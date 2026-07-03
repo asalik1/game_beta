@@ -13,12 +13,25 @@ var speed := 150.0
 var xp_value := 12
 var gold_value := 4
 var ranged := false
+# Defensive stats (see Stats for the curves).
+var physres := 0.0
+var magres := 0.0
+var eva := 0.0
+var critres := 0.0
+var dmg_type := "phys"  # what this enemy's attacks count as
 
 var aggro_range := 330.0
 var attack_cd := 0.0
+var windup := 0.0     # yellow-flash wind-up before a melee bite lands
+var zone_idx := -1    # which zone's clear-count this enemy belongs to
+var force_aggro := false  # zone entered: everyone attacks
+var alerted := false  # has shown its "!" bubble
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
 var sprite: Sprite2D
+var hp_bar_bg: ColorRect
+var hp_bar_fg: ColorRect
+var face_left := false  # sprite art natively faces left (Crawl tiles)
 var dying := false
 var anim_t := 0.0
 
@@ -29,6 +42,7 @@ var slow_mult := 1.0
 var burn_time := 0.0
 var burn_dps := 0.0
 var burn_tick := 0.0
+var burn_color := Color(1.4, 0.8, 0.6)  # orange = fire, green = poison
 var vuln_time := 0.0   # takes +50% damage while marked
 
 
@@ -50,6 +64,11 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2) -> void:
 	xp_value = stats["xp"]
 	gold_value = stats.get("gold", 4)
 	ranged = stats["ranged"]
+	physres = stats.get("physres", 0.0)
+	magres = stats.get("magres", 0.0)
+	eva = stats.get("eva", 0.0)
+	critres = stats.get("critres", 0.0)
+	dmg_type = stats.get("dmg_type", "phys")
 	global_position = pos
 	home = pos
 	anim_t = randf() * 10.0
@@ -71,8 +90,26 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2) -> void:
 
 	sprite = Sprite2D.new()
 	sprite.texture = Art.tex(stats["sprite"])
-	sprite.scale = Vector2(stats["scale"], stats["scale"])
+	sprite.scale = Art.scale_for(sprite.texture, stats["scale"])
+	face_left = Art.faces_left(stats["sprite"])
 	add_child(sprite)
+
+	# Tiny HP bar above the head, shown once the monster is damaged.
+	var bar_y: float = -8.0 * stats["scale"] - 8.0
+	hp_bar_bg = ColorRect.new()
+	hp_bar_bg.color = Color(0, 0, 0, 0.7)
+	hp_bar_bg.position = Vector2(-16, bar_y)
+	hp_bar_bg.size = Vector2(32, 5)
+	hp_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_bar_bg.visible = false
+	add_child(hp_bar_bg)
+	hp_bar_fg = ColorRect.new()
+	hp_bar_fg.color = Color(0.9, 0.25, 0.2)
+	hp_bar_fg.position = Vector2(-15, bar_y + 1)
+	hp_bar_fg.size = Vector2(30, 3)
+	hp_bar_fg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_bar_fg.visible = false
+	add_child(hp_bar_fg)
 
 
 func _physics_process(delta: float) -> void:
@@ -93,9 +130,24 @@ func _physics_process(delta: float) -> void:
 			burn_tick = 0.5
 			take_damage(burn_dps * 0.5, Vector2.ZERO, false, true)
 			if not dying:
-				sprite.modulate = Color(1.4, 0.8, 0.6)
+				sprite.modulate = burn_color
 
 	if stun_time > 0.0:
+		windup = 0.0
+		sprite.modulate = Color(1, 1, 1)
+		velocity = knock
+		move_and_slide()
+		return
+
+	# Bite wind-up: the monster flashes yellow, then snaps. Gives the
+	# player a beat to dodge or knock it back — readable combat.
+	if windup > 0.0:
+		windup -= delta
+		if windup <= 0.0:
+			sprite.modulate = Color(1, 1, 1)
+			var player: Player = game.player
+			if player and not player.dead and global_position.distance_to(player.global_position) < 64.0:
+				player.take_damage(dmg, dmg_type)
 		velocity = knock
 		move_and_slide()
 		return
@@ -107,7 +159,8 @@ func _physics_process(delta: float) -> void:
 	velocity = move + knock
 	move_and_slide()
 	if absf(velocity.x) > 5.0:
-		sprite.flip_h = velocity.x < 0.0
+		# Left-facing art (Crawl sprites) flips the opposite way.
+		sprite.flip_h = (velocity.x > 0.0) if face_left else (velocity.x < 0.0)
 	# Little walk bob so they feel alive.
 	if velocity.length() > 20.0:
 		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
@@ -123,8 +176,11 @@ func _think(_delta: float) -> Vector2:
 
 	var to_player: Vector2 = player.global_position - global_position
 	var dist := to_player.length()
-	if dist > aggro_range:
+	if dist > aggro_range and not force_aggro:
 		return _drift_home()
+	if not alerted:
+		alerted = true
+		game.emote(self, "!", 0.9)
 
 	if ranged:
 		if attack_cd <= 0.0:
@@ -137,10 +193,11 @@ func _think(_delta: float) -> Vector2:
 			return to_player.normalized() * speed
 		return Vector2.ZERO
 	else:
-		if dist < 40.0:
+		if dist < 42.0:
 			if attack_cd <= 0.0:
-				attack_cd = 1.0
-				player.take_damage(dmg)
+				attack_cd = 1.2
+				windup = 0.3
+				sprite.modulate = Color(2.0, 1.7, 0.5)  # "about to bite!" flash
 			return Vector2.ZERO
 		return to_player.normalized() * speed
 
@@ -159,9 +216,10 @@ func apply_stun(dur: float) -> void:
 	stun_time = maxf(stun_time, dur * (0.35 if self is Boss else 1.0))
 
 
-func apply_burn(dps: float, dur: float) -> void:
+func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6)) -> void:
 	burn_dps = maxf(burn_dps, dps)
 	burn_time = maxf(burn_time, dur)
+	burn_color = color
 
 
 func apply_slow(mult: float, dur: float) -> void:
@@ -188,6 +246,11 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		sprite.modulate = Color(3, 3, 3)
 		var tween := create_tween()
 		tween.tween_property(sprite, "modulate", Color(1, 1, 1), 0.15)
+	# Show and update the overhead HP bar once damaged.
+	if hp_bar_bg and hp < max_hp and not dying:
+		hp_bar_bg.visible = true
+		hp_bar_fg.visible = true
+		hp_bar_fg.size.x = 30.0 * clampf(hp / max_hp, 0.0, 1.0)
 	if hp <= 0.0:
 		die()
 
@@ -196,6 +259,9 @@ func die() -> void:
 	dying = true
 	collision_layer = 0
 	collision_mask = 0
+	if hp_bar_bg:
+		hp_bar_bg.visible = false
+		hp_bar_fg.visible = false
 	remove_from_group("enemies")
 	game.sfx("edie")
 	game.burst(global_position, Color(0.9, 0.3, 0.3))

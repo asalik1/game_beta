@@ -1,27 +1,34 @@
 class_name Player extends CharacterBody2D
-## The hero. Class is chosen at the start (warrior/archer/mage/assassin);
-## each class has 3 basic abilities + 1 ultimate, all keyboard-driven and
-## AUTO-AIMED at the nearest enemy (no mouse needed in combat).
-## Stats are recomputed from: class base + level + gear + skill tree + evolution.
+## The hero. Classes scale on a primary attribute (STR/AGI/INT), fight
+## with 3 basics + 1 ultimate (keyboard, auto-aimed), and customize via:
+##  - THEMES: each ability can be assigned any unlocked elemental theme,
+##    which changes its behavior (poison DoTs, shadow crits, ice roots...)
+##  - the row-based skill tree (see skills.gd)
+##  - gear with gem sockets
+## All combat math (crit curves, resistances, penetration, evasion,
+## true damage) lives in stats.gd.
+
+const SPEED_BASE_REF := 260.0
 
 var game: Node2D  # set by game.gd
 
 # --- identity ---
 var cls := "warrior"
-var evolution := ""   # "" until evolved (see Classes.EVOLVE_LEVEL)
+var ability_theme := {"a1": "", "a2": "", "a3": "", "ult": ""}
+var themes_known := 0
 
 # --- progression ---
 var level := 1
 var xp := 0
 var skill_points := 0
-var learned := {}      # skill node id -> true
-var pending_evolution := false
+var tree_points := {}    # skill cell id -> points (0..5)
 var gold := 30
 var potions := 3
 
 # --- gear ---
-var equipment := {}    # slot -> item Dictionary
+var equipment := {}      # slot -> item Dictionary
 var backpack: Array = []
+var gem_bag: Array = []  # loose gems
 const BACKPACK_MAX := 15
 
 # --- vitals ---
@@ -31,30 +38,79 @@ var max_mp := 50.0
 var mp := 50.0
 var dead := false
 
-# --- derived stats (never write these directly; recalc() builds them) ---
+# --- derived stats (recalc() builds these; never write directly) ---
+var primary := 12.0      # STR / AGI / INT value
 var atk := 12.0
 var speed := 250.0
 var crit := 0.05
 var crit_dmg := 1.5
 var cdr := 0.0
 var lifesteal := 0.0
-var dr := 0.0
-var dodge := 0.0
-var gold_pct := 0.0
+var physres := 0.0
+var magres := 0.0
+var critres := 0.0
+var eva := 0.0
+var dex := 0.0
+var physpen := 0.0
+var magpen := 0.0
+var combo := 0.0
+var greed := 0.0
 
 # --- combat state ---
 var cds := {"a1": 0.0, "a2": 0.0, "a3": 0.0, "ult": 0.0}
 var potion_cd := 0.0
 var hurt_cd := 0.0
-var berserk_time := 0.0        # warrior ult
-var storm_time := 0.0          # archer ult
+var berserk_time := 0.0
+var storm_time := 0.0
 var storm_tick := 0.0
-var tumble_speed_time := 0.0   # archer "Adrenaline" node
-var phase_time := 0.0          # mage "Phase Shift" node
+var storm_fx := {}
+var theme_speed_time := 0.0
+var theme_speed_amt := 0.0
+var theme_guard_time := 0.0
+var theme_guard_amt := 0.0
+var melee_swing := 0.0         # held-weapon attack animation timer
+var melee_style := "swing"     # "swing" (arc) or "stab" (thrust)
+var melee_dir := Vector2.RIGHT
 var facing := Vector2.RIGHT
+var look_sign := 1.0           # which way the hero visually faces (+1 right)
+var face_left := false         # does the sprite's art natively face left?
 var anim_t := 0.0
+var locked_target: Enemy = null
+var pending_theme_note := ""   # set when a new theme unlocks (game shows it)
+
+# per-cast theme payload (set by use_ability, read by ability helpers)
+var _tfx := {}
+var _tcolor := Color(1, 1, 1)
+var _themed := false
 
 var sprite: Sprite2D
+var weapon_spr: Sprite2D
+var weapon_glow: Sprite2D
+var aura: Sprite2D
+
+
+## Passive granted by an equipped S-grade weapon ("" if none).
+func s_passive() -> String:
+	var w = equipment.get("weapon")
+	if w != null and w.has("passive"):
+		return w["passive"]
+	return ""
+
+
+func _update_weapon_visual() -> void:
+	if weapon_spr == null:
+		return
+	var w = equipment.get("weapon")
+	if w == null:
+		weapon_spr.visible = false
+		weapon_glow.visible = false
+		return
+	weapon_spr.texture = Art.weapon_tex(w.get("noun", "Blade"), w["grade"])
+	weapon_spr.visible = true
+	var fancy: bool = w["grade"] in ["A", "S"]
+	weapon_glow.visible = fancy
+	if fancy:
+		weapon_glow.modulate = Color(Items.GRADE_COLOR[w["grade"]], 0.55)
 
 
 func _ready() -> void:
@@ -72,10 +128,30 @@ func _ready() -> void:
 	shadow.position = Vector2(0, 20)
 	add_child(shadow)
 
+	# Buff aura: red while Berserk, blue while a guard buff is up.
+	aura = Sprite2D.new()
+	aura.texture = Art.tex("glow")
+	aura.visible = false
+	add_child(aura)
+
 	sprite = Sprite2D.new()
 	sprite.texture = Art.tex(Classes.CLASSES[cls]["sprite"])
-	sprite.scale = Vector2(3, 3)
+	sprite.scale = Art.scale_for(sprite.texture, 3.0)
+	face_left = Art.faces_left(Classes.CLASSES[cls]["sprite"])
 	add_child(sprite)
+
+	weapon_spr = Sprite2D.new()
+	weapon_spr.scale = Vector2(2.4, 2.4)
+	weapon_spr.visible = false
+	weapon_spr.z_index = 1
+	add_child(weapon_spr)
+	weapon_glow = Sprite2D.new()
+	weapon_glow.texture = Art.tex("glow")
+	weapon_glow.visible = false
+	weapon_glow.scale = Vector2(1.1, 1.1)
+	weapon_glow.z_index = 0
+	add_child(weapon_glow)
+
 	recalc()
 	hp = max_hp
 	mp = max_mp
@@ -83,11 +159,47 @@ func _ready() -> void:
 
 func set_class(id: String) -> void:
 	cls = id
+	ability_theme = {"a1": "", "a2": "", "a3": "", "ult": ""}
+	themes_known = Classes.themes_unlocked(level)
+	if themes_known > 0:
+		var first: String = Classes.THEMES[cls][0]["id"]
+		for slot in ability_theme:
+			ability_theme[slot] = first
 	if sprite:
 		sprite.texture = Art.tex(Classes.CLASSES[cls]["sprite"])
+		sprite.scale = Art.scale_for(sprite.texture, 3.0)
+		face_left = Art.faces_left(Classes.CLASSES[cls]["sprite"])
 	recalc()
 	hp = max_hp
 	mp = max_mp
+
+
+# ================================================================== themes
+
+func unlocked_theme_ids() -> Array:
+	var out: Array = []
+	for i in themes_known:
+		out.append(Classes.THEMES[cls][i]["id"])
+	return out
+
+
+func set_ability_theme(slot: String, id: String) -> void:
+	if id == "" or id in unlocked_theme_ids():
+		ability_theme[slot] = id
+
+
+func _theme_fx(slot: String) -> Dictionary:
+	var id: String = ability_theme.get(slot, "")
+	if id == "":
+		return {}
+	return Classes.theme_by_id(cls, id).get("fx", {})
+
+
+func _theme_color(slot: String) -> Color:
+	var id: String = ability_theme.get(slot, "")
+	if id == "":
+		return Color(1, 1, 1)
+	return Classes.theme_by_id(cls, id).get("color", Color(1, 1, 1))
 
 
 # ================================================================== stats
@@ -96,58 +208,60 @@ func xp_needed() -> int:
 	return 20 + level * 15
 
 
-## Rebuild every derived stat. Call after any gear/skill/level change.
+## Rebuild every derived stat: class base + passive + gear (incl. gems)
+## + skill tree points.
 func recalc() -> void:
 	var base: Dictionary = Classes.CLASSES[cls]
 	var b := {"atk_flat": 0.0, "atk_pct": 0.0, "hp_flat": 0.0, "hp_pct": 0.0,
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
-		"cdr": 0.0, "lifesteal": 0.0, "dr": 0.0, "gold_pct": 0.0, "dodge": 0.0}
+		"cdr": 0.0, "lifesteal": 0.0, "physres": 0.0, "magres": 0.0,
+		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
+		"combo": 0.0, "greed": 0.0}
 
-	# Class passive (Warrior's plating, Archer's crit, Assassin's dodge...).
 	var passive: Dictionary = base.get("passive", {})
 	for stat in passive:
 		if stat != "text":
 			b[stat] = b.get(stat, 0.0) + passive[stat]
-
 	for slot in equipment:
 		var stats := Items.stats_of(equipment[slot])
 		for stat in stats:
 			b[stat] = b.get(stat, 0.0) + stats[stat]
-	for id in learned:
-		var node := Skills.get_node_data(cls, id)
-		if node.is_empty():
-			continue  # node belongs to a different class
-		for stat in node.get("bonus", {}):
-			b[stat] = b.get(stat, 0.0) + node["bonus"][stat]
-		if evolution != "":
-			var evo_b: Dictionary = node.get("evo_bonus", {}).get(evolution, {})
-			for stat in evo_b:
-				b[stat] = b.get(stat, 0.0) + evo_b[stat]
-	if evolution != "":
-		for stat in base["evolutions"][evolution]["bonus"]:
-			b[stat] = b.get(stat, 0.0) + base["evolutions"][evolution]["bonus"][stat]
+	for id in tree_points:
+		var cell := Skills.find_cell(cls, id)
+		if cell.is_empty():
+			continue
+		var pts: int = tree_points[id]
+		for stat in cell.get("bonus", {}):
+			b[stat] = b.get(stat, 0.0) + cell["bonus"][stat] * pts
 
 	var hp_frac := hp / max_hp if max_hp > 0 else 1.0
 	var mp_frac := mp / max_mp if max_mp > 0 else 1.0
+	# Primary attribute (STR/AGI/INT) drives attack and a little crit.
+	primary = base["atk"] + base["atk_lvl"] * (level - 1)
+	atk = (primary + b["atk_flat"]) * (1.0 + b["atk_pct"])
 	max_hp = (base["hp"] + base["hp_lvl"] * (level - 1) + b["hp_flat"]) * (1.0 + b["hp_pct"])
 	max_mp = base["mp"] + base["mp_lvl"] * (level - 1) + b["mp_flat"]
-	atk = (base["atk"] + base["atk_lvl"] * (level - 1) + b["atk_flat"]) * (1.0 + b["atk_pct"])
 	speed = base["speed"] * (1.0 + b["speed_pct"])
-	crit = clampf(0.05 + b["crit"], 0.0, 0.9)
+	crit = 0.05 + b["crit"] + primary * 0.0006
 	crit_dmg = 1.5 + b["crit_dmg"]
 	cdr = clampf(b["cdr"], 0.0, 0.45)
 	lifesteal = b["lifesteal"]
-	dr = clampf(b["dr"], 0.0, 0.65)
-	dodge = clampf(b["dodge"], 0.0, 0.5)
-	gold_pct = b["gold_pct"]
+	physres = b["physres"]
+	magres = b["magres"]
+	critres = b["critres"]
+	eva = b["eva"]
+	dex = b["dex"]
+	physpen = b["physpen"]
+	magpen = b["magpen"]
+	combo = b["combo"]
+	greed = b["greed"]
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
 
 
-## Current attack including temporary buffs (Berserk).
 func current_atk() -> float:
 	if berserk_time > 0.0:
-		return atk * (1.65 if evolution == "warlord" else 1.4)
+		return atk * 1.4
 	return atk
 
 
@@ -155,10 +269,23 @@ func current_lifesteal() -> float:
 	return lifesteal + (0.15 if berserk_time > 0.0 else 0.0)
 
 
+## Summary block for the inventory screen.
+func stat_sheet() -> String:
+	var pname: String = Classes.CLASSES[cls]["primary"]
+	return "%s %d   ATK %d (%s)\nCrit %d%% (x%.1f)   Combo %d%%\nPhysRes %d   MagRes %d   CritRes %d\nEVA %d%%   DEX %d\nPen %d phys / %d mag\nHaste %d%%   Speed %d   Lifesteal %d%%   Greed %d%%" % [
+		pname, int(primary), int(atk), Classes.CLASSES[cls]["dmg_type"],
+		int(Stats.crit_curve(crit) * 100), crit_dmg, int(Stats.combo_curve(combo) * 100),
+		int(physres), int(magres), int(critres),
+		int(Stats.eva_curve(eva) * 100), int(dex),
+		int(physpen), int(magpen),
+		int(cdr * 100), int(speed), int(lifesteal * 100), int(Stats.greed_gold(greed) * 100)]
+
+
 # ==================================================================== gear
 
 func add_item(item: Dictionary) -> bool:
 	if backpack.size() >= BACKPACK_MAX:
+		strip_gems(item)
 		gold += maxi(1, Items.price(item) / 2)
 		game.spawn_text(global_position + Vector2(0, -50), "Bag full! Sold for gold", Color(1, 0.9, 0.4))
 		return false
@@ -173,7 +300,56 @@ func equip(item: Dictionary) -> void:
 		backpack.append(equipment[slot])
 	equipment[slot] = item
 	recalc()
+	_update_weapon_visual()
 	game.sfx("potion")
+
+
+## Pull all gems out of an item back into the gem bag (used when selling).
+func strip_gems(item: Dictionary) -> void:
+	for gem in item.get("gems", []):
+		gem_bag.append(gem)
+	item["gems"] = []
+
+
+## Socket a specific gem into a specific item (the player chooses both).
+func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
+	if item.get("gems", []).size() >= item.get("gem_slots", 0):
+		return false
+	item["gems"].append(gem)
+	gem_bag.erase(gem)
+	recalc()
+	game.sfx("levelup")
+	return true
+
+
+## Pop one gem out of an item's socket back into the bag.
+func remove_gem(item: Dictionary, index: int) -> void:
+	var gems: Array = item.get("gems", [])
+	if index < 0 or index >= gems.size():
+		return
+	gem_bag.append(gems[index])
+	gems.remove_at(index)
+	recalc()
+	game.sfx("potion")
+
+
+## 3 gems of the same stat & level -> 1 gem of the next level.
+func synthesize(stat: String, lvl: int) -> bool:
+	if lvl >= Items.GEM_MAX_LEVEL:
+		return false
+	var found: Array = []
+	for gem in gem_bag:
+		if gem["stat"] == stat and gem["lvl"] == lvl:
+			found.append(gem)
+			if found.size() == 3:
+				break
+	if found.size() < 3:
+		return false
+	for gem in found:
+		gem_bag.erase(gem)
+	gem_bag.append(Items.make_gem(stat, lvl + 1))
+	game.sfx("levelup")
+	return true
 
 
 # =============================================================== progression
@@ -190,43 +366,44 @@ func gain_xp(amount: int) -> void:
 		mp = max_mp
 		game.sfx("levelup")
 		game.spawn_text(global_position + Vector2(0, -72), "LEVEL UP!  Lv %d  (+1 skill point, press T)" % level, Color(0.5, 0.9, 1.0))
-		if level >= Classes.EVOLVE_LEVEL and evolution == "":
-			# The menu opens from game._process once no dialogue is up.
-			pending_evolution = true
+		var unlocked := Classes.themes_unlocked(level)
+		if unlocked > themes_known:
+			themes_known = unlocked
+			var theme: Dictionary = Classes.THEMES[cls][unlocked - 1]
+			pending_theme_note = theme["name"]
+			if unlocked == 1:
+				for slot in ability_theme:
+					ability_theme[slot] = theme["id"]
 
 
-## Has this skill node been learned? (behavior nodes are checked by id)
-func has_mod(id: String) -> bool:
-	return learned.has(id)
+func add_tree_point(id: String) -> bool:
+	if skill_points <= 0 or not Skills.can_add(cls, id, tree_points, level):
+		return false
+	skill_points -= 1
+	tree_points[id] = tree_points.get(id, 0) + 1
+	recalc()
+	game.sfx("levelup")
+	return true
 
 
-## Sum of all ability modifiers ("dmg" / "cd" / "mp") for one ability slot,
-## from learned skill nodes and evolution-specific capstone effects.
+## Sum of ability modifiers for one slot from tree points.
 func _amod(slot: String, field: String) -> float:
 	var total := 0.0
-	for id in learned:
-		var node := Skills.get_node_data(cls, id)
-		if node.is_empty():
+	for id in tree_points:
+		var cell := Skills.find_cell(cls, id)
+		if cell.is_empty():
 			continue
-		total += node.get("amod", {}).get(slot, {}).get(field, 0.0)
-		if evolution != "":
-			total += node.get("evo_amod", {}).get(evolution, {}).get(slot, {}).get(field, 0.0)
+		total += cell.get("amod", {}).get(slot, {}).get(field, 0.0) * tree_points[id]
 	return total
 
 
-## Damage factor for one ability slot (1.0 = unmodified).
 func dm(slot: String) -> float:
 	return 1.0 + _amod(slot, "dmg")
 
 
-## Final cooldown of an ability, after skill nodes, evolution and haste.
 func ability_cd(slot: String) -> float:
 	var ab := Classes.ability(cls, slot)
 	var cd: float = ab["cd"] * (1.0 + _amod(slot, "cd"))
-	if cls == "archer" and slot == "a1" and evolution == "ranger":
-		cd *= 0.75
-	if cls == "assassin" and slot == "a2" and evolution == "shadow":
-		cd = minf(cd, 3.0)
 	return maxf(0.1, cd * (1.0 - cdr))
 
 
@@ -235,29 +412,8 @@ func ability_cost(slot: String) -> float:
 	return maxf(0.0, ab["mp"] * (1.0 + _amod(slot, "mp")))
 
 
-func learn_skill(id: String) -> bool:
-	if skill_points <= 0 or not Skills.can_learn(cls, id, learned):
-		return false
-	skill_points -= 1
-	learned[id] = true
-	recalc()
-	game.sfx("levelup")
-	return true
-
-
-func evolve(id: String) -> void:
-	evolution = id
-	recalc()
-	hp = max_hp
-	mp = max_mp
-	game.sfx("victory")
-	game.spawn_text(global_position + Vector2(0, -80), "EVOLVED: %s!" % Classes.CLASSES[cls]["evolutions"][id]["name"], Color(1, 0.85, 0.3))
-	# Evolved heroes get a subtle aura tint.
-	sprite.self_modulate = Color(1.15, 1.05, 1.15)
-
-
 func gain_gold(amount: int) -> void:
-	gold += int(amount * (1.0 + gold_pct))
+	gold += int(amount * (1.0 + Stats.greed_gold(greed)))
 
 
 # ================================================================= per frame
@@ -268,8 +424,8 @@ func _physics_process(delta: float) -> void:
 	potion_cd = maxf(0.0, potion_cd - delta)
 	hurt_cd = maxf(0.0, hurt_cd - delta)
 	berserk_time = maxf(0.0, berserk_time - delta)
-	tumble_speed_time = maxf(0.0, tumble_speed_time - delta)
-	phase_time = maxf(0.0, phase_time - delta)
+	theme_speed_time = maxf(0.0, theme_speed_time - delta)
+	theme_guard_time = maxf(0.0, theme_guard_time - delta)
 	mp = minf(max_mp, mp + (6.0 if cls == "mage" else 4.0) * delta)
 	anim_t += delta
 
@@ -298,8 +454,8 @@ func _physics_process(delta: float) -> void:
 	if dir != Vector2.ZERO:
 		facing = dir
 	var spd := speed * (1.25 if berserk_time > 0.0 else 1.0)
-	if tumble_speed_time > 0.0:
-		spd *= 1.2
+	if theme_speed_time > 0.0:
+		spd *= 1.0 + theme_speed_amt
 	velocity = dir * spd
 	move_and_slide()
 
@@ -307,13 +463,33 @@ func _physics_process(delta: float) -> void:
 	var target := auto_aim()
 	var look_x := target.global_position.x - global_position.x if target else facing.x
 	if absf(look_x) > 2.0:
-		sprite.flip_h = look_x < 0.0
+		look_sign = signf(look_x)
+		# Left-facing art (Crawl sprites) flips the opposite way.
+		sprite.flip_h = (look_x > 0.0) if face_left else (look_x < 0.0)
 	if dir != Vector2.ZERO:
 		sprite.position.y = -absf(sin(anim_t * 11.0)) * 3.0
 		sprite.rotation = sin(anim_t * 11.0) * 0.06
 	else:
 		sprite.position.y = 0.0
 		sprite.rotation = 0.0
+
+	# Held weapon follows the facing side, with a light idle sway.
+	if weapon_spr and weapon_spr.visible:
+		var side := look_sign
+		weapon_spr.position = Vector2(20.0 * side, 8.0 + sprite.position.y)
+		weapon_spr.flip_h = side < 0.0
+		if melee_swing > 0.0:
+			melee_swing = maxf(0.0, melee_swing - delta)
+			var prog := 1.0 - melee_swing / 0.16
+			if melee_style == "stab":
+				# Blade points along the stab line and lunges out-and-back.
+				weapon_spr.rotation = melee_dir.angle() + PI / 2.0
+				weapon_spr.position += melee_dir * sin(prog * PI) * 20.0
+			else:
+				weapon_spr.rotation = side * lerpf(-1.4, 0.9, melee_swing / 0.16)
+		else:
+			weapon_spr.rotation = side * (0.35 + sin(anim_t * 2.0) * 0.05)
+		weapon_glow.position = weapon_spr.position
 
 	# ------------------------------------------------------------- actions
 	var binds: Dictionary = game.binds
@@ -330,11 +506,23 @@ func _physics_process(delta: float) -> void:
 
 	sprite.modulate.a = 0.55 if hurt_cd > 0.0 else 1.0
 
+	# Buff aura pulse (berserk = red, guard = blue).
+	if berserk_time > 0.0 or theme_guard_time > 0.0:
+		aura.visible = true
+		aura.modulate = Color(1.0, 0.25, 0.15, 0.7) if berserk_time > 0.0 else Color(0.4, 0.6, 1.0, 0.6)
+		var pulse := 2.2 + sin(anim_t * 9.0) * 0.25
+		aura.scale = Vector2(pulse, pulse)
+	else:
+		aura.visible = false
+
 
 # ================================================================ targeting
 
-## Nearest living enemy within range. This is the whole auto-aim system.
 func auto_aim(rng := 520.0) -> Enemy:
+	if is_instance_valid(locked_target) and not locked_target.dying \
+			and global_position.distance_to(locked_target.global_position) <= rng * 1.4:
+		return locked_target
+	locked_target = null
 	var best: Enemy = null
 	var best_d := rng
 	for node in get_tree().get_nodes_in_group("enemies"):
@@ -346,6 +534,22 @@ func auto_aim(rng := 520.0) -> Enemy:
 			best_d = d
 			best = e
 	return best
+
+
+func cycle_target() -> void:
+	var list: Array = []
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and not e.dying and global_position.distance_to(e.global_position) <= 560.0:
+			list.append(e)
+	if list.is_empty():
+		locked_target = null
+		return
+	list.sort_custom(func(a, b) -> bool:
+		return global_position.distance_to(a.global_position) < global_position.distance_to(b.global_position))
+	var idx := list.find(locked_target)
+	locked_target = list[(idx + 1) % list.size()]
+	game.sfx("talk")
 
 
 func aim_dir(rng := 520.0) -> Vector2:
@@ -365,75 +569,149 @@ func use_ability(slot: String) -> void:
 		return
 	cds[slot] = ability_cd(slot)
 	mp -= cost
-	var f := dm(slot)  # damage factor from skill tree
+	var f := dm(slot)
+
+	# Theme payload for this cast (behavior modifiers + tint).
+	_tfx = _theme_fx(slot).duplicate()
+	_tcolor = _theme_color(slot)
+	_themed = not _tfx.is_empty()
+	if _tfx.has("speed_buff"):
+		theme_speed_time = 2.5
+		theme_speed_amt = _tfx["speed_buff"]
+	if _tfx.has("guard_buff"):
+		theme_guard_time = 2.5
+		theme_guard_amt = _tfx["guard_buff"]
+
+	# Weapon "punch" on any cast: the held weapon pops for a beat.
+	if weapon_spr and weapon_spr.visible:
+		var wp := weapon_spr.create_tween()
+		wp.tween_property(weapon_spr, "scale", Vector2(3.0, 3.0), 0.06)
+		wp.tween_property(weapon_spr, "scale", Vector2(2.4, 2.4), 0.10)
 
 	match [cls, slot]:
 		["warrior", "a1"]:
-			var reach := 96.0 * (1.4 if has_mod("wA1") else 1.0)
-			var knock := 330.0 * (1.5 if has_mod("wA1") else 1.0)
-			_melee_arc(1.0 * f, reach, "slash", {"stagger": 0.35, "knock": knock})
-		["warrior", "a2"]: _shield_bash(f)
+			_melee_arc(1.0 * f, 96.0, "slash", {"stagger": 0.35, "knock": 330.0}, "swing", "sword")
+			if s_passive() == "kingsblade":
+				var wave := Projectile.spawn(game, global_position + aim_dir(220.0) * 30.0, aim_dir(220.0) * 400.0, 0.0, true, "slash")
+				wave.hit_player_mult = 0.6 * f
+				wave.source_player = self
+				wave.fx = _tfx.duplicate()
+				wave.pierce = true
+				wave.life = 0.6
+		["warrior", "a2"]:
+			# Charge: ram through everything in your path, stunning it.
+			melee_swing = 0.16
+			game.sfx("slam")
+			_dash_strike(170.0, 1.3 * f, {"stun": 1.3, "knock": 220.0})
 		["warrior", "a3"]: _whirlwind(f)
 		["warrior", "ult"]:
-			berserk_time = 12.0 if (has_mod("wC3") and evolution == "warlord") else 8.0
+			berserk_time = 8.0
 			game.sfx("roar")
+			game.shake(6.0)
+			game.hud.flash_screen(Color(1.0, 0.25, 0.15), 0.4, 0.4)
+			game.burst(global_position, Color(1.0, 0.3, 0.2), 20)
 			game.spawn_text(global_position + Vector2(0, -60), "BERSERK!", Color(1, 0.4, 0.3))
-		["archer", "a1"]:
-			_shoot(aim_dir(), 1.0 * f)
-			if has_mod("aA1"):  # Split Shot
-				_shoot(aim_dir().rotated(0.09), 0.5 * f)
+		["archer", "a1"]: _shoot(aim_dir(), 0.85 * f)
 		["archer", "a2"]: _multishot(f)
 		["archer", "a3"]: _tumble()
 		["archer", "ult"]:
 			storm_time = 3.0
+			storm_fx = _tfx.duplicate()
 			game.sfx("roar")
+			game.hud.flash_screen(Color(0.6, 1.0, 0.6), 0.3, 0.35)
 			game.spawn_text(global_position + Vector2(0, -60), "ARROW STORM!", Color(0.6, 1, 0.6))
 		["mage", "a1"]: _cast_bolt(aim_dir(), 1.1 * f)
 		["mage", "a2"]: _frost_nova(f)
 		["mage", "a3"]: _blink()
 		["mage", "ult"]: _meteor()
-		["assassin", "a1"]:
-			_melee_arc(0.8 * f, 84.0, "slash", {"stagger": 0.3, "knock": 260.0})
-			if has_mod("sA1"):  # Twin Blades
-				_melee_arc(0.4 * f, 84.0, "slash", {"knock": 160.0})
-		["assassin", "a2"]: _shadowstep(f)
+		["assassin", "a1"]: _melee_arc(0.8 * f, 84.0, "slash", {"stagger": 0.3, "knock": 260.0}, "stab", "stab")
+		["assassin", "a2"]: _shadow_dash(f)
 		["assassin", "a3"]: _fan_of_knives(f)
 		["assassin", "ult"]: _death_mark()
 
+	# COMBO: chance the ability doesn't go on cooldown and refunds mana.
+	if slot != "ult" and randf() < Stats.combo_curve(combo):
+		cds[slot] = 0.0
+		mp = minf(max_mp, mp + cost)
+		game.spawn_text(global_position + Vector2(0, -66), "COMBO!", Color(0.5, 1.0, 1.0))
 
-## Deal damage to one enemy, applying crit / lifesteal / pyromancer burn.
+
+## Deal damage to one enemy through the full stat pipeline.
+## effects: stagger/stun/knock/pull/slow/burn (guaranteed), plus theme fx
+## (dot/slow/stun_chance/echo/heal/vuln/crit_bonus/splash),
+## "type": "true" for true damage, "aoe": lifesteal at 33%.
 func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
-	var dmg := current_atk() * mult
-	var is_crit := randf() < crit
-	if is_crit:
+	for key in _tfx:
+		if not effects.has(key):
+			effects[key] = _tfx[key]
+	var dmg_type: String = effects.get("type", Classes.CLASSES[cls]["dmg_type"])
+	var pen := 0.0
+	var e_res := 0.0
+	if dmg_type == "phys":
+		pen = physpen
+		e_res = e.physres
+	elif dmg_type == "magic":
+		pen = magpen
+		e_res = e.magres
+
+	var result := Stats.resolve(current_atk() * mult, dmg_type,
+		crit + effects.get("crit_bonus", 0.0), crit_dmg, pen, dex, e_res, e.eva, e.critres)
+	if result["miss"]:
+		game.spawn_text(e.global_position + Vector2(0, -30), "MISS", Color(0.7, 0.7, 0.7))
+		return
+	var dmg: float = result["dmg"]
+	var is_crit: bool = result["crit"]
+	# Nightfang: strikes on stunned/slowed enemies always crit.
+	if s_passive() == "nightfang" and dmg_type != "true" and not is_crit \
+			and (e.stun_time > 0.0 or e.slow_time > 0.0):
+		is_crit = true
 		dmg *= crit_dmg
-	if evolution == "pyromancer":
-		# Conflagration capstone makes every burn 50% stronger.
-		e.apply_burn(current_atk() * (0.45 if has_mod("mA3") else 0.3), 3.0)
+
+	# ------------------------------------------------ theme / rider effects
+	if effects.has("dot"):
+		var dot_color := Color(0.5, 1.2, 0.5) if _tcolor.g > _tcolor.r else Color(1.4, 0.8, 0.6)
+		e.apply_burn(current_atk() * effects["dot"], 3.0, dot_color)
 	if effects.has("burn"):
 		e.apply_burn(effects["burn"], 3.0)
+	if s_passive() == "phoenix" and cls == "mage":
+		pass  # phoenix burn rides on the projectile fx instead
+	if effects.has("slow"):
+		e.apply_slow(1.0 - effects["slow"] if effects["slow"] < 1.0 else 0.5, effects.get("slow_dur", 2.0))
 	if effects.has("stun"):
 		e.apply_stun(effects["stun"])
 	if effects.has("stagger"):
 		e.apply_stun(effects["stagger"])
-	if effects.has("slow"):
-		e.apply_slow(effects["slow"], effects.get("slow_dur", 2.5))
-	if current_lifesteal() > 0.0:
-		hp = minf(max_hp, hp + dmg * current_lifesteal())
+	if effects.has("stun_chance") and randf() < effects["stun_chance"]:
+		e.apply_stun(0.5)
+	if effects.has("vuln") and randf() < effects["vuln"]:
+		e.vuln_time = 3.0
+		game.spawn_text(e.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
+	if effects.has("heal"):
+		hp = minf(max_hp, hp + max_hp * effects["heal"])
+
+	# Lifesteal (AoE hits only steal a third).
+	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
+	if ls > 0.0:
+		hp = minf(max_hp, hp + dmg * ls)
+
 	var dir := (e.global_position - global_position).normalized()
 	e.take_damage(dmg, dir, is_crit)
 	if effects.has("knock") and not e.dying:
 		e.knock = dir * effects["knock"]
 	if effects.has("pull") and not e.dying:
-		e.knock = -dir * 380.0  # Cyclone: drag them into the blender
-	if effects.has("splash"):  # Fireburst: explosion around the target
-		game.burst(e.global_position, Color(1.0, 0.6, 0.2), 8)
+		e.knock = -dir * 380.0
+	if effects.has("splash"):
+		game.burst(e.global_position, _tcolor if _themed else Color(1.0, 0.6, 0.2), 8)
 		for e2 in _enemies_within(e.global_position, 80.0):
 			if e2 != e and not e2.dying:
 				e2.take_damage(dmg * effects["splash"], (e2.global_position - e.global_position).normalized())
+	# Echo: the hit strikes again at half strength.
+	if effects.has("echo") and not effects.has("_echoed") and randf() < effects["echo"] and not e.dying:
+		var again := effects.duplicate()
+		again["_echoed"] = true
+		hit_enemy(e, mult * 0.5, again)
 
 
-## Enemies inside an arc/circle in front of us (no physics queries needed).
 func _enemies_within(center: Vector2, radius: float) -> Array:
 	var out: Array = []
 	for node in get_tree().get_nodes_in_group("enemies"):
@@ -443,96 +721,99 @@ func _enemies_within(center: Vector2, radius: float) -> Array:
 	return out
 
 
-func _melee_arc(mult: float, reach: float, fx: String, effects := {}) -> void:
-	game.sfx("slash")
+## Melee strike. style "swing" = crescent arc; "stab" = straight thrust
+## (a piercing streak, and the held weapon lunges instead of swiping).
+func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style := "swing", snd := "slash") -> void:
+	game.sfx(snd)
+	melee_swing = 0.16
+	melee_style = style
 	var dir := aim_dir(220.0)
-	var spr := Sprite2D.new()
-	spr.texture = Art.tex(fx)
-	spr.rotation = dir.angle()
-	spr.scale = Vector2(2.8, 2.8) * (reach / 78.0)
-	spr.position = dir * reach * 0.5
-	spr.z_index = 6
-	add_child(spr)
-	var tween := spr.create_tween()
-	tween.tween_property(spr, "modulate:a", 0.0, 0.14)
-	tween.tween_callback(spr.queue_free)
+	melee_dir = dir
+	if style == "stab":
+		# Thrust streak: a stretched flash of light along the stab line.
+		var streak := Sprite2D.new()
+		streak.texture = Art.tex("glow")
+		streak.modulate = Color(_tcolor if _themed else Color(1, 1, 1), 0.9)
+		streak.rotation = dir.angle()
+		streak.scale = Vector2(reach / 26.0, 0.45)
+		streak.position = dir * reach * 0.55
+		streak.z_index = 6
+		add_child(streak)
+		var tw := streak.create_tween()
+		tw.tween_property(streak, "scale:y", 0.1, 0.12)
+		tw.parallel().tween_property(streak, "modulate:a", 0.0, 0.12)
+		tw.tween_callback(streak.queue_free)
+	else:
+		var spr := Sprite2D.new()
+		spr.texture = Art.tex(fx_name)
+		spr.rotation = dir.angle()
+		spr.scale = Vector2(2.8, 2.8) * (reach / 78.0)
+		spr.position = dir * reach * 0.5
+		if _themed:
+			spr.modulate = _tcolor
+		spr.z_index = 6
+		add_child(spr)
+		var tween := spr.create_tween()
+		tween.tween_property(spr, "modulate:a", 0.0, 0.14)
+		tween.tween_callback(spr.queue_free)
 	for e in _enemies_within(global_position + dir * reach * 0.55, reach * 0.55):
-		hit_enemy(e, mult, effects)
+		hit_enemy(e, mult, effects.duplicate())
 
 
-func _shoot(dir: Vector2, mult: float, fx := {}) -> void:
-	game.sfx("bolt")
-	var p := Projectile.spawn(game, global_position + dir * 24.0, dir * 520.0, 0.0, true, "arrow")
+func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectile:
+	var p := Projectile.spawn(game, global_position + dir * 24.0, dir * speed_px, 0.0, true, tex)
 	p.hit_player_mult = mult
 	p.source_player = self
-	p.fx = fx
-	p.pierce = (evolution == "sniper")
+	p.fx = _tfx.duplicate()
+	if _themed:
+		p.modulate = Color(1, 1, 1).lerp(_tcolor, 0.55)
+	return p
+
+
+func _shoot(dir: Vector2, mult: float) -> void:
+	game.sfx("bow")
+	var p := _proj(dir, mult, "arrow", 520.0)
+	if s_passive() == "ricochet":
+		p.fx["ric"] = 1
 
 
 func _cast_bolt(dir: Vector2, mult: float) -> void:
-	game.sfx("fireball")
-	var p := Projectile.spawn(game, global_position + dir * 24.0, dir * 440.0, 0.0, true, "fireball")
-	p.hit_player_mult = mult
-	p.source_player = self
-	if has_mod("mA1"):  # Fireburst
-		p.fx = {"splash": 0.5}
-
-
-func _shield_bash(f := 1.0) -> void:
-	game.sfx("slam")
-	var dir := aim_dir(220.0)
-	global_position += dir * 60.0
-	var stun := 2.0 if evolution == "guardian" else 1.2
-	var hit_list := _enemies_within(global_position + dir * 40.0, 52.0)
-	for e in hit_list:
-		hit_enemy(e, 1.2 * f, {"stun": stun})
-	if has_mod("wB1"):  # Aftershock
-		game.shake(4.0)
-		for e2 in _enemies_within(global_position + dir * 40.0, 150.0):
-			if not hit_list.has(e2):
-				hit_enemy(e2, 0.7 * f)
+	game.sfx("cast")
+	var p := _proj(dir, mult, "fireball", 440.0)
+	if s_passive() == "phoenix":
+		p.fx["splash"] = maxf(p.fx.get("splash", 0.0), 0.5)
+		p.fx["burn"] = current_atk() * 0.35
 
 
 func _whirlwind(f := 1.0) -> void:
-	game.sfx("slash")
+	game.sfx("sword")
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex("glow")
-	spr.modulate = Color(1, 1, 1, 0.8)
+	spr.modulate = Color(_tcolor, 0.8) if _themed else Color(1, 1, 1, 0.8)
 	spr.scale = Vector2(4.5, 4.5)
 	add_child(spr)
 	var tween := spr.create_tween()
 	tween.tween_property(spr, "scale", Vector2(6, 6), 0.2)
 	tween.parallel().tween_property(spr, "modulate:a", 0.0, 0.2)
 	tween.tween_callback(spr.queue_free)
-	var eff := {"pull": true, "stagger": 0.3} if has_mod("wC1") else {"knock": 380.0, "stagger": 0.3}
 	for e in _enemies_within(global_position, 115.0):
-		hit_enemy(e, 0.9 * f, eff)
+		hit_enemy(e, 0.9 * f, {"knock": 380.0, "stagger": 0.3, "aoe": true})
 
 
 func _multishot(f := 1.0) -> void:
 	game.sfx("bolt")
 	var dir := aim_dir()
-	var count := 5
-	if evolution == "ranger":
-		count += 2
-	if has_mod("aB3"):  # Rain of Barbs
-		count += 2 if evolution == "ranger" else 1
-	var fx := {"slow": 0.65, "slow_dur": 2.0} if has_mod("aB1") else {}
-	for i in count:
-		var spread := (float(i) - (count - 1) / 2.0) * 0.16
-		_shoot(dir.rotated(spread), 0.7 * f, fx)
+	for i in 5:
+		var spread := (float(i) - 2.0) * 0.16
+		var p := _proj(dir.rotated(spread), 0.55 * f, "arrow", 520.0)
+		if s_passive() == "ricochet":
+			p.fx["ric"] = 1
 
 
 func _tumble() -> void:
 	game.sfx("blink")
 	hurt_cd = maxf(hurt_cd, 0.5)
 	global_position = game.clamp_to_zone(global_position + facing * 130.0, global_position)
-	if has_mod("aC1"):  # Quiver Roll: reset Multishot
-		cds["a2"] = 0.0
-	if has_mod("aC2"):  # Adrenaline
-		tumble_speed_time = 3.0
-	if has_mod("aC3") and evolution == "ranger":  # Windrunner
-		_multishot(dm("a2"))
 
 
 func _storm_strike() -> void:
@@ -541,105 +822,162 @@ func _storm_strike() -> void:
 		return
 	var e: Enemy = targets[randi() % targets.size()]
 	game.sfx("bolt")
+	# An arrow visibly falls out of the sky onto the target.
+	var arrow := Sprite2D.new()
+	arrow.texture = Art.tex("arrow")
+	arrow.rotation = PI / 2.0
+	arrow.scale = Vector2(3, 3)
+	arrow.global_position = e.global_position + Vector2(randf_range(-10, 10), -160)
+	arrow.z_index = 30
+	game.add_child(arrow)
+	var tween := arrow.create_tween()
+	tween.tween_property(arrow, "global_position:y", e.global_position.y, 0.11)
+	tween.tween_callback(arrow.queue_free)
 	game.burst(e.global_position, Color(0.7, 1.0, 0.7))
-	hit_enemy(e, 0.8)
+	var eff := storm_fx.duplicate()
+	eff["aoe"] = true
+	hit_enemy(e, 0.8, eff)
 
 
 func _frost_nova(f := 1.0) -> void:
-	game.sfx("blink")
-	var radius := 125.0 * (1.4 if has_mod("mB2") else 1.0)
+	game.sfx("slam")
+	game.shake(5.0)
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex("glow")
-	spr.modulate = Color(0.4, 0.7, 1.0, 0.9)
+	spr.modulate = Color(_tcolor, 0.9) if _themed else Color(0.4, 0.7, 1.0, 0.9)
 	spr.scale = Vector2(3, 3)
 	add_child(spr)
 	var tween := spr.create_tween()
-	tween.tween_property(spr, "scale", Vector2(radius / 19.0, radius / 19.0), 0.25)
+	tween.tween_property(spr, "scale", Vector2(8.5, 8.5), 0.25)
 	tween.parallel().tween_property(spr, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(spr.queue_free)
-	var dur_mult := 2.0 if (has_mod("mB3") and evolution == "pyromancer") else 1.0
-	var eff := {}
-	if has_mod("mB1"):  # Deep Freeze: root instead of slow
-		eff = {"stun": 1.2 * dur_mult}
-	else:
-		eff = {"slow": 0.5, "slow_dur": 2.5 * dur_mult}
-	var hits := 0
-	for e in _enemies_within(global_position, radius):
-		hit_enemy(e, 0.8 * f, eff)
-		hits += 1
-	if has_mod("mB3") and evolution == "archmage":  # Absolute Zero refund
-		mp = minf(max_mp, mp + 8.0 * hits)
+	# A real panic button: big damage, shove everything away, slow it.
+	for e in _enemies_within(global_position, 160.0):
+		hit_enemy(e, 1.4 * f, {"slow": 0.5, "slow_dur": 2.5, "knock": 340.0, "aoe": true})
 
 
-func _blink_shock() -> void:
-	game.burst(global_position, Color(0.6, 0.7, 1.0), 12)
-	for e in _enemies_within(global_position, 85.0):
-		hit_enemy(e, 0.8 * dm("a3"))
+## Dash `dist` pixels in the move direction, damaging every enemy along
+## the path. Used by mage Blink and assassin Shadow Dash — and because
+## it HITS things, ability themes fully apply to it.
+func _dash_strike(dist: float, mult: float, effects := {}) -> void:
+	game.sfx("blink")
+	var color := _tcolor if _themed else Color(0.6, 0.7, 1.0)
+	var start := global_position
+	global_position = game.clamp_to_zone(start + facing * dist, start)
+	var end := global_position
+	hurt_cd = maxf(hurt_cd, 0.3)  # brief immunity while dashing
+	game.burst(start, color, 8)
+	game.burst(end, color, 8)
+
+	# Light trail between the two points.
+	var mid := (start + end) / 2.0
+	var trail := Sprite2D.new()
+	trail.texture = Art.tex("glow")
+	trail.modulate = Color(color, 0.7)
+	trail.global_position = mid
+	trail.rotation = (end - start).angle()
+	trail.scale = Vector2(maxf(1.0, start.distance_to(end) / 44.0), 1.1)
+	trail.z_index = 6
+	game.add_child(trail)
+	var tween := trail.create_tween()
+	tween.tween_property(trail, "modulate:a", 0.0, 0.25)
+	tween.tween_callback(trail.queue_free)
+
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e.dying:
+			continue
+		var closest := Geometry2D.get_closest_point_to_segment(e.global_position, start, end)
+		if e.global_position.distance_to(closest) <= 55.0:
+			hit_enemy(e, mult, effects.duplicate())
 
 
 func _blink() -> void:
-	game.sfx("blink")
-	if has_mod("mC1"):  # Static Step: shock at departure...
-		_blink_shock()
-	else:
-		game.burst(global_position, Color(0.6, 0.7, 1.0))
-	var dist := 180.0 * (1.6 if has_mod("mC2") else 1.0)
-	global_position = game.clamp_to_zone(global_position + facing * dist, global_position)
-	if has_mod("mC1"):  # ...and arrival
-		_blink_shock()
-	if has_mod("mC3"):  # Phase Shift
-		phase_time = 1.0
+	_dash_strike(190.0, 0.8, {"aoe": true})
 
 
 func _meteor() -> void:
 	var target := auto_aim()
 	var pos := target.global_position if target else global_position + facing * 150.0
 	game.sfx("roar")
-	# Falling meteor sprite, then boom.
+	var fx_copy := _tfx.duplicate()
+	var col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
+
+	# Growing impact shadow on the ground — you can feel it coming.
+	var mark := Sprite2D.new()
+	mark.texture = Art.tex("telegraph")
+	mark.global_position = pos
+	mark.modulate = Color(col, 0.5)
+	mark.scale = Vector2(1, 1)
+	mark.z_index = -6
+	game.add_child(mark)
+	var mark_tw := mark.create_tween()
+	mark_tw.tween_property(mark, "scale", Vector2(4.6, 4.6), 0.62)
+
+	# The meteor itself: big, burning, with a particle trail.
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex("fireball")
-	spr.scale = Vector2(8, 8)
-	spr.global_position = pos + Vector2(60, -320)
+	spr.scale = Vector2(11, 11)
+	spr.modulate = col
+	spr.global_position = pos + Vector2(90, -460)
 	spr.z_index = 30
 	game.add_child(spr)
+	var trail := CPUParticles2D.new()
+	trail.amount = 26
+	trail.lifetime = 0.5
+	trail.spread = 20.0
+	trail.direction = Vector2(-0.2, -1)
+	trail.initial_velocity_min = 60.0
+	trail.initial_velocity_max = 140.0
+	trail.scale_amount_min = 2.5
+	trail.scale_amount_max = 5.0
+	trail.color = col
+	spr.add_child(trail)
+
 	var tween := spr.create_tween()
-	tween.tween_property(spr, "global_position", pos, 0.55)
+	tween.tween_property(spr, "global_position", pos, 0.62).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.tween_callback(func() -> void:
 		spr.queue_free()
+		if is_instance_valid(mark):
+			mark.queue_free()
 		game.sfx("slam")
-		game.shake(9.0)
-		game.burst(pos, Color(1.0, 0.6, 0.2), 24)
-		for e in _enemies_within(pos, 140.0):
-			hit_enemy(e, 3.5, {"burn": current_atk() * 0.4})
+		game.shake(14.0)
+		game.hud.flash_screen(Color(1.0, 0.75, 0.4), 0.55, 0.35)
+		game.burst(pos, col, 30)
+		game.burst(pos, Color(1.0, 0.9, 0.5), 16)
+		# Scorched ground lingers for a moment.
+		var scorch := Sprite2D.new()
+		scorch.texture = Art.tex("glow")
+		scorch.modulate = Color(col, 0.6)
+		scorch.global_position = pos
+		scorch.scale = Vector2(4.2, 4.2)
+		scorch.z_index = -5
+		game.add_child(scorch)
+		var s_tw := scorch.create_tween()
+		s_tw.tween_property(scorch, "modulate:a", 0.0, 1.3)
+		s_tw.tween_callback(scorch.queue_free)
+		for e in _enemies_within(pos, 150.0):
+			var eff := fx_copy.duplicate()
+			eff["burn"] = current_atk() * 0.4
+			eff["aoe"] = true
+			hit_enemy(e, 3.5, eff)
 	)
 
 
-func _shadowstep(f := 1.0) -> void:
-	var target := auto_aim()
-	if target == null:
-		cds["a2"] = 0.5  # refund most of the cooldown if there was no target
-		return
-	game.sfx("blink")
-	game.burst(global_position, Color(0.5, 0.4, 0.7))
-	var behind := (global_position - target.global_position).normalized() * -46.0
-	global_position = target.global_position + behind
-	var mult := 1.5 * f
-	if has_mod("sB3") and target.hp < target.max_hp * 0.35:  # Executioner
-		mult *= 1.6
-	var eff := {"stun": 1.0} if has_mod("sB1") else {"stagger": 0.5}
-	hit_enemy(target, mult, eff)
+func _shadow_dash(f := 1.0) -> void:
+	melee_swing = 0.16
+	melee_style = "stab"
+	melee_dir = facing
+	game.sfx("stab")
+	_dash_strike(210.0, 1.2 * f, {"stagger": 0.4})
 
 
 func _fan_of_knives(f := 1.0) -> void:
-	game.sfx("slash")
+	game.sfx("knife")
 	var dir := aim_dir()
-	var count := 5 if has_mod("sC3") else 3
-	for i in count:
-		var spread := (float(i) - (count - 1) / 2.0) * 0.13
-		var p := Projectile.spawn(game, global_position + dir * 22.0, dir.rotated(spread) * 560.0, 0.0, true, "knife")
-		p.hit_player_mult = 0.7 * f
-		p.source_player = self
-		p.pierce = has_mod("sC1")
+	for i in 3:
+		var spread := (float(i) - 1.0) * 0.13
+		_proj(dir.rotated(spread), 0.7 * f, "knife", 560.0)
 
 
 func _death_mark() -> void:
@@ -647,11 +985,42 @@ func _death_mark() -> void:
 	if target == null:
 		cds["ult"] = 1.0
 		return
+	# EXECUTION: the world darkens, you appear on top of the target,
+	# a giant death mark rises, then a 3-hit true-damage flurry lands.
 	game.sfx("roar")
-	game.burst(target.global_position, Color(1.0, 0.2, 0.3), 20)
+	game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.45)
+	game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
+	var dir := (target.global_position - global_position).normalized()
+	global_position = game.clamp_to_zone(target.global_position + dir * 42.0, target.global_position)
 	target.vuln_time = 5.0
-	hit_enemy(target, 2.0)
-	game.spawn_text(target.global_position + Vector2(0, -50), "MARKED", Color(1, 0.3, 0.3))
+	target.apply_stun(0.6)
+	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK", Color(1, 0.25, 0.3))
+
+	var skull := Sprite2D.new()
+	skull.texture = Art.glyph_tex("ab_skull", Color(1.0, 0.25, 0.35))
+	skull.scale = Vector2(3.5, 3.5)
+	skull.global_position = target.global_position + Vector2(0, -40)
+	skull.z_index = 30
+	game.add_child(skull)
+	var tween := skull.create_tween()
+	tween.tween_property(skull, "global_position:y", skull.global_position.y - 46.0, 0.7)
+	tween.parallel().tween_property(skull, "modulate:a", 0.0, 0.7)
+	tween.tween_callback(skull.queue_free)
+
+	_death_mark_flurry(target)
+
+
+func _death_mark_flurry(target: Enemy) -> void:
+	for i in 3:
+		if not is_instance_valid(target) or target.dying:
+			return
+		melee_swing = 0.16
+		melee_style = "stab"
+		game.sfx("stab")
+		game.shake(3.5)
+		game.burst(target.global_position, Color(1.0, 0.2, 0.3), 10)
+		hit_enemy(target, 0.7 if i < 2 else 1.3, {"type": "true"})
+		await get_tree().create_timer(0.09).timeout
 
 
 # ================================================================== survival
@@ -666,16 +1035,19 @@ func drink_potion() -> void:
 	game.spawn_text(global_position + Vector2(0, -40), "+HP", Color(0.4, 1.0, 0.4))
 
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, dmg_type := "phys") -> void:
 	if dead or hurt_cd > 0.0:
 		return
-	var eff_dodge := minf(0.9, dodge + (0.5 if phase_time > 0.0 else 0.0))
-	if eff_dodge > 0.0 and randf() < eff_dodge:
+	if randf() < Stats.eva_curve(eva):
 		game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
 		game.sfx("blink")
 		return
 	hurt_cd = 0.6
-	amount *= (1.0 - dr)
+	var res := physres if dmg_type == "phys" else magres
+	if theme_guard_time > 0.0:
+		res += theme_guard_amt
+	if dmg_type != "true":
+		amount *= (1.0 - Stats.res_frac(res))
 	hp -= amount
 	game.sfx("hurt")
 	game.shake(4.0)

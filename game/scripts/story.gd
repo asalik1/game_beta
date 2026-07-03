@@ -4,15 +4,24 @@ class_name Story
 
 # ---------------------------------------------------------------- enemies ---
 
+# Defensive stats: physres/magres (log-curve reduction), eva (dodge
+# chance, countered by DEX), critres (shaves attacker crit chance).
 const ENEMIES := {
-	"wolf":     {"name": "Blighted Wolf",   "sprite": "wolf",     "hp": 34.0,  "dmg": 8.0,  "speed": 155.0, "xp": 12, "gold": 4,  "ranged": false, "scale": 3.0},
-	"spider":   {"name": "Marsh Spider",    "sprite": "spider",   "hp": 28.0,  "dmg": 6.0,  "speed": 195.0, "xp": 14, "gold": 5,  "ranged": false, "scale": 3.0},
-	"cultist":  {"name": "Blight Cultist",  "sprite": "cultist",  "hp": 40.0,  "dmg": 10.0, "speed": 90.0,  "xp": 20, "gold": 8,  "ranged": true,  "scale": 3.0},
-	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 14.0, "speed": 120.0, "xp": 24, "gold": 10, "ranged": false, "scale": 3.0},
-	# Bosses (buffed vs v1 since heroes now have gear + skill trees)
-	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "wolf",     "hp": 460.0,  "dmg": 15.0, "speed": 130.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 6.5},
-	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 620.0,  "dmg": 12.0, "speed": 105.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5},
-	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 1000.0, "dmg": 18.0, "speed": 115.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5},
+	"wolf":     {"name": "Blighted Wolf",   "sprite": "wolf",     "hp": 34.0,  "dmg": 8.0,  "speed": 155.0, "xp": 12, "gold": 4,  "ranged": false, "scale": 3.0,
+		"physres": 5.0,  "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys"},
+	"spider":   {"name": "Marsh Spider",    "sprite": "spider",   "hp": 28.0,  "dmg": 6.0,  "speed": 195.0, "xp": 14, "gold": 5,  "ranged": false, "scale": 3.0,
+		"physres": 0.0,  "magres": 5.0,  "eva": 0.12, "critres": 0.0, "dmg_type": "phys"},
+	"cultist":  {"name": "Blight Cultist",  "sprite": "cultist",  "hp": 40.0,  "dmg": 10.0, "speed": 90.0,  "xp": 20, "gold": 8,  "ranged": true,  "scale": 3.0,
+		"physres": 5.0,  "magres": 15.0, "eva": 0.0,  "critres": 0.0, "dmg_type": "magic"},
+	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 14.0, "speed": 120.0, "xp": 24, "gold": 10, "ranged": false, "scale": 3.0,
+		"physres": 25.0, "magres": 5.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys"},
+	# Bosses (real defenses: bring penetration or lose a chunk of damage)
+	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 460.0,  "dmg": 15.0, "speed": 130.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
+		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "dmg_type": "phys"},
+	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 620.0,  "dmg": 12.0, "speed": 105.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5,
+		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "dmg_type": "magic"},
+	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 1000.0, "dmg": 18.0, "speed": 115.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5,
+		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "dmg_type": "phys"},
 }
 
 # ------------------------------------------------------------------ zones ---
@@ -22,14 +31,14 @@ const ENEMIES := {
 const ZONES := [
 	{
 		"name": "Emberfall Village", "ground": "grass", "path": "dirt",
-		"obstacles": ["tree", "rock"], "obstacle_count": 8,
+		"obstacles": ["tree_green", "tree_green", "rock"], "obstacle_count": 9,
 		"decor": ["flower", "flower", "pebble"],
 		"merchant": [820, 300],
 		"enemies": [], "boss": "",
 	},
 	{
 		"name": "The Darkwood", "ground": "forest", "path": "dirt",
-		"obstacles": ["tree", "tree", "rock"], "obstacle_count": 16,
+		"obstacles": ["tree_autumn", "tree_autumn", "rock"], "obstacle_count": 16,
 		"decor": ["mushroom", "pebble", "flower"],
 		"merchant": [660, 560],
 		"enemies": [
@@ -41,7 +50,7 @@ const ZONES := [
 	},
 	{
 		"name": "The Blightmarsh", "ground": "marsh", "path": "dirt",
-		"obstacles": ["deadtree", "rock"], "obstacle_count": 14,
+		"obstacles": ["tree_teal", "deadtree", "rock"], "obstacle_count": 14,
 		"decor": ["mushroom", "bones", "pebble"],
 		"merchant": [540, 170],
 		"enemies": [
@@ -114,8 +123,8 @@ const BEATS := {
 
 const QUESTS := {
 	"talk":     "Speak with Elder Maren  (walk up to her and press E)",
-	"fangmaw":  "Slay FANGMAW in the Darkwood  (head east)",
-	"morwen":   "Destroy MORWEN in the Blightmarsh  (head east)",
-	"vargoth":  "Defeat KING VARGOTH in his keep  (head east)",
+	"fangmaw":  "Clear the Darkwood, then slay FANGMAW",
+	"morwen":   "Purge the Blightmarsh, then destroy MORWEN",
+	"vargoth":  "Cleanse the keep, then face KING VARGOTH",
 	"done":     "Chapter 1 complete!",
 }

@@ -51,11 +51,18 @@ func _on_body_entered(body: Node) -> void:
 
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var item := Items.roll_item(tier, rng)
+	var item := Items.roll_item(tier, rng, body.cls)
 	body.add_item(item)
 	var bonus_gold := rng.randi_range(3, 8) * (1 + ["wood", "silver", "gold"].find(tier))
 	body.gain_gold(bonus_gold)
 	game.hud.loot_banner(item, bonus_gold)
+
+	# Chests can also hold loose gems (better chests, better odds).
+	var gem_chance: float = {"wood": 0.25, "silver": 0.6, "gold": 1.0}[tier]
+	if rng.randf() < gem_chance:
+		var gem := Items.random_gem(rng, 1)
+		body.gem_bag.append(gem)
+		game.spawn_text(body.global_position + Vector2(0, -66), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)

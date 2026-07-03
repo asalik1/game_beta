@@ -8,6 +8,8 @@ class_name Boss extends Enemy
 var ability_cd := 3.0        # main special attack timer
 var ring_cd := 6.0           # morwen's / vargoth's radial attack timer
 var blink_cd := 0.0
+var special_cd := 2.2        # telegraphed signature move (pounce / rain / blades)
+var leaping := false         # fangmaw mid-pounce
 var summoned := false        # fangmaw's 50% wolves
 var enraged := false         # vargoth's 30% enrage
 
@@ -31,7 +33,9 @@ func reset_fight() -> void:
 	global_position = home
 	charging = false
 	telegraphing = false
+	leaping = false
 	ability_cd = 3.0
+	special_cd = 3.0
 	enraged = false
 	stun_time = 0.0
 	slow_time = 0.0
@@ -51,6 +55,7 @@ func _think(delta: float) -> Vector2:
 	ability_cd = maxf(0.0, ability_cd - delta)
 	ring_cd = maxf(0.0, ring_cd - delta)
 	blink_cd = maxf(0.0, blink_cd - delta)
+	special_cd = maxf(0.0, special_cd - delta)
 
 	match kind:
 		"fangmaw":
@@ -64,6 +69,13 @@ func _think(delta: float) -> Vector2:
 
 # ------------------------------------------------------------- Fangmaw ---
 func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if leaping:
+		return Vector2.ZERO
+	# Signature: POUNCE — marks a danger circle on you, then crashes down.
+	if special_cd <= 0.0 and not charging and not telegraphing and dist < 620.0:
+		special_cd = 6.5
+		_pounce(player)
+		return Vector2.ZERO
 	if charging:
 		charge_time -= delta
 		if charge_time <= 0.0:
@@ -78,7 +90,9 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 		game.sfx("roar")
 		game.spawn_text(global_position + Vector2(0, -80), "Fangmaw calls the pack!", Color(1, 0.5, 0.4))
 		for offset in [Vector2(-90, -50), Vector2(90, 50)]:
-			game.add_enemy(Enemy.make(game, "wolf", global_position + offset))
+			var add := Enemy.make(game, "wolf", global_position + offset)
+			add.force_aggro = true
+			game.add_enemy(add)
 
 	if ability_cd <= 0.0 and dist < 500.0 and not telegraphing:
 		telegraphing = true
@@ -94,6 +108,16 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 			player.take_damage(dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
+
+
+func _pounce(player: Player) -> void:
+	leaping = true
+	game.sfx("roar")
+	var target: Vector2 = player.global_position
+	game.telegraph(target, 95.0, 0.85, dmg * 1.4)
+	var tween := create_tween()
+	tween.tween_property(self, "global_position", target, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_callback(func() -> void: leaping = false)
 
 
 func _do_charge(_to_player: Vector2) -> void:
@@ -114,6 +138,15 @@ func _do_charge(_to_player: Vector2) -> void:
 
 # -------------------------------------------------------------- Morwen ---
 func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
+	# Signature: BLIGHT RAIN — poison zones bloom under and around you.
+	if special_cd <= 0.0:
+		special_cd = 8.0
+		game.sfx("roar")
+		for i in 4:
+			var offset := Vector2.ZERO if i == 0 else Vector2(randf_range(-160, 160), randf_range(-120, 120))
+			game.telegraph(player.global_position + offset, 75.0, 0.75 + i * 0.12, dmg * 1.3,
+				{"color": Color(0.55, 1.0, 0.25, 0.55)})
+
 	# Blink away when the knight gets close.
 	if dist < 160.0 and blink_cd <= 0.0:
 		blink_cd = 3.0
@@ -155,6 +188,12 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		game.sfx("roar")
 		game.spawn_text(global_position + Vector2(0, -90), "VARGOTH ENRAGES!", Color(1, 0.3, 0.3))
 
+	# Signature: BLADE STORM — greatswords fall from the sky onto marked
+	# ground, chasing the player's position. Dodge or take heavy damage.
+	if special_cd <= 0.0 and dist < 560.0:
+		special_cd = 6.0 if enraged else 9.0
+		_blade_storm()
+
 	# Shockwave slam: ring of slow bolts + screen shake.
 	if ability_cd <= 0.0 and dist < 520.0:
 		ability_cd = 3.4 if enraged else 5.0
@@ -171,6 +210,16 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 			player.take_damage(dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
+
+
+func _blade_storm() -> void:
+	game.sfx("roar")
+	var count := 6 if enraged else 4
+	for i in count:
+		if dying or not is_instance_valid(game.player) or game.player.dead:
+			return
+		game.telegraph(game.player.global_position, 85.0, 0.8, 30.0, {"sword": true})
+		await get_tree().create_timer(0.45 if enraged else 0.6).timeout
 
 
 func die() -> void:

@@ -25,28 +25,168 @@ const SLOT_MAIN := {
 }
 
 const SLOT_NAMES := {
-	"weapon": ["Blade", "Edge", "Fang"],
+	"weapon": ["Blade", "Edge", "Fang", "Kunai", "Claymore", "Bow", "Crossbow", "Staff", "Wand"],
 	"armor":  ["Plate", "Mail", "Guard"],
 	"boots":  ["Boots", "Striders", "Treads"],
 	"charm":  ["Charm", "Talisman", "Sigil"],
 }
 
+# One representative prefix per grade (used in the codex).
 const GRADE_PREFIX := {
 	"F": "Rusty", "E": "Worn", "D": "Soldier's", "C": "Knight's",
 	"B": "Runed", "A": "Dragonforged", "S": "Emberforged",
 }
 
+# Rolled items pick a random prefix from their grade's pool,
+# so drops read like "Trainee's Kunai" or "Masterwork Claymore".
+const PREFIXES := {
+	"F": ["Rusty", "Cracked", "Trainee's", "Bent"],
+	"E": ["Worn", "Plain", "Sturdy", "Militia"],
+	"D": ["Soldier's", "Tempered", "Honed", "Veteran's"],
+	"C": ["Knight's", "Fine", "Gilded", "Journeyman's"],
+	"B": ["Runed", "Masterwork", "Enchanted", "Warlord's"],
+	"A": ["Dragonforged"],
+	"S": ["Emberforged"],
+}
+
+# A-grade items get a unique epic name instead of "prefix + noun".
+const A_NAMES := {
+	"weapon": ["The Ruined King's Sword", "Oathbreaker", "Dawnsplitter", "Widow's Bite", "The Shadow God's Dagger"],
+	"armor":  ["Bulwark of the Last Watch", "Heartguard", "The Unyielding", "Wyrmscale Cuirass"],
+	"boots":  ["Windrunner Greaves", "Shadowdancer Treads", "Gravewalkers", "Stormchaser Boots"],
+	"charm":  ["Eye of the Storm", "The Widow's Locket", "Emberheart", "Tear of the Old God"],
+}
+
+# S-grade gear is CLASS-EXCLUSIVE: unique name + synergy stats,
+# and S weapons carry a passive ability (implemented in player.gd).
+const S_GEAR := {
+	"warrior": {
+		"weapon": {"name": "Kingsbane, Edge of the Fallen Crown", "passive": "kingsblade", "noun": "Blade"},
+		"armor":  {"name": "Aegis of the Mountain",   "subs": {"hp_pct": 0.15, "physres": 20.0}},
+		"boots":  {"name": "Earthshaker Sabatons",    "subs": {"speed_pct": 0.06, "hp_pct": 0.08}},
+		"charm":  {"name": "Warlord's Iron Oath",     "subs": {"atk_pct": 0.10, "physpen": 10.0}},
+	},
+	"archer": {
+		"weapon": {"name": "Stormcaller, Bow of the Tempest", "passive": "ricochet", "noun": "Bow"},
+		"armor":  {"name": "Cloak of a Thousand Leaves", "subs": {"hp_pct": 0.10, "eva": 0.05}},
+		"boots":  {"name": "Zephyr's Grace",             "subs": {"speed_pct": 0.09, "crit": 0.06}},
+		"charm":  {"name": "The Hawk God's Eye",         "subs": {"crit": 0.10, "crit_dmg": 0.30}},
+	},
+	"mage": {
+		"weapon": {"name": "Heart of the Phoenix", "passive": "phoenix", "noun": "Staff"},
+		"armor":  {"name": "Robes of the Infinite", "subs": {"hp_pct": 0.10, "magres": 18.0}},
+		"boots":  {"name": "Steps of the Void",     "subs": {"speed_pct": 0.07, "cdr": 0.05}},
+		"charm":  {"name": "The Archmage's Folly",  "subs": {"cdr": 0.10, "magpen": 10.0}},
+	},
+	"assassin": {
+		"weapon": {"name": "Nightfang, Kiss of the Abyss", "passive": "nightfang", "noun": "Fang"},
+		"armor":  {"name": "Shroud of Silence", "subs": {"hp_pct": 0.08, "lifesteal": 0.05}},
+		"boots":  {"name": "Whisperwind",       "subs": {"speed_pct": 0.10, "crit": 0.05}},
+		"charm":  {"name": "The Bloodpact",     "subs": {"crit": 0.08, "combo": 0.04}},
+	},
+}
+
+const PASSIVES := {
+	"kingsblade": "Cleave hurls a sword wave",
+	"ricochet":   "Arrows ricochet to a second enemy",
+	"phoenix":    "Firebolt always explodes and ignites",
+	"nightfang":  "Strikes on stunned or slowed enemies always crit",
+}
+
+# ------------------------------------------------------------------- gems ---
+# A gem grants exactly ONE stat. Equipment B+ has sockets (B:1, A:2, S:3).
+# Synthesis: 3 gems of the same stat & level -> 1 gem of the next level.
+
+const GEM_SLOTS := {"F": 0, "E": 0, "D": 0, "C": 0, "B": 1, "A": 2, "S": 3}
+const GEM_MAX_LEVEL := 10
+
+# stat -> [display name, base value per level-ish, color]
+const GEM_STATS := {
+	"atk_pct":  {"name": "Ruby",      "base": 0.02,  "color": Color(1.0, 0.3, 0.3)},
+	"hp_pct":   {"name": "Garnet",    "base": 0.025, "color": Color(0.9, 0.45, 0.45)},
+	"crit":     {"name": "Topaz",     "base": 0.012, "color": Color(1.0, 0.8, 0.3)},
+	"crit_dmg": {"name": "Sunstone",  "base": 0.04,  "color": Color(1.0, 0.6, 0.2)},
+	"cdr":      {"name": "Sapphire",  "base": 0.01,  "color": Color(0.35, 0.55, 1.0)},
+	"combo":    {"name": "Opal",      "base": 0.01,  "color": Color(0.85, 0.9, 1.0)},
+	"physres":  {"name": "Onyx",      "base": 4.0,   "color": Color(0.5, 0.5, 0.6)},
+	"magres":   {"name": "Lapis",     "base": 4.0,   "color": Color(0.4, 0.5, 0.9)},
+	"physpen":  {"name": "Bloodstone", "base": 2.5,  "color": Color(0.7, 0.2, 0.3)},
+	"magpen":   {"name": "Amethyst",  "base": 2.5,   "color": Color(0.7, 0.4, 0.95)},
+	"eva":      {"name": "Jade",      "base": 0.008, "color": Color(0.4, 0.85, 0.5)},
+	"dex":      {"name": "Amber",     "base": 2.0,   "color": Color(0.95, 0.7, 0.3)},
+	"greed":    {"name": "Goldstone", "base": 0.03,  "color": Color(1.0, 0.85, 0.3)},
+	"lifesteal": {"name": "Vampire Eye", "base": 0.006, "color": Color(0.8, 0.2, 0.5)},
+}
+
+
+static func make_gem(stat: String, lvl := 1) -> Dictionary:
+	return {"gem": true, "stat": stat, "lvl": lvl}
+
+
+static func random_gem(rng: RandomNumberGenerator, lvl := 1) -> Dictionary:
+	var keys := GEM_STATS.keys()
+	return make_gem(keys[rng.randi_range(0, keys.size() - 1)], lvl)
+
+
+## The stat value a gem grants at its level (superlinear growth).
+static func gem_value(gem: Dictionary) -> float:
+	var base: float = GEM_STATS[gem["stat"]]["base"]
+	var lvl: int = gem["lvl"]
+	return base * lvl * (1.0 + 0.18 * (lvl - 1))
+
+
+static func gem_title(gem: Dictionary) -> String:
+	var info: Dictionary = GEM_STATS[gem["stat"]]
+	var v := gem_value(gem)
+	var val_txt := "+%d" % int(v) if gem["stat"] in FLAT_STATS else "+%d%%" % int(round(v * 100))
+	return "%s Lv%d  (%s %s)" % [info["name"], gem["lvl"], STAT_LABEL[gem["stat"]], val_txt]
+
+
+static func gem_color(gem: Dictionary) -> Color:
+	return GEM_STATS[gem["stat"]]["color"]
+
+# Every shape has a stat personality: a main-stat multiplier plus
+# guaranteed bonus stats. A Claymore hits like a truck, a Kunai crits.
+const SHAPE_STYLE := {
+	"Blade":    {"main": 1.0,  "subs": {"atk_pct": 0.05}, "tag": "balanced"},
+	"Edge":     {"main": 1.2,  "subs": {}, "tag": "heavy hits"},
+	"Fang":     {"main": 0.85, "subs": {"crit": 0.05}, "tag": "crit"},
+	"Kunai":    {"main": 0.8,  "subs": {"crit": 0.04, "speed_pct": 0.03}, "tag": "crit + speed"},
+	"Claymore": {"main": 1.4,  "subs": {}, "tag": "massive damage"},
+	"Bow":      {"main": 0.9,  "subs": {"cdr": 0.04}, "tag": "attack speed"},
+	"Crossbow": {"main": 1.05, "subs": {"physpen": 5.0}, "tag": "penetration"},
+	"Staff":    {"main": 0.95, "subs": {"mp_flat": 15.0, "atk_pct": 0.04}, "tag": "mana + power"},
+	"Wand":     {"main": 0.85, "subs": {"combo": 0.02, "magpen": 3.0}, "tag": "combo + magic pen"},
+	"Plate":    {"main": 1.15, "subs": {}, "tag": "bulk"},
+	"Mail":     {"main": 0.9,  "subs": {"speed_pct": 0.03}, "tag": "mobility"},
+	"Guard":    {"main": 0.95, "subs": {"physres": 10.0}, "tag": "physical resistance"},
+	"Boots":    {"main": 1.0,  "subs": {}, "tag": "balanced"},
+	"Striders": {"main": 0.9,  "subs": {"cdr": 0.03}, "tag": "haste"},
+	"Treads":   {"main": 0.85, "subs": {"hp_flat": 25.0}, "tag": "sturdy"},
+	"Charm":    {"main": 1.0,  "subs": {}, "tag": "balanced"},
+	"Talisman": {"main": 0.85, "subs": {"atk_pct": 0.05}, "tag": "power"},
+	"Sigil":    {"main": 0.85, "subs": {"crit": 0.05}, "tag": "crit"},
+}
+
 # Substat pool: stat -> base roll (scaled a little by grade).
 const SUBSTATS := {
 	"atk_pct": 0.05, "hp_pct": 0.06, "crit": 0.03, "cdr": 0.03,
-	"speed_pct": 0.03, "lifesteal": 0.02, "dr": 0.03, "gold_pct": 0.10,
+	"speed_pct": 0.03, "lifesteal": 0.02, "greed": 0.08, "crit_dmg": 0.08,
+	"physres": 9.0, "magres": 9.0, "critres": 6.0, "eva": 0.02, "dex": 4.0,
+	"physpen": 5.0, "magpen": 5.0, "combo": 0.02, "mp_flat": 12.0,
 }
 
 const STAT_LABEL := {
 	"atk_flat": "ATK", "hp_flat": "HP", "atk_pct": "ATK%", "hp_pct": "HP%",
 	"crit": "Crit", "crit_dmg": "CritDmg", "cdr": "Haste", "speed_pct": "Speed",
-	"lifesteal": "Lifesteal", "dr": "Armor", "gold_pct": "Greed", "mp_flat": "MP",
+	"lifesteal": "Lifesteal", "greed": "Greed", "mp_flat": "MP",
+	"physres": "PhysRes", "magres": "MagRes", "critres": "CritRes",
+	"eva": "EVA", "dex": "DEX", "physpen": "PhysPen", "magpen": "MagPen",
+	"combo": "Combo",
 }
+
+# Stats measured in flat points rather than percent (for display).
+const FLAT_STATS := ["atk_flat", "hp_flat", "mp_flat", "physres", "magres", "critres", "dex", "physpen", "magpen"]
 
 # Chest tiers -> grade weights.
 const CHEST_TIERS := {
@@ -69,17 +209,23 @@ static func roll_grade(tier: String, rng: RandomNumberGenerator) -> String:
 	return "F"
 
 
-static func roll_item(tier: String, rng: RandomNumberGenerator) -> Dictionary:
+static func roll_item(tier: String, rng: RandomNumberGenerator, cls := "") -> Dictionary:
 	var grade := roll_grade(tier, rng)
 	var slot: String = SLOTS[rng.randi_range(0, SLOTS.size() - 1)]
-	return roll_item_of(slot, grade, rng)
+	return roll_item_of(slot, grade, rng, cls)
 
 
-static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator) -> Dictionary:
+static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator, cls := "", force_noun := "") -> Dictionary:
 	var mult: float = GRADE_MULT[grade]
+	var noun_list: Array = SLOT_NAMES[slot]
+	var noun: String = force_noun if force_noun != "" else noun_list[rng.randi_range(0, noun_list.size() - 1)]
+	if grade == "S" and cls != "" and S_GEAR.has(cls) and S_GEAR[cls][slot].has("noun"):
+		noun = S_GEAR[cls][slot]["noun"]  # legendaries use their class shape
+	var style: Dictionary = SHAPE_STYLE.get(noun, {"main": 1.0, "subs": {}})
+
 	var main := {}
 	for stat in SLOT_MAIN[slot]:
-		main[stat] = snappedf(SLOT_MAIN[slot][stat] * mult * rng.randf_range(0.9, 1.15), 0.01)
+		main[stat] = snappedf(SLOT_MAIN[slot][stat] * mult * style["main"] * rng.randf_range(0.9, 1.15), 0.01)
 	# Higher grades roll more substats (F/E: 0, D/C: 1, B/A: 2, S: 3).
 	var sub_count := maxi(0, (GRADES.find(grade) - 1) / 2)
 	var subs := {}
@@ -88,15 +234,40 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 	for i in mini(sub_count, pool.size()):
 		var stat: String = pool[i]
 		subs[stat] = snappedf(SUBSTATS[stat] * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
-	var noun_list: Array = SLOT_NAMES[slot]
-	return {
-		"slot": slot, "grade": grade,
-		"name": "%s %s" % [GRADE_PREFIX[grade], noun_list[rng.randi_range(0, noun_list.size() - 1)]],
+	# The shape's guaranteed personality stats, scaled by grade.
+	for stat in style["subs"]:
+		subs[stat] = snappedf(subs.get(stat, 0.0) + style["subs"][stat] * (0.75 + 0.25 * mult), 0.01)
+
+	var item := {
+		"slot": slot, "grade": grade, "noun": noun,
 		"main": main, "subs": subs, "plus": 0,
+		"gem_slots": GEM_SLOTS[grade], "gems": [],
 	}
+	var prefix_pool: Array = PREFIXES[grade]
+	item["name"] = "%s %s" % [prefix_pool[rng.randi_range(0, prefix_pool.size() - 1)], item["noun"]]
+
+	# A-grade: epic unique names.
+	if grade == "A":
+		var names: Array = A_NAMES[slot]
+		item["name"] = names[rng.randi_range(0, names.size() - 1)]
+
+	# S-grade: class-exclusive legendary with synergy stats / a passive.
+	if grade == "S" and cls != "" and S_GEAR.has(cls):
+		var special: Dictionary = S_GEAR[cls][slot]
+		item["name"] = special["name"]
+		item["cls"] = cls
+		if special.has("noun"):
+			item["noun"] = special["noun"]
+		if special.has("passive"):
+			item["passive"] = special["passive"]
+		if special.has("subs"):
+			for stat in special["subs"]:
+				subs[stat] = special["subs"][stat]
+	return item
 
 
-## All stats an item grants (main stat gets +15% per upgrade level).
+## All stats an item grants (main stat gets +15% per upgrade level,
+## embedded gems contribute their stat too).
 static func stats_of(item: Dictionary) -> Dictionary:
 	var out := {}
 	var plus_mult: float = 1.0 + 0.15 * item["plus"]
@@ -104,6 +275,8 @@ static func stats_of(item: Dictionary) -> Dictionary:
 		out[stat] = item["main"][stat] * plus_mult
 	for stat in item["subs"]:
 		out[stat] = out.get(stat, 0.0) + item["subs"][stat]
+	for gem in item.get("gems", []):
+		out[gem["stat"]] = out.get(gem["stat"], 0.0) + gem_value(gem)
 	return out
 
 
@@ -120,11 +293,48 @@ static func describe(item: Dictionary) -> String:
 	var stats := stats_of(item)
 	for stat in stats:
 		var v: float = stats[stat]
-		if stat in ["atk_flat", "hp_flat", "mp_flat"]:
-			bits.append("%s +%d" % [STAT_LABEL[stat], int(v)])
+		if stat in FLAT_STATS:
+			bits.append("%s +%d" % [STAT_LABEL.get(stat, stat), int(v)])
 		else:
-			bits.append("%s +%d%%" % [STAT_LABEL[stat], int(round(v * 100))])
-	return ", ".join(bits)
+			bits.append("%s +%d%%" % [STAT_LABEL.get(stat, stat), int(round(v * 100))])
+	var out := ", ".join(bits)
+	if item.has("passive"):
+		out += "  ★ " + PASSIVES[item["passive"]]
+	var slots: int = item.get("gem_slots", 0)
+	if slots > 0:
+		var used: int = item.get("gems", []).size()
+		out += "  " + "◆".repeat(used) + "◇".repeat(slots - used)
+	return out
+
+
+## Stat-by-stat difference between a candidate item and what's equipped
+## in that slot ("▲ ATK +5" / "▼ Crit -2%"). For hover tooltips.
+static func diff_text(new_item: Dictionary, old_item) -> String:
+	if old_item == null:
+		return "Slot is empty — pure upgrade:\n" + describe(new_item)
+	var a := stats_of(new_item)
+	var b := stats_of(old_item)
+	var keys := {}
+	for stat in a:
+		keys[stat] = true
+	for stat in b:
+		keys[stat] = true
+	var lines: Array = ["vs %s:" % title(old_item)]
+	for stat in keys:
+		var d: float = a.get(stat, 0.0) - b.get(stat, 0.0)
+		if absf(d) < 0.001:
+			continue
+		var arrow := "▲" if d > 0.0 else "▼"
+		var label: String = STAT_LABEL.get(stat, stat)
+		if stat in FLAT_STATS:
+			lines.append("%s %s %+d" % [arrow, label, int(round(d))])
+		else:
+			lines.append("%s %s %+d%%" % [arrow, label, int(round(d * 100))])
+	if lines.size() == 1:
+		lines.append("(identical stats)")
+	if new_item.has("passive"):
+		lines.append("★ " + PASSIVES[new_item["passive"]])
+	return "\n".join(lines)
 
 
 static func title(item: Dictionary) -> String:

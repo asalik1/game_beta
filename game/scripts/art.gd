@@ -8,25 +8,29 @@ static var _cache: Dictionary = {}
 
 # Shared palette: character -> color.
 const PAL := {
-	"k": Color(0.07, 0.06, 0.09),   # outline / near-black
-	"w": Color(0.94, 0.94, 0.96),   # white / bone
-	"s": Color(0.72, 0.76, 0.84),   # steel
-	"S": Color(0.45, 0.50, 0.60),   # dark steel
-	"e": Color(0.55, 0.55, 0.62),   # grey (rock, wolf fur)
-	"E": Color(0.30, 0.30, 0.38),   # dark grey
-	"b": Color(0.30, 0.50, 0.92),   # blue
-	"B": Color(0.16, 0.24, 0.50),   # dark blue
-	"r": Color(0.88, 0.22, 0.20),   # red
-	"R": Color(0.50, 0.10, 0.12),   # dark red
-	"g": Color(0.45, 0.75, 0.35),   # light green
-	"G": Color(0.20, 0.45, 0.24),   # green
-	"y": Color(0.96, 0.84, 0.30),   # gold
-	"o": Color(0.95, 0.55, 0.15),   # orange
-	"n": Color(0.55, 0.38, 0.22),   # brown
-	"N": Color(0.33, 0.22, 0.12),   # dark brown
-	"p": Color(0.75, 0.45, 0.95),   # light purple
-	"P": Color(0.40, 0.20, 0.55),   # purple
-	"f": Color(0.94, 0.78, 0.62),   # skin
+	# High-contrast arcade palette (Soul-Knight-ish): saturated mids,
+	# bright highlights, near-black outlines so silhouettes always read.
+	"k": Color(0.05, 0.04, 0.08),   # outline / near-black
+	"w": Color(0.98, 0.98, 1.00),   # white / bone
+	"s": Color(0.80, 0.84, 0.92),   # steel
+	"S": Color(0.48, 0.54, 0.66),   # dark steel
+	"e": Color(0.62, 0.62, 0.72),   # grey (rock, wolf fur)
+	"E": Color(0.32, 0.32, 0.42),   # dark grey
+	"b": Color(0.35, 0.58, 1.00),   # blue
+	"B": Color(0.18, 0.28, 0.60),   # dark blue
+	"r": Color(1.00, 0.25, 0.22),   # red
+	"R": Color(0.58, 0.10, 0.14),   # dark red
+	"g": Color(0.55, 0.88, 0.38),   # light green
+	"G": Color(0.22, 0.52, 0.26),   # green
+	"y": Color(1.00, 0.90, 0.32),   # gold
+	"o": Color(1.00, 0.60, 0.12),   # orange
+	"n": Color(0.62, 0.42, 0.24),   # brown
+	"N": Color(0.36, 0.24, 0.13),   # dark brown
+	"p": Color(0.85, 0.52, 1.00),   # light purple
+	"P": Color(0.45, 0.22, 0.62),   # purple
+	"f": Color(0.97, 0.80, 0.64),   # skin
+	"m": Color(1.00, 0.35, 0.85),   # magenta (enemy bolts)
+	"c": Color(0.35, 0.95, 0.95),   # cyan
 }
 
 # Sprite definitions. "over" optionally re-colors palette characters
@@ -55,9 +59,9 @@ const SPRITES := {
 		"................",
 		"..........kk....",
 		".k........keek..",
-		".kk......keeeek.",
+		".kk......keerek.",
 		"..kkkkkkkeeeeek.",
-		"..keeeeeeeeeekk.",
+		"..keeeeeeeeewkk.",
 		"...keeeeeeeeek..",
 		"...keeeeeeeek...",
 		"....keeeeeek....",
@@ -105,23 +109,114 @@ const SPRITES := {
 		"................",
 	]},
 	"witch": {"rows": [
+		".......kk.......",
+		"......kPPk......",
+		".....kPPPPk.....",
+		"....kPPPPPPk....",
+		".kkkkkkkkkkkkk..",
+		"..kPkkkkkkkkPk..",
+		"....kEgkkgEk....",
+		"....kEEEEEEk..y.",
+		"....kPPPPPPk.kyk",
+		"...kPPpPPpPPkkNk",
+		"...kPPPPPPPPk.Nk",
+		"..kPPPPPPPPPPkNk",
+		"..kPPpPPPPpPPkNk",
+		"..kkkkkkkkkkkkNk",
+		"..............Nk",
+		"..............k.",
+	], "over": {"g": Color(0.45, 1.0, 0.55)}},
+	"direwolf": {"rows": [
+		"........................",
+		"..................kk....",
+		".kk..............krek...",
+		".kRk........kkkkkeeeek..",
+		".kRRk..kkkkkRRRRkeeeeek.",
+		"..kRRkkRRRRRRRRRkewwek..",
+		"..kRRRRRRRRRRRRReeeeek..",
+		"...kReeeeeeeeeeReeeek...",
+		"...kReeeeeeeeeeeeeek....",
+		"....keeeeeeeeeeeeek.....",
+		"....keeeeeeeeeeeek......",
+		".....keek....keek.......",
+		".....kek......kek.......",
+		".....kk........kk.......",
+		"........................",
+		"........................",
+	]},
+	"greatsword": {"rows": [
+		"......kyyk......",
+		".....kyyyyk.....",
+		"....kkkwwkkk....",
+		"......kwwk......",
+		"......kwwk......",
+		"......kwwk......",
+		"......kwwk......",
+		"......kwwk......",
+		"......kwwk......",
+		"......kwwk......",
+		"......kwwk......",
+		"......kwsk......",
+		"......kwsk......",
+		".......kwk......",
+		".......kk.......",
 		"................",
-		".....kkkkkk.....",
-		"....kGGGGGGk....",
-		"...kGGGGGGGGk...",
-		"...kGkkkkkkGk...",
-		"...kGkkrkkrkkGk.",
-		"....kGGGGGGk....",
-		"....kGGGGGGk....",
-		"...kGGGGGGGGk...",
-		"...kGGNNNNGGk...",
-		"...kGGGGGGGGk...",
-		"..kGGGGGGGGGGk..",
-		"..kGGGGGGGGGGk..",
-		"..kkkkkkkkkkkk..",
+	]},
+	# ------------------------------------------- held weapon variants ---
+	"w_blade": {"rows": [
+		".......kk.......",
+		"......kwwk......",
+		"......kwsk......",
+		"......kwsk......",
+		"......kwsk......",
+		"......kwsk......",
+		"......kwsk......",
+		"......kwsk......",
+		"....kkkwwkkk....",
+		"....kkkwwkkk....",
+		"......knnk......",
+		"......knnk......",
+		"......kyyk......",
+		".......kk.......",
 		"................",
 		"................",
-	], "over": {"G": Color(0.40, 0.20, 0.55), "r": Color(0.45, 1.0, 0.55), "N": Color(0.75, 0.45, 0.95)}},
+	]},
+	"w_edge": {"rows": [
+		"................",
+		"....kkkk........",
+		"...kwwwwkk......",
+		"..kwwwwwwwk.....",
+		"..kwwskkwwwk....",
+		"..kwsk.kkwk.....",
+		"...kk...knnk....",
+		".........knnk...",
+		"..........knnk..",
+		"...........knnk.",
+		"............kyyk",
+		".............kk.",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"w_fang": {"rows": [
+		"................",
+		"................",
+		"........kk......",
+		".......kwwk.....",
+		"......kwwsk.....",
+		".....kwwsk......",
+		"....kwwsk.......",
+		"....kwsk........",
+		"...kkwwkk.......",
+		"...kknnkk.......",
+		"....knnk........",
+		"....kyyk........",
+		".....kk.........",
+		"................",
+		"................",
+		"................",
+	]},
 	"skeleton": {"rows": [
 		"................",
 		".....kkkkk......",
@@ -296,11 +391,11 @@ const SPRITES := {
 	]},
 	"bolt": {"rows": [
 		"...kk...",
-		"..kppk..",
-		".kpPPpk.",
-		".kpPPpk.",
-		".kpPPpk.",
-		"..kppk..",
+		"..kmmk..",
+		".kmwwmk.",
+		".kmwwmk.",
+		".kmwwmk.",
+		"..kmmk..",
 		"...kk...",
 		"........",
 	]},
@@ -324,74 +419,74 @@ const SPRITES := {
 	]},
 	# ------------------------------------------------- hero classes ---
 	"warrior": {"rows": [
-		"......rr........",
-		".....krrk.......",
-		".....kssssk.....",
-		"....kssssssk....",
-		"....ksEssEsk....",
-		"....kssssssk....",
-		".....kSSSSk.....",
-		"...kssssssssk...",
-		"...ksSrrrrSsk...",
-		"..kEksrrrrskEk..",
-		"..kEksSrrSskEk..",
-		"...k.kssssk.k...",
-		"....kss..ssk....",
-		"....kSs..sSk....",
-		"....kkk..kkk....",
+		"......rrr.......",
+		"..kkkkrrkkkk....",
+		".kssssssssssk...",
+		".ksswssssswsk...",
+		".kSSkkkkkkSSk...",
+		".kssEssssEssk...",
+		".kssssssssssk...",
+		"..kssssssssk....",
+		"..kBBsrrsBBk....",
+		"..kBBsrrsBBk....",
+		"...kssrrssk.....",
+		"...kssssssk.....",
+		"....kSSkSSk.....",
+		"....kkk.kkk.....",
+		"................",
 		"................",
 	]},
 	"archer": {"rows": [
-		"................",
 		".....kkkkkk.....",
-		"....kGGGGGGk....",
-		"...kGGGGGGGGk...",
-		"...kGkffffkGk...",
-		"...kGkfEfEfkGk..",
-		"....kGffffGk....",
-		"....kGGGGGGk....",
-		"...knGGGGGGnk...",
-		"...knGNNNNGnk...",
-		"...knGGGGGGnk...",
-		"....kGGGGGGk....",
+		"...kkGgggGGkk...",
+		"..kGGGGGGGGGGk..",
+		"..kGGkkkkkkGGk..",
+		"..kGkffffffkGk..",
+		"..kGkfEffEfkGk..",
+		"..kGkffffffkGk..",
+		"...kGkkkkkkGk...",
+		"...kGGnnnnGGk...",
+		"...kGGnnnnGGk...",
+		"....knNNNNnk....",
+		"....knnnnnnk....",
 		"....knn..nnk....",
-		"....kNn..nNk....",
 		"....kkk..kkk....",
+		"................",
 		"................",
 	]},
 	"mage": {"rows": [
 		".......kk.......",
 		"......kbbk......",
-		".....kbbbbk.....",
+		".....kbwbbk.....",
 		"....kbbbbbbk....",
+		".kkkkbbbbbbkkkk.",
+		".kbbbbbbbbbbbbk.",
 		"..kkkkkkkkkkkk..",
-		"....kffffffk....",
-		"....kfEffEfk....",
-		"....kffffffk....",
+		"...kffffffffk...",
+		"...kfEffffEfk...",
+		"...kffffffffk...",
+		"...kbbbwwbbbk...",
 		"....kbbbbbbk....",
-		"...kbbBwwBbbk...",
-		"...kbbbbbbbbk...",
-		"..kbbbbbbbbbbk..",
-		"..kbbbbbbbbbbk..",
-		"..kkkkkkkkkkkk..",
-		"................",
+		"....kbbbbbbk....",
+		"....kbb..bbk....",
+		"....kkk.kkk.....",
 		"................",
 	]},
 	"assassin": {"rows": [
-		"................",
 		".....kkkkkk.....",
+		"...kkEEEEEEkk...",
+		"..kEEEEEEEEEEk..",
+		"..kEEkkkkkkEEk..",
+		"..kEkkwkkwkkEk..",
+		"..kEEkkkkkkEEk..",
+		"...kEEEEEEEEk...",
+		"...krrrrrrrrk...",
+		"...kEEEEEEEEk...",
 		"....kEEEEEEk....",
-		"...kEEEEEEEEk...",
-		"...kEkkkkkkEk...",
-		"...kEkkrkkrkkEk.",
-		"....kEEkkEEk....",
-		"....kEEEEEEk....",
-		"...kEEEEEEEEk...",
-		"...kEERRRREEk...",
-		"...kEEEEEEEEk...",
+		"....kEErrEEk....",
 		"....kEEEEEEk....",
 		"....kEE..EEk....",
-		"....kkk..kkk....",
+		"....kkk.kkk.....",
 		"................",
 		"................",
 	]},
@@ -640,6 +735,232 @@ const SPRITES := {
 		"................",
 		"................",
 	]},
+	"icon_mail": {"rows": [
+		"................",
+		"................",
+		"................",
+		".kkkk....kkkk...",
+		".kwwskkkkswwk...",
+		".kswswswswssk...",
+		"..kwswswswsk....",
+		"..kswswswwsk....",
+		"..kwswswswsk....",
+		"...kswswssk.....",
+		"...kkkkkkkk.....",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"icon_shield": {"rows": [
+		"................",
+		"................",
+		"...kkkkkkkk.....",
+		"..kssssssssk....",
+		"..kswwsswwsk....",
+		"..kssssssssk....",
+		"..kssbbbbssk....",
+		"...kssbbssk.....",
+		"...kssssssk.....",
+		"....kssssk......",
+		".....kssk.......",
+		"......kk........",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"icon_striders": {"rows": [
+		"................",
+		"................",
+		"................",
+		"..w.kwwk........",
+		".ww.kwwk........",
+		"www.kwwk........",
+		"....kwwkk.......",
+		"....kwwwwk......",
+		"....kkkkkk......",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"icon_treads": {"rows": [
+		"................",
+		"................",
+		"................",
+		"...kkwwkk.......",
+		"...kwwwwk.......",
+		"...kwwwwk.......",
+		"...kwwwwkkk.....",
+		"...kwwwwwwwk....",
+		"...kkkkkkkkk....",
+		"....k..k..k.....",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"icon_talisman": {"rows": [
+		"................",
+		"................",
+		"......k.k.......",
+		"....kkkkkkk.....",
+		"....kwwwwwk.....",
+		"....kwywywk.....",
+		"....kwwywwk.....",
+		"....kwywywk.....",
+		"....kwwwwwk.....",
+		"....kkkkkkk.....",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"icon_sigil": {"rows": [
+		"................",
+		"................",
+		"......yy........",
+		".....kkkk.......",
+		"....kwwwwk......",
+		"...kww..wwk.....",
+		"...kw....wk.....",
+		"...kww..wwk.....",
+		"....kwwwwk......",
+		".....kkkk.......",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"w_bow": {"rows": [
+		"................",
+		"......kk........",
+		".....knnk.......",
+		"....knnk.k......",
+		"....knk..w......",
+		"...knnk..w......",
+		"...knk...w......",
+		"...knk...w......",
+		"...knnk..w......",
+		"....knk..w......",
+		"....knnk.k......",
+		".....knnk.......",
+		"......kk........",
+		"................",
+		"................",
+		"................",
+	]},
+	"w_kunai": {"rows": [
+		"................",
+		"......kk........",
+		".....kwwk.......",
+		".....kwwk.......",
+		"....kwwwwk......",
+		"....kwwwwk......",
+		".....kwwk.......",
+		"......kwk.......",
+		"......knk.......",
+		"......knk.......",
+		".....k..k.......",
+		"....k....k......",
+		".....k..k.......",
+		"......kk........",
+		"................",
+		"................",
+	]},
+	"w_claymore": {"rows": [
+		"......kkk.......",
+		".....kwwwk......",
+		".....kwswk......",
+		".....kwswk......",
+		".....kwswk......",
+		".....kwswk......",
+		".....kwswk......",
+		".....kwswk......",
+		"...kkkwwwkkk....",
+		"..kyykkkkkyyk...",
+		"......knnk......",
+		"......knnk......",
+		".....kyyyyk.....",
+		"......kk........",
+		"................",
+		"................",
+	]},
+	"w_crossbow": {"rows": [
+		"................",
+		"....k......k....",
+		"....kk....kk....",
+		".....knnnnk.....",
+		"...kkknwwnkkk...",
+		"....knnwwnnk....",
+		"......kwwk......",
+		"......kwwk......",
+		"......knnk......",
+		"......knnk......",
+		"......knnk......",
+		".....kNNNNk.....",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"w_wand": {"rows": [
+		"................",
+		"......kmmk......",
+		".....kmwwmk.....",
+		".....kmwwmk.....",
+		"......kmmk......",
+		"......knnk......",
+		"......knnk......",
+		"......knnk......",
+		"......knnk......",
+		".....kyyyyk.....",
+		"......kNNk......",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"gem": {"rows": [
+		"........",
+		"..kkkk..",
+		".kwwwwk.",
+		".kwwwsk.",
+		"..kwsk..",
+		"...kk...",
+		"........",
+		"........",
+	]},
+	"w_staff": {"rows": [
+		"................",
+		".....kcck.......",
+		"....kcccck......",
+		"....kcccck......",
+		".....kcck.......",
+		"......knk.......",
+		"......knk.......",
+		"......knk.......",
+		"......knk.......",
+		"......knk.......",
+		"......knk.......",
+		"......knk.......",
+		".....kNNk.......",
+		"................",
+		"................",
+		"................",
+	]},
 }
 
 # Ground tile colors: base, darker speckle, lighter speckle.
@@ -653,9 +974,18 @@ const GROUND := {
 
 
 ## Get (and cache) the texture for a named sprite.
+## If assets/sprites/<name>.png exists it OVERRIDES the procedural art —
+## drop in hand-drawn or CC0 sprites (any size) without touching code.
 static func tex(name: String) -> ImageTexture:
 	if _cache.has(name):
 		return _cache[name]
+	var override_path := "res://assets/sprites/%s.png" % name
+	if FileAccess.file_exists(override_path):
+		var file_img := Image.load_from_file(ProjectSettings.globalize_path(override_path))
+		if file_img:
+			var ft := ImageTexture.create_from_image(file_img)
+			_cache[name] = ft
+			return ft
 	var t: ImageTexture
 	match name:
 		"slash":
@@ -668,24 +998,478 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_vignette())
 		"reticle":
 			t = ImageTexture.create_from_image(_make_reticle())
+		"telegraph":
+			t = ImageTexture.create_from_image(_make_telegraph())
+		"tree_green", "tree_autumn", "tree_teal":
+			t = ImageTexture.create_from_image(_make_tree(name))
+		"bubble":
+			t = ImageTexture.create_from_image(_make_bubble())
 		_:
 			t = ImageTexture.create_from_image(img(name))
 	_cache[name] = t
 	return t
 
 
-## A gear icon tinted with its grade color (32x32, ready for UI buttons).
-static func item_icon(slot: String, grade: String) -> ImageTexture:
-	var key := "itemicon_%s_%s" % [slot, grade]
+# ------------------------------------------------------------- glyphs ---
+# Small symbol drawings for ability buttons and skill-tree nodes.
+# "w" pixels take the tint color, "k" stays dark, "y" stays gold.
+const GLYPHS := {
+	"ab_slash": [  # warrior Cleave / generic damage
+		"..........k.",
+		".........kwk",
+		"........kwk.",
+		".......kwk..",
+		"......kwk...",
+		".....kwk....",
+		"....kwk.....",
+		"...kwk......",
+		"..kwk.......",
+		".kwk........",
+		".kk.........",
+	],
+	"ab_shield": [  # Shield Bash / resistances
+		".kkkkkkkkk..",
+		".kwwwwwwwk..",
+		".kwwyywwwk..",
+		".kwwyywwwk..",
+		"..kwwwwwk...",
+		"..kwwwwwk...",
+		"...kwwwk....",
+		"....kwk.....",
+		".....k......",
+	],
+	"ab_whirl": [  # Whirlwind
+		"...kkkkkk...",
+		"..kwwwwwwk..",
+		".kwk....kwk.",
+		".kw......wk.",
+		".kw......wk.",
+		".kwk...kykk.",
+		"..kwwwwwyk..",
+		"...kkkkkk...",
+	],
+	"ab_fist": [  # Berserk
+		"....kkkk....",
+		"...kwwwwk...",
+		"..kwwwwwwk..",
+		"..kwwwwwwk..",
+		"..kwwywwwk..",
+		"..kkwwwwkk..",
+		"...kwwwwk...",
+		"...kkkkkk...",
+	],
+	"ab_arrow": [  # Quick Shot
+		"......kkkkk.",
+		".......kwwk.",
+		"......kwwyk.",
+		".....kwkkk..",
+		"....kwk.....",
+		"...kwk......",
+		"..kwk.......",
+		".kwk........",
+		".kk.........",
+	],
+	"ab_multi": [  # Multishot
+		".k...k...k..",
+		".kw..kw..kw.",
+		".kw..kw..kw.",
+		".kw..kw..kw.",
+		".ky..ky..ky.",
+		"..k...k...k.",
+	],
+	"ab_roll": [  # Tumble / speed
+		"..kww.......",
+		"....kww.....",
+		"......kww...",
+		"........kww.",
+		"......kww...",
+		"....kww.....",
+		"..kww.......",
+	],
+	"ab_rain": [  # Arrow Storm
+		".kkkkkkkkk..",
+		"kwwwwwwwwwk.",
+		".kkkkkkkkk..",
+		"..w...w...w.",
+		"..w...w...w.",
+		".kwk.kwk.kwk",
+		"..k...k...k.",
+	],
+	"ab_flame": [  # Firebolt
+		".....kk.....",
+		"....kwwk....",
+		"...kwwwwk...",
+		"...kwywwk...",
+		"..kwyyywwk..",
+		"..kwyyyywk..",
+		"...kwyywk...",
+		"....kkkk....",
+	],
+	"ab_snow": [  # Frost Nova
+		"..w...w...w.",
+		"...w..w..w..",
+		"....w.w.w...",
+		".....www....",
+		"..wwwwwwww..",
+		".....www....",
+		"....w.w.w...",
+		"...w..w..w..",
+		"..w...w...w.",
+	],
+	"ab_blink": [  # Blink / evasion
+		".kw...kw....",
+		"..kw...kw...",
+		"...kw...kw..",
+		"....kw...kw.",
+		"...kw...kw..",
+		"..kw...kw...",
+		".kw...kw....",
+	],
+	"ab_meteor": [  # Meteor
+		"........kw..",
+		".......kw...",
+		"......kw....",
+		"..kkkkw.....",
+		".kwwwwk.....",
+		".kwyywk.....",
+		".kwwwwk.....",
+		"..kkkk......",
+	],
+	"ab_dagger": [  # Stab
+		".....kk.....",
+		".....kwk....",
+		".....kwk....",
+		".....kwk....",
+		".....kwk....",
+		"....kkkk....",
+		".....kyk....",
+		".....kk.....",
+	],
+	"ab_knives": [  # Fan of Knives
+		".k....k....k",
+		".kw...kw..wk",
+		"..kw..kw.wk.",
+		"...kw.kwwk..",
+		"....kwkwk...",
+		".....kkk....",
+	],
+	"ab_skull": [  # Death Mark
+		"...kkkkk....",
+		"..kwwwwwk...",
+		"..kwkwkwk...",
+		"..kwwwwwk...",
+		"...kwkwk....",
+		"...kkkkk....",
+	],
+	"ic_cd": [  # cooldown (hourglass)
+		".kkkkkkk....",
+		"..kwwwk.....",
+		"...kwk......",
+		"....k.......",
+		"...kwk......",
+		"..kwwwk.....",
+		".kkkkkkk....",
+	],
+	"ic_hp": [  # health (heart)
+		"..kk...kk...",
+		".kwwk.kwwk..",
+		".kwwwkwwwk..",
+		"..kwwwwwk...",
+		"...kwwwk....",
+		"....kwk.....",
+		".....k......",
+	],
+	"ic_mp": [  # mana / lifesteal (drop)
+		".....k......",
+		"....kwk.....",
+		"...kwwwk....",
+		"...kwwwk....",
+		"...kwwwk....",
+		"....kkk.....",
+	],
+	"ic_crit": [  # crit (star)
+		".....w......",
+		"....www.....",
+		".wwwwwwwww..",
+		"....www.....",
+		"...ww.ww....",
+		"..w.....w...",
+	],
+	"ic_pen": [  # penetration (arrowhead)
+		".....k......",
+		"....kwk.....",
+		"...kwwwk....",
+		"..kwwwwwk...",
+		".kwwkkkwwk..",
+		"....kwk.....",
+		"....kwk.....",
+	],
+	"ic_combo": [  # combo (linked rings)
+		"..kkk..kkk..",
+		".kw.wkkw.wk.",
+		".kw..ww..wk.",
+		".kw.wkkw.wk.",
+		"..kkk..kkk..",
+	],
+	"ic_eye": [  # dex (eye)
+		"...kkkkk....",
+		"..kwwwwwk...",
+		".kwwkkkwwk..",
+		"..kwwwwwk...",
+		"...kkkkk....",
+	],
+	"ic_coin": [  # greed (coin)
+		"...kkkk.....",
+		"..kwwwwk....",
+		".kwwyywwk...",
+		".kwwyywwk...",
+		"..kwwwwk....",
+		"...kkkk.....",
+	],
+}
+
+# Which glyph each ability uses.
+const ABILITY_GLYPH := {
+	"warrior":  {"a1": "ab_slash",  "a2": "ab_shield", "a3": "ab_whirl",  "ult": "ab_fist"},
+	"archer":   {"a1": "ab_arrow",  "a2": "ab_multi",  "a3": "ab_roll",   "ult": "ab_rain"},
+	"mage":     {"a1": "ab_flame",  "a2": "ab_snow",   "a3": "ab_blink",  "ult": "ab_meteor"},
+	"assassin": {"a1": "ab_dagger", "a2": "ab_blink",  "a3": "ab_knives", "ult": "ab_skull"},
+}
+
+
+## Build (and cache) a tinted glyph texture, upscaled for UI use.
+static func glyph_tex(name: String, tint := Color(0.92, 0.92, 0.98)) -> ImageTexture:
+	var key := "glyph_%s_%s" % [name, tint.to_html(false)]
 	if _cache.has(key):
 		return _cache[key]
-	var image := img("icon_" + slot)
+	var rows: Array = GLYPHS[name]
+	var w := 12
+	for row in rows:
+		w = maxi(w, row.length())
+	var image := Image.create_empty(w, rows.size(), false, Image.FORMAT_RGBA8)
+	for y in rows.size():
+		var row: String = rows[y]
+		for x in row.length():
+			match row[x]:
+				"k": image.set_pixel(x, y, Color(0.05, 0.04, 0.08))
+				"w": image.set_pixel(x, y, tint)
+				"y": image.set_pixel(x, y, Color(1.0, 0.9, 0.32))
+	image.resize(w * 2, rows.size() * 2, Image.INTERPOLATE_NEAREST)
+	var t := ImageTexture.create_from_image(image)
+	_cache[key] = t
+	return t
+
+
+# Every gear family (noun) has its own sprite; grade adds the tint.
+const GEAR_SHAPES := {
+	"weapon": {"Blade": "w_blade", "Edge": "w_edge", "Fang": "w_fang", "Kunai": "w_kunai", "Claymore": "w_claymore", "Bow": "w_bow", "Crossbow": "w_crossbow", "Staff": "w_staff", "Wand": "w_wand"},
+	"armor":  {"Plate": "icon_armor", "Mail": "icon_mail", "Guard": "icon_shield"},
+	"boots":  {"Boots": "icon_boots", "Striders": "icon_striders", "Treads": "icon_treads"},
+	"charm":  {"Charm": "icon_charm", "Talisman": "icon_talisman", "Sigil": "icon_sigil"},
+}
+
+
+static func _shape_for(slot: String, noun: String) -> String:
+	var shapes: Dictionary = GEAR_SHAPES[slot]
+	if shapes.has(noun):
+		return shapes[noun]
+	return shapes.values()[0]
+
+
+## Convenience: the icon for a rolled item Dictionary.
+static func icon_for(item: Dictionary) -> ImageTexture:
+	return item_icon(item["slot"], item["grade"], item.get("noun", ""))
+
+
+## Held weapon sprite tinted by grade (drawn in the hero's hand).
+static func weapon_tex(noun: String, grade: String) -> ImageTexture:
+	var shape := _shape_for("weapon", noun)
+	var key := "wpn_%s_%s" % [shape, grade]
+	if _cache.has(key):
+		return _cache[key]
+	var image := img(shape)
+	var tint: Color = Items.GRADE_COLOR[grade]
+	for y in image.get_height():
+		for x in image.get_width():
+			var c := image.get_pixel(x, y)
+			if c.a > 0.0:
+				# Blend toward the grade color so blades stay metallic.
+				image.set_pixel(x, y, c.lerp(Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a), 0.65))
+	_embellish(image, grade)
+	var t := ImageTexture.create_from_image(image)
+	_cache[key] = t
+	return t
+
+
+## Grade-specific visual treatment, so a Trainee's Kunai and a legendary
+## dagger look nothing alike beyond mere color:
+##   F: chipped and dull · C/D: gem accents · B+: glowing rim
+##   A: gold trim · S: bright aura + sparkles
+static func _embellish(image: Image, grade: String) -> void:
+	var gi: int = Items.GRADES.find(grade)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 991 + gi
+	var w := image.get_width()
+	var h := image.get_height()
+
+	if grade == "F":  # dull the colors and chip a few pixels off
+		for y in h:
+			for x in w:
+				var c := image.get_pixel(x, y)
+				if c.a > 0.0:
+					if rng.randf() < 0.10:
+						image.set_pixel(x, y, Color(0, 0, 0, 0))
+					else:
+						image.set_pixel(x, y, Color(c.r * 0.7, c.g * 0.7, c.b * 0.7, c.a))
+		return
+
+	if gi >= 3:  # C+: a couple of bright gem/etching pixels
+		var opaque: Array = []
+		for y in h:
+			for x in w:
+				var c := image.get_pixel(x, y)
+				if c.a > 0.0 and c.v > 0.25:  # skip outlines
+					opaque.append(Vector2i(x, y))
+		if not opaque.is_empty():
+			var gem := Color(0.35, 0.95, 0.95) if gi < 5 else Color(1.0, 0.9, 0.3)
+			for i in mini(2 + (gi - 3), opaque.size()):
+				var p: Vector2i = opaque[rng.randi_range(0, opaque.size() - 1)]
+				image.set_pixel(p.x, p.y, gem)
+
+	if gi >= 5:  # A/S: gold-trim some of the dark outline
+		for y in h:
+			for x in w:
+				var c := image.get_pixel(x, y)
+				if c.a > 0.0 and c.v < 0.25 and rng.randf() < 0.30:
+					image.set_pixel(x, y, Color(1.0, 0.85, 0.3, c.a))
+
+	if gi >= 4:  # B+: glowing rim around the silhouette
+		var rim: Color = Items.GRADE_COLOR[grade]
+		var rim_a := 0.75 if grade == "S" else 0.45
+		var to_rim: Array = []
+		for y in h:
+			for x in w:
+				if image.get_pixel(x, y).a > 0.0:
+					continue
+				for off: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+					var nx: int = x + off.x
+					var ny: int = y + off.y
+					if nx >= 0 and ny >= 0 and nx < w and ny < h and image.get_pixel(nx, ny).a > 0.5:
+						to_rim.append(Vector2i(x, y))
+						break
+		for p in to_rim:
+			image.set_pixel(p.x, p.y, Color(rim.r, rim.g, rim.b, rim_a))
+		if grade == "S":  # sparkles in the aura
+			for i in 4:
+				if to_rim.is_empty():
+					break
+				var p: Vector2i = to_rim[rng.randi_range(0, to_rim.size() - 1)]
+				image.set_pixel(p.x, p.y, Color(1, 1, 1, 0.95))
+
+
+## A lush tree: overlapping canopy blobs with 4-tone shading (light from
+## the top-right), a highlight sprinkle, dark outline, and a trunk.
+## Palettes per zone: green (village), autumn (Darkwood), teal (marsh).
+static func _make_tree(kind: String) -> Image:
+	var pal: Array = {
+		"tree_green":  [Color(0.09, 0.28, 0.13), Color(0.15, 0.44, 0.19), Color(0.27, 0.62, 0.25), Color(0.52, 0.84, 0.34)],
+		"tree_autumn": [Color(0.45, 0.13, 0.05), Color(0.76, 0.28, 0.07), Color(0.96, 0.51, 0.10), Color(1.00, 0.80, 0.24)],
+		"tree_teal":   [Color(0.04, 0.20, 0.19), Color(0.09, 0.33, 0.29), Color(0.17, 0.48, 0.39), Color(0.33, 0.68, 0.51)],
+	}[kind]
+	var w := 26
+	var h := 28
+	var image := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = kind.hash()
+
+	# Trunk first; the canopy will overlap its top.
+	var bark := Color(0.34, 0.22, 0.12)
+	var bark_d := Color(0.22, 0.14, 0.08)
+	for y in range(16, 27):
+		for x in range(11, 15):
+			image.set_pixel(x, y, bark_d if x == 11 else bark)
+	for x in range(10, 16):
+		image.set_pixel(x, 26, bark_d)
+
+	# Canopy: four overlapping blobs.
+	var canopy := {}
+	for blob in [[13, 9, 7.2], [8, 12, 5.8], [18, 12, 5.8], [13, 14, 6.6]]:
+		for y in h:
+			for x in w:
+				if Vector2(x - blob[0], y - blob[1]).length() <= blob[2]:
+					canopy[Vector2i(x, y)] = true
+	for p: Vector2i in canopy:
+		# Light from the top-right, with a little noise for texture.
+		var f := (p.x - 13) * 0.55 - (p.y - 11) * 0.85 + rng.randf_range(-1.6, 1.6)
+		var tone := clampi(2 + int(round(f / 4.0)), 0, 3)
+		image.set_pixel(p.x, p.y, pal[tone])
+	# Highlight sprinkles.
+	var keys: Array = canopy.keys()
+	for i in 7:
+		var p: Vector2i = keys[rng.randi_range(0, keys.size() - 1)]
+		image.set_pixel(p.x, p.y, pal[3])
+	# Dark outline around the canopy.
+	var outline := Color(0.04, 0.06, 0.05)
+	for p: Vector2i in canopy:
+		for off: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var q := p + off
+			if q.x < 0 or q.y < 0 or q.x >= w or q.y >= h or not canopy.has(Vector2i(q.x, q.y)):
+				if q.x >= 0 and q.y >= 0 and q.x < w and q.y < h and not canopy.has(q):
+					image.set_pixel(q.x, q.y, outline)
+	return image
+
+
+## Little white speech bubble for emotes ("!", "♪", "…").
+static func _make_bubble() -> Image:
+	var image := Image.create_empty(14, 13, false, Image.FORMAT_RGBA8)
+	var k := Color(0.05, 0.04, 0.08)
+	var wcol := Color(0.98, 0.98, 1.0)
+	for y in range(1, 9):
+		for x in range(1, 13):
+			image.set_pixel(x, y, wcol)
+	for x in range(1, 13):
+		image.set_pixel(x, 0, k)
+		image.set_pixel(x, 9, k)
+	for y in range(1, 9):
+		image.set_pixel(0, y, k)
+		image.set_pixel(13, y, k)
+	# Tail.
+	image.set_pixel(4, 10, k)
+	image.set_pixel(5, 10, wcol)
+	image.set_pixel(6, 10, k)
+	image.set_pixel(5, 11, k)
+	return image
+
+
+## Danger-zone circle for telegraphed attacks (tinted via modulate).
+static func _make_telegraph() -> Image:
+	var s := 64
+	var image := Image.create_empty(s, s, false, Image.FORMAT_RGBA8)
+	var c := s / 2.0
+	for y in s:
+		for x in s:
+			var d := Vector2(x + 0.5 - c, y + 0.5 - c).length() / c
+			if d < 1.0:
+				var a := 0.30 if d < 0.92 else 0.95  # soft fill + hard rim
+				image.set_pixel(x, y, Color(1, 1, 1, a))
+	return image
+
+
+## A gear icon tinted with its grade color (32x32, ready for UI buttons).
+## noun picks the shape variant (Blade vs Bow, Plate vs Guard...).
+static func item_icon(slot: String, grade: String, noun := "") -> ImageTexture:
+	var shape := _shape_for(slot, noun)
+	var key := "itemicon_%s_%s" % [shape, grade]
+	if _cache.has(key):
+		return _cache[key]
+	var image := img(shape)
 	var tint: Color = Items.GRADE_COLOR[grade]
 	for y in image.get_height():
 		for x in image.get_width():
 			var c := image.get_pixel(x, y)
 			if c.a > 0.0:
 				image.set_pixel(x, y, Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a))
+	_embellish(image, grade)
 	image.resize(32, 32, Image.INTERPOLATE_NEAREST)
 	var t := ImageTexture.create_from_image(image)
 	_cache[key] = t
@@ -745,6 +1529,23 @@ static func _make_reticle() -> Image:
 	return image
 
 
+## Does this sprite's art natively face LEFT? The Crawl-tileset override
+## PNGs face left by convention; our procedural grids face right.
+## Flip logic must invert for left-facing art.
+static var _faceleft_cache := {}
+static func faces_left(name: String) -> bool:
+	if not _faceleft_cache.has(name):
+		_faceleft_cache[name] = FileAccess.file_exists("res://assets/sprites/%s.png" % name)
+	return _faceleft_cache[name]
+
+
+## Sprite scale that keeps on-screen size constant regardless of the
+## texture's pixel size (grids are 16px, file overrides are often 32px).
+static func scale_for(texture: Texture2D, scale_16px: float) -> Vector2:
+	var s := scale_16px * 16.0 / maxf(1.0, float(texture.get_width()))
+	return Vector2(s, s)
+
+
 ## Build an Image from a sprite's character grid.
 static func img(name: String) -> Image:
 	var def: Dictionary = SPRITES[name]
@@ -781,28 +1582,85 @@ static func _make_slash() -> Image:
 
 
 ## Compose one big ground texture for a zone (34 x 15 tiles of 16px art).
-## path_kind is painted across the middle rows so there is always a road.
+## Organic look: patch blobs instead of a tile checkerboard, litter (fallen
+## leaves / puddles), an edge-highlighted road, and depth shading under
+## the top wall. path_kind is painted across the middle rows.
 static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: int, seed_val: int) -> ImageTexture:
 	var key := "ground_%s_%s_%d" % [base_kind, path_kind, seed_val]
 	if _cache.has(key):
 		return _cache[key]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_val
-	var image := Image.create_empty(tiles_w * 16, tiles_h * 16, false, Image.FORMAT_RGBA8)
-	for ty in tiles_h:
-		for tx in tiles_w:
-			var kind := base_kind
-			if ty >= 6 and ty <= 8:
-				kind = path_kind
-			var cols: Array = GROUND[kind]
-			var base: Color = cols[0]
-			# Tiny per-tile brightness variation so the ground isn't flat.
-			base = base.lightened(rng.randf_range(-0.03, 0.03))
-			image.fill_rect(Rect2i(tx * 16, ty * 16, 16, 16), base)
-			for i in 7:
-				var px := tx * 16 + rng.randi_range(0, 15)
-				var py := ty * 16 + rng.randi_range(0, 15)
-				image.set_pixel(px, py, cols[1] if rng.randf() < 0.5 else cols[2])
+	var pw := tiles_w * 16
+	var ph := tiles_h * 16
+	var path_top := 6 * 16
+	var path_bottom := 9 * 16
+	var image := Image.create_empty(pw, ph, false, Image.FORMAT_RGBA8)
+
+	var g_cols: Array = GROUND[base_kind]
+	var p_cols: Array = GROUND[path_kind]
+	image.fill_rect(Rect2i(0, 0, pw, ph), g_cols[0])
+	image.fill_rect(Rect2i(0, path_top, pw, path_bottom - path_top), p_cols[0])
+
+	# Soft organic patches of lighter/darker ground (no checkerboard!).
+	for i in 90:
+		var cx := rng.randi_range(0, pw - 1)
+		var cy := rng.randi_range(0, ph - 1)
+		var r := rng.randi_range(3, 9)
+		var on_path := cy >= path_top and cy < path_bottom
+		var cols: Array = p_cols if on_path else g_cols
+		var col: Color = cols[1] if rng.randf() < 0.5 else cols[2]
+		for y in range(maxi(0, cy - r), mini(ph, cy + r)):
+			for x in range(maxi(0, cx - r), mini(pw, cx + r)):
+				var same_band := (y >= path_top and y < path_bottom) == on_path
+				if same_band and Vector2(x - cx, y - cy).length() <= r and rng.randf() < 0.7:
+					image.set_pixel(x, y, col)
+
+	# Fine speckle everywhere.
+	for i in 600:
+		var x := rng.randi_range(0, pw - 1)
+		var y := rng.randi_range(0, ph - 1)
+		var cols: Array = p_cols if (y >= path_top and y < path_bottom) else g_cols
+		image.set_pixel(x, y, cols[1] if rng.randf() < 0.5 else cols[2])
+
+	# Road edges catch the light; a few stones on the road.
+	var edge: Color = p_cols[2].lightened(0.12)
+	for x in pw:
+		if rng.randf() < 0.85:
+			image.set_pixel(x, path_top, edge)
+		if rng.randf() < 0.85:
+			image.set_pixel(x, path_bottom - 1, p_cols[1].darkened(0.15))
+	for i in 26:
+		var sx := rng.randi_range(2, pw - 3)
+		var sy := rng.randi_range(path_top + 3, path_bottom - 4)
+		var stone := Color(0.55, 0.55, 0.6).lightened(rng.randf_range(-0.1, 0.1))
+		image.set_pixel(sx, sy, stone)
+		image.set_pixel(sx + 1, sy, stone)
+
+	# Zone flavor litter: fallen leaves in the forest, puddles in the marsh.
+	if base_kind == "forest":
+		var leaf_cols := [Color(0.95, 0.5, 0.1), Color(0.85, 0.3, 0.1), Color(1.0, 0.75, 0.2)]
+		for i in 340:
+			var x := rng.randi_range(0, pw - 1)
+			var y := rng.randi_range(0, ph - 1)
+			image.set_pixel(x, y, leaf_cols[rng.randi_range(0, 2)])
+	elif base_kind == "marsh":
+		for i in 18:
+			var cx := rng.randi_range(4, pw - 5)
+			var cy := rng.randi_range(20, ph - 21)
+			var r := rng.randi_range(2, 5)
+			for y in range(cy - r, cy + r):
+				for x in range(cx - r * 2, cx + r * 2):
+					if x >= 0 and x < pw and Vector2((x - cx) * 0.5, y - cy).length() <= r:
+						image.set_pixel(x, y, Color(0.16, 0.30, 0.30))
+
+	# Depth: the ground darkens in the wall's shadow at the top.
+	for y in range(16, 24):
+		var f := 0.72 + (y - 16) / 8.0 * 0.28
+		for x in pw:
+			var c := image.get_pixel(x, y)
+			image.set_pixel(x, y, Color(c.r * f, c.g * f, c.b * f, 1.0))
+
 	# Stone border wall along the top and bottom edge of the world.
 	var wall := img("wallblock")
 	for tx in tiles_w:

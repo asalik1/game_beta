@@ -75,4 +75,10 @@ static func build_all() -> Dictionary:
 		"pdie":     tone(320, 45, 0.8, 0.45, 0.2),
 		"victory":  jingle([523, 659, 784, 1047, 784, 1047], 0.16),
 		"talk":     tone(700, 640, 0.035, 0.18),
+		# --- class-flavored ability sounds ---
+		"sword":    tone(280, 90, 0.16, 0.4, 0.65),    # heavy whoosh (warrior)
+		"stab":     tone(1400, 500, 0.06, 0.35, 0.3),  # sharp shink (assassin)
+		"knife":    tone(950, 450, 0.09, 0.3, 0.5),    # thrown blade
+		"bow":      tone(420, 130, 0.08, 0.4, 0.65),   # string release (archer)
+		"cast":     tone(480, 980, 0.18, 0.3, 0.08),   # arcane shimmer (mage)
 	}

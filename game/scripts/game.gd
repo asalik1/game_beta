@@ -35,7 +35,7 @@ var reticle: Sprite2D
 var binds := {
 	"a1": KEY_J, "a2": KEY_K, "a3": KEY_L, "ult": KEY_U,
 	"potion": KEY_Q, "interact": KEY_E, "inventory": KEY_I, "skills": KEY_T,
-	"codex": KEY_C,
+	"codex": KEY_C, "target": KEY_TAB,
 }
 
 var quest_key := "talk"
@@ -47,6 +47,7 @@ var play_started := false
 var elder: Node2D
 var interactables: Array = []    # [{node, prompt, action}]
 var gates: Array = []
+var zone_alive := {}             # zone index -> monsters still alive
 var boss_spawned := {}
 var boss_done := {}
 var current_boss: Boss = null
@@ -56,6 +57,13 @@ var shake_amt := 0.0
 var sounds: Dictionary = {}
 var sound_pool: Array = []
 var loot_rng := RandomNumberGenerator.new()
+var ambient_fx: CPUParticles2D = null
+var npc_emote_t := 4.0
+var music_player: AudioStreamPlayer
+var music_tracks: Dictionary = {}
+var current_track := ""
+
+const ZONE_TRACKS := ["village", "darkwood", "marsh", "keep"]
 
 
 func _ready() -> void:
@@ -68,6 +76,12 @@ func _ready() -> void:
 		sp.volume_db = -8.0
 		add_child(sp)
 		sound_pool.append(sp)
+
+	# Background music: looping procedural chiptune, one per zone + boss.
+	music_tracks = Music.build_all()
+	music_player = AudioStreamPlayer.new()
+	music_player.volume_db = -16.0
+	add_child(music_player)
 
 	ambient = CanvasModulate.new()
 	ambient.color = ZONE_TINT[0]
@@ -94,13 +108,14 @@ func _ready() -> void:
 	camera.limit_bottom = WORLD_H
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 8.0
+	camera.zoom = Vector2(1.12, 1.12)  # slightly closer = chunkier pixels
 	player.add_child(camera)
 	camera.make_current()
 
 	hud = Hud.new()
 	hud.game = self
 	add_child(hud)
-	hud.set_quest(Story.QUESTS[quest_key])
+	refresh_quest()
 
 	menus = Menus.new()
 	menus.game = self
@@ -119,6 +134,7 @@ func on_class_chosen(id: String) -> void:
 	get_tree().paused = false
 	hud.dialogue(Story.BEATS["intro"], func() -> void:
 		play_started = true
+		set_music("village")
 		hud.flash_title("Emberfall Village", "Chapter 1: The Hollow King")
 	)
 
@@ -165,7 +181,7 @@ func _build_world() -> void:
 			hud.dialogue(Story.BEATS["elder"], func() -> void:
 				open_gate(0)
 				quest_key = "fangmaw"
-				hud.set_quest(Story.QUESTS[quest_key])
+				refresh_quest()
 			)
 		else:
 			hud.dialogue(Story.BEATS["elder_repeat"])
@@ -192,7 +208,7 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	npc.add_child(shadow)
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex(sprite_name)
-	spr.scale = Vector2(3, 3)
+	spr.scale = Art.scale_for(spr.texture, 3.0)
 	npc.add_child(spr)
 	var prompt := Label.new()
 	prompt.text = prompt_text
@@ -253,44 +269,34 @@ func _build_zone(zi: int) -> void:
 				break
 
 	for spawn in zone["enemies"]:
-		add_enemy(Enemy.make(self, spawn[0], Vector2(zone_x + spawn[1], spawn[2])))
-
-	if zone["boss"] != "":
-		var trigger := Area2D.new()
-		trigger.position = Vector2(zone_x + 1050, 360)
-		trigger.collision_layer = 0
-		trigger.collision_mask = 2
-		var cs := CollisionShape2D.new()
-		var shape := RectangleShape2D.new()
-		shape.size = Vector2(40, 560)
-		cs.shape = shape
-		trigger.add_child(cs)
-		trigger.body_entered.connect(func(body: Node) -> void:
-			if body is Player:
-				_on_boss_trigger.call_deferred(zi)
-		)
-		add_child(trigger)
+		var e := Enemy.make(self, spawn[0], Vector2(zone_x + spawn[1], spawn[2]))
+		e.zone_idx = zi
+		zone_alive[zi] = zone_alive.get(zi, 0) + 1
+		add_enemy(e)
 
 
 func _add_obstacle(sprite_name: String, pos: Vector2) -> void:
+	var is_tree := sprite_name.begins_with("tree")
 	var body := StaticBody2D.new()
 	body.position = pos
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var cs := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
-	shape.radius = 14.0 if sprite_name == "tree" else 11.0
+	shape.radius = 13.0 if is_tree else 11.0
 	cs.shape = shape
 	cs.position = Vector2(0, 10)
 	body.add_child(cs)
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
-	shadow.scale = Vector2(3, 2)
-	shadow.position = Vector2(0, 22)
+	shadow.scale = Vector2(4, 2.4) if is_tree else Vector2(3, 2)
+	shadow.position = Vector2(0, 38 if is_tree else 22)
 	body.add_child(shadow)
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex(sprite_name)
-	spr.scale = Vector2(4, 4) if sprite_name == "tree" else Vector2(3, 3)
+	spr.scale = Vector2(3, 3)
+	if is_tree:
+		spr.position = Vector2(0, -18)  # trunk base sits at the body origin
 	body.add_child(spr)
 	add_child(body)
 
@@ -395,6 +401,7 @@ func _spawn_boss(zi: int, kind: String) -> void:
 	current_boss = Boss.make_boss(self, kind, Vector2(zi * ZONE_W + 1380, 360))
 	add_child(current_boss)
 	hud.show_boss_bar(Story.ENEMIES[kind]["name"])
+	set_music("boss_" + kind)
 
 
 func on_boss_died(kind: String) -> void:
@@ -402,6 +409,7 @@ func on_boss_died(kind: String) -> void:
 	var boss_pos := current_boss.global_position
 	current_boss = null
 	hud.hide_boss_bar()
+	set_music(ZONE_TRACKS[clampi(last_zone, 0, 3)])
 	player.hp = player.max_hp
 	player.mp = player.max_mp
 	player.potions = maxi(player.potions, 3)
@@ -415,19 +423,20 @@ func on_boss_died(kind: String) -> void:
 			quest_key = "morwen"
 			hud.dialogue(Story.BEATS["post_fangmaw"], func() -> void:
 				open_gate(1)
-				hud.set_quest(Story.QUESTS[quest_key])
+				refresh_quest()
 			)
 		"morwen":
 			quest_key = "vargoth"
 			hud.dialogue(Story.BEATS["post_morwen"], func() -> void:
 				open_gate(2)
-				hud.set_quest(Story.QUESTS[quest_key])
+				refresh_quest()
 			)
 		"vargoth":
 			quest_key = "done"
-			hud.set_quest(Story.QUESTS[quest_key])
+			refresh_quest()
 			hud.dialogue(Story.BEATS["epilogue"], func() -> void:
 				state = ST_VICTORY
+				set_music("")
 				sfx("victory")
 				hud.show_end_screen("VICTORY", "The Ember Crown is reclaimed. Thanks for playing Chapter 1!\nPress R to play again.", Color(1.0, 0.85, 0.35))
 				get_tree().paused = true
@@ -438,12 +447,29 @@ func on_enemy_died(e: Enemy) -> void:
 	if e is Boss:
 		return  # boss drops are handled in on_boss_died
 	Pickup.drop_gold(self, e.gold_value, e.global_position)
-	# Chance-based chest drops: mostly wood, sometimes silver.
+	# Chance-based chest drops (Greed above 30% nudges the odds up).
+	var bonus := Stats.greed_loot(player.greed) if is_instance_valid(player) else 0.0
 	var roll := loot_rng.randf()
-	if roll < 0.04:
+	if roll < 0.04 + bonus * 0.3:
 		Chest.drop(self, "silver", e.global_position)
-	elif roll < 0.18:
+	elif roll < 0.18 + bonus:
 		Chest.drop(self, "wood", e.global_position)
+
+	# Zone clear tracking: the boss only appears once the zone is purged.
+	if e.zone_idx >= 0:
+		zone_alive[e.zone_idx] = maxi(0, zone_alive.get(e.zone_idx, 0) - 1)
+		refresh_quest()
+		if zone_alive[e.zone_idx] == 0:
+			_try_spawn_boss(e.zone_idx)
+
+
+func _try_spawn_boss(zi: int) -> void:
+	if zone_alive.get(zi, 0) > 0:
+		return
+	var kind: String = Story.ZONES[zi]["boss"]
+	if kind == "" or boss_done.get(kind, false) or boss_spawned.get(zi, false):
+		return
+	_on_boss_trigger(zi)
 
 
 func add_enemy(e: Enemy) -> void:
@@ -476,12 +502,39 @@ func on_player_died() -> void:
 
 # ================================================================== helpers
 
+## Quest line + live "monsters left" counter for the player's zone.
+func refresh_quest() -> void:
+	var text: String = Story.QUESTS[quest_key]
+	var zi := clampi(int(player.global_position.x / ZONE_W), 0, ZONES - 1) if player else 0
+	var left: int = zone_alive.get(zi, 0)
+	if left > 0 and Story.ZONES[zi]["boss"] != "" and not boss_done.get(Story.ZONES[zi]["boss"], false):
+		text += "   —   %d monster%s left" % [left, "" if left == 1 else "s"]
+	hud.set_quest(text)
+
+
 func clamp_to_zone(pos: Vector2, anchor: Vector2) -> Vector2:
 	var zi := clampi(int(anchor.x / ZONE_W), 0, ZONES - 1)
 	return Vector2(
 		clampf(pos.x, zi * ZONE_W + 80.0, (zi + 1) * ZONE_W - 80.0),
 		clampf(pos.y, 90.0, WORLD_H - 90.0)
 	)
+
+
+## Switch the background track with a quick fade.
+func set_music(name: String) -> void:
+	if name == current_track or music_player == null:
+		return
+	current_track = name
+	var tween := create_tween()
+	tween.tween_property(music_player, "volume_db", -40.0, 0.4)
+	tween.tween_callback(func() -> void:
+		if name == "" or not music_tracks.has(name):
+			music_player.stop()
+			return
+		music_player.stream = music_tracks[name]
+		music_player.play()
+	)
+	tween.tween_property(music_player, "volume_db", -16.0, 0.6)
 
 
 func sfx(name: String) -> void:
@@ -498,6 +551,117 @@ func sfx(name: String) -> void:
 
 func shake(amount: float) -> void:
 	shake_amt = maxf(shake_amt, amount)
+
+
+## Telegraphed ground attack: a danger zone appears, pulses for `delay`
+## seconds, then erupts — heavy damage if the player is still inside.
+## opts: {"color": Color, "sword": true} (sword = a blade falls from the sky).
+func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts := {}) -> void:
+	var zone := Sprite2D.new()
+	zone.texture = Art.tex("telegraph")
+	zone.global_position = pos
+	zone.scale = Vector2(radius / 32.0, radius / 32.0)
+	zone.modulate = opts.get("color", Color(1.0, 0.2, 0.15, 0.55))
+	zone.z_index = -6
+	add_child(zone)
+	var pulse := zone.create_tween()
+	pulse.set_loops()
+	pulse.tween_property(zone, "modulate:a", 0.85, 0.18)
+	pulse.tween_property(zone, "modulate:a", 0.45, 0.18)
+
+	var sword: Sprite2D = null
+	if opts.get("sword", false):
+		sword = Sprite2D.new()
+		sword.texture = Art.tex("greatsword")
+		sword.scale = Vector2(4.5, 4.5)
+		sword.global_position = pos + Vector2(0, -420)
+		sword.z_index = 30
+		add_child(sword)
+		var fall := sword.create_tween()
+		fall.tween_property(sword, "global_position", pos + Vector2(0, -20), delay).set_ease(Tween.EASE_IN)
+
+	await get_tree().create_timer(delay).timeout
+	if not is_instance_valid(zone):
+		return
+	zone.queue_free()
+	sfx("slam")
+	shake(6.0)
+	burst(pos, opts.get("color", Color(1.0, 0.35, 0.2)), 18)
+	if sword and is_instance_valid(sword):
+		var sink := sword.create_tween()
+		sink.tween_property(sword, "modulate:a", 0.0, 0.35)
+		sink.tween_callback(sword.queue_free)
+	if is_instance_valid(player) and not player.dead \
+			and player.global_position.distance_to(pos) <= radius + 8.0:
+		player.take_damage(damage, "magic")
+
+
+## Floating emote bubble above a character ("!", "♪", "…", "?").
+func emote(target: Node2D, symbol: String, dur := 1.4) -> void:
+	if not is_instance_valid(target):
+		return
+	var box := Node2D.new()
+	box.position = Vector2(10, -52)
+	box.z_index = 30
+	var spr := Sprite2D.new()
+	spr.texture = Art.tex("bubble")
+	spr.scale = Vector2(2.4, 2.4)
+	box.add_child(spr)
+	var l := Label.new()
+	l.text = symbol
+	l.position = Vector2(-14, -22)
+	l.size = Vector2(28, 24)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", 15)
+	l.add_theme_color_override("font_color", Color(0.08, 0.06, 0.1))
+	box.add_child(l)
+	target.add_child(box)
+	box.scale = Vector2(0.3, 0.3)
+	var tween := box.create_tween()
+	tween.tween_property(box, "scale", Vector2(1, 1), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_interval(dur)
+	tween.tween_property(box, "modulate:a", 0.0, 0.25)
+	tween.tween_callback(box.queue_free)
+
+
+## Per-zone ambient particles: leaves, fireflies, embers.
+func _setup_ambient_fx(zi: int) -> void:
+	if is_instance_valid(ambient_fx):
+		ambient_fx.queue_free()
+	ambient_fx = CPUParticles2D.new()
+	ambient_fx.amount = 14
+	ambient_fx.lifetime = 9.0
+	ambient_fx.preprocess = 6.0
+	ambient_fx.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	ambient_fx.emission_rect_extents = Vector2(760, 60)
+	ambient_fx.spread = 30.0
+	ambient_fx.z_index = 12
+	match zi:
+		0, 1:  # drifting leaves (green petals in town, autumn in the woods)
+			ambient_fx.color = Color(0.7, 0.9, 0.4) if zi == 0 else Color(1.0, 0.55, 0.15)
+			ambient_fx.direction = Vector2(0.4, 1)
+			ambient_fx.gravity = Vector2(6, 22)
+			ambient_fx.initial_velocity_min = 12.0
+			ambient_fx.initial_velocity_max = 30.0
+			ambient_fx.scale_amount_min = 2.0
+			ambient_fx.scale_amount_max = 3.2
+		2:  # marsh fireflies
+			ambient_fx.color = Color(0.75, 1.0, 0.45, 0.85)
+			ambient_fx.emission_rect_extents = Vector2(760, 340)
+			ambient_fx.gravity = Vector2.ZERO
+			ambient_fx.initial_velocity_min = 6.0
+			ambient_fx.initial_velocity_max = 16.0
+			ambient_fx.scale_amount_min = 1.4
+			ambient_fx.scale_amount_max = 2.2
+		3:  # rising embers in the keep
+			ambient_fx.color = Color(1.0, 0.55, 0.2, 0.9)
+			ambient_fx.direction = Vector2(0, -1)
+			ambient_fx.gravity = Vector2(0, -18)
+			ambient_fx.initial_velocity_min = 8.0
+			ambient_fx.initial_velocity_max = 20.0
+			ambient_fx.scale_amount_min = 1.5
+			ambient_fx.scale_amount_max = 2.4
+	add_child(ambient_fx)
 
 
 ## Quick burst of particles (deaths, blinks, chest opens, meteors...).
@@ -552,11 +716,12 @@ func _process(delta: float) -> void:
 	if is_instance_valid(current_boss) and not current_boss.dying:
 		hud.update_boss_bar(current_boss.hp / current_boss.max_hp)
 
-	# Auto-aim reticle over the current target.
+	# Auto-aim reticle over the current target (orange = Tab-locked).
 	var target := player.auto_aim()
 	if target and not player.dead:
 		reticle.visible = true
 		reticle.global_position = target.global_position
+		reticle.modulate = Color(1.0, 0.45, 0.2) if target == player.locked_target else Color(1, 1, 1)
 	else:
 		reticle.visible = false
 
@@ -568,12 +733,36 @@ func _process(delta: float) -> void:
 		last_zone = zi
 		var tween := create_tween()
 		tween.tween_property(ambient, "color", ZONE_TINT[zi], 1.0)
+		# Entering a combat zone wakes up EVERY monster in it.
+		for node in get_tree().get_nodes_in_group("enemies"):
+			var e := node as Enemy
+			if e and e.zone_idx == zi:
+				e.force_aggro = true
+		refresh_quest()
+		_setup_ambient_fx(zi)
+		if not is_instance_valid(current_boss):
+			set_music(ZONE_TRACKS[zi])
+		_try_spawn_boss(zi)
 	hud.set_zone(Story.ZONES[zi]["name"])
 
-	# Evolution choice pops up as soon as nothing else is on screen.
-	if player.pending_evolution and state == ST_PLAYING and not hud.dialogue_active and not menus.is_open():
-		player.pending_evolution = false
-		menus.open_evolution()
+	# Ambient particles drift around the camera; NPCs chatter idly.
+	if is_instance_valid(ambient_fx):
+		var above := -380.0 if zi != 2 else 0.0
+		ambient_fx.global_position = player.global_position + Vector2(0, above)
+	npc_emote_t -= delta
+	if npc_emote_t <= 0.0:
+		npc_emote_t = randf_range(3.5, 7.0)
+		if not interactables.is_empty() and state == ST_PLAYING and not hud.dialogue_active:
+			var entry: Dictionary = interactables[randi() % interactables.size()]
+			if is_instance_valid(entry["node"]) and player.global_position.distance_to(entry["node"].position) < 700.0:
+				emote(entry["node"], ["♪", "…", "?", "♥"][randi() % 4])
+
+	# New theme unlocked: announce it.
+	if player.pending_theme_note != "" and state == ST_PLAYING and not hud.dialogue_active and not menus.is_open():
+		hud.flash_title("THEME UNLOCKED: " + player.pending_theme_note,
+			"Press T to assign themes to your abilities", 2.2)
+		sfx("victory")
+		player.pending_theme_note = ""
 
 	# NPC interactions (elder, merchants).
 	if state == ST_PLAYING and not hud.dialogue_active and not menus.is_open():
@@ -599,3 +788,8 @@ func _process(delta: float) -> void:
 	shake_amt = move_toward(shake_amt, 0.0, 20.0 * delta)
 	if camera:
 		camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
+
+	# Safety net: no dash, knockback or physics glitch may ever leave the
+	# hero stranded outside the world walls.
+	player.global_position.x = clampf(player.global_position.x, 44.0, ZONE_W * ZONES - 44.0)
+	player.global_position.y = clampf(player.global_position.y, 64.0, WORLD_H - 64.0)

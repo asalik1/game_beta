@@ -36,6 +36,9 @@ var dialogue_done: Callable
 var dialogue_active := false
 
 var overlay: ColorRect
+var vignette: TextureRect
+var flash_rect: ColorRect = null
+var boss_base_name := ""
 var paused_by_menu := false
 var banner_y := 110.0
 
@@ -47,14 +50,14 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 10
 
-	# Vignette (drawn under all UI, over the world).
-	var vig := TextureRect.new()
-	vig.texture = Art.tex("vignette")
-	vig.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vig.stretch_mode = TextureRect.STRETCH_SCALE
-	vig.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	vig.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(vig)
+	# Vignette (drawn under all UI, over the world). Pulses red at low HP.
+	vignette = TextureRect.new()
+	vignette.texture = Art.tex("vignette")
+	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	vignette.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(vignette)
 
 	# ------------------------------------------------- player stat bars ---
 	_panel(Vector2(14, 12), Vector2(BAR_W + 8, 66))
@@ -145,9 +148,13 @@ func _ready() -> void:
 	dhint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	dialogue_box.add_child(dhint)
 
-	# ----------------------------------------------------- controls hint --
-	var controls := _label(Vector2(14, 698), 12, Color(0.7, 0.7, 0.7), 900)
-	controls.text = "WASD move · I inventory · T skill tree · C codex · E talk · ESC pause (B = keybinds)"
+	# --------------------------------------------------- controls hint ---
+	# Two short lines on the far left so they never collide with the
+	# ability bar's labels in the bottom center.
+	var controls := _label(Vector2(14, 682), 11, Color(0.7, 0.7, 0.7), 400)
+	controls.text = "WASD move · TAB target · E talk"
+	var controls2 := _label(Vector2(14, 698), 11, Color(0.7, 0.7, 0.7), 400)
+	controls2.text = "I inventory · T skills · C codex · ESC menu"
 
 
 const SLOT_SIZE := 60.0
@@ -168,6 +175,14 @@ func _build_ability_bar() -> void:
 		bg.size = Vector2(SLOT_SIZE, SLOT_SIZE)
 		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(bg)
+		# Ability glyph, tinted by the assigned theme's color.
+		var icon := TextureRect.new()
+		icon.position = Vector2(x + 8, y + 8)
+		icon.custom_minimum_size = Vector2(SLOT_SIZE - 16, SLOT_SIZE - 16)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(icon)
 		# Cooldown "shade" that drains from top to bottom as the ability recharges.
 		var cd := ColorRect.new()
 		cd.color = Color(0.25, 0.3, 0.45, 0.75)
@@ -180,7 +195,7 @@ func _build_ability_bar() -> void:
 		var key := _label(Vector2(x + 4, y - 1), 12, Color(0.95, 0.85, 0.5), 50)
 		var cost := _label(Vector2(x, y + SLOT_SIZE - 20), 12, Color(0.5, 0.7, 1.0), SLOT_SIZE - 5, HORIZONTAL_ALIGNMENT_RIGHT)
 		var name_l := _label(Vector2(x - 8, y + SLOT_SIZE + 4), 12, Color(1, 1, 1), SLOT_SIZE + 16, HORIZONTAL_ALIGNMENT_CENTER)
-		slot_boxes.append({"border": border, "bg": bg, "cd": cd, "num": num,
+		slot_boxes.append({"border": border, "bg": bg, "icon": icon, "cd": cd, "num": num,
 			"key": key, "cost": cost, "name": name_l, "was_ready": true, "flash_ms": 0})
 		x += 70.0
 
@@ -237,12 +252,17 @@ func _set_fill(fill: ColorRect, fraction: float) -> void:
 # ----------------------------------------------------------- API used by game
 
 func update_stats(p: Player) -> void:
-	_set_fill(hp_fill, p.hp / p.max_hp)
+	# Low-HP warning: the screen edges pulse red below 30% health.
+	var hp_frac := p.hp / p.max_hp
+	if hp_frac < 0.3 and not p.dead:
+		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.008)
+		vignette.modulate = Color(1.0 + pulse * 0.6, 1.0 - pulse * 0.5, 1.0 - pulse * 0.5, 1.0 + pulse * 0.6)
+	else:
+		vignette.modulate = Color(1, 1, 1)
+	_set_fill(hp_fill, hp_frac)
 	_set_fill(mp_fill, p.mp / p.max_mp)
 	_set_fill(xp_fill, float(p.xp) / float(p.xp_needed()))
 	var cls_name: String = Classes.CLASSES[p.cls]["name"]
-	if p.evolution != "":
-		cls_name = Classes.CLASSES[p.cls]["evolutions"][p.evolution]["name"]
 	var pts := "  (+%d pts, press T)" % p.skill_points if p.skill_points > 0 else ""
 	stats_label.text = "%s  Lv %d   HP %d/%d   MP %d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), int(p.mp), pts]
 	gold_label.text = "◉ %d gold    Potions [%s] x%d" % [p.gold, OS.get_keycode_string(game.binds["potion"]), p.potions]
@@ -258,9 +278,13 @@ func update_stats(p: Player) -> void:
 			box["num"].text = "x%d" % p.potions
 			box["cd"].size.y = 0.0
 			box["cost"].text = ""
+			box["icon"].texture = Art.tex("potion")
 			box["border"].color = Color(0.75, 0.35, 0.35) if p.potions > 0 else Color(0.3, 0.15, 0.15)
 			continue
 		var ab := Classes.ability(p.cls, slot)
+		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
+		box["icon"].texture = Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][slot],
+			theme.get("color", Color(0.85, 0.85, 0.92)))
 		var cost := p.ability_cost(slot)
 		box["key"].text = OS.get_keycode_string(game.binds[slot])
 		box["name"].text = ab["name"]
@@ -304,12 +328,14 @@ func set_quest(text: String) -> void:
 
 
 func show_boss_bar(bname: String) -> void:
+	boss_base_name = bname
 	boss_name.text = bname
 	boss_box.visible = true
 
 
 func update_boss_bar(fraction: float) -> void:
 	boss_fill.size.x = 500.0 * clampf(fraction, 0.0, 1.0)
+	boss_name.text = "%s — %d%%" % [boss_base_name, int(ceil(clampf(fraction, 0.0, 1.0) * 100))]
 
 
 func hide_boss_bar() -> void:
@@ -322,7 +348,7 @@ func loot_banner(item: Dictionary, bonus_gold: int) -> void:
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(box)
 	var icon := TextureRect.new()
-	icon.texture = Art.item_icon(item["slot"], item["grade"])
+	icon.texture = Art.icon_for(item)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(icon)
 	var l := Label.new()
@@ -362,6 +388,18 @@ func show_end_screen(text: String, sub: String, color: Color) -> void:
 
 func dim(amount: float) -> void:
 	overlay.color = Color(0, 0, 0, amount)
+
+
+## One-frame impact flash over the whole screen (ults, meteor strikes).
+func flash_screen(color: Color, strength := 0.4, dur := 0.3) -> void:
+	if flash_rect == null:
+		flash_rect = ColorRect.new()
+		flash_rect.size = Vector2(1280, 720)
+		flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(flash_rect)
+	flash_rect.color = Color(color.r, color.g, color.b, strength)
+	var tween := create_tween()
+	tween.tween_property(flash_rect, "color:a", 0.0, dur)
 
 
 # --------------------------------------------------------------- dialogue
@@ -413,6 +451,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_R and game.state == game.ST_VICTORY:
 			get_tree().paused = false
 			get_tree().reload_current_scene()
+		elif event.keycode == game.binds.get("target", KEY_TAB) \
+				and game.state == game.ST_PLAYING and not dialogue_active and not paused_by_menu:
+			game.player.cycle_target()
+			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		pressed_confirm = true
 
