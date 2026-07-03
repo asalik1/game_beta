@@ -840,7 +840,7 @@ func _storm_strike() -> void:
 
 
 func _frost_nova(f := 1.0) -> void:
-	game.sfx("slam")
+	game.sfx("nova")
 	game.shake(5.0)
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex("glow")

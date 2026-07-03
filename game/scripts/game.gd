@@ -71,6 +71,16 @@ func _ready() -> void:
 	load_binds()
 
 	sounds = Sfx.build_all()
+	# Sound overrides: any assets/sounds/<name>.ogg replaces the
+	# synthesized effect of the same name (same idea as sprites).
+	var snd_dir := DirAccess.open("res://assets/sounds")
+	if snd_dir:
+		for file in snd_dir.get_files():
+			if file.ends_with(".ogg"):
+				var stream := AudioStreamOggVorbis.load_from_file(
+					ProjectSettings.globalize_path("res://assets/sounds/" + file))
+				if stream:
+					sounds[file.get_basename()] = stream
 	for i in 10:
 		var sp := AudioStreamPlayer.new()
 		sp.volume_db = -8.0
