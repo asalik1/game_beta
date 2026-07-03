@@ -1,0 +1,10 @@
+# Godot generated files
+game/.godot/
+
+# Bundled engine (re-download from godotengine.org if needed)
+tools/
+
+# Exports
+build/
+*.exe
+*.apk
