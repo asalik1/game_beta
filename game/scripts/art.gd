@@ -379,14 +379,50 @@ const SPRITES := {
 		"kNnnkNnnkNnnkNnk",
 		"kkkkkkkkkkkkkkkk",
 	]},
+	# A comet, not a ball: white-hot head (right — projectiles rotate to
+	# their velocity), orange body, ragged red tail with detached embers.
 	"fireball": {"rows": [
-		"...kk...",
-		"..kyyk..",
-		".kyooyk.",
-		".kyoryk.",
-		".kyooyk.",
-		"..kyyk..",
-		"...kk...",
+		"................",
+		"..r....kkkkk....",
+		"....kkkyyyyyk...",
+		".rkoyyyywwwwwyk.",
+		"rkooyyywwwwwwwk.",
+		".rkoyyyywwwwwyk.",
+		"....kkkyyyyyk...",
+		"..r....kkkkk....",
+	]},
+	# A jagged ice shard, point right — the Ice-theme bolt.
+	"icelance": {"rows": [
+		"................",
+		"...kkkkkk.......",
+		".kkccccccck.....",
+		"kbccwwwwwwwwwck.",
+		".kkccccccck.....",
+		"...kkkkkk.......",
+		"................",
+		"................",
+	]},
+	# Hungry darkness with a pale core, ragged void wisps trailing left
+	# (projectiles rotate to their velocity — head points right).
+	"shadowbolt": {"rows": [
+		"................",
+		"..P....kkkkk....",
+		"....kkkpppppk...",
+		".PkPppppwwwwppk.",
+		"PkPPpppwwwwwwwk.",
+		".PkPppppwwwwppk.",
+		"....kkkpppppk...",
+		"..P....kkkkk....",
+	]},
+	# The Ember Crown — cutscene prop.
+	"crown": {"rows": [
+		"y..yy..y",
+		"yy.yy.yy",
+		"yyyyyyyy",
+		"yyryyryy",
+		".yyyyyy.",
+		"........",
+		"........",
 		"........",
 	]},
 	"bolt": {"rows": [
@@ -486,6 +522,44 @@ const SPRITES := {
 		"....kEErrEEk....",
 		"....kEEEEEEk....",
 		"....kEE..EEk....",
+		"....kkk.kkk.....",
+		"................",
+		"................",
+	]},
+	# Gold-trimmed holy knight: white tabard, gilded plate, golden plume.
+	"paladin": {"rows": [
+		"......yyy.......",
+		"..kkkkyykkkk....",
+		".kssssssssssk...",
+		".ksswssssswsk...",
+		".kSSkkkkkkSSk...",
+		".kssEssssEssk...",
+		".kssssssssssk...",
+		"..kssssssssk....",
+		"..kyyswwsyyk....",
+		"..kyyswwsyyk....",
+		"...ksswwssk.....",
+		"...kssyyssk.....",
+		"....kSSkSSk.....",
+		"....kkk.kkk.....",
+		"................",
+		"................",
+	]},
+	# Hooded pact-mage: deep purple robes, glowing cyan eyes in the dark.
+	"warlock": {"rows": [
+		".....kkkkkk.....",
+		"...kkPPPPPPkk...",
+		"..kPPPPPPPPPPk..",
+		"..kPPkkkkkkPPk..",
+		"..kPkkckkckkPk..",
+		"..kPPkkkkkkPPk..",
+		"...kPPPPPPPPk...",
+		"...kPpPPPPpPk...",
+		"...kPPPPPPPPk...",
+		"....kPPppPPk....",
+		"....kPPPPPPk....",
+		"....kPPPPPPk....",
+		"....kPP..PPk....",
 		"....kkk.kkk.....",
 		"................",
 		"................",
@@ -997,6 +1071,42 @@ const SPRITES := {
 		"................",
 		"................",
 	]},
+	"w_hammer": {"rows": [
+		"................",
+		"...kkkkkkkkk....",
+		"..ksssssssssk...",
+		"..ksswwwssssk...",
+		"..ksssssssssk...",
+		"..kkkkkkkkkkk...",
+		"......knnk......",
+		"......knnk......",
+		"......knnk......",
+		"......knnk......",
+		"......knnk......",
+		"......kyyk......",
+		".......kk.......",
+		"................",
+		"................",
+		"................",
+	]},
+	"w_tome": {"rows": [
+		"................",
+		"................",
+		"..kkkkkkkkkkk...",
+		"..kPPPPkPPPPk...",
+		"..kPpPPkPPpPk...",
+		"..kPPPPkPPPPk...",
+		"..kPPcPkPcPPk...",
+		"..kPPPPkPPPPk...",
+		"..kPpPPkPPpPk...",
+		"..kPPPPkPPPPk...",
+		"..kkkkkkkkkkk...",
+		"...kNNNNNNNk....",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
 }
 
 # Ground tile colors: base, darker speckle, lighter speckle.
@@ -1041,6 +1151,8 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_shadow())
 		"glow":
 			t = ImageTexture.create_from_image(_make_glow())
+		"ring":
+			t = ImageTexture.create_from_image(_make_ring())
 		"vignette":
 			t = ImageTexture.create_from_image(_make_vignette())
 		"reticle":
@@ -1208,6 +1320,78 @@ const GLYPHS := {
 		"...kwkwk....",
 		"...kkkkk....",
 	],
+	"ab_hammer": [  # Judgment
+		".kkkkkkkk...",
+		".kwwwwwwk...",
+		".kwwwwwwk...",
+		".kkkkkkkk...",
+		"....kyk.....",
+		"....kyk.....",
+		"....kyk.....",
+		"....kyk.....",
+		"....kkk.....",
+	],
+	"ab_sun": [  # Consecration (radiant ground)
+		".....w......",
+		"..w..w..w...",
+		"...kkkkk....",
+		"..kwwwwwk...",
+		"w.kwwywwk.w.",
+		"..kwwwwwk...",
+		"...kkkkk....",
+		"..w..w..w...",
+		".....w......",
+	],
+	"ab_chain": [  # Chains of Wrath
+		".kkk........",
+		"kw.wk.......",
+		".kkk........",
+		"...kkk......",
+		"..kw.wk.....",
+		"...kkk......",
+		".....kkk....",
+		"....kw.wk...",
+		".....kkk....",
+	],
+	"ab_orb": [  # Shadowbolt
+		"....kkkk....",
+		"...kwwwwk...",
+		"..kwwkkwwk..",
+		"..kwkwwkwk..",
+		"..kwwkkwwk..",
+		"...kwwwwk...",
+		"....kkkk....",
+	],
+	"ab_hex": [  # Hex (the watching curse)
+		"...kkkkk....",
+		"..kwwwwwk...",
+		".kwwkkkwwk..",
+		".kwkwywkwk..",
+		".kwwkkkwwk..",
+		"..kwwwwwk...",
+		"...kkkkk....",
+		"....kwk.....",
+		".....kw.....",
+	],
+	"ab_pact": [  # Dark Pact (the paid drop)
+		".....k......",
+		"....kwk.....",
+		"...kwwwk....",
+		"..kwwwwwk...",
+		"..kwwywwk...",
+		"..kwwwwwk...",
+		"...kwwwk....",
+		"....kkk.....",
+	],
+	"ab_rift": [  # Void Rift
+		"...kkkkk....",
+		"..kw...wk...",
+		".kw..k..wk..",
+		".kw.kwk.wk..",
+		".kw..w..wk..",
+		"..kw...wk...",
+		"...kkkkk....",
+	],
 	"ic_cd": [  # cooldown (hourglass)
 		".kkkkkkk....",
 		"..kwwwk.....",
@@ -1281,6 +1465,8 @@ const ABILITY_GLYPH := {
 	"archer":   {"a1": "ab_arrow",  "a2": "ab_multi",  "a3": "ab_roll",   "ult": "ab_rain"},
 	"mage":     {"a1": "ab_flame",  "a2": "ab_snow",   "a3": "ab_blink",  "ult": "ab_meteor"},
 	"assassin": {"a1": "ab_dagger", "a2": "ab_blink",  "a3": "ab_knives", "ult": "ab_skull"},
+	"paladin":  {"a1": "ab_hammer", "a2": "ab_sun",    "a3": "ab_shield", "ult": "ab_chain"},
+	"warlock":  {"a1": "ab_orb",    "a2": "ab_hex",    "a3": "ab_pact",   "ult": "ab_rift"},
 }
 
 
@@ -1309,7 +1495,7 @@ static func glyph_tex(name: String, tint := Color(0.92, 0.92, 0.98)) -> ImageTex
 
 # Every gear family (noun) has its own sprite; grade adds the tint.
 const GEAR_SHAPES := {
-	"weapon": {"Blade": "w_blade", "Edge": "w_edge", "Fang": "w_fang", "Kunai": "w_kunai", "Claymore": "w_claymore", "Bow": "w_bow", "Crossbow": "w_crossbow", "Staff": "w_staff", "Wand": "w_wand"},
+	"weapon": {"Blade": "w_blade", "Edge": "w_edge", "Fang": "w_fang", "Kunai": "w_kunai", "Claymore": "w_claymore", "Bow": "w_bow", "Crossbow": "w_crossbow", "Staff": "w_staff", "Wand": "w_wand", "Hammer": "w_hammer", "Tome": "w_tome"},
 	"armor":  {"Plate": "icon_armor", "Mail": "icon_mail", "Guard": "icon_shield"},
 	"boots":  {"Boots": "icon_boots", "Striders": "icon_striders", "Treads": "icon_treads"},
 	"charm":  {"Charm": "icon_charm", "Talisman": "icon_talisman", "Sigil": "icon_sigil"},
@@ -1549,6 +1735,20 @@ static func _make_glow() -> Image:
 			var d := Vector2(x + 0.5 - s / 2.0, y + 0.5 - s / 2.0).length() / (s / 2.0)
 			if d < 1.0:
 				image.set_pixel(x, y, Color(1, 1, 1, (1.0 - d) * (1.0 - d) * 0.55))
+	return image
+
+
+## A soft shockwave ring (white — tint with modulate). Powers nova
+## blasts and projectile impact flashes.
+static func _make_ring() -> Image:
+	var s := 64
+	var image := Image.create_empty(s, s, false, Image.FORMAT_RGBA8)
+	var c := (s - 1) / 2.0
+	for y in s:
+		for x in s:
+			var band := absf(Vector2(x - c, y - c).length() - 24.0)
+			if band < 6.0:
+				image.set_pixel(x, y, Color(1, 1, 1, pow(1.0 - band / 6.0, 1.4)))
 	return image
 
 

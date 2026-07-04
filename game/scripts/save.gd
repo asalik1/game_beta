@@ -25,6 +25,7 @@ static func write(game: Game, slot: int) -> void:
 		"version": VERSION,
 		"saved_at": Time.get_unix_time_from_system(),
 		# --- identity / progression ---
+		"chapter": game.chapter_id,
 		"cls": p.cls,
 		"level": p.level, "xp": p.xp,
 		"skill_points": p.skill_points, "tree_points": p.tree_points,
@@ -43,6 +44,8 @@ static func write(game: Game, slot: int) -> void:
 		"quest_key": game.quest_key,
 		"talked_to_elder": game.talked_to_elder,
 		"bosses_slain": game.boss_done.keys(),
+		"flags": game.flags,
+		"merchant_zones": game.merchant_zones,
 	}
 	var f := FileAccess.open(path(slot), FileAccess.WRITE)
 	if f:
@@ -137,9 +140,14 @@ static func apply(game: Game, data: Dictionary) -> void:
 
 	game.quest_key = String(data.get("quest_key", "talk"))
 	game.talked_to_elder = bool(data.get("talked_to_elder", false))
+	game.flags = data.get("flags", {})
 	game.boss_done = {}
 	for kind in data.get("bosses_slain", []):
 		game.boss_done[String(kind)] = true
+	# Wandering merchants that had arrived come back (village merchant
+	# already exists from the world build — the spawn guard skips it).
+	for z in data.get("merchant_zones", []):
+		game._spawn_merchant(int(z))
 	game.reconcile_after_load()
 
 

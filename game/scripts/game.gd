@@ -11,7 +11,14 @@ const TILES_W := 34
 const TILES_H := 15
 const ZONE_W := TILES_W * TILE
 const WORLD_H := TILES_H * TILE
-const ZONES := 4
+
+# ------------------------------------------------------------- chapters ---
+# The world is data: Story.CHAPTER_LIST[chapter_id] decides the zones,
+# starting quest and final boss. switch_chapter() rebuilds everything.
+var chapter_id := "ch1"
+var zones: Array = []            # this chapter's zone dicts
+var zone_count := 0
+var world: Node2D = null         # every world node lives under here
 
 const ST_PLAYING := 0
 const ST_DEAD := 2
@@ -73,6 +80,9 @@ var gust_t := 0.0
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
 var no_saves := false                 # autotest: never touch real save files
+var flags := {}                       # persistent story flags (saved)
+var merchant_zones: Array = []        # zones with a merchant present (saved)
+var cutscene: Cutscene = null         # active opening cinematic (if any)
 
 # ------------------------------------------------------------ dev mode ---
 var dev_mode := false                 # launched via dev_mode.bat (--dev)
@@ -85,8 +95,11 @@ var current_track := ""
 func _ready() -> void:
 	loot_rng.randomize()
 	load_binds()
+	Story.load_content()  # merge content modules before anything reads them
 	dev_mode = "--dev" in OS.get_cmdline_user_args()
-	for zone in Story.ZONES:
+	zones = Story.chapter(chapter_id)["zones"]
+	zone_count = zones.size()
+	for zone in zones:
 		terrain_by_zone.append(zone.get("terrain", "village"))
 
 	sounds = Sfx.build_all()
@@ -146,6 +159,9 @@ func _ready() -> void:
 	ambient.color = Terrains.get_terrain(terrain_by_zone[0])["tint"]
 	add_child(ambient)
 
+	world = Node2D.new()
+	world.y_sort_enabled = true  # world children sort with the player
+	add_child(world)
 	_build_world()
 
 	player = Player.new()
@@ -172,7 +188,7 @@ func _ready() -> void:
 
 	camera = Camera2D.new()
 	camera.limit_left = 0
-	camera.limit_right = ZONE_W * ZONES
+	camera.limit_right = ZONE_W * zone_count
 	camera.limit_top = 0
 	camera.limit_bottom = WORLD_H
 	camera.position_smoothing_enabled = true
@@ -196,7 +212,7 @@ func _ready() -> void:
 
 func _start_flow() -> void:
 	if no_saves or SaveGame.list().is_empty():
-		menus.open_class_select()
+		menus.open_chapter_select()
 	else:
 		menus.open_title()
 
@@ -206,12 +222,29 @@ func on_class_chosen(id: String) -> void:
 	if not no_saves:
 		save_slot = SaveGame.next_free_slot()
 	get_tree().paused = false
-	hud.dialogue(Story.BEATS["intro"], func() -> void:
+	var begin := func() -> void:
 		play_started = true
-		set_music("village")
-		hud.flash_title("Emberfall Village", "Chapter 1: The Hollow King")
+		set_music(Terrains.get_terrain(terrain_by_zone[0]).get("music", "village"))
+		hud.flash_title(zones[0]["name"], String(Story.chapter(chapter_id)["name"]))
 		autosave()
-	)
+	if Story.ALL_CONVOS.has("open_" + id):
+		# Class openings replace the generic intro: a staged cinematic
+		# plays under the words (cues in Story.CONVOS), and a choice
+		# moves Resonance before Maren ever appears.
+		set_flag("opened_" + id)
+		cutscene = Cutscene.new(self)
+		hud.add_child(cutscene)
+		# Above the gameplay HUD (bars/quest/abilities), under the words.
+		hud.move_child(cutscene, hud.dialogue_box.get_index())
+		run_convo_id("open_" + id, func() -> void:
+			if cutscene:
+				var cs := cutscene
+				cutscene = null
+				cs.finish(begin)
+			else:
+				begin.call())
+	else:
+		hud.dialogue(Story.BEATS["intro"], begin)
 
 
 ## Resume a saved character: restore the player + story flags onto the
@@ -221,32 +254,37 @@ func load_save(slot: int) -> void:
 	if data.is_empty():
 		return
 	save_slot = slot
+	switch_chapter(String(data.get("chapter", "ch1")))  # no-op if same
 	SaveGame.apply(self, data)
 	get_tree().paused = false
 	play_started = true
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, ZONES - 1)
+	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1)
 	set_music(Terrains.get_terrain(terrain_by_zone[zi]).get("music", "village"))
-	hud.flash_title(Story.ZONES[zi]["name"], "The tale continues")
+	hud.flash_title(zones[zi]["name"], "The tale continues")
 
 
 ## Rebuild the world state a save implies: clear pacified zones,
-## reopen earned gates, keep dead bosses dead.
+## reopen earned gates, keep dead bosses dead. Gate rule: the gate out
+## of zone zi opens when zi's boss is dead, when zi's "gate_flag" story
+## flag is set, or (Chapter 1, zone 0) when the elder has been talked to.
 func reconcile_after_load() -> void:
-	if talked_to_elder:
+	if chapter_id == "ch1" and talked_to_elder:
 		open_gate(0)
-	if boss_done.get("fangmaw", false):
-		open_gate(1)
-	if boss_done.get("morwen", false):
-		open_gate(2)
-	for zi in ZONES:
-		var kind: String = Story.ZONES[zi].get("boss", "")
+	for zi in zone_count:
+		var kind: String = zones[zi].get("boss", "")
+		var cleared: bool = kind != "" and boss_done.get(kind, false)
+		var flag: String = String(zones[zi].get("gate_flag", ""))
+		if flag != "" and get_flag(flag, false):
+			cleared = true
+		if cleared and zi < gates.size():
+			open_gate(zi)
 		if kind != "" and boss_done.get(kind, false):
 			boss_spawned[zi] = true
 			zone_alive[zi] = 0
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
-		if e and e.zone_idx >= 0:
-			var kind: String = Story.ZONES[e.zone_idx].get("boss", "")
+		if e and e.zone_idx >= 0 and e.zone_idx < zone_count:
+			var kind: String = zones[e.zone_idx].get("boss", "")
 			if kind != "" and boss_done.get(kind, false):
 				e.queue_free()
 	refresh_quest()
@@ -262,6 +300,96 @@ func autosave() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		autosave()
+
+
+# ======================================================= conversation engine
+# Branching dialogue with choices, resonance/faction shifts and story
+# flags. Data format documented at Story.CONVOS.
+
+func set_flag(flag_name: String, value = true) -> void:
+	flags[flag_name] = value
+	# Flag-opened gates: any zone whose "gate_flag" just got set unlocks.
+	if value:
+		for zi in zone_count:
+			if String(zones[zi].get("gate_flag", "")) == flag_name and zi < gates.size():
+				open_gate(zi)
+
+
+func get_flag(flag_name: String, def = false):
+	return flags.get(flag_name, def)
+
+
+func run_convo_id(id: String, on_done := Callable()) -> void:
+	run_convo(Story.ALL_CONVOS[id], on_done)
+
+
+func run_convo(convo: Dictionary, on_done := Callable()) -> void:
+	_convo_node(convo, String(convo.get("start", "")), on_done)
+
+
+func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
+	var nodes: Dictionary = convo.get("nodes", {})
+	if node_id == "" or not nodes.has(node_id):
+		autosave()  # choices are story progress
+		if on_done.is_valid():
+			on_done.call()
+		return
+	var node: Dictionary = nodes[node_id]
+	if cutscene and node.has("cue"):
+		cutscene.cue(String(node["cue"]))  # stage the picture for this beat
+	var who: String = node.get("who", "")
+	# A matched variant can override the text AND the path: a variant
+	# with its own "next" makes the node linear (choices are skipped) —
+	# the short-circuit for "we already had this conversation" greetings.
+	var variant := _convo_variant(node)
+	var text: String = variant.get("text", node.get("text", ""))
+	var next_id: String = String(variant.get("next", node.get("next", "")))
+	var force_linear: bool = variant.has("next")
+	if node.has("quest"):
+		quest_key = String(node["quest"])
+		refresh_quest()
+
+	# Gate choices on flags / resonance band, then present or continue.
+	var choices: Array = []
+	for c in node.get("choices", []):
+		if c.has("req_flag") and not flags.get(String(c["req_flag"]), false):
+			continue
+		if c.has("req_not_flag") and flags.get(String(c["req_not_flag"]), false):
+			continue
+		if c.has("req_band") and Story.res_band(player.resonance) != String(c["req_band"]):
+			continue
+		choices.append(c)
+	if choices.is_empty() or force_linear:
+		hud.dialogue([[who, text]], func() -> void:
+			_convo_node(convo, next_id, on_done))
+	else:
+		var option_texts: Array = []
+		for c in choices:
+			option_texts.append(String(c["text"]))
+		hud.dialogue_choice(who, text, option_texts, func(idx: int) -> void:
+			var c: Dictionary = choices[idx]
+			player.add_resonance(float(c.get("resonance", 0.0)))
+			var fac_shifts: Dictionary = c.get("faction", {})
+			for fac in fac_shifts:
+				player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(fac_shifts[fac])
+			var set_flags: Dictionary = c.get("flags", {})
+			for fname in set_flags:
+				set_flag(fname, set_flags[fname])  # via set_flag: gates react
+			if c.has("quest"):
+				quest_key = String(c["quest"])
+				refresh_quest()
+			_convo_node(convo, String(c.get("next", "")), on_done))
+
+
+## The FIRST matching variant wins (resonance band or story flag);
+## empty dict = use the node's own text/next.
+func _convo_variant(node: Dictionary) -> Dictionary:
+	for v in node.get("variants", []):
+		if v.has("band") and Story.res_band(player.resonance) == String(v["band"]):
+			return v
+		if v.has("flag") and flags.get(String(v["flag"]), false):
+			return v
+	return {}
 
 
 # =================================================================== keybinds
@@ -287,16 +415,63 @@ func load_binds() -> void:
 
 # ==================================================================== world
 
+## Tear the world down and rebuild it from another chapter's data.
+## Only ever called before play starts (chapter select) or on load —
+## dynamic entities (chests, pickups, projectiles) don't exist then.
+func switch_chapter(id: String) -> void:
+	if not Story.CHAPTER_LIST.has(id) or id == chapter_id:
+		return
+	chapter_id = id
+	var chapter: Dictionary = Story.chapter(id)
+	zones = chapter["zones"]
+	zone_count = zones.size()
+
+	if is_instance_valid(world):
+		world.free()  # immediate: everything world-owned dies with it
+	world = Node2D.new()
+	world.y_sort_enabled = true
+	add_child(world)
+	move_child(world, player.get_index())  # draw under the hero again
+
+	gates.clear()
+	interactables.clear()
+	zone_alive.clear()
+	boss_spawned.clear()
+	boss_done.clear()
+	merchant_zones.clear()
+	hazards.clear()
+	zone_grounds.clear()
+	zone_scenery.clear()
+	shop_stock.clear()
+	current_boss = null
+	elder = null
+	barrier_active = false
+	talked_to_elder = false
+	last_zone = -1
+	gust_vec = Vector2.ZERO
+	terrain_by_zone.clear()
+	for zone in zones:
+		terrain_by_zone.append(zone.get("terrain", "village"))
+	quest_key = String(chapter.get("start_quest", "talk"))
+
+	_build_world()
+	camera.limit_right = ZONE_W * zone_count
+	var sp: Array = chapter.get("start_pos", [180, 360])
+	player.global_position = Vector2(float(sp[0]), float(sp[1]))
+	ambient.color = Terrains.get_terrain(terrain_by_zone[0])["tint"]
+	refresh_quest()
+
+
 func _build_world() -> void:
-	for zi in ZONES:
+	for zi in zone_count:
 		_build_zone(zi)
 
-	_wall(Rect2(0, 0, ZONE_W * ZONES, TILE))
-	_wall(Rect2(0, WORLD_H - TILE, ZONE_W * ZONES, TILE))
+	_wall(Rect2(0, 0, ZONE_W * zone_count, TILE))
+	_wall(Rect2(0, WORLD_H - TILE, ZONE_W * zone_count, TILE))
 	_wall(Rect2(-TILE, 0, TILE, WORLD_H))
-	_wall(Rect2(ZONE_W * ZONES, 0, TILE, WORLD_H))
+	_wall(Rect2(ZONE_W * zone_count, 0, TILE, WORLD_H))
 
-	for i in ZONES - 1:
+	for i in zone_count - 1:
 		gates.append(_build_gate(ZONE_W * (i + 1)))
 
 	# Battle barrier: while a zone still has monsters (or its boss),
@@ -316,31 +491,56 @@ func _build_world() -> void:
 	barrier_glow.z_index = 4
 	barrier.add_child(barrier_glow)
 	barrier.position = Vector2(-2000, -2000)  # parked (inactive)
-	add_child(barrier)
+	world.add_child(barrier)
 
-	# Elder Maren, the quest giver in the village.
-	elder = _make_npc("elder", Vector2(520, 330), "E — Talk", func() -> void:
-		if not talked_to_elder:
-			talked_to_elder = true
-			hud.dialogue(Story.BEATS["elder"], func() -> void:
-				open_gate(0)
-				quest_key = "fangmaw"
-				refresh_quest()
-				autosave()
-			)
-		else:
-			hud.dialogue(Story.BEATS["elder_repeat"])
+	# Elder Maren, the Chapter 1 quest giver in the village.
+	if chapter_id == "ch1":
+		elder = _make_npc("elder", Vector2(520, 330), "E — Talk", func() -> void:
+			if not talked_to_elder:
+				talked_to_elder = true
+				var after := func() -> void:
+					open_gate(0)
+					quest_key = "fangmaw"
+					refresh_quest()
+					autosave()
+				if get_flag("opened_" + player.cls, false) and Story.ALL_CONVOS.has("maren_" + player.cls):
+					run_convo_id("maren_" + player.cls, after)  # she read your opening choice
+				else:
+					hud.dialogue(Story.BEATS["elder"], after)
+			else:
+				hud.dialogue(Story.BEATS["elder_repeat"])
+		)
+
+	# SAFE zones (no boss, no monsters) keep a merchant from the start.
+	# Combat zones only get a wandering merchant once they're pacified —
+	# and only sometimes. No shopping mid-battlefield.
+	for zi in zone_count:
+		if String(zones[zi].get("boss", "")) == "" and zones[zi].get("enemies", []).is_empty():
+			_spawn_merchant(zi)
+
+
+func _spawn_merchant(zi: int) -> void:
+	var zone: Dictionary = zones[zi]
+	if not zone.has("merchant") or merchant_zones.has(zi):
+		return
+	merchant_zones.append(zi)
+	var pos: Vector2 = Vector2(zi * ZONE_W, 0) + Vector2(zone["merchant"][0], zone["merchant"][1])
+	var zone_idx := zi
+	_make_npc("merchant", pos, "E — Shop", func() -> void:
+		menus.open_shop(zone_idx)
 	)
 
-	# One merchant per zone.
-	for zi in ZONES:
-		var zone: Dictionary = Story.ZONES[zi]
-		if zone.has("merchant"):
-			var pos: Vector2 = Vector2(zi * ZONE_W, 0) + Vector2(zone["merchant"][0], zone["merchant"][1])
-			var zone_idx := zi
-			_make_npc("merchant", pos, "E — Shop", func() -> void:
-				menus.open_shop(zone_idx)
-			)
+
+## The post-boss arrival: a puff of travel dust and a sales pitch.
+func _merchant_arrives(zi: int) -> void:
+	if merchant_zones.has(zi):
+		return
+	_spawn_merchant(zi)
+	var zone: Dictionary = zones[zi]
+	var pos: Vector2 = Vector2(zi * ZONE_W, 0) + Vector2(zone["merchant"][0], zone["merchant"][1])
+	burst(pos, Color(0.9, 0.8, 0.5), 12)
+	sfx("coin")
+	spawn_text(pos + Vector2(0, -50), "A WANDERING MERCHANT ARRIVES!", Color(0.95, 0.85, 0.5))
 
 
 func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: Callable) -> Node2D:
@@ -365,14 +565,23 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	prompt.add_theme_constant_override("outline_size", 4)
 	prompt.visible = false
 	npc.add_child(prompt)
-	add_child(npc)
+	world.add_child(npc)
 	interactables.append({"node": npc, "prompt": prompt, "action": action})
 	return npc
 
 
 func _build_zone(zi: int) -> void:
-	var zone: Dictionary = Story.ZONES[zi]
+	var zone: Dictionary = zones[zi]
 	var zone_x := zi * ZONE_W
+
+	# Data-driven NPCs (content modules use this — no code needed):
+	# {"sprite": "villager", "x": 500, "y": 330, "prompt": "E — Talk",
+	#  "convo": "some_convo_id"}
+	for npc_def in zone.get("npcs", []):
+		var convo_id: String = npc_def["convo"]
+		_make_npc(npc_def["sprite"], Vector2(zone_x + npc_def["x"], npc_def["y"]),
+			npc_def.get("prompt", "E — Talk"), func() -> void:
+				run_convo_id(convo_id))
 
 	# Ground texture comes from the zone's TERRAIN (repaintable in dev
 	# mode via apply_terrain, so keep a reference).
@@ -383,7 +592,7 @@ func _build_zone(zi: int) -> void:
 	ground.position = Vector2(zone_x, 0)
 	ground.scale = Vector2(3, 3)
 	ground.z_index = -10
-	add_child(ground)
+	world.add_child(ground)
 	zone_grounds.append(ground)
 	_spawn_patches(zi)
 
@@ -417,13 +626,13 @@ func _spawn_scenery(zi: int) -> void:
 		spr.scale = Vector2(3, 3)
 		spr.position = Vector2(zone_x + rng.randf_range(70.0, ZONE_W - 70.0), rng.randf_range(80.0, 640.0))
 		spr.z_index = -8
-		add_child(spr)
+		world.add_child(spr)
 		zone_scenery[zi].append(spr)
 
 	# Colliding obstacles, kept off the central road.
 	var obstacles: Array = terrain.get("obstacles", ["rock"])
 	var placed: Array = []
-	var max_x := 1000.0 if Story.ZONES[zi]["boss"] != "" else 1400.0
+	var max_x := 1000.0 if zones[zi].get("boss", "") != "" else 1400.0
 	for i in terrain.get("count", 10):
 		for attempt in 40:
 			var pos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, 630.0))
@@ -464,7 +673,7 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	if is_tree:
 		spr.position = Vector2(0, -18)  # trunk base sits at the body origin
 	body.add_child(spr)
-	add_child(body)
+	world.add_child(body)
 	return body
 
 
@@ -478,7 +687,7 @@ func _wall(rect: Rect2) -> void:
 	shape.size = rect.size
 	cs.shape = shape
 	body.add_child(cs)
-	add_child(body)
+	world.add_child(body)
 
 
 func _build_gate(x: float) -> Node2D:
@@ -493,7 +702,7 @@ func _build_gate(x: float) -> Node2D:
 		spr.scale = Vector2(3, 3)
 		spr.position = Vector2(x, row * TILE + TILE / 2.0)
 		spr.z_index = -5
-		add_child(spr)
+		world.add_child(spr)
 	_wall(Rect2(x - TILE / 2.0, 0, TILE, gap_top))
 	_wall(Rect2(x - TILE / 2.0, gap_bottom, TILE, WORLD_H - gap_bottom))
 
@@ -504,14 +713,14 @@ func _build_gate(x: float) -> Node2D:
 		torch.scale = Vector2(3, 3)
 		torch.position = Vector2(x, (gap_top if side == -1 else gap_bottom) + side * -26.0)
 		torch.z_index = 2
-		add_child(torch)
+		world.add_child(torch)
 		var glow := Sprite2D.new()
 		glow.texture = Art.tex("glow")
 		glow.modulate = Color(1.0, 0.6, 0.2, 0.5)
 		glow.position = torch.position + Vector2(0, -12)
 		glow.scale = Vector2(2.5, 2.5)
 		glow.z_index = 1
-		add_child(glow)
+		world.add_child(glow)
 		var tween := glow.create_tween()
 		tween.set_loops()
 		tween.tween_property(glow, "scale", Vector2(3.1, 3.1), 0.5 + randf() * 0.3)
@@ -532,7 +741,7 @@ func _build_gate(x: float) -> Node2D:
 		spr.scale = Vector2(3, 3)
 		spr.position = Vector2(0, (row - 1) * TILE)
 		gate.add_child(spr)
-	add_child(gate)
+	world.add_child(gate)
 	return gate
 
 
@@ -553,21 +762,28 @@ func open_gate(index: int) -> void:
 func _on_boss_trigger(zi: int) -> void:
 	if boss_spawned.get(zi, false):
 		return
-	var kind: String = Story.ZONES[zi]["boss"]
+	var kind: String = zones[zi]["boss"]
 	if boss_done.get(kind, false):
 		return
 	boss_spawned[zi] = true
-	hud.dialogue(Story.BEATS["pre_" + kind], func() -> void:
+	var beat: Array = Story.BEATS.get("pre_" + kind, [])
+	if beat.is_empty():
 		_spawn_boss(zi, kind)
-	)
+	else:
+		hud.dialogue(beat, func() -> void:
+			_spawn_boss(zi, kind)
+		)
 
 
 func _spawn_boss(zi: int, kind: String) -> void:
 	shake(6.0)
-	current_boss = Boss.make_boss(self, kind, Vector2(zi * ZONE_W + 1380, 360))
-	add_child(current_boss)
+	# Zones may spawn a boss below its "story" level (Act pacing).
+	current_boss = Boss.make_boss(self, kind, Vector2(zi * ZONE_W + 1380, 360),
+		int(zones[zi].get("boss_level", -1)))
+	current_boss.story_boss = true  # its death advances the chapter
+	world.add_child(current_boss)
 	current_boss.roar()
-	hud.show_boss_bar(Story.ENEMIES[kind]["name"])
+	hud.show_boss_bar(Story.ALL_ENEMIES[kind]["name"])
 	set_music("boss_" + kind)
 
 
@@ -576,39 +792,64 @@ func on_boss_died(kind: String) -> void:
 	var boss_pos := current_boss.global_position
 	current_boss = null
 	hud.hide_boss_bar()
-	set_music(Terrains.get_terrain(terrain_by_zone[clampi(last_zone, 0, 3)]).get("music", "village"))
+	set_music(Terrains.get_terrain(terrain_by_zone[clampi(last_zone, 0, zone_count - 1)]).get("music", "village"))
 	player.hp = player.max_hp
 	player.mp = player.max_mp
 	player.potions = maxi(player.potions, 3)
 
 	# Bosses always drop a golden chest + a pile of gold.
 	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
-	Pickup.drop_gold(self, Story.ENEMIES[kind].get("gold", 50), boss_pos)
+	Pickup.drop_gold(self, Story.ALL_ENEMIES[kind].get("gold", 50), boss_pos)
 
-	match kind:
-		"fangmaw":
-			quest_key = "morwen"
-			hud.dialogue(Story.BEATS["post_fangmaw"], func() -> void:
-				open_gate(1)
-				refresh_quest()
-			)
-		"morwen":
-			quest_key = "vargoth"
-			hud.dialogue(Story.BEATS["post_morwen"], func() -> void:
-				open_gate(2)
-				refresh_quest()
-			)
-		"vargoth":
-			quest_key = "done"
+	# Now that the zone is safe, a wandering merchant MAY set up camp.
+	var mzi := clampi(int(boss_pos.x / ZONE_W), 0, zone_count - 1)
+	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
+		call_deferred("_merchant_arrives", mzi)
+
+	# Boss zones may also carry a clear_flag (arc/act progress markers).
+	var boss_cflag := String(zones[mzi].get("clear_flag", ""))
+	if boss_cflag != "":
+		set_flag(boss_cflag)
+
+	# Chapter-driven progression: the final boss ends the chapter; any
+	# other boss opens the gate out of its zone and points the quest at
+	# the next boss down the road.
+	if kind == String(Story.chapter(chapter_id).get("final_boss", "")):
+		quest_key = "done"
+		refresh_quest()
+		var epilogue: Array = Story.BEATS.get("epilogue", [])
+		var end_it := func() -> void:
+			state = ST_VICTORY
+			set_music("")
+			sfx("victory")
+			hud.show_end_screen("VICTORY", "The Ember Crown is reclaimed. Thanks for playing Chapter 1!\nPress R to play again.", Color(1.0, 0.85, 0.35))
+			get_tree().paused = true
+		if epilogue.is_empty():
+			end_it.call()
+		else:
+			hud.dialogue(epilogue, end_it)
+	else:
+		quest_key = _next_quest_after(mzi)
+		var beat: Array = Story.BEATS.get("post_" + kind, [])
+		var proceed := func() -> void:
+			if mzi < gates.size():
+				open_gate(mzi)
 			refresh_quest()
-			hud.dialogue(Story.BEATS["epilogue"], func() -> void:
-				state = ST_VICTORY
-				set_music("")
-				sfx("victory")
-				hud.show_end_screen("VICTORY", "The Ember Crown is reclaimed. Thanks for playing Chapter 1!\nPress R to play again.", Color(1.0, 0.85, 0.35))
-				get_tree().paused = true
-			)
+		if beat.is_empty():
+			proceed.call()
+		else:
+			hud.dialogue(beat, proceed)
 	autosave()
+
+
+## The quest key after clearing zone zi: the next boss down the road,
+## or the chapter's own "done" text if it has one.
+func _next_quest_after(zi: int) -> String:
+	for z in range(zi + 1, zone_count):
+		var kind := String(zones[z].get("boss", ""))
+		if kind != "" and not boss_done.get(kind, false):
+			return kind
+	return "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
 
 
 func on_enemy_died(e: Enemy) -> void:
@@ -629,19 +870,28 @@ func on_enemy_died(e: Enemy) -> void:
 		refresh_quest()
 		if zone_alive[e.zone_idx] == 0:
 			_try_spawn_boss(e.zone_idx)
+			if zones[e.zone_idx].get("boss", "") == "":
+				# Bossless zones: clearing IS the objective ("clear_flag"),
+				# and the wandering merchant may arrive.
+				var cflag := String(zones[e.zone_idx].get("clear_flag", ""))
+				if cflag != "":
+					set_flag(cflag)
+					autosave()
+				if loot_rng.randf() < 0.65 and not merchant_zones.has(e.zone_idx):
+					call_deferred("_merchant_arrives", e.zone_idx)
 
 
 func _try_spawn_boss(zi: int) -> void:
 	if zone_alive.get(zi, 0) > 0:
 		return
-	var kind: String = Story.ZONES[zi]["boss"]
+	var kind: String = zones[zi].get("boss", "")
 	if kind == "" or boss_done.get(kind, false) or boss_spawned.get(zi, false):
 		return
 	_on_boss_trigger(zi)
 
 
 func add_enemy(e: Enemy) -> void:
-	add_child(e)
+	world.add_child(e)
 
 
 # ============================================================ death / respawn
@@ -661,7 +911,7 @@ func on_player_died() -> void:
 		current_boss.reset_fight()
 		hud.update_boss_bar(1.0)
 
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, ZONES - 1)
+	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1)
 	player.global_position = Vector2(zi * ZONE_W + 180.0, 360.0)
 	player.revive()
 	hud.dim(0.0)
@@ -674,13 +924,13 @@ func on_player_died() -> void:
 func zone_pacified(zi: int) -> bool:
 	if zone_alive.get(zi, 0) > 0:
 		return false
-	var kind: String = Story.ZONES[zi]["boss"]
+	var kind: String = zones[zi].get("boss", "")
 	return kind == "" or boss_done.get(kind, false)
 
 
 ## Seal or lift the entrance barrier based on the player's zone state.
 func _update_barrier() -> void:
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, ZONES - 1)
+	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1)
 	var want := zi > 0 and not zone_pacified(zi)
 	if want and not barrier_active:
 		sfx("gate")
@@ -696,16 +946,17 @@ func _update_barrier() -> void:
 
 ## Quest line + live "monsters left" counter for the player's zone.
 func refresh_quest() -> void:
-	var text: String = Story.QUESTS[quest_key]
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, ZONES - 1) if player else 0
+	var text: String = Story.quest_text(quest_key)
+	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1) if player else 0
+	var boss_kind: String = zones[zi].get("boss", "")
 	var left: int = zone_alive.get(zi, 0)
-	if left > 0 and Story.ZONES[zi]["boss"] != "" and not boss_done.get(Story.ZONES[zi]["boss"], false):
+	if left > 0 and boss_kind != "" and not boss_done.get(boss_kind, false):
 		text += "   —   %d monster%s left" % [left, "" if left == 1 else "s"]
 	hud.set_quest(text)
 
 
 func clamp_to_zone(pos: Vector2, anchor: Vector2) -> Vector2:
-	var zi := clampi(int(anchor.x / ZONE_W), 0, ZONES - 1)
+	var zi := clampi(int(anchor.x / ZONE_W), 0, zone_count - 1)
 	return Vector2(
 		clampf(pos.x, zi * ZONE_W + 80.0, (zi + 1) * ZONE_W - 80.0),
 		clampf(pos.y, 90.0, WORLD_H - 90.0)
@@ -929,7 +1180,7 @@ func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration :=
 	spr.global_position = pos
 	spr.scale = Vector2(radius / 22.0, radius / 26.0)
 	spr.z_index = -7
-	add_child(spr)
+	world.add_child(spr)
 	hazards.append({"zone": zi, "type": type, "pos": pos, "radius": radius,
 		"until": (Time.get_ticks_msec() / 1000.0 + duration) if duration > 0.0 else -1.0,
 		"drift": drift, "sprite": spr})
@@ -1094,10 +1345,10 @@ func _process(delta: float) -> void:
 		reticle.visible = false
 
 	# Zone banner + ambient tint when crossing into a new zone.
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, ZONES - 1)
+	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1)
 	if zi != last_zone:
 		if last_zone != -1 and play_started:
-			hud.flash_title(Story.ZONES[zi]["name"])
+			hud.flash_title(zones[zi]["name"])
 			autosave()
 		last_zone = zi
 		var terrain := Terrains.get_terrain(terrain_by_zone[zi])
@@ -1114,7 +1365,7 @@ func _process(delta: float) -> void:
 		if not is_instance_valid(current_boss):
 			set_music(terrain.get("music", "village"))
 		_try_spawn_boss(zi)
-	hud.set_zone(Story.ZONES[zi]["name"])
+	hud.set_zone(zones[zi]["name"])
 
 	# ------------------------------------------------ terrain mechanics ---
 	var cur_terrain := Terrains.get_terrain(terrain_by_zone[zi])
@@ -1189,5 +1440,5 @@ func _process(delta: float) -> void:
 
 	# Safety net: no dash, knockback or physics glitch may ever leave the
 	# hero stranded outside the world walls.
-	player.global_position.x = clampf(player.global_position.x, 44.0, ZONE_W * ZONES - 44.0)
+	player.global_position.x = clampf(player.global_position.x, 44.0, ZONE_W * zone_count - 44.0)
 	player.global_position.y = clampf(player.global_position.y, 64.0, WORLD_H - 64.0)

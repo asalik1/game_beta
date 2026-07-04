@@ -1,6 +1,6 @@
-Character and monster sprites in this folder are from the
+﻿Character and monster sprites in this folder are from the
 Dungeon Crawl Stone Soup tileset, which is released into the
-PUBLIC DOMAIN (CC0) — no attribution required, free for any use
+PUBLIC DOMAIN (CC0) â€” no attribution required, free for any use
 including commercial.
 
 Source: https://github.com/crawl/crawl  (crawl-ref/source/rltiles)
@@ -13,5 +13,6 @@ How the override system works:
   resolution, so you can drop in art of any size.
 
   To restyle a character, replace its PNG here (warrior/archer/mage/
-  assassin/wolf/direwolf/spider/cultist/skeleton/witch/king). Delete a
+  assassin/paladin/warlock/wolf/direwolf/spider/cultist/skeleton/witch/king). Delete a
   PNG to fall back to the built-in procedural art.
+

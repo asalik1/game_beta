@@ -74,15 +74,30 @@ func _run() -> void:
 	add_child(game)
 	await _frames(10)
 
-	# 1. Class select -> intro.
+	# 1. Chapter select -> class select -> opening.
+	if not (game.menus.is_open() and game.menus.current == "chapter_select"):
+		return _fail("chapter select did not open")
+	game.menus.pick_chapter("ch1")
+	await _frames(2)
 	if not (game.menus.is_open() and game.menus.current == "class_select"):
 		return _fail("class select did not open")
 	game.menus.pick_class("warrior")
 	await _frames(5)
 	if not game.hud.dialogue_active:
-		return _fail("intro dialogue did not open after class select")
-	await _skip_dialogue()
-	print("ok: class select + intro")
+		return _fail("warrior opening scene did not start after class select")
+	await _skip_dialogue()  # narration up to Bren's question
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("warrior opening offered no decision")
+	var res_before := game.player.resonance
+	game.hud._choose(0)  # kneel: own the harm
+	await _frames(2)
+	if game.player.resonance <= res_before or not game.get_flag("owned_the_harm", false):
+		return _fail("opening choice did not move resonance / set its flag")
+	await _skip_dialogue()  # Bren's reply + closing narration
+	print("ok: class select + warrior opening (owned the harm)")
+	if game.merchant_zones != [0]:
+		return _fail("only the village should start with a merchant (got %s)" % str(game.merchant_zones))
 	_buff()
 
 	# 2. Talk to the elder (simulated E keypress) -> gate 0 opens.
@@ -104,17 +119,26 @@ func _run() -> void:
 	Input.parse_input_event(ev_up)
 	if not game.hud.dialogue_active:
 		return _fail("elder dialogue did not open")
+	# Maren's greeting must READ the road choice (flag-gated variant).
+	if not ("KNELT" in game.hud.text_label.text):
+		return _fail("Maren did not react to the opening choice (got '%s')" % game.hud.text_label.text)
 	await _skip_dialogue()
 	await _frames(2)
 	if game.gates[0] != null:
 		return _fail("gate 0 did not open after elder talk")
-	print("ok: elder talk + gate 0")
+	print("ok: elder talk reads opening choice + gate 0")
 
 	# 3. Fire every ability of every class against dummy wolves.
 	game.player.global_position = Vector2(900, 360)
 	await _frames(5)
 	for cls in Classes.CLASSES:
 		game.player.set_class(cls)
+		# Re-anchor every class: dashes drift the hero ~300-500px right per
+		# kit, and six kits would carry it past the village edge into zone 1
+		# — where the loop's ults slaughter the aggroed mobs, the zone
+		# clears, and the pre-boss dialogue PAUSES the tree mid-test.
+		game.player.global_position = Vector2(900, 360)
+		game.player.locked_target = null
 		_buff()
 		for i in 3:
 			_dummy(Vector2(90 + i * 50, i * 40 - 40))
@@ -130,7 +154,12 @@ func _run() -> void:
 	_buff()
 	# Hard reset: clear leftover dummies, projectiles and lingering ult
 	# effects (arrow storm, delayed meteor) so later steps are clean.
+	# Six classes of dashes and teleports drift the hero ~1000px right —
+	# past the village edge into zone 1 — so anchor the position back too,
+	# or later dummy-relative tests fight real aggroed monsters.
 	_clear_combat()
+	game.player.locked_target = null
+	game.player.global_position = Vector2(900, 360)
 	await _frames(45)
 
 	# 3b. Target lock cycling.
@@ -200,7 +229,17 @@ func _run() -> void:
 	game.player.cds["a3"] = 0.0
 	game.player.mp = game.player.max_mp
 	game.player.use_ability("a3")
-	await _frames(90)  # knife flight + bloom + first mist ticks
+	# Poll in REAL time, not frames: headless frames run uncapped while
+	# the mist ticks on wall-clock timers (0.4s), so frame counts race
+	# far ahead of the poison. One retry in case the throw whiffed.
+	var bloom_waited := 0.0
+	while is_instance_valid(vic) and not vic.dying and vic.burn_time <= 0.0 and bloom_waited < 4.0:
+		await get_tree().create_timer(0.2).timeout
+		bloom_waited += 0.2
+		if absf(bloom_waited - 2.0) < 0.01:
+			game.player.cds["a3"] = 0.0
+			game.player.mp = game.player.max_mp
+			game.player.use_ability("a3")
 	if not is_instance_valid(vic) or vic.burn_time <= 0.0:
 		return _fail("venom bloom mist did not poison the target")
 	_clear_combat()
@@ -218,6 +257,126 @@ func _run() -> void:
 	game.player.pending_theme_note = ""
 	await _frames(3)
 	print("ok: per-ability theme variants (quake / berserk tune / venom bloom / lined shot)")
+
+	# 3c3. Paladin kit: Aegis guard + redirect smite, Consecration
+	# heal-on-hit, Chains of Wrath drag.
+	game.player.set_class("paladin")
+	game.player.themes_known = 3
+	_buff()
+	game.player.eva = 0.0
+	game.player.cds["a3"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("a3")
+	if game.player.aegis_time <= 0.0:
+		return _fail("Aegis did not raise the shield")
+	var smite_probe := _dummy(Vector2(60, 0))
+	smite_probe.max_hp = 100000.0
+	smite_probe.hp = smite_probe.max_hp
+	smite_probe.speed = 0.0
+	await _frames(3)
+	game.player.hurt_cd = 0.0
+	game.player.take_damage(10.0, "phys")
+	await _frames(3)
+	if smite_probe.hp >= smite_probe.max_hp:
+		return _fail("Aegis did not smite the attacker")
+	# Holy Consecration: every enemy struck mends you.
+	game.player.set_ability_theme("a2", "holy")
+	game.player.hp = game.player.max_hp * 0.5
+	var pal_hp := game.player.hp
+	game.player.cds["a2"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("a2")
+	await _frames(10)
+	if game.player.hp <= pal_hp:
+		return _fail("holy Consecration did not mend on hit")
+	# Chains of Wrath: the pack is dragged to the hammer. The drag tween
+	# (0.28s) and the verdict timer (0.34s) run on WALL clock, so poll in
+	# real time — headless frames race far ahead of timers.
+	var dragged := _dummy(Vector2(240, 0))
+	dragged.max_hp = 100000.0
+	dragged.hp = dragged.max_hp
+	dragged.speed = 0.0
+	await _frames(3)
+	game.player.cds["ult"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("ult")
+	var chains_waited := 0.0
+	while is_instance_valid(dragged) and not dragged.dying \
+			and dragged.hp >= dragged.max_hp and chains_waited < 3.0:
+		await get_tree().create_timer(0.2).timeout
+		chains_waited += 0.2
+	if is_instance_valid(dragged) and not dragged.dying:
+		if dragged.hp >= dragged.max_hp:
+			return _fail("Chains of Wrath dealt no damage")
+		if dragged.global_position.distance_to(game.player.global_position) > 200.0:
+			return _fail("Chains of Wrath did not drag the enemy in")
+	_clear_combat()
+	game.player.aegis_time = 0.0
+	await _frames(3)
+	print("ok: paladin kit (aegis smite, holy mend, chains drag)")
+
+	# 3c4. Warlock kit: hex death-detonation, Dark Pact blood price,
+	# Void Rift delayed burst.
+	game.player.set_class("warlock")
+	game.player.themes_known = 3
+	_buff()
+	var hexed_a := _dummy(Vector2(90, 0))
+	hexed_a.max_hp = 100000.0
+	hexed_a.hp = hexed_a.max_hp
+	hexed_a.speed = 0.0
+	var hexed_b := _dummy(Vector2(150, 0))
+	hexed_b.max_hp = 100000.0
+	hexed_b.hp = hexed_b.max_hp
+	hexed_b.speed = 0.0
+	await _frames(3)
+	game.player.cds["a2"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("a2")
+	await _frames(3)
+	if game.player.hexed.size() < 2:
+		return _fail("Hex did not curse the pack (%d cursed)" % game.player.hexed.size())
+	# Zero the hex's own DoT first so the only damage left to observe is
+	# the death-detonation itself.
+	hexed_b.burn_time = 0.0
+	hexed_b.burn_dps = 0.0
+	var b_hp: float = hexed_b.hp
+	hexed_a.take_damage(999999.0)
+	var boom_wait := 0.0
+	while is_instance_valid(hexed_b) and hexed_b.hp >= b_hp and boom_wait < 2.0:
+		await get_tree().create_timer(0.1).timeout
+		boom_wait += 0.1
+	if not is_instance_valid(hexed_b) or hexed_b.hp >= b_hp:
+		return _fail("hex death-detonation did not hit the neighbor")
+	# Dark Pact: HP is the cost, a lifesteal surge is the recovery.
+	game.player.hp = game.player.max_hp
+	game.player.cds["a3"] = 0.0
+	game.player.use_ability("a3")
+	if game.player.hp >= game.player.max_hp:
+		return _fail("Dark Pact did not take its blood price")
+	if game.player.pact_time <= 0.0:
+		return _fail("Dark Pact did not start the lifesteal surge")
+	# Void Rift: pulls for ~0.9s of WALL time, then bursts — poll.
+	hexed_b.burn_time = 0.0
+	hexed_b.burn_dps = 0.0
+	var rift_hp: float = hexed_b.hp
+	game.player.cds["ult"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("ult")
+	var rift_wait := 0.0
+	while is_instance_valid(hexed_b) and not hexed_b.dying \
+			and hexed_b.hp >= rift_hp and rift_wait < 4.0:
+		await get_tree().create_timer(0.2).timeout
+		rift_wait += 0.2
+	if is_instance_valid(hexed_b) and not hexed_b.dying and hexed_b.hp >= rift_hp:
+		return _fail("Void Rift burst dealt no damage")
+	_clear_combat()
+	game.player.hexed.clear()
+	game.player.pact_time = 0.0
+	game.player.set_class("warrior")  # restore for the combo test
+	game.player.pending_theme_note = ""
+	_buff()
+	await _frames(3)
+	print("ok: warlock kit (hex detonation, dark pact, void rift)")
 
 	# 3d. COMBO stat: at the 60% cap, ~60% of casts skip the cooldown
 	# (cds left at 0 by a proc, or set to the full cooldown otherwise).
@@ -254,7 +413,7 @@ func _run() -> void:
 	var boss_hi := Story.enemy_stats_at("fangmaw", 30)
 	if w_hi["hp"] <= w_lo["hp"] or w_hi["dmg"] <= w_lo["dmg"]:
 		return _fail("wolf did not scale with level")
-	if boss_hi["hp"] / Story.ENEMIES["fangmaw"]["hp"] <= w_hi["hp"] / Story.ENEMIES["wolf"]["hp"]:
+	if boss_hi["hp"] / Story.ALL_ENEMIES["fangmaw"]["hp"] <= w_hi["hp"] / Story.ALL_ENEMIES["wolf"]["hp"]:
 		return _fail("boss growth should outpace trash growth")
 	var lv_wolf := _dummy(Vector2(120, 40))
 	var lv_wolf30 := Enemy.make(game, "wolf", game.player.global_position + Vector2(-140, 40), 30)
@@ -405,6 +564,7 @@ func _run() -> void:
 	p.gold = 4321
 	p.resonance = -37.0
 	p.faction_standing["cinderborn"] = 12
+	game.set_flag("rt_flag", true)
 	var kept_quest: String = game.quest_key
 	var kept_level: int = p.level
 	var kept_weapon: String = p.equipment["weapon"]["name"] if p.equipment.has("weapon") else ""
@@ -414,9 +574,12 @@ func _run() -> void:
 	p.resonance = 0.0
 	p.faction_standing["cinderborn"] = 0
 	game.quest_key = "talk"
+	game.flags.clear()
 	var loaded := SaveGame.read(SaveGame.MAX_SLOTS)
 	if loaded.is_empty():
 		return _fail("save file did not write/read")
+	if String(loaded.get("chapter", "")) != "ch1":
+		return _fail("save did not record its chapter")
 	SaveGame.apply(game, loaded)
 	await _frames(2)
 	if p.gold != 4321 or p.resonance != -37.0 or p.faction_standing["cinderborn"] != 12:
@@ -428,10 +591,83 @@ func _run() -> void:
 		return _fail("save did not restore equipment")
 	if absf(p.atk - kept_atk) > 0.01:
 		return _fail("stats after load differ from before save (atk %.2f vs %.2f)" % [p.atk, kept_atk])
+	if not game.get_flag("rt_flag", false):
+		return _fail("story flags did not survive the save roundtrip")
+	game.flags.clear()
 	SaveGame.delete(SaveGame.MAX_SLOTS)
 	if SaveGame.exists(SaveGame.MAX_SLOTS):
 		return _fail("save delete failed")
 	print("ok: save/load roundtrip (gold, resonance, factions, gear, stats)")
+
+	# 5c. Choice dialogue + flag engine: choices apply resonance/flags,
+	# and both flag- and band-gated text variants resolve.
+	var convo := {
+		"start": "n1",
+		"nodes": {
+			"n1": {"who": "Tester", "text": "Neutral opener.",
+				"variants": [{"band": "tempted", "text": "Tempted opener."}],
+				"choices": [
+					{"text": "Dark path", "resonance": -40.0,
+						"flags": {"chose_dark": true}, "faction": {"choir": 3}, "next": "n2"},
+					{"text": "Light path", "resonance": 10.0, "next": "n2"},
+				]},
+			"n2": {"who": "Tester", "text": "Default reply.",
+				"variants": [{"flag": "chose_dark", "text": "Flagged reply."}]},
+		},
+	}
+	var convo_state := {"done": false}
+	game.player.resonance = 0.0
+	game.run_convo(convo, func() -> void: convo_state["done"] = true)
+	await _frames(2)
+	if not game.hud.choices_active or game.hud.choice_count != 2:
+		return _fail("choice dialogue did not present 2 options")
+	if game.hud.text_label.text != "Neutral opener.":
+		return _fail("neutral variant not chosen at resonance 0")
+	game.hud._choose(0)
+	await _frames(2)
+	if game.player.resonance != -40.0 or not game.get_flag("chose_dark", false):
+		return _fail("choice did not apply resonance/flag")
+	if game.player.faction_standing["choir"] != 3:
+		return _fail("choice did not shift faction standing")
+	if game.hud.text_label.text != "Flagged reply.":
+		return _fail("flag-gated variant not shown (got '%s')" % game.hud.text_label.text)
+	await _skip_dialogue()
+	if not convo_state["done"]:
+		return _fail("convo completion callback did not fire")
+	# Resonance is now -40 = "tempted" band: the opener must change.
+	game.run_convo(convo, Callable())
+	await _frames(2)
+	if game.hud.text_label.text != "Tempted opener.":
+		return _fail("band-gated variant not shown for tempted resonance")
+	game.hud._choose(1)
+	await _frames(2)
+	await _skip_dialogue()
+	game.player.resonance = 0.0
+	game.player.faction_standing["choir"] = 0
+	game.flags.clear()
+	print("ok: choice dialogue engine (choices, flags, factions, resonance bands)")
+
+	# 5d. Opening-convo data integrity: every node resolves, every cue
+	# has a staged scene, every opening has a Maren counterpart.
+	for cid in Story.ALL_CONVOS:
+		var convo2: Dictionary = Story.ALL_CONVOS[cid]
+		var nodes2: Dictionary = convo2["nodes"]
+		if not nodes2.has(convo2["start"]):
+			return _fail("%s: start node missing" % cid)
+		for nid in nodes2:
+			var node2: Dictionary = nodes2[nid]
+			var nxt: String = String(node2.get("next", ""))
+			if nxt != "" and not nodes2.has(nxt):
+				return _fail("%s/%s: next '%s' missing" % [cid, nid, nxt])
+			if node2.has("cue") and not (String(node2["cue"]) in Cutscene.KNOWN_CUES):
+				return _fail("%s/%s: unknown cue '%s'" % [cid, nid, node2["cue"]])
+			for c2 in node2.get("choices", []):
+				var cnxt: String = String(c2.get("next", ""))
+				if cnxt != "" and not nodes2.has(cnxt):
+					return _fail("%s/%s: choice next '%s' missing" % [cid, nid, cnxt])
+		if cid.begins_with("open_") and not Story.ALL_CONVOS.has("maren_" + cid.substr(5)):
+			return _fail("%s has no matching Maren convo" % cid)
+	print("ok: opening convo data integrity (%d convos)" % Story.ALL_CONVOS.size())
 
 	# 6. Shop + codex still open fine.
 	game.player.gold = 500
@@ -491,7 +727,7 @@ func _run() -> void:
 
 	# 7..9. Each zone: enter (all aggro), clear it, boss spawns, kill it.
 	for zi in [1, 2, 3]:
-		var kind: String = Story.ZONES[zi]["boss"]
+		var kind: String = game.zones[zi]["boss"]
 		game.player.global_position = Vector2(zi * Game.ZONE_W + 300.0, 360.0)
 		await _frames(5)
 		var mobs: Array = []
@@ -586,9 +822,390 @@ func _run() -> void:
 		return _fail("resume did not restore the finished character")
 	if not game.boss_done.get("vargoth", false):
 		return _fail("resume lost boss progress")
+	if not game.merchant_zones.has(0):
+		return _fail("village merchant missing after resume")
 	SaveGame.delete(SaveGame.MAX_SLOTS)
 	print("ok: title screen + resume from save")
+
+	# 12. A second class opening end-to-end: assassin, temptation path.
+	game.queue_free()
+	await _frames(3)
+	game = main_scene.instantiate()
+	game.no_saves = true
+	add_child(game)
+	await _frames(10)
+	game.menus.pick_chapter("ch1")
+	await _frames(2)
+	game.menus.pick_class("assassin")
+	await _frames(5)
+	await _skip_dialogue()  # narration up to the carter's question
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("assassin opening offered no decision")
+	game.hud._choose(1)  # keep what you took
+	await _frames(2)
+	if game.player.resonance != -12.0 or not game.get_flag("kept_taking", false):
+		return _fail("assassin choice did not apply (res %.0f)" % game.player.resonance)
+	await _skip_dialogue()
+	print("ok: assassin opening (temptation path)")
+
+	# 13. The Paladin and Warlock openings — live now that the classes are.
+	for spec in [["paladin", "delivered_verdict"], ["warlock", "closed_tome"]]:
+		game.queue_free()
+		await _frames(3)
+		game = main_scene.instantiate()
+		game.no_saves = true
+		add_child(game)
+		await _frames(10)
+		game.menus.pick_chapter("ch1")
+		await _frames(2)
+		game.menus.pick_class(spec[0])
+		await _frames(5)
+		await _skip_dialogue()
+		await _frames(2)
+		if not game.hud.choices_active:
+			return _fail("%s opening offered no decision" % spec[0])
+		game.hud._choose(0)  # the virtue path
+		await _frames(2)
+		if not game.get_flag(spec[1], false):
+			return _fail("%s opening flag '%s' not set" % [spec[0], spec[1]])
+		await _skip_dialogue()
+		print("ok: %s opening (virtue path)" % spec[0])
+
+	# 14. Chapter 2 boots into its placeholder hub (T0 done-criterion).
+	game.queue_free()
+	await _frames(3)
+	game = main_scene.instantiate()
+	game.no_saves = true
+	add_child(game)
+	await _frames(10)
+	game.menus.pick_chapter("ch2")
+	await _frames(3)
+	if game.chapter_id != "ch2" or game.zone_count < 1:
+		return _fail("chapter 2 did not build (chapter=%s zones=%d)" % [game.chapter_id, game.zone_count])
+	game.menus.pick_class("warrior")
+	await _frames(5)
+	await _skip_dialogue()
+	await _frames(2)
+	if game.hud.choices_active:
+		game.hud._choose(0)
+		await _frames(2)
+		await _skip_dialogue()
+	if game.zones[0]["name"] != "Maren's Camp":
+		return _fail("chapter 2 hub zone missing")
+	var hub_hostiles := 0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.zone_idx == 0:
+			hub_hostiles += 1
+	if hub_hostiles != 0:
+		return _fail("chapter 2 hub should be safe (found %d hostiles)" % hub_hostiles)
+	if not game.merchant_zones.has(0):
+		return _fail("chapter 2 hub merchant missing")
+	print("ok: chapter 2 placeholder hub boots (%d zone[s])" % game.zone_count)
+
+	# ---- CONTENT-MODULE TEST HOOK ----------------------------------------
+	# T1/T2/T3/T5/T6: append your _test_*() func at the END of this file
+	# and add exactly ONE `await _test_yourthing()` line here.
+	await _test_ch2_hub()
+	await _test_ch2_factions()
+	await _test_ch2_aldric()
+	await _test_ch2_act1()
+	# -----------------------------------------------------------------------
+	await _test_ch2_bosses()
 
 	print("AUTOTEST PASS")
 	get_tree().paused = false
 	get_tree().quit(0)
+
+
+## (T1) Maren's camp hub: briefing reads the common opening flags, sets
+## the quest + gate flag, and short-circuits on repeat visits.
+func _test_ch2_hub() -> void:
+	# Runs right after section 14: a ch2 warrior standing in the camp.
+	if not game.get_flag("chose_virtue", false):
+		return _fail("opening did not set the common chose_virtue flag")
+	var maren_action := Callable()
+	for entry in game.interactables:
+		if entry["prompt"].text == "E — Maren":
+			maren_action = entry["action"]
+	if not maren_action.is_valid():
+		return _fail("Maren NPC missing from the camp")
+	maren_action.call()
+	await _frames(2)
+	if not game.hud.dialogue_active:
+		return _fail("Maren briefing did not open")
+	if not ("chose BACK" in game.hud.text_label.text):
+		return _fail("Maren did not read the opening choice (got '%s')" % game.hud.text_label.text)
+	await _skip_dialogue()  # m1 + m2 -> m3 presents the choices
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("Maren briefing offered no choices")
+	game.hud._choose(0)  # "point me east"
+	await _frames(2)
+	await _skip_dialogue()
+	if not game.get_flag("ch2_briefed", false) or game.quest_key != "ch2_act1":
+		return _fail("briefing did not set flag/quest (quest=%s)" % game.quest_key)
+	# Repeat visit: the variant-next short-circuit, no choices re-offered.
+	maren_action.call()
+	await _frames(2)
+	if not game.hud.dialogue_active or not ("East, shard-bearer" in game.hud.text_label.text):
+		return _fail("repeat Maren visit did not short-circuit")
+	await _skip_dialogue()
+	await _frames(2)
+	if game.hud.choices_active:
+		return _fail("repeat Maren visit re-offered the briefing choices")
+	print("ok: T1 hub (Maren briefing reads flags, quest set, short-circuit)")
+
+
+## (T5) Faction arcs: joining is exclusive, standings shift, the ambient
+## factions keep score without recruiting.
+func _test_ch2_factions() -> void:
+	var acts := {}
+	for entry in game.interactables:
+		acts[entry["prompt"].text] = entry["action"]
+	for needed in ["E — Accord", "E — Cinderborn", "E — The Cage", "E — Pilgrim"]:
+		if not acts.has(needed):
+			return _fail("faction NPC '%s' missing from the camp" % needed)
+
+	# Join the Accord.
+	var accord_before: int = game.player.faction_standing["accord"]
+	acts["E — Accord"].call()
+	await _frames(2)
+	await _skip_dialogue()  # the pitch
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("Accord recruiter offered no choices")
+	game.hud._choose(0)  # join
+	await _frames(2)
+	await _skip_dialogue()
+	if not game.get_flag("joined_accord", false) or not game.get_flag("faction_chosen", false):
+		return _fail("joining the Accord did not set its flags")
+	if game.player.faction_standing["accord"] != accord_before + 20:
+		return _fail("Accord standing wrong (%d)" % game.player.faction_standing["accord"])
+	if game.player.faction_standing["cinderborn"] != -10:
+		return _fail("joining Accord should cost Cinderborn standing")
+	if game.quest_key != "ch2_accord1":
+		return _fail("Accord arc quest not set (got %s)" % game.quest_key)
+
+	# The rival now brushes you off — and offers NO join.
+	acts["E — Cinderborn"].call()
+	await _frames(2)
+	if not ("got to you first" in game.hud.text_label.text):
+		return _fail("Cinderborn did not react to the Accord join")
+	await _skip_dialogue()
+	await _frames(2)
+	if game.hud.choices_active:
+		return _fail("Cinderborn still offered choices after exclusivity")
+
+	# Wildfang: free the caged scout.
+	var wf_before: int = game.player.faction_standing["wildfang"]
+	acts["E — The Cage"].call()
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("cage encounter offered no choices")
+	game.hud._choose(0)  # open the cage
+	await _frames(2)
+	await _skip_dialogue()
+	if game.player.faction_standing["wildfang"] != wf_before + 10:
+		return _fail("freeing the scout did not raise Wildfang standing")
+	acts["E — The Cage"].call()
+	await _frames(2)
+	if not ("empty" in game.hud.text_label.text):
+		return _fail("cage encounter did not resolve permanently")
+	await _skip_dialogue()
+
+	# Choir: hear the litany.
+	var ch_before: int = game.player.faction_standing["choir"]
+	acts["E — Pilgrim"].call()
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("pilgrim offered no choices")
+	game.hud._choose(0)  # listen
+	await _frames(2)
+	await _skip_dialogue()
+	if game.player.faction_standing["choir"] != ch_before + 6:
+		return _fail("the litany did not raise Choir standing")
+	print("ok: T5 factions (exclusive join, standings, ambient Wildfang/Choir)")
+
+
+## (T6) Aldric: hub-and-spokes lore, act-progress gate, the buried truth.
+func _test_ch2_aldric() -> void:
+	var aldric := Callable()
+	for entry in game.interactables:
+		if entry["prompt"].text == "E — Ser Aldric":
+			aldric = entry["action"]
+	if not aldric.is_valid():
+		return _fail("Aldric missing from the camp")
+	aldric.call()
+	await _frames(2)
+	await _skip_dialogue()  # greeting -> the question hub
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("Aldric offered no questions")
+	# ch2_briefed is set, blight_scouted is NOT: expect 3 options
+	# (cost question, crown question, leave) — the secret stays hidden.
+	if game.hud.choice_count != 3:
+		return _fail("Aldric question count wrong pre-act (%d)" % game.hud.choice_count)
+	game.hud._choose(0)  # what did it cost
+	await _frames(2)
+	await _skip_dialogue()  # part 1 -> back at the hub
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("Aldric hub did not loop back after an answer")
+	game.hud._choose(2)  # leave
+	await _frames(2)
+	await _skip_dialogue()
+	# Act progress (T2 will set this in play): the secret unlocks.
+	game.set_flag("blight_scouted")
+	aldric.call()
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if game.hud.choice_count != 4:
+		return _fail("Aldric secret did not unlock with act progress (%d)" % game.hud.choice_count)
+	game.hud._choose(2)  # what he never told Maren
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if not game.get_flag("aldric_truth", false):
+		return _fail("hearing the secret did not set aldric_truth")
+	if game.hud.choices_active:
+		game.hud._choose(game.hud.choice_count - 1)  # leave
+		await _frames(2)
+		await _skip_dialogue()
+	game.flags.erase("blight_scouted")  # leave T2's flag pristine
+	print("ok: T6 Aldric (question hub, act gate, the truth)")
+
+
+## (T2) Act 1: four zones, arc flags, act-scaled bosses, quest chain.
+func _test_ch2_act1() -> void:
+	if game.zone_count != 5:
+		return _fail("act 1 zones did not append (zones=%d)" % game.zone_count)
+	_buff()
+	if game.gates[0] != null:
+		return _fail("camp gate should already be open (briefing flag)")
+	game.player.global_position = Vector2(1 * Game.ZONE_W + 300.0, 360.0)
+	await _frames(5)
+
+	# Sera's blue door + the fallen courier.
+	var acts := {}
+	for entry in game.interactables:
+		acts[entry["prompt"].text] = entry["action"]
+	if not acts.has("E — The Mill") or not acts.has("E — A Fallen Courier"):
+		return _fail("Greyrun landmarks missing")
+	acts["E — The Mill"].call()
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if game.hud.choices_active:
+		game.hud._choose(0)
+		await _frames(2)
+		await _skip_dialogue()
+	if not game.get_flag("mill_seen", false):
+		return _fail("the blue door went unrecorded")
+	acts["E — A Fallen Courier"].call()
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("courier offered no choices")
+	game.hud._choose(0)  # accord member: 'pocket the seal' (Vessa option hidden)
+	await _frames(2)
+	await _skip_dialogue()
+	if not game.get_flag("relic_recovered", false):
+		return _fail("courier seal not recovered")
+
+	# Clear the Mills: bossless clear sets blight_scouted + opens the gate.
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.zone_idx == 1:
+			e.take_damage(9999999.0)
+	await _frames(10)
+	if not game.get_flag("blight_scouted", false):
+		return _fail("clearing the Mills did not set blight_scouted")
+	if game.gates[1] != null:
+		return _fail("Mills gate did not open on clear")
+
+	# The Howling Fields: warband falls, the Stormwarden comes act-scaled.
+	game.player.global_position = Vector2(2 * Game.ZONE_W + 300.0, 360.0)
+	await _frames(5)
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.zone_idx == 2 and not (e is Boss):
+			e.take_damage(9999999.0)
+	var guard := 0
+	while not is_instance_valid(game.current_boss) and guard < 200:
+		await _frames(5)
+		guard += 5
+		if game.hud.dialogue_active:
+			await _skip_dialogue()
+	if not is_instance_valid(game.current_boss) or game.current_boss.kind != "stormwarden":
+		return _fail("Stormwarden did not spawn after the Fields cleared")
+	if game.current_boss.level != 8:
+		return _fail("Stormwarden not act-scaled (level %d)" % game.current_boss.level)
+	game.current_boss.take_damage(99999999.0)
+	await _frames(10)
+	if game.hud.dialogue_active:
+		await _skip_dialogue()
+	await _frames(5)
+	if game.quest_key != "choirmother":
+		return _fail("quest did not advance past the Stormwarden (got %s)" % game.quest_key)
+	if game.gates[2] != null:
+		return _fail("Fields gate did not open")
+
+	# Sporewood clear, then Choir's Hollow and its Mother end the act.
+	game.player.global_position = Vector2(3 * Game.ZONE_W + 300.0, 360.0)
+	await _frames(5)
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.zone_idx == 3:
+			e.take_damage(9999999.0)
+	await _frames(10)
+	if not game.get_flag("sporewood_cleared", false) or game.gates[3] != null:
+		return _fail("Sporewood clear did not open the way")
+	game.player.global_position = Vector2(4 * Game.ZONE_W + 300.0, 360.0)
+	await _frames(5)
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.zone_idx == 4 and not (e is Boss):
+			e.take_damage(9999999.0)
+	guard = 0
+	while not is_instance_valid(game.current_boss) and guard < 200:
+		await _frames(5)
+		guard += 5
+		if game.hud.dialogue_active:
+			await _skip_dialogue()
+	if not is_instance_valid(game.current_boss) or game.current_boss.kind != "choirmother":
+		return _fail("Choir Mother did not spawn")
+	game.current_boss.take_damage(99999999.0)
+	await _frames(10)
+	if game.hud.dialogue_active:
+		await _skip_dialogue()
+	await _frames(5)
+	if not game.get_flag("act1_complete", false):
+		return _fail("act 1 completion flag not set")
+	if game.quest_key != "done_ch2":
+		return _fail("chapter done quest wrong (got %s)" % game.quest_key)
+	print("ok: T2 act 1 (Mills/Fields/Sporewood/Hollow, scaled bosses, arc flags)")
+
+
+## (T4) Chapter 2 bosses: spawn, signature move, enrage threshold, and a
+## story-neutral death for each content boss (the module's own kill-flow
+## selftest — runs in the ch2 hub the previous section booted into).
+func _test_ch2_bosses() -> void:
+	_buff()
+	game.player.global_position = Vector2(600, 360)
+	await _frames(5)
+	var err: String = await preload("res://scripts/content/ch2_bosses.gd").selftest(game)
+	if err != "":
+		_fail(err)
+		# quit(1) lands at frame end; never resume, or _run would print
+		# AUTOTEST PASS and quit(0) over the failure.
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch2 bosses (spawn / signature / enrage / story-neutral death) — stormwarden, choirmother, nullwarden")

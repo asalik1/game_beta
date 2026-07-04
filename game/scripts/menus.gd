@@ -25,7 +25,7 @@ func close() -> void:
 		root = null
 	listening_action = ""
 	# Boot menus unpause only once the game actually starts.
-	if current != "class_select" and current != "title":
+	if not (current in ["class_select", "title", "chapter_select"]):
 		get_tree().paused = false
 	current = ""
 	if game.play_started:
@@ -148,7 +148,7 @@ func open_title() -> void:
 			game.load_save(slot)
 		var b := _btn(row, "  %s — Lv %d" % [cname, s["level"]], resume, Color(0.6, 1.0, 0.6), true, icon)
 		b.custom_minimum_size = Vector2(360, 0)
-		b.tooltip_text = Story.QUESTS.get(s["quest"], "")
+		b.tooltip_text = Story.quest_text(s["quest"])
 		var when := Time.get_datetime_string_from_unix_time(s["saved_at"]).replace("T", "  ")
 		var wl := _lbl(row, when, 12, Color(0.55, 0.58, 0.66))
 		wl.custom_minimum_size = Vector2(170, 0)
@@ -163,53 +163,95 @@ func open_title() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(spacer)
-	_btn(vbox, "  ⚔  New Game  ", func() -> void: open_class_select(), Color(0.95, 0.85, 0.5))
+	_btn(vbox, "  ⚔  New Game  ", func() -> void: open_chapter_select(), Color(0.95, 0.85, 0.5))
 	_hint(vbox, "Continue a saved hero, or forge a new one")
+
+
+# ---------------------------------------------------------- chapter select ---
+
+## New game, step one: WHICH story? The world is rebuilt from the
+## chosen chapter's data before the class is picked.
+func open_chapter_select() -> void:
+	var vbox := _open("Choose your chapter", 900, 540)
+	current = "chapter_select"
+	_lbl(vbox, "Each chapter is its own tale with its own hero. Your saved characters keep their chapters.", 14, Color(0.75, 0.75, 0.75))
+	var idx := 1
+	for chid in Story.CHAPTER_LIST:
+		var chapter: Dictionary = Story.CHAPTER_LIST[chid]
+		var pick_id: String = chid
+		var b := _btn(vbox, "  %d.  %s  " % [idx, chapter["name"]], func() -> void:
+			pick_chapter(pick_id), Color(0.95, 0.85, 0.5))
+		b.add_theme_font_size_override("font_size", 18)
+		var sub := _lbl(vbox, "        " + String(chapter.get("sub", "")), 13, Color(0.65, 0.68, 0.78))
+		sub.custom_minimum_size = Vector2(800, 0)
+		idx += 1
+	_hint(vbox, "Press the chapter's number, or click")
+
+
+func pick_chapter(id: String) -> void:
+	if root:
+		root.queue_free()
+		root = null
+	current = ""
+	game.switch_chapter(id)  # no-op if it is already the built chapter
+	open_class_select()
 
 
 # ------------------------------------------------------------ class select ---
 
 func open_class_select() -> void:
-	var vbox := _open("Choose your class", 1180, 620)
+	var vbox := _open("Choose your class", 1240, 660)
 	current = "class_select"
 	_lbl(vbox, "This choice defines your four abilities and your three THEMES — elemental playstyles that change how your abilities behave, unlocked as you level.", 15, Color(0.75, 0.75, 0.75))
 
 	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 14)
+	hbox.add_theme_constant_override("separation", 10)
 	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(hbox)
+
+	# Cards share the row equally, however many classes exist.
+	var count := Classes.CLASSES.size()
+	var card_w := (1240.0 - 48.0 - 10.0 * (count - 1)) / count
+	var dense := count > 4  # 6-class roster: tighter type, smaller icon
 
 	var idx := 1
 	for id in Classes.CLASSES:
 		var c: Dictionary = Classes.CLASSES[id]
 		var col := VBoxContainer.new()
-		col.custom_minimum_size = Vector2(272, 0)
-		col.add_theme_constant_override("separation", 6)
+		col.custom_minimum_size = Vector2(card_w, 0)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_theme_constant_override("separation", 4 if dense else 6)
 		hbox.add_child(col)
 
 		var icon := TextureRect.new()
 		icon.texture = Art.tex(c["sprite"])
-		icon.custom_minimum_size = Vector2(96, 96)
+		var icon_px := 72.0 if dense else 96.0
+		icon.custom_minimum_size = Vector2(icon_px, icon_px)
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		col.add_child(icon)
 
-		_lbl(col, c["name"], 20, Color(0.95, 0.85, 0.5))
-		_lbl(col, c["desc"], 13, Color(0.8, 0.8, 0.8))
+		_lbl(col, c["name"], 18 if dense else 20, Color(0.95, 0.85, 0.5))
+		_lbl(col, c["desc"], 12 if dense else 13, Color(0.8, 0.8, 0.8))
 		if c.has("passive"):
-			_lbl(col, "★ " + c["passive"]["text"], 12, Color(0.5, 0.95, 0.8))
+			_lbl(col, "★ " + c["passive"]["text"], 11 if dense else 12, Color(0.5, 0.95, 0.8))
 		var theme_names: Array = []
 		for theme in Classes.THEMES[id]:
 			theme_names.append(theme["name"])
-		_lbl(col, "Themes: " + " / ".join(theme_names), 12, Color(0.7, 0.8, 0.95))
+		_lbl(col, "Themes: " + " / ".join(theme_names), 11 if dense else 12, Color(0.7, 0.8, 0.95))
 		for slot in ["a1", "a2", "a3", "ult"]:
 			var ab: Dictionary = c["abilities"][slot]
 			var tag: String = "ULT" if slot == "ult" else slot.to_upper()
-			_lbl(col, "%s %s — %s" % [tag, ab["name"], ab["desc"]], 12, Color(0.65, 0.7, 0.8))
+			# Dense roster: ability names only — full text lives one hover away.
+			var line: String = "%s %s" % [tag, ab["name"]] if dense else "%s %s — %s" % [tag, ab["name"], ab["desc"]]
+			var l := _lbl(col, line, 11 if dense else 12, Color(0.65, 0.7, 0.8))
+			if dense:
+				l.tooltip_text = ab["desc"]
+				l.mouse_filter = Control.MOUSE_FILTER_STOP
 		var spacer := Control.new()
 		spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		col.add_child(spacer)
-		_btn(col, "  Choose %s  (%d)" % [c["name"], idx], func() -> void: pick_class(id), Color(0.6, 1.0, 0.6))
+		_btn(col, "  %s  (%d)" % [c["name"], idx], func() -> void: pick_class(id), Color(0.6, 1.0, 0.6))
 		idx += 1
 
 
@@ -414,6 +456,21 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	]
 	for r in rows3:
 		_stat_row(list, r[0], r[1], r[2])
+
+	# (T5) Faction standing — who in Vaelscar trusts you, and how much.
+	_lbl(list, "FACTIONS", 16, Color(0.95, 0.85, 0.5))
+	var factions := [
+		["accord", "Ember Accord", "joined_accord", "Maren's loyalists: gather the shards, break the hollow throne for good."],
+		["cinderborn", "Cinderborn", "joined_cinderborn", "Old-regime nobles: order needs a crown — find a worthy head for it."],
+		["wildfang", "Wildfang Tribes", "", "Fangmaw's beastkin descendants. They remember who opens doors. (Not joinable.)"],
+		["choir", "Hollow Choir", "", "Blight-plague survivors turned faithful. They do not recruit; they wait. (Not joinable.)"],
+	]
+	for f in factions:
+		var standing: int = int(p.faction_standing.get(f[0], 0))
+		var joined: bool = f[2] != "" and game.get_flag(f[2], false)
+		var val := "%s%d%s" % ["+" if standing > 0 else "", standing, "   ⚑ JOINED" if joined else ""]
+		var col := Color(0.6, 1.0, 0.6) if standing > 0 else (Color(1.0, 0.6, 0.6) if standing < 0 else Color(0.85, 0.85, 0.9))
+		_stat_row(list, f[1], val, f[3], col)
 	_hint(vbox, "ESC / I to close")
 
 
@@ -812,7 +869,8 @@ func open_shop(zone: int) -> void:
 
 # ------------------------------------------------------------------- codex ---
 
-const BOSS_KINDS := ["fangmaw", "morwen", "vargoth"]
+const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
+	"stormwarden", "choirmother", "nullwarden"]  # (T4) ch2 content bosses
 
 func open_codex(tab := "monsters") -> void:
 	var vbox := _open("Codex", 1000, 620)
@@ -865,11 +923,11 @@ func _codex_monsters(list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	for section in [false, true]:  # regular monsters first, then bosses
 		_lbl(list, "— BOSSES —" if section else "— MONSTERS —", 16, Color(1, 0.5, 0.5) if section else Color(0.95, 0.85, 0.5))
-		for kind in Story.ENEMIES:
+		for kind in Story.ALL_ENEMIES:
 			var is_boss: bool = kind in BOSS_KINDS
 			if is_boss != section:
 				continue
-			var st: Dictionary = Story.ENEMIES[kind]
+			var st: Dictionary = Story.ALL_ENEMIES[kind]
 
 			# One boxed card per monster.
 			var row := HBoxContainer.new()
@@ -942,8 +1000,10 @@ func _codex_terrains(list: VBoxContainer) -> void:
 	}
 	# Which Chapter 1 zone (if any) uses each terrain.
 	var found_in := {}
-	for zone in Story.ZONES:
-		found_in[zone.get("terrain", "")] = zone["name"]
+	for chid in Story.CHAPTER_LIST:
+		for zone in Story.CHAPTER_LIST[chid]["zones"]:
+			if not found_in.has(zone.get("terrain", "")):
+				found_in[zone.get("terrain", "")] = zone["name"]
 
 	for id in Terrains.DATA:
 		var t: Dictionary = Terrains.DATA[id]
@@ -1054,7 +1114,11 @@ func _codex_gear(list: VBoxContainer) -> void:
 			elif special.has("subs"):
 				var bits: Array = []
 				for stat in special["subs"]:
-					bits.append("%s +%d%%" % [Items.STAT_LABEL[stat], int(round(special["subs"][stat] * 100))])
+					var v: float = special["subs"][stat]
+					if stat in Items.FLAT_STATS:
+						bits.append("%s +%d" % [Items.STAT_LABEL[stat], int(v)])
+					else:
+						bits.append("%s +%d%%" % [Items.STAT_LABEL[stat], int(round(v * 100))])
 				extra = "  (" + ", ".join(bits) + ")"
 			var l := _lbl(row, special["name"] + extra, 13, Items.GRADE_COLOR["S"])
 			l.custom_minimum_size = Vector2(780, 0)
@@ -1160,7 +1224,7 @@ func open_dev() -> void:
 	var row4 := HBoxContainer.new()
 	row4.add_theme_constant_override("separation", 8)
 	list.add_child(row4)
-	for zi in 4:
+	for zi in game.zone_count:
 		var z: int = zi
 		_btn(row4, "Go zone %d" % z, func() -> void:
 			game.player.global_position = Vector2(z * Game.ZONE_W + 300.0, 360.0)
@@ -1174,14 +1238,14 @@ func open_dev() -> void:
 	var row5 := HBoxContainer.new()
 	row5.add_theme_constant_override("separation", 8)
 	list.add_child(row5)
-	for kind in ["fangmaw", "morwen", "vargoth"]:
+	for kind in BOSS_KINDS:
 		var k: String = kind
 		_btn(row5, "Spawn " + k, func() -> void:
 			if is_instance_valid(game.current_boss):
 				game.current_boss.queue_free()
 			game.current_boss = Boss.make_boss(game, k, game.player.global_position + Vector2(320, 0))
 			game.add_child(game.current_boss)
-			game.hud.show_boss_bar(Story.ENEMIES[k]["name"])
+			game.hud.show_boss_bar(Story.ALL_ENEMIES[k]["name"])
 			game.set_music("boss_" + k)
 			close(), Color(1, 0.6, 0.6))
 	_btn(row5, "Kill boss", func() -> void:
@@ -1281,6 +1345,13 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey and event.pressed and not event.echo:
+		if current == "chapter_select":
+			var chids: Array = Story.CHAPTER_LIST.keys()
+			var chnum: int = event.keycode - KEY_1
+			if chnum >= 0 and chnum < chids.size():
+				pick_chapter(chids[chnum])
+				get_viewport().set_input_as_handled()
+				return
 		if current == "class_select":
 			var ids: Array = Classes.CLASSES.keys()
 			var num: int = event.keycode - KEY_1
@@ -1288,7 +1359,7 @@ func _input(event: InputEvent) -> void:
 				pick_class(ids[num])
 				get_viewport().set_input_as_handled()
 			return  # can't ESC out of class select
-		if current == "title" or current == "class_select":
+		if current in ["title", "class_select", "chapter_select"]:
 			return  # boot menus: no escaping into a paused void
 		if event.keycode == KEY_ESCAPE \
 				or (current == "inventory" and event.keycode == game.binds["inventory"]) \

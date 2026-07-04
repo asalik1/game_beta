@@ -29,8 +29,17 @@ var slot_boxes: Array = []      # [{bg, cd, key, name}] for a1,a2,a3,ult,potion
 
 # dialogue
 var dialogue_box: Control
+# choice dialogue (the branching-conversation engine lives in game.gd)
+var choice_panel: Control
+var choice_frame: ColorRect
+var choice_inner: ColorRect
+var choice_option_labels: Array = []
+var choices_active := false
+var choice_count := 0
+var choice_cb := Callable()
 var speaker_label: Label
 var text_label: Label
+var hint_labels: Array = []     # hidden during cutscenes
 var dialogue_lines: Array = []
 var dialogue_index := 0
 var dialogue_done: Callable
@@ -150,6 +159,28 @@ func _ready() -> void:
 	dhint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	dialogue_box.add_child(dhint)
 
+	# ------------------------------------------- choice options panel ---
+	# Sits directly above the dialogue box when a conversation offers a
+	# decision; pick with the number keys.
+	choice_panel = Control.new()
+	choice_panel.visible = false
+	add_child(choice_panel)
+	choice_frame = ColorRect.new()
+	choice_frame.color = Color(0.9, 0.8, 0.5)
+	choice_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	choice_panel.add_child(choice_frame)
+	choice_inner = ColorRect.new()
+	choice_inner.color = Color(0.10, 0.09, 0.15, 0.97)
+	choice_inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	choice_panel.add_child(choice_inner)
+	for i in 4:
+		var opt := Label.new()
+		opt.add_theme_font_size_override("font_size", 17)
+		opt.add_theme_color_override("font_color", Color(0.92, 0.9, 0.8))
+		opt.visible = false
+		choice_panel.add_child(opt)
+		choice_option_labels.append(opt)
+
 	# --------------------------------------------------- controls hint ---
 	# Two short lines on the far left so they never collide with the
 	# ability bar's labels in the bottom center.
@@ -157,6 +188,7 @@ func _ready() -> void:
 	controls.text = "WASD move · TAB target · E talk"
 	var controls2 := _label(Vector2(14, 698), 11, Color(0.7, 0.7, 0.7), 400)
 	controls2.text = "I inventory · T skills · C codex · ESC menu"
+	hint_labels = [controls, controls2]
 	if game.dev_mode:
 		var dev_l := _label(Vector2(1120, 12), 14, Color(1.0, 0.5, 0.4), 150, HORIZONTAL_ALIGNMENT_RIGHT)
 		dev_l.text = "DEV (F1)"
@@ -439,11 +471,63 @@ func _advance_dialogue() -> void:
 		_show_line()
 
 
+## Cinematic mode: the few HUD bits a cutscene can't cover get hidden.
+func set_cinematic(on: bool) -> void:
+	for l in hint_labels:
+		l.visible = not on
+
+
+## A dialogue line that ends in a DECISION: the text shows in the normal
+## box, the options stack above it, and the number keys choose.
+func dialogue_choice(who: String, text: String, options: Array, cb: Callable) -> void:
+	get_tree().paused = true
+	dialogue_box.visible = true
+	speaker_label.text = who
+	text_label.text = text
+	game.sfx("talk")
+	choice_cb = cb
+	choice_count = options.size()
+	choices_active = true
+	var h := choice_count * 30 + 16
+	choice_frame.position = Vector2(138, 492 - h)
+	choice_frame.size = Vector2(1004, h)
+	choice_inner.position = choice_frame.position + Vector2(3, 3)
+	choice_inner.size = choice_frame.size - Vector2(6, 6)
+	for i in choice_option_labels.size():
+		var opt: Label = choice_option_labels[i]
+		opt.visible = i < choice_count
+		if i < choice_count:
+			opt.text = "%d.  %s" % [i + 1, options[i]]
+			opt.position = Vector2(168, 492 - h + 10 + i * 30)
+	choice_panel.visible = true
+
+
+func _choose(idx: int) -> void:
+	if not choices_active or idx < 0 or idx >= choice_count:
+		return
+	choices_active = false
+	choice_panel.visible = false
+	dialogue_box.visible = false
+	get_tree().paused = false
+	game.sfx("talk")
+	var cb := choice_cb
+	choice_cb = Callable()
+	if cb.is_valid():
+		cb.call(idx)  # the convo engine re-opens the box synchronously
+
+
 # ------------------------------------------------------------------ input
 
 func _unhandled_input(event: InputEvent) -> void:
 	if game.menus and game.menus.is_open():
 		return  # menus layer handles its own input
+
+	# A decision on screen swallows everything except its number keys.
+	if choices_active:
+		if event is InputEventKey and event.pressed and not event.echo:
+			_choose(event.keycode - KEY_1)
+			get_viewport().set_input_as_handled()
+		return
 
 	var pressed_confirm := false
 	if event is InputEventKey and event.pressed and not event.echo:

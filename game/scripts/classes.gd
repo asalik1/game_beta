@@ -64,6 +64,28 @@ const THEMES := {
 			"desc": "Precision: crits and marks that expose the prey.",
 			"fx": {"crit_bonus": 0.15, "vuln": 0.20}},
 	],
+	"paladin": [
+		{"id": "holy", "name": "Holy", "color": Color(1.00, 0.92, 0.55),
+			"desc": "Consecrated light: your blows mend you and sear the wicked.",
+			"fx": {"heal": 0.02, "dot": 0.25}},
+		{"id": "aegis", "name": "Aegis", "color": Color(0.60, 0.78, 1.00),
+			"desc": "The shield answers: casting hardens you, blows stagger.",
+			"fx": {"guard_buff": 80.0, "stun_chance": 0.15}},
+		{"id": "wrath", "name": "Wrath", "color": Color(1.00, 0.45, 0.22),
+			"desc": "Zeal and vengeance: crits and echoing judgment.",
+			"fx": {"crit_bonus": 0.12, "echo": 0.30}},
+	],
+	"warlock": [
+		{"id": "curse", "name": "Curse", "color": Color(0.75, 0.40, 1.00),
+			"desc": "Hexes and rot: wither, expose, detonate.",
+			"fx": {"dot": 0.30, "vuln": 0.20}},
+		{"id": "pact", "name": "Pact", "color": Color(1.00, 0.30, 0.45),
+			"desc": "Blood for power: pay in HP, feast on the return.",
+			"fx": {"heal": 0.025, "crit_bonus": 0.10}},
+		{"id": "void", "name": "Void", "color": Color(0.50, 0.55, 1.00),
+			"desc": "Gravity and hunger: pulls, slows, delayed ruin.",
+			"fx": {"slow": 0.35, "splash": 0.30}},
+	],
 }
 
 # ------------------------------------------------------------------ classes ---
@@ -122,6 +144,32 @@ const CLASSES := {
 			"ult": {"name": "Death Mark",   "cd": 45.0, "mp": 0,  "desc": "TRUE-damage burst; target takes +50% damage for 5s."},
 		},
 	},
+	"paladin": {
+		"name": "Paladin", "sprite": "paladin", "primary": "STR", "dmg_type": "phys",
+		"desc": "Holy bruiser. Fights up close, mends through violence, drags foes to the hammer.",
+		"passive": {"text": "Sanctified — blessed plate wards blade and spell alike; a sliver of every strike returns as healing.", "physres": 45.0, "magres": 45.0, "lifesteal": 0.03},
+		"hp": 125.0, "hp_lvl": 17.0, "mp": 55.0, "mp_lvl": 5.0,
+		"atk": 13.5, "atk_lvl": 3.5, "speed": 248.0,
+		"abilities": {
+			"a1": {"name": "Judgment",       "cd": 0.5,  "mp": 0,  "desc": "Bring the warhammer down on the nearest enemy."},
+			"a2": {"name": "Consecration",   "cd": 8.0,  "mp": 15, "desc": "Sanctify the ground around you: two waves of holy fire, and every enemy struck MENDS you."},
+			"a3": {"name": "Aegis",          "cd": 9.0,  "mp": 12, "desc": "Raise the shield for 2.5s: massive resistances, and attackers are SMITTEN in return."},
+			"ult": {"name": "Chains of Wrath", "cd": 50.0, "mp": 25, "desc": "Chains tether every nearby enemy and DRAG them to your hammer: stun + massive damage."},
+		},
+	},
+	"warlock": {
+		"name": "Warlock", "sprite": "warlock", "primary": "INT", "dmg_type": "magic",
+		"desc": "Ranged hexer. Curses that detonate on death, blood paid for power, rifts that bite late.",
+		"passive": {"text": "Soulthirst — 6% of all damage returns as life; +8 magic penetration.", "lifesteal": 0.06, "magpen": 8.0},
+		"hp": 95.0, "hp_lvl": 13.0, "mp": 65.0, "mp_lvl": 7.0,
+		"atk": 11.5, "atk_lvl": 3.0, "speed": 258.0,
+		"abilities": {
+			"a1": {"name": "Shadowbolt", "cd": 0.5,  "mp": 3,  "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
+			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death."},
+			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
+			"ult": {"name": "Void Rift", "cd": 55.0, "mp": 35, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS."},
+		},
+	},
 }
 
 
@@ -158,6 +206,22 @@ const ATTR_SCALE := {
 		"AGI": {"atk_flat": 1.2, "crit": 0.0007, "eva": 0.0004},
 		"INT": {"mp_flat": 1.5, "magres": 0.4},
 		"VIT": {"hp_flat": 5.0, "physres": 0.3},
+	},
+	# STR/INT hybrid: STR is still the primary, but INT converts to real
+	# power too (faith fuels the hammer) — unique among the melee classes.
+	"paladin": {
+		"STR": {"atk_flat": 1.0, "hp_flat": 3.0},
+		"AGI": {"atk_flat": 0.3, "eva": 0.0005},
+		"INT": {"atk_flat": 0.6, "mp_flat": 2.0, "magres": 0.5},
+		"VIT": {"hp_flat": 6.0, "physres": 0.4},
+	},
+	# VIT is worth more to a warlock than to other casters — HP is a
+	# spendable resource (Dark Pact).
+	"warlock": {
+		"STR": {"atk_flat": 0.2, "hp_flat": 2.0},
+		"AGI": {"atk_flat": 0.3, "eva": 0.0005},
+		"INT": {"atk_flat": 1.2, "mp_flat": 2.5},
+		"VIT": {"hp_flat": 6.0, "physres": 0.3},
 	},
 }
 
@@ -355,6 +419,74 @@ const ABILITY_THEMES := {
 				"fx": {"execute": 2.0}},
 			"blood": {"desc": "The flurry feeds: every hit of the execution restores 6% max HP.",
 				"fx": {"flurry_heal": 0.06}},
+		},
+	},
+	"paladin": {
+		"a1": {
+			"holy": {"desc": "Every righteous blow mends you and sears the target with radiance.",
+				"fx": {"heal": 0.02, "dot": 0.30}},
+			"aegis": {"desc": "Strike with the shield edge: blows stagger and harden your guard.",
+				"fx": {"stun_chance": 0.20, "guard_buff": 60.0}},
+			"wrath": {"desc": "Judgment falls TWICE — a burning backswing follows at 60% damage.",
+				"fx": {"wave2": 1, "crit_bonus": 0.10}},
+		},
+		"a2": {
+			"holy": {"desc": "Wider hallowed ground, and every foe inside mends you more deeply.",
+				"fx": {"radius_mult": 1.35, "heal": 0.035}},
+			"aegis": {"desc": "The sanctified ring is a bastion: casting grants a heavy guard and the fire staggers.",
+				"fx": {"guard_buff": 100.0, "stun_chance": 0.25}},
+			"wrath": {"desc": "The ground ERUPTS: the consecration burns, and drags enemies toward its heart.",
+				"fx": {"pull": 1, "dot": 0.40}},
+		},
+		"a3": {
+			"holy": {"desc": "Lowering the shield releases a blessing: mend 12% of your max HP.",
+				"fx": {"aegis_heal": 0.12}},
+			"aegis": {"desc": "An unbreakable wall: a stronger, longer guard that SHOVES attackers away.",
+				"fx": {"aegis_amt": 150.0, "aegis_dur": 3.5, "aegis_knock": 1}},
+			"wrath": {"desc": "Retribution: the smite on attackers strikes twice as hard and can stun.",
+				"fx": {"aegis_reflect": 2.0, "stun_chance": 0.30}},
+		},
+		"ult": {
+			"holy": {"desc": "The chains are mercy: every enemy dragged in mends 6% of your max HP.",
+				"fx": {"chain_heal": 0.06}},
+			"aegis": {"desc": "The chains anchor YOU: the verdict grants a massive guard while it lands.",
+				"fx": {"chain_guard": 120.0}},
+			"wrath": {"desc": "Longer chains, harder verdict: a wider drag and +40% damage.",
+				"fx": {"radius_mult": 1.4, "dmg_mult": 1.4}},
+		},
+	},
+	"warlock": {
+		"a1": {
+			"curse": {"desc": "The bolt hexes: a withering DoT, and it can EXPOSE the target.",
+				"fx": {"dot": 0.40, "vuln": 0.25}},
+			"pact": {"desc": "Blood-tipped: the bolt cuts 15% deeper and feeds you.",
+				"fx": {"dmg_mult": 1.15, "heal": 0.025}},
+			"void": {"desc": "The bolt tears space: it PIERCES the line and drags at everything it passes.",
+				"fx": {"pierce": 1, "slow": 0.40}},
+		},
+		"a2": {
+			"curse": {"desc": "Deeper rot: the curse withers harder, and death-detonations hit 50% harder.",
+				"fx": {"dot": 0.45, "hex_boom": 1.5}},
+			"pact": {"desc": "Leeching curse: every cursed enemy's death mends 8% of your max HP.",
+				"fx": {"hex_heal": 0.08}},
+			"void": {"desc": "The curse bends space: cursed enemies are SLOWED to a crawl.",
+				"fx": {"slow": 0.50, "slow_dur": 3.0}},
+		},
+		"a3": {
+			"curse": {"desc": "The blood is poisoned: the blast withers and EXPOSES everything it touches.",
+				"fx": {"dot": 0.50, "vuln": 0.20}},
+			"pact": {"desc": "A deeper cut: sacrifice 18% instead — hit far harder, drink far deeper.",
+				"fx": {"pact_cost": 0.18, "dmg_mult": 1.5, "pact_ls": 0.25}},
+			"void": {"desc": "The pact tears a vacuum: the blast drags enemies IN before it bites.",
+				"fx": {"pull": 1, "slow": 0.35}},
+		},
+		"ult": {
+			"curse": {"desc": "The rift leaves everything it touches EXPOSED and rotting.",
+				"fx": {"vuln": 0.50, "dot": 0.40}},
+			"pact": {"desc": "The rift feeds its master: every enemy caught in the burst mends 8% max HP.",
+				"fx": {"rift_heal": 0.08}},
+			"void": {"desc": "A greedy singularity: wider, and it drags far harder before it bursts.",
+				"fx": {"radius_mult": 1.4, "hard_pull": 1}},
 		},
 	},
 }

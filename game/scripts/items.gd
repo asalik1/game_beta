@@ -25,7 +25,7 @@ const SLOT_MAIN := {
 }
 
 const SLOT_NAMES := {
-	"weapon": ["Blade", "Edge", "Fang", "Kunai", "Claymore", "Bow", "Crossbow", "Staff", "Wand"],
+	"weapon": ["Blade", "Edge", "Fang", "Kunai", "Claymore", "Bow", "Crossbow", "Staff", "Wand", "Hammer", "Tome"],
 	"armor":  ["Plate", "Mail", "Guard"],
 	"boots":  ["Boots", "Striders", "Treads"],
 	"charm":  ["Charm", "Talisman", "Sigil"],
@@ -51,10 +51,10 @@ const PREFIXES := {
 
 # A-grade items get a unique epic name instead of "prefix + noun".
 const A_NAMES := {
-	"weapon": ["The Ruined King's Sword", "Oathbreaker", "Dawnsplitter", "Widow's Bite", "The Shadow God's Dagger"],
-	"armor":  ["Bulwark of the Last Watch", "Heartguard", "The Unyielding", "Wyrmscale Cuirass"],
-	"boots":  ["Windrunner Greaves", "Shadowdancer Treads", "Gravewalkers", "Stormchaser Boots"],
-	"charm":  ["Eye of the Storm", "The Widow's Locket", "Emberheart", "Tear of the Old God"],
+	"weapon": ["The Ruined King's Sword", "Oathbreaker", "Dawnsplitter", "Widow's Bite", "The Shadow God's Dagger", "Lightbringer", "The Pactkeeper's Grimoire"],
+	"armor":  ["Bulwark of the Last Watch", "Heartguard", "The Unyielding", "Wyrmscale Cuirass", "Faithwall"],
+	"boots":  ["Windrunner Greaves", "Shadowdancer Treads", "Gravewalkers", "Stormchaser Boots", "Pilgrim's Resolve"],
+	"charm":  ["Eye of the Storm", "The Widow's Locket", "Emberheart", "Tear of the Old God", "Sigil of the Broken Pact"],
 }
 
 # S-grade gear is CLASS-EXCLUSIVE: unique name + synergy stats,
@@ -84,13 +84,27 @@ const S_GEAR := {
 		"boots":  {"name": "Whisperwind",       "subs": {"speed_pct": 0.10, "crit": 0.05}},
 		"charm":  {"name": "The Bloodpact",     "subs": {"crit": 0.08, "combo": 0.04}},
 	},
+	"paladin": {
+		"weapon": {"name": "Dawnbreaker, Hammer of the Highfather", "passive": "dawnbreaker", "noun": "Hammer"},
+		"armor":  {"name": "Bulwark of the Dawn",  "subs": {"hp_pct": 0.12, "physres": 14.0, "magres": 14.0}},
+		"boots":  {"name": "Greaves of the Vigil", "subs": {"speed_pct": 0.06, "hp_pct": 0.08}},
+		"charm":  {"name": "The Highfather's Oath", "subs": {"atk_pct": 0.08, "cdr": 0.06, "lifesteal": 0.02}},
+	},
+	"warlock": {
+		"weapon": {"name": "Grimoire of the Hollow Choir", "passive": "hollowchoir", "noun": "Tome"},
+		"armor":  {"name": "Vestments of the Long Bargain", "subs": {"hp_pct": 0.10, "magres": 16.0}},
+		"boots":  {"name": "Voidwalkers",                   "subs": {"speed_pct": 0.08, "magpen": 6.0}},
+		"charm":  {"name": "The First Debt",                "subs": {"atk_pct": 0.08, "lifesteal": 0.04}},
+	},
 }
 
 const PASSIVES := {
-	"kingsblade": "Cleave hurls a sword wave",
-	"ricochet":   "Arrows ricochet to a second enemy",
-	"phoenix":    "Firebolt always explodes and ignites",
-	"nightfang":  "Strikes on stunned or slowed enemies always crit",
+	"kingsblade":  "Cleave hurls a sword wave",
+	"ricochet":    "Arrows ricochet to a second enemy",
+	"phoenix":     "Firebolt always explodes and ignites",
+	"nightfang":   "Strikes on stunned or slowed enemies always crit",
+	"dawnbreaker": "Judgment calls down a pillar of light (splash + holy burn)",
+	"hollowchoir": "Shadowbolt splits into a second bolt at a second enemy",
 }
 
 # ------------------------------------------------------------------- gems ---
@@ -157,6 +171,8 @@ const SHAPE_STYLE := {
 	"Crossbow": {"main": 1.05, "subs": {"physpen": 5.0}, "tag": "penetration"},
 	"Staff":    {"main": 0.95, "subs": {"mp_flat": 15.0, "atk_pct": 0.04}, "tag": "mana + power"},
 	"Wand":     {"main": 0.85, "subs": {"combo": 0.02, "magpen": 3.0}, "tag": "combo + magic pen"},
+	"Hammer":   {"main": 1.25, "subs": {"hp_flat": 20.0}, "tag": "crushing + sturdy"},
+	"Tome":     {"main": 0.9,  "subs": {"magpen": 4.0, "lifesteal": 0.01}, "tag": "dark power"},
 	"Plate":    {"main": 1.15, "subs": {}, "tag": "bulk"},
 	"Mail":     {"main": 0.9,  "subs": {"speed_pct": 0.03}, "tag": "mobility"},
 	"Guard":    {"main": 0.95, "subs": {"physres": 10.0}, "tag": "physical resistance"},

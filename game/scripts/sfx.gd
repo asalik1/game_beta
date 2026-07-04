@@ -315,6 +315,31 @@ static func _make_ult_archer() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+## Paladin ultimate (Chains of Wrath): chain links rattle taut — two
+## quick metallic clanks — then a great bell tolls over a war-drum boom.
+## A cathedral verdict, zero melody.
+static func _make_ult_paladin() -> AudioStreamWAV:
+	var b := _buf(1.0)
+	_metal(b, 0.0, [1900.0, 2470.0, 3320.0], 0.10, 0.45)   # chain snap
+	_metal(b, 0.14, [1700.0, 2260.0, 3080.0], 0.10, 0.40)  # second link
+	_noise_sweep(b, 0.0, 0.28, 0.25, 900.0, 2600.0, 0.3)   # dragged links hiss
+	_sine_sweep(b, 0.26, 110.0, 32.0, 0.55, 0.65)          # the verdict lands
+	# Bell: inharmonic hum/prime/tierce/nominal partials, long decay.
+	_metal(b, 0.28, [220.0, 440.0, 524.0, 880.0, 1174.0], 0.7, 0.5)
+	return _to_wav(b)
+
+
+## Warlock ultimate (Void Rift): space tears — a rising indrawn hiss
+## sucked into silence, then a hollow sub-drop and a detuned dark shimmer.
+static func _make_ult_warlock() -> AudioStreamWAV:
+	var b := _buf(1.0)
+	_noise_sweep(b, 0.0, 0.4, 0.4, 300.0, 5200.0, 0.75)    # the rift inhales
+	_sine_sweep(b, 0.38, 180.0, 28.0, 0.55, 0.6)           # gravity drop
+	_metal(b, 0.42, [1310.0, 1747.0, 2333.0, 3109.0], 0.5, 0.3)  # wrong-ratio shimmer
+	_noise_sweep(b, 0.5, 0.45, 0.3, 2400.0, 200.0, 0.1)    # collapsing roar
+	return _to_wav(b)
+
+
 ## Assassin ultimate (Death Mark): a dark falling whoosh over a doom
 ## sub-pulse, then two echoing blade shings vanishing into a shadow hiss.
 static func _make_ult_assassin() -> AudioStreamWAV:
@@ -360,6 +385,8 @@ static func build_all() -> Dictionary:
 		"ult_warrior":  _make_ult_warrior(),
 		"ult_archer":   _make_ult_archer(),
 		"ult_assassin": _make_ult_assassin(),
+		"ult_paladin":  _make_ult_paladin(),
+		"ult_warlock":  _make_ult_warlock(),
 		"meteor":   _make_slam(),
 		"roar_fangmaw": _make_growl(),  # synthesized beast, not a wolfman
 	}

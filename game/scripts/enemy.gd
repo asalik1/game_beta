@@ -57,11 +57,11 @@ static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level :
 func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1) -> void:
 	game = game_node
 	kind = enemy_kind
-	var stats: Dictionary = Story.ENEMIES[enemy_kind]
+	var stats: Dictionary = _stats_for(enemy_kind)
 	display_name = stats["name"]
 	# Stats scale with the monster's LEVEL and its per-kind growth rates.
 	level = at_level if at_level > 0 else int(stats.get("level", 1))
-	var scaled := Story.enemy_stats_at(enemy_kind, level)
+	var scaled := _stats_at(enemy_kind, level)
 	max_hp = scaled["hp"]
 	hp = max_hp
 	dmg = scaled["dmg"]
@@ -115,6 +115,17 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	hp_bar_fg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hp_bar_fg.visible = false
 	add_child(hp_bar_fg)
+
+
+## Stat lookup, overridable so chapter-content monsters (see Boss's
+## Chapter 2 block + content/ch2_bosses.gd) can resolve outside
+## Story.ENEMIES until T0's content registry lands.
+func _stats_for(k: String) -> Dictionary:
+	return Story.ALL_ENEMIES[k]  # base table + registered content modules
+
+
+func _stats_at(k: String, lvl: int) -> Dictionary:
+	return Story.enemy_stats_at(k, lvl)
 
 
 func _physics_process(delta: float) -> void:

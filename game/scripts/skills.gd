@@ -103,6 +103,50 @@ const TREES := {
 			{"id": "s32", "name": "Exsanguinate", "desc": "Shadow Dash cooldown -5%", "amod": {"a2": {"cd": -0.05}}},
 		],
 	],
+	"paladin": [  # columns: Holy / Aegis / Wrath
+		[
+			{"id": "p00", "name": "Righteous Blows", "desc": "Judgment +5% damage", "amod": {"a1": {"dmg": 0.05}}},
+			{"id": "p01", "name": "Devotion",        "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "p02", "name": "Zeal",            "desc": "+1.5% crit chance", "bonus": {"crit": 0.015}},
+		],
+		[
+			{"id": "p10", "name": "Hallowed Ground", "desc": "Consecration +6% damage", "amod": {"a2": {"dmg": 0.06}}},
+			{"id": "p11", "name": "Shieldwall",      "desc": "+10 physical resistance", "bonus": {"physres": 10.0}},
+			{"id": "p12", "name": "Fervor",          "desc": "+1% combo chance", "bonus": {"combo": 0.01}},
+		],
+		[
+			{"id": "p20", "name": "Lightmender", "desc": "+1% lifesteal", "bonus": {"lifesteal": 0.01}},
+			{"id": "p21", "name": "Sanctuary",   "desc": "Aegis cooldown -5%", "amod": {"a3": {"cd": -0.05}}},
+			{"id": "p22", "name": "Crusader",    "desc": "+4 physical penetration", "bonus": {"physpen": 4.0}},
+		],
+		[
+			{"id": "p30", "name": "Beacon of Dawn", "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
+			{"id": "p31", "name": "Unbreakable",    "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "p32", "name": "Executioner of the Faith", "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
+		],
+	],
+	"warlock": [  # columns: Curse / Pact / Void
+		[
+			{"id": "k00", "name": "Wither",         "desc": "Shadowbolt +5% damage", "amod": {"a1": {"dmg": 0.05}}},
+			{"id": "k01", "name": "Blood Tithe",    "desc": "+1% lifesteal", "bonus": {"lifesteal": 0.01}},
+			{"id": "k02", "name": "Deep Reservoir", "desc": "+8 max mana", "bonus": {"mp_flat": 8.0}},
+		],
+		[
+			{"id": "k10", "name": "Creeping Doom",  "desc": "Hex +6% damage", "amod": {"a2": {"dmg": 0.06}}},
+			{"id": "k11", "name": "Crimson Vigor",  "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "k12", "name": "Warp Step",      "desc": "+1% move speed", "bonus": {"speed_pct": 0.01}},
+		],
+		[
+			{"id": "k20", "name": "Unraveling", "desc": "+4 magic penetration", "bonus": {"magpen": 4.0}},
+			{"id": "k21", "name": "Bargainer",  "desc": "Dark Pact +8% damage", "amod": {"a3": {"dmg": 0.08}}},
+			{"id": "k22", "name": "Slipspace",  "desc": "+1.5% evasion", "bonus": {"eva": 0.015}},
+		],
+		[
+			{"id": "k30", "name": "Archfiend's Favor", "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
+			{"id": "k31", "name": "Soulfeast",         "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "k32", "name": "Annihilation",      "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
+		],
+	],
 }
 
 
