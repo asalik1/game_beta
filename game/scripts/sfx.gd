@@ -13,6 +13,52 @@ class_name Sfx
 const RATE := 22050
 
 
+## Load a PCM16 .wav file at runtime (RIFF parser — no import needed),
+## so recorded CC0 sounds can override the synthesized ones.
+static func load_wav(path: String) -> AudioStreamWAV:
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return null
+	var bytes := f.get_buffer(f.get_length())
+	if bytes.size() < 44 or bytes.slice(0, 4).get_string_from_ascii() != "RIFF" \
+			or bytes.slice(8, 12).get_string_from_ascii() != "WAVE":
+		return null
+	var channels := 1
+	var sample_rate := 44100
+	var bits := 16
+	var audio_format := 1
+	var pcm := PackedByteArray()
+	var pos := 12
+	while pos + 8 <= bytes.size():
+		var cid := bytes.slice(pos, pos + 4).get_string_from_ascii()
+		var csize := bytes.decode_u32(pos + 4)
+		if cid == "fmt ":
+			audio_format = bytes.decode_u16(pos + 8)
+			channels = bytes.decode_u16(pos + 10)
+			sample_rate = bytes.decode_u32(pos + 12)
+			bits = bytes.decode_u16(pos + 22)
+		elif cid == "data":
+			pcm = bytes.slice(pos + 8, pos + 8 + csize)
+		pos += 8 + csize + (csize & 1)
+	if audio_format != 1 or pcm.is_empty() or not bits in [16, 24]:
+		return null  # only uncompressed 16/24-bit PCM supported
+	if bits == 24:
+		# Convert 24-bit -> 16-bit: keep the top two bytes of each sample.
+		var n := pcm.size() / 3
+		var out := PackedByteArray()
+		out.resize(n * 2)
+		for i in n:
+			out[i * 2] = pcm[i * 3 + 1]
+			out[i * 2 + 1] = pcm[i * 3 + 2]
+		pcm = out
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = channels == 2
+	stream.data = pcm
+	return stream
+
+
 # ------------------------------------------------------------ primitives ---
 
 static func _buf(dur: float) -> PackedFloat32Array:
@@ -238,6 +284,30 @@ static func _make_slam() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+## Beast growl: dark noise amplitude-modulated at ~26Hz (the pulsing
+## "throat roughness" that reads as animal), over a sub rumble, with a
+## snarl transient. No human vocal cords involved.
+static func _make_growl() -> AudioStreamWAV:
+	var b := _buf(1.15)
+	var n := b.size()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 66
+	var y := 0.0
+	var am_phase := 0.0
+	for i in n:
+		var t := float(i) / n
+		var fc := 520.0 - 260.0 * t  # darkens as the growl trails off
+		var k := 1.0 - exp(-TAU * fc / RATE)
+		y += k * ((rng.randf() * 2.0 - 1.0) - y)
+		am_phase += (26.0 + 8.0 * sin(t * 9.0)) / RATE  # wobbling growl rate
+		var am := 0.55 + 0.45 * sin(am_phase * TAU)
+		var env := sin(minf(t * 5.0, 1.0) * PI / 2.0) * (1.0 - pow(t, 3.0))
+		b[i] += y * am * env * 1.0
+	_sine_sweep(b, 0.0, 55.0, 36.0, 1.05, 0.25)
+	_noise_sweep(b, 0.0, 0.14, 0.35, 1900.0, 500.0, 0.1)
+	return _to_wav(b)
+
+
 ## Build the whole sound bank the game uses.
 static func build_all() -> Dictionary:
 	return {
@@ -264,4 +334,11 @@ static func build_all() -> Dictionary:
 		"pdie":     tone(320, 45, 0.8, 0.45, 0.2),
 		"victory":  jingle([523, 659, 784, 1047, 784, 1047], 0.16),
 		"talk":     tone(700, 640, 0.035, 0.18),
+		# Synthesized fallbacks — normally replaced by assets/sounds/*.wav.
+		"coin":     tone(900, 1400, 0.08, 0.25),
+		"equip":    tone(300, 200, 0.12, 0.3, 0.4),
+		"chest":    tone(200, 120, 0.15, 0.35, 0.5),
+		"ult":      jingle([392, 523, 659, 784], 0.07, 0.4),  # rising power-up
+		"meteor":   _make_slam(),
+		"roar_fangmaw": _make_growl(),  # synthesized beast, not a wolfman
 	}

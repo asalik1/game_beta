@@ -1,4 +1,4 @@
-class_name Boss extends Enemy
+﻿class_name Boss extends Enemy
 ## Boss monsters. Same body as a regular enemy, but with special
 ## attacks on timers and a big health bar. Three fights:
 ##   fangmaw  - dire wolf: telegraphed charge, summons wolves at 50% HP
@@ -25,6 +25,14 @@ static func make_boss(game_node: Node2D, boss_kind: String, pos: Vector2) -> Bos
 	b._setup(game_node, boss_kind, pos)
 	b.aggro_range = 900.0
 	return b
+
+
+## Boss voice: uses the per-boss sound (roar_fangmaw = wolf howl,
+## roar_morwen = spectral wail, roar_vargoth = giant) when present.
+func roar() -> void:
+	var key := "roar_" + kind
+	# Long recordings (the real wolf howl) get faded after ~2.5s.
+	game.sfx(key if game.sounds.has(key) else "roar", 1.0, 2.5)
 
 
 func reset_fight() -> void:
@@ -87,7 +95,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 
 	if hp <= max_hp * 0.5 and not summoned:
 		summoned = true
-		game.sfx("roar")
+		roar()
 		game.spawn_text(global_position + Vector2(0, -80), "Fangmaw calls the pack!", Color(1, 0.5, 0.4))
 		for offset in [Vector2(-90, -50), Vector2(90, 50)]:
 			var add := Enemy.make(game, "wolf", global_position + offset)
@@ -112,7 +120,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 
 func _pounce(player: Player) -> void:
 	leaping = true
-	game.sfx("roar")
+	roar()
 	var target: Vector2 = player.global_position
 	game.telegraph(target, 95.0, 0.85, dmg * 1.4)
 	var tween := create_tween()
@@ -128,7 +136,7 @@ func _do_charge(_to_player: Vector2) -> void:
 		telegraphing = false
 		return
 	sprite.modulate = Color(1, 1, 1)
-	game.sfx("roar")
+	roar()
 	charge_dir = (game.player.global_position - global_position).normalized()
 	charging = true
 	charge_time = 0.55
@@ -141,7 +149,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# Signature: BLIGHT RAIN — poison zones bloom under and around you.
 	if special_cd <= 0.0:
 		special_cd = 8.0
-		game.sfx("roar")
+		roar()
 		for i in 4:
 			var offset := Vector2.ZERO if i == 0 else Vector2(randf_range(-160, 160), randf_range(-120, 120))
 			game.telegraph(player.global_position + offset, 75.0, 0.75 + i * 0.12, dmg * 1.3,
@@ -166,7 +174,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# Full ring of bolts.
 	if ring_cd <= 0.0:
 		ring_cd = 7.0
-		game.sfx("roar")
+		roar()
 		for i in 12:
 			var angle := TAU * i / 12.0
 			Projectile.spawn(game, global_position, Vector2.RIGHT.rotated(angle) * 200.0, dmg, false, "bolt")
@@ -185,7 +193,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		enraged = true
 		sprite.modulate = Color(1.6, 0.55, 0.55)
 		speed *= 1.5
-		game.sfx("roar")
+		roar()
 		game.spawn_text(global_position + Vector2(0, -90), "VARGOTH ENRAGES!", Color(1, 0.3, 0.3))
 
 	# Signature: BLADE STORM — greatswords fall from the sky onto marked
@@ -213,7 +221,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 
 func _blade_storm() -> void:
-	game.sfx("roar")
+	roar()
 	var count := 6 if enraged else 4
 	for i in count:
 		if dying or not is_instance_valid(game.player) or game.player.dead:

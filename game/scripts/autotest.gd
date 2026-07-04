@@ -326,6 +326,8 @@ func _run() -> void:
 			return _fail("zone %d has no monsters" % zi)
 		if not mobs[0].force_aggro:
 			return _fail("zone %d monsters not aggroed on entry" % zi)
+		if not game.barrier_active:
+			return _fail("battle barrier did not seal zone %d entrance" % zi)
 		for e in mobs:
 			e.take_damage(999999.0)
 			await _frames(1)
@@ -379,7 +381,9 @@ func _run() -> void:
 			if game.player.gold <= gold_before:
 				return _fail("boss %s dropped no gold" % kind)
 		await _frames(5)
-		print("ok: %s killed + loot" % kind)
+		if game.barrier_active:
+			return _fail("battle barrier did not lift after %s died" % kind)
+		print("ok: %s killed + loot (barrier lifted)" % kind)
 
 	# 10. Victory.
 	await _frames(10)

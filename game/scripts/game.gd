@@ -59,6 +59,9 @@ var sound_pool: Array = []
 var loot_rng := RandomNumberGenerator.new()
 var ambient_fx: CPUParticles2D = null
 var npc_emote_t := 4.0
+var barrier: StaticBody2D = null      # seals the entrance mid-combat
+var barrier_glow: Sprite2D = null
+var barrier_active := false
 var music_player: AudioStreamPlayer
 var music_tracks: Dictionary = {}
 var current_track := ""
@@ -71,16 +74,20 @@ func _ready() -> void:
 	load_binds()
 
 	sounds = Sfx.build_all()
-	# Sound overrides: any assets/sounds/<name>.ogg replaces the
+	# Sound overrides: any assets/sounds/<name>.wav or .ogg replaces the
 	# synthesized effect of the same name (same idea as sprites).
 	var snd_dir := DirAccess.open("res://assets/sounds")
 	if snd_dir:
 		for file in snd_dir.get_files():
-			if file.ends_with(".ogg"):
-				var stream := AudioStreamOggVorbis.load_from_file(
-					ProjectSettings.globalize_path("res://assets/sounds/" + file))
-				if stream:
-					sounds[file.get_basename()] = stream
+			var full := ProjectSettings.globalize_path("res://assets/sounds/" + file)
+			if file.ends_with(".wav"):
+				var wav := Sfx.load_wav(full)
+				if wav:
+					sounds[file.get_basename()] = wav
+			elif file.ends_with(".ogg"):
+				var ogg := AudioStreamOggVorbis.load_from_file(full)
+				if ogg:
+					sounds[file.get_basename()] = ogg
 	for i in 10:
 		var sp := AudioStreamPlayer.new()
 		sp.volume_db = -8.0
@@ -183,6 +190,25 @@ func _build_world() -> void:
 
 	for i in ZONES - 1:
 		gates.append(_build_gate(ZONE_W * (i + 1)))
+
+	# Battle barrier: while a zone still has monsters (or its boss),
+	# a glowing wall seals the way BACK — no retreating mid-combat.
+	barrier = StaticBody2D.new()
+	barrier.collision_layer = 1
+	barrier.collision_mask = 0
+	var bshape := CollisionShape2D.new()
+	var brect := RectangleShape2D.new()
+	brect.size = Vector2(TILE, 160)
+	bshape.shape = brect
+	barrier.add_child(bshape)
+	barrier_glow = Sprite2D.new()
+	barrier_glow.texture = Art.tex("glow")
+	barrier_glow.modulate = Color(1.0, 0.25, 0.2, 0.55)
+	barrier_glow.scale = Vector2(1.4, 3.6)
+	barrier_glow.z_index = 4
+	barrier.add_child(barrier_glow)
+	barrier.position = Vector2(-2000, -2000)  # parked (inactive)
+	add_child(barrier)
 
 	# Elder Maren, the quest giver in the village.
 	elder = _make_npc("elder", Vector2(520, 330), "E — Talk", func() -> void:
@@ -406,10 +432,10 @@ func _on_boss_trigger(zi: int) -> void:
 
 
 func _spawn_boss(zi: int, kind: String) -> void:
-	sfx("roar")
 	shake(6.0)
 	current_boss = Boss.make_boss(self, kind, Vector2(zi * ZONE_W + 1380, 360))
 	add_child(current_boss)
+	current_boss.roar()
 	hud.show_boss_bar(Story.ENEMIES[kind]["name"])
 	set_music("boss_" + kind)
 
@@ -512,6 +538,30 @@ func on_player_died() -> void:
 
 # ================================================================== helpers
 
+## Is this zone fully pacified (no monsters, boss dead or none)?
+func zone_pacified(zi: int) -> bool:
+	if zone_alive.get(zi, 0) > 0:
+		return false
+	var kind: String = Story.ZONES[zi]["boss"]
+	return kind == "" or boss_done.get(kind, false)
+
+
+## Seal or lift the entrance barrier based on the player's zone state.
+func _update_barrier() -> void:
+	var zi := clampi(int(player.global_position.x / ZONE_W), 0, ZONES - 1)
+	var want := zi > 0 and not zone_pacified(zi)
+	if want and not barrier_active:
+		sfx("gate")
+	barrier_active = want
+	if want:
+		# Slightly inside the previous boundary so the player is never
+		# spawned overlapping it when crossing the gate.
+		barrier.position = Vector2(zi * ZONE_W - 26.0, 360.0)
+		barrier_glow.modulate.a = 0.45 + 0.2 * sin(Time.get_ticks_msec() * 0.006)
+	else:
+		barrier.position = Vector2(-2000, -2000)
+
+
 ## Quest line + live "monsters left" counter for the player's zone.
 func refresh_quest() -> void:
 	var text: String = Story.QUESTS[quest_key]
@@ -547,16 +597,33 @@ func set_music(name: String) -> void:
 	tween.tween_property(music_player, "volume_db", -16.0, 0.6)
 
 
-func sfx(name: String) -> void:
+## Play a sound. pitch shifts the base pitch (still ±6% randomized);
+## cutoff > 0 fades the sound out after that many seconds — lets long
+## recordings (like a real wolf howl) play only their opening.
+func sfx(name: String, pitch := 1.0, cutoff := 0.0) -> void:
 	if not sounds.has(name):
 		return
+	var chosen: AudioStreamPlayer = sound_pool[0]
 	for sp in sound_pool:
 		if not sp.playing:
-			sp.stream = sounds[name]
-			sp.play()
-			return
-	sound_pool[0].stream = sounds[name]
-	sound_pool[0].play()
+			chosen = sp
+			break
+	# Small random pitch per play: kills the machine-gun sameness of
+	# repeated samples and the phasing of near-simultaneous ones.
+	chosen.pitch_scale = pitch * randf_range(0.94, 1.06)
+	chosen.volume_db = -8.0
+	chosen.stream = sounds[name]
+	chosen.play()
+	if cutoff > 0.0:
+		var this_stream: AudioStream = chosen.stream
+		var tween := create_tween()
+		tween.tween_interval(cutoff)
+		tween.tween_property(chosen, "volume_db", -40.0, 0.4)
+		tween.tween_callback(func() -> void:
+			if chosen.stream == this_stream:
+				chosen.stop()
+			chosen.volume_db = -8.0
+		)
 
 
 func shake(amount: float) -> void:
@@ -754,6 +821,8 @@ func _process(delta: float) -> void:
 			set_music(ZONE_TRACKS[zi])
 		_try_spawn_boss(zi)
 	hud.set_zone(Story.ZONES[zi]["name"])
+
+	_update_barrier()
 
 	# Ambient particles drift around the camera; NPCs chatter idly.
 	if is_instance_valid(ambient_fx):

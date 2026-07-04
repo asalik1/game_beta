@@ -46,7 +46,7 @@ func _on_body_entered(body: Node) -> void:
 	if opened or not body is Player:
 		return
 	opened = true
-	game.sfx("potion")
+	game.sfx("chest")
 	game.burst(global_position, Color(1.0, 0.85, 0.3), 14)
 
 	var rng := RandomNumberGenerator.new()

@@ -1,4 +1,4 @@
-class_name Player extends CharacterBody2D
+﻿class_name Player extends CharacterBody2D
 ## The hero. Classes scale on a primary attribute (STR/AGI/INT), fight
 ## with 3 basics + 1 ultimate (keyboard, auto-aimed), and customize via:
 ##  - THEMES: each ability can be assigned any unlocked elemental theme,
@@ -138,6 +138,7 @@ func _ready() -> void:
 	sprite.texture = Art.tex(Classes.CLASSES[cls]["sprite"])
 	sprite.scale = Art.scale_for(sprite.texture, 3.0)
 	face_left = Art.faces_left(Classes.CLASSES[cls]["sprite"])
+	sprite.flip_h = face_left  # start facing right regardless of art
 	add_child(sprite)
 
 	weapon_spr = Sprite2D.new()
@@ -169,6 +170,7 @@ func set_class(id: String) -> void:
 		sprite.texture = Art.tex(Classes.CLASSES[cls]["sprite"])
 		sprite.scale = Art.scale_for(sprite.texture, 3.0)
 		face_left = Art.faces_left(Classes.CLASSES[cls]["sprite"])
+		sprite.flip_h = face_left if look_sign > 0.0 else not face_left
 	recalc()
 	hp = max_hp
 	mp = max_mp
@@ -301,7 +303,7 @@ func equip(item: Dictionary) -> void:
 	equipment[slot] = item
 	recalc()
 	_update_weapon_visual()
-	game.sfx("potion")
+	game.sfx("equip")
 
 
 ## Pull all gems out of an item back into the gem bag (used when selling).
@@ -460,9 +462,11 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	# Walk bob + face the aim target (or move direction).
+	# NOTE: movement facing is normalized (max 1.0) while target facing is
+	# in pixels — the threshold must be small enough for BOTH.
 	var target := auto_aim()
 	var look_x := target.global_position.x - global_position.x if target else facing.x
-	if absf(look_x) > 2.0:
+	if absf(look_x) > 0.4:
 		look_sign = signf(look_x)
 		# Left-facing art (Crawl sprites) flips the opposite way.
 		sprite.flip_h = (look_x > 0.0) if face_left else (look_x < 0.0)
@@ -606,7 +610,7 @@ func use_ability(slot: String) -> void:
 		["warrior", "a3"]: _whirlwind(f)
 		["warrior", "ult"]:
 			berserk_time = 8.0
-			game.sfx("roar")
+			_ult_sfx()
 			game.shake(6.0)
 			game.hud.flash_screen(Color(1.0, 0.25, 0.15), 0.4, 0.4)
 			game.burst(global_position, Color(1.0, 0.3, 0.2), 20)
@@ -617,7 +621,7 @@ func use_ability(slot: String) -> void:
 		["archer", "ult"]:
 			storm_time = 3.0
 			storm_fx = _tfx.duplicate()
-			game.sfx("roar")
+			_ult_sfx()
 			game.hud.flash_screen(Color(0.6, 1.0, 0.6), 0.3, 0.35)
 			game.spawn_text(global_position + Vector2(0, -60), "ARROW STORM!", Color(0.6, 1, 0.6))
 		["mage", "a1"]: _cast_bolt(aim_dir(), 1.1 * f)
@@ -778,7 +782,7 @@ func _shoot(dir: Vector2, mult: float) -> void:
 
 
 func _cast_bolt(dir: Vector2, mult: float) -> void:
-	game.sfx("cast")
+	game.sfx("fireball")  # a breathy fire fwoosh, not an arcane laser
 	var p := _proj(dir, mult, "fireball", 440.0)
 	if s_passive() == "phoenix":
 		p.fx["splash"] = maxf(p.fx.get("splash", 0.0), 0.5)
@@ -800,8 +804,17 @@ func _whirlwind(f := 1.0) -> void:
 		hit_enemy(e, 0.9 * f, {"knock": 380.0, "stagger": 0.3, "aoe": true})
 
 
+## Per-class ultimate activation sound, falling back to the generic one.
+func _ult_sfx() -> void:
+	var key := "ult_" + cls
+	game.sfx(key if game.sounds.has(key) else "ult")
+
+
 func _multishot(f := 1.0) -> void:
-	game.sfx("bolt")
+	# ONE release sound for the whole volley — five overlapping copies of
+	# the same sample phase into a nasty digital flanging artifact.
+	# Pitched lower than Quick Shot so the two are distinguishable.
+	game.sfx("slash", 0.85)
 	var dir := aim_dir()
 	for i in 5:
 		var spread := (float(i) - 2.0) * 0.16
@@ -821,7 +834,8 @@ func _storm_strike() -> void:
 	if targets.is_empty():
 		return
 	var e: Enemy = targets[randi() % targets.size()]
-	game.sfx("bolt")
+	# Falling-arrow whoosh (deep-pitched), NOT the synth laser zap.
+	game.sfx("knife", 0.75)
 	# An arrow visibly falls out of the sky onto the target.
 	var arrow := Sprite2D.new()
 	arrow.texture = Art.tex("arrow")
@@ -899,7 +913,7 @@ func _blink() -> void:
 func _meteor() -> void:
 	var target := auto_aim()
 	var pos := target.global_position if target else global_position + facing * 150.0
-	game.sfx("roar")
+	_ult_sfx()
 	var fx_copy := _tfx.duplicate()
 	var col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
 
@@ -940,7 +954,7 @@ func _meteor() -> void:
 		spr.queue_free()
 		if is_instance_valid(mark):
 			mark.queue_free()
-		game.sfx("slam")
+		game.sfx("meteor")
 		game.shake(14.0)
 		game.hud.flash_screen(Color(1.0, 0.75, 0.4), 0.55, 0.35)
 		game.burst(pos, col, 30)
@@ -973,7 +987,7 @@ func _shadow_dash(f := 1.0) -> void:
 
 
 func _fan_of_knives(f := 1.0) -> void:
-	game.sfx("knife")
+	game.sfx("knife", 1.25)  # lighter/faster than the archer sounds
 	var dir := aim_dir()
 	for i in 3:
 		var spread := (float(i) - 1.0) * 0.13
@@ -987,7 +1001,7 @@ func _death_mark() -> void:
 		return
 	# EXECUTION: the world darkens, you appear on top of the target,
 	# a giant death mark rises, then a 3-hit true-damage flurry lands.
-	game.sfx("roar")
+	_ult_sfx()
 	game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.45)
 	game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
 	var dir := (target.global_position - global_position).normalized()
