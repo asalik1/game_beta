@@ -22,8 +22,11 @@ const CHAPTER_ZONES := {
 			# Faction presences (convos live in ch2_factions.gd — T5):
 			{"sprite": "warden", "x": 660, "y": 200, "prompt": "E — Accord", "convo": "ch2_accord_recruit"},
 			{"sprite": "envoy", "x": 950, "y": 500, "prompt": "E — Cinderborn", "convo": "ch2_cinder_recruit"},
-			{"sprite": "beastkin", "x": 1290, "y": 560, "prompt": "E — The Cage", "convo": "ch2_beastkin_cage"},
-			{"sprite": "villager", "x": 140, "y": 250, "prompt": "E — Pilgrim", "convo": "ch2_choir_pilgrim"},
+			# Playtest casting fixes: the scout renders IN its cage (bars
+			# composited over the sprite), and the pilgrim wears the
+			# Choir's grey habit — the same one the Choir Mother wears.
+			{"sprite": "beastkin_caged", "x": 1290, "y": 560, "prompt": "E — The Cage", "convo": "ch2_beastkin_cage"},
+			{"sprite": "choirmother", "x": 140, "y": 250, "prompt": "E — Pilgrim", "convo": "ch2_choir_pilgrim"},
 			# The man who killed Vargoth, by his own small fire (T6):
 			{"sprite": "aldric", "x": 700, "y": 600, "prompt": "E — Ser Aldric", "convo": "ch2_aldric"},
 		],
@@ -53,10 +56,13 @@ const CONVOS := {
 			"choices": [
 				{"text": "\"Point me east. Whatever's out there, I'd rather meet it than wait for it.\"",
 					"flags": {"ch2_briefed": true}, "quest": "ch2_act1", "next": "m_go"},
+				# Both question paths ALSO brief you (playtest fix: they end
+				# with "the road east" but used to leave the gate shut).
 				{"text": "\"First — what happens to shard-bearers who lose themselves?\"",
-					"resonance": 4.0, "next": "m_warn"},
+					"resonance": 4.0, "flags": {"ch2_briefed": true}, "next": "m_warn"},
 				{"text": "\"Careful how you say 'leash', old woman. The shard listens.\"",
-					"req_band": "tempted", "resonance": -4.0, "next": "m_dark"},
+					"req_band": "tempted", "resonance": -4.0,
+					"flags": {"ch2_briefed": true}, "next": "m_dark"},
 			]},
 		"m_warn": {"who": "Elder Maren", "text": "They stop asking that question. That is the first sign. Keep asking it, and you will likely die yourself — which, for a shard-bearer, is the good ending. Now: east.",
 			"quest": "ch2_act1",
@@ -88,9 +94,20 @@ const CONVOS := {
 		"r1": {"who": "Widow Sera",
 			"text": "We had a mill on the Greyrun. Then the water came up black one morning, and that was that. Maren says the land can be cleaned. I say she believes it because someone has to.",
 			"variants": [
+				# Payoff first (playtest fix): she asked about the blue door —
+				# if you went and looked, she must KNOW you did.
+				{"flag": "mill_told", "text": "Sera nods as you pass, the way people nod at good weather. \"Still blue,\" she says, to herself as much as you. She has stopped saying 'we HAD a mill.'", "next": ""},
+				{"flag": "mill_seen", "text": "\"You went.\" She reads it off your face before you speak. \"...And it stands? The door held?\" She sits down slowly on the cook-bench. \"Twenty years of spring paint. You tell Maren she's right — the land can be cleaned. Some of it is clean ALREADY.\"", "next": "r_told"},
 				{"band": "tempted", "text": "My gran used to say the blight gets in through what you want most. ...Why are you looking at me like that, shard-bearer?"},
 				{"band": "steady", "text": "You have kind eyes for someone carrying a dead king's splinter. If you get as far as the Greyrun... the mill had a blue door. I'd like to know if it's standing."},
 			],
 			"next": ""},
+		"r_told": {"who": "Widow Sera", "text": "\"Twenty years I painted that door. Tell me true, once more — it stands?\"",
+			"next": "",
+			"choices": [
+				{"text": "\"It stands, Sera. The paint is winning.\"",
+					"flags": {"mill_told": true}, "resonance": 2.0, "next": "r_told2"},
+			]},
+		"r_told2": {"who": "Narrator", "text": "Small honest cargo, delivered. It weighed nothing, and it was worth the trip.", "next": ""},
 	}},
 }

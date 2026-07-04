@@ -30,19 +30,27 @@ Rules for parallel agents working this board:
       one call line per task); ch2 hub smoke test added
 - **Read this before starting a content task:** `scripts/content/README.md`
 
-## T4 — New bosses ×3 (CAN START NOW — does not need T0) — CLAIMED: agent-B (2026-07-04, in progress)
-Telegraphs + enrage per the existing architecture. Suggested trio:
-a corrupted Stormwarden beastmaster (Fangmaw's successor), a blight
-"Choir Mother" (Mórwyn's echo), and an Accord/Cinderborn-agnostic
-construct in the ruins.
-- [ ] Signature moves on `game.telegraph()` + enrage threshold each
-- [ ] Creature-appropriate voices (real recordings > synth growls),
-      per-boss music track names (override folder), codex entries
-- [ ] Dev-mode spawnable (add to the F1 boss list) + autotest kill-flow
-- **Owns:** `content/ch2_bosses.gd` (data) + new boss move funcs in
-  boss.gd (append-only at file end), `assets/sounds/roar_*`,
-  `assets/music/boss_*`
-- **Done when:** each boss spawns from dev mode, fights, enrages, dies.
+## ✅ T4 — New bosses ×3 — DONE: agent-B (2026-07-04, suite green)
+Shipped: `stormwarden` (Korrag, Stormwarden Broken, Lv 14 — lightning-
+lash telegraph line, wolf packs at 66/33%, storm-break enrage 30%),
+`choirmother` (The Choir Mother, Lv 22 — requiem rings rippling
+outward, verse volleys, hymn drain that heals her, cultist adds 60%,
+crescendo 25%), `nullwarden` (Warden Null, Lv 32 — piston-grid stamps,
+beam spokes, shockwave slams, ARMOR-SHED phase 50%, overdrive 25%).
+- [x] Signature moves on `game.telegraph()` + enrage threshold each
+- [x] Synthesized voices as override FILES (`roar_*`: thunder+growl /
+      detuned choir wail / piston+iron resonance) + chiptune themes
+      (`boss_*`, Music._synth family) — replace with recordings anytime
+- [x] Data via CONTENT_MODULES preload; codex (BOSS_KINDS) + dev F1
+      spawn list registered; sprites cast from Crawl (ironbound
+      beastmaster / servant of whispers / iron golem)
+- [x] Autotest hook `_test_ch2_bosses` → module `selftest(game)`:
+      spawn / signature / enrage / STORY-NEUTRAL death per boss
+      (content-boss kills route through `Ch2 on_died`, never the
+      chapter quest chain — dev kills can't skip story)
+- Zone placement: T2/T3 just set `"boss": "<kind>"` on their zone
+  dicts; `content/ch2_bosses.gd::spawn()` also works for scripted
+  spawns (boss + bar + music in one call).
 
 ## ✅ T1 — Maren's camp hub — DONE: agent-A (2026-07-04)
 - [x] Hub zone via `content/ch2_hub.gd` CHAPTER_ZONES (safe, merchant,
@@ -85,10 +93,18 @@ construct in the ruins.
       on pacification (boss OR full clear)
 - [x] Autotest `_test_ch2_act1` plays the whole act
 
-## T3 — Act 2 combat zones (after T0)
-Same shape as T2: magma / ice / crystal / void / holy / desert, ~Lv 25–40,
-the world "opening up as the Waking spreads" per DESIGN.md.
-- **Owns:** `content/ch2_zones_act2.gd`
+## ✅ T3 — Act 2 combat zones — DONE: agent-A (2026-07-04)
+- [x] Five zones, Lv 9–16: The Scorching Dunes (desert), The Frozen
+      Expanse (ice), The Crystal Deeps (crystal), The Sanctified Ruins
+      (holy), The Null Bastion (void) — four flag-gated crossings, then
+      Warden Null (act-scaled Lv 16) as Chapter 2's FINAL BOSS
+- [x] Six new ENEMIES (Dune Prowler → Voidbound Husk); Scholar Ivo in
+      the Deeps (band variants + Bastion boss-strategy lore, scholar_met)
+- [x] Chapter-driven ending: `victory_text` on the chapter def,
+      `epilogue_ch2` beat (Maren: "beaten back — not beaten"),
+      `pre_nullwarden` beat; engine merges module BEATS + `done_<chapter>`
+      quest keys
+- [x] Autotest `_test_ch2_act2` plays the act to the victory screen
 
 ## ✅ T5 — Faction arcs: Accord vs Cinderborn — DONE: agent-A (2026-07-04)
 - [x] Recruiters at the camp (Warden Callis / Envoy Vessa, new `warden` +
@@ -121,12 +137,23 @@ the world "opening up as the Waking spreads" per DESIGN.md.
 - [x] No superboss; he cannot fight
 - [x] Autotest `_test_ch2_aldric` (question count gates, hub loop, flag)
 
-## T7 — Resonance surfacing pass (LAST — after T1/T2/T5 content exists)
-- [ ] Ambient reactions per band across hub + zones: greeting variants,
-      NPC emotes, small touches (e.g. merchants haggle differently with
-      the tempted)
-- Touches other tasks' convo files ONLY by adding `variants` entries —
-  that's why it goes last, single owner, quick pass.
+## ✅ T7 — Resonance surfacing pass — DONE: agent-A (2026-07-04)
+- [x] Merchants HAGGLE by band: `game.band_price_mult()` (steady 0.9 /
+      tempted 1.1) on all shop prices, with in-character greetings
+      ("the till gets nervous around your sort")
+- [x] Band greeting variants added where missing: both recruiters (the
+      warden's hand finds her hilt; Vessa's smile sharpens) and the
+      caged scout (presses to the FAR bars from the tempted); sentry /
+      Sera / Aldric / pilgrim / scholar already carried theirs
+- [x] Fixed latent crash: shop price tier indexed by raw zone number
+      (Chapter 2 zones 4+ would have crashed every shop)
+- [x] Autotest `_test_ch2_resonance` (haggle bands + two NPC band reads)
+- Cut from scope: band-driven idle EMOTES (bubbles) — the textual
+  reactions cover the design intent; revisit if playtests want more.
+
+---
+
+**BOARD COMPLETE (2026-07-04): T0–T7 all done — Chapter 2 ships.**
 
 ---
 

@@ -18,8 +18,11 @@ const CONVOS := {
 				{"text": "\"What did it cost — killing him?\"", "next": "p1"},
 				{"text": "\"What IS the Ember Crown, really?\"",
 					"req_flag": "ch2_briefed", "next": "p2"},
+				# One-time reveal: once told, the question retires (playtest
+				# fix — "I never told anyone" rang false on the second ask).
 				{"text": "\"Maren says you never told her everything. Tell me.\"",
-					"req_flag": "blight_scouted", "flags": {"aldric_truth": true}, "next": "p3"},
+					"req_flag": "blight_scouted", "req_not_flag": "aldric_truth",
+					"flags": {"aldric_truth": true}, "next": "p3"},
 				{"text": "\"Rest easy, ser.\" (leave)", "next": "g_bye"},
 			]},
 

@@ -364,7 +364,8 @@ const CHAPTERS := {
 		"sub": "Years later — the scattered shards choose their bearers",
 		"zones": CH2_ZONES,
 		"start_quest": "ch2_start",
-		"final_boss": "",
+		"final_boss": "nullwarden",
+		"victory_text": "The Null Bastion falls silent. The Waking is beaten back — but the shards are still choosing, and the factions are still counting.\nThanks for playing Chapter 2!  Press R to play again.",
 		"start_pos": [180, 360],
 	},
 }
@@ -381,6 +382,7 @@ const CHAPTERS := {
 const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch2_hub.gd"),        # (T1) zone 0
 	preload("res://scripts/content/ch2_zones_act1.gd"), # (T2) zones 1-4
+	preload("res://scripts/content/ch2_zones_act2.gd"), # (T3) zones 5-9
 	preload("res://scripts/content/ch2_factions.gd"),   # (T5)
 	preload("res://scripts/content/ch2_aldric.gd"),     # (T6)
 	preload("res://scripts/content/ch2_bosses.gd"),     # (T4)
@@ -390,6 +392,7 @@ static var _content_loaded := false
 static var ALL_CONVOS: Dictionary = {}
 static var ALL_ENEMIES: Dictionary = {}
 static var ALL_QUESTS: Dictionary = {}
+static var ALL_BEATS: Dictionary = {}
 static var CHAPTER_LIST: Dictionary = {}
 
 
@@ -402,12 +405,14 @@ static func load_content() -> void:
 	ALL_CONVOS = CONVOS.duplicate(true)
 	ALL_ENEMIES = ENEMIES.duplicate(true)
 	ALL_QUESTS = QUESTS.duplicate(true)
+	ALL_BEATS = BEATS.duplicate(true)
 	CHAPTER_LIST = CHAPTERS.duplicate(true)
 	for m in CONTENT_MODULES:
 		var consts: Dictionary = m.get_script_constant_map()
 		ALL_CONVOS.merge(consts.get("CONVOS", {}), true)
 		ALL_ENEMIES.merge(consts.get("ENEMIES", {}), true)
 		ALL_QUESTS.merge(consts.get("QUESTS", {}), true)
+		ALL_BEATS.merge(consts.get("BEATS", {}), true)
 		var extra_zones: Dictionary = consts.get("CHAPTER_ZONES", {})
 		for chid in extra_zones:
 			if CHAPTER_LIST.has(chid):

@@ -759,7 +759,8 @@ func open_shop(zone: int) -> void:
 	if not game.shop_stock.has(zone):
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
-		var tier: String = ["wood", "silver", "silver", "gold"][zone]
+		# Tier climbs with how deep the zone sits (works for any chapter).
+		var tier: String = ["wood", "silver", "silver", "gold"][clampi(zone, 0, 3)]
 		var stock: Array = []
 		for i in 3:
 			stock.append(Items.roll_item(tier, rng, game.player.cls))
@@ -768,7 +769,14 @@ func open_shop(zone: int) -> void:
 	var p: Player = game.player
 	var vbox := _open("Merchant — you have %d gold" % p.gold, 1120, 600)
 	current = "shop"
-	_lbl(vbox, "\"Ah, a customer! Dangerous roads make good business.\"", 14, Color(0.75, 0.7, 0.6))
+	# (T7) The merchant reads the shard before quoting a price.
+	match Story.res_band(p.resonance):
+		"steady":
+			_lbl(vbox, "\"For YOU? Fair rates, friend — the road speaks well of you.\"  (prices 10% kinder)", 14, Color(0.6, 0.9, 0.6))
+		"tempted":
+			_lbl(vbox, "\"Prices are... firm today. Nothing personal — the till gets nervous around your sort.\"  (prices 10% wary)", 14, Color(1.0, 0.65, 0.55))
+		_:
+			_lbl(vbox, "\"Ah, a customer! Dangerous roads make good business.\"", 14, Color(0.75, 0.7, 0.6))
 
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 26)
@@ -782,18 +790,20 @@ func open_shop(zone: int) -> void:
 	hbox.add_child(buy)
 	_lbl(buy, "BUY", 16, Color(0.95, 0.85, 0.5))
 
+	var haggle: float = game.band_price_mult()
+	var potion_cost := int(ceil(25.0 * haggle))
 	var buy_potion := func() -> void:
-		if p.gold >= 25 and p.potions < 5:
-			p.gold -= 25
+		if p.gold >= potion_cost and p.potions < 5:
+			p.gold -= potion_cost
 			p.potions += 1
 			game.sfx("potion")
 		open_shop(zone)
-	_btn(buy, "Health Potion — 25 gold  (you have %d, max 5)" % p.potions,
-		buy_potion, Color(1.0, 0.5, 0.5), p.gold >= 25 and p.potions < 5)
+	_btn(buy, "Health Potion — %d gold  (you have %d, max 5)" % [potion_cost, p.potions],
+		buy_potion, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < 5)
 
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
-		var cost := Items.price(it) * 2
+		var cost := int(ceil(Items.price(it) * 2 * haggle))
 		var buy_item := func() -> void:
 			if p.gold >= cost:
 				p.gold -= cost

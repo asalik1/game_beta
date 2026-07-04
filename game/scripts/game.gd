@@ -244,7 +244,7 @@ func on_class_chosen(id: String) -> void:
 			else:
 				begin.call())
 	else:
-		hud.dialogue(Story.BEATS["intro"], begin)
+		hud.dialogue(Story.ALL_BEATS["intro"], begin)
 
 
 ## Resume a saved character: restore the player + story flags onto the
@@ -288,6 +288,15 @@ func reconcile_after_load() -> void:
 			if kind != "" and boss_done.get(kind, false):
 				e.queue_free()
 	refresh_quest()
+
+
+## (T7) Merchants read the shard: the steady get kinder prices, the
+## tempted make the till nervous. Surfaced, never explained in numbers.
+func band_price_mult() -> float:
+	match Story.res_band(player.resonance):
+		"steady": return 0.9
+		"tempted": return 1.1
+	return 1.0
 
 
 ## Write the current character to its slot. Called on story progress,
@@ -506,9 +515,9 @@ func _build_world() -> void:
 				if get_flag("opened_" + player.cls, false) and Story.ALL_CONVOS.has("maren_" + player.cls):
 					run_convo_id("maren_" + player.cls, after)  # she read your opening choice
 				else:
-					hud.dialogue(Story.BEATS["elder"], after)
+					hud.dialogue(Story.ALL_BEATS["elder"], after)
 			else:
-				hud.dialogue(Story.BEATS["elder_repeat"])
+				hud.dialogue(Story.ALL_BEATS["elder_repeat"])
 		)
 
 	# SAFE zones (no boss, no monsters) keep a merchant from the start.
@@ -766,7 +775,7 @@ func _on_boss_trigger(zi: int) -> void:
 	if boss_done.get(kind, false):
 		return
 	boss_spawned[zi] = true
-	var beat: Array = Story.BEATS.get("pre_" + kind, [])
+	var beat: Array = Story.ALL_BEATS.get("pre_" + kind, [])
 	if beat.is_empty():
 		_spawn_boss(zi, kind)
 	else:
@@ -815,14 +824,19 @@ func on_boss_died(kind: String) -> void:
 	# other boss opens the gate out of its zone and points the quest at
 	# the next boss down the road.
 	if kind == String(Story.chapter(chapter_id).get("final_boss", "")):
-		quest_key = "done"
+		quest_key = "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
 		refresh_quest()
-		var epilogue: Array = Story.BEATS.get("epilogue", [])
+		# Chapter-specific epilogue beat and victory card, with the
+		# Chapter 1 texts as the fallback.
+		var epilogue: Array = Story.ALL_BEATS.get("epilogue_" + chapter_id,
+			Story.ALL_BEATS.get("epilogue", []))
+		var vtext := String(Story.chapter(chapter_id).get("victory_text",
+			"The Ember Crown is reclaimed. Thanks for playing Chapter 1!\nPress R to play again."))
 		var end_it := func() -> void:
 			state = ST_VICTORY
 			set_music("")
 			sfx("victory")
-			hud.show_end_screen("VICTORY", "The Ember Crown is reclaimed. Thanks for playing Chapter 1!\nPress R to play again.", Color(1.0, 0.85, 0.35))
+			hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
 			get_tree().paused = true
 		if epilogue.is_empty():
 			end_it.call()
@@ -830,7 +844,7 @@ func on_boss_died(kind: String) -> void:
 			hud.dialogue(epilogue, end_it)
 	else:
 		quest_key = _next_quest_after(mzi)
-		var beat: Array = Story.BEATS.get("post_" + kind, [])
+		var beat: Array = Story.ALL_BEATS.get("post_" + kind, [])
 		var proceed := func() -> void:
 			if mzi < gates.size():
 				open_gate(mzi)

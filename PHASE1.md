@@ -83,16 +83,29 @@ automatically the moment those classes are selectable.
 - [x] Autotest: convo-graph integrity for all 12 convos + assassin
       opening E2E (temptation path)
 
-## 🟨 7. Chapter 2 world — Act 1 → Act 2 (IN PROGRESS)
-Split into parallel-agent tasks — see **[CH2_TASKS.md](CH2_TASKS.md)**
-(one owner per task, new files under `game/scripts/content/`, shared
-files locked to T0). Original scope, mapped to tasks:
-- [ ] Timeskip framing + chapter framework → T0; Maren's camp hub → T1
-- [ ] New zones using the 14 terrains → T2 (Act 1) + T3 (Act 2)
-- [ ] Accord vs. Cinderborn arcs + ambient standing quests → T5
-- [ ] New bosses on the telegraph/enrage architecture → T4
-- [ ] Aldric lore NPC → T6
-- [ ] Resonance surfacing pass → T7 (last)
+## ✅ 7. Chapter 2 world — Act 1 → Act 2 — DONE (2026-07-04)
+Built as a parallel-agent task board — **[CH2_TASKS.md](CH2_TASKS.md)**,
+all eight tasks complete. What shipped:
+- [x] Chapter framework + content-module registry (T0): data-driven
+      chapters, chapter select, per-chapter saves
+- [x] Maren's camp hub with 8 NPCs, briefing that reads your opening (T1)
+- [x] Nine combat zones across 10 terrains, 12 new monsters, Lv 1→16
+      arc (T2+T3); Warden Null ends the chapter with its own epilogue
+- [x] Three new bosses on the telegraph/enrage architecture (T4)
+- [x] Accord vs. Cinderborn exclusive arcs + Wildfang/Choir ambient
+      standing + FACTIONS panel (T5)
+- [x] Aldric and the truth about the Crown (T6)
+- [x] Resonance surfaced: band-reactive NPCs + merchant haggling (T7)
+
+---
+
+# 🏁 PHASE 1 COMPLETE (2026-07-04)
+Every item above is done and covered by the autotest. What ships:
+six classes with cinematic, choice-driven openings; a Resonance system
+the world visibly reacts to; save/load with a title screen; two full
+chapters; factions; and 30+ autotest sections keeping all of it honest.
+**Next milestones (from README):** balance/playtest pass → Steam
+export → Android → co-op (Phase 2 / DESIGN.md).
 
 ---
 

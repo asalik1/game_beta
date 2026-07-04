@@ -911,6 +911,8 @@ func _run() -> void:
 	await _test_ch2_factions()
 	await _test_ch2_aldric()
 	await _test_ch2_act1()
+	await _test_ch2_act2()
+	await _test_ch2_resonance()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 
@@ -1084,7 +1086,7 @@ func _test_ch2_aldric() -> void:
 
 ## (T2) Act 1: four zones, arc flags, act-scaled bosses, quest chain.
 func _test_ch2_act1() -> void:
-	if game.zone_count != 5:
+	if game.zone_count < 5:
 		return _fail("act 1 zones did not append (zones=%d)" % game.zone_count)
 	_buff()
 	if game.gates[0] != null:
@@ -1189,9 +1191,131 @@ func _test_ch2_act1() -> void:
 	await _frames(5)
 	if not game.get_flag("act1_complete", false):
 		return _fail("act 1 completion flag not set")
+	if game.quest_key != "nullwarden":
+		return _fail("quest did not point into Act 2 (got %s)" % game.quest_key)
+	print("ok: T2 act 1 (Mills/Fields/Sporewood/Hollow, scaled bosses, arc flags)")
+
+
+## (T3) Act 2: four crossings, the scholar, and the chapter's end.
+func _test_ch2_act2() -> void:
+	if game.zone_count != 10:
+		return _fail("act 2 zones did not append (zones=%d)" % game.zone_count)
+	_buff()
+	# The four bossless crossings: clear each, its gate must open.
+	for zi in [5, 6, 7, 8]:
+		game.player.global_position = Vector2(zi * Game.ZONE_W + 300.0, 360.0)
+		await _frames(5)
+		for node in get_tree().get_nodes_in_group("enemies"):
+			var e := node as Enemy
+			if e and e.zone_idx == zi:
+				e.take_damage(9999999.0)
+		await _frames(10)
+		if game.gates[zi] != null:
+			return _fail("zone %d gate did not open on clear" % zi)
+	# The scholar in the Deeps.
+	var scholar := Callable()
+	for entry in game.interactables:
+		if entry["prompt"].text == "E — A Scholar":
+			scholar = entry["action"]
+	if not scholar.is_valid():
+		return _fail("the scholar is missing from the Deeps")
+	scholar.call()
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("the scholar offered no question")
+	game.hud._choose(0)
+	await _frames(2)
+	await _skip_dialogue()
+	if not game.get_flag("scholar_met", false):
+		return _fail("scholar_met flag not set")
+	# The Null Bastion: clear it, the Warden comes act-scaled, chapter ends.
+	game.player.global_position = Vector2(9 * Game.ZONE_W + 300.0, 360.0)
+	await _frames(5)
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.zone_idx == 9 and not (e is Boss):
+			e.take_damage(9999999.0)
+	var guard := 0
+	while not is_instance_valid(game.current_boss) and guard < 200:
+		await _frames(5)
+		guard += 5
+		if game.hud.dialogue_active:
+			await _skip_dialogue()
+	if not is_instance_valid(game.current_boss) or game.current_boss.kind != "nullwarden":
+		return _fail("Warden Null did not spawn")
+	if game.current_boss.level != 16:
+		return _fail("Warden Null not act-scaled (level %d)" % game.current_boss.level)
+	game.current_boss.take_damage(99999999.0)
+	await _frames(10)
+	var vguard := 0
+	while game.state != Game.ST_VICTORY and vguard < 200:
+		if game.hud.dialogue_active:
+			await _skip_dialogue()
+		await _frames(5)
+		vguard += 5
+	if game.state != Game.ST_VICTORY:
+		return _fail("chapter 2 did not reach victory")
 	if game.quest_key != "done_ch2":
 		return _fail("chapter done quest wrong (got %s)" % game.quest_key)
-	print("ok: T2 act 1 (Mills/Fields/Sporewood/Hollow, scaled bosses, arc flags)")
+	# Restore a playable state for the tests that follow this hook.
+	get_tree().paused = false
+	game.state = Game.ST_PLAYING
+	game.player.global_position = Vector2(600, 360)
+	await _frames(5)
+	print("ok: T3 act 2 (crossings, scholar, Warden Null ends the chapter)")
+
+
+## (T7) Resonance surfaces: merchants haggle by band, NPCs read you.
+func _test_ch2_resonance() -> void:
+	var res_keep := game.player.resonance
+	game.player.resonance = -40.0
+	if absf(game.band_price_mult() - 1.1) > 0.001:
+		return _fail("tempted haggle mult wrong")
+	game.player.resonance = 40.0
+	if absf(game.band_price_mult() - 0.9) > 0.001:
+		return _fail("steady haggle mult wrong")
+	game.player.resonance = 0.0
+	if absf(game.band_price_mult() - 1.0) > 0.001:
+		return _fail("neutral haggle mult wrong")
+	# The tempted shop greeting builds without breaking anything.
+	game.player.resonance = -40.0
+	game.menus.open_shop(0)
+	await _frames(2)
+	if not game.menus.is_open():
+		return _fail("shop did not open for a tempted bearer")
+	game.menus.close()
+	await _frames(1)
+	# NPCs read the band: the sentry steps back from the tempted...
+	var sentry := Callable()
+	for entry in game.interactables:
+		if entry["prompt"].text == "E — Talk":
+			sentry = entry["action"]
+			break  # first "E — Talk" in the hub is Sentry Piet
+	if not sentry.is_valid():
+		return _fail("sentry missing for the band test")
+	sentry.call()
+	await _frames(2)
+	if not ("further off" in game.hud.text_label.text):
+		return _fail("sentry did not react to the tempted band")
+	await _skip_dialogue()
+	# ...and Aldric hears the shard leaning in.
+	for entry in game.interactables:
+		if entry["prompt"].text == "E — Ser Aldric":
+			entry["action"].call()
+			break
+	await _frames(2)
+	if not ("almost hear it" in game.hud.text_label.text):
+		return _fail("Aldric did not react to the tempted band")
+	await _skip_dialogue()
+	await _frames(2)
+	if game.hud.choices_active:
+		game.hud._choose(game.hud.choice_count - 1)  # leave
+		await _frames(2)
+		await _skip_dialogue()
+	game.player.resonance = res_keep
+	print("ok: T7 resonance surfacing (haggle bands, NPCs read the shard)")
 
 
 ## (T4) Chapter 2 bosses: spawn, signature move, enrage threshold, and a

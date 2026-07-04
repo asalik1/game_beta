@@ -20,8 +20,10 @@ const CONVOS := {
 		"a1": {"who": "Warden Callis",
 			"text": "Shard-bearer. I won't circle it: the Accord wants every shard gathered and the hollow throne broken for good — yours included, one day, with your consent. We ask people to become LESS so the world can be more. Maren trusts us. Mostly.",
 			"variants": [
-				{"flag": "joined_accord", "text": "Warden Callis salutes. \"The east road, colleague. The blight will not survey itself — and Vessa's coin-counters would love to beat us to it.\"", "next": ""},
+				{"flag": "joined_accord", "text": "Warden Callis salutes. \"Colleague.\"", "next": "a_status"},
 				{"flag": "joined_cinderborn", "text": "\"You wear Vessa's colors now. Then we are done talking, bearer — the Accord does not bargain for what should never be owned.\" She turns back to the palisade.", "next": ""},
+				{"band": "tempted", "text": "The warden's hand settles — casually, precisely — on her hilt before she speaks. \"Shard-bearer. I'll make the Accord's case anyway. Consider it optimism under arms: we gather the shards, we break the throne, and we ask people like you to become LESS before that voice makes you MORE.\""},
+				{"band": "steady", "text": "\"Shard-bearer.\" The warden looks you over once and, remarkably, relaxes. \"You hold it well. That's exactly who the Accord wants: we gather the shards, break the hollow throne, and ask the strong to become less so the world can be more. Few carry the asking better than you would.\""},
 			],
 			"next": "a2"},
 		"a2": {"who": "Warden Callis", "text": "Join us, and your first task is honest work: survey what the Waking has made of the east road. No thrones, no leashes. Just the slow unglamorous mending of the world.",
@@ -38,6 +40,23 @@ const CONVOS := {
 					"faction": {"accord": -5}, "next": "a_mock"},
 			]},
 		"a_join": {"who": "Warden Callis", "text": "Then welcome to the long defeat, colleague — that's Accord humor, you'll learn to survive it. East road. Eyes open. Report what the blight has taken.", "next": ""},
+		# Arc 1 status desk: reminds until the survey flag lands, takes the
+		# report ONCE, then remembers it was taken (playtest fix — the
+		# recruiter used to keep assigning a finished job forever).
+		"a_status": {"who": "Warden Callis",
+			"text": "\"The east road, colleague. The blight will not survey itself — and Vessa's coin-counters would love to beat us to it.\"",
+			"variants": [
+				{"flag": "accord_arc1_done", "text": "\"Your survey's already gone up the chain, colleague — first honest map of the Waking anyone's drawn. There'll be more work when the Accord digests it. Rest while it chews.\"", "next": ""},
+			],
+			"next": "",
+			"choices": [
+				{"text": "\"The survey's done. The Greyrun is scouted — here's what the blight has taken.\"",
+					"req_flag": "blight_scouted", "req_not_flag": "accord_arc1_done",
+					"flags": {"accord_arc1_done": true}, "faction": {"accord": 12},
+					"resonance": 2.0, "next": "a_report"},
+				{"text": "\"Still walking it, warden.\"", "next": ""},
+			]},
+		"a_report": {"who": "Warden Callis", "text": "She reads without a word, twice, then grips your shoulder with the strength of someone who buries fewer friends because of paper like this. \"Good work. UNGLAMOROUS work — the only kind that mends anything. The Accord remembers, colleague.\"", "next": ""},
 		"a_later": {"who": "Warden Callis", "text": "Sensible. The shards make joiners of some and hermits of others. The offer keeps — the Accord is patient the way stone is patient.", "next": ""},
 		"a_mock": {"who": "Warden Callis", "text": "...There it is. The little voice that thinks power should never kneel. I've buried friends who listened to it, bearer. The offer stands anyway — that is the difference between us and it.", "next": ""},
 	}},
@@ -47,8 +66,10 @@ const CONVOS := {
 		"c1": {"who": "Envoy Vessa",
 			"text": "Ah — the camp's newest miracle. Envoy Vessa, of the Cinderborn. Before Maren's people fill your ears: we do not miss the tyrant. We miss ROADS. Granaries. Law. A crown is a tool, and Vaelscar is bleeding for the lack of one.",
 			"variants": [
-				{"flag": "joined_cinderborn", "text": "\"Associate. The seal, when you have it — the east road ate an imperial courier and his satchel, and history is written by whoever holds the paperwork.\"", "next": ""},
+				{"flag": "joined_cinderborn", "text": "\"Associate.\"", "next": "c_status"},
 				{"flag": "joined_accord", "text": "\"Maren's warden got to you first, I see. A pity — you'd have looked well in better tailoring. Do give the Accord my regards while you're being noble at each other.\"", "next": ""},
+				{"band": "tempted", "text": "Envoy Vessa's smile sharpens by a full karat. \"Now THERE is a bearer who understands wanting things. Vessa, of the Cinderborn. We don't miss the tyrant, darling — we miss ROADS. And we pay people who reach for what they want.\""},
+				{"band": "steady", "text": "\"Hm. The disciplined sort.\" Vessa recalibrates her smile to something almost honest. \"Good — discipline is half of what a crown is FOR. Envoy Vessa, of the Cinderborn. We miss roads, granaries, and law. Hear the offer before Maren's people talk you into camping forever.\""},
 			],
 			"next": "c2"},
 		"c2": {"who": "Envoy Vessa", "text": "Work with us and be paid, protected, and REMEMBERED. First commission: an imperial courier vanished on the east road with a seal of office. Recover it. History belongs to whoever holds the paperwork.",
@@ -64,6 +85,22 @@ const CONVOS := {
 					"resonance": 3.0, "faction": {"cinderborn": -5}, "next": "c_refuse"},
 			]},
 		"c_join": {"who": "Envoy Vessa", "text": "Splendid. A retainer will find you — we pay in coin, not sermons. The seal, associate. East road. Try not to die; the paperwork for that is dreadful.", "next": ""},
+		# Arc 1 status desk: asks for the seal until it's delivered ONCE,
+		# then remembers (playtest fix — see a_status).
+		"c_status": {"who": "Envoy Vessa",
+			"text": "\"The seal, when you have it — the east road ate an imperial courier and his satchel, and history is written by whoever holds the paperwork.\"",
+			"variants": [
+				{"flag": "cinder_arc1_done", "text": "\"Ah, my favorite associate — the one whose paperwork ARRIVES. The seal is already opening doors in three provinces. There will be more commissions; there is always more history to hold.\"", "next": ""},
+			],
+			"next": "",
+			"choices": [
+				{"text": "Hand over the courier's seal. \"One commission, delivered.\"",
+					"req_flag": "relic_recovered", "req_not_flag": "cinder_arc1_done",
+					"flags": {"cinder_arc1_done": true}, "faction": {"cinderborn": 12},
+					"next": "c_reward"},
+				{"text": "\"The road hasn't given it up yet.\"", "next": ""},
+			]},
+		"c_reward": {"who": "Envoy Vessa", "text": "She turns the cold white metal over once and smiles like a ledger balancing. \"Do you know what this unlocks? Neither do the people who'll pay to find out. Coin follows by courier — a LIVING one, we've learned our lesson. The Cinderborn remember their associates.\"", "next": ""},
 		"c_later": {"who": "Envoy Vessa", "text": "Complicated moments pass. Poverty and banditry, historically, do not. You know our colors when you tire of camping.", "next": ""},
 		"c_refuse": {"who": "Envoy Vessa", "text": "The last crown was WORN BADLY — a fault of the head, not the hat. But yes, do go tell the Accord how principled you are. They give out so little else.", "next": ""},
 	}},
@@ -74,6 +111,7 @@ const CONVOS := {
 			"text": "The cage holds a wiry beastkin scout — Fangmaw's blood, three generations on. It watches you with too-clever eyes and says nothing. The sentries argue about what to do with it.",
 			"variants": [
 				{"flag": "cage_resolved", "text": "The cage stands empty now. One of the sentries has planted herbs in it, out of spite or optimism.", "next": ""},
+				{"band": "tempted", "text": "The caged scout presses itself against the FAR bars as you approach — the first fear it has shown anyone in this camp. \"Two hungry things,\" it rasps, \"and only one of us is caged.\""},
 			],
 			"next": "w2"},
 		"w2": {"who": "Caged Beastkin", "text": "\"Shard-carrier,\" it rasps, finally. \"Your pack or mine — a cage is a cage. The Tribes remember who opens doors. And who watches.\"",

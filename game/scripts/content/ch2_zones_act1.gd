@@ -27,7 +27,9 @@ const CHAPTER_ZONES := {
 			"clear_flag": "blight_scouted",
 			"gate_flag": "blight_scouted",  # clearing opens the road on
 			"npcs": [
-				{"sprite": "villager", "x": 1240, "y": 200, "prompt": "E — The Mill", "convo": "ch2_mill"},
+				# Playtest casting fix: the mill is a BUILDING (blue-doored
+				# sprite), not a villager standing in a bog.
+				{"sprite": "mill", "x": 1240, "y": 200, "prompt": "E — The Mill", "convo": "ch2_mill"},
 				{"sprite": "bones", "x": 1150, "y": 560, "prompt": "E — A Fallen Courier", "convo": "ch2_courier"},
 			],
 		},
@@ -125,9 +127,23 @@ const CONVOS := {
 		"k1": {"who": "Narrator",
 			"text": "Bones in a roadside ditch, picked clean and half-swallowed by bog grass. The satchel under them is imperial leather, and inside — untouched by twenty kinds of weather — a seal of office in cold white metal.",
 			"variants": [
-				{"flag": "courier_searched", "text": "The ditch again. The bones lie easier without their burden — or you imagine they do.", "next": ""},
+				{"flag": "courier_searched", "text": "The ditch again. Rain has already begun smoothing over what happened here.", "next": "k_revisit"},
 			],
 			"next": "k2"},
+		# Revisit desk (playtest fix): burying the courier used to lock the
+		# Cinderborn arc forever — a bearer who joins AFTER the burial can
+		# now unmake their own cairn. It costs what grave-robbing costs.
+		"k_revisit": {"who": "Narrator",
+			"text": "The bones keep their vigil either way.",
+			"next": "",
+			"choices": [
+				{"text": "Unpile the stones you stacked. Vessa's commission outweighs a stranger's rest.",
+					"req_flag": "joined_cinderborn", "req_not_flag": "relic_recovered",
+					"resonance": -6.0, "flags": {"relic_recovered": true, "grave_robbed": true},
+					"faction": {"cinderborn": 8}, "next": "k_dig"},
+				{"text": "Leave it be.", "next": ""},
+			]},
+		"k_dig": {"who": "Narrator", "text": "The stones come up easier than they went down — they always do. The seal is exactly where you left it, cold and patient as paperwork. The cairn does not go back together quite right, and you decide not to notice.", "next": ""},
 		"k2": {"who": "Narrator", "text": "History belongs to whoever holds the paperwork, someone told you.",
 			"choices": [
 				{"text": "Take the seal for Envoy Vessa. A commission is a commission.",
