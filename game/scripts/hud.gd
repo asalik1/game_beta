@@ -11,6 +11,7 @@ var mp_fill: ColorRect
 var xp_fill: ColorRect
 var stats_label: Label
 var gold_label: Label
+var cr_label: Label
 
 # quest / zone
 var zone_label: Label
@@ -66,6 +67,7 @@ func _ready() -> void:
 	xp_fill = _bar(Vector2(18, 58), Vector2(BAR_W, 8), Color(0.95, 0.8, 0.25))
 	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1))
 	gold_label = _label(Vector2(18, 104), 15, Color(1.0, 0.85, 0.35))
+	cr_label = _label(Vector2(18, 126), 15, Color(0.65, 0.9, 1.0))
 
 	# ---------------------------------------------------- quest tracker ---
 	zone_label = _label(Vector2(340, 12), 16, Color(0.95, 0.85, 0.5), 600, HORIZONTAL_ALIGNMENT_CENTER)
@@ -269,6 +271,7 @@ func update_stats(p: Player) -> void:
 	var pts := "  (+%d pts, press T)" % p.skill_points if p.skill_points > 0 else ""
 	stats_label.text = "%s  Lv %d   HP %d/%d   MP %d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), int(p.mp), pts]
 	gold_label.text = "◉ %d gold    Potions [%s] x%d" % [p.gold, OS.get_keycode_string(game.binds["potion"]), p.potions]
+	cr_label.text = "Combat Rating: %d" % p.combat_rating()
 
 	# Ability bar: cooldown shade + countdown number + affordability color.
 	var now_ms := Time.get_ticks_msec()

@@ -125,6 +125,94 @@ const CLASSES := {
 }
 
 
+# ---------------------------------------------------------- attributes ---
+# Each level grants 5 attribute points. What a point gives depends on
+# the CLASS (scaling ratios): an assassin converts AGI into power at
+# triple the rate of STR; a warrior is the reverse.
+# Balance sketch (per point, primary attr): +1.2 ATK ≈ +8% of a level's
+# natural growth, so a full level of points (5) into the primary roughly
+# equals +1.5 levels of raw attack — meaningful but not explosive.
+const ATTR_NAMES := ["STR", "AGI", "INT", "VIT"]
+
+const ATTR_SCALE := {
+	"warrior": {
+		"STR": {"atk_flat": 1.2, "hp_flat": 2.0},
+		"AGI": {"atk_flat": 0.4, "eva": 0.0006},
+		"INT": {"mp_flat": 1.5, "magres": 0.5},
+		"VIT": {"hp_flat": 7.0, "physres": 0.4},
+	},
+	"archer": {
+		"STR": {"atk_flat": 0.4, "hp_flat": 2.0},
+		"AGI": {"atk_flat": 1.2, "crit": 0.0008},
+		"INT": {"mp_flat": 1.5, "magres": 0.4},
+		"VIT": {"hp_flat": 5.0, "physres": 0.3},
+	},
+	"mage": {
+		"STR": {"atk_flat": 0.2, "hp_flat": 2.0},
+		"AGI": {"atk_flat": 0.3, "eva": 0.0005},
+		"INT": {"atk_flat": 1.2, "mp_flat": 3.0},
+		"VIT": {"hp_flat": 5.0, "physres": 0.3},
+	},
+	"assassin": {
+		"STR": {"atk_flat": 0.4, "hp_flat": 2.0},
+		"AGI": {"atk_flat": 1.2, "crit": 0.0007, "eva": 0.0004},
+		"INT": {"mp_flat": 1.5, "magres": 0.4},
+		"VIT": {"hp_flat": 5.0, "physres": 0.3},
+	},
+}
+
+
+## Plain-language description of what an attribute does for this class
+## (for stat hover tooltips — teaches players what to invest in).
+static func attr_help(cls: String, attr: String) -> String:
+	var scale: Dictionary = ATTR_SCALE[cls].get(attr, {})
+	var bits: Array = []
+	var atk_v: float = scale.get("atk_flat", 0.0)
+	if atk_v >= 1.0:
+		bits.append("greatly increases your ATK")
+	elif atk_v >= 0.3:
+		bits.append("slightly increases your ATK")
+	elif atk_v > 0.0:
+		bits.append("barely increases your ATK")
+	if scale.has("crit"):
+		bits.append("adds a little crit chance")
+	if scale.has("eva"):
+		bits.append("adds a little evasion")
+	var hp_v: float = scale.get("hp_flat", 0.0)
+	if hp_v >= 5.0:
+		bits.append("adds solid health")
+	elif hp_v > 0.0:
+		bits.append("adds a little health")
+	if scale.has("mp_flat"):
+		bits.append("expands your mana pool")
+	if scale.has("magres"):
+		bits.append("hardens you against magic")
+	if scale.has("physres"):
+		bits.append("hardens you against physical damage")
+	var out := "For a %s this " % CLASSES[cls]["name"]
+	out += "; ".join(bits) + "."
+	if CLASSES[cls]["primary"] == attr:
+		out += "\n★ This is your MAIN attribute — it also grows naturally each level."
+	return out
+
+
+## Human-readable "what one point gives YOUR class".
+static func attr_text(cls: String, attr: String) -> String:
+	var bits: Array = []
+	var scale: Dictionary = ATTR_SCALE[cls].get(attr, {})
+	for stat in scale:
+		var v: float = scale[stat]
+		match stat:
+			"atk_flat": bits.append("+%.1f ATK" % v)
+			"hp_flat": bits.append("+%.0f HP" % v)
+			"mp_flat": bits.append("+%.1f MP" % v)
+			"crit": bits.append("+%.2f%% crit" % (v * 100))
+			"eva": bits.append("+%.2f%% evasion" % (v * 100))
+			"physres": bits.append("+%.1f PhysRes" % v)
+			"magres": bits.append("+%.1f MagRes" % v)
+	return ", ".join(bits) + " per point"
+
+
 static func ability(cls: String, slot: String) -> Dictionary:
 	return CLASSES[cls]["abilities"][slot]
 

@@ -1047,7 +1047,7 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_reticle())
 		"telegraph":
 			t = ImageTexture.create_from_image(_make_telegraph())
-		"tree_green", "tree_autumn", "tree_teal":
+		"tree_green", "tree_autumn", "tree_teal", "tree_snow", "tree_spore":
 			t = ImageTexture.create_from_image(_make_tree(name))
 		"bubble":
 			t = ImageTexture.create_from_image(_make_bubble())
@@ -1422,6 +1422,8 @@ static func _make_tree(kind: String) -> Image:
 		"tree_green":  [Color(0.09, 0.28, 0.13), Color(0.15, 0.44, 0.19), Color(0.27, 0.62, 0.25), Color(0.52, 0.84, 0.34)],
 		"tree_autumn": [Color(0.45, 0.13, 0.05), Color(0.76, 0.28, 0.07), Color(0.96, 0.51, 0.10), Color(1.00, 0.80, 0.24)],
 		"tree_teal":   [Color(0.04, 0.20, 0.19), Color(0.09, 0.33, 0.29), Color(0.17, 0.48, 0.39), Color(0.33, 0.68, 0.51)],
+		"tree_snow":   [Color(0.45, 0.52, 0.62), Color(0.62, 0.68, 0.78), Color(0.80, 0.85, 0.92), Color(0.96, 0.98, 1.00)],
+		"tree_spore":  [Color(0.28, 0.12, 0.32), Color(0.45, 0.22, 0.50), Color(0.62, 0.35, 0.68), Color(0.85, 0.55, 0.90)],
 	}[kind]
 	var w := 26
 	var h := 28

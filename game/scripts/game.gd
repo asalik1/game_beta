@@ -26,6 +26,7 @@ var menus: Menus
 var camera: Camera2D
 var ambient: CanvasModulate
 var reticle: Sprite2D
+var reticle_label: Label
 
 # Rebindable keys. Movement is always WASD/arrows; ESC is fixed.
 var binds := {
@@ -62,6 +63,7 @@ var barrier_active := false
 # ------------------------------------------------------ terrain system ---
 var terrain_by_zone: Array = []       # terrain id per zone
 var zone_grounds: Array = []          # ground Sprite2D per zone (repaintable)
+var zone_scenery: Array = []          # decor + obstacle nodes per zone
 var hazards: Array = []               # active floor patches (lava/ice/...)
 var terrain_event_t := 4.0            # countdown to the next terrain event
 var hazard_tick := 0.0
@@ -74,8 +76,6 @@ var dev_god := false
 var music_player: AudioStreamPlayer
 var music_tracks: Dictionary = {}
 var current_track := ""
-
-const ZONE_TRACKS := ["village", "darkwood", "marsh", "keep"]
 
 
 func _ready() -> void:
@@ -129,6 +129,16 @@ func _ready() -> void:
 	reticle.z_index = 25
 	reticle.visible = false
 	add_child(reticle)
+	# Target's level floats above the lock-on brackets.
+	reticle_label = Label.new()
+	reticle_label.position = Vector2(-30, -24)
+	reticle_label.size = Vector2(60, 14)
+	reticle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reticle_label.scale = Vector2(0.5, 0.5)
+	reticle_label.add_theme_font_size_override("font_size", 20)
+	reticle_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	reticle_label.add_theme_constant_override("outline_size", 6)
+	reticle.add_child(reticle_label)
 
 	camera = Camera2D.new()
 	camera.limit_left = 0
@@ -290,11 +300,30 @@ func _build_zone(zi: int) -> void:
 	zone_grounds.append(ground)
 	_spawn_patches(zi)
 
-	var rng := RandomNumberGenerator.new()
-	rng.seed = zi * 77 + 3
+	zone_scenery.append([])
+	_spawn_scenery(zi)
 
-	# Non-colliding ground decor (flowers, bones, cracks...).
-	var decor_list: Array = zone.get("decor", ["pebble"])
+	for spawn in zone["enemies"]:
+		var e := Enemy.make(self, spawn[0], Vector2(zone_x + spawn[1], spawn[2]))
+		e.zone_idx = zi
+		zone_alive[zi] = zone_alive.get(zi, 0) + 1
+		add_enemy(e)
+
+
+## (Re)build a zone's decor + obstacles from its TERRAIN — tombstones in
+## the graveyard, snowy pines on the ice, crystals in the caverns...
+func _spawn_scenery(zi: int) -> void:
+	for node in zone_scenery[zi]:
+		if is_instance_valid(node):
+			node.queue_free()
+	zone_scenery[zi] = []
+	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	var zone_x := zi * ZONE_W
+	var rng := RandomNumberGenerator.new()
+	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
+
+	# Non-colliding ground decor.
+	var decor_list: Array = terrain.get("decor", ["pebble"])
 	for i in 26:
 		var spr := Sprite2D.new()
 		spr.texture = Art.tex(decor_list[rng.randi_range(0, decor_list.size() - 1)])
@@ -302,11 +331,13 @@ func _build_zone(zi: int) -> void:
 		spr.position = Vector2(zone_x + rng.randf_range(70.0, ZONE_W - 70.0), rng.randf_range(80.0, 640.0))
 		spr.z_index = -8
 		add_child(spr)
+		zone_scenery[zi].append(spr)
 
 	# Colliding obstacles, kept off the central road.
+	var obstacles: Array = terrain.get("obstacles", ["rock"])
 	var placed: Array = []
-	var max_x := 1000.0 if zone["boss"] != "" else 1400.0
-	for i in zone["obstacle_count"]:
+	var max_x := 1000.0 if Story.ZONES[zi]["boss"] != "" else 1400.0
+	for i in terrain.get("count", 10):
 		for attempt in 40:
 			var pos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, 630.0))
 			if pos.y > 260.0 and pos.y < 460.0:
@@ -318,17 +349,12 @@ func _build_zone(zi: int) -> void:
 					break
 			if ok:
 				placed.append(pos)
-				_add_obstacle(zone["obstacles"][rng.randi_range(0, zone["obstacles"].size() - 1)], Vector2(zone_x, 0) + pos)
+				var body := _add_obstacle(obstacles[rng.randi_range(0, obstacles.size() - 1)], Vector2(zone_x, 0) + pos)
+				zone_scenery[zi].append(body)
 				break
 
-	for spawn in zone["enemies"]:
-		var e := Enemy.make(self, spawn[0], Vector2(zone_x + spawn[1], spawn[2]))
-		e.zone_idx = zi
-		zone_alive[zi] = zone_alive.get(zi, 0) + 1
-		add_enemy(e)
 
-
-func _add_obstacle(sprite_name: String, pos: Vector2) -> void:
+func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	var is_tree := sprite_name.begins_with("tree")
 	var body := StaticBody2D.new()
 	body.position = pos
@@ -352,6 +378,7 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> void:
 		spr.position = Vector2(0, -18)  # trunk base sits at the body origin
 	body.add_child(spr)
 	add_child(body)
+	return body
 
 
 func _wall(rect: Rect2) -> void:
@@ -462,7 +489,7 @@ func on_boss_died(kind: String) -> void:
 	var boss_pos := current_boss.global_position
 	current_boss = null
 	hud.hide_boss_bar()
-	set_music(ZONE_TRACKS[clampi(last_zone, 0, 3)])
+	set_music(Terrains.get_terrain(terrain_by_zone[clampi(last_zone, 0, 3)]).get("music", "village"))
 	player.hp = player.max_hp
 	player.mp = player.max_mp
 	player.potions = maxi(player.potions, 3)
@@ -759,6 +786,8 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 	var terrain := Terrains.get_terrain(terrain_id)
 	if zi < zone_grounds.size() and is_instance_valid(zone_grounds[zi]):
 		zone_grounds[zi].texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H, zi * 1000 + 7)
+	if zi < zone_scenery.size():
+		_spawn_scenery(zi)  # tombstones, snowy pines, crystals...
 	_spawn_patches(zi)
 	# If the player is standing in this zone, refresh mood immediately.
 	if last_zone == zi:
@@ -766,6 +795,8 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 		tween.tween_property(ambient, "color", terrain["tint"], 0.6)
 		_setup_ambient_fx(terrain_id)
 		terrain_event_t = randf_range(2.0, 4.0)
+		if not is_instance_valid(current_boss):
+			set_music(terrain.get("music", "village"))
 
 
 ## (Re)roll a zone's static hazard patches from its terrain spec.
@@ -822,7 +853,7 @@ func run_terrain_event(ev: String) -> void:
 				var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-220, 220), randf_range(-160, 160)), player.global_position)
 				burst(pos, Color(0.5, 0.45, 0.35), 12)
 				sfx("gate", 1.4)
-				var z := Enemy.make(self, "zombie", pos)
+				var z := Enemy.make(self, "zombie", pos, player.level)  # scales with you
 				z.force_aggro = true
 				add_enemy(z)
 				emote(z, "!", 0.8)
@@ -952,6 +983,11 @@ func _process(delta: float) -> void:
 		reticle.visible = true
 		reticle.global_position = target.global_position
 		reticle.modulate = Color(1.0, 0.45, 0.2) if target == player.locked_target else Color(1, 1, 1)
+		reticle_label.text = "Lv %d" % target.level
+		# Color the level by threat vs your own level.
+		var diff := target.level - player.level
+		reticle_label.add_theme_color_override("font_color",
+			Color(1, 0.35, 0.3) if diff >= 3 else (Color(1, 0.85, 0.4) if diff >= 0 else Color(0.6, 1, 0.6)))
 	else:
 		reticle.visible = false
 
@@ -973,7 +1009,7 @@ func _process(delta: float) -> void:
 		_setup_ambient_fx(terrain_by_zone[zi])
 		terrain_event_t = randf_range(2.5, 5.0)
 		if not is_instance_valid(current_boss):
-			set_music(ZONE_TRACKS[zi])
+			set_music(terrain.get("music", "village"))
 		_try_spawn_boss(zi)
 	hud.set_zone(Story.ZONES[zi]["name"])
 

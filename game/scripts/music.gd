@@ -138,6 +138,42 @@ static func build_all() -> Dictionary:
 			"melody": [0, R, R, 3, R, R, 2, R, 0, R, R, R, -2, R, R, R,
 				0, R, R, 3, R, R, 5, R, 3, R, 2, R, 0, R, R, R],
 			"bass": [0, 0, 0, 0, -2, -2, -2, -2, -4, -4, -4, -4, -2, -2, -2, -2]}),
+		# ------------------------------------------- terrain themes ---
+		# Graveyard: slow funeral toll, hollow and sparse.
+		"graveyard": _synth({"bpm": 74.0, "root": 155.6, "kick_every": 16, "hat_every": 8, "square": 0.3,
+			"melody": [0, R, R, R, 3, R, R, R, 1, R, R, R, 0, R, R, R,
+				-2, R, R, R, 0, R, R, R, 1, R, 0, R, -2, R, R, R],
+			"bass": [0, 0, 0, 0, -4, -4, -4, -4, 0, 0, 0, 0, -5, -5, -5, -5]}),
+		# Scorched Wastes: driving, molten, relentless.
+		"magma": _synth({"bpm": 126.0, "root": 164.8, "kick_every": 4, "hat_every": 2, "square": 0.75, "bass_x2": true,
+			"melody": [0, R, 0, 1, R, 1, 5, R, 0, R, 0, 1, R, 6, 5, 1,
+				0, R, 0, 1, R, 1, 5, R, 8, R, 7, 6, 5, 1, 0, R],
+			"bass": [0, 0, 1, 1, 0, 0, -2, -2, 0, 0, 1, 1, -4, -4, -2, -2]}),
+		# Frozen Expanse: high, gentle, bell-like drifting.
+		"icefield": _synth({"bpm": 86.0, "root": 293.7, "kick_every": 16, "hat_every": 8, "square": 0.1,
+			"melody": [0, R, 7, R, 4, R, R, R, 9, R, 7, R, 4, R, R, R,
+				2, R, 4, R, 7, R, 4, R, 0, R, R, R, R, R, R, R],
+			"bass": [0, 0, -5, -5, -3, -3, -5, -5, 0, 0, -5, -5, -8, -8, -5, -5]}),
+		# Scorching Dunes: exotic phrygian-dominant sway.
+		"desert": _synth({"bpm": 96.0, "root": 196.0, "kick_every": 8, "hat_every": 4, "square": 0.4,
+			"melody": [0, R, 1, R, 4, R, 5, R, 4, R, 1, R, 0, R, R, R,
+				7, R, 5, R, 4, R, 1, R, 4, R, 1, R, 0, R, R, R],
+			"bass": [0, 0, 0, 0, -5, -5, -5, -5, 0, 0, 0, 0, -7, -7, -5, -5]}),
+		# Crystal Caverns: sparse high arpeggios, glassy.
+		"crystalline": _synth({"bpm": 102.0, "root": 261.6, "kick_every": 16, "hat_every": 4, "square": 0.2,
+			"melody": [0, 4, 7, 12, R, R, R, R, 0, 4, 7, 11, R, R, R, R,
+				-1, 4, 7, 12, R, R, R, R, 0, 5, 9, 12, R, R, R, R],
+			"bass": [0, 0, -3, -3, -5, -5, -3, -3, 0, 0, -3, -3, -7, -7, -5, -5]}),
+		# Sanctified Ruins: slow major hymn.
+		"holy": _synth({"bpm": 70.0, "root": 220.0, "kick_every": 16, "hat_every": 8, "square": 0.15,
+			"melody": [0, R, R, 4, R, R, 7, R, 9, R, 7, R, 4, R, R, R,
+				5, R, R, 4, R, R, 2, R, 0, R, R, R, R, R, R, R],
+			"bass": [0, 0, -3, -3, -5, -5, -3, -3, -7, -7, -5, -5, 0, 0, 0, 0]}),
+		# Thunder Plains: brooding mid-tempo under the rain.
+		"rainstorm": _synth({"bpm": 112.0, "root": 185.0, "kick_every": 8, "hat_every": 2, "square": 0.6,
+			"melody": [0, R, 3, R, 2, R, 3, R, 5, R, 3, R, 2, R, 0, R,
+				0, R, 3, R, 7, R, 5, R, 3, R, 2, R, 0, R, R, R],
+			"bass": [0, 0, 0, -2, -4, -4, -4, -2, 0, 0, 0, -2, -5, -5, -4, -4]}),
 		# BOSS TENSION PACKAGE: hard square tone, a harmony voice a fifth
 		# up, driving 8th-note bass, hats every step, kicks twice a bar.
 		# Fangmaw: fast, snarling chase.

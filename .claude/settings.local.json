@@ -63,7 +63,8 @@
       "PowerShell(curl.exe -sL -o \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\\\\assets\\\\sprites\\\\zombie.png\" \"https://raw.githubusercontent.com/crawl/crawl/master/crawl-ref/source/rltiles/mon/undead/ghoul.png\"; $b = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\\\\assets\\\\sprites\\\\zombie.png\"\\); Write-Output \"sig: $\\([char]$b[1]\\)$\\([char]$b[2]\\)$\\([char]$b[3]\\) size: $\\($b.Length\\)\")",
       "PowerShell(& \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\tools\\\\Godot_v4.4.1-stable_win64_console.exe\" --headless --path \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\" --import 2>&1 | Select-String -Pattern \"SCRIPT ERROR|Parse Error\" | Select-Object -First 12; echo \"IMPORT: $LASTEXITCODE\")",
       "PowerShell(Stop-Process -Id 18884 -Force -Confirm:$false -ErrorAction SilentlyContinue)",
-      "PowerShell(& \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\tools\\\\Godot_v4.4.1-stable_win64_console.exe\" --headless --path \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\" res://scenes/test.tscn 2>&1)"
+      "PowerShell(& \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\tools\\\\Godot_v4.4.1-stable_win64_console.exe\" --headless --path \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\" res://scenes/test.tscn 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\tools\\\\Godot_v4.4.1-stable_win64_console.exe\" --headless --path \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\" --import 2>&1 | Select-String -Pattern \"SCRIPT ERROR|Parse Error\" | Select-Object -First 10; echo \"IMPORT: $LASTEXITCODE\")"
     ]
   }
 }

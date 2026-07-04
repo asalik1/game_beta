@@ -183,6 +183,39 @@ func _run() -> void:
 	game.player.recalc()  # restore real combo value
 	print("ok: combo stat (%d/200 resets)" % resets)
 
+	# 3d2. Attributes: +5/level, class-scaled conversion, CR responds.
+	if game.player.unspent_attr < 5:
+		return _fail("no attribute points after leveling (has %d)" % game.player.unspent_attr)
+	var cr_before := game.player.combat_rating()
+	var atk_b := game.player.atk
+	var primary_attr: String = Classes.CLASSES[game.player.cls]["primary"]
+	if not game.player.add_attr_points(primary_attr, 5):
+		return _fail("could not spend attribute points")
+	if game.player.atk <= atk_b:
+		return _fail("primary attribute points did not raise ATK")
+	if game.player.combat_rating() <= cr_before:
+		return _fail("combat rating did not rise with attributes")
+	print("ok: attributes + combat rating (CR %d -> %d)" % [cr_before, game.player.combat_rating()])
+
+	# 3d3. Monster levels: a Lv 30 wolf out-stats a story-level wolf.
+	var w_lo := Story.enemy_stats_at("wolf", 2)
+	var w_hi := Story.enemy_stats_at("wolf", 30)
+	var boss_hi := Story.enemy_stats_at("fangmaw", 30)
+	if w_hi["hp"] <= w_lo["hp"] or w_hi["dmg"] <= w_lo["dmg"]:
+		return _fail("wolf did not scale with level")
+	if boss_hi["hp"] / Story.ENEMIES["fangmaw"]["hp"] <= w_hi["hp"] / Story.ENEMIES["wolf"]["hp"]:
+		return _fail("boss growth should outpace trash growth")
+	var lv_wolf := _dummy(Vector2(120, 40))
+	var lv_wolf30 := Enemy.make(game, "wolf", game.player.global_position + Vector2(-140, 40), 30)
+	game.add_enemy(lv_wolf30)
+	await _frames(3)
+	if lv_wolf30.max_hp <= lv_wolf.max_hp or lv_wolf30.level != 30:
+		return _fail("spawned enemy did not honor its level")
+	lv_wolf.take_damage(9999999.0)
+	lv_wolf30.take_damage(9999999.0)
+	await _frames(3)
+	print("ok: monster levels + growth scaling")
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -308,9 +341,15 @@ func _run() -> void:
 	await _frames(2)
 	if game.menus.current != "theme_pick":
 		return _fail("theme picker did not open")
+	game.menus.open_inventory("stats")
+	await _frames(2)
+	game.menus.open_skills("attributes")
+	await _frames(2)
+	game.menus.open_dev()
+	await _frames(2)
 	game.menus.close()
 	await _frames(2)
-	print("ok: shop, codex, skill tree + theme picker UI")
+	print("ok: shop, codex, skill tree, theme picker, stats tab, dev panel UI")
 
 	# 6c. Terrains: apply every terrain to zone 1, fire its event, tick
 	# hazards — none of it may crash. (Player parked away from the mobs

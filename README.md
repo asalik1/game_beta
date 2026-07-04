@@ -70,6 +70,15 @@ Combat is **keyboard only**: your abilities auto-aim at the nearest enemy
   tracker counts them down), and the boss only emerges once the zone is
   cleared. Melee classes have better base stats than ranged (LoL-style) to
   pay for the risk of fighting up close.
+- **Attributes & Combat Rating** — every level grants 5 attribute points
+  (STR/AGI/INT/VIT) allocated in the skill menu's Attributes tab; each class
+  converts them at different scaling ratios (an assassin gets 3x more from
+  AGI than STR). Your **Combat Rating** (under the gold display) sums your
+  whole build into one power number.
+- **Monster levels** — every monster has a level (shown on the target
+  reticle, color-coded by threat) and per-species growth rates: a boss
+  gains far more per level than a wolf. The codex lists each monster's
+  scaling and projected stats at Lv 25/50. Cap: 100.
 - **14 terrains with unique mechanics** (terrains.gd) — beyond the four
   story zones: Scorched Wastes (magma falls from the sky, floors collapse
   into lava), Frozen Expanse (slippery ice speeds everyone up, constant

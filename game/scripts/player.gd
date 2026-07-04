@@ -22,6 +22,8 @@ var level := 1
 var xp := 0
 var skill_points := 0
 var tree_points := {}    # skill cell id -> points (0..5)
+var attr_points := {"STR": 0, "AGI": 0, "INT": 0, "VIT": 0}
+var unspent_attr := 0    # +5 per level, allocate in the skills menu
 var gold := 30
 var potions := 3
 
@@ -236,6 +238,15 @@ func recalc() -> void:
 		var pts: int = tree_points[id]
 		for stat in cell.get("bonus", {}):
 			b[stat] = b.get(stat, 0.0) + cell["bonus"][stat] * pts
+	# Allocated attribute points, converted at CLASS scaling ratios
+	# (an assassin gets far more from AGI than from STR).
+	var attr_scale: Dictionary = Classes.ATTR_SCALE[cls]
+	for attr in attr_points:
+		var pts: int = attr_points[attr]
+		if pts <= 0:
+			continue
+		for stat in attr_scale.get(attr, {}):
+			b[stat] = b.get(stat, 0.0) + attr_scale[attr][stat] * pts
 
 	var hp_frac := hp / max_hp if max_hp > 0 else 1.0
 	var mp_frac := mp / max_mp if max_mp > 0 else 1.0
@@ -272,11 +283,21 @@ func current_lifesteal() -> float:
 	return lifesteal + (0.15 if berserk_time > 0.0 else 0.0)
 
 
-## Summary block for the inventory screen.
+## An attribute's TOTAL: everyone has a base of 5, allocation adds to it,
+## and the class primary also carries the class's natural level growth.
+func attr_total(attr: String) -> int:
+	var total: int = 5 + attr_points.get(attr, 0)
+	if Classes.CLASSES[cls]["primary"] == attr:
+		total += int(primary)
+	return total
+
+
+## Summary block (attributes tab / quick views).
 func stat_sheet() -> String:
-	var pname: String = Classes.CLASSES[cls]["primary"]
-	return "%s %d   ATK %d (%s)\nCrit %d%% (x%.1f)   Combo %d%%\nPhysRes %d   MagRes %d   CritRes %d\nEVA %d%%   DEX %d\nPen %d phys / %d mag\nHaste %d%%   Speed %d   Lifesteal %d%%   Greed %d%%" % [
-		pname, int(primary), int(atk), Classes.CLASSES[cls]["dmg_type"],
+	var unspent := "  (%d unspent — press T)" % unspent_attr if unspent_attr > 0 else ""
+	return "STR %d  AGI %d  INT %d  VIT %d%s\nATK %d (%s)\nCrit %d%% (x%.1f)   Combo %d%%\nPhysRes %d   MagRes %d   CritRes %d\nEVA %d%%   DEX %d\nPen %d phys / %d mag\nHaste %d%%   Speed %d   Lifesteal %d%%   Greed %d%%" % [
+		attr_total("STR"), attr_total("AGI"), attr_total("INT"), attr_total("VIT"), unspent,
+		int(atk), Classes.CLASSES[cls]["dmg_type"],
 		int(Stats.crit_curve(crit) * 100), crit_dmg, int(Stats.combo_curve(combo) * 100),
 		int(physres), int(magres), int(critres),
 		int(Stats.eva_curve(eva) * 100), int(dex),
@@ -364,6 +385,7 @@ func gain_xp(amount: int) -> void:
 		xp -= xp_needed()
 		level += 1
 		skill_points += 1
+		unspent_attr += 5
 		recalc()
 		hp = max_hp
 		mp = max_mp
@@ -377,6 +399,32 @@ func gain_xp(amount: int) -> void:
 			if unlocked == 1:
 				for slot in ability_theme:
 					ability_theme[slot] = theme["id"]
+
+
+## Spend unallocated attribute points (STR/AGI/INT/VIT).
+func add_attr_points(attr: String, n: int) -> bool:
+	if unspent_attr <= 0 or not attr_points.has(attr):
+		return false
+	var spend := mini(n, unspent_attr)
+	attr_points[attr] += spend
+	unspent_attr -= spend
+	recalc()
+	game.sfx("levelup")
+	return true
+
+
+## One number that approximates total power (gear + gems + level +
+## attributes + tree). Shown under the gold display.
+func combat_rating() -> int:
+	var crit_eff := Stats.crit_curve(crit)
+	var offense := atk * (1.0 + crit_eff * (crit_dmg - 1.0)) * 3.0
+	offense *= 1.0 + (physpen + magpen) * 0.01
+	offense *= 1.0 + Stats.combo_curve(combo) * 0.5
+	offense *= 1.0 + cdr * 0.6
+	var defense := max_hp * 0.35 + (physres + magres) * 1.2 + critres * 0.8
+	defense *= 1.0 + Stats.eva_curve(eva) * 0.8
+	var utility := max_mp * 0.3 + speed * 0.2 + lifesteal * 250.0 + dex * 1.0
+	return int(round(offense + defense + utility))
 
 
 func add_tree_point(id: String) -> bool:

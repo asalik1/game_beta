@@ -6,25 +6,53 @@ class_name Story
 
 # Defensive stats: physres/magres (log-curve reduction), eva (dodge
 # chance, countered by DEX), critres (shaves attacker crit chance).
+#
+# LEVELS & GROWTH: the listed hp/dmg are the monster's stats AT its
+# listed "level" (so Chapter 1 balance is unchanged). Away from that
+# level they scale by the per-monster GROWTH rates — a wolf gains
+# little per level while a boss gains a lot, so a high-level wolf
+# is dangerous but a same-level boss dwarfs it. Cap: level 100.
+const LEVEL_CAP := 100
+
 const ENEMIES := {
 	"wolf":     {"name": "Blighted Wolf",   "sprite": "wolf",     "hp": 34.0,  "dmg": 8.0,  "speed": 155.0, "xp": 12, "gold": 4,  "ranged": false, "scale": 3.0,
-		"physres": 5.0,  "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys"},
+		"physres": 5.0,  "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
+		"level": 2, "hp_g": 0.10, "dmg_g": 0.08},
 	"spider":   {"name": "Marsh Spider",    "sprite": "spider",   "hp": 28.0,  "dmg": 6.0,  "speed": 195.0, "xp": 14, "gold": 5,  "ranged": false, "scale": 3.0,
-		"physres": 0.0,  "magres": 5.0,  "eva": 0.12, "critres": 0.0, "dmg_type": "phys"},
+		"physres": 0.0,  "magres": 5.0,  "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
+		"level": 2, "hp_g": 0.09, "dmg_g": 0.08},
 	"cultist":  {"name": "Blight Cultist",  "sprite": "cultist",  "hp": 40.0,  "dmg": 10.0, "speed": 90.0,  "xp": 20, "gold": 8,  "ranged": true,  "scale": 3.0,
-		"physres": 5.0,  "magres": 15.0, "eva": 0.0,  "critres": 0.0, "dmg_type": "magic"},
+		"physres": 5.0,  "magres": 15.0, "eva": 0.0,  "critres": 0.0, "dmg_type": "magic",
+		"level": 4, "hp_g": 0.11, "dmg_g": 0.10},
 	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 14.0, "speed": 120.0, "xp": 24, "gold": 10, "ranged": false, "scale": 3.0,
-		"physres": 25.0, "magres": 5.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys"},
+		"physres": 25.0, "magres": 5.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
+		"level": 7, "hp_g": 0.12, "dmg_g": 0.10},
 	"zombie":   {"name": "Risen Corpse",    "sprite": "zombie",   "hp": 45.0,  "dmg": 10.0, "speed": 95.0,  "xp": 15, "gold": 6,  "ranged": false, "scale": 3.0,
-		"physres": 12.0, "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys"},
-	# Bosses (real defenses: bring penetration or lose a chunk of damage)
+		"physres": 12.0, "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
+		"level": 4, "hp_g": 0.10, "dmg_g": 0.09},
+	# Bosses: strong base AND strong growth ("dragon-grade" scaling).
 	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 460.0,  "dmg": 15.0, "speed": 130.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
-		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "dmg_type": "phys"},
+		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "dmg_type": "phys",
+		"level": 4, "hp_g": 0.14, "dmg_g": 0.11},
 	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 620.0,  "dmg": 12.0, "speed": 105.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5,
-		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "dmg_type": "magic"},
+		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "dmg_type": "magic",
+		"level": 7, "hp_g": 0.14, "dmg_g": 0.11},
 	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 1000.0, "dmg": 18.0, "speed": 115.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5,
-		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "dmg_type": "phys"},
+		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "dmg_type": "phys",
+		"level": 10, "hp_g": 0.15, "dmg_g": 0.12},
 }
+
+
+## A monster's hp/dmg/xp/gold at an arbitrary level (clamped to the cap).
+static func enemy_stats_at(kind: String, level: int) -> Dictionary:
+	var base: Dictionary = ENEMIES[kind]
+	var lvl := clampi(level, 1, LEVEL_CAP)
+	var d := lvl - int(base["level"])
+	var hp_m := maxf(0.25, 1.0 + d * float(base["hp_g"]))
+	var dmg_m := maxf(0.3, 1.0 + d * float(base["dmg_g"]))
+	var reward_m := maxf(0.3, 1.0 + d * 0.12)
+	return {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
+		"xp": int(ceil(base["xp"] * reward_m)), "gold": int(ceil(base["gold"] * reward_m))}
 
 # ------------------------------------------------------------------ zones ---
 # Positions are relative to the left edge of each zone.

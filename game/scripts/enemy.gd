@@ -6,6 +6,7 @@ class_name Enemy extends CharacterBody2D
 var game: Node2D
 var kind := "wolf"
 var display_name := "Monster"
+var level := 1
 var max_hp := 30.0
 var hp := 30.0
 var dmg := 8.0
@@ -47,23 +48,26 @@ var burn_color := Color(1.4, 0.8, 0.6)  # orange = fire, green = poison
 var vuln_time := 0.0   # takes +50% damage while marked
 
 
-static func make(game_node: Node2D, enemy_kind: String, pos: Vector2) -> Enemy:
+static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1) -> Enemy:
 	var e := Enemy.new()
-	e._setup(game_node, enemy_kind, pos)
+	e._setup(game_node, enemy_kind, pos, at_level)
 	return e
 
 
-func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2) -> void:
+func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1) -> void:
 	game = game_node
 	kind = enemy_kind
 	var stats: Dictionary = Story.ENEMIES[enemy_kind]
 	display_name = stats["name"]
-	max_hp = stats["hp"]
+	# Stats scale with the monster's LEVEL and its per-kind growth rates.
+	level = at_level if at_level > 0 else int(stats.get("level", 1))
+	var scaled := Story.enemy_stats_at(enemy_kind, level)
+	max_hp = scaled["hp"]
 	hp = max_hp
-	dmg = stats["dmg"]
+	dmg = scaled["dmg"]
 	speed = stats["speed"]
-	xp_value = stats["xp"]
-	gold_value = stats.get("gold", 4)
+	xp_value = scaled["xp"]
+	gold_value = scaled["gold"]
 	ranged = stats["ranged"]
 	physres = stats.get("physres", 0.0)
 	magres = stats.get("magres", 0.0)

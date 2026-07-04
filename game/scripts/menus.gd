@@ -176,9 +176,21 @@ func pick_class(id: String) -> void:
 
 # --------------------------------------------------------------- inventory ---
 
-func open_inventory() -> void:
+func open_inventory(tab := "gear") -> void:
 	var vbox := _open("Inventory — %d gold" % game.player.gold, 1120, 640)
 	current = "inventory"
+
+	# Subtabs: gear management / full character sheet.
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 12)
+	vbox.add_child(tabs)
+	_btn(tabs, "  Gear  ", func() -> void: open_inventory("gear"),
+		Color(0.95, 0.85, 0.5) if tab == "gear" else Color(0.6, 0.6, 0.6))
+	_btn(tabs, "  Stats  ", func() -> void: open_inventory("stats"),
+		Color(0.95, 0.85, 0.5) if tab == "stats" else Color(0.6, 0.6, 0.6))
+	if tab == "stats":
+		_build_stats_tab(vbox, game.player)
+		return
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 24)
 	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -205,8 +217,7 @@ func open_inventory() -> void:
 			dl.custom_minimum_size = Vector2(430, 0)
 		else:
 			_lbl(left, "     %s — empty" % slot.capitalize(), 14, Color(0.45, 0.45, 0.45))
-	_lbl(left, "YOUR STATS", 16, Color(0.95, 0.85, 0.5))
-	_lbl(left, game.player.stat_sheet(), 13, Color(0.75, 0.78, 0.85))
+	_lbl(left, "(full character sheet in the Stats tab)", 12, Color(0.55, 0.55, 0.6))
 
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -253,6 +264,86 @@ func open_inventory() -> void:
 					open_inventory()
 				_btn(line, "⚒ synthesize 3 → Lv%d" % (g["lvl"] + 1), synth_cb, Color(0.6, 0.9, 1.0))
 	_hint(vbox, "ESC / I to close")
+
+
+## Full character sheet: every stat on its own row, with a hover tooltip
+## explaining what it does — so players learn what to invest in.
+func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 4)
+	scroll.add_child(list)
+
+	_lbl(list, "ATTRIBUTES  (hover any stat to learn what it does)", 16, Color(0.95, 0.85, 0.5))
+	for attr in Classes.ATTR_NAMES:
+		var is_primary: bool = Classes.CLASSES[p.cls]["primary"] == attr
+		_stat_row(list, "%s%s" % [attr, "  ★" if is_primary else ""], str(p.attr_total(attr)),
+			Classes.attr_help(p.cls, attr),
+			Color(0.95, 0.85, 0.5) if is_primary else Color(0.85, 0.85, 0.9))
+	if p.unspent_attr > 0:
+		_lbl(list, "     %d unspent points — allocate in the skill menu (T)" % p.unspent_attr, 13, Color(0.5, 1.0, 0.5))
+
+	_lbl(list, "COMBAT", 16, Color(0.95, 0.85, 0.5))
+	var rows := [
+		["Combat Rating", str(p.combat_rating()), "Your whole build boiled down to one power number: attack, crits, penetration, defenses, mobility — everything counts."],
+		["ATK (%s)" % Classes.CLASSES[p.cls]["dmg_type"], str(int(p.atk)), "Base damage of all your abilities. Your class deals %s damage." % Classes.CLASSES[p.cls]["dmg_type"]],
+		["Crit chance", "%d%%" % int(Stats.crit_curve(p.crit) * 100), "Chance a hit deals bonus damage. Diminishing returns past 70%. DoTs and TRUE damage never crit."],
+		["Crit damage", "x%.2f" % p.crit_dmg, "How hard your critical hits land."],
+		["Combo", "%d%%" % int(Stats.combo_curve(p.combo) * 100), "Chance an ability skips its cooldown AND refunds mana (capped at 60%). Ultimates excluded."],
+		["Phys Pen", str(int(p.physpen)), "Ignores enemy physical resistance. Any EXCESS beyond their resistance becomes bonus damage."],
+		["Magic Pen", str(int(p.magpen)), "Ignores enemy magic resistance. Any EXCESS beyond their resistance becomes bonus damage."],
+		["DEX", str(int(p.dex)), "Hit rate: reduces the enemy's chance to EVADE your attacks. Only matters against evasive enemies (spiders, witches)."],
+		["Haste", "%d%%" % int(p.cdr * 100), "Reduces all ability cooldowns."],
+	]
+	for r in rows:
+		_stat_row(list, r[0], r[1], r[2])
+
+	_lbl(list, "DEFENSE", 16, Color(0.95, 0.85, 0.5))
+	var rows2 := [
+		["HP", "%d / %d" % [int(p.hp), int(p.max_hp)], "Your health. Dying respawns you at the zone entrance."],
+		["Mana", "%d / %d" % [int(p.mp), int(p.max_mp)], "Fuel for abilities. Regenerates over time (mages regenerate 50% faster)."],
+		["Phys Res", str(int(p.physres)), "Reduces physical damage taken (diminishing returns — never reaches 100%)."],
+		["Magic Res", str(int(p.magres)), "Reduces magic damage taken (diminishing returns). TRUE damage ignores all resistances."],
+		["Crit Res", str(int(p.critres)), "Shaves the enemy's chance to critically hit you."],
+		["Evasion", "%d%%" % int(Stats.eva_curve(p.eva) * 100), "Chance to fully dodge a hit. Countered by the attacker's DEX. Capped at 60%."],
+	]
+	for r in rows2:
+		_stat_row(list, r[0], r[1], r[2])
+
+	_lbl(list, "UTILITY", 16, Color(0.95, 0.85, 0.5))
+	var rows3 := [
+		["Speed", str(int(p.speed)), "How fast you move. Ice patches boost it; void rifts slow it."],
+		["Lifesteal", "%d%%" % int(p.lifesteal * 100), "Heals you for a share of damage dealt. AoE hits only steal a third."],
+		["Greed", "%d%%" % int(Stats.greed_gold(p.greed) * 100), "Bonus gold from every source. Above 30% it also nudges chest drop rates. Strong diminishing returns past 50%."],
+	]
+	for r in rows3:
+		_stat_row(list, r[0], r[1], r[2])
+	_hint(vbox, "ESC / I to close")
+
+
+## One stat line: name, value, and a hover tooltip that explains it.
+func _stat_row(parent: Node, stat_name: String, value: String, tip: String, color := Color(0.85, 0.85, 0.9)) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.tooltip_text = tip
+	parent.add_child(row)
+	var n := _lbl(row, stat_name, 14, color)
+	n.custom_minimum_size = Vector2(220, 0)
+	n.mouse_filter = Control.MOUSE_FILTER_STOP
+	n.tooltip_text = tip
+	var v := _lbl(row, value, 14, Color(1, 1, 1))
+	v.custom_minimum_size = Vector2(160, 0)
+	v.mouse_filter = Control.MOUSE_FILTER_STOP
+	v.tooltip_text = tip
+	var hint := _lbl(row, "🛈", 12, Color(0.5, 0.55, 0.65))
+	hint.mouse_filter = Control.MOUSE_FILTER_STOP
+	hint.tooltip_text = tip
 
 
 ## Bag gems grouped by stat+level: key -> {gem, count}.
@@ -339,10 +430,24 @@ func _cell_glyph(cell: Dictionary) -> String:
 			"atk_pct": return "ab_slash"
 	return "ic_crit"
 
-func open_skills() -> void:
+func open_skills(tab := "talents") -> void:
 	var p: Player = game.player
-	var vbox := _open("%s Skill Tree — %d point%s available" % [Classes.CLASSES[p.cls]["name"], p.skill_points, "" if p.skill_points == 1 else "s"], 1120, 640)
+	var vbox := _open("%s — %s" % [Classes.CLASSES[p.cls]["name"], "Skill Tree" if tab == "talents" else "Attributes"], 1120, 640)
 	current = "skills"
+
+	# Subtabs: talents / attribute allocation.
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 12)
+	vbox.add_child(tabs)
+	_btn(tabs, "  Talents (%d pts)  " % p.skill_points, func() -> void: open_skills("talents"),
+		Color(0.95, 0.85, 0.5) if tab == "talents" else Color(0.6, 0.6, 0.6))
+	_btn(tabs, "  Attributes (%d pts)  " % p.unspent_attr, func() -> void: open_skills("attributes"),
+		Color(0.95, 0.85, 0.5) if tab == "attributes" else Color(0.6, 0.6, 0.6))
+
+	if tab == "attributes":
+		_build_attributes_tab(vbox, p)
+		return
+
 	_lbl(vbox, "Rows unlock as you level. Spend up to %d points per row, spread across its 3 columns (max %d per skill). Each column follows one of your themes." % [Skills.MAX_PER_ROW, Skills.MAX_PER_CELL], 13, Color(0.6, 0.62, 0.68))
 
 	var scroll := ScrollContainer.new()
@@ -407,6 +512,33 @@ func open_skills() -> void:
 		_btn(trow, "%s: %s ▾" % [Classes.ability(p.cls, s)["name"], label], pick_cb,
 			tcolor, p.themes_known > 0, Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][s], tcolor))
 	_hint(vbox, "ESC / T to close — themes change how your abilities behave")
+
+
+## Attribute allocation: +5 points per level, converted at CLASS
+## scaling ratios (your class page shows exactly what a point buys YOU).
+func _build_attributes_tab(vbox: VBoxContainer, p: Player) -> void:
+	_lbl(vbox, "Every level grants 5 attribute points. Conversion depends on your class — %s scales best with %s." % [Classes.CLASSES[p.cls]["name"], Classes.CLASSES[p.cls]["primary"]], 13, Color(0.6, 0.62, 0.68))
+	_lbl(vbox, "Unspent: %d points" % p.unspent_attr, 18, Color(0.5, 1.0, 0.5) if p.unspent_attr > 0 else Color(0.6, 0.6, 0.65))
+	for attr in Classes.ATTR_NAMES:
+		var a: String = attr
+		var is_primary: bool = Classes.CLASSES[p.cls]["primary"] == a
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		vbox.add_child(row)
+		var name_l := _lbl(row, "%s  %d%s" % [a, p.attr_points[a], "  ★" if is_primary else ""], 17,
+			Color(0.95, 0.85, 0.5) if is_primary else Color(0.85, 0.85, 0.9))
+		name_l.custom_minimum_size = Vector2(140, 0)
+		_btn(row, " +1 ", func() -> void:
+			game.player.add_attr_points(a, 1)
+			open_skills("attributes"), Color(0.5, 1.0, 0.5), p.unspent_attr > 0)
+		_btn(row, " +5 ", func() -> void:
+			game.player.add_attr_points(a, 5)
+			open_skills("attributes"), Color(0.5, 1.0, 0.5), p.unspent_attr > 0)
+		var desc := _lbl(row, Classes.attr_text(p.cls, a), 13, Color(0.68, 0.7, 0.78))
+		desc.custom_minimum_size = Vector2(620, 0)
+	_lbl(vbox, "YOUR STATS", 16, Color(0.95, 0.85, 0.5))
+	_lbl(vbox, p.stat_sheet(), 13, Color(0.75, 0.78, 0.85))
+	_hint(vbox, "ESC / T to close")
 
 
 ## Dedicated variant chooser: shows the base ability and every theme
@@ -621,12 +753,20 @@ func _codex_monsters(list: VBoxContainer) -> void:
 			var info := VBoxContainer.new()
 			info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(info)
-			var name_l := _lbl(info, st["name"], 16, Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
+			var name_l := _lbl(info, "%s   —   Lv %d" % [st["name"], st.get("level", 1)], 16, Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
 			name_l.custom_minimum_size = Vector2(780, 0)
 			var stats_l := _lbl(info, "HP %d   ·   Damage %d   ·   Speed %d   ·   XP %d   ·   Gold %d   ·   %s" %
 				[int(st["hp"]), int(st["dmg"]), int(st["speed"]), st["xp"], st.get("gold", 0),
 				"Ranged caster" if st["ranged"] else "Melee"], 13, Color(0.7, 0.72, 0.78))
 			stats_l.custom_minimum_size = Vector2(780, 0)
+			# Scaling: growth per level + projected stats (cap 100).
+			var at25 := Story.enemy_stats_at(kind, 25)
+			var at50 := Story.enemy_stats_at(kind, 50)
+			var grow_l := _lbl(info, "Scaling: HP +%d%%/lvl, DMG +%d%%/lvl   →   Lv 25: HP %d, DMG %d   ·   Lv 50: HP %d, DMG %d" %
+				[int(st.get("hp_g", 0.1) * 100), int(st.get("dmg_g", 0.1) * 100),
+				int(at25["hp"]), int(at25["dmg"]), int(at50["hp"]), int(at50["dmg"])],
+				12, Color(0.55, 0.65, 0.8))
+			grow_l.custom_minimum_size = Vector2(780, 0)
 
 
 func _codex_gear(list: VBoxContainer) -> void:
@@ -821,6 +961,37 @@ func open_dev() -> void:
 		if is_instance_valid(game.current_boss):
 			game.current_boss.take_damage(9999999.0)
 		open_dev())
+
+	# ------------------------------------------------------------ audio ---
+	_lbl(list, "AUDIO (browse every track and sound in the game)", 16, Color(0.95, 0.85, 0.5))
+	var arow := HBoxContainer.new()
+	arow.add_theme_constant_override("separation", 8)
+	list.add_child(arow)
+	_lbl(arow, "Music:", 14)
+	var mopt := OptionButton.new()
+	mopt.add_item("(silence)")
+	var mkeys: Array = game.music_tracks.keys()
+	mkeys.sort()
+	for k in mkeys:
+		mopt.add_item(k)
+		if k == game.current_track:
+			mopt.select(mopt.item_count - 1)
+	mopt.item_selected.connect(func(idx: int) -> void:
+		game.set_music("" if idx == 0 else mkeys[idx - 1])
+	)
+	arow.add_child(mopt)
+	_lbl(arow, "   Play SFX once:", 14)
+	var sopt := OptionButton.new()
+	sopt.add_item("(choose a sound)")
+	var skeys: Array = game.sounds.keys()
+	skeys.sort()
+	for k in skeys:
+		sopt.add_item(k)
+	sopt.item_selected.connect(func(idx: int) -> void:
+		if idx > 0:
+			game.sfx(skeys[idx - 1])
+	)
+	arow.add_child(sopt)
 
 	# --------------------------------------------------------- terrains ---
 	_lbl(list, "TERRAIN (applies to the zone you're standing in)", 16, Color(0.95, 0.85, 0.5))
