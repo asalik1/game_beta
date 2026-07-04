@@ -7,7 +7,7 @@ class_name SaveGame
 ## Dictionaries of strings/numbers). JSON turns ints into floats, so
 ## every read casts explicitly — never trust a loaded number's type.
 
-const VERSION := 1
+const VERSION := 2   # v2: the zone graph (visited/cleared rooms, wander seed)
 const MAX_SLOTS := 6
 
 
@@ -46,6 +46,13 @@ static func write(game: Game, slot: int) -> void:
 		"bosses_slain": game.boss_done.keys(),
 		"flags": game.flags,
 		"merchant_zones": game.merchant_zones,
+		# --- the zone graph (v2) ---
+		"cur_room": game.cur_room,
+		"last_safe_room": game.last_safe_room,
+		"visited_rooms": game.visited.keys(),
+		"cleared_rooms": game.cleared.keys(),
+		"door_seen": game.door_seen.keys(),
+		"wander_seed": game.wander_seed,
 	}
 	var f := FileAccess.open(path(slot), FileAccess.WRITE)
 	if f:
@@ -134,9 +141,6 @@ static func apply(game: Game, data: Dictionary) -> void:
 	p.recalc()
 	p.hp = clampf(float(data.get("hp", p.max_hp)), 1.0, p.max_hp)
 	p.mp = clampf(float(data.get("mp", p.max_mp)), 0.0, p.max_mp)
-	var pos: Array = data.get("pos", [400.0, 360.0])
-	var v := Vector2(float(pos[0]), float(pos[1]))
-	p.global_position = game.clamp_to_zone(v, v)
 
 	game.quest_key = String(data.get("quest_key", "talk"))
 	game.talked_to_elder = bool(data.get("talked_to_elder", false))
@@ -144,10 +148,33 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.boss_done = {}
 	for kind in data.get("bosses_slain", []):
 		game.boss_done[String(kind)] = true
-	# Wandering merchants that had arrived come back (village merchant
-	# already exists from the world build — the spawn guard skips it).
-	for z in data.get("merchant_zones", []):
-		game._spawn_merchant(int(z))
+	game.wander_seed = int(data.get("wander_seed", 0))
+
+	# --- room state (v2). Pre-graph saves (v1) keep the character and
+	# the story, but restart the chapter's GEOGRAPHY from its first room
+	# — their positions were authored for a world that no longer exists.
+	if int(data.get("version", 1)) >= 2 and data.has("visited_rooms"):
+		for r in data.get("visited_rooms", []):
+			game.visited[int(r)] = true
+		for r in data.get("cleared_rooms", []):
+			game.cleared[int(r)] = true
+		for r in data.get("door_seen", []):
+			game.door_seen[int(r)] = true
+		game.last_safe_room = clampi(int(data.get("last_safe_room", 0)), 0, game.zone_count - 1)
+		# Wandering merchants that had arrived come back (nodes appear
+		# when their room builds).
+		for z in data.get("merchant_zones", []):
+			game._spawn_merchant(int(z))
+		var cur: int = clampi(int(data.get("cur_room", 0)), 0, game.zone_count - 1)
+		var pos: Array = data.get("pos", [400.0, 360.0])
+		var anchor: Vector2 = game.room_center(cur)
+		game._enter_room(cur)
+		p.global_position = game.clamp_to_zone(Vector2(float(pos[0]), float(pos[1])), anchor)
+	else:
+		for z in data.get("merchant_zones", []):
+			game._spawn_merchant(int(z))
+		p.global_position = game._start_pos()
+		game._enter_room(game.room_at_pos(p.global_position))
 	game.reconcile_after_load()
 
 

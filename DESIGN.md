@@ -225,6 +225,13 @@ wings, and dead ends. Design intents:
   Visited-room state saves with the character.
 - The critical path stays readable; side rooms are where the optional density
   lives. Roughly 40–50% of rooms should be off the boss path.
+- **Every run lays a different map (playtest round 4).** A chapter's boss
+  path (the *spine*) is authored as an ordered room list, not coordinates;
+  each run walks it onto the grid eastward with seeded N/S jogs, then
+  attaches side rooms to seeded same-terrain hosts. The seed is the
+  character's wander_seed — saves reload their exact world; replays and new
+  characters roll a fresh one. Content stays authored; only the geography
+  rolls.
 
 ### The room-type palette
 
@@ -255,6 +262,13 @@ Consequences of 20–30-room graphs that need answers *before* coding, not after
   Rule: from the map screen, travel instantly to any **visited safe room**
   (hub, merchant camp, boss arena after the kill). Combat rooms are never
   travel targets — the space between safe rooms stays real.
+- **Purge seals (playtest round 2).** Any room with living packs seals every
+  door while they live — no running past content, no naked corridor sprints.
+  Aggro stays per-pack inside the room; the quest line shows the room's
+  "monsters left" counter as the visible WHY. The last kill fires a brief
+  green cleansing pulse — *the blight recedes* — and the seals lift. The
+  critical path also bends N/S and routes through at least one merchant
+  camp per chapter, so the grid reads as a place, not a corridor.
 - **Room-state persistence.** Cleared combat rooms stay cleared for the
   chapter run (and through save/load). Elites, socials, and caches do not
   respawn once resolved. Chapter replay re-rolls the seeded rooms — replays
@@ -262,7 +276,10 @@ Consequences of 20–30-room graphs that need answers *before* coding, not after
 - **Death & checkpoints.** Death returns you to the last visited safe room
   with gear/gold/XP intact; the room you died in resets. No corpse runs, no
   loot loss — the penalty is the walk and the retry, which the bigger maps
-  now make meaningful on their own.
+  now make meaningful on their own. Nothing follows you home: boss adds and
+  terrain-event spawns despawn on death, and every aggroed survivor calms
+  and walks back to its post (playtest round 3 — a chaser once camped the
+  respawn room).
 - **Autosave on every room transition.** A 45–75 minute chapter cannot
   assume one sitting. Room granularity means quitting anywhere costs at most
   one room of progress.
@@ -301,8 +318,25 @@ The 13-minute clear isn't only a content-volume problem:
 
 - Rooms grow to 2–3 screens of walkable space, more mob packs per room.
 - Time-to-kill at level parity roughly doubles (mob HP tune, not damage).
+- **Level-gap rules (playtest round 3).** ±2 levels is a fair fight; beyond
+  that every level compounds — your damage collapses (×0.75/level, floor 5%)
+  and theirs multiplies (×1.25/level, cap 8×). A +10 boss one-shots a squishy
+  and shrugs off their spells; a perfect-dodge god run stays possible,
+  face-tanking does not. (Found in dev mode: a naked Lv4 mage soloed a Lv14
+  boss. Never again.) Telegraphed ground attacks stay un-scaled — they are
+  the dodgeable, skill-checked part of every fight.
 - The XP curve assumes side rooms — skipping them leaves you under-leveled.
 - Gold/potion scarcity pass so merchants and haggling matter.
+- **The chapter XP total is FIXED (playtest round 4).** Kill XP comes only
+  from authored room packs and bosses — terrain-event spawns and boss
+  summons pay zero — so every run yields the same total. Replaying a
+  chapter you have already COMPLETED pays no XP at all: farm gold and
+  gear, never levels.
+- **Act loot ceilings (playtest round 4).** Chapter 1 never drops above C;
+  Chapter 2 caps at A; S-tier is Act 3 / endgame loot. Chest tier weights
+  are unchanged — rolls above the ceiling collapse to it. Power-curve
+  note: ch1 was implicitly balanced around lucky A/S drops; the cap plus
+  the mob retune is deliberate pressure — verify in the next playtest.
 - Aggro becomes per-pack, not per-room — rooms are too big for all-at-once.
 - **Combat readability** (standing playtest feedback): cooldowns and resource
   costs get visible numbers on screen, and melee classes get risk

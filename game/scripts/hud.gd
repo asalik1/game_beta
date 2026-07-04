@@ -184,7 +184,7 @@ func _ready() -> void:
 	# Two short lines on the far left so they never collide with the
 	# ability bar's labels in the bottom center.
 	var controls := _label(Vector2(14, 682), 11, Color(0.7, 0.7, 0.7), 400)
-	controls.text = "WASD move · TAB target · E talk"
+	controls.text = "WASD move · TAB target · E talk · M map"
 	var controls2 := _label(Vector2(14, 698), 11, Color(0.7, 0.7, 0.7), 400)
 	controls2.text = "I inventory · T skills · C codex · ESC menu"
 	hint_labels = [controls, controls2]
@@ -300,7 +300,7 @@ func update_stats(p: Player) -> void:
 	_set_fill(xp_fill, float(p.xp) / float(p.xp_needed()))
 	var cls_name: String = Classes.CLASSES[p.cls]["name"]
 	var pts := "  (+%d pts, press T)" % p.skill_points if p.skill_points > 0 else ""
-	stats_label.text = "%s  Lv %d   HP %d/%d   MP %d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), int(p.mp), pts]
+	stats_label.text = "%s  Lv %d   HP %d/%d   MP %d/%d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), int(p.mp), int(p.max_mp), pts]
 	gold_label.text = "◉ %d gold    Potions [%s] x%d" % [p.gold, OS.get_keycode_string(game.binds["potion"]), p.potions]
 	cr_label.text = "Combat Rating: %d" % p.combat_rating()
 
@@ -326,6 +326,9 @@ func update_stats(p: Player) -> void:
 		box["key"].text = OS.get_keycode_string(game.binds[slot])
 		box["name"].text = ab["name"]
 		box["cost"].text = str(int(cost)) if cost > 0 else ""
+		# Readability: the mana price reads red the moment you can't pay it.
+		box["cost"].add_theme_color_override("font_color",
+			Color(1.0, 0.4, 0.35) if p.mp < cost else Color(0.5, 0.7, 1.0))
 		var remaining: float = p.cds[slot]
 		var max_cd: float = p.ability_cd(slot)
 		var frac: float = clampf(remaining / max_cd, 0.0, 1.0)

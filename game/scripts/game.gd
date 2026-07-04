@@ -1,23 +1,36 @@
 class_name Game extends Node2D
-## The conductor. Builds the world (4 zones in a row), spawns the player,
+## The conductor. Builds the world as a ZONE GRAPH — rooms on a grid,
+## connected N/S/E/W, built lazily on first entry — spawns the player,
 ## enemies, merchants and bosses, runs the story beats, and handles
 ## loot drops, death and victory.
 ##
-## World layout (each zone is ZONE_W wide, gates between them):
-##   [ Village ] | [ Darkwood ] | [ Blightmarsh ] | [ Vargoth's Keep ]
+## Rooms are the chapter's "zones" array (index = room id, still called
+## zone_idx on enemies). Graph-authored rooms carry "coord"/"exits"
+## (see Story.ZONES); legacy chapters without coords are auto-converted
+## to a west→east chain and their positions rescaled to the room size.
 
 const TILE := 48
-const TILES_W := 34
-const TILES_H := 15
-const ZONE_W := TILES_W * TILE
-const WORLD_H := TILES_H * TILE
+const TILES_W := 44              # rooms grew: ~2 screens of walkable space
+const TILES_H := 26
+const ROOM_W := TILES_W * TILE   # 2112
+const ROOM_H := TILES_H * TILE   # 1248
+# Legacy zone-authoring space (Chapter 2 content modules): positions
+# written for the old 34x15 strip get rescaled into the bigger rooms.
+const LEGACY_W := 34 * TILE
+const LEGACY_H := 15 * TILE
+const DOOR_TILES := 3            # door gap width, in tiles
+const DIRS := {"N": Vector2i(0, -1), "S": Vector2i(0, 1), "E": Vector2i(1, 0), "W": Vector2i(-1, 0)}
+const OPP := {"N": "S", "S": "N", "E": "W", "W": "E"}
 
 # ------------------------------------------------------------- chapters ---
-# The world is data: Story.CHAPTER_LIST[chapter_id] decides the zones,
+# The world is data: Story.CHAPTER_LIST[chapter_id] decides the rooms,
 # starting quest and final boss. switch_chapter() rebuilds everything.
 var chapter_id := "ch1"
-var zones: Array = []            # this chapter's zone dicts
+var zones: Array = []            # this chapter's room dicts
 var zone_count := 0
+var rooms: Array = []            # runtime graph meta per room:
+                                 # {coord: Vector2i, exits: {dir: lock}, scale: Vector2, origin: Vector2}
+var coord_to_room := {}          # Vector2i -> room index
 var world: Node2D = null         # every world node lives under here
 
 const ST_PLAYING := 0
@@ -39,23 +52,32 @@ var reticle_label: Label
 var binds := {
 	"a1": KEY_J, "a2": KEY_K, "a3": KEY_L, "ult": KEY_U,
 	"potion": KEY_Q, "interact": KEY_E, "inventory": KEY_I, "skills": KEY_T,
-	"codex": KEY_C, "target": KEY_TAB,
+	"codex": KEY_C, "target": KEY_TAB, "map": KEY_M,
 }
 
 var quest_key := "talk"
 var talked_to_elder := false
 var talk_cd := 0.0
-var last_zone := -1
+var cur_room := 0                # the room the player occupies (only it simulates)
+var last_room := -1              # previous frame's room (change detection)
 var play_started := false
+
+# ---------------------------------------------------------- room state ---
+var built := {}                  # room idx -> true (world nodes exist)
+var visited := {}                # room idx -> true (fog of war; saved)
+var cleared := {}                # room idx -> true (packs dead; saved)
+var door_seen := {}              # room idx -> true (its door was visible from
+                                 # an adjacent visited room; boss marker on map)
+var last_safe_room := 0          # death returns you here
 
 var elder: Node2D
 var interactables: Array = []    # [{node, prompt, action}]
-var gates: Array = []
-var zone_alive := {}             # zone index -> monsters still alive
+var gates := {}                  # edge key "a_b" -> gate Node2D (locked edges only)
+var zone_alive := {}             # room index -> monsters still alive
 var boss_spawned := {}
 var boss_done := {}
 var current_boss: Boss = null
-var shop_stock := {}             # zone index -> Array of items for sale
+var shop_stock := {}             # room index -> Array of items for sale
 
 var shake_amt := 0.0
 var sounds: Dictionary = {}
@@ -63,14 +85,15 @@ var sound_pool: Array = []
 var loot_rng := RandomNumberGenerator.new()
 var ambient_fx: CPUParticles2D = null
 var npc_emote_t := 4.0
-var barrier: StaticBody2D = null      # seals the entrance mid-combat
-var barrier_glow: Sprite2D = null
+# Battle seals: while the current room is HOT (an aggroed pack or a live
+# boss), every door of the room closes — no retreating mid-combat.
+var door_seals: Array = []            # 4 pooled StaticBody2D, one per direction
 var barrier_active := false
 
 # ------------------------------------------------------ terrain system ---
-var terrain_by_zone: Array = []       # terrain id per zone
-var zone_grounds: Array = []          # ground Sprite2D per zone (repaintable)
-var zone_scenery: Array = []          # decor + obstacle nodes per zone
+var terrain_by_zone: Array = []       # terrain id per room
+var zone_grounds := {}                # room idx -> ground Sprite2D (repaintable)
+var zone_scenery := {}                # room idx -> decor + obstacle nodes
 var hazards: Array = []               # active floor patches (lava/ice/...)
 var terrain_event_t := 4.0            # countdown to the next terrain event
 var hazard_tick := 0.0
@@ -83,7 +106,8 @@ var no_saves := false                 # autotest: never touch real save files
 var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false}  # user://settings.json
 var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)
-var merchant_zones: Array = []        # zones with a merchant present (saved)
+var merchant_zones: Array = []        # rooms with a merchant present (saved)
+var wander_seed := 0                  # per-character roll for seeded rooms (saved)
 var cutscene: Cutscene = null         # active opening cinematic (if any)
 
 # ------------------------------------------------------------ dev mode ---
@@ -103,6 +127,7 @@ func _ready() -> void:
 	zone_count = zones.size()
 	for zone in zones:
 		terrain_by_zone.append(zone.get("terrain", "village"))
+	_prepare_rooms()
 
 	sounds = Sfx.build_all()
 	# Sound overrides: any assets/sounds/<name>.wav or .ogg replaces the
@@ -167,11 +192,11 @@ func _ready() -> void:
 	world = Node2D.new()
 	world.y_sort_enabled = true  # world children sort with the player
 	add_child(world)
-	_build_world()
+	_build_door_seals()
 
 	player = Player.new()
 	player.game = self
-	player.global_position = Vector2(180, 360)
+	player.global_position = _start_pos()
 	add_child(player)
 
 	reticle = Sprite2D.new()
@@ -192,10 +217,6 @@ func _ready() -> void:
 	reticle.add_child(reticle_label)
 
 	camera = Camera2D.new()
-	camera.limit_left = 0
-	camera.limit_right = ZONE_W * zone_count
-	camera.limit_top = 0
-	camera.limit_bottom = WORLD_H
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 8.0
 	camera.zoom = Vector2(1.12, 1.12)  # slightly closer = chunkier pixels
@@ -211,6 +232,9 @@ func _ready() -> void:
 	menus.game = self
 	add_child(menus)
 
+	# Build and enter the starting room (the rest of the graph is lazy).
+	_enter_room(room_at_pos(player.global_position))
+
 	# First: pick a class. Then the story begins.
 	call_deferred("_start_flow")
 
@@ -224,13 +248,15 @@ func _start_flow() -> void:
 
 func on_class_chosen(id: String) -> void:
 	player.set_class(id)
+	wander_seed = randi() % 1000000  # seeds this character's layout + rolled rooms
+	switch_chapter(chapter_id, true)  # lay out THIS run's world from the fresh seed
 	if not no_saves:
 		save_slot = SaveGame.next_free_slot()
 	get_tree().paused = false
 	var begin := func() -> void:
 		play_started = true
-		set_music(Terrains.get_terrain(terrain_by_zone[0]).get("music", "village"))
-		hud.flash_title(zones[0]["name"], String(Story.chapter(chapter_id)["name"]))
+		set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(chapter_id)["name"]))
 		autosave()
 	if Story.ALL_CONVOS.has("open_" + id):
 		# Class openings replace the generic intro: a staged cinematic
@@ -259,40 +285,47 @@ func load_save(slot: int) -> void:
 	if data.is_empty():
 		return
 	save_slot = slot
-	switch_chapter(String(data.get("chapter", "ch1")))  # no-op if same
+	# The layout is a pure function of wander_seed: restore the seed
+	# FIRST, then force-rebuild so the world matches the saved one.
+	wander_seed = int(data.get("wander_seed", 0))
+	switch_chapter(String(data.get("chapter", "ch1")), true)
 	SaveGame.apply(self, data)
 	get_tree().paused = false
 	play_started = true
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1)
-	set_music(Terrains.get_terrain(terrain_by_zone[zi]).get("music", "village"))
-	hud.flash_title(zones[zi]["name"], "The tale continues")
+	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	hud.flash_title(zones[cur_room]["name"], "The tale continues")
 
 
-## Rebuild the world state a save implies: clear pacified zones,
-## reopen earned gates, keep dead bosses dead. Gate rule: the gate out
-## of zone zi opens when zi's boss is dead, when zi's "gate_flag" story
-## flag is set, or (Chapter 1, zone 0) when the elder has been talked to.
+## Rebuild the world state a save implies: mark dead bosses' rooms
+## resolved and re-check every built gate against the restored flags
+## and kills. (Unbuilt rooms evaluate their locks at build time.)
 func reconcile_after_load() -> void:
-	if chapter_id == "ch1" and talked_to_elder:
-		open_gate(0)
+	if talked_to_elder and not get_flag("met_elder", false):
+		set_flag("met_elder")  # pre-graph saves stored only the bool
 	for zi in zone_count:
 		var kind: String = zones[zi].get("boss", "")
-		var cleared: bool = kind != "" and boss_done.get(kind, false)
-		var flag: String = String(zones[zi].get("gate_flag", ""))
-		if flag != "" and get_flag(flag, false):
-			cleared = true
-		if cleared and zi < gates.size():
-			open_gate(zi)
 		if kind != "" and boss_done.get(kind, false):
 			boss_spawned[zi] = true
 			zone_alive[zi] = 0
-	for node in get_tree().get_nodes_in_group("enemies"):
-		var e := node as Enemy
-		if e and e.zone_idx >= 0 and e.zone_idx < zone_count:
-			var kind: String = zones[e.zone_idx].get("boss", "")
-			if kind != "" and boss_done.get(kind, false):
-				e.queue_free()
+			cleared[zi] = true
+	_recheck_gates()
 	refresh_quest()
+
+
+## Open any built gate whose lock condition is now satisfied.
+func _recheck_gates() -> void:
+	for key in gates.keys():
+		var parts: PackedStringArray = String(key).split("_")
+		var a := int(parts[0])
+		var b := int(parts[1])
+		if _edge_unlocked(a, b):
+			open_edge(a, b)
+
+
+## The best gear grade this chapter can drop (act gating, DESIGN.md):
+## Act 1 caps at C, Act 2 at A — S-tier is endgame loot only.
+func loot_cap() -> String:
+	return String(Story.chapter(chapter_id).get("loot_cap", "S"))
 
 
 ## (T7) Merchants read the shard: the steady get kinder prices, the
@@ -322,11 +355,9 @@ func _notification(what: int) -> void:
 
 func set_flag(flag_name: String, value = true) -> void:
 	flags[flag_name] = value
-	# Flag-opened gates: any zone whose "gate_flag" just got set unlocks.
+	# Flag-locked gates: any built gate whose flag just got set unlocks.
 	if value:
-		for zi in zone_count:
-			if String(zones[zi].get("gate_flag", "")) == flag_name and zi < gates.size():
-				open_gate(zi)
+		_recheck_gates()
 
 
 func get_flag(flag_name: String, def = false):
@@ -458,11 +489,12 @@ func replay_chapter(id: String) -> void:
 	_wipe_chapter_flags()
 	for fac in player.faction_standing:
 		player.faction_standing[fac] = 0
+	wander_seed = randi() % 1000000  # replays meet a fresh set of rolled rooms
 	switch_chapter(id, true)
 	play_started = true
 	get_tree().paused = false
-	set_music(Terrains.get_terrain(terrain_by_zone[0]).get("music", "village"))
-	hud.flash_title(zones[0]["name"], String(Story.chapter(id)["name"]))
+	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(id)["name"]))
 	autosave()
 
 
@@ -482,8 +514,8 @@ func advance_chapter() -> void:
 	_wipe_chapter_flags()  # last chapter's story state retires; history stays
 	switch_chapter(next_ch, true)
 	play_started = true
-	set_music(Terrains.get_terrain(terrain_by_zone[0]).get("music", "village"))
-	hud.flash_title(zones[0]["name"], String(Story.chapter(next_ch)["name"]))
+	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(next_ch)["name"]))
 	autosave()
 
 
@@ -617,63 +649,360 @@ func switch_chapter(id: String, force := false) -> void:
 	zone_grounds.clear()
 	zone_scenery.clear()
 	shop_stock.clear()
+	built.clear()
+	visited.clear()
+	cleared.clear()
+	door_seen.clear()
 	current_boss = null
 	elder = null
 	barrier_active = false
 	talked_to_elder = false
-	last_zone = -1
+	last_room = -1
 	gust_vec = Vector2.ZERO
 	terrain_by_zone.clear()
 	for zone in zones:
 		terrain_by_zone.append(zone.get("terrain", "village"))
+	_prepare_rooms()
+	_build_door_seals()
 	quest_key = String(chapter.get("start_quest", "talk"))
 
-	_build_world()
-	camera.limit_right = ZONE_W * zone_count
-	var sp: Array = chapter.get("start_pos", [180, 360])
-	player.global_position = Vector2(float(sp[0]), float(sp[1]))
-	ambient.color = Terrains.get_terrain(terrain_by_zone[0])["tint"]
+	player.global_position = _start_pos()
+	last_safe_room = maxi(0, room_at_pos(player.global_position))
+	_enter_room(last_safe_room)
+	ambient.color = Terrains.get_terrain(terrain_by_zone[cur_room])["tint"]
 	refresh_quest()
 
 
-func _build_world() -> void:
-	for zi in zone_count:
-		_build_zone(zi)
+# ------------------------------------------------------- the room graph ---
 
-	_wall(Rect2(0, 0, ZONE_W * zone_count, TILE))
-	_wall(Rect2(0, WORLD_H - TILE, ZONE_W * zone_count, TILE))
-	_wall(Rect2(-TILE, 0, TILE, WORLD_H))
-	_wall(Rect2(ZONE_W * zone_count, 0, TILE, WORLD_H))
+## Build the runtime graph meta (grid coords, exits, locks, scales)
+## from the chapter's room dicts. Chapters authored WITHOUT coords are
+## legacy west→east strips: they become a one-row chain, and all their
+## authored positions rescale from the old 34x15 zone into the room.
+func _prepare_rooms() -> void:
+	rooms.clear()
+	coord_to_room.clear()
+	edge_locks.clear()
+	# Chapters with a SPINE get a seeded procedural layout instead of
+	# their authored coords — every run is a different map.
+	var spine: Array = Story.chapter(chapter_id).get("spine", [])
+	if not spine.is_empty():
+		_generate_layout(spine)
+		return
+	var graph := false
+	for zone in zones:
+		if zone.has("coord"):
+			graph = true
+			break
+	for i in zone_count:
+		var zone: Dictionary = zones[i]
+		var meta := {}
+		var exits := {}
+		if graph:
+			var c: Array = zone.get("coord", [i, 0])
+			meta["coord"] = Vector2i(int(c[0]), int(c[1]))
+			meta["scale"] = Vector2.ONE
+			var locks: Dictionary = zone.get("locks", {})
+			for dir in zone.get("exits", []):
+				exits[String(dir)] = String(locks.get(dir, ""))
+		else:
+			meta["coord"] = Vector2i(i, 0)
+			meta["scale"] = Vector2(float(ROOM_W) / LEGACY_W, float(ROOM_H) / LEGACY_H)
+			if i > 0:
+				exits["W"] = ""
+			if i < zone_count - 1:
+				# Old strip gate rule: the way east opens when this zone's
+				# boss dies or its gate_flag is set.
+				var lock := ""
+				if String(zone.get("boss", "")) != "":
+					lock = "boss"
+				elif String(zone.get("gate_flag", "")) != "":
+					lock = "flag:" + String(zone["gate_flag"])
+				exits["E"] = lock
+		meta["exits"] = exits
+		meta["origin"] = Vector2(meta["coord"].x * ROOM_W, meta["coord"].y * ROOM_H)
+		rooms.append(meta)
+		coord_to_room[meta["coord"]] = i
+	# Exits are declared one-sided; imply the reciprocal, and register
+	# each locked edge with the room that owns the lock condition.
+	for i in zone_count:
+		var exits: Dictionary = rooms[i]["exits"]
+		for dir in exits.keys():
+			var nb := neighbor(i, dir)
+			if nb < 0:
+				push_warning("room %d: exit %s leads nowhere" % [i, dir])
+				exits.erase(dir)
+				continue
+			var nexits: Dictionary = rooms[nb]["exits"]
+			if not nexits.has(OPP[dir]):
+				nexits[OPP[dir]] = ""
+			var lock: String = exits[dir]
+			if lock != "" and not edge_locks.has(_edge_key(i, nb)):
+				edge_locks[_edge_key(i, nb)] = {"lock": lock, "own": i}
 
-	for i in zone_count - 1:
-		gates.append(_build_gate(ZONE_W * (i + 1)))
 
-	# Battle barrier: while a zone still has monsters (or its boss),
-	# a glowing wall seals the way BACK — no retreating mid-combat.
-	barrier = StaticBody2D.new()
-	barrier.collision_layer = 1
-	barrier.collision_mask = 0
-	var bshape := CollisionShape2D.new()
-	var brect := RectangleShape2D.new()
-	brect.size = Vector2(TILE, 160)
-	bshape.shape = brect
-	barrier.add_child(bshape)
-	barrier_glow = Sprite2D.new()
-	barrier_glow.texture = Art.tex("glow")
-	barrier_glow.modulate = Color(1.0, 0.25, 0.2, 0.55)
-	barrier_glow.scale = Vector2(1.4, 3.6)
-	barrier_glow.z_index = 4
-	barrier.add_child(barrier_glow)
-	barrier.position = Vector2(-2000, -2000)  # parked (inactive)
-	world.add_child(barrier)
+var edge_locks := {}   # edge key -> {"lock": "boss"/"clear"/"flag:x", "own": room idx}
+
+
+## Seeded procedural layout (playtest round 3: "why is every run the
+## same map?"). The spine (story-ordered boss path) walks the grid
+## east with seeded N/S jogs — at most one vertical step per column,
+## which makes the walk provably self-avoiding. Side rooms then attach
+## to a seeded host of the SAME TERRAIN with a free edge (falling back
+## to any placed room), so wings and dead ends land somewhere new each
+## run. Pure function of wander_seed: saves reload the same world;
+## replays and new characters roll a fresh one.
+func _generate_layout(spine: Array) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 31 + chapter_id.hash() % 100003
+	var coord := {}                     # room idx -> Vector2i
+	var room_exits: Array = []          # room idx -> {dir: lock}
+	for i in zone_count:
+		room_exits.append({})
+
+	# --- the spine walk ---
+	var at := Vector2i(0, 0)
+	coord[int(spine[0])] = at
+	var vertical_last := false
+	for k in range(1, spine.size()):
+		var dir := "E"
+		if not vertical_last and rng.randf() < 0.45:
+			dir = "N" if rng.randf() < 0.5 else "S"
+		vertical_last = dir != "E"
+		var prev := int(spine[k - 1])
+		var cur := int(spine[k])
+		at += Vector2i(DIRS[dir])
+		coord[cur] = at
+		room_exits[prev][dir] = String(zones[prev].get("lock_next", ""))
+		room_exits[cur][OPP[dir]] = ""
+
+	# --- side rooms attach to same-terrain hosts (then anyone) ---
+	var placed: Array = spine.duplicate()
+	var taken := {}
+	for i in coord:
+		taken[coord[i]] = true
+	for i in zone_count:
+		if coord.has(i):
+			continue
+		var cands: Array = []
+		for pass_same in [true, false]:
+			for p in placed:
+				if pass_same and terrain_by_zone[int(p)] != terrain_by_zone[i]:
+					continue
+				for d in ["N", "S", "E", "W"]:
+					if room_exits[int(p)].has(d):
+						continue
+					if not taken.has(coord[int(p)] + Vector2i(DIRS[d])):
+						cands.append([int(p), d])
+			if not cands.is_empty():
+				break
+		if cands.is_empty():
+			push_warning("layout: no host found for room %d" % i)
+			continue
+		var pick: Array = cands[rng.randi_range(0, cands.size() - 1)]
+		var host := int(pick[0])
+		var host_dir := String(pick[1])
+		coord[i] = coord[host] + Vector2i(DIRS[host_dir])
+		taken[coord[i]] = true
+		room_exits[host][host_dir] = ""
+		room_exits[i][OPP[host_dir]] = ""
+		placed.append(i)
+
+	# --- write the runtime meta (same shape as the authored path) ---
+	for i in zone_count:
+		var meta := {"coord": coord[i], "scale": Vector2.ONE, "exits": room_exits[i],
+			"origin": Vector2(coord[i].x * ROOM_W, coord[i].y * ROOM_H)}
+		rooms.append(meta)
+		coord_to_room[coord[i]] = i
+	for i in zone_count:
+		var exits: Dictionary = rooms[i]["exits"]
+		for dir in exits.keys():
+			var lock := String(exits[dir])
+			var nb := neighbor(i, String(dir))
+			if lock != "" and nb >= 0 and not edge_locks.has(_edge_key(i, nb)):
+				edge_locks[_edge_key(i, nb)] = {"lock": lock, "own": i}
+
+
+func _edge_key(a: int, b: int) -> String:
+	return "%d_%d" % [mini(a, b), maxi(a, b)]
+
+
+func neighbor(i: int, dir: String) -> int:
+	var c: Vector2i = rooms[i]["coord"]
+	return int(coord_to_room.get(c + Vector2i(DIRS[dir]), -1))
+
+
+func room_rect(i: int) -> Rect2:
+	return Rect2(rooms[i]["origin"], Vector2(ROOM_W, ROOM_H))
+
+
+func room_center(i: int) -> Vector2:
+	return rooms[i]["origin"] + Vector2(ROOM_W, ROOM_H) / 2.0
+
+
+## The room whose grid cell contains pos (-1 = outside the graph).
+func room_at_pos(pos: Vector2) -> int:
+	var c := Vector2i(floori(pos.x / ROOM_W), floori(pos.y / ROOM_H))
+	return int(coord_to_room.get(c, -1))
+
+
+## World position of the door on room i's `dir` edge.
+func door_pos(i: int, dir: String) -> Vector2:
+	var r := room_rect(i)
+	match dir:
+		"N": return Vector2(r.position.x + ROOM_W / 2.0, r.position.y)
+		"S": return Vector2(r.position.x + ROOM_W / 2.0, r.end.y)
+		"E": return Vector2(r.end.x, r.position.y + ROOM_H / 2.0)
+	return Vector2(r.position.x, r.position.y + ROOM_H / 2.0)  # W
+
+
+## The declared room type ("combat"/"boss"/"safe" derived when absent).
+func room_type(i: int) -> String:
+	var zone: Dictionary = zones[i]
+	var t := String(zone.get("type", ""))
+	if t != "":
+		return t
+	if String(zone.get("boss", "")) != "":
+		return "boss"
+	if not zone.get("enemies", []).is_empty():
+		return "combat"
+	return "safe"
+
+
+## Is this room fully pacified (no living packs, boss dead or none)?
+func room_pacified(i: int) -> bool:
+	if built.get(i, false):
+		if zone_alive.get(i, 0) > 0:
+			return false
+	elif not cleared.get(i, false) and not zones[i].get("enemies", []).is_empty():
+		return false
+	var kind: String = zones[i].get("boss", "")
+	return kind == "" or boss_done.get(kind, false)
+
+
+## Death returns you to rooms like these; the map can travel to them.
+func room_safe(i: int) -> bool:
+	return room_type(i) != "combat" and room_type(i) != "boss" and room_pacified(i)
+
+
+## Map fast-travel rule: visited safe pockets, plus boss arenas after
+## the kill. Combat rooms are never travel targets (DESIGN.md).
+func travel_target(i: int) -> bool:
+	if not visited.get(i, false) or i == cur_room:
+		return false
+	if room_type(i) == "boss":
+		var kind: String = zones[i].get("boss", "")
+		return kind != "" and boss_done.get(kind, false)
+	return room_safe(i)
+
+
+## Is a locked edge's condition met? (Unlocked edges return true.)
+func _edge_unlocked(a: int, b: int) -> bool:
+	var info: Dictionary = edge_locks.get(_edge_key(a, b), {})
+	var lock := String(info.get("lock", ""))
+	if lock == "":
+		return true
+	var own := int(info.get("own", a))
+	if lock == "boss":
+		var kind: String = zones[own].get("boss", "")
+		return kind == "" or boss_done.get(kind, false)
+	if lock == "clear":
+		return room_pacified(own)
+	if lock.begins_with("flag:"):
+		return bool(get_flag(lock.substr(5), false))
+	return true
+
+
+## Where the player starts this chapter (start_pos is authored in the
+## first room's local space).
+func _start_pos() -> Vector2:
+	var sp: Array = Story.chapter(chapter_id).get("start_pos", [280, 624])
+	if rooms.is_empty():
+		return Vector2(float(sp[0]), float(sp[1]))
+	var meta: Dictionary = rooms[0]
+	return meta["origin"] + Vector2(float(sp[0]), float(sp[1])) * meta["scale"]
+
+
+# ------------------------------------------------ entering & building ---
+
+## Make room i the live room: build it on first entry, clamp the camera
+## to it, wake the mood, autosave. Only the live room simulates.
+func _enter_room(i: int) -> void:
+	if i < 0 or i >= zone_count:
+		return
+	_build_room(i)
+	var first_visit: bool = not visited.get(i, false)
+	visited[i] = true
+	cur_room = i
+	# Standing in a room, you can SEE its doors: neighbors go on the map
+	# as stubs, and a seen boss door gets its marker.
+	for dir in rooms[i]["exits"].keys():
+		var nb := neighbor(i, dir)
+		if nb >= 0:
+			door_seen[nb] = true
+	var r := room_rect(i)
+	camera.limit_left = int(r.position.x)
+	camera.limit_top = int(r.position.y)
+	camera.limit_right = int(r.end.x)
+	camera.limit_bottom = int(r.end.y)
+	if room_safe(i):
+		last_safe_room = i
+	var terrain := Terrains.get_terrain(terrain_by_zone[i])
+	var tween := create_tween()
+	tween.tween_property(ambient, "color", terrain["tint"], 1.0)
+	_setup_ambient_fx(terrain_by_zone[i])
+	terrain_event_t = randf_range(2.5, 5.0)
+	if not is_instance_valid(current_boss):
+		set_music(terrain.get("music", "village"))
+	if play_started and first_visit:
+		hud.flash_title(zones[i]["name"])
+	refresh_quest()
+	_try_spawn_boss(i)
+	last_room = i
+	autosave()  # autosave on every room transition (DESIGN.md)
+
+
+## Build a room's world nodes on first entry (rooms build lazily).
+func _build_room(i: int) -> void:
+	if built.get(i, false):
+		return
+	built[i] = true
+	var zone: Dictionary = zones[i]
+	var meta: Dictionary = rooms[i]
+	var origin: Vector2 = meta["origin"]
+
+	var terrain := Terrains.get_terrain(terrain_by_zone[i])
+	var ground := Sprite2D.new()
+	ground.texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H,
+		i * 1000 + 7, meta["exits"].keys())
+	ground.centered = false
+	ground.position = origin
+	ground.scale = Vector2(3, 3)
+	ground.z_index = -10
+	world.add_child(ground)
+	zone_grounds[i] = ground
+	_spawn_patches(i)
+	zone_scenery[i] = []
+	_spawn_scenery(i)
+	_build_room_walls(i)
+
+	# Data-driven NPCs (content modules + Chapter 1 props/shrines):
+	# {"sprite": "villager", "x": 500, "y": 330, "prompt": "E — Talk",
+	#  "convo": "some_convo_id"}
+	for npc_def in zone.get("npcs", []):
+		var convo_id: String = npc_def["convo"]
+		_make_npc(npc_def["sprite"],
+			origin + Vector2(npc_def["x"], npc_def["y"]) * meta["scale"],
+			npc_def.get("prompt", "E — Talk"), func() -> void:
+				run_convo_id(convo_id))
 
 	# Elder Maren, the Chapter 1 quest giver in the village.
-	if chapter_id == "ch1":
-		elder = _make_npc("elder", Vector2(520, 330), "E — Talk", func() -> void:
+	if chapter_id == "ch1" and i == 0:
+		elder = _make_npc("elder", origin + Vector2(660, 500), "E — Talk", func() -> void:
 			if not talked_to_elder:
 				talked_to_elder = true
 				var after := func() -> void:
-					open_gate(0)
+					set_flag("met_elder")  # unbars the village's east gate
 					quest_key = "fangmaw"
 					refresh_quest()
 					autosave()
@@ -685,20 +1014,103 @@ func _build_world() -> void:
 				hud.dialogue(Story.ALL_BEATS["elder_repeat"])
 		)
 
-	# SAFE zones (no boss, no monsters) keep a merchant from the start.
-	# Combat zones only get a wandering merchant once they're pacified —
-	# and only sometimes. No shopping mid-battlefield.
-	for zi in zone_count:
-		if String(zones[zi].get("boss", "")) == "" and zones[zi].get("enemies", []).is_empty():
-			_spawn_merchant(zi)
+	# Merchants: SAFE rooms with a merchant spot keep one from the start
+	# (or one who already wandered in, restored from the save). Combat
+	# rooms only get theirs through the post-clear arrival roll.
+	if merchant_zones.has(i):
+		_merchant_node(i)
+	elif zone.has("merchant") and String(zone.get("boss", "")) == "" \
+			and zone.get("enemies", []).is_empty():
+		_spawn_merchant(i)
+
+	# Room-type extras.
+	if room_type(i) == "social":
+		_spawn_wanderer(i)
+	var cache_tier := String(zone.get("cache", ""))
+	if cache_tier != "" and not get_flag(_cache_flag(i), false):
+		var cache_room := i
+		var chest := Chest.drop(self, cache_tier, room_center(i) + Vector2(0, -140))
+		chest.on_open = func() -> void:
+			set_flag(_cache_flag(cache_room))  # once per character
+
+	# Packs — skipped when the save already calls this room cleared.
+	if not cleared.get(i, false):
+		_spawn_room_enemies(i)
+	else:
+		zone_alive[i] = 0
+
+
+func _cache_flag(i: int) -> String:
+	return "cache_%s_%d" % [chapter_id, i]
+
+
+func _spawn_room_enemies(i: int) -> void:
+	zone_alive[i] = 0
+	var meta: Dictionary = rooms[i]
+	for spawn in zones[i].get("enemies", []):
+		var lvl := int(spawn[4]) if spawn.size() > 4 else -1
+		var e := Enemy.make(self, spawn[0],
+			meta["origin"] + Vector2(spawn[1], spawn[2]) * meta["scale"], lvl)
+		e.zone_idx = i
+		e.pack_id = int(spawn[3]) if spawn.size() > 3 else 0
+		zone_alive[i] = zone_alive.get(i, 0) + 1
+		add_enemy(e)
+
+
+## The room you died in resets: its surviving packs despawn and respawn
+## fresh (and calm) for the retry.
+func _reset_room_enemies(i: int) -> void:
+	if not built.get(i, false):
+		return
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.zone_idx == i and not (e is Boss):
+			e.remove_from_group("enemies")
+			e.queue_free()
+	_spawn_room_enemies(i)
+
+
+## One pack member noticed you: the whole pack answers (per-pack aggro —
+## rooms are too big for all-at-once).
+func wake_pack(room: int, pack: int) -> void:
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and not e.dying and e.zone_idx == room and e.pack_id == pack \
+				and not e.force_aggro:
+			e.force_aggro = true
+			if not e.alerted:
+				e.alerted = true
+				emote(e, "!", 0.9)
+
+
+## Social rooms roll ONE wanderer from the pool, seeded per character —
+## a replay meets different people (DESIGN.md room palette).
+func _spawn_wanderer(i: int) -> void:
+	if Story.WANDERERS.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed + i * 131 + chapter_id.hash() % 9973
+	var w: Dictionary = Story.WANDERERS[rng.randi_range(0, Story.WANDERERS.size() - 1)]
+	var convo_id: String = w["convo"]
+	var pos := room_center(i) + Vector2(rng.randf_range(-220.0, 220.0), rng.randf_range(-140.0, 140.0))
+	_make_npc(w["sprite"], pos, w.get("prompt", "E — Talk"), func() -> void:
+		run_convo_id(convo_id))
 
 
 func _spawn_merchant(zi: int) -> void:
-	var zone: Dictionary = zones[zi]
-	if not zone.has("merchant") or merchant_zones.has(zi):
+	if not zones[zi].has("merchant") or merchant_zones.has(zi):
 		return
 	merchant_zones.append(zi)
-	var pos: Vector2 = Vector2(zi * ZONE_W, 0) + Vector2(zone["merchant"][0], zone["merchant"][1])
+	if built.get(zi, false):
+		_merchant_node(zi)
+
+
+func _merchant_node(zi: int) -> void:
+	var zone: Dictionary = zones[zi]
+	if not zone.has("merchant"):
+		return
+	var pos: Vector2 = rooms[zi]["origin"] \
+		+ Vector2(zone["merchant"][0], zone["merchant"][1]) * rooms[zi]["scale"]
 	var zone_idx := zi
 	_make_npc("merchant", pos, "E — Shop", func() -> void:
 		menus.open_shop(zone_idx)
@@ -707,14 +1119,27 @@ func _spawn_merchant(zi: int) -> void:
 
 ## The post-boss arrival: a puff of travel dust and a sales pitch.
 func _merchant_arrives(zi: int) -> void:
-	if merchant_zones.has(zi):
+	if merchant_zones.has(zi) or not zones[zi].has("merchant"):
 		return
 	_spawn_merchant(zi)
-	var zone: Dictionary = zones[zi]
-	var pos: Vector2 = Vector2(zi * ZONE_W, 0) + Vector2(zone["merchant"][0], zone["merchant"][1])
+	var pos: Vector2 = rooms[zi]["origin"] \
+		+ Vector2(zones[zi]["merchant"][0], zones[zi]["merchant"][1]) * rooms[zi]["scale"]
 	burst(pos, Color(0.9, 0.8, 0.5), 12)
 	sfx("coin")
 	spawn_text(pos + Vector2(0, -50), "A WANDERING MERCHANT ARRIVES!", Color(0.95, 0.85, 0.5))
+
+
+## Teleport to a visited safe room from the map screen. Walking through
+## a LIVE room is content; re-walking a cleared one is not (DESIGN.md).
+func fast_travel(i: int) -> void:
+	if not travel_target(i) or state != ST_PLAYING or barrier_active \
+			or hud.dialogue_active or player.dead:
+		return
+	sfx("blink")
+	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)
+	player.global_position = room_center(i)
+	_enter_room(i)
+	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)
 
 
 func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: Callable) -> Node2D:
@@ -744,74 +1169,41 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	return npc
 
 
-func _build_zone(zi: int) -> void:
-	var zone: Dictionary = zones[zi]
-	var zone_x := zi * ZONE_W
-
-	# Data-driven NPCs (content modules use this — no code needed):
-	# {"sprite": "villager", "x": 500, "y": 330, "prompt": "E — Talk",
-	#  "convo": "some_convo_id"}
-	for npc_def in zone.get("npcs", []):
-		var convo_id: String = npc_def["convo"]
-		_make_npc(npc_def["sprite"], Vector2(zone_x + npc_def["x"], npc_def["y"]),
-			npc_def.get("prompt", "E — Talk"), func() -> void:
-				run_convo_id(convo_id))
-
-	# Ground texture comes from the zone's TERRAIN (repaintable in dev
-	# mode via apply_terrain, so keep a reference).
-	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
-	var ground := Sprite2D.new()
-	ground.texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H, zi * 1000 + 7)
-	ground.centered = false
-	ground.position = Vector2(zone_x, 0)
-	ground.scale = Vector2(3, 3)
-	ground.z_index = -10
-	world.add_child(ground)
-	zone_grounds.append(ground)
-	_spawn_patches(zi)
-
-	zone_scenery.append([])
-	_spawn_scenery(zi)
-
-	for spawn in zone["enemies"]:
-		var e := Enemy.make(self, spawn[0], Vector2(zone_x + spawn[1], spawn[2]))
-		e.zone_idx = zi
-		zone_alive[zi] = zone_alive.get(zi, 0) + 1
-		add_enemy(e)
-
-
-## (Re)build a zone's decor + obstacles from its TERRAIN — tombstones in
+## (Re)build a room's decor + obstacles from its TERRAIN — tombstones in
 ## the graveyard, snowy pines on the ice, crystals in the caverns...
 func _spawn_scenery(zi: int) -> void:
-	for node in zone_scenery[zi]:
+	for node in zone_scenery.get(zi, []):
 		if is_instance_valid(node):
 			node.queue_free()
 	zone_scenery[zi] = []
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
-	var zone_x := zi * ZONE_W
+	var origin: Vector2 = rooms[zi]["origin"]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
 
-	# Non-colliding ground decor.
+	# Non-colliding ground decor (density scaled to the bigger rooms).
 	var decor_list: Array = terrain.get("decor", ["pebble"])
-	for i in 26:
+	for i in 58:
 		var spr := Sprite2D.new()
 		spr.texture = Art.tex(decor_list[rng.randi_range(0, decor_list.size() - 1)])
 		spr.scale = Vector2(3, 3)
-		spr.position = Vector2(zone_x + rng.randf_range(70.0, ZONE_W - 70.0), rng.randf_range(80.0, 640.0))
+		spr.position = origin + Vector2(rng.randf_range(70.0, ROOM_W - 70.0), rng.randf_range(80.0, ROOM_H - 80.0))
 		spr.z_index = -8
 		world.add_child(spr)
 		zone_scenery[zi].append(spr)
 
-	# Colliding obstacles, kept off the central road.
+	# Colliding obstacles, kept off the road band and the door lanes.
 	var obstacles: Array = terrain.get("obstacles", ["rock"])
 	var placed: Array = []
-	var max_x := 1000.0 if zones[zi].get("boss", "") != "" else 1400.0
-	for i in terrain.get("count", 10):
+	var max_x := ROOM_W - 760.0 if zones[zi].get("boss", "") != "" else ROOM_W - 90.0
+	var count := int(ceil(float(terrain.get("count", 10)) * 2.2))
+	for i in count:
 		for attempt in 40:
-			var pos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, 630.0))
-			if pos.y > 260.0 and pos.y < 460.0:
-				continue
+			var pos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ROOM_H - 100.0))
+			if pos.y > ROOM_H / 2.0 - 90.0 and pos.y < ROOM_H / 2.0 + 90.0:
+				continue  # the road / east-west door lane stays open
+			if absf(pos.x - ROOM_W / 2.0) < 130.0:
+				continue  # the north-south door lane stays open
 			var ok := true
 			for other in placed:
 				if pos.distance_to(other) < 85.0:
@@ -819,7 +1211,7 @@ func _spawn_scenery(zi: int) -> void:
 					break
 			if ok:
 				placed.append(pos)
-				var body := _add_obstacle(obstacles[rng.randi_range(0, obstacles.size() - 1)], Vector2(zone_x, 0) + pos)
+				var body := _add_obstacle(obstacles[rng.randi_range(0, obstacles.size() - 1)], origin + pos)
 				zone_scenery[zi].append(body)
 				break
 
@@ -851,7 +1243,10 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	return body
 
 
+## A wall segment: collider + tiled wallblock visual.
 func _wall(rect: Rect2) -> void:
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return
 	var body := StaticBody2D.new()
 	body.position = rect.position + rect.size / 2.0
 	body.collision_layer = 1
@@ -862,30 +1257,66 @@ func _wall(rect: Rect2) -> void:
 	cs.shape = shape
 	body.add_child(cs)
 	world.add_child(body)
+	var spr := Sprite2D.new()
+	spr.texture = Art.tex("wallblock")
+	spr.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	spr.region_enabled = true
+	spr.region_rect = Rect2(Vector2.ZERO, rect.size / 3.0)
+	spr.centered = false
+	spr.position = rect.position
+	spr.scale = Vector2(3, 3)
+	spr.z_index = -5
+	world.add_child(spr)
 
 
-func _build_gate(x: float) -> Node2D:
-	var gap_top := 6 * TILE
-	var gap_bottom := 9 * TILE
-
-	for row in TILES_H:
-		if row >= 6 and row <= 8:
+## Perimeter walls for one room, with door gaps on its open edges, and
+## a gate body on any locked edge that isn't already satisfied.
+func _build_room_walls(i: int) -> void:
+	var r := room_rect(i)
+	var exits: Dictionary = rooms[i]["exits"]
+	var gap := DOOR_TILES * TILE
+	# North/south walls (gap centered on x).
+	for spec in [["N", r.position.y], ["S", r.end.y - TILE]]:
+		var dir: String = spec[0]
+		var y: float = spec[1]
+		if exits.has(dir):
+			var half := ROOM_W / 2.0 - gap / 2.0
+			_wall(Rect2(r.position.x, y, half, TILE))
+			_wall(Rect2(r.position.x + ROOM_W / 2.0 + gap / 2.0, y, half, TILE))
+			_door_torches(door_pos(i, dir), false)
+		else:
+			_wall(Rect2(r.position.x, y, ROOM_W, TILE))
+	# West/east walls (gap centered on y).
+	for spec in [["W", r.position.x], ["E", r.end.x - TILE]]:
+		var dir: String = spec[0]
+		var x: float = spec[1]
+		if exits.has(dir):
+			var half := ROOM_H / 2.0 - gap / 2.0
+			_wall(Rect2(x, r.position.y, TILE, half))
+			_wall(Rect2(x, r.position.y + ROOM_H / 2.0 + gap / 2.0, TILE, half))
+			_door_torches(door_pos(i, dir), true)
+		else:
+			_wall(Rect2(x, r.position.y, TILE, ROOM_H))
+	# Locked edges get a gate — built once per edge, by whichever room
+	# builds first, and only while the lock is still unmet.
+	for dir in exits.keys():
+		var nb := neighbor(i, dir)
+		if nb < 0:
 			continue
-		var spr := Sprite2D.new()
-		spr.texture = Art.tex("wallblock")
-		spr.scale = Vector2(3, 3)
-		spr.position = Vector2(x, row * TILE + TILE / 2.0)
-		spr.z_index = -5
-		world.add_child(spr)
-	_wall(Rect2(x - TILE / 2.0, 0, TILE, gap_top))
-	_wall(Rect2(x - TILE / 2.0, gap_bottom, TILE, WORLD_H - gap_bottom))
+		var key := _edge_key(i, nb)
+		if edge_locks.has(key) and not gates.has(key) and not _edge_unlocked(i, nb):
+			gates[key] = _build_gate(i, String(dir))
 
-	# Flickering torches flank each gate.
+
+## Flickering torches flank each doorway.
+func _door_torches(pos: Vector2, vertical: bool) -> void:
+	var span := DOOR_TILES * TILE / 2.0 + 26.0
 	for side in [-1, 1]:
+		var off := Vector2(0, side * span) if vertical else Vector2(side * span, 0)
 		var torch := Sprite2D.new()
 		torch.texture = Art.tex("torch")
 		torch.scale = Vector2(3, 3)
-		torch.position = Vector2(x, (gap_top if side == -1 else gap_bottom) + side * -26.0)
+		torch.position = pos + off
 		torch.z_index = 2
 		world.add_child(torch)
 		var glow := Sprite2D.new()
@@ -900,35 +1331,76 @@ func _build_gate(x: float) -> Node2D:
 		tween.tween_property(glow, "scale", Vector2(3.1, 3.1), 0.5 + randf() * 0.3)
 		tween.tween_property(glow, "scale", Vector2(2.4, 2.4), 0.5 + randf() * 0.3)
 
+
+## A gate barring the doorway on room i's `dir` edge.
+func _build_gate(i: int, dir: String) -> Node2D:
+	var vertical := dir in ["E", "W"]  # the barred passage runs east-west
 	var gate := StaticBody2D.new()
-	gate.position = Vector2(x, (gap_top + gap_bottom) / 2.0)
+	gate.position = door_pos(i, dir)
 	gate.collision_layer = 1
 	gate.collision_mask = 0
 	var cs := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(TILE, gap_bottom - gap_top)
-	gate.add_child(cs)
+	shape.size = Vector2(TILE * 2.2, DOOR_TILES * TILE) if vertical \
+		else Vector2(DOOR_TILES * TILE, TILE * 2.2)
 	cs.shape = shape
-	for row in 3:
+	gate.add_child(cs)
+	for row in DOOR_TILES:
 		var spr := Sprite2D.new()
 		spr.texture = Art.tex("gate")
 		spr.scale = Vector2(3, 3)
-		spr.position = Vector2(0, (row - 1) * TILE)
+		var off := (row - 1) * TILE
+		spr.position = Vector2(0, off) if vertical else Vector2(off, 0)
 		gate.add_child(spr)
 	world.add_child(gate)
 	return gate
 
 
-func open_gate(index: int) -> void:
-	var gate: Node2D = gates[index]
-	if gate == null:
+## Open a (possibly gated) edge between two rooms.
+func open_edge(a: int, b: int) -> void:
+	var key := _edge_key(a, b)
+	if not gates.has(key):
 		return
-	gates[index] = null
+	var gate: Node2D = gates[key]
+	gates.erase(key)
+	if gate == null or not is_instance_valid(gate):
+		return
 	sfx("gate")
 	gate.collision_layer = 0
 	var tween := create_tween()
 	tween.tween_property(gate, "modulate:a", 0.0, 0.8)
 	tween.tween_callback(gate.queue_free)
+
+
+## Legacy helper: open the gate on room zi's EAST edge (old strip rule).
+func open_gate(zi: int) -> void:
+	var nb := neighbor(zi, "E")
+	if nb >= 0:
+		open_edge(zi, nb)
+
+
+## Battle seals: the 4 pooled door-blockers that close the current
+## room's exits while a fight is live (rebuilt with the world).
+func _build_door_seals() -> void:
+	door_seals.clear()
+	for i in 4:
+		var body := StaticBody2D.new()
+		body.collision_layer = 1
+		body.collision_mask = 0
+		var cs := CollisionShape2D.new()
+		var shape := RectangleShape2D.new()
+		shape.size = Vector2(TILE * 1.4, DOOR_TILES * TILE + 24.0)
+		cs.shape = shape
+		body.add_child(cs)
+		var glow := Sprite2D.new()
+		glow.texture = Art.tex("glow")
+		glow.modulate = Color(1.0, 0.25, 0.2, 0.55)
+		glow.scale = Vector2(1.4, 3.6)
+		glow.z_index = 4
+		body.add_child(glow)
+		body.position = Vector2(-4000, -4000)  # parked (inactive)
+		world.add_child(body)
+		door_seals.append({"body": body, "shape": shape, "glow": glow})
 
 
 # ==================================================================== bosses
@@ -951,10 +1423,12 @@ func _on_boss_trigger(zi: int) -> void:
 
 func _spawn_boss(zi: int, kind: String) -> void:
 	shake(6.0)
-	# Zones may spawn a boss below its "story" level (Act pacing).
-	current_boss = Boss.make_boss(self, kind, Vector2(zi * ZONE_W + 1380, 360),
+	# Rooms may spawn a boss off its "story" level (Act pacing).
+	current_boss = Boss.make_boss(self, kind,
+		rooms[zi]["origin"] + Vector2(ROOM_W - 420.0, ROOM_H / 2.0),
 		int(zones[zi].get("boss_level", -1)))
 	current_boss.story_boss = true  # its death advances the chapter
+	current_boss.zone_idx = zi
 	world.add_child(current_boss)
 	current_boss.roar()
 	hud.show_boss_bar(Story.ALL_ENEMIES[kind]["name"])
@@ -964,23 +1438,23 @@ func _spawn_boss(zi: int, kind: String) -> void:
 func on_boss_died(kind: String) -> void:
 	boss_done[kind] = true
 	var boss_pos := current_boss.global_position
+	var mzi: int = clampi(current_boss.zone_idx, 0, zone_count - 1)
 	current_boss = null
 	hud.hide_boss_bar()
-	set_music(Terrains.get_terrain(terrain_by_zone[clampi(last_zone, 0, zone_count - 1)]).get("music", "village"))
+	set_music(Terrains.get_terrain(terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]).get("music", "village"))
 	player.hp = player.max_hp
 	player.mp = player.max_mp
-	player.potions = maxi(player.potions, 3)
+	player.potions = maxi(player.potions, 2)
 
 	# Bosses always drop a golden chest + a pile of gold.
 	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
 	Pickup.drop_gold(self, Story.ALL_ENEMIES[kind].get("gold", 50), boss_pos)
 
-	# Now that the zone is safe, a wandering merchant MAY set up camp.
-	var mzi := clampi(int(boss_pos.x / ZONE_W), 0, zone_count - 1)
+	# Now that the room is safe, a wandering merchant MAY set up camp.
 	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
 		call_deferred("_merchant_arrives", mzi)
 
-	# Boss zones may also carry a clear_flag (arc/act progress markers).
+	# Boss rooms may also carry a clear_flag (arc/act progress markers).
 	var boss_cflag := String(zones[mzi].get("clear_flag", ""))
 	if boss_cflag != "":
 		set_flag(boss_cflag)
@@ -1025,8 +1499,7 @@ func on_boss_died(kind: String) -> void:
 		quest_key = _next_quest_after(mzi)
 		var beat: Array = Story.ALL_BEATS.get("post_" + kind, [])
 		var proceed := func() -> void:
-			if mzi < gates.size():
-				open_gate(mzi)
+			_recheck_gates()  # "boss" locks on this arena's edges open
 			refresh_quest()
 		if beat.is_empty():
 			proceed.call()
@@ -1057,25 +1530,44 @@ func on_enemy_died(e: Enemy) -> void:
 	elif roll < 0.18 + bonus:
 		Chest.drop(self, "wood", e.global_position)
 
-	# Zone clear tracking: the boss only appears once the zone is purged.
+	# Room clear tracking: the boss only appears once its room is purged.
 	if e.zone_idx >= 0:
 		zone_alive[e.zone_idx] = maxi(0, zone_alive.get(e.zone_idx, 0) - 1)
 		refresh_quest()
 		if zone_alive[e.zone_idx] == 0:
+			cleared[e.zone_idx] = true  # stays cleared for the run (saved)
 			_try_spawn_boss(e.zone_idx)
+			_recheck_gates()  # "clear" locks on this room's edges open
 			if zones[e.zone_idx].get("boss", "") == "":
-				# Bossless zones: clearing IS the objective ("clear_flag"),
+				# Bossless rooms: clearing IS the objective ("clear_flag"),
 				# and the wandering merchant may arrive.
+				if e.zone_idx == cur_room:
+					_purge_fx()  # the blight recedes; the door seals lift
 				var cflag := String(zones[e.zone_idx].get("clear_flag", ""))
 				if cflag != "":
 					set_flag(cflag)
-					autosave()
 				if loot_rng.randf() < 0.65 and not merchant_zones.has(e.zone_idx):
 					call_deferred("_merchant_arrives", e.zone_idx)
+				if e.zone_idx == cur_room and room_safe(cur_room):
+					last_safe_room = cur_room
+			autosave()
+
+
+## The room's last pack falls: a brief green cleansing pulse — the
+## blight recedes — as the door seals lift (purge rule, DESIGN.md).
+func _purge_fx() -> void:
+	hud.flash_screen(Color(0.3, 0.85, 0.4), 0.32, 0.55)
+	# A low, soft sting — noticeable, never loud (playtest round 3).
+	sfx("nova", 0.65, 0.0, -9.0)
+	shake(3.0)
+	if is_instance_valid(player):
+		spawn_text(player.global_position + Vector2(0, -70),
+			"THE BLIGHT RECEDES", Color(0.55, 0.95, 0.6))
+		burst(player.global_position + Vector2(0, -20), Color(0.5, 0.9, 0.55), 16)
 
 
 func _try_spawn_boss(zi: int) -> void:
-	if zone_alive.get(zi, 0) > 0:
+	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 or zi != cur_room:
 		return
 	var kind: String = zones[zi].get("boss", "")
 	if kind == "" or boss_done.get(kind, false) or boss_spawned.get(zi, false):
@@ -1089,6 +1581,8 @@ func add_enemy(e: Enemy) -> void:
 
 # ============================================================ death / respawn
 
+## Death: back to the last safe room with gear/gold/XP intact; the room
+## you died in resets. No corpse runs — the penalty is the walk.
 func on_player_died() -> void:
 	if state != ST_PLAYING:
 		return
@@ -1098,61 +1592,99 @@ func on_player_died() -> void:
 	hud.flash_title("YOU DIED", "The flame endures...", 1.0)
 	for p in get_tree().get_nodes_in_group("projectiles"):
 		p.queue_free()
+	var death_room := cur_room
 	await get_tree().create_timer(2.0).timeout
 
 	if is_instance_valid(current_boss) and not current_boss.dying:
 		current_boss.reset_fight()
 		hud.update_boss_bar(1.0)
+	if not cleared.get(death_room, false):
+		_reset_room_enemies(death_room)
+	# Nothing follows you home from a death: homeless spawns (boss adds,
+	# terrain-event zombies — zone_idx -1, they never freeze with a room)
+	# despawn outright, and every other survivor calms down and returns
+	# to its post instead of camping your respawn.
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e is Boss or e.dying:
+			continue
+		if e.zone_idx < 0:
+			e.remove_from_group("enemies")
+			e.queue_free()
+		elif e.force_aggro or e.alerted:
+			e.force_aggro = false
+			e.alerted = false
+			e.global_position = e.home
 
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1)
-	player.global_position = Vector2(zi * ZONE_W + 180.0, 360.0)
+	player.global_position = room_center(last_safe_room)
 	player.revive()
+	_enter_room(last_safe_room)
 	hud.dim(0.0)
 	state = ST_PLAYING
 
 
 # ================================================================== helpers
 
-## Is this zone fully pacified (no monsters, boss dead or none)?
-func zone_pacified(zi: int) -> bool:
-	if zone_alive.get(zi, 0) > 0:
-		return false
-	var kind: String = zones[zi].get("boss", "")
-	return kind == "" or boss_done.get(kind, false)
+## Is the current room HOT — ANY living pack or a live boss? Hot rooms
+## seal their doors: the room must be PURGED before you move on
+## (playtest round 2 — aggro stays per-pack, but no running past
+## content; the exits only open once the last pack falls).
+func _room_hot(i: int) -> bool:
+	if is_instance_valid(current_boss) and not current_boss.dying:
+		return true
+	return zone_alive.get(i, 0) > 0
 
 
-## Seal or lift the entrance barrier based on the player's zone state.
+## Seal or lift the current room's door seals based on its fight state.
 func _update_barrier() -> void:
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1)
-	var want := zi > 0 and not zone_pacified(zi)
+	var want := _room_hot(cur_room)
 	if want and not barrier_active:
 		sfx("gate")
 	barrier_active = want
+	var idx := 0
 	if want:
-		# Slightly inside the previous boundary so the player is never
-		# spawned overlapping it when crossing the gate.
-		barrier.position = Vector2(zi * ZONE_W - 26.0, 360.0)
-		barrier_glow.modulate.a = 0.45 + 0.2 * sin(Time.get_ticks_msec() * 0.006)
-	else:
-		barrier.position = Vector2(-2000, -2000)
+		var pulse := 0.45 + 0.2 * sin(Time.get_ticks_msec() * 0.006)
+		for dir in rooms[cur_room]["exits"].keys():
+			if idx >= door_seals.size():
+				break
+			var entry: Dictionary = door_seals[idx]
+			idx += 1
+			var vertical: bool = dir in ["E", "W"]
+			entry["shape"].size = Vector2(TILE * 1.4, DOOR_TILES * TILE + 24.0) if vertical \
+				else Vector2(DOOR_TILES * TILE + 24.0, TILE * 1.4)
+			entry["glow"].scale = Vector2(1.4, 3.6) if vertical else Vector2(3.6, 1.4)
+			entry["glow"].modulate.a = pulse
+			# Seals sit a step OUTSIDE the room (into the doorway
+			# corridor) so one never spawns on top of a player who just
+			# walked in — they pass it, then it bars the way back.
+			entry["body"].position = door_pos(cur_room, String(dir)) \
+				+ Vector2(DIRS[dir]) * (TILE * 0.9)
+	for j in range(idx, door_seals.size()):
+		door_seals[j]["body"].position = Vector2(-4000, -4000)
 
 
-## Quest line + live "monsters left" counter for the player's zone.
+## Quest line + live "monsters left" counter for the player's room.
 func refresh_quest() -> void:
 	var text: String = Story.quest_text(quest_key)
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1) if player else 0
-	var boss_kind: String = zones[zi].get("boss", "")
+	var zi: int = clampi(cur_room, 0, zone_count - 1)
 	var left: int = zone_alive.get(zi, 0)
-	if left > 0 and boss_kind != "" and not boss_done.get(boss_kind, false):
+	if left > 0:
+		# Sealed doors need a visible WHY: every room with living packs
+		# shows its purge counter, not just boss arenas.
 		text += "   —   %d monster%s left" % [left, "" if left == 1 else "s"]
 	hud.set_quest(text)
 
 
+## Clamp a position into the room that contains `anchor` (dashes, drops
+## and boss blinks never leave the room they started in).
 func clamp_to_zone(pos: Vector2, anchor: Vector2) -> Vector2:
-	var zi := clampi(int(anchor.x / ZONE_W), 0, zone_count - 1)
+	var zi := room_at_pos(anchor)
+	if zi < 0:
+		zi = clampi(cur_room, 0, zone_count - 1)
+	var r := room_rect(zi)
 	return Vector2(
-		clampf(pos.x, zi * ZONE_W + 80.0, (zi + 1) * ZONE_W - 80.0),
-		clampf(pos.y, 90.0, WORLD_H - 90.0)
+		clampf(pos.x, r.position.x + 80.0, r.end.x - 80.0),
+		clampf(pos.y, r.position.y + 90.0, r.end.y - 90.0)
 	)
 
 
@@ -1191,7 +1723,7 @@ func set_music(name: String) -> void:
 ## Play a sound. pitch shifts the base pitch (still ±6% randomized);
 ## cutoff > 0 fades the sound out after that many seconds — lets long
 ## recordings (like a real wolf howl) play only their opening.
-func sfx(name: String, pitch := 1.0, cutoff := 0.0) -> void:
+func sfx(name: String, pitch := 1.0, cutoff := 0.0, vol_db := 0.0) -> void:
 	if not sounds.has(name):
 		return
 	var chosen: AudioStreamPlayer = sound_pool[0]
@@ -1201,8 +1733,9 @@ func sfx(name: String, pitch := 1.0, cutoff := 0.0) -> void:
 			break
 	# Small random pitch per play: kills the machine-gun sameness of
 	# repeated samples and the phasing of near-simultaneous ones.
+	# vol_db offsets the base level (e.g. quiet ambient stings).
 	chosen.pitch_scale = pitch * randf_range(0.94, 1.06)
-	chosen.volume_db = -8.0
+	chosen.volume_db = -8.0 + vol_db
 	chosen.stream = sounds[name]
 	chosen.play()
 	if cutoff > 0.0:
@@ -1326,18 +1859,20 @@ func _setup_ambient_fx(terrain_id: String) -> void:
 
 # ================================================================= terrain
 
-## Repaint a zone with a different terrain (look + mechanics). Live —
+## Repaint a room with a different terrain (look + mechanics). Live —
 ## this is how dev mode lets you audition every terrain instantly.
 func apply_terrain(zi: int, terrain_id: String) -> void:
 	terrain_by_zone[zi] = terrain_id
+	if not built.get(zi, false):
+		return  # unbuilt rooms pick the new terrain up at build time
 	var terrain := Terrains.get_terrain(terrain_id)
-	if zi < zone_grounds.size() and is_instance_valid(zone_grounds[zi]):
-		zone_grounds[zi].texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H, zi * 1000 + 7)
-	if zi < zone_scenery.size():
-		_spawn_scenery(zi)  # tombstones, snowy pines, crystals...
+	if is_instance_valid(zone_grounds.get(zi)):
+		zone_grounds[zi].texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H,
+			zi * 1000 + 7, rooms[zi]["exits"].keys())
+	_spawn_scenery(zi)  # tombstones, snowy pines, crystals...
 	_spawn_patches(zi)
-	# If the player is standing in this zone, refresh mood immediately.
-	if last_zone == zi:
+	# If the player is standing in this room, refresh mood immediately.
+	if cur_room == zi:
 		var tween := create_tween()
 		tween.tween_property(ambient, "color", terrain["tint"], 0.6)
 		_setup_ambient_fx(terrain_id)
@@ -1346,7 +1881,7 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 			set_music(terrain.get("music", "village"))
 
 
-## (Re)roll a zone's static hazard patches from its terrain spec.
+## (Re)roll a room's static hazard patches from its terrain spec.
 func _spawn_patches(zi: int) -> void:
 	for i in range(hazards.size() - 1, -1, -1):
 		if hazards[i]["zone"] == zi:
@@ -1354,11 +1889,13 @@ func _spawn_patches(zi: int) -> void:
 				hazards[i]["sprite"].queue_free()
 			hazards.remove_at(i)
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	var origin: Vector2 = rooms[zi]["origin"]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 991 + terrain_by_zone[zi].hash()
 	for spec in terrain.get("patches", []):
-		for i in spec["count"]:
-			var pos := Vector2(zi * ZONE_W + rng.randf_range(120.0, ZONE_W - 120.0), rng.randf_range(120.0, WORLD_H - 120.0))
+		# Patch counts were tuned for the old strip; rooms are ~2.2x the area.
+		for i in int(ceil(float(spec["count"]) * 2.0)):
+			var pos := origin + Vector2(rng.randf_range(120.0, ROOM_W - 120.0), rng.randf_range(120.0, ROOM_H - 120.0))
 			var radius := rng.randf_range(spec["radius"][0], spec["radius"][1])
 			var drift := Vector2.ZERO
 			if spec.get("drift", false):
@@ -1382,7 +1919,7 @@ func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration :=
 
 ## Timed terrain happenings (magma rain, zombies, gusts, lightning...).
 func run_terrain_event(ev: String) -> void:
-	var zi := last_zone
+	var zi := cur_room
 	match ev:
 		"magma_rain":
 			# Magma falls from the sky — sometimes the floor collapses
@@ -1401,6 +1938,8 @@ func run_terrain_event(ev: String) -> void:
 				burst(pos, Color(0.5, 0.45, 0.35), 12)
 				sfx("gate", 1.4)
 				var z := Enemy.make(self, "zombie", pos, player.level)  # scales with you
+				z.xp_value = 0   # event spawns are mood, not a farm —
+				z.gold_value = 0  # chapter XP/gold stays a fixed total
 				z.force_aggro = true
 				add_enemy(z)
 				emote(z, "!", 0.8)
@@ -1436,10 +1975,10 @@ func _apply_hazards() -> void:
 			continue
 		if h["drift"] != Vector2.ZERO:  # wandering spore clouds
 			h["pos"] += h["drift"] * 0.4
-			var zi_h: int = h["zone"]
-			if h["pos"].x < zi_h * ZONE_W + 100 or h["pos"].x > (zi_h + 1) * ZONE_W - 100:
+			var hr := room_rect(int(h["zone"]))
+			if h["pos"].x < hr.position.x + 100 or h["pos"].x > hr.end.x - 100:
 				h["drift"].x *= -1.0
-			if h["pos"].y < 110 or h["pos"].y > WORLD_H - 110:
+			if h["pos"].y < hr.position.y + 110 or h["pos"].y > hr.end.y - 110:
 				h["drift"].y *= -1.0
 			if is_instance_valid(h["sprite"]):
 				h["sprite"].global_position = h["pos"]
@@ -1538,31 +2077,21 @@ func _process(delta: float) -> void:
 	else:
 		reticle.visible = false
 
-	# Zone banner + ambient tint when crossing into a new zone.
-	var zi := clampi(int(player.global_position.x / ZONE_W), 0, zone_count - 1)
-	if zi != last_zone:
-		if last_zone != -1 and play_started:
-			hud.flash_title(zones[zi]["name"])
-			autosave()
-		last_zone = zi
-		var terrain := Terrains.get_terrain(terrain_by_zone[zi])
-		var tween := create_tween()
-		tween.tween_property(ambient, "color", terrain["tint"], 1.0)
-		# Entering a combat zone wakes up EVERY monster in it.
-		for node in get_tree().get_nodes_in_group("enemies"):
-			var e := node as Enemy
-			if e and e.zone_idx == zi:
-				e.force_aggro = true
-		refresh_quest()
-		_setup_ambient_fx(terrain_by_zone[zi])
-		terrain_event_t = randf_range(2.5, 5.0)
-		if not is_instance_valid(current_boss):
-			set_music(terrain.get("music", "village"))
-		_try_spawn_boss(zi)
-	hud.set_zone(zones[zi]["name"])
+	# Room transitions: walking through a doorway moves you next door.
+	# (Aggro is per-pack now — entering a room wakes nobody by itself.)
+	var zi := room_at_pos(player.global_position)
+	if zi == -1:
+		# Physics glitch outside the graph: snap back into the room.
+		var rr := room_rect(clampi(cur_room, 0, zone_count - 1))
+		player.global_position.x = clampf(player.global_position.x, rr.position.x + 52.0, rr.end.x - 52.0)
+		player.global_position.y = clampf(player.global_position.y, rr.position.y + 62.0, rr.end.y - 62.0)
+		zi = cur_room
+	elif zi != cur_room and state == ST_PLAYING:
+		_enter_room(zi)
+	hud.set_zone(zones[cur_room]["name"])
 
 	# ------------------------------------------------ terrain mechanics ---
-	var cur_terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	var cur_terrain := Terrains.get_terrain(terrain_by_zone[cur_room])
 	if cur_terrain.get("event", "") != "" and state == ST_PLAYING and not player.dead:
 		terrain_event_t -= delta
 		if terrain_event_t <= 0.0:
@@ -1627,14 +2156,14 @@ func _process(delta: float) -> void:
 			elif Input.is_key_pressed(binds["codex"]):
 				talk_cd = 0.4
 				menus.open_codex()
+			elif Input.is_key_pressed(binds.get("map", KEY_M)):
+				talk_cd = 0.4
+				menus.open_map()
 			# (ESC → pause menu lives in hud._on_escape, event-driven —
 			# a polled duplicate here caused double-open/close races.)
 
 	shake_amt = move_toward(shake_amt, 0.0, 20.0 * delta)
 	if camera:
 		camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
-
-	# Safety net: no dash, knockback or physics glitch may ever leave the
-	# hero stranded outside the world walls.
-	player.global_position.x = clampf(player.global_position.x, 44.0, ZONE_W * zone_count - 44.0)
-	player.global_position.y = clampf(player.global_position.y, 64.0, WORLD_H - 64.0)
+	# (The room-transition check at the top of _process is the safety
+	# net: any position outside the graph snaps back into the room.)

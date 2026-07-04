@@ -41,6 +41,30 @@ static func greed_loot(g: float) -> float:
 	return minf(0.10, (g - 0.3) * 0.2)
 
 
+## ----------------------------------------------------- level-gap rules ---
+## Punching UP has teeth (playtest round 3: a Lv4 mage soloed a Lv14
+## boss). Within 2 levels nothing changes; beyond that every level
+## compounds: your damage collapses (×0.75/level, floor 5%) and their
+## hits land harder (×1.25/level, cap 8×). At +10 a boss one-shots a
+## squishy and shrugs off their spells — a perfect-dodge god run stays
+## theoretically possible; face-tanking does not. Punching DOWN is
+## never penalized (the growth curves already handle rewards).
+const GAP_GRACE := 2
+
+static func gap_dealt_mult(attacker_lvl: int, target_lvl: int) -> float:
+	var d := target_lvl - attacker_lvl - GAP_GRACE
+	if d <= 0:
+		return 1.0
+	return maxf(0.05, pow(0.75, d))
+
+
+static func gap_taken_mult(attacker_lvl: int, target_lvl: int) -> float:
+	var d := attacker_lvl - target_lvl - GAP_GRACE
+	if d <= 0:
+		return 1.0
+	return minf(8.0, pow(1.25, d))
+
+
 ## Resolve one hit from the player against an enemy.
 ## Returns {"dmg": float, "crit": bool, "miss": bool}.
 static func resolve(atk_dmg: float, dmg_type: String, crit_chance: float, crit_dmg: float,

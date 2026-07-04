@@ -236,6 +236,124 @@ const CONVOS := {
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
 		"m3": {"who": "Elder Maren", "text": "Take these potions — press Q when your wounds are grave. And keep moving: still things are what the creditor collects first."},
 	}},
+
+	# ================================================= Chapter 1 room content
+	# Social wanderers (rolled per character into social rooms).
+	"wander_tinker": {"start": "t1", "nodes": {
+		"t1": {"who": "Tinker Osla",
+			"text": "Axle's cracked. Third one this season — the roads got worse when the wolves got bold. You wouldn't hold the cart steady a moment?",
+			"variants": [{"flag": "helped_tinker", "text": "The cart rolls straight now, thanks to you. If you pass a smith, tell them Osla still owes for the axle.", "next": ""}],
+			"choices": [
+				{"text": "Set your shoulder against the cart. \"Take your time.\"",
+					"resonance": 3.0, "flags": {"helped_tinker": true}, "next": "t_help"},
+				{"text": "\"Roads are dangerous. Pay someone to guard you next time.\"",
+					"resonance": -2.0, "next": "t_no"},
+			]},
+		"t_help": {"who": "Tinker Osla", "text": "There — seated. You've an honest shoulder for someone armed to the teeth. Flame keep you down the road.", "next": ""},
+		"t_no": {"who": "Tinker Osla", "text": "Aye, and eat what, while I pay them? ...Safe travels anyway, stranger.", "next": ""},
+	}},
+	"wander_deserter": {"start": "d1", "nodes": {
+		"d1": {"who": "Ragged Soldier",
+			"text": "Before you say it: yes, that's a keep tabard under the mud. I walked. You stand a night watch hearing THAT thing sing through the stones and see how long your oath holds.",
+			"variants": [{"flag": "heard_deserter", "text": "Still here. Still walking nowhere in particular. It's quieter out here, at least.", "next": ""}],
+			"choices": [
+				{"text": "\"Sit. Tell me what you heard in there — all of it.\"",
+					"resonance": 3.0, "flags": {"heard_deserter": true}, "next": "d_hear"},
+				{"text": "\"You left your post. Whatever sang to you, others still hear it.\"",
+					"resonance": -3.0, "flags": {"heard_deserter": true}, "next": "d_shame"},
+			]},
+		"d_hear": {"who": "Ragged Soldier", "text": "It hums through the floor at night. Old words. And the worst part — some mornings you wake up HUMMING ALONG. Kill it at the source, if that's where you're headed. Don't listen long.", "next": ""},
+		"d_shame": {"who": "Ragged Soldier", "text": "...Aye. They do. And I'll carry that longer than I carried the spear. Go on, then — be braver than me. Someone has to be.", "next": ""},
+	}},
+	"wander_pilgrim": {"start": "p1", "nodes": {
+		"p1": {"who": "Pilgrim of the Flame",
+			"text": "I walk to every hearth the blight has touched and light a stick of pine. It does nothing, the scholars say. The scholars have never sat in a dark house.",
+			"variants": [
+				{"band": "tempted", "text": "...The flame leans when you stand near it, friend. I won't ask. But I'll burn a stick of pine for you especially."},
+				{"band": "steady", "text": "The flame sits easy near you. That's rarer than you know, out here. Walk with it."},
+			],
+			"next": ""},
+	}},
+	"wander_hunter": {"start": "h1", "nodes": {
+		"h1": {"who": "Old Hunter",
+			"text": "Word of advice, since you're kitted for trouble: the packs out here move TOGETHER now. Wound one and its whole family answers. Pick your ground before you pick a fight.",
+			"variants": [{"flag": "met_hunter", "text": "Still breathing? Good. Told you the ground matters more than the blade.", "next": ""}],
+			"next": "h2"},
+		"h2": {"who": "Old Hunter", "text": "And if you find a still pool deep in the wood — the one that holds the moon wrong — don't drink before you've decided who you are. That's free too.",
+			"choices": [
+				{"text": "\"Thanks for the warning, hunter.\"", "flags": {"met_hunter": true}, "next": ""},
+			]},
+	}},
+	"wander_peddler": {"start": "w1", "nodes": {
+		"w1": {"who": "Roadside Peddler",
+			"text": "No stock left worth your coin — the camps bought me clean. But gossip's free: the marsh witch pays her spiders in something, and the stilt-camp merchant swears it's TEETH. Make of that what you will.",
+			"variants": [{"flag": "met_peddler", "text": "Still no stock. Still full of gossip. The teeth thing? I stand by it.", "next": ""}],
+			"choices": [
+				{"text": "\"...Teeth.\"", "flags": {"met_peddler": true}, "next": "w2"},
+			]},
+		"w2": {"who": "Roadside Peddler", "text": "TEETH. Ask her yourself if you don't believe me. Actually — don't.", "next": ""},
+	}},
+	"wander_orphan": {"start": "o1", "nodes": {
+		"o1": {"who": "Miller's Boy",
+			"text": "You're going TOWARD the howling? On purpose? ...My da went toward the howling. If you see a wide-brim hat out there — brown, with a heron feather — it's his.",
+			"variants": [{"flag": "boy_answered", "text": "You'll watch for the hat? Brown, heron feather. I'll be here.", "next": ""}],
+			"choices": [
+				{"text": "Crouch to his height. \"I'll watch for the hat. I promise nothing else.\"",
+					"resonance": 3.0, "flags": {"boy_answered": true}, "next": "o_kind"},
+				{"text": "\"The wood keeps what it takes, boy. Go home.\"",
+					"resonance": -3.0, "flags": {"boy_answered": true}, "next": "o_cold"},
+			]},
+		"o_kind": {"who": "Miller's Boy", "text": "That's more than anyone else promised. The feather's blue at the tip. You'll know it.", "next": ""},
+		"o_cold": {"who": "Narrator", "text": "He doesn't cry. He just looks at you the way you look at weather — and heads home. It was probably the truth. It didn't need to be yours to say.", "next": ""},
+	}},
+
+	# Resonance shrines: a genuine band-shifting choice between story beats.
+	"shrine_moonwell": {"start": "s1", "nodes": {
+		"s1": {"who": "Narrator",
+			"text": "A still pool in a ring of silver birches. The moon sits in the water — full, though the sky above holds only a sliver. The Ember in you leans toward it like a plant toward light. The water would give. It always gives. The question is what it takes.",
+			"variants": [{"flag": "moonwell_touched", "text": "The pool is only a pool now — the moon in it matches the sky. Whatever it wanted to know about you, it knows.", "next": ""}],
+			"choices": [
+				{"text": "Kneel and give the water a memory freely — let it take, and take nothing back.",
+					"resonance": 8.0, "flags": {"moonwell_touched": true}, "next": "s_give"},
+				{"text": "Drink. Power is there for the taking, and you have a king to kill.",
+					"resonance": -8.0, "flags": {"moonwell_touched": true}, "next": "s_drink"},
+				{"text": "Step back from the edge. Not every offered thing must be answered.",
+					"resonance": 0.0, "flags": {"moonwell_touched": true}, "next": "s_leave"},
+			]},
+		"s_give": {"who": "Narrator", "text": "You give it a small warm morning from years ago. The water goes dark, satisfied — and the Ember in you sits QUIETER, like a debt paid down. You will not miss the morning. That is the strange part.", "next": ""},
+		"s_drink": {"who": "Narrator", "text": "Cold light down the throat. Strength floods in — and underneath it, faint as a hook in a fish, something now runs the other way. The Ember purrs. You choose not to wonder what swims up a line like that.", "next": ""},
+		"s_leave": {"who": "Narrator", "text": "The moon in the water watches you go. Neither of you owes the other anything. It is the rarest way an encounter with power ends.", "next": ""},
+	}},
+	"shrine_reliquary": {"start": "r1", "nodes": {
+		"r1": {"who": "Narrator",
+			"text": "A vault the looters somehow missed: the Ember Guard's reliquary. On a dusty plinth, the padded stand where the CROWN once rested — empty sixty years. Around it, the small honest relics of four founders. The Ember in you knows this room. It was BUILT here.",
+			"variants": [{"flag": "reliquary_touched", "text": "The reliquary keeps its dust and its dead. The empty stand no longer pulls at you — or you no longer answer.", "next": ""}],
+			"choices": [
+				{"text": "Kneel to the founders and renew their oath in your own words.",
+					"resonance": 8.0, "flags": {"reliquary_touched": true}, "next": "r_oath"},
+				{"text": "Rest your hand on the crown-stand. Just to know how it would feel.",
+					"resonance": -8.0, "flags": {"reliquary_touched": true}, "next": "r_hand"},
+				{"text": "Touch nothing. Some rooms are graves; act like it.",
+					"resonance": 0.0, "flags": {"reliquary_touched": true}, "next": "r_leave"},
+			]},
+		"r_oath": {"who": "Narrator", "text": "The words come out plain and unheroic, which is how the true ones sound. The Ember steadies — not tamed, but ENLISTED. Somewhere in its long memory, four dead founders note the signature.", "next": ""},
+		"r_hand": {"who": "Narrator", "text": "It would feel like THIS: right. Fitted. Overdue. You take your hand back — you can still do that, this time — and the Ember spends the rest of the hour showing you the room from a throne's height.", "next": ""},
+		"r_leave": {"who": "Narrator", "text": "You leave the dust its shapes. On the way out, the Ember tests the lock on you, once, quietly — and finds it holds.", "next": ""},
+	}},
+
+	# Dead-end lore props.
+	"lore_hollow_oak": {"start": "l1", "nodes": {
+		"l1": {"who": "Narrator", "text": "A grandfather oak, split open and hollow. Inside, wax stubs and a child's carved wolf — someone hid offerings here for the wood's old spirits, long before the blight gave the wood new ones. The candle wax is recent.", "next": ""},
+	}},
+	"lore_ravine": {"start": "l1", "nodes": {
+		"l1": {"who": "Narrator", "text": "The ravine has nothing for you. No monsters, no treasure, no secret door. The view, though — the whole Darkwood rolling east under the mist, and the keep's towers far off, patient as tombstones. You allow yourself one long minute of it.", "next": ""},
+	}},
+	"lore_drowned_chapel": {"start": "l1", "nodes": {
+		"l1": {"who": "Narrator", "text": "A flooded chapel of the Flame, sunk to its windows. The altar stone stands just above the waterline, and someone has kept ONE candle burning on it — the wax runs down in years, not hours. Morwen's blight circles this place and does not enter. Interesting, that it can't. Or won't.", "next": ""},
+	}},
+	"lore_collapsed_tower": {"start": "l1", "nodes": {
+		"l1": {"who": "Narrator", "text": "The watchtower fell the night Vargoth rose — the masonry still shows the burn-shadow of the guard who stood here when it came down. Under the rubble: a rusted signal-horn, mouthpiece worn bright from use. He was CALLING someone, at the end. The record does not say if anyone came.", "next": ""},
+	}},
 }
 
 # ---------------------------------------------------------------- enemies ---
@@ -251,32 +369,43 @@ const CONVOS := {
 const LEVEL_CAP := 100
 
 const ENEMIES := {
-	"wolf":     {"name": "Blighted Wolf",   "sprite": "wolf",     "hp": 34.0,  "dmg": 8.0,  "speed": 155.0, "xp": 12, "gold": 4,  "ranged": false, "scale": 3.0,
+	# Playtest retune (2026-07, round 2): mobs hit ~50% harder and melee
+	# kinds run faster — a naked, talentless run should NOT clear the
+	# chapter. Getting caught by a pack is supposed to sting.
+	"wolf":     {"name": "Blighted Wolf",   "sprite": "wolf",     "hp": 34.0,  "dmg": 12.0, "speed": 175.0, "xp": 12, "gold": 4,  "ranged": false, "scale": 3.0,
 		"physres": 5.0,  "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
 		"level": 2, "hp_g": 0.10, "dmg_g": 0.08},
-	"spider":   {"name": "Marsh Spider",    "sprite": "spider",   "hp": 28.0,  "dmg": 6.0,  "speed": 195.0, "xp": 14, "gold": 5,  "ranged": false, "scale": 3.0,
+	"spider":   {"name": "Marsh Spider",    "sprite": "spider",   "hp": 28.0,  "dmg": 9.0,  "speed": 215.0, "xp": 14, "gold": 5,  "ranged": false, "scale": 3.0,
 		"physres": 0.0,  "magres": 5.0,  "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
 		"level": 2, "hp_g": 0.09, "dmg_g": 0.08},
-	"cultist":  {"name": "Blight Cultist",  "sprite": "cultist",  "hp": 40.0,  "dmg": 10.0, "speed": 90.0,  "xp": 20, "gold": 8,  "ranged": true,  "scale": 3.0,
+	"cultist":  {"name": "Blight Cultist",  "sprite": "cultist",  "hp": 40.0,  "dmg": 14.0, "speed": 90.0,  "xp": 20, "gold": 8,  "ranged": true,  "scale": 3.0,
 		"physres": 5.0,  "magres": 15.0, "eva": 0.0,  "critres": 0.0, "dmg_type": "magic",
 		"level": 4, "hp_g": 0.11, "dmg_g": 0.10},
-	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 14.0, "speed": 120.0, "xp": 24, "gold": 10, "ranged": false, "scale": 3.0,
+	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 20.0, "speed": 140.0, "xp": 24, "gold": 10, "ranged": false, "scale": 3.0,
 		"physres": 25.0, "magres": 5.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
 		"level": 7, "hp_g": 0.12, "dmg_g": 0.10},
-	"zombie":   {"name": "Risen Corpse",    "sprite": "zombie",   "hp": 45.0,  "dmg": 10.0, "speed": 95.0,  "xp": 15, "gold": 6,  "ranged": false, "scale": 3.0,
+	"zombie":   {"name": "Risen Corpse",    "sprite": "zombie",   "hp": 45.0,  "dmg": 14.0, "speed": 115.0, "xp": 15, "gold": 6,  "ranged": false, "scale": 3.0,
 		"physres": 12.0, "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.10, "dmg_g": 0.09},
 	# Bosses: strong base AND strong growth ("dragon-grade" scaling).
-	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 460.0,  "dmg": 15.0, "speed": 130.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
+	# "boss": true exempts them from the mob TTK retune (enemy_stats_at).
+	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 460.0,  "dmg": 18.0, "speed": 140.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
 		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "dmg_type": "phys",
-		"level": 4, "hp_g": 0.14, "dmg_g": 0.11},
-	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 620.0,  "dmg": 12.0, "speed": 105.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5,
+		"level": 4, "hp_g": 0.14, "dmg_g": 0.11, "boss": true},
+	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 620.0,  "dmg": 15.0, "speed": 105.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5,
 		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "dmg_type": "magic",
-		"level": 7, "hp_g": 0.14, "dmg_g": 0.11},
-	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 1000.0, "dmg": 18.0, "speed": 115.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5,
+		"level": 7, "hp_g": 0.14, "dmg_g": 0.11, "boss": true},
+	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 1000.0, "dmg": 22.0, "speed": 115.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5,
 		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "dmg_type": "phys",
-		"level": 10, "hp_g": 0.15, "dmg_g": 0.12},
+		"level": 10, "hp_g": 0.15, "dmg_g": 0.12, "boss": true},
 }
+
+
+# Pacing retrofit (DESIGN.md): time-to-kill at level parity roughly
+# doubles — an HP tune, not a damage one — and gold gets scarcer so
+# merchants and haggling matter.
+const TTK_HP_MULT := 2.0
+const GOLD_MULT := 0.6
 
 
 ## A monster's hp/dmg/xp/gold at an arbitrary level (clamped to the cap).
@@ -286,59 +415,261 @@ static func enemy_stats_at(kind: String, level: int) -> Dictionary:
 	var lvl := clampi(level, 1, LEVEL_CAP)
 	var d := lvl - int(base["level"])
 	var hp_m := maxf(0.25, 1.0 + d * float(base["hp_g"]))
+	if not bool(base.get("boss", false)):
+		hp_m *= TTK_HP_MULT  # mobs only: boss HP pools were already long fights
 	var dmg_m := maxf(0.3, 1.0 + d * float(base["dmg_g"]))
 	var reward_m := maxf(0.3, 1.0 + d * 0.12)
 	return {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
-		"xp": int(ceil(base["xp"] * reward_m)), "gold": int(ceil(base["gold"] * reward_m))}
+		"xp": int(ceil(base["xp"] * reward_m)),
+		"gold": maxi(1, int(ceil(base["gold"] * reward_m * GOLD_MULT)))}
 
-# ------------------------------------------------------------------ zones ---
-# Positions are relative to the left edge of each zone.
-# The playable area is roughly x 60..1570, y 70..650 (middle rows are the road).
+# ------------------------------------------------------------------ rooms ---
+# Chapter 1 as a ZONE GRAPH (the vertical slice; see DESIGN.md).
+# Each room dict is one entry in the chapter's "zones" array (the array
+# index is the room id — enemies still carry it as zone_idx).
+#
+# Graph keys (graph-authored chapters; legacy chapters without "coord"
+# are auto-converted to a west→east chain by Game._prepare_rooms):
+#   "coord": [gx, gy]      grid cell (unique per chapter)
+#   "exits": ["N","E"]     open sides; the neighbor room must exist.
+#                          Declared one-sided: the reciprocal is implied.
+#   "locks": {"E": lock}   gate on that exit. Lock forms:
+#                          "boss"     opens when this room's boss dies
+#                          "clear"    opens when this room's packs die
+#                          "flag:x"   opens when story flag x is set
+#   "type": "safe" | "combat" | "boss" | "social" | "resonance"
+#           | "dead_end" | "merchant"   (defaults: boss/combat/safe)
+#   "cache": "wood"|"silver"|"gold"    dead-end chest (once per character)
+#   "shop_tier": chest-tier string for the room's merchant stock
+#
+# Enemy spawns: [kind, x, y, pack, level] — pack (default 0) is the
+# per-pack aggro group; level (optional) overrides the kind's base level.
+# Positions are LOCAL to the room: playable space is roughly
+# x 100..2010, y 100..1150; the road band is y ~552..696.
 
 const ZONES := [
+	# ---------------------------------------------------- village (start) ---
 	{
-		"name": "Emberfall Village", "terrain": "village", "ground": "grass", "path": "dirt",
-		"obstacles": ["tree_green", "tree_green", "rock"], "obstacle_count": 9,
-		"decor": ["flower", "flower", "pebble"],
-		"merchant": [820, 300],
+		"name": "Emberfall Village", "terrain": "village", "type": "safe",
+		"coord": [0, 1], "exits": ["E", "S"], "locks": {"E": "flag:met_elder"},
+		"lock_next": "flag:met_elder",
+		"merchant": [1050, 480], "shop_tier": "wood",
 		"enemies": [], "boss": "",
 	},
 	{
-		"name": "The Darkwood", "terrain": "darkwood", "ground": "forest", "path": "dirt",
-		"obstacles": ["tree_autumn", "tree_autumn", "rock"], "obstacle_count": 16,
-		"decor": ["mushroom", "pebble", "flower"],
-		"merchant": [660, 560],
+		"name": "Village Outskirts", "terrain": "village", "type": "social",
+		"coord": [0, 2], "exits": ["N"],
+		"enemies": [], "boss": "",
+	},
+	# ------------------------------------------------------- the darkwood ---
+	{
+		"name": "The Darkwood Road", "terrain": "darkwood", "type": "combat",
+		"coord": [1, 1], "exits": ["W", "E", "N"],
 		"enemies": [
-			["wolf", 320, 170], ["wolf", 430, 540], ["wolf", 560, 330],
-			["wolf", 660, 130], ["wolf", 800, 480], ["wolf", 900, 300],
-			["spider", 520, 600], ["spider", 740, 200],
+			["wolf", 500, 300, 0], ["wolf", 620, 380, 0], ["wolf", 560, 480, 0],
+			["wolf", 1400, 900, 1], ["wolf", 1520, 820, 1], ["wolf", 1350, 1000, 1],
+			["spider", 1480, 950, 1],
+			["wolf", 900, 170, 2], ["wolf", 1030, 140, 2], ["spider", 960, 260, 2],
 		],
-		"boss": "fangmaw",
+		"boss": "",
 	},
 	{
-		"name": "The Blightmarsh", "terrain": "marsh", "ground": "marsh", "path": "dirt",
-		"obstacles": ["tree_teal", "deadtree", "rock"], "obstacle_count": 14,
-		"decor": ["mushroom", "bones", "pebble"],
-		"merchant": [540, 170],
+		"name": "The Hollow Oak", "terrain": "darkwood", "type": "dead_end",
+		"coord": [1, 0], "exits": ["S"], "cache": "wood",
+		"enemies": [["wolf", 1050, 500, 0, 3], ["wolf", 1180, 600, 0, 3]],
+		"boss": "",
+		"npcs": [{"sprite": "deadtree", "x": 1000, "y": 300, "prompt": "E — Look", "convo": "lore_hollow_oak"}],
+	},
+	# The spine BENDS here: north through the deep wood, not straight east.
+	{
+		"name": "Wolfpaths", "terrain": "darkwood", "type": "combat",
+		"coord": [2, 1], "exits": ["W", "S", "N"],
 		"enemies": [
-			["spider", 300, 200], ["spider", 420, 520], ["spider", 610, 350],
-			["spider", 760, 600], ["cultist", 500, 150], ["cultist", 700, 420],
-			["cultist", 880, 250], ["wolf", 850, 520],
+			["wolf", 400, 250, 0, 3], ["wolf", 520, 180, 0, 3], ["wolf", 460, 360, 0, 3], ["wolf", 600, 280, 0, 3],
+			["spider", 1250, 950, 1, 3], ["spider", 1380, 880, 1, 3],
+			["wolf", 1700, 450, 2, 3], ["wolf", 1820, 560, 2, 3],
+			["wolf", 950, 1000, 3, 3], ["spider", 1080, 930, 3, 3], ["spider", 1010, 1080, 3, 3],
 		],
-		"boss": "morwen",
+		"boss": "",
 	},
 	{
-		"name": "Vargoth's Keep", "terrain": "keep", "ground": "stone", "path": "stone",
-		"obstacles": ["pillar"], "obstacle_count": 10,
-		"decor": ["bones", "crack", "bones"],
-		"merchant": [700, 540],
-		"enemies": [
-			["skeleton", 300, 250], ["skeleton", 430, 500], ["skeleton", 570, 180],
-			["skeleton", 700, 380], ["skeleton", 850, 550], ["cultist", 620, 600],
-			["cultist", 800, 150],
-		],
-		"boss": "vargoth",
+		"name": "Woodsman's Clearing", "terrain": "darkwood", "type": "social",
+		"coord": [2, 2], "exits": ["N", "E"],
+		"enemies": [], "boss": "",
 	},
+	{
+		"name": "Ravine Edge", "terrain": "darkwood", "type": "dead_end",
+		"coord": [3, 2], "exits": ["W"],
+		"enemies": [], "boss": "",
+		"npcs": [{"sprite": "rock", "x": 1700, "y": 620, "prompt": "E — Look", "convo": "lore_ravine"}],
+	},
+	{
+		"name": "The Deep Darkwood", "terrain": "darkwood", "type": "combat",
+		"coord": [2, 0], "exits": ["S", "E", "N"],
+		"enemies": [
+			["wolf", 450, 350, 0, 3], ["wolf", 580, 420, 0, 3], ["wolf", 500, 550, 0, 3], ["wolf", 650, 300, 0, 3],
+			["spider", 1300, 850, 1, 4], ["spider", 1450, 780, 1, 4], ["spider", 1380, 950, 1, 4],
+			["wolf", 1750, 400, 2, 4], ["wolf", 1850, 520, 2, 4],
+			["spider", 900, 1050, 3, 4], ["spider", 1030, 980, 3, 4], ["spider", 960, 1120, 3, 4],
+		],
+		"boss": "",
+	},
+	{
+		"name": "The Moonwell", "terrain": "darkwood", "type": "resonance",
+		"coord": [2, -1], "exits": ["S"],
+		"enemies": [], "boss": "",
+		"npcs": [{"sprite": "crystal", "x": 1056, "y": 500, "prompt": "E — The Moonwell", "convo": "shrine_moonwell"}],
+	},
+	{
+		"name": "Fangmaw's Hollow", "terrain": "darkwood", "type": "boss",
+		"coord": [3, 0], "exits": ["W", "E"], "locks": {"E": "boss"},
+		"lock_next": "boss",
+		"enemies": [["wolf", 700, 400, 0, 4], ["wolf", 850, 330, 0, 4], ["wolf", 780, 520, 0, 4]],
+		"boss": "fangmaw", "boss_level": 5,
+	},
+	# ---------------------------------------------------- the blightmarsh ---
+	# The road into the marsh DIPS south through the stilt camp — the
+	# merchant sits on the critical path, then it climbs north again.
+	{
+		"name": "The Marsh Gate", "terrain": "marsh", "type": "combat",
+		"coord": [4, 0], "exits": ["W", "S"],
+		"enemies": [
+			["spider", 480, 300, 0, 4], ["spider", 600, 240, 0, 4], ["spider", 540, 420, 0, 4],
+			["cultist", 1300, 900, 1, 4], ["cultist", 1450, 830, 1, 4],
+			["wolf", 1750, 500, 2, 4], ["wolf", 1850, 620, 2, 4],
+			["spider", 1100, 600, 3, 5], ["spider", 1230, 530, 3, 5], ["spider", 1170, 700, 3, 5],
+		],
+		"boss": "",
+	},
+	{
+		"name": "Stilt Camp", "terrain": "marsh", "type": "merchant",
+		"coord": [4, 1], "exits": ["N", "E"],
+		"merchant": [1050, 620], "shop_tier": "silver",
+		"enemies": [], "boss": "",
+	},
+	{
+		"name": "The Sunken Path", "terrain": "marsh", "type": "combat",
+		"coord": [5, 1], "exits": ["W", "N"],
+		"enemies": [
+			["spider", 500, 800, 0, 5], ["spider", 640, 880, 0, 5], ["spider", 560, 980, 0, 5],
+			["cultist", 1500, 400, 1, 5], ["cultist", 1620, 480, 1, 5],
+			["zombie", 1000, 250, 2, 5], ["zombie", 1130, 320, 2, 5], ["zombie", 1060, 180, 2, 5],
+		],
+		"boss": "",
+	},
+	{
+		"name": "Blightheart Bog", "terrain": "marsh", "type": "combat",
+		"coord": [5, 0], "exits": ["E", "S", "N"],
+		"enemies": [
+			["spider", 450, 300, 0, 5], ["spider", 570, 380, 0, 5], ["spider", 500, 480, 0, 5], ["spider", 640, 300, 0, 5],
+			["cultist", 1350, 850, 1, 5], ["cultist", 1500, 900, 1, 5],
+			["zombie", 1000, 700, 2, 5],
+			["spider", 1700, 350, 3, 6], ["spider", 1820, 280, 3, 6], ["zombie", 1760, 460, 3, 6],
+		],
+		"boss": "",
+	},
+	{
+		"name": "The Drowned Chapel", "terrain": "marsh", "type": "dead_end",
+		"coord": [5, -1], "exits": ["S"], "cache": "silver",
+		"enemies": [["zombie", 1000, 500, 0, 5], ["zombie", 1150, 560, 0, 5]],
+		"boss": "",
+		"npcs": [{"sprite": "tombstone", "x": 950, "y": 320, "prompt": "E — Read", "convo": "lore_drowned_chapel"}],
+	},
+	{
+		"name": "Witchlight Fen", "terrain": "marsh", "type": "combat",
+		"coord": [6, 0], "exits": ["W", "E"],
+		"enemies": [
+			["cultist", 500, 350, 0, 6], ["cultist", 620, 280, 0, 6], ["cultist", 560, 450, 0, 6],
+			["spider", 1300, 880, 1, 6], ["spider", 1420, 800, 1, 6], ["spider", 1350, 980, 1, 6],
+			["zombie", 1750, 550, 2, 6], ["zombie", 1850, 650, 2, 6],
+			["cultist", 1000, 620, 3, 6], ["zombie", 1130, 550, 3, 6], ["zombie", 1070, 720, 3, 6],
+		],
+		"boss": "",
+	},
+	{
+		"name": "Morwen's Bower", "terrain": "marsh", "type": "boss",
+		"coord": [7, 0], "exits": ["W", "E"], "locks": {"E": "boss"},
+		"lock_next": "boss",
+		"enemies": [["spider", 700, 450, 0, 6], ["spider", 820, 380, 0, 6]],
+		"boss": "morwen", "boss_level": 8,
+	},
+	# ------------------------------------------------------ vargoth's keep ---
+	# The keep climbs: bailey east, then the ward turns NORTH up to the
+	# throne approach — the reliquary and throne sit at the map's top.
+	{
+		"name": "The Outer Bailey", "terrain": "keep", "type": "combat",
+		"coord": [8, 0], "exits": ["W", "E", "N", "S"],
+		"enemies": [
+			["skeleton", 500, 300, 0], ["skeleton", 620, 380, 0], ["skeleton", 540, 480, 0],
+			["cultist", 1400, 900, 1, 7], ["cultist", 1520, 820, 1, 7],
+			["zombie", 1750, 450, 2, 7], ["zombie", 1850, 570, 2, 7],
+			["skeleton", 1050, 950, 3, 7], ["skeleton", 1180, 880, 3, 7], ["skeleton", 1110, 1050, 3, 7],
+		],
+		"boss": "",
+	},
+	{
+		"name": "The Collapsed Tower", "terrain": "keep", "type": "dead_end",
+		"coord": [8, -1], "exits": ["S"], "cache": "silver",
+		"enemies": [["skeleton", 1000, 520, 0], ["skeleton", 1150, 580, 0]],
+		"boss": "",
+		"npcs": [{"sprite": "pillar", "x": 950, "y": 330, "prompt": "E — Search", "convo": "lore_collapsed_tower"}],
+	},
+	{
+		"name": "The Refugee Cellar", "terrain": "keep", "type": "social",
+		"coord": [8, 1], "exits": ["N"],
+		"enemies": [], "boss": "",
+	},
+	{
+		"name": "The Inner Ward", "terrain": "keep", "type": "combat",
+		"coord": [9, 0], "exits": ["W", "S", "N"],
+		"enemies": [
+			["skeleton", 450, 320, 0, 8], ["skeleton", 570, 250, 0, 8], ["skeleton", 500, 430, 0, 8], ["skeleton", 640, 350, 0, 8],
+			["cultist", 1400, 850, 1, 8], ["cultist", 1520, 780, 1, 8], ["cultist", 1450, 950, 1, 8],
+			["skeleton", 1700, 400, 2, 8], ["skeleton", 1820, 330, 2, 8], ["cultist", 1760, 500, 2, 8],
+		],
+		"boss": "",
+	},
+	{
+		"name": "The Smugglers' Postern", "terrain": "keep", "type": "merchant",
+		"coord": [9, 1], "exits": ["N"],
+		"merchant": [1050, 620], "shop_tier": "gold",
+		"enemies": [], "boss": "",
+	},
+	{
+		"name": "The Throne Approach", "terrain": "keep", "type": "combat",
+		"coord": [9, -1], "exits": ["S", "E", "N"],
+		"enemies": [
+			["skeleton", 500, 350, 0, 9], ["skeleton", 620, 280, 0, 9], ["skeleton", 560, 460, 0, 9],
+			["cultist", 1350, 880, 1, 9], ["cultist", 1470, 800, 1, 9], ["cultist", 1400, 980, 1, 9],
+			["zombie", 1750, 500, 2, 9], ["zombie", 1850, 620, 2, 9],
+			["skeleton", 1050, 620, 3, 9], ["skeleton", 1180, 550, 3, 9], ["cultist", 1110, 720, 3, 9],
+		],
+		"boss": "",
+	},
+	{
+		"name": "The Crown Reliquary", "terrain": "keep", "type": "resonance",
+		"coord": [9, -2], "exits": ["S"],
+		"enemies": [], "boss": "",
+		"npcs": [{"sprite": "pillar", "x": 1056, "y": 480, "prompt": "E — The Reliquary", "convo": "shrine_reliquary"}],
+	},
+	{
+		"name": "The Hollow Throne", "terrain": "keep", "type": "boss",
+		"coord": [10, -1], "exits": ["W"],
+		"enemies": [["skeleton", 700, 420, 0, 9], ["skeleton", 830, 350, 0, 9]],
+		"boss": "vargoth", "boss_level": 12,
+	},
+]
+
+# ------------------------------------------------- social wanderer pool ---
+# Social rooms roll ONE wanderer from this pool, seeded per character —
+# replays meet different people. Convos live in CONVOS ("wander_*").
+const WANDERERS := [
+	{"sprite": "villager", "prompt": "E — Talk", "convo": "wander_tinker"},
+	{"sprite": "sentry", "prompt": "E — Talk", "convo": "wander_deserter"},
+	{"sprite": "villager", "prompt": "E — Talk", "convo": "wander_pilgrim"},
+	{"sprite": "archer", "prompt": "E — Talk", "convo": "wander_hunter"},
+	{"sprite": "merchant", "prompt": "E — Talk", "convo": "wander_peddler"},
+	{"sprite": "villager", "prompt": "E — Talk", "convo": "wander_orphan"},
 ]
 
 # --------------------------------------------------------------- chapters ---
@@ -355,14 +686,22 @@ const CHAPTERS := {
 		"name": "Chapter 1: The Hollow King",
 		"sub": "Aldric's story — the fall of Vargoth",
 		"zones": ZONES,
+		# Seeded procedural layout (playtest round 3: "every run is the
+		# same map"). The SPINE lists the boss path in story order; each
+		# run lays it out as a seeded east-going walk with N/S jogs, and
+		# the side rooms attach to seeded same-terrain hosts. The coords
+		# authored in ZONES become the no-spine fallback.
+		"spine": [0, 2, 4, 7, 9, 10, 11, 12, 13, 15, 16, 17, 20, 22, 24],
+		"loot_cap": "C",  # Act 1 gear ceiling: no S-tier in chapter 1
 		"start_quest": "talk",
 		"final_boss": "vargoth",
-		"start_pos": [180, 360],
+		"start_pos": [280, 624],
 	},
 	"ch2": {
 		"name": "Chapter 2: The Waking",
 		"sub": "Years later — the scattered shards choose their bearers",
 		"zones": CH2_ZONES,
+		"loot_cap": "A",  # Act 2 ceiling — S-tier stays endgame loot
 		"start_quest": "ch2_start",
 		"final_boss": "nullwarden",
 		"victory_text": "The Null Bastion falls silent. The Waking is beaten back — but the shards are still choosing, and the factions are still counting.\nThanks for playing Chapter 2!  Press R to play again.",
@@ -488,7 +827,7 @@ const BEATS := {
 }
 
 const QUESTS := {
-	"talk":     "Speak with Elder Maren  (walk up to her and press E)",
+	"talk":     "Speak with Elder Maren in the village  (walk up to her and press E)",
 	"fangmaw":  "Clear the Darkwood, then slay FANGMAW",
 	"morwen":   "Purge the Blightmarsh, then destroy MORWEN",
 	"vargoth":  "Cleanse the keep, then face KING VARGOTH",

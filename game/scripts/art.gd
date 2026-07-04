@@ -1854,34 +1854,63 @@ static func _make_slash() -> Image:
 ## Organic look: patch blobs instead of a tile checkerboard, litter (fallen
 ## leaves / puddles), an edge-highlighted road, and depth shading under
 ## the top wall. path_kind is painted across the middle rows.
-static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: int, seed_val: int) -> ImageTexture:
-	var key := "ground_%s_%s_%d" % [base_kind, path_kind, seed_val]
+static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: int, seed_val: int, exits: Array = ["W", "E"]) -> ImageTexture:
+	var dirs: Array = exits.duplicate()
+	dirs.sort()
+	var dstr := ""
+	for d in dirs:
+		dstr += String(d)
+	var key := "ground_%s_%s_%d_%s" % [base_kind, path_kind, seed_val, dstr]
 	if _cache.has(key):
 		return _cache[key]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_val
 	var pw := tiles_w * 16
 	var ph := tiles_h * 16
-	var path_top := 6 * 16
-	var path_bottom := 9 * 16
+	# The road is painted as ARMS from the room's center to each REAL
+	# doorway — it never promises a door that isn't there (playtest
+	# round 3: an always-E/W road walked players into blank walls).
+	# Horizontal arms sit on the middle rows (E/W doors), vertical arms
+	# on the middle columns (N/S doors); all 3 tiles (48px) wide.
+	var path_top := (tiles_h / 2 - 1) * 16 - 8
+	var path_bottom := path_top + 3 * 16
+	var vleft := pw / 2 - 24
+	var vright := vleft + 48
+	var arms: Array = [Rect2i(vleft, path_top, 48, 48)]  # central plaza
+	if "W" in dirs:
+		arms.append(Rect2i(0, path_top, vleft, 48))
+	if "E" in dirs:
+		arms.append(Rect2i(vright, path_top, pw - vright, 48))
+	if "N" in dirs:
+		arms.append(Rect2i(vleft, 0, 48, path_top))
+	if "S" in dirs:
+		arms.append(Rect2i(vleft, path_bottom, 48, ph - path_bottom))
 	var image := Image.create_empty(pw, ph, false, Image.FORMAT_RGBA8)
 
 	var g_cols: Array = GROUND[base_kind]
 	var p_cols: Array = GROUND[path_kind]
 	image.fill_rect(Rect2i(0, 0, pw, ph), g_cols[0])
-	image.fill_rect(Rect2i(0, path_top, pw, path_bottom - path_top), p_cols[0])
+	var mask := PackedByteArray()
+	mask.resize(pw * ph)
+	for arm in arms:
+		var ar: Rect2i = arm
+		image.fill_rect(ar, p_cols[0])
+		for y in range(ar.position.y, ar.end.y):
+			var row := y * pw
+			for x in range(ar.position.x, ar.end.x):
+				mask[row + x] = 1
 
 	# Soft organic patches of lighter/darker ground (no checkerboard!).
 	for i in 90:
 		var cx := rng.randi_range(0, pw - 1)
 		var cy := rng.randi_range(0, ph - 1)
 		var r := rng.randi_range(3, 9)
-		var on_path := cy >= path_top and cy < path_bottom
+		var on_path := mask[cy * pw + cx] == 1
 		var cols: Array = p_cols if on_path else g_cols
 		var col: Color = cols[1] if rng.randf() < 0.5 else cols[2]
 		for y in range(maxi(0, cy - r), mini(ph, cy + r)):
 			for x in range(maxi(0, cx - r), mini(pw, cx + r)):
-				var same_band := (y >= path_top and y < path_bottom) == on_path
+				var same_band := (mask[y * pw + x] == 1) == on_path
 				if same_band and Vector2(x - cx, y - cy).length() <= r and rng.randf() < 0.7:
 					image.set_pixel(x, y, col)
 
@@ -1889,22 +1918,33 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	for i in 600:
 		var x := rng.randi_range(0, pw - 1)
 		var y := rng.randi_range(0, ph - 1)
-		var cols: Array = p_cols if (y >= path_top and y < path_bottom) else g_cols
+		var cols: Array = p_cols if mask[y * pw + x] == 1 else g_cols
 		image.set_pixel(x, y, cols[1] if rng.randf() < 0.5 else cols[2])
 
-	# Road edges catch the light; a few stones on the road.
+	# Road edges catch the light (top/left) and fall to shadow
+	# (bottom/right); a few stones scattered along the arms.
 	var edge: Color = p_cols[2].lightened(0.12)
-	for x in pw:
-		if rng.randf() < 0.85:
-			image.set_pixel(x, path_top, edge)
-		if rng.randf() < 0.85:
-			image.set_pixel(x, path_bottom - 1, p_cols[1].darkened(0.15))
+	var dark: Color = p_cols[1].darkened(0.15)
+	for y in ph:
+		var row := y * pw
+		for x in pw:
+			if mask[row + x] == 0:
+				continue
+			var lit: bool = (y == 0 or mask[row - pw + x] == 0) or (x == 0 or mask[row + x - 1] == 0)
+			var shad: bool = (y == ph - 1 or mask[row + pw + x] == 0) or (x == pw - 1 or mask[row + x + 1] == 0)
+			if lit and rng.randf() < 0.85:
+				image.set_pixel(x, y, edge)
+			elif shad and rng.randf() < 0.85:
+				image.set_pixel(x, y, dark)
 	for i in 26:
-		var sx := rng.randi_range(2, pw - 3)
-		var sy := rng.randi_range(path_top + 3, path_bottom - 4)
-		var stone := Color(0.55, 0.55, 0.6).lightened(rng.randf_range(-0.1, 0.1))
-		image.set_pixel(sx, sy, stone)
-		image.set_pixel(sx + 1, sy, stone)
+		for attempt in 14:
+			var sx := rng.randi_range(2, pw - 3)
+			var sy := rng.randi_range(2, ph - 3)
+			if mask[sy * pw + sx] == 1:
+				var stone := Color(0.55, 0.55, 0.6).lightened(rng.randf_range(-0.1, 0.1))
+				image.set_pixel(sx, sy, stone)
+				image.set_pixel(sx + 1, sy, stone)
+				break
 
 	# Zone flavor litter: fallen leaves in the forest, puddles in the marsh,
 	# embers in basalt, glints on snow/crystal, void sparks...
@@ -1950,11 +1990,16 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 			var c := image.get_pixel(x, y)
 			image.set_pixel(x, y, Color(c.r * f, c.g * f, c.b * f, 1.0))
 
-	# Stone border wall along the top and bottom edge of the world.
+	# Stone border wall along the top and bottom edge — EXCEPT across a
+	# real doorway: painting the whole row walled the N/S doors shut
+	# visually even though the collider gap was open (playtest round 3).
 	var wall := img("wallblock")
 	for tx in tiles_w:
-		image.blit_rect(wall, Rect2i(0, 0, 16, 16), Vector2i(tx * 16, 0))
-		image.blit_rect(wall, Rect2i(0, 0, 16, 16), Vector2i(tx * 16, (tiles_h - 1) * 16))
+		var in_gap: bool = tx * 16 + 16 > vleft and tx * 16 < vright
+		if not (in_gap and "N" in dirs):
+			image.blit_rect(wall, Rect2i(0, 0, 16, 16), Vector2i(tx * 16, 0))
+		if not (in_gap and "S" in dirs):
+			image.blit_rect(wall, Rect2i(0, 0, 16, 16), Vector2i(tx * 16, (tiles_h - 1) * 16))
 	var t := ImageTexture.create_from_image(image)
 	_cache[key] = t
 	return t

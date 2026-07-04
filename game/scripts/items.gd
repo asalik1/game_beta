@@ -212,7 +212,7 @@ const CHEST_TIERS := {
 }
 
 
-static func roll_grade(tier: String, rng: RandomNumberGenerator) -> String:
+static func roll_grade(tier: String, rng: RandomNumberGenerator, cap := "S") -> String:
 	var weights: Dictionary = CHEST_TIERS[tier]["weights"]
 	var total := 0
 	for w in weights.values():
@@ -221,12 +221,17 @@ static func roll_grade(tier: String, rng: RandomNumberGenerator) -> String:
 	for grade in weights:
 		pick -= weights[grade]
 		if pick <= 0:
+			# Act loot ceiling (game.loot_cap): anything rolled above the
+			# chapter's cap collapses TO the cap — a gold chest in Act 1
+			# pays the act's best, never endgame gear.
+			if GRADES.find(String(grade)) > GRADES.find(cap):
+				return cap
 			return grade
 	return "F"
 
 
-static func roll_item(tier: String, rng: RandomNumberGenerator, cls := "") -> Dictionary:
-	var grade := roll_grade(tier, rng)
+static func roll_item(tier: String, rng: RandomNumberGenerator, cls := "", cap := "S") -> Dictionary:
+	var grade := roll_grade(tier, rng, cap)
 	var slot: String = SLOTS[rng.randi_range(0, SLOTS.size() - 1)]
 	return roll_item_of(slot, grade, rng, cls)
 

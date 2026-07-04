@@ -5,6 +5,7 @@ class_name Projectile extends Area2D
 
 var vel := Vector2.ZERO
 var dmg := 10.0                # used by hostile (enemy) projectiles
+var atk_level := 0             # shooter's level (level-gap damage rule)
 var friendly := true
 var life := 2.5
 var pierce := false            # sniper arrows fly through enemies
@@ -26,11 +27,12 @@ const GLOWS := {
 }
 
 
-static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: float, is_friendly: bool, tex_name: String) -> Projectile:
+static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: float, is_friendly: bool, tex_name: String, attacker_level := 0) -> Projectile:
 	var p := Projectile.new()
 	p.game = game_node
 	p.vel = velocity
 	p.dmg = damage
+	p.atk_level = attacker_level
 	p.friendly = is_friendly
 	p.global_position = pos
 	p.z_index = 5
@@ -154,7 +156,7 @@ func _on_body_entered(body: Node) -> void:
 			queue_free()
 	elif not friendly and body is Player:
 		game.burst(global_position, glow_color, 5)
-		body.take_damage(dmg, "magic")
+		body.take_damage(dmg, "magic", atk_level)
 		queue_free()
 	elif body is StaticBody2D:
 		game.burst(global_position, Color(glow_color, 0.5), 3)

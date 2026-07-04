@@ -5,6 +5,7 @@ class_name Chest extends Area2D
 var tier := "wood"
 var opened := false
 var game: Node2D
+var on_open := Callable()  # optional hook (dead-end caches set a flag)
 
 
 static func drop(game_node: Node2D, chest_tier: String, pos: Vector2) -> Chest:
@@ -48,10 +49,12 @@ func _on_body_entered(body: Node) -> void:
 	opened = true
 	game.sfx("chest")
 	game.burst(global_position, Color(1.0, 0.85, 0.3), 14)
+	if on_open.is_valid():
+		on_open.call()
 
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var item := Items.roll_item(tier, rng, body.cls)
+	var item := Items.roll_item(tier, rng, body.cls, game.loot_cap())
 	body.add_item(item)
 	var bonus_gold := rng.randi_range(3, 8) * (1 + ["wood", "silver", "gold"].find(tier))
 	body.gain_gold(bonus_gold)

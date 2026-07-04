@@ -18,7 +18,7 @@ const ENEMIES := {
 		"hp": 1500.0, "dmg": 26.0, "speed": 150.0, "xp": 300, "gold": 220,
 		"ranged": false, "scale": 5.0,
 		"physres": 25.0, "magres": 20.0, "eva": 0.06, "critres": 3.0, "dmg_type": "phys",
-		"level": 14, "hp_g": 0.14, "dmg_g": 0.11,
+		"level": 14, "hp_g": 0.14, "dmg_g": 0.11, "boss": true,
 		"music": "boss_stormwarden",
 		"lore": "He once kept the warbands' beasts calm through thunder. Now the thunder keeps HIM.",
 	},
@@ -30,7 +30,7 @@ const ENEMIES := {
 		"hp": 2600.0, "dmg": 30.0, "speed": 105.0, "xp": 480, "gold": 380,
 		"ranged": true, "scale": 5.6,
 		"physres": 15.0, "magres": 45.0, "eva": 0.10, "critres": 4.0, "dmg_type": "magic",
-		"level": 22, "hp_g": 0.14, "dmg_g": 0.11,
+		"level": 22, "hp_g": 0.14, "dmg_g": 0.11, "boss": true,
 		"music": "boss_choirmother",
 		"lore": "Where Morwen cursed, the Mother sings. Her congregation never buries its dead.",
 	},
@@ -42,7 +42,7 @@ const ENEMIES := {
 		"hp": 5200.0, "dmg": 40.0, "speed": 85.0, "xp": 750, "gold": 600,
 		"ranged": false, "scale": 6.2,
 		"physres": 55.0, "magres": 35.0, "eva": 0.0, "critres": 8.0, "dmg_type": "phys",
-		"level": 32, "hp_g": 0.15, "dmg_g": 0.12,
+		"level": 32, "hp_g": 0.15, "dmg_g": 0.12, "boss": true,
 		"music": "boss_nullwarden",
 		"lore": "It asked the first shard-bearers for a passphrase no living tongue remembers.",
 	},
@@ -60,7 +60,7 @@ static func on_died(game: Node2D, boss: Node2D) -> void:
 		game.current_boss = null
 	game.hud.hide_boss_bar()
 	game.set_music(Terrains.get_terrain(
-		game.terrain_by_zone[clampi(game.last_zone, 0, game.zone_count - 1)]).get("music", "village"))
+		game.terrain_by_zone[clampi(game.cur_room, 0, game.zone_count - 1)]).get("music", "village"))
 	game.player.hp = game.player.max_hp
 	game.player.mp = game.player.max_mp
 	Chest.drop(game, "gold", game.clamp_to_zone(

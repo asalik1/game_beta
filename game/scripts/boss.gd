@@ -98,7 +98,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 			charging = false
 		if dist < 70.0 and attack_cd <= 0.0:
 			attack_cd = 0.8
-			player.take_damage(dmg * 1.4)
+			player.take_damage(dmg * 1.4, "phys", level)
 		return charge_dir * 620.0
 
 	if hp <= max_hp * 0.5 and not summoned:
@@ -106,7 +106,9 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 		roar()
 		game.spawn_text(global_position + Vector2(0, -80), "Fangmaw calls the pack!", Color(1, 0.5, 0.4))
 		for offset in [Vector2(-90, -50), Vector2(90, 50)]:
-			var add := Enemy.make(game, "wolf", global_position + offset)
+			var add := Enemy.make(game, "wolf", global_position + offset, level)
+			add.xp_value = 0   # summons pay nothing: die-and-retry
+			add.gold_value = 0  # must not farm the fight
 			add.force_aggro = true
 			game.add_enemy(add)
 
@@ -121,7 +123,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 	if dist < 60.0:
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			player.take_damage(dmg)
+			player.take_damage(dmg, "phys", level)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -177,7 +179,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		game.sfx("bolt")
 		var aim := to_player.normalized()
 		for spread in [-0.25, 0.0, 0.25]:
-			Projectile.spawn(game, global_position, aim.rotated(spread) * 320.0, dmg, false, "bolt")
+			Projectile.spawn(game, global_position, aim.rotated(spread) * 320.0, dmg, false, "bolt", level)
 
 	# Full ring of bolts.
 	if ring_cd <= 0.0:
@@ -185,7 +187,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		roar()
 		for i in 12:
 			var angle := TAU * i / 12.0
-			Projectile.spawn(game, global_position, Vector2.RIGHT.rotated(angle) * 200.0, dmg, false, "bolt")
+			Projectile.spawn(game, global_position, Vector2.RIGHT.rotated(angle) * 200.0, dmg, false, "bolt", level)
 
 	# Drift to keep a comfortable distance.
 	if dist < 240.0:
@@ -218,12 +220,12 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		var count := 16
 		for i in count:
 			var angle := TAU * i / count
-			Projectile.spawn(game, global_position, Vector2.RIGHT.rotated(angle) * 230.0, dmg * 0.7, false, "bolt")
+			Projectile.spawn(game, global_position, Vector2.RIGHT.rotated(angle) * 230.0, dmg * 0.7, false, "bolt", level)
 
 	if dist < 64.0:
 		if attack_cd <= 0.0:
 			attack_cd = 1.1
-			player.take_damage(dmg)
+			player.take_damage(dmg, "phys", level)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -286,6 +288,8 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 			"Korrag whistles the pack in!", Color(1.0, 0.8, 0.3))
 		for offset in [Vector2(-100, -60), Vector2(100, 60)]:
 			var add := Enemy.make(game, "wolf", global_position + offset, level)
+			add.xp_value = 0
+			add.gold_value = 0
 			add.force_aggro = true
 			game.add_enemy(add)
 
@@ -317,7 +321,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if dist < 70.0:
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			player.take_damage(dmg)
+			player.take_damage(dmg, "phys", level)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -350,6 +354,8 @@ func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
 			"The choir answers her call!", Color(0.8, 0.5, 1.0))
 		for offset in [Vector2(-110, -40), Vector2(110, 40)]:
 			var add := Enemy.make(game, "cultist", global_position + offset, level)
+			add.xp_value = 0
+			add.gold_value = 0
 			add.force_aggro = true
 			game.add_enemy(add)
 
@@ -365,7 +371,7 @@ func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		var aim := to_player.normalized()
 		var spreads := [-0.36, -0.12, 0.12, 0.36] if enraged else [-0.22, 0.0, 0.22]
 		for spread in spreads:
-			Projectile.spawn(game, global_position, aim.rotated(spread) * 300.0, dmg, false, "bolt")
+			Projectile.spawn(game, global_position, aim.rotated(spread) * 300.0, dmg, false, "bolt", level)
 
 	# Hymn of hunger: a marked strike — and the choir feeds her.
 	if ring_cd <= 0.0:
@@ -443,12 +449,12 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		var count := 20 if enraged else 12
 		for i in count:
 			Projectile.spawn(game, global_position,
-				Vector2.RIGHT.rotated(TAU * i / count) * 210.0, dmg * 0.7, false, "bolt")
+				Vector2.RIGHT.rotated(TAU * i / count) * 210.0, dmg * 0.7, false, "bolt", level)
 
 	if dist < 74.0:
 		if attack_cd <= 0.0:
 			attack_cd = 1.3
-			player.take_damage(dmg * 1.2)
+			player.take_damage(dmg * 1.2, "phys", level)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 

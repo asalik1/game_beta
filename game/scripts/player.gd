@@ -34,8 +34,8 @@ var skill_points := 0
 var tree_points := {}    # skill cell id -> points (0..5)
 var attr_points := {"STR": 0, "AGI": 0, "INT": 0, "VIT": 0}
 var unspent_attr := 0    # +5 per level, allocate in the skills menu
-var gold := 30
-var potions := 3
+var gold := 15           # scarcity pass: merchants and haggling matter
+var potions := 2
 
 # --- gear ---
 var equipment := {}      # slot -> item Dictionary
@@ -58,6 +58,7 @@ var crit := 0.05
 var crit_dmg := 1.5
 var cdr := 0.0
 var lifesteal := 0.0
+var regen_pct := 0.0     # % of max HP regenerated per second (melee passives)
 var physres := 0.0
 var magres := 0.0
 var critres := 0.0
@@ -234,7 +235,9 @@ func _theme_color(slot: String) -> Color:
 # ================================================================== stats
 
 func xp_needed() -> int:
-	return 20 + level * 15
+	# The curve assumes side rooms: skipping the optional wings of the
+	# zone graph leaves you under-leveled for the boss doors (DESIGN.md).
+	return 30 + level * 22
 
 
 ## Rebuild every derived stat: class base + passive + gear (incl. gems)
@@ -243,7 +246,7 @@ func recalc() -> void:
 	var base: Dictionary = Classes.CLASSES[cls]
 	var b := {"atk_flat": 0.0, "atk_pct": 0.0, "hp_flat": 0.0, "hp_pct": 0.0,
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
-		"cdr": 0.0, "lifesteal": 0.0, "physres": 0.0, "magres": 0.0,
+		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "physres": 0.0, "magres": 0.0,
 		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
 		"combo": 0.0, "greed": 0.0}
 
@@ -284,6 +287,7 @@ func recalc() -> void:
 	crit_dmg = 1.5 + b["crit_dmg"]
 	cdr = clampf(b["cdr"], 0.0, 0.45)
 	lifesteal = b["lifesteal"]
+	regen_pct = b["regen_pct"]
 	physres = b["physres"]
 	magres = b["magres"]
 	critres = b["critres"]
@@ -456,6 +460,11 @@ func synthesize(stat: String, lvl: int, quiet := false) -> bool:
 # =============================================================== progression
 
 func gain_xp(amount: int) -> void:
+	# A finished chapter pays NO XP on replays — farm gold and gear,
+	# never levels (playtest round 3: "clear ch1 2000 times, come out
+	# max level"). Dev mode keeps its level buttons for testing.
+	if game.get_flag("completed_" + game.chapter_id, false) and not game.dev_mode:
+		return
 	xp += amount
 	game.spawn_text(global_position + Vector2(0, -56), "+%d XP" % amount, Color(1.0, 0.9, 0.4))
 	while xp >= xp_needed():
@@ -557,6 +566,10 @@ func _physics_process(delta: float) -> void:
 	aegis_time = maxf(0.0, aegis_time - delta)
 	pact_time = maxf(0.0, pact_time - delta)
 	mp = minf(max_mp, mp + (6.0 if cls == "mage" else 4.0) * delta)
+	# Melee risk compensation: class-passive HP regeneration. Longer
+	# fights (2x TTK) can't ask melee to eat hits with no comeback.
+	if regen_pct > 0.0 and not dead and hp > 0.0:
+		hp = minf(max_hp, hp + max_hp * regen_pct * delta)
 	anim_t += delta
 
 	# Hex watch: cursed enemies EXPLODE on death (chains: a detonation
@@ -2206,7 +2219,7 @@ func drink_potion() -> void:
 	game.spawn_text(global_position + Vector2(0, -40), "+HP", Color(0.4, 1.0, 0.4))
 
 
-func take_damage(amount: float, dmg_type := "phys") -> void:
+func take_damage(amount: float, dmg_type := "phys", atk_level := 0) -> void:
 	if dead or hurt_cd > 0.0:
 		return
 	if randf() < Stats.eva_curve(eva):
@@ -2214,6 +2227,10 @@ func take_damage(amount: float, dmg_type := "phys") -> void:
 		game.sfx("blink")
 		return
 	hurt_cd = 0.6
+	# Level-gap rule: hits from enemies far above you land brutally
+	# harder — at +10 a boss one-shots a squishy (Stats.gap_taken_mult).
+	if atk_level > 0:
+		amount *= Stats.gap_taken_mult(atk_level, level)
 	var res := physres if dmg_type == "phys" else magres
 	if theme_guard_time > 0.0:
 		res += theme_guard_amt
@@ -2223,7 +2240,11 @@ func take_damage(amount: float, dmg_type := "phys") -> void:
 		amount *= (1.0 - Stats.res_frac(res))
 	hp -= amount
 	game.sfx("hurt")
-	game.shake(4.0)
+	# Getting hit should FEEL like something went wrong: harder shake and
+	# a red edge-flash, scaled a touch by how big the bite was.
+	game.shake(6.0)
+	game.hud.flash_screen(Color(0.85, 0.1, 0.08),
+		clampf(0.18 + amount / max_hp * 0.5, 0.18, 0.4), 0.3)
 	game.spawn_text(global_position + Vector2(0, -40), "-%d" % int(amount), Color(1.0, 0.35, 0.3))
 	if hp <= 0.0:
 		hp = 0.0

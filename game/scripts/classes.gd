@@ -95,7 +95,7 @@ const CLASSES := {
 	"warrior": {
 		"name": "Warrior", "sprite": "warrior", "primary": "STR", "dmg_type": "phys",
 		"desc": "Frontline bruiser. Simple, tanky, hits hard up close.",
-		"passive": {"text": "Plated — you take much less damage; your swings knock enemies back and stagger them.", "physres": 60.0, "magres": 30.0},
+		"passive": {"text": "Plated — you take much less damage, your swings knock enemies back, and your wounds knit themselves (1% max HP/s).", "physres": 60.0, "magres": 30.0, "regen_pct": 0.010},
 		"hp": 130.0, "hp_lvl": 18.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 14.5, "atk_lvl": 3.7, "speed": 250.0,
 		"abilities": {
@@ -134,7 +134,7 @@ const CLASSES := {
 	"assassin": {
 		"name": "Assassin", "sprite": "assassin", "primary": "AGI", "dmg_type": "phys",
 		"desc": "Fast melee striker. Dashes through enemies. Nothing personal.",
-		"passive": {"text": "Elusive — 20% evasion; your strikes stagger enemies.", "eva": 0.20},
+		"passive": {"text": "Elusive — 20% evasion, and blood you spill feeds you (0.6% max HP/s regen).", "eva": 0.20, "regen_pct": 0.006},
 		"hp": 95.0, "hp_lvl": 13.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 13.5, "atk_lvl": 3.8, "speed": 275.0,
 		"abilities": {
@@ -147,7 +147,7 @@ const CLASSES := {
 	"paladin": {
 		"name": "Paladin", "sprite": "paladin", "primary": "STR", "dmg_type": "phys",
 		"desc": "Holy bruiser. Fights up close, mends through violence, drags foes to the hammer.",
-		"passive": {"text": "Sanctified — blessed plate wards blade and spell alike; a sliver of every strike returns as healing.", "physres": 45.0, "magres": 45.0, "lifesteal": 0.03},
+		"passive": {"text": "Sanctified — blessed plate wards blade and spell alike; every strike returns as healing, and the light mends you (0.8% max HP/s).", "physres": 45.0, "magres": 45.0, "lifesteal": 0.03, "regen_pct": 0.008},
 		"hp": 125.0, "hp_lvl": 17.0, "mp": 55.0, "mp_lvl": 5.0,
 		"atk": 13.5, "atk_lvl": 3.5, "speed": 248.0,
 		"abilities": {

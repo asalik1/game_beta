@@ -24,8 +24,9 @@ var dmg_type := "phys"  # what this enemy's attacks count as
 var aggro_range := 330.0
 var attack_cd := 0.0
 var windup := 0.0     # yellow-flash wind-up before a melee bite lands
-var zone_idx := -1    # which zone's clear-count this enemy belongs to
-var force_aggro := false  # zone entered: everyone attacks
+var zone_idx := -1    # which room's clear-count this enemy belongs to
+var pack_id := 0      # aggro group within the room (per-pack aggro)
+var force_aggro := false  # pack woken: attack no matter the distance
 var alerted := false  # has shown its "!" bubble
 var hazard_speed := 1.0  # terrain patch effect (ice boosts, void slows)
 var knock := Vector2.ZERO
@@ -131,6 +132,10 @@ func _stats_at(k: String, lvl: int) -> Dictionary:
 func _physics_process(delta: float) -> void:
 	if dying:
 		return
+	# Only the occupied room simulates: monsters elsewhere stand frozen
+	# (zone_idx -1 — test dummies, boss adds, event spawns — always runs).
+	if zone_idx >= 0 and game.cur_room != zone_idx:
+		return
 	anim_t += delta
 	attack_cd = maxf(0.0, attack_cd - delta)
 	knock = knock.move_toward(Vector2.ZERO, 900.0 * delta)
@@ -163,7 +168,7 @@ func _physics_process(delta: float) -> void:
 			sprite.modulate = Color(1, 1, 1)
 			var player: Player = game.player
 			if player and not player.dead and global_position.distance_to(player.global_position) < 64.0:
-				player.take_damage(dmg, dmg_type)
+				player.take_damage(dmg, dmg_type, level)
 		velocity = knock
 		move_and_slide()
 		return
@@ -198,12 +203,17 @@ func _think(_delta: float) -> Vector2:
 	if not alerted:
 		alerted = true
 		game.emote(self, "!", 0.9)
+		# One noticed you — the whole pack answers (per-pack aggro).
+		if zone_idx >= 0:
+			game.wake_pack(zone_idx, pack_id)
 
 	if ranged:
 		if attack_cd <= 0.0:
-			attack_cd = 1.9
+			attack_cd = 1.7
 			game.sfx("bolt")
-			Projectile.spawn(game, global_position, to_player.normalized() * 300.0, dmg, false, "bolt")
+			# Playtest round 2: bolts fly noticeably faster — walking
+			# lazily out of their path stops being free.
+			Projectile.spawn(game, global_position, to_player.normalized() * 420.0, dmg, false, "bolt", level)
 		if dist < 200.0:
 			return -to_player.normalized() * speed * 0.8
 		elif dist > 300.0:
@@ -212,7 +222,7 @@ func _think(_delta: float) -> Vector2:
 	else:
 		if dist < 42.0:
 			if attack_cd <= 0.0:
-				attack_cd = 1.2
+				attack_cd = 1.0
 				windup = 0.3
 				sprite.modulate = Color(2.0, 1.7, 0.5)  # "about to bite!" flash
 			return Vector2.ZERO
@@ -250,6 +260,13 @@ func apply_slow(mult: float, dur: float) -> void:
 func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, silent := false) -> void:
 	if dying:
 		return
+	# Level-gap rule: monsters far above the player shrug off most of
+	# the damage (Stats.gap_dealt_mult — punching up has teeth).
+	if game and is_instance_valid(game.player):
+		amount *= Stats.gap_dealt_mult(game.player.level, level)
+	# Wounding one pack member wakes its whole pack (ranged openers too).
+	if zone_idx >= 0 and not force_aggro:
+		game.wake_pack(zone_idx, pack_id)
 	if vuln_time > 0.0:
 		amount *= 1.5
 	hp -= amount

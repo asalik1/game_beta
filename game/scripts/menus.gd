@@ -178,7 +178,7 @@ func open_title() -> void:
 func open_pause() -> void:
 	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 600)
 	current = "pause"
-	var zi := clampi(game.last_zone, 0, game.zone_count - 1)
+	var zi := clampi(game.cur_room, 0, game.zone_count - 1)
 	_lbl(vbox, "%s, Level %d — %s" % [Classes.CLASSES[game.player.cls]["name"],
 		game.player.level, game.zones[zi]["name"]], 14, Color(0.7, 0.72, 0.78))
 	_btn(vbox, "  ▶  Resume", func() -> void: close(), Color(0.6, 1.0, 0.6))
@@ -551,7 +551,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 
 	_lbl(list, "DEFENSE", 16, Color(0.95, 0.85, 0.5))
 	var rows2 := [
-		["HP", "%d / %d" % [int(p.hp), int(p.max_hp)], "Your health. Dying respawns you at the zone entrance."],
+		["HP", "%d / %d" % [int(p.hp), int(p.max_hp)], "Your health. Dying returns you to the last safe room you visited — and the room you fell in resets."],
 		["Mana", "%d / %d" % [int(p.mp), int(p.max_mp)], "Fuel for abilities. Regenerates over time (mages regenerate 50% faster)."],
 		["Phys Res", str(int(p.physres)), "Reduces physical damage taken (diminishing returns — never reaches 100%)."],
 		["Magic Res", str(int(p.magres)), "Reduces magic damage taken (diminishing returns). TRUE damage ignores all resistances."],
@@ -872,11 +872,13 @@ func open_shop(zone: int) -> void:
 	if not game.shop_stock.has(zone):
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
-		# Tier climbs with how deep the zone sits (works for any chapter).
-		var tier: String = ["wood", "silver", "silver", "gold"][clampi(zone, 0, 3)]
+		# Rooms may declare their stock tier; otherwise it climbs with
+		# how deep the room sits (works for any chapter).
+		var tier: String = String(game.zones[zone].get("shop_tier",
+			["wood", "silver", "silver", "gold"][clampi(zone, 0, 3)]))
 		var stock: Array = []
 		for i in 3:
-			stock.append(Items.roll_item(tier, rng, game.player.cls))
+			stock.append(Items.roll_item(tier, rng, game.player.cls, game.loot_cap()))
 		game.shop_stock[zone] = stock
 
 	var p: Player = game.player
@@ -988,6 +990,167 @@ func open_shop(zone: int) -> void:
 		_btn(sell, "SELL ALL (%d items) — %d gold" % [p.backpack.size(), total],
 			sell_all, Color(1.0, 0.9, 0.4))
 	_hint(vbox)
+
+
+# --------------------------------------------------------------- map (M) ---
+
+# Fog-of-war rules (DESIGN.md): only VISITED rooms render. Unexplored
+# exits off visited rooms show as stubs — you can see THAT there's
+# somewhere left to go without being shown what's there. A boss door
+# gets its marker only once it has been seen. Fast travel goes to
+# visited safe rooms; combat rooms are never travel targets.
+const MAP_TYPE_COLOR := {
+	"safe": Color(0.30, 0.45, 0.30), "merchant": Color(0.32, 0.44, 0.34),
+	"social": Color(0.30, 0.42, 0.38), "resonance": Color(0.30, 0.36, 0.50),
+	"dead_end": Color(0.34, 0.34, 0.38), "combat": Color(0.42, 0.30, 0.28),
+	"boss": Color(0.38, 0.26, 0.40),
+}
+const MAP_TYPE_ICON := {
+	"safe": "⌂", "merchant": "⚖", "social": "…", "resonance": "✦",
+	"dead_end": "", "combat": "", "boss": "☠",
+}
+
+
+func open_map() -> void:
+	var vbox := _open("Map — %s" % String(Story.chapter(game.chapter_id)["name"]), 1180, 640)
+	current = "map"
+	_lbl(vbox, "Rooms you have entered. ◆ you are here · ☠ a boss door you've seen · lit rooms are safe camps — click one to travel there. Notches on a room's edge are its doorways; stubs jut toward rooms you haven't explored.", 13, Color(0.7, 0.72, 0.78))
+
+	var board := Control.new()
+	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	board.custom_minimum_size = Vector2(1120, 440)
+	vbox.add_child(board)
+
+	# Extent: visited rooms plus one cell of breathing room for stubs.
+	var have_any := false
+	var min_c := Vector2i(1 << 20, 1 << 20)
+	var max_c := Vector2i(-(1 << 20), -(1 << 20))
+	for i in game.zone_count:
+		if not game.visited.get(i, false):
+			continue
+		have_any = true
+		var c: Vector2i = game.rooms[i]["coord"]
+		min_c = Vector2i(mini(min_c.x, c.x - 1), mini(min_c.y, c.y - 1))
+		max_c = Vector2i(maxi(max_c.x, c.x + 1), maxi(max_c.y, c.y + 1))
+	if not have_any:
+		_lbl(vbox, "Nothing charted yet.", 14)
+		_hint(vbox, "ESC / M to close")
+		return
+	var cols := max_c.x - min_c.x + 1
+	var rows := max_c.y - min_c.y + 1
+	var cw := clampf((1120.0 - (cols - 1) * 10.0) / cols, 34.0, 120.0)
+	var ch := clampf((430.0 - (rows - 1) * 10.0) / rows, 26.0, 84.0)
+	var org := Vector2(maxf(0.0, (1120.0 - cols * (cw + 10.0)) / 2.0),
+		maxf(0.0, (430.0 - rows * (ch + 10.0)) / 2.0))
+	var cell_pos := func(c: Vector2i) -> Vector2:
+		return org + Vector2((c.x - min_c.x) * (cw + 10.0), (c.y - min_c.y) * (ch + 10.0))
+
+	for i in game.zone_count:
+		if not game.visited.get(i, false):
+			continue
+		var c: Vector2i = game.rooms[i]["coord"]
+		var p: Vector2 = cell_pos.call(c)
+
+		# Connections + unexplored-exit stubs (drawn under the cells).
+		for dir in game.rooms[i]["exits"].keys():
+			var nb: int = game.neighbor(i, String(dir))
+			if nb < 0:
+				continue
+			var delta: Vector2i = Game.DIRS[dir]
+			var mid := p + Vector2(cw / 2.0, ch / 2.0)
+			var full := Vector2(delta.x * (cw + 10.0), delta.y * (ch + 10.0))
+			var nb_visited: bool = game.visited.get(nb, false)
+			var link := ColorRect.new()
+			link.color = Color(0.55, 0.5, 0.4) if nb_visited else Color(0.4, 0.38, 0.34)
+			var reach := 1.0 if nb_visited else 0.62  # stub: juts toward the unknown
+			var to := mid + full * 0.5 * reach
+			var thick := 5.0
+			link.position = Vector2(minf(mid.x, to.x) - thick / 2.0, minf(mid.y, to.y) - thick / 2.0)
+			link.size = Vector2(absf(to.x - mid.x) + thick, absf(to.y - mid.y) + thick)
+			link.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			board.add_child(link)
+			# A seen-but-unentered BOSS door earns its skull early.
+			if not nb_visited and game.room_type(nb) == "boss" and game.door_seen.get(nb, false):
+				var skull := _lbl(board, "☠", 15, Color(1.0, 0.55, 0.6))
+				skull.position = to - Vector2(7, 12)
+				skull.size = Vector2(20, 20)
+
+	for i in game.zone_count:
+		if not game.visited.get(i, false):
+			continue
+		var c: Vector2i = game.rooms[i]["coord"]
+		var p: Vector2 = cell_pos.call(c)
+		var t: String = game.room_type(i)
+		var can_travel: bool = game.travel_target(i) and not game.barrier_active
+
+		if i == game.cur_room:
+			var here := ColorRect.new()  # gold frame around the current room
+			here.color = Color(0.95, 0.85, 0.5)
+			here.position = p - Vector2(3, 3)
+			here.size = Vector2(cw + 6, ch + 6)
+			here.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			board.add_child(here)
+
+		if can_travel:
+			var room_idx: int = i
+			var b := Button.new()
+			b.position = p
+			b.size = Vector2(cw, ch)
+			b.tooltip_text = "%s — travel here" % game.zones[i]["name"]
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = MAP_TYPE_COLOR.get(t, Color(0.3, 0.3, 0.3)).lightened(0.18)
+			sb.set_corner_radius_all(4)
+			b.add_theme_stylebox_override("normal", sb)
+			var sbh: StyleBoxFlat = sb.duplicate()
+			sbh.bg_color = sb.bg_color.lightened(0.2)
+			b.add_theme_stylebox_override("hover", sbh)
+			b.pressed.connect(func() -> void:
+				close()
+				game.fast_travel(room_idx))
+			board.add_child(b)
+		else:
+			var cell := ColorRect.new()
+			cell.color = MAP_TYPE_COLOR.get(t, Color(0.3, 0.3, 0.3))
+			cell.position = p
+			cell.size = Vector2(cw, ch)
+			cell.tooltip_text = String(game.zones[i]["name"])
+			cell.mouse_filter = Control.MOUSE_FILTER_STOP
+			board.add_child(cell)
+
+		# Doorway notches: every exit of a visited room gets a bright pip
+		# on that edge of its cell — clear the room, glance at the map,
+		# and you KNOW which walls have doors (playtest round 3).
+		for dir in game.rooms[i]["exits"].keys():
+			var pip := ColorRect.new()
+			pip.color = Color(0.95, 0.85, 0.5) if i == game.cur_room else Color(0.78, 0.74, 0.6)
+			var horiz: bool = String(dir) in ["N", "S"]
+			pip.size = Vector2(12, 4) if horiz else Vector2(4, 12)
+			match String(dir):
+				"N": pip.position = p + Vector2(cw / 2.0 - 6.0, -1.0)
+				"S": pip.position = p + Vector2(cw / 2.0 - 6.0, ch - 3.0)
+				"W": pip.position = p + Vector2(-1.0, ch / 2.0 - 6.0)
+				"E": pip.position = p + Vector2(cw - 3.0, ch / 2.0 - 6.0)
+			pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			board.add_child(pip)
+
+		var icon_text: String = MAP_TYPE_ICON.get(t, "")
+		if t == "boss":
+			var kind := String(game.zones[i].get("boss", ""))
+			if kind != "" and game.boss_done.get(kind, false):
+				icon_text = "✓"
+		if i == game.cur_room:
+			icon_text = "◆"
+		if icon_text != "":
+			var il := _lbl(board, icon_text, 15, Color(0.95, 0.92, 0.8))
+			il.position = p + Vector2(0, ch / 2.0 - 11.0)
+			il.size = Vector2(cw, 22)
+			il.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			il.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	_lbl(vbox, "◆ %s%s" % [game.zones[game.cur_room]["name"],
+		"   —   the doors are sealed mid-fight" if game.barrier_active else ""],
+		14, Color(0.95, 0.85, 0.5))
+	_hint(vbox, "ESC / M to close")
 
 
 # ------------------------------------------------------------------- codex ---
@@ -1272,7 +1435,8 @@ func _codex_gear(list: VBoxContainer) -> void:
 ## replaying from scratch.
 func open_dev() -> void:
 	var p: Player = game.player
-	var vbox := _open("DEV PANEL — zone %d (%s)" % [game.last_zone, game.terrain_by_zone[clampi(game.last_zone, 0, 3)]], 1160, 660)
+	var vbox := _open("DEV PANEL — room %d/%d: %s (%s)" % [game.cur_room, game.zone_count,
+		game.zones[game.cur_room]["name"], game.terrain_by_zone[game.cur_room]], 1160, 660)
 	current = "dev"
 
 	var scroll := ScrollContainer.new()
@@ -1343,21 +1507,34 @@ func open_dev() -> void:
 		open_dev())
 
 	# ------------------------------------------------------------ world ---
-	_lbl(list, "WORLD", 16, Color(0.95, 0.85, 0.5))
-	var row4 := HBoxContainer.new()
-	row4.add_theme_constant_override("separation", 8)
-	list.add_child(row4)
+	_lbl(list, "WORLD (rooms of this chapter's graph)", 16, Color(0.95, 0.85, 0.5))
+	var row4: HBoxContainer = null
+	var rb := 0
 	for zi in game.zone_count:
+		if rb % 8 == 0:
+			row4 = HBoxContainer.new()
+			row4.add_theme_constant_override("separation", 8)
+			list.add_child(row4)
+		rb += 1
 		var z: int = zi
-		_btn(row4, "Go zone %d" % z, func() -> void:
-			game.player.global_position = Vector2(z * Game.ZONE_W + 300.0, 360.0)
+		_btn(row4, "%d %s" % [z, game.zones[z]["name"]], func() -> void:
+			game.player.global_position = game.room_center(z)
+			game._enter_room(z)
 			close())
-	_btn(row4, "Clear zone monsters", func() -> void:
+	var row4b := HBoxContainer.new()
+	row4b.add_theme_constant_override("separation", 8)
+	list.add_child(row4b)
+	_btn(row4b, "Clear room monsters", func() -> void:
 		for node in get_tree().get_nodes_in_group("enemies"):
 			var e := node as Enemy
-			if e and not (e is Boss) and e.zone_idx == game.last_zone:
+			if e and not (e is Boss) and e.zone_idx == game.cur_room:
 				e.take_damage(9999999.0)
 		open_dev())
+	_btn(row4b, "Reveal whole map", func() -> void:
+		for zi2 in game.zone_count:
+			game.visited[zi2] = true
+			game.door_seen[zi2] = true
+		open_map())
 	var row5 := HBoxContainer.new()
 	row5.add_theme_constant_override("separation", 8)
 	list.add_child(row5)
@@ -1410,7 +1587,7 @@ func open_dev() -> void:
 	arow.add_child(sopt)
 
 	# --------------------------------------------------------- terrains ---
-	_lbl(list, "TERRAIN (applies to the zone you're standing in)", 16, Color(0.95, 0.85, 0.5))
+	_lbl(list, "TERRAIN (applies to the room you're standing in)", 16, Color(0.95, 0.85, 0.5))
 	var trow: HBoxContainer = null
 	var count := 0
 	for tid in Terrains.DATA:
@@ -1420,9 +1597,9 @@ func open_dev() -> void:
 			list.add_child(trow)
 		count += 1
 		var t: String = tid
-		var active: bool = game.terrain_by_zone[clampi(game.last_zone, 0, 3)] == t
+		var active: bool = game.terrain_by_zone[game.cur_room] == t
 		_btn(trow, ("● " if active else "") + Terrains.DATA[t]["name"], func() -> void:
-			game.apply_terrain(game.last_zone, t)
+			game.apply_terrain(game.cur_room, t)
 			close(), Color(0.5, 1.0, 0.5) if active else Color(1, 1, 1))
 	_hint(vbox, "ESC / F1 to close")
 
@@ -1436,7 +1613,7 @@ func open_keybinds() -> void:
 		"a1": "Ability 1", "a2": "Ability 2", "a3": "Ability 3", "ult": "Ultimate",
 		"potion": "Drink potion", "interact": "Talk / interact",
 		"inventory": "Inventory", "skills": "Skill tree", "codex": "Codex",
-		"target": "Switch target lock",
+		"map": "Map", "target": "Switch target lock",
 	}
 	for action in actions:
 		var act: String = action
@@ -1498,6 +1675,7 @@ func _input(event: InputEvent) -> void:
 				or (current == "inventory" and event.keycode == game.binds["inventory"]) \
 				or (current == "skills" and event.keycode == game.binds["skills"]) \
 				or (current == "codex" and event.keycode == game.binds["codex"]) \
+				or (current == "map" and event.keycode == game.binds.get("map", KEY_M)) \
 				or (current == "dev" and event.keycode == KEY_F1):
 			if current == "theme_pick":
 				open_skills()  # back to the tree, not out of the menu
