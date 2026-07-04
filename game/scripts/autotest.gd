@@ -335,6 +335,8 @@ func _run() -> void:
 		return _fail("shop did not open with stock")
 	game.menus.open_codex("gear")
 	await _frames(2)
+	game.menus.open_codex("terrains")
+	await _frames(2)
 	game.menus.open_skills()
 	await _frames(2)
 	game.menus.open_theme_picker("a1")

@@ -1,2 +1,27 @@
-﻿Terrain music tracks by Juhani Junkala ('5 Action Chiptunes' and 'Chiptune Adventures', OpenGameArt.org), CC0 public domain.
-Drop any .ogg/.wav here named after a track (magma, graveyard, village, boss_vargoth...) to override it. Delete a file to fall back to the built-in composed track.
+Music override folder
+=====================
+Drop a .ogg, .mp3 or .wav file here named after a track to replace it,
+looped automatically. Track names: village, darkwood, marsh, keep,
+magma, icefield, graveyard, desert, rainstorm, holy, crystalline,
+boss_fangmaw, boss_morwen, boss_vargoth.
+Delete a file to fall back to the built-in composed version.
+
+Current tracks (all from OpenGameArt.org):
+- magma.ogg       "Lava Area Theme" by Wolfgang_ — CC-BY 4.0
+                  https://opengameart.org/content/lava-area-theme
+- icefield.ogg    "Snow May Never End (v2)" by Sindwiller — CC-BY-SA 3.0
+                  https://opengameart.org/content/snow-may-never-end
+- graveyard.ogg   "RPG - The Graveyard" by HitCtrl — CC-BY 3.0
+                  https://opengameart.org/content/rpg-the-graveyard
+- desert.mp3      "Nomads" by elerya — CC-BY 3.0
+                  https://opengameart.org/content/nomads
+- rainstorm.ogg   "rain and thunders" by kindland — CC0
+                  https://opengameart.org/content/rain-and-thunders
+- holy.wav        "Cathedral" by Umplix — CC0
+                  https://opengameart.org/content/cathedral-0
+- crystalline.mp3 "Crystal Cave (song18)" by cynicmusic (pixelsphere.org) — CC0
+                  https://opengameart.org/content/crystal-cave-song18
+
+CC-BY tracks require the above attribution to ship with the game.
+village / darkwood / marsh / keep and the three boss themes are
+original compositions synthesized in scripts/music.gd.

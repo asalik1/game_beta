@@ -235,23 +235,6 @@ static func _make_bow() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
-## Arcane cast: gliding shimmer partials with vibrato + sparkle pings.
-static func _make_cast() -> AudioStreamWAV:
-	var b := _buf(0.34)
-	var n := b.size()
-	for base in [620.0, 930.0, 1560.0]:
-		var f: float = base
-		var phase := 0.0
-		for i in n:
-			var t := float(i) / n
-			var freq: float = f * lerpf(1.0, 1.5, t) * (1.0 + 0.02 * sin(t * 34.0))
-			phase += freq / RATE
-			b[i] += sin(phase * TAU) * 0.14 * sin(t * PI)
-	_metal(b, 0.10, [3400.0, 4600.0], 0.12, 0.15)
-	_metal(b, 0.20, [4100.0, 5500.0], 0.10, 0.12)
-	return _to_wav(b)
-
-
 ## Flame launch: roaring noise + low rumble.
 static func _make_fireball() -> AudioStreamWAV:
 	var b := _buf(0.3)
@@ -308,6 +291,42 @@ static func _make_growl() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+## Warrior ultimate (Berserk): two taiko war-drum booms under a rising
+## battle-roar of air and a deep anvil clang. Martial, zero melody.
+static func _make_ult_warrior() -> AudioStreamWAV:
+	var b := _buf(0.95)
+	_sine_sweep(b, 0.0, 120.0, 30.0, 0.5, 0.7)
+	_sine_sweep(b, 0.28, 100.0, 34.0, 0.45, 0.55)
+	_noise_sweep(b, 0.0, 0.85, 0.4, 280.0, 1700.0, 0.5)
+	_metal(b, 0.06, [520.0, 782.0, 1174.0], 0.6, 0.3)
+	return _to_wav(b)
+
+
+## Archer ultimate (Arrow Storm): the sky opens — a broad wind swell,
+## four quick ascending bowstring plucks, and a thin arrow whistle.
+static func _make_ult_archer() -> AudioStreamWAV:
+	var b := _buf(0.85)
+	_noise_sweep(b, 0.0, 0.85, 0.38, 400.0, 3600.0, 0.45)
+	_pluck(b, 0.04, 130.0, 0.18, 0.5)
+	_pluck(b, 0.14, 155.0, 0.18, 0.5)
+	_pluck(b, 0.24, 185.0, 0.18, 0.5)
+	_pluck(b, 0.34, 220.0, 0.2, 0.5)
+	_sine_sweep(b, 0.15, 1100.0, 2300.0, 0.45, 0.1)
+	return _to_wav(b)
+
+
+## Assassin ultimate (Death Mark): a dark falling whoosh over a doom
+## sub-pulse, then two echoing blade shings vanishing into a shadow hiss.
+static func _make_ult_assassin() -> AudioStreamWAV:
+	var b := _buf(0.9)
+	_noise_sweep(b, 0.0, 0.5, 0.4, 2600.0, 320.0, 0.55)
+	_sine_sweep(b, 0.0, 70.0, 36.0, 0.6, 0.5)
+	_metal(b, 0.32, [3100.0, 4420.0, 5810.0], 0.22, 0.3)
+	_metal(b, 0.52, [2600.0, 3840.0], 0.26, 0.18)
+	_noise_sweep(b, 0.58, 0.3, 0.22, 3800.0, 7200.0, 0.35)
+	return _to_wav(b)
+
+
 ## Build the whole sound bank the game uses.
 static func build_all() -> Dictionary:
 	return {
@@ -316,7 +335,6 @@ static func build_all() -> Dictionary:
 		"sword":    _make_sword(),
 		"knife":    _make_knife(),
 		"bow":      _make_bow(),
-		"cast":     _make_cast(),
 		"fireball": _make_fireball(),
 		"blink":    _make_blink(),
 		"nova":     _make_nova(),
@@ -339,6 +357,9 @@ static func build_all() -> Dictionary:
 		"equip":    tone(300, 200, 0.12, 0.3, 0.4),
 		"chest":    tone(200, 120, 0.15, 0.35, 0.5),
 		"ult":      jingle([392, 523, 659, 784], 0.07, 0.4),  # rising power-up
+		"ult_warrior":  _make_ult_warrior(),
+		"ult_archer":   _make_ult_archer(),
+		"ult_assassin": _make_ult_assassin(),
 		"meteor":   _make_slam(),
 		"roar_fangmaw": _make_growl(),  # synthesized beast, not a wolfman
 	}

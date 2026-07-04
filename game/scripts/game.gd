@@ -108,17 +108,26 @@ func _ready() -> void:
 
 	# Background music: looping procedural chiptune, one per zone + boss.
 	music_tracks = Music.build_all()
-	# Music overrides: assets/music/<track>.ogg (or .wav) replaces the
+	# Music overrides: assets/music/<track>.ogg/.mp3/.wav replaces the
 	# composed track of the same name, looped — same idea as sprites/sfx.
 	var mus_dir := DirAccess.open("res://assets/music")
 	if mus_dir:
 		for file in mus_dir.get_files():
 			var full := ProjectSettings.globalize_path("res://assets/music/" + file)
+			var tune: Dictionary = MUSIC_TUNE.get(file.get_basename(), {})
 			if file.ends_with(".ogg"):
 				var ogg := AudioStreamOggVorbis.load_from_file(full)
 				if ogg:
 					ogg.loop = true
+					ogg.loop_offset = float(tune.get("start", 0.0))
 					music_tracks[file.get_basename()] = ogg
+			elif file.ends_with(".mp3"):
+				var mp3 := AudioStreamMP3.new()
+				mp3.data = FileAccess.get_file_as_bytes(full)
+				if not mp3.data.is_empty():
+					mp3.loop = true
+					mp3.loop_offset = float(tune.get("start", 0.0))
+					music_tracks[file.get_basename()] = mp3
 			elif file.ends_with(".wav"):
 				var wav := Sfx.load_wav(full)
 				if wav:
@@ -642,10 +651,24 @@ func clamp_to_zone(pos: Vector2, anchor: Vector2) -> Vector2:
 
 
 ## Switch the background track with a quick fade.
+## Per-track mix fixes for external recordings (measured RMS): dB gain
+## evens out mastering differences, start skips long quiet intros
+## (loops restart from the same offset via the stream's loop_offset).
+const MUSIC_TUNE := {
+	"icefield": {"gain": 14.0, "start": 10.0},  # whisper-quiet master
+	"rainstorm": {"start": 30.0},               # storm fades in over ~30s
+	"holy": {"gain": 4.0},
+	"magma": {"gain": -4.0},
+	"crystalline": {"gain": -3.0},
+}
+const MUSIC_DB := -16.0
+
+
 func set_music(name: String) -> void:
 	if name == current_track or music_player == null:
 		return
 	current_track = name
+	var tune: Dictionary = MUSIC_TUNE.get(name, {})
 	var tween := create_tween()
 	tween.tween_property(music_player, "volume_db", -40.0, 0.4)
 	tween.tween_callback(func() -> void:
@@ -653,9 +676,9 @@ func set_music(name: String) -> void:
 			music_player.stop()
 			return
 		music_player.stream = music_tracks[name]
-		music_player.play()
+		music_player.play(float(tune.get("start", 0.0)))
 	)
-	tween.tween_property(music_player, "volume_db", -16.0, 0.6)
+	tween.tween_property(music_player, "volume_db", MUSIC_DB + float(tune.get("gain", 0.0)), 0.6)
 
 
 ## Play a sound. pitch shifts the base pitch (still ±6% randomized);
