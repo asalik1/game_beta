@@ -70,6 +70,7 @@ func _run() -> void:
 
 	var main_scene: PackedScene = load("res://scenes/main.tscn")
 	game = main_scene.instantiate()
+	game.no_saves = true  # never touch (or list) the player's real save files
 	add_child(game)
 	await _frames(10)
 
@@ -167,6 +168,56 @@ func _run() -> void:
 	if is_instance_valid(probe) and not probe.dying:
 		probe.take_damage(999999.0)
 	print("ok: themes unlock + assignment (%s on Cleave)" % game.player.ability_theme["a1"])
+
+	# 3c2. Per-ability variants: one theme, different behavior per skill.
+	game.player.themes_known = 3  # test cheat: open all three columns
+	# Earth Cleave launches a stone shockwave (a piercing projectile).
+	game.player.set_ability_theme("a1", "earth")
+	var proj_before := get_tree().get_nodes_in_group("projectiles").size()
+	game.player.cds["a1"] = 0.0
+	game.player.use_ability("a1")
+	await _frames(2)
+	if get_tree().get_nodes_in_group("projectiles").size() <= proj_before:
+		return _fail("earth Cleave did not launch a quake wave")
+	# Fury Berserk: deeper rage tuning (+55% for 10s).
+	game.player.set_ability_theme("ult", "fury")
+	game.player.cds["ult"] = 0.0
+	game.player.use_ability("ult")
+	if absf(game.player.berserk_bonus - 0.55) > 0.001 or game.player.berserk_time < 9.5:
+		return _fail("fury Berserk tuning not applied (bonus %.2f, dur %.1f)" %
+			[game.player.berserk_bonus, game.player.berserk_time])
+	game.player.berserk_time = 0.0
+
+	# Poison Fan of Knives: ONE blade that blooms into a poison mist.
+	game.player.set_class("assassin")
+	game.player.themes_known = 3
+	game.player.set_ability_theme("a3", "poison")
+	var vic := _dummy(Vector2(130, 0))
+	vic.max_hp = 100000.0
+	vic.hp = vic.max_hp
+	vic.speed = 0.0  # pin it: a chasing wolf can slip inside the knife's spawn offset
+	await _frames(3)
+	game.player.cds["a3"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("a3")
+	await _frames(90)  # knife flight + bloom + first mist ticks
+	if not is_instance_valid(vic) or vic.burn_time <= 0.0:
+		return _fail("venom bloom mist did not poison the target")
+	_clear_combat()
+
+	# Hunt Tumble: lines up a guaranteed crit on the next hit.
+	game.player.set_class("archer")
+	game.player.themes_known = 3
+	game.player.set_ability_theme("a3", "hunt")
+	game.player.cds["a3"] = 0.0
+	game.player.use_ability("a3")
+	if not game.player.next_crit:
+		return _fail("hunt Tumble did not line up a guaranteed crit")
+	game.player.next_crit = false
+	game.player.set_class("warrior")  # restore for the combo test
+	game.player.pending_theme_note = ""
+	await _frames(3)
+	print("ok: per-ability theme variants (quake / berserk tune / venom bloom / lined shot)")
 
 	# 3d. COMBO stat: at the 60% cap, ~60% of casts skip the cooldown
 	# (cds left at 0 by a proc, or set to the full cooldown otherwise).
@@ -327,8 +378,73 @@ func _run() -> void:
 		return _fail("locked row accepted a point")
 	print("ok: skill tree rows (caps + gating)")
 
+	# 5a2. Auto-synthesize: socketed gems level first, then the bag rolls up.
+	var socketed_item: Dictionary = game.player.equipment["weapon"]
+	socketed_item["gems"].clear()
+	game.player.gem_bag.clear()
+	game.player.gem_bag.append(Items.make_gem("atk_pct", 1))
+	if not game.player.embed_gem_into(socketed_item, game.player.gem_bag[0]):
+		return _fail("could not socket the auto-synth test gem")
+	for i in 11:
+		game.player.gem_bag.append(Items.make_gem("atk_pct", 1))
+	# 1 socketed L1 + 11 bag L1: socketed eats 2 (->L2), bag 9 -> 3xL2,
+	# socketed eats 2 L2 (->L3), 1 L2 remains. 5 upgrades total.
+	var ups: int = game.player.auto_synthesize()
+	var socketed_lvl: int = socketed_item["gems"][0]["lvl"]
+	if ups != 5 or socketed_lvl != 3:
+		return _fail("auto-synthesize wrong result: %d upgrades, socketed L%d (want 5, L3)" % [ups, socketed_lvl])
+	if game.player.gem_bag.size() != 1 or game.player.gem_bag[0]["lvl"] != 2:
+		return _fail("auto-synthesize bag remainder wrong (%d gems)" % game.player.gem_bag.size())
+	game.player.gem_bag.clear()
+	socketed_item["gems"].clear()
+	game.player.recalc()
+	print("ok: auto-synthesize (equipped-first, %d upgrades)" % ups)
+
+	# 5b. Save / load roundtrip on a scratch slot.
+	var p: Player = game.player
+	p.gold = 4321
+	p.resonance = -37.0
+	p.faction_standing["cinderborn"] = 12
+	var kept_quest: String = game.quest_key
+	var kept_level: int = p.level
+	var kept_weapon: String = p.equipment["weapon"]["name"] if p.equipment.has("weapon") else ""
+	var kept_atk: float = p.atk
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	p.gold = 0
+	p.resonance = 0.0
+	p.faction_standing["cinderborn"] = 0
+	game.quest_key = "talk"
+	var loaded := SaveGame.read(SaveGame.MAX_SLOTS)
+	if loaded.is_empty():
+		return _fail("save file did not write/read")
+	SaveGame.apply(game, loaded)
+	await _frames(2)
+	if p.gold != 4321 or p.resonance != -37.0 or p.faction_standing["cinderborn"] != 12:
+		return _fail("save did not restore gold/resonance/faction")
+	if game.quest_key != kept_quest or p.level != kept_level:
+		return _fail("save did not restore quest/level")
+	var got_weapon: String = p.equipment["weapon"]["name"] if p.equipment.has("weapon") else ""
+	if got_weapon != kept_weapon:
+		return _fail("save did not restore equipment")
+	if absf(p.atk - kept_atk) > 0.01:
+		return _fail("stats after load differ from before save (atk %.2f vs %.2f)" % [p.atk, kept_atk])
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+	if SaveGame.exists(SaveGame.MAX_SLOTS):
+		return _fail("save delete failed")
+	print("ok: save/load roundtrip (gold, resonance, factions, gear, stats)")
+
 	# 6. Shop + codex still open fine.
 	game.player.gold = 500
+	# Inventory must survive a gem hoard (compact grid + capped scroll).
+	for i in 40:
+		game.player.gem_bag.append(Items.random_gem(game.loot_rng, 1 + (i % 5)))
+	game.menus.open_inventory()
+	await _frames(2)
+	if not game.menus.is_open():
+		return _fail("inventory did not open with a 40-gem bag")
+	game.menus.close()
+	game.player.gem_bag.clear()
+	await _frames(1)
 	game.menus.open_shop(0)
 	await _frames(2)
 	if not game.menus.is_open() or game.shop_stock[0].size() != 3:
@@ -451,6 +567,27 @@ func _run() -> void:
 	if game.state != Game.ST_VICTORY:
 		return _fail("no victory state after final boss")
 	print("ok: victory screen")
+
+	# 11. Title screen + resume on a fresh boot. Uses only the scratch
+	# slot — real saves on this machine are listed but never touched.
+	get_tree().paused = false
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	game.queue_free()
+	await _frames(3)
+	game = main_scene.instantiate()
+	add_child(game)
+	await _frames(10)
+	if not (game.menus.is_open() and game.menus.current == "title"):
+		return _fail("title screen did not open when saves exist")
+	game.menus.close()
+	game.load_save(SaveGame.MAX_SLOTS)
+	await _frames(5)
+	if game.player.cls != "warrior" or game.quest_key != "done":
+		return _fail("resume did not restore the finished character")
+	if not game.boss_done.get("vargoth", false):
+		return _fail("resume lost boss progress")
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+	print("ok: title screen + resume from save")
 
 	print("AUTOTEST PASS")
 	get_tree().paused = false

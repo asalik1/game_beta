@@ -82,7 +82,17 @@ func _physics_process(delta: float) -> void:
 	global_position += vel * delta
 	life -= delta
 	if life <= 0.0:
+		_bloom()
 		queue_free()
+
+
+## Venom Bloom: the projectile detonates into an expanding poison mist
+## on its first hit or at the end of its flight.
+func _bloom() -> void:
+	if fx.get("bloom_mist", 0) and is_instance_valid(source_player):
+		fx["bloom_mist"] = 0
+		source_player._mist(global_position, 120.0, 0.4,
+			fx.get("bloom_color", Color(0.45, 0.95, 0.3)), 3.0)
 
 
 func _on_body_entered(body: Node) -> void:
@@ -99,6 +109,7 @@ func _on_body_entered(body: Node) -> void:
 		else:
 			body.take_damage(dmg, vel.normalized())
 		if not pierce:
+			_bloom()
 			queue_free()
 	elif not friendly and body is Player:
 		game.burst(global_position, glow_color, 5)
@@ -106,6 +117,8 @@ func _on_body_entered(body: Node) -> void:
 		queue_free()
 	elif body is StaticBody2D:
 		game.burst(global_position, Color(glow_color, 0.5), 3)
+		if friendly:
+			_bloom()
 		queue_free()
 
 

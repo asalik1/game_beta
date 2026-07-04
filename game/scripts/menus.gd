@@ -24,9 +24,12 @@ func close() -> void:
 		root.queue_free()
 		root = null
 	listening_action = ""
-	if current != "class_select":  # class select unpauses only after choosing
+	# Boot menus unpause only once the game actually starts.
+	if current != "class_select" and current != "title":
 		get_tree().paused = false
 	current = ""
+	if game.play_started:
+		game.autosave()  # menus are where gear/talents/purchases change
 
 
 # ------------------------------------------------------------ scaffolding ---
@@ -118,6 +121,50 @@ func _diff_tip(item: Dictionary) -> String:
 func _hint(vbox: Node, text := "ESC to close") -> void:
 	var l := _lbl(vbox, text, 13, Color(0.55, 0.55, 0.55))
 	l.size_flags_vertical = Control.SIZE_SHRINK_END
+
+
+# ------------------------------------------------------------ title screen ---
+
+## Shown at boot when saves exist: continue a character or start fresh.
+func open_title() -> void:
+	var vbox := _open("EMBERFALL", 760, 560)
+	current = "title"
+	_lbl(vbox, "Chapter 1: The Hollow King", 15, Color(0.75, 0.75, 0.75))
+
+	_lbl(vbox, "— CONTINUE —", 15, Color(0.95, 0.85, 0.5))
+	for s in SaveGame.list():
+		var slot: int = s["slot"]
+		var cls_info: Dictionary = Classes.CLASSES.get(s["cls"], {})
+		var cname: String = cls_info.get("name", s["cls"])
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		vbox.add_child(row)
+		var icon: Texture2D = Art.tex(cls_info["sprite"]) if cls_info.has("sprite") else null
+		var resume := func() -> void:
+			if root:
+				root.queue_free()
+				root = null
+			current = ""
+			game.load_save(slot)
+		var b := _btn(row, "  %s — Lv %d" % [cname, s["level"]], resume, Color(0.6, 1.0, 0.6), true, icon)
+		b.custom_minimum_size = Vector2(360, 0)
+		b.tooltip_text = Story.QUESTS.get(s["quest"], "")
+		var when := Time.get_datetime_string_from_unix_time(s["saved_at"]).replace("T", "  ")
+		var wl := _lbl(row, when, 12, Color(0.55, 0.58, 0.66))
+		wl.custom_minimum_size = Vector2(170, 0)
+		var erase := func() -> void:
+			SaveGame.delete(slot)
+			if SaveGame.list().is_empty():
+				open_class_select()
+			else:
+				open_title()
+		_btn(row, " ✕ ", erase, Color(1, 0.5, 0.5))
+
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(spacer)
+	_btn(vbox, "  ⚔  New Game  ", func() -> void: open_class_select(), Color(0.95, 0.85, 0.5))
+	_hint(vbox, "Continue a saved hero, or forge a new one")
 
 
 # ------------------------------------------------------------ class select ---
@@ -244,26 +291,70 @@ func open_inventory(tab := "gear") -> void:
 		b.tooltip_text = Items.describe(it) + "\n\nEQUIP — diff:\n" + _diff_tip(it)
 
 	# ------------------------------------------------------------- gems ---
-	_lbl(right, "GEM BAG (%d) — click an EQUIPPED item on the left to socket them" % game.player.gem_bag.size(), 15, Color(0.95, 0.85, 0.5))
+	var gem_head := HBoxContainer.new()
+	gem_head.add_theme_constant_override("separation", 12)
+	right.add_child(gem_head)
+	var gh := _lbl(gem_head, "GEM BAG (%d) — click an EQUIPPED item on the left to socket them" % game.player.gem_bag.size(), 15, Color(0.95, 0.85, 0.5))
+	gh.custom_minimum_size = Vector2(420, 0)
+	if not game.player.gem_bag.is_empty():
+		var auto_cb := func() -> void:
+			var n: int = game.player.auto_synthesize()
+			game.spawn_text(game.player.global_position + Vector2(0, -60),
+				"%d GEM UPGRADES" % n if n > 0 else "NOTHING TO MERGE", Color(0.6, 0.9, 1.0))
+			open_inventory()
+		var ab := _btn(gem_head, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
+		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
 	if game.player.gem_bag.is_empty():
 		_lbl(right, "No loose gems. They drop from chests.", 12, Color(0.5, 0.5, 0.55))
 	else:
-		for key in _gem_groups():
-			var group: Dictionary = _gem_groups()[key]
+		# Compact two-column grid in its own capped scroll area — a gem
+		# hoard scrolls here instead of crushing the backpack list above.
+		var groups := _gem_groups()
+		var keys := _sorted_gem_keys(groups)
+		var gscroll := ScrollContainer.new()
+		gscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		var gem_rows := ceili(keys.size() / 2.0)
+		gscroll.custom_minimum_size = Vector2(0, minf(34.0 * gem_rows + 6.0, 176.0))
+		right.add_child(gscroll)
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 16)
+		grid.add_theme_constant_override("v_separation", 4)
+		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		gscroll.add_child(grid)
+		for key in keys:
+			var group: Dictionary = groups[key]
 			var g: Dictionary = group["gem"]
 			var count: int = group["count"]
 			var line := HBoxContainer.new()
 			line.add_theme_constant_override("separation", 6)
-			right.add_child(line)
+			grid.add_child(line)
 			var gl := _lbl(line, "%s  x%d" % [Items.gem_title(g), count], 13, Items.gem_color(g))
-			# Wrapping labels inside an HBox collapse without a minimum width.
-			gl.custom_minimum_size = Vector2(280, 0)
+			gl.custom_minimum_size = Vector2(190, 0)
+			gl.autowrap_mode = TextServer.AUTOWRAP_OFF
+			gl.clip_text = true
+			gl.mouse_filter = Control.MOUSE_FILTER_STOP
+			gl.tooltip_text = "%s  x%d" % [Items.gem_title(g), count]
 			if count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL:
 				var synth_cb := func() -> void:
 					game.player.synthesize(g["stat"], g["lvl"])
 					open_inventory()
-				_btn(line, "⚒ synthesize 3 → Lv%d" % (g["lvl"] + 1), synth_cb, Color(0.6, 0.9, 1.0))
+				var sb := _btn(line, "⚒ 3→Lv%d" % (g["lvl"] + 1), synth_cb, Color(0.6, 0.9, 1.0))
+				sb.tooltip_text = "Synthesize three %s into one Lv%d" % [Items.gem_title(g), g["lvl"] + 1]
 	_hint(vbox, "ESC / I to close")
+
+
+## Gem-group keys ordered by stat name, then level descending —
+## a stable, scannable order no matter what the bag looks like.
+func _sorted_gem_keys(groups: Dictionary) -> Array:
+	var keys: Array = groups.keys()
+	keys.sort_custom(func(a, b) -> bool:
+		var ga: Dictionary = groups[a]["gem"]
+		var gb: Dictionary = groups[b]["gem"]
+		if ga["stat"] == gb["stat"]:
+			return int(ga["lvl"]) > int(gb["lvl"])
+		return String(ga["stat"]) < String(gb["stat"]))
+	return keys
 
 
 ## Full character sheet: every stat on its own row, with a hover tooltip
@@ -395,13 +486,28 @@ func open_item_panel(item: Dictionary) -> void:
 			_lbl(vbox, "No gems in your bag to insert (they drop from chests).", 12, Color(0.5, 0.5, 0.55))
 		else:
 			_lbl(vbox, "INSERT FROM BAG:", 15, Color(0.95, 0.85, 0.5))
-			for key in _gem_groups():
-				var group: Dictionary = _gem_groups()[key]
+			# Scrollable two-column grid — big bags stay inside the panel.
+			var groups := _gem_groups()
+			var iscroll := ScrollContainer.new()
+			iscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+			iscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			vbox.add_child(iscroll)
+			var igrid := GridContainer.new()
+			igrid.columns = 2
+			igrid.add_theme_constant_override("h_separation", 12)
+			igrid.add_theme_constant_override("v_separation", 4)
+			igrid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			iscroll.add_child(igrid)
+			for key in _sorted_gem_keys(groups):
+				var group: Dictionary = groups[key]
 				var g2: Dictionary = group["gem"]
 				var ins_cb := func() -> void:
 					game.player.embed_gem_into(item, g2)
 					open_item_panel(item)
-				_btn(vbox, "%s  x%d — insert" % [Items.gem_title(g2), group["count"]], ins_cb, Items.gem_color(g2))
+				var ib := _btn(igrid, "%s  x%d — insert" % [Items.gem_title(g2), group["count"]], ins_cb, Items.gem_color(g2))
+				ib.clip_text = true
+				ib.custom_minimum_size = Vector2(400, 0)
+				ib.tooltip_text = "%s  x%d" % [Items.gem_title(g2), group["count"]]
 	_hint(vbox, "ESC to go back to inventory")
 
 
@@ -579,7 +685,10 @@ func open_theme_picker(slot: String) -> void:
 			title += "   (unlocks at Lv %d)" % Classes.THEME_LEVELS[i]
 		_btn(vbox, title, pick, tcolor, unlocked,
 			Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][slot], tcolor))
-		var d := _lbl(vbox, theme["desc"] + "\n" + Classes.fx_text(theme["fx"]), 12,
+		# What this theme does to THIS ability — every pair is unique.
+		var vdesc := Classes.variant_desc(p.cls, slot, theme["id"])
+		var vfx := Classes.fx_text(Classes.ability_fx(p.cls, slot, theme["id"]))
+		var d := _lbl(vbox, vdesc + ("\n" + vfx if vfx != "" else ""), 12,
 			Color(0.68, 0.7, 0.78) if unlocked else Color(0.45, 0.45, 0.5))
 		d.custom_minimum_size = Vector2(860, 0)
 	_hint(vbox, "ESC to go back to the skill tree")
@@ -1179,6 +1288,8 @@ func _input(event: InputEvent) -> void:
 				pick_class(ids[num])
 				get_viewport().set_input_as_handled()
 			return  # can't ESC out of class select
+		if current == "title" or current == "class_select":
+			return  # boot menus: no escaping into a paused void
 		if event.keycode == KEY_ESCAPE \
 				or (current == "inventory" and event.keycode == game.binds["inventory"]) \
 				or (current == "skills" and event.keycode == game.binds["skills"]) \

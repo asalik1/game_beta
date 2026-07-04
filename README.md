@@ -134,11 +134,16 @@ MIT-licensed. See `game/assets/sprites/CREDITS.txt`.
 
 ## 🗺 Roadmap (how this becomes the MMO)
 
-1. **Done**: solo storyline, 3 bosses, 4 classes + evolutions, gear/loot,
-   skill tree, merchants, keybinding, auto-aim keyboard combat.
-2. **Polish**: real sprite sheets with walk/attack animations (swap the pixel
-   grids in `art.gd` — e.g. free CC0 packs from kenney.nl or itch.io), music,
-   save games, more zones and quests.
+1. **Done**: solo storyline, 3 bosses, 4 classes + themes, gear/loot,
+   skill tree, merchants, keybinding, auto-aim keyboard combat, 14 terrains,
+   monster level scaling, **save games** (autosaved to `user://save_<n>.json`
+   on story progress / zone changes / menu closes; title screen lists saved
+   heroes with continue + delete; up to 6 characters).
+2. **Phase 1** (see `DESIGN.md` Phase Plan): choice dialogue + Resonance,
+   class openings, Paladin + Warlock, two joinable factions, Chapter 2.
+3. **Polish**: real sprite sheets with walk/attack animations (swap the pixel
+   grids in `art.gd` — e.g. free CC0 packs from kenney.nl or itch.io),
+   more zones and quests.
 3. **Steam**: in the Godot editor: *Project → Export → Windows Desktop* gives
    you an `.exe`; upload via Steamworks (one-time $100 Steam Direct fee).
 4. **Android**: *Project → Export → Android* (needs the free Android SDK once;

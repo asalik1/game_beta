@@ -70,6 +70,10 @@ var hazard_tick := 0.0
 var gust_vec := Vector2.ZERO          # sandstorm push applied to everyone
 var gust_t := 0.0
 
+# ---------------------------------------------------------- persistence ---
+var save_slot := -1                   # active save file (-1 = none yet)
+var no_saves := false                 # autotest: never touch real save files
+
 # ------------------------------------------------------------ dev mode ---
 var dev_mode := false                 # launched via dev_mode.bat (--dev)
 var dev_god := false
@@ -191,17 +195,73 @@ func _ready() -> void:
 
 
 func _start_flow() -> void:
-	menus.open_class_select()
+	if no_saves or SaveGame.list().is_empty():
+		menus.open_class_select()
+	else:
+		menus.open_title()
 
 
 func on_class_chosen(id: String) -> void:
 	player.set_class(id)
+	if not no_saves:
+		save_slot = SaveGame.next_free_slot()
 	get_tree().paused = false
 	hud.dialogue(Story.BEATS["intro"], func() -> void:
 		play_started = true
 		set_music("village")
 		hud.flash_title("Emberfall Village", "Chapter 1: The Hollow King")
+		autosave()
 	)
+
+
+## Resume a saved character: restore the player + story flags onto the
+## freshly built world, then skip straight into play (no intro).
+func load_save(slot: int) -> void:
+	var data := SaveGame.read(slot)
+	if data.is_empty():
+		return
+	save_slot = slot
+	SaveGame.apply(self, data)
+	get_tree().paused = false
+	play_started = true
+	var zi := clampi(int(player.global_position.x / ZONE_W), 0, ZONES - 1)
+	set_music(Terrains.get_terrain(terrain_by_zone[zi]).get("music", "village"))
+	hud.flash_title(Story.ZONES[zi]["name"], "The tale continues")
+
+
+## Rebuild the world state a save implies: clear pacified zones,
+## reopen earned gates, keep dead bosses dead.
+func reconcile_after_load() -> void:
+	if talked_to_elder:
+		open_gate(0)
+	if boss_done.get("fangmaw", false):
+		open_gate(1)
+	if boss_done.get("morwen", false):
+		open_gate(2)
+	for zi in ZONES:
+		var kind: String = Story.ZONES[zi].get("boss", "")
+		if kind != "" and boss_done.get(kind, false):
+			boss_spawned[zi] = true
+			zone_alive[zi] = 0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.zone_idx >= 0:
+			var kind: String = Story.ZONES[e.zone_idx].get("boss", "")
+			if kind != "" and boss_done.get(kind, false):
+				e.queue_free()
+	refresh_quest()
+
+
+## Write the current character to its slot. Called on story progress,
+## zone changes, menu closes and window close — never mid-death.
+func autosave() -> void:
+	if save_slot > 0 and play_started and state == ST_PLAYING and not player.dead:
+		SaveGame.write(self, save_slot)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		autosave()
 
 
 # =================================================================== keybinds
@@ -266,6 +326,7 @@ func _build_world() -> void:
 				open_gate(0)
 				quest_key = "fangmaw"
 				refresh_quest()
+				autosave()
 			)
 		else:
 			hud.dialogue(Story.BEATS["elder_repeat"])
@@ -547,6 +608,7 @@ func on_boss_died(kind: String) -> void:
 				hud.show_end_screen("VICTORY", "The Ember Crown is reclaimed. Thanks for playing Chapter 1!\nPress R to play again.", Color(1.0, 0.85, 0.35))
 				get_tree().paused = true
 			)
+	autosave()
 
 
 func on_enemy_died(e: Enemy) -> void:
@@ -1036,6 +1098,7 @@ func _process(delta: float) -> void:
 	if zi != last_zone:
 		if last_zone != -1 and play_started:
 			hud.flash_title(Story.ZONES[zi]["name"])
+			autosave()
 		last_zone = zi
 		var terrain := Terrains.get_terrain(terrain_by_zone[zi])
 		var tween := create_tween()

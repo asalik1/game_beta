@@ -213,6 +213,172 @@ static func attr_text(cls: String, attr: String) -> String:
 	return ", ".join(bits) + " per point"
 
 
+# ------------------------------------------------- per-ability variants ---
+# A theme is an identity; what it DOES is unique to each ability.
+# Every (ability, theme) pair has its own entry: a hand-tuned fx package
+# and often a "behavior" key the ability code branches on. Rider keys
+# (dot/slow/echo/heal/...) are applied generically by Player.hit_enemy;
+# behavior keys (bloom/knives/quake/meteors/...) are read by the ability
+# implementations in player.gd.
+const ABILITY_THEMES := {
+	"warrior": {
+		"a1": {
+			"fury": {"desc": "Cleave twice — a second backhand swing follows at 60% damage.",
+				"fx": {"wave2": 1, "crit_bonus": 0.10}},
+			"bulwark": {"desc": "Fight behind the shield: every enemy struck mends you and hardens your guard.",
+				"fx": {"heal": 0.025, "guard_buff": 70.0}},
+			"earth": {"desc": "Slam the ground: a stone shockwave rolls down the lane, staggering everything it runs through.",
+				"fx": {"quake": 1, "slow": 0.30, "stun_chance": 0.25}},
+		},
+		"a2": {
+			"fury": {"desc": "Reckless charge: 40% further and 30% harder — momentum is the weapon.",
+				"fx": {"dash_mult": 1.4, "dmg_mult": 1.3, "crit_bonus": 0.10}},
+			"bulwark": {"desc": "Shield high: every enemy rammed heals you and fortifies your guard.",
+				"fx": {"heal": 0.03, "guard_buff": 90.0}},
+			"earth": {"desc": "The charge ends in a ground-shattering slam that stuns everything around the impact.",
+				"fx": {"end_slam": 1, "slow": 0.30}},
+		},
+		"a3": {
+			"fury": {"desc": "A wider, bloodier cyclone whose hits strike again.",
+				"fx": {"radius_mult": 1.35, "echo": 0.40}},
+			"bulwark": {"desc": "Spin behind the shield: every hit mends you, every cast hardens you.",
+				"fx": {"heal": 0.02, "guard_buff": 80.0}},
+			"earth": {"desc": "The spin drags enemies INTO you and staggers them — set up the kill.",
+				"fx": {"pull": 1, "stun_chance": 0.30, "slow": 0.30}},
+		},
+		"ult": {
+			"fury": {"desc": "Deeper rage: +55% damage, and it burns for 10 seconds.",
+				"fx": {"berserk_dmg": 0.55, "berserk_dur": 10.0}},
+			"bulwark": {"desc": "Juggernaut: the rage heals 25% HP on cast and armors you while it lasts.",
+				"fx": {"berserk_heal": 0.25, "berserk_guard": 100.0}},
+			"earth": {"desc": "Your roar is seismic: enemies around you are STUNNED 2s when you awaken.",
+				"fx": {"awaken_slam": 1}},
+		},
+	},
+	"archer": {
+		"a1": {
+			"storm": {"desc": "The arrow forks with lightning, leaping to a second enemy.",
+				"fx": {"ric": 1, "splash": 0.20}},
+			"venom": {"desc": "Dipped arrowheads: a heavy venom DoT and a lingering slow.",
+				"fx": {"dot": 0.45, "slow": 0.30}},
+			"hunt": {"desc": "Aim for the gaps: +20% crit, and shots can EXPOSE the prey.",
+				"fx": {"crit_bonus": 0.20, "vuln": 0.25}},
+		},
+		"a2": {
+			"storm": {"desc": "Five charged arrows that PIERCE everything, splashing lightning on each hit.",
+				"fx": {"pierce": 1, "splash": 0.30}},
+			"venom": {"desc": "THREE heavy toxin arrows in a tight fan — each drips a brutal DoT.",
+				"fx": {"knives": 3, "spread": 0.10, "dmg_mult": 1.5, "dot": 0.50, "slow": 0.25}},
+			"hunt": {"desc": "The whole volley converges on a single point — one target eats all five.",
+				"fx": {"narrow": 1, "crit_bonus": 0.15, "vuln": 0.30}},
+		},
+		"a3": {
+			"storm": {"desc": "Discharge a lightning burst where you leave — punish anything chasing you.",
+				"fx": {"burst_origin": 0.9}},
+			"venom": {"desc": "Drop a toxin cloud behind you that poisons everything inside.",
+				"fx": {"mist_origin": 1}},
+			"hunt": {"desc": "Reposition and line it up: your NEXT hit is a guaranteed crit.",
+				"fx": {"next_crit": 1}},
+		},
+		"ult": {
+			"storm": {"desc": "The rain crackles: every arrow splashes lightning around its mark.",
+				"fx": {"splash": 0.50, "echo": 0.30}},
+			"venom": {"desc": "A plague rain: everything struck rots and slows.",
+				"fx": {"dot": 0.50, "slow": 0.30}},
+			"hunt": {"desc": "Every arrow hunts YOUR target — one prey, total focus, exposed to the bone.",
+				"fx": {"focus": 1, "vuln": 0.40, "crit_bonus": 0.15}},
+		},
+	},
+	"mage": {
+		"a1": {
+			"fire": {"desc": "Explosive bolt: splashes on impact and ignites what survives.",
+				"fx": {"splash": 0.45, "dot": 0.35}},
+			"ice": {"desc": "An ice lance that PIERCES the whole line, freezing everything it runs through.",
+				"fx": {"pierce": 1, "slow": 0.55, "stun_chance": 0.15, "proj_speed": 0.75}},
+			"wind": {"desc": "Split the bolt: TWO smaller bolts that flurry with echoing hits.",
+				"fx": {"twin": 1, "echo": 0.35}},
+		},
+		"a2": {
+			"fire": {"desc": "Flame ring: a wider, burning detonation — it ignites instead of shoving.",
+				"fx": {"radius_mult": 1.4, "dot": 0.45, "no_knock": 1}},
+			"ice": {"desc": "Deep freeze: the blast can freeze solid what it doesn't kill.",
+				"fx": {"stun_chance": 0.35, "slow": 0.60}},
+			"wind": {"desc": "Implosion: drag everything INTO you, then ride the updraft out (+move speed).",
+				"fx": {"pull": 1, "speed_buff": 0.35}},
+		},
+		"a3": {
+			"fire": {"desc": "Burn the path: everything you pass through is left on fire.",
+				"fx": {"dot": 0.50}},
+			"ice": {"desc": "Frostwalk: everything you pass through is frozen mid-step.",
+				"fx": {"freeze_path": 0.7, "slow": 0.50}},
+			"wind": {"desc": "Slipstream: blink 40% further and leave with a burst of speed.",
+				"fx": {"dash_mult": 1.4, "speed_buff": 0.35}},
+		},
+		"ult": {
+			"fire": {"desc": "A dying sun: a wider crater and a heavier, longer burn.",
+				"fx": {"radius_mult": 1.4, "burn_mult": 1.6}},
+			"ice": {"desc": "Glacial comet: the impact FREEZES the whole field solid for 1.2s.",
+				"fx": {"freeze": 1.2, "slow": 0.50}},
+			"wind": {"desc": "Starfall: THREE comets rain down across three different targets.",
+				"fx": {"meteors": 3, "dmg_mult": 0.6}},
+		},
+	},
+	"assassin": {
+		"a1": {
+			"poison": {"desc": "Coated steel: every stab drips venom and slows the prey.",
+				"fx": {"dot": 0.35, "slow": 0.30}},
+			"shadow": {"desc": "Strike from the dark: +15% crit, and stunned or slowed prey ALWAYS crits.",
+				"fx": {"crit_bonus": 0.15, "opportunist": 1}},
+			"blood": {"desc": "Rend: hits strike again and feed you.",
+				"fx": {"echo": 0.45, "heal": 0.02}},
+		},
+		"a2": {
+			"poison": {"desc": "A toxic wake: the dash line blooms into a poison mist behind you.",
+				"fx": {"trail_mist": 1, "slow": 0.30}},
+			"shadow": {"desc": "Phantom step: dash further — and a kill refunds most of the cooldown.",
+				"fx": {"dash_mult": 1.35, "kill_refund": 0.7, "crit_bonus": 0.10}},
+			"blood": {"desc": "Exsanguinate: every enemy cut feeds you, and cuts strike twice.",
+				"fx": {"heal": 0.03, "echo": 0.35}},
+		},
+		"a3": {
+			"poison": {"desc": "ONE heavy venom blade that detonates into an expanding toxin cloud.",
+				"fx": {"bloom": 1, "dmg_mult": 1.4}},
+			"shadow": {"desc": "FIVE blades in a wide arc, all hungry for weak points.",
+				"fx": {"knives": 5, "spread": 0.22, "crit_bonus": 0.15}},
+			"blood": {"desc": "Scarlet fan: the blades PIERCE, and every wound feeds you.",
+				"fx": {"pierce": 1, "heal": 0.02, "echo": 0.30}},
+		},
+		"ult": {
+			"poison": {"desc": "The mark rots: injects a massive 5s venom that eats the target alive.",
+				"fx": {"mark_dot": 0.6}},
+			"shadow": {"desc": "Executioner: if the flurry leaves them under 30% HP, a TRUE-damage finisher lands.",
+				"fx": {"execute": 2.0}},
+			"blood": {"desc": "The flurry feeds: every hit of the execution restores 6% max HP.",
+				"fx": {"flurry_heal": 0.06}},
+		},
+	},
+}
+
+
+## The fx package an ability actually casts with under a theme:
+## the hand-tuned per-ability variant, falling back to the theme's base.
+static func ability_fx(cls_id: String, slot: String, theme_id: String) -> Dictionary:
+	var per_cls: Dictionary = ABILITY_THEMES.get(cls_id, {})
+	var per_slot: Dictionary = per_cls.get(slot, {})
+	if per_slot.has(theme_id):
+		return per_slot[theme_id].get("fx", {})
+	return theme_by_id(cls_id, theme_id).get("fx", {})
+
+
+## What this theme does to THIS ability, in words.
+static func variant_desc(cls_id: String, slot: String, theme_id: String) -> String:
+	var per_cls: Dictionary = ABILITY_THEMES.get(cls_id, {})
+	var per_slot: Dictionary = per_cls.get(slot, {})
+	if per_slot.has(theme_id):
+		return per_slot[theme_id].get("desc", "")
+	return theme_by_id(cls_id, theme_id).get("desc", "")
+
+
 static func ability(cls: String, slot: String) -> Dictionary:
 	return CLASSES[cls]["abilities"][slot]
 

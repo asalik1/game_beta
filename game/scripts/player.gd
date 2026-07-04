@@ -17,6 +17,10 @@ var cls := "warrior"
 var ability_theme := {"a1": "", "a2": "", "a3": "", "ult": ""}
 var themes_known := 0
 
+# --- Phase 1 story trackers (persisted with the save from day one) ---
+var resonance := 0.0     # -100 (Temptation) .. +100 (Virtue), per DESIGN.md
+var faction_standing := {"accord": 0, "cinderborn": 0, "wildfang": 0, "choir": 0}
+
 # --- progression ---
 var level := 1
 var xp := 0
@@ -63,6 +67,8 @@ var cds := {"a1": 0.0, "a2": 0.0, "a3": 0.0, "ult": 0.0}
 var potion_cd := 0.0
 var hurt_cd := 0.0
 var berserk_time := 0.0
+var berserk_bonus := 0.4       # damage bonus while berserk (theme-tunable)
+var next_crit := false         # Hunt: the next hit is a guaranteed crit
 var storm_time := 0.0
 var storm_tick := 0.0
 var storm_fx := {}
@@ -197,7 +203,8 @@ func _theme_fx(slot: String) -> Dictionary:
 	var id: String = ability_theme.get(slot, "")
 	if id == "":
 		return {}
-	return Classes.theme_by_id(cls, id).get("fx", {})
+	# Per-ability variant package — each (ability, theme) pair is unique.
+	return Classes.ability_fx(cls, slot, id)
 
 
 func _theme_color(slot: String) -> Color:
@@ -275,7 +282,7 @@ func recalc() -> void:
 
 func current_atk() -> float:
 	if berserk_time > 0.0:
-		return atk * 1.4
+		return atk * (1.0 + berserk_bonus)
 	return atk
 
 
@@ -357,22 +364,74 @@ func remove_gem(item: Dictionary, index: int) -> void:
 	game.sfx("potion")
 
 
-## 3 gems of the same stat & level -> 1 gem of the next level.
-func synthesize(stat: String, lvl: int) -> bool:
-	if lvl >= Items.GEM_MAX_LEVEL:
-		return false
+## One click, zero tedium: repeatedly synthesize everything possible.
+## Socketed gems on equipped gear are upgraded FIRST (a socketed gem +
+## two matching bag gems levels up in place), then the bag combines
+## 3-of-a-kind until nothing can be merged any more. Returns the number
+## of upgrades performed.
+func auto_synthesize() -> int:
+	var upgrades := 0
+	while true:
+		# Equipped gems always get first pick of the bag — even of gems
+		# the bag itself just merged into existence.
+		if _upgrade_equipped_once():
+			upgrades += 1
+			continue
+		if _bag_merge_once():
+			upgrades += 1
+			continue
+		break
+	if upgrades > 0:
+		recalc()
+		game.sfx("levelup")
+	return upgrades
+
+
+## Level up ONE socketed gem in place (eats two matching bag gems).
+func _upgrade_equipped_once() -> bool:
+	for slot in equipment:
+		for gem in equipment[slot].get("gems", []):
+			if gem["lvl"] < Items.GEM_MAX_LEVEL and _take_from_bag(gem["stat"], gem["lvl"], 2):
+				gem["lvl"] += 1
+				return true
+	return false
+
+
+## Merge ONE 3-of-a-kind in the bag, lowest levels first.
+func _bag_merge_once() -> bool:
+	for lvl in range(1, Items.GEM_MAX_LEVEL):
+		for stat in Items.GEM_STATS:
+			if synthesize(stat, lvl, true):
+				return true
+	return false
+
+
+## Remove `count` bag gems matching stat+level. All or nothing.
+func _take_from_bag(stat: String, lvl: int, count: int) -> bool:
 	var found: Array = []
 	for gem in gem_bag:
 		if gem["stat"] == stat and gem["lvl"] == lvl:
 			found.append(gem)
-			if found.size() == 3:
+			if found.size() == count:
 				break
-	if found.size() < 3:
+	if found.size() < count:
 		return false
 	for gem in found:
 		gem_bag.erase(gem)
+	return true
+
+
+## 3 gems of the same stat & level -> 1 gem of the next level.
+## quiet: skip the sound (auto-synthesize merges dozens in one frame —
+## overlapping copies of the same sample phase into digital mush).
+func synthesize(stat: String, lvl: int, quiet := false) -> bool:
+	if lvl >= Items.GEM_MAX_LEVEL:
+		return false
+	if not _take_from_bag(stat, lvl, 3):
+		return false
 	gem_bag.append(Items.make_gem(stat, lvl + 1))
-	game.sfx("levelup")
+	if not quiet:
+		game.sfx("levelup")
 	return true
 
 
@@ -629,6 +688,7 @@ func use_ability(slot: String) -> void:
 	_tfx = _theme_fx(slot).duplicate()
 	_tcolor = _theme_color(slot)
 	_themed = not _tfx.is_empty()
+	f *= float(_tfx.get("dmg_mult", 1.0))
 	if _tfx.has("speed_buff"):
 		theme_speed_time = 2.5
 		theme_speed_amt = _tfx["speed_buff"]
@@ -645,6 +705,22 @@ func use_ability(slot: String) -> void:
 	match [cls, slot]:
 		["warrior", "a1"]:
 			_melee_arc(1.0 * f, 96.0, "slash", {"stagger": 0.35, "knock": 330.0}, "swing", "sword")
+			if _tfx.get("quake", 0):
+				# Earth: a stone shockwave rolls down the lane.
+				var qdir := aim_dir(220.0)
+				var quake := Projectile.spawn(game, global_position + qdir * 26.0, qdir * 300.0, 0.0, true, "slash")
+				quake.hit_player_mult = 0.7 * f
+				quake.source_player = self
+				quake.fx = _tfx.duplicate()
+				quake.pierce = true
+				quake.life = 0.5
+				quake.modulate = Color(0.85, 0.65, 0.35)
+			if _tfx.get("wave2", 0):
+				# Fury: a second backhand swing follows.
+				var f2 := f
+				get_tree().create_timer(0.13).timeout.connect(func() -> void:
+					if not dead:
+						_melee_arc(0.6 * f2, 96.0, "slash", {"stagger": 0.2}, "swing", "sword"))
 			if s_passive() == "kingsblade":
 				var wave := Projectile.spawn(game, global_position + aim_dir(220.0) * 30.0, aim_dir(220.0) * 400.0, 0.0, true, "slash")
 				wave.hit_player_mult = 0.6 * f
@@ -656,10 +732,27 @@ func use_ability(slot: String) -> void:
 			# Charge: ram through everything in your path, stunning it.
 			melee_swing = 0.16
 			game.sfx("slam")
-			_dash_strike(170.0, 1.3 * f, {"stun": 1.3, "knock": 220.0})
+			_dash_strike(170.0 * float(_tfx.get("dash_mult", 1.0)), 1.3 * f, {"stun": 1.3, "knock": 220.0})
+			if _tfx.get("end_slam", 0):
+				# Earth: the charge ends in a ground-shattering slam.
+				game.shake(5.0)
+				game.sfx("slam", 0.8)
+				game.burst(global_position, _tcolor, 14)
+				for e in _enemies_within(global_position, 120.0):
+					hit_enemy(e, 0.7 * f, {"stun": 1.0, "aoe": true})
 		["warrior", "a3"]: _whirlwind(f)
 		["warrior", "ult"]:
-			berserk_time = 8.0
+			berserk_time = float(_tfx.get("berserk_dur", 8.0))
+			berserk_bonus = float(_tfx.get("berserk_dmg", 0.4))
+			if _tfx.has("berserk_heal"):
+				hp = minf(max_hp, hp + max_hp * float(_tfx["berserk_heal"]))
+			if _tfx.has("berserk_guard"):
+				theme_guard_time = berserk_time
+				theme_guard_amt = float(_tfx["berserk_guard"])
+			if _tfx.get("awaken_slam", 0):
+				# Earth: the roar itself is seismic.
+				for e in _enemies_within(global_position, 150.0):
+					hit_enemy(e, 0.8 * f, {"stun": 2.0, "aoe": true})
 			_ult_sfx()
 			game.shake(6.0)
 			game.hud.flash_screen(Color(1.0, 0.25, 0.15), 0.4, 0.4)
@@ -674,7 +767,13 @@ func use_ability(slot: String) -> void:
 			_ult_sfx()
 			game.hud.flash_screen(Color(0.6, 1.0, 0.6), 0.3, 0.35)
 			game.spawn_text(global_position + Vector2(0, -60), "ARROW STORM!", Color(0.6, 1, 0.6))
-		["mage", "a1"]: _cast_bolt(aim_dir(), 1.1 * f)
+		["mage", "a1"]:
+			if _tfx.get("twin", 0):
+				# Wind: split the bolt.
+				_cast_bolt(aim_dir().rotated(0.09), 0.7 * f)
+				_cast_bolt(aim_dir().rotated(-0.09), 0.7 * f)
+			else:
+				_cast_bolt(aim_dir(), 1.1 * f)
 		["mage", "a2"]: _frost_nova(f)
 		["mage", "a3"]: _blink()
 		["mage", "ult"]: _meteor()
@@ -715,11 +814,17 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		return
 	var dmg: float = result["dmg"]
 	var is_crit: bool = result["crit"]
-	# Nightfang: strikes on stunned/slowed enemies always crit.
-	if s_passive() == "nightfang" and dmg_type != "true" and not is_crit \
-			and (e.stun_time > 0.0 or e.slow_time > 0.0):
+	# Nightfang passive / Shadow opportunist: stunned or slowed prey always crits.
+	if (s_passive() == "nightfang" or effects.get("opportunist", 0)) and dmg_type != "true" \
+			and not is_crit and (e.stun_time > 0.0 or e.slow_time > 0.0):
 		is_crit = true
 		dmg *= crit_dmg
+	# Hunt: a lined-up shot cannot fail to crit.
+	if next_crit and dmg_type != "true":
+		next_crit = false
+		if not is_crit:
+			is_crit = true
+			dmg *= crit_dmg
 
 	# ------------------------------------------------ theme / rider effects
 	if effects.has("dot"):
@@ -833,7 +938,8 @@ func _shoot(dir: Vector2, mult: float) -> void:
 
 func _cast_bolt(dir: Vector2, mult: float) -> void:
 	game.sfx("fireball")  # a breathy fire fwoosh, not an arcane laser
-	var p := _proj(dir, mult, "fireball", 440.0)
+	var p := _proj(dir, mult, "fireball", 440.0 * float(_tfx.get("proj_speed", 1.0)))
+	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 	if s_passive() == "phoenix":
 		p.fx["splash"] = maxf(p.fx.get("splash", 0.0), 0.5)
 		p.fx["burn"] = current_atk() * 0.35
@@ -841,17 +947,21 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 
 func _whirlwind(f := 1.0) -> void:
 	game.sfx("sword")
+	var radius := 115.0 * float(_tfx.get("radius_mult", 1.0))
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex("glow")
 	spr.modulate = Color(_tcolor, 0.8) if _themed else Color(1, 1, 1, 0.8)
 	spr.scale = Vector2(4.5, 4.5)
 	add_child(spr)
 	var tween := spr.create_tween()
-	tween.tween_property(spr, "scale", Vector2(6, 6), 0.2)
+	tween.tween_property(spr, "scale", Vector2(6, 6) * (radius / 115.0), 0.2)
 	tween.parallel().tween_property(spr, "modulate:a", 0.0, 0.2)
 	tween.tween_callback(spr.queue_free)
-	for e in _enemies_within(global_position, 115.0):
-		hit_enemy(e, 0.9 * f, {"knock": 380.0, "stagger": 0.3, "aoe": true})
+	var eff := {"stagger": 0.3, "aoe": true}
+	if not _tfx.get("pull", 0):  # Earth drags them in instead of flinging
+		eff["knock"] = 380.0
+	for e in _enemies_within(global_position, radius):
+		hit_enemy(e, 0.9 * f, eff.duplicate())
 
 
 ## Per-class ultimate activation sound, falling back to the generic one.
@@ -866,9 +976,12 @@ func _multishot(f := 1.0) -> void:
 	# Pitched lower than Quick Shot so the two are distinguishable.
 	game.sfx("slash", 0.85)
 	var dir := aim_dir()
-	for i in 5:
-		var spread := (float(i) - 2.0) * 0.16
+	var count := int(_tfx.get("knives", 5))
+	var step := 0.05 if _tfx.get("narrow", 0) else float(_tfx.get("spread", 0.16))
+	for i in count:
+		var spread := (float(i) - (count - 1) / 2.0) * step
 		var p := _proj(dir.rotated(spread), 0.55 * f, "arrow", 520.0)
+		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 		if s_passive() == "ricochet":
 			p.fx["ric"] = 1
 
@@ -876,14 +989,34 @@ func _multishot(f := 1.0) -> void:
 func _tumble() -> void:
 	game.sfx("blink")
 	hurt_cd = maxf(hurt_cd, 0.5)
+	var origin := global_position
 	global_position = game.clamp_to_zone(global_position + facing * 130.0, global_position)
+	if _tfx.has("burst_origin"):
+		# Storm: discharge where you left.
+		game.sfx("nova", 1.2)
+		game.burst(origin, _tcolor, 12)
+		for e in _enemies_within(origin, 110.0):
+			hit_enemy(e, float(_tfx["burst_origin"]), {"aoe": true})
+	if _tfx.get("mist_origin", 0):
+		# Venom: leave a toxin cloud behind.
+		_mist(origin, 95.0, 0.35, _tcolor, 2.5)
+	if _tfx.get("next_crit", 0):
+		# Hunt: line up the next shot.
+		next_crit = true
+		game.spawn_text(global_position + Vector2(0, -60), "LINED UP", Color(1, 0.7, 0.3))
 
 
 func _storm_strike() -> void:
-	var targets := _enemies_within(global_position, 560.0)
-	if targets.is_empty():
+	var e: Enemy = null
+	if storm_fx.get("focus", 0):
+		# Hunt: every arrow hunts YOUR target.
+		e = auto_aim(560.0)
+	else:
+		var targets := _enemies_within(global_position, 560.0)
+		if not targets.is_empty():
+			e = targets[randi() % targets.size()]
+	if e == null:
 		return
-	var e: Enemy = targets[randi() % targets.size()]
 	# Falling-arrow whoosh (deep-pitched), NOT the synth laser zap.
 	game.sfx("knife", 0.75)
 	# An arrow visibly falls out of the sky onto the target.
@@ -916,14 +1049,20 @@ func _frost_nova(f := 1.0) -> void:
 	tween.parallel().tween_property(spr, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(spr.queue_free)
 	# A real panic button: big damage, shove everything away, slow it.
-	for e in _enemies_within(global_position, 160.0):
-		hit_enemy(e, 1.4 * f, {"slow": 0.5, "slow_dur": 2.5, "knock": 340.0, "aoe": true})
+	# (Fire ring burns instead of shoving; Wind implodes them INTO you.)
+	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
+	var eff := {"slow": 0.5, "slow_dur": 2.5, "aoe": true}
+	if not (_tfx.get("no_knock", 0) or _tfx.get("pull", 0)):
+		eff["knock"] = 340.0
+	for e in _enemies_within(global_position, radius):
+		hit_enemy(e, 1.4 * f, eff.duplicate())
 
 
 ## Dash `dist` pixels in the move direction, damaging every enemy along
 ## the path. Used by mage Blink and assassin Shadow Dash — and because
-## it HITS things, ability themes fully apply to it.
-func _dash_strike(dist: float, mult: float, effects := {}) -> void:
+## it HITS things, ability themes fully apply to it. Returns kill count
+## (Phantom step refunds cooldown on kills).
+func _dash_strike(dist: float, mult: float, effects := {}) -> int:
 	game.sfx("blink")
 	var color := _tcolor if _themed else Color(0.6, 0.7, 1.0)
 	var start := global_position
@@ -947,6 +1086,7 @@ func _dash_strike(dist: float, mult: float, effects := {}) -> void:
 	tween.tween_property(trail, "modulate:a", 0.0, 0.25)
 	tween.tween_callback(trail.queue_free)
 
+	var kills := 0
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e == null or e.dying:
@@ -954,16 +1094,36 @@ func _dash_strike(dist: float, mult: float, effects := {}) -> void:
 		var closest := Geometry2D.get_closest_point_to_segment(e.global_position, start, end)
 		if e.global_position.distance_to(closest) <= 55.0:
 			hit_enemy(e, mult, effects.duplicate())
+			if e.dying or e.hp <= 0.0:
+				kills += 1
+	return kills
 
 
 func _blink() -> void:
-	_dash_strike(190.0, 0.8, {"aoe": true})
+	var eff := {"aoe": true}
+	if _tfx.has("freeze_path"):
+		eff["stun"] = float(_tfx["freeze_path"])  # Frostwalk
+	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), 0.8, eff)
 
 
 func _meteor() -> void:
-	var target := auto_aim()
-	var pos := target.global_position if target else global_position + facing * 150.0
 	_ult_sfx()
+	# Starfall (wind): several smaller comets across several targets.
+	var count := int(_tfx.get("meteors", 1))
+	var spots: Array = []
+	if count > 1:
+		for e in _enemies_within(global_position, 560.0):
+			spots.append(e.global_position)
+			if spots.size() >= count:
+				break
+	if spots.is_empty():
+		var target := auto_aim()
+		spots.append(target.global_position if target else global_position + facing * 150.0)
+	for pos in spots:
+		_meteor_at(pos)
+
+
+func _meteor_at(pos: Vector2) -> void:
 	var fx_copy := _tfx.duplicate()
 	var col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
 
@@ -1020,11 +1180,14 @@ func _meteor() -> void:
 		var s_tw := scorch.create_tween()
 		s_tw.tween_property(scorch, "modulate:a", 0.0, 1.3)
 		s_tw.tween_callback(scorch.queue_free)
-		for e in _enemies_within(pos, 150.0):
+		var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
+		for e in _enemies_within(pos, radius):
 			var eff := fx_copy.duplicate()
-			eff["burn"] = current_atk() * 0.4
+			eff["burn"] = current_atk() * 0.4 * float(fx_copy.get("burn_mult", 1.0))
 			eff["aoe"] = true
-			hit_enemy(e, 3.5, eff)
+			if fx_copy.has("freeze"):
+				eff["stun"] = float(fx_copy["freeze"])  # glacial comet
+			hit_enemy(e, 3.5 * float(fx_copy.get("dmg_mult", 1.0)), eff)
 	)
 
 
@@ -1033,15 +1196,70 @@ func _shadow_dash(f := 1.0) -> void:
 	melee_style = "stab"
 	melee_dir = facing
 	game.sfx("stab")
-	_dash_strike(210.0, 1.2 * f, {"stagger": 0.4})
+	var start := global_position
+	var kills := _dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), 1.2 * f, {"stagger": 0.4})
+	if _tfx.get("trail_mist", 0):
+		# Poison: the dash line blooms into a toxic wake.
+		_mist((start + global_position) / 2.0, 110.0, 0.3, _tcolor, 2.5)
+	if kills > 0 and _tfx.has("kill_refund"):
+		# Shadow: a kill refunds most of the cooldown.
+		cds["a2"] *= 1.0 - float(_tfx["kill_refund"])
+		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
 
 
 func _fan_of_knives(f := 1.0) -> void:
 	game.sfx("knife", 1.25)  # lighter/faster than the archer sounds
 	var dir := aim_dir()
-	for i in 3:
-		var spread := (float(i) - 1.0) * 0.13
-		_proj(dir.rotated(spread), 0.7 * f, "knife", 560.0)
+	if _tfx.get("bloom", 0):
+		# Poison: ONE heavy venom blade that detonates into a toxin cloud
+		# (on its first hit, or at the end of its flight).
+		var p := _proj(dir, 1.0 * f, "knife", 500.0)
+		p.scale = Vector2(1.5, 1.5)
+		p.life = 0.55
+		p.fx["bloom_mist"] = 1
+		p.fx["bloom_color"] = _tcolor
+		return
+	var count := int(_tfx.get("knives", 3))
+	var step := float(_tfx.get("spread", 0.13))
+	for i in count:
+		var spread := (float(i) - (count - 1) / 2.0) * step
+		var p := _proj(dir.rotated(spread), 0.7 * f, "knife", 560.0)
+		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+
+
+## An expanding cloud that ticks poison on everything inside — the mist
+## primitive behind Venom Bloom, Toxic Wake and the archer's toxin cloud.
+func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.5) -> void:
+	var cloud := Sprite2D.new()
+	cloud.texture = Art.tex("glow")
+	cloud.modulate = Color(color, 0.45)
+	cloud.global_position = pos
+	cloud.scale = Vector2(1.2, 1.2)
+	cloud.z_index = 4
+	game.add_child(cloud)
+	var grow := cloud.create_tween()
+	grow.tween_property(cloud, "scale", Vector2(radius / 24.0, radius / 24.0), 0.5)
+	var puff := CPUParticles2D.new()
+	puff.amount = 18
+	puff.lifetime = 0.8
+	puff.spread = 180.0
+	puff.initial_velocity_min = 10.0
+	puff.initial_velocity_max = 40.0
+	puff.gravity = Vector2(0, -10)
+	puff.scale_amount_min = 2.0
+	puff.scale_amount_max = 4.0
+	puff.color = Color(color, 0.7)
+	cloud.add_child(puff)
+	var ticks := int(dur / 0.4)
+	for i in ticks:
+		await get_tree().create_timer(0.4).timeout
+		if not is_instance_valid(cloud) or dead:
+			return
+		for e in _enemies_within(pos, radius):
+			e.apply_burn(current_atk() * dps_mult, 1.2, Color(color, 1.0))
+	var fade := cloud.create_tween()
+	fade.tween_property(cloud, "modulate:a", 0.0, 0.5)
+	fade.tween_callback(cloud.queue_free)
 
 
 func _death_mark() -> void:
@@ -1058,6 +1276,9 @@ func _death_mark() -> void:
 	global_position = game.clamp_to_zone(target.global_position + dir * 42.0, target.global_position)
 	target.vuln_time = 5.0
 	target.apply_stun(0.6)
+	if _tfx.has("mark_dot"):
+		# Poison: the mark itself rots the target.
+		target.apply_burn(current_atk() * float(_tfx["mark_dot"]), 5.0, Color(0.5, 1.2, 0.5))
 	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK", Color(1, 0.25, 0.3))
 
 	var skull := Sprite2D.new()
@@ -1071,10 +1292,10 @@ func _death_mark() -> void:
 	tween.parallel().tween_property(skull, "modulate:a", 0.0, 0.7)
 	tween.tween_callback(skull.queue_free)
 
-	_death_mark_flurry(target)
+	_death_mark_flurry(target, float(_tfx.get("flurry_heal", 0.0)), float(_tfx.get("execute", 0.0)))
 
 
-func _death_mark_flurry(target: Enemy) -> void:
+func _death_mark_flurry(target: Enemy, flurry_heal := 0.0, execute := 0.0) -> void:
 	for i in 3:
 		if not is_instance_valid(target) or target.dying:
 			return
@@ -1084,7 +1305,16 @@ func _death_mark_flurry(target: Enemy) -> void:
 		game.shake(3.5)
 		game.burst(target.global_position, Color(1.0, 0.2, 0.3), 10)
 		hit_enemy(target, 0.7 if i < 2 else 1.3, {"type": "true"})
+		if flurry_heal > 0.0:
+			hp = minf(max_hp, hp + max_hp * flurry_heal)  # Blood: the flurry feeds
 		await get_tree().create_timer(0.09).timeout
+	# Shadow: if they survived under 30%, the executioner finishes it.
+	if execute > 0.0 and is_instance_valid(target) and not target.dying \
+			and target.hp < target.max_hp * 0.3:
+		game.shake(6.0)
+		game.spawn_text(target.global_position + Vector2(0, -70), "EXECUTED", Color(1, 0.15, 0.25))
+		game.burst(target.global_position, Color(0.6, 0.2, 0.6), 16)
+		hit_enemy(target, execute, {"type": "true"})
 
 
 # ================================================================== survival
