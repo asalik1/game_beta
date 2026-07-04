@@ -68,6 +68,7 @@ var theme_speed_time := 0.0
 var theme_speed_amt := 0.0
 var theme_guard_time := 0.0
 var theme_guard_amt := 0.0
+var hazard_speed := 1.0        # terrain patch effect (ice boosts, void slows)
 var melee_swing := 0.0         # held-weapon attack animation timer
 var melee_style := "swing"     # "swing" (arc) or "stab" (thrust)
 var melee_dir := Vector2.RIGHT
@@ -458,7 +459,8 @@ func _physics_process(delta: float) -> void:
 	var spd := speed * (1.25 if berserk_time > 0.0 else 1.0)
 	if theme_speed_time > 0.0:
 		spd *= 1.0 + theme_speed_amt
-	velocity = dir * spd
+	spd *= hazard_speed  # ice patches boost, void rifts slow
+	velocity = dir * spd + game.gust_vec  # sandstorm gusts shove everyone
 	move_and_slide()
 
 	# Walk bob + face the aim target (or move direction).

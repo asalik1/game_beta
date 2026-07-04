@@ -155,6 +155,9 @@ func _ready() -> void:
 	controls.text = "WASD move · TAB target · E talk"
 	var controls2 := _label(Vector2(14, 698), 11, Color(0.7, 0.7, 0.7), 400)
 	controls2.text = "I inventory · T skills · C codex · ESC menu"
+	if game.dev_mode:
+		var dev_l := _label(Vector2(1120, 12), 14, Color(1.0, 0.5, 0.4), 150, HORIZONTAL_ALIGNMENT_RIGHT)
+		dev_l.text = "DEV (F1)"
 
 
 const SLOT_SIZE := 60.0
@@ -454,6 +457,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == game.binds.get("target", KEY_TAB) \
 				and game.state == game.ST_PLAYING and not dialogue_active and not paused_by_menu:
 			game.player.cycle_target()
+			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_F1 and game.dev_mode and not dialogue_active and not paused_by_menu:
+			game.menus.open_dev()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		pressed_confirm = true

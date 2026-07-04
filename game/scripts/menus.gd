@@ -711,6 +711,135 @@ func _codex_gear(list: VBoxContainer) -> void:
 	_lbl(list, "Bonus stats: ATK%, HP%, Crit, Haste, Speed, Lifesteal, Armor, Greed (gold).", 13, Color(0.7, 0.72, 0.78))
 
 
+# ---------------------------------------------------------------- dev mode ---
+
+## Debug panel (F1, only when launched via dev_mode.bat). Lets the
+## tester change class/level/gear/terrain/bosses instantly instead of
+## replaying from scratch.
+func open_dev() -> void:
+	var p: Player = game.player
+	var vbox := _open("DEV PANEL — zone %d (%s)" % [game.last_zone, game.terrain_by_zone[clampi(game.last_zone, 0, 3)]], 1160, 660)
+	current = "dev"
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 6)
+	scroll.add_child(list)
+
+	# ------------------------------------------------------- character ---
+	_lbl(list, "CHARACTER", 16, Color(0.95, 0.85, 0.5))
+	var row1 := HBoxContainer.new()
+	row1.add_theme_constant_override("separation", 8)
+	list.add_child(row1)
+	_btn(row1, ("■ God mode ON" if game.dev_god else "□ God mode off"), func() -> void:
+		game.dev_god = not game.dev_god
+		open_dev(), Color(0.5, 1.0, 0.5) if game.dev_god else Color(1, 1, 1))
+	_btn(row1, "+1 level", func() -> void:
+		game.player.gain_xp(game.player.xp_needed())
+		open_dev())
+	_btn(row1, "+5 levels", func() -> void:
+		for i in 5:
+			game.player.gain_xp(game.player.xp_needed())
+		open_dev())
+	_btn(row1, "+500 gold", func() -> void:
+		game.player.gold += 500
+		open_dev())
+	_btn(row1, "Max potions", func() -> void:
+		game.player.potions = 5
+		open_dev())
+	_btn(row1, "Heal + reset CDs", func() -> void:
+		game.player.hp = game.player.max_hp
+		game.player.mp = game.player.max_mp
+		for key in game.player.cds:
+			game.player.cds[key] = 0.0
+		open_dev())
+	var row2 := HBoxContainer.new()
+	row2.add_theme_constant_override("separation", 8)
+	list.add_child(row2)
+	for id in Classes.CLASSES:
+		var cid: String = id
+		_btn(row2, "Class: " + Classes.CLASSES[id]["name"], func() -> void:
+			game.player.set_class(cid)
+			game.player._update_weapon_visual()
+			open_dev(), Color(0.6, 0.9, 1.0))
+
+	# ------------------------------------------------------------ items ---
+	_lbl(list, "ITEMS & GEMS", 16, Color(0.95, 0.85, 0.5))
+	var row3 := HBoxContainer.new()
+	row3.add_theme_constant_override("separation", 8)
+	list.add_child(row3)
+	for grade in ["C", "B", "A", "S"]:
+		var g: String = grade
+		_btn(row3, "Give %s item" % g, func() -> void:
+			var rng := RandomNumberGenerator.new()
+			rng.randomize()
+			game.player.add_item(Items.roll_item_of(Items.SLOTS[rng.randi_range(0, 3)], g, rng, game.player.cls))
+			open_dev(), Items.GRADE_COLOR[g])
+	_btn(row3, "Give 5 gems", func() -> void:
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		for i in 5:
+			game.player.gem_bag.append(Items.random_gem(rng, 1))
+		game.player.gem_bag.append(Items.random_gem(rng, 3))
+		open_dev())
+
+	# ------------------------------------------------------------ world ---
+	_lbl(list, "WORLD", 16, Color(0.95, 0.85, 0.5))
+	var row4 := HBoxContainer.new()
+	row4.add_theme_constant_override("separation", 8)
+	list.add_child(row4)
+	for zi in 4:
+		var z: int = zi
+		_btn(row4, "Go zone %d" % z, func() -> void:
+			game.player.global_position = Vector2(z * Game.ZONE_W + 300.0, 360.0)
+			close())
+	_btn(row4, "Clear zone monsters", func() -> void:
+		for node in get_tree().get_nodes_in_group("enemies"):
+			var e := node as Enemy
+			if e and not (e is Boss) and e.zone_idx == game.last_zone:
+				e.take_damage(9999999.0)
+		open_dev())
+	var row5 := HBoxContainer.new()
+	row5.add_theme_constant_override("separation", 8)
+	list.add_child(row5)
+	for kind in ["fangmaw", "morwen", "vargoth"]:
+		var k: String = kind
+		_btn(row5, "Spawn " + k, func() -> void:
+			if is_instance_valid(game.current_boss):
+				game.current_boss.queue_free()
+			game.current_boss = Boss.make_boss(game, k, game.player.global_position + Vector2(320, 0))
+			game.add_child(game.current_boss)
+			game.hud.show_boss_bar(Story.ENEMIES[k]["name"])
+			game.set_music("boss_" + k)
+			close(), Color(1, 0.6, 0.6))
+	_btn(row5, "Kill boss", func() -> void:
+		if is_instance_valid(game.current_boss):
+			game.current_boss.take_damage(9999999.0)
+		open_dev())
+
+	# --------------------------------------------------------- terrains ---
+	_lbl(list, "TERRAIN (applies to the zone you're standing in)", 16, Color(0.95, 0.85, 0.5))
+	var trow: HBoxContainer = null
+	var count := 0
+	for tid in Terrains.DATA:
+		if count % 5 == 0:
+			trow = HBoxContainer.new()
+			trow.add_theme_constant_override("separation", 8)
+			list.add_child(trow)
+		count += 1
+		var t: String = tid
+		var active: bool = game.terrain_by_zone[clampi(game.last_zone, 0, 3)] == t
+		_btn(trow, ("● " if active else "") + Terrains.DATA[t]["name"], func() -> void:
+			game.apply_terrain(game.last_zone, t)
+			close(), Color(0.5, 1.0, 0.5) if active else Color(1, 1, 1))
+	_hint(vbox, "ESC / F1 to close")
+
+
 # ---------------------------------------------------------------- keybinds ---
 
 func open_keybinds() -> void:
@@ -762,7 +891,8 @@ func _input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE \
 				or (current == "inventory" and event.keycode == game.binds["inventory"]) \
 				or (current == "skills" and event.keycode == game.binds["skills"]) \
-				or (current == "codex" and event.keycode == game.binds["codex"]):
+				or (current == "codex" and event.keycode == game.binds["codex"]) \
+				or (current == "dev" and event.keycode == KEY_F1):
 			if current == "theme_pick":
 				open_skills()  # back to the tree, not out of the menu
 			elif current == "item_panel":

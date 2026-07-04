@@ -17,11 +17,7 @@ const ST_PLAYING := 0
 const ST_DEAD := 2
 const ST_VICTORY := 3
 
-# Ambient light color per zone (subtle mood shift, Soul-Knight style).
-const ZONE_TINT := [
-	Color(1.0, 0.98, 0.9), Color(0.82, 0.9, 0.86),
-	Color(0.88, 0.92, 0.78), Color(0.82, 0.8, 0.92),
-]
+# (Zone tint and weather now come from the terrain registry — terrains.gd.)
 
 var state := ST_PLAYING
 var player: Player
@@ -62,6 +58,19 @@ var npc_emote_t := 4.0
 var barrier: StaticBody2D = null      # seals the entrance mid-combat
 var barrier_glow: Sprite2D = null
 var barrier_active := false
+
+# ------------------------------------------------------ terrain system ---
+var terrain_by_zone: Array = []       # terrain id per zone
+var zone_grounds: Array = []          # ground Sprite2D per zone (repaintable)
+var hazards: Array = []               # active floor patches (lava/ice/...)
+var terrain_event_t := 4.0            # countdown to the next terrain event
+var hazard_tick := 0.0
+var gust_vec := Vector2.ZERO          # sandstorm push applied to everyone
+var gust_t := 0.0
+
+# ------------------------------------------------------------ dev mode ---
+var dev_mode := false                 # launched via dev_mode.bat (--dev)
+var dev_god := false
 var music_player: AudioStreamPlayer
 var music_tracks: Dictionary = {}
 var current_track := ""
@@ -72,6 +81,9 @@ const ZONE_TRACKS := ["village", "darkwood", "marsh", "keep"]
 func _ready() -> void:
 	loot_rng.randomize()
 	load_binds()
+	dev_mode = "--dev" in OS.get_cmdline_user_args()
+	for zone in Story.ZONES:
+		terrain_by_zone.append(zone.get("terrain", "village"))
 
 	sounds = Sfx.build_all()
 	# Sound overrides: any assets/sounds/<name>.wav or .ogg replaces the
@@ -101,7 +113,7 @@ func _ready() -> void:
 	add_child(music_player)
 
 	ambient = CanvasModulate.new()
-	ambient.color = ZONE_TINT[0]
+	ambient.color = Terrains.get_terrain(terrain_by_zone[0])["tint"]
 	add_child(ambient)
 
 	_build_world()
@@ -265,13 +277,18 @@ func _build_zone(zi: int) -> void:
 	var zone: Dictionary = Story.ZONES[zi]
 	var zone_x := zi * ZONE_W
 
+	# Ground texture comes from the zone's TERRAIN (repaintable in dev
+	# mode via apply_terrain, so keep a reference).
+	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
 	var ground := Sprite2D.new()
-	ground.texture = Art.ground(zone["ground"], zone["path"], TILES_W, TILES_H, zi * 1000 + 7)
+	ground.texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H, zi * 1000 + 7)
 	ground.centered = false
 	ground.position = Vector2(zone_x, 0)
 	ground.scale = Vector2(3, 3)
 	ground.z_index = -10
 	add_child(ground)
+	zone_grounds.append(ground)
+	_spawn_patches(zi)
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 77 + 3
@@ -647,10 +664,12 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	pulse.tween_property(zone, "modulate:a", 0.45, 0.18)
 
 	var sword: Sprite2D = null
-	if opts.get("sword", false):
+	if opts.get("sword", false) or opts.get("fireball", false):
 		sword = Sprite2D.new()
-		sword.texture = Art.tex("greatsword")
-		sword.scale = Vector2(4.5, 4.5)
+		sword.texture = Art.tex("fireball" if opts.get("fireball", false) else "greatsword")
+		sword.scale = Vector2(6, 6) if opts.get("fireball", false) else Vector2(4.5, 4.5)
+		if opts.get("fireball", false):
+			sword.modulate = Color(1.0, 0.55, 0.2)
 		sword.global_position = pos + Vector2(0, -420)
 		sword.z_index = 30
 		add_child(sword)
@@ -701,44 +720,178 @@ func emote(target: Node2D, symbol: String, dur := 1.4) -> void:
 	tween.tween_callback(box.queue_free)
 
 
-## Per-zone ambient particles: leaves, fireflies, embers.
-func _setup_ambient_fx(zi: int) -> void:
+var ambient_above := true
+
+## Weather particles driven by the terrain's ambient preset.
+func _setup_ambient_fx(terrain_id: String) -> void:
 	if is_instance_valid(ambient_fx):
 		ambient_fx.queue_free()
+	var spec: Dictionary = Terrains.AMBIENTS.get(
+		Terrains.get_terrain(terrain_id).get("ambient", "leaves_green"), {})
+	if spec.is_empty():
+		ambient_fx = null
+		return
 	ambient_fx = CPUParticles2D.new()
-	ambient_fx.amount = 14
+	ambient_fx.amount = spec["amount"]
 	ambient_fx.lifetime = 9.0
 	ambient_fx.preprocess = 6.0
 	ambient_fx.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	ambient_fx.emission_rect_extents = Vector2(760, 60)
+	ambient_above = spec["above"]
+	ambient_fx.emission_rect_extents = Vector2(760, 60) if ambient_above else Vector2(760, 340)
 	ambient_fx.spread = 30.0
 	ambient_fx.z_index = 12
-	match zi:
-		0, 1:  # drifting leaves (green petals in town, autumn in the woods)
-			ambient_fx.color = Color(0.7, 0.9, 0.4) if zi == 0 else Color(1.0, 0.55, 0.15)
-			ambient_fx.direction = Vector2(0.4, 1)
-			ambient_fx.gravity = Vector2(6, 22)
-			ambient_fx.initial_velocity_min = 12.0
-			ambient_fx.initial_velocity_max = 30.0
-			ambient_fx.scale_amount_min = 2.0
-			ambient_fx.scale_amount_max = 3.2
-		2:  # marsh fireflies
-			ambient_fx.color = Color(0.75, 1.0, 0.45, 0.85)
-			ambient_fx.emission_rect_extents = Vector2(760, 340)
-			ambient_fx.gravity = Vector2.ZERO
-			ambient_fx.initial_velocity_min = 6.0
-			ambient_fx.initial_velocity_max = 16.0
-			ambient_fx.scale_amount_min = 1.4
-			ambient_fx.scale_amount_max = 2.2
-		3:  # rising embers in the keep
-			ambient_fx.color = Color(1.0, 0.55, 0.2, 0.9)
-			ambient_fx.direction = Vector2(0, -1)
-			ambient_fx.gravity = Vector2(0, -18)
-			ambient_fx.initial_velocity_min = 8.0
-			ambient_fx.initial_velocity_max = 20.0
-			ambient_fx.scale_amount_min = 1.5
-			ambient_fx.scale_amount_max = 2.4
+	ambient_fx.color = spec["color"]
+	ambient_fx.direction = spec["dir"]
+	ambient_fx.gravity = spec["gravity"]
+	ambient_fx.initial_velocity_min = spec["vel"][0]
+	ambient_fx.initial_velocity_max = spec["vel"][1]
+	ambient_fx.scale_amount_min = spec["scale"][0]
+	ambient_fx.scale_amount_max = spec["scale"][1]
 	add_child(ambient_fx)
+
+
+# ================================================================= terrain
+
+## Repaint a zone with a different terrain (look + mechanics). Live —
+## this is how dev mode lets you audition every terrain instantly.
+func apply_terrain(zi: int, terrain_id: String) -> void:
+	terrain_by_zone[zi] = terrain_id
+	var terrain := Terrains.get_terrain(terrain_id)
+	if zi < zone_grounds.size() and is_instance_valid(zone_grounds[zi]):
+		zone_grounds[zi].texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H, zi * 1000 + 7)
+	_spawn_patches(zi)
+	# If the player is standing in this zone, refresh mood immediately.
+	if last_zone == zi:
+		var tween := create_tween()
+		tween.tween_property(ambient, "color", terrain["tint"], 0.6)
+		_setup_ambient_fx(terrain_id)
+		terrain_event_t = randf_range(2.0, 4.0)
+
+
+## (Re)roll a zone's static hazard patches from its terrain spec.
+func _spawn_patches(zi: int) -> void:
+	for i in range(hazards.size() - 1, -1, -1):
+		if hazards[i]["zone"] == zi:
+			if is_instance_valid(hazards[i]["sprite"]):
+				hazards[i]["sprite"].queue_free()
+			hazards.remove_at(i)
+	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	var rng := RandomNumberGenerator.new()
+	rng.seed = zi * 991 + terrain_by_zone[zi].hash()
+	for spec in terrain.get("patches", []):
+		for i in spec["count"]:
+			var pos := Vector2(zi * ZONE_W + rng.randf_range(120.0, ZONE_W - 120.0), rng.randf_range(120.0, WORLD_H - 120.0))
+			var radius := rng.randf_range(spec["radius"][0], spec["radius"][1])
+			var drift := Vector2.ZERO
+			if spec.get("drift", false):
+				drift = Vector2(rng.randf_range(-20, 20), rng.randf_range(-14, 14))
+			_add_hazard(zi, spec["type"], pos, radius, -1.0, drift)
+
+
+## Add a floor hazard (until < 0 = permanent, else expires at that time).
+func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration := -1.0, drift := Vector2.ZERO) -> void:
+	var spr := Sprite2D.new()
+	spr.texture = Art.tex("glow")
+	spr.modulate = Terrains.PATCH_COLOR.get(type, Color(1, 1, 1, 0.4))
+	spr.global_position = pos
+	spr.scale = Vector2(radius / 22.0, radius / 26.0)
+	spr.z_index = -7
+	add_child(spr)
+	hazards.append({"zone": zi, "type": type, "pos": pos, "radius": radius,
+		"until": (Time.get_ticks_msec() / 1000.0 + duration) if duration > 0.0 else -1.0,
+		"drift": drift, "sprite": spr})
+
+
+## Timed terrain happenings (magma rain, zombies, gusts, lightning...).
+func run_terrain_event(ev: String) -> void:
+	var zi := last_zone
+	match ev:
+		"magma_rain":
+			# Magma falls from the sky — sometimes the floor collapses
+			# into a lingering lava pool instead.
+			if randf() < 0.3:
+				var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), player.global_position)
+				telegraph(pos, 75.0, 1.3, 10.0, {"color": Color(1.0, 0.35, 0.1, 0.5)})
+				_add_hazard.call_deferred(zi, "lava", pos, 70.0, 22.0)
+			else:
+				for i in randi_range(1, 2):
+					var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-260, 260), randf_range(-180, 180)), player.global_position)
+					telegraph(pos, 65.0, 1.0, 16.0, {"color": Color(1.0, 0.35, 0.1, 0.55), "fireball": true})
+		"grave_spawn":
+			if zone_alive.get(zi, 0) > 0 or is_instance_valid(current_boss):
+				var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-220, 220), randf_range(-160, 160)), player.global_position)
+				burst(pos, Color(0.5, 0.45, 0.35), 12)
+				sfx("gate", 1.4)
+				var z := Enemy.make(self, "zombie", pos)
+				z.force_aggro = true
+				add_enemy(z)
+				emote(z, "!", 0.8)
+		"gust":
+			gust_vec = Vector2.RIGHT.rotated(randf() * TAU) * 220.0
+			gust_t = 1.8
+			sfx("blink", 0.6)
+			burst(player.global_position + gust_vec.normalized() * -80.0, Color(0.85, 0.72, 0.45), 16)
+		"lightning":
+			var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-160, 160), randf_range(-120, 120)), player.global_position)
+			telegraph(pos, 60.0, 0.55, 24.0, {"color": Color(0.7, 0.85, 1.0, 0.6)})
+			hud.flash_screen(Color(0.8, 0.9, 1.0), 0.25, 0.2)
+		"shard":
+			var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), player.global_position)
+			telegraph(pos, 55.0, 0.7, 14.0, {"color": Color(0.5, 0.85, 1.0, 0.55)})
+			sfx("nova", 1.3)
+
+
+## Apply floor-patch effects to the player and enemies (ticked at 2.5Hz).
+func _apply_hazards() -> void:
+	player.hazard_speed = 1.0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e:
+			e.hazard_speed = 1.0
+	var now := Time.get_ticks_msec() / 1000.0
+	for i in range(hazards.size() - 1, -1, -1):
+		var h: Dictionary = hazards[i]
+		if h["until"] > 0.0 and now > h["until"]:
+			if is_instance_valid(h["sprite"]):
+				h["sprite"].queue_free()
+			hazards.remove_at(i)
+			continue
+		if h["drift"] != Vector2.ZERO:  # wandering spore clouds
+			h["pos"] += h["drift"] * 0.4
+			var zi_h: int = h["zone"]
+			if h["pos"].x < zi_h * ZONE_W + 100 or h["pos"].x > (zi_h + 1) * ZONE_W - 100:
+				h["drift"].x *= -1.0
+			if h["pos"].y < 110 or h["pos"].y > WORLD_H - 110:
+				h["drift"].y *= -1.0
+			if is_instance_valid(h["sprite"]):
+				h["sprite"].global_position = h["pos"]
+		# Player effects.
+		if not player.dead and player.global_position.distance_to(h["pos"]) <= h["radius"]:
+			match h["type"]:
+				"lava":
+					player.take_damage(12.0, "magic")
+				"poison":
+					player.take_damage(6.0, "true")
+				"ice":
+					player.hazard_speed = 1.35
+				"slow":
+					player.hazard_speed = 0.7
+				"heal":
+					if player.hp < player.max_hp:
+						player.hp = minf(player.max_hp, player.hp + player.max_hp * 0.02)
+		# Enemies share physical patches (ice, slow, lava).
+		if h["type"] in ["ice", "slow", "lava"]:
+			for node in get_tree().get_nodes_in_group("enemies"):
+				var e := node as Enemy
+				if e == null or e.dying or e.global_position.distance_to(h["pos"]) > h["radius"]:
+					continue
+				match h["type"]:
+					"ice":
+						e.hazard_speed = 1.35
+					"slow":
+						e.hazard_speed = 0.75
+					"lava":
+						e.take_damage(5.0, Vector2.ZERO, false, true)
 
 
 ## Quick burst of particles (deaths, blinks, chest opens, meteors...).
@@ -808,26 +961,53 @@ func _process(delta: float) -> void:
 		if last_zone != -1 and play_started:
 			hud.flash_title(Story.ZONES[zi]["name"])
 		last_zone = zi
+		var terrain := Terrains.get_terrain(terrain_by_zone[zi])
 		var tween := create_tween()
-		tween.tween_property(ambient, "color", ZONE_TINT[zi], 1.0)
+		tween.tween_property(ambient, "color", terrain["tint"], 1.0)
 		# Entering a combat zone wakes up EVERY monster in it.
 		for node in get_tree().get_nodes_in_group("enemies"):
 			var e := node as Enemy
 			if e and e.zone_idx == zi:
 				e.force_aggro = true
 		refresh_quest()
-		_setup_ambient_fx(zi)
+		_setup_ambient_fx(terrain_by_zone[zi])
+		terrain_event_t = randf_range(2.5, 5.0)
 		if not is_instance_valid(current_boss):
 			set_music(ZONE_TRACKS[zi])
 		_try_spawn_boss(zi)
 	hud.set_zone(Story.ZONES[zi]["name"])
 
+	# ------------------------------------------------ terrain mechanics ---
+	var cur_terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	if cur_terrain.get("event", "") != "" and state == ST_PLAYING and not player.dead:
+		terrain_event_t -= delta
+		if terrain_event_t <= 0.0:
+			var span: Array = cur_terrain.get("event_t", [5.0, 8.0])
+			terrain_event_t = randf_range(span[0], span[1])
+			run_terrain_event(cur_terrain["event"])
+	if cur_terrain.get("mp_boost", false):  # crystal caverns hum with mana
+		player.mp = minf(player.max_mp, player.mp + 5.0 * delta)
+	hazard_tick -= delta
+	if hazard_tick <= 0.0:
+		hazard_tick = 0.4
+		_apply_hazards()
+	if gust_t > 0.0:
+		gust_t -= delta
+		if gust_t <= 0.0:
+			gust_vec = Vector2.ZERO
+
+	# Dev god mode: unkillable, infinite mana, no cooldowns.
+	if dev_god:
+		player.hp = player.max_hp
+		player.mp = player.max_mp
+		for key in player.cds:
+			player.cds[key] = minf(player.cds[key], 0.2)
+
 	_update_barrier()
 
 	# Ambient particles drift around the camera; NPCs chatter idly.
 	if is_instance_valid(ambient_fx):
-		var above := -380.0 if zi != 2 else 0.0
-		ambient_fx.global_position = player.global_position + Vector2(0, above)
+		ambient_fx.global_position = player.global_position + Vector2(0, -380.0 if ambient_above else 0.0)
 	npc_emote_t -= delta
 	if npc_emote_t <= 0.0:
 		npc_emote_t = randf_range(3.5, 7.0)

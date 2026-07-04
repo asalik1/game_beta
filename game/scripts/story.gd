@@ -15,6 +15,8 @@ const ENEMIES := {
 		"physres": 5.0,  "magres": 15.0, "eva": 0.0,  "critres": 0.0, "dmg_type": "magic"},
 	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 14.0, "speed": 120.0, "xp": 24, "gold": 10, "ranged": false, "scale": 3.0,
 		"physres": 25.0, "magres": 5.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys"},
+	"zombie":   {"name": "Risen Corpse",    "sprite": "zombie",   "hp": 45.0,  "dmg": 10.0, "speed": 95.0,  "xp": 15, "gold": 6,  "ranged": false, "scale": 3.0,
+		"physres": 12.0, "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys"},
 	# Bosses (real defenses: bring penetration or lose a chunk of damage)
 	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 460.0,  "dmg": 15.0, "speed": 130.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
 		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "dmg_type": "phys"},
@@ -30,14 +32,14 @@ const ENEMIES := {
 
 const ZONES := [
 	{
-		"name": "Emberfall Village", "ground": "grass", "path": "dirt",
+		"name": "Emberfall Village", "terrain": "village", "ground": "grass", "path": "dirt",
 		"obstacles": ["tree_green", "tree_green", "rock"], "obstacle_count": 9,
 		"decor": ["flower", "flower", "pebble"],
 		"merchant": [820, 300],
 		"enemies": [], "boss": "",
 	},
 	{
-		"name": "The Darkwood", "ground": "forest", "path": "dirt",
+		"name": "The Darkwood", "terrain": "darkwood", "ground": "forest", "path": "dirt",
 		"obstacles": ["tree_autumn", "tree_autumn", "rock"], "obstacle_count": 16,
 		"decor": ["mushroom", "pebble", "flower"],
 		"merchant": [660, 560],
@@ -49,7 +51,7 @@ const ZONES := [
 		"boss": "fangmaw",
 	},
 	{
-		"name": "The Blightmarsh", "ground": "marsh", "path": "dirt",
+		"name": "The Blightmarsh", "terrain": "marsh", "ground": "marsh", "path": "dirt",
 		"obstacles": ["tree_teal", "deadtree", "rock"], "obstacle_count": 14,
 		"decor": ["mushroom", "bones", "pebble"],
 		"merchant": [540, 170],
@@ -61,7 +63,7 @@ const ZONES := [
 		"boss": "morwen",
 	},
 	{
-		"name": "Vargoth's Keep", "ground": "stone", "path": "stone",
+		"name": "Vargoth's Keep", "terrain": "keep", "ground": "stone", "path": "stone",
 		"obstacles": ["pillar"], "obstacle_count": 10,
 		"decor": ["bones", "crack", "bones"],
 		"merchant": [700, 540],

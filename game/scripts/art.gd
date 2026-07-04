@@ -861,6 +861,42 @@ const SPRITES := {
 		"................",
 		"................",
 	]},
+	"tombstone": {"rows": [
+		"................",
+		"....kkkkkk......",
+		"...keeeeeek.....",
+		"...keeeeeek.....",
+		"...keekkeek.....",
+		"...keeeeeek.....",
+		"...keekeeek.....",
+		"...keeeeeek.....",
+		"...keeeeeek.....",
+		"...keeeeeek.....",
+		"..kEeeeeeeEk....",
+		"..kkkkkkkkkk....",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
+	"crystal": {"rows": [
+		"......kk........",
+		".....kcck.......",
+		".....kcck..kk...",
+		"....kccwck.kck..",
+		"....kcccckkcck..",
+		"...kccwccckcck..",
+		"...kcccccckck...",
+		"...kccccccck....",
+		"....kccccck.....",
+		"....kkkkkkk.....",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	]},
 	"w_kunai": {"rows": [
 		"................",
 		"......kk........",
@@ -970,6 +1006,17 @@ const GROUND := {
 	"marsh":  [Color(0.33, 0.38, 0.23), Color(0.27, 0.32, 0.19), Color(0.40, 0.44, 0.27)],
 	"stone":  [Color(0.40, 0.40, 0.46), Color(0.34, 0.34, 0.40), Color(0.46, 0.46, 0.52)],
 	"dirt":   [Color(0.52, 0.40, 0.26), Color(0.45, 0.34, 0.22), Color(0.58, 0.46, 0.30)],
+	# --------------------------------------------- terrain expansion ---
+	"basalt":       [Color(0.20, 0.12, 0.11), Color(0.15, 0.09, 0.08), Color(0.30, 0.15, 0.10)],
+	"snow":         [Color(0.82, 0.86, 0.93), Color(0.74, 0.79, 0.88), Color(0.92, 0.95, 1.00)],
+	"gravedirt":    [Color(0.31, 0.29, 0.26), Color(0.25, 0.24, 0.21), Color(0.38, 0.36, 0.32)],
+	"sand":         [Color(0.78, 0.67, 0.44), Color(0.70, 0.59, 0.38), Color(0.86, 0.76, 0.52)],
+	"bogsoil":      [Color(0.21, 0.28, 0.17), Color(0.16, 0.22, 0.13), Color(0.28, 0.35, 0.21)],
+	"crystalfloor": [Color(0.30, 0.31, 0.46), Color(0.24, 0.25, 0.38), Color(0.40, 0.42, 0.60)],
+	"stormgrass":   [Color(0.24, 0.36, 0.28), Color(0.19, 0.29, 0.23), Color(0.30, 0.44, 0.34)],
+	"voidstone":    [Color(0.11, 0.08, 0.16), Color(0.07, 0.05, 0.11), Color(0.18, 0.13, 0.26)],
+	"holystone":    [Color(0.66, 0.61, 0.49), Color(0.58, 0.53, 0.42), Color(0.76, 0.71, 0.58)],
+	"sporesoil":    [Color(0.31, 0.23, 0.31), Color(0.25, 0.18, 0.25), Color(0.40, 0.30, 0.40)],
 }
 
 
@@ -1637,14 +1684,15 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		image.set_pixel(sx, sy, stone)
 		image.set_pixel(sx + 1, sy, stone)
 
-	# Zone flavor litter: fallen leaves in the forest, puddles in the marsh.
+	# Zone flavor litter: fallen leaves in the forest, puddles in the marsh,
+	# embers in basalt, glints on snow/crystal, void sparks...
 	if base_kind == "forest":
 		var leaf_cols := [Color(0.95, 0.5, 0.1), Color(0.85, 0.3, 0.1), Color(1.0, 0.75, 0.2)]
 		for i in 340:
 			var x := rng.randi_range(0, pw - 1)
 			var y := rng.randi_range(0, ph - 1)
 			image.set_pixel(x, y, leaf_cols[rng.randi_range(0, 2)])
-	elif base_kind == "marsh":
+	elif base_kind == "marsh" or base_kind == "bogsoil":
 		for i in 18:
 			var cx := rng.randi_range(4, pw - 5)
 			var cy := rng.randi_range(20, ph - 21)
@@ -1652,7 +1700,26 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 			for y in range(cy - r, cy + r):
 				for x in range(cx - r * 2, cx + r * 2):
 					if x >= 0 and x < pw and Vector2((x - cx) * 0.5, y - cy).length() <= r:
-						image.set_pixel(x, y, Color(0.16, 0.30, 0.30))
+						image.set_pixel(x, y, Color(0.16, 0.30, 0.30) if base_kind == "marsh" else Color(0.28, 0.40, 0.14))
+	elif base_kind == "basalt":
+		var ember_cols := [Color(1.0, 0.45, 0.1), Color(0.9, 0.25, 0.05), Color(1.0, 0.7, 0.2)]
+		for i in 260:
+			var x := rng.randi_range(0, pw - 1)
+			var y := rng.randi_range(0, ph - 1)
+			image.set_pixel(x, y, ember_cols[rng.randi_range(0, 2)])
+	elif base_kind == "snow" or base_kind == "crystalfloor":
+		for i in 200:
+			image.set_pixel(rng.randi_range(0, pw - 1), rng.randi_range(0, ph - 1), Color(1, 1, 1))
+	elif base_kind == "voidstone" or base_kind == "sporesoil":
+		var spark := Color(0.7, 0.4, 1.0) if base_kind == "voidstone" else Color(0.85, 0.55, 0.9)
+		for i in 160:
+			image.set_pixel(rng.randi_range(0, pw - 1), rng.randi_range(0, ph - 1), spark)
+	elif base_kind == "sand":
+		for i in 60:  # wind ripple dashes
+			var x := rng.randi_range(0, pw - 5)
+			var y := rng.randi_range(0, ph - 1)
+			for dx2 in rng.randi_range(2, 4):
+				image.set_pixel(x + dx2, y, Color(0.66, 0.55, 0.35))
 
 	# Depth: the ground darkens in the wall's shadow at the top.
 	for y in range(16, 24):

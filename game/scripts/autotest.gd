@@ -312,6 +312,26 @@ func _run() -> void:
 	await _frames(2)
 	print("ok: shop, codex, skill tree + theme picker UI")
 
+	# 6c. Terrains: apply every terrain to zone 1, fire its event, tick
+	# hazards — none of it may crash. (Player parked away from the mobs
+	# so lava pools / zombies don't clear the zone prematurely.)
+	game.player.global_position = Vector2(Game.ZONE_W + 1350.0, 620.0)
+	await _frames(3)
+	for tid in Terrains.DATA:
+		game.apply_terrain(1, tid)
+		await _frames(3)
+		var terrain_ev: String = Terrains.DATA[tid].get("event", "")
+		if terrain_ev != "":
+			game.run_terrain_event(terrain_ev)
+		await _frames(12)
+	game.apply_terrain(1, "darkwood")  # restore for the story flow
+	await _frames(60)  # let stray telegraphs resolve
+	_clear_combat()    # remove event-spawned zombies
+	game.gust_vec = Vector2.ZERO
+	await _frames(5)
+	_buff()
+	print("ok: all %d terrains applied + events fired" % Terrains.DATA.size())
+
 	# 7..9. Each zone: enter (all aggro), clear it, boss spawns, kill it.
 	for zi in [1, 2, 3]:
 		var kind: String = Story.ZONES[zi]["boss"]

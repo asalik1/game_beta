@@ -12,6 +12,10 @@ which exports to **Windows/Steam and Android** from the same project.
 
 Double-click **`run_game.bat`**. That's it — the engine is bundled in `tools/`.
 
+For testing, **`dev_mode.bat`** launches the same game with an **F1 debug
+panel**: god mode, instant class/level/gold/item/gem cheats, zone teleports,
+boss spawning, monster clearing, and a live **terrain switcher**.
+
 Combat is **keyboard only**: your abilities auto-aim at the nearest enemy
 (watch the yellow reticle). All keys below are rebindable in-game
 (ESC → B, or click any action and press a new key).
@@ -66,6 +70,14 @@ Combat is **keyboard only**: your abilities auto-aim at the nearest enemy
   tracker counts them down), and the boss only emerges once the zone is
   cleared. Melee classes have better base stats than ranged (LoL-style) to
   pay for the risk of fighting up close.
+- **14 terrains with unique mechanics** (terrains.gd) — beyond the four
+  story zones: Scorched Wastes (magma falls from the sky, floors collapse
+  into lava), Frozen Expanse (slippery ice speeds everyone up, constant
+  snowfall), Restless Graveyard (zombies claw out of the ground), Scorching
+  Dunes (sandstorm gusts shove everyone), Poison Bog, Crystal Caverns (mana
+  surge + shard bursts), Thunder Plains (lightning strikes + rain), The Void
+  (slowing rifts), Sanctified Ruins (healing springs), Spore Glade (drifting
+  poison clouds). Preview them all via dev mode's terrain switcher.
 - **Telegraphed boss mechanics** — red danger zones mark heavy attacks:
   Fangmaw pounces onto marked ground, Morwen rains blight zones, and
   Vargoth calls greatswords down from the sky. Stand in the red = get hit.

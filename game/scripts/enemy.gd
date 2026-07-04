@@ -26,6 +26,7 @@ var windup := 0.0     # yellow-flash wind-up before a melee bite lands
 var zone_idx := -1    # which zone's clear-count this enemy belongs to
 var force_aggro := false  # zone entered: everyone attacks
 var alerted := false  # has shown its "!" bubble
+var hazard_speed := 1.0  # terrain patch effect (ice boosts, void slows)
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
 var sprite: Sprite2D
@@ -155,8 +156,9 @@ func _physics_process(delta: float) -> void:
 	var move := _think(delta)
 	if slow_time > 0.0:
 		move *= slow_mult
+	move *= hazard_speed  # ice patches boost, void rifts slow
 
-	velocity = move + knock
+	velocity = move + knock + game.gust_vec
 	move_and_slide()
 	if absf(velocity.x) > 5.0:
 		# Left-facing art (Crawl sprites) flips the opposite way.
