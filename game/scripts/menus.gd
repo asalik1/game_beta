@@ -279,7 +279,7 @@ func open_chapter_select(replay := false) -> void:
 	for chid in Story.CHAPTER_LIST:
 		var chapter: Dictionary = Story.CHAPTER_LIST[chid]
 		var pick_id: String = chid
-		var unlocked := game.chapter_available(chid, replay)
+		var unlocked: bool = game.chapter_available(chid, replay)
 		var pick := func() -> void:
 			if chapter_replay:
 				if root:

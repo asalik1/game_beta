@@ -132,7 +132,17 @@
       "PowerShell(git -C \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\" add game PHASE1.md CH2_TASKS.md 2>$null)",
       "PowerShell(git -C C:\\\\Users\\\\asali\\\\Projects\\\\MMO add CH2_TASKS.md)",
       "PowerShell($f = \"C:\\\\Users\\\\asali\\\\.claude\\\\projects\\\\C--Users-asali-Projects-MMO\\\\memory\\\\emberfall-project.md\"; \\(Get-Content $f -Raw\\).Substring\\(0, 700\\))",
-      "PowerShell(git -C \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\" add game)"
+      "PowerShell(git -C \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\" add game)",
+      "PowerShell(Measure-Command { & \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\test_quick.bat\" | Select-Object -Last 4 | ForEach-Object { Write-Host $_ } } | Select-Object -ExpandProperty TotalSeconds)",
+      "PowerShell($f = \"C:\\\\Users\\\\asali\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-asali-Projects-MMO\\\\f843777c-d12e-43d1-b231-b9577e3aafbe\\\\tasks\\\\bch8qrmzh.output\"; \\(Get-Item $f\\).Length; Select-String -Path $f -Pattern \"SCRIPT ERROR|Parse Error|AUTOTEST|ok:\" | Select-Object -First 8 | ForEach-Object { $_.Line }; Write-Output \"--- quick run ---\"; $q = \"C:\\\\Users\\\\asali\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-asali-Projects-MMO\\\\f843777c-d12e-43d1-b231-b9577e3aafbe\\\\tasks\\\\b1azgq9bf.output\"; \\(Get-Item $q\\).Length; Get-Content $q -Tail 6)",
+      "PowerShell(& \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\tools\\\\Godot_v4.4.1-stable_win64_console.exe\" --headless --path \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\" --check-only --script res://scripts/menus.gd)",
+      "PowerShell(& \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\tools\\\\Godot_v4.4.1-stable_win64_console.exe\" --headless --path \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\" --check-only --script res://scripts/game.gd)",
+      "PowerShell($t = Measure-Command { & \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\tools\\\\Godot_v4.4.1-stable_win64_console.exe\" --headless --path \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\" res://scenes/test.tscn -- --quick 2>$null | Select-Object -Last 3 | ForEach-Object { Write-Host $_ } }; Write-Output \\(\"quick tier: {0:N0}s\" -f $t.TotalSeconds\\))",
+      "PowerShell($t = Measure-Command { & \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\tools\\\\Godot_v4.4.1-stable_win64_console.exe\" --headless --path \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\" res://scenes/test.tscn -- --quick 2>$null | Select-Object -Last 2 | ForEach-Object { Write-Host $_ } }; Write-Output \\(\"quick tier: {0:N0}s\" -f $t.TotalSeconds\\))",
+      "PowerShell(git -C C:\\\\Users\\\\asali\\\\Projects\\\\MMO add game/scripts/game.gd game/scripts/hud.gd game/scripts/menus.gd game/scripts/story.gd game/scripts/autotest.gd)",
+      "PowerShell($f = \"C:\\\\Users\\\\asali\\\\.claude\\\\projects\\\\C--Users-asali-Projects-MMO\\\\memory\\\\emberfall-project.md\"; \\(Get-Content $f -Raw\\).Substring\\(0, 400\\))",
+      "PowerShell(& \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\test_quick.bat\" 2>$null | Select-Object -First 1 -Last 2; Write-Output \"--- now proving the gate CATCHES a break ---\"; Add-Content -Path \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\game\\\\scripts\\\\stats.gd\" -Value \"var broken := game.oops\\(\\)\"; & \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\\\\test_quick.bat\" 2>$null | Select-Object -Last 2; $code = $LASTEXITCODE; git -C \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\" checkout -- game/scripts/stats.gd; Write-Output \\(\"gate exit code on broken script: {0} \\(restored stats.gd\\)\" -f $code\\))",
+      "PowerShell(git -C \"C:\\\\Users\\\\asali\\\\Projects\\\\MMO\" add game CLAUDE.md CH2_TASKS.md test.bat test_quick.bat)"
     ]
   }
 }

@@ -9,11 +9,23 @@ extends Node
 var game: Game
 
 
+# --quick: core-systems tier (~20s) for iterating on small fixes.
+# It runs boot → one class kit → every systems test → UI smoke → pause
+# menu, then exits BEFORE the content playthroughs (terrains, both
+# chapters, opening E2Es, boss selftests). Full suite before staging.
+var quick := false
+
+
 func _ready() -> void:
+	quick = "--quick" in OS.get_cmdline_user_args()
 	_run()
 
 
+var _failed := false
+
+
 func _fail(msg: String) -> void:
+	_failed = true
 	push_error("AUTOTEST FAIL: " + msg)
 	print("AUTOTEST FAIL: ", msg)
 	get_tree().quit(1)
@@ -131,7 +143,8 @@ func _run() -> void:
 	# 3. Fire every ability of every class against dummy wolves.
 	game.player.global_position = Vector2(900, 360)
 	await _frames(5)
-	for cls in Classes.CLASSES:
+	var kit_classes: Array = ["warrior"] if quick else Classes.CLASSES.keys()
+	for cls in kit_classes:
 		game.player.set_class(cls)
 		# Re-anchor every class: dashes drift the hero ~300-500px right per
 		# kit, and six kits would carry it past the village edge into zone 1
@@ -564,6 +577,7 @@ func _run() -> void:
 	p.gold = 4321
 	p.resonance = -37.0
 	p.faction_standing["cinderborn"] = 12
+	var flags_keep: Dictionary = game.flags.duplicate(true)  # restore after — later tests need the opening flags
 	game.set_flag("rt_flag", true)
 	var kept_quest: String = game.quest_key
 	var kept_level: int = p.level
@@ -593,7 +607,7 @@ func _run() -> void:
 		return _fail("stats after load differ from before save (atk %.2f vs %.2f)" % [p.atk, kept_atk])
 	if not game.get_flag("rt_flag", false):
 		return _fail("story flags did not survive the save roundtrip")
-	game.flags.clear()
+	game.flags = flags_keep  # never strand the run without its opening flags
 	SaveGame.delete(SaveGame.MAX_SLOTS)
 	if SaveGame.exists(SaveGame.MAX_SLOTS):
 		return _fail("save delete failed")
@@ -644,7 +658,7 @@ func _run() -> void:
 	await _skip_dialogue()
 	game.player.resonance = 0.0
 	game.player.faction_standing["choir"] = 0
-	game.flags.clear()
+	game.flags.erase("chose_dark")  # cleanup — but keep the opening flags
 	print("ok: choice dialogue engine (choices, flags, factions, resonance bands)")
 
 	# 5d. Opening-convo data integrity: every node resolves, every cue
@@ -704,6 +718,17 @@ func _run() -> void:
 	game.menus.close()
 	await _frames(2)
 	print("ok: shop, codex, skill tree, theme picker, stats tab, dev panel UI")
+
+	# --quick tier ends here, after one last check that the system menu
+	# behaves (it works from ch1 state: replay lands in ch2 and exits).
+	if quick:
+		await _test_pause_menu()
+		if _failed:
+			return  # quit(1) is already queued — do not print PASS over it
+		print("AUTOTEST QUICK PASS  (core systems only — run the FULL suite before staging)")
+		get_tree().paused = false
+		get_tree().quit(0)
+		return
 
 	# 6c. Terrains: apply every terrain to zone 1, fire its event, tick
 	# hazards — none of it may crash. (Player parked away from the mobs

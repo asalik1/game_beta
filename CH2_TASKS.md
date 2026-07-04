@@ -4,7 +4,9 @@ Rules for parallel agents working this board:
 1. **One task = one owner.** Claim it here (put your mark on the line) before starting.
 2. **Each task creates NEW files** under `game/scripts/content/` plus at most
    its listed registration lines. Never edit another task's files.
-3. Run the full autotest before staging. Stage with `git add` (no commits).
+3. Iterate with `test_quick.bat` (~20s core tier); the FULL autotest
+   (`test.bat`, plays both chapters) must be green before staging.
+   Stage with `git add` (no commits).
 4. Shared files (`game.gd`, `story.gd`, `save.gd`, `menus.gd`, `player.gd`)
    belong to T0 during its window — do not touch them until T0 lands.
 
