@@ -429,6 +429,17 @@ static func quest_text(key: String) -> String:
 	return String(ALL_QUESTS.get(key, ""))
 
 
+## The chapter after this one in campaign order ("" = this is the last).
+## Chapters form one PROGRESSION: winning a chapter carries the character
+## into the next (game.advance_chapter), and finished chapters stay
+## replayable for farming (game.replay_chapter).
+static func next_chapter(id: String) -> String:
+	load_content()
+	var ids: Array = CHAPTER_LIST.keys()
+	var i := ids.find(id)
+	return String(ids[i + 1]) if i >= 0 and i + 1 < ids.size() else ""
+
+
 # --------------------------------------------------------------- dialogue ---
 # Each beat is a list of [speaker, line].
 

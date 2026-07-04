@@ -272,13 +272,14 @@ func open_chapter_select(replay := false) -> void:
 	var vbox := _open("Choose your chapter", 900, 540)
 	current = "chapter_select"
 	if replay:
-		_lbl(vbox, "Replay any chapter with this character. Story progress there resets; your build, gear and Resonance travel with you.", 14, Color(0.75, 0.75, 0.75))
+		_lbl(vbox, "Return to any unlocked chapter with this character — farm, finish arcs, take other paths. Story progress there resets; your build, gear and Resonance travel with you.", 14, Color(0.75, 0.75, 0.75))
 	else:
-		_lbl(vbox, "Each chapter is its own tale with its own hero. Your saved characters keep their chapters.", 14, Color(0.75, 0.75, 0.75))
+		_lbl(vbox, "One campaign, chapter by chapter: win a chapter and your hero journeys on to the next. Later chapters unlock once you've beaten the one before.", 14, Color(0.75, 0.75, 0.75))
 	var idx := 1
 	for chid in Story.CHAPTER_LIST:
 		var chapter: Dictionary = Story.CHAPTER_LIST[chid]
 		var pick_id: String = chid
+		var unlocked := game.chapter_available(chid, replay)
 		var pick := func() -> void:
 			if chapter_replay:
 				if root:
@@ -288,9 +289,13 @@ func open_chapter_select(replay := false) -> void:
 				game.replay_chapter(pick_id)
 			else:
 				pick_chapter(pick_id)
-		var b := _btn(vbox, "  %d.  %s  " % [idx, chapter["name"]], pick, Color(0.95, 0.85, 0.5))
+		var b := _btn(vbox, "  %d.  %s%s  " % [idx, "" if unlocked else "🔒 ", chapter["name"]],
+			pick, Color(0.95, 0.85, 0.5) if unlocked else Color(0.5, 0.5, 0.55), unlocked)
 		b.add_theme_font_size_override("font_size", 18)
-		var sub := _lbl(vbox, "        " + String(chapter.get("sub", "")), 13, Color(0.65, 0.68, 0.78))
+		var sub_text: String = String(chapter.get("sub", "")) if unlocked \
+			else "Locked — finish the previous chapter to open this road."
+		var sub := _lbl(vbox, "        " + sub_text, 13,
+			Color(0.65, 0.68, 0.78) if unlocked else Color(0.5, 0.5, 0.55))
 		sub.custom_minimum_size = Vector2(800, 0)
 		idx += 1
 	_hint(vbox, "Press the chapter's number, or click" + ("  ·  ESC to go back" if replay else ""))
@@ -1466,7 +1471,8 @@ func _input(event: InputEvent) -> void:
 		if current == "chapter_select":
 			var chids: Array = Story.CHAPTER_LIST.keys()
 			var chnum: int = event.keycode - KEY_1
-			if chnum >= 0 and chnum < chids.size():
+			if chnum >= 0 and chnum < chids.size() \
+					and game.chapter_available(String(chids[chnum]), chapter_replay):
 				if chapter_replay:
 					var chid: String = chids[chnum]
 					if root:

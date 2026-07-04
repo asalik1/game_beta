@@ -916,6 +916,7 @@ func _run() -> void:
 	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
+	await _test_chapter_progression()
 
 	print("AUTOTEST PASS")
 	get_tree().paused = false
@@ -1322,10 +1323,21 @@ func _test_ch2_resonance() -> void:
 ## System menu: pause opens/resumes, audio settings apply, and a chapter
 ## replay wipes the story while keeping the character.
 func _test_pause_menu() -> void:
-	game.menus.open_pause()
-	await _frames(2)
+	# A single real ESC press must open the system menu (regression: a
+	# legacy HUD overlay used to eat the first press).
+	var esc := InputEventKey.new()
+	esc.keycode = KEY_ESCAPE
+	esc.physical_keycode = KEY_ESCAPE
+	esc.pressed = true
+	Input.parse_input_event(esc)
+	await _frames(3)
+	var esc_up := InputEventKey.new()
+	esc_up.keycode = KEY_ESCAPE
+	esc_up.physical_keycode = KEY_ESCAPE
+	esc_up.pressed = false
+	Input.parse_input_event(esc_up)
 	if not (game.menus.is_open() and game.menus.current == "pause"):
-		return _fail("pause menu did not open")
+		return _fail("one ESC press did not open the pause menu (got '%s')" % game.menus.current)
 	if not get_tree().paused:
 		return _fail("pause menu did not pause the game")
 	game.menus.close()
@@ -1379,3 +1391,34 @@ func _test_ch2_bosses() -> void:
 		await get_tree().create_timer(60.0).timeout
 		return
 	print("ok: ch2 bosses (spawn / signature / enrage / story-neutral death) — stormwarden, choirmother, nullwarden")
+
+
+## Chapter PROGRESSION: a ch1 victory carries the character into ch2
+## (build/gold intact, world rebuilt, unpaused), the completion flag
+## survives, and the finished chapter stays available for farming.
+func _test_chapter_progression() -> void:
+	game.replay_chapter("ch1")
+	await _frames(10)
+	if game.chapter_id != "ch1":
+		return _fail("could not return to ch1 for the progression test")
+	var lvl: int = game.player.level
+	var gold: int = game.player.gold
+	# Simulate the ch1 victory card, then press on.
+	game.state = Game.ST_VICTORY
+	get_tree().paused = true
+	game.set_flag("completed_ch1", true)
+	game.advance_chapter()
+	await _frames(10)
+	if game.chapter_id != "ch2":
+		return _fail("advance_chapter did not carry on to ch2")
+	if game.state != Game.ST_PLAYING or get_tree().paused:
+		return _fail("advance_chapter left the game frozen")
+	if game.player.level != lvl or game.player.gold != gold:
+		return _fail("progression did not keep the character (Lv %d -> %d)" % [lvl, game.player.level])
+	if not game.get_flag("completed_ch1", false):
+		return _fail("chapter completion flag was wiped by the advance")
+	if not game.chapter_available("ch2", true):
+		return _fail("finished chapter did not unlock ch2 for this character")
+	if game.quest_key != "ch2_start":
+		return _fail("ch2 did not start its quest chain (got %s)" % game.quest_key)
+	print("ok: chapter progression (victory carries the hero into ch2; ch1 stays farmable)")

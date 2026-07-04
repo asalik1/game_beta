@@ -49,7 +49,6 @@ var overlay: ColorRect
 var vignette: TextureRect
 var flash_rect: ColorRect = null
 var boss_base_name := ""
-var paused_by_menu := false
 var banner_y := 110.0
 
 const BAR_W := 280.0
@@ -531,21 +530,24 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var pressed_confirm := false
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode in [KEY_SPACE, KEY_ENTER, KEY_E]:
+		if event.keycode in [KEY_SPACE, KEY_ENTER, KEY_E] \
+				and game.state == game.ST_VICTORY \
+				and Story.next_chapter(game.chapter_id) != "":
+			# Mid-campaign victory card: carry this character onward.
+			game.advance_chapter()
+			get_viewport().set_input_as_handled()
+		elif event.keycode in [KEY_SPACE, KEY_ENTER, KEY_E]:
 			pressed_confirm = true
 		elif event.keycode == KEY_ESCAPE:
 			_on_escape()
-		elif event.keycode == KEY_B and paused_by_menu:
-			_close_pause()
-			game.menus.open_keybinds()
 		elif event.keycode == KEY_R and game.state == game.ST_VICTORY:
 			get_tree().paused = false
 			get_tree().reload_current_scene()
 		elif event.keycode == game.binds.get("target", KEY_TAB) \
-				and game.state == game.ST_PLAYING and not dialogue_active and not paused_by_menu:
+				and game.state == game.ST_PLAYING and not dialogue_active:
 			game.player.cycle_target()
 			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_F1 and game.dev_mode and not dialogue_active and not paused_by_menu:
+		elif event.keycode == KEY_F1 and game.dev_mode and not dialogue_active:
 			game.menus.open_dev()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -556,25 +558,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+## ESC opens the system menu (menus.gd owns closing it again).
 func _on_escape() -> void:
-	if dialogue_active or game.state != game.ST_PLAYING:
+	if dialogue_active or choices_active or not game.play_started \
+			or game.state != game.ST_PLAYING or game.menus.is_open():
 		return
-	if paused_by_menu:
-		_close_pause()
-	else:
-		paused_by_menu = true
-		get_tree().paused = true
-		dim(0.5)
-		title_label.add_theme_color_override("font_color", Color(1, 1, 1))
-		title_label.text = "PAUSED"
-		subtitle_label.text = "ESC resume  ·  B keybinds"
-		title_label.modulate.a = 1.0
-		subtitle_label.modulate.a = 1.0
-
-
-func _close_pause() -> void:
-	paused_by_menu = false
-	get_tree().paused = false
-	dim(0.0)
-	title_label.modulate.a = 0.0
-	subtitle_label.modulate.a = 0.0
+	game.menus.open_pause()
+	get_viewport().set_input_as_handled()

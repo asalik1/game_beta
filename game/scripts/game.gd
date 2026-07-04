@@ -466,9 +466,80 @@ func replay_chapter(id: String) -> void:
 	autosave()
 
 
+## Chapter PROGRESSION: the character who just won carries straight on
+## into the next chapter — build, gear, Resonance, faction standings and
+## choice history all intact. (Farming trips back go through
+## replay_chapter, which resets standings; moving FORWARD keeps them.)
+func advance_chapter() -> void:
+	var next_ch := Story.next_chapter(chapter_id)
+	if next_ch == "" or state != ST_VICTORY:
+		return
+	state = ST_PLAYING
+	get_tree().paused = false
+	hud.overlay.color = Color(0, 0, 0, 0)
+	hud.title_label.modulate.a = 0.0
+	hud.subtitle_label.modulate.a = 0.0
+	_wipe_chapter_flags()  # last chapter's story state retires; history stays
+	switch_chapter(next_ch, true)
+	play_started = true
+	set_music(Terrains.get_terrain(terrain_by_zone[0]).get("music", "village"))
+	hud.flash_title(zones[0]["name"], String(Story.chapter(next_ch)["name"]))
+	autosave()
+
+
+# ------------------------------------------------- meta progression ---
+# Account-wide unlocks that outlive characters (user://meta.json):
+# finishing a chapter with ANY character opens the next one on the
+# New Game chapter select.
+const META_PATH := "user://meta.json"
+var _meta: Dictionary = {}
+var _meta_loaded := false
+
+
+func _load_meta() -> void:
+	if _meta_loaded:
+		return
+	_meta_loaded = true
+	if no_saves or not FileAccess.file_exists(META_PATH):
+		return
+	var f := FileAccess.open(META_PATH, FileAccess.READ)
+	if f:
+		var data = JSON.parse_string(f.get_as_text())
+		if data is Dictionary:
+			_meta = data
+
+
+func meta_unlock(chid: String) -> void:
+	_load_meta()
+	if bool(_meta.get("unlocked_" + chid, false)):
+		return
+	_meta["unlocked_" + chid] = true
+	if no_saves:
+		return  # tests never touch the real user files
+	var f := FileAccess.open(META_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(_meta))
+
+
+## Progression gating for the chapter select: the first chapter is
+## always open; each later one opens once the previous is finished —
+## by ANY character (meta unlock) for New Game, or by THIS character
+## (its completed_ flag) when replaying.
+func chapter_available(chid: String, replay := false) -> bool:
+	var ids: Array = Story.CHAPTER_LIST.keys()
+	var i := ids.find(chid)
+	if i <= 0 or dev_mode:
+		return true
+	_load_meta()
+	if bool(_meta.get("unlocked_" + chid, false)):
+		return true
+	return replay and get_flag("completed_" + String(ids[i - 1]), false)
+
+
 # Character history that survives a chapter replay: which opening you
-# played and what you chose in it. Everything else is story state.
-const KEPT_FLAG_PREFIXES := ["opened_", "chose_"]
+# played, what you chose in it, and which chapters you have finished.
+# Everything else is story state.
+const KEPT_FLAG_PREFIXES := ["opened_", "chose_", "completed_"]
 const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
 	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
 	"left_silent", "said_farewell", "cut_clean", "walked_silent",
@@ -920,12 +991,26 @@ func on_boss_died(kind: String) -> void:
 	if kind == String(Story.chapter(chapter_id).get("final_boss", "")):
 		quest_key = "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
 		refresh_quest()
+		# Progression: this character has finished the chapter (kept across
+		# replays), and the NEXT chapter unlocks account-wide.
+		set_flag("completed_" + chapter_id, true)
+		var next_ch := Story.next_chapter(chapter_id)
+		if next_ch != "":
+			meta_unlock(next_ch)
 		# Chapter-specific epilogue beat and victory card, with the
 		# Chapter 1 texts as the fallback.
 		var epilogue: Array = Story.ALL_BEATS.get("epilogue_" + chapter_id,
 			Story.ALL_BEATS.get("epilogue", []))
-		var vtext := String(Story.chapter(chapter_id).get("victory_text",
-			"The Ember Crown is reclaimed. Thanks for playing Chapter 1!\nPress R to play again."))
+		var vtext: String
+		if next_ch != "":
+			# Mid-campaign victory: the road goes on.
+			vtext = String(Story.chapter(chapter_id).get("victory_text",
+				"The Ember Crown is reclaimed. But the shards are still out there — and years from now, they will wake."))
+			vtext += "\n\nENTER — journey on to %s        ·        R — start over" \
+				% String(Story.chapter(next_ch)["name"])
+		else:
+			vtext = String(Story.chapter(chapter_id).get("victory_text",
+				"Thanks for playing!\nPress R to play again."))
 		var end_it := func() -> void:
 			state = ST_VICTORY
 			set_music("")
@@ -1542,9 +1627,8 @@ func _process(delta: float) -> void:
 			elif Input.is_key_pressed(binds["codex"]):
 				talk_cd = 0.4
 				menus.open_codex()
-			elif Input.is_key_pressed(KEY_ESCAPE) and play_started:
-				talk_cd = 0.4
-				menus.open_pause()
+			# (ESC → pause menu lives in hud._on_escape, event-driven —
+			# a polled duplicate here caused double-open/close races.)
 
 	shake_amt = move_toward(shake_amt, 0.0, 20.0 * delta)
 	if camera:
