@@ -37,6 +37,7 @@ static func write(game: Game, slot: int) -> void:
 		"faction_standing": p.faction_standing,
 		# --- gear ---
 		"equipment": p.equipment, "backpack": p.backpack, "gem_bag": p.gem_bag,
+		"bag": p.bag, "consumables": p.consumables,
 		# --- vitals / place ---
 		"hp": p.hp, "mp": p.mp,
 		"pos": [p.global_position.x, p.global_position.y],
@@ -137,6 +138,12 @@ static func apply(game: Game, data: Dictionary) -> void:
 	p.gem_bag = []
 	for g in data.get("gem_bag", []):
 		p.gem_bag.append(_fix_gem(g))
+	# Bags/consumables (round 6). Pre-bag saves get the starter pouch —
+	# same 15 slots the old BACKPACK_MAX allowed.
+	var bag_data: Dictionary = data.get("bag", {})
+	p.bag = bag_data if bag_data.has("slots") else Items.make_bag("F")
+	p.bag["slots"] = int(p.bag["slots"])  # JSON floats -> int
+	p.consumables = data.get("consumables", [])
 
 	p.recalc()
 	p.hp = clampf(float(data.get("hp", p.max_hp)), 1.0, p.max_hp)

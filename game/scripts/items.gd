@@ -142,6 +142,38 @@ static func random_gem(rng: RandomNumberGenerator, lvl := 1) -> Dictionary:
 	return make_gem(keys[rng.randi_range(0, keys.size() - 1)], lvl)
 
 
+# ------------------------------------------------------------------ bags ---
+# The bag is carried capacity for everything NOT equipped: gear, GEM
+# STACKS (one slot per stat+level, round 7) and consumables share its
+# slots. One bag at a time — looting a bigger one upgrades in place,
+# smaller/equal ones convert to gold. Elites are the bag source
+# (playtest round 6; DESIGN.md).
+const BAG_SLOTS := {"F": 15, "E": 20, "D": 25, "C": 35, "B": 50, "A": 70, "S": 100}
+const BAG_NAMES := {
+	"F": "Frayed Pouch", "E": "Patched Satchel", "D": "Soldier's Knapsack",
+	"C": "Knight's Rucksack", "B": "Runed Haversack", "A": "Dragonhide Duffel",
+	"S": "Emberforged Hold",
+}
+
+
+static func make_bag(grade: String) -> Dictionary:
+	return {"kind": "bag", "grade": grade, "name": BAG_NAMES[grade],
+		"slots": int(BAG_SLOTS[grade])}
+
+
+static func bag_price(grade: String) -> int:
+	return int(40.0 * GRADE_MULT[grade])
+
+
+# ----------------------------------------------------------- consumables ---
+# Non-gear bag items ({"kind": "stone", ...}). The talent reset stone is
+# the first; elites are the primary source (playtest round 6).
+static func make_reset_stone() -> Dictionary:
+	return {"kind": "stone", "id": "reset_stone", "grade": "B",
+		"name": "Stone of Unlearning",
+		"desc": "Crush it to refund EVERY allocated talent point (attributes and substats) for reallocation."}
+
+
 ## The stat value a gem grants at its level (superlinear growth).
 static func gem_value(gem: Dictionary) -> float:
 	var base: float = GEM_STATS[gem["stat"]]["base"]
@@ -234,6 +266,14 @@ static func roll_item(tier: String, rng: RandomNumberGenerator, cls := "", cap :
 	var grade := roll_grade(tier, rng, cap)
 	var slot: String = SLOTS[rng.randi_range(0, SLOTS.size() - 1)]
 	return roll_item_of(slot, grade, rng, cls)
+
+
+## The class's signature weapon shape (from its S legendary) — used by
+## the dev gear sets and class swaps so a mage never holds a Claymore.
+static func class_weapon_noun(cls: String) -> String:
+	if S_GEAR.has(cls):
+		return S_GEAR[cls]["weapon"].get("noun", "Blade")
+	return "Blade"
 
 
 static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator, cls := "", force_noun := "") -> Dictionary:

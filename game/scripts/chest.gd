@@ -64,8 +64,8 @@ func _on_body_entered(body: Node) -> void:
 	var gem_chance: float = {"wood": 0.25, "silver": 0.6, "gold": 1.0}[tier]
 	if rng.randf() < gem_chance:
 		var gem := Items.random_gem(rng, 1)
-		body.gem_bag.append(gem)
-		game.spawn_text(body.global_position + Vector2(0, -66), "+ " + Items.gem_title(gem), Items.gem_color(gem))
+		if body.gain_gem(gem):  # bag capacity applies; overflow pays gold
+			game.spawn_text(body.global_position + Vector2(0, -66), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)

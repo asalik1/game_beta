@@ -337,6 +337,93 @@ The 13-minute clear isn't only a content-volume problem:
   summons pay zero — so every run yields the same total. Replaying a
   chapter you have already COMPLETED pays no XP at all: farm gold and
   gear, never levels.
+- **Level parity is the XP budget (playtest round 5).** Chapter 1 trash
+  XP paid ~1.6× what its level plan supported: a full clear hit L15
+  against the L12 final boss, and the player was L10 farming L6 marsh
+  mobs ("outleveling by 4 is unfair"). Trash XP was cut ~45% (wolf
+  12→7, spider 14→8, cultist 20→11, skeleton 24→13, zombie 15→8) so a
+  full clear now tracks room mob levels within ±1 and reaches each boss
+  AT its level (L5 Fangmaw / L8 Morwen / enter Vargoth L11, ding 12 on
+  the kill); spine-only runs sit ~1 under, as intended. Chapter 2 was
+  already on budget (L8 at the Choir Mother, L16 at Warden Null) and is
+  untouched. Rule for new chapters: sum the authored pack XP, walk it
+  through the 30+22·lvl curve, and land each boss room at boss level.
+- **Attributes: 1 point per level, not 5 (playtest round 5).** Same
+  cadence as skill points. 5/level buried the player in unspent points
+  (30+ banked by L10) and silently added ~1.5 extra levels of ATK per
+  level on top of natural growth — half the reason mobs died in a few
+  hits. Per-point conversion ratios are unchanged.
+- **No downscaling — a monster's listed level is its MINIMUM (playtest
+  round 6).** Trigger: "a L20 mage solos 5 L36 Warden Nulls." Spawn an
+  endgame boss in chapter 1 and it arrives with its stats as-is; spawn
+  an early boss at endgame and it scales UP — early bosses stay
+  reusable, lesser threats forever. The Ch2 bosses were re-anchored at
+  their story spawn levels (8/10/16, was 14/22/32): the down-scaling
+  floors had gutted them — story-level Warden Null hit for 12, softer
+  than his own trash. Kill rewards were re-anchored to what they
+  actually paid, so chapter XP totals are unchanged.
+- **Every monster substat scales with level (playtest round 6).**
+  Monsters carry an attribute BUILD — `attrs` points per level above
+  anchor, converted through one `MONSTER_ATTR_SCALE` table (STR→pen/
+  critres, AGI→dex/crit/eva, INT→magpen/magres, VIT→res/critres) — so
+  physres/magres/critres/crit/dex/pen all climb, not just hp/dmg.
+  Kinds without an authored build get an archetype default (brute STR,
+  skirmisher AGI, caster INT; bosses invest at double the trash rate).
+  Boss dmg growth was raised to ~hp growth (0.13–0.14): a +16 boss now
+  one-shots what it should one-shot. Enemy hits resolve through the
+  SAME Stats.resolve math as player hits (their crit vs your critres,
+  their pen vs your res, their dex vs your eva) — attacker-less damage
+  (telegraphs, hazards) stays plain, dodging by movement.
+- **Talent points can buy substats directly (playtest round 6).**
+  Besides STR/AGI/INT/VIT (class-scaled), points go 1:1 into PhysRes,
+  MagRes, CritRes, DEX, PhysPen, MagPen (Classes.SUBSTAT_SCALE). Combo
+  is deliberately NOT purchasable — a cooldown-skip chance you could
+  buy every level would snowball.
+- **Rooms are not all one size (playtest round 6).** Every room still
+  occupies one grid cell, but quiet types — social, dead_end,
+  resonance, merchant, elite arenas — shrink their walled playable
+  area (`Game.SMALL_INSET`); short corridors connect the doorways to
+  the cell edges, and the camera clamps to the playable rect. A room
+  where you talk to one NPC should not be a three-screen hike.
+- **ELITES (playtest round 6).** A promoted monster (`promote_elite`):
+  ~4× HP, 1.5× damage, +res/critres, 1.3× sprite, gold ring underfoot
+  — reads as a miniboss. Two seeded spawn paths (per character, like
+  the wanderer rolls): ~30% of social side rooms hold a lone elite
+  instead of a wanderer (small arena; a wanderer moves in after you
+  beat it), and ~18% of combat rooms promote one pack member. Elites
+  pay ZERO XP (chapter totals stay fixed) but are loot pinatas: 3×
+  gold, a guaranteed gem, a guaranteed silver/gold chest, ~30% a
+  talent reset stone, ~15% a bag. LATER CHAPTERS: elite rooms and
+  combat rooms may spawn SEVERAL elites at once — the single-elite
+  numbers above are the chapter 1–2 tuning, not the system's shape.
+- **Bags & consumables (playtest round 6).** The bag is carried
+  capacity for everything not equipped — gear, gem STACKS and
+  consumables share its slots (F 15 / E 20 / D 25 / C 35 / B 50 /
+  A 70 / S 100, `Items.BAG_SLOTS`). Gems stack: one slot per
+  stat+level kind however many you hold, and a gem that fits an
+  existing stack is always a free pickup (round 7 — the relief valve
+  for gem hoards). One bag at a time: looting a bigger one upgrades
+  in place, smaller ones convert to gold; elites are the bag source.
+  Overflow pickups auto-sell (gems included); internal gem machinery
+  (synthesize, socket removal) never jams on capacity. The inventory
+  is a WoW-style slot grid: icons for gear, colored gem stacks
+  (click a x3 stack to synthesize), consumables click-to-use, dark
+  squares for free space. First consumable: the **Stone of
+  Unlearning** (elite drop, ~30%) — refunds every allocated talent
+  point for reallocation.
+- **Dev/rogue boss kills never touch the story (playtest round 7).**
+  Only zone-spawned bosses (`story_boss`) drive quests, gates,
+  dialogue, `boss_done` and chapter endings; any boss spawned by the
+  dev panel or tests routes to `game.on_rogue_boss_died` — rewards
+  and brawl bookkeeping only (found when a spare dev-spawned Vargoth
+  died in the village and "won" chapter 1). Multi-boss music no
+  longer steps down per kill: it stays where it peaked until the last
+  boss falls, then the terrain track returns.
+- **Resonance is visible now (playtest round 6).** The Stats tab shows
+  the number, its band, and a plain explanation of what moves it and
+  what it affects (haggle prices, gated dialogue, NPC reactions). The
+  "feel it before any UI exposes it" rule (below) held for Phase 1;
+  actual players immediately asked what the stat even was.
 - **Act loot ceilings (playtest round 4).** Chapter 1 never drops above C;
   Chapter 2 caps at A; S-tier is Act 3 / endgame loot. Chest tier weights
   are unchanged — rolls above the ceiling collapse to it. Power-curve

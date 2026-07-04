@@ -22,8 +22,9 @@ var resonance := 0.0     # -100 (Temptation) .. +100 (Virtue), per DESIGN.md
 var faction_standing := {"accord": 0, "cinderborn": 0, "wildfang": 0, "choir": 0}
 
 
-## Nudge Resonance. No number is ever shown — the world reacts through
-## dialogue (Story.res_band) long before any UI would.
+## Nudge Resonance. The world reacts through dialogue and haggle bands
+## (Story.res_band); the Stats tab surfaces the number and a one-line
+## explanation (playtest round 6: "I can't even SEE this stat").
 func add_resonance(delta: float) -> void:
 	resonance = clampf(resonance + delta, -100.0, 100.0)
 
@@ -32,8 +33,11 @@ var level := 1
 var xp := 0
 var skill_points := 0
 var tree_points := {}    # skill cell id -> points (0..5)
-var attr_points := {"STR": 0, "AGI": 0, "INT": 0, "VIT": 0}
-var unspent_attr := 0    # +5 per level, allocate in the skills menu
+# The four attributes convert at CLASS ratios (Classes.ATTR_SCALE);
+# the substats convert 1:1 for everyone (Classes.SUBSTAT_SCALE).
+var attr_points := {"STR": 0, "AGI": 0, "INT": 0, "VIT": 0,
+	"PhysRes": 0, "MagRes": 0, "CritRes": 0, "DEX": 0, "PhysPen": 0, "MagPen": 0}
+var unspent_attr := 0    # +1 per level, allocate in the skills menu
 var gold := 15           # scarcity pass: merchants and haggling matter
 var potions := 2
 
@@ -41,7 +45,11 @@ var potions := 2
 var equipment := {}      # slot -> item Dictionary
 var backpack: Array = []
 var gem_bag: Array = []  # loose gems
-const BACKPACK_MAX := 15
+# The BAG is carried capacity for everything not equipped: gear
+# (backpack), gem STACKS and consumables share its slots. Bigger bags
+# drop from elites (Items.BAG_SLOTS: F 15 ... S 100).
+var bag: Dictionary = Items.make_bag("F")
+var consumables: Array = []   # reset stones etc. ({"kind": "stone", ...})
 
 # --- vitals ---
 var max_hp := 100.0
@@ -265,15 +273,17 @@ func recalc() -> void:
 		var pts: int = tree_points[id]
 		for stat in cell.get("bonus", {}):
 			b[stat] = b.get(stat, 0.0) + cell["bonus"][stat] * pts
-	# Allocated attribute points, converted at CLASS scaling ratios
-	# (an assassin gets far more from AGI than from STR).
+	# Allocated attribute points: the four attributes convert at CLASS
+	# scaling ratios (an assassin gets far more from AGI than from STR);
+	# substat points (PhysRes, DEX, pens...) convert 1:1 for everyone.
 	var attr_scale: Dictionary = Classes.ATTR_SCALE[cls]
 	for attr in attr_points:
 		var pts: int = attr_points[attr]
 		if pts <= 0:
 			continue
-		for stat in attr_scale.get(attr, {}):
-			b[stat] = b.get(stat, 0.0) + attr_scale[attr][stat] * pts
+		var conv: Dictionary = Classes.SUBSTAT_SCALE.get(attr, attr_scale.get(attr, {}))
+		for stat in conv:
+			b[stat] = b.get(stat, 0.0) + conv[stat] * pts
 
 	var hp_frac := hp / max_hp if max_hp > 0 else 1.0
 	var mp_frac := mp / max_mp if max_mp > 0 else 1.0
@@ -336,14 +346,90 @@ func stat_sheet() -> String:
 
 # ==================================================================== gear
 
+func bag_capacity() -> int:
+	return int(bag.get("slots", 15))
+
+
+## Gems STACK: one bag slot per stat+level kind, however many you hold
+## (playtest round 7 — the relief valve for gem hoards).
+func gem_stacks() -> int:
+	var kinds := {}
+	for gem in gem_bag:
+		kinds["%s_%d" % [gem["stat"], gem["lvl"]]] = true
+	return kinds.size()
+
+
+func bag_used() -> int:
+	return backpack.size() + gem_stacks() + consumables.size()
+
+
 func add_item(item: Dictionary) -> bool:
-	if backpack.size() >= BACKPACK_MAX:
+	if bag_used() >= bag_capacity():
 		strip_gems(item)
 		gold += maxi(1, Items.price(item) / 2)
 		game.spawn_text(global_position + Vector2(0, -50), "Bag full! Sold for gold", Color(1, 0.9, 0.4))
 		return false
 	backpack.append(item)
 	return true
+
+
+## Loose gem pickup (chests, elites). A gem that fits an EXISTING
+## stack is always free; only a brand-new stack needs a free slot.
+## Internal gem machinery (synthesize, socket removal, sell-stripping)
+## bypasses capacity entirely so it never jams.
+func gain_gem(gem: Dictionary) -> bool:
+	var stacks := false
+	for g in gem_bag:
+		if g["stat"] == gem["stat"] and g["lvl"] == gem["lvl"]:
+			stacks = true
+			break
+	if not stacks and bag_used() >= bag_capacity():
+		gold += 2 + int(gem["lvl"]) * 3
+		game.spawn_text(global_position + Vector2(0, -50), "Bag full! Gem sold", Color(1, 0.9, 0.4))
+		return false
+	gem_bag.append(gem)
+	return true
+
+
+func add_consumable(c: Dictionary) -> bool:
+	if bag_used() >= bag_capacity():
+		gold += 25
+		game.spawn_text(global_position + Vector2(0, -50), "Bag full! Sold for gold", Color(1, 0.9, 0.4))
+		return false
+	consumables.append(c)
+	return true
+
+
+## Use a consumable from the bag (the bag UI calls this).
+func use_consumable(c: Dictionary) -> void:
+	if not consumables.has(c):
+		return
+	match str(c.get("id", "")):
+		"reset_stone":
+			var refunded := 0
+			for attr in attr_points:
+				refunded += int(attr_points[attr])
+				attr_points[attr] = 0
+			unspent_attr += refunded
+			consumables.erase(c)
+			recalc()
+			game.sfx("levelup")
+			game.spawn_text(global_position + Vector2(0, -56),
+				"TALENTS RESET — %d points refunded (press T)" % refunded, Color(0.6, 0.9, 1.0))
+
+
+## A looted bag: bigger than the current one upgrades in place,
+## anything else converts to gold.
+func acquire_bag(b: Dictionary) -> bool:
+	if int(b.get("slots", 0)) > bag_capacity():
+		bag = b
+		game.sfx("levelup")
+		game.spawn_text(global_position + Vector2(0, -56),
+			"BAG UPGRADED: %s (%d slots)" % [b["name"], int(b["slots"])], Color(0.95, 0.85, 0.5))
+		return true
+	gold += Items.bag_price(str(b.get("grade", "F")))
+	game.spawn_text(global_position + Vector2(0, -50), "Spare bag sold for gold", Color(1, 0.9, 0.4))
+	return false
 
 
 func equip(item: Dictionary) -> void:
@@ -471,12 +557,12 @@ func gain_xp(amount: int) -> void:
 		xp -= xp_needed()
 		level += 1
 		skill_points += 1
-		unspent_attr += 5
+		unspent_attr += 1
 		recalc()
 		hp = max_hp
 		mp = max_mp
 		game.sfx("levelup")
-		game.spawn_text(global_position + Vector2(0, -72), "LEVEL UP!  Lv %d  (+1 skill point, press T)" % level, Color(0.5, 0.9, 1.0))
+		game.spawn_text(global_position + Vector2(0, -72), "LEVEL UP!  Lv %d  (+1 skill, +1 attribute point — press T)" % level, Color(0.5, 0.9, 1.0))
 		var unlocked := Classes.themes_unlocked(level)
 		if unlocked > themes_known:
 			themes_known = unlocked
@@ -2219,29 +2305,49 @@ func drink_potion() -> void:
 	game.spawn_text(global_position + Vector2(0, -40), "+HP", Color(0.4, 1.0, 0.4))
 
 
-func take_damage(amount: float, dmg_type := "phys") -> void:
+## attacker (optional Enemy/Boss): resolves the hit through the SAME
+## combat math as player attacks (Stats.resolve) — the attacker's dex
+## shaves our evasion, its pen eats our resistance, and it can crit
+## against our critres. Attacker-less damage (telegraphs, hazards)
+## keeps the plain eva-then-res path.
+func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> void:
 	if dead or hurt_cd > 0.0:
 		return
-	if randf() < Stats.eva_curve(eva):
-		game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
-		game.sfx("blink")
-		return
-	hurt_cd = 0.6
 	var res := physres if dmg_type == "phys" else magres
 	if theme_guard_time > 0.0:
 		res += theme_guard_amt
 	if aegis_time > 0.0:
 		res += aegis_amt
-	if dmg_type != "true":
-		amount *= (1.0 - Stats.res_frac(res))
+	var was_crit := false
+	if attacker != null:
+		var pen: float = attacker.physpen if dmg_type == "phys" else attacker.magpen
+		var result: Dictionary = Stats.resolve(amount, dmg_type,
+			attacker.crit, 1.5, pen, attacker.dex, res, eva, critres)
+		if result["miss"]:
+			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
+			game.sfx("blink")
+			return
+		amount = result["dmg"]
+		was_crit = result["crit"]
+	else:
+		if randf() < Stats.eva_curve(eva):
+			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
+			game.sfx("blink")
+			return
+		if dmg_type != "true":
+			amount *= (1.0 - Stats.res_frac(res))
+	hurt_cd = 0.6
 	hp -= amount
 	game.sfx("hurt")
 	# Getting hit should FEEL like something went wrong: harder shake and
 	# a red edge-flash, scaled a touch by how big the bite was.
-	game.shake(6.0)
+	game.shake(9.0 if was_crit else 6.0)
 	game.hud.flash_screen(Color(0.85, 0.1, 0.08),
 		clampf(0.18 + amount / max_hp * 0.5, 0.18, 0.4), 0.3)
-	game.spawn_text(global_position + Vector2(0, -40), "-%d" % int(amount), Color(1.0, 0.35, 0.3))
+	if was_crit:
+		game.spawn_text(global_position + Vector2(0, -40), "-%d CRIT!" % int(amount), Color(1.0, 0.5, 0.1))
+	else:
+		game.spawn_text(global_position + Vector2(0, -40), "-%d" % int(amount), Color(1.0, 0.35, 0.3))
 	if hp <= 0.0:
 		hp = 0.0
 		dead = true

@@ -174,13 +174,44 @@ const CLASSES := {
 
 
 # ---------------------------------------------------------- attributes ---
-# Each level grants 5 attribute points. What a point gives depends on
-# the CLASS (scaling ratios): an assassin converts AGI into power at
-# triple the rate of STR; a warrior is the reverse.
-# Balance sketch (per point, primary attr): +1.2 ATK ≈ +8% of a level's
-# natural growth, so a full level of points (5) into the primary roughly
-# equals +1.5 levels of raw attack — meaningful but not explosive.
+# Each level grants 1 attribute point — same cadence as skill points
+# (playtest round 5: 5/level buried the player in unspent points and
+# quietly stacked ~1.5 extra levels of ATK per level on top of natural
+# growth). What a point gives depends on the CLASS (scaling ratios): an
+# assassin converts AGI into power at triple the rate of STR; a warrior
+# is the reverse.
+# Balance sketch (per point, primary attr): +1.2 ATK ≈ a third of a
+# level's natural attack growth — a nudge, not a second growth curve.
 const ATTR_NAMES := ["STR", "AGI", "INT", "VIT"]
+
+# Substat allocation (playtest round 6): talent points can also go
+# STRAIGHT into a combat substat — same conversion for every class,
+# no ratios. Combo is deliberately absent (a purchasable cooldown-skip
+# chance every level would snowball).
+const SUBSTAT_NAMES := ["PhysRes", "MagRes", "CritRes", "DEX", "PhysPen", "MagPen"]
+const SUBSTAT_SCALE := {
+	"PhysRes": {"physres": 2.0},
+	"MagRes": {"magres": 2.0},
+	"CritRes": {"critres": 1.0},
+	"DEX": {"dex": 2.0},
+	"PhysPen": {"physpen": 1.5},
+	"MagPen": {"magpen": 1.5},
+}
+const SUBSTAT_DESC := {
+	"PhysRes": "hardens you against physical damage",
+	"MagRes": "hardens you against magic",
+	"CritRes": "enemy crits land less often",
+	"DEX": "shreds enemy evasion so your hits stop missing",
+	"PhysPen": "physical hits punch through armor (excess becomes bonus damage)",
+	"MagPen": "spells punch through wards (excess becomes bonus damage)",
+}
+
+
+## Human-readable "what one point gives" for a substat row.
+static func substat_text(attr: String) -> String:
+	var scale: Dictionary = SUBSTAT_SCALE[attr]
+	var stat: String = scale.keys()[0]
+	return "+%.1f %s per point — %s" % [scale[stat], attr, SUBSTAT_DESC[attr]]
 
 const ATTR_SCALE := {
 	"warrior": {

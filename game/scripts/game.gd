@@ -838,6 +838,37 @@ func room_rect(i: int) -> Rect2:
 	return Rect2(rooms[i]["origin"], Vector2(ROOM_W, ROOM_H))
 
 
+# Small rooms (playtest round 6): every room still occupies one grid
+# cell, but quiet rooms — a single NPC, a shrine, a lore dead end, an
+# elite arena — shrink their walled playable area; short corridors
+# connect the doorways to the cell edges.
+const SMALL_INSET := Vector2(420.0, 246.0)
+
+
+func room_inset(i: int) -> Vector2:
+	if room_type(i) in ["social", "dead_end", "resonance", "merchant"]:
+		return SMALL_INSET
+	return Vector2.ZERO
+
+
+## The walled, walkable area of a room (equals room_rect for full-size
+## rooms). Cameras, spawns and clamps all use THIS rect.
+func play_rect(i: int) -> Rect2:
+	var ins := room_inset(i)
+	return Rect2(rooms[i]["origin"] + ins, Vector2(ROOM_W, ROOM_H) - ins * 2.0)
+
+
+## Map an authored in-room position into the playable rect — authored
+## coordinates assume the full cell, so small rooms scale them down.
+func room_pos(i: int, x: float, y: float) -> Vector2:
+	var meta: Dictionary = rooms[i]
+	var p: Vector2 = Vector2(x, y) * meta["scale"]
+	var ins := room_inset(i)
+	if ins != Vector2.ZERO:
+		p = ins + p * (Vector2(ROOM_W, ROOM_H) - ins * 2.0) / Vector2(ROOM_W, ROOM_H)
+	return meta["origin"] + p
+
+
 func room_center(i: int) -> Vector2:
 	return rooms[i]["origin"] + Vector2(ROOM_W, ROOM_H) / 2.0
 
@@ -942,7 +973,9 @@ func _enter_room(i: int) -> void:
 		var nb := neighbor(i, dir)
 		if nb >= 0:
 			door_seen[nb] = true
-	var r := room_rect(i)
+	# Camera clamps to the PLAYABLE rect — small rooms read small, and
+	# the empty margin outside their walls never shows.
+	var r := play_rect(i)
 	camera.limit_left = int(r.position.x)
 	camera.limit_top = int(r.position.y)
 	camera.limit_right = int(r.end.x)
@@ -1007,7 +1040,7 @@ func _build_room(i: int) -> void:
 	for npc_def in zone.get("npcs", []):
 		var convo_id: String = npc_def["convo"]
 		_make_npc(npc_def["sprite"],
-			origin + Vector2(npc_def["x"], npc_def["y"]) * meta["scale"],
+			room_pos(i, npc_def["x"], npc_def["y"]),
 			npc_def.get("prompt", "E — Talk"), func() -> void:
 				run_convo_id(convo_id))
 
@@ -1039,8 +1072,6 @@ func _build_room(i: int) -> void:
 		_spawn_merchant(i)
 
 	# Room-type extras.
-	if room_type(i) == "social":
-		_spawn_wanderer(i)
 	var cache_tier := String(zone.get("cache", ""))
 	if cache_tier != "" and not get_flag(_cache_flag(i), false):
 		var cache_room := i
@@ -1054,6 +1085,19 @@ func _build_room(i: int) -> void:
 	else:
 		zone_alive[i] = 0
 
+	# Social rooms (after the pack pass, so zone_alive counts stick):
+	# seeded per character, some hold a lone ELITE instead of a wanderer
+	# — a miniboss beat between combat rooms (playtest round 6; later
+	# chapters may spawn more than one). Once beaten, the room stays
+	# quiet — a wanderer moves in on the next visit.
+	if room_type(i) == "social":
+		var erng := _social_rng(i)
+		var elite_room := erng.randf() < 0.30
+		if elite_room and not cleared.get(i, false):
+			_spawn_elite_room(i, erng)
+		elif not elite_room or cleared.get(i, false):
+			_spawn_wanderer(i)
+
 
 func _cache_flag(i: int) -> String:
 	return "cache_%s_%d" % [chapter_id, i]
@@ -1061,15 +1105,63 @@ func _cache_flag(i: int) -> String:
 
 func _spawn_room_enemies(i: int) -> void:
 	zone_alive[i] = 0
-	var meta: Dictionary = rooms[i]
+	var spawned: Array = []
 	for spawn in zones[i].get("enemies", []):
 		var lvl := int(spawn[4]) if spawn.size() > 4 else -1
-		var e := Enemy.make(self, spawn[0],
-			meta["origin"] + Vector2(spawn[1], spawn[2]) * meta["scale"], lvl)
+		var e := Enemy.make(self, spawn[0], room_pos(i, spawn[1], spawn[2]), lvl)
 		e.zone_idx = i
 		e.pack_id = int(spawn[3]) if spawn.size() > 3 else 0
 		zone_alive[i] = zone_alive.get(i, 0) + 1
 		add_enemy(e)
+		spawned.append(e)
+	# Elite ambush (playtest round 6): seeded per character+room, some
+	# combat rooms promote one pack member to a miniboss. Boss rooms
+	# are exempt — those arenas stay as authored.
+	if not spawned.is_empty() and String(zones[i].get("boss", "")) == "":
+		var rng := RandomNumberGenerator.new()
+		rng.seed = wander_seed * 17 + i * 337 + chapter_id.hash() % 8837
+		if rng.randf() < 0.18:
+			spawned[rng.randi_range(0, spawned.size() - 1)].promote_elite()
+
+
+## The seeded per-character roll for social room i. ONE place for the
+## formula: the room build consumes it, and social_holds_elite lets
+## the autotest predict the outcome instead of guessing.
+func _social_rng(i: int) -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 23 + i * 173 + chapter_id.hash() % 7717
+	return rng
+
+
+## Does social room i hold a lone elite instead of a wanderer?
+func social_holds_elite(i: int) -> bool:
+	return _social_rng(i).randf() < 0.30
+
+
+## A lone elite holds a small side room. Kind and level ride the
+## nearest earlier combat room, one level above its toughest spawn —
+## a miniboss that always fits the local power band.
+func _spawn_elite_room(i: int, rng: RandomNumberGenerator) -> void:
+	var kind := ""
+	var lvl := 1
+	for j in range(i - 1, -1, -1):
+		var packs: Array = zones[j].get("enemies", [])
+		if packs.is_empty():
+			continue
+		var pick: Array = packs[rng.randi_range(0, packs.size() - 1)]
+		kind = String(pick[0])
+		for s in packs:
+			var sl := int(s[4]) if s.size() > 4 else int(Story.ALL_ENEMIES[s[0]]["level"])
+			lvl = maxi(lvl, sl)
+		break
+	if kind == "":
+		return
+	var e := Enemy.make(self, kind, room_center(i) + Vector2(0, -60), lvl + 1)
+	e.zone_idx = i
+	e.pack_id = 0
+	e.promote_elite()
+	zone_alive[i] = zone_alive.get(i, 0) + 1
+	add_enemy(e)
 
 
 ## The room you died in resets: its surviving packs despawn and respawn
@@ -1124,8 +1216,7 @@ func _merchant_node(zi: int) -> void:
 	var zone: Dictionary = zones[zi]
 	if not zone.has("merchant"):
 		return
-	var pos: Vector2 = rooms[zi]["origin"] \
-		+ Vector2(zone["merchant"][0], zone["merchant"][1]) * rooms[zi]["scale"]
+	var pos := room_pos(zi, zone["merchant"][0], zone["merchant"][1])
 	var zone_idx := zi
 	_make_npc("merchant", pos, "E — Shop", func() -> void:
 		menus.open_shop(zone_idx)
@@ -1137,8 +1228,7 @@ func _merchant_arrives(zi: int) -> void:
 	if merchant_zones.has(zi) or not zones[zi].has("merchant"):
 		return
 	_spawn_merchant(zi)
-	var pos: Vector2 = rooms[zi]["origin"] \
-		+ Vector2(zones[zi]["merchant"][0], zones[zi]["merchant"][1]) * rooms[zi]["scale"]
+	var pos := room_pos(zi, zones[zi]["merchant"][0], zones[zi]["merchant"][1])
 	burst(pos, Color(0.9, 0.8, 0.5), 12)
 	sfx("coin")
 	spawn_text(pos + Vector2(0, -50), "A WANDERING MERCHANT ARRIVES!", Color(0.95, 0.85, 0.5))
@@ -1192,17 +1282,22 @@ func _spawn_scenery(zi: int) -> void:
 			node.queue_free()
 	zone_scenery[zi] = []
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
-	var origin: Vector2 = rooms[zi]["origin"]
+	var pr := play_rect(zi)
+	var origin: Vector2 = pr.position
+	var pw := pr.size.x
+	var ph := pr.size.y
+	var area_frac := (pw * ph) / float(ROOM_W * ROOM_H)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
 
-	# Non-colliding ground decor (density scaled to the bigger rooms).
+	# Non-colliding ground decor (density scaled to the room's area —
+	# small rooms get proportionally less).
 	var decor_list: Array = terrain.get("decor", ["pebble"])
-	for i in 58:
+	for i in int(ceil(58.0 * area_frac)):
 		var spr := Sprite2D.new()
 		spr.texture = Art.tex(decor_list[rng.randi_range(0, decor_list.size() - 1)])
 		spr.scale = Vector2(3, 3)
-		spr.position = origin + Vector2(rng.randf_range(70.0, ROOM_W - 70.0), rng.randf_range(80.0, ROOM_H - 80.0))
+		spr.position = origin + Vector2(rng.randf_range(70.0, pw - 70.0), rng.randf_range(80.0, ph - 80.0))
 		spr.z_index = -8
 		world.add_child(spr)
 		zone_scenery[zi].append(spr)
@@ -1210,14 +1305,14 @@ func _spawn_scenery(zi: int) -> void:
 	# Colliding obstacles, kept off the road band and the door lanes.
 	var obstacles: Array = terrain.get("obstacles", ["rock"])
 	var placed: Array = []
-	var max_x := ROOM_W - 760.0 if zones[zi].get("boss", "") != "" else ROOM_W - 90.0
-	var count := int(ceil(float(terrain.get("count", 10)) * 2.2))
+	var max_x := pw - 760.0 if zones[zi].get("boss", "") != "" else pw - 90.0
+	var count := int(ceil(float(terrain.get("count", 10)) * 2.2 * area_frac))
 	for i in count:
 		for attempt in 40:
-			var pos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ROOM_H - 100.0))
-			if pos.y > ROOM_H / 2.0 - 90.0 and pos.y < ROOM_H / 2.0 + 90.0:
+			var pos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
+			if pos.y > ph / 2.0 - 90.0 and pos.y < ph / 2.0 + 90.0:
 				continue  # the road / east-west door lane stays open
-			if absf(pos.x - ROOM_W / 2.0) < 130.0:
+			if absf(pos.x - pw / 2.0) < 130.0:
 				continue  # the north-south door lane stays open
 			var ok := true
 			for other in placed:
@@ -1286,8 +1381,12 @@ func _wall(rect: Rect2) -> void:
 
 ## Perimeter walls for one room, with door gaps on its open edges, and
 ## a gate body on any locked edge that isn't already satisfied.
+## Small rooms build their walls at the inset playable rect and add
+## short corridor walls from each doorway out to the cell edge.
 func _build_room_walls(i: int) -> void:
-	var r := room_rect(i)
+	var r := play_rect(i)
+	var full := room_rect(i)
+	var ins := room_inset(i)
 	var exits: Dictionary = rooms[i]["exits"]
 	var gap := DOOR_TILES * TILE
 	# North/south walls (gap centered on x).
@@ -1295,23 +1394,33 @@ func _build_room_walls(i: int) -> void:
 		var dir: String = spec[0]
 		var y: float = spec[1]
 		if exits.has(dir):
-			var half := ROOM_W / 2.0 - gap / 2.0
+			var half := r.size.x / 2.0 - gap / 2.0
 			_wall(Rect2(r.position.x, y, half, TILE))
-			_wall(Rect2(r.position.x + ROOM_W / 2.0 + gap / 2.0, y, half, TILE))
+			_wall(Rect2(r.position.x + r.size.x / 2.0 + gap / 2.0, y, half, TILE))
 			_door_torches(door_pos(i, dir), false)
+			if ins.y > 0.0:
+				var cx := full.position.x + ROOM_W / 2.0
+				var cy := full.position.y if dir == "N" else r.end.y
+				_wall(Rect2(cx - gap / 2.0 - TILE, cy, TILE, ins.y))
+				_wall(Rect2(cx + gap / 2.0, cy, TILE, ins.y))
 		else:
-			_wall(Rect2(r.position.x, y, ROOM_W, TILE))
+			_wall(Rect2(r.position.x, y, r.size.x, TILE))
 	# West/east walls (gap centered on y).
 	for spec in [["W", r.position.x], ["E", r.end.x - TILE]]:
 		var dir: String = spec[0]
 		var x: float = spec[1]
 		if exits.has(dir):
-			var half := ROOM_H / 2.0 - gap / 2.0
+			var half := r.size.y / 2.0 - gap / 2.0
 			_wall(Rect2(x, r.position.y, TILE, half))
-			_wall(Rect2(x, r.position.y + ROOM_H / 2.0 + gap / 2.0, TILE, half))
+			_wall(Rect2(x, r.position.y + r.size.y / 2.0 + gap / 2.0, TILE, half))
 			_door_torches(door_pos(i, dir), true)
+			if ins.x > 0.0:
+				var cy2 := full.position.y + ROOM_H / 2.0
+				var cx2 := full.position.x if dir == "W" else r.end.x
+				_wall(Rect2(cx2, cy2 - gap / 2.0 - TILE, ins.x, TILE))
+				_wall(Rect2(cx2, cy2 + gap / 2.0, ins.x, TILE))
 		else:
-			_wall(Rect2(x, r.position.y, TILE, ROOM_H))
+			_wall(Rect2(x, r.position.y, TILE, r.size.y))
 	# Locked edges get a gate — built once per edge, by whichever room
 	# builds first, and only while the lock is still unmet.
 	for dir in exits.keys():
@@ -1451,21 +1560,41 @@ func _spawn_boss(zi: int, kind: String) -> void:
 	set_music(_boss_music())
 
 
-func on_boss_died(kind: String, dead: Boss = null) -> void:
-	boss_done[kind] = true
-	var src: Boss = dead if is_instance_valid(dead) else current_boss
-	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
-	var mzi: int = clampi(src.zone_idx if is_instance_valid(src) else cur_room, 0, zone_count - 1)
+## Brawl bookkeeping shared by story and rogue boss deaths: drop the
+## boss from the roster, retarget the bar, and restore the terrain
+## music only when the LAST one falls — while the brawl continues the
+## music stays where it peaked (playtest round 7: each kill in a x5
+## dev brawl used to step the track down x5 -> x4 -> ...).
+func _boss_roster_update(src: Boss) -> void:
 	bosses.erase(src)
 	if _live_bosses().is_empty():
 		current_boss = null
 		hud.hide_boss_bar()
 		set_music(Terrains.get_terrain(terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]).get("music", "village"))
-	else:
-		if current_boss == src:
-			current_boss = _live_bosses()[0]
-			hud.show_boss_bar(current_boss.display_name)
-		set_music(_boss_music())  # the brawl thins out: x3 -> x2 -> solo theme
+	elif current_boss == src:
+		current_boss = _live_bosses()[0]
+		hud.show_boss_bar(current_boss.display_name)
+
+
+## A boss killed OUTSIDE the story flow (dev panel spawns, tests):
+## rewards and brawl bookkeeping only — no quests, no gates, no story
+## dialogue, no boss_done marks, no chapter end.
+func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
+	var src: Boss = dead if is_instance_valid(dead) else current_boss
+	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
+	_boss_roster_update(src)
+	player.hp = player.max_hp
+	player.mp = player.max_mp
+	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
+	Pickup.drop_gold(self, Story.ALL_ENEMIES[kind].get("gold", 50), boss_pos)
+
+
+func on_boss_died(kind: String, dead: Boss = null) -> void:
+	boss_done[kind] = true
+	var src: Boss = dead if is_instance_valid(dead) else current_boss
+	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
+	var mzi: int = clampi(src.zone_idx if is_instance_valid(src) else cur_room, 0, zone_count - 1)
+	_boss_roster_update(src)
 	player.hp = player.max_hp
 	player.mp = player.max_mp
 	player.potions = maxi(player.potions, 2)
@@ -1546,13 +1675,30 @@ func on_enemy_died(e: Enemy) -> void:
 	if e is Boss:
 		return  # boss drops are handled in on_boss_died
 	Pickup.drop_gold(self, e.gold_value, e.global_position)
-	# Chance-based chest drops (Greed above 30% nudges the odds up).
-	var bonus := Stats.greed_loot(player.greed) if is_instance_valid(player) else 0.0
-	var roll := loot_rng.randf()
-	if roll < 0.04 + bonus * 0.3:
-		Chest.drop(self, "silver", e.global_position)
-	elif roll < 0.18 + bonus:
-		Chest.drop(self, "wood", e.global_position)
+	if e.elite and is_instance_valid(player):
+		# Elite loot pinata (playtest round 6): a guaranteed gem, a
+		# guaranteed good chest, and the elite-exclusive economy —
+		# talent reset stones and bigger bags. XP is zero by design
+		# (chapter totals stay fixed).
+		var gem := Items.random_gem(loot_rng, 2 if loot_rng.randf() < 0.35 else 1)
+		if player.gain_gem(gem):
+			spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
+		Chest.drop(self, "gold" if loot_rng.randf() < 0.45 else "silver",
+			e.global_position + Vector2(44, 0))
+		if loot_rng.randf() < 0.30:
+			if player.add_consumable(Items.make_reset_stone()):
+				spawn_text(e.global_position + Vector2(0, -92), "+ Stone of Unlearning", Color(0.6, 0.9, 1.0))
+		elif loot_rng.randf() < 0.18:
+			var cap := String(Story.chapter(chapter_id).get("loot_cap", "S"))
+			player.acquire_bag(Items.make_bag(Items.roll_grade("gold", loot_rng, cap)))
+	else:
+		# Chance-based chest drops (Greed above 30% nudges the odds up).
+		var bonus := Stats.greed_loot(player.greed) if is_instance_valid(player) else 0.0
+		var roll := loot_rng.randf()
+		if roll < 0.04 + bonus * 0.3:
+			Chest.drop(self, "silver", e.global_position)
+		elif roll < 0.18 + bonus:
+			Chest.drop(self, "wood", e.global_position)
 
 	# Room clear tracking: the boss only appears once its room is purged.
 	if e.zone_idx >= 0:
@@ -1744,7 +1890,7 @@ func clamp_to_zone(pos: Vector2, anchor: Vector2) -> Vector2:
 	var zi := room_at_pos(anchor)
 	if zi < 0:
 		zi = clampi(cur_room, 0, zone_count - 1)
-	var r := room_rect(zi)
+	var r := play_rect(zi)
 	return Vector2(
 		clampf(pos.x, r.position.x + 80.0, r.end.x - 80.0),
 		clampf(pos.y, r.position.y + 90.0, r.end.y - 90.0)
@@ -2156,7 +2302,7 @@ func _process(delta: float) -> void:
 	var zi := room_at_pos(player.global_position)
 	if zi == -1:
 		# Physics glitch outside the graph: snap back into the room.
-		var rr := room_rect(clampi(cur_room, 0, zone_count - 1))
+		var rr := play_rect(clampi(cur_room, 0, zone_count - 1))
 		player.global_position.x = clampf(player.global_position.x, rr.position.x + 52.0, rr.end.x - 52.0)
 		player.global_position.y = clampf(player.global_position.y, rr.position.y + 62.0, rr.end.y - 62.0)
 		zi = cur_room

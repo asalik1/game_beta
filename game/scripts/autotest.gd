@@ -518,8 +518,8 @@ func _run() -> void:
 	game.player.recalc()  # restore real combo value
 	print("ok: combo stat (%d/200 resets)" % resets)
 
-	# 3d2. Attributes: +5/level, class-scaled conversion, CR responds.
-	if game.player.unspent_attr < 5:
+	# 3d2. Attributes: +1/level, class-scaled conversion, CR responds.
+	if game.player.unspent_attr < 1:
 		return _fail("no attribute points after leveling (has %d)" % game.player.unspent_attr)
 	var cr_before := game.player.combat_rating()
 	var atk_b := game.player.atk
@@ -532,6 +532,18 @@ func _run() -> void:
 		return _fail("combat rating did not rise with attributes")
 	print("ok: attributes + combat rating (CR %d -> %d)" % [cr_before, game.player.combat_rating()])
 
+	# 3d2b. Substats: points can go STRAIGHT into a substat (1:1 for
+	# every class — combo deliberately not purchasable).
+	game.player.unspent_attr += 1  # grant one point for the check
+	var pres_b: float = game.player.physres
+	if game.player.attr_points.has("combo") or Classes.SUBSTAT_SCALE.has("combo"):
+		return _fail("combo must not be purchasable with attribute points")
+	if not game.player.add_attr_points("PhysRes", 1):
+		return _fail("could not spend a substat point")
+	if game.player.physres <= pres_b:
+		return _fail("PhysRes point did not raise physres")
+	print("ok: substat allocation (PhysRes %d -> %d)" % [int(pres_b), int(game.player.physres)])
+
 	# 3d3. Monster levels: a Lv 30 wolf out-stats a story-level wolf.
 	var w_lo := Story.enemy_stats_at("wolf", 2)
 	var w_hi := Story.enemy_stats_at("wolf", 30)
@@ -540,6 +552,17 @@ func _run() -> void:
 		return _fail("wolf did not scale with level")
 	if boss_hi["hp"] / Story.ALL_ENEMIES["fangmaw"]["hp"] <= w_hi["hp"] / (Story.ALL_ENEMIES["wolf"]["hp"] * Story.TTK_HP_MULT):
 		return _fail("boss growth should outpace trash growth")
+	# 3d3b. NO DOWNSCALING: the listed level is a MINIMUM — asking for
+	# less clamps UP (an endgame boss in chapter 1 arrives as-is) — and
+	# every substat climbs with level via the monster attribute build.
+	var v_lo := Story.enemy_stats_at("vargoth", 1)
+	if v_lo["level"] != int(Story.ALL_ENEMIES["vargoth"]["level"]) \
+			or absf(v_lo["hp"] - Story.ALL_ENEMIES["vargoth"]["hp"]) > 0.01:
+		return _fail("boss below its anchor should clamp UP to its listed level/stats")
+	var v_30 := Story.enemy_stats_at("vargoth", 30)
+	if v_30["physpen"] <= v_lo["physpen"] or v_30["physres"] <= v_lo["physres"] \
+			or v_30["critres"] <= v_lo["critres"]:
+		return _fail("boss substats did not scale with level")
 	var lv_wolf := _dummy(Vector2(120, 40))
 	var lv_wolf30 := Enemy.make(game, "wolf", game.player.global_position + Vector2(-140, 40), 30)
 	game.add_enemy(lv_wolf30)
@@ -550,6 +573,9 @@ func _run() -> void:
 	lv_wolf30.take_damage(9999999.0)
 	await _frames(3)
 	print("ok: monster levels + growth scaling")
+
+	# 3d4. Elites, bags, reset stones, small rooms (playtest round 6).
+	await _test_elites_bags_smallrooms()
 
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
@@ -1228,25 +1254,39 @@ func _test_graph_walk_darkwood() -> void:
 		return _fail("cache flag not set (would refarm on reload)")
 	print("ok: dead-end cache (guarded, once per character)")
 
-	# Side room: the social clearing rolls a wanderer from the pool.
+	# Side room: the social clearing rolls a wanderer from the pool —
+	# or, seeded ~30% per character (round 6), a lone ELITE holds the
+	# room instead. game.social_holds_elite says which, so the test
+	# asserts the RIGHT outcome instead of guessing.
 	var before_npcs := game.interactables.size()
 	await _goto_room(5)
-	if game.interactables.size() <= before_npcs:
-		return _fail("social room rolled no wanderer")
-	var w_entry: Dictionary = game.interactables[-1]
-	w_entry["action"].call()
-	await _frames(2)
-	# A wanderer convo may OPEN on a choice node (tinker, orphan...) —
-	# that's choices_active, not dialogue_active.
-	if not game.hud.dialogue_active and not game.hud.choices_active:
-		return _fail("wanderer had nothing to say")
-	await _skip_dialogue()
-	await _frames(2)
-	if game.hud.choices_active:
-		game.hud._choose(0)
+	if game.social_holds_elite(5):
+		var elite_found := false
+		for node in get_tree().get_nodes_in_group("enemies"):
+			var en := node as Enemy
+			if en and not en.dying and en.zone_idx == 5 and en.elite:
+				elite_found = true
+		if not elite_found:
+			return _fail("elite social room spawned no elite")
+		await _kill_room(5)
+		print("ok: social room (seeded ELITE ambush variant)")
+	else:
+		if game.interactables.size() <= before_npcs:
+			return _fail("social room rolled no wanderer")
+		var w_entry: Dictionary = game.interactables[-1]
+		w_entry["action"].call()
 		await _frames(2)
+		# A wanderer convo may OPEN on a choice node (tinker, orphan...)
+		# — that's choices_active, not dialogue_active.
+		if not game.hud.dialogue_active and not game.hud.choices_active:
+			return _fail("wanderer had nothing to say")
 		await _skip_dialogue()
-	print("ok: social room (pool wanderer talks)")
+		await _frames(2)
+		if game.hud.choices_active:
+			game.hud._choose(0)
+			await _frames(2)
+			await _skip_dialogue()
+		print("ok: social room (pool wanderer talks)")
 
 	# Side room: the Moonwell shrine moves Resonance between story beats.
 	await _goto_room(8)
@@ -1947,3 +1987,106 @@ func _test_chapter_progression() -> void:
 	if game.quest_key != "ch2_start":
 		return _fail("ch2 did not start its quest chain (got %s)" % game.quest_key)
 	print("ok: chapter progression (victory carries the hero into ch2; ch1 stays farmable)")
+
+
+# ---- CORE: elites, bags, reset stones, small rooms (round 6) ------------
+func _test_elites_bags_smallrooms() -> void:
+	# Snapshot shared state (restore, never clear — later sections
+	# reuse this game).
+	var keep_bag: Dictionary = game.player.bag
+	var keep_gold: int = game.player.gold
+	var keep_unspent: int = game.player.unspent_attr
+	var keep_attr: Dictionary = game.player.attr_points.duplicate()
+	var keep_consumables: Array = game.player.consumables.duplicate()
+
+	# Elites: much tougher, zero XP, guaranteed gem on death.
+	game.player.bag = Items.make_bag("S")  # room for the guaranteed gem
+	var base_mob := _dummy(Vector2(150, 70))
+	var e := _dummy(Vector2(200, 70))
+	e.promote_elite()
+	if e.max_hp <= base_mob.max_hp * 2.0 or e.dmg <= base_mob.dmg:
+		return _fail("elite is not meaningfully tougher than its kind")
+	if e.xp_value != 0:
+		return _fail("elite must pay ZERO xp (fixed chapter totals)")
+	var gems_before: int = game.player.gem_bag.size()
+	var xp_mark: int = game.player.xp + game.player.level * 100000
+	e.take_damage(99999999.0)
+	await _frames(3)
+	if game.player.gem_bag.size() != gems_before + 1:
+		return _fail("elite death did not guarantee a gem")
+	if game.player.xp + game.player.level * 100000 != xp_mark:
+		return _fail("elite death paid xp")
+	base_mob.take_damage(99999999.0)
+	await _frames(2)
+	# The elite's guaranteed chest must not linger where later movement
+	# tests could open it (it would skew their exact gem counts).
+	for node in game.get_children():
+		if node is Chest:
+			node.queue_free()
+	await _frames(1)
+
+	# Reset stone: zero every allocation, refund every point.
+	game.player.unspent_attr += 2
+	game.player.add_attr_points("STR", 1)
+	game.player.add_attr_points("PhysRes", 1)
+	var stone := Items.make_reset_stone()
+	# Count-based consumption check: the elite above may have dropped
+	# its own stone, and Dictionary equality is by VALUE in Godot 4 —
+	# has(stone) would match the twin.
+	var stones_before: int = game.player.consumables.size()
+	game.player.consumables.append(stone)
+	var unspent_before: int = game.player.unspent_attr
+	game.player.use_consumable(stone)
+	if int(game.player.attr_points["STR"]) != 0 or int(game.player.attr_points["PhysRes"]) != 0:
+		return _fail("reset stone did not zero allocations")
+	if game.player.unspent_attr < unspent_before + 2:
+		return _fail("reset stone did not refund the points")
+	if game.player.consumables.size() != stones_before:
+		return _fail("reset stone was not consumed")
+
+	# Bags: bigger upgrades in place, smaller converts to gold.
+	game.player.bag = Items.make_bag("F")
+	if not game.player.acquire_bag(Items.make_bag("C")):
+		return _fail("bigger bag should upgrade in place")
+	if game.player.bag_capacity() != int(Items.BAG_SLOTS["C"]):
+		return _fail("bag capacity did not follow the upgrade")
+	var gold_before: int = game.player.gold
+	if game.player.acquire_bag(Items.make_bag("F")):
+		return _fail("smaller bag must never replace a bigger one")
+	if game.player.gold <= gold_before:
+		return _fail("spare bag should convert to gold")
+
+	# Gem stacking (round 7): same stat+level shares ONE bag slot.
+	var used_before: int = game.player.bag_used()
+	game.player.gem_bag.append(Items.make_gem("crit", 1))
+	var used_one: int = game.player.bag_used()
+	game.player.gem_bag.append(Items.make_gem("crit", 1))
+	if game.player.bag_used() != used_one:
+		return _fail("same-kind gems must stack into one bag slot")
+	if used_one > used_before + 1:
+		return _fail("a new gem stack should cost exactly one slot")
+	game.player._take_from_bag("crit", 1, 2)  # restore
+
+	# Small rooms: quiet room types play smaller than their grid cell.
+	var checked := 0
+	for i in game.zone_count:
+		if game.room_type(i) in ["social", "dead_end", "resonance", "merchant"]:
+			if game.play_rect(i).size.x >= float(Game.ROOM_W) \
+					or game.play_rect(i).size.y >= float(Game.ROOM_H):
+				return _fail("small room type did not shrink its play rect (room %d)" % i)
+			checked += 1
+		elif game.room_type(i) in ["combat", "boss"]:
+			if game.play_rect(i).size != Vector2(Game.ROOM_W, Game.ROOM_H):
+				return _fail("combat/boss room %d lost its full size" % i)
+	if checked == 0:
+		return _fail("no small-room types found in this chapter")
+
+	# Restore.
+	game.player.bag = keep_bag
+	game.player.gold = keep_gold
+	game.player.unspent_attr = keep_unspent
+	for k in keep_attr:
+		game.player.attr_points[k] = keep_attr[k]
+	game.player.consumables = keep_consumables
+	game.player.recalc()
+	print("ok: elites (no-xp loot pinata) + reset stone + bag tiers + small rooms")

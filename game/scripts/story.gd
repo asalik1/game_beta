@@ -362,29 +362,38 @@ const CONVOS := {
 # chance, countered by DEX), critres (shaves attacker crit chance).
 #
 # LEVELS & GROWTH: the listed hp/dmg are the monster's stats AT its
-# listed "level" (so Chapter 1 balance is unchanged). Away from that
-# level they scale by the per-monster GROWTH rates — a wolf gains
-# little per level while a boss gains a lot, so a high-level wolf
-# is dangerous but a same-level boss dwarfs it. Cap: level 100.
+# listed "level" — which is also its MINIMUM level (no downscaling;
+# see enemy_stats_at). Above it they scale by the per-monster GROWTH
+# rates — a wolf gains little per level while a boss gains a lot, so
+# a high-level wolf is dangerous but a same-level boss dwarfs it.
+# "attrs" is the monster's per-level attribute build (see
+# MONSTER_ATTR_SCALE); kinds without one get an archetype default.
+# Cap: level 100.
+#
+# XP (playtest round 5): trash xp is anchored so a FULL clear of ch1
+# tracks the room mob levels within ±1 and lands at each boss's level
+# (L5 Fangmaw / L8 Morwen / L11-12 Vargoth on the 30+22·lvl curve) —
+# the old values overshot by ~3 levels ("I'm L10 farming L6 mobs").
+# Retune trash + bosses TOGETHER against that budget, never one alone.
 const LEVEL_CAP := 100
 
 const ENEMIES := {
 	# Playtest retune (2026-07, round 2): mobs hit ~50% harder and melee
 	# kinds run faster — a naked, talentless run should NOT clear the
 	# chapter. Getting caught by a pack is supposed to sting.
-	"wolf":     {"name": "Blighted Wolf",   "sprite": "wolf",     "hp": 34.0,  "dmg": 12.0, "speed": 175.0, "xp": 12, "gold": 4,  "ranged": false, "scale": 3.0,
+	"wolf":     {"name": "Blighted Wolf",   "sprite": "wolf",     "hp": 34.0,  "dmg": 12.0, "speed": 175.0, "xp": 7,  "gold": 4,  "ranged": false, "scale": 3.0,
 		"physres": 5.0,  "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
 		"level": 2, "hp_g": 0.10, "dmg_g": 0.08},
-	"spider":   {"name": "Marsh Spider",    "sprite": "spider",   "hp": 28.0,  "dmg": 9.0,  "speed": 215.0, "xp": 14, "gold": 5,  "ranged": false, "scale": 3.0,
+	"spider":   {"name": "Marsh Spider",    "sprite": "spider",   "hp": 28.0,  "dmg": 9.0,  "speed": 215.0, "xp": 8,  "gold": 5,  "ranged": false, "scale": 3.0,
 		"physres": 0.0,  "magres": 5.0,  "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
 		"level": 2, "hp_g": 0.09, "dmg_g": 0.08},
-	"cultist":  {"name": "Blight Cultist",  "sprite": "cultist",  "hp": 40.0,  "dmg": 14.0, "speed": 90.0,  "xp": 20, "gold": 8,  "ranged": true,  "scale": 3.0,
+	"cultist":  {"name": "Blight Cultist",  "sprite": "cultist",  "hp": 40.0,  "dmg": 14.0, "speed": 90.0,  "xp": 11, "gold": 8,  "ranged": true,  "scale": 3.0,
 		"physres": 5.0,  "magres": 15.0, "eva": 0.0,  "critres": 0.0, "dmg_type": "magic",
 		"level": 4, "hp_g": 0.11, "dmg_g": 0.10},
-	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 20.0, "speed": 140.0, "xp": 24, "gold": 10, "ranged": false, "scale": 3.0,
+	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 20.0, "speed": 140.0, "xp": 13, "gold": 10, "ranged": false, "scale": 3.0,
 		"physres": 25.0, "magres": 5.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
 		"level": 7, "hp_g": 0.12, "dmg_g": 0.10},
-	"zombie":   {"name": "Risen Corpse",    "sprite": "zombie",   "hp": 45.0,  "dmg": 14.0, "speed": 115.0, "xp": 15, "gold": 6,  "ranged": false, "scale": 3.0,
+	"zombie":   {"name": "Risen Corpse",    "sprite": "zombie",   "hp": 45.0,  "dmg": 14.0, "speed": 115.0, "xp": 8,  "gold": 6,  "ranged": false, "scale": 3.0,
 		"physres": 12.0, "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.10, "dmg_g": 0.09},
 	# Bosses: strong base AND strong growth ("dragon-grade" scaling).
@@ -394,14 +403,17 @@ const ENEMIES := {
 	# With compounding growth, a boss 5 above you leaves ~2 mistakes,
 	# 10 above ~1. Dodge-everything god runs stay possible.
 	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 460.0,  "dmg": 30.0, "speed": 140.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
-		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "dmg_type": "phys",
-		"level": 4, "hp_g": 0.14, "dmg_g": 0.11, "boss": true},
+		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "crit": 0.05, "dmg_type": "phys",
+		"level": 4, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
+		"attrs": {"STR": 1.5, "AGI": 1.5}},
 	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 620.0,  "dmg": 26.0, "speed": 105.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5,
-		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "dmg_type": "magic",
-		"level": 7, "hp_g": 0.14, "dmg_g": 0.11, "boss": true},
+		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "crit": 0.05, "dmg_type": "magic",
+		"level": 7, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
+		"attrs": {"INT": 2.0, "VIT": 1.0}},
 	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 1000.0, "dmg": 50.0, "speed": 115.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5,
-		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "dmg_type": "phys",
-		"level": 10, "hp_g": 0.15, "dmg_g": 0.12, "boss": true},
+		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
+		"level": 10, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
+		"attrs": {"STR": 2.0, "VIT": 1.5}},
 }
 
 
@@ -412,25 +424,68 @@ const TTK_HP_MULT := 2.0
 const GOLD_MULT := 0.6
 
 
-## A monster's hp/dmg/xp/gold at an arbitrary level (clamped to the cap).
-## Growth COMPOUNDS per level (playtest round 4): at the listed level
-## nothing changes, but every level away multiplies — matching the
-## player's own compounding power curve. Level gaps need no special
-## combat rule: a +10 monster's raw stats ARE the wall (its codex
-## numbers stay honest), while at-level balance is untouched.
+# Monster attribute conversion — one table for all monsters (the
+# player's equivalent is Classes.ATTR_SCALE, per class). A kind's
+# "attrs" build is points invested PER LEVEL above its anchor, so
+# every substat climbs with level, not just hp/dmg.
+const MONSTER_ATTR_SCALE := {
+	"STR": {"physpen": 0.8, "critres": 0.2},
+	"AGI": {"dex": 1.0, "crit": 0.004, "eva": 0.0015},
+	"INT": {"magpen": 0.8, "magres": 0.5},
+	"VIT": {"physres": 0.8, "magres": 0.4, "critres": 0.3},
+}
+
+# Every substat enemy_stats_at scales and Enemy._setup consumes.
+const SCALED_SUBSTATS := ["physres", "magres", "eva", "critres", "crit",
+	"dex", "physpen", "magpen"]
+
+
+## The per-level attribute spread for kinds that don't author "attrs":
+## brutes push STR, skirmishers AGI, casters INT, everyone a bit of
+## VIT — and bosses invest at double the trash rate (they ARE the wall).
+static func monster_build(base: Dictionary) -> Dictionary:
+	if base.has("attrs"):
+		return base["attrs"]
+	var primary := "STR"
+	if str(base.get("dmg_type", "phys")) == "magic":
+		primary = "INT"
+	elif bool(base.get("ranged", false)):
+		primary = "AGI"
+	if bool(base.get("boss", false)):
+		return {primary: 2.0, "VIT": 1.0}
+	return {primary: 1.0, "VIT": 0.5}
+
+
+## A monster's FULL combat sheet at an arbitrary level.
+## NO DOWNSCALING (playtest round 6): the listed level is a MINIMUM —
+## spawn an endgame boss in chapter 1 and it arrives with its stats
+## as-is; spawn an early boss at endgame and it scales UP, staying a
+## (lesser) threat forever. hp/dmg growth COMPOUNDS per level (round
+## 4, matching the player's own compounding curve); every offensive/
+## defensive substat climbs linearly via the monster's attribute
+## build. At the listed level nothing changes, codex numbers stay
+## honest, and rewards stay LINEAR (no farm spiral).
 static func enemy_stats_at(kind: String, level: int) -> Dictionary:
 	load_content()
 	var base: Dictionary = ALL_ENEMIES[kind]
-	var lvl := clampi(level, 1, LEVEL_CAP)
+	var lvl := clampi(level, int(base["level"]), LEVEL_CAP)
 	var d := lvl - int(base["level"])
-	var hp_m := maxf(0.25, pow(1.0 + float(base["hp_g"]), d))
+	var hp_m := pow(1.0 + float(base["hp_g"]), d)
 	if not bool(base.get("boss", false)):
 		hp_m *= TTK_HP_MULT  # mobs only: boss HP pools were already long fights
-	var dmg_m := maxf(0.3, pow(1.0 + float(base["dmg_g"]), d))
-	var reward_m := maxf(0.3, 1.0 + d * 0.12)  # rewards stay LINEAR (no farm spiral)
-	return {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
+	var dmg_m := pow(1.0 + float(base["dmg_g"]), d)
+	var reward_m := 1.0 + d * 0.12  # rewards stay LINEAR (no farm spiral)
+	var out := {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
 		"xp": int(ceil(base["xp"] * reward_m)),
 		"gold": maxi(1, int(ceil(base["gold"] * reward_m * GOLD_MULT)))}
+	for stat in SCALED_SUBSTATS:
+		out[stat] = float(base.get(stat, 0.0))
+	var build := monster_build(base)
+	for attr in build:
+		var pts: float = float(build[attr]) * d
+		for stat in MONSTER_ATTR_SCALE[attr]:
+			out[stat] += MONSTER_ATTR_SCALE[attr][stat] * pts
+	return out
 
 # ------------------------------------------------------------------ rooms ---
 # Chapter 1 as a ZONE GRAPH (the vertical slice; see DESIGN.md).

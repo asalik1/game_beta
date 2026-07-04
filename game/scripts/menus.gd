@@ -9,6 +9,7 @@ var current := ""
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
 var chapter_replay := false       # chapter select opened from the pause menu
+var dev_boss_mode := 0            # dev panel boss spawn level: 0 story, 1 my Lv, 2 +10, 3 +20
 
 
 func _ready() -> void:
@@ -425,78 +426,113 @@ func open_inventory(tab := "gear") -> void:
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	hbox.add_child(right)
-	_lbl(right, "BACKPACK (%d/%d) — click an item to equip it" % [game.player.backpack.size(), Player.BACKPACK_MAX], 16, Color(0.95, 0.85, 0.5))
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	right.add_child(scroll)
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(list)
-	for item in game.player.backpack:
-		var it: Dictionary = item
-		var equip_cb := func() -> void:
-			game.player.equip(it)
-			open_inventory()  # refresh
-		var b := _btn(list, "%s  %s" % [Items.title(it), Items.describe(it)],
-			equip_cb, Items.GRADE_COLOR[it["grade"]], true, Art.icon_for(it))
-		b.clip_text = true
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.tooltip_text = Items.describe(it) + "\n\nEQUIP — diff:\n" + _diff_tip(it)
 
-	# ------------------------------------------------------------- gems ---
-	var gem_head := HBoxContainer.new()
-	gem_head.add_theme_constant_override("separation", 12)
-	right.add_child(gem_head)
-	var gh := _lbl(gem_head, "GEM BAG (%d) — click an EQUIPPED item on the left to socket them" % game.player.gem_bag.size(), 15, Color(0.95, 0.85, 0.5))
-	gh.custom_minimum_size = Vector2(420, 0)
-	if not game.player.gem_bag.is_empty():
+	# ------------------------------------------------------------- bag ---
+	# One WoW-style slot grid for EVERYTHING carried: gear, gems
+	# (stacked by kind for display; each gem still owns a slot) and
+	# consumables, plus dark squares for the free space. Capacity comes
+	# from the equipped bag; bigger bags drop from elites.
+	var p: Player = game.player
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 12)
+	right.add_child(head)
+	var bh := _lbl(head, "BAG — [%s] %s  (%d/%d)" % [p.bag["grade"], p.bag["name"],
+		p.bag_used(), p.bag_capacity()], 16, Items.GRADE_COLOR[p.bag["grade"]])
+	bh.custom_minimum_size = Vector2(360, 0)
+	if not p.gem_bag.is_empty():
 		var auto_cb := func() -> void:
 			var n: int = game.player.auto_synthesize()
 			game.spawn_text(game.player.global_position + Vector2(0, -60),
 				"%d GEM UPGRADES" % n if n > 0 else "NOTHING TO MERGE", Color(0.6, 0.9, 1.0))
 			open_inventory()
-		var ab := _btn(gem_head, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
+		var ab := _btn(head, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
-	if game.player.gem_bag.is_empty():
-		_lbl(right, "No loose gems. They drop from chests.", 12, Color(0.5, 0.5, 0.55))
-	else:
-		# Compact two-column grid in its own capped scroll area — a gem
-		# hoard scrolls here instead of crushing the backpack list above.
-		var groups := _gem_groups()
-		var keys := _sorted_gem_keys(groups)
-		var gscroll := ScrollContainer.new()
-		gscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		var gem_rows := ceili(keys.size() / 2.0)
-		gscroll.custom_minimum_size = Vector2(0, minf(34.0 * gem_rows + 6.0, 176.0))
-		right.add_child(gscroll)
-		var grid := GridContainer.new()
-		grid.columns = 2
-		grid.add_theme_constant_override("h_separation", 16)
-		grid.add_theme_constant_override("v_separation", 4)
-		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		gscroll.add_child(grid)
-		for key in keys:
-			var group: Dictionary = groups[key]
-			var g: Dictionary = group["gem"]
-			var count: int = group["count"]
-			var line := HBoxContainer.new()
-			line.add_theme_constant_override("separation", 6)
-			grid.add_child(line)
-			var gl := _lbl(line, "%s  x%d" % [Items.gem_title(g), count], 13, Items.gem_color(g))
-			gl.custom_minimum_size = Vector2(190, 0)
-			gl.autowrap_mode = TextServer.AUTOWRAP_OFF
-			gl.clip_text = true
-			gl.mouse_filter = Control.MOUSE_FILTER_STOP
-			gl.tooltip_text = "%s  x%d" % [Items.gem_title(g), count]
-			if count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL:
-				var synth_cb := func() -> void:
-					game.player.synthesize(g["stat"], g["lvl"])
-					open_inventory()
-				var sb := _btn(line, "⚒ 3→Lv%d" % (g["lvl"] + 1), synth_cb, Color(0.6, 0.9, 1.0))
-				sb.tooltip_text = "Synthesize three %s into one Lv%d" % [Items.gem_title(g), g["lvl"] + 1]
+	_lbl(right, "Gear: click to equip · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · bigger bags drop from ELITES", 12, Color(0.55, 0.55, 0.6))
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	right.add_child(scroll)
+	var grid := GridContainer.new()
+	grid.columns = 11
+	grid.add_theme_constant_override("h_separation", 4)
+	grid.add_theme_constant_override("v_separation", 4)
+	scroll.add_child(grid)
+	for item in p.backpack:
+		var it: Dictionary = item
+		_bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
+			"%s\n%s\n\nCLICK TO EQUIP — diff:\n%s" % [Items.title(it), Items.describe(it), _diff_tip(it)],
+			func() -> void:
+				game.player.equip(it)
+				open_inventory())
+	for c in p.consumables:
+		var cc: Dictionary = c
+		_bag_slot(grid, null, "⟲", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
+			"%s\n%s\n\nCLICK TO USE" % [str(cc["name"]), str(cc.get("desc", ""))],
+			func() -> void:
+				game.player.use_consumable(cc)
+				open_inventory())
+	var groups := _gem_groups()
+	for key in _sorted_gem_keys(groups):
+		var group: Dictionary = groups[key]
+		var g: Dictionary = group["gem"]
+		var count: int = group["count"]
+		var tip := "%s  x%d" % [Items.gem_title(g), count]
+		var gem_cb := func() -> void: pass
+		if count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL:
+			tip += "\n\nCLICK: synthesize three into one Lv%d" % (g["lvl"] + 1)
+			gem_cb = func() -> void:
+				game.player.synthesize(g["stat"], g["lvl"])
+				open_inventory()
+		else:
+			tip += "\n\nSocket it: click an EQUIPPED item on the left"
+		_bag_slot(grid, null, ("◆%d" % count) if count > 1 else "◆", Items.gem_color(g), tip, gem_cb)
+	for i in maxi(0, p.bag_capacity() - p.bag_used()):
+		_bag_empty(grid)
 	_hint(vbox, "ESC / I to close")
+
+
+## One square bag slot: an item icon or a colored glyph, colored border,
+## hover tooltip, click action.
+func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color,
+		tip: String, cb: Callable) -> Button:
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(48, 48)
+	if icon != null:
+		b.icon = icon
+		b.expand_icon = true
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	else:
+		b.text = glyph
+		b.add_theme_font_size_override("font_size", 17)
+	b.add_theme_color_override("font_color", color)
+	b.tooltip_text = tip
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.09, 0.09, 0.12, 0.92)
+	sb.border_color = Color(color, 0.9)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(4)
+	b.add_theme_stylebox_override("normal", sb)
+	var sbh: StyleBoxFlat = sb.duplicate()
+	sbh.bg_color = Color(0.17, 0.17, 0.23, 0.95)
+	b.add_theme_stylebox_override("hover", sbh)
+	b.add_theme_stylebox_override("pressed", sbh)
+	b.pressed.connect(cb)
+	grid.add_child(b)
+	return b
+
+
+## A dark square: one free bag slot.
+func _bag_empty(grid: GridContainer) -> void:
+	var pnl := Panel.new()
+	pnl.custom_minimum_size = Vector2(48, 48)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.06, 0.08, 0.7)
+	sb.border_color = Color(0.25, 0.25, 0.3, 0.6)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(4)
+	pnl.add_theme_stylebox_override("panel", sb)
+	grid.add_child(pnl)
 
 
 ## Gem-group keys ordered by stat name, then level descending —
@@ -569,6 +605,18 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	]
 	for r in rows3:
 		_stat_row(list, r[0], r[1], r[2])
+
+	# The shard's opinion of you — surfaced here after playtest round 6
+	# ("I can't even SEE this stat"): the number, its band, and what
+	# actually moves it.
+	_lbl(list, "SHARD", 16, Color(0.95, 0.85, 0.5))
+	var res_band := String(Story.res_band(p.resonance))
+	var res_word: String = {"steady": "Steady — the shard hums warm",
+		"tempted": "Tempted — the shard whispers"}.get(res_band, "Quiet — the shard is undecided")
+	var res_col: Color = {"steady": Color(0.6, 1.0, 0.6),
+		"tempted": Color(1.0, 0.6, 0.6)}.get(res_band, Color(0.85, 0.85, 0.9))
+	_stat_row(list, "Resonance", "%+d   (%s)" % [int(p.resonance), res_word],
+		"How the shard resonates with your CHOICES, from -100 (Temptation) to +100 (Virtue). Kindness, mercy and honest work raise it; cruelty, theft and grave-robbing lower it. The world reads it before you do: merchants price you 10% kinder when it's high and 10% warier when it's low, some dialogue options only open at certain bands, and NPCs react to what the shard says about you.", res_col)
 
 	# (T5) Faction standing — who in Vaelscar trusts you, and how much.
 	_lbl(list, "FACTIONS", 16, Color(0.95, 0.85, 0.5))
@@ -790,31 +838,44 @@ func open_skills(tab := "talents") -> void:
 	_hint(vbox, "ESC / T to close — themes change how your abilities behave")
 
 
-## Attribute allocation: +5 points per level, converted at CLASS
-## scaling ratios (your class page shows exactly what a point buys YOU).
+## Attribute allocation: +1 point per level. The four attributes
+## convert at CLASS scaling ratios; the substat rows convert 1:1 for
+## every class (combo is deliberately not purchasable).
 func _build_attributes_tab(vbox: VBoxContainer, p: Player) -> void:
-	_lbl(vbox, "Every level grants 5 attribute points. Conversion depends on your class — %s scales best with %s." % [Classes.CLASSES[p.cls]["name"], Classes.CLASSES[p.cls]["primary"]], 13, Color(0.6, 0.62, 0.68))
+	_lbl(vbox, "Every level grants 1 attribute point. Attributes convert by class — %s scales best with %s — or pour points straight into a substat." % [Classes.CLASSES[p.cls]["name"], Classes.CLASSES[p.cls]["primary"]], 13, Color(0.6, 0.62, 0.68))
 	_lbl(vbox, "Unspent: %d points" % p.unspent_attr, 18, Color(0.5, 1.0, 0.5) if p.unspent_attr > 0 else Color(0.6, 0.6, 0.65))
 	for attr in Classes.ATTR_NAMES:
 		var a: String = attr
 		var is_primary: bool = Classes.CLASSES[p.cls]["primary"] == a
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-		vbox.add_child(row)
-		var name_l := _lbl(row, "%s  %d%s" % [a, p.attr_points[a], "  ★" if is_primary else ""], 17,
-			Color(0.95, 0.85, 0.5) if is_primary else Color(0.85, 0.85, 0.9))
-		name_l.custom_minimum_size = Vector2(140, 0)
-		_btn(row, " +1 ", func() -> void:
-			game.player.add_attr_points(a, 1)
-			open_skills("attributes"), Color(0.5, 1.0, 0.5), p.unspent_attr > 0)
-		_btn(row, " +5 ", func() -> void:
-			game.player.add_attr_points(a, 5)
-			open_skills("attributes"), Color(0.5, 1.0, 0.5), p.unspent_attr > 0)
-		var desc := _lbl(row, Classes.attr_text(p.cls, a), 13, Color(0.68, 0.7, 0.78))
-		desc.custom_minimum_size = Vector2(620, 0)
+		_attr_row(vbox, p, a, "%s  %d%s" % [a, p.attr_points[a], "  ★" if is_primary else ""],
+			Color(0.95, 0.85, 0.5) if is_primary else Color(0.85, 0.85, 0.9),
+			Classes.attr_text(p.cls, a))
+	_lbl(vbox, "SUBSTATS", 15, Color(0.95, 0.85, 0.5))
+	for attr in Classes.SUBSTAT_NAMES:
+		var a: String = attr
+		_attr_row(vbox, p, a, "%s  %d" % [a, p.attr_points[a]],
+			Color(0.75, 0.8, 0.92), Classes.substat_text(a))
 	_lbl(vbox, "YOUR STATS", 16, Color(0.95, 0.85, 0.5))
 	_lbl(vbox, p.stat_sheet(), 13, Color(0.75, 0.78, 0.85))
 	_hint(vbox, "ESC / T to close")
+
+
+## One allocation row: name + points, +1/+5 spend buttons, description.
+func _attr_row(vbox: VBoxContainer, p: Player, a: String, label: String,
+		color: Color, desc_text: String) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	vbox.add_child(row)
+	var name_l := _lbl(row, label, 17, color)
+	name_l.custom_minimum_size = Vector2(140, 0)
+	_btn(row, " +1 ", func() -> void:
+		game.player.add_attr_points(a, 1)
+		open_skills("attributes"), Color(0.5, 1.0, 0.5), p.unspent_attr > 0)
+	_btn(row, " +5 ", func() -> void:
+		game.player.add_attr_points(a, 5)
+		open_skills("attributes"), Color(0.5, 1.0, 0.5), p.unspent_attr > 0)
+	var desc := _lbl(row, desc_text, 13, Color(0.68, 0.7, 0.78))
+	desc.custom_minimum_size = Vector2(620, 0)
 
 
 ## Dedicated variant chooser: shows the base ability and every theme
@@ -1451,9 +1512,7 @@ func open_dev() -> void:
 
 	# ------------------------------------------------------- character ---
 	_lbl(list, "CHARACTER", 16, Color(0.95, 0.85, 0.5))
-	var row1 := HBoxContainer.new()
-	row1.add_theme_constant_override("separation", 8)
-	list.add_child(row1)
+	var row1 := _flow(list)
 	_btn(row1, ("■ God mode ON" if game.dev_god else "□ God mode off"), func() -> void:
 		game.dev_god = not game.dev_god
 		open_dev(), Color(0.5, 1.0, 0.5) if game.dev_god else Color(1, 1, 1))
@@ -1467,6 +1526,12 @@ func open_dev() -> void:
 	_btn(row1, "+500 gold", func() -> void:
 		game.player.gold += 500
 		open_dev())
+	_btn(row1, "+5 attr pts", func() -> void:
+		game.player.unspent_attr += 5
+		open_dev())
+	_btn(row1, "+5 skill pts", func() -> void:
+		game.player.skill_points += 5
+		open_dev())
 	_btn(row1, "Max potions", func() -> void:
 		game.player.potions = 5
 		open_dev())
@@ -1476,27 +1541,29 @@ func open_dev() -> void:
 		for key in game.player.cds:
 			game.player.cds[key] = 0.0
 		open_dev())
-	var row2 := HBoxContainer.new()
-	row2.add_theme_constant_override("separation", 8)
-	list.add_child(row2)
+	_btn(row1, "Die (test death)", func() -> void:
+		game.player.hp = 0.0
+		game.player.dead = true
+		game.on_player_died()
+		close(), Color(1, 0.5, 0.5))
+	# Class swap re-gears: the weapon takes the class's signature shape,
+	# S pieces become the class legendaries (grade/+level/gems carry).
+	var row2 := _flow(list)
 	for id in Classes.CLASSES:
 		var cid: String = id
-		_btn(row2, "Class: " + Classes.CLASSES[id]["name"], func() -> void:
+		var cls_active: bool = game.player.cls == cid
+		_btn(row2, ("● " if cls_active else "") + "Class: " + Classes.CLASSES[id]["name"], func() -> void:
 			game.player.set_class(cid)
-			game.player._update_weapon_visual()
-			open_dev(), Color(0.6, 0.9, 1.0))
+			_dev_regear_for_class()
+			open_dev(), Color(0.5, 1.0, 0.5) if cls_active else Color(0.6, 0.9, 1.0))
 
 	# ------------------------------------------------------------ items ---
 	_lbl(list, "ITEMS & GEMS", 16, Color(0.95, 0.85, 0.5))
-	var row3 := HBoxContainer.new()
-	row3.add_theme_constant_override("separation", 8)
-	list.add_child(row3)
+	var row3 := _flow(list)
 	for grade in ["C", "B", "A", "S"]:
 		var g: String = grade
-		_btn(row3, "Give %s item" % g, func() -> void:
-			var rng := RandomNumberGenerator.new()
-			rng.randomize()
-			game.player.add_item(Items.roll_item_of(Items.SLOTS[rng.randi_range(0, 3)], g, rng, game.player.cls))
+		_btn(row3, "Equip full %s set" % g, func() -> void:
+			_dev_equip_set(g)
 			open_dev(), Items.GRADE_COLOR[g])
 	_btn(row3, "Give 5 gems", func() -> void:
 		var rng := RandomNumberGenerator.new()
@@ -1505,25 +1572,25 @@ func open_dev() -> void:
 			game.player.gem_bag.append(Items.random_gem(rng, 1))
 		game.player.gem_bag.append(Items.random_gem(rng, 3))
 		open_dev())
+	_btn(row3, "Give reset stone", func() -> void:
+		game.player.add_consumable(Items.make_reset_stone())
+		open_dev(), Color(0.6, 0.9, 1.0))
+	_btn(row3, "Bag +1 tier", func() -> void:
+		var idx: int = Items.GRADES.find(String(game.player.bag["grade"]))
+		if idx < Items.GRADES.size() - 1:
+			game.player.acquire_bag(Items.make_bag(Items.GRADES[idx + 1]))
+		open_dev(), Color(0.95, 0.85, 0.5))
 
 	# ------------------------------------------------------------ world ---
 	_lbl(list, "WORLD (rooms of this chapter's graph)", 16, Color(0.95, 0.85, 0.5))
-	var row4: HBoxContainer = null
-	var rb := 0
+	var row4 := _flow(list)
 	for zi in game.zone_count:
-		if rb % 8 == 0:
-			row4 = HBoxContainer.new()
-			row4.add_theme_constant_override("separation", 8)
-			list.add_child(row4)
-		rb += 1
 		var z: int = zi
 		_btn(row4, "%d %s" % [z, game.zones[z]["name"]], func() -> void:
 			game.player.global_position = game.room_center(z)
 			game._enter_room(z)
 			close())
-	var row4b := HBoxContainer.new()
-	row4b.add_theme_constant_override("separation", 8)
-	list.add_child(row4b)
+	var row4b := _flow(list)
 	_btn(row4b, "Clear room monsters", func() -> void:
 		for node in get_tree().get_nodes_in_group("enemies"):
 			var e := node as Enemy
@@ -1535,15 +1602,31 @@ func open_dev() -> void:
 			game.visited[zi2] = true
 			game.door_seen[zi2] = true
 		open_map())
-	var row5 := HBoxContainer.new()
-	row5.add_theme_constant_override("separation", 8)
-	list.add_child(row5)
+	_btn(row4b, "Spawn elite (my Lv+1)", func() -> void:
+		var e := Enemy.make(game, "wolf",
+			game.player.global_position + Vector2(260, 0), game.player.level + 1)
+		e.promote_elite()
+		game.add_enemy(e)
+		close(), Color(1.0, 0.8, 0.4))
+	# Boss spawn level: story anchor, or pinned to your level (+10/+20
+	# probes the no-downscale walls without hand-leveling first).
+	var lrow := _flow(list)
+	var lvl_lbl := _lbl(lrow, "Spawn bosses at:", 14)
+	lvl_lbl.custom_minimum_size = Vector2(130, 0)
+	var modes := ["story Lv", "my Lv", "my Lv +10", "my Lv +20"]
+	for i in modes.size():
+		var mi: int = i
+		_btn(lrow, ("● " if dev_boss_mode == mi else "") + modes[mi], func() -> void:
+			dev_boss_mode = mi
+			open_dev(), Color(0.5, 1.0, 0.5) if dev_boss_mode == mi else Color(1, 1, 1))
+	var row5 := _flow(list)
 	for kind in BOSS_KINDS:
 		var k: String = kind
 		_btn(row5, "Spawn " + k, func() -> void:
 			# Spawns STACK — brawl-test up to 5 at once. The bar follows
 			# your target; boss_x2..boss_x5 tracks play when installed.
-			var b: Boss = Boss.make_boss(game, k, game.player.global_position + Vector2(320, 0))
+			var b: Boss = Boss.make_boss(game, k,
+				game.player.global_position + Vector2(320, 0), _dev_boss_level())
 			game.bosses.append(b)
 			game.current_boss = b
 			game.add_child(b)
@@ -1590,20 +1673,75 @@ func open_dev() -> void:
 
 	# --------------------------------------------------------- terrains ---
 	_lbl(list, "TERRAIN (applies to the room you're standing in)", 16, Color(0.95, 0.85, 0.5))
-	var trow: HBoxContainer = null
-	var count := 0
+	var trow := _flow(list)
 	for tid in Terrains.DATA:
-		if count % 5 == 0:
-			trow = HBoxContainer.new()
-			trow.add_theme_constant_override("separation", 8)
-			list.add_child(trow)
-		count += 1
 		var t: String = tid
 		var active: bool = game.terrain_by_zone[game.cur_room] == t
 		_btn(trow, ("● " if active else "") + Terrains.DATA[t]["name"], func() -> void:
 			game.apply_terrain(game.cur_room, t)
 			close(), Color(0.5, 1.0, 0.5) if active else Color(1, 1, 1))
 	_hint(vbox, "ESC / F1 to close")
+
+
+## A wrapping button row: the dev panel used fixed HBox rows, which
+## overflowed off the right edge (long room names) — a flow container
+## wraps to the next line instead.
+func _flow(parent: Control) -> HFlowContainer:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 8)
+	row.add_theme_constant_override("v_separation", 4)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(row)
+	return row
+
+
+## Dev: the level bosses spawn at, per the "Spawn bosses at" selector.
+## -1 = the kind's story anchor (make_boss default); below-anchor asks
+## clamp UP — a monster's listed level is its minimum.
+func _dev_boss_level() -> int:
+	match dev_boss_mode:
+		1: return game.player.level
+		2: return game.player.level + 10
+		3: return game.player.level + 20
+	return -1
+
+
+## Dev: equip a fresh full set of `grade` gear in every slot — the
+## weapon in the class's signature shape, S pieces as the class
+## legendaries. Replaced items vanish; their gems return to the bag.
+func _dev_equip_set(grade: String) -> void:
+	var p: Player = game.player
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for slot in Items.SLOTS:
+		var noun: String = Items.class_weapon_noun(p.cls) if slot == "weapon" else ""
+		if p.equipment.has(slot):
+			p.strip_gems(p.equipment[slot])
+		p.equipment[slot] = Items.roll_item_of(slot, grade, rng, p.cls, noun)
+	p.recalc()
+	p._update_weapon_visual()
+	game.sfx("equip")
+
+
+## Dev: after a class swap, re-roll equipped gear into the new class's
+## version — the weapon always (signature shape), other slots only at
+## S grade (class legendaries); non-S armor is class-agnostic anyway.
+## Grade, +level and socketed gems carry over.
+func _dev_regear_for_class() -> void:
+	var p: Player = game.player
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for slot in p.equipment.keys():
+		var old: Dictionary = p.equipment[slot]
+		if slot != "weapon" and str(old.get("grade", "")) != "S":
+			continue
+		var noun: String = Items.class_weapon_noun(p.cls) if slot == "weapon" else ""
+		var item := Items.roll_item_of(slot, str(old["grade"]), rng, p.cls, noun)
+		item["plus"] = old.get("plus", 0)
+		item["gems"] = old.get("gems", [])
+		p.equipment[slot] = item
+	p.recalc()
+	p._update_weapon_visual()
 
 
 # ---------------------------------------------------------------- keybinds ---

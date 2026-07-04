@@ -5,6 +5,8 @@ class_name Projectile extends Area2D
 
 var vel := Vector2.ZERO
 var dmg := 10.0                # used by hostile (enemy) projectiles
+var hostile_type := "magic"    # hostile: damage type (set from the shooter)
+var source_enemy: Node = null  # hostile: shooter, for crit/pen/dex resolution
 var friendly := true
 var life := 2.5
 var pierce := false            # sniper arrows fly through enemies
@@ -154,7 +156,8 @@ func _on_body_entered(body: Node) -> void:
 			queue_free()
 	elif not friendly and body is Player:
 		game.burst(global_position, glow_color, 5)
-		body.take_damage(dmg, "magic")
+		var shooter: Node = source_enemy if is_instance_valid(source_enemy) else null
+		body.take_damage(dmg, hostile_type, shooter)
 		queue_free()
 	elif body is StaticBody2D:
 		game.burst(global_position, Color(glow_color, 0.5), 3)

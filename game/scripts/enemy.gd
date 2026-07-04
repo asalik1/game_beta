@@ -14,13 +14,19 @@ var speed := 150.0
 var xp_value := 12
 var gold_value := 4
 var ranged := false
-# Defensive stats (see Stats for the curves).
+# Combat substats (see Stats for the curves). ALL of them scale with
+# level via the monster's attribute build (Story.enemy_stats_at).
 var physres := 0.0
 var magres := 0.0
 var eva := 0.0
 var critres := 0.0
+var crit := 0.0     # chance this enemy's hits crit (x1.5, vs player critres)
+var dex := 0.0      # shaves the player's evasion before the dodge roll
+var physpen := 0.0  # eats player resistance (excess -> bonus damage)
+var magpen := 0.0
 var dmg_type := "phys"  # what this enemy's attacks count as
 
+var elite := false     # miniboss variant: bigger, meaner, loot pinata, NO xp
 var aggro_range := 330.0
 var attack_cd := 0.0
 var windup := 0.0     # yellow-flash wind-up before a melee bite lands
@@ -61,8 +67,11 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	var stats: Dictionary = _stats_for(enemy_kind)
 	display_name = stats["name"]
 	# Stats scale with the monster's LEVEL and its per-kind growth rates.
-	level = at_level if at_level > 0 else int(stats.get("level", 1))
-	var scaled := _stats_at(enemy_kind, level)
+	# The listed level is a MINIMUM (no downscaling): asking for less
+	# clamps UP — the monster arrives at its anchor, stats as-is.
+	var want: int = at_level if at_level > 0 else int(stats.get("level", 1))
+	var scaled := _stats_at(enemy_kind, want)
+	level = scaled["level"]
 	max_hp = scaled["hp"]
 	hp = max_hp
 	dmg = scaled["dmg"]
@@ -70,10 +79,14 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	xp_value = scaled["xp"]
 	gold_value = scaled["gold"]
 	ranged = stats["ranged"]
-	physres = stats.get("physres", 0.0)
-	magres = stats.get("magres", 0.0)
-	eva = stats.get("eva", 0.0)
-	critres = stats.get("critres", 0.0)
+	physres = scaled["physres"]
+	magres = scaled["magres"]
+	eva = scaled["eva"]
+	critres = scaled["critres"]
+	crit = scaled["crit"]
+	dex = scaled["dex"]
+	physpen = scaled["physpen"]
+	magpen = scaled["magpen"]
 	dmg_type = stats.get("dmg_type", "phys")
 	global_position = pos
 	home = pos
@@ -168,7 +181,7 @@ func _physics_process(delta: float) -> void:
 			sprite.modulate = Color(1, 1, 1)
 			var player: Player = game.player
 			if player and not player.dead and global_position.distance_to(player.global_position) < 64.0:
-				player.take_damage(dmg, dmg_type)
+				player.take_damage(dmg, dmg_type, self)
 		velocity = knock
 		move_and_slide()
 		return
@@ -213,7 +226,9 @@ func _think(_delta: float) -> Vector2:
 			game.sfx("bolt")
 			# Playtest round 2: bolts fly noticeably faster — walking
 			# lazily out of their path stops being free.
-			Projectile.spawn(game, global_position, to_player.normalized() * 420.0, dmg, false, "bolt")
+			var p := Projectile.spawn(game, global_position, to_player.normalized() * 420.0, dmg, false, "bolt")
+			p.hostile_type = dmg_type
+			p.source_enemy = self
 		if dist < 200.0:
 			return -to_player.normalized() * speed * 0.8
 		elif dist > 300.0:
@@ -234,6 +249,37 @@ func _drift_home() -> Vector2:
 	if to_home.length() > 30.0:
 		return to_home.normalized() * speed * 0.5
 	return Vector2.ZERO
+
+
+## Promote this monster to an ELITE — the between-boss miniboss beat
+## (playtest round 6). Bigger and meaner than its kind, pays NO XP
+## (the chapter XP total stays fixed) but its death rolls the good-loot
+## table: guaranteed gem, guaranteed chest, reset stones and bags
+## (game.on_enemy_died). Later chapters may promote several at once.
+func promote_elite() -> void:
+	if elite:
+		return
+	elite = true
+	display_name = "Elite " + display_name
+	max_hp *= 4.0
+	hp = max_hp
+	dmg *= 1.5
+	physres += 10.0
+	magres += 10.0
+	critres += 3.0
+	xp_value = 0
+	gold_value *= 3
+	aggro_range *= 1.5
+	sprite.scale *= 1.3
+	# A gold ring underfoot marks the rank at a glance (body tints reset
+	# on damage flashes, so a child sprite is the durable marker).
+	var ring := Sprite2D.new()
+	ring.texture = Art.tex("ring")
+	ring.modulate = Color(1.0, 0.8, 0.3, 0.75)
+	ring.position = Vector2(0, 14)
+	ring.scale = Vector2(1.5, 0.85)
+	ring.z_index = -1
+	add_child(ring)
 
 
 # ------------------------------------------------------------- statuses ---
