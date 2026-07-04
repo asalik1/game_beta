@@ -1,0 +1,2 @@
+﻿Terrain music tracks by Juhani Junkala ('5 Action Chiptunes' and 'Chiptune Adventures', OpenGameArt.org), CC0 public domain.
+Drop any .ogg/.wav here named after a track (magma, graveyard, village, boss_vargoth...) to override it. Delete a file to fall back to the built-in composed track.

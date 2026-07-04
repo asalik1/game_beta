@@ -108,6 +108,23 @@ func _ready() -> void:
 
 	# Background music: looping procedural chiptune, one per zone + boss.
 	music_tracks = Music.build_all()
+	# Music overrides: assets/music/<track>.ogg (or .wav) replaces the
+	# composed track of the same name, looped — same idea as sprites/sfx.
+	var mus_dir := DirAccess.open("res://assets/music")
+	if mus_dir:
+		for file in mus_dir.get_files():
+			var full := ProjectSettings.globalize_path("res://assets/music/" + file)
+			if file.ends_with(".ogg"):
+				var ogg := AudioStreamOggVorbis.load_from_file(full)
+				if ogg:
+					ogg.loop = true
+					music_tracks[file.get_basename()] = ogg
+			elif file.ends_with(".wav"):
+				var wav := Sfx.load_wav(full)
+				if wav:
+					wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+					wav.loop_end = wav.data.size() / (4 if wav.stereo else 2)
+					music_tracks[file.get_basename()] = wav
 	music_player = AudioStreamPlayer.new()
 	music_player.volume_db = -16.0
 	add_child(music_player)
