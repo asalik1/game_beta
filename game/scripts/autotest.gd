@@ -140,11 +140,21 @@ func _run() -> void:
 	var fang_now := Story.enemy_stats_at("fangmaw", 4)
 	if absf(fang_now["hp"] - Story.ALL_ENEMIES["fangmaw"]["hp"]) > 0.01:
 		return _fail("boss HP should not get the mob TTK multiplier")
-	# Level-gap rules: parity fights untouched, punching up collapses.
-	if absf(Stats.gap_dealt_mult(10, 12) - 1.0) > 0.001 or absf(Stats.gap_taken_mult(12, 10) - 1.0) > 0.001:
-		return _fail("level-gap grace window broken (±2 should be a fair fight)")
-	if Stats.gap_dealt_mult(4, 14) > 0.11 or Stats.gap_taken_mult(14, 4) < 5.0:
-		return _fail("level-gap cliffs too soft (a Lv4 must not solo a Lv14 boss)")
+	# Act loot ceilings: a gold chest under a C cap never pays above C.
+	var caprng := RandomNumberGenerator.new()
+	caprng.seed = 7
+	for i in 40:
+		var g := Items.roll_grade("gold", caprng, "C")
+		if Items.GRADES.find(g) > Items.GRADES.find("C"):
+			return _fail("loot cap leaked an %s from a gold chest" % g)
+	# Level scaling is exponential: at the listed level nothing changes,
+	# but a monster 10 levels up is a WALL of raw stats (no hidden rule).
+	var v_at := Story.enemy_stats_at("vargoth", 10)
+	var v_up := Story.enemy_stats_at("vargoth", 20)
+	if absf(v_at["dmg"] - Story.ALL_ENEMIES["vargoth"]["dmg"]) > 0.01:
+		return _fail("at-level stats must be untouched by the growth curve")
+	if v_up["dmg"] < v_at["dmg"] * 2.5 or v_up["hp"] < v_at["hp"] * 3.0:
+		return _fail("level growth is not compounding (a +10 boss should be a wall)")
 	print("ok: stat curves + true damage + TTK retune")
 
 	var main_scene: PackedScene = load("res://scenes/main.tscn")
@@ -182,6 +192,14 @@ func _run() -> void:
 	# 1b. The room graph itself: shape, reciprocity, reachability, and
 	# the DESIGN.md structure rules for Chapter 1.
 	await _test_room_graph()
+
+	# Completed chapters pay no XP on replay (anti max-level farming).
+	game.set_flag("completed_ch1", true)
+	var xp_gate_before: int = game.player.xp
+	game.player.gain_xp(50)
+	if game.player.xp != xp_gate_before:
+		return _fail("completed-chapter replay still paid XP")
+	game.flags.erase("completed_ch1")
 
 	# 2. Talk to the elder (simulated E keypress) -> the village gate.
 	# (Room 2 is the spine's second stop wherever the seeded walk put it.)

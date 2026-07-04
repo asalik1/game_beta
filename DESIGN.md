@@ -318,13 +318,18 @@ The 13-minute clear isn't only a content-volume problem:
 
 - Rooms grow to 2–3 screens of walkable space, more mob packs per room.
 - Time-to-kill at level parity roughly doubles (mob HP tune, not damage).
-- **Level-gap rules (playtest round 3).** ±2 levels is a fair fight; beyond
-  that every level compounds — your damage collapses (×0.75/level, floor 5%)
-  and theirs multiplies (×1.25/level, cap 8×). A +10 boss one-shots a squishy
-  and shrugs off their spells; a perfect-dodge god run stays possible,
-  face-tanking does not. (Found in dev mode: a naked Lv4 mage soloed a Lv14
-  boss. Never again.) Telegraphed ground attacks stay un-scaled — they are
-  the dodgeable, skill-checked part of every fight.
+- **Exponential monster growth — no level-gap combat rule (round 4).**
+  Monster HP/damage growth COMPOUNDS per level (`base × (1+g)^Δ`) instead
+  of adding, matching the player's own compounding power curve. At the
+  authored level nothing changes, so parity balance is untouched — but a
+  monster 10 levels up is a wall of honest, codex-visible stats: ~1 mistake
+  and you're done, ~2 mistakes at +5. No hidden combat multipliers, no
+  exemptions — mobs, bosses, and every attack type follow one rule: the
+  stat sheet. Boss base damage was retuned up alongside (bosses were
+  authored gentle: a contact hit now costs a squishy ~20-25% of at-level
+  HP; dodge-everything god runs stay possible). Rewards still scale
+  LINEARLY with level — no farm spiral. (Found in dev mode: a naked Lv4
+  mage soloed a Lv14 boss. Never again.)
 - The XP curve assumes side rooms — skipping them leaves you under-leveled.
 - Gold/potion scarcity pass so merchants and haggling matter.
 - **The chapter XP total is FIXED (playtest round 4).** Kill XP comes only

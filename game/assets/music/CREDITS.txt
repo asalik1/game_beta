@@ -4,6 +4,9 @@ Drop a .ogg, .mp3 or .wav file here named after a track to replace it,
 looped automatically. Track names: village, darkwood, marsh, keep,
 magma, icefield, graveyard, desert, rainstorm, holy, crystalline,
 boss_fangmaw, boss_morwen, boss_vargoth.
+Multi-boss brawls (2-5 live bosses) look for: boss_x2, boss_x3,
+boss_x4, boss_x5 — optional; the first boss's own theme plays when a
+tier's file is missing.
 Delete a file to fall back to the built-in composed version.
 
 Current tracks (all from OpenGameArt.org):
@@ -21,6 +24,22 @@ Current tracks (all from OpenGameArt.org):
                   https://opengameart.org/content/cathedral-0
 - crystalline.mp3 "Crystal Cave (song18)" by cynicmusic (pixelsphere.org) — CC0
                   https://opengameart.org/content/crystal-cave-song18
+
+Multi-boss tiers (escalating intensity):
+- boss_x2.wav     "Epic Boss Battle" by Juhani Junkala (SubspaceAudio) — CC0
+                  https://opengameart.org/content/boss-battle-music
+- boss_x3.wav     "Boss Battle #2 [Symphonic Metal]" by nene — CC0
+                  https://opengameart.org/content/boss-battle-2-symphonic-metal
+                  (zip's two files are MISLABELED: the one named
+                  "opening" is the loop — that's the file installed here)
+- boss_x4.wav     "Boss Battle #9 [Metal]" by nene — CC0
+                  https://opengameart.org/content/boss-battle-9-metal
+                  (boss_battle_9_metal_loop.wav from the pack)
+- boss_x5.wav     "Colossal Boss Battle Theme" by Matthew Pablo — CC-BY 3.0
+                  https://opengameart.org/content/colossal-boss-battle-theme
+                  ("Blackmoor Colossus Loop.wav" from the zip — the
+                  looped WAV, kept as WAV for a gapless loop point;
+                  attribution REQUIRED: Matthew Pablo, matthewpablo.com)
 
 CC-BY tracks require the above attribution to ship with the game.
 village / darkwood / marsh / keep and the three boss themes are

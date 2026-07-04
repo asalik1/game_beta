@@ -2219,7 +2219,7 @@ func drink_potion() -> void:
 	game.spawn_text(global_position + Vector2(0, -40), "+HP", Color(0.4, 1.0, 0.4))
 
 
-func take_damage(amount: float, dmg_type := "phys", atk_level := 0) -> void:
+func take_damage(amount: float, dmg_type := "phys") -> void:
 	if dead or hurt_cd > 0.0:
 		return
 	if randf() < Stats.eva_curve(eva):
@@ -2227,10 +2227,6 @@ func take_damage(amount: float, dmg_type := "phys", atk_level := 0) -> void:
 		game.sfx("blink")
 		return
 	hurt_cd = 0.6
-	# Level-gap rule: hits from enemies far above you land brutally
-	# harder — at +10 a boss one-shots a squishy (Stats.gap_taken_mult).
-	if atk_level > 0:
-		amount *= Stats.gap_taken_mult(atk_level, level)
 	var res := physres if dmg_type == "phys" else magres
 	if theme_guard_time > 0.0:
 		res += theme_guard_amt

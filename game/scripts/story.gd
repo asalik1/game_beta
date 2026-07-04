@@ -389,13 +389,17 @@ const ENEMIES := {
 		"level": 4, "hp_g": 0.10, "dmg_g": 0.09},
 	# Bosses: strong base AND strong growth ("dragon-grade" scaling).
 	# "boss": true exempts them from the mob TTK retune (enemy_stats_at).
-	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 460.0,  "dmg": 18.0, "speed": 140.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
+	# Boss damage retune (round 4): bosses were authored gentle — a
+	# contact hit should cost a squishy ~20-25% of their at-level HP.
+	# With compounding growth, a boss 5 above you leaves ~2 mistakes,
+	# 10 above ~1. Dodge-everything god runs stay possible.
+	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 460.0,  "dmg": 30.0, "speed": 140.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
 		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.14, "dmg_g": 0.11, "boss": true},
-	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 620.0,  "dmg": 15.0, "speed": 105.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5,
+	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 620.0,  "dmg": 26.0, "speed": 105.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5,
 		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "dmg_type": "magic",
 		"level": 7, "hp_g": 0.14, "dmg_g": 0.11, "boss": true},
-	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 1000.0, "dmg": 22.0, "speed": 115.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5,
+	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 1000.0, "dmg": 50.0, "speed": 115.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5,
 		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "dmg_type": "phys",
 		"level": 10, "hp_g": 0.15, "dmg_g": 0.12, "boss": true},
 }
@@ -409,16 +413,21 @@ const GOLD_MULT := 0.6
 
 
 ## A monster's hp/dmg/xp/gold at an arbitrary level (clamped to the cap).
+## Growth COMPOUNDS per level (playtest round 4): at the listed level
+## nothing changes, but every level away multiplies — matching the
+## player's own compounding power curve. Level gaps need no special
+## combat rule: a +10 monster's raw stats ARE the wall (its codex
+## numbers stay honest), while at-level balance is untouched.
 static func enemy_stats_at(kind: String, level: int) -> Dictionary:
 	load_content()
 	var base: Dictionary = ALL_ENEMIES[kind]
 	var lvl := clampi(level, 1, LEVEL_CAP)
 	var d := lvl - int(base["level"])
-	var hp_m := maxf(0.25, 1.0 + d * float(base["hp_g"]))
+	var hp_m := maxf(0.25, pow(1.0 + float(base["hp_g"]), d))
 	if not bool(base.get("boss", false)):
 		hp_m *= TTK_HP_MULT  # mobs only: boss HP pools were already long fights
-	var dmg_m := maxf(0.3, 1.0 + d * float(base["dmg_g"]))
-	var reward_m := maxf(0.3, 1.0 + d * 0.12)
+	var dmg_m := maxf(0.3, pow(1.0 + float(base["dmg_g"]), d))
+	var reward_m := maxf(0.3, 1.0 + d * 0.12)  # rewards stay LINEAR (no farm spiral)
 	return {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
 		"xp": int(ceil(base["xp"] * reward_m)),
 		"gold": maxi(1, int(ceil(base["gold"] * reward_m * GOLD_MULT)))}

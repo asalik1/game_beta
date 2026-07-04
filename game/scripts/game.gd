@@ -76,7 +76,8 @@ var gates := {}                  # edge key "a_b" -> gate Node2D (locked edges o
 var zone_alive := {}             # room index -> monsters still alive
 var boss_spawned := {}
 var boss_done := {}
-var current_boss: Boss = null
+var bosses: Array = []           # every LIVE boss (endgame: up to 5 at once)
+var current_boss: Boss = null    # the DISPLAYED boss: your target, else bosses[0]
 var shop_stock := {}             # room index -> Array of items for sale
 
 var shake_amt := 0.0
@@ -653,6 +654,7 @@ func switch_chapter(id: String, force := false) -> void:
 	visited.clear()
 	cleared.clear()
 	door_seen.clear()
+	bosses.clear()
 	current_boss = null
 	elder = null
 	barrier_active = false
@@ -952,7 +954,20 @@ func _enter_room(i: int) -> void:
 	tween.tween_property(ambient, "color", terrain["tint"], 1.0)
 	_setup_ambient_fx(terrain_by_zone[i])
 	terrain_event_t = randf_range(2.5, 5.0)
-	if not is_instance_valid(current_boss):
+	var room_boss: Boss = null
+	var rogue_boss := false
+	for b in _live_bosses():
+		var live_b: Boss = b
+		if live_b.zone_idx == i:
+			room_boss = live_b
+		elif live_b.zone_idx < 0:
+			rogue_boss = true
+	if room_boss != null:
+		# Walking back into a live arena: the fight's bar + music resume.
+		current_boss = room_boss
+		set_music(_boss_music())
+		hud.show_boss_bar(room_boss.display_name)
+	elif not rogue_boss:
 		set_music(terrain.get("music", "village"))
 	if play_started and first_visit:
 		hud.flash_title(zones[i]["name"])
@@ -1429,19 +1444,28 @@ func _spawn_boss(zi: int, kind: String) -> void:
 		int(zones[zi].get("boss_level", -1)))
 	current_boss.story_boss = true  # its death advances the chapter
 	current_boss.zone_idx = zi
+	bosses.append(current_boss)
 	world.add_child(current_boss)
 	current_boss.roar()
 	hud.show_boss_bar(Story.ALL_ENEMIES[kind]["name"])
-	set_music("boss_" + kind)
+	set_music(_boss_music())
 
 
-func on_boss_died(kind: String) -> void:
+func on_boss_died(kind: String, dead: Boss = null) -> void:
 	boss_done[kind] = true
-	var boss_pos := current_boss.global_position
-	var mzi: int = clampi(current_boss.zone_idx, 0, zone_count - 1)
-	current_boss = null
-	hud.hide_boss_bar()
-	set_music(Terrains.get_terrain(terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]).get("music", "village"))
+	var src: Boss = dead if is_instance_valid(dead) else current_boss
+	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
+	var mzi: int = clampi(src.zone_idx if is_instance_valid(src) else cur_room, 0, zone_count - 1)
+	bosses.erase(src)
+	if _live_bosses().is_empty():
+		current_boss = null
+		hud.hide_boss_bar()
+		set_music(Terrains.get_terrain(terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]).get("music", "village"))
+	else:
+		if current_boss == src:
+			current_boss = _live_bosses()[0]
+			hud.show_boss_bar(current_boss.display_name)
+		set_music(_boss_music())  # the brawl thins out: x3 -> x2 -> solo theme
 	player.hp = player.max_hp
 	player.mp = player.max_mp
 	player.potions = maxi(player.potions, 2)
@@ -1595,8 +1619,19 @@ func on_player_died() -> void:
 	var death_room := cur_room
 	await get_tree().create_timer(2.0).timeout
 
-	if is_instance_valid(current_boss) and not current_boss.dying:
-		current_boss.reset_fight()
+	for b in _live_bosses().duplicate():
+		var live_b: Boss = b
+		if live_b.zone_idx < 0:
+			# Rogue bosses (dev-panel spawns — no home arena) don't
+			# survive your death: they'd chase and attack across rooms.
+			bosses.erase(live_b)
+			live_b.remove_from_group("enemies")
+			live_b.queue_free()
+			if current_boss == live_b:
+				current_boss = null
+		else:
+			live_b.reset_fight()  # walks home and heals; the arena waits
+	if is_instance_valid(current_boss):
 		hud.update_boss_bar(1.0)
 	if not cleared.get(death_room, false):
 		_reset_room_enemies(death_room)
@@ -1619,19 +1654,47 @@ func on_player_died() -> void:
 	player.global_position = room_center(last_safe_room)
 	player.revive()
 	_enter_room(last_safe_room)
+	# No boss serenades your respawn: unless the boss is HERE (it never
+	# is — you respawn in a safe room), the bar hides and the room's own
+	# music takes over. The arena boss keeps waiting where it lives.
+	if not is_instance_valid(current_boss) or current_boss.zone_idx != cur_room:
+		hud.hide_boss_bar()
+		set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.dim(0.0)
 	state = ST_PLAYING
 
 
 # ================================================================== helpers
 
-## Is the current room HOT — ANY living pack or a live boss? Hot rooms
-## seal their doors: the room must be PURGED before you move on
-## (playtest round 2 — aggro stays per-pack, but no running past
-## content; the exits only open once the last pack falls).
+## Every boss still standing (pruned of dead/freed ones).
+func _live_bosses() -> Array:
+	for i in range(bosses.size() - 1, -1, -1):
+		if not is_instance_valid(bosses[i]) or bosses[i].dying:
+			bosses.remove_at(i)
+	return bosses
+
+
+## The fight's music. Multi-boss brawls use the boss_x2..boss_x5
+## override tracks when present (drop them in assets/music/); until
+## then, the first boss's own theme carries the fight.
+func _boss_music() -> String:
+	var live := _live_bosses()
+	if live.is_empty():
+		return Terrains.get_terrain(terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]).get("music", "village")
+	var multi := "boss_x%d" % mini(live.size(), 5)
+	if live.size() > 1 and music_tracks.has(multi):
+		return multi
+	return "boss_" + String(live[0].kind)
+
+
+## Is the current room HOT — ANY living pack, or a live boss that is in
+## this room (or a homeless dev spawn)? Hot rooms seal their doors: the
+## room must be PURGED before you move on (playtest round 2 — aggro
+## stays per-pack, but no running past content).
 func _room_hot(i: int) -> bool:
-	if is_instance_valid(current_boss) and not current_boss.dying:
-		return true
+	for b in _live_bosses():
+		if b.zone_idx == i or b.zone_idx < 0:
+			return true
 	return zone_alive.get(i, 0) > 0
 
 
@@ -2060,9 +2123,6 @@ func _process(delta: float) -> void:
 
 	hud.update_stats(player)
 
-	if is_instance_valid(current_boss) and not current_boss.dying:
-		hud.update_boss_bar(current_boss.hp / current_boss.max_hp)
-
 	# Auto-aim reticle over the current target (orange = Tab-locked).
 	var target := player.auto_aim()
 	if target and not player.dead:
@@ -2076,6 +2136,20 @@ func _process(delta: float) -> void:
 			Color(1, 0.35, 0.3) if diff >= 3 else (Color(1, 0.85, 0.4) if diff >= 0 else Color(0.6, 1, 0.6)))
 	else:
 		reticle.visible = false
+
+	# The boss bar follows your TARGET: the locked/aimed boss if any,
+	# else the first live one (endgame brawls run up to 5 at once).
+	var live_bosses := _live_bosses()
+	if not live_bosses.is_empty():
+		var shown: Boss = player.locked_target as Boss
+		if shown == null or not is_instance_valid(shown) or shown.dying:
+			shown = target as Boss  # the auto-aim pick from above
+		if shown == null or not live_bosses.has(shown):
+			shown = live_bosses[0] if current_boss == null or not live_bosses.has(current_boss) else current_boss
+		if shown != current_boss:
+			current_boss = shown
+			hud.show_boss_bar(shown.display_name)
+		hud.update_boss_bar(current_boss.hp / current_boss.max_hp)
 
 	# Room transitions: walking through a doorway moves you next door.
 	# (Aggro is per-pack now — entering a room wakes nobody by itself.)

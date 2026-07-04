@@ -1541,16 +1541,18 @@ func open_dev() -> void:
 	for kind in BOSS_KINDS:
 		var k: String = kind
 		_btn(row5, "Spawn " + k, func() -> void:
-			if is_instance_valid(game.current_boss):
-				game.current_boss.queue_free()
-			game.current_boss = Boss.make_boss(game, k, game.player.global_position + Vector2(320, 0))
-			game.add_child(game.current_boss)
+			# Spawns STACK — brawl-test up to 5 at once. The bar follows
+			# your target; boss_x2..boss_x5 tracks play when installed.
+			var b: Boss = Boss.make_boss(game, k, game.player.global_position + Vector2(320, 0))
+			game.bosses.append(b)
+			game.current_boss = b
+			game.add_child(b)
 			game.hud.show_boss_bar(Story.ALL_ENEMIES[k]["name"])
-			game.set_music("boss_" + k)
+			game.set_music(game._boss_music())
 			close(), Color(1, 0.6, 0.6))
-	_btn(row5, "Kill boss", func() -> void:
-		if is_instance_valid(game.current_boss):
-			game.current_boss.take_damage(9999999.0)
+	_btn(row5, "Kill bosses", func() -> void:
+		for b in game._live_bosses().duplicate():
+			b.take_damage(9999999.0)
 		open_dev())
 
 	# ------------------------------------------------------------ audio ---

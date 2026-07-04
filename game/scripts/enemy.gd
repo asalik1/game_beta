@@ -168,7 +168,7 @@ func _physics_process(delta: float) -> void:
 			sprite.modulate = Color(1, 1, 1)
 			var player: Player = game.player
 			if player and not player.dead and global_position.distance_to(player.global_position) < 64.0:
-				player.take_damage(dmg, dmg_type, level)
+				player.take_damage(dmg, dmg_type)
 		velocity = knock
 		move_and_slide()
 		return
@@ -213,7 +213,7 @@ func _think(_delta: float) -> Vector2:
 			game.sfx("bolt")
 			# Playtest round 2: bolts fly noticeably faster — walking
 			# lazily out of their path stops being free.
-			Projectile.spawn(game, global_position, to_player.normalized() * 420.0, dmg, false, "bolt", level)
+			Projectile.spawn(game, global_position, to_player.normalized() * 420.0, dmg, false, "bolt")
 		if dist < 200.0:
 			return -to_player.normalized() * speed * 0.8
 		elif dist > 300.0:
@@ -260,10 +260,6 @@ func apply_slow(mult: float, dur: float) -> void:
 func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, silent := false) -> void:
 	if dying:
 		return
-	# Level-gap rule: monsters far above the player shrug off most of
-	# the damage (Stats.gap_dealt_mult — punching up has teeth).
-	if game and is_instance_valid(game.player):
-		amount *= Stats.gap_dealt_mult(game.player.level, level)
 	# Wounding one pack member wakes its whole pack (ranged openers too).
 	if zone_idx >= 0 and not force_aggro:
 		game.wake_pack(zone_idx, pack_id)

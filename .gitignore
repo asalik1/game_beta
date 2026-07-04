@@ -8,3 +8,11 @@ tools/
 build/
 *.exe
 *.apk
+
+# Claude session scratch (never commit)
+claude_test_run.bat
+claude_test.log
+claude_stage.bat
+claude_stage.log
+.claude/
+.claude_tmp_copy/
