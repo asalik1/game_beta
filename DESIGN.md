@@ -17,6 +17,9 @@ This document is the north star; not all of it ships at once.
 - **Resonance ships whole.** It is the hook. Nothing about the trim touches it.
 - All four existing classes get their openings retrofitted from this document.
 
+**Phase 1 shipped 2026-07-04.** The next arc is the content build-out — see
+**Content Architecture — The Road to 100 Hours** below.
+
 **Phase 2:** co-op, then the Hollow Throne raid.
 
 **Expansion (deferred by design, not cut):**
@@ -157,6 +160,173 @@ reactivating.
 single player, you assemble the pieces through NPC shard-bearer questlines. In
 co-op, four players bring their own classes and Resonance scores into the Hollow
 Throne raid together.
+
+---
+
+## Content Architecture — The Road to 100 Hours (agreed 2026-07-04)
+
+Context: the first full human playthroughs clocked Chapter 1 at ~5 minutes and
+Chapter 2 at ~8. The target is **100 hours of play across the three acts**. This
+section is how we get there without pretending we can hand-author 100 hours.
+
+### The hour budget
+
+No solo-built game hand-authors 100 hours. The games that deliver it ship a
+15–30 hour campaign and let **systems** own the rest (Hades: ~25h to credits,
+hundreds via runs; Diablo/PoE: ~25h campaigns, thousands via rifts and loot).
+Emberfall's budget:
+
+| Source | Hours | What it costs us |
+|---|---|---|
+| Authored campaign (3 acts × 3–4 chapters) | 15–20 | The expensive part — bespoke zones, bosses, cutscenes |
+| Difficulty tiers / NG+ | ×2–3 on everything above | Nearly free — monster level scaling to 100 already exists |
+| Endless mode ("the Waking Depths") | open-ended | Cheap once the zone graph + room palette exist |
+| Build & loot chase (gems to 10, S-gear per class, 6 classes × 3 themes × Resonance paths) | the glue | Already built — needs difficulty tiers to give it a *reason* |
+
+### Acts vs chapters
+
+- **Acts** are the narrative superstructure — the three-act journey above.
+- **Chapters** are the playable unit we already built (own world, bosses,
+  save/replay support): **3–4 chapters per act**, each 45–75 minutes first run.
+- Existing Chapters 1 and 2 re-slot as Act 1's openers after the pacing
+  retrofit. Nothing is thrown away.
+
+### Mono-terrain chapters
+
+Early chapters use **one terrain family each**; later chapters blend. Why:
+
+- Each terrain's *mechanics* get room to escalate across a chapter (magma rain
+  intensifying zone by zone) instead of appearing once and vanishing.
+- The fiction supports it — the Waking corrupts one region at a time. Terrain
+  blending in Act 3 is itself a story beat: the corruption is merging.
+- Cheaper to author depth in one mood than breadth across six.
+
+**Mono-family, not mono-look.** A graveyard chapter drifts misty fields →
+zombie barrows → crypt stone → boss cathedral: one family, varied palettes,
+patches, and events. Literal repetition of one tile for 6 zones reads as
+monotony, not identity.
+
+### The zone graph — the map grows in two dimensions
+
+Zones stop being a single west→east corridor. Each room declares exits
+(**N/S/E/W**) and chapters lay rooms out on a grid: branches, loops, optional
+wings, and dead ends. Design intents:
+
+- **Exploration time is content.** Walking down a wrong turn that pays off with
+  a mood, an NPC, or nothing at all is pacing texture, not waste. The map is
+  allowed to spend the player's steps — that's what makes it a place.
+- **Chapter size: minimum 20 rooms, maximum 30.** The floor guarantees a
+  chapter can't be a corridor sprint again; the ceiling keeps a mono-terrain
+  family from overstaying its welcome and keeps authoring per chapter bounded.
+- **The map (M key)** replaces the linear zone counter: a fog-of-war grid that
+  reveals **only rooms the player has entered**, with a marker for the current
+  room. Unexplored exits show as stubs off visited rooms, so the player can see
+  *that* there's somewhere left to go without being shown *what's there*.
+  Visited-room state saves with the character.
+- The critical path stays readable; side rooms are where the optional density
+  lives. Roughly 40–50% of rooms should be off the boss path.
+
+### The room-type palette
+
+Every room declares a type; combat is only one of them:
+
+| Type | What happens |
+|---|---|
+| **Combat** | Mob packs (the default) |
+| **Boss** | Arena, story-gated |
+| **Social** | Wanderer NPC encounters — traders, pilgrims, refugees, deserters. Pool-based, rolled per character, so replays meet different people |
+| **Resonance** | A shrine or stranger offering a genuine band-shifting choice — more chances to move Resonance *between* story beats, where it's currently starved |
+| **Elite** | A single named elite with 1–2 affixes roaming the room; better loot |
+| **Event** | The terrain's hazard amplified — a magma-rain gauntlet, a lightning field |
+| **Dead end** | Scenery, maybe a lore prop or small cache — sometimes **nothing**. Deliberate |
+| **Secret** | Rare; hidden exit or flag-gated; the best caches |
+| **Merchant camp** | Safe pocket; ties into the post-boss wanderer roll |
+
+Rooms that roll their contents (social, elite, dead-end caches) are seeded per
+character — the replay matrix (class × theme × Resonance) gets spatial variety
+for free.
+
+### UX rules the bigger maps force us to decide
+
+Consequences of 20–30-room graphs that need answers *before* coding, not after:
+
+- **Backtracking & fast travel.** Dead ends and wings mean walking back.
+  Walking through a *live* room is content; re-walking a cleared one is not.
+  Rule: from the map screen, travel instantly to any **visited safe room**
+  (hub, merchant camp, boss arena after the kill). Combat rooms are never
+  travel targets — the space between safe rooms stays real.
+- **Room-state persistence.** Cleared combat rooms stay cleared for the
+  chapter run (and through save/load). Elites, socials, and caches do not
+  respawn once resolved. Chapter replay re-rolls the seeded rooms — replays
+  meet a fresh map, not a memorized one.
+- **Death & checkpoints.** Death returns you to the last visited safe room
+  with gear/gold/XP intact; the room you died in resets. No corpse runs, no
+  loot loss — the penalty is the walk and the retry, which the bigger maps
+  now make meaningful on their own.
+- **Autosave on every room transition.** A 45–75 minute chapter cannot
+  assume one sitting. Room granularity means quitting anywhere costs at most
+  one room of progress.
+- **Objective clarity.** Nonlinear maps must not mean lost players: the quest
+  line stays on screen, and once the player has *seen* the boss door, the map
+  marks it. Before that, unexplored-exit stubs are the only hint — finding
+  the door is gameplay, remembering where it was is not.
+- **Audio fatigue.** Mono-terrain chapters mean one music mood for up to an
+  hour. Each terrain family needs at least an **explore layer and a
+  combat/boss layer** (or deliberate silence between), not one looped track.
+
+### Elites & affixes
+
+A small affix pool (Frenzied, Bulwark, Vampiric, Stormtouched, Splitting…)
+applied to existing monsters with a scale/tint and a loot bump. One system,
+variety in every combat room, and it double-feeds difficulty tiers and the
+endless mode.
+
+### Difficulty tiers / NG+
+
+Chapter replay already keeps the character; tiers reuse the existing level
+scaling: **Normal / Nightmare (+20 levels) / Torment (+40)**, with loot-grade
+floors rising per tier. This is the cheapest multiplier in the plan — it
+triples the value of every zone already built.
+
+### Endless mode — the Waking Depths
+
+A procedural chapter: rooms chained from the terrain families with rising
+monster levels and affix density, checkpoints every N rooms, depth counter as
+the bragging stat. Built entirely from the zone graph + room palette + elites —
+which is why those come first. This is where hours 30–100 live.
+
+### Pacing retrofit (applies to Chapters 1–2 before anything new)
+
+The 13-minute clear isn't only a content-volume problem:
+
+- Rooms grow to 2–3 screens of walkable space, more mob packs per room.
+- Time-to-kill at level parity roughly doubles (mob HP tune, not damage).
+- The XP curve assumes side rooms — skipping them leaves you under-leveled.
+- Gold/potion scarcity pass so merchants and haggling matter.
+- Aggro becomes per-pack, not per-room — rooms are too big for all-at-once.
+- **Combat readability** (standing playtest feedback): cooldowns and resource
+  costs get visible numbers on screen, and melee classes get risk
+  compensation through their class passives. Longer fights make both
+  non-negotiable — you can't ask players to eat hits for 2× longer without
+  telling them what their kit is doing.
+
+### Build order
+
+1. Zone graph + room-type palette + pacing retrofit of Chapters 1–2
+2. Elites/affixes + difficulty tiers (instant replay hours on existing content)
+3. Act 1's remaining chapters (mono-terrain, new structure)
+4. The Waking Depths
+5. Acts 2–3 chapters, blending terrains as the Waking merges
+
+Step 1 is the **vertical slice**: retrofit Chapter 1 alone first, human-playtest
+it, and lock the numbers (room size, TTK, density, map feel) before touching
+Chapter 2 or authoring anything new. Every tuning mistake found there is one we
+don't replicate across eleven more chapters.
+
+**Engine note:** a 30-room chapter should not build all 30 rooms at load. Rooms
+build lazily on first entry and only the occupied room (plus, later, its
+neighbors) simulates. This also keeps the door open for procedural room
+generation in the Waking Depths, where the "chapter" has no fixed size at all.
 
 ---
 
