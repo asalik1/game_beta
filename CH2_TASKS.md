@@ -155,7 +155,31 @@ beam spokes, shockwave slams, ARMOR-SHED phase 50%, overdrive 25%).
 
 **BOARD COMPLETE (2026-07-04): T0–T7 all done — Chapter 2 ships.**
 
----
+## 🔍 Playtest logic audit — agent-B (2026-07-04, post-completion)
+Cross-task review for paladin-behind-the-table-class bugs; all fixes
+verified by a live CH2 harness + the full suite (green).
+- **FIXED — briefing gate**: Maren's two question paths (`m_warn` /
+  `m_dark`) sent you east but never set `ch2_briefed` — gate stayed
+  shut. Both choices now brief you.
+- **FIXED — bury-then-join dead-end**: burying the courier locked
+  `relic_recovered` forever; a bearer who joins Cinderborn afterwards
+  can now dig up their own cairn (`k_revisit`, −6 res, `grave_robbed`).
+- **FIXED — arcs never completed**: neither recruiter acknowledged
+  `blight_scouted` / `relic_recovered`. Added status-desk nodes
+  (`a_status` / `c_status`): report/deliver ONCE (+12 standing,
+  `accord_arc1_done` / `cinder_arc1_done`), remembered after.
+- **FIXED — Sera's mill had no payoff**: `mill_seen` / `mill_told`
+  variants close the blue-door loop (+2 res, once).
+- **FIXED — Aldric's reveal repeated verbatim**: "what I never told
+  Maren" retires after telling (`req_not_flag: aldric_truth`).
+- **FIXED — miscast visuals**: The Mill was a villager sprite → new
+  procedural `mill` sprite (grey walls, blue door, wheel); the caged
+  scout stood free → `beastkin_caged.png` (bars composited over the
+  sprite); the "grey-wrapped" pilgrim wore villager brown → now wears
+  the Choir's habit (`choirmother` sprite — visual rhyme with her boss).
+- Noted, not changed: the fallen courier uses the same `bones` art as
+  the zone's scattered decor — findable via prompt, but easy to walk
+  past. Revisit if playtests complain.
 
 **Dependency graph:** T4 anytime · T0 first → then T1/T2/T3/T5/T6 in any
 order/parallel → T7 last.

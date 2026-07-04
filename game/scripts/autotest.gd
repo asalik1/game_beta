@@ -913,6 +913,7 @@ func _run() -> void:
 	await _test_ch2_act1()
 	await _test_ch2_act2()
 	await _test_ch2_resonance()
+	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 
@@ -1316,6 +1317,51 @@ func _test_ch2_resonance() -> void:
 		await _skip_dialogue()
 	game.player.resonance = res_keep
 	print("ok: T7 resonance surfacing (haggle bands, NPCs read the shard)")
+
+
+## System menu: pause opens/resumes, audio settings apply, and a chapter
+## replay wipes the story while keeping the character.
+func _test_pause_menu() -> void:
+	game.menus.open_pause()
+	await _frames(2)
+	if not (game.menus.is_open() and game.menus.current == "pause"):
+		return _fail("pause menu did not open")
+	if not get_tree().paused:
+		return _fail("pause menu did not pause the game")
+	game.menus.close()
+	await _frames(1)
+	if get_tree().paused:
+		return _fail("closing the pause menu did not resume")
+	# Audio settings apply to the live players.
+	var music_keep: float = game.settings["music"]
+	var sfx_keep: float = game.settings["sfx"]
+	game.settings["music"] = 0.5
+	game.settings["sfx"] = 0.0
+	game.apply_audio_settings()
+	if absf(game.music_player.volume_db - (game.music_gain_db + linear_to_db(0.5))) > 0.5:
+		return _fail("music volume not applied (%.1f dB)" % game.music_player.volume_db)
+	if game.sound_pool[0].volume_db > -80.0:
+		return _fail("sfx mute not applied")
+	game.settings["music"] = music_keep
+	game.settings["sfx"] = sfx_keep
+	game.apply_audio_settings()
+	# Chapter replay: story state resets, the character does not.
+	var lvl: int = game.player.level
+	var res: float = game.player.resonance
+	game.set_flag("blight_scouted")
+	game.replay_chapter("ch2")
+	await _frames(5)
+	if game.get_flag("blight_scouted", false):
+		return _fail("chapter replay kept story flags")
+	if not game.get_flag("chose_virtue", false):
+		return _fail("chapter replay wiped the character's opening history")
+	if game.player.level != lvl or game.player.resonance != res:
+		return _fail("chapter replay touched the character build")
+	if game.quest_key != "ch2_start" or game.zone_count != 10:
+		return _fail("chapter replay world wrong (quest=%s zones=%d)" % [game.quest_key, game.zone_count])
+	if game.player.faction_standing["accord"] != 0 or game.get_flag("joined_accord", false):
+		return _fail("chapter replay should reset faction commitments")
+	print("ok: pause menu (pause/resume, audio settings, chapter replay)")
 
 
 ## (T4) Chapter 2 bosses: spawn, signature move, enrage threshold, and a

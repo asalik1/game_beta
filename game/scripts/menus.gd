@@ -8,6 +8,7 @@ var root: Control = null          # the currently open panel (null = closed)
 var current := ""
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
+var chapter_replay := false       # chapter select opened from the pause menu
 
 
 func _ready() -> void:
@@ -25,9 +26,11 @@ func close() -> void:
 		root = null
 	listening_action = ""
 	# Boot menus unpause only once the game actually starts.
-	if not (current in ["class_select", "title", "chapter_select"]):
+	if not (current in ["class_select", "title"]) \
+			and not (current == "chapter_select" and not chapter_replay):
 		get_tree().paused = false
 	current = ""
+	game.talk_cd = maxf(game.talk_cd, 0.35)  # debounce the reopen hotkeys
 	if game.play_started:
 		game.autosave()  # menus are where gear/talents/purchases change
 
@@ -164,28 +167,133 @@ func open_title() -> void:
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(spacer)
 	_btn(vbox, "  ⚔  New Game  ", func() -> void: open_chapter_select(), Color(0.95, 0.85, 0.5))
+	_btn(vbox, "  🔊  Settings  ", func() -> void: open_settings("title"), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "Continue a saved hero, or forge a new one")
+
+
+# ---------------------------------------------------------------- pause ---
+
+## The system menu (ESC in-game): everything a session needs that isn't
+## combat — resume, options, chapter control, and the exits.
+func open_pause() -> void:
+	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 600)
+	current = "pause"
+	var zi := clampi(game.last_zone, 0, game.zone_count - 1)
+	_lbl(vbox, "%s, Level %d — %s" % [Classes.CLASSES[game.player.cls]["name"],
+		game.player.level, game.zones[zi]["name"]], 14, Color(0.7, 0.72, 0.78))
+	_btn(vbox, "  ▶  Resume", func() -> void: close(), Color(0.6, 1.0, 0.6))
+	_btn(vbox, "  🔊  Settings (sound)", func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
+	_btn(vbox, "  ⌨  Keybinds", func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
+	var restart := func() -> void:
+		open_confirm("Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(game.chapter_id)["name"],
+			func() -> void: game.replay_chapter(game.chapter_id))
+	_btn(vbox, "  ↺  Restart chapter  (keeps your character)", restart, Color(1.0, 0.8, 0.5))
+	_btn(vbox, "  ⚑  Chapter select  (replay any chapter)", func() -> void: open_chapter_select(true), Color(1.0, 0.8, 0.5))
+	var to_title := func() -> void:
+		open_confirm("Exit to the title screen? Your progress is saved.",
+			func() -> void: game.exit_to_title())
+	_btn(vbox, "  ⇦  Exit to title  (switch character)", to_title, Color(1.0, 0.65, 0.55))
+	var quit_game := func() -> void:
+		game.autosave()
+		get_tree().quit()
+	_btn(vbox, "  ✕  Save and quit game", quit_game, Color(1.0, 0.55, 0.5))
+	_hint(vbox, "ESC to resume")
+
+
+## A single yes/cancel gate in front of anything destructive.
+func open_confirm(msg: String, on_yes: Callable) -> void:
+	var vbox := _open("Are you sure?", 680, 320)
+	current = "confirm"
+	var l := _lbl(vbox, msg, 15, Color(0.9, 0.9, 0.9))
+	l.custom_minimum_size = Vector2(600, 0)
+	var yes := func() -> void:
+		close()
+		on_yes.call()
+	_btn(vbox, "  Yes — do it  ", yes, Color(1.0, 0.6, 0.5))
+	_btn(vbox, "  Cancel  ", func() -> void: open_pause(), Color(0.8, 0.85, 0.9))
+	_hint(vbox, "ESC to cancel")
+
+
+## Sound + display options. Everything applies live and persists to
+## user://settings.json. Reachable from the pause menu AND the title.
+var settings_return := "pause"
+func open_settings(from := "pause") -> void:
+	settings_return = from
+	var vbox := _open("Settings", 700, 440)
+	current = "settings"
+	for spec in [["Music volume", "music"], ["Sound effects", "sfx"]]:
+		var key: String = spec[1]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 14)
+		vbox.add_child(row)
+		var name_l := _lbl(row, spec[0], 15)
+		name_l.custom_minimum_size = Vector2(180, 0)
+		var slider := HSlider.new()
+		slider.min_value = 0.0
+		slider.max_value = 1.0
+		slider.step = 0.05
+		slider.value = float(game.settings[key])
+		slider.custom_minimum_size = Vector2(320, 24)
+		row.add_child(slider)
+		var pct := _lbl(row, "%d%%" % int(float(game.settings[key]) * 100), 15, Color(0.95, 0.85, 0.5))
+		pct.custom_minimum_size = Vector2(70, 0)
+		slider.value_changed.connect(func(v: float) -> void:
+			game.settings[key] = v
+			game.apply_audio_settings()
+			game.save_settings()
+			pct.text = "%d%%" % int(v * 100)
+			if key == "sfx":
+				game.sfx("coin"))  # audible preview at the new level
+	_lbl(vbox, "Slide to 0 to mute. Changes save instantly.", 12, Color(0.55, 0.58, 0.66))
+	var fs_btn := _btn(vbox, "  Fullscreen: %s  " % ("ON" if game.settings["fullscreen"] else "OFF"),
+		func() -> void:
+			game.settings["fullscreen"] = not game.settings["fullscreen"]
+			game.apply_display_settings()
+			game.save_settings()
+			open_settings(settings_return), Color(0.9, 0.9, 0.95))
+	fs_btn.tooltip_text = "Borderless fullscreen on your current monitor."
+	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
+	_hint(vbox, "ESC to go back")
+
+
+func _settings_back() -> void:
+	if settings_return == "title":
+		open_title()
+	else:
+		open_pause()
 
 
 # ---------------------------------------------------------- chapter select ---
 
-## New game, step one: WHICH story? The world is rebuilt from the
-## chosen chapter's data before the class is picked.
-func open_chapter_select() -> void:
+## New game step one — or, from the pause menu (replay=true), jump an
+## EXISTING character into any chapter from its beginning.
+func open_chapter_select(replay := false) -> void:
+	chapter_replay = replay
 	var vbox := _open("Choose your chapter", 900, 540)
 	current = "chapter_select"
-	_lbl(vbox, "Each chapter is its own tale with its own hero. Your saved characters keep their chapters.", 14, Color(0.75, 0.75, 0.75))
+	if replay:
+		_lbl(vbox, "Replay any chapter with this character. Story progress there resets; your build, gear and Resonance travel with you.", 14, Color(0.75, 0.75, 0.75))
+	else:
+		_lbl(vbox, "Each chapter is its own tale with its own hero. Your saved characters keep their chapters.", 14, Color(0.75, 0.75, 0.75))
 	var idx := 1
 	for chid in Story.CHAPTER_LIST:
 		var chapter: Dictionary = Story.CHAPTER_LIST[chid]
 		var pick_id: String = chid
-		var b := _btn(vbox, "  %d.  %s  " % [idx, chapter["name"]], func() -> void:
-			pick_chapter(pick_id), Color(0.95, 0.85, 0.5))
+		var pick := func() -> void:
+			if chapter_replay:
+				if root:
+					root.queue_free()
+					root = null
+				current = ""
+				game.replay_chapter(pick_id)
+			else:
+				pick_chapter(pick_id)
+		var b := _btn(vbox, "  %d.  %s  " % [idx, chapter["name"]], pick, Color(0.95, 0.85, 0.5))
 		b.add_theme_font_size_override("font_size", 18)
 		var sub := _lbl(vbox, "        " + String(chapter.get("sub", "")), 13, Color(0.65, 0.68, 0.78))
 		sub.custom_minimum_size = Vector2(800, 0)
 		idx += 1
-	_hint(vbox, "Press the chapter's number, or click")
+	_hint(vbox, "Press the chapter's number, or click" + ("  ·  ESC to go back" if replay else ""))
 
 
 func pick_chapter(id: String) -> void:
@@ -1359,7 +1467,15 @@ func _input(event: InputEvent) -> void:
 			var chids: Array = Story.CHAPTER_LIST.keys()
 			var chnum: int = event.keycode - KEY_1
 			if chnum >= 0 and chnum < chids.size():
-				pick_chapter(chids[chnum])
+				if chapter_replay:
+					var chid: String = chids[chnum]
+					if root:
+						root.queue_free()
+						root = null
+					current = ""
+					game.replay_chapter(chid)
+				else:
+					pick_chapter(chids[chnum])
 				get_viewport().set_input_as_handled()
 				return
 		if current == "class_select":
@@ -1369,7 +1485,8 @@ func _input(event: InputEvent) -> void:
 				pick_class(ids[num])
 				get_viewport().set_input_as_handled()
 			return  # can't ESC out of class select
-		if current in ["title", "class_select", "chapter_select"]:
+		if current in ["title", "class_select"] \
+				or (current == "chapter_select" and not chapter_replay):
 			return  # boot menus: no escaping into a paused void
 		if event.keycode == KEY_ESCAPE \
 				or (current == "inventory" and event.keycode == game.binds["inventory"]) \
@@ -1380,6 +1497,11 @@ func _input(event: InputEvent) -> void:
 				open_skills()  # back to the tree, not out of the menu
 			elif current == "item_panel":
 				open_inventory()  # back to the bag
+			elif current == "settings":
+				_settings_back()  # back to wherever settings was opened from
+			elif current == "confirm" \
+					or (current == "chapter_select" and chapter_replay):
+				open_pause()  # back to the system menu, not out of it
 			else:
 				close()
 			get_viewport().set_input_as_handled()

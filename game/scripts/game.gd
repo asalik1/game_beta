@@ -80,6 +80,8 @@ var gust_t := 0.0
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
 var no_saves := false                 # autotest: never touch real save files
+var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false}  # user://settings.json
+var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)
 var merchant_zones: Array = []        # zones with a merchant present (saved)
 var cutscene: Cutscene = null         # active opening cinematic (if any)
@@ -154,6 +156,9 @@ func _ready() -> void:
 	music_player = AudioStreamPlayer.new()
 	music_player.volume_db = -16.0
 	add_child(music_player)
+	load_settings()
+	apply_audio_settings()
+	apply_display_settings()
 
 	ambient = CanvasModulate.new()
 	ambient.color = Terrains.get_terrain(terrain_by_zone[0])["tint"]
@@ -401,6 +406,95 @@ func _convo_variant(node: Dictionary) -> Dictionary:
 	return {}
 
 
+# ==================================================================== options
+
+## Volume settings, persisted separately from saves (they're per-player,
+## not per-character).
+func load_settings() -> void:
+	if not FileAccess.file_exists("user://settings.json"):
+		return
+	var f := FileAccess.open("user://settings.json", FileAccess.READ)
+	if f == null:
+		return
+	var data = JSON.parse_string(f.get_as_text())
+	if data is Dictionary:
+		for key in settings:
+			if not data.has(key):
+				continue
+			if settings[key] is bool:
+				settings[key] = bool(data[key])
+			else:
+				settings[key] = clampf(float(data[key]), 0.0, 1.0)
+
+
+func save_settings() -> void:
+	var f := FileAccess.open("user://settings.json", FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(settings))
+
+
+func _vol_db(linear: float) -> float:
+	return -80.0 if linear <= 0.01 else linear_to_db(linear)
+
+
+func apply_audio_settings() -> void:
+	if music_player:
+		music_player.volume_db = music_gain_db + _vol_db(float(settings["music"]))
+	for sp in sound_pool:
+		sp.volume_db = -8.0 + _vol_db(float(settings["sfx"]))
+
+
+func apply_display_settings() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	DisplayServer.window_set_mode(
+		DisplayServer.WINDOW_MODE_FULLSCREEN if settings["fullscreen"]
+		else DisplayServer.WINDOW_MODE_WINDOWED)
+
+
+## Replay a chapter from its beginning: the CHARACTER survives (build,
+## gear, Resonance, opening history); the chapter's story state resets.
+func replay_chapter(id: String) -> void:
+	_wipe_chapter_flags()
+	for fac in player.faction_standing:
+		player.faction_standing[fac] = 0
+	switch_chapter(id, true)
+	play_started = true
+	get_tree().paused = false
+	set_music(Terrains.get_terrain(terrain_by_zone[0]).get("music", "village"))
+	hud.flash_title(zones[0]["name"], String(Story.chapter(id)["name"]))
+	autosave()
+
+
+# Character history that survives a chapter replay: which opening you
+# played and what you chose in it. Everything else is story state.
+const KEPT_FLAG_PREFIXES := ["opened_", "chose_"]
+const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
+	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
+	"left_silent", "said_farewell", "cut_clean", "walked_silent",
+	"delivered_verdict", "spared_guilty", "recused", "closed_tome",
+	"borrowed_more", "burned_pages"]
+
+func _wipe_chapter_flags() -> void:
+	var kept := {}
+	for fname in flags:
+		var keep: bool = String(fname) in KEPT_FLAGS
+		for pre in KEPT_FLAG_PREFIXES:
+			if String(fname).begins_with(pre):
+				keep = true
+		if keep:
+			kept[fname] = flags[fname]
+	flags = kept
+
+
+## Back to the title screen (character select). Progress is saved; the
+## whole scene reboots so every system starts clean.
+func exit_to_title() -> void:
+	autosave()
+	get_tree().paused = false
+	get_tree().reload_current_scene()
+
+
 # =================================================================== keybinds
 
 func save_binds() -> void:
@@ -427,8 +521,8 @@ func load_binds() -> void:
 ## Tear the world down and rebuild it from another chapter's data.
 ## Only ever called before play starts (chapter select) or on load —
 ## dynamic entities (chests, pickups, projectiles) don't exist then.
-func switch_chapter(id: String) -> void:
-	if not Story.CHAPTER_LIST.has(id) or id == chapter_id:
+func switch_chapter(id: String, force := false) -> void:
+	if not Story.CHAPTER_LIST.has(id) or (id == chapter_id and not force):
 		return
 	chapter_id = id
 	var chapter: Dictionary = Story.chapter(id)
@@ -996,8 +1090,9 @@ func set_music(name: String) -> void:
 		return
 	current_track = name
 	var tune: Dictionary = MUSIC_TUNE.get(name, {})
+	music_gain_db = MUSIC_DB + float(tune.get("gain", 0.0))
 	var tween := create_tween()
-	tween.tween_property(music_player, "volume_db", -40.0, 0.4)
+	tween.tween_property(music_player, "volume_db", -40.0 + _vol_db(float(settings["music"])), 0.4)
 	tween.tween_callback(func() -> void:
 		if name == "" or not music_tracks.has(name):
 			music_player.stop()
@@ -1005,7 +1100,7 @@ func set_music(name: String) -> void:
 		music_player.stream = music_tracks[name]
 		music_player.play(float(tune.get("start", 0.0)))
 	)
-	tween.tween_property(music_player, "volume_db", MUSIC_DB + float(tune.get("gain", 0.0)), 0.6)
+	tween.tween_property(music_player, "volume_db", music_gain_db + _vol_db(float(settings["music"])), 0.6)
 
 
 ## Play a sound. pitch shifts the base pitch (still ±6% randomized);
@@ -1447,6 +1542,9 @@ func _process(delta: float) -> void:
 			elif Input.is_key_pressed(binds["codex"]):
 				talk_cd = 0.4
 				menus.open_codex()
+			elif Input.is_key_pressed(KEY_ESCAPE) and play_started:
+				talk_cd = 0.4
+				menus.open_pause()
 
 	shake_amt = move_toward(shake_amt, 0.0, 20.0 * delta)
 	if camera:
