@@ -734,6 +734,7 @@ func open_codex(tab := "monsters") -> void:
 
 
 func _codex_monsters(list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
 	for section in [false, true]:  # regular monsters first, then bosses
 		_lbl(list, "— BOSSES —" if section else "— MONSTERS —", 16, Color(1, 0.5, 0.5) if section else Color(0.95, 0.85, 0.5))
 		for kind in Story.ENEMIES:
@@ -741,9 +742,22 @@ func _codex_monsters(list: VBoxContainer) -> void:
 			if is_boss != section:
 				continue
 			var st: Dictionary = Story.ENEMIES[kind]
+
+			# One boxed card per monster.
+			var card := PanelContainer.new()
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = Color(1, 1, 1, 0.045)
+			sb.set_corner_radius_all(6)
+			sb.content_margin_left = 12
+			sb.content_margin_right = 12
+			sb.content_margin_top = 8
+			sb.content_margin_bottom = 8
+			card.add_theme_stylebox_override("panel", sb)
+			list.add_child(card)
+
 			var row := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 14)
-			list.add_child(row)
+			card.add_child(row)
 			var icon := TextureRect.new()
 			icon.texture = Art.tex(st["sprite"])
 			icon.custom_minimum_size = Vector2(52, 52)
@@ -752,21 +766,37 @@ func _codex_monsters(list: VBoxContainer) -> void:
 			row.add_child(icon)
 			var info := VBoxContainer.new()
 			info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			info.add_theme_constant_override("separation", 2)
 			row.add_child(info)
-			var name_l := _lbl(info, "%s   —   Lv %d" % [st["name"], st.get("level", 1)], 16, Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
-			name_l.custom_minimum_size = Vector2(780, 0)
-			var stats_l := _lbl(info, "HP %d   ·   Damage %d   ·   Speed %d   ·   XP %d   ·   Gold %d   ·   %s" %
-				[int(st["hp"]), int(st["dmg"]), int(st["speed"]), st["xp"], st.get("gold", 0),
-				"Ranged caster" if st["ranged"] else "Melee"], 13, Color(0.7, 0.72, 0.78))
-			stats_l.custom_minimum_size = Vector2(780, 0)
-			# Scaling: growth per level + projected stats (cap 100).
+
+			# Name .......................................... Lv badge
+			var head := HBoxContainer.new()
+			info.add_child(head)
+			var name_l := _lbl(head, st["name"], 16, Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
+			name_l.custom_minimum_size = Vector2(560, 0)
+			name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var lv_l := _lbl(head, "Lv %d" % st.get("level", 1), 15, Color(0.95, 0.85, 0.5))
+			lv_l.custom_minimum_size = Vector2(120, 0)
+			lv_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+
+			# Aligned stat columns.
+			var cols := HBoxContainer.new()
+			info.add_child(cols)
+			for pair in [["HP", int(st["hp"])], ["DMG", int(st["dmg"])], ["SPD", int(st["speed"])],
+					["XP", st["xp"]], ["Gold", st.get("gold", 0)]]:
+				var c := _lbl(cols, "%s %s" % [pair[0], str(pair[1])], 13, Color(0.78, 0.8, 0.86))
+				c.custom_minimum_size = Vector2(105, 0)
+			_lbl(cols, "Ranged caster" if st["ranged"] else "Melee", 13, Color(0.6, 0.7, 0.85))
+
+			# Scaling: growth + projections, in two quiet sublines.
 			var at25 := Story.enemy_stats_at(kind, 25)
 			var at50 := Story.enemy_stats_at(kind, 50)
-			var grow_l := _lbl(info, "Scaling: HP +%d%%/lvl, DMG +%d%%/lvl   →   Lv 25: HP %d, DMG %d   ·   Lv 50: HP %d, DMG %d" %
-				[int(st.get("hp_g", 0.1) * 100), int(st.get("dmg_g", 0.1) * 100),
-				int(at25["hp"]), int(at25["dmg"]), int(at50["hp"]), int(at50["dmg"])],
-				12, Color(0.55, 0.65, 0.8))
-			grow_l.custom_minimum_size = Vector2(780, 0)
+			var g1 := _lbl(info, "Growth per level:   HP +%d%%   ·   DMG +%d%%" %
+				[int(st.get("hp_g", 0.1) * 100), int(st.get("dmg_g", 0.1) * 100)], 12, Color(0.55, 0.65, 0.8))
+			g1.custom_minimum_size = Vector2(700, 0)
+			var g2 := _lbl(info, "Projected:   Lv 25 → %d HP, %d DMG        Lv 50 → %d HP, %d DMG" %
+				[int(at25["hp"]), int(at25["dmg"]), int(at50["hp"]), int(at50["dmg"])], 12, Color(0.5, 0.55, 0.66))
+			g2.custom_minimum_size = Vector2(700, 0)
 
 
 func _codex_gear(list: VBoxContainer) -> void:
