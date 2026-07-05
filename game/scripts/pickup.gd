@@ -2,7 +2,7 @@ class_name Pickup extends Area2D
 ## A gold coin on the ground. Magnets toward the player when close.
 
 var value := 3
-var game: Node2D
+var game: Game
 var magnet := false
 
 

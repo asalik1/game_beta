@@ -13,7 +13,7 @@ var pierce := false            # sniper arrows fly through enemies
 var hit_player_mult := 0.0     # friendly: damage = player atk * this
 var source_player: Player = null
 var fx := {}                   # extra effects passed to hit_enemy (slow, splash...)
-var game: Node2D
+var game: Game
 var glow_color := Color(1, 1, 1)
 var tex_kind := ""
 var spr: Sprite2D = null       # thrown knives spin in flight

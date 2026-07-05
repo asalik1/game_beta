@@ -1,0 +1,477 @@
+extends "res://scripts/game_world.gd"
+## GAME, layer 3 of 4 — consequences: boss/enemy/player death flows,
+## loot, chapter progression + meta unlocks, settings, and terrain
+## events. See game_base.gd for the chain layout.
+
+
+## Volume settings, persisted separately from saves (they're per-player,
+## not per-character).
+func load_settings() -> void:
+	if not FileAccess.file_exists("user://settings.json"):
+		return
+	var f := FileAccess.open("user://settings.json", FileAccess.READ)
+	if f == null:
+		return
+	var data = JSON.parse_string(f.get_as_text())
+	if data is Dictionary:
+		for key in settings:
+			if not data.has(key):
+				continue
+			if settings[key] is bool:
+				settings[key] = bool(data[key])
+			else:
+				settings[key] = clampf(float(data[key]), 0.0, 1.0)
+
+func save_settings() -> void:
+	var f := FileAccess.open("user://settings.json", FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(settings))
+
+func apply_audio_settings() -> void:
+	if music_player:
+		music_player.volume_db = music_gain_db + _vol_db(float(settings["music"]))
+	for sp in sound_pool:
+		sp.volume_db = -8.0 + _vol_db(float(settings["sfx"]))
+
+func apply_display_settings() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	DisplayServer.window_set_mode(
+		DisplayServer.WINDOW_MODE_FULLSCREEN if settings["fullscreen"]
+		else DisplayServer.WINDOW_MODE_WINDOWED)
+
+## Replay a chapter from its beginning: the CHARACTER survives (build,
+## gear, Resonance, opening history); the chapter's story state resets.
+func replay_chapter(id: String) -> void:
+	_wipe_chapter_flags()
+	for fac in player.faction_standing:
+		player.faction_standing[fac] = 0
+	wander_seed = randi() % 1000000  # replays meet a fresh set of rolled rooms
+	switch_chapter(id, true)
+	play_started = true
+	get_tree().paused = false
+	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(id)["name"]))
+	autosave()
+
+## Chapter PROGRESSION: the character who just won carries straight on
+## into the next chapter — build, gear, Resonance, faction standings and
+## choice history all intact. (Farming trips back go through
+## replay_chapter, which resets standings; moving FORWARD keeps them.)
+func advance_chapter() -> void:
+	var next_ch := Story.next_chapter(chapter_id)
+	if next_ch == "" or state != ST_VICTORY:
+		return
+	state = ST_PLAYING
+	get_tree().paused = false
+	hud.overlay.color = Color(0, 0, 0, 0)
+	hud.title_label.modulate.a = 0.0
+	hud.subtitle_label.modulate.a = 0.0
+	_wipe_chapter_flags()  # last chapter's story state retires; history stays
+	switch_chapter(next_ch, true)
+	play_started = true
+	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(next_ch)["name"]))
+	autosave()
+
+
+# ------------------------------------------------- meta progression ---
+# Account-wide unlocks that outlive characters (user://meta.json):
+# finishing a chapter with ANY character opens the next one on the
+# New Game chapter select.
+const META_PATH := "user://meta.json"
+var _meta: Dictionary = {}
+var _meta_loaded := false
+
+func _load_meta() -> void:
+	if _meta_loaded:
+		return
+	_meta_loaded = true
+	if no_saves or not FileAccess.file_exists(META_PATH):
+		return
+	var f := FileAccess.open(META_PATH, FileAccess.READ)
+	if f:
+		var data = JSON.parse_string(f.get_as_text())
+		if data is Dictionary:
+			_meta = data
+
+func meta_unlock(chid: String) -> void:
+	_load_meta()
+	if bool(_meta.get("unlocked_" + chid, false)):
+		return
+	_meta["unlocked_" + chid] = true
+	if no_saves:
+		return  # tests never touch the real user files
+	var f := FileAccess.open(META_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(_meta))
+
+## Progression gating for the chapter select: the first chapter is
+## always open; each later one opens once the previous is finished —
+## by ANY character (meta unlock) for New Game, or by THIS character
+## (its completed_ flag) when replaying.
+func chapter_available(chid: String, replay := false) -> bool:
+	var ids: Array = Story.CHAPTER_LIST.keys()
+	var i := ids.find(chid)
+	if i <= 0 or dev_mode:
+		return true
+	_load_meta()
+	if bool(_meta.get("unlocked_" + chid, false)):
+		return true
+	return replay and get_flag("completed_" + String(ids[i - 1]), false)
+
+
+# Character history that survives a chapter replay: which opening you
+# played, what you chose in it, and which chapters you have finished.
+# Everything else is story state.
+const KEPT_FLAG_PREFIXES := ["opened_", "chose_", "completed_"]
+const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
+	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
+	"left_silent", "said_farewell", "cut_clean", "walked_silent",
+	"delivered_verdict", "spared_guilty", "recused", "closed_tome",
+	"borrowed_more", "burned_pages"]
+
+func _wipe_chapter_flags() -> void:
+	var kept := {}
+	for fname in flags:
+		var keep: bool = String(fname) in KEPT_FLAGS
+		for pre in KEPT_FLAG_PREFIXES:
+			if String(fname).begins_with(pre):
+				keep = true
+		if keep:
+			kept[fname] = flags[fname]
+	flags = kept
+
+## Back to the title screen (character select). Progress is saved; the
+## whole scene reboots so every system starts clean.
+func exit_to_title() -> void:
+	autosave()
+	get_tree().paused = false
+	get_tree().reload_current_scene()
+
+
+# =================================================================== keybinds
+
+## Brawl bookkeeping shared by story and rogue boss deaths: drop the
+## boss from the roster, retarget the bar, and restore the terrain
+## music only when the LAST one falls — while the brawl continues the
+## music stays where it peaked (playtest round 7: each kill in a x5
+## dev brawl used to step the track down x5 -> x4 -> ...).
+func _boss_roster_update(src: Boss) -> void:
+	bosses.erase(src)
+	if _live_bosses().is_empty():
+		current_boss = null
+		hud.hide_boss_bar()
+		set_music(Terrains.get_terrain(terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]).get("music", "village"))
+	elif current_boss == src:
+		current_boss = _live_bosses()[0]
+		hud.show_boss_bar(current_boss.display_name)
+
+## A boss killed OUTSIDE the story flow (dev panel spawns, tests):
+## rewards and brawl bookkeeping only — no quests, no gates, no story
+## dialogue, no boss_done marks, no chapter end.
+func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
+	var src: Boss = dead if is_instance_valid(dead) else current_boss
+	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
+	_boss_roster_update(src)
+	player.hp = player.max_hp
+	player.mp = player.max_mp
+	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
+	Pickup.drop_gold(self, Story.ALL_ENEMIES[kind].get("gold", 50), boss_pos)
+
+func on_boss_died(kind: String, dead: Boss = null) -> void:
+	boss_done[kind] = true
+	var src: Boss = dead if is_instance_valid(dead) else current_boss
+	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
+	var mzi: int = clampi(src.zone_idx if is_instance_valid(src) else cur_room, 0, zone_count - 1)
+	_boss_roster_update(src)
+	player.hp = player.max_hp
+	player.mp = player.max_mp
+	player.potions = maxi(player.potions, 2)
+
+	# Bosses always drop a golden chest + a pile of gold.
+	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
+	Pickup.drop_gold(self, Story.ALL_ENEMIES[kind].get("gold", 50), boss_pos)
+
+	# Now that the room is safe, a wandering merchant MAY set up camp.
+	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
+		call_deferred("_merchant_arrives", mzi)
+
+	# Boss rooms may also carry a clear_flag (arc/act progress markers).
+	var boss_cflag := String(zones[mzi].get("clear_flag", ""))
+	if boss_cflag != "":
+		set_flag(boss_cflag)
+
+	# Chapter-driven progression: the final boss ends the chapter; any
+	# other boss opens the gate out of its zone and points the quest at
+	# the next boss down the road.
+	if kind == String(Story.chapter(chapter_id).get("final_boss", "")):
+		quest_key = "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
+		refresh_quest()
+		# Progression: this character has finished the chapter (kept across
+		# replays), and the NEXT chapter unlocks account-wide.
+		set_flag("completed_" + chapter_id, true)
+		var next_ch := Story.next_chapter(chapter_id)
+		if next_ch != "":
+			meta_unlock(next_ch)
+		# Chapter-specific epilogue beat and victory card, with the
+		# Chapter 1 texts as the fallback.
+		var epilogue: Array = Story.ALL_BEATS.get("epilogue_" + chapter_id,
+			Story.ALL_BEATS.get("epilogue", []))
+		var vtext: String
+		if next_ch != "":
+			# Mid-campaign victory: the road goes on.
+			vtext = String(Story.chapter(chapter_id).get("victory_text",
+				"The Ember Crown is reclaimed. But the shards are still out there — and years from now, they will wake."))
+			vtext += "\n\nENTER — journey on to %s        ·        R — start over" \
+				% String(Story.chapter(next_ch)["name"])
+		else:
+			vtext = String(Story.chapter(chapter_id).get("victory_text",
+				"Thanks for playing!\nPress R to play again."))
+		var end_it := func() -> void:
+			state = ST_VICTORY
+			set_music("")
+			sfx("victory")
+			hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
+			get_tree().paused = true
+		if epilogue.is_empty():
+			end_it.call()
+		else:
+			hud.dialogue(epilogue, end_it)
+	else:
+		quest_key = _next_quest_after(mzi)
+		var beat: Array = Story.ALL_BEATS.get("post_" + kind, [])
+		var proceed := func() -> void:
+			_recheck_gates()  # "boss" locks on this arena's edges open
+			refresh_quest()
+		if beat.is_empty():
+			proceed.call()
+		else:
+			hud.dialogue(beat, proceed)
+	autosave()
+
+## The quest key after clearing zone zi: the next boss down the road,
+## or the chapter's own "done" text if it has one.
+func _next_quest_after(zi: int) -> String:
+	for z in range(zi + 1, zone_count):
+		var kind := String(zones[z].get("boss", ""))
+		if kind != "" and not boss_done.get(kind, false):
+			return kind
+	return "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
+
+func on_enemy_died(e: Enemy) -> void:
+	if e is Boss:
+		return  # boss drops are handled in on_boss_died
+	Pickup.drop_gold(self, e.gold_value, e.global_position)
+	if e.elite and is_instance_valid(player):
+		# Elite loot pinata (playtest round 6): a guaranteed gem, a
+		# guaranteed good chest, and the elite-exclusive economy —
+		# talent reset stones and bigger bags. XP is zero by design
+		# (chapter totals stay fixed).
+		var gem := Items.random_gem(loot_rng,
+			2 if loot_rng.randf() < Balance.ELITE_GEM_LV2_CHANCE else 1)
+		if player.gain_gem(gem):
+			spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
+		Chest.drop(self, "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
+			e.global_position + Vector2(44, 0))
+		if loot_rng.randf() < Balance.ELITE_STONE_CHANCE:
+			if player.add_consumable(Items.make_reset_stone()):
+				spawn_text(e.global_position + Vector2(0, -92), "+ Stone of Unlearning", Color(0.6, 0.9, 1.0))
+		elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
+			var cap := String(Story.chapter(chapter_id).get("loot_cap", "S"))
+			player.acquire_bag(Items.make_bag(Items.roll_grade("gold", loot_rng, cap)))
+	else:
+		# Chance-based chest drops (Greed above 30% nudges the odds up).
+		var bonus := Stats.greed_loot(player.greed) if is_instance_valid(player) else 0.0
+		var roll := loot_rng.randf()
+		if roll < Balance.MOB_SILVER_CHEST_CHANCE + bonus * 0.3:
+			Chest.drop(self, "silver", e.global_position)
+		elif roll < Balance.MOB_WOOD_CHEST_CHANCE + bonus:
+			Chest.drop(self, "wood", e.global_position)
+
+	# Room clear tracking: the boss only appears once its room is purged.
+	if e.zone_idx >= 0:
+		zone_alive[e.zone_idx] = maxi(0, zone_alive.get(e.zone_idx, 0) - 1)
+		refresh_quest()
+		if zone_alive[e.zone_idx] == 0:
+			cleared[e.zone_idx] = true  # stays cleared for the run (saved)
+			_try_spawn_boss(e.zone_idx)
+			_recheck_gates()  # "clear" locks on this room's edges open
+			if zones[e.zone_idx].get("boss", "") == "":
+				# Bossless rooms: clearing IS the objective ("clear_flag"),
+				# and the wandering merchant may arrive.
+				if e.zone_idx == cur_room:
+					_purge_fx()  # the blight recedes; the door seals lift
+				var cflag := String(zones[e.zone_idx].get("clear_flag", ""))
+				if cflag != "":
+					set_flag(cflag)
+				if loot_rng.randf() < 0.65 and not merchant_zones.has(e.zone_idx):
+					call_deferred("_merchant_arrives", e.zone_idx)
+				if e.zone_idx == cur_room and room_safe(cur_room):
+					last_safe_room = cur_room
+			autosave()
+
+## The room's last pack falls: a brief green cleansing pulse — the
+## blight recedes — as the door seals lift (purge rule, DESIGN.md).
+func _purge_fx() -> void:
+	hud.flash_screen(Color(0.3, 0.85, 0.4), 0.32, 0.55)
+	# A low, soft sting — noticeable, never loud (playtest round 3).
+	sfx("nova", 0.65, 0.0, -9.0)
+	shake(3.0)
+	if is_instance_valid(player):
+		spawn_text(player.global_position + Vector2(0, -70),
+			"THE BLIGHT RECEDES", Color(0.55, 0.95, 0.6))
+		burst(player.global_position + Vector2(0, -20), Color(0.5, 0.9, 0.55), 16)
+
+## Death: back to the last safe room with gear/gold/XP intact; the room
+## you died in resets. No corpse runs — the penalty is the walk.
+func on_player_died() -> void:
+	if state != ST_PLAYING:
+		return
+	state = ST_DEAD
+	sfx("pdie")
+	hud.dim(0.55)
+	hud.flash_title("YOU DIED", "The flame endures...", 1.0)
+	for p in get_tree().get_nodes_in_group("projectiles"):
+		p.queue_free()
+	var death_room := cur_room
+	await get_tree().create_timer(2.0).timeout
+
+	for b in _live_bosses().duplicate():
+		var live_b: Boss = b
+		if live_b.zone_idx < 0:
+			# Rogue bosses (dev-panel spawns — no home arena) don't
+			# survive your death: they'd chase and attack across rooms.
+			bosses.erase(live_b)
+			live_b.remove_from_group("enemies")
+			live_b.queue_free()
+			if current_boss == live_b:
+				current_boss = null
+		else:
+			live_b.reset_fight()  # walks home and heals; the arena waits
+	if is_instance_valid(current_boss):
+		hud.update_boss_bar(1.0)
+	if not cleared.get(death_room, false):
+		_reset_room_enemies(death_room)
+	# Nothing follows you home from a death: homeless spawns (boss adds,
+	# terrain-event zombies — zone_idx -1, they never freeze with a room)
+	# despawn outright, and every other survivor calms down and returns
+	# to its post instead of camping your respawn.
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e is Boss or e.dying:
+			continue
+		if e.zone_idx < 0:
+			e.remove_from_group("enemies")
+			e.queue_free()
+		elif e.force_aggro or e.alerted:
+			e.force_aggro = false
+			e.alerted = false
+			e.global_position = e.home
+
+	player.global_position = room_center(last_safe_room)
+	player.revive()
+	_enter_room(last_safe_room)
+	# No boss serenades your respawn: unless the boss is HERE (it never
+	# is — you respawn in a safe room), the bar hides and the room's own
+	# music takes over. The arena boss keeps waiting where it lives.
+	if not is_instance_valid(current_boss) or current_boss.zone_idx != cur_room:
+		hud.hide_boss_bar()
+		set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	hud.dim(0.0)
+	state = ST_PLAYING
+
+
+# ================================================================== helpers
+
+## Timed terrain happenings (magma rain, zombies, gusts, lightning...).
+func run_terrain_event(ev: String) -> void:
+	var zi := cur_room
+	match ev:
+		"magma_rain":
+			# Magma falls from the sky — sometimes the floor collapses
+			# into a lingering lava pool instead.
+			if randf() < 0.3:
+				var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), player.global_position)
+				telegraph(pos, 75.0, 1.3, 10.0, {"color": Color(1.0, 0.35, 0.1, 0.5)})
+				_add_hazard.call_deferred(zi, "lava", pos, 70.0, 22.0)
+			else:
+				for i in randi_range(1, 2):
+					var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-260, 260), randf_range(-180, 180)), player.global_position)
+					telegraph(pos, 65.0, 1.0, 16.0, {"color": Color(1.0, 0.35, 0.1, 0.55), "fireball": true})
+		"grave_spawn":
+			if zone_alive.get(zi, 0) > 0 or is_instance_valid(current_boss):
+				var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-220, 220), randf_range(-160, 160)), player.global_position)
+				burst(pos, Color(0.5, 0.45, 0.35), 12)
+				sfx("gate", 1.4)
+				var z := Enemy.make(self, "zombie", pos, player.level)  # scales with you
+				z.xp_value = 0   # event spawns are mood, not a farm —
+				z.gold_value = 0  # chapter XP/gold stays a fixed total
+				z.force_aggro = true
+				add_enemy(z)
+				emote(z, "!", 0.8)
+		"gust":
+			gust_vec = Vector2.RIGHT.rotated(randf() * TAU) * 220.0
+			gust_t = 1.8
+			sfx("blink", 0.6)
+			burst(player.global_position + gust_vec.normalized() * -80.0, Color(0.85, 0.72, 0.45), 16)
+		"lightning":
+			var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-160, 160), randf_range(-120, 120)), player.global_position)
+			telegraph(pos, 60.0, 0.55, 24.0, {"color": Color(0.7, 0.85, 1.0, 0.6)})
+			hud.flash_screen(Color(0.8, 0.9, 1.0), 0.25, 0.2)
+		"shard":
+			var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), player.global_position)
+			telegraph(pos, 55.0, 0.7, 14.0, {"color": Color(0.5, 0.85, 1.0, 0.55)})
+			sfx("nova", 1.3)
+
+## Apply floor-patch effects to the player and enemies (ticked at 2.5Hz).
+func _apply_hazards() -> void:
+	player.hazard_speed = 1.0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e:
+			e.hazard_speed = 1.0
+	var now := Time.get_ticks_msec() / 1000.0
+	for i in range(hazards.size() - 1, -1, -1):
+		var h: Dictionary = hazards[i]
+		if h["until"] > 0.0 and now > h["until"]:
+			if is_instance_valid(h["sprite"]):
+				h["sprite"].queue_free()
+			hazards.remove_at(i)
+			continue
+		if h["drift"] != Vector2.ZERO:  # wandering spore clouds
+			h["pos"] += h["drift"] * 0.4
+			var hr := room_rect(int(h["zone"]))
+			if h["pos"].x < hr.position.x + 100 or h["pos"].x > hr.end.x - 100:
+				h["drift"].x *= -1.0
+			if h["pos"].y < hr.position.y + 110 or h["pos"].y > hr.end.y - 110:
+				h["drift"].y *= -1.0
+			if is_instance_valid(h["sprite"]):
+				h["sprite"].global_position = h["pos"]
+		# Player effects.
+		if not player.dead and player.global_position.distance_to(h["pos"]) <= h["radius"]:
+			match h["type"]:
+				"lava":
+					player.take_damage(12.0, "magic")
+				"poison":
+					player.take_damage(6.0, "true")
+				"ice":
+					player.hazard_speed = 1.35
+				"slow":
+					player.hazard_speed = 0.7
+				"heal":
+					if player.hp < player.max_hp:
+						player.hp = minf(player.max_hp, player.hp + player.max_hp * 0.02)
+		# Enemies share physical patches (ice, slow, lava).
+		if h["type"] in ["ice", "slow", "lava"]:
+			for node in get_tree().get_nodes_in_group("enemies"):
+				var e := node as Enemy
+				if e == null or e.dying or e.global_position.distance_to(h["pos"]) > h["radius"]:
+					continue
+				match h["type"]:
+					"ice":
+						e.hazard_speed = 1.35
+					"slow":
+						e.hazard_speed = 0.75
+					"lava":
+						e.take_damage(5.0, Vector2.ZERO, false, true)

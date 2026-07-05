@@ -5,7 +5,7 @@ class_name Cutscene extends Control
 ## PROCESS_MODE_ALWAYS so the animation keeps moving while dialogue
 ## pauses the tree.
 
-var game: Node2D
+var game: Game
 var stage: Node2D
 var flash_rect: ColorRect
 

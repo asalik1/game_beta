@@ -2,321 +2,154 @@
 
 > Language/framework-agnostic. Confirm every item before presenting code.
 
----
-
 ## §1 No Hardcoded Identifiers
-- No hardcoded paths, URLs, resource IDs, or env-specific values in app code.
-- Dynamic fetch failure → return error; never fall through to a stale constant.
-- Required config/env vars → fail loudly when missing; never silently default.
-  - **§1a Config-key safety**: Use safe lookup (`get`/`find` + null check) for env-dependent keys to avoid import-time crashes; give a clear skip-reason when missing.
+No hardcoded paths/URLs/resource IDs/env values in app code. Dynamic fetch failure → error, never a stale constant. Required config/env → fail loudly, never silently default. **§1a**: safe lookup (`get` + null check) for env-dependent keys; clear skip-reason when missing.
 
 ## §2 Input Validation — Allowlist Over Blocklist
-- Prefer allowlist (regex matching known-good format) over blocklist. Blocklists are fragile.
-- Known-format identifiers (hex UUID, ISO date, slug) → strict `fullmatch` regex; reject non-matches.
-- Validate **all** user-controlled params feeding path/query construction, not just the obvious one. The unvalidated param is the attack surface.
-- Document expected format of each external input in signature/docstring.
+Allowlist (strict `fullmatch` regex for known formats: hex UUID, ISO date, slug) over fragile blocklists. Validate ALL user-controlled params feeding path/query construction — the unvalidated one is the attack surface. Document expected formats in signatures.
 
 ## §3 Response Field Semantics
-- Field names must unambiguously describe what is counted. `"total"` is ambiguous → use `"total_matching"`, `"page_size"`, `"total_unfiltered"`, etc.
-- Document what each response field represents, especially pagination fields.
-- When renaming a response field, update all consumers (tests, UI, docs).
+Field names must say what is counted (`total_matching`, `page_size`, not `total`). Document pagination fields. Renaming a field → update all consumers (tests, UI, docs).
 
 ## §4 Ownership of Mutable State
-- Every shared mutable state piece has **one clear owner** for set/clear.
-- If cleanup occurs in multiple paths (cancel AND completion), verify no conflict or double-fire.
-- Guard mutations on shared refs so only the owning operation modifies:
-  ```
-  if shared_ref == this_instance:
-      shared_ref = null
-  ```
+One clear owner per shared mutable piece. Multiple cleanup paths (cancel AND completion) → verify no double-fire. Guard mutations: `if shared_ref == this_instance: shared_ref = null`.
 
 ## §5 Stale State in Async/Deferred Callbacks
-- Values captured by deferred ops that can change before execution → re-check after async boundary.
-- After async resolves, compare captured inputs to current state; discard if mismatched.
-- Enumerate ALL inputs influencing the result; verify ALL still valid after the async gap.
+Values captured by deferred ops can change before execution → re-check after the async boundary; discard on mismatch. Enumerate ALL inputs influencing the result; verify each still valid.
 
 ## §6 Cleanup Blocks (finally/defer/destructors)
-- Cleanup runs unconditionally, including after early returns. Verify side-effect correctness for EVERY exit path.
-- Do NOT use unconditional cleanup for conditional logic; prefer explicit cleanup at each exit.
-- Verify cleanup cannot conflict with concurrent operation state mutations.
+Cleanup runs on EVERY exit path incl. early returns — verify side-effects for each. Don't use unconditional cleanup for conditional logic. Verify no conflict with concurrent mutations.
 
 ## §7 String/URL/Path Construction
-- Verify separators for all input shapes (empty, leading/trailing separator, none).
-- Document when segments are intentionally unencoded; state assumed-safe characters.
-- Values containing delimiters (`?`, `#`, `/`, spaces, shell metacharacters) → encode/validate at boundary.
-- Shell interpolation → use proper escaping even for "trusted" sources.
-- Prefix/suffix normalization must be **idempotent** (don't double-apply).
-  - **§7a Empty-string edge-cases**: Constructed strings feeding APIs with non-empty constraints → handle empty case (reject with error or skip component).
+Test separators for all shapes (empty, leading/trailing, none). Document intentionally-unencoded segments. Delimiters (`?#/` spaces, shell metachars) → encode/validate at the boundary; escape shell interpolation even from "trusted" sources. Prefix/suffix normalization must be idempotent. **§7a**: constructed strings feeding non-empty-constrained APIs → handle the empty case.
 
 ## §8 Counts, Indices, Off-by-One
-- Capture counts **before** filtering when displaying to users.
-- Post-filter length ≠ pre-filter count.
-- Verify boundaries: empty, single-element, exactly-at-limit.
-- Rename-on-collision: (a) renamed value rechecked for collisions, (b) loop terminates. Prefer deterministic uniqueness (always suffix with index).
-- Values crossing serialization boundaries (int→str→CLI→int) → verify lossless round-trip.
-  - **§8a Negative/underflow index**: Slice/offset calculations → ensure non-negative (clamp to 0) unless negative is intentional.
+Capture counts BEFORE filtering when shown to users. Verify boundaries: empty / single / at-limit. Rename-on-collision: recheck the renamed value, guarantee termination (prefer deterministic index suffix). Serialization round-trips (int→str→int) must be lossless. **§8a**: slice/offset math → clamp to 0 unless negative is intentional.
 
 ## §9 Duplication
-- After adding a definition, **search codebase** for existing ones with same name/purpose.
-- Never define same identifier/block twice in one file.
-- Copy-paste → verify original removed or copies intentionally different.
-- Tests: verify every mock/patch/stub is exercised; every import is used.
-  - **§9a Style inheritance**: Adopt the safer variant already present in the file; don't introduce less-safe variations.
-  - **§9b Existing patterns ≠ excuse**: "Matches existing pattern" is NOT a pass. If your diff repeats a block, extract a shared constant/helper/component AND fold pre-existing copies into that single source of truth. If truly out of scope, leave `# TODO:` and note in review summary.
-  - **§9c Destructuring consistency**: In a block destructuring fields, access ALL fields via destructured vars — never mix destructured + direct property access on the same object in the same scope.
+After adding a definition, search for existing same-name/purpose ones. Never define an identifier twice in one file. Copy-paste → original removed or intentionally different. Tests: every mock exercised, every import used. **§9a**: adopt the file's safer existing variant. **§9b**: "matches existing pattern" is NOT a pass — extract shared helper AND fold pre-existing copies in (or leave `# TODO` + note). **§9c**: in a destructuring block, access ALL fields via destructured vars — never mixed.
 
 ## §10 Null/None/Undefined Safety
-- Guard null in one expression → apply same guard everywhere that var is used in scope.
-- Extract guarded value to local and reuse: `items = value ?? []; filtered = items.filter(pred)`
-- Empty collection → verify downstream handles explicitly; no silent no-ops.
+A null guard in one expression → same guard everywhere in scope; extract to a local (`items = value ?? []`). Empty collections → explicit downstream handling, no silent no-ops.
 
 ## §11 Cache/Lookup Integrity
-- Hash keys can collide → store original key material alongside cached data; verify on read.
-- Document invalidation strategy and owner.
-- Cached values must not mask upstream changes the caller needs.
+Hash keys collide → store original key material with the value; verify on read. Document invalidation strategy + owner. Cached values must not mask upstream changes.
 
 ## §12 Error Handling
-- Catch narrowest exception type possible. Never swallow all errors silently.
-- Preserve original cause when wrapping.
-- Swallowed non-critical errors must not mask critical-path failures.
+Catch the narrowest type; never swallow silently. Preserve cause when wrapping. Swallowed non-critical errors must not mask critical-path failures.
 
 ## §13 Concurrency & Race Conditions
-- Every shared mutable variable → enumerate all writers; can two run simultaneously?
-- Check-then-act → verify flag can't change between check and act.
-- After acquiring resource → verify released on ALL exit paths.
+Per shared mutable var: enumerate writers; can two run at once? Check-then-act → can the flag change between? Acquired resources released on ALL exit paths.
 
 ## §14 API Contracts & Boundary Assumptions
-- Handle upstream data shape mismatches (missing fields, null, wrong type).
-- Return type change → verify ALL callers handle new shape.
-- Multiple mode flags → verify mutual exclusion; add explicit conflict check.
-  - **§14a External library callbacks**: Don't assume single event shape. Enumerate ALL values the callback can emit; handle or explicitly discard each. Silent ignoring → invisible failures.
-  - **§14b Backend capability constraints**: Verify data types/options per backend before applying uniformly. Option valid for one backend may be illegal on another. Branch config by backend.
-  - **§14c Remote access side-effects**: Enabling remote fetches → document security/deployment implications; specify which external hostnames must be whitelisted in network policy/CSP. Missing entry silently blocks fetches.
+Handle upstream shape mismatches (missing/null/wrong type). Return-type changes → verify all callers. Multiple mode flags → explicit mutual-exclusion check. **§14a**: enumerate ALL callback event shapes; handle or explicitly discard each. **§14b**: verify options per backend; branch where support differs. **§14c**: remote fetches → document security implications + hostnames to whitelist.
 
-## §15 Early Filtering — Skip Expensive Work
-- Before a loop with expensive body → how many iterations needed vs happening?
-- Filter/short-circuit BEFORE the expensive operation, not after.
-- N inputs → ≪N outputs → move disqualifying check above the costly step.
+## §15 Early Filtering
+Filter/short-circuit BEFORE expensive loop bodies. N inputs → ≪N outputs → move the disqualifier above the costly step.
 
 ## §16 Function Independence
-- Each function → verify no dependency on external mutable state or call-ordering side-effects.
-- Adding condition to existing function → revisit every test; tighten isolation.
-- New function alongside similar ones → explicitly diff for structural parity.
-  - **§16a Dead guards**: After refactoring so caller enforces an invariant, remove guards inside callee that relied on the old weaker invariant.
+No hidden dependence on external mutable state or call order. New conditions → revisit tests. New function beside similar ones → diff for structural parity. **§16a**: after the caller enforces an invariant, delete the callee's dead guards.
 
-## §17 Test Robustness — Decouple from External Data
-- Never hardcode expected counts/names/IDs from live config. Load config at test time; compute expected values dynamically.
-- Test asserting specific entry → derive expectation from config, not string literal.
-- Count assertion → trace source. If from externally-modified file, compute from file contents.
-- Prefer test-controlled fixtures over shared production configs; when using shared configs, derive from their contents.
+## §17 Test Robustness
+Never hardcode counts/names from live config — load config at test time and derive expectations. Trace count assertions to their source. Prefer test-controlled fixtures.
 
 ## §18 Resource Management
-- Every exit path (normal, timeout, exception) → same acquire → use → release.
-- Code acquiring resources → enumerate all exit paths; verify each releases.
-- Asymmetry (one function has cleanup, similar one doesn't) → likely a bug.
+Every exit path (normal/timeout/exception): acquire → use → release. Asymmetry between similar functions (one cleans up, one doesn't) = likely bug.
 
 ## §19 Comments & Documentation
-- Brevity preferred; verbosity actively discouraged.
-- Comment the *why*, not the *what*. If comment explains what code does, rewrite the code.
-- Never reference internal guideline numbers or design docs in code comments.
-- Narrating mechanism ("this checks X then does Y") → noise. Simplify or name descriptively.
+Brevity. Comment the WHY; if a comment explains what the code does, rewrite the code. Never reference guideline numbers/design docs in code comments. No mechanism narration.
 
 ## §20 Name Collision in Generated Artifacts
-- After char-replacement normalization (`.`→`_`, `/`→`_`) → verify distinct inputs can't collapse to same output.
-- Incorporate unique discriminator (index) as tie-breaker when collision possible.
-- Track generated names in a set; assert uniqueness. Silent overwrites > loud collision error.
+After char-replacement normalization, distinct inputs must not collapse to one output — add an index tie-breaker. Track generated names in a set; loud collision error over silent overwrite.
 
-## §21 Auth & User Identity in Concurrent Contexts
-- Use **request-scoped/context-local** identity — never process-global/module-level.
-- Trace where "current user" comes from; verify no contamination by concurrent ops.
-- Identity lookup → null/anonymous → handle explicitly; don't produce empty filter returning everything.
+## §21 Auth & Identity in Concurrent Contexts
+Request-scoped identity only, never process-global. Trace "current user" provenance. Null/anonymous → handle explicitly; never an empty filter that returns everything.
 
 ## §22 Cache Invalidation Completeness
-- Every write path (create, update, **delete**) → verify cache invalidated.
-- Multiple mutation code paths → each must invalidate or delegate to shared write function.
-- Cache entry references deleted resource → invalidate stale entry; fall back gracefully.
-- Long-lived process caches → document invalidation strategy; "populated once at startup" only if data truly immutable for process lifetime.
+Every write path (create/update/DELETE) invalidates or delegates to a shared writer. Stale entries referencing deleted resources → invalidate + graceful fallback. "Populated once at startup" only for truly immutable data.
 
 ## §23 Access-Control — Default Deny
-- Unfiltered listing → still enforce access control. Never return all records because no filter supplied.
-- Trace every filter-param combination; verify private resources only visible to authorized callers in **each** combo.
-- Scoping filter without required qualifier → restrict to caller's own scope.
-- Document and test "no params" case explicitly — highest-risk for data leakage.
+Unfiltered listings still enforce access control. Verify private-resource visibility for EVERY filter-param combination. Document and test the "no params" case — highest leak risk.
 
-## §24 Single Source of Truth for Shared Logic
-- Same transformation in two modules → extract to shared utility; both import it.
-- "Applies same rules as X" in a comment → signal to import X.
-- After extracting shared logic → remove unused imports from original locations.
-- Canonical logic on a class but needed outside → extract to standalone function in shared module; class delegates to it.
+## §24 Single Source of Truth
+Same transformation in two modules → extract shared utility. "Applies same rules as X" in a comment = import X instead. Remove unused imports after extraction. Canonical class logic needed elsewhere → standalone shared function; class delegates.
 
-## §25 Synchronous vs Asynchronous State — Guard Timing
-- Guard checked inside callback/event handler → could callback fire before async update propagates?
-- Flag must be readable synchronously → write it in **same call** as async state update:
-  ```
-  function setStatus(next):
-      statusFlag = next      // sync — visible immediately
-      asyncStateUpdate(next) // async — triggers downstream
-  ```
-- Never rely on side-effect observers (`watch`/`effect`/`subscribe`) to keep sync flag in sync — always ≥1 scheduling cycle of lag = race window.
-- Teardown + replacement → set guard flag to "not ready" **before** releasing old resource reference.
+## §25 Sync vs Async State — Guard Timing
+Guards read in callbacks: could the callback fire before the async update lands? Sync-readable flags are written in the SAME call as the async update, never via watch/effect observers (≥1 cycle lag = race). Teardown+replace → set "not ready" BEFORE releasing the old reference.
 
-## §26 Message-Passing Channel Lifecycle (Workers, Subprocesses, Queues)
-- **One channel, one job.** Channel always recreated per config → remove dead in-channel "same config" guards.
-- **Discard superseded responses.** Old channel may deliver queued messages after teardown:
-  ```
-  onMessage(msg):
-      if activeChannel != thisChannel: return  // superseded
-  ```
-- **Use cancellation flag over identity guard.** Cleanup nulling `activeChannel` before `terminate()` breaks identity check. Fix: boolean `cancelled` flag scoped to channel closure, set `true` in cleanup, checked first in handler:
-  ```
-  cancelled = false
-  onMessage(msg):
-      if cancelled: return
-  cleanup():
-      cancelled = true       // before nulling ref
-      activeChannel = null
-      channel.terminate()
-  ```
-- **In-flight flags released on every path.** Channel killed mid-flight → reset busy flag unconditionally in teardown, not only on successful response.
-- **Every handler branch sends a reply.** Including error and no-op paths. Silent returns leave caller permanently blocked.
+## §26 Message-Passing Channel Lifecycle
+One channel, one job (recreate per config; delete dead in-channel "same config" guards). Discard superseded responses (`if activeChannel != thisChannel: return`). Prefer a `cancelled` flag scoped to the channel closure over identity checks (cleanup nulls the ref before terminate): set it first in cleanup, check it first in handlers. In-flight/busy flags reset unconditionally in teardown. EVERY handler branch sends a reply — silent returns block the caller forever.
 
 ## §27 Recursive vs Shallow Listing
-- One level of children needed → use non-recursive listing. `recursive=True` when only one level exists → silently wrong if sub-objects added later.
-- Full-path returns → verify extracting correct path component (immediate child, not deeper descendant).
-- `recursive=False` returns nothing but `recursive=True` does → objects nested deeper than expected; investigate layout.
+One level needed → non-recursive. Full-path returns → extract the right component (immediate child). `recursive=False` empty but `True` populated → data nested deeper than assumed; investigate.
 
-## §28 N+1 Query Patterns — Batch Where Possible
-- Per-item metadata requiring separate round-trip per item → find batch/bulk alternative.
-- Symptoms: loop calling `get_count(item)` per item; one SELECT per parent row.
-- Fix: single query returning all items with counts (`GROUP BY`, single recursive `ls`, `walk` with projection).
-- No batch API → document as known limitation; add `# TODO: batch`.
+## §28 N+1 Queries — Batch
+Per-item round-trips in a loop → find the batch alternative (GROUP BY, single recursive ls, walk with projection). No batch API → document + `# TODO: batch`.
 
-## §29 Exploit Source Ordering — Avoid Full Scans for Extrema
-- Data source already ordered (dates reverse-chrono, IDs monotonic) → answer in first/last bucket; don't scan all.
-- Full scan unavoidable → limit to smallest scope (first/last partition).
-- "Latest by timestamp" + date-partitioned most-recent-first → scan only first date's partition.
+## §29 Exploit Source Ordering
+Ordered sources (reverse-chrono, monotonic IDs) → answer from the first/last bucket, don't scan all. Unavoidable scans → smallest scope.
 
-## §30 Boundary-Aware Scans — Partition Keys vs Sort Keys
-- Record near partition boundary (23:55 day N, stored under day N) may have sort-key exceeding all values in adjacent partition → scan **both** adjacent partitions.
-- Limiting to "top N partitions" → document boundary assumption; choose N for worst-case overlap (typically N=2 for date partitions spanning midnight).
+## §30 Boundary-Aware Partition Scans
+Records near partition boundaries can out-sort the adjacent partition → scan BOTH neighbors (N=2 for date partitions spanning midnight). Document the boundary assumption.
 
-## §31 Filter Push-Down — Skip Partitions When Filters Allow
-- Filter value identifies single partition (e.g. `date_filter="2024-01-15"`, data partitioned by date) → skip all other partitions; don't scan everything and discard post-hoc.
-- Applies to any hierarchical/partitioned store: date dirs, tenant prefixes, shard keys.
+## §31 Filter Push-Down
+A filter identifying one partition → skip the rest; never scan-all-then-discard. Applies to date dirs, tenant prefixes, shard keys.
 
-## §32 Connection/Resource Reuse Within Request
-- Verify whether resource re-acquisition is cheap (cached, same instance) or expensive (new TCP connection).
-- Even when cheap, avoid redundant re-acquisition in same scope when already holding reference — obscures data flow; breaks if caching changes.
-- Prefer passing already-acquired resource into helpers over each helper independently acquiring.
+## §32 Resource Reuse Within Request
+Know whether re-acquisition is cheap or a new connection. Either way, pass the already-acquired resource into helpers rather than re-acquiring in scope.
 
-## §33 Hard-Coded Structural Indices — Derive from Schema
-- Never hardcode positional index based on specific known prefix. Root path change → silently extracts wrong component.
-- Derive dynamically: `root_depth = len(PurePosixPath(ROOT).parts)` then `parts[root_depth]`.
-- Assert expected depth as guard; don't silently return wrong results on structural mismatch.
+## §33 No Hard-Coded Structural Indices
+Derive positions from schema (`root_depth = len(parts(ROOT))` then `parts[root_depth]`), assert expected depth; never a magic index tied to a known prefix.
 
 ## §34 Spawner/Job-Graph Consistency
-- New job in spawner/job-graph → compare config against all analogous existing jobs. Field present in others but absent from new job → likely oversight.
-- Intentional omission → add comment explaining why.
+New job → diff config against ALL analogous jobs; a field others have and yours lacks is likely an oversight (comment if intentional).
 
-## §35 No Blocking Calls in Bounded Thread/Worker Pools
-- Never use blocking sleeps (`time.sleep`, `Thread.sleep`) in bounded-concurrency contexts. Blocked workers → pool starvation → cascade latency.
-- Retry needed → (a) non-blocking alternative (`asyncio.sleep`, event-loop timers), or (b) remove retry; let caller handle.
-- Retry constants → document execution context. Bounded pool → warn that increasing retries reduces throughput.
-- Audit hidden blocking: DNS, sync HTTP without timeouts, file locks, subprocess waits. Ensure short timeouts relative to pool capacity.
-- Prefer "fail fast, let caller decide" over "retry silently inside helper."
+## §35 No Blocking Calls in Bounded Pools
+No blocking sleeps in bounded-concurrency contexts (pool starvation → cascade latency). Retry → non-blocking primitives or push to caller. Audit hidden blocking (DNS, sync HTTP w/o timeout, file locks, subprocess waits). Prefer fail-fast.
 
 ## §36 Client/Server Call-Contract Parity
-- **Match HTTP method.** Open server handler; confirm verb (`get`/`post`/`put`). `post_json()` against `get()` handler → `405`.
-- **Match parameter names exactly.** Keys client sends must be exact names handler reads. Renamed/abbreviated key silently dropped.
-- **Match required parameters.** Handler requires field → client must require it too.
-- **Match GET vs body placement.** GET → query string; POST/PUT → JSON body. Wrong placement → values never arrive.
-- **Missing verb helper → add it.** Don't force wrong verb through existing helper.
+Match the handler's HTTP verb, exact parameter names, required params, and GET-query vs POST-body placement. Missing verb helper → add it, don't force the wrong one. **One mismatch found → audit ALL sibling call sites** (map verb/endpoint/params sent vs read/required, diff row by row); newly-required params → grep every caller, flag uninspectable ones.
 
-### Audit ALL call sites once a contract bug is found
-- One mismatch found → enumerate every other call site using same client helper; cross-check each against server handler (verb + param names + required fields).
-- Build map: per call `(method, endpoint, params sent)` vs handler `(method, params read, required)`. Diff row by row.
-- Newly-required param added to client signature → grep all callers (including bundled frontend outside repo); flag uninspectable callers for manual verification.
+## §37 Blocking I/O in Tornado Async Handlers
+Single-threaded event loop: any blocking call (gromit.ns.*, db.readobj/ls, S3 read_content, helpers over them) blocks the process. Rule: blocking work in a `@staticmethod` (no `self` capture), dispatched via `await loop.run_in_executor(None, lambda: ...)`. Module caches written by executor threads → guard check-and-set AND invalidation with one `threading.Lock`. Checklist: every async handler touching blocking helpers uses the executor; no inline gromit in coroutine bodies.
 
-## §37 Blocking I/O in Tornado Async Handlers — Always Use run_in_executor
-
-In Tornado/asyncio, `async def get/post/put/delete` runs on single-threaded event loop. Any blocking call blocks the entire process.
-
-**Blocking in our stack:** `gromit.ns.*`, `gromit.ns.db.readobj`/`ls`, `container.read_content()` (S3/boto3), any helper calling these.
-
-**Rule:** Extract blocking work into `@staticmethod` (no `self`); dispatch via `run_in_executor`:
-```python
-# ✗ blocks event loop
-async def get(self) -> None:
-    data = self._fetch_from_db(path)
-
-# ✓ correct
-async def get(self) -> None:
-    data = await asyncio.get_running_loop().run_in_executor(
-        None, lambda: self._fetch_from_db(path)
-    )
-
-@staticmethod
-def _fetch_from_db(path: str) -> dict:
-    return gromit.ns.db.readobj(path)
-```
-
-**`@staticmethod` prevents** accidentally capturing non-thread-safe `self` (Tornado handler) in thread-pool worker.
-
-**Thread-safe module caches:** Guard check-and-set with `threading.Lock`:
-```python
-import threading
-_cache: set[str] | None = None
-_cache_lock = threading.Lock()
-
-def _get_cache() -> set[str]:
-    global _cache
-    with _cache_lock:
-        if _cache is None:
-            _cache = set(gromit.ns.db.ls(FOLDER))
-        return _cache
-
-def invalidate_cache() -> None:
-    global _cache
-    with _cache_lock:
-        _cache = None
-```
-
-Checklist:
-- Every async handler calling gromit/S3/blocking helper → `run_in_executor`.
-- Blocking logic in `@staticmethod` — never inline gromit in coroutine body.
-- Module-level `None`-init cache written by executor threads → guarded by `threading.Lock`.
-- `invalidate_cache()` also holds lock when clearing.
+## §38 GDScript / Godot Specifics (this project)
+- **§38a Type inference**: `var x := obj.method()` on loosely-typed obj or Variant expressions (`Dictionary.get`) = parse error — annotate. One parse error breaks the whole chain and the headless suite hangs; run the compile gate (`test_quick.bat`) first, always.
+- **§38b New scripts**: new `class_name` → `--import` before headless runs. Prefer path-based `extends "res://…"` for internal chain layers; `class_name` only for cross-file types.
+- **§38c Inheritance-chain splits**: Game/Player/tests are `_base ← … ← final(class_name)` chains; code moves verbatim; calls flow derived→base; ALL vars in the base layer. Unavoidable upward call → `call("method")` + comment naming the resolving layer (keep to a minimum; currently one: `set_flag`→`_recheck_gates`).
+- **§38d Equality**: Dictionary/Array `==` is DEEP in Godot 4; `Array.has(dict)` matches twins — compare counts or `is_same()` for identity.
+- **§38e Deferred/async**: re-check `is_instance_valid` INSIDE deferred callbacks. Timed-effect tests poll wall-clock (`await create_timer`), not frames.
+- **§38f Knobs vs data**: tuning numbers → `balance.gd`; content tables stay in domain files; no bare tuning numbers in logic.
+- **§38g Autotest**: snapshot + restore shared state, never `.clear()`. Content-module tests via the CONTENT-MODULE TEST HOOK. Seeded behavior → tests derive the expected branch from the same seed helper the game uses (e.g. `social_holds_elite`).
 
 ---
 
 # Per-File Audit Checklist
-
 For every file modified:
-
-1. **Re-read diff** — anything defined twice? Unused imports? Leftover debug? Dead mocks?
-2. **Shared mutable writes** — who else writes? Two writers simultaneous?
-3. **Async/deferred ops** — what can change while pending? All verified after resolution?
-4. **Path/URL/query from variables** — substitute edge cases (empty, no prefix, special chars, shell metacharacters).
-5. **User-facing counts** — captured before or after filtering?
-6. **Cleanup blocks** — list ALL paths reaching it; correct for every one?
-7. **Caught errors** — too broad? Silently hiding failure?
-8. **Loops** — how many iterations produce output? Skip rest earlier?
-9. **Multiple mode flags** — what if >1 supplied? Explicit mutual-exclusion check?
-10. **Rename-on-collision/dedup loops** — renamed value rechecked? Loop can't run forever?
-11. **Listing/query endpoints** — unauthenticated/no-filter call returns what? Data leakage?
-12. **Cache reads** — cached key references deleted resource? Stale case handled?
-13. **Duplicated logic** — canonical version exists? Use it. Pre-existing copies → fold into single source of truth.
-14. **Guard flags in callbacks** — updated sync or async? Callback fires in lag window?
-15. **Message-passing channels** — dead guards assuming caller-enforced invariants? Every handler branch sends reply? `cancelled` flag (not just identity check) guards post-cleanup messages?
-16. **Third-party callbacks** — all event shapes enumerated from docs/source, not just happy path?
-17. **Config applied uniformly across backends** — every backend supports that value? Branch where support differs.
-18. **Remote access enabled** — whitelisted hostnames documented in network policy/CSP? Missing entry silently fails?
-19. **Object destructuring + property access** — every field via destructured var, no mixed access?
-20. **Recursive/hierarchical listing** — recursion depth matches data model? Immediate children → non-recursive.
-21. **O(N) scan for single best result** — source already ordered? Limit to first bucket.
-22. **Per-item count endpoint** — single batch query possible instead of one-per-item loop?
-23. **User input in path/query** — allowlist validated? ALL params, not just obvious one?
-24. **API response field names** — unambiguous? Could consumer misinterpret?
-25. **Sleep/blocking delay** — runs in bounded pool? Non-blocking alternative or document pool-starvation risk.
-26. **Client→server calls** — verb matches handler? Param names exact? Required params supplied? GET→query string, POST→body?
-27. **One contract mismatch found** → audit ALL sibling call sites. Newly-required param → grep all callers; flag uninspectable ones.
+1. Re-read diff — double definitions? unused imports? leftover debug? dead mocks?
+2. Shared mutable writes — who else writes? simultaneous?
+3. Async/deferred — what changes while pending? verified after?
+4. Paths/URLs/queries from vars — edge cases (empty, no prefix, special/shell chars)?
+5. User-facing counts — captured before filtering?
+6. Cleanup blocks — correct for every path reaching them?
+7. Caught errors — too broad? hiding failure?
+8. Loops — filter earlier?
+9. Multiple mode flags — mutual exclusion?
+10. Rename/dedup loops — rechecked? terminates?
+11. Listing endpoints — no-filter call leaks data?
+12. Cache reads — stale/deleted-resource case handled?
+13. Duplicated logic — use/fold into the canonical version.
+14. Guard flags in callbacks — sync or lagging async?
+15. Channels — dead guards? every branch replies? `cancelled` flag over identity?
+16. Third-party callbacks — all event shapes enumerated?
+17. Config across backends — every backend supports it?
+18. Remote access — hostnames documented/whitelisted?
+19. Destructuring — no mixed access.
+20. Hierarchical listing — recursion depth matches the data model?
+21. O(N) scan for one extremum — use source ordering.
+22. Per-item count loop — batch query instead?
+23. User input in path/query — allowlist-validated, ALL params?
+24. Response field names — unambiguous?
+25. Sleeps/blocking — bounded pool? non-blocking alternative?
+26. Client→server — verb/params/placement match the handler?
+27. One contract mismatch → audit all sibling call sites.

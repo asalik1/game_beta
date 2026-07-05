@@ -375,7 +375,8 @@ const CONVOS := {
 # (L5 Fangmaw / L8 Morwen / L11-12 Vargoth on the 30+22·lvl curve) —
 # the old values overshot by ~3 levels ("I'm L10 farming L6 mobs").
 # Retune trash + bosses TOGETHER against that budget, never one alone.
-const LEVEL_CAP := 100
+# (Tuning knobs — level cap, TTK/gold multipliers, reward growth —
+# live in balance.gd.)
 
 const ENEMIES := {
 	# Playtest retune (2026-07, round 2): mobs hit ~50% harder and melee
@@ -415,13 +416,6 @@ const ENEMIES := {
 		"level": 10, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"STR": 2.0, "VIT": 1.5}},
 }
-
-
-# Pacing retrofit (DESIGN.md): time-to-kill at level parity roughly
-# doubles — an HP tune, not a damage one — and gold gets scarcer so
-# merchants and haggling matter.
-const TTK_HP_MULT := 2.0
-const GOLD_MULT := 0.6
 
 
 # Monster attribute conversion — one table for all monsters (the
@@ -468,16 +462,16 @@ static func monster_build(base: Dictionary) -> Dictionary:
 static func enemy_stats_at(kind: String, level: int) -> Dictionary:
 	load_content()
 	var base: Dictionary = ALL_ENEMIES[kind]
-	var lvl := clampi(level, int(base["level"]), LEVEL_CAP)
+	var lvl := clampi(level, int(base["level"]), Balance.LEVEL_CAP)
 	var d := lvl - int(base["level"])
 	var hp_m := pow(1.0 + float(base["hp_g"]), d)
 	if not bool(base.get("boss", false)):
-		hp_m *= TTK_HP_MULT  # mobs only: boss HP pools were already long fights
+		hp_m *= Balance.TTK_HP_MULT  # mobs only: boss pools were already long fights
 	var dmg_m := pow(1.0 + float(base["dmg_g"]), d)
-	var reward_m := 1.0 + d * 0.12  # rewards stay LINEAR (no farm spiral)
+	var reward_m := 1.0 + d * Balance.REWARD_PER_LEVEL
 	var out := {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
 		"xp": int(ceil(base["xp"] * reward_m)),
-		"gold": maxi(1, int(ceil(base["gold"] * reward_m * GOLD_MULT)))}
+		"gold": maxi(1, int(ceil(base["gold"] * reward_m * Balance.GOLD_MULT)))}
 	for stat in SCALED_SUBSTATS:
 		out[stat] = float(base.get(stat, 0.0))
 	var build := monster_build(base)

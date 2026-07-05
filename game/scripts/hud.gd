@@ -3,7 +3,7 @@ class_name Hud extends CanvasLayer
 ## tracker, boss bar, the ability bar with cooldowns, loot banners,
 ## dialogue boxes, and pause / death / victory screens.
 
-var game: Node2D
+var game: Game
 
 # bars
 var hp_fill: ColorRect

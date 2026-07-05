@@ -141,7 +141,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 	# Bags/consumables (round 6). Pre-bag saves get the starter pouch —
 	# same 15 slots the old BACKPACK_MAX allowed.
 	var bag_data: Dictionary = data.get("bag", {})
-	p.bag = bag_data if bag_data.has("slots") else Items.make_bag("F")
+	p.bag = bag_data if bag_data.has("slots") else Items.make_bag(Balance.STARTER_BAG_GRADE)
 	p.bag["slots"] = int(p.bag["slots"])  # JSON floats -> int
 	p.consumables = data.get("consumables", [])
 

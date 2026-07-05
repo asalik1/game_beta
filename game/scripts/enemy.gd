@@ -3,7 +3,7 @@ class_name Enemy extends CharacterBody2D
 ## covers wolves, spiders, cultists and skeletons.
 ## Supports status effects: stun, slow, burn, and vulnerability (Death Mark).
 
-var game: Node2D
+var game: Game
 var kind := "wolf"
 var display_name := "Monster"
 var level := 1
@@ -261,16 +261,16 @@ func promote_elite() -> void:
 		return
 	elite = true
 	display_name = "Elite " + display_name
-	max_hp *= 4.0
+	max_hp *= Balance.ELITE_HP_MULT
 	hp = max_hp
-	dmg *= 1.5
-	physres += 10.0
-	magres += 10.0
-	critres += 3.0
-	xp_value = 0
-	gold_value *= 3
-	aggro_range *= 1.5
-	sprite.scale *= 1.3
+	dmg *= Balance.ELITE_DMG_MULT
+	physres += Balance.ELITE_RES_BONUS
+	magres += Balance.ELITE_RES_BONUS
+	critres += Balance.ELITE_CRITRES_BONUS
+	xp_value = 0  # elites never pay XP (fixed chapter totals)
+	gold_value *= Balance.ELITE_GOLD_MULT
+	aggro_range *= Balance.ELITE_AGGRO_MULT
+	sprite.scale *= Balance.ELITE_SPRITE_MULT
 	# A gold ring underfoot marks the rank at a glance (body tints reset
 	# on damage flashes, so a child sprite is the durable marker).
 	var ring := Sprite2D.new()

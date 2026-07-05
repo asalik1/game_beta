@@ -54,6 +54,7 @@ func reset_fight() -> void:
 	ability_cd = 3.0
 	special_cd = 3.0
 	enraged = false
+	summoned = false  # fangmaw's 50% pack-call re-arms for the retry
 	stun_time = 0.0
 	slow_time = 0.0
 	burn_time = 0.0
@@ -281,7 +282,9 @@ func _reset_ch2_state() -> void:
 	adds_called = false
 	if core_exposed:
 		core_exposed = false
-		physres = float(_stats_for(kind).get("physres", 0.0))
+		# Restore the LEVEL-SCALED armor, not the anchor value — a
+		# Nightmare-tier warden must not reset into story-tier plating.
+		physres = float(_stats_at(kind, level)["physres"])
 
 
 # --------------------------------------------- Korrag, Stormwarden Broken ---

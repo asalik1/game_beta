@@ -4,7 +4,7 @@ class_name Chest extends Area2D
 
 var tier := "wood"
 var opened := false
-var game: Node2D
+var game: Game
 var on_open := Callable()  # optional hook (dead-end caches set a flag)
 
 
