@@ -137,13 +137,24 @@ func open_title() -> void:
 	_lbl(vbox, "Chapter 1: The Hollow King", 15, Color(0.75, 0.75, 0.75))
 
 	_lbl(vbox, "— CONTINUE —", 15, Color(0.95, 0.85, 0.5))
+	# The save list SCROLLS (20 slots + a dev roster overflowed the fixed
+	# panel — the bottom buttons must never leave the box).
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var saves := VBoxContainer.new()
+	saves.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	saves.add_theme_constant_override("separation", 4)
+	scroll.add_child(saves)
 	for s in SaveGame.list():
 		var slot: int = s["slot"]
 		var cls_info: Dictionary = Classes.CLASSES.get(s["cls"], {})
 		var cname: String = cls_info.get("name", s["cls"])
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
-		vbox.add_child(row)
+		saves.add_child(row)
 		var icon: Texture2D = Art.tex(cls_info["sprite"]) if cls_info.has("sprite") else null
 		var resume := func() -> void:
 			if root:
@@ -165,9 +176,8 @@ func open_title() -> void:
 				open_title()
 		_btn(row, " ✕ ", erase, Color(1, 0.5, 0.5))
 
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(spacer)
+	# No spacer: the scroll list absorbs the flexible space, pinning
+	# these buttons inside the panel no matter how many saves exist.
 	_btn(vbox, "  ⚔  New Game  ", func() -> void: open_chapter_select(), Color(0.95, 0.85, 0.5))
 	_btn(vbox, "  🔊  Settings  ", func() -> void: open_settings("title"), Color(0.8, 0.85, 0.9))
 	_dev_roster_row(vbox)

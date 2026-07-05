@@ -250,7 +250,122 @@ func _run_systems() -> void:
 		return _fail("a spent ward must not absorb again")
 	game.player.set_class("warrior")
 	game.player.pending_theme_note = ""
-	print("ok: mage arcane ward (blink absorbs one hit)")
+	if game.player.flat_dr <= 0.0:
+		return _fail("warrior plate DR missing (round 21)")
+	print("ok: mage arcane ward (blink absorbs one hit) + plate DR present")
+
+	# Assassin STAB SURGE (round 25): a connecting cut buffs lifesteal,
+	# bigger the lower your health sits.
+	game.player.set_class("assassin")
+	game.player.pending_theme_note = ""
+	var surge_dummy := _dummy(Vector2(50, 0))
+	await _frames(2)
+	game.player.hp = game.player.max_hp * 0.3
+	game.player.cds["a1"] = 0.0
+	game.player.use_ability("a1")
+	await _frames(2)
+	if game.player.stab_ls_time <= 0.0:
+		return _fail("connecting stab did not raise the lifesteal surge")
+	# Assert the surge STATE, not a current_lifesteal() delta — other
+	# timed buffs (warlock pact from the kit loop) can expire between a
+	# baseline capture and the check and poison the comparison.
+	if game.player.stab_ls_amt < 0.2:
+		return _fail("low-health stab surge too small (missing-hp scaling broken)")
+	# Shadow Dash carries the knife (round 26): dashing through an
+	# enemy stabs it in stride and grants the same surge.
+	game.player.stab_ls_time = 0.0
+	game.player.facing = Vector2.RIGHT
+	game.player.cds["a2"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("a2")
+	await _frames(2)
+	if game.player.stab_ls_time <= 0.0:
+		return _fail("shadow dash through an enemy did not grant the stab surge")
+	# Dash refund (round 37): a CONNECTING dash-stab refunds part of the
+	# cooldown — the cd must sit clearly below the full price.
+	if game.player.cds["a2"] > game.player.ability_cd("a2") * (1.0 - Balance.DASH_REFUND) + 0.05:
+		return _fail("connecting dash-stab did not refund the dash cooldown")
+	# Graze corridor (round 29): passing NEXT to an enemy (~85px off the
+	# dash line, outside the 55px damage lane) still lands the stab.
+	var graze_dummy := _dummy(Vector2(100, 85))
+	await _frames(2)
+	game.player.stab_ls_time = 0.0
+	game.player.facing = Vector2.RIGHT
+	game.player.cds["a2"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("a2")
+	await _frames(2)
+	if game.player.stab_ls_time <= 0.0:
+		return _fail("graze-pass dash did not land the stab (105px corridor broken)")
+	# Blade cadence (round 35): Stab and Fan of Knives share a lockout —
+	# casting either floors the twin's cooldown (no point-blank weave).
+	game.player.cds["a1"] = 0.0
+	game.player.cds["a3"] = 0.0
+	game.player.use_ability("a1")
+	if game.player.cds["a3"] <= 0.0:
+		return _fail("stab did not lock Fan of Knives (blade cadence broken)")
+	game.player.cds["a1"] = 0.0
+	game.player.cds["a3"] = 0.0
+	game.player.use_ability("a3")
+	if game.player.cds["a1"] <= 0.0:
+		return _fail("Fan of Knives did not lock Stab (blade cadence broken)")
+	await _frames(3)
+	# Earned knives (round 37): unsurged darts chip thin; during the
+	# surge window the SAME cast bites double. Assert the ratio via the
+	# projectiles' damage mult (immune to talent/gear multipliers).
+	for stale in get_tree().get_nodes_in_group("projectiles"):
+		stale.queue_free()
+	await _frames(1)
+	game.player.stab_ls_time = 0.0
+	game.player.cds["a3"] = 0.0
+	game.player.use_ability("a3")
+	await _frames(1)
+	var knife_base := 0.0
+	for node in get_tree().get_nodes_in_group("projectiles"):
+		if node is Projectile and node.tex_kind == "dart":
+			knife_base = maxf(knife_base, node.hit_player_mult)
+		node.queue_free()
+	await _frames(1)
+	game.player.stab_ls_time = 4.0
+	game.player.cds["a3"] = 0.0
+	game.player.cds["a1"] = 0.0
+	game.player.use_ability("a3")
+	await _frames(1)
+	var knife_surged := 0.0
+	for node in get_tree().get_nodes_in_group("projectiles"):
+		if node is Projectile and node.tex_kind == "dart":
+			knife_surged = maxf(knife_surged, node.hit_player_mult)
+		node.queue_free()
+	await _frames(1)
+	if knife_base <= 0.0 or absf(knife_surged / knife_base - Balance.KNIFE_SURGE_MULT) > 0.05:
+		return _fail("surge did not double the knives (base %.2f, surged %.2f)" %
+			[knife_base, knife_surged])
+	game.player.stab_ls_time = 0.0
+	# Fixed execution (round 38): Death Mark's cooldown ignores haste
+	# and cd talents — the authored cd is the floor at any build.
+	var cdr_save: float = game.player.cdr
+	game.player.cdr = 0.45
+	var ult_cd_data: float = Classes.ability("assassin", "ult")["cd"]
+	var ult_cd_now := game.player.ability_cd("ult")
+	game.player.cdr = cdr_save
+	if absf(ult_cd_now - ult_cd_data) > 0.01:
+		return _fail("Death Mark cd must be FIXED (haste leaked in: %.1fs vs %.1fs)" %
+			[ult_cd_now, ult_cd_data])
+	graze_dummy.take_damage(9999999.0)
+	surge_dummy.take_damage(9999999.0)
+	await _frames(2)
+	# Sweep the corpses' droppings: the dashes carried the player out of
+	# magnet range, so stray coins linger and later magnet into the
+	# save-roundtrip's exact gold assertion.
+	for drop in game.get_children():
+		if drop is Pickup or drop is Chest:
+			drop.queue_free()
+	await _frames(1)
+	game.player.hp = game.player.max_hp
+	game.player.stab_ls_time = 0.0
+	game.player.set_class("warrior")
+	game.player.pending_theme_note = ""
+	print("ok: assassin stab surge (stab + dash-stab, scales with missing health)")
 
 	# 3b. Target lock cycling.
 	var d1 := _dummy(Vector2(120, 0))
@@ -551,6 +666,13 @@ func _run_systems() -> void:
 	lv_wolf.take_damage(9999999.0)
 	lv_wolf30.take_damage(9999999.0)
 	await _frames(3)
+	# Boss gem chance curve (round 44): 1/25 at the early floor, rising
+	# with level, guaranteed at the L40 cap.
+	if absf(Balance.boss_gem_chance(5.0) - Balance.BOSS_GEM_CHANCE_MIN) > 0.001 \
+			or Balance.boss_gem_chance(40.0) < 1.0 \
+			or Balance.boss_gem_chance(20.0) <= Balance.boss_gem_chance(10.0):
+		return _fail("boss gem chance curve broken (%.2f / %.2f / %.2f)" %
+			[Balance.boss_gem_chance(5.0), Balance.boss_gem_chance(20.0), Balance.boss_gem_chance(40.0)])
 	print("ok: monster levels + growth scaling")
 
 	# 3d4. Elites, bags, reset stones, small rooms (playtest round 6).
@@ -606,7 +728,15 @@ func _run_systems() -> void:
 		var mi := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "mage")
 		if mi["subs"].has("physpen"):
 			return _fail("mage gear rolled PhysPen (dead stat)")
-	print("ok: class-aware drops (arsenal + no dead pen stats)")
+		# Endgame-only stats (round 43): nothing below B may carry
+		# lifesteal or combo — including shape personality stats
+		# (the Wand's built-in combo, the Tome's lifesteal).
+		var low := Items.roll_item_of(Items.SLOTS[i % 4], ["F", "E", "D", "C"][i % 4], crng)
+		var wand_low := Items.roll_item_of("weapon", "C", crng, "", "Wand")
+		if low["subs"].has("lifesteal") or low["subs"].has("combo") \
+				or wand_low["subs"].has("combo") or wand_low["subs"].has("lifesteal"):
+			return _fail("sub-B gear rolled an endgame-only stat (lifesteal/combo)")
+	print("ok: class-aware drops (arsenal + no dead pen stats + B-gated lifesteal/combo)")
 
 	# 4b. S weapon: class shape, 3 gem slots, passive.
 	var srng := RandomNumberGenerator.new()

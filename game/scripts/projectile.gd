@@ -17,6 +17,7 @@ var game: Game
 var glow_color := Color(1, 1, 1)
 var tex_kind := ""
 var spr: Sprite2D = null       # thrown knives spin in flight
+var spin := true               # darts (assassin fan) fly POINT-FIRST instead
 var _already_hit := {}
 
 # Glow tint per projectile type — bright and readable at a glance.
@@ -24,7 +25,7 @@ const GLOWS := {
 	"fireball": Color(1.0, 0.55, 0.15), "bolt": Color(1.0, 0.35, 0.85),
 	"arrow": Color(0.9, 1.0, 0.6), "knife": Color(0.8, 0.85, 1.0),
 	"slash": Color(1.0, 0.9, 0.5), "icelance": Color(0.5, 0.9, 1.0),
-	"shadowbolt": Color(0.7, 0.4, 1.0),
+	"shadowbolt": Color(0.7, 0.4, 1.0), "dart": Color(0.85, 0.92, 1.0),
 }
 
 
@@ -68,18 +69,32 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 		p.add_child(sparks)
 
 	# Arrows and knives streak: a thin motion trail behind the tip.
-	if tex_name == "arrow" or tex_name == "knife":
+	# Knives read SHARP (round 26): longer, thinner streak, dimmer glow,
+	# blade stretched along the flight line — a dart, not a glowstick.
+	if tex_name in ["arrow", "knife"]:
 		var trail := Sprite2D.new()
 		trail.texture = Art.tex("glow")
-		trail.modulate = Color(p.glow_color, 0.4)
+		trail.modulate = Color(p.glow_color, 0.4 if tex_name == "arrow" else 0.5)
 		trail.rotation = velocity.angle()
-		trail.position = -velocity.normalized() * 13.0
-		trail.scale = Vector2(1.6, 0.2)
+		trail.position = -velocity.normalized() * 15.0
+		trail.scale = Vector2(1.6, 0.2) if tex_name == "arrow" else Vector2(2.6, 0.12)
 		p.add_child(trail)
+	if tex_name == "knife":
+		glow.modulate.a = 0.35
+		glow.scale = Vector2(0.7, 0.7)
 
 	var sprite := Sprite2D.new()
 	sprite.texture = Art.tex(tex_name)
-	sprite.scale = Vector2(3, 3)
+	match tex_name:
+		"knife": sprite.scale = Vector2(3.8, 2.1)
+		"dart":
+			# The fan throws the SAME solid blade sliver the stab draws
+			# (player reference art, round 33) — just in motion. No glow,
+			# no trail: a clean white line flying at the enemy.
+			sprite.texture = Art.tex("slashline")
+			sprite.scale = Vector2(0.55, 0.32)  # thinned twice (rounds 34/36): a needle
+			glow.visible = false
+		_: sprite.scale = Vector2(3, 3)
 	sprite.rotation = velocity.angle()
 	p.add_child(sprite)
 	p.spr = sprite
@@ -103,7 +118,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	global_position += vel * delta
-	if tex_kind == "knife" and spr:
+	if tex_kind == "knife" and spr and spin:
 		spr.rotation += 16.0 * delta  # thrown blades tumble end over end
 	life -= delta
 	if life <= 0.0:
@@ -121,19 +136,23 @@ func _bloom() -> void:
 
 
 ## A quick expanding shockwave where a magic bolt lands.
+## Darts get a smaller, snappier ring so fan-of-knives hits register
+## even when the flight itself was too short to see (round 31).
 func _impact_ring() -> void:
-	if not tex_kind in ["fireball", "icelance", "shadowbolt"]:
+	if not tex_kind in ["fireball", "icelance", "shadowbolt", "dart"]:
 		return
+	var small := tex_kind == "dart"
 	var ring := Sprite2D.new()
 	ring.texture = Art.tex("ring")
 	ring.modulate = Color(glow_color, 0.9)
 	ring.global_position = global_position
-	ring.scale = Vector2(0.4, 0.4)
+	ring.scale = Vector2(0.25, 0.25) if small else Vector2(0.4, 0.4)
 	ring.z_index = 8
 	game.add_child(ring)
 	var rt := ring.create_tween()
-	rt.tween_property(ring, "scale", Vector2(1.7, 1.7), 0.18)
-	rt.parallel().tween_property(ring, "modulate:a", 0.0, 0.2)
+	rt.tween_property(ring, "scale",
+		Vector2(0.9, 0.9) if small else Vector2(1.7, 1.7), 0.13 if small else 0.18)
+	rt.parallel().tween_property(ring, "modulate:a", 0.0, 0.15 if small else 0.2)
 	rt.tween_callback(ring.queue_free)
 
 

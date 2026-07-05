@@ -667,6 +667,15 @@ const SPRITES := {
 		"........",
 		"........",
 	]},
+	# The assassin's thrown dart (round 30): a 16px needle with a hot
+	# tip — reads SHARP in flight where the stubby knife read as a stick.
+	"dart": {"rows": [
+		"................",
+		"..........kkkk..",
+		"nnksssssssssssw.",
+		"..........kkkk..",
+		"................",
+	]},
 	"torch": {"rows": [
 		"................",
 		"................",
@@ -1171,6 +1180,8 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_shadow())
 		"glow":
 			t = ImageTexture.create_from_image(_make_glow())
+		"slashline":
+			t = ImageTexture.create_from_image(_make_slashline())
 		"ring":
 			t = ImageTexture.create_from_image(_make_ring())
 		"vignette":
@@ -1755,6 +1766,26 @@ static func _make_glow() -> Image:
 			var d := Vector2(x + 0.5 - s / 2.0, y + 0.5 - s / 2.0).length() / (s / 2.0)
 			if d < 1.0:
 				image.set_pixel(x, y, Color(1, 1, 1, (1.0 - d) * (1.0 - d) * 0.55))
+	return image
+
+
+## A solid blade sliver: needle points at BOTH ends, belly at ~65%
+## along the length (player-provided reference, round 33). SOLID white
+## core with a 1px anti-aliased edge — striking, not glowy. White base;
+## theme variants tint it with modulate. Drawn pointing right.
+static func _make_slashline() -> Image:
+	var w := 96
+	var h := 14
+	var image := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var cy := (h - 1) / 2.0
+	for x in w:
+		var t := (x + 0.5) / float(w)
+		# Long shallow taper to the belly, then a fast sharp point.
+		var half: float = cy * (pow(t / 0.65, 1.6) if t < 0.65 else pow((1.0 - t) / 0.35, 0.8))
+		for y in h:
+			var a := clampf(half - absf(y - cy) + 0.5, 0.0, 1.0)
+			if a > 0.0:
+				image.set_pixel(x, y, Color(1, 1, 1, a))
 	return image
 
 

@@ -195,6 +195,24 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
 	Pickup.drop_gold(self, Story.ALL_ENEMIES[kind].get("gold", 50), boss_pos)
 
+	# Boss gems (round 44): first clear of the chapter = 3 guaranteed
+	# gems per boss (this runs BEFORE completed_<ch> is set below, so
+	# the first run's final boss still counts). Replays roll a per-kill
+	# chance scaling with the boss's level — 1/25 early, sure at L40+.
+	var boss_lv: int = src.level if is_instance_valid(src) else 1
+	var first_clear: bool = not flags.get("completed_" + chapter_id, false)
+	var gem_count := 0
+	if first_clear:
+		gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
+	elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
+		gem_count = 1
+	for gi in gem_count:
+		var boss_gem := Items.random_gem(loot_rng,
+			2 if loot_rng.randf() < Balance.ELITE_GEM_LV2_CHANCE else 1)
+		if give_loot({"kind": "gem", "gem": boss_gem}, boss_pos + Vector2(-34.0 + 34.0 * gi, 30)):
+			spawn_text(boss_pos + Vector2(0, -70 - 20 * gi),
+				"+ " + Items.gem_title(boss_gem), Items.gem_color(boss_gem))
+
 	# Now that the room is safe, a wandering merchant MAY set up camp.
 	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
 		call_deferred("_merchant_arrives", mzi)

@@ -319,11 +319,16 @@ func update_stats(p: Player) -> void:
 	else:
 		vignette.modulate = Color(1, 1, 1)
 	_set_fill(hp_fill, hp_frac)
-	_set_fill(mp_fill, p.mp / p.max_mp)
 	_set_fill(xp_fill, float(p.xp) / float(p.xp_needed()))
 	var cls_name: String = Classes.CLASSES[p.cls]["name"]
 	var pts := "  (+%d pts, press T)" % p.skill_points if p.skill_points > 0 else ""
-	stats_label.text = "%s  Lv %d   HP %d/%d   MP %d/%d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), int(p.mp), int(p.max_mp), pts]
+	if Classes.CLASSES[p.cls].get("manaless", false):
+		# Manaless classes (assassin, round 31): no MP line, no blue bar.
+		stats_label.text = "%s  Lv %d   HP %d/%d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), pts]
+		_set_fill(mp_fill, 0.0)
+	else:
+		stats_label.text = "%s  Lv %d   HP %d/%d   MP %d/%d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), int(p.mp), int(p.max_mp), pts]
+		_set_fill(mp_fill, p.mp / p.max_mp)
 	gold_label.text = "◉ %d gold    Potions [%s] x%d" % [p.gold, OS.get_keycode_string(game.binds["potion"]), p.potions]
 	cr_label.text = "Combat Rating: %d" % p.combat_rating()
 	_update_resonance(p.resonance)

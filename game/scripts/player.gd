@@ -21,6 +21,7 @@ func _physics_process(delta: float) -> void:
 	# fights (2x TTK) can't ask melee to eat hits with no comeback.
 	since_hurt += delta
 	ward_time = maxf(0.0, ward_time - delta)
+	stab_ls_time = maxf(0.0, stab_ls_time - delta)
 	# Second Wind (round 14): the no-lifesteal ranged kit's sustain —
 	# stay untouched for sw_delay and recovery kicks in. Spacing skill
 	# IS the heal; one connected hit resets the clock.
@@ -63,16 +64,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# ------------------------------------------------------------ movement
-	var dir := Vector2.ZERO
-	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
-		dir.y -= 1
-	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
-		dir.y += 1
-	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
-		dir.x -= 1
-	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
-		dir.x += 1
-	dir = dir.normalized()
+	var dir := _move_dir()
 	if dir != Vector2.ZERO:
 		facing = dir
 	var spd := speed * (1.25 if berserk_time > 0.0 else 1.0)
@@ -161,6 +153,13 @@ func use_ability(slot: String) -> void:
 	if mp < cost:
 		return
 	cds[slot] = ability_cd(slot)
+	# Blade cadence (round 35): the assassin's two spammables share a
+	# lockout — Stab and Fan of Knives can each be spammed, but never
+	# WOVEN together. Point-blank stab+knives was double dps with ALL
+	# of it feeding the surge lifesteal: an immortality loop.
+	if cls == "assassin" and slot in ["a1", "a3"]:
+		var twin := "a3" if slot == "a1" else "a1"
+		cds[twin] = maxf(cds[twin], cds[slot])
 	mp -= cost
 	var f := dm(slot)
 
@@ -255,18 +254,38 @@ func use_ability(slot: String) -> void:
 		["mage", "a1"]:
 			if _tfx.get("twin", 0):
 				# Wind: split the bolt.
-				_cast_bolt(aim_dir().rotated(0.09), 0.7 * f)
-				_cast_bolt(aim_dir().rotated(-0.09), 0.7 * f)
+				_cast_bolt(aim_dir().rotated(0.09), 0.75 * f)
+				_cast_bolt(aim_dir().rotated(-0.09), 0.75 * f)
 			else:
-				_cast_bolt(aim_dir(), 1.1 * f)
+				_cast_bolt(aim_dir(), 1.2 * f)
 		["mage", "a2"]: _frost_nova(f)
 		["mage", "a3"]: _blink()
 		["mage", "ult"]: _meteor()
-		["assassin", "a1"]: _melee_arc(0.8 * f, 84.0, "slash", {"stagger": 0.3, "knock": 260.0}, "stab", "stab")
+		["assassin", "a1"]:
+			# The quick-draw SWORD (round 30): longer reach, no slide —
+			# the round-18 slide-step gave infinite mobility on a 0.3s
+			# cadence and was quietly game-breaking. Mobility lives on
+			# Shadow Dash now; the blade covers the distance instead.
+			var cut := _melee_arc(Balance.STAB_MULT * f, 118.0, "slash", {"stagger": 0.3, "knock": 260.0}, "stab", "stab")
+			if cut > 0:
+				# Blood price, paid forward (round 25): dive in low, cut,
+				# ult through the answer, heal it back through knives.
+				_grant_stab_surge()
 		["assassin", "a2"]: _shadow_dash(f)
 		["assassin", "a3"]: _fan_of_knives(f)
 		["assassin", "ult"]: _death_mark()
 		["paladin", "a1"]:
+			# Judgment CLOSES (round 22): out of arm's reach, the paladin
+			# leaps to the prey before the hammer falls — dodge the
+			# telegraph, then leap straight back onto the boss.
+			var j_tgt := auto_aim(300.0)
+			if j_tgt and global_position.distance_to(j_tgt.global_position) > 95.0:
+				var j_from := global_position
+				global_position = game.clamp_to_zone(
+					j_tgt.global_position + (global_position - j_tgt.global_position).normalized() * 58.0,
+					j_tgt.global_position)
+				_afterimages(j_from, global_position, Color(1.0, 0.9, 0.55), 3)
+				game.sfx("slam", 1.4)
 			var jeff := {"stagger": 0.3, "knock": 280.0}
 			if s_passive() == "dawnbreaker":
 				# A pillar of light falls with the hammer.
@@ -358,6 +377,10 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 		return
 	hurt_cd = 0.6
 	since_hurt = 0.0
+	if flat_dr > 0.0 and dmg_type != "true":
+		# Plate DR (round 21): flat, AFTER resists — immune to the res
+		# curve's saturation, exclusive to the plate classes.
+		amount *= (1.0 - flat_dr)
 	hp -= amount
 	game.sfx("hurt")
 	# Getting hit should FEEL like something went wrong: harder shake and

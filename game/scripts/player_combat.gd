@@ -6,6 +6,21 @@ extends "res://scripts/player_core.gd"
 
 # ================================================================ targeting
 
+## Current movement input (WASD/arrows), normalized; ZERO when idle.
+## Shared by the per-frame mover and abilities that step with you.
+func _move_dir() -> Vector2:
+	var dir := Vector2.ZERO
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		dir.y -= 1
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		dir.y += 1
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+		dir.x -= 1
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+		dir.x += 1
+	return dir.normalized()
+
+
 func auto_aim(rng := 520.0) -> Enemy:
 	if is_instance_valid(locked_target) and not locked_target.dying \
 			and not locked_target.untargetable \
@@ -105,6 +120,11 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		game.spawn_text(e.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
 	if effects.has("heal"):
 		hp = minf(max_hp, hp + max_hp * effects["heal"])
+	if effects.has("blood_amp"):
+		# Blood theme (round 32): the cut bites harder the deeper YOU
+		# bleed — missing health becomes DAMAGE (the base kit's surge
+		# already turns it into lifesteal; blood doubles down on the edge).
+		dmg *= 1.0 + effects["blood_amp"] * (1.0 - hp / max_hp)
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -210,50 +230,33 @@ func _muzzle(dir: Vector2, color: Color) -> void:
 
 ## Melee strike. style "swing" = crescent arc; "stab" = straight thrust
 ## (a piercing streak, and the held weapon lunges instead of swiping).
-func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style := "swing", snd := "slash") -> void:
+func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style := "swing", snd := "slash") -> int:
 	game.sfx(snd)
 	melee_swing = 0.16
 	melee_style = style
 	var dir := aim_dir(220.0)
 	melee_dir = dir
 	if style == "stab":
-		# Thrust streak: a stretched flash of light along the stab line,
-		# with a white-hot core and an impact flash at the point.
-		var streak := Sprite2D.new()
-		streak.texture = Art.tex("glow")
-		streak.modulate = Color(_tcolor if _themed else Color(1, 1, 1), 0.9)
-		streak.rotation = dir.angle()
-		streak.scale = Vector2(reach / 26.0, 0.45)
-		streak.position = dir * reach * 0.55
-		streak.z_index = 6
-		add_child(streak)
-		var tw := streak.create_tween()
-		tw.tween_property(streak, "scale:y", 0.1, 0.12)
-		tw.parallel().tween_property(streak, "modulate:a", 0.0, 0.12)
-		tw.tween_callback(streak.queue_free)
-		var core := Sprite2D.new()
-		core.texture = Art.tex("glow")
-		core.modulate = Color(1, 1, 1, 0.95)
-		core.rotation = dir.angle()
-		core.scale = Vector2(reach / 34.0, 0.16)
-		core.position = dir * reach * 0.55
-		core.z_index = 7
-		add_child(core)
-		var ct := core.create_tween()
-		ct.tween_property(core, "scale:y", 0.04, 0.1)
-		ct.parallel().tween_property(core, "modulate:a", 0.0, 0.1)
-		ct.tween_callback(core.queue_free)
-		var tip := Sprite2D.new()
-		tip.texture = Art.tex("glow")
-		tip.modulate = Color(_tcolor if _themed else Color(1, 1, 1), 0.9)
-		tip.position = dir * reach
-		tip.scale = Vector2(0.3, 0.3)
-		tip.z_index = 7
-		add_child(tip)
-		var tt := tip.create_tween()
-		tt.tween_property(tip, "scale", Vector2(1.1, 1.1), 0.11)
-		tt.parallel().tween_property(tip, "modulate:a", 0.0, 0.12)
-		tt.tween_callback(tip.queue_free)
+		# The stab IS a single solid blade sliver (player reference art,
+		# round 33): a white line with needle-sharp ends, there for a
+		# beat, then gone. No glow stack — SOLID and striking. White is
+		# the base; theme variants only change the color.
+		var blade := Sprite2D.new()
+		blade.texture = Art.tex("slashline")
+		blade.modulate = _tcolor if _themed else Color(1, 1, 1)
+		blade.rotation = dir.angle()
+		# y thinned twice on playtest feedback (1.5 → 0.8 → 0.5): a razor
+		# line, not a bar.
+		blade.scale = Vector2(reach / 80.0, 0.5)
+		blade.position = dir * reach * 0.35
+		blade.z_index = 7
+		add_child(blade)
+		var tw := blade.create_tween()
+		tw.tween_property(blade, "position", dir * reach * 0.58, 0.06) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_interval(0.06)  # hold solid — the reference pose
+		tw.tween_property(blade, "modulate:a", 0.0, 0.07)
+		tw.tween_callback(blade.queue_free)
 	else:
 		# The crescent SWEEPS across the arc instead of fading in place —
 		# a pivot at the hero swings the blade sprite through ~100°.
@@ -273,8 +276,11 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tween.parallel().tween_property(pivot, "modulate:a", 0.0, 0.17)
 		tween.tween_callback(pivot.queue_free)
+	var hits := 0
 	for e in _enemies_within(global_position + dir * reach * 0.55, reach * 0.55):
 		hit_enemy(e, mult, effects.duplicate())
+		hits += 1
+	return hits
 
 
 func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectile:
@@ -422,6 +428,12 @@ func _storm_strike() -> void:
 func _frost_nova(f := 1.0) -> void:
 	game.sfx("nova")
 	game.shake(6.0)
+	# The nova drinks the cold (round 23): restores 20% of MISSING
+	# health and mana — the lower you run, the more it gives back. The
+	# mage's short-range button carries UTILITY, not damage budget
+	# (ranged kits can rarely connect close-range damage safely).
+	hp = minf(max_hp, hp + (max_hp - hp) * 0.2)
+	mp = minf(max_mp, mp + (max_mp - mp) * 0.2)
 	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
 	var col := _tcolor if _themed else Color(0.45, 0.8, 1.0)
 	var inward: bool = _tfx.get("pull", 0)
@@ -497,13 +509,21 @@ func _frost_nova(f := 1.0) -> void:
 ## the path. Used by mage Blink and assassin Shadow Dash — and because
 ## it HITS things, ability themes fully apply to it. Returns kill count
 ## (Phantom step refunds cooldown on kills).
-func _dash_strike(dist: float, mult: float, effects := {}) -> int:
+## A connecting stab's blood surge (round 25): lifesteal up for 4s,
+## scaling with MISSING health — low health is a resource.
+func _grant_stab_surge() -> void:
+	stab_ls_time = 4.0
+	stab_ls_amt = Balance.SURGE_LS_FLOOR + Balance.SURGE_LS_SCALE * (1.0 - hp / max_hp)
+
+
+func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, iframe := 0.3) -> int:
 	game.sfx("blink")
 	var color := _tcolor if _themed else Color(0.6, 0.7, 1.0)
 	var start := global_position
 	global_position = game.clamp_to_zone(start + facing * dist, start)
 	var end := global_position
-	hurt_cd = maxf(hurt_cd, 0.3)  # brief immunity while dashing
+	if iframe > 0.0:
+		hurt_cd = maxf(hurt_cd, iframe)  # brief immunity while dashing
 	game.burst(start, color, 8)
 	game.burst(end, color, 8)
 	_afterimages(start, end, color)
@@ -523,16 +543,63 @@ func _dash_strike(dist: float, mult: float, effects := {}) -> int:
 	tween.tween_callback(trail.queue_free)
 
 	var kills := 0
+	var rider_hit := false
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e == null or e.dying or e.untargetable:
 			continue
 		var closest := Geometry2D.get_closest_point_to_segment(e.global_position, start, end)
-		if e.global_position.distance_to(closest) <= 55.0:
+		var lane := e.global_position.distance_to(closest)
+		if lane <= 55.0:
 			hit_enemy(e, mult, effects.duplicate())
+			if stab_rider > 0.0:
+				# First stroke on the victim: the dash blade itself
+				# (round 36 — the pass-through finally LOOKS like a cut).
+				_cut_flash(e.global_position, 0.65, _tcolor if _themed else Color(1, 1, 1))
 			if e.dying or e.hp <= 0.0:
 				kills += 1
+		if stab_rider > 0.0 and lane <= 150.0 and not e.dying:
+			# The dash carries the knife (rounds 26/29), and the knife
+			# reaches FARTHER than the shoulder: a graze-pass NEXT to
+			# the boss still lands the stab + blood surge — thread the
+			# needle past the swing, cut, kite out already healing.
+			# Round 32: the dash-stab gets BONUS range over the standing
+			# stab (150px corridor vs 118px reach) — striking in stride
+			# reaches deeper than planting your feet.
+			# Round 40: the rider pays by DEPTH — inside the old 105px
+			# corridor the cut lands full (1.0x); only the far bonus-
+			# reach graze (105-150px) takes the discount. The surge is
+			# identical at every depth.
+			var rider_mult: float = (Balance.DASH_STAB_NEAR_MULT
+				if lane <= Balance.DASH_STAB_NEAR_LANE else Balance.DASH_STAB_MULT)
+			hit_enemy(e, rider_mult * stab_rider, {"stagger": 0.3})
+			_grant_stab_surge()
+			rider_hit = true
+			# The rider's stroke, opposite diagonal: a graze shows ONE
+			# cut; a full pass-through (lane + rider) crosses into an X.
+			_cut_flash(e.global_position, -0.65, _tcolor if _themed else Color(1, 1, 1))
+	if rider_hit:
+		# The connect refunds the dash (round 37): land the cut, keep
+		# dancing — whiffed dashes pay full price.
+		cds["a2"] *= 1.0 - Balance.DASH_REFUND
 	return kills
+
+
+## A single blade-sliver flash across a point — the universal "you
+## were cut" mark (one diagonal per stroke; two strokes cross an X).
+func _cut_flash(pos: Vector2, ang: float, color := Color(1, 1, 1)) -> void:
+	var cut := Sprite2D.new()
+	cut.texture = Art.tex("slashline")
+	cut.modulate = color
+	cut.global_position = pos
+	cut.rotation = ang
+	cut.scale = Vector2(1.1, 0.45)
+	cut.z_index = 8
+	game.add_child(cut)
+	var tw := cut.create_tween()
+	tw.tween_interval(0.08)
+	tw.tween_property(cut, "modulate:a", 0.0, 0.1)
+	tw.tween_callback(cut.queue_free)
 
 
 func _blink() -> void:
@@ -641,10 +708,14 @@ func _shadow_dash(f := 1.0) -> void:
 	melee_swing = 0.16
 	melee_style = "stab"
 	melee_dir = facing
-	hurt_cd = maxf(hurt_cd, 0.5)  # slip through the blow (Tumble-style i-frames)
+	# NO i-frame (round 43): a short-cd dash with immunity was too
+	# abusable once the refund made it semi-spammable. The dodge is the
+	# MOVEMENT itself; only the ult's all-in commit grants immunity.
 	game.sfx("stab")
 	var start := global_position
-	var kills := _dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), 1.2 * f, {"stagger": 0.4})
+	# stab_rider passes the talent scale only — the depth-tiered damage
+	# mult (near/far) is applied per victim inside _dash_strike.
+	var kills := _dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), 1.2 * f, {"stagger": 0.4}, f, 0.0)
 	if _tfx.get("trail_mist", 0):
 		# Poison: the dash line blooms into a toxic wake.
 		_mist((start + global_position) / 2.0, 110.0, 0.3, _tcolor, 2.5)
@@ -655,15 +726,19 @@ func _shadow_dash(f := 1.0) -> void:
 
 
 func _fan_of_knives(f := 1.0) -> void:
-	game.sfx("knife", 1.25)  # lighter/faster than the archer sounds
+	game.sfx("knife", 1.55)  # short and SHARP — a dart leaving fingers
 	var dir := aim_dir()
 	_muzzle(dir, _tcolor if _themed else Color(0.8, 0.85, 1.0))
+	# The range damage is EARNED in close (round 37): thin chip on its
+	# own, but the fan bites double while the stab surge runs.
+	var surge_amp: float = Balance.KNIFE_SURGE_MULT if stab_ls_time > 0.0 else 1.0
 	if _tfx.get("bloom", 0):
-		# Poison: ONE heavy venom blade that detonates into a toxin cloud
-		# (on its first hit, or at the end of its flight).
-		var p := _proj(dir, 1.0 * f, "knife", 500.0)
+		# Poison: ONE venom blade that detonates into a toxin cloud
+		# (chip-tuned: knives spam at stab cadence since round 25).
+		var p := _proj(dir, Balance.KNIFE_BLOOM_MULT * surge_amp * f, "dart", 660.0)
+		p.spin = false
+		p.life = 0.45
 		p.scale = Vector2(1.5, 1.5)
-		p.life = 0.55
 		p.fx["bloom_mist"] = 1
 		p.fx["bloom_color"] = _tcolor
 		return
@@ -671,7 +746,8 @@ func _fan_of_knives(f := 1.0) -> void:
 	var step := float(_tfx.get("spread", 0.13))
 	for i in count:
 		var spread := (float(i) - (count - 1) / 2.0) * step
-		var p := _proj(dir.rotated(spread), 0.7 * f, "knife", 560.0)
+		var p := _proj(dir.rotated(spread), Balance.KNIFE_MULT * surge_amp * f, "dart", 760.0)
+		p.spin = false
 		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 
 
@@ -748,70 +824,115 @@ func _death_mark() -> void:
 	if target == null:
 		cds["ult"] = 1.0
 		return
-	# EXECUTION: the world darkens, you appear on top of the target,
-	# a giant death mark rises, then a 3-hit true-damage flurry lands.
+	# EXECUTION (round 34, player-designed from the LoL reference): the
+	# world darkens and the X mark is SET — the prey takes +50% damage
+	# for 5s and wears a floating X. Two living shadows of the assassin
+	# converge THROUGH it in an X, slashing, then the assassin himself
+	# appears BEHIND it and drives the killing stab home.
 	_ult_sfx()
-	game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.45)
+	game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.8)
 	game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
-	# Untouchable through the execution's opening (round 18): blinking
-	# INTO the enemy is the whole move, so the i-frame runs LONGER than
-	# Shadow Dash's 0.5s — commit to the kill, not to the chip damage.
+	# Untouchable through the execution (round 18): longer than Shadow
+	# Dash's 0.5s — commit to the kill, not to the chip damage.
 	hurt_cd = maxf(hurt_cd, 0.8)
-	var dm_start := global_position
-	var dir := (target.global_position - global_position).normalized()
-	global_position = game.clamp_to_zone(target.global_position + dir * 42.0, target.global_position)
-	_afterimages(dm_start, global_position, Color(0.6, 0.25, 0.6), 3)
 	target.vuln_time = 5.0
 	target.apply_stun(0.6)
 	if _tfx.has("mark_dot"):
 		# Poison: the mark itself rots the target.
 		target.apply_burn(current_atk() * float(_tfx["mark_dot"]), 5.0, Color(0.5, 1.2, 0.5))
 	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK", Color(1, 0.25, 0.3))
-
-	var skull := Sprite2D.new()
-	skull.texture = Art.glyph_tex("ab_skull", Color(1.0, 0.25, 0.35))
-	skull.scale = Vector2(3.5, 3.5)
-	skull.global_position = target.global_position + Vector2(0, -40)
-	skull.z_index = 30
-	game.add_child(skull)
-	var tween := skull.create_tween()
-	tween.tween_property(skull, "global_position:y", skull.global_position.y - 46.0, 0.7)
-	tween.parallel().tween_property(skull, "modulate:a", 0.0, 0.7)
-	tween.tween_callback(skull.queue_free)
-
-	_death_mark_flurry(target, float(_tfx.get("flurry_heal", 0.0)), float(_tfx.get("execute", 0.0)))
+	_mark_overhead_x(target)
+	_death_mark_execution(target, float(_tfx.get("execute", 0.0)))
 
 
-func _death_mark_flurry(target: Enemy, flurry_heal := 0.0, execute := 0.0) -> void:
-	for i in 3:
-		if not is_instance_valid(target) or target.dying:
-			return
-		melee_swing = 0.16
-		melee_style = "stab"
-		game.sfx("stab")
-		game.shake(3.5)
-		game.burst(target.global_position, Color(1.0, 0.2, 0.3), 10)
-		# A visible slash rips across the target with every hit.
+## The floating X over a marked target's head: two crossed blade
+## slivers riding the enemy (freed with it) for the mark's 5s window.
+func _mark_overhead_x(target: Enemy) -> void:
+	var x_mark := Node2D.new()
+	x_mark.position = Vector2(0, -56)
+	x_mark.z_index = 30
+	for ang in [0.7, -0.7]:
+		var stroke := Sprite2D.new()
+		stroke.texture = Art.tex("slashline")
+		stroke.modulate = Color(1.0, 0.2, 0.3, 0.95)
+		stroke.rotation = ang
+		stroke.scale = Vector2(0.4, 0.5)
+		x_mark.add_child(stroke)
+	target.add_child(x_mark)
+	var tw := x_mark.create_tween().set_loops(5)
+	tw.tween_property(x_mark, "position:y", -62.0, 0.5)
+	tw.tween_property(x_mark, "position:y", -56.0, 0.5)
+	await get_tree().create_timer(5.0).timeout
+	if is_instance_valid(x_mark):
+		x_mark.queue_free()
+
+
+## A living-shadow copy of the assassin dashing along a line.
+func _shadow_ghost(from: Vector2, to: Vector2) -> void:
+	if sprite == null:
+		return
+	var ghost := Sprite2D.new()
+	ghost.texture = sprite.texture
+	ghost.flip_h = to.x < from.x
+	ghost.scale = sprite.scale
+	ghost.global_position = from + sprite.position
+	ghost.modulate = Color(0.3, 0.12, 0.4, 0.9)  # a shadow, not a man
+	ghost.z_index = 6
+	game.add_child(ghost)
+	var tw := ghost.create_tween()
+	tw.tween_property(ghost, "global_position", to + sprite.position, 0.14) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ghost, "modulate:a", 0.0, 0.12)
+	tw.tween_callback(ghost.queue_free)
+
+
+## One execution slash across a point: the stab's slashline, red
+## stroke over a white-hot core.
+func _execution_slash(pos: Vector2, ang: float) -> void:
+	for layer in 2:
 		var rip := Sprite2D.new()
-		rip.texture = Art.tex("glow")
-		rip.modulate = Color(1.0, 0.35, 0.45, 0.95)
-		rip.global_position = target.global_position
-		rip.rotation = randf_range(0.0, TAU)
-		rip.scale = Vector2(2.4, 0.14)
-		rip.z_index = 8
+		rip.texture = Art.tex("slashline")
+		rip.modulate = Color(1.0, 0.25, 0.35, 1.0) if layer == 0 else Color(1, 1, 1, 1.0)
+		rip.global_position = pos
+		rip.rotation = ang
+		rip.scale = Vector2(2.0, 0.9) if layer == 0 else Vector2(1.7, 0.45)
+		rip.z_index = 8 + layer
 		game.add_child(rip)
 		var rt := rip.create_tween()
-		rt.tween_property(rip, "scale:y", 0.03, 0.12)
-		rt.parallel().tween_property(rip, "modulate:a", 0.0, 0.14)
+		rt.tween_interval(0.1 if layer == 0 else 0.08)
+		rt.tween_property(rip, "modulate:a", 0.0, 0.12)
 		rt.tween_callback(rip.queue_free)
-		hit_enemy(target, 0.7 if i < 2 else 1.3, {"type": "true"})
-		if flurry_heal > 0.0:
-			hp = minf(max_hp, hp + max_hp * flurry_heal)  # Blood: the flurry feeds
-		await get_tree().create_timer(0.09).timeout
-	# Shadow: if they survived under 30%, the executioner finishes it.
+
+
+## The execution itself: two shadows converge through the prey in an
+## X (a slash and a 0.7x true hit each), then the assassin blinks
+## BEHIND it and lands the killing stab (1.3x true, via the real stab
+## arc). Shadow theme: a survivor under 30% is finished on the spot.
+func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
+	for diag in [Vector2(1, 1).normalized(), Vector2(-1, 1).normalized()]:
+		if not is_instance_valid(target) or target.dying:
+			return
+		var tpos: Vector2 = target.global_position
+		_shadow_ghost(tpos - diag * 150.0, tpos + diag * 150.0)
+		_execution_slash(tpos, diag.angle())
+		game.sfx("stab")
+		game.shake(3.5)
+		game.burst(tpos, Color(1.0, 0.2, 0.3), 10)
+		hit_enemy(target, 0.7, {"type": "true"})
+		await get_tree().create_timer(0.16).timeout
+	if not is_instance_valid(target) or target.dying:
+		return
+	# The real blade: appear on the FAR side of the prey and stab back
+	# through it — the full stab visual, not a bolt-on flash.
+	var from := global_position
+	var behind := (target.global_position - from).normalized()
+	global_position = game.clamp_to_zone(
+		target.global_position + behind * 46.0, target.global_position)
+	_afterimages(from, global_position, Color(0.6, 0.25, 0.6), 3)
+	game.shake(6.0)
+	_melee_arc(1.3, 118.0, "slash", {"type": "true"}, "stab", "stab")
 	if execute > 0.0 and is_instance_valid(target) and not target.dying \
 			and target.hp < target.max_hp * 0.3:
-		game.shake(6.0)
 		game.spawn_text(target.global_position + Vector2(0, -70), "EXECUTED", Color(1, 0.15, 0.25))
 		game.burst(target.global_position, Color(0.6, 0.2, 0.6), 16)
 		hit_enemy(target, execute, {"type": "true"})

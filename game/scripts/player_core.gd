@@ -74,6 +74,9 @@ var regen_pct := 0.0     # % of max HP regenerated per second (melee passives)
 var sw_regen := 0.0      # Second Wind: extra regen once untouched for sw_delay
 var sw_delay := 0.0
 var since_hurt := 999.0  # seconds since the player last TOOK damage
+var flat_dr := 0.0      # plate classes: flat damage reduction AFTER resists
+var stab_ls_time := 0.0  # assassin: lifesteal surge window from a connecting stab
+var stab_ls_amt := 0.0   # surge size — scales with MISSING health at the cut
 var blink_ward := 0.0    # Arcane Ward duration granted by Blink (mage passive)
 var ward_time := 0.0     # while > 0 the next hit is fully absorbed
 var physres := 0.0
@@ -286,14 +289,16 @@ func recalc() -> void:
 	var b := {"atk_flat": 0.0, "atk_pct": 0.0, "hp_flat": 0.0, "hp_pct": 0.0,
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
 		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
-		"blink_ward": 0.0,
+		"blink_ward": 0.0, "flat_dr": 0.0,
 		"physres": 0.0, "magres": 0.0,
 		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
 		"combo": 0.0, "greed": 0.0}
 
 	var passive: Dictionary = base.get("passive", {})
 	for stat in passive:
-		if stat != "text":
+		# Numeric stats only: passives also carry "text" and flag keys
+		# like "manaless" (bool + float = runtime error, round 31).
+		if passive[stat] is float or passive[stat] is int:
 			b[stat] = b.get(stat, 0.0) + passive[stat]
 	for slot in equipment:
 		var stats := Items.stats_of(equipment[slot])
@@ -334,6 +339,7 @@ func recalc() -> void:
 	sw_regen = b["sw_regen"]
 	sw_delay = b["sw_delay"]
 	blink_ward = b["blink_ward"]
+	flat_dr = b["flat_dr"]
 	physres = b["physres"]
 	magres = b["magres"]
 	critres = b["critres"]
@@ -355,7 +361,8 @@ func current_atk() -> float:
 
 func current_lifesteal() -> float:
 	return lifesteal + (0.15 if berserk_time > 0.0 else 0.0) \
-		+ (pact_ls if pact_time > 0.0 else 0.0)
+		+ (pact_ls if pact_time > 0.0 else 0.0) \
+		+ (stab_ls_amt if stab_ls_time > 0.0 else 0.0)
 
 
 ## An attribute's TOTAL: everyone has a base of 5, allocation adds to it,
@@ -671,6 +678,11 @@ func dm(slot: String) -> float:
 
 func ability_cd(slot: String) -> float:
 	var ab := Classes.ability(cls, slot)
+	if cls == "assassin" and slot == "ult":
+		# Death Mark runs a FIXED cooldown (round 38): immune to haste
+		# and cd talents. At its numbers the execution gets disgusting
+		# below 30s — the authored cd IS the floor.
+		return float(ab["cd"])
 	var cd: float = ab["cd"] * (1.0 + _amod(slot, "cd"))
 	return maxf(0.1, cd * (1.0 - cdr))
 

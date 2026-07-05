@@ -325,12 +325,21 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 	# own damage type can use. Everything else stays class-neutral.
 	if cls != "" and CLASSES_DMG_TYPE.has(cls):
 		pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
+	# Endgame-only stats (round 43): lifesteal and combo never roll
+	# below B — the climb earns them (applies to the random pool AND
+	# a shape's built-in personality stats, e.g. the Wand's combo).
+	var below_b := GRADES.find(grade) < GRADES.find("B")
+	if below_b:
+		pool.erase("lifesteal")
+		pool.erase("combo")
 	pool.shuffle()
 	for i in mini(sub_count, pool.size()):
 		var stat: String = pool[i]
 		subs[stat] = snappedf(SUBSTATS[stat] * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
 	# The shape's guaranteed personality stats, scaled by grade.
 	for stat in style["subs"]:
+		if below_b and (stat == "lifesteal" or stat == "combo"):
+			continue
 		subs[stat] = snappedf(subs.get(stat, 0.0) + style["subs"][stat] * (0.75 + 0.25 * mult), 0.01)
 
 	var item := {
