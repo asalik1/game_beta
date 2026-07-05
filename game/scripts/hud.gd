@@ -12,6 +12,9 @@ var xp_fill: ColorRect
 var stats_label: Label
 var gold_label: Label
 var cr_label: Label
+var res_label: Label            # shard resonance, right under Combat Rating
+var res_particles: CPUParticles2D
+var _last_resonance := -99999.0  # sentinel: no pulse on the first frame
 
 # quest / zone
 var zone_label: Label
@@ -76,6 +79,26 @@ func _ready() -> void:
 	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1))
 	gold_label = _label(Vector2(18, 104), 15, Color(1.0, 0.85, 0.35))
 	cr_label = _label(Vector2(18, 126), 15, Color(0.65, 0.9, 1.0))
+	# Resonance: golden and sparkling when positive (shinier as it
+	# climbs), black-on-pale when negative, pulses on every change.
+	res_label = _label(Vector2(18, 148), 15, Color(0.75, 0.75, 0.8))
+	res_label.pivot_offset = Vector2(0, 10)
+	res_particles = CPUParticles2D.new()
+	res_particles.position = Vector2(88, 158)
+	res_particles.amount = 6
+	res_particles.lifetime = 0.9
+	res_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	res_particles.emission_rect_extents = Vector2(78, 8)
+	res_particles.direction = Vector2(0, -1)
+	res_particles.spread = 20.0
+	res_particles.initial_velocity_min = 5.0
+	res_particles.initial_velocity_max = 16.0
+	res_particles.gravity = Vector2(0, -12)
+	res_particles.scale_amount_min = 1.0
+	res_particles.scale_amount_max = 2.4
+	res_particles.color = Color(1.0, 0.9, 0.45)
+	res_particles.emitting = false
+	add_child(res_particles)
 
 	# ---------------------------------------------------- quest tracker ---
 	zone_label = _label(Vector2(340, 12), 16, Color(0.95, 0.85, 0.5), 600, HORIZONTAL_ALIGNMENT_CENTER)
@@ -303,6 +326,7 @@ func update_stats(p: Player) -> void:
 	stats_label.text = "%s  Lv %d   HP %d/%d   MP %d/%d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), int(p.mp), int(p.max_mp), pts]
 	gold_label.text = "◉ %d gold    Potions [%s] x%d" % [p.gold, OS.get_keycode_string(game.binds["potion"]), p.potions]
 	cr_label.text = "Combat Rating: %d" % p.combat_rating()
+	_update_resonance(p.resonance)
 
 	# Ability bar: cooldown shade + countdown number + affordability color.
 	var now_ms := Time.get_ticks_msec()
@@ -568,3 +592,40 @@ func _on_escape() -> void:
 		return
 	game.menus.open_pause()
 	get_viewport().set_input_as_handled()
+
+
+## The shard's mood, worn on the HUD (round 8): gold that gets shinier
+## and busier with sparkles as Resonance climbs; ink-black when it
+## falls. Any change pulses the label — bright for gains, violet for
+## losses.
+func _update_resonance(res: float) -> void:
+	res_label.text = "Resonance: %+d" % int(res) if int(res) != 0 else "Resonance: 0"
+	if res > 0.0:
+		var shine := clampf(res / 100.0, 0.0, 1.0)
+		res_label.add_theme_color_override("font_color",
+			Color(0.84, 0.7, 0.32).lerp(Color(1.0, 0.96, 0.6), shine))
+		res_label.add_theme_color_override("font_outline_color", Color(0.25, 0.18, 0.02))
+		res_label.add_theme_constant_override("outline_size", 3)
+		var want := clampi(4 + int(res / 7.0), 4, 20)
+		if res_particles.amount != want:
+			res_particles.amount = want
+		res_particles.emitting = true
+	elif res < 0.0:
+		res_label.add_theme_color_override("font_color", Color(0.05, 0.04, 0.07))
+		res_label.add_theme_color_override("font_outline_color", Color(0.6, 0.6, 0.65, 0.7))
+		res_label.add_theme_constant_override("outline_size", 3)
+		res_particles.emitting = false
+	else:
+		res_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.8))
+		res_label.add_theme_constant_override("outline_size", 0)
+		res_particles.emitting = false
+	if _last_resonance <= -99998.0:
+		_last_resonance = res  # first frame / fresh load: no pulse
+		return
+	if absf(res - _last_resonance) >= 0.5:
+		res_label.scale = Vector2(1.5, 1.5)
+		res_label.modulate = Color(2.2, 2.0, 1.2) if res > _last_resonance else Color(0.55, 0.35, 0.8)
+		var tw := create_tween()
+		tw.tween_property(res_label, "scale", Vector2(1, 1), 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(res_label, "modulate", Color(1, 1, 1), 0.6)
+	_last_resonance = res

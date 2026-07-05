@@ -9,7 +9,8 @@ var current := ""
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
 var chapter_replay := false       # chapter select opened from the pause menu
-var dev_boss_mode := 0            # dev panel boss spawn level: 0 story, 1 my Lv, 2 +10, 3 +20
+var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv (default), 2 +10, 3 +20
+var dev_boss_level_override := 0  # dev panel: exact level for NEW boss spawns (0 = off)
 
 
 func _ready() -> void:
@@ -169,7 +170,29 @@ func open_title() -> void:
 	vbox.add_child(spacer)
 	_btn(vbox, "  ⚔  New Game  ", func() -> void: open_chapter_select(), Color(0.95, 0.85, 0.5))
 	_btn(vbox, "  🔊  Settings  ", func() -> void: open_settings("title"), Color(0.8, 0.85, 0.9))
+	_dev_roster_row(vbox)
 	_hint(vbox, "Continue a saved hero, or forge a new one")
+
+
+## Dev launcher row (dev_mode.bat only): batch-create the 6-class
+## roster straight from the launcher screens — no need to enter a
+## game and open F1 first. Level box → one save per class, free
+## slots only (never overwrites), then back to the title list.
+func _dev_roster_row(vbox: VBoxContainer) -> void:
+	if not game.dev_mode:
+		return
+	var drow := HBoxContainer.new()
+	drow.add_theme_constant_override("separation", 8)
+	vbox.add_child(drow)
+	var lvl_box := LineEdit.new()
+	lvl_box.text = "40"
+	lvl_box.max_length = 3
+	lvl_box.custom_minimum_size = Vector2(64, 0)
+	drow.add_child(lvl_box)
+	_btn(drow, "  🛠  DEV: create roster — all 6 classes at this level  ", func() -> void:
+		var lvl := clampi(int(lvl_box.text) if lvl_box.text.is_valid_int() else 40, 1, Balance.LEVEL_CAP)
+		UIDevPanel.create_roster(self, lvl)
+		open_title(), Color(0.6, 0.9, 1.0))
 
 
 # ---------------------------------------------------------------- pause ---
@@ -185,6 +208,12 @@ func open_pause() -> void:
 	_btn(vbox, "  ▶  Resume", func() -> void: close(), Color(0.6, 1.0, 0.6))
 	_btn(vbox, "  🔊  Settings (sound)", func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
 	_btn(vbox, "  ⌨  Keybinds", func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
+	var unread := 0
+	for mail in game.mailbox:
+		if not mail["read"]:
+			unread += 1
+	_btn(vbox, "  ✉  Mailbox" + ("  (%d new)" % unread if unread > 0 else ""),
+		func() -> void: open_mailbox(), Color(0.8, 0.9, 1.0) if unread > 0 else Color(0.9, 0.9, 0.95))
 	var restart := func() -> void:
 		open_confirm("Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(game.chapter_id)["name"],
 			func() -> void: game.replay_chapter(game.chapter_id))
@@ -299,6 +328,8 @@ func open_chapter_select(replay := false) -> void:
 			Color(0.65, 0.68, 0.78) if unlocked else Color(0.5, 0.5, 0.55))
 		sub.custom_minimum_size = Vector2(800, 0)
 		idx += 1
+	if not replay:
+		_dev_roster_row(vbox)
 	_hint(vbox, "Press the chapter's number, or click" + ("  ·  ESC to go back" if replay else ""))
 
 
@@ -835,6 +866,22 @@ func open_skills(tab := "talents") -> void:
 			open_theme_picker(s)
 		_btn(trow, "%s: %s ▾" % [Classes.ability(p.cls, s)["name"], label], pick_cb,
 			tcolor, p.themes_known > 0, Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][s], tcolor))
+	# One-click loadouts: opt every ability into a single theme.
+	var arow := HBoxContainer.new()
+	arow.add_theme_constant_override("separation", 10)
+	vbox.add_child(arow)
+	var al := _lbl(arow, "All-in:", 14, Color(0.7, 0.72, 0.78))
+	al.custom_minimum_size = Vector2(60, 0)
+	_btn(arow, " Base ", func() -> void:
+		game.player.set_all_themes("")
+		open_skills(), Color(0.85, 0.85, 0.9), p.themes_known > 0)
+	for i2 in Classes.THEMES[p.cls].size():
+		var th: Dictionary = Classes.THEMES[p.cls][i2]
+		var tid: String = th["id"]
+		var t_unlocked: bool = i2 < p.themes_known
+		_btn(arow, " %s " % th["name"], func() -> void:
+			game.player.set_all_themes(tid)
+			open_skills(), th["color"] if t_unlocked else Color(0.4, 0.4, 0.45), t_unlocked)
 	_hint(vbox, "ESC / T to close — themes change how your abilities behave")
 
 
@@ -969,23 +1016,26 @@ func open_shop(zone: int) -> void:
 	var haggle: float = game.band_price_mult()
 	var potion_cost := int(ceil(25.0 * haggle))
 	var buy_potion := func() -> void:
-		if p.gold >= potion_cost and p.potions < 5:
+		if p.gold >= potion_cost and p.potions < Balance.POTION_MAX:
 			p.gold -= potion_cost
 			p.potions += 1
 			game.sfx("potion")
 		open_shop(zone)
 	_btn(buy, "Health Potion — %d gold  (you have %d, max 5)" % [potion_cost, p.potions],
-		buy_potion, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < 5)
+		buy_potion, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < Balance.POTION_MAX)
 
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
 		var cost := int(ceil(Items.price(it) * 2 * haggle))
 		var buy_item := func() -> void:
 			if p.gold >= cost:
-				p.gold -= cost
-				game.shop_stock[zone].erase(it)
-				p.add_item(it)
-				game.sfx("potion")
+				if p.bag_used() >= p.bag_capacity():
+					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+				else:
+					p.gold -= cost
+					game.shop_stock[zone].erase(it)
+					p.add_item(it)
+					game.sfx("potion")
 			open_shop(zone)
 		var bb := _btn(buy, "%s  %s — %d gold" % [Items.title(it), Items.describe(it), cost],
 			buy_item, Items.GRADE_COLOR[it["grade"]], p.gold >= cost, Art.icon_for(it))
@@ -1217,7 +1267,8 @@ func open_map() -> void:
 # ------------------------------------------------------------------- codex ---
 
 const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
-	"stormwarden", "choirmother", "nullwarden"]  # (T4) ch2 content bosses
+	"stormwarden", "choirmother", "nullwarden",  # (T4) ch2 content bosses
+	"sexton", "vess", "saint_varo"]  # ch3 Unburied Vale (BOSSES.md)
 
 ## Codex screens live in ui/codex.gd.
 func open_codex(tab := "monsters") -> void:
@@ -1225,6 +1276,11 @@ func open_codex(tab := "monsters") -> void:
 
 
 # ---------------------------------------------------------------- dev mode ---
+
+## The mailbox (dropped-loot letters, gifts) lives in ui/mailbox.gd.
+func open_mailbox() -> void:
+	UIMailbox.open(self)
+
 
 ## Debug panel (F1, only when launched via dev_mode.bat) — ui/dev_panel.gd.
 func open_dev() -> void:

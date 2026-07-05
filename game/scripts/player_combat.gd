@@ -8,6 +8,7 @@ extends "res://scripts/player_core.gd"
 
 func auto_aim(rng := 520.0) -> Enemy:
 	if is_instance_valid(locked_target) and not locked_target.dying \
+			and not locked_target.untargetable \
 			and global_position.distance_to(locked_target.global_position) <= rng * 1.4:
 		return locked_target
 	locked_target = null
@@ -15,7 +16,7 @@ func auto_aim(rng := 520.0) -> Enemy:
 	var best_d := rng
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
-		if e == null or e.dying:
+		if e == null or e.dying or e.untargetable:
 			continue
 		var d := global_position.distance_to(e.global_position)
 		if d < best_d:
@@ -28,7 +29,8 @@ func cycle_target() -> void:
 	var list: Array = []
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
-		if e and not e.dying and global_position.distance_to(e.global_position) <= 560.0:
+		if e and not e.dying and not e.untargetable \
+				and global_position.distance_to(e.global_position) <= 560.0:
 			list.append(e)
 	if list.is_empty():
 		locked_target = null
@@ -131,7 +133,8 @@ func _enemies_within(center: Vector2, radius: float) -> Array:
 	var out: Array = []
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
-		if e and not e.dying and center.distance_to(e.global_position) <= radius:
+		if e and not e.dying and not e.untargetable \
+				and center.distance_to(e.global_position) <= radius:
 			out.append(e)
 	return out
 
@@ -522,7 +525,7 @@ func _dash_strike(dist: float, mult: float, effects := {}) -> int:
 	var kills := 0
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
-		if e == null or e.dying:
+		if e == null or e.dying or e.untargetable:
 			continue
 		var closest := Geometry2D.get_closest_point_to_segment(e.global_position, start, end)
 		if e.global_position.distance_to(closest) <= 55.0:
@@ -541,6 +544,11 @@ func _blink() -> void:
 	# Fire leaves a burning wake on the ground; Ice a frozen one.
 	if _themed and (_tfx.has("dot") or _tfx.has("freeze_path")):
 		_floor_streak(start, global_position, _tcolor)
+	if blink_ward > 0.0:
+		# Arcane Ward (round 16): a well-timed Blink IS the mage's
+		# sustain — the next hit within the window is fully absorbed.
+		ward_time = blink_ward
+		game.spawn_text(global_position + Vector2(0, -52), "WARD UP", Color(0.6, 0.9, 1.0))
 
 
 func _meteor() -> void:
@@ -633,6 +641,7 @@ func _shadow_dash(f := 1.0) -> void:
 	melee_swing = 0.16
 	melee_style = "stab"
 	melee_dir = facing
+	hurt_cd = maxf(hurt_cd, 0.5)  # slip through the blow (Tumble-style i-frames)
 	game.sfx("stab")
 	var start := global_position
 	var kills := _dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), 1.2 * f, {"stagger": 0.4})
@@ -744,8 +753,14 @@ func _death_mark() -> void:
 	_ult_sfx()
 	game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.45)
 	game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
+	# Untouchable through the execution's opening (round 18): blinking
+	# INTO the enemy is the whole move, so the i-frame runs LONGER than
+	# Shadow Dash's 0.5s — commit to the kill, not to the chip damage.
+	hurt_cd = maxf(hurt_cd, 0.8)
+	var dm_start := global_position
 	var dir := (target.global_position - global_position).normalized()
 	global_position = game.clamp_to_zone(target.global_position + dir * 42.0, target.global_position)
+	_afterimages(dm_start, global_position, Color(0.6, 0.25, 0.6), 3)
 	target.vuln_time = 5.0
 	target.apply_stun(0.6)
 	if _tfx.has("mark_dot"):

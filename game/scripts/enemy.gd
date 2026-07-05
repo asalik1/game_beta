@@ -27,6 +27,7 @@ var magpen := 0.0
 var dmg_type := "phys"  # what this enemy's attacks count as
 
 var elite := false     # miniboss variant: bigger, meaner, loot pinata, NO xp
+var untargetable := false  # burrowed/submerged boss phase: no damage, no auto-aim
 var aggro_range := 330.0
 var attack_cd := 0.0
 var windup := 0.0     # yellow-flash wind-up before a melee bite lands
@@ -222,7 +223,7 @@ func _think(_delta: float) -> Vector2:
 
 	if ranged:
 		if attack_cd <= 0.0:
-			attack_cd = 1.7
+			attack_cd = 1.58
 			game.sfx("bolt")
 			# Playtest round 2: bolts fly noticeably faster — walking
 			# lazily out of their path stops being free.
@@ -237,8 +238,8 @@ func _think(_delta: float) -> Vector2:
 	else:
 		if dist < 42.0:
 			if attack_cd <= 0.0:
-				attack_cd = 1.0
-				windup = 0.3
+				attack_cd = 0.92
+				windup = 0.27
 				sprite.modulate = Color(2.0, 1.7, 0.5)  # "about to bite!" flash
 			return Vector2.ZERO
 		return to_player.normalized() * speed
@@ -269,7 +270,6 @@ func promote_elite() -> void:
 	critres += Balance.ELITE_CRITRES_BONUS
 	xp_value = 0  # elites never pay XP (fixed chapter totals)
 	gold_value *= Balance.ELITE_GOLD_MULT
-	aggro_range *= Balance.ELITE_AGGRO_MULT
 	sprite.scale *= Balance.ELITE_SPRITE_MULT
 	# A gold ring underfoot marks the rank at a glance (body tints reset
 	# on damage flashes, so a child sprite is the durable marker).
@@ -304,7 +304,7 @@ func apply_slow(mult: float, dur: float) -> void:
 # --------------------------------------------------------------- damage ---
 
 func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, silent := false) -> void:
-	if dying:
+	if dying or untargetable:
 		return
 	# Wounding one pack member wakes its whole pack (ranged openers too).
 	if zone_idx >= 0 and not force_aggro:

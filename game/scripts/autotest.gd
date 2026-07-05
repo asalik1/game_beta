@@ -72,10 +72,16 @@ func _run_systems() -> void:
 	# but a monster 10 levels up is a WALL of raw stats (no hidden rule).
 	var v_at := Story.enemy_stats_at("vargoth", 10)
 	var v_up := Story.enemy_stats_at("vargoth", 20)
-	if absf(v_at["dmg"] - Story.ALL_ENEMIES["vargoth"]["dmg"]) > 0.01:
-		return _fail("at-level stats must be untouched by the growth curve")
-	if v_up["dmg"] < v_at["dmg"] * 2.5 or v_up["hp"] < v_at["hp"] * 3.0:
-		return _fail("level growth is not compounding (a +10 boss should be a wall)")
+	if absf(v_at["dmg"] - Story.ALL_ENEMIES["vargoth"]["dmg"] * Balance.ENEMY_DMG_MULT * Balance.BOSS_DMG_MULT) > 0.01:
+		return _fail("at-anchor boss dmg must be base x ENEMY_DMG_MULT x BOSS_DMG_MULT")
+	# Rounds 11+13: growth tracks the player curve (~5.5%/level for boss
+	# dmg, per-kind rescaled hp) — +10 bites (~1.7x dmg on a base that
+	# already sits 20% above parity, ~2.2x hp) without ever running away
+	# into the one-shot wall that collapsed at-level parity at L38.
+	if v_up["dmg"] < v_at["dmg"] * 1.55 or v_up["hp"] < v_at["hp"] * 2.0:
+		return _fail("+10 growth lost its bite (want ~1.7x dmg / ~2.2x hp)")
+	if v_up["dmg"] > v_at["dmg"] * 3.0:
+		return _fail("+10 growth is runaway again (at-level parity collapses)")
 	print("ok: stat curves + true damage + TTK retune")
 
 	main_scene = load("res://scenes/main.tscn")
@@ -204,6 +210,48 @@ func _run_systems() -> void:
 	_buff()
 	print("ok: melee passive regen")
 
+	# Archer SECOND WIND (round 14): the no-lifesteal ranged kit heals
+	# only while untouched — spacing is the sustain.
+	game.player.set_class("archer")
+	game.player.pending_theme_note = ""
+	game.player.hp = game.player.max_hp * 0.5
+	game.player.since_hurt = 0.0
+	var sw_hp0: float = game.player.hp
+	await get_tree().create_timer(0.5).timeout
+	if game.player.hp > sw_hp0 + game.player.max_hp * 0.006:
+		return _fail("second wind healed before its delay")
+	game.player.since_hurt = 99.0
+	var sw_hp1: float = game.player.hp
+	await get_tree().create_timer(1.0).timeout
+	if game.player.hp < sw_hp1 + game.player.max_hp * 0.012:
+		return _fail("archer second wind did not regenerate")
+	game.player.set_class("warrior")
+	game.player.pending_theme_note = ""
+	print("ok: archer second wind (untouched -> recovery)")
+
+	# Mage ARCANE WARD (round 16): a well-timed Blink eats the next hit.
+	game.player.set_class("mage")
+	game.player.pending_theme_note = ""
+	_buff()
+	game.player.mp = game.player.max_mp
+	game.player.cds["a3"] = 0.0  # earlier kit tests may have left it hot
+	game.player.use_ability("a3")
+	await _frames(3)
+	if game.player.ward_time <= 0.0:
+		return _fail("blink did not raise the arcane ward")
+	var ward_hp: float = game.player.hp
+	game.player.hurt_cd = 0.0
+	game.player.take_damage(500.0, "true")
+	if game.player.hp < ward_hp:
+		return _fail("the ward did not absorb the hit")
+	game.player.hurt_cd = 0.0
+	game.player.take_damage(500.0, "true")
+	if game.player.hp >= ward_hp:
+		return _fail("a spent ward must not absorb again")
+	game.player.set_class("warrior")
+	game.player.pending_theme_note = ""
+	print("ok: mage arcane ward (blink absorbs one hit)")
+
 	# 3b. Target lock cycling.
 	var d1 := _dummy(Vector2(120, 0))
 	var d2 := _dummy(Vector2(-160, 30))
@@ -239,6 +287,16 @@ func _run_systems() -> void:
 	if is_instance_valid(probe) and not probe.dying:
 		probe.take_damage(999999.0)
 	print("ok: themes unlock + assignment (%s on Cleave)" % game.player.ability_theme["a1"])
+
+	# All-in loadout (round 18 QoL): one call themes every ability.
+	game.player.set_all_themes("fury")
+	for ai_slot in ["a1", "a2", "a3", "ult"]:
+		if game.player.ability_theme[ai_slot] != "fury":
+			return _fail("set_all_themes left %s unthemed" % ai_slot)
+	game.player.set_all_themes("")
+	if game.player.ability_theme["a1"] != "":
+		return _fail("set_all_themes could not reset to base")
+	print("ok: all-in theme loadout")
 
 	# 3c2. Per-ability variants: one theme, different behavior per skill.
 	game.player.themes_known = 3  # test cheat: open all three columns
@@ -498,6 +556,9 @@ func _run_systems() -> void:
 	# 3d4. Elites, bags, reset stones, small rooms (playtest round 6).
 	await _test_elites_bags_smallrooms()
 
+	# 3d5. Mailbox: ground overflow, flush, claim, expiry, trusted clock.
+	await _test_mailbox()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -530,6 +591,22 @@ func _run_systems() -> void:
 	if not fang["subs"].has("crit"):
 		return _fail("Fang has no guaranteed crit substat")
 	print("ok: weapon shape identities")
+
+	# Class-aware drops (round 15): a class only loots weapons from its
+	# own arsenal and never rolls the other damage type's penetration.
+	var crng := RandomNumberGenerator.new()
+	crng.seed = 42
+	for i in 30:
+		var aw := Items.roll_item_of("weapon", "A", crng, "archer")
+		if not (aw["noun"] in Items.CLASS_WEAPONS["archer"]):
+			return _fail("archer looted a %s (not in the archer arsenal)" % aw["noun"])
+		var ai := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "archer")
+		if ai["subs"].has("magpen"):
+			return _fail("archer gear rolled MagPen (dead stat)")
+		var mi := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "mage")
+		if mi["subs"].has("physpen"):
+			return _fail("mage gear rolled PhysPen (dead stat)")
+	print("ok: class-aware drops (arsenal + no dead pen stats)")
 
 	# 4b. S weapon: class shape, 3 gem slots, passive.
 	var srng := RandomNumberGenerator.new()
@@ -982,6 +1059,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch2_act1()
 	await _test_ch2_act2()
 	await _test_ch2_resonance()
+	await _test_ch3_bosses()
 	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
@@ -990,3 +1068,93 @@ func _run_campaign_ch2() -> void:
 	print("AUTOTEST PASS")
 	get_tree().paused = false
 	get_tree().quit(0)
+
+
+# ---- CORE: mailbox, ground overflow, trusted clock (round 8) ------------
+func _test_mailbox() -> void:
+	var keep_bag: Dictionary = game.player.bag
+	var keep_mail: Array = game.mailbox
+	var keep_dropped: Array = game.dropped_loot
+	game.mailbox = []
+	game.dropped_loot = []
+
+	# Overflow drops to the ground and registers — never silently sold.
+	game.player.bag = Items.make_bag("F")
+	var filler: Array = []
+	while game.player.bag_used() < game.player.bag_capacity():
+		var st := Items.make_reset_stone()
+		game.player.consumables.append(st)
+		filler.append(st)
+	var gold_before: int = game.player.gold
+	var it := Items.roll_item_of("charm", "C", game.loot_rng, game.player.cls)
+	if game.give_loot({"kind": "item", "item": it}, game.player.global_position + Vector2(400, 0)):
+		return _fail("give_loot claimed into a FULL bag")
+	if game.dropped_loot.size() != 1 or game.player.gold != gold_before:
+		return _fail("bag-full loot did not drop to the ground registry (or sold)")
+	await _frames(2)
+	if get_tree().get_nodes_in_group("loot_pickups").is_empty():
+		return _fail("no ground pickup spawned for dropped loot")
+
+	# Chapter-end flush -> one "Dropped Loot" letter, empty body.
+	game.flush_dropped_loot()
+	await _frames(2)
+	if game.mailbox.size() != 1:
+		return _fail("flush did not send the Dropped Loot mail")
+	var mail: Dictionary = game.mailbox[0]
+	if String(mail["subject"]) != "Dropped Loot" or String(mail["body"]) != "":
+		return _fail("Dropped Loot mail has wrong subject/body")
+	if not game.dropped_loot.is_empty() or not get_tree().get_nodes_in_group("loot_pickups").is_empty():
+		return _fail("flush left ground loot behind")
+
+	# Claim: with space the loot lands in the bag; the letter stays.
+	for st in filler:
+		game.player.consumables.erase(st)
+	var bp_before: int = game.player.backpack.size()
+	for pl in mail["items"].duplicate():
+		if game._try_receive(pl):
+			mail["items"].erase(pl)
+	if game.player.backpack.size() != bp_before + 1 or not mail["items"].is_empty():
+		return _fail("claiming the mail did not deliver the loot")
+	if game.mailbox.size() != 1:
+		return _fail("claimed letter must stay until deleted")
+
+	# Expiry: unclaimed letters die after MAIL_EXPIRY_DAYS; claimed stay.
+	game.send_mail("Old Loot", "", [{"kind": "gem", "gem": Items.make_gem("crit", 1)}])
+	var old_mail: Dictionary = game.mailbox[-1]
+	old_mail["sent_at"] = int(old_mail["sent_at"]) - (Balance.MAIL_EXPIRY_DAYS + 1) * 86400
+	mail["sent_at"] = int(mail["sent_at"]) - (Balance.MAIL_EXPIRY_DAYS + 1) * 86400
+	game.prune_mail()
+	if game.mailbox.size() != 1 or not game.mailbox[0]["items"].is_empty():
+		return _fail("expiry pruned the wrong letters (claimed must survive)")
+
+	# Trusted clock: never goes backwards, even if the OS clock does.
+	var t1: int = game.trusted_now()
+	game.clock_anchor = t1 + 99999  # "highest time ever seen" from a rolled clock
+	if game.trusted_now() < t1 + 99999:
+		return _fail("trusted clock went backwards")
+	game.clock_anchor = 0  # back to the real OS clock
+
+	# Restore.
+	game.player.backpack.erase(it)
+	game.player.bag = keep_bag
+	game.mailbox = keep_mail
+	game.dropped_loot = keep_dropped
+	print("ok: mailbox (ground overflow, flush, claim, 30d expiry, trusted clock)")
+
+
+# ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
+## Spawn, signature, per-boss phase mechanic, and story-neutral death
+## for each ch3 boss (the module's own kill-flow selftest — runs in the
+## ch2 hub the earlier hook sections booted into).
+func _test_ch3_bosses() -> void:
+	_buff()
+	await _goto_room(0)
+	await _frames(5)
+	var err: String = await preload("res://scripts/content/ch3_bosses.gd").selftest(game)
+	if err != "":
+		_fail(err)
+		# quit(1) lands at frame end; never resume, or _run would print
+		# AUTOTEST PASS and quit(0) over the failure.
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch3 bosses (spawn / signature / phase / story-neutral death) — sexton, vess, saint_varo")

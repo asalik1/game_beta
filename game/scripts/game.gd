@@ -277,7 +277,7 @@ func _process(delta: float) -> void:
 		if not interactables.is_empty() and state == ST_PLAYING and not hud.dialogue_active:
 			var entry: Dictionary = interactables[randi() % interactables.size()]
 			if is_instance_valid(entry["node"]) and player.global_position.distance_to(entry["node"].position) < 700.0:
-				emote(entry["node"], ["♪", "…", "?", "♥"][randi() % 4])
+				emote(entry["node"], idle_emote_symbol())
 
 	# New theme unlocked: announce it.
 	if player.pending_theme_note != "" and state == ST_PLAYING and not hud.dialogue_active and not menus.is_open():

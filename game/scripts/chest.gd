@@ -55,7 +55,7 @@ func _on_body_entered(body: Node) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	var item := Items.roll_item(tier, rng, body.cls, game.loot_cap())
-	body.add_item(item)
+	game.give_loot({"kind": "item", "item": item}, global_position)
 	var bonus_gold := rng.randi_range(3, 8) * (1 + ["wood", "silver", "gold"].find(tier))
 	body.gain_gold(bonus_gold)
 	game.hud.loot_banner(item, bonus_gold)
@@ -64,7 +64,7 @@ func _on_body_entered(body: Node) -> void:
 	var gem_chance: float = {"wood": 0.25, "silver": 0.6, "gold": 1.0}[tier]
 	if rng.randf() < gem_chance:
 		var gem := Items.random_gem(rng, 1)
-		if body.gain_gem(gem):  # bag capacity applies; overflow pays gold
+		if game.give_loot({"kind": "gem", "gem": gem}, global_position):
 			game.spawn_text(body.global_position + Vector2(0, -66), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 
 	var tween := create_tween()

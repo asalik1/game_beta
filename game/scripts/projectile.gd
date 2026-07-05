@@ -172,7 +172,7 @@ func _ricochet(hit: Node) -> void:
 	var best_d := 260.0
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
-		if e == null or e == hit or e.dying:
+		if e == null or e == hit or e.dying or e.untargetable:
 			continue
 		var d := global_position.distance_to(e.global_position)
 		if d < best_d:

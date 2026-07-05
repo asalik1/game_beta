@@ -398,20 +398,24 @@ const ENEMIES := {
 		"physres": 12.0, "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.10, "dmg_g": 0.09},
 	# Bosses: strong base AND strong growth ("dragon-grade" scaling).
+# HP pools follow the TTK BUDGET (playtest round 9: "Fangmaw died in
+# <10s to C-gear, zero talents"): at level with modest gear a boss
+# should survive ~25s (chapter opener) / ~30s (mid) / ~40s (finale)
+# of realistic player DPS. Retune pools when player power moves.
 	# "boss": true exempts them from the mob TTK retune (enemy_stats_at).
 	# Boss damage retune (round 4): bosses were authored gentle — a
 	# contact hit should cost a squishy ~20-25% of their at-level HP.
 	# With compounding growth, a boss 5 above you leaves ~2 mistakes,
 	# 10 above ~1. Dodge-everything god runs stay possible.
-	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 460.0,  "dmg": 30.0, "speed": 140.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
+	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 1200.0,  "dmg": 30.0, "speed": 160.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 4.8,
 		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 1.5, "AGI": 1.5}},
-	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 620.0,  "dmg": 26.0, "speed": 105.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5,
+	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "witch",    "hp": 2200.0,  "dmg": 26.0, "speed": 120.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 5.5,
 		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 7, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.0}},
-	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 1000.0, "dmg": 50.0, "speed": 115.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5,
+	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 4200.0, "dmg": 50.0, "speed": 132.0, "xp": 200, "gold": 150, "ranged": false, "scale": 6.5,
 		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 10, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"STR": 2.0, "VIT": 1.5}},
@@ -464,10 +468,19 @@ static func enemy_stats_at(kind: String, level: int) -> Dictionary:
 	var base: Dictionary = ALL_ENEMIES[kind]
 	var lvl := clampi(level, int(base["level"]), Balance.LEVEL_CAP)
 	var d := lvl - int(base["level"])
-	var hp_m := pow(1.0 + float(base["hp_g"]), d)
-	if not bool(base.get("boss", false)):
-		hp_m *= Balance.TTK_HP_MULT  # mobs only: boss pools were already long fights
-	var dmg_m := pow(1.0 + float(base["dmg_g"]), d)
+	var is_boss := bool(base.get("boss", false))
+	var hp_m := pow(1.0 + float(base["hp_g"]) * Balance.GROWTH_SCALE, d)
+	if not is_boss:
+		hp_m *= Balance.TTK_HP_MULT  # mobs only: boss pools are budgeted directly
+	var dmg_growth := float(base["dmg_g"]) * Balance.GROWTH_SCALE
+	var dmg_flat := Balance.ENEMY_DMG_MULT
+	if is_boss:
+		# Bosses hit a constant ~20% above parity (the skill tilt), and
+		# their damage GROWTH tracks the player curve exactly — the gap
+		# must not widen with level (round 13: L42 A-gear playtest).
+		dmg_growth = Balance.BOSS_DMG_GROWTH
+		dmg_flat *= Balance.BOSS_DMG_MULT
+	var dmg_m := pow(1.0 + dmg_growth, d) * dmg_flat
 	var reward_m := 1.0 + d * Balance.REWARD_PER_LEVEL
 	var out := {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
 		"xp": int(ceil(base["xp"] * reward_m)),
@@ -783,6 +796,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch2_factions.gd"),   # (T5)
 	preload("res://scripts/content/ch2_aldric.gd"),     # (T6)
 	preload("res://scripts/content/ch2_bosses.gd"),     # (T4)
+	preload("res://scripts/content/ch3_bosses.gd"),     # Unburied Vale bosses (BOSSES.md)
 ]
 
 static var _content_loaded := false

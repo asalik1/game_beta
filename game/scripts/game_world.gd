@@ -17,6 +17,8 @@ func _recheck_gates() -> void:
 ## Only ever called before play starts (chapter select) or on load —
 ## dynamic entities (chests, pickups, projectiles) don't exist then.
 func switch_chapter(id: String, force := false) -> void:
+	# World teardown: forgotten ground loot mails itself first (round 8).
+	flush_dropped_loot()
 	if not Story.CHAPTER_LIST.has(id) or (id == chapter_id and not force):
 		return
 	chapter_id = id
@@ -388,10 +390,13 @@ func _spawn_elite_room(i: int, rng: RandomNumberGenerator) -> void:
 		break
 	if kind == "":
 		return
-	var e := Enemy.make(self, kind, room_center(i) + Vector2(0, -60), lvl + 1)
+	var e := Enemy.make(self, kind, room_center(i) + Vector2(0, -60), lvl + Balance.ELITE_ROOM_LEVEL_BONUS)
 	e.zone_idx = i
 	e.pack_id = 0
 	e.promote_elite()
+	# The lone room guardian watches its whole (small) arena; pack-
+	# promoted elites keep pack aggro so doorways never wake a room.
+	e.aggro_range *= Balance.ELITE_AGGRO_MULT
 	zone_alive[i] = zone_alive.get(i, 0) + 1
 	add_enemy(e)
 

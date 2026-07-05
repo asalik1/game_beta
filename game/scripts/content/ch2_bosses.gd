@@ -20,7 +20,7 @@ const ENEMIES := {
 	# storm breaks the sky starts swinging with him.
 	"stormwarden": {
 		"name": "Korrag, Stormwarden Broken", "sprite": "stormwarden",
-		"hp": 750.0, "dmg": 30.0, "speed": 150.0, "xp": 90, "gold": 66,
+		"hp": 2000.0, "dmg": 30.0, "speed": 170.0, "xp": 90, "gold": 66,
 		"ranged": false, "scale": 5.0,
 		"physres": 25.0, "magres": 20.0, "eva": 0.06, "critres": 3.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 8, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -33,7 +33,7 @@ const ENEMIES := {
 	# the choir marks.
 	"choirmother": {
 		"name": "The Choir Mother", "sprite": "choirmother",
-		"hp": 1000.0, "dmg": 36.0, "speed": 105.0, "xp": 144, "gold": 114,
+		"hp": 3200.0, "dmg": 36.0, "speed": 120.0, "xp": 144, "gold": 114,
 		"ranged": true, "scale": 5.6,
 		"physres": 15.0, "magres": 45.0, "eva": 0.10, "critres": 4.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 10, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -46,7 +46,7 @@ const ENEMIES := {
 	# armor when the fight demands speed.
 	"nullwarden": {
 		"name": "Warden Null, the Last Sentinel", "sprite": "nullwarden",
-		"hp": 2400.0, "dmg": 55.0, "speed": 85.0, "xp": 225, "gold": 180,
+		"hp": 8000.0, "dmg": 55.0, "speed": 100.0, "xp": 225, "gold": 180,
 		"ranged": false, "scale": 6.2,
 		"physres": 55.0, "magres": 35.0, "eva": 0.0, "critres": 8.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 16, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,

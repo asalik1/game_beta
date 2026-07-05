@@ -125,6 +125,11 @@ var current_track := ""
 
 var edge_locks := {}   # edge key -> {"lock": "boss"/"clear"/"flag:x", "own": room idx}
 
+# --- mailbox (playtest round 8) ---
+var mailbox: Array = []        # letters: {subject, body, items, sent_at, read}
+var dropped_loot: Array = []   # ground-drop payloads awaiting pickup or flush
+var clock_anchor := 0          # highest unix time ever seen (persisted, monotonic)
+
 const MUSIC_TUNE := {
 	"icefield": {"gain": 14.0, "start": 10.0},  # whisper-quiet master
 	"rainstorm": {"start": 30.0},               # storm fades in over ~30s
@@ -153,6 +158,78 @@ func band_price_mult() -> float:
 func autosave() -> void:
 	if save_slot > 0 and play_started and state == ST_PLAYING and not player.dead:
 		SaveGame.write(self, save_slot)
+
+# ------------------------------------------------------------------ mailbox ---
+
+## Cheat-resistant wall clock: never goes backwards, even when the OS
+## clock does (players roll system time to farm timed rewards; rolling
+## FORWARD only accelerates their own expiries — no gain). Never use
+## raw OS time for rewards or expiry; always this.
+func trusted_now() -> int:
+	clock_anchor = maxi(clock_anchor, int(Time.get_unix_time_from_system()))
+	return clock_anchor
+
+
+## Deliver a letter. items = loot payloads ({"kind": "item"/"gem"/
+## "stone", ...}); body may be "" ("Dropped Loot" letters have none).
+## Also the dev/event gift API.
+func send_mail(subject: String, body: String, items: Array) -> void:
+	mailbox.append({"subject": subject, "body": body, "items": items,
+		"sent_at": trusted_now(), "read": false})
+	if play_started and is_instance_valid(player):
+		sfx("chest")
+		spawn_text(player.global_position + Vector2(0, -64),
+			"NEW MAIL — see the pause menu", Color(0.8, 0.9, 1.0))
+
+
+## Unclaimed letters expire after Balance.MAIL_EXPIRY_DAYS on the
+## trusted clock; claimed ones stay until the player deletes them.
+func prune_mail() -> void:
+	var cutoff := trusted_now() - Balance.MAIL_EXPIRY_DAYS * 86400
+	for m in mailbox.duplicate():
+		if not m["items"].is_empty() and int(m["sent_at"]) < cutoff:
+			mailbox.erase(m)
+
+
+## Give loot to the player — or drop it at `pos` when the bag is full.
+## Ground drops are registered and flush into a "Dropped Loot" letter
+## at chapter end: nothing is ever silently lost. Returns true when it
+## went straight into the bag.
+func give_loot(payload: Dictionary, pos: Vector2) -> bool:
+	if _try_receive(payload):
+		return true
+	payload["pos"] = [pos.x, pos.y]
+	dropped_loot.append(payload)
+	Pickup.drop_loot(self, payload, pos)
+	spawn_text(pos + Vector2(0, -44), "Bag full! Dropped", Color(1, 0.9, 0.4))
+	return false
+
+
+## Route a loot payload into the right bag pocket. False = no room.
+func _try_receive(payload: Dictionary) -> bool:
+	match str(payload.get("kind", "")):
+		"item":
+			return player.add_item(payload["item"])
+		"gem":
+			return player.gain_gem(payload["gem"])
+		"stone":
+			return player.add_consumable(payload["stone"])
+	return false
+
+
+## Chapter end (victory, replay, advance): whatever still lies on the
+## ground mails itself — subject "Dropped Loot", no body. Idempotent.
+func flush_dropped_loot() -> void:
+	if dropped_loot.is_empty():
+		return
+	var items := dropped_loot.duplicate()
+	for pl in items:
+		pl.erase("pos")
+	dropped_loot = []
+	for node in get_tree().get_nodes_in_group("loot_pickups"):
+		node.queue_free()
+	send_mail("Dropped Loot", "", items)
+
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
@@ -221,7 +298,10 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 			option_texts.append(String(c["text"]))
 		hud.dialogue_choice(who, text, option_texts, func(idx: int) -> void:
 			var c: Dictionary = choices[idx]
-			player.add_resonance(float(c.get("resonance", 0.0)))
+			var res_delta := float(c.get("resonance", 0.0))
+			player.add_resonance(res_delta)
+			if res_delta != 0.0:
+				_resonance_reward(res_delta)
 			var fac_shifts: Dictionary = c.get("faction", {})
 			for fac in fac_shifts:
 				player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(fac_shifts[fac])
@@ -232,6 +312,22 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 				quest_key = String(c["quest"])
 				refresh_quest()
 			_convo_node(convo, String(c.get("next", "")), on_done))
+
+## A shard choice made in a quiet room pays a token reward either way
+## — the shard reacts to CONVICTION, not virtue (playtest round 8:
+## resonance choices should feel eventful). Combat/boss rooms pay
+## nothing: no farming mid-fight decisions.
+func _resonance_reward(delta: float) -> void:
+	if room_type(clampi(cur_room, 0, zone_count - 1)) in ["combat", "boss"]:
+		return
+	var pos: Vector2 = player.global_position + Vector2(randf_range(-26.0, 26.0), 42.0)
+	Pickup.drop_gold(self, Balance.RES_REWARD_GOLD_BASE
+		+ int(absf(delta)) * Balance.RES_REWARD_GOLD_PER_POINT, pos)
+	if absf(delta) >= Balance.RES_REWARD_CHEST_AT:
+		Chest.drop(self, "silver" if absf(delta) >= Balance.RES_REWARD_SILVER_AT else "wood",
+			pos + Vector2(54, 0))
+	sfx("coin")
+
 
 ## The FIRST matching variant wins (resonance band or story flag);
 ## empty dict = use the node's own text/next.
@@ -540,12 +636,85 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 			and player.global_position.distance_to(pos) <= radius + 8.0:
 		player.take_damage(damage, "magic")
 
+
+## INVERSE telegraph (safe-zone): after the delay the whole arena hits
+## EXCEPT the marked circle(s) — stand inside one to live. Debuted by
+## Vess (ch3); reused by Varo's tolls, then Serane / Ordo / Cyrraeth
+## (see BOSSES.md toolbox). opts["decoys"]: extra positions drawn like
+## safe circles but FLICKERING — lies that grant no safety (the steady
+## circle is the truth).
+func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, opts := {}) -> void:
+	var zones: Array = []
+	for c in centers:
+		var zone := Sprite2D.new()
+		zone.texture = Art.tex("telegraph")
+		zone.global_position = c
+		zone.scale = Vector2(radius / 32.0, radius / 32.0)
+		zone.modulate = opts.get("color", Color(0.5, 1.0, 0.7, 0.5))
+		zone.z_index = -6
+		add_child(zone)
+		zones.append(zone)
+		var pulse := zone.create_tween()
+		pulse.set_loops()
+		pulse.tween_property(zone, "modulate:a", 0.75, 0.22)
+		pulse.tween_property(zone, "modulate:a", 0.4, 0.22)
+	var decoys: Array = opts.get("decoys", [])
+	for c in decoys:
+		var lie := Sprite2D.new()
+		lie.texture = Art.tex("telegraph")
+		lie.global_position = c
+		lie.scale = Vector2(radius / 32.0, radius / 32.0)
+		lie.modulate = opts.get("color", Color(0.5, 1.0, 0.7, 0.5))
+		lie.z_index = -6
+		add_child(lie)
+		zones.append(lie)
+		var flicker := lie.create_tween()
+		flicker.set_loops()
+		flicker.tween_property(lie, "modulate:a", 0.15, 0.07)
+		flicker.tween_property(lie, "modulate:a", 0.7, 0.09)
+
+	await get_tree().create_timer(delay).timeout
+	var any_alive := false
+	for zone in zones:
+		if is_instance_valid(zone):
+			any_alive = true
+			zone.queue_free()
+	if not any_alive:
+		return
+	sfx("slam")
+	shake(9.0)
+	if not is_instance_valid(player) or player.dead:
+		return
+	for c in centers:
+		var safe_at: Vector2 = c
+		if player.global_position.distance_to(safe_at) <= radius + 8.0:
+			burst(player.global_position, Color(0.6, 1.0, 0.75), 12)  # sheltered
+			return
+	burst(player.global_position, Color(1.0, 0.35, 0.2), 18)
+	player.take_damage(damage, "magic")
+
+# Idle-chatter symbols by resonance band (round 8): the steady get
+# hearts and song, the tempted get sidelong wariness — the world reads
+# the shard before anyone says a word.
+const IDLE_EMOTES := {
+	"steady": ["♥", "♪", "♥", "…"],
+	"tempted": ["…", "?", "!", "…"],
+	"neutral": ["♪", "…", "?", "♥"],
+}
+
+
+## The symbol an idling NPC floats at the player, per the current band.
+func idle_emote_symbol() -> String:
+	var pool: Array = IDLE_EMOTES.get(String(Story.res_band(player.resonance)), IDLE_EMOTES["neutral"])
+	return pool[randi() % pool.size()]
+
+
 ## Floating emote bubble above a character ("!", "♪", "…", "?").
 func emote(target: Node2D, symbol: String, dur := 1.4) -> void:
 	if not is_instance_valid(target):
 		return
 	var box := Node2D.new()
-	box.position = Vector2(10, -52)
+	box.position = Vector2(10, -46)
 	box.z_index = 30
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex("bubble")
@@ -553,10 +722,13 @@ func emote(target: Node2D, symbol: String, dur := 1.4) -> void:
 	box.add_child(spr)
 	var l := Label.new()
 	l.text = symbol
-	l.position = Vector2(-14, -22)
-	l.size = Vector2(28, 24)
+	# Centered on the BALLOON part of the bubble art (rows 0-9 of 13;
+	# the tail hangs below) — glyphs used to ride the top edge, clipped.
+	l.position = Vector2(-14, -16)
+	l.size = Vector2(28, 22)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 15)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", 14)
 	l.add_theme_color_override("font_color", Color(0.08, 0.06, 0.1))
 	box.add_child(l)
 	target.add_child(box)

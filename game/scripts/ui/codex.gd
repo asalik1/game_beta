@@ -52,6 +52,18 @@ static func _card(parent: Container) -> PanelContainer:
 
 static func _monsters(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
+	# Elites — the roaming miniboss variant (round 6).
+	m._lbl(list, "— ELITES —", 16, Color(1.0, 0.8, 0.3))
+	var ecard := VBoxContainer.new()
+	ecard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(ecard)
+	for line in [
+		"Any monster can be promoted to an ELITE: ~4× health, 1.5× damage, extra resistances, a bigger sprite and a gold ring underfoot — a miniboss, not a mob.",
+		"Where: some quiet side rooms hold a lone elite instead of a wanderer (rolled per character), and combat rooms sometimes hide one in a pack. Later chapters may field several at once.",
+		"Why fight them: elites pay NO experience — they are pure loot. Triple gold, a guaranteed gem, a guaranteed silver/golden chest, and they are the only source of Stones of Unlearning and bigger BAGS (see the Gear tab)."]:
+		var el := m._lbl(ecard, String(line), 13, Color(0.78, 0.8, 0.86))
+		el.custom_minimum_size = Vector2(880, 0)
+		el.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for section in [false, true]:  # regular monsters first, then bosses
 		m._lbl(list, "— BOSSES —" if section else "— MONSTERS —", 16, Color(1, 0.5, 0.5) if section else Color(0.95, 0.85, 0.5))
 		for kind in Story.ALL_ENEMIES:
@@ -59,6 +71,9 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 			if is_boss != section:
 				continue
 			var st: Dictionary = Story.ALL_ENEMIES[kind]
+			# Codex honesty: display what the fight actually deals/has
+			# (TTK and damage multipliers included), not raw table rows.
+			var live: Dictionary = Story.enemy_stats_at(kind, int(st.get("level", 1)))
 
 			# One boxed card per monster.
 			var row := HBoxContainer.new()
@@ -88,8 +103,8 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 			# Aligned stat columns.
 			var cols := HBoxContainer.new()
 			info.add_child(cols)
-			for pair in [["HP", int(st["hp"])], ["DMG", int(st["dmg"])], ["SPD", int(st["speed"])],
-					["XP", st["xp"]], ["Gold", st.get("gold", 0)]]:
+			for pair in [["HP", int(live["hp"])], ["DMG", int(live["dmg"])], ["SPD", int(st["speed"])],
+					["XP", live["xp"]], ["Gold", live.get("gold", 0)]]:
 				var c := m._lbl(cols, "%s %s" % [pair[0], str(pair[1])], 13, Color(0.78, 0.8, 0.86))
 				c.custom_minimum_size = Vector2(105, 0)
 			var type_l := m._lbl(cols, "Ranged caster" if st["ranged"] else "Melee", 13, Color(0.6, 0.7, 0.85))
@@ -271,3 +286,28 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	m._lbl(chests, "Silver chest — drops from monsters (rare). Contains D to A gear.", 14, Color(0.8, 0.82, 0.9))
 	m._lbl(chests, "Golden chest — every boss drops one. Contains B to S gear.", 14, Color(1.0, 0.85, 0.35))
 	m._lbl(chests, "Bonus stats: ATK%, HP%, Crit, Haste, Speed, Lifesteal, Armor, Greed (gold).", 13, Color(0.7, 0.72, 0.78))
+
+	# ------------------------------------------------- bags & consumables ---
+	m._lbl(list, "— BAGS — everything you carry shares one bag's slots —", 16, Color(0.95, 0.85, 0.5))
+	var bags := VBoxContainer.new()
+	bags.add_theme_constant_override("separation", 2)
+	_card(list).add_child(bags)
+	for g2 in Items.GRADES:
+		m._lbl(bags, "%s   %s — %d slots" % [g2, Items.BAG_NAMES[g2], int(Items.BAG_SLOTS[g2])], 14, Items.GRADE_COLOR[g2])
+	for line2 in [
+		"Gear, gem stacks (one slot per gem kind, any count) and consumables all live in the bag. One bag at a time: looting a bigger one upgrades it in place, smaller ones convert to gold. ELITES drop them.",
+		"Full bag? New loot drops at your feet instead of vanishing — and anything you leave on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
+		var bl := m._lbl(bags, String(line2), 13, Color(0.7, 0.72, 0.78))
+		bl.custom_minimum_size = Vector2(880, 0)
+		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	m._lbl(list, "— CONSUMABLES —", 16, Color(0.6, 0.9, 1.0))
+	var cons := VBoxContainer.new()
+	cons.add_theme_constant_override("separation", 2)
+	_card(list).add_child(cons)
+	var cl := m._lbl(cons, "⟲ Stone of Unlearning — crush it (click it in the bag) to refund EVERY allocated talent point, attributes and substats alike, for reallocation. Elite drop (~1 in 3).", 13, Color(0.7, 0.72, 0.78))
+	cl.custom_minimum_size = Vector2(880, 0)
+	cl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var tl := m._lbl(cons, "⟲ Palimpsest of the Path — crush it to refund EVERY spent skill point and pick a new path down the tree. Elite drop, rarer than the Stone.", 13, Color(0.7, 0.72, 0.78))
+	tl.custom_minimum_size = Vector2(880, 0)
+	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

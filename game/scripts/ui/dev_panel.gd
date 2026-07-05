@@ -27,24 +27,8 @@ static func open(m: Menus) -> void:
 	m._btn(row1, ("■ God mode ON" if m.game.dev_god else "□ God mode off"), func() -> void:
 		m.game.dev_god = not m.game.dev_god
 		m.open_dev(), Color(0.5, 1.0, 0.5) if m.game.dev_god else Color(1, 1, 1))
-	m._btn(row1, "+1 level", func() -> void:
-		m.game.player.gain_xp(m.game.player.xp_needed())
-		m.open_dev())
-	m._btn(row1, "+5 levels", func() -> void:
-		for i in 5:
-			m.game.player.gain_xp(m.game.player.xp_needed())
-		m.open_dev())
-	m._btn(row1, "+500 gold", func() -> void:
-		m.game.player.gold += 500
-		m.open_dev())
-	m._btn(row1, "+5 attr pts", func() -> void:
-		m.game.player.unspent_attr += 5
-		m.open_dev())
-	m._btn(row1, "+5 skill pts", func() -> void:
-		m.game.player.skill_points += 5
-		m.open_dev())
 	m._btn(row1, "Max potions", func() -> void:
-		m.game.player.potions = 5
+		m.game.player.potions = Balance.POTION_MAX
 		m.open_dev())
 	m._btn(row1, "Heal + reset CDs", func() -> void:
 		m.game.player.hp = m.game.player.max_hp
@@ -52,13 +36,57 @@ static func open(m: Menus) -> void:
 		for key in m.game.player.cds:
 			m.game.player.cds[key] = 0.0
 		m.open_dev())
+	# Unlimited respecs, no consumable needed (the stone/tome buttons
+	# below still exist to test the REAL flow).
+	m._btn(row1, "Refund talents", func() -> void:
+		var p2: Player = m.game.player
+		var back := 0
+		for attr in p2.attr_points:
+			back += int(p2.attr_points[attr])
+			p2.attr_points[attr] = 0
+		p2.unspent_attr += back
+		p2.recalc()
+		m.open_dev(), Color(0.6, 0.9, 1.0))
+	m._btn(row1, "Refund skill tree", func() -> void:
+		var p2: Player = m.game.player
+		var back := 0
+		for id2 in p2.tree_points:
+			back += int(p2.tree_points[id2])
+		p2.tree_points.clear()
+		p2.skill_points += back
+		p2.recalc()
+		m.open_dev(), Color(0.6, 0.9, 1.0))
 	m._btn(row1, "Die (test death)", func() -> void:
 		m.game.player.hp = 0.0
 		m.game.player.dead = true
 		m.game.on_player_died()
 		m.close(), Color(1, 0.5, 0.5))
+	# Quantity row: type the amount, hit the button (playtest: +1/+5
+	# buttons were tedious — "+99 levels if I want to").
+	var rowq := _flow(list)
+	_qty_btn(m, rowq, "1", "+ levels", func(n: int) -> void:
+		var p2: Player = m.game.player
+		for i in n:
+			if p2.level >= Balance.LEVEL_CAP:
+				break
+			p2.gain_xp(p2.xp_needed() - p2.xp)
+		m.open_dev())
+	_qty_btn(m, rowq, "40", "Set level (rebirth: refunds all points)", func(n: int) -> void:
+		_set_level(m, n)
+		m.open_dev())
+	_qty_btn(m, rowq, "500", "+ gold", func(n: int) -> void:
+		m.game.player.gold += n
+		m.open_dev())
+	_qty_btn(m, rowq, "5", "+ attr pts", func(n: int) -> void:
+		m.game.player.unspent_attr += n
+		m.open_dev())
+	_qty_btn(m, rowq, "5", "+ skill pts", func(n: int) -> void:
+		m.game.player.skill_points += n
+		m.open_dev())
 	# Class swap re-gears: the weapon takes the class's signature shape,
 	# S pieces become the class legendaries (grade/+level/gems carry).
+	# set_class refunds all spent talent/tree points (they respec, never
+	# vanish — old-class tree cells don't exist for the new class).
 	var row2 := _flow(list)
 	for id in Classes.CLASSES:
 		var cid: String = id
@@ -76,21 +104,46 @@ static func open(m: Menus) -> void:
 		m._btn(row3, "Equip full %s set" % g, func() -> void:
 			_equip_set(m, g)
 			m.open_dev(), Items.GRADE_COLOR[g])
-	m._btn(row3, "Give 5 gems", func() -> void:
+	# Gems by the crate: count box + level box + button.
+	var gem_n := _qty_box(row3, "10")
+	var gem_lv := _qty_box(row3, "1")
+	m._btn(row3, "← give N gems of Lv", func() -> void:
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
-		for i in 5:
-			m.game.player.gem_bag.append(Items.random_gem(rng, 1))
-		m.game.player.gem_bag.append(Items.random_gem(rng, 3))
+		var n := clampi(int(gem_n.text) if gem_n.text.is_valid_int() else 10, 1, 2000)
+		var lv := clampi(int(gem_lv.text) if gem_lv.text.is_valid_int() else 1, 1, Items.GEM_MAX_LEVEL)
+		for i in n:
+			m.game.player.gem_bag.append(Items.random_gem(rng, lv))
 		m.open_dev())
 	m._btn(row3, "Give reset stone", func() -> void:
 		m.game.player.add_consumable(Items.make_reset_stone())
 		m.open_dev(), Color(0.6, 0.9, 1.0))
+	m._btn(row3, "Give respec tome", func() -> void:
+		m.game.player.add_consumable(Items.make_respec_tome())
+		m.open_dev(), Color(0.6, 0.9, 1.0))
+	m._btn(row3, "Send gift mail", func() -> void:
+		var grng := RandomNumberGenerator.new()
+		grng.randomize()
+		m.game.send_mail("A Gift from the Devs", "Thanks for playing the event!",
+			[{"kind": "item", "item": Items.roll_item_of(Items.SLOTS[grng.randi_range(0, 3)], "A", grng, m.game.player.cls)},
+			{"kind": "gem", "gem": Items.random_gem(grng, 2)}])
+		m.open_dev(), Color(0.8, 0.9, 1.0))
+	m._btn(row3, "Age mail +31d", func() -> void:
+		for mail in m.game.mailbox:
+			mail["sent_at"] = int(mail["sent_at"]) - 31 * 86400
+		m.game.prune_mail()
+		m.open_dev(), Color(0.8, 0.9, 1.0))
 	m._btn(row3, "Bag +1 tier", func() -> void:
 		var idx: int = Items.GRADES.find(String(m.game.player.bag["grade"]))
 		if idx < Items.GRADES.size() - 1:
 			m.game.player.acquire_bag(Items.make_bag(Items.GRADES[idx + 1]))
 		m.open_dev(), Color(0.95, 0.85, 0.5))
+	for grade2 in Items.GRADES:
+		var bg: String = grade2
+		var bag_active: bool = String(m.game.player.bag["grade"]) == bg
+		m._btn(row3, ("● " if bag_active else "") + "Bag %s" % bg, func() -> void:
+			m.game.player.bag = Items.make_bag(bg)  # direct set — downgrades allowed for capacity testing
+			m.open_dev(), Items.GRADE_COLOR[bg])
 
 	# ------------------------------------------------------------ world ---
 	m._lbl(list, "WORLD (rooms of this chapter's graph)", 16, Color(0.95, 0.85, 0.5))
@@ -119,6 +172,15 @@ static func open(m: Menus) -> void:
 		e.promote_elite()
 		m.game.add_enemy(e)
 		m.close(), Color(1.0, 0.8, 0.4))
+	m._btn(row4b, "Spawn 3 elites", func() -> void:
+		var kinds := ["wolf", "spider", "skeleton"]
+		for i in 3:
+			var e3 := Enemy.make(m.game, kinds[i],
+				m.game.player.global_position + Vector2(240 + i * 80, -70 + i * 70),
+				m.game.player.level + 1)
+			e3.promote_elite()
+			m.game.add_enemy(e3)
+		m.close(), Color(1.0, 0.8, 0.4))
 	# Boss spawn level: story anchor, or pinned to your level (+10/+20
 	# probes the no-downscale walls without hand-leveling first).
 	var lrow := _flow(list)
@@ -130,6 +192,19 @@ static func open(m: Menus) -> void:
 		m._btn(lrow, ("● " if m.dev_boss_mode == mi else "") + modes[mi], func() -> void:
 			m.dev_boss_mode = mi
 			m.open_dev(), Color(0.5, 1.0, 0.5) if m.dev_boss_mode == mi else Color(1, 1, 1))
+	# Exact-level override: types like "100" — wins over the buttons
+	# while non-empty, for NEW spawns only.
+	var ovr := LineEdit.new()
+	ovr.placeholder_text = "exact Lv"
+	ovr.custom_minimum_size = Vector2(96, 0)
+	ovr.max_length = 3
+	if m.dev_boss_level_override > 0:
+		ovr.text = str(m.dev_boss_level_override)
+	ovr.text_changed.connect(func(t: String) -> void:
+		m.dev_boss_level_override = clampi(int(t), 0, Balance.LEVEL_CAP) if t.is_valid_int() else 0)
+	lrow.add_child(ovr)
+	var ovr_note := m._lbl(lrow, "← override wins while set (new spawns only)", 12, Color(0.55, 0.58, 0.66))
+	ovr_note.custom_minimum_size = Vector2(330, 0)  # labels in box containers collapse without this
 	var row5 := _flow(list)
 	for kind in m.BOSS_KINDS:
 		var k: String = kind
@@ -146,6 +221,7 @@ static func open(m: Menus) -> void:
 			m.close(), Color(1, 0.6, 0.6))
 	m._btn(row5, "Kill bosses", func() -> void:
 		for b in m.game._live_bosses().duplicate():
+			b.untargetable = false  # dev kill pierces burrow/submerge phases
 			b.take_damage(9999999.0)
 		m.open_dev())
 
@@ -206,10 +282,94 @@ static func _flow(parent: Control) -> HFlowContainer:
 	return row
 
 
+## A small numeric input box for quantity rows.
+static func _qty_box(row: Control, def: String) -> LineEdit:
+	var box := LineEdit.new()
+	box.text = def
+	box.custom_minimum_size = Vector2(64, 0)
+	box.max_length = 6
+	row.add_child(box)
+	return box
+
+
+## [amount box][button] pair: the button parses its own box and calls
+## fn(n). Every "+X" dev action takes a typed amount (+99 levels,
+## +2000 gems — absurd amounts are the point of a dev panel).
+static func _qty_btn(m: Menus, row: Control, def: String, label: String, fn: Callable, color := Color(1, 1, 1)) -> void:
+	var box := _qty_box(row, def)
+	m._btn(row, label, func() -> void:
+		var fallback := int(def)
+		var n := clampi(int(box.text) if box.text.is_valid_int() else fallback, 1, 999999)
+		fn.call(n), color)
+
+
+## Dev: set the EXACT level — a rebirth. Level and xp reset, every
+## talent/tree point refunds (set_class does that) and the pools are
+## re-granted at the per-level rates, ready to hand-allocate.
+static func _set_level(m: Menus, target: int) -> void:
+	var p: Player = m.game.player
+	p.level = clampi(target, 1, Balance.LEVEL_CAP)
+	p.xp = 0
+	p.set_class(p.cls)  # refunds points, re-derives themes for the new level
+	p.skill_points = (p.level - 1) * Balance.SKILL_POINTS_PER_LEVEL
+	p.unspent_attr = (p.level - 1) * Balance.ATTR_POINTS_PER_LEVEL
+	p.recalc()
+	p.hp = p.max_hp
+	p.mp = p.max_mp
+	m.game.spawn_text(p.global_position + Vector2(0, -56),
+		"REBIRTH — Lv %d, %d skill + %d attr points to allocate" % [p.level, p.skill_points, p.unspent_attr],
+		Color(0.5, 0.9, 1.0))
+
+
+## Write one fresh save per class (chapter 1, given level, all points
+## banked, no gear) — ALWAYS all six, every press. Free slots only
+## (existing saves are never touched); with 20 slots that's three full
+## rosters before anything needs deleting. Returns how many were
+## created (short only when the slots genuinely run out). Lives here
+## with the other dev tools, but the BUTTON is on the launcher screens
+## (Menus._dev_roster_row) — no need to enter a game first.
+static func create_roster(m: Menus, lvl: int) -> int:
+	if m.game.no_saves:
+		return 0  # test runs must never write real save files
+	var made := 0
+	var slot := 1
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for cid in Classes.CLASSES:
+		while slot <= SaveGame.MAX_SLOTS and SaveGame.exists(slot):
+			slot += 1
+		if slot > SaveGame.MAX_SLOTS:
+			break
+		var data := {
+			"version": SaveGame.VERSION,
+			"saved_at": Time.get_unix_time_from_system(),
+			"chapter": "ch1",
+			"cls": cid,
+			"level": lvl, "xp": 0,
+			"skill_points": (lvl - 1) * Balance.SKILL_POINTS_PER_LEVEL,
+			"unspent_attr": (lvl - 1) * Balance.ATTR_POINTS_PER_LEVEL,
+			"tree_points": {}, "attr_points": {},
+			"gold": 2000, "potions": 3,
+			"quest_key": "talk",
+			"wander_seed": rng.randi(),
+		}
+		var f := FileAccess.open(SaveGame.path(slot), FileAccess.WRITE)
+		if f:
+			f.store_string(JSON.stringify(data))
+			made += 1
+		slot += 1
+	return made
+
+
 ## Dev: the level bosses spawn at, per the "Spawn bosses at" selector.
 ## -1 = the kind's story anchor (make_boss default); below-anchor asks
 ## clamp UP — a monster's listed level is its minimum.
 static func _boss_level(m: Menus) -> int:
+	# The override field wins while set: spawn ANY boss at an exact
+	# level (e.g. Fangmaw at 100 vs an endgame build). New spawns only —
+	# bosses already in the arena keep the level they spawned with.
+	if m.dev_boss_level_override > 0:
+		return m.dev_boss_level_override
 	match m.dev_boss_mode:
 		1: return m.game.player.level
 		2: return m.game.player.level + 10

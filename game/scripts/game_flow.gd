@@ -80,6 +80,8 @@ func advance_chapter() -> void:
 # finishing a chapter with ANY character opens the next one on the
 # New Game chapter select.
 const META_PATH := "user://meta.json"
+# Layer-local state (read/written ONLY in this layer — the chain rule
+# keeps cross-layer vars in game_base; private caches may live here).
 var _meta: Dictionary = {}
 var _meta_loaded := false
 
@@ -187,7 +189,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	_boss_roster_update(src)
 	player.hp = player.max_hp
 	player.mp = player.max_mp
-	player.potions = maxi(player.potions, 2)
+	player.potions = maxi(player.potions, Balance.BOSS_KILL_POTION_FLOOR)
 
 	# Bosses always drop a golden chest + a pile of gold.
 	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
@@ -206,6 +208,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	# other boss opens the gate out of its zone and points the quest at
 	# the next boss down the road.
 	if kind == String(Story.chapter(chapter_id).get("final_boss", "")):
+		flush_dropped_loot()  # forgotten ground loot mails itself (round 8)
 		quest_key = "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
 		refresh_quest()
 		# Progression: this character has finished the chapter (kept across
@@ -270,13 +273,16 @@ func on_enemy_died(e: Enemy) -> void:
 		# (chapter totals stay fixed).
 		var gem := Items.random_gem(loot_rng,
 			2 if loot_rng.randf() < Balance.ELITE_GEM_LV2_CHANCE else 1)
-		if player.gain_gem(gem):
+		if give_loot({"kind": "gem", "gem": gem}, e.global_position):
 			spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 		Chest.drop(self, "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
 			e.global_position + Vector2(44, 0))
 		if loot_rng.randf() < Balance.ELITE_STONE_CHANCE:
-			if player.add_consumable(Items.make_reset_stone()):
+			if give_loot({"kind": "stone", "stone": Items.make_reset_stone()}, e.global_position + Vector2(-36, 8)):
 				spawn_text(e.global_position + Vector2(0, -92), "+ Stone of Unlearning", Color(0.6, 0.9, 1.0))
+		elif loot_rng.randf() < Balance.ELITE_TOME_CHANCE:
+			if give_loot({"kind": "stone", "stone": Items.make_respec_tome()}, e.global_position + Vector2(-36, 8)):
+				spawn_text(e.global_position + Vector2(0, -92), "+ Palimpsest of the Path", Color(0.6, 0.9, 1.0))
 		elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
 			var cap := String(Story.chapter(chapter_id).get("loot_cap", "S"))
 			player.acquire_bag(Items.make_bag(Items.roll_grade("gold", loot_rng, cap)))

@@ -71,6 +71,11 @@ var crit_dmg := 1.5
 var cdr := 0.0
 var lifesteal := 0.0
 var regen_pct := 0.0     # % of max HP regenerated per second (melee passives)
+var sw_regen := 0.0      # Second Wind: extra regen once untouched for sw_delay
+var sw_delay := 0.0
+var since_hurt := 999.0  # seconds since the player last TOOK damage
+var blink_ward := 0.0    # Arcane Ward duration granted by Blink (mage passive)
+var ward_time := 0.0     # while > 0 the next hit is fully absorbed
 var physres := 0.0
 var magres := 0.0
 var critres := 0.0
@@ -195,6 +200,21 @@ func _ready() -> void:
 
 
 func set_class(id: String) -> void:
+	# Switching class REFUNDS all progression points instead of orphaning
+	# them: spent tree points reference the OLD class's cells (they'd
+	# silently stop existing), and attribute ratios differ per class.
+	# Points respec, never vanish. (Save loading is unaffected: apply()
+	# calls set_class on a fresh zero-point player, then sets the pools.)
+	var refunded_skill := 0
+	for tid in tree_points:
+		refunded_skill += int(tree_points[tid])
+	tree_points.clear()
+	skill_points += refunded_skill
+	var refunded_attr := 0
+	for attr in attr_points:
+		refunded_attr += int(attr_points[attr])
+		attr_points[attr] = 0
+	unspent_attr += refunded_attr
 	cls = id
 	ability_theme = {"a1": "", "a2": "", "a3": "", "ult": ""}
 	aegis_time = 0.0
@@ -229,6 +249,13 @@ func set_ability_theme(slot: String, id: String) -> void:
 		ability_theme[slot] = id
 
 
+## One click, one identity: assign a theme (or "" = base) to EVERY
+## ability at once (round 18 QoL). Locked themes are refused per slot.
+func set_all_themes(id: String) -> void:
+	for slot in ability_theme:
+		set_ability_theme(slot, id)
+
+
 func _theme_fx(slot: String) -> Dictionary:
 	var id: String = ability_theme.get(slot, "")
 	if id == "":
@@ -258,7 +285,9 @@ func recalc() -> void:
 	var base: Dictionary = Classes.CLASSES[cls]
 	var b := {"atk_flat": 0.0, "atk_pct": 0.0, "hp_flat": 0.0, "hp_pct": 0.0,
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
-		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "physres": 0.0, "magres": 0.0,
+		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
+		"blink_ward": 0.0,
+		"physres": 0.0, "magres": 0.0,
 		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
 		"combo": 0.0, "greed": 0.0}
 
@@ -302,6 +331,9 @@ func recalc() -> void:
 	cdr = clampf(b["cdr"], 0.0, 0.45)
 	lifesteal = b["lifesteal"]
 	regen_pct = b["regen_pct"]
+	sw_regen = b["sw_regen"]
+	sw_delay = b["sw_delay"]
+	blink_ward = b["blink_ward"]
 	physres = b["physres"]
 	magres = b["magres"]
 	critres = b["critres"]
@@ -367,11 +399,12 @@ func bag_used() -> int:
 	return backpack.size() + gem_stacks() + consumables.size()
 
 
+# Bag-full adds return false with NO side effects — the caller decides
+# what happens (game.give_loot drops it on the ground; the shop refuses
+# the sale). Nothing is ever silently sold (playtest round 8).
+
 func add_item(item: Dictionary) -> bool:
 	if bag_used() >= bag_capacity():
-		strip_gems(item)
-		gold += maxi(1, Items.price(item) / 2)
-		game.spawn_text(global_position + Vector2(0, -50), "Bag full! Sold for gold", Color(1, 0.9, 0.4))
 		return false
 	backpack.append(item)
 	return true
@@ -388,8 +421,6 @@ func gain_gem(gem: Dictionary) -> bool:
 			stacks = true
 			break
 	if not stacks and bag_used() >= bag_capacity():
-		gold += 2 + int(gem["lvl"]) * 3
-		game.spawn_text(global_position + Vector2(0, -50), "Bag full! Gem sold", Color(1, 0.9, 0.4))
 		return false
 	gem_bag.append(gem)
 	return true
@@ -397,8 +428,6 @@ func gain_gem(gem: Dictionary) -> bool:
 
 func add_consumable(c: Dictionary) -> bool:
 	if bag_used() >= bag_capacity():
-		gold += 25
-		game.spawn_text(global_position + Vector2(0, -50), "Bag full! Sold for gold", Color(1, 0.9, 0.4))
 		return false
 	consumables.append(c)
 	return true
@@ -420,6 +449,17 @@ func use_consumable(c: Dictionary) -> void:
 			game.sfx("levelup")
 			game.spawn_text(global_position + Vector2(0, -56),
 				"TALENTS RESET — %d points refunded (press T)" % refunded, Color(0.6, 0.9, 1.0))
+		"tree_tome":
+			var back := 0
+			for id in tree_points:
+				back += int(tree_points[id])
+			tree_points.clear()
+			skill_points += back
+			consumables.erase(c)
+			recalc()
+			game.sfx("levelup")
+			game.spawn_text(global_position + Vector2(0, -56),
+				"SKILL TREE RESET — %d points refunded (press T)" % back, Color(0.6, 0.9, 1.0))
 
 
 ## A looted bag: bigger than the current one upgrades in place,
@@ -563,8 +603,9 @@ func gain_xp(amount: int) -> void:
 		skill_points += Balance.SKILL_POINTS_PER_LEVEL
 		unspent_attr += Balance.ATTR_POINTS_PER_LEVEL
 		recalc()
-		hp = max_hp
-		mp = max_mp
+		# NO free full heal on level-up (round 10): early levels come
+		# fast, and the resets made potions — and merchants — pointless.
+		# recalc() keeps your hp/mp FRACTION as the pools grow.
 		game.sfx("levelup")
 		game.spawn_text(global_position + Vector2(0, -72), "LEVEL UP!  Lv %d  (+1 skill, +1 attribute point — press T)" % level, Color(0.5, 0.9, 1.0))
 		var unlocked := Classes.themes_unlocked(level)

@@ -19,8 +19,16 @@ func _physics_process(delta: float) -> void:
 	mp = minf(max_mp, mp + (6.0 if cls == "mage" else 4.0) * delta)
 	# Melee risk compensation: class-passive HP regeneration. Longer
 	# fights (2x TTK) can't ask melee to eat hits with no comeback.
-	if regen_pct > 0.0 and not dead and hp > 0.0:
-		hp = minf(max_hp, hp + max_hp * regen_pct * delta)
+	since_hurt += delta
+	ward_time = maxf(0.0, ward_time - delta)
+	# Second Wind (round 14): the no-lifesteal ranged kit's sustain —
+	# stay untouched for sw_delay and recovery kicks in. Spacing skill
+	# IS the heal; one connected hit resets the clock.
+	var regen_now := regen_pct
+	if sw_regen > 0.0 and since_hurt >= sw_delay:
+		regen_now += sw_regen
+	if regen_now > 0.0 and not dead and hp > 0.0:
+		hp = minf(max_hp, hp + max_hp * regen_now * delta)
 	anim_t += delta
 
 	# Hex watch: cursed enemies EXPLODE on death (chains: a detonation
@@ -341,7 +349,15 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 			return
 		if dmg_type != "true":
 			amount *= (1.0 - Stats.res_frac(res))
+	if ward_time > 0.0:
+		# Arcane Ward eats the hit whole — one absorb per Blink.
+		ward_time = 0.0
+		hurt_cd = 0.4
+		game.sfx("blink")
+		game.spawn_text(global_position + Vector2(0, -40), "WARDED", Color(0.6, 0.9, 1.0))
+		return
 	hurt_cd = 0.6
+	since_hurt = 0.0
 	hp -= amount
 	game.sfx("hurt")
 	# Getting hit should FEEL like something went wrong: harder shake and

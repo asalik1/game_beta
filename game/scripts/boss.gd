@@ -62,6 +62,7 @@ func reset_fight() -> void:
 	sprite.modulate = Color(1, 1, 1)
 	speed = _stats_for(kind)["speed"]  # (T4) content bosses resolve here too
 	_reset_ch2_state()
+	_reset_ch3_state()
 
 
 func _think(delta: float) -> Vector2:
@@ -89,6 +90,12 @@ func _think(delta: float) -> Vector2:
 			return _choirmother(player, to_player, dist)
 		"nullwarden":
 			return _nullwarden(player, to_player, dist)
+		"sexton":  # Chapter 3 block (The Unburied Vale) at the end of this file
+			return _sexton(player, to_player, dist, delta)
+		"vess":
+			return _vess(player, to_player, dist)
+		"saint_varo":
+			return _saint_varo(player, to_player, dist, delta)
 	return Vector2.ZERO
 
 
@@ -106,7 +113,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 		if charge_time <= 0.0:
 			charging = false
 		if dist < 70.0 and attack_cd <= 0.0:
-			attack_cd = 0.8
+			attack_cd = 0.72
 			player.take_damage(dmg * 1.4, dmg_type, self)
 		return charge_dir * 620.0
 
@@ -131,7 +138,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 	# Normal wolf behavior between charges.
 	if dist < 60.0:
 		if attack_cd <= 0.0:
-			attack_cd = 1.0
+			attack_cd = 0.92
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -141,7 +148,7 @@ func _pounce(player: Player) -> void:
 	leaping = true
 	roar()
 	var target: Vector2 = player.global_position
-	game.telegraph(target, 95.0, 0.85, dmg * 1.4)
+	game.telegraph(target, 95.0, 0.76, dmg * 1.4)
 	var tween := create_tween()
 	tween.tween_property(self, "global_position", target, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_callback(func() -> void: leaping = false)
@@ -150,7 +157,7 @@ func _pounce(player: Player) -> void:
 func _do_charge(_to_player: Vector2) -> void:
 	# Telegraph: flash red for a moment, THEN charge at where the player is.
 	sprite.modulate = Color(2.5, 0.6, 0.6)
-	await get_tree().create_timer(0.65).timeout
+	await get_tree().create_timer(0.58).timeout
 	if dying or not is_instance_valid(game.player):
 		telegraphing = false
 		return
@@ -171,7 +178,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		roar()
 		for i in 4:
 			var offset := Vector2.ZERO if i == 0 else Vector2(randf_range(-160, 160), randf_range(-120, 120))
-			game.telegraph(player.global_position + offset, 75.0, 0.75 + i * 0.12, dmg * 1.3,
+			game.telegraph(player.global_position + offset, 75.0, 0.68 + i * 0.11, dmg * 1.3,
 				{"color": Color(0.55, 1.0, 0.25, 0.55)})
 
 	# Blink away when the knight gets close.
@@ -233,7 +240,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 	if dist < 64.0:
 		if attack_cd <= 0.0:
-			attack_cd = 1.1
+			attack_cd = 1.0
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -245,7 +252,7 @@ func _blade_storm() -> void:
 	for i in count:
 		if dying or not is_instance_valid(game.player) or game.player.dead:
 			return
-		game.telegraph(game.player.global_position, 85.0, 0.8, 30.0, {"sword": true})
+		game.telegraph(game.player.global_position, 85.0, 0.72, dmg * 1.3, {"sword": true})
 		await get_tree().create_timer(0.45 if enraged else 0.6).timeout
 
 
@@ -262,6 +269,10 @@ func die() -> void:
 		# chapter end (playtest round 7: a spare dev-spawned Vargoth
 		# died in the village and "won" chapter 1).
 		game.on_rogue_boss_died.call_deferred(kind, self)
+	# (Ch3) The censers gutter out with their saint.
+	for c in censers:
+		if is_instance_valid(c):
+			c.queue_free()
 	super.die()
 
 
@@ -324,16 +335,16 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		for i in 3:
 			game.telegraph(player.global_position
 				+ Vector2(randf_range(-140.0, 140.0), randf_range(-110.0, 110.0)),
-				70.0, 0.6, dmg * 1.1, {"color": STORM})
+				70.0, 0.55, dmg * 1.1, {"color": STORM})
 
 	# Whip snap keeps mid-range honest.
 	if ability_cd <= 0.0 and dist > 80.0 and dist < 260.0:
 		ability_cd = 3.4
-		game.telegraph(player.global_position, 75.0, 0.5, dmg * 1.2, {"color": STORM})
+		game.telegraph(player.global_position, 75.0, 0.45, dmg * 1.2, {"color": STORM})
 
 	if dist < 70.0:
 		if attack_cd <= 0.0:
-			attack_cd = 1.0
+			attack_cd = 0.92
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -344,7 +355,7 @@ func _lightning_lash(player: Player) -> void:
 	var dir := (player.global_position - global_position).normalized()
 	for i in 5:
 		game.telegraph(global_position + dir * (120.0 + i * 95.0), 80.0,
-			0.5 + i * 0.11, dmg * 1.4, {"color": Color(1.0, 0.95, 0.4, 0.6)})
+			0.45 + i * 0.10, dmg * 1.4, {"color": Color(1.0, 0.95, 0.4, 0.6)})
 
 
 # ---------------------------------------------------- The Choir Mother ---
@@ -389,7 +400,7 @@ func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# Hymn of hunger: a marked strike — and the choir feeds her.
 	if ring_cd <= 0.0:
 		ring_cd = 8.0
-		game.telegraph(player.global_position, 90.0, 0.7, dmg * 1.3, {"color": BLIGHT})
+		game.telegraph(player.global_position, 90.0, 0.62, dmg * 1.3, {"color": BLIGHT})
 		hp = minf(max_hp, hp + max_hp * 0.02)
 		game.spawn_text(global_position + Vector2(0, -70), "the choir feeds her", Color(0.8, 0.5, 1.0))
 
@@ -417,7 +428,7 @@ func _requiem() -> void:
 		for i in count:
 			var ang := TAU * i / count + ring * 0.3
 			game.telegraph(global_position + Vector2.from_angle(ang) * radius, 62.0,
-				0.65 + ring * 0.28, dmg * 1.25, {"color": Color(0.8, 0.4, 1.0, 0.55)})
+				0.58 + ring * 0.25, dmg * 1.25, {"color": Color(0.8, 0.4, 1.0, 0.55)})
 
 
 # ------------------------------------------ Warden Null, the Last Sentinel ---
@@ -452,7 +463,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		var dir := to_player.normalized()
 		for i in 7:
 			game.telegraph(global_position + dir * (110.0 + i * 90.0), 70.0,
-				0.55 + i * 0.08, dmg * 1.3, {"color": CORE})
+				0.5 + i * 0.075, dmg * 1.3, {"color": CORE})
 
 	# Shockwave slam.
 	if ability_cd <= 0.0 and dist < 480.0:
@@ -465,7 +476,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 	if dist < 74.0:
 		if attack_cd <= 0.0:
-			attack_cd = 1.3
+			attack_cd = 1.15
 			player.take_damage(dmg * 1.2, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -478,4 +489,330 @@ func _piston_protocol(player: Player) -> void:
 	for col in 4:
 		for row in 3:
 			game.telegraph(base + Vector2((col - 1.5) * 130.0, (row - 1) * 120.0),
-				68.0, 0.55 + col * 0.16, dmg * 1.35, {"color": Color(0.5, 0.9, 1.0, 0.55)})
+				68.0, 0.5 + col * 0.145, dmg * 1.35, {"color": Color(0.5, 0.9, 1.0, 0.55)})
+
+
+# ========================================================== Chapter 3 ---
+# The Unburied Vale (BOSSES.md). Data lives in content/ch3_bosses.gd;
+# same telegraph/threshold architecture, two new primitives debut here:
+# telegraph_safe (inverse safe-zone, game_base) and the burrow state
+# (Enemy.untargetable). Placeholder sprites/music until assets land.
+
+const GRAVE := Color(0.6, 0.45, 0.3, 0.6)     # sexton's churned earth
+const DIRGE := Color(0.75, 0.8, 1.0, 0.55)    # vess's grief-pale blue
+const INCENSE := Color(1.0, 0.9, 0.6, 0.55)   # varo's censer gold
+
+var burrowed := false        # sexton (later: the auroch) — underground phase
+var corpses: Array = []      # sexton: where his summons fell (Vector2s)
+var tracked_adds: Array = [] # sexton: live summons watched for death spots
+var grave_t := 0.0           # sexton: next grave-spawn timer
+var censers: Array = []      # varo: the burning censer adds
+var censer_wave := 0         # varo: relights fired (60% / 30%)
+var toll_count := 0          # varo: bell tolls rung (safe spots shrink)
+var varo_setup := false      # varo: censers placed on first think
+var heal_text_t := 0.0       # varo: throttle for the incense flavor text
+
+
+func _reset_ch3_state() -> void:
+	if burrowed:
+		burrowed = false
+		untargetable = false
+		collision_layer = 4
+		collision_mask = 1 | 2 | 4
+		sprite.visible = true
+	corpses.clear()
+	tracked_adds.clear()
+	grave_t = 0.0
+	for c in censers:
+		if is_instance_valid(c):
+			c.queue_free()
+	censers.clear()
+	censer_wave = 0
+	toll_count = 0
+	varo_setup = false
+
+
+# --------------------------------- The Sexton, Gravedigger of the Vale ---
+## Melee brute. Endless graves answer him (zero-reward shamblers), and
+## any summon that dies near another corpse detonates both — kill the
+## adds SPREAD OUT. Signature: SHOVELWORK — burrows, tears an eruption
+## line at you, and surfaces out of it. No enrage; the arithmetic is
+## the threat.
+func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if burrowed:
+		return Vector2.ZERO
+	_track_corpses()
+
+	# The Vale answers: a shambler claws up near the prey, all fight.
+	grave_t -= delta
+	if grave_t <= 0.0:
+		grave_t = 7.0
+		var live := 0
+		for a in tracked_adds:
+			if is_instance_valid(a) and not a.dying:
+				live += 1
+		if live < 4:
+			var at: Vector2 = game.clamp_to_zone(player.global_position
+				+ Vector2.from_angle(randf() * TAU) * randf_range(140.0, 220.0), home)
+			var add := Enemy.make(game, "zombie", at, level)
+			add.xp_value = 0
+			add.gold_value = 0
+			add.force_aggro = true
+			game.add_enemy(add)
+			tracked_adds.append(add)
+			game.burst(at, GRAVE, 12)
+
+	# Signature: SHOVELWORK — under the dirt and up through your floor.
+	if special_cd <= 0.0 and dist < 600.0:
+		special_cd = 8.0
+		_shovelwork(player)
+		return Vector2.ZERO
+
+	# Shovel swipe keeps mid-range honest.
+	if ability_cd <= 0.0 and dist < 300.0:
+		ability_cd = 4.0
+		game.telegraph(player.global_position, 70.0, 0.5, dmg * 1.1, {"color": GRAVE})
+
+	if dist < 64.0:
+		if attack_cd <= 0.0:
+			attack_cd = 1.0
+			player.take_damage(dmg, dmg_type, self)
+		return Vector2.ZERO
+	return to_player.normalized() * speed
+
+
+## Watch the summons: when one dies, its resting spot becomes a corpse.
+## A corpse falling within 180px of another detonates BOTH (telegraphed)
+## — the positioning lesson the whole chapter is built on.
+func _track_corpses() -> void:
+	var still: Array = []
+	for a in tracked_adds:
+		if not is_instance_valid(a):
+			continue  # freed before we saw it fall — no corpse to mark
+		if not a.dying:
+			still.append(a)
+			continue
+		var fell: Vector2 = a.global_position
+		var chained := false
+		for c in corpses:
+			var rest: Vector2 = c
+			if fell.distance_to(rest) <= 180.0:
+				chained = true
+				game.telegraph(fell, 85.0, 0.6, dmg * 1.3, {"color": Color(0.55, 0.9, 0.3, 0.6)})
+				game.telegraph(rest, 85.0, 0.6, dmg * 1.3, {"color": Color(0.55, 0.9, 0.3, 0.6)})
+				corpses.erase(rest)
+				break
+		if not chained:
+			corpses.append(fell)
+			if corpses.size() > 6:
+				corpses.pop_front()
+	tracked_adds = still
+
+
+func _shovelwork(player: Player) -> void:
+	burrowed = true
+	untargetable = true
+	collision_layer = 0
+	collision_mask = 0
+	sprite.visible = false
+	game.sfx("slam")
+	game.burst(global_position, GRAVE, 16)
+	var from := global_position
+	var dir := (player.global_position - from).normalized()
+	var span := minf(from.distance_to(player.global_position), 480.0)
+	var steps := 4
+	for i in steps:
+		game.telegraph(from + dir * span * float(i + 1) / float(steps), 75.0,
+			0.35 + i * 0.14, dmg * 1.2, {"color": GRAVE})
+	await get_tree().create_timer(1.1).timeout
+	if dying or not burrowed:
+		return  # killed mid-dig or the fight reset under us
+	global_position = game.clamp_to_zone(from + dir * span, home)
+	burrowed = false
+	untargetable = false
+	collision_layer = 4
+	collision_mask = 1 | 2 | 4
+	sprite.visible = true
+	game.burst(global_position, GRAVE, 20)
+	roar()
+
+
+# ------------------------------------- Vess the Unburied, First Widow ---
+## Ranged banshee. Grief fans that ECHO from where she cast them, a
+## Morwen-lineage blink, and the SILENCE: the whole arena screams except
+## one quiet circle — stand in it. At 30% she KEENS: the silence gains
+## a flickering decoy circle (the steady one is the truth).
+func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
+	if hp <= max_hp * 0.3 and not enraged:
+		enraged = true
+		sprite.modulate = Color(0.8, 0.85, 1.6)
+		speed *= 1.2
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "VESS KEENS!", Color(0.75, 0.8, 1.0))
+
+	# Signature: THE SILENCE — find the quiet circle before the wail.
+	if special_cd <= 0.0:
+		special_cd = 7.0 if enraged else 9.0
+		_silence(player)
+
+	# Grief fan: 3 bolts now, and the memory of them 0.8s later.
+	if ability_cd <= 0.0:
+		ability_cd = 2.8
+		_grief_fan(to_player.normalized())
+
+	# Wail ring, slow and wide.
+	if ring_cd <= 0.0:
+		ring_cd = 8.0
+		roar()
+		for i in 12:
+			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 190.0, dmg)
+
+	# Blink away from blades (her grief is Morwen's lineage).
+	if dist < 160.0 and blink_cd <= 0.0:
+		blink_cd = 3.0
+		game.sfx("blink")
+		var away := -to_player.normalized().rotated(randf_range(-0.9, 0.9))
+		global_position = game.clamp_to_zone(
+			global_position + away * randf_range(280.0, 400.0), home)
+		return Vector2.ZERO
+
+	if dist < 240.0:
+		return -to_player.normalized() * speed
+	elif dist > 340.0:
+		return to_player.normalized() * speed
+	return to_player.orthogonal().normalized() * speed * 0.5
+
+
+func _silence(player: Player) -> void:
+	roar()
+	game.spawn_text(global_position + Vector2(0, -84), "FIND THE SILENCE!", DIRGE)
+	var dir := Vector2.from_angle(randf() * TAU)
+	var safe: Vector2 = game.clamp_to_zone(player.global_position + dir * 240.0, home)
+	var opts := {"color": DIRGE}
+	if enraged:
+		opts["decoys"] = [game.clamp_to_zone(player.global_position - dir * 260.0, home)]
+	game.telegraph_safe([safe], 110.0, 2.0, dmg * 2.0, opts)
+
+
+func _grief_fan(aim: Vector2) -> void:
+	game.sfx("bolt")
+	var from := global_position
+	for spread in [-0.22, 0.0, 0.22]:
+		_bolt(aim.rotated(spread) * 320.0, dmg)
+	await get_tree().create_timer(0.8).timeout
+	if dying:
+		return
+	# The echo fires from where she CAST it — dodge the memory too.
+	game.sfx("bolt")
+	for spread in [-0.22, 0.0, 0.22]:
+		var p := Projectile.spawn(game, from, aim.rotated(spread) * 320.0, dmg, false, "bolt")
+		p.hostile_type = dmg_type
+		p.source_enemy = self
+
+
+# ------------------------------------------ Saint Varo the Unrotting ---
+## Slow holy-horror juggernaut. Three censers ring the arena and their
+## incense HEALS him — kill them (they relight at 60% and 30%). The
+## TOLL: arena-wide bell strike except the marked shadows, and every
+## toll cracks one — the shelter shrinks. At 25% he stands up for the
+## first time in sixty years.
+func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if not varo_setup:
+		varo_setup = true
+		_spawn_censers()
+		game.spawn_text(global_position + Vector2(0, -84), "The censers burn.", INCENSE)
+
+	# Incense: while any censer lives, he mends. Snuff them out.
+	var incense := false
+	for c in censers:
+		if is_instance_valid(c) and not c.dying:
+			incense = true
+			break
+	if incense:
+		hp = minf(max_hp, hp + max_hp * 0.015 * delta)
+		heal_text_t -= delta
+		if heal_text_t <= 0.0:
+			heal_text_t = 3.0
+			game.spawn_text(global_position + Vector2(0, -70), "the incense sustains him", INCENSE)
+
+	# The congregation relights the censers at 60% and 30%.
+	if censer_wave == 0 and hp <= max_hp * 0.6:
+		censer_wave = 1
+		_spawn_censers()
+		game.spawn_text(global_position + Vector2(0, -84), "The congregation relights the censers!", INCENSE)
+	elif censer_wave == 1 and hp <= max_hp * 0.3:
+		censer_wave = 2
+		_spawn_censers()
+		game.spawn_text(global_position + Vector2(0, -84), "The congregation relights the censers!", INCENSE)
+
+	if hp <= max_hp * 0.25 and not enraged:
+		enraged = true
+		speed *= 1.5
+		sprite.modulate = Color(1.4, 1.3, 0.9)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "SAINT VARO STANDS.", Color(1.0, 0.9, 0.5))
+
+	# Signature: THE TOLL — shelter in a shadow; each toll cracks one.
+	if special_cd <= 0.0 and dist < 640.0:
+		special_cd = 6.0 if enraged else 9.0
+		_toll()
+
+	# Reliquary rain: falling blades chase the penitent.
+	if ring_cd <= 0.0 and dist < 560.0:
+		ring_cd = 7.0
+		_reliquary_rain()
+
+	# Reliquary slam: the Vargoth lineage, slower and heavier.
+	if ability_cd <= 0.0 and dist < 500.0:
+		ability_cd = 3.4 if enraged else 5.0
+		game.sfx("slam")
+		game.shake(8.0)
+		for i in 14:
+			_bolt(Vector2.RIGHT.rotated(TAU * i / 14.0) * 210.0, dmg * 0.7)
+
+	if dist < 70.0:
+		if attack_cd <= 0.0:
+			attack_cd = 1.2
+			player.take_damage(dmg * 1.2, dmg_type, self)
+		return Vector2.ZERO
+	return to_player.normalized() * speed
+
+
+func _spawn_censers() -> void:
+	var live := 0
+	for c in censers:
+		if is_instance_valid(c) and not c.dying:
+			live += 1
+	var base_ang := randf() * TAU
+	for i in maxi(0, 3 - live):
+		var at: Vector2 = game.clamp_to_zone(home
+			+ Vector2.from_angle(base_ang + TAU * i / 3.0) * 260.0, home)
+		var cens := Enemy.make(game, "choir_censer", at, level)
+		cens.xp_value = 0
+		cens.gold_value = 0
+		cens.attack_cd = 1.0e9   # scenery that bleeds: it never swings
+		cens.aggro_range = 0.0   # and never alerts — kill it or don't
+		game.add_enemy(cens)
+		censers.append(cens)
+		game.burst(at, INCENSE, 10)
+
+
+func _toll() -> void:
+	roar()
+	game.spawn_text(global_position + Vector2(0, -84), "THE BELL TOLLS — STAND IN A SHADOW!", INCENSE)
+	var count := maxi(1, 3 - toll_count)
+	toll_count += 1
+	var centers: Array = []
+	var base_ang := randf() * TAU
+	for i in count:
+		centers.append(game.clamp_to_zone(global_position
+			+ Vector2.from_angle(base_ang + TAU * i / float(count)) * 310.0, home))
+	game.telegraph_safe(centers, 100.0, 2.2, dmg * 1.8, {"color": INCENSE})
+
+
+func _reliquary_rain() -> void:
+	for i in 3:
+		if dying or not is_instance_valid(game.player) or game.player.dead:
+			return
+		game.telegraph(game.player.global_position, 85.0, 0.75, dmg * 1.3, {"sword": true})
+		await get_tree().create_timer(0.55).timeout

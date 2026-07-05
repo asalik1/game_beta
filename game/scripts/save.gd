@@ -8,7 +8,9 @@ class_name SaveGame
 ## every read casts explicitly — never trust a loaded number's type.
 
 const VERSION := 2   # v2: the zone graph (visited/cleared rooms, wander seed)
-const MAX_SLOTS := 6
+# 20 slots: dev rosters (6 per press) live alongside real playthroughs
+# without anyone juggling deletions. Only occupied slots render anywhere.
+const MAX_SLOTS := 20
 
 
 static func path(slot: int) -> String:
@@ -44,6 +46,8 @@ static func write(game: Game, slot: int) -> void:
 		# --- world / story ---
 		"quest_key": game.quest_key,
 		"talked_to_elder": game.talked_to_elder,
+		"mailbox": game.mailbox, "dropped_loot": game.dropped_loot,
+		"clock_anchor": game.trusted_now(),
 		"bosses_slain": game.boss_done.keys(),
 		"flags": game.flags,
 		"merchant_zones": game.merchant_zones,
@@ -152,6 +156,21 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.quest_key = String(data.get("quest_key", "talk"))
 	game.talked_to_elder = bool(data.get("talked_to_elder", false))
 	game.flags = data.get("flags", {})
+	# Mailbox (round 8). trusted_now() folds the saved anchor in, so the
+	# clock stays monotonic across sessions even if the OS clock rolled.
+	game.clock_anchor = maxi(game.clock_anchor, int(data.get("clock_anchor", 0)))
+	game.mailbox = data.get("mailbox", [])
+	game.dropped_loot = data.get("dropped_loot", [])
+	for mail in game.mailbox:
+		mail["sent_at"] = int(mail.get("sent_at", 0))
+		for pl in mail.get("items", []):
+			_fix_payload(pl)
+	for pl in game.dropped_loot:
+		_fix_payload(pl)
+	game.prune_mail()
+	for pl in game.dropped_loot:
+		var pp: Array = pl.get("pos", [0, 0])
+		Pickup.drop_loot(game, pl, Vector2(float(pp[0]), float(pp[1])))
 	game.boss_done = {}
 	for kind in data.get("bosses_slain", []):
 		game.boss_done[String(kind)] = true
@@ -200,3 +219,12 @@ static func _fix_gem(g: Dictionary) -> Dictionary:
 	g["lvl"] = int(g.get("lvl", 1))
 	g["gem"] = true
 	return g
+
+
+## Loot payloads ride saves inside mail and ground drops; their inner
+## items/gems need the same int re-casts as the bag (JSON -> floats).
+static func _fix_payload(pl: Dictionary) -> void:
+	if pl.has("item"):
+		pl["item"] = _fix_item(pl["item"])
+	if pl.has("gem"):
+		pl["gem"] = _fix_gem(pl["gem"])

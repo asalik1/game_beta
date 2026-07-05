@@ -24,6 +24,18 @@ const SLOT_MAIN := {
 	"charm":  {"cdr": 0.06},
 }
 
+# Weapon shapes a class can actually be DEALT (round 15: an archer was
+# looting Tomes). Any class may still equip anything from the bag —
+# drops just stop wasting rolls on the wrong arsenal.
+const CLASS_WEAPONS := {
+	"warrior": ["Blade", "Edge", "Claymore"],
+	"archer": ["Bow", "Crossbow"],
+	"assassin": ["Fang", "Kunai"],
+	"mage": ["Staff", "Wand"],
+	"paladin": ["Hammer", "Blade"],
+	"warlock": ["Tome", "Wand"],
+}
+
 const SLOT_NAMES := {
 	"weapon": ["Blade", "Edge", "Fang", "Kunai", "Claymore", "Bow", "Crossbow", "Staff", "Wand", "Hammer", "Tome"],
 	"armor":  ["Plate", "Mail", "Guard"],
@@ -174,6 +186,15 @@ static func make_reset_stone() -> Dictionary:
 		"desc": "Crush it to refund EVERY allocated talent point (attributes and substats) for reallocation."}
 
 
+## The skill-tree twin of the reset stone: a manuscript scraped clean
+## and rewritten — the tree forgets, you choose again. Elite drop,
+## rarer than the stone (Balance.ELITE_TOME_CHANCE).
+static func make_respec_tome() -> Dictionary:
+	return {"kind": "stone", "id": "tree_tome", "grade": "B",
+		"name": "Palimpsest of the Path",
+		"desc": "Crush it to refund EVERY spent skill point — the tree forgets, you choose a new path."}
+
+
 ## The stat value a gem grants at its level (superlinear growth).
 static func gem_value(gem: Dictionary) -> float:
 	var base: float = GEM_STATS[gem["stat"]]["base"]
@@ -217,6 +238,13 @@ const SHAPE_STYLE := {
 }
 
 # Substat pool: stat -> base roll (scaled a little by grade).
+# Mirror of Classes.CLASSES[cls]["dmg_type"] — items.gd must not preload
+# classes.gd (content modules preload items early).
+const CLASSES_DMG_TYPE := {
+	"warrior": "phys", "archer": "phys", "assassin": "phys",
+	"paladin": "phys", "mage": "magic", "warlock": "magic",
+}
+
 const SUBSTATS := {
 	"atk_pct": 0.05, "hp_pct": 0.06, "crit": 0.03, "cdr": 0.03,
 	"speed_pct": 0.03, "lifesteal": 0.02, "greed": 0.08, "crit_dmg": 0.08,
@@ -279,6 +307,8 @@ static func class_weapon_noun(cls: String) -> String:
 static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator, cls := "", force_noun := "") -> Dictionary:
 	var mult: float = GRADE_MULT[grade]
 	var noun_list: Array = SLOT_NAMES[slot]
+	if slot == "weapon" and cls != "" and CLASS_WEAPONS.has(cls):
+		noun_list = CLASS_WEAPONS[cls]
 	var noun: String = force_noun if force_noun != "" else noun_list[rng.randi_range(0, noun_list.size() - 1)]
 	if grade == "S" and cls != "" and S_GEAR.has(cls) and S_GEAR[cls][slot].has("noun"):
 		noun = S_GEAR[cls][slot]["noun"]  # legendaries use their class shape
@@ -291,6 +321,10 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 	var sub_count := maxi(0, (GRADES.find(grade) - 1) / 2)
 	var subs := {}
 	var pool := SUBSTATS.keys()
+	# No dead stats (round 15): a class only rolls the penetration its
+	# own damage type can use. Everything else stays class-neutral.
+	if cls != "" and CLASSES_DMG_TYPE.has(cls):
+		pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
 	pool.shuffle()
 	for i in mini(sub_count, pool.size()):
 		var stat: String = pool[i]

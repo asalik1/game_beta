@@ -97,7 +97,7 @@ const CLASSES := {
 		"desc": "Frontline bruiser. Simple, tanky, hits hard up close.",
 		"passive": {"text": "Plated — you take much less damage, your swings knock enemies back, and your wounds knit themselves (1% max HP/s).", "physres": 60.0, "magres": 30.0, "regen_pct": 0.010},
 		"hp": 130.0, "hp_lvl": 18.0, "mp": 40.0, "mp_lvl": 3.0,
-		"atk": 14.5, "atk_lvl": 3.7, "speed": 250.0,
+		"atk": 15.5, "atk_lvl": 4.3, "speed": 250.0,
 		"abilities": {
 			"a1": {"name": "Cleave",      "cd": 0.45, "mp": 0,  "desc": "Swing your blade at the nearest enemy."},
 			"a2": {"name": "Shield Bash", "cd": 6.0,  "mp": 10, "desc": "Charge forward, ramming everything in your path: damage, knockback and a 1.3s STUN."},
@@ -108,11 +108,11 @@ const CLASSES := {
 	"archer": {
 		"name": "Archer", "sprite": "archer", "primary": "AGI", "dmg_type": "phys",
 		"desc": "Ranged skirmisher. Safe damage from a distance, with a dodge roll.",
-		"passive": {"text": "Hawk Eye — +10% crit chance, +12 DEX.", "crit": 0.10, "dex": 12.0},
+		"passive": {"text": "Hawk Eye — +10% crit chance, +12 DEX. Second Wind: untouched for 3s, you recover a strong 6% max HP/s — spacing IS your sustain.", "crit": 0.10, "dex": 12.0, "sw_delay": 3.0, "sw_regen": 0.06},
 		"hp": 100.0, "hp_lvl": 14.0, "mp": 40.0, "mp_lvl": 3.0,
-		"atk": 10.0, "atk_lvl": 2.5, "speed": 265.0,
+		"atk": 11.0, "atk_lvl": 2.85, "speed": 265.0,
 		"abilities": {
-			"a1": {"name": "Quick Shot",  "cd": 0.4,  "mp": 0,  "desc": "Fire an arrow at the nearest enemy."},
+			"a1": {"name": "Quick Shot",  "cd": 0.36, "mp": 0,  "desc": "Fire an arrow at the nearest enemy."},
 			"a2": {"name": "Multishot",   "cd": 5.0,  "mp": 12, "desc": "Fan of 5 arrows."},
 			"a3": {"name": "Tumble",      "cd": 6.0,  "mp": 0,  "desc": "Dodge-roll in your move direction (brief immunity)."},
 			"ult": {"name": "Arrow Storm", "cd": 50.0, "mp": 20, "desc": "3s: arrows rain on every enemy near you."},
@@ -121,27 +121,27 @@ const CLASSES := {
 	"mage": {
 		"name": "Mage", "sprite": "mage", "primary": "INT", "dmg_type": "magic",
 		"desc": "Glass cannon. Huge burst, big mana pool, blink to survive.",
-		"passive": {"text": "Attuned — 50% faster mana regeneration, +10 magic penetration.", "magpen": 10.0},
+		"passive": {"text": "Attuned — 50% faster mana regeneration, +10 magic penetration. Arcane Ward: Blink shields you — the next hit within 4s is fully absorbed.", "magpen": 10.0, "blink_ward": 4.0},
 		"hp": 90.0, "hp_lvl": 12.0, "mp": 70.0, "mp_lvl": 8.0,
-		"atk": 12.5, "atk_lvl": 3.1, "speed": 255.0,
+		"atk": 13.5, "atk_lvl": 3.7, "speed": 255.0,
 		"abilities": {
 			"a1": {"name": "Firebolt",   "cd": 0.5,  "mp": 4,  "desc": "Hurl a bolt at the nearest enemy."},
 			"a2": {"name": "Frost Nova", "cd": 7.0,  "mp": 20, "desc": "Heavy blast around you: knocks enemies away and SLOWS them 50%."},
-			"a3": {"name": "Blink",      "cd": 6.0,  "mp": 10, "desc": "Dash in your move direction, shocking everything in your path."},
+			"a3": {"name": "Blink",      "cd": 4.5,  "mp": 10, "desc": "Dash in your move direction, shocking everything in your path."},
 			"ult": {"name": "Meteor",    "cd": 55.0, "mp": 40, "desc": "Call a meteor onto the nearest enemy. Massive damage."},
 		},
 	},
 	"assassin": {
 		"name": "Assassin", "sprite": "assassin", "primary": "AGI", "dmg_type": "phys",
 		"desc": "Fast melee striker. Dashes through enemies. Nothing personal.",
-		"passive": {"text": "Elusive — 20% evasion, and blood you spill feeds you (0.6% max HP/s regen).", "eva": 0.20, "regen_pct": 0.006},
+		"passive": {"text": "Elusive — 25% evasion, blood you spill feeds you (1.2% max HP/s regen), and Shadow Dash slips through blows (brief immunity).", "eva": 0.25, "regen_pct": 0.012},
 		"hp": 95.0, "hp_lvl": 13.0, "mp": 40.0, "mp_lvl": 3.0,
-		"atk": 13.5, "atk_lvl": 3.8, "speed": 275.0,
+		"atk": 14.5, "atk_lvl": 4.5, "speed": 275.0,
 		"abilities": {
 			"a1": {"name": "Stab",          "cd": 0.3,  "mp": 0,  "desc": "Lightning-fast strike."},
 			"a2": {"name": "Shadow Dash",   "cd": 7.0,  "mp": 12, "desc": "Dash in your move direction, slashing everything in your path."},
 			"a3": {"name": "Fan of Knives", "cd": 4.5,  "mp": 10, "desc": "Hurl 3 knives in a tight spread."},
-			"ult": {"name": "Death Mark",   "cd": 45.0, "mp": 0,  "desc": "TRUE-damage burst; target takes +50% damage for 5s."},
+			"ult": {"name": "Death Mark",   "cd": 45.0, "mp": 0,  "desc": "Blink to your prey, untouchable for a beat: TRUE-damage burst; target takes +50% damage for 5s."},
 		},
 	},
 	"paladin": {
@@ -149,7 +149,7 @@ const CLASSES := {
 		"desc": "Holy bruiser. Fights up close, mends through violence, drags foes to the hammer.",
 		"passive": {"text": "Sanctified — blessed plate wards blade and spell alike; every strike returns as healing, and the light mends you (0.8% max HP/s).", "physres": 45.0, "magres": 45.0, "lifesteal": 0.03, "regen_pct": 0.008},
 		"hp": 125.0, "hp_lvl": 17.0, "mp": 55.0, "mp_lvl": 5.0,
-		"atk": 13.5, "atk_lvl": 3.5, "speed": 248.0,
+		"atk": 14.3, "atk_lvl": 4.0, "speed": 248.0,
 		"abilities": {
 			"a1": {"name": "Judgment",       "cd": 0.5,  "mp": 0,  "desc": "Bring the warhammer down on the nearest enemy."},
 			"a2": {"name": "Consecration",   "cd": 8.0,  "mp": 15, "desc": "Sanctify the ground around you: two waves of holy fire, and every enemy struck MENDS you."},
@@ -160,11 +160,11 @@ const CLASSES := {
 	"warlock": {
 		"name": "Warlock", "sprite": "warlock", "primary": "INT", "dmg_type": "magic",
 		"desc": "Ranged hexer. Curses that detonate on death, blood paid for power, rifts that bite late.",
-		"passive": {"text": "Soulthirst — 6% of all damage returns as life; +8 magic penetration.", "lifesteal": 0.06, "magpen": 8.0},
+		"passive": {"text": "Soulthirst — 5% of all damage returns as life; +8 magic penetration.", "lifesteal": 0.05, "magpen": 8.0},
 		"hp": 95.0, "hp_lvl": 13.0, "mp": 65.0, "mp_lvl": 7.0,
 		"atk": 11.5, "atk_lvl": 3.0, "speed": 258.0,
 		"abilities": {
-			"a1": {"name": "Shadowbolt", "cd": 0.5,  "mp": 3,  "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
+			"a1": {"name": "Shadowbolt", "cd": 0.55, "mp": 3,  "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
 			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death."},
 			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
 			"ult": {"name": "Void Rift", "cd": 55.0, "mp": 35, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS."},

@@ -116,11 +116,13 @@ Single-threaded event loop: any blocking call (gromit.ns.*, db.readobj/ls, S3 re
 ## §38 GDScript / Godot Specifics (this project)
 - **§38a Type inference**: `var x := obj.method()` on loosely-typed obj or Variant expressions (`Dictionary.get`) = parse error — annotate. One parse error breaks the whole chain and the headless suite hangs; run the compile gate (`test_quick.bat`) first, always.
 - **§38b New scripts**: new `class_name` → `--import` before headless runs. Prefer path-based `extends "res://…"` for internal chain layers; `class_name` only for cross-file types.
-- **§38c Inheritance-chain splits**: Game/Player/tests are `_base ← … ← final(class_name)` chains; code moves verbatim; calls flow derived→base; ALL vars in the base layer. Unavoidable upward call → `call("method")` + comment naming the resolving layer (keep to a minimum; currently one: `set_flag`→`_recheck_gates`).
+- **§38c Inheritance-chain splits**: Game/Player/tests are `_base ← … ← final(class_name)` chains; code moves verbatim; calls flow derived→base; vars READ ACROSS LAYERS live in the base layer (private, layer-local caches may stay in their layer with a comment — e.g. game_flow's `_meta`). Unavoidable upward call → `call("method")` + comment naming the resolving layer (keep to a minimum; currently one: `set_flag`→`_recheck_gates`).
 - **§38d Equality**: Dictionary/Array `==` is DEEP in Godot 4; `Array.has(dict)` matches twins — compare counts or `is_same()` for identity.
 - **§38e Deferred/async**: re-check `is_instance_valid` INSIDE deferred callbacks. Timed-effect tests poll wall-clock (`await create_timer`), not frames.
 - **§38f Knobs vs data**: tuning numbers → `balance.gd`; content tables stay in domain files; no bare tuning numbers in logic.
 - **§38g Autotest**: snapshot + restore shared state, never `.clear()`. Content-module tests via the CONTENT-MODULE TEST HOOK. Seeded behavior → tests derive the expected branch from the same seed helper the game uses (e.g. `social_holds_elite`).
+- **§38h Time & clocks**: never trust raw OS time for rewards/expiry — players roll the system clock. Use `game.trusted_now()` (persisted monotonic anchor; never decreases). Design timed features so a forward-rolled clock only hurts the roller.
+- **§38i Comment idiom (overrides §19's design-doc clause)**: "playtest round N" references ARE this project's WHY convention — they anchor a tuning decision to its trigger. Keep them; still no §-number references in code.
 
 ---
 
