@@ -14,9 +14,15 @@ const ENEMIES := {
 	# A gravedigger who dug for a congregation that never buries. His
 	# fight is arithmetic: endless zero-reward shamblers, and corpses
 	# that chain-detonate when they fall near each other.
+	# HP anchors retuned to the TTK budget (round 45): first-pass values
+	# (2700/3300/5800) sat 2-3x under the ch2 curve — a post-Nullwarden
+	# player (~224 dps at L17, gear-inclusive) melted the opener in ~13s
+	# vs the 25s budget. Now: 25s opener x 224 (swarm pressure keeps the
+	# discount small), 30s mid x 281, 40s finale x 395 less a censer-heal
+	# allowance. Damage was already textbook on-curve — untouched.
 	"sexton": {
 		"name": "The Sexton, Gravedigger of the Vale", "sprite": "zombie",
-		"hp": 2700.0, "dmg": 58.0, "speed": 120.0, "xp": 260, "gold": 200,
+		"hp": 5400.0, "dmg": 58.0, "speed": 120.0, "xp": 260, "gold": 200,
 		"ranged": false, "scale": 5.2,
 		"physres": 30.0, "magres": 15.0, "eva": 0.0, "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 17, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -28,7 +34,7 @@ const ENEMIES := {
 	# liturgy; the SILENCE (inverse telegraph) debuts here.
 	"vess": {
 		"name": "Vess the Unburied, First Widow", "sprite": "witch",
-		"hp": 3300.0, "dmg": 66.0, "speed": 100.0, "xp": 300, "gold": 235,
+		"hp": 8000.0, "dmg": 66.0, "speed": 100.0, "xp": 300, "gold": 235,
 		"ranged": true, "scale": 5.4,
 		"physres": 12.0, "magres": 50.0, "eva": 0.10, "critres": 5.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 19, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -41,7 +47,7 @@ const ENEMIES := {
 	# he stands up for the first time in sixty years.
 	"saint_varo": {
 		"name": "Saint Varo the Unrotting", "sprite": "king",
-		"hp": 5800.0, "dmg": 88.0, "speed": 70.0, "xp": 400, "gold": 310,
+		"hp": 14000.0, "dmg": 88.0, "speed": 70.0, "xp": 400, "gold": 310,
 		"ranged": false, "scale": 6.4,
 		"physres": 60.0, "magres": 40.0, "eva": 0.0, "critres": 9.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 22, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
