@@ -162,6 +162,7 @@ func exit_to_title() -> void:
 func _boss_roster_update(src: Boss) -> void:
 	bosses.erase(src)
 	if _live_bosses().is_empty():
+		fight_report()
 		current_boss = null
 		hud.hide_boss_bar()
 		set_music(Terrains.get_terrain(terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]).get("music", "village"))
@@ -183,6 +184,7 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 
 func on_boss_died(kind: String, dead: Boss = null) -> void:
 	boss_done[kind] = true
+	unlock_achievement("first_boss")
 	var src: Boss = dead if is_instance_valid(dead) else current_boss
 	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
 	var mzi: int = clampi(src.zone_idx if is_instance_valid(src) else cur_room, 0, zone_count - 1)
@@ -232,6 +234,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		# Progression: this character has finished the chapter (kept across
 		# replays), and the NEXT chapter unlocks account-wide.
 		set_flag("completed_" + chapter_id, true)
+		unlock_achievement("clear_" + chapter_id)
 		var next_ch := Story.next_chapter(chapter_id)
 		if next_ch != "":
 			meta_unlock(next_ch)
@@ -353,6 +356,7 @@ func on_player_died() -> void:
 	if state != ST_PLAYING:
 		return
 	state = ST_DEAD
+	fight_wipe()
 	sfx("pdie")
 	hud.dim(0.55)
 	hud.flash_title("YOU DIED", "The flame endures...", 1.0)

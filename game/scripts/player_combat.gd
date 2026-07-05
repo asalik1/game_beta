@@ -87,8 +87,8 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		return
 	var dmg: float = result["dmg"]
 	var is_crit: bool = result["crit"]
-	# Nightfang passive / Shadow opportunist: stunned or slowed prey always crits.
-	if (s_passive() == "nightfang" or effects.get("opportunist", 0)) and dmg_type != "true" \
+	# Shadow opportunist: stunned or slowed prey always crits.
+	if effects.get("opportunist", 0) and dmg_type != "true" \
 			and not is_crit and (e.stun_time > 0.0 or e.slow_time > 0.0):
 		is_crit = true
 		dmg *= crit_dmg
@@ -100,31 +100,52 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 			dmg *= crit_dmg
 
 	# ------------------------------------------------ theme / rider effects
+	# DoTs resolve like hits — no hidden true damage: the tick rate is
+	# mitigated by the target's res minus our pen, SNAPSHOT at
+	# application (fast refresh cadences re-snapshot within a beat).
+	# Mitigation relief only: no excess-pen flat bonus on ticks.
+	var dot_mit := 1.0 - Stats.res_frac(maxf(0.0, e_res - pen))
 	if effects.has("dot"):
 		var dot_color := Color(0.5, 1.2, 0.5) if _tcolor.g > _tcolor.r else Color(1.4, 0.8, 0.6)
-		e.apply_burn(current_atk() * effects["dot"], 3.0, dot_color)
+		var dot_dps: float = current_atk() * effects["dot"] * dot_mit
+		if effects.get("toxin", 0):
+			e.apply_toxin(dot_dps, 3.0, dot_color)
+		else:
+			e.apply_burn(dot_dps, 3.0, dot_color)
 	if effects.has("burn"):
-		e.apply_burn(effects["burn"], 3.0)
-	if s_passive() == "phoenix" and cls == "mage":
-		pass  # phoenix burn rides on the projectile fx instead
+		e.apply_burn(float(effects["burn"]) * dot_mit, 3.0)
 	if effects.has("slow"):
 		e.apply_slow(1.0 - effects["slow"] if effects["slow"] < 1.0 else 0.5, effects.get("slow_dur", 2.0))
 	if effects.has("stun"):
-		e.apply_stun(effects["stun"])
+		_stun_or_concuss(e, effects["stun"])
 	if effects.has("stagger"):
-		e.apply_stun(effects["stagger"])
+		_stun_or_concuss(e, effects["stagger"])
 	if effects.has("stun_chance") and randf() < effects["stun_chance"]:
-		e.apply_stun(0.5)
+		_stun_or_concuss(e, 0.5)
 	if effects.has("vuln") and randf() < effects["vuln"]:
 		e.vuln_time = 3.0
 		game.spawn_text(e.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
 	if effects.has("heal"):
-		hp = minf(max_hp, hp + max_hp * effects["heal"])
+		gain_hp(max_hp * effects["heal"])  # bulwark ram / holy strike: SHOWS
 	if effects.has("blood_amp"):
 		# Blood theme (round 32): the cut bites harder the deeper YOU
 		# bleed — missing health becomes DAMAGE (the base kit's surge
 		# already turns it into lifesteal; blood doubles down on the edge).
 		dmg *= 1.0 + effects["blood_amp"] * (1.0 - hp / max_hp)
+	# Warlock wither: a maintained hex deepens — every hit bites harder
+	# the longer the curse has held (only the warlock ever fills `wither`).
+	if wither.has(e):
+		dmg *= 1.0 + mini(int(float(wither[e]) / Balance.WITHER_STACK_EVERY),
+			Balance.WITHER_MAX_STACKS) * Balance.WITHER_PER_STACK
+	# Brittle (ice): cold cracks the target — this hit bites per existing
+	# stack, then deepens the crack for the next one.
+	if effects.get("brittle", 0):
+		dmg *= 1.0 + e.brittle * Balance.BRITTLE_PER_STACK
+		e.add_brittle()
+	# Crush (void): gravity hurts — a target recently displaced hard
+	# (shove, hard pull) takes the hit deeper.
+	if effects.get("crush", 0) and e.crush_t > 0.0:
+		dmg *= 1.0 + Balance.CRUSH_MULT
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -133,7 +154,11 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 
 	var dir := (e.global_position - global_position).normalized()
 	e.take_damage(dmg, dir, is_crit)
-	if effects.has("knock") and not e.dying:
+	if effects.has("knock") and not e.dying \
+			and not (effects.get("knock_no_boss", 0) and e is Boss):
+		# knock_no_boss: the shove flings mobs but a boss holds its ground
+		# (mage Frost Nova — the mage spaces with its feet, never by shoving
+		# a boss; warlock Void is the deliberate exception and omits the flag).
 		e.knock = dir * effects["knock"]
 	if effects.has("pull") and not e.dying:
 		e.knock = -dir * 380.0
@@ -147,6 +172,28 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		var again := effects.duplicate()
 		again["_echoed"] = true
 		hit_enemy(e, mult * 0.5, again)
+
+
+## DoT rate mitigated by the target's res (class damage type) minus our
+## pen — for dot sources OUTSIDE hit_enemy (the mist primitive, the
+## poison Death Mark), which mirror the rider pipeline's snapshot rule.
+func _dot_dps(e: Enemy, dps: float) -> float:
+	var dmg_type: String = Classes.CLASSES[cls]["dmg_type"]
+	var pen := physpen if dmg_type == "phys" else magpen
+	var e_res := e.physres if dmg_type == "phys" else e.magres
+	return dps * (1.0 - Stats.res_frac(maxf(0.0, e_res - pen)))
+
+
+## Stun — or CONCUSSION: a CC-immune target (boss) takes the failed
+## stun as bonus damage instead (duration x mult x ATK), so stun riders
+## keep a boss-fight value without re-opening boss CC.
+func _stun_or_concuss(e: Enemy, dur: float) -> void:
+	if e is Boss:
+		if not e.dying:
+			e.take_damage(current_atk() * dur * Balance.CONCUSSION_MULT,
+				(e.global_position - global_position).normalized())
+	else:
+		e.apply_stun(dur)
 
 
 func _enemies_within(center: Vector2, radius: float) -> Array:
@@ -211,6 +258,25 @@ func _floor_streak(start: Vector2, end: Vector2, color: Color) -> void:
 	var tw := streak.create_tween()
 	tw.tween_property(streak, "modulate:a", 0.0, 1.1)
 	tw.tween_callback(streak.queue_free)
+
+
+## A single faint gust streak, trailing BEHIND a speed-buffed run (round
+## 44): the "this buff is live" tell for theme_speed. Kept very low-alpha
+## and short — a whisper of wind, not a comet. `back` is the drift/lean
+## direction (opposite travel).
+func _wind_wisp(back: Vector2) -> void:
+	var wisp := Sprite2D.new()
+	wisp.texture = Art.tex("glow")
+	wisp.modulate = Color(0.82, 0.94, 1.0, 0.13)  # pale, barely-there
+	wisp.global_position = global_position + back * 16.0 + Vector2(0, -6)
+	wisp.rotation = back.angle()
+	wisp.scale = Vector2(1.3, 0.32)               # stretched along the gust
+	wisp.z_index = -4                              # behind the hero
+	game.add_child(wisp)
+	var tw := wisp.create_tween()
+	tw.tween_property(wisp, "global_position", wisp.global_position + back * 26.0, 0.4)
+	tw.parallel().tween_property(wisp, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(wisp.queue_free)
 
 
 ## Release flash at the weapon: shots visibly leave YOU, not thin air.
@@ -296,9 +362,7 @@ func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectil
 func _shoot(dir: Vector2, mult: float) -> void:
 	game.sfx("bow")
 	_muzzle(dir, _tcolor if _themed else Color(0.9, 1.0, 0.6))
-	var p := _proj(dir, mult, "arrow", 520.0)
-	if s_passive() == "ricochet":
-		p.fx["ric"] = 1
+	_proj(dir, mult, "arrow", 520.0)
 
 
 func _cast_bolt(dir: Vector2, mult: float) -> void:
@@ -308,9 +372,6 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 	var tex := "icelance" if _tfx.get("pierce", 0) else "fireball"
 	var p := _proj(dir, mult, tex, 440.0 * float(_tfx.get("proj_speed", 1.0)))
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
-	if s_passive() == "phoenix":
-		p.fx["splash"] = maxf(p.fx.get("splash", 0.0), 0.5)
-		p.fx["burn"] = current_atk() * 0.35
 
 
 func _whirlwind(f := 1.0) -> void:
@@ -366,13 +427,18 @@ func _multishot(f := 1.0) -> void:
 		var spread := (float(i) - (count - 1) / 2.0) * step
 		var p := _proj(dir.rotated(spread), 0.55 * f, "arrow", 520.0)
 		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
-		if s_passive() == "ricochet":
-			p.fx["ric"] = 1
 
 
 func _tumble() -> void:
 	game.sfx("blink")
-	hurt_cd = maxf(hurt_cd, 0.5)
+	# Round 45: the outright 0.5s negate on a 6s cd was too forgiving —
+	# safety belongs to positioning, not a free button. The immunity is
+	# now a split-second PERFECT-DODGE window (skill-timed against a hit),
+	# and the roll leaves the archer NIMBLE — a soft evasion buff covers
+	# the reposition so an average pilot still has margin, not a wall.
+	hurt_cd = maxf(hurt_cd, 0.1)
+	dodge_time = 1.25
+	dodge_amt = 0.20
 	var origin := global_position
 	global_position = game.clamp_to_zone(global_position + facing * 130.0, global_position)
 	# The roll reads as motion: ghost trail + kicked-up dust behind you.
@@ -432,7 +498,7 @@ func _frost_nova(f := 1.0) -> void:
 	# health and mana — the lower you run, the more it gives back. The
 	# mage's short-range button carries UTILITY, not damage budget
 	# (ranged kits can rarely connect close-range damage safely).
-	hp = minf(max_hp, hp + (max_hp - hp) * 0.2)
+	gain_hp((max_hp - hp) * 0.2)  # nova drinks the cold — SHOW the mend
 	mp = minf(max_mp, mp + (max_mp - mp) * 0.2)
 	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
 	var col := _tcolor if _themed else Color(0.45, 0.8, 1.0)
@@ -501,6 +567,7 @@ func _frost_nova(f := 1.0) -> void:
 	var eff := {"slow": 0.5, "slow_dur": 2.5, "aoe": true}
 	if not (fiery or inward):
 		eff["knock"] = 340.0
+		eff["knock_no_boss"] = 1  # mobs fly; bosses never get shove-kited
 	for e in _enemies_within(global_position, radius):
 		hit_enemy(e, 1.4 * f, eff.duplicate())
 
@@ -512,6 +579,10 @@ func _frost_nova(f := 1.0) -> void:
 ## A connecting stab's blood surge (round 25): lifesteal up for 4s,
 ## scaling with MISSING health — low health is a resource.
 func _grant_stab_surge() -> void:
+	# Announce it once when it FIRST lights (a refresh mid-surge is silent —
+	# the stab cadence is 0.3s); the crimson aura carries the rest.
+	if stab_ls_time <= 0.0:
+		game.spawn_text(global_position + Vector2(0, -52), "BLOOD SURGE", Color(0.95, 0.35, 0.4))
 	stab_ls_time = 4.0
 	stab_ls_amt = Balance.SURGE_LS_FLOOR + Balance.SURGE_LS_SCALE * (1.0 - hp / max_hp)
 
@@ -578,6 +649,14 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 			# The rider's stroke, opposite diagonal: a graze shows ONE
 			# cut; a full pass-through (lane + rider) crosses into an X.
 			_cut_flash(e.global_position, -0.65, _tcolor if _themed else Color(1, 1, 1))
+		if effects.get("graze_heal", 0) and lane > 55.0 and lane <= Balance.CHARGE_GRAZE_LANE and not e.dying:
+			# Bulwark ram (round 44): the shield-charge mends on a NEAR
+			# pass, not just a dead-center ram — like the assassin's safe-
+			# range graze, charging PAST a boss (threading its swing) still
+			# clips it for a lighter hit, and the heal rides that hit. A
+			# direct ram (lane <= 55) already healed via the fx above.
+			hit_enemy(e, mult * Balance.CHARGE_GRAZE_MULT, effects.duplicate())
+			_cut_flash(e.global_position, 0.4, _tcolor if _themed else Color(0.7, 0.85, 1.0))
 	if rider_hit:
 		# The connect refunds the dash (round 37): land the cut, keep
 		# dancing — whiffed dashes pay full price.
@@ -607,35 +686,80 @@ func _blink() -> void:
 	if _tfx.has("freeze_path"):
 		eff["stun"] = float(_tfx["freeze_path"])  # Frostwalk
 	var start := global_position
-	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), 0.8, eff)
+	# Round 45: iframe cut 0.3->0.1 (like the archer roll) — a perfect-dodge
+	# window, not a sloppy blink-through. Safety now rides the DR cloak below.
+	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), 0.8, eff, 0.0, 0.1)
 	# Fire leaves a burning wake on the ground; Ice a frozen one.
 	if _themed and (_tfx.has("dot") or _tfx.has("freeze_path")):
 		_floor_streak(start, global_position, _tcolor)
-	if blink_ward > 0.0:
-		# Arcane Ward (round 16): a well-timed Blink IS the mage's
-		# sustain — the next hit within the window is fully absorbed.
-		ward_time = blink_ward
-		game.spawn_text(global_position + Vector2(0, -52), "WARD UP", Color(0.6, 0.9, 1.0))
+	if blink_dr > 0.0:
+		# Arcane Ward (round 45): Blink no longer erases a hit — it wraps
+		# the mage in magic for a beat, CUTTING incoming damage while the
+		# window holds. Forgives a misstep; doesn't undo it.
+		dr_time = blink_dr_dur
+		dr_amt = blink_dr
+		game.sfx("ward", 1.0, 0.0, -3.0)
+		game.spawn_text(global_position + Vector2(0, -52), "WARD", Color(0.6, 0.9, 1.0))
 
 
 func _meteor() -> void:
 	_ult_sfx()
-	# Starfall (wind): several smaller comets across several targets.
 	var count := int(_tfx.get("meteors", 1))
-	var spots: Array = []
-	if count > 1:
-		for e in _enemies_within(global_position, 560.0):
-			spots.append(e.global_position)
-			if spots.size() >= count:
-				break
-	if spots.is_empty():
+	if count <= 1:
+		# Fire / Ice: a single meteor on the aimed target.
 		var target := auto_aim()
-		spots.append(target.global_position if target else global_position + facing * 150.0)
-	for pos in spots:
-		_meteor_at(pos)
+		_meteor_at(target.global_position if target else global_position + facing * 150.0)
+	else:
+		# Starfall (wind): comets fall in SEQUENCE on the lowest-health
+		# priority. Stacked hits on one target diminish, but a target's DEATH
+		# hands the next comet a fresh priority at FULL power (execute and
+		# cascade) — it concentrates where Fire's Meteor spreads and burns.
+		_starfall_comet(count, float(_tfx.get("stack_falloff", 0.4)), null, 0)
+	# Wind ult TAILWIND: Blink and Frost Nova cool down quicker for a window —
+	# tempo for tight rotations (Fire's Meteor still out-bursts and AoE-burns).
+	if _tfx.has("haste_dur"):
+		cast_haste_cdr = float(_tfx.get("haste_cdr", 0.0))
+		cast_haste_time = float(_tfx.get("haste_dur", 5.0))
+		game.spawn_text(global_position + Vector2(0, -60), "TAILWIND", Color(0.7, 1.0, 0.75))
 
 
-func _meteor_at(pos: Vector2) -> void:
+## One comet of a Starfall, recursing through the previous comet's fall:
+## seek the lowest-health target, diminish a repeat hit on the SAME target,
+## but reset to FULL when the priority changes — a kill cascades the salvo
+## onward at full power onto the next threat.
+func _starfall_comet(remaining: int, falloff: float, last: Enemy, stack: int) -> void:
+	if remaining <= 0 or dead:
+		return
+	var tgt := _lowest_hp_enemy(560.0)
+	var scale := 1.0
+	var pos: Vector2
+	if tgt != null:
+		if tgt == last:
+			stack += 1
+		else:
+			stack = 0  # fresh priority (or cascade off a kill): full power
+		scale = pow(falloff, stack)
+		pos = tgt.global_position
+	else:
+		var a := auto_aim()
+		pos = a.global_position if a else global_position + facing * 150.0
+	_meteor_at(pos, scale, func() -> void:
+		_starfall_comet(remaining - 1, falloff, tgt, stack))
+
+
+## The lowest-health live enemy within range — Starfall's priority pick.
+func _lowest_hp_enemy(radius: float) -> Enemy:
+	var best: Enemy = null
+	for e in _enemies_within(global_position, radius):
+		if best == null or e.hp < best.hp:
+			best = e
+	return best
+
+
+## `scale` diminishes a comet's damage (Starfall stacks on one target).
+## `on_land` fires after the comet resolves — Starfall chains its next comet
+## from here, so a kill is already registered when the next target is picked.
+func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 	var fx_copy := _tfx.duplicate()
 	var col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
 
@@ -696,11 +820,13 @@ func _meteor_at(pos: Vector2) -> void:
 		var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 		for e in _enemies_within(pos, radius):
 			var eff := fx_copy.duplicate()
-			eff["burn"] = current_atk() * 0.4 * float(fx_copy.get("burn_mult", 1.0))
+			eff["burn"] = current_atk() * 0.4 * float(fx_copy.get("burn_mult", 1.0)) * scale
 			eff["aoe"] = true
 			if fx_copy.has("freeze"):
 				eff["stun"] = float(fx_copy["freeze"])  # glacial comet
-			hit_enemy(e, 3.5 * float(fx_copy.get("dmg_mult", 1.0)), eff)
+			hit_enemy(e, 3.5 * float(fx_copy.get("dmg_mult", 1.0)) * scale, eff)
+		if on_land.is_valid():
+			on_land.call()
 	)
 
 
@@ -716,6 +842,8 @@ func _shadow_dash(f := 1.0) -> void:
 	# stab_rider passes the talent scale only — the depth-tiered damage
 	# mult (near/far) is applied per victim inside _dash_strike.
 	var kills := _dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), 1.2 * f, {"stagger": 0.4}, f, 0.0)
+	if s_passive() == "mirrorstep":
+		_mirrorstep_guard(start)
 	if _tfx.get("trail_mist", 0):
 		# Poison: the dash line blooms into a toxic wake.
 		_mist((start + global_position) / 2.0, 110.0, 0.3, _tcolor, 2.5)
@@ -723,6 +851,26 @@ func _shadow_dash(f := 1.0) -> void:
 		# Shadow: a kill refunds most of the cooldown.
 		cds["a2"] *= 1.0 - float(_tfx["kill_refund"])
 		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
+
+
+## Mirrorstep (assassin S weapon): a dash through fire turns aside nearby
+## hostile projectiles — lashing their shooters back — and opens a brief
+## window of reduced AoE damage. Offense-dodge for the storm you can't outrun;
+## it rewards READING the volley and dashing INTO it, not free immunity.
+func _mirrorstep_guard(start: Vector2) -> void:
+	dash_guard_time = 0.25  # brief AoE damage-reduction while the dash reads
+	var mid := (start + global_position) / 2.0
+	var reach := start.distance_to(global_position) / 2.0 + 150.0
+	for node in get_tree().get_nodes_in_group("projectiles"):
+		var p := node as Projectile
+		if p == null or p.friendly or mid.distance_to(p.global_position) > reach:
+			continue
+		var shooter := p.source_enemy as Enemy
+		if is_instance_valid(shooter) and not shooter.dying:
+			game.burst(shooter.global_position, Color(0.7, 0.5, 1.0), 6)
+			hit_enemy(shooter, 0.8, {"aoe": true})
+		game.burst(p.global_position, Color(0.7, 0.5, 1.0), 5)
+		p.queue_free()
 
 
 func _fan_of_knives(f := 1.0) -> void:
@@ -811,7 +959,8 @@ func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.
 			root.queue_free()
 			return
 		for e in _enemies_within(pos, radius):
-			e.apply_burn(current_atk() * dps_mult, 1.2, Color(color, 1.0))
+			# The mist IS the poison primitive: its ticks stack toxin.
+			e.apply_toxin(_dot_dps(e, current_atk() * dps_mult), 1.2, Color(color, 1.0))
 			game.burst(e.global_position + Vector2(0, -10), color, 4)  # venom bubbles
 	motes.emitting = false
 	var fade := root.create_tween()
@@ -836,10 +985,10 @@ func _death_mark() -> void:
 	# Dash's 0.5s — commit to the kill, not to the chip damage.
 	hurt_cd = maxf(hurt_cd, 0.8)
 	target.vuln_time = 5.0
-	target.apply_stun(0.6)
+	_stun_or_concuss(target, 0.6)
 	if _tfx.has("mark_dot"):
-		# Poison: the mark itself rots the target.
-		target.apply_burn(current_atk() * float(_tfx["mark_dot"]), 5.0, Color(0.5, 1.2, 0.5))
+		# Poison: the mark itself rots the target (and stacks toxin).
+		target.apply_toxin(_dot_dps(target, current_atk() * float(_tfx["mark_dot"])), 5.0, Color(0.5, 1.2, 0.5))
 	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK", Color(1, 0.25, 0.3))
 	_mark_overhead_x(target)
 	_death_mark_execution(target, float(_tfx.get("execute", 0.0)))

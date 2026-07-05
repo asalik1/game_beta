@@ -23,7 +23,7 @@ const THEMES := {
 	"assassin": [
 		{"id": "poison", "name": "Poison", "color": Color(0.45, 0.95, 0.30),
 			"desc": "Stacking DoT and utility: everything drips venom and slows.",
-			"fx": {"dot": 0.30, "slow": 0.30}},
+			"fx": {"dot": 0.30, "slow": 0.30, "toxin": 1}},
 		{"id": "shadow", "name": "Shadow", "color": Color(0.60, 0.45, 1.00),
 			"desc": "Burst, crits and mobility: strike hard, be gone.",
 			"fx": {"crit_bonus": 0.15, "speed_buff": 0.25}},
@@ -36,8 +36,8 @@ const THEMES := {
 			"desc": "Burst AoE and burning: everything explodes.",
 			"fx": {"dot": 0.35, "splash": 0.40}},
 		{"id": "ice", "name": "Ice", "color": Color(0.45, 0.90, 1.00),
-			"desc": "Single-target control: slows, roots and freezes.",
-			"fx": {"slow": 0.50, "stun_chance": 0.20}},
+			"desc": "Single-target control: slows, freezes, and cold that cracks armor.",
+			"fx": {"slow": 0.50, "stun_chance": 0.20, "brittle": 1}},
 		{"id": "wind", "name": "Wind", "color": Color(0.70, 1.00, 0.75),
 			"desc": "Speed and flurries: extra hits and swift movement.",
 			"fx": {"echo": 0.35, "speed_buff": 0.30}},
@@ -58,8 +58,8 @@ const THEMES := {
 			"desc": "Chain lightning arrows: extra hits crackle between foes.",
 			"fx": {"echo": 0.45, "splash": 0.30}},
 		{"id": "venom", "name": "Venom", "color": Color(0.45, 0.95, 0.30),
-			"desc": "Toxin-tipped arrows: DoT and slows.",
-			"fx": {"dot": 0.38, "slow": 0.30}},
+			"desc": "Toxin-tipped arrows: stacking DoT and slows.",
+			"fx": {"dot": 0.38, "slow": 0.30, "toxin": 1}},
 		{"id": "hunt", "name": "Hunt", "color": Color(1.00, 0.60, 0.25),
 			"desc": "Precision: crits and marks that expose the prey.",
 			"fx": {"crit_bonus": 0.15, "vuln": 0.20}},
@@ -83,8 +83,8 @@ const THEMES := {
 			"desc": "Blood for power: pay in HP, feast on the return.",
 			"fx": {"heal": 0.025, "crit_bonus": 0.10}},
 		{"id": "void", "name": "Void", "color": Color(0.50, 0.55, 1.00),
-			"desc": "Gravity and hunger: pulls, slows, delayed ruin.",
-			"fx": {"slow": 0.35, "splash": 0.30}},
+			"desc": "Gravity and hunger: pulls, slows, and hits that CRUSH whatever is still tumbling.",
+			"fx": {"slow": 0.35, "splash": 0.30, "crush": 1}},
 	],
 }
 
@@ -114,14 +114,14 @@ const CLASSES := {
 		"abilities": {
 			"a1": {"name": "Quick Shot",  "cd": 0.36, "mp": 0,  "desc": "Fire an arrow at the nearest enemy."},
 			"a2": {"name": "Multishot",   "cd": 5.0,  "mp": 12, "desc": "Fan of 5 arrows."},
-			"a3": {"name": "Tumble",      "cd": 6.0,  "mp": 0,  "desc": "Dodge-roll in your move direction (brief immunity)."},
+			"a3": {"name": "Tumble",      "cd": 6.0,  "mp": 0,  "desc": "Dodge-roll in your move direction: a split-second perfect-dodge window, then you stay nimble (+20% evasion) for 1.25s. Time it into a hit to negate it outright; otherwise the evasion covers your reposition."},
 			"ult": {"name": "Arrow Storm", "cd": 40.0, "mp": 20, "desc": "3s: arrows rain on every enemy near you."},
 		},
 	},
 	"mage": {
 		"name": "Mage", "sprite": "mage", "primary": "INT", "dmg_type": "magic",
 		"desc": "Glass cannon. Huge burst, big mana pool, blink to survive.",
-		"passive": {"text": "Attuned — 50% faster mana regeneration, +10 magic penetration. Arcane Ward: Blink shields you — the next hit within 4s is fully absorbed.", "magpen": 10.0, "blink_ward": 4.0},
+		"passive": {"text": "Attuned — 50% faster mana regeneration, +10 magic penetration. Arcane Ward: Blink wraps you in magic — 70% damage reduction for 0.8s.", "magpen": 10.0, "blink_dr": 0.50, "blink_dr_dur": 0.8},
 		"hp": 90.0, "hp_lvl": 12.0, "mp": 70.0, "mp_lvl": 8.0,
 		"atk": 13.5, "atk_lvl": 3.7, "speed": 255.0,
 		"abilities": {
@@ -166,7 +166,7 @@ const CLASSES := {
 		"atk": 11.5, "atk_lvl": 3.0, "speed": 258.0,
 		"abilities": {
 			"a1": {"name": "Shadowbolt", "cd": 0.55, "mp": 3,  "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
-			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death."},
+			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death. A MAINTAINED curse deepens: the longer it holds, the harder your every hit bites."},
 			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
 			"ult": {"name": "Void Rift", "cd": 50.0, "mp": 35, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS."},
 		},
@@ -329,8 +329,8 @@ const ABILITY_THEMES := {
 		"a2": {
 			"fury": {"desc": "Reckless charge: 40% further and 30% harder — momentum is the weapon.",
 				"fx": {"dash_mult": 1.4, "dmg_mult": 1.3, "crit_bonus": 0.10}},
-			"bulwark": {"desc": "Shield high: every enemy rammed heals you and fortifies your guard.",
-				"fx": {"heal": 0.03, "guard_buff": 90.0}},
+			"bulwark": {"desc": "Shield high: charge THROUGH the danger — even a near pass clips them, and every enemy rammed heals you and fortifies your guard.",
+				"fx": {"heal": 0.03, "guard_buff": 90.0, "graze_heal": 1}},
 			"earth": {"desc": "The charge ends in a ground-shattering slam that stuns everything around the impact.",
 				"fx": {"end_slam": 1, "slow": 0.30}},
 		},
@@ -355,16 +355,16 @@ const ABILITY_THEMES := {
 		"a1": {
 			"storm": {"desc": "The arrow forks with lightning, leaping to a second enemy.",
 				"fx": {"ric": 1, "splash": 0.20}},
-			"venom": {"desc": "Dipped arrowheads: a heavy venom DoT and a lingering slow.",
-				"fx": {"dot": 0.45, "slow": 0.30}},
+			"venom": {"desc": "Dipped arrowheads: a heavy venom DoT that STACKS with every hit, and a lingering slow.",
+				"fx": {"dot": 0.45, "slow": 0.30, "toxin": 1}},
 			"hunt": {"desc": "Aim for the gaps: +20% crit, and shots can EXPOSE the prey.",
 				"fx": {"crit_bonus": 0.20, "vuln": 0.25}},
 		},
 		"a2": {
 			"storm": {"desc": "Five charged arrows that PIERCE everything, splashing lightning on each hit.",
 				"fx": {"pierce": 1, "splash": 0.30}},
-			"venom": {"desc": "THREE heavy toxin arrows in a tight fan — each drips a brutal DoT.",
-				"fx": {"knives": 3, "spread": 0.10, "dmg_mult": 1.5, "dot": 0.50, "slow": 0.25}},
+			"venom": {"desc": "THREE heavy toxin arrows in a tight fan — each drips a brutal, STACKING DoT.",
+				"fx": {"knives": 3, "spread": 0.10, "dmg_mult": 1.5, "dot": 0.50, "slow": 0.25, "toxin": 1}},
 			"hunt": {"desc": "The whole volley converges on a single point — one target eats all five.",
 				"fx": {"narrow": 1, "crit_bonus": 0.15, "vuln": 0.30}},
 		},
@@ -379,8 +379,8 @@ const ABILITY_THEMES := {
 		"ult": {
 			"storm": {"desc": "The rain crackles: every arrow splashes lightning around its mark.",
 				"fx": {"splash": 0.50, "echo": 0.30}},
-			"venom": {"desc": "A plague rain: everything struck rots and slows.",
-				"fx": {"dot": 0.50, "slow": 0.30}},
+			"venom": {"desc": "A plague rain: everything struck rots and slows, arrow after arrow deepening the toxin.",
+				"fx": {"dot": 0.50, "slow": 0.30, "toxin": 1}},
 			"hunt": {"desc": "Every arrow hunts YOUR target — one prey, total focus, exposed to the bone.",
 				"fx": {"focus": 1, "vuln": 0.40, "crit_bonus": 0.15}},
 		},
@@ -389,40 +389,40 @@ const ABILITY_THEMES := {
 		"a1": {
 			"fire": {"desc": "Explosive bolt: splashes on impact and ignites what survives.",
 				"fx": {"splash": 0.45, "dot": 0.35}},
-			"ice": {"desc": "An ice lance that PIERCES the whole line, freezing everything it runs through.",
-				"fx": {"pierce": 1, "slow": 0.55, "stun_chance": 0.15, "proj_speed": 0.75}},
+			"ice": {"desc": "An ice lance that PIERCES the whole line, freezing everything it runs through — repeated cold turns armor BRITTLE.",
+				"fx": {"pierce": 1, "slow": 0.55, "stun_chance": 0.15, "proj_speed": 0.75, "brittle": 1}},
 			"wind": {"desc": "Split the bolt: TWO smaller bolts that flurry with echoing hits.",
 				"fx": {"twin": 1, "echo": 0.35}},
 		},
 		"a2": {
 			"fire": {"desc": "Flame ring: a wider, burning detonation — it ignites instead of shoving.",
 				"fx": {"radius_mult": 1.4, "dot": 0.45, "no_knock": 1}},
-			"ice": {"desc": "Deep freeze: the blast can freeze solid what it doesn't kill.",
-				"fx": {"stun_chance": 0.35, "slow": 0.60}},
-			"wind": {"desc": "Implosion: drag everything INTO you, then ride the updraft out (+move speed).",
-				"fx": {"pull": 1, "speed_buff": 0.35}},
+			"ice": {"desc": "Deep freeze: the blast can freeze solid what it doesn't kill, and leaves everything BRITTLE.",
+				"fx": {"stun_chance": 0.35, "slow": 0.60, "brittle": 1}},
+			"wind": {"desc": "Gale burst: BLAST everything away and ride the updraft out (+move speed). Bosses hold their ground — space with your feet, not by shoving.",
+				"fx": {"speed_buff": 0.35}},
 		},
 		"a3": {
 			"fire": {"desc": "Burn the path: everything you pass through is left on fire.",
 				"fx": {"dot": 0.50}},
-			"ice": {"desc": "Frostwalk: everything you pass through is frozen mid-step.",
-				"fx": {"freeze_path": 0.7, "slow": 0.50}},
+			"ice": {"desc": "Frostwalk: everything you pass through is frozen mid-step and turned BRITTLE.",
+				"fx": {"freeze_path": 0.7, "slow": 0.50, "brittle": 1}},
 			"wind": {"desc": "Slipstream: blink 40% further and leave with a burst of speed.",
 				"fx": {"dash_mult": 1.4, "speed_buff": 0.35}},
 		},
 		"ult": {
 			"fire": {"desc": "A dying sun: a wider crater and a heavier, longer burn.",
 				"fx": {"radius_mult": 1.4, "burn_mult": 1.6}},
-			"ice": {"desc": "Glacial comet: the impact FREEZES the whole field solid for 1.2s.",
-				"fx": {"freeze": 1.2, "slow": 0.50}},
-			"wind": {"desc": "Starfall: THREE comets rain down across three different targets.",
-				"fx": {"meteors": 3, "dmg_mult": 0.6}},
+			"ice": {"desc": "Glacial comet: the impact FREEZES the whole field solid for 1.2s and cracks it BRITTLE.",
+				"fx": {"freeze": 1.2, "slow": 0.50, "brittle": 1}},
+			"wind": {"desc": "Starfall: THREE comets fall in sequence on your lowest-health target — each successive hit on the same target lands weaker, but if it DIES the next comet snaps to a fresh priority at FULL power (execute and cascade). A TAILWIND follows for 5s: Blink and Frost Nova cool down 25% quicker. Bursts less than the Meteor and won't burn a pack — it focuses the kill.",
+				"fx": {"meteors": 3, "dmg_mult": 0.6, "stack_falloff": 0.40, "haste_cdr": 0.25, "haste_dur": 5.0}},
 		},
 	},
 	"assassin": {
 		"a1": {
-			"poison": {"desc": "Coated steel: every stab drips venom and slows the prey.",
-				"fx": {"dot": 0.35, "slow": 0.30}},
+			"poison": {"desc": "Coated steel: every stab drips venom and slows the prey — fast cuts STACK the toxin deep.",
+				"fx": {"dot": 0.35, "slow": 0.30, "toxin": 1}},
 			"shadow": {"desc": "Strike from the dark: +15% crit, and stunned or slowed prey ALWAYS crits.",
 				"fx": {"crit_bonus": 0.15, "opportunist": 1}},
 			"blood": {"desc": "Rend: cuts strike again, and bite harder the deeper YOU bleed.",
@@ -493,32 +493,32 @@ const ABILITY_THEMES := {
 				"fx": {"dot": 0.40, "vuln": 0.25}},
 			"pact": {"desc": "Blood-tipped: the bolt cuts 15% deeper and feeds you.",
 				"fx": {"dmg_mult": 1.15, "heal": 0.025}},
-			"void": {"desc": "The bolt tears space: it PIERCES the line and drags at everything it passes.",
-				"fx": {"pierce": 1, "slow": 0.40}},
+			"void": {"desc": "The bolt tears space: it PIERCES the line, drags at everything it passes, and CRUSHES whatever is still tumbling from a shove or pull.",
+				"fx": {"pierce": 1, "slow": 0.40, "crush": 1}},
 		},
 		"a2": {
 			"curse": {"desc": "Deeper rot: the curse withers harder, and death-detonations hit 50% harder.",
 				"fx": {"dot": 0.45, "hex_boom": 1.5}},
 			"pact": {"desc": "Leeching curse: every cursed enemy's death mends 8% of your max HP.",
 				"fx": {"hex_heal": 0.08}},
-			"void": {"desc": "The curse bends space: cursed enemies are SLOWED to a crawl.",
-				"fx": {"slow": 0.50, "slow_dur": 3.0}},
+			"void": {"desc": "The curse bends space: cursed enemies are SLOWED to a crawl, and the curse itself CRUSHES the displaced.",
+				"fx": {"slow": 0.50, "slow_dur": 3.0, "crush": 1}},
 		},
 		"a3": {
 			"curse": {"desc": "The blood is poisoned: the blast withers and EXPOSES everything it touches.",
 				"fx": {"dot": 0.50, "vuln": 0.20}},
 			"pact": {"desc": "A deeper cut: sacrifice 18% instead — hit far harder, drink far deeper.",
 				"fx": {"pact_cost": 0.18, "dmg_mult": 1.5, "pact_ls": 0.25}},
-			"void": {"desc": "The pact collapses space OUTWARD: enemies are hurled away and slowed — a ranged caster's panic button.",
-				"fx": {"knock": 340.0, "slow": 0.35}},
+			"void": {"desc": "The pact collapses space OUTWARD: enemies are hurled away and slowed — and your next spells CRUSH them mid-tumble.",
+				"fx": {"knock": 340.0, "slow": 0.35, "crush": 1}},
 		},
 		"ult": {
 			"curse": {"desc": "The rift leaves everything it touches EXPOSED and rotting.",
 				"fx": {"vuln": 0.50, "dot": 0.40}},
 			"pact": {"desc": "The rift feeds its master: every enemy caught in the burst mends 8% max HP.",
 				"fx": {"rift_heal": 0.08}},
-			"void": {"desc": "A greedy singularity: wider, and it drags far harder before it bursts.",
-				"fx": {"radius_mult": 1.4, "hard_pull": 1}},
+			"void": {"desc": "A greedy singularity: wider, dragging far harder — and the burst CRUSHES everything still caught in the pull.",
+				"fx": {"radius_mult": 1.4, "hard_pull": 1, "crush": 1}},
 		},
 	},
 }
@@ -558,11 +558,20 @@ static func theme_by_id(cls: String, id: String) -> Dictionary:
 static func fx_text(fx: Dictionary) -> String:
 	var bits: Array = []
 	if fx.has("dot"):
-		bits.append("applies a DoT: %d%% ATK/s for 3s" % int(fx["dot"] * 100))
+		bits.append("applies a DoT: %d%% ATK/s for 3s (ticks can CRIT)" % int(fx["dot"] * 100))
+	if fx.has("toxin"):
+		bits.append("the DoT STACKS: +%d%% tick per application (up to %d stacks)"
+			% [int(Balance.TOXIN_PER_STACK * 100), Balance.TOXIN_MAX_STACKS])
+	if fx.has("brittle"):
+		bits.append("turns targets BRITTLE: ice hits bite +%d%% per stack (up to %d)"
+			% [int(Balance.BRITTLE_PER_STACK * 100), Balance.BRITTLE_MAX_STACKS])
+	if fx.has("crush"):
+		bits.append("CRUSHES: +%d%% damage to targets recently shoved or pulled"
+			% int(Balance.CRUSH_MULT * 100))
 	if fx.has("slow"):
 		bits.append("slows enemies %d%% for 2s" % int(fx["slow"] * 100))
 	if fx.has("stun_chance"):
-		bits.append("%d%% chance to STUN 0.5s" % int(fx["stun_chance"] * 100))
+		bits.append("%d%% chance to STUN 0.5s (CC-immune bosses take CONCUSSION damage instead)" % int(fx["stun_chance"] * 100))
 	if fx.has("echo"):
 		bits.append("%d%% chance to strike AGAIN at 50%% damage" % int(fx["echo"] * 100))
 	if fx.has("heal"):

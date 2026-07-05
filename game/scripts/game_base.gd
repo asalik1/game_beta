@@ -85,6 +85,23 @@ var bosses: Array = []           # every LIVE boss (endgame: up to 5 at once)
 var current_boss: Boss = null    # the DISPLAYED boss: your target, else bosses[0]
 var shop_stock := {}             # room index -> Array of items for sale
 
+# ------------------------------------------------------- fight report ---
+# Benchmark instrument: boss fights are timed from FIRST BLOOD (either
+# direction) to the roster emptying, and the kill prints a report —
+# TTK, realized dps (boss HP pool / kill time), damage taken, potions,
+# wipes. Wipes accumulate across retries and reset when a report lands.
+var fight_active := false
+var fight_time := 0.0            # live fight seconds (frame-accumulated)
+var fight_dmg_taken := 0.0       # player HP actually lost during the fight
+var fight_potions := 0
+var fight_wipes := 0
+var fight_pool := 0.0            # summed max HP of every boss that joined
+var fight_names: Array = []      # roster, as "kind LvN" (log/benchmark line)
+var fight_titles: Array = []     # roster, as display names (the victory letter)
+var fight_kinds: Array = []      # roster, as raw kinds (personal-best records)
+var fight_seen := {}             # boss instance id -> true (already pooled)
+var last_fight_report := ""      # most recent report (tests / dev panel)
+
 var shake_amt := 0.0
 var sounds: Dictionary = {}
 var sound_pool: Array = []
@@ -129,6 +146,14 @@ var edge_locks := {}   # edge key -> {"lock": "boss"/"clear"/"flag:x", "own": ro
 var mailbox: Array = []        # letters: {subject, body, items, sent_at, read}
 var dropped_loot: Array = []   # ground-drop payloads awaiting pickup or flush
 var clock_anchor := 0          # highest unix time ever seen (persisted, monotonic)
+
+# --- daily login reward (trusted-clock day index; -1 = never claimed) ---
+var daily_last_day := -1       # day index of the last claim
+var daily_streak := 0          # consecutive-day claim count
+
+# --- records & achievements (persisted) ---
+var achievements := {}         # achievement id -> true (unlocked)
+var boss_records := {}         # boss kind -> {"ttk": best secs, "dps": best, "kills": n}
 
 const MUSIC_TUNE := {
 	"icefield": {"gain": 14.0, "start": 10.0},  # whisper-quiet master
@@ -189,6 +214,96 @@ func prune_mail() -> void:
 	for m in mailbox.duplicate():
 		if not m["items"].is_empty() and int(m["sent_at"]) < cutoff:
 			mailbox.erase(m)
+
+
+# ------------------------------------------------------- daily login reward ---
+
+## Which calendar day it is on the trusted clock (integer day index).
+func daily_day_index() -> int:
+	return int(trusted_now() / 86400)
+
+
+## True when a daily reward is waiting (a new day since the last claim).
+func daily_available() -> bool:
+	return daily_day_index() > daily_last_day
+
+
+## The streak this claim WOULD land on (1 if fresh or a day was missed).
+func daily_next_streak() -> int:
+	return daily_streak + 1 if daily_day_index() == daily_last_day + 1 else 1
+
+
+## The reward dict for a given streak position (cycles every 7 days).
+func daily_reward_for(streak: int) -> Dictionary:
+	return Balance.DAILY_REWARDS[(maxi(streak, 1) - 1) % Balance.DAILY_REWARDS.size()]
+
+
+## Claim today's reward: advance the streak, grant the loot, persist.
+## Returns human-readable lines of what was granted (for the panel/fx).
+func claim_daily() -> Array:
+	if not daily_available():
+		return []
+	daily_streak = daily_next_streak()
+	daily_last_day = daily_day_index()
+	if daily_streak >= 7:
+		unlock_achievement("streak_7")
+	var lines := _grant_daily_reward(daily_streak)
+	if is_instance_valid(player):
+		sfx("chest")
+		spawn_text(player.global_position + Vector2(0, -70),
+			"DAILY REWARD — Day %d streak!" % daily_streak, Color(1.0, 0.85, 0.4))
+	autosave()
+	return lines
+
+
+## Hand over one day's reward. Gold scales with level; gems route through
+## give_loot so a full bag drops them safely (never silently lost).
+func _grant_daily_reward(streak: int) -> Array:
+	var r := daily_reward_for(streak)
+	var lines: Array = []
+	if r.has("gold"):
+		var g := int(float(r["gold"]) * Balance.daily_gold_mult(player.level))
+		player.gold += g
+		lines.append("%d gold" % g)
+	if r.has("potions"):
+		var pc := int(r["potions"])
+		player.potions = mini(player.potions + pc, Balance.POTION_MAX)
+		lines.append("%d potion%s" % [pc, "" if pc == 1 else "s"])
+	if r.has("gems"):
+		var gc := int(r["gems"])
+		var lvl := int(r.get("gem_lvl", 1))
+		for i in gc:
+			give_loot({"kind": "gem", "gem": Items.random_gem(loot_rng, lvl)},
+				player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
+		lines.append("%d Lv%d gem%s" % [gc, lvl, "" if gc == 1 else "s"])
+	return lines
+
+
+# ------------------------------------------------- records & achievements ---
+
+## Log a boss clear: bump the kill count, keep the FASTEST time and the
+## HIGHEST realized dps. Surfaced in the codex Records tab.
+func record_boss(kind: String, ttk: float, dps: float) -> void:
+	var r: Dictionary = boss_records.get(kind, {"ttk": 0.0, "dps": 0.0, "kills": 0})
+	r["kills"] = int(r.get("kills", 0)) + 1
+	if float(r.get("ttk", 0.0)) <= 0.0 or ttk < float(r["ttk"]):
+		r["ttk"] = ttk
+	if dps > float(r.get("dps", 0.0)):
+		r["dps"] = dps
+	boss_records[kind] = r
+
+
+## Unlock an achievement (idempotent): toast it, chime, persist. Unknown
+## ids and repeats are no-ops.
+func unlock_achievement(id: String) -> void:
+	if achievements.has(id) or not Achievements.DATA.has(id):
+		return
+	achievements[id] = true
+	var a: Dictionary = Achievements.DATA[id]
+	if is_instance_valid(hud):
+		hud.achievement_toast(String(a["name"]), String(a["desc"]))
+	sfx("levelup", 1.15)
+	autosave()
 
 
 ## Give loot to the player — or drop it at `pos` when the bag is full.
@@ -500,6 +615,118 @@ func _live_bosses() -> Array:
 			bosses.remove_at(i)
 	return bosses
 
+## Dev: wipe the instrument to a clean slate. Spawning or removing a boss
+## from the F1 panel starts a fresh benchmark — no pool, roster, wipes or
+## clock carried over from an abandoned fight. Without this, respawning a
+## boss mid-benchmark leaked the old fight's state into the next report:
+## an unkilled boss stayed active so its HP joined the new pool (doubling
+## realized dps), and its wipes/damage-taken rode into a different boss's
+## numbers. Benchmark data is only trustworthy from a clean start.
+func fight_reset() -> void:
+	fight_active = false
+	fight_time = 0.0
+	fight_dmg_taken = 0.0
+	fight_potions = 0
+	fight_wipes = 0
+	fight_pool = 0.0
+	fight_names.clear()
+	fight_titles.clear()
+	fight_kinds.clear()
+	fight_seen.clear()
+
+
+## First blood on a boss roster: start the clock, capture the field.
+func fight_engage() -> void:
+	fight_active = true
+	fight_time = 0.0
+	fight_dmg_taken = 0.0
+	fight_potions = 0
+	fight_pool = 0.0
+	fight_names.clear()
+	fight_titles.clear()
+	fight_kinds.clear()
+	fight_seen.clear()
+	for b in _live_bosses():
+		fight_track(b)
+
+
+## Pool a boss into the running fight (engage roster or a brawl
+## reinforcement that spawned mid-fight).
+func fight_track(b: Boss) -> void:
+	var iid := b.get_instance_id()
+	if fight_seen.has(iid):
+		return
+	fight_seen[iid] = true
+	fight_pool += b.max_hp
+	fight_names.append("%s Lv%d" % [b.kind, b.level])
+	fight_titles.append(b.display_name)
+	fight_kinds.append(b.kind)
+
+
+## Player HP lost while a fight runs. A boss landing the FIRST hit of
+## the fight engages it (telegraph/hazard damage carries no attacker
+## and only counts once the fight is live).
+func fight_note_damage(amount: float, attacker: Node) -> void:
+	if not fight_active:
+		if not (attacker is Boss) or _live_bosses().is_empty():
+			return
+		fight_engage()
+	fight_dmg_taken += amount
+
+
+func fight_note_potion() -> void:
+	if fight_active:
+		fight_potions += 1
+
+
+## Player died mid-fight: bosses walk home and heal, the clock is void.
+## The wipe survives into the retry's report.
+func fight_wipe() -> void:
+	if not fight_active:
+		return
+	fight_active = false
+	fight_seen.clear()
+	fight_wipes += 1
+
+
+## The last boss fell: print the benchmark line and float it on screen.
+func fight_report() -> void:
+	if not fight_active:
+		return
+	fight_active = false
+	fight_seen.clear()
+	var secs := maxf(fight_time, 0.1)
+	var mins := int(secs / 60.0)
+	var roster := " + ".join(fight_names)
+	var head := "FIGHT  %d:%02d — %s" % [mins, int(secs) % 60, roster]
+	var mid := "%.0f dps vs %.0f boss HP" % [fight_pool / secs, fight_pool]
+	var tail := "taken %.0f (%.1f/s) · potions %d · wipes %d" % [
+		fight_dmg_taken, fight_dmg_taken / secs, fight_potions, fight_wipes]
+	last_fight_report = head + "\n" + mid + "\n" + tail
+	print("[fight] %s | %s Lv%d | ttk %d:%02d | pool %.0f | dps %.1f | taken %.0f | potions %d | wipes %d" % [
+		roster, player.cls, player.level, mins, int(secs) % 60,
+		fight_pool, fight_pool / secs, fight_dmg_taken, fight_potions, fight_wipes])
+	fight_wipes = 0
+	if is_instance_valid(player):
+		spawn_text(player.global_position + Vector2(0, -104), head, Color(0.95, 0.85, 0.5), 5.0)
+		spawn_text(player.global_position + Vector2(0, -82), mid, Color(0.85, 0.9, 1.0), 5.0)
+		spawn_text(player.global_position + Vector2(0, -60), tail, Color(0.85, 0.9, 1.0), 5.0)
+	# The on-screen report fades in seconds (round 44) — mail a keepsake:
+	# a victory letter carrying the same stat block, so the fight is on
+	# record in the pause menu long after the numbers float away.
+	var titles := " + ".join(fight_titles) if not fight_titles.is_empty() else roster
+	send_mail("Victory — %s" % titles,
+		"You brought down %s!\n\nThe record of the fight:\n\n%s" % [titles, last_fight_report], [])
+
+	# Personal bests + achievements from the concluded fight. (dps here is
+	# the encounter's realized dps; for solo story bosses it's exact.)
+	var dps := fight_pool / secs
+	for k in fight_kinds:
+		record_boss(String(k), secs, dps)
+	if fight_dmg_taken <= 0.0 and not fight_kinds.is_empty():
+		unlock_achievement("flawless")
+
+
 ## The fight's music. Multi-boss brawls use the boss_x2..boss_x5
 ## override tracks when present (drop them in assets/music/); until
 ## then, the first boss's own theme carries the fight.
@@ -510,7 +737,25 @@ func _boss_music() -> String:
 	var multi := "boss_x%d" % mini(live.size(), 5)
 	if live.size() > 1 and music_tracks.has(multi):
 		return multi
-	return "boss_" + String(live[0].kind)
+	return _boss_track(String(live[0].kind))
+
+
+## A single boss's fight track. The enemy data is the source of truth:
+## its declared `music`, else `music_fallback`, else the terrain track
+## (never silence). A real boss_<kind>.wav dropped into assets/music/
+## auto-adopts by matching the declared name. Bosses that declare no
+## music key keep the legacy "boss_<kind>" default. This is the ONLY
+## resolver both the story spawn and the dev roster hit — the content
+## modules' own spawn() helpers are dev/selftest sugar.
+func _boss_track(kind: String) -> String:
+	var data: Dictionary = Story.ALL_ENEMIES.get(kind, {})
+	var track: String = data.get("music", "boss_" + kind)
+	if music_tracks.has(track):
+		return track
+	var fallback: String = data.get("music_fallback", "")
+	if fallback != "" and music_tracks.has(fallback):
+		return fallback
+	return Terrains.get_terrain(terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]).get("music", "village")
 
 ## Quest line + live "monsters left" counter for the player's room.
 func refresh_quest() -> void:
@@ -763,7 +1008,9 @@ func burst(pos: Vector2, color: Color, count := 10) -> void:
 	p.emitting = true
 	p.finished.connect(p.queue_free)
 
-func spawn_text(pos: Vector2, text: String, color: Color) -> void:
+## hold: seconds the text sits still before the float-and-fade (the
+## fight report needs reading time; combat numbers leave it at 0).
+func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 	var l := Label.new()
 	l.text = text
 	l.position = pos + Vector2(-70, -10)
@@ -776,6 +1023,8 @@ func spawn_text(pos: Vector2, text: String, color: Color) -> void:
 	l.add_theme_constant_override("outline_size", 4)
 	add_child(l)
 	var tween := create_tween()
+	if hold > 0.0:
+		tween.tween_interval(hold)
 	tween.tween_property(l, "position:y", l.position.y - 34.0, 0.9)
 	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.9)
 	tween.tween_callback(l.queue_free)

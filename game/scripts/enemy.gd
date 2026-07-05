@@ -54,6 +54,10 @@ var burn_dps := 0.0
 var burn_tick := 0.0
 var burn_color := Color(1.4, 0.8, 0.6)  # orange = fire, green = poison
 var vuln_time := 0.0   # takes +50% damage while marked
+var toxin := 0         # green-DoT stacks: deepen the burn TICK (die with it)
+var brittle := 0       # ice stacks: ice hits bite harder per stack
+var brittle_t := 0.0
+var crush_t := 0.0     # recently displaced hard: void hits bite (crush window)
 
 
 static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1) -> Enemy:
@@ -158,14 +162,32 @@ func _physics_process(delta: float) -> void:
 	stun_time = maxf(0.0, stun_time - delta)
 	slow_time = maxf(0.0, slow_time - delta)
 	vuln_time = maxf(0.0, vuln_time - delta)
+	brittle_t = maxf(0.0, brittle_t - delta)
+	if brittle_t <= 0.0:
+		brittle = 0
+	crush_t = maxf(0.0, crush_t - delta)
+	# A shove/pull harder than ordinary hit-flinch opens a crush window.
+	if knock.length() >= Balance.CRUSH_MIN_KNOCK:
+		crush_t = Balance.CRUSH_WINDOW
 	if burn_time > 0.0:
 		burn_time -= delta
 		burn_tick -= delta
 		if burn_tick <= 0.0:
 			burn_tick = 0.5
-			take_damage(burn_dps * 0.5, Vector2.ZERO, false, true)
+			var tick := burn_dps * 0.5
+			# DoT ticks CRIT: rolled per tick on the player's SHEET crit
+			# (burns carry no source ref — single-player, so the player
+			# is the source), shaved by this target's critres like any
+			# hit. Per-ability crit bonuses never ride into ticks, and
+			# nothing snapshots — no fishing for a locked-in crit burn.
+			var src: Player = game.player
+			if src != null and randf() < Stats.crit_curve(src.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
+				tick *= src.crit_dmg
+			take_damage(tick, Vector2.ZERO, false, true)
 			if not dying:
 				sprite.modulate = burn_color
+	else:
+		toxin = 0  # the stack dies with the burn
 
 	if stun_time > 0.0:
 		windup = 0.0
@@ -285,8 +307,14 @@ func promote_elite() -> void:
 # ------------------------------------------------------------- statuses ---
 
 func apply_stun(dur: float) -> void:
-	# Bosses shrug off most of a stun so they can't be perma-locked.
-	stun_time = maxf(stun_time, dur * (0.35 if self is Boss else 1.0))
+	# CC belongs to mobs and elites: bosses are outright IMMUNE (was a
+	# 35% duration tax — short enough to read as a bug at boss doors,
+	# long enough to tax every stun-themed variant's damage budget).
+	# Boss kits that stun the boss ON PURPOSE (wall-slam vuln windows)
+	# must write stun_time directly.
+	if self is Boss:
+		return
+	stun_time = maxf(stun_time, dur)
 
 
 func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6)) -> void:
@@ -295,7 +323,24 @@ func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6)) -> void:
 	burn_color = color
 
 
+## Green-theme DoT (poison/venom): the exception to the no-stack burn
+## rule — each application adds a toxin stack that deepens the TICK.
+## Fast cadences ramp fast; the stack dies when the burn runs out.
+func apply_toxin(dps: float, dur: float, color := Color(0.5, 1.2, 0.5)) -> void:
+	toxin = mini(toxin + 1, Balance.TOXIN_MAX_STACKS)
+	apply_burn(dps * (1.0 + toxin * Balance.TOXIN_PER_STACK), dur, color)
+
+
+## Ice hits crack the target: brittle stacks amplify ICE damage only
+## (theme-internal — see Balance.BRITTLE_PER_STACK).
+func add_brittle() -> void:
+	brittle = mini(brittle + 1, Balance.BRITTLE_MAX_STACKS)
+	brittle_t = Balance.BRITTLE_DUR
+
+
 func apply_slow(mult: float, dur: float) -> void:
+	if self is Boss:
+		return  # CC-immune, same rule as stuns
 	slow_mult = minf(slow_mult, mult) if slow_time > 0.0 else mult
 	slow_time = maxf(slow_time, dur)
 	sprite.modulate = Color(0.6, 0.8, 1.3)

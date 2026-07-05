@@ -79,19 +79,19 @@ const S_GEAR := {
 		"charm":  {"name": "Warlord's Iron Oath",     "subs": {"atk_pct": 0.10, "physpen": 10.0}},
 	},
 	"archer": {
-		"weapon": {"name": "Stormcaller, Bow of the Tempest", "passive": "ricochet", "noun": "Bow"},
+		"weapon": {"name": "Stormcaller, Bow of the Tempest", "passive": "windward", "noun": "Bow"},
 		"armor":  {"name": "Cloak of a Thousand Leaves", "subs": {"hp_pct": 0.10, "eva": 0.05}},
 		"boots":  {"name": "Zephyr's Grace",             "subs": {"speed_pct": 0.09, "crit": 0.06}},
 		"charm":  {"name": "The Hawk God's Eye",         "subs": {"crit": 0.10, "crit_dmg": 0.30}},
 	},
 	"mage": {
-		"weapon": {"name": "Heart of the Phoenix", "passive": "phoenix", "noun": "Staff"},
+		"weapon": {"name": "Heart of the Phoenix", "passive": "wellspring", "noun": "Staff"},
 		"armor":  {"name": "Robes of the Infinite", "subs": {"hp_pct": 0.10, "magres": 18.0}},
 		"boots":  {"name": "Steps of the Void",     "subs": {"speed_pct": 0.07, "cdr": 0.05}},
 		"charm":  {"name": "The Archmage's Folly",  "subs": {"cdr": 0.10, "magpen": 10.0}},
 	},
 	"assassin": {
-		"weapon": {"name": "Nightfang, Kiss of the Abyss", "passive": "nightfang", "noun": "Fang"},
+		"weapon": {"name": "Nightfang, Kiss of the Abyss", "passive": "mirrorstep", "noun": "Fang"},
 		"armor":  {"name": "Shroud of Silence", "subs": {"hp_pct": 0.08, "lifesteal": 0.05}},
 		"boots":  {"name": "Whisperwind",       "subs": {"speed_pct": 0.10, "crit": 0.05}},
 		"charm":  {"name": "The Bloodpact",     "subs": {"crit": 0.08, "combo": 0.04}},
@@ -103,7 +103,7 @@ const S_GEAR := {
 		"charm":  {"name": "The Highfather's Oath", "subs": {"atk_pct": 0.08, "cdr": 0.06, "lifesteal": 0.02}},
 	},
 	"warlock": {
-		"weapon": {"name": "Grimoire of the Hollow Choir", "passive": "hollowchoir", "noun": "Tome"},
+		"weapon": {"name": "Grimoire of the Hollow Choir", "passive": "voidmaw", "noun": "Tome"},
 		"armor":  {"name": "Vestments of the Long Bargain", "subs": {"hp_pct": 0.10, "magres": 16.0}},
 		"boots":  {"name": "Voidwalkers",                   "subs": {"speed_pct": 0.08, "magpen": 6.0}},
 		"charm":  {"name": "The First Debt",                "subs": {"atk_pct": 0.08, "lifesteal": 0.04}},
@@ -112,11 +112,11 @@ const S_GEAR := {
 
 const PASSIVES := {
 	"kingsblade":  "Cleave hurls a sword wave",
-	"ricochet":    "Arrows ricochet to a second enemy",
-	"phoenix":     "Firebolt always explodes and ignites",
-	"nightfang":   "Strikes on stunned or slowed enemies always crit",
+	"windward":    "Second Wind kicks in after just 1.5s untouched (from 3s)",
+	"wellspring":  "+50% mana regen; Frost Nova and Blink cool down 8% faster",
+	"mirrorstep":  "Dashing reflects nearby projectiles and softens AoE damage",
 	"dawnbreaker": "Judgment calls down a pillar of light (splash + holy burn)",
-	"hollowchoir": "Shadowbolt splits into a second bolt at a second enemy",
+	"voidmaw":     "Void Rift ends with a curse-wave: shoves enemies off you and curses the room",
 }
 
 # ------------------------------------------------------------------- gems ---

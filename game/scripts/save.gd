@@ -48,6 +48,8 @@ static func write(game: Game, slot: int) -> void:
 		"talked_to_elder": game.talked_to_elder,
 		"mailbox": game.mailbox, "dropped_loot": game.dropped_loot,
 		"clock_anchor": game.trusted_now(),
+		"daily_last_day": game.daily_last_day, "daily_streak": game.daily_streak,
+		"achievements": game.achievements.keys(), "boss_records": game.boss_records,
 		"bosses_slain": game.boss_done.keys(),
 		"flags": game.flags,
 		"merchant_zones": game.merchant_zones,
@@ -159,6 +161,18 @@ static func apply(game: Game, data: Dictionary) -> void:
 	# Mailbox (round 8). trusted_now() folds the saved anchor in, so the
 	# clock stays monotonic across sessions even if the OS clock rolled.
 	game.clock_anchor = maxi(game.clock_anchor, int(data.get("clock_anchor", 0)))
+	game.daily_last_day = int(data.get("daily_last_day", -1))
+	game.daily_streak = int(data.get("daily_streak", 0))
+	game.achievements = {}
+	for aid in data.get("achievements", []):
+		game.achievements[String(aid)] = true
+	game.boss_records = {}
+	var br: Dictionary = data.get("boss_records", {})
+	for k in br:
+		var r: Dictionary = br[k]
+		game.boss_records[String(k)] = {
+			"ttk": float(r.get("ttk", 0.0)), "dps": float(r.get("dps", 0.0)),
+			"kills": int(r.get("kills", 0))}
 	game.mailbox = data.get("mailbox", [])
 	game.dropped_loot = data.get("dropped_loot", [])
 	for mail in game.mailbox:

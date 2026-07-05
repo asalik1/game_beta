@@ -84,6 +84,66 @@ const DASH_STAB_NEAR_LANE := 105.0
 const SURGE_LS_FLOOR := 0.12      # surge lifesteal at full health (round 42: 14→12)
 const SURGE_LS_SCALE := 0.14      # + this x missing-hp (cap = floor+scale = 26%)
 
+# ------------------------------------------------ warrior bulwark charge ---
+# Round 44: the bulwark's sustain is its heal-on-hit, but Charge's dead-
+# center ram (55px lane) whiffed the mend on a near pass. Like the
+# assassin's safe-range graze, a charge THROUGH the danger band now
+# clips the enemy — a lighter ram that still triggers the heal — so the
+# gap-closer reliably feeds the shield.
+const CHARGE_GRAZE_LANE := 120.0  # graze band outer edge (past the 55px direct ram)
+const CHARGE_GRAZE_MULT := 0.6    # clip damage on a graze (vs the full ram)
+# Round 44: a melee gap-closer PARKS you in the boss's swing range — the
+# assassin dash passes through and leaves, but Shield Bash rams and stays,
+# and Judgment leaps in and stays. Without a landing i-frame they eat the
+# boss's next telegraphed swing just for closing the distance their kit
+# requires. This brief window covers the landing beat (the boss attack
+# cadence is ~0.7-0.9s), NOT sustained melee — Judgment only grants it on
+# the actual LEAP, so its 0.5s-cd spam can't chain into perma-immunity.
+const MELEE_DASH_IFRAME := 0.45
+
+# ------------------------------------------------- warlock wither ramp ---
+# "The warlock's damage doesn't keep up with boss HP pools": a MAINTAINED
+# Hex deepens — every WITHER_STACK_EVERY seconds of hex uptime on a
+# target adds a stack of +WITHER_PER_STACK damage taken from the
+# warlock, capping at WITHER_MAX_STACKS (+48%). Trash never lives long
+# enough to stack, so pack farming is untouched; long boss fights
+# converge the class's weakest axis upward. Stacks die with the hex —
+# letting the curse lapse resets the ramp, so upkeep IS the rotation.
+const WITHER_STACK_EVERY := 6.0
+const WITHER_PER_STACK := 0.06
+const WITHER_MAX_STACKS := 8
+
+# ------------------------------------------- CC-immune boss conversions ---
+# Bosses are outright CC-immune (enemy.gd), which would leave every
+# stun/slow-themed variant paying full damage budget for dead riders at
+# boss doors. These conversions give each CONTROL identity a boss-mode
+# payoff without re-opening boss CC — tuned small: the floor lifts, the
+# ceiling stays put.
+# CONCUSSION (systemic): a stun that fails on a CC-immune target lands
+# as bonus damage instead — failed duration x this x ATK.
+const CONCUSSION_MULT := 0.15
+# TOXIN (poison/venom themes): green DoTs are the exception to the
+# no-stack burn rule — each application adds a stack that deepens the
+# TICK (never the hit), so fast cadences finally get paid.
+const TOXIN_PER_STACK := 0.08
+const TOXIN_MAX_STACKS := 5
+# BRITTLE (ice theme): cold cracks what it strikes — ice hits bite
+# harder per stack, and ONLY ice hits (theme-internal: one poached ice
+# slot amps nothing else).
+const BRITTLE_PER_STACK := 0.04
+const BRITTLE_MAX_STACKS := 5
+const BRITTLE_DUR := 6.0
+# CRUSH (void theme): void hits bite displaced targets — anything
+# recently shoved/pulled hard (above ordinary hit-flinch, which peaks
+# at 220) is "in motion against its will" for a short grace window.
+const CRUSH_MULT := 0.25
+const CRUSH_MIN_KNOCK := 240.0
+const CRUSH_WINDOW := 0.7
+# AEGIS ANSWERS ARROWS (paladin a3): a blocked PROJECTILE smites its
+# shooter at this fraction of the melee reflect, capped per cast.
+const AEGIS_PROJ_REFLECT := 0.5
+const AEGIS_PROJ_CAP := 4
+
 # --------------------------------------------------------------- elites ---
 # The miniboss variant (Enemy.promote_elite). Multipliers apply on top
 # of the monster's level-scaled stats.
@@ -127,6 +187,28 @@ const RES_REWARD_SILVER_AT := 8.0    # |delta| >= this -> silver chest
 # many days on the TRUSTED clock (game.trusted_now — monotonic, cheat-
 # resistant). Claimed letters stay until the player deletes them.
 const MAIL_EXPIRY_DAYS := 30
+
+# ---------------------------------------------------- daily login reward ---
+# One claim per calendar day on the TRUSTED clock. Consecutive days build
+# a streak; a missed day resets it to 1. The reward cycles through this
+# 7-day table by streak position (day 7 = the jackpot), then loops. Gold
+# scales with level (daily_gold_mult) so it stays relevant; gems/potions
+# are flat. Gear is deliberately omitted — dailies must not short-circuit
+# the act-gated loot curve.
+const DAILY_REWARDS := [
+	{"gold": 120},
+	{"gold": 180, "potions": 1},
+	{"gems": 1, "gem_lvl": 1},
+	{"gold": 300},
+	{"gems": 1, "gem_lvl": 1, "potions": 1},
+	{"gold": 500, "potions": 2},
+	{"gold": 400, "gems": 1, "gem_lvl": 2},   # day 7 jackpot
+]
+
+## Gold rewards scale with level so a daily stays meaningful late (a flat
+## 120g is nothing at L40). ~+12% per level over the base.
+static func daily_gold_mult(level: int) -> float:
+	return 1.0 + 0.12 * float(maxi(level - 1, 0))
 
 # ----------------------------------------------------------------- rooms ---
 # Quiet room types shrink their walled playable area within the fixed

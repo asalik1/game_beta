@@ -16,6 +16,10 @@ static func open(m: Menus, tab := "monsters") -> void:
 		Color(0.95, 0.85, 0.5) if tab == "gear" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Terrains  ", func() -> void: m.open_codex("terrains"),
 		Color(0.95, 0.85, 0.5) if tab == "terrains" else Color(0.6, 0.6, 0.6))
+	m._btn(tabs, "  Status  ", func() -> void: m.open_codex("status"),
+		Color(0.95, 0.85, 0.5) if tab == "status" else Color(0.6, 0.6, 0.6))
+	m._btn(tabs, "  Records  ", func() -> void: m.open_codex("records"),
+		Color(0.95, 0.85, 0.5) if tab == "records" else Color(0.6, 0.6, 0.6))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -30,6 +34,10 @@ static func open(m: Menus, tab := "monsters") -> void:
 		_monsters(m, list)
 	elif tab == "terrains":
 		_terrains(m, list)
+	elif tab == "status":
+		_statuses(m, list)
+	elif tab == "records":
+		_records(m, list)
 	else:
 		_gear(m, list)
 	m._hint(vbox, "ESC / C to close")
@@ -71,6 +79,10 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 			if is_boss != section:
 				continue
 			var st: Dictionary = Story.ALL_ENEMIES[kind]
+			# Boss-summon props (censers, roots, rods) are zero-reward
+			# scenery-with-hp, not catalogue monsters — skip them.
+			if not is_boss and st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
+				continue
 			# Codex honesty: display what the fight actually deals/has
 			# (TTK and damage multipliers included), not raw table rows.
 			var live: Dictionary = Story.enemy_stats_at(kind, int(st.get("level", 1)))
@@ -191,6 +203,96 @@ static func _terrains(m: Menus, list: VBoxContainer) -> void:
 			ql.custom_minimum_size = Vector2(700, 0)
 
 
+static func _statuses(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+	m._lbl(list, "— STATUS EFFECTS —", 16, Color(0.6, 0.9, 1.0))
+	var intro := m._lbl(list,
+		"What you inflict on enemies (most ride your talent-themed abilities) — and, in hazard terrain, suffer yourself.",
+		13, Color(0.7, 0.72, 0.78))
+	intro.custom_minimum_size = Vector2(880, 0)
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	# name, colour, description lines. Numbers pull live from Balance so
+	# the codex can never drift from the actual combat tuning.
+	var effects := [
+		["Stun", Color(1.0, 0.85, 0.4), [
+			"The target can't move or act for a moment.",
+			"Bosses are CC-immune: a stun that would hit them lands as CONCUSSION instead — bonus damage of duration × ATK × %d%%, so stun-themed abilities keep their value in boss fights." % int(Balance.CONCUSSION_MULT * 100)]],
+		["Slow", Color(0.5, 0.65, 1.0), [
+			"Movement speed is cut for a duration (clinging murk −30%, void rifts drag). CC-immune bosses ignore it."]],
+		["Burn", Color(1.4, 0.7, 0.5), [
+			"Fire damage over time, an orange flicker. Burns do NOT stack — only the strongest active burn applies (lava pools, ignite effects)."]],
+		["Poison", Color(0.5, 0.9, 0.5), [
+			"The green damage-over-time — the ONE exception to the no-stack rule. Each application adds a stack (up to %d) that deepens the tick by %d%%; the stacks expire together when the DoT runs out." % [Balance.TOXIN_MAX_STACKS, int(Balance.TOXIN_PER_STACK * 100)]]],
+		["Expose (Vulnerable)", Color(0.85, 0.5, 0.95), [
+			"A marked target takes +50% damage while the mark holds (~3s). The assassin's Death Mark ult stretches it to 5s of true-damage setup."]],
+		["Silence", Color(0.75, 0.8, 1.0), [
+			"An INVERSE telegraph (debuts against Vess in Chapter 3): the whole arena screams lethal except one quiet safe circle — find it and stand INSIDE before the wail lands, the opposite of a normal red danger-zone."]],
+	]
+	for e in effects:
+		var info := VBoxContainer.new()
+		info.add_theme_constant_override("separation", 2)
+		_card(list).add_child(info)
+		m._lbl(info, String(e[0]), 15, e[1])
+		for line in e[2]:
+			var dl := m._lbl(info, String(line), 13, Color(0.78, 0.8, 0.86))
+			dl.custom_minimum_size = Vector2(880, 0)
+			dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+
+## Records tab: achievements (unlocked/locked) + boss personal bests.
+static func _records(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+
+	# --- achievements ---
+	var unlocked := 0
+	for id in Achievements.DATA:
+		if m.game.achievements.has(id):
+			unlocked += 1
+	m._lbl(list, "— ACHIEVEMENTS —   %d / %d" % [unlocked, Achievements.DATA.size()], 16, Color(1.0, 0.85, 0.4))
+	var ach := VBoxContainer.new()
+	ach.add_theme_constant_override("separation", 3)
+	_card(list).add_child(ach)
+	for id in Achievements.ORDER:
+		var a: Dictionary = Achievements.DATA[id]
+		var got: bool = m.game.achievements.has(id)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		ach.add_child(row)
+		var mark := m._lbl(row, "✓" if got else "—", 15, Color(0.55, 1.0, 0.55) if got else Color(0.5, 0.5, 0.55))
+		mark.custom_minimum_size = Vector2(28, 0)
+		var nm := m._lbl(row, String(a["name"]), 14, Color(1.0, 0.88, 0.45) if got else Color(0.6, 0.62, 0.68))
+		nm.custom_minimum_size = Vector2(220, 0)
+		var ds := m._lbl(row, String(a["desc"]), 13, Color(0.8, 0.82, 0.88) if got else Color(0.5, 0.52, 0.58))
+		ds.custom_minimum_size = Vector2(560, 0)
+
+	# --- boss personal bests ---
+	m._lbl(list, "— BOSS RECORDS —   fastest clear · best dps · kills", 16, Color(1, 0.6, 0.6))
+	var recs := VBoxContainer.new()
+	recs.add_theme_constant_override("separation", 3)
+	_card(list).add_child(recs)
+	var any := false
+	for kind in Story.ALL_ENEMIES:
+		if not (kind in m.BOSS_KINDS) or not m.game.boss_records.has(kind):
+			continue
+		any = true
+		var r: Dictionary = m.game.boss_records[kind]
+		var secs: float = float(r.get("ttk", 0.0))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		recs.add_child(row)
+		var nm := m._lbl(row, String(Story.ALL_ENEMIES[kind].get("name", kind)), 14, Color(1, 0.75, 0.75))
+		nm.custom_minimum_size = Vector2(300, 0)
+		var t := m._lbl(row, "%d:%02d" % [int(secs / 60.0), int(secs) % 60], 14, Color(0.7, 1.0, 0.7))
+		t.custom_minimum_size = Vector2(90, 0)
+		var d := m._lbl(row, "%d dps" % int(r.get("dps", 0.0)), 14, Color(0.85, 0.9, 1.0))
+		d.custom_minimum_size = Vector2(140, 0)
+		var k := m._lbl(row, "×%d" % int(r.get("kills", 0)), 14, Color(0.8, 0.82, 0.88))
+		k.custom_minimum_size = Vector2(80, 0)
+	if not any:
+		m._lbl(recs, "No bosses felled yet. Their fastest clears will be recorded here.", 13, Color(0.6, 0.62, 0.68))
+
+
 static func _gear(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	var slot_desc := {
@@ -286,6 +388,46 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	m._lbl(chests, "Silver chest — drops from monsters (rare). Contains D to A gear.", 14, Color(0.8, 0.82, 0.9))
 	m._lbl(chests, "Golden chest — every boss drops one. Contains B to S gear.", 14, Color(1.0, 0.85, 0.35))
 	m._lbl(chests, "Bonus stats: ATK%, HP%, Crit, Haste, Speed, Lifesteal, Armor, Greed (gold).", 13, Color(0.7, 0.72, 0.78))
+
+	# ------------------------------------------------------------ gems ---
+	m._lbl(list, "— GEMS — socket into B+ gear (B:%d · A:%d · S:%d sockets) —" %
+		[int(Items.GEM_SLOTS["B"]), int(Items.GEM_SLOTS["A"]), int(Items.GEM_SLOTS["S"])],
+		16, Color(0.6, 0.9, 1.0))
+	var gem_intro := VBoxContainer.new()
+	gem_intro.add_theme_constant_override("separation", 2)
+	_card(list).add_child(gem_intro)
+	for line3 in [
+		"Each gem grants ONE stat and deepens with its level, up to Lv %d. Only B-grade gear and above has sockets." % Items.GEM_MAX_LEVEL,
+		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (click them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level."]:
+		var gil := m._lbl(gem_intro, String(line3), 13, Color(0.7, 0.72, 0.78))
+		gil.custom_minimum_size = Vector2(880, 0)
+		gil.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	var gems_box := VBoxContainer.new()
+	gems_box.add_theme_constant_override("separation", 3)
+	_card(list).add_child(gems_box)
+	for stat in Items.GEM_STATS:
+		var info: Dictionary = Items.GEM_STATS[stat]
+		var is_flat: bool = stat in Items.FLAT_STATS
+		var v1: float = Items.gem_value(Items.make_gem(stat, 1))
+		var vmax: float = Items.gem_value(Items.make_gem(stat, Items.GEM_MAX_LEVEL))
+		var v1_txt: String = "+%d" % int(v1) if is_flat else "+%d%%" % int(round(v1 * 100))
+		var vmax_txt: String = "+%d" % int(vmax) if is_flat else "+%d%%" % int(round(vmax * 100))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		gems_box.add_child(row)
+		var sw := ColorRect.new()
+		sw.color = info["color"]
+		sw.custom_minimum_size = Vector2(16, 16)
+		sw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(sw)
+		var name_l := m._lbl(row, String(info["name"]), 13, info["color"])
+		name_l.custom_minimum_size = Vector2(150, 0)
+		var stat_l := m._lbl(row, Items.STAT_LABEL[stat], 13, Color(0.85, 0.85, 0.9))
+		stat_l.custom_minimum_size = Vector2(120, 0)
+		var val_l := m._lbl(row, "Lv1 %s   ·   Lv%d %s" % [v1_txt, Items.GEM_MAX_LEVEL, vmax_txt],
+			13, Color(0.7, 0.72, 0.78))
+		val_l.custom_minimum_size = Vector2(300, 0)
 
 	# ------------------------------------------------- bags & consumables ---
 	m._lbl(list, "— BAGS — everything you carry shares one bag's slots —", 16, Color(0.95, 0.85, 0.5))

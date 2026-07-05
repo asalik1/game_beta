@@ -96,6 +96,16 @@ static func open(m: Menus) -> void:
 			_regear_for_class(m)
 			m.open_dev(), Color(0.5, 1.0, 0.5) if cls_active else Color(0.6, 0.9, 1.0))
 
+	# ------------------------------------------------- last fight report ---
+	# The benchmark line the last boss roster printed (TTK / dps / damage
+	# taken / potions / wipes). On screen it floats for 5s then fades;
+	# here it stays put, and every kill also mails it as a victory letter.
+	m._lbl(list, "LAST BOSS FIGHT", 16, Color(0.95, 0.85, 0.5))
+	var report: String = m.game.last_fight_report
+	var rlbl := m._lbl(list, report if report != "" else "No fight recorded yet — the report lands when a boss roster falls.",
+		14, Color(0.85, 0.9, 1.0) if report != "" else Color(0.6, 0.62, 0.68))
+	rlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
 	# ------------------------------------------------------------ items ---
 	m._lbl(list, "ITEMS & GEMS", 16, Color(0.95, 0.85, 0.5))
 	var row3 := _flow(list)
@@ -166,6 +176,17 @@ static func open(m: Menus) -> void:
 			m.game.visited[zi2] = true
 			m.game.door_seen[zi2] = true
 		m.open_map())
+	m._btn(row4b, "Spawn test dummy", func() -> void:
+		# Immortal DPS target: hit it and the floating readout tallies
+		# realized dps / peak / crit, resetting after 5s untouched.
+		m.game.add_enemy(Dummy.spawn_dummy(m.game, m.game.player.global_position + Vector2(200, 0)))
+		m.close(), Color(0.85, 0.9, 0.5))
+	m._btn(row4b, "Remove dummies", func() -> void:
+		for node in m.get_tree().get_nodes_in_group("enemies"):
+			if node is Dummy:
+				node.remove_from_group("enemies")
+				node.queue_free()
+		m.open_dev(), Color(0.85, 0.9, 0.5))
 	m._btn(row4b, "Spawn elite (my Lv+1)", func() -> void:
 		var e := Enemy.make(m.game, "wolf",
 			m.game.player.global_position + Vector2(260, 0), m.game.player.level + 1)
@@ -209,6 +230,11 @@ static func open(m: Menus) -> void:
 	for kind in m.BOSS_KINDS:
 		var k: String = kind
 		m._btn(row5, "Spawn " + k, func() -> void:
+			# A fresh spawn is a fresh benchmark: clear any leftover fight
+			# state (an abandoned boss's pool/wipes/clock) so this roster's
+			# report is trustworthy. (Stacking a brawl? Spawn them all in
+			# one breath BEFORE first blood — engage snapshots the field.)
+			m.game.fight_reset()
 			# Spawns STACK — brawl-test up to 5 at once. The bar follows
 			# your target; boss_x2..boss_x5 tracks play when installed.
 			var b: Boss = Boss.make_boss(m.game, k,
@@ -220,6 +246,9 @@ static func open(m: Menus) -> void:
 			m.game.set_music(m.game._boss_music())
 			m.close(), Color(1, 0.6, 0.6))
 	m._btn(row5, "Kill bosses", func() -> void:
+		# Removal, not a real kill: reset first so the death doesn't fire a
+		# junk near-zero-TTK report, and no state lingers for the next spawn.
+		m.game.fight_reset()
 		for b in m.game._live_bosses().duplicate():
 			b.untargetable = false  # dev kill pierces burrow/submerge phases
 			b.take_damage(9999999.0)

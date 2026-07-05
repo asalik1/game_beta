@@ -229,7 +229,8 @@ func _run_systems() -> void:
 	game.player.pending_theme_note = ""
 	print("ok: archer second wind (untouched -> recovery)")
 
-	# Mage ARCANE WARD (round 16): a well-timed Blink eats the next hit.
+	# Mage ARCANE WARD (round 45): Blink cloaks the mage in a brief, strong
+	# damage-reduction window — it SOFTENS the next hits, no longer erases one.
 	game.player.set_class("mage")
 	game.player.pending_theme_note = ""
 	_buff()
@@ -237,22 +238,31 @@ func _run_systems() -> void:
 	game.player.cds["a3"] = 0.0  # earlier kit tests may have left it hot
 	game.player.use_ability("a3")
 	await _frames(3)
-	if game.player.ward_time <= 0.0:
-		return _fail("blink did not raise the arcane ward")
-	var ward_hp: float = game.player.hp
+	if game.player.dr_time <= 0.0 or game.player.dr_amt <= 0.0:
+		return _fail("blink did not raise the arcane ward DR window")
+	# A hit inside the window lands, but heavily cut (magic damage, no
+	# attacker: eva/res are zeroed by _buff, so ~dr_amt is the reduction).
 	game.player.hurt_cd = 0.0
-	game.player.take_damage(500.0, "true")
-	if game.player.hp < ward_hp:
-		return _fail("the ward did not absorb the hit")
+	var pre_hp: float = game.player.hp
+	game.player.take_damage(1000.0, "magic")
+	var taken: float = pre_hp - game.player.hp
+	if taken <= 0.0:
+		return _fail("warded hit dealt nothing (ward must soften, not absorb)")
+	if taken > 1000.0 * (1.0 - game.player.dr_amt) + 1.0:
+		return _fail("arcane ward DR did not cut the incoming hit")
+	# True damage pierces the cloak (like plate DR).
+	game.player.dr_time = 5.0
 	game.player.hurt_cd = 0.0
-	game.player.take_damage(500.0, "true")
-	if game.player.hp >= ward_hp:
-		return _fail("a spent ward must not absorb again")
+	var pre_true: float = game.player.hp
+	game.player.take_damage(200.0, "true")
+	if absf((pre_true - game.player.hp) - 200.0) > 0.5:
+		return _fail("arcane ward DR must not reduce true damage")
+	game.player.dr_time = 0.0
 	game.player.set_class("warrior")
 	game.player.pending_theme_note = ""
 	if game.player.flat_dr <= 0.0:
 		return _fail("warrior plate DR missing (round 21)")
-	print("ok: mage arcane ward (blink absorbs one hit) + plate DR present")
+	print("ok: mage arcane ward (blink DR softens hits, pierced by true) + plate DR")
 
 	# Assassin STAB SURGE (round 25): a connecting cut buffs lifesteal,
 	# bigger the lower your health sits.
@@ -675,11 +685,22 @@ func _run_systems() -> void:
 			[Balance.boss_gem_chance(5.0), Balance.boss_gem_chance(20.0), Balance.boss_gem_chance(40.0)])
 	print("ok: monster levels + growth scaling")
 
+	# 3d3b. Every catalogued boss must resolve to a real FIGHT track through
+	# the gameplay path (_boss_music -> _boss_track), not just the dev/selftest
+	# spawn helper. Guards the ch3 "declared music, silent in-game" regression.
+	_test_boss_music()
+
 	# 3d4. Elites, bags, reset stones, small rooms (playtest round 6).
 	await _test_elites_bags_smallrooms()
 
 	# 3d5. Mailbox: ground overflow, flush, claim, expiry, trusted clock.
 	await _test_mailbox()
+
+	# 3d6. Daily login reward: new-day claim, streak advance + reset.
+	_test_daily()
+
+	# 3d7. Records + achievements: best-time keeping and idempotent unlock.
+	_test_records()
 
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
@@ -989,6 +1010,10 @@ func _run_systems() -> void:
 	await _frames(2)
 	game.menus.open_codex("terrains")
 	await _frames(2)
+	game.menus.open_codex("monsters")
+	await _frames(2)
+	game.menus.open_codex("status")
+	await _frames(2)
 	game.menus.open_skills()
 	await _frames(2)
 	game.menus.open_theme_picker("a1")
@@ -1200,6 +1225,18 @@ func _run_campaign_ch2() -> void:
 	get_tree().quit(0)
 
 
+# ---- CORE: every boss resolves to a real fight track (gameplay path) ----
+# The story spawn and dev roster both go through _boss_track(); a boss that
+# declares music with no installed track (and no valid fallback) plays SILENT.
+# Assert every catalogued boss lands on an actual boss_* track.
+func _test_boss_music() -> void:
+	for kind in Menus.BOSS_KINDS:
+		var track: String = game._boss_track(kind)
+		if not track.begins_with("boss_") or not game.music_tracks.has(track):
+			return _fail("boss '%s' has no fight track via the gameplay path (resolved '%s')" % [kind, track])
+	print("ok: boss music (every BOSS_KINDS entry resolves to a real fight track)")
+
+
 # ---- CORE: mailbox, ground overflow, trusted clock (round 8) ------------
 func _test_mailbox() -> void:
 	var keep_bag: Dictionary = game.player.bag
@@ -1270,6 +1307,74 @@ func _test_mailbox() -> void:
 	game.mailbox = keep_mail
 	game.dropped_loot = keep_dropped
 	print("ok: mailbox (ground overflow, flush, claim, 30d expiry, trusted clock)")
+
+
+# ---- CORE: daily login reward (new-day claim, streak advance/reset) -----
+func _test_daily() -> void:
+	var keep_last: int = game.daily_last_day
+	var keep_streak: int = game.daily_streak
+	var keep_gold: int = game.player.gold
+	var keep_pot: int = game.player.potions
+	var today: int = game.daily_day_index()
+
+	# A new day since the last claim: reward is available.
+	game.daily_last_day = today - 1
+	game.daily_streak = 3
+	if not game.daily_available():
+		return _fail("daily reward not available on a new day")
+	var lines: Array = game.claim_daily()
+	if game.daily_streak != 4:
+		return _fail("consecutive-day claim did not advance the streak (%d)" % game.daily_streak)
+	if game.daily_available():
+		return _fail("daily still claimable the same day")
+	if game.player.gold <= keep_gold or lines.is_empty():
+		return _fail("daily claim granted nothing")
+
+	# A missed day resets the streak to 1.
+	game.player.gold = keep_gold
+	game.daily_last_day = today - 3
+	game.daily_streak = 9
+	game.claim_daily()
+	if game.daily_streak != 1:
+		return _fail("a missed day did not reset the streak to 1 (%d)" % game.daily_streak)
+
+	# Restore.
+	game.daily_last_day = keep_last
+	game.daily_streak = keep_streak
+	game.player.gold = keep_gold
+	game.player.potions = keep_pot
+	print("ok: daily login reward (new-day claim, streak advance + reset)")
+
+
+# ---- CORE: records + achievements (best-time keeping, idempotent unlock) -
+func _test_records() -> void:
+	var keep_ach: Dictionary = game.achievements.duplicate()
+	var keep_rec: Dictionary = game.boss_records.duplicate(true)
+
+	# record_boss keeps the FASTEST time and the BEST dps, counting kills.
+	game.boss_records = {}
+	game.record_boss("fangmaw", 30.0, 100.0)
+	game.record_boss("fangmaw", 20.0, 80.0)   # faster clear, weaker dps
+	var r: Dictionary = game.boss_records["fangmaw"]
+	if int(r["kills"]) != 2:
+		return _fail("boss record did not count both kills")
+	if absf(float(r["ttk"]) - 20.0) > 0.01:
+		return _fail("boss record did not keep the fastest time")
+	if absf(float(r["dps"]) - 100.0) > 0.01:
+		return _fail("boss record did not keep the best dps")
+
+	# unlock_achievement is idempotent and rejects unknown ids.
+	game.achievements = {}
+	game.unlock_achievement("first_boss")
+	game.unlock_achievement("first_boss")
+	game.unlock_achievement("not_a_real_id")
+	if not game.achievements.has("first_boss") or game.achievements.size() != 1:
+		return _fail("achievement unlock not idempotent / accepted a bad id")
+
+	# Restore.
+	game.achievements = keep_ach
+	game.boss_records = keep_rec
+	print("ok: records + achievements (best-time keeping, idempotent unlock)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

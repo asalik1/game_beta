@@ -147,6 +147,7 @@ func _aegis() -> void:
 	aegis_time = float(_tfx.get("aegis_dur", 2.5))
 	aegis_amt = float(_tfx.get("aegis_amt", 110.0))
 	aegis_reflect = float(_tfx.get("aegis_reflect", 0.6))
+	aegis_proj_left = Balance.AEGIS_PROJ_CAP  # arrows answered per cast
 	aegis_fx = _tfx.duplicate()
 	var col := _tcolor if _themed else Color(0.7, 0.85, 1.0)
 	_ring_fx(global_position, col, 95.0)
@@ -208,7 +209,7 @@ func _chains_of_wrath(f := 1.0) -> void:
 	for node in targets:
 		var e := node as Enemy
 		_chain_link_fx(e.global_position, col)
-		e.apply_stun(1.2)
+		_stun_or_concuss(e, 1.2)
 		var dir := (e.global_position - global_position).normalized()
 		if dir == Vector2.ZERO:
 			dir = Vector2.RIGHT
@@ -246,7 +247,7 @@ func _chains_of_wrath(f := 1.0) -> void:
 			_smite_rip(e2.global_position, col)
 			hit_enemy(e2, 2.2 * fmul, {"aoe": true, "stun": 0.5})
 			if heal_frac > 0.0:
-				hp = minf(max_hp, hp + max_hp * heal_frac)
+				gain_hp(max_hp * heal_frac)  # holy chains: each drag mends, SHOWN
 		_tfx = saved)
 
 
@@ -282,8 +283,6 @@ func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
 	_muzzle(dir, _tcolor if _themed else Color(0.75, 0.4, 1.0))
 	var p := _proj(dir, mult, "shadowbolt", 460.0)
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
-	if s_passive() == "hollowchoir":
-		p.fx["ric"] = 1  # the choir answers: a second bolt leaps onward
 
 
 ## Hex: curse everything around your target — withered, EXPOSED, and
@@ -566,7 +565,33 @@ func _void_rift(f := 1.0) -> void:
 	for e in _enemies_within(pos, radius):
 		hit_enemy(e, 3.0 * fmul, {"aoe": true})
 		if heal_frac > 0.0:
-			hp = minf(max_hp, hp + max_hp * heal_frac)
+			gain_hp(max_hp * heal_frac)  # pact rift: each caught soul mends, SHOWN
 	_tfx = saved
+	if s_passive() == "voidmaw":
+		_voidmaw_wave()
+
+
+## Voidmaw (warlock S weapon): once the rift resolves, a dark curse-wave
+## rolls off the warlock — SHOVING nearby enemies away (harder the closer)
+## and cursing the whole room. The endgame answer to being swarmed: a mob
+## storm becomes breathing room AND fuel for the curse engine at once.
+func _voidmaw_wave() -> void:
+	game.sfx("gate", 1.1)
+	var col := Color(0.6, 0.28, 0.95)
+	_ring_fx(global_position, col, 340.0)
+	game.burst(global_position, col, 20)
+	hex_fx = _tfx.duplicate()
+	var max_reach := 720.0
+	var eff := {"aoe": true, "vuln": 1.0, "dot": 0.30}
+	for e in _enemies_within(global_position, max_reach):
+		var away: Vector2 = e.global_position - global_position
+		var dist := away.length()
+		if dist > 12.0:
+			var push := clampf(1.0 - dist / max_reach, 0.15, 1.0)  # closer = harder
+			e.knock = away.normalized() * 640.0 * push
+		_beam_fx(global_position, e.global_position, col, 0.14)
+		hit_enemy(e, 0.4, eff.duplicate())
+		if not e.dying:
+			_hex_mark(e)
 
 

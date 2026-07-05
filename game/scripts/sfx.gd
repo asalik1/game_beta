@@ -377,6 +377,11 @@ static func build_all() -> Dictionary:
 		"pdie":     tone(320, 45, 0.8, 0.45, 0.2),
 		"victory":  jingle([523, 659, 784, 1047, 784, 1047], 0.16),
 		"talk":     tone(700, 640, 0.035, 0.18),
+		# Buff feedback (round 44): soft, low-volume cues so on-hit mends and
+		# the arcane ward READ without drowning the swing. Replaceable by
+		# assets/sounds/{mend,ward}.wav.
+		"mend":     tone(560, 780, 0.09, 0.13),          # warm restorative blip
+		"ward":     tone(1150, 1650, 0.14, 0.16),        # crystalline shimmer up
 		# Synthesized fallbacks — normally replaced by assets/sounds/*.wav.
 		"coin":     tone(900, 1400, 0.08, 0.25),
 		"equip":    tone(300, 200, 0.12, 0.3, 0.4),

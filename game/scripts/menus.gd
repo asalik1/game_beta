@@ -224,6 +224,9 @@ func open_pause() -> void:
 			unread += 1
 	_btn(vbox, "  ✉  Mailbox" + ("  (%d new)" % unread if unread > 0 else ""),
 		func() -> void: open_mailbox(), Color(0.8, 0.9, 1.0) if unread > 0 else Color(0.9, 0.9, 0.95))
+	if game.daily_available():
+		_btn(vbox, "  ★  Daily reward  (ready to claim!)",
+			func() -> void: open_daily(), Color(1.0, 0.88, 0.45))
 	var restart := func() -> void:
 		open_confirm("Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(game.chapter_id)["name"],
 			func() -> void: game.replay_chapter(game.chapter_id))
@@ -1290,6 +1293,11 @@ func open_codex(tab := "monsters") -> void:
 ## The mailbox (dropped-loot letters, gifts) lives in ui/mailbox.gd.
 func open_mailbox() -> void:
 	UIMailbox.open(self)
+
+
+## The daily-login reward screen lives in ui/daily.gd.
+func open_daily() -> void:
+	UIDaily.open(self)
 
 
 ## Debug panel (F1, only when launched via dev_mode.bat) — ui/dev_panel.gd.

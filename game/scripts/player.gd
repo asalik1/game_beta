@@ -13,15 +13,30 @@ func _physics_process(delta: float) -> void:
 	hurt_cd = maxf(0.0, hurt_cd - delta)
 	berserk_time = maxf(0.0, berserk_time - delta)
 	theme_speed_time = maxf(0.0, theme_speed_time - delta)
+	dodge_time = maxf(0.0, dodge_time - delta)
 	theme_guard_time = maxf(0.0, theme_guard_time - delta)
 	aegis_time = maxf(0.0, aegis_time - delta)
 	pact_time = maxf(0.0, pact_time - delta)
-	mp = minf(max_mp, mp + (6.0 if cls == "mage" else 4.0) * delta)
+	var mregen := 6.0 if cls == "mage" else 4.0
+	if s_passive() == "wellspring":
+		mregen *= 1.5  # mage S weapon: +50% mana regen — cast through the storm
+	mp = minf(max_mp, mp + mregen * delta)
 	# Melee risk compensation: class-passive HP regeneration. Longer
 	# fights (2x TTK) can't ask melee to eat hits with no comeback.
 	since_hurt += delta
-	ward_time = maxf(0.0, ward_time - delta)
+	dr_time = maxf(0.0, dr_time - delta)
+	cast_haste_time = maxf(0.0, cast_haste_time - delta)
+	dash_guard_time = maxf(0.0, dash_guard_time - delta)
 	stab_ls_time = maxf(0.0, stab_ls_time - delta)
+	# Heal tick: fold accumulated discrete mends into one soft green cue
+	# (~3/s max) so bulwark/holy/nova/kit heals are SEEN, not silent.
+	heal_fx_cd = maxf(0.0, heal_fx_cd - delta)
+	if heal_accum >= 1.0 and heal_fx_cd <= 0.0:
+		heal_fx_cd = 0.3
+		game.spawn_text(global_position + Vector2(0, -46), "+%d" % int(heal_accum), Color(0.5, 1.0, 0.6))
+		game.burst(global_position, Color(0.55, 1.0, 0.6), 5)
+		game.sfx("mend", 1.0, 0.0, -5.0)
+		heal_accum = 0.0
 	# Second Wind (round 14): the no-lifesteal ranged kit's sustain —
 	# stay untouched for sw_delay and recovery kicks in. Spacing skill
 	# IS the heal; one connected hit resets the clock.
@@ -39,16 +54,30 @@ func _physics_process(delta: float) -> void:
 		for e in hexed.keys():
 			if not is_instance_valid(e):
 				hexed.erase(e)  # despawned without dying — no detonation
+				wither.erase(e)
 				continue
 			if e.dying or e.hp <= 0.0:
 				booms.append(e.global_position)
 				hexed.erase(e)
+				wither.erase(e)
 				continue
 			hexed[e] -= delta
 			if hexed[e] <= 0.0:
 				if e.has_node("hex_rune"):
 					e.get_node("hex_rune").queue_free()
 				hexed.erase(e)
+				wither.erase(e)  # a lapsed curse resets the ramp
+				continue
+			# Wither ramp: a MAINTAINED hex deepens with uptime — the
+			# warlock's damage grows with fight length (see balance.gd).
+			var w_before: int = mini(int(float(wither.get(e, 0.0)) / Balance.WITHER_STACK_EVERY),
+				Balance.WITHER_MAX_STACKS)
+			wither[e] = float(wither.get(e, 0.0)) + delta
+			var w_now: int = mini(int(float(wither[e]) / Balance.WITHER_STACK_EVERY),
+				Balance.WITHER_MAX_STACKS)
+			if w_now > w_before:
+				game.spawn_text(e.global_position + Vector2(0, -52),
+					"WITHER x%d" % w_now, Color(0.8, 0.45, 1.0))
 		for pos in booms:
 			_hex_detonate(pos)
 
@@ -73,6 +102,13 @@ func _physics_process(delta: float) -> void:
 	spd *= hazard_speed  # ice patches boost, void rifts slow
 	velocity = dir * spd + game.gust_vec  # sandstorm gusts shove everyone
 	move_and_slide()
+
+	# Speed-buff wind trail: a very faint gust off the back while a theme
+	# speed boost carries you — the only held buff without an aura tell.
+	wind_fx_t = maxf(0.0, wind_fx_t - delta)
+	if theme_speed_time > 0.0 and dir != Vector2.ZERO and wind_fx_t <= 0.0:
+		wind_fx_t = 0.1
+		_wind_wisp(-dir)
 
 	# Walk bob + face the aim target (or move direction).
 	# NOTE: movement facing is normalized (max 1.0) while target facing is
@@ -123,19 +159,28 @@ func _physics_process(delta: float) -> void:
 
 	sprite.modulate.a = 0.55 if hurt_cd > 0.0 else 1.0
 
-	# Buff aura pulse (berserk = red, Aegis = gold, Pact = crimson,
-	# guard = blue).
-	if berserk_time > 0.0 or theme_guard_time > 0.0 or aegis_time > 0.0 or pact_time > 0.0:
+	# Buff aura pulse — the persistent "this is active" tell for every held
+	# buff (berserk = red, Aegis = gold, Ward = arcane cyan, blood surge =
+	# crimson-red, Pact = crimson, guard = blue). Classes don't share these
+	# so the colors never collide in play.
+	if berserk_time > 0.0 or theme_guard_time > 0.0 or aegis_time > 0.0 \
+			or pact_time > 0.0 or dr_time > 0.0 or stab_ls_time > 0.0:
 		aura.visible = true
+		var shimmer := 9.0
 		if berserk_time > 0.0:
 			aura.modulate = Color(1.0, 0.25, 0.15, 0.7)
 		elif aegis_time > 0.0:
 			aura.modulate = Color(1.0, 0.85, 0.4, 0.65)
+		elif dr_time > 0.0:
+			aura.modulate = Color(0.45, 0.85, 1.0, 0.6)  # arcane shield
+			shimmer = 16.0                               # crystalline flicker
+		elif stab_ls_time > 0.0:
+			aura.modulate = Color(0.95, 0.25, 0.30, 0.5)  # blood surge
 		elif pact_time > 0.0 and theme_guard_time <= 0.0:
 			aura.modulate = Color(0.9, 0.15, 0.35, 0.55)
 		else:
 			aura.modulate = Color(0.4, 0.6, 1.0, 0.6)
-		var pulse := 2.2 + sin(anim_t * 9.0) * 0.25
+		var pulse := 2.2 + sin(anim_t * shimmer) * 0.25
 		aura.scale = Vector2(pulse, pulse)
 	else:
 		aura.visible = false
@@ -211,7 +256,10 @@ func use_ability(slot: String) -> void:
 			# Charge: ram through everything in your path, stunning it.
 			melee_swing = 0.16
 			game.sfx("slam")
-			_dash_strike(170.0 * float(_tfx.get("dash_mult", 1.0)), 1.3 * f, {"stun": 1.3, "knock": 220.0})
+			# The ram parks you in the boss's face — a landing i-frame so the
+			# gap-close itself isn't punished (round 44).
+			_dash_strike(170.0 * float(_tfx.get("dash_mult", 1.0)), 1.3 * f,
+				{"stun": 1.3, "knock": 220.0}, 0.0, Balance.MELEE_DASH_IFRAME)
 			_ring_fx(global_position, _tcolor if _themed else Color(0.85, 0.85, 0.95), 80.0)
 			if _tfx.get("end_slam", 0):
 				# Earth: the charge ends in a ground-shattering slam.
@@ -252,12 +300,15 @@ func use_ability(slot: String) -> void:
 			game.hud.flash_screen(Color(0.6, 1.0, 0.6), 0.3, 0.35)
 			game.spawn_text(global_position + Vector2(0, -60), "ARROW STORM!", Color(0.6, 1, 0.6))
 		["mage", "a1"]:
+			# Round 45: Firebolt +25% — the glass cannon earns its damage
+			# now that Blink no longer hands it a free negate (twin/splash
+			# themes scale off this base, lifting Wind's ST and Fire's AoE).
 			if _tfx.get("twin", 0):
 				# Wind: split the bolt.
-				_cast_bolt(aim_dir().rotated(0.09), 0.75 * f)
-				_cast_bolt(aim_dir().rotated(-0.09), 0.75 * f)
+				_cast_bolt(aim_dir().rotated(0.09), 0.94 * f)
+				_cast_bolt(aim_dir().rotated(-0.09), 0.94 * f)
 			else:
-				_cast_bolt(aim_dir(), 1.2 * f)
+				_cast_bolt(aim_dir(), 1.5 * f)
 		["mage", "a2"]: _frost_nova(f)
 		["mage", "a3"]: _blink()
 		["mage", "ult"]: _meteor()
@@ -286,6 +337,11 @@ func use_ability(slot: String) -> void:
 					j_tgt.global_position)
 				_afterimages(j_from, global_position, Color(1.0, 0.9, 0.55), 3)
 				game.sfx("slam", 1.4)
+				# Landing i-frame — but ONLY on the leap (round 44): closing
+				# the gap shouldn't feed you to the boss's swing. Gated on the
+				# >95px leap, so Judgment spam in melee (no leap) never chains
+				# immunity off a 0.5s cd.
+				hurt_cd = maxf(hurt_cd, Balance.MELEE_DASH_IFRAME)
 			var jeff := {"stagger": 0.3, "knock": 280.0}
 			if s_passive() == "dawnbreaker":
 				# A pillar of light falls with the hammer.
@@ -307,7 +363,10 @@ func use_ability(slot: String) -> void:
 		["paladin", "a2"]: _consecration(f)
 		["paladin", "a3"]: _aegis()
 		["paladin", "ult"]: _chains_of_wrath(f)
-		["warlock", "a1"]: _cast_shadowbolt(aim_dir(), 1.0 * f)
+		# Round 45: -10% on the spam bolt so the DoT class trails the pure
+		# single-target burst classes (assassin/archer) on boss TTK — the
+		# wither ramp still pays it back on longer fights.
+		["warlock", "a1"]: _cast_shadowbolt(aim_dir(), 0.9 * f)
 		["warlock", "a2"]: _hex(f)
 		["warlock", "a3"]: _dark_pact(f)
 		["warlock", "ult"]: _void_rift(f)
@@ -332,6 +391,7 @@ func drink_potion() -> void:
 		return
 	potion_cd = 0.6
 	potions -= 1
+	game.fight_note_potion()
 	hp = minf(max_hp, hp + max_hp * 0.6)
 	game.sfx("potion")
 	game.spawn_text(global_position + Vector2(0, -40), "+HP", Color(0.4, 1.0, 0.4))
@@ -351,10 +411,14 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 	if aegis_time > 0.0:
 		res += aegis_amt
 	var was_crit := false
+	# Archer Tumble's post-roll nimbleness adds evasion CHANCE for a beat
+	# (a soft cushion, not the old free negate). Bosses still shave it via
+	# their DEX inside Stats.resolve, so accurate fights stay dangerous.
+	var eff_eva := eva + (dodge_amt if dodge_time > 0.0 else 0.0)
 	if attacker != null:
 		var pen: float = attacker.physpen if dmg_type == "phys" else attacker.magpen
 		var result: Dictionary = Stats.resolve(amount, dmg_type,
-			attacker.crit, 1.5, pen, attacker.dex, res, eva, critres)
+			attacker.crit, 1.5, pen, attacker.dex, res, eff_eva, critres)
 		if result["miss"]:
 			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
 			game.sfx("blink")
@@ -362,26 +426,29 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 		amount = result["dmg"]
 		was_crit = result["crit"]
 	else:
-		if randf() < Stats.eva_curve(eva):
+		if randf() < Stats.eva_curve(eff_eva):
 			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
 			game.sfx("blink")
 			return
 		if dmg_type != "true":
 			amount *= (1.0 - Stats.res_frac(res))
-	if ward_time > 0.0:
-		# Arcane Ward eats the hit whole — one absorb per Blink.
-		ward_time = 0.0
-		hurt_cd = 0.4
-		game.sfx("blink")
-		game.spawn_text(global_position + Vector2(0, -40), "WARDED", Color(0.6, 0.9, 1.0))
-		return
+		if dash_guard_time > 0.0 and dmg_type != "true":
+			# Mirrorstep (assassin S weapon): the un-dodgeable AoE (telegraphs,
+			# hazards — the attacker-less path) is softened during the dash.
+			amount *= 0.65
 	hurt_cd = 0.6
 	since_hurt = 0.0
+	if dr_time > 0.0 and dmg_type != "true":
+		# Arcane Ward (round 45): the mage's Blink cloak — a brief, strong
+		# damage cut that SOFTENS a misstep instead of erasing it (the old
+		# ward absorbed a whole hit). Skips true damage like plate DR.
+		amount *= (1.0 - dr_amt)
 	if flat_dr > 0.0 and dmg_type != "true":
 		# Plate DR (round 21): flat, AFTER resists — immune to the res
 		# curve's saturation, exclusive to the plate classes.
 		amount *= (1.0 - flat_dr)
 	hp -= amount
+	game.fight_note_damage(amount, attacker)
 	game.sfx("hurt")
 	# Getting hit should FEEL like something went wrong: harder shake and
 	# a red edge-flash, scaled a touch by how big the bite was.
@@ -415,6 +482,19 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 					eff["knock"] = 320.0
 				hit_enemy(e, aegis_reflect, eff)
 			_tfx = saved
+		elif attacker is Enemy and is_instance_valid(attacker) \
+				and not (attacker as Enemy).dying and aegis_proj_left > 0:
+			# The shield answers ARROWS too: a blocked projectile smites
+			# its SOURCE at range — half strength, capped per cast.
+			aegis_proj_left -= 1
+			var shooter := attacker as Enemy
+			game.sfx("nova", 1.3)
+			_beam_fx(global_position, shooter.global_position, Color(1.0, 0.92, 0.55), 0.14)
+			_smite_rip(shooter.global_position, Color(1.0, 0.92, 0.55))
+			var saved_fx := _tfx
+			_tfx = aegis_fx
+			hit_enemy(shooter, aegis_reflect * Balance.AEGIS_PROJ_REFLECT, {"aoe": true})
+			_tfx = saved_fx
 
 
 func revive() -> void:

@@ -226,6 +226,18 @@ func _process(delta: float) -> void:
 			current_boss = shown
 			hud.show_boss_bar(shown.display_name)
 		hud.update_boss_bar(current_boss.hp / current_boss.max_hp)
+		# Fight-report bookkeeping: our first blood engages the clock
+		# (a boss's first hit engages via take_damage); brawl
+		# reinforcements join the HP pool the frame they appear.
+		if fight_active:
+			for b in live_bosses:
+				fight_track(b)
+			fight_time += delta
+		else:
+			for b in live_bosses:
+				if b.hp < b.max_hp - 0.5:
+					fight_engage()
+					break
 
 	# Room transitions: walking through a doorway moves you next door.
 	# (Aggro is per-pack now — entering a room wakes nobody by itself.)

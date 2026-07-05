@@ -34,6 +34,13 @@ func _skip_dialogue() -> void:
 func _buff() -> void:
 	game.player.max_hp = 50000.0
 	game.player.hp = 50000.0
+	# Clear transient combat windows that would otherwise LEAK a dodge/cushion
+	# into a fresh section (the archer Tumble eva window is a 20%-flaky dodge
+	# on any later take_damage assertion — e.g. the Aegis smite probe).
+	game.player.dodge_time = 0.0
+	game.player.dr_time = 0.0
+	game.player.cast_haste_time = 0.0
+	game.player.dash_guard_time = 0.0
 
 
 func _dummy(offset := Vector2(100, 0)) -> Enemy:

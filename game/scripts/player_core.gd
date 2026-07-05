@@ -77,8 +77,19 @@ var since_hurt := 999.0  # seconds since the player last TOOK damage
 var flat_dr := 0.0      # plate classes: flat damage reduction AFTER resists
 var stab_ls_time := 0.0  # assassin: lifesteal surge window from a connecting stab
 var stab_ls_amt := 0.0   # surge size — scales with MISSING health at the cut
-var blink_ward := 0.0    # Arcane Ward duration granted by Blink (mage passive)
-var ward_time := 0.0     # while > 0 the next hit is fully absorbed
+var blink_dr := 0.0      # Arcane Ward: DR fraction Blink grants (mage passive)
+var blink_dr_dur := 0.0  # how long that DR window lasts after a Blink
+var dr_time := 0.0       # while > 0, incoming non-true damage is cut by dr_amt
+var dr_amt := 0.0        # active damage-reduction fraction (multiplicative)
+var cast_haste_time := 0.0  # Wind ult tailwind window (Blink/Frost Nova cdr)
+var cast_haste_cdr := 0.0   # + this cdr on Blink/Frost Nova while it holds
+var dash_guard_time := 0.0  # assassin Mirrorstep: AoE damage softened while > 0
+# Heal feedback (round 44): discrete mends (bulwark/holy on-hit, nova,
+# kit drains) accumulate here and surface as one throttled green tick +
+# soft chime — so per-hit spam (whirlwind, chains) stays readable. Route
+# silent heals through gain_hp(); continuous lifesteal/regen stay quiet.
+var heal_accum := 0.0
+var heal_fx_cd := 0.0
 var physres := 0.0
 var magres := 0.0
 var critres := 0.0
@@ -101,17 +112,23 @@ var storm_tick := 0.0
 var storm_fx := {}
 var theme_speed_time := 0.0
 var theme_speed_amt := 0.0
+var wind_fx_t := 0.0     # throttle for the faint speed-buff wind trail
+var dodge_time := 0.0    # archer Tumble: temporary evasion window after the roll
+var dodge_amt := 0.0     # +evasion CHANCE added while dodge_time > 0
 var theme_guard_time := 0.0
 var theme_guard_amt := 0.0
 var hazard_speed := 1.0        # terrain patch effect (ice boosts, void slows)
 var aegis_time := 0.0          # paladin Aegis: the shield is up
 var aegis_amt := 110.0         # resistances granted while it holds
 var aegis_reflect := 0.6       # smite multiplier on attackers
+var aegis_proj_left := 0       # blocked projectiles answered this cast
 var aegis_fx := {}             # theme payload captured at cast
 var pact_time := 0.0           # warlock Dark Pact: lifesteal surge window
 var pact_ls := 0.15
 var hexed := {}                # warlock Hex: Enemy -> seconds left (explodes on death)
 var hex_fx := {}               # theme payload captured when the curse landed
+var wither := {}               # warlock: Enemy -> seconds of MAINTAINED hex uptime
+                               # (stacks = uptime / Balance.WITHER_STACK_EVERY)
 var melee_swing := 0.0         # held-weapon attack animation timer
 var melee_style := "swing"     # "swing" (arc) or "stab" (thrust)
 var melee_dir := Vector2.RIGHT
@@ -223,6 +240,7 @@ func set_class(id: String) -> void:
 	aegis_time = 0.0
 	pact_time = 0.0
 	hexed.clear()
+	wither.clear()
 	themes_known = Classes.themes_unlocked(level)
 	if themes_known > 0:
 		var first: String = Classes.THEMES[cls][0]["id"]
@@ -289,7 +307,7 @@ func recalc() -> void:
 	var b := {"atk_flat": 0.0, "atk_pct": 0.0, "hp_flat": 0.0, "hp_pct": 0.0,
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
 		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
-		"blink_ward": 0.0, "flat_dr": 0.0,
+		"blink_dr": 0.0, "blink_dr_dur": 0.0, "flat_dr": 0.0,
 		"physres": 0.0, "magres": 0.0,
 		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
 		"combo": 0.0, "greed": 0.0}
@@ -338,7 +356,12 @@ func recalc() -> void:
 	regen_pct = b["regen_pct"]
 	sw_regen = b["sw_regen"]
 	sw_delay = b["sw_delay"]
-	blink_ward = b["blink_ward"]
+	if s_passive() == "windward":
+		# Archer S weapon: Second Wind kicks in after 1.5s untouched, not 3s —
+		# the endgame sustain fix (bullet-hell has brief gaps, not long lulls).
+		sw_delay = maxf(0.5, sw_delay - 1.5)
+	blink_dr = b["blink_dr"]
+	blink_dr_dur = b["blink_dr_dur"]
 	flat_dr = b["flat_dr"]
 	physres = b["physres"]
 	magres = b["magres"]
@@ -351,6 +374,17 @@ func recalc() -> void:
 	greed = b["greed"]
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
+
+
+## Heal that SHOWS: raise HP and bank the real (clamped) amount for the
+## throttled green tick in _physics_process. Use for discrete mends the
+## player should SEE; continuous lifesteal/regen stay silent by design.
+func gain_hp(amount: float) -> void:
+	if amount <= 0.0 or dead:
+		return
+	var before := hp
+	hp = minf(max_hp, hp + amount)
+	heal_accum += hp - before
 
 
 func current_atk() -> float:
@@ -414,6 +448,8 @@ func add_item(item: Dictionary) -> bool:
 	if bag_used() >= bag_capacity():
 		return false
 	backpack.append(item)
+	if String(item.get("grade", "")) == "S":
+		game.unlock_achievement("s_gear")
 	return true
 
 
@@ -610,6 +646,7 @@ func gain_xp(amount: int) -> void:
 		skill_points += Balance.SKILL_POINTS_PER_LEVEL
 		unspent_attr += Balance.ATTR_POINTS_PER_LEVEL
 		recalc()
+		_check_level_achievements()
 		# NO free full heal on level-up (round 10): early levels come
 		# fast, and the resets made potions — and merchants — pointless.
 		# recalc() keeps your hp/mp FRACTION as the pools grow.
@@ -623,6 +660,14 @@ func gain_xp(amount: int) -> void:
 			if unlocked == 1:
 				for slot in ability_theme:
 					ability_theme[slot] = theme["id"]
+
+
+## Level milestones (checked after any level-up).
+func _check_level_achievements() -> void:
+	if level >= 20:
+		game.unlock_achievement("level_20")
+	if level >= 40:
+		game.unlock_achievement("level_40")
 
 
 ## Spend unallocated attribute points (STR/AGI/INT/VIT).
@@ -684,6 +729,12 @@ func ability_cd(slot: String) -> float:
 		# below 30s — the authored cd IS the floor.
 		return float(ab["cd"])
 	var cd: float = ab["cd"] * (1.0 + _amod(slot, "cd"))
+	if cast_haste_time > 0.0 and (slot == "a2" or slot == "a3"):
+		# Wind ult TAILWIND: Blink and Frost Nova cool down quicker for the
+		# window — mobility and the heal come back sooner for tight rotations.
+		cd *= 1.0 - cast_haste_cdr
+	if s_passive() == "wellspring" and (slot == "a2" or slot == "a3"):
+		cd *= 0.92  # mage S weapon: Frost Nova & Blink cool down 8% faster
 	return maxf(0.1, cd * (1.0 - cdr))
 
 
