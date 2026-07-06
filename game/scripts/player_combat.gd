@@ -80,8 +80,11 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		pen = magpen
 		e_res = e.magres
 
+	var eff_crit: float = crit + effects.get("crit_bonus", 0.0)
+	if void_crit > 0.0 and effects.get("crush", 0):
+		eff_crit += void_crit  # Nightfall (warlock): Void's crushing line crits more
 	var result := Stats.resolve(current_atk() * mult, dmg_type,
-		crit + effects.get("crit_bonus", 0.0), crit_dmg, pen, dex, e_res, e.eva, e.critres)
+		eff_crit, crit_dmg, pen, dex, e_res, e.eva, e.critres)
 	if result["miss"]:
 		game.spawn_text(e.global_position + Vector2(0, -30), "MISS", Color(0.7, 0.7, 0.7))
 		return
@@ -146,6 +149,10 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# (shove, hard pull) takes the hit deeper.
 	if effects.get("crush", 0) and e.crush_t > 0.0:
 		dmg *= 1.0 + Balance.CRUSH_MULT
+	# Rupture (warlock Void talent): anything you've displaced hard takes more
+	# from EVERY hit — the payoff for choreographing shoves and pulls.
+	if crush_amp > 0.0 and e.crush_t > 0.0:
+		dmg *= 1.0 + crush_amp
 	# Killing Frost (mage Ice talent): bite harder into slowed or frozen prey.
 	if chill_dmg > 0.0 and (e.slow_time > 0.0 or e.stun_time > 0.0):
 		dmg *= 1.0 + chill_dmg
@@ -171,6 +178,13 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		e.knock = dir * effects["knock"]
 	if effects.has("pull") and not e.dying:
 		e.knock = -dir * 380.0
+	if effects.has("shove") and not e.dying:
+		# Void's light shove: opens the crush window every hit, but a boss is
+		# barely moved (BOSS_SHOVE_FACTOR). The crush window is set DIRECTLY so
+		# it fires regardless of how far the target actually slid.
+		var sf: float = effects["shove"]
+		e.knock = dir * (sf * Balance.BOSS_SHOVE_FACTOR if e is Boss else sf)
+		e.crush_t = Balance.CRUSH_WINDOW
 	if effects.has("splash"):
 		game.burst(e.global_position, _tcolor if _themed else Color(1.0, 0.6, 0.2), 8)
 		for e2 in _enemies_within(e.global_position, 80.0):

@@ -21,6 +21,7 @@ var mail_btn: Button            # ✉ under Resonance — click to open the mail
 var mail_badge: Panel           # red unread-count circle on the ✉
 var mail_badge_num: Label
 var daily_btn: Button           # ★ beside the ✉ — shown only when a daily waits
+var daily_glow: Sprite2D        # pulsing shine behind the ★
 
 # quest / zone
 var zone_label: Label
@@ -105,11 +106,11 @@ func _ready() -> void:
 	# (outer aura + pearl heart) driven by _update_resonance_orb.
 	res_orb_glow = Sprite2D.new()
 	res_orb_glow.texture = Art.tex("glow")
-	res_orb_glow.position = Vector2(30, 156)
+	res_orb_glow.position = Vector2(30, 161)
 	add_child(res_orb_glow)
 	res_orb_core = Sprite2D.new()
 	res_orb_core.texture = Art.tex("glow")
-	res_orb_core.position = Vector2(30, 156)
+	res_orb_core.position = Vector2(30, 161)
 	add_child(res_orb_core)
 	res_particles = CPUParticles2D.new()
 	res_particles.position = Vector2(88, 158)
@@ -167,7 +168,14 @@ func _ready() -> void:
 	mail_badge.add_child(mail_badge_num)
 
 	# Daily-reward star: appears beside the ✉ only when a reward is waiting,
-	# pulsing gold to draw the eye. Click opens the claim screen.
+	# with a pulsing golden SHINE behind it to draw the eye. Click opens the
+	# claim screen. The glow is added first so it sits BEHIND the star.
+	daily_glow = Sprite2D.new()
+	daily_glow.texture = Art.tex("glow")
+	daily_glow.position = Vector2(68, 189)  # centered on the ★
+	daily_glow.modulate = Color(1.0, 0.85, 0.35, 0.0)
+	daily_glow.visible = false
+	add_child(daily_glow)
 	daily_btn = Button.new()
 	daily_btn.flat = true
 	daily_btn.text = "★"
@@ -175,7 +183,7 @@ func _ready() -> void:
 	daily_btn.add_theme_font_size_override("font_size", 22)
 	daily_btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
 	daily_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.7))
-	daily_btn.position = Vector2(52, 178)
+	daily_btn.position = Vector2(52, 173)  # nudged up to line up with the ✉
 	daily_btn.size = Vector2(32, 30)
 	daily_btn.visible = false
 	daily_btn.pressed.connect(func() -> void:
@@ -735,11 +743,17 @@ func update_stats(p: Player) -> void:
 	if unread > 0:
 		mail_badge_num.text = str(unread) if unread < 10 else "9+"
 
-	# Daily star: visible only when a reward waits, pulsing to catch the eye.
+	# Daily star: visible only when a reward waits, with a pulsing golden
+	# shine behind it to catch the eye.
 	daily_btn.visible = game.daily_available()
+	daily_glow.visible = daily_btn.visible
 	if daily_btn.visible:
-		var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() * 0.006)
-		daily_btn.modulate = Color(1.0, 1.0, 1.0, 0.7 + 0.3 * pulse)
+		var t := Time.get_ticks_msec() * 0.001
+		var pulse := 0.5 + 0.5 * sin(t * 3.6)
+		daily_btn.modulate = Color(1.0, 1.0, 1.0, 0.75 + 0.25 * pulse)
+		# Shine: the glow breathes in size and brightness under the star.
+		daily_glow.modulate = Color(1.0, 0.88, 0.4, 0.25 + 0.4 * pulse)
+		daily_glow.scale = Vector2.ONE * (0.5 + 0.16 * pulse)
 
 	_update_buffs()
 	_update_minimap()

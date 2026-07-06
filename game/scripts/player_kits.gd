@@ -326,6 +326,19 @@ func _hex(f := 1.0) -> void:
 			_hex_mark(e)
 
 
+## Contagion (warlock talent): a cursed death seeds the curse onto one nearby
+## un-cursed enemy — EXPOSED + explode-on-death + wither, no damage hit (so it
+## carries the attrition engine into packs without touching single-target).
+func _spread_curse(pos: Vector2) -> void:
+	for e in _enemies_within(pos, 160.0):
+		if hexed.has(e) or e.dying:
+			continue
+		e.vuln_time = 3.0  # EXPOSED
+		_hex_mark(e)
+		_beam_fx(pos, e.global_position, Color(0.8, 0.45, 1.0), 0.14)
+		return
+
+
 func _hex_mark(e: Enemy) -> void:
 	hexed[e] = 8.0
 	if e.has_node("hex_rune"):

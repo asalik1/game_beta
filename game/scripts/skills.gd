@@ -66,7 +66,7 @@ const TREES := {
 			{"id": "m02", "name": "Seeker Winds",  "desc": "Firebolt homes toward its target; +3% Firebolt damage", "bonus": {"bolt_homing": 1.0}, "amod": {"a1": {"dmg": 0.03}}},
 		],
 		[
-			{"id": "m10", "name": "Rimeheart",    "desc": "Frost Nova also heals 1.5% max HP/s for 6s (recast renews, never stacks)", "bonus": {"nova_regen": 0.015}},
+			{"id": "m10", "name": "Rimeheart",    "desc": "Frost Nova also heals 1.5% max HP/s for 6s", "bonus": {"nova_regen": 0.015}},
 			{"id": "m11", "name": "Frost Armor",  "desc": "+5 phys & magic res, +2 crit res", "bonus": {"physres": 5.0, "magres": 5.0, "critres": 2.0}},
 			{"id": "m12", "name": "Slipstream",   "desc": "Blink cooldown -5%", "amod": {"a3": {"cd": -0.05}}},
 		],
@@ -100,7 +100,7 @@ const TREES := {
 		[
 			{"id": "s30", "name": "Plaguebearer", "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
 			{"id": "s31", "name": "Phantom",      "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
-			{"id": "s32", "name": "Exsanguinate", "desc": "Shadow Dash connect-refund +5% (deepens the dance toward the 1.0s floor)", "bonus": {"dash_refund": 0.05}},
+			{"id": "s32", "name": "Exsanguinate", "desc": "Shadow Dash connect-refund +5% (toward the 1s floor)", "bonus": {"dash_refund": 0.05}},
 		],
 	],
 	"paladin": [  # columns: Holy / Aegis / Wrath
@@ -127,23 +127,23 @@ const TREES := {
 	],
 	"warlock": [  # columns: Curse / Pact / Void
 		[
-			{"id": "k00", "name": "Wither",         "desc": "Shadowbolt +5% damage", "amod": {"a1": {"dmg": 0.05}}},
-			{"id": "k01", "name": "Blood Tithe",    "desc": "+1% lifesteal", "bonus": {"lifesteal": 0.01}},
-			{"id": "k02", "name": "Deep Reservoir", "desc": "+8 max mana", "bonus": {"mp_flat": 8.0}},
+			{"id": "k00", "name": "Wither",       "desc": "Shadowbolt +5% damage", "amod": {"a1": {"dmg": 0.05}}},
+			{"id": "k01", "name": "Blood Tithe",  "desc": "+1% lifesteal", "bonus": {"lifesteal": 0.01}},
+			{"id": "k02", "name": "Doomward",     "desc": "+3% damage reduction while any enemy is cursed", "bonus": {"curse_dr": 0.03}},
 		],
 		[
-			{"id": "k10", "name": "Creeping Doom",  "desc": "Hex +6% damage", "amod": {"a2": {"dmg": 0.06}}},
-			{"id": "k11", "name": "Crimson Vigor",  "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
-			{"id": "k12", "name": "Warp Step",      "desc": "+1% move speed", "bonus": {"speed_pct": 0.01}},
+			{"id": "k10", "name": "Contagion",    "desc": "Cursed deaths spread the curse to a nearby foe (20% chance/pt)", "bonus": {"curse_spread": 0.20}},
+			{"id": "k11", "name": "Transfusion",  "desc": "Lifesteal overheal becomes a temporary shield (caps at 5% max HP per point)", "bonus": {"transfusion": 0.05}},
+			{"id": "k12", "name": "Rupture",      "desc": "Enemies you've shoved or pulled take +4% damage from your hits", "bonus": {"crush_amp": 0.04}},
 		],
 		[
 			{"id": "k20", "name": "Unraveling", "desc": "+4 magic penetration", "bonus": {"magpen": 4.0}},
-			{"id": "k21", "name": "Bargainer",  "desc": "Dark Pact +8% damage", "amod": {"a3": {"dmg": 0.08}}},
-			{"id": "k22", "name": "Slipspace",  "desc": "+1.5% evasion", "bonus": {"eva": 0.015}},
+			{"id": "k21", "name": "Sacrificial Might", "desc": "+3% total damage while below 50% max HP", "bonus": {"lowhp_dmg": 0.03}},
+			{"id": "k22", "name": "Nightfall",  "desc": "+5% crit to your crushing (Void) abilities", "bonus": {"void_crit": 0.05}},
 		],
 		[
 			{"id": "k30", "name": "Archfiend's Favor", "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
-			{"id": "k31", "name": "Soulfeast",         "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "k31", "name": "Last Rites",        "desc": "Survive a lethal blow at 5% max HP/pt (once per min)", "bonus": {"last_rites": 1.0}},
 			{"id": "k32", "name": "Annihilation",      "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
 		],
 	],

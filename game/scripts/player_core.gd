@@ -91,6 +91,15 @@ var nova_regen := 0.0       # mage Rimeheart talent: Frost Nova HoT rate (/sec)
 var nova_regen_time := 0.0  # active Rimeheart heal-over-time window
 var dash_refund := 0.0      # assassin Exsanguinate talent: + to Shadow Dash refund
 var execute_dmg := 0.0      # assassin Coup de Grâce talent: +dmg to sub-40% enemies
+var curse_dr := 0.0         # warlock Doomward talent: DR while any enemy is cursed
+var crush_amp := 0.0        # warlock Rupture talent: +dmg to displaced (crush) targets
+var void_crit := 0.0        # warlock Nightfall talent: +crit to crushing (Void) abilities
+var curse_spread := 0.0     # warlock Contagion talent: curse-jump chance on a cursed death
+var transfusion := 0.0      # warlock Transfusion talent: lifesteal overheal -> shield (cap frac)
+var lowhp_dmg := 0.0        # warlock Sacrificial Might talent: +dmg while below 50% HP
+var shield := 0.0           # current absorb shield (Transfusion overheal buffer)
+var last_rites := 0.0       # warlock Last Rites talent: >0 enables the cheat-death
+var last_rites_cd := 0.0    # cooldown on the cheat-death (60s)
 # Heal feedback (round 44): discrete mends (bulwark/holy on-hit, nova,
 # kit drains) accumulate here and surface as one throttled green tick +
 # soft chime — so per-hit spam (whirlwind, chains) stays readable. Route
@@ -324,6 +333,8 @@ func recalc() -> void:
 		"blink_dr": 0.0, "blink_dr_dur": 0.0, "flat_dr": 0.0,
 		"chill_dmg": 0.0, "poison_dmg": 0.0, "bolt_homing": 0.0, "nova_regen": 0.0,
 		"dash_refund": 0.0, "execute_dmg": 0.0,
+		"curse_dr": 0.0, "crush_amp": 0.0, "void_crit": 0.0,
+		"curse_spread": 0.0, "transfusion": 0.0, "lowhp_dmg": 0.0, "last_rites": 0.0,
 		"physres": 0.0, "magres": 0.0,
 		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
 		"combo": 0.0, "greed": 0.0}
@@ -392,6 +403,13 @@ func recalc() -> void:
 	nova_regen = b["nova_regen"]
 	dash_refund = b["dash_refund"]
 	execute_dmg = b["execute_dmg"]
+	curse_dr = b["curse_dr"]
+	crush_amp = b["crush_amp"]
+	void_crit = b["void_crit"]
+	curse_spread = b["curse_spread"]
+	transfusion = b["transfusion"]
+	lowhp_dmg = b["lowhp_dmg"]
+	last_rites = b["last_rites"]
 	flat_dr = b["flat_dr"]
 	physres = b["physres"]
 	magres = b["magres"]
@@ -415,6 +433,12 @@ func gain_hp(amount: float) -> void:
 	var before := hp
 	hp = minf(max_hp, hp + amount)
 	heal_accum += hp - before
+	# Transfusion (warlock talent): healing wasted at full HP pools into a
+	# temporary shield, HARD-CAPPED so it never stacks past the limit.
+	if transfusion > 0.0:
+		var overflow := amount - (hp - before)
+		if overflow > 0.0:
+			shield = minf(transfusion * max_hp, shield + overflow)
 
 
 func current_atk() -> float:
@@ -423,6 +447,8 @@ func current_atk() -> float:
 		a *= 1.0 + berserk_bonus
 	if elixir_time > 0.0:
 		a *= 1.0 + elixir_atk  # Elixir of Might
+	if lowhp_dmg > 0.0 and hp < max_hp * 0.5:
+		a *= 1.0 + lowhp_dmg   # Sacrificial Might (warlock): blood-price aggression
 	return a
 
 

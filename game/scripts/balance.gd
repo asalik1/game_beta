@@ -147,7 +147,13 @@ const BRITTLE_DUR := 6.0
 # at 220) is "in motion against its will" for a short grace window.
 const CRUSH_MULT := 0.25
 const CRUSH_MIN_KNOCK := 240.0
-const CRUSH_WINDOW := 0.7
+# Round 47: crush window widened (0.7→1.5) so ONE displacement keeps Void's
+# crush-crit combo live for ~3 bolts, not one — the Void warlock's damage
+# rides crush uptime, and a 0.7s window on a 9s-cd shove was ~8% uptime.
+const CRUSH_WINDOW := 1.5
+# A "shove" (light-displacement fx) moves a boss only this fraction as far as
+# a mob — Void keeps constant crush uptime without flinging the boss around.
+const BOSS_SHOVE_FACTOR := 0.4
 # AEGIS ANSWERS ARROWS (paladin a3): a blocked PROJECTILE smites its
 # shooter at this fraction of the melee reflect, capped per cast.
 const AEGIS_PROJ_REFLECT := 0.5

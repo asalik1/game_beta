@@ -65,6 +65,7 @@ func reset_fight() -> void:
 	_reset_ch3_state()
 	_reset_ch4_state()
 	_reset_ch5_state()
+	_reset_ch6_state()
 
 
 func _think(delta: float) -> Vector2:
@@ -110,6 +111,12 @@ func _think(delta: float) -> Vector2:
 			return _icebound(player, to_player, dist, delta)
 		"sleepkeeper":
 			return _sleepkeeper(player, to_player, dist, delta)
+		"auroch":  # Chapter 6 block (The Blooming Deep) at the end of this file
+			return _auroch(player, to_player, dist, delta)
+		"gardener":
+			return _gardener(player, to_player, dist, delta)
+		"curetwisted":
+			return _curetwisted(player, to_player, dist, delta)
 	return Vector2.ZERO
 
 
@@ -895,6 +902,14 @@ func _clear_boss_props() -> void:
 		if is_instance_valid(d):
 			d.queue_free()
 	dreamers.clear()
+	for b in blooms:
+		if is_instance_valid(b):
+			b.queue_free()
+	blooms.clear()
+	for r in roots:
+		if is_instance_valid(r):
+			r.queue_free()
+	roots.clear()
 
 
 ## The arena rect for half/zone telegraphs — the room when placed in the
@@ -1508,3 +1523,334 @@ func _frost_hymnal(player: Player) -> void:
 			player.global_position + Vector2(randf_range(-200, 200), randf_range(-160, 160)), home)
 		game.telegraph(at, 110.0, 0.9, dmg * 1.2, {"color": FROST})
 		game._add_hazard(game.cur_room, "slow", at, 90.0, 8.0)
+
+
+# ========================================================== Chapter 6 ---
+# The Blooming Deep (BOSSES.md). Data lives in content/ch6_bosses.gd. The
+# submerge reuses ch3's burrow; blooms reuse the censer add-channel; the
+# one new primitive is Kaethra's FORM SWAP. Placeholder sprites/music.
+
+const BOG := Color(0.5, 0.72, 0.4, 0.55)     # auroch / rotmaw bog-green
+const ROOTC := Color(0.6, 0.85, 0.4, 0.55)   # rotmaw / kaethra growth
+
+var auroch_setup := false
+var blooms: Array = []         # rotmaw: stationary bloom adds
+var bloom_t := 0.0
+var gardener_setup := false
+var full_bloom := false        # rotmaw: 30% enrage
+var form := 0                  # kaethra: 0 = Huntress (melee), 1 = Bloom (rooted)
+var form_stage := 0            # kaethra: hard swaps done (80/60/40/20%)
+var roots: Array = []          # kaethra: Bloom-form root adds (heal while alive)
+var kaethra_ended := false     # kaethra: 10% — the Root lets go, fight ends
+
+
+func _reset_ch6_state() -> void:
+	auroch_setup = false
+	bloom_t = 0.0
+	gardener_setup = false
+	full_bloom = false
+	form = 0
+	form_stage = 0
+	kaethra_ended = false  # blooms / roots freed by _clear_boss_props
+
+
+# ------------------------------------------- The Drowned Auroch (L34) ---
+## Submerging beast (Sexton's burrow at scale). It sinks untargetable,
+## chases with eruption lines + surfaces under you; the cycle shortens as
+## it bleeds. Gore rush between dives; wallow splashes poison.
+func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if burrowed:
+		return Vector2.ZERO
+	if not auroch_setup:
+		auroch_setup = true
+		game.spawn_text(global_position + Vector2(0, -84), "It is a weather system with horns.", BOG)
+
+	# Signature: SUBMERGE — sink, chase, surface. Shortens as HP drops.
+	if special_cd <= 0.0:
+		special_cd = lerpf(24.0, 13.0, 1.0 - hp / max_hp)
+		_submerge(player)
+		return Vector2.ZERO
+
+	if charging:
+		charge_time -= delta
+		if charge_time <= 0.0:
+			charging = false
+		if dist < 78.0 and attack_cd <= 0.0:
+			attack_cd = 0.8
+			player.take_damage(dmg * 1.3, dmg_type, self)
+		return charge_dir * 600.0
+
+	# Gore rush: surface-phase charge.
+	if ability_cd <= 0.0 and dist < 500.0 and not telegraphing:
+		telegraphing = true
+		_do_charge(to_player)
+		return Vector2.ZERO
+	if telegraphing:
+		return Vector2.ZERO
+
+	# Wallow: shockwave ring + poison splash.
+	if ring_cd <= 0.0 and dist < 320.0:
+		ring_cd = 6.5
+		game.sfx("slam")
+		game.shake(8.0)
+		for i in 12:
+			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 200.0, dmg * 0.7)
+		for i in 3:
+			var at: Vector2 = game.clamp_to_zone(global_position + Vector2.from_angle(randf() * TAU) * randf_range(90.0, 180.0), home)
+			game._add_hazard(game.cur_room, "poison", at, 80.0, 8.0)
+
+	if dist < 72.0:
+		if attack_cd <= 0.0:
+			attack_cd = 1.0
+			player.take_damage(dmg, dmg_type, self)
+		return Vector2.ZERO
+	return to_player.normalized() * speed
+
+
+func _submerge(player: Player) -> void:
+	burrowed = true
+	untargetable = true
+	collision_layer = 0
+	collision_mask = 0
+	sprite.visible = false
+	charging = false
+	telegraphing = false
+	game.sfx("slam")
+	game.burst(global_position, BOG, 16)
+	game.spawn_text(global_position + Vector2(0, -84), "IT SINKS...", BOG)
+	# Chasing eruption lines toward the prey + 2 bog-spawn adds.
+	for i in 4:
+		var at: Vector2 = game.clamp_to_zone(player.global_position + Vector2.from_angle(randf() * TAU) * (80.0 + i * 70.0), home)
+		game.telegraph(at, 80.0, 0.6 + i * 0.15, dmg * 1.2, {"color": BOG})
+	for off in [Vector2(-120, -60), Vector2(120, 60)]:
+		var add := Enemy.make(game, "spider", global_position + off, level)
+		add.xp_value = 0
+		add.gold_value = 0
+		add.force_aggro = true
+		game.add_enemy(add)
+	await get_tree().create_timer(2.2).timeout
+	if dying or not burrowed:
+		return
+	var surf: Vector2 = game.clamp_to_zone(
+		game.player.global_position if is_instance_valid(game.player) else home, home)
+	global_position = surf
+	burrowed = false
+	untargetable = false
+	collision_layer = 4
+	collision_mask = 1 | 2 | 4
+	sprite.visible = true
+	game.telegraph(surf, 110.0, 0.4, dmg * 1.4, {"color": BOG})  # surface slam
+	game.burst(surf, BOG, 20)
+	roar()
+
+
+# ------------------------------------------- Rotmaw the Gardener (L35) ---
+## Zone-control caster. BLOOMS (censer-kin) sprout and spread drifting
+## poison — weed them. VINE LASH roots you inside a closing ring. COMPOST:
+## a bloom killed within 150px HEALS him, so weed the far garden. At 30%
+## full bloom.
+func _gardener(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if not gardener_setup:
+		gardener_setup = true
+		_sprout_blooms()
+		game.spawn_text(global_position + Vector2(0, -84), "The garden is carnivorous.", ROOTC)
+
+	_tend_blooms()
+	bloom_t -= delta
+	if bloom_t <= 0.0:
+		bloom_t = 6.0 if full_bloom else 9.0
+		_sprout_blooms()
+
+	if hp <= max_hp * 0.3 and not full_bloom:
+		full_bloom = true
+		enraged = true
+		sprite.modulate = Color(0.7, 1.3, 0.6)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "FULL BLOOM!", ROOTC)
+		_sprout_blooms()
+
+	# Signature: VINE LASH — root the player inside a closing ring.
+	if special_cd <= 0.0:
+		special_cd = 7.0 if full_bloom else 10.0
+		_vine_lash(player)
+
+	# Spore volley.
+	if ability_cd <= 0.0:
+		ability_cd = 2.8
+		game.sfx("bolt")
+		var aim := to_player.normalized()
+		for spread in [-0.22, 0.0, 0.22]:
+			_bolt(aim.rotated(spread) * 280.0, dmg)
+
+	if dist < 250.0:
+		return -to_player.normalized() * speed
+	elif dist > 380.0:
+		return to_player.normalized() * speed
+	return to_player.orthogonal().normalized() * speed * 0.5
+
+
+func _sprout_blooms() -> void:
+	var live := 0
+	for b in blooms:
+		if is_instance_valid(b) and not b.dying:
+			live += 1
+	var cap := 4 if full_bloom else 3
+	for i in maxi(0, cap - live):
+		var at: Vector2 = game.clamp_to_zone(home + Vector2.from_angle(randf() * TAU) * randf_range(150.0, 340.0), home)
+		var bloom := Enemy.make(game, "choir_censer", at, level)
+		bloom.xp_value = 0
+		bloom.gold_value = 0
+		bloom.attack_cd = 1.0e9
+		bloom.aggro_range = 0.0
+		game.add_enemy(bloom)
+		blooms.append(bloom)
+		game.burst(at, ROOTC, 8)
+
+
+## Living blooms spread drifting poison; a bloom that falls near Rotmaw
+## COMPOSTS (heals him) — weed the far garden, kite him off the near one.
+func _tend_blooms() -> void:
+	var still: Array = []
+	for b in blooms:
+		if not is_instance_valid(b):
+			continue
+		if b.dying:
+			if b.global_position.distance_to(global_position) <= 150.0:
+				hp = minf(max_hp, hp + max_hp * 0.04)
+				game.spawn_text(global_position + Vector2(0, -70), "he composts the bloom", ROOTC)
+			continue
+		still.append(b)
+		if randf() < 0.01:  # throttled drift-poison spread
+			game._add_hazard(game.cur_room, "poison", b.global_position, 70.0, 5.0,
+				Vector2.from_angle(randf() * TAU) * 20.0)
+	blooms = still
+
+
+func _vine_lash(player: Player) -> void:
+	roar()
+	player.apply_root(1.2)
+	game.spawn_text(player.global_position + Vector2(0, -50), "VINE LASH!", ROOTC)
+	var center := player.global_position
+	for i in 8:  # a closing ring — break out once the root lets go
+		game.telegraph(center + Vector2.from_angle(TAU * i / 8.0) * 210.0, 74.0, 1.4, dmg * 1.2, {"color": ROOTC})
+
+
+# ------------------------------------------- Kaethra Cure-Twisted (L37) ---
+## Two-form tragedy. Hard swap at 80/60/40/20%: HUNTRESS (melee charges)
+## and BLOOM (rooted, heals via two root-adds — kill them to stop the
+## heal). At 10% the Root lets go and the fight ENDS (the strike-or-sheathe
+## convo attaches when the chapter is authored; here she simply stops).
+func _curetwisted(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	const THRESH := [0.8, 0.6, 0.4, 0.2]
+	if form_stage < THRESH.size() and hp <= max_hp * THRESH[form_stage]:
+		form_stage += 1
+		_kaethra_swap()
+
+	if hp <= max_hp * 0.1 and not kaethra_ended:
+		kaethra_ended = true
+		_kaethra_finale()
+		return Vector2.ZERO
+	if kaethra_ended:
+		return Vector2.ZERO
+
+	if form == 0:
+		return _kaethra_huntress(player, to_player, dist, delta)
+	return _kaethra_bloom(player, to_player, dist, delta)
+
+
+func _kaethra_swap() -> void:
+	roar()
+	charging = false
+	telegraphing = false
+	form = 1 - form
+	if form == 0:
+		_clear_roots()
+		speed = float(_stats_at(kind, level)["speed"])
+		sprite.modulate = Color(1.3, 1.0, 0.85)
+		game.spawn_text(global_position + Vector2(0, -84), "\"...still me. For now.\"", ROOTC)
+	else:
+		speed = 0.0
+		sprite.modulate = Color(0.7, 1.2, 0.7)
+		_spawn_roots()
+		game.spawn_text(global_position + Vector2(0, -84), "\"The Root wants to STAY.\"", ROOTC)
+
+
+func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if charging:
+		charge_time -= delta
+		if charge_time <= 0.0:
+			charging = false
+		if dist < 76.0 and attack_cd <= 0.0:
+			attack_cd = 0.7
+			player.take_damage(dmg * 1.3, dmg_type, self)
+		return charge_dir * 620.0
+	if special_cd <= 0.0 and dist < 520.0 and not telegraphing:
+		special_cd = 6.0
+		telegraphing = true
+		_do_charge(to_player)
+		return Vector2.ZERO
+	if telegraphing:
+		return Vector2.ZERO
+	if ability_cd <= 0.0 and dist < 220.0:
+		ability_cd = 4.0
+		game.sfx("slam")
+		game.shake(6.0)
+		for i in 10:
+			_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0) * 190.0, dmg * 0.6)
+	if dist < 70.0:
+		if attack_cd <= 0.0:
+			attack_cd = 0.85
+			player.take_damage(dmg, dmg_type, self)
+		return Vector2.ZERO
+	return to_player.normalized() * speed
+
+
+func _kaethra_bloom(player: Player, to_player: Vector2, _dist: float, delta: float) -> Vector2:
+	# She mends while any root lives — cut them to stop the heal.
+	var root_alive := false
+	for r in roots:
+		if is_instance_valid(r) and not r.dying:
+			root_alive = true
+			break
+	if root_alive:
+		hp = minf(max_hp, hp + max_hp * 0.02 * delta)
+	if special_cd <= 0.0:
+		special_cd = 5.0
+		game.sfx("bolt")
+		for i in 8:
+			_bolt(Vector2.RIGHT.rotated(TAU * i / 8.0 + randf() * 0.3) * 260.0, dmg)
+	if ability_cd <= 0.0:
+		ability_cd = 2.4
+		game.sfx("bolt")
+		var aim := to_player.normalized()
+		for spread in [-0.3, -0.1, 0.1, 0.3]:
+			_bolt(aim.rotated(spread) * 270.0, dmg)
+	return Vector2.ZERO  # rooted in place
+
+
+func _spawn_roots() -> void:
+	for off in [Vector2(-90, -40), Vector2(90, 40)]:
+		var at: Vector2 = game.clamp_to_zone(global_position + off, home)
+		var r := Enemy.make(game, "choir_censer", at, level)
+		r.xp_value = 0
+		r.gold_value = 0
+		r.attack_cd = 1.0e9
+		r.aggro_range = 0.0
+		game.add_enemy(r)
+		roots.append(r)
+		game.burst(at, ROOTC, 8)
+
+
+func _clear_roots() -> void:
+	for r in roots:
+		if is_instance_valid(r):
+			r.queue_free()
+	roots.clear()
+
+
+func _kaethra_finale() -> void:
+	roar()
+	_clear_roots()
+	speed = 0.0
+	sprite.modulate = Color(1.0, 0.95, 0.9)
+	game.spawn_text(global_position + Vector2(0, -90), "The Root lets go. She looks at you.", ROOTC)

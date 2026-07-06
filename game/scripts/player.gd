@@ -30,6 +30,9 @@ func _physics_process(delta: float) -> void:
 	dr_time = maxf(0.0, dr_time - delta)
 	cast_haste_time = maxf(0.0, cast_haste_time - delta)
 	dash_guard_time = maxf(0.0, dash_guard_time - delta)
+	last_rites_cd = maxf(0.0, last_rites_cd - delta)
+	if shield > 0.0:
+		shield = maxf(0.0, shield - max_hp * 0.05 * delta)  # Transfusion buffer fades
 	if nova_regen_time > 0.0:
 		nova_regen_time = maxf(0.0, nova_regen_time - delta)
 		gain_hp(max_hp * nova_regen * delta)  # Rimeheart heal-over-time
@@ -64,6 +67,8 @@ func _physics_process(delta: float) -> void:
 				continue
 			if e.dying or e.hp <= 0.0:
 				booms.append(e.global_position)
+				if curse_spread > 0.0 and randf() < minf(1.0, curse_spread):
+					_spread_curse(e.global_position)  # Contagion: the curse leaps onward
 				hexed.erase(e)
 				wither.erase(e)
 				continue
@@ -479,6 +484,14 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 		# Plate DR (round 21): flat, AFTER resists — immune to the res
 		# curve's saturation, exclusive to the plate classes.
 		amount *= (1.0 - flat_dr)
+	if curse_dr > 0.0 and dmg_type != "true" and not hexed.is_empty():
+		# Doomward (warlock talent): maintaining a curse wards YOU as well.
+		amount *= (1.0 - curse_dr)
+	if shield > 0.0:
+		# Transfusion shield eats the blow first (any damage type).
+		var absorbed: float = minf(shield, amount)
+		shield -= absorbed
+		amount -= absorbed
 	hp -= amount
 	game.fight_note_damage(amount, attacker)
 	game.sfx("hurt")
@@ -492,10 +505,19 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 	else:
 		game.spawn_text(global_position + Vector2(0, -40), "-%d" % int(amount), Color(1.0, 0.35, 0.3))
 	if hp <= 0.0:
-		hp = 0.0
-		dead = true
-		game.on_player_died()
-		return
+		if last_rites > 0.0 and last_rites_cd <= 0.0:
+			# Last Rites (warlock talent): the pact refuses death, once a minute —
+			# survive at 5% max HP per point invested (up to 25% at 5).
+			hp = max_hp * 0.05 * last_rites
+			last_rites_cd = 60.0
+			game.spawn_text(global_position + Vector2(0, -60), "LAST RITES", Color(0.85, 0.35, 1.0))
+			game.burst(global_position, Color(0.7, 0.2, 1.0), 22)
+			game.hud.flash_screen(Color(0.5, 0.1, 0.7), 0.5, 0.5)
+		else:
+			hp = 0.0
+			dead = true
+			game.on_player_died()
+			return
 	# Aegis redirect: while the shield is up, whoever strikes you is
 	# smitten in return (everything in arm's reach pays for the blow).
 	if aegis_time > 0.0:

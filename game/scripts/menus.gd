@@ -942,6 +942,7 @@ func open_skills(tab := "talents") -> void:
 				add_cb, color, can or pts > 0,
 				Art.glyph_tex(_cell_glyph(cd), theme_col if unlocked else Color(0.4, 0.4, 0.45)))
 			b.custom_minimum_size = Vector2(288, 0)
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD  # long talent descs wrap, not overflow
 			if not can:
 				b.disabled = true
 
@@ -1401,7 +1402,8 @@ const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
 	"stormwarden", "choirmother", "nullwarden",  # (T4) ch2 content bosses
 	"sexton", "vess", "saint_varo",  # ch3 Unburied Vale (BOSSES.md)
 	"forgemistress", "cinderhide", "ashpriest",  # ch4 Slagfields (BOSSES.md)
-	"whitepelt", "icebound", "sleepkeeper"]  # ch5 Long Sleep (BOSSES.md)
+	"whitepelt", "icebound", "sleepkeeper",  # ch5 Long Sleep (BOSSES.md)
+	"auroch", "gardener", "curetwisted"]  # ch6 Blooming Deep (BOSSES.md)
 
 ## Codex screens live in ui/codex.gd.
 func open_codex(tab := "monsters") -> void:
