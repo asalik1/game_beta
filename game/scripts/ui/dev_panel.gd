@@ -106,10 +106,11 @@ static func open(m: Menus) -> void:
 		14, Color(0.85, 0.9, 1.0) if report != "" else Color(0.6, 0.62, 0.68))
 	rlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	# ----------------------------------------------- meta / new features ---
-	# Quick levers for the retention/meta systems so they can be exercised
-	# without waiting on the real clock or grinding to the trigger.
-	_section(m, list, "META & NEW FEATURES (quick test)")
+	# --------------------------------------------- progression & economy ---
+	# Levers for the account/progression systems (dailies, bounties, vault,
+	# achievements, records) and the economy (consumables, gambling) so they
+	# can be exercised without waiting on the clock or grinding the trigger.
+	_section(m, list, "PROGRESSION & ECONOMY")
 	var mrow := _flow(list)
 	m._btn(mrow, "Daily: make claimable", func() -> void:
 		m.game.daily_last_day = -1
