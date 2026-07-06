@@ -149,6 +149,9 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# Killing Frost (mage Ice talent): bite harder into slowed or frozen prey.
 	if chill_dmg > 0.0 and (e.slow_time > 0.0 or e.stun_time > 0.0):
 		dmg *= 1.0 + chill_dmg
+	# Serpent's Due (archer Venom talent): poisoned prey takes extra damage.
+	if poison_dmg > 0.0 and e.burn_time > 0.0:
+		dmg *= 1.0 + poison_dmg
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -505,7 +508,9 @@ func _frost_nova(f := 1.0) -> void:
 	# (ranged kits can rarely connect close-range damage safely).
 	gain_hp((max_hp - hp) * 0.2)  # nova drinks the cold — SHOW the mend
 	if nova_regen > 0.0:
-		nova_regen_time = 3.0  # Rimeheart (mage talent): the cold keeps mending
+		# Rimeheart (mage talent): the cold keeps mending — a long, slow trickle
+		# (recast RENEWS this window, never stacks the rate: spam ≠ more potency).
+		nova_regen_time = 6.0
 	mp = minf(max_mp, mp + (max_mp - mp) * 0.2)
 	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
 	var col := _tcolor if _themed else Color(0.45, 0.8, 1.0)

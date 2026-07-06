@@ -85,6 +85,7 @@ var cast_haste_time := 0.0  # Wind ult tailwind window (Blink/Frost Nova cdr)
 var cast_haste_cdr := 0.0   # + this cdr on Blink/Frost Nova while it holds
 var dash_guard_time := 0.0  # assassin Mirrorstep: AoE damage softened while > 0
 var chill_dmg := 0.0        # mage Killing Frost talent: +dmg vs slowed/frozen
+var poison_dmg := 0.0       # archer Serpent's Due talent: +dmg vs DoT'd enemies
 var bolt_homing := 0.0      # mage Seeker Winds talent: Firebolt homes (>0 = on)
 var nova_regen := 0.0       # mage Rimeheart talent: Frost Nova HoT rate (/sec)
 var nova_regen_time := 0.0  # active Rimeheart heal-over-time window
@@ -312,7 +313,7 @@ func recalc() -> void:
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
 		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
 		"blink_dr": 0.0, "blink_dr_dur": 0.0, "flat_dr": 0.0,
-		"chill_dmg": 0.0, "bolt_homing": 0.0, "nova_regen": 0.0,
+		"chill_dmg": 0.0, "poison_dmg": 0.0, "bolt_homing": 0.0, "nova_regen": 0.0,
 		"physres": 0.0, "magres": 0.0,
 		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
 		"combo": 0.0, "greed": 0.0}
@@ -368,6 +369,7 @@ func recalc() -> void:
 	blink_dr = b["blink_dr"]
 	blink_dr_dur = b["blink_dr_dur"]
 	chill_dmg = b["chill_dmg"]
+	poison_dmg = b["poison_dmg"]
 	bolt_homing = b["bolt_homing"]
 	nova_regen = b["nova_regen"]
 	flat_dr = b["flat_dr"]

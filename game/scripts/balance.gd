@@ -210,6 +210,31 @@ const DAILY_REWARDS := [
 static func daily_gold_mult(level: int) -> float:
 	return 1.0 + 0.12 * float(maxi(level - 1, 0))
 
+# --------------------------------------------------------------- bounties ---
+# Rotating objectives: 2 daily + 1 weekly, rolled DETERMINISTICALLY from
+# these pools by trusted-clock day/week index (so relogging can't reroll).
+# Progress is driven by kill/clear events (bounty_progress). Gold scales
+# with level like the daily; gems are flat. Types: boss_kills /
+# rooms_cleared / elite_kills.
+const BOUNTY_DAILY_COUNT := 2
+const BOUNTY_WEEKLY_COUNT := 1
+const BOUNTY_POOL := {
+	"daily": [
+		{"type": "boss_kills",    "target": 1, "desc": "Slay a boss",        "gold": 220},
+		{"type": "rooms_cleared", "target": 4, "desc": "Clear 4 rooms",      "gold": 150},
+		{"type": "elite_kills",   "target": 2, "desc": "Slay 2 elites",      "gold": 180},
+	],
+	"weekly": [
+		{"type": "boss_kills",    "target": 5,  "desc": "Slay 5 bosses",    "gold": 800, "gems": 1, "gem_lvl": 2},
+		{"type": "rooms_cleared", "target": 25, "desc": "Clear 25 rooms",   "gold": 700, "gems": 1, "gem_lvl": 2},
+		{"type": "elite_kills",   "target": 10, "desc": "Slay 10 elites",   "gold": 750, "gems": 1, "gem_lvl": 2},
+	],
+}
+
+# Weekly vault: kill this many bosses in a trusted-clock week to unlock one
+# guaranteed golden-chest reward, claimable once per week (great-vault style).
+const VAULT_BOSS_GOAL := 5
+
 # ----------------------------------------------------------------- rooms ---
 # Quiet room types shrink their walled playable area within the fixed
 # grid cell (corridors connect the doors to the cell edges).

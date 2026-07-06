@@ -63,6 +63,7 @@ func reset_fight() -> void:
 	speed = _stats_for(kind)["speed"]  # (T4) content bosses resolve here too
 	_reset_ch2_state()
 	_reset_ch3_state()
+	_reset_ch4_state()
 
 
 func _think(delta: float) -> Vector2:
@@ -96,6 +97,12 @@ func _think(delta: float) -> Vector2:
 			return _vess(player, to_player, dist)
 		"saint_varo":
 			return _saint_varo(player, to_player, dist, delta)
+		"forgemistress":  # Chapter 4 block (The Slagfields) at the end of this file
+			return _forgemistress(player, to_player, dist, delta)
+		"cinderhide":
+			return _cinderhide(player, to_player, dist, delta)
+		"ashpriest":
+			return _ashpriest(player, to_player, dist, delta)
 	return Vector2.ZERO
 
 
@@ -273,6 +280,8 @@ func die() -> void:
 	for c in censers:
 		if is_instance_valid(c):
 			c.queue_free()
+	# (Ch4) Slag pools / marching sons clean up with their master.
+	_clear_boss_props()
 	super.die()
 
 
@@ -816,3 +825,385 @@ func _reliquary_rain() -> void:
 			return
 		game.telegraph(game.player.global_position, 85.0, 0.75, dmg * 1.3, {"sword": true})
 		await get_tree().create_timer(0.55).timeout
+
+
+# ========================================================== Chapter 4 ---
+# The Slagfields (BOSSES.md). Data lives in content/ch4_bosses.gd. Three
+# new primitives debut here per the toolbox: walk-to-point + intercept
+# (Calda's quench, reused by Ordo's marching Sons), terrain-patch contact
+# on a boss (Cinderhide's lava-melt), and rect/half-arena zones (Ordo's
+# Verdict, reused by Cyrraeth). Placeholder sprites/music until assets land.
+
+const FORGE := Color(1.0, 0.5, 0.15, 0.6)     # calda's forge-orange
+const LAVA := Color(1.0, 0.35, 0.1, 0.5)      # cinderhide / ordo slag
+const VERDICT := Color(1.0, 0.55, 0.2, 0.55)  # ordo's judgment
+
+var boss_props: Array = []      # stationary visual props (slag pools) to free
+var heat := 0.0                 # calda: 0..1 forge heat
+var quenching := false          # calda: marching to a pool
+var quench_target := Vector2.ZERO
+var quench_stacks := 0          # calda: damage buff from clean quenches
+var calda_setup := false
+var plated := false             # cinderhide: obsidian plating up
+var melt := 0.0                 # cinderhide: lava-contact meter
+var plate_shed_t := 0.0         # cinderhide: seconds of exposed window left
+var cinder_setup := false
+var sons: Array = []            # ordo: marching ember adds
+var sons_waves := 0             # ordo: relights fired (66% / 33%)
+var verdict_speed := 1.0        # ordo: verdicts quicken as sons arrive
+var ordo_setup := false
+
+
+func _reset_ch4_state() -> void:
+	_clear_boss_props()
+	heat = 0.0
+	quenching = false
+	quench_stacks = 0
+	calda_setup = false
+	melt = 0.0
+	plate_shed_t = 0.0
+	if kind == "cinderhide":  # restore the honest base resists, not a melt value
+		var base: Dictionary = _stats_at(kind, level)
+		physres = float(base["physres"])
+		magres = float(base["magres"])
+	plated = false
+	cinder_setup = false
+	sons_waves = 0
+	verdict_speed = 1.0
+	ordo_setup = false
+
+
+## Stationary props (Calda's pools) and marching adds (Ordo's Sons) die
+## with their master or when the fight resets.
+func _clear_boss_props() -> void:
+	for p in boss_props:
+		if is_instance_valid(p):
+			p.queue_free()
+	boss_props.clear()
+	for s in sons:
+		if is_instance_valid(s):
+			s.queue_free()
+	sons.clear()
+
+
+## The arena rect for half/zone telegraphs — the room when placed in the
+## world, a home-centred fallback for dev/selftest spawns.
+func _arena_rect() -> Rect2:
+	if zone_idx >= 0 and zone_idx < game.zone_count:
+		return game.room_rect(zone_idx)
+	return Rect2(home - Vector2(700, 500), Vector2(1400, 1000))
+
+
+## Is the boss standing in a lava patch (its own vents, or the arena)?
+func _on_lava() -> bool:
+	for h in game.hazards:
+		if String(h.get("type", "")) != "lava":
+			continue
+		var at: Vector2 = h.get("pos", Vector2.ZERO)
+		if global_position.distance_to(at) <= float(h.get("radius", 0.0)):
+			return true
+	return false
+
+
+# ------------------------------------------- Forgemistress Calda (L23) ---
+## Melee skirmisher on a HEAT CLOCK: her weapon heats over ~12s (hits and
+## telegraphs grow); she marches to a slag pool to QUENCH (reset heat +
+## stacking damage buff). Body-block the pool and she quenches THROUGH you
+## — the fight's hardest hit — and gains nothing.
+func _forgemistress(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if not calda_setup:
+		calda_setup = true
+		_calda_pools()
+		game.spawn_text(global_position + Vector2(0, -84), "The forge is cold — for now.", FORGE)
+
+	if not quenching:
+		heat = minf(1.0, heat + delta / 12.0)
+	sprite.modulate = Color(1, 1, 1).lerp(Color(2.0, 0.9, 0.6), heat)
+
+	# Signature: QUENCH — march to the nearest slag pool.
+	if special_cd <= 0.0 and not quenching and boss_props.size() > 0:
+		special_cd = 10.0
+		quenching = true
+		quench_target = _nearest_pool()
+		roar()
+		game.spawn_text(global_position + Vector2(0, -84), "Calda moves to quench!", FORGE)
+	if quenching:
+		if global_position.distance_to(quench_target) <= 60.0:
+			quenching = false
+			_do_quench(player)
+			return Vector2.ZERO
+		return (quench_target - global_position).normalized() * speed
+
+	# Hammer lines: forge-orange lash telegraphs, wider when white-hot.
+	if ability_cd <= 0.0 and dist < 520.0:
+		ability_cd = 3.4
+		var dir := to_player.normalized()
+		var rad := 105.0 if heat >= 1.0 else 75.0
+		for i in 4:
+			game.telegraph(global_position + dir * (110.0 + i * 95.0), rad,
+				0.45 + i * 0.10, dmg * (1.0 + 0.12 * quench_stacks) * 1.2, {"color": FORGE})
+
+	if dist < 66.0:
+		if attack_cd <= 0.0:
+			attack_cd = 0.9
+			var hit := dmg * (1.0 + 0.12 * quench_stacks) * (1.3 if heat >= 1.0 else 1.0)
+			player.take_damage(hit, dmg_type, self)
+		return Vector2.ZERO
+	return to_player.normalized() * speed
+
+
+func _calda_pools() -> void:
+	var base_ang := randf() * TAU
+	for i in 3:
+		var at: Vector2 = game.clamp_to_zone(home + Vector2.from_angle(base_ang + TAU * i / 3.0) * 300.0, home)
+		var pool := Sprite2D.new()
+		pool.texture = Art.tex("glow")
+		pool.modulate = Color(1.0, 0.4, 0.1, 0.5)
+		pool.global_position = at
+		pool.scale = Vector2(4.6, 4.0)
+		pool.z_index = -7
+		game.world.add_child(pool)
+		boss_props.append(pool)
+
+
+func _nearest_pool() -> Vector2:
+	var best := global_position
+	var bd := 1.0e9
+	for p in boss_props:
+		if not is_instance_valid(p):
+			continue
+		var d := global_position.distance_to(p.global_position)
+		if d < bd:
+			bd = d
+			best = p.global_position
+	return best
+
+
+func _do_quench(player: Player) -> void:
+	if player.global_position.distance_to(quench_target) <= 120.0:
+		# Body-blocked: she quenches THROUGH the player — no buff, but the
+		# hardest hit in the fight lands where she meant the pool to be.
+		game.spawn_text(quench_target + Vector2(0, -60), "QUENCHED THROUGH!", FORGE)
+		game.telegraph(quench_target, 130.0, 0.5, dmg * 2.2, {"color": FORGE})
+		heat = 0.0
+	else:
+		quench_stacks += 1
+		heat = 0.0
+		game.burst(quench_target, FORGE, 16)
+		game.spawn_text(global_position + Vector2(0, -70),
+			"Calda quenches — her edge sharpens (x%d)" % quench_stacks, FORGE)
+
+
+# ------------------------------------------ Cinderhide the Unquenched (L25) ---
+## Armored beast, near-immune while PLATED (physres/magres ~85). Lava is
+## the answer: standing in it melts the plating (bait the Fangmaw-lineage
+## charge across a pool it vented). At full melt the plates shed ~10s and
+## the damage window opens — but a magma tantrum rides it. At 30% the
+## plates stop regrowing and it enrages into a chase.
+func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if not cinder_setup:
+		cinder_setup = true
+		plated = true
+		physres += 60.0
+		magres += 60.0
+		game.spawn_text(global_position + Vector2(0, -84), "Its obsidian hide is a meter thick.", LAVA)
+
+	# Lava contact melts the plating.
+	if _on_lava():
+		melt += delta
+		game.burst(global_position, LAVA, 2)
+	else:
+		melt = maxf(0.0, melt - delta * 0.4)
+	if plated and melt >= 2.5:
+		plated = false
+		melt = 0.0
+		plate_shed_t = 10.0
+		physres = maxf(15.0, physres - 60.0)
+		magres = maxf(15.0, magres - 60.0)
+		sprite.modulate = Color(1.6, 0.8, 0.5)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "THE PLATING SHEDS!", Color(1.0, 0.7, 0.3))
+		_tantrum()
+	if plate_shed_t > 0.0:
+		plate_shed_t -= delta
+		if plate_shed_t <= 0.0 and hp > max_hp * 0.3 and not enraged:
+			plated = true
+			physres += 60.0
+			magres += 60.0
+			sprite.modulate = Color(1, 1, 1)
+			game.spawn_text(global_position + Vector2(0, -84), "The obsidian reforms.", LAVA)
+
+	if hp <= max_hp * 0.3 and not enraged:
+		enraged = true
+		if plated:  # plates stop regrowing — the window stays open
+			plated = false
+			physres = maxf(15.0, physres - 60.0)
+			magres = maxf(15.0, magres - 60.0)
+		plate_shed_t = 0.0
+		speed *= 1.35
+		sprite.modulate = Color(1.7, 0.6, 0.4)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "CINDERHIDE ENRAGES!", Color(1.0, 0.4, 0.2))
+
+	if charging:
+		charge_time -= delta
+		if charge_time <= 0.0:
+			charging = false
+		if dist < 76.0 and attack_cd <= 0.0:
+			attack_cd = 0.8
+			player.take_damage(dmg * 1.3, dmg_type, self)
+		return charge_dir * 600.0
+
+	# Signature: VENT BREATH — a cone that lingers as the lava you lure it into.
+	if special_cd <= 0.0 and dist < 560.0:
+		special_cd = 7.0 if enraged else 9.5
+		_vent_breath(player)
+		return Vector2.ZERO
+
+	# Charge (Fangmaw lineage): bait it across a pool to melt the plating.
+	if ability_cd <= 0.0 and dist < 520.0 and not telegraphing:
+		telegraphing = true
+		_do_charge(to_player)
+		return Vector2.ZERO
+	if telegraphing:
+		return Vector2.ZERO
+
+	# Enraged: extra magma rain hammers the chase.
+	if enraged and ring_cd <= 0.0:
+		ring_cd = 3.5
+		for i in 3:
+			game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
+				75.0, 0.6, dmg * 1.1, {"color": LAVA})
+
+	if dist < 72.0:
+		if attack_cd <= 0.0:
+			attack_cd = 1.0
+			player.take_damage(dmg, dmg_type, self)
+		return Vector2.ZERO
+	return to_player.normalized() * speed
+
+
+func _vent_breath(player: Player) -> void:
+	roar()
+	game.spawn_text(global_position + Vector2(0, -84), "Vent breath!", LAVA)
+	var dir := (player.global_position - global_position).normalized()
+	for i in 4:
+		var at: Vector2 = game.clamp_to_zone(
+			global_position + dir.rotated(randf_range(-0.35, 0.35)) * (150.0 + i * 90.0), home)
+		game.telegraph(at, 80.0, 0.5 + i * 0.1, dmg * 1.2, {"color": LAVA})
+		game._add_hazard(game.cur_room, "lava", at, 70.0, 6.0)
+
+
+func _tantrum() -> void:
+	if not is_instance_valid(game.player):
+		return
+	for i in 5:
+		game.telegraph(game.player.global_position + Vector2(randf_range(-180, 180), randf_range(-150, 150)),
+			78.0, 0.7 + i * 0.05, dmg * 1.2, {"color": LAVA})
+
+
+# ----------------------- Ashpriest Ordo, Voice of the Molten Judge (L28) ---
+## Ranged herald. THE VERDICT judges one half of the arena (paired below
+## 50%); at 66% / 33% four SONS march toward him — each arrival heals him
+## and quickens his verdicts, so intercept them. At 20% the Judge attends
+## and magma rain runs continuous.
+func _ashpriest(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if not ordo_setup:
+		ordo_setup = true
+		game.spawn_text(global_position + Vector2(0, -84), "The sermon begins.", VERDICT)
+
+	_march_sons(delta)
+
+	if (sons_waves == 0 and hp <= max_hp * 0.66) or (sons_waves == 1 and hp <= max_hp * 0.33):
+		sons_waves += 1
+		_spawn_sons()
+
+	if hp <= max_hp * 0.2 and not enraged:
+		enraged = true
+		sprite.modulate = Color(1.6, 0.7, 0.4)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "THE JUDGE ATTENDS.", Color(1.0, 0.5, 0.2))
+
+	# Signature: THE VERDICT — half the arena is judged.
+	if special_cd <= 0.0:
+		special_cd = (5.0 if enraged else 7.5) / verdict_speed
+		_verdict()
+
+	if enraged and ring_cd <= 0.0:
+		ring_cd = 3.0
+		for i in 3:
+			game.telegraph(player.global_position + Vector2(randf_range(-170, 170), randf_range(-140, 140)),
+				76.0, 0.6, dmg, {"color": LAVA})
+
+	# Brand volleys keep the range honest.
+	if ability_cd <= 0.0:
+		ability_cd = 2.6
+		game.sfx("bolt")
+		var aim := to_player.normalized()
+		for spread in [-0.28, -0.09, 0.09, 0.28]:
+			_bolt(aim.rotated(spread) * 300.0, dmg)
+
+	if dist < 250.0:
+		return -to_player.normalized() * speed
+	elif dist > 380.0:
+		return to_player.normalized() * speed
+	return to_player.orthogonal().normalized() * speed * 0.5
+
+
+## Ember Sons crawl toward Ordo; the player intercepts. Each arrival is
+## consumed for an +8% heal and faster verdicts.
+func _march_sons(delta: float) -> void:
+	var still: Array = []
+	for s in sons:
+		if not is_instance_valid(s) or s.dying:
+			continue
+		var to: Vector2 = global_position - s.global_position
+		if to.length() <= 90.0:
+			hp = minf(max_hp, hp + max_hp * 0.08)
+			verdict_speed = minf(2.5, verdict_speed + 0.15)
+			game.spawn_text(global_position + Vector2(0, -70), "the Judge consumes a Son", VERDICT)
+			s.queue_free()
+			continue
+		s.global_position += to.normalized() * 70.0 * delta
+		still.append(s)
+	sons = still
+
+
+func _spawn_sons() -> void:
+	roar()
+	game.spawn_text(global_position + Vector2(0, -84), "SONS OF THE JUDGE — INTERCEPT THEM!", VERDICT)
+	var rect := _arena_rect()
+	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
+	for i in 4:
+		var corner: Vector2 = corners[i]
+		var at: Vector2 = game.clamp_to_zone(corner.lerp(rect.get_center(), 0.2), home)
+		var son := Enemy.make(game, "cultist", at, level)
+		son.xp_value = 0
+		son.gold_value = 0
+		son.speed = 0.0        # driven manually toward Ordo (not the player)
+		son.aggro_range = 0.0  # they ignore you; you choose to stop them
+		game.add_enemy(son)
+		sons.append(son)
+		game.burst(at, VERDICT, 10)
+
+
+func _verdict() -> void:
+	roar()
+	var rect := _arena_rect()
+	var west := randf() < 0.5
+	game.spawn_text(global_position + Vector2(0, -84),
+		"GUILTY: THE %s" % ("WEST" if west else "EAST"), VERDICT)
+	var pairs := 2 if hp <= max_hp * 0.5 else 1
+	for p in pairs:
+		_judge_half(rect, west if p == 0 else not west, 2.4 + p * 0.5)
+
+
+## Tile telegraphs across the judged half — the other half is the shelter.
+func _judge_half(rect: Rect2, west: bool, delay: float) -> void:
+	var x0 := rect.position.x + (0.0 if west else rect.size.x * 0.5)
+	var half_w := rect.size.x * 0.5
+	for cx in 5:
+		for cy in 4:
+			var at := Vector2(x0 + (cx + 0.5) / 5.0 * half_w,
+				rect.position.y + (cy + 0.5) / 4.0 * rect.size.y)
+			game.telegraph(at, 92.0, delay, dmg * 1.2, {"color": VERDICT})

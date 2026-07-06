@@ -50,6 +50,9 @@ static func write(game: Game, slot: int) -> void:
 		"clock_anchor": game.trusted_now(),
 		"daily_last_day": game.daily_last_day, "daily_streak": game.daily_streak,
 		"achievements": game.achievements.keys(), "boss_records": game.boss_records,
+		"bounties": game.bounties, "bounty_day": game.bounty_day, "bounty_week": game.bounty_week,
+		"vault_week": game.vault_week, "vault_progress": game.vault_progress,
+		"vault_claimed_week": game.vault_claimed_week,
 		"bosses_slain": game.boss_done.keys(),
 		"flags": game.flags,
 		"merchant_zones": game.merchant_zones,
@@ -173,6 +176,20 @@ static func apply(game: Game, data: Dictionary) -> void:
 		game.boss_records[String(k)] = {
 			"ttk": float(r.get("ttk", 0.0)), "dps": float(r.get("dps", 0.0)),
 			"kills": int(r.get("kills", 0))}
+	game.bounties = []
+	for raw in data.get("bounties", []):
+		var b: Dictionary = raw
+		game.bounties.append({
+			"scope": String(b.get("scope", "daily")), "type": String(b.get("type", "boss_kills")),
+			"target": int(b.get("target", 1)), "progress": int(b.get("progress", 0)),
+			"desc": String(b.get("desc", "")), "gold": int(b.get("gold", 0)),
+			"gems": int(b.get("gems", 0)), "gem_lvl": int(b.get("gem_lvl", 1)),
+			"done": bool(b.get("done", false))})
+	game.bounty_day = int(data.get("bounty_day", -1))
+	game.bounty_week = int(data.get("bounty_week", -1))
+	game.vault_week = int(data.get("vault_week", -1))
+	game.vault_progress = int(data.get("vault_progress", 0))
+	game.vault_claimed_week = int(data.get("vault_claimed_week", -1))
 	game.mailbox = data.get("mailbox", [])
 	game.dropped_loot = data.get("dropped_loot", [])
 	for mail in game.mailbox:

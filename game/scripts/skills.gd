@@ -39,23 +39,23 @@ const TREES := {
 	],
 	"archer": [  # columns: Storm / Venom / Hunt
 		[
-			{"id": "a00", "name": "Swift Shot",   "desc": "Quick Shot +5% damage", "amod": {"a1": {"dmg": 0.05}}},
-			{"id": "a01", "name": "Toxin Coat",   "desc": "Multishot +5% damage", "amod": {"a2": {"dmg": 0.05}}},
-			{"id": "a02", "name": "Steady Aim",   "desc": "+1.5% crit chance", "bonus": {"crit": 0.015}},
+			{"id": "a00", "name": "Swift Shot",       "desc": "Quick Shot +5% damage", "amod": {"a1": {"dmg": 0.05}}},
+			{"id": "a01", "name": "Serpent's Due",    "desc": "+8% damage to poisoned enemies", "bonus": {"poison_dmg": 0.08}},
+			{"id": "a02", "name": "Steady Aim",       "desc": "+1.5% crit chance", "bonus": {"crit": 0.015}},
 		],
 		[
-			{"id": "a10", "name": "Chain Reflex", "desc": "+1% combo chance", "bonus": {"combo": 0.01}},
-			{"id": "a11", "name": "Light Feet",   "desc": "+1% move speed", "bonus": {"speed_pct": 0.01}},
-			{"id": "a12", "name": "Keen Sight",   "desc": "+3 DEX (reduces enemy evasion)", "bonus": {"dex": 3.0}},
+			{"id": "a10", "name": "Chain Reflex",     "desc": "+2% combo chance", "bonus": {"combo": 0.02}},
+			{"id": "a11", "name": "Second Breath",    "desc": "Second Wind regen +1% max HP/s", "bonus": {"sw_regen": 0.01}},
+			{"id": "a12", "name": "Falcon's Patience", "desc": "Arrow Storm cooldown -10%", "amod": {"ult": {"cd": -0.10}}},
 		],
 		[
-			{"id": "a20", "name": "Rapid Quiver", "desc": "Multishot cooldown -5%", "amod": {"a2": {"cd": -0.05}}},
-			{"id": "a21", "name": "Evasive",      "desc": "+1.5% evasion", "bonus": {"eva": 0.015}},
-			{"id": "a22", "name": "Piercer",      "desc": "+4 physical penetration", "bonus": {"physpen": 4.0}},
+			{"id": "a20", "name": "Rapid Quiver",     "desc": "Multishot cooldown -5% and +4% damage", "amod": {"a2": {"cd": -0.05, "dmg": 0.04}}},
+			{"id": "a21", "name": "Evasive",          "desc": "+1.5% evasion", "bonus": {"eva": 0.015}},
+			{"id": "a22", "name": "Piercer",          "desc": "+4 physical penetration", "bonus": {"physpen": 4.0}},
 		],
 		[
 			{"id": "a30", "name": "Stormcaller", "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
-			{"id": "a31", "name": "Survivalist", "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "a31", "name": "Windrunner",  "desc": "Tumble cooldown -3%", "amod": {"a3": {"cd": -0.03}}},
 			{"id": "a32", "name": "Executioner", "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
 		],
 	],
@@ -66,7 +66,7 @@ const TREES := {
 			{"id": "m02", "name": "Seeker Winds",  "desc": "Firebolt homes toward its target; +3% Firebolt damage", "bonus": {"bolt_homing": 1.0}, "amod": {"a1": {"dmg": 0.03}}},
 		],
 		[
-			{"id": "m10", "name": "Rimeheart",    "desc": "Frost Nova also heals 3% max HP/s for 3s", "bonus": {"nova_regen": 0.03}},
+			{"id": "m10", "name": "Rimeheart",    "desc": "Frost Nova also heals 1.5% max HP/s for 6s (recast renews, never stacks)", "bonus": {"nova_regen": 0.015}},
 			{"id": "m11", "name": "Frost Armor",  "desc": "+5 phys & magic res, +2 crit res", "bonus": {"physres": 5.0, "magres": 5.0, "critres": 2.0}},
 			{"id": "m12", "name": "Slipstream",   "desc": "Blink cooldown -5%", "amod": {"a3": {"cd": -0.05}}},
 		],

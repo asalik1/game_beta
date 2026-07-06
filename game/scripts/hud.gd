@@ -742,6 +742,7 @@ func update_stats(p: Player) -> void:
 
 	_update_buffs()
 	_update_minimap()
+	game.refresh_bounties()  # rolls the daily/weekly sets when the clock ticks over
 
 	# Ability bar: cooldown shade + countdown number + affordability color.
 	var now_ms := Time.get_ticks_msec()

@@ -14,26 +14,40 @@ const FACTION_NAME := {
 
 static func open(m: Menus) -> void:
 	var g := m.game
-	var vbox := m._open("Quest Log — %s" % String(Story.chapter(g.chapter_id)["name"]), 860, 620)
+	g.refresh_bounties()  # make sure the day/week sets are current
+	var vbox := m._open("Quest Log — %s" % String(Story.chapter(g.chapter_id)["name"]), 860, 640)
 	m.current = "journal"
 
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 6)
+	scroll.add_child(list)
+
 	# --- current objective ---
-	m._lbl(vbox, "— CURRENT OBJECTIVE —", 16, Color(0.95, 0.85, 0.5))
+	m._lbl(list, "— CURRENT OBJECTIVE —", 16, Color(0.95, 0.85, 0.5))
 	var obj := Story.quest_text(g.quest_key)
-	var ol := m._lbl(vbox, "◆  " + (obj if obj != "" else "Explore."), 16, Color(1, 1, 1))
+	var ol := m._lbl(list, "◆  " + (obj if obj != "" else "Explore."), 16, Color(1, 1, 1))
 	ol.custom_minimum_size = Vector2(800, 0)
 	ol.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var zi: int = clampi(g.cur_room, 0, g.zone_count - 1)
 	var left: int = g.zone_alive.get(zi, 0)
 	if left > 0:
-		m._lbl(vbox, "   This room: %d monster%s left to clear." % [left, "" if left == 1 else "s"],
+		m._lbl(list, "   This room: %d monster%s left to clear." % [left, "" if left == 1 else "s"],
 			13, Color(0.8, 0.7, 0.5))
 
+	_bounties(m, list)
+	_vault(m, list)
+
 	# --- chapter boss checklist ---
-	m._lbl(vbox, "— CHAPTER BOSSES —", 16, Color(1, 0.6, 0.6))
+	m._lbl(list, "— CHAPTER BOSSES —", 16, Color(1, 0.6, 0.6))
 	var bosses := VBoxContainer.new()
 	bosses.add_theme_constant_override("separation", 2)
-	vbox.add_child(bosses)
+	list.add_child(bosses)
 	var seen := {}
 	var any_boss := false
 	for i in g.zone_count:
@@ -50,31 +64,68 @@ static func open(m: Menus) -> void:
 		m._lbl(bosses, "None charted yet.", 13, Color(0.6, 0.62, 0.68))
 
 	# --- exploration + resonance ---
-	m._lbl(vbox, "— PROGRESS —", 16, Color(0.6, 0.9, 1.0))
+	m._lbl(list, "— PROGRESS —", 16, Color(0.6, 0.9, 1.0))
 	var visited := 0
 	for i in g.zone_count:
 		if g.visited.get(i, false):
 			visited += 1
-	m._lbl(vbox, "Rooms charted:  %d / %d" % [visited, g.zone_count], 14, Color(0.85, 0.88, 0.94))
+	m._lbl(list, "Rooms charted:  %d / %d" % [visited, g.zone_count], 14, Color(0.85, 0.88, 0.94))
 	var res := int(g.player.resonance)
 	var band := "Virtuous" if res > 20 else ("Tempted" if res < -20 else "Balanced")
-	m._lbl(vbox, "Resonance:  %+d  (%s)" % [res, band], 14,
+	m._lbl(list, "Resonance:  %+d  (%s)" % [res, band], 14,
 		Color(1.0, 0.85, 0.4) if res > 20 else (Color(0.7, 0.5, 0.95) if res < -20 else Color(0.85, 0.85, 0.9)))
 
 	# --- factions ---
-	m._lbl(vbox, "— STANDING —", 16, Color(0.8, 0.9, 0.7))
+	m._lbl(list, "— STANDING —", 16, Color(0.8, 0.9, 0.7))
 	for fid in g.player.faction_standing:
 		var v: int = int(g.player.faction_standing[fid])
 		if v == 0:
 			continue
-		var name: String = FACTION_NAME.get(fid, String(fid).capitalize())
-		m._lbl(vbox, "%s:  %+d" % [name, v], 14,
+		var fname: String = FACTION_NAME.get(fid, String(fid).capitalize())
+		m._lbl(list, "%s:  %+d" % [fname, v], 14,
 			Color(0.7, 1.0, 0.7) if v > 0 else Color(1.0, 0.7, 0.6))
 	var neutral := true
 	for fid in g.player.faction_standing:
 		if int(g.player.faction_standing[fid]) != 0:
 			neutral = false
 	if neutral:
-		m._lbl(vbox, "No faction has taken your measure yet.", 13, Color(0.6, 0.62, 0.68))
+		m._lbl(list, "No faction has taken your measure yet.", 13, Color(0.6, 0.62, 0.68))
 
 	m._hint(vbox, "ESC to close")
+
+
+## Active bounties with progress. Daily first, then weekly.
+static func _bounties(m: Menus, list: VBoxContainer) -> void:
+	m._lbl(list, "— BOUNTIES —", 16, Color(0.6, 1.0, 0.7))
+	if m.game.bounties.is_empty():
+		m._lbl(list, "No bounties active.", 13, Color(0.6, 0.62, 0.68))
+		return
+	for scope in ["daily", "weekly"]:
+		for b in m.game.bounties:
+			if String(b["scope"]) != scope:
+				continue
+			var done: bool = b["done"]
+			var tag := "DAILY" if scope == "daily" else "WEEKLY"
+			var reward := "%d gold" % int(b["gold"]) + ("  + gem" if int(b["gems"]) > 0 else "")
+			var line := "%s  [%s]  %s  —  %d/%d   (%s)" % [
+				"✓" if done else "○", tag, String(b["desc"]),
+				int(b["progress"]), int(b["target"]), reward]
+			m._lbl(list, line, 14, Color(0.6, 1.0, 0.6) if done else Color(0.85, 0.88, 0.94))
+
+
+## The weekly vault: progress toward the guaranteed reward + claim button.
+static func _vault(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	m._lbl(list, "— WEEKLY VAULT —", 16, Color(1.0, 0.85, 0.4))
+	var prog: int = g.vault_progress if g._week_index() == g.vault_week else 0
+	var goal: int = Balance.VAULT_BOSS_GOAL
+	m._lbl(list, "Bosses this week:  %d / %d  →  a guaranteed golden chest" % [mini(prog, goal), goal],
+		14, Color(0.9, 0.85, 0.7))
+	if g.vault_ready():
+		var row := HBoxContainer.new()
+		list.add_child(row)
+		m._btn(row, "   Claim vault reward   ", func() -> void:
+			g.claim_vault()
+			m.open_journal(), Color(1.0, 0.88, 0.45))
+	elif g.vault_claimed_week == g._week_index():
+		m._lbl(list, "Claimed this week. Resets next week.", 13, Color(0.6, 0.62, 0.68))

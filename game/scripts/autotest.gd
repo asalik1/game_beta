@@ -702,6 +702,9 @@ func _run_systems() -> void:
 	# 3d7. Records + achievements: best-time keeping and idempotent unlock.
 	_test_records()
 
+	# 3d8. Bounties + weekly vault: roll, progress reward, vault claim.
+	_test_bounties()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -1387,6 +1390,71 @@ func _test_records() -> void:
 	game.achievements = keep_ach
 	game.boss_records = keep_rec
 	print("ok: records + achievements (best-time keeping, idempotent unlock)")
+
+
+# ---- CORE: bounties + weekly vault (roll, progress reward, vault claim) --
+func _test_bounties() -> void:
+	var keep_b: Array = game.bounties
+	var keep_bd: int = game.bounty_day
+	var keep_bw: int = game.bounty_week
+	var keep_vw: int = game.vault_week
+	var keep_vp: int = game.vault_progress
+	var keep_vc: int = game.vault_claimed_week
+	var keep_gold: int = game.player.gold
+	var keep_gems: Array = game.player.gem_bag.duplicate()
+	var keep_dropped: Array = game.dropped_loot
+	game.dropped_loot = []
+
+	# A deterministic roll fills the roster and is stable for a given seed
+	# (so relogging can't reroll for a kinder objective).
+	game.bounties = []
+	game._roll_bounties("daily", 2, 12345)
+	if game._bounty_count("daily") != 2:
+		return _fail("daily bounty roll did not produce 2 objectives")
+	var first_type: String = String(game.bounties[0]["type"])
+	game.bounties = []
+	game._roll_bounties("daily", 2, 12345)
+	if String(game.bounties[0]["type"]) != first_type:
+		return _fail("bounty roll is not deterministic for a given seed")
+
+	# Progress completes a matching bounty, pays once, and ignores extra.
+	game.player.gold = 0
+	game.bounties = [{"scope": "daily", "type": "boss_kills", "target": 1, "progress": 0,
+		"desc": "Slay a boss", "gold": 100, "gems": 0, "gem_lvl": 1, "done": false}]
+	game.bounty_progress("boss_kills")
+	if not game.bounties[0]["done"] or game.player.gold <= 0:
+		return _fail("bounty did not complete + pay at target")
+	var gold_after: int = game.player.gold
+	game.bounty_progress("boss_kills")
+	if game.player.gold != gold_after:
+		return _fail("completed bounty paid out twice")
+
+	# Weekly vault: reaching the boss goal unlocks one claim per week.
+	game.vault_week = -1
+	game.vault_progress = 0
+	game.vault_claimed_week = -1
+	for i in Balance.VAULT_BOSS_GOAL:
+		game.vault_note_boss()
+	if not game.vault_ready():
+		return _fail("vault not ready after reaching the boss goal")
+	if game.claim_vault().is_empty():
+		return _fail("vault claim returned nothing while ready")
+	if game.vault_ready():
+		return _fail("vault still claimable after this week's claim")
+
+	# Clean up the vault's spawned pickups + restore.
+	for n in get_tree().get_nodes_in_group("loot_pickups"):
+		n.queue_free()
+	game.bounties = keep_b
+	game.bounty_day = keep_bd
+	game.bounty_week = keep_bw
+	game.vault_week = keep_vw
+	game.vault_progress = keep_vp
+	game.vault_claimed_week = keep_vc
+	game.player.gold = keep_gold
+	game.player.gem_bag = keep_gems
+	game.dropped_loot = keep_dropped
+	print("ok: bounties + weekly vault (deterministic roll, progress reward, vault claim)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

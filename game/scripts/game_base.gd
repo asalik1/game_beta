@@ -155,6 +155,16 @@ var daily_streak := 0          # consecutive-day claim count
 var achievements := {}         # achievement id -> true (unlocked)
 var boss_records := {}         # boss kind -> {"ttk": best secs, "dps": best, "kills": n}
 
+# --- bounties (rotating objectives; persisted) ---
+var bounties: Array = []       # active: {scope,type,target,progress,desc,gold,gems,gem_lvl,done}
+var bounty_day := -1           # trusted-clock day the daily set was rolled
+var bounty_week := -1          # trusted-clock week the weekly was rolled
+
+# --- weekly vault (great-vault style; persisted) ---
+var vault_week := -1           # trusted-clock week the current progress belongs to
+var vault_progress := 0        # boss kills this week
+var vault_claimed_week := -1   # week the vault was last claimed
+
 const MUSIC_TUNE := {
 	"icefield": {"gain": 14.0, "start": 10.0},  # whisper-quiet master
 	"rainstorm": {"start": 30.0},               # storm fades in over ~30s
@@ -304,6 +314,136 @@ func unlock_achievement(id: String) -> void:
 		hud.achievement_toast(String(a["name"]), String(a["desc"]))
 	sfx("levelup", 1.15)
 	autosave()
+
+
+# --------------------------------------------------------------- bounties ---
+
+## Roll the daily set on a new day and the weekly on a new week — both
+## DETERMINISTIC from the trusted clock, so relogging can't reroll for a
+## kinder objective. Cheap no-op when nothing has rolled over; safe to
+## call every frame.
+func refresh_bounties() -> void:
+	# no_saves = headless autotest: keep the roster empty so campaign-test
+	# kills don't fire reward gems into other sections. The bounty test
+	# drives _roll_bounties/bounty_progress directly instead.
+	if not play_started or no_saves:
+		return
+	var day := daily_day_index()
+	var week := int(day / 7)
+	var changed := false
+	if day != bounty_day or _bounty_count("daily") == 0:
+		bounty_day = day
+		_roll_bounties("daily", Balance.BOUNTY_DAILY_COUNT, day * 2 + 1)
+		changed = true
+	if week != bounty_week or _bounty_count("weekly") == 0:
+		bounty_week = week
+		_roll_bounties("weekly", Balance.BOUNTY_WEEKLY_COUNT, week * 7 + 3)
+		changed = true
+	if changed:
+		autosave()
+
+
+func _bounty_count(scope: String) -> int:
+	var n := 0
+	for b in bounties:
+		if String(b["scope"]) == scope:
+			n += 1
+	return n
+
+
+## Replace a scope's bounties with `count` fresh picks, seeded so the same
+## day/week always yields the same objectives.
+func _roll_bounties(scope: String, count: int, seed_val: int) -> void:
+	var kept: Array = []
+	for b in bounties:
+		if String(b["scope"]) != scope:
+			kept.append(b)
+	bounties = kept
+	var pool: Array = Balance.BOUNTY_POOL[scope]
+	var idxs: Array = []
+	for i in pool.size():
+		idxs.append(i)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_val
+	for i in range(idxs.size() - 1, 0, -1):  # seeded Fisher-Yates
+		var j := rng.randi_range(0, i)
+		var tmp = idxs[i]; idxs[i] = idxs[j]; idxs[j] = tmp
+	for k in mini(count, pool.size()):
+		var t: Dictionary = pool[idxs[k]]
+		bounties.append({"scope": scope, "type": String(t["type"]), "target": int(t["target"]),
+			"progress": 0, "desc": String(t["desc"]), "gold": int(t.get("gold", 0)),
+			"gems": int(t.get("gems", 0)), "gem_lvl": int(t.get("gem_lvl", 1)), "done": false})
+
+
+## Advance every active bounty of `type`; award and flag any that finish.
+func bounty_progress(type: String, n := 1) -> void:
+	var touched := false
+	for b in bounties:
+		if String(b["type"]) == type and not b["done"]:
+			b["progress"] = mini(int(b["progress"]) + n, int(b["target"]))
+			touched = true
+			if int(b["progress"]) >= int(b["target"]):
+				b["done"] = true
+				_award_bounty(b)
+	if touched:
+		autosave()
+
+
+## Bounty reward: gold (level-scaled) straight to the purse, gems via
+## give_loot so a full bag never loses them. The player is always present
+## when a bounty completes (it rides a kill/clear event).
+func _award_bounty(b: Dictionary) -> void:
+	var g := int(float(b["gold"]) * Balance.daily_gold_mult(player.level))
+	player.gold += g
+	var extra := ""
+	for i in int(b["gems"]):
+		give_loot({"kind": "gem", "gem": Items.random_gem(loot_rng, int(b["gem_lvl"]))},
+			player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
+		extra = " + gem"
+	sfx("chest")
+	spawn_text(player.global_position + Vector2(0, -78),
+		"BOUNTY: %s  (+%d gold%s)" % [b["desc"], g, extra], Color(0.6, 1.0, 0.6), 4.0)
+
+
+# ----------------------------------------------------------- weekly vault ---
+
+func _week_index() -> int:
+	return int(daily_day_index() / 7)
+
+
+## A boss fell: credit it to this week's vault (resetting on a new week),
+## and shout once when it first unlocks.
+func vault_note_boss() -> void:
+	var week := _week_index()
+	if week != vault_week:
+		vault_week = week
+		vault_progress = 0
+	var was_ready := vault_ready()
+	vault_progress += 1
+	if vault_ready() and not was_ready and is_instance_valid(player):
+		spawn_text(player.global_position + Vector2(0, -92),
+			"WEEKLY VAULT READY — open the Quest Log (⚑)", Color(1.0, 0.85, 0.4), 5.0)
+
+
+## True when this week's kills hit the goal and it hasn't been claimed yet.
+func vault_ready() -> bool:
+	var week := _week_index()
+	return vault_week == week and vault_progress >= Balance.VAULT_BOSS_GOAL \
+		and vault_claimed_week != week
+
+
+## Claim the weekly reward: a golden chest at your feet + a bright gem.
+## Returns reward lines for the journal; empty if not ready.
+func claim_vault() -> Array:
+	if not vault_ready():
+		return []
+	vault_claimed_week = _week_index()
+	Chest.drop(self, "gold", clamp_to_zone(player.global_position + Vector2(64, 0), player.global_position))
+	give_loot({"kind": "gem", "gem": Items.random_gem(loot_rng, 2)}, player.global_position + Vector2(0, 44))
+	sfx("chest")
+	spawn_text(player.global_position + Vector2(0, -70), "WEEKLY VAULT CLAIMED!", Color(1.0, 0.85, 0.4), 4.0)
+	autosave()
+	return ["a golden chest", "a bright gem"]
 
 
 ## Give loot to the player — or drop it at `pos` when the bag is full.

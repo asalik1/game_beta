@@ -187,6 +187,8 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	unlock_achievement("first_boss")
 	if boss_done.size() >= 9:
 		unlock_achievement("boss_hunter")
+	bounty_progress("boss_kills")
+	vault_note_boss()
 	var src: Boss = dead if is_instance_valid(dead) else current_boss
 	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
 	var mzi: int = clampi(src.zone_idx if is_instance_valid(src) else cur_room, 0, zone_count - 1)
@@ -290,6 +292,7 @@ func on_enemy_died(e: Enemy) -> void:
 		return  # boss drops are handled in on_boss_died
 	Pickup.drop_gold(self, e.gold_value, e.global_position)
 	if e.elite and is_instance_valid(player):
+		bounty_progress("elite_kills")
 		# Elite loot pinata (playtest round 6): a guaranteed gem, a
 		# guaranteed good chest, and the elite-exclusive economy —
 		# talent reset stones and bigger bags. XP is zero by design
@@ -324,6 +327,7 @@ func on_enemy_died(e: Enemy) -> void:
 		refresh_quest()
 		if zone_alive[e.zone_idx] == 0:
 			cleared[e.zone_idx] = true  # stays cleared for the run (saved)
+			bounty_progress("rooms_cleared")
 			_try_spawn_boss(e.zone_idx)
 			_recheck_gates()  # "clear" locks on this room's edges open
 			if zones[e.zone_idx].get("boss", "") == "":
