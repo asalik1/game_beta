@@ -217,6 +217,7 @@ func open_pause() -> void:
 		game.player.level, game.zones[zi]["name"]], 14, Color(0.7, 0.72, 0.78))
 	_btn(vbox, "  ▶  Resume", func() -> void: close(), Color(0.6, 1.0, 0.6))
 	_btn(vbox, "  ⚑  Quest Log", func() -> void: open_journal(), Color(0.9, 0.9, 0.95))
+	_btn(vbox, "  ⛃  Stash  (shared across characters)", func() -> void: open_stash(), Color(0.9, 0.9, 0.95))
 	_btn(vbox, "  🔊  Settings (sound)", func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
 	_btn(vbox, "  ⌨  Keybinds", func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
 	var unread := 0
@@ -1350,7 +1351,8 @@ func open_map() -> void:
 const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
 	"stormwarden", "choirmother", "nullwarden",  # (T4) ch2 content bosses
 	"sexton", "vess", "saint_varo",  # ch3 Unburied Vale (BOSSES.md)
-	"forgemistress", "cinderhide", "ashpriest"]  # ch4 Slagfields (BOSSES.md)
+	"forgemistress", "cinderhide", "ashpriest",  # ch4 Slagfields (BOSSES.md)
+	"whitepelt", "icebound", "sleepkeeper"]  # ch5 Long Sleep (BOSSES.md)
 
 ## Codex screens live in ui/codex.gd.
 func open_codex(tab := "monsters") -> void:
@@ -1372,6 +1374,11 @@ func open_daily() -> void:
 ## The quest log / journal lives in ui/journal.gd.
 func open_journal() -> void:
 	UIJournal.open(self)
+
+
+## The account-wide stash lives in ui/stash.gd.
+func open_stash() -> void:
+	UIStash.open(self)
 
 
 ## Debug panel (F1, only when launched via dev_mode.bat) — ui/dev_panel.gd.

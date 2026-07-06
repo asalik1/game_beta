@@ -165,6 +165,11 @@ var vault_week := -1           # trusted-clock week the current progress belongs
 var vault_progress := 0        # boss kills this week
 var vault_claimed_week := -1   # week the vault was last claimed
 
+# --- account-wide stash (cross-character; user://stash.json) ---
+var stash: Array = []          # storage payloads {kind: item/gem/stone, ...}
+var _stash_loaded := false
+const STASH_PATH := "user://stash.json"
+
 const MUSIC_TUNE := {
 	"icefield": {"gain": 14.0, "start": 10.0},  # whisper-quiet master
 	"rainstorm": {"start": 30.0},               # storm fades in over ~30s
@@ -444,6 +449,52 @@ func claim_vault() -> Array:
 	spawn_text(player.global_position + Vector2(0, -70), "WEEKLY VAULT CLAIMED!", Color(1.0, 0.85, 0.4), 4.0)
 	autosave()
 	return ["a golden chest", "a bright gem"]
+
+
+# ----------------------------------------------------------- account stash ---
+
+## Load the account-wide stash once per session (from user://stash.json).
+## It's shared across every character, so it lives outside the per-slot save.
+func ensure_stash_loaded() -> void:
+	if _stash_loaded:
+		return
+	_stash_loaded = true
+	if no_saves or not FileAccess.file_exists(STASH_PATH):
+		return
+	var f := FileAccess.open(STASH_PATH, FileAccess.READ)
+	if f == null:
+		return
+	var data = JSON.parse_string(f.get_as_text())
+	if data is Array:
+		for pl in data:
+			SaveGame._fix_payload(pl)
+			stash.append(pl)
+
+
+func save_stash() -> void:
+	if no_saves:
+		return  # tests never touch the real account file
+	var f := FileAccess.open(STASH_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(stash))
+
+
+## Move a bag payload INTO the stash. False = stash full.
+func stash_deposit(payload: Dictionary) -> bool:
+	if stash.size() >= Balance.STASH_SLOTS:
+		return false
+	stash.append(payload)
+	save_stash()
+	return true
+
+
+## Move a stashed payload back into the bag. False = bag full (stays put).
+func stash_withdraw(payload: Dictionary) -> bool:
+	if not _try_receive(payload):
+		return false
+	stash.erase(payload)
+	save_stash()
+	return true
 
 
 ## Give loot to the player — or drop it at `pos` when the bag is full.

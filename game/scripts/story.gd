@@ -798,6 +798,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch2_bosses.gd"),     # (T4)
 	preload("res://scripts/content/ch3_bosses.gd"),     # Unburied Vale bosses (BOSSES.md)
 	preload("res://scripts/content/ch4_bosses.gd"),     # Slagfields bosses (BOSSES.md)
+	preload("res://scripts/content/ch5_bosses.gd"),     # Long Sleep bosses (BOSSES.md)
 ]
 
 static var _content_loaded := false

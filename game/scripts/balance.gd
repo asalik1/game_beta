@@ -244,6 +244,10 @@ const BOUNTY_POOL := {
 # guaranteed golden-chest reward, claimable once per week (great-vault style).
 const VAULT_BOSS_GOAL := 5
 
+# Account-wide stash: cross-character long-term storage (survives any one
+# character; lives in user://stash.json, not the per-character save).
+const STASH_SLOTS := 200
+
 # ----------------------------------------------------------------- rooms ---
 # Quiet room types shrink their walled playable area within the fixed
 # grid cell (corridors connect the doors to the cell edges).

@@ -711,6 +711,9 @@ func _run_systems() -> void:
 	# 3d10. Set bonuses: piece counting, cross-class isolation, recalc.
 	_test_set_bonus()
 
+	# 3d11. Account stash: deposit, withdraw to bag, capacity cap.
+	_test_stash()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -1045,6 +1048,10 @@ func _run_systems() -> void:
 	await _frames(2)
 	if game.menus.current != "journal":
 		return _fail("quest log did not open")
+	game.menus.open_stash()
+	await _frames(2)
+	if game.menus.current != "stash":
+		return _fail("stash did not open")
 	game.menus.open_daily()
 	await _frames(2)
 	if game.menus.current != "daily":
@@ -1237,6 +1244,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch2_resonance()
 	await _test_ch3_bosses()
 	await _test_ch4_bosses()
+	await _test_ch5_bosses()
 	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
@@ -1542,6 +1550,43 @@ func _test_set_bonus() -> void:
 	print("ok: set bonuses (piece count, cross-class isolation, 2/4 detection)")
 
 
+# ---- CORE: account stash (deposit, withdraw, capacity) ------------------
+func _test_stash() -> void:
+	var keep_stash: Array = game.stash
+	var keep_bag: Dictionary = game.player.bag
+	var keep_bp: Array = game.player.backpack
+	game.stash = []
+	game._stash_loaded = true          # skip the real account file
+	game.player.bag = Items.make_bag("S")  # 100 slots — room to withdraw into
+	game.player.backpack = []
+
+	# Deposit puts a payload into the stash.
+	var it := Items.roll_item_of("charm", "C", game.loot_rng, game.player.cls)
+	if not game.stash_deposit({"kind": "item", "item": it}):
+		return _fail("stash_deposit failed with room to spare")
+	if game.stash.size() != 1:
+		return _fail("deposit did not land in the stash")
+
+	# Withdraw moves it to the bag and clears it from the stash.
+	if not game.stash_withdraw(game.stash[0]):
+		return _fail("stash_withdraw failed with an empty bag")
+	if game.stash.size() != 0 or game.player.backpack.size() != 1:
+		return _fail("withdraw did not move the item back to the bag")
+
+	# Capacity: a full stash rejects further deposits.
+	game.stash = []
+	for i in Balance.STASH_SLOTS:
+		game.stash.append({"kind": "gem", "gem": Items.make_gem("crit", 1)})
+	if game.stash_deposit({"kind": "item", "item": it}):
+		return _fail("stash accepted a deposit past capacity")
+
+	# Restore.
+	game.stash = keep_stash
+	game.player.bag = keep_bag
+	game.player.backpack = keep_bp
+	print("ok: account stash (deposit, withdraw to bag, capacity cap)")
+
+
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
 ## Spawn, signature, per-boss phase mechanic, and story-neutral death
 ## for each ch3 boss (the module's own kill-flow selftest — runs in the
@@ -1572,3 +1617,15 @@ func _test_ch4_bosses() -> void:
 		await get_tree().create_timer(60.0).timeout
 		return
 	print("ok: ch4 bosses (spawn / signature / phase / story-neutral death) — forgemistress, cinderhide, ashpriest")
+
+
+func _test_ch5_bosses() -> void:
+	_buff()
+	await _goto_room(0)
+	await _frames(5)
+	var err: String = await preload("res://scripts/content/ch5_bosses.gd").selftest(game)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch5 bosses (spawn / signature / phase / story-neutral death) — whitepelt, icebound, sleepkeeper")

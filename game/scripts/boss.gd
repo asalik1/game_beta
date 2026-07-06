@@ -64,6 +64,7 @@ func reset_fight() -> void:
 	_reset_ch2_state()
 	_reset_ch3_state()
 	_reset_ch4_state()
+	_reset_ch5_state()
 
 
 func _think(delta: float) -> Vector2:
@@ -103,6 +104,12 @@ func _think(delta: float) -> Vector2:
 			return _cinderhide(player, to_player, dist, delta)
 		"ashpriest":
 			return _ashpriest(player, to_player, dist, delta)
+		"whitepelt":  # Chapter 5 block (The Long Sleep) at the end of this file
+			return _whitepelt(player, to_player, dist, delta)
+		"icebound":
+			return _icebound(player, to_player, dist, delta)
+		"sleepkeeper":
+			return _sleepkeeper(player, to_player, dist, delta)
 	return Vector2.ZERO
 
 
@@ -884,6 +891,10 @@ func _clear_boss_props() -> void:
 		if is_instance_valid(s):
 			s.queue_free()
 	sons.clear()
+	for d in dreamers:
+		if is_instance_valid(d):
+			d.queue_free()
+	dreamers.clear()
 
 
 ## The arena rect for half/zone telegraphs — the room when placed in the
@@ -1207,3 +1218,293 @@ func _judge_half(rect: Rect2, west: bool, delay: float) -> void:
 			var at := Vector2(x0 + (cx + 0.5) / 5.0 * half_w,
 				rect.position.y + (cy + 0.5) / 4.0 * rect.size.y)
 			game.telegraph(at, 92.0, delay, dmg * 1.2, {"color": VERDICT})
+
+
+# ========================================================== Chapter 5 ---
+# The Long Sleep (BOSSES.md). Data lives in content/ch5_bosses.gd. The
+# player FREEZE/ROOT status (player.apply_freeze/apply_root, game_base's
+# telegraph_safe "freeze" opt) and STILLNESS detection (Halla) debut here.
+
+const FROST := Color(0.6, 0.85, 1.0, 0.55)
+
+var sliding := false           # whitepelt: charging across ice, can't stop
+var dazed_t := 0.0             # whitepelt: wall-slam self-stun / vuln window
+var slide_cap := 0.0
+var ch5_setup := false         # ice field / dreamers placed
+var still_accum := 0.0         # halla: player stillness meter
+var drowse := 0               # halla: current Drowse stacks
+var aura_mult := 1.0          # halla: dreamers thicken the aura
+var dreamers: Array = []      # halla: drifting sleepwalker adds
+var dreamer_t := 0.0
+
+
+func _reset_ch5_state() -> void:
+	sliding = false
+	dazed_t = 0.0
+	slide_cap = 0.0
+	ch5_setup = false
+	still_accum = 0.0
+	drowse = 0
+	aura_mult = 1.0
+	dreamer_t = 0.0  # dreamers themselves freed by _clear_boss_props
+
+
+## Is the boss standing in a floor patch of `type` (its own, or the arena)?
+func _on_patch(type: String) -> bool:
+	for h in game.hazards:
+		if String(h.get("type", "")) != type:
+			continue
+		var at: Vector2 = h.get("pos", Vector2.ZERO)
+		if global_position.distance_to(at) <= float(h.get("radius", 0.0)):
+			return true
+	return false
+
+
+# ------------------------------------------- Hrolgar Whitepelt (L29) ---
+## Pack brute. His Fangmaw-lineage charge can't stop on ICE — bait it onto
+## a patch and he skids into the wall (self-stun + vuln window). Pack calls
+## at 66% / 33%; pelt drums when crowded.
+func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if not ch5_setup:
+		ch5_setup = true
+		_ice_field()
+		game.spawn_text(global_position + Vector2(0, -84), "Bait his charge onto the ice.", FROST)
+
+	if dazed_t > 0.0:  # wall-slam vuln window — no moves
+		dazed_t -= delta
+		return Vector2.ZERO
+
+	if (pack_calls == 0 and hp <= max_hp * 0.66) or (pack_calls == 1 and hp <= max_hp * 0.33):
+		pack_calls += 1
+		roar()
+		game.spawn_text(global_position + Vector2(0, -84), "Whitepelt calls the pack!", FROST)
+		for offset in [Vector2(-100, -60), Vector2(100, 60)]:
+			var add := Enemy.make(game, "wolf", global_position + offset, level)
+			add.xp_value = 0
+			add.gold_value = 0
+			add.force_aggro = true
+			game.add_enemy(add)
+
+	if charging:
+		if _on_patch("ice"):
+			sliding = true  # can't stop on ice — keep skidding
+		else:
+			charge_time -= delta
+		slide_cap = maxf(0.0, slide_cap - delta)
+		if dist < 78.0 and attack_cd <= 0.0:
+			attack_cd = 0.8
+			player.take_damage(dmg * 1.3, dmg_type, self)
+		if charge_time <= 0.0 or slide_cap <= 0.0:
+			charging = false
+			if sliding:
+				sliding = false
+				dazed_t = 2.5
+				vuln_time = maxf(vuln_time, 2.6)
+				game.shake(10.0)
+				game.spawn_text(global_position + Vector2(0, -90), "WHITEPELT SLAMS THE WALL!", Color(0.7, 0.85, 1.0))
+		return charge_dir * 620.0
+
+	# Signature: ICE CHARGE — telegraph then charge (bait it onto ice).
+	if special_cd <= 0.0 and dist < 540.0 and not telegraphing:
+		special_cd = 8.0
+		slide_cap = 2.2
+		telegraphing = true
+		_do_charge(to_player)
+		return Vector2.ZERO
+	if telegraphing:
+		return Vector2.ZERO
+
+	# Pelt drums: shockwave ring when crowded too long.
+	if ability_cd <= 0.0 and dist < 220.0:
+		ability_cd = 5.0
+		game.sfx("slam")
+		game.shake(7.0)
+		for i in 12:
+			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 200.0, dmg * 0.7)
+
+	if dist < 70.0:
+		if attack_cd <= 0.0:
+			attack_cd = 0.95
+			player.take_damage(dmg, dmg_type, self)
+		return Vector2.ZERO
+	return to_player.normalized() * speed
+
+
+func _ice_field() -> void:
+	var base_ang := randf() * TAU
+	for i in 4:
+		var at: Vector2 = game.clamp_to_zone(home + Vector2.from_angle(base_ang + TAU * i / 4.0) * 320.0, home)
+		game._add_hazard(game.cur_room, "ice", at, 130.0, 90.0)
+
+
+# ------------------------------------------- Serane the Icebound (L31) ---
+## Frozen caster. FLASH FREEZE is the safe-spot exam: stand in a thawed
+## vent or freeze solid + vulnerable. SHATTER LANCE roots you for a
+## piercing line — move the instant the root breaks. At 40% the keystone
+## cracks: ice spreads inward and freezes quicken.
+func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -> Vector2:
+	if hp <= max_hp * 0.4 and not enraged:
+		enraged = true
+		sprite.modulate = Color(0.7, 0.85, 1.6)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "THE KEYSTONE CRACKS!", Color(0.6, 0.85, 1.0))
+		var rect := _arena_rect()
+		for i in 6:
+			var at: Vector2 = game.clamp_to_zone(rect.get_center() + Vector2.from_angle(TAU * i / 6.0) * 360.0, home)
+			game._add_hazard(game.cur_room, "ice", at, 150.0, 60.0)
+
+	# Signature: FLASH FREEZE — stand in a thawed vent or freeze solid.
+	if special_cd <= 0.0:
+		special_cd = 6.0 if enraged else 9.0
+		_flash_freeze(player)
+
+	# Shatter Lance: root, then a piercing line at where you stood.
+	if ring_cd <= 0.0 and dist < 620.0:
+		ring_cd = 7.0
+		_shatter_lance(player)
+
+	# Icicle rain: Morwen-lineage scatter.
+	if ability_cd <= 0.0:
+		ability_cd = 2.8
+		game.sfx("bolt")
+		for i in 4:
+			var off := Vector2(randf_range(-180, 180), randf_range(-140, 140))
+			game.telegraph(player.global_position + off, 70.0, 0.7, dmg * 1.1, {"color": FROST})
+
+	if dist < 160.0 and blink_cd <= 0.0:
+		blink_cd = 3.2
+		game.sfx("blink")
+		var away := -to_player.normalized().rotated(randf_range(-0.9, 0.9))
+		global_position = game.clamp_to_zone(global_position + away * randf_range(280.0, 400.0), home)
+		return Vector2.ZERO
+
+	if dist < 250.0:
+		return -to_player.normalized() * speed
+	elif dist > 380.0:
+		return to_player.normalized() * speed
+	return to_player.orthogonal().normalized() * speed * 0.5
+
+
+func _flash_freeze(player: Player) -> void:
+	roar()
+	game.spawn_text(global_position + Vector2(0, -84), "FLASH FREEZE — FIND A VENT!", FROST)
+	var vents: Array = []
+	var n := 2 if enraged else 3   # fewer vents enraged = harder
+	var base_ang := randf() * TAU
+	for i in n:
+		var v: Vector2 = game.clamp_to_zone(player.global_position + Vector2.from_angle(base_ang + TAU * i / float(n)) * 240.0, home)
+		vents.append(v)
+	game.telegraph_safe(vents, 105.0, 2.2, dmg * 1.6, {"color": FROST, "freeze": 2.5})
+
+
+func _shatter_lance(player: Player) -> void:
+	roar()
+	player.apply_root(1.0)
+	var from := global_position
+	var dir := (player.global_position - from).normalized()
+	game.spawn_text(player.global_position + Vector2(0, -50), "SHATTER LANCE!", FROST)
+	# The line lands AFTER the root breaks — move off the memory of your spot.
+	for i in 6:
+		game.telegraph(from + dir * (140.0 + i * 90.0), 72.0, 1.1 + i * 0.12, dmg * 1.3, {"color": FROST})
+
+
+# ----------------------- Mother Halla, Keeper of the Long Sleep (L33) ---
+## Finale. The inversion of every safe-spot fight: her LULLABY AURA turns
+## standing still into Drowse (5 = Asleep), and while you're drowsy she
+## MENDS. DREAMERS drift toward her and thicken the aura. At 25% the Queen
+## stirs (a Flash Freeze + a wider aura).
+func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if not ch5_setup:
+		ch5_setup = true
+		_spawn_dreamers()
+		game.spawn_text(global_position + Vector2(0, -84), "Do not stand still.", FROST)
+
+	# Lullaby aura: stillness stacks Drowse; 5 = Asleep; she mends while
+	# any Drowse rides you.
+	if player.velocity.length() < 45.0:
+		still_accum += delta * aura_mult
+	else:
+		still_accum = maxf(0.0, still_accum - delta * 2.0)
+	drowse = clampi(int(still_accum / 1.5), 0, 5)
+	if drowse >= 5:
+		still_accum = 0.0
+		drowse = 0
+		player.apply_freeze(3.0)
+		game.spawn_text(player.global_position + Vector2(0, -50), "ASLEEP!", FROST)
+	if drowse > 0:
+		hp = minf(max_hp, hp + max_hp * 0.008 * drowse * delta)
+
+	_march_dreamers(delta)
+	dreamer_t -= delta
+	if dreamer_t <= 0.0:
+		dreamer_t = 9.0
+		_spawn_dreamers()
+
+	if hp <= max_hp * 0.25 and not enraged:
+		enraged = true
+		aura_mult += 0.6
+		sprite.modulate = Color(0.75, 0.85, 1.5)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "THE QUEEN STIRS.", Color(0.6, 0.85, 1.0))
+		_flash_freeze(player)
+
+	# Signature: FROST HYMNAL — slow big telegraphs that pave slow patches.
+	if special_cd <= 0.0:
+		special_cd = 7.0 if enraged else 10.0
+		_frost_hymnal(player)
+
+	if ability_cd <= 0.0:
+		ability_cd = 2.8
+		game.sfx("bolt")
+		var aim := to_player.normalized()
+		for spread in [-0.25, 0.0, 0.25]:
+			_bolt(aim.rotated(spread) * 290.0, dmg)
+
+	if dist < 240.0:
+		return -to_player.normalized() * speed
+	elif dist > 380.0:
+		return to_player.normalized() * speed
+	return to_player.orthogonal().normalized() * speed * 0.5
+
+
+func _spawn_dreamers() -> void:
+	var rect := _arena_rect()
+	var live := 0
+	for d in dreamers:
+		if is_instance_valid(d) and not d.dying:
+			live += 1
+	for i in maxi(0, 3 - live):
+		var at: Vector2 = game.clamp_to_zone(rect.get_center() + Vector2.from_angle(randf() * TAU) * 480.0, home)
+		var dr := Enemy.make(game, "cultist", at, level)
+		dr.xp_value = 0
+		dr.gold_value = 0
+		dr.speed = 0.0        # driven manually toward Halla (not the player)
+		dr.aggro_range = 0.0
+		game.add_enemy(dr)
+		dreamers.append(dr)
+		game.burst(at, FROST, 8)
+
+
+func _march_dreamers(delta: float) -> void:
+	var still: Array = []
+	for d in dreamers:
+		if not is_instance_valid(d) or d.dying:
+			continue
+		var to: Vector2 = global_position - d.global_position
+		if to.length() <= 90.0:
+			aura_mult = minf(3.0, aura_mult + 0.15)
+			game.spawn_text(global_position + Vector2(0, -70), "a dreamer joins the hymn", FROST)
+			d.queue_free()
+			continue
+		d.global_position += to.normalized() * 55.0 * delta
+		still.append(d)
+	dreamers = still
+
+
+func _frost_hymnal(player: Player) -> void:
+	roar()
+	for i in 3:
+		var at: Vector2 = game.clamp_to_zone(
+			player.global_position + Vector2(randf_range(-200, 200), randf_range(-160, 160)), home)
+		game.telegraph(at, 110.0, 0.9, dmg * 1.2, {"color": FROST})
+		game._add_hazard(game.cur_room, "slow", at, 90.0, 8.0)
