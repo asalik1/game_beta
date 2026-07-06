@@ -1403,7 +1403,8 @@ const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
 	"sexton", "vess", "saint_varo",  # ch3 Unburied Vale (BOSSES.md)
 	"forgemistress", "cinderhide", "ashpriest",  # ch4 Slagfields (BOSSES.md)
 	"whitepelt", "icebound", "sleepkeeper",  # ch5 Long Sleep (BOSSES.md)
-	"auroch", "gardener", "curetwisted"]  # ch6 Blooming Deep (BOSSES.md)
+	"auroch", "gardener", "curetwisted",  # ch6 Blooming Deep (BOSSES.md)
+	"stormdrake_veyx", "unnamed_echo", "stormmouth"]  # ch7 Breaking Sky — Act 1 finale (BOSSES.md)
 
 ## Codex screens live in ui/codex.gd.
 func open_codex(tab := "monsters") -> void:

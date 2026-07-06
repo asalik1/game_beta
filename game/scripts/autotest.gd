@@ -1255,6 +1255,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch4_bosses()
 	await _test_ch5_bosses()
 	await _test_ch6_bosses()
+	await _test_ch7_bosses()
 	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
@@ -1756,3 +1757,15 @@ func _test_ch6_bosses() -> void:
 		await get_tree().create_timer(60.0).timeout
 		return
 	print("ok: ch6 bosses (spawn / signature / phase / story-neutral death) — auroch, gardener, curetwisted")
+
+
+func _test_ch7_bosses() -> void:
+	_buff()
+	await _goto_room(0)
+	await _frames(5)
+	var err: String = await preload("res://scripts/content/ch7_bosses.gd").selftest(game)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch7 bosses (spawn / signature / phase / story-neutral death) — veyx, echo, cyrraeth")

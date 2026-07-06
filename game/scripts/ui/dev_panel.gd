@@ -22,7 +22,7 @@ static func open(m: Menus) -> void:
 	scroll.add_child(list)
 
 	# ------------------------------------------------------- character ---
-	m._lbl(list, "CHARACTER", 16, Color(0.95, 0.85, 0.5))
+	_section(m, list, "CHARACTER")
 	var row1 := _flow(list)
 	m._btn(row1, ("■ God mode ON" if m.game.dev_god else "□ God mode off"), func() -> void:
 		m.game.dev_god = not m.game.dev_god
@@ -100,14 +100,75 @@ static func open(m: Menus) -> void:
 	# The benchmark line the last boss roster printed (TTK / dps / damage
 	# taken / potions / wipes). On screen it floats for 5s then fades;
 	# here it stays put, and every kill also mails it as a victory letter.
-	m._lbl(list, "LAST BOSS FIGHT", 16, Color(0.95, 0.85, 0.5))
+	_section(m, list, "LAST BOSS FIGHT")
 	var report: String = m.game.last_fight_report
 	var rlbl := m._lbl(list, report if report != "" else "No fight recorded yet — the report lands when a boss roster falls.",
 		14, Color(0.85, 0.9, 1.0) if report != "" else Color(0.6, 0.62, 0.68))
 	rlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+	# ----------------------------------------------- meta / new features ---
+	# Quick levers for the retention/meta systems so they can be exercised
+	# without waiting on the real clock or grinding to the trigger.
+	_section(m, list, "META & NEW FEATURES (quick test)")
+	var mrow := _flow(list)
+	m._btn(mrow, "Daily: make claimable", func() -> void:
+		m.game.daily_last_day = -1
+		m.open_dev(), Color(1.0, 0.88, 0.45))
+	m._btn(mrow, "Daily: +1 streak", func() -> void:
+		m.game.daily_streak += 1
+		m.open_dev(), Color(1.0, 0.88, 0.45))
+	m._btn(mrow, "Bounties: (re)roll", func() -> void:
+		m.game.bounties = []
+		m.game.bounty_day = -1
+		m.game.bounty_week = -1
+		m.game.refresh_bounties()
+		m.open_dev(), Color(0.6, 1.0, 0.7))
+	m._btn(mrow, "Bounties: complete all", func() -> void:
+		for b in m.game.bounties:
+			m.game.bounty_progress(String(b["type"]), int(b["target"]))
+		m.open_dev(), Color(0.6, 1.0, 0.7))
+	m._btn(mrow, "Vault: make ready", func() -> void:
+		m.game.vault_week = m.game._week_index()
+		m.game.vault_progress = Balance.VAULT_BOSS_GOAL
+		m.game.vault_claimed_week = -1
+		m.game.spawn_text(m.game.player.global_position + Vector2(0, -60), "vault ready", Color(1, 0.85, 0.4))
+		m.open_dev(), Color(1.0, 0.85, 0.4))
+
+	var mrow2 := _flow(list)
+	m._btn(mrow2, "Unlock ALL achievements", func() -> void:
+		for id in Achievements.DATA:
+			m.game.unlock_achievement(String(id))
+		m.open_dev(), Color(1.0, 0.85, 0.4))
+	m._btn(mrow2, "Reset achievements", func() -> void:
+		m.game.achievements.clear()
+		m.open_dev())
+	m._btn(mrow2, "Add sample boss records", func() -> void:
+		m.game.record_boss("fangmaw", 42.0, 1800.0)
+		m.game.record_boss("vargoth", 88.0, 2400.0)
+		m.open_dev(), Color(1.0, 0.6, 0.6))
+	m._btn(mrow2, "Give utility consumables", func() -> void:
+		m.game.player.add_consumable(Items.make_mana_potion())
+		m.game.player.add_consumable(Items.make_elixir_might())
+		m.game.player.add_consumable(Items.make_recall_scroll())
+		m.open_dev(), Color(0.6, 0.9, 1.0))
+	m._btn(mrow2, "Gamble x5 (silver)", func() -> void:
+		m.game.player.gold += 5000
+		for i in 5:
+			m.game.gamble("silver")
+		m.open_dev(), Color(0.85, 0.6, 1.0))
+
+	# Jump straight into the feature screens (reforge lives inside an item's
+	# panel; equip a set below and open the bag to reach it).
+	var mrow3 := _flow(list)
+	m._btn(mrow3, "→ Open Stash", func() -> void: m.game.menus.open_stash(), Color(0.9, 0.9, 0.95))
+	m._btn(mrow3, "→ Open Quest Log", func() -> void: m.game.menus.open_journal(), Color(0.9, 0.9, 0.95))
+	m._btn(mrow3, "→ Open Daily", func() -> void:
+		m.game.daily_last_day = -1
+		m.game.menus.open_daily(), Color(1.0, 0.88, 0.45))
+	m._btn(mrow3, "→ Open Bag (gems/reforge)", func() -> void: m.game.menus.open_inventory(), Color(0.9, 0.9, 0.95))
+
 	# ------------------------------------------------------------ items ---
-	m._lbl(list, "ITEMS & GEMS", 16, Color(0.95, 0.85, 0.5))
+	_section(m, list, "ITEMS & GEMS")
 	var row3 := _flow(list)
 	for grade in ["C", "B", "A", "S"]:
 		var g: String = grade
@@ -156,7 +217,7 @@ static func open(m: Menus) -> void:
 			m.open_dev(), Items.GRADE_COLOR[bg])
 
 	# ------------------------------------------------------------ world ---
-	m._lbl(list, "WORLD (rooms of this chapter's graph)", 16, Color(0.95, 0.85, 0.5))
+	_section(m, list, "WORLD (rooms of this chapter's graph)")
 	var row4 := _flow(list)
 	for zi in m.game.zone_count:
 		var z: int = zi
@@ -255,7 +316,7 @@ static func open(m: Menus) -> void:
 		m.open_dev())
 
 	# ------------------------------------------------------------ audio ---
-	m._lbl(list, "AUDIO (browse every track and sound in the game)", 16, Color(0.95, 0.85, 0.5))
+	_section(m, list, "AUDIO (browse every track and sound in the game)")
 	var arow := HBoxContainer.new()
 	arow.add_theme_constant_override("separation", 8)
 	list.add_child(arow)
@@ -288,7 +349,7 @@ static func open(m: Menus) -> void:
 	arow.add_child(sopt)
 
 	# --------------------------------------------------------- terrains ---
-	m._lbl(list, "TERRAIN (applies to the room you're standing in)", 16, Color(0.95, 0.85, 0.5))
+	_section(m, list, "TERRAIN (applies to the room you're standing in)")
 	var trow := _flow(list)
 	for tid in Terrains.DATA:
 		var t: String = tid
@@ -297,6 +358,17 @@ static func open(m: Menus) -> void:
 			m.game.apply_terrain(m.game.cur_room, t)
 			m.close(), Color(0.5, 1.0, 0.5) if active else Color(1, 1, 1))
 	m._hint(vbox, "ESC / F1 to close")
+
+
+## A section header with a thin gold divider above it, so the long flat
+## scroll reads as distinct blocks instead of one wall of buttons.
+static func _section(m: Menus, list: VBoxContainer, title: String) -> void:
+	var div := ColorRect.new()
+	div.color = Color(0.95, 0.85, 0.5, 0.28)
+	div.custom_minimum_size = Vector2(0, 2)
+	div.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	list.add_child(div)
+	m._lbl(list, title, 17, Color(0.98, 0.88, 0.55))
 
 
 ## A wrapping button row: the dev panel used fixed HBox rows, which

@@ -66,6 +66,7 @@ func reset_fight() -> void:
 	_reset_ch4_state()
 	_reset_ch5_state()
 	_reset_ch6_state()
+	_reset_ch7_state()
 
 
 func _think(delta: float) -> Vector2:
@@ -117,6 +118,12 @@ func _think(delta: float) -> Vector2:
 			return _gardener(player, to_player, dist, delta)
 		"curetwisted":
 			return _curetwisted(player, to_player, dist, delta)
+		"stormdrake_veyx":  # Chapter 7 block (The Breaking Sky) at the end of this file
+			return _veyx(player, to_player, dist, delta)
+		"unnamed_echo":
+			return _echo(player, to_player, dist, delta)
+		"stormmouth":
+			return _cyrraeth(player, to_player, dist, delta)
 	return Vector2.ZERO
 
 
@@ -910,6 +917,18 @@ func _clear_boss_props() -> void:
 		if is_instance_valid(r):
 			r.queue_free()
 	roots.clear()
+	for rod in rods:
+		if is_instance_valid(rod):
+			rod.queue_free()
+	rods.clear()
+	for c in clones:
+		if is_instance_valid(c):
+			c.queue_free()
+	clones.clear()
+	for v in vowkeepers:
+		if is_instance_valid(v):
+			v.queue_free()
+	vowkeepers.clear()
 
 
 ## The arena rect for half/zone telegraphs — the room when placed in the
@@ -1854,3 +1873,320 @@ func _kaethra_finale() -> void:
 	speed = 0.0
 	sprite.modulate = Color(1.0, 0.95, 0.9)
 	game.spawn_text(global_position + Vector2(0, -90), "The Root lets go. She looks at you.", ROOTC)
+
+
+# ========================================================== Chapter 7 ---
+# The Breaking Sky — ACT 1 FINALE (BOSSES.md). Data lives in
+# content/ch7_bosses.gd. Three new primitives: conductor-rod arc
+# redirection (Veyx), mirrored-telegraph clones (Echo), and rotating
+# sector zones (Cyrraeth, extending Ordo's rect tech).
+
+const STORMC := Color(0.7, 0.85, 1.0, 0.6)    # veyx / cyrraeth storm
+const VOIDC := Color(0.6, 0.4, 0.9, 0.55)     # echo void
+
+var rods: Array = []           # veyx: conductor rod adds
+var rod_charge := {}           # veyx: rod instance id -> arc charges (3 = boom)
+var veyx_setup := false
+var clones: Array = []         # echo: mirror copies
+var echo_setup := false
+var phase := 1                 # cyrraeth: 1 Speaker / 2 Mouth / 3 Unfinished
+var safe_quad := 0             # cyrraeth: rotating safe sector index
+var vowkeepers: Array = []     # cyrraeth: vow-keeper adds (pause the rotation)
+var rotation_pause := 0.0      # cyrraeth: breathing room a vow-keeper bought
+var vow_t := 0.0
+var cyrraeth_setup := false
+
+
+func _reset_ch7_state() -> void:
+	rod_charge.clear()
+	veyx_setup = false
+	echo_setup = false
+	phase = 1
+	safe_quad = 0
+	rotation_pause = 0.0
+	vow_t = 0.0
+	cyrraeth_setup = false  # rods / clones / vow-keepers freed by _clear_boss_props
+
+
+func _rods_live() -> int:
+	var n := 0
+	for r in rods:
+		if is_instance_valid(r) and not r.dying:
+			n += 1
+	return n
+
+
+# ------------------------------------ Veyx, the Unchained Current (L38) ---
+## Storm elemental. ARC chains to the player UNLESS a conductor rod is near
+## — stand by a rod to feed it, but 3 redirects OVERCHARGE it (explodes).
+## Static strikes hammer harder with the rods gone. At 30% rods respawn and
+## arcs come in pairs.
+func _veyx(player: Player, to_player: Vector2, dist: float, _delta: float) -> Vector2:
+	if not veyx_setup:
+		veyx_setup = true
+		_spawn_rods()
+		game.spawn_text(global_position + Vector2(0, -84), "Feed the arc to a rod — but mind the charge.", STORMC)
+
+	if hp <= max_hp * 0.3 and not enraged:
+		enraged = true
+		sprite.modulate = Color(0.8, 0.9, 1.7)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "THE CURRENT UNBOUND!", STORMC)
+		_spawn_rods()
+
+	# Signature: ARC — to the nearest rod the player is sheltering by, else
+	# straight through the player.
+	if special_cd <= 0.0:
+		special_cd = 5.0 if enraged else 7.5
+		for p in (2 if enraged else 1):
+			_arc(player)
+
+	# Squall: scatter volley.
+	if ring_cd <= 0.0:
+		ring_cd = 6.0
+		game.sfx("bolt")
+		for i in 10:
+			_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0 + randf()) * 200.0, dmg * 0.7)
+
+	# Static field: strikes around the prey, hotter when no rods remain.
+	if ability_cd <= 0.0:
+		var live := _rods_live()
+		ability_cd = 2.2 if live == 0 else 3.5
+		for i in (3 if live == 0 else 2):
+			game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
+				68.0, 0.55, dmg * 1.1, {"color": STORMC})
+
+	if dist < 250.0:
+		return -to_player.normalized() * speed
+	elif dist > 380.0:
+		return to_player.normalized() * speed
+	return to_player.orthogonal().normalized() * speed * 0.5
+
+
+func _arc(player: Player) -> void:
+	game.sfx("bolt")
+	var caught: Enemy = null
+	for r in rods:
+		if not is_instance_valid(r) or r.dying:
+			continue
+		if player.global_position.distance_to(r.global_position) < 220.0:
+			caught = r  # the player is sheltering by this rod — it drinks the arc
+			break
+	if caught != null:
+		var id := caught.get_instance_id()
+		rod_charge[id] = int(rod_charge.get(id, 0)) + 1
+		game.burst(caught.global_position, STORMC, 10)
+		if int(rod_charge[id]) >= 3:
+			game.telegraph(caught.global_position, 150.0, 0.6, dmg * 1.6, {"color": STORMC})  # overcharge boom
+			caught.take_damage(99999.0, Vector2.ZERO, false, true)
+			rod_charge.erase(id)
+	else:
+		game.telegraph(player.global_position, 90.0, 0.5, dmg * 1.5, {"color": STORMC})
+
+
+func _spawn_rods() -> void:
+	var base_ang := randf() * TAU
+	for i in maxi(0, 4 - _rods_live()):
+		var at: Vector2 = game.clamp_to_zone(home + Vector2.from_angle(base_ang + TAU * i / 4.0) * 300.0, home)
+		var rod := Enemy.make(game, "choir_censer", at, level)
+		rod.xp_value = 0
+		rod.gold_value = 0
+		rod.attack_cd = 1.0e9
+		rod.aggro_range = 0.0
+		game.add_enemy(rod)
+		rods.append(rod)
+		game.burst(at, STORMC, 8)
+
+
+# --------------------------------------- The Echo of the Unnamed (L39) ---
+## Shadow duelist. UNNAMING spawns 3 mirror copies that fan alongside him —
+## cut a copy and it detonates a void zone. Blink-strike punishes lingering;
+## the arena fills with void. At 25% it refuses to stay forgotten.
+func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Vector2:
+	if not echo_setup:
+		echo_setup = true
+		game.spawn_text(global_position + Vector2(0, -84), "Which one is real? Read the tell.", VOIDC)
+	_tend_clones()
+
+	if hp <= max_hp * 0.25 and not enraged:
+		enraged = true
+		speed *= 1.2
+		sprite.modulate = Color(0.85, 0.6, 1.4)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "IT REFUSES TO BE FORGOTTEN!", VOIDC)
+
+	# Signature: UNNAMING — the mirror copies.
+	if special_cd <= 0.0:
+		special_cd = 6.0 if enraged else 8.0
+		_unnaming(player)
+
+	# Blink-strike onto a lingering prey.
+	if dist > 320.0 and blink_cd <= 0.0:
+		blink_cd = 4.0
+		game.sfx("blink")
+		global_position = game.clamp_to_zone(player.global_position + Vector2.from_angle(randf() * TAU) * 90.0, home)
+		game.burst(global_position, VOIDC, 12)
+		return Vector2.ZERO
+
+	# Dagger fan chip.
+	if ability_cd <= 0.0:
+		ability_cd = 2.4
+		game.sfx("bolt")
+		var aim := to_player.normalized()
+		for spread in [-0.25, 0.0, 0.25]:
+			_bolt(aim.rotated(spread) * 340.0, dmg)
+
+	if dist < 70.0:
+		if attack_cd <= 0.0:
+			attack_cd = 0.7
+			player.take_damage(dmg, dmg_type, self)
+		return Vector2.ZERO
+	return to_player.normalized() * speed
+
+
+func _unnaming(player: Player) -> void:
+	roar()
+	game.spawn_text(global_position + Vector2(0, -84), "UNNAMING!", VOIDC)
+	for i in 3:
+		var at: Vector2 = game.clamp_to_zone(player.global_position + Vector2.from_angle(TAU * i / 3.0 + randf()) * 260.0, home)
+		var c := Enemy.make(game, "echo_clone", at, level)
+		c.force_aggro = true
+		game.add_enemy(c)
+		clones.append(c)
+		game.burst(at, VOIDC, 8)
+
+
+## A cut copy detonates a void zone (persistent damage patch).
+func _tend_clones() -> void:
+	var still: Array = []
+	for c in clones:
+		if not is_instance_valid(c):
+			continue
+		if c.dying:
+			game._add_hazard(game.cur_room, "poison", c.global_position, 90.0, 6.0)
+			game.burst(c.global_position, VOIDC, 10)
+			continue
+		still.append(c)
+	clones = still
+
+
+# ------------------------------ Cyrraeth, Mouth of the Storm (L41) — FINALE ---
+## Three phases. P1 Speaker (Korrag matured — lash lines). P2 the Mouth (a
+## rotating quiet quadrant; vow-keeper adds march to him and PAUSE the
+## rotation — protect-by-permitting). P3 the Word Unfinished (faster, quiet
+## OCTANT, continuous lightning). Kill him and the seal cracks.
+func _cyrraeth(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	if not cyrraeth_setup:
+		cyrraeth_setup = true
+		game.spawn_text(global_position + Vector2(0, -84), "Six hundred years. He stops to listen.", STORMC)
+
+	if phase == 1 and hp <= max_hp * 0.6:
+		phase = 2
+		sprite.modulate = Color(0.8, 0.85, 1.5)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "THE MOUTH OPENS.", STORMC)
+	elif phase == 2 and hp <= max_hp * 0.25:
+		phase = 3
+		enraged = true
+		sprite.modulate = Color(1.0, 0.7, 1.4)
+		roar()
+		game.spawn_text(global_position + Vector2(0, -90), "THE WORD, UNFINISHED.", STORMC)
+
+	if phase == 1:
+		return _cyrraeth_speaker(player, to_player, dist)
+	return _cyrraeth_mouth(player, to_player, dist, delta)
+
+
+func _cyrraeth_speaker(player: Player, to_player: Vector2, dist: float) -> Vector2:
+	if special_cd <= 0.0:
+		special_cd = 7.0
+		_lightning_lash(player)  # the Ch2 Korrag helper, matured here
+	if ability_cd <= 0.0:
+		ability_cd = 2.6
+		game.sfx("bolt")
+		var aim := to_player.normalized()
+		for spread in [-0.3, -0.1, 0.1, 0.3]:
+			_bolt(aim.rotated(spread) * 300.0, dmg)
+	if dist < 250.0:
+		return -to_player.normalized() * speed
+	elif dist > 380.0:
+		return to_player.normalized() * speed
+	return to_player.orthogonal().normalized() * speed * 0.5
+
+
+func _cyrraeth_mouth(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+	_march_vowkeepers(delta)
+	vow_t -= delta
+	if vow_t <= 0.0:
+		vow_t = 12.0
+		_spawn_vowkeepers()
+	rotation_pause = maxf(0.0, rotation_pause - delta)
+
+	# Signature: the rotating storm — all sectors but the quiet one erupt.
+	if special_cd <= 0.0 and rotation_pause <= 0.0:
+		special_cd = 3.5 if phase == 3 else 5.0
+		_storm_rotation()
+
+	# Arcs between rotations.
+	if ability_cd <= 0.0:
+		ability_cd = 2.8
+		game.telegraph(player.global_position, 90.0, 0.5, dmg * 1.3, {"color": STORMC})
+
+	# P3: continuous lightning.
+	if phase == 3 and ring_cd <= 0.0:
+		ring_cd = 1.5
+		game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
+			66.0, 0.5, dmg, {"color": STORMC})
+
+	if dist < 200.0:
+		return -to_player.normalized() * speed * 0.6
+	return Vector2.ZERO  # he recites, mostly rooted
+
+
+## The rotating quiet sector — danger in every angular direction except one
+## wedge (a quadrant in P2, a narrower octant in P3), which walks around.
+func _storm_rotation() -> void:
+	roar()
+	game.spawn_text(global_position + Vector2(0, -84), "STAY IN THE QUIET.", STORMC)
+	var sectors := 8 if phase == 3 else 4
+	safe_quad = (safe_quad + 1) % sectors
+	var center := _arena_rect().get_center()
+	var safe_a := TAU * safe_quad / float(sectors)
+	var wedge := TAU / float(sectors)
+	for i in 12:
+		var ang := TAU * i / 12.0
+		if absf(wrapf(ang - safe_a, -PI, PI)) <= wedge * 0.5:
+			continue  # the quiet wedge — stand here
+		for rad in [190.0, 360.0]:
+			game.telegraph(game.clamp_to_zone(center + Vector2.from_angle(ang) * rad, home),
+				82.0, 1.6, dmg * 1.2, {"color": STORMC})
+
+
+func _spawn_vowkeepers() -> void:
+	var center := _arena_rect().get_center()
+	for i in 2:
+		var at: Vector2 = game.clamp_to_zone(center + Vector2.from_angle(randf() * TAU) * 480.0, home)
+		var v := Enemy.make(game, "cultist", at, level)
+		v.xp_value = 0
+		v.gold_value = 0
+		v.speed = 0.0        # driven manually toward Cyrraeth (LET them through)
+		v.aggro_range = 0.0
+		game.add_enemy(v)
+		vowkeepers.append(v)
+		game.burst(at, STORMC, 8)
+
+
+func _march_vowkeepers(delta: float) -> void:
+	var still: Array = []
+	for v in vowkeepers:
+		if not is_instance_valid(v) or v.dying:
+			continue
+		var to: Vector2 = global_position - v.global_position
+		if to.length() <= 90.0:
+			rotation_pause = maxf(rotation_pause, 10.0)  # it speaks in his place — the storm pauses
+			game.spawn_text(global_position + Vector2(0, -70), "a vow-keeper speaks — the storm pauses", STORMC)
+			v.queue_free()
+			continue
+		v.global_position += to.normalized() * 55.0 * delta
+		still.append(v)
+	vowkeepers = still
