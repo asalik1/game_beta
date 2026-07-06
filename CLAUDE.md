@@ -2,6 +2,7 @@
 
 ## Code layout (see CODING_GUIDELINES.md §38)
 - Tuning knobs → `balance.gd`; data tables stay in domain files (classes/items/story). Never inline a bare tuning number.
+- Docs split (2026-07-06): balance/pacing round narratives go in `BALANCE_HISTORY.md` (newest at TOP of the tuning list); `DESIGN.md` holds only current decisions + distilled standing rules — never append round-by-round history there.
 - Big node classes are inheritance CHAINS (verbatim moves, calls flow derived→base, all vars in the base layer):
   - Game: `game_base` (state/flags/convo/lookups/fx) ← `game_world` (graph/rooms/walls/spawning/gates) ← `game_flow` (deaths/loot/chapters/settings/terrain events) ← `game.gd` (boot + per-frame).
   - Player: `player_core` (state/stats/gear/progression) ← `player_combat` (targeting/hit/juice + 4 kits) ← `player_kits` (paladin/warlock) ← `player.gd` (dispatch/survival/per-frame).
