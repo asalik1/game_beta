@@ -1,5 +1,9 @@
 # Emberfall — working practices (all agents)
 
+## Mobile version — frozen by default
+- `mobile/` (repo root) holds the planned iOS/Android version (see `mobile/README.md` for the framework: Godot native export from a snapshot copy of `game/`).
+- **Do NOT update, sync, or touch anything under `mobile/` unless the user explicitly asks for mobile work.** Desktop changes are never ported there automatically. All normal work happens in `game/` — treat `mobile/` as read-only.
+
 ## Code layout (see CODING_GUIDELINES.md §38)
 - Tuning knobs → `balance.gd`; data tables stay in domain files (classes/items/story). Never inline a bare tuning number.
 - Docs split (2026-07-06): balance/pacing round narratives go in `BALANCE_HISTORY.md` (newest at TOP of the tuning list); `DESIGN.md` holds only current decisions + distilled standing rules — never append round-by-round history there.
