@@ -45,10 +45,22 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 	c.global_position = pos + Vector2(randf_range(-22, 22), randf_range(-16, 16))
 	match str(payload.get("kind", "")):
 		"item":
+			# Grade glow under the icon + a soft bob: LOOT, not scenery.
+			var grade: String = payload["item"].get("grade", "F")
+			var glow := Sprite2D.new()
+			glow.texture = Art.tex("glow")
+			glow.modulate = Color(Items.GRADE_COLOR.get(grade, Color(1, 1, 1)), 0.5)
+			glow.scale = Vector2(1.1, 0.9)
+			c.add_child(glow)
 			var spr := Sprite2D.new()
 			spr.texture = Art.icon_for(payload["item"])
 			spr.scale = Vector2(1.6, 1.6)
 			c.add_child(spr)
+			var bob := spr.create_tween().set_loops()
+			bob.tween_property(spr, "position:y", -4.0, 0.9) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			bob.tween_property(spr, "position:y", 0.0, 0.9) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		"gem":
 			c._glyph("◆", Items.gem_color(payload["gem"]))
 		_:
@@ -117,4 +129,7 @@ func _try_claim(p: Player) -> void:
 		game.sfx("potion")
 		queue_free()
 	else:
+		# SAY why it won't pick up (playtest: "unable to interact, idk") —
+		# the silent 1.2s retry read as a bug, not a full bag.
+		game.spawn_text(global_position + Vector2(0, -30), "BAG FULL", Color(1.0, 0.55, 0.4))
 		retry_cd = 1.2

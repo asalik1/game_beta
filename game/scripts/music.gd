@@ -118,6 +118,25 @@ static func _synth(spec: Dictionary) -> AudioStreamWAV:
 static func build_all() -> Dictionary:
 	var R := -99  # rest
 	return {
+		# ------------------------------------------------ boot screens ---
+		# Cover: the login-screen anthem (round 2 — v1 was "too slow, needs
+		# excitement"): heroic D-minor march, harmony a fifth up, walking
+		# bass, a melody that climbs to a peak and resolves. Alive, not a
+		# boss chase — the war horn heard from home.
+		"title": _synth({"bpm": 98.0, "root": 146.8, "kick_every": 8, "hat_every": 4,
+			"square": 0.35, "lead2": true,
+			"melody": [0, R, 3, 5, 7, R, 7, R, 8, 7, 5, R, 7, R, R, R,
+				10, R, 8, 7, 8, R, 7, 5, 7, 5, 3, R, 5, R, R, R,
+				7, R, 8, 10, 12, R, 12, R, 15, R, 12, 10, 8, R, 10, R,
+				12, 10, 8, 7, 8, 7, 5, 3, 2, R, 3, R, 0, R, R, R],
+			"bass": [0, 0, -2, -2, -4, -4, -2, -2, 0, 0, -2, -2, -9, -9, -7, -7,
+				-4, -4, -4, -4, -2, -2, -2, -2, 0, 0, -4, -4, -2, -2, -2, -2]}),
+		# Roster / new-character screens: the hearth before the journey —
+		# hushed major pentatonic, slower and softer than the village.
+		"roster": _synth({"bpm": 76.0, "root": 196.0, "kick_every": 16, "hat_every": 8, "square": 0.12,
+			"melody": [0, R, 4, R, 7, R, 9, R, 7, R, 4, R, 2, R, 4, R,
+				0, R, 4, R, 7, R, 12, R, 9, R, 7, R, 4, R, 2, R],
+			"bass": [0, 0, -5, -5, -3, -3, -5, -5, 0, 0, -3, -3, -5, -5, -7, -7]}),
 		# Gentle, warm, major-pentatonic stroll (soft round tone).
 		"village": _synth({"bpm": 92.0, "root": 220.0, "kick_every": 8, "square": 0.25,
 			"melody": [0, R, 4, R, 7, R, 4, 2, 0, R, 2, R, 4, R, R, R,

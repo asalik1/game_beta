@@ -374,6 +374,7 @@ func xp_needed() -> int:
 func recalc() -> void:
 	var base: Dictionary = Classes.CLASSES[cls]
 	var b := {"atk_flat": 0.0, "atk_pct": 0.0, "hp_flat": 0.0, "hp_pct": 0.0,
+		"STR": 0.0, "AGI": 0.0, "INT": 0.0, "VIT": 0.0,
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
 		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
 		"blink_dr": 0.0, "blink_dr_dur": 0.0, "flat_dr": 0.0,
@@ -416,8 +417,10 @@ func recalc() -> void:
 	# substat points (PhysRes, DEX, pens...) convert 1:1 for everyone.
 	var attr_scale: Dictionary = Classes.ATTR_SCALE[cls]
 	for attr in attr_points:
-		var pts: int = attr_points[attr]
-		if pts <= 0:
+		# Allocated points PLUS gear attribute mains (2026-07-06): every
+		# piece guarantees the class primary; both convert identically.
+		var pts: float = float(attr_points[attr]) + b.get(attr, 0.0)
+		if pts <= 0.0:
 			continue
 		var conv: Dictionary = Classes.SUBSTAT_SCALE.get(attr, attr_scale.get(attr, {}))
 		for stat in conv:
@@ -430,15 +433,18 @@ func recalc() -> void:
 	atk = (primary + b["atk_flat"]) * (1.0 + b["atk_pct"])
 	max_hp = (base["hp"] + base["hp_lvl"] * (level - 1) + b["hp_flat"]) * (1.0 + b["hp_pct"])
 	max_mp = base["mp"] + base["mp_lvl"] * (level - 1) + b["mp_flat"]
-	speed = base["speed"] * (1.0 + b["speed_pct"])
+	# Movement speed is SOVEREIGN (player rule, 2026-07-06): no gear, gem
+	# or talent may touch it — only terrain (hazard_speed) and abilities
+	# (theme_speed). Dodging is life or death; speed stays authored.
+	speed = base["speed"]
 	crit = 0.05 + b["crit"] + primary * 0.0006
 	crit_dmg = 1.5 + b["crit_dmg"]
 	# Anti-degeneracy caps (player-designed, 2026-07-06): the special
-	# stats are gem-only and HARD-capped regardless of source — no build
-	# stacks past them. Late game may lift these a notch by level (L80+);
-	# deliberately not built yet.
-	cdr = clampf(b["cdr"], 0.0, Balance.CAP_CDR)
-	lifesteal = minf(b["lifesteal"], Balance.CAP_LIFESTEAL)
+	# stats are gem-only and SOFT-KNEE'd regardless of source — beyond
+	# the cap every point pays ~1/10 (never a dead stop). Late game may
+	# lift the caps a notch by level (L80+); deliberately not built yet.
+	cdr = Balance.soft_cap(maxf(0.0, b["cdr"]), Balance.CAP_CDR)
+	lifesteal = Balance.soft_cap(maxf(0.0, b["lifesteal"]), Balance.CAP_LIFESTEAL)
 	regen_pct = b["regen_pct"]
 	sw_regen = b["sw_regen"]
 	sw_delay = b["sw_delay"]
@@ -472,7 +478,7 @@ func recalc() -> void:
 	dex = b["dex"]
 	physpen = b["physpen"]
 	magpen = b["magpen"]
-	combo = minf(b["combo"], Balance.CAP_COMBO)  # anti-degeneracy cap
+	combo = Balance.soft_cap(maxf(0.0, b["combo"]), Balance.CAP_COMBO)  # soft knee
 	greed = b["greed"]
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
@@ -511,9 +517,12 @@ func current_atk() -> float:
 
 
 func current_lifesteal() -> float:
-	return lifesteal + (0.15 if berserk_time > 0.0 else 0.0) \
-		+ (pact_ls if pact_time > 0.0 else 0.0) \
-		+ (stab_ls_amt if stab_ls_time > 0.0 else 0.0)
+	# Surges ADD to the stat (an assassin with 2% lifesteal proccing a
+	# 26% surge drains at 28%) — and the TOTAL rides the same soft knee
+	# as the stat, so temp windows can't smuggle past the cap either.
+	return Balance.soft_cap(lifesteal + (0.15 if berserk_time > 0.0 else 0.0)
+		+ (pact_ls if pact_time > 0.0 else 0.0)
+		+ (stab_ls_amt if stab_ls_time > 0.0 else 0.0), Balance.CAP_LIFESTEAL)
 
 
 ## An attribute's TOTAL: everyone has a base of 5, allocation adds to it,
@@ -654,6 +663,13 @@ func acquire_bag(b: Dictionary) -> bool:
 
 
 func equip(item: Dictionary) -> void:
+	# Class lock (player rule, 2026-07-06): a mage cannot wear an
+	# assassin's boots. Unclassed items (legacy saves, dev tools) pass.
+	var item_cls := String(item.get("cls", ""))
+	if item_cls != "" and item_cls != cls:
+		game.spawn_text(global_position + Vector2(0, -56),
+			"%s gear — not yours to wear." % item_cls.capitalize(), Color(1.0, 0.7, 0.5))
+		return
 	backpack.erase(item)
 	var slot: String = item["slot"]
 	if equipment.has(slot):
@@ -691,6 +707,13 @@ func strip_gems(item: Dictionary) -> void:
 ## gateway to off-build stats, never the highway (player rule, 2026-07-06).
 func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
 	if item.get("gems", []).size() >= item.get("gem_slots", 0):
+		return false
+	# A vessel holds what it can bear: B ≤ Lv3, A ≤ Lv6, S ≤ Lv10.
+	var lvl_lim: int = Items.GEM_LEVEL_LIMIT.get(String(item.get("grade", "")), 0)
+	if int(gem["lvl"]) > lvl_lim:
+		game.spawn_text(global_position + Vector2(0, -56),
+			"%s gear holds gems up to Lv%d." % [String(item.get("grade", "?")), lvl_lim],
+			Color(1.0, 0.7, 0.5))
 		return false
 	if String(gem["stat"]) in Balance.SPECIAL_GEM_STATS:
 		for socketed in item.get("gems", []):
@@ -884,11 +907,14 @@ func dm(slot: String) -> float:
 
 func ability_cd(slot: String) -> float:
 	var ab := Classes.ability(cls, slot)
-	if cls == "assassin" and slot == "ult":
-		# Death Mark runs a FIXED cooldown (round 38): immune to haste
-		# and cd talents. At its numbers the execution gets disgusting
-		# below 30s — the authored cd IS the floor.
-		return float(ab["cd"])
+	if slot == "ult":
+		# ULTS ignore haste, EVERY class (player rule 2026-07-06: there's
+		# a reason they're called ults). Authored ult-cd TALENTS still
+		# apply — those are design-owned, not stat-stacking. The assassin's
+		# Death Mark stays FULLY fixed, talents included (round 38).
+		if cls == "assassin":
+			return float(ab["cd"])
+		return maxf(0.1, ab["cd"] * (1.0 + _amod(slot, "cd")))
 	if cls == "assassin" and slot == "a2":
 		# Shadow Dash: this is the WHIFF cd — floored so gear cdr can't push
 		# it below DASH_WHIFF_FLOOR. A connecting refund (in _dash_strike)

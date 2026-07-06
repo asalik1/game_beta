@@ -26,19 +26,29 @@ static func loot_sound(grade: String) -> String:
 const SLOTS := ["weapon", "armor", "boots", "charm"]
 const SLOT_ICON := {"weapon": "⚔", "armor": "🛡", "boots": "👢", "charm": "❖"}
 
-# Main stat per slot (base value, scaled by grade multiplier).
-# Charm main was Haste until 2026-07-06 — Haste is a special (gem-only)
-# stat now, so the trinket's identity moved to precision.
-const SLOT_MAIN := {
-	"weapon": {"atk_flat": 6.0},
-	"armor":  {"hp_flat": 40.0},
-	"boots":  {"speed_pct": 0.06},
-	"charm":  {"crit": 0.05},
+# Every piece's MAIN is the wearer-class's PRIMARY attribute (player
+# rule, 2026-07-06, WoW-style): guaranteed, class-matched, slot-budgeted
+# points that convert through Classes.ATTR_SCALE exactly like allocated
+# talent points — a dagger literally cannot carry INT. (Old slot mains —
+# weapon ATK / armor HP / boots Speed / charm Haste — are retired; legacy
+# ATK/HP mains on old saves still count, banned ones are stripped on load.)
+# Budgets sized (2026-07-06) so the L42 full-B benchmark loadout lands
+# within ~1-2% of the pre-attribute-mains power envelope: attributes
+# convert SUB-1 to ATK (0.9 — player rule: 100 STR = 90 ATK + 120 HP),
+# and the total slot budget stays small enough that gear attributes
+# never outrun the ~5.5%/level player curve every boss is pinned to.
+const SLOT_MAIN_BUDGET := {"weapon": 5.0, "armor": 3.0, "boots": 2.0, "charm": 2.5}
+# Mirror of Classes.CLASSES[cls]["primary"] — items.gd must not preload
+# classes.gd (same rule as CLASSES_DMG_TYPE below).
+const CLASS_PRIMARY := {
+	"warrior": "STR", "paladin": "STR",
+	"archer": "AGI", "assassin": "AGI",
+	"mage": "INT", "warlock": "INT",
 }
 
 # Weapon shapes a class can actually be DEALT (round 15: an archer was
-# looting Tomes). Any class may still equip anything from the bag —
-# drops just stop wasting rolls on the wrong arsenal.
+# looting Tomes). Since 2026-07-06 gear is also class-LOCKED at equip
+# (item["cls"]) — a mage cannot wear an assassin's boots.
 const CLASS_WEAPONS := {
 	"warrior": ["Blade", "Edge", "Claymore"],
 	"archer": ["Bow", "Crossbow"],
@@ -87,38 +97,38 @@ const S_GEAR := {
 	"warrior": {
 		"weapon": {"name": "Kingsbane, Edge of the Fallen Crown", "passive": "kingsblade", "noun": "Blade"},
 		"armor":  {"name": "Aegis of the Mountain",   "subs": {"hp_pct": 0.15, "physres": 20.0}},
-		"boots":  {"name": "Earthshaker Sabatons",    "subs": {"speed_pct": 0.06, "hp_pct": 0.08}},
+		"boots":  {"name": "Earthshaker Sabatons",    "subs": {"hp_pct": 0.10, "physres": 10.0}},
 		"charm":  {"name": "Warlord's Iron Oath",     "subs": {"atk_pct": 0.10, "physpen": 10.0}},
 	},
 	"archer": {
 		"weapon": {"name": "Stormcaller, Bow of the Tempest", "passive": "windward", "noun": "Bow"},
 		"armor":  {"name": "Cloak of a Thousand Leaves", "subs": {"hp_pct": 0.10, "eva": 0.05}},
-		"boots":  {"name": "Zephyr's Grace",             "subs": {"speed_pct": 0.09, "crit": 0.06}},
+		"boots":  {"name": "Zephyr's Grace",             "subs": {"dex": 8.0, "crit": 0.06}},
 		"charm":  {"name": "The Hawk God's Eye",         "subs": {"crit": 0.10, "crit_dmg": 0.30}},
 	},
 	"mage": {
 		"weapon": {"name": "Heart of the Phoenix", "passive": "wellspring", "noun": "Staff"},
 		"armor":  {"name": "Robes of the Infinite", "subs": {"hp_pct": 0.10, "magres": 18.0}},
-		"boots":  {"name": "Steps of the Void",     "subs": {"speed_pct": 0.07, "cdr": 0.05}},
-		"charm":  {"name": "The Archmage's Folly",  "subs": {"cdr": 0.10, "magpen": 10.0}},
+		"boots":  {"name": "Steps of the Void",     "subs": {"eva": 0.04, "magres": 12.0}},
+		"charm":  {"name": "The Archmage's Folly",  "subs": {"crit": 0.08, "magpen": 10.0}},
 	},
 	"assassin": {
 		"weapon": {"name": "Nightfang, Kiss of the Abyss", "passive": "mirrorstep", "noun": "Fang"},
-		"armor":  {"name": "Shroud of Silence", "subs": {"hp_pct": 0.08, "lifesteal": 0.05}},
-		"boots":  {"name": "Whisperwind",       "subs": {"speed_pct": 0.10, "crit": 0.05}},
-		"charm":  {"name": "The Bloodpact",     "subs": {"crit": 0.08, "combo": 0.04}},
+		"armor":  {"name": "Shroud of Silence", "subs": {"hp_pct": 0.08, "eva": 0.04}},
+		"boots":  {"name": "Whisperwind",       "subs": {"dex": 8.0, "crit": 0.05}},
+		"charm":  {"name": "The Bloodpact",     "subs": {"crit": 0.08, "crit_dmg": 0.25}},
 	},
 	"paladin": {
 		"weapon": {"name": "Dawnbreaker, Hammer of the Highfather", "passive": "dawnbreaker", "noun": "Hammer"},
 		"armor":  {"name": "Bulwark of the Dawn",  "subs": {"hp_pct": 0.12, "physres": 14.0, "magres": 14.0}},
-		"boots":  {"name": "Greaves of the Vigil", "subs": {"speed_pct": 0.06, "hp_pct": 0.08}},
-		"charm":  {"name": "The Highfather's Oath", "subs": {"atk_pct": 0.08, "cdr": 0.06, "lifesteal": 0.02}},
+		"boots":  {"name": "Greaves of the Vigil", "subs": {"hp_pct": 0.08, "magres": 10.0}},
+		"charm":  {"name": "The Highfather's Oath", "subs": {"atk_pct": 0.10, "physres": 8.0}},
 	},
 	"warlock": {
 		"weapon": {"name": "Grimoire of the Hollow Choir", "passive": "voidmaw", "noun": "Tome"},
 		"armor":  {"name": "Vestments of the Long Bargain", "subs": {"hp_pct": 0.10, "magres": 16.0}},
-		"boots":  {"name": "Voidwalkers",                   "subs": {"speed_pct": 0.08, "magpen": 6.0}},
-		"charm":  {"name": "The First Debt",                "subs": {"atk_pct": 0.08, "lifesteal": 0.04}},
+		"boots":  {"name": "Voidwalkers",                   "subs": {"magpen": 8.0, "hp_pct": 0.06}},
+		"charm":  {"name": "The First Debt",                "subs": {"atk_pct": 0.10, "magpen": 6.0}},
 	},
 }
 
@@ -137,6 +147,9 @@ const PASSIVES := {
 
 const GEM_SLOTS := {"F": 0, "E": 0, "D": 0, "C": 0, "B": 1, "A": 2, "S": 3}
 const GEM_MAX_LEVEL := 10
+# A vessel holds what it can bear (player rule, 2026-07-06): each grade
+# caps the gem LEVEL it can socket — deep gems need endgame gear.
+const GEM_LEVEL_LIMIT := {"F": 0, "E": 0, "D": 0, "C": 0, "B": 3, "A": 6, "S": 10}
 
 # stat -> [display name, base value per level-ish, color]
 const GEM_STATS := {
@@ -250,7 +263,7 @@ const SHAPE_STYLE := {
 	"Blade":    {"main": 1.0,  "subs": {"atk_pct": 0.05}, "tag": "balanced"},
 	"Edge":     {"main": 1.2,  "subs": {}, "tag": "heavy hits"},
 	"Fang":     {"main": 0.85, "subs": {"crit": 0.05}, "tag": "crit"},
-	"Kunai":    {"main": 0.8,  "subs": {"crit": 0.04, "speed_pct": 0.03}, "tag": "crit + speed"},
+	"Kunai":    {"main": 0.8,  "subs": {"crit": 0.04, "dex": 3.0}, "tag": "crit + aim"},
 	"Claymore": {"main": 1.4,  "subs": {}, "tag": "massive damage"},
 	"Bow":      {"main": 0.9,  "subs": {"dex": 5.0}, "tag": "true aim"},
 	"Crossbow": {"main": 1.05, "subs": {"physpen": 5.0}, "tag": "penetration"},
@@ -259,7 +272,7 @@ const SHAPE_STYLE := {
 	"Hammer":   {"main": 1.25, "subs": {"hp_flat": 20.0}, "tag": "crushing + sturdy"},
 	"Tome":     {"main": 0.9,  "subs": {"magpen": 4.0, "mp_flat": 12.0}, "tag": "dark power"},
 	"Plate":    {"main": 1.15, "subs": {}, "tag": "bulk"},
-	"Mail":     {"main": 0.9,  "subs": {"speed_pct": 0.03}, "tag": "mobility"},
+	"Mail":     {"main": 0.9,  "subs": {"eva": 0.015}, "tag": "elusive"},
 	"Guard":    {"main": 0.95, "subs": {"physres": 10.0}, "tag": "physical resistance"},
 	"Boots":    {"main": 1.0,  "subs": {}, "tag": "balanced"},
 	"Striders": {"main": 0.9,  "subs": {"eva": 0.02}, "tag": "elusive"},
@@ -280,16 +293,19 @@ const CLASSES_DMG_TYPE := {
 # The SPECIAL stats (Haste/Lifesteal/Combo/Greed) are deliberately
 # ABSENT: they are gem-only (Balance.SPECIAL_GEM_STATS) — gems are the
 # gateway to off-build stats, and each item sockets at most one special
-# gem. Supersedes round 43's B-gate: gear never rolls them at any grade.
+# gem. MOVEMENT SPEED is absent for a harder reason: it is sovereign —
+# only terrain and abilities may touch it (dodging is life or death;
+# player rule 2026-07-06). Supersedes round 43's B-gate.
 const SUBSTATS := {
-	"atk_pct": 0.05, "hp_pct": 0.06, "crit": 0.03,
-	"speed_pct": 0.03, "crit_dmg": 0.08,
+	"atk_pct": 0.05, "hp_pct": 0.06, "crit": 0.03, "crit_dmg": 0.08,
+	"VIT": 3.0,
 	"physres": 9.0, "magres": 9.0, "critres": 6.0, "eva": 0.02, "dex": 4.0,
 	"physpen": 5.0, "magpen": 5.0, "mp_flat": 12.0,
 }
 
 const STAT_LABEL := {
 	"atk_flat": "ATK", "hp_flat": "HP", "atk_pct": "ATK%", "hp_pct": "HP%",
+	"STR": "STR", "AGI": "AGI", "INT": "INT", "VIT": "VIT",
 	"crit": "Crit", "crit_dmg": "CritDmg", "cdr": "Haste", "speed_pct": "Speed",
 	"lifesteal": "Lifesteal", "greed": "Greed", "mp_flat": "MP",
 	"physres": "PhysRes", "magres": "MagRes", "critres": "CritRes",
@@ -298,7 +314,7 @@ const STAT_LABEL := {
 }
 
 # Stats measured in flat points rather than percent (for display).
-const FLAT_STATS := ["atk_flat", "hp_flat", "mp_flat", "physres", "magres", "critres", "dex", "physpen", "magpen"]
+const FLAT_STATS := ["atk_flat", "hp_flat", "mp_flat", "physres", "magres", "critres", "dex", "physpen", "magpen", "STR", "AGI", "INT", "VIT"]
 
 # Chest tiers -> grade weights.
 const CHEST_TIERS := {
@@ -350,9 +366,10 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 		noun = S_GEAR[cls][slot]["noun"]  # legendaries use their class shape
 	var style: Dictionary = SHAPE_STYLE.get(noun, {"main": 1.0, "subs": {}})
 
-	var main := {}
-	for stat in SLOT_MAIN[slot]:
-		main[stat] = snappedf(SLOT_MAIN[slot][stat] * mult * style["main"] * rng.randf_range(0.9, 1.15), 0.01)
+	# The main is the class's primary attribute, guaranteed (2026-07-06).
+	var primary := String(CLASS_PRIMARY.get(cls, "STR"))
+	var main := {primary: snappedf(SLOT_MAIN_BUDGET[slot] * mult * style["main"]
+		* rng.randf_range(0.9, 1.15), 0.01)}
 	var subs := roll_subs(grade, noun, cls, rng)
 
 	var item := {
@@ -360,6 +377,8 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 		"main": main, "subs": subs, "plus": 0,
 		"gem_slots": GEM_SLOTS[grade], "gems": [],
 	}
+	if cls != "":
+		item["cls"] = cls  # class-locked: only this class may EQUIP it
 	var prefix_pool: Array = PREFIXES[grade]
 	item["name"] = "%s %s" % [prefix_pool[rng.randi_range(0, prefix_pool.size() - 1)], item["noun"]]
 
@@ -464,11 +483,11 @@ static func add_socket(item: Dictionary) -> void:
 # S items carry item["cls"], so only your class's legendaries count.
 const SET_BONUSES := {
 	"warrior":  {"name": "Emberforged Warplate", "2": {"hp_pct": 0.10}, "4": {"atk_pct": 0.12, "physres": 20.0}},
-	"archer":   {"name": "The Hawk God's Regalia", "2": {"crit": 0.06}, "4": {"crit_dmg": 0.25, "speed_pct": 0.06}},
-	"mage":     {"name": "The Archmage's Array", "2": {"cdr": 0.08}, "4": {"atk_pct": 0.12, "magpen": 10.0}},
-	"assassin": {"name": "The Shadow God's Vestige", "2": {"crit": 0.06}, "4": {"crit_dmg": 0.20, "lifesteal": 0.05}},
-	"paladin":  {"name": "The Highfather's Aegis", "2": {"hp_pct": 0.10}, "4": {"physres": 18.0, "lifesteal": 0.04}},
-	"warlock":  {"name": "The Long Bargain Raiment", "2": {"cdr": 0.06}, "4": {"magpen": 10.0, "lifesteal": 0.06}},
+	"archer":   {"name": "The Hawk God's Regalia", "2": {"crit": 0.06}, "4": {"crit_dmg": 0.25, "dex": 8.0}},
+	"mage":     {"name": "The Archmage's Array", "2": {"magpen": 8.0}, "4": {"atk_pct": 0.12, "magpen": 10.0}},
+	"assassin": {"name": "The Shadow God's Vestige", "2": {"crit": 0.06}, "4": {"crit_dmg": 0.20, "atk_pct": 0.06}},
+	"paladin":  {"name": "The Highfather's Aegis", "2": {"hp_pct": 0.10}, "4": {"physres": 18.0, "hp_pct": 0.08}},
+	"warlock":  {"name": "The Long Bargain Raiment", "2": {"mp_flat": 25.0}, "4": {"magpen": 10.0, "atk_pct": 0.08}},
 }
 
 

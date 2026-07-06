@@ -216,44 +216,44 @@ static func substat_text(attr: String) -> String:
 
 const ATTR_SCALE := {
 	"warrior": {
-		"STR": {"atk_flat": 1.2, "hp_flat": 2.0},
-		"AGI": {"atk_flat": 0.4, "eva": 0.0006},
-		"INT": {"mp_flat": 1.5, "magres": 0.5},
-		"VIT": {"hp_flat": 7.0, "physres": 0.4},
+		"STR": {"atk_flat": 0.9, "hp_flat": 1.2},
+		"AGI": {"atk_flat": 0.4, "crit": 0.0004},
+		"INT": {"atk_flat": 0.2, "crit": 0.0002, "dex": 0.06},
+		"VIT": {"hp_flat": 7.0, "physres": 0.4, "magres": 0.3, "critres": 0.2},
 	},
 	"archer": {
-		"STR": {"atk_flat": 0.4, "hp_flat": 2.0},
-		"AGI": {"atk_flat": 1.2, "crit": 0.0008},
-		"INT": {"mp_flat": 1.5, "magres": 0.4},
-		"VIT": {"hp_flat": 5.0, "physres": 0.3},
+		"STR": {"atk_flat": 0.4, "hp_flat": 1.2},
+		"AGI": {"atk_flat": 0.9, "crit": 0.0008},
+		"INT": {"atk_flat": 0.2, "crit": 0.0002, "dex": 0.06},
+		"VIT": {"hp_flat": 5.0, "physres": 0.3, "magres": 0.25, "critres": 0.15},
 	},
 	"mage": {
-		"STR": {"atk_flat": 0.2, "hp_flat": 2.0},
-		"AGI": {"atk_flat": 0.3, "eva": 0.0005},
-		"INT": {"atk_flat": 1.2, "mp_flat": 3.0},
-		"VIT": {"hp_flat": 5.0, "physres": 0.3},
+		"STR": {"atk_flat": 0.2, "hp_flat": 1.2},
+		"AGI": {"atk_flat": 0.3, "crit": 0.0004},
+		"INT": {"atk_flat": 0.9, "crit": 0.0006, "dex": 0.15},
+		"VIT": {"hp_flat": 5.0, "physres": 0.3, "magres": 0.25, "critres": 0.15},
 	},
 	"assassin": {
-		"STR": {"atk_flat": 0.4, "hp_flat": 2.0},
-		"AGI": {"atk_flat": 1.2, "crit": 0.0007, "eva": 0.0004},
-		"INT": {"mp_flat": 1.5, "magres": 0.4},
-		"VIT": {"hp_flat": 5.0, "physres": 0.3},
+		"STR": {"atk_flat": 0.4, "hp_flat": 1.2},
+		"AGI": {"atk_flat": 0.9, "crit": 0.0008},
+		"INT": {"atk_flat": 0.2, "crit": 0.0002, "dex": 0.06},
+		"VIT": {"hp_flat": 5.0, "physres": 0.3, "magres": 0.25, "critres": 0.15},
 	},
 	# STR/INT hybrid: STR is still the primary, but INT converts to real
 	# power too (faith fuels the hammer) — unique among the melee classes.
 	"paladin": {
-		"STR": {"atk_flat": 1.0, "hp_flat": 3.0},
-		"AGI": {"atk_flat": 0.3, "eva": 0.0005},
-		"INT": {"atk_flat": 0.6, "mp_flat": 2.0, "magres": 0.5},
-		"VIT": {"hp_flat": 6.0, "physres": 0.4},
+		"STR": {"atk_flat": 0.9, "hp_flat": 1.2},
+		"AGI": {"atk_flat": 0.3, "crit": 0.0004},
+		"INT": {"atk_flat": 0.6, "crit": 0.0004, "dex": 0.1},
+		"VIT": {"hp_flat": 6.0, "physres": 0.4, "magres": 0.3, "critres": 0.2},
 	},
 	# VIT is worth more to a warlock than to other casters — HP is a
 	# spendable resource (Dark Pact).
 	"warlock": {
-		"STR": {"atk_flat": 0.2, "hp_flat": 2.0},
-		"AGI": {"atk_flat": 0.3, "eva": 0.0005},
-		"INT": {"atk_flat": 1.2, "mp_flat": 2.5},
-		"VIT": {"hp_flat": 6.0, "physres": 0.3},
+		"STR": {"atk_flat": 0.2, "hp_flat": 1.2},
+		"AGI": {"atk_flat": 0.3, "crit": 0.0004},
+		"INT": {"atk_flat": 0.9, "crit": 0.0006, "dex": 0.15},
+		"VIT": {"hp_flat": 6.0, "physres": 0.3, "magres": 0.3, "critres": 0.2},
 	},
 }
 
@@ -264,7 +264,7 @@ static func attr_help(cls: String, attr: String) -> String:
 	var scale: Dictionary = ATTR_SCALE[cls].get(attr, {})
 	var bits: Array = []
 	var atk_v: float = scale.get("atk_flat", 0.0)
-	if atk_v >= 1.0:
+	if atk_v >= 0.8:  # primaries convert at 0.9 (2026-07-06: sub-1 by design)
 		bits.append("greatly increases your ATK")
 	elif atk_v >= 0.3:
 		bits.append("slightly increases your ATK")
@@ -279,12 +279,16 @@ static func attr_help(cls: String, attr: String) -> String:
 		bits.append("adds solid health")
 	elif hp_v > 0.0:
 		bits.append("adds a little health")
+	if scale.has("dex"):
+		bits.append("adds a little DEX (accuracy)")
 	if scale.has("mp_flat"):
 		bits.append("expands your mana pool")
 	if scale.has("magres"):
 		bits.append("hardens you against magic")
 	if scale.has("physres"):
 		bits.append("hardens you against physical damage")
+	if scale.has("critres"):
+		bits.append("blunts enemy crits")
 	var out := "For a %s this " % CLASSES[cls]["name"]
 	out += "; ".join(bits) + "."
 	if CLASSES[cls]["primary"] == attr:

@@ -81,11 +81,14 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		pen = magpen
 		e_res = e.magres
 
-	var eff_crit: float = crit + effects.get("crit_bonus", 0.0)
+	# Theme crit bonuses (and theme-line talents like Nightfall) are
+	# CAP-EXEMPT (player rule 2026-07-06): they ride above the 35% knee
+	# at full value — the built stat knees, the themed edge never does.
+	var crit_exempt: float = effects.get("crit_bonus", 0.0)
 	if void_crit > 0.0 and effects.get("crush", 0):
-		eff_crit += void_crit  # Nightfall (warlock): Void's crushing line crits more
+		crit_exempt += void_crit  # Nightfall (warlock): Void's crushing line crits more
 	var result := Stats.resolve(current_atk() * mult, dmg_type,
-		eff_crit, crit_dmg, pen, dex, e_res, e.eva, e.critres)
+		crit, crit_dmg, pen, dex, e_res, e.eva, e.critres, crit_exempt)
 	if result["miss"]:
 		game.spawn_text(e.global_position + Vector2(0, -30), "MISS", Color(0.7, 0.7, 0.7))
 		return

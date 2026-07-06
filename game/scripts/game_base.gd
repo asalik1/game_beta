@@ -1253,6 +1253,8 @@ func set_music(name: String) -> void:
 	var tune: Dictionary = MUSIC_TUNE.get(name, {})
 	music_gain_db = MUSIC_DB + float(tune.get("gain", 0.0))
 	var tween := create_tween()
+	# The crossfade must run while the tree is paused (boot menus pause it).
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.tween_property(music_player, "volume_db", -40.0 + _vol_db(float(settings["music"])), 0.4)
 	tween.tween_callback(func() -> void:
 		if name == "" or not music_tracks.has(name):

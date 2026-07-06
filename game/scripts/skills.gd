@@ -18,22 +18,22 @@ const TREES := {
 	"warrior": [  # columns: Fury / Bulwark / Earth
 		[
 			{"id": "w00", "name": "Heavy Cleave",  "desc": "Cleave +5% damage", "amod": {"a1": {"dmg": 0.05}}},
-			{"id": "w01", "name": "Thick Hide",    "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "w01", "name": "Thick Hide",    "desc": "+4% max HP", "bonus": {"hp_pct": 0.04}},
 			{"id": "w02", "name": "Wide Storm",    "desc": "Whirlwind +5% damage", "amod": {"a3": {"dmg": 0.05}}},
 		],
 		[
 			{"id": "w10", "name": "Killer Instinct", "desc": "+1.5% crit chance", "bonus": {"crit": 0.015}},
 			{"id": "w11", "name": "Iron Wall",       "desc": "+10 physical resistance", "bonus": {"physres": 10.0}},
-			{"id": "w12", "name": "Heavy Bash",      "desc": "Shield Bash +8% damage", "amod": {"a2": {"dmg": 0.08}}},
+			{"id": "w12", "name": "Stonehide",       "desc": "+1 phys & magic res per Grit stack (the beating hardens you)", "bonus": {"grit_res": 1.0}},
 		],
 		[
-			{"id": "w20", "name": "Battle Rhythm", "desc": "+1% combo chance", "bonus": {"combo": 0.01}},
+			{"id": "w20", "name": "Battle Rhythm", "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
 			{"id": "w21", "name": "Spell Ward",    "desc": "+10 magic resistance", "bonus": {"magres": 10.0}},
 			{"id": "w22", "name": "Momentum",      "desc": "Whirlwind cooldown -4%", "amod": {"a3": {"cd": -0.04}}},
 		],
 		[
 			{"id": "w30", "name": "Warlord",   "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
-			{"id": "w31", "name": "Colossus",  "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "w31", "name": "Deep Grit", "desc": "+1 max Grit stack", "bonus": {"grit_cap": 1.0}},
 			{"id": "w32", "name": "Sunderer",  "desc": "+4 physical penetration", "bonus": {"physpen": 4.0}},
 		],
 	],
@@ -44,7 +44,7 @@ const TREES := {
 			{"id": "a02", "name": "Steady Aim",       "desc": "+1.5% crit chance", "bonus": {"crit": 0.015}},
 		],
 		[
-			{"id": "a10", "name": "Chain Reflex",     "desc": "+2% combo chance", "bonus": {"combo": 0.02}},
+			{"id": "a10", "name": "Chain Reflex",     "desc": "+4 DEX (accuracy)", "bonus": {"dex": 4.0}},
 			{"id": "a11", "name": "Second Breath",    "desc": "Second Wind regen +1% max HP/s", "bonus": {"sw_regen": 0.01}},
 			{"id": "a12", "name": "Falcon's Patience", "desc": "Arrow Storm cooldown -10%", "amod": {"ult": {"cd": -0.10}}},
 		],
@@ -71,7 +71,7 @@ const TREES := {
 			{"id": "m12", "name": "Slipstream",   "desc": "Blink cooldown -5%", "amod": {"a3": {"cd": -0.05}}},
 		],
 		[
-			{"id": "m20", "name": "Arcane Echo",  "desc": "+2% combo chance", "bonus": {"combo": 0.02}},
+			{"id": "m20", "name": "Arcane Echo",  "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
 			{"id": "m21", "name": "Piercing Cold", "desc": "+4 magic penetration", "bonus": {"magpen": 4.0}},
 			{"id": "m22", "name": "Warding Veil", "desc": "+5% Blink damage reduction (the 0.8s ward)", "bonus": {"blink_dr": 0.05}},
 		],
@@ -85,7 +85,7 @@ const TREES := {
 		[
 			{"id": "s00", "name": "Coated Blades", "desc": "Stab +5% damage", "amod": {"a1": {"dmg": 0.05}}},
 			{"id": "s01", "name": "Night Edge",    "desc": "+1.5% crit chance", "bonus": {"crit": 0.015}},
-			{"id": "s02", "name": "Quick Hands",   "desc": "+2% combo chance", "bonus": {"combo": 0.02}},
+			{"id": "s02", "name": "Quick Hands",   "desc": "+4 DEX (accuracy)", "bonus": {"dex": 4.0}},
 		],
 		[
 			{"id": "s10", "name": "Lingering Toxin", "desc": "Fan of Knives +6% damage", "amod": {"a3": {"dmg": 0.06}}},
@@ -95,7 +95,7 @@ const TREES := {
 		[
 			{"id": "s20", "name": "Wasting Venom", "desc": "+4 physical penetration", "bonus": {"physpen": 4.0}},
 			{"id": "s21", "name": "Coup de Grâce", "desc": "+8% damage to enemies below 40% HP", "bonus": {"execute_dmg": 0.08}},
-			{"id": "s22", "name": "Bloodletter",   "desc": "+1% lifesteal", "bonus": {"lifesteal": 0.01}},
+			{"id": "s22", "name": "Iron Veins",    "desc": "+4% max HP", "bonus": {"hp_pct": 0.04}},
 		],
 		[
 			{"id": "s30", "name": "Plaguebearer", "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
@@ -106,29 +106,29 @@ const TREES := {
 	"paladin": [  # columns: Holy / Aegis / Wrath
 		[
 			{"id": "p00", "name": "Righteous Blows", "desc": "Judgment +5% damage", "amod": {"a1": {"dmg": 0.05}}},
-			{"id": "p01", "name": "Devotion",        "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "p01", "name": "Devotion",        "desc": "+4% max HP", "bonus": {"hp_pct": 0.04}},
 			{"id": "p02", "name": "Zeal",            "desc": "+1.5% crit chance", "bonus": {"crit": 0.015}},
 		],
 		[
-			{"id": "p10", "name": "Hallowed Ground", "desc": "Consecration +6% damage", "amod": {"a2": {"dmg": 0.06}}},
+			{"id": "p10", "name": "Hallowed Ground", "desc": "Consecration blesses the ground: +1% max HP/s for 6s (recast renews, never stacks)", "bonus": {"nova_regen": 0.01}},
 			{"id": "p11", "name": "Shieldwall",      "desc": "+10 physical resistance", "bonus": {"physres": 10.0}},
-			{"id": "p12", "name": "Fervor",          "desc": "+1% combo chance", "bonus": {"combo": 0.01}},
+			{"id": "p12", "name": "Fervor",          "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
 		],
 		[
-			{"id": "p20", "name": "Lightmender", "desc": "+1% lifesteal", "bonus": {"lifesteal": 0.01}},
+			{"id": "p20", "name": "Lightmender", "desc": "+4% max HP", "bonus": {"hp_pct": 0.04}},
 			{"id": "p21", "name": "Sanctuary",   "desc": "Aegis cooldown -5%", "amod": {"a3": {"cd": -0.05}}},
 			{"id": "p22", "name": "Crusader",    "desc": "+4 physical penetration", "bonus": {"physpen": 4.0}},
 		],
 		[
 			{"id": "p30", "name": "Beacon of Dawn", "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
-			{"id": "p31", "name": "Unbreakable",    "desc": "+3% max HP", "bonus": {"hp_pct": 0.03}},
+			{"id": "p31", "name": "Unwavering Conviction", "desc": "Conviction (stance swap) cooldown -5%", "amod": {"ult": {"cd": -0.05}}},
 			{"id": "p32", "name": "Executioner of the Faith", "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
 		],
 	],
 	"warlock": [  # columns: Curse / Pact / Void
 		[
 			{"id": "k00", "name": "Wither",       "desc": "Shadowbolt +5% damage", "amod": {"a1": {"dmg": 0.05}}},
-			{"id": "k01", "name": "Blood Tithe",  "desc": "+1% lifesteal", "bonus": {"lifesteal": 0.01}},
+			{"id": "k01", "name": "Blood Tithe",  "desc": "+4% max HP", "bonus": {"hp_pct": 0.04}},
 			{"id": "k02", "name": "Doomward",     "desc": "+3% damage reduction while any enemy is cursed", "bonus": {"curse_dr": 0.03}},
 		],
 		[

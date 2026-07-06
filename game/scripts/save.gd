@@ -257,10 +257,16 @@ static func apply(game: Game, data: Dictionary) -> void:
 
 
 ## JSON loads every number as float; re-cast the fields the game
-## compares or indexes as ints.
+## compares or indexes as ints. Also the stat-doctrine migration
+## (2026-07-06): banned stats — movement speed and the gem-only
+## specials — are stripped from legacy gear on load (legacy ATK/HP
+## mains still count; socketed gems are the sanctioned carrier).
 static func _fix_item(it: Dictionary) -> Dictionary:
 	it["plus"] = int(it.get("plus", 0))
 	it["gem_slots"] = int(it.get("gem_slots", 0))
+	for banned in ["speed_pct", "cdr", "lifesteal", "combo", "greed"]:
+		it.get("subs", {}).erase(banned)
+		it.get("main", {}).erase(banned)
 	var gems: Array = it.get("gems", [])
 	for i in gems.size():
 		gems[i] = _fix_gem(gems[i])

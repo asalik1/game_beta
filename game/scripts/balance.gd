@@ -218,13 +218,31 @@ const ACT_LOOT_CAP := {1: "B", 2: "A", 3: "S"}
 
 # Anti-degeneracy stat caps (player-designed, 2026-07-06): the four
 # SPECIAL stats — Haste, Lifesteal, Combo, Greed — are GEM-ONLY (never
-# on gear; gems are the deliberate gateway to off-build stats), each
-# item can socket at most ONE special gem, and the totals are hard-
-# capped in recalc. Late game may lift the caps a notch by level
-# (e.g. L80) — deliberately NOT built yet.
-const CAP_CDR := 0.40        # was an implicit 0.45 (dash floor 1.49s -> 1.62s)
-const CAP_LIFESTEAL := 0.35
+# on gear; gems are the deliberate gateway to off-build stats) and each
+# item sockets at most ONE special gem.
+#
+# EVERY cap in the game is a SOFT KNEE, never a dead stop (player rule):
+# below the cap a point is a point; beyond it every point converts at
+# SOFT_CAP_RATE (~1/10) — "greatly diminishing", not useless. Applied in
+# recalc (cdr/lifesteal/combo), at consumption (current_lifesteal covers
+# temp surges) and inside the Stats curves (crit/eva/res/greed).
+# Late game may lift the caps a notch by level (~L80) — NOT built yet.
+const SOFT_CAP_RATE := 0.1
+# Crit alone diminishes gentler (1/5): it's a payoff stat, not a system-
+# breaker. Combo stays at 1/10 hard — past the cap you'd start spamming
+# every ability with barely any issue (player rule, 2026-07-06).
+const CRIT_SOFT_RATE := 0.2
+
+static func soft_cap(v: float, cap: float, rate := SOFT_CAP_RATE) -> float:
+	return v if v <= cap else cap + (v - cap) * rate
+
+const CAP_CDR := 0.40        # ults ignore haste ENTIRELY (they're ults)
+const CAP_LIFESTEAL := 0.35  # knee on the TOTAL incl. surges/berserk/pact
 const CAP_COMBO := 0.30
+const CAP_CRIT := 0.35       # the old 70%-curve was far too generous
+const CAP_EVA := 0.50        # nothing approaches unhittable
+const CAP_GREED := 0.40
+const CAP_RES_FRAC := 0.80   # damage REDUCTION knee: >80% pays 1/10
 const SPECIAL_GEM_STATS := ["cdr", "lifesteal", "combo", "greed"]
 
 # Boss gem-expectation ramp (player-approved, 2026-07-06): the TIERLIST

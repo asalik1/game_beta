@@ -8,6 +8,7 @@ var root: Control = null          # the currently open panel (null = closed)
 var current := ""
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
+var title_stage := "cover"        # boot title: "cover" (splash) -> "slots" (roster)
 var chapter_replay := false       # chapter select opened from the pause menu
 var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv (default), 2 +10, 3 +20
 var dev_boss_level_override := 0  # dev panel: exact level for NEW boss spawns (0 = off)
@@ -51,6 +52,16 @@ func _open(title: String, w := 960.0, h := 560.0) -> VBoxContainer:
 	dim.color = Color(0, 0, 0, 0.65)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(dim)
+
+	# Boot menus (roster / chapter / class select before play starts):
+	# keep the cover's night behind the panel instead of letting the
+	# not-yet-a-game village and HUD peek through the dim.
+	if not game.play_started:
+		var night := ColorRect.new()
+		night.color = Color(0.02, 0.015, 0.045)
+		night.set_anchors_preset(Control.PRESET_FULL_RECT)
+		root.add_child(night)
+		root.move_child(night, 0)
 
 	var frame := ColorRect.new()
 	frame.color = Color(0.9, 0.8, 0.5)
@@ -130,13 +141,36 @@ func _hint(vbox: Node, text := "ESC to close") -> void:
 
 # ------------------------------------------------------------ title screen ---
 
-## Shown at boot when saves exist: continue a character or start fresh.
+## Boot stage 1 — the opening COVER (see ui/cover.gd). Always shown to
+## real players, saves or none; any key/click advances to the roster.
+## (Both stages report current == "title": one boot state, two looks.)
 func open_title() -> void:
-	var vbox := _open("EMBERFALL", 760, 560)
+	if root:
+		root.queue_free()
+	get_tree().paused = true
+	root = Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(root)
 	current = "title"
-	_lbl(vbox, "Chapter 1: The Hollow King", 15, Color(0.75, 0.75, 0.75))
+	title_stage = "cover"
+	game.set_music("title")
+	UICover.build(self, root)
 
-	_lbl(vbox, "— CONTINUE —", 15, Color(0.95, 0.85, 0.5))
+
+## Boot stage 2 — the character roster: continue a saved hero from its
+## slot, or forge a new one (next free slot). This is the FIRST
+## interactive screen; class select only appears for a new character.
+func open_slots() -> void:
+	var vbox := _open("EMBERFALL — your heroes", 760, 560)
+	current = "title"
+	title_stage = "slots"
+	game.set_music("roster")  # carries through chapter + class select
+
+	var have_saves := not SaveGame.list().is_empty()
+	_btn(vbox, "  ⚔  New Character  ", func() -> void: open_chapter_select(),
+		Color(0.95, 0.85, 0.5))
+	_lbl(vbox, "— CONTINUE —" if have_saves else "No heroes yet — forge your first.",
+		15, Color(0.95, 0.85, 0.5) if have_saves else Color(0.6, 0.62, 0.7))
 	# The save list SCROLLS (20 slots + a dev roster overflowed the fixed
 	# panel — the bottom buttons must never leave the box).
 	var scroll := ScrollContainer.new()
@@ -170,15 +204,11 @@ func open_title() -> void:
 		wl.custom_minimum_size = Vector2(170, 0)
 		var erase := func() -> void:
 			SaveGame.delete(slot)
-			if SaveGame.list().is_empty():
-				open_class_select()
-			else:
-				open_title()
+			open_slots()  # stay on the roster — empty is a valid state now
 		_btn(row, " ✕ ", erase, Color(1, 0.5, 0.5))
 
 	# No spacer: the scroll list absorbs the flexible space, pinning
 	# these buttons inside the panel no matter how many saves exist.
-	_btn(vbox, "  ⚔  New Game  ", func() -> void: open_chapter_select(), Color(0.95, 0.85, 0.5))
 	_btn(vbox, "  🔊  Settings  ", func() -> void: open_settings("title"), Color(0.8, 0.85, 0.9))
 	_dev_roster_row(vbox)
 	_hint(vbox, "Continue a saved hero, or forge a new one")
@@ -202,7 +232,7 @@ func _dev_roster_row(vbox: VBoxContainer) -> void:
 	_btn(drow, "  🛠  DEV: create roster — all 6 classes at this level  ", func() -> void:
 		var lvl := clampi(int(lvl_box.text) if lvl_box.text.is_valid_int() else 40, 1, Balance.LEVEL_CAP)
 		UIDevPanel.create_roster(self, lvl)
-		open_title(), Color(0.6, 0.9, 1.0))
+		open_slots(), Color(0.6, 0.9, 1.0))
 
 
 # ---------------------------------------------------------------- pause ---
@@ -324,7 +354,7 @@ func open_settings(from := "pause") -> void:
 
 func _settings_back() -> void:
 	if settings_return == "title":
-		open_title()
+		open_slots()  # back to the roster, not the splash
 	else:
 		open_pause()
 
@@ -1519,6 +1549,14 @@ func _input(event: InputEvent) -> void:
 			game.save_binds()
 		listening_action = ""
 		open_keybinds()
+		get_viewport().set_input_as_handled()
+		return
+
+	# The cover (boot stage 1) advances on ANY key or click.
+	if current == "title" and title_stage == "cover" \
+			and ((event is InputEventKey and event.pressed and not event.echo)
+			or (event is InputEventMouseButton and event.pressed)):
+		open_slots()
 		get_viewport().set_input_as_handled()
 		return
 

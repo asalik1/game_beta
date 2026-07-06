@@ -49,8 +49,8 @@ func _run_systems() -> void:
 	# 0. Stat-engine math sanity.
 	if absf(Stats.res_frac(120.0) - 0.5) > 0.01:
 		return _fail("res curve broken")
-	if Stats.crit_curve(0.9) > 0.95 or Stats.crit_curve(0.5) != 0.5:
-		return _fail("crit curve broken")
+	if Stats.crit_curve(0.9) > 0.5 or Stats.crit_curve(0.3) != 0.3:
+		return _fail("crit curve broken")  # knee at 35% (2026-07-06)
 	var r := Stats.resolve(100.0, "true", 0.0, 1.5, 0.0, 0.0, 500.0, 0.9, 50.0)
 	if r["miss"] or r["dmg"] != 100.0 or r["crit"]:
 		return _fail("true damage should ignore everything and never crit")
@@ -607,11 +607,12 @@ func _run_systems() -> void:
 	await _frames(3)
 	print("ok: warlock kit (hex detonation, dark pact, void rift)")
 
-	# 3d. COMBO stat: at the 60% cap, ~60% of casts skip the cooldown
-	# (cds left at 0 by a proc, or set to the full cooldown otherwise).
+	# 3d. COMBO stat: the proc rate IS the stat (the anti-degeneracy knee
+	# lives in recalc, 30% + 1/10 beyond — 2026-07-06). At 60% combo,
+	# ~60% of casts skip the cooldown.
 	var resets := 0
 	for i in 200:
-		game.player.combo = 1.0  # re-assert: recalc() from a stray level-up would reset it
+		game.player.combo = 0.6  # re-assert: recalc() from a stray level-up would reset it
 		game.player.cds["a2"] = 0.0
 		game.player.mp = game.player.max_mp
 		game.player.use_ability("a2")
@@ -755,10 +756,12 @@ func _run_systems() -> void:
 	# 4a. Weapon shape identities.
 	var wrng := RandomNumberGenerator.new()
 	wrng.seed = 3
-	var clay := Items.roll_item_of("weapon", "C", wrng, "", "Claymore")
-	var fang := Items.roll_item_of("weapon", "C", wrng, "", "Fang")
-	if clay["main"]["atk_flat"] <= fang["main"]["atk_flat"]:
-		return _fail("Claymore does not out-damage Fang")
+	var clay := Items.roll_item_of("weapon", "C", wrng, "warrior", "Claymore")
+	var fang := Items.roll_item_of("weapon", "C", wrng, "assassin", "Fang")
+	# Mains are class attributes now (2026-07-06): shape mults still order
+	# the BUDGET (Claymore 1.4x > Fang 0.85x), just in attribute points.
+	if clay["main"]["STR"] <= fang["main"]["AGI"]:
+		return _fail("Claymore does not out-budget Fang")
 	if not fang["subs"].has("crit"):
 		return _fail("Fang has no guaranteed crit substat")
 	print("ok: weapon shape identities")
@@ -1888,11 +1891,17 @@ func _test_retention() -> void:
 		# sanctioned exception; the recalc caps guard the ceiling).
 		var it2 := Items.roll_item_of(Items.SLOTS[i % 4], Items.GRADES[i % 6], grng,
 			["warrior", "mage", "archer"][i % 3])
-		for stat in Balance.SPECIAL_GEM_STATS:
+		for stat in Balance.SPECIAL_GEM_STATS + ["speed_pct"]:
 			if it2["subs"].has(stat) or it2["main"].has(stat):
-				return _fail("rolled gear carried special stat %s" % stat)
-	if not Items.SLOT_MAIN["charm"].has("crit"):
-		return _fail("charm main did not move to crit")
+				return _fail("rolled gear carried banned stat %s" % stat)
+		var main_attr: String = it2["main"].keys()[0]
+		if main_attr != Items.CLASS_PRIMARY[["warrior", "mage", "archer"][i % 3]]:
+			return _fail("gear main %s does not match its class" % main_attr)
+	# Mains are the class primary attribute, guaranteed and class-tagged;
+	# movement speed exists nowhere on gear (sovereign stat).
+	var probe := Items.roll_item_of("boots", "B", grng, "mage")
+	if not probe["main"].has("INT") or String(probe.get("cls", "")) != "mage":
+		return _fail("gear main is not the class-tagged primary attribute")
 
 	# --- act loot ceilings: Act 1 clamps to B over authored caps ---
 	if Story.act_of("ch1") != 1 or Story.act_of("ch7") != 1:
@@ -1912,12 +1921,47 @@ func _test_retention() -> void:
 		"noun": "Charm", "main": {}, "plus": 0, "gem_slots": 0, "gems": [],
 		"subs": {"cdr": 0.9, "lifesteal": 0.9, "combo": 0.9}}}
 	game.player.recalc()
-	if game.player.cdr > Balance.CAP_CDR + 0.001 \
-			or game.player.lifesteal > Balance.CAP_LIFESTEAL + 0.001 \
-			or game.player.combo > Balance.CAP_COMBO + 0.001:
-		return _fail("a special stat stacked past its cap")
+	# Caps are SOFT KNEES: 0.9 raw -> cap + (0.9 - cap) * 0.1, never a wall.
+	if absf(game.player.cdr - Balance.soft_cap(0.9, Balance.CAP_CDR)) > 0.001 \
+			or absf(game.player.lifesteal - Balance.soft_cap(0.9, Balance.CAP_LIFESTEAL)) > 0.001 \
+			or absf(game.player.combo - Balance.soft_cap(0.9, Balance.CAP_COMBO)) > 0.001:
+		return _fail("special-stat soft knees are off their curve")
 	game.player.equipment = keep_eq2
 	game.player.recalc()
+
+	# --- soft knees in the combat curves + the new cap values ---
+	if absf(Stats.crit_curve(0.5) - (0.35 + 0.15 * 0.2)) > 0.001:
+		return _fail("crit knee is not 35% + 1/5 beyond")
+	# Theme crit is CAP-EXEMPT: 35% built + 15% themed = 50% flat, no knee.
+	if absf(Stats.effective_crit(0.35, 0.15, 0.0) - 0.5) > 0.001:
+		return _fail("theme crit bonus did not ride above the knee")
+	if absf(Stats.eva_curve(0.8) - (0.50 + 0.3 * 0.1)) > 0.001:
+		return _fail("evasion knee is not 50% + 1/10 beyond")
+	if Stats.res_frac(9999.0) > 0.82:
+		return _fail("resistance reduction exceeded its ~82% ceiling")
+	if Stats.greed_loot(0.1) <= 0.0:
+		return _fail("greed chest chance still has a threshold")
+
+	# --- ults ignore haste (every class; authored talents still apply) ---
+	var keep_cdr: float = game.player.cdr
+	game.player.cdr = 0.4
+	var ult_cd: float = game.player.ability_cd("ult")
+	game.player.cdr = 0.0
+	if absf(ult_cd - game.player.ability_cd("ult")) > 0.001:
+		return _fail("haste compressed an ult cooldown")
+	game.player.cdr = keep_cdr
+
+	# --- gem LEVEL limits by grade: B holds Lv3 at most ---
+	var b_host := {"slot": "armor", "grade": "B", "name": "t2", "noun": "Plate",
+		"main": {}, "subs": {}, "plus": 0, "gem_slots": 1, "gems": []}
+	var g_lv4 := Items.make_gem("hp_pct", 4)
+	var g_lv3 := Items.make_gem("hp_pct", 3)
+	game.player.gem_bag.append_array([g_lv4, g_lv3])
+	if game.player.embed_gem_into(b_host, g_lv4):
+		return _fail("B gear accepted a Lv4 gem (limit Lv3)")
+	if not game.player.embed_gem_into(b_host, g_lv3):
+		return _fail("B gear refused a legal Lv3 gem")
+	game.player.gem_bag.erase(g_lv4)
 
 	# --- one special gem per item ---
 	var host := {"slot": "weapon", "grade": "S", "name": "t", "noun": "Blade",
@@ -1933,6 +1977,15 @@ func _test_retention() -> void:
 	if not game.player.embed_gem_into(host, g_rb):
 		return _fail("a normal gem was refused by the special-gem rule")
 	game.player.gem_bag.erase(g_cb)
+
+	# --- class lock: another class's gear refuses to be worn ---
+	var other_cls: String = "mage" if game.player.cls != "mage" else "warrior"
+	var locked := Items.roll_item_of("charm", "B", grng, other_cls)
+	game.player.backpack.append(locked)
+	game.player.equip(locked)
+	if game.player.equipment.get("charm") == locked:
+		return _fail("equipped another class's gear")
+	game.player.backpack.erase(locked)
 
 	# --- boss gem-expectation ramp: bosses out-grow pure growth past L32 ---
 	var nw_g: float = float(Story.ALL_ENEMIES["nullwarden"]["hp_g"]) * Balance.GROWTH_SCALE

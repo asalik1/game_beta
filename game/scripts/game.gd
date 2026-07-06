@@ -65,9 +65,13 @@ func _ready() -> void:
 					music_tracks[file.get_basename()] = wav
 	music_player = AudioStreamPlayer.new()
 	music_player.volume_db = -16.0
+	# Music survives the pause: boot menus (cover/roster) run with the
+	# tree paused, and the pause menu shouldn't strangle the track.
+	music_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(music_player)
 	amb_player = AudioStreamPlayer.new()
 	amb_player.volume_db = AMB_DB
+	amb_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(amb_player)
 	load_settings()
 	apply_audio_settings()
@@ -144,9 +148,11 @@ func _ready() -> void:
 	call_deferred("_start_flow")
 
 func _start_flow() -> void:
-	if no_saves or SaveGame.list().is_empty():
-		menus.open_chapter_select()
+	if no_saves:
+		menus.open_chapter_select()  # autotest: straight to the pick
 	else:
+		# Real players always land on the cover, saves or none:
+		# cover -> character roster -> (new hero) chapter + class select.
 		menus.open_title()
 
 func on_class_chosen(id: String) -> void:

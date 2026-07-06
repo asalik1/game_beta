@@ -381,10 +381,10 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 static func _gear(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	var slot_desc := {
-		"weapon": "Main stat: ATK. Upgradeable at merchants.",
-		"armor": "Main stat: HP. Upgradeable at merchants.",
-		"boots": "Main stat: move speed.",
-		"charm": "Main stat: Crit.",
+		"weapon": "Main: your class attribute (largest budget). Upgradeable at merchants.",
+		"armor": "Main: your class attribute. Upgradeable at merchants.",
+		"boots": "Main: your class attribute (smallest budget).",
+		"charm": "Main: your class attribute.",
 	}
 
 	# ------------------ visual gallery: every shape at every grade ------
@@ -472,11 +472,16 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	m._lbl(chests, "Wooden chest — drops from monsters (common). Contains F to C gear.", 14, Color(0.8, 0.65, 0.45))
 	m._lbl(chests, "Silver chest — drops from monsters (rare). Contains D to A gear.", 14, Color(0.8, 0.82, 0.9))
 	m._lbl(chests, "Golden chest — every boss drops one. Contains B to S gear.", 14, Color(1.0, 0.85, 0.35))
-	m._lbl(chests, "Bonus stats: ATK%, HP%, Crit, CritDmg, Speed, EVA, DEX, Pen, Resists, MP.", 13, Color(0.7, 0.72, 0.78))
-	var resv := m._lbl(chests, "Haste, Lifesteal, Combo and Greed NEVER roll on gear — they are GEM-only (see below), hard-capped at %d%% / %d%% / %d%% / —, and each item holds at most ONE such gem." %
-		[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)], 13, Color(0.85, 0.75, 0.55))
+	m._lbl(chests, "Every piece is CLASS-LOCKED and guarantees your class attribute as its main (STR/AGI/INT). Bonus stats: ATK%, HP%, Crit, CritDmg, VIT, EVA, DEX, Pen, Resists, MP.", 13, Color(0.7, 0.72, 0.78))
+	var resv := m._lbl(chests, "Haste, Lifesteal, Combo and Greed NEVER roll on gear — they are GEM-only (see below), and each item holds at most ONE such gem. MOVEMENT SPEED is on no item and no gem: only terrain and abilities touch it." , 13, Color(0.85, 0.75, 0.55))
 	resv.custom_minimum_size = Vector2(880, 0)
 	resv.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var caps := m._lbl(chests, "STAT CAPS (soft — beyond each cap a point pays about a tenth, never nothing; Crit alone diminishes gentler, about a fifth): Crit %d%% · Evasion %d%% · Haste %d%% · Lifesteal %d%% · Combo %d%% · Greed %d%% · damage reduction from resistances %d%%. Ults ignore Haste entirely." %
+		[int(Balance.CAP_CRIT * 100), int(Balance.CAP_EVA * 100), int(Balance.CAP_CDR * 100),
+		int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100), int(Balance.CAP_GREED * 100),
+		int(Balance.CAP_RES_FRAC * 100)], 13, Color(0.85, 0.75, 0.55))
+	caps.custom_minimum_size = Vector2(880, 0)
+	caps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# ------------------------------------------------------------ gems ---
 	m._lbl(list, "— GEMS — socket into B+ gear (B:%d · A:%d · S:%d sockets) —" %
@@ -488,8 +493,10 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	for line3 in [
 		"Each gem grants ONE stat and deepens with its level, up to Lv %d. Only B-grade gear and above has sockets." % Items.GEM_MAX_LEVEL,
 		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (click them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level.",
-		"SPECIAL gems — Haste, Lifesteal, Combo, Greed — are the ONLY way to build those stats: at most one special gem per item, and their totals cap at %d%% Haste / %d%% Lifesteal / %d%% Combo no matter the source." %
-			[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)]]:
+		"SPECIAL gems — Haste, Lifesteal, Combo, Greed — are the ONLY way to build those stats: at most one special gem per item, and their totals soft-cap at %d%% Haste / %d%% Lifesteal / %d%% Combo (beyond, a point pays about a tenth)." %
+			[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)],
+		"A vessel holds what it can bear: B gear sockets gems up to Lv%d, A up to Lv%d, S up to Lv%d — deep gems need endgame gear." %
+			[int(Items.GEM_LEVEL_LIMIT["B"]), int(Items.GEM_LEVEL_LIMIT["A"]), int(Items.GEM_LEVEL_LIMIT["S"])]]:
 		var gil := m._lbl(gem_intro, String(line3), 13, Color(0.7, 0.72, 0.78))
 		gil.custom_minimum_size = Vector2(880, 0)
 		gil.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
