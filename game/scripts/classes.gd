@@ -110,7 +110,7 @@ const CLASSES := {
 		"desc": "Ranged skirmisher. Safe damage from a distance, with a dodge roll.",
 		"passive": {"text": "Hawk Eye — +10% crit chance, +12 DEX. Second Wind: untouched for 3s, you recover a strong 6% max HP/s — spacing IS your sustain.", "crit": 0.10, "dex": 12.0, "sw_delay": 3.0, "sw_regen": 0.06},
 		"hp": 100.0, "hp_lvl": 14.0, "mp": 40.0, "mp_lvl": 3.0,
-		"atk": 12.0, "atk_lvl": 3.15, "speed": 265.0,
+		"atk": 11.1, "atk_lvl": 2.91, "speed": 265.0,   # round 47: −7.5% to land ~1200 boss dps (tied with assassin)
 		"abilities": {
 			"a1": {"name": "Quick Shot",  "cd": 0.36, "mp": 0,  "desc": "Fire an arrow at the nearest enemy."},
 			"a2": {"name": "Multishot",   "cd": 5.0,  "mp": 12, "desc": "Fan of 5 arrows."},
@@ -140,7 +140,7 @@ const CLASSES := {
 		"atk": 14.5, "atk_lvl": 4.5, "speed": 275.0,
 		"abilities": {
 			"a1": {"name": "Stab",          "cd": 0.3,  "mp": 0,  "desc": "Quick-draw the long blade — a lightning strike with real reach. A CONNECTING cut surges your lifesteal for 4s; the lower your health, the bigger the surge."},
-			"a2": {"name": "Shadow Dash",   "cd": 2.5,  "mp": 0,  "desc": "Dash in your move direction, slashing everything in your path — and the blade reaches wide: a close pass cuts at FULL stab strength; even the farthest graze lands a lighter cut. The blood surge is full at any depth. A CONNECTING cut refunds cooldown toward a 1.0s floor: land the blade, keep dancing; whiff and pay full. Cooldown can't be bought below the floor — excess haste feeds the dash's bite instead."},
+			"a2": {"name": "Shadow Dash",   "cd": 3.75, "mp": 0,  "desc": "Dash in your move direction, slashing everything in your path — the blade reaches wide (a close pass cuts at FULL stab strength, the farthest graze lands lighter), and the blood surge is full at any depth. Its base cooldown MATCHES your Blood Surge: a CONNECTING cut refunds it so you keep dancing and keep the surge alive — but WHIFF and the full cooldown outlasts the surge, your Fan drops to normal, and you're exposed. Landing the blade is the whole game."},
 			"a3": {"name": "Fan of Knives", "cd": 0.3,  "mp": 0,  "desc": "Spammable dagger fan — thin chip on its own, but while your blood surge runs the blades bite TWICE as hard. The range damage is EARNED in close. Shares its cadence with Stab: spam either, never both."},
 			"ult": {"name": "Death Mark",   "cd": 30.0, "mp": 0,  "desc": "Mark your prey with the X: two shadows converge THROUGH it, then you appear behind it for the killing stab. TRUE damage; the marked target takes +50% damage for 5s. FIXED 30s cooldown — no haste can hurry the execution."},
 		},
@@ -165,7 +165,7 @@ const CLASSES := {
 		"hp": 95.0, "hp_lvl": 13.0, "mp": 65.0, "mp_lvl": 7.0,
 		"atk": 11.5, "atk_lvl": 3.0, "speed": 258.0,
 		"abilities": {
-			"a1": {"name": "Shadowbolt", "cd": 0.55, "mp": 3,  "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
+			"a1": {"name": "Shadowbolt", "cd": 0.55, "mp": 1,  "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
 			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death. A MAINTAINED curse deepens: the longer it holds, the harder your every hit bites."},
 			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
 			"ult": {"name": "Void Rift", "cd": 50.0, "mp": 35, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS."},
@@ -493,8 +493,8 @@ const ABILITY_THEMES := {
 				"fx": {"dot": 0.40, "vuln": 0.25}},
 			"pact": {"desc": "Blood-tipped: the bolt cuts 15% deeper and feeds you.",
 				"fx": {"dmg_mult": 1.15, "heal": 0.025}},
-			"void": {"desc": "The bolt tears space: it PIERCES the line, CRUSHES whatever is still tumbling from a shove or pull, and hits for pure BURST — no lingering rot; Void strikes hard, not long.",
-				"fx": {"pierce": 1, "slow": 0.40, "crush": 1, "dmg_mult": 1.15}},
+			"void": {"desc": "The bolt tears space: it PIERCES the line and CRUSHES whatever is still tumbling from a shove or pull — no lingering rot, all BURST. The crush-crit spike is the payoff for choreographing displacement.",
+				"fx": {"pierce": 1, "slow": 0.40, "crush": 1}},
 		},
 		"a2": {
 			"curse": {"desc": "Deeper rot: the curse withers harder, and death-detonations hit 50% harder.",

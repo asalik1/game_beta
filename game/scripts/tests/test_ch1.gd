@@ -184,7 +184,6 @@ func _test_graph_walk_darkwood() -> void:
 	# or, seeded ~30% per character (round 6), a lone ELITE holds the
 	# room instead. game.social_holds_elite says which, so the test
 	# asserts the RIGHT outcome instead of guessing.
-	var before_npcs := game.interactables.size()
 	await _goto_room(5)
 	if game.social_holds_elite(5):
 		var elite_found := false
@@ -197,9 +196,19 @@ func _test_graph_walk_darkwood() -> void:
 		await _kill_room(5)
 		print("ok: social room (seeded ELITE ambush variant)")
 	else:
-		if game.interactables.size() <= before_npcs:
+		# Find the wanderer by POSITION in room 5, not a global interactables
+		# delta: earlier seeded movement may have already built room 5, so its
+		# NPC is already counted (a flaky size compare). Room 5 (Woodsman's
+		# Clearing) has no merchant or authored NPC, so any interactable
+		# inside its rect is the wanderer.
+		var w_entry: Dictionary = {}
+		for it in game.interactables:
+			var node: Node2D = it.get("node")
+			if is_instance_valid(node) and game.room_rect(5).has_point(node.global_position):
+				w_entry = it
+				break
+		if w_entry.is_empty():
 			return _fail("social room rolled no wanderer")
-		var w_entry: Dictionary = game.interactables[-1]
 		w_entry["action"].call()
 		await _frames(2)
 		# A wanderer convo may OPEN on a choice node (tinker, orphan...)
