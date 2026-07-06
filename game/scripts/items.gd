@@ -195,6 +195,26 @@ static func make_respec_tome() -> Dictionary:
 		"desc": "Crush it to refund EVERY spent skill point — the tree forgets, you choose a new path."}
 
 
+## Utility consumables (round 47) — bought from merchants, used from the
+## bag. Distinct from the health-potion counter (that lives on the player).
+static func make_mana_potion() -> Dictionary:
+	return {"kind": "stone", "id": "mana_potion", "grade": "D",
+		"name": "Mana Draught",
+		"desc": "Restore %d%% of your maximum mana." % int(Balance.MANA_POTION_FRAC * 100)}
+
+
+static func make_elixir_might() -> Dictionary:
+	return {"kind": "stone", "id": "elixir_might", "grade": "C",
+		"name": "Elixir of Might",
+		"desc": "+%d%% damage for %ds." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)]}
+
+
+static func make_recall_scroll() -> Dictionary:
+	return {"kind": "stone", "id": "recall_scroll", "grade": "D",
+		"name": "Scroll of Recall",
+		"desc": "Whisk yourself back to the last safe room you rested in."}
+
+
 ## The stat value a gem grants at its level (superlinear growth).
 static func gem_value(gem: Dictionary) -> float:
 	var base: float = GEM_STATS[gem["stat"]]["base"]

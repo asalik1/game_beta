@@ -453,3 +453,10 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	var tl := m._lbl(cons, "⟲ Palimpsest of the Path — crush it to refund EVERY spent skill point and pick a new path down the tree. Elite drop, rarer than the Stone.", 13, Color(0.7, 0.72, 0.78))
 	tl.custom_minimum_size = Vector2(880, 0)
 	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	for util in [
+		"🜁 Mana Draught — restore %d%% of your maximum mana. Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
+		"🜂 Elixir of Might — +%d%% damage for %ds. Pop it before a boss. Bought from merchants." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
+		"🜃 Scroll of Recall — whisk yourself back to the last safe room (not in combat). Bought from merchants."]:
+		var ul := m._lbl(cons, String(util), 13, Color(0.7, 0.72, 0.78))
+		ul.custom_minimum_size = Vector2(880, 0)
+		ul.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

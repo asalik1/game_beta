@@ -419,6 +419,20 @@ func on_player_died() -> void:
 	state = ST_PLAYING
 
 
+## Scroll of Recall: whisk the LIVING player back to the last safe room.
+## Refused while a room is HOT (doors sealed mid-combat) — returns false so
+## the scroll isn't consumed. Returns true on a successful recall.
+func recall_to_safe() -> bool:
+	if barrier_active:
+		spawn_text(player.global_position + Vector2(0, -56), "Can't recall in combat!", Color(1.0, 0.6, 0.4))
+		return false
+	player.global_position = room_center(last_safe_room)
+	_enter_room(last_safe_room)
+	burst(player.global_position, Color(0.6, 0.9, 1.0), 14)
+	spawn_text(player.global_position + Vector2(0, -56), "RECALLED to safety", Color(0.6, 0.9, 1.0))
+	return true
+
+
 # ================================================================== helpers
 
 ## Timed terrain happenings (magma rain, zombies, gusts, lightning...).

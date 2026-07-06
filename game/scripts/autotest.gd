@@ -717,6 +717,9 @@ func _run_systems() -> void:
 	# 3d12. Localization: lookup, key fallback, format, language swap.
 	_test_loc()
 
+	# 3d13. Consumables: mana draught, might elixir, recall scroll.
+	_test_consumables()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -1608,6 +1611,57 @@ func _test_loc() -> void:
 		return _fail("Loc.t did not fall back to en for a key missing in es")
 	Loc.lang = keep
 	print("ok: localization (lookup, key fallback, format, language swap)")
+
+
+# ---- CORE: utility consumables (mana, might elixir, recall) --------------
+func _test_consumables() -> void:
+	var p := game.player
+	var keep_cons: Array = p.consumables.duplicate()
+	var keep_mp: float = p.mp
+	var keep_elix: float = p.elixir_time
+	var keep_barrier: bool = game.barrier_active
+	var keep_pos: Vector2 = p.global_position
+	var keep_safe: int = game.last_safe_room
+	p.consumables = []
+
+	# Mana Draught restores mana and is consumed.
+	p.mp = 0.0
+	var mana := Items.make_mana_potion()
+	p.consumables.append(mana)
+	p.use_consumable(mana)
+	if p.mp <= 0.0 or p.consumables.has(mana):
+		return _fail("mana draught did not restore mana / wasn't consumed")
+
+	# Elixir of Might raises current_atk while it holds.
+	p.elixir_time = 0.0
+	var atk0 := p.current_atk()
+	var elix := Items.make_elixir_might()
+	p.consumables.append(elix)
+	p.use_consumable(elix)
+	if p.elixir_time <= 0.0 or p.current_atk() <= atk0:
+		return _fail("elixir of might did not buff damage")
+
+	# Recall: refused mid-combat (scroll survives), allowed otherwise.
+	var scroll := Items.make_recall_scroll()
+	p.consumables.append(scroll)
+	game.barrier_active = true
+	p.use_consumable(scroll)
+	if not p.consumables.has(scroll):
+		return _fail("recall scroll consumed while doors were sealed")
+	game.barrier_active = false
+	game.last_safe_room = game.cur_room  # recall in place — no cross-room churn
+	p.use_consumable(scroll)
+	if p.consumables.has(scroll):
+		return _fail("recall scroll not consumed out of combat")
+
+	# Restore.
+	p.consumables = keep_cons
+	p.mp = keep_mp
+	p.elixir_time = keep_elix
+	game.barrier_active = keep_barrier
+	game.last_safe_room = keep_safe
+	p.global_position = keep_pos
+	print("ok: consumables (mana draught, might elixir, recall scroll)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

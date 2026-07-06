@@ -13,6 +13,7 @@ func _physics_process(delta: float) -> void:
 	hurt_cd = maxf(0.0, hurt_cd - delta)
 	berserk_time = maxf(0.0, berserk_time - delta)
 	theme_speed_time = maxf(0.0, theme_speed_time - delta)
+	elixir_time = maxf(0.0, elixir_time - delta)
 	dodge_time = maxf(0.0, dodge_time - delta)
 	frozen_time = maxf(0.0, frozen_time - delta)
 	rooted_time = maxf(0.0, rooted_time - delta)

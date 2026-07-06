@@ -421,6 +421,7 @@ func _active_buffs() -> Array:
 	if p.pact_time > 0.0: out.append(["pact", "ab_pact", Color(0.9, 0.2, 0.4), p.pact_time])
 	if p.theme_guard_time > 0.0: out.append(["guard", "ab_shield", Color(0.45, 0.65, 1.0), p.theme_guard_time])
 	if p.theme_speed_time > 0.0: out.append(["speed", "ab_roll", Color(0.6, 1.0, 0.85), p.theme_speed_time])
+	if p.elixir_time > 0.0: out.append(["elixir", "ab_fist", Color(1.0, 0.6, 0.3), p.elixir_time])
 	if p.stab_ls_time > 0.0: out.append(["surge", "ab_dagger", Color(0.95, 0.3, 0.35), p.stab_ls_time])
 	if p.dodge_time > 0.0: out.append(["dodge", "ab_roll", Color(0.8, 0.95, 0.7), p.dodge_time])
 	if p.storm_time > 0.0: out.append(["storm", "ab_rain", Color(0.6, 1.0, 0.6), p.storm_time])

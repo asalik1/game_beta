@@ -1118,6 +1118,25 @@ func open_shop(zone: int) -> void:
 	_btn(buy, "Health Potion — %d gold  (you have %d, max 5)" % [potion_cost, p.potions],
 		buy_potion, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < Balance.POTION_MAX)
 
+	# Alchemist's shelf: utility consumables (bag items, used from inventory).
+	for spec in [["mana_potion", Items.make_mana_potion()], ["elixir_might", Items.make_elixir_might()],
+			["recall_scroll", Items.make_recall_scroll()]]:
+		var cid: String = spec[0]
+		var made: Dictionary = spec[1]
+		var ccost := int(ceil(float(Balance.CONSUMABLE_PRICES[cid]) * haggle))
+		var buy_cons := func() -> void:
+			if p.gold >= ccost and p.bag_used() < p.bag_capacity():
+				p.gold -= ccost
+				p.add_consumable(made)
+				game.sfx("potion")
+			elif p.bag_used() >= p.bag_capacity():
+				game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+			open_shop(zone)
+		var cb := _btn(buy, "%s — %d gold   (%s)" % [made["name"], ccost, made["desc"]],
+			buy_cons, Items.GRADE_COLOR[made["grade"]], p.gold >= ccost)
+		cb.clip_text = true
+		cb.custom_minimum_size = Vector2(640, 0)
+
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
 		var cost := int(ceil(Items.price(it) * 2 * haggle))

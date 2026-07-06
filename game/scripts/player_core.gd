@@ -120,6 +120,8 @@ var storm_fx := {}
 var theme_speed_time := 0.0
 var theme_speed_amt := 0.0
 var wind_fx_t := 0.0     # throttle for the faint speed-buff wind trail
+var elixir_time := 0.0   # Elixir of Might: +elixir_atk damage while > 0
+var elixir_atk := 0.0
 var dodge_time := 0.0    # archer Tumble: temporary evasion window after the roll
 var dodge_amt := 0.0     # +evasion CHANCE added while dodge_time > 0
 var theme_guard_time := 0.0
@@ -416,9 +418,12 @@ func gain_hp(amount: float) -> void:
 
 
 func current_atk() -> float:
+	var a := atk
 	if berserk_time > 0.0:
-		return atk * (1.0 + berserk_bonus)
-	return atk
+		a *= 1.0 + berserk_bonus
+	if elixir_time > 0.0:
+		a *= 1.0 + elixir_atk  # Elixir of Might
+	return a
 
 
 func current_lifesteal() -> float:
@@ -533,6 +538,21 @@ func use_consumable(c: Dictionary) -> void:
 			game.sfx("levelup")
 			game.spawn_text(global_position + Vector2(0, -56),
 				"SKILL TREE RESET — %d points refunded (press T)" % back, Color(0.6, 0.9, 1.0))
+		"mana_potion":
+			mp = minf(max_mp, mp + max_mp * Balance.MANA_POTION_FRAC)
+			consumables.erase(c)
+			game.sfx("potion", 1.3)
+			game.spawn_text(global_position + Vector2(0, -56), "MANA RESTORED", Color(0.5, 0.7, 1.0))
+		"elixir_might":
+			elixir_time = Balance.ELIXIR_MIGHT_DUR
+			elixir_atk = Balance.ELIXIR_MIGHT_AMT
+			consumables.erase(c)
+			game.sfx("potion", 0.85)
+			game.spawn_text(global_position + Vector2(0, -56), "MIGHT!", Color(1.0, 0.6, 0.3))
+		"recall_scroll":
+			if game.recall_to_safe():
+				consumables.erase(c)
+				game.sfx("blink")
 
 
 ## A looted bag: bigger than the current one upgrades in place,
