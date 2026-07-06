@@ -537,6 +537,16 @@ Ordo, Cyrraeth), NEVER-stand-still (Halla), environment-as-weapon
 (Cinderhide, Whitepelt, Auroch), intercept (Calda, Ordo), clone-hunt
 (Echo), conductor management (Veyx), form-swap tragedy (Kaethra).
 
+> BUILT 2026-07-06: all five chapters (Ch3–Ch7) are authored and
+> registered — 21 rooms each (13-room spine + 8 side), per-chapter
+> trash kinds, camp briefings, faction pitches, two resonance rooms
+> per chapter, per-chapter wanderer pools, and Kaethra's
+> strike-or-sheathe wired through the convo system. Boss XP was
+> re-anchored during the build (Ch5–7 first-pass values paid 1–2.5
+> LEVELS each; now mids ~65–80% / finales ~85% of a level, gold
+> untouched) so full clears land at boss level per the DESIGN r5 rule.
+> The hp/dmg/speed table below is otherwise still live.
+
 # First-pass stat anchors (ENEMIES schema)
 
 On the shipped curve (Warden Null L16: 2400 hp / 55 dmg, growth

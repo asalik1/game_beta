@@ -20,7 +20,11 @@ const ENEMIES := {
 	# when down). No enrage; the cycles just shorten.
 	"auroch": {
 		"name": "The Drowned Auroch", "sprite": "spider",
-		"hp": 34000.0, "dmg": 250.0, "speed": 130.0, "xp": 780, "gold": 600,
+		# XP re-anchored (chapter-budget audit): the first-pass 780/820/1150
+		# paid 100-136% of a level each — the chapter's fixed XP budget
+		# (30+22·lvl, DESIGN r5) had no room left for trash. Mids ~67-70%,
+		# finale ~85%, like ch1-4. Gold untouched (gold has no budget).
+		"hp": 34000.0, "dmg": 250.0, "speed": 130.0, "xp": 520, "gold": 600,
 		"ranged": false, "scale": 6.4,
 		"physres": 35.0, "magres": 25.0, "eva": 0.0, "critres": 7.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 34, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -35,7 +39,7 @@ const ENEMIES := {
 	# him HEALS him, so weed the far garden and kite him off the near one.
 	"gardener": {
 		"name": "Rotmaw the Gardener", "sprite": "skeleton",
-		"hp": 44000.0, "dmg": 270.0, "speed": 80.0, "xp": 820, "gold": 640,
+		"hp": 44000.0, "dmg": 270.0, "speed": 80.0, "xp": 560, "gold": 640,
 		"ranged": true, "scale": 6.0,
 		"physres": 25.0, "magres": 45.0, "eva": 0.05, "critres": 8.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 35, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -51,7 +55,7 @@ const ENEMIES := {
 	# sheathe, through the convo system (no mid-combat branching).
 	"curetwisted": {
 		"name": "Kaethra Cure-Twisted", "sprite": "beastkin",
-		"hp": 69000.0, "dmg": 330.0, "speed": 145.0, "xp": 1150, "gold": 900,
+		"hp": 69000.0, "dmg": 330.0, "speed": 145.0, "xp": 720, "gold": 900,
 		"ranged": false, "scale": 6.2,
 		"physres": 30.0, "magres": 35.0, "eva": 0.05, "critres": 9.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 37, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,

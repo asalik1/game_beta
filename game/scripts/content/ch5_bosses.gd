@@ -53,7 +53,9 @@ const ENEMIES := {
 	# them is free and feels terrible. At 25% the Queen stirs.
 	"sleepkeeper": {
 		"name": "Mother Halla, Keeper of the Long Sleep", "sprite": "cultist",
-		"hp": 48000.0, "dmg": 230.0, "speed": 85.0, "xp": 720, "gold": 560,
+		# XP re-anchor (chapter-budget audit): 720 paid ~95% of a level —
+		# finales sit at ~85% so full clears land at boss level (DESIGN r5).
+		"hp": 48000.0, "dmg": 230.0, "speed": 85.0, "xp": 640, "gold": 560,
 		"ranged": true, "scale": 6.2,
 		"physres": 25.0, "magres": 45.0, "eva": 0.0, "critres": 9.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 33, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,

@@ -775,8 +775,69 @@ const CHAPTERS := {
 		"loot_cap": "A",  # Act 2 ceiling — S-tier stays endgame loot
 		"start_quest": "ch2_start",
 		"final_boss": "nullwarden",
-		"victory_text": "The Null Bastion falls silent. The Waking is beaten back — but the shards are still choosing, and the factions are still counting.\nThanks for playing Chapter 2!  Press R to play again.",
+		# (The end-screen appends the "journey on" prompt now that ch3+ exist.)
+		"victory_text": "The Null Bastion falls silent. The Waking is beaten back — but the shards are still choosing, and the factions are still counting.\nEast of the camps, the Choir's heartland has gone quiet in the wrong way.",
 		"start_pos": [180, 360],
+	},
+	# ---- Act 1 back half (BOSSES.md): zones arrive via content modules
+	# (chN_zones.gd appends them). Spines list the boss path in authoring
+	# order — each module authors its 13 spine rooms FIRST, side rooms
+	# after, so every spine is [0..12]. Loot stays capped at A: S-tier is
+	# endgame (Act 2+) loot everywhere in Act 1.
+	"ch3": {
+		"name": "Chapter 3: The Unburied Vale",
+		"sub": "The Choir's heartland — a funeral that never ends",
+		"zones": [],
+		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+		"loot_cap": "A",
+		"start_quest": "ch3_start",
+		"final_boss": "saint_varo",
+		"victory_text": "Saint Varo lies still, and for the first time in sixty years the Vale is quiet enough to bury someone.\nThe Choir scatters — but far south, the foundry fires are answering something under the rock.",
+		"start_pos": [340, 624],
+	},
+	"ch4": {
+		"name": "Chapter 4: The Slagfields",
+		"sub": "The Molten Judge stirs beneath the foundries",
+		"zones": [],
+		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+		"loot_cap": "A",
+		"start_quest": "ch4_start",
+		"final_boss": "ashpriest",
+		"victory_text": "The sermon ends unfinished. The foundries cool — but the verdicts were never Ordo's, and the court beneath the rock is still in session.\nNorth, they say, whole villages have stopped waking up.",
+		"start_pos": [340, 624],
+	},
+	"ch5": {
+		"name": "Chapter 5: The Long Sleep",
+		"sub": "The Still Queen whispers under the ice",
+		"zones": [],
+		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+		"loot_cap": "A",
+		"start_quest": "ch5_start",
+		"final_boss": "sleepkeeper",
+		"victory_text": "Halla's hymn fades. The sleepers she gathered will wake or they won't — the ice keeps its own counsel, and the Queen has not stopped dreaming.\nEast, in the deep bog, something has started to GROW.",
+		"start_pos": [340, 624],
+	},
+	"ch6": {
+		"name": "Chapter 6: The Blooming Deep",
+		"sub": "Where the blight learned to grow",
+		"zones": [],
+		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+		"loot_cap": "A",
+		"start_quest": "ch6_start",
+		"final_boss": "curetwisted",
+		"victory_text": "The Deep goes still. Whatever the Pale Root wanted with Kaethra, it is looking for a new gardener now.\nOver the Thunder Plains, the sky has begun to tear at the edges.",
+		"start_pos": [340, 624],
+	},
+	"ch7": {
+		"name": "Chapter 7: The Breaking Sky",
+		"sub": "The last vow-keeper stops mid-sentence — Act 1 finale",
+		"zones": [],
+		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+		"loot_cap": "A",
+		"start_quest": "ch7_start",
+		"final_boss": "stormmouth",
+		"victory_text": "The recitation ends, six hundred years late — and the sky answers with a sound like the world clearing its throat.\nThe seal is CRACKED. Not open. Cracked. Every power in Vaelscar heard it, and the age you grew up in is over.\n\nACT 1 COMPLETE — the mid game begins.",
+		"start_pos": [340, 624],
 	},
 }
 
@@ -796,10 +857,15 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch2_factions.gd"),   # (T5)
 	preload("res://scripts/content/ch2_aldric.gd"),     # (T6)
 	preload("res://scripts/content/ch2_bosses.gd"),     # (T4)
+	preload("res://scripts/content/ch3_zones.gd"),      # Unburied Vale chapter (zones/convos/quests)
 	preload("res://scripts/content/ch3_bosses.gd"),     # Unburied Vale bosses (BOSSES.md)
+	preload("res://scripts/content/ch4_zones.gd"),      # Slagfields chapter (zones/convos/quests)
 	preload("res://scripts/content/ch4_bosses.gd"),     # Slagfields bosses (BOSSES.md)
+	preload("res://scripts/content/ch5_zones.gd"),      # Long Sleep chapter (zones/convos/quests)
 	preload("res://scripts/content/ch5_bosses.gd"),     # Long Sleep bosses (BOSSES.md)
+	preload("res://scripts/content/ch6_zones.gd"),      # Blooming Deep chapter (zones/convos/quests)
 	preload("res://scripts/content/ch6_bosses.gd"),     # Blooming Deep bosses (BOSSES.md)
+	preload("res://scripts/content/ch7_zones.gd"),      # Breaking Sky chapter (zones/convos/quests)
 	preload("res://scripts/content/ch7_bosses.gd"),     # Breaking Sky bosses — Act 1 finale (BOSSES.md)
 ]
 
@@ -808,6 +874,7 @@ static var ALL_CONVOS: Dictionary = {}
 static var ALL_ENEMIES: Dictionary = {}
 static var ALL_QUESTS: Dictionary = {}
 static var ALL_BEATS: Dictionary = {}
+static var ALL_WANDERERS: Dictionary = {}  # chapter id -> wanderer pool
 static var CHAPTER_LIST: Dictionary = {}
 
 
@@ -821,6 +888,7 @@ static func load_content() -> void:
 	ALL_ENEMIES = ENEMIES.duplicate(true)
 	ALL_QUESTS = QUESTS.duplicate(true)
 	ALL_BEATS = BEATS.duplicate(true)
+	ALL_WANDERERS = {}
 	CHAPTER_LIST = CHAPTERS.duplicate(true)
 	for m in CONTENT_MODULES:
 		var consts: Dictionary = m.get_script_constant_map()
@@ -828,10 +896,20 @@ static func load_content() -> void:
 		ALL_ENEMIES.merge(consts.get("ENEMIES", {}), true)
 		ALL_QUESTS.merge(consts.get("QUESTS", {}), true)
 		ALL_BEATS.merge(consts.get("BEATS", {}), true)
+		# Per-chapter social-wanderer pools ({"ch3": [...]}) — chapters
+		# without one fall back to the Chapter 1 WANDERERS pool.
+		ALL_WANDERERS.merge(consts.get("WANDERERS", {}), true)
 		var extra_zones: Dictionary = consts.get("CHAPTER_ZONES", {})
 		for chid in extra_zones:
 			if CHAPTER_LIST.has(chid):
 				CHAPTER_LIST[chid]["zones"] = CHAPTER_LIST[chid]["zones"] + extra_zones[chid]
+
+
+## The social-wanderer pool for a chapter (module-supplied, else the
+## Chapter 1 pool — those convos are road-generic enough to travel).
+static func wanderers_for(chid: String) -> Array:
+	load_content()
+	return ALL_WANDERERS.get(chid, WANDERERS)
 
 
 static func chapter(id: String) -> Dictionary:

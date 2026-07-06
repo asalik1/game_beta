@@ -20,7 +20,11 @@ const ENEMIES := {
 	# and arcs come in pairs.
 	"stormdrake_veyx": {
 		"name": "Veyx, the Unchained Current", "sprite": "stormwarden",
-		"hp": 62000.0, "dmg": 350.0, "speed": 115.0, "xp": 1250, "gold": 980,
+		# XP re-anchored (chapter-budget audit): 1250/1300/2400 paid 1.4-2.5
+		# LEVELS each — Cyrraeth alone was two and a half. Mids ~70%, act
+		# finale ~86% of a level; Act 1 closes at ~L41-42 as designed.
+		# The finale's fanfare stays in its gold (gold has no XP budget).
+		"hp": 62000.0, "dmg": 350.0, "speed": 115.0, "xp": 600, "gold": 980,
 		"ranged": true, "scale": 6.0,
 		"physres": 20.0, "magres": 45.0, "eva": 0.05, "critres": 9.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 38, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -34,7 +38,7 @@ const ENEMIES := {
 	# real one. Void zones shrink the arena; blink-strike punishes lingering.
 	"unnamed_echo": {
 		"name": "The Echo of the Unnamed", "sprite": "assassin",
-		"hp": 48000.0, "dmg": 375.0, "speed": 170.0, "xp": 1300, "gold": 1020,
+		"hp": 48000.0, "dmg": 375.0, "speed": 170.0, "xp": 640, "gold": 1020,
 		"ranged": false, "scale": 5.4,
 		"physres": 25.0, "magres": 25.0, "eva": 0.15, "critres": 6.0, "crit": 0.15, "dmg_type": "phys",
 		"level": 39, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -50,7 +54,7 @@ const ENEMIES := {
 	# the mid-game begins. ACT 1 FINALE.
 	"stormmouth": {
 		"name": "Cyrraeth, Mouth of the Storm", "sprite": "nullwarden",
-		"hp": 130000.0, "dmg": 460.0, "speed": 105.0, "xp": 2400, "gold": 1900,
+		"hp": 130000.0, "dmg": 460.0, "speed": 105.0, "xp": 800, "gold": 1900,
 		"ranged": true, "scale": 6.6,
 		"physres": 30.0, "magres": 45.0, "eva": 0.0, "critres": 10.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 41, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,

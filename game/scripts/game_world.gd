@@ -427,11 +427,12 @@ func wake_pack(room: int, pack: int) -> void:
 ## Social rooms roll ONE wanderer from the pool, seeded per character —
 ## a replay meets different people (DESIGN.md room palette).
 func _spawn_wanderer(i: int) -> void:
-	if Story.WANDERERS.is_empty():
+	var pool: Array = Story.wanderers_for(chapter_id)
+	if pool.is_empty():
 		return
 	var rng := RandomNumberGenerator.new()
 	rng.seed = wander_seed + i * 131 + chapter_id.hash() % 9973
-	var w: Dictionary = Story.WANDERERS[rng.randi_range(0, Story.WANDERERS.size() - 1)]
+	var w: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
 	var convo_id: String = w["convo"]
 	var pos := room_center(i) + Vector2(rng.randf_range(-220.0, 220.0), rng.randf_range(-140.0, 140.0))
 	_make_npc(w["sprite"], pos, w.get("prompt", "E — Talk"), func() -> void:

@@ -1269,6 +1269,11 @@ func _run_campaign_ch2() -> void:
 	await _test_ch5_bosses()
 	await _test_ch6_bosses()
 	await _test_ch7_bosses()
+	await _test_ch3_chapter()
+	await _test_ch4_chapter()
+	await _test_ch5_chapter()
+	await _test_ch6_chapter()
+	await _test_ch7_chapter()
 	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
@@ -1825,3 +1830,161 @@ func _test_ch7_bosses() -> void:
 		await get_tree().create_timer(60.0).timeout
 		return
 	print("ok: ch7 bosses (spawn / signature / phase / story-neutral death) — veyx, echo, cyrraeth")
+
+
+# ---- Act 1 back-half chapters (ch3-ch7): the shared spine walk ----------
+# One walker for all five: boot the chapter, integrity-check every zone
+# (enemy kinds resolve, npc convos exist, boss quests exist), run the
+# camp briefing (gate + first quest), then walk the spine killing packs
+# and bosses through to the victory card. Returns "" or a failure text.
+func _walk_act1_chapter(chid: String, briefing_prompt: String, gate_flag: String,
+		want_zones: int) -> String:
+	game.replay_chapter(chid)
+	await _frames(10)
+	if game.chapter_id != chid:
+		return "%s did not boot" % chid
+	if game.zone_count != want_zones:
+		return "%s zones did not append (zones=%d, want %d)" % [chid, game.zone_count, want_zones]
+	# Structural integrity: every authored reference must resolve.
+	for zi in game.zone_count:
+		var zone: Dictionary = game.zones[zi]
+		for spawn in zone.get("enemies", []):
+			if not Story.ALL_ENEMIES.has(spawn[0]):
+				return "%s room %d: unknown enemy kind '%s'" % [chid, zi, spawn[0]]
+		for npc in zone.get("npcs", []):
+			if not Story.ALL_CONVOS.has(npc["convo"]):
+				return "%s room %d: unknown convo '%s'" % [chid, zi, npc["convo"]]
+		var bkind := String(zone.get("boss", ""))
+		if bkind != "":
+			if not Story.ALL_ENEMIES.has(bkind):
+				return "%s room %d: unknown boss '%s'" % [chid, zi, bkind]
+			if not Story.ALL_QUESTS.has(bkind):
+				return "%s: boss '%s' has no quest line" % [chid, bkind]
+	for w in Story.wanderers_for(chid):
+		if not Story.ALL_CONVOS.has(w["convo"]):
+			return "%s wanderer convo '%s' missing" % [chid, w["convo"]]
+	_buff()
+	# The camp briefing opens the gate and points the quest at boss #1.
+	var brief := _find_action(briefing_prompt)
+	if not brief.is_valid():
+		return "%s briefing NPC missing ('%s')" % [chid, briefing_prompt]
+	brief.call()
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if game.hud.choices_active:
+		game.hud._choose(0)
+		await _frames(2)
+		await _skip_dialogue()
+	if not game.get_flag(gate_flag, false):
+		return "%s briefing did not set %s" % [chid, gate_flag]
+	if not game._edge_unlocked(0, game.neighbor(0, game.rooms[0]["exits"].keys()[0])):
+		return "%s camp gate did not open on the briefing" % chid
+	# Walk the spine: purge packs, meet each boss at its authored level.
+	var spine: Array = Story.chapter(chid)["spine"]
+	for si in range(1, spine.size()):
+		var zi := int(spine[si])
+		await _goto_room(zi)
+		await _kill_room(zi)
+		var bkind := String(game.zones[zi].get("boss", ""))
+		if bkind == "":
+			continue
+		var guard := 0
+		while not is_instance_valid(game.current_boss) and guard < 200:
+			await _frames(5)
+			guard += 5
+			if game.hud.dialogue_active:
+				await _skip_dialogue()
+		if not is_instance_valid(game.current_boss) or game.current_boss.kind != bkind:
+			return "%s: boss '%s' did not spawn in room %d" % [chid, bkind, zi]
+		if game.current_boss.level != int(game.zones[zi].get("boss_level", -1)):
+			return "%s: %s not story-scaled (level %d)" % [chid, bkind, game.current_boss.level]
+		# Kaethra's fight ENDS at 10%: the strike-or-sheathe convo is the
+		# killing blow — exercise the real flow instead of a one-shot.
+		if bkind == "curetwisted":
+			game.current_boss.take_damage(game.current_boss.max_hp * 0.95, Vector2.ZERO, false, true)
+			var cguard := 0
+			while not game.hud.choices_active and cguard < 200:
+				await _frames(5)
+				cguard += 5
+				if game.hud.dialogue_active and not game.hud.choices_active:
+					game.hud._advance_dialogue()
+			if not game.hud.choices_active:
+				return "ch6: Kaethra's ending offered no choice"
+			game.hud._choose(0)
+			await _frames(2)
+			await _skip_dialogue()
+		else:
+			game.current_boss.take_damage(99999999.0)
+		# Final boss -> victory card; mid boss -> quest advances.
+		if bkind == String(Story.chapter(chid).get("final_boss", "")):
+			var vguard := 0
+			while game.state != Game.ST_VICTORY and vguard < 200:
+				if game.hud.dialogue_active:
+					await _skip_dialogue()
+				await _frames(5)
+				vguard += 5
+			if game.state != Game.ST_VICTORY:
+				return "%s did not reach victory" % chid
+			if game.quest_key != "done_" + chid:
+				return "%s done quest wrong (got %s)" % [chid, game.quest_key]
+			get_tree().paused = false
+			game.state = Game.ST_PLAYING
+			await _goto_room(0)
+			await _frames(5)
+		else:
+			await _frames(10)
+			if game.hud.dialogue_active:
+				await _skip_dialogue()
+			await _frames(5)
+	return ""
+
+
+func _test_ch3_chapter() -> void:
+	var err: String = await _walk_act1_chapter("ch3", "E — Cantor Ilse", "ch3_briefed", 21)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch3 chapter (Vale spine end-to-end — briefing, packs, sexton/vess/varo, victory)")
+
+
+func _test_ch4_chapter() -> void:
+	var err: String = await _walk_act1_chapter("ch4", "E — Overseer Brann", "ch4_briefed", 21)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch4 chapter (Slagfields spine end-to-end — calda/cinderhide/ordo, victory)")
+
+
+func _test_ch5_chapter() -> void:
+	var err: String = await _walk_act1_chapter("ch5", "E — Tracker Yri", "ch5_briefed", 21)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch5 chapter (Long Sleep spine end-to-end — whitepelt/serane/halla, victory)")
+
+
+func _test_ch6_chapter() -> void:
+	var err: String = await _walk_act1_chapter("ch6", "E — Deacon Vela", "ch6_briefed", 21)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	# The strike-or-sheathe must have landed its flag (choice 0 = sheathe).
+	if not game.get_flag("chose_kaethra_sheathed", false):
+		_fail("ch6: Kaethra's ending did not set its choice flag")
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch6 chapter (Blooming Deep spine — auroch/rotmaw/kaethra strike-or-sheathe, victory)")
+
+
+func _test_ch7_chapter() -> void:
+	var err: String = await _walk_act1_chapter("ch7", "E — Elder Maren", "ch7_briefed", 21)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch7 chapter (Breaking Sky spine — veyx/echo/cyrraeth, ACT 1 COMPLETE)")

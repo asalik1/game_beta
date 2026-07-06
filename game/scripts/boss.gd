@@ -1053,9 +1053,12 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		magres += 60.0
 		game.spawn_text(global_position + Vector2(0, -84), "Its obsidian hide is a meter thick.", LAVA)
 
-	# Lava contact melts the plating.
+	# Lava contact melts the plating. A CHARGE through lava melts fast —
+	# the advertised bait (one baited charge ~= a full second of standing)
+	# — so the fight rewards the play the telegraph teaches, not just
+	# parking it in a pool.
 	if _on_lava():
-		melt += delta
+		melt += delta * (4.0 if charging else 1.0)
 		game.burst(global_position, LAVA, 2)
 	else:
 		melt = maxf(0.0, melt - delta * 0.4)
@@ -1570,6 +1573,8 @@ func _reset_ch6_state() -> void:
 	full_bloom = false
 	form = 0
 	form_stage = 0
+	if kaethra_ended:
+		untargetable = false  # a wipe during the finale convo re-arms the fight
 	kaethra_ended = false  # blooms / roots freed by _clear_boss_props
 
 
@@ -1784,7 +1789,9 @@ func _kaethra_swap() -> void:
 	form = 1 - form
 	if form == 0:
 		_clear_roots()
-		speed = float(_stats_at(kind, level)["speed"])
+		# speed lives in the BASE table (enemy_stats_at only scales
+		# hp/dmg/substats) — reading it there left her rooted forever.
+		speed = float(_stats_for(kind)["speed"])
 		sprite.modulate = Color(1.3, 1.0, 0.85)
 		game.spawn_text(global_position + Vector2(0, -84), "\"...still me. For now.\"", ROOTC)
 	else:
@@ -1873,6 +1880,17 @@ func _kaethra_finale() -> void:
 	speed = 0.0
 	sprite.modulate = Color(1.0, 0.95, 0.9)
 	game.spawn_text(global_position + Vector2(0, -90), "The Root lets go. She looks at you.", ROOTC)
+	# Story fights end HERE: the strike-or-sheathe choice runs through the
+	# existing convo system (BOSSES.md, locked 2026-07-04 — binary,
+	# diegetic, no timer; she dies either way). Dev/test spawns keep the
+	# quiet stop — finish her by hand, no dialogue mid-selftest.
+	if story_boss and Story.ALL_CONVOS.has("ch6_kaethra_end"):
+		untargetable = true  # the choice is the killing blow, not your cooldowns
+		game.run_convo_id.call_deferred("ch6_kaethra_end", func() -> void:
+			if dying or not is_instance_valid(self):
+				return
+			untargetable = false
+			take_damage(9.9e9, Vector2.ZERO, false, true))
 
 
 # ========================================================== Chapter 7 ---
@@ -2047,8 +2065,17 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 func _unnaming(player: Player) -> void:
 	roar()
 	game.spawn_text(global_position + Vector2(0, -84), "UNNAMING!", VOIDC)
-	for i in 3:
-		var at: Vector2 = game.clamp_to_zone(player.global_position + Vector2.from_angle(TAU * i / 3.0 + randf()) * 260.0, home)
+	# Four figures on one ring around the prey — three lies and him. He
+	# takes a random slot himself (the vanish-and-shuffle IS the fight;
+	# without it the copies are scenery and the hunt is trivial).
+	var base_ang := randf() * TAU
+	var real_slot := randi() % 4
+	for i in 4:
+		var at: Vector2 = game.clamp_to_zone(player.global_position + Vector2.from_angle(base_ang + TAU * i / 4.0) * 260.0, home)
+		if i == real_slot:
+			global_position = at
+			game.burst(at, VOIDC, 12)
+			continue
 		var c := Enemy.make(game, "echo_clone", at, level)
 		c.force_aggro = true
 		game.add_enemy(c)
@@ -2153,11 +2180,16 @@ func _storm_rotation() -> void:
 	var center := _arena_rect().get_center()
 	var safe_a := TAU * safe_quad / float(sectors)
 	var wedge := TAU / float(sectors)
-	for i in 12:
-		var ang := TAU * i / 12.0
-		if absf(wrapf(ang - safe_a, -PI, PI)) <= wedge * 0.5:
-			continue  # the quiet wedge — stand here
-		for rad in [190.0, 360.0]:
+	# Three rings out to the arena edge, denser as they widen — standing
+	# past the storm was the old cheese (everything beyond ~440px was
+	# silent). The quiet wedge is the only quiet left.
+	for ring in [[180.0, 10], [340.0, 14], [500.0, 18]]:
+		var rad: float = ring[0]
+		var count: int = ring[1]
+		for i in count:
+			var ang := TAU * i / float(count)
+			if absf(wrapf(ang - safe_a, -PI, PI)) <= wedge * 0.5:
+				continue  # the quiet wedge — stand here
 			game.telegraph(game.clamp_to_zone(center + Vector2.from_angle(ang) * rad, home),
 				82.0, 1.6, dmg * 1.2, {"color": STORMC})
 
