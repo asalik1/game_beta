@@ -714,6 +714,9 @@ func _run_systems() -> void:
 	# 3d11. Account stash: deposit, withdraw to bag, capacity cap.
 	_test_stash()
 
+	# 3d12. Localization: lookup, key fallback, format, language swap.
+	_test_loc()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -1585,6 +1588,26 @@ func _test_stash() -> void:
 	game.player.bag = keep_bag
 	game.player.backpack = keep_bp
 	print("ok: account stash (deposit, withdraw to bag, capacity cap)")
+
+
+# ---- CORE: localization string table (lookup, fallback, format, swap) ---
+func _test_loc() -> void:
+	var keep := Loc.lang
+	Loc.lang = "en"
+	if Loc.t("resume") != "Resume":
+		return _fail("Loc.t did not return the English string")
+	if Loc.t("__nope__") != "__nope__":
+		return _fail("Loc.t did not fall back to the key for a missing entry")
+	if Loc.t("gold_amount", [42]) != "42 gold":
+		return _fail("Loc.t did not format positional args")
+	# Language swap uses the active table, with per-key English fallback.
+	Loc.lang = "es"
+	if Loc.t("resume") != "Reanudar":
+		return _fail("Loc.t did not use the active language")
+	if Loc.t("stash") != String(Loc.STRINGS["en"]["stash"]):
+		return _fail("Loc.t did not fall back to en for a key missing in es")
+	Loc.lang = keep
+	print("ok: localization (lookup, key fallback, format, language swap)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

@@ -126,7 +126,7 @@ var gust_t := 0.0
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
 var no_saves := false                 # autotest: never touch real save files
-var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false}  # user://settings.json
+var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en"}  # user://settings.json
 var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)
 var merchant_zones: Array = []        # rooms with a merchant present (saved)

@@ -17,10 +17,13 @@ func load_settings() -> void:
 		for key in settings:
 			if not data.has(key):
 				continue
-			if settings[key] is bool:
+			if settings[key] is String:
+				settings[key] = String(data[key])
+			elif settings[key] is bool:
 				settings[key] = bool(data[key])
 			else:
 				settings[key] = clampf(float(data[key]), 0.0, 1.0)
+	Loc.lang = String(settings.get("lang", "en"))
 
 func save_settings() -> void:
 	var f := FileAccess.open("user://settings.json", FileAccess.WRITE)

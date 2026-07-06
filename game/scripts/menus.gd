@@ -215,11 +215,13 @@ func open_pause() -> void:
 	var zi := clampi(game.cur_room, 0, game.zone_count - 1)
 	_lbl(vbox, "%s, Level %d — %s" % [Classes.CLASSES[game.player.cls]["name"],
 		game.player.level, game.zones[zi]["name"]], 14, Color(0.7, 0.72, 0.78))
-	_btn(vbox, "  ▶  Resume", func() -> void: close(), Color(0.6, 1.0, 0.6))
-	_btn(vbox, "  ⚑  Quest Log", func() -> void: open_journal(), Color(0.9, 0.9, 0.95))
-	_btn(vbox, "  ⛃  Stash  (shared across characters)", func() -> void: open_stash(), Color(0.9, 0.9, 0.95))
-	_btn(vbox, "  🔊  Settings (sound)", func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
-	_btn(vbox, "  ⌨  Keybinds", func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
+	# UI strings route through Loc.t (localization pass) — translating is a
+	# table swap in loc.gd, not a code sweep.
+	_btn(vbox, "  ▶  " + Loc.t("resume"), func() -> void: close(), Color(0.6, 1.0, 0.6))
+	_btn(vbox, "  ⚑  " + Loc.t("quest_log"), func() -> void: open_journal(), Color(0.9, 0.9, 0.95))
+	_btn(vbox, "  ⛃  " + Loc.t("stash"), func() -> void: open_stash(), Color(0.9, 0.9, 0.95))
+	_btn(vbox, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
+	_btn(vbox, "  ⌨  " + Loc.t("keybinds"), func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
 	var unread := 0
 	for mail in game.mailbox:
 		if not mail["read"]:
@@ -227,7 +229,7 @@ func open_pause() -> void:
 	_btn(vbox, "  ✉  Mailbox" + ("  (%d new)" % unread if unread > 0 else ""),
 		func() -> void: open_mailbox(), Color(0.8, 0.9, 1.0) if unread > 0 else Color(0.9, 0.9, 0.95))
 	if game.daily_available():
-		_btn(vbox, "  ★  Daily reward  (ready to claim!)",
+		_btn(vbox, "  ★  " + Loc.t("daily_reward"),
 			func() -> void: open_daily(), Color(1.0, 0.88, 0.45))
 	var restart := func() -> void:
 		open_confirm("Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(game.chapter_id)["name"],
@@ -297,6 +299,16 @@ func open_settings(from := "pause") -> void:
 			game.save_settings()
 			open_settings(settings_return), Color(0.9, 0.9, 0.95))
 	fs_btn.tooltip_text = "Borderless fullscreen on your current monitor."
+	# Language selector — cycles the Loc table (translation is a table swap).
+	var lang_btn := _btn(vbox, "  Language: %s  " % String(game.settings.get("lang", "en")).to_upper(),
+		func() -> void:
+			var langs := Loc.languages()
+			var i := langs.find(Loc.lang)
+			Loc.lang = String(langs[(i + 1) % langs.size()])
+			game.settings["lang"] = Loc.lang
+			game.save_settings()
+			open_settings(settings_return), Color(0.9, 0.9, 0.95))
+	lang_btn.tooltip_text = "Cycle UI language (localization foundation — most screens are English for now)."
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back")
 
