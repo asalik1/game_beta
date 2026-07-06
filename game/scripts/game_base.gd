@@ -193,6 +193,25 @@ func band_price_mult() -> float:
 		"tempted": return 1.1
 	return 1.0
 
+
+## Gambling vendor: the haggle-adjusted price of one gamble at `tier`.
+func gamble_cost(tier: String) -> int:
+	return int(ceil(float(Balance.GAMBLE_COST.get(tier, 100)) * band_price_mult()))
+
+
+## Spend gold on a random item of `tier`, sight unseen. Returns the won
+## item, or {} if you can't afford it or the bag is full (nothing charged).
+func gamble(tier: String) -> Dictionary:
+	var cost := gamble_cost(tier)
+	if player.gold < cost or player.bag_used() >= player.bag_capacity():
+		return {}
+	player.gold -= cost
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	var won := Items.roll_item(tier, rng, player.cls, loot_cap())
+	player.add_item(won)
+	return won
+
 ## Write the current character to its slot. Called on story progress,
 ## zone changes, menu closes and window close — never mid-death.
 func autosave() -> void:

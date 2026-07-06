@@ -257,6 +257,11 @@ const ELIXIR_MIGHT_AMT := 0.20   # +20% damage while the elixir holds
 const ELIXIR_MIGHT_DUR := 30.0   # seconds
 const CONSUMABLE_PRICES := {"mana_potion": 35, "elixir_might": 130, "recall_scroll": 55}
 
+# Gambling vendor (Diablo-style): spend gold for a random item of the
+# merchant's tier, sight unseen. A cheap gold sink + loot thrill; deeper
+# merchants gamble richer tiers. Cost is per merchant tier (before haggle).
+const GAMBLE_COST := {"wood": 60, "silver": 150, "gold": 400}
+
 # ----------------------------------------------------------------- rooms ---
 # Quiet room types shrink their walled playable area within the fixed
 # grid cell (corridors connect the doors to the cell edges).

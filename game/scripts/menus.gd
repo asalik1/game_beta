@@ -1137,6 +1137,24 @@ func open_shop(zone: int) -> void:
 		cb.clip_text = true
 		cb.custom_minimum_size = Vector2(640, 0)
 
+	# Gambling shelf: spend gold on a random item of this merchant's tier.
+	var gamble_tier := String(game.zones[zone].get("shop_tier",
+		["wood", "silver", "silver", "gold"][clampi(zone, 0, 3)]))
+	var gcost := game.gamble_cost(gamble_tier)
+	var gamble_cb := func() -> void:
+		var won: Dictionary = game.gamble(gamble_tier)
+		if won.is_empty():
+			game.spawn_text(p.global_position + Vector2(0, -50),
+				"Bag full!" if p.bag_used() >= p.bag_capacity() else "Not enough gold!", Color(1.0, 0.6, 0.5))
+		else:
+			game.sfx("chest")
+			game.spawn_text(p.global_position + Vector2(0, -60), "GAMBLED: %s" % Items.title(won),
+				Items.GRADE_COLOR[won["grade"]], 3.0)
+		open_shop(zone)
+	var gb := _btn(buy, "🎲 Gamble — %d gold  (a random %s-tier item, sight unseen)" % [gcost, gamble_tier],
+		gamble_cb, Color(0.85, 0.6, 1.0), p.gold >= gcost)
+	gb.custom_minimum_size = Vector2(640, 0)
+
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
 		var cost := int(ceil(Items.price(it) * 2 * haggle))

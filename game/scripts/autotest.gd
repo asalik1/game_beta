@@ -720,6 +720,9 @@ func _run_systems() -> void:
 	# 3d13. Consumables: mana draught, might elixir, recall scroll.
 	_test_consumables()
 
+	# 3d14. Gamble vendor: afford gate, cost deduction, item delivered.
+	_test_gamble()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -1662,6 +1665,40 @@ func _test_consumables() -> void:
 	game.last_safe_room = keep_safe
 	p.global_position = keep_pos
 	print("ok: consumables (mana draught, might elixir, recall scroll)")
+
+
+# ---- CORE: gambling vendor (afford gate, cost deduction, delivery) -------
+func _test_gamble() -> void:
+	var p := game.player
+	var keep_gold: int = p.gold
+	var keep_bag: Dictionary = p.bag
+	var keep_bp: Array = p.backpack
+	p.bag = Items.make_bag("S")  # room to receive
+	p.backpack = []
+
+	# Can't afford -> nothing won, no gold spent.
+	p.gold = 0
+	if not game.gamble("silver").is_empty():
+		return _fail("gamble paid out with no gold")
+	if p.gold != 0:
+		return _fail("gamble charged gold on a failed roll")
+
+	# Afford -> an item is delivered and the cost is deducted.
+	p.gold = 100000
+	var cost := game.gamble_cost("silver")
+	var won := game.gamble("silver")
+	if won.is_empty():
+		return _fail("gamble returned nothing despite gold + bag room")
+	if p.gold != 100000 - cost:
+		return _fail("gamble did not deduct exactly the cost")
+	if p.backpack.size() != 1:
+		return _fail("gamble did not add the item to the bag")
+
+	# Restore.
+	p.gold = keep_gold
+	p.bag = keep_bag
+	p.backpack = keep_bp
+	print("ok: gamble vendor (afford gate, cost deduction, item delivered)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
