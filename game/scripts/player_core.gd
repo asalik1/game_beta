@@ -606,6 +606,21 @@ func equip(item: Dictionary) -> void:
 	game.sfx("equip")
 
 
+## Move an equipped item back to the bag, leaving the slot empty. False =
+## no such item equipped, or the bag is full (the item stays worn).
+func unequip(slot: String) -> bool:
+	if not equipment.has(slot):
+		return false
+	if bag_used() >= bag_capacity():
+		return false
+	backpack.append(equipment[slot])
+	equipment.erase(slot)
+	recalc()
+	_update_weapon_visual()
+	game.sfx("equip")
+	return true
+
+
 ## Pull all gems out of an item back into the gem bag (used when selling).
 func strip_gems(item: Dictionary) -> void:
 	for gem in item.get("gems", []):

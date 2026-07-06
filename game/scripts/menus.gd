@@ -437,7 +437,7 @@ func pick_class(id: String) -> void:
 
 # --------------------------------------------------------------- inventory ---
 
-func open_inventory(tab := "gear") -> void:
+func open_inventory(tab := "gear", cat := "all") -> void:
 	var vbox := _open("Inventory — %d gold" % game.player.gold, 1120, 640)
 	current = "inventory"
 
@@ -506,6 +506,18 @@ func open_inventory(tab := "gear") -> void:
 		var ab := _btn(head, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
 	_lbl(right, "Gear: click to equip · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · bigger bags drop from ELITES", 12, Color(0.55, 0.55, 0.6))
+
+	# Bag category filter: All (default) + per-slot gear, gems, consumables.
+	var catrow := HBoxContainer.new()
+	catrow.add_theme_constant_override("separation", 6)
+	right.add_child(catrow)
+	for spec in [["all", "All"], ["weapon", "Weapons"], ["armor", "Armor"], ["boots", "Boots"],
+			["charm", "Charms"], ["gems", "Gems"], ["consumables", "Consumables"]]:
+		var cid: String = spec[0]
+		var cb := _btn(catrow, spec[1], func() -> void: open_inventory("gear", cid),
+			Color(0.95, 0.85, 0.5) if cat == cid else Color(0.6, 0.6, 0.6))
+		cb.add_theme_font_size_override("font_size", 13)
+
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -516,37 +528,48 @@ func open_inventory(tab := "gear") -> void:
 	grid.add_theme_constant_override("h_separation", 4)
 	grid.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(grid)
-	for item in p.backpack:
-		var it: Dictionary = item
-		_bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
-			"%s\n%s\n\nCLICK TO EQUIP — diff:\n%s" % [Items.title(it), Items.describe(it), _diff_tip(it)],
-			func() -> void:
-				game.player.equip(it)
-				open_inventory())
-	for c in p.consumables:
-		var cc: Dictionary = c
-		_bag_slot(grid, null, "⟲", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
-			"%s\n%s\n\nCLICK TO USE" % [str(cc["name"]), str(cc.get("desc", ""))],
-			func() -> void:
-				game.player.use_consumable(cc)
-				open_inventory())
-	var groups := _gem_groups()
-	for key in _sorted_gem_keys(groups):
-		var group: Dictionary = groups[key]
-		var g: Dictionary = group["gem"]
-		var count: int = group["count"]
-		var tip := "%s  x%d" % [Items.gem_title(g), count]
-		var gem_cb := func() -> void: pass
-		if count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL:
-			tip += "\n\nCLICK: synthesize three into one Lv%d" % (g["lvl"] + 1)
-			gem_cb = func() -> void:
-				game.player.synthesize(g["stat"], g["lvl"])
-				open_inventory()
-		else:
-			tip += "\n\nSocket it: click an EQUIPPED item on the left"
-		_bag_slot(grid, null, ("◆%d" % count) if count > 1 else "◆", Items.gem_color(g), tip, gem_cb)
-	for i in maxi(0, p.bag_capacity() - p.bag_used()):
-		_bag_empty(grid)
+	var show_gear: bool = cat == "all" or cat in Items.SLOTS
+	var show_gems: bool = cat == "all" or cat == "gems"
+	var show_cons: bool = cat == "all" or cat == "consumables"
+	if show_gear:
+		for item in p.backpack:
+			var it: Dictionary = item
+			if cat != "all" and String(it["slot"]) != cat:
+				continue
+			_bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
+				"%s\n%s\n\nCLICK TO EQUIP — diff:\n%s" % [Items.title(it), Items.describe(it), _diff_tip(it)],
+				func() -> void:
+					game.player.equip(it)
+					open_inventory("gear", cat))
+	if show_cons:
+		for c in p.consumables:
+			var cc: Dictionary = c
+			_bag_slot(grid, null, "⟲", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
+				"%s\n%s\n\nCLICK TO USE" % [str(cc["name"]), str(cc.get("desc", ""))],
+				func() -> void:
+					game.player.use_consumable(cc)
+					open_inventory("gear", cat))
+	if show_gems:
+		var groups := _gem_groups()
+		for key in _sorted_gem_keys(groups):
+			var group: Dictionary = groups[key]
+			var g: Dictionary = group["gem"]
+			var count: int = group["count"]
+			var tip := "%s  x%d" % [Items.gem_title(g), count]
+			var gem_cb := func() -> void: pass
+			if count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL:
+				tip += "\n\nCLICK: synthesize three into one Lv%d" % (g["lvl"] + 1)
+				gem_cb = func() -> void:
+					game.player.synthesize(g["stat"], g["lvl"])
+					open_inventory("gear", cat)
+			else:
+				tip += "\n\nSocket it: click an EQUIPPED item on the left"
+			_bag_slot(grid, null, ("◆%d" % count) if count > 1 else "◆", Items.gem_color(g), tip, gem_cb)
+	# Free-space squares only in the All view (a filtered view isn't the
+	# whole bag, so padding it with empties would misrepresent capacity).
+	if cat == "all":
+		for i in maxi(0, p.bag_capacity() - p.bag_used()):
+			_bag_empty(grid)
 	_hint(vbox, "ESC / I to close")
 
 
@@ -751,6 +774,18 @@ func open_item_panel(item: Dictionary) -> void:
 	head.add_child(icon)
 	var d := _lbl(head, Items.describe(item), 14, Items.GRADE_COLOR[item["grade"]])
 	d.custom_minimum_size = Vector2(760, 0)
+
+	# Equipped items can be UNEQUIPPED back to the bag (leaving the slot
+	# empty) — not just swapped by equipping something else.
+	var is_equipped: bool = p.equipment.get(String(item.get("slot", ""))) == item
+	if is_equipped:
+		var slot_id: String = String(item["slot"])
+		var unequip_cb := func() -> void:
+			if game.player.unequip(slot_id):
+				open_inventory()
+			else:
+				game.spawn_text(game.player.global_position + Vector2(0, -50), "Bag full!", Color(1, 0.6, 0.4))
+		_btn(vbox, "  ⇩  Unequip  (move to bag)  ", unequip_cb, Color(1.0, 0.8, 0.5))
 
 	# Set bonus panel (S legendaries): which tiers are live given what's worn.
 	if String(item.get("grade", "")) == "S" and item.has("cls"):

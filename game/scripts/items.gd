@@ -160,7 +160,7 @@ static func random_gem(rng: RandomNumberGenerator, lvl := 1) -> Dictionary:
 # slots. One bag at a time — looting a bigger one upgrades in place,
 # smaller/equal ones convert to gold. Elites are the bag source
 # (playtest round 6; DESIGN.md).
-const BAG_SLOTS := {"F": 15, "E": 20, "D": 25, "C": 35, "B": 50, "A": 70, "S": 100}
+const BAG_SLOTS := {"F": 30, "E": 35, "D": 40, "C": 50, "B": 65, "A": 85, "S": 115}
 const BAG_NAMES := {
 	"F": "Frayed Pouch", "E": "Patched Satchel", "D": "Soldier's Knapsack",
 	"C": "Knight's Rucksack", "B": "Runed Haversack", "A": "Dragonhide Duffel",

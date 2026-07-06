@@ -723,6 +723,9 @@ func _run_systems() -> void:
 	# 3d14. Gamble vendor: afford gate, cost deduction, item delivered.
 	_test_gamble()
 
+	# 3d15. Equip / unequip: slot empties back to the bag, bag-full guard.
+	_test_equip_unequip()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -1140,13 +1143,23 @@ func _run_campaign_ch2() -> void:
 	await _frames(3)
 	game = main_scene.instantiate()
 	add_child(game)
-	await _frames(10)
-	if not (game.menus.is_open() and game.menus.current == "title"):
+	# Poll WALL-CLOCK for the fresh boot: frames race ahead headless, so a
+	# fixed _frames() count is flaky — the title menu may not be up yet.
+	var boot_t := 0.0
+	while not (game.menus != null and game.menus.is_open() and game.menus.current == "title") and boot_t < 5.0:
+		await get_tree().create_timer(0.1).timeout
+		boot_t += 0.1
+	if not (game.menus != null and game.menus.is_open() and game.menus.current == "title"):
 		return _fail("title screen did not open when saves exist")
 	game.menus.close()
 	game.load_save(SaveGame.MAX_SLOTS)
-	await _frames(5)
-	if game.player.cls != "warrior" or game.quest_key != "done":
+	# Poll for the restored character — load_save rebuilds the world across
+	# frames, so the state isn't ready the instant the call returns.
+	var load_t := 0.0
+	while (game.player == null or game.player.cls != "warrior" or game.quest_key != "done") and load_t < 5.0:
+		await get_tree().create_timer(0.1).timeout
+		load_t += 0.1
+	if game.player == null or game.player.cls != "warrior" or game.quest_key != "done":
 		return _fail("resume did not restore the finished character")
 	if not game.boss_done.get("vargoth", false):
 		return _fail("resume lost boss progress")
@@ -1701,6 +1714,49 @@ func _test_gamble() -> void:
 	p.bag = keep_bag
 	p.backpack = keep_bp
 	print("ok: gamble vendor (afford gate, cost deduction, item delivered)")
+
+
+# ---- CORE: equip / unequip (slot empties to bag, bag-full guard) ---------
+func _test_equip_unequip() -> void:
+	var p := game.player
+	var keep_eq: Dictionary = p.equipment
+	var keep_bp: Array = p.backpack
+	var keep_cons: Array = p.consumables
+	var keep_bag: Dictionary = p.bag
+	p.bag = Items.make_bag("S")
+	p.equipment = {}
+	p.backpack = []
+	p.consumables = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var w := Items.roll_item_of("weapon", "B", rng, p.cls)
+	p.backpack.append(w)
+
+	# Equip from bag -> slot filled, item left the bag.
+	p.equip(w)
+	if p.equipment.get("weapon") != w or p.backpack.has(w):
+		return _fail("equip did not move the item from bag to slot")
+
+	# Unequip -> slot empties, item back in bag.
+	if not p.unequip("weapon"):
+		return _fail("unequip failed with bag room")
+	if p.equipment.has("weapon") or not p.backpack.has(w):
+		return _fail("unequip did not empty the slot / return to bag")
+
+	# Unequip is refused into a full bag (item stays worn).
+	p.equip(w)
+	while p.bag_used() < p.bag_capacity():
+		p.consumables.append(Items.make_reset_stone())
+	if p.unequip("weapon"):
+		return _fail("unequip succeeded into a full bag")
+
+	# Restore.
+	p.equipment = keep_eq
+	p.backpack = keep_bp
+	p.consumables = keep_cons
+	p.bag = keep_bag
+	p.recalc()
+	print("ok: equip / unequip (slot empties to bag, bag-full guard)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
