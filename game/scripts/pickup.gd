@@ -62,7 +62,12 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 			bob.tween_property(spr, "position:y", 0.0, 0.9) \
 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		"gem":
-			c._glyph("◆", Items.gem_color(payload["gem"]))
+			# A real cut gem on the ground (was a text ◆ glyph).
+			var gspr := Sprite2D.new()
+			gspr.texture = Art.gem_icon(Items.gem_color(payload["gem"]),
+				int(payload["gem"].get("lvl", 1)))
+			gspr.scale = Vector2(0.9, 0.9)
+			c.add_child(gspr)
 		_:
 			c._glyph("⟲", Color(0.6, 0.9, 1.0))
 	c._body_setup()

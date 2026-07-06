@@ -603,7 +603,8 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					open_inventory("gear", cat)
 			else:
 				tip += "\n\nSocket it: click an EQUIPPED item on the left"
-			_bag_slot(grid, null, ("◆%d" % count) if count > 1 else "◆", Items.gem_color(g), tip, gem_cb)
+			_bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
+				("x%d" % count) if count > 1 else "", Items.gem_color(g), tip, gem_cb)
 	# Free-space squares only in the All view (a filtered view isn't the
 	# whole bag, so padding it with empties would misrepresent capacity).
 	if cat == "all":
@@ -622,6 +623,9 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 		b.icon = icon
 		b.expand_icon = true
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		if glyph != "":  # icon + text together (gem stacks: icon + count)
+			b.text = glyph
+			b.add_theme_font_size_override("font_size", 13)
 	else:
 		b.text = glyph
 		b.add_theme_font_size_override("font_size", 17)

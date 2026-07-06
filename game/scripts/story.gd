@@ -296,7 +296,11 @@ const CONVOS := {
 	"wander_orphan": {"start": "o1", "nodes": {
 		"o1": {"who": "Miller's Boy",
 			"text": "You're going TOWARD the howling? On purpose? ...My da went toward the howling. If you see a wide-brim hat out there — brown, with a heron feather — it's his.",
-			"variants": [{"flag": "boy_answered", "text": "You'll watch for the hat? Brown, heron feather. I'll be here.", "next": ""}],
+			"variants": [
+				{"flag": "hat_given", "text": "The hat rides low over the boy's ears — he's pinned the brim up with a wolf tooth. Nobody at the mill teases him about the size. Nobody would dare.", "next": ""},
+				{"flag": "hat_taken", "text": "You're— that's. Behind your back. That's a HAT.", "next": "o_hat"},
+				{"flag": "boy_answered", "text": "You'll watch for the hat? Brown, heron feather. I'll be here.", "next": ""},
+			],
 			"choices": [
 				{"text": "Crouch to his height. \"I'll watch for the hat. I promise nothing else.\"",
 					"resonance": 3.0, "flags": {"boy_answered": true}, "next": "o_kind"},
@@ -305,6 +309,12 @@ const CONVOS := {
 			]},
 		"o_kind": {"who": "Miller's Boy", "text": "That's more than anyone else promised. The feather's blue at the tip. You'll know it.", "next": ""},
 		"o_cold": {"who": "Narrator", "text": "He doesn't cry. He just looks at you the way you look at weather — and heads home. It was probably the truth. It didn't need to be yours to say.", "next": ""},
+		"o_hat": {"who": "Miller's Boy", "text": "Show me. Please. Is the feather blue at the tip?",
+			"choices": [
+				{"text": "Hold it out. \"Brown, wide-brim, heron feather — blue at the tip. I watched for it, like I said.\"",
+					"resonance": 3.0, "flags": {"hat_given": true}, "next": "o_hat2"},
+			]},
+		"o_hat2": {"who": "Narrator", "text": "He doesn't cry this time either. He puts it on — it swallows him to the eyebrows — and stands straighter under it than the size should allow. \"He got far?\" \"The ravine. He saw the whole wood.\" The boy nods, slow, like a man watching a debt settle. \"That's a good place to stop walking,\" he decides. So do you.", "next": ""},
 	}},
 
 	# Resonance shrines: a genuine band-shifting choice between story beats.
@@ -314,9 +324,9 @@ const CONVOS := {
 			"variants": [{"flag": "moonwell_touched", "text": "The pool is only a pool now — the moon in it matches the sky. Whatever it wanted to know about you, it knows.", "next": ""}],
 			"choices": [
 				{"text": "Kneel and give the water a memory freely — let it take, and take nothing back.",
-					"resonance": 8.0, "flags": {"moonwell_touched": true}, "next": "s_give"},
+					"resonance": 8.0, "flags": {"moonwell_touched": true, "chose_moonwell_gave": true}, "next": "s_give"},
 				{"text": "Drink. Power is there for the taking, and you have a king to kill.",
-					"resonance": -8.0, "flags": {"moonwell_touched": true}, "next": "s_drink"},
+					"resonance": -8.0, "flags": {"moonwell_touched": true, "chose_moonwell_drank": true}, "next": "s_drink"},
 				{"text": "Step back from the edge. Not every offered thing must be answered.",
 					"resonance": 0.0, "flags": {"moonwell_touched": true}, "next": "s_leave"},
 			]},
@@ -330,9 +340,9 @@ const CONVOS := {
 			"variants": [{"flag": "reliquary_touched", "text": "The reliquary keeps its dust and its dead. The empty stand no longer pulls at you — or you no longer answer.", "next": ""}],
 			"choices": [
 				{"text": "Kneel to the founders and renew their oath in your own words.",
-					"resonance": 8.0, "flags": {"reliquary_touched": true}, "next": "r_oath"},
+					"resonance": 8.0, "flags": {"reliquary_touched": true, "chose_reliquary_oath": true}, "next": "r_oath"},
 				{"text": "Rest your hand on the crown-stand. Just to know how it would feel.",
-					"resonance": -8.0, "flags": {"reliquary_touched": true}, "next": "r_hand"},
+					"resonance": -8.0, "flags": {"reliquary_touched": true, "chose_reliquary_hand": true}, "next": "r_hand"},
 				{"text": "Touch nothing. Some rooms are graves; act like it.",
 					"resonance": 0.0, "flags": {"reliquary_touched": true}, "next": "r_leave"},
 			]},
@@ -349,10 +359,62 @@ const CONVOS := {
 		"l1": {"who": "Narrator", "text": "The ravine has nothing for you. No monsters, no treasure, no secret door. The view, though — the whole Darkwood rolling east under the mist, and the keep's towers far off, patient as tombstones. You allow yourself one long minute of it.", "next": ""},
 	}},
 	"lore_drowned_chapel": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "A flooded chapel of the Flame, sunk to its windows. The altar stone stands just above the waterline, and someone has kept ONE candle burning on it — the wax runs down in years, not hours. Morwen's blight circles this place and does not enter. Interesting, that it can't. Or won't.", "next": ""},
+		"l1": {"who": "Narrator", "text": "A flooded chapel of the Flame, sunk to its windows. The altar stone stands just above the waterline, and someone has kept ONE candle burning on it — the wax runs down in years, not hours. Morwen's blight circles this place and does not enter. Interesting, that it can't. Or won't.",
+			"variants": [
+				{"flag": "chapel_cupped", "text": "The candle burns on the altar stone, steady over the black water. The flame leans toward you when you enter now — barely. But it does.", "next": ""},
+				{"flag": "chapel_snuffed", "text": "The candle burns — relit, grudging, a shade smaller than it was. The blight circles a half-step closer than you remember. Neither of you mentions it.", "next": ""},
+				{"flag": "chapel_faced", "text": "The candle burns on, sixty years and one more night. The watch was never yours. It minds the door all the same.", "next": ""},
+			],
+			"next": "c_watch"},
+		"c_watch": {"who": "Narrator", "text": "The wind comes off the water and the flame bends, recovers, bends. Whoever keeps this candle is not here. Right now, the watch is anyone's.",
+			"choices": [
+				{"text": "Cup your hand around the flame until the gust passes. Stand a stranger's watch.",
+					"resonance": 3.0, "flags": {"chapel_faced": true, "chapel_cupped": true}, "next": "c_cup"},
+				{"text": "Pinch it out. Sixty years is long enough for anything to burn.",
+					"resonance": -5.0, "flags": {"chapel_faced": true, "chapel_snuffed": true}, "next": "c_snuff"},
+				{"text": "Leave it to its work. It has managed this long without your opinion.",
+					"resonance": 0.0, "flags": {"chapel_faced": true}, "next": "c_leave"},
+			]},
+		"c_cup": {"who": "Narrator", "text": "The gust breaks on your knuckles and the flame steadies, and for one held breath the chapel is exactly what it was built to be: a lit room in the dark, with someone minding the door. Out on the water, the blight's slow circling falters — a half-step, no more. It is enough to have been seen doing it.", "next": ""},
+		"c_snuff": {"who": "Narrator", "text": "Dark comes down like a lid — and the marsh LEANS: reeds, water, the far unseen singing, all of it, toward the altar, the way a crowd leans at a scaffold. You relight it. You TRY. The wick takes on the third strike, grudging, smaller. Some watches you do not get to end on someone else's behalf. The Ember, you notice, enjoyed the dark just fine.", "next": ""},
+		"c_leave": {"who": "Narrator", "text": "It has burned sixty years of nights exactly like this one. You leave it to the work, and the flame stands a little taller in the still air behind you — or you tell yourself it does. Either way, the door was minded tonight.", "next": ""},
 	}},
 	"lore_collapsed_tower": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "The watchtower fell the night Vargoth rose — the masonry still shows the burn-shadow of the guard who stood here when it came down. Under the rubble: a rusted signal-horn, mouthpiece worn bright from use. He was CALLING someone, at the end. The record does not say if anyone came.", "next": ""},
+		"l1": {"who": "Narrator", "text": "The watchtower fell the night Vargoth rose — the masonry still shows the burn-shadow of the guard who stood here when it came down. Under the rubble: a rusted signal-horn, mouthpiece worn bright from use. He was CALLING someone, at the end. The record does not say if anyone came.",
+			"variants": [
+				{"flag": "horn_blown", "text": "The signal-horn rests on the rubble where you set it. The horizon has kept its answer to itself since — but you know what you heard, and the storm knows you heard it.", "next": ""},
+				{"flag": "horn_rested", "text": "The horn stands on the rubble, mouthpiece up, aimed at the horizon. Still ready. Still his.", "next": ""},
+			],
+			"next": "t_horn"},
+		"t_horn": {"who": "Narrator", "text": "The horn has waited under the rubble for sixty years, mouthpiece worn bright, call unfinished.",
+			"choices": [
+				{"text": "Raise it and sound the call — finish what the guard started.",
+					"resonance": 3.0, "flags": {"horn_blown": true}, "next": "t_blow"},
+				{"text": "Set it upright on the rubble, mouthpiece up, the way a signalman stands his post. Leave the silence his.",
+					"resonance": 0.0, "flags": {"horn_rested": true}, "next": "t_rest"},
+			]},
+		"t_blow": {"who": "Narrator", "text": "The note comes out cracked, then enormous — it rolls east over the marsh and the wastes and takes sixty years of waiting with it. Silence. Then, from far past the keep, where the storm never quite leaves the horizon: one long note back. The same call. An answer six decades late — or an acknowledgment. Somewhere, a watch that never ended has changed hands.", "next": ""},
+		"t_rest": {"who": "Narrator", "text": "You set it ready, pointed at the horizon. Some calls are not yours to finish. The burn-shadow on the masonry keeps its silence, and you leave the tower feeling watched — not unkindly.", "next": ""},
+	}},
+	# The miller's hat (payoff for the boy's ask — see wander_orphan).
+	"lore_millers_hat": {"start": "l1", "nodes": {
+		"l1": {"who": "Narrator",
+			"text": "Snagged in the thorns at the ravine's lip: a wide-brim hat, brown once, rain-stiffened to the color of bark. A feather still rides the band. Whoever walked this far came for the view — or was past wanting anything. The wood keeps its own accounts.",
+			"variants": [
+				{"flag": "hat_taken", "text": "The thornbush keeps the hat's shape, empty. You check it every pass anyway. Habit, now.", "next": ""},
+				{"flag": "hat_left", "text": "The hat rides the thorns where you left it, brim set the way the wind likes. Some accounts you closed on purpose.", "next": ""},
+				{"flag": "boy_answered", "text": "Snagged in the thorns at the ravine's lip: a wide-brim hat. Brown. Heron feather. You know before you turn it over — blue at the tip. The miller made it exactly this far, and the view from here is the whole Darkwood.", "next": "h_choice"},
+			],
+			"next": ""},
+		"h_choice": {"who": "Narrator", "text": "A boy at the village edge is waiting on a promise. The hat weighs nothing, and will weigh more every mile back.",
+			"choices": [
+				{"text": "Work it free of the thorns, gently. A promise is a promise.",
+					"resonance": 4.0, "flags": {"hat_taken": true}, "next": "h_take"},
+				{"text": "Leave it. The wood keeps what it takes — and the boy keeps the version where his da is still walking.",
+					"resonance": -3.0, "flags": {"hat_left": true}, "next": "h_leave"},
+			]},
+		"h_take": {"who": "Narrator", "text": "The thorns give it up one at a time, grudging as this wood ever gets. Up close, the brim shows years of a thumb finding the same worn spot. You find the spot without meaning to.", "next": ""},
+		"h_leave": {"who": "Narrator", "text": "You set the brim back the way the wind had it. On the road behind you the howling starts up again, and for once it sounds less like hunger and more like accounting.", "next": ""},
 	}},
 }
 
@@ -583,7 +645,8 @@ const ZONES := [
 		"name": "Ravine Edge", "terrain": "darkwood", "type": "dead_end",
 		"coord": [3, 2], "exits": ["W"],
 		"enemies": [], "boss": "",
-		"npcs": [{"sprite": "rock", "x": 1700, "y": 620, "prompt": "E — Look", "convo": "lore_ravine"}],
+		"npcs": [{"sprite": "rock", "x": 1700, "y": 620, "prompt": "E — Look", "convo": "lore_ravine"},
+			{"sprite": "deadtree", "x": 1440, "y": 880, "prompt": "E — Something in the thorns", "convo": "lore_millers_hat"}],
 	},
 	{
 		"name": "The Deep Darkwood", "terrain": "darkwood", "type": "combat",
@@ -933,6 +996,26 @@ static func quest_text(key: String) -> String:
 	return String(ALL_QUESTS.get(key, ""))
 
 
+## Boss-door beats read the bearer (2026-07-06): a beat key may author
+## variants under "key@flag:x" (story flag set) or "key@band" (resonance
+## band). Flag variants outrank band variants; authored order breaks
+## flag ties. Keys without variants keep playing the plain beat, and a
+## missing key stays [] — exactly the old ALL_BEATS.get contract.
+static func beat_for(key: String, band: String, flags: Dictionary) -> Array:
+	load_content()
+	var prefix := key + "@flag:"
+	for k in ALL_BEATS:
+		var ks := String(k)
+		if ks.begins_with(prefix) and bool(flags.get(ks.substr(prefix.length()), false)):
+			var flagged: Array = ALL_BEATS[k]
+			return flagged
+	if ALL_BEATS.has(key + "@" + band):
+		var banded: Array = ALL_BEATS[key + "@" + band]
+		return banded
+	var plain: Array = ALL_BEATS.get(key, [])
+	return plain
+
+
 ## The chapter after this one in campaign order ("" = this is the last).
 ## Chapters form one PROGRESSION: winning a chapter carries the character
 ## into the next (game.advance_chapter), and finished chapters stay
@@ -970,8 +1053,17 @@ const BEATS := {
 	"elder_repeat": [
 		["Elder Maren", "The road east awaits, Ser Aldric. May the flame keep you."],
 	],
+	# Boss doors read the bearer (2026-07-06): "key@flag:x" / "key@band"
+	# variants, resolved by Story.beat_for — flag variants outrank band
+	# variants; chapters that author none keep playing the plain key.
 	"pre_fangmaw": [
 		["Narrator", "A monstrous howl shakes the trees. Fangmaw has caught your scent."],
+	],
+	"pre_fangmaw@tempted": [
+		["Narrator", "A monstrous howl shakes the trees. Fangmaw has caught your scent — and the Ember in you rises to answer it, gleeful, like calling to like. You are hunting each other. It would be dishonest to say which of you is happier about it."],
+	],
+	"pre_fangmaw@steady": [
+		["Narrator", "A monstrous howl shakes the trees. Fangmaw has caught your scent. The Ember in your chest holds low and even — a lantern, not a wildfire. The howl breaks off mid-note. It noticed."],
 	],
 	"post_fangmaw": [
 		["Narrator", "Fangmaw falls. The wolves scatter into the trees, their eyes clear for the first time in months."],
@@ -980,6 +1072,14 @@ const BEATS := {
 	],
 	"pre_morwen": [
 		["Morwen", "Another little candle, come to gutter out in my marsh? The spiders will pick your bones clean, knight."],
+		["Ser Aldric", "Talk less, witch."],
+	],
+	"pre_morwen@tempted": [
+		["Morwen", "Another little candle, come to gutter out in my marsh? ...No. Look at you. Not guttering — LEANING. I know that lean, knight. Mine began exactly so: just a little, toward the warm."],
+		["Ser Aldric", "Talk less, witch."],
+	],
+	"pre_morwen@steady": [
+		["Morwen", "A candle that keeps its flame in MY wind? How it must cost you, all that holding. Set it down, knight — the rot asks nothing of anyone. That is its whole mercy."],
 		["Ser Aldric", "Talk less, witch."],
 	],
 	"post_morwen": [
@@ -992,9 +1092,32 @@ const BEATS := {
 		["King Vargoth", "I wore it for sixty years. It is MINE. Come - kneel before your king."],
 		["Ser Aldric", "My king died sixty years ago. You're just what's left."],
 	],
+	# He FELT the hand on the crown-stand (shrine_reliquary r_hand).
+	"pre_vargoth@flag:chose_reliquary_hand": [
+		["King Vargoth", "A knight of the Ember Guard... You come for the Crown, little flame?"],
+		["King Vargoth", "I felt your hand on the stand where it rested. One breath of wanting — but oh, the FIT of you. Sixty years I wore it; you wore it for a heartbeat, and you already know how to kneel. Spare us both the pretending."],
+		["Ser Aldric", "My king died sixty years ago. You're just what's left."],
+	],
+	"pre_vargoth@tempted": [
+		["King Vargoth", "A knight of the Ember Guard... You come for the Crown, little flame?"],
+		["King Vargoth", "I can hear yours whispering from HERE. It promised you small things first, didn't it? Mine did too. Kneel, little flame — and skip the wasted years of telling yourself you don't want the rest."],
+		["Ser Aldric", "My king died sixty years ago. You're just what's left."],
+	],
+	"pre_vargoth@steady": [
+		["King Vargoth", "A knight of the Ember Guard... You come for the Crown, little flame?"],
+		["King Vargoth", "You hold it the way the founders held it. Steady. They knelt in the end, knight — to me, or to time; it hardly matters which. Everything steady breaks. Come and break."],
+		["Ser Aldric", "My king died sixty years ago. You're just what's left."],
+	],
 	"epilogue": [
 		["Narrator", "The Hollow King shatters like old porcelain. The Ember Crown clatters to the stones - still warm to the touch."],
 		["Ser Aldric", "It's over. The flame returns to Emberfall."],
+		["Narrator", "...But deep beneath the keep, something older stirs in its sleep. TO BE CONTINUED IN CHAPTER 2."],
+	],
+	# The deserter's loop closes (wander_deserter: "be braver than me").
+	"epilogue@flag:heard_deserter": [
+		["Narrator", "The Hollow King shatters like old porcelain. The Ember Crown clatters to the stones - still warm to the touch."],
+		["Ser Aldric", "It's over. The flame returns to Emberfall."],
+		["Narrator", "Miles west, on a road going nowhere in particular, a ragged soldier stops mid-stride. The stones have gone quiet. He stands a long moment — then turns, at last, toward home."],
 		["Narrator", "...But deep beneath the keep, something older stirs in its sleep. TO BE CONTINUED IN CHAPTER 2."],
 	],
 }
