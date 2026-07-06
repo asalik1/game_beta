@@ -771,6 +771,50 @@ func open_item_panel(item: Dictionary) -> void:
 				ib.clip_text = true
 				ib.custom_minimum_size = Vector2(400, 0)
 				ib.tooltip_text = "%s  x%d" % [Items.gem_title(g2), group["count"]]
+
+	# --- reforge bench: gold-cost crafting on this item ---
+	_lbl(vbox, "REFORGE BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
+	var subs2: Dictionary = item.get("subs", {})
+	# S-gear reforges within its own class; everything else uses the wearer's.
+	var rcls: String = String(item.get("cls", p.cls))
+	if subs2.is_empty() and not Items.can_add_socket(item):
+		_lbl(vbox, "Nothing to reforge — no affixes to reroll or sockets to add.",
+			12, Color(0.55, 0.55, 0.6))
+	if not subs2.is_empty():
+		var acost := Items.reforge_cost(item, "affix")
+		var affix_cb := func() -> void:
+			if game.player.gold >= acost:
+				game.player.gold -= acost
+				Items.reforge_affixes(item, rcls, game.loot_rng)
+				game.player.recalc()
+				game.sfx("equip")
+				open_item_panel(item)
+		_btn(vbox, "Reroll ALL affixes  —  %d gold" % acost, affix_cb,
+			Color(0.7, 0.9, 1.0) if p.gold >= acost else Color(0.5, 0.5, 0.55))
+		for stat in subs2.keys():
+			var s := String(stat)
+			var scost := Items.reforge_cost(item, "sub")
+			var sub_cb := func() -> void:
+				if game.player.gold >= scost:
+					game.player.gold -= scost
+					Items.reforge_sub(item, s, game.loot_rng)
+					game.player.recalc()
+					game.sfx("equip")
+					open_item_panel(item)
+			_btn(vbox, "   Reroll %s value  —  %d gold" % [Items.STAT_LABEL.get(s, s), scost], sub_cb,
+				Color(0.85, 0.85, 0.9) if p.gold >= scost else Color(0.5, 0.5, 0.55))
+	if Items.can_add_socket(item):
+		var ccost := Items.reforge_cost(item, "socket")
+		var sock_cb := func() -> void:
+			if game.player.gold >= ccost:
+				game.player.gold -= ccost
+				Items.add_socket(item)
+				game.player.recalc()
+				game.sfx("chest")
+				open_item_panel(item)
+		_btn(vbox, "Add gem socket  —  %d gold" % ccost, sock_cb,
+			Color(0.6, 1.0, 0.6) if p.gold >= ccost else Color(0.5, 0.5, 0.55))
+	_lbl(vbox, "Your gold: %d" % p.gold, 13, Color(1.0, 0.85, 0.35))
 	_hint(vbox, "ESC to go back to inventory")
 
 
@@ -1282,7 +1326,8 @@ func open_map() -> void:
 
 const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
 	"stormwarden", "choirmother", "nullwarden",  # (T4) ch2 content bosses
-	"sexton", "vess", "saint_varo"]  # ch3 Unburied Vale (BOSSES.md)
+	"sexton", "vess", "saint_varo",  # ch3 Unburied Vale (BOSSES.md)
+	"forgemistress", "cinderhide", "ashpriest"]  # ch4 Slagfields (BOSSES.md)
 
 ## Codex screens live in ui/codex.gd.
 func open_codex(tab := "monsters") -> void:

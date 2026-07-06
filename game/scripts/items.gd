@@ -317,30 +317,7 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 	var main := {}
 	for stat in SLOT_MAIN[slot]:
 		main[stat] = snappedf(SLOT_MAIN[slot][stat] * mult * style["main"] * rng.randf_range(0.9, 1.15), 0.01)
-	# Higher grades roll more substats (F/E: 0, D/C: 1, B/A: 2, S: 3).
-	var sub_count := maxi(0, (GRADES.find(grade) - 1) / 2)
-	var subs := {}
-	var pool := SUBSTATS.keys()
-	# No dead stats (round 15): a class only rolls the penetration its
-	# own damage type can use. Everything else stays class-neutral.
-	if cls != "" and CLASSES_DMG_TYPE.has(cls):
-		pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
-	# Endgame-only stats (round 43): lifesteal and combo never roll
-	# below B — the climb earns them (applies to the random pool AND
-	# a shape's built-in personality stats, e.g. the Wand's combo).
-	var below_b := GRADES.find(grade) < GRADES.find("B")
-	if below_b:
-		pool.erase("lifesteal")
-		pool.erase("combo")
-	pool.shuffle()
-	for i in mini(sub_count, pool.size()):
-		var stat: String = pool[i]
-		subs[stat] = snappedf(SUBSTATS[stat] * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
-	# The shape's guaranteed personality stats, scaled by grade.
-	for stat in style["subs"]:
-		if below_b and (stat == "lifesteal" or stat == "combo"):
-			continue
-		subs[stat] = snappedf(subs.get(stat, 0.0) + style["subs"][stat] * (0.75 + 0.25 * mult), 0.01)
+	var subs := roll_subs(grade, noun, cls, rng)
 
 	var item := {
 		"slot": slot, "grade": grade, "noun": noun,
@@ -368,6 +345,86 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 			for stat in special["subs"]:
 				subs[stat] = special["subs"][stat]
 	return item
+
+
+## Roll an item's substat set: `sub_count` random affixes for the grade
+## (class-appropriate, endgame stats gated below B) plus the shape's
+## guaranteed personality stats. Shared by drops (roll_item_of) and the
+## reforge bench (reforge_affixes).
+static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumberGenerator) -> Dictionary:
+	var mult: float = GRADE_MULT[grade]
+	var style: Dictionary = SHAPE_STYLE.get(noun, {"main": 1.0, "subs": {}})
+	# Higher grades roll more substats (F/E: 0, D/C: 1, B/A: 2, S: 3).
+	var sub_count := maxi(0, (GRADES.find(grade) - 1) / 2)
+	var subs := {}
+	var pool := SUBSTATS.keys()
+	# No dead stats (round 15): a class only rolls the penetration its own
+	# damage type can use. Everything else stays class-neutral.
+	if cls != "" and CLASSES_DMG_TYPE.has(cls):
+		pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
+	# Endgame-only stats (round 43): lifesteal and combo never roll below B.
+	var below_b := GRADES.find(grade) < GRADES.find("B")
+	if below_b:
+		pool.erase("lifesteal")
+		pool.erase("combo")
+	pool.shuffle()
+	for i in mini(sub_count, pool.size()):
+		var stat: String = pool[i]
+		subs[stat] = snappedf(SUBSTATS[stat] * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
+	for stat in style["subs"]:
+		if below_b and (stat == "lifesteal" or stat == "combo"):
+			continue
+		subs[stat] = snappedf(subs.get(stat, 0.0) + style["subs"][stat] * (0.75 + 0.25 * mult), 0.01)
+	return subs
+
+
+# ------------------------------------------------------------ reforge bench ---
+# Deterministic-ish crafting on OWNED gear (gold sink). Three crafts:
+# reroll one substat's magnitude, reroll the whole affix set, or add a gem
+# socket (B+ only, capped). Costs scale with grade.
+const REFORGE_COST := {"F": 40, "E": 60, "D": 90, "C": 140, "B": 220, "A": 340, "S": 500}
+const MAX_SOCKETS := 3
+
+## Gold cost of a reforge on this item. kind: "sub" | "affix" | "socket".
+static func reforge_cost(item: Dictionary, kind: String) -> int:
+	var base: int = REFORGE_COST.get(String(item["grade"]), 100)
+	match kind:
+		"affix": return base * 2
+		"socket": return base * 3
+		_: return base
+
+
+## Reroll the MAGNITUDE of one existing substat (keeps which stat it is).
+static func reforge_sub(item: Dictionary, stat: String, rng: RandomNumberGenerator) -> void:
+	if not item.get("subs", {}).has(stat):
+		return
+	var mult: float = GRADE_MULT[item["grade"]]
+	if SUBSTATS.has(stat):
+		item["subs"][stat] = snappedf(SUBSTATS[stat] * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
+	else:
+		item["subs"][stat] = snappedf(float(item["subs"][stat]) * rng.randf_range(0.8, 1.2), 0.01)
+
+
+## Reroll WHICH substats the item carries (and their values) — the affix
+## reroll loop. S-gear synergy subs are preserved (never rerolled away).
+static func reforge_affixes(item: Dictionary, cls: String, rng: RandomNumberGenerator) -> void:
+	var fresh := roll_subs(String(item["grade"]), String(item.get("noun", "Blade")), cls, rng)
+	# Keep an S legendary's signature subs on top of the fresh roll.
+	if String(item["grade"]) == "S" and item.has("cls") and S_GEAR.has(String(item["cls"])):
+		var special: Dictionary = S_GEAR[String(item["cls"])][String(item["slot"])]
+		for stat in special.get("subs", {}):
+			fresh[stat] = special["subs"][stat]
+	item["subs"] = fresh
+
+
+## Can this item take another gem socket? B+ only, capped at MAX_SOCKETS.
+static func can_add_socket(item: Dictionary) -> bool:
+	return String(item["grade"]) in ["B", "A", "S"] \
+		and int(item.get("gem_slots", 0)) < mini(GEM_SLOTS[item["grade"]] + 1, MAX_SOCKETS)
+
+
+static func add_socket(item: Dictionary) -> void:
+	item["gem_slots"] = int(item.get("gem_slots", 0)) + 1
 
 
 ## All stats an item grants (main stat gets +15% per upgrade level,

@@ -705,6 +705,9 @@ func _run_systems() -> void:
 	# 3d8. Bounties + weekly vault: roll, progress reward, vault claim.
 	_test_bounties()
 
+	# 3d9. Reforge bench: affix reroll, value reroll, add socket + cap.
+	_test_reforge()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -1230,6 +1233,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch2_act2()
 	await _test_ch2_resonance()
 	await _test_ch3_bosses()
+	await _test_ch4_bosses()
 	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
@@ -1457,6 +1461,46 @@ func _test_bounties() -> void:
 	print("ok: bounties + weekly vault (deterministic roll, progress reward, vault claim)")
 
 
+# ---- CORE: reforge bench (affix reroll, value reroll, add socket) -------
+func _test_reforge() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 999
+	var it := Items.roll_item_of("weapon", "A", rng, "warrior")
+
+	# Affix reroll keeps a grade-appropriate, non-empty sub set.
+	Items.reforge_affixes(it, "warrior", rng)
+	if it["subs"].is_empty():
+		return _fail("reforge_affixes wiped all substats")
+
+	# Value reroll changes one stat's magnitude (over a few tries).
+	var stat := String(it["subs"].keys()[0])
+	var v0: float = it["subs"][stat]
+	var changed := false
+	for i in 8:
+		Items.reforge_sub(it, stat, rng)
+		if absf(float(it["subs"][stat]) - v0) > 0.001:
+			changed = true
+			break
+	if not changed:
+		return _fail("reforge_sub never changed the value in 8 tries")
+
+	# Add socket: A starts at 2 -> can add to 3, then hits the cap.
+	var slots0: int = int(it["gem_slots"])
+	if not Items.can_add_socket(it):
+		return _fail("A-grade item should allow adding a socket")
+	Items.add_socket(it)
+	if int(it["gem_slots"]) != slots0 + 1:
+		return _fail("add_socket did not add a socket")
+	if Items.can_add_socket(it):
+		return _fail("socket count past cap should be rejected")
+
+	# An S weapon starts at 3 sockets and is already at the cap.
+	var s_it := Items.roll_item_of("weapon", "S", rng, "warrior")
+	if Items.can_add_socket(s_it):
+		return _fail("S item (3 sockets) should be at the socket cap")
+	print("ok: reforge bench (affix reroll, value reroll, add socket + cap)")
+
+
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
 ## Spawn, signature, per-boss phase mechanic, and story-neutral death
 ## for each ch3 boss (the module's own kill-flow selftest — runs in the
@@ -1473,3 +1517,17 @@ func _test_ch3_bosses() -> void:
 		await get_tree().create_timer(60.0).timeout
 		return
 	print("ok: ch3 bosses (spawn / signature / phase / story-neutral death) — sexton, vess, saint_varo")
+
+
+func _test_ch4_bosses() -> void:
+	_buff()
+	await _goto_room(0)
+	await _frames(5)
+	var err: String = await preload("res://scripts/content/ch4_bosses.gd").selftest(game)
+	if err != "":
+		_fail(err)
+		# quit(1) lands at frame end; never resume, or _run would print
+		# AUTOTEST PASS and quit(0) over the failure.
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: ch4 bosses (spawn / signature / phase / story-neutral death) — forgemistress, cinderhide, ashpriest")

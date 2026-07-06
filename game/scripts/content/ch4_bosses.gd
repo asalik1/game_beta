@@ -38,7 +38,7 @@ const ENEMIES := {
 	# (at full melt the plates shed ~10s and the damage window opens, but a
 	# magma-rain tantrum rides the window). At 30% the plates stop regrowing.
 	"cinderhide": {
-		"name": "Cinderhide the Unquenched", "sprite": "deep_stalker",
+		"name": "Cinderhide the Unquenched", "sprite": "direwolf",
 		"hp": 9500.0, "dmg": 110.0, "speed": 135.0, "xp": 330, "gold": 260,
 		"ranged": false, "scale": 5.8,
 		# Base resists are the SHED value; the plate mechanic adds +60 at
@@ -56,7 +56,7 @@ const ENEMIES := {
 	# arrives heals him + speeds his verdicts (intercept them); at 20% the
 	# Judge attends and magma-rain runs continuous.
 	"ashpriest": {
-		"name": "Ashpriest Ordo, Voice of the Molten Judge", "sprite": "stormcult",
+		"name": "Ashpriest Ordo, Voice of the Molten Judge", "sprite": "choirmother",
 		"hp": 28000.0, "dmg": 150.0, "speed": 95.0, "xp": 460, "gold": 360,
 		"ranged": true, "scale": 6.0,
 		"physres": 20.0, "magres": 45.0, "eva": 0.05, "critres": 8.0, "crit": 0.05, "dmg_type": "magic",
@@ -106,10 +106,11 @@ static func selftest(game: Node2D) -> String:
 			await game.get_tree().create_timer(0.2).timeout
 			if b.physres < 70.0:
 				return "ch4 boss cinderhide: plating did not raise resists"
-			# Drop it into lava and let the melt shed the plates.
-			game._add_hazard(game.cur_room, "lava", b.global_position, 120.0, 6.0)
+			# Keep lava under it as it chases (it walks off a single pool) —
+			# sustained contact is what melts the plating.
 			var melted := 0.0
-			while b.physres > 40.0 and melted < 4.0:
+			while b.physres > 40.0 and melted < 6.0:
+				game._add_hazard(game.cur_room, "lava", b.global_position, 90.0, 0.5)
 				await game.get_tree().create_timer(0.1).timeout
 				melted += 0.1
 			if b.physres > 40.0:
