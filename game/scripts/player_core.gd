@@ -1,8 +1,13 @@
 ﻿extends CharacterBody2D
-## PLAYER, layer 1 of 3 — state, stats, themes, gear/bag and
+## PLAYER, layer 1 of 9 — state, stats, themes, gear/bag and
 ## progression. The class is split across an inheritance chain so each
-## file stays readable while code and `self` semantics stay verbatim:
-##   player_core.gd  <- player_combat.gd <- player.gd (class_name Player)
+## file stays readable while code and `self` semantics stay verbatim
+## (calls flow derived→base; shared primitives live in player_combat):
+##   player_core.gd <- player_combat.gd (targeting/hit/juice)
+##     <- player_kit_warrior.gd <- player_kit_archer.gd
+##     <- player_kit_mage.gd <- player_kit_assassin.gd
+##     <- player_kit_paladin.gd <- player_kit_warlock.gd
+##     <- player.gd (class_name Player: dispatch/survival/per-frame)
 ## The hero. Classes scale on a primary attribute (STR/AGI/INT), fight
 ## with 3 basics + 1 ultimate (keyboard, auto-aimed), and customize via:
 ##  - THEMES: each ability can be assigned any unlocked elemental theme,
@@ -87,8 +92,9 @@ var dash_guard_time := 0.0  # assassin Mirrorstep: AoE damage softened while > 0
 var chill_dmg := 0.0        # mage Killing Frost talent: +dmg vs slowed/frozen
 var poison_dmg := 0.0       # archer Serpent's Due talent: +dmg vs DoT'd enemies
 var bolt_homing := 0.0      # mage Seeker Winds talent: Firebolt homes (>0 = on)
-var nova_regen := 0.0       # mage Rimeheart talent: Frost Nova HoT rate (/sec)
-var nova_regen_time := 0.0  # active Rimeheart heal-over-time window
+var nova_regen := 0.0       # ability-granted HoT rate (/s): mage Rimeheart (Nova)
+                            # and paladin Hallowed Ground (Consecration) share it
+var nova_regen_time := 0.0  # active heal-over-time window (recast renews)
 var dash_refund := 0.0      # assassin Exsanguinate talent: + to Shadow Dash refund
 var execute_dmg := 0.0      # assassin Coup de Grâce talent: +dmg to sub-40% enemies
 var curse_dr := 0.0         # warlock Doomward talent: DR while any enemy is cursed
@@ -100,6 +106,13 @@ var lowhp_dmg := 0.0        # warlock Sacrificial Might talent: +dmg while below
 var shield := 0.0           # current absorb shield (Transfusion overheal buffer)
 var last_rites := 0.0       # warlock Last Rites talent: >0 enables the cheat-death
 var last_rites_cd := 0.0    # cooldown on the cheat-death (60s)
+var grit_regen := 0.0       # warrior Grit: +regen per stack (passive-derived)
+var grit_cap := 0.0         # warrior Grit: max stacks (passive + Deep Grit talent)
+var grit_res := 0.0         # warrior Stonehide talent: +phys/mag res per Grit stack
+var grit_stacks := 0        # warrior Grit: current stacks (built by TAKING hits)
+var grit_time := 0.0        # Grit window — lapses (and stacks die) if unhit too long
+var paladin_mode := "holy"  # paladin Conviction stance: "holy" | "retribution"
+var judgment_leap_cd := 0.0 # Judgment's leap rider arms every JUDGMENT_LEAP_CD
 # Heal feedback (round 44): discrete mends (bulwark/holy on-hit, nova,
 # kit drains) accumulate here and surface as one throttled green tick +
 # soft chime — so per-hit spam (whirlwind, chains) stays readable. Route
@@ -171,6 +184,33 @@ var sprite: Sprite2D
 var weapon_spr: Sprite2D
 var weapon_glow: Sprite2D
 var aura: Sprite2D
+# Animation seam (Track C): set when assets/sprites/<class>_anim.png
+# exists — a horizontal strip animated via Sprite2D.hframes.
+# (anim_t above is the walk-bob clock; strip_t is the frame clock.)
+var strip_frames := 0
+var strip_fps := 6.0
+var strip_t := 0.0
+var halo: PointLight2D = null  # the hero's soft light (dark terrains only)
+
+
+## Point the hero Sprite2D at the class art — the animated strip when
+## one is installed, the static texture otherwise.
+func _apply_class_sprite() -> void:
+	var art_name: String = Classes.CLASSES[cls]["sprite"]
+	var anim := Art.anim_info(art_name)
+	sprite.hframes = 1
+	sprite.frame = 0
+	strip_frames = 0
+	if anim.is_empty():
+		sprite.texture = Art.tex(art_name)
+		sprite.scale = Art.scale_for(sprite.texture, 3.0)
+	else:
+		sprite.texture = anim["tex"]
+		sprite.hframes = anim["frames"]
+		strip_frames = int(anim["frames"])
+		strip_fps = float(anim["fps"])
+		sprite.scale = Art.scale_for(sprite.texture, 3.0, strip_frames)
+	face_left = Art.faces_left(art_name)
 
 
 ## Passive granted by an equipped S-grade weapon ("" if none).
@@ -219,11 +259,15 @@ func _ready() -> void:
 	add_child(aura)
 
 	sprite = Sprite2D.new()
-	sprite.texture = Art.tex(Classes.CLASSES[cls]["sprite"])
-	sprite.scale = Art.scale_for(sprite.texture, 3.0)
-	face_left = Art.faces_left(Classes.CLASSES[cls]["sprite"])
+	_apply_class_sprite()
 	sprite.flip_h = face_left  # start facing right regardless of art
 	add_child(sprite)
+
+	# The shard-bearer sheds a faint warm light: invisible in daylight,
+	# a small readable halo in dark-tinted terrains (void/grave/night).
+	# Energy tracks the room's darkness (game.refresh_ambience).
+	halo = Art.light(Color(1.0, 0.93, 0.8), 150.0, 0.0)
+	add_child(halo)
 
 	weapon_spr = Sprite2D.new()
 	weapon_spr.scale = Vector2(2.4, 2.4)
@@ -262,6 +306,10 @@ func set_class(id: String) -> void:
 	ability_theme = {"a1": "", "a2": "", "a3": "", "ult": ""}
 	aegis_time = 0.0
 	pact_time = 0.0
+	paladin_mode = "holy"
+	grit_stacks = 0
+	grit_time = 0.0
+	judgment_leap_cd = 0.0
 	hexed.clear()
 	wither.clear()
 	themes_known = Classes.themes_unlocked(level)
@@ -270,9 +318,7 @@ func set_class(id: String) -> void:
 		for slot in ability_theme:
 			ability_theme[slot] = first
 	if sprite:
-		sprite.texture = Art.tex(Classes.CLASSES[cls]["sprite"])
-		sprite.scale = Art.scale_for(sprite.texture, 3.0)
-		face_left = Art.faces_left(Classes.CLASSES[cls]["sprite"])
+		_apply_class_sprite()
 		sprite.flip_h = face_left if look_sign > 0.0 else not face_left
 	recalc()
 	hp = max_hp
@@ -335,6 +381,7 @@ func recalc() -> void:
 		"dash_refund": 0.0, "execute_dmg": 0.0,
 		"curse_dr": 0.0, "crush_amp": 0.0, "void_crit": 0.0,
 		"curse_spread": 0.0, "transfusion": 0.0, "lowhp_dmg": 0.0, "last_rites": 0.0,
+		"grit_regen": 0.0, "grit_cap": 0.0, "grit_res": 0.0,
 		"physres": 0.0, "magres": 0.0,
 		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
 		"combo": 0.0, "greed": 0.0}
@@ -386,8 +433,12 @@ func recalc() -> void:
 	speed = base["speed"] * (1.0 + b["speed_pct"])
 	crit = 0.05 + b["crit"] + primary * 0.0006
 	crit_dmg = 1.5 + b["crit_dmg"]
-	cdr = clampf(b["cdr"], 0.0, 0.45)
-	lifesteal = b["lifesteal"]
+	# Anti-degeneracy caps (player-designed, 2026-07-06): the special
+	# stats are gem-only and HARD-capped regardless of source — no build
+	# stacks past them. Late game may lift these a notch by level (L80+);
+	# deliberately not built yet.
+	cdr = clampf(b["cdr"], 0.0, Balance.CAP_CDR)
+	lifesteal = minf(b["lifesteal"], Balance.CAP_LIFESTEAL)
 	regen_pct = b["regen_pct"]
 	sw_regen = b["sw_regen"]
 	sw_delay = b["sw_delay"]
@@ -409,6 +460,9 @@ func recalc() -> void:
 	curse_spread = b["curse_spread"]
 	transfusion = b["transfusion"]
 	lowhp_dmg = b["lowhp_dmg"]
+	grit_regen = b["grit_regen"]
+	grit_cap = b["grit_cap"]
+	grit_res = b["grit_res"]
 	last_rites = b["last_rites"]
 	flat_dr = b["flat_dr"]
 	physres = b["physres"]
@@ -418,7 +472,7 @@ func recalc() -> void:
 	dex = b["dex"]
 	physpen = b["physpen"]
 	magpen = b["magpen"]
-	combo = b["combo"]
+	combo = minf(b["combo"], Balance.CAP_COMBO)  # anti-degeneracy cap
 	greed = b["greed"]
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
@@ -449,6 +503,10 @@ func current_atk() -> float:
 		a *= 1.0 + elixir_atk  # Elixir of Might
 	if lowhp_dmg > 0.0 and hp < max_hp * 0.5:
 		a *= 1.0 + lowhp_dmg   # Sacrificial Might (warlock): blood-price aggression
+	if cls == "paladin":
+		# Conviction stance: Holy trades damage for mending, Retribution the
+		# reverse — sustain and damage are never simultaneous (round 48).
+		a *= Balance.PALADIN_HOLY_DMG if paladin_mode == "holy" else Balance.PALADIN_RETRI_DMG
 	return a
 
 
@@ -629,9 +687,17 @@ func strip_gems(item: Dictionary) -> void:
 
 
 ## Socket a specific gem into a specific item (the player chooses both).
+## One SPECIAL gem (Haste/Lifesteal/Combo/Greed) per item — gems are the
+## gateway to off-build stats, never the highway (player rule, 2026-07-06).
 func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
 	if item.get("gems", []).size() >= item.get("gem_slots", 0):
 		return false
+	if String(gem["stat"]) in Balance.SPECIAL_GEM_STATS:
+		for socketed in item.get("gems", []):
+			if String(socketed["stat"]) in Balance.SPECIAL_GEM_STATS:
+				game.spawn_text(global_position + Vector2(0, -56),
+					"One special gem per item.", Color(1.0, 0.7, 0.5))
+				return false
 	item["gems"].append(gem)
 	gem_bag.erase(gem)
 	recalc()

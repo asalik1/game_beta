@@ -35,6 +35,8 @@ func apply_audio_settings() -> void:
 		music_player.volume_db = music_gain_db + _vol_db(float(settings["music"]))
 	for sp in sound_pool:
 		sp.volume_db = -8.0 + _vol_db(float(settings["sfx"]))
+	if amb_player:
+		amb_player.volume_db = AMB_DB + _vol_db(float(settings["sfx"]))
 
 func apply_display_settings() -> void:
 	if DisplayServer.get_name() == "headless":
@@ -50,11 +52,36 @@ func replay_chapter(id: String) -> void:
 	for fac in player.faction_standing:
 		player.faction_standing[fac] = 0
 	wander_seed = randi() % 1000000  # replays meet a fresh set of rolled rooms
+	weekly_active = false            # a fresh seed is never the weekly run
+	reset_run_stats()
 	switch_chapter(id, true)
 	play_started = true
 	get_tree().paused = false
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(id)["name"]))
+	autosave()
+
+
+## Begin this week's challenge run: the WEEK'S fixed seed (everyone plays
+## the same map), the week's modifier live, PB recorded on the clear.
+## Mechanically a replay — standings reset, character rides along.
+func start_weekly() -> void:
+	var chid := weekly_chapter()
+	if not chapter_available(chid, true):
+		chid = "ch1"  # rotation picked a chapter this account hasn't opened
+	_wipe_chapter_flags()
+	for fac in player.faction_standing:
+		player.faction_standing[fac] = 0
+	weekly_active = true
+	weekly_week = _week_index()
+	wander_seed = weekly_seed()
+	reset_run_stats()
+	switch_chapter(chid, true)
+	play_started = true
+	get_tree().paused = false
+	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	hud.flash_title(zones[cur_room]["name"],
+		"WEEKLY CHALLENGE — %s" % String(weekly_mod()["name"]))
 	autosave()
 
 ## Chapter PROGRESSION: the character who just won carries straight on
@@ -70,7 +97,10 @@ func advance_chapter() -> void:
 	hud.overlay.color = Color(0, 0, 0, 0)
 	hud.title_label.modulate.a = 0.0
 	hud.subtitle_label.modulate.a = 0.0
+	hud.hide_results()
 	_wipe_chapter_flags()  # last chapter's story state retires; history stays
+	weekly_active = false
+	reset_run_stats()
 	switch_chapter(next_ch, true)
 	play_started = true
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
@@ -105,11 +135,79 @@ func meta_unlock(chid: String) -> void:
 	if bool(_meta.get("unlocked_" + chid, false)):
 		return
 	_meta["unlocked_" + chid] = true
+	_meta_write()
+
+
+func _meta_write() -> void:
 	if no_saves:
 		return  # tests never touch the real user files
 	var f := FileAccess.open(META_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(_meta))
+
+
+## Chapter personal bests are ACCOUNT-wide (meta.json), keyed chapter ×
+## class — exactly the shape a leaderboard row takes when multiplayer
+## lands. Records the run, keeps best time + best grade, and reports
+## which bests this run broke (the results card shouts them).
+func record_chapter_result(res: Dictionary) -> Dictionary:
+	_load_meta()
+	var key := "pb_%s_%s" % [chapter_id, player.cls]
+	var prev: Dictionary = _meta.get(key, {})
+	var best := {"time": float(prev.get("time", 0.0)), "grade": String(prev.get("grade", "")),
+		"runs": int(prev.get("runs", 0)) + 1}
+	var out := {"new_time": false, "new_grade": false, "prev_time": best["time"],
+		"first_run": int(prev.get("runs", 0)) == 0}
+	if best["time"] <= 0.0 or float(res["time"]) < float(best["time"]):
+		best["time"] = float(res["time"])
+		out["new_time"] = true
+	if Balance.grade_rank(String(res["grade"])) > Balance.grade_rank(String(best["grade"])):
+		best["grade"] = String(res["grade"])
+		out["new_grade"] = true
+	_meta[key] = best
+	_meta_write()
+	return out
+
+
+## This class's chapter PB, or {} (codex/journal display).
+func chapter_pb(chid: String, cls: String) -> Dictionary:
+	_load_meta()
+	return _meta.get("pb_%s_%s" % [chid, cls], {})
+
+
+## The account's best weekly-challenge clear for the CURRENT week, or {}.
+func weekly_best() -> Dictionary:
+	_load_meta()
+	return _meta.get("wk_%d" % _week_index(), {})
+
+
+## A weekly run just cleared its chapter: keep the week's fastest clear
+## (account-wide) and pay the once-per-week completion reward. The run
+## must still be inside its week — a stale seed races nobody.
+func _finish_weekly(res: Dictionary) -> void:
+	weekly_active = false
+	if weekly_week != _week_index():
+		spawn_text(player.global_position + Vector2(0, -70),
+			"The week turned mid-run — no challenge credit.", Color(0.8, 0.8, 0.85), 4.0)
+		return
+	_load_meta()
+	var wkey := "wk_%d" % weekly_week
+	var prev: Dictionary = _meta.get(wkey, {})
+	if float(prev.get("time", 0.0)) <= 0.0 or float(res["time"]) < float(prev.get("time", 0.0)):
+		_meta[wkey] = {"time": float(res["time"]), "cls": player.cls,
+			"grade": String(res["grade"])}
+		_meta_write()
+	if weekly_claimed_week != weekly_week:
+		weekly_claimed_week = weekly_week
+		var g := int(float(Balance.WEEKLY_REWARD_GOLD) * Balance.daily_gold_mult(player.level))
+		player.gold += g
+		for i in Balance.WEEKLY_REWARD_GEMS:
+			give_loot({"kind": "gem", "gem": Items.random_gem(loot_rng, Balance.WEEKLY_REWARD_GEM_LVL)},
+				player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
+		sfx("chest")
+		spawn_text(player.global_position + Vector2(0, -92),
+			"WEEKLY CHALLENGE COMPLETE  (+%d gold, %d gems)" % [g, Balance.WEEKLY_REWARD_GEMS],
+			Color(1.0, 0.85, 0.4), 5.0)
 
 ## Progression gating for the chapter select: the first chapter is
 ## always open; each later one opens once the previous is finished —
@@ -187,6 +285,7 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 
 func on_boss_died(kind: String, dead: Boss = null) -> void:
 	boss_done[kind] = true
+	note_kill(kind)
 	unlock_achievement("first_boss")
 	if boss_done.size() >= 9:
 		unlock_achievement("boss_hunter")
@@ -217,7 +316,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		gem_count = 1
 	for gi in gem_count:
 		var boss_gem := Items.random_gem(loot_rng,
-			2 if loot_rng.randf() < Balance.ELITE_GEM_LV2_CHANCE else 1)
+			2 if loot_rng.randf() < Balance.gem_lv2_chance(boss_lv) else 1)
 		if give_loot({"kind": "gem", "gem": boss_gem}, boss_pos + Vector2(-34.0 + 34.0 * gi, 30)):
 			spawn_text(boss_pos + Vector2(0, -70 - 20 * gi),
 				"+ " + Items.gem_title(boss_gem), Items.gem_color(boss_gem))
@@ -242,6 +341,8 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		# replays), and the NEXT chapter unlocks account-wide.
 		set_flag("completed_" + chapter_id, true)
 		unlock_achievement("clear_" + chapter_id)
+		if first_clear:
+			_first_clear_reward(boss_lv)
 		var next_ch := Story.next_chapter(chapter_id)
 		if next_ch != "":
 			meta_unlock(next_ch)
@@ -263,7 +364,14 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			state = ST_VICTORY
 			set_music("")
 			sfx("victory")
+			# Results card + personal bests (retention roadmap #1): grade the
+			# run, keep account-wide chapter × class bests, shout new ones.
+			var res := run_results()
+			if weekly_active:
+				_finish_weekly(res)
+			var pb := record_chapter_result(res)
 			hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
+			hud.show_results(res, pb)
 			get_tree().paused = true
 		if epilogue.is_empty():
 			end_it.call()
@@ -281,6 +389,23 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			hud.dialogue(beat, proceed)
 	autosave()
 
+## The first conquest of a chapter pays a LEGIBLE beat (reward
+## calibration, 2026-07-06): gold in hand (~15-25% of the run's own
+## take, level-scaled) plus a mailed spoils package — one act-cap gear
+## roll and a Lv2 gem. Once per character per chapter; after this,
+## replays are the farm loop and pay as themselves.
+func _first_clear_reward(boss_lv: int) -> void:
+	var g := int(Balance.FIRST_CLEAR_GOLD * Balance.daily_gold_mult(boss_lv))
+	player.gold += g
+	var spoils := Items.roll_item("gold", loot_rng, player.cls, loot_cap())
+	send_mail("Spoils of %s" % String(Story.chapter(chapter_id)["name"]),
+		"The chapter is conquered. These spoils are yours by right — and the road behind you stays open for the farming.",
+		[{"kind": "item", "item": spoils}, {"kind": "gem", "gem": Items.random_gem(loot_rng, 2)}])
+	spawn_text(player.global_position + Vector2(0, -106),
+		"CHAPTER CONQUERED  +%d gold — spoils in your mailbox" % g,
+		Color(1.0, 0.85, 0.4), 5.0)
+
+
 ## The quest key after clearing zone zi: the next boss down the road,
 ## or the chapter's own "done" text if it has one.
 func _next_quest_after(zi: int) -> String:
@@ -294,14 +419,17 @@ func on_enemy_died(e: Enemy) -> void:
 	if e is Boss:
 		return  # boss drops are handled in on_boss_died
 	Pickup.drop_gold(self, e.gold_value, e.global_position)
+	if e.xp_value > 0 or e.gold_value > 0 or e.elite:
+		note_kill(e.kind)  # codex completion (scenery props and event mood spawns don't count)
 	if e.elite and is_instance_valid(player):
+		run_elites += 1
 		bounty_progress("elite_kills")
 		# Elite loot pinata (playtest round 6): a guaranteed gem, a
 		# guaranteed good chest, and the elite-exclusive economy —
 		# talent reset stones and bigger bags. XP is zero by design
 		# (chapter totals stay fixed).
 		var gem := Items.random_gem(loot_rng,
-			2 if loot_rng.randf() < Balance.ELITE_GEM_LV2_CHANCE else 1)
+			2 if loot_rng.randf() < Balance.gem_lv2_chance(e.level) else 1)
 		if give_loot({"kind": "gem", "gem": gem}, e.global_position):
 			spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 		Chest.drop(self, "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
@@ -330,6 +458,9 @@ func on_enemy_died(e: Enemy) -> void:
 		refresh_quest()
 		if zone_alive[e.zone_idx] == 0:
 			cleared[e.zone_idx] = true  # stays cleared for the run (saved)
+			if curse_pending.has(e.zone_idx):
+				curse_pending.erase(e.zone_idx)
+				_curse_payout(e.zone_idx)
 			bounty_progress("rooms_cleared")
 			_try_spawn_boss(e.zone_idx)
 			_recheck_gates()  # "clear" locks on this room's edges open
@@ -346,6 +477,22 @@ func on_enemy_died(e: Enemy) -> void:
 				if e.zone_idx == cur_room and room_safe(cur_room):
 					last_safe_room = cur_room
 			autosave()
+
+## A cursed room's pack is purged: the chest honors its bargain — a
+## golden chest and a guaranteed gem at the room's heart (risk events,
+## retention roadmap #4).
+func _curse_payout(zi: int) -> void:
+	var pos := room_center(zi) + Vector2(0, -60)
+	Chest.drop(self, "gold", pos)
+	var gem := Items.random_gem(loot_rng,
+		2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
+	if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(44, 24)):
+		spawn_text(pos + Vector2(0, -40), "+ " + Items.gem_title(gem), Items.gem_color(gem))
+	sfx("nova", 0.8)
+	if is_instance_valid(player):
+		spawn_text(player.global_position + Vector2(0, -78),
+			"THE CURSE LIFTS — its hoard is yours", Color(0.8, 0.6, 1.0), 3.5)
+
 
 ## The room's last pack falls: a brief green cleansing pulse — the
 ## blight recedes — as the door seals lift (purge rule, DESIGN.md).
@@ -365,6 +512,7 @@ func on_player_died() -> void:
 	if state != ST_PLAYING:
 		return
 	state = ST_DEAD
+	run_deaths += 1
 	fight_wipe()
 	sfx("pdie")
 	hud.dim(0.55)
@@ -526,3 +674,26 @@ func _apply_hazards() -> void:
 						e.hazard_speed = 0.75
 					"lava":
 						e.take_damage(5.0, Vector2.ZERO, false, true)
+
+	# River wading (terrain mechanic, codex'd): everyone in the water
+	# slows unless they're on the bridge. Entry splashes; wading ripples.
+	var rv: Dictionary = rivers.get(cur_room, {})
+	var wading := false
+	if not rv.is_empty():
+		var rect: Rect2 = rv["rect"]
+		var bridge: Rect2 = rv["bridge"]
+		if not player.dead and rect.has_point(player.global_position) \
+				and not bridge.has_point(player.global_position):
+			wading = true
+			player.hazard_speed = minf(player.hazard_speed, Balance.RIVER_WADE_MULT)
+			if not was_wading:
+				sfx("splash")
+				burst(player.global_position + Vector2(0, 14), Color(0.75, 0.85, 0.9), 8)
+			elif randf() < 0.45:
+				_ripple(player.global_position + Vector2(0, 14))
+		for node in get_tree().get_nodes_in_group("enemies"):
+			var e := node as Enemy
+			if e and not e.dying and rect.has_point(e.global_position) \
+					and not bridge.has_point(e.global_position):
+				e.hazard_speed = minf(e.hazard_speed, Balance.RIVER_WADE_MULT)
+	was_wading = wading

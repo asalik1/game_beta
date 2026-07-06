@@ -95,7 +95,7 @@ const CLASSES := {
 	"warrior": {
 		"name": "Warrior", "sprite": "warrior", "primary": "STR", "dmg_type": "phys",
 		"desc": "Frontline bruiser. Simple, tanky, hits hard up close.",
-		"passive": {"text": "Plated — your armor turns aside 15% of EVERY blow on top of resistances, your swings knock enemies back, your wounds knit themselves (1.5% max HP/s), and catching your breath untouched for 3s knits them much faster (+4%/s).", "physres": 80.0, "magres": 45.0, "regen_pct": 0.015, "flat_dr": 0.15, "sw_delay": 3.0, "sw_regen": 0.04},
+		"passive": {"text": "Plated — your armor turns aside 15% of EVERY blow on top of resistances, your swings knock enemies back, and your wounds knit themselves (1.5% max HP/s). GRIT: every blow you TAKE stokes recovery — +0.6% max HP/s per hit, up to 6 stacks. The grind feeds you; kiting starves you.", "physres": 80.0, "magres": 45.0, "regen_pct": 0.015, "flat_dr": 0.15, "grit_regen": 0.006, "grit_cap": 6.0},
 		"hp": 130.0, "hp_lvl": 19.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 15.5, "atk_lvl": 4.3, "speed": 250.0,
 		"abilities": {
@@ -121,7 +121,7 @@ const CLASSES := {
 	"mage": {
 		"name": "Mage", "sprite": "mage", "primary": "INT", "dmg_type": "magic",
 		"desc": "Glass cannon. Huge burst, big mana pool, blink to survive.",
-		"passive": {"text": "Attuned — 50% faster mana regeneration, +10 magic penetration. Arcane Ward: Blink wraps you in magic — 70% damage reduction for 0.8s.", "magpen": 10.0, "blink_dr": 0.50, "blink_dr_dur": 0.8},
+		"passive": {"text": "Attuned — 50% faster mana regeneration, +10 magic penetration. Arcane Ward: Blink wraps you in magic — 50% damage reduction for 0.8s.", "magpen": 10.0, "blink_dr": 0.50, "blink_dr_dur": 0.8},
 		"hp": 90.0, "hp_lvl": 12.0, "mp": 70.0, "mp_lvl": 8.0,
 		"atk": 13.5, "atk_lvl": 3.7, "speed": 255.0,
 		"abilities": {
@@ -147,15 +147,15 @@ const CLASSES := {
 	},
 	"paladin": {
 		"name": "Paladin", "sprite": "paladin", "primary": "STR", "dmg_type": "phys",
-		"desc": "Holy bruiser. Fights up close, mends through violence, drags foes to the hammer.",
-		"passive": {"text": "Sanctified — blessed plate turns aside 12% of every blow; every strike returns as healing (4%), the light mends you (1% max HP/s), and when you go untouched for 3s it mends you faster still (+3%/s).", "physres": 60.0, "magres": 60.0, "lifesteal": 0.04, "regen_pct": 0.010, "flat_dr": 0.12, "sw_delay": 3.0, "sw_regen": 0.03},
+		"desc": "Stance knight. In HOLY his blows mend him; in RETRIBUTION he trades the mending for wrath. Reading when to swap IS the class.",
+		"passive": {"text": "Sanctified — blessed plate turns aside 12% of every blow; every strike returns as healing (4%), and the light mends you (1% max HP/s). CONVICTION: you fight in a stance — HOLY (blows mend you, -20% damage) or RETRIBUTION (+25% damage, no stance mending — your lifesteal and regen still hold).", "physres": 60.0, "magres": 60.0, "lifesteal": 0.04, "regen_pct": 0.010, "flat_dr": 0.12},
 		"hp": 125.0, "hp_lvl": 17.0, "mp": 55.0, "mp_lvl": 5.0,
 		"atk": 15.0, "atk_lvl": 4.3, "speed": 248.0,
 		"abilities": {
-			"a1": {"name": "Judgment",       "cd": 0.5,  "mp": 0,  "desc": "Bring the warhammer down on the nearest enemy — LEAPING to them if they stand beyond arm's reach."},
+			"a1": {"name": "Judgment",       "cd": 0.5,  "mp": 0,  "desc": "Bring the warhammer down on the nearest enemy — LEAPING to them if they stand beyond arm's reach (the leap arms every 5s; its brief landing guard rides the leap, not the swing)."},
 			"a2": {"name": "Consecration",   "cd": 8.0,  "mp": 15, "desc": "Sanctify the ground around you: two waves of holy fire, and every enemy struck MENDS you."},
 			"a3": {"name": "Aegis",          "cd": 9.0,  "mp": 12, "desc": "Raise the shield for 2.5s: massive resistances, and attackers are SMITTEN in return."},
-			"ult": {"name": "Chains of Wrath", "cd": 40.0, "mp": 25, "desc": "Chains tether every nearby enemy and DRAG them to your hammer: stun + massive damage."},
+			"ult": {"name": "Conviction",    "cd": 8.0,  "mp": 0,  "desc": "Swap stances. Entering RETRIBUTION drags nearby enemies to your hammer in chains; returning to HOLY releases a mending blessing (10% max HP + brief guard). Sustain and damage are never yours at once — choose when to be which."},
 		},
 	},
 	"warlock": {
@@ -479,11 +479,11 @@ const ABILITY_THEMES := {
 				"fx": {"aegis_reflect": 2.0, "stun_chance": 0.30}},
 		},
 		"ult": {
-			"holy": {"desc": "The chains are mercy: every enemy dragged in mends 6% of your max HP.",
+			"holy": {"desc": "Merciful Conviction: the Retribution swap's chains mend 6% max HP per enemy dragged in.",
 				"fx": {"chain_heal": 0.06}},
-			"aegis": {"desc": "The chains anchor YOU: the verdict grants a massive guard while it lands.",
+			"aegis": {"desc": "Anchored Conviction: the Retribution swap's chains grant a massive guard while the verdict lands.",
 				"fx": {"chain_guard": 120.0}},
-			"wrath": {"desc": "Longer chains, harder verdict: a wider drag and +40% damage.",
+			"wrath": {"desc": "Wrathful Conviction: the Retribution swap drags wider and its verdict hits +40% harder.",
 				"fx": {"radius_mult": 1.4, "dmg_mult": 1.4}},
 		},
 	},

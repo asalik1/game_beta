@@ -36,6 +36,44 @@ const PAL := {
 # Sprite definitions. "over" optionally re-colors palette characters
 # for that one sprite (used to make the witch a purple cultist, etc).
 const SPRITES := {
+	# Ambient critters (scenery that reacts — see ambience.gd).
+	"bird": {"rows": [
+		"...kkk..",
+		"..knnnk.",
+		".knnnnok",
+		".knNNnk.",
+		"..knnk..",
+		"...k.k..",
+	]},
+	"crow": {"rows": [
+		"....kk...",
+		"...kEEk..",
+		"..kEEEEk.",
+		".kEEEEEsk",
+		"..kEEEk..",
+		"...k.k...",
+	]},
+	"butterfly": {"rows": [
+		"p.k.p",
+		"ppkpp",
+		"PpkpP",
+		"P...P",
+	]},
+	# Wooden bridge planks (stretched across the river band).
+	"bridge": {"rows": [
+		"kkkkkkkkkkkkkkkk",
+		"knnnnnnnknnnnnnk",
+		"kNNNNNNNkNNNNNNk",
+		"knnnnnnnknnnnnnk",
+		"kkkkkkkkkkkkkkkk",
+		"knnnknnnnnnknnnk",
+		"kNNNkNNNNNNkNNNk",
+		"knnnknnnnnnknnnk",
+		"kkkkkkkkkkkkkkkk",
+		"knnnnnnnknnnnnnk",
+		"kNNNNNNNkNNNNNNk",
+		"kkkkkkkkkkkkkkkk",
+	]},
 	"knight": {"rows": [
 		"................",
 		".....kkkkkk.....",
@@ -1182,10 +1220,18 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_glow())
 		"slashline":
 			t = ImageTexture.create_from_image(_make_slashline())
+		"lootbeam":
+			t = ImageTexture.create_from_image(_make_lootbeam())
 		"ring":
 			t = ImageTexture.create_from_image(_make_ring())
 		"vignette":
 			t = ImageTexture.create_from_image(_make_vignette())
+		"light":
+			t = ImageTexture.create_from_image(_make_light())
+		"white":
+			var wimg := Image.create_empty(8, 8, false, Image.FORMAT_RGBA8)
+			wimg.fill(Color(1, 1, 1))
+			t = ImageTexture.create_from_image(wimg)
 		"reticle":
 			t = ImageTexture.create_from_image(_make_reticle())
 		"telegraph":
@@ -1769,6 +1815,110 @@ static func _make_glow() -> Image:
 	return image
 
 
+## Radial falloff for PointLight2D — like the glow but full-strength at
+## the core (lights read through their texture's alpha).
+static func _make_light() -> Image:
+	var s := 64
+	var image := Image.create_empty(s, s, false, Image.FORMAT_RGBA8)
+	for y in s:
+		for x in s:
+			var d := Vector2(x + 0.5 - s / 2.0, y + 0.5 - s / 2.0).length() / (s / 2.0)
+			if d < 1.0:
+				image.set_pixel(x, y, Color(1, 1, 1, pow(1.0 - d, 2.2)))
+	return image
+
+
+# One shared wind material sways all foliage: phase comes from each
+# sprite's world position, so a single material desynchronizes the
+# whole forest for free (no per-instance uniforms).
+static var _wind_mat: ShaderMaterial = null
+
+static func wind_material() -> ShaderMaterial:
+	if _wind_mat != null:
+		return _wind_mat
+	var sh := Shader.new()
+	sh.code = """
+shader_type canvas_item;
+// Foliage wind sway: the sprite's TOP leans, the base stays planted.
+// amp is in local texture pixels (sprites are scaled ~3x on screen).
+uniform float amp = 1.4;
+uniform float speed = 1.1;
+void vertex() {
+	float phase = MODEL_MATRIX[3].x * 0.031 + MODEL_MATRIX[3].y * 0.017;
+	float sway = sin(TIME * speed + phase) + 0.4 * sin(TIME * speed * 2.7 + phase * 1.3);
+	VERTEX.x += sway * amp * (1.0 - UV.y);
+}
+"""
+	_wind_mat = ShaderMaterial.new()
+	_wind_mat.shader = sh
+	return _wind_mat
+
+
+## Animated river water: pixel-quantized ripple glints scrolling
+## downstream, soft banks, faint foam lines at the edges. One material
+## per river (the water color is a uniform — the Greyrun runs BLACK in
+## blighted lands, murky teal elsewhere).
+static func water_material(col: Color) -> ShaderMaterial:
+	var sh := Shader.new()
+	sh.code = """
+shader_type canvas_item;
+uniform vec4 water_col : source_color = vec4(0.1, 0.2, 0.2, 0.8);
+void fragment() {
+	// Chunky water pixels so the shader sits with the 16px art.
+	vec2 uv = floor(UV * vec2(20.0, 220.0)) / vec2(20.0, 220.0);
+	float x = uv.x;
+	float edge = smoothstep(0.0, 0.12, x) * smoothstep(1.0, 0.88, x);
+	float y = uv.y * 46.0;
+	float r1 = sin((y - TIME * 1.7) * 3.14159 + x * 4.0) * 0.5 + 0.5;
+	float r2 = sin((y * 0.53 + TIME * 0.8) * 3.14159 + x * 9.0) * 0.5 + 0.5;
+	float glint = smoothstep(0.82, 0.96, r1 * 0.55 + r2 * 0.55);
+	float foam = smoothstep(0.10, 0.02, x) + smoothstep(0.90, 0.98, x);
+	vec3 rgb = water_col.rgb + glint * 0.16 + foam * 0.08;
+	COLOR = vec4(rgb, clamp(water_col.a * edge + foam * 0.20, 0.0, 0.9));
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = sh
+	mat.set_shader_parameter("water_col", col)
+	return mat
+
+
+## A ready-to-add soft point light. radius_px = world-space reach.
+## Additive: brightens what's under it, disappears politely in daylight,
+## carves through dark terrain tints (voidstone, gravedirt, night).
+static func light(color: Color, radius_px: float, energy := 1.0) -> PointLight2D:
+	var l := PointLight2D.new()
+	l.texture = tex("light")
+	l.texture_scale = radius_px / 32.0
+	l.color = color
+	l.energy = energy
+	l.blend_mode = Light2D.BLEND_MODE_ADD
+	return l
+
+
+## A vertical loot beam (Diablo-style drop pillar): a hot narrow core
+## with a soft horizontal skirt, solid at the base and fading toward
+## the sky. Drawn white — the drop's GRADE tints it with modulate.
+static func _make_lootbeam() -> Image:
+	var w := 32
+	var h := 180
+	var image := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	for y in h:
+		var up := 1.0 - float(y) / h          # 1 at the top of the beam
+		var vfade := pow(1.0 - up, 0.6)       # bright base, soft head
+		for x in w:
+			var dx: float = absf(x + 0.5 - w / 2.0) / (w / 2.0)
+			var core: float = maxf(0.0, 1.0 - dx * dx * 3.4)   # hot center column
+			var halo: float = (1.0 - dx) * (1.0 - dx) * 0.35   # soft wide skirt
+			var a := clampf((core + halo) * vfade, 0.0, 1.0)
+			if a > 0.01:
+				# The center overexposes toward white for the hot look.
+				var white := clampf(core - 0.55, 0.0, 1.0)
+				var c := Color(1.0, 1.0, 1.0, a).lerp(Color(1.6, 1.6, 1.5, a), white)
+				image.set_pixel(x, y, c)
+	return image
+
+
 ## A solid blade sliver: needle points at BOTH ends, belly at ~65%
 ## along the length (player-provided reference, round 33). SOLID white
 ## core with a 1px anti-aliased edge — striking, not glowy. White base;
@@ -1839,10 +1989,47 @@ static func faces_left(name: String) -> bool:
 	return _faceleft_cache[name]
 
 
+## HDR lift for emissive FX (rides viewport/hdr_2d + the glow pass in
+## game.gd): pushes a tint past 1.0 so the bloom threshold catches it,
+## alpha untouched. Ordinary sprites stay LDR — only deliberate
+## emissives (projectile glows, impact rings, loot beams) call this.
+const HDR_FX_BOOST := 2.2
+
+static func hdr(c: Color, boost: float = HDR_FX_BOOST) -> Color:
+	return Color(c.r * boost, c.g * boost, c.b * boost, c.a)
+
+
+# ---------------------------------------------------- animation seam ---
+# Track C machinery (DESIGN.md Graphics & Ambience): drop
+# assets/sprites/<name>_anim.png — a HORIZONTAL strip of square frames —
+# and that creature animates. Rendering stays Sprite2D (hframes + frame
+# advance), so every existing flip/tint/scale/juice call still works.
+# Frame count is auto-detected (width / height). Strips follow the same
+# native-facing rule as static overrides (Art.faces_left).
+static var _anim_cache := {}
+
+static func anim_info(name: String) -> Dictionary:
+	if _anim_cache.has(name):
+		return _anim_cache[name]
+	var info := {}
+	var path := "res://assets/sprites/%s_anim.png" % name
+	if FileAccess.file_exists(path):
+		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+		if img != null and img.get_height() > 0:
+			info = {
+				"tex": ImageTexture.create_from_image(img),
+				"frames": maxi(1, int(img.get_width() / img.get_height())),
+				"fps": 6.0,
+			}
+	_anim_cache[name] = info
+	return info
+
+
 ## Sprite scale that keeps on-screen size constant regardless of the
 ## texture's pixel size (grids are 16px, file overrides are often 32px).
-static func scale_for(texture: Texture2D, scale_16px: float) -> Vector2:
-	var s := scale_16px * 16.0 / maxf(1.0, float(texture.get_width()))
+## `frames` divides the width for hframes strips (animation seam).
+static func scale_for(texture: Texture2D, scale_16px: float, frames := 1) -> Vector2:
+	var s := scale_16px * 16.0 / maxf(1.0, float(texture.get_width()) / maxi(1, frames))
 	return Vector2(s, s)
 
 

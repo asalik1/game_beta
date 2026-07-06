@@ -50,6 +50,7 @@ var hud: Hud
 var menus: Menus
 var camera: Camera2D
 var ambient: CanvasModulate
+var glow_env: WorldEnvironment
 var reticle: Sprite2D
 var reticle_label: Label
 
@@ -122,6 +123,15 @@ var terrain_event_t := 4.0            # countdown to the next terrain event
 var hazard_tick := 0.0
 var gust_vec := Vector2.ZERO          # sandstorm push applied to everyone
 var gust_t := 0.0
+# Rivers (Graphics & Ambience track): room idx -> {rect, bridge}. Built
+# with the scenery from the terrain's "river" config; wading slows
+# (Balance.RIVER_WADE_MULT), the bridge doesn't — a terrain mechanic.
+var rivers := {}
+var was_wading := false
+# World-light scale for the room's terrain: PointLight2Ds are additive,
+# so daylight zones run them near-zero and dark zones at full strength
+# (set alongside the ambience in refresh_ambience).
+var light_mult := 1.0
 
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
@@ -139,6 +149,12 @@ var dev_god := false
 var music_player: AudioStreamPlayer
 var music_tracks: Dictionary = {}
 var current_track := ""
+
+# Ambient audio bed (per-biome loop under the music; Sfx.make_ambient).
+var amb_player: AudioStreamPlayer
+var amb_tracks: Dictionary = {}       # kind -> synthesized loop (lazy)
+var current_amb := ""
+const AMB_DB := -30.0                 # a bed, not a soundscape
 
 var edge_locks := {}   # edge key -> {"lock": "boss"/"clear"/"flag:x", "own": room idx}
 
@@ -165,6 +181,24 @@ var vault_week := -1           # trusted-clock week the current progress belongs
 var vault_progress := 0        # boss kills this week
 var vault_claimed_week := -1   # week the vault was last claimed
 
+# --- chapter run stats (results card; persisted mid-run, reset per run) ---
+var run_time := 0.0            # seconds in ST_PLAYING this chapter run
+var run_deaths := 0
+var run_elites := 0            # elite kills this run
+var run_secrets := 0           # caches unearthed this run
+
+# --- weekly challenge (persisted) ---
+var weekly_active := false     # the CURRENT run is this week's challenge
+var weekly_week := -1          # week the active run belongs to
+var weekly_claimed_week := -1  # week the completion reward was last paid
+
+# --- codex completion + titles (persisted) ---
+var kill_counts := {}          # enemy kind -> lifetime kills (this character)
+var player_title := ""         # equipped title id ("" = none)
+
+# --- elective risk events (curse state persists via flags) ---
+var curse_pending := {}        # room idx -> true (accepted, payout on purge)
+
 # --- account-wide stash (cross-character; user://stash.json) ---
 var stash: Array = []          # storage payloads {kind: item/gem/stone, ...}
 var _stash_loaded := false
@@ -181,9 +215,13 @@ const MUSIC_DB := -16.0
 
 
 ## The best gear grade this chapter can drop (act gating, DESIGN.md):
-## Act 1 caps at C, Act 2 at A — S-tier is endgame loot only.
+## Act 1 covers F->B, Act 2 introduces A, Act 3 owns S (2026-07-06) —
+## applied as a clamp over the chapter's authored cap (ch1's authored C
+## stays lower), so content modules never carry the act rule themselves.
 func loot_cap() -> String:
-	return String(Story.chapter(chapter_id).get("loot_cap", "S"))
+	var authored := String(Story.chapter(chapter_id).get("loot_cap", "S"))
+	var act_cap := String(Balance.ACT_LOOT_CAP.get(Story.act_of(chapter_id), "S"))
+	return authored if Items.GRADES.find(authored) < Items.GRADES.find(act_cap) else act_cap
 
 ## (T7) Merchants read the shard: the steady get kinder prices, the
 ## tempted make the till nervous. Surfaced, never explained in numbers.
@@ -338,6 +376,154 @@ func unlock_achievement(id: String) -> void:
 		hud.achievement_toast(String(a["name"]), String(a["desc"]))
 	sfx("levelup", 1.15)
 	autosave()
+
+
+## Total achievement points (titles hang on these — codex Records tab).
+func achievement_points() -> int:
+	var pts := 0
+	for id in achievements:
+		pts += int(Achievements.DATA.get(id, {}).get("pts", Achievements.DEFAULT_PTS))
+	return pts
+
+
+## One more of `kind` slain (codex completion). Shouts when the kill
+## unearths the kind's lore entry.
+func note_kill(kind: String) -> void:
+	kill_counts[kind] = int(kill_counts.get(kind, 0)) + 1
+	if int(kill_counts[kind]) == Lore.threshold(kind) and is_instance_valid(player):
+		spawn_text(player.global_position + Vector2(0, -92),
+			"LORE UNEARTHED — see the Codex", Color(0.75, 0.9, 1.0), 3.0)
+
+
+## How many lore entries this character has unearthed (Lorekeeper title).
+func lore_unearthed() -> int:
+	var n := 0
+	for kind in kill_counts:
+		if Story.ALL_ENEMIES.has(kind) and int(kill_counts[kind]) >= Lore.threshold(kind):
+			n += 1
+	return n
+
+
+## Lifetime kills across every kind (Reaper title).
+func total_kills() -> int:
+	var n := 0
+	for kind in kill_counts:
+		n += int(kill_counts[kind])
+	return n
+
+
+## Can this character wear the title? (see Achievements.TITLES).
+func title_available(id: String) -> bool:
+	var t: Dictionary = Achievements.TITLES.get(id, {})
+	if t.is_empty():
+		return false
+	if t.has("req_ach") and not achievements.has(String(t["req_ach"])):
+		return false
+	if achievement_points() < int(t.get("req_pts", 0)):
+		return false
+	if lore_unearthed() < int(t.get("req_lore", 0)):
+		return false
+	if total_kills() < int(t.get("req_kills", 0)):
+		return false
+	return true
+
+
+# ---------------------------------------------------- chapter run tracking ---
+
+## A fresh chapter run begins (new game, replay, advance): the results
+## card's counters restart. Loading a save does NOT reset — the counters
+## ride the save, so the card reflects the whole run across sessions.
+func reset_run_stats() -> void:
+	run_time = 0.0
+	run_deaths = 0
+	run_elites = 0
+	run_secrets = 0
+	curse_pending.clear()
+
+
+## The stats block the results card shows (and the grade is computed from).
+func run_results() -> Dictionary:
+	var explored := 0
+	for i in zone_count:
+		if visited.get(i, false):
+			explored += 1
+	var expect := maxi(1, int(ceil(zone_count * Balance.GRADE_HUNT_EXPECT)))
+	var grade := Balance.chapter_grade(run_deaths,
+		float(explored) / maxf(1.0, float(zone_count)),
+		float(run_elites + run_secrets) / float(expect))
+	return {"time": run_time, "deaths": run_deaths, "elites": run_elites,
+		"secrets": run_secrets, "explored": explored, "rooms": zone_count,
+		"grade": grade}
+
+
+# --------------------------------------------------------- weekly challenge ---
+
+## This week's modifier — the same for every player (deterministic from
+## the trusted-clock week, like bounties).
+func weekly_mod() -> Dictionary:
+	return Balance.WEEKLY_MODS[_week_index() % Balance.WEEKLY_MODS.size()]
+
+
+## This week's fixed map seed: everyone runs the SAME layout this week.
+func weekly_seed() -> int:
+	return _week_index() * 77003 + 12345
+
+
+## The chapter this week's challenge runs (rotates weekly through the list).
+func weekly_chapter() -> String:
+	var ids: Array = Story.CHAPTER_LIST.keys()
+	return String(ids[_week_index() % ids.size()])
+
+
+## A weekly modifier multiplier, 1.0 unless a challenge run is live (or the
+## run outlived its week — stale runs keep the feel but never the reward).
+func weekly_fx(key: String) -> float:
+	if not weekly_active:
+		return 1.0
+	return float(weekly_mod().get(key, 1.0))
+
+
+## Gold pickups route through this (weekly "gilded" modifier hook).
+func gold_scaled(amount: int) -> int:
+	return int(round(amount * weekly_fx("gold")))
+
+
+# ------------------------------------------------------------ loot fanfare ---
+
+## Every gear drop announces its rarity (retention roadmap #3): a
+## per-grade chime always; from LOOT_BEAM_MIN_GRADE up, a grade-colored
+## light beam rises at the drop. S-grade adds a screen flash — the
+## jackpot is unmissable. FX only; the item itself already moved.
+func loot_fanfare(grade: String, pos: Vector2) -> void:
+	sfx(Items.loot_sound(grade))
+	var rank := Items.GRADES.find(grade)
+	if rank < Items.GRADES.find(Balance.LOOT_BEAM_MIN_GRADE):
+		return
+	var tint: Color = Items.GRADE_COLOR.get(grade, Color(1, 1, 1))
+	var beam := Sprite2D.new()
+	beam.texture = Art.tex("lootbeam")
+	beam.centered = false
+	beam.z_index = 6
+	# The beam plants its BASE on the drop and grows with rarity.
+	var grow := 1.0 + 0.45 * float(rank - Items.GRADES.find(Balance.LOOT_BEAM_MIN_GRADE))
+	beam.scale = Vector2(1.6, 1.7 * grow)
+	beam.position = pos - Vector2(16.0 * beam.scale.x, 180.0 * beam.scale.y)
+	var hot := Art.hdr(tint)  # emissive: the beam blooms over the scene
+	beam.modulate = Color(hot.r, hot.g, hot.b, 0.0)
+	world.add_child(beam)
+	# The drop LIGHTS the ground around it while the beam stands.
+	var beam_light := Art.light(tint, 110.0, 1.0 * light_mult)
+	beam_light.position = pos - beam.position  # beam origin is offset; re-anchor on the drop
+	beam.add_child(beam_light)
+	burst(pos, tint, 10 + 6 * rank)
+	var tw := beam.create_tween()
+	tw.tween_property(beam, "modulate:a", 0.95, 0.12)
+	tw.tween_interval(Balance.LOOT_BEAM_TIME)
+	tw.tween_property(beam, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(beam.queue_free)
+	if grade == "S" and is_instance_valid(hud):
+		hud.flash_screen(tint, 0.28, 0.4)
+		shake(4.0)
 
 
 # --------------------------------------------------------------- bounties ---
@@ -806,6 +992,20 @@ func _start_pos() -> Vector2:
 func _cache_flag(i: int) -> String:
 	return "cache_%s_%d" % [chapter_id, i]
 
+# Risk-event once-per-run flags (wiped by replay's flag reset, like caches).
+func _curse_flag(i: int) -> String:
+	return "cursed_%s_%d" % [chapter_id, i]
+
+func _shrine_flag(i: int) -> String:
+	return "shrined_%s_%d" % [chapter_id, i]
+
+func _hidden_flag(i: int) -> String:
+	return "hidden_%s_%d" % [chapter_id, i]
+
+## The gamble shrine's ask, scaled with level like the daily gold.
+func shrine_cost() -> int:
+	return int(ceil(Balance.SHRINE_COST_BASE * Balance.daily_gold_mult(player.level)))
+
 ## The seeded per-character roll for social room i. ONE place for the
 ## formula: the room build consumes it, and social_holds_elite lets
 ## the autotest predict the outcome instead of guessing.
@@ -1001,6 +1201,51 @@ func _vol_db(linear: float) -> float:
 ## Per-track mix fixes for external recordings (measured RMS): dB gain
 ## evens out mastering differences, start skips long quiet intros
 ## (loops restart from the same offset via the stream's loop_offset).
+## A small water ripple at the feet of whatever is wading.
+func _ripple(pos: Vector2) -> void:
+	var ring := Sprite2D.new()
+	ring.texture = Art.tex("ring")
+	ring.modulate = Color(0.8, 0.9, 0.95, 0.5)
+	ring.global_position = pos
+	ring.scale = Vector2(0.22, 0.12)  # squashed: a ripple, not a shockwave
+	ring.z_index = -8
+	world.add_child(ring)
+	var tw := ring.create_tween()
+	tw.tween_property(ring, "scale", Vector2(0.7, 0.36), 0.5)
+	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(ring.queue_free)
+
+
+## Keep the ambient bed matched to the room the player stands in.
+## Called every frame (string compare when nothing changed) so every
+## path — room change, chapter switch, terrain repaint, load — is
+## covered by one hook.
+func refresh_ambience() -> void:
+	if amb_player == null or zone_count == 0:
+		return
+	var tid: String = terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]
+	# Scale world lights to the terrain's darkness: bright tints (village
+	# daylight) mute them, dark tints (void, grave) run them full — keeps
+	# additive lights from washing daylight scenes into bloom.
+	var tint: Color = Terrains.get_terrain(tid)["tint"]
+	var lum := (tint.r + tint.g + tint.b) / 3.0
+	light_mult = clampf((1.05 - lum) * 2.2, 0.1, 1.0)
+	if player != null and player.halo != null:
+		player.halo.energy = 0.45 * light_mult
+	var kind: String = Terrains.AMBIENT_LOOPS.get(tid, "")
+	if kind == current_amb:
+		return
+	current_amb = kind
+	if kind == "":
+		amb_player.stop()
+		return
+	if not amb_tracks.has(kind):
+		amb_tracks[kind] = Sfx.make_ambient(kind)
+	amb_player.stream = amb_tracks[kind]
+	amb_player.volume_db = AMB_DB + _vol_db(float(settings["sfx"]))
+	amb_player.play()
+
+
 func set_music(name: String) -> void:
 	if name == current_track or music_player == null:
 		return

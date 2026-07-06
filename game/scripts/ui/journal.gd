@@ -42,6 +42,7 @@ static func open(m: Menus) -> void:
 
 	_bounties(m, list)
 	_vault(m, list)
+	_weekly(m, list)
 
 	# --- chapter boss checklist ---
 	m._lbl(list, "— CHAPTER BOSSES —", 16, Color(1, 0.6, 0.6))
@@ -129,3 +130,37 @@ static func _vault(m: Menus, list: VBoxContainer) -> void:
 			m.open_journal(), Color(1.0, 0.88, 0.45))
 	elif g.vault_claimed_week == g._week_index():
 		m._lbl(list, "Claimed this week. Resets next week.", 13, Color(0.6, 0.62, 0.68))
+
+
+## The weekly challenge (retention roadmap #2): one fixed seed + one
+## modifier per week, the same for every player. Starts a replay of the
+## week's chapter; the clear pays once per week and keeps a weekly best.
+static func _weekly(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	m._lbl(list, "— WEEKLY CHALLENGE —", 16, Color(0.85, 0.6, 1.0))
+	var mod: Dictionary = g.weekly_mod()
+	var chname := String(Story.chapter(g.weekly_chapter())["name"])
+	var head := m._lbl(list, "%s  —  %s   (%s, fixed map for everyone this week)" %
+		[String(mod["name"]), String(mod["desc"]), chname], 14, Color(0.9, 0.85, 1.0))
+	head.custom_minimum_size = Vector2(800, 0)
+	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var best: Dictionary = g.weekly_best()
+	if not best.is_empty():
+		var secs := int(float(best.get("time", 0.0)))
+		m._lbl(list, "Your best this week:  %d:%02d  (%s, grade %s)" %
+			[secs / 60, secs % 60, String(Classes.CLASSES.get(String(best.get("cls", "warrior")), {}).get("name", "?")),
+			String(best.get("grade", "?"))], 14, Color(0.7, 1.0, 0.7))
+	if g.weekly_claimed_week == g._week_index():
+		m._lbl(list, "Reward claimed this week — the seed still races for a better time.",
+			13, Color(0.6, 0.62, 0.68))
+	if g.weekly_active and g.weekly_week == g._week_index():
+		m._lbl(list, "◆ The challenge is LIVE — this run rides the week's modifier.",
+			14, Color(1.0, 0.88, 0.45))
+	else:
+		var row := HBoxContainer.new()
+		list.add_child(row)
+		m._btn(row, "   Begin the weekly run   ", func() -> void:
+			m.open_confirm(
+				"Begin this week's challenge? It restarts %s from its beginning on the week's fixed map, with '%s' live (%s). Your character, gear and Resonance carry in — chapter story progress resets, like any replay." %
+					[chname, String(mod["name"]), String(mod["desc"])],
+				func() -> void: g.start_weekly()), Color(0.85, 0.7, 1.0))

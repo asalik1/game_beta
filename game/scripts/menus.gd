@@ -247,17 +247,26 @@ func open_pause() -> void:
 	_hint(vbox, "ESC to resume")
 
 
-## A single yes/cancel gate in front of anything destructive.
-func open_confirm(msg: String, on_yes: Callable) -> void:
+## A single yes/cancel gate in front of anything destructive. Pause-menu
+## flows fall back there on cancel; world prompts (shrines, cursed
+## chests) pass an on_cancel that just closes.
+func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> void:
 	var vbox := _open("Are you sure?", 680, 320)
 	current = "confirm"
 	var l := _lbl(vbox, msg, 15, Color(0.9, 0.9, 0.9))
 	l.custom_minimum_size = Vector2(600, 0)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var yes := func() -> void:
 		close()
 		on_yes.call()
+	var no := func() -> void:
+		if on_cancel.is_valid():
+			close()
+			on_cancel.call()
+		else:
+			open_pause()
 	_btn(vbox, "  Yes — do it  ", yes, Color(1.0, 0.6, 0.5))
-	_btn(vbox, "  Cancel  ", func() -> void: open_pause(), Color(0.8, 0.85, 0.9))
+	_btn(vbox, "  Cancel  ", no, Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to cancel")
 
 

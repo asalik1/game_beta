@@ -28,7 +28,19 @@ func _ready() -> void:
 	await _frames(10)
 	game.menus.pick_chapter("ch1")
 	await _frames(3)
-	game.menus.pick_class("assassin")
+	# Class under the lens: --class=<name> after "--" (default assassin).
+	# The a1/a2/a3/ult sequence below fires generically for any kit; shot
+	# names stay assassin-flavored — judge by looking, as always.
+	var cls := "assassin"
+	var terrain := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--class="):
+			cls = arg.trim_prefix("--class=")
+		elif arg.begins_with("--terrain="):
+			# Repaint the shooting room — judge FX under a dark tint
+			# (voidstone, gravedirt) as well as village daylight.
+			terrain = arg.trim_prefix("--terrain=")
+	game.menus.pick_class(cls)
 	await _frames(5)
 	# Fast-forward the opening.
 	var guard := 0
@@ -46,6 +58,23 @@ func _ready() -> void:
 	dummy.max_hp = 9999999.0
 	dummy.hp = 9999999.0
 	game.add_enemy(dummy)
+	if terrain != "":
+		game.apply_terrain(0, terrain)
+		game.ambient.color = Terrains.get_terrain(terrain)["tint"]
+	# One wide establishing shot first — rivers, critters and scenery
+	# live out of the close-up lens's reach.
+	game.camera.zoom = Vector2(0.75, 0.75)
+	await _frames(12)
+	_shot("terrain_wide")
+	# Second wide frame ~half a sway period later: diffing the two proves
+	# the foliage wind shader actually moves (a still can't).
+	await get_tree().create_timer(0.55).timeout
+	_shot("terrain_wide2")
+	var critters := 0
+	for n in game.zone_scenery.get(game.cur_room, []):
+		if is_instance_valid(n) and n.get("kind") != null:
+			critters += 1
+	print("CRITTERS in room: ", critters, "  RIVER: ", game.rivers.has(game.cur_room))
 	# Close-up lens: FX are unjudgeable at full zoom-out.
 	game.camera.zoom = Vector2(2.4, 2.4)
 	await _frames(8)

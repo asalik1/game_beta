@@ -67,6 +67,7 @@ var dialogue_active := false
 var overlay: ColorRect
 var vignette: TextureRect
 var flash_rect: ColorRect = null
+var results_box: Control = null   # chapter results card (victory screen)
 var boss_base_name := ""
 var banner_y := 110.0
 
@@ -95,11 +96,15 @@ func _ready() -> void:
 	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1))
 	gold_label = _label(Vector2(18, 104), 15, Color(1.0, 0.85, 0.35))
 	cr_label = _label(Vector2(18, 126), 15, Color(0.65, 0.9, 1.0))
+	cr_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	cr_label.tooltip_text = _wrap_tip("Combat Rating — one number approximating your total power: gear and gems, level, attributes and skill tree combined.")
 	# Resonance: golden and sparkling when positive (shinier as it
 	# climbs), black-on-pale when negative, pulses on every change.
 	# Nudged right to seat the mood orb on its left.
 	res_label = _label(Vector2(46, 147), 16, Color(0.75, 0.75, 0.8))
 	res_label.pivot_offset = Vector2(0, 10)
+	res_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	res_label.tooltip_text = _wrap_tip("Resonance — how your shard leans: Virtue (+) or Temptation (−). Major choices move it, and the world answers through dialogue and merchant haggling.")
 	# Resonance mood orb: a glowing bead just left of the number — golden
 	# fire when strongly Virtuous (+50), a dark flame when Tempted (-50),
 	# a calm white pearl at neutral, gradients between. Two glow sprites
@@ -333,7 +338,10 @@ func _build_ability_bar() -> void:
 		border.color = Color(0.35, 0.35, 0.4)
 		border.position = Vector2(x - 3, y - 3)
 		border.size = Vector2(SLOT_SIZE + 6, SLOT_SIZE + 6)
-		border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# PASS (not IGNORE): the border is the slot's hover target — Godot's
+		# built-in tooltip needs a non-ignoring control, and PASS still lets
+		# the click fall through to _unhandled_input (dialogue advance).
+		border.mouse_filter = Control.MOUSE_FILTER_PASS
 		add_child(border)
 		var bg := ColorRect.new()
 		bg.color = Color(0.05, 0.05, 0.09, 0.9)
@@ -381,7 +389,8 @@ func _build_buff_bar() -> void:
 		var border := ColorRect.new()
 		border.position = Vector2(x - 2, y - 2)
 		border.size = Vector2(BUFF_W + 4, 40)
-		border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# PASS: the chip's hover target for its tooltip (see ability bar note).
+		border.mouse_filter = Control.MOUSE_FILTER_PASS
 		add_child(border)
 		var box := ColorRect.new()
 		box.color = Color(0.06, 0.06, 0.10, 0.9)
@@ -416,24 +425,60 @@ func _set_buff_slot_visible(slot: Dictionary, vis: bool) -> void:
 	slot["fill"].visible = vis
 
 
-## Every timed player buff worth surfacing: [id, glyph, color, seconds].
-## The glyph reuses an ability icon that fits the buff; colors echo the
-## on-hero aura so the chip and the aura read as one language. Classes
-## don't share buffs, so repeated glyphs never collide on screen.
+## Every player state worth a chip. Timed buffs carry "t" = seconds left;
+## PERSISTENT states (paladin stance, warrior Grit, Second Wind) set t < 0
+## — their chip holds a full bar with no countdown. Optional "text"
+## replaces the countdown (Grit shows its stack count). "tip" feeds the
+## hover tooltip and reads LIVE numbers off the player, so talents and
+## gear are reflected truthfully. The glyph reuses an ability icon that
+## fits the buff; colors echo the on-hero aura so the chip and the aura
+## read as one language.
 func _active_buffs() -> Array:
 	var p: Player = game.player
 	var out: Array = []
-	if p.berserk_time > 0.0: out.append(["berserk", "ab_fist", Color(1.0, 0.3, 0.2), p.berserk_time])
-	if p.aegis_time > 0.0: out.append(["aegis", "ab_shield", Color(1.0, 0.85, 0.4), p.aegis_time])
-	if p.dr_time > 0.0: out.append(["ward", "ab_blink", Color(0.45, 0.85, 1.0), p.dr_time])
-	if p.pact_time > 0.0: out.append(["pact", "ab_pact", Color(0.9, 0.2, 0.4), p.pact_time])
-	if p.theme_guard_time > 0.0: out.append(["guard", "ab_shield", Color(0.45, 0.65, 1.0), p.theme_guard_time])
-	if p.theme_speed_time > 0.0: out.append(["speed", "ab_roll", Color(0.6, 1.0, 0.85), p.theme_speed_time])
-	if p.elixir_time > 0.0: out.append(["elixir", "ab_fist", Color(1.0, 0.6, 0.3), p.elixir_time])
-	if p.stab_ls_time > 0.0: out.append(["surge", "ab_dagger", Color(0.95, 0.3, 0.35), p.stab_ls_time])
-	if p.dodge_time > 0.0: out.append(["dodge", "ab_roll", Color(0.8, 0.95, 0.7), p.dodge_time])
-	if p.storm_time > 0.0: out.append(["storm", "ab_rain", Color(0.6, 1.0, 0.6), p.storm_time])
-	if p.cast_haste_time > 0.0: out.append(["haste", "ab_flame", Color(0.7, 0.95, 1.0), p.cast_haste_time])
+	# Persistent class states lead the row, so chips don't reshuffle as
+	# timed buffs come and go around them.
+	if p.cls == "paladin":
+		if p.paladin_mode == "holy":
+			out.append({"id": "holy", "glyph": "ab_sun", "color": Color(1.0, 0.92, 0.55), "t": -1.0,
+				"tip": "HOLY stance — every blow you land mends %.0f%% max HP (a third on AoE), but you deal %d%% less damage. Conviction swaps stances." % [
+					Balance.PALADIN_HOLY_MEND * 100.0, int(round((1.0 - Balance.PALADIN_HOLY_DMG) * 100.0))]})
+		else:
+			out.append({"id": "retri", "glyph": "ab_hammer", "color": Color(1.0, 0.45, 0.22), "t": -1.0,
+				"tip": "RETRIBUTION stance — +%d%% damage, but your blows no longer mend you. Conviction swaps stances (returning to Holy mends %.0f%% max HP)." % [
+					int(round((Balance.PALADIN_RETRI_DMG - 1.0) * 100.0)), Balance.PALADIN_SWAP_HEAL * 100.0]})
+	if p.grit_stacks > 0:
+		out.append({"id": "grit", "glyph": "ab_shield", "color": Color(1.0, 0.75, 0.35),
+			"t": p.grit_time, "text": "x%d" % p.grit_stacks,
+			"tip": "GRIT x%d — +%.1f%% max HP/s recovery. Every enemy blow taken adds a stack (max %d) and refreshes the window; stay unhit and the stacks lapse." % [
+				p.grit_stacks, p.grit_regen * p.grit_stacks * 100.0, int(p.grit_cap)]})
+	if p.sw_regen > 0.0 and not p.dead and p.since_hurt >= p.sw_delay:
+		out.append({"id": "second_wind", "glyph": "ic_hp", "color": Color(0.55, 1.0, 0.65), "t": -1.0,
+			"tip": "Second Wind — untouched for %.1fs: recovering +%.0f%% max HP/s. Taking a hit resets the clock." % [
+				p.sw_delay, p.sw_regen * 100.0]})
+	# Timed buffs.
+	if p.berserk_time > 0.0: out.append({"id": "berserk", "glyph": "ab_fist", "color": Color(1.0, 0.3, 0.2), "t": p.berserk_time,
+		"tip": "Berserk — +%d%% damage, +25%% move speed, +15%% lifesteal." % int(p.berserk_bonus * 100.0)})
+	if p.aegis_time > 0.0: out.append({"id": "aegis", "glyph": "ab_shield", "color": Color(1.0, 0.85, 0.4), "t": p.aegis_time,
+		"tip": "Aegis — +%d resistances, and attackers are smitten in return." % int(p.aegis_amt)})
+	if p.dr_time > 0.0: out.append({"id": "ward", "glyph": "ab_blink", "color": Color(0.45, 0.85, 1.0), "t": p.dr_time,
+		"tip": "Arcane Ward — incoming damage cut by %d%% (true damage pierces it)." % int(p.dr_amt * 100.0)})
+	if p.pact_time > 0.0: out.append({"id": "pact", "glyph": "ab_pact", "color": Color(0.9, 0.2, 0.4), "t": p.pact_time,
+		"tip": "Dark Pact — +%d%% lifesteal while the pact holds." % int(p.pact_ls * 100.0)})
+	if p.theme_guard_time > 0.0: out.append({"id": "guard", "glyph": "ab_shield", "color": Color(0.45, 0.65, 1.0), "t": p.theme_guard_time,
+		"tip": "Guard — +%d physical & magic resistance." % int(p.theme_guard_amt)})
+	if p.theme_speed_time > 0.0: out.append({"id": "speed", "glyph": "ab_roll", "color": Color(0.6, 1.0, 0.85), "t": p.theme_speed_time,
+		"tip": "Fleet — +%d%% move speed." % int(p.theme_speed_amt * 100.0)})
+	if p.elixir_time > 0.0: out.append({"id": "elixir", "glyph": "ab_fist", "color": Color(1.0, 0.6, 0.3), "t": p.elixir_time,
+		"tip": "Elixir of Might — +%d%% damage." % int(p.elixir_atk * 100.0)})
+	if p.stab_ls_time > 0.0: out.append({"id": "surge", "glyph": "ab_dagger", "color": Color(0.95, 0.3, 0.35), "t": p.stab_ls_time,
+		"tip": "Blood Surge — +%d%% lifesteal, and Fan of Knives bites TWICE as hard. A connecting Stab or Shadow Dash refreshes it." % int(p.stab_ls_amt * 100.0)})
+	if p.dodge_time > 0.0: out.append({"id": "dodge", "glyph": "ab_roll", "color": Color(0.8, 0.95, 0.7), "t": p.dodge_time,
+		"tip": "Nimble — +%d%% evasion while the roll's momentum carries." % int(p.dodge_amt * 100.0)})
+	if p.storm_time > 0.0: out.append({"id": "storm", "glyph": "ab_rain", "color": Color(0.6, 1.0, 0.6), "t": p.storm_time,
+		"tip": "Arrow Storm — arrows rain on every enemy near you."})
+	if p.cast_haste_time > 0.0: out.append({"id": "haste", "glyph": "ab_flame", "color": Color(0.7, 0.95, 1.0), "t": p.cast_haste_time,
+		"tip": "Tailwind — Blink & Frost Nova cool down %d%% faster." % int(p.cast_haste_cdr * 100.0)})
 	return out
 
 
@@ -441,11 +486,13 @@ func _update_buffs() -> void:
 	var active := _active_buffs()
 	# Peak tracking gives each chip a drain bar without knowing its grant
 	# duration: the fill is remaining / the longest we've seen it hold.
+	# Persistent chips (t < 0) skip it and simply hold a full bar.
 	var live := {}
 	for b in active:
-		live[b[0]] = true
-		var t: float = b[3]
-		_buff_peak[b[0]] = maxf(float(_buff_peak.get(b[0], 0.0)), t)
+		if float(b["t"]) < 0.0:
+			continue
+		live[b["id"]] = true
+		_buff_peak[b["id"]] = maxf(float(_buff_peak.get(b["id"], 0.0)), float(b["t"]))
 	for id in _buff_peak.keys():
 		if not live.has(id):
 			_buff_peak.erase(id)
@@ -453,23 +500,31 @@ func _update_buffs() -> void:
 		var slot: Dictionary = buff_slots[i]
 		if i >= active.size():
 			_set_buff_slot_visible(slot, false)
+			slot["border"].tooltip_text = ""
 			continue
-		var b: Array = active[i]
-		var id: String = b[0]
-		var col: Color = b[2]
-		var t: float = b[3]
+		var b: Dictionary = active[i]
+		var col: Color = b["color"]
+		var t: float = b["t"]
 		_set_buff_slot_visible(slot, true)
 		slot["border"].color = col
-		var glyph: String = String(b[1])
+		slot["border"].tooltip_text = _wrap_tip(String(b.get("tip", "")))
+		var glyph: String = String(b["glyph"])
 		# glyph_tex is cached per (name,tint); only rebuild when this slot's
 		# icon actually changes, so we don't thrash the cache every frame.
 		if slot["glyph"] != glyph:
 			slot["glyph"] = glyph
 			slot["icon"].texture = Art.glyph_tex(glyph, col.lightened(0.15))
-		slot["time"].text = "%.0f" % ceil(t) if t >= 1.0 else "%.1f" % t
 		slot["fill"].color = col
-		var peak: float = maxf(float(_buff_peak.get(id, t)), 0.01)
-		slot["fill"].size.x = BUFF_W * clampf(t / peak, 0.0, 1.0)
+		if t < 0.0:
+			# Persistent state: no countdown, full bar; Grit-style chips show
+			# their stack text instead.
+			slot["time"].text = String(b.get("text", ""))
+			slot["fill"].size.x = BUFF_W
+		else:
+			slot["time"].text = String(b["text"]) if b.has("text") \
+				else ("%.0f" % ceil(t) if t >= 1.0 else "%.1f" % t)
+			var peak: float = maxf(float(_buff_peak.get(b["id"], t)), 0.01)
+			slot["fill"].size.x = BUFF_W * clampf(t / peak, 0.0, 1.0)
 
 
 const MINIMAP_AREA := Vector2(182, 116)
@@ -660,6 +715,22 @@ func achievement_toast(name: String, desc: String) -> void:
 
 # ------------------------------------------------------------- helpers ---
 
+## Godot's default tooltip label never wraps, so a paragraph-long ability
+## desc would stretch one line across the screen — fold it by words here.
+static func _wrap_tip(text: String, width := 56) -> String:
+	var out: Array = []
+	for para in text.split("\n"):
+		var line := ""
+		for word in para.split(" "):
+			if line != "" and line.length() + 1 + word.length() > width:
+				out.append(line)
+				line = word
+			else:
+				line = word if line == "" else line + " " + word
+		out.append(line)
+	return "\n".join(out)
+
+
 func _panel(pos: Vector2, panel_size: Vector2) -> void:
 	var bg := ColorRect.new()
 	bg.color = Color(0, 0, 0, 0.45)
@@ -720,6 +791,9 @@ func update_stats(p: Player) -> void:
 	_set_fill(hp_fill, hp_frac)
 	_set_fill(xp_fill, float(p.xp) / float(p.xp_needed()))
 	var cls_name: String = Classes.CLASSES[p.cls]["name"]
+	if game.player_title != "" and Achievements.TITLES.has(game.player_title):
+		# The worn title rides the class name (codex Records tab to change).
+		cls_name += ", %s" % String(Achievements.TITLES[game.player_title]["name"])
 	var pts := "  (+%d pts, press T)" % p.skill_points if p.skill_points > 0 else ""
 	if Classes.CLASSES[p.cls].get("manaless", false):
 		# Manaless classes (assassin, round 31): no MP line, no blue bar.
@@ -772,6 +846,9 @@ func update_stats(p: Player) -> void:
 			box["cost"].text = ""
 			box["icon"].texture = Art.tex("potion")
 			box["border"].color = Color(0.75, 0.35, 0.35) if p.potions > 0 else Color(0.3, 0.15, 0.15)
+			box["border"].tooltip_text = _wrap_tip(
+				"Health Potion — drink to mend 60%% of your max HP (x%d carried, max %d). Boss kills restock you up to %d." % [
+					p.potions, Balance.POTION_MAX, Balance.BOSS_KILL_POTION_FLOOR])
 			continue
 		var ab := Classes.ability(p.cls, slot)
 		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
@@ -781,6 +858,20 @@ func update_stats(p: Player) -> void:
 		box["key"].text = OS.get_keycode_string(game.binds[slot])
 		box["name"].text = ab["name"]
 		box["cost"].text = str(int(cost)) if cost > 0 else ""
+		# Hover card: name/key/cost/cd, the ability's own words, then the
+		# assigned theme's variant line — built from live values, so cd
+		# talents and mana amods read truthfully.
+		var tip := "%s  [%s]" % [String(ab["name"]), OS.get_keycode_string(game.binds[slot])]
+		if cost > 0:
+			tip += "  ·  %d mana" % int(cost)
+		tip += "  ·  %.1fs cooldown" % p.ability_cd(slot)
+		tip += "\n" + String(ab["desc"])
+		var theme_id: String = p.ability_theme.get(slot, "")
+		if theme_id != "":
+			var vdesc := Classes.variant_desc(p.cls, slot, theme_id)
+			if vdesc != "":
+				tip += "\n★ %s: %s" % [String(theme.get("name", theme_id)), vdesc]
+		box["border"].tooltip_text = _wrap_tip(tip)
 		# Readability: the mana price reads red the moment you can't pay it.
 		box["cost"].add_theme_color_override("font_color",
 			Color(1.0, 0.4, 0.35) if p.mp < cost else Color(0.5, 0.7, 1.0))
@@ -879,6 +970,100 @@ func show_end_screen(text: String, sub: String, color: Color) -> void:
 	subtitle_label.text = sub
 	title_label.modulate.a = 1.0
 	subtitle_label.modulate.a = 1.0
+
+
+## The chapter results card (retention roadmap #1): the run's numbers, a
+## big grade letter, and NEW BEST callouts. Rides the victory screen —
+## the process_mode override keeps it visible through the pause.
+func show_results(res: Dictionary, pb: Dictionary) -> void:
+	hide_results()
+	results_box = Control.new()
+	results_box.position = Vector2(400, 386)
+	results_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(results_box)
+
+	var panel := ColorRect.new()
+	panel.color = Color(0.06, 0.05, 0.09, 0.85)
+	panel.position = Vector2(0, 0)
+	panel.size = Vector2(480, 232)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	results_box.add_child(panel)
+
+	# The grade, big, in its gear-grade color (shared rarity language).
+	var grade := String(res.get("grade", "D"))
+	var gl := Label.new()
+	gl.text = grade
+	gl.position = Vector2(354, 34)
+	gl.size = Vector2(100, 130)
+	gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gl.add_theme_font_size_override("font_size", 104)
+	gl.add_theme_color_override("font_color", Items.GRADE_COLOR.get(grade, Color(1, 1, 1)))
+	_outline(gl)
+	results_box.add_child(gl)
+	var gt := Label.new()
+	gt.text = "GRADE"
+	gt.position = Vector2(354, 156)
+	gt.size = Vector2(100, 20)
+	gt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gt.add_theme_font_size_override("font_size", 13)
+	gt.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
+	results_box.add_child(gt)
+
+	var secs := int(res.get("time", 0.0))
+	var time_note := ""
+	if bool(pb.get("new_time", false)) and not bool(pb.get("first_run", false)):
+		time_note = "  ★ NEW BEST"
+	elif float(pb.get("prev_time", 0.0)) > 0.0 and not bool(pb.get("new_time", false)):
+		time_note = "   (best %d:%02d)" % [int(pb["prev_time"]) / 60, int(pb["prev_time"]) % 60]
+	var rows: Array = [
+		["Time", "%d:%02d%s" % [secs / 60, secs % 60, time_note],
+			Color(1.0, 0.88, 0.45) if bool(pb.get("new_time", false)) else Color(0.9, 0.92, 0.98)],
+		["Deaths", str(int(res.get("deaths", 0))),
+			Color(0.6, 1.0, 0.6) if int(res.get("deaths", 0)) == 0 else Color(1.0, 0.65, 0.55)],
+		["Elites slain", str(int(res.get("elites", 0))), Color(0.9, 0.92, 0.98)],
+		["Secrets found", str(int(res.get("secrets", 0))), Color(0.9, 0.92, 0.98)],
+		["Rooms charted", "%d / %d" % [int(res.get("explored", 0)), int(res.get("rooms", 1))],
+			Color(0.9, 0.92, 0.98)],
+	]
+	var y := 26.0
+	for row in rows:
+		var k := Label.new()
+		k.text = String(row[0])
+		k.position = Vector2(28, y)
+		k.add_theme_font_size_override("font_size", 16)
+		k.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
+		_outline(k)
+		results_box.add_child(k)
+		var v := Label.new()
+		v.text = String(row[1])
+		v.position = Vector2(160, y)
+		v.add_theme_font_size_override("font_size", 16)
+		v.add_theme_color_override("font_color", row[2])
+		_outline(v)
+		results_box.add_child(v)
+		y += 30.0
+	if bool(pb.get("new_grade", false)) and not bool(pb.get("first_run", false)):
+		var ng := Label.new()
+		ng.text = "★ BEST GRADE YET"
+		ng.position = Vector2(342, 186)
+		ng.add_theme_font_size_override("font_size", 13)
+		ng.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		_outline(ng)
+		results_box.add_child(ng)
+	# Pop-in: the card lands with a little weight.
+	results_box.scale = Vector2(0.85, 0.85)
+	results_box.pivot_offset = Vector2(240, 116)
+	results_box.modulate.a = 0.0
+	var tw := results_box.create_tween()
+	tw.tween_property(results_box, "modulate:a", 1.0, 0.25)
+	tw.parallel().tween_property(results_box, "scale", Vector2.ONE, 0.3) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func hide_results() -> void:
+	if is_instance_valid(results_box):
+		results_box.queue_free()
+	results_box = null
 
 
 func dim(amount: float) -> void:

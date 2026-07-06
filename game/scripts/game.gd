@@ -66,6 +66,9 @@ func _ready() -> void:
 	music_player = AudioStreamPlayer.new()
 	music_player.volume_db = -16.0
 	add_child(music_player)
+	amb_player = AudioStreamPlayer.new()
+	amb_player.volume_db = AMB_DB
+	add_child(amb_player)
 	load_settings()
 	apply_audio_settings()
 	apply_display_settings()
@@ -73,6 +76,23 @@ func _ready() -> void:
 	ambient = CanvasModulate.new()
 	ambient.color = Terrains.get_terrain(terrain_by_zone[0])["tint"]
 	add_child(ambient)
+
+	# 2D glow (needs Forward+ and viewport/hdr_2d, set in project.godot):
+	# additive FX stacks (spell impacts, ult flashes, loot beams) push past
+	# 1.0 brightness and bloom; ordinary sprites sit under the threshold.
+	glow_env = WorldEnvironment.new()
+	var env := Environment.new()
+	env.background_mode = Environment.BG_CANVAS
+	env.glow_enabled = true
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
+	env.glow_hdr_threshold = 1.1
+	env.glow_intensity = 0.55
+	env.glow_bloom = 0.0
+	env.set_glow_level(1, 0.5)
+	env.set_glow_level(3, 1.0)
+	env.set_glow_level(5, 0.6)
+	glow_env.environment = env
+	add_child(glow_env)
 
 	world = Node2D.new()
 	world.y_sort_enabled = true  # world children sort with the player
@@ -132,6 +152,7 @@ func _start_flow() -> void:
 func on_class_chosen(id: String) -> void:
 	player.set_class(id)
 	wander_seed = randi() % 1000000  # seeds this character's layout + rolled rooms
+	reset_run_stats()  # the results card starts counting from here
 	switch_chapter(chapter_id, true)  # lay out THIS run's world from the fresh seed
 	if not no_saves:
 		save_slot = SaveGame.next_free_slot()
@@ -196,6 +217,9 @@ func _process(delta: float) -> void:
 	talk_cd = maxf(0.0, talk_cd - delta)
 	if hud.dialogue_active or menus.is_open():
 		talk_cd = 0.4
+	if play_started and state == ST_PLAYING:
+		run_time += delta  # chapter run clock (results card; pauses pause it)
+	refresh_ambience()  # ambient bed tracks the room's terrain (cheap no-op)
 
 	hud.update_stats(player)
 

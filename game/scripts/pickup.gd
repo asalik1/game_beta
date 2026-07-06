@@ -15,6 +15,7 @@ var retry_cd := 0.0   # full-bag claim retry throttle
 
 static func drop_gold(game_node: Node2D, amount: int, pos: Vector2) -> void:
 	# Scatter a few coins around the death spot.
+	amount = (game_node as Game).gold_scaled(amount)  # weekly "gilded" hook
 	var coins := clampi(amount / 3, 1, 5)
 	for i in coins:
 		var c := Pickup.new()

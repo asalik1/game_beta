@@ -9,7 +9,7 @@
 - Docs split (2026-07-06): balance/pacing round narratives go in `BALANCE_HISTORY.md` (newest at TOP of the tuning list); `DESIGN.md` holds only current decisions + distilled standing rules — never append round-by-round history there.
 - Big node classes are inheritance CHAINS (verbatim moves, calls flow derived→base, all vars in the base layer):
   - Game: `game_base` (state/flags/convo/lookups/fx) ← `game_world` (graph/rooms/walls/spawning/gates) ← `game_flow` (deaths/loot/chapters/settings/terrain events) ← `game.gd` (boot + per-frame).
-  - Player: `player_core` (state/stats/gear/progression) ← `player_combat` (targeting/hit/juice + 4 kits) ← `player_kits` (paladin/warlock) ← `player.gd` (dispatch/survival/per-frame).
+  - Player: `player_core` (state/stats/gear/progression) ← `player_combat` (targeting/hit/shared juice + shared primitives) ← `player_kit_{warrior,archer,mage,assassin,paladin,warlock}` (one file per class: `_use_<class>` dispatch + its abilities) ← `player.gd` (dispatch/survival/per-frame). Primitives shared by several kits (`_dash_strike`, `_melee_arc`, `_mist`, `_beam_fx`, `_grant_stab_surge`) stay in `player_combat` — calls only flow derived→base.
   - Tests: `tests/test_base` (helpers) ← `tests/test_ch1` ← `tests/test_ch2` ← `autotest.gd` (entry + systems tier).
 - Self-contained UI screens = static modules in `scripts/ui/` (dev_panel, codex) taking the Menus instance.
 - New `class_name` script → run `--import` before any headless run.

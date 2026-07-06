@@ -36,6 +36,10 @@ var pack_id := 0      # aggro group within the room (per-pack aggro)
 var force_aggro := false  # pack woken: attack no matter the distance
 var alerted := false  # has shown its "!" bubble
 var hazard_speed := 1.0  # terrain patch effect (ice boosts, void slows)
+# Animation seam (Track C): >1 when an _anim strip override is installed.
+var anim_frames := 0
+var anim_fps := 6.0
+var anim_t := 0.0
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
 var sprite: Sprite2D
@@ -43,7 +47,6 @@ var hp_bar_bg: ColorRect
 var hp_bar_fg: ColorRect
 var face_left := false  # sprite art natively faces left (Crawl tiles)
 var dying := false
-var anim_t := 0.0
 
 # --- status effects ---
 var stun_time := 0.0
@@ -113,8 +116,17 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	add_child(shadow)
 
 	sprite = Sprite2D.new()
-	sprite.texture = Art.tex(stats["sprite"])
-	sprite.scale = Art.scale_for(sprite.texture, stats["scale"])
+	var anim := Art.anim_info(stats["sprite"])
+	if anim.is_empty():
+		sprite.texture = Art.tex(stats["sprite"])
+		sprite.scale = Art.scale_for(sprite.texture, stats["scale"])
+	else:
+		# Animated override strip (Track C seam): same Sprite2D, hframes on.
+		sprite.texture = anim["tex"]
+		sprite.hframes = anim["frames"]
+		anim_frames = int(anim["frames"])
+		anim_fps = float(anim["fps"])
+		sprite.scale = Art.scale_for(sprite.texture, stats["scale"], anim_frames)
 	face_left = Art.faces_left(stats["sprite"])
 	add_child(sprite)
 
@@ -216,6 +228,12 @@ func _physics_process(delta: float) -> void:
 
 	velocity = move + knock + game.gust_vec
 	move_and_slide()
+	if anim_frames > 1:
+		# Animated override: idle pace standing, double-time on the move
+		# (the shared anim_t clock already ticked once this frame).
+		if velocity.length() > 20.0:
+			anim_t += delta
+		sprite.frame = int(anim_t * anim_fps) % anim_frames
 	if absf(velocity.x) > 5.0:
 		# Left-facing art (Crawl sprites) flips the opposite way.
 		sprite.flip_h = (velocity.x > 0.0) if face_left else (velocity.x < 0.0)

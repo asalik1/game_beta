@@ -47,9 +47,13 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	var glow := Sprite2D.new()
 	glow.texture = Art.tex("glow")
 	var hot := tex_name in ["fireball", "icelance", "shadowbolt"]
-	glow.modulate = Color(p.glow_color, 0.8 if hot else 0.6)
+	glow.modulate = Art.hdr(Color(p.glow_color, 0.8 if hot else 0.6))
 	glow.scale = Vector2(1.35, 1.35) if hot else Vector2(1.0, 1.0)
 	p.add_child(glow)
+	if hot:
+		# Magic bolts CARRY light: walls and ground brighten as they pass
+		# (scaled to the room's darkness — daylight mutes it).
+		p.add_child(Art.light(p.glow_color, 95.0, 0.85 * p.game.light_mult))
 
 	# Fire magic trails sparks; ice trails frost; shadow trails void wisps.
 	if hot:
@@ -165,7 +169,7 @@ func _impact_ring() -> void:
 	var small := tex_kind == "dart"
 	var ring := Sprite2D.new()
 	ring.texture = Art.tex("ring")
-	ring.modulate = Color(glow_color, 0.9)
+	ring.modulate = Art.hdr(Color(glow_color, 0.9))
 	ring.global_position = global_position
 	ring.scale = Vector2(0.25, 0.25) if small else Vector2(0.4, 0.4)
 	ring.z_index = 8
@@ -185,10 +189,18 @@ func _on_body_entered(body: Node) -> void:
 		game.burst(global_position, glow_color, 5)
 		_impact_ring()
 		if is_instance_valid(source_player):
+			# Resolve with the payload SNAPSHOT this shot was fired with (fx,
+			# copied from _tfx at spawn) — never with whatever the player has
+			# cast SINCE: hit_enemy merges the player's live _tfx into the
+			# effects, and a shot in flight outlives its cast (the same
+			# save-restore idiom as Consecration's second pulse).
+			var saved_tfx: Dictionary = source_player._tfx
+			source_player._tfx = {}
 			source_player.hit_enemy(body, hit_player_mult, fx)
 			# Stormcaller passive: the arrow leaps to a second enemy.
 			if fx.get("ric", 0) > 0:
 				_ricochet(body)
+			source_player._tfx = saved_tfx
 		else:
 			body.take_damage(dmg, vel.normalized())
 		if not pierce:

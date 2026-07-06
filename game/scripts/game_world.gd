@@ -332,6 +332,7 @@ func _build_room(i: int) -> void:
 		var chest := Chest.drop(self, cache_tier, room_center(i) + Vector2(0, -140))
 		chest.on_open = func() -> void:
 			set_flag(_cache_flag(cache_room))  # once per character
+			run_secrets += 1                   # results card: secrets found
 
 	# Packs — skipped when the save already calls this room cleared.
 	if not cleared.get(i, false):
@@ -346,11 +347,20 @@ func _build_room(i: int) -> void:
 	# quiet — a wanderer moves in on the next visit.
 	if room_type(i) == "social":
 		var erng := _social_rng(i)
-		var elite_room := erng.randf() < Balance.ELITE_SOCIAL_ROOM_CHANCE
+		var elite_room := erng.randf() < Balance.ELITE_SOCIAL_ROOM_CHANCE * weekly_fx("elite")
 		if elite_room and not cleared.get(i, false):
 			_spawn_elite_room(i, erng)
 		elif not elite_room or cleared.get(i, false):
 			_spawn_wanderer(i)
+
+	# Elective risk events (retention roadmap #4): seeded per character
+	# like elites — a replay meets different temptations. Both are
+	# walk-past-able; neither ever ambushes.
+	_spawn_risk_events(i)
+
+	# Hidden caches (exploration premium): some dead ends bury a chest
+	# that only glints awake when the player wanders near.
+	_spawn_hidden_cache(i)
 
 func _spawn_room_enemies(i: int) -> void:
 	zone_alive[i] = 0
@@ -369,8 +379,13 @@ func _spawn_room_enemies(i: int) -> void:
 	if not spawned.is_empty() and String(zones[i].get("boss", "")) == "":
 		var rng := RandomNumberGenerator.new()
 		rng.seed = wander_seed * 17 + i * 337 + chapter_id.hash() % 8837
-		if rng.randf() < Balance.ELITE_COMBAT_AMBUSH_CHANCE:
+		if rng.randf() < Balance.ELITE_COMBAT_AMBUSH_CHANCE * weekly_fx("elite"):
 			spawned[rng.randi_range(0, spawned.size() - 1)].promote_elite()
+	# An accepted curse outlives saves and death-resets: the flag re-arms
+	# the pack's buff (and the payout) every time the room respawns.
+	if get_flag(_curse_flag(i), false) and zone_alive.get(i, 0) > 0:
+		curse_pending[i] = true
+		_apply_room_curse(i)
 
 ## A lone elite holds a small side room. Kind and level ride the
 ## nearest earlier combat room, one level above its toughest spawn —
@@ -423,6 +438,152 @@ func wake_pack(room: int, pack: int) -> void:
 			if not e.alerted:
 				e.alerted = true
 				emote(e, "!", 0.9)
+
+# ------------------------------------------------------- risk events ---
+
+## Seeded elective risk (retention roadmap #4): a CURSED CHEST in some
+## combat rooms — open it and the living pack grows crueler until the
+## purge, THEN it pays (golden chest + gem) — and a GAMBLE SHRINE in
+## some quiet rooms — feed it gold and it blesses or drinks deeper.
+## Once per character per room; replays reroll with the seed.
+func _spawn_risk_events(i: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 53 + i * 947 + chapter_id.hash() % 6659
+	var rt := room_type(i)
+	if rt == "combat" and String(zones[i].get("boss", "")) == "":
+		if rng.randf() < Balance.CURSED_ROOM_CHANCE \
+				and not get_flag(_curse_flag(i), false) and not cleared.get(i, false):
+			_cursed_chest_node(i, room_center(i)
+				+ Vector2(rng.randf_range(-150.0, 150.0), rng.randf_range(-90.0, 90.0)))
+	elif rt in ["social", "dead_end"]:
+		if rng.randf() < Balance.SHRINE_ROOM_CHANCE and not get_flag(_shrine_flag(i), false):
+			_gamble_shrine_node(i, room_center(i)
+				+ Vector2(rng.randf_range(-110.0, 110.0), rng.randf_range(-70.0, 70.0)))
+
+
+## A buried chest in some dead ends (exploration premium): invisible
+## until the player wanders within reach, then it glints awake. Only in
+## dead ends WITHOUT an authored cache; once per character per room
+## (flag wiped by replays, like caches). Counts as a secret.
+func _spawn_hidden_cache(i: int) -> void:
+	if room_type(i) != "dead_end" or String(zones[i].get("cache", "")) != "" \
+			or get_flag(_hidden_flag(i), false):
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 71 + i * 383 + chapter_id.hash() % 5581
+	if rng.randf() >= Balance.HIDDEN_CACHE_CHANCE:
+		return
+	var room := i
+	var tier := "gold" if rng.randf() < Balance.HIDDEN_CACHE_GOLD_TIER else "silver"
+	var chest := Chest.drop(self, tier,
+		room_center(i) + Vector2(rng.randf_range(-220.0, 220.0), rng.randf_range(-130.0, 130.0)))
+	chest.bury()
+	chest.on_open = func() -> void:
+		set_flag(_hidden_flag(room))
+		run_secrets += 1  # results card: the wanderer's premium
+
+
+## Drop an interactable from the prompt registry and the world.
+func _remove_interactable(npc: Node2D) -> void:
+	for it in interactables.duplicate():
+		if it["node"] == npc:
+			interactables.erase(it)
+	npc.queue_free()
+
+
+func _cursed_chest_node(i: int, pos: Vector2) -> void:
+	var room := i
+	var npc := _make_npc(String(Items.CHEST_TIERS["gold"]["sprite"]), pos,
+		"E — The chest whispers", Callable())
+	npc.modulate = Color(0.72, 0.5, 0.95)  # wrong-colored gold: clearly a bargain
+	# The action needs the npc handle, so it's bound after creation.
+	interactables[-1]["action"] = func() -> void:
+		menus.open_confirm(
+			"The chest whispers promises. Open it, and every monster in this room grows CRUELER (+%d%% damage, faster) until the room is purged — but the purge unlocks its hoard: a golden chest and a gem, guaranteed. Open it?"
+				% int((Balance.CURSE_DMG_MULT - 1.0) * 100),
+			func() -> void:
+				set_flag(_curse_flag(room))
+				curse_pending[room] = true
+				_apply_room_curse(room)
+				sfx("gate", 1.2)
+				burst(npc.global_position, Color(0.7, 0.4, 1.0), 18)
+				if is_instance_valid(player):
+					spawn_text(player.global_position + Vector2(0, -78),
+						"THE PACK STIRS, CRUELER — purge the room to claim the hoard",
+						Color(0.85, 0.6, 1.0), 3.5)
+				_remove_interactable(npc), func() -> void: pass)
+
+
+## The accepted curse: every living pack member in the room hits harder
+## and moves faster, wearing a violet cast so the bargain stays visible.
+func _apply_room_curse(i: int) -> void:
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e is Boss or e.dying or e.zone_idx != i:
+			continue
+		if e.has_meta("cursed"):
+			continue  # rebuilds re-arm the curse; never double-buff
+		e.set_meta("cursed", true)
+		e.dmg *= Balance.CURSE_DMG_MULT
+		e.speed *= Balance.CURSE_SPEED_MULT
+		e.modulate = e.modulate * Color(0.85, 0.65, 1.1)
+
+
+func _gamble_shrine_node(i: int, pos: Vector2) -> void:
+	var room := i
+	var npc := _make_npc("pillar", pos, "E — Feed the shrine", Callable())
+	npc.modulate = Color(0.85, 0.75, 1.05)
+	interactables[-1]["action"] = func() -> void:
+		var cost := shrine_cost()
+		if player.gold < cost:
+			spawn_text(player.global_position + Vector2(0, -56),
+				"The shrine wants %d gold." % cost, Color(0.8, 0.75, 0.9))
+			return
+		menus.open_confirm(
+			"The shrine hums with a borrowed hunger. Feed it %d gold? It may bless the offering... or drink deeper." % cost,
+			func() -> void:
+				set_flag(_shrine_flag(room))
+				player.gold -= cost
+				_shrine_outcome(cost)
+				_remove_interactable(npc), func() -> void: pass)
+
+
+## The gamble resolves — a true roll (loot_rng), not seeded: blessings
+## outnumber banes, but the banes bite. Never lethal by design.
+func _shrine_outcome(cost: int) -> void:
+	var pos: Vector2 = player.global_position
+	if loot_rng.randf() < Balance.SHRINE_BLESS_CHANCE:
+		sfx("nova", 1.1)
+		burst(pos, Color(1.0, 0.9, 0.5), 16)
+		var roll := loot_rng.randf()
+		if roll < 0.4:
+			var gem := Items.random_gem(loot_rng,
+				2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
+			if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(0, 44)):
+				spawn_text(pos + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
+		elif roll < 0.7:
+			var back := cost * 3
+			player.gain_gold(back)
+			spawn_text(pos + Vector2(0, -70), "The shrine returns THREEFOLD (+%d gold)" % back,
+				Color(1.0, 0.85, 0.4))
+		elif roll < 0.9:
+			Chest.drop(self, "silver", clamp_to_zone(pos + Vector2(70, 0), pos))
+			spawn_text(pos + Vector2(0, -70), "A gift surfaces...", Color(0.85, 0.88, 0.95))
+		else:
+			give_loot({"kind": "stone", "stone": Items.make_elixir_might()}, pos + Vector2(0, 44))
+			spawn_text(pos + Vector2(0, -70), "+ Elixir of Might", Color(1.0, 0.7, 0.4))
+	else:
+		sfx("hurt", 0.8)
+		hud.flash_screen(Color(0.6, 0.2, 0.5), 0.25, 0.3)
+		if loot_rng.randf() < 0.6:
+			player.hp = maxf(1.0, player.hp - player.max_hp * 0.3)
+			spawn_text(pos + Vector2(0, -70), "The shrine drinks your BLOOD", Color(0.9, 0.4, 0.5))
+		else:
+			var more := mini(cost, player.gold)
+			player.gold -= more
+			spawn_text(pos + Vector2(0, -70), "The shrine drinks DEEPER (−%d gold)" % more,
+				Color(0.9, 0.5, 0.6))
+
 
 ## Social rooms roll ONE wanderer from the pool, seeded per character —
 ## a replay meets different people (DESIGN.md room palette).
@@ -523,11 +684,14 @@ func _spawn_scenery(zi: int) -> void:
 	# small rooms get proportionally less).
 	var decor_list: Array = terrain.get("decor", ["pebble"])
 	for i in int(ceil(58.0 * area_frac)):
+		var decor_name: String = decor_list[rng.randi_range(0, decor_list.size() - 1)]
 		var spr := Sprite2D.new()
-		spr.texture = Art.tex(decor_list[rng.randi_range(0, decor_list.size() - 1)])
+		spr.texture = Art.tex(decor_name)
 		spr.scale = Vector2(3, 3)
 		spr.position = origin + Vector2(rng.randf_range(70.0, pw - 70.0), rng.randf_range(80.0, ph - 80.0))
 		spr.z_index = -8
+		if decor_name in ["flower", "mushroom"]:
+			spr.material = Art.wind_material()  # soft stems nod in the wind
 		world.add_child(spr)
 		zone_scenery[zi].append(spr)
 
@@ -554,6 +718,46 @@ func _spawn_scenery(zi: int) -> void:
 				zone_scenery[zi].append(body)
 				break
 
+	# Ambient critters (birds/crows/butterflies) live with the scenery:
+	# room rebuilds and terrain repaints sweep them up too.
+	for critter in Ambience.populate(self, zi):
+		zone_scenery[zi].append(critter)
+
+	# ---- the river (the Greyrun and its cousins) ------------------
+	# Terrain-configured, seeded per room; skips boss arenas. Wading
+	# slows everyone; the bridge carries the road across dry.
+	rivers.erase(zi)
+	var river_cfg: Dictionary = terrain.get("river", {})
+	if not river_cfg.is_empty() and String(zones[zi].get("boss", "")) == "":
+		var rrng := RandomNumberGenerator.new()
+		rrng.seed = zi * 131 + terrain_by_zone[zi].hash() % 100000
+		if rrng.randf() < float(river_cfg.get("chance", 0.5)):
+			# Keep the channel clear of the N/S door lane at room center.
+			var fx_pos := rrng.randf_range(0.18, 0.40) if rrng.randf() < 0.5 \
+				else rrng.randf_range(0.60, 0.82)
+			var wpx := rrng.randf_range(120.0, 170.0)
+			var rect := Rect2(origin.x + pw * fx_pos - wpx / 2.0, origin.y, wpx, ph)
+			var bridge := Rect2(rect.position.x - 14.0, origin.y + ph / 2.0 - 84.0,
+				wpx + 28.0, 168.0)
+			var water := Sprite2D.new()
+			water.texture = Art.tex("white")
+			water.centered = false
+			water.position = rect.position
+			water.scale = rect.size / 8.0  # white tex is 8x8
+			water.z_index = -9             # over the ground, under decor
+			water.material = Art.water_material(river_cfg.get("color", Color(0.1, 0.2, 0.2, 0.8)))
+			world.add_child(water)
+			zone_scenery[zi].append(water)
+			var plank := Sprite2D.new()
+			plank.texture = Art.tex("bridge")
+			plank.centered = false
+			plank.position = bridge.position
+			plank.scale = bridge.size / Vector2(16.0, 12.0)
+			plank.z_index = -8
+			world.add_child(plank)
+			zone_scenery[zi].append(plank)
+			rivers[zi] = {"rect": rect, "bridge": bridge}
+
 func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	var is_tree := sprite_name.begins_with("tree")
 	var body := StaticBody2D.new()
@@ -576,6 +780,7 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	spr.scale = Vector2(3, 3)
 	if is_tree:
 		spr.position = Vector2(0, -18)  # trunk base sits at the body origin
+		spr.material = Art.wind_material()  # canopy sways in the wind
 	body.add_child(spr)
 	world.add_child(body)
 	return body
@@ -788,6 +993,12 @@ func _try_spawn_boss(zi: int) -> void:
 	_on_boss_trigger(zi)
 
 func add_enemy(e: Enemy) -> void:
+	if weekly_active:
+		# The week's modifier rides every spawn (weekly challenge run).
+		e.max_hp *= weekly_fx("hp")
+		e.hp = e.max_hp
+		e.dmg *= weekly_fx("dmg")
+		e.speed *= weekly_fx("speed")
 	world.add_child(e)
 
 

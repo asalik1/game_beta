@@ -30,7 +30,8 @@ const DATA := {
 	"marsh": {"name": "The Blightmarsh", "ground": "marsh", "path": "dirt",
 		"tint": Color(0.85, 0.9, 0.78), "ambient": "fireflies", "music": "marsh",
 		"obstacles": ["tree_teal", "deadtree", "rock"], "decor": ["mushroom", "bones", "pebble"], "count": 14,
-		"patches": [], "event": ""},
+		"patches": [], "event": "",
+		"river": {"chance": 0.45, "color": Color(0.10, 0.20, 0.19, 0.82)}},
 	"keep": {"name": "Vargoth's Keep", "ground": "stone", "path": "stone",
 		"tint": Color(0.8, 0.78, 0.88), "ambient": "embers", "music": "keep",
 		"obstacles": ["pillar"], "decor": ["bones", "crack", "bones"], "count": 10,
@@ -58,7 +59,9 @@ const DATA := {
 		"tint": Color(0.82, 0.9, 0.75), "ambient": "fireflies", "music": "marsh",
 		"obstacles": ["tree_teal", "deadtree"], "decor": ["mushroom", "mushroom", "bones"], "count": 13,
 		"patches": [{"type": "poison", "count": 8, "radius": [55, 95]}],
-		"event": ""},
+		"event": "",
+		# The Greyrun runs BLACK through the blightlands (ch2 mill canon).
+		"river": {"chance": 0.5, "color": Color(0.07, 0.08, 0.08, 0.88)}},
 	"crystal": {"name": "Crystal Caverns", "ground": "crystalfloor", "path": "crystalfloor",
 		"tint": Color(0.85, 0.88, 1.05), "ambient": "twinkle", "music": "crystalline",
 		"obstacles": ["crystal", "crystal", "pillar"], "decor": ["pebble", "crack"], "count": 14,
@@ -82,6 +85,17 @@ const DATA := {
 		"obstacles": ["tree_spore", "tree_spore", "rock"], "decor": ["mushroom", "mushroom", "mushroom"], "count": 13,
 		"patches": [{"type": "poison", "count": 5, "radius": [60, 90], "drift": true}],
 		"event": ""},
+}
+
+# Ambient AUDIO bed per terrain (Sfx.make_ambient kinds; "" = silence).
+# The visual weather lives in AMBIENTS below; this is its soundtrack.
+const AMBIENT_LOOPS := {
+	"village": "amb_birds", "darkwood": "amb_birds", "holy": "amb_birds",
+	"storm": "amb_wind", "desert": "amb_wind",
+	"ice": "amb_cold",
+	"marsh": "amb_crickets", "bog": "amb_crickets", "spore": "amb_crickets",
+	"keep": "amb_drone", "void": "amb_drone", "graveyard": "amb_drone",
+	"magma": "amb_drone", "crystal": "amb_drone",
 }
 
 # Weather / ambient particle presets.

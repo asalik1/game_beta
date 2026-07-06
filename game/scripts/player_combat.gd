@@ -1,7 +1,8 @@
 extends "res://scripts/player_core.gd"
-## PLAYER, layer 2 of 4 — targeting, hit resolution, the shared
-## combat juice, and the warrior/archer/mage/assassin ability funcs.
-## See player_core.gd for the chain layout.
+## PLAYER, layer 2 of 9 — targeting, hit resolution, and the shared
+## combat primitives/juice every class kit leans on (melee arcs,
+## projectiles, dashes, mists, beams). Class kits live in
+## player_kit_<class>.gd; see player_core.gd for the chain layout.
 
 
 # ================================================================ targeting
@@ -167,6 +168,10 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
 	if ls > 0.0:
 		hp = minf(max_hp, hp + dmg * ls)
+	# Holy stance (paladin Conviction, round 48): every righteous blow mends —
+	# the stance IS the sustain (AoE hits mend at a third, like lifesteal).
+	if cls == "paladin" and paladin_mode == "holy":
+		gain_hp(max_hp * Balance.PALADIN_HOLY_MEND * (0.33 if effects.get("aoe", false) else 1.0))
 
 	var dir := (e.global_position - global_position).normalized()
 	e.take_damage(dmg, dir, is_crit)
@@ -235,7 +240,7 @@ func _enemies_within(center: Vector2, radius: float) -> Array:
 func _ring_fx(pos: Vector2, color: Color, radius: float, collapse := false) -> void:
 	var ring := Sprite2D.new()
 	ring.texture = Art.tex("ring")
-	ring.modulate = Color(color, 0.9)
+	ring.modulate = Art.hdr(Color(color, 0.9))
 	ring.global_position = pos
 	ring.z_index = 7
 	game.add_child(ring)
@@ -306,7 +311,7 @@ func _wind_wisp(back: Vector2) -> void:
 func _muzzle(dir: Vector2, color: Color) -> void:
 	var fl := Sprite2D.new()
 	fl.texture = Art.tex("glow")
-	fl.modulate = Color(color, 0.85)
+	fl.modulate = Art.hdr(Color(color, 0.85))
 	fl.position = dir * 26.0
 	fl.scale = Vector2(0.5, 0.5)
 	fl.z_index = 6
@@ -382,231 +387,37 @@ func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectil
 	return p
 
 
-func _shoot(dir: Vector2, mult: float) -> void:
-	game.sfx("bow")
-	_muzzle(dir, _tcolor if _themed else Color(0.9, 1.0, 0.6))
-	_proj(dir, mult, "arrow", 520.0)
-
-
-func _cast_bolt(dir: Vector2, mult: float) -> void:
-	game.sfx("fireball")  # a breathy fire fwoosh, not an arcane laser
-	_muzzle(dir, _tcolor if _themed else Color(1.0, 0.6, 0.2))
-	# The Ice variant flies as a crystal lance, not a ball of fire.
-	var tex := "icelance" if _tfx.get("pierce", 0) else "fireball"
-	var p := _proj(dir, mult, tex, 440.0 * float(_tfx.get("proj_speed", 1.0)))
-	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
-	if bolt_homing > 0.0:
-		p.homing = true  # Seeker Winds (mage Wind talent): the bolt curves to its mark
-
-
-func _whirlwind(f := 1.0) -> void:
-	game.sfx("sword")
-	var radius := 115.0 * float(_tfx.get("radius_mult", 1.0))
-	var col := _tcolor if _themed else Color(1, 1, 1)
-	var inward: bool = _tfx.get("pull", 0)
-
-	# Three blades sweep a full revolution around the hero (reversed
-	# when Earth drags enemies in — the vortex visibly turns inward).
-	var pivot := Node2D.new()
-	pivot.z_index = 6
-	add_child(pivot)
-	for i in 3:
-		var ang := TAU * i / 3.0
-		var blade := Sprite2D.new()
-		blade.texture = Art.tex("slash")
-		blade.modulate = Color(col, 0.9)
-		blade.rotation = ang
-		blade.position = Vector2.from_angle(ang) * radius * 0.55
-		blade.scale = Vector2(2.6, 2.6)
-		pivot.add_child(blade)
-	var tw := pivot.create_tween()
-	tw.tween_property(pivot, "rotation", TAU * (-1.0 if inward else 1.0), 0.32) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(pivot, "modulate:a", 0.0, 0.34)
-	tw.tween_callback(pivot.queue_free)
-	_ring_fx(global_position, col, radius, inward)
-
-	var eff := {"stagger": 0.3, "aoe": true}
-	if not inward:  # Earth drags them in instead of flinging
-		eff["knock"] = 380.0
-	for e in _enemies_within(global_position, radius):
-		hit_enemy(e, 0.9 * f, eff.duplicate())
-
-
 ## Per-class ultimate activation sound, falling back to the generic one.
 func _ult_sfx() -> void:
 	var key := "ult_" + cls
 	game.sfx(key if game.sounds.has(key) else "ult")
 
 
-func _multishot(f := 1.0) -> void:
-	# ONE release sound for the whole volley — five overlapping copies of
-	# the same sample phase into a nasty digital flanging artifact.
-	# Pitched lower than Quick Shot so the two are distinguishable.
-	game.sfx("slash", 0.85)
-	var dir := aim_dir()
-	_muzzle(dir, _tcolor if _themed else Color(0.9, 1.0, 0.6))
-	var count := int(_tfx.get("knives", 5))
-	var step := 0.05 if _tfx.get("narrow", 0) else float(_tfx.get("spread", 0.16))
-	for i in count:
-		var spread := (float(i) - (count - 1) / 2.0) * step
-		var p := _proj(dir.rotated(spread), 0.55 * f, "arrow", 520.0)
-		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
-
-
-func _tumble() -> void:
-	game.sfx("blink")
-	# Round 45: the outright 0.5s negate on a 6s cd was too forgiving —
-	# safety belongs to positioning, not a free button. The immunity is
-	# now a split-second PERFECT-DODGE window (skill-timed against a hit),
-	# and the roll leaves the archer NIMBLE — a soft evasion buff covers
-	# the reposition so an average pilot still has margin, not a wall.
-	hurt_cd = maxf(hurt_cd, 0.1)
-	dodge_time = 1.25
-	dodge_amt = 0.20
-	var origin := global_position
-	global_position = game.clamp_to_zone(global_position + facing * 130.0, global_position)
-	# The roll reads as motion: ghost trail + kicked-up dust behind you.
-	_afterimages(origin, global_position, _tcolor if _themed else Color(0.9, 0.95, 1.0), 2)
-	game.burst(origin, Color(0.75, 0.7, 0.6), 6)
-	if _tfx.has("burst_origin"):
-		# Storm: discharge where you left.
-		game.sfx("nova", 1.2)
-		game.burst(origin, _tcolor, 12)
-		for e in _enemies_within(origin, 110.0):
-			hit_enemy(e, float(_tfx["burst_origin"]), {"aoe": true})
-	if _tfx.get("mist_origin", 0):
-		# Venom: leave a toxin cloud behind.
-		_mist(origin, 95.0, 0.35, _tcolor, 2.5)
-	if _tfx.get("next_crit", 0):
-		# Hunt: line up the next shot.
-		next_crit = true
-		game.spawn_text(global_position + Vector2(0, -60), "LINED UP", Color(1, 0.7, 0.3))
-
-
-func _storm_strike() -> void:
-	var e: Enemy = null
-	if storm_fx.get("focus", 0):
-		# Hunt: every arrow hunts YOUR target.
-		e = auto_aim(560.0)
-	else:
-		var targets := _enemies_within(global_position, 560.0)
-		if not targets.is_empty():
-			e = targets[randi() % targets.size()]
-	if e == null:
-		return
-	# Falling-arrow whoosh (deep-pitched), NOT the synth laser zap.
-	game.sfx("knife", 0.75)
-	# An arrow visibly falls out of the sky onto the target.
-	var arrow := Sprite2D.new()
-	arrow.texture = Art.tex("arrow")
-	arrow.rotation = PI / 2.0
-	arrow.scale = Vector2(3, 3)
-	arrow.global_position = e.global_position + Vector2(randf_range(-10, 10), -160)
-	arrow.z_index = 30
-	game.add_child(arrow)
-	var tween := arrow.create_tween()
-	tween.tween_property(arrow, "global_position:y", e.global_position.y, 0.11)
-	tween.tween_callback(arrow.queue_free)
-	game.burst(e.global_position, Color(0.7, 1.0, 0.7))
-	var storm_col := _theme_color("ult") if ability_theme.get("ult", "") != "" else Color(0.7, 1.0, 0.7)
-	_ring_fx(e.global_position, storm_col, 42.0)
-	var eff := storm_fx.duplicate()
-	eff["aoe"] = true
-	hit_enemy(e, 0.8, eff)
-
-
-func _frost_nova(f := 1.0) -> void:
-	game.sfx("nova")
-	game.shake(6.0)
-	# The nova drinks the cold (round 23): restores 20% of MISSING
-	# health and mana — the lower you run, the more it gives back. The
-	# mage's short-range button carries UTILITY, not damage budget
-	# (ranged kits can rarely connect close-range damage safely).
-	gain_hp((max_hp - hp) * 0.2)  # nova drinks the cold — SHOW the mend
-	if nova_regen > 0.0:
-		# Rimeheart (mage talent): the cold keeps mending — a long, slow trickle
-		# (recast RENEWS this window, never stacks the rate: spam ≠ more potency).
-		nova_regen_time = 6.0
-	mp = minf(max_mp, mp + (max_mp - mp) * 0.2)
-	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
-	var col := _tcolor if _themed else Color(0.45, 0.8, 1.0)
-	var inward: bool = _tfx.get("pull", 0)
-	var fiery: bool = _tfx.get("no_knock", 0)
-
-	# Shockwave RING — expands for the blast, COLLAPSES for the implosion.
-	var r_scale := radius / 24.0
-	for delay in ([0.0, 0.07] if not inward else [0.0]):
-		var ring := Sprite2D.new()
-		ring.texture = Art.tex("ring")
-		ring.modulate = Color(col, 0.95)
-		ring.z_index = 7
-		add_child(ring)
-		var tw := ring.create_tween()
-		if delay > 0.0:
-			ring.scale = Vector2(0.1, 0.1)
-			tw.tween_interval(delay)
-		if inward:
-			ring.scale = Vector2(r_scale, r_scale)
-			tw.tween_property(ring, "scale", Vector2(0.3, 0.3), 0.26) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		else:
-			tw.tween_property(ring, "scale", Vector2(r_scale * (1.0 - delay), r_scale * (1.0 - delay)), 0.26) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.32)
-		tw.tween_callback(ring.queue_free)
-
-	# Radial shards: icicles fly OUT, embers for the flame ring, and the
-	# implosion sucks them IN instead.
-	for i in 10:
-		var ang := TAU * i / 10.0 + randf_range(-0.15, 0.15)
-		var shard := Sprite2D.new()
-		shard.texture = Art.tex("fireball" if fiery else "icelance")
-		shard.modulate = col
-		shard.rotation = ang + (PI if inward else 0.0)
-		shard.scale = Vector2(1.5, 1.5)
-		shard.z_index = 7
-		shard.position = Vector2.from_angle(ang) * (radius if inward else 6.0)
-		add_child(shard)
-		var st := shard.create_tween()
-		st.tween_property(shard, "position",
-			Vector2.ZERO if inward else Vector2.from_angle(ang) * radius, 0.24) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN if inward else Tween.EASE_OUT)
-		st.parallel().tween_property(shard, "modulate:a", 0.0, 0.26)
-		st.tween_callback(shard.queue_free)
-
-	# Lingering ground frost / scorch where the blast happened.
-	var floor_glow := Sprite2D.new()
-	floor_glow.texture = Art.tex("glow")
-	floor_glow.modulate = Color(col, 0.4)
-	floor_glow.scale = Vector2(radius / 24.0, radius / 32.0)
-	floor_glow.global_position = global_position
-	floor_glow.z_index = -5
-	game.add_child(floor_glow)
-	var ft := floor_glow.create_tween()
-	ft.tween_property(floor_glow, "modulate:a", 0.0, 0.9)
-	ft.tween_callback(floor_glow.queue_free)
-
-	game.hud.flash_screen(Color(col, 1.0), 0.2, 0.25)
-	game.burst(global_position, col, 18)
-	game.burst(global_position, Color(1, 1, 1), 8)
-
-	# A real panic button: big damage, shove everything away, slow it.
-	# (Fire ring burns instead of shoving; Wind implodes them INTO you.)
-	var eff := {"slow": 0.5, "slow_dur": 2.5, "aoe": true}
-	if not (fiery or inward):
-		eff["knock"] = 340.0
-		eff["knock_no_boss"] = 1  # mobs fly; bosses never get shove-kited
-	for e in _enemies_within(global_position, radius):
-		hit_enemy(e, 1.4 * f, eff.duplicate())
+## A thin beam of light/darkness between two points, fading fast
+## (hex tendrils, chain snaps, quick magical connections).
+func _beam_fx(from: Vector2, to: Vector2, col: Color, width := 0.18) -> void:
+	var seg := Sprite2D.new()
+	seg.texture = Art.tex("glow")
+	seg.modulate = Art.hdr(Color(col, 0.85))
+	seg.global_position = (from + to) / 2.0
+	seg.rotation = (to - from).angle()
+	seg.scale = Vector2(maxf(0.5, from.distance_to(to) / 44.0), width)
+	seg.z_index = 7
+	game.add_child(seg)
+	var tw := seg.create_tween()
+	tw.tween_property(seg, "scale:y", 0.03, 0.22)
+	tw.parallel().tween_property(seg, "modulate:a", 0.0, 0.24)
+	tw.tween_callback(seg.queue_free)
 
 
 ## Dash `dist` pixels in the move direction, damaging every enemy along
-## the path. Used by mage Blink and assassin Shadow Dash — and because
-## it HITS things, ability themes fully apply to it. Returns kill count
-## (Phantom step refunds cooldown on kills).
+## the path. Used by mage Blink, assassin Shadow Dash and the warrior's
+## Shield Bash — and because it HITS things, ability themes fully apply
+## to it. Returns kill count (Phantom step refunds cooldown on kills).
 ## A connecting stab's blood surge (round 25): lifesteal up for 4s,
 ## scaling with MISSING health — low health is a resource.
+## (_grant_stab_surge lives HERE, not in the assassin layer: _dash_strike
+## fires it for the dash-stab rider, and calls only flow derived→base.)
 func _grant_stab_surge() -> void:
 	# Announce it once when it FIRST lights (a refresh mid-surge is silent —
 	# the stab cadence is 0.3s); the crimson aura carries the rest.
@@ -712,243 +523,6 @@ func _cut_flash(pos: Vector2, ang: float, color := Color(1, 1, 1)) -> void:
 	tw.tween_callback(cut.queue_free)
 
 
-func _blink() -> void:
-	var eff := {"aoe": true}
-	if _tfx.has("freeze_path"):
-		eff["stun"] = float(_tfx["freeze_path"])  # Frostwalk
-	var start := global_position
-	# Round 45: iframe cut 0.3->0.1 (like the archer roll) — a perfect-dodge
-	# window, not a sloppy blink-through. Safety now rides the DR cloak below.
-	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), 0.8, eff, 0.0, 0.1)
-	# Fire leaves a burning wake on the ground; Ice a frozen one.
-	if _themed and (_tfx.has("dot") or _tfx.has("freeze_path")):
-		_floor_streak(start, global_position, _tcolor)
-	if blink_dr > 0.0:
-		# Arcane Ward (round 45): Blink no longer erases a hit — it wraps
-		# the mage in magic for a beat, CUTTING incoming damage while the
-		# window holds. Forgives a misstep; doesn't undo it.
-		dr_time = blink_dr_dur
-		dr_amt = blink_dr
-		game.sfx("ward", 1.0, 0.0, -3.0)
-		game.spawn_text(global_position + Vector2(0, -52), "WARD", Color(0.6, 0.9, 1.0))
-
-
-func _meteor() -> void:
-	_ult_sfx()
-	var count := int(_tfx.get("meteors", 1))
-	if count <= 1:
-		# Fire / Ice: a single meteor on the aimed target.
-		var target := auto_aim()
-		_meteor_at(target.global_position if target else global_position + facing * 150.0)
-	else:
-		# Starfall (wind): comets fall in SEQUENCE on the lowest-health
-		# priority. Stacked hits on one target diminish, but a target's DEATH
-		# hands the next comet a fresh priority at FULL power (execute and
-		# cascade) — it concentrates where Fire's Meteor spreads and burns.
-		_starfall_comet(count, float(_tfx.get("stack_falloff", 0.4)), null, 0)
-	# Wind ult TAILWIND: Blink and Frost Nova cool down quicker for a window —
-	# tempo for tight rotations (Fire's Meteor still out-bursts and AoE-burns).
-	if _tfx.has("haste_dur"):
-		cast_haste_cdr = float(_tfx.get("haste_cdr", 0.0))
-		cast_haste_time = float(_tfx.get("haste_dur", 5.0))
-		game.spawn_text(global_position + Vector2(0, -60), "TAILWIND", Color(0.7, 1.0, 0.75))
-
-
-## One comet of a Starfall, recursing through the previous comet's fall:
-## seek the lowest-health target, diminish a repeat hit on the SAME target,
-## but reset to FULL when the priority changes — a kill cascades the salvo
-## onward at full power onto the next threat.
-func _starfall_comet(remaining: int, falloff: float, last: Enemy, stack: int) -> void:
-	if remaining <= 0 or dead:
-		return
-	var tgt := _lowest_hp_enemy(560.0)
-	var scale := 1.0
-	var pos: Vector2
-	if tgt != null:
-		if tgt == last:
-			stack += 1
-		else:
-			stack = 0  # fresh priority (or cascade off a kill): full power
-		scale = pow(falloff, stack)
-		pos = tgt.global_position
-	else:
-		var a := auto_aim()
-		pos = a.global_position if a else global_position + facing * 150.0
-	_meteor_at(pos, scale, func() -> void:
-		_starfall_comet(remaining - 1, falloff, tgt, stack))
-
-
-## The lowest-health live enemy within range — Starfall's priority pick.
-func _lowest_hp_enemy(radius: float) -> Enemy:
-	var best: Enemy = null
-	for e in _enemies_within(global_position, radius):
-		if best == null or e.hp < best.hp:
-			best = e
-	return best
-
-
-## `scale` diminishes a comet's damage (Starfall stacks on one target).
-## `on_land` fires after the comet resolves — Starfall chains its next comet
-## from here, so a kill is already registered when the next target is picked.
-func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
-	var fx_copy := _tfx.duplicate()
-	var col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
-
-	# Growing impact shadow on the ground — you can feel it coming.
-	var mark := Sprite2D.new()
-	mark.texture = Art.tex("telegraph")
-	mark.global_position = pos
-	mark.modulate = Color(col, 0.5)
-	mark.scale = Vector2(1, 1)
-	mark.z_index = -6
-	game.add_child(mark)
-	var mark_tw := mark.create_tween()
-	mark_tw.tween_property(mark, "scale", Vector2(4.6, 4.6), 0.62)
-
-	# The meteor itself: big, burning, with a particle trail.
-	var spr := Sprite2D.new()
-	spr.texture = Art.tex("fireball")
-	spr.scale = Vector2(11, 11)
-	spr.modulate = col
-	spr.global_position = pos + Vector2(90, -460)
-	spr.z_index = 30
-	game.add_child(spr)
-	var trail := CPUParticles2D.new()
-	trail.amount = 26
-	trail.lifetime = 0.5
-	trail.spread = 20.0
-	trail.direction = Vector2(-0.2, -1)
-	trail.initial_velocity_min = 60.0
-	trail.initial_velocity_max = 140.0
-	trail.scale_amount_min = 2.5
-	trail.scale_amount_max = 5.0
-	trail.color = col
-	spr.add_child(trail)
-
-	var tween := spr.create_tween()
-	tween.tween_property(spr, "global_position", pos, 0.62).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_callback(func() -> void:
-		spr.queue_free()
-		if is_instance_valid(mark):
-			mark.queue_free()
-		game.sfx("meteor")
-		game.shake(14.0)
-		game.hud.flash_screen(Color(1.0, 0.75, 0.4), 0.55, 0.35)
-		game.burst(pos, col, 30)
-		game.burst(pos, Color(1.0, 0.9, 0.5), 16)
-		_ring_fx(pos, col, 150.0 * float(fx_copy.get("radius_mult", 1.0)))
-		# Scorched ground lingers for a moment.
-		var scorch := Sprite2D.new()
-		scorch.texture = Art.tex("glow")
-		scorch.modulate = Color(col, 0.6)
-		scorch.global_position = pos
-		scorch.scale = Vector2(4.2, 4.2)
-		scorch.z_index = -5
-		game.add_child(scorch)
-		var s_tw := scorch.create_tween()
-		s_tw.tween_property(scorch, "modulate:a", 0.0, 1.3)
-		s_tw.tween_callback(scorch.queue_free)
-		var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
-		for e in _enemies_within(pos, radius):
-			var eff := fx_copy.duplicate()
-			eff["burn"] = current_atk() * 0.4 * float(fx_copy.get("burn_mult", 1.0)) * scale
-			eff["aoe"] = true
-			if fx_copy.has("freeze"):
-				eff["stun"] = float(fx_copy["freeze"])  # glacial comet
-			hit_enemy(e, 3.5 * float(fx_copy.get("dmg_mult", 1.0)) * scale, eff)
-		if on_land.is_valid():
-			on_land.call()
-	)
-
-
-func _shadow_dash(f := 1.0) -> void:
-	# Excess cdr the dash's cd floor "eats" is redirected here — into the
-	# dash-through HIT (never the surge) and a slightly snappier animation,
-	# so an over-hasted assassin's spare cdr is never wasted (round 46).
-	var eaten := _dash_cdr_conversion()
-	melee_swing = 0.16 * (1.0 - minf(0.10, eaten * Balance.DASH_CDR_TO_ANIM))
-	melee_style = "stab"
-	melee_dir = facing
-	# NO i-frame (round 43): a short-cd dash with immunity was too
-	# abusable once the refund made it semi-spammable. The dodge is the
-	# MOVEMENT itself; only the ult's all-in commit grants immunity.
-	game.sfx("stab")
-	var start := global_position
-	# stab_rider passes the talent scale only — the depth-tiered damage
-	# mult (near/far) is applied per victim inside _dash_strike. The eaten-cdr
-	# bonus rides the HIT mult only, leaving the surge rider (stab_rider = f) clean.
-	var dash_mult := 1.2 * f * (1.0 + eaten * Balance.DASH_CDR_TO_DMG)
-	var kills := _dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), dash_mult, {"stagger": 0.4}, f, 0.0)
-	if s_passive() == "mirrorstep":
-		_mirrorstep_guard(start)
-	if _tfx.get("trail_mist", 0):
-		# Poison: the dash line blooms into a toxic wake.
-		_mist((start + global_position) / 2.0, 110.0, 0.3, _tcolor, 2.5)
-	if kills > 0 and _tfx.has("kill_refund"):
-		# Shadow: a kill refunds most of the cooldown — but still floored, so
-		# even room-chaining never drops into sub-second strobe territory.
-		cds["a2"] = maxf(Balance.DASH_CONNECT_FLOOR,
-			cds["a2"] * (1.0 - float(_tfx["kill_refund"])))
-		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
-
-
-## Excess cdr past Shadow Dash's cd floor isn't wasted — this returns the
-## seconds of cooldown the floor "eats" on a connecting dash, which feed the
-## dash-HIT damage and a snappier animation (round 46). Assassin-only.
-func _dash_cdr_conversion() -> float:
-	var base_cd: float = Classes.ability(cls, "a2")["cd"]
-	var whiff := maxf(Balance.DASH_WHIFF_FLOOR, base_cd * (1.0 - cdr))
-	var refund: float = Balance.DASH_REFUND + dash_refund
-	var unfloored := whiff * (1.0 - refund)
-	return maxf(0.0, Balance.DASH_CONNECT_FLOOR - unfloored)
-
-
-## Mirrorstep (assassin S weapon): a dash through fire turns aside nearby
-## hostile projectiles — lashing their shooters back — and opens a brief
-## window of reduced AoE damage. Offense-dodge for the storm you can't outrun;
-## it rewards READING the volley and dashing INTO it, not free immunity.
-func _mirrorstep_guard(start: Vector2) -> void:
-	dash_guard_time = 0.25  # brief AoE damage-reduction while the dash reads
-	var mid := (start + global_position) / 2.0
-	var reach := start.distance_to(global_position) / 2.0 + 150.0
-	for node in get_tree().get_nodes_in_group("projectiles"):
-		var p := node as Projectile
-		if p == null or p.friendly or mid.distance_to(p.global_position) > reach:
-			continue
-		var shooter := p.source_enemy as Enemy
-		if is_instance_valid(shooter) and not shooter.dying:
-			game.burst(shooter.global_position, Color(0.7, 0.5, 1.0), 6)
-			hit_enemy(shooter, 0.8, {"aoe": true})
-		game.burst(p.global_position, Color(0.7, 0.5, 1.0), 5)
-		p.queue_free()
-
-
-func _fan_of_knives(f := 1.0) -> void:
-	game.sfx("knife", 1.55)  # short and SHARP — a dart leaving fingers
-	var dir := aim_dir()
-	_muzzle(dir, _tcolor if _themed else Color(0.8, 0.85, 1.0))
-	# The range damage is EARNED in close (round 37): thin chip on its
-	# own, but the fan bites double while the stab surge runs.
-	var surge_amp: float = Balance.KNIFE_SURGE_MULT if stab_ls_time > 0.0 else 1.0
-	if _tfx.get("bloom", 0):
-		# Poison: ONE venom blade that detonates into a toxin cloud
-		# (chip-tuned: knives spam at stab cadence since round 25).
-		var p := _proj(dir, Balance.KNIFE_BLOOM_MULT * surge_amp * f, "dart", 660.0)
-		p.spin = false
-		p.life = 0.45
-		p.scale = Vector2(1.5, 1.5)
-		p.fx["bloom_mist"] = 1
-		p.fx["bloom_color"] = _tcolor
-		return
-	var count := int(_tfx.get("knives", 3))
-	var step := float(_tfx.get("spread", 0.13))
-	for i in count:
-		var spread := (float(i) - (count - 1) / 2.0) * step
-		var p := _proj(dir.rotated(spread), Balance.KNIFE_MULT * surge_amp * f, "dart", 760.0)
-		p.spin = false
-		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
-
-
 ## An expanding cloud that ticks poison on everything inside — the mist
 ## primitive behind Venom Bloom, Toxic Wake and the archer's toxin cloud.
 ## Not a flat glow: a ROILING mass of drifting blobs, rising toxic motes,
@@ -1016,124 +590,3 @@ func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.
 	var fade := root.create_tween()
 	fade.tween_property(root, "modulate:a", 0.0, 0.6)
 	fade.tween_callback(root.queue_free)
-
-
-func _death_mark() -> void:
-	var target := auto_aim()
-	if target == null:
-		cds["ult"] = 1.0
-		return
-	# EXECUTION (round 34, player-designed from the LoL reference): the
-	# world darkens and the X mark is SET — the prey takes +50% damage
-	# for 5s and wears a floating X. Two living shadows of the assassin
-	# converge THROUGH it in an X, slashing, then the assassin himself
-	# appears BEHIND it and drives the killing stab home.
-	_ult_sfx()
-	game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.8)
-	game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
-	# Untouchable through the execution (round 18): longer than Shadow
-	# Dash's 0.5s — commit to the kill, not to the chip damage.
-	hurt_cd = maxf(hurt_cd, 0.8)
-	target.vuln_time = 5.0
-	_stun_or_concuss(target, 0.6)
-	if _tfx.has("mark_dot"):
-		# Poison: the mark itself rots the target (and stacks toxin).
-		target.apply_toxin(_dot_dps(target, current_atk() * float(_tfx["mark_dot"])), 5.0, Color(0.5, 1.2, 0.5))
-	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK", Color(1, 0.25, 0.3))
-	_mark_overhead_x(target)
-	_death_mark_execution(target, float(_tfx.get("execute", 0.0)))
-
-
-## The floating X over a marked target's head: two crossed blade
-## slivers riding the enemy (freed with it) for the mark's 5s window.
-func _mark_overhead_x(target: Enemy) -> void:
-	var x_mark := Node2D.new()
-	x_mark.position = Vector2(0, -56)
-	x_mark.z_index = 30
-	for ang in [0.7, -0.7]:
-		var stroke := Sprite2D.new()
-		stroke.texture = Art.tex("slashline")
-		stroke.modulate = Color(1.0, 0.2, 0.3, 0.95)
-		stroke.rotation = ang
-		stroke.scale = Vector2(0.4, 0.5)
-		x_mark.add_child(stroke)
-	target.add_child(x_mark)
-	var tw := x_mark.create_tween().set_loops(5)
-	tw.tween_property(x_mark, "position:y", -62.0, 0.5)
-	tw.tween_property(x_mark, "position:y", -56.0, 0.5)
-	await get_tree().create_timer(5.0).timeout
-	if is_instance_valid(x_mark):
-		x_mark.queue_free()
-
-
-## A living-shadow copy of the assassin dashing along a line.
-func _shadow_ghost(from: Vector2, to: Vector2) -> void:
-	if sprite == null:
-		return
-	var ghost := Sprite2D.new()
-	ghost.texture = sprite.texture
-	ghost.flip_h = to.x < from.x
-	ghost.scale = sprite.scale
-	ghost.global_position = from + sprite.position
-	ghost.modulate = Color(0.3, 0.12, 0.4, 0.9)  # a shadow, not a man
-	ghost.z_index = 6
-	game.add_child(ghost)
-	var tw := ghost.create_tween()
-	tw.tween_property(ghost, "global_position", to + sprite.position, 0.14) \
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(ghost, "modulate:a", 0.0, 0.12)
-	tw.tween_callback(ghost.queue_free)
-
-
-## One execution slash across a point: the stab's slashline, red
-## stroke over a white-hot core.
-func _execution_slash(pos: Vector2, ang: float) -> void:
-	for layer in 2:
-		var rip := Sprite2D.new()
-		rip.texture = Art.tex("slashline")
-		rip.modulate = Color(1.0, 0.25, 0.35, 1.0) if layer == 0 else Color(1, 1, 1, 1.0)
-		rip.global_position = pos
-		rip.rotation = ang
-		rip.scale = Vector2(2.0, 0.9) if layer == 0 else Vector2(1.7, 0.45)
-		rip.z_index = 8 + layer
-		game.add_child(rip)
-		var rt := rip.create_tween()
-		rt.tween_interval(0.1 if layer == 0 else 0.08)
-		rt.tween_property(rip, "modulate:a", 0.0, 0.12)
-		rt.tween_callback(rip.queue_free)
-
-
-## The execution itself: two shadows converge through the prey in an
-## X (a slash and a 0.7x true hit each), then the assassin blinks
-## BEHIND it and lands the killing stab (1.3x true, via the real stab
-## arc). Shadow theme: a survivor under 30% is finished on the spot.
-func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
-	for diag in [Vector2(1, 1).normalized(), Vector2(-1, 1).normalized()]:
-		if not is_instance_valid(target) or target.dying:
-			return
-		var tpos: Vector2 = target.global_position
-		_shadow_ghost(tpos - diag * 150.0, tpos + diag * 150.0)
-		_execution_slash(tpos, diag.angle())
-		game.sfx("stab")
-		game.shake(3.5)
-		game.burst(tpos, Color(1.0, 0.2, 0.3), 10)
-		hit_enemy(target, 0.7, {"type": "true"})
-		await get_tree().create_timer(0.16).timeout
-	if not is_instance_valid(target) or target.dying:
-		return
-	# The real blade: appear on the FAR side of the prey and stab back
-	# through it — the full stab visual, not a bolt-on flash.
-	var from := global_position
-	var behind := (target.global_position - from).normalized()
-	global_position = game.clamp_to_zone(
-		target.global_position + behind * 46.0, target.global_position)
-	_afterimages(from, global_position, Color(0.6, 0.25, 0.6), 3)
-	game.shake(6.0)
-	_melee_arc(1.3, 118.0, "slash", {"type": "true"}, "stab", "stab")
-	if execute > 0.0 and is_instance_valid(target) and not target.dying \
-			and target.hp < target.max_hp * 0.3:
-		game.spawn_text(target.global_position + Vector2(0, -70), "EXECUTED", Color(1, 0.15, 0.25))
-		game.burst(target.global_position, Color(0.6, 0.2, 0.6), 16)
-		hit_enemy(target, execute, {"type": "true"})
-
-

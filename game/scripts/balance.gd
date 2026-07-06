@@ -93,6 +93,22 @@ const DASH_CONNECT_FLOOR := 1.0
 const DASH_CDR_TO_DMG := 0.75    # per second of floor-eaten cd -> +dash-HIT dmg
 const DASH_CDR_TO_ANIM := 0.25   # per second eaten -> anim speedup (capped at 10%)
 
+# ------------------------------------------------------- paladin stances ---
+# Round 48: the paladin is a STANCE knight — no true ult. Conviction (the
+# ult slot, 8s cd) swaps Holy <-> Retribution: sustain and damage become
+# mutually exclusive IN TIME, so reading the fight (when to be which) is the
+# skill. Braindead pilots camp Holy (safe, slow); good ones camp Retribution
+# and flick out under pressure — the reward curve lives in stance uptime.
+const PALADIN_HOLY_DMG := 0.80      # Holy stance: damage dealt multiplier
+const PALADIN_HOLY_MEND := 0.01     # Holy stance: max-HP fraction mended per hit landed
+const PALADIN_RETRI_DMG := 1.25     # Retribution stance: damage dealt multiplier
+const PALADIN_SWAP_HEAL := 0.10     # entering Holy: blessing burst (max-HP fraction)
+const PALADIN_SWAP_CHAINS := 0.5    # entering Retribution: chains cast at this scale
+# Judgment's leap is a RIDER with its own cooldown (round 48): the hammer
+# swings at 0.5s but the leap (and its landing i-frame) only arms this often —
+# kills the perma-iframe exploit (dash out, leap back, repeat) at the root.
+const JUDGMENT_LEAP_CD := 5.0
+
 # ------------------------------------------------ warrior bulwark charge ---
 # Round 44: the bulwark's sustain is its heal-on-hit, but Charge's dead-
 # center ram (55px lane) whiffed the mend on a near pass. Like the
@@ -175,7 +191,58 @@ const ELITE_ROOM_LEVEL_BONUS := 1        # above the host area's toughest spawn
 const ELITE_COMBAT_AMBUSH_CHANCE := 0.18 # combat room promotes one pack member
 # Death loot (on top of a guaranteed gem + guaranteed chest).
 const ELITE_GOLD_CHEST_CHANCE := 0.45    # else the chest is silver
-const ELITE_GEM_LV2_CHANCE := 0.35       # the guaranteed gem rolls Lv2
+const ELITE_GEM_LV2_CHANCE := 0.35       # the guaranteed gem rolls Lv2 (floor; see gem_lv2_chance)
+
+# River wading (terrain mechanic, Graphics & Ambience track): speed
+# multiplier in the water for player AND enemies; the bridge is dry.
+# Gentle on purpose — a routing choice, not a punishment.
+const RIVER_WADE_MULT := 0.72
+
+# Gem QUALITY chases the frontier (reward calibration, 2026-07-06): the
+# guaranteed-gem Lv2 chance climbs with the CONTENT's level. Gem count
+# per run stays flat; quality is why you farm at your level instead of
+# clubbing Chapter 1 — the no-downscaling rule makes old content safe,
+# so the premium has to live in the payout.
+const GEM_LV2_CAP := 0.65
+const GEM_LV2_RAMP_START := 10           # at/below this level: the flat floor
+
+static func gem_lv2_chance(level: int) -> float:
+	return clampf(ELITE_GEM_LV2_CHANCE + 0.01 * float(level - GEM_LV2_RAMP_START),
+		ELITE_GEM_LV2_CHANCE, GEM_LV2_CAP)
+
+# Act loot ceilings (reward calibration, 2026-07-06): Act 1 covers F->B
+# (ch1's authored C cap stays lower), Act 2 introduces A, Act 3 owns S.
+# Applied centrally in game.loot_cap() as a clamp over the chapter's
+# authored cap — content modules never need to know the act rule.
+const ACT_LOOT_CAP := {1: "B", 2: "A", 3: "S"}
+
+# Anti-degeneracy stat caps (player-designed, 2026-07-06): the four
+# SPECIAL stats — Haste, Lifesteal, Combo, Greed — are GEM-ONLY (never
+# on gear; gems are the deliberate gateway to off-build stats), each
+# item can socket at most ONE special gem, and the totals are hard-
+# capped in recalc. Late game may lift the caps a notch by level
+# (e.g. L80) — deliberately NOT built yet.
+const CAP_CDR := 0.40        # was an implicit 0.45 (dash floor 1.49s -> 1.62s)
+const CAP_LIFESTEAL := 0.35
+const CAP_COMBO := 0.30
+const SPECIAL_GEM_STATS := ["cdr", "lifesteal", "combo", "greed"]
+
+# Boss gem-expectation ramp (player-approved, 2026-07-06): the TIERLIST
+# benchmark was gemless, but real players arrive with sockets filled —
+# boss hp/dmg gain a small compounding premium per level above the ramp
+# start (where B-gear sockets + Lv3 gems realistically come online), the
+# same "budget for what the player actually has" move as round 45's
+# gear-inclusive dps. Applied inside enemy_stats_at: codex stays honest.
+const BOSS_GEM_RAMP_START := 32
+const BOSS_GEM_HP_RAMP := 0.012    # +9.6% at L40, grows through Act 2
+const BOSS_GEM_DMG_RAMP := 0.006   # half-size: skill still wins parity
+
+# First-clear premium (reward calibration, 2026-07-06): conquering a
+# chapter the FIRST time pays a legible beat on top of XP + boss gems —
+# gold in hand plus a mailed spoils package (one act-cap gear roll + a
+# Lv2 gem). Roughly 15-25% of the run's own gold: felt, never economy-
+# breaking, and never worth chasing over the farm loop itself.
+const FIRST_CLEAR_GOLD := 150            # x daily_gold_mult(final boss level)
 const ELITE_STONE_CHANCE := 0.30         # Stone of Unlearning
 const ELITE_TOME_CHANCE := 0.15          # Palimpsest of the Path (skill tree reset)
 const ELITE_BAG_CHANCE := 0.18           # rolled only when neither reset dropped
@@ -273,3 +340,82 @@ const GAMBLE_COST := {"wood": 60, "silver": 150, "gold": 400}
 # grid cell (corridors connect the doors to the cell edges).
 const SMALL_ROOM_TYPES := ["social", "dead_end", "resonance", "merchant"]
 const SMALL_ROOM_INSET := Vector2(420.0, 246.0)
+
+# -------------------------------------------------------- chapter results ---
+# The results card on every chapter clear (retention roadmap #1): run time,
+# deaths, elites, secrets, exploration -> one letter. TIME is deliberately
+# NOT graded — it is the personal-best race instead; grading speed would
+# punish the exploration the zone graph exists to reward.
+# Score: deaths (clean play) + exploration + thoroughness (elites+secrets
+# vs the seeded expectation), 0..100 -> letter by these floors.
+const GRADE_FLOORS := {"S": 90, "A": 72, "B": 50, "C": 30}   # below C = "D"
+const GRADE_DEATH_PTS := [40, 25, 10]  # 0 / 1 / 2 deaths (3+ = 0 of 40)
+const GRADE_EXPLORE_PTS := 30.0        # x visited/zone_count
+const GRADE_HUNT_PTS := 30.0           # x (elites+secrets)/expected, capped
+const GRADE_HUNT_EXPECT := 0.2         # expected finds ≈ 20% of room count
+
+const GRADE_ORDER := ["D", "C", "B", "A", "S"]
+
+## Higher = better; unknown/empty = -1 (any real grade beats it).
+static func grade_rank(g: String) -> int:
+	return GRADE_ORDER.find(g)
+
+
+## The chapter grade letter from a run's stats (see the section note).
+static func chapter_grade(deaths: int, explored: float, hunt: float) -> String:
+	var pts := 0.0
+	if deaths < GRADE_DEATH_PTS.size():
+		pts += float(GRADE_DEATH_PTS[deaths])
+	pts += GRADE_EXPLORE_PTS * clampf(explored, 0.0, 1.0)
+	pts += GRADE_HUNT_PTS * clampf(hunt, 0.0, 1.0)
+	for g in ["S", "A", "B", "C"]:
+		if pts >= float(GRADE_FLOORS[g]):
+			return g
+	return "D"
+
+# --------------------------------------------------------- weekly challenge ---
+# One fixed seed + one modifier per trusted-clock week, the same for every
+# player (retention roadmap #2 — becomes a leaderboard when multiplayer
+# lands). The run is a chapter replay on the week's seed; finishing it once
+# a week pays gold (level-scaled) + gems. Modifier fx keys are consulted at
+# spawn/drop sites via game.weekly_fx().
+const WEEKLY_MODS := [
+	{"id": "iron",   "name": "Ironhide",     "desc": "Monsters have +30% health.",                    "hp": 1.3},
+	{"id": "cruel",  "name": "Cruelty",      "desc": "Monsters hit +20% harder.",                     "dmg": 1.2},
+	{"id": "swift",  "name": "Swiftfoot",    "desc": "Monsters move +15% faster.",                    "speed": 1.15},
+	{"id": "gilded", "name": "Gilded Blood", "desc": "Monsters drop +50% gold, but hit +10% harder.", "gold": 1.5, "dmg": 1.1},
+	{"id": "legion", "name": "Elite Legion", "desc": "Elite ambushes are twice as common.",           "elite": 2.0},
+]
+const WEEKLY_REWARD_GOLD := 400   # scaled by daily_gold_mult(level)
+const WEEKLY_REWARD_GEMS := 2
+const WEEKLY_REWARD_GEM_LVL := 2
+
+# ------------------------------------------------------------- risk events ---
+# Elective risk (retention roadmap #4): temptations the player can walk
+# past. Seeded per character like elites — a replay meets different offers.
+const CURSED_ROOM_CHANCE := 0.15   # combat rooms that hold a cursed chest
+const CURSE_DMG_MULT := 1.3        # cursed pack hits harder...
+const CURSE_SPEED_MULT := 1.15     # ...and moves faster, until the purge
+const SHRINE_ROOM_CHANCE := 0.22   # quiet rooms that hold a gamble shrine
+const SHRINE_COST_BASE := 45       # gold, scaled by daily_gold_mult(level)
+const SHRINE_BLESS_CHANCE := 0.6   # else the shrine drinks deeper
+
+# Hidden caches (exploration premium, 2026-07-06): some dead ends bury a
+# chest that only glints awake when the player wanders NEAR — walking
+# the room nobody made you walk is what finds it. Seeded per character;
+# counts as a secret on the results card.
+const HIDDEN_CACHE_CHANCE := 0.25
+const HIDDEN_CACHE_GOLD_TIER := 0.3   # else silver
+
+# ------------------------------------------------------------ loot fanfare ---
+# Rarity is audio-visual (retention roadmap #3): every gear drop plays a
+# per-grade chime; B and above also raise a grade-colored light beam that
+# grows with rarity. S adds a screen flash — the jackpot reads across the room.
+const LOOT_BEAM_MIN_GRADE := "B"   # beams start here; below is chime-only
+const LOOT_BEAM_TIME := 1.6        # seconds the beam holds before fading
+
+# -------------------------------------------------------- codex completion ---
+# Kill-count lore (retention roadmap #5): slaying enough of a monster kind
+# unearths its codex lore entry; unearthed entries feed the Lorekeeper title.
+const LORE_KILLS_MOB := 25         # kills to unearth a regular monster's lore
+const LORE_KILLS_BOSS := 3         # bosses die once a run — 3 clears is devotion

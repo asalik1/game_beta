@@ -481,6 +481,17 @@ static func enemy_stats_at(kind: String, level: int) -> Dictionary:
 		dmg_growth = Balance.BOSS_DMG_GROWTH
 		dmg_flat *= Balance.BOSS_DMG_MULT
 	var dmg_m := pow(1.0 + dmg_growth, d) * dmg_flat
+	# Gem-expectation ramp (2026-07-06): the TIERLIST benchmark was
+	# gemless, but real players arrive socketed — UPSCALED bosses gain a
+	# small premium per level above where gems come online (round 45's
+	# "budget what the player actually has", extended). Anchor stats stay
+	# exactly as authored: high-anchor bosses get their gem allowance at
+	# authoring time, not from a hidden multiplier.
+	if is_boss:
+		var gl := float(lvl - maxi(Balance.BOSS_GEM_RAMP_START, int(base["level"])))
+		if gl > 0.0:
+			hp_m *= 1.0 + Balance.BOSS_GEM_HP_RAMP * gl
+			dmg_m *= 1.0 + Balance.BOSS_GEM_DMG_RAMP * gl
 	var reward_m := 1.0 + d * Balance.REWARD_PER_LEVEL
 	var out := {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
 		"xp": int(ceil(base["xp"] * reward_m)),
@@ -931,6 +942,14 @@ static func next_chapter(id: String) -> String:
 	var ids: Array = CHAPTER_LIST.keys()
 	var i := ids.find(id)
 	return String(ids[i + 1]) if i >= 0 and i + 1 < ids.size() else ""
+
+
+## Which ACT a chapter belongs to (~7 chapters per act — the level
+## thirds; DESIGN.md "Acts vs chapters"). Gates the act loot ceilings.
+static func act_of(id: String) -> int:
+	load_content()
+	var i: int = CHAPTER_LIST.keys().find(id)
+	return 1 + maxi(i, 0) / 7
 
 
 # --------------------------------------------------------------- dialogue ---

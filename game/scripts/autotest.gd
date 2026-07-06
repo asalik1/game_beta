@@ -726,6 +726,10 @@ func _run_systems() -> void:
 	# 3d15. Equip / unequip: slot empties back to the bag, bag-full guard.
 	_test_equip_unequip()
 
+	# 3d16. Retention pass: chapter grades + PBs, weekly challenge fx,
+	# kill-count lore + titles, risk-event curse, loot fanfare bank.
+	await _test_retention()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -1762,6 +1766,208 @@ func _test_equip_unequip() -> void:
 	p.bag = keep_bag
 	p.recalc()
 	print("ok: equip / unequip (slot empties to bag, bag-full guard)")
+
+
+func _test_retention() -> void:
+	var g := game
+	# Snapshot everything this section touches (autotest etiquette).
+	var keep_run: Array = [g.run_time, g.run_deaths, g.run_elites, g.run_secrets]
+	var keep_weekly: Array = [g.weekly_active, g.weekly_week]
+	var keep_kc: Dictionary = g.kill_counts.duplicate()
+	var keep_title: String = g.player_title
+	var keep_ach: Dictionary = g.achievements.duplicate()
+
+	# --- chapter grade: clean+thorough = S; sloppy sprint grades lower ---
+	if Balance.chapter_grade(0, 1.0, 1.0) != "S":
+		return _fail("perfect run did not grade S")
+	if Balance.grade_rank("S") <= Balance.grade_rank(Balance.chapter_grade(3, 0.4, 0.0)):
+		return _fail("grades do not order by play quality")
+
+	# --- run stats -> results block -> account PB (in-memory when no_saves) ---
+	g.run_time = 65.0
+	g.run_deaths = 1
+	g.run_elites = 2
+	g.run_secrets = 1
+	var res: Dictionary = g.run_results()
+	if int(res["deaths"]) != 1 or String(res["grade"]) == "":
+		return _fail("run_results dropped the counters")
+	g.record_chapter_result(res)
+	g.run_time = 42.0
+	var pb2: Dictionary = g.record_chapter_result(g.run_results())
+	if not bool(pb2["new_time"]):
+		return _fail("a faster clear did not register as a new best")
+	if absf(float(g.chapter_pb(g.chapter_id, g.player.cls).get("time", 0.0)) - 42.0) > 0.01:
+		return _fail("chapter PB did not keep the fastest time")
+
+	# --- weekly challenge: deterministic + fx only while live ---
+	if g.weekly_seed() != g.weekly_seed():
+		return _fail("weekly seed not deterministic")
+	g.weekly_active = false
+	if absf(g.weekly_fx("dmg") - 1.0) > 0.001:
+		return _fail("weekly fx leaked outside a challenge run")
+	g.weekly_active = true
+	g.weekly_week = g._week_index()
+	var mod: Dictionary = g.weekly_mod()
+	for key in ["hp", "dmg", "speed", "gold", "elite"]:
+		if mod.has(key) and absf(g.weekly_fx(key) - float(mod[key])) > 0.001:
+			return _fail("weekly fx does not serve the live modifier")
+	# A spawn rides the live modifier (compare against a clean spawn).
+	var probe_on := _dummy(Vector2(150, 0))
+	g.weekly_active = false
+	var probe_off := _dummy(Vector2(180, 0))
+	var want_hp: float = float(mod.get("hp", 1.0))
+	if absf(probe_on.max_hp / probe_off.max_hp - want_hp) > 0.01:
+		return _fail("weekly modifier did not ride the spawn (hp x%.2f expected)" % want_hp)
+
+	# --- risk events: the curse buffs the pack once, never twice ---
+	var cursed := _dummy(Vector2(210, 0))
+	cursed.zone_idx = 0
+	var dmg_before: float = cursed.dmg
+	g._apply_room_curse(0)
+	if absf(cursed.dmg - dmg_before * Balance.CURSE_DMG_MULT) > 0.01:
+		return _fail("room curse did not buff the pack's damage")
+	g._apply_room_curse(0)
+	if absf(cursed.dmg - dmg_before * Balance.CURSE_DMG_MULT) > 0.01:
+		return _fail("re-applying the curse double-buffed")
+	cursed.zone_idx = -1  # hand the dummy back to _clear_combat
+	_clear_combat()
+	await _frames(2)
+
+	# --- kill counts -> lore -> titles ---
+	g.kill_counts = {}
+	for i in Lore.threshold("wolf"):
+		g.note_kill("wolf")
+	if g.lore_unearthed() != 1:
+		return _fail("the kill threshold did not unearth lore")
+	if not g.title_available("wanderer"):
+		return _fail("the free title is locked")
+	if g.title_available("reaper"):
+		return _fail("Reaper unlocked early")
+	g.kill_counts["wolf"] = 500
+	if not g.title_available("reaper"):
+		return _fail("Reaper locked at 500 kills")
+	g.achievements = {"flawless": true, "first_boss": true}
+	if g.achievement_points() != 30:
+		return _fail("achievement points miscounted (20 + default 10 expected)")
+	if not g.title_available("untouchable"):
+		return _fail("feat title locked despite the feat")
+	g.player_title = "wanderer"
+	if not Achievements.TITLES.has(g.player_title):
+		return _fail("worn title missing from the registry")
+
+	# --- loot fanfare: every grade has a chime; the beam call survives ---
+	for grade in Items.GRADES:
+		if not g.sounds.has(Items.loot_sound(grade)):
+			return _fail("no loot chime for grade %s" % grade)
+	g.loot_fanfare("S", g.player.global_position)  # beam + flash, no crash
+
+	# --- reward calibration: gem quality chases the frontier ---
+	if absf(Balance.gem_lv2_chance(5) - Balance.ELITE_GEM_LV2_CHANCE) > 0.001:
+		return _fail("gem quality floor moved")
+	if Balance.gem_lv2_chance(30) <= Balance.gem_lv2_chance(15):
+		return _fail("gem quality does not climb with level")
+	if Balance.gem_lv2_chance(99) > Balance.GEM_LV2_CAP + 0.001:
+		return _fail("gem quality blew past its cap")
+
+	# --- first-clear beat: gold in hand + a mailed spoils package ---
+	var mail_before: int = g.mailbox.size()
+	var gold_before2: int = g.player.gold
+	g._first_clear_reward(12)
+	if g.player.gold <= gold_before2:
+		return _fail("first clear paid no gold")
+	if g.mailbox.size() != mail_before + 1 or g.mailbox[-1]["items"].size() != 2:
+		return _fail("first clear did not mail the spoils (item + gem)")
+	g.player.gold = gold_before2
+	g.mailbox.resize(mail_before)
+
+	# --- gear stat doctrine (2026-07-06): special stats are gem-only ---
+	var grng := RandomNumberGenerator.new()
+	grng.seed = 99
+	for i in 40:
+		# F..A rolls (S legendaries keep their AUTHORED specials — the
+		# sanctioned exception; the recalc caps guard the ceiling).
+		var it2 := Items.roll_item_of(Items.SLOTS[i % 4], Items.GRADES[i % 6], grng,
+			["warrior", "mage", "archer"][i % 3])
+		for stat in Balance.SPECIAL_GEM_STATS:
+			if it2["subs"].has(stat) or it2["main"].has(stat):
+				return _fail("rolled gear carried special stat %s" % stat)
+	if not Items.SLOT_MAIN["charm"].has("crit"):
+		return _fail("charm main did not move to crit")
+
+	# --- act loot ceilings: Act 1 clamps to B over authored caps ---
+	if Story.act_of("ch1") != 1 or Story.act_of("ch7") != 1:
+		return _fail("act_of misplaces Act 1 chapters")
+	var keep_ch: String = g.chapter_id
+	g.chapter_id = "ch3"   # authored cap A -> act clamp B
+	var clamped: String = g.loot_cap()
+	g.chapter_id = keep_ch
+	if clamped != "B":
+		return _fail("Act 1 loot cap did not clamp to B (got %s)" % clamped)
+	if g.chapter_id == "ch1" and g.loot_cap() != "C":
+		return _fail("ch1 authored C cap did not survive the clamp")
+
+	# --- anti-degeneracy caps: no source stacks past them ---
+	var keep_eq2: Dictionary = game.player.equipment
+	game.player.equipment = {"charm": {"slot": "charm", "grade": "S", "name": "test",
+		"noun": "Charm", "main": {}, "plus": 0, "gem_slots": 0, "gems": [],
+		"subs": {"cdr": 0.9, "lifesteal": 0.9, "combo": 0.9}}}
+	game.player.recalc()
+	if game.player.cdr > Balance.CAP_CDR + 0.001 \
+			or game.player.lifesteal > Balance.CAP_LIFESTEAL + 0.001 \
+			or game.player.combo > Balance.CAP_COMBO + 0.001:
+		return _fail("a special stat stacked past its cap")
+	game.player.equipment = keep_eq2
+	game.player.recalc()
+
+	# --- one special gem per item ---
+	var host := {"slot": "weapon", "grade": "S", "name": "t", "noun": "Blade",
+		"main": {}, "subs": {}, "plus": 0, "gem_slots": 3, "gems": []}
+	var g_ls := Items.make_gem("lifesteal", 1)
+	var g_cb := Items.make_gem("combo", 1)
+	var g_rb := Items.make_gem("atk_pct", 1)
+	game.player.gem_bag.append_array([g_ls, g_cb, g_rb])
+	if not game.player.embed_gem_into(host, g_ls):
+		return _fail("first special gem was refused")
+	if game.player.embed_gem_into(host, g_cb):
+		return _fail("second special gem was accepted (one per item!)")
+	if not game.player.embed_gem_into(host, g_rb):
+		return _fail("a normal gem was refused by the special-gem rule")
+	game.player.gem_bag.erase(g_cb)
+
+	# --- boss gem-expectation ramp: bosses out-grow pure growth past L32 ---
+	var nw_g: float = float(Story.ALL_ENEMIES["nullwarden"]["hp_g"]) * Balance.GROWTH_SCALE
+	var hi_ratio: float = float(Story.enemy_stats_at("nullwarden", 50)["hp"]) \
+		/ float(Story.enemy_stats_at("nullwarden", 49)["hp"])
+	if hi_ratio <= 1.0 + nw_g:
+		return _fail("boss gem ramp missing above L%d" % Balance.BOSS_GEM_RAMP_START)
+	var low_ratio: float = float(Story.enemy_stats_at("nullwarden", 30)["hp"]) \
+		/ float(Story.enemy_stats_at("nullwarden", 29)["hp"])
+	if absf(low_ratio - (1.0 + nw_g)) > 0.001:
+		return _fail("boss gem ramp leaked below its start level")
+
+	# --- hidden caches: buried chest stays invisible, reveals near ---
+	var hc := Chest.drop(g, "silver", g.player.global_position + Vector2(400, 0))
+	hc.bury()
+	if hc.visible or not hc.buried:
+		return _fail("buried chest is not hidden")
+	hc.global_position = g.player.global_position + Vector2(60, 0)
+	await _frames(3)
+	if hc.buried or not hc.visible:
+		return _fail("buried chest did not glint awake near the player")
+	hc.queue_free()
+	await _frames(2)
+
+	# Restore.
+	g.run_time = keep_run[0]
+	g.run_deaths = keep_run[1]
+	g.run_elites = keep_run[2]
+	g.run_secrets = keep_run[3]
+	g.weekly_active = keep_weekly[0]
+	g.weekly_week = keep_weekly[1]
+	g.kill_counts = keep_kc
+	g.player_title = keep_title
+	g.achievements = keep_ach
+	print("ok: retention pass (grades + PBs, weekly fx, lore titles, curse, fanfare)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

@@ -4,6 +4,7 @@ class_name Chest extends Area2D
 
 var tier := "wood"
 var opened := false
+var buried := false        # buried: invisible until the player comes near
 var game: Game
 var on_open := Callable()  # optional hook (dead-end caches set a flag)
 
@@ -43,8 +44,33 @@ static func drop(game_node: Node2D, chest_tier: String, pos: Vector2) -> Chest:
 	return c
 
 
+## Bury the chest (hidden caches, exploration premium): invisible until
+## the player wanders close, then it glints awake — the reward for
+## walking the dead end nobody made you walk.
+func bury() -> void:
+	buried = true
+	visible = false
+	set_physics_process(true)
+
+
+func _physics_process(_delta: float) -> void:
+	if not buried:
+		set_physics_process(false)
+		return
+	var p: Player = game.player
+	if p != null and not p.dead \
+			and global_position.distance_to(p.global_position) < 150.0:
+		buried = false
+		visible = true
+		set_physics_process(false)
+		game.sfx("ward", 0.85, 0.0, -6.0)
+		game.burst(global_position, Color(1.0, 0.95, 0.6), 12)
+		game.spawn_text(global_position + Vector2(0, -46), "Something glints...",
+			Color(1.0, 0.95, 0.7))
+
+
 func _on_body_entered(body: Node) -> void:
-	if opened or not body is Player:
+	if opened or buried or not body is Player:
 		return
 	opened = true
 	game.sfx("chest")
@@ -56,6 +82,7 @@ func _on_body_entered(body: Node) -> void:
 	rng.randomize()
 	var item := Items.roll_item(tier, rng, body.cls, game.loot_cap())
 	game.give_loot({"kind": "item", "item": item}, global_position)
+	game.loot_fanfare(item["grade"], global_position)  # rarity chime + beam
 	var bonus_gold := rng.randi_range(3, 8) * (1 + ["wood", "silver", "gold"].find(tier))
 	body.gain_gold(bonus_gold)
 	game.hud.loot_banner(item, bonus_gold)

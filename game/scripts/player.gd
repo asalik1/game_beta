@@ -1,5 +1,5 @@
-class_name Player extends "res://scripts/player_kits.gd"
-## PLAYER, layer 4 of 4 — the ability dispatcher, survival (potion,
+class_name Player extends "res://scripts/player_kit_warlock.gd"
+## PLAYER, layer 9 of 9 — the ability dispatcher, survival (potion,
 ## damage intake, death) and the per-frame driver. See player_core.gd
 ## for the chain layout.
 
@@ -7,6 +7,10 @@ class_name Player extends "res://scripts/player_kits.gd"
 # ================================================================= per frame
 
 func _physics_process(delta: float) -> void:
+	if strip_frames > 1:
+		# Animated class art (Track C seam): idle pace, brisker on the move.
+		strip_t += delta * (2.0 if velocity.length() > 20.0 else 1.0)
+		sprite.frame = int(strip_t * strip_fps) % strip_frames
 	for key in cds:
 		cds[key] = maxf(0.0, cds[key] - delta)
 	potion_cd = maxf(0.0, potion_cd - delta)
@@ -31,6 +35,13 @@ func _physics_process(delta: float) -> void:
 	cast_haste_time = maxf(0.0, cast_haste_time - delta)
 	dash_guard_time = maxf(0.0, dash_guard_time - delta)
 	last_rites_cd = maxf(0.0, last_rites_cd - delta)
+	judgment_leap_cd = maxf(0.0, judgment_leap_cd - delta)
+	# Grit (warrior, round 48): the stacks live only while the grind does —
+	# go unhit for the window and they die. Kiting starves the juggernaut.
+	if grit_time > 0.0:
+		grit_time = maxf(0.0, grit_time - delta)
+		if grit_time <= 0.0:
+			grit_stacks = 0
 	if shield > 0.0:
 		shield = maxf(0.0, shield - max_hp * 0.05 * delta)  # Transfusion buffer fades
 	if nova_regen_time > 0.0:
@@ -52,6 +63,8 @@ func _physics_process(delta: float) -> void:
 	var regen_now := regen_pct
 	if sw_regen > 0.0 and since_hurt >= sw_delay:
 		regen_now += sw_regen
+	if grit_stacks > 0:
+		regen_now += grit_regen * grit_stacks  # Grit: the beating IS the mending
 	if regen_now > 0.0 and not dead and hp > 0.0:
 		hp = minf(max_hp, hp + max_hp * regen_now * delta)
 	anim_t += delta
@@ -177,7 +190,8 @@ func _physics_process(delta: float) -> void:
 	# crimson-red, Pact = crimson, guard = blue). Classes don't share these
 	# so the colors never collide in play.
 	if berserk_time > 0.0 or theme_guard_time > 0.0 or aegis_time > 0.0 \
-			or pact_time > 0.0 or dr_time > 0.0 or stab_ls_time > 0.0:
+			or pact_time > 0.0 or dr_time > 0.0 or stab_ls_time > 0.0 \
+			or (cls == "paladin" and paladin_mode == "retribution"):
 		aura.visible = true
 		var shimmer := 9.0
 		if berserk_time > 0.0:
@@ -191,8 +205,13 @@ func _physics_process(delta: float) -> void:
 			aura.modulate = Color(0.95, 0.25, 0.30, 0.5)  # blood surge
 		elif pact_time > 0.0 and theme_guard_time <= 0.0:
 			aura.modulate = Color(0.9, 0.15, 0.35, 0.55)
-		else:
+		elif theme_guard_time > 0.0:
 			aura.modulate = Color(0.4, 0.6, 1.0, 0.6)
+		else:
+			# Retribution stance: a held STATE, not a timer — it keeps its
+			# ember-orange tell until the paladin swaps back to Holy (the
+			# timed buffs above outrank it while they run).
+			aura.modulate = Color(1.0, 0.45, 0.22, 0.5)
 		var pulse := 2.2 + sin(anim_t * shimmer) * 0.25
 		aura.scale = Vector2(pulse, pulse)
 	else:
@@ -263,150 +282,15 @@ func use_ability(slot: String) -> void:
 		wp.tween_property(weapon_spr, "scale", Vector2(3.0, 3.0), 0.06)
 		wp.tween_property(weapon_spr, "scale", Vector2(2.4, 2.4), 0.10)
 
-	match [cls, slot]:
-		["warrior", "a1"]:
-			_melee_arc(1.0 * f, 96.0, "slash", {"stagger": 0.35, "knock": 330.0}, "swing", "sword")
-			if _tfx.get("quake", 0):
-				# Earth: a stone shockwave rolls down the lane.
-				var qdir := aim_dir(220.0)
-				var quake := Projectile.spawn(game, global_position + qdir * 26.0, qdir * 300.0, 0.0, true, "slash")
-				quake.hit_player_mult = 0.7 * f
-				quake.source_player = self
-				quake.fx = _tfx.duplicate()
-				quake.pierce = true
-				quake.life = 0.5
-				quake.modulate = Color(0.85, 0.65, 0.35)
-			if _tfx.get("wave2", 0):
-				# Fury: a second backhand swing follows.
-				var f2 := f
-				get_tree().create_timer(0.13).timeout.connect(func() -> void:
-					if not dead:
-						_melee_arc(0.6 * f2, 96.0, "slash", {"stagger": 0.2}, "swing", "sword"))
-			if s_passive() == "kingsblade":
-				var wave := Projectile.spawn(game, global_position + aim_dir(220.0) * 30.0, aim_dir(220.0) * 400.0, 0.0, true, "slash")
-				wave.hit_player_mult = 0.6 * f
-				wave.source_player = self
-				wave.fx = _tfx.duplicate()
-				wave.pierce = true
-				wave.life = 0.6
-		["warrior", "a2"]:
-			# Charge: ram through everything in your path, stunning it.
-			melee_swing = 0.16
-			game.sfx("slam")
-			# The ram parks you in the boss's face — a landing i-frame so the
-			# gap-close itself isn't punished (round 44).
-			_dash_strike(170.0 * float(_tfx.get("dash_mult", 1.0)), 1.3 * f,
-				{"stun": 1.3, "knock": 220.0}, 0.0, Balance.MELEE_DASH_IFRAME)
-			_ring_fx(global_position, _tcolor if _themed else Color(0.85, 0.85, 0.95), 80.0)
-			if _tfx.get("end_slam", 0):
-				# Earth: the charge ends in a ground-shattering slam.
-				game.shake(5.0)
-				game.sfx("slam", 0.8)
-				game.burst(global_position, _tcolor, 14)
-				_ring_fx(global_position, _tcolor, 130.0)
-				for e in _enemies_within(global_position, 120.0):
-					hit_enemy(e, 0.7 * f, {"stun": 1.0, "aoe": true})
-		["warrior", "a3"]: _whirlwind(f)
-		["warrior", "ult"]:
-			berserk_time = float(_tfx.get("berserk_dur", 8.0))
-			berserk_bonus = float(_tfx.get("berserk_dmg", 0.4))
-			if _tfx.has("berserk_heal"):
-				hp = minf(max_hp, hp + max_hp * float(_tfx["berserk_heal"]))
-			if _tfx.has("berserk_guard"):
-				theme_guard_time = berserk_time
-				theme_guard_amt = float(_tfx["berserk_guard"])
-			if _tfx.get("awaken_slam", 0):
-				# Earth: the roar itself is seismic.
-				for e in _enemies_within(global_position, 150.0):
-					hit_enemy(e, 0.8 * f, {"stun": 2.0, "aoe": true})
-			_ring_fx(global_position, _tcolor if _themed else Color(1.0, 0.3, 0.2),
-				150.0 if _tfx.get("awaken_slam", 0) else 110.0)
-			_ult_sfx()
-			game.shake(6.0)
-			game.hud.flash_screen(Color(1.0, 0.25, 0.15), 0.4, 0.4)
-			game.burst(global_position, Color(1.0, 0.3, 0.2), 20)
-			game.spawn_text(global_position + Vector2(0, -60), "BERSERK!", Color(1, 0.4, 0.3))
-		["archer", "a1"]: _shoot(aim_dir(), 0.85 * f)
-		["archer", "a2"]: _multishot(f)
-		["archer", "a3"]: _tumble()
-		["archer", "ult"]:
-			storm_time = 3.0
-			storm_fx = _tfx.duplicate()
-			_ult_sfx()
-			_ring_fx(global_position, _tcolor if _themed else Color(0.6, 1.0, 0.6), 190.0)
-			game.hud.flash_screen(Color(0.6, 1.0, 0.6), 0.3, 0.35)
-			game.spawn_text(global_position + Vector2(0, -60), "ARROW STORM!", Color(0.6, 1, 0.6))
-		["mage", "a1"]:
-			# Round 45: Firebolt +25% — the glass cannon earns its damage
-			# now that Blink no longer hands it a free negate (twin/splash
-			# themes scale off this base, lifting Wind's ST and Fire's AoE).
-			if _tfx.get("twin", 0):
-				# Wind: split the bolt.
-				_cast_bolt(aim_dir().rotated(0.09), 0.94 * f)
-				_cast_bolt(aim_dir().rotated(-0.09), 0.94 * f)
-			else:
-				_cast_bolt(aim_dir(), 1.5 * f)
-		["mage", "a2"]: _frost_nova(f)
-		["mage", "a3"]: _blink()
-		["mage", "ult"]: _meteor()
-		["assassin", "a1"]:
-			# The quick-draw SWORD (round 30): longer reach, no slide —
-			# the round-18 slide-step gave infinite mobility on a 0.3s
-			# cadence and was quietly game-breaking. Mobility lives on
-			# Shadow Dash now; the blade covers the distance instead.
-			var cut := _melee_arc(Balance.STAB_MULT * f, 118.0, "slash", {"stagger": 0.3, "knock": 260.0}, "stab", "stab")
-			if cut > 0:
-				# Blood price, paid forward (round 25): dive in low, cut,
-				# ult through the answer, heal it back through knives.
-				_grant_stab_surge()
-		["assassin", "a2"]: _shadow_dash(f)
-		["assassin", "a3"]: _fan_of_knives(f)
-		["assassin", "ult"]: _death_mark()
-		["paladin", "a1"]:
-			# Judgment CLOSES (round 22): out of arm's reach, the paladin
-			# leaps to the prey before the hammer falls — dodge the
-			# telegraph, then leap straight back onto the boss.
-			var j_tgt := auto_aim(300.0)
-			if j_tgt and global_position.distance_to(j_tgt.global_position) > 95.0:
-				var j_from := global_position
-				global_position = game.clamp_to_zone(
-					j_tgt.global_position + (global_position - j_tgt.global_position).normalized() * 58.0,
-					j_tgt.global_position)
-				_afterimages(j_from, global_position, Color(1.0, 0.9, 0.55), 3)
-				game.sfx("slam", 1.4)
-				# Landing i-frame — but ONLY on the leap (round 44): closing
-				# the gap shouldn't feed you to the boss's swing. Gated on the
-				# >95px leap, so Judgment spam in melee (no leap) never chains
-				# immunity off a 0.5s cd.
-				hurt_cd = maxf(hurt_cd, Balance.MELEE_DASH_IFRAME)
-			var jeff := {"stagger": 0.3, "knock": 280.0}
-			if s_passive() == "dawnbreaker":
-				# A pillar of light falls with the hammer.
-				jeff["splash"] = maxf(float(_tfx.get("splash", 0.0)), 0.5)
-				jeff["burn"] = current_atk() * 0.3
-				_light_pillar(global_position + aim_dir(220.0) * 70.0,
-					_tcolor if _themed else Color(1.0, 0.95, 0.6))
-			_melee_arc(1.0 * f, 92.0, "slash", jeff, "swing", "sword")
-			# The hammer lands with weight: a golden shock at the impact.
-			var jdir := aim_dir(220.0)
-			_ring_fx(global_position + jdir * 58.0,
-				_tcolor if _themed else Color(1.0, 0.9, 0.55), 34.0)
-			if _tfx.get("wave2", 0):
-				# Wrath: a burning backswing follows.
-				var jf2 := f
-				get_tree().create_timer(0.13).timeout.connect(func() -> void:
-					if not dead:
-						_melee_arc(0.6 * jf2, 92.0, "slash", {"stagger": 0.2}, "swing", "sword"))
-		["paladin", "a2"]: _consecration(f)
-		["paladin", "a3"]: _aegis()
-		["paladin", "ult"]: _chains_of_wrath(f)
-		# Round 45: -10% on the spam bolt so the DoT class trails the pure
-		# single-target burst classes (assassin/archer) on boss TTK — the
-		# wither ramp still pays it back on longer fights.
-		["warlock", "a1"]: _cast_shadowbolt(aim_dir(), 0.9 * f)
-		["warlock", "a2"]: _hex(f)
-		["warlock", "a3"]: _dark_pact(f)
-		["warlock", "ult"]: _void_rift(f)
+	# Per-class kit dispatch — each class's four abilities (and their
+	# helpers) live in their own scripts/player_kit_<class>.gd layer.
+	match cls:
+		"warrior": _use_warrior(slot, f)
+		"archer": _use_archer(slot, f)
+		"mage": _use_mage(slot, f)
+		"assassin": _use_assassin(slot, f)
+		"paladin": _use_paladin(slot, f)
+		"warlock": _use_warlock(slot, f)
 
 	# COMBO: chance the ability doesn't go on cooldown and refunds mana.
 	if slot != "ult" and randf() < Stats.combo_curve(combo):
@@ -447,6 +331,10 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 		res += theme_guard_amt
 	if aegis_time > 0.0:
 		res += aegis_amt
+	if grit_res > 0.0 and grit_stacks > 0:
+		# Stonehide (warrior talent): the beating hardens him — res scales
+		# with Grit stacks, and dies with them when he kites away.
+		res += grit_res * grit_stacks
 	var was_crit := false
 	# Archer Tumble's post-roll nimbleness adds evasion CHANCE for a beat
 	# (a soft cushion, not the old free negate). Bosses still shave it via
@@ -492,6 +380,16 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 		var absorbed: float = minf(shield, amount)
 		shield -= absorbed
 		amount -= absorbed
+	if grit_regen > 0.0 and attacker != null:
+		# Grit (warrior, round 48): every ENEMY blow taken stokes recovery —
+		# stacks cap and refresh the window. Attacker-less damage (hazards,
+		# telegraphs) builds nothing: no camping a campfire to farm stacks.
+		# hurt_cd already throttles hits to ~1.6/s, so the ramp is rate-limited.
+		if grit_stacks < int(grit_cap):
+			grit_stacks += 1
+			game.spawn_text(global_position + Vector2(0, -56), "GRIT x%d" % grit_stacks,
+				Color(1.0, 0.75, 0.35))
+		grit_time = 6.0
 	hp -= amount
 	game.fight_note_damage(amount, attacker)
 	game.sfx("hurt")

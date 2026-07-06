@@ -72,6 +72,19 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 		var el := m._lbl(ecard, String(line), 13, Color(0.78, 0.8, 0.86))
 		el.custom_minimum_size = Vector2(880, 0)
 		el.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Temptations — the elective risk events (retention roadmap #4).
+	m._lbl(list, "— TEMPTATIONS —", 16, Color(0.85, 0.6, 1.0))
+	var tcard := VBoxContainer.new()
+	tcard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(tcard)
+	for tline in [
+		"CURSED CHEST — a wrong-colored chest in some combat rooms. Open it and every living monster in the room grows crueler (+%d%% damage, faster) until the purge — then it pays: a golden chest and a guaranteed gem. Decline freely; it never ambushes." % int((Balance.CURSE_DMG_MULT - 1.0) * 100),
+		"GAMBLE SHRINE — a humming shrine in some quiet rooms. Feed it gold once and it blesses the offering (a gem, threefold gold, a chest, an elixir)... or drinks deeper (blood or more coin). The odds favor the bold — barely.",
+		"Both are rolled per character, like elites — a replay meets different temptations.",
+		"And keep your eyes open in dead ends: not everything glints until you're near it."]:
+		var tl := m._lbl(tcard, String(tline), 13, Color(0.78, 0.8, 0.86))
+		tl.custom_minimum_size = Vector2(880, 0)
+		tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for section in [false, true]:  # regular monsters first, then bosses
 		m._lbl(list, "— BOSSES —" if section else "— MONSTERS —", 16, Color(1, 0.5, 0.5) if section else Color(0.95, 0.85, 0.5))
 		for kind in Story.ALL_ENEMIES:
@@ -131,6 +144,18 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 			var g2 := m._lbl(info, "Projected:   Lv 25 → %d HP, %d DMG        Lv 50 → %d HP, %d DMG" %
 				[int(at25["hp"]), int(at25["dmg"]), int(at50["hp"]), int(at50["dmg"])], 12, Color(0.5, 0.55, 0.66))
 			g2.custom_minimum_size = Vector2(700, 0)
+
+			# Codex completion (retention roadmap #5): the kill tally, and
+			# the lore this character has (or hasn't) earned the right to read.
+			var kills: int = int(m.game.kill_counts.get(kind, 0))
+			var need := Lore.threshold(kind)
+			if kills >= need:
+				var ll := m._lbl(info, "❝ %s ❞" % Lore.entry(kind), 13, Color(0.85, 0.78, 0.6))
+				ll.custom_minimum_size = Vector2(700, 0)
+				ll.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			else:
+				m._lbl(info, "Slain: %d / %d — its lore is still buried." % [kills, need],
+					12, Color(0.5, 0.55, 0.66))
 
 
 static func _terrains(m: Menus, list: VBoxContainer) -> void:
@@ -196,6 +221,8 @@ static func _terrains(m: Menus, list: VBoxContainer) -> void:
 			quirks.append(event_desc.get(t["event"], ""))
 		if t.get("mp_boost", false):
 			quirks.append("Latent magic — your mana recovers much faster here")
+		if t.has("river"):
+			quirks.append("Rivers cross these lands — wading slows everyone; the bridge doesn't")
 		if quirks.is_empty():
 			quirks.append("No hazards — safe ground")
 		for q in quirks:
@@ -249,7 +276,8 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 	for id in Achievements.DATA:
 		if m.game.achievements.has(id):
 			unlocked += 1
-	m._lbl(list, "— ACHIEVEMENTS —   %d / %d" % [unlocked, Achievements.DATA.size()], 16, Color(1.0, 0.85, 0.4))
+	m._lbl(list, "— ACHIEVEMENTS —   %d / %d   ·   %d points" %
+		[unlocked, Achievements.DATA.size(), m.game.achievement_points()], 16, Color(1.0, 0.85, 0.4))
 	var ach := VBoxContainer.new()
 	ach.add_theme_constant_override("separation", 3)
 	_card(list).add_child(ach)
@@ -292,6 +320,63 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 	if not any:
 		m._lbl(recs, "No bosses felled yet. Their fastest clears will be recorded here.", 13, Color(0.6, 0.62, 0.68))
 
+	# --- chapter personal bests (account-wide, this class) ---
+	m._lbl(list, "— CHAPTER BESTS — %s, account-wide —" %
+		String(Classes.CLASSES[m.game.player.cls]["name"]), 16, Color(0.6, 0.9, 1.0))
+	var pbs := VBoxContainer.new()
+	pbs.add_theme_constant_override("separation", 3)
+	_card(list).add_child(pbs)
+	var any_pb := false
+	for chid in Story.CHAPTER_LIST:
+		var pb: Dictionary = m.game.chapter_pb(String(chid), m.game.player.cls)
+		if pb.is_empty():
+			continue
+		any_pb = true
+		var secs := int(float(pb.get("time", 0.0)))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		pbs.add_child(row)
+		var nm := m._lbl(row, String(Story.chapter(String(chid))["name"]), 14, Color(0.85, 0.9, 1.0))
+		nm.custom_minimum_size = Vector2(300, 0)
+		var t := m._lbl(row, "%d:%02d" % [secs / 60, secs % 60], 14, Color(0.7, 1.0, 0.7))
+		t.custom_minimum_size = Vector2(90, 0)
+		var gr := String(pb.get("grade", "D"))
+		var g := m._lbl(row, "grade %s" % gr, 14, Items.GRADE_COLOR.get(gr, Color(1, 1, 1)))
+		g.custom_minimum_size = Vector2(120, 0)
+		var runs := m._lbl(row, "×%d runs" % int(pb.get("runs", 1)), 14, Color(0.8, 0.82, 0.88))
+		runs.custom_minimum_size = Vector2(100, 0)
+	if not any_pb:
+		m._lbl(pbs, "Clear a chapter to set its first mark — time and grade are kept per class.",
+			13, Color(0.6, 0.62, 0.68))
+
+	# --- titles (worn beside the class name on the HUD) ---
+	m._lbl(list, "— TITLES — earned by points, feats, lore and slaughter —", 16, Color(0.85, 0.6, 1.0))
+	var tbox := VBoxContainer.new()
+	tbox.add_theme_constant_override("separation", 3)
+	_card(list).add_child(tbox)
+	for tid in Achievements.TITLE_ORDER:
+		var t2: Dictionary = Achievements.TITLES[tid]
+		var can: bool = m.game.title_available(tid)
+		var worn: bool = m.game.player_title == tid
+		var row2 := HBoxContainer.new()
+		row2.add_theme_constant_override("separation", 10)
+		tbox.add_child(row2)
+		if can:
+			var wear_id := String(tid)
+			m._btn(row2, "  Doff  " if worn else "  Wear  ", func() -> void:
+				m.game.player_title = "" if worn else wear_id
+				m.game.autosave()
+				m.open_codex("records"), Color(1.0, 0.88, 0.45) if worn else Color(0.8, 0.9, 1.0))
+		else:
+			var lock := m._lbl(row2, "  🔒  ", 14, Color(0.5, 0.5, 0.55))
+			lock.custom_minimum_size = Vector2(64, 0)
+		var nm2 := m._lbl(row2, String(t2["name"]) + ("   ← worn" if worn else ""), 14,
+			Color(1.0, 0.88, 0.45) if worn else (Color(0.85, 0.88, 0.94) if can else Color(0.55, 0.57, 0.63)))
+		nm2.custom_minimum_size = Vector2(280, 0)
+		var how := m._lbl(row2, String(t2["how"]), 13,
+			Color(0.8, 0.82, 0.88) if can else Color(0.5, 0.52, 0.58))
+		how.custom_minimum_size = Vector2(480, 0)
+
 
 static func _gear(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
@@ -299,7 +384,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		"weapon": "Main stat: ATK. Upgradeable at merchants.",
 		"armor": "Main stat: HP. Upgradeable at merchants.",
 		"boots": "Main stat: move speed.",
-		"charm": "Main stat: cooldown reduction (Haste).",
+		"charm": "Main stat: Crit.",
 	}
 
 	# ------------------ visual gallery: every shape at every grade ------
@@ -387,7 +472,11 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	m._lbl(chests, "Wooden chest — drops from monsters (common). Contains F to C gear.", 14, Color(0.8, 0.65, 0.45))
 	m._lbl(chests, "Silver chest — drops from monsters (rare). Contains D to A gear.", 14, Color(0.8, 0.82, 0.9))
 	m._lbl(chests, "Golden chest — every boss drops one. Contains B to S gear.", 14, Color(1.0, 0.85, 0.35))
-	m._lbl(chests, "Bonus stats: ATK%, HP%, Crit, Haste, Speed, Lifesteal, Armor, Greed (gold).", 13, Color(0.7, 0.72, 0.78))
+	m._lbl(chests, "Bonus stats: ATK%, HP%, Crit, CritDmg, Speed, EVA, DEX, Pen, Resists, MP.", 13, Color(0.7, 0.72, 0.78))
+	var resv := m._lbl(chests, "Haste, Lifesteal, Combo and Greed NEVER roll on gear — they are GEM-only (see below), hard-capped at %d%% / %d%% / %d%% / —, and each item holds at most ONE such gem." %
+		[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)], 13, Color(0.85, 0.75, 0.55))
+	resv.custom_minimum_size = Vector2(880, 0)
+	resv.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# ------------------------------------------------------------ gems ---
 	m._lbl(list, "— GEMS — socket into B+ gear (B:%d · A:%d · S:%d sockets) —" %
@@ -398,7 +487,9 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	_card(list).add_child(gem_intro)
 	for line3 in [
 		"Each gem grants ONE stat and deepens with its level, up to Lv %d. Only B-grade gear and above has sockets." % Items.GEM_MAX_LEVEL,
-		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (click them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level."]:
+		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (click them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level.",
+		"SPECIAL gems — Haste, Lifesteal, Combo, Greed — are the ONLY way to build those stats: at most one special gem per item, and their totals cap at %d%% Haste / %d%% Lifesteal / %d%% Combo no matter the source." %
+			[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)]]:
 		var gil := m._lbl(gem_intro, String(line3), 13, Color(0.7, 0.72, 0.78))
 		gil.custom_minimum_size = Vector2(880, 0)
 		gil.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

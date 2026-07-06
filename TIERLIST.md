@@ -4,10 +4,16 @@ Living balance document. This is the first documented edition; update it
 whenever a balance pass lands, and replace letter grades with measured
 numbers as fight-report benchmarks (`[fight]` console lines) accumulate.
 
-**Frame:** level 42, full A-tier gear, gemless, talents allocated
-optimally, no potions — the standard benchmark loadout. Grades are
-static analysis (cadence × multipliers × crit/vuln math, adjusted for
-realistic uptime); the fight-report instrument exists to verify them.
+**Frame (re-anchored 2026-07-06):** level 42, **full B-tier gear + four
+Lv3 gems** (Act 1's realistic ceiling — the act loot clamp caps Act 1
+drops at B, and 4 sockets × Lv3 is what the gem economy pays by 40),
+talents allocated optimally, no potions. The old frame (full A,
+gemless) is numerically within a few percent of this one, so historic
+grades stay comparable. Bosses above L32 now carry the gem-expectation
+ramp (`Balance.BOSS_GEM_*`) — benchmark against LIVE `enemy_stats_at`
+numbers, never raw tables. Grades are static analysis (cadence ×
+multipliers × crit/vuln math, adjusted for realistic uptime); the
+fight-report instrument exists to verify them.
 
 **Two axes, graded separately:**
 - **Boss** — solo boss doors: sustained single-target output, sustain

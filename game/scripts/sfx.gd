@@ -352,6 +352,56 @@ static func _make_ult_assassin() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+# ------------------------------------------------------- loot fanfare ---
+# Per-grade pickup chimes (retention roadmap #3): rarity is AUDIBLE.
+# Common is a polite blip; each step up gets longer, brighter, more
+# metallic — S is an unmistakable bell-and-shimmer jackpot.
+
+## F/E: a quiet, warm blip. Present, never demanding.
+static func _make_loot_low() -> AudioStreamWAV:
+	var b := _buf(0.14)
+	_metal(b, 0.0, [1040.0, 1560.0], 0.13, 0.28)
+	return _to_wav(b)
+
+
+## D/C: a clean two-note chime up — "worth a look".
+static func _make_loot_mid() -> AudioStreamWAV:
+	var b := _buf(0.24)
+	_metal(b, 0.0, [1180.0, 1770.0], 0.12, 0.3)
+	_metal(b, 0.09, [1570.0, 2360.0], 0.14, 0.34)
+	return _to_wav(b)
+
+
+## B: a three-step metallic arpeggio — the first "real drop" sound.
+static func _make_loot_b() -> AudioStreamWAV:
+	var b := _buf(0.4)
+	_metal(b, 0.0, [990.0, 1490.0], 0.14, 0.3)
+	_metal(b, 0.1, [1320.0, 1980.0], 0.14, 0.32)
+	_metal(b, 0.2, [1760.0, 2640.0], 0.19, 0.36)
+	return _to_wav(b)
+
+
+## A: the arpeggio plus a plucked-string flourish and a bright tail.
+static func _make_loot_a() -> AudioStreamWAV:
+	var b := _buf(0.6)
+	_pluck(b, 0.0, 330.0, 0.3, 0.4)
+	_metal(b, 0.05, [1320.0, 1980.0], 0.16, 0.3)
+	_metal(b, 0.16, [1760.0, 2640.0], 0.18, 0.34)
+	_metal(b, 0.28, [2350.0, 3520.0], 0.3, 0.38)
+	return _to_wav(b)
+
+
+## S: the jackpot — a deep bell toll under a rising shimmer. Reads across
+## the room; nothing else in the bank sounds like it.
+static func _make_loot_s() -> AudioStreamWAV:
+	var b := _buf(1.0)
+	_sine_sweep(b, 0.0, 160.0, 70.0, 0.4, 0.35)
+	_metal(b, 0.02, [440.0, 660.0, 880.0, 1174.0], 0.75, 0.45)   # bell partials
+	_metal(b, 0.3, [1760.0, 2640.0, 3520.0], 0.4, 0.3)           # high shimmer
+	_noise_sweep(b, 0.25, 0.5, 0.15, 2500.0, 7000.0, 0.6)        # rising sparkle air
+	return _to_wav(b)
+
+
 ## Build the whole sound bank the game uses.
 static func build_all() -> Dictionary:
 	return {
@@ -372,6 +422,7 @@ static func build_all() -> Dictionary:
 		"edie":     tone(420, 50, 0.3, 0.4, 0.5),
 		"levelup":  jingle([523, 659, 784, 1047]),
 		"potion":   tone(400, 850, 0.16, 0.35),
+		"splash":   _make_splash(),  # river entry (Graphics & Ambience)
 		"gate":     tone(120, 55, 0.5, 0.45, 0.7),
 		"roar":     tone(95, 38, 0.75, 0.55, 0.5),
 		"pdie":     tone(320, 45, 0.8, 0.45, 0.2),
@@ -386,6 +437,12 @@ static func build_all() -> Dictionary:
 		"coin":     tone(900, 1400, 0.08, 0.25),
 		"equip":    tone(300, 200, 0.12, 0.3, 0.4),
 		"chest":    tone(200, 120, 0.15, 0.35, 0.5),
+		# Loot fanfare chimes (rarity is audible; see loot_fanfare).
+		"loot_low": _make_loot_low(),
+		"loot_mid": _make_loot_mid(),
+		"loot_b":   _make_loot_b(),
+		"loot_a":   _make_loot_a(),
+		"loot_s":   _make_loot_s(),
 		"ult":      jingle([392, 523, 659, 784], 0.07, 0.4),  # rising power-up
 		"ult_warrior":  _make_ult_warrior(),
 		"ult_archer":   _make_ult_archer(),
@@ -395,3 +452,77 @@ static func build_all() -> Dictionary:
 		"meteor":   _make_slam(),
 		"roar_fangmaw": _make_growl(),  # synthesized beast, not a wolfman
 	}
+
+
+# --------------------------------------------------- ambient loops ---
+# Per-biome ambience BEDS (Graphics & Ambience track): quiet layers
+# under the music, not soundscapes. Seamless 8s loops — every LFO and
+# sine period divides the loop length, so the seam never thumps.
+# Taste rules apply: textures only, nothing melodic.
+
+## A short wet splash: a bright noise burst collapsing into a low slosh.
+static func _make_splash() -> AudioStreamWAV:
+	var buf := _buf(0.4)
+	_noise_sweep(buf, 0.0, 0.14, 0.5, 2600.0, 900.0, 0.02)
+	_noise_sweep(buf, 0.08, 0.28, 0.3, 700.0, 250.0, 0.1)
+	return _to_wav(buf)
+
+
+## A soft wind bed: heavily low-passed noise breathing on two slow LFOs.
+static func _amb_wind_bed(buf: PackedFloat32Array, vol: float, cutoff := 0.02) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 424242
+	var y := 0.0
+	var dur := buf.size() / float(RATE)
+	for i in buf.size():
+		var t := float(i) / RATE
+		# Both LFO periods divide the loop: 2 and 3 full cycles over dur.
+		var lfo := 0.62 + 0.38 * sin(TAU * t * 2.0 / dur) * sin(TAU * t * 3.0 / dur)
+		y += cutoff * (rng.randf_range(-1.0, 1.0) - y)
+		buf[i] += y * vol * lfo * 8.0
+
+
+static func make_ambient(kind: String) -> AudioStreamWAV:
+	var dur := 8.0
+	var buf := _buf(dur)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = kind.hash()
+	match kind:
+		"amb_birds":
+			# Distant songbirds over the faintest breeze: sparse two-to-four
+			# note twitters, high and quiet, clear of the loop seam.
+			_amb_wind_bed(buf, 0.016)
+			for i in 7:
+				var at := rng.randf_range(0.4, dur - 0.7)
+				var f0 := rng.randf_range(2300.0, 3300.0)
+				for c in 2 + rng.randi_range(0, 2):
+					_sine_sweep(buf, at + c * 0.11, f0 + rng.randf_range(-150.0, 150.0),
+						f0 + rng.randf_range(250.0, 700.0), 0.055, 0.045)
+		"amb_wind":
+			_amb_wind_bed(buf, 0.05)
+		"amb_cold":
+			# Thinner, higher hiss — winter air, not summer grass.
+			_amb_wind_bed(buf, 0.035, 0.06)
+		"amb_crickets":
+			# Marsh night: breeze + cricket trains (short high pings in
+			# fast bursts, a few bursts per loop).
+			_amb_wind_bed(buf, 0.012)
+			for i in 5:
+				var at := rng.randf_range(0.3, dur - 0.8)
+				var f := rng.randf_range(3800.0, 4600.0)
+				for c in 5 + rng.randi_range(0, 4):
+					_sine_sweep(buf, at + c * 0.055, f, f, 0.028, 0.035)
+		"amb_drone":
+			# Stone / void / grave: a low three-partial drone breathing on
+			# a loop-locked LFO. Frequencies are multiples of 1/8 Hz so the
+			# loop point is phase-perfect.
+			for i in buf.size():
+				var t := float(i) / RATE
+				var swell := 0.6 + 0.4 * sin(TAU * t / dur)
+				buf[i] += (sin(TAU * 55.0 * t) * 0.030
+					+ sin(TAU * 82.5 * t) * 0.018
+					+ sin(TAU * 110.25 * t) * 0.010) * swell
+	var wav := _to_wav(buf)
+	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	wav.loop_end = buf.size()
+	return wav

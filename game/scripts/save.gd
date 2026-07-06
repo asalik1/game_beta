@@ -53,6 +53,12 @@ static func write(game: Game, slot: int) -> void:
 		"bounties": game.bounties, "bounty_day": game.bounty_day, "bounty_week": game.bounty_week,
 		"vault_week": game.vault_week, "vault_progress": game.vault_progress,
 		"vault_claimed_week": game.vault_claimed_week,
+		# --- run stats / weekly challenge / codex completion ---
+		"run_time": game.run_time, "run_deaths": game.run_deaths,
+		"run_elites": game.run_elites, "run_secrets": game.run_secrets,
+		"weekly_active": game.weekly_active, "weekly_week": game.weekly_week,
+		"weekly_claimed_week": game.weekly_claimed_week,
+		"kill_counts": game.kill_counts, "player_title": game.player_title,
 		"bosses_slain": game.boss_done.keys(),
 		"flags": game.flags,
 		"merchant_zones": game.merchant_zones,
@@ -190,6 +196,21 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.vault_week = int(data.get("vault_week", -1))
 	game.vault_progress = int(data.get("vault_progress", 0))
 	game.vault_claimed_week = int(data.get("vault_claimed_week", -1))
+	# Run stats ride the save so the results card spans sessions.
+	game.run_time = float(data.get("run_time", 0.0))
+	game.run_deaths = int(data.get("run_deaths", 0))
+	game.run_elites = int(data.get("run_elites", 0))
+	game.run_secrets = int(data.get("run_secrets", 0))
+	game.weekly_active = bool(data.get("weekly_active", false))
+	game.weekly_week = int(data.get("weekly_week", -1))
+	game.weekly_claimed_week = int(data.get("weekly_claimed_week", -1))
+	game.kill_counts = {}
+	var kc: Dictionary = data.get("kill_counts", {})
+	for k in kc:
+		game.kill_counts[String(k)] = int(kc[k])
+	game.player_title = String(data.get("player_title", ""))
+	if game.player_title != "" and not Achievements.TITLES.has(game.player_title):
+		game.player_title = ""  # a retired title never wedges a save
 	game.mailbox = data.get("mailbox", [])
 	game.dropped_loot = data.get("dropped_loot", [])
 	for mail in game.mailbox:

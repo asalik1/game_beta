@@ -13,15 +13,27 @@ const GRADE_COLOR := {
 	"S": Color(1.00, 0.30, 0.30),
 }
 
+# Per-grade pickup chime (loot fanfare — the rarity is audible before
+# it's readable). Keys are Sfx bank entries.
+const LOOT_SOUND := {
+	"F": "loot_low", "E": "loot_low", "D": "loot_mid", "C": "loot_mid",
+	"B": "loot_b", "A": "loot_a", "S": "loot_s",
+}
+
+static func loot_sound(grade: String) -> String:
+	return String(LOOT_SOUND.get(grade, "loot_low"))
+
 const SLOTS := ["weapon", "armor", "boots", "charm"]
 const SLOT_ICON := {"weapon": "⚔", "armor": "🛡", "boots": "👢", "charm": "❖"}
 
 # Main stat per slot (base value, scaled by grade multiplier).
+# Charm main was Haste until 2026-07-06 — Haste is a special (gem-only)
+# stat now, so the trinket's identity moved to precision.
 const SLOT_MAIN := {
 	"weapon": {"atk_flat": 6.0},
 	"armor":  {"hp_flat": 40.0},
 	"boots":  {"speed_pct": 0.06},
-	"charm":  {"cdr": 0.06},
+	"charm":  {"crit": 0.05},
 }
 
 # Weapon shapes a class can actually be DEALT (round 15: an archer was
@@ -240,17 +252,17 @@ const SHAPE_STYLE := {
 	"Fang":     {"main": 0.85, "subs": {"crit": 0.05}, "tag": "crit"},
 	"Kunai":    {"main": 0.8,  "subs": {"crit": 0.04, "speed_pct": 0.03}, "tag": "crit + speed"},
 	"Claymore": {"main": 1.4,  "subs": {}, "tag": "massive damage"},
-	"Bow":      {"main": 0.9,  "subs": {"cdr": 0.04}, "tag": "attack speed"},
+	"Bow":      {"main": 0.9,  "subs": {"dex": 5.0}, "tag": "true aim"},
 	"Crossbow": {"main": 1.05, "subs": {"physpen": 5.0}, "tag": "penetration"},
 	"Staff":    {"main": 0.95, "subs": {"mp_flat": 15.0, "atk_pct": 0.04}, "tag": "mana + power"},
-	"Wand":     {"main": 0.85, "subs": {"combo": 0.02, "magpen": 3.0}, "tag": "combo + magic pen"},
+	"Wand":     {"main": 0.85, "subs": {"crit": 0.03, "magpen": 3.0}, "tag": "crit + magic pen"},
 	"Hammer":   {"main": 1.25, "subs": {"hp_flat": 20.0}, "tag": "crushing + sturdy"},
-	"Tome":     {"main": 0.9,  "subs": {"magpen": 4.0, "lifesteal": 0.01}, "tag": "dark power"},
+	"Tome":     {"main": 0.9,  "subs": {"magpen": 4.0, "mp_flat": 12.0}, "tag": "dark power"},
 	"Plate":    {"main": 1.15, "subs": {}, "tag": "bulk"},
 	"Mail":     {"main": 0.9,  "subs": {"speed_pct": 0.03}, "tag": "mobility"},
 	"Guard":    {"main": 0.95, "subs": {"physres": 10.0}, "tag": "physical resistance"},
 	"Boots":    {"main": 1.0,  "subs": {}, "tag": "balanced"},
-	"Striders": {"main": 0.9,  "subs": {"cdr": 0.03}, "tag": "haste"},
+	"Striders": {"main": 0.9,  "subs": {"eva": 0.02}, "tag": "elusive"},
 	"Treads":   {"main": 0.85, "subs": {"hp_flat": 25.0}, "tag": "sturdy"},
 	"Charm":    {"main": 1.0,  "subs": {}, "tag": "balanced"},
 	"Talisman": {"main": 0.85, "subs": {"atk_pct": 0.05}, "tag": "power"},
@@ -265,11 +277,15 @@ const CLASSES_DMG_TYPE := {
 	"paladin": "phys", "mage": "magic", "warlock": "magic",
 }
 
+# The SPECIAL stats (Haste/Lifesteal/Combo/Greed) are deliberately
+# ABSENT: they are gem-only (Balance.SPECIAL_GEM_STATS) — gems are the
+# gateway to off-build stats, and each item sockets at most one special
+# gem. Supersedes round 43's B-gate: gear never rolls them at any grade.
 const SUBSTATS := {
-	"atk_pct": 0.05, "hp_pct": 0.06, "crit": 0.03, "cdr": 0.03,
-	"speed_pct": 0.03, "lifesteal": 0.02, "greed": 0.08, "crit_dmg": 0.08,
+	"atk_pct": 0.05, "hp_pct": 0.06, "crit": 0.03,
+	"speed_pct": 0.03, "crit_dmg": 0.08,
 	"physres": 9.0, "magres": 9.0, "critres": 6.0, "eva": 0.02, "dex": 4.0,
-	"physpen": 5.0, "magpen": 5.0, "combo": 0.02, "mp_flat": 12.0,
+	"physpen": 5.0, "magpen": 5.0, "mp_flat": 12.0,
 }
 
 const STAT_LABEL := {
@@ -380,20 +396,15 @@ static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumbe
 	var pool := SUBSTATS.keys()
 	# No dead stats (round 15): a class only rolls the penetration its own
 	# damage type can use. Everything else stays class-neutral.
+	# (Special stats — Haste/Lifesteal/Combo/Greed — aren't in the pool at
+	# all since 2026-07-06: gem-only, superseding round 43's B-gate.)
 	if cls != "" and CLASSES_DMG_TYPE.has(cls):
 		pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
-	# Endgame-only stats (round 43): lifesteal and combo never roll below B.
-	var below_b := GRADES.find(grade) < GRADES.find("B")
-	if below_b:
-		pool.erase("lifesteal")
-		pool.erase("combo")
 	pool.shuffle()
 	for i in mini(sub_count, pool.size()):
 		var stat: String = pool[i]
 		subs[stat] = snappedf(SUBSTATS[stat] * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
 	for stat in style["subs"]:
-		if below_b and (stat == "lifesteal" or stat == "combo"):
-			continue
 		subs[stat] = snappedf(subs.get(stat, 0.0) + style["subs"][stat] * (0.75 + 0.25 * mult), 0.01)
 	return subs
 
