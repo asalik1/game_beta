@@ -708,6 +708,9 @@ func _run_systems() -> void:
 	# 3d9. Reforge bench: affix reroll, value reroll, add socket + cap.
 	_test_reforge()
 
+	# 3d10. Set bonuses: piece counting, cross-class isolation, recalc.
+	_test_set_bonus()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -1499,6 +1502,44 @@ func _test_reforge() -> void:
 	if Items.can_add_socket(s_it):
 		return _fail("S item (3 sockets) should be at the socket cap")
 	print("ok: reforge bench (affix reroll, value reroll, add socket + cap)")
+
+
+# ---- CORE: set bonuses (count, cross-class isolation, recalc) ------------
+func _test_set_bonus() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var cls: String = game.player.cls
+	var other := "warrior" if cls != "warrior" else "mage"
+
+	# Counting: two class S pieces + one wrong-class piece.
+	var eq := {
+		"weapon": Items.roll_item_of("weapon", "S", rng, cls),
+		"armor": Items.roll_item_of("armor", "S", rng, cls),
+		"boots": Items.roll_item_of("boots", "S", rng, other),
+	}
+	if Items.count_set_pieces(eq, cls) != 2:
+		return _fail("count_set_pieces miscounted this class's S pieces")
+	if Items.count_set_pieces(eq, other) != 1:
+		return _fail("count_set_pieces leaked across classes")
+
+	# recalc detects 2 vs 4 pieces without error, and a full set beats none.
+	var keep_eq: Dictionary = game.player.equipment
+	game.player.equipment = {}
+	game.player.recalc()
+	var atk_bare: float = game.player.atk
+	game.player.equipment = {}
+	for slot in Items.SLOTS:
+		game.player.equipment[slot] = Items.roll_item_of(slot, "S", rng, cls)
+	game.player.recalc()
+	if Items.count_set_pieces(game.player.equipment, cls) != 4:
+		return _fail("full S set not detected as 4 pieces")
+	if game.player.atk <= atk_bare:
+		return _fail("full S set did not raise ATK")
+
+	# Restore.
+	game.player.equipment = keep_eq
+	game.player.recalc()
+	print("ok: set bonuses (piece count, cross-class isolation, 2/4 detection)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

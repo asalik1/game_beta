@@ -83,6 +83,15 @@ const DASH_STAB_NEAR_LANE := 105.0
 # commit grants immunity.
 const SURGE_LS_FLOOR := 0.12      # surge lifesteal at full health (round 42: 14→12)
 const SURGE_LS_SCALE := 0.14      # + this x missing-hp (cap = floor+scale = 26%)
+# Round 46: Shadow Dash cd is FLOORED so it never becomes sub-second spam
+# (flashy but bad design). A connecting refund claws it toward the connect
+# floor; a whiff can't drop below the whiff floor no matter the gear cdr.
+# Excess cdr past the floor isn't wasted — it converts to bonus damage on the
+# dash-through HIT (never the surge slash) and a slightly snappier animation.
+const DASH_WHIFF_FLOOR := 1.5
+const DASH_CONNECT_FLOOR := 1.0
+const DASH_CDR_TO_DMG := 0.75    # per second of floor-eaten cd -> +dash-HIT dmg
+const DASH_CDR_TO_ANIM := 0.25   # per second eaten -> anim speedup (capped at 10%)
 
 # ------------------------------------------------ warrior bulwark charge ---
 # Round 44: the bulwark's sustain is its heal-on-hit, but Charge's dead-

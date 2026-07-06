@@ -427,6 +427,30 @@ static func add_socket(item: Dictionary) -> void:
 	item["gem_slots"] = int(item.get("gem_slots", 0)) + 1
 
 
+# --------------------------------------------------------------- set bonuses ---
+# Each class's four S legendaries form a SET. Wearing 2 / 4 pieces of your
+# own class's S set grants escalating bonuses (applied in Player.recalc).
+# S items carry item["cls"], so only your class's legendaries count.
+const SET_BONUSES := {
+	"warrior":  {"name": "Emberforged Warplate", "2": {"hp_pct": 0.10}, "4": {"atk_pct": 0.12, "physres": 20.0}},
+	"archer":   {"name": "The Hawk God's Regalia", "2": {"crit": 0.06}, "4": {"crit_dmg": 0.25, "speed_pct": 0.06}},
+	"mage":     {"name": "The Archmage's Array", "2": {"cdr": 0.08}, "4": {"atk_pct": 0.12, "magpen": 10.0}},
+	"assassin": {"name": "The Shadow God's Vestige", "2": {"crit": 0.06}, "4": {"crit_dmg": 0.20, "lifesteal": 0.05}},
+	"paladin":  {"name": "The Highfather's Aegis", "2": {"hp_pct": 0.10}, "4": {"physres": 18.0, "lifesteal": 0.04}},
+	"warlock":  {"name": "The Long Bargain Raiment", "2": {"cdr": 0.06}, "4": {"magpen": 10.0, "lifesteal": 0.06}},
+}
+
+
+## How many pieces of `cls`'s S set are equipped (S grade + matching class).
+static func count_set_pieces(equipment: Dictionary, cls: String) -> int:
+	var n := 0
+	for slot in equipment:
+		var it: Dictionary = equipment[slot]
+		if String(it.get("grade", "")) == "S" and String(it.get("cls", "")) == cls:
+			n += 1
+	return n
+
+
 ## All stats an item grants (main stat gets +15% per upgrade level,
 ## embedded gems contribute their stat too).
 static func stats_of(item: Dictionary) -> Dictionary:

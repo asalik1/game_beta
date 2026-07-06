@@ -140,7 +140,7 @@ const CLASSES := {
 		"atk": 14.5, "atk_lvl": 4.5, "speed": 275.0,
 		"abilities": {
 			"a1": {"name": "Stab",          "cd": 0.3,  "mp": 0,  "desc": "Quick-draw the long blade — a lightning strike with real reach. A CONNECTING cut surges your lifesteal for 4s; the lower your health, the bigger the surge."},
-			"a2": {"name": "Shadow Dash",   "cd": 3.6,  "mp": 0,  "desc": "Dash in your move direction, slashing everything in your path — and the blade reaches wide: a close pass cuts at FULL stab strength; even the farthest graze lands a lighter cut. The blood surge is full at any depth. A CONNECTING cut refunds a chunk of the cooldown: land the blade, keep dancing."},
+			"a2": {"name": "Shadow Dash",   "cd": 2.5,  "mp": 0,  "desc": "Dash in your move direction, slashing everything in your path — and the blade reaches wide: a close pass cuts at FULL stab strength; even the farthest graze lands a lighter cut. The blood surge is full at any depth. A CONNECTING cut refunds cooldown toward a 1.0s floor: land the blade, keep dancing; whiff and pay full. Cooldown can't be bought below the floor — excess haste feeds the dash's bite instead."},
 			"a3": {"name": "Fan of Knives", "cd": 0.3,  "mp": 0,  "desc": "Spammable dagger fan — thin chip on its own, but while your blood surge runs the blades bite TWICE as hard. The range damage is EARNED in close. Shares its cadence with Stab: spam either, never both."},
 			"ult": {"name": "Death Mark",   "cd": 30.0, "mp": 0,  "desc": "Mark your prey with the X: two shadows converge THROUGH it, then you appear behind it for the killing stab. TRUE damage; the marked target takes +50% damage for 5s. FIXED 30s cooldown — no haste can hurry the execution."},
 		},

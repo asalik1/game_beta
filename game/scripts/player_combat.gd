@@ -152,6 +152,9 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# Serpent's Due (archer Venom talent): poisoned prey takes extra damage.
 	if poison_dmg > 0.0 and e.burn_time > 0.0:
 		dmg *= 1.0 + poison_dmg
+	# Coup de Grâce (assassin talent): finish wounded prey faster.
+	if execute_dmg > 0.0 and e.max_hp > 0.0 and e.hp < e.max_hp * 0.40:
+		dmg *= 1.0 + execute_dmg
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -670,9 +673,11 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 			hit_enemy(e, mult * Balance.CHARGE_GRAZE_MULT, effects.duplicate())
 			_cut_flash(e.global_position, 0.4, _tcolor if _themed else Color(0.7, 0.85, 1.0))
 	if rider_hit:
-		# The connect refunds the dash (round 37): land the cut, keep
-		# dancing — whiffed dashes pay full price.
-		cds["a2"] *= 1.0 - Balance.DASH_REFUND
+		# The connect refunds the dash — the SKILL lever (round 46): a landed
+		# cut claws the cd toward the connect floor (talent deepens the
+		# refund); a whiff pays full, and gear cdr can't push below the floor.
+		cds["a2"] = maxf(Balance.DASH_CONNECT_FLOOR,
+			cds["a2"] * (1.0 - (Balance.DASH_REFUND + dash_refund)))
 	return kills
 
 
@@ -843,7 +848,11 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 
 
 func _shadow_dash(f := 1.0) -> void:
-	melee_swing = 0.16
+	# Excess cdr the dash's cd floor "eats" is redirected here — into the
+	# dash-through HIT (never the surge) and a slightly snappier animation,
+	# so an over-hasted assassin's spare cdr is never wasted (round 46).
+	var eaten := _dash_cdr_conversion()
+	melee_swing = 0.16 * (1.0 - minf(0.10, eaten * Balance.DASH_CDR_TO_ANIM))
 	melee_style = "stab"
 	melee_dir = facing
 	# NO i-frame (round 43): a short-cd dash with immunity was too
@@ -852,17 +861,32 @@ func _shadow_dash(f := 1.0) -> void:
 	game.sfx("stab")
 	var start := global_position
 	# stab_rider passes the talent scale only — the depth-tiered damage
-	# mult (near/far) is applied per victim inside _dash_strike.
-	var kills := _dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), 1.2 * f, {"stagger": 0.4}, f, 0.0)
+	# mult (near/far) is applied per victim inside _dash_strike. The eaten-cdr
+	# bonus rides the HIT mult only, leaving the surge rider (stab_rider = f) clean.
+	var dash_mult := 1.2 * f * (1.0 + eaten * Balance.DASH_CDR_TO_DMG)
+	var kills := _dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), dash_mult, {"stagger": 0.4}, f, 0.0)
 	if s_passive() == "mirrorstep":
 		_mirrorstep_guard(start)
 	if _tfx.get("trail_mist", 0):
 		# Poison: the dash line blooms into a toxic wake.
 		_mist((start + global_position) / 2.0, 110.0, 0.3, _tcolor, 2.5)
 	if kills > 0 and _tfx.has("kill_refund"):
-		# Shadow: a kill refunds most of the cooldown.
-		cds["a2"] *= 1.0 - float(_tfx["kill_refund"])
+		# Shadow: a kill refunds most of the cooldown — but still floored, so
+		# even room-chaining never drops into sub-second strobe territory.
+		cds["a2"] = maxf(Balance.DASH_CONNECT_FLOOR,
+			cds["a2"] * (1.0 - float(_tfx["kill_refund"])))
 		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
+
+
+## Excess cdr past Shadow Dash's cd floor isn't wasted — this returns the
+## seconds of cooldown the floor "eats" on a connecting dash, which feed the
+## dash-HIT damage and a snappier animation (round 46). Assassin-only.
+func _dash_cdr_conversion() -> float:
+	var base_cd: float = Classes.ability(cls, "a2")["cd"]
+	var whiff := maxf(Balance.DASH_WHIFF_FLOOR, base_cd * (1.0 - cdr))
+	var refund: float = Balance.DASH_REFUND + dash_refund
+	var unfloored := whiff * (1.0 - refund)
+	return maxf(0.0, Balance.DASH_CONNECT_FLOOR - unfloored)
 
 
 ## Mirrorstep (assassin S weapon): a dash through fire turns aside nearby

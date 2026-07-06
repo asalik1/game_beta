@@ -85,22 +85,22 @@ const TREES := {
 		[
 			{"id": "s00", "name": "Coated Blades", "desc": "Stab +5% damage", "amod": {"a1": {"dmg": 0.05}}},
 			{"id": "s01", "name": "Night Edge",    "desc": "+1.5% crit chance", "bonus": {"crit": 0.015}},
-			{"id": "s02", "name": "Quick Hands",   "desc": "+1% combo chance", "bonus": {"combo": 0.01}},
+			{"id": "s02", "name": "Quick Hands",   "desc": "+2% combo chance", "bonus": {"combo": 0.02}},
 		],
 		[
 			{"id": "s10", "name": "Lingering Toxin", "desc": "Fan of Knives +6% damage", "amod": {"a3": {"dmg": 0.06}}},
-			{"id": "s11", "name": "Ghost Step",      "desc": "+1.5% evasion", "bonus": {"eva": 0.015}},
+			{"id": "s11", "name": "Ghost Step",      "desc": "+2% evasion", "bonus": {"eva": 0.02}},
 			{"id": "s12", "name": "Opportunist",     "desc": "Shadow Dash +8% damage", "amod": {"a2": {"dmg": 0.08}}},
 		],
 		[
 			{"id": "s20", "name": "Wasting Venom", "desc": "+4 physical penetration", "bonus": {"physpen": 4.0}},
-			{"id": "s21", "name": "Blur",          "desc": "+1% move speed", "bonus": {"speed_pct": 0.01}},
+			{"id": "s21", "name": "Coup de Grâce", "desc": "+8% damage to enemies below 40% HP", "bonus": {"execute_dmg": 0.08}},
 			{"id": "s22", "name": "Bloodletter",   "desc": "+1% lifesteal", "bonus": {"lifesteal": 0.01}},
 		],
 		[
 			{"id": "s30", "name": "Plaguebearer", "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
 			{"id": "s31", "name": "Phantom",      "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
-			{"id": "s32", "name": "Exsanguinate", "desc": "Shadow Dash cooldown -5%", "amod": {"a2": {"cd": -0.05}}},
+			{"id": "s32", "name": "Exsanguinate", "desc": "Shadow Dash connect-refund +5% (deepens the dance toward the 1.0s floor)", "bonus": {"dash_refund": 0.05}},
 		],
 	],
 	"paladin": [  # columns: Holy / Aegis / Wrath

@@ -89,6 +89,8 @@ var poison_dmg := 0.0       # archer Serpent's Due talent: +dmg vs DoT'd enemies
 var bolt_homing := 0.0      # mage Seeker Winds talent: Firebolt homes (>0 = on)
 var nova_regen := 0.0       # mage Rimeheart talent: Frost Nova HoT rate (/sec)
 var nova_regen_time := 0.0  # active Rimeheart heal-over-time window
+var dash_refund := 0.0      # assassin Exsanguinate talent: + to Shadow Dash refund
+var execute_dmg := 0.0      # assassin Coup de Grâce talent: +dmg to sub-40% enemies
 # Heal feedback (round 44): discrete mends (bulwark/holy on-hit, nova,
 # kit drains) accumulate here and surface as one throttled green tick +
 # soft chime — so per-hit spam (whirlwind, chains) stays readable. Route
@@ -123,6 +125,11 @@ var dodge_amt := 0.0     # +evasion CHANCE added while dodge_time > 0
 var theme_guard_time := 0.0
 var theme_guard_amt := 0.0
 var hazard_speed := 1.0        # terrain patch effect (ice boosts, void slows)
+# Crowd control the player can suffer (Act 1 ch5+ bosses). FROZEN =
+# can't move OR cast (Serane's Flash Freeze, Halla's sleep); ROOTED =
+# can't move but MAY still cast (Serane's Shatter Lance, ch6 roots).
+var frozen_time := 0.0
+var rooted_time := 0.0
 var aegis_time := 0.0          # paladin Aegis: the shield is up
 var aegis_amt := 110.0         # resistances granted while it holds
 var aegis_reflect := 0.6       # smite multiplier on attackers
@@ -314,6 +321,7 @@ func recalc() -> void:
 		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
 		"blink_dr": 0.0, "blink_dr_dur": 0.0, "flat_dr": 0.0,
 		"chill_dmg": 0.0, "poison_dmg": 0.0, "bolt_homing": 0.0, "nova_regen": 0.0,
+		"dash_refund": 0.0, "execute_dmg": 0.0,
 		"physres": 0.0, "magres": 0.0,
 		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
 		"combo": 0.0, "greed": 0.0}
@@ -328,6 +336,14 @@ func recalc() -> void:
 		var stats := Items.stats_of(equipment[slot])
 		for stat in stats:
 			b[stat] = b.get(stat, 0.0) + stats[stat]
+	# Set bonus: 2/4 pieces of your class's S legendary set grant escalating
+	# stat bonuses (Items.SET_BONUSES). Only S gear of your OWN class counts.
+	var set_pieces := Items.count_set_pieces(equipment, cls)
+	var set_data: Dictionary = Items.SET_BONUSES.get(cls, {})
+	for tier in ["2", "4"]:
+		if set_pieces >= int(tier) and set_data.has(tier):
+			for stat in set_data[tier]:
+				b[stat] = b.get(stat, 0.0) + set_data[tier][stat]
 	for id in tree_points:
 		var cell := Skills.find_cell(cls, id)
 		if cell.is_empty():
@@ -372,6 +388,8 @@ func recalc() -> void:
 	poison_dmg = b["poison_dmg"]
 	bolt_homing = b["bolt_homing"]
 	nova_regen = b["nova_regen"]
+	dash_refund = b["dash_refund"]
+	execute_dmg = b["execute_dmg"]
 	flat_dr = b["flat_dr"]
 	physres = b["physres"]
 	magres = b["magres"]
@@ -744,6 +762,12 @@ func ability_cd(slot: String) -> float:
 		# and cd talents. At its numbers the execution gets disgusting
 		# below 30s — the authored cd IS the floor.
 		return float(ab["cd"])
+	if cls == "assassin" and slot == "a2":
+		# Shadow Dash: this is the WHIFF cd — floored so gear cdr can't push
+		# it below DASH_WHIFF_FLOOR. A connecting refund (in _dash_strike)
+		# claws it down to the tighter connect floor; excess cdr converts to
+		# dash-hit power instead. No cd amod — Exsanguinate feeds the refund.
+		return maxf(Balance.DASH_WHIFF_FLOOR, ab["cd"] * (1.0 - cdr))
 	var cd: float = ab["cd"] * (1.0 + _amod(slot, "cd"))
 	if cast_haste_time > 0.0 and (slot == "a2" or slot == "a3"):
 		# Wind ult TAILWIND: Blink and Frost Nova cool down quicker for the

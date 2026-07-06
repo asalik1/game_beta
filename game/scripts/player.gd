@@ -14,6 +14,8 @@ func _physics_process(delta: float) -> void:
 	berserk_time = maxf(0.0, berserk_time - delta)
 	theme_speed_time = maxf(0.0, theme_speed_time - delta)
 	dodge_time = maxf(0.0, dodge_time - delta)
+	frozen_time = maxf(0.0, frozen_time - delta)
+	rooted_time = maxf(0.0, rooted_time - delta)
 	theme_guard_time = maxf(0.0, theme_guard_time - delta)
 	aegis_time = maxf(0.0, aegis_time - delta)
 	pact_time = maxf(0.0, pact_time - delta)
@@ -97,6 +99,8 @@ func _physics_process(delta: float) -> void:
 
 	# ------------------------------------------------------------ movement
 	var dir := _move_dir()
+	if frozen_time > 0.0 or rooted_time > 0.0:
+		dir = Vector2.ZERO  # crowd-controlled: the dodge is denied
 	if dir != Vector2.ZERO:
 		facing = dir
 	var spd := speed * (1.25 if berserk_time > 0.0 else 1.0)
@@ -192,11 +196,35 @@ func _physics_process(delta: float) -> void:
 		sprite.modulate = Color(1.45, 0.55, 0.5) if berserk_time > 0.0 else Color(1, 1, 1)
 
 
+# ============================================================ crowd control
+
+## FROZEN: can't move OR cast for `dur` (Serane's Flash Freeze, Halla's
+## sleep). Dodging AND acting are denied — the punish for being caught in
+## the open. A no-op if already frozen longer.
+func apply_freeze(dur: float) -> void:
+	if dead:
+		return
+	frozen_time = maxf(frozen_time, dur)
+	game.spawn_text(global_position + Vector2(0, -50), "FROZEN!", Color(0.6, 0.85, 1.0))
+	game.burst(global_position, Color(0.7, 0.9, 1.0), 14)
+
+
+## ROOTED: can't move for `dur`, but may still cast (Serane's Shatter
+## Lance, ch6 vine roots). The kite is denied; the kit is not.
+func apply_root(dur: float) -> void:
+	if dead:
+		return
+	rooted_time = maxf(rooted_time, dur)
+	game.spawn_text(global_position + Vector2(0, -50), "ROOTED!", Color(0.5, 0.8, 0.6))
+
+
 # ================================================================= abilities
 
 func use_ability(slot: String) -> void:
 	if dead or cds[slot] > 0.0:
 		return
+	if frozen_time > 0.0:
+		return  # frozen solid: no casting until you thaw (rooted may still cast)
 	var cost := ability_cost(slot)
 	if mp < cost:
 		return

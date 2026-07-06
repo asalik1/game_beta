@@ -712,6 +712,18 @@ func _gem_groups() -> Dictionary:
 
 
 ## Item detail: full stats + per-socket gem management.
+## Format a {stat: value} bonus dict as "ATK +12%, PhysRes +20".
+func _stat_bonus_text(d: Dictionary) -> String:
+	var parts: Array = []
+	for stat in d:
+		var v: float = d[stat]
+		if stat in Items.FLAT_STATS:
+			parts.append("%s +%d" % [Items.STAT_LABEL.get(stat, stat), int(v)])
+		else:
+			parts.append("%s +%d%%" % [Items.STAT_LABEL.get(stat, stat), int(round(v * 100))])
+	return ", ".join(parts)
+
+
 func open_item_panel(item: Dictionary) -> void:
 	var p: Player = game.player
 	var vbox := _open(Items.title(item), 900, 620)
@@ -726,6 +738,17 @@ func open_item_panel(item: Dictionary) -> void:
 	head.add_child(icon)
 	var d := _lbl(head, Items.describe(item), 14, Items.GRADE_COLOR[item["grade"]])
 	d.custom_minimum_size = Vector2(760, 0)
+
+	# Set bonus panel (S legendaries): which tiers are live given what's worn.
+	if String(item.get("grade", "")) == "S" and item.has("cls"):
+		var sd: Dictionary = Items.SET_BONUSES.get(String(item["cls"]), {})
+		if not sd.is_empty():
+			var pieces := Items.count_set_pieces(p.equipment, String(item["cls"]))
+			_lbl(vbox, "SET: %s   (%d/4 pieces worn)" % [sd.get("name", "Set"), pieces], 15, Color(1.0, 0.85, 0.4))
+			for tier in ["2", "4"]:
+				var live := pieces >= int(tier)
+				_lbl(vbox, "   %spc %s  —  %s" % [tier, "✓ ACTIVE" if live else "inactive",
+					_stat_bonus_text(sd[tier])], 13, Color(0.6, 1.0, 0.6) if live else Color(0.6, 0.62, 0.68))
 
 	var slots: int = item.get("gem_slots", 0)
 	var gems: Array = item.get("gems", [])

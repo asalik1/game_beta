@@ -1080,6 +1080,12 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 			return
 	burst(player.global_position, Color(1.0, 0.35, 0.2), 18)
 	player.take_damage(damage, "magic")
+	# Some inverse telegraphs don't just hurt — they FREEZE or ROOT the
+	# player caught in the open (Serane's Flash Freeze, ch5+).
+	if opts.has("freeze"):
+		player.apply_freeze(float(opts["freeze"]))
+	if opts.has("root"):
+		player.apply_root(float(opts["root"]))
 
 # Idle-chatter symbols by resonance band (round 8): the steady get
 # hearts and song, the tempted get sidelong wariness — the world reads
