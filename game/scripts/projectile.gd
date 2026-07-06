@@ -18,6 +18,7 @@ var glow_color := Color(1, 1, 1)
 var tex_kind := ""
 var spr: Sprite2D = null       # thrown knives spin in flight
 var spin := true               # darts (assassin fan) fly POINT-FIRST instead
+var homing := false            # mage Seeker Winds: friendly bolt curves to a target
 var _already_hit := {}
 
 # Glow tint per projectile type — bright and readable at a glance.
@@ -117,6 +118,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if homing and friendly:
+		_steer_home(delta)
 	global_position += vel * delta
 	if tex_kind == "knife" and spr and spin:
 		spr.rotation += 16.0 * delta  # thrown blades tumble end over end
@@ -124,6 +127,24 @@ func _physics_process(delta: float) -> void:
 	if life <= 0.0:
 		_bloom()
 		queue_free()
+
+
+## Curve toward the nearest live enemy, keeping speed — a gentle homing arc
+## (mage Seeker Winds talent), so the twin Wind bolts converge on their mark.
+func _steer_home(delta: float) -> void:
+	var best: Node2D = null
+	var best_d := 1.0e12
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e.dying or e.untargetable:
+			continue
+		var d := global_position.distance_squared_to(e.global_position)
+		if d < best_d:
+			best_d = d
+			best = e
+	if best != null:
+		var desired := (best.global_position - global_position).normalized() * vel.length()
+		vel = vel.lerp(desired, clampf(6.0 * delta, 0.0, 1.0))
 
 
 ## Venom Bloom: the projectile detonates into an expanding poison mist

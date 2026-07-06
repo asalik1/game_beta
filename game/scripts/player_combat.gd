@@ -146,6 +146,9 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# (shove, hard pull) takes the hit deeper.
 	if effects.get("crush", 0) and e.crush_t > 0.0:
 		dmg *= 1.0 + Balance.CRUSH_MULT
+	# Killing Frost (mage Ice talent): bite harder into slowed or frozen prey.
+	if chill_dmg > 0.0 and (e.slow_time > 0.0 or e.stun_time > 0.0):
+		dmg *= 1.0 + chill_dmg
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -372,6 +375,8 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 	var tex := "icelance" if _tfx.get("pierce", 0) else "fireball"
 	var p := _proj(dir, mult, tex, 440.0 * float(_tfx.get("proj_speed", 1.0)))
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+	if bolt_homing > 0.0:
+		p.homing = true  # Seeker Winds (mage Wind talent): the bolt curves to its mark
 
 
 func _whirlwind(f := 1.0) -> void:
@@ -499,6 +504,8 @@ func _frost_nova(f := 1.0) -> void:
 	# mage's short-range button carries UTILITY, not damage budget
 	# (ranged kits can rarely connect close-range damage safely).
 	gain_hp((max_hp - hp) * 0.2)  # nova drinks the cold — SHOW the mend
+	if nova_regen > 0.0:
+		nova_regen_time = 3.0  # Rimeheart (mage talent): the cold keeps mending
 	mp = minf(max_mp, mp + (max_mp - mp) * 0.2)
 	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
 	var col := _tcolor if _themed else Color(0.45, 0.8, 1.0)

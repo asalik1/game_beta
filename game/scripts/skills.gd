@@ -61,23 +61,23 @@ const TREES := {
 	],
 	"mage": [  # columns: Fire / Ice / Wind
 		[
-			{"id": "m00", "name": "Kindled Bolt", "desc": "Firebolt +5% damage", "amod": {"a1": {"dmg": 0.05}}},
-			{"id": "m01", "name": "Cold Snap",    "desc": "Frost Nova +6% damage", "amod": {"a2": {"dmg": 0.06}}},
-			{"id": "m02", "name": "Tailwind",     "desc": "+1% move speed", "bonus": {"speed_pct": 0.01}},
+			{"id": "m00", "name": "Kindled Bolt",  "desc": "Firebolt +5% damage", "amod": {"a1": {"dmg": 0.05}}},
+			{"id": "m01", "name": "Killing Frost", "desc": "+8% damage to slowed or frozen enemies", "bonus": {"chill_dmg": 0.08}},
+			{"id": "m02", "name": "Seeker Winds",  "desc": "Firebolt homes toward its target; +3% Firebolt damage", "bonus": {"bolt_homing": 1.0}, "amod": {"a1": {"dmg": 0.03}}},
 		],
 		[
-			{"id": "m10", "name": "Deep Focus",   "desc": "+8 max mana", "bonus": {"mp_flat": 8.0}},
-			{"id": "m11", "name": "Frost Armor",  "desc": "+8 physical resistance", "bonus": {"physres": 8.0}},
+			{"id": "m10", "name": "Rimeheart",    "desc": "Frost Nova also heals 3% max HP/s for 3s", "bonus": {"nova_regen": 0.03}},
+			{"id": "m11", "name": "Frost Armor",  "desc": "+5 phys & magic res, +2 crit res", "bonus": {"physres": 5.0, "magres": 5.0, "critres": 2.0}},
 			{"id": "m12", "name": "Slipstream",   "desc": "Blink cooldown -5%", "amod": {"a3": {"cd": -0.05}}},
 		],
 		[
-			{"id": "m20", "name": "Arcane Echo",  "desc": "+1% combo chance", "bonus": {"combo": 0.01}},
+			{"id": "m20", "name": "Arcane Echo",  "desc": "+2% combo chance", "bonus": {"combo": 0.02}},
 			{"id": "m21", "name": "Piercing Cold", "desc": "+4 magic penetration", "bonus": {"magpen": 4.0}},
-			{"id": "m22", "name": "Gale Force",   "desc": "+1.5% evasion", "bonus": {"eva": 0.015}},
+			{"id": "m22", "name": "Warding Veil", "desc": "+5% Blink damage reduction (the 0.8s ward)", "bonus": {"blink_dr": 0.05}},
 		],
 		[
 			{"id": "m30", "name": "Archmage",   "desc": "+2% total damage", "bonus": {"atk_pct": 0.02}},
-			{"id": "m31", "name": "Permafrost", "desc": "Nova +8% damage", "amod": {"a2": {"dmg": 0.08}}},
+			{"id": "m31", "name": "Permafrost", "desc": "Frost Nova & Blink cooldown -2%", "amod": {"a2": {"cd": -0.02}, "a3": {"cd": -0.02}}},
 			{"id": "m32", "name": "Windborne",  "desc": "+6% crit damage", "bonus": {"crit_dmg": 0.06}},
 		],
 	],

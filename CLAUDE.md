@@ -26,6 +26,7 @@
 ## Multi-agent etiquette
 - Task boards (`CH2_TASKS.md` pattern): one owner per task, claim before starting; content lands as NEW modules under `game/scripts/content/` (format: `scripts/content/README.md`) + one registration line in `Story.CONTENT_MODULES`.
 - Stage with `git add` after a green full suite. No commits unless the user asks.
+- Commit messages: NO author/co-author trailers (no `Co-Authored-By`, no attribution lines) — this project keeps commits authorless; credit lives in a separate credits file.
 - Autotest additions: content modules use the marked CONTENT-MODULE TEST HOOK (one func at file end + one call line); never edit existing sections.
 
 ## Asset sourcing

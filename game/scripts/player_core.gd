@@ -84,6 +84,10 @@ var dr_amt := 0.0        # active damage-reduction fraction (multiplicative)
 var cast_haste_time := 0.0  # Wind ult tailwind window (Blink/Frost Nova cdr)
 var cast_haste_cdr := 0.0   # + this cdr on Blink/Frost Nova while it holds
 var dash_guard_time := 0.0  # assassin Mirrorstep: AoE damage softened while > 0
+var chill_dmg := 0.0        # mage Killing Frost talent: +dmg vs slowed/frozen
+var bolt_homing := 0.0      # mage Seeker Winds talent: Firebolt homes (>0 = on)
+var nova_regen := 0.0       # mage Rimeheart talent: Frost Nova HoT rate (/sec)
+var nova_regen_time := 0.0  # active Rimeheart heal-over-time window
 # Heal feedback (round 44): discrete mends (bulwark/holy on-hit, nova,
 # kit drains) accumulate here and surface as one throttled green tick +
 # soft chime — so per-hit spam (whirlwind, chains) stays readable. Route
@@ -308,6 +312,7 @@ func recalc() -> void:
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
 		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
 		"blink_dr": 0.0, "blink_dr_dur": 0.0, "flat_dr": 0.0,
+		"chill_dmg": 0.0, "bolt_homing": 0.0, "nova_regen": 0.0,
 		"physres": 0.0, "magres": 0.0,
 		"critres": 0.0, "eva": 0.0, "dex": 0.0, "physpen": 0.0, "magpen": 0.0,
 		"combo": 0.0, "greed": 0.0}
@@ -362,6 +367,9 @@ func recalc() -> void:
 		sw_delay = maxf(0.5, sw_delay - 1.5)
 	blink_dr = b["blink_dr"]
 	blink_dr_dur = b["blink_dr_dur"]
+	chill_dmg = b["chill_dmg"]
+	bolt_homing = b["bolt_homing"]
+	nova_regen = b["nova_regen"]
 	flat_dr = b["flat_dr"]
 	physres = b["physres"]
 	magres = b["magres"]
@@ -466,6 +474,8 @@ func gain_gem(gem: Dictionary) -> bool:
 	if not stacks and bag_used() >= bag_capacity():
 		return false
 	gem_bag.append(gem)
+	if int(gem.get("lvl", 1)) >= Items.GEM_MAX_LEVEL:
+		game.unlock_achievement("gem_max")
 	return true
 
 
@@ -588,6 +598,8 @@ func _upgrade_equipped_once() -> bool:
 		for gem in equipment[slot].get("gems", []):
 			if gem["lvl"] < Items.GEM_MAX_LEVEL and _take_from_bag(gem["stat"], gem["lvl"], 2):
 				gem["lvl"] += 1
+				if gem["lvl"] >= Items.GEM_MAX_LEVEL:
+					game.unlock_achievement("gem_max")
 				return true
 	return false
 
@@ -625,6 +637,8 @@ func synthesize(stat: String, lvl: int, quiet := false) -> bool:
 	if not _take_from_bag(stat, lvl, 3):
 		return false
 	gem_bag.append(Items.make_gem(stat, lvl + 1))
+	if lvl + 1 >= Items.GEM_MAX_LEVEL:
+		game.unlock_achievement("gem_max")
 	if not quiet:
 		game.sfx("levelup")
 	return true

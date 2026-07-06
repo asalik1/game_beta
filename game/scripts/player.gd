@@ -27,6 +27,9 @@ func _physics_process(delta: float) -> void:
 	dr_time = maxf(0.0, dr_time - delta)
 	cast_haste_time = maxf(0.0, cast_haste_time - delta)
 	dash_guard_time = maxf(0.0, dash_guard_time - delta)
+	if nova_regen_time > 0.0:
+		nova_regen_time = maxf(0.0, nova_regen_time - delta)
+		gain_hp(max_hp * nova_regen * delta)  # Rimeheart heal-over-time
 	stab_ls_time = maxf(0.0, stab_ls_time - delta)
 	# Heal tick: fold accumulated discrete mends into one soft green cue
 	# (~3/s max) so bulwark/holy/nova/kit heals are SEEN, not silent.

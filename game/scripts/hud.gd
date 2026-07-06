@@ -186,6 +186,20 @@ func _ready() -> void:
 	# ---------------------------------------------------- quest tracker ---
 	zone_label = _label(Vector2(340, 12), 16, Color(0.95, 0.85, 0.5), 600, HORIZONTAL_ALIGNMENT_CENTER)
 	quest_label = _label(Vector2(240, 36), 16, Color(1, 1, 1), 800, HORIZONTAL_ALIGNMENT_CENTER)
+	# ⚑ opens the Quest Log — sits just left of the objective line.
+	var journal_btn := Button.new()
+	journal_btn.flat = true
+	journal_btn.text = "⚑"
+	journal_btn.tooltip_text = "Quest Log"
+	journal_btn.add_theme_font_size_override("font_size", 18)
+	journal_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
+	journal_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
+	journal_btn.position = Vector2(210, 33)
+	journal_btn.size = Vector2(28, 26)
+	journal_btn.pressed.connect(func() -> void:
+		if game.play_started and not game.menus.is_open():
+			game.menus.open_journal())
+	add_child(journal_btn)
 
 	# --------------------------------------------------------- boss bar ---
 	boss_box = Control.new()
@@ -367,14 +381,21 @@ func _build_buff_bar() -> void:
 		box.size = Vector2(BUFF_W, 36)
 		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(box)
-		var name_l := _label(Vector2(x, y + 1), 11, Color(1, 1, 1), BUFF_W, HORIZONTAL_ALIGNMENT_CENTER)
-		var time_l := _label(Vector2(x, y + 14), 16, Color(1, 1, 1), BUFF_W, HORIZONTAL_ALIGNMENT_CENTER)
+		var icon := TextureRect.new()
+		icon.position = Vector2(x + 13, y + 1)
+		icon.custom_minimum_size = Vector2(22, 22)
+		icon.size = Vector2(22, 22)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(icon)
+		var time_l := _label(Vector2(x, y + 21), 14, Color(1, 1, 1), BUFF_W, HORIZONTAL_ALIGNMENT_CENTER)
 		var fill := ColorRect.new()
 		fill.position = Vector2(x, y + 33)
 		fill.size = Vector2(BUFF_W, 3)
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(fill)
-		var slot := {"border": border, "box": box, "name": name_l, "time": time_l, "fill": fill}
+		var slot := {"border": border, "box": box, "icon": icon, "time": time_l, "fill": fill, "glyph": ""}
 		_set_buff_slot_visible(slot, false)
 		buff_slots.append(slot)
 
@@ -382,26 +403,28 @@ func _build_buff_bar() -> void:
 func _set_buff_slot_visible(slot: Dictionary, vis: bool) -> void:
 	slot["border"].visible = vis
 	slot["box"].visible = vis
-	slot["name"].visible = vis
+	slot["icon"].visible = vis
 	slot["time"].visible = vis
 	slot["fill"].visible = vis
 
 
-## Every timed player buff worth surfacing, with its short tag + color.
-## Colors echo the buff aura on the hero so the two read as one language.
+## Every timed player buff worth surfacing: [id, glyph, color, seconds].
+## The glyph reuses an ability icon that fits the buff; colors echo the
+## on-hero aura so the chip and the aura read as one language. Classes
+## don't share buffs, so repeated glyphs never collide on screen.
 func _active_buffs() -> Array:
 	var p: Player = game.player
 	var out: Array = []
-	if p.berserk_time > 0.0: out.append(["berserk", "RAGE", Color(1.0, 0.3, 0.2), p.berserk_time])
-	if p.aegis_time > 0.0: out.append(["aegis", "AEGIS", Color(1.0, 0.85, 0.4), p.aegis_time])
-	if p.dr_time > 0.0: out.append(["ward", "WARD", Color(0.45, 0.85, 1.0), p.dr_time])
-	if p.pact_time > 0.0: out.append(["pact", "PACT", Color(0.9, 0.2, 0.4), p.pact_time])
-	if p.theme_guard_time > 0.0: out.append(["guard", "GUARD", Color(0.45, 0.65, 1.0), p.theme_guard_time])
-	if p.theme_speed_time > 0.0: out.append(["speed", "SWIFT", Color(0.6, 1.0, 0.85), p.theme_speed_time])
-	if p.stab_ls_time > 0.0: out.append(["surge", "BLOOD", Color(0.95, 0.3, 0.35), p.stab_ls_time])
-	if p.dodge_time > 0.0: out.append(["dodge", "DODGE", Color(0.8, 0.95, 0.7), p.dodge_time])
-	if p.storm_time > 0.0: out.append(["storm", "STORM", Color(0.6, 1.0, 0.6), p.storm_time])
-	if p.cast_haste_time > 0.0: out.append(["haste", "GALE", Color(0.7, 0.95, 1.0), p.cast_haste_time])
+	if p.berserk_time > 0.0: out.append(["berserk", "ab_fist", Color(1.0, 0.3, 0.2), p.berserk_time])
+	if p.aegis_time > 0.0: out.append(["aegis", "ab_shield", Color(1.0, 0.85, 0.4), p.aegis_time])
+	if p.dr_time > 0.0: out.append(["ward", "ab_blink", Color(0.45, 0.85, 1.0), p.dr_time])
+	if p.pact_time > 0.0: out.append(["pact", "ab_pact", Color(0.9, 0.2, 0.4), p.pact_time])
+	if p.theme_guard_time > 0.0: out.append(["guard", "ab_shield", Color(0.45, 0.65, 1.0), p.theme_guard_time])
+	if p.theme_speed_time > 0.0: out.append(["speed", "ab_roll", Color(0.6, 1.0, 0.85), p.theme_speed_time])
+	if p.stab_ls_time > 0.0: out.append(["surge", "ab_dagger", Color(0.95, 0.3, 0.35), p.stab_ls_time])
+	if p.dodge_time > 0.0: out.append(["dodge", "ab_roll", Color(0.8, 0.95, 0.7), p.dodge_time])
+	if p.storm_time > 0.0: out.append(["storm", "ab_rain", Color(0.6, 1.0, 0.6), p.storm_time])
+	if p.cast_haste_time > 0.0: out.append(["haste", "ab_flame", Color(0.7, 0.95, 1.0), p.cast_haste_time])
 	return out
 
 
@@ -428,8 +451,12 @@ func _update_buffs() -> void:
 		var t: float = b[3]
 		_set_buff_slot_visible(slot, true)
 		slot["border"].color = col
-		slot["name"].text = String(b[1])
-		slot["name"].add_theme_color_override("font_color", col)
+		var glyph: String = String(b[1])
+		# glyph_tex is cached per (name,tint); only rebuild when this slot's
+		# icon actually changes, so we don't thrash the cache every frame.
+		if slot["glyph"] != glyph:
+			slot["glyph"] = glyph
+			slot["icon"].texture = Art.glyph_tex(glyph, col.lightened(0.15))
 		slot["time"].text = "%.0f" % ceil(t) if t >= 1.0 else "%.1f" % t
 		slot["fill"].color = col
 		var peak: float = maxf(float(_buff_peak.get(id, t)), 0.01)
@@ -444,13 +471,13 @@ const MINIMAP_AREA := Vector2(182, 116)
 func _build_minimap() -> void:
 	minimap_root = Control.new()
 	minimap_root.position = Vector2(1066, 84)
-	minimap_root.size = Vector2(198, 150)
+	minimap_root.size = Vector2(198, 170)
 	minimap_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	minimap_root.visible = false
 	add_child(minimap_root)
 	var bg := ColorRect.new()
 	bg.color = Color(0.05, 0.05, 0.09, 0.7)
-	bg.size = Vector2(198, 150)
+	bg.size = Vector2(198, 170)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	minimap_root.add_child(bg)
 	var title := Label.new()
@@ -459,6 +486,13 @@ func _build_minimap() -> void:
 	title.add_theme_font_size_override("font_size", 12)
 	title.add_theme_color_override("font_color", Color(0.75, 0.77, 0.83))
 	minimap_root.add_child(title)
+	var legend := Label.new()
+	legend.text = "◆ here   ☠ boss   ✓ cleared"
+	legend.position = Vector2(8, 150)
+	legend.add_theme_font_size_override("font_size", 10)
+	legend.add_theme_color_override("font_color", Color(0.6, 0.62, 0.68))
+	legend.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	minimap_root.add_child(legend)
 	minimap_cells = Control.new()
 	minimap_cells.position = Vector2(8, 26)
 	minimap_cells.size = MINIMAP_AREA
@@ -555,6 +589,27 @@ func _update_minimap() -> void:
 		cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		minimap_cells.add_child(cell)
 
+		# Room-type marker. Boss/current/cleared markers always show; the
+		# quieter room-type glyphs only when the cell is big enough to read.
+		var icon_text := String(Menus.MAP_TYPE_ICON.get(t, ""))
+		if t == "boss":
+			var bk := String(game.zones[i].get("boss", ""))
+			icon_text = "✓" if (bk != "" and game.boss_done.get(bk, false)) else "☠"
+		if i == game.cur_room:
+			icon_text = "◆"
+		if icon_text != "" and (cw >= 12.0 or icon_text in ["◆", "☠", "✓"]):
+			var il := Label.new()
+			il.text = icon_text
+			il.position = p
+			il.size = Vector2(cw, ch)
+			il.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			il.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			il.add_theme_font_size_override("font_size", int(clampf(minf(cw, ch) * 0.82, 8.0, 15.0)))
+			il.add_theme_color_override("font_color",
+				Color(0.12, 0.09, 0.05) if i == game.cur_room else Color(0.95, 0.92, 0.8))
+			il.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			minimap_cells.add_child(il)
+
 
 ## A gold banner sliding in at the top when an achievement unlocks; holds
 ## a few seconds, then fades. Stacks downward if several land together.
@@ -569,7 +624,9 @@ func achievement_toast(name: String, desc: String) -> void:
 	sb.set_corner_radius_all(8)
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.size = Vector2(440, 58)
-	panel.position = Vector2(640 - 220, 66 + stacked * 64)
+	# Below the boss bar (which sits ~y86-130, center) so a mid-fight unlock
+	# never covers the boss's health.
+	panel.position = Vector2(640 - 220, 138 + stacked * 64)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(panel)
 	var title := Label.new()
@@ -663,6 +720,8 @@ func update_stats(p: Player) -> void:
 		stats_label.text = "%s  Lv %d   HP %d/%d   MP %d/%d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), int(p.mp), int(p.max_mp), pts]
 		_set_fill(mp_fill, p.mp / p.max_mp)
 	gold_label.text = "◉ %d gold    Potions [%s] x%d" % [p.gold, OS.get_keycode_string(game.binds["potion"]), p.potions]
+	if p.gold >= 5000:
+		game.unlock_achievement("wealthy")  # idempotent: fires once
 	cr_label.text = "Combat Rating: %d" % p.combat_rating()
 	_update_resonance(p.resonance)
 

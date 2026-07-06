@@ -1028,11 +1028,23 @@ func _run_systems() -> void:
 	await _frames(2)
 	if game.menus.current != "map":
 		return _fail("map screen did not open")
+	game.menus.open_codex("records")
+	await _frames(2)
+	if game.menus.current != "codex":
+		return _fail("codex Records tab did not open")
+	game.menus.open_journal()
+	await _frames(2)
+	if game.menus.current != "journal":
+		return _fail("quest log did not open")
+	game.menus.open_daily()
+	await _frames(2)
+	if game.menus.current != "daily":
+		return _fail("daily reward screen did not open")
 	game.menus.open_dev()
 	await _frames(2)
 	game.menus.close()
 	await _frames(2)
-	print("ok: shop, codex, skill tree, theme picker, stats tab, map, dev panel UI")
+	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
 
 
 ## Chapter 1 end to end: terrains, the darkwood walk, all three bosses.

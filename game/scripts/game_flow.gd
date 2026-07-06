@@ -185,6 +185,8 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 func on_boss_died(kind: String, dead: Boss = null) -> void:
 	boss_done[kind] = true
 	unlock_achievement("first_boss")
+	if boss_done.size() >= 9:
+		unlock_achievement("boss_hunter")
 	var src: Boss = dead if is_instance_valid(dead) else current_boss
 	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
 	var mzi: int = clampi(src.zone_idx if is_instance_valid(src) else cur_room, 0, zone_count - 1)

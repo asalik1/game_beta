@@ -723,8 +723,11 @@ func fight_report() -> void:
 	var dps := fight_pool / secs
 	for k in fight_kinds:
 		record_boss(String(k), secs, dps)
-	if fight_dmg_taken <= 0.0 and not fight_kinds.is_empty():
-		unlock_achievement("flawless")
+	if not fight_kinds.is_empty():
+		if fight_dmg_taken <= 0.0:
+			unlock_achievement("flawless")
+		if fight_potions <= 0:
+			unlock_achievement("no_potion_boss")
 
 
 ## The fight's music. Multi-boss brawls use the boss_x2..boss_x5
