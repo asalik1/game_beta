@@ -16,3 +16,7 @@ claude_stage.bat
 claude_stage.log
 .claude/
 .claude_tmp_copy/
+
+# Bench / test outputs (regenerated; never commit)
+dps_*.txt
+test_full_run.log
