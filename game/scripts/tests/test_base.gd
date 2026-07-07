@@ -42,6 +42,10 @@ func _buff() -> void:
 	game.player.cast_haste_time = 0.0
 	game.player.dash_guard_time = 0.0
 	game.player.nova_regen_time = 0.0
+	game.player.grit_stacks = 0
+	game.player.grit_time = 0.0
+	game.player.paladin_mode = "holy"
+	game.player.judgment_leap_cd = 0.0
 
 
 func _dummy(offset := Vector2(100, 0)) -> Enemy:
