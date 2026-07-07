@@ -108,20 +108,25 @@ zone NPCs and props (`ch2_zones_act1/2.gd`).
       an Aldric-side ask would break the suite's asserted hub choice
       counts; the carry-gate keeps it invisible to every suite walk.)
 
-## Q3 — Chapter 3 quests (`ch3_quests.gd`) — CLAIMED: Claude (2026-07-06)
+## Q3 — Chapter 3 quests (`ch3_quests.gd`) — DONE: Claude (2026-07-06, QA'd)
 Read `ch3_zones.gd` first (gate NPC: Cantor Ilse; kneeling congregation,
 peddler, lore props).
-- [ ] **The Unfilled Row** — Cantor Ilse asks for the NAMES on the
+- [x] **The Unfilled Row** — Cantor Ilse asks for the NAMES on the
       Vale's old markers: visit 2–3 fixed lore props (append gated
       "copy the name" choices), return to Ilse to report. ~180g.
-- [ ] **Bread for the Kneeling** — carry bread from the Vigil Gate to
+      (Shipped: Bram Tallow's headstone + the reliquary placards,
+      ordered chain, reported at Ilse's post-briefing hub.)
+- [x] **Bread for the Kneeling** — carry bread from the Vigil Gate to
       the kneeling congregation (courier shape). Small `choir` standing
       either direction per the player's framing choice. ~120g.
-- [ ] **A Stone for the Sexton** — after the Vale quiets, someone must
+      (Shipped: giver = Old Fenna, kind-path gated; two delivery
+      framings at the Kneeling Field, choir ±2.)
+- [x] **A Stone for the Sexton** — after the Vale quiets, someone must
       close the graves: a courier/offering chain ending at a grave
-      prop. ~150g.
+      prop. ~150g. (Shipped: giver = Old Digger Haim, wanderer; stone
+      set beside Bram Tallow's plot at the Hollow Chapel.)
 
-## Q4 — Chapter 4 quests (`ch4_quests.gd`) — CLAIMED: Claude (2026-07-06)
+## Q4 — Chapter 4 quests (`ch4_quests.gd`) — DONE: Claude (2026-07-06, QA'd)
 Read `ch4_zones.gd` first (gate NPC: Overseer Brann; Nix the
 acquittal-seller, foundry props).
 - [x] **Out of Tolerance** — Brann wants proof the foundries cool:
@@ -141,7 +146,7 @@ acquittal-seller, foundry props).
       destination = the Ember Font — the deposit does NOT consume the
       shrine's own three-way choice.)
 
-## Q5 — Chapter 5 quests (`ch5_quests.gd`) — CLAIMED: Claude (2026-07-06)
+## Q5 — Chapter 5 quests (`ch5_quests.gd`) — DONE: Claude (2026-07-06, QA'd)
 Read `ch5_zones.gd` first (gate NPC: Tracker Yri; skald Ottar, the
 deserter, wagon/cairn props).
 - [x] **Forty Mouths** — after Whitepelt's ridge: deliver the wagons'
@@ -156,7 +161,7 @@ deserter, wagon/cairn props).
       pilgrimage over 2–3 fixed props, report back. ~180g. (Shipped:
       Buried Chapel congregation + the Vein of the Queen, report to Yri.)
 
-## Q6 — Chapter 6 quests (`ch6_quests.gd`) — CLAIMED: Claude (2026-07-06)
+## Q6 — Chapter 6 quests (`ch6_quests.gd`) — DONE: Claude (2026-07-06, QA'd)
 Read `ch6_zones.gd` first (gate NPC: Deacon Vela; Fisher Dov, Kesh,
 the schism camps, bloom props).
 - [x] **The Far Shore's Door** — Fisher Dov can't row past the leaning
@@ -173,18 +178,29 @@ the schism camps, bloom props).
       `wildfang` +3. ~180g. (Marks: Sunken Shrine lintel + Cure Pool
       fence; debriefed mark-by-mark at Kesh.)
 
-## Q7 — Chapter 7 quests (`ch7_quests.gd`) — CLAIMED: Claude (2026-07-06)
+## Q7 — Chapter 7 quests (`ch7_quests.gd`) — DONE: Claude (2026-07-06, QA'd)
 Read `ch7_zones.gd` first (gate NPC: Elder Maren at the Summit Camp;
 Keeper Vasse, the vowstone, Korrag's cairn, the void shelf).
-- [ ] **The Relay Stands** — Retired Keeper Vasse can't climb anymore:
+- [x] **The Relay Stands** — Retired Keeper Vasse can't climb anymore:
       stand a moment at the relay's three stations (vowstone, cairn,
       one more fixed prop — gated choices appended), then tell her the
-      line still holds. ~220g.
-- [ ] **A Letter for Someone Who Will Remember** — the void shelf's
+      line still holds. ~220g. (Shipped: vowstone + cairn + void shelf;
+      completion line delivered via Vasse's paid variant.)
+- [x] **A Letter for Someone Who Will Remember** — the void shelf's
       sealed letter (`gain_item`) brought to Maren, who has outlived
       enough of Vaelscar to qualify. Do NOT open it — that's the point.
-      ~200g.
-- [ ] **Korrag's Due** — the beast-clans left offerings at the
+      ~200g. (Shipped: seal stays unbroken; Maren pockets it for after
+      the stair.)
+- [x] **Korrag's Due** — the beast-clans left offerings at the
       Stormwarden's cairn; the old order never did. Carry an order
       token from the summit camp and leave it (`lose_item`).
-      `wildfang` +4. ~150g.
+      `wildfang` +4. ~150g. (Shipped: giver = Apprentice Sorrel, the
+      order's shift-token among the wolf teeth.)
+
+---
+
+QA pass (2026-07-06, post-merge): all 22 quests audited — override
+fidelity vs owners, gating, suite-walk safety, cross-module collisions
+(none), reward bands. One fix applied: Still Blue gains a retroactive
+accept on Sera's report choice (explorer-first players used to lose the
+quest). Full suite green.

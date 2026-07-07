@@ -77,7 +77,11 @@ const CONVOS := {
 		"r_told": {"who": "Widow Sera", "text": "\"Twenty years I painted that door. Tell me true, once more — it stands?\"",
 			"next": "",
 			"choices": [
+				# side_quest here is the RETROACTIVE accept: a player who found
+				# the mill before ever hearing Sera's ask still gets the quest
+				# (and its payout) the moment they carry the truth back.
 				{"text": "\"It stands, Sera. The paint is winning.\"",
+					"side_quest": "still_blue",
 					"flags": {"mill_told": true}, "resonance": 2.0, "next": "r_told2"},
 			]},
 		"r_told2": {"who": "Narrator", "text": "Small honest cargo, delivered. It weighed nothing, and it was worth the trip.", "next": ""},
