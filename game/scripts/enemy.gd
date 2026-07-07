@@ -18,6 +18,11 @@ var ranged := false
 # level via the monster's attribute build (Story.enemy_stats_at).
 var physres := 0.0
 var magres := 0.0
+# Flat, pen-proof damage reduction applied AFTER resists in take_damage —
+# a hard armor wall no build shortcuts (Cinderhide's obsidian plating sets
+# it to ~0.82; every other enemy leaves it 0.0). NOT the res/(res+120)
+# curve: that saturates at 0.80 and penetration erodes it.
+var plate_dr := 0.0
 var eva := 0.0
 var critres := 0.0
 var crit := 0.0     # chance this enemy's hits crit (x1.5, vs player critres)
@@ -857,6 +862,11 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	# CHANNEL_HEAL breaks on damage.
 	if channel_t > 0.0:
 		_break_channel()
+	# Flat plate wall (Cinderhide): a pen-proof cut on EVERYTHING that lands
+	# — resolved player hits, DoTs, true damage — so the plated phase is a
+	# real wall the lava-melt must open, not a resist a DPS build outscales.
+	if plate_dr > 0.0:
+		amount *= 1.0 - plate_dr
 	hp -= amount
 	knock = from_dir * (220.0 if is_crit else 160.0)
 	if not silent:

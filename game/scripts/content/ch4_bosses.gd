@@ -41,9 +41,10 @@ const ENEMIES := {
 		"name": "Cinderhide the Unquenched", "sprite": "direwolf",
 		"hp": 9500.0, "dmg": 110.0, "speed": 135.0, "xp": 330, "gold": 260,
 		"ranged": false, "scale": 8.5,
-		# Base resists are the SHED value; the plate mechanic adds +60 at
-		# setup (plated 85) and drops it back on melt — so a fight reset
-		# restores the honest 25, not a mid-melt number.
+		# Resists stay the honest SHED value the whole fight (~25 / ~17% DR).
+		# The plating is a separate FLAT ~82% pen-proof wall (plate_dr, set at
+		# setup and dropped on melt) — not a resist swap, so a DPS build can't
+		# outscale it and the lava-melt is mandatory.
 		"physres": 25.0, "magres": 25.0, "eva": 0.0, "critres": 6.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 25, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 1.5, "VIT": 1.5},
@@ -102,19 +103,22 @@ static func selftest(game: Node2D) -> String:
 			return "ch4 boss %s: stats did not resolve" % kind
 
 		if kind == "cinderhide":
-			# Plates on at setup: physres must be well above the honest base.
+			# Plates on at setup: the flat wall (plate_dr) is up and the honest
+			# base resist is UNCHANGED (the wall is not a resist swap).
 			await game.get_tree().create_timer(0.2).timeout
-			if b.physres < 70.0:
-				return "ch4 boss cinderhide: plating did not raise resists"
+			if not b.plated or b.plate_dr < 0.5:
+				return "ch4 boss cinderhide: plating wall did not raise (plate_dr)"
+			if b.physres > 40.0:
+				return "ch4 boss cinderhide: plating inflated base resist (should be flat DR only)"
 			# Keep lava under it as it chases (it walks off a single pool) —
-			# sustained contact is what melts the plating.
+			# sustained contact is what melts the plating and drops the wall.
 			var melted := 0.0
-			while b.physres > 40.0 and melted < 6.0:
+			while b.plated and melted < 6.0:
 				game._add_hazard(game.cur_room, "lava", b.global_position, 90.0, 0.5)
 				await game.get_tree().create_timer(0.1).timeout
 				melted += 0.1
-			if b.physres > 40.0:
-				return "ch4 boss cinderhide: lava contact did not melt the plating"
+			if b.plated or b.plate_dr > 0.01:
+				return "ch4 boss cinderhide: lava contact did not shed the plating wall"
 
 		# The signature move: forcing the cd to zero must re-arm it.
 		b.special_cd = 0.0

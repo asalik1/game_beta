@@ -682,6 +682,8 @@ func _apply_hazards() -> void:
 			match h["type"]:
 				"lava":
 					player.take_damage(12.0, "magic")
+				"churned":  # Sexton's grave-earth: imposed floor, phys, boss-only
+					player.take_damage(9.0, "physical")
 				"poison":
 					player.take_damage(6.0, "true")
 				"ice":

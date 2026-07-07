@@ -125,6 +125,7 @@ const PATCH_COLOR := {
 	"poison": Color(0.45, 0.9, 0.25, 0.45),
 	"heal":   Color(1.0, 0.9, 0.45, 0.4),
 	"slow":   Color(0.4, 0.2, 0.6, 0.5),
+	"churned": Color(0.6, 0.45, 0.3, 0.55),  # Sexton's grave-earth (phys, boss-only)
 }
 
 

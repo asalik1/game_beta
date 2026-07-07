@@ -204,7 +204,9 @@ func _do_charge(_to_player: Vector2) -> void:
 	charging = true
 	charge_time = 0.55
 	telegraphing = false
-	ability_cd = 4.0
+	# Cinderhide charges more often while plated (a rampaging tank you must
+	# survive while setting up the melt); fangmaw's plated is always false.
+	ability_cd = 3.0 if plated else 4.0
 
 
 # -------------------------------------------------------------- Morwen ---
@@ -601,6 +603,14 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 			tracked_adds.append(add)
 			game.burst(at, GRAVE, 12)
 
+	# Imposed floor (r51 kite answer): the ground churns open under the
+	# prey on a steady beat — adds or no adds, melee-range or across the
+	# arena, a kiter can't ignore the Vale. Slow tell; unavoidable if you
+	# stand. Independent of shovelwork and the grave shamblers.
+	if ring_cd <= 0.0:
+		ring_cd = 4.5
+		game.telegraph(player.global_position, 95.0, 0.9, dmg * 1.1, {"color": GRAVE})
+
 	# Signature: SHOVELWORK — under the dirt and up through your floor.
 	if special_cd <= 0.0 and dist < 600.0:
 		special_cd = 8.0
@@ -673,6 +683,9 @@ func _shovelwork(player: Player) -> void:
 	collision_mask = 1 | 2 | 4
 	sprite.visible = true
 	game.burst(global_position, GRAVE, 20)
+	# The torn ground stays torn: churned earth lingers where he surfaces,
+	# so walking off the eruption line onto his exit isn't free (r51).
+	game._add_hazard(game.cur_room, "churned", global_position, 95.0, 5.0)
 	roar()
 
 
@@ -900,7 +913,7 @@ var quenching := false          # calda: marching to a pool
 var quench_target := Vector2.ZERO
 var quench_stacks := 0          # calda: damage buff from clean quenches
 var calda_setup := false
-var plated := false             # cinderhide: obsidian plating up
+var plated := false             # cinderhide: obsidian plating up (drives plate_dr wall)
 var melt := 0.0                 # cinderhide: lava-contact meter
 var plate_shed_t := 0.0         # cinderhide: seconds of exposed window left
 var cinder_setup := false
@@ -918,7 +931,8 @@ func _reset_ch4_state() -> void:
 	calda_setup = false
 	melt = 0.0
 	plate_shed_t = 0.0
-	if kind == "cinderhide":  # restore the honest base resists, not a melt value
+	plate_dr = 0.0  # drop the flat plate wall; cinder_setup re-arms it on think
+	if kind == "cinderhide":  # honest base resists (~25) always; plating is plate_dr now
 		var base: Dictionary = _stats_at(kind, level)
 		physres = float(base["physres"])
 		magres = float(base["magres"])
@@ -979,6 +993,12 @@ func _on_lava() -> bool:
 	for h in game.hazards:
 		if String(h.get("type", "")) != "lava":
 			continue
+		# Cinderhide's OWN Vent Breath lava is tagged and never melts its
+		# plating — otherwise it strips its own armor on autopilot as it
+		# wanders/charges through the cone it just laid. Only arena pools,
+		# magma-rain, and the baited charge across them count.
+		if bool(h.get("no_melt", false)):
+			continue
 		var at: Vector2 = h.get("pos", Vector2.ZERO)
 		if global_position.distance_to(at) <= float(h.get("radius", 0.0)):
 			return true
@@ -1013,6 +1033,15 @@ func _forgemistress(player: Player, to_player: Vector2, dist: float, delta: floa
 			_do_quench(player)
 			return Vector2.ZERO
 		return (quench_target - global_position).normalized() * speed
+
+	# White-hot: the forge reaches past melee (r51 kite answer). While her
+	# heat is capped she lobs slag at the prey wherever they've run — the
+	# heat clock a kiter used to feel nothing from now lands at range, on
+	# top of the widening hammer lanes below.
+	if heat >= 1.0 and ring_cd <= 0.0:
+		ring_cd = 3.2
+		var lob: Vector2 = player.global_position + Vector2(randf_range(-70, 70), randf_range(-70, 70))
+		game.telegraph(lob, 100.0, 0.7, dmg * (1.0 + 0.12 * quench_stacks) * 1.3, {"color": FORGE})
 
 	# Hammer lines: forge-orange lash telegraphs, wider when white-hot.
 	if ability_cd <= 0.0 and dist < 520.0:
@@ -1072,20 +1101,33 @@ func _do_quench(player: Player) -> void:
 		game.burst(quench_target, FORGE, 16)
 		game.spawn_text(global_position + Vector2(0, -70),
 			"Calda quenches — her edge sharpens (x%d)" % quench_stacks, FORGE)
+		# A clean quench isn't free even for a kiter who never contested the
+		# pool (r51): the slag flashes over in a ring, and two gouts of it
+		# linger around the rim — imposed ground-denial as her edge sharpens.
+		for i in 6:
+			game.telegraph(quench_target + Vector2.RIGHT.rotated(TAU * i / 6.0) * 155.0,
+				72.0, 0.7, dmg * (1.0 + 0.12 * quench_stacks) * 1.2, {"color": FORGE})
+		for i in 2:
+			var slag: Vector2 = game.clamp_to_zone(quench_target
+				+ Vector2.from_angle(randf() * TAU) * 150.0, home)
+			game._add_hazard(game.cur_room, "lava", slag, 68.0, 6.0)
 
 
 # ------------------------------------------ Cinderhide the Unquenched (L25) ---
-## Armored beast, near-immune while PLATED (physres/magres ~85). Lava is
-## the answer: standing in it melts the plating (bait the Fangmaw-lineage
-## charge across a pool it vented). At full melt the plates shed ~10s and
-## the damage window opens — but a magma tantrum rides it. At 30% the
-## plates stop regrowing and it enrages into a chase.
+## Armored beast, near-immune while PLATED. The plating is a FLAT ~82%
+## damage wall (plate_dr, pen-proof — the old +60 resist read as only ~41%
+## DR and a DPS build outscaled it, so the lava-melt was skippable). Lava
+## is the ONLY answer: standing in it melts the plating (bait the Fangmaw-
+## lineage charge across a pool it vented). At full melt the plates shed
+## ~10s and the honest base resist (~25) is all that remains — the damage
+## window opens, and a magma tantrum rides it. At 30% the plates stop
+## regrowing and it enrages into a chase.
+const PLATE_DR := 0.82   # flat, pen-proof reduction while plated
 func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
 	if not cinder_setup:
 		cinder_setup = true
 		plated = true
-		physres += 60.0
-		magres += 60.0
+		plate_dr = PLATE_DR
 		game.spawn_text(global_position + Vector2(0, -84), "Its obsidian hide is a meter thick.", LAVA)
 
 	# Lava contact melts the plating. A CHARGE through lava melts fast —
@@ -1101,8 +1143,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		plated = false
 		melt = 0.0
 		plate_shed_t = 10.0
-		physres = maxf(15.0, physres - 60.0)
-		magres = maxf(15.0, magres - 60.0)
+		plate_dr = 0.0  # wall drops — only the honest base resist (~25) remains
 		sprite.modulate = Color(1.6, 0.8, 0.5)
 		roar()
 		game.spawn_text(global_position + Vector2(0, -90), "THE PLATING SHEDS!", Color(1.0, 0.7, 0.3))
@@ -1111,8 +1152,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		plate_shed_t -= delta
 		if plate_shed_t <= 0.0 and hp > max_hp * 0.3 and not enraged:
 			plated = true
-			physres += 60.0
-			magres += 60.0
+			plate_dr = PLATE_DR
 			sprite.modulate = Color(1, 1, 1)
 			game.spawn_text(global_position + Vector2(0, -84), "The obsidian reforms.", LAVA)
 
@@ -1120,8 +1160,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		enraged = true
 		if plated:  # plates stop regrowing — the window stays open
 			plated = false
-			physres = maxf(15.0, physres - 60.0)
-			magres = maxf(15.0, magres - 60.0)
+			plate_dr = 0.0
 		plate_shed_t = 0.0
 		speed *= 1.35
 		sprite.modulate = Color(1.7, 0.6, 0.4)
@@ -1134,12 +1173,14 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 			charging = false
 		if dist < _reach(76.0) and attack_cd <= 0.0:
 			attack_cd = 0.8
-			player.take_damage(dmg * 1.3, dmg_type, self)
+			player.take_damage(dmg * (1.5 if plated else 1.3), dmg_type, self)
 		return charge_dir * 600.0
 
 	# Signature: VENT BREATH — a cone that lingers as the lava you lure it into.
+	# Comes faster while plated so the immune window is a threat you outlast,
+	# not a safe DPS-check pause (r51 floor).
 	if special_cd <= 0.0 and dist < 560.0:
-		special_cd = 7.0 if enraged else 9.5
+		special_cd = 7.0 if enraged else (7.5 if plated else 9.5)
 		_vent_breath(player)
 		return Vector2.ZERO
 
@@ -1170,11 +1211,17 @@ func _vent_breath(player: Player) -> void:
 	roar()
 	game.spawn_text(global_position + Vector2(0, -84), "Vent breath!", LAVA)
 	var dir := (player.global_position - global_position).normalized()
-	for i in 4:
+	# Plated, the beast is a rampaging tank you must survive while you set
+	# up the melt: the cone reaches wider and hits harder (r51 floor).
+	var vf := 1.5 if plated else 1.2
+	var span := 5 if plated else 4
+	for i in span:
 		var at: Vector2 = game.clamp_to_zone(
 			global_position + dir.rotated(randf_range(-0.35, 0.35)) * (150.0 + i * 90.0), home)
-		game.telegraph(at, 80.0, 0.5 + i * 0.1, dmg * 1.2, {"color": LAVA})
+		game.telegraph(at, 80.0, 0.5 + i * 0.1, dmg * vf, {"color": LAVA})
 		game._add_hazard(game.cur_room, "lava", at, 70.0, 6.0)
+		# Its own vent lava must NOT melt its plating (see _on_lava).
+		game.hazards.back()["no_melt"] = true
 
 
 func _tantrum() -> void:
@@ -1411,6 +1458,13 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 			add.force_aggro = true
 			game.add_enemy(add)
 
+	# Imposed floor (r51 kite answer): a frost stomp cracks the ground under
+	# the prey on a steady beat, whatever the range — his answer to a kiter
+	# who never closes to provoke the pelt-drums. Slow tell; move or eat it.
+	if ring_cd <= 0.0:
+		ring_cd = 4.0
+		game.telegraph(player.global_position, 100.0, 0.85, dmg * 1.1, {"color": FROST})
+
 	if charging:
 		if _on_patch("ice"):
 			sliding = true  # can't stop on ice — keep skidding
@@ -1431,8 +1485,10 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 		return charge_dir * 620.0
 
 	# Signature: ICE CHARGE — telegraph then charge (bait it onto ice).
+	# Tightened toward Fangmaw's rhythm (r51) so the ice-bait → wall-slam
+	# payoff can actually recur, not fire once every 8s.
 	if special_cd <= 0.0 and dist < 540.0 and not telegraphing:
-		special_cd = 8.0
+		special_cd = 5.5
 		slide_cap = 2.2
 		telegraphing = true
 		_do_charge(to_player)
@@ -1620,6 +1676,14 @@ func _march_dreamers(delta: float) -> void:
 		if to.length() <= 90.0:
 			aura_mult = minf(3.0, aura_mult + 0.15)
 			game.spawn_text(global_position + Vector2(0, -70), "a dreamer joins the hymn", FROST)
+			# The hymn thickens the FLOOR, not just the aura (r51): each arrived
+			# dreamer paves another frost slow-patch under the prey and quickens
+			# the hymnal. A kiter who ignores the march watches their running
+			# room shrink until stillness — and the aura/heal — finally lands.
+			if is_instance_valid(game.player):
+				var at: Vector2 = game.clamp_to_zone(game.player.global_position, home)
+				game._add_hazard(game.cur_room, "slow", at, 90.0, 12.0)
+			special_cd = maxf(0.0, special_cd - 1.2)
 			d.queue_free()
 			continue
 		d.global_position += to.normalized() * 55.0 * delta
@@ -1906,6 +1970,12 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 		return Vector2.ZERO
 	if telegraphing:
 		return Vector2.ZERO
+	# Thrown spear (r51 kite answer): between charges the Huntress hurls one
+	# at range so a kiter feels pressure, not just a dodgeable charge every
+	# 6s. Lean by design — she still hunts alone, no adds.
+	if ring_cd <= 0.0:
+		ring_cd = 3.5
+		game.telegraph(player.global_position, 90.0, 0.75, dmg * 1.15, {"color": ROOTC})
 	if ability_cd <= 0.0 and dist < 220.0:
 		ability_cd = 4.0
 		game.sfx("slam")

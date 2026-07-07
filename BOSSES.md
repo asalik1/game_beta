@@ -200,11 +200,16 @@ meter thick. The foundry crews call it unkillable. They're almost right.
 **Codex line:** *"The foundry lost four crews learning that steel
 doesn't bite it. The fifth crew learned what does."*
 **Kit (the environmental-positioning boss — WoW ref: Magmadar + reverse Hodir):**
-- Near-immune while plated (physres/magres ~85): the arena's `lava`
-  patches are the answer — **standing in lava MELTS its plating**
-  (stacking debuff while it's in lava; at full melt, plates shed for
-  ~10s: resists crash, damage window opens). It avoids lava; you LURE
-  it (it charges like Fangmaw — bait the charge across a pool).
+- Near-immune while plated (FLAT ~82% pen-proof damage wall via `plate_dr`,
+  NOT a resist number — the old +60 resist read as only ~41% DR and a DPS
+  build could skip the mechanic): the arena's `lava` patches are the
+  answer — **standing in lava MELTS its plating** (stacking meter while
+  it's in lava; at full melt the wall drops and only the honest base
+  resist ~25 / ~17% DR remains, ~10s window). It avoids lava; you LURE
+  it (it charges like Fangmaw — bait the charge across a pool). Its own
+  vent-breath lava is tagged `no_melt` and never melts it; while plated
+  its charge + vent breath come faster/harder (a rampaging tank you
+  outlast, not a safe DPS pause).
 - **Vent breath:** cone of lava telegraphs.
 - **Tantrum** at each plate-shed: magma_rain event burst while
   vulnerable — the damage window isn't free.
@@ -560,7 +565,7 @@ mid bosses lean. ALL numbers get retuned against the chapter XP budget
 | widow | 19 | 3300 | 66 | 100 | magic ranged | high INT, eva |
 | saint_varo | 22 | 5800 | 88 | 70→105 | phys melee | Null-grade physres |
 | forgemistress | 23 | 5900 | 96 | 150 | phys melee | AGI/STR skirmisher |
-| cinderhide | 25 | 7600 | 110 | 135 | phys melee | resists 85 plated / 25 shed |
+| cinderhide | 25 | 7600 | 110 | 135 | phys melee | base res 25; plated = flat ~82% pen-proof wall (plate_dr) |
 | ashpriest | 28 | 11500 | 150 | 95 | magic ranged | finale |
 | whitepelt | 29 | 12000 | 160 | 155 | phys melee | pack boss |
 | icebound | 31 | 15000 | 190 | 90 | magic ranged | high magres |
