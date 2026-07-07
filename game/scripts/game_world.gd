@@ -396,6 +396,20 @@ func _spawn_room_enemies(i: int) -> void:
 			zone_alive[i] = zone_alive.get(i, 0) + 1
 			add_enemy(e)
 			spawned.append(e)
+	# Tether pairing (mob mechanic): link tether mobs two-by-two so their
+	# bond burns the player and one dying full-heals the twin (kill both
+	# together). Odd one out simply loses the trait (no partner).
+	var teth: Array = []
+	for s in spawned:
+		if (s as Enemy).traits.has("tether"):
+			teth.append(s)
+	for pi in range(0, teth.size() - 1, 2):
+		var a := teth[pi] as Enemy
+		var b := teth[pi + 1] as Enemy
+		a.tether_partner = b
+		b.tether_partner = a
+	if teth.size() % 2 == 1:
+		(teth[-1] as Enemy).traits.erase("tether")
 	# Elite ambush (playtest round 6): seeded per character+room, some
 	# combat rooms promote one pack member to a miniboss. Boss rooms
 	# are exempt — those arenas stay as authored.

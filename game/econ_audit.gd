@@ -45,7 +45,7 @@ func _chest_gear_value(tier: String, cap: String) -> float:
 		var gi: int = mini(Items.GRADES.find(String(g)), cap_i)
 		var w: float = float(weights[g])
 		total += w
-		value += w * (22.0 * float(Items.GRADE_MULT[Items.GRADES[gi]]) / 2.0)
+		value += w * (22.0 * float(Items.GRADE_MULT[Items.GRADES[gi]]) * Balance.MERCHANT_SELL_FRACTION)
 	return value / maxf(total, 1.0)
 
 

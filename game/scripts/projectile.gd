@@ -7,6 +7,7 @@ var vel := Vector2.ZERO
 var dmg := 10.0                # used by hostile (enemy) projectiles
 var hostile_type := "magic"    # hostile: damage type (set from the shooter)
 var source_enemy: Node = null  # hostile: shooter, for crit/pen/dex resolution
+var root_dur := 0.0            # webber snare shot: roots the player on hit
 var friendly := true
 var life := 2.5
 var pierce := false            # sniper arrows fly through enemies
@@ -215,6 +216,10 @@ func _on_body_entered(body: Node) -> void:
 		game.burst(global_position, glow_color, 5)
 		var shooter: Node = source_enemy if is_instance_valid(source_enemy) else null
 		body.take_damage(dmg, hostile_type, shooter)
+		# Webber's snare shot (mob mechanic): roots the player on hit —
+		# the dodge is denied for a beat so an ally's pounce can land.
+		if root_dur > 0.0 and body.has_method("apply_root"):
+			body.apply_root(root_dur)
 		queue_free()
 	elif body is StaticBody2D:
 		game.burst(global_position, Color(glow_color, 0.5), 3)

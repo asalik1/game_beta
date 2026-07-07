@@ -27,6 +27,9 @@ func _physics_process(delta: float) -> void:
 	dodge_time = maxf(0.0, dodge_time - delta)
 	frozen_time = maxf(0.0, frozen_time - delta)
 	rooted_time = maxf(0.0, rooted_time - delta)
+	chill_time = maxf(0.0, chill_time - delta)
+	if chill_time <= 0.0:
+		chill_mult = 1.0
 	theme_guard_time = maxf(0.0, theme_guard_time - delta)
 	aegis_time = maxf(0.0, aegis_time - delta)
 	pact_time = maxf(0.0, pact_time - delta)
@@ -132,6 +135,8 @@ func _physics_process(delta: float) -> void:
 	if theme_speed_time > 0.0:
 		spd *= 1.0 + theme_speed_amt
 	spd *= hazard_speed  # ice patches boost, void rifts slow
+	if chill_time > 0.0:
+		spd *= chill_mult  # a mob's frost aura drags at your feet
 	velocity = dir * spd + game.gust_vec  # sandstorm gusts shove everyone
 	move_and_slide()
 
@@ -250,6 +255,16 @@ func apply_root(dur: float) -> void:
 		return
 	rooted_time = maxf(rooted_time, dur)
 	game.spawn_text(global_position + Vector2(0, -50), "ROOTED!", Color(0.5, 0.8, 0.6))
+
+
+## CHILLED: movement slowed to `mult` while inside a mob's frost aura.
+## Refreshed every frame the aura holds you (mob frost_aura trait) — no
+## text spam; the walking-through-molasses feel is the tell.
+func apply_chill(mult: float, dur := 0.35) -> void:
+	if dead:
+		return
+	chill_mult = minf(chill_mult, mult) if chill_time > 0.0 else mult
+	chill_time = maxf(chill_time, dur)
 
 
 # ================================================================= abilities

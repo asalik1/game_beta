@@ -946,10 +946,7 @@ func open_item_panel(item: Dictionary) -> void:
 				ib.tooltip_text = "%s  x%d" % [Items.gem_title(g2), group["count"]]
 
 	# --- reforge bench: gold-cost crafting on this item ---
-	# Round 50: reforge costs ride the same level ladder as the shop, so the
-	# bench doesn't become the trivially-cheap sink once gear prices scale.
 	_lbl(vbox, "REFORGE BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
-	var rm: float = Balance.merchant_price_mult(p.level)
 	var subs2: Dictionary = item.get("subs", {})
 	# S-gear reforges within its own class; everything else uses the wearer's.
 	var rcls: String = String(item.get("cls", p.cls))
@@ -957,7 +954,7 @@ func open_item_panel(item: Dictionary) -> void:
 		_lbl(vbox, "Nothing to reforge — no affixes to reroll or sockets to add.",
 			12, Color(0.55, 0.55, 0.6))
 	if not subs2.is_empty():
-		var acost := int(ceil(Items.reforge_cost(item, "affix") * rm))
+		var acost := Items.reforge_cost(item, "affix")
 		var affix_cb := func() -> void:
 			if game.player.gold >= acost:
 				game.player.gold -= acost
@@ -969,7 +966,7 @@ func open_item_panel(item: Dictionary) -> void:
 			Color(0.7, 0.9, 1.0) if p.gold >= acost else Color(0.5, 0.5, 0.55))
 		for stat in subs2.keys():
 			var s := String(stat)
-			var scost := int(ceil(Items.reforge_cost(item, "sub") * rm))
+			var scost := Items.reforge_cost(item, "sub")
 			var sub_cb := func() -> void:
 				if game.player.gold >= scost:
 					game.player.gold -= scost
@@ -980,7 +977,7 @@ func open_item_panel(item: Dictionary) -> void:
 			_btn(vbox, "   Reroll %s value  —  %d gold" % [Items.STAT_LABEL.get(s, s), scost], sub_cb,
 				Color(0.85, 0.85, 0.9) if p.gold >= scost else Color(0.5, 0.5, 0.55))
 	if Items.can_add_socket(item):
-		var ccost := int(ceil(Items.reforge_cost(item, "socket") * rm))
+		var ccost := Items.reforge_cost(item, "socket")
 		var sock_cb := func() -> void:
 			if game.player.gold >= ccost:
 				game.player.gold -= ccost
@@ -1221,8 +1218,11 @@ func open_shop(zone: int) -> void:
 			["wood", "silver", "silver", "gold"][clampi(zone, 0, 3)]))
 		var stock: Array = []
 		var stock_n: int = int(Balance.SHOP_STOCK_BY_TIER.get(tier, 3))
+		# Round 51: stock grade follows the ACT appearance table (Items.
+		# roll_shop_grade), clamped to loot_cap — not the old chest tiers.
 		for i in stock_n:
-			stock.append(Items.roll_item(tier, rng, game.player.cls, game.loot_cap()))
+			var sg := Items.roll_shop_grade(game.chapter_id, rng, game.loot_cap())
+			stock.append(Items.roll_gear_of_grade(sg, rng, game.player.cls))
 		game.shop_stock[zone] = stock
 
 	var p: Player = game.player
@@ -1250,10 +1250,9 @@ func open_shop(zone: int) -> void:
 	_lbl(buy, "BUY", 16, Color(0.95, 0.85, 0.5))
 
 	var haggle: float = game.band_price_mult()
-	# Merchant price ladder (round 50): gear / upgrade / gamble / reforge climb
-	# with player level so the shop keeps pace with income. Consumables and the
-	# health potion stay flat staples.
-	var m: float = Balance.merchant_price_mult(p.level)
+	# Round 51: gear buy = FARM-COST (Items.shop_buy_price), so buying never
+	# beats farming. Consumables/health potion stay flat staples; the old
+	# per-level ladder is retired.
 	var potion_cost := int(ceil(float(Balance.POTION_PRICE) * haggle))
 	var buy_potion := func() -> void:
 		if p.gold >= potion_cost and p.potions < Balance.POTION_MAX:
@@ -1286,6 +1285,25 @@ func open_shop(zone: int) -> void:
 		cb.clip_text = true
 		cb.custom_minimum_size = Vector2(640, 0)
 
+	# Gem shelf (round 51): buy loose gems at the act's level(s), random stat.
+	# Farm-cost priced (Items.gem_buy_price) — a fraction of gear, scales by act.
+	var gem_act: int = int(Balance.CHAPTER_ECON.get(game.chapter_id, {}).get("act", 1))
+	var gem_range: Array = Balance.SHOP_GEM_RANGE.get(gem_act, [1, 1])
+	for glvl in range(int(gem_range[0]), int(gem_range[1]) + 1):
+		var gl := glvl
+		var gprice := int(ceil(Items.gem_buy_price(gl, game.chapter_id) * haggle))
+		var buy_gem := func() -> void:
+			if p.gold >= gprice:
+				if p.gain_gem(Items.random_gem(game.loot_rng, gl)):
+					p.gold -= gprice
+					game.sfx("chest")
+				else:
+					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+			open_shop(zone)
+		var gemb := _btn(buy, "💎 Gem — Lv%d, random stat — %d gold" % [gl, gprice],
+			buy_gem, Color(0.6, 0.9, 1.0), p.gold >= gprice)
+		gemb.custom_minimum_size = Vector2(640, 0)
+
 	# Gambling shelf: spend gold on a random item of this merchant's tier.
 	var gamble_tier := String(game.zones[zone].get("shop_tier",
 		["wood", "silver", "silver", "gold"][clampi(zone, 0, 3)]))
@@ -1306,7 +1324,7 @@ func open_shop(zone: int) -> void:
 
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
-		var cost := int(ceil(Items.price(it) * Balance.SHOP_BUY_MARKUP * m * haggle))
+		var cost := int(ceil(Items.shop_buy_price(it, game.chapter_id) * haggle))
 		var buy_item := func() -> void:
 			if p.gold >= cost:
 				if p.bag_used() >= p.bag_capacity():
@@ -1327,7 +1345,7 @@ func open_shop(zone: int) -> void:
 	for slot in ["weapon", "armor"]:
 		if p.equipment.has(slot):
 			var item: Dictionary = p.equipment[slot]
-			var cost := int(ceil(Items.upgrade_cost(item) * m))
+			var cost := Items.upgrade_cost(item)
 			var do_upgrade := func() -> void:
 				if p.gold >= cost:
 					p.gold -= cost
@@ -1361,7 +1379,7 @@ func open_shop(zone: int) -> void:
 	for item in p.backpack:
 		sold_any = true
 		var it: Dictionary = item
-		var value := maxi(1, int(Items.price(it) * Balance.MERCHANT_SELL_FRACTION * m))
+		var value := maxi(1, int(Items.price(it) * Balance.MERCHANT_SELL_FRACTION))
 		gear_total += value
 		var sell_one := func() -> void:
 			p.strip_gems(it)  # gems pop back into your bag

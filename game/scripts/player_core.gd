@@ -160,6 +160,8 @@ var hazard_speed := 1.0        # terrain patch effect (ice boosts, void slows)
 # can't move but MAY still cast (Serane's Shatter Lance, ch6 roots).
 var frozen_time := 0.0
 var rooted_time := 0.0
+var chill_time := 0.0          # mob frost-aura: movement slowed while > 0
+var chill_mult := 1.0          # the active chill slow factor (rebuilt each frame)
 var aegis_time := 0.0          # paladin Aegis: the shield is up
 var aegis_amt := 110.0         # resistances granted while it holds
 var aegis_reflect := 0.6       # smite multiplier on attackers
@@ -815,8 +817,10 @@ func acquire_bag(b: Dictionary) -> bool:
 		game.spawn_text(global_position + Vector2(0, -56),
 			"BAG UPGRADED: %s (%d slots)" % [b["name"], int(b["slots"])], Color(0.95, 0.85, 0.5))
 		return true
-	gold += Items.bag_price(str(b.get("grade", "F")))
-	game.spawn_text(global_position + Vector2(0, -50), "Spare bag sold for gold", Color(1, 0.9, 0.4))
+	# Bags cash out for a flat 1g (round 51 anti-exploit: never the sell
+	# formula — boss-dropped bags would otherwise be a gold pump).
+	gold += Balance.BAG_SELL_GOLD
+	game.spawn_text(global_position + Vector2(0, -50), "Spare bag — %dg" % Balance.BAG_SELL_GOLD, Color(1, 0.9, 0.4))
 	return false
 
 

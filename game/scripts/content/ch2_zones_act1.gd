@@ -81,22 +81,22 @@ const CHAPTER_ZONES := {
 const ENEMIES := {
 	"blightwolf": {"name": "Waking Wolf", "sprite": "blightwolf", "hp": 58.0, "dmg": 11.0, "speed": 165.0, "xp": 18, "gold": 6, "ranged": false, "scale": 3.2,
 		"physres": 8.0, "magres": 5.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
-		"level": 3, "hp_g": 0.10, "dmg_g": 0.08},
+		"level": 3, "hp_g": 0.10, "dmg_g": 0.08, "traits": ["pounce"]},
 	"bogspider": {"name": "Greyrun Lurker", "sprite": "rat", "hp": 50.0, "dmg": 9.0, "speed": 205.0, "xp": 20, "gold": 7, "ranged": false, "scale": 3.2,
 		"physres": 0.0, "magres": 8.0, "eva": 0.14, "critres": 0.0, "dmg_type": "phys",
-		"level": 4, "hp_g": 0.09, "dmg_g": 0.08},
+		"level": 4, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["web"]},
 	"beastkin_raider": {"name": "Wildfang Raider", "sprite": "orc", "hp": 82.0, "dmg": 13.0, "speed": 175.0, "xp": 26, "gold": 10, "ranged": false, "scale": 3.4,
 		"physres": 14.0, "magres": 4.0, "eva": 0.05, "critres": 0.0, "dmg_type": "phys",
-		"level": 5, "hp_g": 0.11, "dmg_g": 0.09},
+		"level": 5, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["frenzy", "swift"]},
 	"sporeshambler": {"name": "Spore Shambler", "sprite": "fungus_heavy", "hp": 115.0, "dmg": 14.0, "speed": 115.0, "xp": 30, "gold": 11, "ranged": false, "scale": 3.5,
 		"physres": 15.0, "magres": 18.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
-		"level": 6, "hp_g": 0.11, "dmg_g": 0.09},
+		"level": 6, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["mend"]},
 	"stormcult": {"name": "Choir Cantor", "sprite": "scholar_censor", "hp": 68.0, "dmg": 15.0, "speed": 105.0, "xp": 34, "gold": 13, "ranged": true, "scale": 3.2,
 		"physres": 6.0, "magres": 22.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
-		"level": 7, "hp_g": 0.11, "dmg_g": 0.10},
+		"level": 7, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["channel_heal"]},
 	"beastkin_howler": {"name": "Wildfang Howler", "sprite": "orc_rogue", "hp": 74.0, "dmg": 16.0, "speed": 150.0, "xp": 38, "gold": 14, "ranged": true, "scale": 3.3,
 		"physres": 8.0, "magres": 10.0, "eva": 0.08, "critres": 0.0, "dmg_type": "magic",
-		"level": 8, "hp_g": 0.11, "dmg_g": 0.10},
+		"level": 8, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["pounce"]},
 }
 
 const QUESTS := {

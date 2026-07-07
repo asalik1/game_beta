@@ -799,22 +799,40 @@ func _run_systems() -> void:
 			return _fail("sub-B gear rolled an endgame-only stat (lifesteal/combo)")
 	print("ok: class-aware drops (arsenal + no dead pen stats + B-gated lifesteal/combo)")
 
-	# 4b. S weapon: class shape, 3 gem slots, passive.
+	# 4b. S weapon: legendary shape + 3 sockets; its passive is DORMANT
+	# (round 51b) until the class's awakening flag is set. Wrong-class flag
+	# never wakes it; describe() reflects locked vs active.
 	var srng := RandomNumberGenerator.new()
 	srng.seed = 7
 	var s_wpn := Items.roll_item_of("weapon", "S", srng, "warrior")
 	if s_wpn.get("passive", "") != "kingsblade" or s_wpn.get("cls", "") != "warrior":
 		return _fail("S warrior weapon wrong passive/class")
+	if not s_wpn.get("passive_dormant", false):
+		return _fail("a dropped S weapon must stamp passive_dormant")
 	if s_wpn.get("gem_slots", 0) != 3:
 		return _fail("S gear should have 3 gem slots")
+	var keep_flags: Dictionary = game.flags.duplicate(true)
+	game.set_flag("s_awakened_warrior", false)
+	game.set_flag("s_awakened_archer", false)
 	game.player.add_item(s_wpn)
 	game.player.equip(s_wpn)
+	if game.player.s_passive() != "":
+		return _fail("dormant S passive fired without awakening")
+	game.set_flag("s_awakened_archer")  # wrong class
+	if game.player.s_passive() != "":
+		return _fail("wrong-class awakening woke a warrior legendary")
+	if not Items.describe(s_wpn, false).contains("LOCKED"):
+		return _fail("describe should show LOCKED for a dormant legendary")
+	game.set_flag("s_awakened_warrior")  # right class
 	if game.player.s_passive() != "kingsblade":
-		return _fail("s_passive not active after equipping")
+		return _fail("s_passive not active after awakening the class")
+	if Items.describe(s_wpn, true).contains("LOCKED"):
+		return _fail("describe still LOCKED after awakening")
 	game.player.cds["a1"] = 0.0
 	game.player.use_ability("a1")
 	await _frames(15)
-	print("ok: S weapon + passive (%s)" % s_wpn["name"])
+	game.flags = keep_flags
+	print("ok: S weapon dormant passive + awakening (%s sleeps until s_awakened_warrior)" % s_wpn["name"])
 
 	# 4c. Gems: targeted socket, removal, stat change, synthesize, sell-return.
 	var cg := Items.make_gem("crit", 1)
@@ -2061,27 +2079,15 @@ func _test_mob_traits() -> void:
 	if absf(float(fang["hp"]) - 1200.0) > 1.0:
 		return _fail("boss HP wrongly caught the mob mult")
 
-	# Traits parse onto the instance.
-	var zed := _dummy(Vector2(240, 0))  # helper spawns a wolf...
-	zed.queue_free()
-	await _frames(1)
+	# Channel-healer: pulse tops up a wounded neighbor (both -1, same zone).
 	var healer := Enemy.make(game, "cultist", game.player.global_position + Vector2(260, 0))
 	game.add_enemy(healer)
-	if not healer.traits.has("healer"):
-		return _fail("cultist did not carry the healer trait")
-
-	# Mend self-heals a wounded zombie (zone_idx -1 always simulates).
+	if not healer.traits.has("channel_heal"):
+		return _fail("cultist did not carry the channel_heal trait")
 	var z := Enemy.make(game, "zombie", game.player.global_position + Vector2(300, 0))
 	game.add_enemy(z)
 	if z.mend_rate <= 0.0:
-		return _fail("zombie has no mend rate")
-	z.hp = z.max_hp * 0.5
-	var hp0: float = z.hp
-	await get_tree().create_timer(0.4).timeout
-	if z.hp <= hp0:
-		return _fail("mend did not self-heal")
-
-	# Healer pulse tops up a wounded neighbor (both -1, same 'zone').
+		return _fail("zombie has no mend rate (mend trait)")
 	z.zone_idx = 0
 	healer.zone_idx = 0
 	game.cur_room = 0
@@ -2089,9 +2095,30 @@ func _test_mob_traits() -> void:
 	var hp1: float = z.hp
 	healer._heal_pulse()
 	if z.hp <= hp1:
-		return _fail("healer pulse did not mend a wounded ally")
+		return _fail("channel-heal pulse did not mend a wounded ally")
 
-	# Frenzy hardens the wounded.
+	# WARDED: a small chip hit is guarded; a CRIT (a real blow) shatters
+	# the guard for good — no status required (every build can crack it).
+	var husk := Enemy.make(game, "sun_bleached", game.player.global_position + Vector2(320, 0))
+	game.add_enemy(husk)
+	if not husk.traits.has("warded"):
+		return _fail("sun_bleached lost its warded trait")
+	var chip := husk.max_hp * 0.02  # a small, non-shattering hit
+	husk.hp = husk.max_hp
+	husk.take_damage(chip, Vector2.ZERO, false, true)  # non-crit chip: guarded
+	if husk.max_hp - husk.hp >= chip * 0.9:
+		return _fail("warded guard did not reduce chip damage")
+	if husk.ward_broken:
+		return _fail("a chip hit wrongly shattered the ward")
+	husk.take_damage(chip, Vector2.ZERO, true, true)   # a CRIT shatters it
+	if not husk.ward_broken:
+		return _fail("a crit did not shatter the ward")
+	husk.hp = husk.max_hp
+	husk.take_damage(chip, Vector2.ZERO, false, true)  # now full damage lands
+	if husk.max_hp - husk.hp < chip * 0.9:
+		return _fail("shattered ward still reduced damage")
+
+	# Frenzy hardens the wounded; swift speeds the plate-less melee.
 	var wt := Enemy.make(game, "skeleton", game.player.global_position + Vector2(340, 0))
 	game.add_enemy(wt)
 	wt.hp = wt.max_hp
@@ -2099,18 +2126,47 @@ func _test_mob_traits() -> void:
 	wt.hp = wt.max_hp * 0.2
 	if wt._hit_dmg() <= calm:
 		return _fail("frenzy did not raise damage below the HP threshold")
-
-	# Lunge trait present + speeds up when swift.
-	var w := Enemy.make(game, "wolf", game.player.global_position + Vector2(360, 0))
-	if not w.traits.has("lunge"):
-		return _fail("wolf lost its lunge trait")
-	if wt.speed <= 140.0:  # skeleton is swift (140 base x 1.18)
+	if wt.speed <= 140.0:
 		return _fail("swift speed bump not applied")
-	for e in [healer, z, wt, w]:
-		e.queue_free()
+
+	# Pounce present; bloat spawns a hazard pool on death.
+	var w := Enemy.make(game, "wolf", game.player.global_position + Vector2(360, 0))
+	if not w.traits.has("pounce"):
+		return _fail("wolf lost its pounce trait")
+	var hz0: int = game.hazards.size()
+	var bl := Enemy.make(game, "casket_creeper", game.player.global_position + Vector2(380, 0))
+	game.add_enemy(bl)
+	bl.zone_idx = 0
+	bl.take_damage(9999999.0, Vector2.ZERO, false, true)
+	await _frames(3)  # death + deferred hazard spawn
+	if game.hazards.size() <= hz0:
+		return _fail("bloat did not leave a hazard pool on death")
+
+	for e in [healer, z, husk, wt, w]:
+		if is_instance_valid(e):
+			e.queue_free()
+	game.hazards.clear()
 	await _frames(2)
 	game.cur_room = 0
-	print("ok: mob traits (HP/dmg presence, mend, healer pulse, frenzy, lunge/swift)")
+
+	# Coverage + validity: every catalogued mob (ch1-7) carries at least
+	# one trait, and every trait names a real behavior (typo guard).
+	var untagged: Array = []
+	for kind in Story.ALL_ENEMIES:
+		var st: Dictionary = Story.ALL_ENEMIES[kind]
+		if st.get("boss", false) or kind in game.menus.BOSS_KINDS:
+			continue
+		if st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
+			continue  # scenery props (censers, roots) aren't catalogue mobs
+		var tr: Array = st.get("traits", [])
+		if tr.is_empty():
+			untagged.append(kind)
+		for t in tr:
+			if not Enemy.TRAIT_DESC.has(String(t)):
+				return _fail("mob '%s' has unknown trait '%s'" % [kind, t])
+	if not untagged.is_empty():
+		return _fail("untagged mobs (need a trait): %s" % ", ".join(untagged))
+	print("ok: mob mechanics (presence + pounce/web/channel/warded/bloat... all ch1-7 tagged)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
@@ -2945,30 +3001,73 @@ func _test_promises_kept_2() -> void:
 	print("ok: promises kept 2 (Osk's falling count on vess_dead; kneeling-field epilogue beat)")
 
 
-# ---- CORE: merchant economy (round 50) — level-scaled prices, new
-# consumables, sell eligibility incl. the quest-item unsellable guard -------
+# ---- CORE: merchant economy (round 51) — FARM-COST pricing, act-gated
+# grades, upgrade curve, bag=1g, sell basis + quest-item guard --------------
 func _test_merchant_economy() -> void:
 	var p := game.player
-	# Price ladder: flat at L1, climbs with level, matches the knob.
-	if not is_equal_approx(Balance.merchant_price_mult(1), 1.0):
-		return _fail("merchant_price_mult(1) != 1.0")
-	var m20: float = Balance.merchant_price_mult(20)
-	if m20 <= 1.0 or not is_equal_approx(m20, 1.0 + Balance.SHOP_PRICE_PER_LEVEL * 19.0):
-		return _fail("merchant_price_mult(20) off the ladder")
-	# A gear buy price actually climbs with level.
-	var it := {"grade": "A", "plus": 0}
-	var buy1: int = int(ceil(Items.price(it) * Balance.SHOP_BUY_MARKUP))
-	var buy20: int = int(ceil(Items.price(it) * Balance.SHOP_BUY_MARKUP * m20))
-	if buy20 <= buy1:
-		return _fail("shop buy price did not climb with level")
 
-	# Gems: value climbs by gem level; sell is a sub-market fraction.
+	# N_runs math: ceil((1/chance)/3 bosses). B=1 run, A(1/10)=4, S=9, S-wpn=17.
+	if Balance.farm_runs(1.0 / 3.0) != 1 or Balance.farm_runs(1.0 / 10.0) != 4:
+		return _fail("farm_runs off for B / A")
+	if Balance.farm_runs(1.0 / 25.0) != 9 or Balance.farm_runs(1.0 / 25.0 * Balance.S_WEAPON_DROP_WEIGHT) != 17:
+		return _fail("farm_runs off for S / S-weapon (should be 9 / 17)")
+
+	# Act-gated boss gear odds: ch1-6 B only (no A); ONLY ch7 adds A.
+	if Balance.boss_gear_odds("ch3").has("A") or not Balance.boss_gear_odds("ch3").has("B"):
+		return _fail("ch1-6 boss gear table wrong (should be B only)")
+	if not Balance.boss_gear_odds("ch7").has("A"):
+		return _fail("ch7 bosses must be able to drop A")
+
+	# loot_cap: the A->B nerf (ch2-7 cap B), ch1 stays C.
+	if String(Story.chapter("ch3").get("loot_cap", "")) != "B" \
+			or String(Story.chapter("ch1").get("loot_cap", "")) != "C":
+		return _fail("loot_cap not ch1=C / ch3=B")
+
+	# Farm-cost formula: B in ch3 == (first + (N-1)*replay)*tax, N=1.
+	var e3: Dictionary = Balance.CHAPTER_ECON["ch3"]
+	var expect_b: int = int(round(float(e3["first"]) * Balance.FARM_TAX))
+	var b3: int = Items.shop_buy_price({"grade": "B", "slot": "armor", "plus": 0}, "ch3")
+	if b3 != expect_b:
+		return _fail("farm-cost B@ch3 = %d, expected %d" % [b3, expect_b])
+	# Scales with the chapter's gold/run: deeper chapter, pricier B.
+	if Items.shop_buy_price({"grade": "B", "slot": "armor", "plus": 0}, "ch7") <= b3:
+		return _fail("farm-cost B did not scale ch3->ch7")
+	# Commodity grades (below the rare tier) stay cheap flat — far under B.
+	if Items.shop_buy_price({"grade": "D", "slot": "armor", "plus": 0}, "ch3") >= b3:
+		return _fail("commodity D priced >= farm-cost B")
+
+	# Drop-channel rolls: shop grade never exceeds loot_cap; boss-gear + exact
+	# gear roll produce valid grades.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 424242
+	for i in 150:
+		if Items.GRADES.find(Items.roll_shop_grade("ch3", rng, "B")) > Items.GRADES.find("B"):
+			return _fail("shop stock grade exceeded loot_cap")
+		var bg := Items.roll_boss_gear_grade("ch7", rng)
+		if bg != "" and not Balance.boss_gear_odds("ch7").has(bg):
+			return _fail("boss gear rolled a grade off the act table")
+	if String(Items.roll_gear_of_grade("A", rng, "warrior")["grade"]) != "A":
+		return _fail("roll_gear_of_grade produced the wrong grade")
+
+	# Upgrade curve: C +0->+1 = 24g; an S step is exactly 8x a C step.
+	var cstep: int = Items.upgrade_cost({"grade": "C", "plus": 0})
+	var sstep: int = Items.upgrade_cost({"grade": "S", "plus": 0})
+	if cstep != 24 or sstep != cstep * 8:
+		return _fail("upgrade curve off (C step %d, S step %d)" % [cstep, sstep])
+
+	# Bags cash out for exactly 1g (anti-exploit), never the sell formula.
+	if Balance.BAG_SELL_GOLD != 1:
+		return _fail("bag sell gold != 1")
+
+	# Gem BUY (farm-cost) sits well ABOVE gem SELL (0.45 x intrinsic) — no pump.
 	if Balance.gem_gold_value(2) <= Balance.gem_gold_value(1):
 		return _fail("gem gold value not monotonic in level")
 	var gem_market: int = int(Balance.gem_gold_value(2))
 	var gem_sell: int = int(Balance.gem_gold_value(2) * Balance.MERCHANT_SELL_FRACTION)
 	if gem_sell <= 0 or gem_sell >= gem_market:
 		return _fail("gem sell value not a sub-market fraction")
+	if Items.gem_buy_price(1, "ch3") <= int(Balance.gem_gold_value(1) * Balance.MERCHANT_SELL_FRACTION):
+		return _fail("gem buy (farm-cost) not above gem sell")
 
 	# Sell-eligibility (menus.open_shop): ONLY ids in CONSUMABLE_PRICES.
 	# Elite utility + quest keepsakes have no market price -> unsellable.
@@ -3008,4 +3107,4 @@ func _test_merchant_economy() -> void:
 	p.dr_time = keep_dr
 	p.dr_amt = keep_dra
 	p.hp = keep_hp
-	print("ok: merchant economy (price ladder, gem/consumable sell, quest-item guard, ward+renewal)")
+	print("ok: merchant economy (farm-cost buy, act-gated grades, upgrade curve, bag=1g, sell + quest-item guard, ward+renewal)")

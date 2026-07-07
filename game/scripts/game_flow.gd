@@ -319,12 +319,25 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
 	elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
 		gem_count = 1
+	# First-clear catch-up bundle rolls one level richer than the act floor.
+	var boss_gem_lvl := Balance.gem_drop_level(chapter_id) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
 	for gi in gem_count:
-		var boss_gem := Items.random_gem(loot_rng,
-			2 if loot_rng.randf() < Balance.gem_lv2_chance(boss_lv) else 1)
+		var boss_gem := Items.random_gem(loot_rng, boss_gem_lvl)
 		if give_loot({"kind": "gem", "gem": boss_gem}, boss_pos + Vector2(-34.0 + 34.0 * gi, 30)):
 			spawn_text(boss_pos + Vector2(0, -70 - 20 * gi),
 				"+ " + Items.gem_title(boss_gem), Items.gem_color(boss_gem))
+
+	# Boss GEAR + BAG channel (round 51): a NEW drop on top of gems/gold/
+	# spoils. Grade from the act table (Act1 ch1-6 B@1/3; ch7 +A@1/10; Act2/3
+	# richer). Two independent rolls — one gear piece, one bag.
+	var ggrade := Items.roll_boss_gear_grade(chapter_id, loot_rng)
+	if ggrade != "":
+		var gear := Items.roll_gear_of_grade(ggrade, loot_rng, player.cls)
+		if give_loot({"kind": "item", "item": gear}, boss_pos + Vector2(40, 30)):
+			spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
+	var bgrade := Items.roll_boss_gear_grade(chapter_id, loot_rng)
+	if bgrade != "":
+		player.acquire_bag(Items.make_bag(bgrade))
 
 	# Now that the room is safe, a wandering merchant MAY set up camp.
 	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
@@ -408,7 +421,8 @@ func _first_clear_reward(boss_lv: int) -> void:
 	var spoils := Items.roll_item("gold", loot_rng, player.cls, loot_cap())
 	send_mail("Spoils of %s" % String(Story.chapter(chapter_id)["name"]),
 		"The chapter is conquered. These spoils are yours by right — and the road behind you stays open for the farming.",
-		[{"kind": "item", "item": spoils}, {"kind": "gem", "gem": Items.random_gem(loot_rng, 2)}])
+		[{"kind": "item", "item": spoils}, {"kind": "gem", "gem": Items.random_gem(loot_rng,
+			Balance.gem_drop_level(chapter_id) + Balance.BOSS_FIRST_CLEAR_GEM_BONUS)}])
 	spawn_text(player.global_position + Vector2(0, -106),
 		"CHAPTER CONQUERED  +%d gold — spoils in your mailbox" % g,
 		Color(1.0, 0.85, 0.4), 5.0)
@@ -441,8 +455,7 @@ func on_enemy_died(e: Enemy) -> void:
 		# nobody can socket yet.
 		if e.level >= Balance.ELITE_GEM_SURE_LEVEL \
 				or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE:
-			var gem := Items.random_gem(loot_rng,
-				2 if loot_rng.randf() < Balance.gem_lv2_chance(e.level) else 1)
+			var gem := Items.random_gem(loot_rng, Balance.gem_drop_level(chapter_id))
 			if give_loot({"kind": "gem", "gem": gem}, e.global_position):
 				spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 		Chest.drop(self, "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",

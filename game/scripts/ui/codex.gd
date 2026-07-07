@@ -481,6 +481,9 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	m._lbl(chests, "Wooden chest — drops from monsters (common). Contains F to C gear.", 14, Color(0.8, 0.65, 0.45))
 	m._lbl(chests, "Silver chest — drops from monsters (rare). Contains D to A gear.", 14, Color(0.8, 0.82, 0.9))
 	m._lbl(chests, "Golden chest — every boss drops one. Contains B to S gear.", 14, Color(1.0, 0.85, 0.35))
+	var bossdrop := m._lbl(chests, "Boss GEAR — every boss also has a chance to drop a piece of gear AND a bag, on top of its chest and gems. In Act 1 that piece is B-grade (about 1 in 3 per boss); only the FINAL chapter's bosses can drop an A. A-grade and up is farmed, not bought.", 13, Color(0.85, 0.75, 0.55))
+	bossdrop.custom_minimum_size = Vector2(880, 0)
+	bossdrop.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	m._lbl(chests, "Every piece is CLASS-LOCKED and guarantees your class attribute as its main (STR/AGI/INT). Bonus stats: ATK%, HP%, Crit, CritDmg, VIT, EVA, DEX, Pen, Resists, MP.", 13, Color(0.7, 0.72, 0.78))
 	var resv := m._lbl(chests, "Haste, Lifesteal, Combo and Greed NEVER roll on gear — they are GEM-only (see below), and each item holds at most ONE such gem. MOVEMENT SPEED is on no item and no gem: only terrain and abilities touch it." , 13, Color(0.85, 0.75, 0.55))
 	resv.custom_minimum_size = Vector2(880, 0)
@@ -505,7 +508,8 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		"SPECIAL gems — Haste, Lifesteal, Combo, Greed — are the ONLY way to build those stats: at most one special gem per item, and their totals soft-cap at %d%% Haste / %d%% Lifesteal / %d%% Combo (beyond, a point pays about a tenth)." %
 			[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)],
 		"A vessel holds what it can bear: B gear sockets gems up to Lv%d, A up to Lv%d, S up to Lv%d — deep gems need endgame gear." %
-			[int(Items.GEM_LEVEL_LIMIT["B"]), int(Items.GEM_LEVEL_LIMIT["A"]), int(Items.GEM_LEVEL_LIMIT["S"])]]:
+			[int(Items.GEM_LEVEL_LIMIT["B"]), int(Items.GEM_LEVEL_LIMIT["A"]), int(Items.GEM_LEVEL_LIMIT["S"])],
+		"Merchants sell loose gems (at the act's level) and buy your spares back — but the buy price is a pity option: farming gems is always cheaper."]:
 		var gil := m._lbl(gem_intro, String(line3), 13, Color(0.7, 0.72, 0.78))
 		gil.custom_minimum_size = Vector2(880, 0)
 		gil.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

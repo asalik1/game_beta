@@ -462,13 +462,13 @@ const ENEMIES := {
 	# chapter. Getting caught by a pack is supposed to sting.
 	"wolf":     {"name": "Blighted Wolf",   "sprite": "wolf",     "hp": 34.0,  "dmg": 12.0, "speed": 175.0, "xp": 7,  "gold": 4,  "ranged": false, "scale": 3.0,
 		"physres": 5.0,  "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
-		"level": 2, "hp_g": 0.10, "dmg_g": 0.08, "traits": ["lunge"]},
+		"level": 2, "hp_g": 0.10, "dmg_g": 0.08, "traits": ["pounce"]},
 	"spider":   {"name": "Marsh Spider",    "sprite": "spider",   "hp": 28.0,  "dmg": 9.0,  "speed": 215.0, "xp": 8,  "gold": 5,  "ranged": false, "scale": 3.0,
 		"physres": 0.0,  "magres": 5.0,  "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
-		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["evasive"]},
+		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["web"]},
 	"cultist":  {"name": "Blight Cultist",  "sprite": "cultist",  "hp": 40.0,  "dmg": 14.0, "speed": 90.0,  "xp": 11, "gold": 8,  "ranged": true,  "scale": 3.0,
 		"physres": 5.0,  "magres": 15.0, "eva": 0.0,  "critres": 0.0, "dmg_type": "magic",
-		"level": 4, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["healer"]},
+		"level": 4, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["channel_heal"]},
 	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 20.0, "speed": 140.0, "xp": 13, "gold": 10, "ranged": false, "scale": 3.0,
 		"physres": 25.0, "magres": 5.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
 		"level": 7, "hp_g": 0.12, "dmg_g": 0.10, "traits": ["frenzy", "swift"]},
@@ -873,7 +873,7 @@ const CHAPTERS := {
 		"name": "Chapter 2: The Waking",
 		"sub": "Years later — the scattered shards choose their bearers",
 		"zones": CH2_ZONES,
-		"loot_cap": "A",  # Act 2 ceiling — S-tier stays endgame loot
+		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch2_start",
 		"final_boss": "nullwarden",
 		# (The end-screen appends the "journey on" prompt now that ch3+ exist.)
@@ -890,7 +890,7 @@ const CHAPTERS := {
 		"sub": "The Choir's heartland — a funeral that never ends",
 		"zones": [],
 		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-		"loot_cap": "A",
+		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch3_start",
 		"final_boss": "saint_varo",
 		"victory_text": "Saint Varo lies still, and for the first time in sixty years the Vale is quiet enough to bury someone.\nThe Choir scatters — but far south, the foundry fires are answering something under the rock.",
@@ -901,7 +901,7 @@ const CHAPTERS := {
 		"sub": "The Molten Judge stirs beneath the foundries",
 		"zones": [],
 		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-		"loot_cap": "A",
+		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch4_start",
 		"final_boss": "ashpriest",
 		"victory_text": "The sermon ends unfinished. The foundries cool — but the verdicts were never Ordo's, and the court beneath the rock is still in session.\nNorth, they say, whole villages have stopped waking up.",
@@ -912,7 +912,7 @@ const CHAPTERS := {
 		"sub": "The Still Queen whispers under the ice",
 		"zones": [],
 		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-		"loot_cap": "A",
+		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch5_start",
 		"final_boss": "sleepkeeper",
 		"victory_text": "Halla's hymn fades. The sleepers she gathered will wake or they won't — the ice keeps its own counsel, and the Queen has not stopped dreaming.\nEast, in the deep bog, something has started to GROW.",
@@ -923,7 +923,7 @@ const CHAPTERS := {
 		"sub": "Where the blight learned to grow",
 		"zones": [],
 		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-		"loot_cap": "A",
+		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch6_start",
 		"final_boss": "curetwisted",
 		"victory_text": "The Deep goes still. Whatever the Pale Root wanted with Kaethra, it is looking for a new gardener now.\nOver the Thunder Plains, the sky has begun to tear at the edges.",
@@ -934,7 +934,7 @@ const CHAPTERS := {
 		"sub": "The last vow-keeper stops mid-sentence — Act 1 finale",
 		"zones": [],
 		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-		"loot_cap": "A",
+		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch7_start",
 		"final_boss": "stormmouth",
 		"victory_text": "The recitation ends, six hundred years late — and the sky answers with a sound like the world clearing its throat.\nThe seal is CRACKED. Not open. Cracked. Every power in Vaelscar heard it, and the age you grew up in is over.\n\nACT 1 COMPLETE — the mid game begins.",

@@ -201,19 +201,19 @@ const CHAPTER_ZONES := {
 const ENEMIES := {
 	"cold_pilgrim": {"name": "Cold Pilgrim", "sprite": "cultist", "hp": 330.0, "dmg": 58.0, "speed": 95.0, "xp": 13, "gold": 20, "ranged": false, "scale": 3.2,
 		"physres": 20.0, "magres": 30.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
-		"level": 28, "hp_g": 0.10, "dmg_g": 0.09,
+		"level": 28, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["mend"],
 		"lore": "Cult porters who walked the white road one too many times. They still walk it. They no longer bring wagons, or come back."},
 	"winterfang": {"name": "Winterfang", "sprite": "winterfang", "hp": 340.0, "dmg": 62.0, "speed": 190.0, "xp": 14, "gold": 20, "ranged": false, "scale": 3.1,
 		"physres": 15.0, "magres": 20.0, "eva": 0.05, "critres": 0.0, "dmg_type": "phys",
-		"level": 29, "hp_g": 0.10, "dmg_g": 0.09,
+		"level": 29, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["pounce"],
 		"lore": "The winter clans' wolves, gone strange around the sleeping valley — they circle the dreamers like shepherds, and eat anyone who isn't one."},
 	"hushcaller": {"name": "Hushcaller", "sprite": "banshee", "hp": 350.0, "dmg": 66.0, "speed": 100.0, "xp": 16, "gold": 22, "ranged": true, "scale": 3.3,
 		"physres": 10.0, "magres": 42.0, "eva": 0.05, "critres": 2.0, "dmg_type": "magic",
-		"level": 30, "hp_g": 0.11, "dmg_g": 0.10,
+		"level": 30, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["snare"],
 		"lore": "The cult's cantors, who sing the Queen's lullaby at anything awake. They are not angry with you. They think you look tired."},
 	"frozen_guard": {"name": "Frozen Guard", "sprite": "royal_knight", "hp": 460.0, "dmg": 70.0, "speed": 130.0, "xp": 16, "gold": 22, "ranged": false, "scale": 3.3,
 		"physres": 42.0, "magres": 20.0, "eva": 0.0, "critres": 3.0, "dmg_type": "phys",
-		"level": 31, "hp_g": 0.11, "dmg_g": 0.09,
+		"level": 31, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["frost_aura", "swift"],
 		"lore": "Sentries of the old keystone garrison, six hundred years at their posts. The Queen's whisper never asked them to sleep — someone has to hold the door."},
 }
 

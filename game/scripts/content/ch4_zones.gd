@@ -87,7 +87,7 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Deep Vents", "terrain": "magma", "type": "boss",
-			"lock_next": "boss",
+			"lock_next": "boss", "clear_flag": "ch4_vents_capped",
 			"enemies": [["vent_skitter", 700, 420, 0], ["vent_skitter", 830, 350, 0]],
 			"boss": "cinderhide", "boss_level": 25,
 		},
@@ -203,19 +203,19 @@ const CHAPTER_ZONES := {
 const ENEMIES := {
 	"cinder_whelp": {"name": "Cinder Whelp", "sprite": "stone_base", "hp": 230.0, "dmg": 38.0, "speed": 180.0, "xp": 12, "gold": 14, "ranged": false, "scale": 3.0,
 		"physres": 12.0, "magres": 15.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
-		"level": 22, "hp_g": 0.10, "dmg_g": 0.09,
+		"level": 22, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["pounce"],
 		"lore": "Vent-born fire in a wolf's habit of running in packs. The foundry crews stopped naming them after the first winter."},
 	"slag_brute": {"name": "Slagbound Brute", "sprite": "stone_broken", "hp": 320.0, "dmg": 43.0, "speed": 130.0, "xp": 14, "gold": 16, "ranged": false, "scale": 3.5,
 		"physres": 38.0, "magres": 12.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
-		"level": 23, "hp_g": 0.11, "dmg_g": 0.09,
+		"level": 23, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["sower", "swift"],
 		"lore": "Foundry laborers who worked the deep lines too long. The slag doesn't burn them anymore, which tells you what they're made of now."},
 	"forge_acolyte": {"name": "Forge Acolyte", "sprite": "mummy_mage", "hp": 250.0, "dmg": 46.0, "speed": 100.0, "xp": 15, "gold": 18, "ranged": true, "scale": 3.2,
 		"physres": 10.0, "magres": 38.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
-		"level": 24, "hp_g": 0.11, "dmg_g": 0.10,
+		"level": 24, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["reflect"],
 		"lore": "They attended one of Ordo's sermons out of curiosity. The Judge's court does not have a public gallery — everyone present is staff."},
 	"vent_skitter": {"name": "Vent Skitter", "sprite": "vent_skitter", "hp": 260.0, "dmg": 48.0, "speed": 215.0, "xp": 15, "gold": 18, "ranged": false, "scale": 3.1,
 		"physres": 8.0, "magres": 20.0, "eva": 0.15, "critres": 0.0, "dmg_type": "phys",
-		"level": 25, "hp_g": 0.10, "dmg_g": 0.09,
+		"level": 25, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["web"],
 		"lore": "It lives in the vent shafts and eats what falls in. The foundries feed it better than the mountain ever did."},
 }
 

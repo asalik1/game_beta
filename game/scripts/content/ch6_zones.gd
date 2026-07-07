@@ -199,19 +199,19 @@ const CHAPTER_ZONES := {
 const ENEMIES := {
 	"bog_lurker": {"name": "Bog Lurker", "sprite": "bog_lurker", "hp": 620.0, "dmg": 72.0, "speed": 200.0, "xp": 13, "gold": 26, "ranged": false, "scale": 3.2,
 		"physres": 12.0, "magres": 22.0, "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
-		"level": 33, "hp_g": 0.10, "dmg_g": 0.09,
+		"level": 33, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["web"],
 		"lore": "The bog's old ambush hunters, grown a size past their name. The Root feeds everything, including the things that feed on you."},
 	"root_shambler": {"name": "Root Shambler", "sprite": "fungus_long", "hp": 750.0, "dmg": 76.0, "speed": 105.0, "xp": 14, "gold": 26, "ranged": false, "scale": 3.4,
 		"physres": 30.0, "magres": 30.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
-		"level": 34, "hp_g": 0.11, "dmg_g": 0.09,
+		"level": 34, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["tether"],
 		"lore": "The bog's drowned dead, re-rooted and walking. The blight would have let them rot. The Root had other plans, and worse taste."},
 	"bloom_acolyte": {"name": "Bloom Acolyte", "sprite": "elf_druid", "hp": 680.0, "dmg": 80.0, "speed": 100.0, "xp": 16, "gold": 28, "ranged": true, "scale": 3.2,
 		"physres": 12.0, "magres": 45.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
-		"level": 35, "hp_g": 0.11, "dmg_g": 0.10,
+		"level": 35, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["spawner"],
 		"lore": "Choir pilgrims who came for holy rot, saw the Blooming, and converted on the spot. Faith that flips once flips easy — Rotmaw taught them where to aim it."},
 	"grove_horror": {"name": "Grove Horror", "sprite": "medusa", "hp": 880.0, "dmg": 84.0, "speed": 140.0, "xp": 17, "gold": 30, "ranged": false, "scale": 3.6,
 		"physres": 40.0, "magres": 25.0, "eva": 0.0, "critres": 3.0, "dmg_type": "phys",
-		"level": 36, "hp_g": 0.11, "dmg_g": 0.09,
+		"level": 36, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["frenzy", "warded"],
 		"lore": "Something that walked into the deep grove on two legs. The Root never subtracts — it only adds, and adds, and adds."},
 }
 

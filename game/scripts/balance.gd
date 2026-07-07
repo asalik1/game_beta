@@ -42,31 +42,95 @@ const GOLD_MULT := 0.6          # global gold scarcity (merchants must matter)
 const REWARD_PER_LEVEL := 0.12  # xp/gold grow LINEARLY per level (no farm spiral)
 
 # ------------------------------------------------------ merchant economy ---
-# Round 50: the shop went stale. Gear/gamble/upgrade/reforge prices were
-# LEVEL-INDEPENDENT (grade+plus only) while mob/boss gold climbs 0.12/level
-# — so by Ch3 a player hoarded ~4k gold against ~140g items and the merchant
-# stopped mattering. Fix: merchant BUY-side prices now climb with player
-# level at SHOP_PRICE_PER_LEVEL (just UNDER income's 0.12/level, so a leveling
-# player's purchasing power creeps up but a merchant is always a real spend).
-# Consumables/health potions stay flat staples (see CONSUMABLE_PRICES,
-# POTION_PRICE) — commodities shouldn't inflate.
-const SHOP_BUY_MARKUP := 2.0        # gear sells at this x its intrinsic Items.price
-const SHOP_PRICE_PER_LEVEL := 0.11  # merchant gear/upgrade/gamble/reforge climb per level
-const MERCHANT_SELL_FRACTION := 0.45  # buy-back = this x market value (gear, gems, consumables) — always well under buy
-const POTION_PRICE := 25            # health-potion buy price (flat staple, un-scaled)
-# Deeper merchants carry a wider board (rolled gear count by shop tier).
-const SHOP_STOCK_BY_TIER := {"wood": 3, "silver": 4, "gold": 5}
-# A loose gem's market value in gold, by gem level (roughly triples per level,
-# mirroring the 3-into-1 combine). Sold at MERCHANT_SELL_FRACTION — a modest
-# duplicate-dump faucet, never a gem->gold pump that trivializes gold.
+# Round 51 — FARM-COST pricing (supersedes round 50's flat level ladder).
+# Buy price of gear ~= the gold you'd earn farming one yourself + a small
+# convenience tax, so buying is a pity/convenience option that NEVER beats
+# farming. price = (first_run_gold + (N_runs-1)*replay_gold) * FARM_TAX, with
+# N_runs = ceil( (1/drop_chance) / BOSSES_PER_RUN ). Because gold/run already
+# scales with level, the shop scales automatically — round 50's separate
+# SHOP_PRICE_PER_LEVEL ladder is retired. Measured run gold: CHAPTER_ECON.
+const FARM_TAX := 1.05
+const BOSSES_PER_RUN := 3            # every Act-1 chapter has exactly 3 bosses (verified via econ_audit)
+const S_WEAPON_DROP_WEIGHT := 0.5    # S-TIER weapons only drop at HALF rate (they carry the endgame passives) -> rarest, ~2x farm N; sub-S weapon rolls stay uniform
+const SHOP_BUY_MARKUP := 2.0         # commodity (below the act's rare tier) grades: cheap flat price = intrinsic x this
+const MERCHANT_SELL_FRACTION := 0.45 # SELL = this x INTRINSIC value (Items.price / gem_gold_value), NOT farm-cost — no sell-spiral
+const POTION_PRICE := 25             # health-potion buy price (flat staple)
+const BAG_SELL_GOLD := 1             # bags ALWAYS cash out for exactly 1g (never the 0.45 formula — anti-exploit)
+const SHOP_STOCK_BY_TIER := {"wood": 3, "silver": 4, "gold": 5}  # rolled-gear count
+const GAMBLE_DISCOUNT := 0.8         # gamble costs this x the farm price of the chapter's cap grade (sight-unseen risk)
+# A loose gem's INTRINSIC value (gold), tripling per level like the 3-into-1
+# combine. Drives the SELL price (x MERCHANT_SELL_FRACTION); BUY is farm-cost.
 const GEM_GOLD_BASE := 30.0
 const GEM_GOLD_PER_LEVEL := 3.0
 
-static func merchant_price_mult(level: int) -> float:
-	return 1.0 + SHOP_PRICE_PER_LEVEL * float(maxi(level - 1, 0))
+# --- act-keyed loot framework (Act 2/3 latent until those chapters exist) ---
+# BOSS GEAR drop: a NEW channel on every boss, ON TOP of gems/gold/spoils.
+# {grade: per-boss drop chance}. Act 1: ch1-6 -> B only; ONLY ch7 bosses add A.
+const BOSS_GEAR_DROP := {
+	1: {"B": 1.0 / 3.0},                        # ch1-6 bosses
+	2: {"A": 1.0 / 8.0, "S": 1.0 / 25.0},
+	3: {"A": 1.0, "S": 1.0 / 15.0},             # A guaranteed per Act-3 boss
+}
+const BOSS_GEAR_DROP_ACT1_FINAL := {"B": 1.0 / 3.0, "A": 1.0 / 10.0}  # ch7 bosses only
+const ACT1_FINAL_CHAPTER := "ch7"
+# Bags are inventory expansion, not needed every run: a SEPARATE, rarer roll
+# than gear (round 51b — the per-gear-grade bag roll felt spammy). Grade = the
+# chapter's loot_cap; dupes still cash out at BAG_SELL_GOLD.
+const BOSS_BAG_DROP_CHANCE := 0.15
+# SHOP gear appearance weights per act — the grade a stock slot rolls, then
+# clamped to the chapter's loot_cap. Act1 floor below B; Act2 floor B; Act3 floor A.
+const SHOP_GEAR_WEIGHTS := {
+	1: {"F": 12, "E": 18, "D": 22, "C": 15, "B": 33},   # B ~1/3
+	2: {"B": 70, "A": 20, "S": 10},                     # A 1/5, S 1/10
+	3: {"A": 80, "S": 20},                              # A guaranteed floor, S 1/5
+}
+# GEM levels by act: elite/boss drop floor, and shop stock range [lo, hi].
+const GEM_ACT_LEVEL := {1: 1, 2: 2, 3: 5}
+const SHOP_GEM_RANGE := {1: [1, 1], 2: [2, 4], 3: [5, 7]}
+const BOSS_FIRST_CLEAR_GEM_BONUS := 1                   # first-clear catch-up bundle rolls +1 level
+
+# Smith UPGRADE curve (round 51): S must cost WAY more than C. Per-step cost =
+# UPGRADE_BASE * UPGRADE_GRADE_FACTOR[grade] * (1+plus) — doubling per tier, so
+# an S step is 8x a C step at equal plus. base tuned so C +0->+1 = 24g.
+const UPGRADE_BASE := 12.0
+const UPGRADE_GRADE_FACTOR := {"F": 0.5, "E": 0.75, "D": 1.0, "C": 2.0, "B": 4.0, "A": 8.0, "S": 16.0}
+
+# Measured per-chapter run economy (from econ_audit.gd — RE-RUN and update
+# these when reward numbers move; they drive every farm-cost price). "gems" is
+# gems per REPLAY run (the gem-price denominator).
+const CHAPTER_ECON := {
+	"ch1": {"act": 1, "first": 1796, "replay": 1470, "gems": 16.8},
+	"ch2": {"act": 1, "first": 1734, "replay": 1296, "gems": 10.1},
+	"ch3": {"act": 1, "first": 2944, "replay": 2398, "gems": 16.7},
+	"ch4": {"act": 1, "first": 3414, "replay": 2760, "gems": 17.5},
+	"ch5": {"act": 1, "first": 4018, "replay": 3274, "gems": 17.5},
+	"ch6": {"act": 1, "first": 4866, "replay": 4050, "gems": 17.7},
+	"ch7": {"act": 1, "first": 6603, "replay": 5716, "gems": 18.0},
+}
 
 static func gem_gold_value(lvl: int) -> float:
 	return GEM_GOLD_BASE * pow(GEM_GOLD_PER_LEVEL, float(maxi(lvl - 1, 0)))
+
+## Per-boss GEAR/BAG drop odds ({grade: chance}) for the chapter's act.
+static func boss_gear_odds(chid: String) -> Dictionary:
+	var e: Dictionary = CHAPTER_ECON.get(chid, {})
+	var act: int = int(e.get("act", 1))
+	if act == 1 and chid == ACT1_FINAL_CHAPTER:
+		return BOSS_GEAR_DROP_ACT1_FINAL
+	return BOSS_GEAR_DROP.get(act, {})
+
+## Elite/boss gem drop LEVEL for a chapter's act (round 51: replaces the
+## gem_lv2_chance ramp for the act floor). Act1 L1, Act2 L2, Act3 L5.
+static func gem_drop_level(chid: String) -> int:
+	var act: int = int(CHAPTER_ECON.get(chid, {}).get("act", 1))
+	return int(GEM_ACT_LEVEL.get(act, 1))
+
+## Whole RUNS to farm one drop at `chance` (3 bosses/run). S-tier weapons pass
+## a halved chance (S_WEAPON_DROP_WEIGHT) so their N — and price — ~doubles.
+static func farm_runs(chance: float) -> int:
+	if chance <= 0.0:
+		return 1
+	return int(ceil((1.0 / chance) / float(BOSSES_PER_RUN)))
 
 # ------------------------------------------------------ boss gem drops ---
 # Round 44: bosses join the gem economy (was elite-only). The FIRST
@@ -254,29 +318,64 @@ const MOB_DMG_MULT := 1.2       # +20% contact/bolt damage
 const MOB_DENSITY_EXTRA := 0.15 # +15% pack size (seeded duplicate chance)
 
 # -------------------------------------------------------- mob traits ---
-# Each mob KIND carries an identity gimmick (data lives in its ENEMIES
-# dict "traits"; behavior in enemy.gd). One vocabulary, tuned here:
-#   lunge   — gap-closer: telegraphed pounce from mid-range
-#   evasive — skitters sideways as it approaches (on top of its eva stat)
-#   mend    — self-heal: knits a fraction of max HP/s (undead durability)
-#   healer  — support: pulses a heal to nearby wounded allies + itself
-#             (KILL PRIORITY — green-tinted so it reads)
-#   frenzy  — below FRENZY_HP: +speed and +damage as it breaks
-#   swift   — a flat speed bump (the no-gap-closer melee compensation)
-const MOB_LUNGE_CD := 4.5           # seconds between pounces
-const MOB_LUNGE_RANGE := 340.0      # starts a pounce inside this, outside melee
-const MOB_LUNGE_SPEED := 620.0      # dash velocity during the pounce
-const MOB_LUNGE_TIME := 0.28        # dash duration
-const MOB_LUNGE_WINDUP := 0.32      # telegraph flash before the leap
-const MOB_EVASIVE_WEAVE := 0.55     # lateral strafe as a fraction of speed
-const MOB_MEND_RATE := 0.03         # max-HP fraction healed per second
-const MOB_HEAL_CD := 3.5            # healer pulse cadence
+# The mob-mechanic vocabulary (2026-07-07 REDESIGN — each is a decision,
+# not a stat check; most reuse an existing system). Data in each kind's
+# ENEMIES "traits"; behavior in enemy.gd; per-chapter escalation in the
+# content files. pounce/web/channel_heal (ch1) / warded (ch2) /
+# bloat/martyr (ch3) / reflect/sower (ch4) / frost_aura/snare (ch5) /
+# spawner/tether (ch6) / blinker/counter (ch7); mend/frenzy/swift baseline.
+# pounce (OVERSHOOT gap-closer)
+const MOB_LUNGE_CD := 4.5
+const MOB_LUNGE_RANGE := 340.0
+const MOB_LUNGE_SPEED := 640.0      # fast enough to overshoot a sidestep
+const MOB_LUNGE_TIME := 0.30
+const MOB_LUNGE_WINDUP := 0.34      # crouch telegraph
+const MOB_POUNCE_WHIFF := 1.1       # exposed/dazed window after an overshoot
+const MOB_POUNCE_PUNISH := 0.6      # +damage taken while whiff-dazed
+# baseline modifiers
+const MOB_MEND_RATE := 0.03
 const MOB_HEAL_RADIUS := 220.0
-const MOB_HEAL_FRAC := 0.10         # of each ally's max HP per pulse
-const MOB_FRENZY_HP := 0.40         # frenzy arms below this HP fraction
+const MOB_HEAL_FRAC := 0.10         # channel-heal per pulse
+const MOB_FRENZY_HP := 0.40
 const MOB_FRENZY_SPEED := 1.35
 const MOB_FRENZY_DMG := 1.30
-const MOB_SWIFT_SPEED := 1.18       # non-gap-closer melee run a bit faster
+const MOB_SWIFT_SPEED := 1.18
+# web (root shot)
+const MOB_WEB_CD := 6.0
+const MOB_WEB_ROOT := 0.7
+# channel_heal (interruptible support)
+const MOB_CHANNEL_CD := 5.0
+const MOB_CHANNEL_TIME := 1.6
+# warded (a GUARD you must SHATTER, not nibble through). A real blow
+# breaks it for good — a crit, a heavy single hit (>= this frac of its
+# max HP), OR any status (control builds keep their shortcut). Small
+# chip hits pay the DR until then. No build is walled: everyone crits
+# or lands a heavy hit eventually; status is just the fast lane.
+const MOB_WARD_DR := 0.65           # chip damage cut while the guard holds
+const MOB_WARD_BREAK_HIT := 0.12    # a single hit >= this frac of max HP shatters it
+# bloat / martyr (death triggers)
+const MOB_BLOAT_LIFE := 5.0
+const MOB_MARTYR_HEAL := 0.25
+const MOB_MARTYR_RAGE := 1.25
+# reflect / sower
+const MOB_REFLECT_CD := 6.5
+const MOB_REFLECT_TIME := 1.8
+const MOB_REFLECT_FRAC := 0.5
+const MOB_SOW_EVERY := 0.45
+const MOB_SOW_LIFE := 3.5
+# frost_aura / snare (denial)
+const MOB_AURA_RADIUS := 170.0
+const MOB_FROST_SLOW := 0.6
+const MOB_SNARE_CD := 7.0
+const MOB_SNARE_FREEZE := 1.1
+# spawner / tether
+const MOB_SPAWN_CD := 6.0
+const MOB_SPAWN_CAP := 3
+# blinker / counter (ch7)
+const MOB_BLINK_CD := 5.0
+const MOB_COUNTER_CD := 4.0
+const MOB_COUNTER_TIME := 1.4
+const MOB_COUNTER_STAGGER := 0.6
 
 # --------------------------------------------------------------- elites ---
 # The miniboss variant (Enemy.promote_elite). Multipliers apply on top

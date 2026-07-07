@@ -80,22 +80,22 @@ const CHAPTER_ZONES := {
 const ENEMIES := {
 	"duneprowler": {"name": "Dune Prowler", "sprite": "duneprowler", "hp": 130.0, "dmg": 20.0, "speed": 185.0, "xp": 44, "gold": 16, "ranged": false, "scale": 3.3,
 		"physres": 12.0, "magres": 8.0, "eva": 0.06, "critres": 0.0, "dmg_type": "phys",
-		"level": 9, "hp_g": 0.10, "dmg_g": 0.08},
+		"level": 9, "hp_g": 0.10, "dmg_g": 0.08, "traits": ["pounce"]},
 	"sun_bleached": {"name": "Sun-Bleached Husk", "sprite": "mummy", "hp": 165.0, "dmg": 22.0, "speed": 110.0, "xp": 48, "gold": 17, "ranged": false, "scale": 3.5,
 		"physres": 18.0, "magres": 12.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
-		"level": 10, "hp_g": 0.10, "dmg_g": 0.09},
+		"level": 10, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["warded"]},
 	"frost_husk": {"name": "Frost-Bound Soldier", "sprite": "skeleton_warrior", "hp": 185.0, "dmg": 24.0, "speed": 125.0, "xp": 55, "gold": 20, "ranged": false, "scale": 3.4,
 		"physres": 30.0, "magres": 10.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
-		"level": 11, "hp_g": 0.11, "dmg_g": 0.09},
+		"level": 11, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["warded", "swift"]},
 	"deep_stalker": {"name": "Crystal Stalker", "sprite": "deep_stalker", "hp": 150.0, "dmg": 23.0, "speed": 215.0, "xp": 60, "gold": 22, "ranged": false, "scale": 3.4,
 		"physres": 8.0, "magres": 20.0, "eva": 0.18, "critres": 0.0, "dmg_type": "phys",
-		"level": 12, "hp_g": 0.10, "dmg_g": 0.09},
+		"level": 12, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["web"]},
 	"null_acolyte": {"name": "Null Acolyte", "sprite": "scholar_director", "hp": 160.0, "dmg": 27.0, "speed": 110.0, "xp": 70, "gold": 26, "ranged": true, "scale": 3.3,
 		"physres": 10.0, "magres": 28.0, "eva": 0.0, "critres": 3.0, "dmg_type": "magic",
-		"level": 13, "hp_g": 0.11, "dmg_g": 0.10},
+		"level": 13, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["channel_heal"]},
 	"void_husk": {"name": "Voidbound Husk", "sprite": "skeleton_mage", "hp": 260.0, "dmg": 30.0, "speed": 115.0, "xp": 85, "gold": 30, "ranged": false, "scale": 3.6,
 		"physres": 25.0, "magres": 25.0, "eva": 0.0, "critres": 4.0, "dmg_type": "phys",
-		"level": 15, "hp_g": 0.11, "dmg_g": 0.10},
+		"level": 15, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["warded", "mend"]},
 }
 
 const QUESTS := {

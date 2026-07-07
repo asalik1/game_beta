@@ -274,12 +274,15 @@ func band_price_mult() -> float:
 	return 1.0
 
 
-## Gambling vendor: the haggle- and level-adjusted price of one gamble at
-## `tier`. Scales with player level (round 50) like the rest of the merchant
-## board, so the sight-unseen roll stays a real spend deep into the act.
-func gamble_cost(tier: String) -> int:
-	return int(ceil(float(Balance.GAMBLE_COST.get(tier, 100)) * band_price_mult()
-		* Balance.merchant_price_mult(player.level)))
+## Gambling vendor price (round 51): the FARM cost of the chapter's cap grade
+## (what the best possible roll is worth), discounted for the sight-unseen
+## risk, then haggled. The `tier` still shapes the grade spread you actually
+## get (rolled + capped in gamble()); pricing tracks the ceiling so a cheap
+## gamble can never beat farming.
+func gamble_cost(_tier: String = "") -> int:
+	var probe := {"grade": loot_cap(), "slot": "armor", "plus": 0}
+	return int(ceil(float(Items.shop_buy_price(probe, chapter_id))
+		* Balance.GAMBLE_DISCOUNT * band_price_mult()))
 
 
 ## Spend gold on a random item of `tier`, sight unseen. Returns the won
@@ -1538,6 +1541,11 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	if is_instance_valid(player) and not player.dead \
 			and player.global_position.distance_to(pos) <= radius + 8.0:
 		player.take_damage(damage, "magic")
+		# Riders (mob snare patch): a caught player can also be frozen/rooted.
+		if opts.has("freeze"):
+			player.apply_freeze(float(opts["freeze"]))
+		if opts.has("root"):
+			player.apply_root(float(opts["root"]))
 
 
 ## INVERSE telegraph (safe-zone): after the delay the whole arena hits

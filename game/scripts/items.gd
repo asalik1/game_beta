@@ -388,8 +388,59 @@ static func roll_grade(tier: String, rng: RandomNumberGenerator, cap := "S") -> 
 
 static func roll_item(tier: String, rng: RandomNumberGenerator, cls := "", cap := "S") -> Dictionary:
 	var grade := roll_grade(tier, rng, cap)
-	var slot: String = SLOTS[rng.randi_range(0, SLOTS.size() - 1)]
+	var slot := _roll_slot(grade, rng)
 	return roll_item_of(slot, grade, rng, cls)
+
+
+## Pick a gear slot. S-tier down-weights WEAPON (Balance.S_WEAPON_DROP_WEIGHT):
+## the class legendary weapon carries the endgame passive, so it is the single
+## rarest slot. Sub-S rolls stay uniform. All gear channels funnel through here.
+static func _roll_slot(grade: String, rng: RandomNumberGenerator) -> String:
+	if grade != "S":
+		return SLOTS[rng.randi_range(0, SLOTS.size() - 1)]
+	var total := 0.0
+	var cum: Array = []
+	for s in SLOTS:
+		total += Balance.S_WEAPON_DROP_WEIGHT if s == "weapon" else 1.0
+		cum.append(total)
+	var pick := rng.randf() * total
+	for i in SLOTS.size():
+		if pick <= float(cum[i]):
+			return SLOTS[i]
+	return SLOTS[SLOTS.size() - 1]
+
+
+## One gear item of an exact grade (slot picked via _roll_slot). Used by the
+## boss gear channel and the act-appearance shop roll.
+static func roll_gear_of_grade(grade: String, rng: RandomNumberGenerator, cls := "") -> Dictionary:
+	return roll_item_of(_roll_slot(grade, rng), grade, rng, cls)
+
+
+## Grade a SHOP stock slot rolls (act appearance weights), clamped to loot_cap.
+static func roll_shop_grade(chid: String, rng: RandomNumberGenerator, cap: String) -> String:
+	var act: int = int(Balance.CHAPTER_ECON.get(chid, {}).get("act", 1))
+	var weights: Dictionary = Balance.SHOP_GEAR_WEIGHTS.get(act, {"C": 1})
+	var total := 0.0
+	for w in weights.values():
+		total += float(w)
+	var pick := rng.randf() * total
+	var cap_i := GRADES.find(cap)
+	for grade in weights:
+		pick -= float(weights[grade])
+		if pick <= 0.0:
+			return cap if GRADES.find(String(grade)) > cap_i else String(grade)
+	return cap
+
+
+## The BOSS gear/bag drop channel: highest act-table grade that hits, or "".
+## Each listed grade rolls independently; a lucky S beats a simultaneous A.
+static func roll_boss_gear_grade(chid: String, rng: RandomNumberGenerator) -> String:
+	var odds: Dictionary = Balance.boss_gear_odds(chid)
+	var best := ""
+	for grade in GRADES:  # F..S ascending, so the last hit is the highest
+		if odds.has(grade) and rng.randf() < float(odds[grade]):
+			best = String(grade)
+	return best
 
 
 ## The class's signature weapon shape (from its S legendary) — used by
@@ -564,7 +615,46 @@ static func price(item: Dictionary) -> int:
 
 
 static func upgrade_cost(item: Dictionary) -> int:
-	return int(15.0 * GRADE_MULT[item["grade"]] * (1 + item["plus"]))
+	# Round 51: steep per-tier curve (base * grade factor * (1+plus)) — an S
+	# step costs 8x a C step. Data curve; knobs in balance.gd.
+	var f: float = float(Balance.UPGRADE_GRADE_FACTOR.get(String(item["grade"]), 1.0))
+	return int(Balance.UPGRADE_BASE * f * float(1 + int(item["plus"])))
+
+
+## FARM-COST buy price of a gear item in a `chid` merchant (round 51): the gold
+## you'd earn farming one yourself + FARM_TAX. Rare grades (in the act's boss
+## table) use the farm-cost formula; commodity grades below them get a cheap
+## flat intrinsic price so shop filler stays junk-cheap. S weapons pay ~2x
+## (halved drop rate). SELL is separate — always MERCHANT_SELL_FRACTION x the
+## small intrinsic price(), never this inflated number.
+static func shop_buy_price(item: Dictionary, chid: String) -> int:
+	var grade := String(item["grade"])
+	var econ: Dictionary = Balance.CHAPTER_ECON.get(chid, {})
+	var odds: Dictionary = Balance.boss_gear_odds(chid)
+	var plus_mult: float = 1.0 + 0.5 * float(item.get("plus", 0))
+	if odds.has(grade) and not econ.is_empty():
+		var chance: float = float(odds[grade])
+		if grade == "S" and String(item.get("slot", "")) == "weapon":
+			chance *= Balance.S_WEAPON_DROP_WEIGHT
+		var n: int = Balance.farm_runs(chance)
+		var g: float = float(econ["first"]) + float(n - 1) * float(econ["replay"])
+		return int(round(g * Balance.FARM_TAX * plus_mult))
+	return int(ceil(price(item) * Balance.SHOP_BUY_MARKUP))
+
+
+## FARM-COST buy price of a shop GEM at `lvl` (round 51). Gems drop many per
+## run, so per-unit cost = (one run's gold / gems per run) scaled up the
+## combine curve from the act's floor level, + FARM_TAX. A fraction of gear.
+static func gem_buy_price(lvl: int, chid: String) -> int:
+	var econ: Dictionary = Balance.CHAPTER_ECON.get(chid, {})
+	if econ.is_empty():
+		return int(ceil(Balance.gem_gold_value(lvl) * Balance.FARM_TAX))
+	var act: int = int(econ.get("act", 1))
+	var floor_lvl: int = int(Balance.GEM_ACT_LEVEL.get(act, 1))
+	var gems_per_run: float = maxf(1.0, float(econ.get("gems", 15.0)))
+	var per_gem: float = float(econ["replay"]) / gems_per_run
+	var weight: float = pow(Balance.GEM_GOLD_PER_LEVEL, float(maxi(lvl - floor_lvl, 0)))
+	return int(round(per_gem * weight * Balance.FARM_TAX))
 
 
 static func describe(item: Dictionary) -> String:

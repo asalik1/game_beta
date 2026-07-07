@@ -201,19 +201,19 @@ const CHAPTER_ZONES := {
 const ENEMIES := {
 	"storm_harrier": {"name": "Storm Harrier", "sprite": "storm_harrier", "hp": 950.0, "dmg": 88.0, "speed": 195.0, "xp": 13, "gold": 32, "ranged": false, "scale": 3.1,
 		"physres": 15.0, "magres": 25.0, "eva": 0.08, "critres": 0.0, "dmg_type": "phys",
-		"level": 37, "hp_g": 0.10, "dmg_g": 0.09,
+		"level": 37, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["pounce", "sower"],
 		"lore": "Plains hounds that learned to run ahead of the thunder. Lately the thunder runs ahead of THEM, and it has made them mean."},
 	"vow_sentinel": {"name": "Vow Sentinel", "sprite": "royal_soldier", "hp": 1250.0, "dmg": 92.0, "speed": 130.0, "xp": 15, "gold": 34, "ranged": false, "scale": 3.4,
 		"physres": 42.0, "magres": 25.0, "eva": 0.0, "critres": 3.0, "dmg_type": "phys",
-		"level": 38, "hp_g": 0.11, "dmg_g": 0.09,
+		"level": 38, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["counter"],
 		"lore": "Dead keepers of the recitation relay, still walking their circuits. The vow outlived the vowing — that is either loyalty or its skeleton."},
 	"static_caller": {"name": "Static Caller", "sprite": "bandit_sorcerer", "hp": 1000.0, "dmg": 96.0, "speed": 100.0, "xp": 15, "gold": 34, "ranged": true, "scale": 3.2,
 		"physres": 12.0, "magres": 45.0, "eva": 0.0, "critres": 3.0, "dmg_type": "magic",
-		"level": 38, "hp_g": 0.11, "dmg_g": 0.10,
+		"level": 38, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["channel_heal", "snare"],
 		"lore": "Order zealots who followed Cyrraeth into listening. They speak in half-sentences now — the storm finishes the other half, and its grammar hurts."},
 	"void_shade": {"name": "Void Shade", "sprite": "bandit_scout", "hp": 1050.0, "dmg": 100.0, "speed": 185.0, "xp": 16, "gold": 36, "ranged": false, "scale": 3.2,
 		"physres": 15.0, "magres": 30.0, "eva": 0.18, "critres": 2.0, "dmg_type": "phys",
-		"level": 39, "hp_g": 0.10, "dmg_g": 0.10,
+		"level": 39, "hp_g": 0.10, "dmg_g": 0.10, "traits": ["blinker"],
 		"lore": "Silhouettes out of the tear — shapes the world threw away, returned with the packaging removed. The void keeps everything. That was never a comfort."},
 }
 
