@@ -86,6 +86,7 @@ var boss_done := {}
 var bosses: Array = []           # every LIVE boss (endgame: up to 5 at once)
 var current_boss: Boss = null    # the DISPLAYED boss: your target, else bosses[0]
 var shop_stock := {}             # room index -> Array of items for sale
+var shop_bags := {}              # room index -> Array of bags for sale (round 52)
 
 # ------------------------------------------------------- fight report ---
 # Benchmark instrument: boss fights are timed from FIRST BLOOD (either
@@ -762,6 +763,29 @@ func give_loot(payload: Dictionary, pos: Vector2) -> bool:
 	Pickup.drop_loot(self, payload, pos)
 	spawn_text(pos + Vector2(0, -44), "Bag full! Dropped", Color(1, 0.9, 0.4))
 	return false
+
+
+## Player-initiated DISCARD (round 52): fling a bag payload out to a short
+## arc away with a brief no-pickup window, so a full bag can be cleared
+## without the item instantly re-collecting. The CALLER has already removed
+## it from the bag. Registered like any ground drop -> flushes to the
+## mailbox at chapter end (never silently lost). Returns the spawned Pickup.
+func discard_to_ground(payload: Dictionary) -> Pickup:
+	var dir: Vector2 = player.facing if player.facing.length() > 0.1 else Vector2(player.look_sign, 0.0)
+	var target: Vector2 = player.global_position + dir.normalized() * Balance.DISCARD_THROW_DIST
+	payload["pos"] = [target.x, target.y]
+	dropped_loot.append(payload)
+	var pk := Pickup.drop_loot(self, payload, target)
+	pk.pickup_delay = Balance.DISCARD_NO_PICKUP_TIME
+	# Throw arc: start on the hero and sail out to where it lands.
+	var landed: Vector2 = pk.global_position
+	pk.global_position = player.global_position
+	var tw := pk.create_tween()
+	tw.tween_property(pk, "global_position", landed, 0.28) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	sfx("equip")
+	spawn_text(player.global_position + Vector2(0, -44), "Discarded", Color(0.8, 0.8, 0.85))
+	return pk
 
 
 ## Route a loot payload into the right bag pocket. False = no room.

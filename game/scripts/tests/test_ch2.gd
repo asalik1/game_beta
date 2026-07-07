@@ -465,14 +465,14 @@ func _test_chapter_progression() -> void:
 func _test_elites_bags_smallrooms() -> void:
 	# Snapshot shared state (restore, never clear — later sections
 	# reuse this game).
-	var keep_bag: Dictionary = game.player.bag
+	var keep_bags: Array = game.player.bags
 	var keep_gold: int = game.player.gold
 	var keep_unspent: int = game.player.unspent_attr
 	var keep_attr: Dictionary = game.player.attr_points.duplicate()
 	var keep_consumables: Array = game.player.consumables.duplicate()
 
 	# Elites: much tougher, zero XP, guaranteed gem on death.
-	game.player.bag = Items.make_bag("S")  # room for the guaranteed gem
+	game.player.bags = [Items.make_bag("S")]  # room for the guaranteed gem
 	var base_mob := _dummy(Vector2(150, 70))
 	var e := _dummy(Vector2(200, 70))
 	e.promote_elite()
@@ -519,17 +519,27 @@ func _test_elites_bags_smallrooms() -> void:
 	if game.player.consumables.size() != stones_before:
 		return _fail("reset stone was not consumed")
 
-	# Bags: bigger upgrades in place, smaller converts to gold.
-	game.player.bag = Items.make_bag("F")
+	# Bags (round 52): stacking up to MAX_BAGS; capacity is the SUM. A 6th
+	# bag keeps the best MAX_BAGS by slots and cashes the worst at 1g.
+	game.player.bags = [Items.make_bag("F")]
 	if not game.player.acquire_bag(Items.make_bag("C")):
-		return _fail("bigger bag should upgrade in place")
-	if game.player.bag_capacity() != int(Items.BAG_SLOTS["C"]):
-		return _fail("bag capacity did not follow the upgrade")
+		return _fail("a new bag should be added while under the cap")
+	if game.player.bags.size() != 2:
+		return _fail("second bag was not equipped")
+	if game.player.bag_capacity() != int(Items.BAG_SLOTS["F"]) + int(Items.BAG_SLOTS["C"]):
+		return _fail("capacity is not the sum of equipped bags")
+	while game.player.bags.size() < Balance.MAX_BAGS:
+		game.player.acquire_bag(Items.make_bag("C"))
+	var cap_before: int = game.player.bag_capacity()
 	var gold_before: int = game.player.gold
 	if game.player.acquire_bag(Items.make_bag("F")):
-		return _fail("smaller bag must never replace a bigger one")
-	if game.player.gold <= gold_before:
-		return _fail("spare bag should convert to gold")
+		return _fail("a worse 6th bag must not be kept")
+	if game.player.bags.size() != Balance.MAX_BAGS:
+		return _fail("bag count exceeded MAX_BAGS")
+	if game.player.gold != gold_before + Balance.BAG_SELL_GOLD:
+		return _fail("spare bag did not cash for exactly 1g")
+	if game.player.bag_capacity() != cap_before:
+		return _fail("capacity changed when a worse bag was rejected")
 
 	# Gem stacking (round 7): same stat+level shares ONE bag slot.
 	var used_before: int = game.player.bag_used()
@@ -557,7 +567,7 @@ func _test_elites_bags_smallrooms() -> void:
 		return _fail("no small-room types found in this chapter")
 
 	# Restore.
-	game.player.bag = keep_bag
+	game.player.bags = keep_bags
 	game.player.gold = keep_gold
 	game.player.unspent_attr = keep_unspent
 	for k in keep_attr:

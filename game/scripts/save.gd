@@ -39,7 +39,7 @@ static func write(game: Game, slot: int) -> void:
 		"faction_standing": p.faction_standing,
 		# --- gear ---
 		"equipment": p.equipment, "backpack": p.backpack, "gem_bag": p.gem_bag,
-		"bag": p.bag, "consumables": p.consumables,
+		"bags": p.bags, "consumables": p.consumables,
 		"potion_rotation": p.potion_rotation, "active_potion": p.active_potion,
 		# --- vitals / place ---
 		"hp": p.hp, "mp": p.mp,
@@ -116,6 +116,27 @@ static func next_free_slot() -> int:
 	return MAX_SLOTS  # all full: reuse the last slot
 
 
+## Load/migrate the equipped bags from a save dict (round 52). New saves
+## store a `bags` array; an OLD single `bag` dict wraps to a 1-element array
+## (capacity preserved — old characters never break); pre-bag saves fall back
+## to the starter pouches. JSON floats are re-cast to int. Split out so the
+## migration is unit-testable without a full world apply().
+static func load_bags(data: Dictionary) -> Array:
+	var out: Array = []
+	var bags_raw: Array = data.get("bags", [])
+	if not bags_raw.is_empty():
+		for bd in bags_raw:
+			var b: Dictionary = bd
+			b["slots"] = int(b["slots"])  # JSON floats -> int
+			out.append(b)
+		return out
+	var old_bag: Dictionary = data.get("bag", {})  # legacy single-bag save
+	if old_bag.has("slots"):
+		old_bag["slots"] = int(old_bag["slots"])
+		return [old_bag]
+	return Items.starter_bags()
+
+
 ## Restore a save onto a freshly built world. Order matters: level first
 ## (set_class derives theme unlocks from it), then class, then the
 ## overrides, then recalc, then the world reconciles.
@@ -154,11 +175,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 	p.gem_bag = []
 	for g in data.get("gem_bag", []):
 		p.gem_bag.append(_fix_gem(g))
-	# Bags/consumables (round 6). Pre-bag saves get the starter pouch —
-	# same 15 slots the old BACKPACK_MAX allowed.
-	var bag_data: Dictionary = data.get("bag", {})
-	p.bag = bag_data if bag_data.has("slots") else Items.make_bag(Balance.STARTER_BAG_GRADE)
-	p.bag["slots"] = int(p.bag["slots"])  # JSON floats -> int
+	p.bags = load_bags(data)
 	p.consumables = data.get("consumables", [])
 	p.potion_rotation = data.get("potion_rotation", [])
 	p.active_potion = String(data.get("active_potion", "health"))

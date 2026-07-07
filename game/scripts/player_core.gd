@@ -54,10 +54,12 @@ var potions := 2
 var equipment := {}      # slot -> item Dictionary
 var backpack: Array = []
 var gem_bag: Array = []  # loose gems
-# The BAG is carried capacity for everything not equipped: gear
-# (backpack), gem STACKS and consumables share its slots. Bigger bags
-# drop from elites (Items.BAG_SLOTS: F 15 ... S 100).
-var bag: Dictionary = Items.make_bag(Balance.STARTER_BAG_GRADE)
+# The BAGS are carried capacity for everything not equipped: gear
+# (backpack), gem STACKS and consumables share their pooled slots. The
+# hero equips UP TO Balance.MAX_BAGS bags and capacity is the SUM of
+# their slots (round 52). Bags drop act-tiered from bosses/elites and
+# stock at merchants. Start with two F pouches (Balance.STARTER_BAGS).
+var bags: Array = Items.starter_bags()
 var consumables: Array = []   # reset stones etc. ({"kind": "stone", ...})
 # Q-rotation (playtest 2026-07-07): Q drinks the ACTIVE potion; the
 # potion_next bind cycles health + every slotted rotation potion you
@@ -587,7 +589,10 @@ func stat_sheet() -> String:
 # ==================================================================== gear
 
 func bag_capacity() -> int:
-	return int(bag.get("slots", Items.BAG_SLOTS[Balance.STARTER_BAG_GRADE]))
+	var total := 0
+	for b in bags:
+		total += int(b.get("slots", 0))
+	return total
 
 
 ## Gems STACK: one bag slot per stat+level kind, however many you hold
@@ -821,20 +826,36 @@ func use_consumable(c: Dictionary) -> void:
 				game.sfx("blink")
 
 
-## A looted bag: bigger than the current one upgrades in place,
-## anything else converts to gold.
+## A looted/bought bag joins the equipped set (capacity grows). A SIXTH
+## bag auto-keeps the best Balance.MAX_BAGS by slot count; the worst is
+## removed and cashes for a flat 1g (round 52; preserves the round-51
+## anti-exploit — spare bags are never worth more than 1g). Returns true
+## when the incoming bag was KEPT, false when it was the spare cashed out.
 func acquire_bag(b: Dictionary) -> bool:
-	if int(b.get("slots", 0)) > bag_capacity():
-		bag = b
+	bags.append(b)
+	if bags.size() <= Balance.MAX_BAGS:
 		game.sfx("levelup")
 		game.spawn_text(global_position + Vector2(0, -56),
-			"BAG UPGRADED: %s (%d slots)" % [b["name"], int(b["slots"])], Color(0.95, 0.85, 0.5))
+			"BAG ADDED: %s (+%d slots) — %d/%d bags, %d total" % [b["name"], int(b["slots"]),
+				bags.size(), Balance.MAX_BAGS, bag_capacity()], Color(0.95, 0.85, 0.5))
 		return true
-	# Bags cash out for a flat 1g (round 51 anti-exploit: never the sell
-	# formula — boss-dropped bags would otherwise be a gold pump).
+	# Over the cap: keep the best MAX_BAGS by slots, cash the smallest at 1g.
+	var worst := 0
+	for i in range(1, bags.size()):
+		if int(bags[i].get("slots", 0)) < int(bags[worst].get("slots", 0)):
+			worst = i
+	var dropped: Dictionary = bags[worst]
+	bags.remove_at(worst)
 	gold += Balance.BAG_SELL_GOLD
-	game.spawn_text(global_position + Vector2(0, -50), "Spare bag — %dg" % Balance.BAG_SELL_GOLD, Color(1, 0.9, 0.4))
-	return false
+	if dropped == b:
+		# The incoming bag was the worst — nothing gained.
+		game.spawn_text(global_position + Vector2(0, -50), "Spare bag — %dg" % Balance.BAG_SELL_GOLD, Color(1, 0.9, 0.4))
+		return false
+	game.sfx("levelup")
+	game.spawn_text(global_position + Vector2(0, -56),
+		"BAG UPGRADED: %s — best %d kept, spare +%dg (%d total)" % [b["name"],
+			Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, bag_capacity()], Color(0.95, 0.85, 0.5))
+	return true
 
 
 func equip(item: Dictionary) -> void:

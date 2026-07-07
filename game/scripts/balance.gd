@@ -13,7 +13,12 @@ const XP_BASE := 30
 const XP_PER_LEVEL := 22
 const SKILL_POINTS_PER_LEVEL := 1
 const ATTR_POINTS_PER_LEVEL := 1   # attributes AND substats spend from this pool
-const STARTER_BAG_GRADE := "F"     # Items.BAG_SLOTS[F] = the old backpack cap
+const STARTER_BAG_GRADE := "F"     # legacy single-bag default (save migration fallback)
+# Stacking bags (round 52): the hero equips UP TO MAX_BAGS bags and their
+# slots SUM. Start with two F pouches — one F (5 slots) is too tight once
+# gems + consumables share the pool.
+const MAX_BAGS := 5
+const STARTER_BAGS := ["F", "F"]
 
 # ------------------------------------------------------ monster scaling ---
 const LEVEL_CAP := 100
@@ -74,9 +79,45 @@ const BOSS_GEAR_DROP := {
 const BOSS_GEAR_DROP_ACT1_FINAL := {"B": 1.0 / 3.0, "A": 1.0 / 10.0}  # ch7 bosses only
 const ACT1_FINAL_CHAPTER := "ch7"
 # Bags are inventory expansion, not needed every run: a SEPARATE, rarer roll
-# than gear (round 51b — the per-gear-grade bag roll felt spammy). Grade = the
-# chapter's loot_cap; dupes still cash out at BAG_SELL_GOLD.
-const BOSS_BAG_DROP_CHANCE := 0.15
+# than gear (round 51b — the per-gear-grade bag roll felt spammy). Round 52:
+# a per-ACT table — chance per boss + a tier weight spread gated to the act,
+# so players aren't flooded with obsolete low-tier dupes. dupes still cash at
+# BAG_SELL_GOLD (a 6th bag keeps the best MAX_BAGS, the worst is sold).
+const BOSS_BAG_DROP := {
+	1: {"chance": 0.10, "weights": {"F": 50, "E": 35, "D": 15}},
+	2: {"chance": 0.09, "weights": {"D": 40, "C": 40, "B": 20}},
+	3: {"chance": 0.08, "weights": {"B": 35, "A": 45, "S": 20}},
+}
+# Merchants stock bags too (round 52) — capacity is QoL, not power, so they're
+# priced FAR below gear/S-weapons. Flat per-tier (the act-gated tier already
+# encodes progression); buy still dwarfs the 1g sell. Count rolled per act.
+const BAG_BUY_PRICE := {"F": 30, "E": 60, "D": 100, "C": 150, "B": 220, "A": 320, "S": 450}
+const SHOP_BAG_COUNT := {1: [1, 1], 2: [1, 2], 3: [1, 2]}
+
+## Per-boss bag drop chance for an act (round 52).
+static func bag_drop_chance(act: int) -> float:
+	return float(BOSS_BAG_DROP.get(clampi(act, 1, 3), {}).get("chance", 0.0))
+
+## Roll a bag GRADE from an act's tier weights (used by boss/elite/merchant
+## bag sources so tier stays gated to the act everywhere).
+static func roll_bag_grade(act: int, rng: RandomNumberGenerator) -> String:
+	var weights: Dictionary = BOSS_BAG_DROP.get(clampi(act, 1, 3), {}).get("weights", {"F": 1})
+	var total := 0.0
+	for w in weights.values():
+		total += float(w)
+	var pick := rng.randf() * total
+	for grade in weights:
+		pick -= float(weights[grade])
+		if pick <= 0.0:
+			return String(grade)
+	return String(weights.keys()[0])
+
+# DISCARD-throw (round 52): a bag item flung out to free a slot. It sails a
+# short arc away, then ignores pickup for a beat so it doesn't re-collect the
+# instant you're standing on it. Registered like any drop -> mails at chapter
+# end (never silently lost).
+const DISCARD_THROW_DIST := 96.0
+const DISCARD_NO_PICKUP_TIME := 1.5
 # SHOP gear appearance weights per act — the grade a stock slot rolls, then
 # clamped to the chapter's loot_cap. Act1 floor below B; Act2 floor B; Act3 floor A.
 const SHOP_GEAR_WEIGHTS := {

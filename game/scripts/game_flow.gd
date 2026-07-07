@@ -337,9 +337,11 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		if give_loot({"kind": "item", "item": gear}, boss_pos + Vector2(40, 30)):
 			spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
 	# Bags: a SEPARATE, rarer roll (round 51b) — inventory expansion, not every
-	# run. Grade = loot_cap; dupes cash at 1g via acquire_bag.
-	if loot_rng.randf() < Balance.BOSS_BAG_DROP_CHANCE:
-		player.acquire_bag(Items.make_bag(loot_cap()))
+	# run. Round 52: per-act chance + tier weights (Balance.BOSS_BAG_DROP), so
+	# tier stays gated to the act; a 6th bag keeps the best 5 (acquire_bag).
+	var bag_act: int = Story.act_of(chapter_id)
+	if loot_rng.randf() < Balance.bag_drop_chance(bag_act):
+		player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(bag_act, loot_rng)))
 
 	# Now that the room is safe, a wandering merchant MAY set up camp.
 	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
@@ -469,8 +471,8 @@ func on_enemy_died(e: Enemy) -> void:
 			if give_loot({"kind": "stone", "stone": Items.make_respec_tome()}, e.global_position + Vector2(-36, 8)):
 				spawn_text(e.global_position + Vector2(0, -92), "+ Palimpsest of the Path", Color(0.6, 0.9, 1.0))
 		elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
-			var cap := String(Story.chapter(chapter_id).get("loot_cap", "S"))
-			player.acquire_bag(Items.make_bag(Items.roll_grade("gold", loot_rng, cap)))
+			# Round 52: act-tiered like boss bags (no obsolete low-tier floods).
+			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(Story.act_of(chapter_id), loot_rng)))
 	else:
 		# Chance-based chest drops (Greed above 30% nudges the odds up).
 		var bonus := Stats.greed_loot(player.greed) if is_instance_valid(player) else 0.0

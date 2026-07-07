@@ -561,9 +561,17 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 12)
 	right.add_child(head)
-	var bh := _lbl(head, "BAG — [%s] %s  (%d/%d)" % [p.bag["grade"], p.bag["name"],
-		p.bag_used(), p.bag_capacity()], 16, Items.GRADE_COLOR[p.bag["grade"]])
+	var best_grade: String = String(p.bags[0].get("grade", "F")) if not p.bags.is_empty() else "F"
+	var bag_summary := ""
+	for bb in p.bags:
+		var bg: String = String(bb.get("grade", "F"))
+		if Items.GRADES.find(bg) > Items.GRADES.find(best_grade):
+			best_grade = bg
+		bag_summary += "%s·%d  " % [bg, int(bb.get("slots", 0))]
+	var bh := _lbl(head, "BAGS — %d/%d equipped  (%d/%d slots)" % [p.bags.size(), Balance.MAX_BAGS,
+		p.bag_used(), p.bag_capacity()], 16, Items.GRADE_COLOR[best_grade])
 	bh.custom_minimum_size = Vector2(360, 0)
+	_lbl(head, bag_summary.strip_edges(), 13, Color(0.6, 0.6, 0.66))
 	if not p.gem_bag.is_empty():
 		var auto_cb := func() -> void:
 			var n: int = game.player.auto_synthesize()
@@ -572,7 +580,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			open_inventory()
 		var ab := _btn(head, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
-	_lbl(right, "Gear: click to equip · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · bigger bags drop from ELITES", 12, Color(0.55, 0.55, 0.6))
+	_lbl(right, "Gear: click to equip · ALT-CLICK gear/consumables to DISCARD (throw out, free a slot) · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
 	# Bag category filter: All (default) + per-slot gear, gems, consumables.
 	var catrow := HBoxContainer.new()
@@ -604,9 +612,13 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			if cat != "all" and String(it["slot"]) != cat:
 				continue
 			_bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
-				"%s\n%s\n\nCLICK TO EQUIP — diff:\n%s" % [Items.title(it), Items.describe(it, _awk(it)), _diff_tip(it)],
+				"%s\n%s\n\nCLICK TO EQUIP — diff:\n%s\n\nALT-CLICK: discard (throw it out to free a slot)" % [Items.title(it), Items.describe(it, _awk(it)), _diff_tip(it)],
 				func() -> void:
-					game.player.equip(it)
+					if Input.is_key_pressed(KEY_ALT):
+						game.player.backpack.erase(it)
+						game.discard_to_ground({"kind": "item", "item": it})
+					else:
+						game.player.equip(it)
 					open_inventory("gear", cat))
 	if show_cons:
 		# Consumables STACK by id (playtest 2026-07-07): one slot per
@@ -634,7 +646,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var cicon: Texture2D = Art.consumable_icon(cc)
 			var cid := String(gid)
 			var slotted: int = p.potion_rotation.count(cid)
-			var tip := "%s%s\n%s\n\nCLICK TO USE" % [str(cc["name"]), xn, str(cc.get("desc", ""))]
+			var tip := "%s%s\n%s\n\nCLICK TO USE · ALT-CLICK: discard one" % [str(cc["name"]), xn, str(cc.get("desc", ""))]
 			if cid in Items.ROTATION_POTIONS:
 				# Loadout editing (per-room potion budget, 2026-07-07 v2).
 				tip += "\nSHIFT-CLICK: slot into the room loadout · CTRL-CLICK: unslot"
@@ -646,7 +658,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
 				tip,
 				func() -> void:
-					if cid in Items.ROTATION_POTIONS and Input.is_key_pressed(KEY_SHIFT):
+					if Input.is_key_pressed(KEY_ALT):
+						game.player.consumables.erase(cc)
+						game.discard_to_ground({"kind": "stone", "stone": cc})
+					elif cid in Items.ROTATION_POTIONS and Input.is_key_pressed(KEY_SHIFT):
 						game.player.loadout_add(cid)
 					elif cid in Items.ROTATION_POTIONS and Input.is_key_pressed(KEY_CTRL):
 						game.player.loadout_remove(cid)
@@ -1230,6 +1245,18 @@ func open_shop(zone: int) -> void:
 			var sg := Items.roll_shop_grade(game.chapter_id, rng, game.loot_cap())
 			stock.append(Items.roll_gear_of_grade(sg, rng, game.player.cls))
 		game.shop_stock[zone] = stock
+	# Bags on the shelf (round 52): 1 (Act 1) or 1-2 (Act 2/3) of a rollable
+	# act tier — kept alongside gear stock until bought out.
+	if not game.shop_bags.has(zone):
+		var brng := RandomNumberGenerator.new()
+		brng.randomize()
+		var bact: int = Story.act_of(game.chapter_id)
+		var bcount: Array = Balance.SHOP_BAG_COUNT.get(bact, [1, 1])
+		var nbags: int = brng.randi_range(int(bcount[0]), int(bcount[1]))
+		var bstock: Array = []
+		for i in nbags:
+			bstock.append(Items.make_bag(Balance.roll_bag_grade(bact, brng)))
+		game.shop_bags[zone] = bstock
 
 	var p: Player = game.player
 	var vbox := _open("Merchant — you have %d gold" % p.gold, 1120, 600)
@@ -1309,6 +1336,22 @@ func open_shop(zone: int) -> void:
 		var gemb := _btn(buy, "💎 Gem — Lv%d, random stat — %d gold" % [gl, gprice],
 			buy_gem, Color(0.6, 0.9, 1.0), p.gold >= gprice)
 		gemb.custom_minimum_size = Vector2(640, 0)
+
+	# Bag shelf (round 52): expand carry capacity. Capacity is QoL not power,
+	# so bags are priced FAR below gear. Buying joins the equipped set (a 6th
+	# keeps the best 5 via acquire_bag). Sells for only 1g, so buy >> sell.
+	for bag_item in game.shop_bags[zone]:
+		var bit: Dictionary = bag_item
+		var bcost := int(ceil(float(Items.bag_buy_price(String(bit["grade"]))) * haggle))
+		var buy_bag := func() -> void:
+			if p.gold >= bcost:
+				p.gold -= bcost
+				game.shop_bags[zone].erase(bit)
+				p.acquire_bag(bit)
+			open_shop(zone)
+		var bagb := _btn(buy, "🎒 %s — +%d slots — %d gold" % [String(bit["name"]), int(bit["slots"]), bcost],
+			buy_bag, Items.GRADE_COLOR[String(bit["grade"])], p.gold >= bcost)
+		bagb.custom_minimum_size = Vector2(640, 0)
 
 	# Gambling shelf: spend gold on a random item of this merchant's tier.
 	var gamble_tier := String(game.zones[zone].get("shop_tier",

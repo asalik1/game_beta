@@ -11,6 +11,7 @@ var game: Game
 var magnet := false
 var loot := {}        # empty = a gold coin; else a dropped-loot payload
 var retry_cd := 0.0   # full-bag claim retry throttle
+var pickup_delay := 0.0  # discard-throw: ignore all claims until this elapses
 
 
 static func drop_gold(game_node: Node2D, amount: int, pos: Vector2) -> void:
@@ -124,6 +125,7 @@ func _physics_process(delta: float) -> void:
 	if p == null or p.dead:
 		return
 	retry_cd = maxf(0.0, retry_cd - delta)
+	pickup_delay = maxf(0.0, pickup_delay - delta)
 	var d := global_position.distance_to(p.global_position)
 	if loot.is_empty():
 		# Coin: magnet toward the player.
@@ -132,9 +134,10 @@ func _physics_process(delta: float) -> void:
 		if magnet:
 			global_position = global_position.move_toward(p.global_position,
 				(300.0 + (110.0 - minf(d, 110.0)) * 4.0) * delta)
-	elif d < 30.0 and retry_cd <= 0.0:
+	elif d < 30.0 and retry_cd <= 0.0 and pickup_delay <= 0.0:
 		# Loot: keep retrying while stood on — the player may have just
-		# made bag room (body_entered alone fires only on ENTER).
+		# made bag room (body_entered alone fires only on ENTER). A freshly
+		# DISCARDED drop stays put until its no-pickup window elapses.
 		_try_claim(p)
 
 
@@ -145,7 +148,7 @@ func _on_body_entered(body: Node) -> void:
 		body.gain_gold(value)
 		game.sfx("coin")
 		queue_free()
-	elif retry_cd <= 0.0:
+	elif retry_cd <= 0.0 and pickup_delay <= 0.0:
 		_try_claim(body)
 
 

@@ -732,6 +732,10 @@ func _run_systems() -> void:
 	# 3d15. Equip / unequip: slot empties back to the bag, bag-full guard.
 	_test_equip_unequip()
 
+	# 3d15b. Stacking bags (round 52): sum-capacity, keep-best-5, act-tiered
+	# drops, shop pricing, discard-throw, save round-trip + old-save migration.
+	await _test_bags_discard()
+
 	# 3d16. Retention pass: chapter grades + PBs, weekly challenge fx,
 	# kill-count lore + titles, risk-event curse, loot fanfare bank.
 	await _test_retention()
@@ -1342,14 +1346,14 @@ func _test_boss_music() -> void:
 
 # ---- CORE: mailbox, ground overflow, trusted clock (round 8) ------------
 func _test_mailbox() -> void:
-	var keep_bag: Dictionary = game.player.bag
+	var keep_bags: Array = game.player.bags
 	var keep_mail: Array = game.mailbox
 	var keep_dropped: Array = game.dropped_loot
 	game.mailbox = []
 	game.dropped_loot = []
 
 	# Overflow drops to the ground and registers — never silently sold.
-	game.player.bag = Items.make_bag("F")
+	game.player.bags = [Items.make_bag("F")]
 	var filler: Array = []
 	while game.player.bag_used() < game.player.bag_capacity():
 		var st := Items.make_reset_stone()
@@ -1409,7 +1413,7 @@ func _test_mailbox() -> void:
 
 	# Restore.
 	game.player.backpack.erase(it)
-	game.player.bag = keep_bag
+	game.player.bags = keep_bags
 	game.mailbox = keep_mail
 	game.dropped_loot = keep_dropped
 	print("ok: mailbox (ground overflow, flush, claim, 30d expiry, trusted clock)")
@@ -1629,11 +1633,11 @@ func _test_set_bonus() -> void:
 # ---- CORE: account stash (deposit, withdraw, capacity) ------------------
 func _test_stash() -> void:
 	var keep_stash: Array = game.stash
-	var keep_bag: Dictionary = game.player.bag
+	var keep_bags: Array = game.player.bags
 	var keep_bp: Array = game.player.backpack
 	game.stash = []
 	game._stash_loaded = true          # skip the real account file
-	game.player.bag = Items.make_bag("S")  # 100 slots — room to withdraw into
+	game.player.bags = [Items.make_bag("S"), Items.make_bag("S")]  # room to withdraw into
 	game.player.backpack = []
 
 	# Deposit puts a payload into the stash.
@@ -1658,7 +1662,7 @@ func _test_stash() -> void:
 
 	# Restore.
 	game.stash = keep_stash
-	game.player.bag = keep_bag
+	game.player.bags = keep_bags
 	game.player.backpack = keep_bp
 	print("ok: account stash (deposit, withdraw to bag, capacity cap)")
 
@@ -1738,9 +1742,9 @@ func _test_consumables() -> void:
 func _test_gamble() -> void:
 	var p := game.player
 	var keep_gold: int = p.gold
-	var keep_bag: Dictionary = p.bag
+	var keep_bags: Array = p.bags
 	var keep_bp: Array = p.backpack
-	p.bag = Items.make_bag("S")  # room to receive
+	p.bags = [Items.make_bag("S")]  # room to receive
 	p.backpack = []
 
 	# Can't afford -> nothing won, no gold spent.
@@ -1763,7 +1767,7 @@ func _test_gamble() -> void:
 
 	# Restore.
 	p.gold = keep_gold
-	p.bag = keep_bag
+	p.bags = keep_bags
 	p.backpack = keep_bp
 	print("ok: gamble vendor (afford gate, cost deduction, item delivered)")
 
@@ -1774,8 +1778,8 @@ func _test_equip_unequip() -> void:
 	var keep_eq: Dictionary = p.equipment
 	var keep_bp: Array = p.backpack
 	var keep_cons: Array = p.consumables
-	var keep_bag: Dictionary = p.bag
-	p.bag = Items.make_bag("S")
+	var keep_bags: Array = p.bags
+	p.bags = [Items.make_bag("S")]
 	p.equipment = {}
 	p.backpack = []
 	p.consumables = []
@@ -1809,9 +1813,117 @@ func _test_equip_unequip() -> void:
 	p.equipment = keep_eq
 	p.backpack = keep_bp
 	p.consumables = keep_cons
-	p.bag = keep_bag
+	p.bags = keep_bags
 	p.recalc()
 	print("ok: equip / unequip (slot empties to bag, bag-full guard)")
+
+
+# ---- CORE: stacking bags + discard-throw (round 52) --------------------
+func _test_bags_discard() -> void:
+	var p := game.player
+	# Snapshot everything this section touches (restore, never clear).
+	var keep_bags: Array = p.bags
+	var keep_bp: Array = p.backpack
+	var keep_gold: int = p.gold
+	var keep_dropped: Array = game.dropped_loot
+
+	# --- capacity is the SUM; a 6th bag keeps the best MAX_BAGS ------------
+	p.bags = []
+	for i in Balance.MAX_BAGS:
+		p.bags.append(Items.make_bag("F"))
+	if p.bag_capacity() != Balance.MAX_BAGS * int(Items.BAG_SLOTS["F"]):
+		return _fail("bag capacity is not the sum of equipped bags")
+	var cap0: int = p.bag_capacity()
+	var gold0: int = p.gold
+	# A bigger 6th bag displaces the smallest: kept, capacity grows, spare 1g.
+	if not p.acquire_bag(Items.make_bag("D")):
+		return _fail("a bigger 6th bag should be kept")
+	if p.bags.size() != Balance.MAX_BAGS:
+		return _fail("bag count exceeded MAX_BAGS after a 6th")
+	if p.bag_capacity() <= cap0:
+		return _fail("capacity did not grow when a bigger bag displaced a smaller")
+	if p.gold != gold0 + Balance.BAG_SELL_GOLD:
+		return _fail("displaced bag did not cash for exactly 1g")
+
+	# --- act-tiered bag drops: chance + grade stay on the act's table -----
+	if not (is_equal_approx(Balance.bag_drop_chance(1), 0.10)
+			and is_equal_approx(Balance.bag_drop_chance(2), 0.09)
+			and is_equal_approx(Balance.bag_drop_chance(3), 0.08)):
+		return _fail("per-act bag drop chance drifted from the design table")
+	var brng := RandomNumberGenerator.new()
+	brng.seed = 707
+	for act in [1, 2, 3]:
+		var weights: Dictionary = Balance.BOSS_BAG_DROP[act]["weights"]
+		for i in 300:
+			if not weights.has(Balance.roll_bag_grade(act, brng)):
+				return _fail("act %d bag drop rolled a grade off its table" % act)
+	# Tier gating: Act 1 never mints above D; Act 3 never below B.
+	if Items.GRADES.find("B") <= Items.GRADES.find("D"):
+		return _fail("grade ordering assumption broke (B must outrank D)")
+	for gk in Balance.BOSS_BAG_DROP[1]["weights"]:
+		if Items.GRADES.find(String(gk)) > Items.GRADES.find("D"):
+			return _fail("Act 1 bag table leaked a grade above D")
+	for gk in Balance.BOSS_BAG_DROP[3]["weights"]:
+		if Items.GRADES.find(String(gk)) < Items.GRADES.find("B"):
+			return _fail("Act 3 bag table leaked a grade below B")
+
+	# --- shop bags are QoL-cheap but always dwarf the 1g sell -------------
+	for gk in Items.GRADES:
+		if Items.bag_buy_price(gk) <= Balance.BAG_SELL_GOLD:
+			return _fail("shop bag price must sit far above the 1g sell (%s)" % gk)
+
+	# --- save round-trip + old-save migration -----------------------------
+	var nb: Array = SaveGame.load_bags({"bags": [
+		{"kind": "bag", "grade": "F", "name": "a", "slots": 5.0},
+		{"kind": "bag", "grade": "D", "name": "b", "slots": 15.0}]})
+	if nb.size() != 2 or int(nb[0]["slots"]) != 5 or int(nb[1]["slots"]) != 15:
+		return _fail("new-format bags did not load / re-cast slots to int")
+	var round_trip: Array = SaveGame.load_bags(JSON.parse_string(JSON.stringify({"bags": nb})))
+	if round_trip.size() != 2 or int(round_trip[1]["slots"]) != 15:
+		return _fail("bags did not survive a JSON round-trip")
+	var migrated: Array = SaveGame.load_bags({"bag": {"kind": "bag", "grade": "C", "name": "c", "slots": 20.0}})
+	if migrated.size() != 1 or int(migrated[0]["slots"]) != 20:
+		return _fail("old single-bag save did not migrate to a 1-element array")
+	if SaveGame.load_bags({}).size() != Balance.STARTER_BAGS.size():
+		return _fail("pre-bag save did not fall back to the starter bags")
+
+	# --- discard-throw: to the ground, no-pickup window, then collectable -
+	p.bags = [Items.make_bag("S")]
+	p.backpack = []
+	game.dropped_loot = []
+	var gear := Items.roll_item_of("charm", "B", game.loot_rng, p.cls)
+	p.backpack.append(gear)
+	# The UI removes it from the bag, then the game flings it out.
+	p.backpack.erase(gear)
+	var pk := game.discard_to_ground({"kind": "item", "item": gear})
+	# NB: no `await` here — headless frames race ahead and would drain the
+	# no-pickup timer before we can test it. The spawn/registry are synchronous.
+	if game.dropped_loot.size() != 1:
+		return _fail("discard did not register the drop (would be silently lost)")
+	if pk.pickup_delay <= 0.0:
+		return _fail("discarded pickup has no no-pickup window")
+	if get_tree().get_nodes_in_group("loot_pickups").is_empty():
+		return _fail("discard did not spawn a ground pickup")
+	# Walk over it DURING the window: it must NOT re-collect.
+	pk._on_body_entered(p)
+	if not p.backpack.is_empty() or game.dropped_loot.size() != 1:
+		return _fail("discarded item re-collected inside its no-pickup window")
+	# Window elapses -> a walk-over now claims it back into the bag.
+	pk.pickup_delay = 0.0
+	pk._on_body_entered(p)
+	if p.backpack.size() != 1 or not game.dropped_loot.is_empty():
+		return _fail("discarded item did not become collectable after the window")
+
+	# Restore.
+	for node in get_tree().get_nodes_in_group("loot_pickups"):
+		node.queue_free()
+	p.bags = keep_bags
+	p.backpack = keep_bp
+	p.gold = keep_gold
+	game.dropped_loot = keep_dropped
+	p.recalc()
+	await _frames(2)
+	print("ok: stacking bags (sum-capacity, keep-best-5, act drops, shop price, migration) + discard-throw")
 
 
 func _test_retention() -> void:

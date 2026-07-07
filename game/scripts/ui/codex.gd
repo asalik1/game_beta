@@ -544,15 +544,16 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		val_l.custom_minimum_size = Vector2(300, 0)
 
 	# ------------------------------------------------- bags & consumables ---
-	m._lbl(list, "— BAGS — everything you carry shares one bag's slots —", 16, Color(0.95, 0.85, 0.5))
+	m._lbl(list, "— BAGS — carry up to 5 stacking bags; everything shares their slots —", 16, Color(0.95, 0.85, 0.5))
 	var bags := VBoxContainer.new()
 	bags.add_theme_constant_override("separation", 2)
 	_card(list).add_child(bags)
 	for g2 in Items.GRADES:
 		m._lbl(bags, "%s   %s — %d slots" % [g2, Items.BAG_NAMES[g2], int(Items.BAG_SLOTS[g2])], 14, Items.GRADE_COLOR[g2])
 	for line2 in [
-		"Gear, gem stacks (one slot per gem kind, any count) and consumables all live in the bag. One bag at a time: looting a bigger one upgrades it in place, smaller ones convert to gold. ELITES drop them.",
-		"Full bag? New loot drops at your feet instead of vanishing — and anything you leave on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
+		"Gear, gem stacks (one slot per gem kind, any count) and consumables all share your bags' slots. Equip up to %d bags at once — total capacity is the SUM of their slots. You start with two Frayed Pouches." % Balance.MAX_BAGS,
+		"Bags drop from BOSSES and elites (tier scales with the act) and merchants stock them cheap. Pick up a sixth and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],
+		"Full bag? DISCARD loose gear or a consumable (ALT-click it in the inventory) to fling it out and free a slot. New loot drops at your feet instead of vanishing — anything left on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
 		var bl := m._lbl(bags, String(line2), 13, Color(0.7, 0.72, 0.78))
 		bl.custom_minimum_size = Vector2(880, 0)
 		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

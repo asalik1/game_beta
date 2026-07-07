@@ -182,11 +182,11 @@ static func random_gem(rng: RandomNumberGenerator, lvl := 1) -> Dictionary:
 # ------------------------------------------------------------------ bags ---
 # The bag is carried capacity for everything NOT equipped: gear, GEM
 # STACKS (one slot per stat+level, round 7) and consumables share its
-# slots. One bag at a time — looting a bigger one upgrades in place,
-# smaller/equal ones convert to gold. Elites are the bag source
-# (playtest round 6; DESIGN.md).
-# +5 across the board (playtest 2026-07-07: early bags choked on gems).
-const BAG_SLOTS := {"F": 35, "E": 40, "D": 45, "C": 55, "B": 70, "A": 90, "S": 120}
+# slots. Round 52: the hero equips UP TO Balance.MAX_BAGS bags and their
+# slots SUM — capacity spans 1 bag (5) to 5xS (175). Bags drop from
+# bosses/elites (act-tiered) and stock cheap at merchants.
+# Downscaled curve (+5/tier) so stacking is the growth axis, not one bag.
+const BAG_SLOTS := {"F": 5, "E": 10, "D": 15, "C": 20, "B": 25, "A": 30, "S": 35}
 const BAG_NAMES := {
 	"F": "Frayed Pouch", "E": "Patched Satchel", "D": "Soldier's Knapsack",
 	"C": "Knight's Rucksack", "B": "Runed Haversack", "A": "Dragonhide Duffel",
@@ -201,6 +201,19 @@ static func make_bag(grade: String) -> Dictionary:
 
 static func bag_price(grade: String) -> int:
 	return int(40.0 * GRADE_MULT[grade])
+
+
+## The two Frayed Pouches every new hero starts with (Balance.STARTER_BAGS).
+static func starter_bags() -> Array:
+	var out: Array = []
+	for g in Balance.STARTER_BAGS:
+		out.append(make_bag(String(g)))
+	return out
+
+
+## Merchant buy price for a bag — QoL-cheap, flat per tier (Balance table).
+static func bag_buy_price(grade: String) -> int:
+	return int(Balance.BAG_BUY_PRICE.get(grade, 30))
 
 
 # ----------------------------------------------------------- consumables ---
