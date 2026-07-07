@@ -758,6 +758,40 @@ func set_flag(flag_name: String, value = true) -> void:
 	# deliberate upward call in the chain.)
 	if value:
 		call("_recheck_gates")
+		_check_side_quests()
+
+
+## Side quests are visible wrappers over flag chains (Story.SIDE_QUESTS):
+## sq_on_<id> marks acceptance, each step completes when its flag lands,
+## and the reward pays the moment the LAST step's flag is set — once per
+## run (sq_paid_<id>; all three are ordinary flags, so saves carry them
+## and the run-end wipe retires them together).
+func _check_side_quests() -> void:
+	for id in Story.ALL_SIDE_QUESTS:
+		var sid := String(id)
+		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
+			continue
+		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
+		var done := true
+		for step in q.get("steps", []):
+			if not get_flag(String(step["flag"]), false):
+				done = false
+				break
+		if not done:
+			continue
+		flags["sq_paid_" + sid] = true  # direct: no gate/quest re-entry
+		var reward: Dictionary = q.get("reward", {})
+		var gold := int(ceil(float(reward.get("gold", 0)) * Balance.daily_gold_mult(player.level)))
+		if gold > 0:
+			player.gold += gold
+		var standing: Dictionary = reward.get("standing", {})
+		for fac in standing:
+			player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
+		sfx("levelup")
+		spawn_text(player.global_position + Vector2(0, -70),
+			"SIDE QUEST COMPLETE — %s%s" % [String(q["name"]),
+				"  (+%d gold)" % gold if gold > 0 else ""],
+			Color(1.0, 0.85, 0.35), 4.0)
 
 func get_flag(flag_name: String, def = false):
 	return flags.get(flag_name, def)
@@ -816,6 +850,21 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 			var fac_shifts: Dictionary = c.get("faction", {})
 			for fac in fac_shifts:
 				player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(fac_shifts[fac])
+			# Side-quest acceptance runs BEFORE the choice's flags land, so
+			# a single choice can accept a quest and complete its first
+			# step (or even the whole chain) in one breath. Quests bind to
+			# their authored chapter — a wanderer repeating his ask in a
+			# later chapter can't open an uncompletable job.
+			if c.has("side_quest"):
+				var sqid := String(c["side_quest"])
+				var sq: Dictionary = Story.ALL_SIDE_QUESTS.get(sqid, {})
+				if not sq.is_empty() and String(sq.get("chapter", chapter_id)) == chapter_id \
+						and not get_flag("sq_on_" + sqid, false):
+					set_flag("sq_on_" + sqid)
+					sfx("potion")
+					spawn_text(player.global_position + Vector2(0, -70),
+						"NEW SIDE QUEST — %s  (see the ⚑ journal)" % String(sq["name"]),
+						Color(0.95, 0.85, 0.5), 4.0)
 			var set_flags: Dictionary = c.get("flags", {})
 			for fname in set_flags:
 				set_flag(fname, set_flags[fname])  # via set_flag: gates react

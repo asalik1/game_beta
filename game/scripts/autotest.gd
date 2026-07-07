@@ -1281,6 +1281,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch5_chapter()
 	await _test_ch6_chapter()
 	await _test_ch7_chapter()
+	await _test_side_quests()
 	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
@@ -2247,3 +2248,35 @@ func _test_ch7_chapter() -> void:
 		await get_tree().create_timer(60.0).timeout
 		return
 	print("ok: ch7 chapter (Breaking Sky spine — veyx/echo/cyrraeth, ACT 1 COMPLETE)")
+
+
+## Side-quest engine (flag-chain wrappers, Story.SIDE_QUESTS): accept ->
+## step tracking -> single payout on the last step. Drives the pilot
+## quest's flags by hand; SNAPSHOT + RESTORE shared state per the rule.
+func _test_side_quests() -> void:
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var gold0: int = game.player.gold
+	game.set_flag("sq_on_heron_feather")
+	game.set_flag("hat_taken")
+	if game.get_flag("sq_paid_heron_feather", false):
+		_fail("side quest paid before all steps were done")
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.set_flag("hat_given")
+	if not game.get_flag("sq_paid_heron_feather", false):
+		_fail("side quest did not pay on its final step")
+		await get_tree().create_timer(60.0).timeout
+		return
+	var gained: int = game.player.gold - gold0
+	if gained <= 0:
+		_fail("side quest completion paid no gold")
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.set_flag("some_unrelated_flag")
+	if game.player.gold != gold0 + gained:
+		_fail("side quest paid more than once")
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.player.gold = gold0
+	game.flags = snap_flags
+	print("ok: side quests (accept, step tracking, single payout)")
