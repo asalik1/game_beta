@@ -201,15 +201,15 @@ const CHAPTER_ZONES := {
 # (~224 x 1.12^(lvl-17), ~1s single-target TTK), dmg on the ~5.5%/lvl
 # parity curve (in-game = base x 1.3).
 const ENEMIES := {
-	"cinder_whelp": {"name": "Cinder Whelp", "sprite": "wolf", "hp": 230.0, "dmg": 38.0, "speed": 180.0, "xp": 12, "gold": 14, "ranged": false, "scale": 3.0,
+	"cinder_whelp": {"name": "Cinder Whelp", "sprite": "stone_base", "hp": 230.0, "dmg": 38.0, "speed": 180.0, "xp": 12, "gold": 14, "ranged": false, "scale": 3.0,
 		"physres": 12.0, "magres": 15.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
 		"level": 22, "hp_g": 0.10, "dmg_g": 0.09,
 		"lore": "Vent-born fire in a wolf's habit of running in packs. The foundry crews stopped naming them after the first winter."},
-	"slag_brute": {"name": "Slagbound Brute", "sprite": "beastkin", "hp": 320.0, "dmg": 43.0, "speed": 130.0, "xp": 14, "gold": 16, "ranged": false, "scale": 3.5,
+	"slag_brute": {"name": "Slagbound Brute", "sprite": "stone_broken", "hp": 320.0, "dmg": 43.0, "speed": 130.0, "xp": 14, "gold": 16, "ranged": false, "scale": 3.5,
 		"physres": 38.0, "magres": 12.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
 		"level": 23, "hp_g": 0.11, "dmg_g": 0.09,
 		"lore": "Foundry laborers who worked the deep lines too long. The slag doesn't burn them anymore, which tells you what they're made of now."},
-	"forge_acolyte": {"name": "Forge Acolyte", "sprite": "cultist", "hp": 250.0, "dmg": 46.0, "speed": 100.0, "xp": 15, "gold": 18, "ranged": true, "scale": 3.2,
+	"forge_acolyte": {"name": "Forge Acolyte", "sprite": "mummy_mage", "hp": 250.0, "dmg": 46.0, "speed": 100.0, "xp": 15, "gold": 18, "ranged": true, "scale": 3.2,
 		"physres": 10.0, "magres": 38.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
 		"level": 24, "hp_g": 0.11, "dmg_g": 0.10,
 		"lore": "They attended one of Ordo's sermons out of curiosity. The Judge's court does not have a public gallery — everyone present is staff."},

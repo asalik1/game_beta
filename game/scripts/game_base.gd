@@ -819,6 +819,20 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 			var set_flags: Dictionary = c.get("flags", {})
 			for fname in set_flags:
 				set_flag(fname, set_flags[fname])  # via set_flag: gates react
+			# Quest keepsakes: a choice may hand the player a bag rider
+			# ("gain_item") or take one back ("lose_item"). Gains bypass
+			# bag capacity — a promise never bounces off a full pack.
+			if c.has("gain_item"):
+				var qi := Items.make_quest_item(String(c["gain_item"]))
+				if not qi.is_empty():
+					player.consumables.append(qi)
+					sfx("potion")
+			if c.has("lose_item"):
+				var lose_id := String(c["lose_item"])
+				for qc in player.consumables.duplicate():
+					if String(qc.get("id", "")) == lose_id:
+						player.consumables.erase(qc)
+						break
 			if c.has("quest"):
 				quest_key = String(c["quest"])
 				refresh_quest()
@@ -1201,6 +1215,51 @@ func _vol_db(linear: float) -> float:
 ## Per-track mix fixes for external recordings (measured RMS): dB gain
 ## evens out mastering differences, start skips long quiet intros
 ## (loops restart from the same offset via the stream's loop_offset).
+## A little grey scuff of dust — dashes, rolls, hard landings.
+func dust(pos: Vector2, count := 5) -> void:
+	for i in count:
+		var puff := Sprite2D.new()
+		puff.texture = Art.tex("glow")
+		puff.modulate = Color(0.75, 0.72, 0.66, 0.5)
+		puff.global_position = pos + Vector2(randf_range(-10.0, 10.0), randf_range(-4.0, 8.0))
+		puff.scale = Vector2(0.25, 0.25)
+		puff.z_index = -4
+		world.add_child(puff)
+		var tw := puff.create_tween()
+		tw.tween_property(puff, "scale", Vector2(0.55, 0.55), 0.35)
+		tw.parallel().tween_property(puff, "global_position:y",
+			puff.global_position.y - randf_range(4.0, 12.0), 0.35)
+		tw.parallel().tween_property(puff, "modulate:a", 0.0, 0.35)
+		tw.tween_callback(puff.queue_free)
+
+
+# Snow footprints (visual pass): fading tracks behind anyone crossing
+# snow ground. Spacing-gated, so standing still leaves nothing.
+var _step_pos := Vector2.ZERO
+
+func track_footprints() -> void:
+	if player == null or player.dead or zone_count == 0 or world == null:
+		return
+	var tid: String = terrain_by_zone[clampi(cur_room, 0, zone_count - 1)]
+	if String(Terrains.get_terrain(tid).get("ground", "")) != "snow":
+		return
+	var fp := player.global_position + Vector2(0, 18)
+	if fp.distance_to(_step_pos) < 26.0 or player.velocity.length() < 20.0:
+		return
+	_step_pos = fp
+	var print_spr := Sprite2D.new()
+	print_spr.texture = Art.tex("shadow")
+	print_spr.modulate = Color(0.25, 0.3, 0.42, 0.3)
+	print_spr.global_position = fp
+	print_spr.scale = Vector2(0.5, 0.32)
+	print_spr.z_index = -9
+	world.add_child(print_spr)
+	var tw := print_spr.create_tween()
+	tw.tween_interval(1.6)
+	tw.tween_property(print_spr, "modulate:a", 0.0, 2.2)
+	tw.tween_callback(print_spr.queue_free)
+
+
 ## A small water ripple at the feet of whatever is wading.
 func _ripple(pos: Vector2) -> void:
 	var ring := Sprite2D.new()

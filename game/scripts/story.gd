@@ -303,7 +303,8 @@ const CONVOS := {
 			],
 			"choices": [
 				{"text": "Crouch to his height. \"I'll watch for the hat. I promise nothing else.\"",
-					"resonance": 3.0, "flags": {"boy_answered": true}, "next": "o_kind"},
+					"resonance": 3.0, "flags": {"boy_answered": true},
+					"side_quest": "heron_feather", "next": "o_kind"},
 				{"text": "\"The wood keeps what it takes, boy. Go home.\"",
 					"resonance": -3.0, "flags": {"boy_answered": true}, "next": "o_cold"},
 			]},
@@ -312,7 +313,12 @@ const CONVOS := {
 		"o_hat": {"who": "Miller's Boy", "text": "Show me. Please. Is the feather blue at the tip?",
 			"choices": [
 				{"text": "Hold it out. \"Brown, wide-brim, heron feather — blue at the tip. I watched for it, like I said.\"",
-					"resonance": 3.0, "flags": {"hat_given": true}, "next": "o_hat2"},
+					"req_flag": "boy_answered", "resonance": 3.0,
+					"flags": {"hat_given": true}, "lose_item": "millers_hat", "next": "o_hat2"},
+				{"text": "Hold it out. \"Found it by the ravine, in the thorns. I think... I think it's his.\"",
+					"req_not_flag": "boy_answered", "resonance": 3.0,
+					"flags": {"hat_given": true, "boy_answered": true}, "lose_item": "millers_hat", "next": "o_hat2"},
+				{"text": "\"...Another time.\" Keep the pack shut.", "next": ""},
 			]},
 		"o_hat2": {"who": "Narrator", "text": "He doesn't cry this time either. He puts it on — it swallows him to the eyebrows — and stands straighter under it than the size should allow. \"He got far?\" \"The ravine. He saw the whole wood.\" The boy nods, slow, like a man watching a debt settle. \"That's a good place to stop walking,\" he decides. So do you.", "next": ""},
 	}},
@@ -397,24 +403,34 @@ const CONVOS := {
 		"t_rest": {"who": "Narrator", "text": "You set it ready, pointed at the horizon. Some calls are not yours to finish. The burn-shadow on the masonry keeps its silence, and you leave the tower feeling watched — not unkindly.", "next": ""},
 	}},
 	# The miller's hat (payoff for the boy's ask — see wander_orphan).
+	# The prop spawns only in worlds that rolled the boy (req_wanderer);
+	# taking it puts a quest keepsake in the bag ("gain_item") which the
+	# boy collects ("lose_item") — and which does not outlive the run.
 	"lore_millers_hat": {"start": "l1", "nodes": {
 		"l1": {"who": "Narrator",
-			"text": "Snagged in the thorns at the ravine's lip: a wide-brim hat, brown once, rain-stiffened to the color of bark. A feather still rides the band. Whoever walked this far came for the view — or was past wanting anything. The wood keeps its own accounts.",
+			"text": "Snagged in the thorns at the ravine's lip: a wide-brim hat, brown once, rain-stiffened to the color of bark. A heron feather still rides the band — blue at the tip. Whoever walked this far came for the view, or was past wanting anything. The wood keeps its own accounts.",
 			"variants": [
 				{"flag": "hat_taken", "text": "The thornbush keeps the hat's shape, empty. You check it every pass anyway. Habit, now.", "next": ""},
-				{"flag": "hat_left", "text": "The hat rides the thorns where you left it, brim set the way the wind likes. Some accounts you closed on purpose.", "next": ""},
-				{"flag": "boy_answered", "text": "Snagged in the thorns at the ravine's lip: a wide-brim hat. Brown. Heron feather. You know before you turn it over — blue at the tip. The miller made it exactly this far, and the view from here is the whole Darkwood.", "next": "h_choice"},
+				{"flag": "boy_answered", "text": "Snagged in the thorns at the ravine's lip: a wide-brim hat. Brown. Heron feather. You know before you turn it over — blue at the tip. The miller made it exactly this far, and the view from here is the whole Darkwood.", "next": "h_know"},
 			],
-			"next": ""},
-		"h_choice": {"who": "Narrator", "text": "A boy at the village edge is waiting on a promise. The hat weighs nothing, and will weigh more every mile back.",
+			"next": "h_found"},
+		# You made the boy a promise — the hat is the other half of it.
+		"h_know": {"who": "Narrator", "text": "A boy at the village edge is waiting on a promise. The hat weighs nothing, and will weigh more every mile back.",
 			"choices": [
 				{"text": "Work it free of the thorns, gently. A promise is a promise.",
-					"resonance": 4.0, "flags": {"hat_taken": true}, "next": "h_take"},
-				{"text": "Leave it. The wood keeps what it takes — and the boy keeps the version where his da is still walking.",
-					"resonance": -3.0, "flags": {"hat_left": true}, "next": "h_leave"},
+					"resonance": 3.0, "flags": {"hat_taken": true}, "gain_item": "millers_hat",
+					"side_quest": "heron_feather", "next": "h_take"},
+				{"text": "Leave it where the wind put it. For now, or for good.", "next": ""},
 			]},
-		"h_take": {"who": "Narrator", "text": "The thorns give it up one at a time, grudging as this wood ever gets. Up close, the brim shows years of a thumb finding the same worn spot. You find the spot without meaning to.", "next": ""},
-		"h_leave": {"who": "Narrator", "text": "You set the brim back the way the wind had it. On the road behind you the howling starts up again, and for once it sounds less like hunger and more like accounting.", "next": ""},
+		# Found cold, before (or without) ever meeting the boy.
+		"h_found": {"who": "Narrator", "text": "Somebody's da wore this toward the howling and did not come back for it. It would cost nothing to carry.",
+			"choices": [
+				{"text": "Take it. Somebody, somewhere, is short one hat and one answer.",
+					"resonance": 1.0, "flags": {"hat_taken": true}, "gain_item": "millers_hat",
+					"side_quest": "heron_feather", "next": "h_take"},
+				{"text": "Leave it where the wind put it.", "next": ""},
+			]},
+		"h_take": {"who": "Narrator", "text": "The thorns give it up one at a time, grudging as this wood ever gets. Up close, the brim shows years of a thumb finding the same worn spot. You find the spot without meaning to. It rides in your pack, light as a promise.", "next": ""},
 	}},
 }
 
@@ -646,7 +662,9 @@ const ZONES := [
 		"coord": [3, 2], "exits": ["W"],
 		"enemies": [], "boss": "",
 		"npcs": [{"sprite": "rock", "x": 1700, "y": 620, "prompt": "E — Look", "convo": "lore_ravine"},
-			{"sprite": "deadtree", "x": 1440, "y": 880, "prompt": "E — Something in the thorns", "convo": "lore_millers_hat"}],
+			# Only in worlds that rolled the boy who's missing it.
+			{"sprite": "deadtree", "x": 1440, "y": 880, "prompt": "E — Something in the thorns",
+				"convo": "lore_millers_hat", "req_wanderer": "wander_orphan"}],
 	},
 	{
 		"name": "The Deep Darkwood", "terrain": "darkwood", "type": "combat",
@@ -948,6 +966,8 @@ static var ALL_CONVOS: Dictionary = {}
 static var ALL_ENEMIES: Dictionary = {}
 static var ALL_QUESTS: Dictionary = {}
 static var ALL_BEATS: Dictionary = {}
+static var ALL_SIDE_QUESTS: Dictionary = {}
+static var ALL_QUEST_ITEMS: Dictionary = {}  # module keepsakes (Items.make_quest_item)
 static var ALL_WANDERERS: Dictionary = {}  # chapter id -> wanderer pool
 static var CHAPTER_LIST: Dictionary = {}
 
@@ -962,6 +982,7 @@ static func load_content() -> void:
 	ALL_ENEMIES = ENEMIES.duplicate(true)
 	ALL_QUESTS = QUESTS.duplicate(true)
 	ALL_BEATS = BEATS.duplicate(true)
+	ALL_SIDE_QUESTS = SIDE_QUESTS.duplicate(true)
 	ALL_WANDERERS = {}
 	CHAPTER_LIST = CHAPTERS.duplicate(true)
 	for m in CONTENT_MODULES:
@@ -970,6 +991,8 @@ static func load_content() -> void:
 		ALL_ENEMIES.merge(consts.get("ENEMIES", {}), true)
 		ALL_QUESTS.merge(consts.get("QUESTS", {}), true)
 		ALL_BEATS.merge(consts.get("BEATS", {}), true)
+		ALL_SIDE_QUESTS.merge(consts.get("SIDE_QUESTS", {}), true)
+		ALL_QUEST_ITEMS.merge(consts.get("QUEST_ITEMS", {}), true)
 		# Per-chapter social-wanderer pools ({"ch3": [...]}) — chapters
 		# without one fall back to the Chapter 1 WANDERERS pool.
 		ALL_WANDERERS.merge(consts.get("WANDERERS", {}), true)
@@ -1120,6 +1143,27 @@ const BEATS := {
 		["Narrator", "Miles west, on a road going nowhere in particular, a ragged soldier stops mid-stride. The stones have gone quiet. He stands a long moment — then turns, at last, toward home."],
 		["Narrator", "...But deep beneath the keep, something older stirs in its sleep. TO BE CONTINUED IN CHAPTER 2."],
 	],
+}
+
+# ------------------------------------------------------------ side quests ---
+# Visible wrappers over flag chains (2026-07-06): a convo choice's
+# "side_quest" key accepts one (flag sq_on_<id>), each step completes as
+# its flag lands, and the reward pays once per run (sq_paid_<id>) the
+# moment the last step's flag is set — game_base._check_side_quests.
+# Gold rewards scale with level via Balance.daily_gold_mult (the bounty
+# rule); "standing" shifts are flat. Run-scoped like all story flags.
+# Content modules add their own via a SIDE_QUESTS const.
+const SIDE_QUESTS := {
+	"heron_feather": {
+		"name": "The Heron Feather",
+		"chapter": "ch1",
+		"desc": "A miller's boy watches the road for a wide-brim hat — brown, heron feather, blue at the tip. His father wore it toward the howling.",
+		"steps": [
+			{"flag": "hat_taken", "text": "Find the miller's hat, somewhere in the Darkwood"},
+			{"flag": "hat_given", "text": "Bring it to the boy at the village edge"},
+		],
+		"reward": {"gold": 150},
+	},
 }
 
 const QUESTS := {

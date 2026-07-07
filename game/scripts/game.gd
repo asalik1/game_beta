@@ -226,6 +226,7 @@ func _process(delta: float) -> void:
 	if play_started and state == ST_PLAYING:
 		run_time += delta  # chapter run clock (results card; pauses pause it)
 	refresh_ambience()  # ambient bed tracks the room's terrain (cheap no-op)
+	track_footprints()  # snow remembers your steps (no-op off snow)
 
 	hud.update_stats(player)
 

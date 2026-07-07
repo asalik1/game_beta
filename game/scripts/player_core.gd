@@ -190,6 +190,9 @@ var aura: Sprite2D
 var strip_frames := 0
 var strip_fps := 6.0
 var strip_t := 0.0
+var _class_idle := {}          # walk/idle split (swap on movement)
+var _class_walk := {}
+var _class_walking := false
 var halo: PointLight2D = null  # the hero's soft light (dark terrains only)
 
 
@@ -201,16 +204,25 @@ func _apply_class_sprite() -> void:
 	sprite.hframes = 1
 	sprite.frame = 0
 	strip_frames = 0
+	_class_idle = anim
+	_class_walk = Art.walk_info(art_name)
+	_class_walking = false
 	if anim.is_empty():
 		sprite.texture = Art.tex(art_name)
 		sprite.scale = Art.scale_for(sprite.texture, 3.0)
 	else:
-		sprite.texture = anim["tex"]
-		sprite.hframes = anim["frames"]
-		strip_frames = int(anim["frames"])
-		strip_fps = float(anim["fps"])
-		sprite.scale = Art.scale_for(sprite.texture, 3.0, strip_frames)
+		_apply_hero_strip(anim)
 	face_left = Art.faces_left(art_name)
+
+
+func _apply_hero_strip(info: Dictionary) -> void:
+	sprite.texture = info["tex"]
+	var frames := int(info["frames"])
+	sprite.hframes = frames
+	sprite.frame = 0
+	strip_frames = frames
+	strip_fps = float(info["fps"])
+	sprite.scale = Art.scale_for(sprite.texture, 3.0, frames)
 
 
 ## Passive granted by an equipped S-grade weapon ("" if none).
@@ -267,6 +279,9 @@ func _ready() -> void:
 	# a small readable halo in dark-tinted terrains (void/grave/night).
 	# Energy tracks the room's darkness (game.refresh_ambience).
 	halo = Art.light(Color(1.0, 0.93, 0.8), 150.0, 0.0)
+	halo.shadow_enabled = true  # walls occlude it (soft, dark-zone only)
+	halo.shadow_color = Color(0, 0, 0, 0.35)
+	halo.shadow_filter = Light2D.SHADOW_FILTER_PCF5
 	add_child(halo)
 
 	weapon_spr = Sprite2D.new()

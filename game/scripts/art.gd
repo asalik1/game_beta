@@ -59,6 +59,48 @@ const SPRITES := {
 		"PpkpP",
 		"P...P",
 	]},
+	# Village buildings (visual pass): homes make the village a village.
+	# Thatched cottage — golden straw roof, plastered walls, blue window.
+	"cottage_a": {"rows": [
+		"..........kk............",
+		".........knnk...........",
+		"........knyynk..........",
+		".......knyyyynk.........",
+		"......knyyyyyynk........",
+		".....knyyyyyyyynk.......",
+		"....knyyyyyyyyyynk......",
+		"...knyyyyyyyyyyyynk.....",
+		"..knnnnnnnnnnnnnnnnk....",
+		"..kssssssssssssssssk....",
+		"..kskbbkssssskNNkssk....",
+		"..kskbbkssssskNNkssk....",
+		"..ksssssssssskNNkssk....",
+		"..ksssssssssskNykssk....",
+		"..kkkkkkkkkkkkkkkkkk....",
+	]},
+	# Stone cottage — slate roof, mortared stone, arched door.
+	"cottage_b": {"rows": [
+		"....kkkkkkkkkkkkkkkk....",
+		"...kSSSSSSSSSSSSSSSSk...",
+		"..kSSSSSSSSSSSSSSSSSSk..",
+		"..kkkkkkkkkkkkkkkkkkkk..",
+		"..keeeekbbkeeeeeeeeeek..",
+		"..keeeekbbkeeeekNNkeek..",
+		"..keekeeeeeekeekNNkeek..",
+		"..keeeeekeeeeeekNNkeek..",
+		"..kkkkkkkkkkkkkkkkkkkk..",
+	]},
+	# Market stall — striped awning on timber posts over a counter.
+	"stall": {"rows": [
+		"..kkkkkkkkkkkkkkkkkkkk..",
+		".krwwrrwwrrwwrrwwrrwwrk.",
+		".krrwwrrwwrrwwrrwwrrwrk.",
+		"..kn................nk..",
+		"..kn................nk..",
+		"..knnnnnnnnnnnnnnnnnnk..",
+		"...n................n...",
+		"...n................n...",
+	]},
 	# Wooden bridge planks (stretched across the river band).
 	"bridge": {"rows": [
 		"kkkkkkkkkkkkkkkk",
@@ -2052,11 +2094,22 @@ static func hdr(c: Color, boost: float = HDR_FX_BOOST) -> Color:
 # native-facing rule as static overrides (Art.faces_left).
 static var _anim_cache := {}
 
+## Idle strip: assets/sprites/<name>_anim.png.
 static func anim_info(name: String) -> Dictionary:
-	if _anim_cache.has(name):
-		return _anim_cache[name]
+	return _strip_info("%s_anim" % name)
+
+
+## Walk strip: assets/sprites/<name>_walk.png — swapped in by enemies
+## and the player while moving (walk/idle split, Track C round 2).
+static func walk_info(name: String) -> Dictionary:
+	return _strip_info("%s_walk" % name)
+
+
+static func _strip_info(base: String) -> Dictionary:
+	if _anim_cache.has(base):
+		return _anim_cache[base]
 	var info := {}
-	var path := "res://assets/sprites/%s_anim.png" % name
+	var path := "res://assets/sprites/%s.png" % base
 	if FileAccess.file_exists(path):
 		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
 		if img != null and img.get_height() > 0:
@@ -2065,7 +2118,7 @@ static func anim_info(name: String) -> Dictionary:
 				"frames": maxi(1, int(img.get_width() / img.get_height())),
 				"fps": 6.0,
 			}
-	_anim_cache[name] = info
+	_anim_cache[base] = info
 	return info
 
 

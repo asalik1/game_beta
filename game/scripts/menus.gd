@@ -63,19 +63,23 @@ func _open(title: String, w := 960.0, h := 560.0) -> VBoxContainer:
 		root.add_child(night)
 		root.move_child(night, 0)
 
-	var frame := ColorRect.new()
-	frame.color = Color(0.9, 0.8, 0.5)
-	frame.position = Vector2(640 - w / 2 - 3, 360 - h / 2 - 3)
-	frame.size = Vector2(w + 6, h + 6)
-	root.add_child(frame)
-	var panel := ColorRect.new()
-	panel.color = Color(0.09, 0.08, 0.13, 0.98)
-	panel.position = Vector2(640 - w / 2, 360 - h / 2)
-	panel.size = Vector2(w, h)
+	# Dressed panel (visual pass): rounded corners, gold border, a drop
+	# shadow lifting it off the dimmed world — one StyleBox, every menu.
+	var panel := Panel.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.09, 0.08, 0.13, 0.98)
+	sb.border_color = Color(0.9, 0.8, 0.5)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(10)
+	sb.shadow_color = Color(0, 0, 0, 0.55)
+	sb.shadow_size = 16
+	panel.add_theme_stylebox_override("panel", sb)
+	panel.position = Vector2(640 - w / 2 - 3, 360 - h / 2 - 3)
+	panel.size = Vector2(w + 6, h + 6)
 	root.add_child(panel)
 
 	var vbox := VBoxContainer.new()
-	vbox.position = panel.position + Vector2(24, 16)
+	vbox.position = Vector2(640 - w / 2, 360 - h / 2) + Vector2(24, 16)
 	vbox.size = Vector2(w - 48, h - 32)
 	vbox.add_theme_constant_override("separation", 8)
 	root.add_child(vbox)
@@ -85,6 +89,10 @@ func _open(title: String, w := 960.0, h := 560.0) -> VBoxContainer:
 	tl.add_theme_font_size_override("font_size", 26)
 	tl.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 	vbox.add_child(tl)
+	var rule := ColorRect.new()
+	rule.color = Color(0.9, 0.8, 0.5, 0.35)  # header underline
+	rule.custom_minimum_size = Vector2(0, 2)
+	vbox.add_child(rule)
 	return vbox
 
 
@@ -583,6 +591,13 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	if show_cons:
 		for c in p.consumables:
 			var cc: Dictionary = c
+			# Quest keepsakes ride the bag but have no use-click — they
+			# exist to be GIVEN (and vanish when the run ends).
+			if String(cc.get("kind", "")) == "quest":
+				_bag_slot(grid, null, "❦", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
+					"%s\n%s" % [str(cc["name"]), str(cc.get("desc", ""))],
+					func() -> void: pass)
+				continue
 			_bag_slot(grid, null, "⟲", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
 				"%s\n%s\n\nCLICK TO USE" % [str(cc["name"]), str(cc.get("desc", ""))],
 				func() -> void:
@@ -1341,6 +1356,18 @@ func open_map() -> void:
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board.custom_minimum_size = Vector2(1120, 440)
 	vbox.add_child(board)
+	# Chart backdrop (visual pass): the map reads as a board, not floating
+	# rectangles in the void.
+	var bbg := Panel.new()
+	var bsb := StyleBoxFlat.new()
+	bsb.bg_color = Color(0.06, 0.055, 0.09, 0.9)
+	bsb.set_corner_radius_all(8)
+	bsb.border_color = Color(0.9, 0.8, 0.5, 0.25)
+	bsb.set_border_width_all(1)
+	bbg.add_theme_stylebox_override("panel", bsb)
+	bbg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bbg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	board.add_child(bbg)
 
 	# Extent: visited rooms plus one cell of breathing room for stubs.
 	var have_any := false
@@ -1405,12 +1432,20 @@ func open_map() -> void:
 		var can_travel: bool = game.travel_target(i) and not game.barrier_active
 
 		if i == game.cur_room:
-			var here := ColorRect.new()  # gold frame around the current room
-			here.color = Color(0.95, 0.85, 0.5)
-			here.position = p - Vector2(3, 3)
-			here.size = Vector2(cw + 6, ch + 6)
+			var here := Panel.new()  # gold frame, breathing — YOU, alive
+			var hsb := StyleBoxFlat.new()
+			hsb.bg_color = Color(0, 0, 0, 0)
+			hsb.border_color = Color(0.95, 0.85, 0.5)
+			hsb.set_border_width_all(3)
+			hsb.set_corner_radius_all(6)
+			here.add_theme_stylebox_override("panel", hsb)
+			here.position = p - Vector2(4, 4)
+			here.size = Vector2(cw + 8, ch + 8)
 			here.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			board.add_child(here)
+			var htw := here.create_tween().set_loops()
+			htw.tween_property(here, "modulate:a", 0.45, 0.7).set_trans(Tween.TRANS_SINE)
+			htw.tween_property(here, "modulate:a", 1.0, 0.7).set_trans(Tween.TRANS_SINE)
 
 		if can_travel:
 			var room_idx: int = i
@@ -1430,8 +1465,14 @@ func open_map() -> void:
 				game.fast_travel(room_idx))
 			board.add_child(b)
 		else:
-			var cell := ColorRect.new()
-			cell.color = MAP_TYPE_COLOR.get(t, Color(0.3, 0.3, 0.3))
+			var cell := Panel.new()  # rounded, terrain-tinted border
+			var csb := StyleBoxFlat.new()
+			csb.bg_color = MAP_TYPE_COLOR.get(t, Color(0.3, 0.3, 0.3))
+			csb.set_corner_radius_all(4)
+			var tint: Color = Terrains.get_terrain(game.terrain_by_zone[i])["tint"]
+			csb.border_color = Color(tint.r * 0.7, tint.g * 0.7, tint.b * 0.7)
+			csb.set_border_width_all(1)
+			cell.add_theme_stylebox_override("panel", csb)
 			cell.position = p
 			cell.size = Vector2(cw, ch)
 			cell.tooltip_text = String(game.zones[i]["name"])
@@ -1467,6 +1508,12 @@ func open_map() -> void:
 			il.size = Vector2(cw, 22)
 			il.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			il.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# A quiet green check in the corner of every cleansed combat room.
+		if game.cleared.get(i, false) and t in ["combat", "elite"] and i != game.cur_room:
+			var done_l := _lbl(board, "✓", 12, Color(0.5, 0.95, 0.55))
+			done_l.position = p + Vector2(cw - 14.0, ch - 18.0)
+			done_l.size = Vector2(14, 16)
+			done_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	_lbl(vbox, "◆ %s%s" % [game.zones[game.cur_room]["name"],
 		"   —   the doors are sealed mid-fight" if game.barrier_active else ""],

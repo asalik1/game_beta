@@ -69,6 +69,8 @@ static func _bag_entries(p: Player) -> Array:
 	for gm in p.gem_bag:
 		out.append({"kind": "gem", "gem": gm})
 	for st in p.consumables:
+		if String(st.get("kind", "")) == "quest":
+			continue  # run-scoped keepsakes can't hide in the account stash
 		out.append({"kind": "stone", "stone": st})
 	return out
 

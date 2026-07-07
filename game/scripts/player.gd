@@ -8,8 +8,13 @@ class_name Player extends "res://scripts/player_kit_warlock.gd"
 
 func _physics_process(delta: float) -> void:
 	if strip_frames > 1:
-		# Animated class art (Track C seam): idle pace, brisker on the move.
-		strip_t += delta * (2.0 if velocity.length() > 20.0 else 1.0)
+		# Animated class art (Track C seam): swap to the walk strip on
+		# the move when one exists; else idle brisker while moving.
+		var strip_moving := velocity.length() > 20.0
+		if not _class_walk.is_empty() and strip_moving != _class_walking:
+			_class_walking = strip_moving
+			_apply_hero_strip(_class_walk if strip_moving else _class_idle)
+		strip_t += delta * (2.0 if strip_moving else 1.0)
 		sprite.frame = int(strip_t * strip_fps) % strip_frames
 	for key in cds:
 		cds[key] = maxf(0.0, cds[key] - delta)

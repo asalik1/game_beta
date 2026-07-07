@@ -40,6 +40,11 @@ var hazard_speed := 1.0  # terrain patch effect (ice boosts, void slows)
 var anim_frames := 0
 var anim_fps := 6.0
 var anim_t := 0.0
+# Walk/idle split: swap strips on movement when a _walk strip exists.
+var _strip_idle := {}
+var _strip_walk := {}
+var _strip_walking := false
+var art_scale := 1.0
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
 var sprite: Sprite2D
@@ -116,17 +121,16 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	add_child(shadow)
 
 	sprite = Sprite2D.new()
+	art_scale = float(stats["scale"])
 	var anim := Art.anim_info(stats["sprite"])
 	if anim.is_empty():
 		sprite.texture = Art.tex(stats["sprite"])
-		sprite.scale = Art.scale_for(sprite.texture, stats["scale"])
+		sprite.scale = Art.scale_for(sprite.texture, art_scale)
 	else:
 		# Animated override strip (Track C seam): same Sprite2D, hframes on.
-		sprite.texture = anim["tex"]
-		sprite.hframes = anim["frames"]
-		anim_frames = int(anim["frames"])
-		anim_fps = float(anim["fps"])
-		sprite.scale = Art.scale_for(sprite.texture, stats["scale"], anim_frames)
+		_strip_idle = anim
+		_strip_walk = Art.walk_info(stats["sprite"])
+		_apply_strip(anim)
 	face_left = Art.faces_left(stats["sprite"])
 	add_child(sprite)
 
@@ -157,6 +161,17 @@ func _stats_for(k: String) -> Dictionary:
 
 func _stats_at(k: String, lvl: int) -> Dictionary:
 	return Story.enemy_stats_at(k, lvl)
+
+
+## Point the Sprite2D at an idle/walk strip (hframes + normalized scale).
+func _apply_strip(info: Dictionary) -> void:
+	sprite.texture = info["tex"]
+	var frames := int(info["frames"])
+	sprite.hframes = frames
+	sprite.frame = 0
+	anim_frames = frames
+	anim_fps = float(info["fps"])
+	sprite.scale = Art.scale_for(sprite.texture, art_scale, frames)
 
 
 func _physics_process(delta: float) -> void:
@@ -229,9 +244,14 @@ func _physics_process(delta: float) -> void:
 	velocity = move + knock + game.gust_vec
 	move_and_slide()
 	if anim_frames > 1:
-		# Animated override: idle pace standing, double-time on the move
-		# (the shared anim_t clock already ticked once this frame).
-		if velocity.length() > 20.0:
+		# Walk/idle split: real walk frames while moving when the strip
+		# exists, else idle at double-time (the shared anim_t clock
+		# already ticked once this frame).
+		var moving := velocity.length() > 20.0
+		if not _strip_walk.is_empty() and moving != _strip_walking:
+			_strip_walking = moving
+			_apply_strip(_strip_walk if moving else _strip_idle)
+		if moving:
 			anim_t += delta
 		sprite.frame = int(anim_t * anim_fps) % anim_frames
 	if absf(velocity.x) > 5.0:

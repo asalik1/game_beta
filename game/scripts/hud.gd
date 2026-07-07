@@ -48,6 +48,9 @@ var _minimap_sig := ""
 
 # dialogue
 var dialogue_box: Control
+var portrait_box: Control          # speaker portrait (right side of the box)
+var portrait_rect: TextureRect
+var _portrait_cache := {}          # speaker name -> sprite name ("" = none)
 # choice dialogue (the branching-conversation engine lives in game.gd)
 var choice_panel: Control
 var choice_frame: ColorRect
@@ -282,16 +285,43 @@ func _ready() -> void:
 	dialogue_box.add_child(speaker_label)
 	text_label = Label.new()
 	text_label.position = Vector2(168, 542)
-	text_label.size = Vector2(944, 90)
+	text_label.size = Vector2(820, 90)  # leaves the portrait slot clear
 	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_label.add_theme_font_size_override("font_size", 19)
 	dialogue_box.add_child(text_label)
 	var dhint := Label.new()
-	dhint.position = Vector2(1000, 618)
+	dhint.position = Vector2(856, 618)
 	dhint.text = "SPACE / click ▸"
 	dhint.add_theme_font_size_override("font_size", 13)
 	dhint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	dialogue_box.add_child(dhint)
+
+	# Speaker portrait (visual pass): the cast's face beside their words,
+	# in a reserved slot on the box's right (Crawl art faces left — into
+	# the text). Hidden for the Narrator and unknown speakers.
+	portrait_box = Control.new()
+	portrait_box.visible = false
+	dialogue_box.add_child(portrait_box)
+	var pframe := ColorRect.new()
+	pframe.color = Color(0.9, 0.8, 0.5)
+	pframe.position = Vector2(1002, 506)
+	pframe.size = Vector2(134, 134)
+	pframe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	portrait_box.add_child(pframe)
+	var pinner := ColorRect.new()
+	pinner.color = Color(0.1, 0.09, 0.15, 1.0)
+	pinner.position = Vector2(1005, 509)
+	pinner.size = Vector2(128, 128)
+	pinner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	portrait_box.add_child(pinner)
+	portrait_rect = TextureRect.new()
+	portrait_rect.position = Vector2(1011, 515)
+	portrait_rect.size = Vector2(116, 116)
+	portrait_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	portrait_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	portrait_box.add_child(portrait_rect)
 
 	# ------------------------------------------- choice options panel ---
 	# Sits directly above the dialogue box when a conversation offers a
@@ -952,11 +982,36 @@ func loot_banner(item: Dictionary, bonus_gold: int) -> void:
 	tween.tween_callback(box.queue_free)
 
 
+## BOSS TITLE CARD (visual pass): the name SLAMS in red — scale punch,
+## fast in, a beat, gone. Rides the big title labels; restores their
+## default white afterwards so zone titles stay unaffected.
+func boss_banner(boss_name: String) -> void:
+	title_label.add_theme_color_override("font_color", Color(1.0, 0.32, 0.26))
+	title_label.text = boss_name
+	subtitle_label.text = ""
+	title_label.pivot_offset = Vector2(640, 22)
+	title_label.scale = Vector2(1.5, 1.5)
+	var tween := create_tween()
+	tween.tween_property(title_label, "modulate:a", 1.0, 0.1)
+	tween.parallel().tween_property(title_label, "scale", Vector2.ONE, 0.14) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_callback(func() -> void: game.shake(8.0))
+	tween.tween_interval(1.5)
+	tween.tween_property(title_label, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(func() -> void:
+		title_label.add_theme_color_override("font_color", Color(1, 1, 1))
+		title_label.scale = Vector2.ONE)
+
+
 func flash_title(text: String, sub := "", hold := 1.6) -> void:
 	title_label.text = text
 	subtitle_label.text = sub
+	# Every arrival (boot, load, replay, next chapter) fades in from
+	# black instead of cutting — the title rises out of the dark.
+	overlay.color = Color(0, 0, 0, 1)
 	var tween := create_tween()
-	tween.tween_property(title_label, "modulate:a", 1.0, 0.4)
+	tween.tween_property(overlay, "color:a", 0.0, 0.55)
+	tween.parallel().tween_property(title_label, "modulate:a", 1.0, 0.4)
 	tween.parallel().tween_property(subtitle_label, "modulate:a", 1.0, 0.4)
 	tween.tween_interval(hold)
 	tween.tween_property(title_label, "modulate:a", 0.0, 0.6)
@@ -1094,10 +1149,58 @@ func dialogue(lines: Array, on_done := Callable()) -> void:
 	_show_line()
 
 
+# The recurring cast by name fragment (checked in order, lowercase);
+# anyone else falls back to a Story.ALL_ENEMIES display-name scan, so
+# every boss gets a portrait for free. "" = no portrait (Narrator).
+const PORTRAIT_CAST := [
+	["maren", "elder"], ["aldric", "aldric"], ["vargoth", "king"],
+	["warden null", "nullwarden"], ["callis", "warden"], ["vessa", "envoy"],
+	["envoy", "envoy"], ["merchant", "merchant"], ["piet", "sentry"],
+	["sentry", "sentry"], ["sera", "villager"], ["villager", "villager"],
+	["bren", "villager"], ["morwen", "witch"], ["witch", "witch"],
+	["choir mother", "choirmother"], ["pilgrim", "choirmother"],
+	["korrag", "stormwarden"], ["beastkin", "beastkin"], ["scout", "beastkin"],
+	["elder", "elder"], ["king", "king"],
+]
+
+
+func _portrait_for(who: String) -> String:
+	if _portrait_cache.has(who):
+		return _portrait_cache[who]
+	var found := ""
+	var low := who.to_lower()
+	if low in ["you", "hero"]:
+		found = String(Classes.CLASSES[game.player.cls]["sprite"])
+	if found == "" and low != "narrator":
+		for pair in PORTRAIT_CAST:
+			if low.contains(String(pair[0])):
+				found = pair[1]
+				break
+		if found == "":
+			# Any named monster/boss whose codex name contains the speaker
+			# (or vice versa) lends its sprite.
+			for kind in Story.ALL_ENEMIES:
+				var st: Dictionary = Story.ALL_ENEMIES[kind]
+				var ename := String(st.get("name", "")).to_lower()
+				if ename != "" and (ename.contains(low) or low.contains(ename)):
+					found = String(st.get("sprite", ""))
+					break
+	_portrait_cache[who] = found
+	return found
+
+
+func _set_portrait(who: String) -> void:
+	var sprite_name := _portrait_for(who)
+	portrait_box.visible = sprite_name != ""
+	if sprite_name != "":
+		portrait_rect.texture = Art.tex(sprite_name)
+
+
 func _show_line() -> void:
 	var line: Array = dialogue_lines[dialogue_index]
 	speaker_label.text = line[0]
 	text_label.text = line[1]
+	_set_portrait(String(line[0]))
 	game.sfx("talk")
 
 
@@ -1126,6 +1229,7 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	dialogue_box.visible = true
 	speaker_label.text = who
 	text_label.text = text
+	_set_portrait(who)
 	game.sfx("talk")
 	choice_cb = cb
 	choice_count = options.size()

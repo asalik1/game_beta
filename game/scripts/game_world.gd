@@ -292,6 +292,12 @@ func _build_room(i: int) -> void:
 	# {"sprite": "villager", "x": 500, "y": 330, "prompt": "E — Talk",
 	#  "convo": "some_convo_id"}
 	for npc_def in zone.get("npcs", []):
+		# Conditional props: "req_wanderer" ties a prop to this run's
+		# seeded wanderer rolls — e.g. the miller's hat only exists in
+		# worlds that also rolled the boy who's missing it.
+		if npc_def.has("req_wanderer") \
+				and not _wanderer_rolled(String(npc_def["req_wanderer"])):
+			continue
 		var convo_id: String = npc_def["convo"]
 		_make_npc(npc_def["sprite"],
 			room_pos(i, npc_def["x"], npc_def["y"]),
@@ -599,6 +605,24 @@ func _spawn_wanderer(i: int) -> void:
 	_make_npc(w["sprite"], pos, w.get("prompt", "E — Talk"), func() -> void:
 		run_convo_id(convo_id))
 
+## Whether this run's seeded wanderer rolls put `convo_id` in SOME social
+## room — mirrors _spawn_wanderer's roll exactly (same seed, same single
+## randi call). Quest props declaring "req_wanderer" ride the same
+## worlds their wanderer does.
+func _wanderer_rolled(convo_id: String) -> bool:
+	var pool: Array = Story.wanderers_for(chapter_id)
+	if pool.is_empty():
+		return false
+	for i in zone_count:
+		if room_type(i) != "social":
+			continue
+		var rng := RandomNumberGenerator.new()
+		rng.seed = wander_seed + i * 131 + chapter_id.hash() % 9973
+		var w: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
+		if String(w.get("convo", "")) == convo_id:
+			return true
+	return false
+
 func _spawn_merchant(zi: int) -> void:
 	if not zones[zi].has("merchant") or merchant_zones.has(zi):
 		return
@@ -647,9 +671,39 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	shadow.position = Vector2(0, 20)
 	npc.add_child(shadow)
 	var spr := Sprite2D.new()
-	spr.texture = Art.tex(sprite_name)
-	spr.scale = Art.scale_for(spr.texture, 3.0)
+	var anim := Art.anim_info(sprite_name)
+	if anim.is_empty():
+		spr.texture = Art.tex(sprite_name)
+		spr.scale = Art.scale_for(spr.texture, 3.0)
+	else:
+		# NPCs breathe too (animation seam): slow frame flip on a tween,
+		# random phase so a crowd never inhales in unison.
+		spr.texture = anim["tex"]
+		var frames := int(anim["frames"])
+		spr.hframes = frames
+		spr.scale = Art.scale_for(spr.texture, 3.0, frames)
+		var tw := spr.create_tween().set_loops()
+		tw.tween_interval(randf_range(0.1, 0.8))
+		tw.tween_callback(func() -> void: spr.frame = (spr.frame + 1) % frames)
+		tw.tween_interval(0.45)
 	npc.add_child(spr)
+	if sprite_name == "mill":
+		# The mill's chimney breathes a thin smoke plume (visual pass) —
+		# somebody still lives behind that blue door.
+		var smoke := CPUParticles2D.new()
+		smoke.amount = 10
+		smoke.lifetime = 3.5
+		smoke.preprocess = 3.5
+		smoke.position = Vector2(8, -float(spr.texture.get_height()) * spr.scale.y * 0.5 - 4.0)
+		smoke.direction = Vector2(0.25, -1)
+		smoke.spread = 14.0
+		smoke.gravity = Vector2(6, -16)
+		smoke.initial_velocity_min = 8.0
+		smoke.initial_velocity_max = 18.0
+		smoke.scale_amount_min = 1.6
+		smoke.scale_amount_max = 3.2
+		smoke.color = Color(0.75, 0.74, 0.7, 0.35)
+		npc.add_child(smoke)
 	var prompt := Label.new()
 	prompt.text = prompt_text
 	prompt.position = Vector2(-40, -58)
@@ -699,6 +753,23 @@ func _spawn_scenery(zi: int) -> void:
 	var obstacles: Array = terrain.get("obstacles", ["rock"])
 	var placed: Array = []
 	var max_x := pw - 760.0 if zones[zi].get("boss", "") != "" else pw - 90.0
+
+	# Buildings first (visual pass): a few homes make the village a
+	# village. Seeded like everything else; obstacles keep clear of them.
+	for bname in terrain.get("buildings", []):
+		for attempt in 60:
+			var bpos := Vector2(rng.randf_range(200.0, max_x - 160.0), rng.randf_range(170.0, ph - 180.0))
+			if absf(bpos.y - ph / 2.0) < 160.0 or absf(bpos.x - pw / 2.0) < 190.0:
+				continue  # the road and door lanes stay open
+			var bok := true
+			for other in placed:
+				if bpos.distance_to(other) < 260.0:
+					bok = false
+					break
+			if bok:
+				placed.append(bpos)
+				zone_scenery[zi].append(_add_building(String(bname), origin + bpos))
+				break
 	var count := int(ceil(float(terrain.get("count", 10)) * 2.2 * area_frac))
 	for i in count:
 		for attempt in 40:
@@ -758,6 +829,47 @@ func _spawn_scenery(zi: int) -> void:
 			zone_scenery[zi].append(plank)
 			rivers[zi] = {"rect": rect, "bridge": bridge}
 
+## A building: base-anchored (y-sort lets the player walk behind the
+## roof), footprint collider, chimney smoke on the cottages.
+func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
+	var body := StaticBody2D.new()
+	body.position = pos  # the base line is the sort anchor
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var spr := Sprite2D.new()
+	spr.texture = Art.tex(sprite_name)
+	# Houses dwarf a person: 5x, not the usual 3x prop scale.
+	var bscale := 5.0 if sprite_name.begins_with("cottage") else 4.5
+	spr.scale = Vector2(bscale, bscale)
+	var hpx := float(spr.texture.get_height()) * bscale
+	var wpx := float(spr.texture.get_width()) * bscale
+	spr.position = Vector2(0, -hpx * 0.5 + 12.0)
+	body.add_child(spr)
+	var cs := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(wpx * 0.62, 34.0)
+	cs.position = Vector2(0, -8.0)
+	cs.shape = shape
+	body.add_child(cs)
+	if sprite_name.begins_with("cottage"):
+		var smoke := CPUParticles2D.new()
+		smoke.amount = 8
+		smoke.lifetime = 3.5
+		smoke.preprocess = 3.5
+		smoke.position = Vector2(wpx * 0.16, -hpx + 8.0)
+		smoke.direction = Vector2(0.25, -1)
+		smoke.spread = 14.0
+		smoke.gravity = Vector2(6, -16)
+		smoke.initial_velocity_min = 8.0
+		smoke.initial_velocity_max = 18.0
+		smoke.scale_amount_min = 1.6
+		smoke.scale_amount_max = 3.2
+		smoke.color = Color(0.75, 0.74, 0.7, 0.35)
+		body.add_child(smoke)
+	world.add_child(body)
+	return body
+
+
 func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	var is_tree := sprite_name.begins_with("tree")
 	var body := StaticBody2D.new()
@@ -798,6 +910,17 @@ func _wall(rect: Rect2) -> void:
 	shape.size = rect.size
 	cs.shape = shape
 	body.add_child(cs)
+	# Walls block LIGHT too (visual pass): the player's halo throws real
+	# shadows in dark terrains. Additive lights make this free-subtle in
+	# daylight (light_mult ~0 there anyway).
+	var occ := LightOccluder2D.new()
+	var poly := OccluderPolygon2D.new()
+	var hx := rect.size.x / 2.0
+	var hy := rect.size.y / 2.0
+	poly.polygon = PackedVector2Array([Vector2(-hx, -hy), Vector2(hx, -hy),
+		Vector2(hx, hy), Vector2(-hx, hy)])
+	occ.occluder = poly
+	body.add_child(occ)
 	world.add_child(body)
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex("wallblock")
@@ -962,7 +1085,8 @@ func _on_boss_trigger(zi: int) -> void:
 	if boss_done.get(kind, false):
 		return
 	boss_spawned[zi] = true
-	var beat: Array = Story.ALL_BEATS.get("pre_" + kind, [])
+	var beat: Array = Story.beat_for("pre_" + kind,
+		Story.res_band(player.resonance), flags)
 	if beat.is_empty():
 		_spawn_boss(zi, kind)
 	else:
@@ -982,6 +1106,7 @@ func _spawn_boss(zi: int, kind: String) -> void:
 	world.add_child(current_boss)
 	current_boss.roar()
 	hud.show_boss_bar(Story.ALL_ENEMIES[kind]["name"])
+	hud.boss_banner(Story.ALL_ENEMIES[kind]["name"])  # the name SLAMS in
 	set_music(_boss_music())
 
 func _try_spawn_boss(zi: int) -> void:

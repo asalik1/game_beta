@@ -244,6 +244,11 @@ func _wipe_chapter_flags() -> void:
 		if keep:
 			kept[fname] = flags[fname]
 	flags = kept
+	# Quest keepsakes are run-scoped like the flags that earned them:
+	# an undelivered hat does not outlive its world.
+	for c in player.consumables.duplicate():
+		if String(c.get("kind", "")) == "quest":
+			player.consumables.erase(c)
 
 ## Back to the title screen (character select). Progress is saved; the
 ## whole scene reboots so every system starts clean.
@@ -348,8 +353,10 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			meta_unlock(next_ch)
 		# Chapter-specific epilogue beat and victory card, with the
 		# Chapter 1 texts as the fallback.
-		var epilogue: Array = Story.ALL_BEATS.get("epilogue_" + chapter_id,
-			Story.ALL_BEATS.get("epilogue", []))
+		var band := Story.res_band(player.resonance)
+		var epilogue: Array = Story.beat_for("epilogue_" + chapter_id, band, flags)
+		if epilogue.is_empty():
+			epilogue = Story.beat_for("epilogue", band, flags)
 		var vtext: String
 		if next_ch != "":
 			# Mid-campaign victory: the road goes on.
@@ -379,7 +386,8 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			hud.dialogue(epilogue, end_it)
 	else:
 		quest_key = _next_quest_after(mzi)
-		var beat: Array = Story.ALL_BEATS.get("post_" + kind, [])
+		var beat: Array = Story.beat_for("post_" + kind,
+			Story.res_band(player.resonance), flags)
 		var proceed := func() -> void:
 			_recheck_gates()  # "boss" locks on this arena's edges open
 			refresh_quest()
@@ -697,3 +705,18 @@ func _apply_hazards() -> void:
 					and not bridge.has_point(e.global_position):
 				e.hazard_speed = minf(e.hazard_speed, Balance.RIVER_WADE_MULT)
 	was_wading = wading
+
+	# Grass rustle (visual pass): brushing past swaying decor (the wind
+	# material marks it; water/planks are non-centered and skipped) kicks
+	# a few leaves loose. Per-plant cooldown keeps it a whisper.
+	if not player.dead and player.velocity.length() > 30.0:
+		for node in zone_scenery.get(cur_room, []):
+			var ds := node as Sprite2D
+			if ds == null or ds.material == null or not ds.centered:
+				continue
+			if ds.global_position.distance_to(player.global_position) > 30.0:
+				continue
+			if Time.get_ticks_msec() < int(ds.get_meta("rustle_at", 0)):
+				continue
+			ds.set_meta("rustle_at", Time.get_ticks_msec() + 1200)
+			burst(ds.global_position + Vector2(0, -6), Color(0.55, 0.8, 0.4), 3)

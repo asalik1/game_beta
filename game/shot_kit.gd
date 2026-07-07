@@ -42,9 +42,16 @@ func _ready() -> void:
 			terrain = arg.trim_prefix("--terrain=")
 	game.menus.pick_class(cls)
 	await _frames(5)
-	# Fast-forward the opening.
+	if game.hud.dialogue_active or game.hud.choices_active:
+		_shot("dialogue_portrait")  # speaker portrait beside the words
+	# Fast-forward the opening (grabbing one NAMED-speaker frame for the
+	# portrait check on the way through).
 	var guard := 0
+	var took_speaker := false
 	while (game.hud.dialogue_active or game.hud.choices_active) and guard < 80:
+		if not took_speaker and game.hud.portrait_box.visible:
+			took_speaker = true
+			_shot("dialogue_speaker")
 		if game.hud.choices_active:
 			game.hud._choose(0)
 		else:
@@ -126,5 +133,23 @@ func _ready() -> void:
 	await _frames(8)
 	_shot("ult_stab")  # behind-teleport killing stab + floating X mark
 	await _frames(30)
+
+	# --- visual-pass extras -------------------------------------------
+	game.hud.boss_banner("KORRAG, STORMWARDEN BROKEN")
+	await _frames(14)
+	_shot("boss_banner")
+	await get_tree().create_timer(2.4).timeout
+	if terrain != "":
+		# Park by the north wall: the halo should throw a wall shadow.
+		game.player.global_position = game.rooms[0]["origin"] + Vector2(700.0, 150.0)
+		await _frames(10)
+		_shot("wall_shadow")
+	game.menus.open_inventory()
+	await _frames(6)
+	_shot("ui_inventory")
+	game.menus.open_map()
+	await _frames(6)
+	_shot("ui_map")
+	game.menus.close()
 	print("RIG DONE")
 	get_tree().quit(0)

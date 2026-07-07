@@ -207,7 +207,7 @@ const ENEMIES := {
 		"physres": 15.0, "magres": 8.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
 		"level": 16, "hp_g": 0.10, "dmg_g": 0.09,
 		"lore": "The Choir sings that the dead should walk their own funerals. In the Vale, they do."},
-	"barrow_wight": {"name": "Barrow Wight", "sprite": "skeleton", "hp": 155.0, "dmg": 27.0, "speed": 140.0, "xp": 13, "gold": 14, "ranged": false, "scale": 3.2,
+	"barrow_wight": {"name": "Barrow Wight", "sprite": "skeleton_rogue", "hp": 155.0, "dmg": 27.0, "speed": 140.0, "xp": 13, "gold": 14, "ranged": false, "scale": 3.2,
 		"physres": 32.0, "magres": 8.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
 		"level": 17, "hp_g": 0.11, "dmg_g": 0.09,
 		"lore": "Old bones from before the Choir, woken by sixty years of singing overhead. They resent the noise."},

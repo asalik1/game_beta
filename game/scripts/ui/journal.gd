@@ -40,6 +40,7 @@ static func open(m: Menus) -> void:
 		m._lbl(list, "   This room: %d monster%s left to clear." % [left, "" if left == 1 else "s"],
 			13, Color(0.8, 0.7, 0.5))
 
+	_side_quests(m, list)
 	_bounties(m, list)
 	_vault(m, list)
 	_weekly(m, list)
@@ -96,6 +97,39 @@ static func open(m: Menus) -> void:
 
 
 ## Active bounties with progress. Daily first, then weekly.
+## Accepted side quests (Story.SIDE_QUESTS): step checklist while live,
+## one green line once paid. Section hides until something is accepted —
+## side quests are found, not assigned.
+static func _side_quests(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	var entries: Array = []
+	for id in Story.ALL_SIDE_QUESTS:
+		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
+		if String(q.get("chapter", "")) != g.chapter_id:
+			continue
+		if not g.get_flag("sq_on_" + String(id), false):
+			continue
+		entries.append([String(id), q])
+	if entries.is_empty():
+		return
+	m._lbl(list, "— SIDE QUESTS —", 16, Color(0.7, 0.95, 0.7))
+	for e in entries:
+		var id: String = e[0]
+		var q: Dictionary = e[1]
+		var paid: bool = g.get_flag("sq_paid_" + id, false)
+		m._lbl(list, ("✔  %s — complete" if paid else "⚑  %s") % String(q["name"]), 15,
+			Color(0.55, 0.8, 0.55) if paid else Color(0.95, 0.95, 0.8))
+		if paid:
+			continue
+		var dl := m._lbl(list, "   " + String(q.get("desc", "")), 12, Color(0.75, 0.75, 0.8))
+		dl.custom_minimum_size = Vector2(780, 0)
+		dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		for step in q.get("steps", []):
+			var done: bool = g.get_flag(String(step["flag"]), false)
+			m._lbl(list, "   %s  %s" % ["✔" if done else "◇", String(step["text"])], 13,
+				Color(0.55, 0.8, 0.55) if done else Color(0.9, 0.85, 0.7))
+
+
 static func _bounties(m: Menus, list: VBoxContainer) -> void:
 	m._lbl(list, "— BOUNTIES —", 16, Color(0.6, 1.0, 0.7))
 	if m.game.bounties.is_empty():

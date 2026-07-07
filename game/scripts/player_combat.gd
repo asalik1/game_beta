@@ -440,6 +440,7 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 		hurt_cd = maxf(hurt_cd, iframe)  # brief immunity while dashing
 	game.burst(start, color, 8)
 	game.burst(end, color, 8)
+	game.dust(start + Vector2(0, 14), 4)  # kicked-up dust where you left
 	_afterimages(start, end, color)
 
 	# Light trail between the two points.

@@ -22,6 +22,7 @@ const DATA := {
 	"village": {"name": "Emberfall Village", "ground": "grass", "path": "dirt",
 		"tint": Color(1.0, 0.98, 0.9), "ambient": "leaves_green", "music": "village",
 		"obstacles": ["tree_green", "tree_green", "rock"], "decor": ["flower", "flower", "pebble"], "count": 9,
+		"buildings": ["cottage_a", "cottage_b", "stall", "cottage_a"],
 		"patches": [], "event": ""},
 	"darkwood": {"name": "The Darkwood", "ground": "forest", "path": "dirt",
 		"tint": Color(0.82, 0.9, 0.86), "ambient": "leaves_autumn", "music": "darkwood",

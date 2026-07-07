@@ -32,6 +32,18 @@ static func drop_gold(game_node: Node2D, amount: int, pos: Vector2) -> void:
 		var tween := c.create_tween()
 		tween.tween_property(sprite, "position:y", -8.0, 0.12)
 		tween.tween_property(sprite, "position:y", 0.0, 0.15)
+		# Sparkle (visual pass): a tiny glint winks on its own beat — gold
+		# on the ground CATCHES THE EYE. HDR so the wink blooms.
+		var glint := Sprite2D.new()
+		glint.texture = Art.tex("glow")
+		glint.modulate = Art.hdr(Color(1.0, 0.95, 0.7, 0.0), 1.8)
+		glint.position = Vector2(randf_range(-4.0, 4.0), randf_range(-6.0, 0.0))
+		glint.scale = Vector2(0.16, 0.16)
+		c.add_child(glint)
+		var gt := c.create_tween().set_loops()
+		gt.tween_interval(randf_range(0.5, 1.7))
+		gt.tween_property(glint, "modulate:a", 0.9, 0.08)
+		gt.tween_property(glint, "modulate:a", 0.0, 0.16)
 
 
 ## A loot payload ({"kind": "item"/"gem"/"stone", ...}) dropped where a

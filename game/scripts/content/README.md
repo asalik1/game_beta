@@ -20,7 +20,22 @@ old 34x15 zone space (1632x720) into the bigger rooms — keep authoring
 in the old coordinate space and it Just Works. Optional keys:
 - `"npcs"`: [{"sprite": "villager", "x": 500, "y": 330,
              "prompt": "E — Talk", "convo": "convo_id"}] — spawned
-  automatically, talking runs the convo.
+  automatically, talking runs the convo. Optional `"req_wanderer":
+  "wander_x"` spawns the prop only in runs whose seeded social-room
+  rolls placed that wanderer somewhere (quest props that pay off a
+  wanderer's ask — e.g. the miller's hat).
+- Convo choices may carry `"gain_item": "quest_id"` / `"lose_item":
+  "quest_id"` (see `Items.make_quest_item`): run-scoped bag keepsakes,
+  purged with the chapter flags when the run ends.
+- `const SIDE_QUESTS := {...}` — visible flag-chain quests (merged into
+  `Story.ALL_SIDE_QUESTS`; format at `Story.SIDE_QUESTS`). Accept one
+  from a convo choice with `"side_quest": "id"`; steps complete as their
+  flags land; the reward pays automatically on the last step. Shown in
+  the journal's SIDE QUESTS section.
+- `const QUEST_ITEMS := {"my_token": {"name": "...", "desc": "...",
+  "grade": "C"}}` — module-authored quest keepsakes for
+  `gain_item`/`lose_item` (merged into `Story.ALL_QUEST_ITEMS`;
+  `Items.make_quest_item` fills in kind/id).
 - `"gate_flag"`: "story_flag" — the gate out of this zone opens when
   that flag is set (bossless zones; setting it via `game.set_flag`
   opens the door live — reconcile_after_load handles reloads).

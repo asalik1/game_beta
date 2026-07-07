@@ -240,6 +240,31 @@ static func make_recall_scroll() -> Dictionary:
 		"desc": "Whisk yourself back to the last safe room you rested in."}
 
 
+# ------------------------------------------------------------ quest items ---
+# Bag riders with no use-click: they exist to be GIVEN (convo choices
+# grant/collect them via "gain_item"/"lose_item"). Run-scoped — the
+# purge in game_flow._wipe_chapter_flags deletes kind "quest" from the
+# bag when the run ends, alongside the flags that earned them.
+# Content modules author theirs in a QUEST_ITEMS const ({id: {name,
+# desc, grade?}} — merged into Story.ALL_QUEST_ITEMS); base-game ones
+# live in the match below.
+static func make_quest_item(id: String) -> Dictionary:
+	match id:
+		"millers_hat":
+			return {"kind": "quest", "id": "millers_hat", "grade": "C",
+				"name": "The Miller's Hat",
+				"desc": "Wide-brim, brown, heron feather — blue at the tip. A boy at the village edge is waiting on it."}
+	var q: Dictionary = Story.ALL_QUEST_ITEMS.get(id, {})
+	if q.is_empty():
+		return {}
+	var out := q.duplicate(true)
+	out["kind"] = "quest"
+	out["id"] = id
+	if not out.has("grade"):
+		out["grade"] = "C"
+	return out
+
+
 ## The stat value a gem grants at its level (superlinear growth).
 static func gem_value(gem: Dictionary) -> float:
 	var base: float = GEM_STATS[gem["stat"]]["base"]
