@@ -38,6 +38,9 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Misted Fields", "terrain": "graveyard", "type": "combat",
+			# Fenna's promise made findable (promises_kept.gd): the fourth
+			# grave from the alder, grey coat.
+			"npcs": [{"sprite": "deadtree", "x": 300, "y": 950, "prompt": "E — The Alder Row", "convo": "ch3_lore_alder"}],
 			"enemies": [
 				["gravewalker", 480, 300, 0], ["gravewalker", 600, 240, 0], ["gravewalker", 540, 420, 0],
 				["gravewalker", 1300, 900, 1], ["gravewalker", 1420, 830, 1], ["gravewalker", 1350, 1000, 1],
@@ -90,7 +93,7 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Silent Aisle", "terrain": "graveyard", "type": "boss",
-			"lock_next": "boss",
+			"lock_next": "boss", "clear_flag": "vess_dead",
 			"enemies": [["vale_mourner", 700, 420, 0, 19], ["vale_mourner", 830, 350, 0, 19]],
 			"boss": "vess", "boss_level": 19,
 		},
@@ -205,19 +208,19 @@ const CHAPTER_ZONES := {
 const ENEMIES := {
 	"gravewalker": {"name": "Unburied Walker", "sprite": "zombie", "hp": 120.0, "dmg": 24.0, "speed": 118.0, "xp": 11, "gold": 12, "ranged": false, "scale": 3.1,
 		"physres": 15.0, "magres": 8.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
-		"level": 16, "hp_g": 0.10, "dmg_g": 0.09,
+		"level": 16, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["mend"],
 		"lore": "The Choir sings that the dead should walk their own funerals. In the Vale, they do."},
 	"barrow_wight": {"name": "Barrow Wight", "sprite": "skeleton_rogue", "hp": 155.0, "dmg": 27.0, "speed": 140.0, "xp": 13, "gold": 14, "ranged": false, "scale": 3.2,
 		"physres": 32.0, "magres": 8.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
-		"level": 17, "hp_g": 0.11, "dmg_g": 0.09,
+		"level": 17, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["frenzy", "swift"],
 		"lore": "Old bones from before the Choir, woken by sixty years of singing overhead. They resent the noise."},
 	"vale_mourner": {"name": "Vale Mourner", "sprite": "cultist", "hp": 125.0, "dmg": 30.0, "speed": 100.0, "xp": 15, "gold": 16, "ranged": true, "scale": 3.2,
 		"physres": 8.0, "magres": 32.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
-		"level": 18, "hp_g": 0.11, "dmg_g": 0.10,
+		"level": 18, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["healer"],
 		"lore": "Choir faithful who wept until the blight took the weeping over. The grief is real. The aim is too."},
 	"casket_creeper": {"name": "Casket Creeper", "sprite": "casket_creeper", "hp": 140.0, "dmg": 33.0, "speed": 210.0, "xp": 15, "gold": 16, "ranged": false, "scale": 3.1,
 		"physres": 5.0, "magres": 12.0, "eva": 0.14, "critres": 0.0, "dmg_type": "phys",
-		"level": 19, "hp_g": 0.10, "dmg_g": 0.09,
+		"level": 19, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["lunge", "evasive"],
 		"lore": "It nests in what the Choir refuses to close. Every open grave in the Vale has a tenant."},
 }
 

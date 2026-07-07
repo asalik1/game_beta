@@ -274,9 +274,12 @@ func band_price_mult() -> float:
 	return 1.0
 
 
-## Gambling vendor: the haggle-adjusted price of one gamble at `tier`.
+## Gambling vendor: the haggle- and level-adjusted price of one gamble at
+## `tier`. Scales with player level (round 50) like the rest of the merchant
+## board, so the sight-unseen roll stays a real spend deep into the act.
 func gamble_cost(tier: String) -> int:
-	return int(ceil(float(Balance.GAMBLE_COST.get(tier, 100)) * band_price_mult()))
+	return int(ceil(float(Balance.GAMBLE_COST.get(tier, 100)) * band_price_mult()
+		* Balance.merchant_price_mult(player.level)))
 
 
 ## Spend gold on a random item of `tier`, sight unseen. Returns the won

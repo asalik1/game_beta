@@ -462,19 +462,19 @@ const ENEMIES := {
 	# chapter. Getting caught by a pack is supposed to sting.
 	"wolf":     {"name": "Blighted Wolf",   "sprite": "wolf",     "hp": 34.0,  "dmg": 12.0, "speed": 175.0, "xp": 7,  "gold": 4,  "ranged": false, "scale": 3.0,
 		"physres": 5.0,  "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
-		"level": 2, "hp_g": 0.10, "dmg_g": 0.08},
+		"level": 2, "hp_g": 0.10, "dmg_g": 0.08, "traits": ["lunge"]},
 	"spider":   {"name": "Marsh Spider",    "sprite": "spider",   "hp": 28.0,  "dmg": 9.0,  "speed": 215.0, "xp": 8,  "gold": 5,  "ranged": false, "scale": 3.0,
 		"physres": 0.0,  "magres": 5.0,  "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
-		"level": 2, "hp_g": 0.09, "dmg_g": 0.08},
+		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["evasive"]},
 	"cultist":  {"name": "Blight Cultist",  "sprite": "cultist",  "hp": 40.0,  "dmg": 14.0, "speed": 90.0,  "xp": 11, "gold": 8,  "ranged": true,  "scale": 3.0,
 		"physres": 5.0,  "magres": 15.0, "eva": 0.0,  "critres": 0.0, "dmg_type": "magic",
-		"level": 4, "hp_g": 0.11, "dmg_g": 0.10},
+		"level": 4, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["healer"]},
 	"skeleton": {"name": "Hollow Soldier",  "sprite": "skeleton", "hp": 62.0,  "dmg": 20.0, "speed": 140.0, "xp": 13, "gold": 10, "ranged": false, "scale": 3.0,
 		"physres": 25.0, "magres": 5.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
-		"level": 7, "hp_g": 0.12, "dmg_g": 0.10},
+		"level": 7, "hp_g": 0.12, "dmg_g": 0.10, "traits": ["frenzy", "swift"]},
 	"zombie":   {"name": "Risen Corpse",    "sprite": "zombie",   "hp": 45.0,  "dmg": 14.0, "speed": 115.0, "xp": 8,  "gold": 6,  "ranged": false, "scale": 3.0,
 		"physres": 12.0, "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
-		"level": 4, "hp_g": 0.10, "dmg_g": 0.09},
+		"level": 4, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["mend"]},
 	# Bosses: strong base AND strong growth ("dragon-grade" scaling).
 # HP pools follow the TTK BUDGET (playtest round 9: "Fangmaw died in
 # <10s to C-gear, zero talents"): at level with modest gear a boss
@@ -553,9 +553,14 @@ static func enemy_stats_at(kind: String, level: int) -> Dictionary:
 	var is_boss := bool(base.get("boss", false))
 	var hp_m := pow(1.0 + float(base["hp_g"]) * Balance.GROWTH_SCALE, d)
 	if not is_boss:
-		hp_m *= Balance.TTK_HP_MULT  # mobs only: boss pools are budgeted directly
+		# Mobs only (boss pools are budgeted directly): the TTK retune plus
+		# the 2026-07-07 presence pass — fatter pools so trash needs real
+		# hits, not a tap. Codex reads this, so the numbers stay honest.
+		hp_m *= Balance.TTK_HP_MULT * Balance.MOB_HP_MULT
 	var dmg_growth := float(base["dmg_g"]) * Balance.GROWTH_SCALE
 	var dmg_flat := Balance.ENEMY_DMG_MULT
+	if not is_boss:
+		dmg_flat *= Balance.MOB_DMG_MULT  # +20% mob contact/bolt (presence pass)
 	if is_boss:
 		# Bosses hit a constant ~20% above parity (the skill tilt), and
 		# their damage GROWTH tracks the player curve exactly — the gap
@@ -970,6 +975,8 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch1_quests.gd"),     # (Q1) Chapter 1 side quests
 	preload("res://scripts/content/ch6_quests.gd"),     # (Q6) Blooming Deep side quests (after ch6_zones: overrides its convos)
 	preload("res://scripts/content/ch7_quests.gd"),     # (Q7) Breaking Sky side quests (after ch7_zones: overrides its convos)
+	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
+	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]
 
 static var _content_loaded := false

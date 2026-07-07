@@ -376,14 +376,26 @@ func _build_room(i: int) -> void:
 func _spawn_room_enemies(i: int) -> void:
 	zone_alive[i] = 0
 	var spawned: Array = []
+	# +15% density (presence pass 2026-07-07): seeded per room so a save
+	# reloads the same pack. Each authored spawn has a MOB_DENSITY_EXTRA
+	# chance to bring a jittered twin — never on boss arenas.
+	var drng := RandomNumberGenerator.new()
+	drng.seed = wander_seed * 41 + i * 613 + chapter_id.hash() % 7919
+	var densify: bool = String(zones[i].get("boss", "")) == ""
 	for spawn in zones[i].get("enemies", []):
 		var lvl := int(spawn[4]) if spawn.size() > 4 else -1
-		var e := Enemy.make(self, spawn[0], room_pos(i, spawn[1], spawn[2]), lvl)
-		e.zone_idx = i
-		e.pack_id = int(spawn[3]) if spawn.size() > 3 else 0
-		zone_alive[i] = zone_alive.get(i, 0) + 1
-		add_enemy(e)
-		spawned.append(e)
+		var pack := int(spawn[3]) if spawn.size() > 3 else 0
+		var count := 1
+		if densify and drng.randf() < Balance.MOB_DENSITY_EXTRA:
+			count = 2
+		for c in count:
+			var jit := Vector2.ZERO if c == 0 else Vector2(drng.randf_range(-70, 70), drng.randf_range(-60, 60))
+			var e := Enemy.make(self, spawn[0], room_pos(i, spawn[1], spawn[2]) + jit, lvl)
+			e.zone_idx = i
+			e.pack_id = pack
+			zone_alive[i] = zone_alive.get(i, 0) + 1
+			add_enemy(e)
+			spawned.append(e)
 	# Elite ambush (playtest round 6): seeded per character+room, some
 	# combat rooms promote one pack member to a miniboss. Boss rooms
 	# are exempt — those arenas stay as authored.

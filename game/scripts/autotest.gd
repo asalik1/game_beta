@@ -54,10 +54,11 @@ func _run_systems() -> void:
 	var r := Stats.resolve(100.0, "true", 0.0, 1.5, 0.0, 0.0, 500.0, 0.9, 50.0)
 	if r["miss"] or r["dmg"] != 100.0 or r["crit"]:
 		return _fail("true damage should ignore everything and never crit")
-	# Pacing retrofit: mobs live ~2x longer at level parity; bosses don't.
+	# Pacing retrofit + presence pass: mobs live ~2x longer (TTK) AND the
+	# 2026-07-07 mob HP mult stacks on top; bosses get neither.
 	var wolf_now := Story.enemy_stats_at("wolf", 2)
-	if absf(wolf_now["hp"] / Story.ALL_ENEMIES["wolf"]["hp"] - Balance.TTK_HP_MULT) > 0.01:
-		return _fail("mob TTK multiplier not applied")
+	if absf(wolf_now["hp"] / Story.ALL_ENEMIES["wolf"]["hp"] - Balance.TTK_HP_MULT * Balance.MOB_HP_MULT) > 0.01:
+		return _fail("mob TTK/presence multiplier not applied")
 	var fang_now := Story.enemy_stats_at("fangmaw", 4)
 	if absf(fang_now["hp"] - Story.ALL_ENEMIES["fangmaw"]["hp"]) > 0.01:
 		return _fail("boss HP should not get the mob TTK multiplier")
@@ -655,7 +656,7 @@ func _run_systems() -> void:
 	var boss_hi := Story.enemy_stats_at("fangmaw", 30)
 	if w_hi["hp"] <= w_lo["hp"] or w_hi["dmg"] <= w_lo["dmg"]:
 		return _fail("wolf did not scale with level")
-	if boss_hi["hp"] / Story.ALL_ENEMIES["fangmaw"]["hp"] <= w_hi["hp"] / (Story.ALL_ENEMIES["wolf"]["hp"] * Balance.TTK_HP_MULT):
+	if boss_hi["hp"] / Story.ALL_ENEMIES["fangmaw"]["hp"] <= w_hi["hp"] / (Story.ALL_ENEMIES["wolf"]["hp"] * Balance.TTK_HP_MULT * Balance.MOB_HP_MULT):
 		return _fail("boss growth should outpace trash growth")
 	# 3d3b. NO DOWNSCALING: the listed level is a MINIMUM — asking for
 	# less clamps UP (an endgame boss in chapter 1 arrives as-is) — and
@@ -724,12 +725,20 @@ func _run_systems() -> void:
 	# 3d14. Gamble vendor: afford gate, cost deduction, item delivered.
 	_test_gamble()
 
+	# 3d14b. Merchant economy (round 50): level-scaled price ladder, gem +
+	# consumable sell (incl. quest-item unsellable guard), ward/renewal elixirs.
+	_test_merchant_economy()
+
 	# 3d15. Equip / unequip: slot empties back to the bag, bag-full guard.
 	_test_equip_unequip()
 
 	# 3d16. Retention pass: chapter grades + PBs, weekly challenge fx,
 	# kill-count lore + titles, risk-event curse, loot fanfare bank.
 	await _test_retention()
+
+	# 3d17. Mob presence + identity traits (HP/dmg mults, self-heal,
+	# healer pulse, lunge, frenzy damage).
+	await _test_mob_traits()
 
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
@@ -1289,6 +1298,8 @@ func _run_campaign_ch2() -> void:
 	await _test_ch5_quests()
 	await _test_ch6_quests()
 	await _test_ch7_quests()
+	await _test_promises_kept()
+	await _test_promises_kept_2()
 	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
@@ -2037,6 +2048,71 @@ func _test_retention() -> void:
 	print("ok: retention pass (grades + PBs, weekly fx, lore titles, curse, fanfare)")
 
 
+func _test_mob_traits() -> void:
+	# HP/dmg presence mults ride enemy_stats_at (non-boss only).
+	var wolf := Story.enemy_stats_at("wolf", 2)
+	var wolf_base := 34.0 * Balance.TTK_HP_MULT * Balance.MOB_HP_MULT
+	if absf(float(wolf["hp"]) - wolf_base) > 1.0:
+		return _fail("mob HP mult not applied (got %d, want %d)" % [int(wolf["hp"]), int(wolf_base)])
+	if absf(float(wolf["dmg"]) - 12.0 * Balance.ENEMY_DMG_MULT * Balance.MOB_DMG_MULT) > 0.5:
+		return _fail("mob DMG mult not applied")
+	# Bosses are exempt from both.
+	var fang := Story.enemy_stats_at("fangmaw", 4)
+	if absf(float(fang["hp"]) - 1200.0) > 1.0:
+		return _fail("boss HP wrongly caught the mob mult")
+
+	# Traits parse onto the instance.
+	var zed := _dummy(Vector2(240, 0))  # helper spawns a wolf...
+	zed.queue_free()
+	await _frames(1)
+	var healer := Enemy.make(game, "cultist", game.player.global_position + Vector2(260, 0))
+	game.add_enemy(healer)
+	if not healer.traits.has("healer"):
+		return _fail("cultist did not carry the healer trait")
+
+	# Mend self-heals a wounded zombie (zone_idx -1 always simulates).
+	var z := Enemy.make(game, "zombie", game.player.global_position + Vector2(300, 0))
+	game.add_enemy(z)
+	if z.mend_rate <= 0.0:
+		return _fail("zombie has no mend rate")
+	z.hp = z.max_hp * 0.5
+	var hp0: float = z.hp
+	await get_tree().create_timer(0.4).timeout
+	if z.hp <= hp0:
+		return _fail("mend did not self-heal")
+
+	# Healer pulse tops up a wounded neighbor (both -1, same 'zone').
+	z.zone_idx = 0
+	healer.zone_idx = 0
+	game.cur_room = 0
+	z.hp = z.max_hp * 0.3
+	var hp1: float = z.hp
+	healer._heal_pulse()
+	if z.hp <= hp1:
+		return _fail("healer pulse did not mend a wounded ally")
+
+	# Frenzy hardens the wounded.
+	var wt := Enemy.make(game, "skeleton", game.player.global_position + Vector2(340, 0))
+	game.add_enemy(wt)
+	wt.hp = wt.max_hp
+	var calm: float = wt._hit_dmg()
+	wt.hp = wt.max_hp * 0.2
+	if wt._hit_dmg() <= calm:
+		return _fail("frenzy did not raise damage below the HP threshold")
+
+	# Lunge trait present + speeds up when swift.
+	var w := Enemy.make(game, "wolf", game.player.global_position + Vector2(360, 0))
+	if not w.traits.has("lunge"):
+		return _fail("wolf lost its lunge trait")
+	if wt.speed <= 140.0:  # skeleton is swift (140 base x 1.18)
+		return _fail("swift speed bump not applied")
+	for e in [healer, z, wt, w]:
+		e.queue_free()
+	await _frames(2)
+	game.cur_room = 0
+	print("ok: mob traits (HP/dmg presence, mend, healer pulse, frenzy, lunge/swift)")
+
+
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
 ## Spawn, signature, per-boss phase mechanic, and story-neutral death
 ## for each ch3 boss (the module's own kill-flow selftest — runs in the
@@ -2728,3 +2804,208 @@ func _test_ch7_quests() -> void:
 	game.player.faction_standing = snap_standing
 	game.flags = snap_flags
 	print("ok: ch7 side quests (relay_stands, void_letter, korrags_due — single payouts + standing)")
+
+
+## (P1, promises_kept.gd): dialogue promises now have deliveries.
+## Asserts the module's merges (side quests, convo overrides, beat
+## variants, zone flag/prop hooks), then drives both quest chains by
+## hand via set_flag. SNAPSHOT + RESTORE shared state per the rule.
+func _test_promises_kept() -> void:
+	# Module merge sanity: quests, convo overrides, beats, zone hooks.
+	for sqid in ["ch3_facing_home", "ch4_nine_names"]:
+		if not Story.ALL_SIDE_QUESTS.has(sqid):
+			_fail("promises: side quest '%s' not registered" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Each probe node exists only in this module's override.
+	for probe in [["ch3_refugee", "r_tell"], ["ch3_lore_alder", "a_home"],
+			["ch4_survivor", "s_carve"], ["ch5_wander_skald", "k_fee"]]:
+		var conv: Dictionary = Story.ALL_CONVOS.get(probe[0], {})
+		var nodes: Dictionary = conv.get("nodes", {})
+		if not nodes.has(probe[1]):
+			_fail("promises: convo override '%s' lost its '%s' hook (module must preload LAST)" % [probe[0], probe[1]])
+			await get_tree().create_timer(60.0).timeout
+			return
+	# The mute widow's thanks now waits on the deed (vess_dead variant first).
+	var mute_variants: Array = Story.ALL_CONVOS["ch3_wander_mute"]["nodes"]["m1"].get("variants", [])
+	if mute_variants.is_empty() or String(mute_variants[0].get("flag", "")) != "vess_dead":
+		_fail("promises: ch3_wander_mute thanks is not gated on vess_dead")
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Ansa's criers promise carries its beat flag.
+	var m_kind_flags: Dictionary = Story.ALL_CONVOS["ch5_mother"]["nodes"]["m1"]["choices"][0].get("flags", {})
+	if not m_kind_flags.get("chose_criers_promised", false):
+		_fail("promises: ch5_mother criers choice lost chose_criers_promised")
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Beat variants resolve through beat_for (flag set -> variant; unset -> base).
+	for bt in [["post_cinderhide", "ch4_petra_told"],
+			["epilogue_ch5", "chose_criers_promised"],
+			["epilogue_ch6", "chose_kaethra_sheathed"],
+			["epilogue_ch6", "chose_kaethra_struck"],
+			["pre_stormmouth", "chose_carried_lines"]]:
+		var base: Array = Story.beat_for(String(bt[0]), "neutral", {})
+		var flagged: Array = Story.beat_for(String(bt[0]), "neutral", {String(bt[1]): true})
+		if flagged.is_empty() or flagged == base:
+			_fail("promises: beat variant '%s@flag:%s' did not resolve" % [bt[0], bt[1]])
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Zone hooks: the boss rooms carry their promise flags, and the Alder
+	# Row prop stands in the Misted Fields.
+	var vess_ok := false
+	var alder_ok := false
+	for z in Story.chapter("ch3")["zones"]:
+		if String(z.get("boss", "")) == "vess" and String(z.get("clear_flag", "")) == "vess_dead":
+			vess_ok = true
+		for npc in z.get("npcs", []):
+			if String(npc.get("convo", "")) == "ch3_lore_alder":
+				alder_ok = true
+	if not vess_ok or not alder_ok:
+		_fail("promises: ch3 zone hooks missing (vess clear_flag %s, alder prop %s)" % [vess_ok, alder_ok])
+		await get_tree().create_timer(60.0).timeout
+		return
+	var vents_ok := false
+	for z in Story.chapter("ch4")["zones"]:
+		if String(z.get("boss", "")) == "cinderhide" and String(z.get("clear_flag", "")) == "ch4_vents_capped":
+			vents_ok = true
+	if not vents_ok:
+		_fail("promises: ch4 Deep Vents clear_flag missing")
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Drive both chains: no early payout, pays once on the last step.
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var gold0: int = game.player.gold
+	var chains := {
+		"ch3_facing_home": ["ch3_fenna_son_rested", "ch3_fenna_told"],
+		"ch4_nine_names": ["ch4_vents_capped", "ch4_names_carved"],
+	}
+	for sqid in chains:
+		var sid := String(sqid)
+		var before: int = game.player.gold
+		game.set_flag("sq_on_" + sid)
+		var steps: Array = chains[sqid]
+		for i in steps.size() - 1:
+			game.set_flag(String(steps[i]))
+			if game.get_flag("sq_paid_" + sid, false):
+				_fail("promises: quest '%s' paid before its final step" % sid)
+				await get_tree().create_timer(60.0).timeout
+				return
+		game.set_flag(String(steps[steps.size() - 1]))
+		if not game.get_flag("sq_paid_" + sid, false):
+			_fail("promises: quest '%s' did not pay on its final step" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		var gained: int = game.player.gold - before
+		if gained <= 0:
+			_fail("promises: quest '%s' completion paid no gold" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		game.set_flag(String(steps[0]), true)  # re-fire the checker
+		if game.player.gold != before + gained:
+			_fail("promises: quest '%s' paid more than once" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	game.player.gold = gold0
+	game.flags = snap_flags
+	print("ok: promises kept (facing_home, nine_names — single payouts; beat variants resolve)")
+
+
+func _test_promises_kept_2() -> void:
+	# (P2) Osk's count: the override must win (f_down/f_thanks exist), the
+	# delivery is gated on vess_dead, and the words nudge dropped to 2.0.
+	var osk: Dictionary = Story.ALL_CONVOS.get("ch3_wander_defector", {})
+	var onodes: Dictionary = osk.get("nodes", {})
+	if not onodes.has("f_down") or not onodes.has("f_thanks"):
+		_fail("promises2: ch3_wander_defector missing f_down/f_thanks (module must preload LAST)")
+		await get_tree().create_timer(60.0).timeout
+		return
+	var has_vess := false
+	for v in onodes["f1"].get("variants", []):
+		if String(v.get("flag", "")) == "vess_dead" and String(v.get("next", "")) == "f_down":
+			has_vess = true
+	if not has_vess:
+		_fail("promises2: Osk delivery not gated on vess_dead -> f_down")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if float(onodes["f1"]["choices"][0].get("resonance", 0.0)) != 2.0:
+		_fail("promises2: Osk words nudge should be 2.0 (larger shift moved to delivery)")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if float(onodes["f_down"]["choices"][0].get("resonance", 0.0)) != 3.0:
+		_fail("promises2: Osk delivery choice should carry the 3.0 resonance")
+		await get_tree().create_timer(60.0).timeout
+		return
+	# The kneeling field's claim pays off at the ch3 finale (beat variant).
+	var base: Array = Story.beat_for("epilogue_ch3", "neutral", {})
+	var flagged: Array = Story.beat_for("epilogue_ch3", "neutral", {"chose_told_congregation": true})
+	if flagged.is_empty() or flagged == base:
+		_fail("promises2: epilogue_ch3@flag:chose_told_congregation did not resolve")
+		await get_tree().create_timer(60.0).timeout
+		return
+	print("ok: promises kept 2 (Osk's falling count on vess_dead; kneeling-field epilogue beat)")
+
+
+# ---- CORE: merchant economy (round 50) — level-scaled prices, new
+# consumables, sell eligibility incl. the quest-item unsellable guard -------
+func _test_merchant_economy() -> void:
+	var p := game.player
+	# Price ladder: flat at L1, climbs with level, matches the knob.
+	if not is_equal_approx(Balance.merchant_price_mult(1), 1.0):
+		return _fail("merchant_price_mult(1) != 1.0")
+	var m20: float = Balance.merchant_price_mult(20)
+	if m20 <= 1.0 or not is_equal_approx(m20, 1.0 + Balance.SHOP_PRICE_PER_LEVEL * 19.0):
+		return _fail("merchant_price_mult(20) off the ladder")
+	# A gear buy price actually climbs with level.
+	var it := {"grade": "A", "plus": 0}
+	var buy1: int = int(ceil(Items.price(it) * Balance.SHOP_BUY_MARKUP))
+	var buy20: int = int(ceil(Items.price(it) * Balance.SHOP_BUY_MARKUP * m20))
+	if buy20 <= buy1:
+		return _fail("shop buy price did not climb with level")
+
+	# Gems: value climbs by gem level; sell is a sub-market fraction.
+	if Balance.gem_gold_value(2) <= Balance.gem_gold_value(1):
+		return _fail("gem gold value not monotonic in level")
+	var gem_market: int = int(Balance.gem_gold_value(2))
+	var gem_sell: int = int(Balance.gem_gold_value(2) * Balance.MERCHANT_SELL_FRACTION)
+	if gem_sell <= 0 or gem_sell >= gem_market:
+		return _fail("gem sell value not a sub-market fraction")
+
+	# Sell-eligibility (menus.open_shop): ONLY ids in CONSUMABLE_PRICES.
+	# Elite utility + quest keepsakes have no market price -> unsellable.
+	for cid in ["mana_potion", "elixir_might", "elixir_ward", "renewal_draught", "recall_scroll"]:
+		if not Balance.CONSUMABLE_PRICES.has(cid):
+			return _fail("merchant consumable %s missing a price" % cid)
+	if Balance.CONSUMABLE_PRICES.has("reset_stone") or Balance.CONSUMABLE_PRICES.has("tree_tome"):
+		return _fail("elite utility became sellable")
+	var qi := Items.make_quest_item("millers_hat")
+	if qi.is_empty() or Balance.CONSUMABLE_PRICES.has(String(qi.get("id", ""))):
+		return _fail("quest keepsake is sellable")
+
+	# New consumables apply their effect and are consumed.
+	var keep_cons: Array = p.consumables.duplicate()
+	var keep_dr: float = p.dr_time
+	var keep_dra: float = p.dr_amt
+	var keep_hp: float = p.hp
+	p.consumables = []
+
+	p.dr_time = 0.0
+	var ward := Items.make_elixir_ward()
+	p.consumables.append(ward)
+	p.use_consumable(ward)
+	if p.dr_time <= 0.0 or not is_equal_approx(p.dr_amt, Balance.ELIXIR_WARD_AMT) or p.consumables.has(ward):
+		return _fail("elixir of warding did not apply / wasn't consumed")
+
+	p.hp = maxf(1.0, p.max_hp * 0.25)
+	var before: float = p.hp
+	var draught := Items.make_renewal_draught()
+	p.consumables.append(draught)
+	p.use_consumable(draught)
+	if p.hp <= before or p.consumables.has(draught):
+		return _fail("draught of renewal did not heal / wasn't consumed")
+
+	# Restore.
+	p.consumables = keep_cons
+	p.dr_time = keep_dr
+	p.dr_amt = keep_dra
+	p.hp = keep_hp
+	print("ok: merchant economy (price ladder, gem/consumable sell, quest-item guard, ward+renewal)")

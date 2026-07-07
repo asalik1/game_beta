@@ -558,14 +558,20 @@ static func theme_by_id(cls: String, id: String) -> Dictionary:
 	return {}
 
 
-## Human-readable summary of what a theme's fx modifiers do.
-static func fx_text(fx: Dictionary) -> String:
+## Human-readable summary of what a theme's fx modifiers do. `cls` flavors
+## the toxin ENFEEBLE line (assassin evasion vs archer damage cushion).
+static func fx_text(fx: Dictionary, cls := "") -> String:
 	var bits: Array = []
 	if fx.has("dot"):
 		bits.append("applies a DoT: %d%% ATK/s for 3s (ticks can CRIT)" % int(fx["dot"] * 100))
 	if fx.has("toxin"):
-		bits.append("the DoT STACKS: +%d%% tick per application (up to %d stacks)"
-			% [int(Balance.TOXIN_PER_STACK * 100), Balance.TOXIN_MAX_STACKS])
+		var tox := "the DoT STACKS: +%d%% tick per application (up to %d stacks)" \
+			% [int(Balance.TOXIN_PER_STACK * 100), Balance.TOXIN_MAX_STACKS]
+		if cls == "assassin":
+			tox += " — and while your toxin holds you SLIP the venomed foe's blows (up to +%d%% evasion)" % int(Balance.ENFEEBLE_ASSASSIN_EVA * 100)
+		elif cls == "archer":
+			tox += " — and while your toxin holds the venomed foe's blows land SOFTER (up to %d%% less damage)" % int(Balance.ENFEEBLE_ARCHER_DR * 100)
+		bits.append(tox)
 	if fx.has("brittle"):
 		bits.append("turns targets BRITTLE: ice hits bite +%d%% per stack (up to %d)"
 			% [int(Balance.BRITTLE_PER_STACK * 100), Balance.BRITTLE_MAX_STACKS])
@@ -573,7 +579,8 @@ static func fx_text(fx: Dictionary) -> String:
 		bits.append("CRUSHES: +%d%% damage to targets recently shoved or pulled"
 			% int(Balance.CRUSH_MULT * 100))
 	if fx.has("slow"):
-		bits.append("slows enemies %d%% for 2s" % int(fx["slow"] * 100))
+		bits.append("slows enemies %d%% for 2s (CC-immune bosses are HOBBLED instead: +%d%% damage taken for %.1fs)"
+			% [int(fx["slow"] * 100), int(Balance.HOBBLE_MULT * 100), Balance.HOBBLE_DUR])
 	if fx.has("stun_chance"):
 		bits.append("%d%% chance to STUN 0.5s (CC-immune bosses take CONCUSSION damage instead)" % int(fx["stun_chance"] * 100))
 	if fx.has("echo"):

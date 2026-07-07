@@ -101,24 +101,24 @@ re-theming at boss doors.
 
 | # | Spec | DPS | Notes |
 |---|------|----:|-------|
-| 1 | Assassin · Shadow | ~4150 | the ceiling: +20%/+15% cap-exempt crit riders, converging five-knife fan, true-damage execute — priced in melee proximity with no plate and no free i-frames |
+| 1 | Assassin · Shadow | ~4100 | the ceiling: +20%/+15% cap-exempt crit riders, converging five-knife fan, true-damage execute — priced in melee proximity with no plate and no free i-frames |
 | 2 | Archer · Hunt | ~3900 | the couch ceiling: 20%-deeper shots, +25% crit above the knee, near-permanent EXPOSED, all five narrow-volley arrows into one body, zero melee risk |
-| 3 | Mage · Wind | ~3650 | twin echoing bolts + Starfall — the mage's duelist theme |
 | 3 | Assassin · Blood | ~3650 | **tied with Wind at full HP, and that's its FLOOR**: blood_amp converts missing health into up to +40% damage — a bleeding pilot stretches toward Shadow |
-| 5 | Warrior · Fury | ~3380 | wave2 backhand + 55%-echo cyclone + Berserk — which now also restores Cleave's unchained 0.45s cadence: the ult is a tempo steroid |
-| 6 | Mage · Ice | ~3300 | widest variance on the board (3020–3600 observed): heavy lances, brittle self-amplification, freeze-rider concussion |
+| 3 | Mage · Wind | ~3600 | twin echoing bolts + Starfall — the mage's duelist theme |
+| 5 | Warrior · Fury | ~3400 | wave2 backhand + 55%-echo cyclone + Berserk — which now also restores Cleave's unchained 0.45s cadence: the ult is a tempo steroid |
+| 6 | Mage · Ice | ~3350 | widest variance on the board (3020–3600 observed): heavy lances, brittle self-amplification, freeze concussion — and near-permanent HOBBLED since 49d |
 | 7 | Warlock · Curse | ~3170 | deep withering bolts, guaranteed EXPOSED from Hex, wither ramping +8%/6s of curse uptime to +64% — the long-fight spec |
-| 8 | Paladin · Wrath | ~3040 | double Judgment hunting the gaps (+20% crit), erupting Consecration; Retribution uptime IS the skill expression |
-| 8 | Warlock · Void | ~3040 | crush choreography: hex-shove opens the window, bolts spike into it (+28% crush, +25% Nightfall crit) |
-| 10 | Assassin · Poison | ~2870 | the fastest toxin stacker in the game (0.12/stack); pays the deliberate DoT tax against its burst siblings |
-| 10 | Warrior · Earth | ~2860 | the control spec paying its CC budget at CC-immune doors; concussion repays part |
-| 12 | Mage · Fire | ~2800 | **statistically tied with Poison — an accepted tie.** Splash is wasted solo; the deep burn (0.60 bolt dot, 2.0× meteor burn) carries it |
-| 13 | Warlock · Pact | ~2690 | blood-priced bolts; its real identity lives on the pack board |
-| 13 | Archer · Venom | ~2690 | heavy stacking DoTs on capped-pierce arrows; the archer's safest solo theme |
-| 15 | Archer · Storm | ~2610 | the AoE spec's solo floor: with nobody to fork to, the charge arcs BACK into the same body at 50% (`ric_back`) |
-| 16 | Paladin · Holy | ~2090 | −20% stance damage + the Judgment cadence tax: absurd sustain, deliberately low output |
+| 7 | Warlock · Void | ~3120 | crush choreography: hex-shove opens the window, bolts spike into it (+22% crush, +25% Nightfall crit) — its bolt-slow keeps HOBBLED near-permanent |
+| 9 | Paladin · Wrath | ~3040 | double Judgment hunting the gaps (+20% crit), erupting Consecration; Retribution uptime IS the skill expression |
+| 10 | Warrior · Earth | ~2950 | the control spec: stuns concuss, slows HOBBLE — its whole rider budget pays at boss doors since 49d |
+| 11 | Mage · Fire | ~2810 | splash is wasted solo; the deep burn (0.60 bolt dot, 2.0× meteor burn) carries it — nominally above Poison per the ladder, tie-band in practice |
+| 12 | Archer · Venom | ~2790 | heavy stacking DoTs on capped-pierce arrows + slows on every slot feeding HOBBLED (49d's biggest winner: +4%); the archer's safest solo theme |
+| 12 | Assassin · Poison | ~2790 | the fastest toxin stacker in the game (0.12/stack) + HOBBLED uptime; bloom re-trimmed so the pair sits at Fire's shoulder, not past it |
+| 14 | Archer · Storm | ~2650 | the AoE spec's solo floor: with nobody to fork to, the charge arcs BACK into the same body at 50% (`ric_back`) |
+| 15 | Warlock · Pact | ~2550 | blood-priced bolts; its real identity lives on the pack board |
+| 16 | Paladin · Holy | ~2070 | −20% stance damage + the Judgment cadence tax: absurd sustain, deliberately low output |
 | 17 | Warrior · Bulwark | ~1840 | every button heals and hardens; the cannot-die build pays here |
-| 18 | Paladin · Aegis | ~1710 | reflect identity — damage arrives only when the enemy swings, and a bench dummy never swings (see §9) |
+| 18 | Paladin · Aegis | ~1730 | reflect identity — damage arrives only when the enemy swings, and a bench dummy never swings (see §9) |
 
 **Reading notes:**
 
@@ -132,9 +132,10 @@ re-theming at boss doors.
   costs zero bolt casts) is **load-bearing** on long fights. A pilot who
   refuses it loses ~10–15% past the two-minute mark, most of it on
   Fire.
-- **Fire ~ Poison** is the one relation tuning left as a tie: Poison has
-  no room down (Venom sits just beneath it) and Fire is mana-capped,
-  not damage-capped.
+- **Fire ~ Poison ~ Venom** ended as a deliberate tie cluster at ~2800:
+  Fire is mana-capped rather than damage-capped, and 49d's HOBBLED
+  lifted the two DoT specs into its shoulder (Poison re-trimmed to keep
+  Fire nominally on top).
 
 ---
 
@@ -206,7 +207,9 @@ is built to re-theme at boss doors.
 - **Storm** — pack tier-3 (forks, unlimited pierce, splash everywhere)
   with a real solo floor since 49: the lone-prey fork arcs back at 50%.
 - **Venom** — the DoT spec: capped-pierce toxin arrows, the deepened
-  plague rain. Just under Poison on bosses, just above the sustain
+  plague rain, and slows on all four slots — which since 49d means
+  near-permanent HOBBLED at boss doors (it was the mechanic's
+  motivating case). Tied with Poison on bosses, just above the sustain
   floor on packs — both per target.
 
 ### Mage — the glass engine with a fuel gauge
@@ -266,6 +269,12 @@ cadence, wither deepened to +64%.
 - **Concussion:** a stun that fails on a CC-immune target converts to
   bonus damage (failed duration × `CONCUSSION_MULT` × ATK) — control
   themes keep a small uniform boss value.
+- **HOBBLED (49d):** the same conversion for slows — a slow that fails
+  on a CC-immune boss scuffs its footing: +`HOBBLE_MULT` (4%) damage
+  taken from the player for `HOBBLE_DUR` (2.5s), refreshed per failed
+  slow, DoT ticks included. Before this, the slow half of every control
+  theme's budget (venom/poison/ice/void/earth) was a dead rider at boss
+  doors — venom paid it on all four slots.
 - **DoTs resolve like hits** — mitigated by target res minus caster
   pen, snapshot at application, ticks crit on the caster's SHEET crit
   shaved by target critres. No hidden true damage; true damage remains
@@ -324,11 +333,17 @@ are the contract.
 
 ## 9. Standing watch items
 
-- **Fire ~ Poison (boss)** is an accepted tie. If either drifts ±5%+,
-  re-anchor with Fire nominally above, per the ladder.
-- **Void ~ Storm (pack)** holds as a tie at Storm's line; Void has no
-  AoE-pure knob left short of touching crush (shared with its boss
-  identity). If it creeps, trim the rift.
+- **Fire ~ Poison ~ Venom (boss)** is an accepted tie cluster at ~2800.
+  If any of the three drifts ±5%+, re-anchor with Fire nominally above,
+  per the ladder (Poison's bloom and Venom's hobble uptime are the
+  knobs).
+- **Void rides the TOP of its allowed band on both boards** — 49d's
+  HOBBLED handed it a free lift (its slow rides every bolt) and crush
+  came down 0.28→0.22 to compensate. It sits at wrath's shoulder (boss)
+  and in a statistical tie with Storm (pack), and it's the noisiest
+  spec measured (rift crits + crush windows compound). If it creeps
+  again, crush is the knob; the "around Ice" soft target is
+  unreachable without gutting the identity and has been waived.
 - **Blood's real ceiling** (blood_amp at low HP) is invisible to the
   full-HP bench. Playtest reports of Blood out-pacing Shadow at boss
   doors are consistent with the design — up to the point where it does

@@ -41,6 +41,33 @@ const BOSS_DMG_GROWTH := 0.055   # = the player's ~per-level power growth
 const GOLD_MULT := 0.6          # global gold scarcity (merchants must matter)
 const REWARD_PER_LEVEL := 0.12  # xp/gold grow LINEARLY per level (no farm spiral)
 
+# ------------------------------------------------------ merchant economy ---
+# Round 50: the shop went stale. Gear/gamble/upgrade/reforge prices were
+# LEVEL-INDEPENDENT (grade+plus only) while mob/boss gold climbs 0.12/level
+# — so by Ch3 a player hoarded ~4k gold against ~140g items and the merchant
+# stopped mattering. Fix: merchant BUY-side prices now climb with player
+# level at SHOP_PRICE_PER_LEVEL (just UNDER income's 0.12/level, so a leveling
+# player's purchasing power creeps up but a merchant is always a real spend).
+# Consumables/health potions stay flat staples (see CONSUMABLE_PRICES,
+# POTION_PRICE) — commodities shouldn't inflate.
+const SHOP_BUY_MARKUP := 2.0        # gear sells at this x its intrinsic Items.price
+const SHOP_PRICE_PER_LEVEL := 0.11  # merchant gear/upgrade/gamble/reforge climb per level
+const MERCHANT_SELL_FRACTION := 0.45  # buy-back = this x market value (gear, gems, consumables) — always well under buy
+const POTION_PRICE := 25            # health-potion buy price (flat staple, un-scaled)
+# Deeper merchants carry a wider board (rolled gear count by shop tier).
+const SHOP_STOCK_BY_TIER := {"wood": 3, "silver": 4, "gold": 5}
+# A loose gem's market value in gold, by gem level (roughly triples per level,
+# mirroring the 3-into-1 combine). Sold at MERCHANT_SELL_FRACTION — a modest
+# duplicate-dump faucet, never a gem->gold pump that trivializes gold.
+const GEM_GOLD_BASE := 30.0
+const GEM_GOLD_PER_LEVEL := 3.0
+
+static func merchant_price_mult(level: int) -> float:
+	return 1.0 + SHOP_PRICE_PER_LEVEL * float(maxi(level - 1, 0))
+
+static func gem_gold_value(lvl: int) -> float:
+	return GEM_GOLD_BASE * pow(GEM_GOLD_PER_LEVEL, float(maxi(lvl - 1, 0)))
+
 # ------------------------------------------------------ boss gem drops ---
 # Round 44: bosses join the gem economy (was elite-only). The FIRST
 # clear of a chapter guarantees a 3-gem bundle per boss (the catch-up
@@ -178,6 +205,19 @@ const HOBBLE_DUR := 2.5
 # two weakest melee/ranged variants; the stack is their whole payoff.
 const TOXIN_PER_STACK := 0.12
 const TOXIN_MAX_STACKS := 5
+# ENFEEBLE (round 49e; split 49f): maintaining YOUR toxin on a foe turns
+# its own rot into your survival — the DoT specs' end-game answer to
+# bullet-hell, the axis that offsets their lower raw dps. Class-flavored,
+# scaled by live toxin stacks (upkeep pays, like wither): the ASSASSIN
+# slips the blow — up to +EVA evasion ON TOP of base Elusive, so a dive
+# to keep the surge can dodge the bullets it dives into; the ARCHER
+# shrugs it — up to DR% less damage, the cushion that survives the error
+# margin when a hit drops Second Wind. Gated on an attacker carrying
+# toxin (melee bites, bolts with a shooter); attacker-less telegraphs and
+# hazards are untouched — the poison blunts the body, never the
+# spellstorm. Toxin is poison/venom-exclusive; the role can't be borrowed.
+const ENFEEBLE_ASSASSIN_EVA := 0.10  # assassin/poison: dodge chance vs the venomed foe (at max stacks)
+const ENFEEBLE_ARCHER_DR := 0.16     # archer/venom: damage cushion from the venomed foe (at max stacks)
 # BRITTLE (ice theme): cold cracks what it strikes — ice hits bite
 # harder per stack, and ONLY ice hits (theme-internal: one poached ice
 # slot amps nothing else).
@@ -201,6 +241,42 @@ const BOSS_SHOVE_FACTOR := 0.4
 # shooter at this fraction of the melee reflect, capped per cast.
 const AEGIS_PROJ_REFLECT := 0.5
 const AEGIS_PROJ_CAP := 4
+
+# ------------------------------------------------------- mob presence ---
+# Playtest 2026-07-07 ("one/two-tapping ch3 mobs; at least 4 hits should
+# be needed; mobs feel weak"): a global pass making trash a real threat,
+# on TOP of the per-kind level scaling. HP/dmg mults ride inside
+# enemy_stats_at (non-boss only, so the codex stays honest); density
+# adds seeded extra spawns per pack. Elites inherit the fatter HP (they
+# multiply the already-scaled pool) — intended.
+const MOB_HP_MULT := 2.0        # ~1-2 taps -> ~4 hits (the player's ask)
+const MOB_DMG_MULT := 1.2       # +20% contact/bolt damage
+const MOB_DENSITY_EXTRA := 0.15 # +15% pack size (seeded duplicate chance)
+
+# -------------------------------------------------------- mob traits ---
+# Each mob KIND carries an identity gimmick (data lives in its ENEMIES
+# dict "traits"; behavior in enemy.gd). One vocabulary, tuned here:
+#   lunge   — gap-closer: telegraphed pounce from mid-range
+#   evasive — skitters sideways as it approaches (on top of its eva stat)
+#   mend    — self-heal: knits a fraction of max HP/s (undead durability)
+#   healer  — support: pulses a heal to nearby wounded allies + itself
+#             (KILL PRIORITY — green-tinted so it reads)
+#   frenzy  — below FRENZY_HP: +speed and +damage as it breaks
+#   swift   — a flat speed bump (the no-gap-closer melee compensation)
+const MOB_LUNGE_CD := 4.5           # seconds between pounces
+const MOB_LUNGE_RANGE := 340.0      # starts a pounce inside this, outside melee
+const MOB_LUNGE_SPEED := 620.0      # dash velocity during the pounce
+const MOB_LUNGE_TIME := 0.28        # dash duration
+const MOB_LUNGE_WINDUP := 0.32      # telegraph flash before the leap
+const MOB_EVASIVE_WEAVE := 0.55     # lateral strafe as a fraction of speed
+const MOB_MEND_RATE := 0.03         # max-HP fraction healed per second
+const MOB_HEAL_CD := 3.5            # healer pulse cadence
+const MOB_HEAL_RADIUS := 220.0
+const MOB_HEAL_FRAC := 0.10         # of each ally's max HP per pulse
+const MOB_FRENZY_HP := 0.40         # frenzy arms below this HP fraction
+const MOB_FRENZY_SPEED := 1.35
+const MOB_FRENZY_DMG := 1.30
+const MOB_SWIFT_SPEED := 1.18       # non-gap-closer melee run a bit faster
 
 # --------------------------------------------------------------- elites ---
 # The miniboss variant (Enemy.promote_elite). Multipliers apply on top
@@ -386,7 +462,14 @@ const STASH_SLOTS := 200
 const MANA_POTION_FRAC := 0.5    # restores this fraction of MAX mana
 const ELIXIR_MIGHT_AMT := 0.20   # +20% damage while the elixir holds
 const ELIXIR_MIGHT_DUR := 30.0   # seconds
-const CONSUMABLE_PRICES := {"mana_potion": 35, "elixir_might": 130, "recall_scroll": 55}
+# Round 50 additions — a defensive elixir (mirrors Might on the dr_ system)
+# and a burst bag-heal (distinct from the 5-cap health-potion counter, and
+# not budgeted by it — a real reason to spend at the alchemist's shelf).
+const ELIXIR_WARD_AMT := 0.25    # incoming non-true damage cut while it holds
+const ELIXIR_WARD_DUR := 20.0    # seconds
+const RENEWAL_HEAL_FRAC := 0.5   # instant heal, fraction of MAX hp
+const CONSUMABLE_PRICES := {"mana_potion": 35, "elixir_might": 130, "recall_scroll": 55,
+	"elixir_ward": 110, "renewal_draught": 90}
 
 # Gambling vendor (Diablo-style): spend gold for a random item of the
 # merchant's tier, sight unseen. A cheap gold sink + loot thrill; deeper

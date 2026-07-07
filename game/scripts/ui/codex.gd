@@ -145,6 +145,15 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 				[int(at25["hp"]), int(at25["dmg"]), int(at50["hp"]), int(at50["dmg"])], 12, Color(0.5, 0.55, 0.66))
 			g2.custom_minimum_size = Vector2(700, 0)
 
+			# Identity traits (2026-07-07): each kind's gimmick, so the
+			# player learns the counter (kill the healer, dodge the pounce).
+			for tr in st.get("traits", []):
+				var td: String = Enemy.TRAIT_DESC.get(String(tr), "")
+				if td != "":
+					var tl := m._lbl(info, "◆ " + td, 12, Color(0.7, 0.85, 0.7))
+					tl.custom_minimum_size = Vector2(700, 0)
+					tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
 			# Codex completion (retention roadmap #5): the kill tally, and
 			# the lore this character has (or hasn't) earned the right to read.
 			var kills: int = int(m.game.kill_counts.get(kind, 0))
@@ -554,6 +563,8 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	for util in [
 		"🜁 Mana Draught — restore %d%% of your maximum mana. Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
 		"🜂 Elixir of Might — +%d%% damage for %ds. Pop it before a boss. Bought from merchants." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
+		"🜄 Elixir of Warding — cut incoming damage by %d%% for %ds. Bought from merchants." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)],
+		"🜔 Draught of Renewal — instantly restore %d%% of maximum health (stocks past the 5-potion cap). Bought from merchants." % int(Balance.RENEWAL_HEAL_FRAC * 100),
 		"🜃 Scroll of Recall — whisk yourself back to the last safe room (not in combat). Bought from merchants."]:
 		var ul := m._lbl(cons, String(util), 13, Color(0.7, 0.72, 0.78))
 		ul.custom_minimum_size = Vector2(880, 0)

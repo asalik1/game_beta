@@ -100,8 +100,10 @@ func _test_graph_walk_darkwood() -> void:
 	if not game.built.get(2, false):
 		return _fail("room 2 did not build on entry")
 	var mobs := _room_mobs(2)
-	if mobs.size() != 10:
-		return _fail("Darkwood Road pack count wrong (%d)" % mobs.size())
+	# 10 authored spawns + seeded +15% density (each may bring a twin), so
+	# the count is a RANGE, never fewer than authored (2026-07-07).
+	if mobs.size() < 10 or mobs.size() > 20:
+		return _fail("Darkwood Road pack count out of range (%d)" % mobs.size())
 	for e in mobs:
 		if e.force_aggro or e.alerted:
 			return _fail("entering a room should wake nobody (per-pack aggro)")
@@ -312,8 +314,10 @@ func _test_marsh_death_and_travel() -> void:
 		return _fail("stilt camp merchant missing")
 	game.menus.open_shop(11)
 	await _frames(2)
-	if not game.menus.is_open() or game.shop_stock[11].size() != 3:
-		return _fail("stilt camp shop did not stock")
+	# Stock count is tier-driven (Balance.SHOP_STOCK_BY_TIER wood 3 / silver
+	# 4 / gold 5) — assert it stocked SOMETHING in range, not a fixed 3.
+	if not game.menus.is_open() or game.shop_stock[11].size() < 3 or game.shop_stock[11].size() > 5:
+		return _fail("stilt camp shop did not stock (%d)" % game.shop_stock[11].size())
 	game.menus.close()
 	await _frames(2)
 	if game.last_safe_room != 11:
@@ -338,8 +342,9 @@ func _test_marsh_death_and_travel() -> void:
 	# and the marsh room resets behind you.
 	await _goto_room(10)
 	var marsh_mobs := _room_mobs(10)
-	if marsh_mobs.size() != 10:
-		return _fail("marsh gate pack count wrong (%d)" % marsh_mobs.size())
+	var marsh_n := marsh_mobs.size()  # authored + seeded density (2026-07-07)
+	if marsh_n < 10 or marsh_n > 20:
+		return _fail("marsh gate pack count out of range (%d)" % marsh_n)
 	marsh_mobs[0].take_damage(1.0)
 	await _frames(3)
 	if not game.barrier_active:
@@ -361,8 +366,10 @@ func _test_marsh_death_and_travel() -> void:
 		return _fail("death did not return to the last safe room (got %d)" % game.cur_room)
 	# The death room reset: full pack, everyone calm again.
 	var reset_mobs := _room_mobs(10)
-	if reset_mobs.size() != 10:
-		return _fail("death room did not respawn its packs (%d)" % reset_mobs.size())
+	# Seeded density is deterministic per room, so the reset reproduces
+	# the exact same pack it spawned the first time.
+	if reset_mobs.size() != marsh_n:
+		return _fail("death room did not respawn its packs (%d vs %d)" % [reset_mobs.size(), marsh_n])
 	for e in reset_mobs:
 		if e.force_aggro or e.alerted:
 			return _fail("respawned packs should wake calm")

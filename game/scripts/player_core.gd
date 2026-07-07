@@ -789,6 +789,17 @@ func use_consumable(c: Dictionary) -> void:
 			consumables.erase(c)
 			game.sfx("potion", 0.85)
 			game.spawn_text(global_position + Vector2(0, -56), "MIGHT!", Color(1.0, 0.6, 0.3))
+		"elixir_ward":
+			dr_time = Balance.ELIXIR_WARD_DUR
+			dr_amt = Balance.ELIXIR_WARD_AMT
+			consumables.erase(c)
+			game.sfx("potion", 0.75)
+			game.spawn_text(global_position + Vector2(0, -56), "WARDED!", Color(0.5, 0.8, 1.0))
+		"renewal_draught":
+			gain_hp(max_hp * Balance.RENEWAL_HEAL_FRAC)
+			consumables.erase(c)
+			game.sfx("potion", 1.15)
+			game.spawn_text(global_position + Vector2(0, -56), "RENEWED", Color(0.5, 1.0, 0.6))
 		"recall_scroll":
 			if game.recall_to_safe():
 				consumables.erase(c)

@@ -247,6 +247,18 @@ static func make_recall_scroll() -> Dictionary:
 		"desc": "Whisk yourself back to the last safe room you rested in."}
 
 
+static func make_elixir_ward() -> Dictionary:
+	return {"kind": "stone", "id": "elixir_ward", "grade": "C",
+		"name": "Elixir of Warding",
+		"desc": "Cut incoming damage by %d%% for %ds. Quaff it before a heavy blow lands." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)]}
+
+
+static func make_renewal_draught() -> Dictionary:
+	return {"kind": "stone", "id": "renewal_draught", "grade": "C",
+		"name": "Draught of Renewal",
+		"desc": "Instantly restore %d%% of your maximum health." % int(Balance.RENEWAL_HEAL_FRAC * 100)}
+
+
 # ------------------------------------------------------------ quest items ---
 # Bag riders with no use-click: they exist to be GIVEN (convo choices
 # grant/collect them via "gain_item"/"lose_item"). Run-scoped — the

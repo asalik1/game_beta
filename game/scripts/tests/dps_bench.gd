@@ -36,7 +36,14 @@ extends Node
 ## warlock takes Dark Pact back (in a pack you ARE point-blank), and
 ## the mage casts Frost Nova on cooldown (real AoE damage in a crowd).
 ##
-## Run:  dps_bench.bat [--aoe] [--secs=N] [--cls=assassin] [--theme=blood]
+## DOWNTIME MODE (--downtime): hands off the keys for DOWNTIME_DUR out
+## of every DOWNTIME_EVERY seconds — the telegraph-dodge simulation.
+## Casts stop; DoTs, storms, mists and burns keep working. This is the
+## instrument that tests the DoT-tax doctrine with numbers: if the DoT
+## specs close the gap here, their lower stand-still numbers are priced
+## correctly.
+##
+## Run:  dps_bench.bat [--aoe] [--downtime] [--secs=N] [--cls=X] [--theme=Y]
 ## The .bat runs the compile gate first and passes --fixed-fps 60, so
 ## simulated seconds decouple from the wall clock (CPU-bound speed).
 
@@ -121,11 +128,16 @@ const STAND_OFF := {
 const SURGE_REFRESH_AT := 0.35    # dash when the blood surge has this long left
 const DEATH_MARK_WINDOW := 5.0    # Death Mark vuln duration: stab-spam window
 
+# --- downtime mode: simulated telegraph-dodge pressure ---
+const DOWNTIME_EVERY := 5.0       # a dodge window this often...
+const DOWNTIME_DUR := 1.0         # ...costs this long of casting (20% uptime tax)
+
 var game: Game
 var sim_secs := SIM_SECS_DEFAULT
 var only_cls := ""
 var only_theme := ""
 var aoe := false
+var downtime := false
 var results: Array = []
 
 # --- rotation driver state (one case at a time) ---
@@ -193,6 +205,8 @@ class BenchDummy extends Boss:
 	func take_damage(amount: float, _from_dir := Vector2.ZERO, is_crit := false, _silent := false) -> void:
 		if vuln_time > 0.0:
 			amount *= 1.5         # EXPOSED / Death Mark work like any live boss
+		if hobble_t > 0.0:
+			amount *= 1.0 + Balance.HOBBLE_MULT  # failed slows scuff footing (49d)
 		m_active = true
 		m_total += amount
 		m_hits += 1
@@ -265,6 +279,8 @@ func _parse_args() -> void:
 			only_theme = a.get_slice("=", 1)
 		elif a == "--aoe":
 			aoe = true
+		elif a == "--downtime":
+			downtime = true
 
 
 func _run() -> void:
@@ -288,6 +304,9 @@ func _run() -> void:
 	if aoe:
 		print("[bench] AOE MODE: %d boss pillars in a row + %d adds (%.0f hp) every %.0fs — effective damage, pooled" % [
 			PILLARS, ADD_WAVE_COUNT, ADD_HP, ADD_WAVE_SECS])
+	if downtime:
+		print("[bench] DOWNTIME MODE: no casting %.1fs of every %.1fs — the telegraph-dodge tax (DoTs keep ticking)" % [
+			DOWNTIME_DUR, DOWNTIME_EVERY])
 
 	for cls in CLS_ORDER:
 		if only_cls != "" and cls != only_cls:
@@ -514,6 +533,10 @@ func _physics_process(_delta: float) -> void:
 			# the assassin dashes — the warrior just drifted off and swung
 			# at air). A real pilot side-steps back in; the bench pins.
 			game.player.global_position = pack_center + Vector2(0, 70)
+	if downtime and fmod(sim_t, DOWNTIME_EVERY) < DOWNTIME_DUR:
+		# Dodge window: hands off the keys. DoTs, mists, storms and burns
+		# keep working; casts (and ult presses) wait out the telegraph.
+		return
 	var p: Player = game.player
 	if rot_cls == "assassin":
 		_drive_assassin(p)

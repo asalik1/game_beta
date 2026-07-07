@@ -62,10 +62,33 @@ var burn_dps := 0.0
 var burn_tick := 0.0
 var burn_color := Color(1.4, 0.8, 0.6)  # orange = fire, green = poison
 var vuln_time := 0.0   # takes +50% damage while marked
+var hobble_t := 0.0    # HOBBLED: a slow that failed on a CC-immune boss
+                       # scuffs its footing — +HOBBLE_MULT damage taken
 var toxin := 0         # green-DoT stacks: deepen the burn TICK (die with it)
 var brittle := 0       # ice stacks: ice hits bite harder per stack
 var brittle_t := 0.0
 var crush_t := 0.0     # recently displaced hard: void hits bite (crush window)
+
+# --- identity traits (data: kind's ENEMIES "traits"; tuning: Balance) ---
+var traits := {}       # trait name -> true
+var mend_rate := 0.0   # self-heal fraction of max HP/s (mend trait)
+var lunge_cd := 0.0    # gap-closer pounce cooldown
+var lunge_time := 0.0  # active pounce dash timer
+var lunge_windup := 0.0
+var lunge_dir := Vector2.ZERO
+var heal_cd := 0.0     # healer pulse cooldown
+var weave_phase := 0.0 # evasive strafe oscillator
+var mend_fx_t := 0.0   # throttle for the self-heal green wisp
+
+# Player-facing trait blurbs (codex reads this).
+const TRAIT_DESC := {
+	"lunge":   "Lunges — closes the gap with a sudden telegraphed pounce.",
+	"evasive": "Evasive — weaves as it approaches and slips many blows.",
+	"mend":    "Knits — slowly heals its own wounds; burst it down.",
+	"healer":  "Mends the faithful — pulses healing to nearby allies (green glow). Kill it first.",
+	"frenzy":  "Frenzied — wounded, it strikes faster and harder.",
+	"swift":   "Swift — quicker on its feet than its kin.",
+}
 
 
 static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1) -> Enemy:
@@ -101,6 +124,17 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	physpen = scaled["physpen"]
 	magpen = scaled["magpen"]
 	dmg_type = stats.get("dmg_type", "phys")
+	# Identity traits (2026-07-07): each kind's gimmick. Read into a set;
+	# a few configure stats up front (swift speed, mend rate).
+	for t in stats.get("traits", []):
+		traits[String(t)] = true
+	if traits.has("swift"):
+		speed *= Balance.MOB_SWIFT_SPEED
+	if traits.has("mend"):
+		mend_rate = Balance.MOB_MEND_RATE
+	weave_phase = randf() * TAU
+	lunge_cd = randf_range(1.0, Balance.MOB_LUNGE_CD)  # stagger first pounces
+	heal_cd = randf_range(1.0, Balance.MOB_HEAL_CD)
 	global_position = pos
 	home = pos
 	anim_t = randf() * 10.0
@@ -151,6 +185,26 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	hp_bar_fg.visible = false
 	add_child(hp_bar_fg)
 
+	# Healers wear a GREEN RING underfoot — the same "this one's special"
+	# language as the elite gold ring, so kill-priority reads at a glance
+	# (a child sprite survives the white damage flashes). A soft glow
+	# above sells the mending light.
+	if traits.has("healer"):
+		var ring := Sprite2D.new()
+		ring.texture = Art.tex("ring")
+		ring.modulate = Color(0.35, 1.0, 0.45, 0.85)
+		ring.position = Vector2(0, 14)
+		ring.scale = Vector2(1.5, 0.85)
+		ring.z_index = -1
+		add_child(ring)
+		var halo := Sprite2D.new()
+		halo.texture = Art.tex("glow")
+		halo.modulate = Art.hdr(Color(0.4, 1.0, 0.5, 0.4), 1.3)
+		halo.scale = Vector2(0.8, 0.8) * art_scale / 3.0
+		halo.position = Vector2(0, -4)
+		halo.z_index = -1
+		add_child(halo)
+
 
 ## Stat lookup, overridable so chapter-content monsters (see Boss's
 ## Chapter 2 block + content/ch2_bosses.gd) can resolve outside
@@ -184,11 +238,14 @@ func _physics_process(delta: float) -> void:
 	anim_t += delta
 	attack_cd = maxf(0.0, attack_cd - delta)
 	knock = knock.move_toward(Vector2.ZERO, 900.0 * delta)
+	if not traits.is_empty():
+		_tick_traits(delta)
 
 	# --- status effects tick ---
 	stun_time = maxf(0.0, stun_time - delta)
 	slow_time = maxf(0.0, slow_time - delta)
 	vuln_time = maxf(0.0, vuln_time - delta)
+	hobble_t = maxf(0.0, hobble_t - delta)
 	brittle_t = maxf(0.0, brittle_t - delta)
 	if brittle_t <= 0.0:
 		brittle = 0
@@ -231,7 +288,7 @@ func _physics_process(delta: float) -> void:
 			sprite.modulate = Color(1, 1, 1)
 			var player: Player = game.player
 			if player and not player.dead and global_position.distance_to(player.global_position) < 64.0:
-				player.take_damage(dmg, dmg_type, self)
+				player.take_damage(_hit_dmg(), dmg_type, self)
 		velocity = knock
 		move_and_slide()
 		return
@@ -281,28 +338,49 @@ func _think(_delta: float) -> Vector2:
 		if zone_idx >= 0:
 			game.wake_pack(zone_idx, pack_id)
 
+	# Traits (2026-07-07): frenzy quickens the wounded; an active pounce
+	# overrides normal movement.
+	var frenzied := traits.has("frenzy") and hp < max_hp * Balance.MOB_FRENZY_HP
+	var spd := speed * (Balance.MOB_FRENZY_SPEED if frenzied else 1.0)
+	if lunge_windup > 0.0:
+		return Vector2.ZERO                       # crouched, about to spring
+	if lunge_time > 0.0:
+		return lunge_dir * Balance.MOB_LUNGE_SPEED  # the pounce
+
 	if ranged:
 		if attack_cd <= 0.0:
 			attack_cd = 1.58
 			game.sfx("bolt")
 			# Playtest round 2: bolts fly noticeably faster — walking
 			# lazily out of their path stops being free.
-			var p := Projectile.spawn(game, global_position, to_player.normalized() * 420.0, dmg, false, "bolt")
+			var p := Projectile.spawn(game, global_position, to_player.normalized() * 420.0, _hit_dmg(), false, "bolt")
 			p.hostile_type = dmg_type
 			p.source_enemy = self
 		if dist < 200.0:
-			return -to_player.normalized() * speed * 0.8
+			return -to_player.normalized() * spd * 0.8
 		elif dist > 300.0:
-			return to_player.normalized() * speed
+			return to_player.normalized() * spd
 		return Vector2.ZERO
 	else:
+		# Gap-closer: spring from mid-range with a brief crouch tell.
+		if traits.has("lunge") and lunge_cd <= 0.0 and dist > 60.0 and dist < Balance.MOB_LUNGE_RANGE:
+			lunge_cd = Balance.MOB_LUNGE_CD
+			lunge_windup = Balance.MOB_LUNGE_WINDUP
+			lunge_dir = to_player.normalized()
+			sprite.modulate = Color(1.8, 0.7, 2.0)  # purple crouch = incoming pounce
+			return Vector2.ZERO
 		if dist < 42.0:
 			if attack_cd <= 0.0:
 				attack_cd = 0.92
 				windup = 0.27
 				sprite.modulate = Color(2.0, 1.7, 0.5)  # "about to bite!" flash
 			return Vector2.ZERO
-		return to_player.normalized() * speed
+		var mv := to_player.normalized() * spd
+		# Evasive kinds weave laterally as they close — hard to pin down.
+		if traits.has("evasive"):
+			weave_phase += _delta * 6.0
+			mv += to_player.orthogonal().normalized() * spd * Balance.MOB_EVASIVE_WEAVE * sin(weave_phase)
+		return mv
 
 
 func _drift_home() -> Vector2:
@@ -310,6 +388,72 @@ func _drift_home() -> Vector2:
 	if to_home.length() > 30.0:
 		return to_home.normalized() * speed * 0.5
 	return Vector2.ZERO
+
+
+# ---------------------------------------------------------------- traits ---
+
+## Contact/bolt damage for this hit — frenzy quickens AND hardens the
+## wounded (2026-07-07 identity pass).
+func _hit_dmg() -> float:
+	if traits.has("frenzy") and hp < max_hp * Balance.MOB_FRENZY_HP:
+		return dmg * Balance.MOB_FRENZY_DMG
+	return dmg
+
+
+## Per-frame trait upkeep (only runs in the occupied room): self-heal,
+## pounce windup->dash, healer pulses.
+func _tick_traits(delta: float) -> void:
+	if mend_rate > 0.0 and hp < max_hp and not dying:
+		hp = minf(max_hp, hp + max_hp * mend_rate * delta)
+		refresh_hp_bar()
+		mend_fx_t -= delta
+		if mend_fx_t <= 0.0:
+			mend_fx_t = 1.1
+			game.burst(global_position + Vector2(0, -6), Color(0.4, 1.0, 0.5), 4)
+	if traits.has("lunge"):
+		lunge_cd = maxf(0.0, lunge_cd - delta)
+		if lunge_windup > 0.0:
+			lunge_windup -= delta
+			if lunge_windup <= 0.0:
+				lunge_time = Balance.MOB_LUNGE_TIME
+				game.sfx("blink", 0.7)
+		lunge_time = maxf(0.0, lunge_time - delta)
+	if traits.has("healer"):
+		heal_cd -= delta
+		if heal_cd <= 0.0:
+			heal_cd = Balance.MOB_HEAL_CD
+			_heal_pulse()
+
+
+## A support pulse: mend nearby wounded allies (same room) and self.
+## These are the mobs you kill first — the burst SHOWS.
+func _heal_pulse() -> void:
+	var healed := false
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e == self or e.dying or e is Boss or e.zone_idx != zone_idx:
+			continue
+		if global_position.distance_to(e.global_position) > Balance.MOB_HEAL_RADIUS:
+			continue
+		if e.hp < e.max_hp:
+			e.hp = minf(e.max_hp, e.hp + e.max_hp * Balance.MOB_HEAL_FRAC)
+			e.refresh_hp_bar()
+			game.burst(e.global_position + Vector2(0, -6), Color(0.4, 1.0, 0.5), 6)
+			healed = true
+	if hp < max_hp:
+		hp = minf(max_hp, hp + max_hp * Balance.MOB_HEAL_FRAC)
+		refresh_hp_bar()
+		healed = true
+	if healed:
+		game.sfx("mend", 0.85)
+		game.burst(global_position, Color(0.5, 1.0, 0.6), 14)
+
+
+## Keep the overhead HP bar honest after a heal (it normally only
+## updates on damage).
+func refresh_hp_bar() -> void:
+	if hp_bar_fg and hp_bar_fg.visible:
+		hp_bar_fg.size.x = 30.0 * clampf(hp / max_hp, 0.0, 1.0)
 
 
 ## Promote this monster to an ELITE — the between-boss miniboss beat
@@ -378,7 +522,14 @@ func add_brittle() -> void:
 
 func apply_slow(mult: float, dur: float) -> void:
 	if self is Boss:
-		return  # CC-immune, same rule as stuns
+		# CC-immune, same rule as stuns — but a failed slow HOBBLES
+		# (round 49d, the concussion move for slows): the boss shrugs
+		# off the crawl, yet its footing is scuffed — it takes
+		# +HOBBLE_MULT damage from the player while the mark holds.
+		if hobble_t <= 0.0:
+			game.spawn_text(global_position + Vector2(0, -44), "HOBBLED", Color(0.55, 0.95, 0.75))
+		hobble_t = maxf(hobble_t, Balance.HOBBLE_DUR)
+		return
 	slow_mult = minf(slow_mult, mult) if slow_time > 0.0 else mult
 	slow_time = maxf(slow_time, dur)
 	sprite.modulate = Color(0.6, 0.8, 1.3)
@@ -394,6 +545,8 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		game.wake_pack(zone_idx, pack_id)
 	if vuln_time > 0.0:
 		amount *= 1.5
+	if hobble_t > 0.0:
+		amount *= 1.0 + Balance.HOBBLE_MULT  # scuffed footing: every hit bites
 	hp -= amount
 	knock = from_dir * (220.0 if is_crit else 160.0)
 	if not silent:

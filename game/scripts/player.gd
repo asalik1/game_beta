@@ -369,6 +369,22 @@ func drink_potion() -> void:
 func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> void:
 	if dead or hurt_cd > 0.0:
 		return
+	if attacker is Enemy and (attacker as Enemy).toxin > 0:
+		# ENFEEBLE (round 49e; split 49f): YOUR toxin on the attacker turns
+		# its rot into your survival — class-flavored, scaled by live stacks
+		# (see Balance). The assassin SLIPS the blow (evasion, on top of base
+		# Elusive — a second independent roll); the archer SHRUGS it (a flat
+		# damage cushion). Toxin is poison/venom-only, so this can't be
+		# borrowed by another build.
+		var tox_frac := float(mini((attacker as Enemy).toxin, Balance.TOXIN_MAX_STACKS)) \
+			/ float(Balance.TOXIN_MAX_STACKS)
+		if cls == "assassin":
+			if randf() < Balance.ENFEEBLE_ASSASSIN_EVA * tox_frac:
+				game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.55, 1.0, 0.6))
+				game.sfx("blink")
+				return
+		else:
+			amount *= 1.0 - Balance.ENFEEBLE_ARCHER_DR * tox_frac
 	var res := physres if dmg_type == "phys" else magres
 	if theme_guard_time > 0.0:
 		res += theme_guard_amt
