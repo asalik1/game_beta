@@ -68,8 +68,10 @@ static func open_letter(m: Menus, mail: Dictionary) -> void:
 					m._bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g.get("lvl", 1))), "",
 						Items.gem_color(g), Items.gem_title(g), func() -> void: pass)
 				_:
-					m._bag_slot(grid, null, "⟲", Color(0.6, 0.9, 1.0),
-						str(payload.get("stone", {}).get("name", "Consumable")), func() -> void: pass)
+					var st: Dictionary = payload.get("stone", {})
+					var ctex: ImageTexture = Art.consumable_icon(st)
+					m._bag_slot(grid, ctex, "" if ctex != null else "⟲", Color(0.6, 0.9, 1.0),
+						str(st.get("name", "Consumable")), func() -> void: pass)
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)

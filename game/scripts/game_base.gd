@@ -208,6 +208,9 @@ const STASH_PATH := "user://stash.json"
 # Gains measured by RMS against a 0.10 target (python soundfile pass,
 # 2026-07-07) — the purchased Alkakrab packs master quieter than peak.
 const MUSIC_TUNE := {
+	"village": {"gain": 1.0},      # Cozy "Ancient Glow" (synth original
+	                               # exported to the asset library +
+	                               # kept in music.gd — delete to revert)
 	"title": {"gain": 3.1},        # Flameheart "Hollow Throne"
 	"roster": {"gain": 0.4},       # 55-OW "Hearthsong"
 	"graveyard": {"gain": -2.1},   # Flameheart "The Endless Graveyard"

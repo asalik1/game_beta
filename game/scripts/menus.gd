@@ -117,6 +117,9 @@ func _btn(parent: Node, text: String, cb: Callable, color := Color(1, 1, 1), ena
 	if icon:
 		b.icon = icon
 	if enabled:
+		b.pressed.connect(func() -> void:
+			if game:
+				game.sfx("ui_click"))
 		b.pressed.connect(cb)
 	parent.add_child(b)
 	return b
@@ -609,7 +612,9 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					"%s\n%s" % [str(cc["name"]), str(cc.get("desc", ""))],
 					func() -> void: pass)
 				continue
-			_bag_slot(grid, null, "⟲", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
+			var cicon: Texture2D = Art.consumable_icon(cc)
+			_bag_slot(grid, cicon, "" if cicon != null else "⟲",
+				Items.GRADE_COLOR[str(cc.get("grade", "B"))],
 				"%s\n%s\n\nCLICK TO USE" % [str(cc["name"]), str(cc.get("desc", ""))],
 				func() -> void:
 					game.player.use_consumable(cc)
@@ -1238,7 +1243,8 @@ func open_shop(zone: int) -> void:
 				game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
 			open_shop(zone)
 		var cb := _btn(buy, "%s — %d gold   (%s)" % [made["name"], ccost, made["desc"]],
-			buy_cons, Items.GRADE_COLOR[made["grade"]], p.gold >= ccost)
+			buy_cons, Items.GRADE_COLOR[made["grade"]], p.gold >= ccost,
+			Art.consumable_icon(made))
 		cb.clip_text = true
 		cb.custom_minimum_size = Vector2(640, 0)
 

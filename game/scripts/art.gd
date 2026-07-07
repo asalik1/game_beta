@@ -1862,6 +1862,35 @@ static func item_icon(slot: String, grade: String, noun := "") -> ImageTexture:
 	return t
 
 
+## assets/icons/ file per consumable id ({"kind": "stone"} bag items).
+## Missing file or unknown id -> null; callers keep their text glyph.
+const CONSUMABLE_ICONS := {
+	"mana_potion": "mana_draught", "elixir_might": "might_elixir",
+	"recall_scroll": "recall_scroll", "reset_stone": "reset_stone",
+	"tree_tome": "tree_tome",
+}
+
+
+## Hand-authored icon for a non-gear consumable Dictionary, or null.
+## Same seam as item_icon overrides: used untinted — grade rarity stays
+## on bag-slot borders and name colors.
+static func consumable_icon(c: Dictionary) -> ImageTexture:
+	var icon_name: String = CONSUMABLE_ICONS.get(String(c.get("id", "")), "")
+	if icon_name == "":
+		return null
+	var key := "consicon_" + icon_name
+	if _cache.has(key):
+		return _cache[key]
+	var over := _icon_override(icon_name)
+	if over == null:
+		return null
+	if over.get_width() != 32 or over.get_height() != 32:
+		over.resize(32, 32, Image.INTERPOLATE_NEAREST)
+	var t := ImageTexture.create_from_image(over)
+	_cache[key] = t
+	return t
+
+
 # A cut gem: bright crown top-left falling to a dark pavilion — drawn
 # in whites/steels so the stat color tints it multiplicatively (same
 # trick as item_icon). Rows are 12x12.

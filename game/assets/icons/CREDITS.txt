@@ -12,3 +12,10 @@ How overrides work: a 32x32 PNG here named after an Art.GEAR_SHAPES
 shape (e.g. w_blade.png, icon_sigil.png) replaces the procedural gear
 icon, untinted — grade rarity is carried by bag-slot border colors and
 item-name colors. potion.png overrides the HUD potion icon (Art.tex).
+
+Consumable icons (Art.CONSUMABLE_ICONS, same pack + terms as above):
+  mana_draught.png — fb288, hue-shifted red->blue by us (Emberfall)
+  might_elixir.png — fb270
+  recall_scroll.png — fb312
+  reset_stone.png  — fb322
+  tree_tome.png    — fb98

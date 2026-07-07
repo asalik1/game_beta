@@ -57,7 +57,8 @@ static func _column(m: Menus, parent: HBoxContainer, title: String, entries: Arr
 		return
 	for pl in entries:
 		var payload: Dictionary = pl
-		var b := m._btn(list, _entry_label(payload), func() -> void: cb.call(payload), _entry_color(payload))
+		var b := m._btn(list, _entry_label(payload), func() -> void: cb.call(payload),
+			_entry_color(payload), true, _entry_icon(payload))
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.clip_text = true
 
@@ -95,3 +96,13 @@ static func _entry_color(pl: Dictionary) -> Color:
 		"item": return Items.GRADE_COLOR[pl["item"]["grade"]]
 		"gem": return Items.gem_color(pl["gem"])
 	return Color(0.6, 0.9, 1.0)
+
+
+## Row icon per payload kind (consumables only when a hand-authored
+## icon file exists; null keeps the plain text row).
+static func _entry_icon(pl: Dictionary) -> Texture2D:
+	match String(pl.get("kind", "")):
+		"item": return Art.icon_for(pl["item"])
+		"gem": return Art.gem_icon(Items.gem_color(pl["gem"]), int(pl["gem"].get("lvl", 1)))
+		"stone": return Art.consumable_icon(pl.get("stone", {}))
+	return null

@@ -81,7 +81,16 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 			gspr.scale = Vector2(0.9, 0.9)
 			c.add_child(gspr)
 		_:
-			c._glyph("⟲", Color(0.6, 0.9, 1.0))
+			# Consumable on the ground: real icon when one exists (mana
+			# draught, elixir, scroll, stones), else the old ⟲ glyph.
+			var ctex: ImageTexture = Art.consumable_icon(payload.get("stone", {}))
+			if ctex != null:
+				var cspr := Sprite2D.new()
+				cspr.texture = ctex
+				cspr.scale = Vector2(1.1, 1.1)
+				c.add_child(cspr)
+			else:
+				c._glyph("⟲", Color(0.6, 0.9, 1.0))
 	c._body_setup()
 	game_node.add_child(c)
 	return c
@@ -143,7 +152,9 @@ func _on_body_entered(body: Node) -> void:
 func _try_claim(p: Player) -> void:
 	if game._try_receive(loot):
 		game.dropped_loot.erase(loot)
-		game.sfx("potion")
+		# Gems get their own sparkle chime; everything else keeps the
+		# potion-swig pickup sound.
+		game.sfx("gem" if String(loot.get("kind", "")) == "gem" else "potion")
 		queue_free()
 	else:
 		# SAY why it won't pick up (playtest: "unable to interact, idk") —
