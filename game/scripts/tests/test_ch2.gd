@@ -541,15 +541,15 @@ func _test_elites_bags_smallrooms() -> void:
 	if game.player.bag_capacity() != cap_before:
 		return _fail("capacity changed when a worse bag was rejected")
 
-	# Gem stacking (round 7): same stat+level shares ONE bag slot.
+	# Capacity counts UNITS, not kinds (round 52b): every gem UNIT eats a
+	# slot even when it stacks by kind for display.
 	var used_before: int = game.player.bag_used()
 	game.player.gem_bag.append(Items.make_gem("crit", 1))
-	var used_one: int = game.player.bag_used()
+	if game.player.bag_used() != used_before + 1:
+		return _fail("adding a gem must raise bag_used by exactly one")
 	game.player.gem_bag.append(Items.make_gem("crit", 1))
-	if game.player.bag_used() != used_one:
-		return _fail("same-kind gems must stack into one bag slot")
-	if used_one > used_before + 1:
-		return _fail("a new gem stack should cost exactly one slot")
+	if game.player.bag_used() != used_before + 2:
+		return _fail("a second same-kind gem must ALSO cost a slot (units, not kinds)")
 	game.player._take_from_bag("crit", 1, 2)  # restore
 
 	# Small rooms: quiet room types play smaller than their grid cell.

@@ -183,10 +183,12 @@ static func random_gem(rng: RandomNumberGenerator, lvl := 1) -> Dictionary:
 # The bag is carried capacity for everything NOT equipped: gear, GEM
 # STACKS (one slot per stat+level, round 7) and consumables share its
 # slots. Round 52: the hero equips UP TO Balance.MAX_BAGS bags and their
-# slots SUM — capacity spans 1 bag (5) to 5xS (175). Bags drop from
-# bosses/elites (act-tiered) and stock cheap at merchants.
-# Downscaled curve (+5/tier) so stacking is the growth axis, not one bag.
-const BAG_SLOTS := {"F": 5, "E": 10, "D": 15, "C": 20, "B": 25, "A": 30, "S": 35}
+# slots SUM. Bags drop from bosses/elites (act-tiered) and stock cheap at
+# merchants. Round 52b: capacity counts UNITS not kinds — every gem and
+# consumable UNIT takes a slot (stacking is DISPLAY-only), so the curve is
+# bumped one step (F 10 .. S 40, +5/tier) to compensate. Capacity spans
+# 1 bag (10) to 5xS (200). Stacking bags is the growth axis, not one bag.
+const BAG_SLOTS := {"F": 10, "E": 15, "D": 20, "C": 25, "B": 30, "A": 35, "S": 40}
 const BAG_NAMES := {
 	"F": "Frayed Pouch", "E": "Patched Satchel", "D": "Soldier's Knapsack",
 	"C": "Knight's Rucksack", "B": "Runed Haversack", "A": "Dragonhide Duffel",

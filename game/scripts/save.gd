@@ -117,23 +117,25 @@ static func next_free_slot() -> int:
 
 
 ## Load/migrate the equipped bags from a save dict (round 52). New saves
-## store a `bags` array; an OLD single `bag` dict wraps to a 1-element array
-## (capacity preserved — old characters never break); pre-bag saves fall back
-## to the starter pouches. JSON floats are re-cast to int. Split out so the
-## migration is unit-testable without a full world apply().
+## store a `bags` array. Migration (round 52b, pre-release — no live saves to
+## protect): an OLD single `bag` dict is remapped by GRADE to the CURRENT
+## BAG_SLOTS curve, discarding its inflated legacy slot count so old
+## characters land on the new curve (an old F bag becomes a new F=10). Bags
+## in a `bags` array are likewise re-derived from grade. Pre-bag saves fall
+## back to the starter pouches. Split out so the migration is unit-testable
+## without a full world apply().
 static func load_bags(data: Dictionary) -> Array:
 	var out: Array = []
 	var bags_raw: Array = data.get("bags", [])
 	if not bags_raw.is_empty():
 		for bd in bags_raw:
 			var b: Dictionary = bd
-			b["slots"] = int(b["slots"])  # JSON floats -> int
+			b["slots"] = int(Items.BAG_SLOTS.get(String(b.get("grade", "F")), b.get("slots", 0)))
 			out.append(b)
 		return out
 	var old_bag: Dictionary = data.get("bag", {})  # legacy single-bag save
-	if old_bag.has("slots"):
-		old_bag["slots"] = int(old_bag["slots"])
-		return [old_bag]
+	if old_bag.has("grade"):
+		return [Items.make_bag(String(old_bag["grade"]))]  # remap grade -> new curve
 	return Items.starter_bags()
 
 

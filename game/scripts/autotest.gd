@@ -1357,8 +1357,8 @@ func _test_mailbox() -> void:
 	var filler: Array = []
 	while game.player.bag_used() < game.player.bag_capacity():
 		var st := Items.make_reset_stone()
-		# Consumables STACK by id (2026-07-07) — distinct ids per filler
-		# or this loop never fills the bag (one shared slot = forever).
+		# Capacity counts UNITS now (round 52b), so any consumable fills a
+		# slot; distinct ids just keep each filler individually erasable.
 		st["id"] = "filler_%d" % filler.size()
 		game.player.consumables.append(st)
 		filler.append(st)
@@ -1802,7 +1802,8 @@ func _test_equip_unequip() -> void:
 	# Unequip is refused into a full bag (item stays worn).
 	p.equip(w)
 	while p.bag_used() < p.bag_capacity():
-		# Distinct ids: stacked consumables share a slot (2026-07-07).
+		# Every unit fills a slot now (round 52b); distinct ids just keep
+		# fillers individually removable.
 		var filler_st := Items.make_reset_stone()
 		filler_st["id"] = "filler_%d" % p.consumables.size()
 		p.consumables.append(filler_st)
@@ -1845,6 +1846,68 @@ func _test_bags_discard() -> void:
 	if p.gold != gold0 + Balance.BAG_SELL_GOLD:
 		return _fail("displaced bag did not cash for exactly 1g")
 
+	# --- slot curve (round 52b): F=10 base, +5 per tier, S=40 -------------
+	if int(Items.BAG_SLOTS["F"]) != 10 or int(Items.BAG_SLOTS["S"]) != 40:
+		return _fail("bag slot curve endpoints drifted (want F=10, S=40)")
+	for gi in range(1, Items.GRADES.size()):
+		var lo: int = int(Items.BAG_SLOTS[Items.GRADES[gi - 1]])
+		var hi: int = int(Items.BAG_SLOTS[Items.GRADES[gi]])
+		if hi - lo != 5:
+			return _fail("bag curve is not +5/tier at %s" % Items.GRADES[gi])
+	# Starter is exactly two F bags = 20 slots.
+	if Balance.STARTER_BAGS != ["F", "F"] or Items.starter_bags().size() != 2:
+		return _fail("starter is not two F bags")
+
+	# --- capacity counts UNITS, not kinds (the big round-52b change) -------
+	# Fill a known bag with MANY copies of ONE consumable id: each unit must
+	# eat a slot, and a full bag must then refuse further adds.
+	var cap_bags: Array = p.bags
+	var cap_cons: Array = p.consumables
+	var cap_gems: Array = p.gem_bag
+	var cap_bp2: Array = p.backpack
+	p.bags = [Items.make_bag("A")]   # 35 slots
+	p.consumables = []
+	p.gem_bag = []
+	p.backpack = []
+	var used0: int = p.bag_used()    # 0
+	for i in 30:
+		var pot := Items.make_mana_potion()   # ALL the same id
+		if not p.add_consumable(pot):
+			return _fail("add_consumable refused a unit while the bag had room")
+	if p.bag_used() != used0 + 30:
+		return _fail("30 same-id consumables must consume 30 slots, not one (units!)")
+	# Fill the rest with gems (also per-unit), then confirm the bag is full.
+	while p.bag_used() < p.bag_capacity():
+		if not p.gain_gem(Items.make_gem("crit", 1)):
+			return _fail("gain_gem refused a gem while the bag had room")
+	if p.bag_used() != p.bag_capacity():
+		return _fail("unit-counting did not exactly fill the bag")
+	if p.add_consumable(Items.make_mana_potion()):
+		return _fail("a FULL bag accepted another consumable (unit cap breach)")
+	if p.gain_gem(Items.make_gem("crit", 1)):
+		return _fail("a FULL bag accepted another gem (unit cap breach)")
+	p.bags = cap_bags
+	p.consumables = cap_cons
+	p.gem_bag = cap_gems
+	p.backpack = cap_bp2
+
+	# --- shop grey-out: no capacity gain -> buy is blocked ----------------
+	p.bags = []
+	for i in Balance.MAX_BAGS:
+		p.bags.append(Items.make_bag("S"))   # full set of the biggest
+	if p.bag_would_improve(int(Items.BAG_SLOTS["A"])):
+		return _fail("a smaller bag must NOT improve a full set of S bags")
+	if p.bag_would_improve(int(Items.BAG_SLOTS["S"])):
+		return _fail("a tied-size bag on a full set must NOT improve capacity")
+	p.bags = [Items.make_bag("F"), Items.make_bag("F")]
+	if not p.bag_would_improve(int(Items.BAG_SLOTS["S"])):
+		return _fail("an S bag must improve when the set is not yet full")
+	p.bags = []
+	for i in Balance.MAX_BAGS:
+		p.bags.append(Items.make_bag("D"))
+	if not p.bag_would_improve(int(Items.BAG_SLOTS["S"])):
+		return _fail("a bigger bag must improve even a full set of smaller bags")
+
 	# --- act-tiered bag drops: chance + grade stay on the act's table -----
 	if not (is_equal_approx(Balance.bag_drop_chance(1), 0.10)
 			and is_equal_approx(Balance.bag_drop_chance(2), 0.09)
@@ -1872,18 +1935,22 @@ func _test_bags_discard() -> void:
 		if Items.bag_buy_price(gk) <= Balance.BAG_SELL_GOLD:
 			return _fail("shop bag price must sit far above the 1g sell (%s)" % gk)
 
-	# --- save round-trip + old-save migration -----------------------------
+	# --- save round-trip + old-save migration (round 52b: slots re-derived
+	# from GRADE onto the CURRENT curve, discarding inflated legacy counts).
 	var nb: Array = SaveGame.load_bags({"bags": [
 		{"kind": "bag", "grade": "F", "name": "a", "slots": 5.0},
 		{"kind": "bag", "grade": "D", "name": "b", "slots": 15.0}]})
-	if nb.size() != 2 or int(nb[0]["slots"]) != 5 or int(nb[1]["slots"]) != 15:
-		return _fail("new-format bags did not load / re-cast slots to int")
+	if nb.size() != 2 or int(nb[0]["slots"]) != int(Items.BAG_SLOTS["F"]) \
+			or int(nb[1]["slots"]) != int(Items.BAG_SLOTS["D"]):
+		return _fail("bags did not re-derive slots from grade onto the new curve")
 	var round_trip: Array = SaveGame.load_bags(JSON.parse_string(JSON.stringify({"bags": nb})))
-	if round_trip.size() != 2 or int(round_trip[1]["slots"]) != 15:
+	if round_trip.size() != 2 or int(round_trip[1]["slots"]) != int(Items.BAG_SLOTS["D"]):
 		return _fail("bags did not survive a JSON round-trip")
-	var migrated: Array = SaveGame.load_bags({"bag": {"kind": "bag", "grade": "C", "name": "c", "slots": 20.0}})
-	if migrated.size() != 1 or int(migrated[0]["slots"]) != 20:
-		return _fail("old single-bag save did not migrate to a 1-element array")
+	# Old single-bag save: a legacy C bag with an INFLATED slot count remaps
+	# to the new C value, not the stored 55.
+	var migrated: Array = SaveGame.load_bags({"bag": {"kind": "bag", "grade": "C", "name": "c", "slots": 55.0}})
+	if migrated.size() != 1 or int(migrated[0]["slots"]) != int(Items.BAG_SLOTS["C"]):
+		return _fail("old single-bag save did not migrate onto the new curve")
 	if SaveGame.load_bags({}).size() != Balance.STARTER_BAGS.size():
 		return _fail("pre-bag save did not fall back to the starter bags")
 
@@ -1923,7 +1990,7 @@ func _test_bags_discard() -> void:
 	game.dropped_loot = keep_dropped
 	p.recalc()
 	await _frames(2)
-	print("ok: stacking bags (sum-capacity, keep-best-5, act drops, shop price, migration) + discard-throw")
+	print("ok: stacking bags (sum-capacity, keep-best-5, +5/tier curve, UNIT-counting, grey-out, act drops, shop price, migration) + discard-throw")
 
 
 func _test_retention() -> void:

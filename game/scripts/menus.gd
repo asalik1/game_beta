@@ -580,7 +580,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			open_inventory()
 		var ab := _btn(head, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
-	_lbl(right, "Gear: click to equip · ALT-CLICK gear/consumables to DISCARD (throw out, free a slot) · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
+	_lbl(right, "Gear: click to equip · ALT-CLICK gear/consumables to DISCARD (throw out, free a slot) · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
 	# Bag category filter: All (default) + per-slot gear, gems, consumables.
 	var catrow := HBoxContainer.new()
@@ -1343,14 +1343,20 @@ func open_shop(zone: int) -> void:
 	for bag_item in game.shop_bags[zone]:
 		var bit: Dictionary = bag_item
 		var bcost := int(ceil(float(Items.bag_buy_price(String(bit["grade"]))) * haggle))
+		# Grey the buy when it can't raise capacity (round 52b): a full set of
+		# bags all >= this one would just cash it for 1g — don't waste gold.
+		var bimproves: bool = p.bag_would_improve(int(bit["slots"]))
 		var buy_bag := func() -> void:
-			if p.gold >= bcost:
+			if p.gold >= bcost and bimproves:
 				p.gold -= bcost
 				game.shop_bags[zone].erase(bit)
 				p.acquire_bag(bit)
 			open_shop(zone)
-		var bagb := _btn(buy, "🎒 %s — +%d slots — %d gold" % [String(bit["name"]), int(bit["slots"]), bcost],
-			buy_bag, Items.GRADE_COLOR[String(bit["grade"])], p.gold >= bcost)
+		var blabel := "🎒 %s — +%d slots — %d gold" % [String(bit["name"]), int(bit["slots"]), bcost]
+		if not bimproves:
+			blabel += "  (no gain — bags full & larger)"
+		var bagb := _btn(buy, blabel,
+			buy_bag, Items.GRADE_COLOR[String(bit["grade"])], p.gold >= bcost and bimproves)
 		bagb.custom_minimum_size = Vector2(640, 0)
 
 	# Gambling shelf: spend gold on a random item of this merchant's tier.

@@ -595,24 +595,6 @@ func bag_capacity() -> int:
 	return total
 
 
-## Gems STACK: one bag slot per stat+level kind, however many you hold
-## (playtest round 7 — the relief valve for gem hoards).
-func gem_stacks() -> int:
-	var kinds := {}
-	for gem in gem_bag:
-		kinds["%s_%d" % [gem["stat"], gem["lvl"]]] = true
-	return kinds.size()
-
-
-## Consumables STACK like gems (playtest 2026-07-07): one bag slot per
-## id, however many copies ride in it.
-func consumable_stacks() -> int:
-	var kinds := {}
-	for c in consumables:
-		kinds[String(c.get("id", c.get("name", "?")))] = true
-	return kinds.size()
-
-
 func consumable_count(id: String) -> int:
 	var n := 0
 	for c in consumables:
@@ -621,8 +603,12 @@ func consumable_count(id: String) -> int:
 	return n
 
 
+# Capacity counts UNITS, not kinds (round 52b): every gear item, every
+# gem, and every consumable UNIT eats one bag slot. Stacking is purely a
+# DISPLAY convenience (the inventory groups "Mana Potion x12"), but all 12
+# count here — 20 potions really is 20 slots.
 func bag_used() -> int:
-	return backpack.size() + gem_stacks() + consumable_stacks()
+	return backpack.size() + gem_bag.size() + consumables.size()
 
 
 # Bag-full adds return false with NO side effects — the caller decides
@@ -638,17 +624,13 @@ func add_item(item: Dictionary) -> bool:
 	return true
 
 
-## Loose gem pickup (chests, elites). A gem that fits an EXISTING
-## stack is always free; only a brand-new stack needs a free slot.
-## Internal gem machinery (synthesize, socket removal, sell-stripping)
-## bypasses capacity entirely so it never jams.
+## Loose gem pickup (chests, elites). Every gem UNIT costs a slot now
+## (round 52b — capacity counts units, not kinds), so a full bag refuses
+## the pickup and the caller drops/mails it. Internal gem machinery
+## (synthesize, socket removal, sell-stripping) still appends directly and
+## bypasses capacity so it never jams.
 func gain_gem(gem: Dictionary) -> bool:
-	var stacks := false
-	for g in gem_bag:
-		if g["stat"] == gem["stat"] and g["lvl"] == gem["lvl"]:
-			stacks = true
-			break
-	if not stacks and bag_used() >= bag_capacity():
+	if bag_used() >= bag_capacity():
 		return false
 	gem_bag.append(gem)
 	if int(gem.get("lvl", 1)) >= Items.GEM_MAX_LEVEL:
@@ -657,8 +639,8 @@ func gain_gem(gem: Dictionary) -> bool:
 
 
 func add_consumable(c: Dictionary) -> bool:
-	# Stacking: another copy of an id you already hold costs no new slot.
-	if consumable_count(String(c.get("id", ""))) == 0 and bag_used() >= bag_capacity():
+	# Every consumable UNIT eats a slot (round 52b): a full bag refuses.
+	if bag_used() >= bag_capacity():
 		return false
 	consumables.append(c)
 	return true
@@ -856,6 +838,19 @@ func acquire_bag(b: Dictionary) -> bool:
 		"BAG UPGRADED: %s — best %d kept, spare +%dg (%d total)" % [b["name"],
 			Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, bag_capacity()], Color(0.95, 0.85, 0.5))
 	return true
+
+
+## Would acquiring a bag of this slot size actually raise capacity? False
+## only when the set is already full (MAX_BAGS) AND every equipped bag is
+## >= this one — acquire_bag would then just cash it for 1g. The shop uses
+## this to GREY the buy so gold isn't wasted (round 52b).
+func bag_would_improve(slots: int) -> bool:
+	if bags.size() < Balance.MAX_BAGS:
+		return true
+	for b in bags:
+		if int(b.get("slots", 0)) < slots:
+			return true
+	return false
 
 
 func equip(item: Dictionary) -> void:
