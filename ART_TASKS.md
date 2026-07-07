@@ -43,14 +43,18 @@ task, claim before starting**, verify visually before staging.
 - [ ] **A4 — Ember-touched elites.** A glowing-ember overlay variant
   (eyes + cracks, HDR-friendly warm pixels) usable by the elite
   promotion system as an alternative to pure tint.
-- [ ] **A5 — Boss art upgrades (taste call — show the user options
+- [ ] **A5 — claimed: agent-proposals — Boss art upgrades (taste call — show the user options
   first).** Bosses kept their Crawl casting deliberately. If a pack
   piece clearly beats one (e.g. Banshee vs witch bosses), mock BOTH on
   one screenshot and let the user pick. Never swap a boss silently.
-- [ ] **A6 — Identity NPCs (user call required).** villager/warden/
+  → **Proposals ready: `PROPOSALS/` (12 sheets + README verdicts).
+  Awaiting user picks; nothing installed.**
+- [ ] **A6 — claimed: agent-proposals — Identity NPCs (user call required).** villager/warden/
   envoy/merchant/elder are story faces (Sera, Callis, Vessa…). Present
   side-by-side candidates (e.g. Garden humans, Royal Knight for
   Callis) before changing anything.
+  → **Proposals ready: `PROPOSALS/README.md`. Note: the Garden
+  "humans" turned out to be sandstone statues — not usable as faces.**
 - [ ] **A7 — claimed: agent-cover — Hand-made cover art.** `assets/sprites/cover.png`
   (1280x720) replaces the procedural title screen wholesale. The crown
   + four Embers motif is canon; go bigger than the procedural version.
