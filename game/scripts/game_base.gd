@@ -1542,7 +1542,24 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 ## (see BOSSES.md toolbox). opts["decoys"]: extra positions drawn like
 ## safe circles but FLICKERING — lies that grant no safety (the steady
 ## circle is the truth).
+## INVERSE telegraph: the whole arena is lethal EXCEPT the given circles.
+## Readability pass (2026-07-07, playtest: "I didn't see anything — I
+## dodged everything I could see"): an inverse telegraph draws only the
+## SAFETY, so an unseen circle used to look like a safe room for `delay`
+## seconds, then a x2 hit from nowhere. Now the DANGER is shown too:
+## a screen-edge dread ramp builds over the window (hud.danger_ramp), a
+## light BEACON rises from every circle so it reads over scenery clutter
+## and from off-screen edges, and callers can pass a player-anchored
+## "callout" + a rising "sfx" whose swell IS the audible timer.
+## Shared by every safe-spot fight (Vess / Varo / Serane / Cyrraeth).
 func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, opts := {}) -> void:
+	if opts.has("callout") and is_instance_valid(player):
+		spawn_text(player.global_position + Vector2(0, -84), String(opts["callout"]),
+			opts.get("color", Color(0.5, 1.0, 0.7)))
+	if opts.has("sfx"):
+		sfx(String(opts["sfx"]))
+	if is_instance_valid(hud):
+		hud.danger_ramp(delay)
 	var zones: Array = []
 	for c in centers:
 		var zone := Sprite2D.new()
@@ -1557,6 +1574,7 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		pulse.set_loops()
 		pulse.tween_property(zone, "modulate:a", 0.75, 0.22)
 		pulse.tween_property(zone, "modulate:a", 0.4, 0.22)
+		zones.append(_safe_beacon(c, opts.get("color", Color(0.5, 1.0, 0.7)), false))
 	var decoys: Array = opts.get("decoys", [])
 	for c in decoys:
 		var lie := Sprite2D.new()
@@ -1571,6 +1589,9 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		flicker.set_loops()
 		flicker.tween_property(lie, "modulate:a", 0.15, 0.07)
 		flicker.tween_property(lie, "modulate:a", 0.7, 0.09)
+		# The decoy's beacon flickers with the same lie — the tell stays
+		# consistent across both reads (circle AND pillar).
+		zones.append(_safe_beacon(c, opts.get("color", Color(0.5, 1.0, 0.7)), true))
 
 	await get_tree().create_timer(delay).timeout
 	var any_alive := false
@@ -1579,16 +1600,26 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 			any_alive = true
 			zone.queue_free()
 	if not any_alive:
+		if is_instance_valid(hud):
+			hud.danger_end(true)
 		return
 	sfx("slam")
 	shake(9.0)
 	if not is_instance_valid(player) or player.dead:
+		if is_instance_valid(hud):
+			hud.danger_end(true)
 		return
+	var sheltered := false
 	for c in centers:
 		var safe_at: Vector2 = c
 		if player.global_position.distance_to(safe_at) <= radius + 8.0:
-			burst(player.global_position, Color(0.6, 1.0, 0.75), 12)  # sheltered
-			return
+			sheltered = true
+			break
+	if is_instance_valid(hud):
+		hud.danger_end(sheltered)
+	if sheltered:
+		burst(player.global_position, Color(0.6, 1.0, 0.75), 12)  # sheltered
+		return
 	burst(player.global_position, Color(1.0, 0.35, 0.2), 18)
 	player.take_damage(damage, "magic")
 	# Some inverse telegraphs don't just hurt — they FREEZE or ROOT the
@@ -1597,6 +1628,28 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		player.apply_freeze(float(opts["freeze"]))
 	if opts.has("root"):
 		player.apply_root(float(opts["root"]))
+
+
+## A soft light pillar rising from a safe circle: readable over ground
+## clutter and from screen edges where a flat disc vanishes. HDR so it
+## blooms; the decoy's pillar flickers with its lie.
+func _safe_beacon(pos: Vector2, tint: Color, flicker: bool) -> Sprite2D:
+	var beam := Sprite2D.new()
+	beam.texture = Art.tex("lootbeam")
+	beam.centered = false
+	beam.z_index = 5
+	beam.scale = Vector2(1.1, 1.35)
+	beam.position = pos - Vector2(16.0 * beam.scale.x, 180.0 * beam.scale.y)
+	beam.modulate = Color(tint.r, tint.g, tint.b, 0.0)
+	add_child(beam)
+	var tw := beam.create_tween()
+	if flicker:
+		tw.set_loops()
+		tw.tween_property(beam, "modulate:a", 0.2, 0.07)
+		tw.tween_property(beam, "modulate:a", 0.8, 0.09)
+	else:
+		tw.tween_property(beam, "modulate:a", 0.85, 0.25)
+	return beam
 
 # Idle-chatter symbols by resonance band (round 8): the steady get
 # hearts and song, the tempted get sidelong wariness — the world reads

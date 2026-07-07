@@ -352,6 +352,18 @@ static func _make_ult_assassin() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+## The KEENING: a banshee wail swelling for the Silence's whole window —
+## detuned high glides over rising breath-noise. The swell IS the timer:
+## the danger is audible even with your eyes on the bolts (readability
+## pass 2026-07-07). No human vocal cords; semantic fit over melody.
+static func _make_keen() -> AudioStreamWAV:
+	var b := _buf(2.0)
+	_sine_sweep(b, 0.0, 620.0, 1180.0, 2.0, 0.2)
+	_sine_sweep(b, 0.05, 926.0, 1764.0, 1.95, 0.11)   # detuned twin — beats like grief
+	_noise_sweep(b, 0.0, 2.0, 0.3, 1500.0, 5600.0, 0.85)  # long swell into the wail
+	return _to_wav(b)
+
+
 # ------------------------------------------------------- loot fanfare ---
 # Per-grade pickup chimes (retention roadmap #3): rarity is AUDIBLE.
 # Common is a polite blip; each step up gets longer, brighter, more
@@ -437,6 +449,7 @@ static func build_all() -> Dictionary:
 		"coin":     tone(900, 1400, 0.08, 0.25),
 		"equip":    tone(300, 200, 0.12, 0.3, 0.4),
 		"chest":    tone(200, 120, 0.15, 0.35, 0.5),
+		"keen":     _make_keen(),
 		# Loot fanfare chimes (rarity is audible; see loot_fanfare).
 		"loot_low": _make_loot_low(),
 		"loot_mid": _make_loot_mid(),

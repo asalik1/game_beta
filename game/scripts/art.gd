@@ -1286,6 +1286,8 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_slashline())
 		"lootbeam":
 			t = ImageTexture.create_from_image(_make_lootbeam())
+		"dangerrim":
+			t = ImageTexture.create_from_image(_make_dangerrim())
 		"ring":
 			t = ImageTexture.create_from_image(_make_ring())
 		"vignette":
@@ -2041,6 +2043,23 @@ static func light(color: Color, radius_px: float, energy := 1.0) -> PointLight2D
 	l.energy = energy
 	l.blend_mode = Light2D.BLEND_MODE_ADD
 	return l
+
+
+## A WHITE edge vignette for danger rims (the ambient vignette is black,
+## which modulate can't tint — black x red = black). White base, deeper
+## edge reach than the ambient one: modulate paints it any danger color.
+static func _make_dangerrim() -> Image:
+	var w := 320
+	var h := 180
+	var image := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	for y in h:
+		for x in w:
+			var dx := absf(x + 0.5 - w / 2.0) / (w / 2.0)
+			var dy := absf(y + 0.5 - h / 2.0) / (h / 2.0)
+			var d := maxf(dx, dy)
+			var a := clampf((d - 0.45) / 0.55, 0.0, 1.0)
+			image.set_pixel(x, y, Color(1, 1, 1, a * a * 0.85))
+	return image
 
 
 ## A vertical loot beam (Diablo-style drop pillar): a hot narrow core

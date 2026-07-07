@@ -693,6 +693,10 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if special_cd <= 0.0:
 		special_cd = 7.0 if enraged else 9.0
 		_silence(player)
+		# Composition rule (2026-07-07): the 12-bolt ring never fires
+		# while a Silence is airborne — running to shelter THROUGH a
+		# bolt wall was a forced trade, not a test.
+		ring_cd = maxf(ring_cd, 2.4)
 
 	# Grief fan: 3 bolts now, and the memory of them 0.8s later.
 	if ability_cd <= 0.0:
@@ -724,13 +728,35 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 func _silence(player: Player) -> void:
 	roar()
-	game.spawn_text(global_position + Vector2(0, -84), "FIND THE SILENCE!", DIRGE)
-	var dir := Vector2.from_angle(randf() * TAU)
-	var safe: Vector2 = game.clamp_to_zone(player.global_position + dir * 240.0, home)
-	var opts := {"color": DIRGE}
+	# Readability pass (2026-07-07): the callout anchors to the PLAYER
+	# (she's often off-screen), the keening swell is the audible timer,
+	# and the quiet circle prefers ground the player can SEE (_quiet_spot).
+	var safe := _quiet_spot(player)
+	var opts := {"color": DIRGE, "callout": "FIND THE SILENCE!", "sfx": "keen"}
 	if enraged:
-		opts["decoys"] = [game.clamp_to_zone(player.global_position - dir * 260.0, home)]
+		# The decoy mirrors the truth through the player, like before.
+		opts["decoys"] = [game.clamp_to_zone(
+			player.global_position + (player.global_position - safe) * 1.08, home)]
 	game.telegraph_safe([safe], 110.0, 2.0, dmg * 2.0, opts)
+
+
+## Where the quiet circle lands: candidates rotate off a random heading;
+## the first spot that is UNCLAMPED (not shoved into a wall corner) and
+## inside the camera's view wins. Walls + camera clamp used to conspire
+## to hold the exam off-screen ("I didn't see anything").
+func _quiet_spot(player: Player) -> Vector2:
+	var base_a := randf() * TAU
+	var vp_half: Vector2 = game.get_viewport().get_visible_rect().size * 0.5 / game.camera.zoom
+	var view := Rect2(game.camera.get_screen_center_position() - vp_half + Vector2(48, 48),
+		vp_half * 2.0 - Vector2(96, 96))
+	var fallback: Vector2 = game.clamp_to_zone(
+		player.global_position + Vector2.from_angle(base_a) * 240.0, home)
+	for i in 8:
+		var raw: Vector2 = player.global_position + Vector2.from_angle(base_a + TAU * i / 8.0) * 240.0
+		var p: Vector2 = game.clamp_to_zone(raw, home)
+		if p.distance_to(raw) < 1.0 and view.has_point(p):
+			return p
+	return fallback
 
 
 func _grief_fan(aim: Vector2) -> void:

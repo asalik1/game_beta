@@ -1132,6 +1132,44 @@ func dim(amount: float) -> void:
 	overlay.color = Color(0, 0, 0, amount)
 
 
+## Inverse-telegraph dread (readability pass, 2026-07-07): while a
+## safe-zone mechanic is airborne the WHOLE arena is lethal — show it.
+## A red wash builds over the window even if the player never sees the
+## quiet circle; danger_end resolves it (soft green blink sheltered,
+## hard red slam caught). Driven by game.telegraph_safe.
+var danger_rect: TextureRect = null
+var danger_tw: Tween = null
+
+func danger_ramp(dur: float) -> void:
+	if danger_rect == null:
+		# An EDGE vignette, not a flat wash: the screen's rim floods red
+		# while the center stays readable — danger you see in the corner
+		# of your eye, which is exactly where this mechanic was dying.
+		danger_rect = TextureRect.new()
+		danger_rect.texture = Art.tex("dangerrim")
+		danger_rect.size = Vector2(1280, 720)
+		danger_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		danger_rect.stretch_mode = TextureRect.STRETCH_SCALE
+		danger_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(danger_rect)
+		move_child(danger_rect, 0)  # under every HUD element
+	if danger_tw != null and danger_tw.is_valid():
+		danger_tw.kill()
+	danger_rect.modulate = Color(1.9, 0.25, 0.3, 0.0)  # HDR red rim
+	danger_tw = create_tween()
+	danger_tw.tween_property(danger_rect, "modulate:a", 0.9, dur)
+
+func danger_end(sheltered: bool) -> void:
+	if danger_rect == null:
+		return
+	if danger_tw != null and danger_tw.is_valid():
+		danger_tw.kill()
+	if sheltered:
+		danger_rect.modulate = Color(0.5, 1.6, 0.7, minf(danger_rect.modulate.a, 0.5))
+	danger_tw = create_tween()
+	danger_tw.tween_property(danger_rect, "modulate:a", 0.0, 0.35)
+
+
 ## One-frame impact flash over the whole screen (ults, meteor strikes).
 func flash_screen(color: Color, strength := 0.4, dur := 0.3) -> void:
 	if flash_rect == null:
