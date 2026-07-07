@@ -215,6 +215,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if special_cd <= 0.0:
 		special_cd = 8.0
 		roar()
+		play_action("rain")
 		for i in 4:
 			var offset := Vector2.ZERO if i == 0 else Vector2(randf_range(-160, 160), randf_range(-120, 120))
 			game.telegraph(player.global_position + offset, 75.0, 0.68 + i * 0.11, dmg * 1.3,
@@ -224,6 +225,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if dist < 160.0 and blink_cd <= 0.0:
 		blink_cd = 3.0
 		game.sfx("blink")
+		play_action("blink")
 		var away := -to_player.normalized().rotated(randf_range(-0.9, 0.9))
 		global_position = game.clamp_to_zone(global_position + away * randf_range(280.0, 400.0), home)
 		return Vector2.ZERO
@@ -232,6 +234,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ability_cd <= 0.0:
 		ability_cd = 2.6
 		game.sfx("bolt")
+		play_action("bolt")
 		var aim := to_player.normalized()
 		for spread in [-0.25, 0.0, 0.25]:
 			_bolt(aim.rotated(spread) * 320.0, dmg)
@@ -240,6 +243,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ring_cd <= 0.0:
 		ring_cd = 7.0
 		roar()
+		play_action("ring")
 		for i in 12:
 			var angle := TAU * i / 12.0
 			_bolt(Vector2.RIGHT.rotated(angle) * 200.0, dmg)

@@ -31,6 +31,17 @@ const ENEMIES := {
 		"attrs": {"STR": 1.5, "AGI": 1.5},
 		"music": "boss_forgemistress", "music_fallback": "boss_stormwarden",
 		"lore": "Her blades never break. Lately, neither do her mistakes.",
+		"mechanics": [
+			{"name": "The Quench",
+			 "tell": "She roars 'Calda moves to quench!' and marches to a glowing slag pool — a clean dip resets her heat and permanently sharpens her edge (a stacking damage buff), then flashes a ring of slag with two pools lingering on the rim.",
+			 "counter": "Body-block the pool: stand on it and she quenches THROUGH you for the fight's hardest single hit (telegraphed — dodge the last beat) but gains no stack. Deny the buff early; late-fight stacks turn every hit lethal."},
+			{"name": "Rising Heat",
+			 "tell": "Her blade glows from dull to white-hot over ~12s; her forge-orange hammer lanes march out wider and hit harder the hotter she gets.",
+			 "counter": "Read the glow as her damage timer — step off each hammer lane, and force a quench or burn her down before she caps out."},
+			{"name": "White-Hot Slag Lobs",
+			 "tell": "Once she's white-hot she hurls slag that rains down right where you've run to.",
+			 "counter": "Kiting no longer keeps you safe — keep repositioning so the lobbed blast circles land behind you, not on your feet."},
+		],
 	},
 	# A slag-beast in a meter of cooled obsidian: near-immune while plated
 	# (physres/magres ~85). The arena's LAVA is the answer — lure the
@@ -50,6 +61,20 @@ const ENEMIES := {
 		"attrs": {"STR": 1.5, "VIT": 1.5},
 		"music": "boss_cinderhide", "music_fallback": "boss_vargoth",
 		"lore": "The foundry lost four crews learning that steel doesn't bite it. The fifth crew learned what does.",
+		"mechanics": [
+			{"name": "Obsidian Plating",
+			 "tell": "'Its obsidian hide is a meter thick' — while plated your hits read as tiny numbers (~82% cut). You cannot burn it down through the armor.",
+			 "counter": "Don't dump cooldowns on a plated beast. Strip the plating first; only then does your damage matter."},
+			{"name": "Bait the Charge Through Lava",
+			 "tell": "It winds up a straight-line charge; pools of arena lava glow across the floor.",
+			 "counter": "Line the charge up so it drags through a lava pool — standing in lava melts the plating, and a charge across one melts it fast. 'THE PLATING SHEDS' opens a ~10s window where your damage jumps 5-6x. Its own vent-breath lava won't help — only the field pools and magma-rain melt it."},
+			{"name": "Vent Breath & Tantrum",
+			 "tell": "It breathes a widening lava cone (wider and harder while plated) that lingers on the floor; the instant its plates shed, a magma tantrum rains circles around you.",
+			 "counter": "Sidestep the cone — it's a damage trap, not a melt source for it. Ride out the shed-window tantrum while you dump damage; the open window is worth eating the rain around it."},
+			{"name": "Cinderhide Enrages (30%)",
+			 "tell": "At 30% it stops re-plating for good, glows red, speeds up ~35%, and layers magma rain over its chase.",
+			 "counter": "The armor problem is over — commit everything. Keep dodging the rain and finish it before the speed grinds you down."},
+		],
 	},
 	# First herald of a waking god-king. The Judge speaks through his
 	# sermons: THE VERDICT splits the arena and judges one half (paired
@@ -65,6 +90,20 @@ const ENEMIES := {
 		"attrs": {"INT": 2.0, "VIT": 1.0},
 		"music": "boss_ashpriest", "music_fallback": "boss_choirmother",
 		"lore": "Every sermon ends the same way. 'Guilty.' The fires agree.",
+		"mechanics": [
+			{"name": "The Verdict",
+			 "tell": "'GUILTY: THE WEST/EAST' — half the arena washes in verdict light and detonates; below 50% it's paired, judging one half and then the other.",
+			 "counter": "Stand in the un-washed half before it lands. When paired, step into the FIRST half after it fires (now scorched and safe) so you're clear for the second wave — the callout names both halves, trust it."},
+			{"name": "Sons of the Judge",
+			 "tell": "At 66% and 33% four Ember Sons spawn in the corners and crawl toward Ordo; each that reaches him heals him ~8% and quickens his verdicts.",
+			 "counter": "Intercept and kill the Sons before they arrive — they ignore you and drop nothing, but every one Ordo consumes speeds up his sermon and undoes your damage."},
+			{"name": "Brand Volleys",
+			 "tell": "He kites at range, firing four-bolt brand fans to keep the distance honest.",
+			 "counter": "Close on him or juke the fans rather than tanking them mid-chase — he backs off inside melee and advances when you drift too far, so control the spacing."},
+			{"name": "The Judge Attends (20%)",
+			 "tell": "At 20% he glows and magma rain runs continuous over the verdicts.",
+			 "counter": "The floor never fully clears now — prioritize the verdict shelter over greed. The rain holds while a verdict is airborne, so you can cross to safety without eating both at once."},
+		],
 	},
 }
 

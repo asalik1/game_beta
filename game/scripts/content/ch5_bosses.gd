@@ -29,6 +29,20 @@ const ENEMIES := {
 		"attrs": {"STR": 1.5, "VIT": 1.5},
 		"music": "boss_whitepelt", "music_fallback": "boss_fangmaw",
 		"lore": "He knows exactly what he's guarding. That's the price of feeding a clan through winter: knowing, and guarding it anyway.",
+		"mechanics": [
+			{"name": "Ice Charge",
+			 "tell": "He winds up and barrels at you on a short leash; the arena is ringed with frost patches he CANNOT stop on.",
+			 "counter": "Stand with an ice patch between you and him. He skids across it into the wall, self-stuns, and opens a fat vulnerable window — dump your burst there. He re-charges every few seconds, so set the bait each time."},
+			{"name": "Frost Stomp",
+			 "tell": "A frost ring cracks open under your feet on a steady beat, no matter how far you're kiting.",
+			 "counter": "It's his answer to never closing in — a slow, readable tell. Just step off your spot before it lands; don't get greedy standing still."},
+			{"name": "Pack Calls (66% / 33%)",
+			 "tell": "He roars and two wolves peel in from the flanks.",
+			 "counter": "The wolves drop zero loot — don't chase them. Keep moving so they can't stack with him, and stay on the boss."},
+			{"name": "Pelt Drums",
+			 "tell": "Crowd him too long up close and he slams out a twelve-bolt shockwave ring.",
+			 "counter": "Don't sit in his face between charges. Back off when he plants his feet, and give the ring room to pass."},
+		],
 	},
 	# The Guard mage who volunteered to be the Still Queen's LOCK, frozen
 	# alive at the keystone for 600 years. FLASH FREEZE is the safe-spot
@@ -45,6 +59,20 @@ const ENEMIES := {
 		"attrs": {"INT": 2.0, "AGI": 1.0},
 		"music": "boss_icebound", "music_fallback": "boss_morwen",
 		"lore": "She has held one door for six hundred years. She is not going to take your word for it.",
+		"mechanics": [
+			{"name": "Flash Freeze",
+			 "tell": "The whole arena ices over except two or three thawed vents that flash safe near you.",
+			 "counter": "Sprint into a vent before the freeze lands. Caught outside and you're frozen solid and vulnerable — a free hit for her. The vents move each cast, so read them fresh every time."},
+			{"name": "Shatter Lance",
+			 "tell": "She locks you in place with a root, then a piercing line of ice detonates outward from her through where you were standing.",
+			 "counter": "The line lands AFTER the root breaks — the instant you can move, dash off the memory of your spot rather than back through it."},
+			{"name": "The Keystone Cracks (40%)",
+			 "tell": "At 40% she flares blue-white and a ring of fresh ice spreads inward from the walls.",
+			 "counter": "Her Flash Freeze quickens and drops to only two vents — less thawed floor, faster exams. Keep your escape routes shorter and don't over-commit to damage."},
+			{"name": "Icicle Rain",
+			 "tell": "A scatter of small ice circles rains down around your position.",
+			 "counter": "Low-priority chip between her big moves — keep drifting and the circles fall on empty floor."},
+		],
 	},
 	# The cult's shepherd — gentle, sincere, the most dangerous thing in
 	# the chapter. Her LULLABY AURA inverts every safe-spot fight so far:
@@ -62,6 +90,20 @@ const ENEMIES := {
 		"attrs": {"INT": 2.0, "VIT": 1.5},
 		"music": "boss_sleepkeeper", "music_fallback": "boss_choirmother",
 		"lore": "She has never raised her voice. Ask the villages she emptied.",
+		"mechanics": [
+			{"name": "Lullaby Aura",
+			 "tell": "Her hymn fills the arena; a Drowse meter climbs whenever you hold still, and while any Drowse rides you she visibly mends.",
+			 "counter": "The inversion of every safe-spot fight — stillness is the danger. Keep moving to bleed Drowse off; let it hit five and you fall Asleep, frozen and open. Never let her heal by standing to cast."},
+			{"name": "The Dreamers",
+			 "tell": "Sleepwalkers drift in from the edges toward Halla; each one that reaches her paves a frost slow-patch under your feet and speeds her hymnal.",
+			 "counter": "You can't ignore them anymore — every arrival shrinks your running room and stacks her aura until stillness wins. Cut them down before they reach her. They drop zero loot but killing them is the fight."},
+			{"name": "Frost Hymnal",
+			 "tell": "She sings out a spread of slow, wide frost telegraphs that leave lingering slow-floor where they land.",
+			 "counter": "Sidestep the circles early, then route around the slow patches they leave — that muck is what feeds the aura by pinning you in place."},
+			{"name": "The Queen Stirs (25%)",
+			 "tell": "At 25% she glows and the aura swells; a Flash Freeze snaps across the arena at the same moment.",
+			 "counter": "Dodge the freeze immediately, then respect the thicker aura — Drowse climbs faster now, so keep your feet moving and burn her down before the sleep catches you."},
+		],
 	},
 }
 

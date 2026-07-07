@@ -1094,6 +1094,21 @@ func _run_systems() -> void:
 	await _frames(2)
 	if game.menus.current != "codex":
 		return _fail("codex Records tab did not open")
+	# Boss detail view (mechanics & tells): every catalogued boss must
+	# build without error — those WITH authored `mechanics` (e.g. sexton)
+	# and those still WITHOUT (graceful omit during concurrent fan-out).
+	for bk in game.menus.BOSS_KINDS:
+		if not Story.ALL_ENEMIES.has(bk):
+			continue
+		game.menus.open_codex("monsters", bk)
+		await _frames(2)
+		if game.menus.current != "codex":
+			return _fail("boss detail view did not open for %s" % bk)
+	if Story.ALL_ENEMIES.has("sexton"):
+		game.menus.open_codex("monsters", "sexton")
+		await _frames(2)
+		if game.menus.current != "codex":
+			return _fail("boss detail view (sexton, has mechanics) did not open")
 	game.menus.open_journal()
 	await _frames(2)
 	if game.menus.current != "journal":

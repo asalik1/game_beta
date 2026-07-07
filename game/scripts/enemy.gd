@@ -49,6 +49,13 @@ var anim_t := 0.0
 var _strip_idle := {}
 var _strip_walk := {}
 var _strip_walking := false
+# One-shot ability strip (Track C round 3): plays through once on a boss
+# cast, then reverts to idle/walk. Empty when nothing is playing.
+var _strip_action := {}
+var _action_t := 0.0
+var _sprite_key := ""   # stats["sprite"] kept for action-strip lookups
+var _moving_anim := false  # hysteretic "moving" for walk/idle swap + bob
+var _face_vx := 0.0        # low-passed velocity.x for jitter-free facing
 var art_scale := 1.0
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
@@ -200,6 +207,7 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 
 	sprite = Sprite2D.new()
 	art_scale = float(stats["scale"])
+	_sprite_key = stats["sprite"]
 	var anim := Art.anim_info(stats["sprite"])
 	if anim.is_empty():
 		sprite.texture = Art.tex(stats["sprite"])
@@ -267,6 +275,31 @@ func _apply_strip(info: Dictionary) -> void:
 	anim_frames = frames
 	anim_fps = float(info["fps"])
 	sprite.scale = Art.scale_for(sprite.texture, art_scale, frames)
+
+
+## Play a one-shot ability strip once, then fall back to idle/walk. No-op
+## unless the boss has an idle strip AND assets/sprites/<sprite>_<action>.png
+## exists — so ability code can call it unconditionally and it lights up
+## when the art lands. Re-triggering restarts the strip from frame 0.
+func play_action(action: String) -> void:
+	if _strip_idle.is_empty():
+		return
+	var info := Art.action_info(_sprite_key, action)
+	if info.is_empty():
+		return
+	_strip_action = info
+	_action_t = 0.0
+	_apply_strip(info)
+
+
+## Return from a one-shot ability strip to idle (the walk swap re-evaluates
+## next frame). Frame filtering keeps it out of the physics-flush path.
+func _end_action() -> void:
+	_strip_action = {}
+	_action_t = 0.0
+	_strip_walking = false
+	if not _strip_idle.is_empty():
+		_apply_strip(_strip_idle)
 
 
 func _physics_process(delta: float) -> void:
@@ -341,22 +374,43 @@ func _physics_process(delta: float) -> void:
 
 	velocity = move + knock + game.gust_vec
 	move_and_slide()
-	if anim_frames > 1:
+	# Moving-for-animation is HYSTERETIC: post-slide velocity wedged against
+	# a wall hovers right at the threshold, and a bare `> 20` there would
+	# toggle the walk/idle swap + bob every frame (visible jitter). Latch
+	# with a dead band instead.
+	var spd := velocity.length()
+	if _moving_anim and spd < 12.0:
+		_moving_anim = false
+	elif not _moving_anim and spd > 34.0:
+		_moving_anim = true
+	if not _strip_action.is_empty():
+		# One-shot ability strip: play frames 0..N-1 once, then revert.
+		_action_t += delta
+		var idx := int(_action_t * anim_fps)
+		if idx >= anim_frames:
+			_end_action()
+		else:
+			sprite.frame = idx
+	elif anim_frames > 1:
 		# Walk/idle split: real walk frames while moving when the strip
 		# exists, else idle at double-time (the shared anim_t clock
 		# already ticked once this frame).
-		var moving := velocity.length() > 20.0
-		if not _strip_walk.is_empty() and moving != _strip_walking:
-			_strip_walking = moving
-			_apply_strip(_strip_walk if moving else _strip_idle)
-		if moving:
+		if not _strip_walk.is_empty() and _moving_anim != _strip_walking:
+			_strip_walking = _moving_anim
+			_apply_strip(_strip_walk if _moving_anim else _strip_idle)
+		if _moving_anim:
 			anim_t += delta
 		sprite.frame = int(anim_t * anim_fps) % anim_frames
-	if absf(velocity.x) > 5.0:
+	# Facing rides a LOW-PASSED horizontal velocity: raw velocity.x flips
+	# sign frame-to-frame when she strafes/slides against a wall, which would
+	# mirror the sprite every frame (jitter). Smoothing only turns the body
+	# on a sustained direction.
+	_face_vx = lerpf(_face_vx, velocity.x, 0.2)
+	if absf(_face_vx) > 8.0:
 		# Left-facing art (Crawl sprites) flips the opposite way.
-		sprite.flip_h = (velocity.x > 0.0) if face_left else (velocity.x < 0.0)
+		sprite.flip_h = (_face_vx > 0.0) if face_left else (_face_vx < 0.0)
 	# Little walk bob so they feel alive.
-	if velocity.length() > 20.0:
+	if _moving_anim:
 		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
 	else:
 		sprite.position.y = 0.0

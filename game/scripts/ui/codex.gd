@@ -3,7 +3,12 @@ class_name UICodex
 ## menus.gd. Static builders: `m` owns the panel scaffolding
 ## (_open/_btn/_lbl/_hint) and the open/close state.
 
-static func open(m: Menus, tab := "monsters") -> void:
+static func open(m: Menus, tab := "monsters", boss := "") -> void:
+	# A boss kind routes to its focused mechanics detail view (not a tab).
+	if boss != "" and Story.ALL_ENEMIES.has(boss):
+		_boss_detail(m, boss)
+		return
+
 	var vbox := m._open("Codex", 1000, 620)
 	m.current = "codex"
 
@@ -96,75 +101,133 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 			# scenery-with-hp, not catalogue monsters — skip them.
 			if not is_boss and st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
 				continue
-			# Codex honesty: display what the fight actually deals/has
-			# (TTK and damage multipliers included), not raw table rows.
-			var live: Dictionary = Story.enemy_stats_at(kind, int(st.get("level", 1)))
+			_enemy_card(m, list, kind, is_boss)
 
-			# One boxed card per monster.
-			var row := HBoxContainer.new()
-			row.add_theme_constant_override("separation", 14)
-			_card(list).add_child(row)
-			var icon := TextureRect.new()
-			icon.texture = Art.tex(st["sprite"])
-			icon.custom_minimum_size = Vector2(52, 52)
-			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			row.add_child(icon)
-			var info := VBoxContainer.new()
-			info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			info.add_theme_constant_override("separation", 2)
-			row.add_child(info)
 
-			# Name .......................................... Lv badge
-			var head := HBoxContainer.new()
-			info.add_child(head)
-			var name_l := m._lbl(head, st["name"], 16, Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
-			name_l.custom_minimum_size = Vector2(560, 0)
-			name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			var lv_l := m._lbl(head, "Lv %d" % st.get("level", 1), 15, Color(0.95, 0.85, 0.5))
-			lv_l.custom_minimum_size = Vector2(120, 0)
-			lv_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+## One boxed card per monster/boss: icon, name, Lv, live stats, growth,
+## projections, traits and lore. Shared by the bestiary list and the boss
+## detail view. In the LIST, a boss with authored `mechanics` also grows a
+## "▸ Mechanics & Tells" button that opens its focused detail; in the
+## DETAIL view (`detail = true`) that button is suppressed (already there).
+static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bool, detail := false) -> void:
+	var st: Dictionary = Story.ALL_ENEMIES[kind]
+	# Codex honesty: display what the fight actually deals/has
+	# (TTK and damage multipliers included), not raw table rows.
+	var live: Dictionary = Story.enemy_stats_at(kind, int(st.get("level", 1)))
 
-			# Aligned stat columns.
-			var cols := HBoxContainer.new()
-			info.add_child(cols)
-			for pair in [["HP", int(live["hp"])], ["DMG", int(live["dmg"])], ["SPD", int(st["speed"])],
-					["XP", live["xp"]], ["Gold", live.get("gold", 0)]]:
-				var c := m._lbl(cols, "%s %s" % [pair[0], str(pair[1])], 13, Color(0.78, 0.8, 0.86))
-				c.custom_minimum_size = Vector2(105, 0)
-			var type_l := m._lbl(cols, "Ranged caster" if st["ranged"] else "Melee", 13, Color(0.6, 0.7, 0.85))
-			type_l.custom_minimum_size = Vector2(130, 0)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	_card(list).add_child(row)
+	var icon := TextureRect.new()
+	icon.texture = Art.tex(st["sprite"])
+	icon.custom_minimum_size = Vector2(52, 52)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_theme_constant_override("separation", 2)
+	row.add_child(info)
 
-			# Scaling: growth + projections, in two quiet sublines.
-			var at25 := Story.enemy_stats_at(kind, 25)
-			var at50 := Story.enemy_stats_at(kind, 50)
-			var g1 := m._lbl(info, "Growth per level:   HP +%d%%   ·   DMG +%d%%" %
-				[int(st.get("hp_g", 0.1) * 100), int(st.get("dmg_g", 0.1) * 100)], 12, Color(0.55, 0.65, 0.8))
-			g1.custom_minimum_size = Vector2(700, 0)
-			var g2 := m._lbl(info, "Projected:   Lv 25 → %d HP, %d DMG        Lv 50 → %d HP, %d DMG" %
-				[int(at25["hp"]), int(at25["dmg"]), int(at50["hp"]), int(at50["dmg"])], 12, Color(0.5, 0.55, 0.66))
-			g2.custom_minimum_size = Vector2(700, 0)
+	# Name .......................................... Lv badge
+	var head := HBoxContainer.new()
+	info.add_child(head)
+	var name_l := m._lbl(head, st["name"], 16, Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
+	name_l.custom_minimum_size = Vector2(560, 0)
+	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var lv_l := m._lbl(head, "Lv %d" % st.get("level", 1), 15, Color(0.95, 0.85, 0.5))
+	lv_l.custom_minimum_size = Vector2(120, 0)
+	lv_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
-			# Identity traits (2026-07-07): each kind's gimmick, so the
-			# player learns the counter (kill the healer, dodge the pounce).
-			for tr in st.get("traits", []):
-				var td: String = Enemy.TRAIT_DESC.get(String(tr), "")
-				if td != "":
-					var tl := m._lbl(info, "◆ " + td, 12, Color(0.7, 0.85, 0.7))
-					tl.custom_minimum_size = Vector2(700, 0)
-					tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Aligned stat columns.
+	var cols := HBoxContainer.new()
+	info.add_child(cols)
+	for pair in [["HP", int(live["hp"])], ["DMG", int(live["dmg"])], ["SPD", int(st["speed"])],
+			["XP", live["xp"]], ["Gold", live.get("gold", 0)]]:
+		var c := m._lbl(cols, "%s %s" % [pair[0], str(pair[1])], 13, Color(0.78, 0.8, 0.86))
+		c.custom_minimum_size = Vector2(105, 0)
+	var type_l := m._lbl(cols, "Ranged caster" if st["ranged"] else "Melee", 13, Color(0.6, 0.7, 0.85))
+	type_l.custom_minimum_size = Vector2(130, 0)
 
-			# Codex completion (retention roadmap #5): the kill tally, and
-			# the lore this character has (or hasn't) earned the right to read.
-			var kills: int = int(m.game.kill_counts.get(kind, 0))
-			var need := Lore.threshold(kind)
-			if kills >= need:
-				var ll := m._lbl(info, "❝ %s ❞" % Lore.entry(kind), 13, Color(0.85, 0.78, 0.6))
-				ll.custom_minimum_size = Vector2(700, 0)
-				ll.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			else:
-				m._lbl(info, "Slain: %d / %d — its lore is still buried." % [kills, need],
-					12, Color(0.5, 0.55, 0.66))
+	# Scaling: growth + projections, in two quiet sublines.
+	var at25 := Story.enemy_stats_at(kind, 25)
+	var at50 := Story.enemy_stats_at(kind, 50)
+	var g1 := m._lbl(info, "Growth per level:   HP +%d%%   ·   DMG +%d%%" %
+		[int(st.get("hp_g", 0.1) * 100), int(st.get("dmg_g", 0.1) * 100)], 12, Color(0.55, 0.65, 0.8))
+	g1.custom_minimum_size = Vector2(700, 0)
+	var g2 := m._lbl(info, "Projected:   Lv 25 → %d HP, %d DMG        Lv 50 → %d HP, %d DMG" %
+		[int(at25["hp"]), int(at25["dmg"]), int(at50["hp"]), int(at50["dmg"])], 12, Color(0.5, 0.55, 0.66))
+	g2.custom_minimum_size = Vector2(700, 0)
+
+	# Identity traits (2026-07-07): each kind's gimmick, so the
+	# player learns the counter (kill the healer, dodge the pounce).
+	for tr in st.get("traits", []):
+		var td: String = Enemy.TRAIT_DESC.get(String(tr), "")
+		if td != "":
+			var tl := m._lbl(info, "◆ " + td, 12, Color(0.7, 0.85, 0.7))
+			tl.custom_minimum_size = Vector2(700, 0)
+			tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	# Codex completion (retention roadmap #5): the kill tally, and
+	# the lore this character has (or hasn't) earned the right to read.
+	var kills: int = int(m.game.kill_counts.get(kind, 0))
+	var need := Lore.threshold(kind)
+	if kills >= need:
+		var ll := m._lbl(info, "❝ %s ❞" % Lore.entry(kind), 13, Color(0.85, 0.78, 0.6))
+		ll.custom_minimum_size = Vector2(700, 0)
+		ll.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	else:
+		m._lbl(info, "Slain: %d / %d — its lore is still buried." % [kills, need],
+			12, Color(0.5, 0.55, 0.66))
+
+	# Bosses with authored mechanics get a jump-off to their detail view.
+	var mechs: Array = st.get("mechanics", [])
+	if is_boss and not detail and not mechs.is_empty():
+		var bk := String(kind)
+		m._btn(info, "  ▸ Mechanics & Tells  ",
+			func() -> void: m.open_codex("monsters", bk), Color(1, 0.7, 0.7))
+
+
+## Focused boss detail: the summary card, then each authored mechanic as
+## its own mini-card (name heading, the TELL you'll see, the green COUNTER).
+## Reached from the bestiary's boss cards; BACK returns to that list.
+static func _boss_detail(m: Menus, kind: String) -> void:
+	var st: Dictionary = Story.ALL_ENEMIES[kind]
+	var vbox := m._open(String(st.get("name", kind)), 1000, 620)
+	m.current = "codex"
+
+	m._btn(vbox, "  ‹ Back to Bestiary  ",
+		func() -> void: m.open_codex("monsters"), Color(0.95, 0.85, 0.5))
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 8)
+	scroll.add_child(list)
+
+	_enemy_card(m, list, kind, true, true)
+
+	var mechs: Array = st.get("mechanics", [])
+	if mechs.is_empty():
+		m._lbl(list, "No mechanics catalogued for this foe yet.", 13, Color(0.6, 0.62, 0.68))
+	else:
+		m._lbl(list, "— MECHANICS & TELLS —", 16, Color(1, 0.5, 0.5))
+		for mech in mechs:
+			var box := VBoxContainer.new()
+			box.add_theme_constant_override("separation", 3)
+			_card(list).add_child(box)
+			m._lbl(box, "◆ " + String(mech.get("name", "")), 15, Color(1, 0.7, 0.7))
+			var tl := m._lbl(box, "Tell — " + String(mech.get("tell", "")), 13, Color(0.85, 0.82, 0.7))
+			tl.custom_minimum_size = Vector2(880, 0)
+			tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			var cl := m._lbl(box, "Counter — " + String(mech.get("counter", "")), 13, Color(0.7, 0.9, 0.7))
+			cl.custom_minimum_size = Vector2(880, 0)
+			cl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	m._hint(vbox, "ESC / C to close")
 
 
 static func _terrains(m: Menus, list: VBoxContainer) -> void:

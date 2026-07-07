@@ -27,6 +27,20 @@ const ENEMIES := {
 		"attrs": {"STR": 1.5, "AGI": 1.0, "VIT": 0.5},
 		"music": "boss_stormwarden",
 		"lore": "He once kept the warbands' beasts calm through thunder. Now the thunder keeps HIM.",
+		"mechanics": [
+			{"name": "Lightning Lash",
+			 "tell": "He winds up and whips a line of lightning strikes straight out through you, each one landing a beat after the last.",
+			 "counter": "Step sideways off the line — the strikes walk outward in sequence, so clearing the lane once takes you out of all of them."},
+			{"name": "Whistle the Pack",
+			 "tell": "At 66% and again at 33% he whistles and two wolves lope in beside him.",
+			 "counter": "The wolves drop zero loot — don't stop to farm them. Peel them off or just keep kiting the warden; they thin out as the fight moves."},
+			{"name": "Whip Snap",
+			 "tell": "At mid range he flicks a single quick telegraph onto your feet to keep you honest.",
+			 "counter": "A short cast — sidestep it and close or back off; don't sit parked at whip distance."},
+			{"name": "The Storm Breaks (30%)",
+			 "tell": "At 30% he glows blue-white, screams THE STORM BREAKS, moves a third faster, and stray bolts start hammering the ground around you.",
+			 "counter": "He's faster and the sky is now a second threat — keep moving so the random bolts land where you were, not where you are."},
+		],
 	},
 	# Morwen's echo: the Hollow Choir's matron. Fights like a hymn —
 	# rippling rings of blight, verses of bolts, and she FEEDS on what
@@ -40,6 +54,20 @@ const ENEMIES := {
 		"attrs": {"INT": 2.0, "AGI": 0.5, "VIT": 0.5},
 		"music": "boss_choirmother",
 		"lore": "Where Morwen cursed, the Mother sings. Her congregation never buries its dead.",
+		"mechanics": [
+			{"name": "Requiem",
+			 "tell": "She raises the hymn and three rings of blight ripple outward from her, one after another, each wider than the last.",
+			 "counter": "The rings expand away from her — move INWARD toward the Mother between waves, or thread the gaps as each ring passes."},
+			{"name": "Hymn of Hunger",
+			 "tell": "She marks the ground under you and, on the strike, the choir feeds her — she heals a slice of her health.",
+			 "counter": "Leave the marked circle before it lands. Getting clipped feeds her; deny the strike and you deny the heal."},
+			{"name": "The Choir Answers (60%)",
+			 "tell": "At 60% she calls and two cultists rise from the congregation to flank you.",
+			 "counter": "The adds pay nothing — don't chase loot. Keep the Mother as your focus; clear the cultists only if they're boxing you in."},
+			{"name": "The Choir Crescendos (25%)",
+			 "tell": "At 25% she flares magenta, screams THE CHOIR CRESCENDOS, speeds up, and her verse volleys thicken from three bolts to four.",
+			 "counter": "Everything comes faster now — tighten your strafing and give the denser fans more room. Burn her down before the liturgy overwhelms you."},
+		],
 	},
 	# The ruins' warden: a construct that predates Accord and Cinderborn
 	# alike and recognizes neither. Slow, precise, and it sheds its own
@@ -53,6 +81,20 @@ const ENEMIES := {
 		"attrs": {"STR": 1.5, "VIT": 2.0},
 		"music": "boss_nullwarden",
 		"lore": "It asked the first shard-bearers for a passphrase no living tongue remembers.",
+		"mechanics": [
+			{"name": "Piston Protocol",
+			 "tell": "It stamps a four-column grid of slams across the ground under you, the columns firing left to right in sequence.",
+			 "counter": "The columns come in order, not all at once — move along the sweep or against it so you're always in a column that hasn't stamped yet."},
+			{"name": "Beam Spoke",
+			 "tell": "It rakes one long line of strikes straight down your lane, from itself out toward you.",
+			 "counter": "Sidestep out of the lane — the whole beam is one straight line, so a step perpendicular clears all of it."},
+			{"name": "Armor Shed (50%)",
+			 "tell": "At 50% it sheds its plating, glows gold, warns ARMOR SHED — THE CORE IS EXPOSED, and moves faster.",
+			 "counter": "Its physical armor drops hard — this is your damage window, commit your burst. But it's quicker now, so respect its melee and the faster beams."},
+			{"name": "Overdrive (25%)",
+			 "tell": "At 25% it flares red and engages OVERDRIVE — every attack cycles noticeably faster.",
+			 "counter": "The slam ring doubles its bolts and the pistons come sooner. Keep moving and finish it — there's no safe idle time left."},
+		],
 	},
 }
 

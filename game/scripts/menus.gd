@@ -1726,9 +1726,10 @@ const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
 	"auroch", "gardener", "curetwisted",  # ch6 Blooming Deep (BOSSES.md)
 	"stormdrake_veyx", "unnamed_echo", "stormmouth"]  # ch7 Breaking Sky — Act 1 finale (BOSSES.md)
 
-## Codex screens live in ui/codex.gd.
-func open_codex(tab := "monsters") -> void:
-	UICodex.open(self, tab)
+## Codex screens live in ui/codex.gd. Passing a boss `kind` opens that
+## boss's focused mechanics detail view instead of the tab list.
+func open_codex(tab := "monsters", boss := "") -> void:
+	UICodex.open(self, tab, boss)
 
 
 # ---------------------------------------------------------------- dev mode ---

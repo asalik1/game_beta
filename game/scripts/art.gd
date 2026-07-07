@@ -2185,6 +2185,13 @@ static func walk_info(name: String) -> Dictionary:
 	return _strip_info("%s_walk" % name)
 
 
+## Ability strip: assets/sprites/<name>_<action>.png — a one-shot cast/motion
+## strip a boss plays when it fires the matching ability (Track C round 3).
+## Empty when absent, so callers stay art-optional.
+static func action_info(name: String, action: String) -> Dictionary:
+	return _strip_info("%s_%s" % [name, action])
+
+
 static func _strip_info(base: String) -> Dictionary:
 	if _anim_cache.has(base):
 		return _anim_cache[base]
@@ -2200,6 +2207,36 @@ static func _strip_info(base: String) -> Dictionary:
 			}
 	_anim_cache[base] = info
 	return info
+
+
+# ------------------------------------------------ hero action clips ---
+# Full per-class animation set (round: Custom character sheets). Each class
+# ships a family of horizontal strips assets/sprites/<class>_<suffix>.png;
+# the player clip state machine (player_core/_advance_clip) loops locomotion
+# (idle/walk/run) and fires one-shot action clips (attack/cast/dash/ult/death)
+# that return to locomotion. idle keeps the legacy "_anim" suffix so the
+# enemy/anim_info seam is untouched. Absent files are simply skipped.
+const HERO_CLIP_FILES := {
+	"idle": "anim", "walk": "walk", "run": "run", "attack": "attack",
+	"attack2": "attack2", "cast": "cast", "dash": "dash", "ult": "ult",
+	"ultidle": "ultidle", "death": "death",
+}
+const HERO_CLIP_FPS := {
+	"idle": 6.0, "walk": 9.0, "run": 11.0, "attack": 13.0, "attack2": 13.0,
+	"cast": 10.0, "dash": 14.0, "ult": 11.0, "ultidle": 6.0, "death": 9.0,
+}
+
+## Every installed animation clip for a hero class, keyed by clip name.
+## Returns {} entries only for strips that exist on disk.
+static func hero_clips(name: String) -> Dictionary:
+	var out := {}
+	for clip in HERO_CLIP_FILES:
+		var info := _strip_info("%s_%s" % [name, HERO_CLIP_FILES[clip]])
+		if not info.is_empty():
+			info = info.duplicate()
+			info["fps"] = HERO_CLIP_FPS[clip]
+			out[clip] = info
+	return out
 
 
 ## Sprite scale that keeps on-screen size constant regardless of the
