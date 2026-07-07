@@ -66,7 +66,7 @@ static func boss_gem_chance(lvl: float) -> float:
 # they bite DOUBLE — and a CONNECTING dash-stab refunds a chunk of the
 # dash cooldown, so the in-out dance is the engine, not the exception.
 const KNIFE_MULT := 0.16          # per knife, unsurged (was 0.26)
-const KNIFE_BLOOM_MULT := 0.29    # poison's single heavy blade (0.21 -> 0.29, round 49: poison trailed the roster)
+const KNIFE_BLOOM_MULT := 0.24    # poison's single heavy blade (0.21 -> 0.24, round 49: lifted, then trimmed to the player's target ladder)
 const KNIFE_SURGE_MULT := 2.0     # surge window: the fan bites double
 const DASH_REFUND := 0.35         # dash cd refunded when the rider connects
 # Rounds 39/40: planting your feet at blade range is the riskiest act
@@ -172,7 +172,7 @@ const BRITTLE_DUR := 6.0
 # CRUSH (void theme): void hits bite displaced targets — anything
 # recently shoved/pulled hard (above ordinary hit-flinch, which peaks
 # at 220) is "in motion against its will" for a short grace window.
-const CRUSH_MULT := 0.25
+const CRUSH_MULT := 0.28   # round 49: 0.25 -> 0.28 — settled against the player's target ladder
 const CRUSH_MIN_KNOCK := 240.0
 # Round 47: crush window widened (0.7→1.5) so ONE displacement keeps Void's
 # crush-crit combo live for ~3 bolts, not one — the Void warlock's damage

@@ -23,7 +23,7 @@ const ENEMIES := {
 	"sexton": {
 		"name": "The Sexton, Gravedigger of the Vale", "sprite": "zombie",
 		"hp": 5400.0, "dmg": 58.0, "speed": 120.0, "xp": 260, "gold": 200,
-		"ranged": false, "scale": 5.2,
+		"ranged": false, "scale": 6.5,
 		"physres": 30.0, "magres": 15.0, "eva": 0.0, "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 17, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 1.5, "VIT": 1.5},
@@ -35,7 +35,7 @@ const ENEMIES := {
 	"vess": {
 		"name": "Vess the Unburied, First Widow", "sprite": "witch",
 		"hp": 8000.0, "dmg": 66.0, "speed": 100.0, "xp": 300, "gold": 235,
-		"ranged": true, "scale": 5.4,
+		"ranged": true, "scale": 6.5,
 		"physres": 12.0, "magres": 50.0, "eva": 0.10, "critres": 5.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 19, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "AGI": 1.0},
@@ -48,7 +48,7 @@ const ENEMIES := {
 	"saint_varo": {
 		"name": "Saint Varo the Unrotting", "sprite": "king",
 		"hp": 14000.0, "dmg": 88.0, "speed": 70.0, "xp": 400, "gold": 310,
-		"ranged": false, "scale": 6.4,
+		"ranged": false, "scale": 7.5,
 		"physres": 60.0, "magres": 40.0, "eva": 0.0, "critres": 9.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 22, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"VIT": 2.0, "STR": 1.5},

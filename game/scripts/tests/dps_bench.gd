@@ -14,7 +14,11 @@ extends Node
 ## Rotations (player-specified, 2026-07-07):
 ##   warrior  — stand still; Cleave + Whirlwind + Berserk (no Shield Bash)
 ##   archer   — Quick Shot + Multishot + Arrow Storm (no Tumble)
-##   mage     — Firebolt spam + Meteor (no Nova/Blink — they LOSE dps)
+##   mage     — Firebolt spam + Meteor; no Blink, and Frost Nova ONLY as
+##              an emergency refill when nearly dry (round 49 telemetry:
+##              pure bolt spam hits 0 MP ~2min in and the cadence
+##              collapses — the missing-mana refund is the max-dps play
+##              on long fights, never the on-cooldown weave)
 ##   assassin — dash through the target right before the blood surge
 ##              lapses, surged Fan of Knives otherwise; Death Mark on
 ##              cooldown, then Stab-spam through its 5s vuln window
@@ -368,6 +372,12 @@ func _physics_process(_delta: float) -> void:
 		pala_swapped = true
 		p.use_ability("ult")
 		return
+	if rot_cls == "mage" and p.mp <= 55.0 and p.cds["a2"] <= 0.0:
+		# Emergency Frost Nova: 20% of MISSING mana for 15, triggered
+		# BEFORE the pool drops under Meteor's 40 — the ult cadence never
+		# starves, and nova shares no lockout with Firebolt so the refill
+		# costs zero bolt casts. Never woven on cooldown.
+		p.use_ability("a2")
 	for slot in ROTATIONS[rot_cls]:
 		var was_ready: bool = p.cds[slot] <= 0.0
 		if was_ready and p.mp < p.ability_cost(slot):

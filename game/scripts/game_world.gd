@@ -845,6 +845,8 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	var target_w := 120.0 if sprite_name.begins_with("cottage") else 108.0
 	var bscale := target_w / maxf(1.0, float(spr.texture.get_width()))
 	spr.scale = Vector2(bscale, bscale)
+	# Seeded mirroring: half the houses face the other way (free variety).
+	spr.flip_h = (int(pos.x) + int(pos.y)) % 2 == 1
 	var hpx := float(spr.texture.get_height()) * bscale
 	var wpx := float(spr.texture.get_width()) * bscale
 	spr.position = Vector2(0, -hpx * 0.5 + 12.0)
@@ -856,11 +858,22 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	cs.shape = shape
 	body.add_child(cs)
 	if sprite_name.begins_with("cottage"):
+		# The hearth CRACKLES as you walk past (first positional audio).
+		var fire := AudioStreamPlayer2D.new()
+		var fstream: AudioStream = game_stream("campfire")
+		if fstream:
+			fire.stream = fstream
+			fire.max_distance = 340.0
+			fire.attenuation = 1.6
+			fire.volume_db = -6.0
+			fire.autoplay = true
+			body.add_child(fire)
 		var smoke := CPUParticles2D.new()
 		smoke.amount = 8
 		smoke.lifetime = 3.5
 		smoke.preprocess = 3.5
-		smoke.position = Vector2(wpx * 0.16, -hpx + 8.0)
+		# The chimney sits ~66% across the art; mirrored houses mirror it.
+		smoke.position = Vector2(wpx * 0.16 * (-1.0 if spr.flip_h else 1.0), -hpx + 8.0)
 		smoke.direction = Vector2(0.25, -1)
 		smoke.spread = 14.0
 		smoke.gravity = Vector2(6, -16)

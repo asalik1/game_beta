@@ -397,7 +397,7 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	hp -= amount
 	knock = from_dir * (220.0 if is_crit else 160.0)
 	if not silent:
-		game.sfx("ehit")
+		game.sfx("ehit", 1.0, 0.0, 4.0)  # +4dB: the Punch source runs quiet
 		if is_crit:
 			game.spawn_text(global_position + Vector2(0, -34), "%d!" % int(amount), Color(1.0, 0.55, 0.1))
 		else:

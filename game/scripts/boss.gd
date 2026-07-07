@@ -36,6 +36,15 @@ func _bolt(velocity: Vector2, damage: float) -> void:
 	p.source_enemy = self
 
 
+## Contact reach for melee/charge hits. Thresholds measure center-to-
+## center, but the physics circle (radius 6·scale·0.7) keeps a big body
+## that far out on its own — at the 2x–5x boss scales a bare "dist < 70"
+## could never trigger. Reach grows with the body, so bites land at the
+## sprite's edge with the same feel at any size.
+func _reach(base: float) -> float:
+	return base + art_scale * 4.2
+
+
 ## Boss voice: uses the per-boss sound (roar_fangmaw = wolf howl,
 ## roar_morwen = spectral wail, roar_vargoth = giant) when present.
 func roar() -> void:
@@ -140,7 +149,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 		charge_time -= delta
 		if charge_time <= 0.0:
 			charging = false
-		if dist < 70.0 and attack_cd <= 0.0:
+		if dist < _reach(70.0) and attack_cd <= 0.0:
 			attack_cd = 0.72
 			player.take_damage(dmg * 1.4, dmg_type, self)
 		return charge_dir * 620.0
@@ -164,7 +173,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 		return Vector2.ZERO
 
 	# Normal wolf behavior between charges.
-	if dist < 60.0:
+	if dist < _reach(60.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.92
 			player.take_damage(dmg, dmg_type, self)
@@ -266,7 +275,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 			var angle := TAU * i / count
 			_bolt(Vector2.RIGHT.rotated(angle) * 230.0, dmg * 0.7)
 
-	if dist < 64.0:
+	if dist < _reach(64.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
 			player.take_damage(dmg, dmg_type, self)
@@ -372,7 +381,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		ability_cd = 3.4
 		game.telegraph(player.global_position, 75.0, 0.45, dmg * 1.2, {"color": STORM})
 
-	if dist < 70.0:
+	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.92
 			player.take_damage(dmg, dmg_type, self)
@@ -504,7 +513,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		for i in count:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / count) * 210.0, dmg * 0.7)
 
-	if dist < 74.0:
+	if dist < _reach(74.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.15
 			player.take_damage(dmg * 1.2, dmg_type, self)
@@ -603,7 +612,7 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 		ability_cd = 4.0
 		game.telegraph(player.global_position, 70.0, 0.5, dmg * 1.1, {"color": GRAVE})
 
-	if dist < 64.0:
+	if dist < _reach(64.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
 			player.take_damage(dmg, dmg_type, self)
@@ -800,7 +809,7 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 		for i in 14:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 14.0) * 210.0, dmg * 0.7)
 
-	if dist < 70.0:
+	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.2
 			player.take_damage(dmg * 1.2, dmg_type, self)
@@ -988,7 +997,7 @@ func _forgemistress(player: Player, to_player: Vector2, dist: float, delta: floa
 			game.telegraph(global_position + dir * (110.0 + i * 95.0), rad,
 				0.45 + i * 0.10, dmg * (1.0 + 0.12 * quench_stacks) * 1.2, {"color": FORGE})
 
-	if dist < 66.0:
+	if dist < _reach(66.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.9
 			var hit := dmg * (1.0 + 0.12 * quench_stacks) * (1.3 if heat >= 1.0 else 1.0)
@@ -1097,7 +1106,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		charge_time -= delta
 		if charge_time <= 0.0:
 			charging = false
-		if dist < 76.0 and attack_cd <= 0.0:
+		if dist < _reach(76.0) and attack_cd <= 0.0:
 			attack_cd = 0.8
 			player.take_damage(dmg * 1.3, dmg_type, self)
 		return charge_dir * 600.0
@@ -1123,7 +1132,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 			game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
 				75.0, 0.6, dmg * 1.1, {"color": LAVA})
 
-	if dist < 72.0:
+	if dist < _reach(72.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
 			player.take_damage(dmg, dmg_type, self)
@@ -1328,7 +1337,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 		else:
 			charge_time -= delta
 		slide_cap = maxf(0.0, slide_cap - delta)
-		if dist < 78.0 and attack_cd <= 0.0:
+		if dist < _reach(78.0) and attack_cd <= 0.0:
 			attack_cd = 0.8
 			player.take_damage(dmg * 1.3, dmg_type, self)
 		if charge_time <= 0.0 or slide_cap <= 0.0:
@@ -1359,7 +1368,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 		for i in 12:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 200.0, dmg * 0.7)
 
-	if dist < 70.0:
+	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.95
 			player.take_damage(dmg, dmg_type, self)
@@ -1599,7 +1608,7 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 		charge_time -= delta
 		if charge_time <= 0.0:
 			charging = false
-		if dist < 78.0 and attack_cd <= 0.0:
+		if dist < _reach(78.0) and attack_cd <= 0.0:
 			attack_cd = 0.8
 			player.take_damage(dmg * 1.3, dmg_type, self)
 		return charge_dir * 600.0
@@ -1623,7 +1632,7 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 			var at: Vector2 = game.clamp_to_zone(global_position + Vector2.from_angle(randf() * TAU) * randf_range(90.0, 180.0), home)
 			game._add_hazard(game.cur_room, "poison", at, 80.0, 8.0)
 
-	if dist < 72.0:
+	if dist < _reach(72.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
 			player.take_damage(dmg, dmg_type, self)
@@ -1806,7 +1815,7 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 		charge_time -= delta
 		if charge_time <= 0.0:
 			charging = false
-		if dist < 76.0 and attack_cd <= 0.0:
+		if dist < _reach(76.0) and attack_cd <= 0.0:
 			attack_cd = 0.7
 			player.take_damage(dmg * 1.3, dmg_type, self)
 		return charge_dir * 620.0
@@ -1823,7 +1832,7 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 		game.shake(6.0)
 		for i in 10:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0) * 190.0, dmg * 0.6)
-	if dist < 70.0:
+	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.85
 			player.take_damage(dmg, dmg_type, self)
@@ -2054,7 +2063,7 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 		for spread in [-0.25, 0.0, 0.25]:
 			_bolt(aim.rotated(spread) * 340.0, dmg)
 
-	if dist < 70.0:
+	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.7
 			player.take_damage(dmg, dmg_type, self)

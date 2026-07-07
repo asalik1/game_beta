@@ -23,7 +23,7 @@ const ENEMIES := {
 	"whitepelt": {
 		"name": "Hrolgar Whitepelt", "sprite": "beastkin",
 		"hp": 22500.0, "dmg": 160.0, "speed": 155.0, "xp": 520, "gold": 400,
-		"ranged": false, "scale": 5.6,
+		"ranged": false, "scale": 9.0,
 		"physres": 30.0, "magres": 25.0, "eva": 0.05, "critres": 6.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 29, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 1.5, "VIT": 1.5},
@@ -39,7 +39,7 @@ const ENEMIES := {
 	"icebound": {
 		"name": "Serane the Icebound", "sprite": "witch",
 		"hp": 30000.0, "dmg": 190.0, "speed": 90.0, "xp": 560, "gold": 430,
-		"ranged": true, "scale": 5.6,
+		"ranged": true, "scale": 6.0,
 		"physres": 20.0, "magres": 55.0, "eva": 0.08, "critres": 7.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 31, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "AGI": 1.0},
@@ -56,7 +56,7 @@ const ENEMIES := {
 		# XP re-anchor (chapter-budget audit): 720 paid ~95% of a level —
 		# finales sit at ~85% so full clears land at boss level (DESIGN r5).
 		"hp": 48000.0, "dmg": 230.0, "speed": 85.0, "xp": 640, "gold": 560,
-		"ranged": true, "scale": 6.2,
+		"ranged": true, "scale": 6.5,
 		"physres": 25.0, "magres": 45.0, "eva": 0.0, "critres": 9.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 33, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.5},

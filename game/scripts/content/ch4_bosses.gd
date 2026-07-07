@@ -25,7 +25,7 @@ const ENEMIES := {
 	"forgemistress": {
 		"name": "Forgemistress Calda", "sprite": "cultist",
 		"hp": 11500.0, "dmg": 96.0, "speed": 150.0, "xp": 300, "gold": 240,
-		"ranged": false, "scale": 5.2,
+		"ranged": false, "scale": 6.0,
 		"physres": 25.0, "magres": 20.0, "eva": 0.05, "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 23, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 1.5, "AGI": 1.5},
@@ -40,7 +40,7 @@ const ENEMIES := {
 	"cinderhide": {
 		"name": "Cinderhide the Unquenched", "sprite": "direwolf",
 		"hp": 9500.0, "dmg": 110.0, "speed": 135.0, "xp": 330, "gold": 260,
-		"ranged": false, "scale": 5.8,
+		"ranged": false, "scale": 8.5,
 		# Base resists are the SHED value; the plate mechanic adds +60 at
 		# setup (plated 85) and drops it back on melt — so a fight reset
 		# restores the honest 25, not a mid-melt number.

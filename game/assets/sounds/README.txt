@@ -8,3 +8,17 @@ ult.wav / ult_mage.wav and meteor.wav from 'The Essential Retro Video Game Sound
 Collection' by Juhani Junkala (OpenGameArt.org), CC0 public domain.
 roar_fangmaw.ogg: 'Wolf howls' from Wikimedia Commons, public domain.
 Warrior/archer/assassin ultimates are synthesized in scripts/sfx.gd.
+
+GameSounds pack casts (purchased bundle, 2026-07-07 — commercial OK,
+no raw-pack redistribution; user-approved casting):
+  coin=Coin Pick up Sound · splash=Short Water P1 · gate=Door Sound ·
+  bolt=Spell Cast V2 · nova=Water Magic Hit 2 · fireball=Fire Spell
+  Cast V2 · ehit=Punch 1 (+4dB at call site) · potion=Drink Sound ·
+  equip=Wearing Armor · parry=Sword Parry (aegis retaliation) ·
+  ui_click=Button Click · gem=Collect P1 · campfire=Campfire Loop
+  (positional, cottage hearths) · amb_birds/amb_crickets/amb_rain =
+  Forest/Night/Rain Ambience Loops (override the synth beds) ·
+  step_1..3 / step_armor_1..3 = Walking Hits / Armor Solo Hits
+  (footstep system; plate classes clank).
+Talk sounds from the pack were REJECTED (user: bad) — dialogue blip
+stays synthesized. bow/arrow candidates rejected too.

@@ -25,7 +25,9 @@ const ENEMIES := {
 		# finale ~86% of a level; Act 1 closes at ~L41-42 as designed.
 		# The finale's fanfare stays in its gold (gold has no XP budget).
 		"hp": 62000.0, "dmg": 350.0, "speed": 115.0, "xp": 600, "gold": 980,
-		"ranged": true, "scale": 6.0,
+		# A drake the size of a weather front — the 4x+ tier is reserved
+		# for exactly this kind of thing (boss scale doctrine, story.gd).
+		"ranged": true, "scale": 13.0,
 		"physres": 20.0, "magres": 45.0, "eva": 0.05, "critres": 9.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 38, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "AGI": 1.0},
@@ -39,7 +41,8 @@ const ENEMIES := {
 	"unnamed_echo": {
 		"name": "The Echo of the Unnamed", "sprite": "assassin",
 		"hp": 48000.0, "dmg": 375.0, "speed": 170.0, "xp": 640, "gold": 1020,
-		"ranged": false, "scale": 5.4,
+		# 2x floor, no higher: he mirrors the HERO — a person, not a titan.
+		"ranged": false, "scale": 6.0,
 		"physres": 25.0, "magres": 25.0, "eva": 0.15, "critres": 6.0, "crit": 0.15, "dmg_type": "phys",
 		"level": 39, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"AGI": 2.0, "STR": 1.0},
@@ -55,7 +58,8 @@ const ENEMIES := {
 	"stormmouth": {
 		"name": "Cyrraeth, Mouth of the Storm", "sprite": "nullwarden",
 		"hp": 130000.0, "dmg": 460.0, "speed": 105.0, "xp": 800, "gold": 1900,
-		"ranged": true, "scale": 6.6,
+		# The Act 1 finale titan: ~4.5x the hero, the largest thing alive.
+		"ranged": true, "scale": 13.5,
 		"physres": 30.0, "magres": 45.0, "eva": 0.0, "critres": 10.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 41, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.5},
@@ -68,7 +72,8 @@ const ENEMIES := {
 	"echo_clone": {
 		"name": "Mirror of the Unnamed", "sprite": "assassin",
 		"hp": 1.0, "dmg": 0.0, "speed": 0.0, "xp": 0, "gold": 0,
-		"ranged": true, "scale": 5.2,
+		# Must MATCH unnamed_echo's scale — the decoys only work same-size.
+		"ranged": true, "scale": 6.0,
 		"physres": 0.0, "magres": 0.0, "eva": 0.0, "critres": 0.0, "crit": 0.0, "dmg_type": "magic",
 		"level": 39, "hp_g": 0.10, "dmg_g": 0.0,
 		"attrs": {"AGI": 1.0},

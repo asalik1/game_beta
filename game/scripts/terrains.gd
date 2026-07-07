@@ -22,7 +22,9 @@ const DATA := {
 	"village": {"name": "Emberfall Village", "ground": "grass", "path": "dirt",
 		"tint": Color(1.0, 0.98, 0.9), "ambient": "leaves_green", "music": "village",
 		"obstacles": ["tree_green", "tree_green", "rock"], "decor": ["flower", "flower", "pebble"], "count": 9,
-		"buildings": ["cottage_a", "cottage_b", "stall", "cottage_a"],
+		# Two roof colorways per cottage (a2/b2 = PNG override variants) +
+		# seeded mirroring in _add_building keep the village from repeating.
+		"buildings": ["cottage_a", "cottage_b", "stall", "cottage_a2", "cottage_b2"],
 		"patches": [], "event": ""},
 	"darkwood": {"name": "The Darkwood", "ground": "forest", "path": "dirt",
 		"tint": Color(0.82, 0.9, 0.86), "ambient": "leaves_autumn", "music": "darkwood",
@@ -92,7 +94,7 @@ const DATA := {
 # The visual weather lives in AMBIENTS below; this is its soundtrack.
 const AMBIENT_LOOPS := {
 	"village": "amb_birds", "darkwood": "amb_birds", "holy": "amb_birds",
-	"storm": "amb_wind", "desert": "amb_wind",
+	"storm": "amb_rain", "desert": "amb_wind",
 	"ice": "amb_cold",
 	"marsh": "amb_crickets", "bog": "amb_crickets", "spore": "amb_crickets",
 	"keep": "amb_drone", "void": "amb_drone", "graveyard": "amb_drone",

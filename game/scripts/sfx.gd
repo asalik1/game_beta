@@ -482,7 +482,24 @@ static func _amb_wind_bed(buf: PackedFloat32Array, vol: float, cutoff := 0.02) -
 		buf[i] += y * vol * lfo * 8.0
 
 
-static func make_ambient(kind: String) -> AudioStreamWAV:
+static func make_ambient(kind: String) -> AudioStream:
+	# Real recordings override the synth beds (same file-drop idea as
+	# every other asset): assets/sounds/<kind>.ogg or .mp3, looped.
+	for ext in ["ogg", "mp3"]:
+		var path := "res://assets/sounds/%s.%s" % [kind, ext]
+		if FileAccess.file_exists(path):
+			var full := ProjectSettings.globalize_path(path)
+			if ext == "ogg":
+				var ogg := AudioStreamOggVorbis.load_from_file(full)
+				if ogg:
+					ogg.loop = true
+					return ogg
+			else:
+				var mp3 := AudioStreamMP3.new()
+				mp3.data = FileAccess.get_file_as_bytes(full)
+				if not mp3.data.is_empty():
+					mp3.loop = true
+					return mp3
 	var dur := 8.0
 	var buf := _buf(dur)
 	var rng := RandomNumberGenerator.new()
@@ -522,6 +539,10 @@ static func make_ambient(kind: String) -> AudioStreamWAV:
 				buf[i] += (sin(TAU * 55.0 * t) * 0.030
 					+ sin(TAU * 82.5 * t) * 0.018
 					+ sin(TAU * 110.25 * t) * 0.010) * swell
+		_:
+			# Unknown kind without a file (e.g. amb_rain when its
+			# recording is removed): fall back to the wind bed.
+			_amb_wind_bed(buf, 0.05)
 	var wav := _to_wav(buf)
 	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	wav.loop_end = buf.size()

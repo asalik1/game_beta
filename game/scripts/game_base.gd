@@ -1302,6 +1302,39 @@ func _vol_db(linear: float) -> float:
 ## Per-track mix fixes for external recordings (measured RMS): dB gain
 ## evens out mastering differences, start skips long quiet intros
 ## (loops restart from the same offset via the stream's loop_offset).
+## A looping copy of a loaded sound for positional players (the shared
+## sounds-dict stream must not be flipped to looping globally).
+func game_stream(name: String) -> AudioStream:
+	var s: AudioStream = sounds.get(name)
+	if s == null:
+		return null
+	var copy: AudioStream = s.duplicate()
+	if copy is AudioStreamMP3 or copy is AudioStreamOggVorbis:
+		copy.loop = true
+	elif copy is AudioStreamWAV:
+		copy.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	return copy
+
+
+# Footsteps (GameSounds cast): a soft step on a distance-ish cadence
+# while the hero moves. Plate classes (warrior/paladin) clank.
+var _foot_t := 0.0
+
+func tick_footsteps(delta: float) -> void:
+	if player == null or player.dead or not play_started:
+		return
+	if player.velocity.length() < 60.0:
+		_foot_t = 0.12  # next step lands quickly when motion resumes
+		return
+	_foot_t -= delta
+	if _foot_t > 0.0:
+		return
+	_foot_t = clampf(88.0 / maxf(player.velocity.length(), 1.0), 0.24, 0.42)
+	var armor := player.cls in ["warrior", "paladin"]
+	var key := "step_armor_%d" % (randi() % 3 + 1) if armor else "step_%d" % (randi() % 3 + 1)
+	sfx(key, 1.0, 0.0, -8.0)  # quiet: felt more than heard
+
+
 ## A little grey scuff of dust — dashes, rolls, hard landings.
 func dust(pos: Vector2, count := 5) -> void:
 	for i in count:

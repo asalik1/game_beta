@@ -426,7 +426,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 	if aegis_time > 0.0:
 		var near := _enemies_within(global_position, 100.0)
 		if not near.is_empty():
-			game.sfx("nova", 1.3)
+			game.sfx("parry")  # steel answers steel (GameSounds cast)
 			game.burst(global_position, Color(1.0, 0.9, 0.5), 10)
 			_ring_fx(global_position, Color(1.0, 0.9, 0.5), 90.0)
 			var saved := _tfx

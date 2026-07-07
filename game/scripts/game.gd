@@ -29,6 +29,12 @@ func _ready() -> void:
 				var ogg := AudioStreamOggVorbis.load_from_file(full)
 				if ogg:
 					sounds[file.get_basename()] = ogg
+			elif file.ends_with(".mp3"):
+				# The purchased SFX packs ship mp3 (GameSounds set).
+				var smp3 := AudioStreamMP3.new()
+				smp3.data = FileAccess.get_file_as_bytes(full)
+				if not smp3.data.is_empty():
+					sounds[file.get_basename()] = smp3
 	for i in 10:
 		var sp := AudioStreamPlayer.new()
 		sp.volume_db = -8.0
@@ -227,6 +233,7 @@ func _process(delta: float) -> void:
 		run_time += delta  # chapter run clock (results card; pauses pause it)
 	refresh_ambience()  # ambient bed tracks the room's terrain (cheap no-op)
 	track_footprints()  # snow remembers your steps (no-op off snow)
+	tick_footsteps(delta)  # and every step SOUNDS (plate classes clank)
 
 	hud.update_stats(player)
 
