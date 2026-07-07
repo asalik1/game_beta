@@ -28,7 +28,9 @@ func _hex(f := 1.0) -> void:
 	game.sfx("gate", 1.6)
 	var target := auto_aim()
 	var center := target.global_position if target else global_position
-	var radius := 140.0
+	# Round 49 AoE pass: 140 -> 120 — the curse's whole-pack EXPOSE was
+	# carrying every warlock variant's pack damage at once.
+	var radius := 120.0
 	var col := _tcolor if _themed else Color(0.75, 0.4, 1.0)
 	# The curse arrives: a collapsing ring — power drawn INTO the victims.
 	_ring_fx(center, col, radius, true)
@@ -58,7 +60,7 @@ func _hex(f := 1.0) -> void:
 	for e in _enemies_within(center, radius):
 		# A dark tendril lashes from the curse's heart to each victim.
 		_beam_fx(center, e.global_position, col, 0.16)
-		hit_enemy(e, 0.5 * f, eff.duplicate())
+		hit_enemy(e, 0.35 * f, eff.duplicate())
 		if not e.dying:
 			_hex_mark(e)
 

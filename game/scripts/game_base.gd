@@ -59,6 +59,7 @@ var binds := {
 	"a1": KEY_J, "a2": KEY_K, "a3": KEY_L, "ult": KEY_U,
 	"potion": KEY_Q, "interact": KEY_E, "inventory": KEY_I, "skills": KEY_T,
 	"codex": KEY_C, "target": KEY_TAB, "map": KEY_M,
+	"potion_next": KEY_R,  # cycles the Q-rotation (R only restarts at the victory screen)
 }
 
 var quest_key := "talk"

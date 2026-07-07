@@ -90,6 +90,12 @@ const SURGE_LS_SCALE := 0.14      # + this x missing-hp (cap = floor+scale = 26%
 # dash-through HIT (never the surge slash) and a slightly snappier animation.
 const DASH_WHIFF_FLOOR := 1.5
 const DASH_CONNECT_FLOOR := 1.0
+# Round 49 AoE pass: the dash-stab rider lands on at most this many
+# victims per pass ("the blade finds two throats, not the whole
+# room") — one dash through a pack was paying full stab damage on
+# every body in the 150px corridor, making every assassin variant a
+# structural pack monster. Boss fights (one victim) never notice.
+const DASH_RIDER_CAP := 2
 const DASH_CDR_TO_DMG := 0.75    # per second of floor-eaten cd -> +dash-HIT dmg
 const DASH_CDR_TO_ANIM := 0.25   # per second eaten -> anim speedup (capped at 10%)
 
@@ -203,6 +209,15 @@ const ELITE_COMBAT_AMBUSH_CHANCE := 0.18 # combat room promotes one pack member
 # Death loot (on top of a guaranteed gem + guaranteed chest).
 const ELITE_GOLD_CHEST_CHANCE := 0.45    # else the chest is silver
 const ELITE_GEM_LV2_CHANCE := 0.35       # the guaranteed gem rolls Lv2 (floor; see gem_lv2_chance)
+# Early gem faucet trim (playtest 2026-07-07: "bag full of gems I don't
+# use yet in chapter 1") — the per-elite gem GUARANTEE starts at this
+# elite level; below it the gem drops this often instead. Gem QUALITY
+# ramps (gem_lv2_chance) are untouched: fewer early gems, same chase.
+const ELITE_GEM_SURE_LEVEL := 12
+const ELITE_GEM_EARLY_CHANCE := 0.45
+# Rotation potions (mana draught / elixir): bag carry-cap PER TYPE that
+# widens by act — 1 in Act 1, 3 in Act 2, 5 in Act 3.
+const POTION_CARRY_BY_ACT := {1: 1, 2: 3, 3: 5}
 
 # River wading (terrain mechanic, Graphics & Ambience track): speed
 # multiplier in the water for player AND enemies; the bridge is dry.
@@ -425,6 +440,10 @@ const WEEKLY_REWARD_GEM_LVL := 2
 const CURSED_ROOM_CHANCE := 0.15   # combat rooms that hold a cursed chest
 const CURSE_DMG_MULT := 1.3        # cursed pack hits harder...
 const CURSE_SPEED_MULT := 1.15     # ...and moves faster, until the purge
+# The bargain is offered at the DOOR now (playtest 2026-07-07: a chest
+# that waits in the room gets claimed after the pack dies — free hoard,
+# or a payout that never fires). This is its decision window, seconds.
+const CURSE_OFFER_WINDOW := 10.0
 const SHRINE_ROOM_CHANCE := 0.22   # quiet rooms that hold a gamble shrine
 const SHRINE_COST_BASE := 45       # gold, scaled by daily_gold_mult(level)
 const SHRINE_BLESS_CHANCE := 0.6   # else the shrine drinks deeper

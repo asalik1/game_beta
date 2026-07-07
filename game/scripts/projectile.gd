@@ -152,11 +152,12 @@ func _steer_home(delta: float) -> void:
 
 
 ## Venom Bloom: the projectile detonates into an expanding poison mist
-## on its first hit or at the end of its flight.
+## on its first hit or at the end of its flight. Tick rate rides the fx
+## payload (round 49 AoE pass) so the mist tunes independently.
 func _bloom() -> void:
 	if fx.get("bloom_mist", 0) and is_instance_valid(source_player):
 		fx["bloom_mist"] = 0
-		source_player._mist(global_position, 120.0, 0.4,
+		source_player._mist(global_position, 120.0, float(fx.get("bloom_dps", 0.4)),
 			fx.get("bloom_color", Color(0.45, 0.95, 0.3)), 3.0)
 
 
@@ -203,7 +204,11 @@ func _on_body_entered(body: Node) -> void:
 			source_player._tfx = saved_tfx
 		else:
 			body.take_damage(dmg, vel.normalized())
-		if not pierce:
+		# pierce_cap (round 49 AoE pass): a capped pierce stops after N
+		# bodies — the mid-tier coverage tool between "one hit" and
+		# "threads the whole pack" (blood knives, void bolts, venom arrows).
+		var cap := int(fx.get("pierce_cap", 0))
+		if not pierce or (cap > 0 and _already_hit.size() >= cap):
 			_bloom()
 			queue_free()
 	elif not friendly and body is Player:

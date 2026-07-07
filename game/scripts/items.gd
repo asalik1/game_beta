@@ -185,7 +185,8 @@ static func random_gem(rng: RandomNumberGenerator, lvl := 1) -> Dictionary:
 # slots. One bag at a time — looting a bigger one upgrades in place,
 # smaller/equal ones convert to gold. Elites are the bag source
 # (playtest round 6; DESIGN.md).
-const BAG_SLOTS := {"F": 30, "E": 35, "D": 40, "C": 50, "B": 65, "A": 85, "S": 115}
+# +5 across the board (playtest 2026-07-07: early bags choked on gems).
+const BAG_SLOTS := {"F": 35, "E": 40, "D": 45, "C": 55, "B": 70, "A": 90, "S": 120}
 const BAG_NAMES := {
 	"F": "Frayed Pouch", "E": "Patched Satchel", "D": "Soldier's Knapsack",
 	"C": "Knight's Rucksack", "B": "Runed Haversack", "A": "Dragonhide Duffel",
@@ -205,6 +206,11 @@ static func bag_price(grade: String) -> int:
 # ----------------------------------------------------------- consumables ---
 # Non-gear bag items ({"kind": "stone", ...}). The talent reset stone is
 # the first; elites are the primary source (playtest round 6).
+
+# Potions eligible for the Q-rotation (2026-07-07): cycled with the
+# potion_next bind, act-capped carry (Balance.POTION_CARRY_BY_ACT).
+# Scrolls and stones stay inventory-clicked utilities.
+const ROTATION_POTIONS := ["mana_potion", "elixir_might"]
 static func make_reset_stone() -> Dictionary:
 	return {"kind": "stone", "id": "reset_stone", "grade": "B",
 		"name": "Stone of Unlearning",

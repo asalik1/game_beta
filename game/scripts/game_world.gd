@@ -259,6 +259,9 @@ func _enter_room(i: int) -> void:
 		set_music(terrain.get("music", "village"))
 	if play_started and first_visit:
 		hud.flash_title(zones[i]["name"])
+		# The cursed chest's bargain is offered at the door, once,
+		# while the pack still stands (playtest 2026-07-07).
+		_offer_cursed_chest(i)
 	refresh_quest()
 	_try_spawn_boss(i)
 	last_room = i
@@ -452,19 +455,38 @@ func wake_pack(room: int, pack: int) -> void:
 ## purge, THEN it pays (golden chest + gem) — and a GAMBLE SHRINE in
 ## some quiet rooms — feed it gold and it blesses or drinks deeper.
 ## Once per character per room; replays reroll with the seed.
+## (The cursed chest moved to _offer_cursed_chest — playtest 2026-07-07:
+## a chest that waits in the room forever gets claimed AFTER the pack
+## dies, making the bargain free and the payout unreachable.)
 func _spawn_risk_events(i: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = wander_seed * 53 + i * 947 + chapter_id.hash() % 6659
-	var rt := room_type(i)
-	if rt == "combat" and String(zones[i].get("boss", "")) == "":
-		if rng.randf() < Balance.CURSED_ROOM_CHANCE \
-				and not get_flag(_curse_flag(i), false) and not cleared.get(i, false):
-			_cursed_chest_node(i, room_center(i)
-				+ Vector2(rng.randf_range(-150.0, 150.0), rng.randf_range(-90.0, 90.0)))
-	elif rt in ["social", "dead_end"]:
+	if room_type(i) in ["social", "dead_end"]:
 		if rng.randf() < Balance.SHRINE_ROOM_CHANCE and not get_flag(_shrine_flag(i), false):
 			_gamble_shrine_node(i, room_center(i)
 				+ Vector2(rng.randf_range(-110.0, 110.0), rng.randf_range(-70.0, 70.0)))
+
+
+## The cursed chest offers itself AT THE DOOR (playtest 2026-07-07): it
+## materializes ahead of the player on their FIRST step into a blighted
+## room and gives Balance.CURSE_OFFER_WINDOW seconds to decide, then
+## withdraws. Accepting therefore always happens with the whole pack
+## alive — no more clear-most-then-claim, and no more claiming after
+## the purge already fired (which paid nothing). Same seeded roll as
+## before, so the same rooms carry the bargain.
+func _offer_cursed_chest(i: int) -> void:
+	if room_type(i) != "combat" or String(zones[i].get("boss", "")) != "":
+		return
+	if get_flag(_curse_flag(i), false) or cleared.get(i, false) \
+			or zone_alive.get(i, 0) <= 0 or not is_instance_valid(player):
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 53 + i * 947 + chapter_id.hash() % 6659
+	if rng.randf() >= Balance.CURSED_ROOM_CHANCE:
+		return
+	var toward: Vector2 = room_center(i) - player.global_position
+	var dir := toward.normalized() if toward.length() > 1.0 else Vector2.RIGHT
+	_cursed_chest_node(i, player.global_position + dir * 150.0)
 
 
 ## A buried chest in some dead ends (exploration premium): invisible
@@ -502,6 +524,21 @@ func _cursed_chest_node(i: int, pos: Vector2) -> void:
 	var npc := _make_npc(String(Items.CHEST_TIERS["gold"]["sprite"]), pos,
 		"E — The chest whispers", Callable())
 	npc.modulate = Color(0.72, 0.5, 0.95)  # wrong-colored gold: clearly a bargain
+	burst(pos, Color(0.7, 0.4, 1.0), 12)   # it ARRIVES — the window is open
+	# Ten breaths to decide, then the bargain withdraws. The timer is a
+	# CHILD of the chest: it pauses with the tree (menus don't eat the
+	# window) and dies with the room (no lambda firing into a freed
+	# world on chapter switches).
+	var ticker := Timer.new()
+	ticker.wait_time = Balance.CURSE_OFFER_WINDOW
+	ticker.one_shot = true
+	ticker.autostart = true
+	npc.add_child(ticker)
+	ticker.timeout.connect(func() -> void:
+		if is_instance_valid(npc) and not get_flag(_curse_flag(room), false):
+			burst(npc.global_position, Color(0.5, 0.3, 0.7), 10)
+			sfx("gate", 0.7, 0.0, -6.0)
+			_remove_interactable(npc))
 	# The action needs the npc handle, so it's bound after creation.
 	interactables[-1]["action"] = func() -> void:
 		menus.open_confirm(
@@ -1178,8 +1215,17 @@ func _update_barrier() -> void:
 			# Seals sit a step OUTSIDE the room (into the doorway
 			# corridor) so one never spawns on top of a player who just
 			# walked in — they pass it, then it bars the way back.
-			entry["body"].position = door_pos(cur_room, String(dir)) \
+			var spos: Vector2 = door_pos(cur_room, String(dir)) \
 				+ Vector2(DIRS[dir]) * (TILE * 0.9)
+			# ...and never arms INTO the player (playtest 2026-07-07:
+			# crossing the line slowly caught the body inside the
+			# freshly-armed seal — seconds of grinding to depenetrate).
+			# The seal waits, parked, until the player steps clear.
+			if is_instance_valid(player) \
+					and player.global_position.distance_to(spos) < TILE * 2.4:
+				entry["body"].position = Vector2(-4000, -4000)
+				continue
+			entry["body"].position = spos
 	for j in range(idx, door_seals.size()):
 		door_seals[j]["body"].position = Vector2(-4000, -4000)
 

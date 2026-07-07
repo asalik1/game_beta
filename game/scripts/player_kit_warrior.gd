@@ -104,5 +104,7 @@ func _whirlwind(f := 1.0) -> void:
 	var eff := {"stagger": 0.3, "aoe": true}
 	if not inward:  # Earth drags them in instead of flinging
 		eff["knock"] = 380.0
+	# Round 49 AoE pass: 0.9 -> 1.0 — the cyclone is the warrior's whole
+	# pack answer and it trailed the field.
 	for e in _enemies_within(global_position, radius):
-		hit_enemy(e, 0.9 * f, eff.duplicate())
+		hit_enemy(e, 1.0 * f, eff.duplicate())

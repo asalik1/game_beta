@@ -476,6 +476,9 @@ func _test_elites_bags_smallrooms() -> void:
 	var base_mob := _dummy(Vector2(150, 70))
 	var e := _dummy(Vector2(200, 70))
 	e.promote_elite()
+	# The gem GUARANTEE starts at ELITE_GEM_SURE_LEVEL (2026-07-07 trim:
+	# below it the gem is a chance) — test the guaranteed tier.
+	e.level = Balance.ELITE_GEM_SURE_LEVEL
 	if e.max_hp <= base_mob.max_hp * 2.0 or e.dmg <= base_mob.dmg:
 		return _fail("elite is not meaningfully tougher than its kind")
 	if e.xp_value != 0:

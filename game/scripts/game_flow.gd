@@ -435,11 +435,16 @@ func on_enemy_died(e: Enemy) -> void:
 		# Elite loot pinata (playtest round 6): a guaranteed gem, a
 		# guaranteed good chest, and the elite-exclusive economy —
 		# talent reset stones and bigger bags. XP is zero by design
-		# (chapter totals stay fixed).
-		var gem := Items.random_gem(loot_rng,
-			2 if loot_rng.randf() < Balance.gem_lv2_chance(e.level) else 1)
-		if give_loot({"kind": "gem", "gem": gem}, e.global_position):
-			spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
+		# (chapter totals stay fixed). Early-game trim (2026-07-07):
+		# the gem guarantee starts at ELITE_GEM_SURE_LEVEL — below it
+		# the gem is a chance, so chapter-1 bags stop drowning in gems
+		# nobody can socket yet.
+		if e.level >= Balance.ELITE_GEM_SURE_LEVEL \
+				or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE:
+			var gem := Items.random_gem(loot_rng,
+				2 if loot_rng.randf() < Balance.gem_lv2_chance(e.level) else 1)
+			if give_loot({"kind": "gem", "gem": gem}, e.global_position):
+				spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 		Chest.drop(self, "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
 			e.global_position + Vector2(44, 0))
 		if loot_rng.randf() < Balance.ELITE_STONE_CHANCE:

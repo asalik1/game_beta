@@ -59,6 +59,12 @@ var gem_bag: Array = []  # loose gems
 # drop from elites (Items.BAG_SLOTS: F 15 ... S 100).
 var bag: Dictionary = Items.make_bag(Balance.STARTER_BAG_GRADE)
 var consumables: Array = []   # reset stones etc. ({"kind": "stone", ...})
+# Q-rotation (playtest 2026-07-07): Q drinks the ACTIVE potion; the
+# potion_next bind cycles health + every slotted rotation potion you
+# actually carry. Both persist in the save.
+var potion_rotation: Array = []    # consumable ids slotted for rotation
+var active_potion := "health"      # "health" or a Items.ROTATION_POTIONS id
+var potion_swap_cd := 0.0          # debounce for the held cycle key
 
 # --- vitals ---
 var max_hp := 100.0
@@ -578,8 +584,25 @@ func gem_stacks() -> int:
 	return kinds.size()
 
 
+## Consumables STACK like gems (playtest 2026-07-07): one bag slot per
+## id, however many copies ride in it.
+func consumable_stacks() -> int:
+	var kinds := {}
+	for c in consumables:
+		kinds[String(c.get("id", c.get("name", "?")))] = true
+	return kinds.size()
+
+
+func consumable_count(id: String) -> int:
+	var n := 0
+	for c in consumables:
+		if String(c.get("id", "")) == id:
+			n += 1
+	return n
+
+
 func bag_used() -> int:
-	return backpack.size() + gem_stacks() + consumables.size()
+	return backpack.size() + gem_stacks() + consumable_stacks()
 
 
 # Bag-full adds return false with NO side effects — the caller decides
@@ -613,11 +636,70 @@ func gain_gem(gem: Dictionary) -> bool:
 	return true
 
 
+## Rotation potions have an act-wide carry cap PER TYPE (playtest
+## 2026-07-07): 1 in Act 1, 3 in Act 2, 5 in Act 3. Everything else is
+## uncapped (bag space is the limit; stacks cost one slot per id).
+func consumable_carry_cap(id: String) -> int:
+	if not (id in Items.ROTATION_POTIONS):
+		return 999999
+	var act := Story.act_of(game.chapter_id)
+	return int(Balance.POTION_CARRY_BY_ACT.get(clampi(act, 1, 3), 5))
+
+
 func add_consumable(c: Dictionary) -> bool:
-	if bag_used() >= bag_capacity():
+	var id := String(c.get("id", ""))
+	if consumable_count(id) >= consumable_carry_cap(id):
+		return false
+	# Stacking: another copy of an id you already hold costs no new slot.
+	if consumable_count(id) == 0 and bag_used() >= bag_capacity():
 		return false
 	consumables.append(c)
 	return true
+
+
+## Cycle Q's potion: health first, then every rotation-slotted potion
+## the bag actually holds (empty types are skipped, never selected).
+func cycle_potion() -> void:
+	var ring: Array = ["health"]
+	for id in potion_rotation:
+		ring.append(String(id))
+	var at := maxi(ring.find(active_potion), 0)
+	for step in range(1, ring.size() + 1):
+		var cand: String = ring[(at + step) % ring.size()]
+		if cand != "health" and consumable_count(cand) <= 0:
+			continue
+		if cand == active_potion:
+			return  # nothing else available to swap to
+		active_potion = cand
+		game.sfx("ui_click")
+		game.spawn_text(global_position + Vector2(0, -52),
+			"POTION: %s" % potion_display_name(cand), Color(0.7, 0.9, 1.0))
+		return
+
+
+## Toggle a potion type in/out of the Q-rotation (inventory shift-click).
+func toggle_rotation(id: String) -> void:
+	if not (id in Items.ROTATION_POTIONS):
+		return
+	if potion_rotation.has(id):
+		potion_rotation.erase(id)
+		if active_potion == id:
+			active_potion = "health"
+	else:
+		potion_rotation.append(id)
+	game.sfx("ui_click")
+
+
+func potion_display_name(id: String) -> String:
+	if id == "health":
+		return "Health Potion"
+	for c in consumables:
+		if String(c.get("id", "")) == id:
+			return String(c["name"])
+	match id:
+		"mana_potion": return "Mana Draught"
+		"elixir_might": return "Elixir of Might"
+	return id
 
 
 ## Use a consumable from the bag (the bag UI calls this).

@@ -1211,6 +1211,10 @@ func _ashpriest(player: Player, to_player: Vector2, dist: float, delta: float) -
 	if special_cd <= 0.0:
 		special_cd = (5.0 if enraged else 7.5) / verdict_speed
 		_verdict()
+		# Composition rule (2026-07-07, same as Vess's ring): the enrage
+		# rain holds while a verdict is airborne — crossing to shelter
+		# through personal rings was a forced trade, not a test.
+		ring_cd = maxf(ring_cd, 3.2)
 
 	if enraged and ring_cd <= 0.0:
 		ring_cd = 3.0
@@ -1254,7 +1258,11 @@ func _march_sons(delta: float) -> void:
 
 func _spawn_sons() -> void:
 	roar()
-	game.spawn_text(global_position + Vector2(0, -84), "SONS OF THE JUDGE — INTERCEPT THEM!", VERDICT)
+	# Player-anchored (readability pass): the intercept order must be
+	# readable wherever Ordo is standing.
+	if is_instance_valid(game.player):
+		game.spawn_text(game.player.global_position + Vector2(0, -84),
+			"SONS OF THE JUDGE — INTERCEPT THEM!", VERDICT)
 	var rect := _arena_rect()
 	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
 	for i in 4:
@@ -1274,22 +1282,68 @@ func _verdict() -> void:
 	roar()
 	var rect := _arena_rect()
 	var west := randf() < 0.5
-	game.spawn_text(global_position + Vector2(0, -84),
-		"GUILTY: THE %s" % ("WEST" if west else "EAST"), VERDICT)
-	var pairs := 2 if hp <= max_hp * 0.5 else 1
-	for p in pairs:
-		_judge_half(rect, west if p == 0 else not west, 2.4 + p * 0.5)
+	var paired := hp <= max_hp * 0.5
+	# Readability pass (2026-07-07, playtest: "ashpriest one shots me and
+	# idk why"): the callout anchors to the PLAYER and names BOTH waves
+	# when the verdict is paired — the old text announced only the first
+	# half while identical tiles covered the whole floor, so the "shelter"
+	# detonated 0.5s after you reached it. And the judged half is WASHED
+	# in verdict light: "WEST" needs no compass.
+	if is_instance_valid(game.player):
+		var call := "GUILTY: THE %s" % ("WEST" if west else "EAST")
+		if paired:
+			call += " — THEN THE %s" % ("EAST" if west else "WEST")
+		game.spawn_text(game.player.global_position + Vector2(0, -84), call, VERDICT)
+	_judge_half(rect, west, 2.4, false)
+	_half_wash(rect, west, 2.4, false)
+	if paired:
+		# The second sentence smolders DARKER until the first lands —
+		# the scorched first half is the shelter; step into the ashes.
+		_judge_half(rect, not west, 2.9, true)
+		_half_wash(rect, not west, 2.9, true)
 
 
 ## Tile telegraphs across the judged half — the other half is the shelter.
-func _judge_half(rect: Rect2, west: bool, delay: float) -> void:
+## Muted tiles (the paired verdict's second wave) burn darker until their
+## turn: the two waves must never look identical.
+func _judge_half(rect: Rect2, west: bool, delay: float, muted: bool) -> void:
+	var tile_color := VERDICT if not muted \
+		else Color(VERDICT.r * 0.4, VERDICT.g * 0.4, VERDICT.b * 0.55, VERDICT.a)
 	var x0 := rect.position.x + (0.0 if west else rect.size.x * 0.5)
 	var half_w := rect.size.x * 0.5
 	for cx in 5:
 		for cy in 4:
 			var at := Vector2(x0 + (cx + 0.5) / 5.0 * half_w,
 				rect.position.y + (cy + 0.5) / 4.0 * rect.size.y)
-			game.telegraph(at, 92.0, delay, dmg * 1.2, {"color": VERDICT})
+			game.telegraph(at, 92.0, delay, dmg * 1.2, {"color": tile_color})
+
+
+## The judged half GLOWS with the sentence for its whole fuse — which
+## half is guilty is painted on the floor, not spelled in compass words.
+## The muted wash (paired second wave) sits dimmer, then flares when the
+## first wave lands: your eye is handed the handoff.
+func _half_wash(rect: Rect2, west: bool, dur: float, muted: bool) -> void:
+	var wash := Polygon2D.new()
+	var x0 := rect.position.x + (0.0 if west else rect.size.x * 0.5)
+	wash.polygon = PackedVector2Array([
+		Vector2(x0, rect.position.y),
+		Vector2(x0 + rect.size.x * 0.5, rect.position.y),
+		Vector2(x0 + rect.size.x * 0.5, rect.end.y),
+		Vector2(x0, rect.end.y)])
+	wash.color = Color(VERDICT.r, VERDICT.g, VERDICT.b, 0.0)
+	wash.z_index = -7  # over the ground, under the tiles
+	game.add_child(wash)
+	var tw := wash.create_tween()
+	if muted:
+		tw.tween_property(wash, "color:a", 0.06, 0.35)
+		tw.tween_interval(maxf(0.0, dur - 1.0))
+		tw.tween_property(wash, "color:a", 0.17, 0.2)  # the first wave landed: your turn
+		tw.tween_interval(0.45)
+	else:
+		tw.tween_property(wash, "color:a", 0.15, 0.35)
+		tw.tween_interval(maxf(0.0, dur - 0.55))
+	tw.tween_property(wash, "color:a", 0.0, 0.2)
+	tw.tween_callback(wash.queue_free)
 
 
 # ========================================================== Chapter 5 ---

@@ -19,6 +19,7 @@ func _physics_process(delta: float) -> void:
 	for key in cds:
 		cds[key] = maxf(0.0, cds[key] - delta)
 	potion_cd = maxf(0.0, potion_cd - delta)
+	potion_swap_cd = maxf(0.0, potion_swap_cd - delta)
 	hurt_cd = maxf(0.0, hurt_cd - delta)
 	berserk_time = maxf(0.0, berserk_time - delta)
 	theme_speed_time = maxf(0.0, theme_speed_time - delta)
@@ -187,6 +188,9 @@ func _physics_process(delta: float) -> void:
 		use_ability("ult")
 	if Input.is_key_pressed(binds["potion"]):
 		drink_potion()
+	if Input.is_key_pressed(binds.get("potion_next", KEY_R)) and potion_swap_cd <= 0.0:
+		potion_swap_cd = 0.3
+		cycle_potion()
 
 	sprite.modulate.a = 0.55 if hurt_cd > 0.0 else 1.0
 
@@ -313,7 +317,26 @@ func use_ability(slot: String) -> void:
 # ================================================================== survival
 
 func drink_potion() -> void:
-	if potion_cd > 0.0 or potions <= 0 or hp >= max_hp or dead:
+	if potion_cd > 0.0 or dead:
+		return
+	# Rotation potions route through the same bag effects as clicking
+	# them in the inventory (playtest 2026-07-07: the Q-rotation).
+	if active_potion != "health":
+		if active_potion == "mana_potion" and mp >= max_mp - 0.5:
+			return  # never chug mana at full — held Q would drain the stack
+		if active_potion == "elixir_might" and elixir_time > 1.0:
+			return  # elixir already running: don't burn a second vial
+		for c in consumables:
+			if String(c.get("id", "")) == active_potion:
+				potion_cd = 0.6
+				use_consumable(c)
+				if consumable_count(active_potion) <= 0:
+					cycle_potion()  # slot ran dry: fall to the next potion
+				return
+		potion_cd = 0.6
+		cycle_potion()  # nothing left of this type — swap instead of sulking
+		return
+	if potions <= 0 or hp >= max_hp:
 		return
 	potion_cd = 0.6
 	potions -= 1

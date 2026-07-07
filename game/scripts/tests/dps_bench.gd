@@ -27,7 +27,16 @@ extends Node
 ##   warlock  — Shadowbolt + Hex upkeep + Void Rift (no Dark Pact: you
 ##              never stand point-blank on a boss)
 ##
-## Run:  dps_bench.bat [--secs=N] [--cls=assassin] [--theme=blood]
+## AOE MODE (--aoe): the target becomes a PACK — three boss-stat pillars
+## standing shoulder to shoulder, plus five low-health adds every 10s
+## that are SUPPOSED to die (kill-triggered effects — hex detonations,
+## Starfall cascades, Phantom refunds — all live). DPS pools EFFECTIVE
+## damage across everything (overkill on a dying add doesn't count).
+## Two rotation changes vs boss mode, both positioning-derived: the
+## warlock takes Dark Pact back (in a pack you ARE point-blank), and
+## the mage casts Frost Nova on cooldown (real AoE damage in a crowd).
+##
+## Run:  dps_bench.bat [--aoe] [--secs=N] [--cls=assassin] [--theme=blood]
 ## The .bat runs the compile gate first and passes --fixed-fps 60, so
 ## simulated seconds decouple from the wall clock (CPU-bound speed).
 
@@ -83,6 +92,24 @@ const ROTATIONS := {
 	"warlock": ["ult", "a2", "a1"],
 }
 
+# AoE-mode rotations: identical except the two positioning-derived
+# re-inclusions — mage Nova on cooldown, warlock Dark Pact back in.
+const ROTATIONS_AOE := {
+	"warrior": ["ult", "a3", "a1"],
+	"archer": ["ult", "a2", "a1"],
+	"mage": ["ult", "a2", "a1"],
+	"paladin": ["a2", "a1"],
+	"warlock": ["ult", "a3", "a2", "a1"],
+}
+
+# --- AoE-mode pack shape ---
+const PILLARS := 3               # immortal boss-stat targets, in a row
+const PILLAR_SPACING := 65.0     # shoulder to shoulder (inside splash range)
+const ADD_WAVE_SECS := 10.0      # a fresh wave this often
+const ADD_WAVE_COUNT := 5
+const ADD_HP := 1200.0           # low: adds are SUPPOSED to die
+const ADD_RING := 85.0           # adds pop around the pack's heart
+
 # How far the hero stands from the dummy (melee in arm's reach — no
 # Judgment leap below 95px; ranged at a realistic boss-range 200px
 # where spread fans land like they do on a boss hitbox).
@@ -98,6 +125,7 @@ var game: Game
 var sim_secs := SIM_SECS_DEFAULT
 var only_cls := ""
 var only_theme := ""
+var aoe := false
 var results: Array = []
 
 # --- rotation driver state (one case at a time) ---
@@ -113,6 +141,15 @@ var mp_min := 0.0
 var mp_sum := 0.0
 var mp_frames := 0
 var starved := {}   # slot -> frames it sat OFF cooldown but unaffordable
+# --- AoE-mode state ---
+var pool := {}          # shared tally every pack target credits into
+var aoe_win_t := 0.0    # measured window (starts at first blood anywhere)
+var wave_t := 0.0
+var wave_idx := 0
+var adds_spawned := 0
+var pillars: Array = []
+var adds: Array = []
+var pack_center := Vector2.ZERO
 
 
 ## The measuring target: a real Boss (so `e is Boss` combat rules —
@@ -127,6 +164,7 @@ class BenchDummy extends Boss:
 	var m_hits := 0
 	var m_crits := 0
 	var m_peak := 0.0
+	var pool := {}   # AoE mode: shared pack tally (empty in single mode)
 
 	static func spawn_bench(game_node: Node2D, pos: Vector2, lvl: int, block: Dictionary) -> BenchDummy:
 		var d := BenchDummy.new()
@@ -161,8 +199,54 @@ class BenchDummy extends Boss:
 		if is_crit:
 			m_crits += 1
 		m_peak = maxf(m_peak, amount)
+		if not pool.is_empty():
+			pool["dmg"] = float(pool["dmg"]) + amount
+			pool["hits"] = int(pool["hits"]) + 1
+			if is_crit:
+				pool["crits"] = int(pool["crits"]) + 1
+			pool["peak"] = maxf(float(pool["peak"]), amount)
+			pool["started"] = true
 		knock = Vector2.ZERO
 		hp = max_hp               # immortal: the pool never moves, no phases
+
+
+## AoE-mode chaff: a pacifist, killable add. Credits EFFECTIVE damage
+## (capped at remaining HP — overkill never inflates the number) into
+## the shared pack tally, then dies like any real mob so kill-triggered
+## effects (hex detonation, Phantom refund, Starfall cascade) all fire.
+## No XP/gold: 90 dying adds must not level the bench hero.
+class AddDummy extends Enemy:
+	var pool := {}
+
+	static func spawn_add(game_node: Node2D, pos: Vector2, lvl: int, hp_val: float, pool_ref: Dictionary) -> AddDummy:
+		var a := AddDummy.new()
+		a._setup(game_node, "wolf", pos, lvl)
+		a.max_hp = hp_val
+		a.hp = hp_val
+		a.xp_value = 0
+		a.gold_value = 0
+		a.speed = 0.0
+		a.pool = pool_ref
+		return a
+
+	func _think(_delta: float) -> Vector2:
+		return Vector2.ZERO   # it exists to DIE, not to bite
+
+	func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, silent := false) -> void:
+		if dying or untargetable:
+			return
+		var credited: float = minf(amount * (1.5 if vuln_time > 0.0 else 1.0), hp)
+		pool["dmg"] = float(pool["dmg"]) + credited
+		pool["hits"] = int(pool["hits"]) + 1
+		if is_crit:
+			pool["crits"] = int(pool["crits"]) + 1
+		pool["peak"] = maxf(float(pool["peak"]), credited)
+		pool["started"] = true
+		super(amount, from_dir, is_crit, silent)
+
+	func die() -> void:
+		pool["kills"] = int(pool["kills"]) + 1
+		super()
 
 
 func _ready() -> void:
@@ -179,6 +263,8 @@ func _parse_args() -> void:
 			only_cls = a.get_slice("=", 1)
 		elif a.begins_with("--theme="):
 			only_theme = a.get_slice("=", 1)
+		elif a == "--aoe":
+			aoe = true
 
 
 func _run() -> void:
@@ -199,6 +285,9 @@ func _run() -> void:
 		block["eva"] * 100.0, block["critres"]])
 	print("[bench] hero: L%d, full %s gear (seed %d), Lv%d gems, %.0fs window per case" % [
 		PLAYER_LEVEL, GEAR_GRADE, GEAR_SEED, GEM_LVL, sim_secs])
+	if aoe:
+		print("[bench] AOE MODE: %d boss pillars in a row + %d adds (%.0f hp) every %.0fs — effective damage, pooled" % [
+			PILLARS, ADD_WAVE_COUNT, ADD_HP, ADD_WAVE_SECS])
 
 	for cls in CLS_ORDER:
 		if only_cls != "" and cls != only_cls:
@@ -249,10 +338,33 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	p.recalc()
 	_reset_player(p)
 
-	# --- the target
-	dummy = BenchDummy.spawn_bench(game, anchor + Vector2(240, 0), DUMMY_LEVEL, block)
-	game.add_enemy(dummy)
-	p.global_position = dummy.home + Vector2(-float(STAND_OFF[cls]), 0)
+	# --- the target(s)
+	pack_center = anchor + Vector2(240, 0)
+	pillars = []
+	adds = []
+	pool = {"dmg": 0.0, "hits": 0, "crits": 0, "peak": 0.0, "kills": 0, "started": false}
+	if aoe:
+		# Three pillars shoulder to shoulder; the middle one anchors aim.
+		for i in PILLARS:
+			var d := BenchDummy.spawn_bench(game,
+				pack_center + Vector2((float(i) - 1.0) * PILLAR_SPACING, 0), DUMMY_LEVEL, block)
+			d.pool = pool
+			game.add_enemy(d)
+			pillars.append(d)
+		dummy = pillars[PILLARS / 2]
+		# Melee stands under the row (arcs reach all three); the assassin
+		# lines up WITH the row so every dash threads all three pillars;
+		# ranged sits close enough that self-centered AoE catches the pack.
+		if cls in ["warrior", "paladin"]:
+			p.global_position = pack_center + Vector2(0, 70)
+		elif cls == "assassin":
+			p.global_position = pack_center + Vector2(-(PILLAR_SPACING + 65.0), 0)
+		else:
+			p.global_position = pack_center + Vector2(0, 120)
+	else:
+		dummy = BenchDummy.spawn_bench(game, pack_center, DUMMY_LEVEL, block)
+		game.add_enemy(dummy)
+		p.global_position = dummy.home + Vector2(-float(STAND_OFF[cls]), 0)
 	p.facing = Vector2.RIGHT
 	p.locked_target = dummy
 	await _frames(3)
@@ -267,9 +379,13 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	mp_sum = 0.0
 	mp_frames = 0
 	starved = {}
+	aoe_win_t = 0.0
+	wave_t = ADD_WAVE_SECS  # first wave lands immediately
+	wave_idx = 0
+	adds_spawned = 0
 	running = true
 	var guard := 0.0
-	while dummy.m_time < sim_secs:
+	while (aoe_win_t if aoe else dummy.m_time) < sim_secs:
 		await get_tree().physics_frame
 		guard += 1.0 / 60.0
 		if guard > sim_secs * 3.0 + 30.0:
@@ -277,16 +393,30 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 			break
 	running = false
 
-	var secs: float = maxf(dummy.m_time, 0.001)
-	var r := {
-		"case": "%s/%s" % [cls, tid],
-		"dps": dummy.m_total / secs,
-		"total": dummy.m_total, "secs": secs,
-		"hps": float(dummy.m_hits) / secs,
-		"crit": 100.0 * float(dummy.m_crits) / float(maxi(dummy.m_hits, 1)),
-		"peak": dummy.m_peak, "ults": ult_casts,
-		"atk": p.atk,
-	}
+	var secs: float = maxf(aoe_win_t if aoe else dummy.m_time, 0.001)
+	var r := {}
+	if aoe:
+		r = {
+			"case": "%s/%s" % [cls, tid],
+			"dps": float(pool["dmg"]) / secs,
+			"total": float(pool["dmg"]), "secs": secs,
+			"hps": float(pool["hits"]) / secs,
+			"crit": 100.0 * float(pool["crits"]) / float(maxi(int(pool["hits"]), 1)),
+			"peak": float(pool["peak"]), "ults": ult_casts,
+			"atk": p.atk,
+			"kills": "  adds %d/%d" % [int(pool["kills"]), adds_spawned],
+		}
+	else:
+		r = {
+			"case": "%s/%s" % [cls, tid],
+			"dps": dummy.m_total / secs,
+			"total": dummy.m_total, "secs": secs,
+			"hps": float(dummy.m_hits) / secs,
+			"crit": 100.0 * float(dummy.m_crits) / float(maxi(dummy.m_hits, 1)),
+			"peak": dummy.m_peak, "ults": ult_casts,
+			"atk": p.atk,
+			"kills": "",
+		}
 	r["mana"] = ""
 	if not bool(Classes.CLASSES[cls].get("manaless", false)) and mp_frames > 0:
 		var starved_bits: Array = []
@@ -297,14 +427,25 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 		r["mana"] = "  mp avg %d min %d%s" % [int(mp_sum / float(mp_frames)), int(mp_min),
 			("  STARVED " + ", ".join(starved_bits)) if not starved_bits.is_empty() else ""]
 	results.append(r)
-	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s" % [
+	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s%s" % [
 		r["case"], r["dps"], r["total"], r["secs"], r["hps"], r["crit"],
-		r["peak"], r["ults"], int(r["atk"]), r["mana"]])
+		r["peak"], r["ults"], int(r["atk"]), r["kills"], r["mana"]])
 
-	# --- teardown: drop the target, let in-flight effects (mists, rifts,
+	# --- teardown: drop the targets, let in-flight effects (mists, rifts,
 	# meteors, storm arrows) resolve into nothing before the next case.
-	dummy.remove_from_group("enemies")
-	dummy.queue_free()
+	for node in pillars:
+		if is_instance_valid(node):
+			node.remove_from_group("enemies")
+			node.queue_free()
+	pillars = []
+	for node in adds:
+		if is_instance_valid(node):
+			node.remove_from_group("enemies")
+			node.queue_free()
+	adds = []
+	if is_instance_valid(dummy) and not aoe:
+		dummy.remove_from_group("enemies")
+		dummy.queue_free()
 	dummy = null
 	for node in get_tree().get_nodes_in_group("projectiles"):
 		node.queue_free()
@@ -363,6 +504,16 @@ func _physics_process(_delta: float) -> void:
 	if not running or dummy == null:
 		return
 	sim_t += 1.0 / 60.0
+	if aoe:
+		if bool(pool["started"]):
+			aoe_win_t += 1.0 / 60.0
+		_tick_waves()
+		if rot_cls in ["warrior", "paladin"]:
+			# Stand your ground: each add wave physically bulldozes a
+			# stationary melee body out of reach (the paladin leaps back,
+			# the assassin dashes — the warrior just drifted off and swung
+			# at air). A real pilot side-steps back in; the bench pins.
+			game.player.global_position = pack_center + Vector2(0, 70)
 	var p: Player = game.player
 	if rot_cls == "assassin":
 		_drive_assassin(p)
@@ -372,13 +523,15 @@ func _physics_process(_delta: float) -> void:
 		pala_swapped = true
 		p.use_ability("ult")
 		return
-	if rot_cls == "mage" and p.mp <= 55.0 and p.cds["a2"] <= 0.0:
+	if rot_cls == "mage" and not aoe and p.mp <= 55.0 and p.cds["a2"] <= 0.0:
 		# Emergency Frost Nova: 20% of MISSING mana for 15, triggered
 		# BEFORE the pool drops under Meteor's 40 — the ult cadence never
 		# starves, and nova shares no lockout with Firebolt so the refill
-		# costs zero bolt casts. Never woven on cooldown.
+		# costs zero bolt casts. Never woven on cooldown. (AoE mode casts
+		# Nova on cooldown via the rotation instead.)
 		p.use_ability("a2")
-	for slot in ROTATIONS[rot_cls]:
+	var rotation_list: Array = ROTATIONS_AOE[rot_cls] if aoe else ROTATIONS[rot_cls]
+	for slot in rotation_list:
 		var was_ready: bool = p.cds[slot] <= 0.0
 		if was_ready and p.mp < p.ability_cost(slot):
 			starved[slot] = int(starved.get(slot, 0)) + 1
@@ -388,6 +541,24 @@ func _physics_process(_delta: float) -> void:
 	mp_min = minf(mp_min, p.mp)
 	mp_sum += p.mp
 	mp_frames += 1
+
+
+## AoE mode: a fresh wave of low-health adds every ADD_WAVE_SECS, popped
+## in a ring around the pack's heart (deterministic spots, rotated a
+## little per wave so corpses don't stack on one pixel).
+func _tick_waves() -> void:
+	wave_t += 1.0 / 60.0
+	if wave_t < ADD_WAVE_SECS:
+		return
+	wave_t = 0.0
+	wave_idx += 1
+	for i in ADD_WAVE_COUNT:
+		var ang := TAU * float(i) / float(ADD_WAVE_COUNT) + float(wave_idx) * 0.37
+		var a := AddDummy.spawn_add(game, pack_center + Vector2.from_angle(ang) * ADD_RING,
+			DUMMY_LEVEL, ADD_HP, pool)
+		game.add_enemy(a)
+		adds.append(a)
+		adds_spawned += 1
 
 
 ## The assassin dance (player-specified): Death Mark the moment it's up,

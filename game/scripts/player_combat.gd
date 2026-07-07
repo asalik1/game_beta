@@ -499,6 +499,7 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 
 	var kills := 0
 	var rider_hit := false
+	var rider_count := 0
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e == null or e.dying or e.untargetable:
@@ -513,7 +514,11 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 				_cut_flash(e.global_position, 0.65, _tcolor if _themed else Color(1, 1, 1))
 			if e.dying or e.hp <= 0.0:
 				kills += 1
-		if stab_rider > 0.0 and lane <= 150.0 and not e.dying:
+		if stab_rider > 0.0 and lane <= 150.0 and not e.dying \
+				and rider_count < Balance.DASH_RIDER_CAP:
+			# Round 49 AoE pass: the rider lands on at most DASH_RIDER_CAP
+			# victims per pass — a dash through a PACK was paying the full
+			# stab on every body in the corridor. Boss doors never notice.
 			# The dash carries the knife (rounds 26/29), and the knife
 			# reaches FARTHER than the shoulder: a graze-pass NEXT to
 			# the boss still lands the stab + blood surge — thread the
@@ -530,6 +535,7 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 			hit_enemy(e, rider_mult * stab_rider, {"stagger": 0.3})
 			_grant_stab_surge()
 			rider_hit = true
+			rider_count += 1
 			# The rider's stroke, opposite diagonal: a graze shows ONE
 			# cut; a full pass-through (lane + rider) crosses into an X.
 			_cut_flash(e.global_position, -0.65, _tcolor if _themed else Color(1, 1, 1))

@@ -877,15 +877,30 @@ func update_stats(p: Player) -> void:
 		var box: Dictionary = slot_boxes[i]
 		if slot == "potion":
 			box["key"].text = OS.get_keycode_string(game.binds["potion"])
-			box["name"].text = "Potion"
-			box["num"].text = "x%d" % p.potions
 			box["cd"].size.y = 0.0
 			box["cost"].text = ""
-			box["icon"].texture = Art.tex("potion")
-			box["border"].color = Color(0.75, 0.35, 0.35) if p.potions > 0 else Color(0.3, 0.15, 0.15)
-			box["border"].tooltip_text = _wrap_tip(
-				"Health Potion — drink to mend 60%% of your max HP (x%d carried, max %d). Boss kills restock you up to %d." % [
-					p.potions, Balance.POTION_MAX, Balance.BOSS_KILL_POTION_FLOOR])
+			if p.active_potion == "health":
+				box["name"].text = "Potion"
+				box["num"].text = "x%d" % p.potions
+				box["icon"].texture = Art.tex("potion")
+				box["border"].color = Color(0.75, 0.35, 0.35) if p.potions > 0 else Color(0.3, 0.15, 0.15)
+				box["border"].tooltip_text = _wrap_tip(
+					"Health Potion — drink to mend 60%% of your max HP (x%d carried, max %d). Boss kills restock you up to %d. [%s] cycles your potion rotation." % [
+						p.potions, Balance.POTION_MAX, Balance.BOSS_KILL_POTION_FLOOR,
+						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))])
+			else:
+				# A rotation potion holds the Q slot (playtest 2026-07-07).
+				var cnt := p.consumable_count(p.active_potion)
+				box["name"].text = "Mana" if p.active_potion == "mana_potion" else "Might"
+				box["num"].text = "x%d" % cnt
+				var ic: Texture2D = Art.consumable_icon({"id": p.active_potion})
+				box["icon"].texture = ic if ic != null else Art.tex("potion")
+				box["border"].color = Color(0.4, 0.6, 0.95) if cnt > 0 else Color(0.15, 0.2, 0.35)
+				box["border"].tooltip_text = _wrap_tip(
+					"%s — on your Q-rotation (x%d carried, cap %d this act). [%s] cycles back toward health." % [
+						p.potion_display_name(p.active_potion), cnt,
+						p.consumable_carry_cap(p.active_potion),
+						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))])
 			continue
 		var ab := Classes.ability(p.cls, slot)
 		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))

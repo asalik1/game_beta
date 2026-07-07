@@ -40,6 +40,7 @@ static func write(game: Game, slot: int) -> void:
 		# --- gear ---
 		"equipment": p.equipment, "backpack": p.backpack, "gem_bag": p.gem_bag,
 		"bag": p.bag, "consumables": p.consumables,
+		"potion_rotation": p.potion_rotation, "active_potion": p.active_potion,
 		# --- vitals / place ---
 		"hp": p.hp, "mp": p.mp,
 		"pos": [p.global_position.x, p.global_position.y],
@@ -159,6 +160,8 @@ static func apply(game: Game, data: Dictionary) -> void:
 	p.bag = bag_data if bag_data.has("slots") else Items.make_bag(Balance.STARTER_BAG_GRADE)
 	p.bag["slots"] = int(p.bag["slots"])  # JSON floats -> int
 	p.consumables = data.get("consumables", [])
+	p.potion_rotation = data.get("potion_rotation", [])
+	p.active_potion = String(data.get("active_potion", "health"))
 
 	p.recalc()
 	p.hp = clampf(float(data.get("hp", p.max_hp)), 1.0, p.max_hp)

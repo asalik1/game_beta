@@ -1324,6 +1324,9 @@ func _test_mailbox() -> void:
 	var filler: Array = []
 	while game.player.bag_used() < game.player.bag_capacity():
 		var st := Items.make_reset_stone()
+		# Consumables STACK by id (2026-07-07) — distinct ids per filler
+		# or this loop never fills the bag (one shared slot = forever).
+		st["id"] = "filler_%d" % filler.size()
 		game.player.consumables.append(st)
 		filler.append(st)
 	var gold_before: int = game.player.gold
@@ -1766,7 +1769,10 @@ func _test_equip_unequip() -> void:
 	# Unequip is refused into a full bag (item stays worn).
 	p.equip(w)
 	while p.bag_used() < p.bag_capacity():
-		p.consumables.append(Items.make_reset_stone())
+		# Distinct ids: stacked consumables share a slot (2026-07-07).
+		var filler_st := Items.make_reset_stone()
+		filler_st["id"] = "filler_%d" % p.consumables.size()
+		p.consumables.append(filler_st)
 	if p.unequip("weapon"):
 		return _fail("unequip succeeded into a full bag")
 

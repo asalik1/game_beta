@@ -78,7 +78,7 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 	tcard.add_theme_constant_override("separation", 2)
 	_card(list).add_child(tcard)
 	for tline in [
-		"CURSED CHEST — a wrong-colored chest in some combat rooms. Open it and every living monster in the room grows crueler (+%d%% damage, faster) until the purge — then it pays: a golden chest and a guaranteed gem. Decline freely; it never ambushes." % int((Balance.CURSE_DMG_MULT - 1.0) * 100),
+		"CURSED CHEST — a wrong-colored chest that materializes just inside some blighted rooms as you arrive, and withdraws after %d seconds if you leave it be. Open it and the whole pack grows crueler (+%d%% damage, faster) until the purge — then it pays: a golden chest and a guaranteed gem. Decline freely; it never ambushes." % [int(Balance.CURSE_OFFER_WINDOW), int((Balance.CURSE_DMG_MULT - 1.0) * 100)],
 		"GAMBLE SHRINE — a humming shrine in some quiet rooms. Feed it gold once and it blesses the offering (a gem, threefold gold, a chest, an elixir)... or drinks deeper (blood or more coin). The odds favor the bold — barely.",
 		"Both are rolled per character, like elites — a replay meets different temptations.",
 		"And keep your eyes open in dead ends: not everything glints until you're near it."]:
