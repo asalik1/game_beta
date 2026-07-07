@@ -603,21 +603,49 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					game.player.equip(it)
 					open_inventory("gear", cat))
 	if show_cons:
+		# Consumables STACK by id (playtest 2026-07-07): one slot per
+		# type, count in the tooltip, click uses ONE.
+		var cgroups := {}
+		var corder: Array = []
 		for c in p.consumables:
-			var cc: Dictionary = c
+			var cc0: Dictionary = c
+			var gid := String(cc0.get("id", cc0.get("name", "?")))
+			if not cgroups.has(gid):
+				cgroups[gid] = {"c": cc0, "count": 0}
+				corder.append(gid)
+			cgroups[gid]["count"] += 1
+		for gid in corder:
+			var cc: Dictionary = cgroups[gid]["c"]
+			var count: int = cgroups[gid]["count"]
+			var xn := "  x%d" % count if count > 1 else ""
 			# Quest keepsakes ride the bag but have no use-click — they
 			# exist to be GIVEN (and vanish when the run ends).
 			if String(cc.get("kind", "")) == "quest":
 				_bag_slot(grid, null, "❦", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
-					"%s\n%s" % [str(cc["name"]), str(cc.get("desc", ""))],
+					"%s%s\n%s" % [str(cc["name"]), xn, str(cc.get("desc", ""))],
 					func() -> void: pass)
 				continue
 			var cicon: Texture2D = Art.consumable_icon(cc)
+			var cid := String(gid)
+			var slotted: int = p.potion_rotation.count(cid)
+			var tip := "%s%s\n%s\n\nCLICK TO USE" % [str(cc["name"]), xn, str(cc.get("desc", ""))]
+			if cid in Items.ROTATION_POTIONS:
+				# Loadout editing (per-room potion budget, 2026-07-07 v2).
+				tip += "\nSHIFT-CLICK: slot into the room loadout · CTRL-CLICK: unslot"
+				tip += "\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. [%s] cycles in the field." % [
+					p.potion_rotation.size(), p.potion_slot_cap(),
+					("  (this: x%d)" % slotted) if slotted > 0 else "",
+					OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]
 			_bag_slot(grid, cicon, "" if cicon != null else "⟲",
-				Items.GRADE_COLOR[str(cc.get("grade", "B"))],
-				"%s\n%s\n\nCLICK TO USE" % [str(cc["name"]), str(cc.get("desc", ""))],
+				Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
+				tip,
 				func() -> void:
-					game.player.use_consumable(cc)
+					if cid in Items.ROTATION_POTIONS and Input.is_key_pressed(KEY_SHIFT):
+						game.player.loadout_add(cid)
+					elif cid in Items.ROTATION_POTIONS and Input.is_key_pressed(KEY_CTRL):
+						game.player.loadout_remove(cid)
+					else:
+						game.player.use_consumable(cc)
 					open_inventory("gear", cat))
 	if show_gems:
 		var groups := _gem_groups()
@@ -1235,12 +1263,13 @@ func open_shop(zone: int) -> void:
 		var made: Dictionary = spec[1]
 		var ccost := int(ceil(float(Balance.CONSUMABLE_PRICES[cid]) * haggle))
 		var buy_cons := func() -> void:
-			if p.gold >= ccost and p.bag_used() < p.bag_capacity():
-				p.gold -= ccost
-				p.add_consumable(made)
-				game.sfx("potion")
-			elif p.bag_used() >= p.bag_capacity():
-				game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+			if p.gold >= ccost:
+				# Gold only moves when the item actually lands in the bag.
+				if p.add_consumable(made.duplicate(true)):
+					p.gold -= ccost
+					game.sfx("potion")
+				else:
+					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
 			open_shop(zone)
 		var cb := _btn(buy, "%s — %d gold   (%s)" % [made["name"], ccost, made["desc"]],
 			buy_cons, Items.GRADE_COLOR[made["grade"]], p.gold >= ccost,
@@ -1587,7 +1616,8 @@ func open_keybinds() -> void:
 	current = "keybinds"
 	var actions := {
 		"a1": "Ability 1", "a2": "Ability 2", "a3": "Ability 3", "ult": "Ultimate",
-		"potion": "Drink potion", "interact": "Talk / interact",
+		"potion": "Drink potion", "potion_next": "Cycle potion rotation",
+		"interact": "Talk / interact",
 		"inventory": "Inventory", "skills": "Skill tree", "codex": "Codex",
 		"map": "Map", "target": "Switch target lock",
 	}

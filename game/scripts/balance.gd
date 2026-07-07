@@ -66,7 +66,7 @@ static func boss_gem_chance(lvl: float) -> float:
 # they bite DOUBLE — and a CONNECTING dash-stab refunds a chunk of the
 # dash cooldown, so the in-out dance is the engine, not the exception.
 const KNIFE_MULT := 0.16          # per knife, unsurged (was 0.26)
-const KNIFE_BLOOM_MULT := 0.24    # poison's single heavy blade (0.21 -> 0.24, round 49: lifted, then trimmed to the player's target ladder)
+const KNIFE_BLOOM_MULT := 0.22    # poison's single heavy blade (0.21 -> 0.22 net, round 49: lifted, then re-trimmed when 49d's HOBBLED lifted every slow kit — keeps Fire > Poison)
 const KNIFE_SURGE_MULT := 2.0     # surge window: the fan bites double
 const DASH_REFUND := 0.35         # dash cd refunded when the rider connects
 # Rounds 39/40: planting your feet at blade range is the riskiest act
@@ -162,6 +162,15 @@ const WITHER_MAX_STACKS := 8
 # CONCUSSION (systemic): a stun that fails on a CC-immune target lands
 # as bonus damage instead — failed duration x this x ATK.
 const CONCUSSION_MULT := 0.15
+# HOBBLED (systemic, round 49d): the same conversion for SLOWS — a slow
+# that fails on a CC-immune boss scuffs its footing instead: the boss
+# takes +HOBBLE_MULT damage from the player while the mark holds
+# (refreshed per failed slow; DoT ticks benefit too, like EXPOSED).
+# Before this, the slow half of every control theme's budget (venom/
+# poison/ice/void/earth) was a DEAD rider at boss doors — venom paid it
+# on all four slots. Tuned small: the floor lifts, the ceiling stays put.
+const HOBBLE_MULT := 0.04
+const HOBBLE_DUR := 2.5
 # TOXIN (poison/venom themes): green DoTs are the exception to the
 # no-stack burn rule — each application adds a stack that deepens the
 # TICK (never the hit), so fast cadences finally get paid. Round 49
@@ -178,7 +187,8 @@ const BRITTLE_DUR := 6.0
 # CRUSH (void theme): void hits bite displaced targets — anything
 # recently shoved/pulled hard (above ordinary hit-flinch, which peaks
 # at 220) is "in motion against its will" for a short grace window.
-const CRUSH_MULT := 0.28   # round 49: 0.25 -> 0.28 — settled against the player's target ladder
+const CRUSH_MULT := 0.22   # round 49: 0.25 -> 0.28 -> 0.22 — re-settled when 49d's HOBBLED
+                           # handed Void a free lift (its slow rides every bolt)
 const CRUSH_MIN_KNOCK := 240.0
 # Round 47: crush window widened (0.7→1.5) so ONE displacement keeps Void's
 # crush-crit combo live for ~3 bolts, not one — the Void warlock's damage
@@ -215,9 +225,13 @@ const ELITE_GEM_LV2_CHANCE := 0.35       # the guaranteed gem rolls Lv2 (floor; 
 # ramps (gem_lv2_chance) are untouched: fewer early gems, same chase.
 const ELITE_GEM_SURE_LEVEL := 12
 const ELITE_GEM_EARLY_CHANCE := 0.45
-# Rotation potions (mana draught / elixir): bag carry-cap PER TYPE that
-# widens by act — 1 in Act 1, 3 in Act 2, 5 in Act 3.
-const POTION_CARRY_BY_ACT := {1: 1, 2: 3, 3: 5}
+# Potion LOADOUT (playtest 2026-07-07, v2): potions are budgeted PER
+# ROOM. The loadout holds this many slots by act; each slot is a potion
+# type (duplicates fine — 3x health is a plan), unassigned slots default
+# to health. Entering a room refills the budget; each drink spends a
+# slot; an empty loadout locks Q until the next room. Pre-planning IS
+# the skill: bag carrying is uncapped (stacks), the fight is not.
+const POTION_SLOTS_BY_ACT := {1: 1, 2: 3, 3: 5}
 
 # River wading (terrain mechanic, Graphics & Ambience track): speed
 # multiplier in the water for player AND enemies; the bridge is dry.

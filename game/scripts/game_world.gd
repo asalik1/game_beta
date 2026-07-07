@@ -222,6 +222,8 @@ func _enter_room(i: int) -> void:
 	var first_visit: bool = not visited.get(i, false)
 	visited[i] = true
 	cur_room = i
+	if is_instance_valid(player):
+		player.reset_room_potions()  # the loadout's per-room budget refills
 	# Standing in a room, you can SEE its doors: neighbors go on the map
 	# as stubs, and a seen boss door gets its marker.
 	for dir in rooms[i]["exits"].keys():

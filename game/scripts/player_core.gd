@@ -636,36 +636,74 @@ func gain_gem(gem: Dictionary) -> bool:
 	return true
 
 
-## Rotation potions have an act-wide carry cap PER TYPE (playtest
-## 2026-07-07): 1 in Act 1, 3 in Act 2, 5 in Act 3. Everything else is
-## uncapped (bag space is the limit; stacks cost one slot per id).
-func consumable_carry_cap(id: String) -> int:
-	if not (id in Items.ROTATION_POTIONS):
-		return 999999
-	var act := Story.act_of(game.chapter_id)
-	return int(Balance.POTION_CARRY_BY_ACT.get(clampi(act, 1, 3), 5))
-
-
 func add_consumable(c: Dictionary) -> bool:
-	var id := String(c.get("id", ""))
-	if consumable_count(id) >= consumable_carry_cap(id):
-		return false
 	# Stacking: another copy of an id you already hold costs no new slot.
-	if consumable_count(id) == 0 and bag_used() >= bag_capacity():
+	if consumable_count(String(c.get("id", ""))) == 0 and bag_used() >= bag_capacity():
 		return false
 	consumables.append(c)
 	return true
 
 
-## Cycle Q's potion: health first, then every rotation-slotted potion
-## the bag actually holds (empty types are skipped, never selected).
-func cycle_potion() -> void:
-	var ring: Array = ["health"]
+# ------------------------------------------------------ potion loadout ---
+# Playtest 2026-07-07 v2: potions are budgeted PER ROOM. The loadout is
+# an ordered plan of act-capped slots (1/3/5); each slot holds a potion
+# TYPE, duplicates welcome (3x health IS a plan). potion_rotation stores
+# only the ASSIGNED slots — every unassigned slot defaults to health, so
+# an untouched loadout is pure health potions. Entering a room refills
+# the budget (room_potions, unsaved); each drink spends a slot; spent
+# loadout = Q locked until the next room. Planning is the skill.
+
+var room_potions := {}   # potion type -> uses left THIS room (unsaved)
+
+
+func potion_slot_cap() -> int:
+	var act := Story.act_of(game.chapter_id)
+	return int(Balance.POTION_SLOTS_BY_ACT.get(clampi(act, 1, 3), 5))
+
+
+## The full plan: assigned slots (clamped to cap) + health-fill.
+func potion_loadout() -> Array:
+	var cap := potion_slot_cap()
+	var out: Array = []
 	for id in potion_rotation:
-		ring.append(String(id))
-	var at := maxi(ring.find(active_potion), 0)
-	for step in range(1, ring.size() + 1):
-		var cand: String = ring[(at + step) % ring.size()]
+		if out.size() >= cap:
+			break
+		out.append(String(id))
+	while out.size() < cap:
+		out.append("health")
+	return out
+
+
+## Room entry: the budget refills from the plan (game_world calls this
+## on every room transition; death respawns cross a room, so they too).
+func reset_room_potions() -> void:
+	room_potions = {}
+	for id in potion_loadout():
+		room_potions[id] = int(room_potions.get(id, 0)) + 1
+	if int(room_potions.get(active_potion, 0)) <= 0:
+		active_potion = String(potion_loadout()[0])
+
+
+func room_potions_left() -> int:
+	var n := 0
+	for id in room_potions:
+		n += int(room_potions[id])
+	return n
+
+
+## Cycle Q among the types still budgeted THIS room (and stocked).
+func cycle_potion() -> void:
+	var types: Array = []
+	for id in potion_loadout():
+		if not types.has(id):
+			types.append(id)
+	if types.is_empty():
+		return
+	var at := maxi(types.find(active_potion), 0)
+	for step in range(1, types.size() + 1):
+		var cand: String = types[(at + step) % types.size()]
+		if int(room_potions.get(cand, 0)) <= 0:
+			continue
 		if cand != "health" and consumable_count(cand) <= 0:
 			continue
 		if cand == active_potion:
@@ -673,21 +711,32 @@ func cycle_potion() -> void:
 		active_potion = cand
 		game.sfx("ui_click")
 		game.spawn_text(global_position + Vector2(0, -52),
-			"POTION: %s" % potion_display_name(cand), Color(0.7, 0.9, 1.0))
+			"POTION: %s  (%d use%s left this room)" % [potion_display_name(cand),
+				int(room_potions[cand]), "" if int(room_potions[cand]) == 1 else "s"],
+			Color(0.7, 0.9, 1.0))
 		return
 
 
-## Toggle a potion type in/out of the Q-rotation (inventory shift-click).
-func toggle_rotation(id: String) -> void:
+## Inventory loadout editing: SHIFT-click adds one slot of this type,
+## CTRL-click removes one. Health fills whatever is left unassigned.
+func loadout_add(id: String) -> void:
 	if not (id in Items.ROTATION_POTIONS):
 		return
+	if potion_rotation.size() >= potion_slot_cap():
+		game.spawn_text(global_position + Vector2(0, -52),
+			"Loadout full — %d slot%s this act (CTRL-click removes)" % [potion_slot_cap(),
+				"" if potion_slot_cap() == 1 else "s"], Color(1.0, 0.7, 0.4))
+		return
+	potion_rotation.append(id)
+	game.sfx("ui_click")
+
+
+func loadout_remove(id: String) -> void:
 	if potion_rotation.has(id):
 		potion_rotation.erase(id)
-		if active_potion == id:
+		if active_potion == id and not potion_rotation.has(id):
 			active_potion = "health"
-	else:
-		potion_rotation.append(id)
-	game.sfx("ui_click")
+		game.sfx("ui_click")
 
 
 func potion_display_name(id: String) -> String:

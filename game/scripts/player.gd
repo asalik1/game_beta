@@ -319,8 +319,18 @@ func use_ability(slot: String) -> void:
 func drink_potion() -> void:
 	if potion_cd > 0.0 or dead:
 		return
+	# Per-room budget (playtest 2026-07-07 v2): every drink spends a
+	# loadout slot; a spent loadout locks Q until the next room.
+	if room_potions_left() <= 0:
+		potion_cd = 0.6
+		game.spawn_text(global_position + Vector2(0, -40),
+			"No potions left this room", Color(0.85, 0.7, 0.5))
+		return
+	if int(room_potions.get(active_potion, 0)) <= 0:
+		cycle_potion()  # active type spent: fall to the next budgeted one
+		return
 	# Rotation potions route through the same bag effects as clicking
-	# them in the inventory (playtest 2026-07-07: the Q-rotation).
+	# them in the inventory.
 	if active_potion != "health":
 		if active_potion == "mana_potion" and mp >= max_mp - 0.5:
 			return  # never chug mana at full — held Q would drain the stack
@@ -329,9 +339,11 @@ func drink_potion() -> void:
 		for c in consumables:
 			if String(c.get("id", "")) == active_potion:
 				potion_cd = 0.6
+				room_potions[active_potion] = int(room_potions[active_potion]) - 1
 				use_consumable(c)
-				if consumable_count(active_potion) <= 0:
-					cycle_potion()  # slot ran dry: fall to the next potion
+				if int(room_potions.get(active_potion, 0)) <= 0 \
+						or consumable_count(active_potion) <= 0:
+					cycle_potion()  # slot spent or stock dry: next potion
 				return
 		potion_cd = 0.6
 		cycle_potion()  # nothing left of this type — swap instead of sulking
@@ -340,10 +352,13 @@ func drink_potion() -> void:
 		return
 	potion_cd = 0.6
 	potions -= 1
+	room_potions["health"] = int(room_potions.get("health", 1)) - 1
 	game.fight_note_potion()
 	hp = minf(max_hp, hp + max_hp * 0.6)
 	game.sfx("potion")
 	game.spawn_text(global_position + Vector2(0, -40), "+HP", Color(0.4, 1.0, 0.4))
+	if int(room_potions.get("health", 0)) <= 0:
+		cycle_potion()
 
 
 ## attacker (optional Enemy/Boss): resolves the hit through the SAME

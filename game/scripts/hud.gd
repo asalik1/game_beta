@@ -879,27 +879,33 @@ func update_stats(p: Player) -> void:
 			box["key"].text = OS.get_keycode_string(game.binds["potion"])
 			box["cd"].size.y = 0.0
 			box["cost"].text = ""
+			# Per-room potion budget (2026-07-07 v2): the loadout's slots
+			# for the CURRENT room; spent loadout = the slot reads locked.
+			var left: int = p.room_potions_left()
+			var active_left: int = int(p.room_potions.get(p.active_potion, 0))
 			if p.active_potion == "health":
-				box["name"].text = "Potion"
+				box["name"].text = "Potion ▸%d" % active_left if left > 0 else "Spent"
 				box["num"].text = "x%d" % p.potions
 				box["icon"].texture = Art.tex("potion")
-				box["border"].color = Color(0.75, 0.35, 0.35) if p.potions > 0 else Color(0.3, 0.15, 0.15)
+				box["border"].color = (Color(0.75, 0.35, 0.35) if p.potions > 0 else Color(0.3, 0.15, 0.15)) \
+					if left > 0 else Color(0.18, 0.12, 0.12)
 				box["border"].tooltip_text = _wrap_tip(
-					"Health Potion — drink to mend 60%% of your max HP (x%d carried, max %d). Boss kills restock you up to %d. [%s] cycles your potion rotation." % [
+					"Health Potion — mends 60%% of max HP (x%d carried, max %d; boss kills restock to %d). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. [%s] cycles the loadout; SHIFT/CTRL-click potions in the inventory to plan it." % [
 						p.potions, Balance.POTION_MAX, Balance.BOSS_KILL_POTION_FLOOR,
+						left, p.potion_slot_cap(),
 						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))])
 			else:
-				# A rotation potion holds the Q slot (playtest 2026-07-07).
 				var cnt := p.consumable_count(p.active_potion)
-				box["name"].text = "Mana" if p.active_potion == "mana_potion" else "Might"
+				box["name"].text = ("%s ▸%d" % ["Mana" if p.active_potion == "mana_potion" else "Might", active_left]) if left > 0 else "Spent"
 				box["num"].text = "x%d" % cnt
 				var ic: Texture2D = Art.consumable_icon({"id": p.active_potion})
 				box["icon"].texture = ic if ic != null else Art.tex("potion")
-				box["border"].color = Color(0.4, 0.6, 0.95) if cnt > 0 else Color(0.15, 0.2, 0.35)
+				box["border"].color = (Color(0.4, 0.6, 0.95) if cnt > 0 else Color(0.15, 0.2, 0.35)) \
+					if left > 0 else Color(0.18, 0.12, 0.12)
 				box["border"].tooltip_text = _wrap_tip(
-					"%s — on your Q-rotation (x%d carried, cap %d this act). [%s] cycles back toward health." % [
+					"%s — slotted in your loadout (x%d carried). ROOM BUDGET: %d of %d slots left this room. [%s] cycles the loadout." % [
 						p.potion_display_name(p.active_potion), cnt,
-						p.consumable_carry_cap(p.active_potion),
+						left, p.potion_slot_cap(),
 						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))])
 			continue
 		var ab := Classes.ability(p.cls, slot)

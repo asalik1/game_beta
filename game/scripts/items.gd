@@ -207,8 +207,9 @@ static func bag_price(grade: String) -> int:
 # Non-gear bag items ({"kind": "stone", ...}). The talent reset stone is
 # the first; elites are the primary source (playtest round 6).
 
-# Potions eligible for the Q-rotation (2026-07-07): cycled with the
-# potion_next bind, act-capped carry (Balance.POTION_CARRY_BY_ACT).
+# Potions eligible for the room LOADOUT (2026-07-07 v2): slotted from
+# the inventory, cycled with the potion_next bind, budgeted per room
+# (Balance.POTION_SLOTS_BY_ACT; unassigned slots drink as health).
 # Scrolls and stones stay inventory-clicked utilities.
 const ROTATION_POTIONS := ["mana_potion", "elixir_might"]
 static func make_reset_stone() -> Dictionary:
