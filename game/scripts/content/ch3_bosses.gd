@@ -29,6 +29,17 @@ const ENEMIES := {
 		"attrs": {"STR": 1.5, "VIT": 1.5},
 		"music": "boss_sexton", "music_fallback": "boss_vargoth",
 		"lore": "Every grave he ever dug stands open. He remembers who he meant each one for.",
+		"mechanics": [
+			{"name": "Chain-Detonating Corpses",
+			 "tell": "Endless shamblers claw up around you; each one that dies leaves a corpse, and a corpse falling near another paints twin blast circles.",
+			 "counter": "The adds drop zero loot — don't farm them. Kill them SPREAD OUT so their corpses never fall within a body's length of each other."},
+			{"name": "Shovelwork",
+			 "tell": "He bursts into churned earth and vanishes underground, tearing a line of eruption circles straight at your feet.",
+			 "counter": "Step off the line — the eruptions walk outward one after another. He's untargetable while buried, so save your burst for when he surfaces at the end."},
+			{"name": "Grave Swipe",
+			 "tell": "At mid-range a single earth circle blooms under you.",
+			 "counter": "Walk out of it; it's the cheap poke that punishes standing still between the bigger moves."},
+		],
 	},
 	# The first person the Choir refused to bury. Her scream became the
 	# liturgy; the SILENCE (inverse telegraph) debuts here.
@@ -41,6 +52,20 @@ const ENEMIES := {
 		"attrs": {"INT": 2.0, "AGI": 1.0},
 		"music": "boss_vess", "music_fallback": "boss_morwen",
 		"lore": "The Choir's first hymn was a widow told 'no.' She is still singing her half of it.",
+		"mechanics": [
+			{"name": "The Silence",
+			 "tell": "A keening swell rises and the whole arena flashes danger except one quiet circle marked near you.",
+			 "counter": "Inverse telegraph — everywhere is the wail. Sprint INTO the silent circle and wait out the scream."},
+			{"name": "Echoing Grief Fan",
+			 "tell": "She throws a three-bolt fan, then a beat later the same fan fires again from the exact spot she first cast it.",
+			 "counter": "Dodge the volley, then keep moving — the echo repeats the pattern from where she stood, so don't drift back into it."},
+			{"name": "Blink & Wail Ring",
+			 "tell": "Close the gap and she blinks away; periodically she rings out twelve bolts in a full circle.",
+			 "counter": "Expect her to teleport when cornered, and leave a gap in the ring to slip through rather than tanking it."},
+			{"name": "Keening (30%)",
+			 "tell": "At 30% she screams and glows blue-white; the Silence now shows a SECOND flickering circle.",
+			 "counter": "The flickering circle is a decoy — the steady, solid one is the real shelter. Trust the calm one."},
+		],
 	},
 	# The chapter finale: the saint the rot refuses. Censers heal him
 	# (kill priority), the bell tolls shrink the shelter, and at 25%
@@ -54,6 +79,20 @@ const ENEMIES := {
 		"attrs": {"VIT": 2.0, "STR": 1.5},
 		"music": "boss_varo", "music_fallback": "boss_nullwarden",
 		"lore": "The Choir's holiest relic is the one thing in Vaelscar the rot refuses. He prays daily that this is not what it means.",
+		"mechanics": [
+			{"name": "Blighted Censers",
+			 "tell": "Three censers ring the arena and their incense visibly mends him; the congregation relights them at 60% and 30%.",
+			 "counter": "He heals while any censer burns — kill priority. Snuff all three out before you commit damage to the saint, and again after each relight."},
+			{"name": "The Toll",
+			 "tell": "The bell tolls and the whole floor strikes except a few marked shadows — and every toll cracks one, so the safe shadows keep shrinking.",
+			 "counter": "Stand in a shadow before the bell lands. Fewer will appear each time, so don't linger — expect a tighter squeeze on every toll."},
+			{"name": "Reliquary Rain & Slam",
+			 "tell": "Falling blades chase your position in sequence, and he slams out a wide ring of bolts.",
+			 "counter": "Keep moving so the tracking blades land behind you, and give the bolt ring room rather than fighting from point-blank."},
+			{"name": "Saint Varo Stands (25%)",
+			 "tell": "At 25% he rises for the first time in sixty years, glows gold, and moves half again as fast.",
+			 "counter": "His toll and slam come far more often now — burn him down fast and keep the censers dead so nothing buys him time."},
+		],
 	},
 	# Varo's censer-bearers: scenery that bleeds. Zero rewards, zero
 	# attacks — while one burns, the saint mends. (Add-channel-heal
