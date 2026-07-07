@@ -257,13 +257,18 @@ func _ring_fx(pos: Vector2, color: Color, radius: float, collapse := false) -> v
 
 
 ## Ghost copies of the hero along a dash path, fading in sequence.
-func _afterimages(start: Vector2, end: Vector2, color: Color, count := 3) -> void:
+## `stagger`/`fade` shape the read: quick+sparse = a blink, slow+dense =
+## bulk in motion (the warrior's charge).
+func _afterimages(start: Vector2, end: Vector2, color: Color, count := 3,
+		stagger := 0.05, fade := 0.26) -> void:
 	if sprite == null:
 		return
 	for i in count:
 		var t := float(i + 1) / float(count + 1)
 		var ghost := Sprite2D.new()
 		ghost.texture = sprite.texture
+		ghost.hframes = sprite.hframes
+		ghost.frame = sprite.frame
 		ghost.flip_h = sprite.flip_h
 		ghost.scale = sprite.scale
 		ghost.global_position = start.lerp(end, t) + sprite.position
@@ -271,8 +276,8 @@ func _afterimages(start: Vector2, end: Vector2, color: Color, count := 3) -> voi
 		ghost.z_index = 5
 		game.add_child(ghost)
 		var tw := ghost.create_tween()
-		tw.tween_interval(0.05 * i)
-		tw.tween_property(ghost, "modulate:a", 0.0, 0.26)
+		tw.tween_interval(stagger * i)
+		tw.tween_property(ghost, "modulate:a", 0.0, fade)
 		tw.tween_callback(ghost.queue_free)
 
 
@@ -327,7 +332,12 @@ func _muzzle(dir: Vector2, color: Color) -> void:
 
 ## Melee strike. style "swing" = crescent arc; "stab" = straight thrust
 ## (a piercing streak, and the held weapon lunges instead of swiping).
-func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style := "swing", snd := "slash") -> int:
+## `variant` picks the swing's sweep path (-1 = classic fixed fan;
+## 0 diagonal / 1 crescent-down / 2 crescent-up — the warrior cycles
+## these so Cleave reads as swordplay, not a repeated air-swipe), and
+## variants lead the arc with a blade sprite (the equipped weapon's own
+## icon when one is held). Hit logic is untouched — visual only.
+func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style := "swing", snd := "slash", variant := -1) -> int:
 	game.sfx(snd)
 	melee_swing = 0.16
 	melee_style = style
@@ -357,19 +367,41 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 	else:
 		# The crescent SWEEPS across the arc instead of fading in place —
 		# a pivot at the hero swings the blade sprite through ~100°.
+		# Variant sweeps keep the strike centered on `dir` but change the
+		# path: diagonal cut, overhead crescent down, rising crescent up.
+		var from := -0.9
+		var to := 0.9
+		match variant:
+			0: from = -1.7; to = 0.55
+			1: from = -0.8; to = 1.25
+			2: from = 0.8; to = -1.25
 		var pivot := Node2D.new()
-		pivot.rotation = dir.angle() - 0.9
+		pivot.rotation = dir.angle() + from
 		pivot.z_index = 6
 		add_child(pivot)
 		var spr := Sprite2D.new()
 		spr.texture = Art.tex(fx_name)
 		spr.position = Vector2(reach * 0.5, 0)
 		spr.scale = Vector2(2.8, 2.8) * (reach / 78.0)
+		spr.flip_v = to < from  # rising cut: the crescent's belly flips with it
 		if _themed:
 			spr.modulate = _tcolor
 		pivot.add_child(spr)
+		if variant >= 0:
+			# The blade itself leads the swipe — held weapon's icon when
+			# armed, a bare blade otherwise — angled with the cut so the
+			# swing reads as a sword stroke, not an air-swipe.
+			var ahead: float = 0.18 * signf(to - from)
+			var blade := Sprite2D.new()
+			blade.texture = weapon_spr.texture if (weapon_spr != null
+				and weapon_spr.texture != null) else Art.tex("w_blade")
+			blade.position = Vector2.from_angle(ahead) * reach * 0.58
+			blade.rotation = PI / 2.0 + ahead  # icon art points up: lay it along the arm
+			blade.scale = Vector2(3.0, 3.0)
+			blade.z_index = 1
+			pivot.add_child(blade)
 		var tween := pivot.create_tween()
-		tween.tween_property(pivot, "rotation", dir.angle() + 0.9, 0.13) \
+		tween.tween_property(pivot, "rotation", dir.angle() + to, 0.13) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tween.parallel().tween_property(pivot, "modulate:a", 0.0, 0.17)
 		tween.tween_callback(pivot.queue_free)
@@ -430,7 +462,10 @@ func _grant_stab_surge() -> void:
 	stab_ls_amt = Balance.SURGE_LS_FLOOR + Balance.SURGE_LS_SCALE * (1.0 - hp / max_hp)
 
 
-func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, iframe := 0.3) -> int:
+## `heavy` sells mass instead of speed: a denser, slower-fading ghost
+## trail + landing dust/shake (the warrior's charge — an armored wall
+## arriving, not an assassin's blink; same instant mechanics).
+func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, iframe := 0.3, heavy := false) -> int:
 	game.sfx("blink")
 	var color := _tcolor if _themed else Color(0.6, 0.7, 1.0)
 	var start := global_position
@@ -441,7 +476,12 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 	game.burst(start, color, 8)
 	game.burst(end, color, 8)
 	game.dust(start + Vector2(0, 14), 4)  # kicked-up dust where you left
-	_afterimages(start, end, color)
+	if heavy:
+		_afterimages(start, end, color, 7, 0.085, 0.40)
+		game.dust(end + Vector2(0, 14), 6)  # the landing hits like a wall
+		game.shake(2.5)
+	else:
+		_afterimages(start, end, color)
 
 	# Light trail between the two points.
 	var mid := (start + end) / 2.0

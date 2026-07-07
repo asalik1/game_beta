@@ -54,19 +54,15 @@ const TREE_PRESETS := {
 # Gem loadout: every item sockets 1 SPECIAL + 1 regular (A = 2 slots).
 # Specials (player-decided): Combo for the four spam kits, Haste for
 # warrior/paladin (0.40 knee beats Combo's 0.30 for pure cast rate).
-# Regulars are best-in-slot judgment: ATK% + pen for everyone, CritDmg
-# + pen where the theme stacks cap-exempt crit (Hunt/Shadow).
+# Regulars: ATK% + class-matched pen for everyone. (Round 49: the first
+# edition gave Hunt/Shadow CritDmg gems — measurably WORSE than Rubies
+# at their real 23-31% effective crit, and it skewed exactly the crit
+# variants; uniform gems keep variant comparisons honest.)
 const GEM_PRESETS := {
 	"warrior": {"*": {"special": "cdr", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
 	"paladin": {"*": {"special": "cdr", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
-	"archer": {
-		"hunt": {"special": "combo", "regular": ["crit_dmg", "physpen", "crit_dmg", "physpen"]},
-		"*": {"special": "combo", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]},
-	},
-	"assassin": {
-		"shadow": {"special": "combo", "regular": ["crit_dmg", "physpen", "crit_dmg", "physpen"]},
-		"*": {"special": "combo", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]},
-	},
+	"archer": {"*": {"special": "combo", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
+	"assassin": {"*": {"special": "combo", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
 	"mage": {"*": {"special": "combo", "regular": ["atk_pct", "magpen", "atk_pct", "magpen"]}},
 	"warlock": {"*": {"special": "combo", "regular": ["atk_pct", "magpen", "atk_pct", "magpen"]}},
 }
@@ -108,6 +104,11 @@ var sim_t := 0.0
 var ult_until := -1.0
 var pala_swapped := false
 var ult_casts := 0
+# mana telemetry (round 49: "is the warlock running dry?")
+var mp_min := 0.0
+var mp_sum := 0.0
+var mp_frames := 0
+var starved := {}   # slot -> frames it sat OFF cooldown but unaffordable
 
 
 ## The measuring target: a real Boss (so `e is Boss` combat rules —
@@ -258,6 +259,10 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	ult_until = -1.0
 	pala_swapped = false
 	ult_casts = 0
+	mp_min = p.max_mp
+	mp_sum = 0.0
+	mp_frames = 0
+	starved = {}
 	running = true
 	var guard := 0.0
 	while dummy.m_time < sim_secs:
@@ -278,10 +283,19 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 		"peak": dummy.m_peak, "ults": ult_casts,
 		"atk": p.atk,
 	}
+	r["mana"] = ""
+	if not bool(Classes.CLASSES[cls].get("manaless", false)) and mp_frames > 0:
+		var starved_bits: Array = []
+		for slot in starved:
+			var s: float = float(starved[slot]) / 60.0
+			if s >= 1.0:
+				starved_bits.append("%s %.0fs" % [slot, s])
+		r["mana"] = "  mp avg %d min %d%s" % [int(mp_sum / float(mp_frames)), int(mp_min),
+			("  STARVED " + ", ".join(starved_bits)) if not starved_bits.is_empty() else ""]
 	results.append(r)
-	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d" % [
+	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s" % [
 		r["case"], r["dps"], r["total"], r["secs"], r["hps"], r["crit"],
-		r["peak"], r["ults"], int(r["atk"])])
+		r["peak"], r["ults"], int(r["atk"]), r["mana"]])
 
 	# --- teardown: drop the target, let in-flight effects (mists, rifts,
 	# meteors, storm arrows) resolve into nothing before the next case.
@@ -356,9 +370,14 @@ func _physics_process(_delta: float) -> void:
 		return
 	for slot in ROTATIONS[rot_cls]:
 		var was_ready: bool = p.cds[slot] <= 0.0
+		if was_ready and p.mp < p.ability_cost(slot):
+			starved[slot] = int(starved.get(slot, 0)) + 1
 		p.use_ability(slot)
 		if slot == "ult" and was_ready and p.cds[slot] > 0.0:
 			ult_casts += 1
+	mp_min = minf(mp_min, p.mp)
+	mp_sum += p.mp
+	mp_frames += 1
 
 
 ## The assassin dance (player-specified): Death Mark the moment it's up,

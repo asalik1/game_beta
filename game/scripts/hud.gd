@@ -569,8 +569,15 @@ func _build_minimap() -> void:
 	minimap_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	minimap_root.visible = false
 	add_child(minimap_root)
-	var bg := ColorRect.new()
-	bg.color = Color(0.05, 0.05, 0.09, 0.7)
+	# Solid-enough panel + border so the map holds its shape on BLACK
+	# ground too (QA finding 7: it dissolved over void terrain).
+	var bg := Panel.new()
+	var bgsb := StyleBoxFlat.new()
+	bgsb.bg_color = Color(0.05, 0.05, 0.09, 0.88)
+	bgsb.border_color = Color(0.9, 0.8, 0.5, 0.3)
+	bgsb.set_border_width_all(1)
+	bgsb.set_corner_radius_all(4)
+	bg.add_theme_stylebox_override("panel", bgsb)
 	bg.size = Vector2(198, 170)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	minimap_root.add_child(bg)
@@ -1161,6 +1168,10 @@ const PORTRAIT_CAST := [
 	["choir mother", "choirmother"], ["pilgrim", "choirmother"],
 	["korrag", "stormwarden"], ["beastkin", "beastkin"], ["scout", "beastkin"],
 	["elder", "elder"], ["king", "king"],
+	# The class-opening speakers (QA finding 3: four openings had no
+	# portraits). The Tome stays faceless on purpose — it's a book.
+	["carter", "villager"], ["the mother", "villager"], ["ren", "villager"],
+	["osric", "villager"],
 ]
 
 
@@ -1177,16 +1188,34 @@ func _portrait_for(who: String) -> String:
 				found = pair[1]
 				break
 		if found == "":
-			# Any named monster/boss whose codex name contains the speaker
-			# (or vice versa) lends its sprite.
+			# Any named monster/boss lends its sprite — WHOLE-WORD matches
+			# only (QA finding 2: "Ren" landed on "the Unchained CurRENt").
+			# Every word of the speaker must appear as a word of the name.
+			var low_words := _name_words(low)
 			for kind in Story.ALL_ENEMIES:
 				var st: Dictionary = Story.ALL_ENEMIES[kind]
-				var ename := String(st.get("name", "")).to_lower()
-				if ename != "" and (ename.contains(low) or low.contains(ename)):
+				var ewords := _name_words(String(st.get("name", "")))
+				if ewords.is_empty() or low_words.is_empty():
+					continue
+				var all_in := true
+				for w in low_words:
+					if not w in ewords:
+						all_in = false
+						break
+				if all_in:
 					found = String(st.get("sprite", ""))
 					break
 	_portrait_cache[who] = found
 	return found
+
+
+## Lowercased words of a display name, punctuation stripped —
+## "Korrag, Stormwarden Broken" -> [korrag, stormwarden, broken].
+func _name_words(s: String) -> Array:
+	var clean := ""
+	for ch in s.to_lower():
+		clean += ch if (ch >= "a" and ch <= "z") else " "
+	return Array(clean.split(" ", false))
 
 
 func _set_portrait(who: String) -> void:

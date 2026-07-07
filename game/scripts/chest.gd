@@ -33,7 +33,10 @@ static func drop(game_node: Node2D, chest_tier: String, pos: Vector2) -> Chest:
 	shape.radius = 26
 	cs.shape = shape
 	c.add_child(cs)
-	c.body_entered.connect(c._on_body_entered)
+	# DEFERRED: opening can spawn new Area2Ds (bag-full Pickup drops, cache
+	# hooks) — doing that inside the physics flush is a Godot error
+	# (area_set_shape_disabled: "Can't change this state while flushing queries").
+	c.body_entered.connect(c._on_body_entered, CONNECT_DEFERRED)
 	game_node.add_child(c)
 
 	# Little "pop" when it lands.

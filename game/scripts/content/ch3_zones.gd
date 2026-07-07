@@ -215,7 +215,7 @@ const ENEMIES := {
 		"physres": 8.0, "magres": 32.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
 		"level": 18, "hp_g": 0.11, "dmg_g": 0.10,
 		"lore": "Choir faithful who wept until the blight took the weeping over. The grief is real. The aim is too."},
-	"casket_creeper": {"name": "Casket Creeper", "sprite": "spider", "hp": 140.0, "dmg": 33.0, "speed": 210.0, "xp": 15, "gold": 16, "ranged": false, "scale": 3.1,
+	"casket_creeper": {"name": "Casket Creeper", "sprite": "casket_creeper", "hp": 140.0, "dmg": 33.0, "speed": 210.0, "xp": 15, "gold": 16, "ranged": false, "scale": 3.1,
 		"physres": 5.0, "magres": 12.0, "eva": 0.14, "critres": 0.0, "dmg_type": "phys",
 		"level": 19, "hp_g": 0.10, "dmg_g": 0.09,
 		"lore": "It nests in what the Choir refuses to close. Every open grave in the Vale has a tenant."},

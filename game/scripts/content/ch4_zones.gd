@@ -213,7 +213,7 @@ const ENEMIES := {
 		"physres": 10.0, "magres": 38.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
 		"level": 24, "hp_g": 0.11, "dmg_g": 0.10,
 		"lore": "They attended one of Ordo's sermons out of curiosity. The Judge's court does not have a public gallery — everyone present is staff."},
-	"vent_skitter": {"name": "Vent Skitter", "sprite": "spider", "hp": 260.0, "dmg": 48.0, "speed": 215.0, "xp": 15, "gold": 18, "ranged": false, "scale": 3.1,
+	"vent_skitter": {"name": "Vent Skitter", "sprite": "vent_skitter", "hp": 260.0, "dmg": 48.0, "speed": 215.0, "xp": 15, "gold": 18, "ranged": false, "scale": 3.1,
 		"physres": 8.0, "magres": 20.0, "eva": 0.15, "critres": 0.0, "dmg_type": "phys",
 		"level": 25, "hp_g": 0.10, "dmg_g": 0.09,
 		"lore": "It lives in the vent shafts and eats what falls in. The foundries feed it better than the mountain ever did."},

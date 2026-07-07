@@ -3,44 +3,61 @@ Music override folder
 Drop a .ogg, .mp3 or .wav file here named after a track to replace it,
 looped automatically. Track names: village, darkwood, marsh, keep,
 magma, icefield, graveyard, desert, rainstorm, holy, crystalline,
-boss_fangmaw, boss_morwen, boss_vargoth.
+title, roster, boss_fangmaw, boss_morwen, boss_vargoth.
 Multi-boss brawls (2-5 live bosses) look for: boss_x2, boss_x3,
 boss_x4, boss_x5 — optional; the first boss's own theme plays when a
 tier's file is missing.
 Delete a file to fall back to the built-in composed version.
 
-Current tracks (all from OpenGameArt.org):
-- magma.ogg       "Lava Area Theme" by Wolfgang_ — CC-BY 4.0
-                  https://opengameart.org/content/lava-area-theme
-- icefield.ogg    "Snow May Never End (v2)" by Sindwiller — CC-BY-SA 3.0
-                  https://opengameart.org/content/snow-may-never-end
-- graveyard.ogg   "RPG - The Graveyard" by HitCtrl — CC-BY 3.0
-                  https://opengameart.org/content/rpg-the-graveyard
-- desert.mp3      "Nomads" by elerya — CC-BY 3.0
-                  https://opengameart.org/content/nomads
-- rainstorm.ogg   "rain and thunders" by kindland — CC0
+Current tracks — PURCHASED Alkakrab packs (2026-07-07, from the user's
+asset library): royalty-free for commercial games per the packs'
+License Info PDFs; no attribution required; do not redistribute the
+raw packs. Chosen by name/mood, gains RMS-measured (MUSIC_TUNE):
+- title.ogg       "Hollow Throne" — Flameheart Dark Fantasy pack
+- roster.ogg      "Hearthsong" — 55 Fantasy Open World pack
+- graveyard.ogg   "The Endless Graveyard" — Flameheart
+- icefield.ogg    "Beneath the Frozen Crypt" — Flameheart
+                  (replaces a CC-BY-SA track that violated the license
+                  rules — share-alike is banned for this project)
+- magma.ogg       "Ritual Under Ashen Skies" — Flameheart
+- desert.ogg      "Westward Winds" — 55 Fantasy Open World
+- crystalline.ogg "Veil of Echoes" — 50 Cozy Fantasy RPG pack
+- holy.ogg        "The Forgotten Cathedral" — Flameheart
+Per-boss themes (2026-07-07, same purchased Alkakrab packs; every
+declared boss_<kind> slot filled, ch2 offline-synth placeholders
+retired; the ch1 trio upgraded too on user approval — the synth
+versions remain in music.gd as fallbacks, delete a file to revert):
+- boss_fangmaw "The Nameless Hunger" · boss_morwen "Harbinger of
+  Plague" · boss_vargoth "Shattered Crown" (his death's literal event)
+- boss_stormwarden "Raised by The Storm" (55 OW Action)
+- boss_choirmother "The Last Dirge" · boss_nullwarden "The Iron Revenant"
+- ch3: sexton "Tomb of Echoes" · vess "Omen of Crows" ·
+  varo "Black Crowned Seraph"
+- ch4: forgemistress "Soulforged Chains" · cinderhide "Veins of the
+  Underworld" · ashpriest "The Scorched Oracle"
+- ch5: whitepelt "Night's Devouring Maw" · icebound "Wounds of
+  Eternity" · sleepkeeper "Veil of the Forgotten Ones"
+- ch6: auroch "The Eternal Maw" · gardener "The Cursed Grove" ·
+  kaethra "Crown of Rot"
+- ch7: veyx "Herald of Dread" · echo "Curse of the Hollow Star" ·
+  cyrraeth "Dead God's Whisper"
+New terrain slots (were borrowing keep/marsh):
+- void.ogg  "Vault of Eternal Night" · spore.ogg "The Hollow Feast"
+(all Flameheart Dark Fantasy pack unless noted)
+
+Kept from OpenGameArt:
+- rainstorm.ogg   "rain and thunders" by kindland — CC0 (pure storm
+                  ambience, deliberately not musical)
                   https://opengameart.org/content/rain-and-thunders
-- holy.wav        "Cathedral" by Umplix — CC0
-                  https://opengameart.org/content/cathedral-0
-- crystalline.mp3 "Crystal Cave (song18)" by cynicmusic (pixelsphere.org) — CC0
-                  https://opengameart.org/content/crystal-cave-song18
 
-Multi-boss tiers (escalating intensity):
-- boss_x2.wav     "Epic Boss Battle" by Juhani Junkala (SubspaceAudio) — CC0
-                  https://opengameart.org/content/boss-battle-music
-- boss_x3.wav     "Boss Battle #2 [Symphonic Metal]" by nene — CC0
-                  https://opengameart.org/content/boss-battle-2-symphonic-metal
-                  (zip's two files are MISLABELED: the one named
-                  "opening" is the loop — that's the file installed here)
-- boss_x4.wav     "Boss Battle #9 [Metal]" by nene — CC0
-                  https://opengameart.org/content/boss-battle-9-metal
-                  (boss_battle_9_metal_loop.wav from the pack)
-- boss_x5.wav     "Colossal Boss Battle Theme" by Matthew Pablo — CC-BY 3.0
-                  https://opengameart.org/content/colossal-boss-battle-theme
-                  ("Blackmoor Colossus Loop.wav" from the zip — the
-                  looped WAV, kept as WAV for a gapless loop point;
-                  attribution REQUIRED: Matthew Pablo, matthewpablo.com)
+Multi-boss tiers (escalating 2 bosses -> the world ends; purchased
+packs, 2026-07-07 — replaces the old OGA CC0/CC-BY set, which also
+retires the last attribution-required music track):
+- boss_x2.ogg  "With Fire And Sword" (55 OW Action)
+- boss_x3.ogg  "Clash of The Kings" (55 OW Action)
+- boss_x4.ogg  "Chains of the Damned" (Flameheart)
+- boss_x5.ogg  "The Final Eclipse" (Flameheart)
 
-CC-BY tracks require the above attribution to ship with the game.
-village / darkwood / marsh / keep and the three boss themes are
-original compositions synthesized in scripts/music.gd.
+village / darkwood / marsh / keep remain original compositions
+synthesized in scripts/music.gd (the loved set); the ch1 boss synth
+trio also lives there as the fallback if the .ogg files are removed.

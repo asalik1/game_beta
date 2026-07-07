@@ -203,7 +203,7 @@ const ENEMIES := {
 		"physres": 20.0, "magres": 30.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
 		"level": 28, "hp_g": 0.10, "dmg_g": 0.09,
 		"lore": "Cult porters who walked the white road one too many times. They still walk it. They no longer bring wagons, or come back."},
-	"winterfang": {"name": "Winterfang", "sprite": "wolf", "hp": 340.0, "dmg": 62.0, "speed": 190.0, "xp": 14, "gold": 20, "ranged": false, "scale": 3.1,
+	"winterfang": {"name": "Winterfang", "sprite": "winterfang", "hp": 340.0, "dmg": 62.0, "speed": 190.0, "xp": 14, "gold": 20, "ranged": false, "scale": 3.1,
 		"physres": 15.0, "magres": 20.0, "eva": 0.05, "critres": 0.0, "dmg_type": "phys",
 		"level": 29, "hp_g": 0.10, "dmg_g": 0.09,
 		"lore": "The winter clans' wolves, gone strange around the sleeping valley — they circle the dreamers like shepherds, and eat anyone who isn't one."},

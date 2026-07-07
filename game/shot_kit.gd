@@ -140,8 +140,10 @@ func _ready() -> void:
 	_shot("boss_banner")
 	await get_tree().create_timer(2.4).timeout
 	if terrain != "":
-		# Park by the north wall: the halo should throw a wall shadow.
-		game.player.global_position = game.rooms[0]["origin"] + Vector2(700.0, 150.0)
+		# Park ~120px SOUTH of the north wall (QA finding 6: parking AT
+		# the wall clamps the camera and pushes both off-frame) — the
+		# halo's wall shadow stays fully visible.
+		game.player.global_position = game.rooms[0]["origin"] + Vector2(700.0, 270.0)
 		await _frames(10)
 		_shot("wall_shadow")
 	game.menus.open_inventory()

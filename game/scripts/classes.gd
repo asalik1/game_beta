@@ -99,10 +99,10 @@ const CLASSES := {
 		"hp": 130.0, "hp_lvl": 19.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 15.5, "atk_lvl": 4.3, "speed": 250.0,
 		"abilities": {
-			"a1": {"name": "Cleave",      "cd": 0.45, "mp": 0,  "desc": "Swing your blade at the nearest enemy."},
+			"a1": {"name": "Cleave",      "cd": 0.74, "mp": 0,  "desc": "Swing your blade at the nearest enemy. The measured pace of a plated arm — BERSERK swings it at full speed."},
 			"a2": {"name": "Shield Bash", "cd": 4.5,  "mp": 10, "desc": "Charge forward, ramming everything in your path: damage, knockback and a 1.3s STUN."},
 			"a3": {"name": "Whirlwind",   "cd": 8.0,  "mp": 15, "desc": "Damage everything around you."},
-			"ult": {"name": "Berserk",    "cd": 40.0, "mp": 0,  "desc": "8s: +40% damage, +25% speed, 15% lifesteal."},
+			"ult": {"name": "Berserk",    "cd": 40.0, "mp": 0,  "desc": "8s: +40% damage, +25% speed, 15% lifesteal — and the rage swings Cleave at its unchained speed."},
 		},
 	},
 	"archer": {
@@ -110,7 +110,7 @@ const CLASSES := {
 		"desc": "Ranged skirmisher. Safe damage from a distance, with a dodge roll.",
 		"passive": {"text": "Hawk Eye — +10% crit chance, +12 DEX. Second Wind: untouched for 3s, you recover a strong 6% max HP/s — spacing IS your sustain.", "crit": 0.10, "dex": 12.0, "sw_delay": 3.0, "sw_regen": 0.06},
 		"hp": 100.0, "hp_lvl": 14.0, "mp": 40.0, "mp_lvl": 3.0,
-		"atk": 11.1, "atk_lvl": 2.91, "speed": 265.0,   # round 47: −7.5% to land ~1200 boss dps (tied with assassin)
+		"atk": 11.66, "atk_lvl": 3.06, "speed": 265.0,   # round 47: −7.5%; round 49 (dps bench): +5% back — archer trailed the field
 		"abilities": {
 			"a1": {"name": "Quick Shot",  "cd": 0.36, "mp": 0,  "desc": "Fire an arrow at the nearest enemy."},
 			"a2": {"name": "Multishot",   "cd": 5.0,  "mp": 12, "desc": "Fan of 5 arrows."},
@@ -152,7 +152,7 @@ const CLASSES := {
 		"hp": 125.0, "hp_lvl": 17.0, "mp": 55.0, "mp_lvl": 5.0,
 		"atk": 15.0, "atk_lvl": 4.3, "speed": 248.0,
 		"abilities": {
-			"a1": {"name": "Judgment",       "cd": 0.5,  "mp": 0,  "desc": "Bring the warhammer down on the nearest enemy — LEAPING to them if they stand beyond arm's reach (the leap arms every 5s; its brief landing guard rides the leap, not the swing)."},
+			"a1": {"name": "Judgment",       "cd": 0.8,  "mp": 0,  "desc": "Bring the warhammer down on the nearest enemy — LEAPING to them if they stand beyond arm's reach (the leap arms every 5s; its brief landing guard rides the leap, not the swing)."},
 			"a2": {"name": "Consecration",   "cd": 8.0,  "mp": 15, "desc": "Sanctify the ground around you: two waves of holy fire, and every enemy struck MENDS you."},
 			"a3": {"name": "Aegis",          "cd": 9.0,  "mp": 12, "desc": "Raise the shield for 2.5s: massive resistances, and attackers are SMITTEN in return."},
 			"ult": {"name": "Conviction",    "cd": 8.0,  "mp": 0,  "desc": "Swap stances. Entering RETRIBUTION drags nearby enemies to your hammer in chains; returning to HOLY releases a mending blessing (10% max HP + brief guard). Sustain and damage are never yours at once — choose when to be which."},
@@ -165,7 +165,7 @@ const CLASSES := {
 		"hp": 95.0, "hp_lvl": 13.0, "mp": 65.0, "mp_lvl": 7.0,
 		"atk": 11.5, "atk_lvl": 3.0, "speed": 258.0,
 		"abilities": {
-			"a1": {"name": "Shadowbolt", "cd": 0.55, "mp": 1,  "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
+			"a1": {"name": "Shadowbolt", "cd": 0.5,  "mp": 1,  "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
 			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death. A MAINTAINED curse deepens: the longer it holds, the harder your every hit bites."},
 			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
 			"ult": {"name": "Void Rift", "cd": 50.0, "mp": 35, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS."},
@@ -357,10 +357,10 @@ const ABILITY_THEMES := {
 	},
 	"archer": {
 		"a1": {
-			"storm": {"desc": "The arrow forks with lightning, leaping to a second enemy.",
-				"fx": {"ric": 1, "splash": 0.20}},
-			"venom": {"desc": "Dipped arrowheads: a heavy venom DoT that STACKS with every hit, and a lingering slow.",
-				"fx": {"dot": 0.45, "slow": 0.30, "toxin": 1}},
+			"storm": {"desc": "The arrow forks with lightning, leaping to a second enemy — on lone prey the charge arcs BACK for a second strike.",
+				"fx": {"ric": 1, "splash": 0.20, "ric_back": 0.35}},
+			"venom": {"desc": "Dipped arrowheads bite 15% deeper, and drip a heavy venom DoT that STACKS with every hit, plus a lingering slow.",
+				"fx": {"dmg_mult": 1.15, "dot": 0.65, "slow": 0.30, "toxin": 1}},
 			"hunt": {"desc": "Aim for the gaps: +20% crit, and shots can EXPOSE the prey.",
 				"fx": {"crit_bonus": 0.20, "vuln": 0.25}},
 		},
@@ -427,10 +427,10 @@ const ABILITY_THEMES := {
 		"a1": {
 			"poison": {"desc": "Coated steel: every stab drips venom and slows the prey — fast cuts STACK the toxin deep.",
 				"fx": {"dot": 0.35, "slow": 0.30, "toxin": 1}},
-			"shadow": {"desc": "Strike from the dark: +15% crit, and stunned or slowed prey ALWAYS crits.",
-				"fx": {"crit_bonus": 0.15, "opportunist": 1}},
+			"shadow": {"desc": "Strike from the dark: +20% crit, and stunned or slowed prey ALWAYS crits.",
+				"fx": {"crit_bonus": 0.20, "opportunist": 1}},
 			"blood": {"desc": "Rend: cuts strike again, and bite harder the deeper YOU bleed.",
-				"fx": {"echo": 0.45, "blood_amp": 0.4}},
+				"fx": {"echo": 0.35, "blood_amp": 0.4}},
 		},
 		"a2": {
 			"poison": {"desc": "A toxic wake: the dash line blooms into a poison mist behind you.",
@@ -443,10 +443,10 @@ const ABILITY_THEMES := {
 		"a3": {
 			"poison": {"desc": "ONE heavy venom blade that detonates into an expanding toxin cloud.",
 				"fx": {"bloom": 1, "dmg_mult": 1.4}},
-			"shadow": {"desc": "FIVE blades in a wide arc, all hungry for weak points.",
-				"fx": {"knives": 5, "spread": 0.22, "crit_bonus": 0.15}},
+			"shadow": {"desc": "FIVE blades in a tight converging arc, all hungry for weak points.",
+				"fx": {"knives": 5, "spread": 0.15, "crit_bonus": 0.20}},
 			"blood": {"desc": "Scarlet fan: the blades PIERCE, and bite harder the deeper you bleed.",
-				"fx": {"pierce": 1, "echo": 0.30, "blood_amp": 0.4}},
+				"fx": {"pierce": 1, "echo": 0.22, "blood_amp": 0.4}},
 		},
 		"ult": {
 			"poison": {"desc": "The mark rots: injects a massive 5s venom that eats the target alive.",

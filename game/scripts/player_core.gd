@@ -168,6 +168,7 @@ var wither := {}               # warlock: Enemy -> seconds of MAINTAINED hex upt
 var melee_swing := 0.0         # held-weapon attack animation timer
 var melee_style := "swing"     # "swing" (arc) or "stab" (thrust)
 var melee_dir := Vector2.RIGHT
+var cleave_seq := 0            # warrior Cleave: cycles the swing-arc variant
 var facing := Vector2.RIGHT
 var look_sign := 1.0           # which way the hero visually faces (+1 right)
 var face_left := false         # does the sprite's art natively face left?
@@ -936,7 +937,12 @@ func ability_cd(slot: String) -> float:
 		# claws it down to the tighter connect floor; excess cdr converts to
 		# dash-hit power instead. No cd amod — Exsanguinate feeds the refund.
 		return maxf(Balance.DASH_WHIFF_FLOOR, ab["cd"] * (1.0 - cdr))
-	var cd: float = ab["cd"] * (1.0 + _amod(slot, "cd"))
+	var base_cd: float = ab["cd"]
+	if cls == "warrior" and slot == "a1" and berserk_time > 0.0:
+		# Berserk hands Cleave its old cadence back (round 49): the taxed
+		# authored cd applies only while the rage sleeps.
+		base_cd = Balance.BERSERK_CLEAVE_CD
+	var cd: float = base_cd * (1.0 + _amod(slot, "cd"))
 	if cast_haste_time > 0.0 and (slot == "a2" or slot == "a3"):
 		# Wind ult TAILWIND: Blink and Frost Nova cool down quicker for the
 		# window — mobility and the heal come back sooner for tight rotations.

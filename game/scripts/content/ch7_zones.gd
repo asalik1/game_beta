@@ -199,7 +199,7 @@ const CHAPTER_ZONES := {
 # Breaking Sky monsters. HP on the gear-inclusive dps curve, dmg on the
 # parity curve (in-game = base x 1.3).
 const ENEMIES := {
-	"storm_harrier": {"name": "Storm Harrier", "sprite": "wolf", "hp": 950.0, "dmg": 88.0, "speed": 195.0, "xp": 13, "gold": 32, "ranged": false, "scale": 3.1,
+	"storm_harrier": {"name": "Storm Harrier", "sprite": "storm_harrier", "hp": 950.0, "dmg": 88.0, "speed": 195.0, "xp": 13, "gold": 32, "ranged": false, "scale": 3.1,
 		"physres": 15.0, "magres": 25.0, "eva": 0.08, "critres": 0.0, "dmg_type": "phys",
 		"level": 37, "hp_g": 0.10, "dmg_g": 0.09,
 		"lore": "Plains hounds that learned to run ahead of the thunder. Lately the thunder runs ahead of THEM, and it has made them mean."},

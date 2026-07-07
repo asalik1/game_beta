@@ -6,10 +6,10 @@ extends "res://scripts/player_kit_paladin.gd"
 
 func _use_warlock(slot: String, f: float) -> void:
 	match slot:
-		# Round 45: -10% on the spam bolt so the DoT class trails the pure
-		# single-target burst classes (assassin/archer) on boss TTK — the
-		# wither ramp still pays it back on longer fights.
-		"a1": _cast_shadowbolt(aim_dir(), 0.9 * f)
+		# Round 45 taxed the spam bolt -10% so the DoT class trails the
+		# burst classes on boss TTK; round 49's dps bench showed it trailing
+		# EVERYWHERE by 25%+ — tax reverted, wither still owns the long game.
+		"a1": _cast_shadowbolt(aim_dir(), 1.0 * f)
 		"a2": _hex(f)
 		"a3": _dark_pact(f)
 		"ult": _void_rift(f)

@@ -379,6 +379,17 @@ func open_chapter_select(replay := false) -> void:
 		_lbl(vbox, "Return to any unlocked chapter with this character — farm, finish arcs, take other paths. Story progress there resets; your build, gear and Resonance travel with you.", 14, Color(0.75, 0.75, 0.75))
 	else:
 		_lbl(vbox, "One campaign, chapter by chapter: win a chapter and your hero journeys on to the next. Later chapters unlock once you've beaten the one before.", 14, Color(0.75, 0.75, 0.75))
+	# The list SCROLLS (QA finding 4: seven chapters overflowed the fixed
+	# panel) — same pattern as the save roster.
+	var chscroll := ScrollContainer.new()
+	chscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	chscroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(chscroll)
+	var chlist := VBoxContainer.new()
+	chlist.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chlist.add_theme_constant_override("separation", 4)
+	chscroll.add_child(chlist)
 	var idx := 1
 	for chid in Story.CHAPTER_LIST:
 		var chapter: Dictionary = Story.CHAPTER_LIST[chid]
@@ -393,12 +404,12 @@ func open_chapter_select(replay := false) -> void:
 				game.replay_chapter(pick_id)
 			else:
 				pick_chapter(pick_id)
-		var b := _btn(vbox, "  %d.  %s%s  " % [idx, "" if unlocked else "🔒 ", chapter["name"]],
+		var b := _btn(chlist, "  %d.  %s%s  " % [idx, "" if unlocked else "🔒 ", chapter["name"]],
 			pick, Color(0.95, 0.85, 0.5) if unlocked else Color(0.5, 0.5, 0.55), unlocked)
 		b.add_theme_font_size_override("font_size", 18)
 		var sub_text: String = String(chapter.get("sub", "")) if unlocked \
 			else "Locked — finish the previous chapter to open this road."
-		var sub := _lbl(vbox, "        " + sub_text, 13,
+		var sub := _lbl(chlist, "        " + sub_text, 13,
 			Color(0.65, 0.68, 0.78) if unlocked else Color(0.5, 0.5, 0.55))
 		sub.custom_minimum_size = Vector2(800, 0)
 		idx += 1

@@ -79,7 +79,7 @@ const CHAPTER_ZONES := {
 
 # New Waking-era monsters. Stats are anchored at each listed level.
 const ENEMIES := {
-	"blightwolf": {"name": "Waking Wolf", "sprite": "wolf", "hp": 58.0, "dmg": 11.0, "speed": 165.0, "xp": 18, "gold": 6, "ranged": false, "scale": 3.2,
+	"blightwolf": {"name": "Waking Wolf", "sprite": "blightwolf", "hp": 58.0, "dmg": 11.0, "speed": 165.0, "xp": 18, "gold": 6, "ranged": false, "scale": 3.2,
 		"physres": 8.0, "magres": 5.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
 		"level": 3, "hp_g": 0.10, "dmg_g": 0.08},
 	"bogspider": {"name": "Greyrun Lurker", "sprite": "rat", "hp": 50.0, "dmg": 9.0, "speed": 205.0, "xp": 20, "gold": 7, "ranged": false, "scale": 3.2,

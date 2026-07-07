@@ -349,6 +349,32 @@ static func open(m: Menus) -> void:
 	)
 	arow.add_child(sopt)
 
+	# Audition the PURCHASED libraries in-game (tools/audio_library +
+	# tools/audio_sfx — gitignored). Searchable, grouped by source pack:
+	# type to filter, click to hear, note the name, tell the installer.
+	_library_browser(m, list, "MUSIC LIBRARY", _library_tracks(),
+		func(e: Dictionary) -> void:
+			var ogg := AudioStreamOggVorbis.load_from_file(String(e["path"]))
+			if ogg:
+				ogg.loop = true
+				m.game.current_track = "(library) " + String(e["label"])
+				m.game.music_player.stream = ogg
+				m.game.music_player.volume_db = m.game.MUSIC_DB \
+					+ m.game._vol_db(float(m.game.settings["music"]))
+				m.game.music_player.play())
+	_library_browser(m, list, "SFX LIBRARY",
+		_library_files("res://../tools/audio_sfx", [".wav", ".ogg", ".mp3"]),
+		func(e: Dictionary) -> void:
+			var stream := _load_stream(String(e["path"]))
+			if stream:
+				var sp := AudioStreamPlayer.new()
+				sp.stream = stream
+				sp.volume_db = -8.0 + m.game._vol_db(float(m.game.settings["sfx"]))
+				sp.process_mode = Node.PROCESS_MODE_ALWAYS
+				m.game.add_child(sp)
+				sp.finished.connect(sp.queue_free)
+				sp.play())
+
 	# --------------------------------------------------------- terrains ---
 	_section(m, list, "TERRAIN (applies to the room you're standing in)")
 	var trow := _flow(list)
@@ -359,6 +385,105 @@ static func open(m: Menus) -> void:
 			m.game.apply_terrain(m.game.cur_room, t)
 			m.close(), Color(0.5, 1.0, 0.5) if active else Color(1, 1, 1))
 	m._hint(vbox, "ESC / F1 to close")
+
+
+## Every matching file under a library dir (recursive). Each entry:
+## group = top-level source folder ("Miscellaneous" for root strays),
+## label = the rest of the path. Empty when the library isn't built on
+## this machine (gitignored — see the asset-library workflow).
+static func _library_files(res_dir: String, exts: Array) -> Array:
+	var out: Array = []
+	var root := ProjectSettings.globalize_path(res_dir)
+	if not DirAccess.dir_exists_absolute(root):
+		return out
+	var stack: Array = [root]
+	while not stack.is_empty():
+		var dir_path: String = stack.pop_back()
+		var d := DirAccess.open(dir_path)
+		if d == null:
+			continue
+		d.list_dir_begin()
+		var f := d.get_next()
+		while f != "":
+			var full := dir_path + "/" + f
+			if d.current_is_dir() and not f.begins_with("."):
+				stack.append(full)
+			else:
+				for ext in exts:
+					if f.to_lower().ends_with(String(ext)):
+						var rel := full.trim_prefix(root + "/")
+						var group := "Miscellaneous"
+						var label := rel.get_basename()
+						if rel.contains("/"):
+							group = rel.split("/")[0]
+							label = rel.substr(group.length() + 1).get_basename()
+						out.append({"path": full, "group": group, "label": label})
+						break
+			f = d.get_next()
+		d.list_dir_end()
+	out.sort_custom(func(a, b) -> bool:
+		if a["group"] == b["group"]:
+			return String(a["label"]) < String(b["label"])
+		return String(a["group"]) < String(b["group"]))
+	return out
+
+
+## A searchable, source-grouped audition list: a filter box over an
+## ItemList with gold group headers. Click a row to hear it.
+static func _library_browser(m: Menus, list: VBoxContainer, title: String,
+		files: Array, on_pick: Callable) -> void:
+	if files.is_empty():
+		return
+	m._lbl(list, "%s — %d files, type to filter:" % [title, files.size()],
+		13, Color(0.7, 0.75, 0.85))
+	var search := LineEdit.new()
+	search.placeholder_text = "search…"
+	list.add_child(search)
+	var il := ItemList.new()
+	il.custom_minimum_size = Vector2(0, 170)
+	il.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_child(il)
+	var row_meta: Array = []  # ItemList row -> file entry (null = header)
+	var rebuild := func(filter: String) -> void:
+		il.clear()
+		row_meta.clear()
+		var f := filter.strip_edges().to_lower()
+		var current_group := ""
+		for e in files:
+			if f != "" and not String(e["label"]).to_lower().contains(f) \
+					and not String(e["group"]).to_lower().contains(f):
+				continue
+			if e["group"] != current_group:
+				current_group = e["group"]
+				var gi := il.add_item("— %s —" % current_group, null, false)
+				il.set_item_disabled(gi, true)
+				il.set_item_custom_fg_color(gi, Color(0.95, 0.85, 0.5))
+				row_meta.append(null)
+			il.add_item("    " + String(e["label"]))
+			row_meta.append(e)
+	rebuild.call("")
+	search.text_changed.connect(func(t: String) -> void: rebuild.call(t))
+	il.item_selected.connect(func(idx: int) -> void:
+		if idx < row_meta.size() and row_meta[idx] != null:
+			on_pick.call(row_meta[idx]))
+
+
+static func _library_tracks() -> Array:
+	return _library_files("res://../tools/audio_library", [".ogg"])
+
+
+## Load any audio file by extension (the game.gd loader patterns).
+static func _load_stream(path: String) -> AudioStream:
+	var low := path.to_lower()
+	if low.ends_with(".ogg"):
+		return AudioStreamOggVorbis.load_from_file(path)
+	if low.ends_with(".wav"):
+		return Sfx.load_wav(path)
+	if low.ends_with(".mp3"):
+		var mp3 := AudioStreamMP3.new()
+		mp3.data = FileAccess.get_file_as_bytes(path)
+		return mp3 if not mp3.data.is_empty() else null
+	return null
 
 
 ## A section header with a thin gold divider above it, so the long flat

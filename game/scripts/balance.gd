@@ -66,7 +66,7 @@ static func boss_gem_chance(lvl: float) -> float:
 # they bite DOUBLE — and a CONNECTING dash-stab refunds a chunk of the
 # dash cooldown, so the in-out dance is the engine, not the exception.
 const KNIFE_MULT := 0.16          # per knife, unsurged (was 0.26)
-const KNIFE_BLOOM_MULT := 0.21    # poison's single heavy blade (was 0.34)
+const KNIFE_BLOOM_MULT := 0.29    # poison's single heavy blade (0.21 -> 0.29, round 49: poison trailed the roster)
 const KNIFE_SURGE_MULT := 2.0     # surge window: the fan bites double
 const DASH_REFUND := 0.35         # dash cd refunded when the rider connects
 # Rounds 39/40: planting your feet at blade range is the riskiest act
@@ -109,6 +109,14 @@ const PALADIN_SWAP_CHAINS := 0.5    # entering Retribution: chains cast at this 
 # kills the perma-iframe exploit (dash out, leap back, repeat) at the root.
 const JUDGMENT_LEAP_CD := 5.0
 
+# ------------------------------------------- plate-class basic cadence ---
+# Round 49 (first dps_bench round): warrior and paladin topped the chart at
+# ~15 hits/s — plate hits HARD, not fast. Cleave's authored cd carries +65%
+# (0.45 -> 0.74) and Judgment +60% (0.5 -> 0.8). BERSERK hands Cleave its
+# old 0.45s cadence back for the window — the ult is a tempo steroid now,
+# not just a damage one.
+const BERSERK_CLEAVE_CD := 0.45
+
 # ------------------------------------------------ warrior bulwark charge ---
 # Round 44: the bulwark's sustain is its heal-on-hit, but Charge's dead-
 # center ram (55px lane) whiffed the mend on a near pass. Like the
@@ -130,12 +138,13 @@ const MELEE_DASH_IFRAME := 0.45
 # "The warlock's damage doesn't keep up with boss HP pools": a MAINTAINED
 # Hex deepens — every WITHER_STACK_EVERY seconds of hex uptime on a
 # target adds a stack of +WITHER_PER_STACK damage taken from the
-# warlock, capping at WITHER_MAX_STACKS (+48%). Trash never lives long
+# warlock, capping at WITHER_MAX_STACKS (+64%; round 49 deepened it from
+# +48% — the bench had all three variants 25%+ behind). Trash never lives long
 # enough to stack, so pack farming is untouched; long boss fights
 # converge the class's weakest axis upward. Stacks die with the hex —
 # letting the curse lapse resets the ramp, so upkeep IS the rotation.
 const WITHER_STACK_EVERY := 6.0
-const WITHER_PER_STACK := 0.06
+const WITHER_PER_STACK := 0.08
 const WITHER_MAX_STACKS := 8
 
 # ------------------------------------------- CC-immune boss conversions ---
@@ -149,8 +158,10 @@ const WITHER_MAX_STACKS := 8
 const CONCUSSION_MULT := 0.15
 # TOXIN (poison/venom themes): green DoTs are the exception to the
 # no-stack burn rule — each application adds a stack that deepens the
-# TICK (never the hit), so fast cadences finally get paid.
-const TOXIN_PER_STACK := 0.08
+# TICK (never the hit), so fast cadences finally get paid. Round 49
+# (dps bench): 0.08 -> 0.12 — poison assassin and venom archer were the
+# two weakest melee/ranged variants; the stack is their whole payoff.
+const TOXIN_PER_STACK := 0.12
 const TOXIN_MAX_STACKS := 5
 # BRITTLE (ice theme): cold cracks what it strikes — ice hits bite
 # harder per stack, and ONLY ice hits (theme-internal: one poached ice

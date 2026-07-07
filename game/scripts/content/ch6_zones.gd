@@ -197,7 +197,7 @@ const CHAPTER_ZONES := {
 # Blooming Deep monsters. HP on the gear-inclusive dps curve, dmg on
 # the parity curve (in-game = base x 1.3).
 const ENEMIES := {
-	"bog_lurker": {"name": "Bog Lurker", "sprite": "spider", "hp": 620.0, "dmg": 72.0, "speed": 200.0, "xp": 13, "gold": 26, "ranged": false, "scale": 3.2,
+	"bog_lurker": {"name": "Bog Lurker", "sprite": "bog_lurker", "hp": 620.0, "dmg": 72.0, "speed": 200.0, "xp": 13, "gold": 26, "ranged": false, "scale": 3.2,
 		"physres": 12.0, "magres": 22.0, "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
 		"level": 33, "hp_g": 0.10, "dmg_g": 0.09,
 		"lore": "The bog's old ambush hunters, grown a size past their name. The Root feeds everything, including the things that feed on you."},

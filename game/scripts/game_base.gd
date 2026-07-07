@@ -132,6 +132,7 @@ var was_wading := false
 # so daylight zones run them near-zero and dark zones at full strength
 # (set alongside the ambience in refresh_ambience).
 var light_mult := 1.0
+var _halo_pool: Sprite2D = null  # the hero's additive floor-glow (QA 5)
 
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
@@ -204,12 +205,49 @@ var stash: Array = []          # storage payloads {kind: item/gem/stone, ...}
 var _stash_loaded := false
 const STASH_PATH := "user://stash.json"
 
+# Gains measured by RMS against a 0.10 target (python soundfile pass,
+# 2026-07-07) — the purchased Alkakrab packs master quieter than peak.
 const MUSIC_TUNE := {
-	"icefield": {"gain": 14.0, "start": 10.0},  # whisper-quiet master
-	"rainstorm": {"start": 30.0},               # storm fades in over ~30s
-	"holy": {"gain": 4.0},
-	"magma": {"gain": -4.0},
-	"crystalline": {"gain": -3.0},
+	"title": {"gain": 3.1},        # Flameheart "Hollow Throne"
+	"roster": {"gain": 0.4},       # 55-OW "Hearthsong"
+	"graveyard": {"gain": -2.1},   # Flameheart "The Endless Graveyard"
+	"icefield": {"gain": 6.0},     # Flameheart "Beneath the Frozen Crypt"
+	"magma": {"gain": 4.8},        # Flameheart "Ritual Under Ashen Skies"
+	"desert": {"gain": 5.9},       # 55-OW "Westward Winds"
+	"crystalline": {"gain": 0.8},  # Cozy "Veil of Echoes"
+	"holy": {"gain": 6.0},         # Flameheart "The Forgotten Cathedral"
+	"rainstorm": {"start": 30.0},  # storm fades in over ~30s (kept, CC0)
+	"void": {"gain": 6.0},         # Flameheart "Vault of Eternal Night"
+	"spore": {"gain": 6.0},        # Flameheart "The Hollow Feast"
+	# Per-boss themes (2026-07-07): every declared boss_<kind> slot now
+	# has a real track, lore-cast from the purchased packs. Boss target
+	# RMS 0.12 (they should hit hotter than terrain beds).
+	"boss_fangmaw": {"gain": 3.6},        # "The Nameless Hunger"
+	"boss_morwen": {"gain": 6.0},         # "Harbinger of Plague"
+	"boss_vargoth": {"gain": 4.1},        # "Shattered Crown"
+	"boss_stormwarden": {"gain": 0.9},    # "Raised by The Storm"
+	"boss_choirmother": {"gain": 6.0},    # "The Last Dirge"
+	"boss_nullwarden": {"gain": 0.7},     # "The Iron Revenant"
+	"boss_sexton": {"gain": 3.2},         # "Tomb of Echoes"
+	"boss_vess": {"gain": 6.0},           # "Omen of Crows"
+	"boss_varo": {"gain": 2.2},           # "Black Crowned Seraph"
+	"boss_forgemistress": {"gain": 6.0},  # "Soulforged Chains"
+	"boss_cinderhide": {"gain": 6.0},     # "Veins of the Underworld"
+	"boss_ashpriest": {"gain": 6.0},      # "The Scorched Oracle"
+	"boss_whitepelt": {"gain": 6.0},      # "Night's Devouring Maw"
+	"boss_icebound": {"gain": 6.0},       # "Wounds of Eternity"
+	"boss_sleepkeeper": {"gain": 1.5},    # "Veil of the Forgotten Ones"
+	"boss_auroch": {"gain": 3.7},         # "The Eternal Maw"
+	"boss_gardener": {"gain": 6.0},       # "The Cursed Grove"
+	"boss_kaethra": {"gain": 6.0},        # "Crown of Rot"
+	"boss_veyx": {"gain": 5.4},           # "Herald of Dread"
+	"boss_echo": {"gain": 6.0},           # "Curse of the Hollow Star"
+	"boss_cyrraeth": {"gain": 4.2},       # "Dead God's Whisper"
+	# Multi-boss brawl tiers, escalating 2 -> world's end:
+	"boss_x2": {"gain": 0.1},             # "With Fire And Sword"
+	"boss_x3": {"gain": 1.1},             # "Clash of The Kings"
+	"boss_x4": {"gain": 4.6},             # "Chains of the Damned"
+	"boss_x5": {"gain": 6.0},             # "The Final Eclipse"
 }
 const MUSIC_DB := -16.0
 
@@ -1339,7 +1377,19 @@ func refresh_ambience() -> void:
 	var lum := (tint.r + tint.g + tint.b) / 3.0
 	light_mult = clampf((1.05 - lum) * 2.2, 0.1, 1.0)
 	if player != null and player.halo != null:
-		player.halo.energy = 0.45 * light_mult
+		player.halo.energy = 0.9 * light_mult  # QA 5: 0.45 read as nothing
+		# QA 5, part two: 2D lights scale with surface albedo — void's
+		# near-black ground reflects nothing, so an additive floor-pool
+		# sprite carries the halo there. Attached from the game side
+		# (ambience owns its alpha; player_core stays untouched).
+		if _halo_pool == null or not is_instance_valid(_halo_pool):
+			_halo_pool = Sprite2D.new()
+			_halo_pool.texture = Art.tex("glow")
+			_halo_pool.modulate = Color(1.0, 0.93, 0.8, 0.0)
+			_halo_pool.scale = Vector2(3.2, 3.2)
+			_halo_pool.z_index = -6
+			player.add_child(_halo_pool)
+		_halo_pool.modulate.a = 0.16 * light_mult
 	var kind: String = Terrains.AMBIENT_LOOPS.get(tid, "")
 	if kind == current_amb:
 		return

@@ -111,8 +111,8 @@ static func populate(game: Node2D, zi: int) -> Array:
 
 	if safe and tid in ["village", "darkwood", "storm", "holy"]:
 		spawn.call("bird", 3 + rng.randi_range(0, 2))
-	if tid in ["village", "darkwood", "holy", "marsh", "spore"]:
-		spawn.call("butterfly", 2 + rng.randi_range(0, 2))
+	if tid in ["village", "darkwood", "holy", "marsh", "spore", "bog"]:
+		spawn.call("butterfly", 2 + rng.randi_range(0, 2))  # bog: QA 11
 	if tid in ["graveyard", "desert"]:
 		spawn.call("crow", 2 + rng.randi_range(0, 1))
 	return out

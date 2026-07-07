@@ -27,6 +27,7 @@
 - Multiline lambda: following call args must sit on the SAME line as the lambda's last statement.
 - Tests waiting on timed effects must poll wall-clock (`await create_timer(0.2)`) — frames race ahead headless.
 - Autotest sections SNAPSHOT + RESTORE shared state (flags, resonance, standings); never `.clear()`.
+- Spawning an Area2D + CollisionShape2D (Chest/Pickup/Projectile) from inside a `body_entered`/`area_entered` handler = non-fatal "Can't change this state while flushing queries" engine error (`area_set_shape_disabled`) — the new shape's enter-tree hits the physics-flush guard. Connect physics signals with `CONNECT_DEFERRED` or `call_deferred` the spawn (chest open + projectile ricochet were bitten).
 
 ## Multi-agent etiquette
 - Task boards (`CH2_TASKS.md` pattern): one owner per task, claim before starting; content lands as NEW modules under `game/scripts/content/` (format: `scripts/content/README.md`) + one registration line in `Story.CONTENT_MODULES`.

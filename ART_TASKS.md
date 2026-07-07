@@ -25,18 +25,18 @@ task, claim before starting**, verify visually before staging.
 
 ## Tasks (claim by adding your name)
 
-- [ ] **A1 — Palette unification pass.** Sweep all 34 installed pack
+- [ ] **A1 — claimed: agent-palette — Palette unification pass.** Sweep all 34 installed pack
   sprites; nudge any too-bright/too-pastel frames toward the PAL tones.
   Batch-friendly (PIL hue/sat curves), but JUDGE per creature on the
   contact sheet — no blind filters.
-- [ ] **A2 — Chapter recolor variants.** The wolf/spider families still
+- [ ] **A2 — claimed: agent-recolors — Chapter recolor variants.** The wolf/spider families still
   share one look across chapters. From the existing bases, produce:
   `blightwolf` (sickly green-grey), `winterfang` (frost-white),
   `duneprowler` (sand), `storm_harrier` (storm-blue) + spider variants
   (`bog_lurker` murk-green, `deep_stalker` crystal-blue,
   `casket_creeper` bone-pale, `vent_skitter` ember). Install as new
   trios, then point each kind's `"sprite"` field at its variant.
-- [ ] **A3 — Faction dress code.** Choir-flavored kinds (cultist,
+- [ ] **A3 — claimed: agent-factions — Faction dress code.** Choir-flavored kinds (cultist,
   vale_mourner robes, scholar_censor/director) get the Choir look:
   bone-white + ink-black + a gold thread. Wildfang orcs get warpaint
   in tribe colors.
@@ -51,7 +51,7 @@ task, claim before starting**, verify visually before staging.
   envoy/merchant/elder are story faces (Sera, Callis, Vessa…). Present
   side-by-side candidates (e.g. Garden humans, Royal Knight for
   Callis) before changing anything.
-- [ ] **A7 — Hand-made cover art.** `assets/sprites/cover.png`
+- [ ] **A7 — claimed: agent-cover — Hand-made cover art.** `assets/sprites/cover.png`
   (1280x720) replaces the procedural title screen wholesale. The crown
   + four Embers motif is canon; go bigger than the procedural version.
 

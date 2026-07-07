@@ -90,16 +90,21 @@ const SPRITES := {
 		"..keeeeekeeeeeekNNkeek..",
 		"..kkkkkkkkkkkkkkkkkkkk..",
 	]},
-	# Market stall — striped awning on timber posts over a counter.
+	# Market stall — cloth awning on timber posts over a goods counter.
+	# (Was red/white stripes: read as a modern road barrier, QA 2026-07-07.)
 	"stall": {"rows": [
-		"..kkkkkkkkkkkkkkkkkkkk..",
-		".krwwrrwwrrwwrrwwrrwwrk.",
-		".krrwwrrwwrrwwrrwwrrwrk.",
+		"...kkkkkkkkkkkkkkkkkk...",
+		"..kyyyyyyyyyyyyyyyyyyk..",
+		".kyyyyyyyyyyyyyyyyyyyyk.",
+		".kyoyyoyyoyyoyyoyyoyyok.",
+		"..kyk..kyk....kyk..kyk..",
 		"..kn................nk..",
 		"..kn................nk..",
+		"..knnrrnnbbnnyynnssnnk..",
 		"..knnnnnnnnnnnnnnnnnnk..",
-		"...n................n...",
-		"...n................n...",
+		"..kNNNNNNNNNNNNNNNNNNk..",
+		"...N................N...",
+		"...N................N...",
 	]},
 	# Wooden bridge planks (stretched across the river band).
 	"bridge": {"rows": [
@@ -1239,6 +1244,17 @@ const GROUND := {
 }
 
 
+## Hand-authored UI icon override (assets/icons/<name>.png), or null.
+## A separate seam from assets/sprites/: icons are UI art (bag slots,
+## HUD), never world sprites, and are used AS-IS — no grade tinting;
+## rarity stays readable via slot borders and item-name colors.
+static func _icon_override(name: String) -> Image:
+	var path := "res://assets/icons/%s.png" % name
+	if not FileAccess.file_exists(path):
+		return null
+	return Image.load_from_file(ProjectSettings.globalize_path(path))
+
+
 ## Get (and cache) the texture for a named sprite.
 ## If assets/sprites/<name>.png exists it OVERRIDES the procedural art —
 ## drop in hand-drawn or CC0 sprites (any size) without touching code.
@@ -1252,6 +1268,12 @@ static func tex(name: String) -> ImageTexture:
 			var ft := ImageTexture.create_from_image(file_img)
 			_cache[name] = ft
 			return ft
+	if name == "potion":  # HUD potion icon: allow an assets/icons/ override
+		var icon_img := _icon_override(name)
+		if icon_img != null:
+			var it := ImageTexture.create_from_image(icon_img)
+			_cache[name] = it
+			return it
 	var t: ImageTexture
 	match name:
 		"slash":
@@ -1811,11 +1833,21 @@ static func _make_telegraph() -> Image:
 
 ## A gear icon tinted with its grade color (32x32, ready for UI buttons).
 ## noun picks the shape variant (Blade vs Bow, Plate vs Guard...).
+## If assets/icons/<shape>.png exists (hand-colored icon packs, e.g.
+## Raven Fantasy Icons) it wins: used untinted and un-embellished —
+## grade stays legible via bag-slot borders and item-name colors.
 static func item_icon(slot: String, grade: String, noun := "") -> ImageTexture:
 	var shape := _shape_for(slot, noun)
 	var key := "itemicon_%s_%s" % [shape, grade]
 	if _cache.has(key):
 		return _cache[key]
+	var over := _icon_override(shape)
+	if over != null:
+		if over.get_width() != 32 or over.get_height() != 32:
+			over.resize(32, 32, Image.INTERPOLATE_NEAREST)
+		var ot := ImageTexture.create_from_image(over)
+		_cache[key] = ot
+		return ot
 	var image := img(shape)
 	var tint: Color = Items.GRADE_COLOR[grade]
 	for y in image.get_height():

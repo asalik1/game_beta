@@ -78,7 +78,7 @@ const CHAPTER_ZONES := {
 
 # Act 2 monsters (Lv 9-15, anchored at listed level).
 const ENEMIES := {
-	"duneprowler": {"name": "Dune Prowler", "sprite": "wolf", "hp": 130.0, "dmg": 20.0, "speed": 185.0, "xp": 44, "gold": 16, "ranged": false, "scale": 3.3,
+	"duneprowler": {"name": "Dune Prowler", "sprite": "duneprowler", "hp": 130.0, "dmg": 20.0, "speed": 185.0, "xp": 44, "gold": 16, "ranged": false, "scale": 3.3,
 		"physres": 12.0, "magres": 8.0, "eva": 0.06, "critres": 0.0, "dmg_type": "phys",
 		"level": 9, "hp_g": 0.10, "dmg_g": 0.08},
 	"sun_bleached": {"name": "Sun-Bleached Husk", "sprite": "mummy", "hp": 165.0, "dmg": 22.0, "speed": 110.0, "xp": 48, "gold": 17, "ranged": false, "scale": 3.5,
@@ -87,7 +87,7 @@ const ENEMIES := {
 	"frost_husk": {"name": "Frost-Bound Soldier", "sprite": "skeleton_warrior", "hp": 185.0, "dmg": 24.0, "speed": 125.0, "xp": 55, "gold": 20, "ranged": false, "scale": 3.4,
 		"physres": 30.0, "magres": 10.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
 		"level": 11, "hp_g": 0.11, "dmg_g": 0.09},
-	"deep_stalker": {"name": "Crystal Stalker", "sprite": "spider", "hp": 150.0, "dmg": 23.0, "speed": 215.0, "xp": 60, "gold": 22, "ranged": false, "scale": 3.4,
+	"deep_stalker": {"name": "Crystal Stalker", "sprite": "deep_stalker", "hp": 150.0, "dmg": 23.0, "speed": 215.0, "xp": 60, "gold": 22, "ranged": false, "scale": 3.4,
 		"physres": 8.0, "magres": 20.0, "eva": 0.18, "critres": 0.0, "dmg_type": "phys",
 		"level": 12, "hp_g": 0.10, "dmg_g": 0.09},
 	"null_acolyte": {"name": "Null Acolyte", "sprite": "scholar_director", "hp": 160.0, "dmg": 27.0, "speed": 110.0, "xp": 70, "gold": 26, "ranged": true, "scale": 3.3,

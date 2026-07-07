@@ -838,8 +838,12 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	body.collision_mask = 0
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex(sprite_name)
-	# Houses dwarf a person: 5x, not the usual 3x prop scale.
-	var bscale := 5.0 if sprite_name.begins_with("cottage") else 4.5
+	# Houses dwarf a person: ~120px on screen (the old 24px grid at 5x).
+	# Normalized by texture width so a higher-res override PNG lands at
+	# the SAME footprint, just denser — 24px grids at 5x read as flat
+	# cartoon blocks next to 30px pack characters at 3x.
+	var target_w := 120.0 if sprite_name.begins_with("cottage") else 108.0
+	var bscale := target_w / maxf(1.0, float(spr.texture.get_width()))
 	spr.scale = Vector2(bscale, bscale)
 	var hpx := float(spr.texture.get_height()) * bscale
 	var wpx := float(spr.texture.get_width()) * bscale

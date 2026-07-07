@@ -231,8 +231,28 @@ func _ricochet(hit: Node) -> void:
 			best_d = d
 			best = e
 	if best == null:
+		# Round 49 (Storm's single-target floor): with nobody to leap to,
+		# the charge GROUNDS through the same body — a reduced return
+		# strike, so the fork isn't a dead rider at boss doors. Packs
+		# still get the full leap; direct hit is safe here (no Area2D
+		# spawned inside the physics flush).
+		var back := float(fx.get("ric_back", 0.0))
+		if back > 0.0 and is_instance_valid(source_player) \
+				and is_instance_valid(hit) and hit is Enemy and not (hit as Enemy).dying:
+			var saved_tfx: Dictionary = source_player._tfx
+			source_player._tfx = {}
+			source_player._beam_fx(global_position + Vector2(20, -26), hit.global_position, glow_color, 0.12)
+			source_player.hit_enemy(hit, hit_player_mult * back, {"aoe": true})
+			source_player._tfx = saved_tfx
 		return
 	var dir := (best.global_position - global_position).normalized()
+	# DEFERRED: _ricochet runs inside body_entered (the physics flush) — spawning
+	# the new Area2D there is a Godot error (area_set_shape_disabled). The parent
+	# projectile may be queue_freed by then, but it still exists at deferred time.
+	_spawn_ricochet.call_deferred(dir)
+
+
+func _spawn_ricochet(dir: Vector2) -> void:
 	# The leap keeps the parent's look: arrows ricochet as arrows,
 	# shadowbolts (Hollow Choir) split as shadowbolts.
 	var p := Projectile.spawn(game, global_position + dir * 10.0, dir * 520.0, 0.0, true, tex_kind)

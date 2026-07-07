@@ -6,7 +6,11 @@ extends "res://scripts/player_combat.gd"
 func _use_warrior(slot: String, f: float) -> void:
 	match slot:
 		"a1":
-			_melee_arc(1.0 * f, 96.0, "slash", {"stagger": 0.35, "knock": 330.0}, "swing", "sword")
+			# Cleave cycles its cut: diagonal, crescent down, crescent up —
+			# a blade leads each arc (see _melee_arc variants).
+			var v := cleave_seq
+			cleave_seq = (cleave_seq + 1) % 3
+			_melee_arc(1.0 * f, 96.0, "slash", {"stagger": 0.35, "knock": 330.0}, "swing", "sword", v)
 			if _tfx.get("quake", 0):
 				# Earth: a stone shockwave rolls down the lane.
 				var qdir := aim_dir(220.0)
@@ -18,11 +22,12 @@ func _use_warrior(slot: String, f: float) -> void:
 				quake.life = 0.5
 				quake.modulate = Color(0.85, 0.65, 0.35)
 			if _tfx.get("wave2", 0):
-				# Fury: a second backhand swing follows.
+				# Fury: a second backhand swing follows — the mirrored cut.
 				var f2 := f
+				var v2 := 2 - v
 				get_tree().create_timer(0.13).timeout.connect(func() -> void:
 					if not dead:
-						_melee_arc(0.6 * f2, 96.0, "slash", {"stagger": 0.2}, "swing", "sword"))
+						_melee_arc(0.6 * f2, 96.0, "slash", {"stagger": 0.2}, "swing", "sword", v2))
 			if s_passive() == "kingsblade":
 				var wave := Projectile.spawn(game, global_position + aim_dir(220.0) * 30.0, aim_dir(220.0) * 400.0, 0.0, true, "slash")
 				wave.hit_player_mult = 0.6 * f
@@ -37,7 +42,7 @@ func _use_warrior(slot: String, f: float) -> void:
 			# The ram parks you in the boss's face — a landing i-frame so the
 			# gap-close itself isn't punished (round 44).
 			_dash_strike(170.0 * float(_tfx.get("dash_mult", 1.0)), 1.3 * f,
-				{"stun": 1.3, "knock": 220.0}, 0.0, Balance.MELEE_DASH_IFRAME)
+				{"stun": 1.3, "knock": 220.0}, 0.0, Balance.MELEE_DASH_IFRAME, true)
 			_ring_fx(global_position, _tcolor if _themed else Color(0.85, 0.85, 0.95), 80.0)
 			if _tfx.get("end_slam", 0):
 				# Earth: the charge ends in a ground-shattering slam.
