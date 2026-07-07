@@ -227,7 +227,9 @@ func chapter_available(chid: String, replay := false) -> bool:
 # Character history that survives a chapter replay: which opening you
 # played, what you chose in it, and which chapters you have finished.
 # Everything else is story state.
-const KEPT_FLAG_PREFIXES := ["opened_", "chose_", "completed_"]
+# "s_awakened_" persists a class's legendary-passive awakening across chapters
+# (round 51b) — it is earned once per character, like completed_.
+const KEPT_FLAG_PREFIXES := ["opened_", "chose_", "completed_", "s_awakened_"]
 const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
 	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
 	"left_silent", "said_farewell", "cut_clean", "walked_silent",
@@ -327,17 +329,17 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			spawn_text(boss_pos + Vector2(0, -70 - 20 * gi),
 				"+ " + Items.gem_title(boss_gem), Items.gem_color(boss_gem))
 
-	# Boss GEAR + BAG channel (round 51): a NEW drop on top of gems/gold/
-	# spoils. Grade from the act table (Act1 ch1-6 B@1/3; ch7 +A@1/10; Act2/3
-	# richer). Two independent rolls — one gear piece, one bag.
+	# Boss GEAR channel (round 51): a NEW drop on top of gems/gold/spoils.
+	# Grade from the act table (Act1 ch1-6 B@1/3; ch7 +A@1/10; Act2/3 richer).
 	var ggrade := Items.roll_boss_gear_grade(chapter_id, loot_rng)
 	if ggrade != "":
 		var gear := Items.roll_gear_of_grade(ggrade, loot_rng, player.cls)
 		if give_loot({"kind": "item", "item": gear}, boss_pos + Vector2(40, 30)):
 			spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
-	var bgrade := Items.roll_boss_gear_grade(chapter_id, loot_rng)
-	if bgrade != "":
-		player.acquire_bag(Items.make_bag(bgrade))
+	# Bags: a SEPARATE, rarer roll (round 51b) — inventory expansion, not every
+	# run. Grade = loot_cap; dupes cash at 1g via acquire_bag.
+	if loot_rng.randf() < Balance.BOSS_BAG_DROP_CHANCE:
+		player.acquire_bag(Items.make_bag(loot_cap()))
 
 	# Now that the room is safe, a wandering merchant MAY set up camp.
 	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):

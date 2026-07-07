@@ -193,6 +193,15 @@ static func open(m: Menus) -> void:
 	m._btn(row3, "Give respec tome", func() -> void:
 		m.game.player.add_consumable(Items.make_respec_tome())
 		m.open_dev(), Color(0.6, 0.9, 1.0))
+	# Awaken toggle (round 51b): flip the current class's legendary-passive
+	# awakening flag so dropped/bought S weapons wake up, for testing before
+	# the awakening quests exist.
+	var awk_cls: String = m.game.player.cls
+	var awk_on: bool = bool(m.game.get_flag("s_awakened_" + awk_cls, false))
+	m._btn(row3, ("■ S passive AWAKENED" if awk_on else "□ Awaken S passive (this class)"), func() -> void:
+		m.game.set_flag("s_awakened_" + awk_cls, not awk_on)
+		m.game.player.recalc()
+		m.open_dev(), Color(1.0, 0.85, 0.35))
 	m._btn(row3, "Send gift mail", func() -> void:
 		var grng := RandomNumberGenerator.new()
 		grng.randomize()

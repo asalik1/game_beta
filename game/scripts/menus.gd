@@ -142,7 +142,13 @@ func _item_row(parent: Node, item: Dictionary, text: String) -> void:
 
 ## Hover tooltip comparing an item against what's equipped in its slot.
 func _diff_tip(item: Dictionary) -> String:
-	return Items.diff_text(item, game.player.equipment.get(item["slot"]))
+	return Items.diff_text(item, game.player.equipment.get(item["slot"]), _awk(item))
+
+
+## Is this item's class awakened (round 51b)? Governs whether a dormant
+## legendary's passive reads as active or LOCKED in player-facing text.
+func _awk(item: Dictionary) -> bool:
+	return bool(game.get_flag("s_awakened_" + String(item.get("cls", "")), false))
 
 
 func _hint(vbox: Node, text := "ESC to close") -> void:
@@ -534,8 +540,8 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var b := _btn(left, Items.title(item), open_cb, Items.GRADE_COLOR[item["grade"]], true, Art.icon_for(item))
 			b.custom_minimum_size = Vector2(430, 0)
 			b.clip_text = true
-			b.tooltip_text = Items.describe(item) + "\n\nClick to view sockets and remove/insert gems"
-			var dl := _lbl(left, Items.describe(item), 12, Color(Items.GRADE_COLOR[item["grade"]], 0.8))
+			b.tooltip_text = Items.describe(item, _awk(item)) + "\n\nClick to view sockets and remove/insert gems"
+			var dl := _lbl(left, Items.describe(item, _awk(item)), 12, Color(Items.GRADE_COLOR[item["grade"]], 0.8))
 			dl.custom_minimum_size = Vector2(430, 0)
 		else:
 			_lbl(left, "     %s — empty" % slot.capitalize(), 14, Color(0.45, 0.45, 0.45))
@@ -598,7 +604,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			if cat != "all" and String(it["slot"]) != cat:
 				continue
 			_bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
-				"%s\n%s\n\nCLICK TO EQUIP — diff:\n%s" % [Items.title(it), Items.describe(it), _diff_tip(it)],
+				"%s\n%s\n\nCLICK TO EQUIP — diff:\n%s" % [Items.title(it), Items.describe(it, _awk(it)), _diff_tip(it)],
 				func() -> void:
 					game.player.equip(it)
 					open_inventory("gear", cat))
@@ -874,7 +880,7 @@ func open_item_panel(item: Dictionary) -> void:
 	icon.texture = Art.icon_for(item)
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	head.add_child(icon)
-	var d := _lbl(head, Items.describe(item), 14, Items.GRADE_COLOR[item["grade"]])
+	var d := _lbl(head, Items.describe(item, _awk(item)), 14, Items.GRADE_COLOR[item["grade"]])
 	d.custom_minimum_size = Vector2(760, 0)
 
 	# Equipped items can be UNEQUIPPED back to the bag (leaving the slot
@@ -1335,11 +1341,11 @@ func open_shop(zone: int) -> void:
 					p.add_item(it)
 					game.sfx("potion")
 			open_shop(zone)
-		var bb := _btn(buy, "%s  %s — %d gold" % [Items.title(it), Items.describe(it), cost],
+		var bb := _btn(buy, "%s  %s — %d gold" % [Items.title(it), Items.describe(it, _awk(it)), cost],
 			buy_item, Items.GRADE_COLOR[it["grade"]], p.gold >= cost, Art.icon_for(it))
 		bb.clip_text = true
 		bb.custom_minimum_size = Vector2(640, 0)
-		bb.tooltip_text = "%s — %d gold\n%s\n\nDiff vs equipped:\n%s" % [Items.title(it), cost, Items.describe(it), _diff_tip(it)]
+		bb.tooltip_text = "%s — %d gold\n%s\n\nDiff vs equipped:\n%s" % [Items.title(it), cost, Items.describe(it, _awk(it)), _diff_tip(it)]
 
 	_lbl(buy, "UPGRADE", 16, Color(0.95, 0.85, 0.5))
 	for slot in ["weapon", "armor"]:

@@ -491,6 +491,10 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 			item["noun"] = special["noun"]
 		if special.has("passive"):
 			item["passive"] = special["passive"]
+			# Round 51b: a looted/bought legendary keeps its NAME and top stats
+			# but its signature passive SLEEPS — it grants no effect until the
+			# class's awakening quest sets s_awakened_<cls> (see Player.s_passive).
+			item["passive_dormant"] = true
 		if special.has("subs"):
 			for stat in special["subs"]:
 				subs[stat] = special["subs"][stat]
@@ -657,7 +661,18 @@ static func gem_buy_price(lvl: int, chid: String) -> int:
 	return int(round(per_gem * weight * Balance.FARM_TAX))
 
 
-static func describe(item: Dictionary) -> String:
+## "★ <Passive>" — or "★ <Passive> — LOCKED (awakening)" for a dormant
+## legendary whose class hasn't awakened (s_awakened_<cls>) yet.
+static func passive_label(item: Dictionary, awakened := false) -> String:
+	var txt: String = "★ " + PASSIVES[item["passive"]]
+	if item.get("passive_dormant", false) and not awakened:
+		txt += " — LOCKED (awakening)"
+	return txt
+
+
+## `awakened` (the item's class flag s_awakened_<cls>) governs how a dormant
+## legendary's passive reads: pass game.get_flag(...) from player-facing UI.
+static func describe(item: Dictionary, awakened := false) -> String:
 	var bits: Array = []
 	var stats := stats_of(item)
 	for stat in stats:
@@ -668,7 +683,7 @@ static func describe(item: Dictionary) -> String:
 			bits.append("%s +%d%%" % [STAT_LABEL.get(stat, stat), int(round(v * 100))])
 	var out := ", ".join(bits)
 	if item.has("passive"):
-		out += "  ★ " + PASSIVES[item["passive"]]
+		out += "  " + passive_label(item, awakened)
 	var slots: int = item.get("gem_slots", 0)
 	if slots > 0:
 		var used: int = item.get("gems", []).size()
@@ -678,9 +693,9 @@ static func describe(item: Dictionary) -> String:
 
 ## Stat-by-stat difference between a candidate item and what's equipped
 ## in that slot ("▲ ATK +5" / "▼ Crit -2%"). For hover tooltips.
-static func diff_text(new_item: Dictionary, old_item) -> String:
+static func diff_text(new_item: Dictionary, old_item, awakened := false) -> String:
 	if old_item == null:
-		return "Slot is empty — pure upgrade:\n" + describe(new_item)
+		return "Slot is empty — pure upgrade:\n" + describe(new_item, awakened)
 	var a := stats_of(new_item)
 	var b := stats_of(old_item)
 	var keys := {}
@@ -702,7 +717,7 @@ static func diff_text(new_item: Dictionary, old_item) -> String:
 	if lines.size() == 1:
 		lines.append("(identical stats)")
 	if new_item.has("passive"):
-		lines.append("★ " + PASSIVES[new_item["passive"]])
+		lines.append(passive_label(new_item, awakened))
 	return "\n".join(lines)
 
 

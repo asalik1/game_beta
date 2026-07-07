@@ -435,6 +435,9 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		l.custom_minimum_size = Vector2(780, 0)
 
 	m._lbl(list, "— LEGENDARY (S) — class exclusive, golden chests only —", 16, Items.GRADE_COLOR["S"])
+	var awk := m._lbl(list, "A found or bought legendary keeps its name and top stats, but its signature PASSIVE sleeps — complete your class's short AWAKENING quest to wake it. Once awakened, every legendary of that class you carry is active.", 13, Color(0.85, 0.75, 0.55))
+	awk.custom_minimum_size = Vector2(880, 0)
+	awk.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for cls in Items.S_GEAR:
 		# One card per class holding its four legendary pieces.
 		var cls_box := VBoxContainer.new()
@@ -452,7 +455,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 			row.add_child(icon)
 			var extra := ""
 			if special.has("passive"):
-				extra = "  ★ " + Items.PASSIVES[special["passive"]]
+				extra = "  ★ " + Items.PASSIVES[special["passive"]] + "  (DORMANT until you awaken it)"
 			elif special.has("subs"):
 				var bits: Array = []
 				for stat in special["subs"]:

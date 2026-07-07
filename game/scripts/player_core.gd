@@ -234,12 +234,25 @@ func _apply_hero_strip(info: Dictionary) -> void:
 	sprite.scale = Art.scale_for(sprite.texture, 3.0, frames)
 
 
-## Passive granted by an equipped S-grade weapon ("" if none).
+## Passive granted by an equipped S-grade weapon ("" if none). A DORMANT
+## legendary (round 51b — looted/bought, passive_dormant) grants NOTHING until
+## the class's awakening quest sets s_awakened_<cls>; this is the SINGLE gate —
+## every kit/effect reads the passive through here. Legacy legendaries without
+## the dormant marker (old saves, direct grants) stay active, ungrandfathered.
 func s_passive() -> String:
 	var w = equipment.get("weapon")
-	if w != null and w.has("passive"):
-		return w["passive"]
-	return ""
+	if w == null or not w.has("passive"):
+		return ""
+	if w.get("passive_dormant", false) and not weapon_awakened(w):
+		return ""
+	return w["passive"]
+
+
+## Is this S weapon's class awakened for this character? (persisted flag)
+func weapon_awakened(w: Dictionary) -> bool:
+	if game == null:
+		return false
+	return bool(game.get_flag("s_awakened_" + String(w.get("cls", cls)), false))
 
 
 func _update_weapon_visual() -> void:
