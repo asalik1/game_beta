@@ -64,44 +64,51 @@ and details after reading your chapter's files, but keep the shapes.
 
 ---
 
-## Q1 — Chapter 1 quests (`ch1_quests.gd`) — UNCLAIMED
+## Q1 — Chapter 1 quests (`ch1_quests.gd`) — DONE: Claude (2026-07-06)
 Surfaces: 6 wanderers + 4 lore props + 2 shrines, all in `story.gd`
 (the hat pilot already covers the miller's boy).
-- [ ] **Osla's Debt** — override `wander_tinker`: after the axle help
+- [x] **Osla's Debt** — override `wander_tinker`: after the axle help
       (`helped_tinker`), Osla hands over a coin pouch (`gain_item`)
       to leave in the Hollow Oak's offering hollow ("debts left with
       the old wood find their owners") → override `lore_hollow_oak`
       with a gated deposit choice (`lose_item`, final flag). ~120g.
-- [ ] **The Hunter's Rounds** — override `wander_hunter`: he asks you
+- [x] **The Hunter's Rounds** — override `wander_hunter`: he asks you
       to check the wood's old landmarks — Ravine Edge, the Drowned
       Chapel, the Collapsed Tower (all fixed props) — appending a
       quest-gated "mark the hunter's sign" choice to each prop convo.
-      Third mark completes. ~180g.
-- [ ] **Flame at the Window** — override `wander_pilgrim`: she gives a
+      Third mark completes. ~180g. (Offer comes on the SECOND talk —
+      choice-0 chains stay one round deep for the suite's social walk.)
+- [x] **Flame at the Window** — override `wander_pilgrim`: she gives a
       pine stick (`gain_item`) to light on the Drowned Chapel's altar
       (`lose_item`, +2 resonance). ~100g.
   (Both Q1 chapel hooks live in YOUR module — one override carrying
   both gated choices; no conflict.)
 
-## Q2 — Chapter 2 quests (`ch2_quests.gd`) — UNCLAIMED
+## Q2 — Chapter 2 quests (`ch2_quests.gd`) — DONE: Claude (2026-07-06)
 Surfaces: fixed hub NPCs (Sera, Piet, Aldric, recruiters, cage,
 pilgrim in `ch2_hub.gd`/`ch2_factions.gd`/`ch2_aldric.gd`) + act 1/2
 zone NPCs and props (`ch2_zones_act1/2.gd`).
-- [ ] **Still Blue** — WRAP the existing mill arc as a visible quest:
+- [x] **Still Blue** — WRAP the existing mill arc as a visible quest:
       flags `mill_seen`/`mill_told` already exist. Override
       `ch2_refugee` to append an accept choice ("I'll look for the
       door"); steps = the two existing flags. Reward ~150g. Do NOT
       change her existing variant flow.
-- [ ] **Bread for the Road** — Sera bakes for whoever mans the far
+- [x] **Bread for the Road** — Sera bakes for whoever mans the far
       crossings: carry a loaf (`gain_item`) to a fixed act-2 zone NPC
       (read `ch2_zones_act2.gd` for the right one — the scholar works).
       ~150g, small `wildfang` or `accord` standing per your judgment.
-- [ ] **Ash for the Old Knight** — Aldric asks for a pinch of ash from
+      (Shipped: accord +2; delivered to Scholar Ivo in the Deeps.)
+- [x] **Ash for the Old Knight** — Aldric asks for a pinch of ash from
       the Null Bastion approach ("I want to know what it burns like
       now") — a gated choice appended to a fixed act-2 prop convo
       (`gain_item`), returned to Aldric (`lose_item`). ~200g.
+      (Shipped inverted: Ivo holds the jar Aldric once commissioned by
+      letter — accept + `gain_item` at the scholar, hand-over choice on
+      Aldric's hub gated on carrying it. Act 2 has no prop convos, and
+      an Aldric-side ask would break the suite's asserted hub choice
+      counts; the carry-gate keeps it invisible to every suite walk.)
 
-## Q3 — Chapter 3 quests (`ch3_quests.gd`) — UNCLAIMED
+## Q3 — Chapter 3 quests (`ch3_quests.gd`) — CLAIMED: Claude (2026-07-06)
 Read `ch3_zones.gd` first (gate NPC: Cantor Ilse; kneeling congregation,
 peddler, lore props).
 - [ ] **The Unfilled Row** — Cantor Ilse asks for the NAMES on the
@@ -114,46 +121,59 @@ peddler, lore props).
       close the graves: a courier/offering chain ending at a grave
       prop. ~150g.
 
-## Q4 — Chapter 4 quests (`ch4_quests.gd`) — UNCLAIMED
+## Q4 — Chapter 4 quests (`ch4_quests.gd`) — CLAIMED: Claude (2026-07-06)
 Read `ch4_zones.gd` first (gate NPC: Overseer Brann; Nix the
 acquittal-seller, foundry props).
-- [ ] **Out of Tolerance** — Brann wants proof the foundries cool:
+- [x] **Out of Tolerance** — Brann wants proof the foundries cool:
       collect a cooled slag core from a fixed vent-field prop
       (`gain_item`), return it (`lose_item`). ~180g.
-- [ ] **Nix's Receipts** — Nix sold acquittals from a court that never
+      (Shipped: source prop = the Cold Forge — no vent-field prop
+      exists; the never-lit forge is where slag actually goes cold.)
+- [x] **Nix's Receipts** — Nix sold acquittals from a court that never
       acquitted; the player returns one (courier) to a fixed prop/NPC
       the module picks — the refund matters more than the coin. ~150g,
       ±resonance on the framing choices.
-- [ ] **The Quench Prayer** — a smith's token carried up the Judgment
+      (Shipped: destination = Smith Petra, crew five's survivor — the
+      crews bought the charms; the refund goes to who's left.)
+- [x] **The Quench Prayer** — a smith's token carried up the Judgment
       Stair approach and left at a fixed prop. ~120g.
+      (Shipped: giver = Old Smith Harl, the water-quench smith;
+      destination = the Ember Font — the deposit does NOT consume the
+      shrine's own three-way choice.)
 
-## Q5 — Chapter 5 quests (`ch5_quests.gd`) — UNCLAIMED
+## Q5 — Chapter 5 quests (`ch5_quests.gd`) — CLAIMED: Claude (2026-07-06)
 Read `ch5_zones.gd` first (gate NPC: Tracker Yri; skald Ottar, the
 deserter, wagon/cairn props).
-- [ ] **Forty Mouths** — after Whitepelt's ridge: deliver the wagons'
+- [x] **Forty Mouths** — after Whitepelt's ridge: deliver the wagons'
       grain honestly — take a bundle at a wagon prop (`gain_item`),
       leave it at the clan's cairn (`lose_item`). `wildfang` +4. ~200g.
-- [ ] **The Spring Song** — skald Ottar's verse (`gain_item` a written
+      (Shipped: cairn → Yri's fire; no cairn prop exists and zones are
+      frozen — cache dug out at the Sleeper's Wagon, returned to Yri.)
+- [x] **The Spring Song** — skald Ottar's verse (`gain_item` a written
       copy) carried back to the Last Fire so the camp hears something
-      that isn't the hymn. ~120g.
-- [ ] **Count the Sleepers** — Yri needs a census of the sleeper huts:
-      pilgrimage over 2–3 fixed props, report back. ~180g.
+      that isn't the hymn. ~120g. (Shipped: read to Ansa of the Shore.)
+- [x] **Count the Sleepers** — Yri needs a census of the sleeper huts:
+      pilgrimage over 2–3 fixed props, report back. ~180g. (Shipped:
+      Buried Chapel congregation + the Vein of the Queen, report to Yri.)
 
-## Q6 — Chapter 6 quests (`ch6_quests.gd`) — UNCLAIMED
+## Q6 — Chapter 6 quests (`ch6_quests.gd`) — CLAIMED: Claude (2026-07-06)
 Read `ch6_zones.gd` first (gate NPC: Deacon Vela; Fisher Dov, Kesh,
 the schism camps, bloom props).
-- [ ] **The Far Shore's Door** — Fisher Dov can't row past the leaning
+- [x] **The Far Shore's Door** — Fisher Dov can't row past the leaning
       reeds himself: check the far shore's door (fixed prop, gated
       choice), come back and tell him TRUE. What "true" is, is the
-      player's choice. ~150g.
-- [ ] **Bread Between Camps** — the schism's stale loaf, made literal:
+      player's choice. ~150g. (Brekk's blue door found grown into the
+      Pale Gallery's west face; report choice = whole truth vs kind one.)
+- [x] **Bread Between Camps** — the schism's stale loaf, made literal:
       carry bread from one pilgrim camp to the other (courier both
       ways or one, module's call). Small `choir` standing. ~120g.
-- [ ] **Kesh's Tally** — Kesh counts what the Bloom takes: mark 2–3
+      (One way: Vela's gate flock -> the schism table.)
+- [x] **Kesh's Tally** — Kesh counts what the Bloom takes: mark 2–3
       overgrown props for the camps' maps, report to Kesh.
-      `wildfang` +3. ~180g.
+      `wildfang` +3. ~180g. (Marks: Sunken Shrine lintel + Cure Pool
+      fence; debriefed mark-by-mark at Kesh.)
 
-## Q7 — Chapter 7 quests (`ch7_quests.gd`) — UNCLAIMED
+## Q7 — Chapter 7 quests (`ch7_quests.gd`) — CLAIMED: Claude (2026-07-06)
 Read `ch7_zones.gd` first (gate NPC: Elder Maren at the Summit Camp;
 Keeper Vasse, the vowstone, Korrag's cairn, the void shelf).
 - [ ] **The Relay Stands** — Retired Keeper Vasse can't climb anymore:

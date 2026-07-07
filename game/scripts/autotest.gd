@@ -1282,6 +1282,13 @@ func _run_campaign_ch2() -> void:
 	await _test_ch6_chapter()
 	await _test_ch7_chapter()
 	await _test_side_quests()
+	await _test_ch1_quests()
+	await _test_ch2_quests()
+	await _test_ch3_quests()
+	await _test_ch4_quests()
+	await _test_ch5_quests()
+	await _test_ch6_quests()
+	await _test_ch7_quests()
 	await _test_pause_menu()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
@@ -2280,3 +2287,438 @@ func _test_side_quests() -> void:
 	game.player.gold = gold0
 	game.flags = snap_flags
 	print("ok: side quests (accept, step tracking, single payout)")
+
+
+## Q1 — Chapter 1 side quests (ch1_quests.gd): the module's convo
+## overrides merged in, and each quest chain pays once on its last step.
+## Drives the flags by hand; SNAPSHOT + RESTORE shared state per the rule.
+func _test_ch1_quests() -> void:
+	# Override nodes must be present in the merged convo table.
+	for probe in [["wander_tinker", "t_debt"], ["wander_hunter", "h_rounds"],
+			["wander_pilgrim", "p_give"], ["lore_hollow_oak", "l_debt"],
+			["lore_ravine", "l_mark"], ["lore_drowned_chapel", "c_sign"],
+			["lore_collapsed_tower", "t_sign"]]:
+		var nodes: Dictionary = Story.ALL_CONVOS[probe[0]]["nodes"]
+		if not nodes.has(probe[1]):
+			_fail("ch1 quests: override node %s/%s missing" % [probe[0], probe[1]])
+			await get_tree().create_timer(60.0).timeout
+			return
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var gold0: int = game.player.gold
+	var chains := {
+		"oslas_debt": ["osla_pouch_taken", "osla_debt_paid"],
+		"hunters_rounds": ["hunter_mark_ravine", "hunter_mark_chapel", "hunter_mark_tower"],
+		"flame_at_window": ["pine_taken", "pine_lit"],
+	}
+	for qid in chains:
+		var sid := String(qid)
+		var before: int = game.player.gold
+		game.set_flag("sq_on_" + sid)
+		var steps: Array = chains[qid]
+		for i in steps.size() - 1:
+			game.set_flag(String(steps[i]))
+			if game.get_flag("sq_paid_" + sid, false):
+				_fail("ch1 quest '%s' paid before all steps were done" % sid)
+				await get_tree().create_timer(60.0).timeout
+				return
+		game.set_flag(String(steps[steps.size() - 1]))
+		if not game.get_flag("sq_paid_" + sid, false):
+			_fail("ch1 quest '%s' did not pay on its final step" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		if game.player.gold <= before:
+			_fail("ch1 quest '%s' completion paid no gold" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		var after: int = game.player.gold
+		game.set_flag(String(steps[0]), true)  # re-fire the checker
+		if game.player.gold != after:
+			_fail("ch1 quest '%s' paid more than once" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	game.player.gold = gold0
+	game.flags = snap_flags
+	print("ok: ch1 side quests (oslas_debt, hunters_rounds, flame_at_window — single payouts)")
+
+
+# ---- Q4: Chapter 4 side quests (scripts/content/ch4_quests.gd) ----------
+# Merge + chapter binding + quest items resolve, then drive each chain's
+# flags and assert pay-on-last-step-only with a single payout.
+func _test_ch4_quests() -> void:
+	for sqid in ["out_of_tolerance", "nix_receipts", "quench_prayer"]:
+		if not Story.ALL_SIDE_QUESTS.has(sqid):
+			_fail("ch4 side quest '%s' not merged" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		if String(Story.ALL_SIDE_QUESTS[sqid].get("chapter", "")) != "ch4":
+			_fail("ch4 side quest '%s' not bound to ch4" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	for qiid in ["slag_core", "nix_refund", "harl_token"]:
+		if Items.make_quest_item(qiid).is_empty():
+			_fail("ch4 quest item '%s' does not resolve" % qiid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var gold0: int = game.player.gold
+	var chains := {
+		"out_of_tolerance": ["ch4_core_taken", "ch4_core_returned"],
+		"nix_receipts": ["ch4_refund_taken", "ch4_refund_given"],
+		"quench_prayer": ["ch4_token_taken", "ch4_token_left"],
+	}
+	for sqid in chains:
+		var before: int = game.player.gold
+		game.set_flag("sq_on_" + String(sqid))
+		var steps: Array = chains[sqid]
+		for i in steps.size() - 1:
+			game.set_flag(String(steps[i]))
+			if game.get_flag("sq_paid_" + String(sqid), false):
+				_fail("ch4 quest '%s' paid before its final step" % sqid)
+				await get_tree().create_timer(60.0).timeout
+				return
+		game.set_flag(String(steps[steps.size() - 1]))
+		if not game.get_flag("sq_paid_" + String(sqid), false):
+			_fail("ch4 quest '%s' did not pay on its final step" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		var gained: int = game.player.gold - before
+		if gained <= 0:
+			_fail("ch4 quest '%s' completion paid no gold" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		game.set_flag(String(steps[0]), true)  # re-fire the checker
+		if game.player.gold != before + gained:
+			_fail("ch4 quest '%s' paid more than once" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	game.player.gold = gold0
+	game.flags = snap_flags
+	print("ok: ch4 side quests (out_of_tolerance, nix_receipts, quench_prayer - single payouts)")
+
+
+# ---- (Q5) ch5_quests.gd content module: Long Sleep side quests -----------
+# Registration + flag-chain drive for the three ch5 quests; snapshot and
+# restore shared state (flags, gold, standings) per the board's rule 9.
+func _test_ch5_quests() -> void:
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
+	var gold0: int = game.player.gold
+	for sqid in ["ch5_forty_mouths", "ch5_spring_song", "ch5_count_sleepers"]:
+		if not Story.ALL_SIDE_QUESTS.has(sqid):
+			_fail("ch5 side quest '%s' not registered" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	for qid in ["ch5_grain_bundle", "ch5_spring_verse"]:
+		if Items.make_quest_item(qid).is_empty():
+			_fail("ch5 quest item '%s' not registered" % qid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# The module's convo overrides must have landed with their quest
+	# hooks intact (each probe node exists only in the override).
+	for probe in [["ch5_briefing", "sq_hub"], ["ch5_shrine_wagon", "w_road"],
+			["ch5_lore_chapel", "l_count"], ["ch5_lore_vein", "l_one"],
+			["ch5_wander_skald", "k_write"], ["ch5_mother", "m_song"]]:
+		var conv: Dictionary = Story.ALL_CONVOS.get(probe[0], {})
+		var nodes: Dictionary = conv.get("nodes", {})
+		if not nodes.has(probe[1]):
+			_fail("ch5 convo override '%s' lost its '%s' hook" % [probe[0], probe[1]])
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Drive each chain: no early payout, pays once on the last step.
+	var chains := {
+		"ch5_forty_mouths": ["ch5_grain_taken", "ch5_grain_given"],
+		"ch5_spring_song": ["ch5_verse_taken", "ch5_verse_given"],
+		"ch5_count_sleepers": ["ch5_census_chapel", "ch5_census_vein", "ch5_census_told"],
+	}
+	for sqid in chains:
+		var before: int = game.player.gold
+		game.set_flag("sq_on_" + String(sqid))
+		var steps: Array = chains[sqid]
+		for i in steps.size() - 1:
+			game.set_flag(String(steps[i]))
+			if game.get_flag("sq_paid_" + String(sqid), false):
+				_fail("ch5 quest '%s' paid before its final step" % sqid)
+				await get_tree().create_timer(60.0).timeout
+				return
+		game.set_flag(String(steps[steps.size() - 1]))
+		if not game.get_flag("sq_paid_" + String(sqid), false):
+			_fail("ch5 quest '%s' did not pay on its final step" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		var gained: int = game.player.gold - before
+		if gained <= 0:
+			_fail("ch5 quest '%s' completion paid no gold" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		game.set_flag(String(steps[0]), true)  # re-fire the checker
+		if game.player.gold != before + gained:
+			_fail("ch5 quest '%s' paid more than once" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Forty Mouths carries the wildfang standing reward (+4).
+	if int(game.player.faction_standing.get("wildfang", 0)) != int(snap_standing.get("wildfang", 0)) + 4:
+		_fail("ch5 forty_mouths did not pay its wildfang standing")
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.player.gold = gold0
+	game.player.faction_standing = snap_standing
+	game.flags = snap_flags
+	print("ok: ch5 side quests (forty_mouths, spring_song, count_sleepers - single payouts)")
+
+
+## Q3 (ch3_quests.gd): the Vale's three side quests pay once each on
+## their final flag. Drives each chain by hand via set_flag; SNAPSHOT +
+## RESTORE shared state per the board rule.
+func _test_ch3_quests() -> void:
+	# Module merge sanity: quest defs, convo overrides and keepsake defs
+	# must all have landed over ch3_zones (module order in CONTENT_MODULES).
+	if not Story.ALL_SIDE_QUESTS.has("ch3_unfilled_row"):
+		_fail("ch3 quests: SIDE_QUESTS did not merge")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if not Story.ALL_CONVOS["ch3_briefing"]["nodes"].has("q_hub"):
+		_fail("ch3 quests: briefing override did not merge (module must preload AFTER ch3_zones)")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if Items.make_quest_item("vale_bread").is_empty() \
+			or Items.make_quest_item("sexton_stone").is_empty():
+		_fail("ch3 quests: QUEST_ITEMS did not merge")
+		await get_tree().create_timer(60.0).timeout
+		return
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var gold0: int = game.player.gold
+	var chains := {
+		"ch3_unfilled_row": ["row_copied_chapel", "row_copied_reliquary", "row_reported"],
+		"ch3_bread_kneeling": ["vale_bread_left"],
+		"ch3_sexton_stone": ["sexton_stone_left"],
+	}
+	for sqid in chains:
+		var before: int = game.player.gold
+		game.set_flag("sq_on_" + String(sqid))
+		var steps: Array = chains[sqid]
+		for i in steps.size() - 1:
+			game.set_flag(String(steps[i]))
+			if game.get_flag("sq_paid_" + String(sqid), false):
+				_fail("ch3 quest '%s' paid before its final step" % sqid)
+				await get_tree().create_timer(60.0).timeout
+				return
+		game.set_flag(String(steps[steps.size() - 1]))
+		if not game.get_flag("sq_paid_" + String(sqid), false):
+			_fail("ch3 quest '%s' did not pay on its final step" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		var gained: int = game.player.gold - before
+		if gained <= 0:
+			_fail("ch3 quest '%s' completion paid no gold" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		game.set_flag(String(steps[0]), true)  # re-fire the checker
+		if game.player.gold != before + gained:
+			_fail("ch3 quest '%s' paid more than once" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	game.player.gold = gold0
+	game.flags = snap_flags
+	print("ok: ch3 side quests (unfilled_row, bread_kneeling, sexton_stone — single payouts)")
+
+
+## Q2 — Chapter 2 side quests (ch2_quests.gd): the module's convo
+## overrides merged in (over ch2_hub/ch2_zones_act2/ch2_aldric), quest
+## items resolve, and each chain pays once on its last step. Drives the
+## flags by hand; SNAPSHOT + RESTORE shared state per the rule.
+func _test_ch2_quests() -> void:
+	# Override nodes must be present in the merged convo table.
+	for probe in [["ch2_refugee", "r_accept"], ["ch2_refugee", "r_after"],
+			["ch2_scholar", "s_desk"], ["ch2_scholar", "s_jar"],
+			["ch2_aldric", "p_ash"]]:
+		var nodes: Dictionary = Story.ALL_CONVOS[probe[0]]["nodes"]
+		if not nodes.has(probe[1]):
+			_fail("ch2 quests: override node %s/%s missing (module must preload AFTER the ch2 modules)" % [probe[0], probe[1]])
+			await get_tree().create_timer(60.0).timeout
+			return
+	for qiid in ["sera_loaf", "bastion_ash"]:
+		if Items.make_quest_item(String(qiid)).is_empty():
+			_fail("ch2 quest item '%s' does not resolve" % qiid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
+	var gold0: int = game.player.gold
+	var chains := {
+		"still_blue": ["mill_seen", "mill_told"],
+		"bread_for_the_road": ["loaf_taken", "loaf_given"],
+		"ash_for_aldric": ["ash_taken", "ash_given"],
+	}
+	for sqid in chains:
+		var sid := String(sqid)
+		var steps: Array = chains[sqid]
+		for f in steps:  # an earlier suite walk may have left step flags set
+			game.flags.erase(String(f))
+		var before: int = game.player.gold
+		game.set_flag("sq_on_" + sid)
+		for i in steps.size() - 1:
+			game.set_flag(String(steps[i]))
+			if game.get_flag("sq_paid_" + sid, false):
+				_fail("ch2 quest '%s' paid before its final step" % sid)
+				await get_tree().create_timer(60.0).timeout
+				return
+		game.set_flag(String(steps[steps.size() - 1]))
+		if not game.get_flag("sq_paid_" + sid, false):
+			_fail("ch2 quest '%s' did not pay on its final step" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		var gained: int = game.player.gold - before
+		if gained <= 0:
+			_fail("ch2 quest '%s' completion paid no gold" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		game.set_flag(String(steps[0]), true)  # re-fire the checker
+		if game.player.gold != before + gained:
+			_fail("ch2 quest '%s' paid more than once" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# The bread courier's reward carries its Accord standing shift.
+	if int(game.player.faction_standing.get("accord", 0)) != int(snap_standing.get("accord", 0)) + 2:
+		_fail("ch2 quests: bread_for_the_road did not pay its Accord standing")
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.player.gold = gold0
+	game.player.faction_standing = snap_standing
+	game.flags = snap_flags
+	print("ok: ch2 side quests (still_blue, bread_for_the_road, ash_for_aldric — single payouts)")
+
+
+# ---- Q6: Chapter 6 side quests (scripts/content/ch6_quests.gd) ----------
+# Merge + chapter binding + override nodes + quest item resolve, then
+# drive each chain's flags and assert pay-on-last-step-only, single
+# payout, and the standing rewards. SNAPSHOT + RESTORE flags, gold AND
+# faction standings (two of the rewards shift standings).
+func _test_ch6_quests() -> void:
+	for sqid in ["ch6_far_shore", "ch6_gate_bread", "ch6_kesh_tally"]:
+		if not Story.ALL_SIDE_QUESTS.has(sqid):
+			_fail("ch6 side quest '%s' not merged" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		if String(Story.ALL_SIDE_QUESTS[sqid].get("chapter", "")) != "ch6":
+			_fail("ch6 side quest '%s' not bound to ch6" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	if Items.make_quest_item("ch6_gate_loaf").is_empty():
+		_fail("ch6 quest item 'ch6_gate_loaf' does not resolve")
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Override nodes must be present in the merged convo table (module
+	# must preload AFTER ch6_zones so its CONVOS win the merge).
+	for probe in [["ch6_fisher", "f_quest"], ["ch6_fisher", "f_report"],
+			["ch6_briefing", "b_gate"], ["ch6_wildfang", "k_offer"],
+			["ch6_wildfang", "k_tally2"], ["ch6_lore_gallery", "g_door"],
+			["ch6_lore_shrine", "sh_mark"], ["ch6_shrine_pool", "p_mark"],
+			["ch6_shrine_schism", "s_loaf"]]:
+		var nodes: Dictionary = Story.ALL_CONVOS[probe[0]]["nodes"]
+		if not nodes.has(probe[1]):
+			_fail("ch6 quests: override node %s/%s missing" % [probe[0], probe[1]])
+			await get_tree().create_timer(60.0).timeout
+			return
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
+	var gold0: int = game.player.gold
+	var chains := {
+		"ch6_far_shore": ["sq6_shore_seen", "sq6_shore_told"],
+		"ch6_gate_bread": ["sq6_bread_taken", "sq6_bread_left"],
+		"ch6_kesh_tally": ["sq6_tally_shrine", "sq6_tally_pool", "sq6_tally_told"],
+	}
+	for sqid in chains:
+		var sid := String(sqid)
+		var steps: Array = chains[sqid]
+		for f in steps:  # an earlier suite walk may have left step flags set
+			game.flags.erase(String(f))
+		var before: int = game.player.gold
+		game.set_flag("sq_on_" + sid)
+		for i in steps.size() - 1:
+			game.set_flag(String(steps[i]))
+			if game.get_flag("sq_paid_" + sid, false):
+				_fail("ch6 quest '%s' paid before its final step" % sid)
+				await get_tree().create_timer(60.0).timeout
+				return
+		game.set_flag(String(steps[steps.size() - 1]))
+		if not game.get_flag("sq_paid_" + sid, false):
+			_fail("ch6 quest '%s' did not pay on its final step" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		var gained: int = game.player.gold - before
+		if gained <= 0:
+			_fail("ch6 quest '%s' completion paid no gold" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		game.set_flag(String(steps[0]), true)  # re-fire the checker
+		if game.player.gold != before + gained:
+			_fail("ch6 quest '%s' paid more than once" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Standing rewards landed: bread -> choir +2, tally -> wildfang +3.
+	var d_choir: int = int(game.player.faction_standing.get("choir", 0)) - int(snap_standing.get("choir", 0))
+	var d_wf: int = int(game.player.faction_standing.get("wildfang", 0)) - int(snap_standing.get("wildfang", 0))
+	if d_choir != 2 or d_wf != 3:
+		_fail("ch6 quest standings wrong (choir %+d, wildfang %+d)" % [d_choir, d_wf])
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.player.gold = gold0
+	game.player.faction_standing = snap_standing
+	game.flags = snap_flags
+	print("ok: ch6 side quests (ch6_far_shore, ch6_gate_bread, ch6_kesh_tally — single payouts + standings)")
+
+
+# ---- Q7: Chapter 7 side quests (scripts/content/ch7_quests.gd) ----------
+# Drives each quest's flag chain directly (steps land in any order for
+# the relay rounds), asserts single payout per quest, the wildfang
+# standing rider on Korrag's due, and that the module's keepsakes resolve.
+func _test_ch7_quests() -> void:
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
+	var gold0: int = game.player.gold
+	for iid in ["ch7_void_letter", "ch7_korrag_token"]:
+		if Items.make_quest_item(String(iid)).is_empty():
+			_fail("ch7 quest item '%s' did not resolve" % iid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	var chains := {
+		"ch7_relay_stands": ["sq7_relay_cairn", "sq7_relay_shelf", "sq7_relay_vowstone"],
+		"ch7_void_letter": ["sq7_letter_taken", "sq7_letter_given"],
+		"ch7_korrags_due": ["sq7_token_taken", "sq7_token_left"],
+	}
+	for sqid in chains:
+		var sid := String(sqid)
+		var before: int = game.player.gold
+		game.set_flag("sq_on_" + sid)
+		var steps: Array = chains[sqid]
+		for i in steps.size() - 1:
+			game.set_flag(String(steps[i]))
+			if game.get_flag("sq_paid_" + sid, false):
+				_fail("ch7 quest '%s' paid before its final step" % sid)
+				await get_tree().create_timer(60.0).timeout
+				return
+		game.set_flag(String(steps[steps.size() - 1]))
+		if not game.get_flag("sq_paid_" + sid, false):
+			_fail("ch7 quest '%s' did not pay on its final step" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		var gained: int = game.player.gold - before
+		if gained <= 0:
+			_fail("ch7 quest '%s' completion paid no gold" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+		game.set_flag(String(steps[0]), true)  # re-fire the checker
+		if game.player.gold != before + gained:
+			_fail("ch7 quest '%s' paid more than once" % sid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Korrag's due carries its Wildfang standing shift.
+	var d_wf: int = int(game.player.faction_standing.get("wildfang", 0)) - int(snap_standing.get("wildfang", 0))
+	if d_wf != 4:
+		_fail("ch7 quests: korrags_due paid the wrong Wildfang standing (%+d)" % d_wf)
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.player.gold = gold0
+	game.player.faction_standing = snap_standing
+	game.flags = snap_flags
+	print("ok: ch7 side quests (relay_stands, void_letter, korrags_due — single payouts + standing)")

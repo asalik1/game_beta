@@ -949,16 +949,23 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch2_factions.gd"),   # (T5)
 	preload("res://scripts/content/ch2_aldric.gd"),     # (T6)
 	preload("res://scripts/content/ch2_bosses.gd"),     # (T4)
+	preload("res://scripts/content/ch2_quests.gd"),     # (Q2) Chapter 2 side quests (after the ch2 modules: overrides their convos)
 	preload("res://scripts/content/ch3_zones.gd"),      # Unburied Vale chapter (zones/convos/quests)
 	preload("res://scripts/content/ch3_bosses.gd"),     # Unburied Vale bosses (BOSSES.md)
+	preload("res://scripts/content/ch3_quests.gd"),     # (Q3) Unburied Vale side quests
 	preload("res://scripts/content/ch4_zones.gd"),      # Slagfields chapter (zones/convos/quests)
 	preload("res://scripts/content/ch4_bosses.gd"),     # Slagfields bosses (BOSSES.md)
+	preload("res://scripts/content/ch4_quests.gd"),     # (Q4) Slagfields side quests
 	preload("res://scripts/content/ch5_zones.gd"),      # Long Sleep chapter (zones/convos/quests)
 	preload("res://scripts/content/ch5_bosses.gd"),     # Long Sleep bosses (BOSSES.md)
+	preload("res://scripts/content/ch5_quests.gd"),     # (Q5) Long Sleep side quests
 	preload("res://scripts/content/ch6_zones.gd"),      # Blooming Deep chapter (zones/convos/quests)
 	preload("res://scripts/content/ch6_bosses.gd"),     # Blooming Deep bosses (BOSSES.md)
 	preload("res://scripts/content/ch7_zones.gd"),      # Breaking Sky chapter (zones/convos/quests)
 	preload("res://scripts/content/ch7_bosses.gd"),     # Breaking Sky bosses — Act 1 finale (BOSSES.md)
+	preload("res://scripts/content/ch1_quests.gd"),     # (Q1) Chapter 1 side quests
+	preload("res://scripts/content/ch6_quests.gd"),     # (Q6) Blooming Deep side quests (after ch6_zones: overrides its convos)
+	preload("res://scripts/content/ch7_quests.gd"),     # (Q7) Breaking Sky side quests (after ch7_zones: overrides its convos)
 ]
 
 static var _content_loaded := false
