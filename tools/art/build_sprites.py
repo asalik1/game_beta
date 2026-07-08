@@ -49,6 +49,14 @@ JOBS = {
     "paladin":  ("Paladin.png", "idle,walk,run,attack2,attack,dash,death", []),
 }
 
+# Classes whose idle loop is trimmed to a subset of <class>_anim.png frames
+# (parts of the extracted loop read worse than a shorter cut). value = the list
+# of frame indices to keep, in order. A single index == a frozen static idle.
+IDLE_KEEP = {
+    "archer":   [3],           # freeze to the upright, bow-forward resting stance
+    "assassin": [0, 1, 2, 3],  # keep the front half of the scarf-flutter loop
+}
+
 
 def _install(out_dir):
     n = 0
@@ -79,6 +87,18 @@ def _seam_fill_inplace(path):
     Image.fromarray(im, "RGBA").save(path)
 
 
+def _trim_idle(path, keep):
+    """Rebuild a horizontal <class>_anim.png strip from the `keep` frame indices,
+    in order. art._strip_info sets frames = width/height, so the trimmed strip
+    plays exactly those cells (a single index == a frozen static idle)."""
+    im = Image.open(path).convert("RGBA")
+    s = im.height
+    out = Image.new("RGBA", (s * len(keep), s))
+    for j, f in enumerate(keep):
+        out.paste(im.crop((f * s, 0, (f + 1) * s, s)), (j * s, 0))
+    out.save(path)
+
+
 def main():
     if not os.path.isdir(SRC):
         sys.exit("source dir not found: %s  (set EMBERFALL_ART_SRC)" % SRC)
@@ -89,6 +109,9 @@ def main():
                                "--class", cls, "--names", names] + extra)
         print("%-9s %d clips  <- %s" % (cls, _install(out), sheet))
         shutil.rmtree(out, ignore_errors=True)
+        if cls in IDLE_KEEP:
+            _trim_idle(os.path.join(DEST, cls + "_anim.png"), IDLE_KEEP[cls])
+            print("%-9s idle kept frames %s" % (cls, IDLE_KEEP[cls]))
     # Assassin directional: source gone -> restore the backup + re-seam-fill.
     for name in ("assassin_stab_dir", "assassin_throw_dir"):
         dst = os.path.join(DEST, name + ".png")

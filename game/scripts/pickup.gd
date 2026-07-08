@@ -56,45 +56,74 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 	c.loot = payload
 	c.add_to_group("loot_pickups")
 	c.global_position = pos + Vector2(randf_range(-22, 22), randf_range(-16, 16))
+	# Each kind builds its icon sprite + a tint; a shared shine (glow + bob +
+	# winking glint) then makes ANY drop read as loot instead of scenery.
+	var spr: Sprite2D = null
+	var tint := Color(1, 1, 1)
 	match str(payload.get("kind", "")):
 		"item":
-			# Grade glow under the icon + a soft bob: LOOT, not scenery.
-			var grade: String = payload["item"].get("grade", "F")
-			var glow := Sprite2D.new()
-			glow.texture = Art.tex("glow")
-			glow.modulate = Color(Items.GRADE_COLOR.get(grade, Color(1, 1, 1)), 0.5)
-			glow.scale = Vector2(1.1, 0.9)
-			c.add_child(glow)
-			var spr := Sprite2D.new()
+			tint = Items.GRADE_COLOR.get(payload["item"].get("grade", "F"), Color(1, 1, 1))
+			spr = Sprite2D.new()
 			spr.texture = Art.icon_for(payload["item"])
 			spr.scale = Vector2(1.6, 1.6)
-			c.add_child(spr)
-			var bob := spr.create_tween().set_loops()
-			bob.tween_property(spr, "position:y", -4.0, 0.9) \
-				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-			bob.tween_property(spr, "position:y", 0.0, 0.9) \
-				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		"gem":
-			# A real cut gem on the ground (was a text ◆ glyph).
-			var gspr := Sprite2D.new()
-			gspr.texture = Art.gem_icon(Items.gem_color(payload["gem"]),
-				int(payload["gem"].get("lvl", 1)))
-			gspr.scale = Vector2(0.9, 0.9)
-			c.add_child(gspr)
+			# A real cut gem on the ground (was a text ◆ glyph). A Raven faceted
+			# gem tinted by the gem's stat color reads as a proper jewel; fall
+			# back to the procedural gem if the icon isn't present/imported yet.
+			tint = Items.gem_color(payload["gem"])
+			spr = Sprite2D.new()
+			if ResourceLoader.exists("res://assets/icons/gem.png"):
+				spr.texture = load("res://assets/icons/gem.png")
+				spr.modulate = tint
+			else:
+				spr.texture = Art.gem_icon(tint, int(payload["gem"].get("lvl", 1)))
+			spr.scale = Vector2(0.9, 0.9)
 		_:
 			# Consumable on the ground: real icon when one exists (mana
 			# draught, elixir, scroll, stones), else the old ⟲ glyph.
+			tint = Color(0.6, 0.9, 1.0)
 			var ctex: ImageTexture = Art.consumable_icon(payload.get("stone", {}))
 			if ctex != null:
-				var cspr := Sprite2D.new()
-				cspr.texture = ctex
-				cspr.scale = Vector2(1.1, 1.1)
-				c.add_child(cspr)
+				spr = Sprite2D.new()
+				spr.texture = ctex
+				spr.scale = Vector2(1.1, 1.1)
 			else:
-				c._glyph("⟲", Color(0.6, 0.9, 1.0))
+				c._glyph("⟲", tint)
+	if spr != null:
+		c.add_child(spr)
 	c._body_setup()
 	game_node.add_child(c)
+	c._loot_shine(spr, tint)   # after add_child: tweens need the node in-tree
 	return c
+
+
+## Ground-loot eye-catch: a soft glow pooled under the drop so it lifts off the
+## terrain, a slow bob, and a winking HDR glint that blooms — the same treatment
+## the gold coins get. Without it a gem/gear on dirt reads as background.
+## `spr` may be null (glyph fallback); then only the glow + glint are added.
+func _loot_shine(spr: Sprite2D, tint: Color) -> void:
+	var glow := Sprite2D.new()
+	glow.texture = Art.tex("glow")
+	glow.modulate = Color(tint, 0.5)
+	glow.scale = Vector2(1.2, 0.95)
+	glow.z_index = -1
+	add_child(glow)
+	var glint := Sprite2D.new()
+	glint.texture = Art.tex("glow")
+	glint.modulate = Art.hdr(Color(1.0, 1.0, 0.95, 0.0), 1.8)
+	glint.position = Vector2(randf_range(-4.0, 5.0), randf_range(-9.0, -2.0))
+	glint.scale = Vector2(0.15, 0.15)
+	add_child(glint)
+	var gt := create_tween().set_loops()
+	gt.tween_interval(randf_range(0.4, 1.6))
+	gt.tween_property(glint, "modulate:a", 0.95, 0.08)
+	gt.tween_property(glint, "modulate:a", 0.0, 0.18)
+	if spr != null:
+		var bob := spr.create_tween().set_loops()
+		bob.tween_property(spr, "position:y", -4.0, 0.9) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		bob.tween_property(spr, "position:y", 0.0, 0.9) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _glyph(ch: String, color: Color) -> void:
