@@ -1265,6 +1265,21 @@ static func _icon_override(name: String) -> Image:
 	return _override_image("res://assets/icons/%s.png" % name)
 
 
+## A HUD-button icon loaded from assets/icons/<name>.png (pack art, e.g. Raven
+## Fantasy Icons), cached and used at its native size. Returns null when the
+## file is absent so the caller can fall back to procedural art.
+static func ui_icon(name: String) -> ImageTexture:
+	var key := "uiicon_" + name
+	if _cache.has(key):
+		return _cache[key]
+	var im := _icon_override(name)
+	if im == null:
+		return null
+	var t := ImageTexture.create_from_image(im)
+	_cache[key] = t
+	return t
+
+
 ## Get (and cache) the texture for a named sprite.
 ## If assets/sprites/<name>.png exists it OVERRIDES the procedural art —
 ## drop in hand-drawn or CC0 sprites (any size) without touching code.

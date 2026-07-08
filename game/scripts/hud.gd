@@ -191,11 +191,16 @@ func _ready() -> void:
 	add_child(daily_glow)
 	daily_btn = Button.new()
 	daily_btn.flat = true
-	daily_btn.text = "★"
+	var daily_tex: Texture2D = Art.ui_icon("ui_daily")  # Raven gold star; glyph fallback
+	if daily_tex != null:
+		daily_btn.icon = daily_tex
+		daily_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	else:
+		daily_btn.text = "★"
+		daily_btn.add_theme_font_size_override("font_size", 22)
+		daily_btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+		daily_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.7))
 	daily_btn.tooltip_text = "Daily reward ready!"
-	daily_btn.add_theme_font_size_override("font_size", 22)
-	daily_btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
-	daily_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.7))
 	daily_btn.position = Vector2(152, 181)  # end of the icon row: ✉ ! bag book ★
 	daily_btn.size = Vector2(32, 30)
 	daily_btn.visible = false
@@ -218,11 +223,16 @@ func _ready() -> void:
 	add_child(quest_glow)
 	quest_btn = Button.new()
 	quest_btn.flat = true
-	quest_btn.text = "!"
+	var quest_tex: Texture2D = Art.ui_icon("ui_quest")  # Raven scroll; glyph fallback
+	if quest_tex != null:
+		quest_btn.icon = quest_tex
+		quest_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	else:
+		quest_btn.text = "!"
+		quest_btn.add_theme_font_size_override("font_size", 24)
+		quest_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
+		quest_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
 	quest_btn.tooltip_text = "Quest Log"
-	quest_btn.add_theme_font_size_override("font_size", 24)
-	quest_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
-	quest_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
 	quest_btn.position = Vector2(55, 183)
 	quest_btn.size = Vector2(32, 30)
 	quest_btn.pressed.connect(func() -> void:
@@ -243,7 +253,8 @@ func _ready() -> void:
 	# Bag = inventory, Book = codex (small procedural icons, native size).
 	inv_btn = Button.new()
 	inv_btn.flat = true
-	inv_btn.icon = Art.tex("bag")
+	var bag_tex: Texture2D = Art.ui_icon("ui_bag")  # Raven pack art; procedural fallback
+	inv_btn.icon = bag_tex if bag_tex != null else Art.tex("bag")
 	inv_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	inv_btn.tooltip_text = "Inventory"
 	inv_btn.position = Vector2(84, 187)
@@ -254,7 +265,8 @@ func _ready() -> void:
 	add_child(inv_btn)
 	codex_btn = Button.new()
 	codex_btn.flat = true
-	codex_btn.icon = Art.tex("book")
+	var book_tex: Texture2D = Art.ui_icon("ui_book")  # Raven pack art; procedural fallback
+	codex_btn.icon = book_tex if book_tex != null else Art.tex("book")
 	codex_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	codex_btn.tooltip_text = "Codex"
 	codex_btn.position = Vector2(118, 188)

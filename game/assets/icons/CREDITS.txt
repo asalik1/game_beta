@@ -19,3 +19,26 @@ Consumable icons (Art.CONSUMABLE_ICONS, same pack + terms as above):
   recall_scroll.png — fb312
   reset_stone.png  — fb322
   tree_tome.png    — fb98
+
+Gem drop (Pickup, gem visual): a neutral faceted diamond used AS A
+TINT BASE — Sprite2D.modulate multiplies it by the gem's stat color, so
+one PNG serves every gem (Ruby/Sapphire/Jade/...). Same pack + terms.
+  gem.png — fb214, 50% desaturated (so the stat tint reads true) + gamma 0.78
+
+Buff/status icons (HUD buff bar, hud.gd BUFF_ICONS): Raven's "buffed"
+status set (base stat glyph + gold star), used untinted — the chip's
+border already carries the buff color. Same pack + terms; gamma 0.78.
+  buff_atk.png   — fb601 (flexed arm + star)   -> Berserk / Elixir / Retribution
+  buff_heal.png  — fb603 (green heart + star)  -> Holy stance / Second Wind
+  buff_armor.png — fb605 (steel shield + star) -> Grit / Guard
+  buff_ward.png  — fb606 (blue shield + star)  -> Arcane Ward / Aegis
+  buff_blood.png — fb607 (red heart + star)    -> Dark Pact / Blood Surge
+  buff_speed.png — fb635 (running figure)      -> Fleet / Nimble / Tailwind
+
+HUD navigation icons (hud.gd left icon row, via Art.ui_icon), same pack
++ terms; fit to 24px. Procedural fallbacks live in art.gd (_make_bag /
+_make_book) if a file is ever missing.
+  ui_bag.png   — fb305 (loot sack)  -> Inventory button
+  ui_book.png  — fb97  (red book)   -> Codex button
+  ui_quest.png — fb301 (scroll)     -> Quest Log button (glyph "!" fallback)
+  ui_daily.png — fb12  (gold star)  -> Daily reward button (glyph "★" fallback)
