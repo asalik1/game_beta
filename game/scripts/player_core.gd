@@ -149,6 +149,7 @@ var storm_tick := 0.0
 var storm_fx := {}
 var theme_speed_time := 0.0
 var theme_speed_amt := 0.0
+var damp_time := 0.0     # Damp debuff: while > 0, move speed x Balance.DAMP_SLOW_MULT (river wading)
 var wind_fx_t := 0.0     # throttle for the faint speed-buff wind trail
 var elixir_time := 0.0   # Elixir of Might: +elixir_atk damage while > 0
 var elixir_atk := 0.0

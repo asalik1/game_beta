@@ -42,3 +42,6 @@ _make_book) if a file is ever missing.
   ui_book.png  — fb97  (red book)   -> Codex button
   ui_quest.png — fb301 (scroll)     -> Quest Log button (glyph "!" fallback)
   ui_daily.png — fb12  (gold star)  -> Daily reward button (glyph "★" fallback)
+
+buff_damp.png — Emberfall original (hand-drawn water droplet, not Raven);
+  marks the DAMP status effect (river-wading move-speed debuff).

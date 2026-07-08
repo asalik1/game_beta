@@ -16,6 +16,7 @@ func _physics_process(delta: float) -> void:
 	hurt_cd = maxf(0.0, hurt_cd - delta)
 	berserk_time = maxf(0.0, berserk_time - delta)
 	theme_speed_time = maxf(0.0, theme_speed_time - delta)
+	damp_time = maxf(0.0, damp_time - delta)
 	elixir_time = maxf(0.0, elixir_time - delta)
 	dodge_time = maxf(0.0, dodge_time - delta)
 	frozen_time = maxf(0.0, frozen_time - delta)
@@ -151,6 +152,8 @@ func _physics_process(delta: float) -> void:
 	var spd := speed * (1.25 if berserk_time > 0.0 else 1.0)
 	if theme_speed_time > 0.0:
 		spd *= 1.0 + theme_speed_amt
+	if damp_time > 0.0:
+		spd *= Balance.DAMP_SLOW_MULT  # Damp: river water clings, -20% move
 	spd *= hazard_speed  # ice patches boost, void rifts slow
 	if chill_time > 0.0:
 		spd *= chill_mult  # a mob's frost aura drags at your feet

@@ -476,6 +476,13 @@ const POTION_SLOTS_BY_ACT := {1: 1, 2: 3, 3: 5}
 # Gentle on purpose — a routing choice, not a punishment.
 const RIVER_WADE_MULT := 0.72
 
+# DAMP (status effect, 2026-07-08): walking in a river leaves the PLAYER
+# "Damp" — a timed move-speed debuff that lingers after stepping out. It
+# replaces the player's continuous wade slow above (enemies still use it);
+# refreshed every frame you wade, the bridge keeps you dry.
+const DAMP_DURATION := 3.0     # seconds Damp holds / refreshes to while wading
+const DAMP_SLOW_MULT := 0.80   # move-speed multiplier while Damp (-20%)
+
 # Gem QUALITY chases the frontier (reward calibration, 2026-07-06): the
 # guaranteed-gem Lv2 chance climbs with the CONTENT's level. Gem count
 # per run stays flat; quality is why you farm at your level instead of

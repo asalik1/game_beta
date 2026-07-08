@@ -909,7 +909,7 @@ func _spawn_scenery(zi: int) -> void:
 			plank.texture = Art.tex("bridge")
 			plank.centered = false
 			plank.position = bridge.position
-			plank.scale = bridge.size / Vector2(16.0, 12.0)
+			plank.scale = bridge.size / plank.texture.get_size()  # fit any-res bridge art to the span
 			plank.z_index = -8
 			world.add_child(plank)
 			zone_scenery[zi].append(plank)

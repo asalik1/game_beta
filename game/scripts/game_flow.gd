@@ -717,7 +717,7 @@ func _apply_hazards() -> void:
 		if not player.dead and rect.has_point(player.global_position) \
 				and not bridge.has_point(player.global_position):
 			wading = true
-			player.hazard_speed = minf(player.hazard_speed, Balance.RIVER_WADE_MULT)
+			player.damp_time = Balance.DAMP_DURATION  # Damp: refreshes while wading, lingers after
 			if not was_wading:
 				sfx("splash")
 				burst(player.global_position + Vector2(0, 14), Color(0.75, 0.85, 0.9), 8)

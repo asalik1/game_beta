@@ -185,7 +185,7 @@ func _ready() -> void:
 	# claim screen. The glow is added first so it sits BEHIND the star.
 	daily_glow = Sprite2D.new()
 	daily_glow.texture = Art.tex("glow")
-	daily_glow.position = Vector2(168, 197)  # centered on the ★ (end of the icon row)
+	daily_glow.position = Vector2(168, 204)  # centered on the ★ (end of the icon row)
 	daily_glow.modulate = Color(1.0, 0.85, 0.35, 0.0)
 	daily_glow.visible = false
 	add_child(daily_glow)
@@ -201,7 +201,7 @@ func _ready() -> void:
 		daily_btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
 		daily_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.7))
 	daily_btn.tooltip_text = "Daily reward ready!"
-	daily_btn.position = Vector2(152, 181)  # end of the icon row: ✉ ! bag book ★
+	daily_btn.position = Vector2(152, 185)  # end of the icon row: ✉ ! bag book ★
 	daily_btn.size = Vector2(32, 30)
 	daily_btn.visible = false
 	daily_btn.pressed.connect(func() -> void:
@@ -233,7 +233,7 @@ func _ready() -> void:
 		quest_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 		quest_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
 	quest_btn.tooltip_text = "Quest Log"
-	quest_btn.position = Vector2(55, 183)
+	quest_btn.position = Vector2(55, 185)
 	quest_btn.size = Vector2(32, 30)
 	quest_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
@@ -269,7 +269,7 @@ func _ready() -> void:
 	codex_btn.icon = book_tex if book_tex != null else Art.tex("book")
 	codex_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	codex_btn.tooltip_text = "Codex"
-	codex_btn.position = Vector2(118, 188)
+	codex_btn.position = Vector2(118, 186)
 	codex_btn.size = Vector2(32, 30)
 	codex_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
@@ -478,6 +478,7 @@ const BUFF_ICONS := {
 	"ward": "buff_ward", "aegis": "buff_ward",
 	"pact": "buff_blood", "surge": "buff_blood",
 	"speed": "buff_speed", "dodge": "buff_speed", "haste": "buff_speed",
+	"damp": "buff_damp",
 }
 
 ## A pooled row of active-effect chips sitting just above the ability
@@ -582,6 +583,10 @@ func _active_buffs() -> Array:
 		"tip": "Arrow Storm — arrows rain on every enemy near you."})
 	if p.cast_haste_time > 0.0: out.append({"id": "haste", "glyph": "ab_flame", "color": Color(0.7, 0.95, 1.0), "t": p.cast_haste_time,
 		"tip": "Tailwind — Blink & Frost Nova cool down %d%% faster." % int(p.cast_haste_cdr * 100.0)})
+	# Debuff: wading a river leaves you Damp (slowed, lingers after you leave).
+	if p.damp_time > 0.0: out.append({"id": "damp", "glyph": "ab_rain", "color": Color(0.42, 0.66, 0.95), "t": p.damp_time,
+		"tip": "Damp — river water clings to you: -%d%% move speed. Refreshed while wading, fades %ds after you leave the water." % [
+			int(round((1.0 - Balance.DAMP_SLOW_MULT) * 100.0)), int(Balance.DAMP_DURATION)]})
 	return out
 
 

@@ -1,0 +1,20 @@
+Combat FX + ambient water sprites in this folder are cropped/recolored
+frames from the "Ninja Adventure - Asset Pack" by pixel-boy (Pierre Vigier)
+and contributors.
+
+License: CC0 1.0 Universal (public domain) — no obligations, credited here
+as a courtesy. https://pixel-boy.itch.io/ninja-adventure-asset-pack
+
+Processing applied by us: cropped from the pack's FX / animated-background
+sprite sheets, per-channel RGB gamma-brightened (~0.80) to survive the
+Forward+ HDR tonemap, alpha preserved. Frames left as horizontal strips and
+animated at runtime (Sprite2D hframes).
+
+Files:
+  fx_slash.png         Attack/SlashCurved  (4 frames) — melee swing crescent
+  fx_slash_arc.png     Slash/Arc           (6 frames) — spare wide crescent
+  fx_circle.png        Magic/Circle/White  (4 frames) — cast summoning ring
+  fx_circle_spark.png  Magic/Circle/Spark  (6 frames) — spare cast ring+star
+  fx_impact.png        Elemental/Explosion (9 frames) — crit impact burst
+  fx_ice.png           Elemental/Ice       (10 frames)— spare elemental burst
+  fx_ripple.png        Backgrounds/Water Ripples (4 frames) — ambient water

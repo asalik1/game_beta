@@ -52,7 +52,7 @@ const DATA := {
 		"event": ""},
 	"graveyard": {"name": "Restless Graveyard", "ground": "gravedirt", "path": "gravedirt",
 		"tint": Color(0.78, 0.82, 0.85), "ambient": "mist", "music": "graveyard",
-		"obstacles": ["tombstone", "tombstone", "deadtree"], "decor": ["bones", "bones", "crack"], "count": 16,
+		"obstacles": ["tombstone", "tombstone", "tombstone", "grave_cross", "grave_cross", "grave_deadtree", "coffin", "crypt"], "decor": ["grave_bones", "grave_bones", "grave_crack"], "count": 16,
 		"patches": [], "event": "grave_spawn", "event_t": [5.0, 9.0]},
 	"desert": {"name": "Scorching Dunes", "ground": "sand", "path": "sand",
 		"tint": Color(1.05, 0.98, 0.85), "ambient": "sand", "music": "desert",
