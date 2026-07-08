@@ -67,13 +67,21 @@ func _outranks(e: Enemy, cur: Enemy) -> bool:
 	return e.hp < cur.hp  # same tier: the more wounded one
 
 
-## Target for AIMED attacks: the nearest enemy on the FACING side, or one in
-## the overhead cone (straight up/down, valid from either orientation). An
-## enemy on your blind side is ignored — turn to face it. Hard lock wins.
+## Target for AIMED attacks. Hard lock wins; otherwise the STICKY SOFT TARGET
+## (maintained once per frame by _update_soft_target) if it's within this
+## ability's reach — that's what makes your orientation and aim commit to one
+## enemy across frames, so kiting it onto your blind side doesn't drop it.
+## Only when there's no soft target in range do we fall back to the old
+## nearest-on-the-facing-side pick (short-range abilities whose soft target
+## is out of reach still hit whatever's actually in front of them).
 func _aim_target(rng: float) -> Enemy:
 	var lock := _hard_lock(rng)
 	if lock:
 		return lock
+	if is_instance_valid(soft_target) and not soft_target.dying \
+			and not soft_target.untargetable \
+			and global_position.distance_to(soft_target.global_position) <= rng:
+		return soft_target
 	var side := _face_sign()
 	var best: Enemy = null
 	var best_d := rng
@@ -90,6 +98,62 @@ func _aim_target(rng: float) -> Enemy:
 			best = e
 			best_d = d
 	return best
+
+
+## Maintain the sticky soft target — called once per physics frame from
+## player.gd with the current move input. Rules: keep the current target while
+## it's alive and inside SOFT_TARGET_KEEP; if the player is deliberately
+## steering toward the far side AND a real enemy waits there, switch to it
+## (else keep kiting the one behind you); otherwise (re)acquire the nearest
+## within SOFT_TARGET_ACQUIRE, biased to the pressed side. A hard lock overrides
+## everything downstream, so this can run harmlessly even while locked.
+func _update_soft_target(move: Vector2) -> void:
+	var keep := is_instance_valid(soft_target) and not soft_target.dying \
+			and not soft_target.untargetable \
+			and global_position.distance_to(soft_target.global_position) <= Balance.SOFT_TARGET_KEEP
+	var want := signf(move.x)  # horizontal input this frame; 0 when none
+	if keep and want != 0.0 and want != _side_of(soft_target):
+		var alt := _nearest_enemy(Balance.SOFT_TARGET_ACQUIRE, want)
+		if alt != null:
+			soft_target = alt
+		return
+	if keep:
+		return
+	soft_target = _nearest_enemy(Balance.SOFT_TARGET_ACQUIRE, want)
+
+
+## Which side an enemy sits on for orientation: -1/+1, or 0 when it's basically
+## overhead (inside the vertical cone — no clear left/right).
+func _side_of(e: Enemy) -> float:
+	var to := e.global_position - global_position
+	if absf(to.x) <= absf(to.y) * Balance.AIM_VERTICAL_CONE:
+		return 0.0
+	return signf(to.x)
+
+
+## Nearest live enemy within `rng`. When `side` is non-zero, prefer that
+## horizontal side and only fall back to the far side if that side is empty.
+func _nearest_enemy(rng: float, side: float) -> Enemy:
+	var best: Enemy = null
+	var best_d := rng
+	var far: Enemy = null
+	var far_d := rng
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e.dying or e.untargetable:
+			continue
+		var d := global_position.distance_to(e.global_position)
+		if d > rng:
+			continue
+		if side != 0.0 and _side_of(e) != side:
+			if d < far_d:
+				far = e
+				far_d = d
+			continue
+		if d < best_d:
+			best = e
+			best_d = d
+	return best if best != null else far
 
 
 func cycle_target() -> void:
@@ -236,6 +300,14 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 
 	var dir := (e.global_position - global_position).normalized()
 	e.take_damage(dmg, dir, is_crit)
+	# A Ninja-pack impact burst punctuates a CRIT (CC0) — elemental when
+	# themed, a warm shockburst otherwise. Single-target only: AoE and echo
+	# sub-hits stay quiet so a crowd hit doesn't turn to confetti.
+	if is_crit and not effects.get("aoe", false) and not effects.get("_echoed", false):
+		var icol := Color(1, 1, 1).lerp(_tcolor, 0.55) if _themed else Color(1.0, 0.72, 0.42)
+		_fx_flash("fx_impact", e.global_position, 9, {
+			"color": icol, "scale": 1.45, "z": 9, "frame_time": 0.03, "alpha": 0.95,
+		})
 	if effects.has("knock") and not e.dying \
 			and not (effects.get("knock_no_boss", 0) and e is Boss):
 		# knock_no_boss: the shove flings mobs but a boss holds its ground
@@ -373,6 +445,51 @@ func _wind_wisp(back: Vector2) -> void:
 	tw.tween_callback(wisp.queue_free)
 
 
+## Animated Ninja-FX flash (CC0 Ninja Adventure pack): loads a horizontal
+## frame strip from assets/sprites/fx/<name>.png, steps across its `frames`
+## cells, then frees itself. World-space by default (parented to `game`);
+## pass {"parent": self} for a flash that rides the hero, in which case
+## `pos` is treated as a LOCAL offset. `opts` keys: color, alpha, scale,
+## rot, flip_h, flip_v, z, frame_time, fade, parent.
+func _fx_flash(name: String, pos: Vector2, frames: int, opts := {}) -> void:
+	# Degrade gracefully if the pack asset isn't imported/present: Art.tex
+	# would otherwise fall through to the procedural SPRITES table and
+	# hard-error on an unknown "fx/..." key. No file ⇒ simply no flash.
+	if not ResourceLoader.exists("res://assets/sprites/fx/%s.png" % name):
+		return
+	var spr := Sprite2D.new()
+	spr.texture = Art.tex("fx/" + name)
+	spr.hframes = frames
+	spr.frame = 0
+	var scl: float = opts.get("scale", 1.0)
+	spr.scale = Vector2(scl, scl)
+	spr.rotation = opts.get("rot", 0.0)
+	spr.flip_h = opts.get("flip_h", false)
+	spr.flip_v = opts.get("flip_v", false)
+	spr.z_index = opts.get("z", 7)
+	var col: Color = opts.get("color", Color(1, 1, 1))
+	var alpha: float = opts.get("alpha", 1.0)
+	spr.modulate = Color(col.r, col.g, col.b, alpha)
+	var parent: Node = opts.get("parent", game)
+	if parent == self:
+		spr.position = pos
+	else:
+		spr.global_position = pos
+	parent.add_child(spr)
+	var per: float = opts.get("frame_time", 0.045)
+	var fade: float = opts.get("fade", 0.09)
+	# Step the strip frame-by-frame (bind snapshots each frame index), then
+	# fade the last frame out. The tween lives on the sprite, so a freed
+	# sprite (room rebuild, death) kills it cleanly.
+	var tw := spr.create_tween()
+	for f in range(1, frames):
+		tw.tween_interval(per)
+		tw.tween_callback(spr.set_frame.bind(f))
+	tw.tween_interval(per)
+	tw.tween_property(spr, "modulate:a", 0.0, fade)
+	tw.tween_callback(spr.queue_free)
+
+
 ## Release flash at the weapon: shots visibly leave YOU, not thin air.
 func _muzzle(dir: Vector2, color: Color) -> void:
 	var fl := Sprite2D.new()
@@ -460,6 +577,13 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 			blade.scale = Vector2(3.0, 3.0)
 			blade.z_index = 1
 			pivot.add_child(blade)
+		# A Ninja-pack slash crescent flashes along the strike (CC0), tinted
+		# to the swing colour — the drawn "cut" riding on top of the sweep.
+		_fx_flash("fx_slash", global_position + dir * reach * 0.52, 4, {
+			"color": slash_col, "rot": dir.angle(),
+			"scale": 2.4 * (reach / 78.0), "z": 8, "frame_time": 0.032,
+			"alpha": 0.9, "flip_v": to < from,
+		})
 		var tween := pivot.create_tween()
 		tween.tween_property(pivot, "rotation", dir.angle() + to, 0.13) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -479,6 +603,13 @@ func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectil
 	p.fx = _tfx.duplicate()
 	if _themed:
 		p.modulate = Color(1, 1, 1).lerp(_tcolor, 0.55)
+	# Caster tell: a Ninja-pack summoning ring blooms at the hands on a
+	# magic-damage cast (CC0), tinted to the theme (or a cool arcane blue).
+	if Classes.CLASSES[cls]["dmg_type"] == "magic":
+		_fx_flash("fx_circle", global_position + dir * 18.0 + Vector2(0, 2), 4, {
+			"color": _tcolor if _themed else Color(0.62, 0.76, 1.0),
+			"scale": 1.5, "z": 3, "frame_time": 0.05, "alpha": 0.85,
+		})
 	return p
 
 

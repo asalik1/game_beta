@@ -14,6 +14,16 @@ class_name Balance
 # from either orientation (0.6 ~= a 31-degree cone off vertical).
 const AIM_VERTICAL_CONE := 0.6
 
+# STICKY SOFT TARGET. With no Tab-lock the hero still commits to one enemy —
+# your orientation tracks it, and aimed attacks favour it — so you can kite it
+# onto your blind side without turning around. It's acquired within
+# SOFT_TARGET_ACQUIRE and kept (with hysteresis) out to SOFT_TARGET_KEEP; past
+# that, or on death, it drops and the nearest is re-acquired. Tab-lock keeps
+# its own job: refusing to auto-switch. KEEP > ACQUIRE so an edge target doesn't
+# flicker on/off at the boundary.
+const SOFT_TARGET_ACQUIRE := 560.0
+const SOFT_TARGET_KEEP := 680.0
+
 # ------------------------------------------------------ hero progression ---
 # XP to go from `level` to the next: XP_BASE + level * XP_PER_LEVEL.
 # The curve assumes side rooms are cleared (DESIGN.md); chapter kill-XP

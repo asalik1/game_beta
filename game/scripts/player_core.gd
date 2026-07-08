@@ -184,6 +184,7 @@ var look_sign := 1.0           # which way the hero visually faces (+1 right)
 var face_left := false         # does the sprite's art natively face left?
 var anim_t := 0.0
 var locked_target: Enemy = null
+var soft_target: Enemy = null   # sticky auto-target (no Tab-lock); see player_combat
 var pending_theme_note := ""   # set when a new theme unlocks (game shows it)
 
 # per-cast theme payload (set by use_ability, read by ability helpers)

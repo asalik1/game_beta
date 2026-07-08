@@ -123,18 +123,28 @@ func _physics_process(delta: float) -> void:
 	if frozen_time > 0.0 or rooted_time > 0.0:
 		dir = Vector2.ZERO  # crowd-controlled: the dodge is denied
 	# ORIENTATION (left/right). A hard Tab-lock turns the hero to keep facing
-	# its target (unless the target is basically overhead — see AIM_VERTICAL_CONE);
-	# otherwise ONLY horizontal move input (A/D) changes it — pure up/down never
-	# does. Movement itself stays free 2D; only the aim orientation is L/R.
+	# its target; failing that, the STICKY SOFT TARGET does the same (this is
+	# what lets you kite a mob onto your back without turning around). Either
+	# way an overhead target (inside AIM_VERTICAL_CONE) leaves steering to A/D,
+	# and with no target at all ONLY horizontal move input changes facing — pure
+	# up/down never does. Movement stays free 2D; only the aim orientation is L/R.
 	if locked_target != null and (not is_instance_valid(locked_target) \
 			or locked_target.dying or locked_target.untargetable):
 		locked_target = null  # the lock releases when its target dies
+	_update_soft_target(dir)
 	var os := _face_sign()
 	if is_instance_valid(locked_target):
 		var lx := locked_target.global_position.x - global_position.x
 		var ly := locked_target.global_position.y - global_position.y
 		if absf(lx) > absf(ly) * Balance.AIM_VERTICAL_CONE:
 			os = signf(lx)
+	elif is_instance_valid(soft_target):
+		var sx := soft_target.global_position.x - global_position.x
+		var sy := soft_target.global_position.y - global_position.y
+		if absf(sx) > absf(sy) * Balance.AIM_VERTICAL_CONE:
+			os = signf(sx)      # commit orientation to the soft target
+		elif dir.x != 0.0:
+			os = signf(dir.x)   # target overhead: let movement steer
 	elif dir.x != 0.0:
 		os = signf(dir.x)
 	facing = Vector2(os, 0.0)
