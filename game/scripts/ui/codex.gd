@@ -12,11 +12,15 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 	var vbox := m._open("Codex", 1000, 620)
 	m.current = "codex"
 
+	# Bestiary (Monsters / Bosses / NPCs) shares one top-level tab; the other
+	# codex screens stay top-level. `in_bestiary` keeps the parent lit.
+	var in_bestiary: bool = tab in ["monsters", "bosses", "npcs"]
+
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 12)
 	vbox.add_child(tabs)
-	m._btn(tabs, "  Monsters  ", func() -> void: m.open_codex("monsters"),
-		Color(0.95, 0.85, 0.5) if tab == "monsters" else Color(0.6, 0.6, 0.6))
+	m._btn(tabs, "  Bestiary  ", func() -> void: m.open_codex("monsters"),
+		Color(0.95, 0.85, 0.5) if in_bestiary else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Gear  ", func() -> void: m.open_codex("gear"),
 		Color(0.95, 0.85, 0.5) if tab == "gear" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Terrains  ", func() -> void: m.open_codex("terrains"),
@@ -25,6 +29,18 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		Color(0.95, 0.85, 0.5) if tab == "status" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Records  ", func() -> void: m.open_codex("records"),
 		Color(0.95, 0.85, 0.5) if tab == "records" else Color(0.6, 0.6, 0.6))
+
+	# Bestiary subtabs — Monsters / Bosses / NPCs under the one parent tab.
+	if in_bestiary:
+		var subs := HBoxContainer.new()
+		subs.add_theme_constant_override("separation", 10)
+		vbox.add_child(subs)
+		m._btn(subs, "  Monsters  ", func() -> void: m.open_codex("monsters"),
+			Color(1.0, 0.9, 0.6) if tab == "monsters" else Color(0.55, 0.55, 0.58))
+		m._btn(subs, "  Bosses  ", func() -> void: m.open_codex("bosses"),
+			Color(1.0, 0.7, 0.7) if tab == "bosses" else Color(0.55, 0.55, 0.58))
+		m._btn(subs, "  NPCs  ", func() -> void: m.open_codex("npcs"),
+			Color(0.7, 0.9, 1.0) if tab == "npcs" else Color(0.55, 0.55, 0.58))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -37,6 +53,10 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 
 	if tab == "monsters":
 		_monsters(m, list)
+	elif tab == "bosses":
+		_bosses(m, list)
+	elif tab == "npcs":
+		_npcs(m, list)
 	elif tab == "terrains":
 		_terrains(m, list)
 	elif tab == "status":
@@ -90,18 +110,89 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 		var tl := m._lbl(tcard, String(tline), 13, Color(0.78, 0.8, 0.86))
 		tl.custom_minimum_size = Vector2(880, 0)
 		tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	for section in [false, true]:  # regular monsters first, then bosses
-		m._lbl(list, "— BOSSES —" if section else "— MONSTERS —", 16, Color(1, 0.5, 0.5) if section else Color(0.95, 0.85, 0.5))
-		for kind in Story.ALL_ENEMIES:
-			var is_boss: bool = kind in m.BOSS_KINDS
-			if is_boss != section:
-				continue
-			var st: Dictionary = Story.ALL_ENEMIES[kind]
-			# Boss-summon props (censers, roots, rods) are zero-reward
-			# scenery-with-hp, not catalogue monsters — skip them.
-			if not is_boss and st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
-				continue
-			_enemy_card(m, list, kind, is_boss)
+	# Bosses moved to their own subtab (2026-07-08); this subtab keeps the
+	# Elites/Temptations copy above plus the regular-mob bestiary.
+	m._lbl(list, "— MONSTERS —", 16, Color(0.95, 0.85, 0.5))
+	for kind in Story.ALL_ENEMIES:
+		if kind in m.BOSS_KINDS:
+			continue
+		var st: Dictionary = Story.ALL_ENEMIES[kind]
+		# Boss-summon props (censers, roots, rods) are zero-reward
+		# scenery-with-hp, not catalogue monsters — skip them.
+		if st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
+			continue
+		_enemy_card(m, list, kind, false)
+
+
+## Bosses subtab: just the boss cards (each links to its mechanics detail).
+static func _bosses(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+	m._lbl(list, "— BOSSES —", 16, Color(1, 0.5, 0.5))
+	for kind in Story.ALL_ENEMIES:
+		if not (kind in m.BOSS_KINDS):
+			continue
+		_enemy_card(m, list, kind, true)
+
+
+## NPCs subtab (2026-07-08): everyone with a talk prompt, gathered from every
+## chapter's zone npc lists (base ZONES + content modules). Names only for
+## now — roles/lore land later. Deduped by sprite so each distinct NPC face
+## (incl. the placeholder extraction set) shows once for review.
+static func _npcs(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+	m._lbl(list, "— NPCS —", 16, Color(0.6, 0.9, 1.0))
+	var intro := m._lbl(list, "Everyone you can speak to. Names only for now — roles and lore come later.", 13, Color(0.7, 0.72, 0.78))
+	intro.custom_minimum_size = Vector2(880, 0)
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	var seen := {}
+	var entries: Array = []
+	for chid in Story.CHAPTER_LIST:
+		for zone in Story.CHAPTER_LIST[chid].get("zones", []):
+			for npc in zone.get("npcs", []):
+				var spr: String = String(npc.get("sprite", ""))
+				if spr == "" or seen.has(spr):
+					continue
+				seen[spr] = true
+				entries.append({"name": _npc_name(npc), "sprite": spr})
+	if entries.is_empty():
+		m._lbl(list, "No NPCs catalogued.", 13, Color(0.6, 0.62, 0.68))
+		return
+	var card := VBoxContainer.new()
+	card.add_theme_constant_override("separation", 4)
+	_card(list).add_child(card)
+	for e in entries:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		card.add_child(row)
+		var icon := TextureRect.new()
+		icon.texture = Art.tex(String(e["sprite"]))
+		icon.custom_minimum_size = Vector2(36, 36)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		row.add_child(icon)
+		var nm := m._lbl(row, String(e["name"]), 15, Color(0.9, 0.92, 0.98))
+		nm.custom_minimum_size = Vector2(820, 0)
+		nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+## Best display name for an npc entry: the speaker of its convo, else the
+## talk prompt without its "E — " lead, else the sprite id.
+static func _npc_name(npc: Dictionary) -> String:
+	var convo: String = String(npc.get("convo", ""))
+	if convo != "" and Story.ALL_CONVOS.has(convo):
+		var c: Dictionary = Story.ALL_CONVOS[convo]
+		var start: String = String(c.get("start", ""))
+		var nodes: Dictionary = c.get("nodes", {})
+		if nodes.has(start):
+			var who: String = String(nodes[start].get("who", ""))
+			if who != "":
+				return who
+	var prompt: String = String(npc.get("prompt", ""))
+	for lead in ["E — ", "E - "]:
+		if prompt.begins_with(lead):
+			return prompt.substr(lead.length()).strip_edges()
+	return prompt if prompt != "" else String(npc.get("sprite", ""))
 
 
 ## One boxed card per monster/boss: icon, name, Lv, live stats, growth,
@@ -185,7 +276,7 @@ static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bo
 	if is_boss and not detail and not mechs.is_empty():
 		var bk := String(kind)
 		m._btn(info, "  ▸ Mechanics & Tells  ",
-			func() -> void: m.open_codex("monsters", bk), Color(1, 0.7, 0.7))
+			func() -> void: m.open_codex("bosses", bk), Color(1, 0.7, 0.7))
 
 
 ## Focused boss detail: the summary card, then each authored mechanic as
@@ -196,8 +287,8 @@ static func _boss_detail(m: Menus, kind: String) -> void:
 	var vbox := m._open(String(st.get("name", kind)), 1000, 620)
 	m.current = "codex"
 
-	m._btn(vbox, "  ‹ Back to Bestiary  ",
-		func() -> void: m.open_codex("monsters"), Color(0.95, 0.85, 0.5))
+	m._btn(vbox, "  ‹ Back to Bosses  ",
+		func() -> void: m.open_codex("bosses"), Color(0.95, 0.85, 0.5))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -294,7 +385,8 @@ static func _terrains(m: Menus, list: VBoxContainer) -> void:
 		if t.get("mp_boost", false):
 			quirks.append("Latent magic — your mana recovers much faster here")
 		if t.has("river"):
-			quirks.append("Rivers cross these lands — wading slows everyone; the bridge doesn't")
+			quirks.append("Rivers cross these lands — wading leaves you DAMP (-%d%% move speed for %ds) and slows monsters; the bridge crosses dry" % [
+				int(round((1.0 - Balance.DAMP_SLOW_MULT) * 100.0)), int(Balance.DAMP_DURATION)])
 		if quirks.is_empty():
 			quirks.append("No hazards — safe ground")
 		for q in quirks:
