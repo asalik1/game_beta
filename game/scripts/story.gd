@@ -1020,6 +1020,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch7_quests.gd"),     # (Q7) Breaking Sky side quests (after ch7_zones: overrides its convos)
 	preload("res://scripts/content/pc_extra_mobs.gd"),  # Pixel Crawler asset pass (2026-07-08): 8 extra mobs — roster/codex only, TODO placement
 	preload("res://scripts/content/pc_npc_gallery.gd"), # Pixel Crawler asset pass: placeholder NPC convos (humans wired into ch2 hub for review)
+	preload("res://scripts/content/pc_bosses.gd"),      # Ninja Adventure sweep (2026-07-08): 6 placeholder bosses — dev-only, TODO real fights
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]

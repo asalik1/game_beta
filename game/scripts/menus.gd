@@ -5,6 +5,8 @@ class_name Menus extends CanvasLayer
 
 var game: Game
 var root: Control = null          # the currently open panel (null = closed)
+var detail_popover: Control = null  # click-to-reveal item/gem/shop popover
+var detail_return := ""             # screen the popover overlays (restored on close)
 var current := ""
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
@@ -27,6 +29,7 @@ func close() -> void:
 	if root:
 		root.queue_free()
 		root = null
+	detail_popover = null
 	listening_action = ""
 	# Boot menus unpause only once the game actually starts.
 	if not (current in ["class_select", "title"]) \
@@ -47,6 +50,7 @@ func _open(title: String, w := 960.0, h := 560.0) -> VBoxContainer:
 	root = Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
+	detail_popover = null  # any popover was a child of the old root; drop the ref
 
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.65)
@@ -596,7 +600,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var ab := _btn(right, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
-	_lbl(right, "Gear: click to equip · ALT-CLICK gear/consumables/gems to DISCARD (throw out, free a slot) · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
+	_lbl(right, "Click any bag item for its detail card — equip/use/synthesize or drop it there · gems socket via an EQUIPPED item (left) · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
 	# Bag category filter: All (default) + per-slot gear, gems, consumables.
 	var catrow := HBoxContainer.new()
@@ -628,14 +632,21 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			if cat != "all" and String(it["slot"]) != cat:
 				continue
 			_bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
-				"%s\n%s\n\nCLICK TO EQUIP — diff:\n%s\n\nALT-CLICK: discard (throw it out to free a slot)" % [Items.title(it), Items.describe(it, _awk(it)), _diff_tip(it)],
+				"%s\n%s\n\nClick for details — equip or drop." % [Items.title(it), Items.describe(it, _awk(it))],
 				func() -> void:
-					if Input.is_key_pressed(KEY_ALT):
+					var info := "%s\n\nCompared to what's equipped:\n%s" % [Items.describe(it, _awk(it)), _diff_tip(it)]
+					var equip_cb := func() -> void:
+						game.player.equip(it)
+						open_inventory("gear", cat)
+					var drop_cb := func() -> void:
 						game.player.backpack.erase(it)
 						game.discard_to_ground({"kind": "item", "item": it})
-					else:
-						game.player.equip(it)
-					open_inventory("gear", cat))
+						open_inventory("gear", cat)
+					var actions: Array = [
+						["  ⚔  Equip  ", Color(0.6, 1.0, 0.6), equip_cb],
+						["  ✖  Drop  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb],
+					]
+					_open_bag_detail(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions))
 	if show_cons:
 		# Consumables STACK by id (playtest 2026-07-07): one slot per
 		# type, count in the tooltip, click uses ONE.
@@ -662,28 +673,41 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var cicon: Texture2D = Art.consumable_icon(cc)
 			var cid := String(gid)
 			var slotted: int = p.potion_rotation.count(cid)
-			var tip := "%s%s\n%s\n\nCLICK TO USE · ALT-CLICK: discard one" % [str(cc["name"]), xn, str(cc.get("desc", ""))]
+			var tip := "%s%s\n%s\n\nClick for details — use or drop." % [str(cc["name"]), xn, str(cc.get("desc", ""))]
 			if cid in Items.ROTATION_POTIONS:
-				# Loadout editing (per-room potion budget, 2026-07-07 v2).
-				tip += "\nSHIFT-CLICK: slot into the room loadout · CTRL-CLICK: unslot"
-				tip += "\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. [%s] cycles in the field." % [
-					p.potion_rotation.size(), p.potion_slot_cap(),
-					("  (this: x%d)" % slotted) if slotted > 0 else "",
-					OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]
+				tip += "\n(and slot it into the room loadout)"
 			_bag_slot(grid, cicon, "" if cicon != null else "⟲",
 				Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
 				tip,
 				func() -> void:
-					if Input.is_key_pressed(KEY_ALT):
+					var info := str(cc.get("desc", ""))
+					var use_cb := func() -> void:
+						game.player.use_consumable(cc)
+						open_inventory("gear", cat)
+					var drop_cb := func() -> void:
 						game.player.consumables.erase(cc)
 						game.discard_to_ground({"kind": "stone", "stone": cc})
-					elif cid in Items.ROTATION_POTIONS and Input.is_key_pressed(KEY_SHIFT):
-						game.player.loadout_add(cid)
-					elif cid in Items.ROTATION_POTIONS and Input.is_key_pressed(KEY_CTRL):
-						game.player.loadout_remove(cid)
-					else:
-						game.player.use_consumable(cc)
-					open_inventory("gear", cat))
+						open_inventory("gear", cat)
+					var actions: Array = [["  ⚗  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
+					if cid in Items.ROTATION_POTIONS:
+						# Loadout editing (per-room potion budget, 2026-07-07 v2).
+						info += "\n\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. [%s] cycles potions in the field." % [
+							p.potion_rotation.size(), p.potion_slot_cap(),
+							("  (this: x%d)" % slotted) if slotted > 0 else "",
+							OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]
+						var slot_cb := func() -> void:
+							game.player.loadout_add(cid)
+							open_inventory("gear", cat)
+						var unslot_cb := func() -> void:
+							game.player.loadout_remove(cid)
+							open_inventory("gear", cat)
+						actions.append(["  ＋  Add to room loadout  ", Color(0.7, 0.9, 1.0), slot_cb])
+						if slotted > 0:
+							actions.append(["  －  Remove from loadout  ", Color(0.7, 0.82, 0.95), unslot_cb])
+					actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
+					_open_bag_detail(cicon, str(cc["name"]) + xn,
+						Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
+						info, actions))
 	if show_gems:
 		var groups := _gem_groups()
 		for key in _sorted_gem_keys(groups):
@@ -691,19 +715,25 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var g: Dictionary = group["gem"]
 			var count: int = group["count"]
 			var can_synth: bool = count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL
-			var tip := "%s  x%d" % [Items.gem_title(g), count]
-			if can_synth:
-				tip += "\n\nCLICK: synthesize three into one Lv%d" % (g["lvl"] + 1)
-			else:
-				tip += "\n\nSocket it: click an EQUIPPED item on the left"
-			tip += "\nALT-CLICK: discard one (throw it out to free a slot)"
+			var tip := "%s  x%d\n\nClick for details — synthesize or drop." % [Items.gem_title(g), count]
 			var gem_cb := func() -> void:
-				if Input.is_key_pressed(KEY_ALT):
+				var info := "%s  x%d\n\n" % [Items.gem_title(g), count]
+				if can_synth:
+					info += "Synthesize combines three of these into one Lv%d gem." % (g["lvl"] + 1)
+				else:
+					info += "Socket it into an equipped item (click a piece of gear on the left), or gather three to synthesize a stronger one."
+				var synth_cb := func() -> void:
+					game.player.synthesize(g["stat"], g["lvl"])
+					open_inventory("gear", cat)
+				var drop_cb := func() -> void:
 					game.player.gem_bag.erase(g)
 					game.discard_to_ground({"kind": "gem", "gem": g})
-				elif can_synth:
-					game.player.synthesize(g["stat"], g["lvl"])
-				open_inventory("gear", cat)
+					open_inventory("gear", cat)
+				var actions: Array = []
+				if can_synth:
+					actions.append(["  ⚒  Synthesize  (3 → 1 Lv%d)  " % (g["lvl"] + 1), Color(0.6, 0.9, 1.0), synth_cb])
+				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
+				_open_bag_detail(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions)
 			_bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), tip, gem_cb)
 	# Free-space squares only in the All view (a filtered view isn't the
@@ -758,6 +788,91 @@ func _bag_empty(grid: GridContainer) -> void:
 	sb.set_corner_radius_all(4)
 	pnl.add_theme_stylebox_override("panel", sb)
 	grid.add_child(pnl)
+
+
+## The old hover tooltip, promoted to a click-triggered popover: same
+## breakdown, same spot (anchored at the cursor), but the panel is now
+## fully OPAQUE so the content behind can't bleed through it, and it carries
+## action buttons. Not a modal — nothing dims, the screen stays live, and
+## clicking another row just swaps the popover. `actions` is a list of
+## [label, color, Callable]; actions rebuild the screen, Close/ESC dismiss
+## it. Auto-sizes to its content like a tooltip. Shared by the inventory
+## and the merchant shop.
+func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
+		info: String, actions: Array) -> void:
+	if not root:
+		return
+	if detail_popover:
+		detail_popover.queue_free()
+	elif current != "detail":
+		detail_return = current  # the screen we're floating over
+	current = "detail"
+	game.sfx("ui_click")
+
+	# A PanelContainer hugs its content, so the popover is exactly as tall
+	# as the breakdown + buttons — no fixed card box.
+	var pop := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.1, 0.09, 0.13, 1.0)  # fully opaque — no bag bleed-through
+	sb.border_color = Color(title_color, 0.9)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(6)
+	sb.shadow_color = Color(0, 0, 0, 0.5)
+	sb.shadow_size = 10
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	pop.add_theme_stylebox_override("panel", sb)
+	pop.mouse_filter = Control.MOUSE_FILTER_STOP  # absorb clicks; no fall-through
+	root.add_child(pop)
+	detail_popover = pop
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	pop.add_child(vbox)
+
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 10)
+	vbox.add_child(head)
+	if icon != null:
+		var ic := TextureRect.new()
+		ic.texture = icon
+		ic.custom_minimum_size = Vector2(40, 40)
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		head.add_child(ic)
+	var tl := _lbl(head, title, 18, title_color)
+	tl.custom_minimum_size = Vector2(300, 0)
+
+	var il := _lbl(vbox, info, 14, Color(0.85, 0.85, 0.92))
+	il.custom_minimum_size = Vector2(320, 0)
+
+	for a in actions:
+		var acb: Callable = a[2]
+		_btn(vbox, String(a[0]), acb, a[1])
+	_btn(vbox, "  ✕  Close  ", func() -> void: _close_detail_popover(), Color(0.62, 0.63, 0.7))
+
+	# Anchor at the cursor like the tooltip did, then (once the container has
+	# measured itself) nudge it back on-screen if it would spill off an edge.
+	pop.position = pop.get_global_mouse_position() + Vector2(14, 8)
+	await get_tree().process_frame
+	if not is_instance_valid(pop):
+		return
+	pop.reset_size()
+	var sz := pop.size
+	pop.position = Vector2(
+		clampf(pop.position.x, 8.0, 1280.0 - sz.x - 8.0),
+		clampf(pop.position.y, 8.0, 720.0 - sz.y - 8.0))
+
+
+## Dismiss the popover, leaving the screen it floats over (inventory or
+## shop) intact underneath.
+func _close_detail_popover() -> void:
+	if detail_popover:
+		detail_popover.queue_free()
+		detail_popover = null
+	if current == "detail":
+		current = detail_return if detail_return != "" else "inventory"
 
 
 ## Gem-group keys ordered by stat name, then level descending —
@@ -1425,8 +1540,8 @@ func open_shop(zone: int) -> void:
 		gemb.custom_minimum_size = Vector2(640, 0)
 
 	# Bag shelf (round 52): expand carry capacity. Capacity is QoL not power,
-	# so bags are priced FAR below gear. Buying joins the equipped set (a 6th
-	# keeps the best 5 via acquire_bag). Sells for only 1g, so buy >> sell.
+	# so bags are priced FAR below gear. Buying joins the equipped set (over
+	# MAX_BAGS keeps the best via acquire_bag). Sells for only 1g, so buy >> sell.
 	for bag_item in game.shop_bags[zone]:
 		var bit: Dictionary = bag_item
 		var bcost := int(ceil(float(Items.bag_buy_price(String(bit["grade"]))) * haggle))
@@ -1777,7 +1892,11 @@ const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
 	"forgemistress", "cinderhide", "ashpriest",  # ch4 Slagfields (BOSSES.md)
 	"whitepelt", "icebound", "sleepkeeper",  # ch5 Long Sleep (BOSSES.md)
 	"auroch", "gardener", "curetwisted",  # ch6 Blooming Deep (BOSSES.md)
-	"stormdrake_veyx", "unnamed_echo", "stormmouth"]  # ch7 Breaking Sky — Act 1 finale (BOSSES.md)
+	"stormdrake_veyx", "unnamed_echo", "stormmouth",  # ch7 Breaking Sky — Act 1 finale (BOSSES.md)
+	# Ninja Adventure sweep (2026-07-08): PLACEHOLDER bosses (pc_bosses.gd) —
+	# dev-only (unplaced → codex hides them outside dev), spawnable from the
+	# dev panel. Not yet assigned to any chapter.
+	"cyclops", "tengu", "flame_giant", "great_spirit", "ooze", "kraken"]
 
 ## Codex screens live in ui/codex.gd. Passing a boss `kind` opens that
 ## boss's focused mechanics detail view instead of the tab list.
@@ -1890,11 +2009,14 @@ func _input(event: InputEvent) -> void:
 			return  # boot menus: no escaping into a paused void
 		if event.keycode == KEY_ESCAPE \
 				or (current == "inventory" and event.keycode == game.binds["inventory"]) \
+				or (current == "bag_detail" and event.keycode == game.binds["inventory"]) \
 				or (current == "skills" and event.keycode == game.binds["skills"]) \
 				or (current == "codex" and event.keycode == game.binds["codex"]) \
 				or (current == "map" and event.keycode == game.binds.get("map", KEY_M)) \
 				or (current == "dev" and event.keycode == KEY_F1):
-			if current == "theme_pick":
+			if current == "bag_detail":
+				_close_bag_detail()  # dismiss the card, stay in the inventory
+			elif current == "theme_pick":
 				open_skills()  # back to the tree, not out of the menu
 			elif current == "item_panel":
 				open_inventory()  # back to the bag

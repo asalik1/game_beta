@@ -88,6 +88,27 @@ const DATA := {
 		"obstacles": ["tree_spore", "tree_spore", "rock"], "decor": ["mushroom", "mushroom", "mushroom"], "count": 13,
 		"patches": [{"type": "poison", "count": 5, "radius": [60, 90], "drift": true}],
 		"event": ""},
+	# ---- placeholder terrains (2026-07-08 environment-pack sweep) ----
+	# Authored from the owned Pixel Crawler environment packs, dev-only:
+	# the codex hides them outside the dev launcher and tags them
+	# [placeholder]; the dev panel can still paint any room with them to
+	# preview the vibe. No zone references them, so normal play never uses
+	# them. All reuse existing ground types / props / hazards.
+	"ph_sewer": {"name": "Undercroft Sewer", "ground": "stone", "path": "stone",
+		"tint": Color(0.72, 0.82, 0.78), "ambient": "mist", "music": "marsh",
+		"obstacles": ["pillar", "rock", "deadtree"], "decor": ["bones", "crack", "pebble"], "count": 12,
+		"patches": [{"type": "poison", "count": 5, "radius": [60, 95]}], "event": "",
+		"placeholder": true},
+	"ph_hall": {"name": "Castle Hall", "ground": "holystone", "path": "holystone",
+		"tint": Color(0.9, 0.86, 0.95), "ambient": "embers", "music": "keep",
+		"obstacles": ["pillar", "pillar", "rock"], "decor": ["crack", "pebble"], "count": 10,
+		"patches": [], "event": "",
+		"placeholder": true},
+	"ph_fae": {"name": "Fae Grove", "ground": "forest", "path": "dirt",
+		"tint": Color(0.85, 0.95, 0.92), "ambient": "fireflies", "music": "darkwood",
+		"obstacles": ["tree_green", "tree_green", "rock"], "decor": ["flower", "flower", "mushroom"], "count": 15,
+		"patches": [{"type": "heal", "count": 3, "radius": [55, 80]}], "event": "",
+		"placeholder": true},
 }
 
 # Ambient AUDIO bed per terrain (Sfx.make_ambient kinds; "" = silence).

@@ -393,8 +393,15 @@ static func _terrains(m: Menus, list: VBoxContainer) -> void:
 			if not found_in.has(zone.get("terrain", "")):
 				found_in[zone.get("terrain", "")] = zone["name"]
 
+	var dev: bool = m.game.dev_mode
 	for id in Terrains.DATA:
 		var t: Dictionary = Terrains.DATA[id]
+		# Placeholder terrains (authored from the asset packs for review) are
+		# dev-launcher only, tagged [placeholder] there. The dev panel can
+		# still paint any room with them regardless.
+		var ph: bool = t.get("placeholder", false)
+		if ph and not dev:
+			continue
 		var info := VBoxContainer.new()
 		info.add_theme_constant_override("separation", 2)
 		_card(list).add_child(info)
@@ -402,7 +409,7 @@ static func _terrains(m: Menus, list: VBoxContainer) -> void:
 		# Name ................................... where it appears
 		var head := HBoxContainer.new()
 		info.add_child(head)
-		var name_l := m._lbl(head, t["name"], 16, Color(1, 1, 1))
+		var name_l := m._lbl(head, String(t["name"]) + ("   [placeholder]" if ph else ""), 16, Color(0.72, 0.68, 0.55) if ph else Color(1, 1, 1))
 		name_l.custom_minimum_size = Vector2(560, 0)
 		name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var where: String = found_in.get(id, "")
@@ -749,8 +756,8 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		m._lbl(bags, "%s   %s — %d slots" % [g2, Items.BAG_NAMES[g2], int(Items.BAG_SLOTS[g2])], 14, Items.GRADE_COLOR[g2])
 	for line2 in [
 		"Gear, gems and consumables all share your bags' slots — and EVERY unit counts: 20 potions take 20 slots (they only STACK for display). Equip up to %d bags at once — total capacity is the SUM of their slots (F pouch 10 … S hold 40). You start with two Frayed Pouches." % Balance.MAX_BAGS,
-		"Bags drop from BOSSES and elites (tier scales with the act) and merchants stock them too — but a good bag costs real gold. Pick up a sixth and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],
-		"Full bag? DISCARD loose gear, a gem, or a consumable (ALT-click it in the inventory) to fling it out and free a slot. New loot drops at your feet instead of vanishing — anything left on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
+		"Bags drop from BOSSES and elites (tier scales with the act) and merchants stock them too — but a good bag costs real gold. Pick up one past your %d and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],
+		"Full bag? Click any loose gear, gem, or consumable to open its detail card and DROP it — fling it out to free a slot. New loot drops at your feet instead of vanishing — anything left on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
 		var bl := m._lbl(bags, String(line2), 13, Color(0.7, 0.72, 0.78))
 		bl.custom_minimum_size = Vector2(880, 0)
 		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
