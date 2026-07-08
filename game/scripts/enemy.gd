@@ -401,14 +401,25 @@ func _physics_process(delta: float) -> void:
 		if _moving_anim:
 			anim_t += delta
 		sprite.frame = int(anim_t * anim_fps) % anim_frames
-	# Facing rides a LOW-PASSED horizontal velocity: raw velocity.x flips
-	# sign frame-to-frame when she strafes/slides against a wall, which would
-	# mirror the sprite every frame (jitter). Smoothing only turns the body
-	# on a sustained direction.
+	# ORIENTATION mirrors the hero's target-first logic (player.gd): an
+	# engaged enemy faces its PREY, not its slide/velocity — otherwise a
+	# melee attacker that stops to swing (move == 0, e.g. Korrag) keeps
+	# whatever way it last drifted and looks the wrong way mid-attack. Commit
+	# to the player's horizontal side within the aim cone; fall back to a
+	# LOW-PASSED velocity (jitter-free) when unaggroed or the target is
+	# overhead. Left-facing art (Crawl sprites) flips the opposite way.
 	_face_vx = lerpf(_face_vx, velocity.x, 0.2)
-	if absf(_face_vx) > 8.0:
-		# Left-facing art (Crawl sprites) flips the opposite way.
-		sprite.flip_h = (_face_vx > 0.0) if face_left else (_face_vx < 0.0)
+	var os := 0.0
+	var tgt: Player = game.player
+	if (alerted or force_aggro) and tgt != null and not tgt.dead:
+		var tx := tgt.global_position.x - global_position.x
+		var ty := tgt.global_position.y - global_position.y
+		if absf(tx) > absf(ty) * Balance.AIM_VERTICAL_CONE:
+			os = signf(tx)
+	if os == 0.0 and absf(_face_vx) > 8.0:
+		os = signf(_face_vx)
+	if os != 0.0:
+		sprite.flip_h = (os > 0.0) if face_left else (os < 0.0)
 	# Little walk bob so they feel alive.
 	if _moving_anim:
 		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
