@@ -201,39 +201,181 @@ var aura: Sprite2D
 var strip_frames := 0
 var strip_fps := 6.0
 var strip_t := 0.0
-var _class_idle := {}          # walk/idle split (swap on movement)
-var _class_walk := {}
-var _class_walking := false
+# Clip state machine (round: Custom sheets — full per-class animation set).
+# _clips: name -> {tex,frames,fps}. Locomotion (idle/walk/run) loops; action
+# clips (attack/cast/dash/ult/death) play once then fall back to locomotion.
+var _clips := {}
+var _clip := ""                # current clip name
+var _clip_loop := true         # locomotion loops; one-shot actions do not
+var _clip_locked := false      # death latch: hold last frame, ignore everything
 var halo: PointLight2D = null  # the hero's soft light (dark terrains only)
+
+## Per-class ability-slot -> action clip. Slots with no matching clip (or a
+## class with no sheet) simply skip the one-shot. Tunable — maps each kit's
+## four abilities onto the animation rows the artist authored.
+const ABILITY_CLIP := {
+	# Mapped to each kit's ACTUAL abilities: movement dashes -> dash clip,
+	# swings -> attack/attack2, casters' AoE/summons -> cast/ult. "" = no
+	# one-shot (defensive/buff ability keeps the locomotion pose).
+	"warrior":  {"a1": "attack", "a2": "dash",    "a3": "attack2", "ult": "ult"},     # Cleave / Shield Bash / Whirlwind / Berserk
+	"archer":   {"a1": "attack", "a2": "attack2", "a3": "dash",    "ult": "cast"},    # Quick Shot / Multishot / Tumble / Arrow Storm
+	"mage":     {"a1": "attack", "a2": "cast",    "a3": "dash",    "ult": "cast"},    # Firebolt / Frost Nova / Blink / Meteor
+	"assassin": {"a1": "attack", "a2": "dash",    "a3": "attack2", "ult": "attack2"}, # Stab / Shadow Dash / Fan of Knives / Death Mark
+	"paladin":  {"a1": "attack", "a2": "attack2", "a3": "",        "ult": ""},        # Judgment / Consecration / Aegis / Conviction
+	"warlock":  {"a1": "attack", "a2": "ult",     "a3": "attack2", "ult": "cast"},    # Shadowbolt / Hex / Dark Pact / Void Rift
+}
 
 
 ## Point the hero Sprite2D at the class art — the animated strip when
 ## one is installed, the static texture otherwise.
+## The Custom clip frames pad headroom around a feet-aligned character, so
+## on-screen size can't key off the frame box. Instead we MEASURE the idle
+## body height and scale it to a constant target, then offset the sprite so
+## the feet land on the shadow. Both are tunable by taste.
+const HERO_TARGET_BODY := 52.0   # on-screen character body height, px
+const HERO_FEET_ANCHOR := 22.0   # feet sit this far below the node origin (shadow ~+20)
+
+var _hero_scale := 1.0
+var _hero_offset_y := 0.0
+
+# Directional attack POSES (round: assassin-directions sheet). Some abilities
+# aim in any of 360°, which a flat left/right swing clip can't track — so those
+# show an 8-way pose picked by aim instead. _dir_clips: pose name -> strip info;
+# _dir_meta: pose name -> {scale, offset}. Active while _dir_pose_t > 0.
+var _dir_clips := {}
+var _dir_meta := {}
+var _dir_pose_active := false
+var _dir_pose_t := 0.0       # elapsed time in the current directional animation
+var _dir_base := 0           # first strip frame of the chosen direction (dir * K)
+var _dir_k := 1              # sub-frames per direction (windup, action, ...)
+const DIR_ANIM_DUR := 0.22   # seconds to play one direction's sub-frames
+
+## Ability slots that show a directional aim POSE instead of a swing clip.
+const DIR_POSE := {
+	"assassin": {"a1": "stab", "a3": "throw"},   # Stab / Fan of Knives — aim the strike at the target
+}
+
 func _apply_class_sprite() -> void:
 	var art_name: String = Classes.CLASSES[cls]["sprite"]
-	var anim := Art.anim_info(art_name)
+	face_left = Art.faces_left(art_name)
+	_clips = Art.hero_clips(art_name)
+	_clip = ""
+	_clip_loop = true
+	_clip_locked = false
+	strip_frames = 0
 	sprite.hframes = 1
 	sprite.frame = 0
-	strip_frames = 0
-	_class_idle = anim
-	_class_walk = Art.walk_info(art_name)
-	_class_walking = false
-	if anim.is_empty():
+	_dir_clips = Art.hero_dir_clips(art_name)
+	_dir_meta = {}
+	_dir_pose_active = false
+	if _clips.has("idle"):
+		var m := _measure_hero_frame(_clips["idle"])
+		_hero_scale = m["scale"]
+		_hero_offset_y = m["offset"]
+		for pose in _dir_clips:
+			_dir_meta[pose] = _measure_hero_frame(_dir_clips[pose])
+		_play_clip("idle", true)
+	else:
+		# No animation strips installed: legacy static override / grid.
+		sprite.offset = Vector2.ZERO
 		sprite.texture = Art.tex(art_name)
 		sprite.scale = Art.scale_for(sprite.texture, 3.0)
-	else:
-		_apply_hero_strip(anim)
-	face_left = Art.faces_left(art_name)
 
 
-func _apply_hero_strip(info: Dictionary) -> void:
-	sprite.texture = info["tex"]
+## Read a strip's first frame alpha to find body height + feet row, and derive
+## the sprite scale (body -> constant on-screen size) + vertical feet offset.
+## Returned per strip so a different-sized strip (e.g. directional poses) still
+## renders the body at the same size and its feet on the shadow.
+func _measure_hero_frame(info: Dictionary) -> Dictionary:
+	var img: Image = info["tex"].get_image()
 	var frames := int(info["frames"])
-	sprite.hframes = frames
-	sprite.frame = 0
-	strip_frames = frames
+	var fw := int(img.get_width() / max(1, frames))
+	var fh := img.get_height()
+	var top := fh
+	var bot := 0
+	for y in fh:
+		for x in fw:
+			if img.get_pixel(x, y).a > 0.15:
+				if y < top:
+					top = y
+				if y > bot:
+					bot = y
+				break
+	var body_h := maxi(1, bot - top)
+	var sc := HERO_TARGET_BODY / float(body_h)
+	return {"scale": sc, "offset": HERO_FEET_ANCHOR / sc - float(bot) + float(fh) / 2.0}
+
+
+## Point the hero Sprite2D at a clip. loop=false marks a one-shot action
+## (attack/cast/dash/ult/death); the driver returns to locomotion when it ends.
+func _play_clip(name: String, loop: bool) -> void:
+	if not _clips.has(name):
+		if name == "idle" or not _clips.has("idle"):
+			return
+		name = "idle"
+		loop = true
+	var info: Dictionary = _clips[name]
+	_clip = name
+	_clip_loop = loop
+	strip_frames = int(info["frames"])
 	strip_fps = float(info["fps"])
-	sprite.scale = Art.scale_for(sprite.texture, 3.0, frames)
+	strip_t = 0.0
+	sprite.texture = info["tex"]
+	sprite.hframes = strip_frames
+	sprite.frame = 0
+	sprite.scale = Vector2(_hero_scale, _hero_scale)
+	sprite.offset = Vector2(0, _hero_offset_y)
+
+
+## Fire a one-shot action clip that returns to locomotion when it finishes.
+## No-op while dead, with no sheet installed, or if the clip is absent.
+func play_action(name: String) -> void:
+	if _clip_locked or strip_frames == 0 or name == "":
+		return
+	if _clips.has(name):
+		_play_clip(name, false)
+
+
+## Play a DIRECTIONAL animation aimed by `dir`: an 8-way strip of K sub-frames
+## per direction (windup -> action), picked by aim and played over DIR_ANIM_DUR,
+## then back to locomotion. Returns true if it played. The art encodes its own
+## facing, so the flip is suppressed while it runs.
+func play_dir_anim(name: String, dir: Vector2) -> bool:
+	if _clip_locked or not _dir_clips.has(name):
+		return false
+	var info: Dictionary = _dir_clips[name]
+	var meta: Dictionary = _dir_meta.get(name, {"scale": _hero_scale, "offset": _hero_offset_y})
+	var total := int(info["frames"])
+	_dir_k = maxi(1, total / 8)
+	_dir_base = _dir_index(dir) * _dir_k
+	_dir_pose_active = true
+	_dir_pose_t = 0.0
+	_clip = "@dir"
+	_clip_loop = false
+	strip_frames = total
+	sprite.texture = info["tex"]
+	sprite.hframes = total
+	sprite.frame = _dir_base
+	sprite.flip_h = false
+	sprite.scale = Vector2(meta["scale"], meta["scale"])
+	sprite.offset = Vector2(0, meta["offset"])
+	return true
+
+
+## Aim vector -> frame in an 8-way pose strip ordered E,NE,N,NW,W,SW,S,SE.
+func _dir_index(d: Vector2) -> int:
+	if d == Vector2.ZERO:
+		return 0
+	var k := int(round(atan2(d.y, d.x) / (PI / 4.0)))   # -4..4 (screen: +y down)
+	var lut := {0: 0, -1: 1, -2: 2, -3: 3, 4: 4, -4: 4, 3: 5, 2: 6, 1: 7}
+	return lut.get(k, 0)
+
+
+## Terminal death clip: play once, then hold the final frame forever.
+func play_death_anim() -> void:
+	if _clips.has("death"):
+		_play_clip("death", false)
+		_clip_locked = true
 
 
 ## Passive granted by an equipped S-grade weapon ("" if none). A DORMANT

@@ -2239,6 +2239,22 @@ static func hero_clips(name: String) -> Dictionary:
 	return out
 
 
+# Directional POSE strips: 8 frames = 8 compass aims (E,NE,N,NW,W,SW,S,SE,
+# in that order). Unlike animation clips these aren't played over time — the
+# player picks the frame matching the ability's aim so the arm points exactly
+# where the strike goes (fixes the flat-swing-vs-aimed-attack mismatch).
+const HERO_DIR_FILES := {"stab": "stab_dir", "throw": "throw_dir"}
+
+## Installed directional-pose strips for a hero class, keyed by pose name.
+static func hero_dir_clips(name: String) -> Dictionary:
+	var out := {}
+	for pose in HERO_DIR_FILES:
+		var info := _strip_info("%s_%s" % [name, HERO_DIR_FILES[pose]])
+		if not info.is_empty():
+			out[pose] = info
+	return out
+
+
 ## Sprite scale that keeps on-screen size constant regardless of the
 ## texture's pixel size (grids are 16px, file overrides are often 32px).
 ## `frames` divides the width for hframes strips (animation seam).

@@ -22,6 +22,12 @@ task, claim before starting**, verify visually before staging.
 - Palette north star: the game's PAL in art.gd — saturated mids, bright
   highlights, near-black outlines. Blight = sickly greens; ember/ash =
   orange-on-char; void = deep violet; Choir = bone + ink + gold.
+- **New ANIMATED sheets** (a grid of labelled frames — commissioned/AI
+  character sheets, e.g. the six class clips): run them through
+  `tools/art/extract_sheet.py` — it keys, de-labels, SOLIDIFIES (kills the
+  green background bleed-through), mirrors to face-left, and slices to engine
+  strips. Same tool for boss/mob sheets. Full pipeline + the green-holes fix
+  writeup: `tools/art/README.md`.
 
 ## Tasks (claim by adding your name)
 

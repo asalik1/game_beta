@@ -343,6 +343,9 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 	melee_style = style
 	var dir := aim_dir(220.0)
 	melee_dir = dir
+	# Base slash colour: theme tint if themed, else RED while berserk (so the
+	# crescent matches the rage), else plain white.
+	var slash_col := _tcolor if _themed else (Color(1.0, 0.3, 0.2) if berserk_time > 0.0 else Color(1, 1, 1))
 	if style == "stab":
 		# The stab IS a single solid blade sliver (player reference art,
 		# round 33): a white line with needle-sharp ends, there for a
@@ -350,7 +353,7 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 		# the base; theme variants only change the color.
 		var blade := Sprite2D.new()
 		blade.texture = Art.tex("slashline")
-		blade.modulate = _tcolor if _themed else Color(1, 1, 1)
+		blade.modulate = slash_col
 		blade.rotation = dir.angle()
 		# y thinned twice on playtest feedback (1.5 → 0.8 → 0.5): a razor
 		# line, not a bar.
@@ -384,8 +387,7 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 		spr.position = Vector2(reach * 0.5, 0)
 		spr.scale = Vector2(2.8, 2.8) * (reach / 78.0)
 		spr.flip_v = to < from  # rising cut: the crescent's belly flips with it
-		if _themed:
-			spr.modulate = _tcolor
+		spr.modulate = slash_col
 		pivot.add_child(spr)
 		if variant >= 0:
 			# The blade itself leads the swipe — held weapon's icon when

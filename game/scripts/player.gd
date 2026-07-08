@@ -7,15 +7,8 @@ class_name Player extends "res://scripts/player_kit_warlock.gd"
 # ================================================================= per frame
 
 func _physics_process(delta: float) -> void:
-	if strip_frames > 1:
-		# Animated class art (Track C seam): swap to the walk strip on
-		# the move when one exists; else idle brisker while moving.
-		var strip_moving := velocity.length() > 20.0
-		if not _class_walk.is_empty() and strip_moving != _class_walking:
-			_class_walking = strip_moving
-			_apply_hero_strip(_class_walk if strip_moving else _class_idle)
-		strip_t += delta * (2.0 if strip_moving else 1.0)
-		sprite.frame = int(strip_t * strip_fps) % strip_frames
+	if strip_frames > 0:
+		_advance_clip(delta)
 	for key in cds:
 		cds[key] = maxf(0.0, cds[key] - delta)
 	potion_cd = maxf(0.0, potion_cd - delta)
@@ -154,8 +147,10 @@ func _physics_process(delta: float) -> void:
 	var look_x := target.global_position.x - global_position.x if target else facing.x
 	if absf(look_x) > 0.4:
 		look_sign = signf(look_x)
-		# Left-facing art (Crawl sprites) flips the opposite way.
-		sprite.flip_h = (look_x > 0.0) if face_left else (look_x < 0.0)
+		# Left-facing art (Crawl sprites) flips the opposite way. A directional
+		# aim pose sets its own facing, so don't fight it while it holds.
+		if not _dir_pose_active:
+			sprite.flip_h = (look_x > 0.0) if face_left else (look_x < 0.0)
 	if dir != Vector2.ZERO:
 		sprite.position.y = -absf(sin(anim_t * 11.0)) * 3.0
 		sprite.rotation = sin(anim_t * 11.0) * 0.06
@@ -269,6 +264,55 @@ func apply_chill(mult: float, dur := 0.35) -> void:
 
 # ================================================================= abilities
 
+# -------------------------------------------------- clip state machine ---
+# Locomotion (idle/walk/run) loops; a one-shot action clip plays through once
+# then hands back to locomotion; death latches the final frame. Called every
+# physics frame whenever a class sheet is installed (strip_frames > 0).
+func _advance_clip(delta: float) -> void:
+	if _clip_locked:
+		strip_t += delta
+		sprite.frame = mini(strip_frames - 1, int(strip_t * strip_fps))
+		return
+	if _dir_pose_active:
+		# Directional animation: play this direction's K sub-frames (windup ->
+		# action) over DIR_ANIM_DUR, then drop back to locomotion. Only this
+		# direction's frames advance — the aim was locked in at cast time.
+		_dir_pose_t += delta
+		var sub := int(_dir_pose_t / DIR_ANIM_DUR * float(_dir_k))
+		if sub < _dir_k:
+			sprite.frame = _dir_base + sub
+			return
+		_dir_pose_active = false
+		_clip = ""
+		_clip_loop = true
+	if not _clip_loop:
+		# One-shot action: play forward until it runs out, then fall through.
+		strip_t += delta
+		var f := int(strip_t * strip_fps)
+		if f < strip_frames:
+			sprite.frame = f
+			return
+	var loco := _loco_clip()
+	if loco != _clip or not _clip_loop:
+		_play_clip(loco, true)
+	strip_t += delta
+	sprite.frame = int(strip_t * strip_fps) % strip_frames
+
+
+## Which looping clip fits the current movement: run while a speed buff or
+## berserk carries you, walk on foot, berserk-idle when standing enraged.
+func _loco_clip() -> String:
+	if velocity.length() <= 20.0:
+		if berserk_time > 0.0 and _clips.has("ultidle"):
+			return "ultidle"
+		return "idle"
+	if (theme_speed_time > 0.0 or berserk_time > 0.0) and _clips.has("run"):
+		return "run"
+	if _clips.has("walk"):
+		return "walk"
+	return "idle"
+
+
 func use_ability(slot: String) -> void:
 	if dead or cds[slot] > 0.0:
 		return
@@ -286,6 +330,15 @@ func use_ability(slot: String) -> void:
 		var twin := "a3" if slot == "a1" else "a1"
 		cds[twin] = maxf(cds[twin], cds[slot])
 	mp -= cost
+	# Animate this ability. Aim-critical slots (e.g. assassin Stab) show an
+	# 8-way directional POSE pointing at the target; everything else fires a
+	# one-shot swing clip. No-op if the class ships no matching art.
+	var dir_pose: String = DIR_POSE.get(cls, {}).get(slot, "")
+	if dir_pose == "" or not play_dir_anim(dir_pose, aim_dir()):
+		var action_clip: String = ABILITY_CLIP.get(cls, {}).get(slot, "")
+		if cls == "warrior" and berserk_time > 0.0 and action_clip in ["attack", "attack2"]:
+			action_clip = "ult"  # berserk swings the RED blade, not the gold one
+		play_action(action_clip)
 	var f := dm(slot)
 
 	# Theme payload for this cast (behavior modifiers + tint).
@@ -383,6 +436,11 @@ func drink_potion() -> void:
 ## keeps the plain eva-then-res path.
 func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> void:
 	if dead or hurt_cd > 0.0:
+		return
+	if game.dev_god:
+		# Dev god mode: ignore damage at the source. The per-frame HP restore in
+		# game.gd can't save you from a lethal hit that triggers death the same
+		# frame it lands — this does.
 		return
 	if attacker is Enemy and (attacker as Enemy).toxin > 0:
 		# ENFEEBLE (round 49e; split 49f): YOUR toxin on the attacker turns
@@ -488,6 +546,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 		else:
 			hp = 0.0
 			dead = true
+			play_death_anim()
 			game.on_player_died()
 			return
 	# Aegis redirect: while the shield is up, whoever strikes you is
