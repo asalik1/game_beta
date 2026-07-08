@@ -22,6 +22,11 @@ var mail_badge: Panel           # red unread-count circle on the ✉
 var mail_badge_num: Label
 var daily_btn: Button           # ★ beside the ✉ — shown only when a daily waits
 var daily_glow: Sprite2D        # pulsing shine behind the ★
+var quest_btn: Button           # ! opens the Quest Log; shines when a reward waits
+var quest_glow: Sprite2D        # red/orange pulse behind ! when the weekly vault is claimable
+var quest_sparkles: Array = []  # twinkles around ! during the shine
+var inv_btn: Button             # bag icon — opens the inventory
+var codex_btn: Button           # book icon — opens the codex
 
 # quest / zone
 var zone_label: Label
@@ -149,7 +154,7 @@ func _ready() -> void:
 	mail_btn.add_theme_font_size_override("font_size", 22)
 	mail_btn.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
 	mail_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
-	mail_btn.position = Vector2(16, 178)
+	mail_btn.position = Vector2(16, 186)
 	mail_btn.size = Vector2(34, 30)
 	mail_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
@@ -161,7 +166,7 @@ func _ready() -> void:
 	badge_style.set_corner_radius_all(9)  # 18px box + r9 = a circle
 	mail_badge = Panel.new()
 	mail_badge.add_theme_stylebox_override("panel", badge_style)
-	mail_badge.position = Vector2(40, 174)
+	mail_badge.position = Vector2(40, 182)
 	mail_badge.size = Vector2(18, 18)
 	mail_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mail_badge.visible = false
@@ -180,7 +185,7 @@ func _ready() -> void:
 	# claim screen. The glow is added first so it sits BEHIND the star.
 	daily_glow = Sprite2D.new()
 	daily_glow.texture = Art.tex("glow")
-	daily_glow.position = Vector2(110, 189)  # centered on the ★ (shifted right for the quest ⚑)
+	daily_glow.position = Vector2(168, 197)  # centered on the ★ (end of the icon row)
 	daily_glow.modulate = Color(1.0, 0.85, 0.35, 0.0)
 	daily_glow.visible = false
 	add_child(daily_glow)
@@ -191,7 +196,7 @@ func _ready() -> void:
 	daily_btn.add_theme_font_size_override("font_size", 22)
 	daily_btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
 	daily_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.7))
-	daily_btn.position = Vector2(94, 173)  # after the ✉ and the quest ⚑
+	daily_btn.position = Vector2(152, 181)  # end of the icon row: ✉ ! bag book ★
 	daily_btn.size = Vector2(32, 30)
 	daily_btn.visible = false
 	daily_btn.pressed.connect(func() -> void:
@@ -202,20 +207,62 @@ func _ready() -> void:
 	# ---------------------------------------------------- quest tracker ---
 	zone_label = _label(Vector2(340, 12), 16, Color(0.95, 0.85, 0.5), 600, HORIZONTAL_ALIGNMENT_CENTER)
 	quest_label = _label(Vector2(240, 36), 16, Color(1, 1, 1), 800, HORIZONTAL_ALIGNMENT_CENTER)
-	# ⚑ opens the Quest Log — in the left icon cluster, between the ✉ and the ★.
-	var journal_btn := Button.new()
-	journal_btn.flat = true
-	journal_btn.text = "⚑"
-	journal_btn.tooltip_text = "Quest Log"
-	journal_btn.add_theme_font_size_override("font_size", 20)
-	journal_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
-	journal_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
-	journal_btn.position = Vector2(58, 178)
-	journal_btn.size = Vector2(32, 30)
-	journal_btn.pressed.connect(func() -> void:
+	# Icon row under Resonance: ✉ mail · ! quest · bag inventory · book codex · ★ daily.
+	# The quest ! wears a red/orange SHINE (glow + twinkles) when a reward waits
+	# to be claimed in the log (the weekly vault). Glow is added BEHIND the !.
+	quest_glow = Sprite2D.new()
+	quest_glow.texture = Art.tex("glow")
+	quest_glow.position = Vector2(66, 202)  # centered on the !
+	quest_glow.modulate = Color(1.0, 0.42, 0.18, 0.0)
+	quest_glow.visible = false
+	add_child(quest_glow)
+	quest_btn = Button.new()
+	quest_btn.flat = true
+	quest_btn.text = "!"
+	quest_btn.tooltip_text = "Quest Log"
+	quest_btn.add_theme_font_size_override("font_size", 24)
+	quest_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
+	quest_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
+	quest_btn.position = Vector2(55, 183)
+	quest_btn.size = Vector2(32, 30)
+	quest_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_journal())
-	add_child(journal_btn)
+	add_child(quest_btn)
+	# Twinkles around the ! (on top), lit only during the shine.
+	for off: Vector2i in [Vector2i(-9, -7), Vector2i(11, -5), Vector2i(3, 11)]:
+		var sp := Sprite2D.new()
+		sp.texture = Art.tex("glow")
+		sp.position = Vector2(66, 200) + Vector2(off)
+		sp.scale = Vector2(0.1, 0.1)
+		sp.modulate = Color(1.0, 0.95, 0.75, 0.0)
+		sp.visible = false
+		add_child(sp)
+		quest_sparkles.append(sp)
+
+	# Bag = inventory, Book = codex (small procedural icons, native size).
+	inv_btn = Button.new()
+	inv_btn.flat = true
+	inv_btn.icon = Art.tex("bag")
+	inv_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	inv_btn.tooltip_text = "Inventory"
+	inv_btn.position = Vector2(84, 187)
+	inv_btn.size = Vector2(32, 30)
+	inv_btn.pressed.connect(func() -> void:
+		if game.play_started and not game.menus.is_open():
+			game.menus.open_inventory())
+	add_child(inv_btn)
+	codex_btn = Button.new()
+	codex_btn.flat = true
+	codex_btn.icon = Art.tex("book")
+	codex_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	codex_btn.tooltip_text = "Codex"
+	codex_btn.position = Vector2(118, 188)
+	codex_btn.size = Vector2(32, 30)
+	codex_btn.pressed.connect(func() -> void:
+		if game.play_started and not game.menus.is_open():
+			game.menus.open_codex())
+	add_child(codex_btn)
 
 	# --------------------------------------------------------- boss bar ---
 	boss_box = Control.new()
@@ -407,6 +454,20 @@ func _build_ability_bar() -> void:
 const BUFF_SLOTS := 8
 const BUFF_W := 48.0
 
+## Raven status-icon override per active-buff id (assets/icons/buff_*.png):
+## damage / heal / armor / arcane-ward / lifesteal / mobility. A buff with no
+## entry (e.g. Arrow Storm) keeps its tinted procedural ability glyph, and a
+## missing/unimported PNG falls back to the same glyph — so the bar never
+## renders blank.
+const BUFF_ICONS := {
+	"berserk": "buff_atk", "elixir": "buff_atk", "retri": "buff_atk",
+	"holy": "buff_heal", "second_wind": "buff_heal",
+	"grit": "buff_armor", "guard": "buff_armor",
+	"ward": "buff_ward", "aegis": "buff_ward",
+	"pact": "buff_blood", "surge": "buff_blood",
+	"speed": "buff_speed", "dodge": "buff_speed", "haste": "buff_speed",
+}
+
 ## A pooled row of active-effect chips sitting just above the ability
 ## bar: a colored border, the buff's short name, its remaining seconds,
 ## and a draining fill. Hidden slots collapse; _update_buffs fills them
@@ -539,11 +600,19 @@ func _update_buffs() -> void:
 		slot["border"].color = col
 		slot["border"].tooltip_text = _wrap_tip(String(b.get("tip", "")))
 		var glyph: String = String(b["glyph"])
-		# glyph_tex is cached per (name,tint); only rebuild when this slot's
-		# icon actually changes, so we don't thrash the cache every frame.
-		if slot["glyph"] != glyph:
-			slot["glyph"] = glyph
-			slot["icon"].texture = Art.glyph_tex(glyph, col.lightened(0.15))
+		# Prefer a Raven status icon (assets/icons/buff_*.png) when this buff
+		# maps to one; else the tinted procedural ability glyph. Cached per
+		# slot on the resolved icon key, so we only rebuild when THIS slot's
+		# icon actually changes rather than thrashing every frame.
+		var raven: String = BUFF_ICONS.get(b["id"], "")
+		var icon_key: String = raven if raven != "" else glyph
+		if slot["glyph"] != icon_key:
+			slot["glyph"] = icon_key
+			var rpath := "res://assets/icons/%s.png" % raven
+			if raven != "" and ResourceLoader.exists(rpath):
+				slot["icon"].texture = load(rpath)   # Raven's own colors
+			else:
+				slot["icon"].texture = Art.glyph_tex(glyph, col.lightened(0.15))
 		slot["fill"].color = col
 		if t < 0.0:
 			# Persistent state: no countdown, full bar; Grit-style chips show
@@ -865,6 +934,26 @@ func update_stats(p: Player) -> void:
 		# Shine: the glow breathes in size and brightness under the star.
 		daily_glow.modulate = Color(1.0, 0.88, 0.4, 0.25 + 0.4 * pulse)
 		daily_glow.scale = Vector2.ONE * (0.5 + 0.16 * pulse)
+
+	# Quest icon shine: a red/orange pulse + twinkles when a reward waits to be
+	# claimed in the Quest Log (currently the weekly vault).
+	var quest_ready := game.vault_ready()
+	quest_glow.visible = quest_ready
+	for spk in quest_sparkles:
+		spk.visible = quest_ready
+	if quest_ready:
+		var qt := Time.get_ticks_msec() * 0.001
+		var qpulse := 0.5 + 0.5 * sin(qt * 3.2)
+		quest_btn.modulate = Color(1.0, 0.56, 0.38, 0.82 + 0.18 * qpulse)
+		quest_glow.modulate = Color(1.0, 0.42, 0.18, 0.28 + 0.4 * qpulse)
+		quest_glow.scale = Vector2.ONE * (0.55 + 0.18 * qpulse)
+		for i in quest_sparkles.size():
+			var spr: Sprite2D = quest_sparkles[i]
+			var tw := 0.5 + 0.5 * sin(qt * 5.2 + i * 2.1)
+			spr.modulate = Color(1.0, 0.95, 0.75, tw)
+			spr.scale = Vector2.ONE * (0.07 + 0.06 * tw)
+	else:
+		quest_btn.modulate = Color(1, 1, 1, 1)
 
 	_update_buffs()
 	_update_minimap()

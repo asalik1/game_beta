@@ -1315,6 +1315,10 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_tree(name))
 		"bubble":
 			t = ImageTexture.create_from_image(_make_bubble())
+		"bag":  # HUD inventory button
+			t = ImageTexture.create_from_image(_make_bag())
+		"book":  # HUD codex button
+			t = ImageTexture.create_from_image(_make_book())
 		_:
 			t = ImageTexture.create_from_image(img(name))
 	_cache[name] = t
@@ -1989,6 +1993,20 @@ static func gem_icon(col: Color, lvl := 1) -> ImageTexture:
 	var key := "gemicon_%s_%d" % [col.to_html(false), lvl]
 	if _cache.has(key):
 		return _cache[key]
+	# Prefer the shared gem.png (same seam as the ground drop, which modulates
+	# the neutral jewel by stat colour) so bag/stash/shop gems match the world.
+	var override := _icon_override("gem")
+	if override != null:
+		var tinted := override.duplicate() as Image
+		tinted.convert(Image.FORMAT_RGBA8)
+		for y in tinted.get_height():
+			for x in tinted.get_width():
+				var p: Color = tinted.get_pixel(x, y)
+				if p.a > 0.0:
+					tinted.set_pixel(x, y, Color(p.r * col.r, p.g * col.g, p.b * col.b, p.a))
+		var ot := ImageTexture.create_from_image(tinted)
+		_cache[key] = ot
+		return ot
 	var image := Image.create_empty(12, 12, false, Image.FORMAT_RGBA8)
 	for y in GEM_ROWS.size():
 		var row: String = GEM_ROWS[y]
@@ -2021,6 +2039,100 @@ static func _make_shadow() -> Image:
 			if d < 1.0:
 				image.set_pixel(x, y, Color(0, 0, 0, 0.30 * (1.0 - d)))
 	return image
+
+
+## A 1px dark outline where an opaque pixel borders empty space — the shared
+## finishing pass for the little procedural UI icons below.
+static func _ink_outline(img: Image, ink: Color) -> void:
+	var w := img.get_width()
+	var h := img.get_height()
+	var edges: Array = []
+	for y in h:
+		for x in w:
+			if img.get_pixel(x, y).a > 0.0:
+				continue
+			for o: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var nx: int = x + o.x
+				var ny: int = y + o.y
+				if nx >= 0 and ny >= 0 and nx < w and ny < h and img.get_pixel(nx, ny).a > 0.0:
+					edges.append(Vector2i(x, y))
+					break
+	for p: Vector2i in edges:
+		img.set_pixel(p.x, p.y, ink)
+
+
+## HUD inventory icon: a cinched leather coin-pouch (reads as "bag").
+static func _make_bag() -> Image:
+	var w := 20
+	var h := 22
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var body := Color(0.60, 0.40, 0.20)
+	var body_d := Color(0.40, 0.25, 0.11)
+	var body_l := Color(0.74, 0.53, 0.29)
+	var tie := Color(0.86, 0.72, 0.45)
+	var ink := Color(0.14, 0.08, 0.04)
+	var cx := 9.5
+	# Sack body: an egg shape, fatter toward the bottom.
+	for y in range(6, 21):
+		for x in range(1, 19):
+			var ry := (y - 13.0) / 8.0
+			var wx: float = 8.2 - maxf(0.0, -ry) * 1.6  # narrower up near the neck
+			var rx := (x - cx) / wx
+			if rx * rx + ry * ry <= 1.0:
+				var c := body
+				if (x - cx) < -1.5 and (y - 13.0) < 2.0:
+					c = body_l
+				elif (x - cx) > 2.5 or (y - 13.0) > 4.0:
+					c = body_d
+				img.set_pixel(x, y, c)
+	# Cinched neck + collar.
+	for x in range(6, 14):
+		img.set_pixel(x, 5, body_d)
+		img.set_pixel(x, 6, tie)
+	# Drawstring ends flaring up from the knot.
+	for p: Vector2i in [Vector2i(7, 4), Vector2i(12, 4), Vector2i(6, 3), Vector2i(13, 3)]:
+		img.set_pixel(p.x, p.y, tie)
+	# A knot/coin glint low on the belly.
+	img.set_pixel(9, 14, tie)
+	img.set_pixel(10, 14, tie)
+	_ink_outline(img, ink)
+	return img
+
+
+## HUD codex icon: a closed red book with a gold title band + page edges.
+static func _make_book() -> Image:
+	var w := 20
+	var h := 22
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var cover := Color(0.62, 0.16, 0.17)
+	var cover_d := Color(0.42, 0.10, 0.11)
+	var cover_l := Color(0.74, 0.24, 0.24)
+	var spine := Color(0.32, 0.07, 0.08)
+	var page := Color(0.93, 0.89, 0.76)
+	var page_d := Color(0.70, 0.64, 0.50)
+	var gold := Color(0.90, 0.74, 0.32)
+	var ink := Color(0.12, 0.05, 0.06)
+	# Cover block.
+	for y in range(2, 20):
+		for x in range(4, 17):
+			img.set_pixel(x, y, cover)
+	# Spine down the left, page block peeking on the right + bottom.
+	for y in range(2, 20):
+		img.set_pixel(4, y, spine)
+		img.set_pixel(5, y, cover_d)
+		img.set_pixel(16, y, page if y % 2 == 0 else page_d)
+	for x in range(6, 17):
+		img.set_pixel(x, 19, page if x % 2 == 0 else page_d)
+	# Cover top highlight.
+	for x in range(6, 16):
+		img.set_pixel(x, 3, cover_l)
+	# Gold title bands + clasp glint.
+	for x in range(7, 14):
+		img.set_pixel(x, 8, gold)
+		img.set_pixel(x, 11, gold)
+	img.set_pixel(15, 10, gold)
+	_ink_outline(img, ink)
+	return img
 
 
 ## Soft radial light, tinted with modulate (torch glow, frost nova...).

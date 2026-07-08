@@ -206,14 +206,24 @@ func open_slots() -> void:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
 		saves.add_child(row)
-		var icon: Texture2D = Art.tex(cls_info["sprite"]) if cls_info.has("sprite") else null
 		var resume := func() -> void:
 			if root:
 				root.queue_free()
 				root = null
 			current = ""
 			game.load_save(slot)
-		var b := _btn(row, "  %s — Lv %d" % [cname, s["level"]], resume, Color(0.6, 1.0, 0.6), true, icon)
+		# Class portrait at a UNIFORM size. Class sprites have varied native
+		# dimensions, and a Button icon draws at NATIVE px — so a big sprite
+		# (e.g. paladin) dwarfed a small one in the roster. A fixed-size
+		# KEEP_ASPECT TextureRect (same as the class-select screen) fixes it.
+		if cls_info.has("sprite"):
+			var port := TextureRect.new()
+			port.texture = Art.tex(cls_info["sprite"])
+			port.custom_minimum_size = Vector2(56, 56)
+			port.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			port.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			row.add_child(port)
+		var b := _btn(row, "  %s — Lv %d" % [cname, s["level"]], resume, Color(0.6, 1.0, 0.6), true)
 		b.custom_minimum_size = Vector2(360, 0)
 		b.tooltip_text = Story.quest_text(s["quest"])
 		var when := Time.get_datetime_string_from_unix_time(s["saved_at"]).replace("T", "  ")
