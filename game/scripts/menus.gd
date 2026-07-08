@@ -574,14 +574,17 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	# Min width or this collapses to one char per line in the HBox (the classic
 	# trap) — it read as a vertical "F·10" speck next to the BAGS header.
 	var bs := _lbl(head, bag_summary.strip_edges(), 13, Color(0.6, 0.6, 0.66))
-	bs.custom_minimum_size = Vector2(240, 0)
+	bs.custom_minimum_size = Vector2(220, 0)
+	# Auto-synth sits on its OWN row: inline in the header its ~170px pushed the
+	# BAGS+summary run past the right column, overflowing the panel edge.
 	if not p.gem_bag.is_empty():
 		var auto_cb := func() -> void:
 			var n: int = game.player.auto_synthesize()
 			game.spawn_text(game.player.global_position + Vector2(0, -60),
 				"%d GEM UPGRADES" % n if n > 0 else "NOTHING TO MERGE", Color(0.6, 0.9, 1.0))
 			open_inventory()
-		var ab := _btn(head, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
+		var ab := _btn(right, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
+		ab.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
 	_lbl(right, "Gear: click to equip · ALT-CLICK gear/consumables to DISCARD (throw out, free a slot) · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
@@ -901,6 +904,22 @@ func open_item_panel(item: Dictionary) -> void:
 	var d := _lbl(head, Items.describe(item, _awk(item)), 14, Items.GRADE_COLOR[item["grade"]])
 	d.custom_minimum_size = Vector2(760, 0)
 
+	# Everything below the header scrolls as ONE block. Previously it was
+	# packed straight into the fixed-height panel and overran the bottom (the
+	# gold line spilled off-screen), and the gem-insert list lived in its OWN
+	# nested EXPAND_FILL scroll — with the panel already over-full that inner
+	# scroll got 0px of height and collapsed, hiding every insert button so
+	# gems looked un-equippable. One outer scroll fixes both.
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var body := VBoxContainer.new()
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 8)
+	scroll.add_child(body)
+
 	# Equipped items can be UNEQUIPPED back to the bag (leaving the slot
 	# empty) — not just swapped by equipping something else.
 	var is_equipped: bool = p.equipment.get(String(item.get("slot", ""))) == item
@@ -911,24 +930,24 @@ func open_item_panel(item: Dictionary) -> void:
 				open_inventory()
 			else:
 				game.spawn_text(game.player.global_position + Vector2(0, -50), "Bag full!", Color(1, 0.6, 0.4))
-		_btn(vbox, "  ⇩  Unequip  (move to bag)  ", unequip_cb, Color(1.0, 0.8, 0.5))
+		_btn(body, "  ⇩  Unequip  (move to bag)  ", unequip_cb, Color(1.0, 0.8, 0.5))
 
 	# Set bonus panel (S legendaries): which tiers are live given what's worn.
 	if String(item.get("grade", "")) == "S" and item.has("cls"):
 		var sd: Dictionary = Items.SET_BONUSES.get(String(item["cls"]), {})
 		if not sd.is_empty():
 			var pieces := Items.count_set_pieces(p.equipment, String(item["cls"]))
-			_lbl(vbox, "SET: %s   (%d/4 pieces worn)" % [sd.get("name", "Set"), pieces], 15, Color(1.0, 0.85, 0.4))
+			_lbl(body, "SET: %s   (%d/4 pieces worn)" % [sd.get("name", "Set"), pieces], 15, Color(1.0, 0.85, 0.4))
 			for tier in ["2", "4"]:
 				var live := pieces >= int(tier)
-				_lbl(vbox, "   %spc %s  —  %s" % [tier, "✓ ACTIVE" if live else "inactive",
+				_lbl(body, "   %spc %s  —  %s" % [tier, "✓ ACTIVE" if live else "inactive",
 					_stat_bonus_text(sd[tier])], 13, Color(0.6, 1.0, 0.6) if live else Color(0.6, 0.62, 0.68))
 
 	var slots: int = item.get("gem_slots", 0)
 	var gems: Array = item.get("gems", [])
-	_lbl(vbox, "GEM SOCKETS (%d/%d filled)" % [gems.size(), slots], 16, Color(0.95, 0.85, 0.5))
+	_lbl(body, "GEM SOCKETS (%d/%d filled)" % [gems.size(), slots], 16, Color(0.95, 0.85, 0.5))
 	if slots == 0:
-		_lbl(vbox, "This item has no sockets — only B-grade gear and above can hold gems.", 13, Color(0.55, 0.55, 0.6))
+		_lbl(body, "This item has no sockets — only B-grade gear and above can hold gems.", 13, Color(0.55, 0.55, 0.6))
 	for i in slots:
 		if i < gems.size():
 			var g: Dictionary = gems[i]
@@ -936,28 +955,25 @@ func open_item_panel(item: Dictionary) -> void:
 			var rm_cb := func() -> void:
 				game.player.remove_gem(item, idx)
 				open_item_panel(item)
-			_btn(vbox, "Socket %d:  %s    — click to REMOVE (back to bag)" % [i + 1, Items.gem_title(g)],
+			_btn(body, "Socket %d:  %s    — click to REMOVE (back to bag)" % [i + 1, Items.gem_title(g)],
 				rm_cb, Items.gem_color(g))
 		else:
-			_lbl(vbox, "Socket %d:  (empty)" % (i + 1), 13, Color(0.55, 0.55, 0.6))
+			_lbl(body, "Socket %d:  (empty)" % (i + 1), 13, Color(0.55, 0.55, 0.6))
 
 	if slots > gems.size():
 		if p.gem_bag.is_empty():
-			_lbl(vbox, "No gems in your bag to insert (they drop from chests).", 12, Color(0.5, 0.5, 0.55))
+			_lbl(body, "No gems in your bag to insert (they drop from chests).", 12, Color(0.5, 0.5, 0.55))
 		else:
-			_lbl(vbox, "INSERT FROM BAG:", 15, Color(0.95, 0.85, 0.5))
-			# Scrollable two-column grid — big bags stay inside the panel.
+			_lbl(body, "INSERT FROM BAG:", 15, Color(0.95, 0.85, 0.5))
+			# Two-column gem grid straight in the scrolling body — no nested
+			# scroll (that one collapsed to 0px and hid every insert button).
 			var groups := _gem_groups()
-			var iscroll := ScrollContainer.new()
-			iscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-			iscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-			vbox.add_child(iscroll)
 			var igrid := GridContainer.new()
 			igrid.columns = 2
 			igrid.add_theme_constant_override("h_separation", 12)
 			igrid.add_theme_constant_override("v_separation", 4)
 			igrid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			iscroll.add_child(igrid)
+			body.add_child(igrid)
 			for key in _sorted_gem_keys(groups):
 				var group: Dictionary = groups[key]
 				var g2: Dictionary = group["gem"]
@@ -966,16 +982,16 @@ func open_item_panel(item: Dictionary) -> void:
 					open_item_panel(item)
 				var ib := _btn(igrid, "%s  x%d — insert" % [Items.gem_title(g2), group["count"]], ins_cb, Items.gem_color(g2))
 				ib.clip_text = true
-				ib.custom_minimum_size = Vector2(400, 0)
+				ib.custom_minimum_size = Vector2(380, 0)
 				ib.tooltip_text = "%s  x%d" % [Items.gem_title(g2), group["count"]]
 
 	# --- reforge bench: gold-cost crafting on this item ---
-	_lbl(vbox, "REFORGE BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
+	_lbl(body, "REFORGE BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
 	var subs2: Dictionary = item.get("subs", {})
 	# S-gear reforges within its own class; everything else uses the wearer's.
 	var rcls: String = String(item.get("cls", p.cls))
 	if subs2.is_empty() and not Items.can_add_socket(item):
-		_lbl(vbox, "Nothing to reforge — no affixes to reroll or sockets to add.",
+		_lbl(body, "Nothing to reforge — no affixes to reroll or sockets to add.",
 			12, Color(0.55, 0.55, 0.6))
 	if not subs2.is_empty():
 		var acost := Items.reforge_cost(item, "affix")
@@ -986,7 +1002,7 @@ func open_item_panel(item: Dictionary) -> void:
 				game.player.recalc()
 				game.sfx("equip")
 				open_item_panel(item)
-		_btn(vbox, "Reroll ALL affixes  —  %d gold" % acost, affix_cb,
+		_btn(body, "Reroll ALL affixes  —  %d gold" % acost, affix_cb,
 			Color(0.7, 0.9, 1.0) if p.gold >= acost else Color(0.5, 0.5, 0.55))
 		for stat in subs2.keys():
 			var s := String(stat)
@@ -998,7 +1014,7 @@ func open_item_panel(item: Dictionary) -> void:
 					game.player.recalc()
 					game.sfx("equip")
 					open_item_panel(item)
-			_btn(vbox, "   Reroll %s value  —  %d gold" % [Items.STAT_LABEL.get(s, s), scost], sub_cb,
+			_btn(body, "   Reroll %s value  —  %d gold" % [Items.STAT_LABEL.get(s, s), scost], sub_cb,
 				Color(0.85, 0.85, 0.9) if p.gold >= scost else Color(0.5, 0.5, 0.55))
 	if Items.can_add_socket(item):
 		var ccost := Items.reforge_cost(item, "socket")
@@ -1009,9 +1025,9 @@ func open_item_panel(item: Dictionary) -> void:
 				game.player.recalc()
 				game.sfx("chest")
 				open_item_panel(item)
-		_btn(vbox, "Add gem socket  —  %d gold" % ccost, sock_cb,
+		_btn(body, "Add gem socket  —  %d gold" % ccost, sock_cb,
 			Color(0.6, 1.0, 0.6) if p.gold >= ccost else Color(0.5, 0.5, 0.55))
-	_lbl(vbox, "Your gold: %d" % p.gold, 13, Color(1.0, 0.85, 0.35))
+	_lbl(body, "Your gold: %d" % p.gold, 13, Color(1.0, 0.85, 0.35))
 	_hint(vbox, "ESC to go back to inventory")
 
 
@@ -1147,19 +1163,31 @@ func open_skills(tab := "talents") -> void:
 func _build_attributes_tab(vbox: VBoxContainer, p: Player) -> void:
 	_lbl(vbox, "Every level grants 1 attribute point. Attributes convert by class — %s scales best with %s — or pour points straight into a substat." % [Classes.CLASSES[p.cls]["name"], Classes.CLASSES[p.cls]["primary"]], 13, Color(0.6, 0.62, 0.68))
 	_lbl(vbox, "Unspent: %d points" % p.unspent_attr, 18, Color(0.5, 1.0, 0.5) if p.unspent_attr > 0 else Color(0.6, 0.6, 0.65))
+	# Rows + stat sheet scroll inside the panel (like the talents tab) — the
+	# full list is taller than the panel, so without this the "YOUR STATS"
+	# block spilled off the bottom edge onto the HUD.
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 8)
+	scroll.add_child(list)
 	for attr in Classes.ATTR_NAMES:
 		var a: String = attr
 		var is_primary: bool = Classes.CLASSES[p.cls]["primary"] == a
-		_attr_row(vbox, p, a, "%s  %d%s" % [a, p.attr_points[a], "  ★" if is_primary else ""],
+		_attr_row(list, p, a, "%s  %d%s" % [a, p.attr_points[a], "  ★" if is_primary else ""],
 			Color(0.95, 0.85, 0.5) if is_primary else Color(0.85, 0.85, 0.9),
 			Classes.attr_text(p.cls, a))
-	_lbl(vbox, "SUBSTATS", 15, Color(0.95, 0.85, 0.5))
+	_lbl(list, "SUBSTATS", 15, Color(0.95, 0.85, 0.5))
 	for attr in Classes.SUBSTAT_NAMES:
 		var a: String = attr
-		_attr_row(vbox, p, a, "%s  %d" % [a, p.attr_points[a]],
+		_attr_row(list, p, a, "%s  %d" % [a, p.attr_points[a]],
 			Color(0.75, 0.8, 0.92), Classes.substat_text(a))
-	_lbl(vbox, "YOUR STATS", 16, Color(0.95, 0.85, 0.5))
-	_lbl(vbox, p.stat_sheet(), 13, Color(0.75, 0.78, 0.85))
+	_lbl(list, "YOUR STATS", 16, Color(0.95, 0.85, 0.5))
+	_lbl(list, p.stat_sheet(), 13, Color(0.75, 0.78, 0.85))
 	_hint(vbox, "ESC / T to close")
 
 

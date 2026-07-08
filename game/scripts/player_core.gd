@@ -402,17 +402,15 @@ func weapon_awakened(w: Dictionary) -> bool:
 func _update_weapon_visual() -> void:
 	if weapon_spr == null:
 		return
+	# The held-weapon icon no longer rides on the character sprite (taste pass
+	# 2026-07-08): it cluttered the hero, and the S/A rarity glow read as an
+	# orb stuck to the body. We still cache the texture so the melee arc's
+	# leading blade can borrow the equipped weapon's look; it just never shows
+	# as a persistent overlay.
+	weapon_glow.visible = false
 	var w = equipment.get("weapon")
-	if w == null:
-		weapon_spr.visible = false
-		weapon_glow.visible = false
-		return
-	weapon_spr.texture = Art.weapon_tex(w.get("noun", "Blade"), w["grade"])
-	weapon_spr.visible = true
-	var fancy: bool = w["grade"] in ["A", "S"]
-	weapon_glow.visible = fancy
-	if fancy:
-		weapon_glow.modulate = Color(Items.GRADE_COLOR[w["grade"]], 0.55)
+	weapon_spr.texture = Art.weapon_tex(w.get("noun", "Blade"), w["grade"]) if w != null else null
+	weapon_spr.visible = false
 
 
 func _ready() -> void:

@@ -143,8 +143,18 @@ func _physics_process(delta: float) -> void:
 	# Walk bob + face the aim target (or move direction).
 	# NOTE: movement facing is normalized (max 1.0) while target facing is
 	# in pixels — the threshold must be small enough for BOTH.
+	# During a melee swing, turn to face the STRIKE (melee_dir) — otherwise the
+	# hero flips toward the nearest enemy in a 520px sweep while the swing only
+	# snaps to a 220px target (else your move direction), so a mid-range foe
+	# made the warrior face one way while the slash flew the other.
 	var target := auto_aim()
-	var look_x := target.global_position.x - global_position.x if target else facing.x
+	var look_x: float
+	if melee_swing > 0.0:
+		look_x = melee_dir.x
+	elif target:
+		look_x = target.global_position.x - global_position.x
+	else:
+		look_x = facing.x
 	if absf(look_x) > 0.4:
 		look_sign = signf(look_x)
 		# Left-facing art (Crawl sprites) flips the opposite way. A directional
