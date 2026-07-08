@@ -75,7 +75,15 @@ def pick_character(sub):
     # component that is TALL, horizontally CENTERED, and standing on the feet
     # baseline; a bolt is a thin off-centre streak and a pool is a short puddle,
     # so a character-likeness score beats them without dropping real limbs/weapons.
-    lbl,n = ndimage.label(sub)
+    # We label a CLOSED mask so a held part detached by a 1-2px anti-alias gap (a
+    # paladin shield behind the arm) stays ONE component instead of flickering
+    # away frame to frame; distant FX stays separate (closing radius is tiny).
+    # Pad before closing: erosion treats the array border as empty, so a figure
+    # touching the cell edge (feet at the bottom) would lose those pixels — that
+    # cut the paladin's lower legs. Padding keeps the border out of the erosion.
+    P = 3
+    closed = ndimage.binary_closing(np.pad(sub, P), iterations=2)[P:-P, P:-P]
+    lbl,n = ndimage.label(closed)
     if n==0: return None
     H,W = sub.shape
     best=None; best_score=-1e18
@@ -90,7 +98,27 @@ def pick_character(sub):
     if best is None:
         sizes = ndimage.sum(np.ones_like(lbl), lbl, range(1,n+1))
         best = int(np.argmax(sizes))+1
-    return lbl==best
+    # Re-include the figure's other FRAGMENTS: a low-alpha neck/waist can split
+    # a character into separate head / torso / legs components, and keeping only
+    # `best` dropped the head or the legs (the paladin flicker/cut). Keep any
+    # sizeable component that OVERLAPS the main figure's bbox (grown a little) —
+    # head sits just above, legs just below. Distant FX (a bolt off to the side)
+    # and labels don't overlap the figure's column, so they still stay out.
+    ys,xs = np.where(lbl==best)
+    # Reach DOWN (dropped legs sit below the torso) and sideways, but NOT up:
+    # nothing wanted floats above the head, but frame-number labels do — so an
+    # upward reach would wrongly re-grab them.
+    my0,my1,mx0,mx1 = ys.min()+2, ys.max()+8, xs.min()-4, xs.max()+4
+    keep = {best}
+    for k in range(1,n+1):
+        if k==best: continue
+        yk,xk = np.where(lbl==k)
+        if len(yk) < 40: continue                     # a body part is sizeable; specks/label bits aren't
+        if yk.min()<=my1 and yk.max()>=my0 and xk.min()<=mx1 and xk.max()>=mx0:
+            keep.add(k)
+    # Return the CLOSED components (not raw sub) so thin internal transparent
+    # SEAMS — mid-alpha armour detail the cutoff sliced through — are filled too.
+    return closed & np.isin(lbl, list(keep))
 
 def main():
     ap=argparse.ArgumentParser()
@@ -113,6 +141,16 @@ def main():
         dropmap.setdefault(cn, []).append(int(fi))
     os.makedirs(a.out,exist_ok=True)
     im = np.asarray(Image.open(a.inp).convert('RGBA')).copy()   # uint8 pixel data
+    # Opaque-background sheets (the ORIGINAL navy sheets, no alpha) need the
+    # background keyed to transparent before the alpha silhouette works. Auto:
+    # sample the four corners for the bg colour, drop pixels close to it.
+    if (im[:,:,3] > 200).mean() > 0.9:
+        k=12
+        cor=np.concatenate([im[:k,:k].reshape(-1,4), im[:k,-k:].reshape(-1,4),
+                            im[-k:,:k].reshape(-1,4), im[-k:,-k:].reshape(-1,4)])
+        bgc=np.median(cor[:,:3],axis=0)
+        d=np.abs(im[:,:,:3].astype(int)-bgc).sum(2)
+        im[d < 45, 3] = 0
     alpha = im[:,:,3]
     fg = alpha > a.alpha
     H,W = fg.shape
@@ -122,14 +160,15 @@ def main():
     # hair is EMBEDDED in the figure, so only remove a candidate whose immediate
     # surroundings are mostly transparent -> spares paladin trim & archer hair
     # (previously these were eaten, leaving holes the grass showed through).
+    fw = W / max(1, a.ncol)                            # frame width -> scale the digit gate
     r,g,b = im[:,:,0].astype(int), im[:,:,1].astype(int), im[:,:,2].astype(int)
     gold = fg & (r>150) & (g>120) & (b<150) & ((r-b)>45) & (g>=b)
     glbl,gn = ndimage.label(gold)
     for k in range(1,gn+1):
         ys,xs = np.where(glbl==k)
         h=ys.max()-ys.min()+1; w=xs.max()-xs.min()+1
-        if not (len(ys) < 70 and h < 14 and w < 15):
-            continue                                  # too big to be a digit
+        if not (len(ys) < 0.014*fw*fw and h < 0.19*fw and w < 0.20*fw):
+            continue                                  # too big to be a digit (gate scales with resolution)
         P=3
         y0,y1=max(0,ys.min()-P),min(H,ys.max()+1+P)
         x0,x1=max(0,xs.min()-P),min(W,xs.max()+1+P)

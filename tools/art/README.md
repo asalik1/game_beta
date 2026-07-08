@@ -13,13 +13,34 @@ shows the same symptom you know which knob to check.
 ## When to use it
 
 You have an AI-generated (or hand-drawn) sheet where each ROW is an action and
-each COLUMN is a frame, the background is transparent, and the only junk left is
-baked-in gold labels (row names + frame numbers "1..8"). That's the shape the
-tool expects. If your sheet still has a solid background, key it to transparent
-first (any tool) — everything downstream assumes alpha = silhouette.
+each COLUMN is a frame, and each cell has a character. The tool takes either a
+**transparent-background** sheet (alpha = silhouette) or a **solid-background**
+one (it auto-keys the bg by colour when the image is mostly opaque). Baked-in
+gold labels (row names + frame numbers) are removed automatically.
 
 Source sheets live in the asset library (`OneDrive/Assets/Custom/`), NOT in the
 repo. Only the extracted strips get committed, into `game/assets/sprites/`.
+
+### Pick the source that CONTRASTS the character (measured)
+
+A colour-key removes every pixel close to the background colour, so keying needs
+subject↔background contrast. Measured across our six classes, the fraction of a
+character a navy-background key would eat rises straight with darkness:
+
+| character | avg brightness | eaten by a navy (dark) bg |
+|---|---|---|
+| assassin (darkest) | 36 | **52.8%** — half the ninja vanishes |
+| warlock | 39 | 45.8% |
+| warrior / archer | 51 / 57 | 26% / 32% |
+| paladin / mage (lightest) | 83 / 80 | **17% / 19%** |
+
+So: **light characters key cleanly off a dark (navy) bg** — the few eaten pixels
+are sparse interior shadows that `solidify`'s hole-fill restores. **Dark
+characters need a light or transparent bg** — on a dark bg the key eats the body
+itself, unrecoverably. That's why we pulled the light classes (paladin, mage,
+archer) from the navy ORIGINALS and the dark ones (assassin, warlock, warrior)
+from the pre-keyed transparent `(2)` sheets. Rule of thumb: dark subject → light
+bg, light subject → dark bg.
 
 ---
 
