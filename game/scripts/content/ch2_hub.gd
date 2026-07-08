@@ -29,6 +29,23 @@ const CHAPTER_ZONES := {
 			{"sprite": "choirmother", "x": 140, "y": 250, "prompt": "E — Pilgrim", "convo": "ch2_choir_pilgrim"},
 			# The man who killed Vargoth, by his own small fire (T6):
 			{"sprite": "aldric", "x": 700, "y": 600, "prompt": "E — Ser Aldric", "convo": "ch2_aldric"},
+			# TODO(review): Pixel Crawler asset-extraction pass (2026-07-08).
+			# 9 HUMAN sprites wired as PLACEHOLDER NPCs along the camp's back
+			# edge so they can be reviewed in-game (this safe hub is zone 0 of
+			# ch2). Reposition into real roles or delete this whole block.
+			# Convos are one-line placeholders in pc_npc_gallery.gd. NOTE:
+			# humans are reserved for NPCs (mobs use monster/half-monster art),
+			# but some read as bandit/royal/scholar and could instead become
+			# enemy variants — owner's call in the review pass.
+			{"sprite": "npc_hunter",         "x": 200,  "y": 150, "prompt": "E — [ph] Hunter",   "convo": "pc_ph_hunter"},
+			{"sprite": "npc_wanderer",       "x": 340,  "y": 150, "prompt": "E — [ph] Wanderer", "convo": "pc_ph_wanderer"},
+			{"sprite": "npc_villager_f",     "x": 480,  "y": 150, "prompt": "E — [ph] Villager", "convo": "pc_ph_villager_f"},
+			{"sprite": "npc_villager_m",     "x": 620,  "y": 150, "prompt": "E — [ph] Villager", "convo": "pc_ph_villager_m"},
+			{"sprite": "npc_elder2",         "x": 760,  "y": 150, "prompt": "E — [ph] Elder",    "convo": "pc_ph_elder2"},
+			{"sprite": "npc_bandit_tracker", "x": 900,  "y": 150, "prompt": "E — [ph] Tracker",  "convo": "pc_ph_tracker"},
+			{"sprite": "npc_royal_archer",   "x": 1040, "y": 150, "prompt": "E — [ph] Archer",   "convo": "pc_ph_archer"},
+			{"sprite": "npc_scholar_a",      "x": 1180, "y": 150, "prompt": "E — [ph] Scholar",  "convo": "pc_ph_scholar_a"},
+			{"sprite": "npc_scholar_b",      "x": 1320, "y": 150, "prompt": "E — [ph] Scholar",  "convo": "pc_ph_scholar_b"},
 		],
 	}],
 }

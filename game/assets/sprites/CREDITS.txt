@@ -41,6 +41,12 @@ PIXEL CRAWLER (Anokolisa) — purchased bundle, 2026-07-06: some sprites
   skeletons), Cemetery (zombies/banshee), Desert (mummies), Forge (stone),
   Garden (medusa), Hideout (bandits), Castle (royals), Library (scholars),
   Fairy Forest (elves), Cave (fungus).
+  Extraction pass (2026-07-08, same pipeline): 8 EXTRA MOBS (zombie_overweight,
+  mummy_rogue/_warrior, fungus_immature, elf_wild, rat_mage/_rogue/_warrior —
+  see content/pc_extra_mobs.gd) + 9 HUMAN sprites wired as placeholder NPCs
+  (npc_*, see content/pc_npc_gallery.gd + ch2_hub.gd). New PNGs need a Godot
+  --import (ResourceLoader-loaded) — run tools\Godot --import after dropping
+  any new sprite. Skipped as redundant: Pixel Crawler Rat-Base, Elf-Hunter.
 
 PIXEL CRAWLER - CEMETERY (Anokolisa) — purchased pack, licensed for
   commercial game use. Credit optional; the raw pack must NOT be

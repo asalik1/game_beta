@@ -475,6 +475,19 @@ const ENEMIES := {
 	"zombie":   {"name": "Risen Corpse",    "sprite": "zombie",   "hp": 45.0,  "dmg": 14.0, "speed": 115.0, "xp": 8,  "gold": 6,  "ranged": false, "scale": 3.0,
 		"physres": 12.0, "magres": 0.0,  "eva": 0.0,  "critres": 0.0, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["mend"]},
+	# TODO(bats): the "evasive aerial flyer" special mechanics were REMOVED
+	# per owner (2026-07-08) — the POUNCE trait and the flat EVASION are gone,
+	# so bats no longer dodge/leap; they behave as plain melee mobs. The lone
+	# "swift" tag is kept ONLY because the mob-tag invariant (autotest) needs
+	# >=1 real trait, and "swift" is the mildest (just quicker on its feet, no
+	# special behavior). Revisit later: re-add the evasive flit / a real
+	# flight AI once the aerial-swarm design is finalized. Roster + codex only.
+	"bat":      {"name": "Cave Bat",   "sprite": "bat",     "hp": 24.0, "dmg": 10.0, "speed": 230.0, "xp": 6,  "gold": 3,  "ranged": false, "scale": 2.8,
+		"physres": 0.0, "magres": 0.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
+		"level": 3, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"]},
+	"direbat":  {"name": "Blightbat",  "sprite": "direbat", "hp": 70.0, "dmg": 18.0, "speed": 205.0, "xp": 14, "gold": 11, "ranged": false, "scale": 3.6,
+		"physres": 8.0, "magres": 8.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
+		"level": 8, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["swift"]},
 	# Bosses: strong base AND strong growth ("dragon-grade" scaling).
 # HP pools follow the TTK BUDGET (playtest round 9: "Fangmaw died in
 # <10s to C-gear, zero talents"): at level with modest gear a boss
@@ -1005,6 +1018,8 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch1_quests.gd"),     # (Q1) Chapter 1 side quests
 	preload("res://scripts/content/ch6_quests.gd"),     # (Q6) Blooming Deep side quests (after ch6_zones: overrides its convos)
 	preload("res://scripts/content/ch7_quests.gd"),     # (Q7) Breaking Sky side quests (after ch7_zones: overrides its convos)
+	preload("res://scripts/content/pc_extra_mobs.gd"),  # Pixel Crawler asset pass (2026-07-08): 8 extra mobs — roster/codex only, TODO placement
+	preload("res://scripts/content/pc_npc_gallery.gd"), # Pixel Crawler asset pass: placeholder NPC convos (humans wired into ch2 hub for review)
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]
