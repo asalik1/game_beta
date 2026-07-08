@@ -35,6 +35,10 @@ static func open(m: Menus) -> void:
 				func() -> void: open_letter(m, mail),
 				Color(1, 1, 1) if not mail["read"] else Color(0.7, 0.7, 0.75))
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			# Long multi-boss subjects would otherwise grow the button past
+			# the panel and spill off-screen — trim to width with an ellipsis.
+			b.clip_text = true
+			b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	m._hint(vbox, "ESC to close")
 
 

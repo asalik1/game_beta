@@ -1259,8 +1259,15 @@ func fight_report() -> void:
 	# The on-screen report fades in seconds (round 44) — mail a keepsake:
 	# a victory letter carrying the same stat block, so the fight is on
 	# record in the pause menu long after the numbers float away.
-	var titles := " + ".join(fight_titles) if not fight_titles.is_empty() else roster
-	send_mail("Victory — %s" % titles,
+	var name_list: Array = fight_titles if not fight_titles.is_empty() else fight_names
+	var titles := " + ".join(name_list)
+	# Many-boss fights would make an unwieldy subject that overruns the
+	# mailbox list and the letter window title — keep the subject to the
+	# first couple of names; the body still names the whole roster.
+	var subject := titles
+	if name_list.size() > 2:
+		subject = "%s + %s + %d more" % [name_list[0], name_list[1], name_list.size() - 2]
+	send_mail("Victory — %s" % subject,
 		"You brought down %s!\n\nThe record of the fight:\n\n%s" % [titles, last_fight_report], [])
 
 	# Personal bests + achievements from the concluded fight. (dps here is
