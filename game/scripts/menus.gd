@@ -586,7 +586,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var ab := _btn(right, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
-	_lbl(right, "Gear: click to equip · ALT-CLICK gear/consumables to DISCARD (throw out, free a slot) · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
+	_lbl(right, "Gear: click to equip · ALT-CLICK gear/consumables/gems to DISCARD (throw out, free a slot) · gems: socket via an EQUIPPED item, click a x3 stack to synthesize · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
 	# Bag category filter: All (default) + per-slot gear, gems, consumables.
 	var catrow := HBoxContainer.new()
@@ -680,15 +680,20 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var group: Dictionary = groups[key]
 			var g: Dictionary = group["gem"]
 			var count: int = group["count"]
+			var can_synth: bool = count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL
 			var tip := "%s  x%d" % [Items.gem_title(g), count]
-			var gem_cb := func() -> void: pass
-			if count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL:
+			if can_synth:
 				tip += "\n\nCLICK: synthesize three into one Lv%d" % (g["lvl"] + 1)
-				gem_cb = func() -> void:
-					game.player.synthesize(g["stat"], g["lvl"])
-					open_inventory("gear", cat)
 			else:
 				tip += "\n\nSocket it: click an EQUIPPED item on the left"
+			tip += "\nALT-CLICK: discard one (throw it out to free a slot)"
+			var gem_cb := func() -> void:
+				if Input.is_key_pressed(KEY_ALT):
+					game.player.gem_bag.erase(g)
+					game.discard_to_ground({"kind": "gem", "gem": g})
+				elif can_synth:
+					game.player.synthesize(g["stat"], g["lvl"])
+				open_inventory("gear", cat)
 			_bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), tip, gem_cb)
 	# Free-space squares only in the All view (a filtered view isn't the
@@ -1317,6 +1322,45 @@ func open_shop(zone: int) -> void:
 	# Round 51: gear buy = FARM-COST (Items.shop_buy_price), so buying never
 	# beats farming. Consumables/health potion stay flat staples; the old
 	# per-level ladder is retired.
+
+	# ================================================================ GEAR ===
+	# The headline purchase leads the column: rolled stock, then upgrades.
+	_lbl(buy, "— Gear —", 13, Color(0.62, 0.64, 0.7))
+	for item in game.shop_stock[zone]:
+		var it: Dictionary = item
+		var cost := int(ceil(Items.shop_buy_price(it, game.chapter_id) * haggle))
+		var buy_item := func() -> void:
+			if p.gold >= cost:
+				if p.bag_used() >= p.bag_capacity():
+					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+				else:
+					p.gold -= cost
+					game.shop_stock[zone].erase(it)
+					p.add_item(it)
+					game.sfx("potion")
+			open_shop(zone)
+		var bb := _btn(buy, "%s  %s — %d gold" % [Items.title(it), Items.describe(it, _awk(it)), cost],
+			buy_item, Items.GRADE_COLOR[it["grade"]], p.gold >= cost, Art.icon_for(it))
+		bb.clip_text = true
+		bb.custom_minimum_size = Vector2(640, 0)
+		bb.tooltip_text = "%s — %d gold\n%s\n\nDiff vs equipped:\n%s" % [Items.title(it), cost, Items.describe(it, _awk(it)), _diff_tip(it)]
+	_lbl(buy, "Upgrade equipped gear", 13, Color(0.6, 0.85, 1.0))
+	for slot in ["weapon", "armor"]:
+		if p.equipment.has(slot):
+			var item: Dictionary = p.equipment[slot]
+			var cost := Items.upgrade_cost(item)
+			var do_upgrade := func() -> void:
+				if p.gold >= cost:
+					p.gold -= cost
+					item["plus"] += 1
+					p.recalc()
+					game.sfx("levelup")
+				open_shop(zone)
+			_btn(buy, "%s → +%d  (main stat +15%%) — %d gold" % [Items.title(item), item["plus"] + 1, cost],
+				do_upgrade, Color(0.6, 0.9, 1.0), p.gold >= cost, Art.icon_for(item))
+
+	# ========================================================= CONSUMABLES ===
+	_lbl(buy, "— Consumables —", 13, Color(0.62, 0.64, 0.7))
 	var potion_cost := int(ceil(float(Balance.POTION_PRICE) * haggle))
 	var buy_potion := func() -> void:
 		if p.gold >= potion_cost and p.potions < Balance.POTION_MAX:
@@ -1349,6 +1393,8 @@ func open_shop(zone: int) -> void:
 		cb.clip_text = true
 		cb.custom_minimum_size = Vector2(640, 0)
 
+	# ======================================================= MISCELLANEOUS ===
+	_lbl(buy, "— Miscellaneous —", 13, Color(0.62, 0.64, 0.7))
 	# Gem shelf (round 51): buy loose gems at the act's level(s), random stat.
 	# Farm-cost priced (Items.gem_buy_price) — a fraction of gear, scales by act.
 	var gem_act: int = int(Balance.CHAPTER_ECON.get(game.chapter_id, {}).get("act", 1))
@@ -1407,40 +1453,6 @@ func open_shop(zone: int) -> void:
 	var gb := _btn(buy, "🎲 Gamble — %d gold  (a random %s-tier item, sight unseen)" % [gcost, gamble_tier],
 		gamble_cb, Color(0.85, 0.6, 1.0), p.gold >= gcost)
 	gb.custom_minimum_size = Vector2(640, 0)
-
-	for item in game.shop_stock[zone]:
-		var it: Dictionary = item
-		var cost := int(ceil(Items.shop_buy_price(it, game.chapter_id) * haggle))
-		var buy_item := func() -> void:
-			if p.gold >= cost:
-				if p.bag_used() >= p.bag_capacity():
-					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
-				else:
-					p.gold -= cost
-					game.shop_stock[zone].erase(it)
-					p.add_item(it)
-					game.sfx("potion")
-			open_shop(zone)
-		var bb := _btn(buy, "%s  %s — %d gold" % [Items.title(it), Items.describe(it, _awk(it)), cost],
-			buy_item, Items.GRADE_COLOR[it["grade"]], p.gold >= cost, Art.icon_for(it))
-		bb.clip_text = true
-		bb.custom_minimum_size = Vector2(640, 0)
-		bb.tooltip_text = "%s — %d gold\n%s\n\nDiff vs equipped:\n%s" % [Items.title(it), cost, Items.describe(it, _awk(it)), _diff_tip(it)]
-
-	_lbl(buy, "UPGRADE", 16, Color(0.95, 0.85, 0.5))
-	for slot in ["weapon", "armor"]:
-		if p.equipment.has(slot):
-			var item: Dictionary = p.equipment[slot]
-			var cost := Items.upgrade_cost(item)
-			var do_upgrade := func() -> void:
-				if p.gold >= cost:
-					p.gold -= cost
-					item["plus"] += 1
-					p.recalc()
-					game.sfx("levelup")
-				open_shop(zone)
-			_btn(buy, "%s → +%d  (main stat +15%%) — %d gold" % [Items.title(item), item["plus"] + 1, cost],
-				do_upgrade, Color(0.6, 0.9, 1.0), p.gold >= cost, Art.icon_for(item))
 
 	# ----------------------------------------------------- SELL column ---
 	var sell := VBoxContainer.new()

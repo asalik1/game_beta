@@ -180,7 +180,7 @@ func _ready() -> void:
 	# claim screen. The glow is added first so it sits BEHIND the star.
 	daily_glow = Sprite2D.new()
 	daily_glow.texture = Art.tex("glow")
-	daily_glow.position = Vector2(68, 189)  # centered on the ★
+	daily_glow.position = Vector2(110, 189)  # centered on the ★ (shifted right for the quest ⚑)
 	daily_glow.modulate = Color(1.0, 0.85, 0.35, 0.0)
 	daily_glow.visible = false
 	add_child(daily_glow)
@@ -191,7 +191,7 @@ func _ready() -> void:
 	daily_btn.add_theme_font_size_override("font_size", 22)
 	daily_btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
 	daily_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.7))
-	daily_btn.position = Vector2(52, 173)  # nudged up to line up with the ✉
+	daily_btn.position = Vector2(94, 173)  # after the ✉ and the quest ⚑
 	daily_btn.size = Vector2(32, 30)
 	daily_btn.visible = false
 	daily_btn.pressed.connect(func() -> void:
@@ -202,16 +202,16 @@ func _ready() -> void:
 	# ---------------------------------------------------- quest tracker ---
 	zone_label = _label(Vector2(340, 12), 16, Color(0.95, 0.85, 0.5), 600, HORIZONTAL_ALIGNMENT_CENTER)
 	quest_label = _label(Vector2(240, 36), 16, Color(1, 1, 1), 800, HORIZONTAL_ALIGNMENT_CENTER)
-	# ⚑ opens the Quest Log — sits just left of the objective line.
+	# ⚑ opens the Quest Log — in the left icon cluster, between the ✉ and the ★.
 	var journal_btn := Button.new()
 	journal_btn.flat = true
 	journal_btn.text = "⚑"
 	journal_btn.tooltip_text = "Quest Log"
-	journal_btn.add_theme_font_size_override("font_size", 18)
+	journal_btn.add_theme_font_size_override("font_size", 20)
 	journal_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 	journal_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
-	journal_btn.position = Vector2(210, 33)
-	journal_btn.size = Vector2(28, 26)
+	journal_btn.position = Vector2(58, 178)
+	journal_btn.size = Vector2(32, 30)
 	journal_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_journal())

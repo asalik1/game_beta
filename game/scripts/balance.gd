@@ -97,10 +97,13 @@ const BOSS_BAG_DROP := {
 	2: {"chance": 0.09, "weights": {"D": 40, "C": 40, "B": 20}},
 	3: {"chance": 0.08, "weights": {"B": 35, "A": 45, "S": 20}},
 }
-# Merchants stock bags too (round 52) — capacity is QoL, not power, so they're
-# priced FAR below gear/S-weapons. Flat per-tier (the act-gated tier already
-# encodes progression); buy still dwarfs the 1g sell. Count rolled per act.
-const BAG_BUY_PRICE := {"F": 30, "E": 60, "D": 100, "C": 150, "B": 220, "A": 320, "S": 450}
+# Merchants stock bags too (round 52; repriced up ~5x): capacity is QoL, not
+# power — but a bag is a RARE drop, so buying one is a real gold DECISION, a
+# meaningful chunk of a chapter's income yet still well under same-grade gear
+# farm-cost (rarity is the reason to buy, so price — not drop rate — is the
+# lever; never a paywall). Flat per-tier (act-gating encodes progression); buy
+# dwarfs the 1g sell. Curve anchored to econ_audit income + gear/reforge sinks.
+const BAG_BUY_PRICE := {"F": 150, "E": 250, "D": 400, "C": 650, "B": 1000, "A": 1600, "S": 2600}
 const SHOP_BAG_COUNT := {1: [1, 1], 2: [1, 2], 3: [1, 2]}
 
 ## Per-boss bag drop chance for an act (round 52).
@@ -601,8 +604,9 @@ const BOUNTY_POOL := {
 const VAULT_BOSS_GOAL := 5
 
 # Account-wide stash: cross-character long-term storage (survives any one
-# character; lives in user://stash.json, not the per-character save).
-const STASH_SLOTS := 200
+# character; lives in user://stash.json, not the per-character save). Kept
+# deliberately TIGHT — the stash is a curated keep-safe, not a warehouse.
+const STASH_SLOTS := 20
 
 # ------------------------------------------------------------ consumables ---
 # Utility consumables beyond the health potion (bag items, used from the
