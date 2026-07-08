@@ -252,3 +252,12 @@ one `DIR_POSE` slot.
   lighter than its inner neighbour to the body colour (only fires on a light
   rim, so clean sprites are untouched). Raise `--alpha` further if a rim
   persists, but the de-halo usually handles it without eroding the figure.
+- **Dark detail eaten near the background** (e.g. the archer's brown boot soles
+  on the navy sheet — one foot read as half-cut in some idle frames) → the auto
+  bg-key drops any pixel within colour-distance `--key` (default 45) of the
+  sampled background, and a *dark* boot edge sits close to navy. Lower `--key`
+  to spare it — the archer uses `--key 30`, which recovered ~half the boot
+  pixels with a negligible (~30px) navy fringe. Go too low and a navy rim
+  survives; 30 was the sweet spot here. Note `solidify`'s hole-fill only
+  restores *enclosed* holes, so an eaten silhouette *edge* like a sole won't
+  come back on its own — fix it at the key.

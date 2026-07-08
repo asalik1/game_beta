@@ -44,7 +44,7 @@ JOBS = {
     "assassin": ("Assassin (2).png", "idle,walk,run,attack,attack2,dash,death", []),
     "warlock":  ("Warlock (2).png",  "idle,walk,run,cast,attack,ult,attack2,death", ["--keepall"]),
     # LIGHT -> navy ORIGINAL sheets (auto bg-key)
-    "archer":   ("Archer.png",  "idle,walk,run,cast,attack,attack2,dash,death", ["--drop", "attack2:3"]),
+    "archer":   ("Archer.png",  "idle,walk,run,cast,attack,attack2,dash,death", ["--drop", "attack2:3", "--key", "30"]),  # tighter key spares the dark boot soles the default 45 ate
     "mage":     ("Mage.png",    "idle,walk,run,cast,attack,attack2,dash,death", ["--drop", "attack2:3,attack2:4"]),
     "paladin":  ("Paladin.png", "idle,walk,run,attack2,attack,dash,death", []),
 }

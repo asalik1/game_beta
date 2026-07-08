@@ -134,6 +134,7 @@ def main():
     ap.add_argument('--rowgap',dest='rowgap',type=int,default=3,help='empty rows needed to split two clip rows (lower if rows merge)')
     ap.add_argument('--flatten',dest='flatten',default='',help='pack ALL rows into one strip named <class>_<this> (row-major); for directional sheets = 8 dirs x K frames')
     ap.add_argument('--alpha',dest='alpha',type=int,default=90,help='alpha cutoff for the silhouette; raise to cut inside a light AA halo (white-rim fix)')
+    ap.add_argument('--key',dest='key',type=int,default=45,help='colour-distance for auto bg-key on opaque navy sheets; lower to spare dark pixels (boot soles) close to the bg')
     a=ap.parse_args()
     dropmap={}
     for tok in filter(None, (t.strip() for t in a.drop.split(','))):
@@ -150,7 +151,7 @@ def main():
                             im[-k:,:k].reshape(-1,4), im[-k:,-k:].reshape(-1,4)])
         bgc=np.median(cor[:,:3],axis=0)
         d=np.abs(im[:,:,:3].astype(int)-bgc).sum(2)
-        im[d < 45, 3] = 0
+        im[d < a.key, 3] = 0
     alpha = im[:,:,3]
     fg = alpha > a.alpha
     H,W = fg.shape
