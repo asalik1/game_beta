@@ -36,7 +36,7 @@ const STARTER_BAG_GRADE := "F"     # legacy single-bag default (save migration f
 # Stacking bags (round 52): the hero equips UP TO MAX_BAGS bags and their
 # slots SUM. Start with two F pouches — one F (5 slots) is too tight once
 # gems + consumables share the pool.
-const MAX_BAGS := 5
+const MAX_BAGS := 10
 const STARTER_BAGS := ["F", "F"]
 
 # ------------------------------------------------------ monster scaling ---

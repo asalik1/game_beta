@@ -495,12 +495,18 @@ func open_class_select() -> void:
 		for slot in ["a1", "a2", "a3", "ult"]:
 			var ab: Dictionary = c["abilities"][slot]
 			var tag: String = "ULT" if slot == "ult" else slot.to_upper()
-			# Dense roster: ability names only — full text lives one hover away.
+			# Dense roster: ability names only — full text is one click away
+			# (opaque popover), and hover still previews it.
 			var line: String = "%s %s" % [tag, ab["name"]] if dense else "%s %s — %s" % [tag, ab["name"], ab["desc"]]
 			var l := _lbl(col, line, 11 if dense else 12, Color(0.65, 0.7, 0.8))
 			if dense:
-				l.tooltip_text = ab["desc"]
+				var ab_name: String = "%s %s" % [tag, String(ab["name"])]
+				var ab_desc: String = String(ab["desc"])
+				l.tooltip_text = ab_desc
 				l.mouse_filter = Control.MOUSE_FILTER_STOP
+				l.gui_input.connect(func(e: InputEvent) -> void:
+					if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+						_open_detail_popover(null, ab_name, Color(0.75, 0.82, 0.95), ab_desc, []))
 		var spacer := Control.new()
 		spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		col.add_child(spacer)
@@ -646,7 +652,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						["  ⚔  Equip  ", Color(0.6, 1.0, 0.6), equip_cb],
 						["  ✖  Drop  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb],
 					]
-					_open_bag_detail(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions))
+					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions))
 	if show_cons:
 		# Consumables STACK by id (playtest 2026-07-07): one slot per
 		# type, count in the tooltip, click uses ONE.
@@ -705,7 +711,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						if slotted > 0:
 							actions.append(["  －  Remove from loadout  ", Color(0.7, 0.82, 0.95), unslot_cb])
 					actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
-					_open_bag_detail(cicon, str(cc["name"]) + xn,
+					_open_detail_popover(cicon, str(cc["name"]) + xn,
 						Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
 						info, actions))
 	if show_gems:
@@ -733,7 +739,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				if can_synth:
 					actions.append(["  ⚒  Synthesize  (3 → 1 Lv%d)  " % (g["lvl"] + 1), Color(0.6, 0.9, 1.0), synth_cb])
 				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
-				_open_bag_detail(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions)
+				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions)
 			_bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), tip, gem_cb)
 	# Free-space squares only in the All view (a filtered view isn't the
@@ -793,11 +799,11 @@ func _bag_empty(grid: GridContainer) -> void:
 ## The old hover tooltip, promoted to a click-triggered popover: same
 ## breakdown, same spot (anchored at the cursor), but the panel is now
 ## fully OPAQUE so the content behind can't bleed through it, and it carries
-## action buttons. Not a modal — nothing dims, the screen stays live, and
-## clicking another row just swaps the popover. `actions` is a list of
-## [label, color, Callable]; actions rebuild the screen, Close/ESC dismiss
-## it. Auto-sizes to its content like a tooltip. Shared by the inventory
-## and the merchant shop.
+## action buttons. Not a modal — nothing dims, the screen stays live. An
+## invisible full-screen catcher sits behind it: click anywhere OUTSIDE the
+## box (or ESC) to dismiss — no Close button. `actions` is a list of
+## [label, color, Callable]; actions rebuild the screen. Auto-sizes to its
+## content like a tooltip. Shared by the inventory and the merchant shop.
 func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 		info: String, actions: Array) -> void:
 	if not root:
@@ -808,6 +814,17 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 		detail_return = current  # the screen we're floating over
 	current = "detail"
 	game.sfx("ui_click")
+
+	# Transparent full-rect catcher: nothing drawn (so no dim, not a modal),
+	# but a click landing on it — i.e. anywhere off the box — dismisses.
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed:
+			_close_detail_popover())
+	root.add_child(overlay)
+	detail_popover = overlay
 
 	# A PanelContainer hugs its content, so the popover is exactly as tall
 	# as the breakdown + buttons — no fixed card box.
@@ -824,9 +841,8 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 	sb.content_margin_top = 10
 	sb.content_margin_bottom = 10
 	pop.add_theme_stylebox_override("panel", sb)
-	pop.mouse_filter = Control.MOUSE_FILTER_STOP  # absorb clicks; no fall-through
-	root.add_child(pop)
-	detail_popover = pop
+	pop.mouse_filter = Control.MOUSE_FILTER_STOP  # clicks on the box don't dismiss
+	overlay.add_child(pop)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 8)
@@ -850,7 +866,6 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 	for a in actions:
 		var acb: Callable = a[2]
 		_btn(vbox, String(a[0]), acb, a[1])
-	_btn(vbox, "  ✕  Close  ", func() -> void: _close_detail_popover(), Color(0.62, 0.63, 0.7))
 
 	# Anchor at the cursor like the tooltip did, then (once the container has
 	# measured itself) nudge it back on-screen if it would spill off an edge.
@@ -901,7 +916,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	list.add_theme_constant_override("separation", 4)
 	scroll.add_child(list)
 
-	_lbl(list, "ATTRIBUTES  (hover any stat to learn what it does)", 16, Color(0.95, 0.85, 0.5))
+	_lbl(list, "ATTRIBUTES  (click any stat to learn what it does)", 16, Color(0.95, 0.85, 0.5))
 	for attr in Classes.ATTR_NAMES:
 		var is_primary: bool = Classes.CLASSES[p.cls]["primary"] == attr
 		_stat_row(list, "%s%s" % [attr, "  ★" if is_primary else ""], str(p.attr_total(attr)),
@@ -975,24 +990,26 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	_hint(vbox, "ESC / I to close")
 
 
-## One stat line: name, value, and a hover tooltip that explains it.
+## One stat line: name, value, and a 🛈 hint. Click the row to open the
+## explanation as an opaque popover (hover still previews it too). Labels
+## ignore the mouse so the click lands on the row itself.
 func _stat_row(parent: Node, stat_name: String, value: String, tip: String, color := Color(0.85, 0.85, 0.9)) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
 	row.tooltip_text = tip
+	row.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			_open_detail_popover(null, stat_name, color, tip, []))
 	parent.add_child(row)
 	var n := _lbl(row, stat_name, 14, color)
 	n.custom_minimum_size = Vector2(220, 0)
-	n.mouse_filter = Control.MOUSE_FILTER_STOP
-	n.tooltip_text = tip
+	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var v := _lbl(row, value, 14, Color(1, 1, 1))
 	v.custom_minimum_size = Vector2(160, 0)
-	v.mouse_filter = Control.MOUSE_FILTER_STOP
-	v.tooltip_text = tip
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var hint := _lbl(row, "🛈", 12, Color(0.5, 0.55, 0.65))
-	hint.mouse_filter = Control.MOUSE_FILTER_STOP
-	hint.tooltip_text = tip
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 ## Bag gems grouped by stat+level: key -> {gem, count}.
@@ -1454,21 +1471,31 @@ func open_shop(zone: int) -> void:
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
 		var cost := int(ceil(Items.shop_buy_price(it, game.chapter_id) * haggle))
-		var buy_item := func() -> void:
-			if p.gold >= cost:
-				if p.bag_used() >= p.bag_capacity():
-					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
-				else:
-					p.gold -= cost
-					game.shop_stock[zone].erase(it)
-					p.add_item(it)
-					game.sfx("potion")
-			open_shop(zone)
+		var can_afford: bool = p.gold >= cost
+		# Click opens the same detail popover the bag uses — full breakdown +
+		# "Compared to equipped" + a Buy button — instead of buying on contact.
+		var open_cb := func() -> void:
+			var info := "%d gold\n%s\n\nCompared to what's equipped:\n%s" % [cost, Items.describe(it, _awk(it)), _diff_tip(it)]
+			var actions: Array = []
+			if can_afford:
+				var buy_cb := func() -> void:
+					if p.bag_used() >= p.bag_capacity():
+						game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+					else:
+						p.gold -= cost
+						game.shop_stock[zone].erase(it)
+						p.add_item(it)
+						game.sfx("potion")
+					open_shop(zone)
+				actions.append(["  🪙  Buy — %d gold  " % cost, Color(0.6, 1.0, 0.6), buy_cb])
+			else:
+				info += "\n\n(Not enough gold — %d short.)" % (cost - p.gold)
+			_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions)
 		var bb := _btn(buy, "%s  %s — %d gold" % [Items.title(it), Items.describe(it, _awk(it)), cost],
-			buy_item, Items.GRADE_COLOR[it["grade"]], p.gold >= cost, Art.icon_for(it))
+			open_cb, Items.GRADE_COLOR[it["grade"]], true, Art.icon_for(it))
 		bb.clip_text = true
 		bb.custom_minimum_size = Vector2(640, 0)
-		bb.tooltip_text = "%s — %d gold\n%s\n\nDiff vs equipped:\n%s" % [Items.title(it), cost, Items.describe(it, _awk(it)), _diff_tip(it)]
+		bb.tooltip_text = "%s — %d gold\n%s\n\nClick for details & to buy." % [Items.title(it), cost, Items.describe(it, _awk(it))]
 	_lbl(buy, "Upgrade equipped gear", 13, Color(0.6, 0.85, 1.0))
 	for slot in ["weapon", "armor"]:
 		if p.equipment.has(slot):
@@ -2009,13 +2036,13 @@ func _input(event: InputEvent) -> void:
 			return  # boot menus: no escaping into a paused void
 		if event.keycode == KEY_ESCAPE \
 				or (current == "inventory" and event.keycode == game.binds["inventory"]) \
-				or (current == "bag_detail" and event.keycode == game.binds["inventory"]) \
+				or (current == "detail" and event.keycode == game.binds["inventory"]) \
 				or (current == "skills" and event.keycode == game.binds["skills"]) \
 				or (current == "codex" and event.keycode == game.binds["codex"]) \
 				or (current == "map" and event.keycode == game.binds.get("map", KEY_M)) \
 				or (current == "dev" and event.keycode == KEY_F1):
-			if current == "bag_detail":
-				_close_bag_detail()  # dismiss the card, stay in the inventory
+			if current == "detail":
+				_close_detail_popover()  # dismiss the popover, stay on the screen beneath
 			elif current == "theme_pick":
 				open_skills()  # back to the tree, not out of the menu
 			elif current == "item_panel":

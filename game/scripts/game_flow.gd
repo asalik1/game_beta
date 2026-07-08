@@ -338,7 +338,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
 	# Bags: a SEPARATE, rarer roll (round 51b) — inventory expansion, not every
 	# run. Round 52: per-act chance + tier weights (Balance.BOSS_BAG_DROP), so
-	# tier stays gated to the act; a 6th bag keeps the best 5 (acquire_bag).
+	# tier stays gated to the act; over MAX_BAGS keeps the best set (acquire_bag).
 	var bag_act: int = Story.act_of(chapter_id)
 	if loot_rng.randf() < Balance.bag_drop_chance(bag_act):
 		player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(bag_act, loot_rng)))

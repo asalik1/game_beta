@@ -2071,7 +2071,7 @@ func _test_bags_discard() -> void:
 	game.dropped_loot = keep_dropped
 	p.recalc()
 	await _frames(2)
-	print("ok: stacking bags (sum-capacity, keep-best-5, +5/tier curve, UNIT-counting, grey-out, act drops, shop price, migration) + discard-throw")
+	print("ok: stacking bags (sum-capacity, keep-best-N, +5/tier curve, UNIT-counting, grey-out, act drops, shop price, migration) + discard-throw")
 
 
 func _test_retention() -> void:

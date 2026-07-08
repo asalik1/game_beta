@@ -46,6 +46,10 @@ var slot_boxes: Array = []      # [{bg, cd, key, name}] for a1,a2,a3,ult,potion
 var buff_slots: Array = []      # pooled [{border,box,name,time,fill}] widgets
 var _buff_peak := {}            # buff id -> peak seconds seen (for the drain fill)
 
+# click-to-reveal popover over the live HUD (the old hover tooltips, now
+# clickable & opaque — dismiss by clicking anywhere off the box)
+var hud_popover: Control = null
+
 # corner minimap (top-right; rebuilt only when the charted world changes)
 var minimap_root: Control
 var minimap_cells: Control
@@ -106,6 +110,7 @@ func _ready() -> void:
 	cr_label = _label(Vector2(18, 126), 15, Color(0.65, 0.9, 1.0))
 	cr_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	cr_label.tooltip_text = _wrap_tip("Combat Rating — one number approximating your total power: gear and gems, level, attributes and skill tree combined.")
+	_click_to_popover(cr_label, "Combat Rating")
 	# Resonance: golden and sparkling when positive (shinier as it
 	# climbs), black-on-pale when negative, pulses on every change.
 	# Nudged right to seat the mood orb on its left.
@@ -113,6 +118,7 @@ func _ready() -> void:
 	res_label.pivot_offset = Vector2(0, 10)
 	res_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	res_label.tooltip_text = _wrap_tip("Resonance — how your shard leans: Virtue (+) or Temptation (−). Major choices move it, and the world answers through dialogue and merchant haggling.")
+	_click_to_popover(res_label, "Resonance")
 	# Resonance mood orb: a glowing bead just left of the number — golden
 	# fire when strongly Virtuous (+50), a dark flame when Tempted (-50),
 	# a calm white pearl at neutral, gradients between. Two glow sprites
@@ -431,6 +437,7 @@ func _build_ability_bar() -> void:
 		# built-in tooltip needs a non-ignoring control, and PASS still lets
 		# the click fall through to _unhandled_input (dialogue advance).
 		border.mouse_filter = Control.MOUSE_FILTER_PASS
+		_click_to_popover(border, "")
 		add_child(border)
 		var bg := ColorRect.new()
 		bg.color = Color(0.05, 0.05, 0.09, 0.9)
@@ -495,6 +502,7 @@ func _build_buff_bar() -> void:
 		border.size = Vector2(BUFF_W + 4, 40)
 		# PASS: the chip's hover target for its tooltip (see ability bar note).
 		border.mouse_filter = Control.MOUSE_FILTER_PASS
+		_click_to_popover(border, "")
 		add_child(border)
 		var box := ColorRect.new()
 		box.color = Color(0.06, 0.06, 0.10, 0.9)
@@ -527,6 +535,87 @@ func _set_buff_slot_visible(slot: Dictionary, vis: bool) -> void:
 	slot["icon"].visible = vis
 	slot["time"].visible = vis
 	slot["fill"].visible = vis
+
+
+## Make a HUD control click-to-reveal: on a left click it opens the control's
+## CURRENT tooltip text (kept fresh every frame) as an opaque popover, the
+## same click-to-reveal model the inventory uses. accept_event() stops the
+## click from also falling through to dialogue-advance. `title` may be "".
+func _click_to_popover(c: Control, title: String) -> void:
+	c.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			if game.menus.is_open():
+				return
+			_open_hud_popover(title, c.tooltip_text)
+			c.accept_event())
+
+
+## The live-HUD twin of Menus._open_detail_popover: an opaque box at the
+## cursor with a transparent full-screen catcher behind it (click anywhere
+## off the box to dismiss). Info-only, so no buttons; the game keeps running.
+func _open_hud_popover(title: String, text: String) -> void:
+	if text.strip_edges() == "":
+		return
+	if hud_popover:
+		hud_popover.queue_free()
+	game.sfx("ui_click")
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed:
+			_close_hud_popover())
+	add_child(overlay)
+	hud_popover = overlay
+
+	var pop := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.1, 0.09, 0.13, 1.0)  # fully opaque
+	sb.border_color = Color(0.9, 0.8, 0.5, 0.9)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(6)
+	sb.shadow_color = Color(0, 0, 0, 0.5)
+	sb.shadow_size = 10
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	pop.add_theme_stylebox_override("panel", sb)
+	pop.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(pop)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	pop.add_child(vbox)
+	if title != "":
+		var tl := Label.new()
+		tl.text = title
+		tl.add_theme_font_size_override("font_size", 18)
+		tl.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
+		vbox.add_child(tl)
+	var il := Label.new()
+	il.text = text
+	il.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	il.custom_minimum_size = Vector2(430, 0)
+	il.add_theme_font_size_override("font_size", 14)
+	il.add_theme_color_override("font_color", Color(0.85, 0.85, 0.92))
+	vbox.add_child(il)
+
+	pop.position = pop.get_global_mouse_position() + Vector2(14, 8)
+	await get_tree().process_frame
+	if not is_instance_valid(pop):
+		return
+	pop.reset_size()
+	var sz := pop.size
+	pop.position = Vector2(
+		clampf(pop.position.x, 8.0, 1280.0 - sz.x - 8.0),
+		clampf(pop.position.y, 8.0, 720.0 - sz.y - 8.0))
+
+
+func _close_hud_popover() -> void:
+	if hud_popover:
+		hud_popover.queue_free()
+		hud_popover = null
 
 
 ## Every player state worth a chip. Timed buffs carry "t" = seconds left;
@@ -904,6 +993,10 @@ func _set_fill(fill: ColorRect, fraction: float) -> void:
 # ----------------------------------------------------------- API used by game
 
 func update_stats(p: Player) -> void:
+	# A menu opened (e.g. via hotkey) over an open HUD popover — dismiss it so
+	# it doesn't linger behind the paused menu.
+	if hud_popover and game.menus.is_open():
+		_close_hud_popover()
 	# Low-HP warning: the screen edges pulse red below 30% health.
 	var hp_frac := p.hp / p.max_hp
 	if hp_frac < 0.3 and not p.dead:
