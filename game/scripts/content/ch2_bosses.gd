@@ -19,7 +19,7 @@ const ENEMIES := {
 	# his own packs. Skirmishes at whip range, calls wolves, and when the
 	# storm breaks the sky starts swinging with him.
 	"stormwarden": {
-		"name": "Korrag, Stormwarden Broken", "sprite": "stormwarden",
+		"name": "Korrag, Stormwarden Broken", "sprite": "korrag",
 		"hp": 2000.0, "dmg": 30.0, "speed": 170.0, "xp": 90, "gold": 66,
 		"ranged": false, "scale": 6.5,
 		"physres": 25.0, "magres": 20.0, "eva": 0.06, "critres": 3.0, "crit": 0.05, "dmg_type": "phys",

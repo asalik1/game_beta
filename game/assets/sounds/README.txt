@@ -8,6 +8,9 @@ ult.wav / ult_mage.wav and meteor.wav from 'The Essential Retro Video Game Sound
 Collection' by Juhani Junkala (OpenGameArt.org), CC0 public domain.
 roar_fangmaw.ogg: 'Wolf howls' from Wikimedia Commons, public domain.
 Warrior/archer/assassin ultimates are synthesized in scripts/sfx.gd.
+roar_morwen: SYNTHESIZED (sfx.gd _make_wail) — the RPG-pack clip was
+replaced (user: bad); no witch-voice in any owned pack, so it's a
+bespoke spectral wail, hag-sicklier than Vess's grief-keen.
 
 GameSounds pack casts (purchased bundle, 2026-07-07 — commercial OK,
 no raw-pack redistribution; user-approved casting):

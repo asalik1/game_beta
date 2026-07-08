@@ -364,6 +364,32 @@ static func _make_keen() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+## Morwen's spectral wail: a witch's warbling moan. A voiced formant glide
+## with a slow quaver ululates up then SAGS as it decays into a sickly
+## rot-breath, over low spectral weight (she's a scale-6 boss). Lower and
+## hag-sicklier than Vess's high grief-keen — Vess is her lineage, not her
+## echo. No human vocal cords; semantic fit over melody.
+static func _make_wail() -> AudioStreamWAV:
+	var b := _buf(1.6)
+	var n := b.size()
+	var ph1 := 0.0
+	var ph2 := 0.0
+	var vib := 0.0
+	for i in n:
+		var t := float(i) / n
+		var contour := 1.0 + 0.45 * sin(t * PI) - 0.28 * t   # ululate up, then sag
+		vib += 5.5 / RATE
+		var quaver := 1.0 + 0.05 * sin(vib * TAU)            # witch warble
+		var f := 300.0 * contour * quaver
+		ph1 += f / RATE
+		ph2 += (f * 1.5 * 1.004) / RATE                      # detuned fifth — grief beat
+		var env := sin(minf(t * 3.0, 1.0) * PI / 2.0) * pow(1.0 - t, 1.3)
+		b[i] += (sin(ph1 * TAU) * 0.6 + sin(ph2 * TAU) * 0.3) * env * 0.5
+	_noise_sweep(b, 0.1, 1.4, 0.22, 1300.0, 500.0, 0.25)  # sickly rot-breath under the wail
+	_sine_sweep(b, 0.0, 120.0, 60.0, 1.5, 0.3)            # low spectral weight
+	return _to_wav(b)
+
+
 # ------------------------------------------------------- loot fanfare ---
 # Per-grade pickup chimes (retention roadmap #3): rarity is AUDIBLE.
 # Common is a polite blip; each step up gets longer, brighter, more
@@ -464,6 +490,7 @@ static func build_all() -> Dictionary:
 		"ult_warlock":  _make_ult_warlock(),
 		"meteor":   _make_slam(),
 		"roar_fangmaw": _make_growl(),  # synthesized beast, not a wolfman
+		"roar_morwen":  _make_wail(),   # spectral witch wail (replaced the RPG-pack clip)
 	}
 
 

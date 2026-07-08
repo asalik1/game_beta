@@ -353,6 +353,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 			or (pack_calls == 1 and hp <= max_hp * 0.33):
 		pack_calls += 1
 		roar()
+		play_action("pack")
 		game.spawn_text(global_position + Vector2(0, -84),
 			"Korrag whistles the pack in!", Color(1.0, 0.8, 0.3))
 		for offset in [Vector2(-100, -60), Vector2(100, 60)]:
@@ -367,6 +368,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		sprite.modulate = Color(0.8, 0.9, 1.7)
 		speed *= 1.35
 		roar()
+		play_action("storm")
 		game.spawn_text(global_position + Vector2(0, -90), "THE STORM BREAKS!", Color(0.6, 0.8, 1.0))
 
 	# Signature: LIGHTNING LASH — a line of strikes whipped through you.
@@ -397,6 +399,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 func _lightning_lash(player: Player) -> void:
 	roar()
+	play_action("lash")
 	var dir := (player.global_position - global_position).normalized()
 	for i in 5:
 		game.telegraph(global_position + dir * (120.0 + i * 95.0), 80.0,
