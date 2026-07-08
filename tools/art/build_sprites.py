@@ -41,7 +41,9 @@ EXTRACT = os.path.join(HERE, "extract_sheet.py")
 JOBS = {
     # DARK -> pre-keyed (2) sheets
     "warrior":  ("Warrior (2).png",  "idle,walk,run,attack,attack2,dash,ultidle,ult,death", []),
-    "assassin": ("Assassin (2).png", "idle,walk,run,attack,attack2,dash,death", []),
+    # NOTE: the assassin is NOT built here anymore -- it comes from the ChatGPT
+    # upscales via tools/art/upscale_assassin.py (both body clips + directional
+    # strips). Left out of JOBS so a rebuild can't clobber the upscaled sprites.
     "warlock":  ("Warlock (2).png",  "idle,walk,run,cast,attack,ult,attack2,death", ["--keepall"]),
     # LIGHT -> navy ORIGINAL sheets (auto bg-key)
     "archer":   ("Archer.png",  "idle,walk,run,cast,attack,attack2,dash,death", ["--drop", "attack2:3", "--key", "30"]),  # tighter key spares the dark boot soles the default 45 ate
@@ -54,7 +56,6 @@ JOBS = {
 # of frame indices to keep, in order. A single index == a frozen static idle.
 IDLE_KEEP = {
     "archer":   [3],           # freeze to the upright, bow-forward resting stance
-    "assassin": [0, 1, 2, 3],  # keep the front half of the scarf-flutter loop
 }
 
 
@@ -112,12 +113,9 @@ def main():
         if cls in IDLE_KEEP:
             _trim_idle(os.path.join(DEST, cls + "_anim.png"), IDLE_KEEP[cls])
             print("%-9s idle kept frames %s" % (cls, IDLE_KEEP[cls]))
-    # Assassin directional: source gone -> restore the backup + re-seam-fill.
-    for name in ("assassin_stab_dir", "assassin_throw_dir"):
-        dst = os.path.join(DEST, name + ".png")
-        shutil.copy(os.path.join(BACKUP, name + ".png"), dst)
-        _seam_fill_inplace(dst)
-        print("%-9s <- backup (art_src/heroes_clips)" % name)
+    # The assassin (body + directional) is built by upscale_assassin.py, not
+    # here -- see the NOTE in JOBS. _seam_fill_inplace still lives in this module
+    # because that tool imports it.
     print("\nDone. Re-import:  tools/Godot_*_console.exe --headless --path game --import")
 
 

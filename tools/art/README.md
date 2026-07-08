@@ -68,12 +68,30 @@ tools/Godot_v4.4.1-stable_win64_console.exe --headless --path game --import
 | class | source sheet | note |
 |---|---|---|
 | paladin, mage, archer | `Custom/<Class>.png` (navy ORIGINAL) | light figures — key cleanly off a dark bg |
-| assassin, warlock, warrior | `Custom/<Class> (2).png` (transparent) | dark figures — a navy key would eat them |
-| assassin stab/throw | `art_src/heroes_clips/assassin_{stab,throw}_dir.png` | Heroes source sheets are GONE — these extracted strips ARE the master |
+| warlock, warrior | `Custom/<Class> (2).png` (transparent) | dark figures — a navy key would eat them |
+| **assassin (all clips + directional)** | `Custom/assassin_upscaled/*.png` via **`upscale_assassin.py`** | ChatGPT UPSCALES — a separate tool, NOT built by `build_sprites.py` |
 
 The `(2)` and original sheets are sometimes **different art** (e.g. the paladin
 `(2)` was a kneeling variant), not just different keying — always eyeball a
 rebuild.
+
+### The assassin is upscaled (separate pipeline)
+
+The assassin uses higher-detail ChatGPT redraws instead of the `(2)` sheet.
+They can't go through `extract_sheet` because they (a) sit on white, (b) are
+drawn at a **different zoom in every clip** — so the engine's shared idle-derived
+scale would make the ninja grow/shrink between animations — and (c) the stab
+strip is missing its final SE frame. `upscale_assassin.py` handles all three:
+white-keys, then rescales + feet-anchors each clip to match its ORIGINAL
+counterpart's layout (body ref regenerated from `Assassin (2).png`, directional
+ref from the Heroes backup), and duplicates the one missing SE stab frame.
+
+```
+python tools/art/upscale_assassin.py        # source: Custom/assassin_upscaled/
+```
+
+The assassin is deliberately left out of `build_sprites.py`'s `JOBS` so a roster
+rebuild can't overwrite it. To change the assassin, re-run the upscale tool.
 
 ---
 
