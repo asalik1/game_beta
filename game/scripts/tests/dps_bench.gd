@@ -80,7 +80,7 @@ const TREE_PRESETS := {
 # variants; uniform gems keep variant comparisons honest.)
 const GEM_PRESETS := {
 	"warrior": {"*": {"special": "cdr", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
-	"paladin": {"*": {"special": "cdr", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
+	"paladin": {"*": {"special": "cdr", "regular": ["atk_pct", "magpen", "atk_pct", "magpen"]}},
 	"archer": {"*": {"special": "combo", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
 	"assassin": {"*": {"special": "combo", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
 	"mage": {"*": {"special": "combo", "regular": ["atk_pct", "magpen", "atk_pct", "magpen"]}},

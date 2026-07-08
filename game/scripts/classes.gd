@@ -146,7 +146,7 @@ const CLASSES := {
 		},
 	},
 	"paladin": {
-		"name": "Paladin", "sprite": "paladin", "primary": "STR", "dmg_type": "phys",
+		"name": "Paladin", "sprite": "paladin", "primary": "STR", "dmg_type": "magic",  # STR-primary but HOLY = magic damage (checks magres/magpen); INT is a byproduct scaler
 		"desc": "Stance knight. In HOLY his blows mend him; in RETRIBUTION he trades the mending for wrath. Reading when to swap IS the class.",
 		"passive": {"text": "Sanctified — blessed plate turns aside 12% of every blow; every strike returns as healing (4%), and the light mends you (1% max HP/s). CONVICTION: you fight in a stance — HOLY (blows mend you, -20% damage) or RETRIBUTION (+25% damage, no stance mending — your lifesteal and regen still hold).", "physres": 60.0, "magres": 60.0, "lifesteal": 0.04, "regen_pct": 0.010, "flat_dr": 0.12},
 		"hp": 125.0, "hp_lvl": 17.0, "mp": 55.0, "mp_lvl": 5.0,

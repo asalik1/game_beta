@@ -351,7 +351,7 @@ const SHAPE_STYLE := {
 # classes.gd (content modules preload items early).
 const CLASSES_DMG_TYPE := {
 	"warrior": "phys", "archer": "phys", "assassin": "phys",
-	"paladin": "phys", "mage": "magic", "warlock": "magic",
+	"paladin": "magic", "mage": "magic", "warlock": "magic",
 }
 
 # The SPECIAL stats (Haste/Lifesteal/Combo/Greed) are deliberately
@@ -600,13 +600,25 @@ static func add_socket(item: Dictionary) -> void:
 # Each class's four S legendaries form a SET. Wearing 2 / 4 pieces of your
 # own class's S set grants escalating bonuses (applied in Player.recalc).
 # S items carry item["cls"], so only your class's legendaries count.
+# ROLE-WEAKNESS doctrine (2026-07-07, refined): a set shores up the class's
+# WEAKNESS, not its strength. The plate tanks (warrior/paladin) already
+# excel at survival, so their set is pure OFFENSE — their weak axis — to
+# keep their dps from falling behind the squishies' damage scaling. The
+# squishies (archer/assassin/mage/warlock) get DEFENSE from real mitigation
+# — VITALITY (pool + a broad tiny-res sprinkle) plus direct resistances and
+# critres — NO evasion (a soft-capping avoid-RNG cop-out). Modest numbers
+# ride the STEEP low end of the res curve (res_frac saturates, so a little
+# from a near-zero base buys a lot), closing the survival gap for endgame
+# bullet hell WITHOUT making them tanks. AGI classes lean PHYSRES (melee
+# closes on them), INT casters lean MAGRES; all get a little critres. No
+# specials (gear rule holds).
 const SET_BONUSES := {
-	"warrior":  {"name": "Emberforged Warplate", "2": {"hp_pct": 0.10}, "4": {"atk_pct": 0.12, "physres": 20.0}},
-	"archer":   {"name": "The Hawk God's Regalia", "2": {"crit": 0.06}, "4": {"crit_dmg": 0.25, "dex": 8.0}},
-	"mage":     {"name": "The Archmage's Array", "2": {"magpen": 8.0}, "4": {"atk_pct": 0.12, "magpen": 10.0}},
-	"assassin": {"name": "The Shadow God's Vestige", "2": {"crit": 0.06}, "4": {"crit_dmg": 0.20, "atk_pct": 0.06}},
-	"paladin":  {"name": "The Highfather's Aegis", "2": {"hp_pct": 0.10}, "4": {"physres": 18.0, "hp_pct": 0.08}},
-	"warlock":  {"name": "The Long Bargain Raiment", "2": {"mp_flat": 25.0}, "4": {"magpen": 10.0, "atk_pct": 0.08}},
+	"warrior":  {"name": "Emberforged Warplate",    "2": {"atk_pct": 0.06}, "4": {"atk_pct": 0.10, "physpen": 8.0}},
+	"paladin":  {"name": "The Highfather's Aegis",  "2": {"atk_pct": 0.06}, "4": {"atk_pct": 0.10, "magpen": 8.0}},
+	"archer":   {"name": "The Hawk God's Regalia",  "2": {"VIT": 8.0},      "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
+	"assassin": {"name": "The Shadow God's Vestige", "2": {"VIT": 8.0},     "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
+	"mage":     {"name": "The Archmage's Array",    "2": {"VIT": 8.0},      "4": {"magres": 14.0, "critres": 6.0}},
+	"warlock":  {"name": "The Long Bargain Raiment", "2": {"VIT": 8.0},     "4": {"magres": 14.0, "critres": 6.0}},
 }
 
 
