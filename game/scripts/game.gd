@@ -251,8 +251,10 @@ func _process(delta: float) -> void:
 
 	hud.update_stats(player)
 
-	# Auto-aim reticle over the current target (orange = Tab-locked).
-	var target := player.auto_aim()
+	# Reticle over the enemy your AIMED attacks would hit — the facing-gated
+	# target, or the hard-locked one (orange). Hides when nothing is on your
+	# side, which is itself the cue to turn and face a foe.
+	var target := player.aim_focus()
 	if target and not player.dead:
 		reticle.visible = true
 		reticle.global_position = target.global_position

@@ -116,6 +116,13 @@ func aim_dir(rng := 520.0) -> Vector2:
 	return Vector2(_face_sign(), 0.0)  # nothing on your side: fire straight ahead
 
 
+## The enemy your AIMED attacks would strike right now (facing-gated, or the
+## hard-locked target) — drives the on-screen reticle so it always sits on
+## what a basic attack hits, and hides when nothing is on your side.
+func aim_focus(rng := 520.0) -> Enemy:
+	return _aim_target(rng)
+
+
 # ================================================================= abilities
 
 func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
