@@ -587,3 +587,9 @@ func revive() -> void:
 	hp = max_hp
 	mp = max_mp
 	hurt_cd = 1.5
+	# Release the death clip's frozen last frame (the dissolve) and snap back to
+	# the idle animation — otherwise you respawn stuck as the death-pile "speck".
+	_clip_locked = false
+	_dir_pose_active = false
+	if _clips.has("idle"):
+		_play_clip("idle", true)

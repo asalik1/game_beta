@@ -571,7 +571,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	var bh := _lbl(head, "BAGS — %d/%d equipped  (%d/%d slots)" % [p.bags.size(), Balance.MAX_BAGS,
 		p.bag_used(), p.bag_capacity()], 16, Items.GRADE_COLOR[best_grade])
 	bh.custom_minimum_size = Vector2(360, 0)
-	_lbl(head, bag_summary.strip_edges(), 13, Color(0.6, 0.6, 0.66))
+	# Min width or this collapses to one char per line in the HBox (the classic
+	# trap) — it read as a vertical "F·10" speck next to the BAGS header.
+	var bs := _lbl(head, bag_summary.strip_edges(), 13, Color(0.6, 0.6, 0.66))
+	bs.custom_minimum_size = Vector2(240, 0)
 	if not p.gem_bag.is_empty():
 		var auto_cb := func() -> void:
 			var n: int = game.player.auto_synthesize()
