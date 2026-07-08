@@ -22,22 +22,73 @@ func _move_dir() -> Vector2:
 	return dir.normalized()
 
 
-func auto_aim(rng := 520.0) -> Enemy:
+## Which way the hero is oriented: -1 left, +1 right. Facing is kept as a
+## horizontal unit vector (see player.gd), so its x sign IS the orientation.
+func _face_sign() -> float:
+	return -1.0 if facing.x < 0.0 else 1.0
+
+
+## Is a hard Tab-lock in force? A locked target overrides ALL targeting —
+## every aimed and seeking ability homes to it, and the hero's orientation
+## tracks it — until it dies (then per-frame clears the lock).
+func _hard_lock(rng: float) -> Enemy:
 	if is_instance_valid(locked_target) and not locked_target.dying \
 			and not locked_target.untargetable \
 			and global_position.distance_to(locked_target.global_position) <= rng * 1.4:
 		return locked_target
-	locked_target = null
+	return null
+
+
+## Target for SEEKING abilities (ults, sky-drops, marks): they can't be
+## aimed, so they grab the BIGGEST THREAT — any boss outranks any mob, and
+## within a tier the lowest-HP one wins (finish the wounded). A hard lock
+## overrides this entirely.
+func auto_aim(rng := 520.0) -> Enemy:
+	var lock := _hard_lock(rng)
+	if lock:
+		return lock
+	var best: Enemy = null
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e.dying or e.untargetable:
+			continue
+		if global_position.distance_to(e.global_position) > rng:
+			continue
+		if best == null or _outranks(e, best):
+			best = e
+	return best
+
+
+func _outranks(e: Enemy, cur: Enemy) -> bool:
+	var eb := e is Boss
+	var cb := cur is Boss
+	if eb != cb:
+		return eb  # a boss always beats a mob
+	return e.hp < cur.hp  # same tier: the more wounded one
+
+
+## Target for AIMED attacks: the nearest enemy on the FACING side, or one in
+## the overhead cone (straight up/down, valid from either orientation). An
+## enemy on your blind side is ignored — turn to face it. Hard lock wins.
+func _aim_target(rng: float) -> Enemy:
+	var lock := _hard_lock(rng)
+	if lock:
+		return lock
+	var side := _face_sign()
 	var best: Enemy = null
 	var best_d := rng
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e == null or e.dying or e.untargetable:
 			continue
-		var d := global_position.distance_to(e.global_position)
-		if d < best_d:
-			best_d = d
+		var to := e.global_position - global_position
+		var d := to.length()
+		if d > best_d:
+			continue
+		var overhead := absf(to.x) <= absf(to.y) * Balance.AIM_VERTICAL_CONE
+		if signf(to.x) == side or overhead:
 			best = e
+			best_d = d
 	return best
 
 
@@ -59,10 +110,10 @@ func cycle_target() -> void:
 
 
 func aim_dir(rng := 520.0) -> Vector2:
-	var target := auto_aim(rng)
+	var target := _aim_target(rng)
 	if target:
 		return (target.global_position - global_position).normalized()
-	return facing
+	return Vector2(_face_sign(), 0.0)  # nothing on your side: fire straight ahead
 
 
 # ================================================================= abilities

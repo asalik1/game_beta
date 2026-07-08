@@ -349,7 +349,7 @@ func _ready() -> void:
 	# Two short lines on the far left so they never collide with the
 	# ability bar's labels in the bottom center.
 	var controls := _label(Vector2(14, 682), 11, Color(0.7, 0.7, 0.7), 400)
-	controls.text = "WASD move · TAB target · E talk · M map"
+	controls.text = "WASD move · TAB lock · SPACE unlock · E talk · M map"
 	var controls2 := _label(Vector2(14, 698), 11, Color(0.7, 0.7, 0.7), 400)
 	controls2.text = "I inventory · T skills · C codex · ESC menu"
 	hint_labels = [controls, controls2]
@@ -1373,6 +1373,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		elif event.keycode in [KEY_SPACE, KEY_ENTER, KEY_E]:
 			pressed_confirm = true
+			# SPACE during play drops a Tab target-lock (confirm is a no-op
+			# here — it only advances dialogue, which isn't active).
+			if event.keycode == KEY_SPACE and game.state == game.ST_PLAYING \
+					and not dialogue_active and game.player.locked_target != null:
+				game.player.locked_target = null
+				game.sfx("talk")
+				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_ESCAPE:
 			_on_escape()
 		elif event.keycode == KEY_R and game.state == game.ST_VICTORY:

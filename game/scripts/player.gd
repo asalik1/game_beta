@@ -122,8 +122,22 @@ func _physics_process(delta: float) -> void:
 	var dir := _move_dir()
 	if frozen_time > 0.0 or rooted_time > 0.0:
 		dir = Vector2.ZERO  # crowd-controlled: the dodge is denied
-	if dir != Vector2.ZERO:
-		facing = dir
+	# ORIENTATION (left/right). A hard Tab-lock turns the hero to keep facing
+	# its target (unless the target is basically overhead — see AIM_VERTICAL_CONE);
+	# otherwise ONLY horizontal move input (A/D) changes it — pure up/down never
+	# does. Movement itself stays free 2D; only the aim orientation is L/R.
+	if locked_target != null and (not is_instance_valid(locked_target) \
+			or locked_target.dying or locked_target.untargetable):
+		locked_target = null  # the lock releases when its target dies
+	var os := _face_sign()
+	if is_instance_valid(locked_target):
+		var lx := locked_target.global_position.x - global_position.x
+		var ly := locked_target.global_position.y - global_position.y
+		if absf(lx) > absf(ly) * Balance.AIM_VERTICAL_CONE:
+			os = signf(lx)
+	elif dir.x != 0.0:
+		os = signf(dir.x)
+	facing = Vector2(os, 0.0)
 	var spd := speed * (1.25 if berserk_time > 0.0 else 1.0)
 	if theme_speed_time > 0.0:
 		spd *= 1.0 + theme_speed_amt
@@ -140,27 +154,13 @@ func _physics_process(delta: float) -> void:
 		wind_fx_t = 0.1
 		_wind_wisp(-dir)
 
-	# Walk bob + face the aim target (or move direction).
-	# NOTE: movement facing is normalized (max 1.0) while target facing is
-	# in pixels — the threshold must be small enough for BOTH.
-	# During a melee swing, turn to face the STRIKE (melee_dir) — otherwise the
-	# hero flips toward the nearest enemy in a 520px sweep while the swing only
-	# snaps to a 220px target (else your move direction), so a mid-range foe
-	# made the warrior face one way while the slash flew the other.
-	var target := auto_aim()
-	var look_x: float
-	if melee_swing > 0.0:
-		look_x = melee_dir.x
-	elif target:
-		look_x = target.global_position.x - global_position.x
-	else:
-		look_x = facing.x
-	if absf(look_x) > 0.4:
-		look_sign = signf(look_x)
-		# Left-facing art (Crawl sprites) flips the opposite way. A directional
-		# aim pose sets its own facing, so don't fight it while it holds.
-		if not _dir_pose_active:
-			sprite.flip_h = (look_x > 0.0) if face_left else (look_x < 0.0)
+	# Walk bob + face the hero's ORIENTATION. The sprite follows facing (set
+	# above) — NOT whoever is nearest, which used to yank it around and fight
+	# the player's aim. Left-facing art (Crawl sprites) flips the opposite way;
+	# a directional aim pose sets its own facing, so don't fight it while it holds.
+	look_sign = _face_sign()
+	if not _dir_pose_active:
+		sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
 	if dir != Vector2.ZERO:
 		sprite.position.y = -absf(sin(anim_t * 11.0)) * 3.0
 		sprite.rotation = sin(anim_t * 11.0) * 0.06

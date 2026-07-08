@@ -5,6 +5,15 @@ class_name Balance
 ## monsters/zones) — this file is for the numbers you tweak, not the
 ## content you author.
 
+# ------------------------------------------------------------ facing / aim ---
+# Aiming is ORIENTATION-based: the hero faces LEFT or RIGHT (set by A/D and
+# the Tab lock), and AIMED attacks (slashes, bolts, arrows) fire toward a
+# valid target on the facing side — else straight ahead. EXCEPTION: a target
+# nearly straight up or down counts regardless of facing. This cone is how
+# "overhead": a target with |dx| <= |dy| * AIM_VERTICAL_CONE is fair game
+# from either orientation (0.6 ~= a 31-degree cone off vertical).
+const AIM_VERTICAL_CONE := 0.6
+
 # ------------------------------------------------------ hero progression ---
 # XP to go from `level` to the next: XP_BASE + level * XP_PER_LEVEL.
 # The curve assumes side rooms are cleared (DESIGN.md); chapter kill-XP
