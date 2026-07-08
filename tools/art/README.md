@@ -44,7 +44,40 @@ bg, light subject → dark bg.
 
 ---
 
-## Run it
+## Rebuild the whole roster (and where things live)
+
+The exact per-class recipe (which source sheet + flags each class uses) is
+codified in **`tools/art/build_sprites.py`** — run it to regenerate every class
+sprite, then re-import:
+
+```bash
+python tools/art/build_sprites.py     # writes game/assets/sprites/
+tools/Godot_v4.4.1-stable_win64_console.exe --headless --path game --import
+```
+
+**Where the assets live:**
+
+| what | where | in repo? |
+|---|---|---|
+| Source sheets (raw art) | `OneDrive/Assets/Custom/` (`EMBERFALL_ART_SRC`) | no — asset library only |
+| Extracted engine strips | `game/assets/sprites/<class>_*.png` | yes — the shipped sprites |
+| Heroes-set backup + directional master | `art_src/heroes_clips/` | yes |
+
+**Per-class source (why each — see the contrast rule above):**
+
+| class | source sheet | note |
+|---|---|---|
+| paladin, mage, archer | `Custom/<Class>.png` (navy ORIGINAL) | light figures — key cleanly off a dark bg |
+| assassin, warlock, warrior | `Custom/<Class> (2).png` (transparent) | dark figures — a navy key would eat them |
+| assassin stab/throw | `art_src/heroes_clips/assassin_{stab,throw}_dir.png` | Heroes source sheets are GONE — these extracted strips ARE the master |
+
+The `(2)` and original sheets are sometimes **different art** (e.g. the paladin
+`(2)` was a kneeling variant), not just different keying — always eyeball a
+rebuild.
+
+---
+
+## Run one sheet by hand
 
 ```bash
 python tools/art/extract_sheet.py \
