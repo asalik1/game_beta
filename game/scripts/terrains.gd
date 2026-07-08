@@ -152,3 +152,23 @@ const PATCH_COLOR := {
 
 static func get_terrain(id: String) -> Dictionary:
 	return DATA.get(id, DATA["village"])
+
+
+# Per-terrain WALL tile (2026-07-08): room perimeter walls used to be one
+# global grey brick ("wallblock") in every biome. Each seamless 16px tile
+# below is cut from the matching Pixel Crawler environment pack; terrains not
+# listed fall back to the Castle stone (wallblock). Rendered by
+# game_world._build_room_walls / _wall.
+const WALL := {
+	"village": "wall_wood",
+	"darkwood": "wall_moss", "marsh": "wall_moss", "bog": "wall_moss",
+	"spore": "wall_moss", "ph_fae": "wall_moss", "ph_sewer": "wall_moss",
+	"magma": "wall_volcanic", "void": "wall_volcanic",
+	"ice": "wall_ice",
+	"graveyard": "wall_grave",
+	"desert": "wall_sand",
+	# keep / crystal / storm / holy / ph_hall -> wallblock (stone) default
+}
+
+static func wall_for(id: String) -> String:
+	return WALL.get(id, "wallblock")

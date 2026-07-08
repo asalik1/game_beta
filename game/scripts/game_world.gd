@@ -1004,8 +1004,9 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	world.add_child(body)
 	return body
 
-## A wall segment: collider + tiled wallblock visual.
-func _wall(rect: Rect2) -> void:
+## A wall segment: collider + tiled wall visual. `wall_tex` is the terrain's
+## seamless 16px wall tile (Terrains.wall_for); defaults to the stone block.
+func _wall(rect: Rect2, wall_tex := "wallblock") -> void:
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		return
 	var body := StaticBody2D.new()
@@ -1030,7 +1031,7 @@ func _wall(rect: Rect2) -> void:
 	body.add_child(occ)
 	world.add_child(body)
 	var spr := Sprite2D.new()
-	spr.texture = Art.tex("wallblock")
+	spr.texture = Art.tex(wall_tex)
 	spr.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	spr.region_enabled = true
 	spr.region_rect = Rect2(Vector2.ZERO, rect.size / 3.0)
@@ -1050,38 +1051,41 @@ func _build_room_walls(i: int) -> void:
 	var ins := room_inset(i)
 	var exits: Dictionary = rooms[i]["exits"]
 	var gap := DOOR_TILES * TILE
+	# Terrain-aware wall tile (2026-07-08): stone keep, wood village, mossy
+	# forest/marsh, volcanic magma, ice, graveyard, sandstone — else stone.
+	var wt: String = Terrains.wall_for(terrain_by_zone[i])
 	# North/south walls (gap centered on x).
 	for spec in [["N", r.position.y], ["S", r.end.y - TILE]]:
 		var dir: String = spec[0]
 		var y: float = spec[1]
 		if exits.has(dir):
 			var half := r.size.x / 2.0 - gap / 2.0
-			_wall(Rect2(r.position.x, y, half, TILE))
-			_wall(Rect2(r.position.x + r.size.x / 2.0 + gap / 2.0, y, half, TILE))
+			_wall(Rect2(r.position.x, y, half, TILE), wt)
+			_wall(Rect2(r.position.x + r.size.x / 2.0 + gap / 2.0, y, half, TILE), wt)
 			_door_torches(door_pos(i, dir), false)
 			if ins.y > 0.0:
 				var cx := full.position.x + ROOM_W / 2.0
 				var cy := full.position.y if dir == "N" else r.end.y
-				_wall(Rect2(cx - gap / 2.0 - TILE, cy, TILE, ins.y))
-				_wall(Rect2(cx + gap / 2.0, cy, TILE, ins.y))
+				_wall(Rect2(cx - gap / 2.0 - TILE, cy, TILE, ins.y), wt)
+				_wall(Rect2(cx + gap / 2.0, cy, TILE, ins.y), wt)
 		else:
-			_wall(Rect2(r.position.x, y, r.size.x, TILE))
+			_wall(Rect2(r.position.x, y, r.size.x, TILE), wt)
 	# West/east walls (gap centered on y).
 	for spec in [["W", r.position.x], ["E", r.end.x - TILE]]:
 		var dir: String = spec[0]
 		var x: float = spec[1]
 		if exits.has(dir):
 			var half := r.size.y / 2.0 - gap / 2.0
-			_wall(Rect2(x, r.position.y, TILE, half))
-			_wall(Rect2(x, r.position.y + r.size.y / 2.0 + gap / 2.0, TILE, half))
+			_wall(Rect2(x, r.position.y, TILE, half), wt)
+			_wall(Rect2(x, r.position.y + r.size.y / 2.0 + gap / 2.0, TILE, half), wt)
 			_door_torches(door_pos(i, dir), true)
 			if ins.x > 0.0:
 				var cy2 := full.position.y + ROOM_H / 2.0
 				var cx2 := full.position.x if dir == "W" else r.end.x
-				_wall(Rect2(cx2, cy2 - gap / 2.0 - TILE, ins.x, TILE))
-				_wall(Rect2(cx2, cy2 + gap / 2.0, ins.x, TILE))
+				_wall(Rect2(cx2, cy2 - gap / 2.0 - TILE, ins.x, TILE), wt)
+				_wall(Rect2(cx2, cy2 + gap / 2.0, ins.x, TILE), wt)
 		else:
-			_wall(Rect2(x, r.position.y, TILE, r.size.y))
+			_wall(Rect2(x, r.position.y, TILE, r.size.y), wt)
 	# Locked edges get a gate — built once per edge, by whichever room
 	# builds first, and only while the lock is still unmet.
 	for dir in exits.keys():
