@@ -27,8 +27,14 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 	var tex := "icelance" if _tfx.get("pierce", 0) else "fireball"
 	var p := _proj(dir, mult, tex, 440.0 * float(_tfx.get("proj_speed", 1.0)))
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
-	if bolt_homing > 0.0:
-		p.homing = true  # Seeker Winds (mage Wind talent): the bolt curves to its mark
+	if _tfx.get("homing", 0):
+		p.homing = true  # Wind firebolt SEEKS its mark — baseline wind behavior, no talent
+	if bolt_bleed > 0.0 and ability_theme.get("a1", "") == "wind":
+		# Wind Cuts (mage Wind talent): each bolt opens a bleed reckoned against
+		# the WHOLE twin firebolt (both bolts, hence x2). One target just refreshes
+		# a single wound (~+13% DPS); split the twin onto two foes and each bleeds
+		# (~+26% total). Sized off atk here so ticks crit off the sheet like burn.
+		p.fx["bleed"] = current_atk() * bolt_bleed * mult * 2.0
 
 
 func _frost_nova(f := 1.0) -> void:

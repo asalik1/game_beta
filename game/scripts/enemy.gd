@@ -73,6 +73,9 @@ var burn_time := 0.0
 var burn_dps := 0.0
 var burn_tick := 0.0
 var burn_color := Color(1.4, 0.8, 0.6)  # orange = fire, green = poison
+var bleed_time := 0.0  # Wind Cuts (mage): a red physical DoT, kept apart from burn
+var bleed_dps := 0.0
+var bleed_tick := 0.0
 var vuln_time := 0.0   # takes +50% damage while marked
 var hobble_t := 0.0    # HOBBLED: a slow that failed on a CC-immune boss
                        # scuffs its footing — +HOBBLE_MULT damage taken
@@ -346,6 +349,21 @@ func _physics_process(delta: float) -> void:
 				sprite.modulate = burn_color
 	else:
 		toxin = 0  # the stack dies with the burn
+
+	if bleed_time > 0.0:
+		# Wind Cuts bleed — a red physical DoT, independent of burn so it
+		# never reads as "on fire" and never collides with a burn tick.
+		bleed_time -= delta
+		bleed_tick -= delta
+		if bleed_tick <= 0.0:
+			bleed_tick = 0.5
+			var btick := bleed_dps * 0.5
+			var bsrc: Player = game.player
+			if bsrc != null and randf() < Stats.crit_curve(bsrc.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
+				btick *= bsrc.crit_dmg
+			take_damage(btick, Vector2.ZERO, false, true)
+			if not dying:
+				sprite.modulate = Color(1.5, 0.35, 0.4)  # crimson wound flash
 
 	if stun_time > 0.0:
 		windup = 0.0
@@ -849,6 +867,13 @@ func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6)) -> void:
 	burn_dps = maxf(burn_dps, dps)
 	burn_time = maxf(burn_time, dur)
 	burn_color = color
+
+
+## Wind Cuts (mage) bleed — a red physical DoT that REFRESHES, never stacks
+## (keeps the stronger dps and the longer window, exactly like burn).
+func apply_bleed(dps: float, dur: float) -> void:
+	bleed_dps = maxf(bleed_dps, dps)
+	bleed_time = maxf(bleed_time, dur)
 
 
 ## Green-theme DoT (poison/venom): the exception to the no-stack burn

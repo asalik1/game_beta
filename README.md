@@ -91,10 +91,12 @@ Combat is **keyboard only**: your abilities auto-aim at the nearest enemy
   Fangmaw pounces onto marked ground, Morwen rains blight zones, and
   Vargoth calls greatswords down from the sky. Stand in the red = get hit.
   Regular monsters flash yellow before biting, so every hit is dodgeable.
-- **Skill tree** — MMO-style talent rows: a new row unlocks every few
-  levels, you spend up to 5 points per row across 3 columns (max 5 per
-  skill), and each column follows one of your class's themes. Every point
-  is an increment ("Stab +5/10/15/20/25% damage", "+1% combo per point").
+- **Skill tree** — MMO-style talent rows: a new row unlocks every 10
+  levels, you spend up to 10 points per row across 3 columns (max 10 per
+  skill), and each column follows one of your class's themes. You gain a
+  point every level, so the tree fills out across all of Act 1 and caps at
+  level 40. Every point is an increment ("Stab +2.5% damage per point, to
+  +25%").
 - **Codex** — press C for a gallery of every monster and boss (with stats)
   and a full **visual gear gallery**: every equipment shape (5 weapon types,
   3 armors, 3 boots, 3 charms) rendered at all 7 grades, plus the named

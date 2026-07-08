@@ -548,7 +548,7 @@ static func _set_level(m: Menus, target: int) -> void:
 	p.level = clampi(target, 1, Balance.LEVEL_CAP)
 	p.xp = 0
 	p.set_class(p.cls)  # refunds points, re-derives themes for the new level
-	p.skill_points = (p.level - 1) * Balance.SKILL_POINTS_PER_LEVEL
+	p.skill_points = p.level * Balance.SKILL_POINTS_PER_LEVEL  # points == level (first at L1)
 	p.unspent_attr = (p.level - 1) * Balance.ATTR_POINTS_PER_LEVEL
 	p.recalc()
 	p.hp = p.max_hp
@@ -583,7 +583,7 @@ static func create_roster(m: Menus, lvl: int) -> int:
 			"chapter": "ch1",
 			"cls": cid,
 			"level": lvl, "xp": 0,
-			"skill_points": (lvl - 1) * Balance.SKILL_POINTS_PER_LEVEL,
+			"skill_points": lvl * Balance.SKILL_POINTS_PER_LEVEL,
 			"unspent_attr": (lvl - 1) * Balance.ATTR_POINTS_PER_LEVEL,
 			"tree_points": {}, "attr_points": {},
 			"gold": 2000, "potions": 3,

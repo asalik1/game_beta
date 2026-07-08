@@ -265,6 +265,58 @@ func _run_systems() -> void:
 		return _fail("warrior plate DR missing (round 21)")
 	print("ok: mage arcane ward (blink DR softens hits, pierced by true) + plate DR")
 
+	# 3d. Wind Cuts (mage Wind talent): homing is now BASELINE wind behavior;
+	# the talent instead opens a bleed — but ONLY on the wind firebolt. Verify
+	# the stat wires up, the bleed rides only the wind bolt (both twins), and
+	# the enemy-side DoT bites over time and REFRESHES (never stacks).
+	game.player.set_class("mage")
+	game.player.themes_known = 3
+	game.player.tree_points = {"m02": 5}   # 5 pts -> 5 * 0.013 = 0.065
+	game.player.recalc()
+	if absf(game.player.bolt_bleed - 0.065) > 1.0e-6:
+		return _fail("Wind Cuts: 5 pts should give 0.065 bolt_bleed (got %f)" % game.player.bolt_bleed)
+	game.player.facing = Vector2.RIGHT
+	# Fire variant must NOT carry a bleed.
+	_clear_combat()
+	game.player.set_all_themes("fire")
+	game.player.mp = game.player.max_mp
+	game.player.cds["a1"] = 0.0
+	game.player.use_ability("a1")
+	await _frames(1)
+	for pr in get_tree().get_nodes_in_group("projectiles"):
+		if float(pr.fx.get("bleed", 0.0)) > 0.0:
+			return _fail("Wind Cuts leaked onto the FIRE firebolt")
+	# Wind variant MUST carry a bleed on BOTH twin bolts.
+	_clear_combat()
+	game.player.set_all_themes("wind")
+	game.player.mp = game.player.max_mp
+	game.player.cds["a1"] = 0.0
+	game.player.use_ability("a1")
+	await _frames(1)
+	var wind_bleeders := 0
+	for pr in get_tree().get_nodes_in_group("projectiles"):
+		if float(pr.fx.get("bleed", 0.0)) > 0.0:
+			wind_bleeders += 1
+	if wind_bleeders < 2:
+		return _fail("Wind Cuts: both twin wind bolts should bleed (got %d)" % wind_bleeders)
+	# Enemy-side DoT: it bites over time, and a weaker re-hit refreshes (maxf).
+	var bd := _dummy(Vector2(320, 0))
+	bd.hp = 100000.0
+	bd.apply_bleed(200.0, 3.0)
+	if bd.bleed_time <= 0.0:
+		return _fail("apply_bleed did not open a wound")
+	var bhp0 := bd.hp
+	await get_tree().create_timer(0.6).timeout  # wall-clock: let a tick land
+	if bd.hp >= bhp0:
+		return _fail("bleed dealt no damage over time")
+	bd.apply_bleed(10.0, 3.0)  # weaker re-hit
+	if bd.bleed_dps < 200.0 or bd.bleed_time > 3.01:
+		return _fail("bleed must REFRESH not stack (dps %.1f, time %.2f)" % [bd.bleed_dps, bd.bleed_time])
+	_clear_combat()
+	game.player.tree_points = {}
+	game.player.recalc()
+	print("ok: mage Wind Cuts (wind-only bleed, bites + refreshes)")
+
 	# Assassin STAB SURGE (round 25): a connecting cut buffs lifesteal,
 	# bigger the lower your health sits.
 	game.player.set_class("assassin")
@@ -880,23 +932,30 @@ func _run_systems() -> void:
 	await _frames(45)
 	print("ok: telegraph + falling sword")
 
-	# 5. Skill tree: row caps and gating.
-	game.player.skill_points = 12
-	if game.player.level < Skills.ROW_LEVELS[1]:
-		return _fail("test expects level >= row 2 by now")
+	# 5. Skill tree: row caps and gating. Drive it at a controlled level so
+	# the assertions don't depend on how far ch1 leveled us (rows now unlock
+	# at 10/20/30/40). Restore level + points afterward.
+	var saved_level: int = game.player.level
+	game.player.level = Skills.ROW_LEVELS[2]  # rows 0-2 open, row 3 (Lv 40) locked
+	game.player.tree_points.clear()
+	game.player.skill_points = 30
 	var added := 0
-	for i in 6:  # try to overfill row 0
+	for i in 12:  # try to overfill row 0 (cell cap AND row cap are both 10)
 		if game.player.add_tree_point("w00"):
 			added += 1
-	if added != 5:
-		return _fail("cell cap should stop at 5 (got %d)" % added)
+	if added != Skills.MAX_PER_CELL:
+		return _fail("cell cap should stop at %d (got %d)" % [Skills.MAX_PER_CELL, added])
 	if game.player.add_tree_point("w01"):
-		return _fail("row cap should block a 6th point in row 0")
+		return _fail("row cap should block an 11th point in row 0")
 	if game.player.dm("a1") < 1.24:
-		return _fail("5 points in Heavy Cleave should give +25%")
+		return _fail("10 points in Heavy Cleave should give +25%")
 	var high_row := Skills.TREES["warrior"][3][0]["id"]
-	if game.player.level < Skills.ROW_LEVELS[3] and game.player.add_tree_point(high_row):
-		return _fail("locked row accepted a point")
+	if game.player.add_tree_point(high_row):
+		return _fail("locked row (Lv 40) accepted a point at Lv %d" % game.player.level)
+	game.player.tree_points.clear()
+	game.player.skill_points = 0
+	game.player.level = saved_level
+	game.player.recalc()
 	print("ok: skill tree rows (caps + gating)")
 
 	# 5a2. Auto-synthesize: socketed gems level first, then the bag rolls up.

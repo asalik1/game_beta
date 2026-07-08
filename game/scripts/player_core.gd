@@ -40,7 +40,7 @@ func add_resonance(delta: float) -> void:
 # --- progression ---
 var level := 1
 var xp := 0
-var skill_points := 0
+var skill_points := 1    # points == level: the first lands at L1, tree fills at L40
 var tree_points := {}    # skill cell id -> points (0..5)
 # The four attributes convert at CLASS ratios (Classes.ATTR_SCALE);
 # the substats convert 1:1 for everyone (Classes.SUBSTAT_SCALE).
@@ -99,7 +99,7 @@ var cast_haste_cdr := 0.0   # + this cdr on Blink/Frost Nova while it holds
 var dash_guard_time := 0.0  # assassin Mirrorstep: AoE damage softened while > 0
 var chill_dmg := 0.0        # mage Killing Frost talent: +dmg vs slowed/frozen
 var poison_dmg := 0.0       # archer Serpent's Due talent: +dmg vs DoT'd enemies
-var bolt_homing := 0.0      # mage Seeker Winds talent: Firebolt homes (>0 = on)
+var bolt_bleed := 0.0       # mage Wind Cuts talent: wind firebolt opens a bleed (frac/pt)
 var nova_regen := 0.0       # ability-granted HoT rate (/s): mage Rimeheart (Nova)
                             # and paladin Hallowed Ground (Consecration) share it
 var nova_regen_time := 0.0  # active heal-over-time window (recast renews)
@@ -558,7 +558,7 @@ func recalc() -> void:
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
 		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
 		"blink_dr": 0.0, "blink_dr_dur": 0.0, "flat_dr": 0.0,
-		"chill_dmg": 0.0, "poison_dmg": 0.0, "bolt_homing": 0.0, "nova_regen": 0.0,
+		"chill_dmg": 0.0, "poison_dmg": 0.0, "bolt_bleed": 0.0, "nova_regen": 0.0,
 		"dash_refund": 0.0, "execute_dmg": 0.0,
 		"curse_dr": 0.0, "crush_amp": 0.0, "void_crit": 0.0,
 		"curse_spread": 0.0, "transfusion": 0.0, "lowhp_dmg": 0.0, "last_rites": 0.0,
@@ -636,7 +636,7 @@ func recalc() -> void:
 	blink_dr_dur = b["blink_dr_dur"]
 	chill_dmg = b["chill_dmg"]
 	poison_dmg = b["poison_dmg"]
-	bolt_homing = b["bolt_homing"]
+	bolt_bleed = b["bolt_bleed"]
 	nova_regen = b["nova_regen"]
 	dash_refund = b["dash_refund"]
 	execute_dmg = b["execute_dmg"]

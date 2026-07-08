@@ -395,8 +395,8 @@ const ABILITY_THEMES := {
 				"fx": {"splash": 0.45, "dot": 0.60}},
 			"ice": {"desc": "An ice lance that PIERCES the whole line, freezing everything it runs through — repeated cold turns armor BRITTLE.",
 				"fx": {"pierce": 1, "slow": 0.55, "stun_chance": 0.15, "proj_speed": 0.75, "brittle": 1}},
-			"wind": {"desc": "Split the bolt: TWO smaller bolts that flurry with echoing hits and burst in cutting gusts.",
-				"fx": {"twin": 1, "echo": 0.20, "splash": 0.05}},
+			"wind": {"desc": "Split the bolt: TWO smaller bolts that SEEK their mark, flurrying with echoing hits and bursting in cutting gusts.",
+				"fx": {"twin": 1, "echo": 0.20, "splash": 0.05, "homing": 1}},
 		},
 		"a2": {
 			"fire": {"desc": "Flame ring: a wider, burning detonation — it ignites instead of shoving.",

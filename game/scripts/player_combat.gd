@@ -243,6 +243,11 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 			e.apply_burn(dot_dps, 3.0, dot_color)
 	if effects.has("burn"):
 		e.apply_burn(float(effects["burn"]) * dot_mit, 3.0)
+	if effects.has("bleed"):
+		# Wind Cuts (mage): a 3s physical bleed, armor-mitigated and
+		# refresh-don't-stack. effects["bleed"] is the pre-mit TOTAL wound;
+		# spread it across the 3s window as dps.
+		e.apply_bleed(float(effects["bleed"]) * dot_mit / 3.0, 3.0)
 	if effects.has("slow"):
 		e.apply_slow(1.0 - effects["slow"] if effects["slow"] < 1.0 else 0.5, effects.get("slow_dur", 2.0))
 	if effects.has("stun"):

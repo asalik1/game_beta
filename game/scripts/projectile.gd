@@ -19,7 +19,7 @@ var glow_color := Color(1, 1, 1)
 var tex_kind := ""
 var spr: Sprite2D = null       # thrown knives spin in flight
 var spin := true               # darts (assassin fan) fly POINT-FIRST instead
-var homing := false            # mage Seeker Winds: friendly bolt curves to a target
+var homing := false            # Wind firebolt: friendly bolt curves to a target
 var _already_hit := {}
 
 # Glow tint per projectile type — bright and readable at a glance.
@@ -135,7 +135,7 @@ func _physics_process(delta: float) -> void:
 
 
 ## Curve toward the nearest live enemy, keeping speed — a gentle homing arc
-## (mage Seeker Winds talent), so the twin Wind bolts converge on their mark.
+## (baseline Wind firebolt behavior), so the twin Wind bolts converge on their mark.
 func _steer_home(delta: float) -> void:
 	var best: Node2D = null
 	var best_d := 1.0e12

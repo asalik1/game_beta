@@ -1130,7 +1130,7 @@ func open_skills(tab := "talents") -> void:
 			var add_cb := func() -> void:
 				if game.player.add_tree_point(cd["id"]):
 					open_skills()
-			var b := _btn(row_box, "%s  [%d/%d]\n%s" % [cd["name"], pts, Skills.MAX_PER_CELL, cd["desc"]],
+			var b := _btn(row_box, "%s  [%d/%d]\n%s" % [cd["name"], pts, Skills.cell_max(cd), cd["desc"]],
 				add_cb, color, can or pts > 0,
 				Art.glyph_tex(_cell_glyph(cd), theme_col if unlocked else Color(0.4, 0.4, 0.45)))
 			b.custom_minimum_size = Vector2(288, 0)
