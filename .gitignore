@@ -20,3 +20,6 @@ claude_stage.log
 # Bench / test outputs (regenerated; never commit)
 dps_*.txt
 test_full_run.log
+
+# Companion webnovel (kept local; not part of the game project)
+webnovel/
