@@ -218,10 +218,12 @@ func _generate_layout(spine: Array) -> void:
 func _enter_room(i: int) -> void:
 	if i < 0 or i >= zone_count:
 		return
+	var prev := cur_room
 	_build_room(i)
 	var first_visit: bool = not visited.get(i, false)
 	visited[i] = true
 	cur_room = i
+	_calm_left_room(prev, i)
 	if is_instance_valid(player):
 		player.reset_room_potions()  # the loadout's per-room budget refills
 	# Standing in a room, you can SEE its doors: neighbors go on the map
@@ -268,6 +270,25 @@ func _enter_room(i: int) -> void:
 	_try_spawn_boss(i)
 	last_room = i
 	autosave()  # autosave on every room transition (DESIGN.md)
+
+## Leaving a room calms whatever you didn't kill: its pack forgets you and
+## returns to post, so re-entry reads clean instead of a cluster still
+## camping the doorway. You only ever leave a LIVE room by dying or a
+## scripted yank (recall is barred while sealed, the door-lock bars a walk-
+## out) — death already de-aggros, this covers the rest. Re-entry wakes the
+## pack fresh; killed-but-uncleared mobs respawn via _reset_room_enemies.
+## Bosses and homeless spawns (zone_idx < 0) are left to death/reset.
+func _calm_left_room(prev: int, now: int) -> void:
+	if prev < 0 or prev == now:
+		return
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e is Boss or e.dying:
+			continue
+		if e.zone_idx == prev and (e.force_aggro or e.alerted):
+			e.force_aggro = false
+			e.alerted = false
+			e.global_position = e.home
 
 ## Build a room's world nodes on first entry (rooms build lazily).
 func _build_room(i: int) -> void:

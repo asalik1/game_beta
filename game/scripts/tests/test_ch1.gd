@@ -125,6 +125,37 @@ func _test_graph_walk_darkwood() -> void:
 			return _fail("pack 1 woke from across the room")
 	if not game.barrier_active:
 		return _fail("door seals did not close on an aggroed pack")
+	# ...and the seal HOLDS: physically walking an exit of a HOT room does
+	# not carry you out. Regression — the seal body sat a step outside the
+	# cell and raced the boundary that flips cur_room, so a fast turn-around
+	# slipped through. The lock now lives in the transition gate (game.gd).
+	var out_dir := ""
+	for d in game.rooms[2]["exits"].keys():
+		var cand := game.neighbor(2, String(d))
+		if cand > 0 and not game.gates.has(game._edge_key(2, cand)):
+			out_dir = String(d)
+			break
+	if out_dir != "":
+		game.player.global_position = game.door_pos(2, out_dir) \
+			- Vector2(Game.DIRS[out_dir]) * 70.0
+		var out_key: int = {"N": KEY_W, "S": KEY_S, "E": KEY_D, "W": KEY_A}[out_dir]
+		var od := InputEventKey.new()
+		od.keycode = out_key
+		od.physical_keycode = out_key
+		od.pressed = true
+		Input.parse_input_event(od)
+		for _t in 90:
+			await _frames(1)
+			if game.cur_room != 2:
+				break
+		var ou := InputEventKey.new()
+		ou.keycode = out_key
+		ou.physical_keycode = out_key
+		ou.pressed = false
+		Input.parse_input_event(ou)
+		if game.cur_room != 2:
+			return _fail("walked OUT of a hot room (%s door) — the lock leaked" % out_dir)
+		print("ok: hot room locks the exit (no walking out mid-fight)")
 	# Clear the room: seals lift, the room stays cleared.
 	await _kill_room(2)
 	await _frames(5)
