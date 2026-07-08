@@ -28,7 +28,33 @@ PIXEL CRAWLER (Anokolisa) — purchased bundle, 2026-07-06: some sprites
   optional; the raw packs must NOT be redistributed as assets.
   Install pipeline: idle sheets tight-cropped to content and saved as
   <name>_anim.png + first frame as <name>.png (codex/portraits).
+  Re-derivation (2026-07-08): 25 mobs (skeleton*, orc*, zombie/zombie_brute,
+  banshee, mummy/mummy_mage, stone_golem, medusa, bandit_*, royal_soldier/
+  priest, scholar_censor, elf_ranger, fungus_*) were re-cut from the pack
+  side-facing Mob sheets (Idle=4f -> _anim, Run=6f -> _walk, frame0 -> base).
+  IMPORTANT: frames must be SQUARE (Art._strip_info counts frames as
+  width/height) — so each frame is PILLARBOXED to a square (transparent side
+  pad, character bottom-anchored = feet at square base), NOT force-resized to
+  a square (which squished portraits fat/squat). union-cropped across idle+run
+  for a stable anchor; gamma 0.78 pre-brighten for the HDR tonemap; sheets
+  already face LEFT (convention) so no mirror. Source packs: Free Pack (orcs/
+  skeletons), Cemetery (zombies/banshee), Desert (mummies), Forge (stone),
+  Garden (medusa), Hideout (bandits), Castle (royals), Library (scholars),
+  Fairy Forest (elves), Cave (fungus).
+
+PIXEL CRAWLER - CEMETERY (Anokolisa) — purchased pack, licensed for
+  commercial game use. Credit optional; the raw pack must NOT be
+  redistributed. Restless Graveyard biome props are cropped from this
+  pack's Environment/Props + Structures sheets: tombstone, deadtree,
+  grave_cross, crypt, coffin (obstacles) and bones, crack (ground decor).
 
 NINJA ADVENTURE (pixel-boy) — CC0 (LICENSE.txt in the pack), available
   as gap-filler for creatures Pixel Crawler lacks.
 
+
+BAT PACKS (Small_Bat, Bat_Fur) — purchased by the project owner and
+  confirmed cleared for commercial use in Emberfall (2026-07-08); the
+  zips ship no license file. Do NOT redistribute the raw packs.
+  Installed as: bat / bat_anim (Cave Bat, from Small_Bat, side Move sheet)
+  and direbat / direbat_anim (Blightbat, from Bat_Fur). Side-facing Move
+  strips, union-cropped + gamma-0.78 pre-brightened for the HDR tonemap.
