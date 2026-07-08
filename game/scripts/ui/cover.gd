@@ -18,13 +18,15 @@ static func build(m: Menus, root: Control) -> void:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(bg)
 
-	# Hand-made cover art overrides the whole procedural set.
+	# Hand-made cover art overrides the whole procedural set. Loaded through
+	# the resource system so it works in exported builds (globalize_path only
+	# reaches loose files on disk, which don't exist inside a packed .pck).
 	var override_path := "res://assets/sprites/cover.png"
-	if FileAccess.file_exists(override_path):
-		var img := Image.load_from_file(ProjectSettings.globalize_path(override_path))
-		if img != null:
+	if ResourceLoader.exists(override_path):
+		var ctex: Texture2D = load(override_path)
+		if ctex != null:
 			var tr := TextureRect.new()
-			tr.texture = ImageTexture.create_from_image(img)
+			tr.texture = ctex
 			tr.set_anchors_preset(Control.PRESET_FULL_RECT)
 			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED

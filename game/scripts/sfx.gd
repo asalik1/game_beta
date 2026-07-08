@@ -527,19 +527,18 @@ static func make_ambient(kind: String) -> AudioStream:
 	# every other asset): assets/sounds/<kind>.ogg or .mp3, looped.
 	for ext in ["ogg", "mp3"]:
 		var path := "res://assets/sounds/%s.%s" % [kind, ext]
-		if FileAccess.file_exists(path):
-			var full := ProjectSettings.globalize_path(path)
-			if ext == "ogg":
-				var ogg := AudioStreamOggVorbis.load_from_file(full)
-				if ogg:
-					ogg.loop = true
-					return ogg
-			else:
-				var mp3 := AudioStreamMP3.new()
-				mp3.data = FileAccess.get_file_as_bytes(full)
-				if not mp3.data.is_empty():
-					mp3.loop = true
-					return mp3
+		# Resource system, not disk, so overrides survive an export.
+		if not ResourceLoader.exists(path):
+			continue
+		var s := load(path)
+		if s is AudioStreamOggVorbis:
+			var ogg := s as AudioStreamOggVorbis
+			ogg.loop = true
+			return ogg
+		elif s is AudioStreamMP3:
+			var mp3 := s as AudioStreamMP3
+			mp3.loop = true
+			return mp3
 	var dur := 8.0
 	var buf := _buf(dur)
 	var rng := RandomNumberGenerator.new()

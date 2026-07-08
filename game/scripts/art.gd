@@ -1244,15 +1244,25 @@ const GROUND := {
 }
 
 
+## Load an asset-override image through the resource system, so it works
+## in EXPORTED builds too. Image.load_from_file + globalize_path only
+## reach loose files on disk; inside a packed .pck there are none, so the
+## whole sprite/icon override system silently reverted to procedural art
+## in exports (and PNG-only pieces like cottage_a2 crashed on a null).
+## load() reads the imported texture, which is always in the pack.
+static func _override_image(path: String) -> Image:
+	if not ResourceLoader.exists(path):
+		return null
+	var t: Texture2D = load(path)
+	return t.get_image() if t else null
+
+
 ## Hand-authored UI icon override (assets/icons/<name>.png), or null.
 ## A separate seam from assets/sprites/: icons are UI art (bag slots,
 ## HUD), never world sprites, and are used AS-IS — no grade tinting;
 ## rarity stays readable via slot borders and item-name colors.
 static func _icon_override(name: String) -> Image:
-	var path := "res://assets/icons/%s.png" % name
-	if not FileAccess.file_exists(path):
-		return null
-	return Image.load_from_file(ProjectSettings.globalize_path(path))
+	return _override_image("res://assets/icons/%s.png" % name)
 
 
 ## Get (and cache) the texture for a named sprite.
@@ -1262,12 +1272,11 @@ static func tex(name: String) -> ImageTexture:
 	if _cache.has(name):
 		return _cache[name]
 	var override_path := "res://assets/sprites/%s.png" % name
-	if FileAccess.file_exists(override_path):
-		var file_img := Image.load_from_file(ProjectSettings.globalize_path(override_path))
-		if file_img:
-			var ft := ImageTexture.create_from_image(file_img)
-			_cache[name] = ft
-			return ft
+	var file_img := _override_image(override_path)
+	if file_img:
+		var ft := ImageTexture.create_from_image(file_img)
+		_cache[name] = ft
+		return ft
 	if name == "potion":  # HUD potion icon: allow an assets/icons/ override
 		var icon_img := _icon_override(name)
 		if icon_img != null:
@@ -2259,14 +2268,13 @@ static func _strip_info(base: String) -> Dictionary:
 		return _anim_cache[base]
 	var info := {}
 	var path := "res://assets/sprites/%s.png" % base
-	if FileAccess.file_exists(path):
-		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
-		if img != null and img.get_height() > 0:
-			info = {
-				"tex": ImageTexture.create_from_image(img),
-				"frames": maxi(1, int(img.get_width() / img.get_height())),
-				"fps": 6.0,
-			}
+	var img := _override_image(path)
+	if img != null and img.get_height() > 0:
+		info = {
+			"tex": ImageTexture.create_from_image(img),
+			"frames": maxi(1, int(img.get_width() / img.get_height())),
+			"fps": 6.0,
+		}
 	_anim_cache[base] = info
 	return info
 

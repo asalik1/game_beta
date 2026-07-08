@@ -6,6 +6,7 @@ tools/
 
 # Exports
 build/
+executables/
 *.exe
 *.apk
 
