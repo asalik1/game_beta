@@ -112,6 +112,10 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 		tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# Bosses moved to their own subtab (2026-07-08); this subtab keeps the
 	# Elites/Temptations copy above plus the regular-mob bestiary.
+	# Only mobs actually placed in a room show outside dev mode; extracted-
+	# but-unplaced ones appear in the dev launcher only, tagged [placeholder].
+	var used := _used_enemy_kinds()
+	var dev: bool = m.game.dev_mode
 	m._lbl(list, "— MONSTERS —", 16, Color(0.95, 0.85, 0.5))
 	for kind in Story.ALL_ENEMIES:
 		if kind in m.BOSS_KINDS:
@@ -121,17 +125,46 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 		# scenery-with-hp, not catalogue monsters — skip them.
 		if st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
 			continue
-		_enemy_card(m, list, kind, false)
+		var unplaced: bool = not used.has(kind)
+		if unplaced and not dev:
+			continue
+		_enemy_card(m, list, kind, false, false, unplaced)
 
 
 ## Bosses subtab: just the boss cards (each links to its mechanics detail).
+## Same used-filter as monsters — an unplaced boss is dev-only, tagged.
 static func _bosses(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
+	var used := _used_enemy_kinds()
+	var dev: bool = m.game.dev_mode
 	m._lbl(list, "— BOSSES —", 16, Color(1, 0.5, 0.5))
 	for kind in Story.ALL_ENEMIES:
 		if not (kind in m.BOSS_KINDS):
 			continue
-		_enemy_card(m, list, kind, true)
+		var unplaced: bool = not used.has(kind)
+		if unplaced and not dev:
+			continue
+		_enemy_card(m, list, kind, true, false, unplaced)
+
+
+## Enemy kinds actually placed in the world: any zone's `enemies` spawns or
+## `boss`, plus each chapter's `final_boss`. Everything else in ALL_ENEMIES is
+## extracted-but-unplaced — hidden from the codex outside dev mode.
+static func _used_enemy_kinds() -> Dictionary:
+	var used := {}
+	for chid in Story.CHAPTER_LIST:
+		var ch: Dictionary = Story.CHAPTER_LIST[chid]
+		var fb := String(ch.get("final_boss", ""))
+		if fb != "":
+			used[fb] = true
+		for zone in ch.get("zones", []):
+			var b := String(zone.get("boss", ""))
+			if b != "":
+				used[b] = true
+			for e in zone.get("enemies", []):
+				if e is Array and e.size() > 0:
+					used[String(e[0])] = true
+	return used
 
 
 ## NPCs subtab (2026-07-08): everyone with a talk prompt, gathered from every
@@ -145,16 +178,22 @@ static func _npcs(m: Menus, list: VBoxContainer) -> void:
 	intro.custom_minimum_size = Vector2(880, 0)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+	# Placeholder NPCs (extracted art wired for review, `placeholder: true` in
+	# their zone entry) are dev-launcher only, and tagged [placeholder] there.
+	var dev: bool = m.game.dev_mode
 	var seen := {}
 	var entries: Array = []
 	for chid in Story.CHAPTER_LIST:
 		for zone in Story.CHAPTER_LIST[chid].get("zones", []):
 			for npc in zone.get("npcs", []):
+				var ph: bool = npc.get("placeholder", false)
+				if ph and not dev:
+					continue
 				var spr: String = String(npc.get("sprite", ""))
 				if spr == "" or seen.has(spr):
 					continue
 				seen[spr] = true
-				entries.append({"name": _npc_name(npc), "sprite": spr})
+				entries.append({"name": _npc_name(npc), "sprite": spr, "placeholder": ph})
 	if entries.is_empty():
 		m._lbl(list, "No NPCs catalogued.", 13, Color(0.6, 0.62, 0.68))
 		return
@@ -171,7 +210,8 @@ static func _npcs(m: Menus, list: VBoxContainer) -> void:
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		row.add_child(icon)
-		var nm := m._lbl(row, String(e["name"]), 15, Color(0.9, 0.92, 0.98))
+		var nm_txt: String = String(e["name"]) + ("   [placeholder]" if e.get("placeholder", false) else "")
+		var nm := m._lbl(row, nm_txt, 15, Color(0.72, 0.68, 0.55) if e.get("placeholder", false) else Color(0.9, 0.92, 0.98))
 		nm.custom_minimum_size = Vector2(820, 0)
 		nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
@@ -200,7 +240,7 @@ static func _npc_name(npc: Dictionary) -> String:
 ## detail view. In the LIST, a boss with authored `mechanics` also grows a
 ## "▸ Mechanics & Tells" button that opens its focused detail; in the
 ## DETAIL view (`detail = true`) that button is suppressed (already there).
-static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bool, detail := false) -> void:
+static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bool, detail := false, placeholder := false) -> void:
 	var st: Dictionary = Story.ALL_ENEMIES[kind]
 	# Codex honesty: display what the fight actually deals/has
 	# (TTK and damage multipliers included), not raw table rows.
@@ -223,7 +263,9 @@ static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bo
 	# Name .......................................... Lv badge
 	var head := HBoxContainer.new()
 	info.add_child(head)
-	var name_l := m._lbl(head, st["name"], 16, Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
+	var nm_txt: String = String(st["name"]) + ("   [placeholder]" if placeholder else "")
+	var name_col: Color = Color(0.72, 0.68, 0.55) if placeholder else (Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
+	var name_l := m._lbl(head, nm_txt, 16, name_col)
 	name_l.custom_minimum_size = Vector2(560, 0)
 	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var lv_l := m._lbl(head, "Lv %d" % st.get("level", 1), 15, Color(0.95, 0.85, 0.5))

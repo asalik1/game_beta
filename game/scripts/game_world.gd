@@ -324,6 +324,10 @@ func _build_room(i: int) -> void:
 		if npc_def.has("req_wanderer") \
 				and not _wanderer_rolled(String(npc_def["req_wanderer"])):
 			continue
+		# Placeholder NPCs (extracted art wired for review) only exist in the
+		# dev launcher — a normal playthrough never sees them in the world.
+		if npc_def.get("placeholder", false) and not dev_mode:
+			continue
 		var convo_id: String = npc_def["convo"]
 		_make_npc(npc_def["sprite"],
 			room_pos(i, npc_def["x"], npc_def["y"]),

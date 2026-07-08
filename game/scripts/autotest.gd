@@ -1131,12 +1131,15 @@ func _run_systems() -> void:
 	await _frames(2)
 	game.menus.open_codex("terrains")
 	await _frames(2)
+	var _dev0: bool = game.dev_mode
+	game.dev_mode = true  # exercise the [placeholder] cards/tags in the bestiary
 	game.menus.open_codex("monsters")
 	await _frames(2)
 	game.menus.open_codex("bosses")
 	await _frames(2)
 	game.menus.open_codex("npcs")
 	await _frames(2)
+	game.dev_mode = _dev0
 	game.menus.open_codex("status")
 	await _frames(2)
 	game.menus.open_skills()
