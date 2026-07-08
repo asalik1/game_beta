@@ -609,16 +609,16 @@ static func add_socket(item: Dictionary) -> void:
 # critres — NO evasion (a soft-capping avoid-RNG cop-out). Modest numbers
 # ride the STEEP low end of the res curve (res_frac saturates, so a little
 # from a near-zero base buys a lot), closing the survival gap for endgame
-# bullet hell WITHOUT making them tanks. AGI classes lean PHYSRES (melee
-# closes on them), INT casters lean MAGRES; all get a little critres. No
-# specials (gear rule holds).
+# bullet hell WITHOUT making them tanks. All four squishy 4pc are broad
+# phys + mag res + a little critres (bullet hell throws both damage types);
+# the VIT 2pc adds the pool. No specials (gear rule holds).
 const SET_BONUSES := {
 	"warrior":  {"name": "Emberforged Warplate",    "2": {"atk_pct": 0.06}, "4": {"atk_pct": 0.10, "physpen": 8.0}},
 	"paladin":  {"name": "The Highfather's Aegis",  "2": {"atk_pct": 0.06}, "4": {"atk_pct": 0.10, "magpen": 8.0}},
 	"archer":   {"name": "The Hawk God's Regalia",  "2": {"VIT": 8.0},      "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
 	"assassin": {"name": "The Shadow God's Vestige", "2": {"VIT": 8.0},     "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
-	"mage":     {"name": "The Archmage's Array",    "2": {"VIT": 8.0},      "4": {"magres": 14.0, "critres": 6.0}},
-	"warlock":  {"name": "The Long Bargain Raiment", "2": {"VIT": 8.0},     "4": {"magres": 14.0, "critres": 6.0}},
+	"mage":     {"name": "The Archmage's Array",    "2": {"VIT": 8.0},      "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
+	"warlock":  {"name": "The Long Bargain Raiment", "2": {"VIT": 8.0},     "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
 }
 
 
