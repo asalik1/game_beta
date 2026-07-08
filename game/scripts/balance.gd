@@ -699,6 +699,18 @@ const HIDDEN_CACHE_GOLD_TIER := 0.3   # else silver
 const LOOT_BEAM_MIN_GRADE := "B"   # beams start here; below is chime-only
 const LOOT_BEAM_TIME := 1.6        # seconds the beam holds before fading
 
+# ---------------------------------------------------------- gear tier icons ---
+# Every gear icon reads its GRADE at a glance (codex gallery + bag slots),
+# not just from a letter. Hand-colored override PNGs get a gentle shift
+# toward the grade color; the procedural fallback takes the full tint. On
+# top, A and S wear a faint MISTY AURA (light orange / light red) hugging
+# the silhouette — subtle, never a glare. Knobs kept low on purpose.
+const ICON_OVERRIDE_TINT := 0.35   # hand-colored icons: fraction blended toward the grade color
+const ICON_PROC_TINT := 0.65       # procedural fallback icons: full grade tint (matches held-weapon look)
+const TIER_AURA_PAD := 5           # transparent margin (px/side) padding every tier icon to one size
+const TIER_AURA_RINGS := 5         # A/S aura depth: pixel rings dilated out from the silhouette
+const TIER_AURA_ALPHA := 0.20      # A/S aura PEAK opacity — deliberately faint/misty (rings fade past it)
+
 # -------------------------------------------------------- codex completion ---
 # Kill-count lore (retention roadmap #5): slaying enough of a monster kind
 # unearths its codex lore entry; unearthed entries feed the Lorekeeper title.

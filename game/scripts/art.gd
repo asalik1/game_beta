@@ -1843,25 +1843,87 @@ static func item_icon(slot: String, grade: String, noun := "") -> ImageTexture:
 	var key := "itemicon_%s_%s" % [shape, grade]
 	if _cache.has(key):
 		return _cache[key]
-	var over := _icon_override(shape)
-	if over != null:
-		if over.get_width() != 32 or over.get_height() != 32:
-			over.resize(32, 32, Image.INTERPOLATE_NEAREST)
-		var ot := ImageTexture.create_from_image(over)
-		_cache[key] = ot
-		return ot
-	var image := img(shape)
-	var tint: Color = Items.GRADE_COLOR[grade]
+	# Base 32x32: the hand-colored override if present, else procedural. Both
+	# take a grade tint — the override gently (it keeps its own palette), the
+	# procedural fully — so a Trainee's Blade and an S Blade never look alike.
+	var base := _icon_override(shape)
+	if base != null:
+		if base.get_width() != 32 or base.get_height() != 32:
+			base.resize(32, 32, Image.INTERPOLATE_NEAREST)
+		_grade_tint(base, Items.GRADE_COLOR[grade], Balance.ICON_OVERRIDE_TINT)
+	else:
+		base = img(shape)
+		_grade_tint(base, Items.GRADE_COLOR[grade], Balance.ICON_PROC_TINT)
+		base.resize(32, 32, Image.INTERPOLATE_NEAREST)
+	var t := ImageTexture.create_from_image(_tier_frame(base, grade))
+	_cache[key] = t
+	return t
+
+
+## Blend a sprite's opaque pixels toward its grade color (multiplied so
+## metal stays metal). strength 0 = untouched, 1 = fully the grade color.
+static func _grade_tint(image: Image, tint: Color, strength: float) -> void:
 	for y in image.get_height():
 		for x in image.get_width():
 			var c := image.get_pixel(x, y)
 			if c.a > 0.0:
-				image.set_pixel(x, y, Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a))
-	_embellish(image, grade)
-	image.resize(32, 32, Image.INTERPOLATE_NEAREST)
-	var t := ImageTexture.create_from_image(image)
-	_cache[key] = t
-	return t
+				var g := Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a)
+				image.set_pixel(x, y, c.lerp(g, strength))
+
+
+## Pad a 32px icon into a fixed margin canvas (so every tier renders the
+## SAME size in a row), paint the A/S misty aura into that margin, then run
+## the grade embellishment. The pad also gives B+'s rim glow room to bloom.
+static func _tier_frame(icon32: Image, grade: String) -> Image:
+	var pad: int = Balance.TIER_AURA_PAD
+	var w := icon32.get_width()
+	var h := icon32.get_height()
+	var canvas := Image.create_empty(w + pad * 2, h + pad * 2, false, Image.FORMAT_RGBA8)
+	canvas.blit_rect(icon32, Rect2i(0, 0, w, h), Vector2i(pad, pad))
+	# A/S read via a SUBTLE colored mist (orange / red), not the loud gold
+	# trim + sparkle treatment that suits a weapon held in-world — so the top
+	# tiers skip _embellish and wear the aura alone. F..B keep the quiet
+	# per-material detailing (chip / gem accents / purple rim).
+	if grade == "A" or grade == "S":
+		_paint_aura(canvas, Items.GRADE_COLOR[grade])
+	else:
+		_embellish(canvas, grade)
+	return canvas
+
+
+## The tier AURA: a very light misty halo hugging the silhouette. Pixel
+## rings dilate outward from the opaque core into the transparent margin,
+## each fainter than the last (peak stays deliberately low). S wears light
+## red, A light orange — both straight from GRADE_COLOR.
+static func _paint_aura(canvas: Image, col: Color) -> void:
+	var cw := canvas.get_width()
+	var ch := canvas.get_height()
+	var rings: int = Balance.TIER_AURA_RINGS
+	var peak: float = Balance.TIER_AURA_ALPHA
+	var filled := {}
+	var frontier: Array = []
+	for y in ch:
+		for x in cw:
+			if canvas.get_pixel(x, y).a > 0.3:
+				var p := Vector2i(x, y)
+				filled[p] = true
+				frontier.append(p)
+	var offs := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+		Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)]
+	for r in range(1, rings + 1):
+		var a: float = peak * pow(1.0 - float(r) / float(rings + 1), 1.6)
+		var nxt: Array = []
+		for p: Vector2i in frontier:
+			for off: Vector2i in offs:
+				var q: Vector2i = p + off
+				if q.x < 0 or q.y < 0 or q.x >= cw or q.y >= ch:
+					continue
+				if filled.has(q):
+					continue
+				filled[q] = true
+				canvas.set_pixel(q.x, q.y, Color(col.r, col.g, col.b, a))
+				nxt.append(q)
+		frontier = nxt
 
 
 ## assets/icons/ file per consumable id ({"kind": "stone"} bag items).
