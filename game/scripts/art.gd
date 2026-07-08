@@ -1666,7 +1666,7 @@ static func glyph_tex(name: String, tint := Color(0.92, 0.92, 0.98)) -> ImageTex
 
 # Every gear family (noun) has its own sprite; grade adds the tint.
 const GEAR_SHAPES := {
-	"weapon": {"Blade": "w_blade", "Edge": "w_edge", "Fang": "w_fang", "Kunai": "w_kunai", "Claymore": "w_claymore", "Bow": "w_bow", "Crossbow": "w_crossbow", "Staff": "w_staff", "Wand": "w_wand", "Hammer": "w_hammer", "Tome": "w_tome"},
+	"weapon": {"Blade": "w_blade", "Edge": "w_edge", "Fang": "w_fang", "Shuriken": "w_kunai", "Kunai": "w_kunai", "Claymore": "w_claymore", "Bow": "w_bow", "Crossbow": "w_crossbow", "Staff": "w_staff", "Wand": "w_wand", "Hammer": "w_hammer", "Tome": "w_tome"},
 	"armor":  {"Plate": "icon_armor", "Mail": "icon_mail", "Guard": "icon_shield"},
 	"boots":  {"Boots": "icon_boots", "Striders": "icon_striders", "Treads": "icon_treads"},
 	"charm":  {"Charm": "icon_charm", "Talisman": "icon_talisman", "Sigil": "icon_sigil"},
@@ -1705,7 +1705,7 @@ static func weapon_tex(noun: String, grade: String) -> ImageTexture:
 	return t
 
 
-## Grade-specific visual treatment, so a Trainee's Kunai and a legendary
+## Grade-specific visual treatment, so a Rusty Shuriken and a legendary
 ## dagger look nothing alike beyond mere color:
 ##   F: chipped and dull · C/D: gem accents · B+: glowing rim
 ##   A: gold trim · S: bright aura + sparkles

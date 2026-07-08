@@ -52,14 +52,14 @@ const CLASS_PRIMARY := {
 const CLASS_WEAPONS := {
 	"warrior": ["Blade", "Edge", "Claymore"],
 	"archer": ["Bow", "Crossbow"],
-	"assassin": ["Fang", "Kunai"],
+	"assassin": ["Fang", "Shuriken"],
 	"mage": ["Staff", "Wand"],
 	"paladin": ["Hammer", "Blade"],
 	"warlock": ["Tome", "Wand"],
 }
 
 const SLOT_NAMES := {
-	"weapon": ["Blade", "Edge", "Fang", "Kunai", "Claymore", "Bow", "Crossbow", "Staff", "Wand", "Hammer", "Tome"],
+	"weapon": ["Blade", "Edge", "Fang", "Shuriken", "Claymore", "Bow", "Crossbow", "Staff", "Wand", "Hammer", "Tome"],
 	"armor":  ["Plate", "Mail", "Guard"],
 	"boots":  ["Boots", "Striders", "Treads"],
 	"charm":  ["Charm", "Talisman", "Sigil"],
@@ -67,18 +67,22 @@ const SLOT_NAMES := {
 
 # One representative prefix per grade (used in the codex).
 const GRADE_PREFIX := {
-	"F": "Rusty", "E": "Worn", "D": "Soldier's", "C": "Knight's",
+	"F": "Rusty", "E": "Worn", "D": "Tempered", "C": "Fine",
 	"B": "Runed", "A": "Dragonforged", "S": "Emberforged",
 }
 
 # Rolled items pick a random prefix from their grade's pool,
-# so drops read like "Trainee's Kunai" or "Masterwork Claymore".
+# so drops read like "Fine Shuriken" or "Masterwork Claymore". Prefixes are
+# CLASS-NEUTRAL quality adjectives (2026-07-08): the old martial words
+# (Knight's/Soldier's/Militia/Veteran's/Warlord's) read wrong on an
+# assassin's dagger or a mage's wand ("Knight's Fang"). Keep any new prefix
+# fitting for every class's gear.
 const PREFIXES := {
-	"F": ["Rusty", "Cracked", "Trainee's", "Bent"],
-	"E": ["Worn", "Plain", "Sturdy", "Militia"],
-	"D": ["Soldier's", "Tempered", "Honed", "Veteran's"],
-	"C": ["Knight's", "Fine", "Gilded", "Journeyman's"],
-	"B": ["Runed", "Masterwork", "Enchanted", "Warlord's"],
+	"F": ["Rusty", "Cracked", "Chipped", "Bent"],
+	"E": ["Worn", "Plain", "Sturdy", "Simple"],
+	"D": ["Tempered", "Honed", "Polished", "Keen"],
+	"C": ["Fine", "Gilded", "Wrought", "Refined"],
+	"B": ["Runed", "Masterwork", "Enchanted", "Pristine"],
 	"A": ["Dragonforged"],
 	"S": ["Emberforged"],
 }
@@ -317,12 +321,13 @@ static func gem_color(gem: Dictionary) -> Color:
 	return GEM_STATS[gem["stat"]]["color"]
 
 # Every shape has a stat personality: a main-stat multiplier plus
-# guaranteed bonus stats. A Claymore hits like a truck, a Kunai crits.
+# guaranteed bonus stats. A Claymore hits like a truck, a Shuriken crits.
 const SHAPE_STYLE := {
 	"Blade":    {"main": 1.0,  "subs": {"atk_pct": 0.05}, "tag": "balanced"},
 	"Edge":     {"main": 1.2,  "subs": {}, "tag": "heavy hits"},
 	"Fang":     {"main": 0.85, "subs": {"crit": 0.05}, "tag": "crit"},
-	"Kunai":    {"main": 0.8,  "subs": {"crit": 0.04, "dex": 3.0}, "tag": "crit + aim"},
+	"Shuriken": {"main": 0.8,  "subs": {"crit": 0.04, "dex": 3.0}, "tag": "crit + aim"},
+	"Kunai":    {"main": 0.8,  "subs": {"crit": 0.04, "dex": 3.0}, "tag": "crit + aim"},  # back-compat: pre-2026-07-08 saves stored the "Kunai" noun
 	"Claymore": {"main": 1.4,  "subs": {}, "tag": "massive damage"},
 	"Bow":      {"main": 0.9,  "subs": {"dex": 5.0}, "tag": "true aim"},
 	"Crossbow": {"main": 1.05, "subs": {"physpen": 5.0}, "tag": "penetration"},
