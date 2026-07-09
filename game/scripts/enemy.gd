@@ -76,7 +76,8 @@ var burn_color := Color(1.4, 0.8, 0.6)  # orange = fire, green = poison
 var bleed_time := 0.0  # Wind Cuts (mage): a red physical DoT, kept apart from burn
 var bleed_dps := 0.0
 var bleed_tick := 0.0
-var vuln_time := 0.0   # takes +50% damage while marked
+var vuln_time := 0.0   # takes extra damage while marked
+var vuln_mult := 1.5   # the marked multiplier (Death Mark default +50%; shadow's ult sets +40%)
 var hobble_t := 0.0    # HOBBLED: a slow that failed on a CC-immune boss
                        # scuffs its footing — +HOBBLE_MULT damage taken
 var toxin := 0         # green-DoT stacks: deepen the burn TICK (die with it)
@@ -322,6 +323,8 @@ func _physics_process(delta: float) -> void:
 	stun_time = maxf(0.0, stun_time - delta)
 	slow_time = maxf(0.0, slow_time - delta)
 	vuln_time = maxf(0.0, vuln_time - delta)
+	if vuln_time <= 0.0:
+		vuln_mult = 1.5   # reset to the default so a later Exposed doesn't inherit shadow's leaner amp
 	hobble_t = maxf(0.0, hobble_t - delta)
 	brittle_t = maxf(0.0, brittle_t - delta)
 	if brittle_t <= 0.0:
@@ -915,7 +918,7 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	if zone_idx >= 0 and not force_aggro:
 		game.wake_pack(zone_idx, pack_id)
 	if vuln_time > 0.0:
-		amount *= 1.5
+		amount *= vuln_mult
 	if hobble_t > 0.0:
 		amount *= 1.0 + Balance.HOBBLE_MULT  # scuffed footing: every hit bites
 	# --- trait damage modifiers ---

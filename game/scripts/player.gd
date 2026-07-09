@@ -39,6 +39,7 @@ func _physics_process(delta: float) -> void:
 	dash_guard_time = maxf(0.0, dash_guard_time - delta)
 	last_rites_cd = maxf(0.0, last_rites_cd - delta)
 	judgment_leap_cd = maxf(0.0, judgment_leap_cd - delta)
+	dash_refund_t = maxf(0.0, dash_refund_t - delta)  # shadow phantom-step window
 	# Grit (warrior, round 48): the stacks live only while the grind does —
 	# go unhit for the window and they die. Kiting starves the juggernaut.
 	if grit_time > 0.0:

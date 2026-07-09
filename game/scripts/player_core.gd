@@ -144,6 +144,8 @@ var hurt_cd := 0.0
 var berserk_time := 0.0
 var berserk_bonus := 0.4       # damage bonus while berserk (theme-tunable)
 var next_crit := false         # Hunt: the next hit is a guaranteed crit
+var dash_refund_t := 0.0       # Shadow phantom step: kill within this refunds the dash
+var dash_refund_frac := 0.0    # ...how much of the dash cd a closing kill returns
 var storm_time := 0.0
 var storm_tick := 0.0
 var storm_fx := {}
@@ -554,7 +556,7 @@ func xp_needed() -> int:
 ## + skill tree points.
 func recalc() -> void:
 	var base: Dictionary = Classes.CLASSES[cls]
-	var b := {"atk_flat": 0.0, "atk_pct": 0.0, "hp_flat": 0.0, "hp_pct": 0.0,
+	var b := {"atk_flat": 0.0, "atk_pct": 0.0, "dmg_pct": 0.0, "hp_flat": 0.0, "hp_pct": 0.0,
 		"STR": 0.0, "AGI": 0.0, "INT": 0.0, "VIT": 0.0,
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
 		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
@@ -593,6 +595,13 @@ func recalc() -> void:
 		var pts: int = tree_points[id]
 		for stat in cell.get("bonus", {}):
 			b[stat] = b.get(stat, 0.0) + cell["bonus"][stat] * pts
+	# Theme-granted PASSIVE stats (standing bonuses, not per-hit fx). Only combo
+	# today — shadow's a1 grants +5% combo, a spammer boon. Per-hit theme fx
+	# (crit_bonus, dot, slow...) are read contextually in hit_enemy, never here.
+	for slot in ability_theme:
+		var tfx: Dictionary = _theme_fx(slot)
+		if tfx.has("combo"):
+			b["combo"] = b.get("combo", 0.0) + float(tfx["combo"])
 	# Allocated attribute points: the four attributes convert at CLASS
 	# scaling ratios (an assassin gets far more from AGI than from STR);
 	# substat points (PhysRes, DEX, pens...) convert 1:1 for everyone.
@@ -611,7 +620,9 @@ func recalc() -> void:
 	var mp_frac := mp / max_mp if max_mp > 0 else 1.0
 	# Primary attribute (STR/AGI/INT) drives attack and a little crit.
 	primary = base["atk"] + base["atk_lvl"] * (level - 1)
-	atk = (primary + b["atk_flat"]) * (1.0 + b["atk_pct"])
+	# dmg_pct (Sunstone special gem) is a universal damage increase — it adds
+	# to atk_pct's multiplier, so a class of any crit level values it.
+	atk = (primary + b["atk_flat"]) * (1.0 + b["atk_pct"] + b["dmg_pct"])
 	max_hp = (base["hp"] + base["hp_lvl"] * (level - 1) + b["hp_flat"]) * (1.0 + b["hp_pct"])
 	max_mp = base["mp"] + base["mp_lvl"] * (level - 1) + b["mp_flat"]
 	# Movement speed is SOVEREIGN (player rule, 2026-07-06): no gear, gem
@@ -694,6 +705,13 @@ func current_atk() -> float:
 		# Conviction stance: Holy trades damage for mending, Retribution the
 		# reverse — sustain and damage are never simultaneous (round 48).
 		a *= Balance.PALADIN_HOLY_DMG if paladin_mode == "holy" else Balance.PALADIN_RETRI_DMG
+	if cls == "warrior" or cls == "paladin":
+		# PLATE res→damage (2026-07-08): the plate classes' damage-scaling axis —
+		# their over-stacked resistance (past the survival knee) answers as a
+		# little damage. SMALL and CAPPED: lifts the flat-class floor, never tops
+		# the charts. Their identity mirror to crit's crit_dmg.
+		a *= 1.0 + minf(Balance.PLATE_RES_DMG_CAP,
+			(physres + magres) * Balance.PLATE_RES_DMG_SCALE)
 	return a
 
 
@@ -1003,14 +1021,35 @@ func equip(item: Dictionary) -> void:
 		game.spawn_text(global_position + Vector2(0, -56),
 			"%s gear — not yours to wear." % item_cls.capitalize(), Color(1.0, 0.7, 0.5))
 		return
-	backpack.erase(item)
 	var slot: String = item["slot"]
+	# One special gem per STAT across your whole loadout (2026-07-08): refuse
+	# to equip an item whose special gem duplicates one already worn elsewhere.
+	for g in item.get("gems", []):
+		var st := String(g["stat"])
+		if st in Balance.SPECIAL_GEM_STATS and _special_in_other_slots(st, slot):
+			game.spawn_text(global_position + Vector2(0, -56),
+				"Already wearing a %s gem — one per stat." % Items.STAT_LABEL.get(st, st),
+				Color(1.0, 0.7, 0.5))
+			return
+	backpack.erase(item)
 	if equipment.has(slot):
 		backpack.append(equipment[slot])
 	equipment[slot] = item
 	recalc()
 	_update_weapon_visual()
 	game.sfx("equip")
+
+
+## Is a special gem of `stat` already socketed in an EQUIPPED item that isn't
+## the one in `except_slot`? The per-character special-gem limit's core check.
+func _special_in_other_slots(stat: String, except_slot: String) -> bool:
+	for slot in equipment:
+		if slot == except_slot:
+			continue
+		for g in equipment[slot].get("gems", []):
+			if String(g["stat"]) == stat:
+				return true
+	return false
 
 
 ## Move an equipped item back to the bag, leaving the slot empty. False =
@@ -1036,8 +1075,11 @@ func strip_gems(item: Dictionary) -> void:
 
 
 ## Socket a specific gem into a specific item (the player chooses both).
-## One SPECIAL gem (Haste/Lifesteal/Combo/Greed) per item — gems are the
-## gateway to off-build stats, never the highway (player rule, 2026-07-06).
+## TYPED SLOTS (2026-07-08): A+ gear has ONE special-only slot + regular
+## slots; B and below are regular-only. Special gems (Haste/Combo/Lifesteal/
+## Greed/CritDmg) go ONLY in the special slot, regular gems only in regular
+## slots — and specials are further limited to ONE of each stat across your
+## whole equipped loadout. Can't stack them, can't skip them.
 func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
 	if item.get("gems", []).size() >= item.get("gem_slots", 0):
 		return false
@@ -1048,12 +1090,43 @@ func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
 			"%s gear holds gems up to Lv%d." % [String(item.get("grade", "?")), lvl_lim],
 			Color(1.0, 0.7, 0.5))
 		return false
-	if String(gem["stat"]) in Balance.SPECIAL_GEM_STATS:
-		for socketed in item.get("gems", []):
-			if String(socketed["stat"]) in Balance.SPECIAL_GEM_STATS:
-				game.spawn_text(global_position + Vector2(0, -56),
-					"One special gem per item.", Color(1.0, 0.7, 0.5))
-				return false
+	# Typed-slot capacity: count what's already socketed by type.
+	var grade := String(item.get("grade", ""))
+	var spec_cap: int = Items.special_slots(grade)
+	var reg_cap: int = int(item.get("gem_slots", 0)) - spec_cap
+	var spec_used := 0
+	var reg_used := 0
+	for g in item.get("gems", []):
+		if String(g["stat"]) in Balance.SPECIAL_GEM_STATS:
+			spec_used += 1
+		else:
+			reg_used += 1
+	var stat := String(gem["stat"])
+	if stat in Balance.SPECIAL_GEM_STATS:
+		if spec_cap <= 0:
+			game.spawn_text(global_position + Vector2(0, -56),
+				"Special gems need an A-grade special slot.", Color(1.0, 0.7, 0.5))
+			return false
+		if spec_used >= spec_cap:
+			game.spawn_text(global_position + Vector2(0, -56),
+				"The special slot is already filled.", Color(1.0, 0.7, 0.5))
+			return false
+		# One of each special stat across the whole equipped loadout.
+		var dup := _special_in_other_slots(stat, String(item.get("slot", "")))
+		if not dup:
+			for socketed in item.get("gems", []):
+				if String(socketed["stat"]) == stat:
+					dup = true
+					break
+		if dup:
+			game.spawn_text(global_position + Vector2(0, -56),
+				"Only one %s gem may be equipped." % Items.STAT_LABEL.get(stat, stat),
+				Color(1.0, 0.7, 0.5))
+			return false
+	elif reg_used >= reg_cap:
+		game.spawn_text(global_position + Vector2(0, -56),
+			"No regular slot free (that's a special slot).", Color(1.0, 0.7, 0.5))
+		return false
 	item["gems"].append(gem)
 	gem_bag.erase(gem)
 	recalc()

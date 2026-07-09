@@ -88,25 +88,23 @@ const TREE_PRESETS := {
 	},
 }
 
-# Gem loadout — DPS-OPTIMAL (round 50): every item sockets 1 SPECIAL + 1
-# regular (A = 2 slots). Regular = ATK% (Ruby) for ALL — at Lv6 a Ruby is
-# +22.8% atk, and crit_dmg (Sunstone) only overtakes it above ~50%
-# effective crit, which no variant reaches after the 35% knee. Special =
-# HASTE/cdr (4 Lv6 → the 40% cap) vs COMBO (30% + a MANA REFUND). The
-# split is by mana profile, measured (round 50): Haste only wins when your
-# kit is free — warrior/assassin/paladin have free basics + cheap cd
-# abilities and never starve, so Haste is pure cadence. But Haste
-# ACCELERATES mana-costed cooldown abilities into starvation (archer
-# Multishot/Arrow Storm, warlock Hex/Rift, mage Firebolt all hit 0 MP on
-# Haste), so those three take COMBO — its refund sustains the casts Haste
-# would choke. Regular = ATK% (Ruby) for all (see above).
+# Gem loadout — DPS-OPTIMAL under the TYPED-SLOT rule (2026-07-08). A-gear =
+# 1 REGULAR slot (Ruby / ATK%, +22.8%/gem at Lv6) + 1 SPECIAL slot per piece;
+# 4 A pieces → 4 special slots that MUST each hold a DISTINCT special (one gem
+# per stat across gear). `_equip` fills special slots from `specials` and every
+# regular slot with a Ruby. DPS picks: `dmg_pct` (Sunstone — the universal
+# damage special, +22.8% atk) + combo on everyone; cdr for the free-basic
+# classes (warrior/paladin/assassin — pure cadence, no mana risk); the
+# mana-bound (archer/mage/warlock) SKIP cdr (it accelerates their costed
+# cooldowns toward starvation) and fill with the inert specials (lifesteal/
+# greed) instead. Plate res→damage is a kit passive, not a gem.
 const GEM_PRESETS := {
-	"warrior": {"*": {"special": "cdr", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
-	"paladin": {"*": {"special": "cdr", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
-	"assassin": {"*": {"special": "cdr", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
-	"archer": {"*": {"special": "combo", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
-	"mage": {"*": {"special": "combo", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
-	"warlock": {"*": {"special": "combo", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
+	"warrior":  {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
+	"paladin":  {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
+	"assassin": {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
+	"archer":   {"*": {"specials": ["dmg_pct", "combo", "lifesteal", "greed"]}},
+	"mage":     {"*": {"specials": ["dmg_pct", "combo", "lifesteal", "greed"]}},
+	"warlock":  {"*": {"specials": ["dmg_pct", "combo", "lifesteal", "greed"]}},
 }
 
 # Priority list attempted every physics frame (= holding the keys down;
@@ -160,6 +158,9 @@ var only_cls := ""
 var only_theme := ""
 var aoe := false
 var downtime := false
+var rep := -1           # --rep=N: independent RNG stream (parallel-mean fan)
+var standoff_override := -1.0  # --standoff=N: override STAND_OFF (fidelity probe)
+var knife_probe := false       # --knifeprobe: count avg knives/fan connecting
 var results: Array = []
 
 # --- rotation driver state (one case at a time) ---
@@ -170,6 +171,10 @@ var sim_t := 0.0
 var ult_until := -1.0
 var pala_swapped := false
 var ult_casts := 0
+# --knifeprobe: how many of the fan's blades geometrically connect on the
+# single boss (perp dist of each knife ray to the boss center <= body+dart r).
+var knife_fans := 0
+var knife_connects := 0
 # mana telemetry (round 49: "is the warlock running dry?")
 var mp_min := 0.0
 var mp_sum := 0.0
@@ -226,7 +231,7 @@ class BenchDummy extends Boss:
 
 	func take_damage(amount: float, _from_dir := Vector2.ZERO, is_crit := false, _silent := false) -> void:
 		if vuln_time > 0.0:
-			amount *= 1.5         # EXPOSED / Death Mark work like any live boss
+			amount *= vuln_mult   # EXPOSED / Death Mark work like any live boss (per-theme amp)
 		if hobble_t > 0.0:
 			amount *= 1.0 + Balance.HOBBLE_MULT  # failed slows scuff footing (49d)
 		m_active = true
@@ -271,7 +276,7 @@ class AddDummy extends Enemy:
 	func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, silent := false) -> void:
 		if dying or untargetable:
 			return
-		var credited: float = minf(amount * (1.5 if vuln_time > 0.0 else 1.0), hp)
+		var credited: float = minf(amount * (vuln_mult if vuln_time > 0.0 else 1.0), hp)
 		pool["dmg"] = float(pool["dmg"]) + credited
 		pool["hits"] = int(pool["hits"]) + 1
 		if is_crit:
@@ -303,6 +308,12 @@ func _parse_args() -> void:
 			aoe = true
 		elif a == "--downtime":
 			downtime = true
+		elif a.begins_with("--rep="):
+			rep = int(a.get_slice("=", 1))
+		elif a.begins_with("--standoff="):
+			standoff_override = float(a.get_slice("=", 1))
+		elif a == "--knifeprobe":
+			knife_probe = true
 
 
 func _run() -> void:
@@ -361,7 +372,10 @@ func _boss_stat_block(lvl: int) -> Dictionary:
 # ================================================================== a case
 
 func _run_case(cls: String, tid: String, block: Dictionary) -> void:
-	seed(hash(cls + "/" + tid) & 0x7FFFFFFF)  # crit/combo rolls reproducible
+	# Deterministic per case; --rep=N perturbs it so parallel repeats each
+	# draw an INDEPENDENT crit/combo stream (a real distribution to mean over).
+	var seed_key := cls + "/" + tid + ("/" + str(rep) if rep >= 0 else "")
+	seed(hash(seed_key) & 0x7FFFFFFF)
 	var p: Player = game.player
 	var anchor: Vector2 = game.room_center(0)
 
@@ -405,7 +419,8 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	else:
 		dummy = BenchDummy.spawn_bench(game, pack_center, DUMMY_LEVEL, block)
 		game.add_enemy(dummy)
-		p.global_position = dummy.home + Vector2(-float(STAND_OFF[cls]), 0)
+		var so: float = standoff_override if standoff_override >= 0.0 else float(STAND_OFF[cls])
+		p.global_position = dummy.home + Vector2(-so, 0)
 	p.facing = Vector2.RIGHT
 	p.locked_target = dummy
 	await _frames(3)
@@ -416,6 +431,8 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	ult_until = -1.0
 	pala_swapped = false
 	ult_casts = 0
+	knife_fans = 0
+	knife_connects = 0
 	mp_min = p.max_mp
 	mp_sum = 0.0
 	mp_frames = 0
@@ -468,9 +485,12 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 		r["mana"] = "  mp avg %d min %d%s" % [int(mp_sum / float(mp_frames)), int(mp_min),
 			("  STARVED " + ", ".join(starved_bits)) if not starved_bits.is_empty() else ""]
 	results.append(r)
-	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s%s" % [
+	var probe := ""
+	if knife_probe and knife_fans > 0:
+		probe = "  knives/fan %.2f (of 5, n=%d)" % [float(knife_connects) / float(knife_fans), knife_fans]
+	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s%s%s" % [
 		r["case"], r["dps"], r["total"], r["secs"], r["hps"], r["crit"],
-		r["peak"], r["ults"], int(r["atk"]), r["kills"], r["mana"]])
+		r["peak"], r["ults"], int(r["atk"]), r["kills"], r["mana"], probe])
 
 	# --- teardown: drop the targets, let in-flight effects (mists, rifts,
 	# meteors, storm arrows) resolve into nothing before the next case.
@@ -500,15 +520,27 @@ func _equip(p: Player, cls: String, tid: String) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = GEAR_SEED
 	var gems: Dictionary = _preset(GEM_PRESETS, cls, tid)
-	var regulars: Array = gems["regular"]
-	var i := 0
+	var specials: Array = gems.get("specials", [])
+	# TYPED SLOTS (2026-07-08): each A piece has 1 special slot + regular slots.
+	# Fill special slots from the DISTINCT `specials` list (one-per-stat rule);
+	# every regular slot is a Ruby (ATK%). No socket can be left empty or
+	# mis-typed — this is the max-DPS legal loadout under the new gem structure.
+	var spec_cap: int = Items.special_slots(GEAR_GRADE)
+	var spec_idx := 0
 	for slot in Items.SLOTS:
 		var noun: String = Items.class_weapon_noun(cls) if slot == "weapon" else ""
 		var item := Items.roll_item_of(slot, GEAR_GRADE, rng, cls, noun)
-		item["gems"] = [Items.make_gem(String(gems["special"]), GEM_LVL),
-			Items.make_gem(String(regulars[i % regulars.size()]), GEM_LVL)]
+		var glist: Array = []
+		var s_placed := 0
+		for _s in int(item.get("gem_slots", 0)):
+			if s_placed < spec_cap and spec_idx < specials.size():
+				glist.append(Items.make_gem(String(specials[spec_idx]), GEM_LVL))
+				spec_idx += 1
+				s_placed += 1
+			else:
+				glist.append(Items.make_gem("atk_flat", GEM_LVL))  # Ruby regular
+		item["gems"] = glist
 		p.equipment[slot] = item
-		i += 1
 	p._update_weapon_visual()
 
 
@@ -625,7 +657,26 @@ func _drive_assassin(p: Player) -> void:
 		p.facing = (dummy.global_position - p.global_position).normalized()
 		p.use_ability("a2")
 		return
+	var a3_ready: bool = p.cds["a3"] <= 0.0
 	p.use_ability("a3")
+	if knife_probe and a3_ready and p.cds["a3"] > 0.0:
+		_count_fan_connects(p)
+
+
+## Geometric count of how many of the shadow fan's 5 blades would connect on
+## the single boss from where the assassin is actually standing this cast.
+## Boss body r = 6*scale*0.7 (scale 6.5 -> 27.3) + dart r 9 = 36.3 threshold;
+## a knife at angle t clears if dist*sin(|t|) <= that. Blades: 5 @ 0.15 step.
+func _count_fan_connects(p: Player) -> void:
+	var dist: float = p.global_position.distance_to(dummy.global_position)
+	var hit_r := 6.0 * 6.5 * 0.7 + 9.0
+	var connects := 0
+	for i in 5:
+		var ang: float = absf((float(i) - 2.0) * 0.15)
+		if dist * sin(ang) <= hit_r:
+			connects += 1
+	knife_fans += 1
+	knife_connects += connects
 
 
 # ================================================================== plumbing

@@ -252,6 +252,11 @@ const DASH_CONNECT_FLOOR := 1.0
 const DASH_RIDER_CAP := 2
 const DASH_CDR_TO_DMG := 0.75    # per second of floor-eaten cd -> +dash-HIT dmg
 const DASH_CDR_TO_ANIM := 0.25   # per second eaten -> anim speedup (capped at 10%)
+# Shadow phantom step (2026-07-08): the dash arms a refund window instead of
+# only refunding on the dash's OWN kill — ANY kill within this many seconds
+# (the Fan or ult-stab that actually does the killing) slashes the dash cd.
+# Fixes the feast-or-famine dash whose kills came from other buttons.
+const PHANTOM_REFUND_WINDOW := 2.0
 
 # ------------------------------------------------------- paladin stances ---
 # Round 48: the paladin is a STANCE knight — no true ult. Conviction (the
@@ -528,7 +533,21 @@ const CAP_CRIT := 0.35       # the old 70%-curve was far too generous
 const CAP_EVA := 0.50        # nothing approaches unhittable
 const CAP_GREED := 0.40
 const CAP_RES_FRAC := 0.80   # damage REDUCTION knee: >80% pays 1/10
-const SPECIAL_GEM_STATS := ["cdr", "lifesteal", "combo", "greed"]
+# SPECIAL gem stats (2026-07-08): gem-ONLY, and each lives in the dedicated
+# A+ SPECIAL slot, ONE gem of each stat across your whole loadout (not a
+# stack). `dmg_pct` (Sunstone) is the UNIVERSAL damage special — it replaced
+# the crit-only crit_dmg gem so the forced special slot lifts every class,
+# not just crit builds. crit_dmg is now gem-less (base + talents only) and
+# stripped from gear.
+const SPECIAL_GEM_STATS := ["cdr", "lifesteal", "combo", "greed", "dmg_pct"]
+
+# PLATE res→damage (2026-07-08): warrior/paladin convert their (over-stacked,
+# past-the-knee) resistance into a little DAMAGE — a scaling axis on a stat
+# they already accumulate, the flat-class answer to crit's crit_dmg. Tuned
+# SMALL and CAPPED so a tank never tops the dps charts (ranged/assassin still
+# out-dps them on bosses) — it lifts their floor, it isn't 1M armor = 1M dmg.
+const PLATE_RES_DMG_SCALE := 0.001   # +0.1% damage per point of (physres + magres)
+const PLATE_RES_DMG_CAP := 0.30      # hard ceiling on the res→damage bonus
 
 # Boss gem-expectation ramp (player-approved, 2026-07-06): the TIERLIST
 # benchmark was gemless, but real players arrive with sockets filled —

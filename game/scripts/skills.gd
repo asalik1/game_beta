@@ -104,7 +104,7 @@ const TREES := {
 		],
 		[
 			{"id": "s30", "name": "Plaguebearer", "desc": "+1% total damage", "bonus": {"atk_pct": 0.01}},
-			{"id": "s31", "name": "Phantom",      "desc": "+3% crit damage", "bonus": {"crit_dmg": 0.03}},
+			{"id": "s31", "name": "Phantom",      "desc": "+2% crit damage", "bonus": {"crit_dmg": 0.02}},
 			{"id": "s32", "name": "Exsanguinate", "desc": "Shadow Dash connect-refund +2.5% (toward the 1s floor)", "bonus": {"dash_refund": 0.025}},
 		],
 	],

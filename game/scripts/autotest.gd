@@ -962,11 +962,11 @@ func _run_systems() -> void:
 	var socketed_item: Dictionary = game.player.equipment["weapon"]
 	socketed_item["gems"].clear()
 	game.player.gem_bag.clear()
-	game.player.gem_bag.append(Items.make_gem("atk_pct", 1))
+	game.player.gem_bag.append(Items.make_gem("atk_flat", 1))
 	if not game.player.embed_gem_into(socketed_item, game.player.gem_bag[0]):
 		return _fail("could not socket the auto-synth test gem")
 	for i in 11:
-		game.player.gem_bag.append(Items.make_gem("atk_pct", 1))
+		game.player.gem_bag.append(Items.make_gem("atk_flat", 1))
 	# 1 socketed L1 + 11 bag L1: socketed eats 2 (->L2), bag 9 -> 3xL2,
 	# socketed eats 2 L2 (->L3), 1 L2 remains. 5 upgrades total.
 	var ups: int = game.player.auto_synthesize()
@@ -2266,20 +2266,65 @@ func _test_retention() -> void:
 		return _fail("B gear refused a legal Lv3 gem")
 	game.player.gem_bag.erase(g_lv4)
 
-	# --- one special gem per item ---
-	var host := {"slot": "weapon", "grade": "S", "name": "t", "noun": "Blade",
-		"main": {}, "subs": {}, "plus": 0, "gem_slots": 3, "gems": []}
-	var g_ls := Items.make_gem("lifesteal", 1)
-	var g_cb := Items.make_gem("combo", 1)
-	var g_rb := Items.make_gem("atk_pct", 1)
-	game.player.gem_bag.append_array([g_ls, g_cb, g_rb])
-	if not game.player.embed_gem_into(host, g_ls):
-		return _fail("first special gem was refused")
-	if game.player.embed_gem_into(host, g_cb):
-		return _fail("second special gem was accepted (one per item!)")
-	if not game.player.embed_gem_into(host, g_rb):
-		return _fail("a normal gem was refused by the special-gem rule")
-	game.player.gem_bag.erase(g_cb)
+	# --- typed gem slots + one special per stat (2026-07-08) ---
+	if not ("dmg_pct" in Balance.SPECIAL_GEM_STATS):
+		return _fail("dmg_pct should be a special gem stat now (gem-only)")
+	# SNAPSHOT + strip equipped specials (autotest rule); RESTORE at the end.
+	var _saved_gems := {}
+	for eslot in game.player.equipment:
+		_saved_gems[eslot] = game.player.equipment[eslot].get("gems", []).duplicate(true)
+		var eg: Array = game.player.equipment[eslot].get("gems", [])
+		for gi in range(eg.size() - 1, -1, -1):
+			if String(eg[gi]["stat"]) in Balance.SPECIAL_GEM_STATS:
+				eg.remove_at(gi)
+	# B gear is REGULAR-ONLY: a special gem is refused, a regular fits.
+	var b_item := {"slot": "charm", "grade": "B", "name": "b", "noun": "Charm",
+		"main": {}, "subs": {}, "plus": 0, "gem_slots": 1, "gems": []}
+	var g_cd := Items.make_gem("dmg_pct", 3)
+	var g_rb := Items.make_gem("atk_flat", 3)
+	game.player.gem_bag.append_array([g_cd, g_rb])
+	if game.player.embed_gem_into(b_item, g_cd):
+		return _fail("B gear accepted a special gem (it has no special slot)")
+	if not game.player.embed_gem_into(b_item, g_rb):
+		return _fail("B gear refused a regular gem in its regular slot")
+	# A gear = 1 regular + 1 special: one of each fits, a 2nd of either refused.
+	var a_item := {"slot": "boots", "grade": "A", "name": "a", "noun": "Boots",
+		"main": {}, "subs": {}, "plus": 0, "gem_slots": 2, "gems": []}
+	var g_cd2 := Items.make_gem("dmg_pct", 6)
+	var g_cb := Items.make_gem("combo", 6)
+	var g_rb2 := Items.make_gem("atk_flat", 6)
+	var g_rb3 := Items.make_gem("atk_flat", 6)
+	game.player.gem_bag.append_array([g_cd2, g_cb, g_rb2, g_rb3])
+	if not game.player.embed_gem_into(a_item, g_rb2):
+		return _fail("A gear refused a regular gem in its regular slot")
+	if not game.player.embed_gem_into(a_item, g_cd2):
+		return _fail("A gear refused a special gem in its special slot")
+	if game.player.embed_gem_into(a_item, g_rb3):
+		return _fail("A gear accepted a 2nd regular gem (only 1 regular slot)")
+	if game.player.embed_gem_into(a_item, g_cb):
+		return _fail("A gear accepted a 2nd special gem (only 1 special slot)")
+	# One special per STAT across gear: inject a dmg_pct into an equipped item,
+	# then a fresh A item's special slot refuses another dmg_pct.
+	var cross_slot := ""
+	for s in game.player.equipment:
+		cross_slot = s
+		break
+	if cross_slot != "":
+		game.player.equipment[cross_slot].get("gems", []).append(Items.make_gem("dmg_pct", 6))
+		var a2 := {"slot": ("armor" if cross_slot == "weapon" else "weapon"), "grade": "A",
+			"name": "a2", "noun": "X", "main": {}, "subs": {}, "plus": 0, "gem_slots": 2, "gems": []}
+		var g_cd3 := Items.make_gem("dmg_pct", 6)
+		game.player.gem_bag.append(g_cd3)
+		if game.player.embed_gem_into(a2, g_cd3):
+			return _fail("a 2nd dmg_pct accepted while one is worn (one per stat across gear!)")
+		game.player.gem_bag.erase(g_cd3)
+	# RESTORE.
+	for eslot in _saved_gems:
+		game.player.equipment[eslot]["gems"] = _saved_gems[eslot]
+	for gg in [g_cd, g_cb, g_rb3]:
+		game.player.gem_bag.erase(gg)
+	game.player.recalc()
+	print("ok: typed gem slots (B regular-only, A = 1 regular + 1 special, one special per stat across gear)")
 
 	# --- class lock: another class's gear refuses to be worn ---
 	var other_cls: String = "mage" if game.player.cls != "mage" else "warrior"

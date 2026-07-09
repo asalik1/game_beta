@@ -216,9 +216,12 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		return
 	var dmg: float = result["dmg"]
 	var is_crit: bool = result["crit"]
-	# Shadow opportunist: stunned or slowed prey always crits.
-	if effects.get("opportunist", 0) and dmg_type != "true" \
-			and not is_crit and (e.stun_time > 0.0 or e.slow_time > 0.0):
+	# Shadow marked_crit: your MARKED / EXPOSED prey always crits. Keyed on
+	# vuln_time (Death Mark, Exposed) — NOT stun/slow, which a boss converts to
+	# concussion and never actually applies, so this fires on bosses too (the
+	# old "stunned/slowed prey" opportunist was dead on every boss door).
+	if effects.get("marked_crit", 0) and dmg_type != "true" \
+			and not is_crit and e.vuln_time > 0.0:
 		is_crit = true
 		dmg *= crit_dmg
 	# Hunt: a lined-up shot cannot fail to crit.
@@ -305,6 +308,14 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 
 	var dir := (e.global_position - global_position).normalized()
 	e.take_damage(dmg, dir, is_crit)
+	# Shadow phantom step: a dash armed a refund window — the kill that closes
+	# it (usually the Fan or ult-stab, rarely the dash itself) slashes the dash
+	# cd. One refund per window; a fresh dash re-arms it.
+	if dash_refund_t > 0.0 and dash_refund_frac > 0.0 and (e.dying or e.hp <= 0.0):
+		cds["a2"] = maxf(Balance.DASH_CONNECT_FLOOR, cds["a2"] * (1.0 - dash_refund_frac))
+		dash_refund_t = 0.0
+		dash_refund_frac = 0.0
+		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
 	# A Ninja-pack impact burst punctuates a CRIT (CC0) — elemental when
 	# themed, a warm shockburst otherwise. Single-target only: AoE and echo
 	# sub-hits stay quiet so a crowd hit doesn't turn to confetti.

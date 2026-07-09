@@ -39,18 +39,21 @@ func _shadow_dash(f := 1.0) -> void:
 	# mult (near/far) is applied per victim inside _dash_strike. The eaten-cdr
 	# bonus rides the HIT mult only, leaving the surge rider (stab_rider = f) clean.
 	var dash_mult := 1.2 * f * (1.0 + eaten * Balance.DASH_CDR_TO_DMG)
-	var kills := _dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), dash_mult, {"stagger": 0.4}, f, 0.0)
+	if _tfx.has("kill_refund"):
+		# Shadow phantom step: ARM the refund window BEFORE the strike, so a kill
+		# from ANY source in the next PHANTOM_REFUND_WINDOW seconds refunds the
+		# dash — the dash's own kill (caught during _dash_strike below) still
+		# counts, but so does the Fan or ult-stab that usually does the killing.
+		# The actual refund lands in hit_enemy. Still floored (DASH_CONNECT_FLOOR),
+		# so room-chaining never strobes.
+		dash_refund_t = Balance.PHANTOM_REFUND_WINDOW
+		dash_refund_frac = float(_tfx["kill_refund"])
+	_dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), dash_mult, {"stagger": 0.4}, f, 0.0)
 	if s_passive() == "mirrorstep":
 		_mirrorstep_guard(start)
 	if _tfx.get("trail_mist", 0):
 		# Poison: the dash line blooms into a toxic wake.
 		_mist((start + global_position) / 2.0, 110.0, 0.3, _tcolor, 2.5)
-	if kills > 0 and _tfx.has("kill_refund"):
-		# Shadow: a kill refunds most of the cooldown — but still floored, so
-		# even room-chaining never drops into sub-second strobe territory.
-		cds["a2"] = maxf(Balance.DASH_CONNECT_FLOOR,
-			cds["a2"] * (1.0 - float(_tfx["kill_refund"])))
-		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
 
 
 ## Excess cdr past Shadow Dash's cd floor isn't wasted — this returns the
@@ -127,6 +130,9 @@ func _death_mark() -> void:
 	# Dash's 0.5s — commit to the kill, not to the chip damage.
 	hurt_cd = maxf(hurt_cd, 0.8)
 	target.vuln_time = 5.0
+	# Default mark is +50%; shadow's ult carries a leaner "vuln": 0.40 override
+	# (its power lives in the marked-window guaranteed crits, not the amp).
+	target.vuln_mult = 1.0 + float(_tfx.get("vuln", 0.5))
 	_stun_or_concuss(target, 0.6)
 	if _tfx.has("mark_dot"):
 		# Poison: the mark itself rots the target (and stacks toxin).

@@ -108,7 +108,7 @@ const S_GEAR := {
 		"weapon": {"name": "Stormcaller, Bow of the Tempest", "passive": "windward", "noun": "Bow"},
 		"armor":  {"name": "Cloak of a Thousand Leaves", "subs": {"hp_pct": 0.10, "eva": 0.05}},
 		"boots":  {"name": "Zephyr's Grace",             "subs": {"dex": 8.0, "crit": 0.06}},
-		"charm":  {"name": "The Hawk God's Eye",         "subs": {"crit": 0.10, "crit_dmg": 0.30}},
+		"charm":  {"name": "The Hawk God's Eye",         "subs": {"crit": 0.10, "atk_pct": 0.12}},
 	},
 	"mage": {
 		"weapon": {"name": "Heart of the Phoenix", "passive": "wellspring", "noun": "Staff"},
@@ -120,7 +120,7 @@ const S_GEAR := {
 		"weapon": {"name": "Nightfang, Kiss of the Abyss", "passive": "mirrorstep", "noun": "Fang"},
 		"armor":  {"name": "Shroud of Silence", "subs": {"hp_pct": 0.08, "eva": 0.04}},
 		"boots":  {"name": "Whisperwind",       "subs": {"dex": 8.0, "crit": 0.05}},
-		"charm":  {"name": "The Bloodpact",     "subs": {"crit": 0.08, "crit_dmg": 0.25}},
+		"charm":  {"name": "The Bloodpact",     "subs": {"crit": 0.08, "atk_pct": 0.10}},
 	},
 	"paladin": {
 		"weapon": {"name": "Dawnbreaker, Hammer of the Highfather", "passive": "dawnbreaker", "noun": "Hammer"},
@@ -150,6 +150,23 @@ const PASSIVES := {
 # Synthesis: 3 gems of the same stat & level -> 1 gem of the next level.
 
 const GEM_SLOTS := {"F": 0, "E": 0, "D": 0, "C": 0, "B": 1, "A": 2, "S": 3}
+# A+ gear unlocks ONE dedicated SPECIAL slot that ONLY takes special gems
+# (Balance.SPECIAL_GEM_STATS); every other socket is REGULAR and takes only
+# regular gems (2026-07-08). So B = 1 regular; A = 1 regular + 1 special;
+# S = 2 regular + 1 special. You can't stack specials (one slot, and one gem
+# per stat across gear), and you can't skip them (a regular gem can't go in
+# the special slot). Reforge-added sockets are always regular (this stays 1).
+const GEM_SPECIAL_SLOTS := {"F": 0, "E": 0, "D": 0, "C": 0, "B": 0, "A": 1, "S": 1}
+
+
+## How many SPECIAL-only slots this grade's gear carries (A+ = 1, else 0).
+static func special_slots(grade: String) -> int:
+	return int(GEM_SPECIAL_SLOTS.get(grade, 0))
+
+
+## How many REGULAR-only slots (total sockets minus the special one).
+static func regular_slots(grade: String) -> int:
+	return int(GEM_SLOTS.get(grade, 0)) - int(GEM_SPECIAL_SLOTS.get(grade, 0))
 const GEM_MAX_LEVEL := 10
 # A vessel holds what it can bear (player rule, 2026-07-06): each grade
 # caps the gem LEVEL it can socket — deep gems need endgame gear.
@@ -157,10 +174,10 @@ const GEM_LEVEL_LIMIT := {"F": 0, "E": 0, "D": 0, "C": 0, "B": 3, "A": 6, "S": 1
 
 # stat -> [display name, base value per level-ish, color]
 const GEM_STATS := {
-	"atk_pct":  {"name": "Ruby",      "base": 0.02,  "color": Color(1.0, 0.3, 0.3)},
+	"atk_flat": {"name": "Ruby",      "base": 1.0,   "color": Color(1.0, 0.3, 0.3)},  # FLAT atk (+1/lvl-ish), NOT a % — a regular gem that doesn't scale, so stacking it can't runaway
 	"hp_pct":   {"name": "Garnet",    "base": 0.025, "color": Color(0.9, 0.45, 0.45)},
 	"crit":     {"name": "Topaz",     "base": 0.012, "color": Color(1.0, 0.8, 0.3)},
-	"crit_dmg": {"name": "Sunstone",  "base": 0.04,  "color": Color(1.0, 0.6, 0.2)},
+	"dmg_pct":  {"name": "Sunstone",  "base": 0.02,  "color": Color(1.0, 0.6, 0.2)},  # universal DAMAGE increase (special slot); replaced the crit-only crit_dmg gem
 	"cdr":      {"name": "Sapphire",  "base": 0.01,  "color": Color(0.35, 0.55, 1.0)},
 	"combo":    {"name": "Opal",      "base": 0.01,  "color": Color(0.85, 0.9, 1.0)},
 	"physres":  {"name": "Onyx",      "base": 4.0,   "color": Color(0.5, 0.5, 0.6)},
@@ -361,7 +378,7 @@ const CLASSES_DMG_TYPE := {
 # only terrain and abilities may touch it (dodging is life or death;
 # player rule 2026-07-06). Supersedes round 43's B-gate.
 const SUBSTATS := {
-	"atk_pct": 0.05, "hp_pct": 0.06, "crit": 0.03, "crit_dmg": 0.08,
+	"atk_pct": 0.05, "hp_pct": 0.06, "crit": 0.03,
 	"VIT": 3.0,
 	"physres": 9.0, "magres": 9.0, "critres": 6.0, "eva": 0.02, "dex": 4.0,
 	"physpen": 5.0, "magpen": 5.0, "mp_flat": 12.0,
@@ -370,7 +387,7 @@ const SUBSTATS := {
 const STAT_LABEL := {
 	"atk_flat": "ATK", "hp_flat": "HP", "atk_pct": "ATK%", "hp_pct": "HP%",
 	"STR": "STR", "AGI": "AGI", "INT": "INT", "VIT": "VIT",
-	"crit": "Crit", "crit_dmg": "CritDmg", "cdr": "Haste", "speed_pct": "Speed",
+	"crit": "Crit", "crit_dmg": "CritDmg", "dmg_pct": "Damage", "cdr": "Haste", "speed_pct": "Speed",
 	"lifesteal": "Lifesteal", "greed": "Greed", "mp_flat": "MP",
 	"physres": "PhysRes", "magres": "MagRes", "critres": "CritRes",
 	"eva": "EVA", "dex": "DEX", "physpen": "PhysPen", "magpen": "MagPen",
