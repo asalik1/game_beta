@@ -204,13 +204,23 @@ func _audit_chapter(chid: String) -> void:
 		[replay_gold, replay_gems_total, replay_gold / REPLAY_MIN, replay_gems_total / REPLAY_MIN, int(REPLAY_MIN)])
 
 
+## The level a player is expected to hold in a chapter (its final boss's
+## story level) — potion prices are LEVEL-keyed now, so the sink table maps
+## each chapter to its expected-hero price.
+func _chapter_story_level(chid: String) -> int:
+	var best := 1
+	for z in Story.CHAPTER_LIST.get(chid, {}).get("zones", []):
+		best = maxi(best, int(z.get("boss_level", 0)))
+	return maxi(best, 1)
+
+
 func _sinks() -> void:
 	print("")
 	print("--- SINKS (base prices, before haggle 0.9-1.1) ---")
 	var pots: Array = []
 	for pchid in Balance.CHAPTER_ECON:
-		pots.append("%s %dg" % [pchid, Balance.potion_price(String(pchid))])
-	print("  potion (chapter-scaled): " + " | ".join(pots))
+		pots.append("%s %dg" % [pchid, Balance.potion_price(_chapter_story_level(String(pchid)))])
+	print("  potion (LEVEL-scaled, shown at each chapter's story level): " + " | ".join(pots))
 	print("  mana draught %d | elixir %d | recall %d" %
 		[Balance.CONSUMABLE_PRICES["mana_potion"], Balance.CONSUMABLE_PRICES["elixir_might"],
 		Balance.CONSUMABLE_PRICES["recall_scroll"]])

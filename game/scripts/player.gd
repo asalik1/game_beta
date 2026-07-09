@@ -449,7 +449,7 @@ func drink_potion() -> void:
 	spend_health_potion()
 	room_potions["health"] = int(room_potions.get("health", 1)) - 1
 	game.fight_note_potion()
-	hp = minf(max_hp, hp + max_hp * Balance.POTION_HEAL_FRAC * constancy_heal_mult())
+	hp = minf(max_hp, hp + (max_hp - hp) * Balance.POTION_HEAL_FRAC * constancy_heal_mult())
 	game.sfx("potion")
 	game.spawn_text(global_position + Vector2(0, -40), "+HP", Color(0.4, 1.0, 0.4))
 	if int(room_potions.get("health", 0)) <= 0:

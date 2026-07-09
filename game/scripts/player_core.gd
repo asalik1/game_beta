@@ -822,9 +822,12 @@ func consumable_count(id: String) -> int:
 # Capacity counts UNITS, not kinds (round 52b): every gear item, every
 # gem, and every consumable UNIT eats one bag slot. Stacking is purely a
 # DISPLAY convenience (the inventory groups "Mana Potion x12"), but all 12
-# count here — 20 potions really is 20 slots.
+# count here — 20 potions really is 20 slots. 2026-07-09 v2: HEALTH
+# potions joined the count — `potions`/`potions_free` stay counters
+# internally (save format unchanged), but every owned potion occupies a
+# slot like any other consumable unit (bag tiers grew +5 to compensate).
 func bag_used() -> int:
-	return backpack.size() + gem_bag.size() + consumables.size()
+	return backpack.size() + gem_bag.size() + consumables.size() + potion_count()
 
 
 # Bag-full adds return false with NO side effects — the caller decides
@@ -883,6 +886,14 @@ func potion_slot_cap() -> int:
 ## ch1-3 teaching freebie (potions_free).
 func potion_count() -> int:
 	return potions + potions_free
+
+
+## Merchant buy guard: bought stock is capped (POTION_MAX) and every
+## potion occupies a bag slot (2026-07-09 v2) — a full bag refuses the
+## sale, same rule as gear/gems/consumables. No side effects; the shop
+## shows the standard "Bag full!" feedback.
+func can_gain_potion() -> bool:
+	return potions < Balance.POTION_MAX and bag_used() < bag_capacity()
 
 
 ## Consume one health potion from stock — the EXPIRING freebie first (it
@@ -951,8 +962,20 @@ func cycle_potion() -> void:
 
 
 ## Inventory loadout editing: SHIFT-click adds one slot of this type,
-## CTRL-click removes one. Health fills whatever is left unassigned.
+## CTRL-click removes one. Health fills whatever is left unassigned —
+## so "planning health" (the bag's Health Potion entry, 2026-07-09 v2)
+## frees the NEWEST assigned slot back to the health fill.
 func loadout_add(id: String) -> void:
+	if id == "health":
+		if potion_rotation.is_empty():
+			game.spawn_text(global_position + Vector2(0, -52),
+				"Loadout is already pure health", Color(0.7, 0.9, 1.0))
+			return
+		var freed: String = String(potion_rotation.pop_back())
+		if active_potion == freed and not potion_rotation.has(freed):
+			active_potion = "health"
+		game.sfx("ui_click")
+		return
 	if not (id in Items.ROTATION_POTIONS):
 		return
 	if potion_rotation.size() >= potion_slot_cap():
@@ -1029,6 +1052,9 @@ func use_consumable(c: Dictionary) -> void:
 			game.sfx("potion", 0.75)
 			game.spawn_text(global_position + Vector2(0, -56), "WARDED!", Color(0.5, 0.8, 1.0))
 		"renewal_draught":
+			if potion_cd > 0.0:
+				return  # shares the drink cooldown — no chain-chugging past the gate
+			potion_cd = 0.6
 			gain_hp(max_hp * Balance.RENEWAL_HEAL_FRAC)
 			consumables.erase(c)
 			game.sfx("potion", 1.15)

@@ -747,6 +747,39 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					]
 					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
+		# Health potions (2026-07-09 v2): stored as a COUNTER
+		# (potions/potions_free) but they occupy bag slots like any unit,
+		# so they render here as VIRTUAL stack entries — bought stock and
+		# the expiring chapter gift separately. Clicking one plans the
+		# loadout, exactly what the HUD potion tooltip promises. No Use
+		# (Q drinks via the room budget) and no Drop (sell spares at any
+		# merchant instead).
+		var pot_stacks: Array = []
+		if p.potions > 0:
+			pot_stacks.append([p.potions, "", Color(1.0, 0.5, 0.5),
+				"Mends 25%% of your MISSING health. Drink with [%s] in the field (per-room budget); sell spare stock at any merchant. Each potion rides in your bags — one slot per potion." % OS.get_keycode_string(game.binds["potion"])])
+		if p.potions_free > 0:
+			pot_stacks.append([p.potions_free, " (chapter gift)", Color(1.0, 0.78, 0.45),
+				"The chapter's free teaching potion — drunk FIRST, never sellable, and it EXPIRES the moment you leave this chapter. It still takes a bag slot while you hold it."])
+		for ps in pot_stacks:
+			var pn: int = ps[0]
+			var psuf: String = ps[1]
+			var pcol: Color = ps[2]
+			var pdesc: String = ps[3]
+			_bag_slot(grid, Art.tex("potion"), ("x%d" % pn) if pn > 1 else "", pcol,
+				func() -> void:
+					var info := pdesc
+					info += "\n\nLoadout: %d/%d slots assigned to other potions — every UNASSIGNED slot drinks as HEALTH. [%s] cycles potions in the field." % [
+						p.potion_rotation.size(), p.potion_slot_cap(),
+						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]
+					var actions: Array = []
+					if not p.potion_rotation.is_empty():
+						actions.append(["  ＋  Plan a slot back to health  ", Color(0.7, 0.9, 1.0),
+							func() -> void:
+								game.player.loadout_add("health")
+								open_inventory("gear", cat)])
+					_open_detail_popover(Art.tex("potion"), "Health Potion%s  x%d" % [psuf, pn],
+						pcol, info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
 		# Consumables STACK by id (playtest 2026-07-07): one slot per
 		# type, count in the tooltip, click uses ONE.
 		var cgroups := {}
@@ -1830,12 +1863,17 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	_lbl(buy, "— Consumables —", 13, Color(0.62, 0.64, 0.7))
 	# Potion price scales with the chapter (2026-07-09 investment round):
 	# potions heal % HP, so their value — and price — grows with the game.
-	var potion_cost := int(ceil(float(Balance.potion_price(game.chapter_id)) * haggle))
+	var potion_cost := int(ceil(float(Balance.potion_price(game.player.level)) * haggle))
 	var buy_potion := func() -> void:
-		if p.gold >= potion_cost and p.potions < Balance.POTION_MAX:
-			p.gold -= potion_cost
-			p.potions += 1
-			game.sfx("potion")
+		if p.gold >= potion_cost:
+			# Potions occupy bag slots (2026-07-09 v2): a full bag blocks
+			# the buy with the standard feedback, same as the alchemist shelf.
+			if p.can_gain_potion():
+				p.gold -= potion_cost
+				p.potions += 1
+				game.sfx("potion")
+			elif p.potions < Balance.POTION_MAX:
+				game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
 		open_shop(zone)
 	var hpb := _btn(buy, "Health Potion — %d gold  (you have %d, max %d)" % [potion_cost, p.potion_count(), Balance.POTION_MAX],
 		buy_potion, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < Balance.POTION_MAX)
@@ -1847,7 +1885,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			["recall_scroll", Items.make_recall_scroll()]]:
 		var cid: String = spec[0]
 		var made: Dictionary = spec[1]
-		var ccost := int(ceil(float(Balance.CONSUMABLE_PRICES[cid]) * haggle))
+		var ccost := int(ceil(float(Balance.consumable_price(cid, p.level)) * haggle))
 		var buy_cons := func() -> void:
 			if p.gold >= ccost:
 				# Gold only moves when the item actually lands in the bag.

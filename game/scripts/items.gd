@@ -214,9 +214,12 @@ static func random_gem(rng: RandomNumberGenerator, lvl := 1, allow_special := tr
 # slots SUM. Bags drop from bosses/elites (act-tiered) and stock cheap at
 # merchants. Round 52b: capacity counts UNITS not kinds — every gem and
 # consumable UNIT takes a slot (stacking is DISPLAY-only), so the curve is
-# bumped one step (F 10 .. S 40, +5/tier) to compensate. Capacity spans
-# 1 bag (10) to 5xS (200). Stacking bags is the growth axis, not one bag.
-const BAG_SLOTS := {"F": 10, "E": 15, "D": 20, "C": 25, "B": 30, "A": 35, "S": 40}
+# bumped one step to compensate. 2026-07-09 v2: HEALTH POTIONS occupy
+# slots too (they stay a counter internally but count as units and render
+# in the bag), so every tier grew +5 again (F 15 .. S 45, +5/tier).
+# Capacity spans 1 bag (15) to 5xS (225). Stacking bags is the growth
+# axis, not one bag.
+const BAG_SLOTS := {"F": 15, "E": 20, "D": 25, "C": 30, "B": 35, "A": 40, "S": 45}
 const BAG_NAMES := {
 	"F": "Frayed Pouch", "E": "Patched Satchel", "D": "Soldier's Knapsack",
 	"C": "Knight's Rucksack", "B": "Runed Haversack", "A": "Dragonhide Duffel",

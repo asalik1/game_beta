@@ -1176,15 +1176,20 @@ func _run_systems() -> void:
 
 	# 6. Shop + codex + map still open fine.
 	game.player.gold = 500
-	# Inventory must survive a gem hoard (compact grid + capped scroll).
+	# Inventory must survive a gem hoard (compact grid + capped scroll) —
+	# and render the virtual health-potion stacks (2026-07-09 v2: potions
+	# take bag slots and show as clickable stack entries).
 	for i in 40:
 		game.player.gem_bag.append(Items.random_gem(game.loot_rng, 1 + (i % 5)))
+	var keep_pot2: int = game.player.potions
+	game.player.potions = 2
 	game.menus.open_inventory()
 	await _frames(2)
 	if not game.menus.is_open():
 		return _fail("inventory did not open with a 40-gem bag")
 	game.menus.close()
 	game.player.gem_bag.clear()
+	game.player.potions = keep_pot2
 	await _frames(1)
 	game.menus.open_shop(0)
 	await _frames(2)
@@ -2094,15 +2099,16 @@ func _test_bags_discard() -> void:
 	if p.gold != gold0 + Balance.BAG_SELL_GOLD:
 		return _fail("displaced bag did not cash for exactly 1g")
 
-	# --- slot curve (round 52b): F=10 base, +5 per tier, S=40 -------------
-	if int(Items.BAG_SLOTS["F"]) != 10 or int(Items.BAG_SLOTS["S"]) != 40:
-		return _fail("bag slot curve endpoints drifted (want F=10, S=40)")
+	# --- slot curve (2026-07-09 v2): F=15 base, +5 per tier, S=45 ---------
+	# (every tier +5 over round 52b to compensate health potions taking slots)
+	if int(Items.BAG_SLOTS["F"]) != 15 or int(Items.BAG_SLOTS["S"]) != 45:
+		return _fail("bag slot curve endpoints drifted (want F=15, S=45)")
 	for gi in range(1, Items.GRADES.size()):
 		var lo: int = int(Items.BAG_SLOTS[Items.GRADES[gi - 1]])
 		var hi: int = int(Items.BAG_SLOTS[Items.GRADES[gi]])
 		if hi - lo != 5:
 			return _fail("bag curve is not +5/tier at %s" % Items.GRADES[gi])
-	# Starter is exactly two F bags = 20 slots.
+	# Starter is exactly two F bags = 30 slots.
 	if Balance.STARTER_BAGS != ["F", "F"] or Items.starter_bags().size() != 2:
 		return _fail("starter is not two F bags")
 
@@ -2113,11 +2119,19 @@ func _test_bags_discard() -> void:
 	var cap_cons: Array = p.consumables
 	var cap_gems: Array = p.gem_bag
 	var cap_bp2: Array = p.backpack
-	p.bags = [Items.make_bag("A")]   # 35 slots
+	var cap_pot: int = p.potions
+	var cap_potf: int = p.potions_free
+	p.bags = [Items.make_bag("A")]   # 40 slots
 	p.consumables = []
 	p.gem_bag = []
 	p.backpack = []
-	var used0: int = p.bag_used()    # 0
+	# Health potions occupy slots too (2026-07-09 v2): bought stock AND the
+	# free chapter potion each count as one unit.
+	p.potions = 2
+	p.potions_free = 1
+	var used0: int = p.bag_used()    # 3 — the potions alone
+	if used0 != 3:
+		return _fail("owned health potions (bought + free) must count as bag units")
 	for i in 30:
 		var pot := Items.make_mana_potion()   # ALL the same id
 		if not p.add_consumable(pot):
@@ -2134,10 +2148,20 @@ func _test_bags_discard() -> void:
 		return _fail("a FULL bag accepted another consumable (unit cap breach)")
 	if p.gain_gem(Items.make_gem("crit", 1)):
 		return _fail("a FULL bag accepted another gem (unit cap breach)")
+	# A full bag blocks the merchant potion buy (can_gain_potion is the
+	# shop's guard); freeing the potions' own slots re-opens it.
+	if p.can_gain_potion():
+		return _fail("a FULL bag must block a merchant health-potion buy")
+	p.potions = 0
+	p.potions_free = 0
+	if not p.can_gain_potion():
+		return _fail("freed potion slots must re-allow a health-potion buy")
 	p.bags = cap_bags
 	p.consumables = cap_cons
 	p.gem_bag = cap_gems
 	p.backpack = cap_bp2
+	p.potions = cap_pot
+	p.potions_free = cap_potf
 
 	# --- shop grey-out: no capacity gain -> buy is blocked ----------------
 	p.bags = []
@@ -2237,7 +2261,7 @@ func _test_bags_discard() -> void:
 	game.dropped_loot = keep_dropped
 	p.recalc()
 	await _frames(2)
-	print("ok: stacking bags (sum-capacity, keep-best-N, +5/tier curve, UNIT-counting, grey-out, act drops, shop price, migration) + discard-throw")
+	print("ok: stacking bags (sum-capacity, keep-best-N, +5/tier curve, UNIT-counting incl. health potions, grey-out, act drops, shop price, migration) + discard-throw")
 
 
 func _test_retention() -> void:

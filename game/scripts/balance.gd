@@ -92,19 +92,19 @@ const SHOP_BUY_MARKUP := 2.0         # commodity (below the act's rare tier) gra
 const MERCHANT_SELL_FRACTION := 0.45 # SELL = this x INTRINSIC value (Items.price / gem_gold_value), NOT farm-cost — no sell-spiral
 # Health potions are an INVESTMENT (2026-07-09 potion round): stock is
 # BOUGHT, never granted (the only freebie is the expiring ch1-3 teaching
-# potion — FREE_POTION_CHAPTERS below). They heal a % of max HP, so their
-# VALUE scales with progression — the price follows: POTION_PRICE is the
-# ch1 base, POTION_PRICE_MULT the per-chapter multiplier (ch8+ falls back
-# to the richest authored mult, same convention as the loot band tables).
-# Farm-minutes per potion stay roughly flat: the mult tracks the measured
-# g/min climb in CHAPTER_ECON. SELL stays on the flat ch1 base (menus.gd)
-# so cheap early potions can never be hauled forward for profit.
-const POTION_PRICE := 25             # ch1 base health-potion buy price
-const POTION_PRICE_MULT := {"ch1": 1.0, "ch2": 1.4, "ch3": 1.8, "ch4": 2.4,
-	"ch5": 3.2, "ch6": 4.0, "ch7": 5.0}
+# potion — FREE_POTION_CHAPTERS below). Heals are %-based, so a potion is
+# worth the same to a hero of any level — the price must follow the HERO,
+# not the shop's chapter (2026-07-09: chapter-keyed pricing let a L40
+# backtrack to ch1 for 25g potions — a free crutch via the road home).
+# POTION_PRICE is the L1 base; the per-level rate lands ~L40 at the same
+# ~5x endpoint the old chapter ladder measured (farm-minutes per potion
+# stay roughly flat vs CHAPTER_ECON g/min). SELL stays on the flat base
+# (menus.gd) so potions can never be hauled anywhere for profit.
+const POTION_PRICE := 60                 # L1 base buy price (2026-07-09: 25 was ~1% of ch1-clear wealth — dirt cheap; a heal must cost real coin)
+const POTION_PRICE_PER_LEVEL := 0.10     # +10% of base per level above 1
 
-static func potion_price(chid: String) -> int:
-	return int(round(POTION_PRICE * float(POTION_PRICE_MULT.get(chid, 5.0))))
+static func potion_price(level: int) -> int:
+	return int(round(POTION_PRICE * (1.0 + POTION_PRICE_PER_LEVEL * float(maxi(level, 1) - 1))))
 
 # Teaching exception, anti-farm (2026-07-09): ENTERING one of these chapters
 # grants ONE free health potion (player.potions_free) — it EXPIRES the moment
@@ -780,7 +780,10 @@ const RES_HUNGER_EXEC_MAX := 0.10     # dmg vs mobs below the wound line, at ful
 const RES_HUNGER_EXEC_AT := 0.25      # mob hp fraction that counts as "wounded"
 const RES_HUNGER_GOLD_MAX := 0.15     # bonus KILL gold at full lean
 const RES_CONSTANCY_HEAL_MAX := 0.25  # bonus potion healing at full lean
-const POTION_HEAL_FRAC := 0.6         # base health-potion heal (fraction of max hp)
+# Potion heals are MISSING-hp based (2026-07-09 rebalance): a 60%-of-max heal
+# ERASED a mistake; a helping hand mends a fraction of what you've LOST — worth
+# the most at death's door, worth nothing to a topped-off facetank.
+const POTION_HEAL_FRAC := 0.15        # health potion: fraction of MISSING hp (a hand up, never a crutch)
 
 # --------------------------------------------------------------- mailbox ---
 # Unclaimed mail (dropped-loot letters, event gifts) expires after this
@@ -852,9 +855,16 @@ const ELIXIR_MIGHT_DUR := 30.0   # seconds
 # not budgeted by it — a real reason to spend at the alchemist's shelf).
 const ELIXIR_WARD_AMT := 0.25    # incoming non-true damage cut while it holds
 const ELIXIR_WARD_DUR := 20.0    # seconds
-const RENEWAL_HEAL_FRAC := 0.5   # instant heal, fraction of MAX hp
+const RENEWAL_HEAL_FRAC := 0.3   # instant heal, fraction of MAX hp — the premium flask (shares the drink cd; level-priced ~2.5x a potion)
+# BASE prices (L1). The whole shelf LEVEL-SCALES like the health potion
+# (2026-07-09: flat prices went dirt-cheap against level-scaled income — a
+# 90g renewal at L40 was stronger AND cheaper than a health potion). SELL
+# stays on the flat base (menus.gd) so nothing hauls for profit.
 const CONSUMABLE_PRICES := {"mana_potion": 35, "elixir_might": 130, "recall_scroll": 55,
-	"elixir_ward": 110, "renewal_draught": 90}
+	"elixir_ward": 110, "renewal_draught": 150}
+
+static func consumable_price(id: String, level: int) -> int:
+	return int(round(float(CONSUMABLE_PRICES[id]) * (1.0 + POTION_PRICE_PER_LEVEL * float(maxi(level, 1) - 1))))
 
 # Gambling vendor (reworked 2026-07-09): the PITY machine — a gamble rolls
 # from the chapter's BOSS band (CHAPTER_BOSS_WEIGHTS), priced at the boss-

@@ -755,7 +755,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	for g2 in Items.GRADES:
 		m._lbl(bags, "%s   %s — %d slots" % [g2, Items.BAG_NAMES[g2], int(Items.BAG_SLOTS[g2])], 14, Items.GRADE_COLOR[g2])
 	for line2 in [
-		"Gear, gems and consumables all share your bags' slots — and EVERY unit counts: 20 potions take 20 slots (they only STACK for display). Equip up to %d bags at once — total capacity is the SUM of their slots (F pouch 10 … S hold 40). You start with two Frayed Pouches." % Balance.MAX_BAGS,
+		"Gear, gems, consumables — and your HEALTH POTIONS — all share your bags' slots, and EVERY unit counts: 20 potions take 20 slots (they only STACK for display). Equip up to %d bags at once — total capacity is the SUM of their slots (F pouch 15 … S hold 45). You start with two Frayed Pouches." % Balance.MAX_BAGS,
 		"Bags drop from BOSSES and elites (tier tracks the CHAPTER, matching its boss gear) and merchants stock them too — but a good bag costs real gold. Pick up one past your %d and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],
 		"Full bag? Click any loose gear, gem, or consumable to open its detail card and DROP it — fling it out to free a slot. New loot drops at your feet instead of vanishing — anything left on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
 		var bl := m._lbl(bags, String(line2), 13, Color(0.7, 0.72, 0.78))
@@ -773,7 +773,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	tl.custom_minimum_size = Vector2(880, 0)
 	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for util in [
-		"🜍 Health Potion — mends 60%% of max HP (carry up to %d). Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with the chapters. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter." % Balance.POTION_MAX,
+		"🜍 Health Potion — mends 15%% of your MISSING health (carry up to %d; each potion takes a bag slot and shows in your inventory — click the stack there to plan your loadout) — a helping hand, not an eraser: worth the most at death's door. Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with your level. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter." % Balance.POTION_MAX,
 		"🜁 Mana Draught — restore %d%% of your maximum mana. Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
 		"🜂 Elixir of Might — +%d%% damage for %ds. Pop it before a boss. Bought from merchants." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
 		"🜄 Elixir of Warding — cut incoming damage by %d%% for %ds. Bought from merchants." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)],

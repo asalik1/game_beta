@@ -1138,7 +1138,7 @@ func update_stats(p: Player) -> void:
 				box["border"].color = (Color(0.75, 0.35, 0.35) if p.potion_count() > 0 else Color(0.3, 0.15, 0.15)) \
 					if left > 0 else Color(0.18, 0.12, 0.12)
 				box["border"].set_meta("tip", _wrap_tip(
-					"Health Potion — mends 60%% of max HP (x%d carried, max %d — bought from merchants; the price grows with the chapters). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. [%s] cycles the loadout; open the inventory and click a potion to plan it." % [
+					"Health Potion — mends 15%% of your MISSING health (x%d carried, max %d — bought from merchants, each takes a bag slot; the price grows with your LEVEL). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. [%s] cycles the loadout; open the inventory and click a potion stack to plan it." % [
 						p.potion_count(), Balance.POTION_MAX,
 						left, p.potion_slot_cap(),
 						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]))
