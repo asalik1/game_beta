@@ -52,14 +52,11 @@ const ENEMY_DMG_MULT := 1.3     # ALL monster damage (round 10: "bosses don't hi
 # parity holds at ANY level, and gaps still bite (+10 = ~2x dmg = ~2
 # mistakes; +20 Nightmare = ~3x = brutal).
 const GROWTH_SCALE := 0.55
-# Bosses hit above their tables — the skill tilt (round 12/13). The
-# flat mult stacks with ENEMY_DMG_MULT and is CONSTANT at every level:
-# a boss always hits ~20% above parity, so out-playing the telegraphs
-# is always worth a gear grade. Boss damage GROWTH tracks the player
-# curve EXACTLY (round 13: at L42 a full-A-gear player found the old
-# compounding edge "a bit overtuned" — A-tier must beat at-level
-# bosses; S-tier is comfort + tier headroom, matching when S drops,
-# L40-70). Damage only: boss HP growth stays per-kind ("in tune").
+# Global BOSS damage factor (+20% skill tilt), constant at every level; trash
+# keeps its own ENEMY_DMG_MULT/MOB_DMG_MULT. A blunt global halving (2026-07-09)
+# was reverted — it fixed the over-tuned finale but made already-gentle EARLY
+# bosses trivial. Over-tuned bosses are trimmed per-kind in their base_dmg
+# instead, preserving the intro->finale difficulty ramp.
 const BOSS_DMG_MULT := 1.2
 # Boss GROWTH per level above native (2026-07-09 endgame-scaling pass). These
 # only bite when a boss is fought ABOVE its authored level (endgame/scaling
@@ -632,7 +629,7 @@ const CAP_RES_FRAC := 0.80   # damage REDUCTION knee: >80% pays 1/10
 # the crit-only crit_dmg gem so the forced special slot lifts every class,
 # not just crit builds. crit_dmg is now gem-less (base + talents only) and
 # stripped from gear.
-const SPECIAL_GEM_STATS := ["cdr", "lifesteal", "combo", "greed", "dmg_pct"]
+const SPECIAL_GEM_STATS := ["cdr", "lifesteal", "combo", "flat_dr", "dmg_pct"]  # flat_dr = Tenacity gem (DR); greed retired from gems (2026-07-09)
 
 # PLATE res→damage (2026-07-08): warrior/paladin convert their (over-stacked,
 # past-the-knee) resistance into a little DAMAGE — a scaling axis on a stat

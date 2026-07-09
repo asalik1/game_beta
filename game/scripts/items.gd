@@ -186,7 +186,7 @@ const GEM_STATS := {
 	"magpen":   {"name": "Amethyst",  "base": 2.5,   "color": Color(0.7, 0.4, 0.95)},
 	"eva":      {"name": "Jade",      "base": 0.008, "color": Color(0.4, 0.85, 0.5)},
 	"dex":      {"name": "Amber",     "base": 2.0,   "color": Color(0.95, 0.7, 0.3)},
-	"greed":    {"name": "Goldstone", "base": 0.03,  "color": Color(1.0, 0.85, 0.3)},
+	"flat_dr":  {"name": "Tenacity",  "base": 0.005, "color": Color(0.55, 0.62, 0.72)},  # damage reduction (special) — replaced the DPS-dead greed gem; greed the STAT still exists, just no longer from gems
 	"lifesteal": {"name": "Vampire Eye", "base": 0.006, "color": Color(0.8, 0.2, 0.5)},
 }
 
@@ -391,7 +391,7 @@ const STAT_LABEL := {
 	"atk_flat": "ATK", "hp_flat": "HP", "atk_pct": "ATK%", "hp_pct": "HP%",
 	"STR": "STR", "AGI": "AGI", "INT": "INT", "VIT": "VIT",
 	"crit": "Crit", "crit_dmg": "CritDmg", "dmg_pct": "Damage", "cdr": "Haste", "speed_pct": "Speed",
-	"lifesteal": "Lifesteal", "greed": "Greed", "mp_flat": "MP",
+	"lifesteal": "Lifesteal", "greed": "Greed", "flat_dr": "Tenacity", "mp_flat": "MP",
 	"physres": "PhysRes", "magres": "MagRes", "critres": "CritRes",
 	"eva": "EVA", "dex": "DEX", "physpen": "PhysPen", "magpen": "MagPen",
 	"combo": "Combo",

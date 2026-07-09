@@ -83,7 +83,7 @@ const ENEMIES := {
 	# Judge attends and magma-rain runs continuous.
 	"ashpriest": {
 		"name": "Ashpriest Ordo, Voice of the Molten Judge", "sprite": "choirmother",
-		"hp": 28000.0, "dmg": 150.0, "speed": 95.0, "xp": 460, "gold": 360,
+		"hp": 28000.0, "dmg": 125.0, "speed": 95.0, "xp": 460, "gold": 360,
 		"ranged": true, "scale": 6.0,
 		"physres": 20.0, "magres": 45.0, "eva": 0.05, "critres": 8.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 28, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,

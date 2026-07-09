@@ -286,7 +286,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 static func _fix_item(it: Dictionary) -> Dictionary:
 	it["plus"] = int(it.get("plus", 0))
 	it["gem_slots"] = int(it.get("gem_slots", 0))
-	for banned in ["speed_pct", "cdr", "lifesteal", "combo", "greed", "crit_dmg"]:
+	for banned in ["speed_pct", "cdr", "lifesteal", "combo", "greed", "crit_dmg", "flat_dr"]:
 		it.get("subs", {}).erase(banned)
 		it.get("main", {}).erase(banned)
 	var gems: Array = it.get("gems", [])

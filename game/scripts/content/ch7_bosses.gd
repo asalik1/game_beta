@@ -24,7 +24,7 @@ const ENEMIES := {
 		# LEVELS each — Cyrraeth alone was two and a half. Mids ~70%, act
 		# finale ~86% of a level; Act 1 closes at ~L41-42 as designed.
 		# The finale's fanfare stays in its gold (gold has no XP budget).
-		"hp": 62000.0, "dmg": 350.0, "speed": 115.0, "xp": 600, "gold": 980,
+		"hp": 62000.0, "dmg": 205.0, "speed": 115.0, "xp": 600, "gold": 980,
 		# A drake the size of a weather front — the 4x+ tier is reserved
 		# for exactly this kind of thing (boss scale doctrine, story.gd).
 		"ranged": true, "scale": 13.0,
@@ -54,7 +54,7 @@ const ENEMIES := {
 	# real one. Void zones shrink the arena; blink-strike punishes lingering.
 	"unnamed_echo": {
 		"name": "The Echo of the Unnamed", "sprite": "assassin",
-		"hp": 48000.0, "dmg": 375.0, "speed": 170.0, "xp": 640, "gold": 1020,
+		"hp": 48000.0, "dmg": 260.0, "speed": 170.0, "xp": 640, "gold": 1020,
 		# 2x floor, no higher: he mirrors the HERO — a person, not a titan.
 		"ranged": false, "scale": 6.0,
 		"physres": 25.0, "magres": 25.0, "eva": 0.15, "critres": 6.0, "crit": 0.15, "dmg_type": "phys",
@@ -85,7 +85,7 @@ const ENEMIES := {
 	# the mid-game begins. ACT 1 FINALE.
 	"stormmouth": {
 		"name": "Cyrraeth, Mouth of the Storm", "sprite": "nullwarden",
-		"hp": 130000.0, "dmg": 460.0, "speed": 105.0, "xp": 800, "gold": 1900,
+		"hp": 130000.0, "dmg": 275.0, "speed": 105.0, "xp": 800, "gold": 1900,
 		# The Act 1 finale titan: ~4.5x the hero, the largest thing alive.
 		"ranged": true, "scale": 13.5,
 		"physres": 30.0, "magres": 45.0, "eva": 0.0, "critres": 10.0, "crit": 0.05, "dmg_type": "magic",
