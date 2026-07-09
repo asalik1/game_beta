@@ -74,16 +74,53 @@ CLASSES = {
         "body": {"": "static", "_anim": "idle", "_walk": "walk", "_run": "run",
                  "_attack": "attack", "_attack2": "attack2", "_dash": "dash",
                  "_ult": "ult", "_ultidle": "ultidle", "_death": "death"},
+        # the walk upscale is a separate, upright, mirror-facing source: size it
+        # to the IDLE reference (its own crouched (2)-walk ref sized it small) and
+        # flip it to face the same way as the rest of the roster.
+        "ref_override": {"_walk": "_anim"},
+        "mirror": ["_walk"],
+        # the walk upscale came on white with a baked ground shadow and ~13%
+        # brighter than the roster -> strip the shadow, scale luma down to match.
+        "preprocess": {"_walk": {"strip_shadow": True, "brightness": 0.87}},
         "directional": {},
     },
 }
 
 
-def white_key(path):
-    im = np.asarray(Image.open(path).convert("RGBA")).astype(int)
+def white_key(src):
+    img = src if isinstance(src, Image.Image) else Image.open(src)
+    im = np.asarray(img.convert("RGBA")).astype(int)
     w = (255-im[:,:,0]) + (255-im[:,:,1]) + (255-im[:,:,2])   # 0 at pure white
     o = im.copy(); o[:,:,3] = np.clip((w-30)*8, 0, 255)       # soft 1px feather
     return o.astype(np.uint8)
+
+
+def preprocess(img, opts):
+    """Per-clip source fixes before keying. strip_shadow removes a baked
+    blue-grey ground ellipse (a light, low-saturation, bluish slab in the bottom
+    band of each figure -- distinct from the neutral sword and the dark boots).
+    brightness scales character pixels to match the roster's luminance."""
+    arr = np.asarray(img.convert("RGB")).astype(float); H, W = arr.shape[:2]
+    wd = lambda a: (255-a[:,:,0]) + (255-a[:,:,1]) + (255-a[:,:,2])
+    if opts.get("strip_shadow"):
+        notbg = wd(arr) > 60
+        delta = arr.max(-1) - arr.min(-1)
+        lum = 0.299*arr[:,:,0] + 0.587*arr[:,:,1] + 0.114*arr[:,:,2]
+        col = notbg.any(0); runs = []; st = None
+        for x in range(W):
+            if col[x] and st is None: st = x
+            elif not col[x] and st is not None: runs.append((st, x-1)); st = None
+        if st is not None: runs.append((st, W-1))
+        band = np.zeros((H, W), bool)
+        for a, b in [(a,b) for a,b in runs if b-a > 15]:
+            ys = np.where(notbg[:, a:b+1].any(1))[0]
+            band[max(0, ys.max()-15):ys.max()+1, a:b+1] = True
+        shadow = notbg & (lum > 145) & (delta < 42) & ((arr[:,:,2]-arr[:,:,0]) > 5) & band
+        arr[shadow] = [255, 255, 255]
+    if "brightness" in opts:
+        nb = wd(arr) > 60
+        arr[nb] = np.clip(arr[nb] * opts["brightness"], 0, 255)
+    return Image.fromarray(arr.astype("uint8"), "RGB")
 
 
 def clean_figure(arr):
@@ -189,6 +226,15 @@ def _normalize_clip(upscale_path, ref_clip_path, M):
     return out, len(figs)
 
 
+def _mirror_strip(im):
+    """Flip each cell horizontally in place (keeps frame order + centering)."""
+    s = im.height; n = im.width // s
+    out = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    for i in range(n):
+        out.paste(im.crop((i*s, 0, (i+1)*s, s)).transpose(Image.FLIP_LEFT_RIGHT), (i*s, 0))
+    return out
+
+
 def build(cls):
     cfg = CLASSES[cls]
     upsrc = os.environ.get("EMBERFALL_UPSCALE_SRC",
@@ -201,11 +247,20 @@ def build(cls):
     subprocess.check_call([sys.executable, EXTRACT,
         "--in", os.path.join(CUSTOM, cfg["sheet"]), "--out", ref,
         "--class", cls, "--names", cfg["names"]] + cfg["flags"])
+    ref_ov = cfg.get("ref_override", {})
+    mirror = cfg.get("mirror", [])
+    prep = cfg.get("preprocess", {})
     for suf, stem in cfg["body"].items():
-        ref_clip = os.path.join(ref, cls + suf + ".png")
-        out, nf = _normalize_clip(os.path.join(upsrc, stem + ".png"), ref_clip, cfg["m_body"])
+        ref_clip = os.path.join(ref, cls + ref_ov.get(suf, suf) + ".png")
+        src = os.path.join(upsrc, stem + ".png")
+        if suf in prep:
+            src = preprocess(Image.open(src), prep[suf])
+        out, nf = _normalize_clip(src, ref_clip, cfg["m_body"])
+        if suf in mirror:
+            out = _mirror_strip(out)
         out.save(os.path.join(DEST, cls + suf + ".png"))
-        print("%s%-9s %d frames  <- %s.png" % (cls, suf, nf, stem))
+        print("%s%-9s %d frames  <- %s.png%s" % (cls, suf, nf, stem,
+              "  (idle-sized, mirrored)" if suf in mirror else ""))
     shutil.rmtree(ref, ignore_errors=True)
 
     # Aliased clips reuse another built clip verbatim (e.g. walk := idle).
