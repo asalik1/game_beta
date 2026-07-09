@@ -2343,13 +2343,22 @@ static func _make_reticle() -> Image:
 	return image
 
 
+## Override PNGs that BREAK the Crawl faces-left convention by being drawn
+## facing RIGHT (so they'd render facing AWAY from the player). Add a sprite's
+## base key here when it looks the wrong way; the _anim/_walk strips inherit it
+## since facing is resolved on the base name.
+const FACES_RIGHT := {
+	"zombie": true, "zombie_brute": true, "zombie_overweight": true,
+}
+
 ## Does this sprite's art natively face LEFT? The Crawl-tileset override
-## PNGs face left by convention; our procedural grids face right.
-## Flip logic must invert for left-facing art.
+## PNGs face left by convention; our procedural grids (and the FACES_RIGHT
+## overrides) face right. Flip logic must invert for left-facing art.
 static var _faceleft_cache := {}
 static func faces_left(name: String) -> bool:
 	if not _faceleft_cache.has(name):
-		_faceleft_cache[name] = FileAccess.file_exists("res://assets/sprites/%s.png" % name)
+		_faceleft_cache[name] = (not FACES_RIGHT.has(name)) \
+			and FileAccess.file_exists("res://assets/sprites/%s.png" % name)
 	return _faceleft_cache[name]
 
 
