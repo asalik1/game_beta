@@ -1162,6 +1162,22 @@ func _run_systems() -> void:
 				var cnxt: String = String(c2.get("next", ""))
 				if cnxt != "" and not nodes2.has(cnxt):
 					return _fail("%s/%s: choice next '%s' missing" % [cid, nid, cnxt])
+			# A choice must be a CHOICE (2026-07-09): a node whose ONLY
+			# choice carries no effects (nothing beyond text/next) is a fake
+			# decision — author it as a plain linear node instead. Single
+			# choices WITH effects (flags/resonance/req_*/items/...) are
+			# tolerated: the engine can't apply those on a linear advance,
+			# so they wait on an authoring pass, not a mechanical one.
+			var only_choices: Array = node2.get("choices", [])
+			if only_choices.size() == 1:
+				var oc: Dictionary = only_choices[0]
+				var effect_free := true
+				for ock in oc:
+					if not (String(ock) in ["text", "next"]):
+						effect_free = false
+						break
+				if effect_free:
+					return _fail("%s/%s: single effect-free choice — fake decision, make it linear" % [cid, nid])
 			for v2 in node2.get("variants", []):
 				var vnxt: String = String(v2.get("next", ""))
 				if vnxt != "" and not nodes2.has(vnxt):

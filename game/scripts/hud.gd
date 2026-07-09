@@ -67,6 +67,7 @@ var choice_panel: Control
 var choice_frame: ColorRect
 var choice_inner: ColorRect
 var choice_option_labels: Array = []
+var choice_hover_rects: Array = []  # per-row mouse-hover highlight
 var choices_active := false
 var choice_count := 0
 var choice_cb := Callable()
@@ -390,7 +391,8 @@ func _ready() -> void:
 
 	# ------------------------------------------- choice options panel ---
 	# Sits directly above the dialogue box when a conversation offers a
-	# decision; pick with the number keys.
+	# decision; pick with the number keys or click a row (each label is a
+	# full-width mouse target with the menus' hover tint).
 	choice_panel = Control.new()
 	choice_panel.visible = false
 	add_child(choice_panel)
@@ -403,10 +405,21 @@ func _ready() -> void:
 	choice_inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	choice_panel.add_child(choice_inner)
 	for i in 4:
+		var hl := ColorRect.new()
+		hl.color = Color(0.17, 0.17, 0.23, 0.95)  # menus.gd hover-bg idiom
+		hl.visible = false
+		hl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		choice_panel.add_child(hl)
+		choice_hover_rects.append(hl)
 		var opt := Label.new()
 		opt.add_theme_font_size_override("font_size", 17)
 		opt.add_theme_color_override("font_color", Color(0.92, 0.9, 0.8))
 		opt.visible = false
+		opt.mouse_filter = Control.MOUSE_FILTER_STOP
+		opt.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		opt.gui_input.connect(_on_choice_gui_input.bind(i))
+		opt.mouse_entered.connect(_set_choice_hover.bind(i, true))
+		opt.mouse_exited.connect(_set_choice_hover.bind(i, false))
 		choice_panel.add_child(opt)
 		choice_option_labels.append(opt)
 
@@ -1570,7 +1583,7 @@ func set_cinematic(on: bool) -> void:
 
 
 ## A dialogue line that ends in a DECISION: the text shows in the normal
-## box, the options stack above it, and the number keys choose.
+## box, the options stack above it, and the number keys or a click choose.
 func dialogue_choice(who: String, text: String, options: Array, cb: Callable) -> void:
 	get_tree().paused = true
 	dialogue_box.visible = true
@@ -1588,10 +1601,17 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	choice_inner.size = choice_frame.size - Vector2(6, 6)
 	for i in choice_option_labels.size():
 		var opt: Label = choice_option_labels[i]
+		var hl: ColorRect = choice_hover_rects[i]
 		opt.visible = i < choice_count
+		hl.visible = false  # fresh panel: no stale hover from the last decision
+		opt.add_theme_color_override("font_color", Color(0.92, 0.9, 0.8))
 		if i < choice_count:
 			opt.text = "%d.  %s" % [i + 1, options[i]]
 			opt.position = Vector2(168, 442 - h + 10 + i * 30)
+			# Full-width click target for the row (the label IS the target).
+			opt.size = Vector2(choice_inner.size.x - 33, 26)
+			hl.position = Vector2(choice_inner.position.x, opt.position.y - 2)
+			hl.size = Vector2(choice_inner.size.x, 28)
 	choice_panel.visible = true
 
 
@@ -1607,6 +1627,26 @@ func _choose(idx: int) -> void:
 	choice_cb = Callable()
 	if cb.is_valid():
 		cb.call(idx)  # the convo engine re-opens the box synchronously
+
+
+## Mouse path onto the SAME _choose(idx) the number keys use. Marked
+## handled so the click can't fall through to _unhandled_input and
+## double-advance the dialogue the callback just re-opened.
+func _on_choice_gui_input(event: InputEvent, idx: int) -> void:
+	if event is InputEventMouseButton and event.pressed \
+			and event.button_index == MOUSE_BUTTON_LEFT:
+		get_viewport().set_input_as_handled()
+		_choose(idx)
+
+
+## Hover feedback matching the menus' idiom: lighter row bg + the warm
+## gold font_hover_color the shop buttons wear.
+func _set_choice_hover(idx: int, on: bool) -> void:
+	if idx < choice_hover_rects.size():
+		choice_hover_rects[idx].visible = on and choices_active
+	if idx < choice_option_labels.size():
+		choice_option_labels[idx].add_theme_color_override("font_color",
+			Color(1, 0.95, 0.7) if on else Color(0.92, 0.9, 0.8))
 
 
 # ------------------------------------------------------------------ input
