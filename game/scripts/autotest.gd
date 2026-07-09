@@ -275,10 +275,10 @@ func _run_systems() -> void:
 	# the enemy-side DoT bites over time and REFRESHES (never stacks).
 	game.player.set_class("mage")
 	game.player.themes_known = 3
-	game.player.tree_points = {"m02": 5}   # 5 pts -> 5 * 0.013 = 0.065
+	game.player.tree_points = {"m02": 5}   # 5 pts -> 5 * 0.025 = 0.125 (2026-07-09 relevance buff)
 	game.player.recalc()
-	if absf(game.player.bolt_bleed - 0.065) > 1.0e-6:
-		return _fail("Wind Cuts: 5 pts should give 0.065 bolt_bleed (got %f)" % game.player.bolt_bleed)
+	if absf(game.player.bolt_bleed - 0.125) > 1.0e-6:
+		return _fail("Wind Cuts: 5 pts should give 0.125 bolt_bleed (got %f)" % game.player.bolt_bleed)
 	game.player.facing = Vector2.RIGHT
 	# Fire variant must NOT carry a bleed.
 	_clear_combat()

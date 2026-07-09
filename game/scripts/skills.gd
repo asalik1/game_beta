@@ -34,7 +34,7 @@ const TREES := {
 		[
 			{"id": "w20", "name": "Battle Rhythm", "desc": "+0.5% combo chance", "bonus": {"combo": 0.005}},
 			{"id": "w21", "name": "Spell Ward",    "desc": "+5 magic resistance", "bonus": {"magres": 5.0}},
-			{"id": "w22", "name": "Momentum",      "desc": "Whirlwind cooldown -2%", "amod": {"a3": {"cd": -0.02}}},
+			{"id": "w22", "name": "Momentum",      "desc": "Whirlwind cooldown -3.5%", "amod": {"a3": {"cd": -0.035}}},
 		],
 		[
 			{"id": "w30", "name": "Warlord",   "desc": "+1% total damage", "bonus": {"atk_pct": 0.01}},
@@ -60,7 +60,7 @@ const TREES := {
 		],
 		[
 			{"id": "a30", "name": "Stormcaller", "desc": "+1% total damage", "bonus": {"atk_pct": 0.01}},
-			{"id": "a31", "name": "Windrunner",  "desc": "Tumble cooldown -1.5%", "amod": {"a3": {"cd": -0.015}}},
+			{"id": "a31", "name": "Windrunner",  "desc": "Tumble's landing steadies you: +1.5% damage reduction for 3s after the roll", "bonus": {"tumble_dr": 0.015}},
 			{"id": "a32", "name": "Executioner", "desc": "+3% crit damage", "bonus": {"crit_dmg": 0.03}},
 		],
 	],
@@ -68,7 +68,7 @@ const TREES := {
 		[
 			{"id": "m00", "name": "Kindled Bolt",  "desc": "Firebolt +2.5% damage", "amod": {"a1": {"dmg": 0.025}}},
 			{"id": "m01", "name": "Killing Frost", "desc": "+4% damage to slowed or frozen enemies", "bonus": {"chill_dmg": 0.04}},
-			{"id": "m02", "name": "Wind Cuts",     "desc": "Wind firebolt cuts — each bolt opens a 3s bleed, up to +13% (splits onto two targets)", "bonus": {"bolt_bleed": 0.013}},
+			{"id": "m02", "name": "Wind Cuts",     "desc": "Wind firebolt cuts — each bolt opens a 3s bleed, up to +25% (splits onto two targets)", "bonus": {"bolt_bleed": 0.025}},
 		],
 		[
 			{"id": "m10", "name": "Rimeheart",    "desc": "Frost Nova also heals 0.75% max HP/s for 6s", "bonus": {"nova_regen": 0.0075}},
@@ -82,7 +82,7 @@ const TREES := {
 		],
 		[
 			{"id": "m30", "name": "Archmage",   "desc": "+1% total damage", "bonus": {"atk_pct": 0.01}},
-			{"id": "m31", "name": "Permafrost", "desc": "Frost Nova & Blink cooldown -1%", "amod": {"a2": {"cd": -0.01}, "a3": {"cd": -0.01}}},
+			{"id": "m31", "name": "Permafrost", "desc": "Frost Nova and Blink sheathe you in ice: +0.8% max HP shield (non-stacking)", "bonus": {"veil_shield": 0.008}},
 			{"id": "m32", "name": "Windborne",  "desc": "+3% crit damage", "bonus": {"crit_dmg": 0.03}},
 		],
 	],
@@ -126,7 +126,7 @@ const TREES := {
 		],
 		[
 			{"id": "p30", "name": "Beacon of Dawn", "desc": "+1% total damage", "bonus": {"atk_pct": 0.01}},
-			{"id": "p31", "name": "Unwavering Conviction", "desc": "Conviction (stance swap) cooldown -2.5%", "amod": {"ult": {"cd": -0.025}}},
+			{"id": "p31", "name": "Unwavering Conviction", "desc": "Swapping stance girds you in light: +1% max HP shield (non-stacking)", "bonus": {"oath_shield": 0.01}},
 			{"id": "p32", "name": "Executioner of the Faith", "desc": "+3% crit damage", "bonus": {"crit_dmg": 0.03}},
 		],
 	],

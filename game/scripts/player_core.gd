@@ -100,6 +100,12 @@ var blink_dr := 0.0      # Arcane Ward: DR fraction Blink grants (mage passive)
 var blink_dr_dur := 0.0  # how long that DR window lasts after a Blink
 var dr_time := 0.0       # while > 0, incoming non-true damage is cut by dr_amt
 var dr_amt := 0.0        # active damage-reduction fraction (multiplicative)
+# Talent capstone survivability (2026-07-09 dominated-cell rework): defense the
+# tree SELLS instead of dead cd-micro — earned by playing the button, per the
+# floor-compensation doctrine (drip/window, never a free negate).
+var tumble_dr := 0.0     # archer Windrunner: DR window after a Tumble roll
+var veil_shield := 0.0   # mage Permafrost: max-HP shield frac on Nova/Blink cast
+var oath_shield := 0.0   # paladin Unwavering Conviction: shield frac on stance swap
 var cast_haste_time := 0.0  # Wind ult tailwind window (Blink/Frost Nova cdr)
 var cast_haste_cdr := 0.0   # + this cdr on Blink/Frost Nova while it holds
 var dash_guard_time := 0.0  # assassin Mirrorstep: AoE damage softened while > 0
@@ -575,6 +581,7 @@ func recalc() -> void:
 		"mp_flat": 0.0, "speed_pct": 0.0, "crit": 0.0, "crit_dmg": 0.0,
 		"cdr": 0.0, "lifesteal": 0.0, "regen_pct": 0.0, "sw_regen": 0.0, "sw_delay": 0.0,
 		"blink_dr": 0.0, "blink_dr_dur": 0.0, "flat_dr": 0.0,
+		"tumble_dr": 0.0, "veil_shield": 0.0, "oath_shield": 0.0,
 		"chill_dmg": 0.0, "poison_dmg": 0.0, "bolt_bleed": 0.0, "nova_regen": 0.0,
 		"dash_refund": 0.0, "execute_dmg": 0.0,
 		"curse_dr": 0.0, "crush_amp": 0.0, "void_crit": 0.0,
@@ -660,6 +667,9 @@ func recalc() -> void:
 		sw_delay = maxf(0.5, sw_delay - 1.5)
 	blink_dr = b["blink_dr"]
 	blink_dr_dur = b["blink_dr_dur"]
+	tumble_dr = b["tumble_dr"]
+	veil_shield = b["veil_shield"]
+	oath_shield = b["oath_shield"]
 	chill_dmg = b["chill_dmg"]
 	poison_dmg = b["poison_dmg"]
 	bolt_bleed = b["bolt_bleed"]

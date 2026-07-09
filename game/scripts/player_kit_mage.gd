@@ -38,6 +38,10 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 
 
 func _frost_nova(f := 1.0) -> void:
+	if veil_shield > 0.0:
+		# Permafrost (talent): the cast sheathes you in ice — a non-stacking
+		# max-HP shield (Transfusion buffer rail; decays, never banks).
+		shield = maxf(shield, max_hp * veil_shield)
 	game.sfx("nova")
 	game.shake(6.0)
 	# The nova drinks the cold (round 23): restores 20% of MISSING
@@ -123,6 +127,10 @@ func _frost_nova(f := 1.0) -> void:
 
 
 func _blink() -> void:
+	if veil_shield > 0.0:
+		# Permafrost (talent): the cast sheathes you in ice — a non-stacking
+		# max-HP shield (Transfusion buffer rail; decays, never banks).
+		shield = maxf(shield, max_hp * veil_shield)
 	var eff := {"aoe": true}
 	if _tfx.has("freeze_path"):
 		eff["stun"] = float(_tfx["freeze_path"])  # Frostwalk

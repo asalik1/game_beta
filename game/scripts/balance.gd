@@ -556,6 +556,9 @@ const MOB_REFLECT_TIME := 1.8
 const MOB_REFLECT_FRAC := 0.5
 const MOB_SOW_EVERY := 0.45
 const MOB_SOW_LIFE := 3.5
+# Windrunner (archer capstone talent): DR window after a Tumble roll —
+# defense EARNED by dodging (dominated-cell rework 2026-07-09).
+const TUMBLE_DR_DUR := 3.0
 # skirmish (2026-07-09 mob-distribution pass): a ranged mob that actually
 # KITES — full-speed backpedal with a strafing arc inside KEEP, advances past
 # FAR, holds and fires in the band between. Regular ranged mobs shuffle at

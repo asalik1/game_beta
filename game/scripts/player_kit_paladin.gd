@@ -220,6 +220,10 @@ func _aegis() -> void:
 ## hammer (the old Chains, scaled down); returning to Holy releases a
 ## blessing. The 8s cd kills flicker-toggling for double-dipped swap effects.
 func _conviction_swap(f := 1.0) -> void:
+	if oath_shield > 0.0:
+		# Unwavering Conviction (talent): the swap girds you in light — a
+		# non-stacking max-HP shield; stance-dancing IS the defense.
+		shield = maxf(shield, max_hp * oath_shield)
 	if paladin_mode == "holy":
 		paladin_mode = "retribution"
 		game.spawn_text(global_position + Vector2(0, -64), "RETRIBUTION", Color(1.0, 0.45, 0.25))

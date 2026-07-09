@@ -69,6 +69,11 @@ func _tumble() -> void:
 	hurt_was_heavy = true  # the perfect-dodge window blocks heavy telegraph hits too
 	dodge_time = 1.25
 	dodge_amt = 0.20
+	if tumble_dr > 0.0:
+		# Windrunner (talent): the landing steadies you — a DR window EARNED by
+		# rolling, the archer's purchasable floor (same rail as Arcane Ward).
+		dr_time = Balance.TUMBLE_DR_DUR
+		dr_amt = tumble_dr
 	var origin := global_position
 	global_position = game.clamp_to_zone(global_position + facing * 130.0, global_position)
 	# The roll reads as motion: ghost trail + kicked-up dust behind you.
