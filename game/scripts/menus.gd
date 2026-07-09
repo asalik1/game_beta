@@ -99,6 +99,11 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 
 	var tl := Label.new()
 	tl.text = title
+	# Long titles (e.g. a multi-boss "Victory — ..." mail subject) must wrap,
+	# not spill off-screen. A non-wrapping title also reports its full line as
+	# minimum width, which inflates the whole VBox past the panel and makes the
+	# body labels below it stop wrapping too — so autowrap here fixes both.
+	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tl.add_theme_font_size_override("font_size", 26)
 	tl.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 	vbox.add_child(tl)
