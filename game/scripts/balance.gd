@@ -216,14 +216,18 @@ const UPGRADE_GRADE_FACTOR := {"F": 0.5, "E": 0.75, "D": 1.0, "C": 2.0, "B": 4.0
 # Measured per-chapter run economy (from econ_audit.gd — RE-RUN and update
 # these when reward numbers move; they drive every farm-cost price). "gems" is
 # gems per REPLAY run (the gem-price denominator).
+# 2026-07-09: remeasured under the per-chapter loot BANDS (gear sells for its
+# rolled-tier value, not an act cap) — early chapters fell (F/E/D drop cheaper),
+# ch7 is ~flat. Gems are GATED to ch4+ (regular_gems_drop), so ch1-3 = 0 (their
+# gem-price denominator is unused — the shop stocks no gems there).
 const CHAPTER_ECON := {
-	"ch1": {"act": 1, "first": 1796, "replay": 1470, "gems": 16.8},
-	"ch2": {"act": 1, "first": 1734, "replay": 1296, "gems": 10.1},
-	"ch3": {"act": 1, "first": 2944, "replay": 2398, "gems": 16.7},
-	"ch4": {"act": 1, "first": 3414, "replay": 2760, "gems": 17.5},
-	"ch5": {"act": 1, "first": 4018, "replay": 3274, "gems": 17.5},
-	"ch6": {"act": 1, "first": 4866, "replay": 4050, "gems": 17.7},
-	"ch7": {"act": 1, "first": 6603, "replay": 5716, "gems": 18.0},
+	"ch1": {"act": 1, "first": 1545, "replay": 1228, "gems": 0.0},
+	"ch2": {"act": 1, "first": 1574, "replay": 1148, "gems": 0.0},
+	"ch3": {"act": 1, "first": 2758, "replay": 2222, "gems": 0.0},
+	"ch4": {"act": 1, "first": 3344, "replay": 2698, "gems": 19.4},
+	"ch5": {"act": 1, "first": 3987, "replay": 3249, "gems": 19.4},
+	"ch6": {"act": 1, "first": 4871, "replay": 4060, "gems": 19.6},
+	"ch7": {"act": 1, "first": 6616, "replay": 5733, "gems": 19.9},
 }
 
 static func gem_gold_value(lvl: int) -> float:

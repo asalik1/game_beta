@@ -35,37 +35,58 @@ func _room_type(zone: Dictionary) -> String:
 	return "combat" if not zone.get("enemies", []).is_empty() else "safe"
 
 
-## Average sell value of one chest's gear at this act's loot cap.
-func _chest_gear_value(tier: String, cap: String) -> float:
-	var weights: Dictionary = Items.CHEST_TIERS[tier]["weights"]
-	var cap_i: int = Items.GRADES.find(cap)
+## Sell value of one +0 gear item of `grade` (SELL = intrinsic price x fraction,
+## matching menus.gd: Items.price() x MERCHANT_SELL_FRACTION).
+func _grade_sell(grade: String) -> float:
+	return 22.0 * float(Items.GRADE_MULT[grade]) * Balance.MERCHANT_SELL_FRACTION
+
+
+## Expected sell value of one gear roll from a {grade: weight} BAND. Every gear
+## channel now rolls a weighted grade then sells for its intrinsic value:
+## GENERAL band = chest / shop / spoils / gamble, BOSS band = the boss gear
+## channel (2026-07-09 loot BANDS replaced the old chest-tier + act-cap table).
+func _band_gear_value(weights: Dictionary) -> float:
 	var total := 0.0
 	var value := 0.0
 	for g in weights:
-		var gi: int = mini(Items.GRADES.find(String(g)), cap_i)
 		var w: float = float(weights[g])
 		total += w
-		value += w * (22.0 * float(Items.GRADE_MULT[Items.GRADES[gi]]) * Balance.MERCHANT_SELL_FRACTION)
+		value += w * _grade_sell(String(g))
 	return value / maxf(total, 1.0)
 
 
-## One chest's total gold-equivalent: bonus gold + gear sell value.
-func _chest_value(tier: String, cap: String) -> float:
-	var bonus := 5.5 * float(1 + ["wood", "silver", "gold"].find(tier))
-	return bonus + _chest_gear_value(tier, cap)
+## Chest bonus gold by tier (chest.gd: randi(3,8) x (1 + tier index), EV 5.5x).
+func _chest_gold_bonus(tier: String) -> float:
+	return 5.5 * float(1 + ["wood", "silver", "gold"].find(tier))
+
+
+## Chest gem CHANCE by tier (chest.gd; only realized once gems drop, ch4+).
+func _chest_gem_chance(tier: String) -> float:
+	return {"wood": 0.25, "silver": 0.6, "gold": 1.0}[tier]
+
+
+## One chest's total gold-equivalent: bonus gold + gear sell value. Gear grade no
+## longer depends on the chest TIER — every chest (wood/silver/gold) rolls the
+## chapter's GENERAL band via Items.roll_chapter_gear; tier only sets the bonus
+## gold and gem chance (gems are counted separately). (2026-07-09)
+func _chest_value(tier: String, chid: String) -> float:
+	return _chest_gold_bonus(tier) + _band_gear_value(Balance.gear_weights(chid))
 
 
 func _audit_chapter(chid: String) -> void:
 	var ch: Dictionary = Story.chapter(chid)
 	var zones: Array = ch["zones"]
-	var cap := Balance.chapter_gear_ceiling(chid)  # 2026-07-09: band ceiling, not authored field
+	var cap := Balance.chapter_gear_ceiling(chid)  # 2026-07-09: band ceiling, for the label only
+	var gems_on := Balance.regular_gems_drop(chid) # ch1-3 drop NO gems (gear + gold only)
 
 	var kills := 0
+	var lvl_sum := 0           # for the elite gem sure/early threshold (ELITE_GEM_SURE_LEVEL)
 	var mob_gold := 0.0
 	var xp := 0
 	var rooms := {"combat": 0, "boss": 0, "social": 0, "dead_end": 0, "resonance": 0, "other": 0}
 	var pack_rooms := 0        # combat rooms with authored packs (elite/curse hosts)
 	var caches := 0.0          # cache chests, in gold-equivalent
+	var cache_gems := 0.0      # gems from cache chests (chest gem chance)
 	var pack_avg_gold := 0.0
 	var bosses: Array = []
 
@@ -82,6 +103,7 @@ func _audit_chapter(chid: String) -> void:
 			var lvl := int(spawn[4]) if spawn.size() > 4 else int(Story.ALL_ENEMIES[kind]["level"])
 			var st := Story.enemy_stats_at(kind, lvl)
 			kills += 1
+			lvl_sum += lvl
 			room_gold += float(st["gold"])
 			xp += int(st["xp"])
 		mob_gold += room_gold
@@ -89,7 +111,8 @@ func _audit_chapter(chid: String) -> void:
 			pack_avg_gold += room_gold / packs.size()
 		var cache_tier := String(zd.get("cache", ""))
 		if cache_tier != "":
-			caches += _chest_value(cache_tier, cap) + (0.25 if cache_tier == "wood" else (0.6 if cache_tier == "silver" else 1.0))  # + gem chance noted separately
+			caches += _chest_value(cache_tier, chid)
+			cache_gems += _chest_gem_chance(cache_tier)
 		var bkind := String(zd.get("boss", ""))
 		if bkind != "" and not bosses.has(bkind):
 			bosses.append(bkind)
@@ -98,45 +121,58 @@ func _audit_chapter(chid: String) -> void:
 
 	# Hidden caches (exploration premium): buried chests in some dead ends.
 	caches += rooms["dead_end"] * Balance.HIDDEN_CACHE_CHANCE \
-		* (Balance.HIDDEN_CACHE_GOLD_TIER * _chest_value("gold", cap)
-		+ (1.0 - Balance.HIDDEN_CACHE_GOLD_TIER) * _chest_value("silver", cap))
+		* (Balance.HIDDEN_CACHE_GOLD_TIER * _chest_value("gold", chid)
+		+ (1.0 - Balance.HIDDEN_CACHE_GOLD_TIER) * _chest_value("silver", chid))
+	cache_gems += rooms["dead_end"] * Balance.HIDDEN_CACHE_CHANCE \
+		* (Balance.HIDDEN_CACHE_GOLD_TIER * _chest_gem_chance("gold")
+		+ (1.0 - Balance.HIDDEN_CACHE_GOLD_TIER) * _chest_gem_chance("silver"))
 
 	# Mob chest EV: every kill rolls wood 18% / silver 4%.
-	var mob_chests := kills * (Balance.MOB_WOOD_CHEST_CHANCE * _chest_value("wood", cap)
-		+ Balance.MOB_SILVER_CHEST_CHANCE * _chest_value("silver", cap))
-	var mob_chest_gems := kills * (Balance.MOB_WOOD_CHEST_CHANCE * 0.25
-		+ Balance.MOB_SILVER_CHEST_CHANCE * 0.6)
+	var mob_chests := kills * (Balance.MOB_WOOD_CHEST_CHANCE * _chest_value("wood", chid)
+		+ Balance.MOB_SILVER_CHEST_CHANCE * _chest_value("silver", chid))
+	var mob_chest_gems := kills * (Balance.MOB_WOOD_CHEST_CHANCE * _chest_gem_chance("wood")
+		+ Balance.MOB_SILVER_CHEST_CHANCE * _chest_gem_chance("silver"))
 
 	# Elite EV (seeded): social rooms 30% + pack rooms 18%.
 	var elites: float = rooms["social"] * Balance.ELITE_SOCIAL_ROOM_CHANCE \
 		+ pack_rooms * Balance.ELITE_COMBAT_AMBUSH_CHANCE
 	var elite_gold: float = elites * (pack_avg_gold * (Balance.ELITE_GOLD_MULT - 1)
-		+ Balance.ELITE_GOLD_CHEST_CHANCE * _chest_value("gold", cap)
-		+ (1.0 - Balance.ELITE_GOLD_CHEST_CHANCE) * _chest_value("silver", cap))
-	var elite_gems := elites  # one guaranteed gem each (35% Lv2)
+		+ Balance.ELITE_GOLD_CHEST_CHANCE * _chest_value("gold", chid)
+		+ (1.0 - Balance.ELITE_GOLD_CHEST_CHANCE) * _chest_value("silver", chid))
+	# Elite gems: a direct elite gem (guaranteed at ELITE_GEM_SURE_LEVEL, else
+	# ELITE_GEM_EARLY_CHANCE — most Act 1 elites are below the sure level) PLUS
+	# the gem from the elite's own gold/silver chest.
+	var avg_lvl: float = float(lvl_sum) / maxf(1.0, float(kills))
+	var elite_gem_each: float = 1.0 if avg_lvl >= float(Balance.ELITE_GEM_SURE_LEVEL) else Balance.ELITE_GEM_EARLY_CHANCE
+	var elite_chest_gem: float = Balance.ELITE_GOLD_CHEST_CHANCE * _chest_gem_chance("gold") \
+		+ (1.0 - Balance.ELITE_GOLD_CHEST_CHANCE) * _chest_gem_chance("silver")
+	var elite_gems := elites * (elite_gem_each + elite_chest_gem)
 
-	# Boss payouts at their story anchors.
+	# Boss payouts at their story anchors: gold + the BOSS gear channel (a
+	# BOSS_GEAR_CHANCE roll for a boss-band grade — no golden chest; boss gems are
+	# the first_gems / replay_gems channel below, matching on_boss_died).
+	var boss_gear_val := _band_gear_value(Balance.boss_weights(chid))
 	var boss_gold := 0.0
 	var boss_lv_sum := 0
 	for bkind in bosses:
 		var st := Story.enemy_stats_at(String(bkind), int(Story.ALL_ENEMIES[bkind]["level"]))
-		boss_gold += float(st["gold"]) + _chest_value("gold", cap) + 1.0 * 0.0
+		boss_gold += float(st["gold"]) + Balance.BOSS_GEAR_CHANCE * boss_gear_val
 		boss_lv_sum += int(st["level"])
-	var boss_chest_gems := bosses.size() * 1.0  # golden chest gem chance = 100%
 	var first_gems := bosses.size() * Balance.BOSS_GEMS_FIRST_CLEAR
 	var replay_gems := 0.0
 	for bkind in bosses:
 		replay_gems += Balance.boss_gem_chance(int(Story.ALL_ENEMIES[bkind]["level"]))
 
-	# Risk events EV (seeded; assumes the player engages when offered).
-	var curse_gold: float = pack_rooms * Balance.CURSED_ROOM_CHANCE * _chest_value("gold", cap)
-	var curse_gems: float = pack_rooms * Balance.CURSED_ROOM_CHANCE
+	# Risk events EV (seeded; assumes the player engages when offered). A cursed
+	# room's payout is a gold chest (gem chance 1.0) PLUS a guaranteed payout gem.
+	var curse_gold: float = pack_rooms * Balance.CURSED_ROOM_CHANCE * _chest_value("gold", chid)
+	var curse_gems: float = pack_rooms * Balance.CURSED_ROOM_CHANCE * (1.0 + _chest_gem_chance("gold"))
 	var quiet: int = rooms["social"] + rooms["dead_end"]
 	# Shrine EV vs its cost: 60% bless (40% gem≈0g here, 30% 3x back, 20% silver chest, 10% elixir≈35g), 40% bane.
 	var shrine_n: float = quiet * Balance.SHRINE_ROOM_CHANCE
 	var scost := float(Balance.SHRINE_COST_BASE)  # L1-ish; scales with level like its rewards
 	var shrine_gold: float = shrine_n * (Balance.SHRINE_BLESS_CHANCE
-		* (0.3 * 3.0 * scost + 0.2 * _chest_value("silver", cap) + 0.1 * 35.0) - scost
+		* (0.3 * 3.0 * scost + 0.2 * _chest_value("silver", chid) + 0.1 * 35.0) - scost
 		- (1.0 - Balance.SHRINE_BLESS_CHANCE) * 0.4 * scost)
 	var shrine_gems: float = shrine_n * Balance.SHRINE_BLESS_CHANCE * 0.4
 
@@ -145,12 +181,14 @@ func _audit_chapter(chid: String) -> void:
 	for bkind in bosses:
 		max_boss_lv = maxi(max_boss_lv, int(Story.ALL_ENEMIES[bkind]["level"]))
 	var fc_gold := Balance.FIRST_CLEAR_GOLD * Balance.daily_gold_mult(max_boss_lv) \
-		+ _chest_gear_value("gold", cap)
+		+ _band_gear_value(Balance.gear_weights(chid))  # mailed spoils = general-band roll
 
 	var replay_gold := mob_gold + mob_chests + caches + elite_gold + boss_gold + curse_gold + shrine_gold
 	var first_gold := replay_gold + fc_gold
-	var first_gems_total := first_gems + 1.0 + boss_chest_gems + elite_gems + mob_chest_gems + curse_gems + shrine_gems
-	var replay_gems_total := replay_gems + boss_chest_gems + elite_gems + mob_chest_gems + curse_gems + shrine_gems
+	# All gem faucets are gated on regular_gems_drop (ch4+); ch1-3 pay zero gems.
+	# First run also mails one spoils gem (+1.0); the rest are shared with replays.
+	var first_gems_total: float = (first_gems + 1.0 + elite_gems + mob_chest_gems + cache_gems + curse_gems + shrine_gems) if gems_on else 0.0
+	var replay_gems_total: float = (replay_gems + elite_gems + mob_chest_gems + cache_gems + curse_gems + shrine_gems) if gems_on else 0.0
 
 	print("")
 	print("--- %s  (%s, cap %s, %d rooms: %d combat / %d boss / %d social / %d dead-end / %d res)" %
