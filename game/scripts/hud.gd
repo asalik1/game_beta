@@ -1673,6 +1673,10 @@ func _on_escape() -> void:
 func _update_resonance(res: float) -> void:
 	res_label.text = "Resonance: %+d" % int(res) if int(res) != 0 else "Resonance: 0"
 	_update_resonance_orb(res)
+	# Keep the popover's lean numbers live (refresh only when the value
+	# moves — no per-frame string building).
+	if _last_resonance <= -99998.0 or absf(res - _last_resonance) >= 0.5:
+		res_label.set_meta("tip", _res_tip())
 	# Continuous shimmer so the number itself glimmers, not just on change.
 	var shimmer := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.006)
 	if res > 0.0:
@@ -1706,6 +1710,19 @@ func _update_resonance(res: float) -> void:
 		tw.tween_property(res_label, "scale", Vector2(1, 1), 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tw.parallel().tween_property(res_label, "modulate", Color(1, 1, 1), 0.6)
 	_last_resonance = res
+
+
+## The shard popover, with the live band lean spelled out in numbers
+## (player rule: a mechanic the HUD wears must show its numbers).
+func _res_tip() -> String:
+	var base := "Resonance — how your shard leans: Virtue (+) or Temptation (−). Major choices move it, and the world answers through dialogue and merchant haggling."
+	var p: Player = game.player
+	if p == null or p.res_lean() <= 0.0:
+		return base + "\nCommit past ±25 and a lean wakes: Virtue mends (potions heal deeper), Temptation hunts (bonus damage to wounded mobs, bonus kill gold)."
+	if p.resonance > 0.0:
+		return base + "\nConstancy: health potions mend +%d%% deeper." % int((p.constancy_heal_mult() - 1.0) * 100.0)
+	return base + "\nHunger: +%d%% damage to wounded mobs, +%d%% gold from kills." % [
+		int(p.hunger_exec_bonus() * 100.0), int((p.hunger_gold_mult() - 1.0) * 100.0)]
 
 
 ## The mood orb: colour lerps pearl -> gold (Virtue) or pearl -> dark

@@ -781,6 +781,9 @@ func _run_systems() -> void:
 	# 3d13. Consumables: mana draught, might elixir, recall scroll.
 	_test_consumables()
 
+	# 3d13b. Resonance band leans: conviction ramp, Hunger/Constancy sides.
+	_test_res_lean()
+
 	# 3d14. Gamble vendor: afford gate, cost deduction, boss-band roll + pricing.
 	_test_gamble()
 
@@ -1886,6 +1889,40 @@ func _test_consumables() -> void:
 	game.last_safe_room = keep_safe
 	p.global_position = keep_pos
 	print("ok: consumables (mana draught, might elixir, recall scroll)")
+
+
+# ---- CORE: resonance band leans (2026-07-09) ------------------------------
+# Conviction-scaled riders: zero through the neutral band, wake PAST the
+# band line (±25), max at ±100. Virtue = Constancy (potions mend deeper),
+# Temptation = Hunger (execute vs wounded mobs + kill gold). Neither side
+# ever gets the other's rider, and the band line itself lends nothing.
+func _test_res_lean() -> void:
+	var p := game.player
+	var keep_res: float = p.resonance
+	p.resonance = 0.0
+	if p.res_lean() != 0.0 or p.hunger_gold_mult() != 1.0 or p.constancy_heal_mult() != 1.0:
+		return _fail("neutral shard must lend no lean")
+	p.resonance = 25.0
+	if p.res_lean() != 0.0:
+		return _fail("the lean wakes PAST the band line, not at it")
+	p.resonance = 62.5  # halfway between the band line and full conviction
+	if absf(p.res_lean() - 0.5) > 0.001:
+		return _fail("lean should ramp linearly with conviction")
+	p.resonance = 100.0
+	if absf(p.constancy_heal_mult() - (1.0 + Balance.RES_CONSTANCY_HEAL_MAX)) > 0.001:
+		return _fail("full Virtue should max Constancy")
+	if p.hunger_exec_bonus() != 0.0 or p.hunger_gold_mult() != 1.0:
+		return _fail("Virtue must never grant Hunger riders")
+	p.resonance = -100.0
+	if absf(p.hunger_exec_bonus() - Balance.RES_HUNGER_EXEC_MAX) > 0.001 \
+			or absf(p.hunger_gold_mult() - (1.0 + Balance.RES_HUNGER_GOLD_MAX)) > 0.001:
+		return _fail("full Temptation should max Hunger")
+	if p.constancy_heal_mult() != 1.0:
+		return _fail("Temptation must never grant Constancy")
+	if game._kill_gold(100) <= 100:
+		return _fail("kill gold should carry the Hunger bonus")
+	p.resonance = keep_res
+	print("ok: resonance band leans (Hunger / Constancy)")
 
 
 # ---- CORE: gambling vendor (afford gate, cost deduction, delivery) -------

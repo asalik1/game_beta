@@ -409,6 +409,7 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 
 	# --- build the hero: level, mono theme, talents, attributes, gear
 	p.level = plevel
+	p.resonance = 0.0  # pin NEUTRAL: the band leans (Hunger execute) must never skew a bench
 	p.set_class(cls)          # refunds all points, derives theme unlocks
 	p.set_all_themes(tid)     # MONO spec: one identity across all four slots
 	p.tree_points = _preset(TREE_PRESETS, cls, tid).duplicate()

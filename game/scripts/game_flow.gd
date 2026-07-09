@@ -291,7 +291,7 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 	player.hp = player.max_hp
 	player.mp = player.max_mp
 	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
-	Pickup.drop_gold(self, Story.ALL_ENEMIES[kind].get("gold", 50), boss_pos)
+	Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), boss_pos)
 
 func on_boss_died(kind: String, dead: Boss = null) -> void:
 	boss_done[kind] = true
@@ -311,7 +311,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 
 	# Bosses always drop a golden chest + a pile of gold.
 	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
-	Pickup.drop_gold(self, Story.ALL_ENEMIES[kind].get("gold", 50), boss_pos)
+	Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), boss_pos)
 
 	# Boss gems (round 44): first clear of the chapter = 3 guaranteed
 	# gems per boss (this runs BEFORE completed_<ch> is set below, so
@@ -448,10 +448,15 @@ func _next_quest_after(zi: int) -> String:
 			return kind
 	return "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
 
+## Hunger (tempted resonance lean): kills pay a little extra gold —
+## applied where kill gold is ROLLED (greed applies later, at pickup).
+func _kill_gold(base: int) -> int:
+	return int(base * player.hunger_gold_mult()) if is_instance_valid(player) else base
+
 func on_enemy_died(e: Enemy) -> void:
 	if e is Boss:
 		return  # boss drops are handled in on_boss_died
-	Pickup.drop_gold(self, e.gold_value, e.global_position)
+	Pickup.drop_gold(self, _kill_gold(e.gold_value), e.global_position)
 	if e.xp_value > 0 or e.gold_value > 0 or e.elite:
 		note_kill(e.kind)  # codex completion (scenery props and event mood spawns don't count)
 	if e.elite and is_instance_valid(player):

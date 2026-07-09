@@ -749,6 +749,25 @@ const RES_REWARD_GOLD_PER_POINT := 2
 const RES_REWARD_CHEST_AT := 5.0     # |delta| >= this -> wood chest
 const RES_REWARD_SILVER_AT := 8.0    # |delta| >= this -> silver chest
 
+# --------------------------------------------- resonance band leans ---
+# Conviction-scaled leans (2026-07-09): a small passive rider whose
+# STRENGTH ramps with |resonance| — zero through the neutral band, waking
+# at the band line and maxing at full conviction — and whose FLAVOR is
+# the sign. No correct band ("conviction, not virtue"): Virtue mends
+# (Constancy: potions heal deeper, on top of the steady haggle), while
+# Temptation hunts (Hunger: execute damage vs wounded MOBS — never
+# bosses, their execute windows stay design-owned — plus kill gold, the
+# earn-side mirror of steady's spend-side 0.9 haggle). Undecided lends
+# NOTHING — that emptiness is the pull. Autotest and dps_bench PIN
+# resonance to 0 so the leans never skew a benchmark silently.
+const RES_LEAN_START := 25.0   # keep in sync with Story.RES_BAND_AT
+const RES_LEAN_FULL := 100.0
+const RES_HUNGER_EXEC_MAX := 0.10     # dmg vs mobs below the wound line, at full lean
+const RES_HUNGER_EXEC_AT := 0.25      # mob hp fraction that counts as "wounded"
+const RES_HUNGER_GOLD_MAX := 0.15     # bonus KILL gold at full lean
+const RES_CONSTANCY_HEAL_MAX := 0.25  # bonus potion healing at full lean
+const POTION_HEAL_FRAC := 0.6         # base health-potion heal (fraction of max hp)
+
 # --------------------------------------------------------------- mailbox ---
 # Unclaimed mail (dropped-loot letters, event gifts) expires after this
 # many days on the TRUSTED clock (game.trusted_now — monotonic, cheat-

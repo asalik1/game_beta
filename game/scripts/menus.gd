@@ -1080,6 +1080,23 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 		"tempted": Color(1.0, 0.6, 0.6)}.get(res_band, Color(0.85, 0.85, 0.9))
 	_stat_row(list, "Resonance", "%+d   (%s)" % [int(p.resonance), res_word],
 		"How the shard resonates with your CHOICES, from -100 (Temptation) to +100 (Virtue). Kindness, mercy and honest work raise it; cruelty, theft and grave-robbing lower it. The world reads it before you do: merchants price you 10% kinder when it's high and 10% warier when it's low, some dialogue options only open at certain bands, and NPCs react to what the shard says about you.", res_col)
+	# Band leans (2026-07-09): the shard's conviction worn as NUMBERS
+	# (player rule: never explain a stat only in prose).
+	if p.res_lean() <= 0.0:
+		_stat_row(list, "Shard lean", "none — the shard is undecided",
+			"Commit past the band line (±25) and a lean wakes, growing to full strength at ±100. Virtue leans into CONSTANCY: health potions mend up to %d%% deeper. Temptation leans into HUNGER: up to +%d%% damage to wounded mobs (below %d%% HP — never bosses) and up to +%d%% gold from kills. Neither is the correct answer; staying undecided is the only way to get nothing." % [
+				int(Balance.RES_CONSTANCY_HEAL_MAX * 100), int(Balance.RES_HUNGER_EXEC_MAX * 100),
+				int(Balance.RES_HUNGER_EXEC_AT * 100), int(Balance.RES_HUNGER_GOLD_MAX * 100)])
+	elif p.resonance > 0.0:
+		_stat_row(list, "Shard lean", "Constancy — potions mend +%d%%" % int((p.constancy_heal_mult() - 1.0) * 100.0),
+			"The steady shard rewards the measured hand: health potions restore +%d%% more (grows with conviction — +%d%% at Virtue 100). Merchants already price the steady 10%% kinder." % [
+				int((p.constancy_heal_mult() - 1.0) * 100.0), int(Balance.RES_CONSTANCY_HEAL_MAX * 100)], res_col)
+	else:
+		_stat_row(list, "Shard lean", "Hunger — +%d%% vs wounded mobs, +%d%% kill gold" % [
+				int(p.hunger_exec_bonus() * 100.0), int((p.hunger_gold_mult() - 1.0) * 100.0)],
+			"The tempted shard savors the finish: +%d%% damage to mobs below %d%% health (bosses are immune — earn those the honest way) and +%d%% gold from every kill (grows with conviction — full at Temptation -100)." % [
+				int(p.hunger_exec_bonus() * 100.0), int(Balance.RES_HUNGER_EXEC_AT * 100),
+				int((p.hunger_gold_mult() - 1.0) * 100.0)], res_col)
 
 	# (T5) Faction standing — who in Vaelscar trusts you, and how much.
 	_lbl(list, "FACTIONS", 16, Color(0.95, 0.85, 0.5))

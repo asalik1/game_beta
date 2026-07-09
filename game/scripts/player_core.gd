@@ -37,6 +37,29 @@ var faction_standing := {"accord": 0, "cinderborn": 0, "wildfang": 0, "choir": 0
 func add_resonance(delta: float) -> void:
 	resonance = clampf(resonance + delta, -100.0, 100.0)
 
+
+## Conviction strength (0..1) behind the band leans: zero through the
+## neutral band, wakes PAST the band line, full at ±100. All reads are
+## live — no recalc involved.
+func res_lean() -> float:
+	return clampf((absf(resonance) - Balance.RES_LEAN_START)
+		/ (Balance.RES_LEAN_FULL - Balance.RES_LEAN_START), 0.0, 1.0)
+
+
+## Hunger (tempted lean): bonus damage vs wounded MOBS (never bosses).
+func hunger_exec_bonus() -> float:
+	return Balance.RES_HUNGER_EXEC_MAX * res_lean() if resonance < 0.0 else 0.0
+
+
+## Hunger (tempted lean): kills drop a little extra gold.
+func hunger_gold_mult() -> float:
+	return 1.0 + (Balance.RES_HUNGER_GOLD_MAX * res_lean() if resonance < 0.0 else 0.0)
+
+
+## Constancy (steady lean): health potions mend deeper.
+func constancy_heal_mult() -> float:
+	return 1.0 + (Balance.RES_CONSTANCY_HEAL_MAX * res_lean() if resonance > 0.0 else 0.0)
+
 # --- progression ---
 var level := 1
 var xp := 0

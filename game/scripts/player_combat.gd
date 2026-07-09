@@ -296,6 +296,16 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# Coup de Grâce (assassin talent): finish wounded prey faster.
 	if execute_dmg > 0.0 and e.max_hp > 0.0 and e.hp < e.max_hp * 0.40:
 		dmg *= 1.0 + execute_dmg
+	# Hunger (tempted resonance lean): the shard savors the finish — wounded
+	# MOBS take extra. Never bosses (their execute windows stay design-owned),
+	# and only prey that PAYS: boss summons / spawner sprouts / event mood
+	# spawns all zero gold_value, so the hunger ignores them — a boss's adds
+	# die at the fight's own pace.
+	if not (e is Boss) and e.gold_value > 0 and e.max_hp > 0.0 \
+			and e.hp < e.max_hp * Balance.RES_HUNGER_EXEC_AT:
+		var hunger := hunger_exec_bonus()
+		if hunger > 0.0:
+			dmg *= 1.0 + hunger
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
