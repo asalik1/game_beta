@@ -129,6 +129,7 @@ func _death_mark() -> void:
 	# Untouchable through the execution (round 18): longer than Shadow
 	# Dash's 0.5s — commit to the kill, not to the chip damage.
 	hurt_cd = maxf(hurt_cd, 0.8)
+	hurt_was_heavy = true  # untouchable means untouchable — heavy telegraphs too
 	target.vuln_time = 5.0
 	# Default mark is +50%; shadow's ult carries a leaner "vuln": 0.40 override
 	# (its power lives in the marked-window guaranteed crits, not the amp).

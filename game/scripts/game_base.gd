@@ -262,7 +262,8 @@ const MUSIC_DB := -16.0
 ## The best gear grade this chapter can drop (act gating, DESIGN.md):
 ## The best grade a GENERAL faucet (chest/shop/gamble/spoils) can yield this
 ## chapter — the ceiling of the chapter's general band table (2026-07-09).
-## Used for gamble pricing probes; the drop channels roll the band directly.
+## Display/gating probes only; the drop channels roll the band directly
+## (the gamble prices itself off the BOSS band now — see gamble_cost).
 func loot_cap() -> String:
 	return Balance.chapter_gear_ceiling(chapter_id)
 
@@ -275,18 +276,27 @@ func band_price_mult() -> float:
 	return 1.0
 
 
-## Gambling vendor price (round 51): the FARM cost of the chapter's cap grade
-## (what the best possible roll is worth), discounted for the sight-unseen
-## risk, then haggled. The `tier` still shapes the grade spread you actually
-## get (rolled + capped in gamble()); pricing tracks the ceiling so a cheap
-## gamble can never beat farming.
+## Gambling vendor price (2026-07-09 rework): the gamble is the PITY path —
+## it rolls the chapter's BOSS band (the B/A pieces the general faucets
+## can't reach), so it is priced against what it PAYS:
+##   cost = sum_over_boss_band( weight_g x farm_price(g) ) x GAMBLE_DISCOUNT
+## i.e. the boss table's real drop odds weight each grade's farm-cost
+## (Items.shop_buy_price, the round-51 machinery), then the sight-unseen
+## discount (0.8) and the resonance haggle. Reads as "a bit cheaper than
+## farming that grade yourself". `tier` is legacy and ignored.
 func gamble_cost(_tier: String = "") -> int:
-	var probe := {"grade": loot_cap(), "slot": "armor", "plus": 0}
-	return int(ceil(float(Items.shop_buy_price(probe, chapter_id))
-		* Balance.GAMBLE_DISCOUNT * band_price_mult()))
+	var w := Balance.boss_weights(chapter_id)
+	var total := 0.0
+	for v in w.values():
+		total += float(v)
+	var expected := 0.0
+	for g in w:
+		var probe := {"grade": String(g), "slot": "armor", "plus": 0}
+		expected += (float(w[g]) / total) * float(Items.shop_buy_price(probe, chapter_id))
+	return int(ceil(expected * Balance.GAMBLE_DISCOUNT * band_price_mult()))
 
 
-## Spend gold on a random item of `tier`, sight unseen. Returns the won
+## Spend gold on a random BOSS-band item, sight unseen. Returns the won
 ## item, or {} if you can't afford it or the bag is full (nothing charged).
 func gamble(tier: String) -> Dictionary:
 	var cost := gamble_cost(tier)
@@ -295,7 +305,8 @@ func gamble(tier: String) -> Dictionary:
 	player.gold -= cost
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var won := Items.roll_chapter_gear(chapter_id, rng, player.cls)
+	var grade := Balance.roll_weighted_grade(Balance.boss_weights(chapter_id), rng)
+	var won := Items.roll_gear_of_grade(grade, rng, player.cls)
 	player.add_item(won)
 	return won
 
@@ -1639,7 +1650,9 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 		sink.tween_callback(sword.queue_free)
 	if is_instance_valid(player) and not player.dead \
 			and player.global_position.distance_to(pos) <= radius + 8.0:
-		player.take_damage(damage, "magic")
+		# HEAVY: a telegraphed nuke pierces a chip-armed hurt_cd gate — a stray
+		# graze must never eat the punish for standing in the circle.
+		player.take_damage(damage, "magic", null, true)
 		# Riders (mob snare patch): a caught player can also be frozen/rooted.
 		if opts.has("freeze"):
 			player.apply_freeze(float(opts["freeze"]))
@@ -1732,7 +1745,9 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		burst(player.global_position, Color(0.6, 1.0, 0.75), 12)  # sheltered
 		return
 	burst(player.global_position, Color(1.0, 0.35, 0.2), 18)
-	player.take_damage(damage, "magic")
+	# HEAVY: the arena-wide blast pierces a chip-armed hurt_cd gate (the known
+	# cheese: tank a graze right before Vess's wail and eat the wail for free).
+	player.take_damage(damage, "magic", null, true)
 	# Some inverse telegraphs don't just hurt — they FREEZE or ROOT the
 	# player caught in the open (Serane's Flash Freeze, ch5+).
 	if opts.has("freeze"):

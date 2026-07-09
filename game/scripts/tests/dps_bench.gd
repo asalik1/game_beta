@@ -596,6 +596,7 @@ func _reset_player(p: Player) -> void:
 	p.cast_haste_time = 0.0
 	p.nova_regen_time = 0.0
 	p.next_crit = false
+	p.hunt_rhythm = 0
 	p.paladin_mode = "holy"
 	p.grit_stacks = 0
 	p.grit_time = 0.0

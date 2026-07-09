@@ -22,6 +22,12 @@ func switch_chapter(id: String, force := false) -> void:
 	if not Story.CHAPTER_LIST.has(id) or (id == chapter_id and not force):
 		return
 	chapter_id = id
+	# Potion investment (2026-07-09): stock is BOUGHT and carries across
+	# chapters — no grants. The one exception: entering a teaching chapter
+	# (ch1-3) hands ONE free health potion that EXPIRES on leaving it. The
+	# absolute set below is grant + expiry in one move (revisits can never
+	# stack freebies); loads overwrite it from the save right after this.
+	player.potions_free = 1 if chapter_id in Balance.FREE_POTION_CHAPTERS else 0
 	var chapter: Dictionary = Story.chapter(id)
 	zones = chapter["zones"]
 	zone_count = zones.size()

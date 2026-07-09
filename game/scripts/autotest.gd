@@ -781,7 +781,7 @@ func _run_systems() -> void:
 	# 3d13. Consumables: mana draught, might elixir, recall scroll.
 	_test_consumables()
 
-	# 3d14. Gamble vendor: afford gate, cost deduction, item delivered.
+	# 3d14. Gamble vendor: afford gate, cost deduction, boss-band roll + pricing.
 	_test_gamble()
 
 	# 3d14b. Merchant economy (round 50): level-scaled price ladder, gem +
@@ -944,10 +944,46 @@ func _run_systems() -> void:
 	game.player.recalc()
 	print("ok: gems (socket, synthesize, sell-return)")
 
-	# 4d. Telegraph resolves.
-	game.telegraph(game.player.global_position + Vector2(40, 0), 60.0, 0.3, 5.0, {"sword": true})
-	await _frames(45)
-	print("ok: telegraph + falling sword")
+	# 4d. Telegraph resolves — and it lands HEAVY (2026-07-09): a chip-armed
+	# hurt_cd gate must not eat the telegraphed nuke (the old cheese: tank a
+	# graze right before the blast and stand in the circle for free).
+	var eva_save: float = game.player.eva
+	game.player.eva = 0.0        # deterministic: no dodge rolls in these asserts
+	game.player.shield = 0.0
+	game.player.hp = game.player.max_hp
+	game.player.hurt_cd = 0.0
+	game.telegraph(game.player.global_position + Vector2(40, 0), 60.0, 0.3, 50.0, {"sword": true})
+	game.player.take_damage(1.0, "phys")  # chip: arms the gate ahead of the blast
+	if game.player.hurt_cd <= 0.0:
+		return _fail("chip hit did not arm the hurt gate")
+	var tele_hp: float = game.player.hp
+	# Wall-clock wait: the telegraph resolves on a 0.3s timer while the 0.6s
+	# chip gate is still armed — the heavy blast must pierce it.
+	await get_tree().create_timer(0.45).timeout
+	await _frames(2)
+	if game.player.hp >= tele_hp:
+		return _fail("telegraph nuke was eaten by a chip-armed hurt gate")
+	# Gate semantics: chip blocked by ANY armed gate; heavy pierces a
+	# chip-armed gate but is blocked by a heavy-armed one (no double-taps).
+	game.player.hurt_cd = 0.0
+	game.player.take_damage(1.0, "phys")
+	var gate_hp: float = game.player.hp
+	game.player.take_damage(1.0, "phys")               # chip vs chip gate: blocked
+	if game.player.hp < gate_hp:
+		return _fail("chip hit pierced the hurt gate")
+	game.player.take_damage(5.0, "magic", null, true)  # heavy vs chip gate: pierces
+	if game.player.hp >= gate_hp:
+		return _fail("heavy hit did not pierce a chip-armed gate")
+	var heavy_hp: float = game.player.hp
+	game.player.take_damage(5.0, "magic", null, true)  # heavy vs heavy gate: blocked
+	if game.player.hp < heavy_hp:
+		return _fail("overlapping heavy hits double-tapped through the gate")
+	game.player.eva = eva_save
+	game.player.hurt_cd = 0.0
+	game.player.hurt_was_heavy = false
+	game.player.hp = game.player.max_hp
+	await _frames(20)  # let the falling-sword fx finish
+	print("ok: telegraph + falling sword (heavy pierces chip gate, not heavy gate)")
 
 	# 5. Skill tree: row caps and gating. Drive it at a controlled level so
 	# the assertions don't depend on how far ch1 leveled us (rows now unlock
@@ -1693,7 +1729,17 @@ func _test_reforge() -> void:
 	var s_it := Items.roll_item_of("weapon", "S", rng, "warrior")
 	if Items.can_add_socket(s_it):
 		return _fail("S item (3 sockets) should be at the socket cap")
-	print("ok: reforge bench (affix reroll, value reroll, add socket + cap)")
+
+	# C gear (2026-07-09): rolls 1 socket, reforge can add ONE more (cap 2).
+	var c_it := Items.roll_item_of("armor", "C", rng, "warrior")
+	if int(c_it["gem_slots"]) != 1:
+		return _fail("C gear should roll with 1 gem socket")
+	if not Items.can_add_socket(c_it):
+		return _fail("C gear should allow a reforged socket")
+	Items.add_socket(c_it)
+	if Items.can_add_socket(c_it):
+		return _fail("C gear past its 2-socket cap should be rejected")
+	print("ok: reforge bench (affix reroll, value reroll, add socket + cap incl. C)")
 
 
 # ---- CORE: set bonuses (count, cross-class isolation, recalc) ------------
@@ -1869,11 +1915,28 @@ func _test_gamble() -> void:
 	if p.backpack.size() != 1:
 		return _fail("gamble did not add the item to the bag")
 
+	# 2026-07-09 rework: the gamble is the pity machine — it ROLLS the
+	# chapter's BOSS band and is PRICED at the boss-table-weighted expected
+	# farm cost x GAMBLE_DISCOUNT (x the resonance haggle).
+	if not Balance.boss_weights(game.chapter_id).has(String(won.get("grade", ""))):
+		return _fail("gamble rolled a grade off the chapter's BOSS table (%s)" % String(won.get("grade", "")))
+	var w: Dictionary = Balance.boss_weights(game.chapter_id)
+	var total := 0.0
+	for v in w.values():
+		total += float(v)
+	var expected := 0.0
+	for gr in w:
+		expected += (float(w[gr]) / total) * float(Items.shop_buy_price(
+			{"grade": String(gr), "slot": "armor", "plus": 0}, game.chapter_id))
+	var want_cost: int = int(ceil(expected * Balance.GAMBLE_DISCOUNT * game.band_price_mult()))
+	if cost != want_cost:
+		return _fail("gamble cost %d != boss-band expected farm price formula %d" % [cost, want_cost])
+
 	# Restore.
 	p.gold = keep_gold
 	p.bags = keep_bags
 	p.backpack = keep_bp
-	print("ok: gamble vendor (afford gate, cost deduction, item delivered)")
+	print("ok: gamble vendor (afford gate, cost deduction, boss-band roll + pricing)")
 
 
 # ---- CORE: equip / unequip (slot empties to bag, bag-full guard) ---------
@@ -2307,6 +2370,18 @@ func _test_retention() -> void:
 		for gi in range(eg.size() - 1, -1, -1):
 			if String(eg[gi]["stat"]) in Balance.SPECIAL_GEM_STATS:
 				eg.remove_at(gi)
+	# C gear (2026-07-09: sockets extend down a tier) = 1 REGULAR slot,
+	# gem level cap Lv2: a Lv2 regular fits, a special is refused.
+	var c_item := {"slot": "charm", "grade": "C", "name": "c", "noun": "Charm",
+		"main": {}, "subs": {}, "plus": 0, "gem_slots": 1, "gems": []}
+	var g_c_reg := Items.make_gem("atk_flat", 2)
+	var g_c_spec := Items.make_gem("dmg_pct", 2)
+	game.player.gem_bag.append_array([g_c_reg, g_c_spec])
+	if game.player.embed_gem_into(c_item, g_c_spec):
+		return _fail("C gear accepted a special gem (it is regular-only)")
+	if not game.player.embed_gem_into(c_item, g_c_reg):
+		return _fail("C gear refused a legal Lv2 regular gem in its socket")
+	game.player.gem_bag.erase(g_c_spec)
 	# B gear is REGULAR-ONLY: a special gem is refused, a regular fits.
 	var b_item := {"slot": "charm", "grade": "B", "name": "b", "noun": "Charm",
 		"main": {}, "subs": {}, "plus": 0, "gem_slots": 1, "gems": []}
@@ -2354,7 +2429,7 @@ func _test_retention() -> void:
 	for gg in [g_cd, g_cb, g_rb3]:
 		game.player.gem_bag.erase(gg)
 	game.player.recalc()
-	print("ok: typed gem slots (B regular-only, A = 1 regular + 1 special, one special per stat across gear)")
+	print("ok: typed gem slots (C/B regular-only incl. C's new socket, A = 1 regular + 1 special, one special per stat across gear)")
 
 	# --- class lock: another class's gear refuses to be worn ---
 	var other_cls: String = "mage" if game.player.cls != "mage" else "warrior"

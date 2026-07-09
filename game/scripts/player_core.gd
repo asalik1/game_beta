@@ -48,7 +48,13 @@ var attr_points := {"STR": 0, "AGI": 0, "INT": 0, "VIT": 0,
 	"PhysRes": 0, "MagRes": 0, "CritRes": 0, "DEX": 0, "PhysPen": 0, "MagPen": 0}
 var unspent_attr := 0    # +1 per level, allocate in the skills menu
 var gold := 15           # scarcity pass: merchants and haggling matter
-var potions := 2
+# Health potions are an INVESTMENT (2026-07-09): `potions` is BOUGHT stock
+# (merchant gold, carries across chapters, sellable) — a fresh run starts
+# DRY. `potions_free` is the ONE teaching potion granted on entering ch1-3
+# (Balance.FREE_POTION_CHAPTERS): it EXPIRES on leaving the chapter
+# (switch_chapter sets it absolutely), is drunk FIRST, and never sells.
+var potions := 0
+var potions_free := 0
 
 # --- gear ---
 var equipment := {}      # slot -> item Dictionary
@@ -141,9 +147,14 @@ var greed := 0.0
 var cds := {"a1": 0.0, "a2": 0.0, "a3": 0.0, "ult": 0.0}
 var potion_cd := 0.0
 var hurt_cd := 0.0
+var hurt_was_heavy := false    # the live hurt_cd window blocks HEAVY hits too: set by a landed
+                               # heavy hit (boss telegraph) or a deliberate i-frame grant; a
+                               # window armed by mere chip damage leaves this false, so a
+                               # telegraph can pierce it (see player.gd take_damage)
 var berserk_time := 0.0
 var berserk_bonus := 0.4       # damage bonus while berserk (theme-tunable)
 var next_crit := false         # Hunt: the next hit is a guaranteed crit
+var hunt_rhythm := 0           # Hunt: Quick Shots fired since the last rhythm crit (Balance.HUNT_RHYTHM_SHOTS)
 var dash_refund_t := 0.0       # Shadow phantom step: kill within this refunds the dash
 var dash_refund_frac := 0.0    # ...how much of the dash cd a closing kill returns
 var storm_time := 0.0
@@ -487,6 +498,7 @@ func set_class(id: String) -> void:
 	unspent_attr += refunded_attr
 	cls = id
 	ability_theme = {"a1": "", "a2": "", "a3": "", "ult": ""}
+	hunt_rhythm = 0
 	aegis_time = 0.0
 	pact_time = 0.0
 	paladin_mode = "holy"
@@ -520,6 +532,8 @@ func unlocked_theme_ids() -> Array:
 func set_ability_theme(slot: String, id: String) -> void:
 	if id == "" or id in unlocked_theme_ids():
 		ability_theme[slot] = id
+		if slot == "a1":
+			hunt_rhythm = 0  # hunt's rhythm counter never carries across a theme swap
 
 
 ## One click, one identity: assign a theme (or "" = base) to EVERY
@@ -816,19 +830,34 @@ func add_consumable(c: Dictionary) -> bool:
 
 # ------------------------------------------------------ potion loadout ---
 # Playtest 2026-07-07 v2: potions are budgeted PER ROOM. The loadout is
-# an ordered plan of act-capped slots (1/3/5); each slot holds a potion
-# TYPE, duplicates welcome (3x health IS a plan). potion_rotation stores
-# only the ASSIGNED slots — every unassigned slot defaults to health, so
-# an untouched loadout is pure health potions. Entering a room refills
-# the budget (room_potions, unsaved); each drink spends a slot; spent
-# loadout = Q locked until the next room. Planning is the skill.
+# an ordered plan of chapter-band-capped slots (Balance.potion_slots);
+# each slot holds a potion TYPE, duplicates welcome (3x health IS a plan).
+# potion_rotation stores only the ASSIGNED slots — every unassigned slot
+# defaults to health, so an untouched loadout is pure health potions.
+# Entering a room refills the budget (room_potions, unsaved); each drink
+# spends a slot; spent loadout = Q locked until the next room. Planning
+# is the skill.
 
 var room_potions := {}   # potion type -> uses left THIS room (unsaved)
 
 
 func potion_slot_cap() -> int:
-	var act := Story.act_of(game.chapter_id)
-	return int(Balance.POTION_SLOTS_BY_ACT.get(clampi(act, 1, 3), 5))
+	return Balance.potion_slots(game.chapter_id)
+
+
+## Total drinkable health-potion stock: bought potions + the expiring
+## ch1-3 teaching freebie (potions_free).
+func potion_count() -> int:
+	return potions + potions_free
+
+
+## Consume one health potion from stock — the EXPIRING freebie first (it
+## dies with the chapter anyway; bought stock is the investment that keeps).
+func spend_health_potion() -> void:
+	if potions_free > 0:
+		potions_free -= 1
+	elif potions > 0:
+		potions -= 1
 
 
 ## The full plan: assigned slots (clamped to cap) + health-fill.
@@ -894,7 +923,7 @@ func loadout_add(id: String) -> void:
 		return
 	if potion_rotation.size() >= potion_slot_cap():
 		game.spawn_text(global_position + Vector2(0, -52),
-			"Loadout full — %d slot%s this act (CTRL-click removes)" % [potion_slot_cap(),
+			"Loadout full — %d slot%s this chapter (CTRL-click removes)" % [potion_slot_cap(),
 				"" if potion_slot_cap() == 1 else "s"], Color(1.0, 0.7, 0.4))
 		return
 	potion_rotation.append(id)
@@ -1086,7 +1115,7 @@ func strip_gems(item: Dictionary) -> void:
 ## the TYPED-SLOT rules (2026-07-08) so the inventory can EXPLAIN a refusal
 ## right on the gem's row instead of failing silently: A+ gear has ONE
 ## special-only slot + regular slots; B and below are regular-only. Special
-## gems (Haste/CDR/Combo/Lifesteal/Greed/Dmg%) go ONLY in the special slot,
+## gems (Haste/CDR/Combo/Lifesteal/Tenacity/Dmg%) go ONLY in the special slot,
 ## regular gems only in regular slots — and specials are limited to ONE of
 ## each stat across your whole equipped loadout. Can't stack, can't skip.
 func gem_socket_error(item: Dictionary, gem: Dictionary) -> String:

@@ -440,10 +440,12 @@ func drink_potion() -> void:
 		potion_cd = 0.6
 		cycle_potion()  # nothing left of this type — swap instead of sulking
 		return
-	if potions <= 0 or hp >= max_hp:
+	# Health drinks consume OWNED stock (2026-07-09 investment round):
+	# bought potions, or the expiring ch1-3 teaching freebie — never free.
+	if potion_count() <= 0 or hp >= max_hp:
 		return
 	potion_cd = 0.6
-	potions -= 1
+	spend_health_potion()
 	room_potions["health"] = int(room_potions.get("health", 1)) - 1
 	game.fight_note_potion()
 	hp = minf(max_hp, hp + max_hp * 0.6)
@@ -458,8 +460,17 @@ func drink_potion() -> void:
 ## shaves our evasion, its pen eats our resistance, and it can crit
 ## against our critres. Attacker-less damage (telegraphs, hazards)
 ## keeps the plain eva-then-res path.
-func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> void:
-	if dead or hurt_cd > 0.0:
+## `heavy` (2026-07-09): boss telegraph resolutions pass true. The chip gate
+## below exists for READABILITY (throttles hits to ~1.6/s so you can tell what
+## is killing you) — but a stray chip hit must never eat a telegraphed nuke's
+## "get good" punish (known cheese: tank a graze, stand in Vess's wail free).
+## So a HEAVY hit pierces a gate armed by chip damage; it is still blocked by
+## a gate armed by another heavy hit (or a deliberate i-frame window), so two
+## overlapping telegraphs can't double-tap someone instantly.
+func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false) -> void:
+	if dead:
+		return
+	if hurt_cd > 0.0 and (hurt_was_heavy or not heavy):
 		return
 	if game.dev_god:
 		# Dev god mode: ignore damage at the source. The per-frame HP restore in
@@ -518,6 +529,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null) -> vo
 			# hazards — the attacker-less path) is softened during the dash.
 			amount *= 0.65
 	hurt_cd = 0.6
+	hurt_was_heavy = heavy  # a heavy-armed window blocks even other heavies
 	since_hurt = 0.0
 	if dr_time > 0.0 and dmg_type != "true":
 		# Arcane Ward (round 45): the mage's Blink cloak — a brief, strong
@@ -611,6 +623,7 @@ func revive() -> void:
 	hp = max_hp
 	mp = max_mp
 	hurt_cd = 1.5
+	hurt_was_heavy = true  # respawn grace blocks telegraphs too
 	# Release the death clip's frozen last frame (the dissolve) and snap back to
 	# the idle animation — otherwise you respawn stuck as the death-pile "speck".
 	_clip_locked = false

@@ -33,6 +33,10 @@ static func write(game: Game, slot: int) -> void:
 		"skill_points": p.skill_points, "tree_points": p.tree_points,
 		"attr_points": p.attr_points, "unspent_attr": p.unspent_attr,
 		"gold": p.gold, "potions": p.potions,
+		# The expiring ch1-3 teaching potion rides the save WITH its chapter:
+		# switch_chapter re-grants on load, then this overwrites (drunk stays
+		# drunk; leaving the chapter zeroes it before any save can bank it).
+		"potions_free": p.potions_free,
 		"ability_theme": p.ability_theme,
 		# --- Phase 1 story trackers (saved from day one) ---
 		"resonance": p.resonance,
@@ -158,6 +162,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 	p.unspent_attr = int(data.get("unspent_attr", 0))
 	p.gold = int(data.get("gold", 0))
 	p.potions = int(data.get("potions", 0))
+	p.potions_free = int(data.get("potions_free", 0))
 	var themes: Dictionary = data.get("ability_theme", {})
 	for k in p.ability_theme:
 		p.ability_theme[k] = String(themes.get(k, p.ability_theme[k]))

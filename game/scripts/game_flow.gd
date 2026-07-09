@@ -307,7 +307,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	_boss_roster_update(src)
 	player.hp = player.max_hp
 	player.mp = player.max_mp
-	player.potions = maxi(player.potions, Balance.BOSS_KILL_POTION_FLOOR)
+	# (No potion restock — 2026-07-09 investment round: stock is bought.)
 
 	# Bosses always drop a golden chest + a pile of gold.
 	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
@@ -481,7 +481,7 @@ func on_enemy_died(e: Enemy) -> void:
 			# 2026-07-09: bag grade follows the chapter's boss table (like boss bags).
 			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
 	else:
-		# Chance-based chest drops (Greed above 30% nudges the odds up).
+		# Chance-based chest drops (Greed nudges the odds up from its first point).
 		var bonus := Stats.greed_loot(player.greed) if is_instance_valid(player) else 0.0
 		var roll := loot_rng.randf()
 		if roll < Balance.MOB_SILVER_CHEST_CHANCE + bonus * 0.3:
@@ -558,6 +558,14 @@ func on_player_died() -> void:
 	run_deaths += 1
 	fight_wipe()
 	sfx("pdie")
+	# Death tithe (2026-07-09): a slice of CARRIED gold stays where you fell —
+	# without it death is free and every boss is beatable by pure attrition.
+	# Respawn location, boss reset and the HP/MP restore stay untouched.
+	var tithe: int = int(float(player.gold) * Balance.DEATH_GOLD_TITHE)
+	if tithe > 0:
+		player.gold = maxi(player.gold - tithe, 0)
+		spawn_text(player.global_position + Vector2(0, -64), "-%d gold" % tithe,
+			Color(1.0, 0.84, 0.35))
 	hud.dim(0.55)
 	hud.flash_title("YOU DIED", "The flame endures...", 1.0)
 	for p in get_tree().get_nodes_in_group("projectiles"):

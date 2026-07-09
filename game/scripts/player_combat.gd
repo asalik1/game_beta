@@ -680,6 +680,7 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 	var end := global_position
 	if iframe > 0.0:
 		hurt_cd = maxf(hurt_cd, iframe)  # brief immunity while dashing
+		hurt_was_heavy = true  # a deliberate i-frame blocks heavy telegraph hits too
 	game.burst(start, color, 8)
 	game.burst(end, color, 8)
 	game.dust(start + Vector2(0, 14), 4)  # kicked-up dust where you left

@@ -9,6 +9,8 @@ var game: Game
 var hp_fill: ColorRect
 var mp_fill: ColorRect
 var xp_fill: ColorRect
+var hp_text: Label              # current/max, right-aligned inside the bar
+var mp_text: Label
 var stats_label: Label
 var gold_label: Label
 var cr_label: Label
@@ -105,6 +107,8 @@ func _ready() -> void:
 	hp_fill = _bar(Vector2(18, 16), Vector2(BAR_W, 20), Color(0.8, 0.2, 0.2))
 	mp_fill = _bar(Vector2(18, 40), Vector2(BAR_W, 14), Color(0.25, 0.45, 0.9))
 	xp_fill = _bar(Vector2(18, 58), Vector2(BAR_W, 8), Color(0.95, 0.8, 0.25))
+	hp_text = _bar_text(Vector2(18, 16), Vector2(BAR_W, 20), 12)
+	mp_text = _bar_text(Vector2(18, 40), Vector2(BAR_W, 14), 10)
 	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1))
 	gold_label = _label(Vector2(18, 104), 15, Color(1.0, 0.85, 0.35))
 	cr_label = _label(Vector2(18, 126), 15, Color(0.65, 0.9, 1.0))
@@ -217,6 +221,7 @@ func _ready() -> void:
 
 	# ---------------------------------------------------- quest tracker ---
 	zone_label = _label(Vector2(340, 12), 16, Color(0.95, 0.85, 0.5), 600, HORIZONTAL_ALIGNMENT_CENTER)
+	UITheme.title(zone_label, 17)  # the location name is a header
 	quest_label = _label(Vector2(240, 36), 16, Color(1, 1, 1), 800, HORIZONTAL_ALIGNMENT_CENTER)
 	# Icon row under Resonance: ✉ mail · ! quest · bag inventory · book codex · ★ daily.
 	# The quest ! wears a red/orange SHINE (glow + twinkles) when a reward waits
@@ -287,29 +292,21 @@ func _ready() -> void:
 	boss_box.visible = false
 	boss_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(boss_box)
-	var boss_bg := ColorRect.new()
-	boss_bg.color = Color(0, 0, 0, 0.6)
-	boss_bg.position = Vector2(388, 86)
-	boss_bg.size = Vector2(504, 20)
-	boss_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	boss_box.add_child(boss_bg)
-	boss_fill = ColorRect.new()
-	boss_fill.color = Color(0.7, 0.12, 0.2)
-	boss_fill.position = Vector2(390, 88)
-	boss_fill.size = Vector2(500, 16)
-	boss_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	boss_box.add_child(boss_fill)
+	# Same framed treatment as the player bars (2px border, caps, quarter
+	# ticks) — the boss's health speaks the HUD's one bar language.
+	boss_fill = _bar(Vector2(390, 88), Vector2(500, 16), Color(0.7, 0.12, 0.2), boss_box)
 	boss_name = Label.new()
-	boss_name.position = Vector2(390, 62)
-	boss_name.size = Vector2(500, 20)
+	boss_name.position = Vector2(390, 60)
+	boss_name.size = Vector2(500, 22)
 	boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	boss_name.add_theme_font_size_override("font_size", 16)
+	UITheme.title(boss_name, 17)
 	boss_name.add_theme_color_override("font_color", Color(1, 0.6, 0.6))
 	_outline(boss_name)
 	boss_box.add_child(boss_name)
 
 	# ------------------------------------------------------ big titles ---
 	title_label = _label(Vector2(0, 200), 44, Color(1, 1, 1), 1280, HORIZONTAL_ALIGNMENT_CENTER)
+	UITheme.title(title_label, 46)  # chapter/location card wears the display face
 	subtitle_label = _label(Vector2(0, 265), 20, Color(0.9, 0.9, 0.9), 1280, HORIZONTAL_ALIGNMENT_CENTER)
 	title_label.modulate.a = 0.0
 	subtitle_label.modulate.a = 0.0
@@ -348,7 +345,7 @@ func _ready() -> void:
 	dialogue_box.add_child(inner)
 	speaker_label = Label.new()
 	speaker_label.position = Vector2(168, 462)
-	speaker_label.add_theme_font_size_override("font_size", 18)
+	UITheme.title(speaker_label, 19)  # speaker names in the display face
 	speaker_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.4))
 	dialogue_box.add_child(speaker_label)
 	text_label = Label.new()
@@ -595,7 +592,7 @@ func _open_hud_popover(title: String, text: String) -> void:
 	if title != "":
 		var tl := Label.new()
 		tl.text = title
-		tl.add_theme_font_size_override("font_size", 18)
+		UITheme.title(tl, 19)
 		tl.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 		vbox.add_child(tl)
 	var il := Label.new()
@@ -957,21 +954,62 @@ func _panel(pos: Vector2, panel_size: Vector2) -> void:
 	add_child(bg)
 
 
-func _bar(pos: Vector2, bar_size: Vector2, color: Color) -> ColorRect:
-	var bg := ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.6)
-	bg.position = pos
-	bg.size = bar_size
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(bg)
+## Framed resource bar (theme pass): 2px warm-metal border on a dark
+## trough, end-cap lips, a segmentation tick every 25%. `parent` defaults
+## to the HUD layer; the boss bar passes its own box.
+func _bar(pos: Vector2, bar_size: Vector2, color: Color, parent: Node = null) -> ColorRect:
+	var host: Node = parent if parent != null else self
+	var frame := Panel.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0, 0, 0, 0.72)
+	sb.border_color = Color(UITheme.BAR_FRAME, 0.95)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(3)
+	frame.add_theme_stylebox_override("panel", sb)
+	frame.position = pos - Vector2(2, 2)
+	frame.size = bar_size + Vector2(4, 4)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	host.add_child(frame)
 	var fill := ColorRect.new()
 	fill.color = color
-	fill.position = pos + Vector2(2, 2)
-	fill.size = bar_size - Vector2(4, 4)
+	fill.position = pos + Vector2(1, 1)
+	fill.size = bar_size - Vector2(2, 2)
 	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(fill)
-	fill.set_meta("full_w", bar_size.x - 4.0)
+	host.add_child(fill)
+	fill.set_meta("full_w", bar_size.x - 2.0)
+	# End-cap lips: a faint light catch at each end of the trough.
+	for cap_x: float in [pos.x + 1.0, pos.x + bar_size.x - 3.0]:
+		var cap := ColorRect.new()
+		cap.color = Color(1, 1, 1, 0.1)
+		cap.position = Vector2(cap_x, pos.y + 1.0)
+		cap.size = Vector2(2, bar_size.y - 2.0)
+		cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		host.add_child(cap)
+	# Quarter ticks, drawn over the fill.
+	for i: int in [1, 2, 3]:
+		var tick := ColorRect.new()
+		tick.color = Color(0, 0, 0, 0.45)
+		tick.position = Vector2(pos.x + 1.0 + (bar_size.x - 2.0) * 0.25 * i, pos.y + 1.0)
+		tick.size = Vector2(1, bar_size.y - 2.0)
+		tick.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		host.add_child(tick)
 	return fill
+
+
+## Small current/max readout living INSIDE a bar, right-aligned.
+func _bar_text(pos: Vector2, bar_size: Vector2, font_size: int) -> Label:
+	var l := Label.new()
+	l.position = pos
+	l.size = Vector2(bar_size.x - 8.0, bar_size.y)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.92))
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	l.add_theme_constant_override("outline_size", 3)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(l)
+	return l
 
 
 func _label(pos: Vector2, font_size: int, color: Color, width := 500.0, align := HORIZONTAL_ALIGNMENT_LEFT) -> Label:
@@ -1016,14 +1054,18 @@ func update_stats(p: Player) -> void:
 		# The worn title rides the class name (codex Records tab to change).
 		cls_name += ", %s" % String(Achievements.TITLES[game.player_title]["name"])
 	var pts := "  (+%d pts, press T)" % p.skill_points if p.skill_points > 0 else ""
+	# Current/max lives INSIDE each bar now (theme pass) — the text line
+	# under them keeps class, level and the skill-point nudge.
+	stats_label.text = "%s  Lv %d%s" % [cls_name, p.level, pts]
+	hp_text.text = "%d / %d" % [int(p.hp), int(p.max_hp)]
 	if Classes.CLASSES[p.cls].get("manaless", false):
-		# Manaless classes (assassin, round 31): no MP line, no blue bar.
-		stats_label.text = "%s  Lv %d   HP %d/%d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), pts]
+		# Manaless classes (assassin, round 31): no MP number, no blue bar.
+		mp_text.text = ""
 		_set_fill(mp_fill, 0.0)
 	else:
-		stats_label.text = "%s  Lv %d   HP %d/%d   MP %d/%d%s" % [cls_name, p.level, int(p.hp), int(p.max_hp), int(p.mp), int(p.max_mp), pts]
+		mp_text.text = "%d / %d" % [int(p.mp), int(p.max_mp)]
 		_set_fill(mp_fill, p.mp / p.max_mp)
-	gold_label.text = "◉ %d gold    Potions [%s] x%d" % [p.gold, OS.get_keycode_string(game.binds["potion"]), p.potions]
+	gold_label.text = "◉ %d gold    Potions [%s] x%d" % [p.gold, OS.get_keycode_string(game.binds["potion"]), p.potion_count()]
 	if p.gold >= 5000:
 		game.unlock_achievement("wealthy")  # idempotent: fires once
 	cr_label.text = "Combat Rating: %d" % p.combat_rating()
@@ -1089,13 +1131,13 @@ func update_stats(p: Player) -> void:
 			var active_left: int = int(p.room_potions.get(p.active_potion, 0))
 			if p.active_potion == "health":
 				box["name"].text = "Potion ▸%d" % active_left if left > 0 else "Spent"
-				box["num"].text = "x%d" % p.potions
+				box["num"].text = "x%d" % p.potion_count()
 				box["icon"].texture = Art.tex("potion")
-				box["border"].color = (Color(0.75, 0.35, 0.35) if p.potions > 0 else Color(0.3, 0.15, 0.15)) \
+				box["border"].color = (Color(0.75, 0.35, 0.35) if p.potion_count() > 0 else Color(0.3, 0.15, 0.15)) \
 					if left > 0 else Color(0.18, 0.12, 0.12)
 				box["border"].set_meta("tip", _wrap_tip(
-					"Health Potion — mends 60%% of max HP (x%d carried, max %d; boss kills restock to %d). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. [%s] cycles the loadout; open the inventory and click a potion to plan it." % [
-						p.potions, Balance.POTION_MAX, Balance.BOSS_KILL_POTION_FLOOR,
+					"Health Potion — mends 60%% of max HP (x%d carried, max %d — bought from merchants; the price grows with the chapters). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. [%s] cycles the loadout; open the inventory and click a potion to plan it." % [
+						p.potion_count(), Balance.POTION_MAX,
 						left, p.potion_slot_cap(),
 						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]))
 			else:
@@ -1193,7 +1235,7 @@ func show_boss_bar(bname: String) -> void:
 
 
 func update_boss_bar(fraction: float) -> void:
-	boss_fill.size.x = 500.0 * clampf(fraction, 0.0, 1.0)
+	_set_fill(boss_fill, fraction)
 	boss_name.text = "%s — %d%%" % [boss_base_name, int(ceil(clampf(fraction, 0.0, 1.0) * 100))]
 
 

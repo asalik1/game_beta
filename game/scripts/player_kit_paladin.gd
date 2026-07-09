@@ -28,6 +28,7 @@ func _use_paladin(slot: String, f: float) -> void:
 				# leap's own cd now caps it at once per 5s, the sanctioned
 				# gap-closer pattern (same as warrior Charge).
 				hurt_cd = maxf(hurt_cd, Balance.MELEE_DASH_IFRAME)
+				hurt_was_heavy = true  # landing i-frame blocks heavy telegraph hits too
 			var jeff := {"stagger": 0.3, "knock": 280.0}
 			if s_passive() == "dawnbreaker":
 				# A pillar of light falls with the hammer.

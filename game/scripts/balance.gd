@@ -71,6 +71,11 @@ const BOSS_HP_GROWTH := 0.018    # bosses only; tracks player DPS growth -> leve
 const BOSS_DMG_GROWTH := 0.015   # tracks player EHP growth -> level-invariant hit danger
 const GOLD_MULT := 0.6          # global gold scarcity (merchants must matter)
 const REWARD_PER_LEVEL := 0.12  # xp/gold grow LINEARLY per level (no farm spiral)
+# Death tithe (player-approved 2026-07-09): death must cost SOMETHING or every
+# boss is brute-forceable by pure attrition (respawn was a free full restore).
+# Fraction of CARRIED gold lost on death; respawn location / boss reset /
+# HP-MP restore stay free.
+const DEATH_GOLD_TITHE := 0.10
 
 # ------------------------------------------------------ merchant economy ---
 # Round 51 — FARM-COST pricing (supersedes round 50's flat level ladder).
@@ -85,10 +90,30 @@ const BOSSES_PER_RUN := 3            # every Act-1 chapter has exactly 3 bosses 
 const S_WEAPON_DROP_WEIGHT := 0.5    # S-TIER weapons only drop at HALF rate (they carry the endgame passives) -> rarest, ~2x farm N; sub-S weapon rolls stay uniform
 const SHOP_BUY_MARKUP := 2.0         # commodity (below the act's rare tier) grades: cheap flat price = intrinsic x this
 const MERCHANT_SELL_FRACTION := 0.45 # SELL = this x INTRINSIC value (Items.price / gem_gold_value), NOT farm-cost — no sell-spiral
-const POTION_PRICE := 25             # health-potion buy price (flat staple)
+# Health potions are an INVESTMENT (2026-07-09 potion round): stock is
+# BOUGHT, never granted (the only freebie is the expiring ch1-3 teaching
+# potion — FREE_POTION_CHAPTERS below). They heal a % of max HP, so their
+# VALUE scales with progression — the price follows: POTION_PRICE is the
+# ch1 base, POTION_PRICE_MULT the per-chapter multiplier (ch8+ falls back
+# to the richest authored mult, same convention as the loot band tables).
+# Farm-minutes per potion stay roughly flat: the mult tracks the measured
+# g/min climb in CHAPTER_ECON. SELL stays on the flat ch1 base (menus.gd)
+# so cheap early potions can never be hauled forward for profit.
+const POTION_PRICE := 25             # ch1 base health-potion buy price
+const POTION_PRICE_MULT := {"ch1": 1.0, "ch2": 1.4, "ch3": 1.8, "ch4": 2.4,
+	"ch5": 3.2, "ch6": 4.0, "ch7": 5.0}
+
+static func potion_price(chid: String) -> int:
+	return int(round(POTION_PRICE * float(POTION_PRICE_MULT.get(chid, 5.0))))
+
+# Teaching exception, anti-farm (2026-07-09): ENTERING one of these chapters
+# grants ONE free health potion (player.potions_free) — it EXPIRES the moment
+# you leave the chapter (absolute set in switch_chapter), so revisiting early
+# chapters can never farm freebies, and it is never sellable.
+const FREE_POTION_CHAPTERS := ["ch1", "ch2", "ch3"]
 const BAG_SELL_GOLD := 1             # bags ALWAYS cash out for exactly 1g (never the 0.45 formula — anti-exploit)
 const SHOP_STOCK_BY_TIER := {"wood": 3, "silver": 4, "gold": 5}  # rolled-gear count
-const GAMBLE_DISCOUNT := 0.8         # gamble costs this x the farm price of the chapter's cap grade (sight-unseen risk)
+const GAMBLE_DISCOUNT := 0.8         # gamble costs this x the EXPECTED farm price of a chapter boss-band roll (sight-unseen risk; see game_base.gamble_cost)
 # A loose gem's INTRINSIC value (gold), tripling per level like the 3-into-1
 # combine. Drives the SELL price (x MERCHANT_SELL_FRACTION); BUY is farm-cost.
 const GEM_GOLD_BASE := 30.0
@@ -333,6 +358,13 @@ const DASH_CDR_TO_ANIM := 0.25   # per second eaten -> anim speedup (capped at 1
 # Fixes the feast-or-famine dash whose kills came from other buttons.
 const PHANTOM_REFUND_WINDOW := 2.0
 
+# ------------------------------------------------- archer hunt rhythm ---
+# 2026-07-09: hunt a1's free +25% CAP-EXEMPT crit made built crit gear
+# redundant (~60% effective on a 0.36s spam). Replaced with an EARNED
+# rhythm: every Nth hunt Quick Shot is a GUARANTEED crit (cap-exempt by
+# nature — it's guaranteed); gear crit carries the other N-1 shots.
+const HUNT_RHYTHM_SHOTS := 4
+
 # ------------------------------------------------------- paladin stances ---
 # Round 48: the paladin is a STANCE knight — no true ult. Conviction (the
 # ult slot, 8s cd) swaps Holy <-> Retribution: sustain and damage become
@@ -570,12 +602,25 @@ const ELITE_GEM_LV2_CHANCE := 0.35       # the guaranteed gem rolls Lv2 (floor; 
 const ELITE_GEM_SURE_LEVEL := 12
 const ELITE_GEM_EARLY_CHANCE := 0.45
 # Potion LOADOUT (playtest 2026-07-07, v2): potions are budgeted PER
-# ROOM. The loadout holds this many slots by act; each slot is a potion
-# type (duplicates fine — 3x health is a plan), unassigned slots default
+# ROOM. The loadout holds this many slots; each slot is a potion type
+# (duplicates fine — 3x health is a plan), unassigned slots default
 # to health. Entering a room refills the budget; each drink spends a
 # slot; an empty loadout locks Q until the next room. Pre-planning IS
 # the skill: bag carrying is uncapped (stacks), the fight is not.
-const POTION_SLOTS_BY_ACT := {1: 1, 2: 3, 3: 5}
+# CHAPTER-BANDED (2026-07-09; replaces the act table — act 1 spans seven
+# chapters, one flat cap couldn't ramp): ch1-2 teach with 1, ch3-4 midgame
+# 2, ch5-7 act-1 endgame 3. Acts 2/3 hold the latent 4/5 below.
+const POTION_SLOTS := {1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3}
+const POTION_SLOTS_ACT2 := 4   # ch8-11 (latent until Act 2 is built)
+const POTION_SLOTS_ACT3 := 5   # ch12+  (latent until Act 3 is built)
+
+static func potion_slots(chid: String) -> int:
+	var n := chapter_num(chid)
+	if n >= 12:
+		return POTION_SLOTS_ACT3
+	if n >= 8:
+		return POTION_SLOTS_ACT2
+	return int(POTION_SLOTS.get(clampi(n, 1, 7), 1))
 
 # River wading (terrain mechanic, Graphics & Ambience track): speed
 # multiplier in the water for player AND enemies; the bridge is dry.
@@ -690,7 +735,8 @@ const MOB_WOOD_CHEST_CHANCE := 0.18
 
 # ------------------------------------------------------ hero resources ---
 const POTION_MAX := 5
-const BOSS_KILL_POTION_FLOOR := 2   # boss kills top potions up to this
+# (BOSS_KILL_POTION_FLOOR retired 2026-07-09: boss kills no longer restock
+# potions — stock is bought, an investment, never a handout.)
 
 # ------------------------------------------------- resonance rewards ---
 # A shard choice in a quiet room pays either way (conviction, not
@@ -774,10 +820,11 @@ const RENEWAL_HEAL_FRAC := 0.5   # instant heal, fraction of MAX hp
 const CONSUMABLE_PRICES := {"mana_potion": 35, "elixir_might": 130, "recall_scroll": 55,
 	"elixir_ward": 110, "renewal_draught": 90}
 
-# Gambling vendor (Diablo-style): spend gold for a random item of the
-# merchant's tier, sight unseen. A cheap gold sink + loot thrill; deeper
-# merchants gamble richer tiers. Cost is per merchant tier (before haggle).
-const GAMBLE_COST := {"wood": 60, "silver": 150, "gold": 400}
+# Gambling vendor (reworked 2026-07-09): the PITY machine — a gamble rolls
+# from the chapter's BOSS band (CHAPTER_BOSS_WEIGHTS), priced at the boss-
+# table-weighted EXPECTED farm cost x GAMBLE_DISCOUNT. Formula + knob live
+# in game_base.gamble_cost / GAMBLE_DISCOUNT above. (The old flat per-tier
+# GAMBLE_COST table was dead code and is deleted.)
 
 # ----------------------------------------------------------------- rooms ---
 # Quiet room types shrink their walled playable area within the fixed

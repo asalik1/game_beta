@@ -12,6 +12,7 @@ var current := ""
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
 var shop_tab := "buy"             # shop: which full-width tab is showing (persists across refreshes)
+var inv_cat := "all"              # inventory: last bag category filter (survives item-panel rebuilds)
 var title_stage := "cover"        # boot title: "cover" (splash) -> "slots" (roster)
 var chapter_replay := false       # chapter select opened from the pause menu
 var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv (default), 2 +10, 3 +20
@@ -88,20 +89,12 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 		root.add_child(night)
 		root.move_child(night, 0)
 
-	# Dressed panel (visual pass): rounded corners, gold border, a drop
-	# shadow lifting it off the dimmed world — one StyleBox, every menu.
-	var panel := Panel.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.09, 0.08, 0.13, 0.98)
-	sb.border_color = Color(0.9, 0.8, 0.5)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(10)
-	sb.shadow_color = Color(0, 0, 0, 0.55)
-	sb.shadow_size = 16
-	panel.add_theme_stylebox_override("panel", sb)
-	panel.position = Vector2(640 - w / 2 - 3, 360 - h / 2 - 3)
-	panel.size = Vector2(w + 6, h + 6)
-	root.add_child(panel)
+	# Dressed panel (theme pass): the shared chrome lives in UITheme —
+	# gold border + bronze bevel + top sheen — and the root carries the
+	# code-built widget Theme, so every Button/HSlider/ScrollBar on any
+	# screen inherits the skin with no per-screen styling.
+	UITheme.apply(root)
+	UITheme.panel(root, Vector2(640 - w / 2 - 3, 360 - h / 2 - 3), Vector2(w + 6, h + 6))
 
 	var vbox := VBoxContainer.new()
 	vbox.position = Vector2(640 - w / 2, 360 - h / 2) + Vector2(24, 16)
@@ -116,13 +109,10 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	# minimum width, which inflates the whole VBox past the panel and makes the
 	# body labels below it stop wrapping too — so autowrap here fixes both.
 	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tl.add_theme_font_size_override("font_size", 26)
+	UITheme.title(tl, 28)  # display font; ~26px optical in the pixel face
 	tl.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 	vbox.add_child(tl)
-	var rule := ColorRect.new()
-	rule.color = Color(0.9, 0.8, 0.5, 0.35)  # header underline
-	rule.custom_minimum_size = Vector2(0, 2)
-	vbox.add_child(rule)
+	UITheme.rule(vbox)  # header underline: gold, fading right
 
 	if closable:
 		# Red ✕ pinned to the panel's top-right corner (added last = on top).
@@ -235,8 +225,8 @@ func open_slots() -> void:
 	var have_saves := not SaveGame.list().is_empty()
 	_btn(vbox, "  ⚔  New Character  ", func() -> void: open_chapter_select(),
 		Color(0.95, 0.85, 0.5))
-	_lbl(vbox, "— CONTINUE —" if have_saves else "No heroes yet — forge your first.",
-		15, Color(0.95, 0.85, 0.5) if have_saves else Color(0.6, 0.62, 0.7))
+	UITheme.header(_lbl(vbox, "— CONTINUE —" if have_saves else "No heroes yet — forge your first.",
+		15, Color(0.95, 0.85, 0.5) if have_saves else Color(0.6, 0.62, 0.7)))
 	# The save list SCROLLS (20 slots + a dev roster overflowed the fixed
 	# panel — the bottom buttons must never leave the box).
 	var scroll := ScrollContainer.new()
@@ -569,6 +559,7 @@ func pick_class(id: String) -> void:
 # --------------------------------------------------------------- inventory ---
 
 func open_inventory(tab := "gear", cat := "all") -> void:
+	inv_cat = cat  # remembered so an item-panel underlay rebuild keeps the filter
 	var vbox := _open("Inventory — %d gold" % game.player.gold, 1120, 640, true)
 	current = "inventory"
 
@@ -592,7 +583,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	left.custom_minimum_size = Vector2(440, 0)
 	left.add_theme_constant_override("separation", 6)
 	hbox.add_child(left)
-	_lbl(left, "EQUIPPED", 16, Color(0.95, 0.85, 0.5))
+	UITheme.header(_lbl(left, "EQUIPPED", 16, Color(0.95, 0.85, 0.5)))
 	_lbl(left, "(click an item for its detail popover)", 12, Color(0.55, 0.55, 0.6))
 	for slot in Items.SLOTS:
 		if game.player.equipment.has(slot):
@@ -625,7 +616,32 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				left.add_child(srow)
 				_socket_row(srow, item, refresh)
 		else:
-			_lbl(left, "     %s — empty" % slot.capitalize(), 14, Color(0.45, 0.45, 0.45))
+			# Framed silhouette for an empty gear slot: a socketed square
+			# with the slot's monogram, so "nothing equipped HERE" reads as
+			# a place, not a footnote.
+			var erow := HBoxContainer.new()
+			erow.add_theme_constant_override("separation", 10)
+			left.add_child(erow)
+			var esq := Panel.new()
+			esq.custom_minimum_size = Vector2(40, 40)
+			var esb := StyleBoxFlat.new()
+			esb.bg_color = Color(0.05, 0.05, 0.07, 0.92)
+			esb.border_color = Color(0.4, 0.34, 0.2, 0.85)
+			esb.set_border_width_all(2)
+			esb.set_corner_radius_all(4)
+			esq.add_theme_stylebox_override("panel", esb)
+			erow.add_child(esq)
+			var mono := Label.new()
+			mono.text = slot.substr(0, 1).to_upper()
+			mono.set_anchors_preset(Control.PRESET_FULL_RECT)
+			mono.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			mono.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			UITheme.title(mono, 20)
+			mono.add_theme_color_override("font_color", Color(0.42, 0.38, 0.28, 0.9))
+			esq.add_child(mono)
+			var el := _lbl(erow, "%s — empty" % slot.capitalize(), 14, Color(0.5, 0.5, 0.52))
+			el.custom_minimum_size = Vector2(280, 0)  # HBox label-collapse trap
+			el.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_lbl(left, "(full character sheet in the Stats tab)", 12, Color(0.55, 0.55, 0.6))
 
 	var right := VBoxContainer.new()
@@ -651,6 +667,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		bag_summary += "%s·%d  " % [bg, int(bb.get("slots", 0))]
 	var bh := _lbl(head, "BAGS — %d/%d equipped  (%d/%d slots)" % [p.bags.size(), Balance.MAX_BAGS,
 		p.bag_used(), p.bag_capacity()], 16, Items.GRADE_COLOR[best_grade])
+	UITheme.header(bh)
 	bh.custom_minimum_size = Vector2(360, 0)
 	# Min width or this collapses to one char per line in the HBox (the classic
 	# trap) — it read as a vertical "F·10" speck next to the BAGS header.
@@ -690,9 +707,11 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	grid.add_theme_constant_override("h_separation", 4)
 	grid.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(grid)
-	# The bag area is a drop target for a gem dragged out of an equipped
-	# item's socket (the grid's own buttons swallow drops; the scroll, grid
-	# gaps and free squares catch them).
+	# The WHOLE bag area is a drop target for a gem dragged out of an equipped
+	# item's socket: the scroll, the grid, every free square — and every filled
+	# slot button too (buttons are MOUSE_FILTER_STOP, so a drop on one never
+	# bubbles to the grid; without their own forwarding the release showed the
+	# forbidden cursor and read as "drag doesn't work").
 	var sock_can := func(_pos: Vector2, data: Variant) -> bool:
 		return data is Dictionary and String(data.get("kind", "")) == "socketed_gem"
 	var sock_drop := func(_pos: Vector2, data: Variant) -> void:
@@ -700,6 +719,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		open_inventory("gear", cat)
 	scroll.set_drag_forwarding(Callable(), sock_can, sock_drop)
 	grid.set_drag_forwarding(Callable(), sock_can, sock_drop)
+	right.set_drag_forwarding(Callable(), sock_can, sock_drop)
 	var show_gear: bool = cat == "all" or cat in Items.SLOTS
 	var show_gems: bool = cat == "all" or cat == "gems"
 	var show_cons: bool = cat == "all" or cat == "consumables"
@@ -722,7 +742,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						["  ⚔  Equip  ", Color(0.6, 1.0, 0.6), equip_cb],
 						["  ✖  Drop  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb],
 					]
-					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions))
+					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
 		# Consumables STACK by id (playtest 2026-07-07): one slot per
 		# type, count in the tooltip, click uses ONE.
@@ -746,7 +766,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				_bag_slot(grid, null, "❦", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
 					func() -> void:
 						_open_detail_popover(null, str(cc["name"]) + xn,
-							Items.GRADE_COLOR[str(cc.get("grade", "B"))], str(cc.get("desc", "")), []))
+							Items.GRADE_COLOR[str(cc.get("grade", "B"))], str(cc.get("desc", "")), [])).set_drag_forwarding(Callable(), sock_can, sock_drop)
 				continue
 			var cicon: Texture2D = Art.consumable_icon(cc)
 			var cid := String(gid)
@@ -781,7 +801,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
 					_open_detail_popover(cicon, str(cc["name"]) + xn,
 						Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
-						info, actions))
+						info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_gems:
 		var groups := _gem_groups()
 		for key in _sorted_gem_keys(groups):
@@ -809,11 +829,13 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions)
 			var gbtn := _bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), gem_cb)
-			# Drag it straight onto an equipped item (left) to socket it.
+			# Drag it straight onto an equipped item (left) to socket it — and
+			# accept a socketed gem dropped back the other way (landing one on
+			# its matching stack is the most natural target in the grid).
 			var gem_drag := func(_pos: Vector2) -> Variant:
 				gbtn.set_drag_preview(_drag_preview(Art.gem_icon(Items.gem_color(g), int(g["lvl"]))))
 				return {"kind": "bag_gem", "gem": g}
-			gbtn.set_drag_forwarding(gem_drag, Callable(), Callable())
+			gbtn.set_drag_forwarding(gem_drag, sock_can, sock_drop)
 	# Free-space squares only in the All view (a filtered view isn't the
 	# whole bag, so padding it with empties would misrepresent capacity).
 	if cat == "all":
@@ -860,9 +882,9 @@ func _bag_empty(grid: GridContainer) -> Panel:
 	var pnl := Panel.new()
 	pnl.custom_minimum_size = Vector2(48, 48)
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.06, 0.06, 0.08, 0.7)
-	sb.border_color = Color(0.25, 0.25, 0.3, 0.6)
-	sb.set_border_width_all(1)
+	sb.bg_color = Color(0.045, 0.045, 0.065, 0.92)
+	sb.border_color = Color(0.38, 0.32, 0.2, 0.9)  # visible socket, not a hairline
+	sb.set_border_width_all(2)
 	sb.set_corner_radius_all(4)
 	pnl.add_theme_stylebox_override("panel", sb)
 	grid.add_child(pnl)
@@ -927,7 +949,7 @@ func _popover_header(vbox: VBoxContainer, icon: Texture2D, title: String, title_
 		ic.custom_minimum_size = Vector2(40, 40)
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		head.add_child(ic)
-	var tl := _lbl(head, title, 18, title_color)
+	var tl := UITheme.title(_lbl(head, title, 18, title_color), 19)
 	tl.custom_minimum_size = Vector2(300, 0)
 
 
@@ -1033,7 +1055,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 		["Phys Res", str(int(p.physres)), "Reduces physical damage taken (diminishing returns — never reaches 100%)."],
 		["Magic Res", str(int(p.magres)), "Reduces magic damage taken (diminishing returns). TRUE damage ignores all resistances."],
 		["Crit Res", str(int(p.critres)), "Shaves the enemy's chance to critically hit you."],
-		["Evasion", "%d%%" % int(Stats.eva_curve(p.eva) * 100), "Chance to fully dodge a hit. Countered by the attacker's DEX. Capped at 60%."],
+		["Evasion", "%d%%" % int(Stats.eva_curve(p.eva) * 100), "Chance to fully dodge a hit. Countered by the attacker's DEX. Capped at %d%%." % int(Balance.CAP_EVA * 100)],
 	]
 	for r in rows2:
 		_stat_row(list, r[0], r[1], r[2])
@@ -1042,7 +1064,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	var rows3 := [
 		["Speed", str(int(p.speed)), "How fast you move. Ice patches boost it; void rifts slow it."],
 		["Lifesteal", "%d%%" % int(p.lifesteal * 100), "Heals you for a share of damage dealt. AoE hits only steal a third."],
-		["Greed", "%d%%" % int(Stats.greed_gold(p.greed) * 100), "Bonus gold from every source. Above 30% it also nudges chest drop rates. Strong diminishing returns past 50%."],
+		["Greed", "%d%%" % int(Stats.greed_gold(p.greed) * 100), "Bonus gold from every source. Every point also nudges chest drop rates. Strong diminishing returns past %d%%." % int(Balance.CAP_GREED * 100)],
 	]
 	for r in rows3:
 		_stat_row(list, r[0], r[1], r[2])
@@ -1134,6 +1156,12 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1), tab := "info") -> 
 	# open popover — keep its spot so the box doesn't hop to the cursor.
 	if at.x < 0.0 and is_instance_valid(_popover_box):
 		at = _popover_box.position
+	# The panel EDITS the item (sockets, reforges) while the inventory shows the
+	# same item's stat line and socket row underneath — rebuild the underlay
+	# first so both views agree ("Add gem socket" left the equipped column's
+	# socket row a square short), then float the panel back on top.
+	if current == "inventory" or (current == "detail" and detail_return == "inventory"):
+		open_inventory("gear", inv_cat)
 	var p: Player = game.player
 	var color: Color = Items.GRADE_COLOR[item["grade"]]
 	var vbox := _popover_frame(color)
@@ -1482,7 +1510,7 @@ func open_skills(tab := "talents") -> void:
 	var pad := _lbl(head, "", 13)
 	pad.custom_minimum_size = Vector2(120, 0)
 	for theme in Classes.THEMES[p.cls]:
-		var h := _lbl(head, theme["name"].to_upper(), 15, theme["color"])
+		var h := UITheme.header(_lbl(head, theme["name"].to_upper(), 15, theme["color"]))
 		h.custom_minimum_size = Vector2(288, 0)
 
 	for r in Skills.TREES[p.cls].size():
@@ -1780,14 +1808,16 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 
 	# ========================================================= CONSUMABLES ===
 	_lbl(buy, "— Consumables —", 13, Color(0.62, 0.64, 0.7))
-	var potion_cost := int(ceil(float(Balance.POTION_PRICE) * haggle))
+	# Potion price scales with the chapter (2026-07-09 investment round):
+	# potions heal % HP, so their value — and price — grows with the game.
+	var potion_cost := int(ceil(float(Balance.potion_price(game.chapter_id)) * haggle))
 	var buy_potion := func() -> void:
 		if p.gold >= potion_cost and p.potions < Balance.POTION_MAX:
 			p.gold -= potion_cost
 			p.potions += 1
 			game.sfx("potion")
 		open_shop(zone)
-	var hpb := _btn(buy, "Health Potion — %d gold  (you have %d, max 5)" % [potion_cost, p.potions],
+	var hpb := _btn(buy, "Health Potion — %d gold  (you have %d, max %d)" % [potion_cost, p.potion_count(), Balance.POTION_MAX],
 		buy_potion, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < Balance.POTION_MAX)
 	hpb.clip_text = true
 
@@ -1860,7 +1890,9 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		bagb.clip_text = true
 		bagb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	# Gambling shelf: spend gold on a random item of this merchant's tier.
+	# Gambling shelf (2026-07-09): the pity machine — rolls the chapter's
+	# BOSS band at ~0.8x its expected farm cost (game.gamble_cost). The
+	# legacy merchant tier is still passed but no longer shapes anything.
 	var gamble_tier := String(game.zones[zone].get("shop_tier",
 		["wood", "silver", "silver", "gold"][clampi(zone, 0, 3)]))
 	var gcost := game.gamble_cost(gamble_tier)
@@ -1874,7 +1906,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			game.spawn_text(p.global_position + Vector2(0, -60), "GAMBLED: %s" % Items.title(won),
 				Items.GRADE_COLOR[won["grade"]], 3.0)
 		open_shop(zone)
-	var gb := _btn(buy, "🎲 Gamble — %d gold  (a random %s-tier item, sight unseen)" % [gcost, gamble_tier],
+	var gb := _btn(buy, "🎲 Gamble — %d gold  (a random BOSS-tier item for this chapter, sight unseen)" % gcost,
 		gamble_cb, Color(0.85, 0.6, 1.0), p.gold >= gcost)
 	gb.clip_text = true
 	gb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1972,6 +2004,9 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		cb2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	# --- spare health potions (the on-player counter) ---
+	# BOUGHT stock only (potions_free — the expiring ch1-3 teaching potion —
+	# is never sellable), and the sell basis stays the flat ch1 base price:
+	# chapter-scaled buy prices must never open a haul-forward sell spiral.
 	if p.potions > 0:
 		sold_any = true
 		var hval := maxi(1, int(float(Balance.POTION_PRICE) * Balance.MERCHANT_SELL_FRACTION))
@@ -2232,7 +2267,7 @@ func open_dev(tab := "") -> void:
 # ---------------------------------------------------------------- keybinds ---
 
 func open_keybinds() -> void:
-	var vbox := _open("Keybinds — click an action, then press a key", 700, 520)
+	var vbox := _open("Keybinds — click an action, then press a key", 700, 560)
 	current = "keybinds"
 	var actions := {
 		"a1": "Ability 1", "a2": "Ability 2", "a3": "Ability 3", "ult": "Ultimate",
@@ -2241,6 +2276,19 @@ func open_keybinds() -> void:
 		"inventory": "Inventory", "skills": "Skill tree", "codex": "Codex",
 		"map": "Map", "target": "Switch target lock",
 	}
+	# The bind list SCROLLS. The panel's VBox is fixed-size and doesn't
+	# clip, so 12 unscrolled rows pushed the footer hints straight through
+	# the panel border onto the world (QA: keybinds overflow) — an
+	# expand-fill scroll absorbs the excess and pins the footer inside.
+	var kscroll := ScrollContainer.new()
+	kscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	kscroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	kscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(kscroll)
+	var klist := VBoxContainer.new()
+	klist.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	klist.add_theme_constant_override("separation", 4)
+	kscroll.add_child(klist)
 	for action in actions:
 		var act: String = action
 		var key_name := OS.get_keycode_string(game.binds[act])
@@ -2250,7 +2298,7 @@ func open_keybinds() -> void:
 		var rebind_cb := func() -> void:
 			listening_action = act
 			open_keybinds()
-		_btn(vbox, text, rebind_cb, Color(1, 1, 0.6) if listening_action == act else Color(1, 1, 1))
+		_btn(klist, text, rebind_cb, Color(1, 1, 0.6) if listening_action == act else Color(1, 1, 1))
 	_lbl(vbox, "Movement is always WASD / arrows. ESC closes menus.", 13, Color(0.6, 0.6, 0.6))
 	_hint(vbox)
 

@@ -146,13 +146,15 @@ const PASSIVES := {
 }
 
 # ------------------------------------------------------------------- gems ---
-# A gem grants exactly ONE stat. Equipment B+ has sockets (B:1, A:2, S:3).
+# A gem grants exactly ONE stat. Equipment C+ has sockets (C:1, B:1, A:2,
+# S:3) — C gained its socket 2026-07-09 so ch4's first gem drops land on
+# ch4's C-band gear the moment they appear, instead of idling until B.
 # Synthesis: 3 gems of the same stat & level -> 1 gem of the next level.
 
-const GEM_SLOTS := {"F": 0, "E": 0, "D": 0, "C": 0, "B": 1, "A": 2, "S": 3}
+const GEM_SLOTS := {"F": 0, "E": 0, "D": 0, "C": 1, "B": 1, "A": 2, "S": 3}
 # A+ gear unlocks ONE dedicated SPECIAL slot that ONLY takes special gems
 # (Balance.SPECIAL_GEM_STATS); every other socket is REGULAR and takes only
-# regular gems (2026-07-08). So B = 1 regular; A = 1 regular + 1 special;
+# regular gems (2026-07-08). So C/B = 1 regular; A = 1 regular + 1 special;
 # S = 2 regular + 1 special. You can't stack specials (one slot, and one gem
 # per stat across gear), and you can't skip them (a regular gem can't go in
 # the special slot). Reforge-added sockets are always regular (this stays 1).
@@ -169,8 +171,10 @@ static func regular_slots(grade: String) -> int:
 	return int(GEM_SLOTS.get(grade, 0)) - int(GEM_SPECIAL_SLOTS.get(grade, 0))
 const GEM_MAX_LEVEL := 10
 # A vessel holds what it can bear (player rule, 2026-07-06): each grade
-# caps the gem LEVEL it can socket — deep gems need endgame gear.
-const GEM_LEVEL_LIMIT := {"F": 0, "E": 0, "D": 0, "C": 0, "B": 3, "A": 6, "S": 10}
+# caps the gem LEVEL it can socket — deep gems need endgame gear. C holds
+# Lv2 (2026-07-09, with its new socket): exactly what ch4-5 actually drop
+# (act-1 gem floor Lv1, elite Lv2 rolls, first-clear bonus Lv2).
+const GEM_LEVEL_LIMIT := {"F": 0, "E": 0, "D": 0, "C": 2, "B": 3, "A": 6, "S": 10}
 
 # stat -> [display name, base value per level-ish, color]
 const GEM_STATS := {
@@ -248,7 +252,7 @@ static func bag_buy_price(grade: String) -> int:
 
 # Potions eligible for the room LOADOUT (2026-07-07 v2): slotted from
 # the inventory, cycled with the potion_next bind, budgeted per room
-# (Balance.POTION_SLOTS_BY_ACT; unassigned slots drink as health).
+# (Balance.potion_slots, chapter-banded; unassigned slots drink as health).
 # Scrolls and stones stay inventory-clicked utilities.
 const ROTATION_POTIONS := ["mana_potion", "elixir_might"]
 static func make_reset_stone() -> Dictionary:
@@ -374,7 +378,7 @@ const CLASSES_DMG_TYPE := {
 	"paladin": "magic", "mage": "magic", "warlock": "magic",
 }
 
-# The SPECIAL stats (Haste/Lifesteal/Combo/Greed) are deliberately
+# The SPECIAL stats (Haste/Lifesteal/Combo/Tenacity/Dmg%) are deliberately
 # ABSENT: they are gem-only (Balance.SPECIAL_GEM_STATS) — gems are the
 # gateway to off-build stats, and each item sockets at most one special
 # gem. MOVEMENT SPEED is absent for a harder reason: it is sovereign —
@@ -547,7 +551,7 @@ static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumbe
 	var pool := SUBSTATS.keys()
 	# No dead stats (round 15): a class only rolls the penetration its own
 	# damage type can use. Everything else stays class-neutral.
-	# (Special stats — Haste/Lifesteal/Combo/Greed — aren't in the pool at
+	# (Special stats — Haste/Lifesteal/Combo/Tenacity/Dmg% — aren't in the pool at
 	# all since 2026-07-06: gem-only, superseding round 43's B-gate.)
 	if cls != "" and CLASSES_DMG_TYPE.has(cls):
 		pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
@@ -599,9 +603,10 @@ static func reforge_affixes(item: Dictionary, cls: String, rng: RandomNumberGene
 	item["subs"] = fresh
 
 
-## Can this item take another gem socket? B+ only, capped at MAX_SOCKETS.
+## Can this item take another gem socket? C+ only (C joined 2026-07-09 with
+## its rolled socket), capped at grade's roll + 1, never past MAX_SOCKETS.
 static func can_add_socket(item: Dictionary) -> bool:
-	return String(item["grade"]) in ["B", "A", "S"] \
+	return String(item["grade"]) in ["C", "B", "A", "S"] \
 		and int(item.get("gem_slots", 0)) < mini(GEM_SLOTS[item["grade"]] + 1, MAX_SOCKETS)
 
 

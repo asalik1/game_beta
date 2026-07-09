@@ -86,7 +86,7 @@ static func _card(parent: Container) -> PanelContainer:
 static func _monsters(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	# Elites — the roaming miniboss variant (round 6).
-	m._lbl(list, "— ELITES —", 16, Color(1.0, 0.8, 0.3))
+	UITheme.header(m._lbl(list, "— ELITES —", 16, Color(1.0, 0.8, 0.3)))
 	var ecard := VBoxContainer.new()
 	ecard.add_theme_constant_override("separation", 2)
 	_card(list).add_child(ecard)
@@ -98,7 +98,7 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 		el.custom_minimum_size = Vector2(880, 0)
 		el.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# Temptations — the elective risk events (retention roadmap #4).
-	m._lbl(list, "— TEMPTATIONS —", 16, Color(0.85, 0.6, 1.0))
+	UITheme.header(m._lbl(list, "— TEMPTATIONS —", 16, Color(0.85, 0.6, 1.0)))
 	var tcard := VBoxContainer.new()
 	tcard.add_theme_constant_override("separation", 2)
 	_card(list).add_child(tcard)
@@ -116,7 +116,7 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 	# but-unplaced ones appear in the dev launcher only, tagged [placeholder].
 	var used := _used_enemy_kinds()
 	var dev: bool = m.game.dev_mode
-	m._lbl(list, "— MONSTERS —", 16, Color(0.95, 0.85, 0.5))
+	UITheme.header(m._lbl(list, "— MONSTERS —", 16, Color(0.95, 0.85, 0.5)))
 	for kind in Story.ALL_ENEMIES:
 		if kind in m.BOSS_KINDS:
 			continue
@@ -137,7 +137,7 @@ static func _bosses(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	var used := _used_enemy_kinds()
 	var dev: bool = m.game.dev_mode
-	m._lbl(list, "— BOSSES —", 16, Color(1, 0.5, 0.5))
+	UITheme.header(m._lbl(list, "— BOSSES —", 16, Color(1, 0.5, 0.5)))
 	for kind in Story.ALL_ENEMIES:
 		if not (kind in m.BOSS_KINDS):
 			continue
@@ -173,7 +173,7 @@ static func _used_enemy_kinds() -> Dictionary:
 ## (incl. the placeholder extraction set) shows once for review.
 static func _npcs(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
-	m._lbl(list, "— NPCS —", 16, Color(0.6, 0.9, 1.0))
+	UITheme.header(m._lbl(list, "— NPCS —", 16, Color(0.6, 0.9, 1.0)))
 	var intro := m._lbl(list, "Everyone you can speak to. Names only for now — roles and lore come later.", 13, Color(0.7, 0.72, 0.78))
 	intro.custom_minimum_size = Vector2(880, 0)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -347,7 +347,7 @@ static func _boss_detail(m: Menus, kind: String) -> void:
 	if mechs.is_empty():
 		m._lbl(list, "No mechanics catalogued for this foe yet.", 13, Color(0.6, 0.62, 0.68))
 	else:
-		m._lbl(list, "— MECHANICS & TELLS —", 16, Color(1, 0.5, 0.5))
+		UITheme.header(m._lbl(list, "— MECHANICS & TELLS —", 16, Color(1, 0.5, 0.5)))
 		for mech in mechs:
 			var box := VBoxContainer.new()
 			box.add_theme_constant_override("separation", 3)
@@ -692,7 +692,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	bossdrop.custom_minimum_size = Vector2(880, 0)
 	bossdrop.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	m._lbl(chests, "Every piece is CLASS-LOCKED and guarantees your class attribute as its main (STR/AGI/INT). Bonus stats: ATK%, HP%, Crit, CritDmg, VIT, EVA, DEX, Pen, Resists, MP.", 13, Color(0.7, 0.72, 0.78))
-	var resv := m._lbl(chests, "Haste, Lifesteal, Combo and Greed NEVER roll on gear — they are GEM-only (see below), and each item holds at most ONE such gem. MOVEMENT SPEED is on no item and no gem: only terrain and abilities touch it." , 13, Color(0.85, 0.75, 0.55))
+	var resv := m._lbl(chests, "Haste, Lifesteal, Combo, Tenacity and Damage NEVER roll on gear — they are GEM-only (see below), and each item holds at most ONE such gem. Greed comes from neither gear nor gems. MOVEMENT SPEED is on no item and no gem: only terrain and abilities touch it." , 13, Color(0.85, 0.75, 0.55))
 	resv.custom_minimum_size = Vector2(880, 0)
 	resv.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var caps := m._lbl(chests, "STAT CAPS (soft — beyond each cap a point pays about a tenth, never nothing; Crit alone diminishes gentler, about a fifth): Crit %d%% · Evasion %d%% · Haste %d%% · Lifesteal %d%% · Combo %d%% · Greed %d%% · damage reduction from resistances %d%%. Ults ignore Haste entirely." %
@@ -703,19 +703,19 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	caps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# ------------------------------------------------------------ gems ---
-	m._lbl(list, "— GEMS — socket into B+ gear (B:%d · A:%d · S:%d sockets) —" %
-		[int(Items.GEM_SLOTS["B"]), int(Items.GEM_SLOTS["A"]), int(Items.GEM_SLOTS["S"])],
+	m._lbl(list, "— GEMS — socket into C+ gear (C:%d · B:%d · A:%d · S:%d sockets) —" %
+		[int(Items.GEM_SLOTS["C"]), int(Items.GEM_SLOTS["B"]), int(Items.GEM_SLOTS["A"]), int(Items.GEM_SLOTS["S"])],
 		16, Color(0.6, 0.9, 1.0))
 	var gem_intro := VBoxContainer.new()
 	gem_intro.add_theme_constant_override("separation", 2)
 	_card(list).add_child(gem_intro)
 	for line3 in [
-		"Each gem grants ONE stat and deepens with its level, up to Lv %d. Only B-grade gear and above has sockets." % Items.GEM_MAX_LEVEL,
+		"Each gem grants ONE stat and deepens with its level, up to Lv %d. Only C-grade gear and above has sockets — the same chapter gems begin to drop." % Items.GEM_MAX_LEVEL,
 		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (click them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level.",
-		"SPECIAL gems — Haste, Lifesteal, Combo, Greed — begin dropping in Chapter 6 (alongside the A-grade gear that carries the only special slot). They are the ONLY way to build those stats: at most one special gem per item, and their totals soft-cap at %d%% Haste / %d%% Lifesteal / %d%% Combo (beyond, a point pays about a tenth)." %
+		"SPECIAL gems — Haste, Lifesteal, Combo, Tenacity, Damage — begin dropping in Chapter 6 (alongside the A-grade gear that carries the only special slot). They are the ONLY way to build those stats: at most one special gem per item, and their totals soft-cap at %d%% Haste / %d%% Lifesteal / %d%% Combo (beyond, a point pays about a tenth)." %
 			[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)],
-		"A vessel holds what it can bear: B gear sockets gems up to Lv%d, A up to Lv%d, S up to Lv%d — deep gems need endgame gear." %
-			[int(Items.GEM_LEVEL_LIMIT["B"]), int(Items.GEM_LEVEL_LIMIT["A"]), int(Items.GEM_LEVEL_LIMIT["S"])],
+		"A vessel holds what it can bear: C gear sockets gems up to Lv%d, B up to Lv%d, A up to Lv%d, S up to Lv%d — deep gems need endgame gear." %
+			[int(Items.GEM_LEVEL_LIMIT["C"]), int(Items.GEM_LEVEL_LIMIT["B"]), int(Items.GEM_LEVEL_LIMIT["A"]), int(Items.GEM_LEVEL_LIMIT["S"])],
 		"Merchants sell loose gems (at the act's level) and buy your spares back — but the buy price is a pity option: farming gems is always cheaper."]:
 		var gil := m._lbl(gem_intro, String(line3), 13, Color(0.7, 0.72, 0.78))
 		gil.custom_minimum_size = Vector2(880, 0)
@@ -773,6 +773,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	tl.custom_minimum_size = Vector2(880, 0)
 	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for util in [
+		"🜍 Health Potion — mends 60%% of max HP (carry up to %d). Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with the chapters. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter." % Balance.POTION_MAX,
 		"🜁 Mana Draught — restore %d%% of your maximum mana. Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
 		"🜂 Elixir of Might — +%d%% damage for %ds. Pop it before a boss. Bought from merchants." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
 		"🜄 Elixir of Warding — cut incoming damage by %d%% for %ds. Bought from merchants." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)],

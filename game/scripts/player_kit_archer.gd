@@ -6,7 +6,9 @@ extends "res://scripts/player_kit_warrior.gd"
 
 func _use_archer(slot: String, f: float) -> void:
 	match slot:
-		"a1": _shoot(aim_dir(), 0.85 * f)
+		"a1":
+			_hunt_rhythm_tick()
+			_shoot(aim_dir(), 0.85 * f)
 		"a2": _multishot(f)
 		"a3": _tumble()
 		"ult":
@@ -18,9 +20,26 @@ func _use_archer(slot: String, f: float) -> void:
 			game.spawn_text(global_position + Vector2(0, -60), "ARROW STORM!", Color(0.6, 1, 0.6))
 
 
+## Hunt rhythm (2026-07-09): the free +25% cap-exempt crit is gone — instead
+## every Balance.HUNT_RHYTHM_SHOTS-th Quick Shot is a GUARANTEED crit (earned
+## tempo; built crit gear still carries the other three arrows).
+func _hunt_rhythm_tick() -> void:
+	if ability_theme.get("a1", "") != "hunt":
+		return
+	hunt_rhythm += 1
+	if hunt_rhythm >= Balance.HUNT_RHYTHM_SHOTS:
+		hunt_rhythm = 0
+		next_crit = true
+
+
 func _shoot(dir: Vector2, mult: float) -> void:
 	game.sfx("bow")
-	_muzzle(dir, _tcolor if _themed else Color(0.9, 1.0, 0.6))
+	var col: Color = _tcolor if _themed else Color(0.9, 1.0, 0.6)
+	if next_crit:
+		# The lethal arrow reads before it lands: a white-hot muzzle instead
+		# of the theme tint (the hunt rhythm's 4th shot, or a lined-up shot).
+		col = Color(1.0, 0.95, 0.75)
+	_muzzle(dir, col)
 	_proj(dir, mult, "arrow", 520.0)
 
 
@@ -47,6 +66,7 @@ func _tumble() -> void:
 	# and the roll leaves the archer NIMBLE — a soft evasion buff covers
 	# the reposition so an average pilot still has margin, not a wall.
 	hurt_cd = maxf(hurt_cd, 0.1)
+	hurt_was_heavy = true  # the perfect-dodge window blocks heavy telegraph hits too
 	dodge_time = 1.25
 	dodge_amt = 0.20
 	var origin := global_position

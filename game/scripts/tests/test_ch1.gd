@@ -384,6 +384,9 @@ func _test_marsh_death_and_travel() -> void:
 	game.player.max_hp = 100.0
 	game.player.hp = 1.0
 	game.player.eva = 0.0
+	# Death tithe (2026-07-09): dying costs DEATH_GOLD_TITHE of carried gold.
+	var tithe_gold_save: int = game.player.gold
+	game.player.gold = 100
 	game.player.take_damage(999999.0, "true")
 	if not game.player.dead:
 		return _fail("player did not die")
@@ -393,6 +396,11 @@ func _test_marsh_death_and_travel() -> void:
 		guard += 1
 	if game.player.dead:
 		return _fail("player did not respawn")
+	var tithe_expect: int = 100 - int(100.0 * Balance.DEATH_GOLD_TITHE)
+	if game.player.gold != tithe_expect:
+		return _fail("death tithe: expected %d gold after dying with 100 (got %d)" %
+			[tithe_expect, game.player.gold])
+	game.player.gold = tithe_gold_save
 	if game.cur_room != 11:
 		return _fail("death did not return to the last safe room (got %d)" % game.cur_room)
 	# The death room reset: full pack, everyone calm again.

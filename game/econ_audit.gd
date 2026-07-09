@@ -207,7 +207,11 @@ func _audit_chapter(chid: String) -> void:
 func _sinks() -> void:
 	print("")
 	print("--- SINKS (base prices, before haggle 0.9-1.1) ---")
-	print("  potion 25 | mana draught %d | elixir %d | recall %d" %
+	var pots: Array = []
+	for pchid in Balance.CHAPTER_ECON:
+		pots.append("%s %dg" % [pchid, Balance.potion_price(String(pchid))])
+	print("  potion (chapter-scaled): " + " | ".join(pots))
+	print("  mana draught %d | elixir %d | recall %d" %
 		[Balance.CONSUMABLE_PRICES["mana_potion"], Balance.CONSUMABLE_PRICES["elixir_might"],
 		Balance.CONSUMABLE_PRICES["recall_scroll"]])
 	var costs: Array = []
@@ -216,8 +220,31 @@ func _sinks() -> void:
 		costs.append("%s +0->+3 %dg" % [g, Items.upgrade_cost(it) +
 			Items.upgrade_cost({"grade": g, "plus": 1}) + Items.upgrade_cost({"grade": g, "plus": 2})])
 	print("  smith upgrades: " + " | ".join(costs))
-	print("  shop gear: price x2 (C %d, B %d, A %d) | gamble %s" %
-		[44 * 2, 22 * 2 * 2, int(22 * 2.4) * 2, str(Balance.GAMBLE_COST)])
+	print("  shop gear: price x2 (C %d, B %d, A %d)" %
+		[44 * 2, 22 * 2 * 2, int(22 * 2.4) * 2])
+	# Gamble (2026-07-09 rework): rolls the chapter's BOSS band; base price =
+	# boss-table-weighted expected farm cost x GAMBLE_DISCOUNT (mirrors
+	# game_base.gamble_cost, minus the per-character resonance haggle).
+	var gam: Array = []
+	for gchid in Balance.CHAPTER_ECON:
+		gam.append("%s %dg" % [gchid, _gamble_base(String(gchid))])
+	print("  gamble (boss-band pity, x%.1f expected farm cost): %s" %
+		[Balance.GAMBLE_DISCOUNT, " | ".join(gam)])
 	print("  reforge (sub/affix/socket): C 140/280/420 | B 220/440/660 | S 500/1000/1500")
 	print("  weekly challenge pays %d g (level-scaled) + %d gems | vault: gold chest + Lv2 gem" %
 		[Balance.WEEKLY_REWARD_GOLD, Balance.WEEKLY_REWARD_GEMS])
+
+
+## The gamble's BASE price for a chapter (no resonance haggle) — the same
+## formula as game_base.gamble_cost: sum over the chapter's boss band of
+## (weight x farm cost of that grade), then x GAMBLE_DISCOUNT.
+func _gamble_base(chid: String) -> int:
+	var w: Dictionary = Balance.boss_weights(chid)
+	var total := 0.0
+	for v in w.values():
+		total += float(v)
+	var expected := 0.0
+	for g in w:
+		var probe := {"grade": String(g), "slot": "armor", "plus": 0}
+		expected += (float(w[g]) / total) * float(Items.shop_buy_price(probe, chid))
+	return int(ceil(expected * Balance.GAMBLE_DISCOUNT))
