@@ -683,7 +683,7 @@ func _shrine_outcome(cost: int) -> void:
 		sfx("nova", 1.1)
 		burst(pos, Color(1.0, 0.9, 0.5), 16)
 		var roll := loot_rng.randf()
-		if roll < 0.4:
+		if roll < 0.4 and Balance.regular_gems_drop(chapter_id):
 			var gem := drop_gem(
 				2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
 			if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(0, 44)):

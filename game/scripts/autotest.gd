@@ -62,13 +62,15 @@ func _run_systems() -> void:
 	var fang_now := Story.enemy_stats_at("fangmaw", 4)
 	if absf(fang_now["hp"] - Story.ALL_ENEMIES["fangmaw"]["hp"]) > 0.01:
 		return _fail("boss HP should not get the mob TTK multiplier")
-	# Act loot ceilings: a gold chest under a C cap never pays above C.
+	# Chapter loot bands: a general roll never leaves the chapter's table.
 	var caprng := RandomNumberGenerator.new()
 	caprng.seed = 7
-	for i in 40:
-		var g := Items.roll_grade("gold", caprng, "C")
-		if Items.GRADES.find(g) > Items.GRADES.find("C"):
-			return _fail("loot cap leaked an %s from a gold chest" % g)
+	for i in 60:
+		var g1: String = Items.roll_chapter_gear("ch1", caprng)["grade"]
+		if g1 != "F":
+			return _fail("ch1 general roll left its F-only band (got %s)" % g1)
+		if not Balance.gear_weights("ch5").has(Items.roll_chapter_gear("ch5", caprng)["grade"]):
+			return _fail("ch5 general roll left its D/C/B band")
 	# Level scaling is exponential: at the listed level nothing changes,
 	# but a monster 10 levels up is a WALL of raw stats (no hidden rule).
 	var v_at := Story.enemy_stats_at("vargoth", 10)
@@ -1991,27 +1993,26 @@ func _test_bags_discard() -> void:
 	if not p.bag_would_improve(int(Items.BAG_SLOTS["S"])):
 		return _fail("a bigger bag must improve even a full set of smaller bags")
 
-	# --- act-tiered bag drops: chance + grade stay on the act's table -----
+	# --- bag drops: chance stays per-act; GRADE now follows the chapter BOSS table.
 	if not (is_equal_approx(Balance.bag_drop_chance(1), 0.10)
 			and is_equal_approx(Balance.bag_drop_chance(2), 0.09)
 			and is_equal_approx(Balance.bag_drop_chance(3), 0.08)):
 		return _fail("per-act bag drop chance drifted from the design table")
 	var brng := RandomNumberGenerator.new()
 	brng.seed = 707
-	for act in [1, 2, 3]:
-		var weights: Dictionary = Balance.BOSS_BAG_DROP[act]["weights"]
+	for chid in ["ch1", "ch3", "ch5", "ch7"]:
+		var weights: Dictionary = Balance.boss_weights(chid)
 		for i in 300:
-			if not weights.has(Balance.roll_bag_grade(act, brng)):
-				return _fail("act %d bag drop rolled a grade off its table" % act)
-	# Tier gating: Act 1 never mints above D; Act 3 never below B.
-	if Items.GRADES.find("B") <= Items.GRADES.find("D"):
-		return _fail("grade ordering assumption broke (B must outrank D)")
-	for gk in Balance.BOSS_BAG_DROP[1]["weights"]:
-		if Items.GRADES.find(String(gk)) > Items.GRADES.find("D"):
-			return _fail("Act 1 bag table leaked a grade above D")
-	for gk in Balance.BOSS_BAG_DROP[3]["weights"]:
+			if not weights.has(Balance.roll_bag_grade(chid, brng)):
+				return _fail("%s bag grade left the chapter boss table" % chid)
+	# ch1 bags are F; ch2 bags are E (a bag is that chapter's boss tier).
+	for i in 50:
+		if Balance.roll_bag_grade("ch1", brng) != "F" or Balance.roll_bag_grade("ch2", brng) != "E":
+			return _fail("early bag grades not pinned to the chapter boss tier")
+	# Deep chapters mint high-tier bags: ch7 bags are B/A (never below B).
+	for gk in Balance.boss_weights("ch7"):
 		if Items.GRADES.find(String(gk)) < Items.GRADES.find("B"):
-			return _fail("Act 3 bag table leaked a grade below B")
+			return _fail("ch7 bag table leaked a grade below B")
 
 	# --- shop bags are QoL-cheap but always dwarf the 1g sell -------------
 	for gk in Items.GRADES:
@@ -2178,13 +2179,21 @@ func _test_retention() -> void:
 		return _fail("gem quality blew past its cap")
 
 	# --- first-clear beat: gold in hand + a mailed spoils package ---
+	# Gems drop ch4+, so the spoils bundle is gear+gem from ch4 on, gear-only before.
+	var fc_ch: String = g.chapter_id
 	var mail_before: int = g.mailbox.size()
 	var gold_before2: int = g.player.gold
+	g.chapter_id = "ch4"
 	g._first_clear_reward(12)
 	if g.player.gold <= gold_before2:
 		return _fail("first clear paid no gold")
 	if g.mailbox.size() != mail_before + 1 or g.mailbox[-1]["items"].size() != 2:
-		return _fail("first clear did not mail the spoils (item + gem)")
+		return _fail("first clear (ch4) did not mail the spoils (item + gem)")
+	g.chapter_id = "ch1"
+	g._first_clear_reward(12)
+	if g.mailbox[-1]["items"].size() != 1:
+		return _fail("first clear (ch1) should mail gear only, no gem")
+	g.chapter_id = fc_ch
 	g.player.gold = gold_before2
 	g.mailbox.resize(mail_before)
 
@@ -2208,17 +2217,17 @@ func _test_retention() -> void:
 	if not probe["main"].has("INT") or String(probe.get("cls", "")) != "mage":
 		return _fail("gear main is not the class-tagged primary attribute")
 
-	# --- act loot ceilings: Act 1 clamps to B over authored caps ---
-	if Story.act_of("ch1") != 1 or Story.act_of("ch7") != 1:
-		return _fail("act_of misplaces Act 1 chapters")
+	# --- chapter loot ceilings: loot_cap() = the chapter general-band ceiling ---
 	var keep_ch: String = g.chapter_id
-	g.chapter_id = "ch3"   # authored cap A -> act clamp B
-	var clamped: String = g.loot_cap()
+	g.chapter_id = "ch1"
+	var cap1: String = g.loot_cap()
+	g.chapter_id = "ch4"
+	var cap4: String = g.loot_cap()
+	g.chapter_id = "ch7"
+	var cap7: String = g.loot_cap()
 	g.chapter_id = keep_ch
-	if clamped != "B":
-		return _fail("Act 1 loot cap did not clamp to B (got %s)" % clamped)
-	if g.chapter_id == "ch1" and g.loot_cap() != "C":
-		return _fail("ch1 authored C cap did not survive the clamp")
+	if cap1 != "F" or cap4 != "C" or cap7 != "B":
+		return _fail("loot_cap ceilings wrong (ch1=%s ch4=%s ch7=%s)" % [cap1, cap4, cap7])
 
 	# --- anti-degeneracy caps: no source stacks past them ---
 	var keep_eq2: Dictionary = game.player.equipment
@@ -3319,40 +3328,37 @@ func _test_merchant_economy() -> void:
 	if Balance.farm_runs(1.0 / 25.0) != 9 or Balance.farm_runs(1.0 / 25.0 * Balance.S_WEAPON_DROP_WEIGHT) != 17:
 		return _fail("farm_runs off for S / S-weapon (should be 9 / 17)")
 
-	# Act-gated boss gear odds: ch1-6 B only (no A); ONLY ch7 adds A.
-	if Balance.boss_gear_odds("ch3").has("A") or not Balance.boss_gear_odds("ch3").has("B"):
-		return _fail("ch1-6 boss gear table wrong (should be B only)")
-	if not Balance.boss_gear_odds("ch7").has("A"):
-		return _fail("ch7 bosses must be able to drop A")
+	# Chapter boss gear odds (2026-07-09 bands): ch3 bosses drop D only; ch6+ add A.
+	if Balance.boss_gear_odds("ch3").has("A") or not Balance.boss_gear_odds("ch3").has("D"):
+		return _fail("ch3 boss gear table wrong (should be D only)")
+	if not Balance.boss_gear_odds("ch6").has("A") or not Balance.boss_gear_odds("ch7").has("A"):
+		return _fail("ch6/ch7 bosses must be able to drop A")
 
-	# loot_cap: the A->B nerf (ch2-7 cap B), ch1 stays C.
-	if String(Story.chapter("ch3").get("loot_cap", "")) != "B" \
-			or String(Story.chapter("ch1").get("loot_cap", "")) != "C":
-		return _fail("loot_cap not ch1=C / ch3=B")
+	# loot_cap ceilings come from the band tables now (ch1 F, ch7 B).
+	if Balance.chapter_gear_ceiling("ch1") != "F" or Balance.chapter_gear_ceiling("ch7") != "B":
+		return _fail("chapter_gear_ceiling wrong (ch1 should be F, ch7 B)")
 
-	# Farm-cost formula: B in ch3 == (first + (N-1)*replay)*tax, N=1.
+	# Farm-cost formula: the chapter's boss-tier grade == (first + (N-1)*replay)*tax.
+	# ch3's boss tier is D (odds 1/3 -> N=1), so D@ch3 == first*tax.
 	var e3: Dictionary = Balance.CHAPTER_ECON["ch3"]
-	var expect_b: int = int(round(float(e3["first"]) * Balance.FARM_TAX))
-	var b3: int = Items.shop_buy_price({"grade": "B", "slot": "armor", "plus": 0}, "ch3")
-	if b3 != expect_b:
-		return _fail("farm-cost B@ch3 = %d, expected %d" % [b3, expect_b])
-	# Scales with the chapter's gold/run: deeper chapter, pricier B.
-	if Items.shop_buy_price({"grade": "B", "slot": "armor", "plus": 0}, "ch7") <= b3:
-		return _fail("farm-cost B did not scale ch3->ch7")
-	# Commodity grades (below the rare tier) stay cheap flat — far under B.
-	if Items.shop_buy_price({"grade": "D", "slot": "armor", "plus": 0}, "ch3") >= b3:
-		return _fail("commodity D priced >= farm-cost B")
+	var expect_d: int = int(round(float(e3["first"]) * Balance.FARM_TAX))
+	var d3: int = Items.shop_buy_price({"grade": "D", "slot": "armor", "plus": 0}, "ch3")
+	if d3 != expect_d:
+		return _fail("farm-cost D@ch3 = %d, expected %d" % [d3, expect_d])
+	# A commodity grade below the boss tier (F in ch3) stays cheap flat — under D.
+	if Items.shop_buy_price({"grade": "F", "slot": "armor", "plus": 0}, "ch3") >= d3:
+		return _fail("commodity F priced >= farm-cost D")
 
-	# Drop-channel rolls: shop grade never exceeds loot_cap; boss-gear + exact
-	# gear roll produce valid grades.
+	# Drop-channel rolls: general/shop grade stays in the chapter band; boss gear
+	# rolls a boss-table grade (or nothing); an exact-grade roll is exact.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 424242
 	for i in 150:
-		if Items.GRADES.find(Items.roll_shop_grade("ch3", rng, "B")) > Items.GRADES.find("B"):
-			return _fail("shop stock grade exceeded loot_cap")
+		if not Balance.gear_weights("ch3").has(Items.roll_shop_grade("ch3", rng)):
+			return _fail("shop stock grade left the ch3 general band")
 		var bg := Items.roll_boss_gear_grade("ch7", rng)
-		if bg != "" and not Balance.boss_gear_odds("ch7").has(bg):
-			return _fail("boss gear rolled a grade off the act table")
+		if bg != "" and not Balance.boss_weights("ch7").has(bg):
+			return _fail("boss gear rolled a grade off the ch7 boss table")
 	if String(Items.roll_gear_of_grade("A", rng, "warrior")["grade"]) != "A":
 		return _fail("roll_gear_of_grade produced the wrong grade")
 

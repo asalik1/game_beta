@@ -485,8 +485,11 @@ func _test_elites_bags_smallrooms() -> void:
 		return _fail("elite must pay ZERO xp (fixed chapter totals)")
 	var gems_before: int = game.player.gem_bag.size()
 	var xp_mark: int = game.player.xp + game.player.level * 100000
+	var keep_chid: String = game.chapter_id
+	game.chapter_id = "ch4"   # regular gems drop ch4+; test the elite gem where it's enabled
 	e.take_damage(99999999.0)
 	await _frames(3)
+	game.chapter_id = keep_chid
 	if game.player.gem_bag.size() != gems_before + 1:
 		return _fail("elite death did not guarantee a gem")
 	if game.player.xp + game.player.level * 100000 != xp_mark:

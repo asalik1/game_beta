@@ -58,7 +58,7 @@ func _chest_value(tier: String, cap: String) -> float:
 func _audit_chapter(chid: String) -> void:
 	var ch: Dictionary = Story.chapter(chid)
 	var zones: Array = ch["zones"]
-	var cap := String(ch.get("loot_cap", "S"))
+	var cap := Balance.chapter_gear_ceiling(chid)  # 2026-07-09: band ceiling, not authored field
 
 	var kills := 0
 	var mob_gold := 0.0

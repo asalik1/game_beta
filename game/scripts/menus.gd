@@ -1539,7 +1539,7 @@ func open_shop(zone: int) -> void:
 		var nbags: int = brng.randi_range(int(bcount[0]), int(bcount[1]))
 		var bstock: Array = []
 		for i in nbags:
-			bstock.append(Items.make_bag(Balance.roll_bag_grade(bact, brng)))
+			bstock.append(Items.make_bag(Balance.roll_bag_grade(game.chapter_id, brng)))
 		game.shop_bags[zone] = bstock
 
 	var p: Player = game.player
@@ -1669,23 +1669,25 @@ func open_shop(zone: int) -> void:
 	_lbl(buy, "— Miscellaneous —", 13, Color(0.62, 0.64, 0.7))
 	# Gem shelf (round 51): buy loose gems at the act's level(s), random stat.
 	# Farm-cost priced (Items.gem_buy_price) — a fraction of gear, scales by act.
-	var gem_act: int = int(Balance.CHAPTER_ECON.get(game.chapter_id, {}).get("act", 1))
-	var gem_range: Array = Balance.SHOP_GEM_RANGE.get(gem_act, [1, 1])
-	for glvl in range(int(gem_range[0]), int(gem_range[1]) + 1):
-		var gl := glvl
-		var gprice := int(ceil(Items.gem_buy_price(gl, game.chapter_id) * haggle))
-		var buy_gem := func() -> void:
-			if p.gold >= gprice:
-				if p.gain_gem(Items.random_gem(game.loot_rng, gl)):
-					p.gold -= gprice
-					game.sfx("chest")
-				else:
-					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
-			open_shop(zone)
-		var gemb := _btn(buy, "💎 Gem — Lv%d, random stat — %d gold" % [gl, gprice],
-			buy_gem, Color(0.6, 0.9, 1.0), p.gold >= gprice)
-		gemb.clip_text = true
-		gemb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Gated to ch4+ (2026-07-09): merchants don't stock gems before they drop.
+	if Balance.regular_gems_drop(game.chapter_id):
+		var gem_act: int = int(Balance.CHAPTER_ECON.get(game.chapter_id, {}).get("act", 1))
+		var gem_range: Array = Balance.SHOP_GEM_RANGE.get(gem_act, [1, 1])
+		for glvl in range(int(gem_range[0]), int(gem_range[1]) + 1):
+			var gl := glvl
+			var gprice := int(ceil(Items.gem_buy_price(gl, game.chapter_id) * haggle))
+			var buy_gem := func() -> void:
+				if p.gold >= gprice:
+					if p.gain_gem(Items.random_gem(game.loot_rng, gl)):
+						p.gold -= gprice
+						game.sfx("chest")
+					else:
+						game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+				open_shop(zone)
+			var gemb := _btn(buy, "💎 Gem — Lv%d, random stat — %d gold" % [gl, gprice],
+				buy_gem, Color(0.6, 0.9, 1.0), p.gold >= gprice)
+			gemb.clip_text = true
+			gemb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	# Bag shelf (round 52): expand carry capacity. Capacity is QoL not power,
 	# so bags are priced FAR below gear. Buying joins the equipped set (over

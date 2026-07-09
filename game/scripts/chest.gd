@@ -83,16 +83,17 @@ func _on_body_entered(body: Node) -> void:
 
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var item := Items.roll_item(tier, rng, body.cls, game.loot_cap())
+	var item := Items.roll_chapter_gear(game.chapter_id, rng, body.cls)
 	game.give_loot({"kind": "item", "item": item}, global_position)
 	game.loot_fanfare(item["grade"], global_position)  # rarity chime + beam
 	var bonus_gold := rng.randi_range(3, 8) * (1 + ["wood", "silver", "gold"].find(tier))
 	body.gain_gold(bonus_gold)
 	game.hud.loot_banner(item, bonus_gold)
 
-	# Chests can also hold loose gems (better chests, better odds).
+	# Chests can also hold loose gems (better chests, better odds) — but only
+	# once regular gems are dropping (ch4+); ch1-3 chests are gear + gold only.
 	var gem_chance: float = {"wood": 0.25, "silver": 0.6, "gold": 1.0}[tier]
-	if rng.randf() < gem_chance:
+	if Balance.regular_gems_drop(game.chapter_id) and rng.randf() < gem_chance:
 		var gem := Items.random_gem(rng, 1, Balance.special_gems_drop(game.chapter_id))
 		if game.give_loot({"kind": "gem", "gem": gem}, global_position):
 			game.spawn_text(body.global_position + Vector2(0, -66), "+ " + Items.gem_title(gem), Items.gem_color(gem))

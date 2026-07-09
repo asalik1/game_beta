@@ -87,43 +87,56 @@ const GAMBLE_DISCOUNT := 0.8         # gamble costs this x the farm price of the
 const GEM_GOLD_BASE := 30.0
 const GEM_GOLD_PER_LEVEL := 3.0
 
-# --- act-keyed loot framework (Act 2/3 latent until those chapters exist) ---
-# BOSS GEAR drop: a NEW channel on every boss, ON TOP of gems/gold/spoils.
-# {grade: per-boss drop chance}. Act 1: ch1-6 -> B only; ONLY ch7 bosses add A.
-const BOSS_GEAR_DROP := {
-	1: {"B": 1.0 / 3.0},                        # ch1-6 bosses
-	2: {"A": 1.0 / 8.0, "S": 1.0 / 25.0},
-	3: {"A": 1.0, "S": 1.0 / 15.0},             # A guaranteed per Act-3 boss
+# --- Chapter loot BANDS (2026-07-09; replaces the act-keyed loot framework) ---
+# Every gear/bag drop is a WEIGHTED roll from the chapter's table (no more
+# roll-high-then-clamp). Two profiles per chapter:
+#   GENERAL — mobs, chests, shop stock, spoils, gamble (skews low/mid)
+#   BOSS    — the boss gear channel + ALL bag sources (reaches the ceiling)
+# Tiers phase in/out on a sliding window (intent; the tables are the truth):
+#   F ch1-3 | E ch2-4 | D ch3-7 | C ch4-11 | B ch5-.. | A ch6-.. | S ch12-..
+# Regular gems drop ch4+, special gems ch6+ (see *_gems_drop below). ch12+
+# tables are set later (unbuilt) — gear_weights/boss_weights fall back to the
+# richest authored table so nothing rolls empty.
+const GEAR_TIER_ORDER := ["F", "E", "D", "C", "B", "A", "S"]
+const RICHEST_CH := "ch11"   # fallback table for unbuilt ch12+
+const CHAPTER_GEAR_WEIGHTS := {
+	"ch1":  {"F": 100},
+	"ch2":  {"F": 40, "E": 60},
+	"ch3":  {"F": 25, "E": 50, "D": 25},
+	"ch4":  {"E": 15, "D": 50, "C": 35},
+	"ch5":  {"D": 40, "C": 60},
+	"ch6":  {"D": 10, "C": 90},
+	"ch7":  {"D": 5, "C": 94, "B": 1},
+	"ch8":  {"C": 15, "B": 84, "A": 1},
+	"ch9":  {"C": 10, "B": 89, "A": 1},
+	"ch10": {"C": 6, "B": 92, "A": 2},
+	"ch11": {"C": 2, "B": 96, "A": 2},
 }
-const BOSS_GEAR_DROP_ACT1_FINAL := {"B": 1.0 / 3.0, "A": 1.0 / 10.0}  # ch7 bosses only
-const ACT1_FINAL_CHAPTER := "ch7"
-# Bags are inventory expansion, not needed every run: a SEPARATE, rarer roll
-# than gear (round 51b — the per-gear-grade bag roll felt spammy). Round 52:
-# a per-ACT table — chance per boss + a tier weight spread gated to the act,
-# so players aren't flooded with obsolete low-tier dupes. dupes still cash at
-# BAG_SELL_GOLD (a 6th bag keeps the best MAX_BAGS, the worst is sold).
-const BOSS_BAG_DROP := {
-	1: {"chance": 0.10, "weights": {"F": 50, "E": 35, "D": 15}},
-	2: {"chance": 0.09, "weights": {"D": 40, "C": 40, "B": 20}},
-	3: {"chance": 0.08, "weights": {"B": 35, "A": 45, "S": 20}},
+const CHAPTER_BOSS_WEIGHTS := {
+	"ch1":  {"F": 100},
+	"ch2":  {"E": 100},
+	"ch3":  {"D": 100},
+	"ch4":  {"C": 100},
+	"ch5":  {"C": 75, "B": 25},
+	"ch6":  {"B": 80, "A": 20},
+	"ch7":  {"B": 70, "A": 30},
+	"ch8":  {"B": 65, "A": 35},
+	"ch9":  {"B": 65, "A": 35},
+	"ch10": {"B": 65, "A": 35},
+	"ch11": {"B": 65, "A": 35},
 }
-# Merchants stock bags too (round 52; repriced up ~5x): capacity is QoL, not
-# power — but a bag is a RARE drop, so buying one is a real gold DECISION, a
-# meaningful chunk of a chapter's income yet still well under same-grade gear
-# farm-cost (rarity is the reason to buy, so price — not drop rate — is the
-# lever; never a paywall). Flat per-tier (act-gating encodes progression); buy
-# dwarfs the 1g sell. Curve anchored to econ_audit income + gear/reforge sinks.
-const BAG_BUY_PRICE := {"F": 150, "E": 250, "D": 400, "C": 650, "B": 1000, "A": 1600, "S": 2600}
-const SHOP_BAG_COUNT := {1: [1, 1], 2: [1, 2], 3: [1, 2]}
+# Per-boss chance to drop a gear item AT ALL (grade then rolled from the boss
+# table) — preserved from the old B@1/3 channel so gear FREQUENCY is unchanged,
+# only the tier ladder moved. Set to 1.0 to make every boss drop gear.
+const BOSS_GEAR_CHANCE := 1.0 / 3.0
 
-## Per-boss bag drop chance for an act (round 52).
-static func bag_drop_chance(act: int) -> float:
-	return float(BOSS_BAG_DROP.get(clampi(act, 1, 3), {}).get("chance", 0.0))
+static func gear_weights(chid: String) -> Dictionary:
+	return CHAPTER_GEAR_WEIGHTS.get(chid, CHAPTER_GEAR_WEIGHTS[RICHEST_CH])
+static func boss_weights(chid: String) -> Dictionary:
+	return CHAPTER_BOSS_WEIGHTS.get(chid, CHAPTER_BOSS_WEIGHTS[RICHEST_CH])
 
-## Roll a bag GRADE from an act's tier weights (used by boss/elite/merchant
-## bag sources so tier stays gated to the act everywhere).
-static func roll_bag_grade(act: int, rng: RandomNumberGenerator) -> String:
-	var weights: Dictionary = BOSS_BAG_DROP.get(clampi(act, 1, 3), {}).get("weights", {"F": 1})
+## Weighted grade pick from a {grade: weight} table.
+static func roll_weighted_grade(weights: Dictionary, rng: RandomNumberGenerator) -> String:
 	var total := 0.0
 	for w in weights.values():
 		total += float(w)
@@ -134,30 +147,65 @@ static func roll_bag_grade(act: int, rng: RandomNumberGenerator) -> String:
 			return String(grade)
 	return String(weights.keys()[0])
 
+## Best grade a GENERAL roll can yield (chest/shop/gamble/spoils) — what
+## game.loot_cap() returns for pricing probes.
+static func chapter_gear_ceiling(chid: String) -> String:
+	return _ceiling_of(gear_weights(chid))
+static func _ceiling_of(weights: Dictionary) -> String:
+	var best := "F"
+	for g in weights:
+		if GEAR_TIER_ORDER.find(String(g)) > GEAR_TIER_ORDER.find(best):
+			best = String(g)
+	return best
+# Bags are inventory expansion, not needed every run: a SEPARATE, rarer roll
+# than gear (round 51b — the per-gear-grade bag roll felt spammy). Chance stays
+# a per-ACT knob; the GRADE now follows the chapter's BOSS table (2026-07-09) —
+# a bag is boss-tier loot wherever it comes from (drop, elite, or shop shelf).
+# dupes still cash at BAG_SELL_GOLD (a 6th bag keeps the best MAX_BAGS).
+const BAG_DROP_CHANCE := {1: 0.10, 2: 0.09, 3: 0.08}
+# Merchants stock bags too (round 52; repriced up ~5x): capacity is QoL, not
+# power — but a bag is a RARE drop, so buying one is a real gold DECISION, a
+# meaningful chunk of a chapter's income yet still well under same-grade gear
+# farm-cost (rarity is the reason to buy, so price — not drop rate — is the
+# lever; never a paywall). Flat per-tier (act-gating encodes progression); buy
+# dwarfs the 1g sell. Curve anchored to econ_audit income + gear/reforge sinks.
+const BAG_BUY_PRICE := {"F": 150, "E": 250, "D": 400, "C": 650, "B": 1000, "A": 1600, "S": 2600}
+const SHOP_BAG_COUNT := {1: [1, 1], 2: [1, 2], 3: [1, 2]}
+
+## Per-boss bag drop chance for an act (round 52; chance only — grade is chapter).
+static func bag_drop_chance(act: int) -> float:
+	return float(BAG_DROP_CHANCE.get(clampi(act, 1, 3), 0.0))
+
+## Roll a bag GRADE from the chapter's BOSS table (2026-07-09): bags are the
+## exception to the general/boss split — every bag source (drop, elite, shop)
+## rolls the boss-tier grade for that chapter.
+static func roll_bag_grade(chid: String, rng: RandomNumberGenerator) -> String:
+	return roll_weighted_grade(boss_weights(chid), rng)
+
 # DISCARD-throw (round 52): a bag item flung out to free a slot. It sails a
 # short arc away, then ignores pickup for a beat so it doesn't re-collect the
 # instant you're standing on it. Registered like any drop -> mails at chapter
 # end (never silently lost).
 const DISCARD_THROW_DIST := 96.0
 const DISCARD_NO_PICKUP_TIME := 1.5
-# SHOP gear appearance weights per act — the grade a stock slot rolls, then
-# clamped to the chapter's loot_cap. Act1 floor below B; Act2 floor B; Act3 floor A.
-const SHOP_GEAR_WEIGHTS := {
-	1: {"F": 12, "E": 18, "D": 22, "C": 15, "B": 33},   # B ~1/3
-	2: {"B": 70, "A": 20, "S": 10},                     # A 1/5, S 1/10
-	3: {"A": 80, "S": 20},                              # A guaranteed floor, S 1/5
-}
+# SHOP gear now rolls the chapter's GENERAL band (Items.roll_shop_grade) — the
+# old per-act appearance weights are folded into CHAPTER_GEAR_WEIGHTS above.
 # GEM levels by act: elite/boss drop floor, and shop stock range [lo, hi].
 const GEM_ACT_LEVEL := {1: 1, 2: 2, 3: 5}
 const SHOP_GEM_RANGE := {1: [1, 1], 2: [2, 4], 3: [5, 7]}
 const BOSS_FIRST_CLEAR_GEM_BONUS := 1                   # first-clear catch-up bundle rolls +1 level
-# Special-stat gems (Haste/CDR/Combo/Lifesteal/Greed/Dmg%) are off-build power
-# and only equip in an A+ special slot. They stay OUT of the early loot stream
-# so ch1-3 drops teach the REGULAR gems first (and don't drown the bag in gems
-# nobody can socket yet) — they begin dropping in ch4+ (2026-07-08).
-const SPECIAL_GEM_LOCKED_CHAPTERS := ["ch1", "ch2", "ch3"]
+# Gem gating by chapter (2026-07-09): REGULAR gems start at ch4 (ch1-3 teach the
+# gear tiers first, undiluted); SPECIAL-stat gems (Haste/CDR/Combo/Lifesteal/
+# Greed/Dmg%) start at ch6 — the same chapter A-grade gear (with its special
+# slot) begins dropping, so a special gem is socketable the moment it appears.
+const REGULAR_GEM_START_CH := 4
+const SPECIAL_GEM_START_CH := 6
+static func chapter_num(chid: String) -> int:
+	return int(chid.trim_prefix("ch")) if chid.begins_with("ch") else 0
+static func regular_gems_drop(chid: String) -> bool:
+	return chapter_num(chid) >= REGULAR_GEM_START_CH
 static func special_gems_drop(chid: String) -> bool:
-	return not (chid in SPECIAL_GEM_LOCKED_CHAPTERS)
+	return chapter_num(chid) >= SPECIAL_GEM_START_CH
 
 # Smith UPGRADE curve (round 51): S must cost WAY more than C. Per-step cost =
 # UPGRADE_BASE * UPGRADE_GRADE_FACTOR[grade] * (1+plus) — doubling per tier, so
@@ -181,13 +229,20 @@ const CHAPTER_ECON := {
 static func gem_gold_value(lvl: int) -> float:
 	return GEM_GOLD_BASE * pow(GEM_GOLD_PER_LEVEL, float(maxi(lvl - 1, 0)))
 
-## Per-boss GEAR/BAG drop odds ({grade: chance}) for the chapter's act.
+## Per-boss GEAR drop odds ({grade: chance}) — derived from the chapter's BOSS
+## weight table x BOSS_GEAR_CHANCE. Used for shop farm-cost pricing; the actual
+## drop is rolled in Items.roll_boss_gear_grade.
 static func boss_gear_odds(chid: String) -> Dictionary:
-	var e: Dictionary = CHAPTER_ECON.get(chid, {})
-	var act: int = int(e.get("act", 1))
-	if act == 1 and chid == ACT1_FINAL_CHAPTER:
-		return BOSS_GEAR_DROP_ACT1_FINAL
-	return BOSS_GEAR_DROP.get(act, {})
+	var w := boss_weights(chid)
+	var total := 0.0
+	for v in w.values():
+		total += float(v)
+	var out := {}
+	if total <= 0.0:
+		return out
+	for g in w:
+		out[String(g)] = BOSS_GEAR_CHANCE * float(w[g]) / total
+	return out
 
 ## Elite/boss gem drop LEVEL for a chapter's act (round 51: replaces the
 ## gem_lv2_chance ramp for the act floor). Act1 L1, Act2 L2, Act3 L5.
@@ -200,7 +255,9 @@ static func gem_drop_level(chid: String) -> int:
 static func farm_runs(chance: float) -> int:
 	if chance <= 0.0:
 		return 1
-	return int(ceil((1.0 / chance) / float(BOSSES_PER_RUN)))
+	# 1e-9 epsilon: derived odds (BOSS_GEAR_CHANCE x weight/total) can land a hair
+	# under a clean fraction, and a bare ceil() would then bill an extra farm run.
+	return int(ceil((1.0 / chance) / float(BOSSES_PER_RUN) - 1e-9))
 
 # ------------------------------------------------------ boss gem drops ---
 # Round 44: bosses join the gem economy (was elite-only). The FIRST
@@ -519,11 +576,8 @@ static func gem_lv2_chance(level: int) -> float:
 	return clampf(ELITE_GEM_LV2_CHANCE + 0.01 * float(level - GEM_LV2_RAMP_START),
 		ELITE_GEM_LV2_CHANCE, GEM_LV2_CAP)
 
-# Act loot ceilings (reward calibration, 2026-07-06): Act 1 covers F->B
-# (ch1's authored C cap stays lower), Act 2 introduces A, Act 3 owns S.
-# Applied centrally in game.loot_cap() as a clamp over the chapter's
-# authored cap — content modules never need to know the act rule.
-const ACT_LOOT_CAP := {1: "B", 2: "A", 3: "S"}
+# (Act loot ceilings retired 2026-07-09 — the per-chapter band tables above own
+# the ceiling now; game.loot_cap() reads Balance.chapter_gear_ceiling.)
 
 # Anti-degeneracy stat caps (player-designed, 2026-07-06): the four
 # SPECIAL stats — Haste, Lifesteal, Combo, Greed — are GEM-ONLY (never

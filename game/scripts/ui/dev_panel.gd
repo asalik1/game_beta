@@ -214,9 +214,8 @@ static func open(m: Menus) -> void:
 			mail["sent_at"] = int(mail["sent_at"]) - 31 * 86400
 		m.game.prune_mail()
 		m.open_dev(), Color(0.8, 0.9, 1.0))
-	m._btn(row3, "Add bag (act tier)", func() -> void:
-		var act: int = Story.act_of(m.game.chapter_id)
-		m.game.player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(act, m.game.loot_rng)))
+	m._btn(row3, "Add bag (chapter tier)", func() -> void:
+		m.game.player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(m.game.chapter_id, m.game.loot_rng)))
 		m.open_dev(), Color(0.95, 0.85, 0.5))
 	m._btn(row3, "Reset bags (1×F)", func() -> void:
 		m.game.player.bags = [Items.make_bag("F")]  # direct set for capacity testing

@@ -685,10 +685,10 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	var chests := VBoxContainer.new()
 	chests.add_theme_constant_override("separation", 2)
 	_card(list).add_child(chests)
-	m._lbl(chests, "Wooden chest — drops from monsters (common). Contains F to C gear.", 14, Color(0.8, 0.65, 0.45))
-	m._lbl(chests, "Silver chest — drops from monsters (rare). Contains D to A gear.", 14, Color(0.8, 0.82, 0.9))
-	m._lbl(chests, "Golden chest — every boss drops one. Contains B to S gear.", 14, Color(1.0, 0.85, 0.35))
-	var bossdrop := m._lbl(chests, "Boss GEAR — every boss also has a chance to drop a piece of gear AND a bag, on top of its chest and gems. In Act 1 that piece is B-grade (about 1 in 3 per boss); only the FINAL chapter's bosses can drop an A. A-grade and up is farmed, not bought.", 13, Color(0.85, 0.75, 0.55))
+	m._lbl(chests, "Wooden chest — drops from monsters (common). A slim chance of a loose gem inside.", 14, Color(0.8, 0.65, 0.45))
+	m._lbl(chests, "Silver chest — drops from monsters (rare) and elites. Better odds of a gem.", 14, Color(0.8, 0.82, 0.9))
+	m._lbl(chests, "Golden chest — every boss drops one, and it always holds a gem (from Chapter 4 on, once gems drop).", 14, Color(1.0, 0.85, 0.35))
+	var bossdrop := m._lbl(chests, "GEAR grade tracks the CHAPTER, not the chest color: each chapter drops a sliding BAND of tiers — Ch1 is F only, climbing to B by Ch5, A by Ch6, S by Ch12. Chests, shops and spoils roll the low-to-mid of that band; every boss additionally has about a 1-in-3 chance to drop a gear piece — and a bag — at the chapter's TOP tier. Top-tier gear is farmed, not bought.", 13, Color(0.85, 0.75, 0.55))
 	bossdrop.custom_minimum_size = Vector2(880, 0)
 	bossdrop.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	m._lbl(chests, "Every piece is CLASS-LOCKED and guarantees your class attribute as its main (STR/AGI/INT). Bonus stats: ATK%, HP%, Crit, CritDmg, VIT, EVA, DEX, Pen, Resists, MP.", 13, Color(0.7, 0.72, 0.78))
@@ -712,7 +712,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	for line3 in [
 		"Each gem grants ONE stat and deepens with its level, up to Lv %d. Only B-grade gear and above has sockets." % Items.GEM_MAX_LEVEL,
 		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (click them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level.",
-		"SPECIAL gems — Haste, Lifesteal, Combo, Greed — are the ONLY way to build those stats: at most one special gem per item, and their totals soft-cap at %d%% Haste / %d%% Lifesteal / %d%% Combo (beyond, a point pays about a tenth)." %
+		"SPECIAL gems — Haste, Lifesteal, Combo, Greed — begin dropping in Chapter 6 (alongside the A-grade gear that carries the only special slot). They are the ONLY way to build those stats: at most one special gem per item, and their totals soft-cap at %d%% Haste / %d%% Lifesteal / %d%% Combo (beyond, a point pays about a tenth)." %
 			[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)],
 		"A vessel holds what it can bear: B gear sockets gems up to Lv%d, A up to Lv%d, S up to Lv%d — deep gems need endgame gear." %
 			[int(Items.GEM_LEVEL_LIMIT["B"]), int(Items.GEM_LEVEL_LIMIT["A"]), int(Items.GEM_LEVEL_LIMIT["S"])],
@@ -756,7 +756,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		m._lbl(bags, "%s   %s — %d slots" % [g2, Items.BAG_NAMES[g2], int(Items.BAG_SLOTS[g2])], 14, Items.GRADE_COLOR[g2])
 	for line2 in [
 		"Gear, gems and consumables all share your bags' slots — and EVERY unit counts: 20 potions take 20 slots (they only STACK for display). Equip up to %d bags at once — total capacity is the SUM of their slots (F pouch 10 … S hold 40). You start with two Frayed Pouches." % Balance.MAX_BAGS,
-		"Bags drop from BOSSES and elites (tier scales with the act) and merchants stock them too — but a good bag costs real gold. Pick up one past your %d and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],
+		"Bags drop from BOSSES and elites (tier tracks the CHAPTER, matching its boss gear) and merchants stock them too — but a good bag costs real gold. Pick up one past your %d and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],
 		"Full bag? Click any loose gear, gem, or consumable to open its detail card and DROP it — fling it out to free a slot. New loot drops at your feet instead of vanishing — anything left on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
 		var bl := m._lbl(bags, String(line2), 13, Color(0.7, 0.72, 0.78))
 		bl.custom_minimum_size = Vector2(880, 0)

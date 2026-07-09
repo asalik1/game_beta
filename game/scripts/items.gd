@@ -456,31 +456,24 @@ static func roll_gear_of_grade(grade: String, rng: RandomNumberGenerator, cls :=
 	return roll_item_of(_roll_slot(grade, rng), grade, rng, cls)
 
 
-## Grade a SHOP stock slot rolls (act appearance weights), clamped to loot_cap.
-static func roll_shop_grade(chid: String, rng: RandomNumberGenerator, cap: String) -> String:
-	var act: int = int(Balance.CHAPTER_ECON.get(chid, {}).get("act", 1))
-	var weights: Dictionary = Balance.SHOP_GEAR_WEIGHTS.get(act, {"C": 1})
-	var total := 0.0
-	for w in weights.values():
-		total += float(w)
-	var pick := rng.randf() * total
-	var cap_i := GRADES.find(cap)
-	for grade in weights:
-		pick -= float(weights[grade])
-		if pick <= 0.0:
-			return cap if GRADES.find(String(grade)) > cap_i else String(grade)
-	return cap
+## One GENERAL gear item for a chapter (chest / shop-filler / spoils / gamble):
+## grade from the chapter's general band, slot via _roll_slot. (2026-07-09)
+static func roll_chapter_gear(chid: String, rng: RandomNumberGenerator, cls := "") -> Dictionary:
+	return roll_gear_of_grade(Balance.roll_weighted_grade(Balance.gear_weights(chid), rng), rng, cls)
 
 
-## The BOSS gear/bag drop channel: highest act-table grade that hits, or "".
-## Each listed grade rolls independently; a lucky S beats a simultaneous A.
+## Grade a SHOP stock slot rolls — the chapter's GENERAL band table (2026-07-09).
+## `cap` is accepted for call-site compatibility but the band already bounds it.
+static func roll_shop_grade(chid: String, rng: RandomNumberGenerator, _cap := "") -> String:
+	return Balance.roll_weighted_grade(Balance.gear_weights(chid), rng)
+
+
+## The BOSS gear drop channel (2026-07-09): one BOSS_GEAR_CHANCE roll for whether
+## gear drops at all, then a weighted grade from the chapter's boss band. "" = none.
 static func roll_boss_gear_grade(chid: String, rng: RandomNumberGenerator) -> String:
-	var odds: Dictionary = Balance.boss_gear_odds(chid)
-	var best := ""
-	for grade in GRADES:  # F..S ascending, so the last hit is the highest
-		if odds.has(grade) and rng.randf() < float(odds[grade]):
-			best = String(grade)
-	return best
+	if rng.randf() >= Balance.BOSS_GEAR_CHANCE:
+		return ""
+	return Balance.roll_weighted_grade(Balance.boss_weights(chid), rng)
 
 
 ## The class's signature weapon shape (from its S legendary) — used by

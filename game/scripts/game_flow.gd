@@ -320,10 +320,11 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	var boss_lv: int = src.level if is_instance_valid(src) else 1
 	var first_clear: bool = not flags.get("completed_" + chapter_id, false)
 	var gem_count := 0
-	if first_clear:
-		gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
-	elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
-		gem_count = 1
+	if Balance.regular_gems_drop(chapter_id):   # ch1-3 bosses drop no gems (gear only)
+		if first_clear:
+			gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
+		elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
+			gem_count = 1
 	# First-clear catch-up bundle rolls one level richer than the act floor.
 	var boss_gem_lvl := Balance.gem_drop_level(chapter_id) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
 	for gi in gem_count:
@@ -340,11 +341,11 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		if give_loot({"kind": "item", "item": gear}, boss_pos + Vector2(40, 30)):
 			spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
 	# Bags: a SEPARATE, rarer roll (round 51b) — inventory expansion, not every
-	# run. Round 52: per-act chance + tier weights (Balance.BOSS_BAG_DROP), so
-	# tier stays gated to the act; over MAX_BAGS keeps the best set (acquire_bag).
+	# run. Chance is per-act (Balance.bag_drop_chance); the GRADE follows the
+	# chapter's boss band (2026-07-09); over MAX_BAGS keeps the best set.
 	var bag_act: int = Story.act_of(chapter_id)
 	if loot_rng.randf() < Balance.bag_drop_chance(bag_act):
-		player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(bag_act, loot_rng)))
+		player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
 
 	# Now that the room is safe, a wandering merchant MAY set up camp.
 	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
@@ -425,11 +426,14 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 func _first_clear_reward(boss_lv: int) -> void:
 	var g := int(Balance.FIRST_CLEAR_GOLD * Balance.daily_gold_mult(boss_lv))
 	player.gold += g
-	var spoils := Items.roll_item("gold", loot_rng, player.cls, loot_cap())
+	var spoils := Items.roll_chapter_gear(chapter_id, loot_rng, player.cls)
+	var spoil_rewards: Array = [{"kind": "item", "item": spoils}]
+	if Balance.regular_gems_drop(chapter_id):   # ch1-3 spoils are gear + gold only
+		spoil_rewards.append({"kind": "gem", "gem": drop_gem(
+			Balance.gem_drop_level(chapter_id) + Balance.BOSS_FIRST_CLEAR_GEM_BONUS)})
 	send_mail("Spoils of %s" % String(Story.chapter(chapter_id)["name"]),
 		"The chapter is conquered. These spoils are yours by right — and the road behind you stays open for the farming.",
-		[{"kind": "item", "item": spoils}, {"kind": "gem", "gem": drop_gem(
-			Balance.gem_drop_level(chapter_id) + Balance.BOSS_FIRST_CLEAR_GEM_BONUS)}])
+		spoil_rewards)
 	spawn_text(player.global_position + Vector2(0, -106),
 		"CHAPTER CONQUERED  +%d gold — spoils in your mailbox" % g,
 		Color(1.0, 0.85, 0.4), 5.0)
@@ -460,8 +464,8 @@ func on_enemy_died(e: Enemy) -> void:
 		# the gem guarantee starts at ELITE_GEM_SURE_LEVEL — below it
 		# the gem is a chance, so chapter-1 bags stop drowning in gems
 		# nobody can socket yet.
-		if e.level >= Balance.ELITE_GEM_SURE_LEVEL \
-				or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE:
+		if Balance.regular_gems_drop(chapter_id) and (e.level >= Balance.ELITE_GEM_SURE_LEVEL \
+				or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE):
 			var gem := drop_gem(Balance.gem_drop_level(chapter_id))
 			if give_loot({"kind": "gem", "gem": gem}, e.global_position):
 				spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
@@ -474,8 +478,8 @@ func on_enemy_died(e: Enemy) -> void:
 			if give_loot({"kind": "stone", "stone": Items.make_respec_tome()}, e.global_position + Vector2(-36, 8)):
 				spawn_text(e.global_position + Vector2(0, -92), "+ Palimpsest of the Path", Color(0.6, 0.9, 1.0))
 		elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
-			# Round 52: act-tiered like boss bags (no obsolete low-tier floods).
-			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(Story.act_of(chapter_id), loot_rng)))
+			# 2026-07-09: bag grade follows the chapter's boss table (like boss bags).
+			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
 	else:
 		# Chance-based chest drops (Greed above 30% nudges the odds up).
 		var bonus := Stats.greed_loot(player.greed) if is_instance_valid(player) else 0.0
@@ -522,10 +526,11 @@ func on_enemy_died(e: Enemy) -> void:
 func _curse_payout(zi: int) -> void:
 	var pos := room_center(zi) + Vector2(0, -60)
 	Chest.drop(self, "gold", pos)
-	var gem := drop_gem(
-		2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
-	if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(44, 24)):
-		spawn_text(pos + Vector2(0, -40), "+ " + Items.gem_title(gem), Items.gem_color(gem))
+	if Balance.regular_gems_drop(chapter_id):   # gem reward only once gems drop (ch4+)
+		var gem := drop_gem(
+			2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
+		if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(44, 24)):
+			spawn_text(pos + Vector2(0, -40), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 	sfx("nova", 0.8)
 	if is_instance_valid(player):
 		spawn_text(player.global_position + Vector2(0, -78),

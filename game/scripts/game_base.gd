@@ -260,13 +260,11 @@ const MUSIC_DB := -16.0
 
 
 ## The best gear grade this chapter can drop (act gating, DESIGN.md):
-## Act 1 covers F->B, Act 2 introduces A, Act 3 owns S (2026-07-06) —
-## applied as a clamp over the chapter's authored cap (ch1's authored C
-## stays lower), so content modules never carry the act rule themselves.
+## The best grade a GENERAL faucet (chest/shop/gamble/spoils) can yield this
+## chapter — the ceiling of the chapter's general band table (2026-07-09).
+## Used for gamble pricing probes; the drop channels roll the band directly.
 func loot_cap() -> String:
-	var authored := String(Story.chapter(chapter_id).get("loot_cap", "S"))
-	var act_cap := String(Balance.ACT_LOOT_CAP.get(Story.act_of(chapter_id), "S"))
-	return authored if Items.GRADES.find(authored) < Items.GRADES.find(act_cap) else act_cap
+	return Balance.chapter_gear_ceiling(chapter_id)
 
 ## (T7) Merchants read the shard: the steady get kinder prices, the
 ## tempted make the till nervous. Surfaced, never explained in numbers.
@@ -297,7 +295,7 @@ func gamble(tier: String) -> Dictionary:
 	player.gold -= cost
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var won := Items.roll_item(tier, rng, player.cls, loot_cap())
+	var won := Items.roll_chapter_gear(chapter_id, rng, player.cls)
 	player.add_item(won)
 	return won
 
