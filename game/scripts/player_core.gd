@@ -670,6 +670,13 @@ func recalc() -> void:
 	dex = b["dex"]
 	physpen = b["physpen"]
 	magpen = b["magpen"]
+	# Plate EARNED DR: warrior scales it on physres, paladin on magres — 0 with
+	# no armor, up to PLATE_DR_MAX at PLATE_DR_FULL_RES. Res is set above, so this
+	# rides the built (gear + kit) value.
+	if cls == "warrior":
+		flat_dr += Balance.PLATE_DR_MAX * minf(1.0, physres / Balance.PLATE_DR_FULL_RES)
+	elif cls == "paladin":
+		flat_dr += Balance.PLATE_DR_MAX * minf(1.0, magres / Balance.PLATE_DR_FULL_RES)
 	combo = Balance.soft_cap(maxf(0.0, b["combo"]), Balance.CAP_COMBO)  # soft knee
 	greed = b["greed"]
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)

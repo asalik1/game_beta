@@ -640,6 +640,13 @@ const SPECIAL_GEM_STATS := ["cdr", "lifesteal", "combo", "flat_dr", "dmg_pct"]  
 # returns — rises fast off low res (the floor lift), then flattens hard so endgame
 # res stacking can't snowball plate to the top of the charts. At res 100 ~ +5.5%,
 # res 190 ~ +6.9%, res 350 ~ +8.4% (vs the old linear's +10 / +19 / +30%).
+# Plate flat DR is EARNED by resistance (2026-07-09), not a flat handout: it
+# ramps 0 -> PLATE_DR_MAX as the class's SIGNATURE res (warrior physres, paladin
+# magres) climbs to PLATE_DR_FULL_RES. Bare-armored early plate blocks almost
+# nothing (has to respect mechanics); a res wall blocks the full 15%. Fixes the
+# early faceroll and puts tankiness on the gear/investment-gated res curve.
+const PLATE_DR_MAX := 0.15
+const PLATE_DR_FULL_RES := 130.0     # signature res that grants the full DR
 const PLATE_RES_DMG_LOG := 0.025     # log coefficient
 const PLATE_RES_DMG_K := 0.08        # res sensitivity inside the log
 const PLATE_RES_DMG_CAP := 0.15      # hard ceiling (halved from the old 0.30)

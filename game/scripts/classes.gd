@@ -95,7 +95,7 @@ const CLASSES := {
 	"warrior": {
 		"name": "Warrior", "sprite": "warrior", "primary": "STR", "dmg_type": "phys",
 		"desc": "Frontline bruiser. Simple, tanky, hits hard up close.",
-		"passive": {"text": "Plated — your armor turns aside 15% of EVERY blow on top of resistances, your swings knock enemies back, and your wounds knit themselves (1.5% max HP/s). GRIT: every blow you TAKE stokes recovery — +0.6% max HP/s per hit, up to 6 stacks. The grind feeds you; kiting starves you.", "physres": 80.0, "magres": 45.0, "regen_pct": 0.015, "flat_dr": 0.15, "grit_regen": 0.006, "grit_cap": 6.0},
+		"passive": {"text": "Plated — your armor turns aside up to 15% of every blow, EARNED by your PHYSICAL resistance (bare plate blocks little; a wall of it blocks the full 15%). Your swings knock enemies back, and your wounds knit themselves (1.5% max HP/s). GRIT: every blow you TAKE stokes recovery — +0.6% max HP/s per hit, up to 6 stacks. The grind feeds you; kiting starves you.", "physres": 80.0, "magres": 45.0, "regen_pct": 0.015, "grit_regen": 0.006, "grit_cap": 6.0},
 		"hp": 130.0, "hp_lvl": 19.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 15.5, "atk_lvl": 4.3, "speed": 250.0,
 		"abilities": {
@@ -148,7 +148,7 @@ const CLASSES := {
 	"paladin": {
 		"name": "Paladin", "sprite": "paladin", "primary": "STR", "dmg_type": "magic",  # STR-primary but HOLY = magic damage (checks magres/magpen); INT is a byproduct scaler
 		"desc": "Stance knight. In HOLY his blows mend him; in RETRIBUTION he trades the mending for wrath. Reading when to swap IS the class.",
-		"passive": {"text": "Sanctified — blessed plate turns aside 12% of every blow; every strike returns as healing (4%), and the light mends you (1% max HP/s). CONVICTION: you fight in a stance — HOLY (blows mend you, -20% damage) or RETRIBUTION (+25% damage, no stance mending — your lifesteal and regen still hold).", "physres": 60.0, "magres": 60.0, "lifesteal": 0.04, "regen_pct": 0.010, "flat_dr": 0.12},
+		"passive": {"text": "Sanctified — blessed plate turns aside up to 15% of every blow, EARNED by your MAGIC resistance (faith wards spell before steel). Every strike returns as healing (4%), and the light mends you (1% max HP/s). CONVICTION: you fight in a stance — HOLY (blows mend you, -20% damage) or RETRIBUTION (+25% damage, no stance mending — your lifesteal and regen still hold).", "physres": 50.0, "magres": 75.0, "lifesteal": 0.04, "regen_pct": 0.010},
 		"hp": 125.0, "hp_lvl": 17.0, "mp": 55.0, "mp_lvl": 5.0,
 		"atk": 15.0, "atk_lvl": 4.3, "speed": 248.0,
 		"abilities": {
