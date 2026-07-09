@@ -41,10 +41,9 @@ EXTRACT = os.path.join(HERE, "extract_sheet.py")
 JOBS = {
     # DARK -> pre-keyed (2) sheets
     "warrior":  ("Warrior (2).png",  "idle,walk,run,attack,attack2,dash,ultidle,ult,death", []),
-    # NOTE: the assassin is NOT built here anymore -- it comes from the ChatGPT
-    # upscales via tools/art/upscale_assassin.py (both body clips + directional
-    # strips). Left out of JOBS so a rebuild can't clobber the upscaled sprites.
-    "warlock":  ("Warlock (2).png",  "idle,walk,run,cast,attack,ult,attack2,death", ["--keepall"]),
+    # NOTE: the assassin and warlock are NOT built here -- they come from the
+    # ChatGPT upscales via tools/art/upscale_hero.py. Left out of JOBS so a
+    # rebuild can't clobber the upscaled sprites.
     # LIGHT -> navy ORIGINAL sheets (auto bg-key)
     "archer":   ("Archer.png",  "idle,walk,run,cast,attack,attack2,dash,death", ["--drop", "attack2:3", "--key", "30"]),  # tighter key spares the dark boot soles the default 45 ate
     "mage":     ("Mage.png",    "idle,walk,run,cast,attack,attack2,dash,death", ["--drop", "attack2:3,attack2:4"]),

@@ -68,30 +68,34 @@ tools/Godot_v4.4.1-stable_win64_console.exe --headless --path game --import
 | class | source sheet | note |
 |---|---|---|
 | paladin, mage, archer | `Custom/<Class>.png` (navy ORIGINAL) | light figures — key cleanly off a dark bg |
-| warlock, warrior | `Custom/<Class> (2).png` (transparent) | dark figures — a navy key would eat them |
-| **assassin (all clips + directional)** | `Custom/assassin_upscaled/*.png` via **`upscale_assassin.py`** | ChatGPT UPSCALES — a separate tool, NOT built by `build_sprites.py` |
+| warrior | `Custom/<Class> (2).png` (transparent) | dark figures — a navy key would eat them |
+| **assassin, warlock** (all clips + directional) | `Custom/<class>_upscaled/*.png` via **`upscale_hero.py`** | ChatGPT UPSCALES — a separate tool, NOT built by `build_sprites.py` |
 
 The `(2)` and original sheets are sometimes **different art** (e.g. the paladin
 `(2)` was a kneeling variant), not just different keying — always eyeball a
 rebuild.
 
-### The assassin is upscaled (separate pipeline)
+### Upscaled classes (separate pipeline: `upscale_hero.py`)
 
-The assassin uses higher-detail ChatGPT redraws instead of the `(2)` sheet.
-They can't go through `extract_sheet` because they (a) sit on white, (b) are
-drawn at a **different zoom in every clip** — so the engine's shared idle-derived
-scale would make the ninja grow/shrink between animations — and (c) the stab
-strip is missing its final SE frame. `upscale_assassin.py` handles all three:
-white-keys, then rescales + feet-anchors each clip to match its ORIGINAL
-counterpart's layout (body ref regenerated from `Assassin (2).png`, directional
-ref from the Heroes backup), and duplicates the one missing SE stab frame.
+Some classes use higher-detail ChatGPT redraws instead of the `(2)` sheet. They
+can't go through `extract_sheet` because they (a) sit on white, (b) are drawn at
+a **different zoom in every clip** — so the engine's shared idle-derived scale
+would make the character grow/shrink between animations — and (c) sometimes drop
+a frame (the assassin's stab was missing its final SE frame). `upscale_hero.py`
+handles all three: white-key + de-halo each figure, then rescale + feet-anchor
+every clip to match its ORIGINAL counterpart's layout (body ref regenerated from
+`<Class> (2).png`, directional ref from the Heroes backup), filling any missing
+frame from its pair-mate.
 
 ```
-python tools/art/upscale_assassin.py        # source: Custom/assassin_upscaled/
+python tools/art/upscale_hero.py             # every configured class
+python tools/art/upscale_hero.py warlock     # just one
 ```
 
-The assassin is deliberately left out of `build_sprites.py`'s `JOBS` so a roster
-rebuild can't overwrite it. To change the assassin, re-run the upscale tool.
+Add a class by giving it an entry in `CLASSES` (source sheet, clip order, the
+body suffix→source map, any directional strips). Sources are archived under
+`Custom/<class>_upscaled/` with clip-name filenames. Upscaled classes are left
+out of `build_sprites.py`'s `JOBS` so a roster rebuild can't overwrite them.
 
 ---
 
