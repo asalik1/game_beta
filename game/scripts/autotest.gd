@@ -903,10 +903,12 @@ func _run_systems() -> void:
 	if s_wpn["gems"].size() != 0 or absf(game.player.crit - crit_before) > 0.001:
 		return _fail("remove_gem did not restore stats")
 	game.player.embed_gem_into(s_wpn, cg)
+	game.menus.open_inventory()  # the bench popover overlays the open inventory
+	await _frames(1)
 	game.menus.open_item_panel(s_wpn)
 	await _frames(2)
-	if game.menus.current != "item_panel":
-		return _fail("item panel did not open")
+	if game.menus.current != "detail":
+		return _fail("item panel popover did not open")
 	game.menus.close()
 	await _frames(2)
 	for i in 3:

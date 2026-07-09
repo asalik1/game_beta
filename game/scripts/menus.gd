@@ -7,6 +7,7 @@ var game: Game
 var root: Control = null          # the currently open panel (null = closed)
 var detail_popover: Control = null  # click-to-reveal item/gem/shop popover
 var detail_return := ""             # screen the popover overlays (restored on close)
+var _popover_box: PanelContainer = null  # the current popover's panel (for re-anchoring)
 var current := ""
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
@@ -833,18 +834,12 @@ func _bag_empty(grid: GridContainer) -> void:
 	grid.add_child(pnl)
 
 
-## The old hover tooltip, promoted to a click-triggered popover: same
-## breakdown, same spot (anchored at the cursor), but the panel is now
-## fully OPAQUE so the content behind can't bleed through it, and it carries
-## action buttons. Not a modal — nothing dims, the screen stays live. An
-## invisible full-screen catcher sits behind it: click anywhere OUTSIDE the
-## box (or ESC) to dismiss — no Close button. `actions` is a list of
-## [label, color, Callable]; actions rebuild the screen. Auto-sizes to its
-## content like a tooltip. Shared by the inventory and the merchant shop.
-func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
-		info: String, actions: Array) -> void:
-	if not root:
-		return
+## Build the opaque popover shell over the current screen and return the
+## VBox to fill. Frees any open popover first; a click landing on the
+## transparent full-screen catcher behind it — i.e. anywhere off the box —
+## dismisses it (no Close button, nothing dims: a popover, not a modal).
+## `_popover_box` holds the panel so callers can re-anchor a rebuild.
+func _popover_frame(title_color: Color) -> VBoxContainer:
 	if detail_popover:
 		detail_popover.queue_free()
 	elif current != "detail":
@@ -852,8 +847,6 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 	current = "detail"
 	game.sfx("ui_click")
 
-	# Transparent full-rect catcher: nothing drawn (so no dim, not a modal),
-	# but a click landing on it — i.e. anywhere off the box — dismisses.
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -864,10 +857,10 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 	detail_popover = overlay
 
 	# A PanelContainer hugs its content, so the popover is exactly as tall
-	# as the breakdown + buttons — no fixed card box.
+	# as what's inside — no fixed card box.
 	var pop := PanelContainer.new()
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.1, 0.09, 0.13, 1.0)  # fully opaque — no bag bleed-through
+	sb.bg_color = Color(0.1, 0.09, 0.13, 1.0)  # fully opaque — no bleed-through
 	sb.border_color = Color(title_color, 0.9)
 	sb.set_border_width_all(2)
 	sb.set_corner_radius_all(6)
@@ -880,11 +873,16 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 	pop.add_theme_stylebox_override("panel", sb)
 	pop.mouse_filter = Control.MOUSE_FILTER_STOP  # clicks on the box don't dismiss
 	overlay.add_child(pop)
+	_popover_box = pop
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 8)
 	pop.add_child(vbox)
+	return vbox
 
+
+## Icon + title header row for a popover.
+func _popover_header(vbox: VBoxContainer, icon: Texture2D, title: String, title_color: Color) -> void:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 10)
 	vbox.add_child(head)
@@ -897,24 +895,40 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 	var tl := _lbl(head, title, 18, title_color)
 	tl.custom_minimum_size = Vector2(300, 0)
 
-	var il := _lbl(vbox, info, 14, Color(0.85, 0.85, 0.92))
-	il.custom_minimum_size = Vector2(320, 0)
 
-	for a in actions:
-		var acb: Callable = a[2]
-		_btn(vbox, String(a[0]), acb, a[1])
-
-	# Anchor at the cursor like the tooltip did, then (once the container has
-	# measured itself) nudge it back on-screen if it would spill off an edge.
-	pop.position = pop.get_global_mouse_position() + Vector2(14, 8)
+## Place `pop` at `at` (or the cursor when at.x < 0), measure it once laid
+## out, then nudge it fully on-screen. When a scroll+body are passed, cap the
+## scroll height first so a tall bench scrolls instead of overflowing.
+func _popover_settle(pop: PanelContainer, at: Vector2, scroll: ScrollContainer = null, body: Control = null) -> void:
+	pop.position = at if at.x >= 0.0 else pop.get_global_mouse_position() + Vector2(14, 8)
 	await get_tree().process_frame
 	if not is_instance_valid(pop):
 		return
+	if scroll != null and body != null:
+		scroll.custom_minimum_size.y = minf(body.get_combined_minimum_size().y, 500.0)
 	pop.reset_size()
 	var sz := pop.size
 	pop.position = Vector2(
 		clampf(pop.position.x, 8.0, 1280.0 - sz.x - 8.0),
 		clampf(pop.position.y, 8.0, 720.0 - sz.y - 8.0))
+
+
+## The simple popover: header, an info block, then flat action buttons.
+## `actions` is a list of [label, color, Callable]. Cursor-anchored,
+## auto-sized. Shared by inventory bags, the shop and equipped gear.
+func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
+		info: String, actions: Array) -> void:
+	if not root:
+		return
+	var vbox := _popover_frame(title_color)
+	var pop := _popover_box
+	_popover_header(vbox, icon, title, title_color)
+	var il := _lbl(vbox, info, 14, Color(0.85, 0.85, 0.92))
+	il.custom_minimum_size = Vector2(320, 0)
+	for a in actions:
+		var acb: Callable = a[2]
+		_btn(vbox, String(a[0]), acb, a[1])
+	await _popover_settle(pop, Vector2(-1, -1))
 
 
 ## Dismiss the popover, leaving the screen it floats over (inventory or
@@ -1113,35 +1127,36 @@ func _open_equipped_popover(item: Dictionary) -> void:
 	_open_detail_popover(Art.icon_for(item), Items.title(item), Items.GRADE_COLOR[item["grade"]], info, actions)
 
 
-func open_item_panel(item: Dictionary) -> void:
+## The gem-socket + reforge bench — a scrollable opaque popover (the same
+## click-off-to-close box as the bag). `at` re-anchors a rebuild in place so
+## socketing/reforging doesn't make the box hop to the cursor each time.
+func open_item_panel(item: Dictionary, at := Vector2(-1, -1)) -> void:
+	if not root:
+		return
+	# Rebuild in place: a socket/reforge action (or the equipped popover's
+	# bench button) replaces an open popover — keep its spot so the box doesn't
+	# hop to the cursor each click.
+	if at.x < 0.0 and is_instance_valid(_popover_box):
+		at = _popover_box.position
 	var p: Player = game.player
-	var vbox := _open(Items.title(item), 900, 620)
-	current = "item_panel"
+	var color: Color = Items.GRADE_COLOR[item["grade"]]
+	var vbox := _popover_frame(color)
+	var pop := _popover_box
+	_popover_header(vbox, Art.icon_for(item), Items.title(item), color)
+	var d := _lbl(vbox, Items.describe(item, _awk(item)), 13, Color(color, 0.9))
+	d.custom_minimum_size = Vector2(440, 0)
 
-	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 12)
-	vbox.add_child(head)
-	var icon := TextureRect.new()
-	icon.texture = Art.icon_for(item)
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	head.add_child(icon)
-	var d := _lbl(head, Items.describe(item, _awk(item)), 14, Items.GRADE_COLOR[item["grade"]])
-	d.custom_minimum_size = Vector2(760, 0)
-
-	# Everything below the header scrolls as ONE block. Previously it was
-	# packed straight into the fixed-height panel and overran the bottom (the
-	# gold line spilled off-screen), and the gem-insert list lived in its OWN
-	# nested EXPAND_FILL scroll — with the panel already over-full that inner
-	# scroll got 0px of height and collapsed, hiding every insert button so
-	# gems looked un-equippable. One outer scroll fixes both.
+	# Everything below the header scrolls, so a fully-socketed S item with a
+	# long insert list + reforge bench can't overrun the box (_popover_settle
+	# caps the scroll height).
 	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(452, 0)
 	vbox.add_child(scroll)
 	var body := VBoxContainer.new()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 8)
+	body.custom_minimum_size = Vector2(440, 0)
+	body.add_theme_constant_override("separation", 6)
 	scroll.add_child(body)
 
 	# Equipped items can be UNEQUIPPED back to the bag (leaving the slot
@@ -1183,8 +1198,10 @@ func open_item_panel(item: Dictionary) -> void:
 			var rm_cb := func() -> void:
 				game.player.remove_gem(item, idx)
 				open_item_panel(item)
-			_btn(body, "Socket %d:  %s    — click to REMOVE (back to bag)" % [i + 1, Items.gem_title(g)],
+			var rb := _btn(body, "Socket %d:  %s   ✕ remove (to bag)" % [i + 1, Items.gem_title(g)],
 				rm_cb, Items.gem_color(g))
+			rb.clip_text = true
+			rb.custom_minimum_size = Vector2(414, 0)
 		else:
 			_lbl(body, "Socket %d:  (empty)" % (i + 1), 13, Color(0.55, 0.55, 0.6))
 
@@ -1197,7 +1214,7 @@ func open_item_panel(item: Dictionary) -> void:
 			# scroll (that one collapsed to 0px and hid every insert button).
 			var groups := _gem_groups()
 			var igrid := GridContainer.new()
-			igrid.columns = 2
+			igrid.columns = 1  # single column — the popover is narrower than the old panel
 			igrid.add_theme_constant_override("h_separation", 12)
 			igrid.add_theme_constant_override("v_separation", 4)
 			igrid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1214,14 +1231,12 @@ func open_item_panel(item: Dictionary) -> void:
 						open_item_panel(item)
 					var ib := _btn(igrid, "%s  x%d — insert" % [Items.gem_title(g2), group["count"]], ins_cb, Items.gem_color(g2))
 					ib.clip_text = true
-					ib.custom_minimum_size = Vector2(380, 0)
-					ib.tooltip_text = "%s  x%d" % [Items.gem_title(g2), group["count"]]
+					ib.custom_minimum_size = Vector2(414, 0)
 				else:
 					var db := _btn(igrid, "%s  x%d — %s" % [Items.gem_title(g2), group["count"], err],
 						Callable(), Color(0.5, 0.5, 0.55), false)
 					db.clip_text = true
-					db.custom_minimum_size = Vector2(380, 0)
-					db.tooltip_text = "%s — %s" % [Items.gem_title(g2), err]
+					db.custom_minimum_size = Vector2(414, 0)
 
 	# --- reforge bench: gold-cost crafting on this item ---
 	_lbl(body, "REFORGE BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
@@ -1266,7 +1281,7 @@ func open_item_panel(item: Dictionary) -> void:
 		_btn(body, "Add gem socket  —  %d gold" % ccost, sock_cb,
 			Color(0.6, 1.0, 0.6) if p.gold >= ccost else Color(0.5, 0.5, 0.55))
 	_lbl(body, "Your gold: %d" % p.gold, 13, Color(1.0, 0.85, 0.35))
-	_hint(vbox, "ESC to go back to inventory")
+	await _popover_settle(pop, at, scroll, body)
 
 
 # -------------------------------------------------------------- skill tree ---
@@ -2157,8 +2172,6 @@ func _input(event: InputEvent) -> void:
 				_close_detail_popover()  # dismiss the popover, stay on the screen beneath
 			elif current == "theme_pick":
 				open_skills()  # back to the tree, not out of the menu
-			elif current == "item_panel":
-				open_inventory()  # back to the bag
 			elif current == "settings":
 				_settings_back()  # back to wherever settings was opened from
 			elif current == "confirm" \
