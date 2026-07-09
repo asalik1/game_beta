@@ -1224,23 +1224,43 @@ const SPRITES := {
 }
 
 # Ground tile colors: base, darker speckle, lighter speckle.
+# Value notes (art audit 2026-07-09): the Forward+ tonemap sinks midtones,
+# so a ground base below ~0.3 renders near-black in-game and the biome's
+# own props stop separating from the floor. gravedirt was raised to pale
+# ashen earth (dark tombstones now read as silhouettes ON it), stormgrass
+# went grey-blue (it was a darkwood clone in green), forest got a small
+# lift out of murk. voidstone stays near-black ON PURPOSE — absence is
+# its identity; its readability comes from the tint value floor
+# (terrains.gd) instead.
 const GROUND := {
 	"grass":  [Color(0.32, 0.55, 0.30), Color(0.27, 0.49, 0.26), Color(0.38, 0.62, 0.33)],
-	"forest": [Color(0.19, 0.36, 0.21), Color(0.15, 0.30, 0.18), Color(0.24, 0.43, 0.25)],
+	"forest": [Color(0.22, 0.39, 0.23), Color(0.17, 0.32, 0.19), Color(0.28, 0.47, 0.27)],
 	"marsh":  [Color(0.33, 0.38, 0.23), Color(0.27, 0.32, 0.19), Color(0.40, 0.44, 0.27)],
 	"stone":  [Color(0.40, 0.40, 0.46), Color(0.34, 0.34, 0.40), Color(0.46, 0.46, 0.52)],
 	"dirt":   [Color(0.52, 0.40, 0.26), Color(0.45, 0.34, 0.22), Color(0.58, 0.46, 0.30)],
 	# --------------------------------------------- terrain expansion ---
 	"basalt":       [Color(0.20, 0.12, 0.11), Color(0.15, 0.09, 0.08), Color(0.30, 0.15, 0.10)],
 	"snow":         [Color(0.82, 0.86, 0.93), Color(0.74, 0.79, 0.88), Color(0.92, 0.95, 1.00)],
-	"gravedirt":    [Color(0.31, 0.29, 0.26), Color(0.25, 0.24, 0.21), Color(0.38, 0.36, 0.32)],
+	"gravedirt":    [Color(0.40, 0.38, 0.34), Color(0.33, 0.31, 0.28), Color(0.48, 0.46, 0.41)],
 	"sand":         [Color(0.78, 0.67, 0.44), Color(0.70, 0.59, 0.38), Color(0.86, 0.76, 0.52)],
 	"bogsoil":      [Color(0.21, 0.28, 0.17), Color(0.16, 0.22, 0.13), Color(0.28, 0.35, 0.21)],
 	"crystalfloor": [Color(0.30, 0.31, 0.46), Color(0.24, 0.25, 0.38), Color(0.40, 0.42, 0.60)],
-	"stormgrass":   [Color(0.24, 0.36, 0.28), Color(0.19, 0.29, 0.23), Color(0.30, 0.44, 0.34)],
+	"stormgrass":   [Color(0.36, 0.40, 0.46), Color(0.29, 0.33, 0.38), Color(0.44, 0.49, 0.55)],
 	"voidstone":    [Color(0.11, 0.08, 0.16), Color(0.07, 0.05, 0.11), Color(0.18, 0.13, 0.26)],
 	"holystone":    [Color(0.66, 0.61, 0.49), Color(0.58, 0.53, 0.42), Color(0.76, 0.71, 0.58)],
 	"sporesoil":    [Color(0.31, 0.23, 0.31), Color(0.25, 0.18, 0.25), Color(0.40, 0.30, 0.40)],
+}
+
+# Per-ground generation profile: [organic patch count, fine speckle count].
+# Grounds not listed use the default [90, 600]. voidstone runs nearly FLAT
+# on purpose — with the full speckle it read as a crystal-cavern clone
+# (art audit 2026-07-09: void identity is ABSENCE). Stone floors calm
+# their speckle so the flagstone seams read as the dominant texture.
+const GROUND_NOISE := {
+	"voidstone":    [14, 70],
+	"crystalfloor": [60, 240],
+	"stone":        [70, 340],
+	"holystone":    [70, 340],
 }
 
 
@@ -2555,7 +2575,8 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 				mask[row + x] = 1
 
 	# Soft organic patches of lighter/darker ground (no checkerboard!).
-	for i in 90:
+	var noise_prof: Array = GROUND_NOISE.get(base_kind, [90, 600])
+	for i in int(noise_prof[0]):
 		var cx := rng.randi_range(0, pw - 1)
 		var cy := rng.randi_range(0, ph - 1)
 		var r := rng.randi_range(3, 9)
@@ -2569,7 +2590,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 					image.set_pixel(x, y, col)
 
 	# Fine speckle everywhere.
-	for i in 600:
+	for i in int(noise_prof[1]):
 		var x := rng.randi_range(0, pw - 1)
 		var y := rng.randi_range(0, ph - 1)
 		var cols: Array = p_cols if mask[y * pw + x] == 1 else g_cols
@@ -2600,42 +2621,13 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 				image.set_pixel(sx + 1, sy, stone)
 				break
 
-	# Zone flavor litter: fallen leaves in the forest, puddles in the marsh,
-	# embers in basalt, glints on snow/crystal, void sparks...
-	if base_kind == "forest":
-		var leaf_cols := [Color(0.95, 0.5, 0.1), Color(0.85, 0.3, 0.1), Color(1.0, 0.75, 0.2)]
-		for i in 340:
-			var x := rng.randi_range(0, pw - 1)
-			var y := rng.randi_range(0, ph - 1)
-			image.set_pixel(x, y, leaf_cols[rng.randi_range(0, 2)])
-	elif base_kind == "marsh" or base_kind == "bogsoil":
-		for i in 18:
-			var cx := rng.randi_range(4, pw - 5)
-			var cy := rng.randi_range(20, ph - 21)
-			var r := rng.randi_range(2, 5)
-			for y in range(cy - r, cy + r):
-				for x in range(cx - r * 2, cx + r * 2):
-					if x >= 0 and x < pw and Vector2((x - cx) * 0.5, y - cy).length() <= r:
-						image.set_pixel(x, y, Color(0.16, 0.30, 0.30) if base_kind == "marsh" else Color(0.28, 0.40, 0.14))
-	elif base_kind == "basalt":
-		var ember_cols := [Color(1.0, 0.45, 0.1), Color(0.9, 0.25, 0.05), Color(1.0, 0.7, 0.2)]
-		for i in 260:
-			var x := rng.randi_range(0, pw - 1)
-			var y := rng.randi_range(0, ph - 1)
-			image.set_pixel(x, y, ember_cols[rng.randi_range(0, 2)])
-	elif base_kind == "snow" or base_kind == "crystalfloor":
-		for i in 200:
-			image.set_pixel(rng.randi_range(0, pw - 1), rng.randi_range(0, ph - 1), Color(1, 1, 1))
-	elif base_kind == "voidstone" or base_kind == "sporesoil":
-		var spark := Color(0.7, 0.4, 1.0) if base_kind == "voidstone" else Color(0.85, 0.55, 0.9)
-		for i in 160:
-			image.set_pixel(rng.randi_range(0, pw - 1), rng.randi_range(0, ph - 1), spark)
-	elif base_kind == "sand":
-		for i in 60:  # wind ripple dashes
-			var x := rng.randi_range(0, pw - 5)
-			var y := rng.randi_range(0, ph - 1)
-			for dx2 in rng.randi_range(2, 4):
-				image.set_pixel(x + dx2, y, Color(0.66, 0.55, 0.35))
+	# MACRO floor pass (art audit 2026-07-09). The old flavor litter was
+	# 1px confetti — ten biomes collapsed into "murk with accent dots".
+	# Each ground kind now draws sparse LANDMARK features (flagstone seams,
+	# puddles, dune ripples, drift ridges, buried slabs...) with chunkier
+	# strokes, so the floor reads at the same pixel density as the props
+	# standing on it. Everything respects the road mask.
+	_ground_macro(image, mask, base_kind, pw, ph, rng)
 
 	# Depth: the ground darkens in the wall's shadow at the top.
 	for y in range(16, 24):
@@ -2657,3 +2649,543 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	var t := ImageTexture.create_from_image(image)
 	_cache[key] = t
 	return t
+
+
+## ---------------------------------------------------------------------
+## Ground MACRO features (art audit 2026-07-09): per-biome landmark
+## detail baked into the floor image at generation time. Design rules:
+##  * SPARSE — a landmark every few tiles; the generic speckle still
+##    carries the in-between (except voidstone, which stays flat).
+##  * CHUNKY — 1-2px strokes in ground space (3x on screen), so the
+##    floor stops reading one art-voice finer than the props on it.
+##  * OFF-ROAD — every feature respects the path mask; roads stay a
+##    clean walkable read.
+## Cost: generation-time only (the image is cached per room seed).
+static func _ground_macro(image: Image, mask: PackedByteArray, base_kind: String, pw: int, ph: int, rng: RandomNumberGenerator) -> void:
+	var tiles := (pw / 16) * (ph / 16)
+	match base_kind:
+		"grass":
+			_gm_grass(image, mask, pw, ph, rng, tiles)
+		"forest":
+			_gm_forest(image, mask, pw, ph, rng, tiles)
+		"marsh":
+			_gm_wetland(image, mask, pw, ph, rng, tiles, true)
+		"bogsoil":
+			_gm_wetland(image, mask, pw, ph, rng, tiles, false)
+		"stone":
+			_gm_flagstones(image, mask, pw, ph, rng, tiles, false)
+		"holystone":
+			_gm_flagstones(image, mask, pw, ph, rng, tiles, true)
+		"basalt":
+			_gm_basalt(image, mask, pw, ph, rng, tiles)
+		"snow":
+			_gm_snow(image, mask, pw, ph, rng, tiles)
+		"gravedirt":
+			_gm_gravedirt(image, mask, pw, ph, rng, tiles)
+		"sand":
+			_gm_sand(image, mask, pw, ph, rng)
+		"crystalfloor":
+			_gm_crystal(image, mask, pw, ph, rng, tiles)
+		"voidstone":
+			_gm_void(image, mask, pw, ph, rng, tiles)
+		"stormgrass":
+			_gm_storm(image, mask, pw, ph, rng, tiles)
+		"sporesoil":
+			_gm_spore(image, mask, pw, ph, rng, tiles)
+
+
+## Chunky 2x2 block — the macro pass's "fat pixel".
+static func _gm_px(image: Image, x: int, y: int, col: Color) -> void:
+	var w := image.get_width()
+	var h := image.get_height()
+	for dy in 2:
+		for dx in 2:
+			var px := x + dx
+			var py := y + dy
+			if px >= 0 and px < w and py >= 0 and py < h:
+				image.set_pixel(px, py, col)
+
+
+## Random OFF-ROAD anchor point, clear of the wall rows and their shadow
+## band. Returns (-1,-1) when the roll keeps landing on the road.
+static func _gm_spot(mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, margin: int) -> Vector2i:
+	var y_lo := 22 + margin
+	var y_hi := ph - 18 - margin
+	if y_hi <= y_lo:
+		return Vector2i(-1, -1)
+	for attempt in 20:
+		var x := rng.randi_range(margin, pw - 1 - margin)
+		var y := rng.randi_range(y_lo, y_hi)
+		if mask[y * pw + x] == 0:
+			return Vector2i(x, y)
+	return Vector2i(-1, -1)
+
+
+## Wobbly line, off-road only. thick=2 draws chunky 2x2 blocks. Points
+## actually drawn are appended to out_pts (for shadow/ember follow-ups).
+static func _gm_line(image: Image, mask: PackedByteArray, a: Vector2, b: Vector2, col: Color, rng: RandomNumberGenerator, wobble := 0.0, thick := 1, out_pts: Array = []) -> void:
+	var pw := image.get_width()
+	var ph := image.get_height()
+	var n := (b - a).orthogonal().normalized()
+	var phase := rng.randf_range(0.0, TAU)
+	var freq := rng.randf_range(1.5, 3.5)
+	var steps := int(a.distance_to(b)) + 1
+	for i in steps:
+		var t := float(i) / maxf(1.0, float(steps - 1))
+		var p := a.lerp(b, t) + n * (sin(phase + t * freq * TAU) * wobble)
+		var x := int(p.x)
+		var y := int(p.y)
+		if x < 0 or x >= pw or y < 16 or y >= ph - 16:
+			continue
+		if mask[y * pw + x] == 1:
+			continue
+		if thick >= 2:
+			_gm_px(image, x, y, col)
+		else:
+			image.set_pixel(x, y, col)
+		out_pts.append(Vector2i(x, y))
+
+
+## Filled ellipse, off-road only; density < 1 stipples the fill; pass a
+## rim with alpha > 0 to edge the outer ~quarter in a second color.
+static func _gm_blob(image: Image, mask: PackedByteArray, cx: int, cy: int, rx: int, ry: int, fill: Color, rim: Color, rng: RandomNumberGenerator, density := 1.0) -> void:
+	var pw := image.get_width()
+	var ph := image.get_height()
+	for y in range(maxi(16, cy - ry), mini(ph - 16, cy + ry + 1)):
+		for x in range(maxi(0, cx - rx), mini(pw, cx + rx + 1)):
+			if mask[y * pw + x] == 1:
+				continue
+			var d := Vector2(float(x - cx) / rx, float(y - cy) / ry).length()
+			if d > 1.0:
+				continue
+			if d > 0.76 and rim.a > 0.0:
+				image.set_pixel(x, y, rim)
+			elif rng.randf() < density:
+				image.set_pixel(x, y, fill)
+
+
+## grass/village: tufts, worn-dirt patches, a whisper of mowing bands.
+static func _gm_grass(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int) -> void:
+	# Alternating 4-tile bands nudged darker: reads as a meadow's grain.
+	# Keep it a WHISPER — at 0.955 the stripes read as scanlines.
+	var band := 64
+	var by := 24
+	var bi := 0
+	while by < ph - 16:
+		if bi % 2 == 1:
+			for y in range(by, mini(by + band, ph - 16)):
+				var row := y * pw
+				for x in pw:
+					if mask[row + x] == 1:
+						continue
+					var c := image.get_pixel(x, y)
+					image.set_pixel(x, y, Color(c.r * 0.975, c.g * 0.975, c.b * 0.975, 1.0))
+		by += band
+		bi += 1
+	# Grass tufts: little 2-4 blade sprigs, tip catching the light.
+	var tuft_hi := Color(0.47, 0.71, 0.38)
+	var tuft_lo := Color(0.22, 0.42, 0.22)
+	for i in maxi(6, tiles / 12):
+		var s := _gm_spot(mask, pw, ph, rng, 4)
+		if s.x < 0:
+			continue
+		for b in rng.randi_range(2, 4):
+			var bx := s.x + rng.randi_range(-3, 3)
+			var bl := rng.randi_range(2, 3)
+			if bx < 0 or bx >= pw:
+				continue
+			for k in bl:
+				var py := s.y - k
+				if py >= 16 and mask[py * pw + bx] == 0:
+					image.set_pixel(bx, py, tuft_hi if k == bl - 1 else tuft_lo)
+	# Worn dirt patches: the grass gives up where feet cut the corner.
+	var dirt: Array = GROUND["dirt"]
+	for i in maxi(3, tiles / 140):
+		var s := _gm_spot(mask, pw, ph, rng, 12)
+		if s.x < 0:
+			continue
+		var d_fill: Color = dirt[1]
+		var d_rim: Color = dirt[0].darkened(0.18)
+		_gm_blob(image, mask, s.x, s.y, rng.randi_range(7, 13), rng.randi_range(4, 8), d_fill, d_rim, rng, 0.88)
+
+
+## forest/darkwood: root lines + clustered leaf-litter piles.
+static func _gm_forest(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int) -> void:
+	var root := Color(0.10, 0.075, 0.05)
+	for i in maxi(4, tiles / 70):
+		var s := _gm_spot(mask, pw, ph, rng, 10)
+		if s.x < 0:
+			continue
+		var a := Vector2(s.x, s.y)
+		var dirv := Vector2.from_angle(rng.randf_range(0.0, TAU))
+		_gm_line(image, mask, a, a + dirv * rng.randf_range(30.0, 70.0), root, rng, 2.5, 2)
+	# Leaf litter falls in PILES under the canopy, not as even confetti.
+	var leaf_cols := [Color(0.95, 0.5, 0.1), Color(0.85, 0.3, 0.1), Color(1.0, 0.75, 0.2), Color(0.55, 0.30, 0.10)]
+	for i in maxi(6, tiles / 55):
+		var s := _gm_spot(mask, pw, ph, rng, 6)
+		if s.x < 0:
+			continue
+		for j in rng.randi_range(10, 22):
+			var off := Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0))
+			if off.length() > 1.0:
+				continue
+			var lx := s.x + int(off.x * 9.0)
+			var ly := s.y + int(off.y * 6.0)
+			if lx < 0 or lx >= pw or ly < 16 or ly >= ph - 16 or mask[ly * pw + lx] == 1:
+				continue
+			var lc: Color = leaf_cols[rng.randi_range(0, leaf_cols.size() - 1)]
+			image.set_pixel(lx, ly, lc)
+			if rng.randf() < 0.5 and lx + 1 < pw and mask[ly * pw + lx + 1] == 0:
+				image.set_pixel(lx + 1, ly, lc)
+
+
+## marsh + bogsoil: standing water with a dark rim, sheen dashes, reeds.
+## marsh water is teal; the bog's is BLACK with a sickly green rim.
+static func _gm_wetland(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int, marsh: bool) -> void:
+	var water := Color(0.13, 0.25, 0.26) if marsh else Color(0.07, 0.09, 0.08)
+	var rim := Color(0.09, 0.17, 0.18) if marsh else Color(0.27, 0.36, 0.14)
+	var sheen := Color(0.34, 0.49, 0.48) if marsh else Color(0.22, 0.30, 0.22)
+	var reed := Color(0.18, 0.30, 0.13) if marsh else Color(0.31, 0.39, 0.17)
+	for i in maxi(4, tiles / 80):
+		var s := _gm_spot(mask, pw, ph, rng, 14)
+		if s.x < 0:
+			continue
+		var rx := rng.randi_range(7, 15)
+		var ry := rng.randi_range(4, 8)
+		_gm_blob(image, mask, s.x, s.y, rx, ry, water, rim, rng, 1.0)
+		# Light catches the water in short horizontal dashes.
+		for d in rng.randi_range(2, 4):
+			var dx := rng.randi_range(-rx / 2, rx / 4)
+			var dy := -ry / 3 - rng.randi_range(0, maxi(1, ry / 3))
+			for k in rng.randi_range(3, 6):
+				var px := s.x + dx + k
+				var py := s.y + dy
+				if px >= pw or py < 16 or py >= ph - 16 or mask[py * pw + px] == 1:
+					continue
+				if Vector2(float(px - s.x) / rx, float(py - s.y) / ry).length() < 0.72:
+					image.set_pixel(px, py, sheen)
+		# Reeds cluster on the bank.
+		for r in rng.randi_range(3, 6):
+			var ang := rng.randf_range(0.0, TAU)
+			var bx := s.x + int(cos(ang) * (rx + 2))
+			var by := s.y + int(sin(ang) * (ry + 2))
+			var bl := rng.randi_range(3, 5)
+			for k in bl:
+				var py := by - k
+				if bx < 0 or bx >= pw or py < 16 or py >= ph - 16 or mask[py * pw + bx] == 1:
+					continue
+				image.set_pixel(bx, py, reed.lightened(0.3) if k == bl - 1 else reed)
+
+
+## stone/keep + holystone: running-bond flagstone slabs. Holy slabs are
+## larger and a few carry an inlaid gold diamond motif.
+static func _gm_flagstones(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int, holy: bool) -> void:
+	var cols: Array = GROUND["holystone" if holy else "stone"]
+	var seam: Color = cols[1].darkened(0.24)
+	var sw := 64 if holy else 48
+	var sh := 48 if holy else 32
+	# Slab tone variation FIRST so seams draw crisp on top.
+	for i in maxi(4, tiles / 70):
+		var gx := rng.randi_range(0, maxi(0, pw / sw - 1)) * sw
+		var gy := 16 + rng.randi_range(0, maxi(0, (ph - 32) / sh - 1)) * sh
+		var tone: Color = cols[2] if rng.randf() < 0.5 else cols[1]
+		for y in range(gy, mini(gy + sh, ph - 16)):
+			var row := y * pw
+			for x in range(gx, mini(gx + sw, pw)):
+				if mask[row + x] == 0 and rng.randf() < 0.45:
+					image.set_pixel(x, y, tone)
+	# Running-bond seam grid.
+	var y0 := 16
+	var row_i := 0
+	while y0 < ph - 16:
+		for x in pw:
+			if mask[y0 * pw + x] == 0 and rng.randf() < 0.9:
+				image.set_pixel(x, y0, seam)
+		var vx := (sw / 2) if (row_i % 2 == 1) else 0
+		while vx < pw:
+			for vy in range(y0, mini(y0 + sh, ph - 16)):
+				if mask[vy * pw + vx] == 0 and rng.randf() < 0.9:
+					image.set_pixel(vx, vy, seam)
+			vx += sw
+		y0 += sh
+		row_i += 1
+	# Cracked corners: short diagonal fractures off random seams.
+	for i in maxi(4, tiles / 90):
+		var s := _gm_spot(mask, pw, ph, rng, 6)
+		if s.x < 0:
+			continue
+		var dirv := Vector2(1, 1) if rng.randf() < 0.5 else Vector2(-1, 1)
+		_gm_line(image, mask, Vector2(s.x, s.y), Vector2(s.x, s.y) + dirv * rng.randf_range(4.0, 9.0), seam, rng, 0.8, 1)
+	if holy:
+		# Inlaid line motifs: concentric diamonds in muted gold, centered
+		# on a few slabs — sanctified masonry, not gilded wallpaper.
+		var inlay := Color(0.78, 0.68, 0.40)
+		var inlay_hi := Color(0.88, 0.80, 0.52)
+		for i in maxi(2, tiles / 160):
+			var gx := rng.randi_range(0, maxi(0, pw / sw - 1)) * sw + sw / 2
+			var gy := 16 + rng.randi_range(0, maxi(0, (ph - 32) / sh - 1)) * sh + sh / 2
+			for rad in [10, 5]:
+				var mc := inlay if rad == 10 else inlay_hi
+				for d in range(-rad, rad + 1):
+					var rr: int = rad - absi(d)
+					for sy in [gy + rr, gy - rr]:
+						var px := gx + d
+						if px >= 0 and px < pw and sy >= 16 and sy < ph - 16 and mask[sy * pw + px] == 0:
+							image.set_pixel(px, sy, mc)
+
+
+## basalt/magma: cracked plates with thin ember seams glowing between
+## some of them. LDR oranges only — bloom decides what glows.
+static func _gm_basalt(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int) -> void:
+	var crack := Color(0.05, 0.03, 0.03)
+	var plate_hi := Color(0.27, 0.17, 0.14)
+	# A few plates catch more heat-light than others.
+	for i in maxi(3, tiles / 110):
+		var s := _gm_spot(mask, pw, ph, rng, 14)
+		if s.x < 0:
+			continue
+		_gm_blob(image, mask, s.x, s.y, rng.randi_range(9, 16), rng.randi_range(6, 10), plate_hi, Color(0, 0, 0, 0), rng, 0.4)
+	# Jittered lattice of wobbly cracks = plate boundaries.
+	var pts: Array = []
+	var y := 22 + rng.randi_range(0, 10)
+	while y < ph - 18:
+		_gm_line(image, mask, Vector2(0, y + rng.randf_range(-4.0, 4.0)), Vector2(pw, y + rng.randf_range(-4.0, 4.0)), crack, rng, 3.0, 1, pts)
+		y += rng.randi_range(26, 40)
+	var x := rng.randi_range(8, 40)
+	while x < pw - 4:
+		_gm_line(image, mask, Vector2(x + rng.randf_range(-4.0, 4.0), 16), Vector2(x + rng.randf_range(-4.0, 4.0), ph - 16), crack, rng, 3.0, 1, pts)
+		x += rng.randi_range(34, 52)
+	# Ember seams: short glowing runs along SOME cracks.
+	var ember := Color(1.0, 0.45, 0.12)
+	var ember_hot := Color(1.0, 0.72, 0.25)
+	if pts.size() > 20:
+		for i in maxi(6, pts.size() / 80):  # SOME plates leak fire, not all
+			var r0 := rng.randi_range(0, pts.size() - 10)
+			var run := rng.randi_range(4, 9)
+			for k in run:
+				var p: Vector2i = pts[r0 + k]
+				image.set_pixel(p.x, p.y, ember_hot if k == run / 2 else ember)
+	# A little drifting ash keeps the air dirty (was 260-dot confetti).
+	var ash := Color(0.42, 0.36, 0.34)
+	for i in 70:
+		var ax := rng.randi_range(0, pw - 1)
+		var ay := rng.randi_range(16, ph - 17)
+		if mask[ay * pw + ax] == 0:
+			image.set_pixel(ax, ay, ash)
+
+
+## snow/ice: drift ridges with a shadowed south face + glassy sheen
+## patches. The benchmark biome — augment, don't repaint.
+static func _gm_snow(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int) -> void:
+	var crest := Color(0.97, 0.98, 1.0)
+	var shade := Color(0.66, 0.72, 0.84)
+	for i in maxi(3, tiles / 130):
+		var s := _gm_spot(mask, pw, ph, rng, 16)
+		if s.x < 0:
+			continue
+		var pts: Array = []
+		var b := Vector2(s.x + rng.randf_range(50.0, 130.0), s.y + rng.randf_range(-8.0, 8.0))
+		_gm_line(image, mask, Vector2(s.x, s.y), b, crest, rng, 4.0, 1, pts)
+		for p in pts:
+			var pv: Vector2i = p
+			var sy := pv.y + 1
+			if sy < ph - 16 and mask[sy * pw + pv.x] == 0:
+				image.set_pixel(pv.x, sy, shade)
+	var sheen := Color(0.78, 0.87, 0.97)
+	for i in maxi(2, tiles / 190):
+		var s := _gm_spot(mask, pw, ph, rng, 12)
+		if s.x < 0:
+			continue
+		var rx := rng.randi_range(6, 11)
+		var ry := rng.randi_range(3, 6)
+		_gm_blob(image, mask, s.x, s.y, rx, ry, sheen, Color(0, 0, 0, 0), rng, 0.9)
+		for g in 2:  # diagonal glints on the ice
+			var gx := s.x + rng.randi_range(-rx / 2, rx / 2)
+			var gy := s.y + rng.randi_range(-ry / 2, ry / 2)
+			for k in 3:
+				var px := gx + k
+				var py := gy - k
+				if px < pw and py >= 16 and mask[py * pw + px] == 0:
+					image.set_pixel(px, py, Color(1, 1, 1))
+	for i in 140:  # sparse glitter (was 200)
+		image.set_pixel(rng.randi_range(0, pw - 1), rng.randi_range(16, ph - 17), Color(1, 1, 1))
+
+
+## gravedirt: half-buried slab fragments + disturbed-earth mounds.
+static func _gm_gravedirt(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int) -> void:
+	var slab := Color(0.55, 0.55, 0.58)
+	var slab_dk := Color(0.34, 0.34, 0.38)
+	var slab_hi := Color(0.67, 0.67, 0.71)
+	for i in maxi(3, tiles / 110):
+		var s := _gm_spot(mask, pw, ph, rng, 10)
+		if s.x < 0:
+			continue
+		var w := rng.randi_range(5, 11)
+		var h := rng.randi_range(3, 6)
+		var chip_x := rng.randi_range(0, 1) * (w - 2)  # one corner sheared off
+		var chip_y := rng.randi_range(0, 1) * (h - 2)
+		for yy in h:
+			for xx in w:
+				if xx >= chip_x and xx < chip_x + 2 and yy >= chip_y and yy < chip_y + 2:
+					continue
+				var px := s.x + xx
+				var py := s.y + yy
+				if px >= pw or py >= ph - 16 or mask[py * pw + px] == 1:
+					continue
+				var c := slab
+				if yy == 0 or xx == 0:
+					c = slab_hi
+				elif yy == h - 1 or xx == w - 1 or rng.randf() < 0.14:
+					c = slab_dk
+				image.set_pixel(px, py, c)
+	# Freshly turned earth. Recently. By something.
+	var soil_dk := Color(0.24, 0.22, 0.19)
+	var soil_hi := Color(0.47, 0.44, 0.39)
+	for i in maxi(3, tiles / 120):
+		var s := _gm_spot(mask, pw, ph, rng, 8)
+		if s.x < 0:
+			continue
+		var rx := rng.randi_range(4, 8)
+		var ry := rng.randi_range(2, 4)
+		_gm_blob(image, mask, s.x, s.y, rx, ry, soil_dk, Color(0, 0, 0, 0), rng, 0.9)
+		for x in range(s.x - rx / 2, s.x + rx / 2 + 1):
+			var py := s.y - ry
+			if x >= 0 and x < pw and py >= 16 and mask[py * pw + x] == 0:
+				image.set_pixel(x, py, soil_hi)
+
+
+## sand/desert: directional dune ripple bands — long wavy crests all
+## running with the same wind, trough shadow two rows below.
+static func _gm_sand(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator) -> void:
+	var crest := Color(0.88, 0.78, 0.54)
+	var trough := Color(0.61, 0.51, 0.33)
+	var slope := 0.14
+	var phase0 := rng.randf_range(0.0, TAU)
+	var y0 := 20
+	var band_i := 0
+	while y0 < ph + int(pw * slope):
+		var amp := rng.randf_range(2.0, 4.0)
+		var freq := rng.randf_range(0.020, 0.035)
+		var bphase := phase0 + band_i * 1.7
+		for x in pw:
+			var yf := float(y0) - x * slope + sin(bphase + x * freq * TAU) * amp
+			var y := int(yf)
+			if y < 18 or y >= ph - 17 or mask[y * pw + x] == 1:
+				continue
+			if rng.randf() < 0.85:
+				image.set_pixel(x, y, crest)
+			var ty := y + 2
+			if ty < ph - 16 and mask[ty * pw + x] == 0 and rng.randf() < 0.55:
+				image.set_pixel(x, ty, trough)
+		y0 += rng.randi_range(20, 30)
+		band_i += 1
+
+
+## crystalfloor: faceted plate lattice + rare glint crosses. The white
+## starfield speckle is gone — that's what made it a void/keep clone.
+static func _gm_crystal(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int) -> void:
+	var seam := Color(0.45, 0.48, 0.68)
+	var seam_hi := Color(0.60, 0.65, 0.88)
+	var facet := Color(0.36, 0.38, 0.55)
+	for i in maxi(3, tiles / 130):  # a few facets catch the light
+		var s := _gm_spot(mask, pw, ph, rng, 14)
+		if s.x < 0:
+			continue
+		_gm_blob(image, mask, s.x, s.y, rng.randi_range(8, 14), rng.randi_range(5, 9), facet, Color(0, 0, 0, 0), rng, 0.5)
+	var span := ph - 32
+	var d0 := -span
+	while d0 < pw:  # +45 degree seams
+		var pts: Array = []
+		_gm_line(image, mask, Vector2(d0, 16), Vector2(d0 + span, ph - 16), seam, rng, 1.5, 1, pts)
+		if pts.size() > 14:  # one bright edge per seam
+			var r0 := rng.randi_range(0, pts.size() - 9)
+			for k in 8:
+				var p: Vector2i = pts[r0 + k]
+				image.set_pixel(p.x, p.y, seam_hi)
+		d0 += 52 + rng.randi_range(-8, 8)
+	var d1 := 0
+	while d1 < pw + span:  # -45 degree seams
+		_gm_line(image, mask, Vector2(d1, 16), Vector2(d1 - span, ph - 16), seam, rng, 1.5, 1)
+		d1 += 52 + rng.randi_range(-8, 8)
+	for i in maxi(3, tiles / 120):  # rare glint crosses
+		var s := _gm_spot(mask, pw, ph, rng, 6)
+		if s.x < 0:
+			continue
+		for k in range(-2, 3):
+			if s.x + k >= 0 and s.x + k < pw and mask[s.y * pw + s.x + k] == 0:
+				image.set_pixel(s.x + k, s.y, Color(0.85, 0.95, 1.0))
+			if s.y + k >= 16 and s.y + k < ph - 16 and mask[(s.y + k) * pw + s.x] == 0:
+				image.set_pixel(s.x, s.y + k, Color(0.85, 0.95, 1.0))
+
+
+## voidstone: ABSENCE is the identity. Near-featureless matte, a handful
+## of hairline rifts, one dim node each. Nothing else. (It read as a
+## crystal-cavern clone when it speckled.)
+static func _gm_void(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int) -> void:
+	var rift := Color(0.28, 0.20, 0.44)
+	var node := Color(0.55, 0.38, 0.85)
+	for i in clampi(tiles / 300, 2, 4):
+		var s := _gm_spot(mask, pw, ph, rng, 16)
+		if s.x < 0:
+			continue
+		var a := Vector2(s.x, s.y)
+		var dirv := Vector2.from_angle(rng.randf_range(0.0, TAU))
+		_gm_line(image, mask, a, a + dirv * rng.randf_range(28.0, 70.0), rift, rng, 5.0, 1)
+		image.set_pixel(s.x, s.y, node)
+
+
+## stormgrass: wind-flattened grass — directional streak lanes, every
+## streak blown the same way. Grey-blue base lives in GROUND.
+static func _gm_storm(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int) -> void:
+	var hi := Color(0.51, 0.58, 0.67)
+	var lo := Color(0.20, 0.24, 0.29)
+	for i in maxi(5, tiles / 55):
+		var s := _gm_spot(mask, pw, ph, rng, 10)
+		if s.x < 0:
+			continue
+		for j in rng.randi_range(8, 14):
+			var ox := s.x + rng.randi_range(-40, 40)
+			var oy := s.y + rng.randi_range(-9, 9)
+			var slen := rng.randi_range(6, 15)
+			var col := hi if rng.randf() < 0.65 else lo
+			var thick2 := rng.randf() < 0.3
+			for k in slen:
+				var px := ox + k
+				var py := oy + k / 8  # the same shallow downwind slope everywhere
+				if px < 0 or px >= pw or py < 16 or py >= ph - 16 or mask[py * pw + px] == 1:
+					continue
+				image.set_pixel(px, py, col)
+				if thick2 and py + 1 < ph - 16 and mask[(py + 1) * pw + px] == 0:
+					image.set_pixel(px, py + 1, col)
+
+
+## sporesoil: mycelium web threads between nodes + spore-dust rings.
+static func _gm_spore(image: Image, mask: PackedByteArray, pw: int, ph: int, rng: RandomNumberGenerator, tiles: int) -> void:
+	var thread := Color(0.56, 0.43, 0.60)
+	var nodes: Array = []
+	for i in maxi(3, tiles / 130):
+		var s := _gm_spot(mask, pw, ph, rng, 12)
+		if s.x >= 0:
+			nodes.append(Vector2(s.x, s.y))
+	for i in nodes.size():
+		var a: Vector2 = nodes[i]
+		var b: Vector2 = nodes[(i + 1) % nodes.size()]
+		if nodes.size() > 1 and a.distance_to(b) < 170.0:
+			_gm_line(image, mask, a, b, thread, rng, 6.0, 1)
+		for j in rng.randi_range(2, 3):  # short radial rootlets
+			var dirv := Vector2.from_angle(rng.randf_range(0.0, TAU))
+			_gm_line(image, mask, a, a + dirv * rng.randf_range(10.0, 24.0), thread, rng, 2.0, 1)
+	var dust := Color(0.75, 0.52, 0.78)
+	var dust_dk := Color(0.20, 0.14, 0.20)
+	for i in maxi(2, tiles / 160):
+		var s := _gm_spot(mask, pw, ph, rng, 12)
+		if s.x < 0:
+			continue
+		var rad := rng.randi_range(5, 10)
+		_gm_blob(image, mask, s.x, s.y, maxi(2, rad - 2), maxi(2, (rad - 2) * 2 / 3), dust_dk, Color(0, 0, 0, 0), rng, 0.35)
+		for k in 20:  # dotted ring of settled spores
+			var ang := (TAU / 20.0) * k + rng.randf_range(-0.1, 0.1)
+			var px := s.x + int(cos(ang) * rad)
+			var py := s.y + int(sin(ang) * rad * 0.66)
+			if px >= 0 and px < pw and py >= 16 and py < ph - 16 and mask[py * pw + px] == 0 and rng.randf() < 0.8:
+				image.set_pixel(px, py, dust)

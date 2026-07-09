@@ -17,6 +17,14 @@ class_name Terrains
 ##   lightning    fast telegraphed strikes near the player
 ##   shard        crystal bursts erupt at random spots
 
+# TINT VALUE-FLOOR RULE (art audit 2026-07-09): the CanvasModulate tint
+# does MOOD with hue, never with value crush. Keep every channel >= ~0.6
+# and the average >= ~0.75 — the Forward+ tonemap already sinks midtones,
+# and below that floor a biome's own signature props (tombstones, void
+# pillars) merge into their ground. Darkness identity comes from the
+# GROUND palette in art.gd + macro floor features, NOT from the modulate.
+# (Graveyard at 0.78 avg deleted its own tombstones; void at 0.55/0.5/0.7
+# was the worst offender.)
 const DATA := {
 	# ------------------------------------------------ story terrains ---
 	"village": {"name": "Emberfall Village", "ground": "grass", "path": "dirt",
@@ -27,11 +35,11 @@ const DATA := {
 		"buildings": ["cottage_a", "cottage_b", "stall", "cottage_a2", "cottage_b2"],
 		"patches": [], "event": ""},
 	"darkwood": {"name": "The Darkwood", "ground": "forest", "path": "dirt",
-		"tint": Color(0.82, 0.9, 0.86), "ambient": "leaves_autumn", "music": "darkwood",
+		"tint": Color(0.87, 0.94, 0.88), "ambient": "leaves_autumn", "music": "darkwood",
 		"obstacles": ["tree_autumn", "tree_autumn", "rock"], "decor": ["mushroom", "pebble", "flower"], "count": 16,
 		"patches": [], "event": ""},
 	"marsh": {"name": "The Blightmarsh", "ground": "marsh", "path": "dirt",
-		"tint": Color(0.85, 0.9, 0.78), "ambient": "fireflies", "music": "marsh",
+		"tint": Color(0.9, 0.95, 0.8), "ambient": "fireflies", "music": "marsh",
 		"obstacles": ["tree_teal", "deadtree", "rock"], "decor": ["mushroom", "bones", "pebble"], "count": 14,
 		"patches": [], "event": "",
 		"river": {"chance": 0.45, "color": Color(0.10, 0.20, 0.19, 0.82)}},
@@ -51,7 +59,9 @@ const DATA := {
 		"patches": [{"type": "ice", "count": 10, "radius": [60, 110]}],
 		"event": ""},
 	"graveyard": {"name": "Restless Graveyard", "ground": "gravedirt", "path": "gravedirt",
-		"tint": Color(0.78, 0.82, 0.85), "ambient": "mist", "music": "graveyard",
+		# Pale cold mist, NOT darkness: the old 0.78-avg tint buried the
+		# tombstones in their own ground (value-floor rule above).
+		"tint": Color(0.88, 0.91, 0.96), "ambient": "mist", "music": "graveyard",
 		"obstacles": ["tombstone", "tombstone", "tombstone", "grave_cross", "grave_cross", "grave_deadtree", "coffin", "crypt"], "decor": ["grave_bones", "grave_bones", "grave_crack"], "count": 16,
 		"patches": [], "event": "grave_spawn", "event_t": [5.0, 9.0]},
 	"desert": {"name": "Scorching Dunes", "ground": "sand", "path": "sand",
@@ -70,11 +80,14 @@ const DATA := {
 		"obstacles": ["crystal", "crystal", "pillar"], "decor": ["pebble", "crack"], "count": 14,
 		"patches": [], "event": "shard", "event_t": [4.0, 7.0], "mp_boost": true},
 	"storm": {"name": "Thunder Plains", "ground": "stormgrass", "path": "dirt",
-		"tint": Color(0.72, 0.78, 0.85), "ambient": "rain", "music": "rainstorm",
+		# Rain-grey does the mood; the grey-blue GROUND carries the biome.
+		"tint": Color(0.8, 0.86, 0.95), "ambient": "rain", "music": "rainstorm",
 		"obstacles": ["tree_green", "rock"], "decor": ["flower", "pebble"], "count": 8,
 		"patches": [], "event": "lightning", "event_t": [4.0, 7.5]},
 	"void": {"name": "The Void", "ground": "voidstone", "path": "voidstone",
-		"tint": Color(0.55, 0.5, 0.7), "ambient": "motes", "music": "void",
+		# Purple hue-skew keeps the menace; the near-black GROUND is the
+		# darkness. The old 0.55/0.5/0.7 modulate ate the pillars too.
+		"tint": Color(0.72, 0.64, 0.92), "ambient": "motes", "music": "void",
 		"obstacles": ["pillar", "crystal"], "decor": ["crack", "crack"], "count": 10,
 		"patches": [{"type": "slow", "count": 7, "radius": [60, 100]}],
 		"event": ""},
