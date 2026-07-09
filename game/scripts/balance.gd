@@ -847,9 +847,9 @@ const STASH_SLOTS := 20
 # Utility consumables beyond the health potion (bag items, used from the
 # inventory). Prices are the merchant's base (before haggle); effects tuned
 # to be handy, not build-warping.
-const MANA_POTION_FRAC := 0.5    # restores this fraction of MAX mana
-const ELIXIR_MIGHT_AMT := 0.20   # +20% damage while the elixir holds
-const ELIXIR_MIGHT_DUR := 30.0   # seconds
+const MANA_POTION_FRAC := 0.3    # restores this fraction of MISSING mana (mirrors the health potion)
+const ELIXIR_MIGHT_AMT := 0.12   # +12% damage while the elixir holds
+const ELIXIR_MIGHT_DUR := 5.0    # a BURST WINDOW, not a whole boss fight (2026-07-09: 20%/30s was a fight-long free multiplier)
 # Round 50 additions — a defensive elixir (mirrors Might on the dr_ system)
 # and a burst bag-heal (distinct from the 5-cap health-potion counter, and
 # not budgeted by it — a real reason to spend at the alchemist's shelf).
@@ -860,7 +860,7 @@ const RENEWAL_HEAL_FRAC := 0.3   # instant heal, fraction of MAX hp — the prem
 # (2026-07-09: flat prices went dirt-cheap against level-scaled income — a
 # 90g renewal at L40 was stronger AND cheaper than a health potion). SELL
 # stays on the flat base (menus.gd) so nothing hauls for profit.
-const CONSUMABLE_PRICES := {"mana_potion": 35, "elixir_might": 130, "recall_scroll": 55,
+const CONSUMABLE_PRICES := {"mana_potion": 60, "elixir_might": 130, "recall_scroll": 55,
 	"elixir_ward": 110, "renewal_draught": 150}
 
 static func consumable_price(id: String, level: int) -> int:

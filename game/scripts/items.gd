@@ -278,7 +278,7 @@ static func make_respec_tome() -> Dictionary:
 static func make_mana_potion() -> Dictionary:
 	return {"kind": "stone", "id": "mana_potion", "grade": "D",
 		"name": "Mana Draught",
-		"desc": "Restore %d%% of your maximum mana." % int(Balance.MANA_POTION_FRAC * 100)}
+		"desc": "Restore %d%% of your MISSING mana." % int(Balance.MANA_POTION_FRAC * 100)}
 
 
 static func make_elixir_might() -> Dictionary:

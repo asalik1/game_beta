@@ -99,10 +99,10 @@ const CLASSES := {
 		"hp": 130.0, "hp_lvl": 19.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 15.5, "atk_lvl": 4.3, "speed": 250.0,
 		"abilities": {
-			"a1": {"name": "Cleave",      "cd": 0.74, "mp": 0,  "desc": "Swing your blade at the nearest enemy. The measured pace of a plated arm — BERSERK swings it at full speed."},
+			"a1": {"name": "Cleave",      "cd": 0.74, "mp": 0.5,  "desc": "Swing your blade at the nearest enemy. The measured pace of a plated arm — BERSERK swings it at full speed."},
 			"a2": {"name": "Shield Bash", "cd": 4.5,  "mp": 10, "desc": "Charge forward, ramming everything in your path: damage, knockback and a 1.3s STUN."},
 			"a3": {"name": "Whirlwind",   "cd": 8.0,  "mp": 15, "desc": "Damage everything around you."},
-			"ult": {"name": "Berserk",    "cd": 40.0, "mp": 0,  "desc": "8s: +40% damage, +25% speed, 15% lifesteal — and the rage swings Cleave at its unchained speed."},
+			"ult": {"name": "Berserk",    "cd": 40.0, "mp": 40,  "desc": "8s: +40% damage, +25% speed, 15% lifesteal — and the rage swings Cleave at its unchained speed."},
 		},
 	},
 	"archer": {
@@ -112,7 +112,7 @@ const CLASSES := {
 		"hp": 100.0, "hp_lvl": 14.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 11.66, "atk_lvl": 3.06, "speed": 265.0,   # round 47: −7.5%; round 49 (dps bench): +5% back — archer trailed the field
 		"abilities": {
-			"a1": {"name": "Quick Shot",  "cd": 0.36, "mp": 0,  "desc": "Fire an arrow at the nearest enemy."},
+			"a1": {"name": "Quick Shot",  "cd": 0.36, "mp": 1,  "desc": "Fire an arrow at the nearest enemy."},
 			"a2": {"name": "Multishot",   "cd": 5.0,  "mp": 12, "desc": "Fan of 5 arrows."},
 			"a3": {"name": "Tumble",      "cd": 6.0,  "mp": 0,  "desc": "Dodge-roll in your move direction: a split-second perfect-dodge window, then you stay nimble (+20% evasion) for 1.25s. Time it into a hit to negate it outright; otherwise the evasion covers your reposition."},
 			"ult": {"name": "Arrow Storm", "cd": 40.0, "mp": 20, "desc": "3s: arrows rain on every enemy near you."},
@@ -125,7 +125,7 @@ const CLASSES := {
 		"hp": 90.0, "hp_lvl": 12.0, "mp": 70.0, "mp_lvl": 8.0,
 		"atk": 13.5, "atk_lvl": 3.7, "speed": 255.0,
 		"abilities": {
-			"a1": {"name": "Firebolt",   "cd": 0.45, "mp": 2,  "desc": "Hurl a bolt at the nearest enemy."},
+			"a1": {"name": "Firebolt",   "cd": 0.45, "mp": 3,  "desc": "Hurl a bolt at the nearest enemy."},
 			"a2": {"name": "Frost Nova", "cd": 7.0,  "mp": 15, "desc": "Blast around you: knocks enemies away, SLOWS them 50%, and restores 20% of your MISSING health and mana."},
 			"a3": {"name": "Blink",      "cd": 4.5,  "mp": 10, "desc": "Dash in your move direction, shocking everything in your path."},
 			"ult": {"name": "Meteor",    "cd": 44.0, "mp": 40, "desc": "Call a meteor onto the nearest enemy. Massive damage."},
@@ -152,10 +152,10 @@ const CLASSES := {
 		"hp": 125.0, "hp_lvl": 17.0, "mp": 55.0, "mp_lvl": 5.0,
 		"atk": 15.0, "atk_lvl": 4.3, "speed": 248.0,
 		"abilities": {
-			"a1": {"name": "Judgment",       "cd": 0.8,  "mp": 0,  "desc": "Bring the warhammer down on the nearest enemy — LEAPING to them if they stand beyond arm's reach (the leap arms every 5s; its brief landing guard rides the leap, not the swing)."},
+			"a1": {"name": "Judgment",       "cd": 0.8,  "mp": 1,  "desc": "Bring the warhammer down on the nearest enemy — LEAPING to them if they stand beyond arm's reach (the leap arms every 5s; its brief landing guard rides the leap, not the swing)."},
 			"a2": {"name": "Consecration",   "cd": 8.0,  "mp": 15, "desc": "Sanctify the ground around you: two waves of holy fire, and every enemy struck MENDS you."},
 			"a3": {"name": "Aegis",          "cd": 9.0,  "mp": 12, "desc": "Raise the shield for 2.5s: massive resistances, and attackers are SMITTEN in return."},
-			"ult": {"name": "Conviction",    "cd": 8.0,  "mp": 0,  "desc": "Swap stances. Entering RETRIBUTION drags nearby enemies to your hammer in chains; returning to HOLY releases a mending blessing (10% max HP + brief guard). Sustain and damage are never yours at once — choose when to be which."},
+			"ult": {"name": "Conviction",    "cd": 8.0,  "mp": 30,  "desc": "Swap stances. Entering RETRIBUTION drags nearby enemies to your hammer in chains; returning to HOLY releases a mending blessing (10% max HP + brief guard). Sustain and damage are never yours at once — choose when to be which."},
 		},
 	},
 	"warlock": {

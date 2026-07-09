@@ -1035,7 +1035,7 @@ func use_consumable(c: Dictionary) -> void:
 			game.spawn_text(global_position + Vector2(0, -56),
 				"SKILL TREE RESET — %d points refunded (press T)" % back, Color(0.6, 0.9, 1.0))
 		"mana_potion":
-			mp = minf(max_mp, mp + max_mp * Balance.MANA_POTION_FRAC)
+			mp = minf(max_mp, mp + (max_mp - mp) * Balance.MANA_POTION_FRAC)
 			consumables.erase(c)
 			game.sfx("potion", 1.3)
 			game.spawn_text(global_position + Vector2(0, -56), "MANA RESTORED", Color(0.5, 0.7, 1.0))
