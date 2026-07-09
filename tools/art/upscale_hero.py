@@ -66,6 +66,16 @@ CLASSES = {
         "alias": {"_walk": "_anim"},
         "directional": {},
     },
+    "warrior": {
+        "sheet": "Warrior (2).png",
+        "names": "idle,walk,run,attack,attack2,dash,ultidle,ult,death",
+        "flags": [],
+        "m_body": 3,
+        "body": {"": "static", "_anim": "idle", "_walk": "walk", "_run": "run",
+                 "_attack": "attack", "_attack2": "attack2", "_dash": "dash",
+                 "_ult": "ult", "_ultidle": "ultidle", "_death": "death"},
+        "directional": {},
+    },
 }
 
 

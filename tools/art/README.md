@@ -67,13 +67,13 @@ tools/Godot_v4.4.1-stable_win64_console.exe --headless --path game --import
 
 | class | source sheet | note |
 |---|---|---|
-| paladin, mage, archer | `Custom/<Class>.png` (navy ORIGINAL) | light figures — key cleanly off a dark bg |
-| warrior | `Custom/<Class> (2).png` (transparent) | dark figures — a navy key would eat them |
-| **assassin, warlock** (all clips + directional) | `Custom/<class>_upscaled/*.png` via **`upscale_hero.py`** | ChatGPT UPSCALES — a separate tool, NOT built by `build_sprites.py` |
+| paladin, mage, archer | `Custom/<Class>.png` (navy ORIGINAL) via `build_sprites.py` | light figures — key cleanly off a dark bg |
+| **assassin, warlock, warrior** (all clips + directional) | `Custom/<class>_upscaled/*.png` via **`upscale_hero.py`** | ChatGPT UPSCALES — a separate tool, NOT built by `build_sprites.py` |
 
-The `(2)` and original sheets are sometimes **different art** (e.g. the paladin
-`(2)` was a kneeling variant), not just different keying — always eyeball a
-rebuild.
+The three dark classes were originally extracted from the `Custom/<Class> (2).png`
+transparent sheets; they now use ChatGPT upscales instead. The `(2)` and original
+sheets are sometimes **different art** (e.g. the paladin `(2)` was a kneeling
+variant), not just different keying — always eyeball a rebuild.
 
 ### Upscaled classes (separate pipeline: `upscale_hero.py`)
 

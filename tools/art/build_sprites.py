@@ -39,12 +39,10 @@ EXTRACT = os.path.join(HERE, "extract_sheet.py")
 # match the sheet's rows top-to-bottom. --drop cuts FX-only frames (a projectile
 # with no character); --keepall keeps frame 0 on label-free sheets.
 JOBS = {
-    # DARK -> pre-keyed (2) sheets
-    "warrior":  ("Warrior (2).png",  "idle,walk,run,attack,attack2,dash,ultidle,ult,death", []),
-    # NOTE: the assassin and warlock are NOT built here -- they come from the
-    # ChatGPT upscales via tools/art/upscale_hero.py. Left out of JOBS so a
-    # rebuild can't clobber the upscaled sprites.
-    # LIGHT -> navy ORIGINAL sheets (auto bg-key)
+    # NOTE: the three DARK classes (assassin, warlock, warrior) are NOT built
+    # here -- they come from the ChatGPT upscales via tools/art/upscale_hero.py.
+    # Left out of JOBS so a rebuild can't clobber the upscaled sprites. Only the
+    # LIGHT classes below still extract from the navy ORIGINAL sheets (auto bg-key).
     "archer":   ("Archer.png",  "idle,walk,run,cast,attack,attack2,dash,death", ["--drop", "attack2:3", "--key", "30"]),  # tighter key spares the dark boot soles the default 45 ate
     "mage":     ("Mage.png",    "idle,walk,run,cast,attack,attack2,dash,death", ["--drop", "attack2:3,attack2:4"]),
     "paladin":  ("Paladin.png", "idle,walk,run,attack2,attack,dash,death", []),
