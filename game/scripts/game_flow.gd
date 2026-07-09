@@ -700,7 +700,7 @@ func _apply_hazards() -> void:
 				"lava":
 					player.take_damage(12.0, "magic")
 				"churned":  # Sexton's grave-earth: imposed floor, phys, boss-only
-					player.take_damage(9.0, "physical")
+					player.take_damage(9.0, "phys")
 				"poison":
 					player.take_damage(6.0, "true")
 				"ice":
