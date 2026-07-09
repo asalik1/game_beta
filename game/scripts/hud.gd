@@ -109,7 +109,7 @@ func _ready() -> void:
 	gold_label = _label(Vector2(18, 104), 15, Color(1.0, 0.85, 0.35))
 	cr_label = _label(Vector2(18, 126), 15, Color(0.65, 0.9, 1.0))
 	cr_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	cr_label.tooltip_text = _wrap_tip("Combat Rating — one number approximating your total power: gear and gems, level, attributes and skill tree combined.")
+	cr_label.set_meta("tip", "Combat Rating — one number approximating your total power: gear and gems, level, attributes and skill tree combined.")
 	_click_to_popover(cr_label, "Combat Rating")
 	# Resonance: golden and sparkling when positive (shinier as it
 	# climbs), black-on-pale when negative, pulses on every change.
@@ -117,7 +117,7 @@ func _ready() -> void:
 	res_label = _label(Vector2(46, 147), 16, Color(0.75, 0.75, 0.8))
 	res_label.pivot_offset = Vector2(0, 10)
 	res_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	res_label.tooltip_text = _wrap_tip("Resonance — how your shard leans: Virtue (+) or Temptation (−). Major choices move it, and the world answers through dialogue and merchant haggling.")
+	res_label.set_meta("tip", "Resonance — how your shard leans: Virtue (+) or Temptation (−). Major choices move it, and the world answers through dialogue and merchant haggling.")
 	_click_to_popover(res_label, "Resonance")
 	# Resonance mood orb: a glowing bead just left of the number — golden
 	# fire when strongly Virtuous (+50), a dark flame when Tempted (-50),
@@ -537,16 +537,18 @@ func _set_buff_slot_visible(slot: Dictionary, vis: bool) -> void:
 	slot["fill"].visible = vis
 
 
-## Make a HUD control click-to-reveal: on a left click it opens the control's
-## CURRENT tooltip text (kept fresh every frame) as an opaque popover, the
-## same click-to-reveal model the inventory uses. accept_event() stops the
-## click from also falling through to dialogue-advance. `title` may be "".
+## Make a HUD control click-to-reveal: on a left click it opens the info
+## stashed in its "tip" metadata (kept fresh every frame) as an opaque
+## popover — the same click-to-reveal model the inventory uses. The text
+## lives in meta rather than tooltip_text so there's no redundant hover.
+## accept_event() stops the click also falling through to dialogue-advance.
+## `title` may be "".
 func _click_to_popover(c: Control, title: String) -> void:
 	c.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			if game.menus.is_open():
 				return
-			_open_hud_popover(title, c.tooltip_text)
+			_open_hud_popover(title, String(c.get_meta("tip", "")))
 			c.accept_event())
 
 
@@ -697,14 +699,14 @@ func _update_buffs() -> void:
 		var slot: Dictionary = buff_slots[i]
 		if i >= active.size():
 			_set_buff_slot_visible(slot, false)
-			slot["border"].tooltip_text = ""
+			slot["border"].set_meta("tip", "")
 			continue
 		var b: Dictionary = active[i]
 		var col: Color = b["color"]
 		var t: float = b["t"]
 		_set_buff_slot_visible(slot, true)
 		slot["border"].color = col
-		slot["border"].tooltip_text = _wrap_tip(String(b.get("tip", "")))
+		slot["border"].set_meta("tip", _wrap_tip(String(b.get("tip", ""))))
 		var glyph: String = String(b["glyph"])
 		# Prefer a Raven status icon (assets/icons/buff_*.png) when this buff
 		# maps to one; else the tinted procedural ability glyph. Cached per
@@ -1088,11 +1090,11 @@ func update_stats(p: Player) -> void:
 				box["icon"].texture = Art.tex("potion")
 				box["border"].color = (Color(0.75, 0.35, 0.35) if p.potions > 0 else Color(0.3, 0.15, 0.15)) \
 					if left > 0 else Color(0.18, 0.12, 0.12)
-				box["border"].tooltip_text = _wrap_tip(
-					"Health Potion — mends 60%% of max HP (x%d carried, max %d; boss kills restock to %d). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. [%s] cycles the loadout; SHIFT/CTRL-click potions in the inventory to plan it." % [
+				box["border"].set_meta("tip", _wrap_tip(
+					"Health Potion — mends 60%% of max HP (x%d carried, max %d; boss kills restock to %d). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. [%s] cycles the loadout; open the inventory and click a potion to plan it." % [
 						p.potions, Balance.POTION_MAX, Balance.BOSS_KILL_POTION_FLOOR,
 						left, p.potion_slot_cap(),
-						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))])
+						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]))
 			else:
 				var cnt := p.consumable_count(p.active_potion)
 				box["name"].text = ("%s ▸%d" % ["Mana" if p.active_potion == "mana_potion" else "Might", active_left]) if left > 0 else "Spent"
@@ -1101,11 +1103,11 @@ func update_stats(p: Player) -> void:
 				box["icon"].texture = ic if ic != null else Art.tex("potion")
 				box["border"].color = (Color(0.4, 0.6, 0.95) if cnt > 0 else Color(0.15, 0.2, 0.35)) \
 					if left > 0 else Color(0.18, 0.12, 0.12)
-				box["border"].tooltip_text = _wrap_tip(
+				box["border"].set_meta("tip", _wrap_tip(
 					"%s — slotted in your loadout (x%d carried). ROOM BUDGET: %d of %d slots left this room. [%s] cycles the loadout." % [
 						p.potion_display_name(p.active_potion), cnt,
 						left, p.potion_slot_cap(),
-						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))])
+						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]))
 			continue
 		var ab := Classes.ability(p.cls, slot)
 		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
@@ -1115,7 +1117,7 @@ func update_stats(p: Player) -> void:
 		box["key"].text = OS.get_keycode_string(game.binds[slot])
 		box["name"].text = ab["name"]
 		box["cost"].text = str(int(cost)) if cost > 0 else ""
-		# Hover card: name/key/cost/cd, the ability's own words, then the
+		# Detail card: name/key/cost/cd, the ability's own words, then the
 		# assigned theme's variant line — built from live values, so cd
 		# talents and mana amods read truthfully.
 		var tip := "%s  [%s]" % [String(ab["name"]), OS.get_keycode_string(game.binds[slot])]
@@ -1128,7 +1130,7 @@ func update_stats(p: Player) -> void:
 			var vdesc := Classes.variant_desc(p.cls, slot, theme_id)
 			if vdesc != "":
 				tip += "\n★ %s: %s" % [String(theme.get("name", theme_id)), vdesc]
-		box["border"].tooltip_text = _wrap_tip(tip)
+		box["border"].set_meta("tip", _wrap_tip(tip))
 		# Readability: the mana price reads red the moment you can't pay it.
 		box["cost"].add_theme_color_override("font_color",
 			Color(1.0, 0.4, 0.35) if p.mp < cost else Color(0.5, 0.7, 1.0))

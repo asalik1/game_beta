@@ -9,7 +9,7 @@ class_name UIMailbox
 
 static func open(m: Menus) -> void:
 	m.game.prune_mail()
-	var vbox := m._open("Mailbox", 900, 560)
+	var vbox := m._open("Mailbox", 900, 560, true)
 	m.current = "mailbox"
 	if m.game.mailbox.is_empty():
 		m._lbl(vbox, "No mail. Loot you leave on the ground arrives here when a chapter ends.", 14, Color(0.6, 0.62, 0.68))
@@ -39,12 +39,12 @@ static func open(m: Menus) -> void:
 			# the panel and spill off-screen — trim to width with an ellipsis.
 			b.clip_text = true
 			b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	m._hint(vbox, "ESC to close")
+	m._hint(vbox, "Click ✕ (top-right) or anywhere outside to close")
 
 
 static func open_letter(m: Menus, mail: Dictionary) -> void:
 	mail["read"] = true
-	var vbox := m._open(str(mail["subject"]), 900, 560)
+	var vbox := m._open(str(mail["subject"]), 900, 560, true)
 	m.current = "mail_letter"
 	m._lbl(vbox, "Sent " + Time.get_date_string_from_unix_time(int(mail["sent_at"])), 12, Color(0.55, 0.55, 0.6))
 	if str(mail["body"]) != "":
@@ -66,16 +66,23 @@ static func open_letter(m: Menus, mail: Dictionary) -> void:
 				"item":
 					var it: Dictionary = payload["item"]
 					m._bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
-						"%s\n%s" % [Items.title(it), Items.describe(it)], func() -> void: pass)
+						func() -> void:
+							m._open_detail_popover(Art.icon_for(it), Items.title(it),
+								Items.GRADE_COLOR[it["grade"]], Items.describe(it), []))
 				"gem":
 					var g: Dictionary = payload["gem"]
 					m._bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g.get("lvl", 1))), "",
-						Items.gem_color(g), Items.gem_title(g), func() -> void: pass)
+						Items.gem_color(g),
+						func() -> void:
+							m._open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g.get("lvl", 1))),
+								Items.gem_title(g), Items.gem_color(g), Items.gem_title(g), []))
 				_:
 					var st: Dictionary = payload.get("stone", {})
 					var ctex: ImageTexture = Art.consumable_icon(st)
 					m._bag_slot(grid, ctex, "" if ctex != null else "⟲", Color(0.6, 0.9, 1.0),
-						str(st.get("name", "Consumable")), func() -> void: pass)
+						func() -> void:
+							m._open_detail_popover(ctex, str(st.get("name", "Consumable")),
+								Color(0.6, 0.9, 1.0), str(st.get("desc", "")), []))
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -92,7 +99,7 @@ static func open_letter(m: Menus, mail: Dictionary) -> void:
 		m._btn(row, "  Delete letter  ", func() -> void:
 			m.open_confirm("Delete this letter AND its unclaimed loot?", do_delete), Color(1.0, 0.65, 0.55))
 	m._btn(row, "  ⇦ Back  ", func() -> void: open(m))
-	m._hint(vbox, "ESC to close")
+	m._hint(vbox, "Click ✕ (top-right) or anywhere outside to close")
 
 
 ## Move as much loot as fits into the bag; the rest stays in the letter.

@@ -9,7 +9,7 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		_boss_detail(m, boss)
 		return
 
-	var vbox := m._open("Codex", 1000, 620)
+	var vbox := m._open("Codex", 1000, 620, true)
 	m.current = "codex"
 
 	# Bestiary (Monsters / Bosses / NPCs) shares one top-level tab; the other
@@ -65,7 +65,7 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		_records(m, list)
 	else:
 		_gear(m, list)
-	m._hint(vbox, "ESC / C to close")
+	m._hint(vbox, "Click ✕, click outside, or press C to close")
 
 
 ## Rounded, padded card panel — shared row container for codex galleries.
@@ -326,7 +326,7 @@ static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bo
 ## Reached from the bestiary's boss cards; BACK returns to that list.
 static func _boss_detail(m: Menus, kind: String) -> void:
 	var st: Dictionary = Story.ALL_ENEMIES[kind]
-	var vbox := m._open(String(st.get("name", kind)), 1000, 620)
+	var vbox := m._open(String(st.get("name", kind)), 1000, 620, true)
 	m.current = "codex"
 
 	m._btn(vbox, "  ‹ Back to Bosses  ",
@@ -360,7 +360,7 @@ static func _boss_detail(m: Menus, kind: String) -> void:
 			cl.custom_minimum_size = Vector2(880, 0)
 			cl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	m._hint(vbox, "ESC / C to close")
+	m._hint(vbox, "Click ✕, click outside, or press C to close")
 
 
 static func _terrains(m: Menus, list: VBoxContainer) -> void:

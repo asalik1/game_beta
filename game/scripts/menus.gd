@@ -43,7 +43,10 @@ func close() -> void:
 
 # ------------------------------------------------------------ scaffolding ---
 
-func _open(title: String, w := 960.0, h := 560.0) -> VBoxContainer:
+## `closable` screens (inventory, pause, codex, quest log, mailbox) get a red
+## ✕ in the panel's top-right AND close when you click the dimmed area outside
+## the box — so ESC is no longer their only exit (and is retired for them).
+func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxContainer:
 	if root:
 		root.queue_free()
 	get_tree().paused = true
@@ -55,6 +58,12 @@ func _open(title: String, w := 960.0, h := 560.0) -> VBoxContainer:
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.65)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	if closable:
+		# Click-off-the-box to close. The panel sits on top and absorbs its
+		# own clicks, so only clicks in the surrounding dim reach here.
+		dim.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed:
+				close())
 	root.add_child(dim)
 
 	# Boot menus (roster / chapter / class select before play starts):
@@ -97,6 +106,23 @@ func _open(title: String, w := 960.0, h := 560.0) -> VBoxContainer:
 	rule.color = Color(0.9, 0.8, 0.5, 0.35)  # header underline
 	rule.custom_minimum_size = Vector2(0, 2)
 	vbox.add_child(rule)
+
+	if closable:
+		# Red ✕ pinned to the panel's top-right corner (added last = on top).
+		var xbtn := Button.new()
+		xbtn.text = "✕"
+		xbtn.flat = true
+		xbtn.focus_mode = Control.FOCUS_NONE
+		xbtn.add_theme_font_size_override("font_size", 22)
+		xbtn.add_theme_color_override("font_color", Color(1.0, 0.5, 0.45))
+		xbtn.add_theme_color_override("font_hover_color", Color(1.0, 0.82, 0.75))
+		xbtn.size = Vector2(36, 32)
+		xbtn.position = Vector2(640 - w / 2 - 3 + w + 6 - 42, 360 - h / 2 - 3 + 8)
+		xbtn.tooltip_text = "Close"
+		xbtn.pressed.connect(func() -> void:
+			game.sfx("ui_click")
+			close())
+		root.add_child(xbtn)
 	return vbox
 
 
@@ -271,7 +297,7 @@ func _dev_roster_row(vbox: VBoxContainer) -> void:
 ## The system menu (ESC in-game): everything a session needs that isn't
 ## combat — resume, options, chapter control, and the exits.
 func open_pause() -> void:
-	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 600)
+	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 600, true)
 	current = "pause"
 	var zi := clampi(game.cur_room, 0, game.zone_count - 1)
 	_lbl(vbox, "%s, Level %d — %s" % [Classes.CLASSES[game.player.cls]["name"],
@@ -305,7 +331,7 @@ func open_pause() -> void:
 		game.autosave()
 		get_tree().quit()
 	_btn(vbox, "  ✕  Save and quit game", quit_game, Color(1.0, 0.55, 0.5))
-	_hint(vbox, "ESC to resume")
+	_hint(vbox, "Click ✕ (top-right) or anywhere outside to resume")
 
 
 ## A single yes/cancel gate in front of anything destructive. Pause-menu
@@ -502,7 +528,6 @@ func open_class_select() -> void:
 			if dense:
 				var ab_name: String = "%s %s" % [tag, String(ab["name"])]
 				var ab_desc: String = String(ab["desc"])
-				l.tooltip_text = ab_desc
 				l.mouse_filter = Control.MOUSE_FILTER_STOP
 				l.gui_input.connect(func(e: InputEvent) -> void:
 					if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
@@ -525,7 +550,7 @@ func pick_class(id: String) -> void:
 # --------------------------------------------------------------- inventory ---
 
 func open_inventory(tab := "gear", cat := "all") -> void:
-	var vbox := _open("Inventory — %d gold" % game.player.gold, 1120, 640)
+	var vbox := _open("Inventory — %d gold" % game.player.gold, 1120, 640, true)
 	current = "inventory"
 
 	# Subtabs: gear management / full character sheet.
@@ -560,7 +585,6 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var b := _btn(left, Items.title(item), open_cb, Items.GRADE_COLOR[item["grade"]], true, Art.icon_for(item))
 			b.custom_minimum_size = Vector2(430, 0)
 			b.clip_text = true
-			b.tooltip_text = Items.describe(item, _awk(item)) + "\n\nClick to view sockets and remove/insert gems"
 			var dl := _lbl(left, Items.describe(item, _awk(item)), 12, Color(Items.GRADE_COLOR[item["grade"]], 0.8))
 			dl.custom_minimum_size = Vector2(430, 0)
 		else:
@@ -638,7 +662,6 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			if cat != "all" and String(it["slot"]) != cat:
 				continue
 			_bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
-				"%s\n%s\n\nClick for details — equip or drop." % [Items.title(it), Items.describe(it, _awk(it))],
 				func() -> void:
 					var info := "%s\n\nCompared to what's equipped:\n%s" % [Items.describe(it, _awk(it)), _diff_tip(it)]
 					var equip_cb := func() -> void:
@@ -669,22 +692,20 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var cc: Dictionary = cgroups[gid]["c"]
 			var count: int = cgroups[gid]["count"]
 			var xn := "  x%d" % count if count > 1 else ""
-			# Quest keepsakes ride the bag but have no use-click — they
-			# exist to be GIVEN (and vanish when the run ends).
+			# Quest keepsakes ride the bag but have no use/drop — they exist
+			# to be GIVEN (and vanish when the run ends). Click shows the
+			# keepsake's story text; no action buttons.
 			if String(cc.get("kind", "")) == "quest":
 				_bag_slot(grid, null, "❦", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
-					"%s%s\n%s" % [str(cc["name"]), xn, str(cc.get("desc", ""))],
-					func() -> void: pass)
+					func() -> void:
+						_open_detail_popover(null, str(cc["name"]) + xn,
+							Items.GRADE_COLOR[str(cc.get("grade", "B"))], str(cc.get("desc", "")), []))
 				continue
 			var cicon: Texture2D = Art.consumable_icon(cc)
 			var cid := String(gid)
 			var slotted: int = p.potion_rotation.count(cid)
-			var tip := "%s%s\n%s\n\nClick for details — use or drop." % [str(cc["name"]), xn, str(cc.get("desc", ""))]
-			if cid in Items.ROTATION_POTIONS:
-				tip += "\n(and slot it into the room loadout)"
 			_bag_slot(grid, cicon, "" if cicon != null else "⟲",
 				Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
-				tip,
 				func() -> void:
 					var info := str(cc.get("desc", ""))
 					var use_cb := func() -> void:
@@ -721,7 +742,6 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var g: Dictionary = group["gem"]
 			var count: int = group["count"]
 			var can_synth: bool = count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL
-			var tip := "%s  x%d\n\nClick for details — synthesize or drop." % [Items.gem_title(g), count]
 			var gem_cb := func() -> void:
 				var info := "%s  x%d\n\n" % [Items.gem_title(g), count]
 				if can_synth:
@@ -741,19 +761,19 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
 				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions)
 			_bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
-				("x%d" % count) if count > 1 else "", Items.gem_color(g), tip, gem_cb)
+				("x%d" % count) if count > 1 else "", Items.gem_color(g), gem_cb)
 	# Free-space squares only in the All view (a filtered view isn't the
 	# whole bag, so padding it with empties would misrepresent capacity).
 	if cat == "all":
 		for i in maxi(0, p.bag_capacity() - p.bag_used()):
 			_bag_empty(grid)
-	_hint(vbox, "ESC / I to close")
+	_hint(vbox, "Click ✕, click outside, or press I to close")
 
 
 ## One square bag slot: an item icon or a colored glyph, colored border,
-## hover tooltip, click action.
+## click action. No hover tooltip — clicking opens the detail popover.
 func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color,
-		tip: String, cb: Callable) -> Button:
+		cb: Callable) -> Button:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(48, 48)
 	if icon != null:
@@ -767,7 +787,6 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 		b.text = glyph
 		b.add_theme_font_size_override("font_size", 17)
 	b.add_theme_color_override("font_color", color)
-	b.tooltip_text = tip
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.09, 0.09, 0.12, 0.92)
 	sb.border_color = Color(color, 0.9)
@@ -987,7 +1006,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 		var val := "%s%d%s" % ["+" if standing > 0 else "", standing, "   ⚑ JOINED" if joined else ""]
 		var col := Color(0.6, 1.0, 0.6) if standing > 0 else (Color(1.0, 0.6, 0.6) if standing < 0 else Color(0.85, 0.85, 0.9))
 		_stat_row(list, f[1], val, f[3], col)
-	_hint(vbox, "ESC / I to close")
+	_hint(vbox, "Click ✕, click outside, or press I to close")
 
 
 ## One stat line: name, value, and a 🛈 hint. Click the row to open the
@@ -997,7 +1016,6 @@ func _stat_row(parent: Node, stat_name: String, value: String, tip: String, colo
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
-	row.tooltip_text = tip
 	row.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			_open_detail_popover(null, stat_name, color, tip, []))
@@ -1495,7 +1513,6 @@ func open_shop(zone: int) -> void:
 			open_cb, Items.GRADE_COLOR[it["grade"]], true, Art.icon_for(it))
 		bb.clip_text = true
 		bb.custom_minimum_size = Vector2(640, 0)
-		bb.tooltip_text = "%s — %d gold\n%s\n\nClick for details & to buy." % [Items.title(it), cost, Items.describe(it, _awk(it))]
 	_lbl(buy, "Upgrade equipped gear", 13, Color(0.6, 0.85, 1.0))
 	for slot in ["weapon", "armor"]:
 		if p.equipment.has(slot):
@@ -2034,7 +2051,11 @@ func _input(event: InputEvent) -> void:
 		if current in ["title", "class_select"] \
 				or (current == "chapter_select" and not chapter_replay):
 			return  # boot menus: no escaping into a paused void
-		if event.keycode == KEY_ESCAPE \
+		# ESC no longer exits the screens that grew an on-screen ✕ + click-off
+		# (inventory, pause, codex, quest log, mailbox) — use those instead.
+		# Their toggle hotkey (I / C) still closes them.
+		var esc_retired: bool = current in ["inventory", "pause", "codex", "journal", "mailbox", "mail_letter", "daily"]
+		if (event.keycode == KEY_ESCAPE and not esc_retired) \
 				or (current == "inventory" and event.keycode == game.binds["inventory"]) \
 				or (current == "detail" and event.keycode == game.binds["inventory"]) \
 				or (current == "skills" and event.keycode == game.binds["skills"]) \

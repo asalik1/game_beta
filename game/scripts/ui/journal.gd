@@ -15,7 +15,7 @@ const FACTION_NAME := {
 static func open(m: Menus) -> void:
 	var g := m.game
 	g.refresh_bounties()  # make sure the day/week sets are current
-	var vbox := m._open("Quest Log — %s" % String(Story.chapter(g.chapter_id)["name"]), 860, 640)
+	var vbox := m._open("Quest Log — %s" % String(Story.chapter(g.chapter_id)["name"]), 860, 640, true)
 	m.current = "journal"
 
 	var scroll := ScrollContainer.new()
@@ -93,7 +93,7 @@ static func open(m: Menus) -> void:
 	if neutral:
 		m._lbl(list, "No faction has taken your measure yet.", 13, Color(0.6, 0.62, 0.68))
 
-	m._hint(vbox, "ESC to close")
+	m._hint(vbox, "Click ✕ (top-right) or anywhere outside to close")
 
 
 ## Active bounties with progress. Daily first, then weekly.

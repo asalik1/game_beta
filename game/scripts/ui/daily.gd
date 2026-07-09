@@ -11,7 +11,7 @@ class_name UIDaily
 ## second one).
 static func open(m: Menus, just_claimed: Array = []) -> void:
 	var g := m.game
-	var vbox := m._open("Daily Reward", 780, 540)
+	var vbox := m._open("Daily Reward", 780, 540, true)
 	m.current = "daily"
 
 	if not just_claimed.is_empty():
@@ -50,7 +50,7 @@ static func open(m: Menus, just_claimed: Array = []) -> void:
 			var lines: Array = g.claim_daily()
 			open(m, lines), Color(0.6, 1.0, 0.6))
 	m._btn(row, "   Close   ", func() -> void: m.close())
-	m._hint(vbox, "ESC to close")
+	m._hint(vbox, "Click ✕ (top-right) or anywhere outside to close")
 
 
 ## One day-cell in the track: "Day N" over a short reward summary, tinted
