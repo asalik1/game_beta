@@ -498,11 +498,17 @@ const ENEMIES := {
 	# contact hit should cost a squishy ~20-25% of their at-level HP.
 	# With compounding growth, a boss 5 above you leaves ~2 mistakes,
 	# 10 above ~1. Dodge-everything god runs stay possible.
-	# Boss scale doctrine (2026-07-07): bosses read >=2x the hero (scale
-	# 6.0+; hero is 3.0), beasts/golems ~3x, and only true titans (the
-	# stormdrake, the storm's Mouth) reach 4-5x. Contact bites stay fair
-	# at any size via Boss._reach (body-edge, not center, distance).
-	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 1200.0,  "dmg": 30.0, "speed": 160.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 8.0,
+	# Boss scale ordinance (2026-07-09, supersedes the 2026-07-07 doctrine):
+	# every boss reads >=2.5x the player's ON-SCREEN body height, and a
+	# chapter's finale is clearly the biggest thing in its chapter. Compute
+	# from MEASURED art, not the raw scale number: on-screen body px =
+	# scale * 16 * (alpha-bbox height / cell width) of the idle strip, and
+	# the player's body is 52px (player_core HERO_TARGET_BODY) — coverage
+	# varies per sheet (vargoth ~0.74, skeleton ~0.48), so identical scales
+	# render wildly different sizes. Contact bites stay fair at any size
+	# via Boss._reach (body-edge, not center, distance); note the physics
+	# circle (enemy.gd: radius 6*scale*0.7) grows with the same knob.
+	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 1200.0,  "dmg": 30.0, "speed": 160.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 8.5,
 		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 1.5, "AGI": 1.5},
@@ -516,7 +522,7 @@ const ENEMIES := {
 			{"name": "Calls the Pack (50%)",
 			 "tell": "At half health he howls and two wolves spawn at his flanks.",
 			 "counter": "The wolves drop zero XP and gold — don't farm them. Keep damage on Fangmaw and kite the pack rather than chasing it."}]},
-	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "morwen",   "hp": 2200.0,  "dmg": 26.0, "speed": 120.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 6.0,
+	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "morwen",   "hp": 2200.0,  "dmg": 26.0, "speed": 120.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 9.0,
 		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 7, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.0},
@@ -530,7 +536,7 @@ const ENEMIES := {
 			{"name": "Bolt Volleys & Ring",
 			 "tell": "She fires a three-bolt fan at you on a fast cadence, and periodically rings out a full circle of twelve bolts.",
 			 "counter": "Strafe across the fan rather than backing straight up. For the ring, slip out through a gap between bolts instead of tanking it."}]},
-	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "vargoth",  "hp": 4200.0, "dmg": 50.0, "speed": 132.0, "xp": 200, "gold": 150, "ranged": false, "scale": 7.5,
+	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "vargoth",  "hp": 4200.0, "dmg": 50.0, "speed": 132.0, "xp": 200, "gold": 150, "ranged": false, "scale": 13.0,
 		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 10, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"STR": 2.0, "VIT": 1.5},

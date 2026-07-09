@@ -55,8 +55,11 @@ const ENEMIES := {
 	"unnamed_echo": {
 		"name": "The Echo of the Unnamed", "sprite": "assassin",
 		"hp": 48000.0, "dmg": 260.0, "speed": 170.0, "xp": 640, "gold": 1020,
-		# 2x floor, no higher: he mirrors the HERO — a person, not a titan.
-		"ranged": false, "scale": 6.0,
+		# 2x the hero, no higher: he mirrors the HERO — a person, not a titan.
+		# (The assassin strip's body fills ~65% of its cell, so hitting a true
+		# measured 2x needs scale 10; 6.0 rendered him hero-sized. He stays an
+		# authored exception to the >=2.5x boss ordinance — owner-reviewed.)
+		"ranged": false, "scale": 10.0,
 		"physres": 25.0, "magres": 25.0, "eva": 0.15, "critres": 6.0, "crit": 0.15, "dmg_type": "phys",
 		"level": 39, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"AGI": 2.0, "STR": 1.0},
@@ -84,10 +87,11 @@ const ENEMIES := {
 	# Unfinished (faster, quiet OCTANT). Kill him and the seal cracks —
 	# the mid-game begins. ACT 1 FINALE.
 	"stormmouth": {
-		"name": "Cyrraeth, Mouth of the Storm", "sprite": "nullwarden",
+		"name": "Cyrraeth, Mouth of the Storm", "sprite": "stormmouth",
 		"hp": 130000.0, "dmg": 275.0, "speed": 105.0, "xp": 800, "gold": 1900,
-		# The Act 1 finale titan: ~4.5x the hero, the largest thing alive.
-		"ranged": true, "scale": 13.5,
+		# The Act 1 finale titan: ~4.5x the hero, the largest thing alive
+		# (13.5 measured only 4.0x — a dead tie with Veyx; 15.0 = 4.5x true).
+		"ranged": true, "scale": 15.0,
 		"physres": 30.0, "magres": 45.0, "eva": 0.0, "critres": 10.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 41, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.5},
@@ -115,7 +119,7 @@ const ENEMIES := {
 		"name": "Mirror of the Unnamed", "sprite": "assassin",
 		"hp": 1.0, "dmg": 0.0, "speed": 0.0, "xp": 0, "gold": 0,
 		# Must MATCH unnamed_echo's scale — the decoys only work same-size.
-		"ranged": true, "scale": 6.0,
+		"ranged": true, "scale": 10.0,
 		"physres": 0.0, "magres": 0.0, "eva": 0.0, "critres": 0.0, "crit": 0.0, "dmg_type": "magic",
 		"level": 39, "hp_g": 0.10, "dmg_g": 0.0,
 		"attrs": {"AGI": 1.0},

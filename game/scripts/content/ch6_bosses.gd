@@ -49,9 +49,12 @@ const ENEMIES := {
 	# LASH roots you inside a closing ring; COMPOST — a bloom killed near
 	# him HEALS him, so weed the far garden and kite him off the near one.
 	"gardener": {
-		"name": "Rotmaw the Gardener", "sprite": "skeleton",
+		"name": "Rotmaw the Gardener", "sprite": "gardener",
+		# NOTE: the skeleton strip's body only fills ~48% of its cell, so raw
+		# scale lied (7.0 rendered ~1.0x the hero). gardener_* strips are the
+		# skeleton family re-cut to tight cells (~90% body) — same pixels.
 		"hp": 44000.0, "dmg": 185.0, "speed": 80.0, "xp": 560, "gold": 640,
-		"ranged": true, "scale": 7.0,
+		"ranged": true, "scale": 9.5,
 		"physres": 25.0, "magres": 45.0, "eva": 0.05, "critres": 8.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 35, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.0},
@@ -81,7 +84,7 @@ const ENEMIES := {
 	"curetwisted": {
 		"name": "Kaethra Cure-Twisted", "sprite": "beastkin",
 		"hp": 69000.0, "dmg": 205.0, "speed": 145.0, "xp": 720, "gold": 900,
-		"ranged": false, "scale": 7.5,
+		"ranged": false, "scale": 10.5,
 		"physres": 30.0, "magres": 35.0, "eva": 0.05, "critres": 9.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 37, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"AGI": 1.5, "INT": 1.5},

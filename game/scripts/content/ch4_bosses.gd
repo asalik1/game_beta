@@ -25,7 +25,7 @@ const ENEMIES := {
 	"forgemistress": {
 		"name": "Forgemistress Calda", "sprite": "cultist",
 		"hp": 11500.0, "dmg": 96.0, "speed": 150.0, "xp": 300, "gold": 240,
-		"ranged": false, "scale": 6.0,
+		"ranged": false, "scale": 8.5,
 		"physres": 25.0, "magres": 20.0, "eva": 0.05, "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 23, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 1.5, "AGI": 1.5},
@@ -82,9 +82,9 @@ const ENEMIES := {
 	# arrives heals him + speeds his verdicts (intercept them); at 20% the
 	# Judge attends and magma-rain runs continuous.
 	"ashpriest": {
-		"name": "Ashpriest Ordo, Voice of the Molten Judge", "sprite": "choirmother",
+		"name": "Ashpriest Ordo, Voice of the Molten Judge", "sprite": "ashpriest",
 		"hp": 28000.0, "dmg": 125.0, "speed": 95.0, "xp": 460, "gold": 360,
-		"ranged": true, "scale": 6.0,
+		"ranged": true, "scale": 10.5,
 		"physres": 20.0, "magres": 45.0, "eva": 0.05, "critres": 8.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 28, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.0},

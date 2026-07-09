@@ -91,7 +91,9 @@ const ENEMIES := {
 	"sporeshambler": {"name": "Spore Shambler", "sprite": "fungus_heavy", "hp": 115.0, "dmg": 14.0, "speed": 115.0, "xp": 30, "gold": 11, "ranged": false, "scale": 3.5,
 		"physres": 15.0, "magres": 18.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
 		"level": 6, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["mend"]},
-	"stormcult": {"name": "Choir Cantor", "sprite": "scholar_censor", "hp": 68.0, "dmg": 15.0, "speed": 105.0, "xp": 34, "gold": 13, "ranged": true, "scale": 3.2,
+	# Hostile-human rule (2026-07-09): mobs never wear an UNMODIFIED friendly
+	# NPC body. stormcult_* = scholar_censor darkened/desaturated + void face.
+	"stormcult": {"name": "Choir Cantor", "sprite": "stormcult", "hp": 68.0, "dmg": 15.0, "speed": 105.0, "xp": 34, "gold": 13, "ranged": true, "scale": 3.2,
 		"physres": 6.0, "magres": 22.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
 		"level": 7, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["channel_heal"]},
 	"beastkin_howler": {"name": "Wildfang Howler", "sprite": "orc_rogue", "hp": 74.0, "dmg": 16.0, "speed": 150.0, "xp": 38, "gold": 14, "ranged": true, "scale": 3.3,

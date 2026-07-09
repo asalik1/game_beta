@@ -90,7 +90,9 @@ const ENEMIES := {
 	"deep_stalker": {"name": "Crystal Stalker", "sprite": "deep_stalker", "hp": 150.0, "dmg": 23.0, "speed": 215.0, "xp": 60, "gold": 22, "ranged": false, "scale": 3.4,
 		"physres": 8.0, "magres": 20.0, "eva": 0.18, "critres": 0.0, "dmg_type": "phys",
 		"level": 12, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["web"]},
-	"null_acolyte": {"name": "Null Acolyte", "sprite": "scholar_director", "hp": 160.0, "dmg": 27.0, "speed": 110.0, "xp": 70, "gold": 26, "ranged": true, "scale": 3.3,
+	# Hostile-human rule (2026-07-09): null_acolyte_* = scholar_director
+	# darkened/desaturated + void face (mobs never wear a friendly NPC body).
+	"null_acolyte": {"name": "Null Acolyte", "sprite": "null_acolyte", "hp": 160.0, "dmg": 27.0, "speed": 110.0, "xp": 70, "gold": 26, "ranged": true, "scale": 3.3,
 		"physres": 10.0, "magres": 28.0, "eva": 0.0, "critres": 3.0, "dmg_type": "magic",
 		"level": 13, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["channel_heal"]},
 	"void_husk": {"name": "Voidbound Husk", "sprite": "skeleton_mage", "hp": 260.0, "dmg": 30.0, "speed": 115.0, "xp": 85, "gold": 30, "ranged": false, "scale": 3.6,
