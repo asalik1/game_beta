@@ -488,7 +488,10 @@ func pick_chapter(id: String) -> void:
 # ------------------------------------------------------------ class select ---
 
 func open_class_select() -> void:
-	var vbox := _open("Choose your class", 1240, 660)
+	# 700 tall: the tallest card (paladin's stance passive) sets the columns'
+	# MINIMUM height — a shorter panel can't clip it (a Control never shrinks
+	# below its content), the buttons just spill past the frame.
+	var vbox := _open("Choose your class", 1240, 700)
 	current = "class_select"
 	_lbl(vbox, "This choice defines your four abilities and your three THEMES — elemental playstyles that change how your abilities behave, unlocked as you level.", 15, Color(0.75, 0.75, 0.75))
 
@@ -1064,7 +1067,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	var rows3 := [
 		["Speed", str(int(p.speed)), "How fast you move. Ice patches boost it; void rifts slow it."],
 		["Lifesteal", "%d%%" % int(p.lifesteal * 100), "Heals you for a share of damage dealt. AoE hits only steal a third."],
-		["Greed", "%d%%" % int(Stats.greed_gold(p.greed) * 100), "Bonus gold from every source. Every point also nudges chest drop rates. Strong diminishing returns past %d%%." % int(Balance.CAP_GREED * 100)],
+		["Greed", "%d%%" % int(Stats.greed_gold(p.current_greed()) * 100), "Bonus gold from every source. Every point also nudges chest drop rates. Strong diminishing returns past %d%%. Sourced only by GOLD RUSH coins — rare charged coins spilled by farm kills that surge it for a window." % int(Balance.CAP_GREED * 100)],
 	]
 	for r in rows3:
 		_stat_row(list, r[0], r[1], r[2])

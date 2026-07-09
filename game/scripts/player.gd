@@ -18,6 +18,7 @@ func _physics_process(delta: float) -> void:
 	theme_speed_time = maxf(0.0, theme_speed_time - delta)
 	damp_time = maxf(0.0, damp_time - delta)
 	elixir_time = maxf(0.0, elixir_time - delta)
+	goldrush_time = maxf(0.0, goldrush_time - delta)
 	dodge_time = maxf(0.0, dodge_time - delta)
 	frozen_time = maxf(0.0, frozen_time - delta)
 	rooted_time = maxf(0.0, rooted_time - delta)

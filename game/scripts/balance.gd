@@ -736,6 +736,20 @@ const ELITE_BAG_CHANCE := 0.18           # rolled only when neither reset droppe
 const MOB_SILVER_CHEST_CHANCE := 0.04
 const MOB_WOOD_CHEST_CHANCE := 0.18
 
+# GOLD RUSH (2026-07-09): the greed stat's ONLY source since the gem
+# retired for Tenacity — greed is deliberately a FARM-EVENT stat, never a
+# build stat (it was DPS-dead as a gem). A paying trash kill rarely spills
+# a charged coin; touching it surges greed for a window (auto-triggers,
+# never a bag item, refresh-don't-stack). Drop-only, never sold — buying
+# gold% with gold is a dead loop; a surprise mid-farm window is the point.
+# ~1 coin/replay run at 0.01 over ~110 paying kills; ~8% uptime x ~30%
+# on gained gold ≈ +2-3% run income — a felt beat, not an economy dial.
+# (Distinct from the WEEKLY "Gilded Blood" modifier, which scales kill
+# gold at the drop; this one rides the greed stat at the gain.)
+const GOLDRUSH_GREED := 0.30        # greed surge while the window holds
+const GOLDRUSH_DUR := 150.0         # seconds
+const GOLDRUSH_DROP_CHANCE := 0.01  # per paying trash kill
+
 # ------------------------------------------------------ hero resources ---
 const POTION_MAX := 5
 # (BOSS_KILL_POTION_FLOOR retired 2026-07-09: boss kills no longer restock

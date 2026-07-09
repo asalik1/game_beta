@@ -106,6 +106,10 @@ func _run_systems() -> void:
 	await _frames(5)
 	if not game.hud.dialogue_active:
 		return _fail("warrior opening scene did not start after class select")
+	# The dialogue box lives UNDER the hud: if the menus left the hud hidden,
+	# the opening plays invisibly and the game looks frozen (2fa0c82 regression).
+	if not game.hud.visible:
+		return _fail("opening dialogue is playing on a hidden HUD")
 	await _skip_dialogue()  # narration up to Bren's question
 	await _frames(2)
 	if not game.hud.choices_active:
@@ -783,6 +787,9 @@ func _run_systems() -> void:
 
 	# 3d13b. Resonance band leans: conviction ramp, Hunger/Constancy sides.
 	_test_res_lean()
+
+	# 3d13c. Gold Rush: greed surge window + charged-coin touch trigger.
+	await _test_goldrush()
 
 	# 3d14. Gamble vendor: afford gate, cost deduction, boss-band roll + pricing.
 	_test_gamble()
@@ -1923,6 +1930,43 @@ func _test_res_lean() -> void:
 		return _fail("kill gold should carry the Hunger bonus")
 	p.resonance = keep_res
 	print("ok: resonance band leans (Hunger / Constancy)")
+
+
+# ---- CORE: Gold Rush surge (2026-07-09) -----------------------------------
+# Greed's ONLY source since the gem retired: a charged coin that surges
+# greed for a window on touch — auto-trigger, never a bag item.
+func _test_goldrush() -> void:
+	var p := game.player
+	var keep_gold: int = p.gold
+	var keep_rush: float = p.goldrush_time
+	var keep_greed: float = p.greed
+	p.greed = 0.0
+	p.goldrush_time = 0.0
+	if absf(p.current_greed()) > 0.001:
+		return _fail("greed should be sourceless outside a Gold Rush")
+	p.gold = 0
+	p.gain_gold(100)
+	var base_pay: int = p.gold
+	p.goldrush_time = Balance.GOLDRUSH_DUR
+	if absf(p.current_greed() - Balance.GOLDRUSH_GREED) > 0.001:
+		return _fail("Gold Rush should surge greed by GOLDRUSH_GREED")
+	p.gold = 0
+	p.gain_gold(100)
+	if p.gold <= base_pay:
+		return _fail("a Gold Rush window should pay more gold")
+	# The charged coin applies on TOUCH (magnets like a coin; it can never
+	# enter the bag BY CONSTRUCTION — the goldrush branch frees the pickup
+	# before any claim logic, so no bag assertion: idle frames in the live
+	# test world let unrelated ground loot claim itself and false-fail it).
+	p.goldrush_time = 0.0
+	Pickup.drop_goldrush(game, p.global_position)
+	await _frames(8)
+	if p.goldrush_time <= 0.0:
+		return _fail("charged coin did not trigger the Gold Rush on touch")
+	p.gold = keep_gold
+	p.goldrush_time = keep_rush
+	p.greed = keep_greed
+	print("ok: gold rush surge (sourceless baseline, window pay, touch trigger)")
 
 
 # ---- CORE: gambling vendor (afford gate, cost deduction, delivery) -------

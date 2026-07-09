@@ -487,12 +487,17 @@ func on_enemy_died(e: Enemy) -> void:
 			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
 	else:
 		# Chance-based chest drops (Greed nudges the odds up from its first point).
-		var bonus := Stats.greed_loot(player.greed) if is_instance_valid(player) else 0.0
+		var bonus := Stats.greed_loot(player.current_greed()) if is_instance_valid(player) else 0.0
 		var roll := loot_rng.randf()
 		if roll < Balance.MOB_SILVER_CHEST_CHANCE + bonus * 0.3:
 			Chest.drop(self, "silver", e.global_position)
 		elif roll < Balance.MOB_WOOD_CHEST_CHANCE + bonus:
 			Chest.drop(self, "wood", e.global_position)
+		# Gold Rush: rarely, a PAYING trash kill spills a charged coin — grab
+		# it and greed surges for a window. The farm loop's slot-machine beat
+		# (summons/mood spawns pay nothing and can never spill one).
+		if e.gold_value > 0 and loot_rng.randf() < Balance.GOLDRUSH_DROP_CHANCE:
+			Pickup.drop_goldrush(self, e.global_position + Vector2(0, 26))
 
 	# Room clear tracking: the boss only appears once its room is purged.
 	if e.zone_idx >= 0:

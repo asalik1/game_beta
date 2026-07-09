@@ -666,6 +666,8 @@ func _active_buffs() -> Array:
 		"tip": "Fleet — +%d%% move speed." % int(p.theme_speed_amt * 100.0)})
 	if p.elixir_time > 0.0: out.append({"id": "elixir", "glyph": "ab_fist", "color": Color(1.0, 0.6, 0.3), "t": p.elixir_time,
 		"tip": "Elixir of Might — +%d%% damage." % int(p.elixir_atk * 100.0)})
+	if p.goldrush_time > 0.0: out.append({"id": "goldrush", "glyph": "ic_coin", "color": Color(1.0, 0.85, 0.35), "t": p.goldrush_time,
+		"tip": "GOLD RUSH — +%d%% Greed: bonus gold from every source, and chest odds tick up. Farm while it burns; another charged coin refreshes the window." % int(Balance.GOLDRUSH_GREED * 100.0)})
 	if p.stab_ls_time > 0.0: out.append({"id": "surge", "glyph": "ab_dagger", "color": Color(0.95, 0.3, 0.35), "t": p.stab_ls_time,
 		"tip": "Blood Surge — +%d%% lifesteal, and Fan of Knives bites TWICE as hard. A connecting Stab or Shadow Dash refreshes it." % int(p.stab_ls_amt * 100.0)})
 	if p.dodge_time > 0.0: out.append({"id": "dodge", "glyph": "ab_roll", "color": Color(0.8, 0.95, 0.7), "t": p.dodge_time,

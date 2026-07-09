@@ -195,6 +195,7 @@ var damp_time := 0.0     # Damp debuff: while > 0, move speed x Balance.DAMP_SLO
 var wind_fx_t := 0.0     # throttle for the faint speed-buff wind trail
 var elixir_time := 0.0   # Elixir of Might: +elixir_atk damage while > 0
 var elixir_atk := 0.0
+var goldrush_time := 0.0  # Gold Rush coin: greed surges while > 0 (run state, not saved)
 var dodge_time := 0.0    # archer Tumble: temporary evasion window after the roll
 var dodge_amt := 0.0     # +evasion CHANCE added while dodge_time > 0
 var theme_guard_time := 0.0
@@ -798,7 +799,7 @@ func stat_sheet() -> String:
 		int(physres), int(magres), int(critres),
 		int(Stats.eva_curve(eva) * 100), int(dex),
 		int(physpen), int(magpen),
-		int(cdr * 100), int(speed), int(lifesteal * 100), int(Stats.greed_gold(greed) * 100)]
+		int(cdr * 100), int(speed), int(lifesteal * 100), int(Stats.greed_gold(current_greed()) * 100)]
 
 
 # ==================================================================== gear
@@ -1427,7 +1428,13 @@ func ability_cost(slot: String) -> float:
 	return maxf(0.0, ab["mp"] * (1.0 + _amod(slot, "mp")))
 
 
+## Greed as consumed: the built stat plus a live Gold Rush surge. Since
+## the greed gem retired (2026-07-09) the surge is greed's only source.
+func current_greed() -> float:
+	return greed + (Balance.GOLDRUSH_GREED if goldrush_time > 0.0 else 0.0)
+
+
 func gain_gold(amount: int) -> void:
-	gold += int(amount * (1.0 + Stats.greed_gold(greed)))
+	gold += int(amount * (1.0 + Stats.greed_gold(current_greed())))
 
 

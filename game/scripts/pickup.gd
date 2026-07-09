@@ -10,6 +10,7 @@ var value := 3
 var game: Game
 var magnet := false
 var loot := {}        # empty = a gold coin; else a dropped-loot payload
+var goldrush := false  # charged coin: surges greed on touch instead of paying
 var retry_cd := 0.0   # full-bag claim retry throttle
 var pickup_delay := 0.0  # discard-throw: ignore all claims until this elapses
 
@@ -45,6 +46,25 @@ static func drop_gold(game_node: Node2D, amount: int, pos: Vector2) -> void:
 		gt.tween_interval(randf_range(0.5, 1.7))
 		gt.tween_property(glint, "modulate:a", 0.9, 0.08)
 		gt.tween_property(glint, "modulate:a", 0.0, 0.16)
+
+
+## GOLD RUSH charged coin (2026-07-09): a rare trash spill. Touching it
+## surges Greed for a window (Balance.GOLDRUSH_*) instead of paying gold —
+## auto-triggers, never enters the bag. Oversized + hot glow so it reads
+## as an EVENT, not another coin; magnets like one (loot stays empty).
+static func drop_goldrush(game_node: Node2D, pos: Vector2) -> void:
+	var c := Pickup.new()
+	c.game = game_node
+	c.goldrush = true
+	c.global_position = pos
+	var sprite := Sprite2D.new()
+	sprite.texture = Art.tex("coin")
+	sprite.scale = Vector2(4.2, 4.2)
+	sprite.modulate = Art.hdr(Color(1.0, 0.9, 0.5), 1.5)
+	c.add_child(sprite)
+	c._body_setup()
+	game_node.add_child(c)
+	c._loot_shine(sprite, Color(1.0, 0.85, 0.35))
 
 
 ## A loot payload ({"kind": "item"/"gem"/"stone", ...}) dropped where a
@@ -173,7 +193,13 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if not body is Player:
 		return
-	if loot.is_empty():
+	if goldrush:
+		body.goldrush_time = Balance.GOLDRUSH_DUR  # refresh, never stack
+		game.spawn_text(global_position + Vector2(0, -44), "GOLD RUSH!", Color(1.0, 0.85, 0.3))
+		game.burst(global_position, Color(1.0, 0.85, 0.35), 14)
+		game.sfx("gem")
+		queue_free()
+	elif loot.is_empty():
 		body.gain_gold(value)
 		game.sfx("coin")
 		queue_free()
