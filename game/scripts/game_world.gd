@@ -1040,6 +1040,7 @@ func _wall(rect: Rect2, wall_tex := "wallblock") -> void:
 	spr.scale = Vector2(3, 3)
 	spr.z_index = -5
 	world.add_child(spr)
+	_wall_sink.append(spr)  # tracked so a terrain repaint can retexture it live
 
 ## Perimeter walls for one room, with door gaps on its open edges, and
 ## a gate body on any locked edge that isn't already satisfied.
@@ -1053,7 +1054,10 @@ func _build_room_walls(i: int) -> void:
 	var gap := DOOR_TILES * TILE
 	# Terrain-aware wall tile (2026-07-08): stone keep, wood village, mossy
 	# forest/marsh, volcanic magma, ice, graveyard, sandstone — else stone.
+	# Track the wall sprites so apply_terrain can retexture them live.
 	var wt: String = Terrains.wall_for(terrain_by_zone[i])
+	zone_wall_sprites[i] = []
+	_wall_sink = zone_wall_sprites[i]
 	# North/south walls (gap centered on x).
 	for spec in [["N", r.position.y], ["S", r.end.y - TILE]]:
 		var dir: String = spec[0]
@@ -1328,6 +1332,13 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 			zi * 1000 + 7, rooms[zi]["exits"].keys())
 	_spawn_scenery(zi)  # tombstones, snowy pines, crystals...
 	_spawn_patches(zi)
+	# Retexture the room's walls to this terrain's tile (colliders unchanged,
+	# so no rebuild — just swap the visual). Lets the dev terrain-paint preview
+	# walls too, not just ground/props.
+	var wt: String = Terrains.wall_for(terrain_id)
+	for s in zone_wall_sprites.get(zi, []):
+		if is_instance_valid(s):
+			s.texture = Art.tex(wt)
 	# If the player is standing in this room, refresh mood immediately.
 	if cur_room == zi:
 		var tween := create_tween()
