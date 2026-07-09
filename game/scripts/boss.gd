@@ -172,6 +172,19 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 	if telegraphing:
 		return Vector2.ZERO
 
+	# Ground rake (kite answer): the beast slams and a fissure RACES out along
+	# your lane, cracking past you — so a kiter can't AFK the gaps between the
+	# pounce and the charge. Reaches any range (the crack runs out to your feet).
+	if ring_cd <= 0.0:
+		ring_cd = 4.5
+		game.sfx("slam")
+		var aim := to_player.normalized()
+		var reach: float = clampf(dist + 110.0, 240.0, 620.0)
+		for i in 4:
+			var t := float(i + 1) / 4.0
+			game.telegraph(global_position + aim * reach * t, 66.0, 0.4 + t * 0.5,
+				dmg * 0.95, {"color": Color(0.85, 0.5, 0.35, 0.55)})
+
 	# Normal wolf behavior between charges.
 	if dist < _reach(60.0):
 		if attack_cd <= 0.0:
@@ -619,7 +632,14 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	# stand. Independent of shovelwork and the grave shamblers.
 	if ring_cd <= 0.0:
 		ring_cd = 4.5
-		game.telegraph(player.global_position, 95.0, 0.9, dmg * 1.1, {"color": GRAVE})
+		# 3-tell CLUSTER (r51 floor made real): opens under the prey AND flanks,
+		# so a kiter has to REPOSITION to a clear patch, not just sidestep one
+		# circle. Reaches any range — the Vale answers wherever you stand.
+		game.telegraph(player.global_position, 90.0, 0.9, dmg * 1.1, {"color": GRAVE})
+		for _i in 2:
+			var off := Vector2.from_angle(randf() * TAU) * randf_range(120.0, 175.0)
+			game.telegraph(game.clamp_to_zone(player.global_position + off, home),
+				90.0, 0.9, dmg * 1.1, {"color": GRAVE})
 
 	# Signature: SHOVELWORK — under the dirt and up through your floor.
 	if special_cd <= 0.0 and dist < 600.0:
@@ -1202,10 +1222,12 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 	if telegraphing:
 		return Vector2.ZERO
 
-	# Enraged: extra magma rain hammers the chase.
-	if enraged and ring_cd <= 0.0:
-		ring_cd = 3.5
-		for i in 3:
+	# Ember rain (kite answer): magma spatters the prey's ground the WHOLE fight,
+	# not just at enrage — so a kiter can't sit out the charge/cone gaps. Denser
+	# and faster once enraged.
+	if ring_cd <= 0.0:
+		ring_cd = 3.5 if enraged else 5.0
+		for i in (3 if enraged else 2):
 			game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
 				75.0, 0.6, dmg * 1.1, {"color": LAVA})
 
