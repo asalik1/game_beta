@@ -11,10 +11,12 @@ var _popover_box: PanelContainer = null  # the current popover's panel (for re-a
 var current := ""
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
+var shop_tab := "buy"             # shop: which full-width tab is showing (persists across refreshes)
 var title_stage := "cover"        # boot title: "cover" (splash) -> "slots" (roster)
 var chapter_replay := false       # chapter select opened from the pause menu
 var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv (default), 2 +10, 3 +20
 var dev_boss_level_override := 0  # dev panel: exact level for NEW boss spawns (0 = off)
+var dev_tab := "character"        # dev panel: which subtab is showing (persists across refreshes)
 
 
 func _ready() -> void:
@@ -595,17 +597,33 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	for slot in Items.SLOTS:
 		if game.player.equipment.has(slot):
 			var item: Dictionary = game.player.equipment[slot]
-			# Same opaque popover the bag uses: the stat breakdown + Unequip,
-			# with the gem-socket/reforge bench one button away.
+			# The tabbed item panel: Info / Gems / Reforge, Unequip on top.
 			var open_cb := func() -> void:
-				_open_equipped_popover(item)
+				open_item_panel(item)
 			# Title on a fixed-width clipped button; stats wrap in a label
 			# below it — long S-item text can no longer blow up the layout.
 			var b := _btn(left, Items.title(item), open_cb, Items.GRADE_COLOR[item["grade"]], true, Art.icon_for(item))
 			b.custom_minimum_size = Vector2(430, 0)
 			b.clip_text = true
-			var dl := _lbl(left, Items.describe(item, _awk(item)), 12, Color(Items.GRADE_COLOR[item["grade"]], 0.8))
+			var dl := _lbl(left, Items.describe(item, _awk(item), false), 12, Color(Items.GRADE_COLOR[item["grade"]], 0.8))
 			dl.custom_minimum_size = Vector2(430, 0)
+			# Real gem sockets (2026-07-09): the ◆◇ describe-glyphs became
+			# squares — a bag gem drags straight onto them (or onto the title
+			# button, a bigger target); a socketed gem drags back out.
+			var islots: int = item.get("gem_slots", 0)
+			if islots > 0:
+				var refresh := func() -> void: open_inventory("gear", cat)
+				var can_fn := func(_pos: Vector2, data: Variant) -> bool:
+					return data is Dictionary and String(data.get("kind", "")) == "bag_gem" \
+						and game.player.gem_socket_error(item, data["gem"]) == ""
+				var drop_fn := func(_pos: Vector2, data: Variant) -> void:
+					game.player.embed_gem_into(item, data["gem"])
+					open_inventory("gear", cat)
+				b.set_drag_forwarding(Callable(), can_fn, drop_fn)
+				var srow := HBoxContainer.new()
+				srow.add_theme_constant_override("separation", 4)
+				left.add_child(srow)
+				_socket_row(srow, item, refresh)
 		else:
 			_lbl(left, "     %s — empty" % slot.capitalize(), 14, Color(0.45, 0.45, 0.45))
 	_lbl(left, "(full character sheet in the Stats tab)", 12, Color(0.55, 0.55, 0.6))
@@ -649,7 +667,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var ab := _btn(right, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
-	_lbl(right, "Click any bag item for its detail card — equip/use/synthesize or drop it there · gems socket via an EQUIPPED item (left) · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
+	_lbl(right, "Click any bag item for its detail card — equip/use/synthesize or drop it there · DRAG a gem onto an equipped item (left) to socket it, or drag a socketed gem back here · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
 	# Bag category filter: All (default) + per-slot gear, gems, consumables.
 	var catrow := HBoxContainer.new()
@@ -672,6 +690,16 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	grid.add_theme_constant_override("h_separation", 4)
 	grid.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(grid)
+	# The bag area is a drop target for a gem dragged out of an equipped
+	# item's socket (the grid's own buttons swallow drops; the scroll, grid
+	# gaps and free squares catch them).
+	var sock_can := func(_pos: Vector2, data: Variant) -> bool:
+		return data is Dictionary and String(data.get("kind", "")) == "socketed_gem"
+	var sock_drop := func(_pos: Vector2, data: Variant) -> void:
+		game.player.remove_gem(data["item"], int(data["idx"]))
+		open_inventory("gear", cat)
+	scroll.set_drag_forwarding(Callable(), sock_can, sock_drop)
+	grid.set_drag_forwarding(Callable(), sock_can, sock_drop)
 	var show_gear: bool = cat == "all" or cat in Items.SLOTS
 	var show_gems: bool = cat == "all" or cat == "gems"
 	var show_cons: bool = cat == "all" or cat == "consumables"
@@ -779,13 +807,18 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					actions.append(["  ⚒  Synthesize  (3 → 1 Lv%d)  " % (g["lvl"] + 1), Color(0.6, 0.9, 1.0), synth_cb])
 				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
 				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions)
-			_bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
+			var gbtn := _bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), gem_cb)
+			# Drag it straight onto an equipped item (left) to socket it.
+			var gem_drag := func(_pos: Vector2) -> Variant:
+				gbtn.set_drag_preview(_drag_preview(Art.gem_icon(Items.gem_color(g), int(g["lvl"]))))
+				return {"kind": "bag_gem", "gem": g}
+			gbtn.set_drag_forwarding(gem_drag, Callable(), Callable())
 	# Free-space squares only in the All view (a filtered view isn't the
 	# whole bag, so padding it with empties would misrepresent capacity).
 	if cat == "all":
 		for i in maxi(0, p.bag_capacity() - p.bag_used()):
-			_bag_empty(grid)
+			_bag_empty(grid).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	_hint(vbox, "ESC, ✕, click outside, or I to close")
 
 
@@ -821,8 +854,9 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 	return b
 
 
-## A dark square: one free bag slot.
-func _bag_empty(grid: GridContainer) -> void:
+## A dark square: one free bag slot (returned so the inventory can make
+## each a drop target for gems dragged out of sockets).
+func _bag_empty(grid: GridContainer) -> Panel:
 	var pnl := Panel.new()
 	pnl.custom_minimum_size = Vector2(48, 48)
 	var sb := StyleBoxFlat.new()
@@ -832,6 +866,7 @@ func _bag_empty(grid: GridContainer) -> void:
 	sb.set_corner_radius_all(4)
 	pnl.add_theme_stylebox_override("panel", sb)
 	grid.add_child(pnl)
+	return pnl
 
 
 ## Build the opaque popover shell over the current screen and return the
@@ -1086,78 +1121,41 @@ func _stat_bonus_text(d: Dictionary) -> String:
 	return ", ".join(parts)
 
 
-## Equipped-gear detail: the bag's opaque click popover, adapted — the full
-## stat breakdown, live set-bonus tiers and a socket summary, with Unequip
-## and a button into the gem/reforge bench (open_item_panel) for the deep
-## management that's too much for a cursor popover.
-func _open_equipped_popover(item: Dictionary) -> void:
-	var p: Player = game.player
-	var info := Items.describe(item, _awk(item))
-
-	# Set bonus (S legendaries): which tiers are live given what's worn.
-	if String(item.get("grade", "")) == "S" and item.has("cls"):
-		var sd: Dictionary = Items.SET_BONUSES.get(String(item["cls"]), {})
-		if not sd.is_empty():
-			var pieces := Items.count_set_pieces(p.equipment, String(item["cls"]))
-			info += "\n\nSET: %s  (%d/4 pieces worn)" % [sd.get("name", "Set"), pieces]
-			for tier in ["2", "4"]:
-				var live := pieces >= int(tier)
-				info += "\n   %spc %s — %s" % [tier, "✓ ACTIVE" if live else "inactive", _stat_bonus_text(sd[tier])]
-
-	# Socket summary (read-only here; the bench edits them).
-	var slots: int = item.get("gem_slots", 0)
-	var gems: Array = item.get("gems", [])
-	if slots > 0:
-		info += "\n\nGEM SOCKETS (%d/%d filled)" % [gems.size(), slots]
-		for gg in gems:
-			info += "\n   ◆ %s" % Items.gem_title(gg)
-
-	var slot_id := String(item.get("slot", ""))
-	var unequip_cb := func() -> void:
-		if game.player.unequip(slot_id):
-			open_inventory()
-		else:
-			game.spawn_text(game.player.global_position + Vector2(0, -50), "Bag full!", Color(1, 0.6, 0.4))
-	var bench_cb := func() -> void:
-		open_item_panel(item)
-	var actions: Array = [
-		["  ⇩  Unequip  (move to bag)  ", Color(1.0, 0.8, 0.5), unequip_cb],
-		["  ◆  Gems & reforge bench…  ", Color(0.7, 0.9, 1.0), bench_cb],
-	]
-	_open_detail_popover(Art.icon_for(item), Items.title(item), Items.GRADE_COLOR[item["grade"]], info, actions)
-
-
-## The gem-socket + reforge bench — a scrollable opaque popover (the same
-## click-off-to-close box as the bag). `at` re-anchors a rebuild in place so
+## The equipped-item management popover — the same scrollable opaque
+## click-off-to-close box as before, now with codex-style subtabs (2026-07-09)
+## instead of one long stack: Info (stats + set bonuses) / Gems (REAL socket
+## squares + insert list) / Reforge (the gold bench). Unequip rides above the
+## tabs — it applies on every tab. `at` re-anchors a rebuild in place so
 ## socketing/reforging doesn't make the box hop to the cursor each time.
-func open_item_panel(item: Dictionary, at := Vector2(-1, -1)) -> void:
+func open_item_panel(item: Dictionary, at := Vector2(-1, -1), tab := "info") -> void:
 	if not root:
 		return
-	# Rebuild in place: a socket/reforge action (or the equipped popover's
-	# bench button) replaces an open popover — keep its spot so the box doesn't
-	# hop to the cursor each click.
+	# Rebuild in place: a socket/reforge action (or a subtab click) replaces an
+	# open popover — keep its spot so the box doesn't hop to the cursor.
 	if at.x < 0.0 and is_instance_valid(_popover_box):
 		at = _popover_box.position
 	var p: Player = game.player
 	var color: Color = Items.GRADE_COLOR[item["grade"]]
 	var vbox := _popover_frame(color)
 	var pop := _popover_box
+	# Drag a socketed gem OFF the box — anywhere into the dim — to unsocket it.
+	var ov_can := func(_pos: Vector2, data: Variant) -> bool:
+		return data is Dictionary and String(data.get("kind", "")) == "socketed_gem"
+	var ov_drop := func(_pos: Vector2, data: Variant) -> void:
+		game.player.remove_gem(data["item"], int(data["idx"]))
+		open_item_panel(item, Vector2(-1, -1), "gems")
+	detail_popover.set_drag_forwarding(Callable(), ov_can, ov_drop)
 	_popover_header(vbox, Art.icon_for(item), Items.title(item), color)
-	var d := _lbl(vbox, Items.describe(item, _awk(item)), 13, Color(color, 0.9))
-	d.custom_minimum_size = Vector2(440, 0)
 
-	# Everything below the header scrolls, so a fully-socketed S item with a
-	# long insert list + reforge bench can't overrun the box (_popover_settle
-	# caps the scroll height).
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(452, 0)
-	vbox.add_child(scroll)
-	var body := VBoxContainer.new()
-	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.custom_minimum_size = Vector2(440, 0)
-	body.add_theme_constant_override("separation", 6)
-	scroll.add_child(body)
+	var tabrow := HBoxContainer.new()
+	tabrow.add_theme_constant_override("separation", 10)
+	vbox.add_child(tabrow)
+	var slots: int = item.get("gem_slots", 0)
+	var gems_n: int = item.get("gems", []).size()
+	for spec in [["info", "Info"], ["gems", "Gems %d/%d" % [gems_n, slots]], ["reforge", "Reforge"]]:
+		var tid: String = spec[0]
+		_btn(tabrow, "  %s  " % spec[1], func() -> void: open_item_panel(item, Vector2(-1, -1), tid),
+			Color(0.95, 0.85, 0.5) if tab == tid else Color(0.6, 0.6, 0.6))
 
 	# Equipped items can be UNEQUIPPED back to the bag (leaving the slot
 	# empty) — not just swapped by equipping something else.
@@ -1169,8 +1167,33 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1)) -> void:
 				open_inventory()
 			else:
 				game.spawn_text(game.player.global_position + Vector2(0, -50), "Bag full!", Color(1, 0.6, 0.4))
-		_btn(body, "  ⇩  Unequip  (move to bag)  ", unequip_cb, Color(1.0, 0.8, 0.5))
+		_btn(vbox, "  ⇩  Unequip  (move to bag)  ", unequip_cb, Color(1.0, 0.8, 0.5))
 
+	# The tab body scrolls, so a fully-socketed S item with a long insert
+	# list can't overrun the box (_popover_settle caps the scroll height).
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(452, 0)
+	vbox.add_child(scroll)
+	var body := VBoxContainer.new()
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.custom_minimum_size = Vector2(440, 0)
+	body.add_theme_constant_override("separation", 6)
+	scroll.add_child(body)
+
+	match tab:
+		"gems": _item_gems_tab(body, item)
+		"reforge": _item_reforge_tab(body, item)
+		_: _item_info_tab(body, item)
+	await _popover_settle(pop, at, scroll, body)
+
+
+## Info tab: the full stat line + live set-bonus tiers.
+func _item_info_tab(body: VBoxContainer, item: Dictionary) -> void:
+	var p: Player = game.player
+	var d := _lbl(body, Items.describe(item, _awk(item)), 13, Color(Items.GRADE_COLOR[item["grade"]], 0.9))
+	d.custom_minimum_size = Vector2(440, 0)
+	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# Set bonus panel (S legendaries): which tiers are live given what's worn.
 	if String(item.get("grade", "")) == "S" and item.has("cls"):
 		var sd: Dictionary = Items.SET_BONUSES.get(String(item["cls"]), {})
@@ -1182,28 +1205,29 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1)) -> void:
 				_lbl(body, "   %spc %s  —  %s" % [tier, "✓ ACTIVE" if live else "inactive",
 					_stat_bonus_text(sd[tier])], 13, Color(0.6, 1.0, 0.6) if live else Color(0.6, 0.62, 0.68))
 
+
+## Gems tab: real socket squares (click a gem for its card, drag it out to
+## unsocket, drop a bag gem onto an empty one), then the insert-from-bag list.
+func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
+	var p: Player = game.player
 	var slots: int = item.get("gem_slots", 0)
 	var gems: Array = item.get("gems", [])
-	_lbl(body, "GEM SOCKETS (%d/%d filled)" % [gems.size(), slots], 16, Color(0.95, 0.85, 0.5))
-	var spec_cap: int = Items.special_slots(String(item.get("grade", "")))
-	if spec_cap > 0:
-		_lbl(body, "◆ %d special slot (Haste/CDR/Combo/Lifesteal/Greed/Dmg%%) + %d regular." % [
-			spec_cap, slots - spec_cap], 12, Color(0.78, 0.72, 0.98))
 	if slots == 0:
 		_lbl(body, "This item has no sockets — only B-grade gear and above can hold gems.", 13, Color(0.55, 0.55, 0.6))
-	for i in slots:
-		if i < gems.size():
-			var g: Dictionary = gems[i]
-			var idx := i
-			var rm_cb := func() -> void:
-				game.player.remove_gem(item, idx)
-				open_item_panel(item)
-			var rb := _btn(body, "Socket %d:  %s   ✕ remove (to bag)" % [i + 1, Items.gem_title(g)],
-				rm_cb, Items.gem_color(g))
-			rb.clip_text = true
-			rb.custom_minimum_size = Vector2(414, 0)
-		else:
-			_lbl(body, "Socket %d:  (empty)" % (i + 1), 13, Color(0.55, 0.55, 0.6))
+		return
+	var spec_cap: int = Items.special_slots(String(item.get("grade", "")))
+	if spec_cap > 0:
+		var spec_names: Array = []
+		for s in Balance.SPECIAL_GEM_STATS:
+			spec_names.append(Items.STAT_LABEL.get(s, s))
+		_lbl(body, "★ %d special slot (%s) + %d regular." % [
+			spec_cap, "/".join(spec_names), slots - spec_cap], 12, SPECIAL_SOCKET_COLOR)
+	var refresh := func() -> void: open_item_panel(item, Vector2(-1, -1), "gems")
+	var srow := HBoxContainer.new()
+	srow.add_theme_constant_override("separation", 6)
+	body.add_child(srow)
+	_socket_row(srow, item, refresh)
+	_lbl(body, "Click a gem for its card · drag it off the box to unsocket it.", 12, Color(0.55, 0.58, 0.66))
 
 	if slots > gems.size():
 		if p.gem_bag.is_empty():
@@ -1228,7 +1252,7 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1)) -> void:
 				if err == "":
 					var ins_cb := func() -> void:
 						game.player.embed_gem_into(item, g2)
-						open_item_panel(item)
+						open_item_panel(item, Vector2(-1, -1), "gems")
 					var ib := _btn(igrid, "%s  x%d — insert" % [Items.gem_title(g2), group["count"]], ins_cb, Items.gem_color(g2))
 					ib.clip_text = true
 					ib.custom_minimum_size = Vector2(414, 0)
@@ -1238,7 +1262,10 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1)) -> void:
 					db.clip_text = true
 					db.custom_minimum_size = Vector2(414, 0)
 
-	# --- reforge bench: gold-cost crafting on this item ---
+
+## Reforge tab: gold-cost crafting on this item.
+func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
+	var p: Player = game.player
 	_lbl(body, "REFORGE BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
 	var subs2: Dictionary = item.get("subs", {})
 	# S-gear reforges within its own class; everything else uses the wearer's.
@@ -1254,7 +1281,7 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1)) -> void:
 				Items.reforge_affixes(item, rcls, game.loot_rng)
 				game.player.recalc()
 				game.sfx("equip")
-				open_item_panel(item)
+				open_item_panel(item, Vector2(-1, -1), "reforge")
 		_btn(body, "Reroll ALL affixes  —  %d gold" % acost, affix_cb,
 			Color(0.7, 0.9, 1.0) if p.gold >= acost else Color(0.5, 0.5, 0.55))
 		for stat in subs2.keys():
@@ -1266,7 +1293,7 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1)) -> void:
 					Items.reforge_sub(item, s, game.loot_rng)
 					game.player.recalc()
 					game.sfx("equip")
-					open_item_panel(item)
+					open_item_panel(item, Vector2(-1, -1), "reforge")
 			_btn(body, "   Reroll %s value  —  %d gold" % [Items.STAT_LABEL.get(s, s), scost], sub_cb,
 				Color(0.85, 0.85, 0.9) if p.gold >= scost else Color(0.5, 0.5, 0.55))
 	if Items.can_add_socket(item):
@@ -1277,11 +1304,121 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1)) -> void:
 				Items.add_socket(item)
 				game.player.recalc()
 				game.sfx("chest")
-				open_item_panel(item)
+				open_item_panel(item, Vector2(-1, -1), "reforge")
 		_btn(body, "Add gem socket  —  %d gold" % ccost, sock_cb,
 			Color(0.6, 1.0, 0.6) if p.gold >= ccost else Color(0.5, 0.5, 0.55))
 	_lbl(body, "Your gold: %d" % p.gold, 13, Color(1.0, 0.85, 0.35))
-	await _popover_settle(pop, at, scroll, body)
+
+
+## The full socket row for an item: regular squares first, then the SPECIAL
+## square(s) (A+ gear, one per item) marked in violet. The gems array is
+## unordered — sockets are TYPED, not positional — so the row re-buckets
+## what's socketed by type and remembers each gem's real array index.
+func _socket_row(row: Control, item: Dictionary, refresh: Callable) -> void:
+	var slots: int = item.get("gem_slots", 0)
+	var spec_cap: int = Items.special_slots(String(item.get("grade", "")))
+	var gems: Array = item.get("gems", [])
+	var reg_idx: Array = []
+	var spec_idx: Array = []
+	for i in gems.size():
+		if String(gems[i]["stat"]) in Balance.SPECIAL_GEM_STATS:
+			spec_idx.append(i)
+		else:
+			reg_idx.append(i)
+	for k in slots - spec_cap:
+		_socket_square(row, item, int(reg_idx[k]) if k < reg_idx.size() else -1, false, refresh)
+	for k in spec_cap:
+		_socket_square(row, item, int(spec_idx[k]) if k < spec_idx.size() else -1, true, refresh)
+
+
+const SPECIAL_SOCKET_COLOR := Color(0.78, 0.72, 0.98)  # violet — the A+ special slot
+
+## One REAL gem-socket square (2026-07-09, replacing the ◆◇ glyphs): filled
+## shows the actual gem — click for the same detail card a bag gem gets, drag
+## it out to unsocket; empty is a drop target for a bag gem and clicks through
+## to the item panel's Gems tab. `gem_idx` is the gem's index in item["gems"]
+## (-1 = empty). A `special` square keeps a violet border whatever it holds,
+## and only accepts special gems (regular squares refuse them right back).
+func _socket_square(row: Control, item: Dictionary, gem_idx: int, special: bool, refresh: Callable) -> void:
+	var gems: Array = item.get("gems", [])
+	var filled: bool = gem_idx >= 0
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(40, 40)
+	b.focus_mode = Control.FOCUS_NONE
+	# The border says what the SLOT is (violet = special), not what's in it —
+	# the gem's own icon already carries its color.
+	var col: Color = SPECIAL_SOCKET_COLOR if special \
+		else (Items.gem_color(gems[gem_idx]) if filled else Color(0.4, 0.42, 0.5))
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.13, 0.1, 0.18, 0.92) if special else Color(0.09, 0.09, 0.12, 0.92)
+	sb.border_color = Color(col, 0.9)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(4)
+	b.add_theme_stylebox_override("normal", sb)
+	var sbh: StyleBoxFlat = sb.duplicate()
+	sbh.bg_color = Color(0.2, 0.17, 0.28, 0.95) if special else Color(0.17, 0.17, 0.23, 0.95)
+	b.add_theme_stylebox_override("hover", sbh)
+	b.add_theme_stylebox_override("pressed", sbh)
+	row.add_child(b)
+	# Name the special stats from the data, not a hardcoded list — new special
+	# gems (e.g. Tenacity, 2026-07-09) keep the tooltip honest for free.
+	var spec_names: Array = []
+	for s in Balance.SPECIAL_GEM_STATS:
+		spec_names.append(Items.STAT_LABEL.get(s, s))
+	var kind_txt := ("SPECIAL socket (%s only)" % "/".join(spec_names)) if special else "socket"
+	if filled:
+		var g: Dictionary = gems[gem_idx]
+		b.icon = Art.gem_icon(Items.gem_color(g), int(g["lvl"]))
+		b.expand_icon = true
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.tooltip_text = "%s — in the %s\nClick for its card · drag to the bag to unsocket." % [Items.gem_title(g), kind_txt]
+		b.pressed.connect(func() -> void: _open_socketed_gem_popover(item, gem_idx, refresh))
+		var drag_fn := func(_pos: Vector2) -> Variant:
+			b.set_drag_preview(_drag_preview(Art.gem_icon(Items.gem_color(g), int(g["lvl"]))))
+			return {"kind": "socketed_gem", "item": item, "idx": gem_idx}
+		b.set_drag_forwarding(drag_fn, Callable(), Callable())
+	else:
+		b.text = "★" if special else "◇"
+		b.add_theme_font_size_override("font_size", 16)
+		b.add_theme_color_override("font_color", Color(SPECIAL_SOCKET_COLOR, 0.7) if special else Color(0.45, 0.48, 0.56))
+		b.tooltip_text = "Empty %s — drag a matching gem from the bag onto it." % kind_txt
+		b.pressed.connect(func() -> void: open_item_panel(item, Vector2(-1, -1), "gems"))
+		var can_fn := func(_pos: Vector2, data: Variant) -> bool:
+			if not (data is Dictionary and String(data.get("kind", "")) == "bag_gem"):
+				return false
+			var g2: Dictionary = data["gem"]
+			if (String(g2["stat"]) in Balance.SPECIAL_GEM_STATS) != special:
+				return false  # the square's type must match the gem's
+			return game.player.gem_socket_error(item, g2) == ""
+		var drop_fn := func(_pos: Vector2, data: Variant) -> void:
+			game.player.embed_gem_into(item, data["gem"])
+			refresh.call()
+		b.set_drag_forwarding(Callable(), can_fn, drop_fn)
+
+
+## A socketed gem's detail card — the bag gem's popover, adapted: same
+## header and info, with Remove (back to bag) in place of drop/synthesize.
+func _open_socketed_gem_popover(item: Dictionary, idx: int, refresh: Callable) -> void:
+	var gems: Array = item.get("gems", [])
+	if idx < 0 or idx >= gems.size():
+		return
+	var g: Dictionary = gems[idx]
+	var info := "Socketed in %s.\n\nRemove it and it returns to your bag\n(you can also just drag it there)." % Items.title(item)
+	var remove_cb := func() -> void:
+		game.player.remove_gem(item, idx)
+		refresh.call()
+	_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g),
+		Items.gem_color(g), info, [["  ⇩  Remove  (back to bag)  ", Color(1.0, 0.8, 0.5), remove_cb]])
+
+
+## A floating icon that follows the cursor during a gem drag.
+func _drag_preview(icon: Texture2D) -> Control:
+	var t := TextureRect.new()
+	t.texture = icon
+	t.custom_minimum_size = Vector2(40, 40)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	return t
 
 
 # -------------------------------------------------------------- skill tree ---
@@ -1511,7 +1648,8 @@ func open_theme_picker(slot: String) -> void:
 
 # -------------------------------------------------------------------- shop ---
 
-func open_shop(zone: int) -> void:
+## `tab` empty = keep the current tab (so buy/sell actions refresh in place).
+func open_shop(zone: int, tab := "") -> void:
 	shop_zone = zone
 	# Each merchant keeps their stock until you buy it out.
 	if not game.shop_stock.has(zone):
@@ -1542,6 +1680,10 @@ func open_shop(zone: int) -> void:
 			bstock.append(Items.make_bag(Balance.roll_bag_grade(game.chapter_id, brng)))
 		game.shop_bags[zone] = bstock
 
+	if tab == "":
+		tab = shop_tab
+	shop_tab = tab
+
 	var p: Player = game.player
 	var vbox := _open("Merchant — you have %d gold" % p.gold, 1120, 600)
 	current = "shop"
@@ -1554,26 +1696,32 @@ func open_shop(zone: int) -> void:
 		_:
 			_lbl(vbox, "\"Ah, a customer! Dangerous roads make good business.\"", 14, Color(0.75, 0.7, 0.6))
 
-	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 26)
-	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(hbox)
+	# Codex-style tabs: Buy / Sell, each a full-width view. They used to sit
+	# side-by-side in two columns, which cramped both lists (2026-07-09).
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 12)
+	vbox.add_child(tabs)
+	_btn(tabs, "  Buy  ", func() -> void: open_shop(zone, "buy"),
+		Color(0.95, 0.85, 0.5) if tab == "buy" else Color(0.6, 0.6, 0.6))
+	_btn(tabs, "  Sell  ", func() -> void: open_shop(zone, "sell"),
+		Color(0.95, 0.85, 0.5) if tab == "sell" else Color(0.6, 0.6, 0.6))
 
-	# ------------------------------------------------------ BUY column ---
-	# The buy list scrolls (like SELL): the full shelf — gear, upgrades,
-	# consumables, gems, bags, gamble — is taller than the panel and otherwise
-	# spills past the bottom edge into the HUD/quickbar.
-	var buy_col := VBoxContainer.new()
-	buy_col.custom_minimum_size = Vector2(640, 0)
-	buy_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	buy_col.add_theme_constant_override("separation", 6)
-	hbox.add_child(buy_col)
-	_lbl(buy_col, "BUY", 16, Color(0.95, 0.85, 0.5))
+	if tab == "sell":
+		_shop_sell(vbox, zone, p)
+	else:
+		_shop_buy(vbox, zone, p)
+	_hint(vbox)
+
+
+## Buy tab (full width): rolled gear + upgrades, consumables, then the
+## miscellaneous shelf (gems, bags, gamble). Scrolls — the full shelf is
+## taller than the panel and otherwise spills into the HUD/quickbar.
+func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	var buy_scroll := ScrollContainer.new()
 	buy_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	buy_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	buy_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	buy_col.add_child(buy_scroll)
+	vbox.add_child(buy_scroll)
 	var buy := VBoxContainer.new()
 	buy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	buy.add_theme_constant_override("separation", 6)
@@ -1731,19 +1879,17 @@ func open_shop(zone: int) -> void:
 	gb.clip_text = true
 	gb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	# ----------------------------------------------------- SELL column ---
-	var sell := VBoxContainer.new()
-	sell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sell.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	sell.add_theme_constant_override("separation", 6)
-	hbox.add_child(sell)
-	_lbl(sell, "SELL — buy-back is %d%% of market" % int(Balance.MERCHANT_SELL_FRACTION * 100),
-		16, Color(0.95, 0.85, 0.5))
+
+## Sell tab (full width): gear (gems stripped back into the bag first),
+## loose gems, merchant-stocked consumables, then spare health potions.
+func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
+	_lbl(vbox, "Buy-back is %d%% of market." % int(Balance.MERCHANT_SELL_FRACTION * 100),
+		13, Color(0.7, 0.72, 0.78))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	sell.add_child(scroll)
+	vbox.add_child(scroll)
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
@@ -1840,7 +1986,6 @@ func open_shop(zone: int) -> void:
 
 	if not sold_any:
 		_lbl(list, "Nothing to sell.", 13, Color(0.5, 0.5, 0.5))
-	_hint(vbox)
 
 
 # --------------------------------------------------------------- map (M) ---
@@ -2079,8 +2224,9 @@ func open_stash() -> void:
 
 
 ## Debug panel (F1, only when launched via dev_mode.bat) — ui/dev_panel.gd.
-func open_dev() -> void:
-	UIDevPanel.open(self)
+## `tab` empty keeps the current subtab (so in-panel refreshes stay put).
+func open_dev(tab := "") -> void:
+	UIDevPanel.open(self, tab)
 
 
 # ---------------------------------------------------------------- keybinds ---

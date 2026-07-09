@@ -2,14 +2,35 @@ class_name UIDevPanel
 ## The F1 debug panel (dev_mode.bat only), split out of menus.gd.
 ## Static builders: `m` owns the scaffolding and dev_boss_mode state.
 
+## The subtabs, in bar order: id + label. The long flat scroll was too
+## clustered, so it's split into codex-style subtabs (2026-07-09).
+const TABS := [
+	["character", "Character"],
+	["items", "Items & Gems"],
+	["econ", "Progression"],
+	["world", "World"],
+	["audio", "Audio"],
+]
+
 ## Debug panel (F1, only when launched via dev_mode.bat). Lets the
 ## tester change class/level/gear/terrain/bosses instantly instead of
-## replaying from scratch.
-static func open(m: Menus) -> void:
-	var p: Player = m.game.player
+## replaying from scratch. `tab` empty = keep the current subtab.
+static func open(m: Menus, tab := "") -> void:
+	if tab == "":
+		tab = m.dev_tab
+	m.dev_tab = tab
 	var vbox := m._open("DEV PANEL — room %d/%d: %s (%s)" % [m.game.cur_room, m.game.zone_count,
 		m.game.zones[m.game.cur_room]["name"], m.game.terrain_by_zone[m.game.cur_room]], 1160, 660)
 	m.current = "dev"
+
+	# Codex-style subtab row: each button re-opens the panel on its tab.
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 12)
+	vbox.add_child(tabs)
+	for t in TABS:
+		var tid: String = t[0]
+		m._btn(tabs, "  %s  " % t[1], func() -> void: m.open_dev(tid),
+			Color(0.95, 0.85, 0.5) if tab == tid else Color(0.6, 0.6, 0.6))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -21,6 +42,17 @@ static func open(m: Menus) -> void:
 	list.add_theme_constant_override("separation", 6)
 	scroll.add_child(list)
 
+	match tab:
+		"items": _tab_items(m, list)
+		"econ": _tab_econ(m, list)
+		"world": _tab_world(m, list)
+		"audio": _tab_audio(m, list)
+		_: _tab_character(m, list)
+	m._hint(vbox, "ESC / F1 to close")
+
+
+## Class, level, gold, points, god mode, heal, refunds, death test.
+static func _tab_character(m: Menus, list: VBoxContainer) -> void:
 	# ------------------------------------------------------- character ---
 	_section(m, list, "CHARACTER")
 	var row1 := _flow(list)
@@ -96,16 +128,9 @@ static func open(m: Menus) -> void:
 			_regear_for_class(m)
 			m.open_dev(), Color(0.5, 1.0, 0.5) if cls_active else Color(0.6, 0.9, 1.0))
 
-	# ------------------------------------------------- last fight report ---
-	# The benchmark line the last boss roster printed (TTK / dps / damage
-	# taken / potions / wipes). On screen it floats for 5s then fades;
-	# here it stays put, and every kill also mails it as a victory letter.
-	_section(m, list, "LAST BOSS FIGHT")
-	var report: String = m.game.last_fight_report
-	var rlbl := m._lbl(list, report if report != "" else "No fight recorded yet — the report lands when a boss roster falls.",
-		14, Color(0.85, 0.9, 1.0) if report != "" else Color(0.6, 0.62, 0.68))
-	rlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+## Dailies, bounties, vault, achievements, records, economy levers.
+static func _tab_econ(m: Menus, list: VBoxContainer) -> void:
 	# --------------------------------------------- progression & economy ---
 	# Levers for the account/progression systems (dailies, bounties, vault,
 	# achievements, records) and the economy (consumables, gambling) so they
@@ -168,6 +193,9 @@ static func open(m: Menus) -> void:
 		m.game.menus.open_daily(), Color(1.0, 0.88, 0.45))
 	m._btn(mrow3, "→ Open Bag (gems/reforge)", func() -> void: m.game.menus.open_inventory(), Color(0.9, 0.9, 0.95))
 
+
+## Full gear sets, gems by the crate, bags, mail, S-passive awaken.
+static func _tab_items(m: Menus, list: VBoxContainer) -> void:
 	# ------------------------------------------------------------ items ---
 	_section(m, list, "ITEMS & GEMS")
 	var row3 := _flow(list)
@@ -225,6 +253,19 @@ static func open(m: Menus) -> void:
 		m._btn(row3, "+Bag %s" % bg, func() -> void:
 			m.game.player.acquire_bag(Items.make_bag(bg))  # append (keeps best MAX_BAGS)
 			m.open_dev(), Items.GRADE_COLOR[bg])
+
+
+## Rooms, monsters, dummies, elites, bosses, terrain, last fight report.
+static func _tab_world(m: Menus, list: VBoxContainer) -> void:
+	# ------------------------------------------------- last fight report ---
+	# The benchmark line the last boss roster printed (TTK / dps / damage
+	# taken / potions / wipes). On screen it floats for 5s then fades;
+	# here it stays put, and every kill also mails it as a victory letter.
+	_section(m, list, "LAST BOSS FIGHT")
+	var report: String = m.game.last_fight_report
+	var rlbl := m._lbl(list, report if report != "" else "No fight recorded yet — the report lands when a boss roster falls.",
+		14, Color(0.85, 0.9, 1.0) if report != "" else Color(0.6, 0.62, 0.68))
+	rlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# ------------------------------------------------------------ world ---
 	_section(m, list, "WORLD (rooms of this chapter's graph)")
@@ -325,6 +366,19 @@ static func open(m: Menus) -> void:
 			b.take_damage(9999999.0)
 		m.open_dev())
 
+	# --------------------------------------------------------- terrains ---
+	_section(m, list, "TERRAIN (applies to the room you're standing in)")
+	var trow := _flow(list)
+	for tid in Terrains.DATA:
+		var t: String = tid
+		var active: bool = m.game.terrain_by_zone[m.game.cur_room] == t
+		m._btn(trow, ("● " if active else "") + Terrains.DATA[t]["name"], func() -> void:
+			m.game.apply_terrain(m.game.cur_room, t)
+			m.close(), Color(0.5, 1.0, 0.5) if active else Color(1, 1, 1))
+
+
+## Every music track / SFX, plus the purchased-library audition browsers.
+static func _tab_audio(m: Menus, list: VBoxContainer) -> void:
 	# ------------------------------------------------------------ audio ---
 	_section(m, list, "AUDIO (browse every track and sound in the game)")
 	var arow := HBoxContainer.new()
@@ -383,17 +437,6 @@ static func open(m: Menus) -> void:
 				m.game.add_child(sp)
 				sp.finished.connect(sp.queue_free)
 				sp.play())
-
-	# --------------------------------------------------------- terrains ---
-	_section(m, list, "TERRAIN (applies to the room you're standing in)")
-	var trow := _flow(list)
-	for tid in Terrains.DATA:
-		var t: String = tid
-		var active: bool = m.game.terrain_by_zone[m.game.cur_room] == t
-		m._btn(trow, ("● " if active else "") + Terrains.DATA[t]["name"], func() -> void:
-			m.game.apply_terrain(m.game.cur_room, t)
-			m.close(), Color(0.5, 1.0, 0.5) if active else Color(1, 1, 1))
-	m._hint(vbox, "ESC / F1 to close")
 
 
 ## Every matching file under a library dir (recursive). Each entry:

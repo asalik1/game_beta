@@ -916,6 +916,14 @@ func _run_systems() -> void:
 	await _frames(2)
 	if game.menus.current != "detail":
 		return _fail("item panel popover did not open")
+	# All three subtabs build (Info/Gems/Reforge, 2026-07-09) — Gems renders
+	# the real socket squares around the crit gem socketed above.
+	game.menus.open_item_panel(s_wpn, Vector2(-1, -1), "gems")
+	await _frames(2)
+	game.menus.open_item_panel(s_wpn, Vector2(-1, -1), "reforge")
+	await _frames(2)
+	if game.menus.current != "detail":
+		return _fail("item panel subtabs did not build")
 	game.menus.close()
 	await _frames(2)
 	for i in 3:
@@ -1136,6 +1144,12 @@ func _run_systems() -> void:
 	await _frames(2)
 	if not game.menus.is_open() or game.shop_stock[0].size() != 3:
 		return _fail("shop did not open with stock")
+	# The Sell tab builds too (full-width Buy/Sell tabs, 2026-07-09).
+	game.menus.open_shop(0, "sell")
+	await _frames(2)
+	if not game.menus.is_open() or game.menus.shop_tab != "sell":
+		return _fail("shop sell tab did not open")
+	game.menus.shop_tab = "buy"  # restore the default for later shop opens
 	game.menus.open_codex("gear")
 	await _frames(2)
 	game.menus.open_codex("terrains")

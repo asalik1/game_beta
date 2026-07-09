@@ -721,7 +721,9 @@ static func passive_label(item: Dictionary, awakened := false) -> String:
 
 ## `awakened` (the item's class flag s_awakened_<cls>) governs how a dormant
 ## legendary's passive reads: pass game.get_flag(...) from player-facing UI.
-static func describe(item: Dictionary, awakened := false) -> String:
+## `show_sockets` off drops the ◆◇ glyph tail — for screens that render the
+## REAL socket squares right below the text (inventory equipped column).
+static func describe(item: Dictionary, awakened := false, show_sockets := true) -> String:
 	var bits: Array = []
 	var stats := stats_of(item)
 	for stat in stats:
@@ -734,7 +736,7 @@ static func describe(item: Dictionary, awakened := false) -> String:
 	if item.has("passive"):
 		out += "  " + passive_label(item, awakened)
 	var slots: int = item.get("gem_slots", 0)
-	if slots > 0:
+	if slots > 0 and show_sockets:
 		var used: int = item.get("gems", []).size()
 		out += "  " + "◆".repeat(used) + "◇".repeat(slots - used)
 	return out
