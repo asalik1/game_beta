@@ -757,7 +757,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var pot_stacks: Array = []
 		if p.potions > 0:
 			pot_stacks.append([p.potions, "", Color(1.0, 0.5, 0.5),
-				"Mends 25%% of your MISSING health. Drink with [%s] in the field (per-room budget); sell spare stock at any merchant. Each potion rides in your bags — one slot per potion." % OS.get_keycode_string(game.binds["potion"])])
+				"Mends 15%% of your MISSING health. Drink with [%s] in the field (per-room budget); sell spare stock at any merchant. Each potion rides in your bags — one slot per potion." % OS.get_keycode_string(game.binds["potion"])])
 		if p.potions_free > 0:
 			pot_stacks.append([p.potions_free, " (chapter gift)", Color(1.0, 0.78, 0.45),
 				"The chapter's free teaching potion — drunk FIRST, never sellable, and it EXPIRES the moment you leave this chapter. It still takes a bag slot while you hold it."])
@@ -769,14 +769,44 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			_bag_slot(grid, Art.tex("potion"), ("x%d" % pn) if pn > 1 else "", pcol,
 				func() -> void:
 					var info := pdesc
-					info += "\n\nLoadout: %d/%d slots assigned to other potions — every UNASSIGNED slot drinks as HEALTH. [%s] cycles potions in the field." % [
-						p.potion_rotation.size(), p.potion_slot_cap(),
+					# THE ROTATION HUB (2026-07-09): clicking the health potion is where
+					# you PLAN the room loadout — slot-by-slot readout + an action per
+					# ownable rotation type, so the editor exists even on a fresh
+					# character (the old panel showed NO actions until the rotation was
+					# already non-empty — exactly the "no way to set it up" report).
+					var comp: Array = []
+					for rid in p.potion_rotation:
+						comp.append(p.potion_display_name(String(rid)))
+					for _h in range(p.potion_slot_cap() - p.potion_rotation.size()):
+						comp.append("Health")
+					info += "\n\nROOM LOADOUT (%d slots): %s — unassigned slots drink as HEALTH. [%s] cycles in the field." % [
+						p.potion_slot_cap(), " | ".join(comp),
 						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]
 					var actions: Array = []
-					if not p.potion_rotation.is_empty():
-						actions.append(["  ＋  Plan a slot back to health  ", Color(0.7, 0.9, 1.0),
+					for rid in Items.ROTATION_POTIONS:
+						var rid_c := String(rid)
+						var owned := 0
+						for c in p.consumables:
+							if String(c.get("id", "")) == rid_c:
+								owned += 1
+						if owned <= 0:
+							continue
+						var in_rot: int = p.potion_rotation.count(rid_c)
+						actions.append(["  ＋  Slot %s  (own x%d%s)  " % [p.potion_display_name(rid_c), owned,
+								(", slotted x%d" % in_rot) if in_rot > 0 else ""], Color(0.7, 0.9, 1.0),
 							func() -> void:
-								game.player.loadout_add("health")
+								game.player.loadout_add(rid_c)
+								open_inventory("gear", cat)])
+						if in_rot > 0:
+							actions.append(["  －  Unslot %s  " % p.potion_display_name(rid_c), Color(0.7, 0.82, 0.95),
+								func() -> void:
+									game.player.loadout_remove(rid_c)
+									open_inventory("gear", cat)])
+					if not p.potion_rotation.is_empty():
+						actions.append(["  ⟲  All slots back to health  ", Color(0.6, 1.0, 0.8),
+							func() -> void:
+								game.player.potion_rotation.clear()
+								game.player.active_potion = "health"
 								open_inventory("gear", cat)])
 					_open_detail_popover(Art.tex("potion"), "Health Potion%s  x%d" % [psuf, pn],
 						pcol, info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
