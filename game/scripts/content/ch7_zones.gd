@@ -48,10 +48,10 @@ const CHAPTER_ZONES := {
 		{
 			"name": "The Broken Weald", "terrain": "storm", "type": "combat",
 			"enemies": [
-				["storm_harrier", 450, 320, 0, 38], ["storm_harrier", 570, 250, 0, 38],
+				["storm_harrier", 450, 320, 0, 38], ["wildkin_ranger", 570, 250, 0, 38, 15],
 				["vow_sentinel", 1350, 850, 1], ["vow_sentinel", 1470, 780, 1], ["vow_sentinel", 1420, 950, 1],
 				["storm_harrier", 1700, 450, 2, 38], ["storm_harrier", 1820, 560, 2, 38],
-				["vow_sentinel", 1000, 950, 3], ["vow_sentinel", 1130, 880, 3],
+				["beastkin_howler", 1000, 950, 3, 38, 15], ["stormcult", 1130, 880, 3, 38, 15],
 			],
 			"boss": "",
 		},
@@ -112,8 +112,8 @@ const CHAPTER_ZONES := {
 		{
 			"name": "The Screaming Heights", "terrain": "void", "type": "combat",
 			"enemies": [
-				["void_shade", 480, 300, 0, 40], ["void_shade", 600, 240, 0, 40], ["void_shade", 540, 430, 0, 40],
-				["void_shade", 660, 340, 0, 40], ["void_shade", 720, 250, 0, 40],
+				["void_shade", 480, 300, 0, 40], ["stormcult", 600, 240, 0, 40, 18], ["void_shade", 540, 430, 0, 40],
+				["void_shade", 660, 340, 0, 40], ["static_caller", 720, 250, 0, 40],
 				["static_caller", 1350, 880, 1, 40], ["static_caller", 1470, 800, 1, 40],
 				["static_caller", 1410, 980, 1, 40], ["static_caller", 1530, 900, 1, 40], ["static_caller", 1590, 810, 1, 40],
 				["vow_sentinel", 1000, 620, 3, 40], ["vow_sentinel", 1130, 550, 3, 40],

@@ -46,10 +46,10 @@ const CHAPTER_ZONES := {
 		{
 			"name": "The Drowned Meadow", "terrain": "spore", "type": "combat",
 			"enemies": [
-				["bog_lurker", 450, 320, 0, 34], ["bog_lurker", 570, 250, 0, 34], ["bog_lurker", 510, 440, 0, 34],
+				["bog_lurker", 450, 320, 0, 34], ["bog_lurker", 570, 250, 0, 34], ["vale_mourner", 510, 440, 0, 34, 15],
 				["root_shambler", 1350, 850, 1], ["root_shambler", 1470, 780, 1],
 				["bog_lurker", 1700, 450, 2, 34], ["bog_lurker", 1820, 560, 2, 34],
-				["root_shambler", 1000, 950, 3], ["root_shambler", 1130, 880, 3],
+				["wildkin_ranger", 1000, 950, 3, 34, 14], ["wildkin_ranger", 1130, 880, 3, 34, 14],
 			],
 			"boss": "",
 		},
@@ -121,8 +121,8 @@ const CHAPTER_ZONES := {
 		{
 			"name": "The Root Vault", "terrain": "bog", "type": "combat",
 			"enemies": [
-				["root_shambler", 480, 300, 0, 36], ["root_shambler", 600, 240, 0, 36], ["root_shambler", 540, 430, 0, 36],
-				["root_shambler", 660, 340, 0, 36], ["root_shambler", 720, 250, 0, 36],
+				["root_shambler", 480, 300, 0, 36], ["wildkin_ranger", 600, 240, 0, 36, 18], ["root_shambler", 540, 430, 0, 36],
+				["root_shambler", 660, 340, 0, 36], ["vale_mourner", 720, 250, 0, 36, 18],
 				["bloom_acolyte", 1350, 880, 1, 36], ["bloom_acolyte", 1470, 800, 1, 36],
 				["bloom_acolyte", 1410, 980, 1, 36], ["bloom_acolyte", 1530, 900, 1, 36], ["bloom_acolyte", 1590, 810, 1, 36],
 				["grove_horror", 1750, 420, 2, 36], ["grove_horror", 1850, 530, 2, 36],

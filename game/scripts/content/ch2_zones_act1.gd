@@ -39,9 +39,9 @@ const CHAPTER_ZONES := {
 			"decor": ["flower", "pebble", "bones"],
 			"merchant": [540, 170],
 			"enemies": [
-				["beastkin_raider", 320, 200], ["beastkin_raider", 450, 520], ["beastkin_raider", 600, 340],
+				["beastkin_raider", 320, 200], ["wildkin_ranger", 450, 520], ["beastkin_raider", 600, 340],
 				["beastkin_howler", 700, 150], ["beastkin_howler", 860, 480],
-				["blightwolf", 540, 610], ["blightwolf", 780, 300], ["beastkin_raider", 950, 560],
+				["blightwolf", 540, 610], ["beastkin_howler", 780, 300], ["wildkin_ranger", 950, 560],
 			],
 			"boss": "stormwarden",
 			"boss_level": 8,
@@ -96,7 +96,14 @@ const ENEMIES := {
 		"level": 7, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["channel_heal"]},
 	"beastkin_howler": {"name": "Wildfang Howler", "sprite": "orc_rogue", "hp": 74.0, "dmg": 16.0, "speed": 150.0, "xp": 38, "gold": 14, "ranged": true, "scale": 3.3,
 		"physres": 8.0, "magres": 10.0, "eva": 0.08, "critres": 0.0, "dmg_type": "magic",
-		"level": 8, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["pounce"]},
+		"level": 8, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["pounce", "skirmish"]},
+	# The cross-chapter SKIRMISHER (2026-07-09 mob-distribution pass): a ranged
+	# mob that actually kites (full-speed strafing retreat — corner it). Like
+	# the cultist, it travels: later chapters import it at level overrides to
+	# build ranged-majority rooms without minting a new kind per chapter.
+	"wildkin_ranger": {"name": "Wildkin Ranger", "sprite": "elf_ranger", "hp": 66.0, "dmg": 17.0, "speed": 185.0, "xp": 40, "gold": 14, "ranged": true, "scale": 3.2,
+		"physres": 8.0, "magres": 8.0, "eva": 0.10, "critres": 0.0, "dmg_type": "phys",
+		"level": 8, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["skirmish"]},
 }
 
 const QUESTS := {

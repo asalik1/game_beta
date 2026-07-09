@@ -410,6 +410,11 @@ func _spawn_room_enemies(i: int) -> void:
 	for spawn in zones[i].get("enemies", []):
 		var lvl := int(spawn[4]) if spawn.size() > 4 else -1
 		var pack := int(spawn[3]) if spawn.size() > 3 else 0
+		# Optional 6th param: AUTHORED XP for this spawn. Cross-chapter ranged
+		# IMPORTS (2026-07-09 distribution pass) ride reward_m off a LOW base
+		# level, overpaying 3-4x vs the chapter natives they stand beside —
+		# this pins them back onto the chapter's authored XP budget.
+		var xp_override := int(spawn[5]) if spawn.size() > 5 else -1
 		var count := 1
 		if densify and drng.randf() < Balance.MOB_DENSITY_EXTRA:
 			count = 2
@@ -418,6 +423,8 @@ func _spawn_room_enemies(i: int) -> void:
 			var e := Enemy.make(self, spawn[0], room_pos(i, spawn[1], spawn[2]) + jit, lvl)
 			e.zone_idx = i
 			e.pack_id = pack
+			if xp_override >= 0:
+				e.xp_value = xp_override
 			zone_alive[i] = zone_alive.get(i, 0) + 1
 			add_enemy(e)
 			spawned.append(e)

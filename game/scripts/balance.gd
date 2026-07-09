@@ -203,7 +203,7 @@ const SHOP_GEM_RANGE := {1: [1, 1], 2: [2, 4], 3: [5, 7]}
 const BOSS_FIRST_CLEAR_GEM_BONUS := 1                   # first-clear catch-up bundle rolls +1 level
 # Gem gating by chapter (2026-07-09): REGULAR gems start at ch4 (ch1-3 teach the
 # gear tiers first, undiluted); SPECIAL-stat gems (Haste/CDR/Combo/Lifesteal/
-# Greed/Dmg%) start at ch6 — the same chapter A-grade gear (with its special
+# Tenacity/Dmg%) start at ch6 — the same chapter A-grade gear (with its special
 # slot) begins dropping, so a special gem is socketable the moment it appears.
 const REGULAR_GEM_START_CH := 4
 const SPECIAL_GEM_START_CH := 6
@@ -524,6 +524,14 @@ const MOB_REFLECT_TIME := 1.8
 const MOB_REFLECT_FRAC := 0.5
 const MOB_SOW_EVERY := 0.45
 const MOB_SOW_LIFE := 3.5
+# skirmish (2026-07-09 mob-distribution pass): a ranged mob that actually
+# KITES — full-speed backpedal with a strafing arc inside KEEP, advances past
+# FAR, holds and fires in the band between. Regular ranged mobs shuffle at
+# 0.8x inside 200px, which a 250-speed player just walks down; a skirmisher
+# needs chasing into a corner (cornering it is the counterplay).
+const MOB_SKIRMISH_KEEP := 280.0
+const MOB_SKIRMISH_FAR := 400.0
+const MOB_SKIRMISH_STRAFE := 0.45   # orthogonal drift while backpedaling (arcs, not lines)
 # frost_aura / snare (denial)
 const MOB_AURA_RADIUS := 170.0
 const MOB_FROST_SLOW := 0.6
@@ -596,8 +604,8 @@ static func gem_lv2_chance(level: int) -> float:
 # (Act loot ceilings retired 2026-07-09 — the per-chapter band tables above own
 # the ceiling now; game.loot_cap() reads Balance.chapter_gear_ceiling.)
 
-# Anti-degeneracy stat caps (player-designed, 2026-07-06): the four
-# SPECIAL stats — Haste, Lifesteal, Combo, Greed — are GEM-ONLY (never
+# Anti-degeneracy stat caps (player-designed, 2026-07-06): the
+# SPECIAL stats — Haste, Lifesteal, Combo, Tenacity, Dmg% — are GEM-ONLY (never
 # on gear; gems are the deliberate gateway to off-build stats) and each
 # item sockets at most ONE special gem.
 #
@@ -676,7 +684,7 @@ const ELITE_TOME_CHANCE := 0.15          # Palimpsest of the Path (skill tree re
 const ELITE_BAG_CHANCE := 0.18           # rolled only when neither reset dropped
 
 # -------------------------------------------------------------- mob loot ---
-# Chance-based chest drops from trash (Greed above 30% nudges these up).
+# Chance-based chest drops from trash (Greed nudges these up from its first point).
 const MOB_SILVER_CHEST_CHANCE := 0.04
 const MOB_WOOD_CHEST_CHANCE := 0.18
 

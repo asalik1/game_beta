@@ -24,7 +24,7 @@ const CHAPTER_ZONES := {
 			"merchant": [660, 560],
 			"enemies": [
 				["frost_husk", 320, 220], ["frost_husk", 470, 530], ["frost_husk", 640, 180],
-				["duneprowler", 560, 600], ["sun_bleached", 760, 340],
+				["duneprowler", 560, 600], ["null_acolyte", 760, 340, 0, 13, 48],
 				["frost_husk", 880, 520], ["null_acolyte", 980, 220],
 			],
 			"boss": "",
@@ -53,7 +53,7 @@ const CHAPTER_ZONES := {
 			"merchant": [700, 540],
 			"enemies": [
 				["null_acolyte", 320, 220], ["null_acolyte", 480, 540], ["void_husk", 640, 300],
-				["frost_husk", 580, 610], ["null_acolyte", 780, 170],
+				["null_acolyte", 580, 610, 0, 13, 55], ["null_acolyte", 780, 170],
 				["void_husk", 900, 480],
 			],
 			"boss": "",

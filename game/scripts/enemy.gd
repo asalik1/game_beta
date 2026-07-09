@@ -93,6 +93,7 @@ var crush_t := 0.0     # recently displaced hard: void hits bite (crush window)
 # status, hazards, shields, displacement). Behavior below; per-chapter
 # escalation in the ENEMIES "traits" fields.
 var traits := {}       # trait name -> true
+var strafe_sign := 1.0 # skirmish: which way the retreat arcs (rolled at setup)
 # pounce (overshoot gap-closer)
 var pounce_cd := 0.0
 var pounce_time := 0.0
@@ -135,6 +136,7 @@ const TRAIT_DESC := {
 	"spawner": "Broodmother — sprouts fresh spawn until you cut her down.",
 	"tether":  "Tethered — linked to its twin; the bond BURNS you, and one dies but the bond revives it unless BOTH fall together.",
 	"blinker": "Blinks — flickers out of reach, then reappears on top of you. Un-targetable mid-blink.",
+	"skirmish": "Skirmisher — retreats as fast as you advance, peppering you on the move. CORNER it against a wall, or answer in kind.",
 	"counter": "Warder — raises a GUARD; strike it while raised and it staggers YOU. Wait the guard out.",
 	"mend":    "Knits — slowly heals its own wounds; burst it down.",
 	"frenzy":  "Frenzied — wounded, it strikes faster and harder.",
@@ -184,6 +186,7 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 		speed *= Balance.MOB_SWIFT_SPEED
 	if traits.has("mend"):
 		mend_rate = Balance.MOB_MEND_RATE
+	strafe_sign = 1.0 if randf() < 0.5 else -1.0  # skirmish arc direction
 	pounce_cd = randf_range(1.0, Balance.MOB_LUNGE_CD)
 	web_cd = randf_range(1.5, Balance.MOB_WEB_CD)
 	channel_cd = randf_range(1.0, Balance.MOB_CHANNEL_CD)
@@ -526,6 +529,18 @@ func _think(delta: float) -> Vector2:
 		if traits.has("snare") and snare_cd <= 0.0 and dist < 420.0:
 			snare_cd = Balance.MOB_SNARE_CD
 			_snare_patch(player.global_position)
+		if traits.has("skirmish"):
+			# Skirmisher: KITES for real — full-speed backpedal on a strafing
+			# arc inside KEEP (a straight-line retreat is trivially chased;
+			# the arc forces steering). Cornering it against a wall is the
+			# earned counterplay; regular turret mobs keep the old shuffle.
+			if dist < Balance.MOB_SKIRMISH_KEEP:
+				var away := -to_player.normalized()
+				var strafe := away.orthogonal() * strafe_sign * Balance.MOB_SKIRMISH_STRAFE
+				return (away + strafe).normalized() * spd
+			elif dist > Balance.MOB_SKIRMISH_FAR:
+				return to_player.normalized() * spd
+			return Vector2.ZERO
 		if dist < 200.0:
 			return -to_player.normalized() * spd * 0.8
 		elif dist > 300.0:
