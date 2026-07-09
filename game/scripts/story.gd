@@ -530,7 +530,7 @@ const ENEMIES := {
 			{"name": "Bolt Volleys & Ring",
 			 "tell": "She fires a three-bolt fan at you on a fast cadence, and periodically rings out a full circle of twelve bolts.",
 			 "counter": "Strafe across the fan rather than backing straight up. For the ring, slip out through a gap between bolts instead of tanking it."}]},
-	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "king",     "hp": 4200.0, "dmg": 50.0, "speed": 132.0, "xp": 200, "gold": 150, "ranged": false, "scale": 7.5,
+	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "vargoth",  "hp": 4200.0, "dmg": 50.0, "speed": 132.0, "xp": 200, "gold": 150, "ranged": false, "scale": 7.5,
 		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 10, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"STR": 2.0, "VIT": 1.5},

@@ -263,6 +263,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		sprite.modulate = Color(1.6, 0.55, 0.55)
 		speed *= 1.5
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "VARGOTH ENRAGES!", Color(1, 0.3, 0.3))
 
 	# Signature: BLADE STORM — greatswords fall from the sky onto marked
@@ -275,6 +276,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ability_cd <= 0.0 and dist < 520.0:
 		ability_cd = 3.4 if enraged else 5.0
 		game.sfx("slam")
+		play_action("slam")
 		game.shake(8.0)
 		var count := 16
 		for i in count:
@@ -291,6 +293,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 func _blade_storm() -> void:
 	roar()
+	play_action("blade")
 	var count := 6 if enraged else 4
 	for i in count:
 		if dying or not is_instance_valid(game.player) or game.player.dead:
