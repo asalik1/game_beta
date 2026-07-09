@@ -1,17 +1,22 @@
 # Emberfall — Class & Theme Tier List
 
-First documented edition. Living balance document: **every number here
-is MEASURED, not estimated** — both boards are output of the DPS bench
-harness (`dps_bench.bat`), and the roster was tuned across round 49 (see
-BALANCE_HISTORY.md, rounds 49 / 49b / 49c / 49d / 49e / 49f) until the
-boards matched the player-authored target ladders reproduced in §2.
-Update this file whenever a kit or tuning number changes: rerun the
-bench, paste the new boards, and rewrite whatever prose stopped being
-true.
+Living balance document: **every number here is MEASURED**, not estimated
+— both boards are output of the DPS bench harness (`dps_bench.bat`).
 
-**If you read one thing, read §3** — the holistic F–S ranking that
-folds both boards plus survivability and utility into one grade. §4/§5
-are the raw single-axis boards it rests on.
+**Frame change (optimization pass, 2026-07-08):** these boards now measure
+the **optimal-play CEILING** — the max-DPS build per variant (attributes,
+gems, and talents all optimized; §8), not the player's save copies. The
+earlier "hand-authored target ladder" the roster was tuned to (round 49)
+**no longer holds** under optimized builds — the optimization reshuffled
+the order substantially, most sharply by handing the **manaless assassin**
+a free Haste+Ruby stack that nothing else can match. §2 is now a *measured
+re-baseline*, not a design contract. This is documentation of reality; no
+balance numbers were changed in this pass (findings are logged in §10).
+
+**If you read one thing, read §3** — the holistic F–S ranking that folds
+both boards plus survivability and utility into one grade. §4/§5 are the
+raw single-axis boards it rests on; §8 is why the numbers look the way
+they do.
 
 ---
 
@@ -27,43 +32,48 @@ time.
 
 **The frame (every board):**
 
-- Hero at **level 40**, all attribute points in the class primary.
+- Hero at **level 40**. **All attribute points in the class primary** —
+  primary gives the most ATK + crit per point; VIT/off-stats give no ATK,
+  so all-in is optimal for every variant (paladin still STR: it builds the
+  ATK number even though its hits now land as magic).
 - **Full A-grade gear**, seeded rolls (identical every run), class
   signature weapon shape.
-- **Lv6 gems** (the A-socket cap), uniform loadout — one special + one
-  regular per piece: **Combo ×4** specials for archer/assassin/mage/
-  warlock, **Haste ×4** for warrior/paladin (Haste's 0.40 knee out-rates
-  Combo's 0.30 on the plate kits' basics); regulars are **ATK% ×2 +
-  class-matched pen ×2**. CritDmg regulars were tried on the crit
-  variants and measured WORSE than Rubies at their real 23–34%
-  effective crit — uniform gems also keep variant comparisons honest.
-- **Skill trees:** assassin/archer/mage use the player's live builds;
-  warrior/paladin/warlock use DPS-optimal picks (per-variant for
-  warlock). All presets are consts at the top of
-  `scripts/tests/dps_bench.gd`.
-- **Mono themes** — every slot on one theme. These boards grade
-  baseline identities; meta mixes are §9 and currently unmeasured.
+- **Lv6 gems, per-variant OPTIMAL loadout** (this is the change from the
+  old save-copy frame). Every regular socket is a **Ruby (ATK%)** — at Lv6
+  that's +22.8% ATK per gem, and CritDmg only overtakes it above ~50%
+  *effective* crit, which no variant reaches (even Hunt/Shadow land 26–34%
+  after the knee + boss critres). Special slot: **Haste ×4 → the 40% cdr
+  cap** for the classes whose cooldown abilities are free (warrior /
+  paladin / assassin), **Combo ×4** for the mana-bound ones (archer / mage
+  / warlock) whose bigger cooldowns starve under Haste — Combo's mana
+  *refund* sustains the cadence instead of draining it (§8, §10).
+- **Talents: per-variant best-DPS cell per row** (10/9/10 in the DPS rows,
+  the 9 landing in each class's weakest/defensive row). Notable picks:
+  Venom takes Serpent's Due (+40% vs poisoned — its dots always poison),
+  Ice takes Killing Frost (+40% vs chilled — always slowed), Hunt/Shadow
+  take the crit_dmg row-4 cell (the only two that clear the ATK%-vs-CritDmg
+  threshold on that node), everyone else atk%. All presets are consts at
+  the top of `scripts/tests/dps_bench.gd`.
+- **Mono themes** — every slot on one theme. These boards grade baseline
+  identities; meta mixes are §9 and currently unmeasured.
 - **180-second windows**; the damage clock starts at first blood.
 
 **Three boards, one frame:**
-- **Boss** (default): one immortal dummy that is a real `Boss` subclass
-  — CC immunity, concussion conversion, boss shove factor and a
-  boss-sized hitbox all behave exactly like a live boss door — carrying
-  the **average defensive sheet of every registered boss at L40**
-  (physres ~39, magres ~45, eva ~6%, critres ~14), so no single boss's
-  matchup skews the ladder.
-- **Pack** (`--aoe`): three of those pillars shoulder to shoulder
-  (65px), plus **five 1200-HP adds every 10 seconds** that are supposed
-  to die — kill-triggered effects (hex detonations, Starfall cascades,
-  Phantom dash refunds) all fire. DPS pools **effective damage**;
-  overkill on a dying add never inflates a number. The `adds x/95`
-  column is the clear-speed signal.
-- **Downtime** (`--downtime`): the boss board with the hero forced to
-  **stop casting 1s of every 5s** — the telegraph-dodge simulation.
-  DoTs keep ticking through the gap; burst specs cast nothing. It is a
-  DIAGNOSTIC, not a tuning target — it exists to check the doctrine that
-  DoT specs' lower stand-still numbers are partly a bench artifact
-  (§4 note).
+- **Boss** (default): one immortal dummy that is a real `Boss` subclass —
+  CC immunity, concussion conversion, boss shove factor and a boss-sized
+  hitbox all behave like a live boss door — carrying the **average
+  defensive sheet of every registered boss at L40** (physres ~39, magres
+  ~45, eva ~6%, critres ~14), so no single boss's matchup skews the ladder.
+- **Pack** (`--aoe`): three of those pillars shoulder to shoulder (65px),
+  plus **five 1200-HP adds every 10 seconds** that are supposed to die —
+  kill-triggered effects (hex detonations, Starfall cascades, Phantom dash
+  refunds) all fire. DPS pools **effective damage**; overkill on a dying
+  add never inflates a number. The `adds x/95` column is the clear-speed
+  signal.
+- **Downtime** (`--downtime`): the boss board with the hero forced to stop
+  casting 1s of every 5s — the telegraph-dodge simulation. A DIAGNOSTIC,
+  not a tuning target (§4 note; last measured on the pre-optimization
+  builds — the qualitative finding holds).
 
 **Rotations are playstyle-constrained**, per class (player-specified):
 
@@ -76,36 +86,32 @@ time.
 | Paladin | one Conviction swap into RETRIBUTION, never back; Judgment + Consecration (no Aegis vs a passive target) | same |
 | Warlock | Shadowbolt + Hex upkeep + Void Rift (no Dark Pact at boss range) | Dark Pact back in — in a pack you ARE point-blank |
 
-**Measurement law: run-to-run variance is ~±5%** (physics iteration
-order perturbs crit/echo rolls even under fixed seeds; ult-count
-quantization at window edges adds more for the 40–50s-cd kits). Any gap
-under 5% is a TIE. Ladder disputes get settled over 2–3 runs, never one.
+**Measurement law: run-to-run variance is ~±5%** (physics iteration order
+perturbs crit/echo rolls even under fixed seeds; ult-count quantization at
+window edges adds more for the 40–50s-cd kits). Any gap under 5% is a TIE.
+Ladder disputes get settled over 2–3 runs, never one.
 
 ---
 
-## 2. The board ladders (the design contract)
+## 2. The measured order (optimized builds — a re-baseline, not a contract)
 
-Both ladders are player-authored targets; round 49 tuned until they
-held. **They are the contract** — if a future change breaks an
-ordering, that is a regression, not drift. (The holistic §3 grade may
-still differ from a spec's board rank, because it also weighs
-survivability and utility the boards don't measure.)
+Under optimized builds the old hand-tuned target ladder is gone. This is
+now the *measured* order; treat it as the current baseline to check future
+changes against, not a hand-authored contract. **The headline: the
+assassin sweeps — three of the top four on boss** (§10 finding).
 
-**Boss (single-target) ladder:**
-> Shadow > Hunt > Wind > Curse ~ Fury ≥ Wrath ~ Void > Fire ~ Poison ≥
-> Venom > Storm ~ Pact  ·  floor: Bulwark ~ Aegis ~ Holy
+**Boss (single-target):**
+> Shadow ≫ Hunt > Blood > Poison > Curse ~ Venom > Fury ~ Wind ~ Earth ~
+> Pact ~ Wrath ~ Void > Ice > Fire > Storm  ·  floor: Holy ~ Bulwark ~ Aegis
 
-**Pack (AoE) ladder:**
-> Fire king > Pact 2nd > Shadow ~ Storm 3rd > Fury ~ Wrath 4th tier ·
-> Blood < Shadow · Wind < Fire and ≤ Storm · Curse ≤ Wind but ≥ Ice ·
-> Void ≤ Storm, near Ice · Venom / Poison / Ice above the floor, below
-> Wind  ·  floor: Holy ~ Bulwark ~ Aegis
+**Pack (AoE):**
+> Pact ~ Shadow ~ Fire > Blood ~ Poison > Curse > Storm ~ Void > Wind ~
+> Wrath ~ Hunt > Ice ~ Fury ~ Earth ~ Venom  ·  floor: Holy ~ Aegis ~ Bulwark
 
-The boards deliberately INVERT several specs — Hunt is 2nd on bosses
-and bottom-third on packs; Fire is boss-mid and pack king; Pact is
-boss-floor-adjacent and pack #2. **The inversion is the design**: theme
-swaps are free outside combat, so the intended endgame play is
-re-theming at boss doors.
+Several specs still INVERT across boards — Hunt is boss #2 / pack #11, Fire
+is boss #14 / pack #3, Pact is boss #10 / pack #1. That inversion is the
+design: theme swaps are free outside combat, so the intended endgame play
+is re-theming at boss doors.
 
 ---
 
@@ -113,355 +119,302 @@ re-theming at boss doors.
 
 The synthesis grade. It weighs boss output (gates progression) and pack
 output (most of the playtime) roughly evenly, then adjusts for what the
-raw boards CAN'T see: survivability (sustain, dodge, plate), defensive
-utility (ENFEEBLE, HOBBLED, reflect), consistency under dodge pressure
-(the §4 downtime finding), and how much real-play ceiling hides behind
-the stand-still number (blood_amp, Aegis reflect). A one-axis monster
-that is dead weight on the other axis lands lower than its headline rank.
+raw boards CAN'T see: survivability (sustain, plate, ENFEEBLE), and how
+much real-play ceiling hides behind the stand-still number (blood_amp,
+Aegis reflect). A one-axis monster that is dead weight on the other axis
+lands lower than its headline rank.
 
-**Scale note — the floor is compressed on purpose.** Nothing grades
-below B−. The roster was tuned to a deliberately playable floor: a B−
-here means "niche or matchup-dependent, but functional and fun to
-pilot," not "broken." There is no C/D/F because there is no trap build
-in the game — the F–S scale is used honestly, it just doesn't bottom out.
+**Scale note — the floor is compressed on purpose.** Nothing grades below
+B−: the roster has a deliberately playable floor, so a B− means "niche or
+matchup-dependent, but functional," not "broken." No C/D/F because there
+is no trap build.
 
 | Tier | Spec | Why here |
 |---|---|---|
-| **S** | Assassin · Shadow | The game's ceiling: boss #1, pack #3, and it chains Phantom refunds through kills. Docked from "untouchable" only by the squish (no plate, no free i-frames) and the dash-timing skill floor — pure power tops the roster. |
-| **A+** | Assassin · Blood | Boss ~#3 **at its full-HP floor** — blood_amp pays up to +40% as you bleed, so its real ceiling brushes Shadow — and it self-heals through the surge. The most self-sufficient top-tier melee; skill and risk are the only tax. |
-| **A** | Mage · Wind | Boss #3, pack #6, and Blink + Frost Nova are real defensive buttons. The versatile duelist: strong on both boards, mobile, hard to pin. |
-| **A** | Warrior · Fury | Boss #5 welded to the tankiest chassis in the game (80 physres, 15% flat DR, Grit). Pack-mediocre (its own knockback scatters the pile), but survivability + a top-5 boss number carry it, and it's the lowest skill floor of the A-tier. |
-| **A** | Warlock · Curse | Boss #7, pack #7, unconditional 5% lifesteal, wither on long fights, EXPOSED for the party. The insurance class — good everywhere, never dies, no bad matchup. |
-| **A−** | Mage · Fire | Pack KING (#1, and packs are most of the playtime), boss-mid and mana-bound. The farm build; its boss half is capped by mana, not damage. |
-| **A−** | Archer · Hunt | Boss #2 at ZERO melee risk — the couch ceiling for boss doors — but a pack liability (14/95 adds). Carried by the boss ceiling and the free re-theme; a mono-Hunt player suffers in rooms. |
-| **A−** | Archer · Storm | Pack #4, boss floor — Hunt's mirror. Owns the room, coasts the boss. Same "re-theme at the door" logic. |
-| **A−** | Warlock · Void | Boss #8, pack #5, the safest panic buttons in the class (shove/pull/slow). Held back only by the displacement choreography its damage demands — high skill, high safety. |
-| **A−** | Mage · Ice | Boss #6, the **best downtime retention on the board** (89% — its damage doesn't care that you dodged), control + brittle + HOBBLED, and survivable. Raw damage is mid by design; consistency and safety lift the grade. |
-| **A−** | Paladin · Wrath | Boss #9, pack #10, on the plate chassis with the stance game and the reflect Aegis in the kit. Consistent, tanky, and the reward curve lives in Retribution uptime. |
-| **B+** | Assassin · Poison | Boss-weak on paper (~#13) but real-play higher: the fastest toxin stacker in the game, 90/95 pack clear, and now a genuine survival identity — **ENFEEBLE grants up to +10% evasion** vs the venomed foe (atop base Elusive) and slows HOBBLE the boss. A utility-and-clear DoT, not a burst spec. |
-| **B+** | Warlock · Pact | Pack **#2** monster (corpse-fuelled immortality), boss floor-adjacent. The 18% HP self-cost is the live gate the bench can't feel, which keeps it out of A-tier despite the pack crown. |
-| **B+** | Warrior · Earth | Boss #10, control that PAYS at boss doors now (stuns concuss, slows HOBBLE), pulls packs onto the blade — all on the plate tank chassis. Utility and survivability over raw damage. |
-| **B+** | Archer · Venom | Low raw on both boards, but the **safest spec in the game**: it kites everything, and **ENFEEBLE cushions incoming damage up to 16%** — the error-margin insurance for when a hit drops Second Wind. Viable through safety and utility, not damage; a cautious player's dream, a speedrunner's pass. |
-| **B** | Paladin · Holy | Absurd sustain (shield-drop heal, per-enemy mending, chains) bought with deliberately low damage. The attrition/marathon pick — grade it as a survival kit. |
-| **B** | Warrior · Bulwark | The cannot-die build: every button heals and hardens, floor damage. The answer to content that out-damages you, not a farm spec. |
-| **B−** | Paladin · Aegis | Bench floor on both boards — but **under-graded by construction**: the reflect only fires when the enemy swings, and both bench targets are passive. Against a melee-aggressive boss its true grade is a full tier higher; it's a matchup pick, strongest exactly where the boards can't see it. |
+| **S** | Assassin · Shadow | Boss #1 (5550) AND pack #2 (7122) — dominant on both, the clearest #1 in the game. Manaless → the only class that stacks Haste to the cap *and* full Rubies with zero mana tax; docked from "untouchable" only by the squish and dash-timing skill floor. |
+| **A+** | Assassin · Blood | Boss #3 (4806), pack #4 (6485) — and blood_amp pays up to +40% more as you bleed, so its real ceiling brushes Shadow, while the surge self-heals. The most self-sufficient top-tier melee. |
+| **A+** | Assassin · Poison | **The pass's big riser** (was B+): boss #4 (4078), pack #5 (6471, 90/95 adds) — the manaless Haste+Ruby lift plus its own DoT scaling put it in the top five of BOTH boards, on top of ENFEEBLE evasion and HOBBLED. Top-tier damage AND a survival identity. |
+| **A** | Archer · Hunt | Boss #2 (4933) at ZERO melee risk — the couch ceiling for boss doors. A pack liability (#11, 16/95 adds), but boss-gating + safety carry it, and free re-theme covers the rooms. |
+| **A** | Warlock · Curse | Boss #5 (3865), pack #6 (6034), unconditional 5% lifesteal, wither on long fights, EXPOSED for the party. The versatile insurance class — good everywhere, never dies, no bad matchup. |
+| **A** | Warlock · Pact | Pack **#1** (7291) — the farm king outright now — boss #10 (playable). The 18% HP self-cost is the live gate the bench can't feel, but pack-#1 + a real boss floor is A-worthy. |
+| **A−** | Mage · Fire | Pack #3 (6720), boss #14 — the mage's farm build, mana-capped on boss. Packs are most of the playtime, which holds the grade despite the weak boss half. |
+| **A−** | Archer · Venom | Boss #6 (3843 — a real riser) with the deepest DoT + Serpent's Due, and the **safest spec in the game**: kites everything, ENFEEBLE cushions 16% of incoming. Pack-weak (#15), carried by boss + safety. |
+| **A−** | Archer · Storm | Pack #7 (5536), boss floor (#15). Owns the room, coasts the boss — Hunt's mirror, same re-theme logic. |
+| **A−** | Warlock · Void | Boss #12, pack #8 (5535), the safest panic buttons in the class (shove/pull/slow). Balanced-mid + high safety; held back by the displacement choreography its damage demands. |
+| **A−** | Warrior · Fury | Boss #7 (3405) welded to the tankiest chassis in the game (80 physres, 15% flat DR, Grit). Pack-mediocre (its own knockback scatters the pile), but survivability + a top-7 boss carry it at the lowest skill floor of the tier. |
+| **A−** | Mage · Wind | Boss #8, pack #9, Blink + Frost Nova as real defensive buttons — the mobile duelist, strong-mid on both. |
+| **A−** | Paladin · Wrath | Boss #11, pack #10, on the plate chassis with the stance game; now a **magic** dealer (checks magres). Consistent, tanky, reward curve in Retribution uptime. |
+| **B+** | Warrior · Earth | Boss #9, pack #14, control that PAYS at boss doors (stuns concuss, slows HOBBLE) and drags packs onto the blade — all on the plate tank chassis. |
+| **B+** | Mage · Ice | Boss #13, pack #12, control + brittle + HOBBLED, and the most consistent under dodge pressure (best downtime retention pre-opt). Damage mid by design; consistency and safety lift it. |
+| **B** | Paladin · Holy | Absurd sustain (shield-drop heal, per-enemy mending, chains) bought with deliberately low damage (boss #16). The attrition/marathon pick — a survival kit. |
+| **B** | Warrior · Bulwark | The cannot-die build: every button heals and hardens, floor damage (pack #18). The answer to content that out-damages you, not a farm spec. |
+| **B−** | Paladin · Aegis | Bench floor on both boards — but **under-graded by construction**: the reflect only fires when the enemy swings, and both bench targets are passive. Against a melee-aggressive boss its true grade is a full tier higher; a matchup pick, strongest where the boards can't see. |
 
-**How to read a mismatch with §4/§5:** a spec's holistic grade can sit
-above its board rank (Poison, Venom, Ice, Aegis — survivability/utility/
-downtime-retention the boards miss) or below it (Hunt, Storm, Pact — a
-one-axis monster that's dead weight on the other axis). The boards are
-the measurement; §3 is the judgment on top of it.
+**Reading a mismatch with §4/§5:** a spec's holistic grade can sit above
+its board rank (Poison/Venom/Pact/Aegis — survivability/utility/pack-crown
+the boards under-credit) or below it (Hunt/Storm/Fire — a one-axis monster
+that's dead weight on the other axis). The boards are the measurement; §3
+is the judgment on top of it.
 
 ---
 
-## 4. The boss board (single target, ~means across 180s runs)
+## 4. The boss board (single target, optimized builds, verified 180s run)
 
-| # | Spec | DPS | Notes |
-|---|------|----:|-------|
-| 1 | Assassin · Shadow | ~4150 | the ceiling: +20%/+15% cap-exempt crit riders, converging five-knife fan, true-damage execute — priced in melee proximity with no plate and no free i-frames |
-| 2 | Archer · Hunt | ~3950 | the couch ceiling: 20%-deeper shots, +25% crit above the knee, near-permanent EXPOSED, all five narrow-volley arrows into one body, zero melee risk |
-| 3 | Mage · Wind | ~3650 | twin echoing bolts + Starfall — the mage's duelist theme |
-| 3 | Assassin · Blood | ~3630 | **tied with Wind at full HP, and that's its FLOOR**: blood_amp converts missing health into up to +40% damage — a bleeding pilot stretches toward Shadow |
-| 5 | Warrior · Fury | ~3450 | wave2 backhand + 55%-echo cyclone + Berserk — which now also restores Cleave's unchained 0.45s cadence: the ult is a tempo steroid |
-| 6 | Mage · Ice | ~3400 | widest variance on the board (3020–3600 observed): heavy lances, brittle self-amplification, freeze concussion — and near-permanent HOBBLED since 49d |
-| 7 | Warlock · Curse | ~3180 | deep withering bolts, guaranteed EXPOSED from Hex, wither ramping +8%/6s of curse uptime to +64% — the long-fight spec |
-| 8 | Warlock · Void | ~3140 | crush choreography: hex-shove opens the window, bolts spike into it (+22% crush, +25% Nightfall crit) — its bolt-slow keeps HOBBLED near-permanent |
-| 9 | Paladin · Wrath | ~3110 | double Judgment hunting the gaps (+20% crit), erupting Consecration; Retribution uptime IS the skill expression |
-| 10 | Warrior · Earth | ~3040 | the control spec: stuns concuss, slows HOBBLE — its whole rider budget pays at boss doors since 49d |
-| 11 | Mage · Fire | ~2865 | splash is wasted solo; the deep burn (0.60 bolt dot, 2.0× meteor burn) carries it — nominally above Poison per the ladder, tie-band in practice |
-| 12 | Archer · Venom | ~2805 | heavy stacking DoTs on capped-pierce arrows + slows on every slot feeding HOBBLED; ENFEEBLE cushions the archer's own damage taken — the safest solo theme |
-| 13 | Assassin · Poison | ~2780 | the fastest toxin stacker in the game (0.12/stack) + HOBBLED uptime; ENFEEBLE lends the assassin evasion; bloom re-trimmed so the pair sits at Fire's shoulder, not past it |
-| 14 | Archer · Storm | ~2560 | the AoE spec's solo floor: with nobody to fork to, the charge arcs BACK into the same body at 50% (`ric_back`) |
-| 15 | Warlock · Pact | ~2525 | blood-priced bolts; its real identity lives on the pack board |
-| 16 | Paladin · Holy | ~2020 | −20% stance damage + the Judgment cadence tax: absurd sustain, deliberately low output |
-| 17 | Warrior · Bulwark | ~1875 | every button heals and hardens; the cannot-die build pays here |
-| 18 | Paladin · Aegis | ~1700 | reflect identity — damage arrives only when the enemy swings, and a bench dummy never swings (see §10) |
+| # | Spec | DPS | atk | Notes |
+|---|------|----:|----:|-------|
+| 1 | Assassin · Shadow | 5550 | 496 | the ceiling — cap-exempt crit riders, converging five-knife fan, true-damage execute; manaless, so Haste+Ruby stack free |
+| 2 | Archer · Hunt | 4933 | 399 | the couch ceiling: 1.2× shots, +25% cap-exempt crit, near-permanent EXPOSED, all five narrow-volley arrows into one body, zero melee risk |
+| 3 | Assassin · Blood | 4806 | 521 | full-HP FLOOR — blood_amp stretches it toward Shadow as the pilot bleeds; the surge self-heals |
+| 4 | Assassin · Poison | 4078 | 521 | the riser: fastest toxin stacker + Serpent's-Due-adjacent scaling + the manaless Haste lift; also carries ENFEEBLE/HOBBLED survival |
+| 5 | Warlock · Curse | 3865 | 394 | deep withering bolts, guaranteed EXPOSED from Hex, wither +8%/6s to +64% — the long-fight spec, sustained by lifesteal |
+| 6 | Archer · Venom | 3843 | 417 | Serpent's Due (+40% vs poisoned, always on) + deep stacking DoT; HOBBLED on every slot; the safe ranged pick, now a real boss number |
+| 7 | Warrior · Fury | 3405 | 550 | wave2 backhand + echo cyclone + Berserk-cadence; highest ATK on a plate chassis |
+| 8 | Mage · Wind | 3354 | 489 | twin echoing bolts + Starfall — the duelist |
+| 9 | Warrior · Earth | 3246 | 528 | control that pays at the door (concussion + HOBBLED) on the tank chassis |
+| 10 | Warlock · Pact | 3221 | 413 | blood-priced bolts; its real identity is the pack board |
+| 11 | Paladin · Wrath | 3202 | 491 | double Judgment hunting the gaps, erupting Consecration; **magic** damage now (magres/magpen); Retribution uptime is the skill |
+| 12 | Warlock · Void | 3160 | 375 | crush choreography (+22% crush, +25% Nightfall crit); bolt-slow keeps HOBBLED near-permanent |
+| 13 | Mage · Ice | 2991 | 489 | Killing Frost (+40% vs chilled, always slowed) + brittle + freeze concussion; control paid in raw dps |
+| 14 | Mage · Fire | 2818 | 467 | splash wasted solo, mana-capped; the burn carries what it can — a pack theme on the wrong board |
+| 15 | Archer · Storm | 2570 | 399 | the AoE spec's solo floor: nobody to fork to, charge arcs back at 50% (`ric_back`) |
+| 16 | Paladin · Holy | 2113 | 585 | −20% stance + Judgment cadence tax: absurd sustain, deliberately low output (highest ATK, least of it lands) |
+| 17 | Warrior · Bulwark | 2048 | 528 | every button heals and hardens; the cannot-die build pays here |
+| 18 | Paladin · Aegis | 2011 | 516 | reflect identity — damage arrives only when the enemy swings, and a bench dummy never swings (§10) |
 
 **Reading notes:**
 
-- **Melee > ranged at the top is intentional risk compensation**; the
-  plate classes sit mid-table because round 49's cadence tax ("plate
-  hits HARD, not fast") moved Cleave 0.45→0.74s and Judgment 0.5→0.8s.
+- **The assassin sweep is the story (§10).** Being MANALESS, the assassin
+  is the only class that takes Haste to the 40% cap AND four Rubies with no
+  mana penalty — everyone else pays a mana tax on their cooldown abilities
+  that caps how hard they can gem for cadence. That structural edge puts
+  three assassin specs in the top four.
+- **The DoT specs jumped.** With their real optimal talents on (Serpent's
+  Due for Venom, the toxin scaling for Poison) plus 4× Ruby, Poison went
+  boss #13 → #4 and Venom #12 → #6. The old "Fire ~ Poison ~ Venom tie
+  cluster" is broken: both DoT archers/assassins now sit clearly above
+  Fire, which fell to #14 (mana-capped, splash-wasted solo).
 - **The mage mana law (measured):** pure Firebolt spam empties the pool
-  ~2 minutes in and the cast rate collapses to regen speed; Meteor sat
-  unaffordable 48 of 180 seconds. Frost Nova's missing-mana refund (20%
-  of missing for 15 MP, no shared lockout with Firebolt — the refill
-  costs zero bolt casts) is **load-bearing** on long fights. A pilot who
-  refuses it loses ~10–15% past the two-minute mark, most of it on Fire.
-- **Fire ~ Poison ~ Venom** ended as a deliberate tie cluster at ~2800:
-  Fire is mana-capped rather than damage-capped, and 49d's HOBBLED
-  lifted the two DoT specs into its shoulder (Poison re-trimmed to keep
-  Fire nominally on top).
-- **The downtime finding (why the DoT specs rate above their raw rank
-  in §3):** forced to dodge 1s of every 5s (a 20% cast tax), the true
-  tick-banked specs keep far more of their output than the burst
-  cluster — **Venom retains 90%, Ice 89%, Poison 86%**, versus
-  Fury/Void/Wind ~82%. Their damage is already in the ground and doesn't
-  care that you stopped casting. Under a real bullet-hell boss (30–40%
-  dodging) the edge compounds. Two surprises: **Fire retains only 82%**
-  — it's a burst theme wearing a DoT coat (bolt+splash+Meteor front-
-  loaded, mana recovers during the gap), and **Curse retains 83%** —
-  it's Shadowbolt spam with DoT amplifiers, not a true DoT. The genuine
-  tick-banked trio is Venom, Poison, Ice.
+  ~2 minutes in; Frost Nova's missing-mana refund is load-bearing on long
+  fights. It's why mage runs **Combo** (refund) over Haste — Haste would
+  only deepen the starvation.
+- **Downtime finding (pre-optimization builds, qualitative holds):** forced
+  to dodge 1s of every 5s, the true tick-banked specs (Venom/Poison/Ice)
+  keep ~86–90% of their output vs the burst cluster's ~82% — their damage
+  is already in the ground. Fire retains only ~82% (a burst theme wearing a
+  DoT coat). Re-running downtime on optimized builds is a future item.
 
 ---
 
-## 5. The pack board (AoE — 3 pillars + add waves, final 180s run)
+## 5. The pack board (AoE — 3 pillars + add waves, optimized builds, verified)
 
 | # | Spec | DPS | adds | Notes |
 |---|------|----:|-----:|-------|
-| 1 | Mage · Fire | ~6300 | 90/95 | the farm king by a clear margin: 45% splash on every bolt, the flame-ring Nova, the widened burning Meteor |
-| 2 | Warlock · Pact | ~5650 | 88/95 | Dark Pact is the whole story: 18% max HP buys a 3.5×-deep blast around you every ~6s, drunk back through the lifesteal surge — an engine that runs on standing inside the pack |
-| 3 | Assassin · Shadow | ~5500 | 81/95 | five-knife fans at surge cadence; Phantom dash refunds chain through add kills |
-| 3 | Archer · Storm | ~5200 | 85/95 | forks leaping body to body, piercing volleys, 45–75% lightning splash on everything |
-| 5 | Mage · Wind | ~5100 | 90/95 | gust-splash twin bolts; Starfall executes and cascades through dying adds; its gale Nova scatters its own targets — identity kept over optimum |
-| 6 | Warlock · Curse | ~4800 | 88/95 | whole-pack EXPOSED + wither + death-detonations chaining through corpses |
-| 6 | Warlock · Void | ~4900 | 86/95 | hex-shove opens pack-wide crush windows; the greedy rift; capped at Storm's line by target |
-| 8 | Assassin · Blood | ~4900 | 47/95 | echo carries it; the fan's pierce was removed in 49c to hold it under Shadow |
-| 9 | Assassin · Poison | ~4650 | 90/95 | mist blooms + toxin on everything — a top-tier add clearer |
-| 10 | Paladin · Wrath | ~4520 | 84/95 | the erupting Consecration drags the pack onto the hammer |
-| 11 | Mage · Ice | ~4450 | 88/95 | brittle + freeze control; damage mid by design |
-| 12 | Warrior · Fury | ~4170 | 36/95 | the 1.0× echo cyclone; Cleave's knockback scatters its own dinner — the low add count is self-inflicted juice |
-| 13 | Archer · Hunt | ~3900 | 14/95 | the boss spec on the wrong board: precision riders do nothing for crowds — **14 of 95 adds** says everything |
-| 14 | Warrior · Earth | ~3700 | 60/95 | drags the pack into the blade; the control tax again |
-| 15 | Archer · Venom | ~3070 | 59/95 | plague-rain DoTs; above the sustain floor, below Wind — exactly the target slot |
-| 16 | Paladin · Holy | ~2940 | 76/95 | hallowed ground trades fire for mending (0.7× damage) |
-| 17 | Paladin · Aegis | ~2650 | 72/95 | reflect needs attackers; passive targets starve it |
-| 18 | Warrior · Bulwark | ~2350 | 25/95 | the anvil, not the hammer |
+| 1 | Warlock · Pact | 7291 | 88/95 | the farm king: 18% max HP buys a deep blast around you every ~6s, drunk back through the lifesteal surge — an engine that runs on standing inside the pack |
+| 2 | Assassin · Shadow | 7122 | 82/95 | five-knife fans at surge cadence; Phantom dash refunds chain through add kills |
+| 3 | Mage · Fire | 6720 | 90/95 | 45% splash on every bolt, flame-ring Nova, widened burning Meteor — a clean 90/95 clear |
+| 4 | Assassin · Blood | 6485 | 46/95 | echo carries it; low add count is the pierce cap holding it under Shadow |
+| 5 | Assassin · Poison | 6471 | 90/95 | mist blooms + toxin on everything — a top clearer both in dps and bodies |
+| 6 | Warlock · Curse | 6034 | 88/95 | whole-pack EXPOSED + wither + death-detonations chaining through corpses |
+| 7 | Archer · Storm | 5536 | 85/95 | forks leaping body to body, piercing volleys, splash on everything |
+| 8 | Warlock · Void | 5535 | 88/95 | hex-shove opens pack-wide crush windows; the greedy rift |
+| 9 | Mage · Wind | 4921 | 89/95 | gust-splash twin bolts; Starfall executes and cascades through dying adds |
+| 10 | Paladin · Wrath | 4807 | 83/95 | the erupting Consecration drags the pack onto the hammer |
+| 11 | Archer · Hunt | 4750 | 16/95 | the boss spec on the wrong board — decent dps into the pillars but **16/95 adds**: precision riders do nothing for crowds |
+| 12 | Mage · Ice | 4336 | 88/95 | brittle + freeze control; damage mid by design |
+| 13 | Warrior · Fury | 4320 | 39/95 | echo cyclone; Cleave's knockback scatters its own dinner — the low add count is self-inflicted juice |
+| 14 | Warrior · Earth | 4112 | 62/95 | drags the pack into the blade; the control tax again |
+| 15 | Archer · Venom | 4091 | 71/95 | plague-rain DoTs; above the sustain floor, below the burst clearers |
+| 16 | Paladin · Holy | 3081 | 78/95 | hallowed ground trades fire for mending (0.7× damage) |
+| 17 | Paladin · Aegis | 2996 | 74/95 | reflect needs attackers; passive targets starve it |
+| 18 | Warrior · Bulwark | 2630 | 33/95 | the anvil, not the hammer |
 
 **Reading notes:**
 
-- **Structural finding — the dash rider cap:** one Shadow Dash through a
-  pack used to land the full stab rider on *every* body in the 150px
-  corridor; Blood benched **9087** before the fix, ahead of everything.
-  `Balance.DASH_RIDER_CAP` (2) now stops the rider after two victims per
-  pass. Boss fights (one victim) never notice.
-- **Pierce caps:** `pierce_cap` in the projectile fx payload is the new
-  mid-tier coverage tool — Venom arrows punch three bodies deep; Blood
-  knives and Void bolts lost pierce entirely to hold their slots.
-  Unlimited pierce (Storm volleys, Ice lances) is now a deliberate
-  grant, not a default.
-- **Melee vs. wave geometry:** the bench pins the plate classes in place
-  because each add wave physically bulldozes a stationary body out of
-  melee reach — the first warrior AoE bench read 83 dps because he'd
-  been shoved off and was swinging at air. In real play that's footwork.
+- **Pact took the pack crown from Fire** under optimized builds (7291 vs
+  6720) — its self-blast scales harder with 4× Ruby than Fire's splash,
+  and Shadow slots between them. The top three are within ~8% (a tie band).
+- **Structural mechanics still in force:** `DASH_RIDER_CAP` (2) stops the
+  assassin dash-stab rider after two victims (Blood benched 9087 before the
+  fix); `pierce_cap` gives Venom arrows 3-body pierce while Blood/Void
+  bolts lost pierce entirely; the bench pins plate classes because add
+  waves bulldoze a stationary body out of melee reach (footwork in real
+  play).
 
 ---
 
 ## 6. Class deep dives
 
-### Warrior — the juggernaut, taxed into deliberateness
-Plate identity: 80 physres, 15% flat DR, Grit regen that feeds on being
-hit. Round 49's cadence tax made Cleave a 0.74s decision instead of a
-0.45s tremolo, and **Berserk hands the old cadence back for its
-window** — the ult went from a damage steroid to a tempo one, and its
-uptime is now the warrior's dps rhythm.
-- **Fury** — the damage identity and the best warrior on both boards:
-  wave2 backhand, 55%-echo cyclone at 1.5× radius, deeper/longer
-  Berserk.
-- **Earth** — control: quake lanes, stuns (concussion at boss doors),
-  slows (HOBBLED at boss doors), a whirlwind that drags packs in. Mid on
-  both boards; the pull is also why the AoE geometry never broke it.
-- **Bulwark** — floor on both boards by design; every cast hardens,
-  every hit mends. Grade it as a survival kit, not a dps kit.
+### Assassin — the optimization winner
+Manaless, squishiest melee, no free i-frames (round 43). Being manaless is
+its structural jackpot: it's the **only** class that stacks Haste to the
+40% cap AND four Rubies with zero mana penalty, so under optimal builds it
+takes three of the top four boss slots.
+- **Shadow** — boss #1, pack #2: cap-exempt crit riders + crit_dmg row-4,
+  converging fan, Phantom refunds. The clearest #1 in the game.
+- **Blood** — boss #3 at its full-HP floor; blood_amp reaches toward Shadow
+  as you bleed, and the surge self-heals. Pack #4 (pierce cap holds it
+  under Shadow).
+- **Poison** — the riser: boss #4, pack #5 (90/95), fastest toxin stacker,
+  plus ENFEEBLE evasion + HOBBLED. Now genuinely top-tier on both axes, not
+  just a utility DoT.
 
-### Archer — the widest identity split in the game
-Its best boss theme is its worst pack theme and vice versa; the class
-is built to re-theme at boss doors.
-- **Hunt** — boss #2: 1.2× shots, cap-exempt +25% crit, EXPOSED procs,
-  the converging five-arrow volley. Kills 14 adds in three minutes on
-  the pack board. Correct.
-- **Storm** — pack tier-3 (forks, unlimited pierce, splash everywhere)
-  with a real solo floor since 49: the lone-prey fork arcs back at 50%.
-- **Venom** — the DoT/safety spec: capped-pierce toxin arrows, the
-  deepened plague rain, slows on all four slots (→ near-permanent
-  HOBBLED at boss doors), and **ENFEEBLE cushions the archer's own
-  damage taken up to 16%** while its toxin holds — the error-margin
-  insurance when a hit would drop Second Wind. Low raw output, highest
-  safety floor in the class.
+### Archer — the widest identity split
+Best boss theme is its worst pack theme and vice versa; built to re-theme
+at boss doors. Runs **Combo** (Multishot 12mp / Arrow Storm 20mp starve
+under Haste).
+- **Hunt** — boss #2 at zero risk; pack liability (16/95 adds). Correct.
+- **Venom** — boss #6 now (Serpent's Due +40% vs its always-poisoned
+  target is huge), the safest spec in the game, ENFEEBLE cushion. Pack-weak.
+- **Storm** — pack #7, boss floor; the lone-prey fork arcs back at 50%.
 
-### Mage — the glass engine with a fuel gauge
-The measured mana law (§4) is the class's real skill axis: Nova timing
-is throughput, not utility.
-- **Fire** — pack king by a wide margin; boss-mid, tied with Poison
-  (accepted). Its boss output is mana-capped, not damage-capped, and it
-  behaves like a burst spec under dodge pressure (82% downtime retention).
-- **Ice** — mid everywhere, control paid in dps; streakiest spec on the
-  boss board (brittle stacks + huge lances) and the **best downtime
-  retention on the roster** (89%) — its damage survives dodging.
-- **Wind** — the duelist: boss #3, pack-mid with a deliberate self-sab
-  (the gale Nova scatters the adds it should be eating).
+### Warlock — the attrition engine, and the pack king
+Runs **Combo** (Hex 16mp / Rift 35mp starve under Haste). Bolt cadence +
+wither ramp + unconditional lifesteal.
+- **Pact** — pack **#1** outright under optimized builds; boss #10. The
+  self-blast scales hard with Ruby; the 18% HP cost is the live gate.
+- **Curse** — boss #5, pack #6, the versatile no-bad-matchup spec.
+- **Void** — boss #12, pack #8; crush choreography, safest panic buttons.
 
-### Assassin — the ceiling, paid for in proximity
-Manaless, squishiest melee, no free i-frames (round 43): the top of the
-boss board is rent, not a gift.
-- **Shadow** — boss #1 and pack tier-3: cap-exempt crit riders,
-  converging fan, Phantom refunds chaining through kills.
-- **Blood** — boss ~#3 **at its full-HP floor**; blood_amp pays up to
-  +40% as the pilot bleeds, so its real-fight ceiling brushes Shadow,
-  and the surge self-heals. Pack-mid since the fan lost pierce (49c).
-- **Poison** — the DoT/survival spec: fastest toxin stacking in the
-  game, mist blooms, 90/95 adds — and **ENFEEBLE grants up to +10%
-  evasion** vs the venomed foe on top of base Elusive, so the dive that
-  keeps the surge alive can also dodge the bullets it dives into.
-  Boss-weak on paper, real-play higher via safety + downtime retention.
+### Mage — the glass farm engine
+The mana law is its skill axis: Nova timing is throughput. Runs **Combo**
+(Firebolt 4mp bleeds the pool).
+- **Fire** — pack #3, boss #14 (mana-capped). The farm build.
+- **Wind** — boss #8, pack #9; the mobile duelist.
+- **Ice** — boss #13, pack #12; Killing Frost (+40% vs its always-slowed
+  target) + brittle + control. Consistent, survivable, mid raw dps.
 
-### Paladin — the stance knight
-Conviction (Holy ↔ Retribution) makes sustain and damage mutually
-exclusive in time. Every grade here assumes Retribution camping — the
-correct dps line and the risk the class sells.
-- **Wrath** — the damage stance done right: mid-high on both boards.
-- **Holy** — deliberately the sustain-for-damage trade on BOTH boards
-  (−20% stance, 0.7× hallowed ground, the Judgment tax). If Holy ever
-  climbs a dps board again, that's a regression per the ladder.
-- **Aegis** — the matchup spec: strongest into fights that attack you
-  relentlessly, floor against anything passive. Both benches use
-  passive targets, so its true grade against real bosses is HIGHER than
-  its number (§10).
+### Warrior — the juggernaut with free basics
+Free basics (Cleave 0mp) → runs **Haste** to the cap. Plate identity: 80
+physres, 15% flat DR, Grit. Highest ATK numbers on the board (550 Fury) —
+the 4× Ruby on a big STR base.
+- **Fury** — boss #7, the damage identity; tanky, low skill floor.
+- **Earth** — boss #9, pack #14; control that pays at the door + pack pull.
+- **Bulwark** — the cannot-die floor on both boards.
 
-### Warlock — the attrition engine, finally paid
-Round 49 cleared it of the mana myth (min MP ~230 of 380, measured) and
-fixed the real problem: cadence and ramp — bolt tax reverted, 0.5s
-cadence, wither deepened to +64%.
-- **Curse** — boss: the long-fight spec (wither + EXPOSED). Pack: the
-  corpse-chain spec, held just under Wind per target. Unconditional
-  lifesteal makes it the class's no-bad-matchup pick.
-- **Pact** — the board's biggest inversion: boss floor-adjacent, **pack
-  #2**. Dark Pact's 3.5×-deep self-blast makes standing inside the pack
-  the class's best button; the 18% HP price is the live-play gate the
-  bench can't feel (§10).
-- **Void** — crush choreography on both boards; capped at Storm's line
-  on packs, shoulder to shoulder with Wrath on bosses; the safest panic
-  buttons in the class.
+### Paladin — the stance knight, now a magic dealer
+Conviction makes sustain and damage mutually exclusive in time; grades
+assume Retribution camping. **Now deals MAGIC** (STR-primary but holy =
+magic; checks magres, scaled by magpen). Free basics → **Haste**.
+- **Wrath** — boss #11, pack #10; the damage stance, magic now.
+- **Holy** — the sustain-for-damage trade on both boards (highest ATK, least
+  of it lands). A survival kit.
+- **Aegis** — the matchup spec; under-graded by passive bench targets (§10).
 
 ---
 
 ## 7. Mechanical ground rules the numbers rest on
 
 - **Bosses are CC-immune.** Stuns/slows never land on bosses; they work
-  fully on mobs and elites. Displacement is physics, not CC — but a
-  "shove" moves a boss only 40% as far (`BOSS_SHOVE_FACTOR`).
-- **Concussion:** a stun that fails on a CC-immune target converts to
-  bonus damage (failed duration × `CONCUSSION_MULT` × ATK) — control
-  themes keep a small uniform boss value.
-- **HOBBLED (49d):** the same conversion for slows — a slow that fails
-  on a CC-immune boss scuffs its footing: +`HOBBLE_MULT` (4%) damage
-  taken from the player for `HOBBLE_DUR` (2.5s), refreshed per failed
-  slow, DoT ticks included. Before this, the slow half of every control
-  theme's budget (venom/poison/ice/void/earth) was a dead rider at boss
-  doors — venom paid it on all four slots.
-- **ENFEEBLE (49e/49f):** maintaining YOUR toxin on a foe turns its rot
-  into your survival — the DoT specs' defensive axis, toxin-gated so
-  only Poison-assassin and Venom-archer get it, and it can't be borrowed
-  by slotting one green ability. Class-flavored, scaled by live toxin
-  stacks: the **assassin SLIPS the blow** (up to +10% evasion, a second
-  roll on top of base Elusive — dodges the bullets it dives into for the
-  surge); the **archer SHRUGS it** (up to 16% less damage — the cushion
-  that survives losing Second Wind). Invisible to the dps boards (the
-  bench hero takes no damage) — pure survival value.
-- **DoTs resolve like hits** — mitigated by target res minus caster
-  pen, snapshot at application, ticks crit on the caster's SHEET crit
-  shaved by target critres. No hidden true damage; true damage remains
-  Death Mark's exclusive identity.
-- **DoTs do not stack sources** (strongest wins, durations refresh) —
-  **except toxin** (poison/venom): +12% tick depth per stack, 5 stacks.
-  The no-stack rule is why buffing a second DoT source on the same kit
-  often does nothing — the bench proved that twice in round 49.
-- **Brittle** (ice): ice hits stack +4% ice-only amplification, 5 deep.
-- **Crush** (void): +22% to targets displaced hard in the last 1.5s;
-  void's own shoves and pulls open the windows.
-- **Wither** (warlock base kit): a MAINTAINED Hex deepens +8% per 6s of
-  uptime, cap +64%; a lapsed curse resets the ramp — upkeep IS the
-  rotation.
-- **EXPOSED (vuln)** is a debuff, not CC: +50% damage taken, works on
-  bosses — the premier boss rider and the warlock's pack engine.
-- **Plate cadence tax (49):** Cleave 0.74s (0.45 under Berserk),
-  Judgment 0.8s — plate hits hard, not fast.
-- **Dash rider cap (49c):** the assassin's dash-stab rider lands on at
-  most `DASH_RIDER_CAP` (2) victims per pass.
-- **Pierce caps (49c):** projectiles carrying `pierce_cap` stop after N
-  bodies.
-- **Ults ignore Haste** for every class, and Combo never procs on ults.
+  fully on mobs and elites. Displacement is physics, not CC — but a "shove"
+  moves a boss only 40% as far (`BOSS_SHOVE_FACTOR`).
+- **Concussion:** a stun that fails on a CC-immune target converts to bonus
+  damage (failed duration × `CONCUSSION_MULT` × ATK).
+- **HOBBLED (49d):** the same conversion for slows — a failed slow on a boss
+  scuffs its footing: +4% damage taken for 2.5s, DoT ticks included. Lifts
+  the slow half of every control theme's budget at boss doors.
+- **ENFEEBLE (49e/49f):** maintaining YOUR toxin turns its rot into your
+  survival — toxin-gated (Poison-assassin / Venom-archer only). Assassin
+  SLIPS the blow (up to +10% evasion atop Elusive); archer SHRUGS it (up to
+  16% less damage). Bench-invisible (hero takes no damage) — pure survival.
+- **Damage types (3/3 split):** physical = warrior/archer/assassin; magic =
+  **paladin**/mage/warlock. Paladin flipped to magic this era — STR stays
+  its recommended primary (builds ATK), hits land as magic vs magres/magpen.
+- **DoTs resolve like hits** — mitigated by target res minus caster pen,
+  ticks crit on the caster's sheet crit shaved by target critres. No hidden
+  true damage; true damage is Death Mark's exclusive identity.
+- **DoTs don't stack sources** (strongest wins) — **except toxin**
+  (poison/venom): +12% tick depth per stack, 5 stacks.
+- **Brittle** (ice): +4% ice-only amplification per stack, 5 deep.
+- **Crush** (void): +22% to targets displaced hard in the last 1.5s.
+- **Wither** (warlock): a MAINTAINED Hex deepens +8% per 6s, cap +64%.
+- **EXPOSED (vuln):** +50% damage taken, works on bosses — the premier boss
+  rider.
+- **Specials come from GEMS + TALENTS only** (never gear or attribute
+  points). Talents can grant combo/lifesteal again as of this era's restore.
+- **Ults ignore Haste** for every class; Combo never procs on ults.
 
-## 8. Buildcraft — measured, not theorized
+## 8. Buildcraft — the optimization, measured
 
-- **Gems:** ATK% + pen regulars beat CritDmg regulars **even on the
-  crit specs** (Hunt at 31–34% effective crit still preferred Rubies) —
-  boss critres shaves effective crit well below what the sheet
-  suggests. Combo (~31.6% effective) for the four spam kits; Haste
-  (~40.6%) out-rates it on warrior/paladin basics. Lifesteal and Greed
-  are never dps gems.
-- **Penetration** relieves hits AND dot ticks, and excess past target
-  res converts to flat bonus on hits — at this frame (~57 pen with
-  talents vs ~39–45 boss res) pen gems run just past the excess point
-  and keep paying.
-- **Cap-exempt theme crit is king:** sheet crit past the 35% knee pays
-  1/5 and boss critres shaves ~30% off the top; the themed crit riders
-  (Shadow/Hunt/Wrath) ride ABOVE the knee at full value. They top both
-  boards for a reason.
+This is the max-DPS recipe the boards now run, and why:
+
+- **Attributes: all-in primary.** Primary gives the most ATK + a little
+  crit per point; every off-attribute (VIT included) gives no ATK. 39/39
+  in STR/AGI/INT for every variant.
+- **Regular gems: 4× Ruby (ATK%), universally.** At Lv6 a Ruby is +22.8%
+  ATK. CritDmg (Sunstone, +45.6% crit_dmg/gem) only overtakes ATK% above
+  ~50% *effective* crit, and no variant gets there — even the crit specs
+  land 26–34% after the 35% knee and boss critres shaving. So ATK% wins on
+  every variant, crit and non-crit alike. (Pen gems lose too: the flat
+  excess-conversion is small next to a +22.8% multiplier.)
+- **Special gem: Haste if your abilities are free, Combo if they're not.**
+  Haste ×4 hits the 40% cdr cap and is pure cadence — but it accelerates
+  your *cooldown* abilities faster than mana can feed them. Warrior /
+  paladin / assassin have free basics (0–1 mp) → **Haste**. Archer
+  (Multishot 12, Arrow Storm 20), mage (Firebolt 4, mana-bound), warlock
+  (Hex 16, Rift 35) starve under Haste → **Combo**, whose refund sustains
+  the casts. This is the single biggest build fork, and it's why the
+  **manaless assassin is structurally on top** — it's the only class that
+  gets Haste *and* full Ruby with zero mana tax (§10).
+- **Talents: best-DPS cell per row.** Rows 1–3 take the damage cell (atk%,
+  crit, pen, or the theme rider); row 4 takes atk% for everyone except
+  Hunt/Shadow (crit_dmg — the two whose crit clears the node's threshold).
+  Theme-specific standouts: **Serpent's Due** (Venom: +40% vs poisoned, and
+  its dots always poison — a near-permanent +40%), **Killing Frost** (Ice:
+  +40% vs chilled, always slowed). The unavoidable 9-point "filler" goes in
+  each class's weakest/defensive row (mage/warlock row 1 has no dps cell).
 
 ## 9. Meta mixes (unmeasured — the next bench docket)
 
 Mono grades are baselines; per-slot theme mixes are the real endgame.
 Hypotheses worth measuring, in likely-strength order:
-- **Archer loadout swap** — full Hunt at boss doors, full Storm in
-  rooms. Both halves are already measured above; free re-theming makes
-  this the class's intended play, not really a "mix".
-- **Assassin** — Blood a1/a2 + Shadow a3/ult: echo loop plus the crit
-  fan and execute.
+- **Archer loadout swap** — full Hunt at boss doors, full Storm in rooms.
+  Both halves are measured above; free re-theming makes this the intended
+  play, not really a "mix."
+- **Assassin** — Blood a1/a2 + Shadow a3/ult: echo loop + crit fan/execute.
 - **Mage** — Wind a1 + Fire a2/ult: duelist bolts, pack nova/meteor.
-- **Warlock** — Curse a1/a2 + Pact a3: the wither engine plus the pack
-  blast.
-Do NOT balance against mixes until they're measured; the mono ladders
-are the contract.
+- **Warlock** — Curse a1/a2 + Pact a3: wither engine + pack blast.
+Do NOT balance against mixes until measured; the mono boards are the baseline.
 
 ## 10. Standing watch items
 
-- **Fire ~ Poison ~ Venom (boss)** is an accepted tie cluster at ~2800.
-  If any of the three drifts ±5%+, re-anchor with Fire nominally above,
-  per the ladder (Poison's bloom and Venom's hobble uptime are the
-  knobs).
-- **Void rides the TOP of its allowed band on both boards** — 49d's
-  HOBBLED handed it a free lift (its slow rides every bolt) and crush
-  came down 0.28→0.22 to compensate. It sits at wrath's shoulder (boss)
-  and in a statistical tie with Storm (pack), and it's the noisiest
-  spec measured (rift crits + crush windows compound). If it creeps
-  again, crush is the knob; the "around Ice" soft target is unreachable
-  without gutting the identity and has been waived.
-- **Blood's real ceiling** (blood_amp at low HP) is invisible to the
-  full-HP bench. Playtest reports of Blood out-pacing Shadow at boss
-  doors are consistent with the design — up to the point where it does
-  so while SAFE; that would be a regression.
-- **Aegis is under-graded by construction** — passive bench targets
-  never trigger its reflect. Judge it from `[fight]` reports against
-  aggressive bosses before touching the numbers; its §3 grade already
-  credits the hidden ceiling.
-- **ENFEEBLE is bench-invisible** — it only reduces damage the hero
-  TAKES, which the dps boards don't measure. Its value (Poison/Venom
-  survivability) is a §3 judgment, not a board number; verify it in
-  playtest, not the bench.
+- **THE FINDING — manaless assassin dominance.** Under optimized builds the
+  assassin takes boss #1/#3/#4 and pack #2/#4/#5, because being manaless is
+  the one build that pairs Haste-to-cap with full Ruby stacking at no mana
+  cost. Every other class trades cadence for mana sustain (Combo) or starves
+  (Haste). This is *structural*, not a number — if it's judged too strong,
+  the lever is the assassin's damage multipliers or a manaless-specific
+  cost, NOT the gem system. Logged as reality; no change made this pass.
+- **The old target ladder no longer holds.** Round 49 tuned the roster to a
+  hand-authored order under save-copy builds; optimal builds reshuffle it
+  (Poison boss #13→#4, Venom #12→#6, Fire #11→#14, the Fire~Poison~Venom
+  tie broken). §2 is now a measured re-baseline. Future tuning should aim at
+  *this* order, or a new intentional target, not the retired round-49 one.
+- **Pact vs Fire for the pack crown** — Pact overtook Fire (7291 vs 6720)
+  once 4× Ruby amplified its self-blast harder than Fire's splash. Both plus
+  Shadow are a ~8% tie band at the top of the pack board.
+- **Blood's real ceiling** (blood_amp at low HP) is invisible to the full-HP
+  bench — real-fight Blood brushes Shadow. A regression only if it out-paces
+  Shadow while SAFE.
+- **Aegis is under-graded by construction** — passive bench targets never
+  trigger its reflect. Judge it from `[fight]` reports vs aggressive bosses.
 - **Pact's HP price is free on the bench** (nothing hits the hero); live
-  pack-Pact is a notch below its #2 and far riskier. The bench number
-  is the ceiling, not a lie.
+  pack-Pact is a notch lower and riskier than its #1 suggests.
 - **The mage mana law** couples half the mage column to three knobs
-  (Firebolt cost, mage regen, Nova refund) — touch any of them and both
-  boards must be re-run.
-- **Hunt on packs (14/95 adds)** is intended, but a new player who never
-  learns to re-theme will bounce off the archer — that's onboarding
-  material (hint text), not a balance knob.
-- **Add-count vs dps** disagree for knockback kits (Fury kills 36 adds
-  at ~4170 dps; Poison kills 90 at ~4650): scatter juice trades clear
-  speed for feel. Fine today; revisit if farm-speed complaints name the
-  warrior.
+  (Firebolt cost, mage regen, Nova refund) — touch any and re-run both boards.
+- **Downtime not re-run on optimized builds** — the DoT-retention finding
+  (§4) is from the save-build era; qualitatively it still holds, but a fresh
+  `--downtime` sweep would refresh the exact percentages.
 
 ## 11. How to update this document
 
 1. Change a kit or tuning number.
-2. `dps_bench.bat` (boss board) and `dps_bench.bat --aoe` (pack board);
-   `--downtime` when a DoT-vs-burst question is in play. Sub-5% deltas
-   are ties; disputes take 2–3 runs.
-3. Check both board ladders in §2 (the contract) AND whether the change
-   moves any §3 holistic grade — survivability/utility changes (ENFEEBLE,
-   HOBBLED, sustain) move §3 without touching the boards.
-4. Paste the new boards, fix the prose that stopped being true, and log
-   the round in BALANCE_HISTORY.md (newest at top).
+2. `dps_bench.bat` (boss) and `dps_bench.bat --aoe` (pack); `--downtime`
+   when a DoT-vs-burst question is in play. Sub-5% deltas are ties; disputes
+   take 2–3 runs. Read the reports (they're **UTF-16** — decode, don't grep
+   raw for ASCII).
+3. Confirm the bench presets (`TREE_PRESETS` / `GEM_PRESETS` in
+   `dps_bench.gd`) are still the per-variant optimum — a kit change can move
+   the optimal build (§8).
+4. Paste the new boards, re-grade §3 (survivability/utility changes move §3
+   without touching the boards), update the §2 measured order, and log the
+   round in BALANCE_HISTORY.md (newest at top).

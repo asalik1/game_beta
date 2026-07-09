@@ -55,36 +55,58 @@ const GEM_LVL := 6                # what A-grade sockets can bear
 const GEAR_SEED := 48815          # same gear roll sequence for every case
 const CLS_ORDER := ["warrior", "archer", "mage", "assassin", "paladin", "warlock"]
 
-# Skill-tree presets. assassin/archer/mage are the player's own live
-# setups (saves, 2026-07-07 — "the general optimal"); warrior/paladin/
-# warlock are DPS-optimal picks per variant (their saves run defensive
-# rows). "*" = every variant of the class.
+# Skill-tree presets — DPS-OPTIMAL per variant (round 50, 2026-07-08):
+# best damage cell per row, 10/10/10/9 (39 pts at L40), the 9 dumped in
+# the class's weakest/defensive row. Highlights: Venom takes Serpent's
+# Due (+40% vs poisoned — its dots always poison), Ice takes Killing
+# Frost (+40% vs chilled — always slowed), crit_dmg row-4 only for the
+# two variants past the atk%-vs-critdmg crit threshold (Hunt, Shadow).
+# Mage/warlock row 1 is purely defensive (no dps cell) — the forced 9
+# filler points land there. "*" = every variant of the class.
 const TREE_PRESETS := {
-	"warrior": {"*": {"w00": 5, "w10": 5, "w20": 5, "w32": 5}},
-	"archer": {"*": {"a00": 5, "a10": 5, "a22": 5, "a30": 5}},
-	"mage": {"*": {"m00": 5, "m12": 5, "m20": 5, "m30": 5}},
-	"assassin": {"*": {"s02": 5, "s10": 5, "s20": 5, "s30": 3, "s32": 2}},
-	"paladin": {"*": {"p00": 5, "p12": 5, "p22": 5, "p30": 5}},
+	"warrior": {"*": {"w00": 10, "w10": 9, "w20": 10, "w30": 10}},
+	"archer": {
+		"storm": {"a00": 10, "a10": 9, "a20": 10, "a30": 10},
+		"venom": {"a01": 10, "a10": 9, "a22": 10, "a30": 10},
+		"hunt":  {"a00": 10, "a10": 9, "a20": 10, "a32": 10},
+	},
+	"mage": {
+		"ice": {"m01": 10, "m12": 9, "m21": 10, "m30": 10},
+		"*":   {"m00": 10, "m12": 9, "m20": 10, "m30": 10},   # fire / wind (firebolt dmg + combo)
+	},
+	"assassin": {
+		"shadow": {"s00": 10, "s10": 9, "s20": 10, "s31": 10},
+		"*":      {"s00": 10, "s10": 9, "s20": 10, "s30": 10},  # poison / blood (atk% over crit_dmg)
+	},
+	"paladin": {
+		"wrath": {"p00": 10, "p12": 9, "p22": 10, "p32": 10},
+		"*":     {"p00": 10, "p12": 9, "p22": 10, "p30": 10},   # holy / aegis
+	},
 	"warlock": {
-		"void": {"k00": 5, "k12": 5, "k22": 5, "k32": 5},   # the player's live void build
-		"*": {"k00": 5, "k11": 5, "k20": 5, "k32": 5},
+		"void": {"k00": 10, "k12": 9, "k22": 10, "k32": 10},   # rupture + nightfall void-crit
+		"*":    {"k00": 10, "k11": 9, "k20": 10, "k30": 10},    # curse / pact
 	},
 }
 
-# Gem loadout: every item sockets 1 SPECIAL + 1 regular (A = 2 slots).
-# Specials (player-decided): Combo for the four spam kits, Haste for
-# warrior/paladin (0.40 knee beats Combo's 0.30 for pure cast rate).
-# Regulars: ATK% + class-matched pen for everyone. (Round 49: the first
-# edition gave Hunt/Shadow CritDmg gems — measurably WORSE than Rubies
-# at their real 23-31% effective crit, and it skewed exactly the crit
-# variants; uniform gems keep variant comparisons honest.)
+# Gem loadout — DPS-OPTIMAL (round 50): every item sockets 1 SPECIAL + 1
+# regular (A = 2 slots). Regular = ATK% (Ruby) for ALL — at Lv6 a Ruby is
+# +22.8% atk, and crit_dmg (Sunstone) only overtakes it above ~50%
+# effective crit, which no variant reaches after the 35% knee. Special =
+# HASTE/cdr (4 Lv6 → the 40% cap) vs COMBO (30% + a MANA REFUND). The
+# split is by mana profile, measured (round 50): Haste only wins when your
+# kit is free — warrior/assassin/paladin have free basics + cheap cd
+# abilities and never starve, so Haste is pure cadence. But Haste
+# ACCELERATES mana-costed cooldown abilities into starvation (archer
+# Multishot/Arrow Storm, warlock Hex/Rift, mage Firebolt all hit 0 MP on
+# Haste), so those three take COMBO — its refund sustains the casts Haste
+# would choke. Regular = ATK% (Ruby) for all (see above).
 const GEM_PRESETS := {
-	"warrior": {"*": {"special": "cdr", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
-	"paladin": {"*": {"special": "cdr", "regular": ["atk_pct", "magpen", "atk_pct", "magpen"]}},
-	"archer": {"*": {"special": "combo", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
-	"assassin": {"*": {"special": "combo", "regular": ["atk_pct", "physpen", "atk_pct", "physpen"]}},
-	"mage": {"*": {"special": "combo", "regular": ["atk_pct", "magpen", "atk_pct", "magpen"]}},
-	"warlock": {"*": {"special": "combo", "regular": ["atk_pct", "magpen", "atk_pct", "magpen"]}},
+	"warrior": {"*": {"special": "cdr", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
+	"paladin": {"*": {"special": "cdr", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
+	"assassin": {"*": {"special": "cdr", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
+	"archer": {"*": {"special": "combo", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
+	"mage": {"*": {"special": "combo", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
+	"warlock": {"*": {"special": "combo", "regular": ["atk_pct", "atk_pct", "atk_pct", "atk_pct"]}},
 }
 
 # Priority list attempted every physics frame (= holding the keys down;
