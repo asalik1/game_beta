@@ -161,6 +161,8 @@ var downtime := false
 var rep := -1           # --rep=N: independent RNG stream (parallel-mean fan)
 var standoff_override := -1.0  # --standoff=N: override STAND_OFF (fidelity probe)
 var knife_probe := false       # --knifeprobe: count avg knives/fan connecting
+var grade := GEAR_GRADE        # --grade=X: gear tier on every slot (realistic-kit runs)
+var gemlvl := GEM_LVL          # --gemlvl=N: gem level in every socket
 var results: Array = []
 
 # --- rotation driver state (one case at a time) ---
@@ -314,6 +316,10 @@ func _parse_args() -> void:
 			standoff_override = float(a.get_slice("=", 1))
 		elif a == "--knifeprobe":
 			knife_probe = true
+		elif a.begins_with("--grade="):
+			grade = a.get_slice("=", 1)
+		elif a.begins_with("--gemlvl="):
+			gemlvl = int(a.get_slice("=", 1))
 
 
 func _run() -> void:
@@ -333,7 +339,7 @@ func _run() -> void:
 		Menus.BOSS_KINDS.size(), DUMMY_LEVEL, block["physres"], block["magres"],
 		block["eva"] * 100.0, block["critres"]])
 	print("[bench] hero: L%d, full %s gear (seed %d), Lv%d gems, %.0fs window per case" % [
-		PLAYER_LEVEL, GEAR_GRADE, GEAR_SEED, GEM_LVL, sim_secs])
+		PLAYER_LEVEL, grade, GEAR_SEED, gemlvl, sim_secs])
 	if aoe:
 		print("[bench] AOE MODE: %d boss pillars in a row + %d adds (%.0f hp) every %.0fs — effective damage, pooled" % [
 			PILLARS, ADD_WAVE_COUNT, ADD_HP, ADD_WAVE_SECS])
@@ -525,20 +531,20 @@ func _equip(p: Player, cls: String, tid: String) -> void:
 	# Fill special slots from the DISTINCT `specials` list (one-per-stat rule);
 	# every regular slot is a Ruby (ATK%). No socket can be left empty or
 	# mis-typed — this is the max-DPS legal loadout under the new gem structure.
-	var spec_cap: int = Items.special_slots(GEAR_GRADE)
+	var spec_cap: int = Items.special_slots(grade)
 	var spec_idx := 0
 	for slot in Items.SLOTS:
 		var noun: String = Items.class_weapon_noun(cls) if slot == "weapon" else ""
-		var item := Items.roll_item_of(slot, GEAR_GRADE, rng, cls, noun)
+		var item := Items.roll_item_of(slot, grade, rng, cls, noun)
 		var glist: Array = []
 		var s_placed := 0
 		for _s in int(item.get("gem_slots", 0)):
 			if s_placed < spec_cap and spec_idx < specials.size():
-				glist.append(Items.make_gem(String(specials[spec_idx]), GEM_LVL))
+				glist.append(Items.make_gem(String(specials[spec_idx]), gemlvl))
 				spec_idx += 1
 				s_placed += 1
 			else:
-				glist.append(Items.make_gem("atk_flat", GEM_LVL))  # Ruby regular
+				glist.append(Items.make_gem("atk_flat", gemlvl))  # Ruby regular
 		item["gems"] = glist
 		p.equipment[slot] = item
 	p._update_weapon_visual()
@@ -711,7 +717,7 @@ func _print_report() -> void:
 	ranked.sort_custom(func(a, b): return a["dps"] > b["dps"])
 	print("")
 	print("== DPS BENCH — L%d hero, full %s + Lv%d gems, vs avg L%d boss, %.0fs windows ==" % [
-		PLAYER_LEVEL, GEAR_GRADE, GEM_LVL, DUMMY_LEVEL, sim_secs])
+		PLAYER_LEVEL, grade, gemlvl, DUMMY_LEVEL, sim_secs])
 	var rank := 1
 	for r in ranked:
 		print("%2d. %-18s %7.0f dps   hits/s %4.1f   crit %2.0f%%   peak %6.0f   ults %d" % [
