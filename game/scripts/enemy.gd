@@ -40,6 +40,8 @@ var zone_idx := -1    # which room's clear-count this enemy belongs to
 var pack_id := 0      # aggro group within the room (per-pack aggro)
 var force_aggro := false  # pack woken: attack no matter the distance
 var alerted := false  # has shown its "!" bubble
+var los_lost_t := 0.0    # seconds since we last had line-of-sight (leash timer)
+var last_seen := Vector2.ZERO  # where the player was last visible (blind-chase point)
 var hazard_speed := 1.0  # terrain patch effect (ice boosts, void slows)
 # Animation seam (Track C): >1 when an _anim strip override is installed.
 var anim_frames := 0
@@ -449,21 +451,41 @@ func _physics_process(delta: float) -> void:
 
 
 ## Decide where to move this frame. Bosses override this.
-func _think(_delta: float) -> Vector2:
+func _think(delta: float) -> Vector2:
 	var player: Player = game.player
 	if player == null or player.dead:
 		return _drift_home()
 
 	var to_player: Vector2 = player.global_position - global_position
 	var dist := to_player.length()
-	if dist > aggro_range and not force_aggro:
-		return _drift_home()
-	if not alerted:
+	# LINE OF SIGHT (2026-07-09): a mob can't pathfind, so it only wakes when
+	# it can trace a clear line to you (ray gated behind the cheap range check
+	# so far/idle mobs never cast). force_aggro (pack cascade, boss adds, dev)
+	# skips sight entirely — it already knows.
+	var can_see: bool = dist <= aggro_range * Balance.MOB_AGGRO_KEEP and _has_los(player)
+	if not alerted and not force_aggro:
+		if dist > aggro_range or not can_see:
+			return _drift_home()
 		alerted = true
 		game.emote(self, "!", 0.9)
 		# One noticed you — the whole pack answers (per-pack aggro).
 		if zone_idx >= 0:
 			game.wake_pack(zone_idx, pack_id)
+	# LEASH: a woken mob that keeps sight commits; lose sight for
+	# MOB_AGGRO_LEASH seconds and it gives up — first heading to where you
+	# vanished (usually a doorway), then home. force_aggro never leashes.
+	if not force_aggro:
+		if can_see:
+			los_lost_t = 0.0
+			last_seen = player.global_position
+		else:
+			los_lost_t += delta
+			if los_lost_t >= Balance.MOB_AGGRO_LEASH:
+				alerted = false
+				los_lost_t = 0.0
+				return _drift_home()
+			var to_seen := last_seen - global_position
+			return Vector2.ZERO if to_seen.length() < 24.0 else to_seen.normalized() * speed
 
 	# --- movement-overriding trait STATES (checked before normal AI) ---
 	if pounce_windup > 0.0:
@@ -535,6 +557,26 @@ func _drift_home() -> Vector2:
 	if to_home.length() > 30.0:
 		return to_home.normalized() * speed * 0.5
 	return Vector2.ZERO
+
+
+## Clear line to the player? A ray per offset against the WALL layer ONLY
+## (layer 1 — the player is layer 2 and enemies layer 4, so neither blocks
+## sight). Three rays (center + two flanks) keep a mob from "losing" you at a
+## doorway edge. Runs in _physics_process — the query-safe window.
+func _has_los(player: Node2D) -> bool:
+	var space := get_world_2d().direct_space_state
+	if space == null:
+		return true
+	var to := player.global_position - global_position
+	var perp := Vector2(-to.y, to.x)
+	if perp.length() > 0.01:
+		perp = perp.normalized() * 16.0
+	for off in [Vector2.ZERO, perp, -perp]:
+		var q := PhysicsRayQueryParameters2D.create(
+			global_position, player.global_position + off, 1)
+		if space.intersect_ray(q).is_empty():
+			return true
+	return false
 
 
 # ---------------------------------------------------------------- traits ---

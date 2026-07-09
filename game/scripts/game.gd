@@ -185,6 +185,7 @@ func on_class_chosen(id: String) -> void:
 	get_tree().paused = false
 	var begin := func() -> void:
 		play_started = true
+		hud.visible = true  # menus hid it during class select / the intro
 		set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(chapter_id)["name"]))
 		autosave()
@@ -221,6 +222,7 @@ func load_save(slot: int) -> void:
 	SaveGame.apply(self, data)
 	get_tree().paused = false
 	play_started = true
+	hud.visible = true  # the load menu hid it on the way in
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.flash_title(zones[cur_room]["name"], "The tale continues")
 

@@ -151,6 +151,13 @@ const SHOP_GEAR_WEIGHTS := {
 const GEM_ACT_LEVEL := {1: 1, 2: 2, 3: 5}
 const SHOP_GEM_RANGE := {1: [1, 1], 2: [2, 4], 3: [5, 7]}
 const BOSS_FIRST_CLEAR_GEM_BONUS := 1                   # first-clear catch-up bundle rolls +1 level
+# Special-stat gems (Haste/CDR/Combo/Lifesteal/Greed/Dmg%) are off-build power
+# and only equip in an A+ special slot. They stay OUT of the early loot stream
+# so ch1-3 drops teach the REGULAR gems first (and don't drown the bag in gems
+# nobody can socket yet) — they begin dropping in ch4+ (2026-07-08).
+const SPECIAL_GEM_LOCKED_CHAPTERS := ["ch1", "ch2", "ch3"]
+static func special_gems_drop(chid: String) -> bool:
+	return not (chid in SPECIAL_GEM_LOCKED_CHAPTERS)
 
 # Smith UPGRADE curve (round 51): S must cost WAY more than C. Per-step cost =
 # UPGRADE_BASE * UPGRADE_GRADE_FACTOR[grade] * (1+plus) — doubling per tier, so
@@ -384,6 +391,18 @@ const AEGIS_PROJ_CAP := 4
 const MOB_HP_MULT := 2.0        # ~1-2 taps -> ~4 hits (the player's ask)
 const MOB_DMG_MULT := 1.2       # +20% contact/bolt damage
 const MOB_DENSITY_EXTRA := 0.15 # +15% pack size (seeded duplicate chance)
+
+# --- aggro: line-of-sight + leash (2026-07-09) ---
+# Mobs can't pathfind (straight-line chase + move_and_slide), so aggro is
+# gated on SIGHT: a mob only wakes when it can trace a clear line to you (no
+# wall between), and a woken mob that loses sight for MOB_AGGRO_LEASH seconds
+# gives up and returns home instead of grinding a wall forever. KEEP widens
+# the hold range past aggro so an edge target doesn't flicker.
+const MOB_AGGRO_LEASH := 1.6    # seconds blind before a woken mob deaggros
+const MOB_AGGRO_KEEP := 1.5     # hold-aggro range = aggro_range * this
+# Pack cascade: when a pack is wiped, the NEXT-nearest sleeping pack in the
+# room gains awareness and comes to you (the room "hears" the fight) — no
+# hunting stragglers across a large arena. First pack still wakes by sight.
 
 # -------------------------------------------------------- mob traits ---
 # The mob-mechanic vocabulary (2026-07-07 REDESIGN — each is a decision,

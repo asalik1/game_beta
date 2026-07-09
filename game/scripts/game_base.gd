@@ -396,7 +396,7 @@ func _grant_daily_reward(streak: int) -> Array:
 		var gc := int(r["gems"])
 		var lvl := int(r.get("gem_lvl", 1))
 		for i in gc:
-			give_loot({"kind": "gem", "gem": Items.random_gem(loot_rng, lvl)},
+			give_loot({"kind": "gem", "gem": drop_gem(lvl)},
 				player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
 		lines.append("%d Lv%d gem%s" % [gc, lvl, "" if gc == 1 else "s"])
 	return lines
@@ -658,7 +658,7 @@ func _award_bounty(b: Dictionary) -> void:
 	player.gold += g
 	var extra := ""
 	for i in int(b["gems"]):
-		give_loot({"kind": "gem", "gem": Items.random_gem(loot_rng, int(b["gem_lvl"]))},
+		give_loot({"kind": "gem", "gem": drop_gem(int(b["gem_lvl"]))},
 			player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
 		extra = " + gem"
 	sfx("chest")
@@ -700,7 +700,7 @@ func claim_vault() -> Array:
 		return []
 	vault_claimed_week = _week_index()
 	Chest.drop(self, "gold", clamp_to_zone(player.global_position + Vector2(64, 0), player.global_position))
-	give_loot({"kind": "gem", "gem": Items.random_gem(loot_rng, 2)}, player.global_position + Vector2(0, 44))
+	give_loot({"kind": "gem", "gem": drop_gem(2)}, player.global_position + Vector2(0, 44))
 	sfx("chest")
 	spawn_text(player.global_position + Vector2(0, -70), "WEEKLY VAULT CLAIMED!", Color(1.0, 0.85, 0.4), 4.0)
 	autosave()
@@ -760,11 +760,50 @@ func stash_withdraw(payload: Dictionary) -> bool:
 func give_loot(payload: Dictionary, pos: Vector2) -> bool:
 	if _try_receive(payload):
 		return true
+	pos = resolve_drop_pos(pos)  # never bury a drop inside a wall (loot has no magnet)
 	payload["pos"] = [pos.x, pos.y]
 	dropped_loot.append(payload)
 	Pickup.drop_loot(self, payload, pos)
 	spawn_text(pos + Vector2(0, -44), "Bag full! Dropped", Color(1, 0.9, 0.4))
 	return false
+
+
+## A loot gem rolled for the CURRENT chapter: ch1-3 exclude the special
+## off-build stats (Balance.special_gems_drop), ch4+ may roll them. Every
+## in-world gem DROP routes through here so the early-game rule holds in one
+## place; shop stock and dev tools roll specials directly.
+func drop_gem(lvl: int) -> Dictionary:
+	return Items.random_gem(loot_rng, lvl, Balance.special_gems_drop(chapter_id))
+
+
+## Nudge a ground-drop OUT of walls/props so loot stays reachable. Boss loot
+## offset toward a nearby wall used to land INSIDE it — unrecoverable, since
+## loot pickups (unlike coins) have no magnet and need you within 30px. A
+## blocked spot slides toward the player (a known-reachable point) until clear.
+func resolve_drop_pos(pos: Vector2) -> Vector2:
+	var anchor: Vector2 = player.global_position if is_instance_valid(player) else pos
+	pos = clamp_to_zone(pos, anchor)
+	if not _pos_in_wall(pos):
+		return pos
+	for t in [0.25, 0.5, 0.75, 1.0]:
+		var p := pos.lerp(anchor, t)
+		if not _pos_in_wall(p):
+			return p
+	return anchor
+
+
+## Is this point inside a wall or solid prop? (collision layer 1 — the same
+## layer walls/obstacles register on; loot/enemies/player don't.)
+func _pos_in_wall(pos: Vector2) -> bool:
+	var space := get_world_2d().direct_space_state
+	if space == null:
+		return false
+	var q := PhysicsPointQueryParameters2D.new()
+	q.position = pos
+	q.collision_mask = 1
+	q.collide_with_bodies = true
+	q.collide_with_areas = false
+	return not space.intersect_point(q, 1).is_empty()
 
 
 ## Player-initiated DISCARD (round 52): fling a bag payload out to a short
@@ -1087,6 +1126,35 @@ func room_pacified(i: int) -> bool:
 ## Death returns you to rooms like these; the map can travel to them.
 func room_safe(i: int) -> bool:
 	return room_type(i) != "combat" and room_type(i) != "boss" and room_pacified(i)
+
+
+## Where a death drops you: the NEAREST pacified room to where you fell (BFS
+## over the room graph), so a boss wipe leaves you just outside the arena you
+## cleared to — not back at the last village 7 rooms away (2026-07-09). A
+## CLEARED combat room counts (room_pacified), unlike room_safe/travel which
+## still bar combat rooms by design. Falls back to last_safe_room, then 0.
+func respawn_room(death_room: int) -> int:
+	var seen := {death_room: true}
+	var frontier: Array = [death_room]
+	while not frontier.is_empty():
+		var pacified: Array = frontier.filter(
+			func(i: int) -> bool: return visited.get(i, false) and room_pacified(i))
+		if not pacified.is_empty():
+			# At the nearest distance with any pacified room, prefer a TRUE
+			# safe pocket (camp/shrine) over a cleared battlefield.
+			for i in pacified:
+				if room_safe(i):
+					return i
+			return pacified[0]
+		var next: Array = []
+		for i in frontier:
+			for dir in rooms[i]["exits"].keys():
+				var nb := neighbor(i, dir)
+				if nb >= 0 and not seen.has(nb):
+					seen[nb] = true
+					next.append(nb)
+		frontier = next
+	return last_safe_room
 
 ## Map fast-travel rule: visited safe pockets, plus boss arenas after
 ## the kill. Combat rooms are never travel targets (DESIGN.md).

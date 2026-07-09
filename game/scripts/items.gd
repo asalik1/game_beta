@@ -195,8 +195,11 @@ static func make_gem(stat: String, lvl := 1) -> Dictionary:
 	return {"gem": true, "stat": stat, "lvl": lvl}
 
 
-static func random_gem(rng: RandomNumberGenerator, lvl := 1) -> Dictionary:
+static func random_gem(rng: RandomNumberGenerator, lvl := 1, allow_special := true) -> Dictionary:
 	var keys := GEM_STATS.keys()
+	if not allow_special:
+		# Early chapters roll REGULAR stats only (Balance.special_gems_drop).
+		keys = keys.filter(func(k: String) -> bool: return not (k in Balance.SPECIAL_GEM_STATS))
 	return make_gem(keys[rng.randi_range(0, keys.size() - 1)], lvl)
 
 

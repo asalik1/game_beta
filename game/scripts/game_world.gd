@@ -501,6 +501,37 @@ func wake_pack(room: int, pack: int) -> void:
 				e.alerted = true
 				emote(e, "!", 0.9)
 
+
+## Any living member of this pack still standing? (The just-dead enemy is
+## already out of the "enemies" group when on_enemy_died runs, so an emptied
+## pack reads false — the pack-cascade trigger.)
+func _pack_alive(room: int, pack: int) -> bool:
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and not e.dying and e.zone_idx == room and e.pack_id == pack:
+			return true
+	return false
+
+
+## Wake the sleeping pack whose nearest member is closest to the player — the
+## cascade after a wipe (game_flow.on_enemy_died). Same room only; packs
+## already engaged are skipped. No-op if nothing's left to wake.
+func _wake_nearest_pack(room: int) -> void:
+	if not is_instance_valid(player):
+		return
+	var best_pack := -1
+	var best_d := INF
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e.dying or e.zone_idx != room or e.force_aggro or e.alerted:
+			continue
+		var d: float = e.global_position.distance_to(player.global_position)
+		if d < best_d:
+			best_d = d
+			best_pack = e.pack_id
+	if best_pack >= 0:
+		wake_pack(room, best_pack)
+
 # ------------------------------------------------------- risk events ---
 
 ## Seeded elective risk (retention roadmap #4): a CURSED CHEST in some
@@ -653,7 +684,7 @@ func _shrine_outcome(cost: int) -> void:
 		burst(pos, Color(1.0, 0.9, 0.5), 16)
 		var roll := loot_rng.randf()
 		if roll < 0.4:
-			var gem := Items.random_gem(loot_rng,
+			var gem := drop_gem(
 				2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
 			if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(0, 44)):
 				spawn_text(pos + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))

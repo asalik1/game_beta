@@ -36,6 +36,10 @@ func close() -> void:
 			and not (current == "chapter_select" and not chapter_replay):
 		get_tree().paused = false
 	current = ""
+	# Restore the HUD once the menu is gone — but only in actual play (boot
+	# menus run over the cover, where the HUD should stay hidden).
+	if game and game.hud:
+		game.hud.visible = game.play_started
 	game.talk_cd = maxf(game.talk_cd, 0.35)  # debounce the reopen hotkeys
 	if game.play_started:
 		game.autosave()  # menus are where gear/talents/purchases change
@@ -50,6 +54,11 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	if root:
 		root.queue_free()
 	get_tree().paused = true
+	# Hide the gameplay HUD while a menu is up: it sits on a lower CanvasLayer,
+	# so the dim only fades it — the quest banner and quickbar still bleed
+	# through behind the panel and crowd the title and both shop columns.
+	if game and game.hud:
+		game.hud.visible = false
 	root = Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
@@ -200,6 +209,8 @@ func open_title() -> void:
 	if root:
 		root.queue_free()
 	get_tree().paused = true
+	if game and game.hud:
+		game.hud.visible = false
 	root = Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
@@ -579,12 +590,14 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	left.add_theme_constant_override("separation", 6)
 	hbox.add_child(left)
 	_lbl(left, "EQUIPPED", 16, Color(0.95, 0.85, 0.5))
-	_lbl(left, "(click an item to manage its gem sockets)", 12, Color(0.55, 0.55, 0.6))
+	_lbl(left, "(click an item for its detail popover)", 12, Color(0.55, 0.55, 0.6))
 	for slot in Items.SLOTS:
 		if game.player.equipment.has(slot):
 			var item: Dictionary = game.player.equipment[slot]
+			# Same opaque popover the bag uses: the stat breakdown + Unequip,
+			# with the gem-socket/reforge bench one button away.
 			var open_cb := func() -> void:
-				open_item_panel(item)
+				_open_equipped_popover(item)
 			# Title on a fixed-width clipped button; stats wrap in a label
 			# below it — long S-item text can no longer blow up the layout.
 			var b := _btn(left, Items.title(item), open_cb, Items.GRADE_COLOR[item["grade"]], true, Art.icon_for(item))
@@ -1059,6 +1072,47 @@ func _stat_bonus_text(d: Dictionary) -> String:
 	return ", ".join(parts)
 
 
+## Equipped-gear detail: the bag's opaque click popover, adapted — the full
+## stat breakdown, live set-bonus tiers and a socket summary, with Unequip
+## and a button into the gem/reforge bench (open_item_panel) for the deep
+## management that's too much for a cursor popover.
+func _open_equipped_popover(item: Dictionary) -> void:
+	var p: Player = game.player
+	var info := Items.describe(item, _awk(item))
+
+	# Set bonus (S legendaries): which tiers are live given what's worn.
+	if String(item.get("grade", "")) == "S" and item.has("cls"):
+		var sd: Dictionary = Items.SET_BONUSES.get(String(item["cls"]), {})
+		if not sd.is_empty():
+			var pieces := Items.count_set_pieces(p.equipment, String(item["cls"]))
+			info += "\n\nSET: %s  (%d/4 pieces worn)" % [sd.get("name", "Set"), pieces]
+			for tier in ["2", "4"]:
+				var live := pieces >= int(tier)
+				info += "\n   %spc %s — %s" % [tier, "✓ ACTIVE" if live else "inactive", _stat_bonus_text(sd[tier])]
+
+	# Socket summary (read-only here; the bench edits them).
+	var slots: int = item.get("gem_slots", 0)
+	var gems: Array = item.get("gems", [])
+	if slots > 0:
+		info += "\n\nGEM SOCKETS (%d/%d filled)" % [gems.size(), slots]
+		for gg in gems:
+			info += "\n   ◆ %s" % Items.gem_title(gg)
+
+	var slot_id := String(item.get("slot", ""))
+	var unequip_cb := func() -> void:
+		if game.player.unequip(slot_id):
+			open_inventory()
+		else:
+			game.spawn_text(game.player.global_position + Vector2(0, -50), "Bag full!", Color(1, 0.6, 0.4))
+	var bench_cb := func() -> void:
+		open_item_panel(item)
+	var actions: Array = [
+		["  ⇩  Unequip  (move to bag)  ", Color(1.0, 0.8, 0.5), unequip_cb],
+		["  ◆  Gems & reforge bench…  ", Color(0.7, 0.9, 1.0), bench_cb],
+	]
+	_open_detail_popover(Art.icon_for(item), Items.title(item), Items.GRADE_COLOR[item["grade"]], info, actions)
+
+
 func open_item_panel(item: Dictionary) -> void:
 	var p: Player = game.player
 	var vbox := _open(Items.title(item), 900, 620)
@@ -1116,6 +1170,10 @@ func open_item_panel(item: Dictionary) -> void:
 	var slots: int = item.get("gem_slots", 0)
 	var gems: Array = item.get("gems", [])
 	_lbl(body, "GEM SOCKETS (%d/%d filled)" % [gems.size(), slots], 16, Color(0.95, 0.85, 0.5))
+	var spec_cap: int = Items.special_slots(String(item.get("grade", "")))
+	if spec_cap > 0:
+		_lbl(body, "◆ %d special slot (Haste/CDR/Combo/Lifesteal/Greed/Dmg%%) + %d regular." % [
+			spec_cap, slots - spec_cap], 12, Color(0.78, 0.72, 0.98))
 	if slots == 0:
 		_lbl(body, "This item has no sockets — only B-grade gear and above can hold gems.", 13, Color(0.55, 0.55, 0.6))
 	for i in slots:
@@ -1147,13 +1205,23 @@ func open_item_panel(item: Dictionary) -> void:
 			for key in _sorted_gem_keys(groups):
 				var group: Dictionary = groups[key]
 				var g2: Dictionary = group["gem"]
-				var ins_cb := func() -> void:
-					game.player.embed_gem_into(item, g2)
-					open_item_panel(item)
-				var ib := _btn(igrid, "%s  x%d — insert" % [Items.gem_title(g2), group["count"]], ins_cb, Items.gem_color(g2))
-				ib.clip_text = true
-				ib.custom_minimum_size = Vector2(380, 0)
-				ib.tooltip_text = "%s  x%d" % [Items.gem_title(g2), group["count"]]
+				# Say IN-PANEL why a gem won't fit here (the old refusal floated
+				# behind the menu as world text — read as "nothing happened").
+				var err := game.player.gem_socket_error(item, g2)
+				if err == "":
+					var ins_cb := func() -> void:
+						game.player.embed_gem_into(item, g2)
+						open_item_panel(item)
+					var ib := _btn(igrid, "%s  x%d — insert" % [Items.gem_title(g2), group["count"]], ins_cb, Items.gem_color(g2))
+					ib.clip_text = true
+					ib.custom_minimum_size = Vector2(380, 0)
+					ib.tooltip_text = "%s  x%d" % [Items.gem_title(g2), group["count"]]
+				else:
+					var db := _btn(igrid, "%s  x%d — %s" % [Items.gem_title(g2), group["count"], err],
+						Callable(), Color(0.5, 0.5, 0.55), false)
+					db.clip_text = true
+					db.custom_minimum_size = Vector2(380, 0)
+					db.tooltip_text = "%s — %s" % [Items.gem_title(g2), err]
 
 	# --- reforge bench: gold-cost crafting on this item ---
 	_lbl(body, "REFORGE BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
@@ -1477,11 +1545,24 @@ func open_shop(zone: int) -> void:
 	vbox.add_child(hbox)
 
 	# ------------------------------------------------------ BUY column ---
+	# The buy list scrolls (like SELL): the full shelf — gear, upgrades,
+	# consumables, gems, bags, gamble — is taller than the panel and otherwise
+	# spills past the bottom edge into the HUD/quickbar.
+	var buy_col := VBoxContainer.new()
+	buy_col.custom_minimum_size = Vector2(640, 0)
+	buy_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	buy_col.add_theme_constant_override("separation", 6)
+	hbox.add_child(buy_col)
+	_lbl(buy_col, "BUY", 16, Color(0.95, 0.85, 0.5))
+	var buy_scroll := ScrollContainer.new()
+	buy_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	buy_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	buy_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	buy_col.add_child(buy_scroll)
 	var buy := VBoxContainer.new()
-	buy.custom_minimum_size = Vector2(640, 0)
+	buy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	buy.add_theme_constant_override("separation", 6)
-	hbox.add_child(buy)
-	_lbl(buy, "BUY", 16, Color(0.95, 0.85, 0.5))
+	buy_scroll.add_child(buy)
 
 	var haggle: float = game.band_price_mult()
 	# Round 51: gear buy = FARM-COST (Items.shop_buy_price), so buying never
@@ -1517,7 +1598,7 @@ func open_shop(zone: int) -> void:
 		var bb := _btn(buy, "%s  %s — %d gold" % [Items.title(it), Items.describe(it, _awk(it)), cost],
 			open_cb, Items.GRADE_COLOR[it["grade"]], true, Art.icon_for(it))
 		bb.clip_text = true
-		bb.custom_minimum_size = Vector2(640, 0)
+		bb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl(buy, "Upgrade equipped gear", 13, Color(0.6, 0.85, 1.0))
 	for slot in ["weapon", "armor"]:
 		if p.equipment.has(slot):
@@ -1530,8 +1611,9 @@ func open_shop(zone: int) -> void:
 					p.recalc()
 					game.sfx("levelup")
 				open_shop(zone)
-			_btn(buy, "%s → +%d  (main stat +15%%) — %d gold" % [Items.title(item), item["plus"] + 1, cost],
+			var ub := _btn(buy, "%s → +%d  (main stat +15%%) — %d gold" % [Items.title(item), item["plus"] + 1, cost],
 				do_upgrade, Color(0.6, 0.9, 1.0), p.gold >= cost, Art.icon_for(item))
+			ub.clip_text = true
 
 	# ========================================================= CONSUMABLES ===
 	_lbl(buy, "— Consumables —", 13, Color(0.62, 0.64, 0.7))
@@ -1542,8 +1624,9 @@ func open_shop(zone: int) -> void:
 			p.potions += 1
 			game.sfx("potion")
 		open_shop(zone)
-	_btn(buy, "Health Potion — %d gold  (you have %d, max 5)" % [potion_cost, p.potions],
+	var hpb := _btn(buy, "Health Potion — %d gold  (you have %d, max 5)" % [potion_cost, p.potions],
 		buy_potion, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < Balance.POTION_MAX)
+	hpb.clip_text = true
 
 	# Alchemist's shelf: utility consumables (bag items, used from inventory).
 	for spec in [["mana_potion", Items.make_mana_potion()], ["elixir_might", Items.make_elixir_might()],
@@ -1565,7 +1648,7 @@ func open_shop(zone: int) -> void:
 			buy_cons, Items.GRADE_COLOR[made["grade"]], p.gold >= ccost,
 			Art.consumable_icon(made))
 		cb.clip_text = true
-		cb.custom_minimum_size = Vector2(640, 0)
+		cb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	# ======================================================= MISCELLANEOUS ===
 	_lbl(buy, "— Miscellaneous —", 13, Color(0.62, 0.64, 0.7))
@@ -1586,7 +1669,8 @@ func open_shop(zone: int) -> void:
 			open_shop(zone)
 		var gemb := _btn(buy, "💎 Gem — Lv%d, random stat — %d gold" % [gl, gprice],
 			buy_gem, Color(0.6, 0.9, 1.0), p.gold >= gprice)
-		gemb.custom_minimum_size = Vector2(640, 0)
+		gemb.clip_text = true
+		gemb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	# Bag shelf (round 52): expand carry capacity. Capacity is QoL not power,
 	# so bags are priced FAR below gear. Buying joins the equipped set (over
@@ -1608,7 +1692,8 @@ func open_shop(zone: int) -> void:
 			blabel += "  (no gain — bags full & larger)"
 		var bagb := _btn(buy, blabel,
 			buy_bag, Items.GRADE_COLOR[String(bit["grade"])], p.gold >= bcost and bimproves)
-		bagb.custom_minimum_size = Vector2(640, 0)
+		bagb.clip_text = true
+		bagb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	# Gambling shelf: spend gold on a random item of this merchant's tier.
 	var gamble_tier := String(game.zones[zone].get("shop_tier",
@@ -1626,7 +1711,8 @@ func open_shop(zone: int) -> void:
 		open_shop(zone)
 	var gb := _btn(buy, "🎲 Gamble — %d gold  (a random %s-tier item, sight unseen)" % [gcost, gamble_tier],
 		gamble_cb, Color(0.85, 0.6, 1.0), p.gold >= gcost)
-	gb.custom_minimum_size = Vector2(640, 0)
+	gb.clip_text = true
+	gb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	# ----------------------------------------------------- SELL column ---
 	var sell := VBoxContainer.new()

@@ -472,9 +472,12 @@ func _test_vargoth_victory() -> void:
 		return _fail("player did not respawn")
 	if game.current_boss.hp < game.current_boss.max_hp:
 		return _fail("boss did not reset after player death")
-	if not game.room_safe(game.cur_room):
+	# Respawn lands at the nearest PACIFIED room — a cleared combat room now
+	# counts (2026-07-09), so a boss wipe doesn't march you back to the last
+	# village; either way it's never mid-danger.
+	if not game.room_pacified(game.cur_room):
 		return _fail("death respawn landed somewhere unsafe (room %d)" % game.cur_room)
-	print("ok: death, respawn at safe room, boss reset")
+	print("ok: death, respawn at nearest cleared/safe room, boss reset")
 	_buff()
 	await _goto_room(24)
 	game.player.global_position = game.current_boss.global_position + Vector2(-180, 0)

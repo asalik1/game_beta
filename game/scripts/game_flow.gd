@@ -57,6 +57,7 @@ func replay_chapter(id: String) -> void:
 	switch_chapter(id, true)
 	play_started = true
 	get_tree().paused = false
+	hud.visible = true  # the chapter-select menu hid it
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(id)["name"]))
 	autosave()
@@ -79,6 +80,7 @@ func start_weekly() -> void:
 	switch_chapter(chid, true)
 	play_started = true
 	get_tree().paused = false
+	hud.visible = true  # the challenge menu hid it
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.flash_title(zones[cur_room]["name"],
 		"WEEKLY CHALLENGE — %s" % String(weekly_mod()["name"]))
@@ -94,6 +96,7 @@ func advance_chapter() -> void:
 		return
 	state = ST_PLAYING
 	get_tree().paused = false
+	hud.visible = true  # a victory/results menu may have hid it
 	hud.overlay.color = Color(0, 0, 0, 0)
 	hud.title_label.modulate.a = 0.0
 	hud.subtitle_label.modulate.a = 0.0
@@ -202,7 +205,7 @@ func _finish_weekly(res: Dictionary) -> void:
 		var g := int(float(Balance.WEEKLY_REWARD_GOLD) * Balance.daily_gold_mult(player.level))
 		player.gold += g
 		for i in Balance.WEEKLY_REWARD_GEMS:
-			give_loot({"kind": "gem", "gem": Items.random_gem(loot_rng, Balance.WEEKLY_REWARD_GEM_LVL)},
+			give_loot({"kind": "gem", "gem": drop_gem(Balance.WEEKLY_REWARD_GEM_LVL)},
 				player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
 		sfx("chest")
 		spawn_text(player.global_position + Vector2(0, -92),
@@ -324,7 +327,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	# First-clear catch-up bundle rolls one level richer than the act floor.
 	var boss_gem_lvl := Balance.gem_drop_level(chapter_id) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
 	for gi in gem_count:
-		var boss_gem := Items.random_gem(loot_rng, boss_gem_lvl)
+		var boss_gem := drop_gem(boss_gem_lvl)
 		if give_loot({"kind": "gem", "gem": boss_gem}, boss_pos + Vector2(-34.0 + 34.0 * gi, 30)):
 			spawn_text(boss_pos + Vector2(0, -70 - 20 * gi),
 				"+ " + Items.gem_title(boss_gem), Items.gem_color(boss_gem))
@@ -425,7 +428,7 @@ func _first_clear_reward(boss_lv: int) -> void:
 	var spoils := Items.roll_item("gold", loot_rng, player.cls, loot_cap())
 	send_mail("Spoils of %s" % String(Story.chapter(chapter_id)["name"]),
 		"The chapter is conquered. These spoils are yours by right — and the road behind you stays open for the farming.",
-		[{"kind": "item", "item": spoils}, {"kind": "gem", "gem": Items.random_gem(loot_rng,
+		[{"kind": "item", "item": spoils}, {"kind": "gem", "gem": drop_gem(
 			Balance.gem_drop_level(chapter_id) + Balance.BOSS_FIRST_CLEAR_GEM_BONUS)}])
 	spawn_text(player.global_position + Vector2(0, -106),
 		"CHAPTER CONQUERED  +%d gold — spoils in your mailbox" % g,
@@ -459,7 +462,7 @@ func on_enemy_died(e: Enemy) -> void:
 		# nobody can socket yet.
 		if e.level >= Balance.ELITE_GEM_SURE_LEVEL \
 				or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE:
-			var gem := Items.random_gem(loot_rng, Balance.gem_drop_level(chapter_id))
+			var gem := drop_gem(Balance.gem_drop_level(chapter_id))
 			if give_loot({"kind": "gem", "gem": gem}, e.global_position):
 				spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 		Chest.drop(self, "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
@@ -485,6 +488,11 @@ func on_enemy_died(e: Enemy) -> void:
 	# Room clear tracking: the boss only appears once its room is purged.
 	if e.zone_idx >= 0:
 		zone_alive[e.zone_idx] = maxi(0, zone_alive.get(e.zone_idx, 0) - 1)
+		# Pack cascade (2026-07-09): a wiped pack makes the next-nearest
+		# sleeping pack in the room aware — it comes to you, so a big arena
+		# doesn't turn into stragger-hunting. No-op once the room is clear.
+		if not _pack_alive(e.zone_idx, e.pack_id):
+			_wake_nearest_pack(e.zone_idx)
 		refresh_quest()
 		if zone_alive[e.zone_idx] == 0:
 			cleared[e.zone_idx] = true  # stays cleared for the run (saved)
@@ -514,7 +522,7 @@ func on_enemy_died(e: Enemy) -> void:
 func _curse_payout(zi: int) -> void:
 	var pos := room_center(zi) + Vector2(0, -60)
 	Chest.drop(self, "gold", pos)
-	var gem := Items.random_gem(loot_rng,
+	var gem := drop_gem(
 		2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
 	if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(44, 24)):
 		spawn_text(pos + Vector2(0, -40), "+ " + Items.gem_title(gem), Items.gem_color(gem))
@@ -584,9 +592,13 @@ func on_player_died() -> void:
 			e.alerted = false
 			e.global_position = e.home
 
-	player.global_position = room_center(last_safe_room)
+	# Respawn at the nearest pacified room to where you fell — a cleared
+	# combat room counts, so a boss wipe no longer marches you back through
+	# the whole chapter (2026-07-09).
+	var rr := respawn_room(death_room)
+	player.global_position = room_center(rr)
 	player.revive()
-	_enter_room(last_safe_room)
+	_enter_room(rr)
 	# No boss serenades your respawn: unless the boss is HERE (it never
 	# is — you respawn in a safe room), the bar hides and the room's own
 	# music takes over. The arena boss keeps waiting where it lives.

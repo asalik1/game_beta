@@ -93,7 +93,7 @@ func _on_body_entered(body: Node) -> void:
 	# Chests can also hold loose gems (better chests, better odds).
 	var gem_chance: float = {"wood": 0.25, "silver": 0.6, "gold": 1.0}[tier]
 	if rng.randf() < gem_chance:
-		var gem := Items.random_gem(rng, 1)
+		var gem := Items.random_gem(rng, 1, Balance.special_gems_drop(game.chapter_id))
 		if game.give_loot({"kind": "gem", "gem": gem}, global_position):
 			game.spawn_text(body.global_position + Vector2(0, -66), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 

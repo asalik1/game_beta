@@ -331,26 +331,29 @@ func _ready() -> void:
 	dialogue_box = Control.new()
 	dialogue_box.visible = false
 	add_child(dialogue_box)
+	# The box grows UPWARD from a fixed bottom edge (648, clearing the
+	# quickbar): tall enough that a long paragraph (5-6 wrapped lines) fits
+	# instead of clipping its last line against the bottom border.
 	var frame := ColorRect.new()
 	frame.color = Color(0.9, 0.8, 0.5)
-	frame.position = Vector2(138, 498)
-	frame.size = Vector2(1004, 150)
+	frame.position = Vector2(138, 448)
+	frame.size = Vector2(1004, 200)
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue_box.add_child(frame)
 	var inner := ColorRect.new()
 	inner.color = Color(0.08, 0.07, 0.12, 0.97)
-	inner.position = Vector2(141, 501)
-	inner.size = Vector2(998, 144)
+	inner.position = Vector2(141, 451)
+	inner.size = Vector2(998, 194)
 	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue_box.add_child(inner)
 	speaker_label = Label.new()
-	speaker_label.position = Vector2(168, 512)
+	speaker_label.position = Vector2(168, 462)
 	speaker_label.add_theme_font_size_override("font_size", 18)
 	speaker_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.4))
 	dialogue_box.add_child(speaker_label)
 	text_label = Label.new()
-	text_label.position = Vector2(168, 542)
-	text_label.size = Vector2(820, 90)  # leaves the portrait slot clear
+	text_label.position = Vector2(168, 492)
+	text_label.size = Vector2(820, 148)  # leaves the portrait slot clear
 	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_label.add_theme_font_size_override("font_size", 19)
 	dialogue_box.add_child(text_label)
@@ -1117,6 +1120,17 @@ func update_stats(p: Player) -> void:
 		box["key"].text = OS.get_keycode_string(game.binds[slot])
 		box["name"].text = ab["name"]
 		box["cost"].text = str(int(cost)) if cost > 0 else ""
+		# Paladin's ult is a STANCE SWAP, not a nuke — the slot itself reads out
+		# the form you're in RIGHT NOW (Conviction toggles it), so you never have
+		# to hunt the buff chip to know whether your blows mend or hit harder.
+		if p.cls == "paladin" and slot == "ult":
+			var holy: bool = p.paladin_mode == "holy"
+			box["name"].text = "◆ HOLY" if holy else "◆ RETRI"
+			var scol := Color(1.0, 0.92, 0.55) if holy else Color(1.0, 0.5, 0.28)
+			box["name"].add_theme_color_override("font_color", scol)
+			box["icon"].modulate = scol
+		elif box["icon"] != null:
+			box["icon"].modulate = Color(1, 1, 1)
 		# Detail card: name/key/cost/cd, the ability's own words, then the
 		# assigned theme's variant line — built from live values, so cd
 		# talents and mana amods read truthfully.
@@ -1524,7 +1538,7 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	choice_count = options.size()
 	choices_active = true
 	var h := choice_count * 30 + 16
-	choice_frame.position = Vector2(138, 492 - h)
+	choice_frame.position = Vector2(138, 442 - h)  # 6px above the dialogue box top
 	choice_frame.size = Vector2(1004, h)
 	choice_inner.position = choice_frame.position + Vector2(3, 3)
 	choice_inner.size = choice_frame.size - Vector2(6, 6)
@@ -1533,7 +1547,7 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 		opt.visible = i < choice_count
 		if i < choice_count:
 			opt.text = "%d.  %s" % [i + 1, options[i]]
-			opt.position = Vector2(168, 492 - h + 10 + i * 30)
+			opt.position = Vector2(168, 442 - h + 10 + i * 30)
 	choice_panel.visible = true
 
 

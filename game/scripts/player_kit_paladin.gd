@@ -248,7 +248,13 @@ func _conviction_swap(f := 1.0) -> void:
 ## of the Retribution swap, not a standalone ult.
 func _chains_of_wrath(f := 1.0) -> void:
 	var radius := 320.0 * float(_tfx.get("radius_mult", 1.0))
-	var targets := _enemies_within(global_position, radius)
+	# Only chain enemies in YOUR room — the drag tweens straight through
+	# geometry, so a mob on the far side of a wall used to get yanked into it
+	# (then wedge against the wall trying to reach you). Same-room keeps the
+	# pull honest.
+	var my_room := game.room_at_pos(global_position)
+	var targets := _enemies_within(global_position, radius).filter(
+		func(e: Node) -> bool: return game.room_at_pos((e as Node2D).global_position) == my_room)
 	if targets.is_empty():
 		cds["ult"] = 1.0
 		return

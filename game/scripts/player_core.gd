@@ -1074,22 +1074,20 @@ func strip_gems(item: Dictionary) -> void:
 	item["gems"] = []
 
 
-## Socket a specific gem into a specific item (the player chooses both).
-## TYPED SLOTS (2026-07-08): A+ gear has ONE special-only slot + regular
-## slots; B and below are regular-only. Special gems (Haste/Combo/Lifesteal/
-## Greed/CritDmg) go ONLY in the special slot, regular gems only in regular
-## slots — and specials are further limited to ONE of each stat across your
-## whole equipped loadout. Can't stack them, can't skip them.
-func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
-	if item.get("gems", []).size() >= item.get("gem_slots", 0):
-		return false
+## Why this gem can't socket into this item — "" means it CAN. Centralizes
+## the TYPED-SLOT rules (2026-07-08) so the inventory can EXPLAIN a refusal
+## right on the gem's row instead of failing silently: A+ gear has ONE
+## special-only slot + regular slots; B and below are regular-only. Special
+## gems (Haste/CDR/Combo/Lifesteal/Greed/Dmg%) go ONLY in the special slot,
+## regular gems only in regular slots — and specials are limited to ONE of
+## each stat across your whole equipped loadout. Can't stack, can't skip.
+func gem_socket_error(item: Dictionary, gem: Dictionary) -> String:
+	if item.get("gems", []).size() >= int(item.get("gem_slots", 0)):
+		return "No open sockets."
 	# A vessel holds what it can bear: B ≤ Lv3, A ≤ Lv6, S ≤ Lv10.
 	var lvl_lim: int = Items.GEM_LEVEL_LIMIT.get(String(item.get("grade", "")), 0)
 	if int(gem["lvl"]) > lvl_lim:
-		game.spawn_text(global_position + Vector2(0, -56),
-			"%s gear holds gems up to Lv%d." % [String(item.get("grade", "?")), lvl_lim],
-			Color(1.0, 0.7, 0.5))
-		return false
+		return "%s gear holds gems up to Lv%d." % [String(item.get("grade", "?")), lvl_lim]
 	# Typed-slot capacity: count what's already socketed by type.
 	var grade := String(item.get("grade", ""))
 	var spec_cap: int = Items.special_slots(grade)
@@ -1104,13 +1102,9 @@ func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
 	var stat := String(gem["stat"])
 	if stat in Balance.SPECIAL_GEM_STATS:
 		if spec_cap <= 0:
-			game.spawn_text(global_position + Vector2(0, -56),
-				"Special gems need an A-grade special slot.", Color(1.0, 0.7, 0.5))
-			return false
+			return "Needs an A+ special slot."
 		if spec_used >= spec_cap:
-			game.spawn_text(global_position + Vector2(0, -56),
-				"The special slot is already filled.", Color(1.0, 0.7, 0.5))
-			return false
+			return "Special slot already filled."
 		# One of each special stat across the whole equipped loadout.
 		var dup := _special_in_other_slots(stat, String(item.get("slot", "")))
 		if not dup:
@@ -1119,13 +1113,21 @@ func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
 					dup = true
 					break
 		if dup:
-			game.spawn_text(global_position + Vector2(0, -56),
-				"Only one %s gem may be equipped." % Items.STAT_LABEL.get(stat, stat),
-				Color(1.0, 0.7, 0.5))
-			return false
+			return "Already wearing a %s gem." % Items.STAT_LABEL.get(stat, stat)
 	elif reg_used >= reg_cap:
-		game.spawn_text(global_position + Vector2(0, -56),
-			"No regular slot free (that's a special slot).", Color(1.0, 0.7, 0.5))
+		return "No regular slot free (special-only)."
+	return ""
+
+
+## Socket a specific gem into a specific item (the player chooses both).
+func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
+	# Feedback used to float in the WORLD as spawn_text — HIDDEN behind the
+	# open inventory, so a refusal read as "nothing happened" until you closed
+	# the menu. The inventory now reads gem_socket_error() directly and shows
+	# the reason IN-PANEL; this world text is only for non-menu callers.
+	var err := gem_socket_error(item, gem)
+	if err != "":
+		game.spawn_text(global_position + Vector2(0, -56), err, Color(1.0, 0.7, 0.5))
 		return false
 	item["gems"].append(gem)
 	gem_bag.erase(gem)
