@@ -77,14 +77,16 @@ func _run_systems() -> void:
 	var v_up := Story.enemy_stats_at("vargoth", 20)
 	if absf(v_at["dmg"] - Story.ALL_ENEMIES["vargoth"]["dmg"] * Balance.ENEMY_DMG_MULT * Balance.BOSS_DMG_MULT) > 0.01:
 		return _fail("at-anchor boss dmg must be base x ENEMY_DMG_MULT x BOSS_DMG_MULT")
-	# Rounds 11+13: growth tracks the player curve (~5.5%/level for boss
-	# dmg, per-kind rescaled hp) — +10 bites (~1.7x dmg on a base that
-	# already sits 20% above parity, ~2.2x hp) without ever running away
-	# into the one-shot wall that collapsed at-level parity at L38.
-	if v_up["dmg"] < v_at["dmg"] * 1.55 or v_up["hp"] < v_at["hp"] * 2.0:
-		return _fail("+10 growth lost its bite (want ~1.7x dmg / ~2.2x hp)")
-	if v_up["dmg"] > v_at["dmg"] * 3.0:
-		return _fail("+10 growth is runaway again (at-level parity collapses)")
+	# Endgame-scaling pass (2026-07-09): boss growth now TRACKS THE PLAYER CURVE
+	# so a scaled boss stays at PARITY with a same-level player — HP on
+	# BOSS_HP_GROWTH (player DPS), dmg on BOSS_DMG_GROWTH (player EHP). +10 is a
+	# gentle ~1.2x, NOT the old 1.7x "wall" that compounded into L100 one-shots.
+	# Under-level difficulty comes from the PLAYER being weak; an intentional +N
+	# (Nightmare) would be a SEPARATE explicit multiplier, not this growth.
+	var exp_dmg: float = pow(1.0 + Balance.BOSS_DMG_GROWTH, 10)
+	var exp_hp: float = pow(1.0 + Balance.BOSS_HP_GROWTH, 10)
+	if absf(v_up["dmg"] / v_at["dmg"] - exp_dmg) > 0.03 or absf(v_up["hp"] / v_at["hp"] - exp_hp) > 0.03:
+		return _fail("+10 boss growth should track the player curve (gentle, at-parity)")
 	print("ok: stat curves + true damage + TTK retune")
 
 	main_scene = load("res://scenes/main.tscn")
@@ -710,8 +712,11 @@ func _run_systems() -> void:
 	var boss_hi := Story.enemy_stats_at("fangmaw", 30)
 	if w_hi["hp"] <= w_lo["hp"] or w_hi["dmg"] <= w_lo["dmg"]:
 		return _fail("wolf did not scale with level")
-	if boss_hi["hp"] / Story.ALL_ENEMIES["fangmaw"]["hp"] <= w_hi["hp"] / (Story.ALL_ENEMIES["wolf"]["hp"] * Balance.TTK_HP_MULT * Balance.MOB_HP_MULT):
-		return _fail("boss growth should outpace trash growth")
+	# Bosses now scale on the player-tracking BOSS_HP_GROWTH (2026-07-09) —
+	# deliberately GENTLER per-level than trash's per-kind growth, but their huge
+	# authored base keeps them far tankier than trash in absolute terms at level.
+	if boss_hi["hp"] <= w_hi["hp"]:
+		return _fail("a boss should out-HP trash at the same level")
 	# 3d3b. NO DOWNSCALING: the listed level is a MINIMUM — asking for
 	# less clamps UP (an endgame boss in chapter 1 arrives as-is) — and
 	# every substat climbs with level via the monster attribute build.
@@ -2346,16 +2351,17 @@ func _test_retention() -> void:
 		return _fail("equipped another class's gear")
 	game.player.backpack.erase(locked)
 
-	# --- boss gem-expectation ramp: bosses out-grow pure growth past L32 ---
-	var nw_g: float = float(Story.ALL_ENEMIES["nullwarden"]["hp_g"]) * Balance.GROWTH_SCALE
+	# --- boss HP grows on the flat player-tracking BOSS_HP_GROWTH (2026-07-09):
+	# the old per-kind hp_g + past-L32 gem ramp was folded into one dial so a
+	# scaled boss's TTK stays level-invariant instead of ballooning. The per-level
+	# ratio is now the SAME at every level (no ramp bump). ---
 	var hi_ratio: float = float(Story.enemy_stats_at("nullwarden", 50)["hp"]) \
 		/ float(Story.enemy_stats_at("nullwarden", 49)["hp"])
-	if hi_ratio <= 1.0 + nw_g:
-		return _fail("boss gem ramp missing above L%d" % Balance.BOSS_GEM_RAMP_START)
 	var low_ratio: float = float(Story.enemy_stats_at("nullwarden", 30)["hp"]) \
 		/ float(Story.enemy_stats_at("nullwarden", 29)["hp"])
-	if absf(low_ratio - (1.0 + nw_g)) > 0.001:
-		return _fail("boss gem ramp leaked below its start level")
+	if absf(hi_ratio - (1.0 + Balance.BOSS_HP_GROWTH)) > 0.001 \
+			or absf(low_ratio - (1.0 + Balance.BOSS_HP_GROWTH)) > 0.001:
+		return _fail("boss HP should grow at a flat BOSS_HP_GROWTH per level")
 
 	# --- hidden caches: buried chest stays invisible, reveals near ---
 	var hc := Chest.drop(g, "silver", g.player.global_position + Vector2(400, 0))

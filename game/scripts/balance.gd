@@ -61,7 +61,17 @@ const GROWTH_SCALE := 0.55
 # bosses; S-tier is comfort + tier headroom, matching when S drops,
 # L40-70). Damage only: boss HP growth stays per-kind ("in tune").
 const BOSS_DMG_MULT := 1.2
-const BOSS_DMG_GROWTH := 0.055   # = the player's ~per-level power growth
+# Boss GROWTH per level above native (2026-07-09 endgame-scaling pass). These
+# only bite when a boss is fought ABOVE its authored level (endgame/scaling
+# mode); at native level d=0 so nothing changes and normal play is untouched.
+# The old rates (dmg 0.055, hp 0.15*GROWTH_SCALE) compounded exponentially over
+# big level gaps — a L100 boss hit for 32x and had 184x HP, one-shotting even
+# tanks and making 30-min fights. Recalibrated to the PLAYER's real curves over
+# the same range (DPS ~x2.9, EHP ~x2.4 from L40->L100 incl. gear): HP growth
+# tracks player DPS (TTK stays flat), DMG growth tracks player EHP (a hit stays
+# the same % of HP — tanks survive, squishies dodge, exactly as at native L40).
+const BOSS_HP_GROWTH := 0.018    # bosses only; tracks player DPS growth -> level-invariant TTK
+const BOSS_DMG_GROWTH := 0.015   # tracks player EHP growth -> level-invariant hit danger
 const GOLD_MULT := 0.6          # global gold scarcity (merchants must matter)
 const REWARD_PER_LEVEL := 0.12  # xp/gold grow LINEARLY per level (no farm spiral)
 
@@ -349,6 +359,12 @@ const JUDGMENT_LEAP_CD := 5.0
 # old 0.45s cadence back for the window — the ult is a tempo steroid now,
 # not just a damage one.
 const BERSERK_CLEAVE_CD := 0.45
+# Cleave's cd FLOOR (2026-07-09): cdr/haste can pull Cleave's 0.74 base down to
+# here and no further (Berserk bypasses it). ~ the L40 cdr'd value, so at-level
+# play is untouched but stacked ENDGAME cdr can't spin the basic to a caster's
+# tempo — the "plate hits hard, not fast" cap that keeps warrior off the top of
+# the endgame charts without gutting its L40 slot.
+const CLEAVE_FLOOR_CD := 0.66
 
 # ------------------------------------------------ warrior bulwark charge ---
 # Round 44: the bulwark's sustain is its heal-on-hit, but Charge's dead-
@@ -623,8 +639,13 @@ const SPECIAL_GEM_STATS := ["cdr", "lifesteal", "combo", "greed", "dmg_pct"]
 # they already accumulate, the flat-class answer to crit's crit_dmg. Tuned
 # SMALL and CAPPED so a tank never tops the dps charts (ranged/assassin still
 # out-dps them on bosses) — it lifts their floor, it isn't 1M armor = 1M dmg.
-const PLATE_RES_DMG_SCALE := 0.001   # +0.1% damage per point of (physres + magres)
-const PLATE_RES_DMG_CAP := 0.30      # hard ceiling on the res→damage bonus
+# LOG curve (2026-07-09): bonus = LOG * ln(1 + res*K), min'd with CAP. Diminishing
+# returns — rises fast off low res (the floor lift), then flattens hard so endgame
+# res stacking can't snowball plate to the top of the charts. At res 100 ~ +5.5%,
+# res 190 ~ +6.9%, res 350 ~ +8.4% (vs the old linear's +10 / +19 / +30%).
+const PLATE_RES_DMG_LOG := 0.025     # log coefficient
+const PLATE_RES_DMG_K := 0.08        # res sensitivity inside the log
+const PLATE_RES_DMG_CAP := 0.15      # hard ceiling (halved from the old 0.30)
 
 # Boss gem-expectation ramp (player-approved, 2026-07-06): the TIERLIST
 # benchmark was gemless, but real players arrive with sockets filled —
@@ -633,8 +654,12 @@ const PLATE_RES_DMG_CAP := 0.30      # hard ceiling on the res→damage bonus
 # same "budget for what the player actually has" move as round 45's
 # gear-inclusive dps. Applied inside enemy_stats_at: codex stays honest.
 const BOSS_GEM_RAMP_START := 32
-const BOSS_GEM_HP_RAMP := 0.012    # +9.6% at L40, grows through Act 2
-const BOSS_GEM_DMG_RAMP := 0.006   # half-size: skill still wins parity
+# FOLDED into BOSS_HP_GROWTH / BOSS_DMG_GROWTH (2026-07-09): the gem premium was
+# a second per-level scaler that double-counted with a player-curve calibration
+# (the L100 player already has Lv10 gems). Zeroed so scaling is one clean dial
+# per axis; the growth rates were set to include the gemmed player curve.
+const BOSS_GEM_HP_RAMP := 0.0
+const BOSS_GEM_DMG_RAMP := 0.0
 
 # First-clear premium (reward calibration, 2026-07-06): conquering a
 # chapter the FIRST time pays a legible beat on top of XP + boss gems —

@@ -88,23 +88,22 @@ const TREE_PRESETS := {
 	},
 }
 
-# Gem loadout — DPS-OPTIMAL under the TYPED-SLOT rule (2026-07-08). A-gear =
-# 1 REGULAR slot (Ruby / ATK%, +22.8%/gem at Lv6) + 1 SPECIAL slot per piece;
-# 4 A pieces → 4 special slots that MUST each hold a DISTINCT special (one gem
-# per stat across gear). `_equip` fills special slots from `specials` and every
-# regular slot with a Ruby. DPS picks: `dmg_pct` (Sunstone — the universal
-# damage special, +22.8% atk) + combo on everyone; cdr for the free-basic
-# classes (warrior/paladin/assassin — pure cadence, no mana risk); the
-# mana-bound (archer/mage/warlock) SKIP cdr (it accelerates their costed
-# cooldowns toward starvation) and fill with the inert specials (lifesteal/
-# greed) instead. Plate res→damage is a kit passive, not a gem.
+# Gem loadout — DPS-OPTIMAL under the TYPED-SLOT rule. Each piece = REGULAR
+# slot(s) (Ruby / flat ATK) + 1 SPECIAL slot; the special slots MUST each hold a
+# DISTINCT special (one per stat across gear). Of the 5 specials only THREE add
+# damage — `dmg_pct`, `combo`, `cdr` — so the max-DPS build is ALWAYS those three
+# plus the least-useless 4th, `lifesteal` (sustain). `greed` is farm-gold: it
+# does nothing for DPS and never belongs here. `cdr` weakly dominates `greed` for
+# every class (it can't starve mana — it only speeds casts WHEN mana is there),
+# so it's universal now (2026-07-09; the old "mana-bound skip cdr" rule was
+# wrong). Plate res→damage is a kit passive, not a gem.
 const GEM_PRESETS := {
 	"warrior":  {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
 	"paladin":  {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
 	"assassin": {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
-	"archer":   {"*": {"specials": ["dmg_pct", "combo", "lifesteal", "greed"]}},
-	"mage":     {"*": {"specials": ["dmg_pct", "combo", "lifesteal", "greed"]}},
-	"warlock":  {"*": {"specials": ["dmg_pct", "combo", "lifesteal", "greed"]}},
+	"archer":   {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
+	"mage":     {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
+	"warlock":  {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
 }
 
 # Priority list attempted every physics frame (= holding the keys down;
@@ -161,8 +160,12 @@ var downtime := false
 var rep := -1           # --rep=N: independent RNG stream (parallel-mean fan)
 var standoff_override := -1.0  # --standoff=N: override STAND_OFF (fidelity probe)
 var knife_probe := false       # --knifeprobe: count avg knives/fan connecting
+var defense := false           # --defense: print EHP / damage-taken vs the boss, no DPS sim
 var grade := GEAR_GRADE        # --grade=X: gear tier on every slot (realistic-kit runs)
 var gemlvl := GEM_LVL          # --gemlvl=N: gem level in every socket
+var plevel := PLAYER_LEVEL     # --level=N: hero level (also sets attr points = N-1)
+var dlevel := DUMMY_LEVEL      # --level=N sets this too; the target's level
+var boss_kind := ""            # --boss=X: dummy carries THIS boss's sheet, not the averaged one
 var results: Array = []
 
 # --- rotation driver state (one case at a time) ---
@@ -316,10 +319,17 @@ func _parse_args() -> void:
 			standoff_override = float(a.get_slice("=", 1))
 		elif a == "--knifeprobe":
 			knife_probe = true
+		elif a == "--defense":
+			defense = true
 		elif a.begins_with("--grade="):
 			grade = a.get_slice("=", 1)
 		elif a.begins_with("--gemlvl="):
 			gemlvl = int(a.get_slice("=", 1))
+		elif a.begins_with("--level="):
+			plevel = int(a.get_slice("=", 1))
+			dlevel = plevel
+		elif a.begins_with("--boss="):
+			boss_kind = a.get_slice("=", 1)
 
 
 func _run() -> void:
@@ -334,12 +344,18 @@ func _run() -> void:
 	await _frames(5)
 	await _skip_opening()
 
-	var block := _boss_stat_block(DUMMY_LEVEL)
-	print("[bench] target: avg of %d bosses at L%d — physres %.0f  magres %.0f  eva %.1f%%  critres %.0f" % [
-		Menus.BOSS_KINDS.size(), DUMMY_LEVEL, block["physres"], block["magres"],
-		block["eva"] * 100.0, block["critres"]])
+	var block := _boss_stat_block(dlevel)
+	if boss_kind == "":
+		print("[bench] target: avg of %d bosses at L%d — physres %.0f  magres %.0f  eva %.1f%%  critres %.0f" % [
+			Menus.BOSS_KINDS.size(), dlevel, block["physres"], block["magres"],
+			block["eva"] * 100.0, block["critres"]])
+	else:
+		var kh: float = Story.enemy_stats_at(boss_kind, dlevel)["hp"]
+		print("[bench] target: %s at L%d (HP %.0f) — physres %.0f  magres %.0f  eva %.1f%%  critres %.0f" % [
+			boss_kind, dlevel, kh, block["physres"], block["magres"],
+			block["eva"] * 100.0, block["critres"]])
 	print("[bench] hero: L%d, full %s gear (seed %d), Lv%d gems, %.0fs window per case" % [
-		PLAYER_LEVEL, grade, GEAR_SEED, gemlvl, sim_secs])
+		plevel, grade, GEAR_SEED, gemlvl, sim_secs])
 	if aoe:
 		print("[bench] AOE MODE: %d boss pillars in a row + %d adds (%.0f hp) every %.0fs — effective damage, pooled" % [
 			PILLARS, ADD_WAVE_COUNT, ADD_HP, ADD_WAVE_SECS])
@@ -365,6 +381,12 @@ func _run() -> void:
 func _boss_stat_block(lvl: int) -> Dictionary:
 	var block := {"physres": 0.0, "magres": 0.0, "eva": 0.0, "critres": 0.0,
 		"crit": 0.0, "dex": 0.0}
+	# --boss=X: carry that ONE boss's actual defensive sheet, not the average.
+	if boss_kind != "":
+		var s := Story.enemy_stats_at(boss_kind, lvl)
+		for stat in block:
+			block[stat] = float(s.get(stat, 0.0))
+		return block
 	var kinds: Array = Menus.BOSS_KINDS
 	for kind in kinds:
 		var s := Story.enemy_stats_at(String(kind), lvl)
@@ -386,18 +408,25 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	var anchor: Vector2 = game.room_center(0)
 
 	# --- build the hero: level, mono theme, talents, attributes, gear
-	p.level = PLAYER_LEVEL
+	p.level = plevel
 	p.set_class(cls)          # refunds all points, derives theme unlocks
 	p.set_all_themes(tid)     # MONO spec: one identity across all four slots
 	p.tree_points = _preset(TREE_PRESETS, cls, tid).duplicate()
 	p.skill_points = 0
 	for attr in p.attr_points:
 		p.attr_points[attr] = 0
-	p.attr_points[String(Classes.CLASSES[cls]["primary"])] = PLAYER_LEVEL - 1
+	p.attr_points[String(Classes.CLASSES[cls]["primary"])] = plevel - 1
 	p.unspent_attr = 0
+	# S gear carries a dormant signature passive; a BiS run wants it LIVE.
+	if grade == "S":
+		game.set_flag("s_awakened_" + cls, true)
 	_equip(p, cls, tid)
 	p.recalc()
 	_reset_player(p)
+
+	if defense:
+		_defense_readout(p, cls, tid)
+		return
 
 	# --- the target(s)
 	pack_center = anchor + Vector2(240, 0)
@@ -408,7 +437,7 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 		# Three pillars shoulder to shoulder; the middle one anchors aim.
 		for i in PILLARS:
 			var d := BenchDummy.spawn_bench(game,
-				pack_center + Vector2((float(i) - 1.0) * PILLAR_SPACING, 0), DUMMY_LEVEL, block)
+				pack_center + Vector2((float(i) - 1.0) * PILLAR_SPACING, 0), dlevel, block)
 			d.pool = pool
 			game.add_enemy(d)
 			pillars.append(d)
@@ -423,7 +452,7 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 		else:
 			p.global_position = pack_center + Vector2(0, 120)
 	else:
-		dummy = BenchDummy.spawn_bench(game, pack_center, DUMMY_LEVEL, block)
+		dummy = BenchDummy.spawn_bench(game, pack_center, dlevel, block)
 		game.add_enemy(dummy)
 		var so: float = standoff_override if standoff_override >= 0.0 else float(STAND_OFF[cls])
 		p.global_position = dummy.home + Vector2(-so, 0)
@@ -638,7 +667,7 @@ func _tick_waves() -> void:
 	for i in ADD_WAVE_COUNT:
 		var ang := TAU * float(i) / float(ADD_WAVE_COUNT) + float(wave_idx) * 0.37
 		var a := AddDummy.spawn_add(game, pack_center + Vector2.from_angle(ang) * ADD_RING,
-			DUMMY_LEVEL, ADD_HP, pool)
+			dlevel, ADD_HP, pool)
 		game.add_enemy(a)
 		adds.append(a)
 		adds_spawned += 1
@@ -685,6 +714,30 @@ func _count_fan_connects(p: Player) -> void:
 	knife_connects += connects
 
 
+## --defense: how hard does the target boss hit THIS class? Prints EHP + damage
+## taken per representative attack pattern (boss.gd mults), so you can see who
+## gets one-shot and who has a margin. Mitigation = 1 - res_frac(res of the
+## boss's damage type); boss pen is ~0 for most bosses so it's omitted (noted).
+func _defense_readout(p: Player, cls: String, tid: String) -> void:
+	var kind := boss_kind if boss_kind != "" else "stormmouth"
+	var bs := Story.enemy_stats_at(kind, dlevel)
+	var bdmg: float = bs["dmg"]
+	var dtype: String = String(Story.ALL_ENEMIES[kind].get("dmg_type", "phys"))
+	var res: float = p.physres if dtype == "phys" else p.magres
+	var mit: float = (1.0 - Stats.res_frac(res)) * (1.0 - p.flat_dr)
+	var line := "[def] %-16s HP %6.0f  pres %3.0f(%2.0f%%) mres %3.0f(%2.0f%%) dr %2.0f%%  eHP %6.0f | %s %s d%.0f: " % [
+		cls + "/" + tid, p.max_hp, p.physres, Stats.res_frac(p.physres) * 100.0,
+		p.magres, Stats.res_frac(p.magres) * 100.0, p.flat_dr * 100.0,
+		p.max_hp / maxf(0.01, mit), kind, dtype, bdmg]
+	# Representative Cyrraeth patterns: bolt x1.0, storm sector x1.2, arc x1.3.
+	for m in [1.0, 1.2, 1.3]:
+		var taken: float = bdmg * m * mit
+		var pct: float = 100.0 * taken / p.max_hp
+		var tag := "!!" if taken >= p.max_hp else ""
+		line += "x%.1f=%.0f(%.0f%%%s) " % [m, taken, pct, tag]
+	print(line)
+
+
 # ================================================================== plumbing
 
 func _preset(table: Dictionary, cls: String, tid: String) -> Dictionary:
@@ -717,7 +770,7 @@ func _print_report() -> void:
 	ranked.sort_custom(func(a, b): return a["dps"] > b["dps"])
 	print("")
 	print("== DPS BENCH — L%d hero, full %s + Lv%d gems, vs avg L%d boss, %.0fs windows ==" % [
-		PLAYER_LEVEL, grade, gemlvl, DUMMY_LEVEL, sim_secs])
+		plevel, grade, gemlvl, dlevel, sim_secs])
 	var rank := 1
 	for r in ranked:
 		print("%2d. %-18s %7.0f dps   hits/s %4.1f   crit %2.0f%%   peak %6.0f   ults %d" % [

@@ -626,11 +626,15 @@ static func add_socket(item: Dictionary) -> void:
 # phys + mag res + a little critres (bullet hell throws both damage types);
 # the VIT 2pc adds the pool. No specials (gear rule holds).
 const SET_BONUSES := {
-	"warrior":  {"name": "Emberforged Warplate",    "2": {"atk_pct": 0.06}, "4": {"atk_pct": 0.10, "physpen": 8.0}},
-	"paladin":  {"name": "The Highfather's Aegis",  "2": {"atk_pct": 0.06}, "4": {"atk_pct": 0.10, "magpen": 8.0}},
-	"archer":   {"name": "The Hawk God's Regalia",  "2": {"VIT": 8.0},      "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
+	# S-set bonuses are the ENDGAME DPS dial (S-gear only, inert below): glass
+	# cannons (archer/mage) get OFFENSE to top the charts, plate a SMALL offense
+	# lift (they lead on survivability, not damage), assassin/warlock keep the
+	# defensive set (assassin tops on raw kit; warlock is the survivable caster).
+	"warrior":  {"name": "Emberforged Warplate",    "2": {"atk_pct": 0.02}, "4": {"atk_pct": 0.04, "physpen": 4.0}},
+	"paladin":  {"name": "The Highfather's Aegis",  "2": {"atk_pct": 0.06}, "4": {"atk_pct": 0.12, "magpen": 6.0}},
+	"archer":   {"name": "The Hawk God's Regalia",  "2": {"atk_pct": 0.08}, "4": {"atk_pct": 0.17, "crit": 0.04, "physpen": 6.0}},
 	"assassin": {"name": "The Shadow God's Vestige", "2": {"VIT": 8.0},     "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
-	"mage":     {"name": "The Archmage's Array",    "2": {"VIT": 8.0},      "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
+	"mage":     {"name": "The Archmage's Array",    "2": {"atk_pct": 0.10}, "4": {"atk_pct": 0.22, "magpen": 8.0}},
 	"warlock":  {"name": "The Long Bargain Raiment", "2": {"VIT": 8.0},     "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
 }
 

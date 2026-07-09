@@ -594,7 +594,10 @@ static func enemy_stats_at(kind: String, level: int) -> Dictionary:
 	var lvl := clampi(level, int(base["level"]), Balance.LEVEL_CAP)
 	var d := lvl - int(base["level"])
 	var is_boss := bool(base.get("boss", false))
-	var hp_m := pow(1.0 + float(base["hp_g"]) * Balance.GROWTH_SCALE, d)
+	# Bosses grow HP on the global BOSS_HP_GROWTH (tracks the player DPS curve so
+	# TTK stays flat when scaled above native); mobs keep their per-kind hp_g.
+	var hp_growth: float = Balance.BOSS_HP_GROWTH if is_boss else float(base["hp_g"]) * Balance.GROWTH_SCALE
+	var hp_m := pow(1.0 + hp_growth, d)
 	if not is_boss:
 		# Mobs only (boss pools are budgeted directly): the TTK retune plus
 		# the 2026-07-07 presence pass — fatter pools so trash needs real

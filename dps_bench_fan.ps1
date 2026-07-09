@@ -41,6 +41,8 @@ foreach ($j in $jobs) {
         } elseif ($line -match '^\[dps\]') {
             Write-Output $line
             $dpsLines += $line
+        } elseif ($line -match '^\[def\]') {
+            Write-Output $line
         } elseif ($line -match 'BENCH STALL|SCRIPT ERROR') {
             Write-Output $line
         }

@@ -706,12 +706,13 @@ func current_atk() -> float:
 		# reverse — sustain and damage are never simultaneous (round 48).
 		a *= Balance.PALADIN_HOLY_DMG if paladin_mode == "holy" else Balance.PALADIN_RETRI_DMG
 	if cls == "warrior" or cls == "paladin":
-		# PLATE res→damage (2026-07-08): the plate classes' damage-scaling axis —
-		# their over-stacked resistance (past the survival knee) answers as a
-		# little damage. SMALL and CAPPED: lifts the flat-class floor, never tops
-		# the charts. Their identity mirror to crit's crit_dmg.
+		# PLATE res→damage: the plate classes' damage-scaling axis — over-stacked
+		# resistance (past the survival knee) answers as a little damage, their
+		# identity mirror to crit's crit_dmg. LOG curve (2026-07-09): diminishing
+		# returns so endgame res can't buy top-chart DPS — it lifts the low-res
+		# FLOOR, then flattens hard (linear+cap let it snowball to +19% at L100).
 		a *= 1.0 + minf(Balance.PLATE_RES_DMG_CAP,
-			(physres + magres) * Balance.PLATE_RES_DMG_SCALE)
+			Balance.PLATE_RES_DMG_LOG * log(1.0 + (physres + magres) * Balance.PLATE_RES_DMG_K))
 	return a
 
 
@@ -1341,7 +1342,15 @@ func ability_cd(slot: String) -> float:
 		cd *= 1.0 - cast_haste_cdr
 	if s_passive() == "wellspring" and (slot == "a2" or slot == "a3"):
 		cd *= 0.92  # mage S weapon: Frost Nova & Blink cool down 8% faster
-	return maxf(0.1, cd * (1.0 - cdr))
+	cd = cd * (1.0 - cdr)
+	if cls == "warrior" and slot == "a1" and berserk_time <= 0.0:
+		# Cleave has a HARD cd floor cdr can't pierce — plate hits hard, not fast,
+		# so stacked endgame cdr/haste can't spin the basic into a caster's
+		# cadence. Only Berserk (which sets base_cd to the tighter BERSERK value
+		# above, bypassing this branch) drops it below the floor — the burst
+		# window is where the fast blade lives.
+		cd = maxf(Balance.CLEAVE_FLOOR_CD, cd)
+	return maxf(0.1, cd)
 
 
 func ability_cost(slot: String) -> float:

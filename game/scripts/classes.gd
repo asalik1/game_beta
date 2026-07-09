@@ -125,7 +125,7 @@ const CLASSES := {
 		"hp": 90.0, "hp_lvl": 12.0, "mp": 70.0, "mp_lvl": 8.0,
 		"atk": 13.5, "atk_lvl": 3.7, "speed": 255.0,
 		"abilities": {
-			"a1": {"name": "Firebolt",   "cd": 0.45, "mp": 4,  "desc": "Hurl a bolt at the nearest enemy."},
+			"a1": {"name": "Firebolt",   "cd": 0.45, "mp": 2,  "desc": "Hurl a bolt at the nearest enemy."},
 			"a2": {"name": "Frost Nova", "cd": 7.0,  "mp": 15, "desc": "Blast around you: knocks enemies away, SLOWS them 50%, and restores 20% of your MISSING health and mana."},
 			"a3": {"name": "Blink",      "cd": 4.5,  "mp": 10, "desc": "Dash in your move direction, shocking everything in your path."},
 			"ult": {"name": "Meteor",    "cd": 44.0, "mp": 40, "desc": "Call a meteor onto the nearest enemy. Massive damage."},
