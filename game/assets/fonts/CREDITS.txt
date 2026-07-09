@@ -1,0 +1,18 @@
+UI display font in this folder:
+
+PIXELIFY SANS (PixelifySans.ttf) — the UI's display/header face
+  (panel titles, section headers, HUD title cards, boss bar name,
+  speaker names, boot cover wordmark). Body text stays the engine's
+  default sans for readability.
+
+  Copyright 2021 The Pixelify Sans Project Authors
+  (https://github.com/eifetx/Pixelify-Sans)
+  License: SIL Open Font License 1.1 — see OFL.txt in this folder.
+  Free for commercial use; the license text must ship with the font
+  (it does: OFL.txt). Downloaded from the Google Fonts repository
+  (github.com/google/fonts, ofl/pixelifysans).
+
+How the font is wired:
+  scripts/ui/theme.gd (UITheme.display_font) loads it and applies it
+  ONLY to titles/headers via UITheme.title()/header(). Deleting the
+  TTF falls every title back to the default sans — nothing breaks.

@@ -109,7 +109,7 @@ static func build(m: Menus, root: Control) -> void:
 	title.position = Vector2(0, 396)
 	title.size = Vector2(1280, 110)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 84)
+	UITheme.title(title, 84)  # display face — matches the hand-made cover's wordmark
 	title.add_theme_color_override("font_color", Color(0.98, 0.85, 0.45))
 	title.add_theme_color_override("font_outline_color", Color(0.08, 0.04, 0.02))
 	title.add_theme_constant_override("outline_size", 12)
@@ -119,7 +119,7 @@ static func build(m: Menus, root: Control) -> void:
 	sub.position = Vector2(0, 508)
 	sub.size = Vector2(1280, 30)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_font_size_override("font_size", 19)
+	UITheme.title(sub, 21)
 	sub.add_theme_color_override("font_color", Color(0.72, 0.68, 0.62))
 	root.add_child(sub)
 
