@@ -39,7 +39,7 @@ static func open(m: Menus) -> void:
 			# the panel and spill off-screen — trim to width with an ellipsis.
 			b.clip_text = true
 			b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	m._hint(vbox, "Click ✕ (top-right) or anywhere outside to close")
+	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
 
 
 static func open_letter(m: Menus, mail: Dictionary) -> void:
@@ -99,7 +99,7 @@ static func open_letter(m: Menus, mail: Dictionary) -> void:
 		m._btn(row, "  Delete letter  ", func() -> void:
 			m.open_confirm("Delete this letter AND its unclaimed loot?", do_delete), Color(1.0, 0.65, 0.55))
 	m._btn(row, "  ⇦ Back  ", func() -> void: open(m))
-	m._hint(vbox, "Click ✕ (top-right) or anywhere outside to close")
+	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
 
 
 ## Move as much loot as fits into the bag; the rest stays in the letter.

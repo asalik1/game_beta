@@ -65,7 +65,7 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		_records(m, list)
 	else:
 		_gear(m, list)
-	m._hint(vbox, "Click ✕, click outside, or press C to close")
+	m._hint(vbox, "ESC, ✕, click outside, or C to close")
 
 
 ## Rounded, padded card panel — shared row container for codex galleries.
@@ -360,7 +360,7 @@ static func _boss_detail(m: Menus, kind: String) -> void:
 			cl.custom_minimum_size = Vector2(880, 0)
 			cl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	m._hint(vbox, "Click ✕, click outside, or press C to close")
+	m._hint(vbox, "ESC, ✕, click outside, or C to close")
 
 
 static func _terrains(m: Menus, list: VBoxContainer) -> void:

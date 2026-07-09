@@ -93,7 +93,7 @@ static func open(m: Menus) -> void:
 	if neutral:
 		m._lbl(list, "No faction has taken your measure yet.", 13, Color(0.6, 0.62, 0.68))
 
-	m._hint(vbox, "Click ✕ (top-right) or anywhere outside to close")
+	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
 
 
 ## Active bounties with progress. Daily first, then weekly.

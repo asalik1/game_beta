@@ -348,7 +348,7 @@ func open_pause() -> void:
 		game.autosave()
 		get_tree().quit()
 	_btn(vbox, "  ✕  Save and quit game", quit_game, Color(1.0, 0.55, 0.5))
-	_hint(vbox, "Click ✕ (top-right) or anywhere outside to resume")
+	_hint(vbox, "ESC, ✕, or click anywhere outside to resume")
 
 
 ## A single yes/cancel gate in front of anything destructive. Pause-menu
@@ -786,7 +786,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	if cat == "all":
 		for i in maxi(0, p.bag_capacity() - p.bag_used()):
 			_bag_empty(grid)
-	_hint(vbox, "Click ✕, click outside, or press I to close")
+	_hint(vbox, "ESC, ✕, click outside, or I to close")
 
 
 ## One square bag slot: an item icon or a colored glyph, colored border,
@@ -1038,7 +1038,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 		var val := "%s%d%s" % ["+" if standing > 0 else "", standing, "   ⚑ JOINED" if joined else ""]
 		var col := Color(0.6, 1.0, 0.6) if standing > 0 else (Color(1.0, 0.6, 0.6) if standing < 0 else Color(0.85, 0.85, 0.9))
 		_stat_row(list, f[1], val, f[3], col)
-	_hint(vbox, "Click ✕, click outside, or press I to close")
+	_hint(vbox, "ESC, ✕, click outside, or I to close")
 
 
 ## One stat line: name, value, and a 🛈 hint. Click the row to open the
@@ -2159,11 +2159,9 @@ func _input(event: InputEvent) -> void:
 		if current in ["title", "class_select"] \
 				or (current == "chapter_select" and not chapter_replay):
 			return  # boot menus: no escaping into a paused void
-		# ESC no longer exits the screens that grew an on-screen ✕ + click-off
-		# (inventory, pause, codex, quest log, mailbox) — use those instead.
-		# Their toggle hotkey (I / C) still closes them.
-		var esc_retired: bool = current in ["inventory", "pause", "codex", "journal", "mailbox", "mail_letter", "daily"]
-		if (event.keycode == KEY_ESCAPE and not esc_retired) \
+		# ESC closes any open menu (alongside the on-screen ✕ + click-off);
+		# the toggle hotkeys (I / C / M …) also close their own screen.
+		if event.keycode == KEY_ESCAPE \
 				or (current == "inventory" and event.keycode == game.binds["inventory"]) \
 				or (current == "detail" and event.keycode == game.binds["inventory"]) \
 				or (current == "skills" and event.keycode == game.binds["skills"]) \

@@ -50,7 +50,7 @@ static func open(m: Menus, just_claimed: Array = []) -> void:
 			var lines: Array = g.claim_daily()
 			open(m, lines), Color(0.6, 1.0, 0.6))
 	m._btn(row, "   Close   ", func() -> void: m.close())
-	m._hint(vbox, "Click ✕ (top-right) or anywhere outside to close")
+	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
 
 
 ## One day-cell in the track: "Day N" over a short reward summary, tinted
