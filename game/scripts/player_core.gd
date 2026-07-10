@@ -386,6 +386,12 @@ var _clip_locked := false      # death latch: hold last frame, ignore everything
 # rest of the way. Both cleared by the next _play_clip.
 var _clip_rot := 0.0           # rotation held on the sprite (0 on a flat dash)
 var _clip_flip := 0.0          # facing side (±1) forced while it plays; 0 = follow look_sign
+# 8-DIRECTION locomotion (art audit 2026-07-10 seam): populated per clip
+# only when assets/sprites/<class>_<clipfile>_<dir>.png exists. Empty for
+# every current class, which keeps the single-facing + flip path untouched.
+var _dir_loco := {}            # {clip name: 8-dir strip set}, empty if none
+var _loco_dir := "s"           # current facing suffix while directional
+var _loco_dir_on := false      # is directional locomotion driving the sprite?
 var halo: PointLight2D = null  # the hero's soft light (dark terrains only)
 
 ## Per-class ability-slot -> action clip. Slots with no matching clip (or a
@@ -444,6 +450,14 @@ func _apply_class_sprite() -> void:
 	sprite.hframes = 1
 	sprite.frame = 0
 	_dir_clips = Art.hero_dir_clips(art_name)
+	# 8-direction locomotion sets (idle/walk/run/... = <class>_<file>_<dir>).
+	# Empty for every current class; lights up when directional art lands.
+	_dir_loco = {}
+	for clip in Art.HERO_CLIP_FILES:
+		var ds := Art.dir_set("%s_%s" % [art_name, Art.HERO_CLIP_FILES[clip]])
+		if not ds.is_empty():
+			_dir_loco[clip] = ds
+	_loco_dir_on = false
 	_dir_meta = {}
 	_dir_pose_active = false
 	_clip_rot = 0.0   # a held dash pose dies with the old class's sprite
@@ -504,6 +518,8 @@ func _play_clip(name: String, loop: bool) -> void:
 	_clip_rot = 0.0
 	_clip_flip = 0.0
 	_dir_pose_active = false
+	_loco_dir_on = false   # a clip change drops directional drive; the loco
+	                       # tail re-enables it if this clip has 8-dir art
 	sprite.rotation = 0.0
 	strip_frames = int(info["frames"])
 	strip_fps = float(info["fps"])

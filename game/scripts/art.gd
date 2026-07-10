@@ -2446,6 +2446,50 @@ static func _strip_info(base: String) -> Dictionary:
 	return info
 
 
+# ------------------------------------------------ 8-direction render ---
+# Optional per-facing art. A directional clip is eight strips
+# assets/sprites/<base>_<dir>.png, dir in DIR8. When the SOUTH anchor
+# exists the entity renders the strip matching its facing (art encodes
+# the direction, so no flip); otherwise dir_set returns {} and callers
+# keep the single-facing + horizontal-flip path untouched — every
+# existing single-facing mob is unaffected. Missing side directions fall
+# back to south so a partial set still renders. PixelLab exports one
+# rotation set per clip; the install step assembles them into these files.
+static var _dir_cache := {}
+const DIR8 := ["s", "se", "e", "ne", "n", "nw", "w", "sw"]
+
+## Screen-space vector (+y is DOWN) -> one of the eight DIR8 suffixes.
+## Zero rests facing the camera ("s").
+static func dir8_suffix(d: Vector2) -> String:
+	if d == Vector2.ZERO:
+		return "s"
+	match int(round(atan2(d.y, d.x) / (PI / 4.0))):  # -4..4
+		0: return "e"
+		1: return "se"
+		2: return "s"
+		3: return "sw"
+		4, -4: return "w"
+		-3: return "nw"
+		-2: return "n"
+		-1: return "ne"
+	return "s"
+
+## The eight per-direction strips for a clip base, or {} when no
+## directional art exists on disk. Keyed by DIR8 suffix; absent sides
+## fall back to south. Cached per base.
+static func dir_set(base: String) -> Dictionary:
+	if _dir_cache.has(base):
+		return _dir_cache[base]
+	var out := {}
+	var south := _strip_info("%s_s" % base)
+	if not south.is_empty():
+		for d in DIR8:
+			var info := _strip_info("%s_%s" % [base, d])
+			out[d] = info if not info.is_empty() else south
+	_dir_cache[base] = out
+	return out
+
+
 # ------------------------------------------------ hero action clips ---
 # Full per-class animation set (round: Custom character sheets). Each class
 # ships a family of horizontal strips assets/sprites/<class>_<suffix>.png;

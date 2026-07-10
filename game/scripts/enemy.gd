@@ -95,6 +95,12 @@ var hp_bar_bg: ColorRect
 var hp_bar_fg: ColorRect
 var hp_bar_cap: ColorRect  # 1px darker end-cap: the remaining-HP edge stays crisp
 var face_left := false  # sprite art natively faces left (Crawl tiles)
+# 8-DIRECTION render (art audit 2026-07-10 seam): populated only when
+# assets/sprites/<sprite>_anim_<dir>.png exists. Empty for every
+# single-facing mob, which keeps the flip path below untouched.
+var _dir_idle := {}     # {DIR8 suffix: strip_info} for idle, or {}
+var _dir_walk := {}     # {DIR8 suffix: strip_info} for walk, or {}
+var _cur_dir := "s"     # current facing suffix while directional
 var dying := false
 
 # --- status effects ---
@@ -266,6 +272,11 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 		# Animated override strip (Track C seam): same Sprite2D, hframes on.
 		_strip_idle = anim
 		_strip_walk = Art.walk_info(stats["sprite"])
+		# 8-direction sets, if the art exists (else {} -> flip path stays).
+		# A directional asset also ships flat _anim/_walk strips (a south
+		# copy), so setup + the net mirror keep working on the flat strip.
+		_dir_idle = Art.dir_set(String(stats["sprite"]) + "_anim")
+		_dir_walk = Art.dir_set(String(stats["sprite"]) + "_walk")
 		_apply_strip(anim)
 	face_left = Art.faces_left(stats["sprite"])
 	# Identity tint from the def ("tint" key): the resting body color all
@@ -330,6 +341,18 @@ func _stats_for(k: String) -> Dictionary:
 
 func _stats_at(k: String, lvl: int) -> Dictionary:
 	return Story.enemy_stats_at(k, lvl)
+
+
+## 2D facing vector for 8-direction art: toward the prey when engaged
+## (target-first, like the flip logic), else the current movement. Near-
+## still returns ZERO so an idle mob rests facing the camera (south).
+func _facing_vec() -> Vector2:
+	var tgt: Player = _get_target()
+	if (alerted or force_aggro) and tgt != null and not tgt.dead:
+		return tgt.global_position - global_position
+	if velocity.length() > 20.0:
+		return velocity
+	return Vector2.ZERO
 
 
 ## Point the Sprite2D at an idle/walk strip (hframes + normalized scale).
@@ -496,15 +519,29 @@ func _physics_process(delta: float) -> void:
 		else:
 			sprite.frame = idx
 	elif anim_frames > 1:
-		# Walk/idle split: real walk frames while moving when the strip
-		# exists, else idle at double-time (the shared anim_t clock
-		# already ticked once this frame).
-		if not _strip_walk.is_empty() and _moving_anim != _strip_walking:
-			_strip_walking = _moving_anim
-			_apply_strip(_strip_walk if _moving_anim else _strip_idle)
-		if _moving_anim:
-			anim_t += delta
-		sprite.frame = int(anim_t * anim_fps) % anim_frames
+		# Walk/idle split. Single-facing art keeps the flip path; 8-direction
+		# art also picks the strip by facing.
+		if _dir_idle.is_empty():
+			if not _strip_walk.is_empty() and _moving_anim != _strip_walking:
+				_strip_walking = _moving_anim
+				_apply_strip(_strip_walk if _moving_anim else _strip_idle)
+			if _moving_anim:
+				anim_t += delta
+			sprite.frame = int(anim_t * anim_fps) % anim_frames
+		else:
+			# Pick the strip for facing + walk state; swap only when one
+			# changes (the frame clock keeps running — _apply_strip's frame=0
+			# is overwritten on the next line).
+			var nd := Art.dir8_suffix(_facing_vec())
+			var dset: Dictionary = _dir_walk if (_moving_anim and not _dir_walk.is_empty()) else _dir_idle
+			if nd != _cur_dir or _moving_anim != _strip_walking:
+				_cur_dir = nd
+				_strip_walking = _moving_anim
+				_apply_strip(dset[nd])
+			if _moving_anim:
+				anim_t += delta
+			sprite.frame = int(anim_t * anim_fps) % anim_frames
+			sprite.flip_h = false
 	# ORIENTATION mirrors the hero's target-first logic (player.gd): an
 	# engaged enemy faces its PREY, not its slide/velocity — otherwise a
 	# melee attacker that stops to swing (move == 0, e.g. Korrag) keeps
@@ -522,7 +559,10 @@ func _physics_process(delta: float) -> void:
 			os = signf(tx)
 	if os == 0.0 and absf(_face_vx) > 8.0:
 		os = signf(_face_vx)
-	if os != 0.0:
+	# Directional locomotion encoded facing in its chosen strip (flip_h
+	# false); apply the horizontal flip only for single-facing art, or
+	# while a single-facing one-shot action strip is playing.
+	if os != 0.0 and (_dir_idle.is_empty() or not _strip_action.is_empty()):
 		sprite.flip_h = (os > 0.0) if face_left else (os < 0.0)
 	# Little walk bob so they feel alive.
 	if _moving_anim:

@@ -204,9 +204,10 @@ func _physics_process(delta: float) -> void:
 	# the player's aim. Left-facing art (Crawl sprites) flips the opposite way;
 	# a directional aim pose sets its own facing, so don't fight it while it holds.
 	look_sign = _face_sign()
-	if not _dir_pose_active:
+	if not _dir_pose_active and not _loco_dir_on:
 		# An aimed dash pose (_aim_dash_pose) faces the TRAVEL side, which may
 		# oppose the target-committed look_sign — hold its flip while it plays.
+		# Directional locomotion (_loco_dir_on) already chose a facing strip.
 		var side := _clip_flip if _clip_flip != 0.0 else look_sign
 		sprite.flip_h = (side > 0.0) if face_left else (side < 0.0)
 	if _clip_flip != 0.0:
@@ -337,7 +338,7 @@ func _remote_present(delta: float) -> void:
 		return
 	if strip_frames > 0:
 		_advance_clip(delta)  # _loco_clip reads the synced velocity: walk vs idle
-		if not _dir_pose_active:
+		if not _dir_pose_active and not _loco_dir_on:
 			sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
 	else:
 		# Static class art: mirror the local walk bob so a moving remote
@@ -429,8 +430,33 @@ func _advance_clip(delta: float) -> void:
 	var loco := _loco_clip()
 	if loco != _clip or not _clip_loop:
 		_play_clip(loco, true)
+	_loco_dir_frame()   # swap to the facing strip when 8-dir art exists
 	strip_t += delta
 	sprite.frame = int(strip_t * strip_fps) % strip_frames
+
+
+## 8-direction locomotion: while the current loop clip has directional art,
+## point the sprite at the strip matching the hero's movement facing (the
+## art encodes the direction, so flip is suppressed). No-op — and _loco_dir_on
+## stays false — when the clip has no directional set, keeping the flip path.
+func _loco_dir_frame() -> void:
+	var dset: Dictionary = _dir_loco.get(_clip, {})
+	if dset.is_empty():
+		_loco_dir_on = false
+		return
+	var vec := velocity if velocity.length() > 20.0 else Vector2.ZERO
+	var nd: String = Art.dir8_suffix(vec) if vec != Vector2.ZERO else _loco_dir
+	if nd != _loco_dir or not _loco_dir_on:
+		_loco_dir = nd
+		var info: Dictionary = dset[nd]
+		strip_frames = int(info["frames"])
+		strip_fps = float(info["fps"])
+		sprite.texture = info["tex"]
+		sprite.hframes = strip_frames
+		sprite.scale = Vector2(_hero_scale, _hero_scale)
+		sprite.offset = Vector2(0, _hero_offset_y)
+	_loco_dir_on = true
+	sprite.flip_h = false
 
 
 ## Which looping clip fits the current movement: run while a speed buff or
