@@ -216,6 +216,10 @@ const ENEMIES := {
 		"lore": "Order zealots who followed Cyrraeth into listening. They speak in half-sentences now — the storm finishes the other half, and its grammar hurts."},
 	"void_shade": {"name": "Void Shade", "sprite": "bandit_scout", "hp": 1050.0, "dmg": 100.0, "speed": 185.0, "xp": 16, "gold": 36, "ranged": false, "scale": 3.2,
 		"physres": 15.0, "magres": 30.0, "eva": 0.18, "critres": 2.0, "dmg_type": "phys",
+		# Value-floor lift (art audit 2026-07-10): the raw bandit_scout body
+		# vanished on voidstone under the void ambient. Still the darkest
+		# mob on the field — just no longer invisible. Slight violet lean.
+		"tint": Color(1.5, 1.4, 1.75),
 		"level": 39, "hp_g": 0.10, "dmg_g": 0.10, "traits": ["blinker"],
 		"lore": "Silhouettes out of the tear — shapes the world threw away, returned with the packaging removed. The void keeps everything. That was never a comfort."},
 }

@@ -1986,9 +1986,12 @@ const PORTRAIT_CAST := [
 	["warden null", "nullwarden"], ["callis", "warden"], ["vessa", "envoy"],
 	["envoy", "envoy"], ["merchant", "merchant"], ["piet", "sentry"],
 	["sentry", "sentry"], ["sera", "villager"], ["villager", "villager"],
-	["bren", "villager"], ["morwen", "witch"], ["witch", "witch"],
+	# Morwen and Korrag wear their OWN authored sheets. They used to point at
+	# "witch" and at stormwarden.png — and stormwarden.png is VEYX's body,
+	# so the ch2 boss spoke with the ch7 boss's face.
+	["bren", "villager"], ["morwen", "morwen"], ["witch", "witch"],
 	["choir mother", "choirmother"], ["pilgrim", "choirmother"],
-	["korrag", "stormwarden"], ["beastkin", "beastkin"], ["scout", "beastkin"],
+	["korrag", "korrag"], ["beastkin", "beastkin"], ["scout", "beastkin"],
 	["elder", "elder"], ["king", "king"],
 	# The class-opening speakers (QA finding 3: four openings had no
 	# portraits). The Tome stays faceless on purpose — it's a book.
