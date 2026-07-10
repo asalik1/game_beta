@@ -159,6 +159,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 	if hp <= max_hp * 0.5 and not summoned:
 		summoned = true
 		roar()
+		play_action("pack")
 		game.spawn_text(global_position + Vector2(0, -80), "Fangmaw calls the pack!", Color(1, 0.5, 0.4))
 		for offset in [Vector2(-90, -50), Vector2(90, 50)]:
 			var add := Enemy.make(game, "wolf", global_position + offset, level)
@@ -180,6 +181,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 	if ring_cd <= 0.0:
 		ring_cd = 4.5
 		game.sfx("slam")
+		play_action("slam")
 		var aim := to_player.normalized()
 		var reach: float = clampf(dist + 110.0, 240.0, 620.0)
 		for i in 4:
@@ -199,6 +201,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 func _pounce(player: Player) -> void:
 	leaping = true
 	roar()
+	play_action("leap")
 	# (`at`, not `target` — that name is the Enemy-level resolved prey now.)
 	var at: Vector2 = player.global_position
 	game.telegraph(at, 95.0, 0.76, dmg * 1.4)
@@ -209,6 +212,7 @@ func _pounce(player: Player) -> void:
 
 func _do_charge(_to_player: Vector2) -> void:
 	# Telegraph: flash red for a moment, THEN charge at where the prey is.
+	play_action("charge")
 	sprite.modulate = Color(2.5, 0.6, 0.6)
 	await get_tree().create_timer(0.58).timeout
 	var tgt: Player = _get_target()  # re-read after the await (it may have died)
@@ -400,6 +404,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# Broken storm: stray bolts hammer the ground around the prey.
 	if enraged and ring_cd <= 0.0:
 		ring_cd = 4.0
+		play_action("storm")
 		for i in 3:
 			game.telegraph(player.global_position
 				+ Vector2(randf_range(-140.0, 140.0), randf_range(-110.0, 110.0)),
@@ -408,6 +413,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# Whip snap keeps mid-range honest.
 	if ability_cd <= 0.0 and dist > 80.0 and dist < 260.0:
 		ability_cd = 3.4
+		play_action("lash")
 		game.telegraph(player.global_position, 75.0, 0.45, dmg * 1.2, {"color": STORM})
 
 	if dist < _reach(70.0):
@@ -438,11 +444,13 @@ func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		sprite.modulate = Color(1.5, 0.7, 1.5)
 		speed *= 1.25
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "THE CHOIR CRESCENDOS!", Color(0.9, 0.5, 1.0))
 
 	if hp <= max_hp * 0.6 and not adds_called:
 		adds_called = true
 		roar()
+		play_action("summon")
 		game.spawn_text(global_position + Vector2(0, -84),
 			"The choir answers her call!", Color(0.8, 0.5, 1.0))
 		for offset in [Vector2(-110, -40), Vector2(110, 40)]:
@@ -461,6 +469,7 @@ func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ability_cd <= 0.0:
 		ability_cd = 2.2 if enraged else 3.0
 		game.sfx("bolt")
+		play_action("bolt")
 		var aim := to_player.normalized()
 		var spreads := [-0.36, -0.12, 0.12, 0.36] if enraged else [-0.22, 0.0, 0.22]
 		for spread in spreads:
@@ -469,6 +478,7 @@ func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# Hymn of hunger: a marked strike — and the choir feeds her.
 	if ring_cd <= 0.0:
 		ring_cd = 8.0
+		play_action("cast")
 		game.telegraph(player.global_position, 90.0, 0.62, dmg * 1.3, {"color": BLIGHT})
 		hp = minf(max_hp, hp + max_hp * 0.02)
 		game.spawn_text(global_position + Vector2(0, -70), "the choir feeds her", Color(0.8, 0.5, 1.0))
@@ -477,6 +487,7 @@ func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if dist < 160.0 and blink_cd <= 0.0:
 		blink_cd = 3.2
 		game.sfx("blink")
+		play_action("blink")
 		var away := -to_player.normalized().rotated(randf_range(-0.9, 0.9))
 		global_position = game.clamp_to_zone(
 			global_position + away * randf_range(280.0, 420.0), home)
@@ -491,6 +502,7 @@ func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 func _requiem() -> void:
 	roar()
+	play_action("ring")
 	for ring in 3:
 		var radius := 130.0 + ring * 100.0
 		var count := 8 + ring * 4
@@ -512,6 +524,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		speed *= 1.3
 		sprite.modulate = Color(1.5, 1.0, 0.6)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90),
 			"ARMOR SHED — THE CORE IS EXPOSED!", Color(1.0, 0.8, 0.3))
 
@@ -519,6 +532,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		enraged = true
 		sprite.modulate = Color(1.7, 0.7, 0.5)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "OVERDRIVE ENGAGED!", Color(1.0, 0.4, 0.2))
 
 	# Signature: PISTON PROTOCOL — a grid of slams stamps your ground.
@@ -529,6 +543,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# Beam spoke: one long line straight down your lane.
 	if ring_cd <= 0.0 and dist < 560.0:
 		ring_cd = 4.5 if enraged else 7.0
+		play_action("beam")
 		var dir := to_player.normalized()
 		for i in 7:
 			game.telegraph(global_position + dir * (110.0 + i * 90.0), 70.0,
@@ -538,6 +553,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ability_cd <= 0.0 and dist < 480.0:
 		ability_cd = 3.0 if enraged else 4.8
 		game.sfx("slam")
+		play_action("slam")
 		game.shake(9.0)
 		var count := 20 if enraged else 12
 		for i in count:
@@ -553,6 +569,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 func _piston_protocol(player: Player) -> void:
 	roar()
+	play_action("piston")
 	# A 4-column grid stamps across the player's ground, column by column.
 	var base: Vector2 = player.global_position
 	for col in 4:
@@ -621,6 +638,7 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 			if is_instance_valid(a) and not a.dying:
 				live += 1
 		if live < 4:
+			play_action("summon")
 			var at: Vector2 = game.clamp_to_zone(player.global_position
 				+ Vector2.from_angle(randf() * TAU) * randf_range(140.0, 220.0), home)
 			var add := Enemy.make(game, "zombie", at, level)
@@ -637,6 +655,7 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	# stand. Independent of shovelwork and the grave shamblers.
 	if ring_cd <= 0.0:
 		ring_cd = 4.5
+		play_action("slam")
 		# 3-tell CLUSTER (r51 floor made real): opens under the prey AND flanks,
 		# so a kiter has to REPOSITION to a clear patch, not just sidestep one
 		# circle. Reaches any range — the Vale answers wherever you stand.
@@ -655,6 +674,7 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	# Shovel swipe keeps mid-range honest.
 	if ability_cd <= 0.0 and dist < 300.0:
 		ability_cd = 4.0
+		play_action("slam")
 		game.telegraph(player.global_position, 70.0, 0.5, dmg * 1.1, {"color": GRAVE})
 
 	if dist < _reach(64.0):
@@ -717,6 +737,7 @@ func _shovelwork(player: Player) -> void:
 	collision_layer = 4
 	collision_mask = 1 | 2 | 4
 	sprite.visible = true
+	play_action("surface")
 	game.burst(global_position, GRAVE, 20)
 	# The torn ground stays torn: churned earth lingers where he surfaces,
 	# so walking off the eruption line onto his exit isn't free (r51).
@@ -735,6 +756,7 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		sprite.modulate = Color(0.8, 0.85, 1.6)
 		speed *= 1.2
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "VESS KEENS!", Color(0.75, 0.8, 1.0))
 
 	# Signature: THE SILENCE — find the quiet circle before the wail.
@@ -755,6 +777,7 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ring_cd <= 0.0:
 		ring_cd = 8.0
 		roar()
+		play_action("ring")
 		for i in 12:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 190.0, dmg)
 
@@ -762,6 +785,7 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if dist < 160.0 and blink_cd <= 0.0:
 		blink_cd = 3.0
 		game.sfx("blink")
+		play_action("blink")
 		var away := -to_player.normalized().rotated(randf_range(-0.9, 0.9))
 		global_position = game.clamp_to_zone(
 			global_position + away * randf_range(280.0, 400.0), home)
@@ -776,6 +800,7 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 func _silence(player: Player) -> void:
 	roar()
+	play_action("wail")
 	# Readability pass (2026-07-07): the callout anchors to the PLAYER
 	# (she's often off-screen), the keening swell is the audible timer,
 	# and the quiet circle prefers ground the player can SEE (_quiet_spot).
@@ -809,6 +834,7 @@ func _quiet_spot(player: Player) -> Vector2:
 
 func _grief_fan(aim: Vector2) -> void:
 	game.sfx("bolt")
+	play_action("bolt")
 	var from := global_position
 	for spread in [-0.22, 0.0, 0.22]:
 		_bolt(aim.rotated(spread) * 320.0, dmg)
@@ -863,6 +889,7 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 		speed *= 1.5
 		sprite.modulate = Color(1.4, 1.3, 0.9)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "SAINT VARO STANDS.", Color(1.0, 0.9, 0.5))
 
 	# Signature: THE TOLL — shelter in a shadow; each toll cracks one.
@@ -879,6 +906,7 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 	if ability_cd <= 0.0 and dist < 500.0:
 		ability_cd = 3.4 if enraged else 5.0
 		game.sfx("slam")
+		play_action("slam")
 		game.shake(8.0)
 		for i in 14:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 14.0) * 210.0, dmg * 0.7)
@@ -896,6 +924,8 @@ func _spawn_censers() -> void:
 	for c in censers:
 		if is_instance_valid(c) and not c.dying:
 			live += 1
+	if live < 3:
+		play_action("summon")
 	var base_ang := randf() * TAU
 	for i in maxi(0, 3 - live):
 		var at: Vector2 = game.clamp_to_zone(home
@@ -912,6 +942,7 @@ func _spawn_censers() -> void:
 
 func _toll() -> void:
 	roar()
+	play_action("toll")
 	game.spawn_text(global_position + Vector2(0, -84), "THE BELL TOLLS — STAND IN A SHADOW!", INCENSE)
 	var count := maxi(1, 3 - toll_count)
 	toll_count += 1
@@ -941,6 +972,7 @@ func _toll() -> void:
 
 
 func _reliquary_rain() -> void:
+	play_action("blade")
 	for i in 3:
 		var tgt: Player = _get_target()  # per blade — the chase re-aims across awaits
 		if dying or not is_instance_valid(tgt) or tgt.dead:
@@ -1093,12 +1125,14 @@ func _forgemistress(player: Player, to_player: Vector2, dist: float, delta: floa
 	# top of the widening hammer lanes below.
 	if heat >= 1.0 and ring_cd <= 0.0:
 		ring_cd = 3.2
+		play_action("throw")
 		var lob: Vector2 = player.global_position + Vector2(randf_range(-70, 70), randf_range(-70, 70))
 		game.telegraph(lob, 100.0, 0.7, dmg * (1.0 + 0.12 * quench_stacks) * 1.3, {"color": FORGE})
 
 	# Hammer lines: forge-orange lash telegraphs, wider when white-hot.
 	if ability_cd <= 0.0 and dist < 520.0:
 		ability_cd = 3.4
+		play_action("lash")
 		var dir := to_player.normalized()
 		var rad := 105.0 if heat >= 1.0 else 75.0
 		for i in 4:
@@ -1142,6 +1176,7 @@ func _nearest_pool() -> Vector2:
 
 
 func _do_quench(player: Player) -> void:
+	play_action("quench")
 	if player.global_position.distance_to(quench_target) <= 120.0:
 		# Body-blocked: she quenches THROUGH the player — no buff, but the
 		# hardest hit in the fight lands where she meant the pool to be.
@@ -1199,6 +1234,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		plate_dr = 0.0  # wall drops — only the honest base resist (~25) remains
 		sprite.modulate = Color(1.6, 0.8, 0.5)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "THE PLATING SHEDS!", Color(1.0, 0.7, 0.3))
 		_tantrum()
 	if plate_shed_t > 0.0:
@@ -1218,6 +1254,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		speed *= 1.35
 		sprite.modulate = Color(1.7, 0.6, 0.4)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "CINDERHIDE ENRAGES!", Color(1.0, 0.4, 0.2))
 
 	if charging:
@@ -1250,6 +1287,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 	# and faster once enraged.
 	if ring_cd <= 0.0:
 		ring_cd = 3.5 if enraged else 5.0
+		play_action("rain")
 		for i in (3 if enraged else 2):
 			game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
 				75.0, 0.6, dmg * 1.1, {"color": LAVA})
@@ -1264,6 +1302,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 
 func _vent_breath(player: Player) -> void:
 	roar()
+	play_action("breath")
 	game.spawn_text(global_position + Vector2(0, -84), "Vent breath!", LAVA)
 	var dir := (player.global_position - global_position).normalized()
 	# Plated, the beast is a rampaging tank you must survive while you set
@@ -1308,6 +1347,7 @@ func _ashpriest(player: Player, to_player: Vector2, dist: float, delta: float) -
 		enraged = true
 		sprite.modulate = Color(1.6, 0.7, 0.4)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "THE JUDGE ATTENDS.", Color(1.0, 0.5, 0.2))
 
 	# Signature: THE VERDICT — half the arena is judged.
@@ -1321,6 +1361,7 @@ func _ashpriest(player: Player, to_player: Vector2, dist: float, delta: float) -
 
 	if enraged and ring_cd <= 0.0:
 		ring_cd = 3.0
+		play_action("rain")
 		for i in 3:
 			game.telegraph(player.global_position + Vector2(randf_range(-170, 170), randf_range(-140, 140)),
 				76.0, 0.6, dmg, {"color": LAVA})
@@ -1329,6 +1370,7 @@ func _ashpriest(player: Player, to_player: Vector2, dist: float, delta: float) -
 	if ability_cd <= 0.0:
 		ability_cd = 2.6
 		game.sfx("bolt")
+		play_action("bolt")
 		var aim := to_player.normalized()
 		for spread in [-0.28, -0.09, 0.09, 0.28]:
 			_bolt(aim.rotated(spread) * 300.0, dmg)
@@ -1361,6 +1403,7 @@ func _march_sons(delta: float) -> void:
 
 func _spawn_sons() -> void:
 	roar()
+	play_action("summon")
 	# Player-anchored (readability pass): the intercept order must be
 	# readable wherever Ordo is standing. (MP: phase 3 mirrors callouts
 	# to every player's screen; anchoring to the target is the v1 seam.)
@@ -1385,6 +1428,7 @@ func _spawn_sons() -> void:
 
 func _verdict() -> void:
 	roar()
+	play_action("verdict")
 	var rect := _arena_rect()
 	var west := randf() < 0.5
 	var paired := hp <= max_hp * 0.5
@@ -1509,6 +1553,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 	if (pack_calls == 0 and hp <= max_hp * 0.66) or (pack_calls == 1 and hp <= max_hp * 0.33):
 		pack_calls += 1
 		roar()
+		play_action("pack")
 		game.spawn_text(global_position + Vector2(0, -84), "Whitepelt calls the pack!", FROST)
 		for offset in [Vector2(-100, -60), Vector2(100, 60)]:
 			var add := Enemy.make(game, "wolf", global_position + offset, level)
@@ -1522,6 +1567,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 	# who never closes to provoke the pelt-drums. Slow tell; move or eat it.
 	if ring_cd <= 0.0:
 		ring_cd = 4.0
+		play_action("slam")
 		game.telegraph(player.global_position, 100.0, 0.85, dmg * 1.1, {"color": FROST})
 
 	if charging:
@@ -1540,6 +1586,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 				dazed_t = 2.5
 				vuln_time = maxf(vuln_time, 2.6)
 				game.shake(10.0)
+				play_action("slam")
 				game.spawn_text(global_position + Vector2(0, -90), "WHITEPELT SLAMS THE WALL!", Color(0.7, 0.85, 1.0))
 		return charge_dir * 620.0
 
@@ -1559,6 +1606,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 	if ability_cd <= 0.0 and dist < 220.0:
 		ability_cd = 5.0
 		game.sfx("slam")
+		play_action("slam")
 		game.shake(7.0)
 		for i in 12:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 200.0, dmg * 0.7)
@@ -1588,6 +1636,7 @@ func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -
 		enraged = true
 		sprite.modulate = Color(0.7, 0.85, 1.6)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "THE KEYSTONE CRACKS!", Color(0.6, 0.85, 1.0))
 		var rect := _arena_rect()
 		for i in 6:
@@ -1608,6 +1657,7 @@ func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		game.sfx("bolt")
+		play_action("rain")
 		for i in 4:
 			var off := Vector2(randf_range(-180, 180), randf_range(-140, 140))
 			game.telegraph(player.global_position + off, 70.0, 0.7, dmg * 1.1, {"color": FROST})
@@ -1615,6 +1665,7 @@ func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -
 	if dist < 160.0 and blink_cd <= 0.0:
 		blink_cd = 3.2
 		game.sfx("blink")
+		play_action("blink")
 		var away := -to_player.normalized().rotated(randf_range(-0.9, 0.9))
 		global_position = game.clamp_to_zone(global_position + away * randf_range(280.0, 400.0), home)
 		return Vector2.ZERO
@@ -1628,6 +1679,7 @@ func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -
 
 func _flash_freeze(player: Player) -> void:
 	roar()
+	play_action("freeze")
 	game.spawn_text(global_position + Vector2(0, -84), "FLASH FREEZE — FIND A VENT!", FROST)
 	var vents: Array = []
 	var n := 2 if enraged else 3   # fewer vents enraged = harder
@@ -1640,6 +1692,7 @@ func _flash_freeze(player: Player) -> void:
 
 func _shatter_lance(player: Player) -> void:
 	roar()
+	play_action("beam")
 	player.apply_root(1.0)
 	var from := global_position
 	var dir := (player.global_position - from).normalized()
@@ -1686,6 +1739,7 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 		aura_mult += 0.6
 		sprite.modulate = Color(0.75, 0.85, 1.5)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "THE QUEEN STIRS.", Color(0.6, 0.85, 1.0))
 		_flash_freeze(player)
 
@@ -1697,6 +1751,7 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		game.sfx("bolt")
+		play_action("bolt")
 		var aim := to_player.normalized()
 		for spread in [-0.25, 0.0, 0.25]:
 			_bolt(aim.rotated(spread) * 290.0, dmg)
@@ -1714,6 +1769,8 @@ func _spawn_dreamers() -> void:
 	for d in dreamers:
 		if is_instance_valid(d) and not d.dying:
 			live += 1
+	if live < 3:
+		play_action("summon")
 	for i in maxi(0, 3 - live):
 		var at: Vector2 = game.clamp_to_zone(rect.get_center() + Vector2.from_angle(randf() * TAU) * 480.0, home)
 		var dr := Enemy.make(game, "cultist", at, level)
@@ -1753,6 +1810,7 @@ func _march_dreamers(delta: float) -> void:
 
 func _frost_hymnal(player: Player) -> void:
 	roar()
+	play_action("hymn")
 	for i in 3:
 		var at: Vector2 = game.clamp_to_zone(
 			player.global_position + Vector2(randf_range(-200, 200), randf_range(-160, 160)), home)
@@ -1829,6 +1887,7 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	if ring_cd <= 0.0 and dist < 320.0:
 		ring_cd = 6.5
 		game.sfx("slam")
+		play_action("slam")
 		game.shake(8.0)
 		for i in 12:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 200.0, dmg * 0.7)
@@ -1877,6 +1936,7 @@ func _submerge(player: Player) -> void:
 	collision_layer = 4
 	collision_mask = 1 | 2 | 4
 	sprite.visible = true
+	play_action("surface")
 	game.telegraph(surf, 110.0, 0.4, dmg * 1.4, {"color": BOG})  # surface slam
 	game.burst(surf, BOG, 20)
 	roar()
@@ -1904,6 +1964,7 @@ func _gardener(player: Player, to_player: Vector2, dist: float, delta: float) ->
 		enraged = true
 		sprite.modulate = Color(0.7, 1.3, 0.6)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "FULL BLOOM!", ROOTC)
 		_sprout_blooms()
 
@@ -1916,6 +1977,7 @@ func _gardener(player: Player, to_player: Vector2, dist: float, delta: float) ->
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		game.sfx("bolt")
+		play_action("bolt")
 		var aim := to_player.normalized()
 		for spread in [-0.22, 0.0, 0.22]:
 			_bolt(aim.rotated(spread) * 280.0, dmg)
@@ -1933,6 +1995,8 @@ func _sprout_blooms() -> void:
 		if is_instance_valid(b) and not b.dying:
 			live += 1
 	var cap := 4 if full_bloom else 3
+	if live < cap:
+		play_action("summon")
 	for i in maxi(0, cap - live):
 		var at: Vector2 = game.clamp_to_zone(home + Vector2.from_angle(randf() * TAU) * randf_range(150.0, 340.0), home)
 		var bloom := Enemy.make(game, "choir_censer", at, level)
@@ -1966,6 +2030,7 @@ func _tend_blooms() -> void:
 
 func _vine_lash(player: Player) -> void:
 	roar()
+	play_action("lash")
 	player.apply_root(1.2)
 	game.spawn_text(player.global_position + Vector2(0, -50), "VINE LASH!", ROOTC)
 	var center := player.global_position
@@ -1998,6 +2063,7 @@ func _curetwisted(player: Player, to_player: Vector2, dist: float, delta: float)
 
 func _kaethra_swap() -> void:
 	roar()
+	play_action("shift")
 	charging = false
 	telegraphing = false
 	form = 1 - form
@@ -2036,10 +2102,12 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 	# 6s. Lean by design — she still hunts alone, no adds.
 	if ring_cd <= 0.0:
 		ring_cd = 3.5
+		play_action("throw")
 		game.telegraph(player.global_position, 90.0, 0.75, dmg * 1.15, {"color": ROOTC})
 	if ability_cd <= 0.0 and dist < 220.0:
 		ability_cd = 4.0
 		game.sfx("slam")
+		play_action("slam")
 		game.shake(6.0)
 		for i in 10:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0) * 190.0, dmg * 0.6)
@@ -2063,11 +2131,13 @@ func _kaethra_bloom(player: Player, to_player: Vector2, _dist: float, delta: flo
 	if special_cd <= 0.0:
 		special_cd = 5.0
 		game.sfx("bolt")
+		play_action("ring")
 		for i in 8:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 8.0 + randf() * 0.3) * 260.0, dmg)
 	if ability_cd <= 0.0:
 		ability_cd = 2.4
 		game.sfx("bolt")
+		play_action("bolt")
 		var aim := to_player.normalized()
 		for spread in [-0.3, -0.1, 0.1, 0.3]:
 			_bolt(aim.rotated(spread) * 270.0, dmg)
@@ -2169,6 +2239,7 @@ func _veyx(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 		enraged = true
 		sprite.modulate = Color(0.8, 0.9, 1.7)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "THE CURRENT UNBOUND!", STORMC)
 		_spawn_rods()
 
@@ -2183,6 +2254,7 @@ func _veyx(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 	if ring_cd <= 0.0:
 		ring_cd = 6.0
 		game.sfx("bolt")
+		play_action("ring")
 		for i in 10:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0 + randf()) * 200.0, dmg * 0.7)
 
@@ -2190,6 +2262,7 @@ func _veyx(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 	if ability_cd <= 0.0:
 		var live := _rods_live()
 		ability_cd = 2.2 if live == 0 else 3.5
+		play_action("storm")
 		for i in (3 if live == 0 else 2):
 			game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
 				68.0, 0.55, dmg * 1.1, {"color": STORMC})
@@ -2203,6 +2276,7 @@ func _veyx(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 
 func _arc(player: Player) -> void:
 	game.sfx("bolt")
+	play_action("arc")
 	var caught: Enemy = null
 	for r in rods:
 		if not is_instance_valid(r) or r.dying:
@@ -2223,6 +2297,8 @@ func _arc(player: Player) -> void:
 
 
 func _spawn_rods() -> void:
+	if _rods_live() < 4:
+		play_action("summon")
 	var base_ang := randf() * TAU
 	for i in maxi(0, 4 - _rods_live()):
 		var at: Vector2 = game.clamp_to_zone(home + Vector2.from_angle(base_ang + TAU * i / 4.0) * 300.0, home)
@@ -2251,6 +2327,7 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 		speed *= 1.2
 		sprite.modulate = Color(0.85, 0.6, 1.4)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "IT REFUSES TO BE FORGOTTEN!", VOIDC)
 
 	# Signature: UNNAMING — the mirror copies.
@@ -2262,6 +2339,7 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 	if dist > 320.0 and blink_cd <= 0.0:
 		blink_cd = 4.0
 		game.sfx("blink")
+		play_action("blink")
 		global_position = game.clamp_to_zone(player.global_position + Vector2.from_angle(randf() * TAU) * 90.0, home)
 		game.burst(global_position, VOIDC, 12)
 		return Vector2.ZERO
@@ -2270,6 +2348,7 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 	if ability_cd <= 0.0:
 		ability_cd = 2.4
 		game.sfx("bolt")
+		play_action("throw")
 		var aim := to_player.normalized()
 		for spread in [-0.25, 0.0, 0.25]:
 			_bolt(aim.rotated(spread) * 340.0, dmg)
@@ -2284,6 +2363,7 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 
 func _unnaming(player: Player) -> void:
 	roar()
+	play_action("split")
 	game.spawn_text(global_position + Vector2(0, -84), "UNNAMING!", VOIDC)
 	# Four figures on one ring around the prey — three lies and him. He
 	# takes a random slot himself (the vanish-and-shuffle IS the fight;
@@ -2331,12 +2411,14 @@ func _cyrraeth(player: Player, to_player: Vector2, dist: float, delta: float) ->
 		phase = 2
 		sprite.modulate = Color(0.8, 0.85, 1.5)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "THE MOUTH OPENS.", STORMC)
 	elif phase == 2 and hp <= max_hp * 0.25:
 		phase = 3
 		enraged = true
 		sprite.modulate = Color(1.0, 0.7, 1.4)
 		roar()
+		play_action("enrage")
 		game.spawn_text(global_position + Vector2(0, -90), "THE WORD, UNFINISHED.", STORMC)
 
 	if phase == 1:
@@ -2351,6 +2433,7 @@ func _cyrraeth_speaker(player: Player, to_player: Vector2, dist: float) -> Vecto
 	if ability_cd <= 0.0:
 		ability_cd = 2.6
 		game.sfx("bolt")
+		play_action("bolt")
 		var aim := to_player.normalized()
 		for spread in [-0.3, -0.1, 0.1, 0.3]:
 			_bolt(aim.rotated(spread) * 300.0, dmg)
@@ -2377,6 +2460,7 @@ func _cyrraeth_mouth(player: Player, to_player: Vector2, dist: float, delta: flo
 	# Arcs between rotations.
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
+		play_action("cast")
 		game.telegraph(player.global_position, 90.0, 0.5, dmg * 1.3, {"color": STORMC})
 
 	# P3: continuous lightning.
@@ -2394,6 +2478,7 @@ func _cyrraeth_mouth(player: Player, to_player: Vector2, dist: float, delta: flo
 ## wedge (a quadrant in P2, a narrower octant in P3), which walks around.
 func _storm_rotation() -> void:
 	roar()
+	play_action("storm")
 	game.spawn_text(global_position + Vector2(0, -84), "STAY IN THE QUIET.", STORMC)
 	var sectors := 8 if phase == 3 else 4
 	safe_quad = (safe_quad + 1) % sectors
@@ -2415,6 +2500,7 @@ func _storm_rotation() -> void:
 
 
 func _spawn_vowkeepers() -> void:
+	play_action("summon")
 	var center := _arena_rect().get_center()
 	for i in 2:
 		var at: Vector2 = game.clamp_to_zone(center + Vector2.from_angle(randf() * TAU) * 480.0, home)
