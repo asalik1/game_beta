@@ -1,8 +1,14 @@
 # Godot generated files
 game/.godot/
 
-# Bundled engine (re-download from godotengine.org if needed)
-tools/
+# Bundled engine (re-download from godotengine.org if needed). Ignore the
+# CONTENTS of tools/, not the directory itself — git will not descend into
+# an excluded dir, so `tools/` + `!tools/art/` silently keeps the art
+# pipeline untracked. tools/art IS source: the sprite matte/generation
+# scripts live there.
+tools/*
+!tools/art/
+tools/art/__pycache__/
 
 # Local art backups (replaced originals + generation candidates; never commit)
 backup/
