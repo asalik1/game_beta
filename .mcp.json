@@ -13,6 +13,13 @@
       "headers": {
         "Authorization": "Bearer ${PIXELLAB_SECRET}"
       }
+    },
+    "huggingface": {
+      "type": "http",
+      "url": "https://huggingface.co/mcp",
+      "headers": {
+        "Authorization": "Bearer ${HF_TOKEN}"
+      }
     }
   }
 }

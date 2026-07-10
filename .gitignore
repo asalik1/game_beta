@@ -4,6 +4,9 @@ game/.godot/
 # Bundled engine (re-download from godotengine.org if needed)
 tools/
 
+# Local art backups (replaced originals + generation candidates; never commit)
+backup/
+
 # Exports
 build/
 executables/
