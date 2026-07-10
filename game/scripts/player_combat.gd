@@ -5,6 +5,65 @@ extends "res://scripts/player_core.gd"
 ## player_kit_<class>.gd; see player_core.gd for the chain layout.
 
 
+# ================================================= downed presentation (MP-12)
+
+## The §5.3 bleed-out clock, drawn in the world: a red arc over the body
+## that empties as down_t runs out (the HUD banner shows the number). The
+## body reference stays untyped — Player is the END of this chain and a
+## typed forward reference here would be cyclic.
+class DownRing extends Node2D:
+	var plr = null
+	func _ready() -> void:
+		z_index = 40
+	func _process(_delta: float) -> void:
+		queue_redraw()
+	func _draw() -> void:
+		if plr == null or not is_instance_valid(plr):
+			return
+		var frac: float = clampf(float(plr.down_t) / float(plr.DOWN_BLEEDOUT), 0.0, 1.0)
+		draw_arc(Vector2.ZERO, 26.0, 0.0, TAU, 40, Color(0.08, 0.03, 0.03, 0.55), 5.0)
+		if frac > 0.0:
+			draw_arc(Vector2.ZERO, 26.0, -PI / 2.0, -PI / 2.0 + TAU * frac, 40,
+				Color(1.0, 0.3, 0.25, 0.9), 3.0)
+
+
+## MP-12 (§5.3) presentation, shared by the owner and every shell: prone
+## + drained while DOWNED (with the bleed-out ring), spectral + immaterial
+## while a GHOST, defaults restored on standing. Solo never enters the
+## down states, so the restore branch just re-asserts the _ready defaults.
+func _refresh_down_visual() -> void:
+	if sprite == null:
+		return
+	if downed or ghost:
+		if _down_ring == null or not is_instance_valid(_down_ring):
+			_down_ring = DownRing.new()
+			_down_ring.plr = self
+			add_child(_down_ring)
+		_down_ring.visible = downed  # the ring IS the bleed-out clock; ghosts have none
+	elif _down_ring != null:
+		if is_instance_valid(_down_ring):
+			_down_ring.queue_free()
+		_down_ring = null
+	if ghost:
+		sprite.rotation = 0.0
+		sprite.position.y = 0.0
+		sprite.modulate = Color(0.6, 0.8, 1.0, 0.4)  # spectral, translucent
+		collision_layer = 0      # immaterial: enemies/projectiles pass through
+		collision_mask = 1       # walls still hold; enemies don't body-block a ghost
+	elif downed:
+		# Prone: the body tips over its feet; face keeps the crawl heading.
+		sprite.rotation = (PI / 2.0) * (-1.0 if sprite.flip_h else 1.0)
+		sprite.position.y = 0.0
+		sprite.modulate = Color(0.7, 0.45, 0.45, 0.85)  # drained, bloodless
+		collision_layer = 2
+		collision_mask = 1 | 4
+	else:
+		sprite.rotation = 0.0
+		sprite.modulate = Color(1, 1, 1)
+		collision_layer = 2      # the _ready defaults, restored
+		collision_mask = 1 | 4
+
+
 # ================================================================ targeting
 
 ## Current movement INTENT (locally: WASD/arrows), normalized; ZERO when

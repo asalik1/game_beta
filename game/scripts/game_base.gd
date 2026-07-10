@@ -321,7 +321,12 @@ func nearest_player(pos: Vector2) -> Player:
 		if d < best_any_d:
 			best_any_d = d
 			best_any = p
-		if not p.dead and d < best_d:
+		# MP-12 (§5.3): DOWNED/GHOST players stop being valid prey — they
+		# read as not-a-target WITHOUT reading as dead. When nobody stands,
+		# the best_any fallback still returns a body (enemies menace the
+		# fallen for the beat before the wipe fires). Solo: both flags are
+		# always false, so no solo pick ever changes.
+		if not p.dead and not p.downed and not p.ghost and d < best_d:
 			best_d = d
 			best = p
 	return best if best != null else best_any
@@ -442,7 +447,11 @@ func request_pause(on: bool) -> void:
 	# dialogue simply don't freeze the world (the full non-pausing
 	# overlay UX is phase 3). Unpauses still apply; solo keeps the
 	# exact old boolean writes.
-	if on and net_online():
+	# MP-14 (§5.4): the ONE in-session exception is VICTORY — the chapter is
+	# over, nothing left to simulate, so the results card may freeze every
+	# machine (the host's continue unpauses the party). RPCs are event-driven,
+	# not process-gated, so the advance/end handshake still flows while paused.
+	if on and net_online() and state != ST_VICTORY:
 		return
 	get_tree().paused = on
 
@@ -1069,6 +1078,14 @@ func _notification(what: int) -> void:
 # Branching dialogue with choices, resonance/faction shifts and story
 # flags. Data format documented at Story.CONVOS.
 
+## MP-13 (§5.4): set true while applying a WORLD flag that ARRIVED from the
+## session, so the apply doesn't bounce straight back out (loop guard).
+var _net_flag_apply := false
+## MP-13 (§5.4): true on the machine DRIVING a chapter-critical story beat —
+## the HUD mirrors each dialogue line to the spectating party. Private
+## overlays and solo play leave it false (no mirror traffic).
+var beat_broadcasting := false
+
 func set_flag(flag_name: String, value = true) -> void:
 	flags[flag_name] = value
 	# Flag-locked gates: any built gate whose flag just got set unlocks.
@@ -1077,6 +1094,44 @@ func set_flag(flag_name: String, value = true) -> void:
 	if value:
 		call("_recheck_gates")
 		_check_side_quests()
+	# MP-13 (§5.4): WORLD flags are shared story state — quest progress,
+	# opened ways, one-time reveals, pay-once desks, shrine/cache/curse
+	# once-per-room marks. Route them through the host so every machine in
+	# the session agrees; PER-CHARACTER flags stay local to their owner
+	# (game_flow._flag_is_local: the same KEPT_* list that survives a
+	# chapter wipe because it's character history). A flag applied FROM the
+	# wire skips the re-route (loop guard). Offline: no session — nothing
+	# routes, so solo is bit-identical.
+	if not _net_flag_apply and net_online():
+		var s: Node = net_session()
+		if s != null and not bool(call("_flag_is_local", flag_name)):
+			s.route_flag(flag_name, value)
+
+
+## MP-13: apply a WORLD flag received from the session — the same local
+## effects as a fresh set (gates react, side quests re-check) with the
+## re-route suppressed so it can't echo back out. Idempotent (re-applying a
+## set flag is a no-op for gates; sq_paid guards a second reward).
+func net_apply_flag(flag_name: String, value) -> void:
+	_net_flag_apply = true
+	set_flag(flag_name, value)
+	_net_flag_apply = false
+
+
+## MP-13 (§5.4): a chapter-critical BEAT is a convo that advances the story
+## quest — any node or choice carries a `quest` key. Beats gate on the party
+## being present and mirror their lines to everyone; every other convo is a
+## private overlay + a one-line toast. Conservative by design (only quest-
+## advancing convos qualify), and reached from net_session.begin_convo.
+func _convo_is_beat(convo: Dictionary) -> bool:
+	for nid in convo.get("nodes", {}):
+		var node: Dictionary = convo["nodes"][nid]
+		if node.has("quest"):
+			return true
+		for c in node.get("choices", []):
+			if c.has("quest"):
+				return true
+	return false
 
 
 ## Side quests are visible wrappers over flag chains (Story.SIDE_QUESTS):
@@ -1115,7 +1170,18 @@ func get_flag(flag_name: String, def = false):
 	return flags.get(flag_name, def)
 
 func run_convo_id(id: String, on_done := Callable()) -> void:
-	run_convo(Story.ALL_CONVOS[id], on_done)
+	var convo: Dictionary = Story.ALL_CONVOS[id]
+	# MP-13 (§5.4): in a co-op session, dialogue is a local overlay routed
+	# through the etiquette layer — a per-NPC busy-lock, world-flag sync,
+	# consequence toasts, and beat mirroring for the story-critical convos
+	# (net_session.begin_convo). Offline (no session) it collapses to the
+	# plain, unchanged run_convo path.
+	if net_online():
+		var s: Node = net_session()
+		if s != null:
+			s.begin_convo(id, convo, on_done)
+			return
+	run_convo(convo, on_done)
 
 func run_convo(convo: Dictionary, on_done := Callable()) -> void:
 	_convo_node(convo, String(convo.get("start", "")), on_done)
@@ -1212,7 +1278,32 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 			if c.has("quest"):
 				quest_key = String(c["quest"])
 				refresh_quest()
+			# MP-13 (§5.4): resonance, standings, keepsakes and coins above all
+			# hit `player` = local_player, so a GUEST's choice moves only the
+			# guest — owner-side by construction (§5.4). The one SHARED
+			# consequence is a world flag / side-quest accept, which already
+			# routed through the host via set_flag; tell the OTHER players in
+			# one terse line (private overlays only — a mirrored beat already
+			# shows them every word).
+			if net_online() and not beat_broadcasting:
+				var s2: Node = net_session()
+				if s2 != null:
+					if c.has("side_quest"):
+						var sq2: Dictionary = Story.ALL_SIDE_QUESTS.get(String(c["side_quest"]), {})
+						if not sq2.is_empty():
+							s2.convo_toast("accepted", String(sq2.get("name", "a quest")))
+					elif _choice_sets_world_flag(c):
+						s2.convo_toast("chose", String(c.get("text", "")))
 			_convo_node(convo, String(c.get("next", "")), on_done))
+
+
+## MP-13: does this choice set at least one WORLD flag (worth a toast to the
+## party)? Per-character flags don't count — they change nobody else's world.
+func _choice_sets_world_flag(c: Dictionary) -> bool:
+	for fname in c.get("flags", {}):
+		if not bool(call("_flag_is_local", String(fname))):
+			return true
+	return false
 
 ## A shard choice made in a quiet room pays a token reward either way
 ## — the shard reacts to CONVICTION, not virtue (playtest round 8:
@@ -2211,6 +2302,31 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 		tween.tween_interval(hold)
 	tween.tween_property(l, "position:y", l.position.y - 34.0, 0.9)
 	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.9)
+	tween.tween_callback(l.queue_free)
+
+
+## MP-14 (§5.6): an ALLY's hit number — deliberately smaller and dimmer than
+## your own (spawn_text), so a friend fighting beside you reads as background
+## chatter and your own big numbers stay legible. Fanned by the host to the
+## non-attacking party members (net_session.host_fan_damage). World-space, like
+## spawn_text, so it rises off the enemy it landed on.
+func spawn_ally_damage(pos: Vector2, amount: int, crit: bool) -> void:
+	var l := Label.new()
+	l.text = "%d!" % amount if crit else str(amount)
+	l.position = pos + Vector2(-50, -6)
+	l.size = Vector2(100, 16)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.z_index = 19  # under your own numbers (z 20)
+	l.add_theme_font_size_override("font_size", 11)
+	# A cool, dim tint marks it as someone else's damage; crits warm slightly.
+	var col := Color(1.0, 0.72, 0.45, 0.8) if crit else Color(0.78, 0.86, 0.95, 0.72)
+	l.add_theme_color_override("font_color", col)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	l.add_theme_constant_override("outline_size", 3)
+	add_child(l)
+	var tween := create_tween()
+	tween.tween_property(l, "position:y", l.position.y - 24.0, 0.75)
+	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.75)
 	tween.tween_callback(l.queue_free)
 
 

@@ -1310,6 +1310,12 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 			game.spawn_text(global_position + Vector2(0, -34), "%d!" % int(amount), Color(1.0, 0.55, 0.1))
 		else:
 			game.spawn_text(global_position + Vector2(0, -30), str(int(amount)), Color(1, 1, 1))
+		# MP-14 (§5.6): the host is authority for every hit it applies (its own
+		# blow AND a guest's — both land here). Fan the number to the party
+		# members who did NOT strike, who show it small. net_host() gates it, so
+		# solo/offline is untouched; the shell above already showed its own big.
+		if game.net_host():
+			game.net_session().host_fan_damage(net_id, int(amount), is_crit, striker)
 		sprite.modulate = Color(3, 3, 3)
 		var tween := create_tween()
 		tween.tween_property(sprite, "modulate", base_mod, 0.15)

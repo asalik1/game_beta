@@ -235,6 +235,31 @@ func net_push_snapshot(pos: Vector2, vel: Vector2, look: float) -> void:
 		net_snaps.pop_front()
 
 
+# --- downed / revive / ghost (MP-12, MULTIPLAYER.md §5.3) ---
+# ONLINE-SESSION-ONLY states — solo never sets any of these, so every
+# `downed`/`ghost` check below the chain is a no-op offline. The OWNER's
+# take_damage converts a lethal hit into DOWNED and broadcasts the state
+# (net_session._rpc_down_state); shells mirror it for presentation and
+# host-side AI reads (nearest_player skips downed prey).
+#
+# Taste defaults (MP-12 — candidates for a later balance.gd promotion;
+# owner review in MP_TASKS PLAYTEST NOTES):
+const DOWN_CRAWL_MULT := 0.35   # crawl speed while downed (fraction of move speed)
+const DOWN_BLEEDOUT := 30.0     # s from downed to ghost
+const REVIVE_REACH := 60.0      # px a reviver must stand within to channel
+const REVIVE_CHANNEL := 3.0     # s of uninterrupted channel to revive
+const REVIVE_HP_FRAC := 0.30    # revived / ghost-cleared players stand at this HP
+var downed := false             # at 0 HP online: bleeding out, crawling, revivable
+var ghost := false              # bleed-out expired: immaterial until the room clears
+var down_t := 0.0               # bleed-out remaining (owner ticks; shells mirror it)
+var being_revived_by := 0       # peer id channeling on this body (0 = none)
+var revive_bar_ms := 0          # when that channel began (channel-bar presentation)
+var revive_target = null        # reviver-side: the downed Player I'm channeling on
+var revive_t := 0.0             # reviver-side channel progress (0..REVIVE_CHANNEL)
+var _revive_req_ms := 0         # request throttle while the host's grant is in flight
+var _down_ring: Node2D = null   # the bleed-out ring node (player_combat builds it)
+
+
 ## Fill the intents from the local device — same keys the old inline reads
 ## polled. Called at the top of the per-frame driver, AND as a refresh at
 ## the consumption sites that used to read Input live mid-frame (_move_dir,
@@ -263,6 +288,17 @@ func _poll_local_intents() -> void:
 	intent_potion = Input.is_key_pressed(binds["potion"])
 	intent_potion_next = Input.is_key_pressed(binds.get("potion_next", KEY_R))
 	intent_interact = Input.is_key_pressed(binds["interact"])
+	if downed or ghost:
+		# MP-12 (§5.3): while down, only movement remains — no abilities, no
+		# potions, no interacting (being revived is passive). Zeroing at the
+		# poll gates every consumer at once (game.gd's interact loop included).
+		intent_a1 = false
+		intent_a2 = false
+		intent_a3 = false
+		intent_ult = false
+		intent_potion = false
+		intent_potion_next = false
+		intent_interact = false
 
 # --- combat state ---
 var cds := {"a1": 0.0, "a2": 0.0, "a3": 0.0, "ult": 0.0}

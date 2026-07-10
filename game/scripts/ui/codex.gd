@@ -574,9 +574,10 @@ static func _statuses(m: Menus, list: VBoxContainer) -> void:
 			dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
-## Co-op page (MP-08 stub — grows with phases 2/3: revives, party
-## frames, shared boss bars). Numbers pull from the live tables so the
-## page can never drift from the actual netcode/tuning.
+## Co-op page (MP-08 stub, expanded MP-15: the boss fight contract +
+## the §5.3 downed/revive rules — written to the MULTIPLAYER.md blueprint
+## that MP-12 implements). Numbers pull from live tables where they
+## exist so the page can never drift from the actual netcode/tuning.
 static func _coop(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	UITheme.header(m._lbl(list, "— PLAYING TOGETHER —", 16, Color(0.6, 0.9, 1.0)))
@@ -586,6 +587,10 @@ static func _coop(m: Menus, list: VBoxContainer) -> void:
 			"From the title screen choose PLAY TOGETHER. The host picks a hero and a chapter and receives a lobby CODE; friends choose Join, type the code, and bring a hero from their own roster. Up to four heroes walk the host's world — and the lobby closes when the chapter starts, so gather before you set out."],
 		["The road rises to meet you", Color(1.0, 0.7, 0.7),
 			"Monsters grow tougher for every extra hero in the party — more health, a little more bite. A party of one plays exactly the solo game."],
+		["Bosses fight the whole party", Color(1.0, 0.6, 0.4),
+			"A boss keeps its signature move trained on whoever it's hunting — but its floor pressure (rains, strays, eruptions underfoot) seeks out the REST of the party in turn. Nobody stands in guaranteed safety: keep your feet moving even when it isn't looking at you."],
+		["Falling, and getting up", Color(0.7, 1.0, 0.8),
+			"Hit zero among friends and you fall DOWNED instead of dead: 30 seconds of crawling while you bleed out. Any teammate can kneel beside you for 3 seconds (a hit interrupts them) to lift you back up at 30% health; bleed out fully and you ghost until the room is cleared. Only the WHOLE party falling ends the run — the usual death price, paid together."],
 		["Loot is personal", Color(0.6, 1.0, 0.6),
 			"Every drop, coin and gem you see is YOURS — each player is rolled their own rewards, nothing is split and nothing can be sniped. Guests take home everything their character earns; the world and its story stay the host's."],
 		["One build, one road", Color(0.85, 0.6, 1.0),

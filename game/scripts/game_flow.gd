@@ -91,6 +91,11 @@ func start_weekly() -> void:
 ## choice history all intact. (Farming trips back go through
 ## replay_chapter, which resets standings; moving FORWARD keeps them.)
 func advance_chapter() -> void:
+	# MP-14 (§5.4): only the HOST drives the party forward; a guest's ENTER on
+	# the victory card is inert (gated at the hud input layer, belt-and-braces
+	# here — a guest never owns the chapter decision).
+	if net_guest():
+		return
 	var next_ch := Story.next_chapter(chapter_id)
 	if next_ch == "" or state != ST_VICTORY:
 		return
@@ -108,6 +113,15 @@ func advance_chapter() -> void:
 	play_started = true
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(next_ch)["name"]))
+	# MP-14 (§5.4): the party follows through the SAME rebuild the join flow
+	# uses — the host briefs each guest into the new chapter (its live character
+	# rides along; only the world rebuilds). Remotes re-home to the new start so
+	# they never linger in the freed world; the movement sync re-converges them.
+	if net_host():
+		for q in players:
+			if q != null and is_instance_valid(q) and q != local_player:
+				q.global_position = room_center(cur_room)
+		net_session().host_advance_party()
 	autosave()
 
 
@@ -255,6 +269,29 @@ func _wipe_chapter_flags() -> void:
 		if String(c.get("kind", "")) == "quest":
 			player.consumables.erase(c)
 
+
+## MP-13 (§5.4): is this a PER-CHARACTER flag — one that stays LOCAL to its
+## owner in a co-op session — rather than shared WORLD state? The rule reuses
+## the SAME list that already survives a chapter wipe (KEPT_FLAG_PREFIXES /
+## KEPT_FLAGS): those flags describe the CHARACTER, not the host's world —
+## which opening they played and chose (opened_/chose_ + the moral KEPT_FLAGS),
+## their own chapter-completion credit (completed_), their legendary-passive
+## awakening (s_awakened_<cls>). A guest setting one must never rewrite the
+## host's (or a sibling guest's), so set_flag keeps them local. EVERY other
+## flag is world state — quest progress, opened ways, one-time reveals, pay-
+## once desks, shrine/cache/curse once-per-room marks — and routes through the
+## host so the whole party agrees (game_base.set_flag). Dynamically reached
+## from game_base via call() (the base layer can't see this derived const),
+## the same idiom as _recheck_gates.
+func _flag_is_local(flag_name: String) -> bool:
+	if flag_name in KEPT_FLAGS:
+		return true
+	for pre in KEPT_FLAG_PREFIXES:
+		if flag_name.begins_with(pre):
+			return true
+	return false
+
+
 ## Back to the title screen (character select). Progress is saved; the
 ## whole scene reboots so every system starts clean.
 func exit_to_title() -> void:
@@ -288,13 +325,18 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 	var src: Boss = dead if is_instance_valid(dead) else current_boss
 	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
 	_boss_roster_update(src)
-	player.hp = player.max_hp
-	player.mp = player.max_mp
+	# MP-12: a DOWNED/GHOST host skips the heal — the §5.3 paths (channel /
+	# room-clear) own how a fallen body stands. Solo: flags always false.
+	if not player.downed and not player.ghost:
+		player.hp = player.max_hp
+		player.mp = player.max_mp
 	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
 	Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), boss_pos)
 	# MP-11 (§5.5): the brawl pays every head — each guest gets its own
 	# personal chest + pile (its machine spawns and collects them).
+	# MP-12 fold-in (b): the boss-kill full heal reaches every head too.
 	if net_host():
+		net_session().host_full_heal()
 		net_session().host_award_all([
 			{"k": "chest", "tier": "gold", "at": clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos)},
 			{"k": "gold", "n": int(Story.ALL_ENEMIES[kind].get("gold", 50)), "at": boss_pos}])
@@ -311,8 +353,10 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
 	var mzi: int = clampi(src.zone_idx if is_instance_valid(src) else cur_room, 0, zone_count - 1)
 	_boss_roster_update(src)
-	player.hp = player.max_hp
-	player.mp = player.max_mp
+	# MP-12: a DOWNED/GHOST host skips the heal (see on_rogue_boss_died).
+	if not player.downed and not player.ghost:
+		player.hp = player.max_hp
+		player.mp = player.max_mp
 	# (No potion restock — 2026-07-09 investment round: stock is bought.)
 
 	# Bosses always drop a golden chest + a pile of gold.
@@ -358,7 +402,9 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	# so heads are independent), applied on the OWNER's machine through its
 	# own award paths (bag-or-ground, mail, wallet). The host's own share
 	# stayed inline above; bounty/vault credit fans with it.
+	# MP-12 fold-in (b): the boss-kill full heal fans with the package.
 	if net_host():
+		net_session().host_full_heal()
 		net_session().host_boss_kill(kind, boss_pos, boss_lv, first_clear)
 
 	# Now that the room is safe, a wandering merchant MAY set up camp.
@@ -379,6 +425,13 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		# ITS OWN ground strays into ITS OWN mailbox (character-owned, rides
 		# their save home), and a first clear pays each guest the same
 		# legible beat, rolled and mailed on their machine.
+		# MP-12 fold-in (c): the victory card below is HOST-only until MP-14
+		# syncs results (request_pause no-ops online, so the guests' worlds
+		# keep running and nothing can soft-lock them) — guests get the beat
+		# as a toast through the award machinery for now.
+		# MP-14 (§5.4): the real synced victory card fans from end_it below
+		# (host_victory) — no placeholder toast. Loot flush + first clear still
+		# fan here (reward beat, not UI).
 		if net_host():
 			net_session().host_chapter_end(first_clear, boss_lv)
 		quest_key = "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
@@ -420,6 +473,12 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			var pb := record_chapter_result(res)
 			hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
 			hud.show_results(res, pb)
+			# MP-14 (§5.4): the party sees the card at the same moment. Each
+			# guest runs net_victory — its OWN run stats + its OWN chapter
+			# credit / weekly reward, applied owner-side (§5.7). Fan BEFORE the
+			# pause so the reliable RPC is queued while the sim is still live.
+			if net_host():
+				net_session().host_victory(vtext, next_ch != "")
 			request_pause(true)
 		if epilogue.is_empty():
 			end_it.call()
@@ -782,8 +841,10 @@ func _death_begin(p: Player) -> void:
 
 ## Death phase 2 — the return: the world calms down (bosses walk home,
 ## the death room resets, nothing follows you), then p revives at the
-## nearest pacified room and play resumes.
-func _death_respawn(p: Player, death_room: int) -> void:
+## nearest pacified room and play resumes. forced_room (MP-12): a wipe
+## respawns GUESTS at the HOST's respawn-room decision — their own
+## cleared/zone_alive maps are mirrors, not truth. Solo callers omit it.
+func _death_respawn(p: Player, death_room: int, forced_room := -1) -> void:
 	for b in _live_bosses().duplicate():
 		var live_b: Boss = b
 		if live_b.zone_idx < 0:
@@ -819,7 +880,7 @@ func _death_respawn(p: Player, death_room: int) -> void:
 	# Respawn at the nearest pacified room to where you fell — a cleared
 	# combat room counts, so a boss wipe no longer marches you back through
 	# the whole chapter (2026-07-09).
-	var rr := respawn_room(death_room)
+	var rr := forced_room if forced_room >= 0 else respawn_room(death_room)
 	p.global_position = room_center(rr)
 	p.revive()
 	_enter_room(rr)
@@ -831,6 +892,111 @@ func _death_respawn(p: Player, death_room: int) -> void:
 		set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.dim(0.0)
 	state = ST_PLAYING
+
+
+## MP-12 (§5.3): ALL players down — the WIPE. The host detected it
+## (net_session._check_wipe) and broadcast the room decision; every
+## machine now replays the solo death flow for its OWN player: the tithe
+## + 2.0 s beat of _death_begin, then _death_respawn at the HOST's
+## respawn room. The host's copy resets the death room and bosses exactly
+## like solo; a guest's copy resets its mirror world the way a guest
+## death always has (net_session's ST_DEAD watcher asks the host for an
+## enemy resync on recovery). One death code path — a wipe IS "a party
+## of N dying at once", and a party of 1 online collapses to solo.
+func net_wipe(death_room: int, safe_room: int) -> void:
+	if state != ST_PLAYING:
+		return
+	var p: Player = local_player
+	if p == null or not is_instance_valid(p):
+		return
+	# The fall is now a death: drop the §5.3 detour state on EVERY player
+	# object — owners never broadcast an "up" through a wipe, so shells
+	# must shed their downed/ghost flags here (vitals re-truth the bars).
+	for q in players:
+		if q != null and is_instance_valid(q):
+			q.net_clear_down_local()
+	p.hp = 0.0
+	p.dead = true
+	p.play_death_anim()
+	_death_begin(p)
+	await get_tree().create_timer(2.0).timeout
+	_death_respawn(p, death_room, safe_room)
+
+
+## MP-14 (§5.4/§5.7), GUEST: the host's final boss fell — show the SAME
+## results card the host does, from THIS machine's own run + character. The
+## guest applies its own chapter-completion credit (a KEPT/character flag that
+## rides its save home), unlocks its own next chapter in its own meta.json,
+## and claims its own weekly reward — all owner-side, exactly as a solo clear
+## would. The first-clear beat + loot flush already fanned via host_chapter_end.
+func net_victory(vtext: String, has_next: bool) -> void:
+	if state == ST_VICTORY:
+		return  # idempotent — one card per clear
+	# Character credit FIRST, while still ST_PLAYING so autosave persists it
+	# (autosave gates on ST_PLAYING; write_character_home carries the flag home).
+	var res := run_results()
+	if weekly_active:
+		_finish_weekly(res)  # per-player: reads THIS guest's level/records
+	var pb := record_chapter_result(res)
+	set_flag("completed_" + chapter_id, true)  # KEPT flag: local, rides home
+	unlock_achievement("clear_" + chapter_id)
+	if has_next:
+		var next_ch := Story.next_chapter(chapter_id)
+		if next_ch != "":
+			meta_unlock(next_ch)  # this guest's OWN next-chapter unlock
+	autosave()  # ST_PLAYING still — the completion credit writes home now
+	state = ST_VICTORY
+	set_music("")
+	sfx("victory")
+	hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
+	hud.show_results(res, pb)
+	request_pause(true)  # allowed in-session during ST_VICTORY (game_base)
+
+
+## MP-14 (§5.4), GUEST: the host advanced — follow into the next chapter
+## through the SAME switch_chapter rebuild the join snapshot uses, but keep
+## the LIVE, progressed character (no save re-apply). The guest's own kept
+## flags survive the wipe; only the old chapter's world state retires.
+func net_advance(snap: Dictionary) -> void:
+	state = ST_PLAYING
+	hud.hide_results()
+	hud.overlay.color = Color(0, 0, 0, 0)
+	hud.title_label.modulate.a = 0.0
+	hud.subtitle_label.modulate.a = 0.0
+	_wipe_chapter_flags()  # this guest keeps its character flags; world retires
+	wander_seed = int(snap.get("wander_seed", wander_seed))  # the host's map
+	reset_run_stats()
+	guest_world = true  # STILL a guest (reset_run_stats cleared it)
+	switch_chapter(String(snap.get("chapter", chapter_id)), true)
+	# weekly state rides the brief (set AFTER switch — its callers, not it,
+	# clear the flag), mirroring the join snapshot.
+	weekly_active = bool(snap.get("weekly_active", false))
+	weekly_week = int(snap.get("weekly_week", weekly_week))
+	# Re-home the remote shells to the shared start so they never linger in the
+	# freed world; the movement sync re-converges them within a tick.
+	for q in players:
+		if q != null and is_instance_valid(q) and q != local_player:
+			q.global_position = room_center(cur_room)
+	play_started = true
+	request_pause(false)
+	hud.visible = true
+	net_session()._gate_existing_chests()  # the rebuilt world's chests are ours
+	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(chapter_id)["name"]))
+	autosave()
+
+
+## MP-14 (§5.7), GUEST: the host ended the run (replay / title) rather than
+## advancing — autosave the character home and drop out of the session
+## gracefully (the transport leave frees mirrors; net returns to the title).
+func net_session_over() -> void:
+	# Persist the character before the session tears down (autosave gates on
+	# ST_PLAYING; if the guest is on the victory card, write home directly).
+	if guest_world and save_slot > 0:
+		SaveGame.write_character_home(self, save_slot)
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	if net != null and bool(net.is_online()):
+		net.leave()
 
 
 ## Scroll of Recall: whisk the LIVING player back to the last safe room.
@@ -851,6 +1017,14 @@ func recall_to_safe() -> bool:
 
 ## Timed terrain happenings (magma rain, zombies, gusts, lightning...).
 func run_terrain_event(ev: String) -> void:
+	# MP-12 fold-in (a): terrain weather is WORLD simulation — in a session
+	# only the HOST rolls it; its tells reach guests as the telegraph events
+	# game_base already broadcasts plus the hazard event below (a guest
+	# rolling its own would double the weather and desync the ground truth).
+	# Solo: net_guest() is false, nothing changes. Aiming events at guest
+	# positions (a guest alone in a lava room) is MP-15's terrain sweep.
+	if net_guest():
+		return
 	var zi := cur_room
 	match ev:
 		"magma_rain":
@@ -860,6 +1034,10 @@ func run_terrain_event(ev: String) -> void:
 				var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), player.global_position)
 				telegraph(pos, 75.0, 1.3, 10.0, {"color": Color(1.0, 0.35, 0.1, 0.5)})
 				_add_hazard.call_deferred(zi, "lava", pos, 70.0, 22.0)
+				# MP-10 hazard-event pattern: guests paint the same pool and
+				# their own _apply_hazards ticks their own player (§4.1).
+				if net_host():
+					net_session().host_hazard(zi, "lava", pos, 70.0, 22.0)
 			else:
 				for i in randi_range(1, 2):
 					var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-260, 260), randf_range(-180, 180)), player.global_position)
@@ -913,8 +1091,11 @@ func _apply_hazards() -> void:
 				h["drift"].y *= -1.0
 			if is_instance_valid(h["sprite"]):
 				h["sprite"].global_position = h["pos"]
-		# Player effects.
-		if not player.dead and player.global_position.distance_to(h["pos"]) <= h["radius"]:
+		# Player effects. MP-12: a DOWNED/GHOST body is past hazard reach —
+		# take_damage would no-op anyway, and the heal patch must not lift
+		# a fallen player above 0 (the §5.3 paths own standing up).
+		if not player.dead and not player.downed and not player.ghost \
+				and player.global_position.distance_to(h["pos"]) <= h["radius"]:
 			match h["type"]:
 				"lava":
 					player.take_damage(12.0, "magic")

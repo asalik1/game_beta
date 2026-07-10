@@ -47,6 +47,12 @@ extends Node
 ##      Chests are personal instances: every machine spawns its own copy
 ##      and _gate_chest filters its open trigger to the LOCAL player —
 ##      from OUTSIDE chest.gd (the owner's file stays untouched).
+##   7. DOWNED/REVIVE/WIPE (MP-12, §5.3): owner-authoritative down states
+##      (the owner's take_damage converts death into DOWNED and broadcasts
+##      it here; shells mirror it and host AI drops downed prey), host-
+##      arbitrated revive channels (first wins), the host's ghost/wipe
+##      sweep (ghosts stand when no active room is hot; nobody standing
+##      broadcasts the party-wide wipe that replays the solo death flow).
 ##
 ## game.gd hands this node its Game instance at boot. Everything here
 ## no-ops offline — solo never enters this file.
@@ -110,6 +116,9 @@ var last_hit := {}
 ## MP-11, GUEST: the most recent personal award package received —
 ## tests log/assert against it (last_snapshot idiom).
 var last_award: Array = []
+## MP-14, RECIPIENT: the most recent ally-damage number received ({net_id,
+## amount, crit}) — the small-number data assert (last_snapshot idiom).
+var last_ally_dmg := {}
 ## MP-10: what this machine last broadcast for its OWN player's vitals.
 var _vitals_sent := {}
 var _vitals_accum := 0.0
@@ -118,6 +127,38 @@ var _status_throttle := {}  # "pid:kind" -> last send ms (per-frame chill refres
 ## homeless enemies AS IF this were its world) — on respawn we ask the
 ## host for a fresh enemy sweep so the lost mirrors rebuild.
 var _guest_was_dead := false
+## MP-12 (§5.3), HOST: downed pid -> the reviver pid holding its channel.
+var _revive_claims := {}
+## MP-12, HOST: one wipe broadcast per fall — re-arms once anyone stands.
+var _wipe_fired := false
+## MP-12, HOST: room of the most recent fall (the wipe's reset target).
+var _last_down_room := -1
+var _down_sweep_t := 0.0   # HOST: 0.5 s ghost-revive / wipe sweep cadence
+## MP-13 (§5.4), HOST: convo/NPC id -> the peer holding its busy-lock. First
+## interactor wins; a second interactor is denied a local "busy" bark (no
+## dialogue). Freed when the convo ends or the holder disconnects.
+var _convo_claims := {}
+## MP-13, GUEST: the convo this machine asked the host to claim, awaiting a
+## grant/deny — {id, convo, on_done, is_beat}. One at a time (the interact
+## talk_cd debounces the request that opens it).
+var _pending_convo := {}
+## MP-13: the convo id this machine is currently RUNNING — the claim to free
+## when its overlay closes. "" = none.
+var _active_convo_id := ""
+## MP-13 (§5.4): a chapter-critical beat starts only once every living party
+## member stands in the initiator's room OR within this radius of it — a
+## generous half-room gather so nobody misses the story (taste default,
+## logged in PLAYTEST NOTES; the knob is here).
+const BEAT_GATHER_RADIUS := 1200.0
+
+## MP-14 (§5.6): damage-number etiquette. The host is authority — every hit
+## it applies (its own AND a guest's, both land through enemy.take_damage)
+## fans a COMPACT number to the party members who did NOT strike, who render
+## it SMALL (own numbers stay big, per screen). Coalesced per enemy over one
+## 20 Hz window (multi-hit bursts merge into one number) and sent unreliable —
+## a dropped number just doesn't show; the hp bar carries the truth.
+## net_id -> {"amt": accumulated, "crit": any-crit, "attacker": last striker peer}.
+var _dmg_fan := {}
 
 var _move_accum := 0.0
 
@@ -226,6 +267,12 @@ func _send_snapshot(id: int) -> void:
 		"wander_seed": game.wander_seed,
 		"flags": game.flags,
 		"spawn_room": game.cur_room,
+		# MP-15 finding (agent-R): a weekly-challenge host must brief the
+		# guest, or weekly_fx gold and the journal's weekly state go dark
+		# on its machine (applied after switch_chapter below — the flag is
+		# cleared by switch_chapter's CALLERS, never by switch_chapter).
+		"weekly_active": game.weekly_active,
+		"weekly_week": game.weekly_week,
 	})
 
 
@@ -245,6 +292,10 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	var fl: Dictionary = snap.get("flags", {})
 	g.flags = fl.duplicate()
 	g.switch_chapter(String(snap.get("chapter", "ch1")), true)
+	# A weekly-run host briefs the guest (MP-15 finding): weekly_fx and the
+	# journal read these — set AFTER switch_chapter, which never clears them.
+	g.weekly_active = bool(snap.get("weekly_active", false))
+	g.weekly_week = int(snap.get("weekly_week", g.weekly_week))
 	g.guest_world = true  # from here on autosaves are character-only (§5.7)
 	# The character (MP-08, §5.7): the lobby put the joiner's OWN roster
 	# slot in local_char — load that save's CHARACTER section (identity,
@@ -378,15 +429,43 @@ func _on_peer_left(id: int) -> void:
 	lobby_changed.emit()
 	if game != null:
 		game.unregister_player(id)
+	# MP-12: a leaver takes its down state and any channel it held with it;
+	# the wipe re-checks (everyone left standing may now be down).
+	if multiplayer.is_server() and game != null:
+		_revive_claims.erase(id)
+		for k in _revive_claims.keys():
+			if int(_revive_claims[k]) == id:
+				_revive_claims.erase(k)
+				_broadcast_revive_end(int(k))
+		# MP-13: a leaver frees any NPC busy-lock it held (others can talk).
+		for ck in _convo_claims.keys():
+			if int(_convo_claims[ck]) == id:
+				_convo_claims.erase(ck)
+		_check_wipe()
 
 
 func _on_session_ended(_reason: String) -> void:
 	world_ready = false
 	if game != null:
+		# MP-14 (§5.7): a guest whose session ends (host advanced-to-exit, host
+		# loss, or its own leave) takes its character home — belt-and-braces
+		# beside net_session_over's explicit write, so a lost end-RPC or a
+		# vanished host never costs the guest its progress. Full drop/rejoin
+		# hardening is MP-16; this covers the victory-exit path.
+		if game.guest_world and game.save_slot > 0 \
+				and game.local_player != null and is_instance_valid(game.local_player) \
+				and not game.local_player.dead:
+			SaveGame.write_character_home(game, game.save_slot)
 		for id in peer_chars:
 			game.unregister_player(int(id))
 		if game.local_player != null and is_instance_valid(game.local_player):
 			game.local_player.peer_id = 1  # back to the solo default
+			# MP-12: the session died under a fallen player — downed/ghost
+			# are online-only states, so stand them up at the revive floor
+			# (offline: net_stand_up broadcasts nothing).
+			if game.local_player.downed or game.local_player.ghost:
+				game.local_player.net_stand_up(game.local_player.REVIVE_HP_FRAC)
+			game.local_player.net_clear_down_local()
 	peer_chars.clear()
 	lobby_chars.clear()
 	last_snapshot = {}
@@ -413,10 +492,25 @@ func _on_session_ended(_reason: String) -> void:
 	_net_proj_counter = 0
 	last_hit = {}
 	last_award = []
+	last_ally_dmg = {}
+	_dmg_fan.clear()  # MP-14: no session, no ally-number fan
 	_vitals_sent = {}
 	_vitals_accum = 0.0
 	_status_throttle.clear()
 	_guest_was_dead = false
+	_revive_claims.clear()
+	_wipe_fired = false
+	_last_down_room = -1
+	# MP-13: no session, no dialogue etiquette — drop any claim/beat state
+	# and close a mirror transcript left open under the party.
+	_convo_claims.clear()
+	_pending_convo = {}
+	_active_convo_id = ""
+	if game != null:
+		game.beat_broadcasting = false
+		if game.hud != null:
+			game.hud.mirror_end()
+			game.hud.reset_party_ui()  # MP-14: party frames/arrows/labels freed
 	_guest_boss_gone.call_deferred()  # a mirror's bar must not outlive it
 	lobby_changed.emit()
 
@@ -435,6 +529,12 @@ func _physics_process(delta: float) -> void:
 	# frame (both rate-limit themselves; the move gate below is 20 Hz).
 	_watch_guest_death()
 	_tick_vitals(delta, p)
+	# MP-12: the host's ghost-revive / wipe sweep (rate-limits itself).
+	if multiplayer.is_server():
+		_down_sweep_t += delta
+		if _down_sweep_t >= 0.5:
+			_down_sweep_t = 0.0
+			_host_down_sweep()
 	_move_accum += delta
 	var step := 1.0 / MOVE_HZ
 	if _move_accum < step:
@@ -442,8 +542,10 @@ func _physics_process(delta: float) -> void:
 	_move_accum = fmod(_move_accum, step)
 	_rpc_move.rpc(p.global_position, p.velocity, float(p.look_sign))
 	# MP-09: the host's enemy state rides the same ~20 Hz tick.
+	# MP-14: the coalesced ally-damage numbers ride it too.
 	if multiplayer.is_server():
 		_stream_enemy_state()
+		_flush_dmg_fan()
 
 
 ## The owner's 20 Hz movement snapshot: ~24 payload bytes over an
@@ -951,7 +1053,11 @@ func _rpc_vitals(hp: float, max_hp: float, mp: float) -> void:
 	q.max_hp = maxf(1.0, max_hp)
 	q.hp = clampf(hp, 0.0, q.max_hp)
 	q.mp = maxf(0.0, mp)
-	q.dead = q.hp <= 0.0  # host AI stops hunting a fallen guest
+	# MP-12: a DOWNED/GHOST shell is NOT dead — the §5.3 state (which the
+	# owner broadcasts before this hp=0 lands on the same reliable channel)
+	# already steers AI off it via nearest_player's downed filter. `dead`
+	# now only marks the wipe flow's real deaths.
+	q.dead = q.hp <= 0.0 and not q.downed and not q.ghost
 
 
 # ---- XP on kill (§5.5: full XP to every party member) ----
@@ -1276,6 +1382,301 @@ func _rpc_hazard(zi: int, type: String, pos: Vector2, radius: float, dur: float,
 	game._add_hazard(zi, type, pos, radius, dur, drift)
 
 
+# ------------------------------------------- downed / revive / wipe (MP-12) ---
+# §5.3. State ownership: DOWN transitions belong to the fallen player's
+# OWNER (its take_damage/_down_tick run them and broadcast here); the
+# revive CHANNEL belongs to the reviver's machine (its clock, its
+# movement/damage interrupts) with the HOST as claim arbiter (first
+# channel wins); GHOST-revive and the WIPE belong to the HOST (it owns
+# the room-clear truth and the party census). The stand-up itself is
+# always owner-applied: request -> host validate -> owner confirm.
+
+## OWNER -> EVERYONE: this machine's player changed §5.3 state.
+## st: 0 = standing (revived), 1 = downed, 2 = ghost.
+func send_down_state(st: int) -> void:
+	if game == null or not _net().is_online():
+		return
+	_rpc_down_state.rpc(st)
+	if multiplayer.is_server():
+		_host_note_down(1, st)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_down_state(st: int) -> void:
+	if game == null:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0:
+		return
+	var q: Player = _player_of(pid)
+	if q != null and q != game.local_player:
+		q.net_set_down(st)
+	if multiplayer.is_server():
+		_host_note_down(pid, st)
+
+
+## HOST bookkeeping on every state change: remember where the fall
+## happened (the wipe resets that room), free lapsed channels, and
+## re-check the wipe condition.
+func _host_note_down(pid: int, st: int) -> void:
+	if st == 1:
+		var q: Player = _player_of(pid)
+		if q != null:
+			var r: int = game.room_at_pos(q.global_position)
+			if r >= 0:
+				_last_down_room = r
+	else:
+		# Stood up or ghosted: any channel on this body is over.
+		if _revive_claims.has(pid):
+			_revive_claims.erase(pid)
+			_broadcast_revive_end(pid)
+	_check_wipe()
+
+
+# ---- the revive channel (reviver clock, host arbitration) ----
+
+## REVIVER -> HOST: ask to open the channel on downed_pid.
+func request_revive(downed_pid: int) -> void:
+	if game == null or not _net().is_online():
+		return
+	if multiplayer.is_server():
+		_host_revive_request(downed_pid, 1)
+	else:
+		_rpc_revive_request.rpc_id(1, downed_pid)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_revive_request(downed_pid: int) -> void:
+	if not multiplayer.is_server() or game == null:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers):
+		return
+	_host_revive_request(downed_pid, pid)
+
+
+## HOST: grant the claim if the body is downed and unclaimed — first
+## channel wins; a later hopeful gets NOTHING back (the §5.3 busy no-op).
+func _host_revive_request(downed_pid: int, reviver_pid: int) -> void:
+	var q: Player = _player_of(downed_pid)
+	if q == null or not is_instance_valid(q) or not q.downed:
+		return
+	var holder: int = int(_revive_claims.get(downed_pid, 0))
+	if holder != 0 and holder != reviver_pid:
+		return
+	_revive_claims[downed_pid] = reviver_pid
+	_rpc_revive_begin.rpc(downed_pid, reviver_pid)
+	_apply_revive_begin(downed_pid, reviver_pid)
+
+
+## HOST -> EVERYONE: a channel opened (both parties show the bar; the
+## granted reviver starts its clock).
+@rpc("authority", "call_remote", "reliable")
+func _rpc_revive_begin(downed_pid: int, reviver_pid: int) -> void:
+	if game == null or multiplayer.is_server():
+		return
+	_apply_revive_begin(downed_pid, reviver_pid)
+
+
+func _apply_revive_begin(downed_pid: int, reviver_pid: int) -> void:
+	var q: Player = _player_of(downed_pid)
+	if q != null:
+		q.being_revived_by = reviver_pid
+		q.revive_bar_ms = Time.get_ticks_msec()
+	if reviver_pid == multiplayer.get_unique_id() and q != null \
+			and game.local_player != null and is_instance_valid(game.local_player):
+		game.local_player.revive_target = q
+		game.local_player.revive_t = 0.0
+
+
+## REVIVER -> HOST: the channel broke (release / moved / range / a hit).
+func cancel_revive(downed_pid: int) -> void:
+	if game == null or not _net().is_online():
+		return
+	if multiplayer.is_server():
+		_host_revive_cancel(downed_pid, 1)
+	else:
+		_rpc_revive_cancel.rpc_id(1, downed_pid)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_revive_cancel(downed_pid: int) -> void:
+	if not multiplayer.is_server() or game == null:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers):
+		return
+	_host_revive_cancel(downed_pid, pid)
+
+
+func _host_revive_cancel(downed_pid: int, reviver_pid: int) -> void:
+	if int(_revive_claims.get(downed_pid, 0)) != reviver_pid:
+		return  # not the holder — nothing to free
+	_revive_claims.erase(downed_pid)
+	_broadcast_revive_end(downed_pid)
+
+
+## HOST -> EVERYONE: the channel on downed_pid ended (cancel, stand-up,
+## or completion) — bars down, claim freed.
+func _broadcast_revive_end(downed_pid: int) -> void:
+	_rpc_revive_end.rpc(downed_pid)
+	_apply_revive_end(downed_pid)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_revive_end(downed_pid: int) -> void:
+	if game == null or multiplayer.is_server():
+		return
+	_apply_revive_end(downed_pid)
+
+
+func _apply_revive_end(downed_pid: int) -> void:
+	var q: Player = _player_of(downed_pid)
+	if q != null:
+		q.being_revived_by = 0
+	var lp: Player = game.local_player
+	if lp != null and is_instance_valid(lp) and q != null and lp.revive_target == q:
+		lp.revive_target = null
+		lp.revive_t = 0.0
+
+
+## REVIVER -> HOST: the 3 s channel completed.
+func finish_revive(downed_pid: int) -> void:
+	if game == null or not _net().is_online():
+		return
+	if multiplayer.is_server():
+		_host_revive_done(downed_pid, 1)
+	else:
+		_rpc_revive_done.rpc_id(1, downed_pid)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_revive_done(downed_pid: int) -> void:
+	if not multiplayer.is_server() or game == null:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers):
+		return
+	_host_revive_done(downed_pid, pid)
+
+
+## HOST: validate the completion against the claim, then owner-confirm
+## the stand-up (§5.3: revived at 30% max HP, applied by the OWNER).
+func _host_revive_done(downed_pid: int, reviver_pid: int) -> void:
+	if int(_revive_claims.get(downed_pid, 0)) != reviver_pid:
+		return  # lapsed/foreign claim — no revive
+	var q: Player = _player_of(downed_pid)
+	if q == null or not is_instance_valid(q) or not q.downed:
+		return
+	_revive_claims.erase(downed_pid)
+	_broadcast_revive_end(downed_pid)
+	_stand_up_peer(downed_pid, q.REVIVE_HP_FRAC)
+
+
+## HOST: stand a peer's player up at frac (channel revive, ghost clear).
+func _stand_up_peer(pid: int, frac: float) -> void:
+	if pid == 1 or pid == multiplayer.get_unique_id():
+		if game.local_player != null and is_instance_valid(game.local_player):
+			game.local_player.net_stand_up(frac)
+	elif pid in _net().peers:
+		_rpc_stand_up.rpc_id(pid, frac)
+
+
+## HOST -> OWNER: stand up at frac of max HP (owner-applied, §5.3).
+@rpc("authority", "call_remote", "reliable")
+func _rpc_stand_up(frac: float) -> void:
+	if game == null or multiplayer.is_server():
+		return
+	var p: Player = game.local_player
+	if p != null and is_instance_valid(p) and (p.downed or p.ghost):
+		p.net_stand_up(frac)
+
+
+# ---- ghost revive + wipe (host truth) ----
+
+## HOST, 0.5 s cadence (physics tick): ghosts auto-revive once NO active
+## room is HOT — the same room-clear truth the door seals already track
+## (_room_hot: live packs or a live boss). Also re-checks the wipe so a
+## missed edge can never wedge a session.
+func _host_down_sweep() -> void:
+	if game == null or not bool(game.play_started):
+		return
+	var any_hot := false
+	for r in game.active_rooms:
+		if game._room_hot(int(r)):
+			any_hot = true
+			break
+	if not any_hot:
+		for p in game.players:
+			if p == null or not is_instance_valid(p) or not p.ghost:
+				continue
+			_stand_up_peer(p.peer_id, p.REVIVE_HP_FRAC)
+	_check_wipe()
+
+
+## HOST: §5.3 wipe — nobody standing (downed/ghost/dead all count as
+## down). Broadcast the host's room decision and run the shared death
+## flow everywhere. A party of 1 online collapses to the solo flow: its
+## only player downs, the census hits zero, the wipe fires immediately.
+func _check_wipe() -> void:
+	if game == null or not multiplayer.is_server() or not bool(game.play_started):
+		return
+	if game.state != game.ST_PLAYING:
+		return
+	var total := 0
+	var standing := 0
+	for p in game.players:
+		if p == null or not is_instance_valid(p):
+			continue
+		total += 1
+		if not p.dead and not p.downed and not p.ghost:
+			standing += 1
+	if total == 0:
+		return
+	if standing > 0:
+		_wipe_fired = false  # someone is up — the latch re-arms
+		return
+	if _wipe_fired:
+		return
+	_wipe_fired = true
+	var dr: int = _last_down_room if _last_down_room >= 0 else game.cur_room
+	var rr: int = game.respawn_room(dr)
+	_rpc_wipe.rpc(dr, rr)
+	game.net_wipe(dr, rr)
+
+
+## HOST -> GUESTS: the party fell — replay the solo death flow locally,
+## respawning at the HOST's respawn-room decision (guests' cleared maps
+## are mirrors, not truth).
+@rpc("authority", "call_remote", "reliable")
+func _rpc_wipe(death_room: int, safe_room: int) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	game.net_wipe(death_room, safe_room)
+
+
+# ---- boss-kill full heal (MP-12 fold-in b) ----
+
+## HOST: the boss-kill heal reaches every head (§5.5 vitals row). Downed/
+## ghost owners skip it — the §5.3 paths own how a fallen body stands.
+func host_full_heal() -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	for pid in peer_chars:
+		_rpc_full_heal.rpc_id(int(pid))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_full_heal() -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	var p: Player = game.local_player
+	if p == null or not is_instance_valid(p) or p.dead or p.downed or p.ghost:
+		return
+	p.hp = p.max_hp
+	p.mp = p.max_mp
+
+
 # ---- guest death resync ----
 
 ## GUEST: the solo death flow (game_flow) resets rooms and frees homeless
@@ -1304,3 +1705,443 @@ func _rpc_resync_enemies() -> void:
 		var e: Enemy = net_enemies[id]
 		if e != null and is_instance_valid(e) and not e.dying:
 			_rpc_spawn_enemy.rpc_id(pid, _spawn_block(e))
+
+
+# ------------------------------------------ dialogue & story sync (MP-13) ---
+# §5.4. Dialogue is a LOCAL overlay — the world never pauses online
+# (request_pause already no-ops in a session). This section adds the
+# etiquette layer around it:
+#   * WORLD FLAG SYNC — game_base.set_flag routes every world flag here, so
+#     quest state, opened ways, one-time reveals, pay-once desks and once-
+#     per-room marks stay consistent on every machine. Per-character flags
+#     (game_flow._flag_is_local) stay local to their owner.
+#   * BUSY-LOCK — the first interactor of an NPC wins a host-arbitrated
+#     claim (the revive-claim idiom); a second gets a local "busy" bark and
+#     no dialogue. Freed when the convo ends or the holder disconnects.
+#   * TOASTS — a private-overlay choice that mutates shared state tells the
+#     other players in one line (game_base._convo_node -> convo_toast).
+#   * BEAT MIRRORING — quest-advancing convos gate on the party being
+#     present and mirror their lines read-only to everyone; the initiator
+#     drives the choices.
+# Everything here no-ops offline — solo never routes a flag or claims an NPC.
+
+# ---- world flag sync ----
+
+## game_base.set_flag -> here for every WORLD flag. Any setter announces it;
+## the HOST is the authority that fans it to all guests, so a flag set
+## anywhere lands everywhere exactly once. The setter's own optimistic apply
+## already ran (set_flag applies before routing); the host's fan re-confirms
+## it, harmless under net_apply_flag's loop guard. A late joiner needs none
+## of this — the flag is already in game.flags, which the join snapshot
+## ships wholesale (_send_snapshot).
+func route_flag(flag_name: String, value) -> void:
+	if game == null or not _net().is_online():
+		return
+	if multiplayer.is_server():
+		_rpc_set_flag.rpc(flag_name, value)          # host set it: fan out
+	else:
+		_rpc_flag_to_host.rpc_id(1, flag_name, value)  # guest set it: tell host
+
+
+## GUEST -> HOST: a world flag a guest set. The host applies it (guarded) and
+## fans it to every guest — the setter included, for confirmation.
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_flag_to_host(flag_name: String, value) -> void:
+	if not multiplayer.is_server() or game == null:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers):
+		return
+	game.net_apply_flag(flag_name, value)
+	_rpc_set_flag.rpc(flag_name, value)
+
+
+## HOST -> GUESTS: apply a world flag (loop-guarded; gates and side quests
+## react on each machine, so opened ways and reveals land everywhere).
+@rpc("authority", "call_remote", "reliable")
+func _rpc_set_flag(flag_name: String, value) -> void:
+	if game == null or multiplayer.is_server():
+		return
+	game.net_apply_flag(flag_name, value)
+
+
+# ---- busy-lock + beat orchestration ----
+
+## game_base.run_convo_id -> here when online. Solo-in-session (the opening
+## beats before any guest has spawned, or a lone party) collapses to a plain
+## local overlay — the etiquette below only matters with company. Flag
+## routing is independent (set_flag), so a lone host's story still syncs on
+## the next join.
+func begin_convo(id: String, convo: Dictionary, on_done: Callable) -> void:
+	if game == null:
+		return
+	if game.players.size() <= 1:
+		game.run_convo(convo, on_done)
+		return
+	var is_beat: bool = game._convo_is_beat(convo)
+	var me := multiplayer.get_unique_id()
+	# Busy already? The host reads its authoritative claim map for an instant
+	# bark; guests learn on the host's deny.
+	if multiplayer.is_server() and _convo_claims.has(id) \
+			and int(_convo_claims[id]) != me:
+		_busy_bark()
+		return
+	# Beats wait for the party to gather (initiator-local — every machine
+	# sees every player's position through the movement sync).
+	if is_beat and not _party_gathered():
+		_beat_waiting_bark()
+		return
+	if multiplayer.is_server():
+		_grant_convo(id, me, convo, on_done, is_beat)
+	else:
+		_pending_convo = {"id": id, "convo": convo, "on_done": on_done, "is_beat": is_beat}
+		_rpc_convo_request.rpc_id(1, id, is_beat)
+
+
+## GUEST -> HOST: claim an NPC's dialogue. First wins; a later hopeful is
+## denied. Grant tells the spectators (a beat) and then the initiator.
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_convo_request(id: String, is_beat: bool) -> void:
+	if not multiplayer.is_server() or game == null:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers):
+		return
+	if _convo_claims.has(id) and int(_convo_claims[id]) != pid:
+		_rpc_convo_deny.rpc_id(pid, id)
+		return
+	_convo_claims[id] = pid
+	if is_beat:
+		_begin_beat_spectate(id, pid)
+	_rpc_convo_grant.rpc_id(pid, id)
+
+
+## HOST self-grant (the host is the initiator): no round trip.
+func _grant_convo(id: String, pid: int, convo: Dictionary, on_done: Callable, is_beat: bool) -> void:
+	_convo_claims[id] = pid
+	if is_beat:
+		_begin_beat_spectate(id, pid)
+	_execute_convo(id, convo, on_done, is_beat)
+
+
+## GUEST: the host granted our claim — run the convo locally now.
+@rpc("authority", "call_remote", "reliable")
+func _rpc_convo_grant(id: String) -> void:
+	if game == null or String(_pending_convo.get("id", "")) != id:
+		return
+	var convo: Dictionary = _pending_convo.get("convo", {})
+	var on_done: Callable = _pending_convo.get("on_done", Callable())
+	var is_beat: bool = bool(_pending_convo.get("is_beat", false))
+	_pending_convo = {}
+	_execute_convo(id, convo, on_done, is_beat)
+
+
+## GUEST: the NPC was already taken — a local busy bark, no dialogue.
+@rpc("authority", "call_remote", "reliable")
+func _rpc_convo_deny(id: String) -> void:
+	if String(_pending_convo.get("id", "")) == id:
+		_pending_convo = {}
+	_busy_bark()
+
+
+## Run the claimed convo on THIS machine (host self, or a granted guest). The
+## bound end handler frees the claim and closes the mirror when it ends.
+func _execute_convo(id: String, convo: Dictionary, on_done: Callable, is_beat: bool) -> void:
+	_active_convo_id = id
+	if is_beat:
+		game.beat_broadcasting = true
+	game.run_convo(convo, _on_convo_ended.bind(id, is_beat, on_done))
+
+
+func _on_convo_ended(id: String, is_beat: bool, on_done: Callable) -> void:
+	if is_beat and game != null:
+		game.beat_broadcasting = false
+		_rpc_beat_end.rpc()
+		if game.hud != null:
+			game.hud.mirror_end()  # no-op on the driver (never showed one)
+		# In-session HUD consistency: the party's quest tracker follows the
+		# beat's advance. Cosmetic — guests never persist world state (§5.7).
+		_rpc_beat_quest.rpc(game.quest_key)
+	_release_convo(id)
+	if on_done.is_valid():
+		on_done.call()
+
+
+## Free a claim when its overlay closes (host erases; guest tells the host).
+func _release_convo(id: String) -> void:
+	if _active_convo_id == id:
+		_active_convo_id = ""
+	if game == null or not _net().is_online():
+		return
+	if multiplayer.is_server():
+		_convo_claims.erase(id)
+	else:
+		_rpc_convo_release.rpc_id(1, id)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_convo_release(id: String) -> void:
+	if not multiplayer.is_server() or game == null:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0:
+		return
+	if int(_convo_claims.get(id, 0)) == pid:
+		_convo_claims.erase(id)
+
+
+# ---- beat mirroring ----
+
+## Every living party member in the initiator's room, or within a generous
+## radius of it — the gate a beat waits on (§5.4). Downed/ghost bodies count
+## as present (they're in the fight, just can't act); only the dead don't gate.
+func _party_gathered() -> bool:
+	var me: Player = game.local_player
+	if me == null or not is_instance_valid(me):
+		return true
+	var room: int = game.room_at_pos(me.global_position)
+	for p in game.players:
+		if p == null or not is_instance_valid(p) or p == me:
+			continue
+		if p.dead:
+			continue
+		if game.room_at_pos(p.global_position) == room:
+			continue
+		if p.global_position.distance_to(me.global_position) <= BEAT_GATHER_RADIUS:
+			continue
+		return false
+	return true
+
+
+## HOST: tell the spectators (everyone but the initiator) a beat began — their
+## screens show the mirrored transcript. The host itself spectates when a
+## GUEST drives (authority RPCs never echo to the host, so it calls locally).
+func _begin_beat_spectate(id: String, initiator_pid: int) -> void:
+	var nm := _initiator_name(initiator_pid)
+	_rpc_beat_start.rpc(initiator_pid, nm)
+	if initiator_pid != multiplayer.get_unique_id() and game.hud != null:
+		game.hud.mirror_begin(nm)
+
+
+func _initiator_name(pid: int) -> String:
+	if pid == multiplayer.get_unique_id():
+		return local_name()
+	if lobby_chars.has(pid):
+		return String(lobby_chars[pid].get("name", "A hero"))
+	if peer_chars.has(pid):
+		return String(peer_chars[pid].get("name", "A hero"))
+	return "A hero"
+
+
+## This machine's display name (what the party sees on toasts and beats).
+func local_name() -> String:
+	return String(local_char.get("name", os_name()))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_beat_start(initiator_pid: int, nm: String) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	if initiator_pid == multiplayer.get_unique_id():
+		return  # I'm the driver, not a spectator
+	if game.hud != null:
+		game.hud.mirror_begin(nm)
+
+
+## INITIATOR -> spectators: the current dialogue line (+ any options, shown
+## read-only). Called by hud while game.beat_broadcasting holds.
+func beat_line(speaker: String, text: String, options: Array) -> void:
+	if game == null or not _net().is_online():
+		return
+	_rpc_beat_line.rpc(speaker, text, options)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_beat_line(speaker: String, text: String, options: Array) -> void:
+	# play_started (not world_ready): the initiator may be a guest, so the
+	# HOST is a legitimate spectator too — and world_ready is never set on
+	# the host. play_started is true once ANY machine's world is built, and
+	# false for a still-in-lobby guest (which must ignore beat traffic).
+	if game == null or not game.play_started:
+		return
+	if game.hud != null:
+		game.hud.mirror_line(speaker, text, options)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_beat_end() -> void:
+	if game != null and game.hud != null:
+		game.hud.mirror_end()
+
+
+## INITIATOR -> everyone: the beat advanced the quest tracker; the party's
+## HUD follows (cosmetic in-session consistency — guests never persist it).
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_beat_quest(qk: String) -> void:
+	if game == null or not game.play_started:  # host is a recipient too
+		return
+	game.quest_key = qk
+	game.refresh_quest()
+
+
+# ---- barks + toast ----
+
+func _busy_bark() -> void:
+	if game != null and game.local_player != null and is_instance_valid(game.local_player):
+		game.spawn_text(game.local_player.global_position + Vector2(0, -70),
+			"Someone's already speaking with them", Color(0.85, 0.8, 0.7), 1.5)
+
+
+func _beat_waiting_bark() -> void:
+	if game != null and game.local_player != null and is_instance_valid(game.local_player):
+		game.spawn_text(game.local_player.global_position + Vector2(0, -70),
+			"Wait for the party to gather", Color(1.0, 0.85, 0.4), 1.5)
+
+
+## A private-overlay choice touched shared state — one line to the others
+## ("<name> accepted: <quest>" / "<name> chose: <label>"). call_remote, so the
+## initiator (who made the choice) is not toasted.
+func convo_toast(verb: String, label: String) -> void:
+	if game == null or not _net().is_online():
+		return
+	var lab := label
+	if lab.length() > 42:
+		lab = lab.substr(0, 40).strip_edges() + "…"
+	_rpc_convo_toast.rpc("%s %s: %s" % [local_name(), verb, lab])
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_convo_toast(text: String) -> void:
+	if game == null or not game.play_started:  # host is a recipient too
+		return
+	if game.local_player != null and is_instance_valid(game.local_player):
+		game.spawn_text(game.local_player.global_position + Vector2(0, -84),
+			text, Color(0.7, 0.85, 1.0), 2.5)
+
+
+# ------------------------------------------ party UI + victory/advance (MP-14) ---
+# §5.6. Three additive layers over the existing HUD, all host-authoritative
+# where the wire is involved and all no-ops offline:
+#   * ally damage numbers — the host fans each hit's number to the party
+#     members who didn't strike (own big / allies' small);
+#   * synced victory — the host RPCs the final-boss victory so EVERY machine
+#     shows the results card at once (each renders its OWN run from local
+#     state; per-player credit — completed_/meta/weekly — is applied owner-side);
+#   * chapter advance — the host's continue drives the party into the next
+#     chapter through the SAME world-snapshot rebuild the join flow uses (the
+#     live character stays; only the world rebuilds), or ends the session
+#     gracefully (everyone autosaves) on an exit-to-title.
+
+# ---- ally damage numbers (host authority, coalesced, unreliable) ----
+
+## enemy.take_damage (host, non-silent hits) -> here. `striker` is the player
+## whose blow this was (its host-side shell for a guest hit, the host's own
+## player otherwise). Accumulate per enemy for this 20 Hz window; the flush
+## fans one number to every party member OTHER than the striker.
+func host_fan_damage(net_id: int, amount: int, crit: bool, striker) -> void:
+	if net_id <= 0 or amount <= 0 or game == null or not _net().is_online() \
+			or not multiplayer.is_server():
+		return
+	if multiplayer.get_peers().is_empty():
+		return  # nobody to fan to — solo-online skips the bookkeeping entirely
+	var pid := 1
+	if striker != null and is_instance_valid(striker):
+		pid = int(striker.peer_id)
+	var cur: Dictionary = _dmg_fan.get(net_id, {"amt": 0, "crit": false, "attacker": pid})
+	cur["amt"] = int(cur["amt"]) + amount
+	cur["crit"] = bool(cur["crit"]) or crit
+	cur["attacker"] = pid
+	_dmg_fan[net_id] = cur
+
+
+## HOST, 20 Hz: send each pending number to the party members who didn't land
+## it (the striker already showed its own big one). Unreliable — a lost number
+## is a non-event.
+func _flush_dmg_fan() -> void:
+	if _dmg_fan.is_empty():
+		return
+	for net_id in _dmg_fan:
+		var d: Dictionary = _dmg_fan[net_id]
+		var attacker: int = int(d["attacker"])
+		for pid in _net().peers:
+			if int(pid) == attacker:
+				continue
+			_rpc_ally_damage.rpc_id(int(pid), int(net_id), int(d["amt"]), bool(d["crit"]))
+	_dmg_fan.clear()
+
+
+## RECIPIENT: an ally's blow landed on this enemy — a small floating number
+## over its mirror (own hits stay big; this reads as "someone else's damage").
+@rpc("authority", "call_remote", "unreliable")
+func _rpc_ally_damage(net_id: int, amount: int, crit: bool) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	last_ally_dmg = {"net_id": net_id, "amount": amount, "crit": crit}
+	var e: Enemy = net_enemies.get(net_id)
+	if e == null or not is_instance_valid(e) or e.dying:
+		return
+	game.spawn_ally_damage(e.global_position, amount, crit)
+
+
+# ---- synced victory (the final boss falls — everyone sees the card) ----
+
+## HOST: the chapter's final boss died — every guest shows the results card
+## simultaneously (§5.4). vtext is the shared victory blurb; has_next drives
+## the guest's meta unlock. Each guest renders its OWN run stats and applies
+## its OWN chapter-completion credit / weekly reward (§5.7) in net_victory.
+func host_victory(vtext: String, has_next: bool) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	for pid in peer_chars:
+		_rpc_victory.rpc_id(int(pid), vtext, has_next)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_victory(vtext: String, has_next: bool) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	game.net_victory(vtext, has_next)
+
+
+# ---- chapter advance (host's continue drives the party) ----
+
+## HOST: after advance_chapter rebuilt the next chapter locally, brief every
+## guest so it follows through the SAME switch_chapter rebuild the join flow
+## uses — but the guest keeps its LIVE, progressed character (no save re-apply).
+func host_advance_party() -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	var snap := {
+		"chapter": game.chapter_id,
+		"wander_seed": game.wander_seed,
+		"weekly_active": game.weekly_active,
+		"weekly_week": game.weekly_week,
+	}
+	for pid in peer_chars:
+		_rpc_advance_world.rpc_id(int(pid), snap)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_advance_world(snap: Dictionary) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	game.net_advance(snap)
+
+
+# ---- graceful session end (exit-to-title after victory) ----
+
+## HOST: the host chose to leave the run (replay / title) rather than advance —
+## tell every guest to autosave its character home and drop out cleanly, then
+## the host itself leaves (game.gd / caller). No host-loss scramble (that is
+## MP-16): this is a deliberate, announced end.
+func host_end_session() -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_session_over.rpc()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_session_over() -> void:
+	if game == null or multiplayer.is_server():
+		return
+	game.net_session_over()

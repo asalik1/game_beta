@@ -55,6 +55,55 @@ func _reach(base: float) -> float:
 	return base + art_scale * 4.2
 
 
+# ------------------------------------------ §5.2 floor rotation (MP-15) ---
+# In a party the SIGNATURE mechanic keeps hunting the sticky target
+# (_get_target), but FLOOR damage — the non-opt-in pressure: rains, aimed
+# strays, lanes, tell clusters, second threats — ROTATES among the OTHER
+# party members, so a kiting non-target can never stand in guaranteed
+# safety (MULTIPLAYER.md §5.2; BOSSES.md floor-vs-ceiling doctrine).
+# Host-side only: bosses think on the host, guests see the tells via the
+# MP-09 telegraph mirror. Solo: no "others" exist, so every call collapses
+# to _get_target() — behavior bit-identical by construction.
+var _floor_rot := 0        # rotation cursor over the non-target party members
+var _floor_last_id := 0    # cycle guard: never the same victim twice in a row
+var _floor_flip := false   # alternate-cast coin for dual-purpose volleys
+
+
+## The target for a FLOOR cast. `alternate` marks abilities that are ALSO
+## the boss's primary dueling pressure (bolt pokes): every other cast
+## stays on the sticky target, the rest rotate. The rotation CYCLES — the
+## last victim is never re-picked while another non-target stands (the
+## PARTY_BOSS_RATE cadence must not machine-gun one head) — and it skips
+## dead and downed players (`downed` read defensively: MP-12 lands
+## concurrently, a missing property means not-downed). Falls back to the
+## sticky target whenever no live non-target exists.
+func _floor_target(alternate := false) -> Player:
+	var sticky: Player = _get_target()
+	if alternate:
+		_floor_flip = not _floor_flip
+		if not _floor_flip:
+			return sticky
+	var others: Array = []
+	for p in game.players:
+		if p == null or not is_instance_valid(p) or p == sticky or p.dead:
+			continue
+		var down: Variant = p.get("downed")
+		if (down is bool and down) or (down is float and down > 0.0):
+			continue
+		others.append(p)
+	if others.is_empty():
+		return sticky
+	if others.size() > 1:
+		for i in others.size():  # cycle, don't re-roll: drop last cast's victim
+			if others[i].get_instance_id() == _floor_last_id:
+				others.remove_at(i)
+				break
+	_floor_rot = (_floor_rot + 1) % others.size()
+	var pick: Player = others[_floor_rot]
+	_floor_last_id = pick.get_instance_id()
+	return pick
+
+
 ## Boss voice: uses the per-boss sound (roar_fangmaw = wolf howl,
 ## roar_morwen = spectral wail, roar_vargoth = giant) when present.
 func roar() -> void:
@@ -195,12 +244,15 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 	# Ground rake (kite answer): the beast slams and a fissure RACES out along
 	# your lane, cracking past you — so a kiter can't AFK the gaps between the
 	# pounce and the charge. Reaches any range (the crack runs out to your feet).
+	# §5.2 FLOOR: in a party the rake hunts a rotating NON-target — the kiter
+	# it exists to answer. Solo: collapses to the player, same lane as ever.
 	if ring_cd <= 0.0:
 		ring_cd = 4.5
 		game.sfx("slam")
 		play_action("slam")
-		var aim := to_player.normalized()
-		var reach: float = clampf(dist + 110.0, 240.0, 620.0)
+		var rake_to: Vector2 = _floor_target().global_position - global_position
+		var aim := rake_to.normalized()
+		var reach: float = clampf(rake_to.length() + 110.0, 240.0, 620.0)
 		for i in 4:
 			var t := float(i + 1) / 4.0
 			game.telegraph(global_position + aim * reach * t, 66.0, 0.4 + t * 0.5,
@@ -268,12 +320,13 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		global_position = game.clamp_to_zone(global_position + away * randf_range(280.0, 400.0), home)
 		return Vector2.ZERO
 
-	# 3-bolt spread.
+	# 3-bolt spread. §5.2 floor (alternate): her poke is caster-lineage bolt
+	# pressure — every other volley hunts a rotating non-target in a party.
 	if ability_cd <= 0.0:
 		ability_cd = 2.6
 		game.sfx("bolt")
 		play_action("bolt")
-		var aim := to_player.normalized()
+		var aim := (_floor_target(true).global_position - global_position).normalized()
 		for spread in [-0.25, 0.0, 0.25]:
 			_bolt(aim.rotated(spread) * 320.0, dmg)
 
@@ -419,11 +472,13 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		_lightning_lash(player)
 
 	# Broken storm: stray bolts hammer the ground around the prey.
+	# §5.2 FLOOR: the strays rotate onto a non-target in a party.
 	if enraged and ring_cd <= 0.0:
 		ring_cd = 4.0
 		play_action("storm")
+		var struck: Player = _floor_target()
 		for i in 3:
-			game.telegraph(player.global_position
+			game.telegraph(struck.global_position
 				+ Vector2(randf_range(-140.0, 140.0), randf_range(-110.0, 110.0)),
 				70.0, 0.55, dmg * 1.1, {"color": STORM})
 
@@ -454,7 +509,7 @@ func _lightning_lash(player: Player) -> void:
 ## Ranged hymnist. Requiem rings ripple outward, verse volleys harry,
 ## the hymn of hunger marks you and FEEDS her; the choir answers at 60%.
 ## At 25% the crescendo: denser volleys and a faster liturgy.
-func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
+func _choirmother(_player: Player, to_player: Vector2, dist: float) -> Vector2:
 	const BLIGHT := Color(0.8, 0.4, 1.0, 0.55)
 	if hp <= max_hp * 0.25 and not enraged:
 		enraged = true
@@ -482,21 +537,23 @@ func _choirmother(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		special_cd = 6.0 if enraged else 9.0
 		_requiem()
 
-	# Verse volley.
+	# Verse volley. §5.2 floor (alternate): caster-lineage bolt pressure —
+	# every other verse hunts a rotating non-target in a party.
 	if ability_cd <= 0.0:
 		ability_cd = 2.2 if enraged else 3.0
 		game.sfx("bolt")
 		play_action("bolt")
-		var aim := to_player.normalized()
+		var aim := (_floor_target(true).global_position - global_position).normalized()
 		var spreads := [-0.36, -0.12, 0.12, 0.36] if enraged else [-0.22, 0.0, 0.22]
 		for spread in spreads:
 			_bolt(aim.rotated(spread) * 300.0, dmg)
 
 	# Hymn of hunger: a marked strike — and the choir feeds her.
+	# §5.2 FLOOR: the hymn marks a rotating head; nobody kites her for free.
 	if ring_cd <= 0.0:
 		ring_cd = 8.0
 		play_action("cast")
-		game.telegraph(player.global_position, 90.0, 0.62, dmg * 1.3, {"color": BLIGHT})
+		game.telegraph(_floor_target().global_position, 90.0, 0.62, dmg * 1.3, {"color": BLIGHT})
 		hp = minf(max_hp, hp + max_hp * 0.02)
 		game.spawn_text(global_position + Vector2(0, -70), "the choir feeds her", Color(0.8, 0.5, 1.0))
 
@@ -558,10 +615,12 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		_piston_protocol(player)
 
 	# Beam spoke: one long line straight down your lane.
+	# §5.2 FLOOR: an aimed lane is area denial — it rakes toward a rotating
+	# non-target in a party (the piston grid stays on the aggro holder).
 	if ring_cd <= 0.0 and dist < 560.0:
 		ring_cd = 4.5 if enraged else 7.0
 		play_action("beam")
-		var dir := to_player.normalized()
+		var dir := (_floor_target().global_position - global_position).normalized()
 		for i in 7:
 			game.telegraph(global_position + dir * (110.0 + i * 90.0), 70.0,
 				0.5 + i * 0.075, dmg * 1.3, {"color": CORE})
@@ -647,6 +706,8 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	_track_corpses()
 
 	# The Vale answers: a shambler claws up near the prey, all fight.
+	# §5.2 FLOOR: the grave opens near a rotating head — the aggro seed
+	# lands on whoever it clawed up beside (adds pick their own nearest).
 	grave_t -= delta
 	if grave_t <= 0.0:
 		grave_t = 7.0
@@ -656,7 +717,7 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 				live += 1
 		if live < 4:
 			play_action("summon")
-			var at: Vector2 = game.clamp_to_zone(player.global_position
+			var at: Vector2 = game.clamp_to_zone(_floor_target().global_position
 				+ Vector2.from_angle(randf() * TAU) * randf_range(140.0, 220.0), home)
 			var add := Enemy.make(game, "zombie", at, level)
 			add.xp_value = 0
@@ -676,10 +737,12 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 		# 3-tell CLUSTER (r51 floor made real): opens under the prey AND flanks,
 		# so a kiter has to REPOSITION to a clear patch, not just sidestep one
 		# circle. Reaches any range — the Vale answers wherever you stand.
-		game.telegraph(player.global_position, 90.0, 0.9, dmg * 1.1, {"color": GRAVE})
+		# §5.2 FLOOR: in a party the cluster opens under a rotating non-target.
+		var dug: Player = _floor_target()
+		game.telegraph(dug.global_position, 90.0, 0.9, dmg * 1.1, {"color": GRAVE})
 		for _i in 2:
 			var off := Vector2.from_angle(randf() * TAU) * randf_range(120.0, 175.0)
-			game.telegraph(game.clamp_to_zone(player.global_position + off, home),
+			game.telegraph(game.clamp_to_zone(dug.global_position + off, home),
 				90.0, 0.9, dmg * 1.1, {"color": GRAVE})
 
 	# Signature: SHOVELWORK — under the dirt and up through your floor.
@@ -786,9 +849,10 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		ring_cd = maxf(ring_cd, 2.4)
 
 	# Grief fan: 3 bolts now, and the memory of them 0.8s later.
+	# §5.2 floor (alternate): every other fan grieves at a non-target.
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
-		_grief_fan(to_player.normalized())
+		_grief_fan((_floor_target(true).global_position - global_position).normalized())
 
 	# Wail ring, slow and wide.
 	if ring_cd <= 0.0:
@@ -991,7 +1055,10 @@ func _toll() -> void:
 func _reliquary_rain() -> void:
 	play_action("blade")
 	for i in 3:
-		var tgt: Player = _get_target()  # per blade — the chase re-aims across awaits
+		# Per blade — the chase re-aims across awaits. §5.2 FLOOR: falling
+		# blades are aimed area denial, so each blade hunts the ROTATION
+		# (cycling non-targets in a party; solo it's the player, as ever).
+		var tgt: Player = _floor_target()
 		if dying or not is_instance_valid(tgt) or tgt.dead:
 			return
 		game.telegraph(tgt.global_position, 85.0, 0.75, dmg * 1.3, {"sword": true})
@@ -1140,17 +1207,19 @@ func _forgemistress(player: Player, to_player: Vector2, dist: float, delta: floa
 	# heat is capped she lobs slag at the prey wherever they've run — the
 	# heat clock a kiter used to feel nothing from now lands at range, on
 	# top of the widening hammer lanes below.
+	# §5.2 FLOOR: the lob seeks a rotating non-target in a party.
 	if heat >= 1.0 and ring_cd <= 0.0:
 		ring_cd = 3.2
 		play_action("throw")
-		var lob: Vector2 = player.global_position + Vector2(randf_range(-70, 70), randf_range(-70, 70))
+		var lob: Vector2 = _floor_target().global_position + Vector2(randf_range(-70, 70), randf_range(-70, 70))
 		game.telegraph(lob, 100.0, 0.7, dmg * (1.0 + 0.12 * quench_stacks) * 1.3, {"color": FORGE})
 
 	# Hammer lines: forge-orange lash telegraphs, wider when white-hot.
+	# §5.2 floor (alternate): every other lane rakes toward a non-target.
 	if ability_cd <= 0.0 and dist < 520.0:
 		ability_cd = 3.4
 		play_action("lash")
-		var dir := to_player.normalized()
+		var dir := (_floor_target(true).global_position - global_position).normalized()
 		var rad := 105.0 if heat >= 1.0 else 75.0
 		for i in 4:
 			game.telegraph(global_position + dir * (110.0 + i * 95.0), rad,
@@ -1192,9 +1261,18 @@ func _nearest_pool() -> Vector2:
 	return best
 
 
-func _do_quench(player: Player) -> void:
+func _do_quench(_player: Player) -> void:
 	play_action("quench")
-	if player.global_position.distance_to(quench_target) <= 120.0:
+	# §5.2: ANY hero body-blocking the pool denies the buff — the intercept
+	# is party-wide, like every other intercept in the act (the telegraph's
+	# damage already sweeps every player). Solo: the one player, the old read.
+	var blocked := false
+	for p in game.players:
+		if p != null and is_instance_valid(p) and not p.dead \
+				and p.global_position.distance_to(quench_target) <= 120.0:
+			blocked = true
+			break
+	if blocked:
 		# Body-blocked: she quenches THROUGH the player — no buff, but the
 		# hardest hit in the fight lands where she meant the pool to be.
 		game.spawn_text(quench_target + Vector2(0, -60), "QUENCHED THROUGH!", FORGE)
@@ -1302,11 +1380,14 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 	# Ember rain (kite answer): magma spatters the prey's ground the WHOLE fight,
 	# not just at enrage — so a kiter can't sit out the charge/cone gaps. Denser
 	# and faster once enraged.
+	# §5.2 FLOOR: the rain seeks a rotating non-target in a party (the
+	# charge + vent breath stay on whoever it's hunting).
 	if ring_cd <= 0.0:
 		ring_cd = 3.5 if enraged else 5.0
 		play_action("rain")
+		var rained: Player = _floor_target()
 		for i in (3 if enraged else 2):
-			game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
+			game.telegraph(rained.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
 				75.0, 0.6, dmg * 1.1, {"color": LAVA})
 
 	if dist < _reach(72.0):
@@ -1336,7 +1417,9 @@ func _vent_breath(player: Player) -> void:
 
 
 func _tantrum() -> void:
-	var tgt: Player = _get_target()
+	# §5.2 FLOOR: the plate-shed tantrum is a rain — it scatters over a
+	# rotating non-target (the melting crew is already paying in lava).
+	var tgt: Player = _floor_target()
 	if not is_instance_valid(tgt):
 		return
 	for i in 5:
@@ -1349,7 +1432,7 @@ func _tantrum() -> void:
 ## 50%); at 66% / 33% four SONS march toward him — each arrival heals him
 ## and quickens his verdicts, so intercept them. At 20% the Judge attends
 ## and magma rain runs continuous.
-func _ashpriest(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+func _ashpriest(_player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
 	if not ordo_setup:
 		ordo_setup = true
 		game.spawn_text(global_position + Vector2(0, -84), "The sermon begins.", VERDICT)
@@ -1376,19 +1459,22 @@ func _ashpriest(player: Player, to_player: Vector2, dist: float, delta: float) -
 		# through personal rings was a forced trade, not a test.
 		ring_cd = maxf(ring_cd, 3.2)
 
+	# §5.2 FLOOR: the Judge's rain falls on a rotating non-target.
 	if enraged and ring_cd <= 0.0:
 		ring_cd = 3.0
 		play_action("rain")
+		var judged: Player = _floor_target()
 		for i in 3:
-			game.telegraph(player.global_position + Vector2(randf_range(-170, 170), randf_range(-140, 140)),
+			game.telegraph(judged.global_position + Vector2(randf_range(-170, 170), randf_range(-140, 140)),
 				76.0, 0.6, dmg, {"color": LAVA})
 
-	# Brand volleys keep the range honest.
+	# Brand volleys keep the range honest. §5.2 floor (alternate): every
+	# other sermon brands a rotating non-target.
 	if ability_cd <= 0.0:
 		ability_cd = 2.6
 		game.sfx("bolt")
 		play_action("bolt")
-		var aim := to_player.normalized()
+		var aim := (_floor_target(true).global_position - global_position).normalized()
 		for spread in [-0.28, -0.09, 0.09, 0.28]:
 			_bolt(aim.rotated(spread) * 300.0, dmg)
 
@@ -1524,8 +1610,8 @@ var sliding := false           # whitepelt: charging across ice, can't stop
 var dazed_t := 0.0             # whitepelt: wall-slam self-stun / vuln window
 var slide_cap := 0.0
 var ch5_setup := false         # ice field / dreamers placed
-var still_accum := 0.0         # halla: player stillness meter
-var drowse := 0               # halla: current Drowse stacks
+var still_map := {}           # halla: stillness meter PER PLAYER (instance id -> accum)
+var drowse := 0               # halla: current Drowse stacks (party: the drowsiest head)
 var aura_mult := 1.0          # halla: dreamers thicken the aura
 var dreamers: Array = []      # halla: drifting sleepwalker adds
 var dreamer_t := 0.0
@@ -1536,7 +1622,7 @@ func _reset_ch5_state() -> void:
 	dazed_t = 0.0
 	slide_cap = 0.0
 	ch5_setup = false
-	still_accum = 0.0
+	still_map.clear()
 	drowse = 0
 	aura_mult = 1.0
 	dreamer_t = 0.0  # dreamers themselves freed by _clear_boss_props
@@ -1582,10 +1668,11 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 	# Imposed floor (r51 kite answer): a frost stomp cracks the ground under
 	# the prey on a steady beat, whatever the range — his answer to a kiter
 	# who never closes to provoke the pelt-drums. Slow tell; move or eat it.
+	# §5.2 FLOOR: in a party the stomp cracks under a rotating non-target.
 	if ring_cd <= 0.0:
 		ring_cd = 4.0
 		play_action("slam")
-		game.telegraph(player.global_position, 100.0, 0.85, dmg * 1.1, {"color": FROST})
+		game.telegraph(_floor_target().global_position, 100.0, 0.85, dmg * 1.1, {"color": FROST})
 
 	if charging:
 		if _on_patch("ice"):
@@ -1666,18 +1753,22 @@ func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -
 		_flash_freeze(player)
 
 	# Shatter Lance: root, then a piercing line at where you stood.
+	# §5.2 floor (alternate): a second threat — every other lance roots
+	# and skewers a rotating non-target (root forwards to its owner).
 	if ring_cd <= 0.0 and dist < 620.0:
 		ring_cd = 7.0
-		_shatter_lance(player)
+		_shatter_lance(_floor_target(true))
 
 	# Icicle rain: Morwen-lineage scatter.
+	# §5.2 FLOOR: the scatter rains on a rotating non-target in a party.
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		game.sfx("bolt")
 		play_action("rain")
+		var iced: Player = _floor_target()
 		for i in 4:
 			var off := Vector2(randf_range(-180, 180), randf_range(-140, 140))
-			game.telegraph(player.global_position + off, 70.0, 0.7, dmg * 1.1, {"color": FROST})
+			game.telegraph(iced.global_position + off, 70.0, 0.7, dmg * 1.1, {"color": FROST})
 
 	if dist < 160.0 and blink_cd <= 0.0:
 		blink_cd = 3.2
@@ -1731,17 +1822,29 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 		game.spawn_text(global_position + Vector2(0, -84), "Do not stand still.", FROST)
 
 	# Lullaby aura: stillness stacks Drowse; 5 = Asleep; she mends while
-	# any Drowse rides you.
-	if player.velocity.length() < 45.0:
-		still_accum += delta * aura_mult
-	else:
-		still_accum = maxf(0.0, still_accum - delta * 2.0)
-	drowse = clampi(int(still_accum / 1.5), 0, 5)
-	if drowse >= 5:
-		still_accum = 0.0
-		drowse = 0
-		player.apply_freeze(3.0)
-		game.spawn_text(player.global_position + Vector2(0, -50), "ASLEEP!", FROST)
+	# any Drowse rides you. §5.2/MP-15: an aura is positional, not
+	# single-target — EVERY living player is watched (a non-target may not
+	# bench-camp her hymn); she mends off the drowsiest head in the room.
+	# Solo this loop is exactly the old single read, same math throughout.
+	var dz_max := 0
+	for p in game.players:
+		if p == null or not is_instance_valid(p) or p.dead:
+			continue
+		var pid := p.get_instance_id()
+		var acc: float = float(still_map.get(pid, 0.0))
+		if p.velocity.length() < 45.0:
+			acc += delta * aura_mult
+		else:
+			acc = maxf(0.0, acc - delta * 2.0)
+		var dz := clampi(int(acc / 1.5), 0, 5)
+		if dz >= 5:
+			acc = 0.0
+			dz = 0
+			p.apply_freeze(3.0)
+			game.spawn_text(p.global_position + Vector2(0, -50), "ASLEEP!", FROST)
+		still_map[pid] = acc
+		dz_max = maxi(dz_max, dz)
+	drowse = dz_max
 	if drowse > 0:
 		hp = minf(max_hp, hp + max_hp * 0.008 * drowse * delta)
 
@@ -1761,15 +1864,18 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 		_flash_freeze(player)
 
 	# Signature: FROST HYMNAL — slow big telegraphs that pave slow patches.
+	# §5.2 FLOOR: she paves under a rotating head — the whole party gets
+	# its running room shrunk, not just the one she watches.
 	if special_cd <= 0.0:
 		special_cd = 7.0 if enraged else 10.0
-		_frost_hymnal(player)
+		_frost_hymnal(_floor_target())
 
+	# §5.2 floor (alternate): her lull-bolts poke a non-target too.
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		game.sfx("bolt")
 		play_action("bolt")
-		var aim := to_player.normalized()
+		var aim := (_floor_target(true).global_position - global_position).normalized()
 		for spread in [-0.25, 0.0, 0.25]:
 			_bolt(aim.rotated(spread) * 290.0, dmg)
 
@@ -1813,7 +1919,8 @@ func _march_dreamers(delta: float) -> void:
 			# dreamer paves another frost slow-patch under the prey and quickens
 			# the hymnal. A kiter who ignores the march watches their running
 			# room shrink until stillness — and the aura/heal — finally lands.
-			var prey: Player = _get_target()
+			# §5.2 FLOOR: the patch lands under a rotating head in a party.
+			var prey: Player = _floor_target()
 			if is_instance_valid(prey):
 				var at: Vector2 = game.clamp_to_zone(prey.global_position, home)
 				_hazard(game.cur_room, "slow", at, 90.0, 12.0)
@@ -1920,7 +2027,7 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	return to_player.normalized() * speed
 
 
-func _submerge(player: Player) -> void:
+func _submerge(_player: Player) -> void:
 	burrowed = true
 	untargetable = true
 	collision_layer = 0
@@ -1932,8 +2039,12 @@ func _submerge(player: Player) -> void:
 	game.burst(global_position, BOG, 16)
 	game.spawn_text(global_position + Vector2(0, -84), "IT SINKS...", BOG)
 	# Chasing eruption lines toward the prey + 2 bog-spawn adds.
+	# §5.2 FLOOR: while it's under, the eruptions chase a rotating
+	# non-target; the SURFACE (signature) still comes up beneath the
+	# sticky prey. Solo: the same player either way.
+	var chased: Player = _floor_target()
 	for i in 4:
-		var at: Vector2 = game.clamp_to_zone(player.global_position + Vector2.from_angle(randf() * TAU) * (80.0 + i * 70.0), home)
+		var at: Vector2 = game.clamp_to_zone(chased.global_position + Vector2.from_angle(randf() * TAU) * (80.0 + i * 70.0), home)
 		game.telegraph(at, 80.0, 0.6 + i * 0.15, dmg * 1.2, {"color": BOG})
 	for off in [Vector2(-120, -60), Vector2(120, 60)]:
 		var add := Enemy.make(game, "spider", global_position + off, level)
@@ -1990,12 +2101,13 @@ func _gardener(player: Player, to_player: Vector2, dist: float, delta: float) ->
 		special_cd = 7.0 if full_bloom else 10.0
 		_vine_lash(player)
 
-	# Spore volley.
+	# Spore volley. §5.2 floor (alternate): every other volley drifts at a
+	# rotating non-target — the garden reaches for everyone.
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		game.sfx("bolt")
 		play_action("bolt")
-		var aim := to_player.normalized()
+		var aim := (_floor_target(true).global_position - global_position).normalized()
 		for spread in [-0.22, 0.0, 0.22]:
 			_bolt(aim.rotated(spread) * 280.0, dmg)
 
@@ -2117,10 +2229,11 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 	# Thrown spear (r51 kite answer): between charges the Huntress hurls one
 	# at range so a kiter feels pressure, not just a dodgeable charge every
 	# 6s. Lean by design — she still hunts alone, no adds.
+	# §5.2 FLOOR: the spear seeks a rotating non-target in a party.
 	if ring_cd <= 0.0:
 		ring_cd = 3.5
 		play_action("throw")
-		game.telegraph(player.global_position, 90.0, 0.75, dmg * 1.15, {"color": ROOTC})
+		game.telegraph(_floor_target().global_position, 90.0, 0.75, dmg * 1.15, {"color": ROOTC})
 	if ability_cd <= 0.0 and dist < 220.0:
 		ability_cd = 4.0
 		game.sfx("slam")
@@ -2136,7 +2249,7 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 	return to_player.normalized() * speed
 
 
-func _kaethra_bloom(player: Player, to_player: Vector2, _dist: float, delta: float) -> Vector2:
+func _kaethra_bloom(_player: Player, _to_player: Vector2, _dist: float, delta: float) -> Vector2:
 	# She mends while any root lives — cut them to stop the heal.
 	var root_alive := false
 	for r in roots:
@@ -2151,11 +2264,12 @@ func _kaethra_bloom(player: Player, to_player: Vector2, _dist: float, delta: flo
 		play_action("ring")
 		for i in 8:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 8.0 + randf() * 0.3) * 260.0, dmg)
+	# §5.2 floor (alternate): rooted, her aimed fan sprays the party in turn.
 	if ability_cd <= 0.0:
 		ability_cd = 2.4
 		game.sfx("bolt")
 		play_action("bolt")
-		var aim := to_player.normalized()
+		var aim := (_floor_target(true).global_position - global_position).normalized()
 		for spread in [-0.3, -0.1, 0.1, 0.3]:
 			_bolt(aim.rotated(spread) * 270.0, dmg)
 	return Vector2.ZERO  # rooted in place
@@ -2276,12 +2390,15 @@ func _veyx(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0 + randf()) * 200.0, dmg * 0.7)
 
 	# Static field: strikes around the prey, hotter when no rods remain.
+	# §5.2 FLOOR: the strikes hammer a rotating non-target (the ARC — the
+	# signature and its rod game — stays on whoever it's hunting).
 	if ability_cd <= 0.0:
 		var live := _rods_live()
 		ability_cd = 2.2 if live == 0 else 3.5
 		play_action("storm")
+		var struck: Player = _floor_target()
 		for i in (3 if live == 0 else 2):
-			game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
+			game.telegraph(struck.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
 				68.0, 0.55, dmg * 1.1, {"color": STORMC})
 
 	if dist < 250.0:
@@ -2361,12 +2478,13 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 		game.burst(global_position, VOIDC, 12)
 		return Vector2.ZERO
 
-	# Dagger fan chip.
+	# Dagger fan chip. §5.2 floor (alternate): every other fan is thrown at
+	# a rotating non-target — the void remembers everyone.
 	if ability_cd <= 0.0:
 		ability_cd = 2.4
 		game.sfx("bolt")
 		play_action("throw")
-		var aim := to_player.normalized()
+		var aim := (_floor_target(true).global_position - global_position).normalized()
 		for spread in [-0.25, 0.0, 0.25]:
 			_bolt(aim.rotated(spread) * 340.0, dmg)
 
@@ -2447,11 +2565,12 @@ func _cyrraeth_speaker(player: Player, to_player: Vector2, dist: float) -> Vecto
 	if special_cd <= 0.0:
 		special_cd = 7.0
 		_lightning_lash(player)  # the Ch2 Korrag helper, matured here
+	# §5.2 floor (alternate): storm bolts poke a rotating non-target too.
 	if ability_cd <= 0.0:
 		ability_cd = 2.6
 		game.sfx("bolt")
 		play_action("bolt")
-		var aim := to_player.normalized()
+		var aim := (_floor_target(true).global_position - global_position).normalized()
 		for spread in [-0.3, -0.1, 0.1, 0.3]:
 			_bolt(aim.rotated(spread) * 300.0, dmg)
 	if dist < 250.0:
@@ -2461,7 +2580,7 @@ func _cyrraeth_speaker(player: Player, to_player: Vector2, dist: float) -> Vecto
 	return to_player.orthogonal().normalized() * speed * 0.5
 
 
-func _cyrraeth_mouth(player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
+func _cyrraeth_mouth(_player: Player, to_player: Vector2, dist: float, delta: float) -> Vector2:
 	_march_vowkeepers(delta)
 	vow_t -= delta
 	if vow_t <= 0.0:
@@ -2474,16 +2593,17 @@ func _cyrraeth_mouth(player: Player, to_player: Vector2, dist: float, delta: flo
 		special_cd = 3.5 if phase == 3 else 5.0
 		_storm_rotation()
 
-	# Arcs between rotations.
+	# Arcs between rotations. §5.2 floor (alternate): every other arc finds
+	# a rotating non-target (the quiet-sector storm already sweeps everyone).
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		play_action("cast")
-		game.telegraph(player.global_position, 90.0, 0.5, dmg * 1.3, {"color": STORMC})
+		game.telegraph(_floor_target(true).global_position, 90.0, 0.5, dmg * 1.3, {"color": STORMC})
 
-	# P3: continuous lightning.
+	# P3: continuous lightning. §5.2 FLOOR: the strays hunt the rotation.
 	if phase == 3 and ring_cd <= 0.0:
 		ring_cd = 1.5
-		game.telegraph(player.global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
+		game.telegraph(_floor_target().global_position + Vector2(randf_range(-160, 160), randf_range(-130, 130)),
 			66.0, 0.5, dmg, {"color": STORMC})
 
 	if dist < 200.0:

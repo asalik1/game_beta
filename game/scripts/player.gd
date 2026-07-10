@@ -145,6 +145,11 @@ func _physics_process(delta: float) -> void:
 	if dead:
 		velocity = Vector2.ZERO
 		return
+	if downed or ghost:
+		# MP-12 (§5.3): down players crawl (ghosts drift); no aim, no
+		# actions, no aura upkeep — the block below never runs while down.
+		_down_tick(delta)
+		return
 
 	# ------------------------------------------------------------ movement
 	var dir := _move_dir()
@@ -250,6 +255,7 @@ func _physics_process(delta: float) -> void:
 	if intent_potion_next and potion_swap_cd <= 0.0:
 		potion_swap_cd = 0.3
 		cycle_potion()
+	_revive_channel_tick(delta)  # MP-12: hold INTERACT beside a downed ally
 
 	sprite.modulate.a = 0.55 if hurt_cd > 0.0 else 1.0
 
@@ -320,6 +326,13 @@ func _remote_present(delta: float) -> void:
 		if look != 0.0:
 			look_sign = signf(look)
 			facing = Vector2(look_sign, 0.0)
+	if downed or ghost:
+		# MP-12: a down shell holds its prone/spectral pose (the bob/flip
+		# below would fight it); mirror the owner's bleed-out clock locally
+		# so the ring and HUD tag on THIS screen read right.
+		if downed:
+			down_t = maxf(0.0, down_t - delta)
+		return
 	if sprite == null or _clip_locked:
 		return
 	if strip_frames > 0:
@@ -435,7 +448,7 @@ func _loco_clip() -> String:
 
 
 func use_ability(slot: String) -> void:
-	if dead or cds[slot] > 0.0:
+	if dead or downed or ghost or cds[slot] > 0.0:
 		return
 	if frozen_time > 0.0:
 		return  # frozen solid: no casting until you thaw (rooted may still cast)
@@ -506,7 +519,7 @@ func use_ability(slot: String) -> void:
 # ================================================================== survival
 
 func drink_potion() -> void:
-	if potion_cd > 0.0 or dead:
+	if potion_cd > 0.0 or dead or downed or ghost:
 		return
 	# Per-room budget (playtest 2026-07-07 v2): every drink spends a
 	# loadout slot; a spent loadout locks Q until the next room.
@@ -566,6 +579,11 @@ func drink_potion() -> void:
 ## overlapping telegraphs can't double-tap someone instantly.
 func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false) -> void:
 	if dead:
+		return
+	if downed or ghost:
+		# MP-12 (§5.3): a fallen body can't be struck again — the bleed-out
+		# clock is the only threat. Gated before the shell-forward so bites
+		# on a downed shell never even cross the wire.
 		return
 	if not is_locally_controlled():
 		# MP-10 (§4.1 "host decides, owner applies"): a host-side hit on
@@ -641,6 +659,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	hurt_cd = 0.6
 	hurt_was_heavy = heavy  # a heavy-armed window blocks even other heavies
 	since_hurt = 0.0
+	_revive_interrupt(true)  # MP-12 (§5.3): any landed hit breaks your revive channel
 	if dr_time > 0.0 and dmg_type != "true":
 		# Arcane Ward (round 45): the mage's Blink cloak — a brief, strong
 		# damage cut that SOFTENS a misstep instead of erasing it (the old
@@ -691,6 +710,13 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			game.hud.flash_screen(Color(0.5, 0.1, 0.7), 0.5, 0.5)
 		else:
 			hp = 0.0
+			# MP-12 (§5.3): in an online session a lethal hit DOWNS you
+			# instead of killing — 30 s bleed-out, crawl, teammate-revivable.
+			# Solo keeps the exact death below; the wipe flow re-kills
+			# through game_flow.net_wipe, never through here.
+			if game != null and game.net_online():
+				_enter_downed()
+				return
 			dead = true
 			play_death_anim()
 			game.on_player_died()
@@ -730,6 +756,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 
 func revive() -> void:
 	dead = false
+	net_clear_down_local()  # MP-12: down/ghost/channel state dies with the respawn (solo no-op)
 	hp = max_hp
 	mp = max_mp
 	hurt_cd = 1.5
@@ -740,3 +767,171 @@ func revive() -> void:
 	_dir_pose_active = false
 	if _clips.has("idle"):
 		_play_clip("idle", true)
+
+
+# ================================================ downed / revive / ghost (MP-12)
+# MULTIPLAYER.md §5.3 — every state below is online-session-only; solo
+# never reaches any of it (take_damage branches on game.net_online()).
+# OWNER-authoritative: only the owning machine runs the transitions and
+# broadcasts them; shells apply the mirrored flags via net_set_down.
+
+## OWNER: a lethal hit landed online — fall instead of dying. 30 s of
+## bleed-out at crawl speed; abilities/potions/interact are gated at the
+## intents poll (player_core) and take_damage ignores the fallen body.
+func _enter_downed() -> void:
+	downed = true
+	ghost = false
+	down_t = DOWN_BLEEDOUT
+	being_revived_by = 0
+	velocity = Vector2.ZERO
+	locked_target = null
+	_revive_interrupt(false)  # can't keep channeling an ally from the floor
+	_refresh_down_visual()
+	game.spawn_text(global_position + Vector2(0, -56), "DOWNED!", Color(1.0, 0.35, 0.3))
+	game.sfx("pdie")
+	game.hud.flash_screen(Color(0.7, 0.08, 0.06), 0.45, 0.5)
+	if game.net_online():
+		game.net_session().send_down_state(1)
+
+
+## OWNER: the bleed-out expired — become a GHOST: spectral, immaterial to
+## enemies, walk-speed drift, no interaction, until the host sees the
+## active room cleared (net_session._host_down_sweep) and stands us up.
+func _enter_ghost() -> void:
+	downed = false
+	ghost = true
+	being_revived_by = 0
+	_refresh_down_visual()
+	game.spawn_text(global_position + Vector2(0, -56),
+		"The flame gutters...", Color(0.6, 0.8, 1.0))
+	game.sfx("blink", 0.7)
+	if game.net_online():
+		game.net_session().send_down_state(2)
+
+
+## OWNER: stand back up at hp_frac of max (channel revive or ghost
+## room-clear — both 30%, §5.3). Broadcasts the state; vitals follow.
+func net_stand_up(hp_frac: float) -> void:
+	if not downed and not ghost:
+		return
+	downed = false
+	ghost = false
+	being_revived_by = 0
+	down_t = 0.0
+	hp = maxf(1.0, max_hp * hp_frac)
+	hurt_cd = 1.5
+	hurt_was_heavy = true  # the same respawn grace revive() grants
+	_refresh_down_visual()
+	game.spawn_text(global_position + Vector2(0, -56), "BACK ON YOUR FEET", Color(0.5, 1.0, 0.6))
+	game.burst(global_position, Color(0.5, 1.0, 0.6), 14)
+	game.sfx("mend")
+	if game.net_online():
+		game.net_session().send_down_state(0)
+
+
+## SHELL: mirror the owner's broadcast state (net_session._rpc_down_state).
+func net_set_down(st: int) -> void:
+	downed = st == 1
+	ghost = st == 2
+	if downed:
+		down_t = DOWN_BLEEDOUT  # local mirror of the owner's clock (skew ~ one RPC)
+	else:
+		being_revived_by = 0
+	if st == 0:
+		dead = false  # standing up — the vitals broadcast confirms the bar
+	_refresh_down_visual()
+
+
+## Clear ALL down/revive state WITHOUT broadcasting — the wipe path
+## (game_flow.net_wipe) re-kills through the solo flow and every machine
+## already runs its own copy. Also the solo-revive safety reset.
+func net_clear_down_local() -> void:
+	downed = false
+	ghost = false
+	being_revived_by = 0
+	down_t = 0.0
+	revive_target = null
+	revive_t = 0.0
+	_refresh_down_visual()
+
+
+## OWNER, per-frame while downed/ghost: tick the bleed-out clock and move
+## — crawl at DOWN_CRAWL_MULT while downed, plain walk as a ghost. Shells
+## never come here (_remote_present mirrors them).
+func _down_tick(delta: float) -> void:
+	anim_t += delta
+	if downed:
+		down_t -= delta
+		if down_t <= 0.0:
+			_enter_ghost()
+			return
+	var dir := _move_dir()
+	velocity = dir * speed * (DOWN_CRAWL_MULT if downed else 1.0)
+	move_and_slide()
+	if dir.x != 0.0:
+		look_sign = signf(dir.x)
+		facing = Vector2(look_sign, 0.0)
+		if sprite != null:
+			sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
+			if downed:
+				# prone rotation follows the flip so the body drags feet-first
+				sprite.rotation = (PI / 2.0) * (-1.0 if sprite.flip_h else 1.0)
+
+
+## REVIVER, per-frame: hold INTERACT within REVIVE_REACH of a downed ally
+## to channel the 3 s revive (§5.3). The host arbitrates the claim (first
+## channel wins; later hopefuls silently no-op); progress runs on THIS
+## clock. Breaking the hold (release, move, range, the ally standing or
+## ghosting) cancels quietly; a landed hit cancels loudly via take_damage.
+func _revive_channel_tick(delta: float) -> void:
+	if game == null or not game.net_online():
+		return
+	if revive_target != null:
+		var q = revive_target
+		if not is_instance_valid(q) or not q.downed or not intent_interact \
+				or intent_move != Vector2.ZERO \
+				or global_position.distance_to(q.global_position) > REVIVE_REACH * 1.35:
+			_revive_interrupt(false)
+			return
+		revive_t += delta
+		if revive_t >= REVIVE_CHANNEL:
+			var pid: int = q.peer_id
+			revive_target = null
+			revive_t = 0.0
+			game.net_session().finish_revive(pid)
+		return
+	if not intent_interact:
+		return
+	var best = null
+	var best_d: float = REVIVE_REACH
+	for p in game.players:
+		if p == null or not is_instance_valid(p) or p == self or not p.downed:
+			continue
+		var d := global_position.distance_to(p.global_position)
+		if d <= best_d:
+			best_d = d
+			best = p
+	if best == null:
+		return
+	if best.being_revived_by != 0 and best.being_revived_by != peer_id:
+		return  # someone else holds the channel — busy no-op (§5.3)
+	var now := Time.get_ticks_msec()
+	if now - _revive_req_ms < 400:
+		return  # a grant is (maybe) in flight — don't spam the host
+	_revive_req_ms = now
+	game.net_session().request_revive(best.peer_id)
+
+
+## REVIVER: drop the channel. `loud` marks a combat interrupt (a landed
+## hit) — the quiet path covers deliberate releases and range breaks.
+func _revive_interrupt(loud: bool) -> void:
+	if revive_target == null:
+		return
+	var q = revive_target
+	revive_target = null
+	revive_t = 0.0
+	if game != null and game.net_online() and q != null and is_instance_valid(q):
+		game.net_session().cancel_revive(q.peer_id)
+	if loud:
+		game.spawn_text(global_position + Vector2(0, -56), "REVIVE INTERRUPTED", Color(1.0, 0.6, 0.4))
+		game.sfx("hurt", 0.6)

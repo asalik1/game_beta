@@ -1,5 +1,5 @@
 @echo off
-rem NET TEST: three stages, all over localhost ENet.
+rem NET TEST: six stages, all over localhost ENet.
 rem   1. NetworkManager session harness (MP-05) - the NET_VERSION auth
 rem      gate and peer lifecycle (game/scripts/tests/net_test.gd).
 rem   2. Session gameplay bridge (MP-07) - two REAL game instances share
@@ -22,6 +22,26 @@ rem      from their OWN piles (shells can't eat the other's coins), a boss
 rem      chest opens per player (the guest opening its copy leaves the
 rem      host's shut), a crafted award package lands in the guest's bags,
 rem      and a guest-side ground drop flushes to the GUEST's mailbox.
+rem   6. Downed/revive/wipe (MP-12) - same harness, --net-stage=6: a guest
+rem      at 0 hp goes DOWNED not dead (shell shows it, enemies retarget
+rem      away), a 3 s INTERACT channel revives it at 30% max (a landed hit
+rem      on the reviver breaks the channel - no revive), both down = WIPE
+rem      (both tithed, both at the host's safe room, arena boss leashed to
+rem      full), party-of-1-online collapses to the death flow, and the
+rem      solo-OFFLINE death is bit-identical to the old flow.
+rem   7. Dialogue + story sync (MP-13) - same harness, --net-stage=7: a guest
+rem      sets a WORLD flag and the host agrees (a fresh late-joiner gets it in
+rem      its snapshot; a per-character flag stays local), an NPC busy-lock
+rem      stops a second interactor (bark, no dialogue) until the first closes,
+rem      and a guest's payout choice pays ONLY the guest while the world flag
+rem      routes to the host and the party is toasted.
+rem   8. Party UI + synced victory (MP-14) - same harness, --net-stage=8: the
+rem      party-frame DATA model tracks an ally's vitals + downed state, an
+rem      ally-damage number lands small on the non-attacker, a forced final-
+rem      boss death puts BOTH machines on the victory card (the guest takes its
+rem      own chapter credit + weekly reward), the host's advance carries the
+rem      guest into the next chapter via the snapshot rebuild, and the solo-
+rem      OFFLINE victory is the exact old flow.
 rem
 rem Compile gate FIRST, always (test.bat pattern): one parse error anywhere
 rem makes a headless run idle forever. The orchestrator instance spawns and
@@ -59,6 +79,18 @@ set "EF_EXIT=%ERRORLEVEL%"
 if not "%EF_EXIT%"=="0" goto cleanup
 
 powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=5' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  loot-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
+set "EF_EXIT=%ERRORLEVEL%"
+if not "%EF_EXIT%"=="0" goto cleanup
+
+powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=6' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  downed-wipe-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
+set "EF_EXIT=%ERRORLEVEL%"
+if not "%EF_EXIT%"=="0" goto cleanup
+
+powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=7' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  dialogue-story-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
+set "EF_EXIT=%ERRORLEVEL%"
+if not "%EF_EXIT%"=="0" goto cleanup
+
+powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=8' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  party-victory-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
 set "EF_EXIT=%ERRORLEVEL%"
 goto cleanup
 

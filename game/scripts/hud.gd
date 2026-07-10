@@ -86,6 +86,47 @@ var results_box: Control = null   # chapter results card (victory screen)
 var boss_base_name := ""
 var banner_y := 110.0
 
+# downed/revive indicators (MP-12 §5.3). The local player's own DOWNED/GHOST
+# banner + the over-head revive channel bar (the reviver/downed pair) live
+# here; MP-14's party frames below carry the ALLY state read. Built lazily on
+# the first online frame; solo never builds.
+var down_banner: Label = null     # local player's own DOWNED/GHOST line
+var down_marks: Array = []        # pooled overhead tags [{root,bg,fill,label}]
+
+# MP-14 (§5.6): party frames — up to 3 compact ally bars in a left column
+# under the player's own panel (name, class icon, HP, state marker), plus
+# offscreen-ally edge arrows and name tags over on-screen remotes. Built
+# lazily on the first online frame with >=2 players; freed on session end
+# (reset_party_ui). Solo never allocates a node.
+const PARTY_MAX := 3
+const PARTY_FRAME_W := 214.0
+const PARTY_FRAME_H := 42.0
+## Per-class accent (arrow color, frame rail, name tag). No class color lives
+## in Classes.CLASSES, so the party UI carries its own legible-at-a-glance set.
+const CLASS_TINT := {
+	"warrior": Color(0.88, 0.38, 0.32), "archer": Color(0.55, 0.86, 0.46),
+	"mage": Color(0.45, 0.72, 1.0), "assassin": Color(0.72, 0.52, 1.0),
+	"paladin": Color(1.0, 0.85, 0.45), "warlock": Color(0.82, 0.45, 1.0),
+}
+var party_root: Control = null    # holds the frames; freed on session end
+var party_slots: Array = []       # [{root,accent,icon,name,hp_bg,hp_fill,hp_text,state,cls}]
+var party_arrows: Array = []      # pooled Polygon2D edge arrows (offscreen allies)
+var party_names: Array = []       # pooled Label name tags over on-screen remotes
+## §5.6 dimmable knob: name-tag opacity (0.0 hides them, 1.0 full). A settings
+## toggle can drive this; the default reads clearly without shouting.
+var party_names_alpha := 0.85
+
+# MP-13 (§5.4): read-only mirror of a chapter beat another player is driving.
+
+# MP-13 (§5.4): read-only mirror of a chapter beat another player is driving.
+# A compact top-center transcript — the initiator picks the choices, the rest
+# of the party reads along. Built lazily on the first beat; solo never builds.
+var mirror_box: Control = null
+var mirror_header: Label = null
+var mirror_speaker: Label = null
+var mirror_text: Label = null
+var mirror_options: Label = null
+
 const BAR_W := 280.0
 const SLOTS := ["a1", "a2", "a3", "ult", "potion"]
 
@@ -1061,6 +1102,8 @@ func update_stats(p: Player) -> void:
 	# it doesn't linger behind the paused menu.
 	if hud_popover and game.menus.is_open():
 		_close_hud_popover()
+	_update_down_ui(p)  # MP-12 §5.3: downed banner + overhead revive bars
+	_update_party_ui(p)  # MP-14 §5.6: ally frames + offscreen arrows + name tags
 	# Low-HP warning: the screen edges pulse red below 30% health.
 	var hp_frac := p.hp / p.max_hp
 	if hp_frac < 0.3 and not p.dead:
@@ -1247,6 +1290,448 @@ func set_zone(text: String) -> void:
 
 func set_quest(text: String) -> void:
 	quest_label.text = "◆  " + text
+
+
+# ------------------------------------------ downed / revive UI (MP-12 §5.3) ---
+# MINIMAL by charter: the local player's own DOWNED/GHOST banner with the
+# bleed-out countdown, plus small overhead tags on downed bodies and the
+# 3 s channel bar over BOTH heads of a revive. MP-14's party frames will
+# absorb/expand these. Built lazily on the first online frame — solo
+# never allocates a node.
+
+func _ensure_down_ui() -> void:
+	if down_banner != null:
+		return
+	down_banner = _label(Vector2(0, 330), 26, Color(1.0, 0.42, 0.36), 1280, HORIZONTAL_ALIGNMENT_CENTER)
+	down_banner.visible = false
+	for i in 8:
+		var root := Control.new()
+		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.visible = false
+		add_child(root)
+		var bg := ColorRect.new()
+		bg.color = Color(0, 0, 0, 0.6)
+		bg.position = Vector2(-32, 12)
+		bg.size = Vector2(64, 8)
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(bg)
+		var fill := ColorRect.new()
+		fill.color = Color(0.4, 1.0, 0.55, 0.95)
+		fill.position = Vector2(-30, 14)
+		fill.size = Vector2(0, 4)
+		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(fill)
+		var lab := Label.new()
+		lab.position = Vector2(-60, -8)
+		lab.size = Vector2(120, 16)
+		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lab.add_theme_font_size_override("font_size", 12)
+		lab.add_theme_color_override("font_color", Color(1.0, 0.55, 0.5))
+		lab.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		lab.add_theme_constant_override("outline_size", 3)
+		lab.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(lab)
+		down_marks.append({"root": root, "bg": bg, "fill": fill, "label": lab})
+
+
+## Per-frame from update_stats: p is the LOCAL player.
+func _update_down_ui(p: Player) -> void:
+	var online: bool = game.net_online()
+	if not online and down_banner == null:
+		return  # solo: nothing was ever built, nothing to hide
+	_ensure_down_ui()
+	if online and p.downed:
+		var tail := "  (an ally can hold [%s] beside you)" \
+			% OS.get_keycode_string(game.binds["interact"])
+		if p.being_revived_by != 0:
+			tail = "  — an ally is reviving you!"
+		down_banner.text = "DOWNED — %d s%s" % [int(ceil(p.down_t)), tail]
+		down_banner.visible = true
+	elif online and p.ghost:
+		down_banner.text = "GHOST — you return when the room is cleared"
+		down_banner.visible = true
+	else:
+		down_banner.visible = false
+	var used := 0
+	if online:
+		var xf: Transform2D = game.get_viewport().canvas_transform
+		for q in game.players:
+			if q == null or not is_instance_valid(q):
+				continue
+			if q.downed:
+				var prog := -1.0
+				if q.being_revived_by != 0:
+					prog = _revive_progress(p, q)
+				used = _place_down_mark(used, xf, q.global_position,
+					"REVIVING" if prog >= 0.0 else "DOWNED %ds" % int(ceil(q.down_t)), prog)
+			elif q.ghost:
+				used = _place_down_mark(used, xf, q.global_position, "GHOST", -1.0)
+		# §5.3: the channel bar shows over BOTH heads — the reviver's too.
+		if p.revive_target != null and is_instance_valid(p.revive_target):
+			used = _place_down_mark(used, xf, p.global_position, "REVIVING",
+				clampf(p.revive_t / p.REVIVE_CHANNEL, 0.0, 1.0))
+	for i in range(used, down_marks.size()):
+		(down_marks[i]["root"] as Control).visible = false
+
+
+## Channel progress 0..1: the exact clock when WE hold the channel, the
+## broadcast start time otherwise (skew ~ one RPC — presentation only).
+func _revive_progress(p: Player, q) -> float:
+	if p.revive_target == q:
+		return clampf(p.revive_t / p.REVIVE_CHANNEL, 0.0, 1.0)
+	return clampf(float(Time.get_ticks_msec() - int(q.revive_bar_ms))
+		/ (float(q.REVIVE_CHANNEL) * 1000.0), 0.0, 1.0)
+
+
+func _place_down_mark(idx: int, xf: Transform2D, at: Vector2, text: String, prog: float) -> int:
+	if idx >= down_marks.size():
+		return idx
+	var m: Dictionary = down_marks[idx]
+	var root := m["root"] as Control
+	root.visible = true
+	root.position = xf * (at + Vector2(0, -74))
+	(m["label"] as Label).text = text
+	var show_bar: bool = prog >= 0.0
+	(m["bg"] as ColorRect).visible = show_bar
+	var fill := m["fill"] as ColorRect
+	fill.visible = show_bar
+	if show_bar:
+		fill.size.x = 60.0 * clampf(prog, 0.0, 1.0)
+	return idx + 1
+
+
+# ------------------------------------------------------- party UI (MP-14 §5.6) ---
+# Up to 3 compact ally frames (name, class icon, HP, state), offscreen-ally
+# edge arrows, and dimmable name tags over on-screen remotes. Built lazily on
+# the first online frame with a party; solo never allocates. The DATA MODEL
+# (party_frame_data) is exposed so a test can drive vitals/downed and assert
+# the frames' contents without reading pixels.
+
+## The ally roster the party UI draws: ONE row per REMOTE player (never the
+## local player — that's the main HUD). Read live off game.players each call,
+## so it reflects vitals/downed the instant they change (net_test asserts here).
+func party_frame_data() -> Array:
+	var out: Array = []
+	if game == null or not game.net_online():
+		return out
+	for q in game.players:
+		if q == null or not is_instance_valid(q) or q == game.local_player:
+			continue
+		out.append({
+			"peer": int(q.peer_id),
+			"name": String(q.get_meta("net_name", "")),
+			"cls": String(q.cls),
+			"hp": float(q.hp), "max_hp": maxf(1.0, float(q.max_hp)),
+			"state": _ally_state(q),
+		})
+	return out
+
+
+## An ally's §5.3/§5.6 state marker: downed (bleeding out), ghost, dead, or up.
+## (disconnected-grace is structurally a 5th state; it lands with MP-16's
+## drop/rejoin — the frame renders "…" for it when that flag exists.)
+func _ally_state(q) -> String:
+	if q.downed:
+		return "downed"
+	if q.ghost:
+		return "ghost"
+	if q.dead:
+		return "dead"
+	return "up"
+
+
+func _ally_by_peer(pid: int):
+	for q in game.players:
+		if q != null and is_instance_valid(q) and q != game.local_player and int(q.peer_id) == pid:
+			return q
+	return null
+
+
+func _ensure_party_ui() -> void:
+	if party_root != null:
+		return
+	party_root = Control.new()
+	party_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(party_root)
+	for i in PARTY_MAX:
+		var y := 228.0 + i * (PARTY_FRAME_H + 6.0)
+		party_slots.append(_build_party_frame(Vector2(12, y)))
+	# Offscreen-ally arrows (pooled triangles) + on-screen name tags.
+	for i in PARTY_MAX:
+		var arrow := Polygon2D.new()
+		arrow.polygon = PackedVector2Array([Vector2(0, -11), Vector2(9, 7), Vector2(-9, 7)])
+		arrow.visible = false
+		add_child(arrow)
+		party_arrows.append(arrow)
+		var tag := Label.new()
+		tag.add_theme_font_size_override("font_size", 12)
+		tag.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		tag.add_theme_constant_override("outline_size", 3)
+		tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tag.visible = false
+		add_child(tag)
+		party_names.append(tag)
+
+
+func _build_party_frame(pos: Vector2) -> Dictionary:
+	var root := Control.new()
+	root.position = pos
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.visible = false
+	party_root.add_child(root)
+	var bg := ColorRect.new()
+	bg.color = Color(0.05, 0.05, 0.09, 0.62)
+	bg.size = Vector2(PARTY_FRAME_W, PARTY_FRAME_H)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(bg)
+	var accent := ColorRect.new()  # class-colored left rail
+	accent.size = Vector2(3, PARTY_FRAME_H)
+	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(accent)
+	var icon := TextureRect.new()
+	icon.position = Vector2(7, 6)
+	icon.custom_minimum_size = Vector2(30, 30)
+	icon.size = Vector2(30, 30)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(icon)
+	var nm := Label.new()
+	nm.position = Vector2(44, 2)
+	nm.size = Vector2(PARTY_FRAME_W - 50, 16)
+	nm.add_theme_font_size_override("font_size", 13)
+	nm.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	nm.add_theme_constant_override("outline_size", 3)
+	nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(nm)
+	var hp_bg := ColorRect.new()
+	hp_bg.color = Color(0, 0, 0, 0.6)
+	hp_bg.position = Vector2(44, 22)
+	hp_bg.size = Vector2(PARTY_FRAME_W - 52, 13)
+	hp_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(hp_bg)
+	var hp_fill := ColorRect.new()
+	hp_fill.color = Color(0.8, 0.25, 0.25)
+	hp_fill.position = Vector2(45, 23)
+	hp_fill.size = Vector2(PARTY_FRAME_W - 54, 11)
+	hp_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_fill.set_meta("full_w", PARTY_FRAME_W - 54)
+	root.add_child(hp_fill)
+	var hp_text := Label.new()
+	hp_text.position = Vector2(46, 21)
+	hp_text.size = Vector2(PARTY_FRAME_W - 58, 13)
+	hp_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hp_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hp_text.add_theme_font_size_override("font_size", 10)
+	hp_text.add_theme_color_override("font_color", Color(1, 1, 1, 0.9))
+	hp_text.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	hp_text.add_theme_constant_override("outline_size", 2)
+	hp_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(hp_text)
+	var state := Label.new()  # replaces the name row when downed/ghost/dead
+	state.position = Vector2(44, 2)
+	state.size = Vector2(PARTY_FRAME_W - 50, 16)
+	state.add_theme_font_size_override("font_size", 13)
+	state.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	state.add_theme_constant_override("outline_size", 3)
+	state.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	state.visible = false
+	root.add_child(state)
+	return {"root": root, "accent": accent, "icon": icon, "name": nm,
+		"hp_bg": hp_bg, "hp_fill": hp_fill, "hp_text": hp_text, "state": state, "cls": ""}
+
+
+## Per-frame from update_stats: p is the LOCAL player (unused here — the frames
+## are the OTHER players). Solo / lone-online never allocates; a party of >=2
+## builds once and draws.
+func _update_party_ui(_p: Player) -> void:
+	var online: bool = game.net_online()
+	var data: Array = party_frame_data() if online else []
+	if not online or data.is_empty():
+		if party_root != null:
+			_hide_party_ui()
+		return
+	_ensure_party_ui()
+	party_root.visible = true
+	for i in party_slots.size():
+		var slot: Dictionary = party_slots[i]
+		if i >= data.size():
+			(slot["root"] as Control).visible = false
+			continue
+		var d: Dictionary = data[i]
+		(slot["root"] as Control).visible = true
+		var cls := String(d["cls"])
+		(slot["accent"] as ColorRect).color = CLASS_TINT.get(cls, Color(0.6, 0.6, 0.65))
+		if String(slot["cls"]) != cls:
+			slot["cls"] = cls
+			var sprite := String(Classes.CLASSES.get(cls, {}).get("sprite", ""))
+			(slot["icon"] as TextureRect).texture = Art.tex(sprite) if sprite != "" else null
+		var nm := String(d["name"])
+		if nm == "":
+			nm = "Ally %d" % int(d["peer"])
+		var name_l := slot["name"] as Label
+		name_l.text = nm
+		name_l.add_theme_color_override("font_color", Color(0.92, 0.92, 0.98))
+		_set_fill(slot["hp_fill"], clampf(float(d["hp"]) / float(d["max_hp"]), 0.0, 1.0))
+		(slot["hp_text"] as Label).text = "%d/%d" % [int(d["hp"]), int(d["max_hp"])]
+		_apply_frame_state(slot, String(d["state"]), _ally_by_peer(int(d["peer"])))
+	_update_party_arrows(data)
+	_update_party_names(data)
+
+
+## Fold MP-12's ally state into the frame (the charter's "the FRAME shows the
+## state"): downed shows the bleed-out countdown, ghost/dead dim the row. The
+## state text takes the name row; the HP bar stays as the vitals read.
+func _apply_frame_state(slot: Dictionary, st: String, q) -> void:
+	var state_l := slot["state"] as Label
+	var name_l := slot["name"] as Label
+	var icon := slot["icon"] as TextureRect
+	var hp_fill := slot["hp_fill"] as ColorRect
+	match st:
+		"downed":
+			var secs: int = int(ceil(q.down_t)) if q != null else 0
+			var tail := " — reviving" if (q != null and q.being_revived_by != 0) else ""
+			state_l.text = "DOWNED %ds%s" % [secs, tail]
+			state_l.add_theme_color_override("font_color", Color(1.0, 0.5, 0.45))
+			hp_fill.color = Color(0.7, 0.2, 0.2)
+			icon.modulate = Color(1, 1, 1, 0.5)
+		"ghost":
+			state_l.text = "GHOST"
+			state_l.add_theme_color_override("font_color", Color(0.65, 0.82, 1.0))
+			hp_fill.color = Color(0.42, 0.55, 0.82)
+			icon.modulate = Color(0.72, 0.82, 1.0, 0.55)
+		"dead":
+			state_l.text = "DEAD"
+			state_l.add_theme_color_override("font_color", Color(0.82, 0.82, 0.88))
+			hp_fill.color = Color(0.4, 0.4, 0.45)
+			icon.modulate = Color(1, 1, 1, 0.35)
+		"disc":
+			state_l.text = "disconnected…"
+			state_l.add_theme_color_override("font_color", Color(0.8, 0.75, 0.6))
+			icon.modulate = Color(1, 1, 1, 0.4)
+		_:
+			hp_fill.color = Color(0.8, 0.25, 0.25)
+			icon.modulate = Color(1, 1, 1, 1)
+	var down: bool = st != "up"
+	state_l.visible = down
+	name_l.visible = not down
+
+
+## A thin edge arrow per OFFSCREEN living ally, class-colored, pointing toward
+## them from screen center — with a pulse when they're down/ghost (finding your
+## downed friend is the #1 use). Cheap per-frame math (a viewport transform + a
+## ray-to-rect clamp per ally).
+func _update_party_arrows(data: Array) -> void:
+	var xf: Transform2D = game.get_viewport().canvas_transform
+	var center := Vector2(640, 360)
+	var used := 0
+	for d in data:
+		if String(d["state"]) == "dead":
+			continue  # a dead ally has no live position worth chasing
+		var q = _ally_by_peer(int(d["peer"]))
+		if q == null:
+			continue
+		var screen: Vector2 = xf * q.global_position
+		if screen.x >= 0.0 and screen.x <= 1280.0 and screen.y >= 0.0 and screen.y <= 720.0:
+			continue  # on-screen: the name tag covers it
+		if used >= party_arrows.size():
+			break
+		var dir := screen - center
+		if dir.length() < 1.0:
+			continue
+		var arrow := party_arrows[used] as Polygon2D
+		arrow.position = _edge_point(center, dir, Vector2(42, 42), Vector2(1238, 678))
+		arrow.rotation = dir.angle() + PI / 2.0  # the triangle points 'up' at 0
+		var st := String(d["state"])
+		var tint: Color = CLASS_TINT.get(String(d["cls"]), Color(0.7, 0.7, 0.75))
+		if st == "downed" or st == "ghost":
+			var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.008)
+			arrow.color = Color(1.0, 0.4, 0.4) if st == "downed" else Color(0.6, 0.82, 1.0)
+			arrow.modulate = Color(1, 1, 1, 0.5 + 0.5 * pulse)
+			arrow.scale = Vector2.ONE * (1.0 + 0.28 * pulse)
+		else:
+			arrow.color = tint
+			arrow.modulate = Color(1, 1, 1, 0.85)
+			arrow.scale = Vector2.ONE
+		arrow.visible = true
+		used += 1
+	for i in range(used, party_arrows.size()):
+		(party_arrows[i] as Polygon2D).visible = false
+
+
+## Where the ray center->dir exits the on-screen rect [minv, maxv].
+func _edge_point(center: Vector2, dir: Vector2, minv: Vector2, maxv: Vector2) -> Vector2:
+	var t := 1.0e20
+	if dir.x > 0.001:
+		t = minf(t, (maxv.x - center.x) / dir.x)
+	elif dir.x < -0.001:
+		t = minf(t, (minv.x - center.x) / dir.x)
+	if dir.y > 0.001:
+		t = minf(t, (maxv.y - center.y) / dir.y)
+	elif dir.y < -0.001:
+		t = minf(t, (minv.y - center.y) / dir.y)
+	if t >= 1.0e20:
+		t = 0.0
+	return center + dir * t
+
+
+## Small dimmable name tag over each ON-SCREEN remote (offscreen ones are the
+## arrows' job). party_names_alpha is the §5.6 knob.
+func _update_party_names(data: Array) -> void:
+	var xf: Transform2D = game.get_viewport().canvas_transform
+	var used := 0
+	if party_names_alpha > 0.01:
+		for d in data:
+			if String(d["state"]) == "dead":
+				continue
+			var q = _ally_by_peer(int(d["peer"]))
+			if q == null:
+				continue
+			var screen: Vector2 = xf * (q.global_position + Vector2(0, -54))
+			if screen.x < 0.0 or screen.x > 1280.0 or screen.y < 0.0 or screen.y > 720.0:
+				continue  # offscreen: the arrow points the way instead
+			if used >= party_names.size():
+				break
+			var tag := party_names[used] as Label
+			var nm := String(d["name"])
+			if nm == "":
+				nm = "Ally %d" % int(d["peer"])
+			tag.text = nm
+			tag.size = Vector2(160, 16)
+			tag.position = screen - Vector2(80, 8)
+			var tint: Color = CLASS_TINT.get(String(d["cls"]), Color(0.85, 0.85, 0.9))
+			tag.add_theme_color_override("font_color", tint.lerp(Color(1, 1, 1), 0.4))
+			tag.modulate = Color(1, 1, 1, party_names_alpha)
+			tag.visible = true
+			used += 1
+	for i in range(used, party_names.size()):
+		(party_names[i] as Label).visible = false
+
+
+func _hide_party_ui() -> void:
+	if party_root != null:
+		party_root.visible = false
+	for a in party_arrows:
+		(a as Polygon2D).visible = false
+	for n in party_names:
+		(n as Label).visible = false
+
+
+## Freed on session end (§5.6: solo never allocates; a closed session frees
+## the frames). Called from net_session._on_session_ended.
+func reset_party_ui() -> void:
+	if party_root != null:
+		party_root.queue_free()
+		party_root = null
+	party_slots.clear()
+	for a in party_arrows:
+		(a as Polygon2D).queue_free()
+	party_arrows.clear()
+	for n in party_names:
+		(n as Label).queue_free()
+	party_names.clear()
 
 
 func show_boss_bar(bname: String) -> void:
@@ -1570,6 +2055,12 @@ func _show_line() -> void:
 	text_label.text = line[1]
 	_set_portrait(String(line[0]))
 	game.sfx("talk")
+	# MP-13 (§5.4): when THIS machine drives a chapter beat, mirror the line
+	# to the spectating party (read-only). Inert offline / for private convos.
+	if game.beat_broadcasting:
+		var s: Node = game.net_session()
+		if s != null:
+			s.beat_line(String(line[0]), String(line[1]), [])
 
 
 func _advance_dialogue() -> void:
@@ -1590,6 +2081,85 @@ func set_cinematic(on: bool) -> void:
 		l.visible = not on
 
 
+# ------------------------------------------- beat mirror (MP-13, §5.4)
+# A spectator's read-only view of a chapter beat another player drives —
+# the same speaker/text the initiator reads, options shown but not clickable.
+# Built lazily; solo and private overlays never touch it.
+
+func _ensure_mirror() -> void:
+	if mirror_box != null:
+		return
+	mirror_box = Control.new()
+	mirror_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(mirror_box)
+	var frame := ColorRect.new()
+	frame.color = Color(0.55, 0.5, 0.75)  # a cooler frame than your own gold box
+	frame.position = Vector2(340, 150)
+	frame.size = Vector2(600, 132)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mirror_box.add_child(frame)
+	var inner := ColorRect.new()
+	inner.color = Color(0.08, 0.07, 0.12, 0.94)
+	inner.position = Vector2(343, 153)
+	inner.size = Vector2(594, 126)
+	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mirror_box.add_child(inner)
+	mirror_header = Label.new()
+	mirror_header.position = Vector2(356, 158)
+	mirror_header.add_theme_font_size_override("font_size", 12)
+	mirror_header.add_theme_color_override("font_color", Color(0.72, 0.72, 0.88))
+	mirror_box.add_child(mirror_header)
+	mirror_speaker = Label.new()
+	mirror_speaker.position = Vector2(356, 176)
+	UITheme.title(mirror_speaker, 16)
+	mirror_speaker.add_theme_color_override("font_color", Color(0.95, 0.8, 0.4))
+	mirror_box.add_child(mirror_speaker)
+	mirror_text = Label.new()
+	mirror_text.position = Vector2(356, 200)
+	mirror_text.size = Vector2(568, 48)
+	mirror_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	mirror_text.add_theme_font_size_override("font_size", 14)
+	mirror_box.add_child(mirror_text)
+	mirror_options = Label.new()
+	mirror_options.position = Vector2(356, 252)
+	mirror_options.size = Vector2(568, 22)
+	mirror_options.add_theme_font_size_override("font_size", 12)
+	mirror_options.add_theme_color_override("font_color", Color(0.62, 0.67, 0.82))
+	mirror_box.add_child(mirror_options)
+	mirror_box.visible = false
+
+
+## A beat began — someone else is speaking. Open the read-only transcript.
+func mirror_begin(initiator: String) -> void:
+	_ensure_mirror()
+	mirror_header.text = "▸ %s is speaking with someone…" % initiator
+	mirror_speaker.text = ""
+	mirror_text.text = ""
+	mirror_options.text = ""
+	mirror_box.visible = true
+
+
+## The current beat line (and any options, shown read-only).
+func mirror_line(speaker: String, text: String, options: Array) -> void:
+	_ensure_mirror()
+	mirror_speaker.text = speaker
+	mirror_text.text = text
+	if options.is_empty():
+		mirror_options.text = ""
+	else:
+		var parts: Array = []
+		for o in options:
+			parts.append(String(o))
+		mirror_options.text = "deciding:  " + "   ·   ".join(parts)
+	mirror_box.visible = true
+
+
+## The beat ended — close the transcript.
+func mirror_end() -> void:
+	if mirror_box != null:
+		mirror_box.visible = false
+
+
 ## A dialogue line that ends in a DECISION: the text shows in the normal
 ## box, the options stack above it, and the number keys or a click choose.
 func dialogue_choice(who: String, text: String, options: Array, cb: Callable) -> void:
@@ -1599,6 +2169,12 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	text_label.text = text
 	_set_portrait(who)
 	game.sfx("talk")
+	# MP-13 (§5.4): mirror the decision to spectators of a driven beat (they
+	# see the prompt and options read-only; the initiator makes the call).
+	if game.beat_broadcasting:
+		var s: Node = game.net_session()
+		if s != null:
+			s.beat_line(who, text, options)
 	choice_cb = cb
 	choice_count = options.size()
 	choices_active = true
@@ -1692,6 +2268,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_ESCAPE:
 			_on_escape()
 		elif event.keycode == KEY_R and game.state == game.ST_VICTORY:
+			# MP-14 (§5.4/§5.7): in a session, restarting ENDS the run — the
+			# host tells the party to autosave + drop out; both sides leave the
+			# session gracefully before the local scene reloads.
+			if game.net_online():
+				if game.net_host():
+					game.net_session().host_end_session()
+				var net := game.get_node_or_null("/root/NetworkManager")
+				if net != null and net.is_online():
+					net.leave()
 			game.request_pause(false)
 			get_tree().reload_current_scene()
 		elif event.keycode == game.binds.get("target", KEY_TAB) \

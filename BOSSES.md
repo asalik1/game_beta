@@ -552,6 +552,52 @@ Ordo, Cyrraeth), NEVER-stand-still (Halla), environment-as-weapon
 > untouched) so full clears land at boss level per the DESIGN r5 rule.
 > The hp/dmg/speed table below is otherwise still live.
 
+# Party floor rotation (§5.2, MP-15 — swept 2026-07-10)
+
+MULTIPLAYER.md §5.2 extends the floor-vs-ceiling doctrine to parties: the
+SIGNATURE mechanic keeps hunting the aggro holder (the sticky target),
+but FLOOR damage — the non-opt-in pressure — rotates among the OTHER
+party members, so a kiting non-target never stands in guaranteed safety.
+Implemented as one primitive, `Boss._floor_target()` (boss.gd): a cycling
+pick over the live, un-downed non-targets that never repeats a victim
+back-to-back while another stands; `_floor_target(true)` = ALTERNATE
+(every other cast stays on the sticky target — for volleys that are also
+the boss's primary dueling pressure). Solo both collapse to the sticky
+target — behavior bit-identical by construction. Arena-wide exams
+(telegraph/telegraph_safe) already resolve against every player (MP-10),
+so safe-zone signatures are party-fair without rotation.
+
+Per-boss verdicts (SIG = stays on aggro holder, ROT = rotates every cast,
+ALT = alternates, — = position-agnostic/unchanged):
+
+| Boss | Signature (SIG) | Rotates (ROT) | Alternates (ALT) | Unchanged (—) |
+|---|---|---|---|---|
+| Fangmaw | pounce, charge | ground rake | | pack (natural aggro), radial |
+| Morwen | blight rain | | 3-bolt spread | bolt ring, blink |
+| Vargoth | blade storm | | | slam ring (radial bolts reach kiters) |
+| Korrag | lightning lash | broken-storm strays | | whip snap (dueling), packs |
+| Choir Mother | requiem (radial) | hymn-of-hunger mark | verse volley | adds, blink |
+| Warden Null | piston grid | beam spoke (lane) | | slam ring |
+| Sexton | shovelwork | tell cluster, grave-spawn anchor | | shovel swipe (dueling), corpse bloom |
+| Vess | the Silence (all-player exam) | | grief fan | wail ring, blink |
+| Saint Varo | the Toll (all-player exam) | reliquary rain (per blade) | | slam ring, censers |
+| Calda | quench (block swept: ANY hero denies) | slag lob | hammer lines | melee heat |
+| Cinderhide | vent breath, charge | ember rain, tantrum | | plate/melt |
+| Ashpriest | the Verdict (all-player halves) | enrage rain | brand volley | Sons (intercept) |
+| Whitepelt | ice charge | frost stomp | | pack, pelt drums |
+| Serane | Flash Freeze (all-player exam) | icicle rain | shatter lance | blink |
+| Halla | aura (now sweeps ALL players) | frost hymnal, dreamer patch | lull-bolts | dreamers' march |
+| Auroch | surface slam (under sticky) | submerge eruptions | | gore rush, wallow |
+| Rotmaw | vine lash | | spore volley | blooms, compost |
+| Kaethra | charges (huntress) | thrown spear | bloom aimed fan | random ring, roots |
+| Veyx | arc + rod game | static field | | squall ring |
+| Echo | unnaming, blink-strike | | dagger fan | void zones |
+| Cyrraeth | lash (P1), storm rotation (P2/3, all-player) | P3 stray lightning | P1 bolts, P2/3 arcs | vow-keepers |
+
+Authoring rule going forward: every new boss's kit declares each threat
+SIG / ROT / ALT at design time — the r51-style "imposed floor" item is
+always ROT.
+
 # First-pass stat anchors (ENEMIES schema)
 
 On the shipped curve (Warden Null L16: 2400 hp / 55 dmg, growth

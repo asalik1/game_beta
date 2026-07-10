@@ -51,6 +51,51 @@ extends Node
 ##   (d) a guest-side ground drop flushes into the GUEST's mailbox —
 ##       and never the host's.
 ##
+## STAGE 6 (`--net-stage=6` — MP-12 exit criteria, downed/revive/wipe):
+##   (a) the guest forced to 0 hp goes DOWNED, not dead (state visible on
+##       the host's shell) and enemies retarget away from the body;
+##   (b) the host channels INTERACT beside it for 3 s — the guest stands
+##       at 30% max HP (owner-applied; the shell bar follows via vitals);
+##   (c) a channel broken by damage revives nobody (the host holds the
+##       key through repeated hits — the guest is still down after well
+##       over 3 s of "channeling");
+##   (d) both down = WIPE: both machines replay the solo death flow —
+##       both tithed, both respawned at the HOST's safe-room decision,
+##       the wounded arena boss reset to full (leashed);
+##   (d2) party-of-1-online equivalence: the lone host's down collapses
+##       straight into the wipe — today's death flow with a downed beat;
+##   (e) solo-OFFLINE regression (after leave()): 0 hp = the exact old
+##       death — dead immediately, no downed branch, tithe, 2 s, respawn.
+##
+## STAGE 7 (`--net-stage=7` — MP-13 exit criteria, dialogue + story sync):
+##   (a) a guest sets a WORLD flag through the real set_flag — the host and
+##       the guest agree, and a fresh LATE JOINER receives it in its snapshot;
+##       (a') a host-set flag reaches the guest (both directions);
+##       (a'') a PER-CHARACTER flag (s_awakened_<cls>) stays local — the
+##       guest sets it and the host never does (classification holds);
+##   (b) NPC BUSY-LOCK: the host opens a convo; the guest's interact on the
+##       SAME npc gets no dialogue (a busy bark); the lock releases when the
+##       host's dialogue closes, and only then can the guest claim it;
+##   (c)+(d) a guest runs a PAYOUT choice: its own wallet grows and its own
+##       resonance moves, the HOST's wallet/resonance are untouched, the
+##       world flag routes to the host, and the host gets the toast;
+##   (e) solo-OFFLINE: a convo runs end to end with the session gone — flags
+##       set locally, nothing routed (net_online() false gates every RPC).
+##
+## STAGE 8 (`--net-stage=8` — MP-14 exit criteria, party UI + victory):
+##   (a) the party-frame DATA model (hud.party_frame_data) tracks the ally's
+##       live vitals and its downed/up state as they change;
+##   (b) a host hit on a registered enemy fans a SMALL ally-damage number to
+##       the non-attacking guest with the applied amount (the host never fans
+##       to itself);
+##   (c) a forced final-boss death puts BOTH machines on the victory card, and
+##       the guest applies its OWN chapter-completion credit + meta unlock +
+##       weekly reward (per-player);
+##   (d) the host's advance carries the guest into the next chapter through the
+##       same snapshot rebuild the join flow uses (chapter id + host seed);
+##   (e) solo-OFFLINE after the guest leaves: a final-boss death is the exact
+##       old victory flow (no session, no RPCs).
+##
 ## Same discipline as net_test.gd (MP-05): one script, roles picked by
 ## `--net-role=`; the host orchestrates and SPAWNS the guest process
 ## itself (pids tracked, OS.kill on every failure path); every wait is a
@@ -65,6 +110,9 @@ const PORT := 48213
 const PORT_STAGE3 := 48215   # stage 3 binds its own port (no TIME_WAIT races)
 const PORT_STAGE4 := 48217   # stage 4 likewise (it runs right after stage 3)
 const PORT_STAGE5 := 48219   # stage 5 likewise (it runs right after stage 4)
+const PORT_STAGE6 := 48221   # stage 6 likewise (it runs right after stage 5)
+const PORT_STAGE7 := 48223   # stage 7 likewise (dialogue + story sync, MP-13)
+const PORT_STAGE8 := 48225   # stage 8 likewise (party UI + synced victory, MP-14)
 const STEP_TIMEOUT := 30.0   # s per observable step (boots include a world build)
 const EXIT_TIMEOUT := 15.0   # s for the guest process to exit after its work
 const MOVE_THRESHOLD := 120.0  # px the host must see the guest player travel
@@ -84,6 +132,9 @@ var _xp_before := 0                 # guest4: level*1e6+xp before the snipe
 var _gold_before := 0               # guest5: wallet baseline for collect probes
 var _bp_before := 0                 # guest5: backpack baseline (chest contents)
 var _award_before := {}             # guest5: gem/consumable/capacity baselines
+var _res_before7 := 0.0             # guest7: resonance baseline before a choice
+var _gold_before7 := 0              # guest7: wallet baseline before a payout choice
+var _gold_before8 := 0              # guest8: wallet baseline before the weekly victory reward
 
 
 func _ready() -> void:
@@ -97,7 +148,13 @@ func _ready() -> void:
 	_net.peer_left.connect(func(id: int) -> void: _left.append(id))
 	match role:
 		"host":
-			if _stage == 5:
+			if _stage == 8:
+				_run_host8()
+			elif _stage == 7:
+				_run_host7()
+			elif _stage == 6:
+				_run_host6()
+			elif _stage == 5:
 				_run_host5()
 			elif _stage == 4:
 				_run_host4()
@@ -106,7 +163,13 @@ func _ready() -> void:
 			else:
 				_run_host()
 		"guest":
-			if _stage == 5:
+			if _stage == 8:
+				_run_guest8()
+			elif _stage == 7:
+				_run_guest7()
+			elif _stage == 6:
+				_run_guest6()
+			elif _stage == 5:
 				_run_guest5()
 			elif _stage == 4:
 				_run_guest4()
@@ -119,6 +182,12 @@ func _ready() -> void:
 
 
 func _port() -> int:
+	if _stage == 8:
+		return PORT_STAGE8
+	if _stage == 7:
+		return PORT_STAGE7
+	if _stage == 6:
+		return PORT_STAGE6
 	if _stage == 5:
 		return PORT_STAGE5
 	if _stage == 4:
@@ -632,6 +701,31 @@ func _run_host4() -> void:
 		return _fail("mirror never read untargetable=false: %s" % str(r))
 	print("[net_session] host4: boss phase flag round-tripped (bit 2)")
 
+	# (g) MP-15: §5.2 floor rotation — host-side pure logic (the pick never
+	# rides the wire; guests just see the resulting tells via MP-09). Pin
+	# the sticky target to the host's player: every plain floor pick must
+	# then be the guest's shell (the only non-target), and the alternate
+	# coin must land on BOTH heads across consecutive calls.
+	boss.target = game.local_player
+	boss.retarget_t = 9.9e9
+	var rotated := true
+	for k in 4:
+		if boss._floor_target() != shell:
+			rotated = false
+	var alt_sticky := false
+	var alt_shell := false
+	for k in 6:
+		var alt: Player = boss._floor_target(true)
+		if alt == game.local_player:
+			alt_sticky = true
+		elif alt == shell:
+			alt_shell = true
+	if not rotated:
+		return _fail("MP-15: _floor_target did not rotate onto the non-target shell")
+	if not (alt_sticky and alt_shell):
+		return _fail("MP-15: alternate floor coin never split sticky/non-target")
+	print("[net_session] host4: floor rotation picks the non-target; alternate coin splits (§5.2)")
+
 	# Quit hygiene (stage-3 pattern): silence the fight, drain tweens.
 	boss.take_damage(9.9e9)
 	for w in wolves:
@@ -839,6 +933,651 @@ func _run_guest5() -> void:
 	get_tree().quit(0)
 
 
+# --------------------------------------------------- stage 6 (MP-12) ---
+# Downed/revive/wipe (§5.3). Director/probe shape as stages 3-5; the
+# guest self-damages through its REAL take_damage (owner-authoritative
+# transitions), the host channels through its REAL intents.
+
+func _run_host6() -> void:
+	if not await _host_boot():
+		return
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the guest process")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "guest admission"):
+		return
+	var gid: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return bool(_report.get("ready", false)), STEP_TIMEOUT, "guest ready report"):
+		return
+	var shell := _player_of(gid)
+	if shell == null:
+		return _fail("no host-side shell for the guest")
+	var sess: Node = get_node("/root/NetworkManager/Session")
+	print("[net_session] host6: guest %d standing in the world" % gid)
+
+	# The scene: a corner of the village room away from any NPC's 80 px
+	# interact radius — the host will HOLD the interact key to channel.
+	var origin: Vector2 = game.local_player.global_position
+	var spot: Vector2 = game.clamp_to_zone(origin + Vector2(380.0, 160.0), origin)
+	game.player.global_position = spot
+	# One zero-fang wolf beside where the guest will stand: the retarget
+	# probe needs live prey pressure aimed at the shell.
+	var wolf := Enemy.make(game, "wolf", spot + Vector2(90.0, 0.0), 3)
+	wolf.dmg = 0.0
+	wolf.force_aggro = true
+	game.add_enemy(wolf)
+	if not await _wait_for(func() -> bool: return wolf.net_id > 0, 5.0, "wolf announced"):
+		return
+
+	# (a) the guest forces itself to 0 hp through its REAL take_damage:
+	# DOWNED, not dead — and the state lands on the host's shell.
+	var r: Dictionary = await _watch(gid, "downself", {"x": spot.x + 40.0, "y": spot.y})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("guest never went downed (dead instead?): %s" % str(r))
+	if not await _wait_for(func() -> bool: return shell.downed, 8.0, "shell.downed visible host-side"):
+		return
+	if shell.dead:
+		return _fail("downed shell reads DEAD host-side — §5.3 wants down, not dead")
+	# ...and the wolf drops the body: its sticky retarget must land on the
+	# host's player (the only one standing).
+	if not await _wait_for(func() -> bool: return wolf._get_target() == game.local_player,
+			8.0, "wolf retargeting off the downed shell"):
+		return
+	print("[net_session] host6: guest DOWNED (not dead) on the shell; wolf retargeted away")
+	# Clear the fangs for the channel tests: despawn silently (no rewards,
+	# no gold piles that could pollute the tithe math below).
+	wolf.remove_from_group("enemies")
+	wolf.queue_free()
+	await _frames(2)
+
+	# (c) INTERRUPTED channel first (the guest is conveniently down): hold
+	# INTERACT beside the body, then take hits — every landed hit must
+	# break the channel, so the guest is still down long after 3 s.
+	# The shell may still be LERPING from the join spawn toward the owner's
+	# truth — let it settle first (teleporting the host onto a mid-lerp
+	# reading once dropped it inside village-center decor, and the physics
+	# de-penetration shoved it out of revive reach — found the hard way).
+	# The body's truth is the GUEST's settled position from the probe reply
+	# (its own teleport may have been decor-nudged on another seed).
+	var body_at := Vector2(float(r.get("px", spot.x + 40.0)), float(r.get("py", spot.y)))
+	if not await _wait_for(func() -> bool:
+			return shell.global_position.distance_to(body_at) < 12.0, 8.0, "shell settling on the body"):
+		return
+	var stood := false
+	for off in [Vector2(30, 0), Vector2(-30, 0), Vector2(0, 34), Vector2(0, -34)]:
+		game.player.global_position = body_at + (off as Vector2)
+		await _frames(2)
+		if game.player.global_position.distance_to(shell.global_position) <= 55.0:
+			stood = true
+			break
+	if not stood:
+		return _fail("host could not stand beside the body (village decor?)")
+	var ikey: int = int(game.binds["interact"])
+	_press(ikey, true)
+	if not await _wait_for(func() -> bool: return game.player.revive_target != null,
+			5.0, "revive channel grant (interrupt test)"):
+		return
+	await get_tree().create_timer(0.8).timeout
+	var interrupted := false
+	for i in 5:
+		game.player.hurt_cd = 0.0
+		game.player.take_damage(6.0, "true", null, true)
+		# Same-stack read: the interrupt is synchronous; a re-grant can
+		# only happen on a LATER physics frame.
+		if game.player.revive_target == null:
+			interrupted = true
+			break
+		await get_tree().create_timer(0.25).timeout
+	_press(ikey, false)
+	if not interrupted:
+		return _fail("a landed hit never broke the revive channel")
+	await get_tree().create_timer(1.2).timeout
+	r = await _watch(gid, "downstate", {})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("guest revived through an interrupted channel: %s" % str(r))
+	print("[net_session] host6: a landed hit broke the channel — key still held, guest still down")
+
+	# (b) the REAL revive: hold the channel 3 s uninterrupted — the guest
+	# stands at 30% max HP and the shell follows via vitals.
+	_press(ikey, true)
+	if not await _wait_for(func() -> bool: return game.player.revive_target != null,
+			5.0, "revive channel grant (full revive)"):
+		return
+	if not await _wait_for(func() -> bool: return not shell.downed, 8.0, "shell standing after the channel"):
+		return
+	_press(ikey, false)
+	r = await _watch(gid, "upstate", {})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("guest not standing after the channel: %s" % str(r))
+	var frac: float = float(r.get("frac", -1.0))
+	if absf(frac - 0.30) > 0.12:
+		return _fail("revive hp %.2f of max — wanted ~0.30 (§5.3)" % frac)
+	if not await _wait_for(func() -> bool: return shell.hp > shell.max_hp * 0.15,
+			5.0, "shell bar following the revive via vitals"):
+		return
+	print("[net_session] host6: 3 s channel revived the guest at %.0f%% max (shell bar follows)" % (frac * 100.0))
+
+	# (d) the WIPE. A wounded ARENA boss (zone_idx >= 0, parked in a far
+	# room) must leash-reset to full; both wallets must pay the tithe; both
+	# players must stand at the HOST's respawn-room decision.
+	if game.zone_count <= 3:
+		return _fail("chapter too small for the boss-leash arrangement")
+	var boss: Boss = Boss.make_boss(game, "vargoth", game.clamp_to_zone(spot + Vector2(300.0, -200.0), spot))
+	boss.dmg = 0.0
+	boss.zone_idx = 3  # an ARENA boss (not a rogue): wipes leash it home, never free it
+	game.bosses.append(boss)
+	game.add_child(boss)
+	await _frames(2)
+	boss.take_damage(boss.max_hp * 0.4, Vector2.ZERO, false, true)
+	if boss.hp >= boss.max_hp - 0.5:
+		return _fail("boss would not take the arranging wound")
+	game.player.gold = 100
+	r = await _watch(gid, "setgold", {"n": 100})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("guest wallet arrangement failed: %s" % str(r))
+	var tithed: int = 100 - int(100.0 * Balance.DEATH_GOLD_TITHE)
+	var rr_want: int = game.respawn_room(game.room_at_pos(game.player.global_position))
+	# Down the guest again, then the host: 0 standing = wipe, host-detected.
+	r = await _watch(gid, "downself", {"x": shell.global_position.x, "y": shell.global_position.y})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("guest second down failed: %s" % str(r))
+	for i in 5:
+		game.player.hurt_cd = 0.0
+		game.player.take_damage(9.9e9, "true", null, true)
+		if game.player.downed or game.player.dead:
+			break
+		await get_tree().create_timer(0.15).timeout
+	if not await _wait_for(func() -> bool: return game.state == game.ST_DEAD, 5.0, "wipe entering ST_DEAD"):
+		return
+	if not await _wait_for(func() -> bool: return game.state == game.ST_PLAYING, 8.0, "wipe respawn (ST_PLAYING)"):
+		return
+	if game.player.gold != tithed:
+		return _fail("host tithe wrong after the wipe: %d gold, wanted %d" % [game.player.gold, tithed])
+	if game.player.hp < game.player.max_hp - 0.5 or game.player.downed or game.player.dead:
+		return _fail("host not standing at full after the wipe")
+	if game.room_at_pos(game.player.global_position) != rr_want:
+		return _fail("host respawned in room %d, decision was %d"
+			% [game.room_at_pos(game.player.global_position), rr_want])
+	if not is_instance_valid(boss) or boss.dying:
+		return _fail("the arena boss did not survive the wipe (freed like a rogue?)")
+	if boss.hp < boss.max_hp - 0.5:
+		return _fail("the boss was not leash-reset to full by the wipe (hp %.0f/%.0f)" % [boss.hp, boss.max_hp])
+	r = await _watch(gid, "wiped", {"room": rr_want, "gold": tithed})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("guest wipe outcome wrong: %s" % str(r))
+	print("[net_session] host6: WIPE — both tithed to %d, both at room %d, boss leashed to full" % [tithed, rr_want])
+
+	# Quit hygiene (stage-3 pattern), then release the guest.
+	boss.take_damage(9.9e9)
+	await get_tree().create_timer(2.5).timeout
+	_rpc_finish.rpc_id(gid)
+	if not await _wait_for(func() -> bool: return _left.has(gid), STEP_TIMEOUT, "guest peer_left"):
+		return
+	if not await _wait_exit("guest"):
+		return
+
+	# (d2) party-of-1-online equivalence: still hosting, zero peers — the
+	# lone host's down must collapse straight into the wipe (= solo flow).
+	game.player.gold = 100
+	for i in 5:
+		game.player.hurt_cd = 0.0
+		game.player.take_damage(9.9e9, "true", null, true)
+		if game.player.downed or game.player.dead:
+			break
+		await get_tree().create_timer(0.15).timeout
+	if not await _wait_for(func() -> bool: return game.state == game.ST_DEAD, 5.0, "solo-online wipe (ST_DEAD)"):
+		return
+	if not await _wait_for(func() -> bool: return game.state == game.ST_PLAYING, 8.0, "solo-online respawn"):
+		return
+	if game.player.gold != tithed or game.player.hp < game.player.max_hp - 0.5:
+		return _fail("solo-online wipe outcome wrong (gold %d, hp %.0f)" % [game.player.gold, game.player.hp])
+	print("[net_session] host6: party-of-1 online down collapsed to the death flow (tithe %d)" % tithed)
+
+	# (e) solo-OFFLINE regression: leave the session; 0 hp must be the
+	# EXACT old death — dead on the spot, no downed branch.
+	_net.leave()
+	if not await _wait_for(func() -> bool: return not _net.is_online(), 5.0, "session closed (offline)"):
+		return
+	game.player.gold = 100
+	var died_direct := false
+	for i in 5:
+		game.player.hurt_cd = 0.0
+		game.player.take_damage(9.9e9, "true", null, true)
+		if game.player.downed or game.player.ghost:
+			return _fail("SOLO REGRESSION: offline lethal hit entered the downed branch")
+		if game.player.dead:
+			died_direct = true
+			break
+		await get_tree().create_timer(0.15).timeout
+	if not died_direct:
+		return _fail("offline lethal hit never killed (eva streak?)")
+	if game.state != game.ST_DEAD:
+		return _fail("offline death did not enter ST_DEAD")
+	if not await _wait_for(func() -> bool: return game.state == game.ST_PLAYING, 8.0, "offline respawn"):
+		return
+	if game.player.gold != tithed or game.player.hp < game.player.max_hp - 0.5:
+		return _fail("offline death outcome wrong (gold %d, hp %.0f)" % [game.player.gold, game.player.hp])
+	print("[net_session] host6: solo-offline death flow untouched (dead -> tithe -> 2 s -> respawn)")
+
+	print("NET TEST PASS")
+	get_tree().quit(0)
+
+
+func _run_guest6() -> void:
+	if not await _guest_boot():
+		return
+	_rpc_report.rpc_id(1, {"ready": true})
+	if not await _wait_for(func() -> bool: return _finish, 300.0, "host finish signal"):
+		return
+	_net.leave()
+	await get_tree().create_timer(0.5).timeout
+	print("[net_session] guest6: served all probes, left cleanly")
+	get_tree().quit(0)
+
+
+# --------------------------------------------- stage 7 (MP-13) dialogue+story ---
+
+func _run_host7() -> void:
+	if not await _host_boot():
+		return
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the guest process")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "guest admission"):
+		return
+	var gid: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return bool(_report.get("ready", false)), STEP_TIMEOUT, "guest ready report"):
+		return
+	var sess: Node = get_node("/root/NetworkManager/Session")
+	print("[net_session] host7: guest %d standing in the world" % gid)
+
+	# (a) a guest sets a WORLD flag through the real set_flag: the host agrees.
+	var r: Dictionary = await _watch(gid, "setflag", {"flag": "mp13_world_probe"})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("guest could not set its world flag: %s" % str(r))
+	if not await _wait_for(func() -> bool: return bool(game.get_flag("mp13_world_probe", false)),
+			STEP_TIMEOUT, "guest world flag reaching the host"):
+		return
+	r = await _watch(gid, "hasflag", {"flag": "mp13_world_probe", "want": true})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest lost its own world flag after routing: %s" % str(r))
+	print("[net_session] host7: guest->host world flag synced (both agree)")
+
+	# (a') a host-set flag reaches the guest (the other direction).
+	game.set_flag("mp13_host_probe")
+	r = await _watch(gid, "hasflag", {"flag": "mp13_host_probe", "want": true})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("host->guest world flag never arrived: %s" % str(r))
+	print("[net_session] host7: host->guest world flag synced")
+
+	# (a'') a PER-CHARACTER flag stays local: the guest sets s_awakened_mage
+	# and the host must NEVER receive it (classification, §5.4).
+	r = await _watch(gid, "setflag", {"flag": "s_awakened_mage"})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest could not set its per-character flag: %s" % str(r))
+	await get_tree().create_timer(1.0).timeout
+	if game.get_flag("s_awakened_mage", false):
+		return _fail("a per-character flag (s_awakened_mage) leaked to the host")
+	print("[net_session] host7: per-character flag stayed local (classification holds)")
+
+	# (b) NPC BUSY-LOCK. The host opens a convo on 'mp13_npc'; the guest's
+	# interact on the SAME id must get NO dialogue (a busy bark).
+	sess.begin_convo("mp13_npc", _synth_line_convo(), Callable())
+	if not await _wait_for(func() -> bool: return game.hud.dialogue_active, 5.0, "host dialogue open"):
+		return
+	r = await _watch(gid, "trybusy", {"id": "mp13_npc"})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest was NOT busy-locked out of a held NPC: %s" % str(r))
+	print("[net_session] host7: guest's interact on a busy NPC opened no dialogue")
+	# Release: close the host's dialogue; the claim frees, the guest can talk.
+	game.hud._advance_dialogue()
+	if not await _wait_for(func() -> bool: return not game.hud.dialogue_active, 5.0, "host dialogue closed"):
+		return
+	if not await _wait_for(func() -> bool: return not sess._convo_claims.has("mp13_npc"), 5.0, "busy-lock released"):
+		return
+	r = await _watch(gid, "tryclaim", {"id": "mp13_npc"})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest could not claim the freed NPC: %s" % str(r))
+	print("[net_session] host7: lock released — the guest then claimed the NPC")
+
+	# (b2) BEAT MIRRORING: the host drives a quest-advancing beat (the party
+	# is gathered at spawn); the guest is a read-only spectator and its quest
+	# tracker follows when the beat ends.
+	sess.begin_convo("mp13_beat", _synth_beat_convo(), Callable())
+	if not await _wait_for(func() -> bool: return game.hud.dialogue_active, 5.0, "host beat dialogue open"):
+		return
+	r = await _watch(gid, "beatmirror", {})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest did not see the mirrored beat transcript: %s" % str(r))
+	game.hud._advance_dialogue()  # end the beat
+	if not await _wait_for(func() -> bool: return not game.hud.dialogue_active, 5.0, "host beat closed"):
+		return
+	r = await _watch(gid, "beatgone", {"quest": "fangmaw"})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("beat end didn't clear the guest mirror / sync the quest: %s" % str(r))
+	print("[net_session] host7: beat mirrored to the spectator; quest tracker synced on end")
+
+	# (c)+(d) a guest runs a PAYOUT choice: its OWN wallet + resonance move,
+	# the host's do NOT, the world flag routes here, and the host is toasted.
+	var host_gold: int = game.player.gold
+	var host_res: float = game.player.resonance
+	r = await _watch(gid, "choosepayout", {})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest payout choice didn't move its own wallet/resonance: %s" % str(r))
+	if game.player.gold != host_gold:
+		return _fail("host wallet moved on a GUEST's payout (%d -> %d)" % [host_gold, game.player.gold])
+	if absf(game.player.resonance - host_res) > 0.01:
+		return _fail("host resonance moved on a GUEST's choice (%.1f -> %.1f)" % [host_res, game.player.resonance])
+	if not await _wait_for(func() -> bool: return bool(game.get_flag("mp13_choice_flag", false)),
+			STEP_TIMEOUT, "choice world flag routing to the host"):
+		return
+	if not await _wait_for(_saw_convo_toast, 5.0, "host receiving the choice toast"):
+		return
+	print("[net_session] host7: guest choice paid only the guest; flag + toast reached the host")
+
+	# (a-late) LATE JOINER: guest1 leaves, a FRESH guest joins and must
+	# receive every synced flag in its world snapshot.
+	_rpc_finish.rpc_id(gid)
+	if not await _wait_for(func() -> bool: return _left.has(gid), STEP_TIMEOUT, "guest peer_left"):
+		return
+	if not await _wait_exit("guest"):
+		return
+	_report = {}
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the late-joiner process")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "late joiner admission"):
+		return
+	var gid2: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return bool(_report.get("ready", false)), STEP_TIMEOUT, "late joiner ready"):
+		return
+	r = await _watch(gid2, "hasflag", {"flag": "mp13_world_probe", "want": true})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("late joiner missing the guest-set flag from its snapshot: %s" % str(r))
+	r = await _watch(gid2, "hasflag", {"flag": "mp13_choice_flag", "want": true})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("late joiner missing the choice flag from its snapshot: %s" % str(r))
+	print("[net_session] host7: a late joiner received every synced flag in its snapshot")
+	_rpc_finish.rpc_id(gid2)
+	if not await _wait_for(func() -> bool: return _left.has(gid2), STEP_TIMEOUT, "late joiner peer_left"):
+		return
+	if not await _wait_exit("guest"):
+		return
+
+	# (e) solo-OFFLINE: leave the session; a convo runs entirely local, sets
+	# its flag with no session (net_online() false gates every RPC).
+	_net.leave()
+	if not await _wait_for(func() -> bool: return not _net.is_online(), 5.0, "session closed (offline)"):
+		return
+	var off_res: float = game.player.resonance
+	game.run_convo(_synth_choice_convo("mp13_offline_flag"), Callable())
+	if not await _wait_for(func() -> bool: return game.hud.choices_active, 5.0, "offline choice panel"):
+		return
+	game.hud._choose(0)
+	await _frames(3)
+	if not game.get_flag("mp13_offline_flag", false):
+		return _fail("SOLO REGRESSION: offline convo choice never set its flag locally")
+	if absf(game.player.resonance - off_res) < 0.5:
+		return _fail("SOLO REGRESSION: offline choice didn't move resonance")
+	print("[net_session] host7: solo-offline convo ran end to end (flag local, no routing)")
+
+	print("NET TEST PASS")
+	get_tree().quit(0)
+
+
+func _run_guest7() -> void:
+	if not await _guest_boot("mage"):  # a mage: its own s_awakened_mage stays home
+		return
+	_rpc_report.rpc_id(1, {"ready": true})
+	if not await _wait_for(func() -> bool: return _finish, 300.0, "host finish signal"):
+		return
+	_net.leave()
+	await get_tree().create_timer(0.5).timeout
+	print("[net_session] guest7: served all probes, left cleanly")
+	get_tree().quit(0)
+
+
+# --------------------------------------------- stage 8 (MP-14) party UI + victory ---
+# §5.6 party frames (as a DATA model), the ally-damage-number fan, and the
+# synced victory + chapter advance. Same director/probe shape; the party-frame
+# assertions read the HOST's live party_frame_data accessor (pixels aren't
+# tested), the victory/advance ones read the guest's real state through probes.
+
+func _run_host8() -> void:
+	if not await _host_boot():
+		return
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the guest process")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "guest admission"):
+		return
+	var gid: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return bool(_report.get("ready", false)), STEP_TIMEOUT, "guest ready report"):
+		return
+	var shell := _player_of(gid)
+	if shell == null:
+		return _fail("no host-side shell for the guest")
+	var sess: Node = get_node("/root/NetworkManager/Session")
+	print("[net_session] host8: guest %d standing in the world" % gid)
+
+	# (a) the PARTY-FRAME DATA MODEL reflects the shell's live vitals + state.
+	var frames: Array = game.hud.party_frame_data()
+	if frames.size() != 1:
+		return _fail("party_frame_data should hold exactly the 1 ally, got %d" % frames.size())
+	if int(frames[0].get("peer", -1)) != gid:
+		return _fail("frame peer %s != guest %d" % [str(frames[0].get("peer")), gid])
+	if String(frames[0].get("state", "")) != "up":
+		return _fail("fresh ally frame not 'up': %s" % str(frames[0]))
+	print("[net_session] host8: party_frame_data holds the 1 remote ally (state up)")
+
+	# (a1) vitals: the guest wounds itself; the sync drops the shell hp and the
+	# frame reads it (state still 'up').
+	var r: Dictionary = await _watch(gid, "hurt_self", {"frac": 0.5})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest self-wound failed: %s" % str(r))
+	if not await _wait_for(func() -> bool: return shell.hp < shell.max_hp * 0.9, 8.0, "shell hp dropped via vitals"):
+		return
+	if not await _wait_for(func() -> bool:
+			var f: Array = game.hud.party_frame_data()
+			return not f.is_empty() and float(f[0]["hp"]) < shell.max_hp * 0.95 \
+				and String(f[0]["state"]) == "up",
+			8.0, "party frame hp reflects the wound"):
+		return
+	print("[net_session] host8: (a) frame hp tracks the shell's vitals")
+
+	# (a2) downed: the frame reads 'downed'.
+	r = await _watch(gid, "downself", {"x": shell.global_position.x, "y": shell.global_position.y})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest never went downed: %s" % str(r))
+	if not await _wait_for(func() -> bool: return shell.downed, 8.0, "shell.downed host-side"):
+		return
+	if not await _wait_for(func() -> bool:
+			var f: Array = game.hud.party_frame_data()
+			return not f.is_empty() and String(f[0]["state"]) == "downed",
+			8.0, "party frame reads DOWNED"):
+		return
+	print("[net_session] host8: (a) frame shows DOWNED on the fallen ally")
+
+	# (a3) recover so the guest is alive for the victory beats.
+	r = await _watch(gid, "standup", {})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest never stood back up: %s" % str(r))
+	if not await _wait_for(func() -> bool:
+			var f: Array = game.hud.party_frame_data()
+			return not f.is_empty() and String(f[0]["state"]) == "up" and not shell.downed,
+			8.0, "party frame back to up"):
+		return
+	print("[net_session] host8: (a) frame data follows vitals+down state (accessor)")
+
+	# (b) ally damage: the host hits a registered enemy; the guest (the non-
+	# attacker) receives a SMALL-number event with the applied amount; the host
+	# never fans to itself.
+	var wolf := Enemy.make(game, "wolf", game.local_player.global_position + Vector2(140.0, 0.0), 3)
+	wolf.dmg = 0.0
+	game.add_enemy(wolf)
+	if not await _wait_for(func() -> bool: return wolf.net_id > 0, 5.0, "wolf announced"):
+		return
+	r = await _watch(gid, "seesmirror", {"id": wolf.net_id})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest never built the wolf mirror: %s" % str(r))
+	r = await _watch(gid, "reset_dmg", {})  # clear the guest's last_ally_dmg
+	if r.is_empty():
+		return
+	var applied: int = int(minf(20.0, wolf.hp - 1.0))
+	wolf.hit_src = game.local_player  # the host's own blow
+	wolf.take_damage(float(applied), Vector2.ZERO, false)
+	r = await _watch(gid, "allydmg", {"id": wolf.net_id})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("the ally-damage number never reached the non-attacking guest: %s" % str(r))
+	if int(r.get("amount", -1)) != applied:
+		return _fail("ally number amount %s != host-applied %d" % [str(r.get("amount")), applied])
+	print("[net_session] host8: (b) ally-damage number landed small on the non-attacker (%d)" % applied)
+	wolf.take_damage(9.9e9)
+	await _frames(2)
+
+	# (c) forced final-boss death: EVERY machine reports victory; the guest gets
+	# its OWN chapter credit + weekly reward (weekly armed on the guest first).
+	r = await _watch(gid, "arm_weekly", {})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest could not arm its weekly run: %s" % str(r))
+	var chap: String = game.chapter_id
+	var next_ch: String = Story.next_chapter(chap)
+	var fb: String = String(Story.chapter(chap).get("final_boss", ""))
+	if fb == "" or next_ch == "":
+		return _fail("stage 8 needs a chapter with a final boss AND a next chapter")
+	var bpos: Vector2 = game.clamp_to_zone(game.local_player.global_position + Vector2(280.0, -180.0), game.local_player.global_position)
+	var fboss: Boss = Boss.make_boss(game, fb, bpos)
+	fboss.story_boss = true  # the zone-flow death path: on_boss_died -> chapter end
+	game.bosses.append(fboss)
+	game.add_child(fboss)
+	await _frames(2)
+	fboss.take_damage(9.9e9)
+	# Skip the host's epilogue beat to reach end_it (the victory finalize).
+	if not await _wait_for(func() -> bool:
+			return game.state == game.ST_VICTORY or game.hud.dialogue_active,
+			STEP_TIMEOUT, "host reaching victory/epilogue"):
+		return
+	await _skip_story()
+	if not await _wait_for(func() -> bool: return game.state == game.ST_VICTORY, 8.0, "host ST_VICTORY"):
+		return
+	if not game.get_flag("completed_" + chap, false):
+		return _fail("host never marked the chapter completed")
+	print("[net_session] host8: (c) host reached the VICTORY card")
+	r = await _watch(gid, "victory", {"chapter": chap, "next": next_ch})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest didn't reach victory / chapter credit / weekly reward: %s" % str(r))
+	print("[net_session] host8: (c) guest reached VICTORY — chapter credit + weekly reward (+%d gold)"
+		% int(r.get("weekly_gold", -1)))
+
+	# (d) host advance -> the guest follows into the next chapter (world rebuilt
+	# via the snapshot path — same seed, ST_PLAYING).
+	game.advance_chapter()
+	if not await _wait_for(func() -> bool:
+			return game.state == game.ST_PLAYING and game.chapter_id == next_ch,
+			STEP_TIMEOUT, "host advanced to %s" % next_ch):
+		return
+	print("[net_session] host8: (d) host advanced to %s (seed %d)" % [next_ch, game.wander_seed])
+	r = await _watch(gid, "advanced", {"chapter": next_ch, "seed": game.wander_seed})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest never followed into the next chapter: %s" % str(r))
+	print("[net_session] host8: (d) guest followed into %s — world rebuilt via the snapshot path" % next_ch)
+
+	# Release the guest, confirm the clean leave.
+	_rpc_finish.rpc_id(gid)
+	if not await _wait_for(func() -> bool: return _left.has(gid), STEP_TIMEOUT, "guest peer_left"):
+		return
+	if not await _wait_exit("guest"):
+		return
+
+	# (e) solo-OFFLINE victory: leave the session; the current chapter's final
+	# boss death must be the exact old flow (ST_VICTORY, no session, no RPCs).
+	_net.leave()
+	if not await _wait_for(func() -> bool: return not _net.is_online(), 5.0, "session closed (offline)"):
+		return
+	if game.state != game.ST_PLAYING:
+		game.state = game.ST_PLAYING
+	var chap2: String = game.chapter_id
+	var fb2: String = String(Story.chapter(chap2).get("final_boss", ""))
+	if fb2 == "":
+		return _fail("offline stage needs a chapter with a final boss (%s)" % chap2)
+	var bpos2: Vector2 = game.clamp_to_zone(game.local_player.global_position + Vector2(260.0, -160.0), game.local_player.global_position)
+	var fboss2: Boss = Boss.make_boss(game, fb2, bpos2)
+	fboss2.story_boss = true
+	game.bosses.append(fboss2)
+	game.add_child(fboss2)
+	await _frames(2)
+	fboss2.take_damage(9.9e9)
+	if not await _wait_for(func() -> bool:
+			return game.state == game.ST_VICTORY or game.hud.dialogue_active,
+			STEP_TIMEOUT, "offline victory/epilogue"):
+		return
+	await _skip_story()
+	if not await _wait_for(func() -> bool: return game.state == game.ST_VICTORY, 8.0, "offline ST_VICTORY"):
+		return
+	if not game.get_flag("completed_" + chap2, false):
+		return _fail("SOLO REGRESSION: offline final-boss death did not complete the chapter")
+	print("[net_session] host8: (e) solo-offline victory ran the old flow (no session, no RPCs)")
+
+	print("NET TEST PASS")
+	get_tree().quit(0)
+
+
+func _run_guest8() -> void:
+	if not await _guest_boot():
+		return
+	_rpc_report.rpc_id(1, {"ready": true})
+	if not await _wait_for(func() -> bool: return _finish, 300.0, "host finish signal"):
+		return
+	_net.leave()
+	await get_tree().create_timer(0.5).timeout
+	print("[net_session] guest8: served all probes, left cleanly")
+	get_tree().quit(0)
+
+
+## HOST: did a convo consequence toast land under the game? (spawn_text adds a
+## Label child; the choice toast reads "<name> chose: ...".)
+func _saw_convo_toast() -> bool:
+	for node in game.get_children():
+		var l := node as Label
+		if l != null and String(l.text).contains("chose:"):
+			return true
+	return false
+
+
+## MP-13 harness: a one-line, choice-less convo (a plain NPC greeting) —
+## begin_convo treats it as a private overlay, so it exercises the busy-lock
+## without a beat or a consequence.
+func _synth_line_convo() -> Dictionary:
+	return {"start": "a", "nodes": {"a": {"who": "Villager", "text": "A quiet word between friends."}}}
+
+
+## MP-13 harness: a single temptation choice that moves the picker's
+## resonance, drops them coins, and sets a WORLD flag — the payout/consequence
+## probe. `flag` lets the offline case use its own name.
+func _synth_choice_convo(flag := "mp13_choice_flag") -> Dictionary:
+	var fl := {}
+	fl[flag] = true
+	return {"start": "a", "nodes": {"a": {"who": "Tempter", "text": "Take the coin?",
+		"choices": [{"text": "I take it", "resonance": -6.0, "gold": 25, "flags": fl}]}}}
+
+
+## MP-13 harness: a quest-advancing convo — a chapter BEAT. The `quest` key
+## makes _convo_is_beat true, so it gates on the party and mirrors its line.
+func _synth_beat_convo() -> Dictionary:
+	return {"start": "a", "nodes": {"a": {"who": "Maren",
+		"text": "The hunt begins at dusk.", "quest": "fangmaw"}}}
+
+
 ## HOST: batter the guest's shell through the REAL seam — repeated
 ## take_damage calls on the shell (spaced past the owner's hurt_cd; a
 ## rare owner-side dodge just makes the next swing count). Runs as a
@@ -955,6 +1694,70 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 			game.discard_to_ground.call_deferred(
 				{"kind": "stone", "stone": Items.make_reset_stone()})
 			await _frames(3)
+		# ---- stage 6 (MP-12) ----
+		"downself":
+			# Stand at the arranged spot, then force 0 hp through the REAL
+			# take_damage (owner-authoritative §5.3 conversion). A rare
+			# evasion roll just retries; heavy pierces the chip gate.
+			game.player.global_position = Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
+			await _frames(2)
+			for i in 10:
+				game.player.hurt_cd = 0.0
+				game.player.take_damage(9.9e9, "true", null, true)
+				if game.player.downed or game.player.dead:
+					break
+				await get_tree().create_timer(0.1).timeout
+		"setgold":
+			game.player.gold = int(args.get("n", 0))
+		# ---- stage 7 (MP-13) ----
+		"setflag":
+			# The REAL set_flag path (world flags route through the host;
+			# per-character flags stay local — game_flow._flag_is_local).
+			game.set_flag(String(args.get("flag", "")))
+		"trybusy":
+			# Interact with an NPC the host is already speaking to — begin_convo
+			# must be denied (a busy bark), opening NO dialogue here.
+			sess.begin_convo(String(args.get("id", "")), _synth_line_convo(), Callable())
+		"tryclaim":
+			# The lock is free now — begin_convo must GRANT and open dialogue.
+			sess.begin_convo(String(args.get("id", "")), _synth_line_convo(), Callable())
+		"choosepayout":
+			# Close any lingering claim dialogue (the tryclaim line), then run a
+			# temptation choice and pick it: our resonance/wallet move, its
+			# world flag routes to the host, the host is toasted.
+			if game.hud.dialogue_active:
+				game.hud._advance_dialogue()
+				await _frames(2)
+			_res_before7 = game.player.resonance
+			_gold_before7 = game.player.gold
+			sess.begin_convo("mp13_pay", _synth_choice_convo(), Callable())
+			var g7 := 0
+			while not game.hud.choices_active and g7 < 90:
+				await _frames(1)
+				g7 += 1
+			if game.hud.choices_active:
+				game.hud._choose(0)
+			await _frames(30)  # the coin magnet collects the dropped pile
+		# ---- stage 8 (MP-14) ----
+		"hurt_self":
+			# A NON-lethal wound through the REAL take_damage: the vitals sync
+			# carries it to the host's shell (and the party frame).
+			game.player.hurt_cd = 0.0
+			game.player.take_damage(game.player.max_hp * float(args.get("frac", 0.5)),
+				"true", null, true)
+		"standup":
+			# Owner-applied recovery so the guest is alive for the victory beats.
+			if game.player.downed or game.player.ghost:
+				game.player.net_stand_up(0.5)
+		"reset_dmg":
+			sess.last_ally_dmg = {}
+		"arm_weekly":
+			# Make THIS guest a weekly run so net_victory pays its own once-per-
+			# week reward (per-player, §5.5) — and record the wallet baseline.
+			game.weekly_active = true
+			game.weekly_week = game._week_index()
+			game.weekly_claimed_week = -1
+			_gold_before8 = game.player.gold
 		_:
 			pass
 
@@ -1099,6 +1902,113 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 					flushed_mail = true
 			return {"ok": flushed_mail and game.dropped_loot.is_empty(),
 				"mail": game.mailbox.size(), "drops": game.dropped_loot.size()}
+		# ---- stage 6 (MP-12) ----
+		"downself":
+			# §5.3: downed, NOT dead — the solo flow must not have run. The
+			# settled position rides back (decor may have nudged the body):
+			# the host stands beside THIS point, not the arranged one.
+			return {"ok": game.player.downed and not game.player.dead \
+				and not game.player.ghost, "hp": game.player.hp,
+				"dead": game.player.dead,
+				"px": game.player.global_position.x,
+				"py": game.player.global_position.y}
+		"downstate":
+			# Still down (the interrupted channel revived nobody).
+			return {"ok": game.player.downed and not game.player.dead \
+				and not game.player.ghost, "hp": game.player.hp}
+		"upstate":
+			# Standing after the channel; frac carries the §5.3 30% check.
+			return {"ok": not game.player.downed and not game.player.ghost \
+				and not game.player.dead and game.player.hp > 0.0,
+				"frac": game.player.hp / game.player.max_hp}
+		"setgold":
+			return {"ok": game.player.gold == int(args.get("n", -1)),
+				"gold": game.player.gold}
+		"wiped":
+			# The party wipe replayed OUR solo death flow: tithed, revived
+			# at full, standing in the HOST's respawn room, play resumed.
+			return {"ok": game.state == game.ST_PLAYING \
+				and not game.player.dead and not game.player.downed \
+				and not game.player.ghost \
+				and game.player.hp >= game.player.max_hp - 0.5 \
+				and game.player.gold == int(args.get("gold", -1)) \
+				and game.room_at_pos(game.player.global_position) == int(args.get("room", -1)),
+				"gold": game.player.gold, "hp": game.player.hp,
+				"room": game.room_at_pos(game.player.global_position),
+				"state": game.state}
+		# ---- stage 7 (MP-13) ----
+		"hasflag":
+			return {"ok": bool(game.get_flag(String(args.get("flag", "")), false)) \
+				== bool(args.get("want", true)),
+				"val": bool(game.get_flag(String(args.get("flag", "")), false))}
+		"setflag":
+			return {"ok": bool(game.get_flag(String(args.get("flag", "")), false)),
+				"val": bool(game.get_flag(String(args.get("flag", "")), false))}
+		"trybusy":
+			# Denied: no dialogue opened here AND our request was cleared.
+			return {"ok": not game.hud.dialogue_active \
+				and String(sess._pending_convo.get("id", "")) != String(args.get("id", "")),
+				"dlg": game.hud.dialogue_active}
+		"tryclaim":
+			# Granted: the claimed convo opened its dialogue here.
+			return {"ok": game.hud.dialogue_active}
+		"beatmirror":
+			# A beat the HOST drives shows here as a read-only transcript.
+			return {"ok": game.hud.mirror_box != null and game.hud.mirror_box.visible \
+				and game.hud.mirror_text != null and String(game.hud.mirror_text.text) != "",
+				"text": String(game.hud.mirror_text.text) if game.hud.mirror_text != null else ""}
+		"beatgone":
+			# On the beat's end: the mirror closed AND the quest tracker synced.
+			return {"ok": (game.hud.mirror_box == null or not game.hud.mirror_box.visible) \
+				and game.quest_key == String(args.get("quest", "")),
+				"qk": game.quest_key}
+		"choosepayout":
+			return {"ok": absf(game.player.resonance - _res_before7) > 0.5 \
+				and game.player.gold > _gold_before7,
+				"dres": game.player.resonance - _res_before7,
+				"dgold": game.player.gold - _gold_before7}
+		# ---- stage 8 (MP-14) ----
+		"hurt_self":
+			return {"ok": game.player.hp < game.player.max_hp - 0.5 \
+				and not game.player.downed and not game.player.dead,
+				"hp": game.player.hp}
+		"standup":
+			return {"ok": not game.player.downed and not game.player.ghost \
+				and not game.player.dead and game.player.hp > 0.0}
+		"seesmirror":
+			var e: Enemy = sess.net_enemies.get(int(args.get("id", 0)))
+			return {"ok": e != null and is_instance_valid(e) and not e.dying}
+		"reset_dmg":
+			return {"ok": sess.last_ally_dmg.is_empty()}
+		"arm_weekly":
+			return {"ok": game.weekly_active and game.weekly_week == game._week_index()}
+		"allydmg":
+			# The host's blow arrived as an ally-damage number for THIS enemy.
+			var d: Dictionary = sess.last_ally_dmg
+			return {"ok": not d.is_empty() and int(d.get("net_id", -1)) == int(args.get("id", 0)) \
+				and int(d.get("amount", 0)) > 0,
+				"amount": int(d.get("amount", -1)), "crit": bool(d.get("crit", false))}
+		"victory":
+			# The synced card: ST_VICTORY here too, our OWN chapter credit (a
+			# character flag + a meta unlock), and our OWN weekly reward claimed.
+			var chap := String(args.get("chapter", ""))
+			var nxt := String(args.get("next", ""))
+			var credited: bool = game.get_flag("completed_" + chap, false)
+			var unlocked: bool = nxt == "" or bool(game._meta.get("unlocked_" + nxt, false))
+			var weekly_paid: bool = game.weekly_claimed_week == game._week_index() \
+				and game.player.gold > _gold_before8
+			return {"ok": game.state == game.ST_VICTORY and credited \
+				and unlocked and weekly_paid,
+				"state": game.state, "credited": credited, "unlocked": unlocked,
+				"weekly_gold": game.player.gold - _gold_before8}
+		"advanced":
+			# Followed the host into the next chapter through the snapshot path:
+			# same chapter id, the host's seed rebuilt, back to ST_PLAYING.
+			return {"ok": game.chapter_id == String(args.get("chapter", "")) \
+				and game.wander_seed == int(args.get("seed", -1)) \
+				and game.state == game.ST_PLAYING and game.play_started \
+				and not game.player.dead,
+				"chapter": game.chapter_id, "seed": game.wander_seed, "state": game.state}
 	return {"ok": false, "why": "unknown probe %s" % what}
 
 
