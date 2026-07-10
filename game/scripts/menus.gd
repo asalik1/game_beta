@@ -236,6 +236,23 @@ func open_title() -> void:
 	ver.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	ver.add_theme_constant_override("outline_size", 4)
 	root.add_child(ver)
+	# MP-16: a mid-run host-loss reboots to here — surface the plain-words
+	# notice once (staged on the NetworkManager autoload, which survived the
+	# reload). Cleared on read, so it greets the player exactly once.
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	if net != null and String(net.last_session_notice) != "":
+		var note := Label.new()
+		note.text = String(net.last_session_notice)
+		net.last_session_notice = ""
+		note.position = Vector2(0, 84)
+		note.size = Vector2(1280, 44)
+		note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		note.add_theme_font_size_override("font_size", 16)
+		note.add_theme_color_override("font_color", Color(1.0, 0.82, 0.55))
+		note.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		note.add_theme_constant_override("outline_size", 5)
+		root.add_child(note)
 
 
 ## Boot stage 2 — the character roster: continue a saved hero from its
