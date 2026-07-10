@@ -253,6 +253,11 @@ var _clips := {}
 var _clip := ""                # current clip name
 var _clip_loop := true         # locomotion loops; one-shot actions do not
 var _clip_locked := false      # death latch: hold last frame, ignore everything
+# Aimed dash pose (see player_combat._aim_dash_pose): while an off-axis dash's
+# one-shot plays, the L/R art is flipped to the travel side and rotated the
+# rest of the way. Both cleared by the next _play_clip.
+var _clip_rot := 0.0           # rotation held on the sprite (0 on a flat dash)
+var _clip_flip := 0.0          # facing side (±1) forced while it plays; 0 = follow look_sign
 var halo: PointLight2D = null  # the hero's soft light (dark terrains only)
 
 ## Per-class ability-slot -> action clip. Slots with no matching clip (or a
@@ -313,6 +318,9 @@ func _apply_class_sprite() -> void:
 	_dir_clips = Art.hero_dir_clips(art_name)
 	_dir_meta = {}
 	_dir_pose_active = false
+	_clip_rot = 0.0   # a held dash pose dies with the old class's sprite
+	_clip_flip = 0.0
+	sprite.rotation = 0.0
 	if _clips.has("idle"):
 		var m := _measure_hero_frame(_clips["idle"])
 		_hero_scale = m["scale"]
@@ -362,6 +370,13 @@ func _play_clip(name: String, loop: bool) -> void:
 	var info: Dictionary = _clips[name]
 	_clip = name
 	_clip_loop = loop
+	# Any clip takeover releases special sprite states: a held dash pose
+	# un-rotates, and an in-flight directional pose stops driving frames
+	# (it doesn't own the strip on the sprite anymore).
+	_clip_rot = 0.0
+	_clip_flip = 0.0
+	_dir_pose_active = false
+	sprite.rotation = 0.0
 	strip_frames = int(info["frames"])
 	strip_fps = float(info["fps"])
 	strip_t = 0.0
@@ -397,6 +412,9 @@ func play_dir_anim(name: String, dir: Vector2) -> bool:
 	_dir_pose_t = 0.0
 	_clip = "@dir"
 	_clip_loop = false
+	_clip_rot = 0.0       # the 8-way art encodes its own direction —
+	_clip_flip = 0.0      # release any held dash rotation
+	sprite.rotation = 0.0
 	strip_frames = total
 	sprite.texture = info["tex"]
 	sprite.hframes = total

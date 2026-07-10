@@ -75,7 +75,9 @@ func _tumble() -> void:
 		dr_time = Balance.TUMBLE_DR_DUR
 		dr_amt = tumble_dr
 	var origin := global_position
-	global_position = game.clamp_to_zone(global_position + facing * 130.0, global_position)
+	var dvec := dash_vec()
+	global_position = game.clamp_to_zone(origin + dvec * 130.0, origin)
+	_aim_dash_pose(dvec)  # before the trail below, so the ghosts copy the pose
 	# The roll reads as motion: ghost trail + kicked-up dust behind you.
 	_afterimages(origin, global_position, _tcolor if _themed else Color(0.9, 0.95, 1.0), 2)
 	game.burst(origin, Color(0.75, 0.7, 0.6), 6)

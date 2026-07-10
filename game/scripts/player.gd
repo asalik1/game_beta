@@ -175,8 +175,16 @@ func _physics_process(delta: float) -> void:
 	# a directional aim pose sets its own facing, so don't fight it while it holds.
 	look_sign = _face_sign()
 	if not _dir_pose_active:
-		sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
-	if dir != Vector2.ZERO:
+		# An aimed dash pose (_aim_dash_pose) faces the TRAVEL side, which may
+		# oppose the target-committed look_sign — hold its flip while it plays.
+		var side := _clip_flip if _clip_flip != 0.0 else look_sign
+		sprite.flip_h = (side > 0.0) if face_left else (side < 0.0)
+	if _clip_flip != 0.0:
+		# ...and hold its rotation: the dash art is spun along the travel
+		# line (up/down = 90°, diagonals = 45°); the bob would fight it.
+		sprite.rotation = _clip_rot
+		sprite.position.y = 0.0
+	elif dir != Vector2.ZERO:
 		sprite.position.y = -absf(sin(anim_t * 11.0)) * 3.0
 		sprite.rotation = sin(anim_t * 11.0) * 0.06
 	else:

@@ -438,6 +438,11 @@ func _run_systems() -> void:
 	game.player.pending_theme_note = ""
 	print("ok: assassin stab surge (stab + dash-stab, scales with missing health)")
 
+	# 3a2. Directional dash (player-reported 2026-07-09): a dash follows the
+	# HELD move keys — down+dash goes DOWN — and the flat L/R dash art spins
+	# to the travel line. No keys held keeps the old straight-ahead dash.
+	await _test_dash_direction()
+
 	# 3b. Target lock cycling.
 	var d1 := _dummy(Vector2(120, 0))
 	var d2 := _dummy(Vector2(-160, 30))
@@ -1505,6 +1510,94 @@ func _run_campaign_ch2() -> void:
 
 # ---- CORE: every boss resolves to a real fight track (gameplay path) ----
 # The story spawn and dev roster both go through _boss_track(); a boss that
+# ---- CORE: directional dash (player-reported 2026-07-09) -----------------
+# A dash travels along the HELD move keys, not the horizontal facing —
+# down+dash goes DOWN, diagonals go diagonal — and the authored left/right
+# dash clip is flipped to the travel side + ROTATED the rest of the way
+# (straight up/down = 90°, diagonals = 45°; player_combat._aim_dash_pose).
+# No keys held falls back to the facing (the old straight-ahead dash).
+func _test_dash_direction() -> void:
+	game.player.set_class("assassin")
+	game.player.pending_theme_note = ""
+	var has_dash_clip: bool = game.player._clips.has("dash")
+
+	# Hold S, dash: must travel straight DOWN; facing RIGHT the pose spins
+	# +90° (clockwise — the right-facing art pitches nose-down).
+	game.player.global_position = game.room_center(game.cur_room)
+	_press_key(KEY_S, true)
+	await _frames(1)
+	# Set the facing AFTER the awaited frame: the per-frame soft-target
+	# orientation may rewrite it, and no frame runs between here and the cast.
+	game.player.facing = Vector2.RIGHT
+	var start: Vector2 = game.player.global_position
+	game.player.cds["a2"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("a2")
+	var moved: Vector2 = game.player.global_position - start
+	if moved.y < 30.0 or absf(moved.x) > 0.5:
+		_press_key(KEY_S, false)
+		return _fail("down+dash must travel DOWN (moved %s)" % moved)
+	if has_dash_clip and absf(game.player._clip_rot - PI / 2.0) > 0.01:
+		_press_key(KEY_S, false)
+		return _fail("down-dash pose should spin the right art +90° cw (got %.2f rad)"
+			% game.player._clip_rot)
+
+	# Hold S+A, dash: down-LEFT diagonal; the art flips to the LEFT side
+	# and spins the remaining 45° (counter-clockwise off the left facing).
+	game.player.global_position = game.room_center(game.cur_room)
+	_press_key(KEY_A, true)
+	await _frames(1)
+	start = game.player.global_position
+	game.player.cds["a2"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("a2")
+	moved = game.player.global_position - start
+	_press_key(KEY_S, false)
+	_press_key(KEY_A, false)
+	if moved.y < 30.0 or moved.x > -30.0:
+		return _fail("down-left dash must travel the diagonal (moved %s)" % moved)
+	if has_dash_clip:
+		if game.player._clip_flip >= 0.0:
+			return _fail("down-left dash pose must flip to the LEFT side")
+		if absf(game.player._clip_rot + PI / 4.0) > 0.01:
+			return _fail("down-left dash pose should spin -45° (got %.2f rad)"
+				% game.player._clip_rot)
+	await _frames(1)
+
+	# No keys held: the dash still fires straight along the facing.
+	game.player.global_position = game.room_center(game.cur_room)
+	await _frames(1)
+	game.player.facing = Vector2.RIGHT  # after the frame — same reason as above
+	start = game.player.global_position
+	game.player.cds["a2"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.use_ability("a2")
+	moved = game.player.global_position - start
+	if moved.x < 30.0 or absf(moved.y) > 0.5:
+		return _fail("keyless dash must fall back to the facing (moved %s)" % moved)
+	if has_dash_clip and game.player._clip_rot != 0.0:
+		return _fail("a flat dash must not rotate the art (got %.2f rad)"
+			% game.player._clip_rot)
+
+	# Restore shared state the way the kit sections do.
+	game.player.cds["a2"] = 0.0
+	game.player.mp = game.player.max_mp
+	game.player.stab_ls_time = 0.0
+	game.player.set_class("warrior")
+	game.player.pending_theme_note = ""
+	await _frames(2)
+	print("ok: directional dash (held keys steer it, L/R art spins to match)")
+
+
+## Synthesize a raw key press/release (dashes read Input.is_key_pressed).
+func _press_key(key: int, down: bool) -> void:
+	var ev := InputEventKey.new()
+	ev.keycode = key
+	ev.physical_keycode = key
+	ev.pressed = down
+	Input.parse_input_event(ev)
+
+
 # declares music with no installed track (and no valid fallback) plays SILENT.
 # Assert every catalogued boss lands on an actual boss_* track.
 func _test_boss_music() -> void:

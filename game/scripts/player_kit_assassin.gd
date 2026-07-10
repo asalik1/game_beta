@@ -29,7 +29,7 @@ func _shadow_dash(f := 1.0) -> void:
 	var eaten := _dash_cdr_conversion()
 	melee_swing = 0.16 * (1.0 - minf(0.10, eaten * Balance.DASH_CDR_TO_ANIM))
 	melee_style = "stab"
-	melee_dir = facing
+	melee_dir = dash_vec()  # the blade thrusts along the travel line, not just L/R
 	# NO i-frame (round 43): a short-cd dash with immunity was too
 	# abusable once the refund made it semi-spammable. The dodge is the
 	# MOVEMENT itself; only the ult's all-in commit grants immunity.

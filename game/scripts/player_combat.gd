@@ -22,6 +22,16 @@ func _move_dir() -> Vector2:
 	return dir.normalized()
 
 
+## The direction a movement dash travels: the HELD move input (8-way), or
+## straight along the facing when no key is down. Dashes follow your FEET,
+## not your aim — orientation can stay committed to a target while the dash
+## carries you any direction (player-reported: down+dash still fired sideways
+## because facing is a purely horizontal vector).
+func dash_vec() -> Vector2:
+	var dir := _move_dir()
+	return dir if dir != Vector2.ZERO else facing
+
+
 ## Which way the hero is oriented: -1 left, +1 right. Facing is kept as a
 ## horizontal unit vector (see player.gd), so its x sign IS the orientation.
 func _face_sign() -> float:
@@ -426,6 +436,7 @@ func _afterimages(start: Vector2, end: Vector2, color: Color, count := 3,
 		ghost.hframes = sprite.hframes
 		ghost.frame = sprite.frame
 		ghost.flip_h = sprite.flip_h
+		ghost.rotation = sprite.rotation  # an aimed dash pose carries into its trail
 		ghost.scale = sprite.scale
 		ghost.global_position = start.lerp(end, t) + sprite.position
 		ghost.modulate = Color(color, 0.5)
@@ -679,6 +690,24 @@ func _grant_stab_surge() -> void:
 	stab_ls_amt = Balance.SURGE_LS_FLOOR + Balance.SURGE_LS_SCALE * (1.0 - hp / max_hp)
 
 
+## Aim the PLAYING dash clip along the travel line. The sheets only author a
+## left/right dash, so an off-axis dash flips the art to the horizontal side
+## of travel and ROTATES it the rest of the way: straight up/down spins the
+## L/R art 90° (up-while-facing-left = 90° clockwise, up-while-facing-right =
+## 90° counter-clockwise — angle_to encodes exactly that), diagonals 45°. A
+## pure-vertical dash keeps whichever way the hero already faced. The held
+## pose is released by the next _play_clip (player.gd bob gate holds it).
+func _aim_dash_pose(dvec: Vector2) -> void:
+	if strip_frames == 0 or _clip_loop or _dir_pose_active or dvec == Vector2.ZERO:
+		return  # no sheet / no one-shot playing / 8-way pose owns the sprite
+	var side := signf(dvec.x) if dvec.x != 0.0 else _face_sign()
+	_clip_flip = side
+	_clip_rot = Vector2(side, 0.0).angle_to(dvec)
+	sprite.flip_h = (side > 0.0) if face_left else (side < 0.0)
+	sprite.rotation = _clip_rot
+	sprite.position.y = 0.0
+
+
 ## `heavy` sells mass instead of speed: a denser, slower-fading ghost
 ## trail + landing dust/shake (the warrior's charge — an armored wall
 ## arriving, not an assassin's blink; same instant mechanics).
@@ -686,7 +715,9 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 	game.sfx("blink")
 	var color := _tcolor if _themed else Color(0.6, 0.7, 1.0)
 	var start := global_position
-	global_position = game.clamp_to_zone(start + facing * dist, start)
+	var dvec := dash_vec()
+	global_position = game.clamp_to_zone(start + dvec * dist, start)
+	_aim_dash_pose(dvec)  # before the ghost trail below, so the afterimages copy the pose
 	var end := global_position
 	if iframe > 0.0:
 		hurt_cd = maxf(hurt_cd, iframe)  # brief immunity while dashing
