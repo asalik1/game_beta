@@ -525,7 +525,7 @@ const MOB_RETARGET_EVERY := 1.0 # seconds between sticky target re-picks
 # in phase 2/3), never mob one-shots. Opening bids — measure-then-correct.
 const PARTY_HP_MULT: Array[float] = [0.0, 1.0, 1.90, 2.80, 3.70]
 const PARTY_DMG_MULT: Array[float] = [0.0, 1.0, 1.10, 1.20, 1.30]
-const PARTY_BOSS_RATE: Array[float] = [0.0, 1.0, 1.10, 1.20, 1.30]  # boss cast cadence (unused until phase 2/3)
+const PARTY_BOSS_RATE: Array[float] = [0.0, 1.0, 1.10, 1.20, 1.30]  # boss cast cadence (consumed at Boss._think's shared cd tick, MP-09)
 
 static func party_hp(n: int) -> float:
 	return PARTY_HP_MULT[clampi(n, 1, 4)]
@@ -647,6 +647,15 @@ static func potion_slots(chid: String) -> int:
 	if n >= 8:
 		return POTION_SLOTS_ACT2
 	return int(POTION_SLOTS.get(clampi(n, 1, 7), 1))
+
+# Chest on-screen size (grade-telegraphed chests, 2026-07-10): the
+# footprint the old 16px tier art had at scale 3. Art.scale_for keeps it
+# constant however large the authored chest_<grade>.png happens to be.
+const CHEST_SCALE_16PX := 3.0
+# Halo alpha on B+ chests — the "rich chest across the room" tell.
+const CHEST_HALO_ALPHA := 0.5
+# How far a chest's art is washed toward its grade colour (0 = raw art).
+const CHEST_GRADE_TINT := 0.3
 
 # River wading (terrain mechanic, Graphics & Ambience track): speed
 # multiplier in the water for player AND enemies; the bridge is dry.

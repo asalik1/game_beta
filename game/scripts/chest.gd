@@ -1,8 +1,16 @@
 class_name Chest extends Area2D
-## A loot chest lying in the world. Walk over it to open:
-## you get one piece of gear (grade depends on the chest tier) plus some gold.
+## A loot chest lying in the world. Walk over it to open: you get one piece
+## of gear plus some gold.
+##
+## GRADE-TELEGRAPHED (2026-07-10): the gear grade is rolled when the chest
+## DROPS, not when it opens, and the chest wears that grade's art
+## (assets/sprites/chest_<f..s>.png) — so spotting a B-chest across a ch7
+## room is a loot moment before you ever touch it. The roll itself is
+## unchanged (same chapter band, same slot weighting): only the moment of
+## rolling moved. `tier` still sets the gold bonus and gem odds.
 
 var tier := "wood"
+var grade := "F"           # rolled at drop; the sprite shows it
 var opened := false
 var buried := false        # buried: invisible until the player comes near
 var game: Game
@@ -14,6 +22,10 @@ static func drop(game_node: Node2D, chest_tier: String, pos: Vector2) -> Chest:
 	c.game = game_node
 	c.tier = chest_tier
 	c.global_position = pos
+	var grade_rng := RandomNumberGenerator.new()
+	grade_rng.randomize()
+	c.grade = Balance.roll_weighted_grade(
+		Balance.gear_weights(String(game_node.chapter_id)), grade_rng)
 
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
@@ -21,9 +33,33 @@ static func drop(game_node: Node2D, chest_tier: String, pos: Vector2) -> Chest:
 	shadow.position = Vector2(0, 16)
 	c.add_child(shadow)
 
+	# The TELL: B-grade and better wear a grade-coloured halo, so a rich
+	# chest is legible from across the room (the loot moment). Scaled by
+	# terrain luminance like every other light — additive glow blows out
+	# daylight scenes otherwise.
+	if Items.GRADES.find(c.grade) >= Items.GRADES.find("B"):
+		var halo := Sprite2D.new()
+		halo.texture = Art.tex("glow")
+		var gc: Color = Items.GRADE_COLOR[c.grade]
+		halo.modulate = Art.hdr(Color(gc.r, gc.g, gc.b, Balance.CHEST_HALO_ALPHA))
+		halo.scale = Vector2(1.35, 1.35)
+		halo.z_index = -1
+		c.add_child(halo)
+		var pulse := c.create_tween().set_loops()
+		pulse.tween_property(halo, "scale", Vector2(1.55, 1.55), 0.9)
+		pulse.tween_property(halo, "scale", Vector2(1.35, 1.35), 0.9)
+
 	var sprite := Sprite2D.new()
-	sprite.texture = Art.tex(Items.CHEST_TIERS[chest_tier]["sprite"])
-	sprite.scale = Vector2(3, 3)
+	sprite.texture = Art.tex("chest_" + c.grade.to_lower())
+	# A light wash of the grade colour on top of the authored material, so
+	# F..C (four wooden boxes) still separate at a glance. Same colour
+	# language the item names and gem icons already speak.
+	sprite.modulate = Color(1, 1, 1).lerp(
+		Items.GRADE_COLOR[c.grade], Balance.CHEST_GRADE_TINT)
+	# Grade chests are authored at ~32px; scale_for normalizes any source
+	# size back to the on-screen footprint the 16px tier art had.
+	var base_scale := Art.scale_for(sprite.texture, Balance.CHEST_SCALE_16PX)
+	sprite.scale = base_scale
 	c.add_child(sprite)
 
 	c.collision_layer = 0
@@ -40,10 +76,10 @@ static func drop(game_node: Node2D, chest_tier: String, pos: Vector2) -> Chest:
 	game_node.add_child(c)
 
 	# Little "pop" when it lands.
-	sprite.scale = Vector2(0.5, 0.5)
+	sprite.scale = base_scale * 0.17
 	var tween := c.create_tween()
-	tween.tween_property(sprite, "scale", Vector2(3.4, 3.4), 0.15)
-	tween.tween_property(sprite, "scale", Vector2(3, 3), 0.1)
+	tween.tween_property(sprite, "scale", base_scale * 1.13, 0.15)
+	tween.tween_property(sprite, "scale", base_scale, 0.1)
 	return c
 
 
@@ -83,7 +119,10 @@ func _on_body_entered(body: Node) -> void:
 
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var item := Items.roll_chapter_gear(game.chapter_id, rng, body.cls)
+	# The grade was rolled (and shown) at drop time — honour it, don't re-roll.
+	# Same distribution as the old roll_chapter_gear path: chapter band, then
+	# _roll_slot. The chest never lies about what it holds.
+	var item := Items.roll_gear_of_grade(grade, rng, body.cls)
 	game.give_loot({"kind": "item", "item": item}, global_position)
 	game.loot_fanfare(item["grade"], global_position)  # rarity chime + beam
 	var bonus_gold := rng.randi_range(3, 8) * (1 + ["wood", "silver", "gold"].find(tier))
