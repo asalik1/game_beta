@@ -911,10 +911,27 @@ func _toll() -> void:
 	var count := maxi(1, 3 - toll_count)
 	toll_count += 1
 	var centers: Array = []
-	var base_ang := randf() * TAU
+	# The shadows ring the SAINT (the shelter pulls you toward him — his
+	# anti-kite identity), but the exam must be PASSABLE (player report,
+	# 2026-07-09: a random ring angle put every shadow on the far side of a
+	# kiter — geometrically unreachable inside the fuse). Fix: the ring is
+	# ANCHORED player-side (one shadow always on your side of the saint),
+	# and that anchor is reach-clamped — if even the near shadow out-ranges
+	# what your feet can cover in the fuse, it slides along the line toward
+	# you until the sprint is honest. Late tolls (fewer shadows) inherit it.
+	var player: Player = game.player
+	var to_p := (player.global_position - global_position).normalized() \
+		if is_instance_valid(player) else Vector2.RIGHT
+	var base_ang := to_p.angle()
 	for i in count:
 		centers.append(game.clamp_to_zone(global_position
 			+ Vector2.from_angle(base_ang + TAU * i / float(count)) * 310.0, home))
+	if is_instance_valid(player):
+		var reach: float = player.speed * 2.2 * 0.85  # fuse secs, with a margin
+		var near: Vector2 = centers[0]  # the player-side anchor
+		if near.distance_to(player.global_position) > reach:
+			centers[0] = game.clamp_to_zone(player.global_position
+				+ (near - player.global_position).normalized() * reach, home)
 	game.telegraph_safe(centers, 100.0, 2.2, dmg * 1.8, {"color": INCENSE})
 
 
