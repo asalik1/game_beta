@@ -51,6 +51,22 @@ var hazard_speed := 1.0  # terrain patch effect (ice boosts, void slows)
 # behavior is bit-identical with the old direct game.player reads.
 var target: Player = null
 var retarget_t := 0.0
+# --- net mirror (MP-09) ---
+# Solo stays inert by construction: net_id stays 0, net_mirror stays
+# false, and every hook below is gated on them plus game.net_host() —
+# zero new behavior offline.
+var net_id := 0            # session-unique id the HOST stamps at spawn (0 = unannounced)
+var net_mirror := false    # guest-side presentation clone: no AI, no damage, no collision
+var net_target := Vector2.ZERO  # last snapshot position (mirrors chase it)
+var net_walk := false      # last snapshot "moving" flag (drives the walk/idle strip)
+# MP-10: the striking PLAYER for the current take_damage call — hit_enemy
+# sets it before every player hit, and the host's hit RPC sets the guest's
+# shell. Captured-and-cleared at the top of take_damage; solo it always
+# resolves to THE player, so reflect/counter/aggro reads are bit-identical.
+var hit_src: Player = null
+# MP-10: squelch the mirror status forward while apply_toxin calls
+# apply_burn internally — one "toxin" event carries both to the host.
+var _status_mute := false
 # Animation seam (Track C): >1 when an _anim strip override is installed.
 var anim_frames := 0
 var anim_fps := 6.0
@@ -164,6 +180,15 @@ static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level :
 	var e := Enemy.new()
 	e._setup(game_node, enemy_kind, pos, at_level)
 	return e
+
+
+func _ready() -> void:
+	# MP-09: every enemy that enters the HOST's tree is announced to the
+	# session HERE — one choke point under add_enemy, boss spawns, trait
+	# summons and dev spawns alike (they all add_child eventually).
+	# Mirrors and solo skip; net_id stays 0 offline.
+	if not net_mirror and game != null and game.net_host():
+		game.net_session().host_register_enemy(self)
 
 
 func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1) -> void:
@@ -323,6 +348,12 @@ func _apply_strip(info: Dictionary) -> void:
 ## exists — so ability code can call it unconditionally and it lights up
 ## when the art lands. Re-triggering restarts the strip from frame 0.
 func play_action(action: String) -> void:
+	# MP-09: when hosting, the one-shot rides to every guest mirror as an
+	# event RPC — wired at the DEFINITION so all ~91 boss call sites
+	# broadcast for free. It precedes the art checks: both sides ship the
+	# same assets, so each machine resolves the strip locally.
+	if net_id > 0 and not net_mirror and game != null and game.net_host():
+		game.net_session().host_enemy_action(net_id, action)
 	if _strip_idle.is_empty():
 		return
 	var info := Art.action_info(_sprite_key, action)
@@ -351,6 +382,12 @@ func _physics_process(delta: float) -> void:
 	# MP §4.3: active_rooms is the union of every player's room — solo it
 	# is exactly {cur_room}, so this is the old gate to the frame.
 	if zone_idx >= 0 and not game.active_rooms.has(zone_idx):
+		return
+	# MP-09: mirrors are presentation clones — the sim lives on the host.
+	# They chase the ~20 Hz snapshot and run the strip clock; nothing
+	# below (AI, statuses, windups, contact damage) may run on one.
+	if net_mirror:
+		_net_mirror_tick(delta)
 		return
 	anim_t += delta
 	attack_cd = maxf(0.0, attack_cd - delta)
@@ -492,6 +529,95 @@ func _physics_process(delta: float) -> void:
 		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
 	else:
 		sprite.position.y = 0.0
+
+
+## MP-09: per-frame mirror upkeep — chase the last snapshot position
+## (simple exponential smoothing; enemies tolerate far simpler
+## interpolation than the player's two-snapshot buffer) and run the
+## same strip playback the live path uses (one-shot action strips,
+## walk/idle swap at the snapshot's walk flag, the little bob).
+func _net_mirror_tick(delta: float) -> void:
+	global_position = global_position.lerp(net_target, minf(1.0, delta * 10.0))
+	if not _strip_action.is_empty():
+		_action_t += delta
+		var idx := int(_action_t * anim_fps)
+		if idx >= anim_frames:
+			_end_action()
+		else:
+			sprite.frame = idx
+	elif anim_frames > 1:
+		if not _strip_walk.is_empty() and net_walk != _strip_walking:
+			_strip_walking = net_walk
+			_apply_strip(_strip_walk if net_walk else _strip_idle)
+		# The live path ticks anim_t once per frame plus once more while
+		# moving — 1x idle, 2x walking. Same clock here.
+		anim_t += delta * (2.0 if net_walk else 1.0)
+		sprite.frame = int(anim_t * anim_fps) % anim_frames
+	if net_walk:
+		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
+	else:
+		sprite.position.y = 0.0
+	# MP-10: tick the status BOOKKEEPING timers so the guest's own hit
+	# math (marked_crit, Killing Frost, Serpent's Due, crush/rupture,
+	# Enfeeble stacks) reads them exactly like solo. Pure timers — no DoT
+	# damage, no juice: the host simulates the real statuses and its hp
+	# truth arrives in the 20 Hz stream.
+	stun_time = maxf(0.0, stun_time - delta)
+	slow_time = maxf(0.0, slow_time - delta)
+	vuln_time = maxf(0.0, vuln_time - delta)
+	if vuln_time <= 0.0:
+		vuln_mult = 1.5
+	hobble_t = maxf(0.0, hobble_t - delta)
+	brittle_t = maxf(0.0, brittle_t - delta)
+	if brittle_t <= 0.0:
+		brittle = 0
+	crush_t = maxf(0.0, crush_t - delta)
+	burn_time = maxf(0.0, burn_time - delta)
+	if burn_time <= 0.0:
+		toxin = 0
+	bleed_time = maxf(0.0, bleed_time - delta)
+
+
+## MP-09: apply one host state sample to this MIRROR — position target,
+## facing, walk flag, the hp fraction that drives the overhead bar, and
+## (MP-10) the untargetable phase flag that gates guest auto-aim.
+func net_apply_state(pos: Vector2, flip: bool, walk: bool, hp_frac: float, untarget := false) -> void:
+	net_target = pos
+	net_walk = walk
+	untargetable = untarget
+	if sprite != null:
+		sprite.flip_h = flip
+	hp = max_hp * clampf(hp_frac, 0.0, 1.0)
+	if hp < max_hp and not dying and hp_bar_bg != null:
+		hp_bar_bg.visible = true
+		hp_bar_fg.visible = true
+		_update_hp_fill()
+
+
+## MP-09: the host said this mirror's original died — play the same die
+## juice (sound, burst, fade) and free. No rewards, no death triggers:
+## those ran on the host, and anything visual they cause (bloat's burst
+## telegraph) arrives as its own event.
+func net_mirror_die() -> void:
+	if dying:
+		return
+	dying = true
+	if not is_inside_tree():
+		queue_free()  # killed before the deferred add landed — just vanish
+		return
+	collision_layer = 0
+	collision_mask = 0
+	if hp_bar_bg:
+		hp_bar_bg.visible = false
+		hp_bar_fg.visible = false
+		hp_bar_cap.visible = false
+	remove_from_group("enemies")
+	game.sfx("edie")
+	game.burst(global_position, Color(0.9, 0.3, 0.3))
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.35)
+	tween.parallel().tween_property(sprite, "scale", sprite.scale * 1.3, 0.35)
+	tween.tween_callback(queue_free)
 
 
 ## The enemy's current prey (MP targeting seam). Re-resolves IMMEDIATELY
@@ -650,6 +776,18 @@ func _has_los(player: Node2D) -> bool:
 
 # ---------------------------------------------------------------- traits ---
 
+## Dynamic hazard drop (MP-10): the ONE door for hazards the combat sim
+## writes mid-fight (sower trails, bloat pools, every boss slag/ice/
+## poison patch) — paints locally exactly like the old direct call, and
+## when hosting fans the same patch to guests so each machine's own
+## _apply_hazards ticks its own player (owner applies; §4.1). World-gen
+## hazards are seed-pure and never come through here.
+func _hazard(zi: int, type: String, pos: Vector2, radius: float, dur: float, drift := Vector2.ZERO) -> void:
+	game._add_hazard(zi, type, pos, radius, dur, drift)
+	if net_id > 0 and not net_mirror and game.net_host():
+		game.net_session().host_hazard(zi, type, pos, radius, dur, drift)
+
+
 ## Contact/bolt damage for this hit — frenzy quickens AND hardens the
 ## wounded (2026-07-07 identity pass).
 func _hit_dmg() -> float:
@@ -729,7 +867,7 @@ func _tick_traits(delta: float) -> void:
 		if sow_t <= 0.0:
 			sow_t = Balance.MOB_SOW_EVERY
 			if zone_idx >= 0:
-				game._add_hazard(zone_idx, "lava", global_position, 46.0, Balance.MOB_SOW_LIFE)
+				_hazard(zone_idx, "lava", global_position, 46.0, Balance.MOB_SOW_LIFE)
 	# --- spawner: sprout a weak add until killed (ch6) ---
 	if traits.has("spawner"):
 		spawn_cd = maxf(0.0, spawn_cd - delta)
@@ -979,11 +1117,17 @@ func promote_elite() -> void:
 	ring.scale = Vector2(1.5, 0.85)
 	ring.z_index = -1
 	add_child(ring)
+	# MP-09: post-spawn promotions (the room-ambush roll promotes AFTER
+	# add_enemy) reach mirrors as their own event; pre-spawn promotions
+	# ride the spawn event's elite flag instead (net_id is still 0 here).
+	if net_id > 0 and not net_mirror and game != null and game.net_host():
+		game.net_session().host_enemy_elite(net_id)
 
 
 # ------------------------------------------------------------- statuses ---
 
 func apply_stun(dur: float) -> void:
+	_mirror_status("stun", {"dur": dur})
 	# CC belongs to mobs and elites: bosses are outright IMMUNE (was a
 	# 35% duration tax — short enough to read as a bug at boss doors,
 	# long enough to tax every stun-themed variant's damage budget).
@@ -994,10 +1138,23 @@ func apply_stun(dur: float) -> void:
 	stun_time = maxf(stun_time, dur)
 
 
+## MP-10: a guest's rider on a MIRROR ships to the host, which re-applies
+## it through the real apply_* path with the guest's shell as source. The
+## caller's local field writes still run afterwards — display bookkeeping
+## the guest's own hit math reads (ticked down in _net_mirror_tick).
+func _mirror_status(kind: String, data: Dictionary) -> void:
+	if not net_mirror or _status_mute or net_id <= 0:
+		return
+	if game == null or not game.net_guest():
+		return
+	game.net_session().guest_enemy_status(net_id, kind, data)
+
+
 ## `src` (MP phase 0): the player who applied the DoT — ticks crit off
 ## THEIR sheet. Callers that don't pass it yet fall back to game.player
 ## at tick time (solo: identical, there is only one player).
 func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6), src: Player = null) -> void:
+	_mirror_status("burn", {"dps": dps, "dur": dur, "color": color})
 	burn_dps = maxf(burn_dps, dps)
 	burn_time = maxf(burn_time, dur)
 	burn_color = color
@@ -1008,6 +1165,7 @@ func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6), src: Play
 ## Wind Cuts (mage) bleed — a red physical DoT that REFRESHES, never stacks
 ## (keeps the stronger dps and the longer window, exactly like burn).
 func apply_bleed(dps: float, dur: float, src: Player = null) -> void:
+	_mirror_status("bleed", {"dps": dps, "dur": dur})
 	bleed_dps = maxf(bleed_dps, dps)
 	bleed_time = maxf(bleed_time, dur)
 	if src != null:
@@ -1018,18 +1176,45 @@ func apply_bleed(dps: float, dur: float, src: Player = null) -> void:
 ## rule — each application adds a toxin stack that deepens the TICK.
 ## Fast cadences ramp fast; the stack dies when the burn runs out.
 func apply_toxin(dps: float, dur: float, color := Color(0.5, 1.2, 0.5), src: Player = null) -> void:
+	_mirror_status("toxin", {"dps": dps, "dur": dur, "color": color})
 	toxin = mini(toxin + 1, Balance.TOXIN_MAX_STACKS)
+	_status_mute = true  # one "toxin" event carries the burn too (host restacks)
 	apply_burn(dps * (1.0 + toxin * Balance.TOXIN_PER_STACK), dur, color, src)
+	_status_mute = false
 
 
 ## Ice hits crack the target: brittle stacks amplify ICE damage only
 ## (theme-internal — see Balance.BRITTLE_PER_STACK).
 func add_brittle() -> void:
+	_mirror_status("brittle", {})
 	brittle = mini(brittle + 1, Balance.BRITTLE_MAX_STACKS)
 	brittle_t = Balance.BRITTLE_DUR
 
 
+## EXPOSED / Death Mark (MP-10 seam): the direct vuln_time writes now
+## have one door, so a mirror target forwards the mark to the host.
+## mult < 0 keeps the current amp (plain Expose); Death Mark passes its own.
+func apply_vuln(dur: float, mult := -1.0) -> void:
+	_mirror_status("vuln", {"dur": dur, "mult": mult})
+	vuln_time = dur
+	if mult > 0.0:
+		vuln_mult = mult
+
+
+## Player-driven displacement (MP-10 seam): every knock/pull/shove goes
+## through here — a mirror forwards it so the HOST's enemy actually moves
+## (and its crush window opens for real). The local crush bookkeeping
+## still sets: the guest's own crush/rupture hit math reads it.
+func apply_knock(vec: Vector2, crush := false) -> void:
+	_mirror_status("knock", {"v": vec, "crush": crush})
+	if not net_mirror:
+		knock = vec  # a mirror's position belongs to the snapshot stream
+	if crush:
+		crush_t = Balance.CRUSH_WINDOW
+
+
 func apply_slow(mult: float, dur: float) -> void:
+	_mirror_status("slow", {"mult": mult, "dur": dur})
 	if self is Boss:
 		# CC-immune, same rule as stuns — but a failed slow HOBBLES
 		# (round 49d, the concussion move for slows): the boss shrugs
@@ -1047,11 +1232,28 @@ func apply_slow(mult: float, dur: float) -> void:
 # --------------------------------------------------------------- damage ---
 
 func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, silent := false) -> void:
+	# MP-10: capture-and-clear the striking player FIRST, so no early
+	# return leaks it into an unrelated later hit. hit_enemy sets it for
+	# every player hit; the host's hit RPC sets the attacking guest's
+	# shell. Solo it is always THE player — reads below are bit-identical.
+	var striker: Player = hit_src if hit_src != null and is_instance_valid(hit_src) else null
+	hit_src = null
+	if net_mirror:
+		# MP-10: a guest's hit — optimistic local juice + the funnel RPC
+		# (MP-09 dropped it silently; mirror hp truth still rides the sync).
+		_net_mirror_hit(amount, from_dir, is_crit, silent)
+		return
 	if dying or untargetable:
 		return
 	# Wounding one pack member wakes its whole pack (ranged openers too).
 	if zone_idx >= 0 and not force_aggro:
 		game.wake_pack(zone_idx, pack_id)
+	# MP-10: damage TURNS the victim — it hunts its attacker for at least
+	# one sticky retarget window. Solo: the attacker IS the only player,
+	# so this re-picks the same prey (bit-identical).
+	if striker != null and not striker.dead:
+		target = striker
+		retarget_t = Balance.MOB_RETARGET_EVERY
 	if vuln_time > 0.0:
 		amount *= vuln_mult
 	if hobble_t > 0.0:
@@ -1075,15 +1277,16 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	# POUNCE whiff: an overshot pouncer is exposed — punish it.
 	if pounce_whiff > 0.0:
 		amount *= 1.0 + Balance.MOB_POUNCE_PUNISH
-	# REFLECT: while the forge-shield holds, bounce a share back at the player.
-	# MP: should bounce onto the ATTACKING player once take_damage carries a
-	# source ref; until then the resolved target (solo: THE player) eats it.
-	var striker: Player = _get_target()
+	# REFLECT: while the forge-shield holds, bounce a share back at the
+	# ATTACKING player (MP-10: hit_src carries it; solo fallback is the
+	# resolved target — THE player, exactly the old read).
+	if striker == null:
+		striker = _get_target()
 	if reflect_t > 0.0 and not silent and is_instance_valid(striker):
 		striker.take_damage(amount * Balance.MOB_REFLECT_FRAC, dmg_type, self)
 		game.burst(global_position, Color(1.0, 0.8, 0.4), 8)
-	# COUNTER: struck while its guard is raised, it staggers YOU.
-	# MP: same note as REFLECT — the stagger belongs to the attacker.
+	# COUNTER: struck while its guard is raised, it staggers YOU — the
+	# attacker (same striker resolution as REFLECT above).
 	if counter_t > 0.0 and not silent and is_instance_valid(striker):
 		var pushback := (striker.global_position - global_position).normalized()
 		striker.take_damage(dmg * 0.5, dmg_type, self)
@@ -1119,8 +1322,48 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		die()
 
 
+## MP-10, GUEST: a local player hit landed on this MIRROR. Play the solo
+## juice OPTIMISTICALLY (number, flash, bar, predicted hp — trusted
+## client) and ship the hit to the host, which re-resolves take_damage's
+## internal multipliers (vuln/ward/plate/pounce) against authoritative
+## state. The RAW amount travels; the local copies below only shape the
+## DISPLAYED number off this guest's own bookkeeping. The 20 Hz stream
+## re-asserts true hp; the kill event owns death. SILENT hits (hazard
+## ticks, dev sweeps) are host business — a guest's own copy of a lava
+## patch must not double-bill the host through the funnel.
+func _net_mirror_hit(amount: float, from_dir: Vector2, is_crit: bool, silent: bool) -> void:
+	if dying or untargetable or silent:
+		return
+	if game != null and game.net_guest():
+		game.net_session().guest_hit_enemy(net_id, amount, from_dir, is_crit)
+	var shown := amount
+	if vuln_time > 0.0:
+		shown *= vuln_mult
+	if hobble_t > 0.0:
+		shown *= 1.0 + Balance.HOBBLE_MULT
+	if plate_dr > 0.0:
+		shown *= 1.0 - plate_dr
+	hp -= shown  # optimistic (kill-window reads: executes, dash refunds)
+	game.sfx("ehit", 1.0, 0.0, 4.0)
+	if is_crit:
+		game.spawn_text(global_position + Vector2(0, -34), "%d!" % int(shown), Color(1.0, 0.55, 0.1))
+	else:
+		game.spawn_text(global_position + Vector2(0, -30), str(int(shown)), Color(1, 1, 1))
+	sprite.modulate = Color(3, 3, 3)
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate", base_mod, 0.15)
+	if hp_bar_bg and hp < max_hp:
+		hp_bar_bg.visible = true
+		hp_bar_fg.visible = true
+		_update_hp_fill()
+
+
 func die() -> void:
 	dying = true
+	# MP-09: the host fans the death out — guest mirrors play the die
+	# juice and free (rewards, quests and death triggers stay host-side).
+	if net_id > 0 and not net_mirror and game.net_host():
+		game.net_session().host_enemy_died(net_id)
 	collision_layer = 0
 	collision_mask = 0
 	if hp_bar_bg:
@@ -1134,7 +1377,7 @@ func die() -> void:
 	# BLOAT: bursts into a lingering blight pool — kill it at range.
 	if traits.has("bloat") and zone_idx >= 0:
 		game.telegraph(global_position, 70.0, 0.4, 0.0, {"color": Color(0.5, 0.9, 0.4, 0.5)})
-		game._add_hazard.call_deferred(zone_idx, "poison", global_position, 70.0, Balance.MOB_BLOAT_LIFE)
+		_hazard.call_deferred(zone_idx, "poison", global_position, 70.0, Balance.MOB_BLOAT_LIFE)
 		game.burst(global_position, Color(0.5, 0.95, 0.4), 20)
 		game.sfx("nova", 0.7)
 	# MARTYR: its death-wail heals AND enrages nearby allies.
@@ -1153,11 +1396,13 @@ func die() -> void:
 			"THE BOND RESTORES IT", Color(0.5, 1.0, 0.5), 2.5)
 		game.burst(tp.global_position, Color(0.5, 1.0, 0.5), 18)
 		game.sfx("mend", 0.7)
-	# MP: reward attribution, not targeting — co-op awards FULL XP to every
-	# party member in the active room set (MULTIPLAYER.md §5.5, phase 2).
-	# Solo: the one registered player, exactly as before.
+	# Reward attribution, not targeting: co-op awards FULL XP to every
+	# party member in the active room set (MULTIPLAYER.md §5.5). The host
+	# keeps its solo award below; MP-10 fans the same amount to guests.
 	if is_instance_valid(game.player):
 		game.player.gain_xp(xp_value)
+	if net_id > 0 and not net_mirror and game.net_host():
+		game.net_session().host_award_xp(xp_value)
 	# Deferred: loot spawns collision objects, which is not allowed
 	# in the middle of a physics callback (e.g. a projectile hit).
 	game.on_enemy_died.call_deferred(self)

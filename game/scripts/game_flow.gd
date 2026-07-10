@@ -292,6 +292,12 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 	player.mp = player.max_mp
 	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
 	Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), boss_pos)
+	# MP-11 (§5.5): the brawl pays every head — each guest gets its own
+	# personal chest + pile (its machine spawns and collects them).
+	if net_host():
+		net_session().host_award_all([
+			{"k": "chest", "tier": "gold", "at": clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos)},
+			{"k": "gold", "n": int(Story.ALL_ENEMIES[kind].get("gold", 50)), "at": boss_pos}])
 
 func on_boss_died(kind: String, dead: Boss = null) -> void:
 	boss_done[kind] = true
@@ -347,6 +353,14 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	if loot_rng.randf() < Balance.bag_drop_chance(bag_act):
 		player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
 
+	# MP-11 (§5.5): the same boss pays every head. One personal package
+	# per guest — host-rolled (loot_rng, one full roll sequence per player,
+	# so heads are independent), applied on the OWNER's machine through its
+	# own award paths (bag-or-ground, mail, wallet). The host's own share
+	# stayed inline above; bounty/vault credit fans with it.
+	if net_host():
+		net_session().host_boss_kill(kind, boss_pos, boss_lv, first_clear)
+
 	# Now that the room is safe, a wandering merchant MAY set up camp.
 	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
 		call_deferred("_merchant_arrives", mzi)
@@ -361,6 +375,12 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	# the next boss down the road.
 	if kind == String(Story.chapter(chapter_id).get("final_boss", "")):
 		flush_dropped_loot()  # forgotten ground loot mails itself (round 8)
+		# MP-11 (§5.5): chapter end is per head too — every guest flushes
+		# ITS OWN ground strays into ITS OWN mailbox (character-owned, rides
+		# their save home), and a first clear pays each guest the same
+		# legible beat, rolled and mailed on their machine.
+		if net_host():
+			net_session().host_chapter_end(first_clear, boss_lv)
 		quest_key = "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
 		refresh_quest()
 		# Progression: this character has finished the chapter (kept across
@@ -485,6 +505,11 @@ func on_enemy_died(e: Enemy) -> void:
 		elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
 			# 2026-07-09: bag grade follows the chapter's boss table (like boss bags).
 			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
+		# MP-11 (§5.5): the pinata pays every head — a personal, host-rolled
+		# package per guest (roll_elite_pack mirrors the block above; keep
+		# them in step) + their own elite bounty credit.
+		if net_host():
+			net_session().host_elite_kill(e)
 	else:
 		# Chance-based chest drops (Greed nudges the odds up from its first point).
 		var bonus := Stats.greed_loot(player.current_greed()) if is_instance_valid(player) else 0.0
@@ -498,6 +523,13 @@ func on_enemy_died(e: Enemy) -> void:
 		# (summons/mood spawns pay nothing and can never spill one).
 		if e.gold_value > 0 and loot_rng.randf() < Balance.GOLDRUSH_DROP_CHANCE:
 			Pickup.drop_goldrush(self, e.global_position + Vector2(0, 26))
+		# MP-11 (§5.5): the same trash kill pays every head — each guest gets
+		# a personal kill event: the BASE pile (their machine applies its own
+		# Hunger/weekly/greed), their own chest-chance roll (it reads THEIR
+		# greed, so it must roll owner-side — mob_kill_share mirrors the
+		# block above; keep them in step), and a host-rolled Gold Rush coin.
+		if net_host():
+			net_session().host_mob_kill(e)
 
 	# Room clear tracking: the boss only appears once its room is purged.
 	if e.zone_idx >= 0:
@@ -514,6 +546,8 @@ func on_enemy_died(e: Enemy) -> void:
 				curse_pending.erase(e.zone_idx)
 				_curse_payout(e.zone_idx)
 			bounty_progress("rooms_cleared")
+			if net_host():
+				net_session().host_party_credit("room")  # MP-11: guests' boards advance too
 			_try_spawn_boss(e.zone_idx)
 			_recheck_gates()  # "clear" locks on this room's edges open
 			if zones[e.zone_idx].get("boss", "") == "":
@@ -545,6 +579,155 @@ func _curse_payout(zi: int) -> void:
 	if is_instance_valid(player):
 		spawn_text(player.global_position + Vector2(0, -78),
 			"THE CURSE LIFTS — its hoard is yours", Color(0.8, 0.6, 1.0), 3.5)
+	# MP-11 (§5.5): the party shared the crueler pack, so the bargain pays
+	# every head — a personal golden chest + gem roll per guest.
+	if net_host():
+		net_session().host_curse_payout(zi)
+
+
+# ==================================================== MP-11 loot instancing
+# §5.5: every reward faucet pays PER HEAD — the host triggers, each
+# machine spawns/collects its own copy. The helpers below are the two
+# halves of the personal-event machinery (net_session.gd carries them):
+#   roll_*_pack — HOST-side: one player's share, rolled from loot_rng
+#     (a full independent roll sequence per player). Mirrors of the solo
+#     blocks above — when a solo faucet is tuned, tune its pack twin.
+#   apply_award_events / mob_kill_share — OWNER-side: land the share
+#     through the normal award paths (give_loot bag-or-ground + the
+#     owner's dropped_loot/mail registry, acquire_bag, Chest/Pickup
+#     spawns, own Hunger/greed/weekly multipliers). Solo never runs any
+#     of this — the solo paths above are untouched.
+#
+# Award event schema (one Array of these per package, RPC-safe types):
+#   {"k": "gold",  "n": base_amount, "at": Vector2}   # pre-multiplier base
+#   {"k": "chest", "tier": "wood|silver|gold", "at": Vector2}
+#   {"k": "gem",   "gem": {...}, "at": Vector2, "ty": text_y_offset}
+#   {"k": "item",  "item": {...}, "at": Vector2}
+#   {"k": "stone", "stone": {...}, "at": Vector2}     # text = "+ <name>"
+#   {"k": "bag",   "grade": "F".."S"}
+#   {"k": "sfx",   "id": "...", "vol": 1.0}
+#   {"k": "toast", "text": "...", "color": Color, "dur": 0.0}
+
+## OWNER-side: apply a personally-rolled award package. Called deferred
+## (RPC contexts spawn Area2Ds — the flush-guard rule, CLAUDE.md).
+func apply_award_events(events: Array) -> void:
+	for raw in events:
+		var ev: Dictionary = raw
+		var at: Vector2 = ev.get("at", player.global_position)
+		match String(ev.get("k", "")):
+			"gold":
+				Pickup.drop_gold(self, _kill_gold(int(ev.get("n", 0))), at)
+			"chest":
+				Chest.drop(self, String(ev.get("tier", "wood")), at)
+			"gem":
+				var gem: Dictionary = ev.get("gem", {})
+				if give_loot({"kind": "gem", "gem": gem}, at):
+					spawn_text(at + Vector2(0, float(ev.get("ty", -70))),
+						"+ " + Items.gem_title(gem), Items.gem_color(gem))
+			"item":
+				var it: Dictionary = ev.get("item", {})
+				if give_loot({"kind": "item", "item": it}, at):
+					spawn_text(at + Vector2(0, -92), "+ " + Items.title(it),
+						Items.GRADE_COLOR.get(String(it.get("grade", "F")), Color(1, 1, 1)))
+			"stone":
+				var st: Dictionary = ev.get("stone", {})
+				if give_loot({"kind": "stone", "stone": st}, at):
+					spawn_text(at + Vector2(0, -92), "+ " + String(st.get("name", "Stone")),
+						Color(0.6, 0.9, 1.0))
+			"bag":
+				player.acquire_bag(Items.make_bag(String(ev.get("grade", "F"))))
+			"sfx":
+				sfx(String(ev.get("id", "chest")), float(ev.get("vol", 1.0)))
+			"toast":
+				if is_instance_valid(player):
+					spawn_text(player.global_position + Vector2(0, -78),
+						String(ev.get("text", "")), ev.get("color", Color(1, 1, 1)),
+						float(ev.get("dur", 0.0)))
+
+
+## OWNER-side: this machine's PERSONAL share of a party trash kill —
+## the mirror of on_enemy_died's non-elite block (keep them in step).
+## The pile applies the owner's own Hunger (+weekly gild at drop_gold,
+## greed at pickup); the chest chance reads the OWNER's greed — the one
+## roll that cannot happen host-side (greed is never synced); the Gold
+## Rush coin was host-rolled per player (goldrush). Called deferred.
+func mob_kill_share(pos: Vector2, base_gold: int, goldrush: bool) -> void:
+	Pickup.drop_gold(self, _kill_gold(base_gold), pos)
+	var bonus := Stats.greed_loot(player.current_greed()) if is_instance_valid(player) else 0.0
+	var roll := loot_rng.randf()
+	if roll < Balance.MOB_SILVER_CHEST_CHANCE + bonus * 0.3:
+		Chest.drop(self, "silver", pos)
+	elif roll < Balance.MOB_WOOD_CHEST_CHANCE + bonus:
+		Chest.drop(self, "wood", pos)
+	if goldrush:
+		Pickup.drop_goldrush(self, pos + Vector2(0, 26))
+
+
+## HOST-side: one player's share of a boss kill — the mirror of
+## on_boss_died's drop block (keep them in step). first_clear is the
+## HOST's chapter state: the trigger is shared, the payout per head
+## (§5.5). `cls` is the receiving player's class (gear rolls their kit).
+func roll_boss_pack(kind: String, boss_pos: Vector2, boss_lv: int,
+		first_clear: bool, cls: String) -> Array:
+	var evs: Array = [
+		{"k": "chest", "tier": "gold", "at": clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos)},
+		{"k": "gold", "n": int(Story.ALL_ENEMIES[kind].get("gold", 50)), "at": boss_pos},
+	]
+	var gem_count := 0
+	if Balance.regular_gems_drop(chapter_id):
+		if first_clear:
+			gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
+		elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
+			gem_count = 1
+	var gem_lvl := Balance.gem_drop_level(chapter_id) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
+	for gi in gem_count:
+		evs.append({"k": "gem", "gem": drop_gem(gem_lvl),
+			"at": boss_pos + Vector2(-34.0 + 34.0 * gi, 30), "ty": -70 - 20 * gi})
+	var ggrade := Items.roll_boss_gear_grade(chapter_id, loot_rng)
+	if ggrade != "":
+		evs.append({"k": "item", "item": Items.roll_gear_of_grade(ggrade, loot_rng, cls),
+			"at": boss_pos + Vector2(40, 30)})
+	if loot_rng.randf() < Balance.bag_drop_chance(Story.act_of(chapter_id)):
+		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(chapter_id, loot_rng)})
+	return evs
+
+
+## HOST-side: one player's share of an elite kill — the mirror of
+## on_enemy_died's elite block (keep them in step). Gold rides along
+## (the base; the owner multiplies).
+func roll_elite_pack(e: Enemy) -> Array:
+	var pos := e.global_position
+	var evs: Array = [{"k": "gold", "n": e.gold_value, "at": pos}]
+	if Balance.regular_gems_drop(chapter_id) and (e.level >= Balance.ELITE_GEM_SURE_LEVEL \
+			or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE):
+		evs.append({"k": "gem", "gem": drop_gem(Balance.gem_drop_level(chapter_id)),
+			"at": pos, "ty": -70})
+	evs.append({"k": "chest",
+		"tier": "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
+		"at": pos + Vector2(44, 0)})
+	if loot_rng.randf() < Balance.ELITE_STONE_CHANCE:
+		evs.append({"k": "stone", "stone": Items.make_reset_stone(), "at": pos + Vector2(-36, 8)})
+	elif loot_rng.randf() < Balance.ELITE_TOME_CHANCE:
+		evs.append({"k": "stone", "stone": Items.make_respec_tome(), "at": pos + Vector2(-36, 8)})
+	elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
+		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(chapter_id, loot_rng)})
+	return evs
+
+
+## HOST-side: one player's share of a curse payout — the mirror of
+## _curse_payout above (keep them in step). `level` is the receiving
+## player's own level (the Lv2-gem odds scale off the head it pays).
+func roll_curse_pack(zi: int, level: int) -> Array:
+	var pos := room_center(zi) + Vector2(0, -60)
+	var evs: Array = [{"k": "chest", "tier": "gold", "at": pos}]
+	if Balance.regular_gems_drop(chapter_id):
+		evs.append({"k": "gem",
+			"gem": drop_gem(2 if loot_rng.randf() < Balance.gem_lv2_chance(level) else 1),
+			"at": pos + Vector2(44, 24), "ty": -40})
+	evs.append({"k": "sfx", "id": "nova", "vol": 0.8})
+	evs.append({"k": "toast", "text": "THE CURSE LIFTS — its hoard is yours",
+		"color": Color(0.8, 0.6, 1.0), "dur": 3.5})
+	return evs
 
 
 ## The room's last pack falls: a brief green cleansing pulse — the

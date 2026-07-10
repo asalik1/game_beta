@@ -408,11 +408,27 @@ func net_online() -> bool:
 	return net != null and bool(net.is_online())
 
 
-## Online AND not the authority: wave-4 guests mirror an enemy-less
-## world (the host owns the enemy sim; phase 2 streams it). Branches on
+## Online AND not the authority: guests don't run the enemy sim — the
+## host streams it and they render mirrors (MP-09). Branches on
 ## multiplayer.is_server(), never "am I the host player" (§3.1).
 func net_guest() -> bool:
 	return net_online() and not multiplayer.is_server()
+
+
+## Online AND the authority: the host mirrors its simulation outward —
+## enemy spawns/deaths, ~20 Hz state, ability one-shots, telegraphs
+## (MP-09). Solo is offline, so this is false and every hook it gates
+## stays inert.
+func net_host() -> bool:
+	return net_online() and multiplayer.is_server()
+
+
+## The gameplay bridge (/root/NetworkManager/Session), or null when the
+## autoload is absent (check_compile --script mode). Only dereference
+## under a net_host()/net_guest() guard — those imply a live session.
+func net_session() -> Node:
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	return net.session if net != null else null
 
 
 ## THE pause seam (MULTIPLAYER.md §5.4). Every gameplay pause point —
@@ -1817,6 +1833,13 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	# stand a chip-death. The dome eats the sky as well as the bullets.
 	if _sheltered(pos):
 		return
+	# MP-09: the host mirrors every tell to guests as a VISUAL-ONLY event —
+	# co-op dodging needs a guest to see exactly what the host sees,
+	# including tells the boss aims at THE GUEST (pick_target already
+	# targets any player). One hook here rides under every call site
+	# (bosses, mob traits, bloat bursts). Solo: net_host() is false.
+	if net_host():
+		net_session().host_telegraph(pos, radius, delay, opts)
 	var zone := Sprite2D.new()
 	zone.texture = Art.tex("telegraph")
 	zone.global_position = pos
@@ -1853,19 +1876,29 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 		var sink := sword.create_tween()
 		sink.tween_property(sword, "modulate:a", 0.0, 0.35)
 		sink.tween_callback(sword.queue_free)
-	if is_instance_valid(player) and not player.dead \
-			and player.global_position.distance_to(pos) <= radius + 8.0 \
-			and not _sheltered(player.global_position):
-		# (A player standing INSIDE a live shelter is immune to the rim of an
-		# overlapping tell — safe means safe, damage and riders both.)
+	if opts.get("net_visual", false):
+		return  # MP-09: a mirror of the danger, not the danger — damage and
+		        # riders stay host-side (guest hits arrive via MP-10's RPC)
+	# MP-10: the eruption examines EVERY registered player (solo: the one
+	# entry — checks identical to the old single read). A remote shell's
+	# take_damage/riders forward to the owning peer (§4.1 damage row).
+	for pl in players:
+		if pl == null or not is_instance_valid(pl) or pl.dead:
+			continue
+		if pl.global_position.distance_to(pos) > radius + 8.0:
+			continue
+		if _sheltered(pl.global_position):
+			# (A player standing INSIDE a live shelter is immune to the rim
+			# of an overlapping tell — safe means safe, damage and riders.)
+			continue
 		# HEAVY: a telegraphed nuke pierces a chip-armed hurt_cd gate — a stray
 		# graze must never eat the punish for standing in the circle.
-		player.take_damage(damage, "magic", null, true)
+		pl.take_damage(damage, "magic", null, true)
 		# Riders (mob snare patch): a caught player can also be frozen/rooted.
 		if opts.has("freeze"):
-			player.apply_freeze(float(opts["freeze"]))
+			pl.apply_freeze(float(opts["freeze"]))
 		if opts.has("root"):
-			player.apply_root(float(opts["root"]))
+			pl.apply_root(float(opts["root"]))
 
 
 ## INVERSE telegraph (safe-zone): after the delay the whole arena hits
@@ -1926,6 +1959,11 @@ class SafeDome extends Node2D:
 ## "callout" + a rising "sfx" whose swell IS the audible timer.
 ## Shared by every safe-spot fight (Vess / Varo / Serane / Cyrraeth).
 func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, opts := {}) -> void:
+	# MP-09: mirror the safe-spot exam to guests — circles, beacons, decoys
+	# and the dread ramp all render there (visual-only; the wail's damage
+	# stays host business until MP-10). Same hook shape as telegraph().
+	if net_host():
+		net_session().host_telegraph_safe(centers, radius, delay, opts)
 	if opts.has("callout") and is_instance_valid(player):
 		spawn_text(player.global_position + Vector2(0, -84), String(opts["callout"]),
 			opts.get("color", Color(0.5, 1.0, 0.7)))
@@ -1986,31 +2024,45 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		return
 	sfx("slam")
 	shake(9.0)
-	if not is_instance_valid(player) or player.dead:
-		if is_instance_valid(hud):
-			hud.danger_end(true)
-		return
-	var sheltered := false
-	for c in centers:
-		var safe_at: Vector2 = c
-		if player.global_position.distance_to(safe_at) <= radius + 8.0:
-			sheltered = true
-			break
+	# The LOCAL player's verdict drives THIS machine's HUD dread ramp and
+	# shelter burst — exactly the old single-player reads.
+	var sheltered := true
+	if is_instance_valid(player) and not player.dead:
+		sheltered = _safe_at(centers, radius, player.global_position)
 	if is_instance_valid(hud):
 		hud.danger_end(sheltered)
-	if sheltered:
+	if sheltered and is_instance_valid(player) and not player.dead:
 		burst(player.global_position, Color(0.6, 1.0, 0.75), 12)  # sheltered
-		return
-	burst(player.global_position, Color(1.0, 0.35, 0.2), 18)
-	# HEAVY: the arena-wide blast pierces a chip-armed hurt_cd gate (the known
-	# cheese: tank a graze right before Vess's wail and eat the wail for free).
-	player.take_damage(damage, "magic", null, true)
-	# Some inverse telegraphs don't just hurt — they FREEZE or ROOT the
-	# player caught in the open (Serane's Flash Freeze, ch5+).
-	if opts.has("freeze"):
-		player.apply_freeze(float(opts["freeze"]))
-	if opts.has("root"):
-		player.apply_root(float(opts["root"]))
+	if opts.get("net_visual", false):
+		return  # MP-09: visual-only mirror — caught-in-the-open damage,
+		        # freeze and root resolve on the host (MP-10's player-damage
+		        # seam carries a caught guest's share to its owner)
+	# MP-10: the wail examines EVERY registered player (solo: the one
+	# entry — same checks as the old single read). Shells forward (§4.1).
+	for pl in players:
+		if pl == null or not is_instance_valid(pl) or pl.dead:
+			continue
+		if _safe_at(centers, radius, pl.global_position):
+			continue
+		burst(pl.global_position, Color(1.0, 0.35, 0.2), 18)
+		# HEAVY: the arena-wide blast pierces a chip-armed hurt_cd gate (the
+		# known cheese: tank a graze right before Vess's wail, eat it free).
+		pl.take_damage(damage, "magic", null, true)
+		# Some inverse telegraphs don't just hurt — they FREEZE or ROOT the
+		# player caught in the open (Serane's Flash Freeze, ch5+).
+		if opts.has("freeze"):
+			pl.apply_freeze(float(opts["freeze"]))
+		if opts.has("root"):
+			pl.apply_root(float(opts["root"]))
+
+
+## Inside any of a safe-spot exam's true shelters? (Same +8 px rim grace
+## as the old inline check.)
+func _safe_at(centers: Array, radius: float, pos: Vector2) -> bool:
+	for c in centers:
+		if pos.distance_to(c) <= radius + 8.0:
+			return true
+	return false
 
 
 ## A soft light pillar rising from a safe circle: readable over ground

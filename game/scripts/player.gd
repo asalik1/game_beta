@@ -344,6 +344,11 @@ func _remote_present(delta: float) -> void:
 ## sleep). Dodging AND acting are denied — the punish for being caught in
 ## the open. A no-op if already frozen longer.
 func apply_freeze(dur: float) -> void:
+	if not is_locally_controlled():
+		# MP-10: control on a shell rides to the owner (§4.1 damage row).
+		if game != null and game.net_host():
+			game.net_session().host_player_status(peer_id, "freeze", dur)
+		return
 	if dead:
 		return
 	frozen_time = maxf(frozen_time, dur)
@@ -354,6 +359,10 @@ func apply_freeze(dur: float) -> void:
 ## ROOTED: can't move for `dur`, but may still cast (Serane's Shatter
 ## Lance, ch6 vine roots). The kite is denied; the kit is not.
 func apply_root(dur: float) -> void:
+	if not is_locally_controlled():
+		if game != null and game.net_host():
+			game.net_session().host_player_status(peer_id, "root", dur)
+		return
 	if dead:
 		return
 	rooted_time = maxf(rooted_time, dur)
@@ -364,6 +373,10 @@ func apply_root(dur: float) -> void:
 ## Refreshed every frame the aura holds you (mob frost_aura trait) — no
 ## text spam; the walking-through-molasses feel is the tell.
 func apply_chill(mult: float, dur := 0.35) -> void:
+	if not is_locally_controlled():
+		if game != null and game.net_host():
+			game.net_session().host_player_status(peer_id, "chill", mult, dur)
+		return
 	if dead:
 		return
 	chill_mult = minf(chill_mult, mult) if chill_time > 0.0 else mult
@@ -555,10 +568,17 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	if dead:
 		return
 	if not is_locally_controlled():
-		# MP (wave 4): remotes are presentation — a host-side enemy swing
-		# at a guest's mirror must not run ITS survival sim here (worst
-		# case it "dies" and yanks THIS machine's death flow). # MP:
-		# phase-2 routes the hit to the owning peer (§4.1 damage row).
+		# MP-10 (§4.1 "host decides, owner applies"): a host-side hit on
+		# this remote shell forwards to the OWNING peer, whose real
+		# take_damage runs mitigation/dodge/hurt_cd (incl. heavy-pierce)
+		# on the machine that owns the stats. attacker travels as its
+		# net id — the owner re-resolves against its own mirror. On a
+		# guest a shell hit stays inert (only the host decides).
+		if game != null and game.net_host():
+			var aid := 0
+			if attacker is Enemy:
+				aid = (attacker as Enemy).net_id
+			game.net_session().host_player_hit(peer_id, amount, dmg_type, aid, heavy)
 		return
 	if hurt_cd > 0.0 and (hurt_was_heavy or not heavy):
 		return

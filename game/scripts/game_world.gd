@@ -410,9 +410,9 @@ func _build_room(i: int) -> void:
 func _spawn_room_enemies(i: int) -> void:
 	zone_alive[i] = 0
 	if net_guest():
-		return  # MP: wave-4 guests mirror an enemy-less world — the host
-		        # owns the enemy sim (# MP: phase-2 replaces with host
-		        # snapshot mirror).
+		return  # MP-09: guests never spawn enemies — the host owns the sim
+		        # and its net_session spawn events + ~20 Hz state stream
+		        # build the mirrors this room shows.
 	var spawned: Array = []
 	# +15% density (presence pass 2026-07-07): seeded per room so a save
 	# reloads the same pack. Each authored spawn has a MOB_DENSITY_EXTRA
@@ -474,7 +474,7 @@ func _spawn_room_enemies(i: int) -> void:
 ## a miniboss that always fits the local power band.
 func _spawn_elite_room(i: int, rng: RandomNumberGenerator) -> void:
 	if net_guest():
-		return  # MP: enemies are host-side (phase-2 snapshot mirror)
+		return  # MP-09: enemies are host-side (mirrored via net_session)
 	var kind := ""
 	var lvl := 1
 	for j in range(i - 1, -1, -1):
@@ -1279,8 +1279,8 @@ func _spawn_boss(zi: int, kind: String) -> void:
 
 func _try_spawn_boss(zi: int) -> void:
 	if net_guest():
-		return  # MP: bosses are host-side too (# MP: phase-2 replaces
-		        # with host snapshot mirror)
+		return  # MP-09: bosses are host-side too (mirrored via net_session,
+		        # boss bar included)
 	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 or zi != cur_room:
 		return
 	var kind: String = zones[zi].get("boss", "")

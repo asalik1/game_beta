@@ -20,6 +20,14 @@ var tex_kind := ""
 var spr: Sprite2D = null       # thrown knives spin in flight
 var spin := true               # darts (assassin fan) fly POINT-FIRST instead
 var homing := false            # Wind firebolt: friendly bolt curves to a target
+# --- MP-10 (§4.1 projectile row: spawn event + local flight) ---
+# net_visual: another peer's projectile flying HERE as pure presentation —
+# no damage, no riders; it bursts on the bodies the real one would hit and
+# dies (small divergence accepted). net_id: hostile shots get a session id
+# so a guest's Mirrorstep can consume the REAL bolt host-side.
+var net_visual := false
+var net_id := 0
+var _net_announced := false
 var _already_hit := {}
 
 # Glow tint per projectile type — bright and readable at a glance.
@@ -127,6 +135,12 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not _net_announced:
+		# MP-10: announce on the FIRST flight frame — spawn() returns
+		# before callers set source/pierce/theme, so the event snapshot
+		# waits one tick (16 ms; imperceptible on the copies).
+		_net_announced = true
+		_net_announce()
 	if homing and friendly:
 		_steer_home(delta)
 	global_position += vel * delta
@@ -136,6 +150,21 @@ func _physics_process(delta: float) -> void:
 	if life <= 0.0:
 		_bloom()
 		queue_free()
+
+
+## MP-10: real projectiles fan out as spawn events; everyone else flies a
+## visual copy (net_session._rpc_spawn_projectile). Only the OWNER of a
+## friendly shot announces it (copies have no source and stay silent);
+## hostile shots are host business. Offline: net_online is false — inert.
+func _net_announce() -> void:
+	if net_visual or game == null or not game.net_online():
+		return
+	if friendly:
+		if source_player != null and is_instance_valid(source_player) \
+				and source_player.is_locally_controlled():
+			game.net_session().announce_projectile(self)
+	elif game.net_host():
+		game.net_session().announce_projectile(self)
 
 
 ## Curve toward the nearest live enemy, keeping speed — a gentle homing arc
@@ -188,6 +217,24 @@ func _impact_ring() -> void:
 
 
 func _on_body_entered(body: Node) -> void:
+	if net_visual:
+		# MP-10 visual copy: burst where the real one bites, never damage
+		# (the real hit arrives as its own RPC on the authority's side).
+		if friendly and body is Enemy:
+			if _already_hit.has(body):
+				return
+			_already_hit[body] = true
+			game.burst(global_position, glow_color, 5)
+			_impact_ring()
+			if not pierce:
+				queue_free()
+		elif not friendly and body is Player:
+			game.burst(global_position, glow_color, 5)
+			queue_free()
+		elif body is StaticBody2D:
+			game.burst(global_position, Color(glow_color, 0.5), 3)
+			queue_free()
+		return
 	if friendly and body is Enemy:
 		if _already_hit.has(body):
 			return

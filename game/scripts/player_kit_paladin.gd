@@ -284,9 +284,14 @@ func _chains_of_wrath(f := 1.0) -> void:
 		if dir == Vector2.ZERO:
 			dir = Vector2.RIGHT
 		var dest: Vector2 = game.clamp_to_zone(global_position + dir * 70.0, e.global_position)
-		var tw := e.create_tween()
-		tw.tween_property(e, "global_position", dest, 0.28) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		if e.net_mirror:
+			# MP-10: the drag is world business — the host tweens its REAL
+			# enemy to this dest; the mirror follows through the 20 Hz stream.
+			game.net_session().guest_enemy_status(e.net_id, "drag", {"dest": dest, "dur": 0.28})
+		else:
+			var tw := e.create_tween()
+			tw.tween_property(e, "global_position", dest, 0.28) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	# The hammer of verdict falls from the sky while the chains reel in.
 	var hammer := Sprite2D.new()
 	hammer.texture = Art.tex("w_hammer")

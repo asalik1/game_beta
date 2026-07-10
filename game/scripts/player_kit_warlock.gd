@@ -72,7 +72,7 @@ func _spread_curse(pos: Vector2) -> void:
 	for e in _enemies_within(pos, 160.0):
 		if hexed.has(e) or e.dying:
 			continue
-		e.vuln_time = 3.0  # EXPOSED
+		e.apply_vuln(3.0)  # EXPOSED (MP-10 seam: mirrors forward the mark)
 		_hex_mark(e)
 		_beam_fx(pos, e.global_position, Color(0.8, 0.45, 1.0), 0.14)
 		return
@@ -254,7 +254,8 @@ func _void_rift(f := 1.0) -> void:
 		for e in _enemies_within(pos, radius * 1.3):
 			var to_rift: Vector2 = pos - e.global_position
 			if to_rift.length() > 20.0:
-				e.knock = to_rift.normalized() * (520.0 if hard else 300.0)
+				# apply_knock (MP-10 seam): a mirror ships the pull to the host
+				e.apply_knock(to_rift.normalized() * (520.0 if hard else 300.0))
 	if is_instance_valid(mark):
 		mark.queue_free()
 	if is_instance_valid(vortex):
@@ -340,7 +341,7 @@ func _voidmaw_wave() -> void:
 		var dist := away.length()
 		if dist > 12.0:
 			var push := clampf(1.0 - dist / max_reach, 0.15, 1.0)  # closer = harder
-			e.knock = away.normalized() * 640.0 * push
+			e.apply_knock(away.normalized() * 640.0 * push)
 		_beam_fx(global_position, e.global_position, col, 0.14)
 		hit_enemy(e, 0.4, eff.duplicate())
 		if not e.dying:

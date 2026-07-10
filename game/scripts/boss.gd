@@ -25,6 +25,16 @@ static func make_boss(game_node: Node2D, boss_kind: String, pos: Vector2, at_lev
 	var b := Boss.new()
 	b._setup(game_node, boss_kind, pos, at_level)
 	b.aggro_range = 900.0
+	# MP-09: party scaling for bosses (MULTIPLAYER.md §5.2) — bosses don't
+	# route through add_enemy, so the scalars ride the factory (every
+	# spawn path calls it). A party of 1 skips the block entirely: solo
+	# is bit-identical. Guest-built MIRRORS pick this up too — harmless,
+	# their hp renders from the host's synced fraction either way.
+	var party: int = b.game.players.size()
+	if party > 1:
+		b.max_hp *= Balance.party_hp(party)
+		b.hp = b.max_hp
+		b.dmg *= Balance.party_dmg(party)
 	return b
 
 
@@ -87,10 +97,17 @@ func _think(delta: float) -> Vector2:
 	var to_player: Vector2 = player.global_position - global_position
 	var dist := to_player.length()
 
-	ability_cd = maxf(0.0, ability_cd - delta)
-	ring_cd = maxf(0.0, ring_cd - delta)
-	blink_cd = maxf(0.0, blink_cd - delta)
-	special_cd = maxf(0.0, special_cd - delta)
+	# MP-09: PARTY_BOSS_RATE (§5.2) — the party-size cadence knob, applied
+	# at the ONE point every shared ability timer ticks through: bosses
+	# cast/telegraph faster with more players. A party of 1 multiplies by
+	# 1.0 (solo bit-identical); movement/phase timers keep real time.
+	var cd_dt: float = delta
+	if game.players.size() > 1:
+		cd_dt = delta * Balance.PARTY_BOSS_RATE[clampi(game.players.size(), 1, 4)]
+	ability_cd = maxf(0.0, ability_cd - cd_dt)
+	ring_cd = maxf(0.0, ring_cd - cd_dt)
+	blink_cd = maxf(0.0, blink_cd - cd_dt)
+	special_cd = maxf(0.0, special_cd - cd_dt)
 
 	match kind:
 		"fangmaw":
@@ -741,7 +758,7 @@ func _shovelwork(player: Player) -> void:
 	game.burst(global_position, GRAVE, 20)
 	# The torn ground stays torn: churned earth lingers where he surfaces,
 	# so walking off the eruption line onto his exit isn't free (r51).
-	game._add_hazard(game.cur_room, "churned", global_position, 95.0, 5.0)
+	_hazard(game.cur_room, "churned", global_position, 95.0, 5.0)
 	roar()
 
 
@@ -1198,7 +1215,7 @@ func _do_quench(player: Player) -> void:
 		for i in 2:
 			var slag: Vector2 = game.clamp_to_zone(quench_target
 				+ Vector2.from_angle(randf() * TAU) * 150.0, home)
-			game._add_hazard(game.cur_room, "lava", slag, 68.0, 6.0)
+			_hazard(game.cur_room, "lava", slag, 68.0, 6.0)
 
 
 # ------------------------------------------ Cinderhide the Unquenched (L25) ---
@@ -1313,7 +1330,7 @@ func _vent_breath(player: Player) -> void:
 		var at: Vector2 = game.clamp_to_zone(
 			global_position + dir.rotated(randf_range(-0.35, 0.35)) * (150.0 + i * 90.0), home)
 		game.telegraph(at, 80.0, 0.5 + i * 0.1, dmg * vf, {"color": LAVA})
-		game._add_hazard(game.cur_room, "lava", at, 70.0, 6.0)
+		_hazard(game.cur_room, "lava", at, 70.0, 6.0)
 		# Its own vent lava must NOT melt its plating (see _on_lava).
 		game.hazards.back()["no_melt"] = true
 
@@ -1623,7 +1640,7 @@ func _ice_field() -> void:
 	var base_ang := randf() * TAU
 	for i in 4:
 		var at: Vector2 = game.clamp_to_zone(home + Vector2.from_angle(base_ang + TAU * i / 4.0) * 320.0, home)
-		game._add_hazard(game.cur_room, "ice", at, 130.0, 90.0)
+		_hazard(game.cur_room, "ice", at, 130.0, 90.0)
 
 
 # ------------------------------------------- Serane the Icebound (L31) ---
@@ -1641,7 +1658,7 @@ func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -
 		var rect := _arena_rect()
 		for i in 6:
 			var at: Vector2 = game.clamp_to_zone(rect.get_center() + Vector2.from_angle(TAU * i / 6.0) * 360.0, home)
-			game._add_hazard(game.cur_room, "ice", at, 150.0, 60.0)
+			_hazard(game.cur_room, "ice", at, 150.0, 60.0)
 
 	# Signature: FLASH FREEZE — stand in a thawed vent or freeze solid.
 	if special_cd <= 0.0:
@@ -1799,7 +1816,7 @@ func _march_dreamers(delta: float) -> void:
 			var prey: Player = _get_target()
 			if is_instance_valid(prey):
 				var at: Vector2 = game.clamp_to_zone(prey.global_position, home)
-				game._add_hazard(game.cur_room, "slow", at, 90.0, 12.0)
+				_hazard(game.cur_room, "slow", at, 90.0, 12.0)
 			special_cd = maxf(0.0, special_cd - 1.2)
 			d.queue_free()
 			continue
@@ -1815,7 +1832,7 @@ func _frost_hymnal(player: Player) -> void:
 		var at: Vector2 = game.clamp_to_zone(
 			player.global_position + Vector2(randf_range(-200, 200), randf_range(-160, 160)), home)
 		game.telegraph(at, 110.0, 0.9, dmg * 1.2, {"color": FROST})
-		game._add_hazard(game.cur_room, "slow", at, 90.0, 8.0)
+		_hazard(game.cur_room, "slow", at, 90.0, 8.0)
 
 
 # ========================================================== Chapter 6 ---
@@ -1893,7 +1910,7 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 200.0, dmg * 0.7)
 		for i in 3:
 			var at: Vector2 = game.clamp_to_zone(global_position + Vector2.from_angle(randf() * TAU) * randf_range(90.0, 180.0), home)
-			game._add_hazard(game.cur_room, "poison", at, 80.0, 8.0)
+			_hazard(game.cur_room, "poison", at, 80.0, 8.0)
 
 	if dist < _reach(72.0):
 		if attack_cd <= 0.0:
@@ -2023,7 +2040,7 @@ func _tend_blooms() -> void:
 			continue
 		still.append(b)
 		if randf() < 0.01:  # throttled drift-poison spread
-			game._add_hazard(game.cur_room, "poison", b.global_position, 70.0, 5.0,
+			_hazard(game.cur_room, "poison", b.global_position, 70.0, 5.0,
 				Vector2.from_angle(randf() * TAU) * 20.0)
 	blooms = still
 
@@ -2390,7 +2407,7 @@ func _tend_clones() -> void:
 		if not is_instance_valid(c):
 			continue
 		if c.dying:
-			game._add_hazard(game.cur_room, "poison", c.global_position, 90.0, 6.0)
+			_hazard(game.cur_room, "poison", c.global_position, 90.0, 6.0)
 			game.burst(c.global_position, VOIDC, 10)
 			continue
 		still.append(c)

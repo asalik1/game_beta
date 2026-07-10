@@ -1,11 +1,27 @@
 @echo off
-rem NET TEST: two stages, both over localhost ENet.
+rem NET TEST: three stages, all over localhost ENet.
 rem   1. NetworkManager session harness (MP-05) - the NET_VERSION auth
 rem      gate and peer lifecycle (game/scripts/tests/net_test.gd).
 rem   2. Session gameplay bridge (MP-07) - two REAL game instances share
 rem      one seeded world: join snapshot + world rebuild, player spawn
 rem      fan-out, 20 Hz movement sync, clean leave
 rem      (game/scripts/tests/net_test_session.gd).
+rem   3. Combat over the wire (MP-09) - same harness, --net-stage=3: the
+rem      host spawns wolves + a boss and the guest must SEE them (mirror
+rem      census + gating, position tracking, hp sync, play_action strip,
+rem      boss bar, telegraph event, a kill frees the mirror).
+rem   4. Hit resolution over the wire (MP-10) - same harness, --net-stage=4:
+rem      the guest FIGHTS. Real-intent ability on a mirror (host hp drops by
+rem      the RPC'd amount, mirror converges), burn rider ticks host-side,
+rem      host hit on the shell drops the guest's REAL hp (vitals follow),
+rem      guest projectiles kill a mob (death event + kill XP), hostile
+rem      projectile event renders, boss phase flag round-trips.
+rem   5. Loot instancing (MP-11) - same harness, --net-stage=5: a solo kill
+rem      pays exactly once (regression), a party kill grows BOTH wallets
+rem      from their OWN piles (shells can't eat the other's coins), a boss
+rem      chest opens per player (the guest opening its copy leaves the
+rem      host's shut), a crafted award package lands in the guest's bags,
+rem      and a guest-side ground drop flushes to the GUEST's mailbox.
 rem
 rem Compile gate FIRST, always (test.bat pattern): one parse error anywhere
 rem makes a headless run idle forever. The orchestrator instance spawns and
@@ -31,6 +47,18 @@ set "EF_EXIT=%ERRORLEVEL%"
 if not "%EF_EXIT%"=="0" goto cleanup
 
 powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn' -NoNewWindow -PassThru; if ($p.WaitForExit(180000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  session-stage timeout (180s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
+set "EF_EXIT=%ERRORLEVEL%"
+if not "%EF_EXIT%"=="0" goto cleanup
+
+powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=3' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  combat-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
+set "EF_EXIT=%ERRORLEVEL%"
+if not "%EF_EXIT%"=="0" goto cleanup
+
+powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=4' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  hit-resolution-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
+set "EF_EXIT=%ERRORLEVEL%"
+if not "%EF_EXIT%"=="0" goto cleanup
+
+powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=5' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  loot-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
 set "EF_EXIT=%ERRORLEVEL%"
 goto cleanup
 

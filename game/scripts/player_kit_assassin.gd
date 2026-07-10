@@ -84,6 +84,10 @@ func _mirrorstep_guard(start: Vector2) -> void:
 			game.burst(shooter.global_position, Color(0.7, 0.5, 1.0), 6)
 			hit_enemy(shooter, 0.8, {"aoe": true})
 		game.burst(p.global_position, Color(0.7, 0.5, 1.0), 5)
+		if p.net_visual and p.net_id > 0 and game.net_guest():
+			# MP-10: the REAL bolt lives on the host — consume it there too,
+			# or the deflected shot still lands via the damage RPC.
+			game.net_session().guest_consume_projectile(p.net_id)
 		p.queue_free()
 
 
@@ -130,10 +134,10 @@ func _death_mark() -> void:
 	# Dash's 0.5s — commit to the kill, not to the chip damage.
 	hurt_cd = maxf(hurt_cd, 0.8)
 	hurt_was_heavy = true  # untouchable means untouchable — heavy telegraphs too
-	target.vuln_time = 5.0
 	# Default mark is +50%; shadow's ult carries a leaner "vuln": 0.40 override
 	# (its power lives in the marked-window guaranteed crits, not the amp).
-	target.vuln_mult = 1.0 + float(_tfx.get("vuln", 0.5))
+	# apply_vuln is the MP-10 seam: a mirror target forwards the mark.
+	target.apply_vuln(5.0, 1.0 + float(_tfx.get("vuln", 0.5)))
 	_stun_or_concuss(target, 0.6)
 	if _tfx.has("mark_dot"):
 		# Poison: the mark itself rots the target (and stacks toxin).

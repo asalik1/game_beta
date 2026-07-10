@@ -5,6 +5,12 @@ class_name Pickup extends Area2D
 ##    standing on one retries the claim, so a full bag leaves it put.
 ##    Unclaimed drops flush into the MAILBOX at chapter end
 ##    (game.flush_dropped_loot) — nothing is ever silently lost.
+##
+## MP-11 (§5.5): pickups are PERSONAL. In co-op every machine spawns its
+## OWN copies (the host events kills out per player; each side rolls or
+## applies its own share), so everything lying here belongs to the LOCAL
+## player — collection is gated to it below. Solo is untouched: the one
+## player IS the local player.
 
 var value := 3
 var game: Game
@@ -192,6 +198,11 @@ func _physics_process(delta: float) -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if not body is Player:
+		return
+	# MP-11 (§5.5): only the LOCAL player collects — a remote's shell
+	# gliding over your pile must never eat it. Solo: the one body IS
+	# game.local_player, so this line never fires.
+	if body != game.local_player:
 		return
 	if goldrush:
 		body.goldrush_time = Balance.GOLDRUSH_DUR  # refresh, never stack

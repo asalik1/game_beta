@@ -266,7 +266,7 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	if effects.has("stun_chance") and randf() < effects["stun_chance"]:
 		_stun_or_concuss(e, 0.5)
 	if effects.has("vuln") and randf() < effects["vuln"]:
-		e.vuln_time = 3.0
+		e.apply_vuln(3.0)  # MP-10 seam: a mirror forwards the mark to the host
 		game.spawn_text(e.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
 	if effects.has("heal"):
 		gain_hp(max_hp * effects["heal"])  # bulwark ram / holy strike: SHOWS
@@ -323,6 +323,7 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		gain_hp(max_hp * Balance.PALADIN_HOLY_MEND * (0.33 if effects.get("aoe", false) else 1.0))
 
 	var dir := (e.global_position - global_position).normalized()
+	e.hit_src = self  # MP-10: attribute the blow (reflect/counter/aggro; solo: THE player)
 	e.take_damage(dmg, dir, is_crit)
 	# Shadow phantom step: a dash armed a refund window — the kill that closes
 	# it (usually the Fan or ult-stab, rarely the dash itself) slashes the dash
@@ -345,20 +346,20 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		# knock_no_boss: the shove flings mobs but a boss holds its ground
 		# (mage Frost Nova — the mage spaces with its feet, never by shoving
 		# a boss; warlock Void is the deliberate exception and omits the flag).
-		e.knock = dir * effects["knock"]
+		e.apply_knock(dir * effects["knock"])
 	if effects.has("pull") and not e.dying:
-		e.knock = -dir * 380.0
+		e.apply_knock(-dir * 380.0)
 	if effects.has("shove") and not e.dying:
 		# Void's light shove: opens the crush window every hit, but a boss is
 		# barely moved (BOSS_SHOVE_FACTOR). The crush window is set DIRECTLY so
 		# it fires regardless of how far the target actually slid.
 		var sf: float = effects["shove"]
-		e.knock = dir * (sf * Balance.BOSS_SHOVE_FACTOR if e is Boss else sf)
-		e.crush_t = Balance.CRUSH_WINDOW
+		e.apply_knock(dir * (sf * Balance.BOSS_SHOVE_FACTOR if e is Boss else sf), true)
 	if effects.has("splash"):
 		game.burst(e.global_position, _tcolor if _themed else Color(1.0, 0.6, 0.2), 8)
 		for e2 in _enemies_within(e.global_position, 80.0):
 			if e2 != e and not e2.dying:
+				e2.hit_src = self
 				e2.take_damage(dmg * effects["splash"], (e2.global_position - e.global_position).normalized())
 	# Echo: the hit strikes again at half strength.
 	if effects.has("echo") and not effects.has("_echoed") and randf() < effects["echo"] and not e.dying:
@@ -383,6 +384,7 @@ func _dot_dps(e: Enemy, dps: float) -> float:
 func _stun_or_concuss(e: Enemy, dur: float) -> void:
 	if e is Boss:
 		if not e.dying:
+			e.hit_src = self
 			e.take_damage(current_atk() * dur * Balance.CONCUSSION_MULT,
 				(e.global_position - global_position).normalized())
 	else:
