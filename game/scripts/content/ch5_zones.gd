@@ -45,6 +45,10 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Sleeping Village", "terrain": "ice", "type": "combat",
+			# The dowry beat (2026-07-09 symmetry pass): the act's biggest
+			# temptation — the sleepers cannot object. Closes ch5's resonance
+			# floor to match its ceiling (the two +8 shrine beats).
+			"npcs": [{"sprite": "villager", "x": 250, "y": 780, "prompt": "E — The Open Door", "convo": "ch5_sleeping_house"}],
 			"enemies": [
 				["cold_pilgrim", 450, 320, 0, 29], ["cold_pilgrim", 570, 250, 0, 29],
 				["winterfang", 1350, 850, 1], ["winterfang", 1470, 780, 1], ["hushcaller", 1420, 950, 1, 30, 14],
@@ -265,6 +269,23 @@ const WANDERERS := {
 }
 
 const CONVOS := {
+	# ---- The dowry chest: the chapter's darkest ask, given a door. The
+	# sleepers keep breathing either way; only what they wake TO changes.
+	"ch5_sleeping_house": {"start": "n1", "nodes": {
+		"n1": {"who": "Narrator",
+			"text": "A woman sleeps sitting against the doorpost, shawl frosted stiff, the door open behind her the way it was when the sleep came down the street. Inside, the cold has kept the room honest: a family in their beds, breathing the Queen's slow breath, the father's boots laced by the hearth for a morning he is still expecting. At the foot of the girls' bed sits a dowry chest — brass-bound, unlocked, packed the autumn the snow came early.",
+			"variants": [
+				{"flag": "ch5_dowry_taken", "text": "The house again. You latched the door when you left — that seemed important, after. Inside, the family sleeps on toward a morning with less in it, and the chest at the bed's foot keeps only the shape of what you carried out.", "next": ""},
+			],
+			"choices": [
+				{"text": "Let them keep the morning they lay down expecting. Latch the door against the wind, and go.",
+					"next": "n_leave"},
+				{"text": "The Queen's morning may never come — but winter's will. Open the chest.",
+					"resonance": -10.0, "gold": 90, "flags": {"ch5_dowry_taken": true}, "next": "n_take"},
+			]},
+		"n_leave": {"who": "Narrator", "text": "You latch the door. The wind takes the road behind you and the house holds its breath, all of it kept: the linen, the pearls, the laced boots, the morning.", "next": ""},
+		"n_take": {"who": "Narrator", "text": "Linen. A string of river pearls. Coin saved in a stocking against a wedding. Carried out past sleeping faces that do not stir — nothing wakes them; that is the whole shape of the theft. You latch the door behind you. It seems important, after.", "next": ""},
+	}},
 	# ---- Tracker Yri: Wildfang winter clan. The Whitepelt problem is
 	# HER problem — she frames it as policy before you go, and takes your
 	# accounting after (the kill shifts Wildfang either way, by what you
