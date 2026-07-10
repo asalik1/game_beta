@@ -112,7 +112,11 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	p.add_child(cs)
 
 	p.collision_layer = 0
-	# Layer bits: 1 = walls, 2 = player, 4 = enemies.
+	# Layer bits: 1 = walls, 2 = player, 4 = enemies. MP-verified (phase 0):
+	# every Player body sits on layer 2 (player_core.gd), so a hostile
+	# shot's mask already collides with ANY number of player bodies — no
+	# mask change needed for co-op — and _on_body_entered resolves hits by
+	# CLASS (`body is Player`), never by identity against game.player.
 	p.collision_mask = (1 | 4) if is_friendly else (1 | 2)
 	game_node.add_child(p)
 	return p

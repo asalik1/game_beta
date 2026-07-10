@@ -199,7 +199,7 @@ debugging. Keep the handshake even after Steam auto-updates make it rare.
 | Own player: position, facing, anim, dashes | **Owning client** | `MultiplayerSynchronizer` (on-change mode), ~20 Hz, interpolated on remotes |
 | Own player: ability casts, mana/cooldowns, potions | **Owning client** (trusted) | Client executes locally, RPCs the cast event (ability id, aim point, roll seed) to everyone |
 | Damage to enemies | **Host** | Client RPCs "hit enemy E with ability A" → host resolves through the existing `hit_enemy`/`take_damage` path, broadcasts result (hp, crit text) |
-| Enemy/boss AI, movement, telegraphs | **Host** | Enemies: one hand-rolled ~20 Hz unreliable snapshot RPC (`PackedByteArray`: id, x, y, facing, anim, hp — ~12–20 bytes each; one packet replaces 40 synchronizers). Bosses: `MultiplayerSpawner` + `MultiplayerSynchronizer` (few of them, lots of state) |
+| Enemy/boss AI, movement, telegraphs | **Host** | Enemies: one hand-rolled ~20 Hz unreliable snapshot RPC (`PackedByteArray`: id, x, y, facing, anim, hp — ~12–20 bytes each; one packet replaces 40 synchronizers). Bosses: `MultiplayerSpawner` + `MultiplayerSynchronizer` (few of them, lots of state). `play_action` ability-strip one-shots are EVENTS, not state — they ride as reliable event RPCs beside the sync (attack-anim standing rule, ART_TASKS.md) |
 | Projectiles | Spawn event only | RPC (origin, direction, speed, owner); each peer simulates the flight locally and deterministically; **hits resolve only on the authority side** (host for enemy projectiles/damage, owning client reports its own projectile's hits to host) |
 | Loot rolls, chest contents, gold/XP/gem awards | **Host** | Host rolls with `loot_rng`, RPCs per-player results (§5.5) |
 | Story flags, quest state, chapter transitions | **Host** | Reliable RPCs; flags snapshot on join |
@@ -541,8 +541,15 @@ so the port inherits multiplayer instead of retrofitting it:
   desktop-only (or phone-hosting allowed with a loud "keep the screen on" warning). A dedicated
   headless server — the MMO seam — is what eventually makes host-device fragility moot.
 - **The input-intent layer is the touch seam.** Phase 0's intents struct (§6) is exactly where the
-  planned virtual joystick plugs in: a touch poller fills the same struct the keyboard poller
-  fills, and the netcode never knows the difference.
+  planned touch controls plug in: a touch poller fills the same struct the keyboard poller fills,
+  and the netcode never knows the difference. Agreed control scheme (2026-07-10, Wild Rift as the
+  reference layout): **left thumb = movement joystick** (fills `intent_move`); **right thumb = the
+  ability cluster** — a1/a2/a3/ult arranged in a Wild Rift-style arc in the bottom-right corner,
+  with potion + contextual interact beside it (each button fills its intent bool); **target lock =
+  a dedicated HUD button** — tap to lock the nearest/current target, **hold and swipe away to
+  release the lock** (the swipe-off gesture maps to the same unlock intent the keyboard sends).
+  Because every one of these is an intent-field write, the mobile HUD is pure presentation — no
+  gameplay code forks per platform.
 - **Cellular data is a non-issue but not zero:** the ~20 Hz snapshot stream is tens of KB/s —
   worst case ~50–70 MB/hour, far less with on-change sync. Fine on any plan; worth a line in the
   mobile settings screen someday, not worth engineering around.

@@ -126,7 +126,8 @@ static func selftest(game: Node2D) -> String:
 			return "ch2 boss %s: missing music %s" % [kind, ENEMIES[kind]["music"]]
 		if not Story.ALL_ENEMIES.has(kind):
 			return "ch2 boss %s: not merged into Story.ALL_ENEMIES" % kind
-		var b := spawn(game, kind, game.player.global_position + Vector2(320, 0))
+		# (MP: the LOCAL player — this is the test harness's own hero, not AI targeting.)
+		var b := spawn(game, kind, game.local_player.global_position + Vector2(320, 0))
 		await game.get_tree().create_timer(0.2).timeout
 		if not is_instance_valid(b) or absf(b.max_hp - float(ENEMIES[kind]["hp"])) > 0.01:
 			return "ch2 boss %s: stats did not resolve" % kind

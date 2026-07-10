@@ -43,6 +43,14 @@ var alerted := false  # has shown its "!" bubble
 var los_lost_t := 0.0    # seconds since we last had line-of-sight (leash timer)
 var last_seen := Vector2.ZERO  # where the player was last visible (blind-chase point)
 var hazard_speed := 1.0  # terrain patch effect (ice boosts, void slows)
+# --- targeting seam (MP phase 0, MULTIPLAYER.md §5.2) ---
+# AI reads its prey from a per-enemy TARGET resolved via game.pick_target()
+# (v1: nearest living player) on a sticky cadence (Balance.MOB_RETARGET_EVERY,
+# plus immediately when the target dies/frees) — never per-frame, so future
+# packs won't oscillate between players. Solo: always the one player, so
+# behavior is bit-identical with the old direct game.player reads.
+var target: Player = null
+var retarget_t := 0.0
 # Animation seam (Track C): >1 when an _anim strip override is installed.
 var anim_frames := 0
 var anim_fps := 6.0
@@ -62,8 +70,14 @@ var art_scale := 1.0
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
 var sprite: Sprite2D
+# Resting body tint (def "tint" key, e.g. void_shade's value-floor lift —
+# art audit 2026-07-10: the shade vanished on dark ground). Every place
+# that used to reset the body to plain white must reset HERE instead, or
+# a single hit flash strips the identity tint for good.
+var base_mod := Color(1, 1, 1)
 var hp_bar_bg: ColorRect
 var hp_bar_fg: ColorRect
+var hp_bar_cap: ColorRect  # 1px darker end-cap: the remaining-HP edge stays crisp
 var face_left := false  # sprite art natively faces left (Crawl tiles)
 var dying := false
 
@@ -75,9 +89,11 @@ var burn_time := 0.0
 var burn_dps := 0.0
 var burn_tick := 0.0
 var burn_color := Color(1.4, 0.8, 0.6)  # orange = fire, green = poison
+var burn_src: Player = null   # who applied the burn (MP: ticks crit off THEIR sheet)
 var bleed_time := 0.0  # Wind Cuts (mage): a red physical DoT, kept apart from burn
 var bleed_dps := 0.0
 var bleed_tick := 0.0
+var bleed_src: Player = null  # who opened the wound (same source rule as burn)
 var vuln_time := 0.0   # takes extra damage while marked
 var vuln_mult := 1.5   # the marked multiplier (Death Mark default +50%; shadow's ult sets +40%)
 var hobble_t := 0.0    # HOBBLED: a slow that failed on a CC-immune boss
@@ -227,24 +243,40 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 		_strip_walk = Art.walk_info(stats["sprite"])
 		_apply_strip(anim)
 	face_left = Art.faces_left(stats["sprite"])
+	# Identity tint from the def ("tint" key): the resting body color all
+	# flash resets return to (see base_mod above).
+	var def_tint: Variant = stats.get("tint")
+	if def_tint is Color:
+		base_mod = def_tint
+	sprite.modulate = base_mod
 	add_child(sprite)
 
 	# Tiny HP bar above the head, shown once the monster is damaged.
+	# Near-opaque bg = a full 1px dark outline all round the 4px fill, so
+	# the bar reads on ANY terrain (art audit 2026-07-10: the old 3px fill
+	# in a 70%-alpha bg collapsed to a 1px sliver on bright ground).
 	var bar_y: float = -8.0 * stats["scale"] - 8.0
 	hp_bar_bg = ColorRect.new()
-	hp_bar_bg.color = Color(0, 0, 0, 0.7)
-	hp_bar_bg.position = Vector2(-16, bar_y)
-	hp_bar_bg.size = Vector2(32, 5)
+	hp_bar_bg.color = Color(0.04, 0.03, 0.04, 0.95)
+	hp_bar_bg.position = Vector2(-16, bar_y - 1)
+	hp_bar_bg.size = Vector2(32, 6)
 	hp_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hp_bar_bg.visible = false
 	add_child(hp_bar_bg)
 	hp_bar_fg = ColorRect.new()
 	hp_bar_fg.color = Color(0.9, 0.25, 0.2)
-	hp_bar_fg.position = Vector2(-15, bar_y + 1)
-	hp_bar_fg.size = Vector2(30, 3)
+	hp_bar_fg.position = Vector2(-15, bar_y)
+	hp_bar_fg.size = Vector2(30, 4)
 	hp_bar_fg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hp_bar_fg.visible = false
 	add_child(hp_bar_fg)
+	hp_bar_cap = ColorRect.new()
+	hp_bar_cap.color = Color(0.5, 0.10, 0.08)
+	hp_bar_cap.position = Vector2(-15 + 29, bar_y)
+	hp_bar_cap.size = Vector2(1, 4)
+	hp_bar_cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_bar_cap.visible = false
+	add_child(hp_bar_cap)
 
 	# Kill-priority mobs wear a colored RING underfoot — the same "this
 	# one's special" language as the elite gold ring, so priority reads at
@@ -314,13 +346,21 @@ func _end_action() -> void:
 func _physics_process(delta: float) -> void:
 	if dying:
 		return
-	# Only the occupied room simulates: monsters elsewhere stand frozen
+	# Only occupied rooms simulate: monsters elsewhere stand frozen
 	# (zone_idx -1 — test dummies, boss adds, event spawns — always runs).
-	if zone_idx >= 0 and game.cur_room != zone_idx:
+	# MP §4.3: active_rooms is the union of every player's room — solo it
+	# is exactly {cur_room}, so this is the old gate to the frame.
+	if zone_idx >= 0 and not game.active_rooms.has(zone_idx):
 		return
 	anim_t += delta
 	attack_cd = maxf(0.0, attack_cd - delta)
 	knock = knock.move_toward(Vector2.ZERO, 900.0 * delta)
+	# Sticky re-target (MP seam): re-pick the prey on a slow cadence;
+	# _get_target() re-resolves immediately if it dies/frees in between.
+	retarget_t -= delta
+	if retarget_t <= 0.0:
+		retarget_t = Balance.MOB_RETARGET_EVERY
+		target = game.pick_target(self)
 	if not traits.is_empty():
 		_tick_traits(delta)
 
@@ -344,12 +384,13 @@ func _physics_process(delta: float) -> void:
 		if burn_tick <= 0.0:
 			burn_tick = 0.5
 			var tick := burn_dps * 0.5
-			# DoT ticks CRIT: rolled per tick on the player's SHEET crit
-			# (burns carry no source ref — single-player, so the player
-			# is the source), shaved by this target's critres like any
-			# hit. Per-ability crit bonuses never ride into ticks, and
-			# nothing snapshots — no fishing for a locked-in crit burn.
-			var src: Player = game.player
+			# DoT ticks CRIT: rolled per tick on the SOURCE player's SHEET
+			# crit (burn_src, captured when the burn was applied; solo
+			# fallback: THE player — identical, there is only one), shaved
+			# by this target's critres like any hit. Per-ability crit
+			# bonuses never ride into ticks, and nothing snapshots — no
+			# fishing for a locked-in crit burn.
+			var src: Player = burn_src if burn_src != null and is_instance_valid(burn_src) else game.player
 			if src != null and randf() < Stats.crit_curve(src.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
 				tick *= src.crit_dmg
 			take_damage(tick, Vector2.ZERO, false, true)
@@ -366,7 +407,7 @@ func _physics_process(delta: float) -> void:
 		if bleed_tick <= 0.0:
 			bleed_tick = 0.5
 			var btick := bleed_dps * 0.5
-			var bsrc: Player = game.player
+			var bsrc: Player = bleed_src if bleed_src != null and is_instance_valid(bleed_src) else game.player
 			if bsrc != null and randf() < Stats.crit_curve(bsrc.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
 				btick *= bsrc.crit_dmg
 			take_damage(btick, Vector2.ZERO, false, true)
@@ -375,7 +416,7 @@ func _physics_process(delta: float) -> void:
 
 	if stun_time > 0.0:
 		windup = 0.0
-		sprite.modulate = Color(1, 1, 1)
+		sprite.modulate = base_mod
 		velocity = knock
 		move_and_slide()
 		return
@@ -385,8 +426,8 @@ func _physics_process(delta: float) -> void:
 	if windup > 0.0:
 		windup -= delta
 		if windup <= 0.0:
-			sprite.modulate = Color(1, 1, 1)
-			var player: Player = game.player
+			sprite.modulate = base_mod
+			var player: Player = _get_target()
 			if player and not player.dead and global_position.distance_to(player.global_position) < 64.0:
 				player.take_damage(_hit_dmg(), dmg_type, self)
 		velocity = knock
@@ -436,7 +477,7 @@ func _physics_process(delta: float) -> void:
 	# overhead. Left-facing art (Crawl sprites) flips the opposite way.
 	_face_vx = lerpf(_face_vx, velocity.x, 0.2)
 	var os := 0.0
-	var tgt: Player = game.player
+	var tgt: Player = _get_target()
 	if (alerted or force_aggro) and tgt != null and not tgt.dead:
 		var tx := tgt.global_position.x - global_position.x
 		var ty := tgt.global_position.y - global_position.y
@@ -453,9 +494,22 @@ func _physics_process(delta: float) -> void:
 		sprite.position.y = 0.0
 
 
+## The enemy's current prey (MP targeting seam). Re-resolves IMMEDIATELY
+## when the target is gone or dead — the slow sticky cadence lives in
+## _physics_process. Like game.nearest_player it falls back to a DEAD
+## player when nobody is alive (callers keep their own `dead` checks,
+## exactly as they did against game.player) and returns null only when
+## no player is registered at all.
+func _get_target() -> Player:
+	if target == null or not is_instance_valid(target) or target.dead:
+		target = game.pick_target(self)
+		retarget_t = Balance.MOB_RETARGET_EVERY
+	return target
+
+
 ## Decide where to move this frame. Bosses override this.
 func _think(delta: float) -> Vector2:
-	var player: Player = game.player
+	var player: Player = _get_target()
 	if player == null or player.dead:
 		return _drift_home()
 
@@ -625,9 +679,10 @@ func _tick_traits(delta: float) -> void:
 				game.sfx("blink", 0.7)
 		if pounce_time > 0.0:
 			pounce_time -= delta
-			if pounce_time <= 0.0 and is_instance_valid(game.player):
-				# Landed: if the player is NOT here, it overshot — expose it.
-				if global_position.distance_to(game.player.global_position) > 96.0:
+			var prey: Player = _get_target()
+			if pounce_time <= 0.0 and is_instance_valid(prey):
+				# Landed: if the prey is NOT here, it overshot — expose it.
+				if global_position.distance_to(prey.global_position) > 96.0:
 					pounce_whiff = Balance.MOB_POUNCE_WHIFF
 					sprite.modulate = Color(1.6, 1.6, 0.5)  # dazed-yellow: punish me
 		pounce_whiff = maxf(0.0, pounce_whiff - delta)
@@ -640,13 +695,15 @@ func _tick_traits(delta: float) -> void:
 		if counter_t > 0.0:
 			counter_t -= delta
 			if counter_t <= 0.0:
-				sprite.modulate = Color(1, 1, 1)
+				sprite.modulate = base_mod
 	# --- channel_heal: stand-still cast, breaks on damage (take_damage) ---
 	if traits.has("channel_heal"):
 		channel_cd = maxf(0.0, channel_cd - delta)
 		if channel_t > 0.0:
 			channel_t -= delta
-			if is_instance_valid(channel_beam) and is_instance_valid(game.player):
+			# (The beam points at a wounded ALLY; the player check was only
+			# a liveness guard — the target seam keeps it identical.)
+			if is_instance_valid(channel_beam) and is_instance_valid(_get_target()):
 				channel_beam.points = [Vector2.ZERO, to_local(_channel_target())]
 			if channel_t <= 0.0:
 				_finish_channel()
@@ -656,13 +713,16 @@ func _tick_traits(delta: float) -> void:
 		if reflect_t > 0.0:
 			reflect_t -= delta
 			if reflect_t <= 0.0:
-				sprite.modulate = Color(1, 1, 1)
+				sprite.modulate = base_mod
 		elif reflect_cd <= 0.0:
 			_raise_reflect()
-	# --- frost aura: chills the player while near (ch5) ---
-	if traits.has("frost_aura") and is_instance_valid(game.player) and not game.player.dead:
-		if global_position.distance_to(game.player.global_position) < Balance.MOB_AURA_RADIUS:
-			game.player.apply_chill(Balance.MOB_FROST_SLOW)
+	# --- frost aura: chills the prey while near (ch5) ---
+	# MP: v1 chills the resolved target only; phase 2 should sweep ALL
+	# players in radius (an aura is positional, not single-target).
+	var aura_prey: Player = _get_target() if traits.has("frost_aura") else null
+	if aura_prey != null and not aura_prey.dead:
+		if global_position.distance_to(aura_prey.global_position) < Balance.MOB_AURA_RADIUS:
+			aura_prey.apply_chill(Balance.MOB_FROST_SLOW)
 	# --- sower: drip a burning trail as it moves (ch4) ---
 	if traits.has("sower") and velocity.length() > 30.0:
 		sow_t -= delta
@@ -840,7 +900,9 @@ func _tick_tether() -> void:
 		add_child(tether_line)
 	tether_line.points = [Vector2.ZERO, to_local(tether_partner.global_position)]
 	# The bond BURNS the player who stands across it (segment proximity).
-	var pl: Player = game.player
+	# MP: v1 checks the resolved target only; phase 2 should test EVERY
+	# player against the segment (the bond is a wall, not a heat-seeker).
+	var pl: Player = _get_target()
 	if pl and not pl.dead:
 		var d := _dist_to_segment(pl.global_position, global_position, tether_partner.global_position)
 		if d < 34.0:
@@ -877,7 +939,16 @@ func _martyr_wail() -> void:
 ## updates on damage).
 func refresh_hp_bar() -> void:
 	if hp_bar_fg and hp_bar_fg.visible:
-		hp_bar_fg.size.x = 30.0 * clampf(hp / max_hp, 0.0, 1.0)
+		_update_hp_fill()
+
+
+## Fill width + the 1px darker end-cap riding its right edge (the cap
+## keeps the remaining-HP boundary crisp against any ground).
+func _update_hp_fill() -> void:
+	var w: float = 30.0 * clampf(hp / max_hp, 0.0, 1.0)
+	hp_bar_fg.size.x = w
+	hp_bar_cap.visible = hp_bar_fg.visible and w >= 2.0
+	hp_bar_cap.position.x = -15.0 + w - 1.0
 
 
 ## Promote this monster to an ELITE — the between-boss miniboss beat
@@ -923,25 +994,32 @@ func apply_stun(dur: float) -> void:
 	stun_time = maxf(stun_time, dur)
 
 
-func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6)) -> void:
+## `src` (MP phase 0): the player who applied the DoT — ticks crit off
+## THEIR sheet. Callers that don't pass it yet fall back to game.player
+## at tick time (solo: identical, there is only one player).
+func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6), src: Player = null) -> void:
 	burn_dps = maxf(burn_dps, dps)
 	burn_time = maxf(burn_time, dur)
 	burn_color = color
+	if src != null:
+		burn_src = src
 
 
 ## Wind Cuts (mage) bleed — a red physical DoT that REFRESHES, never stacks
 ## (keeps the stronger dps and the longer window, exactly like burn).
-func apply_bleed(dps: float, dur: float) -> void:
+func apply_bleed(dps: float, dur: float, src: Player = null) -> void:
 	bleed_dps = maxf(bleed_dps, dps)
 	bleed_time = maxf(bleed_time, dur)
+	if src != null:
+		bleed_src = src
 
 
 ## Green-theme DoT (poison/venom): the exception to the no-stack burn
 ## rule — each application adds a toxin stack that deepens the TICK.
 ## Fast cadences ramp fast; the stack dies when the burn runs out.
-func apply_toxin(dps: float, dur: float, color := Color(0.5, 1.2, 0.5)) -> void:
+func apply_toxin(dps: float, dur: float, color := Color(0.5, 1.2, 0.5), src: Player = null) -> void:
 	toxin = mini(toxin + 1, Balance.TOXIN_MAX_STACKS)
-	apply_burn(dps * (1.0 + toxin * Balance.TOXIN_PER_STACK), dur, color)
+	apply_burn(dps * (1.0 + toxin * Balance.TOXIN_PER_STACK), dur, color, src)
 
 
 ## Ice hits crack the target: brittle stacks amplify ICE damage only
@@ -998,17 +1076,21 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	if pounce_whiff > 0.0:
 		amount *= 1.0 + Balance.MOB_POUNCE_PUNISH
 	# REFLECT: while the forge-shield holds, bounce a share back at the player.
-	if reflect_t > 0.0 and not silent and is_instance_valid(game.player):
-		game.player.take_damage(amount * Balance.MOB_REFLECT_FRAC, dmg_type, self)
+	# MP: should bounce onto the ATTACKING player once take_damage carries a
+	# source ref; until then the resolved target (solo: THE player) eats it.
+	var striker: Player = _get_target()
+	if reflect_t > 0.0 and not silent and is_instance_valid(striker):
+		striker.take_damage(amount * Balance.MOB_REFLECT_FRAC, dmg_type, self)
 		game.burst(global_position, Color(1.0, 0.8, 0.4), 8)
 	# COUNTER: struck while its guard is raised, it staggers YOU.
-	if counter_t > 0.0 and not silent and is_instance_valid(game.player):
-		var pushback := (game.player.global_position - global_position).normalized()
-		game.player.take_damage(dmg * 0.5, dmg_type, self)
-		game.player.apply_root(Balance.MOB_COUNTER_STAGGER)
+	# MP: same note as REFLECT — the stagger belongs to the attacker.
+	if counter_t > 0.0 and not silent and is_instance_valid(striker):
+		var pushback := (striker.global_position - global_position).normalized()
+		striker.take_damage(dmg * 0.5, dmg_type, self)
+		striker.apply_root(Balance.MOB_COUNTER_STAGGER)
 		amount *= 0.3  # the blow mostly rang off the guard
 		counter_t = 0.0
-		sprite.modulate = Color(1, 1, 1)
+		sprite.modulate = base_mod
 	# CHANNEL_HEAL breaks on damage.
 	if channel_t > 0.0:
 		_break_channel()
@@ -1027,12 +1109,12 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 			game.spawn_text(global_position + Vector2(0, -30), str(int(amount)), Color(1, 1, 1))
 		sprite.modulate = Color(3, 3, 3)
 		var tween := create_tween()
-		tween.tween_property(sprite, "modulate", Color(1, 1, 1), 0.15)
+		tween.tween_property(sprite, "modulate", base_mod, 0.15)
 	# Show and update the overhead HP bar once damaged.
 	if hp_bar_bg and hp < max_hp and not dying:
 		hp_bar_bg.visible = true
 		hp_bar_fg.visible = true
-		hp_bar_fg.size.x = 30.0 * clampf(hp / max_hp, 0.0, 1.0)
+		_update_hp_fill()
 	if hp <= 0.0:
 		die()
 
@@ -1044,6 +1126,7 @@ func die() -> void:
 	if hp_bar_bg:
 		hp_bar_bg.visible = false
 		hp_bar_fg.visible = false
+		hp_bar_cap.visible = false
 	remove_from_group("enemies")
 	game.sfx("edie")
 	game.burst(global_position, Color(0.9, 0.3, 0.3))
@@ -1070,6 +1153,9 @@ func die() -> void:
 			"THE BOND RESTORES IT", Color(0.5, 1.0, 0.5), 2.5)
 		game.burst(tp.global_position, Color(0.5, 1.0, 0.5), 18)
 		game.sfx("mend", 0.7)
+	# MP: reward attribution, not targeting — co-op awards FULL XP to every
+	# party member in the active room set (MULTIPLAYER.md §5.5, phase 2).
+	# Solo: the one registered player, exactly as before.
 	if is_instance_valid(game.player):
 		game.player.gain_xp(xp_value)
 	# Deferred: loot spawns collision objects, which is not allowed

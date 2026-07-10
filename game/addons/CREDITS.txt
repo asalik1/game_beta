@@ -1,0 +1,55 @@
+Engine-side third-party code vendored under this folder (and the
+engine itself). Everything here is MIT-licensed: free for commercial
+use, ship this notice + the license text (we do: each vendored addon
+keeps its upstream LICENSE file in its own directory).
+
+NETFOX — netfox.noray + netfox.internals (Tamas Galffy and contributors)
+  The noray NAT-punchthrough / relay join flow for the co-op lobby
+  codes (MULTIPLAYER.md par.3.2): noray client, UDP packet handshake,
+  protocol parser, plus the netfox logger the noray addon depends on
+  (netfox.internals). The rest of netfox (core / extras / rollback)
+  is NOT vendored — NetworkManager (scripts/net/net_manager.gd) talks
+  to these addons directly.
+
+  Source:  https://github.com/foxssake/netfox
+  Version: v1.35.3 (tag), commit c7fc6ea52b4e9087c980d9ca1f8c3826e3a6caa4
+  License: MIT — Copyright 2023 Gálffy Tamás
+           (full text: netfox.noray/LICENSE, netfox.internals/LICENSE)
+
+  Vendoring rules: upstream file layout is kept verbatim (including
+  .uid files) so a future update is a clean diff against the same two
+  addon folders at a newer tag. Do not edit vendored files — wrap or
+  extend from scripts/net/ instead. The addons' EditorPlugins are NOT
+  enabled in project.godot (we don't want their Noray/PacketHandshake
+  autoloads or editor settings); NetworkManager instantiates the
+  scripts it needs itself.
+
+GODOT ENGINE — the engine this game is built on and exported with.
+  License: MIT (https://godotengine.org/license)
+  This game uses Godot Engine, available under the following license:
+
+  Copyright (c) 2014-present Godot Engine contributors.
+  Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.
+
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+  (MULTIPLAYER.md par.7: this notice must ship in the credits of any
+  distributed build — player-facing credits should read it from here
+  or mirror it.)

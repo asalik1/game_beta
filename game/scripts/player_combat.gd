@@ -7,19 +7,15 @@ extends "res://scripts/player_core.gd"
 
 # ================================================================ targeting
 
-## Current movement input (WASD/arrows), normalized; ZERO when idle.
-## Shared by the per-frame mover and abilities that step with you.
+## Current movement INTENT (locally: WASD/arrows), normalized; ZERO when
+## idle. Shared by the per-frame mover and abilities that step with you.
+## Reads the intents layer (MP seam, player_core.gd) — the poll-through
+## refresh keeps dashes cast between physics ticks (autotest, dev paths)
+## on the same live key state the old inline Input reads saw; for a remote
+## player the refresh no-ops and this returns the RPC-fed intent.
 func _move_dir() -> Vector2:
-	var dir := Vector2.ZERO
-	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
-		dir.y -= 1
-	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
-		dir.y += 1
-	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
-		dir.x -= 1
-	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
-		dir.x += 1
-	return dir.normalized()
+	_poll_local_intents()
+	return intent_move
 
 
 ## The direction a movement dash travels: the HELD move input (8-way), or
@@ -251,16 +247,16 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		var dot_color := Color(0.5, 1.2, 0.5) if _tcolor.g > _tcolor.r else Color(1.4, 0.8, 0.6)
 		var dot_dps: float = current_atk() * effects["dot"] * dot_mit
 		if effects.get("toxin", 0):
-			e.apply_toxin(dot_dps, 3.0, dot_color)
+			e.apply_toxin(dot_dps, 3.0, dot_color, self)
 		else:
-			e.apply_burn(dot_dps, 3.0, dot_color)
+			e.apply_burn(dot_dps, 3.0, dot_color, self)
 	if effects.has("burn"):
-		e.apply_burn(float(effects["burn"]) * dot_mit, 3.0)
+		e.apply_burn(float(effects["burn"]) * dot_mit, 3.0, Color(1.4, 0.8, 0.6), self)
 	if effects.has("bleed"):
 		# Wind Cuts (mage): a 3s physical bleed, armor-mitigated and
 		# refresh-don't-stack. effects["bleed"] is the pre-mit TOTAL wound;
 		# spread it across the 3s window as dps.
-		e.apply_bleed(float(effects["bleed"]) * dot_mit / 3.0, 3.0)
+		e.apply_bleed(float(effects["bleed"]) * dot_mit / 3.0, 3.0, self)
 	if effects.has("slow"):
 		e.apply_slow(1.0 - effects["slow"] if effects["slow"] < 1.0 else 0.5, effects.get("slow_dur", 2.0))
 	if effects.has("stun"):
@@ -883,7 +879,7 @@ func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.
 			return
 		for e in _enemies_within(pos, radius):
 			# The mist IS the poison primitive: its ticks stack toxin.
-			e.apply_toxin(_dot_dps(e, current_atk() * dps_mult), 1.2, Color(color, 1.0))
+			e.apply_toxin(_dot_dps(e, current_atk() * dps_mult), 1.2, Color(color, 1.0), self)
 			game.burst(e.global_position + Vector2(0, -10), color, 4)  # venom bubbles
 	motes.emitting = false
 	var fade := root.create_tween()

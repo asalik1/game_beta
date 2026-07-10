@@ -29,6 +29,8 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		Color(0.95, 0.85, 0.5) if tab == "status" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Records  ", func() -> void: m.open_codex("records"),
 		Color(0.95, 0.85, 0.5) if tab == "records" else Color(0.6, 0.6, 0.6))
+	m._btn(tabs, "  Co-op  ", func() -> void: m.open_codex("coop"),
+		Color(0.95, 0.85, 0.5) if tab == "coop" else Color(0.6, 0.6, 0.6))
 
 	# Bestiary subtabs — Monsters / Bosses / NPCs under the one parent tab.
 	if in_bestiary:
@@ -63,6 +65,8 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		_statuses(m, list)
 	elif tab == "records":
 		_records(m, list)
+	elif tab == "coop":
+		_coop(m, list)
 	else:
 		_gear(m, list)
 	m._hint(vbox, "ESC, ✕, click outside, or C to close")
@@ -568,6 +572,33 @@ static func _statuses(m: Menus, list: VBoxContainer) -> void:
 			var dl := m._lbl(info, String(line), 13, Color(0.78, 0.8, 0.86))
 			dl.custom_minimum_size = Vector2(880, 0)
 			dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+
+## Co-op page (MP-08 stub — grows with phases 2/3: revives, party
+## frames, shared boss bars). Numbers pull from the live tables so the
+## page can never drift from the actual netcode/tuning.
+static func _coop(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+	UITheme.header(m._lbl(list, "— PLAYING TOGETHER —", 16, Color(0.6, 0.9, 1.0)))
+	var net_script := load("res://scripts/net/net_manager.gd")
+	var entries := [
+		["Lobby codes", Color(0.95, 0.85, 0.5),
+			"From the title screen choose PLAY TOGETHER. The host picks a hero and a chapter and receives a lobby CODE; friends choose Join, type the code, and bring a hero from their own roster. Up to four heroes walk the host's world — and the lobby closes when the chapter starts, so gather before you set out."],
+		["The road rises to meet you", Color(1.0, 0.7, 0.7),
+			"Monsters grow tougher for every extra hero in the party — more health, a little more bite. A party of one plays exactly the solo game."],
+		["Loot is personal", Color(0.6, 1.0, 0.6),
+			"Every drop, coin and gem you see is YOURS — each player is rolled their own rewards, nothing is split and nothing can be sniped. Guests take home everything their character earns; the world and its story stay the host's."],
+		["One build, one road", Color(0.85, 0.6, 1.0),
+			"Both games must run the SAME build to connect — yours is printed on the title screen (build %s). A mismatch is refused with both versions named, so you'll know exactly who updates." % String(net_script.NET_VERSION)],
+	]
+	for e in entries:
+		var card := VBoxContainer.new()
+		card.add_theme_constant_override("separation", 3)
+		_card(list).add_child(card)
+		m._lbl(card, String(e[0]), 15, e[1])
+		var dl := m._lbl(card, String(e[2]), 13, Color(0.78, 0.8, 0.86))
+		dl.custom_minimum_size = Vector2(880, 0)
+		dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
 ## Records tab: achievements (unlocked/locked) + boss personal bests.

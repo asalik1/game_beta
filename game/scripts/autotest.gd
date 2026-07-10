@@ -1499,6 +1499,7 @@ func _run_campaign_ch2() -> void:
 	await _test_promises_kept()
 	await _test_promises_kept_2()
 	await _test_pause_menu()
+	await _test_mp_lobby_ui()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -3730,3 +3731,33 @@ func _test_merchant_economy() -> void:
 	p.dr_amt = keep_dra
 	p.hp = keep_hp
 	print("ok: merchant economy (farm-cost buy, act-gated grades, upgrade curve, bag=1g, sell + quest-item guard, ward+renewal)")
+
+
+# ---- MP-08: Play Together lobby + codex co-op page (render smoke) --------
+# Pre-session UI only — every screen must BUILD offline; no sockets here
+# (net_test.bat owns the live-session assertions). The codex gained a
+# Co-op tab in the same change (the codex-staleness rule), so it renders
+# under the same eyes as the other tabs.
+func _test_mp_lobby_ui() -> void:
+	game.menus.open_codex("coop")
+	await _frames(2)
+	if game.menus.current != "codex":
+		return _fail("codex Co-op page did not open")
+	game.menus.open_lobby()
+	await _frames(2)
+	if game.menus.current != "lobby":
+		return _fail("Play Together menu did not open")
+	game.menus.open_lobby("join")
+	await _frames(2)
+	if game.menus.current != "lobby" or String(game.menus.lobby.get("stage", "")) != "join":
+		return _fail("join-code screen did not open")
+	# Empty roster under no_saves: the hero pick renders its fallback note.
+	game.menus.open_lobby("char")
+	await _frames(2)
+	if game.menus.current != "lobby" or String(game.menus.lobby.get("stage", "")) != "char":
+		return _fail("hero-pick screen did not open")
+	game.menus.close()
+	await _frames(2)
+	if game.menus.is_open():
+		return _fail("lobby did not close cleanly")
+	print("ok: Play Together lobby screens + codex co-op page render (offline)")

@@ -506,9 +506,32 @@ const MOB_DENSITY_EXTRA := 0.15 # +15% pack size (seeded duplicate chance)
 # the hold range past aggro so an edge target doesn't flicker.
 const MOB_AGGRO_LEASH := 1.6    # seconds blind before a woken mob deaggros
 const MOB_AGGRO_KEEP := 1.5     # hold-aggro range = aggro_range * this
+# Sticky targeting (MP phase 0, MULTIPLAYER.md §5.2): enemies/bosses
+# re-resolve their prey via game.pick_target() on this cadence — never
+# per-frame, so future packs don't oscillate between players. Solo:
+# always the same one player, so the knob is inert until co-op exists.
+const MOB_RETARGET_EVERY := 1.0 # seconds between sticky target re-picks
 # Pack cascade: when a pack is wiped, the NEXT-nearest sleeping pack in the
 # room gains awareness and comes to you (the room "hears" the fight) — no
 # hunting stragglers across a large arena. First pack still wakes by sight.
+
+# --- co-op party scaling (MULTIPLAYER.md §5.2) ---
+# Applied per spawn in add_enemy, riding beside weekly_fx. Indexed by party
+# size; [0] unused, [1] = 1.0 so SOLO IS UNTOUCHED BY CONSTRUCTION. HP scales
+# near-linearly but slightly under (+90%/head: 4 players bring ~4x DPS plus
+# stacked-debuff synergy; co-op should feel a touch generous). Damage rises
+# only mildly — aggro splits across the party, so per-player pressure already
+# drops; the real 4-player threat is boss cadence (PARTY_BOSS_RATE, consumed
+# in phase 2/3), never mob one-shots. Opening bids — measure-then-correct.
+const PARTY_HP_MULT: Array[float] = [0.0, 1.0, 1.90, 2.80, 3.70]
+const PARTY_DMG_MULT: Array[float] = [0.0, 1.0, 1.10, 1.20, 1.30]
+const PARTY_BOSS_RATE: Array[float] = [0.0, 1.0, 1.10, 1.20, 1.30]  # boss cast cadence (unused until phase 2/3)
+
+static func party_hp(n: int) -> float:
+	return PARTY_HP_MULT[clampi(n, 1, 4)]
+
+static func party_dmg(n: int) -> float:
+	return PARTY_DMG_MULT[clampi(n, 1, 4)]
 
 # -------------------------------------------------------- mob traits ---
 # The mob-mechanic vocabulary (2026-07-07 REDESIGN — each is a decision,

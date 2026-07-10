@@ -56,7 +56,7 @@ func replay_chapter(id: String) -> void:
 	reset_run_stats()
 	switch_chapter(id, true)
 	play_started = true
-	get_tree().paused = false
+	request_pause(false)
 	hud.visible = true  # the chapter-select menu hid it
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(id)["name"]))
@@ -79,7 +79,7 @@ func start_weekly() -> void:
 	reset_run_stats()
 	switch_chapter(chid, true)
 	play_started = true
-	get_tree().paused = false
+	request_pause(false)
 	hud.visible = true  # the challenge menu hid it
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.flash_title(zones[cur_room]["name"],
@@ -95,7 +95,7 @@ func advance_chapter() -> void:
 	if next_ch == "" or state != ST_VICTORY:
 		return
 	state = ST_PLAYING
-	get_tree().paused = false
+	request_pause(false)
 	hud.visible = true  # a victory/results menu may have hid it
 	hud.overlay.color = Color(0, 0, 0, 0)
 	hud.title_label.modulate.a = 0.0
@@ -259,7 +259,7 @@ func _wipe_chapter_flags() -> void:
 ## whole scene reboots so every system starts clean.
 func exit_to_title() -> void:
 	autosave()
-	get_tree().paused = false
+	request_pause(false)
 	get_tree().reload_current_scene()
 
 
@@ -400,7 +400,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			var pb := record_chapter_result(res)
 			hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
 			hud.show_results(res, pb)
-			get_tree().paused = true
+			request_pause(true)
 		if epilogue.is_empty():
 			end_it.call()
 		else:
@@ -561,9 +561,24 @@ func _purge_fx() -> void:
 
 ## Death: back to the last safe room with gear/gold/XP intact; the room
 ## you died in resets. No corpse runs — the penalty is the walk.
+##
+## Structured as an explicit state machine (MULTIPLAYER.md §5.3): solo runs
+## begin → the same 2.0s death beat → respawn, rhythm unchanged. Co-op
+## inserts its downed/revive/wipe logic BETWEEN _death_begin and
+## _death_respawn — a wipe replays this exact sequence as "a party of N
+## wiping", keeping one death code path.
 func on_player_died() -> void:
 	if state != ST_PLAYING:
 		return
+	var p: Player = player  # solo: THE player (co-op: the one who fell)
+	var death_room := cur_room
+	_death_begin(p)
+	await get_tree().create_timer(2.0).timeout
+	_death_respawn(p, death_room)
+
+
+## Death phase 1 — the fall: freeze play (ST_DEAD), pay the tithe, mourn.
+func _death_begin(p: Player) -> void:
 	state = ST_DEAD
 	run_deaths += 1
 	fight_wipe()
@@ -571,18 +586,21 @@ func on_player_died() -> void:
 	# Death tithe (2026-07-09): a slice of CARRIED gold stays where you fell —
 	# without it death is free and every boss is beatable by pure attrition.
 	# Respawn location, boss reset and the HP/MP restore stay untouched.
-	var tithe: int = int(float(player.gold) * Balance.DEATH_GOLD_TITHE)
+	var tithe: int = int(float(p.gold) * Balance.DEATH_GOLD_TITHE)
 	if tithe > 0:
-		player.gold = maxi(player.gold - tithe, 0)
-		spawn_text(player.global_position + Vector2(0, -64), "-%d gold" % tithe,
+		p.gold = maxi(p.gold - tithe, 0)
+		spawn_text(p.global_position + Vector2(0, -64), "-%d gold" % tithe,
 			Color(1.0, 0.84, 0.35))
 	hud.dim(0.55)
 	hud.flash_title("YOU DIED", "The flame endures...", 1.0)
-	for p in get_tree().get_nodes_in_group("projectiles"):
-		p.queue_free()
-	var death_room := cur_room
-	await get_tree().create_timer(2.0).timeout
+	for proj in get_tree().get_nodes_in_group("projectiles"):
+		proj.queue_free()
 
+
+## Death phase 2 — the return: the world calms down (bosses walk home,
+## the death room resets, nothing follows you), then p revives at the
+## nearest pacified room and play resumes.
+func _death_respawn(p: Player, death_room: int) -> void:
 	for b in _live_bosses().duplicate():
 		var live_b: Boss = b
 		if live_b.zone_idx < 0:
@@ -619,8 +637,8 @@ func on_player_died() -> void:
 	# combat room counts, so a boss wipe no longer marches you back through
 	# the whole chapter (2026-07-09).
 	var rr := respawn_room(death_room)
-	player.global_position = room_center(rr)
-	player.revive()
+	p.global_position = room_center(rr)
+	p.revive()
 	_enter_room(rr)
 	# No boss serenades your respawn: unless the boss is HERE (it never
 	# is — you respawn in a safe room), the bar hides and the room's own
@@ -769,8 +787,14 @@ func _apply_hazards() -> void:
 	# material marks it; water/planks are non-centered and skipped) kicks
 	# a few leaves loose. Per-plant cooldown keeps it a whisper.
 	if not player.dead and player.velocity.length() > 30.0:
-		for node in zone_scenery.get(cur_room, []):
-			var ds := node as Sprite2D
+		var scenery: Array = zone_scenery.get(cur_room, [])
+		for i in range(scenery.size() - 1, -1, -1):
+			# Ambience nodes free themselves (fled birds, riverless ripples)
+			# while this cached list still holds them — prune, never cast.
+			if not is_instance_valid(scenery[i]):
+				scenery.remove_at(i)
+				continue
+			var ds := scenery[i] as Sprite2D
 			if ds == null or ds.material == null or not ds.centered:
 				continue
 			if ds.global_position.distance_to(player.global_position) > 30.0:

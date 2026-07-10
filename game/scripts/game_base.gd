@@ -45,7 +45,35 @@ const ST_VICTORY := 3
 # (Zone tint and weather now come from the terrain registry — terrains.gd.)
 
 var state := ST_PLAYING
-var player: Player
+# --------------------------------------------------- player registry (MP) ---
+# Phase 0 groundwork (MULTIPLAYER.md §6): the game tracks a REGISTRY of
+# players. Solo holds exactly one entry — kept in sync by the `player`
+# setter — so every registry query trivially returns THE player and
+# behavior stays bit-identical by construction. `player` remains the
+# legacy alias while call sites migrate deliberately.
+# MP-07 (wave 4): the registry is the FULL session roster now. `player`/
+# `local_player` remain YOUR OWN player — the setter registers-or-replaces
+# your slot and never touches remote entries; remote peers' players come
+# and go through register_remote_player()/unregister_player().
+var players: Array[Player] = []   # every player in the session (solo: one)
+var local_player: Player = null   # the player THIS machine controls
+var player: Player:               # legacy alias — YOUR OWN player
+	set(value):
+		var old := local_player
+		player = value
+		local_player = value
+		if value == null:
+			# Dropping your player empties YOUR slot only; remote
+			# entries (co-op) stay registered. Solo: players had just
+			# that one entry, so this is the old players.clear().
+			if old != null:
+				players.erase(old)
+			return
+		var slot: int = players.find(old) if old != null else -1
+		if slot >= 0:
+			players[slot] = value
+		else:
+			players.append(value)
 var hud: Hud
 var menus: Menus
 var camera: Camera2D
@@ -65,8 +93,13 @@ var binds := {
 var quest_key := "talk"
 var talked_to_elder := false
 var talk_cd := 0.0
-var cur_room := 0                # the room the player occupies (only it simulates)
+var cur_room := 0                # the room YOUR player occupies (camera/music/ambience)
 var last_room := -1              # previous frame's room (change detection)
+# MP (MULTIPLAYER.md §4.3): the SIM gate — the union of every player's
+# room, recomputed each frame from the registry. Solo it is exactly
+# {cur_room}, so the enemy freeze rule stays bit-identical. Each instance
+# computes its own union (it sees every player's position).
+var active_rooms := {0: true}    # room idx -> true
 var play_started := false
 
 # ---------------------------------------------------------- room state ---
@@ -119,6 +152,7 @@ var barrier_active := false
 # ------------------------------------------------------ terrain system ---
 var terrain_by_zone: Array = []       # terrain id per room
 var zone_grounds := {}                # room idx -> ground Sprite2D (repaintable)
+var zone_road_marks := {}             # room idx -> worn-road overlay Sprite2Ds (see _mark_roads)
 var zone_scenery := {}                # room idx -> decor + obstacle nodes
 var zone_wall_sprites := {}           # room idx -> wall visual Sprite2Ds (retextured on terrain repaint)
 var _wall_sink: Array = []            # _build_room_walls points this at the room's wall list while building
@@ -141,6 +175,13 @@ var _halo_pool: Sprite2D = null  # the hero's additive floor-glow (QA 5)
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
 var no_saves := false                 # autotest: never touch real save files
+# MP-08 (§5.7): this machine is standing in ANOTHER player's world (a
+# guest join built it from the host's snapshot). Autosaves then write
+# ONLY the character block home — never this world's flags/rooms/seed.
+# Deliberately OUTLIVES the session (a dropped connection must not flip
+# the next autosave into a full write of the host's world); every path
+# that starts an OWN world (reset_run_stats, load_save) clears it.
+var guest_world := false
 var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en"}  # user://settings.json
 var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)
@@ -259,6 +300,137 @@ const MUSIC_TUNE := {
 const MUSIC_DB := -16.0
 
 
+# ---------------------------------------------- player queries (MP seam) ---
+# Targeting/AI reads go through these instead of `game.player` so a
+# second player is a registry entry, not a rewrite. With one registered
+# player they all trivially return that player — solo is bit-identical.
+
+## Nearest LIVING player to pos. Falls back to the nearest player
+## regardless of death if none are alive (so callers that only check
+## validity — not `dead` — keep their exact solo behavior). Returns
+## null only when the registry is empty.
+func nearest_player(pos: Vector2) -> Player:
+	var best: Player = null
+	var best_d := INF
+	var best_any: Player = null
+	var best_any_d := INF
+	for p in players:
+		if p == null or not is_instance_valid(p):
+			continue
+		var d := pos.distance_squared_to(p.global_position)
+		if d < best_any_d:
+			best_any_d = d
+			best_any = p
+		if not p.dead and d < best_d:
+			best_d = d
+			best = p
+	return best if best != null else best_any
+
+
+## Every registered player currently standing in room idx.
+func players_in_room(idx: int) -> Array[Player]:
+	var out: Array[Player] = []
+	for p in players:
+		if p != null and is_instance_valid(p) and room_at_pos(p.global_position) == idx:
+			out.append(p)
+	return out
+
+
+func any_player_alive() -> bool:
+	for p in players:
+		if p != null and is_instance_valid(p) and not p.dead:
+			return true
+	return false
+
+
+## THE targeting seam (MULTIPLAYER.md §5.2). v1 semantics: nearest living
+## player to from_node. Enemies/bosses resolve their prey through this on
+## a sticky ~1s cadence; taunts and threat tables slot in here later.
+func pick_target(from_node: Node2D) -> Player:
+	return nearest_player(from_node.global_position)
+
+
+# ------------------------------------------------- session roster (MP-07) ---
+
+## A remote peer's Player joins the registry and the tree. The node
+## arrives configured (game/peer_id/authority set by net_session.gd);
+## parenting + the roster slot happen here so every instance shares one
+## spawn path. Replaces any stale entry with the same peer_id (rejoin).
+func register_remote_player(p: Player) -> void:
+	for i in players.size():
+		var q := players[i]
+		if q != null and is_instance_valid(q) and q != local_player \
+				and q.peer_id == p.peer_id:
+			q.queue_free()
+			players[i] = p
+			add_child(p)
+			_refresh_active_rooms()
+			return
+	players.append(p)
+	add_child(p)
+	_refresh_active_rooms()
+
+
+## Peer pid left the session: drop and free its player. Your own player
+## never unregisters here (it isn't a remote entry on this machine).
+func unregister_player(pid: int) -> void:
+	for i in range(players.size() - 1, -1, -1):
+		var q := players[i]
+		if q == null or not is_instance_valid(q):
+			players.remove_at(i)
+			continue
+		if q != local_player and q.peer_id == pid:
+			players.remove_at(i)
+			q.queue_free()
+	_refresh_active_rooms()
+
+
+## Recompute the sim gate (§4.3). Starts from cur_room — the local
+## player's room by definition — so solo it is exactly {cur_room} and
+## enemy.gd's freeze rule keeps its old behavior to the frame. Remote
+## players' rooms union in on top; -1 (outside the graph) never counts.
+func _refresh_active_rooms() -> void:
+	active_rooms.clear()
+	active_rooms[cur_room] = true
+	for p in players:
+		if p == null or not is_instance_valid(p) or p == local_player:
+			continue
+		var r := room_at_pos(p.global_position)
+		if r >= 0:
+			active_rooms[r] = true
+
+
+## Is a network session live? The autoload by PATH: the bare
+## `NetworkManager` global does not exist under check_compile's
+## --script mode (MP-05 finding — see net_manager.gd header).
+func net_online() -> bool:
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	return net != null and bool(net.is_online())
+
+
+## Online AND not the authority: wave-4 guests mirror an enemy-less
+## world (the host owns the enemy sim; phase 2 streams it). Branches on
+## multiplayer.is_server(), never "am I the host player" (§3.1).
+func net_guest() -> bool:
+	return net_online() and not multiplayer.is_server()
+
+
+## THE pause seam (MULTIPLAYER.md §5.4). Every gameplay pause point —
+## menus, dialogue, victory card, boot flow — routes through here instead
+## of touching get_tree().paused directly. Solo semantics are exactly the
+## old inline writes: boolean, last-writer-wins, no refcounting. Co-op
+## branches HERE: a shared world never pauses, so in-session this becomes
+## overlay-without-pause (menus/dialogue keep the world running).
+func request_pause(on: bool) -> void:
+	# MP (§5.4): a shared world never pauses — in a session, menus and
+	# dialogue simply don't freeze the world (the full non-pausing
+	# overlay UX is phase 3). Unpauses still apply; solo keeps the
+	# exact old boolean writes.
+	if on and net_online():
+		return
+	get_tree().paused = on
+
+
 ## The best gear grade this chapter can drop (act gating, DESIGN.md):
 ## The best grade a GENERAL faucet (chest/shop/gamble/spoils) can yield this
 ## chapter — the ceiling of the chapter's general band table (2026-07-09).
@@ -312,9 +484,14 @@ func gamble(tier: String) -> Dictionary:
 
 ## Write the current character to its slot. Called on story progress,
 ## zone changes, menu closes and window close — never mid-death.
+## Guesting in another world (MP-08, §5.7): only the character block
+## travels home — the host's world must never colonize the guest's save.
 func autosave() -> void:
 	if save_slot > 0 and play_started and state == ST_PLAYING and not player.dead:
-		SaveGame.write(self, save_slot)
+		if guest_world:
+			SaveGame.write_character_home(self, save_slot)
+		else:
+			SaveGame.write(self, save_slot)
 
 # ------------------------------------------------------------------ mailbox ---
 
@@ -499,6 +676,9 @@ func reset_run_stats() -> void:
 	run_elites = 0
 	run_secrets = 0
 	curse_pending.clear()
+	# A fresh run counter means THIS machine begins its own world (new
+	# hero / replay / weekly / next chapter): full autosaves again (MP-08).
+	guest_world = false
 
 
 ## The stats block the results card shows (and the grade is computed from).
@@ -1924,6 +2104,42 @@ func burst(pos: Vector2, color: Color, count := 10) -> void:
 	p.emitting = true
 	p.finished.connect(p.queue_free)
 
+# World-space event text must survive the darkest ground (art audit
+# 2026-07-10: Ordo's translucent VERDICT orange rendered "The sermon
+# begins." as illegible near-black mush on keep brown). Every caller
+# benefits: fills below this luminance get lifted toward a readable
+# version of THEMSELVES — hue kept, value floored, never neon.
+const TEXT_LUM_FLOOR := 0.45
+# Saturated hues clip before reaching the floor (pure red tops out at
+# 0.21) — the remainder of the climb leans toward warm parchment.
+const TEXT_LIFT_PARCHMENT := Color(0.94, 0.87, 0.70)
+
+
+## Legibility floor for spawn_text fills: opaque alpha (translucent fill
+## over the opaque black outline reads as burnt-dark text) + a luminance
+## floor that keeps the caller's hue.
+func _floor_text_color(color: Color) -> Color:
+	var c := Color(color.r, color.g, color.b, 1.0)
+	var lum: float = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+	if lum >= TEXT_LUM_FLOOR:
+		return c
+	# Scale the channels first — an exact hue-preserving lift.
+	if lum > 0.001:
+		var k: float = TEXT_LUM_FLOOR / lum
+		c = Color(minf(c.r * k, 1.0), minf(c.g * k, 1.0), minf(c.b * k, 1.0), 1.0)
+	else:
+		c = Color(TEXT_LUM_FLOOR, TEXT_LUM_FLOOR, TEXT_LUM_FLOOR, 1.0)
+	# Channel clipping can leave saturated hues short of the floor —
+	# finish the climb toward parchment, keeping the color's lean.
+	var got: float = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+	if got < TEXT_LUM_FLOOR:
+		var parch_lum: float = 0.2126 * TEXT_LIFT_PARCHMENT.r \
+			+ 0.7152 * TEXT_LIFT_PARCHMENT.g + 0.0722 * TEXT_LIFT_PARCHMENT.b
+		c = c.lerp(TEXT_LIFT_PARCHMENT, (TEXT_LUM_FLOOR - got) / maxf(0.05, parch_lum - got))
+		c.a = 1.0
+	return c
+
+
 ## hold: seconds the text sits still before the float-and-fade (the
 ## fight report needs reading time; combat numbers leave it at 0).
 func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
@@ -1934,7 +2150,7 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.z_index = 20
 	l.add_theme_font_size_override("font_size", 15)
-	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_color", _floor_text_color(color))
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	l.add_theme_constant_override("outline_size", 4)
 	add_child(l)

@@ -151,7 +151,8 @@ static func selftest(game: Node2D) -> String:
 			or game.music_tracks.has(ENEMIES[kind].get("music_fallback", ""))
 		if not music_ok:
 			return "ch7 boss %s: neither music nor fallback track exists" % kind
-		var b := spawn(game, kind, game.player.global_position + Vector2(340, 0))
+		# (MP: the LOCAL player — this is the test harness's own hero, not AI targeting.)
+		var b := spawn(game, kind, game.local_player.global_position + Vector2(340, 0))
 		await game.get_tree().create_timer(0.2).timeout
 		if not is_instance_valid(b) or absf(b.max_hp - float(ENEMIES[kind]["hp"])) > 0.01:
 			return "ch7 boss %s: stats did not resolve" % kind

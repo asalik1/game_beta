@@ -47,6 +47,7 @@ func switch_chapter(id: String, force := false) -> void:
 	merchant_zones.clear()
 	hazards.clear()
 	zone_grounds.clear()
+	zone_road_marks.clear()
 	zone_scenery.clear()
 	shop_stock.clear()
 	built.clear()
@@ -229,6 +230,7 @@ func _enter_room(i: int) -> void:
 	var first_visit: bool = not visited.get(i, false)
 	visited[i] = true
 	cur_room = i
+	_refresh_active_rooms()  # the sim gate follows atomically (MP §4.3)
 	_calm_left_room(prev, i)
 	if is_instance_valid(player):
 		player.reset_room_potions()  # the loadout's per-room budget refills
@@ -315,6 +317,7 @@ func _build_room(i: int) -> void:
 	ground.z_index = -10
 	world.add_child(ground)
 	zone_grounds[i] = ground
+	_mark_roads(i)
 	_spawn_patches(i)
 	zone_scenery[i] = []
 	_spawn_scenery(i)
@@ -406,6 +409,10 @@ func _build_room(i: int) -> void:
 
 func _spawn_room_enemies(i: int) -> void:
 	zone_alive[i] = 0
+	if net_guest():
+		return  # MP: wave-4 guests mirror an enemy-less world — the host
+		        # owns the enemy sim (# MP: phase-2 replaces with host
+		        # snapshot mirror).
 	var spawned: Array = []
 	# +15% density (presence pass 2026-07-07): seeded per room so a save
 	# reloads the same pack. Each authored spawn has a MOB_DENSITY_EXTRA
@@ -466,6 +473,8 @@ func _spawn_room_enemies(i: int) -> void:
 ## nearest earlier combat room, one level above its toughest spawn —
 ## a miniboss that always fits the local power band.
 func _spawn_elite_room(i: int, rng: RandomNumberGenerator) -> void:
+	if net_guest():
+		return  # MP: enemies are host-side (phase-2 snapshot mirror)
 	var kind := ""
 	var lvl := 1
 	for j in range(i - 1, -1, -1):
@@ -1269,6 +1278,9 @@ func _spawn_boss(zi: int, kind: String) -> void:
 	set_music(_boss_music())
 
 func _try_spawn_boss(zi: int) -> void:
+	if net_guest():
+		return  # MP: bosses are host-side too (# MP: phase-2 replaces
+		        # with host snapshot mirror)
 	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 or zi != cur_room:
 		return
 	var kind: String = zones[zi].get("boss", "")
@@ -1277,6 +1289,13 @@ func _try_spawn_boss(zi: int) -> void:
 	_on_boss_trigger(zi)
 
 func add_enemy(e: Enemy) -> void:
+	var party: int = players.size()
+	if party > 1:
+		# Co-op party scaling (MULTIPLAYER.md §5.2) rides every spawn exactly
+		# like weekly_fx below; solo (party of 1) skips this block entirely.
+		e.max_hp *= Balance.party_hp(party)
+		e.hp = e.max_hp
+		e.dmg *= Balance.party_dmg(party)
 	if weekly_active:
 		# The week's modifier rides every spawn (weekly challenge run).
 		e.max_hp *= weekly_fx("hp")
@@ -1374,6 +1393,7 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 	if is_instance_valid(zone_grounds.get(zi)):
 		zone_grounds[zi].texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H,
 			zi * 1000 + 7, rooms[zi]["exits"].keys())
+	_mark_roads(zi)
 	_spawn_scenery(zi)  # tombstones, snowy pines, crystals...
 	_spawn_patches(zi)
 	# Retexture the room's walls to this terrain's tile (colliders unchanged,
@@ -1391,6 +1411,56 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 		terrain_event_t = randf_range(2.0, 4.0)
 		if not is_instance_valid(current_boss):
 			set_music(terrain.get("music", "village"))
+
+## The road arms Art.ground paints (center plaza -> each REAL doorway)
+## are invisible on terrains whose path kind IS their ground kind (keep,
+## holy, void, ice...): only the 1px light-catch rim survives, and on
+## stone it reads as dashed debug rectangles (art audit 2026-07-10).
+## The road is a real navigation marker — door-honest since playtest
+## round 3 — so it stays; this lays a faint worn-traffic band over the
+## same geometry so the rim reads as the edge of an intentional walkway.
+## Geometry mirrors Art.ground's arm rects (16px ground space at 3x).
+func _mark_roads(zi: int) -> void:
+	for s in zone_road_marks.get(zi, []):
+		if is_instance_valid(s):
+			s.queue_free()
+	zone_road_marks[zi] = []
+	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	var gk := String(terrain["ground"])
+	if String(terrain["path"]) != gk or not Art.GROUND.has(gk):
+		return  # contrasting path kinds already read as a road
+	# Worn tone: dark floors polish LIGHTER underfoot, light floors tread
+	# DARKER — both at a whisper (presentation constants, not tuning).
+	var base_c: Color = Art.GROUND[gk][0]
+	var lum: float = 0.2126 * base_c.r + 0.7152 * base_c.g + 0.0722 * base_c.b
+	var worn := Color(1, 1, 1, 0.075) if lum < 0.45 else Color(0, 0, 0, 0.10)
+	# Art.ground's arm rects, scaled to world px (16px ground tile * 3 = TILE).
+	var path_top := float((TILES_H / 2 - 1) * TILE - 24)
+	var band := 3.0 * TILE
+	var vleft := float(ROOM_W / 2 - 72)
+	var arms: Array = [Rect2(vleft, path_top, band, band)]  # central plaza
+	var exits: Array = rooms[zi]["exits"].keys()
+	if "W" in exits:
+		arms.append(Rect2(0, path_top, vleft, band))
+	if "E" in exits:
+		arms.append(Rect2(vleft + band, path_top, ROOM_W - vleft - band, band))
+	if "N" in exits:  # vertical arms stop at the painted top/bottom wall row
+		arms.append(Rect2(vleft, TILE, band, path_top - TILE))
+	if "S" in exits:
+		arms.append(Rect2(vleft, path_top + band, band, ROOM_H - path_top - band - TILE))
+	var origin: Vector2 = rooms[zi]["origin"]
+	for arm in arms:
+		var r: Rect2 = arm
+		var s := Sprite2D.new()
+		s.texture = Art.tex("white")
+		s.centered = false
+		s.position = origin + r.position
+		s.scale = r.size / 8.0  # white tex is 8x8
+		s.modulate = worn
+		s.z_index = -10  # same layer as the ground, added after -> on top
+		world.add_child(s)
+		zone_road_marks[zi].append(s)
+
 
 ## (Re)roll a room's static hazard patches from its terrain spec.
 func _spawn_patches(zi: int) -> void:

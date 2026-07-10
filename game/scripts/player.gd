@@ -7,6 +7,31 @@ class_name Player extends "res://scripts/player_kit_warlock.gd"
 # ================================================================= per frame
 
 func _physics_process(delta: float) -> void:
+	# MP (wave 4): a remote peer's player is PRESENTATION ONLY on this
+	# machine — position/facing/anim ride the 20 Hz sync; no input
+	# polling, no survival sim (regen/DoT/cooldowns/potions), no ability
+	# dispatch. (# MP: phase-2 moves the combat sim to the authority side.)
+	if not is_locally_controlled():
+		_remote_present(delta)
+		return
+	# Intents first (MP seam): poll the local device into the intents
+	# fields, then everything below reads ONLY intents — same keys, same
+	# frame, same order as the old inline Input reads. A remote player's
+	# poll no-ops and the frame consumes whatever its RPCs delivered.
+	_poll_local_intents()
+	# Target-lock EDGES (set by UI events — hud.gd's Tab/Space now, the
+	# mobile HUD button later): consume-then-clear, before anything below
+	# reads locked_target, so this frame's orientation/aim/abilities already
+	# see the new lock. cycle_target() stays the public API (autotest calls
+	# it directly); this is just the device-agnostic way to reach it.
+	if intent_lock:
+		intent_lock = false
+		cycle_target()
+	if intent_lock_release:
+		intent_lock_release = false
+		if locked_target != null:
+			locked_target = null
+			game.sfx("talk")
 	if strip_frames > 0:
 		_advance_clip(delta)
 	for key in cds:
@@ -210,18 +235,19 @@ func _physics_process(delta: float) -> void:
 		weapon_glow.position = weapon_spr.position
 
 	# ------------------------------------------------------------- actions
-	var binds: Dictionary = game.binds
-	if Input.is_key_pressed(binds["a1"]):
+	# Consumed from the intents polled at the top of this frame (MP seam) —
+	# held-state presses, debounced by the cooldowns exactly as before.
+	if intent_a1:
 		use_ability("a1")
-	if Input.is_key_pressed(binds["a2"]):
+	if intent_a2:
 		use_ability("a2")
-	if Input.is_key_pressed(binds["a3"]):
+	if intent_a3:
 		use_ability("a3")
-	if Input.is_key_pressed(binds["ult"]):
+	if intent_ult:
 		use_ability("ult")
-	if Input.is_key_pressed(binds["potion"]):
+	if intent_potion:
 		drink_potion()
-	if Input.is_key_pressed(binds.get("potion_next", KEY_R)) and potion_swap_cd <= 0.0:
+	if intent_potion_next and potion_swap_cd <= 0.0:
 		potion_swap_cd = 0.3
 		cycle_potion()
 
@@ -261,6 +287,55 @@ func _physics_process(delta: float) -> void:
 	# The rage is visible ON the hero, not just around them.
 	if sprite:
 		sprite.modulate = Color(1.45, 0.55, 0.5) if berserk_time > 0.0 else Color(1, 1, 1)
+
+
+# ================================================== remote presentation (MP)
+
+## The whole per-frame life of a player another peer owns (wave 4):
+## render ~NET_LERP_MS in the past between the two buffered snapshots
+## (MULTIPLAYER.md §3.1) and mirror the local sprite driver's minimal
+## states — walk vs idle via the clip machine when a sheet is installed,
+## the walk bob otherwise, facing from the synced look side. Position is
+## SET, never move_and_slide'd: the owner already resolved collisions.
+func _remote_present(delta: float) -> void:
+	anim_t += delta
+	if not net_snaps.is_empty():
+		var render_t := Time.get_ticks_msec() - NET_LERP_MS
+		var a: Dictionary = net_snaps[0]
+		var b: Dictionary = net_snaps[net_snaps.size() - 1]
+		for i in range(net_snaps.size() - 1):
+			var nxt: Dictionary = net_snaps[i + 1]
+			if int(nxt["t"]) >= render_t:
+				a = net_snaps[i]
+				b = nxt
+				break
+		var ta := int(a["t"])
+		var tb := int(b["t"])
+		var f := 1.0
+		if tb > ta:
+			f = clampf(float(render_t - ta) / float(tb - ta), 0.0, 1.0)
+		global_position = (a["pos"] as Vector2).lerp(b["pos"] as Vector2, f)
+		velocity = (a["vel"] as Vector2).lerp(b["vel"] as Vector2, f)
+		var look := float(b["look"])
+		if look != 0.0:
+			look_sign = signf(look)
+			facing = Vector2(look_sign, 0.0)
+	if sprite == null or _clip_locked:
+		return
+	if strip_frames > 0:
+		_advance_clip(delta)  # _loco_clip reads the synced velocity: walk vs idle
+		if not _dir_pose_active:
+			sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
+	else:
+		# Static class art: mirror the local walk bob so a moving remote
+		# doesn't glide like a statue.
+		sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
+		if velocity.length() > 20.0:
+			sprite.position.y = -absf(sin(anim_t * 11.0)) * 3.0
+			sprite.rotation = sin(anim_t * 11.0) * 0.06
+		else:
+			sprite.position.y = 0.0
+			sprite.rotation = 0.0
 
 
 # ============================================================ crowd control
@@ -478,6 +553,12 @@ func drink_potion() -> void:
 ## overlapping telegraphs can't double-tap someone instantly.
 func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false) -> void:
 	if dead:
+		return
+	if not is_locally_controlled():
+		# MP (wave 4): remotes are presentation — a host-side enemy swing
+		# at a guest's mirror must not run ITS survival sim here (worst
+		# case it "dies" and yanks THIS machine's death flow). # MP:
+		# phase-2 routes the hit to the owning peer (§4.1 damage row).
 		return
 	if hurt_cd > 0.0 and (hurt_was_heavy or not heavy):
 		return

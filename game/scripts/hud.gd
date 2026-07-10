@@ -642,7 +642,7 @@ func _close_hud_popover() -> void:
 ## fits the buff; colors echo the on-hero aura so the chip and the aura
 ## read as one language.
 func _active_buffs() -> Array:
-	var p: Player = game.player
+	var p: Player = game.local_player  # the HUD is per-client: MY buffs
 	var out: Array = []
 	# Persistent class states lead the row, so chips don't reshuffle as
 	# timed buffs come and go around them.
@@ -1488,7 +1488,7 @@ func dialogue(lines: Array, on_done := Callable()) -> void:
 	dialogue_index = 0
 	dialogue_done = on_done
 	dialogue_active = true
-	get_tree().paused = true
+	game.request_pause(true)
 	dialogue_box.visible = true
 	_show_line()
 
@@ -1518,7 +1518,9 @@ func _portrait_for(who: String) -> String:
 	var found := ""
 	var low := who.to_lower()
 	if low in ["you", "hero"]:
-		found = String(Classes.CLASSES[game.player.cls]["sprite"])
+		# Dialogue is a local overlay (MULTIPLAYER.md §5.4): "you" is the
+		# player reading it on THIS screen.
+		found = String(Classes.CLASSES[game.local_player.cls]["sprite"])
 	if found == "" and low != "narrator":
 		for pair in PORTRAIT_CAST:
 			if low.contains(String(pair[0])):
@@ -1575,7 +1577,7 @@ func _advance_dialogue() -> void:
 	if dialogue_index >= dialogue_lines.size():
 		dialogue_active = false
 		dialogue_box.visible = false
-		get_tree().paused = false
+		game.request_pause(false)
 		if dialogue_done.is_valid():
 			dialogue_done.call()
 	else:
@@ -1591,7 +1593,7 @@ func set_cinematic(on: bool) -> void:
 ## A dialogue line that ends in a DECISION: the text shows in the normal
 ## box, the options stack above it, and the number keys or a click choose.
 func dialogue_choice(who: String, text: String, options: Array, cb: Callable) -> void:
-	get_tree().paused = true
+	game.request_pause(true)
 	dialogue_box.visible = true
 	speaker_label.text = who
 	text_label.text = text
@@ -1627,7 +1629,7 @@ func _choose(idx: int) -> void:
 	choices_active = false
 	choice_panel.visible = false
 	dialogue_box.visible = false
-	get_tree().paused = false
+	game.request_pause(false)
 	game.sfx("talk")
 	var cb := choice_cb
 	choice_cb = Callable()
@@ -1679,20 +1681,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode in [KEY_SPACE, KEY_ENTER, KEY_E]:
 			pressed_confirm = true
 			# SPACE during play drops a Tab target-lock (confirm is a no-op
-			# here — it only advances dialogue, which isn't active).
+			# here — it only advances dialogue, which isn't active). The key
+			# only SETS the release intent — the player consumes the edge in
+			# its physics step (device-agnostic seam: the mobile HUD lock
+			# button writes the same field, MULTIPLAYER.md §10).
 			if event.keycode == KEY_SPACE and game.state == game.ST_PLAYING \
-					and not dialogue_active and game.player.locked_target != null:
-				game.player.locked_target = null
-				game.sfx("talk")
+					and not dialogue_active and game.local_player.locked_target != null:
+				game.local_player.intent_lock_release = true
 				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_ESCAPE:
 			_on_escape()
 		elif event.keycode == KEY_R and game.state == game.ST_VICTORY:
-			get_tree().paused = false
+			game.request_pause(false)
 			get_tree().reload_current_scene()
 		elif event.keycode == game.binds.get("target", KEY_TAB) \
 				and game.state == game.ST_PLAYING and not dialogue_active:
-			game.player.cycle_target()
+			# Tab SETS the lock/cycle intent; the player consumes the edge
+			# in its physics step (≤1 frame later — accepted). Mobile taps
+			# the HUD lock button into this same field.
+			game.local_player.intent_lock = true
 			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_F1 and game.dev_mode and not dialogue_active:
 			game.menus.open_dev()
@@ -1764,7 +1771,7 @@ func _update_resonance(res: float) -> void:
 ## (player rule: a mechanic the HUD wears must show its numbers).
 func _res_tip() -> String:
 	var base := "Resonance — how your shard leans: Virtue (+) or Temptation (−). Major choices move it, and the world answers through dialogue and merchant haggling."
-	var p: Player = game.player
+	var p: Player = game.local_player  # per-client tooltip: MY shard
 	if p == null or p.res_lean() <= 0.0:
 		return base + "\nCommit past ±25 and a lean wakes: Virtue mends (potions heal deeper), Temptation hunts (bonus damage to wounded mobs, bonus kill gold)."
 	if p.resonance > 0.0:

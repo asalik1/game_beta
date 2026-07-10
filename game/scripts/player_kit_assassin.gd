@@ -137,7 +137,7 @@ func _death_mark() -> void:
 	_stun_or_concuss(target, 0.6)
 	if _tfx.has("mark_dot"):
 		# Poison: the mark itself rots the target (and stacks toxin).
-		target.apply_toxin(_dot_dps(target, current_atk() * float(_tfx["mark_dot"])), 5.0, Color(0.5, 1.2, 0.5))
+		target.apply_toxin(_dot_dps(target, current_atk() * float(_tfx["mark_dot"])), 5.0, Color(0.5, 1.2, 0.5), self)
 	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK", Color(1, 0.25, 0.3))
 	_mark_overhead_x(target)
 	_death_mark_execution(target, float(_tfx.get("execute", 0.0)))

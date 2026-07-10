@@ -7,6 +7,13 @@ class_name Menus extends CanvasLayer
 ## is `game.local_player` — the character on THIS screen. Solo they are the
 ## same object; in co-op your inventory is never a teammate's.
 
+# The lobby module (MP-08) is loaded by PATH, not class_name: adding a
+# class_name would demand a --import pass, and the lobby ships mid-wave.
+const UILobby := preload("res://scripts/ui/lobby.gd")
+# The transport autoload's SCRIPT, for NET_VERSION only (the bare
+# `NetworkManager` global doesn't exist under check_compile — MP-05).
+const NetManager := preload("res://scripts/net/net_manager.gd")
+
 var game: Game
 var root: Control = null          # the currently open panel (null = closed)
 var detail_popover: Control = null  # click-to-reveal item/gem/shop popover
@@ -22,6 +29,7 @@ var chapter_replay := false       # chapter select opened from the pause menu
 var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv (default), 2 +10, 3 +20
 var dev_boss_level_override := 0  # dev panel: exact level for NEW boss spawns (0 = off)
 var dev_tab := "character"        # dev panel: which subtab is showing (persists across refreshes)
+var lobby := {}                   # Play Together flow state (ui/lobby.gd): stage, picks, code, msg
 
 
 func _ready() -> void:
@@ -39,9 +47,11 @@ func close() -> void:
 		root = null
 	detail_popover = null
 	listening_action = ""
-	# Boot menus unpause only once the game actually starts.
+	# Boot menus unpause only once the game actually starts. The lobby
+	# (MP-08) is boot-context too until a session begins play.
 	if not (current in ["class_select", "title"]) \
-			and not (current == "chapter_select" and not chapter_replay):
+			and not (current == "chapter_select" and not chapter_replay) \
+			and not (current == "lobby" and not game.play_started):
 		game.request_pause(false)
 	current = ""
 	# Restore the HUD once the menu is gone — but only in actual play (boot
@@ -215,6 +225,17 @@ func open_title() -> void:
 	title_stage = "cover"
 	game.set_music("title")
 	UICover.build(self, root)
+	# The build mark (MULTIPLAYER.md §3.4): quiet, but readable enough that
+	# "you're on 0.1.0, I'm on 0.1.1" is a glance, not a debugging session.
+	var ver := Label.new()
+	ver.text = "build %s" % NetManager.NET_VERSION
+	ver.position = Vector2(10, 696)
+	ver.size = Vector2(300, 20)
+	ver.add_theme_font_size_override("font_size", 12)
+	ver.add_theme_color_override("font_color", Color(0.55, 0.55, 0.62, 0.8))
+	ver.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	ver.add_theme_constant_override("outline_size", 4)
+	root.add_child(ver)
 
 
 ## Boot stage 2 — the character roster: continue a saved hero from its
@@ -223,9 +244,10 @@ func open_title() -> void:
 func open_slots() -> void:
 	var saves: Array = SaveGame.list()
 	# Size the panel to its content (audit: 4 saves left the bottom ~45%
-	# of a fixed 560 panel as dead black): chrome ≈ 260px + ~68px a row,
-	# clamped to the old height so a 20-slot roster still just scrolls.
-	var slots_h := clampf(260.0 + saves.size() * 68.0 + (44.0 if game.dev_mode else 0.0), 350.0, 560.0)
+	# of a fixed 560 panel as dead black): chrome ≈ 300px (incl. the Play
+	# Together row, MP-08) + ~68px a row, clamped to the old height so a
+	# 20-slot roster still just scrolls.
+	var slots_h := clampf(300.0 + saves.size() * 68.0 + (44.0 if game.dev_mode else 0.0), 380.0, 560.0)
 	var vbox := _open("EMBERFALL — your heroes", 760, slots_h)
 	current = "title"
 	title_stage = "slots"
@@ -234,6 +256,9 @@ func open_slots() -> void:
 	var have_saves := not saves.is_empty()
 	_btn(vbox, "  ⚔  New Character  ", func() -> void: open_chapter_select(),
 		Color(0.95, 0.85, 0.5))
+	# Co-op entry (MP-08, MULTIPLAYER.md §5.1): host or join with a code.
+	_btn(vbox, "  ❖  Play Together  ", func() -> void: open_lobby(),
+		Color(0.6, 0.9, 1.0))
 	UITheme.header(_lbl(vbox, "— CONTINUE —" if have_saves else "No heroes yet — forge your first.",
 		15, Color(0.95, 0.85, 0.5) if have_saves else Color(0.6, 0.62, 0.7)))
 	# The save list SCROLLS (20 slots + a dev roster overflowed the fixed
@@ -2478,6 +2503,11 @@ func open_codex(tab := "monsters", boss := "") -> void:
 	UICodex.open(self, tab, boss)
 
 
+## Play Together — the co-op lobby (MP-08) lives in ui/lobby.gd.
+func open_lobby(stage := "menu") -> void:
+	UILobby.open(self, stage)
+
+
 # ---------------------------------------------------------------- dev mode ---
 
 ## The mailbox (dropped-loot letters, gifts) lives in ui/mailbox.gd.
@@ -2608,6 +2638,8 @@ func _input(event: InputEvent) -> void:
 				_close_detail_popover()  # dismiss the popover, stay on the screen beneath
 			elif current == "theme_pick":
 				open_skills()  # back to the tree, not out of the menu
+			elif current == "lobby":
+				UILobby.esc(self)  # one stage back / leave the lobby, never a void
 			elif current == "settings":
 				_settings_back()  # back to wherever settings was opened from
 			elif current == "confirm" \

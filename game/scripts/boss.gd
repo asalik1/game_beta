@@ -68,7 +68,7 @@ func reset_fight() -> void:
 	slow_time = 0.0
 	burn_time = 0.0
 	vuln_time = 0.0
-	sprite.modulate = Color(1, 1, 1)
+	sprite.modulate = base_mod
 	speed = _stats_for(kind)["speed"]  # (T4) content bosses resolve here too
 	_reset_ch2_state()
 	_reset_ch3_state()
@@ -79,7 +79,9 @@ func reset_fight() -> void:
 
 
 func _think(delta: float) -> Vector2:
-	var player: Player = game.player
+	# MP targeting seam: the boss fights its resolved target (sticky
+	# pick_target cadence, inherited from Enemy). Solo: THE player.
+	var player: Player = _get_target()
 	if player == null or player.dead:
 		return _drift_home()
 	var to_player: Vector2 = player.global_position - global_position
@@ -197,23 +199,25 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 func _pounce(player: Player) -> void:
 	leaping = true
 	roar()
-	var target: Vector2 = player.global_position
-	game.telegraph(target, 95.0, 0.76, dmg * 1.4)
+	# (`at`, not `target` — that name is the Enemy-level resolved prey now.)
+	var at: Vector2 = player.global_position
+	game.telegraph(at, 95.0, 0.76, dmg * 1.4)
 	var tween := create_tween()
-	tween.tween_property(self, "global_position", target, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(self, "global_position", at, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_callback(func() -> void: leaping = false)
 
 
 func _do_charge(_to_player: Vector2) -> void:
-	# Telegraph: flash red for a moment, THEN charge at where the player is.
+	# Telegraph: flash red for a moment, THEN charge at where the prey is.
 	sprite.modulate = Color(2.5, 0.6, 0.6)
 	await get_tree().create_timer(0.58).timeout
-	if dying or not is_instance_valid(game.player):
+	var tgt: Player = _get_target()  # re-read after the await (it may have died)
+	if dying or not is_instance_valid(tgt):
 		telegraphing = false
 		return
-	sprite.modulate = Color(1, 1, 1)
+	sprite.modulate = base_mod
 	roar()
-	charge_dir = (game.player.global_position - global_position).normalized()
+	charge_dir = (tgt.global_position - global_position).normalized()
 	charging = true
 	charge_time = 0.55
 	telegraphing = false
@@ -309,9 +313,10 @@ func _blade_storm() -> void:
 	play_action("blade")
 	var count := 6 if enraged else 4
 	for i in count:
-		if dying or not is_instance_valid(game.player) or game.player.dead:
+		var tgt: Player = _get_target()  # per swing — the chase re-aims across awaits
+		if dying or not is_instance_valid(tgt) or tgt.dead:
 			return
-		game.telegraph(game.player.global_position, 85.0, 0.72, dmg * 1.3, {"sword": true})
+		game.telegraph(tgt.global_position, 85.0, 0.72, dmg * 1.3, {"sword": true})
 		await get_tree().create_timer(0.45 if enraged else 0.6).timeout
 
 
@@ -919,7 +924,7 @@ func _toll() -> void:
 	# and that anchor is reach-clamped — if even the near shadow out-ranges
 	# what your feet can cover in the fuse, it slides along the line toward
 	# you until the sprint is honest. Late tolls (fewer shadows) inherit it.
-	var player: Player = game.player
+	var player: Player = _get_target()
 	var to_p := (player.global_position - global_position).normalized() \
 		if is_instance_valid(player) else Vector2.RIGHT
 	var base_ang := to_p.angle()
@@ -937,9 +942,10 @@ func _toll() -> void:
 
 func _reliquary_rain() -> void:
 	for i in 3:
-		if dying or not is_instance_valid(game.player) or game.player.dead:
+		var tgt: Player = _get_target()  # per blade — the chase re-aims across awaits
+		if dying or not is_instance_valid(tgt) or tgt.dead:
 			return
-		game.telegraph(game.player.global_position, 85.0, 0.75, dmg * 1.3, {"sword": true})
+		game.telegraph(tgt.global_position, 85.0, 0.75, dmg * 1.3, {"sword": true})
 		await get_tree().create_timer(0.55).timeout
 
 
@@ -1065,7 +1071,7 @@ func _forgemistress(player: Player, to_player: Vector2, dist: float, delta: floa
 
 	if not quenching:
 		heat = minf(1.0, heat + delta / 12.0)
-	sprite.modulate = Color(1, 1, 1).lerp(Color(2.0, 0.9, 0.6), heat)
+	sprite.modulate = base_mod.lerp(Color(2.0, 0.9, 0.6), heat)
 
 	# Signature: QUENCH — march to the nearest slag pool.
 	if special_cd <= 0.0 and not quenching and boss_props.size() > 0:
@@ -1200,7 +1206,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		if plate_shed_t <= 0.0 and hp > max_hp * 0.3 and not enraged:
 			plated = true
 			plate_dr = PLATE_DR
-			sprite.modulate = Color(1, 1, 1)
+			sprite.modulate = base_mod
 			game.spawn_text(global_position + Vector2(0, -84), "The obsidian reforms.", LAVA)
 
 	if hp <= max_hp * 0.3 and not enraged:
@@ -1274,10 +1280,11 @@ func _vent_breath(player: Player) -> void:
 
 
 func _tantrum() -> void:
-	if not is_instance_valid(game.player):
+	var tgt: Player = _get_target()
+	if not is_instance_valid(tgt):
 		return
 	for i in 5:
-		game.telegraph(game.player.global_position + Vector2(randf_range(-180, 180), randf_range(-150, 150)),
+		game.telegraph(tgt.global_position + Vector2(randf_range(-180, 180), randf_range(-150, 150)),
 			78.0, 0.7 + i * 0.05, dmg * 1.2, {"color": LAVA})
 
 
@@ -1355,9 +1362,11 @@ func _march_sons(delta: float) -> void:
 func _spawn_sons() -> void:
 	roar()
 	# Player-anchored (readability pass): the intercept order must be
-	# readable wherever Ordo is standing.
-	if is_instance_valid(game.player):
-		game.spawn_text(game.player.global_position + Vector2(0, -84),
+	# readable wherever Ordo is standing. (MP: phase 3 mirrors callouts
+	# to every player's screen; anchoring to the target is the v1 seam.)
+	var callout_tgt: Player = _get_target()
+	if is_instance_valid(callout_tgt):
+		game.spawn_text(callout_tgt.global_position + Vector2(0, -84),
 			"SONS OF THE JUDGE — INTERCEPT THEM!", VERDICT)
 	var rect := _arena_rect()
 	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
@@ -1385,11 +1394,12 @@ func _verdict() -> void:
 	# half while identical tiles covered the whole floor, so the "shelter"
 	# detonated 0.5s after you reached it. And the judged half is WASHED
 	# in verdict light: "WEST" needs no compass.
-	if is_instance_valid(game.player):
+	var callout_tgt: Player = _get_target()  # (MP: v1 anchor — see _spawn_sons)
+	if is_instance_valid(callout_tgt):
 		var call := "GUILTY: THE %s" % ("WEST" if west else "EAST")
 		if paired:
 			call += " — THEN THE %s" % ("EAST" if west else "WEST")
-		game.spawn_text(game.player.global_position + Vector2(0, -84), call, VERDICT)
+		game.spawn_text(callout_tgt.global_position + Vector2(0, -84), call, VERDICT)
 	_judge_half(rect, west, 2.4, false)
 	_half_wash(rect, west, 2.4, false)
 	if paired:
@@ -1729,8 +1739,9 @@ func _march_dreamers(delta: float) -> void:
 			# dreamer paves another frost slow-patch under the prey and quickens
 			# the hymnal. A kiter who ignores the march watches their running
 			# room shrink until stillness — and the aura/heal — finally lands.
-			if is_instance_valid(game.player):
-				var at: Vector2 = game.clamp_to_zone(game.player.global_position, home)
+			var prey: Player = _get_target()
+			if is_instance_valid(prey):
+				var at: Vector2 = game.clamp_to_zone(prey.global_position, home)
 				game._add_hazard(game.cur_room, "slow", at, 90.0, 12.0)
 			special_cd = maxf(0.0, special_cd - 1.2)
 			d.queue_free()
@@ -1857,8 +1868,9 @@ func _submerge(player: Player) -> void:
 	await get_tree().create_timer(2.2).timeout
 	if dying or not burrowed:
 		return
+	var prey: Player = _get_target()  # re-read after the await — surface under the PREY
 	var surf: Vector2 = game.clamp_to_zone(
-		game.player.global_position if is_instance_valid(game.player) else home, home)
+		prey.global_position if is_instance_valid(prey) else home, home)
 	global_position = surf
 	burrowed = false
 	untargetable = false

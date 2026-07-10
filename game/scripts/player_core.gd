@@ -172,6 +172,98 @@ var magpen := 0.0
 var combo := 0.0
 var greed := 0.0
 
+# --- input intents (multiplayer seam — MULTIPLAYER.md §6 phase 0) ---
+# The simulation reads ONLY these fields; _poll_local_intents() fills them
+# from the local device. Every legacy input site was a HELD-state
+# Input.is_key_pressed poll (debounce lives in the cooldown timers: cds /
+# potion_cd / potion_swap_cd / game.talk_cd), so plain booleans reproduce
+# the semantics exactly. There is no mouse aim to capture: aim points come
+# from locked_target/soft_target/facing — simulation state that intent_move
+# (and the event-driven Tab lock) already drives. A remote peer's player
+# returns is_locally_controlled() == false and gets these written by RPC;
+# nothing below this layer knows the difference.
+var intent_move := Vector2.ZERO   # normalized WASD/arrows vector
+var intent_a1 := false            # ability keys, held state
+var intent_a2 := false
+var intent_a3 := false
+var intent_ult := false
+var intent_potion := false        # Q drink (potion_cd debounces)
+var intent_potion_next := false   # R cycle (potion_swap_cd debounces)
+var intent_interact := false      # E talk/open (game.talk_cd debounces)
+# Target lock — EDGE intents, not held state: UI events set them (Tab/Space
+# in hud.gd today; the mobile HUD lock button — tap to lock, hold-and-swipe-
+# away to release — writes these same fields, MULTIPLAYER.md §10) and the
+# player consumes-then-clears them in its physics step (≤1 frame, accepted).
+# _poll_local_intents() deliberately leaves them alone: overwriting from
+# device state each frame would eat the one-shot edge.
+var intent_lock := false          # request: lock / cycle to the next target
+var intent_lock_release := false  # request: drop the current hard lock
+
+
+# --- multiplayer identity + remote presentation (MP-07, wave 4) ---
+# All vars live in this base layer (chain rule). peer_id is the OWNING
+# peer: 1 is the server/solo default; net_session.gd stamps every player
+# with its owner when a session spawns it.
+var peer_id := 1
+# Wave-4 remotes are PRESENTATION: the owner broadcasts {pos, vel, look}
+# at ~20 Hz (net_session.gd) and remotes render NET_LERP_MS in the past,
+# lerping between the buffered snapshots (MULTIPLAYER.md §3.1).
+const NET_LERP_MS := 120
+var net_snaps: Array = []       # [{t, pos, vel, look}] arrival-stamped, newest last
+var _net_mgr: Node = null       # cached transport autoload (by path — MP-05 gate trap)
+
+
+## The remote-player seam: false for a player another peer owns — its
+## intents never poll this device and player.gd's physics runs the
+## presentation path only. Offline every player is yours (solo unchanged).
+func is_locally_controlled() -> bool:
+	if not is_inside_tree():
+		return true
+	if _net_mgr == null:
+		_net_mgr = get_node_or_null("/root/NetworkManager")
+	if _net_mgr == null or not bool(_net_mgr.is_online()):
+		return true
+	return peer_id == multiplayer.get_unique_id()
+
+
+## Owner-side movement state arriving over the wire (net_session.gd's
+## 20 Hz unreliable RPC). Arrival-stamped: the interpolation delay eats
+## the jitter, so sender clocks never need aligning in wave 4.
+func net_push_snapshot(pos: Vector2, vel: Vector2, look: float) -> void:
+	net_snaps.append({"t": Time.get_ticks_msec(), "pos": pos, "vel": vel, "look": look})
+	while net_snaps.size() > 4:
+		net_snaps.pop_front()
+
+
+## Fill the intents from the local device — same keys the old inline reads
+## polled. Called at the top of the per-frame driver, AND as a refresh at
+## the consumption sites that used to read Input live mid-frame (_move_dir,
+## game.gd's interact check): held-state polling is idempotent within a
+## frame, and the refresh keeps direct out-of-frame calls (autotest drives
+## dashes/interact by synthesizing raw key events, then calling abilities
+## between physics ticks) seeing exactly the live key state they always did.
+func _poll_local_intents() -> void:
+	if not is_locally_controlled():
+		return  # remote: intents arrive by RPC, never from this device
+	var dir := Vector2.ZERO
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		dir.y -= 1
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		dir.y += 1
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+		dir.x -= 1
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+		dir.x += 1
+	intent_move = dir.normalized()
+	var binds: Dictionary = game.binds
+	intent_a1 = Input.is_key_pressed(binds["a1"])
+	intent_a2 = Input.is_key_pressed(binds["a2"])
+	intent_a3 = Input.is_key_pressed(binds["a3"])
+	intent_ult = Input.is_key_pressed(binds["ult"])
+	intent_potion = Input.is_key_pressed(binds["potion"])
+	intent_potion_next = Input.is_key_pressed(binds.get("potion_next", KEY_R))
+	intent_interact = Input.is_key_pressed(binds["interact"])
+
 # --- combat state ---
 var cds := {"a1": 0.0, "a2": 0.0, "a3": 0.0, "ult": 0.0}
 var potion_cd := 0.0

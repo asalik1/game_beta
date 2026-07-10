@@ -623,14 +623,19 @@ static func create_roster(m: Menus, lvl: int) -> int:
 			"version": SaveGame.VERSION,
 			"saved_at": Time.get_unix_time_from_system(),
 			"chapter": "ch1",
-			"cls": cid,
-			"level": lvl, "xp": 0,
-			"skill_points": lvl * Balance.SKILL_POINTS_PER_LEVEL,
-			"unspent_attr": (lvl - 1) * Balance.ATTR_POINTS_PER_LEVEL,
-			"tree_points": {}, "attr_points": {},
-			"gold": 2000, "potions": 3,
-			"quest_key": "talk",
-			"wander_seed": rng.randi(),
+			# v3 save shape: character/world sections (save.gd).
+			"character": {
+				"cls": cid,
+				"level": lvl, "xp": 0,
+				"skill_points": lvl * Balance.SKILL_POINTS_PER_LEVEL,
+				"unspent_attr": (lvl - 1) * Balance.ATTR_POINTS_PER_LEVEL,
+				"tree_points": {}, "attr_points": {},
+				"gold": 2000, "potions": 3,
+			},
+			"world": {
+				"quest_key": "talk",
+				"wander_seed": rng.randi(),
+			},
 		}
 		var f := FileAccess.open(SaveGame.path(slot), FileAccess.WRITE)
 		if f:

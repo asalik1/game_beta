@@ -2,6 +2,19 @@ class_name Game extends "res://scripts/game_flow.gd"
 ## GAME, layer 4 of 4 — boot (_ready, class select, save loading) and
 ## the per-frame driver. See game_base.gd for the chain layout.
 
+# The transport autoload's SCRIPT, for enums/consts only — the bare
+# `NetworkManager` global doesn't exist under check_compile (MP-05).
+const NetManager := preload("res://scripts/net/net_manager.gd")
+
+# --- MP session entry (dev-facing, MP-07; MP-08 builds the real lobby UI
+# on these same seams). Layer-local state: only the boot flow reads them.
+# The net test sets them directly before add_child; the CLI parse in
+# _ready fills them from the user args.
+var mp_host := false        # --mp-host[=ip:port]: host while playing normally
+var mp_host_code := ""      # optional listen override (default 127.0.0.1:9999)
+var mp_join_code := ""      # --mp-join=<code>: skip the title flow, join + handshake
+var mp_cls := "warrior"     # --mp-cls=<class>: the joiner's dev character class
+
 
 ## Filenames in an override asset dir (assets/<dir>, e.g. "sounds"/"music").
 ## Editor/source scans the folder live, so dropping in a file just works.
@@ -29,6 +42,23 @@ func _ready() -> void:
 	load_binds()
 	Story.load_content()  # merge content modules before anything reads them
 	dev_mode = "--dev" in OS.get_cmdline_user_args()
+	# MP session flags (MP-07 dev entry — see _start_flow).
+	for arg in OS.get_cmdline_user_args():
+		var s := str(arg)
+		if s == "--mp-host":
+			mp_host = true
+		elif s.begins_with("--mp-host="):
+			mp_host = true
+			mp_host_code = s.get_slice("=", 1)
+		elif s.begins_with("--mp-join="):
+			mp_join_code = s.get_slice("=", 1)
+		elif s.begins_with("--mp-cls="):
+			mp_cls = s.get_slice("=", 1)
+	# Hand the session bridge its game: net_session.gd (a child of the
+	# NetworkManager autoload) owns the join handshake + movement sync.
+	var net_session: Node = get_node_or_null("/root/NetworkManager/Session")
+	if net_session != null:
+		net_session.game = self
 	zones = Story.chapter(chapter_id)["zones"]
 	zone_count = zones.size()
 	for zone in zones:
@@ -168,12 +198,42 @@ func _ready() -> void:
 	call_deferred("_start_flow")
 
 func _start_flow() -> void:
+	if mp_join_code != "":
+		_mp_join_boot()  # joiner: no title flow — the world comes from the host
+		return
+	if mp_host:
+		_mp_host_boot()  # host: start listening, then play normally below
 	if no_saves:
 		menus.open_chapter_select()  # autotest: straight to the pick
 	else:
 		# Real players always land on the cover, saves or none:
 		# cover -> character roster -> (new hero) chapter + class select.
 		menus.open_title()
+
+
+## --mp-host: listen on ENET_DIRECT (dev default 127.0.0.1:9999) while
+## the normal title flow proceeds. Guests are ADMITTED immediately (the
+## MP-05 version gate), but the world snapshot only goes out once a
+## character is picked/loaded — net_session's handshake waits for
+## play_started. Fire-and-forget coroutine.
+func _mp_host_boot() -> void:
+	var net: Node = get_node("/root/NetworkManager")
+	var err: Error = await net.host(NetManager.Mode.ENET_DIRECT, mp_host_code)
+	print("[mp] host session: %s — code %s" % [error_string(err), str(net.session_code)])
+
+
+## --mp-join=<code>: the wave-4 dev joiner. Skips the title flow — a dev
+## character (mp_cls, level 1) rides in; the host's snapshot (chapter,
+## seed, flags) arrives via net_session.gd after admission and rebuilds
+## the world locally (MULTIPLAYER.md §4.1 row 1). Real players go through
+## the lobby instead (MP-08, ui/lobby.gd) — it puts their roster SLOT in
+## local_char and the snapshot handler loads that save's character.
+func _mp_join_boot() -> void:
+	var sess: Node = get_node("/root/NetworkManager/Session")
+	sess.local_char = {"cls": mp_cls, "level": 1}
+	var net: Node = get_node("/root/NetworkManager")
+	var err: Error = await net.join(mp_join_code)
+	print("[mp] join %s: %s" % [mp_join_code, error_string(err)])
 
 func on_class_chosen(id: String) -> void:
 	player.set_class(id)
@@ -182,7 +242,7 @@ func on_class_chosen(id: String) -> void:
 	switch_chapter(chapter_id, true)  # lay out THIS run's world from the fresh seed
 	if not no_saves:
 		save_slot = SaveGame.next_free_slot()
-	get_tree().paused = false
+	request_pause(false)
 	# The class-select menu hid the HUD on the way in — and the opening's
 	# dialogue box and cutscene stage are its CHILDREN, so it must come back
 	# BEFORE the convo below or the whole opening plays invisibly (a "frozen"
@@ -220,12 +280,13 @@ func load_save(slot: int) -> void:
 	if data.is_empty():
 		return
 	save_slot = slot
+	guest_world = false  # resuming OUR world: full autosaves again (MP-08)
 	# The layout is a pure function of wander_seed: restore the seed
 	# FIRST, then force-rebuild so the world matches the saved one.
-	wander_seed = int(data.get("wander_seed", 0))
+	wander_seed = int(SaveGame.world_of(data).get("wander_seed", 0))
 	switch_chapter(String(data.get("chapter", "ch1")), true)
 	SaveGame.apply(self, data)
-	get_tree().paused = false
+	request_pause(false)
 	play_started = true
 	hud.visible = true  # the load menu hid it on the way in
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
@@ -256,19 +317,22 @@ func _process(delta: float) -> void:
 	track_footprints()  # snow remembers your steps (no-op off snow)
 	tick_footsteps(delta)  # and every step SOUNDS (plate classes clank)
 
-	hud.update_stats(player)
+	# HUD, reticle and boss bar are PER-CLIENT presentation (MULTIPLAYER.md
+	# §5.6): they bind to local_player — the player on THIS screen. Solo:
+	# local_player == player, pixel-identical.
+	hud.update_stats(local_player)
 
 	# Reticle over the enemy your AIMED attacks would hit — the facing-gated
 	# target, or the hard-locked one (orange). Hides when nothing is on your
 	# side, which is itself the cue to turn and face a foe.
-	var target := player.aim_focus()
-	if target and not player.dead:
+	var target := local_player.aim_focus()
+	if target and not local_player.dead:
 		reticle.visible = true
 		reticle.global_position = target.global_position
-		reticle.modulate = Color(1.0, 0.45, 0.2) if target == player.locked_target else Color(1, 1, 1)
+		reticle.modulate = Color(1.0, 0.45, 0.2) if target == local_player.locked_target else Color(1, 1, 1)
 		reticle_label.text = "Lv %d" % target.level
 		# Color the level by threat vs your own level.
-		var diff := target.level - player.level
+		var diff := target.level - local_player.level
 		reticle_label.add_theme_color_override("font_color",
 			Color(1, 0.35, 0.3) if diff >= 3 else (Color(1, 0.85, 0.4) if diff >= 0 else Color(0.6, 1, 0.6)))
 	else:
@@ -278,7 +342,7 @@ func _process(delta: float) -> void:
 	# else the first live one (endgame brawls run up to 5 at once).
 	var live_bosses := _live_bosses()
 	if not live_bosses.is_empty():
-		var shown: Boss = player.locked_target as Boss
+		var shown: Boss = local_player.locked_target as Boss
 		if shown == null or not is_instance_valid(shown) or shown.dying:
 			shown = target as Boss  # the auto-aim pick from above
 		if shown == null or not live_bosses.has(shown):
@@ -324,6 +388,9 @@ func _process(delta: float) -> void:
 		else:
 			_enter_room(zi)
 	hud.set_zone(zones[cur_room]["name"])
+	# MP: the sim gate follows every player, every frame (remote players
+	# move between the local room transitions above). Solo: {cur_room}.
+	_refresh_active_rooms()
 
 	# ------------------------------------------------ terrain mechanics ---
 	var cur_terrain := Terrains.get_terrain(terrain_by_zone[cur_room])
@@ -371,16 +438,21 @@ func _process(delta: float) -> void:
 		sfx("victory")
 		player.pending_theme_note = ""
 
-	# NPC interactions (elder, merchants).
+	# NPC interactions (elder, merchants). Interact is GAMEPLAY input — it
+	# fires convos/chests/desks in the shared world — so it routes through
+	# the player's intents (MP seam). The poll-through refresh keeps the
+	# old live-read timing (_process outruns physics frames headless).
 	if state == ST_PLAYING and not hud.dialogue_active and not menus.is_open():
+		player._poll_local_intents()
 		for entry in interactables:
 			var near: bool = player.global_position.distance_to(entry["node"].position) < 80.0
 			entry["prompt"].visible = near
-			if near and talk_cd <= 0.0 and Input.is_key_pressed(binds["interact"]):
+			if near and talk_cd <= 0.0 and player.intent_interact:
 				talk_cd = 0.6
 				entry["action"].call()
 				break
-		# Menu hotkeys.
+		# Menu hotkeys. MP: UI-local, per-client — opening your inventory or
+		# map is presentation, not simulation; these never become intents.
 		if talk_cd <= 0.0:
 			if Input.is_key_pressed(binds["inventory"]):
 				talk_cd = 0.4
