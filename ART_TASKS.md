@@ -65,6 +65,165 @@ task, claim before starting**, verify visually before staging.
   (1280x720) replaces the procedural title screen wholesale. The crown
   + four Embers motif is canon; go bigger than the procedural version.
 
+## Boss attack animations — STANDING RULE (owner call, 2026-07-10)
+
+Bosses have no attack animations: the engine hook exists and is no-op-safe
+(`Enemy.play_action` — plays `assets/sprites/<sprite>_<action>.png` if present,
+silently skips otherwise), but only ~10 of the 27 bosses' abilities even call
+it, and ZERO ability-strip art has shipped. From now on:
+
+1. **Every new or reworked boss ships with attack animations** — minimum two
+   strips: its signature ability + a generic cast/swing, cut per the boss-sheet
+   pipeline (5-row sheets, feet-anchored cells, char-only ability strips,
+   mirror-to-left, gamma 0.85; `tools/art/extract_sheet.py`).
+2. **The 10-boss redesign hit list (PROPOSALS/) now includes ability strips**
+   as part of each redesign's definition of done — no more idle-only installs.
+3. **Code pass (separate, zero-risk):** sweep boss.gd + content/ch*_bosses.gd
+   and add `play_action("<action>")` at every telegraphed ability's wind-up —
+   calls are free until art lands, and each call names the strip the art lane
+   must produce. Deliverable includes the per-boss STRIP MANIFEST
+   (sprite_key × action list) so generation (PixelLab lane) is a checklist.
+   → **DONE 2026-07-10** — see the manifest below.
+4. **Co-op note:** `play_action` one-shots are EVENTS, not state — in
+   multiplayer phase 2 they ride the boss sync as event RPCs (logged in
+   MULTIPLAYER.md §4.1).
+
+### STRIP MANIFEST (code pass landed 2026-07-10)
+
+The rule-3 sweep is DONE: every telegraphed ability across all 21 bosses now
+calls `play_action` at its wind-up (91 call sites in boss.gd, up from 10).
+Each row below is one strip file the art lane owes:
+`assets/sprites/<sprite>_<action>.png` (horizontal one-shot, plays at 6fps,
+cut per the boss-sheet pipeline — 5-row sheets, feet-anchored cells, char-only
+ability strips, mirror-to-LEFT, gamma 0.85; `tools/art/extract_sheet.py`,
+rules in `tools/art/README.md`). Wave-1 already shipped the morwen/korrag/
+vargoth strips — those rows are marked ✔.
+
+Action names are a shared MOTION vocabulary, not per-boss lore names — the
+same action on two bosses means the same choreography, so poses can be
+reused: `bolt` aimed volley cast · `ring` radial burst from self · `slam`
+ground blow/shockwave · `rain` calls sky-zones onto the prey · `blade`
+falling swords · `lash` walking line of strikes · `beam` piercing lane ·
+`cast` single mark cast · `storm` sky-strike call · `blink` teleport ·
+`pack` whistle beasts · `summon` conjure adds · `charge` charge wind-up ·
+`throw` lobbed projectile · `surface` erupt from underground · `enrage`
+threshold flare. Signature moves get their own name (leap, piston, wail,
+toll, quench, breath, freeze, hymn, shift, arc, split, verdict, storm).
+
+**Prerequisite:** `play_action` only fires on a boss that HAS an idle strip.
+vess / serane / rotmaw / kaethra are static PNGs today — each needs
+`<sprite>_anim.png` (idle) before any ability strip will play.
+
+| Boss (kind) | sprite key | action | ability it represents |
+|---|---|---|---|
+| Fangmaw (ch1) | `direwolf` | leap | Pounce — marks the circle, crashes down (signature) |
+| | | charge | telegraphed charge wind-up (shared `_do_charge` flash) |
+| | | slam | Ground Rake — fissure races down your lane |
+| | | pack | calls the pack at 50% |
+| Morwen (ch1) | `morwen` | rain ✔ | Blight Rain (signature) — SHIPPED |
+| | | bolt ✔ | 3-bolt spread — SHIPPED |
+| | | ring ✔ | 12-bolt ring — SHIPPED |
+| | | blink ✔ | retreat blink — SHIPPED |
+| Vargoth (ch1) | `vargoth` | blade ✔ | Blade Storm (signature) — SHIPPED |
+| | | slam ✔ | shockwave slam — SHIPPED |
+| | | enrage ✔ | 30% enrage — SHIPPED |
+| Korrag (ch2) | `korrag` | lash ✔ | Lightning Lash (signature) + whip snap — SHIPPED |
+| | | pack ✔ | pack whistles 66/33% — SHIPPED |
+| | | storm ✔ | Storm Breaks 30% + broken-storm strays — SHIPPED |
+| Choir Mother (ch2) | `choirmother` | ring | Requiem — three rippling rings (signature) |
+| | | bolt | Verse Volley |
+| | | cast | Hymn of Hunger — the feeding mark |
+| | | summon | the choir answers (60%) |
+| | | blink | retreat blink |
+| | | enrage | Crescendo (25%) |
+| Warden Null (ch2) | `nullwarden` | piston | Piston Protocol — stamping grid (signature) |
+| | | beam | Beam Spoke — lane rake |
+| | | slam | shockwave slam |
+| | | enrage | Armor Shed (50%) + Overdrive (25%) |
+| The Sexton (ch3) | `sexton` | slam | Vale churn cluster + shovel swipe |
+| | | summon | a grave shambler claws up |
+| | | surface | Shovelwork exit eruption (the dig-in is an instant vanish — no strip moment exists) |
+| Vess (ch3) | `vess` | wail | The Silence (signature) — needs `vess_anim.png` FIRST |
+| | | bolt | Grief Fan |
+| | | ring | wail ring |
+| | | blink | retreat blink |
+| | | enrage | Keen (30%) |
+| Saint Varo (ch3) | `king` | toll | The Toll — bell strike (signature) |
+| | | blade | Reliquary Rain (same falling-sword motion as vargoth_blade) |
+| | | slam | Reliquary Slam |
+| | | summon | censer placements/relights (setup, 60%, 30%) |
+| | | enrage | Saint Varo Stands (25%) |
+| Calda (ch4) | `cultist` ⚠ | quench | the Quench at the pool, clean or through-you (signature) |
+| | | throw | white-hot slag lob |
+| | | lash | hammer lines |
+| Cinderhide (ch4) | `direwolf` ⚠ | breath | Vent Breath — lava cone (signature) |
+| | | charge | baited charge (shared wind-up) |
+| | | rain | Ember Rain |
+| | | enrage | plate shed + 30% enrage |
+| Ashpriest Ordo (ch4) | `ashpriest` | verdict | The Verdict — half-arena judgment (signature) |
+| | | bolt | Brand Volley |
+| | | rain | enrage magma rain (20%) |
+| | | summon | Sons of the Judge (66/33%) |
+| | | enrage | the Judge Attends (20%) |
+| Whitepelt (ch5) | `whitepelt` | charge | Ice Charge (signature; shared wind-up) |
+| | | pack | pack calls (66/33%) |
+| | | slam | frost stomp + pelt drums + the wall-slam crash |
+| Serane (ch5) | `serane` | freeze | Flash Freeze (signature) — needs `serane_anim.png` FIRST |
+| | | beam | Shatter Lance |
+| | | rain | icicle rain |
+| | | blink | retreat blink |
+| | | enrage | Keystone Cracks (40%) |
+| Mother Halla (ch5) | `cultist` ⚠ | hymn | Frost Hymnal (signature) |
+| | | freeze | Queen-stirs Flash Freeze (shared helper w/ Serane) |
+| | | bolt | lullaby volley |
+| | | summon | dreamers drift in |
+| | | enrage | the Queen Stirs (25%) |
+| Drowned Auroch (ch6) | `spider` ⚠ | charge | Gore Rush (shared wind-up) |
+| | | slam | Wallow — shockwave + poison splash |
+| | | surface | Submerge resurfacing under you (signature; the sink is an instant vanish) |
+| Rotmaw (ch6) | `rotmaw` | lash | Vine Lash — closing root ring (signature) — needs `rotmaw_anim.png` FIRST |
+| | | bolt | Spore Volley |
+| | | summon | blooms sprout |
+| | | enrage | Full Bloom (30%) |
+| Kaethra (ch6) | `kaethra` | shift | Form Swap 80/60/40/20% (signature) — needs `kaethra_anim.png` FIRST |
+| | | charge | Huntress charge (shared wind-up) |
+| | | throw | Huntress thrown spear |
+| | | slam | Huntress shockwave |
+| | | ring | Bloom radial burst |
+| | | bolt | Bloom aimed fan |
+| Veyx (ch7) | `stormwarden` | arc | the Arc — chain to rod or player (signature) |
+| | | ring | Squall scatter |
+| | | storm | Static Field strikes |
+| | | summon | conductor rods (setup + 30%) |
+| | | enrage | the Current Unbound (30%) |
+| Echo of the Unnamed (ch7) | `assassin` | split | Unnaming — the mirror copies (signature) |
+| | | blink | blink-strike |
+| | | throw | dagger fan |
+| | | enrage | Refuses to be Forgotten (25%) |
+| Cyrraeth (ch7) | `stormmouth` | storm | Storm Rotation — the quiet wedge (signature, P2/P3) |
+| | | lash | P1 Lightning Lash (shared Korrag helper — needs its OWN `stormmouth_lash`) |
+| | | bolt | P1 verse fan |
+| | | cast | arc chip between rotations |
+| | | summon | vow-keepers |
+| | | enrage | phase flares — the Mouth Opens (60%) + the Word Unfinished (25%) |
+
+Manifest notes:
+- **89 strips total; 10 shipped (✔), 79 owed.** Of those, 11 sit on
+  placeholder sprites (⚠): `cultist` (Calda + Halla — also the trash-mob
+  sheet) and `spider` (Auroch), plus Cinderhide riding Fangmaw's `direwolf`
+  sheet. **Hold art for ⚠ rows until each boss's own redesign sprite lands**
+  (see the PROPOSALS/ hit list) — the calls are wired and re-key
+  automatically via `stats["sprite"]`, so nothing needs re-coding when keys
+  change; cut the strips under the NEW key.
+- The Echo intentionally wears the hero `assassin` sheet (it IS the player's
+  mirror) — its idle already animates, so its 4 strips light up the moment
+  they land. Its action names deliberately avoid the hero clip vocabulary
+  (attack/cast/dash/ult/…) so nothing collides with player animations.
+- Veyx's `stormwarden` key is its own sheet (Korrag's is `korrag`) — no
+  sharing there despite the name.
+- Cyrraeth's P3 continuous lightning (1.5s cadence) intentionally has NO
+  play_action — retriggering that fast would starve every other strip.
+
 ## Source material
 - Raw packs: `C:\Users\asali\Downloads\*.zip` (Pixel Crawler bundle,
   Ninja Adventure CC0, Small_Bat, Bat_Fur). Re-extract to a scratch
