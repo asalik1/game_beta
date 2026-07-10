@@ -89,14 +89,48 @@ func _test_room_graph() -> void:
 		return _fail("layout not deterministic for a seed")
 	print("ok: room graph (%d rooms, %d on the boss path, seeded layout, lazy build)" % [n, path_len])
 
+## MP-17: a realistic room-entry position — just inside whichever exit
+## doorway sits FARTHEST from the room's spawned packs. The bare center
+## drop the graph test used before could land inside a pack's aggro
+## radius on unlucky seeds (a +15% density twin jittered toward the
+## middle — the authored Darkwood spider at (960,260) sits 376 px from
+## centre, a hair past the 330 aggro range, and its twin can cross it),
+## waking a pack on entry and flaking "entering wakes nobody". Real
+## entries arrive at a doorway, and packs are authored clear of doorways
+## by design — so enter where the player actually would.
+func _clear_entry(i: int) -> Vector2:
+	var mobs := _room_mobs(i)
+	var best_pos: Vector2 = game.room_center(i)
+	var best_clear := -1.0
+	for dir in game.rooms[i]["exits"].keys():
+		var inward: Vector2 = -Vector2(Game.DIRS[String(dir)]) * 200.0
+		var pos: Vector2 = game.door_pos(i, String(dir)) + inward
+		var clear := 99999.0
+		for e in mobs:
+			clear = minf(clear, pos.distance_to((e as Enemy).global_position))
+		if clear > best_clear:
+			best_clear = clear
+			best_pos = pos
+	return best_pos
+
+
 ## (7) Darkwood: lazy build on entry, calm packs, per-pack aggro, door
 ## seals while hot, clears; then the side rooms (cache, social, shrine).
 func _test_graph_walk_darkwood() -> void:
 	_buff()
-	# Entering the Darkwood Road builds it and wakes NOBODY.
+	# Entering the Darkwood Road builds it and wakes NOBODY. Arrive the way
+	# the player actually does — at a doorway, not dropped in the middle of
+	# the packs. (MP-17: a bare center drop lands inside a pack's 330 px
+	# aggro radius on ~1.4% of seeds, when a +15% density twin jitters toward
+	# the centre — measured 13/900. The reposition happens with NO physics
+	# frame between it and the center, so the AI never thinks the player is
+	# there; the assert below keeps its full strength.)
 	if game.built.get(2, false):
 		return _fail("room 2 built before anyone entered it")
-	await _goto_room(2)
+	game.player.global_position = game.room_center(2)
+	game._enter_room(2)                        # lazy-build + seal + visited
+	game.player.global_position = _clear_entry(2)
+	await _frames(3)
 	if not game.built.get(2, false):
 		return _fail("room 2 did not build on entry")
 	var mobs := _room_mobs(2)
@@ -313,6 +347,7 @@ func _test_fangmaw() -> void:
 	game.player.global_position = game.current_boss.global_position + Vector2(-180, 0)
 	await _frames(200)
 	var gold_before := game.player.gold
+	var loot_at: Vector2 = game.current_boss.global_position  # coins scatter here
 	game.current_boss.take_damage(999999.0)
 	await _frames(5)
 	game.player.pending_theme_note = ""
@@ -324,15 +359,17 @@ func _test_fangmaw() -> void:
 		return _fail("fangmaw's death did not unbar the way onward")
 	if game.barrier_active:
 		return _fail("door seals did not lift after fangmaw died")
-	# Walk onto the drop pile: the gold coins magnet in.
-	game.player.global_position = game.room_center(9) + Vector2(ROOM_HALF_X, 0)
-	await _frames(30)
+	# Walk onto the drop pile: the gold coins magnet in. MP-17 flake fix: the
+	# pile scatters around the boss death spot (about 420 px from the room's
+	# right edge the test used before), so stand ON it and give the magnet
+	# real time, instead of a fixed edge + a 30-frame gamble on coin scatter.
+	game.player.global_position = loot_at
+	await _frames(60)
 	if game.player.gold <= gold_before:
 		return _fail("fangmaw dropped no gold")
 	print("ok: fangmaw killed + loot (gate opened)")
 
 
-const ROOM_HALF_X := 620.0  # boss arena drop pile sits east of center
 
 ## (7c) Marsh: the merchant camp, fast travel from the map, and death →
 ## last safe room with the death room resetting.

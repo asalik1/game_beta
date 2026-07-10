@@ -69,6 +69,13 @@ signal lobby_changed
 signal session_started
 
 const MOVE_HZ := 20.0    # owner movement broadcast rate (§3.1)
+## MP-16: after briefing a guest, the host gives it this long to finish its
+## world build and announce readiness (_rpc_join_ready). A peer that never
+## gets there — killed mid-build, or wedged but still ENet-connected — is a
+## ghost; the host drops it (the auth timeout, MP-05, only covers the PRE-
+## admission window, so this closes the post-auth pre-ready gap). Generous:
+## a real world build is seconds, and the transport timeout is the backstop.
+const READY_TIMEOUT := 20.0
 ## MP-10: owner vitals cadence (s). Change-gated at this rate; an hp DROP
 ## (damage) sends immediately so shell bars and host-side AI reads never
 ## trail a fight by more than a beat.
@@ -274,6 +281,26 @@ func _send_snapshot(id: int) -> void:
 		"weekly_active": game.weekly_active,
 		"weekly_week": game.weekly_week,
 	})
+	_watch_ready(id)  # MP-16: bounded ghost-peer drop if it never gets ready
+
+
+## HOST: after briefing a guest, give it a bounded window to finish its
+## world build and announce readiness (_rpc_join_ready populates peer_chars).
+## A peer that never gets there is a ghost holding a seat — drop it, so the
+## session and the seat stay clean. The transport's own timeout is the
+## backstop; this also catches the wedged-but-connected case (MP-16).
+func _watch_ready(id: int) -> void:
+	var deadline := Time.get_ticks_msec() + int(READY_TIMEOUT * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		await get_tree().create_timer(0.25).timeout
+		if not _net().is_online() or not multiplayer.is_server():
+			return
+		if not (id in _net().peers):
+			return  # already gone (clean leave, or a transport drop)
+		if peer_chars.has(id):
+			return  # became ready — the normal path
+	if (id in _net().peers) and not peer_chars.has(id):
+		_net().drop_peer(id)
 
 
 ## GUEST: the host's world arrives. Seed purity (§2.1) makes this SMALL:
@@ -297,6 +324,7 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	g.weekly_active = bool(snap.get("weekly_active", false))
 	g.weekly_week = int(snap.get("weekly_week", g.weekly_week))
 	g.guest_world = true  # from here on autosaves are character-only (§5.7)
+	g._host_lost_handled = false  # MP-16: a fresh session can lose its host anew
 	# The character (MP-08, §5.7): the lobby put the joiner's OWN roster
 	# slot in local_char — load that save's CHARACTER section (identity,
 	# gear, wallet, records) onto our player, after the rebuild exactly
@@ -422,6 +450,12 @@ func _char_block() -> Dictionary:
 # -------------------------------------------------------- peer lifecycle ---
 
 func _on_peer_left(id: int) -> void:
+	# MP-16: name the leaver for the party toast BEFORE the roster erases it.
+	var gone_name := ""
+	if peer_chars.has(id):
+		gone_name = String(peer_chars[id].get("name", ""))
+	elif lobby_chars.has(id):
+		gone_name = String(lobby_chars[id].get("name", ""))
 	peer_chars.erase(id)
 	lobby_chars.erase(id)
 	if multiplayer.is_server() and _net().is_online():
@@ -442,30 +476,42 @@ func _on_peer_left(id: int) -> void:
 			if int(_convo_claims[ck]) == id:
 				_convo_claims.erase(ck)
 		_check_wipe()
+	# MP-16: mid-run, tell the party in plain words that a friend dropped (a
+	# lobby-time leave already shows in the lobby list). Fires on EVERY
+	# remaining machine — host and sibling guests alike.
+	if game != null and bool(game.play_started) \
+			and game.local_player != null and is_instance_valid(game.local_player):
+		var who := gone_name if gone_name != "" else "A hero"
+		game.spawn_text(game.local_player.global_position + Vector2(0, -92),
+			"%s left the party" % who, Color(1.0, 0.8, 0.55), 2.5)
 
 
-func _on_session_ended(_reason: String) -> void:
+func _on_session_ended(reason: String) -> void:
 	world_ready = false
 	if game != null:
+		# MP-16: restore a FALLEN guest to a safe, ALIVE state BEFORE the
+		# autosave. A downed/ghost body sits at hp<=0 (§5.3), and writing that
+		# home would land the hero at 1 HP on their next solo load (apply_character
+		# clamps to >=1). §5.3's stand-up floor (30% max) is the taste default
+		# for "the session died under me" — the same value a channel/room-clear
+		# revive uses. Offline now (peer already swapped): net_stand_up broadcasts
+		# nothing. This runs BEFORE the write below, so the home save reads alive.
+		if game.local_player != null and is_instance_valid(game.local_player):
+			game.local_player.peer_id = 1  # back to the solo default
+			if game.local_player.downed or game.local_player.ghost:
+				game.local_player.net_stand_up(game.local_player.REVIVE_HP_FRAC)
+			game.local_player.net_clear_down_local()
 		# MP-14 (§5.7): a guest whose session ends (host advanced-to-exit, host
 		# loss, or its own leave) takes its character home — belt-and-braces
 		# beside net_session_over's explicit write, so a lost end-RPC or a
-		# vanished host never costs the guest its progress. Full drop/rejoin
-		# hardening is MP-16; this covers the victory-exit path.
+		# vanished host never costs the guest its progress. Now that vitals are
+		# safe (above), the home save captures an alive hero at the revive floor.
 		if game.guest_world and game.save_slot > 0 \
 				and game.local_player != null and is_instance_valid(game.local_player) \
 				and not game.local_player.dead:
 			SaveGame.write_character_home(game, game.save_slot)
 		for id in peer_chars:
 			game.unregister_player(int(id))
-		if game.local_player != null and is_instance_valid(game.local_player):
-			game.local_player.peer_id = 1  # back to the solo default
-			# MP-12: the session died under a fallen player — downed/ghost
-			# are online-only states, so stand them up at the revive floor
-			# (offline: net_stand_up broadcasts nothing).
-			if game.local_player.downed or game.local_player.ghost:
-				game.local_player.net_stand_up(game.local_player.REVIVE_HP_FRAC)
-			game.local_player.net_clear_down_local()
 	peer_chars.clear()
 	lobby_chars.clear()
 	last_snapshot = {}
@@ -513,6 +559,12 @@ func _on_session_ended(_reason: String) -> void:
 			game.hud.reset_party_ui()  # MP-14: party frames/arrows/labels freed
 	_guest_boss_gone.call_deferred()  # a mirror's bar must not outlive it
 	lobby_changed.emit()
+	# MP-16: a GUEST that lost its host mid-run returns to the title with a
+	# plain-words notice (its character is already saved above). No-ops on the
+	# host, in the lobby, and on the graceful victory-exit — net_host_lost gates
+	# on guest_world / play_started / ST_VICTORY. Runs LAST, after teardown.
+	if game != null:
+		game.net_host_lost(reason)
 
 
 # --------------------------------------------------------- movement sync ---

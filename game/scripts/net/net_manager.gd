@@ -51,6 +51,18 @@ const DEFAULT_PORT := 9999
 const AUTH_TIMEOUT := 5.0             # s a joiner may dawdle pre-admission
 const REJECT_LINGER := 0.4            # s to let the refusal packet flush
                                       # before dropping the peer
+# ENet keepalive tuning (MP-16, widened MP-17). The transport's default drops
+# a silently dead peer only after up to 30 s — too long a hang for "the
+# connection died" (a killed host, a yanked cable). But the MP-17 soak proved
+# the first 5-8 s band FALSE-DROPS a healthy guest under sustained load (a
+# 3-process full-party soak lost a guest ~50 s in — the same signature a
+# genuinely laggy internet link will show at real 2-4p). 8-15 s rides out
+# hitches and real-latency spikes while still surfacing a dead host ~2-4x
+# faster than the engine default. If friends report mid-fight drops, raise
+# MAX further before suspecting anything else.
+const PEER_TIMEOUT_LIMIT := 32        # round-trip factor (engine default)
+const PEER_TIMEOUT_MIN := 8000        # ms — the floor (localhost lands here)
+const PEER_TIMEOUT_MAX := 15000       # ms — the ceiling (was 30000 default, 8000 in MP-16)
 const NORAY_ADDRESS := "tomfol.io"    # free public instance (§3.2) — fine
 const NORAY_PORT := 8890              # for the friends phase; self-host later
 const NORAY_TIMEOUT := 10.0           # s for each noray registration step
@@ -67,6 +79,11 @@ var peers: Array[int] = []
 ## Client-side: why the host refused us (kept so the disconnect that follows
 ## a rejection can surface the real reason, not just "connection lost").
 var last_reject_reason := ""
+## MP-16: a player-readable notice to surface on the NEXT title screen. Set
+## when a guest's session ends mid-run (host loss) and the scene reloads to
+## the title — this autoload SURVIVES reload_current_scene, so the message
+## outlives the world it belonged to. menus.open_title reads and clears it.
+var last_session_notice := ""
 ## TESTS ONLY: what this machine CLAIMS as its version when joining. Lets
 ## net_test.gd drive the mismatch path through production code. Empty = truth.
 var version_override := ""
@@ -260,6 +277,7 @@ func _on_auth_failed(id: int) -> void:
 
 func _on_peer_connected(id: int) -> void:
 	peers.append(id)
+	_tune_peer_timeout(id)  # MP-16: cap silent-death detection to ~5-8 s
 	peer_joined.emit(id, {})  # char_info: wave 4 (character handoff)
 
 func _on_peer_disconnected(id: int) -> void:
@@ -268,7 +286,35 @@ func _on_peer_disconnected(id: int) -> void:
 		peer_left.emit(id)
 
 func _on_connected_to_server() -> void:
-	pass  # admission is observable via peer_joined(1, ...) on this machine
+	_tune_peer_timeout(1)  # MP-16: the guest tightens ITS view of the host too
+
+
+## MP-16: tighten a freshly-connected peer's ENet keepalive so a silent
+## death is noticed in the 5-8 s band, not the 30 s default. Best-effort —
+## only ENet transports expose per-peer timeouts (noray hands back an ENet
+## peer too; the offline peer does not).
+func _tune_peer_timeout(id: int) -> void:
+	var mp := multiplayer.multiplayer_peer
+	if mp is ENetMultiplayerPeer:
+		var pp: ENetPacketPeer = (mp as ENetMultiplayerPeer).get_peer(id)
+		if pp != null:
+			pp.set_timeout(PEER_TIMEOUT_LIMIT, PEER_TIMEOUT_MIN, PEER_TIMEOUT_MAX)
+
+
+## MP-16, HOST: drop an ADMITTED peer that never finished joining — a ghost
+## holding a lobby seat (killed mid-world-build, or wedged). Disconnects it
+## at the transport and reaps our roster IMMEDIATELY: a dead ghost never ACKs
+## the graceful close, so we don't wait on the transport's own event (a later
+## peer_disconnected, if it ever comes, no-ops on the already-erased id).
+func drop_peer(id: int) -> void:
+	if not _session_active or not multiplayer.is_server():
+		return
+	var mp := multiplayer.multiplayer_peer
+	if mp is ENetMultiplayerPeer:
+		(mp as ENetMultiplayerPeer).disconnect_peer(id, false)
+	if id in peers:
+		peers.erase(id)
+		peer_left.emit(id)
 
 func _on_connection_failed() -> void:
 	_end_session("could not connect to the host")

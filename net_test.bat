@@ -1,57 +1,27 @@
 @echo off
-rem NET TEST: six stages, all over localhost ENet.
-rem   1. NetworkManager session harness (MP-05) - the NET_VERSION auth
-rem      gate and peer lifecycle (game/scripts/tests/net_test.gd).
-rem   2. Session gameplay bridge (MP-07) - two REAL game instances share
-rem      one seeded world: join snapshot + world rebuild, player spawn
-rem      fan-out, 20 Hz movement sync, clean leave
-rem      (game/scripts/tests/net_test_session.gd).
-rem   3. Combat over the wire (MP-09) - same harness, --net-stage=3: the
-rem      host spawns wolves + a boss and the guest must SEE them (mirror
-rem      census + gating, position tracking, hp sync, play_action strip,
-rem      boss bar, telegraph event, a kill frees the mirror).
-rem   4. Hit resolution over the wire (MP-10) - same harness, --net-stage=4:
-rem      the guest FIGHTS. Real-intent ability on a mirror (host hp drops by
-rem      the RPC'd amount, mirror converges), burn rider ticks host-side,
-rem      host hit on the shell drops the guest's REAL hp (vitals follow),
-rem      guest projectiles kill a mob (death event + kill XP), hostile
-rem      projectile event renders, boss phase flag round-trips.
-rem   5. Loot instancing (MP-11) - same harness, --net-stage=5: a solo kill
-rem      pays exactly once (regression), a party kill grows BOTH wallets
-rem      from their OWN piles (shells can't eat the other's coins), a boss
-rem      chest opens per player (the guest opening its copy leaves the
-rem      host's shut), a crafted award package lands in the guest's bags,
-rem      and a guest-side ground drop flushes to the GUEST's mailbox.
-rem   6. Downed/revive/wipe (MP-12) - same harness, --net-stage=6: a guest
-rem      at 0 hp goes DOWNED not dead (shell shows it, enemies retarget
-rem      away), a 3 s INTERACT channel revives it at 30% max (a landed hit
-rem      on the reviver breaks the channel - no revive), both down = WIPE
-rem      (both tithed, both at the host's safe room, arena boss leashed to
-rem      full), party-of-1-online collapses to the death flow, and the
-rem      solo-OFFLINE death is bit-identical to the old flow.
-rem   7. Dialogue + story sync (MP-13) - same harness, --net-stage=7: a guest
-rem      sets a WORLD flag and the host agrees (a fresh late-joiner gets it in
-rem      its snapshot; a per-character flag stays local), an NPC busy-lock
-rem      stops a second interactor (bark, no dialogue) until the first closes,
-rem      and a guest's payout choice pays ONLY the guest while the world flag
-rem      routes to the host and the party is toasted.
-rem   8. Party UI + synced victory (MP-14) - same harness, --net-stage=8: the
-rem      party-frame DATA model tracks an ally's vitals + downed state, an
-rem      ally-damage number lands small on the non-attacker, a forced final-
-rem      boss death puts BOTH machines on the victory card (the guest takes its
-rem      own chapter credit + weekly reward), the host's advance carries the
-rem      guest into the next chapter via the snapshot rebuild, and the solo-
-rem      OFFLINE victory is the exact old flow.
+rem NET TEST: ten stages, all over localhost ENet. Stages 1-9 prove the MP
+rem feature waves (MP-05/07/09/10/11/12/13/14/16); stage 10 is the MP-17 soak
+rem (host + guest, ~4 min: combat, transitions, down+revive, wipe, flag churn,
+rem a disconnect+fresh-rejoin) asserting session stability over time.
+rem
+rem VERDICT (MP-17 flake 1): each stage's stdout+stderr is captured to a log
+rem and the AUTHORITATIVE pass/fail is a LOG GREP, not the process exit code.
+rem A stage PASSES only if its log contains "NET TEST PASS" and contains none
+rem of "NET TEST FAIL" / "previously freed" / "SCRIPT ERROR" / "Parse Error".
+rem The exit code is only a SECONDARY signal: a KNOWN-nonzero exit also fails
+rem the stage, but a $null/unreadable exit code (Start-Process -PassThru often
+rem returns $null) defers entirely to the grep. The old wrapper did
+rem `exit $p.ExitCode`, which read $null and MASKED a real failure as exit 0
+rem (MP-13 finding). The director spawns its client processes as CHILDREN, so
+rem their freed-object errors land in the same captured log.
 rem
 rem Compile gate FIRST, always (test.bat pattern): one parse error anywhere
-rem makes a headless run idle forever. The orchestrator instance spawns and
-rem reaps its own client processes with wall-clock timeouts (OS.kill on any
-rem failure path); the PowerShell wrapper below is the LAST-RESORT kill:
-rem if the orchestrator itself wedges, taskkill /T by PID sweeps it plus
-rem any client Godots it spawned (they are its child processes).
+rem makes a headless run idle forever. The PowerShell wrapper is the LAST-
+rem RESORT kill: a top-level timeout taskkills /T by PID (director + the
+rem client Godots it spawned, all its child processes).
 rem
-rem Throwaway user:// via APPDATA redirect, same as test.bat, so runs
-rem can't race other suites on shared save/meta files.
+rem Throwaway user:// via APPDATA redirect, same as test.bat, so runs can't
+rem race other suites on shared save/meta files.
 setlocal
 :uniq
 set "EF_TEST_APPDATA=%TEMP%\emberfall_tests\run_%RANDOM%%RANDOM%"
@@ -62,40 +32,54 @@ set "APPDATA=%EF_TEST_APPDATA%"
 "%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" --script res://check_compile.gd
 if errorlevel 1 goto fail
 
-powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test.tscn' -NoNewWindow -PassThru; if ($p.WaitForExit(120000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  top-level timeout (120s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
-set "EF_EXIT=%ERRORLEVEL%"
-if not "%EF_EXIT%"=="0" goto cleanup
+call :stage 1  120000 "res://scenes/net_test.tscn"          ""
+if errorlevel 1 goto cleanup
+call :stage 2  180000 "res://scenes/net_test_session.tscn"  "--net-stage=2"
+if errorlevel 1 goto cleanup
+call :stage 3  240000 "res://scenes/net_test_session.tscn"  "--net-stage=3"
+if errorlevel 1 goto cleanup
+call :stage 4  240000 "res://scenes/net_test_session.tscn"  "--net-stage=4"
+if errorlevel 1 goto cleanup
+call :stage 5  240000 "res://scenes/net_test_session.tscn"  "--net-stage=5"
+if errorlevel 1 goto cleanup
+call :stage 6  240000 "res://scenes/net_test_session.tscn"  "--net-stage=6"
+if errorlevel 1 goto cleanup
+call :stage 7  240000 "res://scenes/net_test_session.tscn"  "--net-stage=7"
+if errorlevel 1 goto cleanup
+call :stage 8  240000 "res://scenes/net_test_session.tscn"  "--net-stage=8"
+if errorlevel 1 goto cleanup
+call :stage 9  360000 "res://scenes/net_test_session.tscn"  "--net-stage=9"
+if errorlevel 1 goto cleanup
+call :stage 10 420000 "res://scenes/net_test_session.tscn"  "--net-stage=10"
+if errorlevel 1 goto cleanup
 
-powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn' -NoNewWindow -PassThru; if ($p.WaitForExit(180000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  session-stage timeout (180s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
-set "EF_EXIT=%ERRORLEVEL%"
-if not "%EF_EXIT%"=="0" goto cleanup
-
-powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=3' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  combat-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
-set "EF_EXIT=%ERRORLEVEL%"
-if not "%EF_EXIT%"=="0" goto cleanup
-
-powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=4' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  hit-resolution-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
-set "EF_EXIT=%ERRORLEVEL%"
-if not "%EF_EXIT%"=="0" goto cleanup
-
-powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=5' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  loot-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
-set "EF_EXIT=%ERRORLEVEL%"
-if not "%EF_EXIT%"=="0" goto cleanup
-
-powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=6' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  downed-wipe-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
-set "EF_EXIT=%ERRORLEVEL%"
-if not "%EF_EXIT%"=="0" goto cleanup
-
-powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=7' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  dialogue-story-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
-set "EF_EXIT=%ERRORLEVEL%"
-if not "%EF_EXIT%"=="0" goto cleanup
-
-powershell -NoProfile -Command "$p = Start-Process -FilePath '%~dp0tools\Godot_v4.4.1-stable_win64_console.exe' -ArgumentList '--headless','--path','%~dp0game','res://scenes/net_test_session.tscn','--','--net-stage=8' -NoNewWindow -PassThru; if ($p.WaitForExit(240000)) { exit $p.ExitCode } else { Write-Host ('NET TEST FAIL  party-victory-stage timeout (240s) - taskkill /T on PID ' + $p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }"
-set "EF_EXIT=%ERRORLEVEL%"
+set "EF_EXIT=0"
 goto cleanup
 
 :fail
 set "EF_EXIT=1"
+goto done
+
 :cleanup
+if not defined EF_EXIT set "EF_EXIT=%ERRORLEVEL%"
+:done
 rmdir /s /q "%EF_TEST_APPDATA%" 2>nul
 exit /b %EF_EXIT%
+
+rem ---- :stage <label> <timeout-ms> <scene> <user-args> -----------------
+rem Runs one stage headless, captures its log, and returns the GREP verdict
+rem in ERRORLEVEL (0 pass, nonzero fail). Env vars carry the parameters into
+rem PowerShell so no path/arg needs cmd-side quoting inside the -Command body.
+rem No setlocal here: the powershell exit code must reach the caller directly
+rem via `exit /b %ERRORLEVEL%` (an endlocal on the same line would swallow it).
+:stage
+set "EF_SNAME=%~1"
+set "EF_TMO=%~2"
+set "EF_SCENE=%~3"
+set "EF_UARGS=%~4"
+set "EF_GODOT=%~dp0tools\Godot_v4.4.1-stable_win64_console.exe"
+set "EF_GAME=%~dp0game"
+set "EF_SLOG=%EF_TEST_APPDATA%\stage%~1.out"
+set "EF_SERR=%EF_TEST_APPDATA%\stage%~1.err"
+powershell -NoProfile -Command "$al=@('--headless','--path',$env:EF_GAME,$env:EF_SCENE); if ($env:EF_UARGS) { $al+='--'; $al+=$env:EF_UARGS }; $p=Start-Process -FilePath $env:EF_GODOT -ArgumentList $al -NoNewWindow -PassThru -RedirectStandardOutput $env:EF_SLOG -RedirectStandardError $env:EF_SERR; if (-not $p.WaitForExit([int]$env:EF_TMO)) { Write-Host ('NET TEST FAIL  stage '+$env:EF_SNAME+' timeout ('+$env:EF_TMO+'ms) - taskkill /T on PID '+$p.Id); taskkill /PID $p.Id /T /F | Out-Null; exit 124 }; $p.WaitForExit(); $txt=(Get-Content -Path $env:EF_SLOG,$env:EF_SERR -ErrorAction SilentlyContinue) -join [Environment]::NewLine; Write-Host $txt; $code=$p.ExitCode; $bad=($txt -match 'NET TEST FAIL') -or ($txt -match 'previously freed') -or ($txt -match 'SCRIPT ERROR') -or ($txt -match 'Parse Error'); $pass=$txt -match 'NET TEST PASS'; if ($bad -or (-not $pass)) { Write-Host ('NET TEST FAIL  stage '+$env:EF_SNAME+' verdict by log grep'); exit 1 }; if (($null -ne $code) -and ($code -ne 0)) { Write-Host ('NET TEST FAIL  stage '+$env:EF_SNAME+' grep PASS but nonzero exit '+$code); exit $code }; Write-Host ('[net_test] stage '+$env:EF_SNAME+' PASS (grep-verified)'); exit 0"
+exit /b %ERRORLEVEL%

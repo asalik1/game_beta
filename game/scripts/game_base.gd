@@ -182,6 +182,10 @@ var no_saves := false                 # autotest: never touch real save files
 # the next autosave into a full write of the host's world); every path
 # that starts an OWN world (reset_run_stats, load_save) clears it.
 var guest_world := false
+## MP-16: net_host_lost fires at most once per session (a guest returning to
+## title on host loss). Reset when a fresh world snapshot rebuilds (a rejoin
+## can lose its host anew) — net_session._rpc_world_snapshot.
+var _host_lost_handled := false
 var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en"}  # user://settings.json
 var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)

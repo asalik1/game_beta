@@ -300,6 +300,36 @@ func exit_to_title() -> void:
 	get_tree().reload_current_scene()
 
 
+## MP-16: a GUEST lost its host mid-run (host crash, kill, or ENet timeout —
+## NOT the graceful victory-exit, where the guest reads its own results card).
+## The character already autosaved in net_session._on_session_ended (with the
+## §5.3 stand-up floor applied to any fallen body); here we tell the player in
+## plain words and reboot to the title. Gated so it never fires on the host,
+## in the lobby, on the victory card, or twice.
+func net_host_lost(reason: String) -> void:
+	if net_online():
+		return  # still in a session — not a loss
+	if not guest_world or not play_started:
+		return  # the host's own close, or a lobby-time drop (lobby.gd owns that)
+	if state == ST_VICTORY:
+		return  # graceful victory-exit — the guest reads its own card
+	if _host_lost_handled:
+		return
+	_host_lost_handled = true
+	print("[mp] host lost (%s) — guest returning to the title" % reason)
+	request_pause(false)
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	if net != null:
+		net.last_session_notice = "The connection to the host was lost. Your hero is safe — its progress came home with you."
+	# Real play: the Game IS the current scene, so reboot clean to the title
+	# (the same reload exit_to_title uses; the notice, staged on the surviving
+	# autoload, greets the player there). Under the net_test harness the Game is
+	# a CHILD of the test node — reloading would restart the harness, so skip it;
+	# the notice + the torn-down offline state is what that stage asserts.
+	if get_tree().current_scene == self:
+		get_tree().reload_current_scene()
+
+
 # =================================================================== keybinds
 
 ## Brawl bookkeeping shared by story and rogue boss deaths: drop the

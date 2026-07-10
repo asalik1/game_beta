@@ -134,10 +134,137 @@ to end: join → fight (mirrors + combat + instanced loot) → talk (synced stor
 clear the chapter together → advance as a party. Remaining: Phase 4 hardening (disconnect/rejoin,
 soak/flake hunt, packaging).
 
-## Wave 7 — Phase 4: hardening — status: PLANNED
-MP-16 disconnects/rejoin (graceful everywhere, guest autosave on drop, host-loss session end);
-MP-17 soak + flake hunt (0xC0000005 shutdown flake, ObjectDB leak warning, long-session drift, MP-10 stage-4 XP room-gating intermittent, net_test.bat PS exit-code masking — grep NET TEST FAIL not exit code, INTERMITTENT full-suite "entering a room should wake nobody (per-pack aggro)" seen once at the phase-3 gate then green on rerun — likely timing-marginal vs the sticky-retarget changes, bench warrior/earth 1987 single-run low read needs a 6-run mean);
-MP-18 packaging (export/zip/SmartScreen README for friends; noray self-host decision = OWNER).
+## Wave 7 — Phase 4: hardening
+
+### MP-16: Disconnect hardening (drop/rejoin, host-loss, ghost peers) — OWNER: agent-H — status: DONE
+Files: net/net_manager.gd, net/net_session.gd, game_flow.gd, game_base.gd, menus.gd,
+tests/net_test_session.gd + net_test.bat (stage 9). ui/lobby.gd needed NO change — its lobby-time
+`_ended` already owns lobby drops. The sweep, per subsystem × event (GUEST-LOST = peer_left,
+HOST-LOST = session_ended):
+* GUEST-LOST is handled by EXISTING valid-guards — combat targets re-resolve (`nearest_player`/
+  `_get_target`/`_floor_target`/`pick_target` all `is_instance_valid`-guard; a `queue_free`d shell
+  cached in `enemy.target`/`boss.target` re-picks within a frame), revive/convo claims free in
+  `_on_peer_left`, party scalars are spawn-time (no mid-room mutation), dropped RPCs to a gone peer
+  no-op (`pid in peers` gates). MP-16 ADDS a plain-words party toast ("<name> left the party") on
+  every remaining machine (mid-run only; the lobby list already shows lobby-time leaves).
+* HOST-LOST: `_on_session_ended` now RESTORES a fallen guest to an ALIVE state BEFORE the autosave —
+  a downed/ghost body sits at hp<=0 and the OLD order wrote that home (→ 1 HP on next solo load);
+  now `net_stand_up(REVIVE_HP_FRAC)` (30% max — the §5.3 stand-up floor, the taste default) runs
+  first, so `write_character_home` captures an alive hero. Then NEW `game.net_host_lost(reason)`
+  (game_flow): a guest that lost its host mid-run (crash/kill/timeout, NOT the graceful victory-exit —
+  ST_VICTORY gates it out) gets "The connection to the host was lost. Your hero is safe…" and reboots
+  to the title (`reload_current_scene`, harness-gated on `current_scene == self`). The notice rides
+  `net_manager.last_session_notice` (survives the reload — the autoload does); menus.open_title
+  surfaces + clears it. Fires once (`_host_lost_handled`, reset on each fresh world snapshot).
+* SILENT DEATH: ENet peer timeout tuned to a 5-8 s band (was up to 30 s) via `_tune_peer_timeout`
+  on every peer_connected / connected_to_server, so a killed host surfaces on guests (and a killed
+  guest on the host) promptly. GHOST PEERS: a NEW bounded ready-timeout (`_watch_ready`, 20 s from
+  snapshot-send) drops an admitted peer that never announces readiness — closing the post-auth
+  pre-ready gap the MP-05 auth timeout (pre-admission only) can't; `net_manager.drop_peer` reaps the
+  roster immediately (a dead ghost never ACKs). LEAVE-AND-RETURN: session state fully resets per join
+  (registries/net_ids/claims/party-UI/flags cleared in `_on_session_ended`), verified by a rejoin +
+  a close→re-host cycle twice.
+* net_test STAGE 9 (`--net-stage=9`, ports 48227/48229): scripted OS.kill of CHILD instances (not
+  graceful leaves), nonzero child exit = success. (a)+(c) guest killed mid-combat while downed +
+  revive-claimed → host roster 1, no claim/frame/mirror leak, boss re-targets the host from the freed
+  shell; (e) peer killed during world build → host drops the ghost, lobby stays usable; (d) fresh
+  guest rejoins (world rebuilds identically) + host closes/re-hosts twice; (b) host killed under a
+  guest → the survivor autosaves its LIVE character home (gold sentinel + saved_at advance), goes
+  offline, stages the title notice. The stage log is captured and grepped for "previously freed"
+  (freed-object errors = failure). test_quick + net_test ALL 9 stages + full test.bat green.
+KNOWN (deferred to MP-17): the ObjectDB-leak-at-exit WARNING surfaces on stage 9's heavy session
+churn (many host/join/leave cycles + child spawns) — a warning, exit still 0, not a freed-object
+error; it's already on MP-17's shutdown-flake list.
+
+### MP-17: Soak + flake hunt — OWNER: agent-K — status: DONE
+Files: net_test.bat, tests/net_test_session.gd (stage 10 soak), tests/test_ch1.gd (aggro flake fix +
+a discovered fangmaw-gold flake). The four logged flakes, understood:
+* FLAKE 1 — net_test.bat exit-code masking: FIXED. The `.bat`'s authoritative verdict is now a LOG
+  GREP per stage (a stage passes only if its captured log has `NET TEST PASS` and none of `NET TEST
+  FAIL` / `previously freed` / `SCRIPT ERROR` / `Parse Error`); the exit code is a SECONDARY signal —
+  a KNOWN-nonzero exit also fails, but a `$null`/unreadable exit code (Start-Process -PassThru returns
+  `$null` here — the exact MP-13 masking root) DEFERS to the grep instead of reading as 0/failure.
+  Rewritten as a `:stage <label> <timeout> <scene> <uargs>` subroutine (no setlocal so the code
+  propagates), ASCII + CRLF. Validated: a passing stage with `$null` exit -> PASS; a FAIL/freed line
+  -> FAIL.
+* FLAKE 2 — per-pack aggro ("entering a room should wake nobody"): ROOT-CAUSED + FIXED in the TEST
+  (assertion preserved at full strength — only the entry position changed, no assert weakened). Cause
+  is SEED GEOMETRY, NOT the MP-01 sticky-retarget: `_test_graph_walk_darkwood` dropped the player at
+  the room CENTRE, and the authored Darkwood spider at (960,260) sits 376 px from centre — a hair past
+  the 330 px aggro range — so a +15% density TWIN jittering toward the middle crosses it, wakes, and
+  cascades its pack. Reproduced with a 900-seed sweep: 13/900 (~1.4%, matching "seen once, green on
+  rerun"), closest approach 301 px; the LOS gate (2026-07-09) only made waking LESS likely, and solo
+  wake conditions are unchanged by the retarget — hypothesis refuted. FIX: enter at the clearest
+  doorway (`_clear_entry`) the way the game actually arrives — packs are authored clear of doorways by
+  design; the reposition happens with NO physics frame at the centre, so the AI never sees the player
+  there. Sweep with the fix: 0/900 wakes.
+* FLAKE 3 — 0xC0000005 child-shutdown crash: CHARACTERIZED + mitigated. Reproduces under SUSTAINED
+  3-process load — a guest process DIES ~50 s into a full-party-1 soak (host peer_left with the child
+  pid GONE), the crash surfacing via an ungraceful mid-run peer drop under CPU contention (the 3-way
+  party comes up fine; sustained load bites — consistent with MP-16's tight 5-8 s peer-timeout note).
+  MITIGATION (harness, in scope): orderly `_net.leave()` (closes the ENet socket -> OfflinePeer) +
+  settle BEFORE every host `get_tree().quit()` (`_pass()`) and on the abort path (`_fail`) — a live
+  listen socket racing the MultiplayerAPI teardown on Windows is the graceful-exit crash. Post-fix,
+  net_test's 10 stages show ZERO `previously freed`. Per the task's guidance the soak runs at host+1
+  (reliable); the 3-process finding is documented for the owner (candidate: raise the peer-timeout
+  ceiling and/or harden the guest session-teardown order for ungraceful drops — both live in
+  net_manager.gd, outside this task's ownership).
+* FLAKE 4 — ObjectDB leaked-at-exit: TRIAGED, leave it. `--verbose` shows the leak is 3 SceneTreeTimer
+  instances still in flight when the FULL content playthrough force-quits (`get_tree().quit()` before
+  tween/fuse timers elapse) — the pre-existing content-playthrough leak (predates MP), a benign
+  WARNING (exit 0, AUTOTEST PASS), NOT session/registry objects. Notably it does NOT appear in any
+  net_test stage — stage 9's heavy churn AND the stage-10 soak exit with ZERO leaked instances, so MP
+  session teardown is clean (the flake-3 orderly-leave helps). The grep verdict does not treat
+  "leaked at exit" as a failure, so a benign residual can't fail the suite.
+* SOAK (net_test STAGE 10, `--net-stage=10`, port 48231): a ~4 min session — continuous combat waves
+  (mirror stream + death events every iter), world-flag churn, a real down+host-channeled-revive
+  cycle, a party wipe (all down -> respawn), and a graceful disconnect + fresh rejoin — asserting
+  stability over time: the roster never silently loses a member, `net_enemies`/`net_projectiles`/
+  claim registries stay bounded (no monotonic growth), the guest shell keeps converging (bounded
+  drift), and host static-memory / RSS don't balloon. Result (host+1, 169 iters): SOAK CLEAN — host
+  static mem +2.6-2.8%, host RSS +0.3-2.1% (< 25% caps), peak net_enemies 6 / net_projectiles 0, max
+  shell drift 15-42 px, final drift 0-2 px, zero freed/SCRIPT-ERROR lines. (Remote shells are
+  freed+replaced by register_remote_player, so the harness re-resolves `_player_of(gid)` at every use
+  — never holds a stale reference across an await.)
+* BENCH RECHECK (dps_bench_rep warrior/earth --runs=6): mean 2274 dps (min 2074, max 2457, 16.8%
+  spread). The pre-phase-0 reference is 2124-2148 -> the mean is ~+6% ABOVE it, so the phase-3
+  single-run 1987 read was low-crit-streak variance, NOT a regression. Nothing tuned.
+* DISCOVERED (5th, pre-existing, out of the logged 4): `_test_fangmaw` gold-pickup — after the kill it
+  teleported the player to the room's right edge (~420 px from where the boss dies and coins scatter)
+  and gave only 30 frames to magnet them in, so a scatter/timing-unlucky seed failed "fangmaw dropped
+  no gold" (fired once in these runs). MINIMAL FIX (same file): collect AT the captured boss death
+  spot with a 60-frame window — assertion (gold dropped AND collected) unchanged.
+* RESULTS: test_quick green; net_test ALL 10 stages green (grep-verified, 0 freed/SCRIPT ERROR); full
+  test.bat green TWICE back-to-back (both AUTOTEST PASS on independent random seeds — darkwood aggro +
+  fangmaw both clean each run).
+
+### MP-18: Packaging — status: DONE (make_build.bat at repo root: compile gate -> test_quick.bat ->
+headless Windows export [game/export_presets.cfg "Windows Desktop", embed_pck=true single self-
+contained exe] -> build/Emberfall_<NET_VERSION>_win64.zip = Emberfall.exe + FRIENDS_README.txt +
+CREDITS.txt; NET_VERSION read live from net_manager.gd so the zip name can't drift; fails loudly at
+each step. export_presets.cfg include_filter HARDENED so the Godot+netfox MIT notices ship in the
+pck AND next to the exe in the zip [verified: export log stored addons/CREDITS.txt + both netfox
+LICENSE files, and the CREDITS-unique phrase greps out of the exe binary]. FRIENDS_README.txt =
+extract-first / one-time SmartScreen / join-by-code / same-version / no-port-forward / 3-line
+troubleshooting. DISTRIBUTION.md [owner] = release checklist + NET_VERSION bump-when/why + preset
+rationale + SmartScreen/AV escalation ladder [nothing -> MS false-positive submit -> Azure Artifact
+Signing ~$10/mo -> Steam vanishes it] + noray posture [public tomfol.io now, self-host REQUIRED
+before wide/mobile = OWNER decision, docker-on-$5-VPS outline, §3.2] + license-compliance state +
+Steam/mobile seam pointers [§3.2/§10]. Version plumbing verified: title cover [menus.gd:231], lobby
+[lobby.gd:91/218], codex [codex.gd:597] all read the const [no drift]; the auth reject names BOTH
+versions [net_manager.gd:224]. net_manager.gd NOT touched [agent-H's file] — read-only. A real
+export ran green: exe 254 MB embedded pck, zip 189 MB, exe boots headless [--version 4.4.1.stable].
+OWNER decisions open: noray self-host timing, code-signing when distribution widens, optional exe
+metadata/icon [rcedit not configured -> non-fatal export warning].)
+
+**PHASE 4 COMPLETE** — disconnect hardening (MP-16) + soak & flake hunt (MP-17) + packaging (MP-18).
+
+**ALL PHASES COMPLETE** — the co-op blueprint is built end to end (Phase 0 groundwork -> Phase 1
+sessions -> Phase 2 combat over the wire -> Phase 3 flow/story/UI -> Phase 4 hardening). The four
+logged flakes are understood (2 fixed, 1 mitigated + characterized, 1 triaged), the session soaks
+clean over time, and net_test's 10 stages + test_quick + full test.bat (x2) are green. Remaining is
+OWNER-gated real-world validation (2-4p over the internet, noray self-host, code-signing) — see the
+PLAYTEST NOTES and DISTRIBUTION.md, not code work.
 
 ## PLAYTEST NOTES — taste calls defaulted while the owner was away (review these!)
 - PARTY scalars: HP x1.9/2.8/3.7, dmg x1.1/1.2/1.3, boss cadence x1.1/1.2/1.3 (balance.gd) — opening
@@ -264,6 +391,50 @@ MP-18 packaging (export/zip/SmartScreen README for friends; noray self-host deci
     clear (a veteran guest in a fresh host world re-earns it — blueprint's call, unchanged). If the
     "everyone freezes" reads wrong for a guest mid-trash-fight in another room when the host kills
     the final boss, the knob is the ST_VICTORY pause exception in game_base.request_pause.
+- MP-16 disconnect hardening (taste calls, review at real 2-4p):
+  * MESSAGE WORDING — a guest that loses its host mid-run reboots to the title with a gold banner:
+    "The connection to the host was lost. Your hero is safe — its progress came home with you."
+    (net_manager.last_session_notice, set by game_flow.net_host_lost, shown by menus.open_title). A
+    friend dropping mid-run floats "<name> left the party" (warm-amber, 2.5 s) over every remaining
+    hero (net_session._on_peer_left). Both are deliberately reassuring, not technical — the transport
+    can't tell a crash from a graceful host-close, so "lost" is the honest word for both. Knobs are
+    those two strings.
+  * TIMEOUT DURATIONS — ENet peer keepalive is tuned to a 5-8 s detection band (PEER_TIMEOUT_MIN 5000
+    / MAX 8000 ms in net_manager; was the engine default up to 30 s) so a silent host/guest death
+    surfaces promptly without dropping a brief real-network hiccup. A guest admitted but never
+    announcing readiness (killed mid-world-build, or wedged) is dropped after READY_TIMEOUT = 20 s
+    (net_session._watch_ready) — generous, since a real world build is seconds; the ENet timeout is
+    the faster backstop for a truly-dead peer. If 8 s feels too twitchy on a laggy connection, raise
+    PEER_TIMEOUT_MAX; if a ghost lobby seat lingering 20 s annoys, lower READY_TIMEOUT.
+  * DOWNED-AUTOSAVE SEMANTICS — when a session dies under a DOWNED or GHOST guest, MP-16 stands them
+    up to REVIVE_HP_FRAC (30% max HP — the §5.3 channel/room-clear revive floor) BEFORE writing the
+    character home, so the hero never lands at 1 HP on their next solo load (apply_character clamps
+    to >=1, so the old order silently bottomed them out). Chosen 30% over "restore pre-down vitals"
+    to match every other stand-up in the game — one consistent floor, no special-casing the drop
+    reason. A truly-dead (mid-wipe) guest keeps the existing skip (its last autosave stands; death
+    is non-permanent, and the local wipe flow self-recovers). Knob: REVIVE_HP_FRAC (player_core.gd).
+- MP-17 soak + flake findings (review before real 2-4p):
+  * FULL-PARTY-1 SOAK FALSE-DROP — the biggest finding. A SUSTAINED host + 2-guest session (3 headless
+    Godots on one box) drops a guest ~50 s in: the host fires peer_left and the guest's own process is
+    GONE (the 0xC0000005 shutdown crash surfacing via an ungraceful mid-run peer drop under CPU
+    contention). The 3-way party COMES UP fine — it's sustained load that bites. The MP-16 5-8 s
+    peer-timeout is the trigger: under contention a live-but-CPU-starved guest misses keepalives past
+    the ceiling and gets dropped, then its session-teardown races the transport and it dies. This is
+    the SAME signature a genuinely laggy internet connection will show at real 2-4p — so it is NOT
+    purely a test-box artifact. RECOMMEND (owner, net_manager.gd — outside MP-17's file ownership):
+    raise PEER_TIMEOUT_MAX (e.g. 12-15 s) and/or make the guest's session-end teardown robust to an
+    ungraceful ENet drop (drain the peer before freeing session nodes). The soak therefore ships at
+    host+1 (SOAK_GUESTS=1 in net_test_session.gd; bump to 2 on an idle box to exercise the 3-way).
+  * SOAK DEFAULTS (net_test_session.gd consts) — SOAK_SECS 240, memory/RSS growth caps 25%, drift cap
+    400 px, registry caps net_enemies 40 / net_projectiles 60. Measured host static-mem growth was
+    ~2.6-2.8% and RSS ~0.3-2.1% over 4 min — comfortably under the caps; no leak. If a future change
+    raises steady-state memory, these caps are the tripwire.
+  * ORDERLY-QUIT — the harness now closes the ENet socket (`_net.leave()` + a 0.3 s settle) before
+    every host `get_tree().quit()`; the graceful-exit teardown crash is gone (net_test 10/10 with zero
+    "previously freed"). The same discipline belongs in any NEW quit path that leaves a session live.
+  * BENCH — warrior/earth central DPS is ~2274 (6-run mean, 16.8% spread), ~6% ABOVE the 2124-2148
+    reference; the phase-3 1987 single-run was crit variance, not a regression. High spread is inherent
+    to the class's crit profile — bench it off the MEAN, never one run.
 - (grows as waves land)
 
 ## Integration gate (orchestrator) — PASSED 2026-07-10
