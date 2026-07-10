@@ -282,7 +282,10 @@ const CONVOS := {
 		"h2": {"who": "Old Hunter", "text": "And if you find a still pool deep in the wood — the one that holds the moon wrong — don't drink before you've decided who you are. That's free too.",
 			"choices": [
 				{"text": "\"Thanks for the warning, hunter.\"", "flags": {"met_hunter": true}, "next": ""},
+				{"text": "\"Save the ghost stories. Wolves die like anything else.\"",
+					"resonance": -2.0, "flags": {"met_hunter": true}, "next": "h_scoff"},
 			]},
+		"h_scoff": {"who": "Old Hunter", "text": "Aye, they do. So do hunters who knew everything. The wood buries both kinds the same depth — but suit yourself. The advice keeps better than you will.", "next": ""},
 	}},
 	"wander_peddler": {"start": "w1", "nodes": {
 		"w1": {"who": "Roadside Peddler",
@@ -290,8 +293,11 @@ const CONVOS := {
 			"variants": [{"flag": "met_peddler", "text": "Still no stock. Still full of gossip. The teeth thing? I stand by it.", "next": ""}],
 			"choices": [
 				{"text": "\"...Teeth.\"", "flags": {"met_peddler": true}, "next": "w2"},
+				{"text": "\"Your gossip's worth what your stock is — nothing. Move along, peddler.\"",
+					"resonance": -3.0, "flags": {"met_peddler": true}, "next": "w_scorn"},
 			]},
 		"w2": {"who": "Roadside Peddler", "text": "TEETH. Ask her yourself if you don't believe me. Actually — don't.", "next": ""},
+		"w_scorn": {"who": "Roadside Peddler", "text": "Free and worthless are different words, friend — a peddler learns that before the first cart breaks. When the spiders find you, do remember I mentioned the teeth for nothing.", "next": ""},
 	}},
 	"wander_orphan": {"start": "o1", "nodes": {
 		"o1": {"who": "Miller's Boy",

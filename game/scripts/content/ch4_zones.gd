@@ -404,8 +404,11 @@ const CONVOS := {
 			"variants": [{"flag": "ch4_voss_met", "text": "Column three's gotten worse, since you ask. The latest entries aren't even words anymore. Just a small stamped scale, perfectly balanced. We don't own that stamp.", "next": ""}],
 			"choices": [
 				{"text": "\"Who countersigned it, Voss?\"", "flags": {"ch4_voss_met": true}, "next": "w_who"},
+				{"text": "\"Dead is dead, clerk. Your column never bought anyone a coffin.\"",
+					"resonance": -1.0, "flags": {"ch4_voss_met": true}, "next": "w_dead"},
 			]},
 		"w_who": {"who": "Compact Clerk Voss", "text": "Chaplain Ordo. Back when he still filed paperwork. The signature's changed since — same name, but the hand gets HEAVIER every quarter, like something's leaning on the pen. I keep the ledgers now mostly so someone, someday, can prove this happened on purpose.", "next": ""},
+		"w_dead": {"who": "Compact Clerk Voss", "text": "No. Columns don't buy coffins — compensation tier does that, and I log it too. What the column buys, bearer, is the word 'JUDGED' sitting in an imperial ledger in my handwriting, where no one can ever say the Compact didn't know. Paper is the slowest revenge there is. It's also the only kind a clerk gets.", "next": ""},
 	}},
 	"ch4_wander_preacher": {"start": "w1", "nodes": {
 		"w1": {"who": "Lay Preacher Immo",
@@ -438,7 +441,10 @@ const CONVOS := {
 			"variants": [{"flag": "ch4_ruel_met", "text": "Today's reading? Don't ask. Actually — ask. Someone besides me and Maren should be losing sleep with correct numbers.", "next": ""}],
 			"choices": [
 				{"text": "\"How long until it matters, sapper?\"", "flags": {"ch4_ruel_met": true}, "next": "w_long"},
+				{"text": "\"Four degrees a month buys years, Ruel. I'll be paid and gone in weeks.\"",
+					"resonance": -1.0, "flags": {"ch4_ruel_met": true}, "next": "w_gone"},
 			]},
 		"w_long": {"who": "Accord Sapper Ruel", "text": "At the current slope? Years. But slopes don't hold near a wake-up — ask anyone who's watched a kettle. The heralds are the rattle before the whistle, bearer. Every one you put down buys the slope back a little. That's the entire Accord strategy, if anyone asks: fight the RATTLE.", "next": ""},
+		"w_gone": {"who": "Accord Sapper Ruel", "text": "Weeks. Mm. He writes your answer in the margin of today's readings — actually writes it. \"Everyone who's told me that is a data point now, bearer. The mountain outlasted all of them, and the instruments outlasted the mountain's patience. Safe travels. I'll log the date you said it.\"", "next": ""},
 	}},
 }

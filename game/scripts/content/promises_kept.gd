@@ -167,13 +167,19 @@ const CONVOS := {
 			"text": "A woman sits on a fallen headstone, hands folded. The locals say she asked the Choir to bury her daughter, was sung 'no', and has not spoken since — nineteen years. She looks up at you. She looks at your sword hand. Very slowly, very clearly, she nods toward the east road.",
 			"variants": [
 				{"flag": "vess_dead", "text": "She is there, hands folded — but the folded hands are different now: loose, done. The Silent Aisle has gone quiet, and word of whose hand ended the liturgy reached her before you did. When she sees you she touches two fingers to her lips, holds them out, and bows her head — nineteen years of vigil, discharged. It is the loudest thank-you you have ever been paid.", "next": ""},
+				# Walked-past state (before ch3_mute_met — the two never mix):
+				# she asked once, with a nod, and was answered. Final.
+				{"flag": "ch3_mute_passed", "text": "She is there, hands folded, eyes on the east road. She does not look up as you pass — nineteen years have taught her which footsteps to spend hope on, and yours, she has decided, are not among them.", "next": ""},
 				{"flag": "ch3_mute_met", "text": "She is there again, hands folded, eyes on the east road. The singing has not stopped yet. The contract holds — she checked your sword hand once, and went back to waiting.", "next": ""},
 			],
 			"choices": [
 				{"text": "Nod back. Once. A contract needs no words.",
 					"resonance": 3.0, "flags": {"ch3_mute_met": true}, "next": "m_nod"},
+				{"text": "Look away and walk on. Every silence in this Vale wants a sword, and yours is already spoken for.",
+					"resonance": -4.0, "flags": {"ch3_mute_passed": true}, "next": "m_pass"},
 			]},
 		"m_nod": {"who": "Narrator", "text": "Something in her shoulders lets go — a knot nineteen years old, loosening one turn. She resumes her vigil. You resume your road. Between you, wordless and binding as anything ever signed: someone is finally going to MAKE the singing stop.", "next": ""},
+		"m_pass": {"who": "Narrator", "text": "You give the east road your eyes and keep them there until she is behind you. She does not gesture again — nineteen years have taught her exactly how much asking is worth — and the not-looking costs more effort than a nod would have. The Ember finds that funny. You walk faster than you need to.", "next": ""},
 	}},
 
 	# OVERRIDES ch4_quests.gd's "ch4_survivor" (which overrode ch4_zones) —
@@ -263,12 +269,31 @@ const CONVOS := {
 		"m_kind": {"who": "Ansa of the Shore", "text": "Toma. Yes. ...You said WHEN, not if. I've had a winter of 'if' from every warden and clerk on this shore. I'm going to keep your 'when', bearer — don't make it a lie.", "next": ""},
 		"m_flint": {"who": "Ansa of the Shore", "text": "Stopped. ...There's a word everyone's been walking around all winter. Aye. Stop her, bearer — and if my boys can hear anything down there, they'll hear the quiet where the lullaby was, and know to swim for it.", "next": ""},
 		"m_more": {"who": "Ansa of the Shore", "text": "Go on, bearer. The valley doesn't wait, and neither do I — I count wagons. Somebody should.",
+			# Withheld-verse revisits route past the temptation (one -4, not
+			# a lever): reading it to her stays reachable at m_hold2. The
+			# given-state variant outranks it (withheld-then-read reads true).
+			"variants": [
+				{"flag": "ch5_verse_given", "text": "She counts wagons, south-facing now. Somewhere down the shore an old song is waiting for a boy to wake and ask for the river part twice.", "next": ""},
+				{"flag": "ch5_verse_withheld", "text": "She counts wagons. The paper rides your ribs where you left it, folded twice — one thaw, one river, unspent.", "next": "m_hold2"},
+			],
 			"choices": [
 				{"text": "Unfold Ottar's paper and read her the spring song — the thaw, the river, the boots by the door.",
 					"req_flag": "ch5_verse_taken", "req_not_flag": "ch5_verse_given",
 					"resonance": 2.0, "lose_item": "ch5_spring_verse",
 					"flags": {"ch5_verse_given": true}, "next": "m_song"},
+				{"text": "Leave the skald's paper folded in your pack. Spring is scarce currency this winter — and the only warm thing you own rides better unspent.",
+					"req_flag": "ch5_verse_taken", "req_not_flag": "ch5_verse_given",
+					"resonance": -4.0, "flags": {"ch5_verse_withheld": true}, "next": "m_hold"},
 			]},
+		"m_hold2": {"who": "Ansa of the Shore", "text": "Still here, bearer? The wagons don't count themselves.",
+			"choices": [
+				{"text": "Unfold Ottar's paper and read her the spring song — the thaw, the river, the boots by the door.",
+					"req_flag": "ch5_verse_taken", "req_not_flag": "ch5_verse_given",
+					"resonance": 2.0, "lose_item": "ch5_spring_verse",
+					"flags": {"ch5_verse_given": true}, "next": "m_song"},
+			],
+			"next": ""},
+		"m_hold": {"who": "Narrator", "text": "The paper stays where it is, against your ribs, one thaw and one river folded twice. Ansa goes back to counting wagons; she never knew there was a spring in the room, so she loses nothing — that's the arithmetic you do on the walk out, and it balances, and the Ember admires how neatly. You are still carrying somebody's boots-by-the-door through a valley of open beds. It rides warm. It would have LANDED warmer.", "next": ""},
 		"m_song": {"who": "Narrator", "text": "You read it low, like the skald said. A thaw. A river loosening. Somebody's boots drying by a door, because the somebody came HOME. Ansa listens the whole way through with her eyes shut, and when she opens them she is looking SOUTH — the first time you've seen her face that way. \"Toma will ask for the river part twice,\" she says. \"When he wakes, I'll have it ready. Thank the skald. Tell him it landed.\"", "next": ""},
 	}},
 

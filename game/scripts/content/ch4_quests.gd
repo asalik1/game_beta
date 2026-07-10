@@ -201,8 +201,11 @@ const CONVOS := {
 			"variants": [{"flag": "ch4_harl_met", "text": "Still here. Still quenching in water, the old way. My blades dull, and I have never once loved them more.", "next": "w_token"}],
 			"choices": [
 				{"text": "\"What are the blades for, Harl?\"", "flags": {"ch4_harl_met": true}, "next": "w_for"},
+				{"text": "\"Edges that never dull win wars, Harl. Point me at the whisper-tempered stall.\"",
+					"resonance": -1.0, "flags": {"ch4_harl_met": true}, "next": "w_edge"},
 			]},
 		"w_for": {"who": "Old Smith Harl", "text": "The heir. Nobody SAYS it, but every order the Compact places is armory-shaped, crown-shaped, procession-shaped. They're forging for a coronation, bearer. And the mountain under us keeps offering better steel, and nobody upstairs finds that combination interesting. I find it interesting enough to quench in water.", "next": ""},
+		"w_edge": {"who": "Old Smith Harl", "text": "Third stall past the tapline — you'll hear it before you see it; the grindstones hum a note grindstones don't have. Go on, then. Fifty years at the anvil says you'll be back to ask what the edge costs, and I'll still be here, and the water will still be free.", "next": ""},
 		# --- The Quench Prayer.
 		"w_token": {"who": "Old Smith Harl",
 			"text": "Since you're bound for the deep anyway — I hammered something last night. A little iron token, quenched in river water, the old ceremony, the whole hiss. I want it left at that font the maps say not to dig toward. Not as an offering — as a COMPARISON. Let the Judge weigh one piece of iron that owes it nothing.",
@@ -246,6 +249,24 @@ const CONVOS := {
 		"f_leave": {"who": "Narrator", "text": "You back out the way the miners backed out. The voice in the slag does not call after you — courts don't chase. But as the chamber door closes you hear, distinctly, the sound of a case file being set aside for later.", "next": ""},
 		# --- The Quench Prayer: deposit, and the post-touch revisit hub.
 		"f_more": {"who": "Narrator", "text": "The slag turns over, slow as case law reconsidering itself.",
+			# Kept-token revisits route past the temptation (one -2, not a
+			# lever): the deposit alone stays on the table at f_more2. The
+			# left-state variant outranks it (kept-then-deposited reads true).
+			"variants": [
+				{"flag": "ch4_token_left", "text": "The slag turns over, slow as case law reconsidering itself. Harl's iron sits on the lip where you left it — read, weighed, inadmissible, filed.", "next": ""},
+				{"flag": "ch4_token_kept", "text": "The slag turns over and finds you again — the pocket where the token rides, precisely. Courts, it seems, remember what's been withheld from evidence.", "next": "f_more2"},
+			],
+			"choices": [
+				{"text": "Set Harl's water-quenched token on the font's lip — iron that owes the deep nothing — and let the Judge weigh a comparison.",
+					"req_flag": "ch4_token_taken", "req_not_flag": "ch4_token_left",
+					"lose_item": "harl_token", "resonance": 3.0,
+					"flags": {"ch4_token_left": true}, "next": "f_token"},
+				{"text": "Keep Harl's token in your pocket a while longer. Iron that owes the deep nothing — down here, better it owes YOU.",
+					"req_flag": "ch4_token_taken", "req_not_flag": "ch4_token_left",
+					"resonance": -2.0, "flags": {"ch4_token_kept": true}, "next": "f_keep"},
+			],
+			"next": ""},
+		"f_more2": {"who": "Narrator", "text": "The font bubbles at blood-heat, keeping its docket. The comparison is still admissible — whenever the iron stops owing you.",
 			"choices": [
 				{"text": "Set Harl's water-quenched token on the font's lip — iron that owes the deep nothing — and let the Judge weigh a comparison.",
 					"req_flag": "ch4_token_taken", "req_not_flag": "ch4_token_left",
@@ -253,6 +274,7 @@ const CONVOS := {
 					"flags": {"ch4_token_left": true}, "next": "f_token"},
 			],
 			"next": ""},
+		"f_keep": {"who": "Narrator", "text": "Your thumb finds the token's worn face without asking you first — the same spot Harl's thumb wore into it, probably, in that room the mountain can't hear. Nix would price this correctly: two silver of not-leaning, kept for yourself. The font bubbles on. Comparisons, it seems to agree, can wait; the deep has never once run short of patience, and now neither has your pocket.", "next": ""},
 		"f_token": {"who": "Narrator", "text": "You set the little token on the lip. For one full breath, nothing — then the bubbling STOPS. The voice in the slag reads the iron the way a judge reads a document from a jurisdiction it does not recognize: river water, patience, a maker who asked for nothing back and got exactly that. The bubbling resumes, a shade slower. Case noted. Precedent — inadmissible, and filed anyway.", "next": ""},
 	}},
 }

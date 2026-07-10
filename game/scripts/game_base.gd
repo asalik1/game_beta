@@ -1004,6 +1004,15 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 					if String(qc.get("id", "")) == lose_id:
 						player.consumables.erase(qc)
 						break
+			# Worldly payment ("gold"): the Temptation-trade price tag — a
+			# few coins for taking the low road. Authored amounts stay TINY
+			# (<= ~2-3% of a chapter run; see Balance.CHAPTER_ECON) and every
+			# paying choice is one-shot flag-gated: flavor money, never a
+			# faucet. Dropped as coins so the usual pickup juice applies.
+			if c.has("gold"):
+				Pickup.drop_gold(self, int(c["gold"]),
+					player.global_position + Vector2(randf_range(-26.0, 26.0), 42.0))
+				sfx("coin")
 			if c.has("quest"):
 				quest_key = String(c["quest"])
 				refresh_quest()
@@ -1611,7 +1620,23 @@ func shake(amount: float) -> void:
 ## Telegraphed ground attack: a danger zone appears, pulses for `delay`
 ## seconds, then erupts — heavy damage if the player is still inside.
 ## opts: {"color": Color, "sword": true} (sword = a blade falls from the sky).
+## A world position sheltered by any LIVE SafeDome? (Ground warded by an
+## airborne safe-spot exam — see SafeDome above.)
+func _sheltered(pos: Vector2) -> bool:
+	for node in get_tree().get_nodes_in_group("safe_domes"):
+		var dome := node as SafeDome
+		if dome and dome.shelters(pos):
+			return true
+	return false
+
+
 func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts := {}) -> void:
+	# Shelter wards the GROUND (player rule 2026-07-09): a danger telegraph
+	# that would land inside a live shelter never forms — Varo's reliquary
+	# swords were falling INTO his own Toll shadows, making the compliant
+	# stand a chip-death. The dome eats the sky as well as the bullets.
+	if _sheltered(pos):
+		return
 	var zone := Sprite2D.new()
 	zone.texture = Art.tex("telegraph")
 	zone.global_position = pos
@@ -1649,7 +1674,10 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 		sink.tween_property(sword, "modulate:a", 0.0, 0.35)
 		sink.tween_callback(sword.queue_free)
 	if is_instance_valid(player) and not player.dead \
-			and player.global_position.distance_to(pos) <= radius + 8.0:
+			and player.global_position.distance_to(pos) <= radius + 8.0 \
+			and not _sheltered(player.global_position):
+		# (A player standing INSIDE a live shelter is immune to the rim of an
+		# overlapping tell — safe means safe, damage and riders both.)
 		# HEAVY: a telegraphed nuke pierces a chip-armed hurt_cd gate — a stray
 		# graze must never eat the punish for standing in the circle.
 		player.take_damage(damage, "magic", null, true)
@@ -1672,6 +1700,47 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 ## SAFETY, so an unseen circle used to look like a safe room for `delay`
 ## seconds, then a x2 hit from nowhere. Now the DANGER is shown too:
 ## a screen-edge dread ramp builds over the window (hud.danger_ramp), a
+## SHELTER DOME (player rule 2026-07-09): while a safe-spot exam is airborne,
+## its REAL shelters consume hostile projectiles at the rim — reaching the
+## shelter means SAFE, not "safe from the nuke but shredded by the stray
+## bolts that followed you in" (which also broke archer Second Wind mid-exam,
+## turning the compliant play into chip death). Decoys never shield: a lie
+## gives no shelter. Lives for the fuse + a beat, so the resolving wave's
+## in-flight stragglers die at the rim too.
+class SafeDome extends Node2D:
+	var centers: Array = []
+	var dome_radius := 100.0
+	var life := 2.5
+	var tint := Color(0.5, 1.0, 0.7)
+	var game_ref: Node2D = null
+
+	func _ready() -> void:
+		add_to_group("safe_domes")
+
+	## Is a world position inside one of this dome's shelters?
+	func shelters(pos: Vector2) -> bool:
+		for c in centers:
+			if pos.distance_to(c) <= dome_radius:
+				return true
+		return false
+
+	func _physics_process(delta: float) -> void:
+		life -= delta
+		if life <= 0.0:
+			queue_free()
+			return
+		for node in get_tree().get_nodes_in_group("projectiles"):
+			var p := node as Projectile
+			if p == null or p.friendly:
+				continue
+			for c in centers:
+				if p.global_position.distance_to(c) <= dome_radius:
+					if game_ref:
+						game_ref.burst(p.global_position, tint, 4)
+					p.queue_free()
+					break
+
+
 ## light BEACON rises from every circle so it reads over scenery clutter
 ## and from off-screen edges, and callers can pass a player-anchored
 ## "callout" + a rising "sfx" whose swell IS the audible timer.
@@ -1699,6 +1768,14 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		pulse.tween_property(zone, "modulate:a", 0.75, 0.22)
 		pulse.tween_property(zone, "modulate:a", 0.4, 0.22)
 		zones.append(_safe_beacon(c, opts.get("color", Color(0.5, 1.0, 0.7)), false))
+	# The dome shields only the REAL centers, for the fuse + a linger beat.
+	var dome := SafeDome.new()
+	dome.centers = centers.duplicate()
+	dome.dome_radius = radius
+	dome.life = delay + 0.5
+	dome.tint = opts.get("color", Color(0.5, 1.0, 0.7))
+	dome.game_ref = self
+	add_child(dome)
 	var decoys: Array = opts.get("decoys", [])
 	for c in decoys:
 		var lie := Sprite2D.new()

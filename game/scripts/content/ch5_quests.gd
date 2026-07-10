@@ -118,7 +118,9 @@ const CONVOS := {
 		"sq_census_go": {"who": "Tracker Yri", "text": "...Nobody. Nobody counts them — the cult calls it doubt and the Accord calls it despair, and between the two the valley's dearest number goes unkept. Count them TRUE, bearer. Start with the chapel buried off the white road — a whole congregation under the snow. And if the deep crystal ever lets you near the Queen's vein... count HER too. A census that leaves her off is the lie this valley's been telling for six hundred years.", "next": ""},
 		"sq_census_done": {"who": "Tracker Yri", "text": "A chapel full, and the one they're all walking toward. ...Aye. I'll send the count south with the next rider — let the Accord put a NUMBER under the word 'valley' for once. Kept count is kept faith, bearer. The clans thank you for both.", "next": ""},
 		"sq_grain_go": {"who": "Tracker Yri", "text": "...Honestly. Aye, there's the word this valley's been short of. The porters kept a toll-cache at the sleeper's wagon on the white road — grain weighed out for a chieftain who isn't coming to collect it. Bring it to my fire and I'll see it goes by NEED, not by watch-rota. Forty mouths, bearer. Walk warm.", "next": ""},
-		"sq_grain_done": {"who": "Tracker Yri", "text": "Full weight, cord uncut — you didn't skim it, and I'll tell them so. This buys porridge, bearer, and something dearer than porridge: proof the grain didn't die with the arrangement. The clans will remember who carried it in.", "next": ""},
+		"sq_grain_done": {"who": "Tracker Yri", "text": "Full weight, cord uncut — you didn't skim it, and I'll tell them so. This buys porridge, bearer, and something dearer than porridge: proof the grain didn't die with the arrangement. The clans will remember who carried it in.",
+			"variants": [{"flag": "ch5_grain_skimmed", "text": "She hefts the sacks once, twice — then looks a long moment at the re-tied cord. \"Hrolgar weighed to the OUNCE, bearer. So do I.\" She says nothing else; the clans will eat, and porridge doesn't ask where the missing measure went. But she counts you out no thanks, and the fire feels a stride wider between you the rest of the night.", "next": ""}],
+			"next": ""},
 	}},
 
 	# OVERRIDES ch5_zones.gd's ch5_mother — Ansa of the Shore. Verbatim
@@ -172,6 +174,10 @@ const CONVOS := {
 				{"text": "Dig out the porters' roadside cache — the ridge-toll grain, bound for a watch that no longer collects.",
 					"req_flag": "sq_on_ch5_forty_mouths", "req_not_flag": "ch5_grain_taken",
 					"gain_item": "ch5_grain_bundle", "flags": {"ch5_grain_taken": true}, "next": "w_grain"},
+				{"text": "Dig out the cache — and weigh yourself a carrier's share before the cord goes back on. Hrolgar's scales are ash; nobody counts but the snow.",
+					"req_flag": "sq_on_ch5_forty_mouths", "req_not_flag": "ch5_grain_taken",
+					"gain_item": "ch5_grain_bundle", "gold": 90, "resonance": -8.0,
+					"flags": {"ch5_grain_taken": true, "ch5_grain_skimmed": true}, "next": "w_skim"},
 			]},
 		"w_south": {"who": "Narrator", "text": "The traces bite your shoulders for two frozen miles. At the waystation they take the sleepers in by the fire, and by dusk three are shivering, and by night one — the child — opens her eyes and asks, furious, where her horse is. It's in her hand. Some of the others may never wake; you chose their risk without their leave, and you will carry that. She's holding the horse, though. She's HOLDING it.", "next": ""},
 		"w_north": {"who": "Narrator", "text": "You lean where the porter leaned, and haul the vow to its keeping. At the ice-line the cult receives the wagon with tears of plain gratitude — eleven promises delivered, they say, eleven sleepers safe till morning. The shard says nothing all the long walk back. It is thinking, you suspect, about the difference between honoring a promise and FEEDING one, and it is glad, for once, that the thinking is yours to do.", "next": ""},
@@ -181,8 +187,13 @@ const CONVOS := {
 				{"text": "Dig out the porters' roadside cache — the ridge-toll grain, bound for a watch that no longer collects.",
 					"req_flag": "sq_on_ch5_forty_mouths", "req_not_flag": "ch5_grain_taken",
 					"gain_item": "ch5_grain_bundle", "flags": {"ch5_grain_taken": true}, "next": "w_grain"},
+				{"text": "Dig out the cache — and weigh yourself a carrier's share before the cord goes back on. Hrolgar's scales are ash; nobody counts but the snow.",
+					"req_flag": "sq_on_ch5_forty_mouths", "req_not_flag": "ch5_grain_taken",
+					"gain_item": "ch5_grain_bundle", "gold": 90, "resonance": -8.0,
+					"flags": {"ch5_grain_taken": true, "ch5_grain_skimmed": true}, "next": "w_skim"},
 			]},
 		"w_grain": {"who": "Narrator", "text": "The cache-stone gives up the sacks stiff as boards: toll-grain, cord-bound, weighed to the ounce — Hrolgar always checked. You shoulder the lot. It rides heavier than gear, the way owed things do, and every frozen mile of it is somebody's porridge.", "next": ""},
+		"w_skim": {"who": "Narrator", "text": "The measure you keep sells easily at the waystation — grain is coin, famine winters. The cord goes back on re-tied, and you tie it well, and it is not Hrolgar's knot. You shoulder the rest. It rides lighter than it should, which is the trouble with carriers' shares: the missing weight travels with you anyway, and it doesn't make porridge for anyone.", "next": ""},
 	}},
 
 	# OVERRIDES ch5_zones.gd's ch5_lore_chapel — the Buried Chapel dig.

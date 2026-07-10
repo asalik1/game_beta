@@ -75,7 +75,10 @@ const CONVOS := {
 			"choices": [
 				{"text": "\"Shifts are shifts. Keep speaking yours, keeper — the sky remembers manners even cracked.\"",
 					"resonance": 3.0, "flags": {"ch7_vasse_met": true}, "next": "k_keep"},
+				{"text": "\"The line's cut, keeper. Mouthed hours warm nobody — save the breath for winter.\"",
+					"resonance": -4.0, "flags": {"ch7_vasse_met": true}, "next": "k_cut"},
 			]},
+		"k_cut": {"who": "Retired Keeper Vasse", "text": "Warm nobody. — She takes it standing, the way she stood thirty years of rain. \"You know what else warms nobody, bearer? A watch. A count. A candle in a drowned window. Half of what holds this world together warms nobody, and the vow knew it, which is why the vow never once mentioned WARM.\" She turns back toward her tent, and her lips are already moving. \"My hour's at moonrise. It will be spoken. You're welcome at it or you're not.\"", "next": ""},
 		"k_keep": {"who": "Retired Keeper Vasse", "text": "...The sky remembers manners. Ha. You talk like the third-century keepers wrote, bearer — they'd have liked you. Go on up. And when you meet him — when you meet what's LEFT of him — remember he kept every shift for forty years before the listening. Kill the Mouth. Mourn the Speaker. The order always could hold two things at once; it's the storm that only holds one.", "next": ""},
 		# Vasse's ask — reachable on any revisit after her story.
 		"k_offer": {"who": "Retired Keeper Vasse",
@@ -106,17 +109,27 @@ const CONVOS := {
 				{"text": "Stand a keeper's shift-breath at the relay's first post — one moment of somebody THERE, for Vasse, whose knees won't make the hill.",
 					"resonance": 2.0, "req_flag": "sq_on_ch7_relay_stands", "req_not_flag": "sq7_relay_vowstone",
 					"flags": {"sq7_relay_vowstone": true}, "next": "v_mark"},
+				{"text": "Slap the stone in passing and call the station stood. A rock is a rock — and Vasse's knees will never carry her up to check.",
+					"resonance": -6.0, "req_flag": "sq_on_ch7_relay_stands", "req_not_flag": "sq7_relay_vowstone",
+					"flags": {"sq7_relay_vowstone": true, "sq7_relay_slighted": true}, "next": "v_slap"},
 			]},
 		"v_speak": {"who": "Narrator", "text": "The old words come out of you rough and unpracticed — and the storm, horizon to horizon, MISSES A BEAT. One breath of the sky standing to attention for the first time in months. Your shift, the stone seems to acknowledge, has been logged; six hundred years of speakers make room on the roster without comment. The line will be finished tonight one way or another. Whatever else is true on that stair, YOU will have spoken it as a keeper, not only as a blade.", "next": ""},
 		"v_listen": {"who": "Narrator", "text": "You listen. Under the stone: half a sentence, patient beyond geology — and it is not raging, that's the vertigo of it. It is REASONABLE. It has been mid-word for six hundred years, and it just wants to finish the thought, and every part of you that has ever been interrupted leans in with terrible sympathy. You pull away before the second clause lands. Mostly before. The shard hums the fragment for hours after, like a tune it means to learn — and now you understand Cyrraeth completely, which was the price of listening, and possibly the purpose.", "next": ""},
 		"v_cover": {"who": "Narrator", "text": "You shelter the carving from the rain with your palm — pointless; it has weathered six hundred years of storms — and stand a moment in the bent weather doing the vow's work without the vow's words. The stone neither thanks you nor tests you. But when you take your hand away, the carved line is dry, and stays dry, all the time you can see it going down the hill. Small courtesies between keepers. Even unofficial ones.", "next": ""},
 		# Post-shrine revisits land here so Vasse's station stays standable.
 		"v_relay": {"who": "Narrator", "text": "The rain works at the thumb-worn carving, and loses, as it has lost for six hundred years. The hilltop keeps its bent, mannered weather. The line waits.",
+			# The slap fooled Vasse (it was built to); the stone is older
+			# than the vow and keeps the receipt.
+			"variants": [{"flag": "sq7_relay_slighted", "text": "The rain works at the thumb-worn carving, and loses. Your palm-print dried off this stone in under a minute; it keeps the receipt anyway — six hundred years of shifts on the ledger, and one signature.", "next": ""}],
 			"choices": [
 				{"text": "Stand a keeper's shift-breath at the relay's first post — one moment of somebody THERE, for Vasse, whose knees won't make the hill.",
 					"resonance": 2.0, "req_flag": "sq_on_ch7_relay_stands", "req_not_flag": "sq7_relay_vowstone",
 					"flags": {"sq7_relay_vowstone": true}, "next": "v_mark"},
+				{"text": "Slap the stone in passing and call the station stood. A rock is a rock — and Vasse's knees will never carry her up to check.",
+					"resonance": -6.0, "req_flag": "sq_on_ch7_relay_stands", "req_not_flag": "sq7_relay_vowstone",
+					"flags": {"sq7_relay_vowstone": true, "sq7_relay_slighted": true}, "next": "v_slap"},
 			]},
+		"v_slap": {"who": "Narrator", "text": "Palm to stone, one beat, done — attendance taken in the only ledger on this hill that can't read hearts. The storm does not miss a beat for you; storms know the difference, it turns out, between a shift and a signature. Down at the camp an old keeper will hear the station was stood and mouth her hour a little easier tonight, and what she paid thirty years of knees for, you paid a slap. The rounds still happen. The word 'still' is doing new work in that sentence now.", "next": ""},
 		"v_mark": {"who": "Narrator", "text": "You stand it the way she taught it without teaching it: feet planted, one breath, THERE. The storm overhead keeps its manners; the carved line sits a shade darker under the wet, as if inked anew. First post, stood. Somewhere downhill, an old keeper's nightly hour has company again.", "next": ""},
 	}},
 

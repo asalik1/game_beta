@@ -413,7 +413,10 @@ const CONVOS := {
 			"variants": [{"flag": "ch7_ilya_met", "text": "New reading: the repeats are getting LONGER. Whatever it's rehearsing, it's up to full phrases now. My professional recommendation is that you climb faster than I can write.", "next": ""}],
 			"choices": [
 				{"text": "\"Rehearsing for what, Ilya?\"", "flags": {"ch7_ilya_met": true}, "next": "c_what"},
+				{"text": "\"Nine years chasing weather that talks back. Sell the instruments while they still fetch coin, Ilya, and be off the steppe by dark.\"",
+					"resonance": -3.0, "flags": {"ch7_ilya_met": true}, "next": "c_sell"},
 			]},
+		"c_sell": {"who": "Storm-Chaser Ilya", "text": "Sell the— bearer, these instruments are the only witnesses taking NOTES. When this is over, somebody will want to know exactly what the sky said before it said it, and the answer will live in nine years of my terrible handwriting or nowhere. ...Though I thank you for pricing my life's work at 'still fetches coin.' I'm putting that in the log too. Posterity should know what the rescue sounded like.", "next": ""},
 		"c_what": {"who": "Storm-Chaser Ilya", "text": "For being HEARD, obviously — everything that rehearses is rehearsing for an audience. Six hundred years of one sentence holding it to 'wait,' and now the sentence is down to one exhausted throat. When the recitation stops, bearer, the first thing through that crack won't be a monster. It'll be a WORD, delivered perfectly, after six centuries of practice. My instruments and I would rather not be reviewing it.", "next": ""},
 	}},
 	"ch7_wander_quarter": {"start": "q1", "nodes": {
@@ -423,7 +426,10 @@ const CONVOS := {
 			"choices": [
 				{"text": "\"Provisioning for after. That might be the most hopeful thing anyone's said at this summit.\"",
 					"resonance": 3.0, "flags": {"ch7_bel_met": true}, "next": "q_hope"},
+				{"text": "\"Then requisition ME, quartermaster — oilcloth, rations, the good rope. The blade that cracks the sky shouldn't march wet.\"",
+					"resonance": -4.0, "flags": {"ch7_bel_met": true}, "gold": 120, "next": "q_kit"},
 			]},
+		"q_kit": {"who": "Compact Quartermaster Bel", "text": "Requisitions ARE requisitions. He kits you without a blink — oilcloth, rations, the good rope, and the Compact double-issues everything, so the surplus sells at the next fire; everyone's does, don't look scandalized. Then he notes it in the ledger, line and date. \"There. When the histories ask what the last bearer cost the empire, bearer, I'll have it to the copper. The heroes never think to ask what got CARRIED for them. The quartermasters always know.\"", "next": ""},
 		"q_hope": {"who": "Compact Quartermaster Bel", "text": "Hopeful! Bearer, I've inventoried three collapses of civilization — regional ones, mind — and the pattern holds: the sky does what the sky does, and then somebody hands out soup. Empires, Accords, god-kings — all of them are just arguments about who holds the ladle. Go crack the sky gently. The soup is HANDLED.", "next": ""},
 	}},
 	"ch7_wander_bellringer": {"start": "b1", "nodes": {
@@ -433,7 +439,10 @@ const CONVOS := {
 			"choices": [
 				{"text": "Sign back, clumsily: WHAT TIME DID IT KEEP?",
 					"flags": {"ch7_tam_met": true}, "next": "b_time"},
+				{"text": "Press a coin into his palm without meeting his hands, and move on — the sky can keep its own time tonight.",
+					"resonance": -4.0, "flags": {"ch7_tam_met": true}, "next": "b_coin"},
 			]},
+		"b_coin": {"who": "Narrator", "text": "The coin sits in a palm that was holding forty years of thunder out to you, fingers wide, and now holds small change. Tam looks at it, then at you — no anger; bellringers learn early that most people only hear what rings — and signs something short and unhurried at your back. You don't stop to read it. Behind you, faintly, at the correct time to the minute, an old man begins beating a rhythm on his knee for nobody.", "next": ""},
 		"b_time": {"who": "Narrator", "text": "Tam's face opens — nine years at this summit and someone finally asked the right question with their hands. He beats it out slowly on his knee: DUM. DUM-DUM. DUM. Rest. Again. The same figure, over and over, and your shard goes cold as you recognize the shape of it: not rhythm. METER. The thunder has been scanning like verse as long as he's felt it — and lately, he signs, tapping your wrist once for emphasis, IT LOST ITS PLACE IN THE POEM. IT IS ANGRY ABOUT IT. GO GIVE IT ITS ENDING.", "next": ""},
 	}},
 	"ch7_wander_undertaker": {"start": "u1", "nodes": {

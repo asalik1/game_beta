@@ -419,8 +419,11 @@ const CONVOS := {
 			"variants": [{"flag": "ch5_pell_met", "text": "Still off shift. Longest off-shift of my career, if anyone asks. The wagons roll fine without me. That's the trouble — everything about this rolls fine without anyone.", "next": ""}],
 			"choices": [
 				{"text": "Stay quiet. Let him talk.", "flags": {"ch5_pell_met": true}, "next": "d_talk"},
+				{"text": "\"Everyone out here's made their peace, driver. I'm not the confessor for what's under your canvas.\"",
+					"resonance": -4.0, "flags": {"ch5_pell_met": true}, "next": "d_shrug"},
 			]},
 		"d_talk": {"who": "Wagon-Driver Pell", "text": "Nine years hauling sleepers and I never once looked under the canvas — professional courtesy, I called it. Last month a strap broke and I HAD to. They're smiling, bearer. All of them, the same smile, the exact same smile, like something drew it on. My mother smiles her own way. Everyone does. ...I haven't taken a shift since. You can put THAT in whatever report you're not writing.", "next": ""},
+		"d_shrug": {"who": "Wagon-Driver Pell", "text": "...No. No, you're not. He says it to his boots, and picks his mittens back up, and you understand from the set of his shoulders that the next shift will get taken after all — because the quiet ones who don't stop are how everything on this road keeps rolling, and now you're one of them too.", "next": ""},
 	}},
 	"ch5_wander_mapper": {"start": "m1", "nodes": {
 		"m1": {"who": "Cartographer Bree (Accord)",
@@ -428,8 +431,11 @@ const CONVOS := {
 			"variants": [{"flag": "ch5_bree_met", "text": "Latest survey's done. The line held this season — first time in four years it didn't move. Somebody up-valley is doing something RIGHT, and my professional guess is standing in front of me.", "next": ""}],
 			"choices": [
 				{"text": "\"What happens when the line reaches the towns?\"", "flags": {"ch5_bree_met": true}, "next": "m_towns"},
+				{"text": "\"My eyes have been up that valley all week, cartographer. The Accord can pay for its bearings like anyone else.\"",
+					"resonance": -5.0, "flags": {"ch5_bree_met": true}, "gold": 70, "next": "m_paid"},
 			]},
 		"m_towns": {"who": "Cartographer Bree (Accord)", "text": "Then people stop needing the cult, because the sleep comes to THEM. That's the map's real message, bearer — the wagons are a symptom. The tide is the disease. Eleven miles in four years, and the first town sits nineteen miles out. You can do that arithmetic as well as I can, and I do it every night.", "next": ""},
+		"m_paid": {"who": "Cartographer Bree (Accord)", "text": "She pays field rate from a purse that's clearly bought bearings before, and takes your week down in quick cold strokes. \"Verified against my own line before it's inked — no offense meant, and some taken, I expect.\" The purse goes away. \"Half this valley is spending itself keeping people ALIVE, bearer. Interesting, what the other half spends on.\"", "next": ""},
 	}},
 	"ch5_wander_memories": {"start": "w1", "nodes": {
 		"w1": {"who": "Peddler Onna",
@@ -437,8 +443,11 @@ const CONVOS := {
 			"variants": [{"flag": "ch5_onna_met", "text": "Restocked the hayloft one — it sells out first, always. Whole valley freezing toward one enormous sleep and everyone's favorite dream is still August. There's a sermon in that, if anyone decent were around to give it.", "next": ""}],
 			"choices": [
 				{"text": "\"Two coppers, then. The kitchen one.\"", "flags": {"ch5_onna_met": true}, "next": "w_buy"},
+				{"text": "\"Spiced oil for the freezing. The Queen sells the same comfort, peddler — hers doesn't run out by morning.\"",
+					"resonance": -4.0, "flags": {"ch5_onna_met": true}, "next": "w_sting"},
 			]},
 		"w_buy": {"who": "Peddler Onna", "text": "The kitchen it is. — And there it is, see, right there in your shoulders: everyone drops an inch when the bread-smell hits. That inch is what I actually sell, bearer. The Queen promises forever-sleep and I move two-copper augusts, and between the two of us, I know whose customers wake up.", "next": ""},
+		"w_sting": {"who": "Peddler Onna", "text": "...Aye. Hers doesn't. She's the better merchant — I've said so myself, on the bad nights. Difference is my customers complain about the price come morning, and mornings are the entire product, bearer. Walk warm. That one was free, and it's the last free thing you'll get off this cart.", "next": ""},
 	}},
 	"ch5_wander_deserter": {"start": "s1", "nodes": {
 		"s1": {"who": "Ridge Deserter",

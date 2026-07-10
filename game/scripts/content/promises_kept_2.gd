@@ -51,6 +51,9 @@ const CONVOS := {
 		"f1": {"who": "Brother Osk (formerly)",
 			"text": "I keep the count. Fourteen thousand, two hundred and six unburied, gate to cathedral. The Choir never counted — counting implies you might one day FINISH. I left over the counting. It seemed a small thing to leave a faith over, until I understood it was the whole faith.",
 			"variants": [
+				# Scorned state first (first match wins): the count was called
+				# ink to his face — he keeps it anyway, quieter.
+				{"flag": "ch3_osk_scorned", "text": "Fourteen thousand, one hundred and seventy-nine — down twenty-seven since the aisle went quiet. I write the falling number and say nothing to the man who called it ink. Ledgers, bearer, outlast opinions of them.", "next": ""},
 				# Ongoing state, after the count's been witnessed together.
 				{"flag": "ch3_osk_counted", "text": "Fourteen thousand, one hundred and seventy-nine — down twenty-seven since the aisle went quiet, and every figure of it a grave dug and filled the same day, the old way. I keep the ledger open to the falling page some mornings just to look at a number that MOVES the right direction. Nineteen years I couldn't. You gave me a smaller one to write, bearer.", "next": ""},
 				# Delivery: the singing stopped, and the impossible number moves.
@@ -60,8 +63,11 @@ const CONVOS := {
 			"choices": [
 				{"text": "\"Keep counting, brother. Every one of them is going to need a number when the burying starts.\"",
 					"resonance": 2.0, "flags": {"ch3_osk_met": true}, "next": "f_keep"},
+				{"text": "\"Keep your ledger, brother. The Vale needs a blade this week, not a bookkeeper.\"",
+					"resonance": -3.0, "flags": {"ch3_osk_met": true}, "next": "f_blade"},
 			]},
 		"f_keep": {"who": "Brother Osk (formerly)", "text": "When the burying starts. You say it like weather — like it's simply COMING. ...I believe I'll keep the ledger open at today's page. It deserves to see this.", "next": ""},
+		"f_blade": {"who": "Brother Osk (formerly)", "text": "The Choir said nearly the same thing, bearer — 'the faith needs voices, not sums.' Everything out here that went mad went mad the day it stopped counting what it cost. ...Go swing your blade. I'll write down what it comes to. Somebody always has to.", "next": ""},
 		# ---- The count, going down: the promise kept, in ink. Reachable off
 		# the vess_dead variant whether or not you ever made the words — the
 		# DEED (the aisle silenced) is what the world checks, and it did.
@@ -71,7 +77,11 @@ const CONVOS := {
 				{"text": "\"Then keep subtracting, brother. It's the only honest direction a grief-count ever ran.\"",
 					"req_not_flag": "ch3_osk_counted", "resonance": 3.0,
 					"flags": {"ch3_osk_counted": true}, "next": "f_thanks"},
+				{"text": "\"It's ink, brother. The dead don't read. Spend the thanks on a spade.\"",
+					"req_not_flag": "ch3_osk_counted", "resonance": -4.0,
+					"flags": {"ch3_osk_counted": true, "ch3_osk_scorned": true}, "next": "f_ink"},
 			]},
+		"f_ink": {"who": "Brother Osk (formerly)", "text": "\"Ink.\" He looks at the struck figure a long moment, then closes the ledger with both hands, gently, the way the Vale never got to close anything. \"The dead don't read. No. But the living count, bearer — it's the one thing grief and empire agree on. You turned this number with your own hand, and you'd rather it were nothing.\" He tucks the book away. \"I'll subtract quietly, then. It goes down either way.\"", "next": ""},
 		"f_thanks": {"who": "Brother Osk (formerly)", "text": "\"The only honest direction.\" He writes it in the ledger's margin — real words, beside the falling number. \"Sixty years the Vale kept this count going one way, and called that faith. You turned it, and left me holding the pen. When the histories ask who ended the funeral, there'll be a figure under the answer, getting smaller by the day. I'll see to that. It's the one thing I was ever any good at.\"", "next": ""},
 	}},
 }

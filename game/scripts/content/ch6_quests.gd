@@ -179,7 +179,11 @@ const CONVOS := {
 					"req_flag": "sq6_tally_pool", "flags": {"sq6_tally_told": true}, "next": "k_done"},
 				{"text": "\"The fence line's not marked yet.\"", "next": ""},
 			]},
-		"k_done": {"who": "Herbalist Kesh", "text": "A congregation and a leaning fence. She'd have traded a finger for a tally this clean. Both marks go on the camps' maps tonight, and the young scouts learn your bearings by heart before they learn anything else. Here — surveyor's share, from the cure-camp chest. Kaethra's rule, and now yours: the count gets PAID, so the count stays honest.", "next": ""},
+		"k_done": {"who": "Herbalist Kesh", "text": "A congregation and a leaning fence. She'd have traded a finger for a tally this clean. Both marks go on the camps' maps tonight, and the young scouts learn your bearings by heart before they learn anything else. Here — surveyor's share, from the cure-camp chest. Kaethra's rule, and now yours: the count gets PAID, so the count stays honest.",
+			# The fudged mark reads the same to Kesh — deceptions land; only
+			# the map (and you) carry the hand's width the record lost.
+			"variants": [{"flag": "sq6_tally_fudged", "text": "A congregation and a HOLDING fence — better news than I hoped for. Both marks go on the camps' maps tonight, and the young scouts learn your bearings by heart. Here — surveyor's share, Kaethra's rule: the count gets PAID, so the count stays honest. — The coin weighs the same either way. The map doesn't, and the green knows by exactly how much.", "next": ""}],
+			"next": ""},
 	}},
 
 	# OVERRIDES ch6_zones.gd's ch6_lore_gallery — base text untouched; a
@@ -193,6 +197,8 @@ const CONVOS := {
 			"choices": [
 				{"text": "Walk the west face and search for the far shore's remainders — Dov's neighbor Brekk had a blue door.",
 					"req_flag": "sq_on_ch6_far_shore", "flags": {"sq6_shore_seen": true}, "next": "g_door"},
+				{"text": "Leave the west face for a steadier hour. Whatever the Root keeps of the shore, it keeps carefully — it will keep one day more.",
+					"req_flag": "sq_on_ch6_far_shore", "req_not_flag": "sq6_shore_seen", "next": ""},
 			],
 			"next": ""},
 		"g_door": {"who": "Narrator", "text": "The west face is where the thickest cables come up from under the bog — the bearing of the far shore. It takes an hour of peat and white root, and then it stops taking any looking at all: set INTO the gallery wall, framed in cable thick as your leg, a door. Blue paint. Brass latch. A boot-scrape at the sill, worn by one man's habit. Exactly right. The Root never subtracts — somewhere under the bog it has the croft, and the reeds, and whatever answered when Brekk called his wife in. You take Dov's truth from the wall with your eyes only, and you leave the latch its silence.", "next": ""},
@@ -209,8 +215,12 @@ const CONVOS := {
 				{"text": "Cut Kesh's survey-mark into the lintel stone, above the waterline — the shrine claimed, counted.",
 					"req_flag": "sq_on_ch6_kesh_tally", "req_not_flag": "sq6_tally_shrine",
 					"flags": {"sq6_tally_shrine": true}, "next": "sh_mark"},
+				{"text": "Cut a double handful of the collar's blooms instead — living samples fetch coin at the cure-camp stills, and the congregation won't miss its front row.",
+					"req_flag": "sq_on_ch6_kesh_tally", "req_not_flag": "sq6_shrine_sampled",
+					"resonance": -3.0, "gold": 80, "flags": {"sq6_shrine_sampled": true}, "next": "sh_cut"},
 			],
 			"next": ""},
+		"sh_cut": {"who": "Narrator", "text": "The stems give like they were bred for the knife — of course they do; everything down here wants to be taken somewhere new. The stills pay honest silver and ask no provenance. By the time the coin is in your pocket the collar has already closed the gap, a hundred blooms shuffled inward, dawn-facing, complete. The front row you cut is simply GONE from the arithmetic, the way your taking of it is not.", "next": ""},
 		"sh_mark": {"who": "Narrator", "text": "The chisel-work takes minutes, and the flowers watch — there is no other word for what a hundred blooms turning off their dawn-bearing to face your hands is doing. When you step back, the mark reads clean: the Choir's sunken stone, claimed by the green, counted by the camps, on the maps by nightfall. The collar will turn with the dawn tomorrow, and every dawn after. But now somebody is looking BACK, and the tally says so in stone.", "next": ""},
 	}},
 
@@ -232,6 +242,9 @@ const CONVOS := {
 				{"text": "Cut Kesh's survey-mark into a fence-stake — the lean measured, the line held, the count kept.",
 					"req_flag": "sq_on_ch6_kesh_tally", "req_not_flag": "sq6_tally_pool",
 					"flags": {"sq6_tally_pool": true}, "next": "p_mark"},
+				{"text": "Cut the mark where LAST season's line stood. A kinder map — and the surveyor's share pays the same for it.",
+					"req_flag": "sq_on_ch6_kesh_tally", "req_not_flag": "sq6_tally_pool",
+					"resonance": -3.0, "flags": {"sq6_tally_pool": true, "sq6_tally_fudged": true}, "next": "p_fudge"},
 			]},
 		"p_own": {"who": "Narrator", "text": "You say it plainly — the exact thing the Ember wants of you, the thing you have carried since your shard woke. Spoken to open water, it sounds smaller. Ownable. The pool's stillness flickers, once: an offer has never been declined by NAMING before, and somewhere down among the white roots something files you under DIFFICULT. The Ember's whisper is still there as you walk away. But it's yours. That was always the only cure on the table.", "next": ""},
 		"p_drink": {"who": "Narrator", "text": "One mouthful. Cold, sweet, and the whisper STOPS — for the first time since your shard woke, perfect silence where the temptation lived. You could weep. Halfway back to the trail you notice your cut knuckle from the fringe has healed without a scar. By nightfall, the scar you got at TEN is gone too. The Root never subtracts, bearer. It is very much hoping you won't do the arithmetic on what it's adding.", "next": ""},
@@ -242,8 +255,12 @@ const CONVOS := {
 				{"text": "Cut Kesh's survey-mark into a fence-stake — the lean measured, the line held, the count kept.",
 					"req_flag": "sq_on_ch6_kesh_tally", "req_not_flag": "sq6_tally_pool",
 					"flags": {"sq6_tally_pool": true}, "next": "p_mark"},
+				{"text": "Cut the mark where LAST season's line stood. A kinder map — and the surveyor's share pays the same for it.",
+					"req_flag": "sq_on_ch6_kesh_tally", "req_not_flag": "sq6_tally_pool",
+					"resonance": -3.0, "flags": {"sq6_tally_pool": true, "sq6_tally_fudged": true}, "next": "p_fudge"},
 			],
 			"next": ""},
+		"p_fudge": {"who": "Narrator", "text": "The chisel bites where the stakes stood a season ago, a hand's width of pull quietly erased from the record. The water's stillness does not flicker — but something in it settles, satisfied, the way a witness settles when the clerk writes down the convenient version. Kaethra's science ran on one rule: the count gets paid so the count stays HONEST. Tonight it just gets paid. The green takes ground faster than the runners can map it, bearer, and now it takes a hand's width faster than that.", "next": ""},
 		"p_mark": {"who": "Narrator", "text": "You choose the stake with the worst lean and cut the mark: the fence line as it stands TODAY, witnessed, counted. The water's stillness does not flicker this time — measurement, it has learned, is the thing humans do instead of deciding. Let it think so. Kaethra measured too, and her stakes are the only reason anyone knows how fast it moves. The tally goes on, and the tally is a fence of its own.", "next": ""},
 	}},
 
@@ -272,6 +289,24 @@ const CONVOS := {
 		"s_eat": {"who": "Narrator", "text": "You eat their argument. The silence is total and profoundly theological. As you walk on, the debate reignites behind you at double volume — WHAT DID IT MEAN — and you find you're smiling. The shard is smiling too, which sours it a little. It likes oracles. It especially likes oracles who answer in riddles and keep walking; that's how ITS old bearers ended up with kingdoms.", "next": ""},
 		"s_after": {"who": "Narrator",
 			"text": "The stale loaf is gone from the table — eaten, buried, or argued into crumbs; nobody will say. The table itself keeps its surveyed midpoint, and both camps keep their sides of it.",
+			# Kept-loaf revisits route past the temptation (one -2, not a
+			# lever): the delivery alone stays on the table at s_after2. The
+			# delivered-state variant outranks it (kept-then-left reads true).
+			"variants": [
+				{"flag": "sq6_bread_left", "text": "The table's surveyed midpoint holds a scatter of crumbs nobody has cleared away — evidence, both camps agree, though of what remains in dispute.", "next": ""},
+				{"flag": "sq6_bread_kept", "text": "The table keeps its surveyed midpoint. The loaf in your pack has begun, faintly, to smell like an argument you are having with yourself.", "next": "s_after2"},
+			],
+			"choices": [
+				{"text": "Set the gate camp's loaf on the table between them — fresh this morning, from the flock that stayed.",
+					"req_flag": "sq6_bread_taken", "req_not_flag": "sq6_bread_left",
+					"resonance": 2.0, "flags": {"sq6_bread_left": true},
+					"lose_item": "ch6_gate_loaf", "next": "s_loaf"},
+				{"text": "Keep Vela's loaf in your pack. Warm bread buys more on a long road than in a war of doctrines — let the camps fast on principle a night more.",
+					"req_flag": "sq6_bread_taken", "req_not_flag": "sq6_bread_left",
+					"resonance": -2.0, "flags": {"sq6_bread_kept": true}, "next": "s_keep"},
+			],
+			"next": ""},
+		"s_after2": {"who": "Narrator", "text": "Vela's loaf still keeps — a day, maybe two. So does the table's surveyed midpoint, wanting bread.",
 			"choices": [
 				{"text": "Set the gate camp's loaf on the table between them — fresh this morning, from the flock that stayed.",
 					"req_flag": "sq6_bread_taken", "req_not_flag": "sq6_bread_left",
@@ -279,6 +314,7 @@ const CONVOS := {
 					"lose_item": "ch6_gate_loaf", "next": "s_loaf"},
 			],
 			"next": ""},
+		"s_keep": {"who": "Narrator", "text": "The linen-wrapped warmth rides out of the camp against your back, and the argument you leave behind loses nothing it will ever notice — that is the whole defense, and it holds right up until you remember Vela wrapping it like a relic. Supper, she called it. Load-bearing. The loaf keeps a day or two more. So, presumably, does the schism.", "next": ""},
 		"s_loaf": {"who": "Narrator", "text": "You set it down at the table's exact midpoint — still warm, wrapped in gate-linen, smelling of a morning nobody here has had in weeks. Silence. Then the old pilgrim reaches out and turns it once, checking the bake the way deacons and millers do, and finds no fault to hide behind. \"The gate flock sent it,\" you say, and Vela's name does what no argument could: both camps eat, because refusing HER bread is a heresy neither side has the doctrine for. It isn't peace. It's supper. In a schism, supper is the load-bearing miracle.", "next": ""},
 	}},
 }

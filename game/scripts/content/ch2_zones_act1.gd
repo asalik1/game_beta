@@ -120,6 +120,9 @@ const CONVOS := {
 		"d1": {"who": "Narrator",
 			"text": "A mill hunches over the black water of the Greyrun. The wheel is furred with blight-moss and the walls have gone grey — but the door is blue. Still blue. Somebody sanded and repainted it every spring for twenty years, and the rot seems, for now, to be losing the argument with the paint.",
 			"variants": [
+				# Looted state first (first match wins): the door still stands;
+				# the checking-on-it habit didn't survive the third floorboard.
+				{"flag": "mill_looted", "text": "The blue door stands where it stood. You know now what the paint was guarding, and how light a tin of coin rides — and you find you don't check on the door the way you meant to. It watches you pass instead.", "next": ""},
 				{"flag": "mill_seen", "text": "The blue door stands where it stood. You find you check on it now, the way Sera must have — one glance, every pass, to make sure the argument is still being lost.", "next": ""},
 			],
 			"next": "d2"},
@@ -127,8 +130,12 @@ const CONVOS := {
 			"choices": [
 				{"text": "Remember it for her. (The door is standing.)",
 					"flags": {"mill_seen": true}, "resonance": 3.0, "next": "d3"},
+				{"text": "Remember it for her — then work the wheel-side shutter loose. Twenty years of paint guarded SOMETHING worth carrying.",
+					"flags": {"mill_seen": true, "mill_looted": true}, "resonance": -8.0,
+					"gold": 30, "next": "d_loot"},
 			]},
 		"d3": {"who": "Narrator", "text": "You fix the blue in your mind against the grey. Small honest cargo for the road back.", "next": ""},
+		"d_loot": {"who": "Narrator", "text": "The shutter gives the way twenty-year hinges give: apologizing. Inside, the mill keeps house the way she must have kept it — jars labeled, tools oiled, and under the third floorboard a tin of coin against a leaner spring than this one. You take the tin. The door stays blue behind you, and stands a little less for it — though only you would know, and you intend to be the only one who ever does.", "next": ""},
 	}},
 
 	# ---- The fallen imperial courier: Vessa's seal (Cinderborn arc).

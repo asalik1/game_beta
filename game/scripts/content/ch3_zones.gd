@@ -438,8 +438,11 @@ const CONVOS := {
 			"variants": [{"flag": "ch3_lene_met", "text": "Found the stonecutter's own grave this morning, by the way. Blank stone. He couldn't decide. Sixty years of everyone else's certainty, and the one man who carved it all hedged.", "next": ""}],
 			"choices": [
 				{"text": "\"And which does the Accord believe — rest or walk?\"", "flags": {"ch3_lene_met": true}, "next": "a_ans"},
+				{"text": "\"I've walked rows your catalogue hasn't reached, archivist. The Accord can pay for its history like anyone else.\"",
+					"resonance": -5.0, "flags": {"ch3_lene_met": true}, "gold": 40, "next": "a_paid"},
 			]},
 		"a_ans": {"who": "Archivist Lene (Accord)", "text": "The Accord believes in whichever one starves the thing underneath. That's the difference between us and everyone else in the Vale, bearer — we're the only ones here reading the stones for TACTICS.", "next": ""},
+		"a_paid": {"who": "Archivist Lene (Accord)", "text": "She pays — field rate, counted twice, no haggling — and takes your rows down in a hand quicker than her talk. \"There. The Accord settles its invoices.\" A beat, pen still. \"Sixty years of people TAKING from these graves, bearer. You're the first to sell them. I haven't decided which the stones would mind more.\"", "next": ""},
 	}},
 	"ch3_wander_peddler": {"start": "p1", "nodes": {
 		"p1": {"who": "Grave-Goods Peddler",

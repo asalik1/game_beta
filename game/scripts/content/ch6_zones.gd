@@ -415,7 +415,10 @@ const CONVOS := {
 			"choices": [
 				{"text": "\"Keep counting, sister. A true count is a kind of faith — maybe the only kind the Deep can't grow through.\"",
 					"resonance": 4.0, "flags": {"ch6_ottilie_met": true}, "next": "d_faith"},
+				{"text": "\"The soul went quiet three weeks ago, sister. Burn the tally-book and be out of the bog by dark — the Deep can keep its own ledger.\"",
+					"resonance": -3.0, "flags": {"ch6_ottilie_met": true}, "next": "d_quit"},
 			]},
+		"d_quit": {"who": "Sister Ottilie", "text": "Burn the book. — Her hands go flat on the cover, and for one breath you watch her actually weigh it: the road out, the dark, the lightness. Then: \"No. No, four thousand and twelve is TRUE, bearer, and true is the last thing I own out here. You keep your sword. I'll keep the number.\" She goes back to counting, a little louder than before — at you, you suspect.", "next": ""},
 		"d_faith": {"who": "Sister Ottilie", "text": "...A kind of faith. She writes that down, actually writes it, in the margin of her tally-book. \"Sixty years of liturgy and the first theology that's helped me in weeks comes off a sword-hand at a bog gate. When they end this — when YOU end this — I'm keeping the book. Someone should know exactly how many it was.\"", "next": ""},
 	}},
 	"ch6_wander_scout": {"start": "s1", "nodes": {
@@ -424,7 +427,10 @@ const CONVOS := {
 			"variants": [{"flag": "ch6_renn_met", "text": "Roster's still one, bearer. It'll stay one till this is done — then I'm teaching the young ones everything she taught me, minus the last lesson. That one you're handling.", "next": ""}],
 			"choices": [
 				{"text": "\"Tell me the thing about her nobody's put in a report.\"", "flags": {"ch6_renn_met": true}, "next": "s_tell"},
+				{"text": "\"Routes and hazards, scout — skip the eulogy. The rest keeps for the wake.\"",
+					"resonance": -3.0, "flags": {"ch6_renn_met": true}, "next": "s_routes"},
 			]},
+		"s_routes": {"who": "Cure-Camp Scout Renn", "text": "...Routes. Aye. He gives them flat and clean, a scout's habit outliving a scout's heart: the wallow, the canal crossing, the grove's false floor, mind the reeds past the stakes. Then he rolls the map shut harder than paper deserves. \"Hazards, all marked. The eulogy would've cost you two minutes, bearer. Her answers are in it. But you know your trade.\"", "next": ""},
 		"s_tell": {"who": "Cure-Camp Scout Renn", "text": "She tested the cure on herself on a MARKET day. Picked it deliberately — camp full, everyone watching, no way to hide the result either way. 'Evidence belongs to everyone,' she said, 'especially the bad kind.' Whatever you meet in that grove, bearer, it grew up around a woman who thought like THAT. Root's got her strength. Remember it also got her stubbornness — and her stubbornness was always aimed at the truth coming OUT.", "next": ""},
 	}},
 	"ch6_wander_fisher": {"start": "f1", "nodes": {
@@ -433,7 +439,10 @@ const CONVOS := {
 			"variants": [{"flag": "ch6_ama_met", "text": "Still cutting the east stands only. The west ones have started leaning EAST, though. I've drawn the line at the canal. Lines matter, even to reeds — maybe especially to reeds.", "next": ""}],
 			"choices": [
 				{"text": "\"A courtesy from the reeds. What do you reckon it wants, Ama?\"", "flags": {"ch6_ama_met": true}, "next": "f_wants"},
+				{"text": "\"Reed that parts for the knife cuts twice as fast, Ama. Sounds like the west stands finally learned some use.\"",
+					"resonance": -3.0, "flags": {"ch6_ama_met": true}, "next": "f_use"},
 			]},
+		"f_use": {"who": "Reed-Cutter Ama", "text": "Twice as fast. Aye — and my cutter said the same, the week before the stand parted for her. USE goes both directions, bearer; that's the first thing forty years of reeds teaches and the last thing anyone believes. Cut the west if you like. Just notice, when it's easy, WHO the easy is for.", "next": ""},
 		"f_wants": {"who": "Reed-Cutter Ama", "text": "Same as any young thing copying its elders — it wants to be LIKED. That's the part that keeps me up, bearer. The blight never cared what we felt about it. This green thing is learning manners, and manners are how you get invited inside. Forty years of reeds, and I never thought I'd miss honest rot.", "next": ""},
 	}},
 	"ch6_wander_botanist": {"start": "b1", "nodes": {
@@ -442,7 +451,10 @@ const CONVOS := {
 			"variants": [{"flag": "ch6_ferro_met", "text": "New curves are in. The multiplier DIPPED this week — first dip on record. Whatever you've been doing in there, the one-thing-wearing-shapes noticed it. Congratulations and, professionally speaking, watch your back.", "next": ""}],
 			"choices": [
 				{"text": "\"One thing wearing four thousand shapes. Put that in the report exactly like that, Ferro.\"", "flags": {"ch6_ferro_met": true}, "next": "b_report"},
+				{"text": "\"Curves like that are worth real coin, Ferro. The Compact would pay for the file twice what the Accord pays for the man.\"",
+					"resonance": -3.0, "flags": {"ch6_ferro_met": true}, "next": "b_twice"},
 			]},
+		"b_twice": {"who": "Botanist Ferro (Accord)", "text": "They offered, actually — a factor at the canal, very politely, twice my stipend. I asked what they'd DO with a growth curve. He said, and I quote, 'yield projections.' — Bearer, the last outfit that read this bog as yield is currently being worn by it. I declined, and I wrote the offer into the survey notes, because the offer is ALSO data. Everything down here is. Including, if you don't mind my saying, that suggestion.", "next": ""},
 		"b_report": {"who": "Botanist Ferro (Accord)", "text": "I did, actually. Maren's marginal note came back in two days: 'KNOWN. The epithet is the Pale Root. Keep measuring — a thing that standardizes can be BUDGETED, and a thing that can be budgeted can be starved.' That woman frightens me more than the bog does, bearer, and I mean that as the highest compliment in the civil service.", "next": ""},
 	}},
 }
