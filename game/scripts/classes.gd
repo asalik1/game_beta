@@ -114,7 +114,7 @@ const CLASSES := {
 		"abilities": {
 			"a1": {"name": "Quick Shot",  "cd": 0.36, "mp": 0.5,  "desc": "Fire an arrow at the nearest enemy."},
 			"a2": {"name": "Multishot",   "cd": 5.0,  "mp": 12, "desc": "Fan of 5 arrows."},
-			"a3": {"name": "Tumble",      "cd": 6.0,  "mp": 0,  "desc": "Dodge-roll in your move direction: a split-second perfect-dodge window, then you stay nimble (+20% evasion) for 1.25s. Time it into a hit to negate it outright; otherwise the evasion covers your reposition."},
+			"a3": {"name": "Tumble",      "cd": 6.0,  "mp": 12, "desc": "Dodge-roll in your move direction: a split-second perfect-dodge window, then you stay nimble (+20% evasion) for 1.25s. Time it into a hit to negate it outright; otherwise the evasion covers your reposition."},
 			"ult": {"name": "Arrow Storm", "cd": 40.0, "mp": 20, "desc": "3s: arrows rain on every enemy near you."},
 		},
 	},

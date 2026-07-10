@@ -944,6 +944,12 @@ func achievement_toast(name: String, desc: String) -> void:
 
 # ------------------------------------------------------------- helpers ---
 
+## Mana prices can be fractional (Quick Shot costs 0.5) — int() would
+## truncate those to a bogus "0", so keep one decimal when it matters.
+static func _fmt_cost(cost: float) -> String:
+	return str(int(roundf(cost))) if absf(cost - roundf(cost)) < 0.05 else "%.1f" % cost
+
+
 ## Godot's default tooltip label never wraps, so a paragraph-long ability
 ## desc would stretch one line across the screen — fold it by words here.
 static func _wrap_tip(text: String, width := 56) -> String:
@@ -1176,7 +1182,7 @@ func update_stats(p: Player) -> void:
 		var cost := p.ability_cost(slot)
 		box["key"].text = OS.get_keycode_string(game.binds[slot])
 		box["name"].text = ab["name"]
-		box["cost"].text = str(int(cost)) if cost > 0 else ""
+		box["cost"].text = _fmt_cost(cost) if cost > 0 else ""
 		# Paladin's ult is a STANCE SWAP, not a nuke — the slot itself reads out
 		# the form you're in RIGHT NOW (Conviction toggles it), so you never have
 		# to hunt the buff chip to know whether your blows mend or hit harder.
@@ -1193,7 +1199,7 @@ func update_stats(p: Player) -> void:
 		# talents and mana amods read truthfully.
 		var tip := "%s  [%s]" % [String(ab["name"]), OS.get_keycode_string(game.binds[slot])]
 		if cost > 0:
-			tip += "  ·  %d mana" % int(cost)
+			tip += "  ·  %s mana" % _fmt_cost(cost)
 		tip += "  ·  %.1fs cooldown" % p.ability_cd(slot)
 		tip += "\n" + String(ab["desc"])
 		var theme_id: String = p.ability_theme.get(slot, "")
