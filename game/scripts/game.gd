@@ -183,9 +183,14 @@ func on_class_chosen(id: String) -> void:
 	if not no_saves:
 		save_slot = SaveGame.next_free_slot()
 	get_tree().paused = false
+	# The class-select menu hid the HUD on the way in — and the opening's
+	# dialogue box and cutscene stage are its CHILDREN, so it must come back
+	# BEFORE the convo below or the whole opening plays invisibly (a "frozen"
+	# game to the player). The cutscene's full-screen stage covers the
+	# gameplay bars, so nothing gameplay-shaped leaks into the cinematic.
+	hud.visible = true
 	var begin := func() -> void:
 		play_started = true
-		hud.visible = true  # menus hid it during class select / the intro
 		set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(chapter_id)["name"]))
 		autosave()

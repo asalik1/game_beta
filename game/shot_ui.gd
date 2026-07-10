@@ -51,9 +51,8 @@ func _ready() -> void:
 	await _frames(5)
 
 	# --- skip opening dialogue, keep one frame of it ---
-	# The opening cutscene hides the HUD until its `begin` fade completes
-	# (wall-clock); a scripted skip outruns it — force the play state the
-	# way the cutscene would have left it before shooting HUD frames.
+	# A scripted skip outruns the cutscene's wall-clock finish fade — force
+	# the play state the way it would have been left before shooting HUD frames.
 	game.hud.visible = true
 	var guard := 0
 	var took_speaker := false
