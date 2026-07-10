@@ -49,12 +49,12 @@ const ENEMIES := {
 	# LASH roots you inside a closing ring; COMPOST — a bloom killed near
 	# him HEALS him, so weed the far garden and kite him off the near one.
 	"gardener": {
-		"name": "Rotmaw the Gardener", "sprite": "gardener",
-		# NOTE: the skeleton strip's body only fills ~48% of its cell, so raw
-		# scale lied (7.0 rendered ~1.0x the hero). gardener_* strips are the
-		# skeleton family re-cut to tight cells (~90% body) — same pixels.
+		"name": "Rotmaw the Gardener", "sprite": "rotmaw",
+		# rotmaw.png: PixelLab redesign body (2026-07-10), ember-red glow
+		# pass baked in, ~95% cell coverage. Scale sits under the ch6
+		# finale (kaethra 10.5) per the ordinance.
 		"hp": 44000.0, "dmg": 185.0, "speed": 80.0, "xp": 560, "gold": 640,
-		"ranged": true, "scale": 9.5,
+		"ranged": true, "scale": 10.2,
 		"physres": 25.0, "magres": 45.0, "eva": 0.05, "critres": 8.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 35, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.0},
@@ -82,7 +82,7 @@ const ENEMIES := {
 	# back). At 10% the Root abandons her and the fight ENDS: strike or
 	# sheathe, through the convo system (no mid-combat branching).
 	"curetwisted": {
-		"name": "Kaethra Cure-Twisted", "sprite": "beastkin",
+		"name": "Kaethra Cure-Twisted", "sprite": "kaethra",
 		"hp": 69000.0, "dmg": 205.0, "speed": 145.0, "xp": 720, "gold": 900,
 		"ranged": false, "scale": 10.5,
 		"physres": 30.0, "magres": 35.0, "eva": 0.05, "critres": 9.0, "crit": 0.05, "dmg_type": "phys",
@@ -132,7 +132,8 @@ static func selftest(game: Node2D) -> String:
 			or game.music_tracks.has(ENEMIES[kind].get("music_fallback", ""))
 		if not music_ok:
 			return "ch6 boss %s: neither music nor fallback track exists" % kind
-		var b := spawn(game, kind, game.player.global_position + Vector2(340, 0))
+		# (MP: the LOCAL player — this is the test harness's own hero, not AI targeting.)
+		var b := spawn(game, kind, game.local_player.global_position + Vector2(340, 0))
 		await game.get_tree().create_timer(0.2).timeout
 		if not is_instance_valid(b) or absf(b.max_hp - float(ENEMIES[kind]["hp"])) > 0.01:
 			return "ch6 boss %s: stats did not resolve" % kind
@@ -196,6 +197,6 @@ static func selftest(game: Node2D) -> String:
 			if is_instance_valid(h.get("sprite")):
 				h["sprite"].queue_free()
 		game.hazards.clear()
-		game.player.rooted_time = 0.0
+		game.local_player.rooted_time = 0.0
 		await game.get_tree().create_timer(0.2).timeout
 	return ""

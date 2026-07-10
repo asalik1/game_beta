@@ -51,7 +51,7 @@ const ENEMIES := {
 	# you for a piercing line. At 40% the keystone cracks: ice spreads
 	# inward and the freezes quicken.
 	"icebound": {
-		"name": "Serane the Icebound", "sprite": "icebound",
+		"name": "Serane the Icebound", "sprite": "serane",
 		"hp": 30000.0, "dmg": 140.0, "speed": 90.0, "xp": 560, "gold": 430,
 		"ranged": true, "scale": 8.5,
 		"physres": 20.0, "magres": 55.0, "eva": 0.08, "critres": 7.0, "crit": 0.05, "dmg_type": "magic",
@@ -132,7 +132,8 @@ static func selftest(game: Node2D) -> String:
 			or game.music_tracks.has(ENEMIES[kind].get("music_fallback", ""))
 		if not music_ok:
 			return "ch5 boss %s: neither music nor fallback track exists" % kind
-		var b := spawn(game, kind, game.player.global_position + Vector2(340, 0))
+		# (MP: the LOCAL player — this is the test harness's own hero, not AI targeting.)
+		var b := spawn(game, kind, game.local_player.global_position + Vector2(340, 0))
 		await game.get_tree().create_timer(0.2).timeout
 		if not is_instance_valid(b) or absf(b.max_hp - float(ENEMIES[kind]["hp"])) > 0.01:
 			return "ch5 boss %s: stats did not resolve" % kind
@@ -190,7 +191,7 @@ static func selftest(game: Node2D) -> String:
 			if is_instance_valid(h.get("sprite")):
 				h["sprite"].queue_free()
 		game.hazards.clear()
-		game.player.frozen_time = 0.0
-		game.player.rooted_time = 0.0
+		game.local_player.frozen_time = 0.0
+		game.local_player.rooted_time = 0.0
 		await game.get_tree().create_timer(0.2).timeout
 	return ""
