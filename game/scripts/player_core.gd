@@ -392,6 +392,7 @@ var _clip_flip := 0.0          # facing side (±1) forced while it plays; 0 = fo
 var _dir_loco := {}            # {clip name: 8-dir strip set}, empty if none
 var _loco_dir := "s"           # current facing suffix while directional
 var _loco_dir_on := false      # is directional locomotion driving the sprite?
+var _action_dir_on := false    # is a directional ONE-SHOT (locked facing) playing?
 var halo: PointLight2D = null  # the hero's soft light (dark terrains only)
 
 ## Per-class ability-slot -> action clip. Slots with no matching clip (or a
@@ -501,6 +502,19 @@ func _measure_hero_frame(info: Dictionary) -> Dictionary:
 	return {"scale": sc, "offset": HERO_FEET_ANCHOR / sc - float(bot) + float(fh) / 2.0}
 
 
+## Facing for a directional ONE-SHOT action (attack/dash/ult...), locked at
+## the moment it fires: toward the aimed target, else the movement, else the
+## committed horizontal look. Mirrors the enemy's target-first action facing.
+## Lives in the base layer so _play_clip (base) can call it.
+func _action_facing_vec() -> Vector2:
+	var t: Enemy = locked_target if is_instance_valid(locked_target) else soft_target
+	if is_instance_valid(t) and not t.dead:
+		return t.global_position - global_position
+	if velocity.length() > 20.0:
+		return velocity
+	return Vector2(look_sign, 0.0)
+
+
 ## Point the hero Sprite2D at a clip. loop=false marks a one-shot action
 ## (attack/cast/dash/ult/death); the driver returns to locomotion when it ends.
 func _play_clip(name: String, loop: bool) -> void:
@@ -519,7 +533,7 @@ func _play_clip(name: String, loop: bool) -> void:
 	_clip_flip = 0.0
 	_dir_pose_active = false
 	_loco_dir_on = false   # a clip change drops directional drive; the loco
-	                       # tail re-enables it if this clip has 8-dir art
+	_action_dir_on = false # tail (loop) / the block below (one-shot) re-enable
 	sprite.rotation = 0.0
 	strip_frames = int(info["frames"])
 	strip_fps = float(info["fps"])
@@ -527,6 +541,18 @@ func _play_clip(name: String, loop: bool) -> void:
 	sprite.texture = info["tex"]
 	sprite.hframes = strip_frames
 	sprite.frame = 0
+	# 8-direction ONE-SHOT (attack/dash/ult/cast/death): lock facing now and
+	# play that direction's strip. Locomotion clips get their facing per-frame
+	# in _loco_dir_frame instead. No-op when the clip has no directional art.
+	if not loop and _dir_loco.has(name):
+		var suf: String = Art.dir8_suffix(_action_facing_vec())
+		var dinfo: Dictionary = _dir_loco[name][suf]
+		strip_frames = int(dinfo["frames"])
+		strip_fps = float(dinfo["fps"])
+		sprite.texture = dinfo["tex"]
+		sprite.hframes = strip_frames
+		sprite.flip_h = false
+		_action_dir_on = true
 	sprite.scale = Vector2(_hero_scale, _hero_scale)
 	sprite.offset = Vector2(0, _hero_offset_y)
 

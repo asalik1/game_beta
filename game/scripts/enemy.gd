@@ -79,6 +79,10 @@ var _strip_walking := false
 # cast, then reverts to idle/walk. Empty when nothing is playing.
 var _strip_action := {}
 var _action_t := 0.0
+# 8-direction ability strip: when assets/sprites/<sprite>_<action>_<dir>.png
+# exists, the facing is LOCKED at the moment the action fires (an attack
+# shouldn't rotate mid-swing) and that direction's strip plays through.
+var _action_dir := {}   # the dir set for the running action, {} if flat
 var _sprite_key := ""   # stats["sprite"] kept for action-strip lookups
 var _moving_anim := false  # hysteretic "moving" for walk/idle swap + bob
 var _face_vx := 0.0        # low-passed velocity.x for jitter-free facing
@@ -379,10 +383,21 @@ func play_action(action: String) -> void:
 		game.net_session().host_enemy_action(net_id, action)
 	if _strip_idle.is_empty():
 		return
+	# Directional ability art first: lock facing now, play that direction.
+	var dset := Art.dir_set("%s_%s" % [_sprite_key, action])
+	if not dset.is_empty():
+		_action_dir = dset
+		var suf := Art.dir8_suffix(_facing_vec())
+		_strip_action = dset[suf]
+		_action_t = 0.0
+		_apply_strip(_strip_action)
+		sprite.flip_h = false
+		return
 	var info := Art.action_info(_sprite_key, action)
 	if info.is_empty():
 		return
 	_strip_action = info
+	_action_dir = {}
 	_action_t = 0.0
 	_apply_strip(info)
 
@@ -391,8 +406,10 @@ func play_action(action: String) -> void:
 ## next frame). Frame filtering keeps it out of the physics-flush path.
 func _end_action() -> void:
 	_strip_action = {}
+	_action_dir = {}
 	_action_t = 0.0
 	_strip_walking = false
+	_cur_dir = ""  # force the idle path to re-pick a directional strip next frame
 	if not _strip_idle.is_empty():
 		_apply_strip(_strip_idle)
 
@@ -563,7 +580,7 @@ func _physics_process(delta: float) -> void:
 	# Directional locomotion encoded facing in its chosen strip (flip_h
 	# false); apply the horizontal flip only for single-facing art, or
 	# while a single-facing one-shot action strip is playing.
-	if os != 0.0 and (_dir_idle.is_empty() or not _strip_action.is_empty()):
+	if os != 0.0 and _action_dir.is_empty() and (_dir_idle.is_empty() or not _strip_action.is_empty()):
 		sprite.flip_h = (os > 0.0) if face_left else (os < 0.0)
 	# Little walk bob so they feel alive.
 	if _moving_anim:

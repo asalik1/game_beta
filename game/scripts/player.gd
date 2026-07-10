@@ -204,10 +204,10 @@ func _physics_process(delta: float) -> void:
 	# the player's aim. Left-facing art (Crawl sprites) flips the opposite way;
 	# a directional aim pose sets its own facing, so don't fight it while it holds.
 	look_sign = _face_sign()
-	if not _dir_pose_active and not _loco_dir_on:
+	if not _dir_pose_active and not _loco_dir_on and not _action_dir_on:
 		# An aimed dash pose (_aim_dash_pose) faces the TRAVEL side, which may
 		# oppose the target-committed look_sign — hold its flip while it plays.
-		# Directional locomotion (_loco_dir_on) already chose a facing strip.
+		# Directional locomotion / one-shot already chose a facing strip.
 		var side := _clip_flip if _clip_flip != 0.0 else look_sign
 		sprite.flip_h = (side > 0.0) if face_left else (side < 0.0)
 	if _clip_flip != 0.0:
@@ -338,7 +338,7 @@ func _remote_present(delta: float) -> void:
 		return
 	if strip_frames > 0:
 		_advance_clip(delta)  # _loco_clip reads the synced velocity: walk vs idle
-		if not _dir_pose_active and not _loco_dir_on:
+		if not _dir_pose_active and not _loco_dir_on and not _action_dir_on:
 			sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
 	else:
 		# Static class art: mirror the local walk bob so a moving remote
