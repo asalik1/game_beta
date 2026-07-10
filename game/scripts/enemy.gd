@@ -518,9 +518,10 @@ func _physics_process(delta: float) -> void:
 			_end_action()
 		else:
 			sprite.frame = idx
-	elif anim_frames > 1:
+	elif anim_frames > 1 or not _dir_idle.is_empty():
 		# Walk/idle split. Single-facing art keeps the flip path; 8-direction
-		# art also picks the strip by facing.
+		# art also picks the strip by facing — and runs even for 1-frame idle
+		# rotations (PixelLab's static rotations are one frame per direction).
 		if _dir_idle.is_empty():
 			if not _strip_walk.is_empty() and _moving_anim != _strip_walking:
 				_strip_walking = _moving_anim
