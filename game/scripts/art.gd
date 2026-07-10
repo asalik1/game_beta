@@ -2022,15 +2022,20 @@ const GEM_ROWS := [
 ]
 
 
-## Gem icon tinted by the stat color; LEVEL adds glints (4+ one, 7+ two,
-## 10 a gold crown pip). 32x32, cached — bags hold a lot of gems.
+## Gem icon tinted by the stat color. The CUT encodes the level (owner
+## rule, 2026-07-09: more cuts = higher tier — teardrop at Lv1 climbing
+## to octagon at Lv9/10): assets/icons/gem_lv<1..10>.png, neutral-grey
+## bases so the stat tint colors them; Lv10 gains a gold crown pip.
+## 32x32, cached — bags hold a lot of gems.
 static func gem_icon(col: Color, lvl := 1) -> ImageTexture:
 	var key := "gemicon_%s_%d" % [col.to_html(false), lvl]
 	if _cache.has(key):
 		return _cache[key]
-	# Prefer the shared gem.png (same seam as the ground drop, which modulates
-	# the neutral jewel by stat colour) so bag/stash/shop gems match the world.
-	var override := _icon_override("gem")
+	# Per-level cut first, then the shared gem.png (same seam as the ground
+	# drop, which modulates the neutral jewel by stat colour).
+	var override := _icon_override("gem_lv%d" % clampi(lvl, 1, 10))
+	if override == null:
+		override = _icon_override("gem")
 	if override != null:
 		var tinted := override.duplicate() as Image
 		tinted.convert(Image.FORMAT_RGBA8)
@@ -2039,6 +2044,12 @@ static func gem_icon(col: Color, lvl := 1) -> ImageTexture:
 				var p: Color = tinted.get_pixel(x, y)
 				if p.a > 0.0:
 					tinted.set_pixel(x, y, Color(p.r * col.r, p.g * col.g, p.b * col.b, p.a))
+		if lvl >= 10 and tinted.get_width() >= 32:
+			# Max-level capstone: a gold crown pip above the octagon,
+			# untinted so it reads gold on every stat color.
+			for gy in range(1, 3):
+				for gx in range(15, 18):
+					tinted.set_pixel(gx, gy, Color(1.0, 0.9, 0.4))
 		var ot := ImageTexture.create_from_image(tinted)
 		_cache[key] = ot
 		return ot

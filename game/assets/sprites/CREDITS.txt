@@ -64,3 +64,9 @@ BAT PACKS (Small_Bat, Bat_Fur) — purchased by the project owner and
   Installed as: bat / bat_anim (Cave Bat, from Small_Bat, side Move sheet)
   and direbat / direbat_anim (Blightbat, from Bat_Fur). Side-facing Move
   strips, union-cropped + gamma-0.78 pre-brightened for the HDR tonemap.
+
+PixelLab (pixellab.ai) AI-generated, project-commissioned art (2026-07-09):
+  rock, coffin, grave_bones, crypt, deadtree, tree_spore, bridge,
+  grove_horror*, sexton*, vess, choir_censer (sprites)
+  gem_lv1..gem_lv10, gem (icons — neutral bases, stat-tinted in code)
+Generated for this project; no third-party attribution required.

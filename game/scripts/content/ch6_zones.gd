@@ -209,7 +209,7 @@ const ENEMIES := {
 		"physres": 12.0, "magres": 45.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
 		"level": 35, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["spawner"],
 		"lore": "Choir pilgrims who came for holy rot, saw the Blooming, and converted on the spot. Faith that flips once flips easy — Rotmaw taught them where to aim it."},
-	"grove_horror": {"name": "Grove Horror", "sprite": "medusa", "hp": 880.0, "dmg": 84.0, "speed": 140.0, "xp": 17, "gold": 30, "ranged": false, "scale": 3.6,
+	"grove_horror": {"name": "Grove Horror", "sprite": "grove_horror", "hp": 880.0, "dmg": 84.0, "speed": 140.0, "xp": 17, "gold": 30, "ranged": false, "scale": 3.6,
 		"physres": 40.0, "magres": 25.0, "eva": 0.0, "critres": 3.0, "dmg_type": "phys",
 		"level": 36, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["frenzy", "warded"],
 		"lore": "Something that walked into the deep grove on two legs. The Root never subtracts — it only adds, and adds, and adds."},

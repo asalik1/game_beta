@@ -21,7 +21,7 @@ const ENEMIES := {
 	# discount small), 30s mid x 281, 40s finale x 395 less a censer-heal
 	# allowance. Damage was already textbook on-curve — untouched.
 	"sexton": {
-		"name": "The Sexton, Gravedigger of the Vale", "sprite": "zombie",
+		"name": "The Sexton, Gravedigger of the Vale", "sprite": "sexton",
 		"hp": 5400.0, "dmg": 58.0, "speed": 120.0, "xp": 260, "gold": 200,
 		"ranged": false, "scale": 9.0,
 		"physres": 30.0, "magres": 15.0, "eva": 0.0, "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
@@ -44,7 +44,7 @@ const ENEMIES := {
 	# The first person the Choir refused to bury. Her scream became the
 	# liturgy; the SILENCE (inverse telegraph) debuts here.
 	"vess": {
-		"name": "Vess the Unburied, First Widow", "sprite": "witch",
+		"name": "Vess the Unburied, First Widow", "sprite": "vess",
 		"hp": 8000.0, "dmg": 66.0, "speed": 100.0, "xp": 300, "gold": 235,
 		"ranged": true, "scale": 8.5,
 		"physres": 12.0, "magres": 50.0, "eva": 0.10, "critres": 5.0, "crit": 0.05, "dmg_type": "magic",
@@ -98,7 +98,7 @@ const ENEMIES := {
 	# attacks — while one burns, the saint mends. (Add-channel-heal
 	# primitive; Kaethra's roots and Veyx's rods reuse this shape.)
 	"choir_censer": {
-		"name": "Blighted Censer", "sprite": "pillar",
+		"name": "Blighted Censer", "sprite": "choir_censer",
 		"hp": 220.0, "dmg": 0.0, "speed": 0.0, "xp": 0, "gold": 0,
 		"ranged": false, "scale": 2.6,
 		"physres": 10.0, "magres": 30.0, "eva": 0.0, "critres": 0.0, "crit": 0.0, "dmg_type": "phys",
