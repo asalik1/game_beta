@@ -391,6 +391,7 @@ func _process(delta: float) -> void:
 	# MP: the sim gate follows every player, every frame (remote players
 	# move between the local room transitions above). Solo: {cur_room}.
 	_refresh_active_rooms()
+	_host_ensure_active_rooms()  # MP: populate any room a guest reached first
 
 	# ------------------------------------------------ terrain mechanics ---
 	var cur_terrain := Terrains.get_terrain(terrain_by_zone[cur_room])

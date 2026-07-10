@@ -1511,8 +1511,8 @@ func _rpc_revive_request(downed_pid: int) -> void:
 ## channel wins; a later hopeful gets NOTHING back (the §5.3 busy no-op).
 func _host_revive_request(downed_pid: int, reviver_pid: int) -> void:
 	var q: Player = _player_of(downed_pid)
-	if q == null or not is_instance_valid(q) or not q.downed:
-		return
+	if q == null or not is_instance_valid(q) or not (q.downed or q.ghost):
+		return  # channel revives a downed OR ghosted body (§5.3, owner 2026-07-10)
 	var holder: int = int(_revive_claims.get(downed_pid, 0))
 	if holder != 0 and holder != reviver_pid:
 		return
@@ -1618,7 +1618,7 @@ func _host_revive_done(downed_pid: int, reviver_pid: int) -> void:
 	if int(_revive_claims.get(downed_pid, 0)) != reviver_pid:
 		return  # lapsed/foreign claim — no revive
 	var q: Player = _player_of(downed_pid)
-	if q == null or not is_instance_valid(q) or not q.downed:
+	if q == null or not is_instance_valid(q) or not (q.downed or q.ghost):
 		return
 	_revive_claims.erase(downed_pid)
 	_broadcast_revive_end(downed_pid)
@@ -1653,15 +1653,17 @@ func _rpc_stand_up(frac: float) -> void:
 func _host_down_sweep() -> void:
 	if game == null or not bool(game.play_started):
 		return
-	var any_hot := false
-	for r in game.active_rooms:
-		if game._room_hot(int(r)):
-			any_hot = true
-			break
-	if not any_hot:
-		for p in game.players:
-			if p == null or not is_instance_valid(p) or not p.ghost:
-				continue
+	# §5.3 (owner call 2026-07-10): a GHOST stands when THEIR OWN room clears —
+	# not when the whole party's rooms are quiet. So a fighter who clears the
+	# room an ally ghosted in brings them back, even while a boss still rages
+	# next door. Downed players are NOT auto-stood here — the 30 s downed window
+	# is the CHANNEL's job (a teammate holds INTERACT); ghost is the passive
+	# room-clear recovery after it lapses.
+	for p in game.players:
+		if p == null or not is_instance_valid(p) or not p.ghost:
+			continue
+		var r: int = game.room_at_pos(p.global_position)
+		if r >= 0 and not game._room_hot(r):
 			_stand_up_peer(p.peer_id, p.REVIVE_HP_FRAC)
 	_check_wipe()
 

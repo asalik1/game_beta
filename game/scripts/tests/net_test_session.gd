@@ -56,9 +56,9 @@ extends Node
 ##       the host's shell) and enemies retarget away from the body;
 ##   (b) the host channels INTERACT beside it for 3 s — the guest stands
 ##       at 30% max HP (owner-applied; the shell bar follows via vitals);
-##   (c) a channel broken by damage revives nobody (the host holds the
-##       key through repeated hits — the guest is still down after well
-##       over 3 s of "channeling");
+##   (c) DAMAGE no longer interrupts (owner call 2026-07-10): the host holds
+##       the key through repeated hits and the channel SURVIVES; a hard CC
+##       (freeze) DOES break it, and the broken channel revives nobody;
 ##   (d) both down = WIPE: both machines replay the solo death flow —
 ##       both tithed, both respawned at the HOST's safe-room decision,
 ##       the wounded arena boss reset to full (leashed);
@@ -1037,9 +1037,9 @@ func _run_host6() -> void:
 	wolf.queue_free()
 	await _frames(2)
 
-	# (c) INTERRUPTED channel first (the guest is conveniently down): hold
-	# INTERACT beside the body, then take hits — every landed hit must
-	# break the channel, so the guest is still down long after 3 s.
+	# (c) DAMAGE DOESN'T INTERRUPT, a FREEZE DOES (owner call 2026-07-10): hold
+	# INTERACT beside the body, take hits — the channel must SURVIVE them — then
+	# a freeze must break it, leaving the guest still down.
 	# The shell may still be LERPING from the join spawn toward the owner's
 	# truth — let it settle first (teleporting the host onto a mid-lerp
 	# reading once dropped it inside village-center decor, and the physics
@@ -1065,26 +1065,31 @@ func _run_host6() -> void:
 			5.0, "revive channel grant (interrupt test)"):
 		return
 	await get_tree().create_timer(0.8).timeout
-	var interrupted := false
+	# (c1) five landed hits must NOT break the hold (well under the 3 s finish):
 	for i in 5:
 		game.player.hurt_cd = 0.0
 		game.player.take_damage(6.0, "true", null, true)
-		# Same-stack read: the interrupt is synchronous; a re-grant can
-		# only happen on a LATER physics frame.
 		if game.player.revive_target == null:
-			interrupted = true
-			break
-		await get_tree().create_timer(0.25).timeout
+			_press(ikey, false)
+			return _fail("a landed hit broke the channel — damage should no longer interrupt")
+		await get_tree().create_timer(0.15).timeout
+	# (c2) a FREEZE (hard CC) breaks it before the 3 s completes. Set frozen_time
+	# directly (apply_freeze's control-forward path is moot for a genuinely-local
+	# reviver) and poll wall-clock — frames race ahead of physics headless.
+	game.player.frozen_time = 3.0
+	if not await _wait_for(func() -> bool: return game.player.revive_target == null,
+			3.0, "a freeze breaking the revive channel"):
+		_press(ikey, false)
+		return _fail("a freeze did not break the revive channel (hard CC must interrupt)")
 	_press(ikey, false)
-	if not interrupted:
-		return _fail("a landed hit never broke the revive channel")
-	await get_tree().create_timer(1.2).timeout
+	game.player.frozen_time = 0.0  # clear the CC before the real-revive leg
+	await get_tree().create_timer(1.0).timeout
 	r = await _watch(gid, "downstate", {})
 	if r.is_empty():
 		return
 	if not bool(r.get("ok", false)):
-		return _fail("guest revived through an interrupted channel: %s" % str(r))
-	print("[net_session] host6: a landed hit broke the channel — key still held, guest still down")
+		return _fail("guest revived through a frozen-broken channel: %s" % str(r))
+	print("[net_session] host6: damage held the channel; a freeze broke it — guest still down")
 
 	# (b) the REAL revive: hold the channel 3 s uninterrupted — the guest
 	# stands at 30% max HP and the shell follows via vitals.

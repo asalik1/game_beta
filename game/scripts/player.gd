@@ -685,7 +685,9 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	hurt_cd = 0.6
 	hurt_was_heavy = heavy  # a heavy-armed window blocks even other heavies
 	since_hurt = 0.0
-	_revive_interrupt(true)  # MP-12 (§5.3): any landed hit breaks your revive channel
+	# MP-12 (§5.3, owner call 2026-07-10): a landed hit NO LONGER breaks a
+	# revive channel — taking damage is the cost of the 3 s hold. Only a hard
+	# CC (freeze) interrupts, handled in _revive_channel_tick.
 	if dr_time > 0.0 and dmg_type != "true":
 		# Arcane Ward (round 45): the mage's Blink cloak — a brief, strong
 		# damage cut that SOFTENS a misstep instead of erasing it (the old
@@ -904,20 +906,28 @@ func _down_tick(delta: float) -> void:
 				sprite.rotation = (PI / 2.0) * (-1.0 if sprite.flip_h else 1.0)
 
 
-## REVIVER, per-frame: hold INTERACT within REVIVE_REACH of a downed ally
-## to channel the 3 s revive (§5.3). The host arbitrates the claim (first
-## channel wins; later hopefuls silently no-op); progress runs on THIS
-## clock. Breaking the hold (release, move, range, the ally standing or
-## ghosting) cancels quietly; a landed hit cancels loudly via take_damage.
+## REVIVER, per-frame: hold INTERACT within REVIVE_REACH of a fallen ally to
+## channel the 3 s revive (§5.3). The host arbitrates the claim (first channel
+## wins; later hopefuls silently no-op); progress runs on THIS clock. A DOWNED
+## or GHOSTED ally can be channeled (owner call 2026-07-10). Breaking the hold
+## (release, move, range, or the ally standing) cancels quietly; a hard CC (a
+## freeze) cancels loudly. Plain damage does NOT interrupt — taking hits is the
+## cost of the hold.
 func _revive_channel_tick(delta: float) -> void:
 	if game == null or not game.net_online():
 		return
 	if revive_target != null:
 		var q = revive_target
-		if not is_instance_valid(q) or not q.downed or not intent_interact \
+		if not is_instance_valid(q) or not (q.downed or q.ghost) or not intent_interact \
 				or intent_move != Vector2.ZERO \
 				or global_position.distance_to(q.global_position) > REVIVE_REACH * 1.35:
 			_revive_interrupt(false)
+			return
+		if frozen_time > 0.0:
+			# Only a hard CC breaks the channel. A freeze is a full lockout —
+			# you can't hold the flame steady frozen solid. Root leaves you
+			# planted but working, so it doesn't (matches apply_root's ethos).
+			_revive_interrupt(true)
 			return
 		revive_t += delta
 		if revive_t >= REVIVE_CHANNEL:
@@ -926,12 +936,12 @@ func _revive_channel_tick(delta: float) -> void:
 			revive_t = 0.0
 			game.net_session().finish_revive(pid)
 		return
-	if not intent_interact:
-		return
+	if not intent_interact or frozen_time > 0.0:
+		return  # frozen solid can't START a channel either (hard CC lockout)
 	var best = null
 	var best_d: float = REVIVE_REACH
 	for p in game.players:
-		if p == null or not is_instance_valid(p) or p == self or not p.downed:
+		if p == null or not is_instance_valid(p) or p == self or not (p.downed or p.ghost):
 			continue
 		var d := global_position.distance_to(p.global_position)
 		if d <= best_d:

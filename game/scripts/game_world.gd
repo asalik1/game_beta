@@ -279,6 +279,23 @@ func _enter_room(i: int) -> void:
 	last_room = i
 	autosave()  # autosave on every room transition (DESIGN.md)
 
+## HOST (empty-room fix 2026-07-10): a room only builds + spawns on its LOCAL
+## player's entry, so a room a GUEST walked into FIRST would sit empty — the
+## host never populated it, so MP-09 had nothing to mirror and the guest saw
+## a rendered but lifeless room. The host already tracks every guest's room in
+## active_rooms; here it builds + arms any it hasn't yet, so the enemies (and
+## a boss) spawn host-side and stream out. Runs off the host's per-frame after
+## _refresh_active_rooms. No-op solo and on guests (net_host gate).
+func _host_ensure_active_rooms() -> void:
+	if not net_host():
+		return
+	for r in active_rooms:
+		var i := int(r)
+		if i < 0 or i >= zone_count or built.get(i, false):
+			continue
+		_build_room(i)     # walls/scenery + _spawn_room_enemies (host spawns)
+		_try_spawn_boss(i)  # arm a boss room a guest reached ahead of the host
+
 ## Leaving a room calms whatever you didn't kill: its pack forgets you and
 ## returns to post, so re-entry reads clean instead of a cluster still
 ## camping the doorway. You only ever leave a LIVE room by dying or a
@@ -1315,6 +1332,16 @@ func _room_hot(i: int) -> bool:
 	for b in _live_bosses():
 		if b.zone_idx == i or b.zone_idx < 0:
 			return true
+	if net_guest():
+		# Guests never run _spawn_room_enemies, so zone_alive stays 0 — count
+		# the HOST's live mirror enemies in the room instead, so a guest is
+		# sealed into a combat room exactly as the host is (MP door-seal parity
+		# 2026-07-10). Brief gap on first entry until the mirrors stream in.
+		for node in get_tree().get_nodes_in_group("enemies"):
+			var e := node as Enemy
+			if e != null and not (e is Boss) and not e.dying and e.zone_idx == i:
+				return true
+		return false
 	return zone_alive.get(i, 0) > 0
 
 ## Seal or lift the current room's door seals based on its fight state.
