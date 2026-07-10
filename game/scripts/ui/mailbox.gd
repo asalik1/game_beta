@@ -9,10 +9,47 @@ class_name UIMailbox
 
 static func open(m: Menus) -> void:
 	m.game.prune_mail()
-	var vbox := m._open("Mailbox", 900, 560, true)
+	var no_mail: bool = m.game.mailbox.is_empty()
+	# Empty mailbox: a note-sized panel (audit: one sentence rattling in a
+	# 560px hall) with ghost letters sketching what will arrive here.
+	var vbox := m._open("Mailbox", 900, 360.0 if no_mail else 560.0, true)
 	m.current = "mailbox"
-	if m.game.mailbox.is_empty():
+	if no_mail:
 		m._lbl(vbox, "No mail. Loot you leave on the ground arrives here when a chapter ends.", 14, Color(0.6, 0.62, 0.68))
+		# Ghost rows: dimmed letter-shaped placeholders — an envelope, a
+		# subject bar, a date bar. The shelf reads as a shelf, even bare.
+		for i in 3:
+			var row := PanelContainer.new()
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = Color(1, 1, 1, 0.03)
+			sb.set_corner_radius_all(6)
+			sb.content_margin_left = 14.0
+			sb.content_margin_right = 14.0
+			sb.content_margin_top = 9.0
+			sb.content_margin_bottom = 9.0
+			row.add_theme_stylebox_override("panel", sb)
+			vbox.add_child(row)
+			var h := HBoxContainer.new()
+			h.add_theme_constant_override("separation", 12)
+			row.add_child(h)
+			var env := m._lbl(h, "✉", 17, Color(0.55, 0.58, 0.66, 0.45))
+			env.custom_minimum_size = Vector2(26, 0)
+			var bar := ColorRect.new()
+			bar.color = Color(0.55, 0.58, 0.66, 0.10)
+			bar.custom_minimum_size = Vector2([340.0, 250.0, 300.0][i], 10)
+			bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			h.add_child(bar)
+			var gap := Control.new()
+			gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			h.add_child(gap)
+			var dbar := ColorRect.new()
+			dbar.color = Color(0.55, 0.58, 0.66, 0.07)
+			dbar.custom_minimum_size = Vector2(90, 10)
+			dbar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			h.add_child(dbar)
+		var fill := Control.new()
+		fill.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		vbox.add_child(fill)
 	else:
 		m._lbl(vbox, "Unclaimed loot vanishes %d days after a letter is sent. Claimed letters stay until you delete them." % Balance.MAIL_EXPIRY_DAYS, 12, Color(0.55, 0.55, 0.6))
 		var scroll := ScrollContainer.new()

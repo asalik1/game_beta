@@ -10,7 +10,7 @@ static func open(m: Menus) -> void:
 	var g := m.game
 	g.ensure_stash_loaded()
 	var p := g.player
-	var vbox := m._open("Stash — account storage  (%d / %d used)" % [g.stash.size(), Balance.STASH_SLOTS], 1040, 640)
+	var vbox := m._open("Stash — account storage  (%d / %d used)" % [g.stash.size(), Balance.STASH_SLOTS], 1040, 470)
 	m.current = "stash"
 	m._lbl(vbox, "Shared across ALL your characters. Click an entry to move it between your BAG and the STASH.",
 		13, Color(0.7, 0.72, 0.78))
@@ -28,7 +28,7 @@ static func open(m: Menus) -> void:
 			g.spawn_text(p.global_position + Vector2(0, -50), "Stash full!", Color(1, 0.6, 0.4))
 		open(m))
 
-	_column(m, cols, "STASH  (click to withdraw)  ▶", g.stash.duplicate(), func(pl: Dictionary) -> void:
+	_stash_grid(m, cols, g.stash.duplicate(), func(pl: Dictionary) -> void:
 		if g.stash_withdraw(pl):
 			g.sfx("equip")
 		else:
@@ -36,6 +36,35 @@ static func open(m: Menus) -> void:
 		open(m))
 
 	m._hint(vbox, "ESC to close")
+
+
+## The vault side renders as SOCKETS (the inventory's slot chrome —
+## _bag_slot/_bag_empty): n filled squares, the rest visibly empty, so
+## "0 / 20 used" is a shelf you can see, not a caption. Click withdraws;
+## the entry's name rides the hover tooltip.
+static func _stash_grid(m: Menus, parent: HBoxContainer, entries: Array, cb: Callable) -> void:
+	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(box)
+	m._lbl(box, "STASH  (click to withdraw)  ▶", 15, Color(0.95, 0.85, 0.5))
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_child(scroll)
+	var grid := GridContainer.new()
+	grid.columns = 9
+	grid.add_theme_constant_override("h_separation", 4)
+	grid.add_theme_constant_override("v_separation", 4)
+	scroll.add_child(grid)
+	for pl in entries:
+		var payload: Dictionary = pl
+		var ic: Texture2D = _entry_icon(payload)
+		var b := m._bag_slot(grid, ic, "" if ic != null else "⟲", _entry_color(payload),
+			func() -> void: cb.call(payload))
+		b.tooltip_text = _entry_label(payload)
+	for i in maxi(0, Balance.STASH_SLOTS - entries.size()):
+		m._bag_empty(grid)
 
 
 static func _column(m: Menus, parent: HBoxContainer, title: String, entries: Array, cb: Callable) -> void:

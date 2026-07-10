@@ -167,14 +167,62 @@ static func _used_enemy_kinds() -> Dictionary:
 	return used
 
 
-## NPCs subtab (2026-07-08): everyone with a talk prompt, gathered from every
-## chapter's zone npc lists (base ZONES + content modules). Names only for
-## now — roles/lore land later. Deduped by sprite so each distinct NPC face
-## (incl. the placeholder extraction set) shows once for review.
+## Role labels by sprite id — LABELS, not lore: the sprite id and the convo
+## data are the source (elder/sentry/merchant art, faction recruiters,
+## quest-carrying convos). Anything unmapped simply shows no role line.
+const NPC_ROLES := {
+	"elder": "Village elder",
+	"sentry": "Village guard",
+	"villager": "Villager",
+	"merchant": "Merchant — buys and sells",
+	"warden": "Faction contact — the Accord",
+	"envoy": "Faction contact — the Cinderborn",
+	"choirmother": "Choir cantor",
+	"cultist": "Devotee",
+	"beastkin": "Beastkin",
+	"beastkin_caged": "Beastkin captive",
+	"aldric": "Knight",
+}
+
+
+## Does this convo hand out a quest anywhere (node or choice)? The one
+## fully data-derived role signal — quest keys ride the convo tables.
+static func _gives_quest(convo: String) -> bool:
+	if convo == "" or not Story.ALL_CONVOS.has(convo):
+		return false
+	var nodes: Dictionary = Story.ALL_CONVOS[convo].get("nodes", {})
+	for nid in nodes:
+		var nd: Dictionary = nodes[nid]
+		if String(nd.get("quest", "")) != "":
+			return true
+		for ch in nd.get("choices", []):
+			if String(ch.get("quest", "")) != "":
+				return true
+	return false
+
+
+## One role line per NPC: sprite-derived base + "quest giver" when any of
+## its convos sets a quest. "" = no line (unmapped placeholder art).
+static func _npc_role(spr: String, gives_quest: bool) -> String:
+	var bits: Array = []
+	var base := String(NPC_ROLES.get(spr, ""))
+	if base != "":
+		bits.append(base)
+	if gives_quest:
+		bits.append("Quest giver" if base == "" else "quest giver")
+	return " · ".join(bits)
+
+
+## NPCs subtab (2026-07-08, dressed 2026-07-10): everyone you can hold a
+## conversation with, gathered from every chapter's zone npc lists (base
+## ZONES + content modules) plus the merchant. Narrator-voiced objects
+## (lore stones, shrines, ruins) are scenery, not cast — filtered out.
+## Deduped by sprite so each distinct face shows once: framed pixel
+## portrait (mirrors the dialogue box) + name + a data-derived role line.
 static func _npcs(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	UITheme.header(m._lbl(list, "— NPCS —", 16, Color(0.6, 0.9, 1.0)))
-	var intro := m._lbl(list, "Everyone you can speak to. Names only for now — roles and lore come later.", 13, Color(0.7, 0.72, 0.78))
+	var intro := m._lbl(list, "The speaking cast — everyone you can hold a conversation with on the road.", 13, Color(0.7, 0.72, 0.78))
 	intro.custom_minimum_size = Vector2(880, 0)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
@@ -183,37 +231,79 @@ static func _npcs(m: Menus, list: VBoxContainer) -> void:
 	var dev: bool = m.game.dev_mode
 	var seen := {}
 	var entries: Array = []
+	var any_merchant := false
 	for chid in Story.CHAPTER_LIST:
 		for zone in Story.CHAPTER_LIST[chid].get("zones", []):
+			if zone.has("merchant"):
+				any_merchant = true
 			for npc in zone.get("npcs", []):
 				var ph: bool = npc.get("placeholder", false)
 				if ph and not dev:
 					continue
 				var spr: String = String(npc.get("sprite", ""))
-				if spr == "" or seen.has(spr):
+				if spr == "":
 					continue
-				seen[spr] = true
-				entries.append({"name": _npc_name(npc), "sprite": spr, "placeholder": ph})
+				var quest := _gives_quest(String(npc.get("convo", "")))
+				if seen.has(spr):
+					# Same face elsewhere can still upgrade its role line.
+					if quest:
+						seen[spr]["quest"] = true
+					continue
+				var nm := _npc_name(npc)
+				if nm == "" or nm == "Narrator":
+					continue  # narrator-voiced scenery: a lore read, not a person
+				var e := {"name": nm, "sprite": spr, "placeholder": ph, "quest": quest}
+				seen[spr] = e
+				entries.append(e)
+	# The merchant spawns from the zones' `merchant` spot, not an npcs list —
+	# but they're absolutely someone you speak to.
+	if any_merchant and not seen.has("merchant"):
+		entries.append({"name": "Merchant", "sprite": "merchant", "placeholder": false, "quest": false})
 	if entries.is_empty():
 		m._lbl(list, "No NPCs catalogued.", 13, Color(0.6, 0.62, 0.68))
 		return
 	var card := VBoxContainer.new()
-	card.add_theme_constant_override("separation", 4)
+	card.add_theme_constant_override("separation", 6)
 	_card(list).add_child(card)
 	for e in entries:
 		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 12)
+		row.add_theme_constant_override("separation", 14)
 		card.add_child(row)
+		# Framed pixel portrait, dialogue-box style: gold frame, dark well,
+		# nearest-neighbor upscale so the sprite reads chunky, not smeared.
+		var frame := Panel.new()
+		frame.custom_minimum_size = Vector2(64, 64)
+		var fsb := StyleBoxFlat.new()
+		fsb.bg_color = Color(0.1, 0.09, 0.15)
+		fsb.border_color = Color(UITheme.GOLD, 0.75)
+		fsb.set_border_width_all(2)
+		fsb.set_corner_radius_all(4)
+		frame.add_theme_stylebox_override("panel", fsb)
+		frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(frame)
 		var icon := TextureRect.new()
 		icon.texture = Art.tex(String(e["sprite"]))
-		icon.custom_minimum_size = Vector2(36, 36)
+		# Anchored inset, not manual size — anchors re-fit on any layout pass.
+		icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+		icon.offset_left = 6
+		icon.offset_top = 6
+		icon.offset_right = -6
+		icon.offset_bottom = -6
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		row.add_child(icon)
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		frame.add_child(icon)
+		var info := VBoxContainer.new()
+		info.add_theme_constant_override("separation", 2)
+		info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(info)
 		var nm_txt: String = String(e["name"]) + ("   [placeholder]" if e.get("placeholder", false) else "")
-		var nm := m._lbl(row, nm_txt, 15, Color(0.72, 0.68, 0.55) if e.get("placeholder", false) else Color(0.9, 0.92, 0.98))
-		nm.custom_minimum_size = Vector2(820, 0)
-		nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var nm2 := m._lbl(info, nm_txt, 16, Color(0.72, 0.68, 0.55) if e.get("placeholder", false) else Color(0.9, 0.92, 0.98))
+		nm2.custom_minimum_size = Vector2(760, 0)
+		var role := _npc_role(String(e["sprite"]), bool(e.get("quest", false)))
+		if role != "":
+			var rl := m._lbl(info, role, 13, Color(0.75, 0.7, 0.5))
+			rl.custom_minimum_size = Vector2(760, 0)
 
 
 ## Best display name for an npc entry: the speaker of its convo, else the
@@ -500,15 +590,56 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 		ach.add_child(row)
-		var mark := m._lbl(row, "✓" if got else "—", 15, Color(0.55, 1.0, 0.55) if got else Color(0.5, 0.5, 0.55))
+		# Unearned entries keep the medal — dimmed to a silhouette — plus a
+		# live progress fraction where the data exists: the list should pull
+		# you forward, not read as a wall of em-dashes. (Display only; no
+		# unlock logic here.)
+		var mark := m._lbl(row, "★", 15, Color(1.0, 0.85, 0.4) if got else Color(0.38, 0.38, 0.46))
 		mark.custom_minimum_size = Vector2(28, 0)
 		var nm := m._lbl(row, String(a["name"]), 14, Color(1.0, 0.88, 0.45) if got else Color(0.6, 0.62, 0.68))
 		nm.custom_minimum_size = Vector2(220, 0)
 		var ds := m._lbl(row, String(a["desc"]), 13, Color(0.8, 0.82, 0.88) if got else Color(0.5, 0.52, 0.58))
-		ds.custom_minimum_size = Vector2(560, 0)
+		ds.custom_minimum_size = Vector2(470, 0)
+		var prog := "" if got else _ach_progress(m, String(id))
+		if prog != "":
+			var pl := m._lbl(row, prog, 13, Color(0.75, 0.7, 0.5))
+			pl.custom_minimum_size = Vector2(140, 0)
+			pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 	# --- boss personal bests ---
 	m._lbl(list, "— BOSS RECORDS —   fastest clear · best dps · kills", 16, Color(1, 0.6, 0.6))
+	_records_bosses_and_rest(m, list)
+
+
+## Live progress toward an unearned achievement, read from the same state
+## the unlock triggers watch (boss_done, gold, level, streak, gem levels).
+## "" = binary feat with nothing to count — the dimmed medal stands alone.
+static func _ach_progress(m: Menus, id: String) -> String:
+	match id:
+		"boss_hunter":
+			return "%d / 9 bosses" % mini(m.game.boss_done.size(), 9)
+		"wealthy":
+			return "%d / 5,000 g" % mini(m.game.player.gold, 5000)
+		"level_20":
+			return "Lv %d / 20" % mini(m.game.player.level, 20)
+		"level_40":
+			return "Lv %d / 40" % mini(m.game.player.level, 40)
+		"streak_7":
+			return "day %d / 7" % mini(m.game.daily_streak, 7)
+		"gem_max":
+			var hi := 0
+			for gm in m.game.player.gem_bag:
+				hi = maxi(hi, int(gm.get("lvl", 1)))
+			for it in m.game.player.equipment.values():
+				for sg in it.get("gems", []):
+					hi = maxi(hi, int(sg.get("lvl", 1)))
+			return "" if hi <= 0 else "gem Lv %d / %d" % [mini(hi, Items.GEM_MAX_LEVEL), Items.GEM_MAX_LEVEL]
+	return ""
+
+
+## Continuation of _records below the achievements card (split so the
+## progress helper can sit beside the code that calls it).
+static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 	var recs := VBoxContainer.new()
 	recs.add_theme_constant_override("separation", 3)
 	_card(list).add_child(recs)
