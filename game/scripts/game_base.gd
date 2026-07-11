@@ -516,7 +516,12 @@ func gamble(tier: String) -> Dictionary:
 ## Guesting in another world (MP-08, §5.7): only the character block
 ## travels home — the host's world must never colonize the guest's save.
 func autosave() -> void:
-	if save_slot > 0 and play_started and state == ST_PLAYING and not player.dead:
+	# MP (Wave-1 co-op fix): a DOWNED/GHOST player (§5.3) sits at hp<=0 while
+	# still ST_PLAYING — banking that state would load the hero clamped to 1 HP
+	# (apply_character floors hp >= 1). Skip the write until they stand. Solo
+	# never sets downed/ghost, so offline is unaffected.
+	if save_slot > 0 and play_started and state == ST_PLAYING \
+			and not player.dead and not player.downed and not player.ghost:
 		if guest_world:
 			SaveGame.write_character_home(self, save_slot)
 		else:

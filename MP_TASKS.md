@@ -444,3 +444,130 @@ PLAYTEST NOTES and DISTRIBUTION.md, not code work.
       flagged stale pre-phase-0 — see BALANCE_HISTORY top entry)
 - [x] Phase-0 paths staged (path-scoped; index also carries prior sessions' sprite/UI staging —
       any future commit must path-scope or describe the union)
+
+## Co-op audit fixes (Wave 1 — world/session) — status: DONE (2026-07-11)
+
+A batch of consistency fixes from a 4-player host-authoritative co-op audit. PRIME DIRECTIVE held:
+every fix is gated behind `net_host()`/`net_guest()`/`net_online()`, so an OFFLINE run executes no
+new branch (solo bit-identical). Files owned: `net_session.gd`, `game_flow.gd`, `game_world.gd`,
+`game_base.gd`, plus the harness (`net_test_session.gd`, `net_test.bat`). All three suites green
+(`test_quick`, `net_test` all 11 stages, full `test.bat`).
+
+### 1 — CRITICAL: boss gates never opened for guests (chapter-blocking softlock)
+FINDING: `boss_done[kind]=true` was set ONLY host-side in `on_boss_died`; a guest's mirror death runs
+no triggers, so `_edge_unlocked`'s `"boss"` lock never resolved and the guest was walled inside every
+boss arena forever.
+CHANGES:
+- `game_flow.gd:391-393` — after `boss_done[kind]=true`, `if net_host(): net_session().host_boss_done(kind)`.
+- `net_session.gd:1487-1500` — `host_boss_done(kind)` → `_rpc_boss_done.rpc(kind)`; the guest-side
+  `@rpc("authority","call_remote","reliable") _rpc_boss_done` calls `game.net_apply_boss_done(kind)`.
+- `game_world.gd:17-25` — new `net_apply_boss_done(kind)`: `boss_done[kind]=true` + `_recheck_gates()`.
+- `net_session.gd:285` (snapshot ships `boss_done`) + `net_session.gd:341` (guest applies
+  `g.boss_done = bd.duplicate()` right AFTER switch_chapter, which clears it, and BEFORE the
+  post-rebuild `_recheck_gates` + spawn-room `_enter_room`).
+- `game_world.gd:296-297` — `_enter_room` end: `if net_guest(): _recheck_gates()` (guest-only, so solo
+  runs no extra call); `game_world.gd:25` — `_host_ensure_active_rooms` end: `_recheck_gates()` (already
+  host-only function). Belt-and-braces for a boss_done that arrives after a gate was built.
+BOTH PATHS VERIFIED (net_test stage 11):
+- LIVE DEATH, guest present: the guest builds the arena first (gate BUILT + LOCKED); the host runs the
+  real `on_boss_died`; the fan reaches the guest and `_recheck_gates` OPENS the built gate → "GUEST gate
+  OPENED (can pass)".
+- LATE BUILD / snapshot: the gate-construction guard (`game_world.gd:1349-1355`, `not _edge_unlocked`)
+  already SKIPS building a gate for a satisfied edge — so a guest that builds the arena after boss_done
+  is known never builds a gate at all. Confirmed with a fresh LATE JOINER: its snapshot carried
+  boss_done and building the cleared arena left the edge OPEN. (Because the gate is never built when
+  satisfied, the extra `_recheck_gates` is defensive only; it is guest/host-gated so solo is untouched.)
+
+### 2 — HIGH: a boss arena a guest reached first never armed
+FINDING: `_host_ensure_active_rooms` populates a room a guest walked into first, but `_try_spawn_boss`
+bailed on `zi != cur_room` (the HOST's room), so a guest-first boss room stayed unarmed until the host
+walked in.
+CHANGE: `game_world.gd:1332-1350` — `_try_spawn_boss(zi, force := false)`; `force` skips ONLY the
+`zi != cur_room` guard (all other preconditions hold). `_host_ensure_active_rooms` calls
+`_try_spawn_boss(i, true)` (`game_world.gd:316`). Local entry passes `force=false` → unchanged.
+
+### 3 — HIGH: dynamic (post-boss/post-clear) merchants were host-only
+FINDING: the arrival roll runs host-side (`game_flow.gd:441,650`) → `_merchant_arrives` mutated
+`merchant_zones` + spawned the node on the host only; not in the snapshot.
+CHANGES:
+- `game_world.gd:844-846` — `_merchant_arrives` end: `if net_host(): net_session().host_merchant_arrives(zi)`.
+- `net_session.gd:1502-1522` — `host_merchant_arrives(zi)` → `_rpc_merchant_arrives.rpc(zi)`; guest-side
+  `game._merchant_arrives.call_deferred(zi)` (spawns node + fanfare owner-side). The guest's re-entry
+  no-ops the re-fan (net_host false) and can't double the static safe-room merchant (the existing
+  `merchant_zones`/`_spawn_merchant` guards).
+- `net_session.gd:285` snapshot ships `merchant_zones`; `net_session.gd:343` guest applies
+  `g.merchant_zones = mz.duplicate()` for late joiners (unbuilt rooms spawn the node on entry via the
+  existing `_build_room` merchant branch).
+
+### 4 — MEDIUM: cache/hidden/shrine once-per-room flags were WORLD-routed but are PER-HEAD
+FINDING: `_cache_flag`/`_hidden_flag`/`_shrine_flag` route as world flags, so one player claiming their
+personal cache/shrine marked it spent party-wide and a teammate who hadn't built the room spawned none.
+CHANGE: `game_flow.gd:293-301` — `_flag_is_local` now returns true for names beginning `cache_`/
+`hidden_`/`shrined_` (CHARACTER-LOCAL routing). NOT added to `KEPT_FLAG_PREFIXES`/`KEPT_FLAGS` — they
+still wipe on replay and stay out of the character save; `_flag_is_local` only controls `set_flag`
+routing. `cursed_` deliberately left WORLD-routed (a shared accept). See FOR OWNER REVIEW below.
+
+### 5 — MEDIUM: sandstorm gust never reached guests
+FINDING: `run_terrain_event` early-returns for `net_guest()`, so the `gust` case never set guest
+`gust_vec`/`gust_t`.
+CHANGES: `game_flow.gd:1109-1113` — `if net_host(): net_session().host_gust(gust_vec, gust_t)`;
+`net_session.gd:1524-1538` — `host_gust(vec,dur)` → `_rpc_gust` sets guest `gust_vec`/`gust_t`
+(game.gd's per-frame decays it on every machine). Rest of the terrain-event host-only gap left as-is.
+
+### 6 — MEDIUM: accepted room curse had no visual/text on guests
+FINDING: the host tinted + buffed only ITS enemies; guests fought the same host-buffed pack with no
+tint/explanation.
+CHANGES: `game_world.gd:698-702` — at the acceptance callback, `if net_host():
+net_session().host_curse_applied(room)`; `net_session.gd:1540-1567` — `host_curse_applied(zi)` →
+`_rpc_curse_applied` tints the guest's mirror enemies in that zone (iterate `"enemies"` group, same
+violet `modulate` and `cursed` meta guard as the host) + shows the same "THE PACK STIRS, CRUELER" text.
+No enemy.gd edits (`.modulate` set from net_session).
+
+### 7 — LOW-MED: autosave banked a downed/ghost player at hp=0 → loaded clamped to 1 HP
+FINDING: `autosave()` gated on `not player.dead` but a downed/ghost player (hp=0, still ST_PLAYING)
+autosaved at hp=0; load clamps to 1 HP.
+CHANGE: `game_base.gd:518-524` — guard adds `and not player.downed and not player.ghost`. Solo never
+sets downed/ghost, so offline is unaffected.
+
+### 8 — LOW-MED: mid-beat initiator disconnect left spectators' mirror overlay stuck
+FINDING: `_on_peer_left` freed revive/convo claims but never closed an active BEAT mirror.
+CHANGES: new `_beat_claims` (`net_session.gd:150-152`, convo id → initiator pid) populated in
+`_begin_beat_spectate` (`net_session.gd:2113`), cleared on normal end (`_release_convo`,
+`_rpc_convo_release`) and session end. `_on_peer_left` (`net_session.gd:499-508`): a leaver holding an
+active beat now broadcasts `_rpc_beat_end` + local `hud.mirror_end()`, closing the stuck transcript
+everywhere (the normal end path can't run — the driver is gone).
+
+### 9 — first-clear bundle was gated on the HOST's completion, not the recipient's — FIXED (see review)
+FINDING: `_rpc_first_clear` fired only if the HOST's `first_clear` and paid unconditionally → a
+first-timer guest with a veteran host got NO bundle; a veteran guest with a first-timer host got a
+duplicate.
+CHANGE (per-guest gate, judged clean): `host_chapter_end` (`net_session.gd:1248-1258`) now fans
+`_rpc_first_clear` to EVERY guest unconditionally; `_rpc_first_clear` (`net_session.gd:1305-1316`)
+self-gates on the recipient's OWN `completed_<ch>` flag. See FOR OWNER REVIEW.
+
+### Tests
+- `net_test_session.gd` — new STAGE 11 (`_run_host11`/`_run_guest11`, port 48233) + probes
+  `buildboss`/`gateopen`/`buildlate`/`hasbossdone`/`merchant`. Proves the CRITICAL fix on ch1's real
+  fangmaw boss-lock: (a) guest present — builds the arena (gate LOCKED), host runs the real
+  `on_boss_died`, GUEST gate OPENS; plus the merchant fan; (b) a fresh LATE JOINER gets boss_done in
+  its snapshot and builds the cleared arena OPEN. `net_test.bat` — registers stage 11 (240 s cap).
+- Stage 11 output: `boss-locked edge 9<->10 behind 'fangmaw'` → `(a) gate LOCKED (walled in)` →
+  `(a) host kill fanned boss_done — GUEST gate OPENED (can pass)` → `merchant arrival fanned — guest
+  marked zone 11` → `(b) late joiner got boss_done in snapshot — arena built OPEN` → `NET TEST PASS`.
+
+### FOR OWNER REVIEW (design calls)
+- **#9 first-clear — implemented the per-guest gate (not left as accepted).** It is clean: the recipient
+  decides its own first-clear from its OWN `completed_<ch>` at reward time. Ordering is safe — the fan
+  rides `host_chapter_end` (called in `on_boss_died` BEFORE the host sets its own `completed_`, and well
+  before `host_victory`/`net_victory` sets the guest's), and `_rpc_first_clear` reads the flag
+  SYNCHRONOUSLY on receipt (before the later `_rpc_victory` records completion). A veteran guest's save
+  already carries `completed_<ch>` (a KEPT flag applied at join), so it is not double-paid; a first-timer
+  guest earns its bundle regardless of the host's history. `host_chapter_end`'s `first_clear` arg is now
+  advisory (renamed `_first_clear`). Watch: if a future change makes a guest set `completed_<ch>` BEFORE
+  reward time, the gate would wrongly deny — today nothing does.
+- **#4 cache/hidden/shrine per-head vs shared — rationale.** These gate PERSONAL spawns: the cache chest,
+  the hidden reveal, and the gamble shrine are each a per-head instance (like the MP-11 personal chests),
+  so a shared "claimed" mark would starve a teammate who hasn't built the room. Routed CHARACTER-LOCAL.
+  `cursed_` is the deliberate exception — accepting the bargain buffs the SHARED pack everyone fights, so
+  it stays WORLD-routed. If the design ever makes a cache a SHARED party reward, flip that prefix back to
+  world-routed (and add a per-head open-once guard elsewhere).

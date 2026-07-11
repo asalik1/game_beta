@@ -145,6 +145,11 @@ var _down_sweep_t := 0.0   # HOST: 0.5 s ghost-revive / wipe sweep cadence
 ## interactor wins; a second interactor is denied a local "busy" bark (no
 ## dialogue). Freed when the convo ends or the holder disconnects.
 var _convo_claims := {}
+## Wave-1 co-op fix, HOST: convo id -> initiator pid, for claims that are an
+## ACTIVE BEAT (a mirrored transcript is open on the spectators). Tracked so a
+## mid-beat DISCONNECT of the initiator can close the stuck overlay everywhere
+## (the normal end path never runs — the driver is gone). Cleared with the claim.
+var _beat_claims := {}
 ## MP-13, GUEST: the convo this machine asked the host to claim, awaiting a
 ## grant/deny — {id, convo, on_done, is_beat}. One at a time (the interact
 ## talk_cd debounces the request that opens it).
@@ -274,6 +279,14 @@ func _send_snapshot(id: int) -> void:
 		"wander_seed": game.wander_seed,
 		"flags": game.flags,
 		"spawn_room": game.cur_room,
+		# Wave-1 co-op fix: boss_done gates the chapter-blocking "boss" edge
+		# locks — ship it so a late joiner's already-cleared arenas build/leave
+		# their gates OPEN (applied before the post-rebuild _recheck_gates below).
+		"boss_done": game.boss_done,
+		# Wave-1 co-op fix: dynamic (post-clear/post-boss) merchants are host-
+		# rolled and NOT seed-pure, so a late joiner would miss them — ship the
+		# roster (built rooms re-spawn the node, unbuilt ones spawn on entry).
+		"merchant_zones": game.merchant_zones,
 		# MP-15 finding (agent-R): a weekly-challenge host must brief the
 		# guest, or weekly_fx gold and the journal's weekly state go dark
 		# on its machine (applied after switch_chapter below — the flag is
@@ -319,6 +332,15 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	var fl: Dictionary = snap.get("flags", {})
 	g.flags = fl.duplicate()
 	g.switch_chapter(String(snap.get("chapter", "ch1")), true)
+	# Wave-1 co-op fix: switch_chapter CLEARS boss_done + merchant_zones, so
+	# restore the host's from the snapshot right after the rebuild — BEFORE the
+	# _recheck_gates and spawn-room _enter_room below read them. An already-
+	# cleared boss arena then leaves its gate open (the gate-construction guard
+	# reads boss_done), and dynamic merchants respawn for the joiner.
+	var bd: Dictionary = snap.get("boss_done", {})
+	g.boss_done = bd.duplicate()
+	var mz: Array = snap.get("merchant_zones", [])
+	g.merchant_zones = mz.duplicate()
 	# A weekly-run host briefs the guest (MP-15 finding): weekly_fx and the
 	# journal read these — set AFTER switch_chapter, which never clears them.
 	g.weekly_active = bool(snap.get("weekly_active", false))
@@ -472,9 +494,17 @@ func _on_peer_left(id: int) -> void:
 				_revive_claims.erase(k)
 				_broadcast_revive_end(int(k))
 		# MP-13: a leaver frees any NPC busy-lock it held (others can talk).
+		# Wave-1 co-op fix: if that claim was an ACTIVE BEAT the leaver drove,
+		# its mirrored transcript is stuck open on every spectator — close it
+		# everywhere (the normal end path can't run now, the driver is gone).
 		for ck in _convo_claims.keys():
 			if int(_convo_claims[ck]) == id:
 				_convo_claims.erase(ck)
+				if _beat_claims.has(ck):
+					_beat_claims.erase(ck)
+					_rpc_beat_end.rpc()
+					if game.hud != null:
+						game.hud.mirror_end()
 		_check_wipe()
 	# MP-16: mid-run, tell the party in plain words that a friend dropped (a
 	# lobby-time leave already shows in the lobby list). Fires on EVERY
@@ -550,6 +580,7 @@ func _on_session_ended(reason: String) -> void:
 	# MP-13: no session, no dialogue etiquette — drop any claim/beat state
 	# and close a mirror transcript left open under the party.
 	_convo_claims.clear()
+	_beat_claims.clear()  # Wave-1: no session, no live beats
 	_pending_convo = {}
 	_active_convo_id = ""
 	if game != null:
@@ -1215,13 +1246,18 @@ func host_party_credit(kind: String) -> void:
 
 ## HOST: the chapter ended — every guest flushes ITS OWN ground strays
 ## into ITS OWN mailbox, and a first clear pays each head its beat.
-func host_chapter_end(first_clear: bool, boss_lv: int) -> void:
+## Wave-1 co-op fix (design #9): first-clear is the RECIPIENT's beat, not the
+## host's. The old fan gated on the HOST's first_clear, so a first-timer guest
+## under a veteran host got NOTHING and a veteran guest under a first-timer host
+## was double-paid. Fan to EVERY guest unconditionally; each self-gates on its
+## OWN completed_<ch> at receipt (before net_victory records it). `_first_clear`
+## is now advisory (kept for the call signature).
+func host_chapter_end(_first_clear: bool, boss_lv: int) -> void:
 	if game == null or not _net().is_online() or not multiplayer.is_server():
 		return
 	for pid in peer_chars:
 		_rpc_flush_loot.rpc_id(int(pid))
-		if first_clear:
-			_rpc_first_clear.rpc_id(int(pid), boss_lv)
+		_rpc_first_clear.rpc_id(int(pid), boss_lv)
 
 
 ## HOST: bounty/vault credit to one peer, gated like the XP fan-out
@@ -1274,6 +1310,12 @@ func _rpc_credit(kind: String) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _rpc_first_clear(boss_lv: int) -> void:
 	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	# Per-head gate (design #9): only a guest that hasn't completed this chapter
+	# earns the bundle — decided HERE, synchronously, before net_victory (a later
+	# reliable RPC) records the completion. The host's own share stays inline in
+	# game_flow.on_boss_died.
+	if game.get_flag("completed_" + game.chapter_id, false):
 		return
 	game._first_clear_reward.call_deferred(boss_lv)
 
@@ -1432,6 +1474,97 @@ func _rpc_hazard(zi: int, type: String, pos: Vector2, radius: float, dur: float,
 	if zi < 0 or zi >= int(game.zone_count):
 		return
 	game._add_hazard(zi, type, pos, radius, dur, drift)
+
+
+# ------------------------------------ world consistency (Wave-1 co-op fixes) ---
+# Three host-authoritative world facts that a guest's silent mirrors / early-
+# return weather never learned on their own: a boss gate opening, a wandering
+# merchant arriving, and a sandstorm gust. Each fans from a game-side hook under
+# a net_host() guard; late-joiner-durable state (boss_done, merchant_zones) also
+# rides the join snapshot. All no-op offline — solo never enters this file.
+
+## HOST -> GUESTS: a story boss fell (game_flow.on_boss_died). boss_done gates
+## the "boss" edge locks; a guest's mirror death runs no triggers, so without
+## this the guest stays WALLED inside the arena. Late joiners get boss_done in
+## the snapshot; this covers everyone already in the session.
+func host_boss_done(kind: String) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_boss_done.rpc(kind)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_boss_done(kind: String) -> void:
+	if game == null or multiplayer.is_server():
+		return
+	game.net_apply_boss_done(kind)
+
+
+## HOST -> GUESTS: a wandering merchant set up camp (game_world._merchant_arrives,
+## a host-only post-clear/post-boss roll). Guests re-enter the same arrival so
+## the node + fanfare land owner-side (a built room spawns it now, an unbuilt one
+## marks merchant_zones and spawns on entry). Deferred: _make_npc is safe, but
+## the RPC-context defer keeps us consistent with the other spawn fan-outs.
+func host_merchant_arrives(zi: int) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_merchant_arrives.rpc(zi)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_merchant_arrives(zi: int) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	if zi < 0 or zi >= int(game.zone_count):
+		return
+	game._merchant_arrives.call_deferred(zi)
+
+
+## HOST -> GUESTS: a sandstorm gust (game_flow.run_terrain_event, host-only
+## weather). Guests set the same push vector/timer so it shoves their player and
+## enemies too; game.gd's per-frame decays it on every machine.
+func host_gust(vec: Vector2, dur: float) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_gust.rpc(vec, dur)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_gust(vec: Vector2, dur: float) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	game.gust_vec = vec
+	game.gust_t = dur
+
+
+## HOST -> GUESTS: a room curse was accepted (game_world._apply_room_curse). The
+## host buffs + tints only ITS enemies; guests fight the same host-buffed pack
+## (real host damage) but saw no tint/text. Fan the visual so a guest's mirror
+## enemies in that zone go violet and the party reads WHY the pack got crueler.
+func host_curse_applied(zi: int) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_curse_applied.rpc(zi)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_curse_applied(zi: int) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	# Tint this zone's mirror enemies to match the host's _apply_room_curse cast
+	# (guarded by the same "cursed" meta so a rebuild/re-fan never double-tints).
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e is Boss or e.dying or e.zone_idx != zi:
+			continue
+		if e.has_meta("cursed"):
+			continue
+		e.set_meta("cursed", true)
+		e.modulate = e.modulate * Color(0.85, 0.65, 1.1)
+	if game.local_player != null and is_instance_valid(game.local_player):
+		game.spawn_text(game.local_player.global_position + Vector2(0, -78),
+			"THE PACK STIRS, CRUELER — purge the room to claim the hoard",
+			Color(0.85, 0.6, 1.0), 3.5)
 
 
 # ------------------------------------------- downed / revive / wipe (MP-12) ---
@@ -1929,6 +2062,7 @@ func _release_convo(id: String) -> void:
 		return
 	if multiplayer.is_server():
 		_convo_claims.erase(id)
+		_beat_claims.erase(id)  # Wave-1: normal beat end retires its beat mark
 	else:
 		_rpc_convo_release.rpc_id(1, id)
 
@@ -1942,6 +2076,7 @@ func _rpc_convo_release(id: String) -> void:
 		return
 	if int(_convo_claims.get(id, 0)) == pid:
 		_convo_claims.erase(id)
+		_beat_claims.erase(id)  # Wave-1: a guest-driven beat's normal end
 
 
 # ---- beat mirroring ----
@@ -1971,6 +2106,9 @@ func _party_gathered() -> bool:
 ## screens show the mirrored transcript. The host itself spectates when a
 ## GUEST drives (authority RPCs never echo to the host, so it calls locally).
 func _begin_beat_spectate(id: String, initiator_pid: int) -> void:
+	# Wave-1 co-op fix: remember this claim is a live beat so a mid-beat
+	# disconnect of the initiator can close the spectators' stuck overlay.
+	_beat_claims[id] = initiator_pid
 	var nm := _initiator_name(initiator_pid)
 	_rpc_beat_start.rpc(initiator_pid, nm)
 	if initiator_pid != multiplayer.get_unique_id() and game.hud != null:

@@ -140,6 +140,7 @@ const PORT_STAGE8 := 48225   # stage 8 likewise (party UI + synced victory, MP-1
 const PORT_STAGE9 := 48227   # stage 9 disconnect hardening (MP-16)
 const PORT_STAGE9B := 48229  # stage 9(b): the throwaway sub-host the survivor joins
 const PORT_STAGE10 := 48231  # stage 10 soak (MP-17): host + 2 guests, ~4 min
+const PORT_STAGE11 := 48233  # stage 11 (Wave-1 co-op world consistency: boss gates)
 const STEP_TIMEOUT := 30.0   # s per observable step (boots include a world build)
 const EXIT_TIMEOUT := 15.0   # s for the guest process to exit after its work
 const MOVE_THRESHOLD := 120.0  # px the host must see the guest player travel
@@ -186,7 +187,9 @@ func _ready() -> void:
 		"subhost":
 			_run_subhost()  # MP-16 stage 9(b): a throwaway host to be killed
 		"host":
-			if _stage == 10:
+			if _stage == 11:
+				_run_host11()
+			elif _stage == 10:
 				_run_host10()
 			elif _stage == 9:
 				_run_host9()
@@ -205,7 +208,9 @@ func _ready() -> void:
 			else:
 				_run_host()
 		"guest":
-			if _stage == 10:
+			if _stage == 11:
+				_run_guest11()
+			elif _stage == 10:
 				_run_guest10()
 			elif _stage == 9:
 				_run_guest9()
@@ -228,6 +233,8 @@ func _ready() -> void:
 
 
 func _port() -> int:
+	if _stage == 11:
+		return PORT_STAGE11
 	if _stage == 10:
 		return PORT_STAGE10
 	if _stage == 9:
@@ -2041,6 +2048,12 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 		"setgold":
 			game.player.gold = int(args.get("n", 0))
 		# ---- stage 7 (MP-13) ----
+		# ---- stage 11 (Wave-1 co-op world consistency) ----
+		"buildboss", "buildlate":
+			# Build the boss arena locally (no walk needed) so its gate exists.
+			# Deferred: wall/gate StaticBody2Ds must not enter-tree mid-flush.
+			game._build_room.call_deferred(int(args.get("room", 0)))
+			await _frames(4)
 		"setflag":
 			# The REAL set_flag path (world flags route through the host;
 			# per-character flags stay local — game_flow._flag_is_local).
@@ -2344,6 +2357,41 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 			return {"ok": true, "x": game.player.global_position.x, "y": game.player.global_position.y}
 		"mem":
 			return {"ok": true, "bytes": OS.get_static_memory_usage()}
+		# ---- stage 11 (Wave-1 co-op world consistency) ----
+		"buildboss":
+			# The freshly-built boss arena is WALLED IN: its gate exists and the
+			# edge reads locked (boss not yet dead) — the softlock precondition.
+			var a: int = int(args.get("room", -1))
+			var b: int = int(args.get("nb", -1))
+			var key: String = game._edge_key(a, b)
+			var gated: bool = game.gates.has(key)
+			var locked: bool = not game._edge_unlocked(a, b)
+			return {"ok": gated and locked, "gated": gated, "locked": locked}
+		"gateopen":
+			# After the host's kill fanned boss_done, the gate is GONE and the
+			# edge reads unlocked — the guest can pass (no softlock).
+			var a: int = int(args.get("room", -1))
+			var b: int = int(args.get("nb", -1))
+			var key: String = game._edge_key(a, b)
+			return {"ok": (not game.gates.has(key)) and game._edge_unlocked(a, b) \
+				and bool(game.boss_done.get(String(args.get("kind", "")), false)),
+				"gate": game.gates.has(key),
+				"unlocked": game._edge_unlocked(a, b)}
+		"buildlate":
+			# A guest that BUILDS the arena AFTER boss_done is set never builds
+			# the gate at all (the construction guard reads boss_done) — open.
+			var a: int = int(args.get("room", -1))
+			var b: int = int(args.get("nb", -1))
+			var key: String = game._edge_key(a, b)
+			return {"ok": bool(game.boss_done.get(String(args.get("kind", "")), false)) \
+				and (not game.gates.has(key)) and game._edge_unlocked(a, b),
+				"gate": game.gates.has(key)}
+		"hasbossdone":
+			# The join snapshot carried the host's boss_done.
+			return {"ok": bool(game.boss_done.get(String(args.get("kind", "")), false))}
+		"merchant":
+			# A host-side dynamic merchant arrival reached our merchant_zones.
+			return {"ok": game.merchant_zones.has(int(args.get("zone", -1)))}
 	return {"ok": false, "why": "unknown probe %s" % what}
 
 
@@ -2922,3 +2970,133 @@ func _soak_wander() -> void:
 		await get_tree().create_timer(0.6).timeout
 		_press(_soak_key, false)
 		await get_tree().create_timer(0.25).timeout
+
+
+# ------------------------- stage 11 (Wave-1 co-op world consistency) ---
+# The CRITICAL boss-gate fix: boss_done was host-only, so a guest walled inside a
+# boss arena stayed walled FOREVER (the "boss" edge lock never opened). This
+# stage proves both open paths — a guest PRESENT at the kill, and a LATE JOINER
+# whose snapshot carries the already-cleared boss — plus the dynamic-merchant fan.
+# Same director/probe shape as stages 3-8; ch1's authored fangmaw/morwen sit
+# behind real "boss" edge locks, so no synthetic world is needed.
+
+func _run_host11() -> void:
+	if not await _host_boot():
+		return
+	# Find a NON-final boss-locked edge in the shared world (authored ch1 has
+	# fangmaw + morwen behind "boss" locks). own = the boss room; nb = the room
+	# across the gate; kind = the boss whose death opens it. Non-final so the
+	# real on_boss_died below doesn't tip the chapter into its victory flow.
+	var final_boss := String(Story.chapter(game.chapter_id).get("final_boss", ""))
+	var own1 := -1
+	var nb1 := -1
+	var kind1 := ""
+	for key in game.edge_locks:
+		var info: Dictionary = game.edge_locks[key]
+		if String(info.get("lock", "")) != "boss":
+			continue
+		var own: int = int(info.get("own", -1))
+		var k := String(game.zones[own].get("boss", ""))
+		if k == "" or k == final_boss:
+			continue
+		var parts: PackedStringArray = String(key).split("_")
+		var pa := int(parts[0])
+		var pb := int(parts[1])
+		own1 = own
+		nb1 = pb if pa == own else pa
+		kind1 = k
+		break
+	if own1 < 0:
+		return _fail("no non-final boss-locked edge in %s (this stage needs one)" % game.chapter_id)
+	print("[net_session] host11: boss-locked edge %d<->%d behind '%s'" % [own1, nb1, kind1])
+
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the guest process")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "guest admission"):
+		return
+	var gid: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return bool(_report.get("ready", false)), STEP_TIMEOUT, "guest ready report"):
+		return
+	print("[net_session] host11: guest %d standing in the world" % gid)
+
+	# (a) PATH A — guest PRESENT at the kill. The guest builds the boss arena
+	# ahead of the host (it wandered in first): the gate is BUILT and LOCKED.
+	var r: Dictionary = await _watch(gid, "buildboss", {"room": own1, "nb": nb1})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest's freshly-built boss gate wasn't locked (walled-in precondition): %s" % str(r))
+	print("[net_session] host11: (a) guest built the arena — gate LOCKED (walled in)")
+
+	# The host kills the boss through the REAL death path — on_boss_died sets
+	# boss_done AND fans host_boss_done. A non-final boss may open a post-kill
+	# beat on the host; skip it (the guest assertion is independent).
+	if not game.boss_done.get(kind1, false):
+		game.on_boss_died(kind1)
+	await _skip_story()
+	if not game.boss_done.get(kind1, false):
+		return _fail("host on_boss_died didn't set boss_done[%s]" % kind1)
+
+	# ...and the GUEST's gate OPENS — the fan ran net_apply_boss_done + a gate
+	# recheck. Without the fix this never fires and the guest is walled forever.
+	r = await _watch(gid, "gateopen", {"room": own1, "nb": nb1, "kind": kind1})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest's boss gate never opened after the host's kill (softlock): %s" % str(r))
+	print("[net_session] host11: (a) host kill fanned boss_done — GUEST gate OPENED (can pass)")
+
+	# Merchant fan (cheap): a host-side dynamic arrival must reach the guest's
+	# merchant_zones. Pick any merchant room not already marked (skip if none).
+	var mzone := -1
+	for i in game.zone_count:
+		if game.zones[i].has("merchant") and not game.merchant_zones.has(i):
+			mzone = i
+			break
+	if mzone >= 0:
+		game._merchant_arrives(mzone)
+		r = await _watch(gid, "merchant", {"zone": mzone})
+		if r.is_empty() or not bool(r.get("ok", false)):
+			return _fail("dynamic merchant never reached the guest's merchant_zones: %s" % str(r))
+		print("[net_session] host11: merchant arrival fanned — guest marked zone %d" % mzone)
+	else:
+		print("[net_session] host11: (no free merchant room in %s — merchant fan skipped)" % game.chapter_id)
+
+	# (b) PATH B — a fresh LATE JOINER. boss_done[kind1] is set now, so its join
+	# snapshot must carry it, AND building the cleared arena must leave the gate
+	# OPEN (the construction guard never builds a gate for a satisfied edge).
+	_rpc_finish.rpc_id(gid)
+	if not await _wait_for(func() -> bool: return _left.has(gid), STEP_TIMEOUT, "guest peer_left"):
+		return
+	if not await _wait_exit("guest"):
+		return
+	_report = {}
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the late-joiner process")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "late joiner admission"):
+		return
+	var gid2: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return bool(_report.get("ready", false)), STEP_TIMEOUT, "late joiner ready"):
+		return
+	r = await _watch(gid2, "hasbossdone", {"kind": kind1})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("late joiner's snapshot missing boss_done[%s]: %s" % [kind1, str(r)])
+	r = await _watch(gid2, "buildlate", {"room": own1, "nb": nb1, "kind": kind1})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("late joiner built the cleared arena but the gate stayed CLOSED: %s" % str(r))
+	print("[net_session] host11: (b) late joiner got boss_done in snapshot — arena built OPEN")
+
+	_rpc_finish.rpc_id(gid2)
+	if not await _wait_for(func() -> bool: return _left.has(gid2), STEP_TIMEOUT, "late joiner peer_left"):
+		return
+	if not await _wait_exit("guest"):
+		return
+	await _pass()
+
+
+func _run_guest11() -> void:
+	if not await _guest_boot():
+		return
+	_rpc_report.rpc_id(1, {"ready": true})
+	if not await _wait_for(func() -> bool: return _finish, 240.0, "host finish signal"):
+		return
+	_net.leave()
+	await get_tree().create_timer(0.5).timeout
+	print("[net_session] guest11: served all probes, left cleanly")
+	get_tree().quit(0)

@@ -1,8 +1,9 @@
 @echo off
-rem NET TEST: ten stages, all over localhost ENet. Stages 1-9 prove the MP
+rem NET TEST: eleven stages, all over localhost ENet. Stages 1-9 prove the MP
 rem feature waves (MP-05/07/09/10/11/12/13/14/16); stage 10 is the MP-17 soak
 rem (host + guest, ~4 min: combat, transitions, down+revive, wipe, flag churn,
-rem a disconnect+fresh-rejoin) asserting session stability over time.
+rem a disconnect+fresh-rejoin) asserting session stability over time; stage 11
+rem is the Wave-1 co-op world-consistency fix (boss gates open for guests).
 rem
 rem VERDICT (MP-17 flake 1): each stage's stdout+stderr is captured to a log
 rem and the AUTHORITATIVE pass/fail is a LOG GREP, not the process exit code.
@@ -51,6 +52,8 @@ if errorlevel 1 goto cleanup
 call :stage 9  360000 "res://scenes/net_test_session.tscn"  "--net-stage=9"
 if errorlevel 1 goto cleanup
 call :stage 10 420000 "res://scenes/net_test_session.tscn"  "--net-stage=10"
+if errorlevel 1 goto cleanup
+call :stage 11 240000 "res://scenes/net_test_session.tscn"  "--net-stage=11"
 if errorlevel 1 goto cleanup
 
 set "EF_EXIT=0"

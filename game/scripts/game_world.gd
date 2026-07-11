@@ -13,6 +13,17 @@ func _recheck_gates() -> void:
 		if _edge_unlocked(a, b):
 			open_edge(a, b)
 
+
+## MP (Wave-1 co-op fix): apply a host-fanned boss_done mark on a guest — record
+## it, then reopen any built gate whose "boss" lock it just satisfied. A guest
+## already standing in the arena has a built, locked gate (this opens it); a
+## guest that builds the arena LATER never builds the gate at all (the gate-
+## construction guard in _build_room_walls reads boss_done). Reached from
+## net_session._rpc_boss_done — solo never sets a boss_done over the wire.
+func net_apply_boss_done(kind: String) -> void:
+	boss_done[kind] = true
+	_recheck_gates()
+
 ## Tear the world down and rebuild it from another chapter's data.
 ## Only ever called before play starts (chapter select) or on load —
 ## dynamic entities (chests, pickups, projectiles) don't exist then.
@@ -276,6 +287,14 @@ func _enter_room(i: int) -> void:
 		_offer_cursed_chest(i)
 	refresh_quest()
 	_try_spawn_boss(i)
+	# Wave-1 co-op fix: a guest entering an already-cleared boss arena must find
+	# its gate OPEN. The gate-construction guard skips building a gate for a
+	# satisfied edge; this reopens one that a boss_done arrival satisfied AFTER
+	# the gate was built. Guest-only — the host opens gates through its own
+	# kill/clear/flag triggers, so solo/host paths run no extra recheck here
+	# (offline is bit-identical).
+	if net_guest():
+		_recheck_gates()
 	last_room = i
 	autosave()  # autosave on every room transition (DESIGN.md)
 
@@ -293,8 +312,13 @@ func _host_ensure_active_rooms() -> void:
 		var i := int(r)
 		if i < 0 or i >= zone_count or built.get(i, false):
 			continue
-		_build_room(i)     # walls/scenery + _spawn_room_enemies (host spawns)
-		_try_spawn_boss(i)  # arm a boss room a guest reached ahead of the host
+		_build_room(i)            # walls/scenery + _spawn_room_enemies (host spawns)
+		_try_spawn_boss(i, true)  # arm a boss room a guest reached ahead of the
+		                          # host (force: ignore the host's cur_room guard)
+	# Wave-1 co-op fix: a room freshly built here for an already-cleared boss
+	# leaves its gate open via the construction guard; this reopens any that a
+	# late boss_done arrival satisfied after the gate was built. Host-only path.
+	_recheck_gates()
 
 ## Leaving a room calms whatever you didn't kill: its pack forgets you and
 ## returns to post, so re-entry reads clean instead of a cluster still
@@ -671,6 +695,11 @@ func _cursed_chest_node(i: int, pos: Vector2) -> void:
 				set_flag(_curse_flag(room))
 				curse_pending[room] = true
 				_apply_room_curse(room)
+				# Wave-1 co-op fix: the buff/tint lands only on the HOST's enemies,
+				# but guests fight the SAME host-buffed pack — fan the visual so
+				# their mirrors go violet and the party reads WHY it got crueler.
+				if net_host():
+					net_session().host_curse_applied(room)
 				sfx("gate", 1.2)
 				burst(npc.global_position, Color(0.7, 0.4, 1.0), 18)
 				if is_instance_valid(player):
@@ -809,6 +838,12 @@ func _merchant_arrives(zi: int) -> void:
 	burst(pos, Color(0.9, 0.8, 0.5), 12)
 	sfx("coin")
 	spawn_text(pos + Vector2(0, -50), "A WANDERING MERCHANT ARRIVES!", Color(0.95, 0.85, 0.5))
+	# Wave-1 co-op fix: the arrival roll is host-only (guests run no kill/clear
+	# triggers), so fan it — guests spawn the same node + fanfare owner-side.
+	# The guest's re-entry here no-ops the re-fan (net_host false) and can't
+	# double the static safe-room merchant (merchant_zones/_spawn_merchant guard).
+	if net_host():
+		net_session().host_merchant_arrives(zi)
 
 ## Teleport to a visited safe room from the map screen. Walking through
 ## a LIVE room is content; re-walking a cleared one is not (DESIGN.md).
@@ -1294,11 +1329,17 @@ func _spawn_boss(zi: int, kind: String) -> void:
 	hud.boss_banner(Story.ALL_ENEMIES[kind]["name"])  # the name SLAMS in
 	set_music(_boss_music())
 
-func _try_spawn_boss(zi: int) -> void:
+func _try_spawn_boss(zi: int, force := false) -> void:
 	if net_guest():
 		return  # MP-09: bosses are host-side too (mirrored via net_session,
 		        # boss bar included)
-	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 or zi != cur_room:
+	# MP (Wave-1 co-op fix): `force` arms a boss room a GUEST reached ahead of
+	# the host — _host_ensure_active_rooms populates such rooms, but the normal
+	# `zi != cur_room` guard (the host stands elsewhere) would leave the arena
+	# unarmed until the host walked in. Force skips ONLY that guard; every other
+	# precondition (built, room purged, not already done/spawned) still holds.
+	# Local entry passes force=false, so solo/normal behavior is unchanged.
+	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 or (zi != cur_room and not force):
 		return
 	var kind: String = zones[zi].get("boss", "")
 	if kind == "" or boss_done.get(kind, false) or boss_spawned.get(zi, false):

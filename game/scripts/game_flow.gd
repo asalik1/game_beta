@@ -289,6 +289,17 @@ func _flag_is_local(flag_name: String) -> bool:
 	for pre in KEPT_FLAG_PREFIXES:
 		if flag_name.begins_with(pre):
 			return true
+	# Wave-1 co-op fix: cache/hidden/shrine once-per-room marks gate PER-HEAD
+	# spawns — the cache chest, the hidden reveal, the gamble shrine are each
+	# personal (a guest builds and claims its OWN). Routing them as WORLD state
+	# let one player's claim mark the room spent party-wide, so a teammate who
+	# hadn't built it spawned none. Keep them CHARACTER-LOCAL so each head
+	# claims once. NOT added to KEPT_* — they still wipe on replay and stay out
+	# of the character save section; this only steers set_flag routing.
+	# `cursed_` stays WORLD-routed: accepting the bargain buffs the SHARED pack.
+	for pre in ["cache_", "hidden_", "shrined_"]:
+		if flag_name.begins_with(pre):
+			return true
 	return false
 
 
@@ -373,6 +384,13 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 
 func on_boss_died(kind: String, dead: Boss = null) -> void:
 	boss_done[kind] = true
+	# MP (Wave-1 co-op fix): fan the boss_done mark so every guest opens the
+	# "boss" edge locks this kill satisfies. A guest's mirror death runs NO
+	# triggers (on_boss_died never fires there), so without this the guest
+	# stays walled inside the arena forever. Late joiners get boss_done in the
+	# join snapshot instead. Solo: net_host() is false — no branch runs.
+	if net_host():
+		net_session().host_boss_done(kind)
 	note_kill(kind)
 	unlock_achievement("first_boss")
 	if boss_done.size() >= 9:
@@ -1088,6 +1106,11 @@ func run_terrain_event(ev: String) -> void:
 			gust_t = 1.8
 			sfx("blink", 0.6)
 			burst(player.global_position + gust_vec.normalized() * -80.0, Color(0.85, 0.72, 0.45), 16)
+			# Wave-1 co-op fix: weather is host-only (guests early-return above),
+			# so the gust push never reached them — fan the vector/timer so it
+			# shoves their player + enemies too (game.gd per-frame decays it).
+			if net_host():
+				net_session().host_gust(gust_vec, gust_t)
 		"lightning":
 			var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-160, 160), randf_range(-120, 120)), player.global_position)
 			telegraph(pos, 60.0, 0.55, 24.0, {"color": Color(0.7, 0.85, 1.0, 0.6)})
