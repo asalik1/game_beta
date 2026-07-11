@@ -752,13 +752,17 @@ const SPRITES := {
 		"........",
 		"........",
 	]},
-	# The assassin's thrown dart (round 30): a 16px needle with a hot
-	# tip — reads SHARP in flight where the stubby knife read as a stick.
+	# The assassin's thrown KUNAI (round 50): ring pommel + wrapped handle +
+	# a steel leaf-blade tapering to a point. Reads as a THROWN BLADE, not a
+	# needle — and the kit rides a variant-tinted glow halo behind it
+	# (poison green / blood red / shadow purple) via _knife_glow.
 	"dart": {"rows": [
 		"................",
-		"..........kkkk..",
-		"nnksssssssssssw.",
-		"..........kkkk..",
+		".kk....kSk......",
+		"k..k..kSsssk....",
+		"k..kNNSssssssskk",
+		"k..k..kSsssk....",
+		".kk....kSk......",
 		"................",
 	]},
 	"torch": {"rows": [
@@ -2503,8 +2507,11 @@ const HERO_CLIP_FILES := {
 	"ultidle": "ultidle", "death": "death",
 }
 const HERO_CLIP_FPS := {
-	"idle": 6.0, "walk": 9.0, "run": 11.0, "attack": 13.0, "attack2": 13.0,
-	"cast": 10.0, "dash": 14.0, "ult": 11.0, "ultidle": 6.0, "death": 9.0,
+	# Action clips run FAST so a ~7-frame swing/throw/dash lands in ~0.3s and
+	# doesn't trail an arm-swing after the hit. (Directional clips only pick
+	# these up via the _dir_loco fps stamp in player_core — dir_set defaults 6.)
+	"idle": 6.0, "walk": 9.0, "run": 11.0, "attack": 22.0, "attack2": 22.0,
+	"cast": 10.0, "dash": 26.0, "ult": 11.0, "ultidle": 6.0, "death": 9.0,
 }
 
 ## Every installed animation clip for a hero class, keyed by clip name.

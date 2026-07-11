@@ -53,9 +53,29 @@ def _place(fig, cell, fw, fh, margin):
     return c
 
 
-def assemble(dir_frames, base, out_dir, margin=3):
+# Horizontal-flip pairs: a symmetric character only needs the east half
+# generated; the west half is the mirror of it. S (front) and N (back) are
+# self-symmetric — used as-is.
+MIRROR = {"w": "e", "sw": "se", "nw": "ne"}
+
+
+def mirror_fill(dir_frames):
+    """For a symmetric character: fill W/SW/NW by horizontally flipping each
+    frame of E/SE/NE. A left/right flip, per-frame (frame ORDER is kept —
+    only the pixels mirror). Returns the same dict, extended in place."""
+    for dst, src in MIRROR.items():
+        if dst not in dir_frames and src in dir_frames:
+            dir_frames[dst] = [f.convert("RGBA").transpose(Image.FLIP_LEFT_RIGHT)
+                               for f in dir_frames[src]]
+    return dir_frames
+
+
+def assemble(dir_frames, base, out_dir, margin=3, symmetric=False):
     """dir_frames: {suffix: [PIL frames]} (1 frame = static). Writes the
-    eight <base>_<dir>.png strips + flat <base>.png. Returns the cell px."""
+    eight <base>_<dir>.png strips + flat <base>.png. Returns the cell px.
+    symmetric=True mirrors the east half onto the missing west half first."""
+    if symmetric:
+        mirror_fill(dir_frames)
     all_frames = [f for frames in dir_frames.values() for f in frames]
     ux0, uy0, ux1, uy1 = _union_bbox([f.convert("RGBA") for f in all_frames])
     fw, fh = ux1 - ux0, uy1 - uy0
@@ -74,6 +94,39 @@ def assemble(dir_frames, base, out_dir, margin=3):
     # flat south copy for setup / net mirror
     Image.open(os.path.join(out_dir, "%s_s.png" % base)).save(
         os.path.join(out_dir, "%s.png" % base))
+    return cell
+
+
+def assemble_clips(clips, out_dir, margin=3, symmetric=False):
+    """clips: {base: {suffix: [PIL frames]}}. Assembles EVERY clip into one
+    shared square cell — the global union-bbox across all frames of all clips
+    and all directions — so a hero never resizes or hops when it switches
+    clip (idle->walk->attack). The render path measures scale off the idle
+    body and reuses it for every clip, so the cells MUST match. When
+    symmetric, mirrors the east half onto the missing west half per clip.
+    Writes <base>_<dir>.png strips + flat <base>.png for each clip. Returns
+    the shared cell px."""
+    if symmetric:
+        for base in clips:
+            mirror_fill(clips[base])
+    allf = [f.convert("RGBA") for c in clips.values() for frs in c.values() for f in frs]
+    ux0, uy0, ux1, uy1 = _union_bbox(allf)
+    fw, fh = ux1 - ux0, uy1 - uy0
+    cell = _cell(fw, fh, margin)
+    os.makedirs(out_dir, exist_ok=True)
+    for base, dir_frames in clips.items():
+        for suf in DIR8:
+            frames = dir_frames.get(suf) or dir_frames["s"]
+            cells = []
+            for im in frames:
+                fig = im.convert("RGBA").crop((ux0, uy0, ux1, uy1))
+                cells.append(_place(fig, cell, fw, fh, margin))
+            strip = Image.new("RGBA", (cell * len(cells), cell), (0, 0, 0, 0))
+            for i, c in enumerate(cells):
+                strip.alpha_composite(c, (i * cell, 0))
+            strip.save(os.path.join(out_dir, "%s_%s.png" % (base, suf)))
+        Image.open(os.path.join(out_dir, "%s_s.png" % base)).save(
+            os.path.join(out_dir, "%s.png" % base))
     return cell
 
 

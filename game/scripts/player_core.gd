@@ -405,7 +405,7 @@ const ABILITY_CLIP := {
 	"warrior":  {"a1": "attack", "a2": "dash",    "a3": "attack2", "ult": "ult"},     # Cleave / Shield Bash / Whirlwind / Berserk
 	"archer":   {"a1": "attack", "a2": "attack2", "a3": "dash",    "ult": "cast"},    # Quick Shot / Multishot / Tumble / Arrow Storm
 	"mage":     {"a1": "attack", "a2": "cast",    "a3": "dash",    "ult": "cast"},    # Firebolt / Frost Nova / Blink / Meteor
-	"assassin": {"a1": "attack", "a2": "dash",    "a3": "attack2", "ult": "attack2"}, # Stab / Shadow Dash / Fan of Knives / Death Mark
+	"assassin": {"a1": "attack", "a2": "dash",    "a3": "attack2", "ult": "ult"},     # Stab / Shadow Dash / Fan of Knives / Death Mark (ult = vanish clip)
 	"paladin":  {"a1": "attack", "a2": "attack2", "a3": "",        "ult": ""},        # Judgment / Consecration / Aegis / Conviction
 	"warlock":  {"a1": "attack", "a2": "ult",     "a3": "attack2", "ult": "cast"},    # Shadowbolt / Hex / Dark Pact / Void Rift
 }
@@ -437,7 +437,10 @@ const DIR_ANIM_DUR := 0.22   # seconds to play one direction's sub-frames
 
 ## Ability slots that show a directional aim POSE instead of a swing clip.
 const DIR_POSE := {
-	"assassin": {"a1": "stab", "a3": "throw"},   # Stab / Fan of Knives — aim the strike at the target
+	# (Retired 2026-07-10: the assassin's stab/throw aim POSES were replaced
+	# by the real 8-direction attack/attack2 CLIPS when his directional art
+	# landed — the unified play_action path locks facing at fire toward the
+	# aim. The old assassin_stab_dir/throw_dir sheets are now dead art.)
 }
 
 func _apply_class_sprite() -> void:
@@ -457,7 +460,17 @@ func _apply_class_sprite() -> void:
 	for clip in Art.HERO_CLIP_FILES:
 		var ds := Art.dir_set("%s_%s" % [art_name, Art.HERO_CLIP_FILES[clip]])
 		if not ds.is_empty():
-			_dir_loco[clip] = ds
+			# dir_set's _strip_info hardcodes fps=6; stamp the clip's REAL
+			# playback rate (HERO_CLIP_FPS) so directional actions don't crawl
+			# at 6fps (a 7-frame dash was taking ~1.2s). Copy so the shared
+			# dir_set cache isn't mutated.
+			var fps: float = Art.HERO_CLIP_FPS[clip]
+			var out := {}
+			for suf in ds:
+				var info: Dictionary = ds[suf].duplicate()
+				info["fps"] = fps
+				out[suf] = info
+			_dir_loco[clip] = out
 	_loco_dir_on = false
 	_dir_meta = {}
 	_dir_pose_active = false
@@ -502,13 +515,21 @@ func _measure_hero_frame(info: Dictionary) -> Dictionary:
 	return {"scale": sc, "offset": HERO_FEET_ANCHOR / sc - float(bot) + float(fh) / 2.0}
 
 
+## A movement action (the dash) sets this so its clip faces the TRAVEL line,
+## not the aimed target — otherwise a north/south dash toward a side target
+## renders sideways. Cleared right after the clip locks its facing.
+var action_face_hint := Vector2.ZERO
+
 ## Facing for a directional ONE-SHOT action (attack/dash/ult...), locked at
-## the moment it fires: toward the aimed target, else the movement, else the
-## committed horizontal look. Mirrors the enemy's target-first action facing.
-## Lives in the base layer so _play_clip (base) can call it.
+## the moment it fires: a movement hint (dash) wins, else toward the aimed
+## target, else the movement, else the committed horizontal look. Mirrors the
+## enemy's target-first action facing. Lives in the base layer so _play_clip
+## (base) can call it.
 func _action_facing_vec() -> Vector2:
+	if action_face_hint != Vector2.ZERO:
+		return action_face_hint
 	var t: Enemy = locked_target if is_instance_valid(locked_target) else soft_target
-	if is_instance_valid(t) and not t.dead:
+	if is_instance_valid(t) and not t.dying:
 		return t.global_position - global_position
 	if velocity.length() > 20.0:
 		return velocity
@@ -553,6 +574,8 @@ func _play_clip(name: String, loop: bool) -> void:
 		sprite.hframes = strip_frames
 		sprite.flip_h = false
 		_action_dir_on = true
+		_loco_dir = suf  # carry the action facing into idle so it doesn't snap
+		                 # back sideways when the one-shot ends (N/S dash bug)
 	sprite.scale = Vector2(_hero_scale, _hero_scale)
 	sprite.offset = Vector2(0, _hero_offset_y)
 

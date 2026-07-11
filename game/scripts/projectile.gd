@@ -102,11 +102,11 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	match tex_name:
 		"knife": sprite.scale = Vector2(3.8, 2.1)
 		"dart":
-			# The fan throws the SAME solid blade sliver the stab draws
-			# (player reference art, round 33) — just in motion. No glow,
-			# no trail: a clean white line flying at the enemy.
-			sprite.texture = Art.tex("slashline")
-			sprite.scale = Vector2(0.55, 0.32)  # thinned twice (rounds 34/36): a needle
+			# The assassin's thrown KUNAI (round 50): a sleek generated blade
+			# (assets/sprites/dart.png, ~90px) flying point-first (rotation =
+			# velocity.angle() below), tinted by the knife-throw variant via
+			# p.modulate, with the kit's _knife_glow halo behind it.
+			sprite.scale = Vector2(0.28, 0.28)
 			glow.visible = false
 		_: sprite.scale = Vector2(3, 3)
 	sprite.rotation = velocity.angle()

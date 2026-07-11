@@ -498,7 +498,12 @@ func use_ability(slot: String) -> void:
 		var action_clip: String = ABILITY_CLIP.get(cls, {}).get(slot, "")
 		if cls == "warrior" and berserk_time > 0.0 and action_clip in ["attack", "attack2"]:
 			action_clip = "ult"  # berserk swings the RED blade, not the gold one
+		# A dash's clip faces the TRAVEL direction, not the aimed target — a
+		# north/south dash was rendering sideways toward a side target.
+		if action_clip == "dash":
+			action_face_hint = dash_vec()
 		play_action(action_clip)
+		action_face_hint = Vector2.ZERO
 	var f := dm(slot)
 
 	# Theme payload for this cast (behavior modifiers + tint).

@@ -12,6 +12,11 @@ func _use_assassin(slot: String, f: float) -> void:
 			# the round-18 slide-step gave infinite mobility on a 0.3s
 			# cadence and was quietly game-breaking. Mobility lives on
 			# Shadow Dash now; the blade covers the distance instead.
+			# Sync the cut to the lunge frame (round 50): the slash/hit lands
+			# WITH the thrust, not on the input frame.
+			await get_tree().create_timer(Balance.STAB_STRIKE_DELAY).timeout
+			if dead or downed or ghost:
+				return
 			var cut := _melee_arc(Balance.STAB_MULT * f, 118.0, "slash", {"stagger": 0.3, "knock": 260.0}, "stab", "stab")
 			if cut > 0:
 				# Blood price, paid forward (round 25): dive in low, cut,
@@ -92,12 +97,19 @@ func _mirrorstep_guard(start: Vector2) -> void:
 
 
 func _fan_of_knives(f := 1.0) -> void:
-	game.sfx("knife", 1.55)  # short and SHARP — a dart leaving fingers
+	# Sync to the THROW animation's release (round 50): the arm winds up first,
+	# so the blades must leave the HAND, not the input frame — otherwise they
+	# fly out before the assassin has thrown. Aim + surge lock at fire; the
+	# knives spawn after the short wind-up.
 	var dir := aim_dir()
-	_muzzle(dir, _tcolor if _themed else Color(0.8, 0.85, 1.0))
 	# The range damage is EARNED in close (round 37): thin chip on its
 	# own, but the fan bites double while the stab surge runs.
 	var surge_amp: float = Balance.KNIFE_SURGE_MULT if stab_ls_time > 0.0 else 1.0
+	await get_tree().create_timer(Balance.KNIFE_THROW_RELEASE).timeout
+	if dead or downed or ghost:
+		return  # went down mid-windup — no knives leave the hand
+	game.sfx("knife", 1.55)  # short and SHARP — a dart leaving fingers
+	_muzzle(dir, _tcolor if _themed else Color(0.8, 0.85, 1.0))
 	if _tfx.get("bloom", 0):
 		# Poison: ONE venom blade that detonates into a toxin cloud
 		# (chip-tuned: knives spam at stab cadence since round 25).
@@ -107,6 +119,7 @@ func _fan_of_knives(f := 1.0) -> void:
 		p.scale = Vector2(1.5, 1.5)
 		p.fx["bloom_mist"] = 1
 		p.fx["bloom_color"] = _tcolor
+		_knife_glow(p)
 		return
 	var count := int(_tfx.get("knives", 3))
 	var step := float(_tfx.get("spread", 0.13))
@@ -115,6 +128,24 @@ func _fan_of_knives(f := 1.0) -> void:
 		var p := _proj(dir.rotated(spread), Balance.KNIFE_MULT * surge_amp * f, "dart", 760.0)
 		p.spin = false
 		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+		_knife_glow(p)
+
+
+## A soft variant-tinted glow riding a thrown kunai — poison green, blood
+## red, shadow purple, etc. (default cold steel-blue when untuned). The halo
+## sits BEHIND the blade (z −1) so the kunai silhouette stays legible over it.
+## This is the code layer for "kunais glow by knife-throw variant" — the blade
+## art is one sprite; the colour is a runtime tint, so no per-variant art.
+func _knife_glow(p: Projectile) -> void:
+	var col: Color = _tcolor if _themed else Color(0.70, 0.85, 1.0)
+	var g := Sprite2D.new()
+	g.texture = Art.tex("glow")
+	# Subtle aura BEHIND the blade — enough to tint the kunai by variant, not
+	# so bright it blooms over the silhouette into a glowing line.
+	g.modulate = Art.hdr(Color(col, 0.4))
+	g.scale = Vector2(0.22, 0.22)
+	g.z_index = -1
+	p.add_child(g)
 
 
 func _death_mark() -> void:
@@ -130,6 +161,10 @@ func _death_mark() -> void:
 	_ult_sfx()
 	game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.8)
 	game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
+	# The shadow LEFT BEHIND (Zed language): he vanishes from HERE and
+	# reappears behind the prey — a dark echo holds the cast point for a
+	# beat so the eye can read where he went from.
+	_cast_shadow(global_position)
 	# Untouchable through the execution (round 18): longer than Shadow
 	# Dash's 0.5s — commit to the kill, not to the chip damage.
 	hurt_cd = maxf(hurt_cd, 0.8)
@@ -167,6 +202,31 @@ func _mark_overhead_x(target: Enemy) -> void:
 	await get_tree().create_timer(5.0).timeout
 	if is_instance_valid(x_mark):
 		x_mark.queue_free()
+
+
+## The vanish-echo left at the cast point: a dark, still copy of the
+## assassin's current pose that holds where he stood, then dissolves with a
+## smoke puff. Pure FX — reuses his own sprite, no new art.
+func _cast_shadow(at: Vector2) -> void:
+	if sprite == null:
+		return
+	var echo := Sprite2D.new()
+	echo.texture = sprite.texture
+	echo.hframes = sprite.hframes
+	echo.vframes = sprite.vframes
+	echo.frame = sprite.frame
+	echo.flip_h = sprite.flip_h
+	echo.scale = sprite.scale
+	echo.global_position = at + sprite.position
+	echo.modulate = Color(0.16, 0.08, 0.26, 0.92)  # a shadow, not a man
+	echo.z_index = 5
+	game.add_child(echo)
+	game.burst(at, Color(0.4, 0.15, 0.5), 8)
+	var tw := echo.create_tween()
+	tw.tween_interval(0.35)
+	tw.tween_property(echo, "modulate:a", 0.0, 0.5)
+	tw.parallel().tween_property(echo, "scale", echo.scale * 0.92, 0.5)
+	tw.tween_callback(echo.queue_free)
 
 
 ## A living-shadow copy of the assassin dashing along a line.
@@ -230,6 +290,9 @@ func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
 	var behind := (target.global_position - from).normalized()
 	global_position = game.clamp_to_zone(
 		target.global_position + behind * 46.0, target.global_position)
+	# Reappear stance (Zed language): he materializes behind the prey already
+	# in the wide blades-out pose, then drives the killing stab home.
+	play_action("ultidle")
 	_afterimages(from, global_position, Color(0.6, 0.25, 0.6), 3)
 	game.shake(6.0)
 	_melee_arc(1.3, 118.0, "slash", {"type": "true"}, "stab", "stab")

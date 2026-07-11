@@ -334,7 +334,8 @@ func _run_systems() -> void:
 	game.player.hp = game.player.max_hp * 0.3
 	game.player.cds["a1"] = 0.0
 	game.player.use_ability("a1")
-	await _frames(2)
+	# The stab's cut lands at the lunge frame now, not the input frame.
+	await get_tree().create_timer(Balance.STAB_STRIKE_DELAY + 0.06).timeout
 	if game.player.stab_ls_time <= 0.0:
 		return _fail("connecting stab did not raise the lifesteal surge")
 	# Assert the surge STATE, not a current_lifesteal() delta — other
@@ -380,7 +381,9 @@ func _run_systems() -> void:
 	game.player.use_ability("a3")
 	if game.player.cds["a1"] <= 0.0:
 		return _fail("Fan of Knives did not lock Stab (blade cadence broken)")
-	await _frames(3)
+	# Let the cadence-test fan's DELAYED knives (throw-release) spawn before
+	# the clear below, or they leak (surged) into the base measurement.
+	await get_tree().create_timer(Balance.KNIFE_THROW_RELEASE + 0.06).timeout
 	# Earned knives (round 37): unsurged darts chip thin; during the
 	# surge window the SAME cast bites double. Assert the ratio via the
 	# projectiles' damage mult (immune to talent/gear multipliers).
@@ -390,7 +393,9 @@ func _run_systems() -> void:
 	game.player.stab_ls_time = 0.0
 	game.player.cds["a3"] = 0.0
 	game.player.use_ability("a3")
-	await _frames(1)
+	# Knives leave at the throw anim's release now, not the input frame —
+	# wait it out (wall-clock; frames race ahead headless).
+	await get_tree().create_timer(Balance.KNIFE_THROW_RELEASE + 0.06).timeout
 	var knife_base := 0.0
 	for node in get_tree().get_nodes_in_group("projectiles"):
 		if node is Projectile and node.tex_kind == "dart":
@@ -401,7 +406,7 @@ func _run_systems() -> void:
 	game.player.cds["a3"] = 0.0
 	game.player.cds["a1"] = 0.0
 	game.player.use_ability("a3")
-	await _frames(1)
+	await get_tree().create_timer(Balance.KNIFE_THROW_RELEASE + 0.06).timeout
 	var knife_surged := 0.0
 	for node in get_tree().get_nodes_in_group("projectiles"):
 		if node is Projectile and node.tex_kind == "dart":

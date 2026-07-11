@@ -616,26 +616,29 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 	# crescent matches the rage), else plain white.
 	var slash_col := _tcolor if _themed else (Color(1.0, 0.3, 0.2) if berserk_time > 0.0 else Color(1, 1, 1))
 	if style == "stab":
-		# The stab IS a single solid blade sliver (player reference art,
-		# round 33): a white line with needle-sharp ends, there for a
-		# beat, then gone. No glow stack — SOLID and striking. White is
-		# the base; theme variants only change the color.
-		var blade := Sprite2D.new()
-		blade.texture = Art.tex("slashline")
-		blade.modulate = slash_col
-		blade.rotation = dir.angle()
-		# y thinned twice on playtest feedback (1.5 → 0.8 → 0.5): a razor
-		# line, not a bar.
-		blade.scale = Vector2(reach / 80.0, 0.5)
-		blade.position = dir * reach * 0.35
-		blade.z_index = 7
-		add_child(blade)
-		var tw := blade.create_tween()
-		tw.tween_property(blade, "position", dir * reach * 0.58, 0.06) \
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		tw.tween_interval(0.06)  # hold solid — the reference pose
-		tw.tween_property(blade, "modulate:a", 0.0, 0.07)
-		tw.tween_callback(blade.queue_free)
+		# Dagger SLASH (round 50): a fast crescent that sweeps an arc OUT from
+		# the blade tip, riding the striking dagger — the assassin cuts, he
+		# doesn't fence with a floating sliver. White base; theme tints it.
+		var pivot := Node2D.new()
+		pivot.rotation = dir.angle() - 0.85  # wind the arc back...
+		pivot.z_index = 8
+		add_child(pivot)
+		var cres := Sprite2D.new()
+		cres.texture = Art.tex("slash")
+		cres.position = Vector2(reach * 0.42, 0)  # crescent out at the blade tip
+		cres.scale = Vector2(2.2, 2.2) * (reach / 118.0)
+		cres.modulate = slash_col
+		pivot.add_child(cres)
+		# The Ninja-pack drawn cut flashes along the arc (CC0), tinted to match.
+		_fx_flash("fx_slash", global_position + dir * reach * 0.46, 4, {
+			"color": slash_col, "rot": dir.angle(),
+			"scale": 1.9 * (reach / 118.0), "z": 9, "frame_time": 0.026, "alpha": 0.95,
+		})
+		var tw := pivot.create_tween()
+		tw.tween_property(pivot, "rotation", dir.angle() + 0.85, 0.1) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)  # ...and cut through
+		tw.parallel().tween_property(pivot, "modulate:a", 0.0, 0.13)
+		tw.tween_callback(pivot.queue_free)
 	else:
 		# The crescent SWEEPS across the arc instead of fading in place —
 		# a pivot at the hero swings the blade sprite through ~100°.
@@ -755,8 +758,9 @@ func _grant_stab_surge() -> void:
 ## pure-vertical dash keeps whichever way the hero already faced. The held
 ## pose is released by the next _play_clip (player.gd bob gate holds it).
 func _aim_dash_pose(dvec: Vector2) -> void:
-	if strip_frames == 0 or _clip_loop or _dir_pose_active or dvec == Vector2.ZERO:
-		return  # no sheet / no one-shot playing / 8-way pose owns the sprite
+	if strip_frames == 0 or _clip_loop or _dir_pose_active or _action_dir_on or dvec == Vector2.ZERO:
+		return  # no sheet / no one-shot playing / 8-way pose or directional
+		        # dash strip already owns the facing (rotating it would mangle it)
 	var side := signf(dvec.x) if dvec.x != 0.0 else _face_sign()
 	_clip_flip = side
 	_clip_rot = Vector2(side, 0.0).angle_to(dvec)

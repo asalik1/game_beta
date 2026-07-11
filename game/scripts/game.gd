@@ -307,8 +307,39 @@ func reconcile_after_load() -> void:
 	_recheck_gates()
 	refresh_quest()
 
+# --- dev review controls (dev_mode ONLY): slow-mo + camera zoom, for
+# eyeballing animations in-engine. Gated so a shipped build never sees them.
+#   \  cycles game speed 1x -> 0.5 -> 0.25 -> 0.1 -> 1x
+#   =  hold to zoom IN,  -  hold to zoom OUT
+const _DEV_SLOWMO := [1.0, 0.5, 0.25, 0.1]
+var _dev_slowmo_i := 0
+var _dev_slow_held := false
+
+func _dev_review_input(delta: float) -> void:
+	if not dev_mode:
+		return
+	var slow := Input.is_key_pressed(KEY_BACKSLASH)
+	if slow and not _dev_slow_held:
+		_dev_slowmo_i = (_dev_slowmo_i + 1) % _DEV_SLOWMO.size()
+		Engine.time_scale = _DEV_SLOWMO[_dev_slowmo_i]
+		if is_instance_valid(player):
+			spawn_text(player.global_position + Vector2(0, -74),
+				"TIME x%.2f" % Engine.time_scale, Color(0.6, 0.9, 1.0))
+	_dev_slow_held = slow
+	if camera:
+		# unscale by time_scale so zoom feels the same however slow the game is
+		var step := 1.6 * (delta / maxf(0.0001, Engine.time_scale))
+		var z: float = camera.zoom.x
+		if Input.is_key_pressed(KEY_EQUAL):
+			z += step
+		elif Input.is_key_pressed(KEY_MINUS):
+			z -= step
+		camera.zoom = Vector2.ONE * clampf(z, 0.4, 4.0)
+
+
 func _process(delta: float) -> void:
 	talk_cd = maxf(0.0, talk_cd - delta)
+	_dev_review_input(delta)   # dev_mode: slow-mo (\) + zoom (=/-)
 	if hud.dialogue_active or menus.is_open():
 		talk_cd = 0.4
 	if play_started and state == ST_PLAYING:
