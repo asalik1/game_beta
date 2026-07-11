@@ -95,6 +95,8 @@ static func _character_section(game: Game) -> Dictionary:
 		# drunk; leaving the chapter zeroes it before any save can bank it).
 		"potions_free": p.potions_free,
 		"ability_theme": p.ability_theme,
+		"chroma": p.chroma,
+		"skin": p.skin,
 		# Standings + resonance are PER-CHARACTER (§5.7): reputation and band
 		# lean travel into a friend's world and come home with you.
 		"resonance": p.resonance,
@@ -174,7 +176,7 @@ static func world_of(data: Dictionary) -> Dictionary:
 # Where each v2 flat field lands in v3. "bag" is the round-52 legacy
 # single-bag key (pre-`bags` saves) — routed so load_bags still sees it.
 const _V2_CHARACTER_FIELDS := ["cls", "level", "xp", "skill_points", "tree_points",
-	"attr_points", "unspent_attr", "gold", "potions", "potions_free", "ability_theme",
+	"attr_points", "unspent_attr", "gold", "potions", "potions_free", "ability_theme", "chroma", "skin",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
 	"consumables", "potion_rotation", "active_potion", "hp", "mp",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
@@ -350,6 +352,8 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	for k in p.ability_theme:
 		p.ability_theme[k] = String(themes.get(k, p.ability_theme[k]))
 	p.pending_theme_note = ""
+	p.set_chroma(String(c.get("chroma", "")))
+	p.set_skin(String(c.get("skin", "")))
 	p.resonance = float(c.get("resonance", 0.0))
 	var fs: Dictionary = c.get("faction_standing", {})
 	for k in p.faction_standing:

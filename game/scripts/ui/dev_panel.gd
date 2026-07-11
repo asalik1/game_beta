@@ -129,6 +129,37 @@ static func _tab_character(m: Menus, list: VBoxContainer) -> void:
 			m.open_dev(), Color(0.5, 1.0, 0.5) if cls_active else Color(0.6, 0.9, 1.0))
 
 
+	# Chroma selection (per-class recolor)
+	_section(m, list, "CHROMA")
+	var row_chr := _flow(list)
+	var p_chr: Player = m.game.player
+	var chr_active: bool = p_chr.chroma == ""
+	m._btn(row_chr, ("● " if chr_active else "") + "Default", func() -> void:
+		m.game.player.set_chroma("")
+		m.open_dev(), Color(0.5, 1.0, 0.5) if chr_active else Color(0.8, 0.8, 0.8))
+	for ch in Skins.chromas_for(p_chr.cls):
+		var ch_id: String = ch["id"]
+		var ch_on: bool = p_chr.chroma == ch_id
+		m._btn(row_chr, ("● " if ch_on else "") + ch["name"], func() -> void:
+			m.game.player.set_chroma(ch_id)
+			m.open_dev(), Color(0.5, 1.0, 0.5) if ch_on else Color(ch["primary"].r * 0.5 + 0.5, ch["primary"].g * 0.5 + 0.5, ch["primary"].b * 0.5 + 0.5))
+
+	# Skin selection (elite/mythic)
+	_section(m, list, "SKIN")
+	var row_skin := _flow(list)
+	var skin_active: bool = p_chr.skin == ""
+	m._btn(row_skin, ("● " if skin_active else "") + "Default", func() -> void:
+		m.game.player.set_skin("")
+		m.open_dev(), Color(0.5, 1.0, 0.5) if skin_active else Color(0.8, 0.8, 0.8))
+	for sk in Skins.skins_for(p_chr.cls):
+		var sk_id: String = sk["id"]
+		var sk_on: bool = p_chr.skin == sk_id
+		var tier_color: Color = Color(0.9, 0.75, 0.3) if sk["tier"] == "elite" else Color(0.85, 0.4, 0.95)
+		m._btn(row_skin, ("● " if sk_on else "") + "[%s] %s" % [sk["tier"].to_upper(), sk["name"]], func() -> void:
+			m.game.player.set_skin(sk_id)
+			m.open_dev(), Color(0.5, 1.0, 0.5) if sk_on else tier_color)
+
+
 ## Dailies, bounties, vault, achievements, records, economy levers.
 static func _tab_econ(m: Menus, list: VBoxContainer) -> void:
 	# --------------------------------------------- progression & economy ---

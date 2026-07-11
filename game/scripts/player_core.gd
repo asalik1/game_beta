@@ -25,6 +25,8 @@ var game: Game  # set by game.gd
 var cls := "warrior"
 var ability_theme := {"a1": "", "a2": "", "a3": "", "ult": ""}
 var themes_known := 0
+var chroma := ""   # active chroma id ("" = base skin, e.g. "obsidian")
+var skin := ""     # active skin id ("" = default, e.g. "dreadknight")
 
 # --- Phase 1 story trackers (persisted with the save from day one) ---
 var resonance := 0.0     # -100 (Temptation) .. +100 (Virtue), per DESIGN.md
@@ -445,6 +447,9 @@ const DIR_POSE := {
 
 func _apply_class_sprite() -> void:
 	var art_name: String = Classes.CLASSES[cls]["sprite"]
+	var skin_art: String = Skins.skin_sprite(cls, skin)
+	if skin_art != "":
+		art_name = skin_art
 	face_left = Art.faces_left(art_name)
 	_clips = Art.hero_clips(art_name)
 	_clip = ""
@@ -489,6 +494,31 @@ func _apply_class_sprite() -> void:
 		sprite.offset = Vector2.ZERO
 		sprite.texture = Art.tex(art_name)
 		sprite.scale = Art.scale_for(sprite.texture, 3.0)
+	# Re-apply the active chroma (if any) after the sprite changed.
+	Skins.apply_to_sprite(sprite, cls, chroma)
+
+
+## Set or clear the active chroma for this character. Validates the id
+## against the class's chroma list; "" clears to the base skin. Persisted
+## by save.gd in the character section.
+func set_chroma(chroma_id: String) -> void:
+	if chroma_id != "" and Skins.find(cls, chroma_id).is_empty():
+		return  # invalid id for this class
+	chroma = chroma_id
+	if sprite:
+		Skins.apply_to_sprite(sprite, cls, chroma)
+
+
+## Set or clear the active skin (elite/mythic). Validates the id against the
+## class's skin list; "" clears to the default appearance. Skins and chromas
+## are mutually exclusive — activating a skin clears the chroma.
+func set_skin(skin_id: String) -> void:
+	if skin_id != "" and Skins.find_skin(cls, skin_id).is_empty():
+		return
+	skin = skin_id
+	if skin_id != "":
+		chroma = ""
+	_apply_class_sprite()
 
 
 ## Read a strip's first frame alpha to find body height + feet row, and derive
@@ -739,6 +769,8 @@ func set_class(id: String) -> void:
 	unspent_attr += refunded_attr
 	cls = id
 	ability_theme = {"a1": "", "a2": "", "a3": "", "ult": ""}
+	chroma = ""  # chromas are per-class; clear on switch
+	skin = ""    # skins are per-class; clear on switch
 	hunt_rhythm = 0
 	aegis_time = 0.0
 	pact_time = 0.0
