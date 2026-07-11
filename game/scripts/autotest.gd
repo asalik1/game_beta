@@ -290,17 +290,22 @@ func _run_systems() -> void:
 	game.player.mp = game.player.max_mp
 	game.player.cds["a1"] = 0.0
 	game.player.use_ability("a1")
-	await _frames(1)
+	await get_tree().create_timer(Balance.MAGE_BOLT_DELAY + 0.08).timeout  # bolt release frame
+	var fire_bolts := 0
 	for pr in get_tree().get_nodes_in_group("projectiles"):
+		fire_bolts += 1
 		if float(pr.fx.get("bleed", 0.0)) > 0.0:
 			return _fail("Wind Cuts leaked onto the FIRE firebolt")
+	if fire_bolts == 0:
+		return _fail("fire firebolt never spawned (bolt-release delay?)")
 	# Wind variant MUST carry a bleed on BOTH twin bolts.
 	_clear_combat()
 	game.player.set_all_themes("wind")
 	game.player.mp = game.player.max_mp
 	game.player.cds["a1"] = 0.0
 	game.player.use_ability("a1")
-	await _frames(1)
+	await get_tree().create_timer(Balance.MAGE_BOLT_DELAY + 0.08).timeout  # bolts
+	# release on the cast-thrust frame now, not the input frame (wall-clock: frames race headless)
 	var wind_bleeders := 0
 	for pr in get_tree().get_nodes_in_group("projectiles"):
 		if float(pr.fx.get("bleed", 0.0)) > 0.0:
@@ -501,7 +506,8 @@ func _run_systems() -> void:
 	var proj_before := get_tree().get_nodes_in_group("projectiles").size()
 	game.player.cds["a1"] = 0.0
 	game.player.use_ability("a1")
-	await _frames(2)
+	await get_tree().create_timer(Balance.WARRIOR_SWING_DELAY + 0.06).timeout  # cut
+	# lands on the swing's contact frame now (wall-clock: frames race headless)
 	if get_tree().get_nodes_in_group("projectiles").size() <= proj_before:
 		return _fail("earth Cleave did not launch a quake wave")
 	# Fury Berserk: deeper rage tuning (+55% for 10s).
@@ -583,7 +589,8 @@ func _run_systems() -> void:
 	game.player.cds["a2"] = 0.0
 	game.player.mp = game.player.max_mp
 	game.player.use_ability("a2")
-	await _frames(10)
+	await get_tree().create_timer(Balance.PALADIN_SMITE_DELAY + 0.12).timeout  # nova
+	# lands on the warhammer's slam frame now (wall-clock: frames race headless)
 	if game.player.hp <= pal_hp:
 		return _fail("holy Consecration did not mend on hit")
 	game.player.recalc()  # restore the passive regen
@@ -630,7 +637,8 @@ func _run_systems() -> void:
 	game.player.cds["a2"] = 0.0
 	game.player.mp = game.player.max_mp
 	game.player.use_ability("a2")
-	await _frames(3)
+	await get_tree().create_timer(Balance.WARLOCK_CAST_DELAY + 0.06).timeout  # curse
+	# lands on the sigil-projection frame now (wall-clock: frames race headless)
 	if game.player.hexed.size() < 2:
 		return _fail("Hex did not curse the pack (%d cursed)" % game.player.hexed.size())
 	# Zero the hex's own DoT first so the only damage left to observe is
@@ -1518,14 +1526,14 @@ func _run_campaign_ch2() -> void:
 # The story spawn and dev roster both go through _boss_track(); a boss that
 # ---- CORE: directional dash (player-reported 2026-07-09) -----------------
 # A dash travels along the HELD move keys, not the horizontal facing —
-# down+dash goes DOWN, diagonals go diagonal — and the authored left/right
-# dash clip is flipped to the travel side + ROTATED the rest of the way
-# (straight up/down = 90°, diagonals = 45°; player_combat._aim_dash_pose).
-# No keys held falls back to the facing (the old straight-ahead dash).
+# down+dash goes DOWN, diagonals go diagonal. With 8-direction dash art the clip
+# picks the travel-facing STRIP and does NOT rotate the sprite (_aim_dash_pose
+# bails on _action_dir_on — rotating the already-correct strip mangled it);
+# _loco_dir carries the chosen suffix. No keys held falls back to the facing.
 func _test_dash_direction() -> void:
 	game.player.set_class("assassin")
 	game.player.pending_theme_note = ""
-	var has_dash_clip: bool = game.player._clips.has("dash")
+	var dir_dash: bool = game.player._dir_loco.has("dash")
 
 	# Hold S, dash: must travel straight DOWN; facing RIGHT the pose spins
 	# +90° (clockwise — the right-facing art pitches nose-down).
@@ -1543,10 +1551,12 @@ func _test_dash_direction() -> void:
 	if moved.y < 30.0 or absf(moved.x) > 0.5:
 		_press_key(KEY_S, false)
 		return _fail("down+dash must travel DOWN (moved %s)" % moved)
-	if has_dash_clip and absf(game.player._clip_rot - PI / 2.0) > 0.01:
+	if dir_dash and game.player._loco_dir != "s":
 		_press_key(KEY_S, false)
-		return _fail("down-dash pose should spin the right art +90° cw (got %.2f rad)"
-			% game.player._clip_rot)
+		return _fail("down dash should pick the SOUTH strip (got %s)" % game.player._loco_dir)
+	if game.player._clip_rot != 0.0:
+		_press_key(KEY_S, false)
+		return _fail("directional dash must NOT rotate the art (got %.2f rad)" % game.player._clip_rot)
 
 	# Hold S+A, dash: down-LEFT diagonal; the art flips to the LEFT side
 	# and spins the remaining 45° (counter-clockwise off the left facing).
@@ -1562,12 +1572,8 @@ func _test_dash_direction() -> void:
 	_press_key(KEY_A, false)
 	if moved.y < 30.0 or moved.x > -30.0:
 		return _fail("down-left dash must travel the diagonal (moved %s)" % moved)
-	if has_dash_clip:
-		if game.player._clip_flip >= 0.0:
-			return _fail("down-left dash pose must flip to the LEFT side")
-		if absf(game.player._clip_rot + PI / 4.0) > 0.01:
-			return _fail("down-left dash pose should spin -45° (got %.2f rad)"
-				% game.player._clip_rot)
+	if dir_dash and game.player._loco_dir != "sw":
+		return _fail("down-left dash should pick the SW strip (got %s)" % game.player._loco_dir)
 	await _frames(1)
 
 	# No keys held: the dash still fires straight along the facing.
@@ -1581,8 +1587,10 @@ func _test_dash_direction() -> void:
 	moved = game.player.global_position - start
 	if moved.x < 30.0 or absf(moved.y) > 0.5:
 		return _fail("keyless dash must fall back to the facing (moved %s)" % moved)
-	if has_dash_clip and game.player._clip_rot != 0.0:
-		return _fail("a flat dash must not rotate the art (got %.2f rad)"
+	if dir_dash and game.player._loco_dir != "e":
+		return _fail("keyless dash should pick the EAST facing strip (got %s)" % game.player._loco_dir)
+	if game.player._clip_rot != 0.0:
+		return _fail("a directional dash must not rotate the art (got %.2f rad)"
 			% game.player._clip_rot)
 
 	# Restore shared state the way the kit sections do.

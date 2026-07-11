@@ -2340,6 +2340,11 @@ static func _make_slashline() -> Image:
 
 ## A soft shockwave ring (white — tint with modulate). Powers nova
 ## blasts and projectile impact flashes.
+# A thin, sleek shockwave ring. Kept at 64px with the ring at texel-radius 24 so
+# EVERY consumer's scale (both _ring_fx's radius/24 and the direct fixed-scale
+# users: nova, enemy, projectile, paladin link, cutscene, game_base) stays
+# correct — only the BAND width dropped (from ~6 to ~1.7) so it reads as a fine
+# crisp line instead of a fat blocky smoke band.
 static func _make_ring() -> Image:
 	var s := 64
 	var image := Image.create_empty(s, s, false, Image.FORMAT_RGBA8)
@@ -2347,8 +2352,8 @@ static func _make_ring() -> Image:
 	for y in s:
 		for x in s:
 			var band := absf(Vector2(x - c, y - c).length() - 24.0)
-			if band < 6.0:
-				image.set_pixel(x, y, Color(1, 1, 1, pow(1.0 - band / 6.0, 1.4)))
+			if band < 1.7:
+				image.set_pixel(x, y, Color(1, 1, 1, pow(1.0 - band / 1.7, 1.1)))
 	return image
 
 

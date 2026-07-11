@@ -7,11 +7,19 @@ extends "res://scripts/player_kit_warrior.gd"
 func _use_archer(slot: String, f: float) -> void:
 	match slot:
 		"a1":
+			# Loose on the bow's draw-release frame, not the input frame (the
+			# draw-and-loose animation has a windup the arrow was firing ahead of).
+			await get_tree().create_timer(Balance.ARCHER_LOOSE_DELAY).timeout
+			if dead or downed or ghost:
+				return
 			_hunt_rhythm_tick()
 			_shoot(aim_dir(), 0.85 * f)
 		"a2": _multishot(f)
 		"a3": _tumble()
 		"ult":
+			await get_tree().create_timer(Balance.ARCHER_LOOSE_DELAY).timeout
+			if dead or downed or ghost:
+				return
 			storm_time = 3.0
 			storm_fx = _tfx.duplicate()
 			_ult_sfx()
@@ -44,6 +52,10 @@ func _shoot(dir: Vector2, mult: float) -> void:
 
 
 func _multishot(f := 1.0) -> void:
+	# Loose the volley on the bow's draw-release frame, not the input frame.
+	await get_tree().create_timer(Balance.ARCHER_LOOSE_DELAY).timeout
+	if dead or downed or ghost:
+		return
 	# ONE release sound for the whole volley — five overlapping copies of
 	# the same sample phase into a nasty digital flanging artifact.
 	# Pitched lower than Quick Shot so the two are distinguishable.

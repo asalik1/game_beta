@@ -10,6 +10,11 @@ func _use_warrior(slot: String, f: float) -> void:
 			# a blade leads each arc (see _melee_arc variants).
 			var v := cleave_seq
 			cleave_seq = (cleave_seq + 1) % 3
+			# Sync the cut to the swing's contact frame — the sword windup means
+			# FX/damage on the input frame read ahead of the animation.
+			await get_tree().create_timer(Balance.WARRIOR_SWING_DELAY).timeout
+			if dead or downed or ghost:
+				return
 			_melee_arc(1.0 * f, 96.0, "slash", {"stagger": 0.35, "knock": 330.0}, "swing", "sword", v)
 			if _tfx.get("quake", 0):
 				# Earth: a stone shockwave rolls down the lane.

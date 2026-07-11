@@ -9,6 +9,11 @@ func _use_mage(slot: String, f: float) -> void:
 			# Round 45: Firebolt +25% — the glass cannon earns its damage
 			# now that Blink no longer hands it a free negate (twin/splash
 			# themes scale off this base, lifting Wind's ST and Fire's AoE).
+			# Sync the bolt to the staff-thrust release, not the input frame —
+			# the cast animation has a windup the FX was firing ahead of.
+			await get_tree().create_timer(Balance.MAGE_BOLT_DELAY).timeout
+			if dead or downed or ghost:
+				return
 			if _tfx.get("twin", 0):
 				# Wind: split the bolt.
 				_cast_bolt(aim_dir().rotated(0.09), 0.94 * f)

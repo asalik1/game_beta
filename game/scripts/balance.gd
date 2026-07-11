@@ -324,6 +324,11 @@ const KNIFE_BLOOM_MULT := 0.22    # poison's single heavy blade (0.21 -> 0.22 ne
 const KNIFE_SURGE_MULT := 2.0     # surge window: the fan bites double
 const KNIFE_THROW_RELEASE := 0.15 # delay the knives to the THROW anim's release (arm-forward), so the blades leave the HAND, not the input frame
 const STAB_STRIKE_DELAY := 0.10   # delay the stab's cut/slash to the lunge frame, so the hit lands WITH the thrust, not on the input frame
+const PALADIN_SMITE_DELAY := 0.16 # delay Judgment/Consecration impact FX+damage to the warhammer's slam frame (the heavy overhead swing has a real windup — FX on the input frame reads ahead of the animation)
+const WARRIOR_SWING_DELAY := 0.13 # delay Cleave's cut/quake to the sword swing's contact frame (same windup-vs-FX sync)
+const MAGE_BOLT_DELAY := 0.12     # delay Firebolt to the staff-thrust release frame (same windup-vs-FX sync)
+const ARCHER_LOOSE_DELAY := 0.12  # delay Quick Shot / Multishot / Arrow Storm to the bow's draw-release frame (same windup-vs-FX sync)
+const WARLOCK_CAST_DELAY := 0.16  # delay Shadowbolt / Hex to the arm-snap/sigil-projection frame (~frame 4 of the re-rolled upright cast; Dark Pact = self-buff stays instant; Void Rift self-sequences via its telegraph)
 const DASH_REFUND := 0.35         # dash cd refunded when the rider connects
 # Rounds 39/40: planting your feet at blade range is the riskiest act
 # in the kit — the STANDING stab pays for it. The dash's proc'd stab

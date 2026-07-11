@@ -30,10 +30,18 @@ func _use_paladin(slot: String, f: float) -> void:
 				hurt_cd = maxf(hurt_cd, Balance.MELEE_DASH_IFRAME)
 				hurt_was_heavy = true  # landing i-frame blocks heavy telegraph hits too
 			var jeff := {"stagger": 0.3, "knock": 280.0}
-			if s_passive() == "dawnbreaker":
-				# A pillar of light falls with the hammer.
+			var dawn := s_passive() == "dawnbreaker"
+			if dawn:
 				jeff["splash"] = maxf(float(_tfx.get("splash", 0.0)), 0.5)
 				jeff["burn"] = current_atk() * 0.3
+			# Sync the impact to the warhammer's slam: the heavy overhead swing
+			# has a real windup, so the shock/pillar/hit land WITH the hammer,
+			# not on the input frame (which read ahead of the animation).
+			await get_tree().create_timer(Balance.PALADIN_SMITE_DELAY).timeout
+			if dead or downed or ghost:
+				return
+			if dawn:
+				# A pillar of light falls with the hammer.
 				_light_pillar(global_position + aim_dir(220.0) * 70.0,
 					_tcolor if _themed else Color(1.0, 0.95, 0.6))
 			_melee_arc(1.0 * f, 92.0, "slash", jeff, "swing", "sword")
@@ -92,9 +100,13 @@ func _smite_rip(pos: Vector2, col: Color) -> void:
 func _consecration(f := 1.0) -> void:
 	var radius := 150.0 * float(_tfx.get("radius_mult", 1.0))
 	var col := _tcolor if _themed else Color(1.0, 0.9, 0.5)
-	var pos := global_position
 	var fx_copy := _tfx.duplicate()
 	var fmul := f
+	# Land the nova on the warhammer's slam frame, not the input frame.
+	await get_tree().create_timer(Balance.PALADIN_SMITE_DELAY).timeout
+	if dead or downed or ghost:
+		return
+	var pos := global_position
 	_consecration_pulse(pos, radius, 0.9 * f, col, fx_copy)
 	# The ground stays sanctified: a second wave erupts moments later.
 	get_tree().create_timer(0.7).timeout.connect(func() -> void:

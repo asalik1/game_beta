@@ -9,7 +9,12 @@ func _use_warlock(slot: String, f: float) -> void:
 		# Round 45 taxed the spam bolt -10% so the DoT class trails the
 		# burst classes on boss TTK; round 49's dps bench showed it trailing
 		# EVERYWHERE by 25%+ — tax reverted, wither still owns the long game.
-		"a1": _cast_shadowbolt(aim_dir(), 1.0 * f)
+		"a1":
+			# Loose the bolt on the hand-thrust frame, not the input frame.
+			await get_tree().create_timer(Balance.WARLOCK_CAST_DELAY).timeout
+			if dead or downed or ghost:
+				return
+			_cast_shadowbolt(aim_dir(), 1.0 * f)
 		"a2": _hex(f)
 		"a3": _dark_pact(f)
 		"ult": _void_rift(f)
@@ -25,6 +30,10 @@ func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
 ## Hex: curse everything around your target — withered, EXPOSED, and
 ## primed to EXPLODE on death (the class identity).
 func _hex(f := 1.0) -> void:
+	# Land the curse on the sigil-projection frame, not the input frame.
+	await get_tree().create_timer(Balance.WARLOCK_CAST_DELAY).timeout
+	if dead or downed or ghost:
+		return
 	game.sfx("gate", 1.6)
 	var target := auto_aim()
 	var center := target.global_position if target else global_position
