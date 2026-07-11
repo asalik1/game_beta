@@ -40,7 +40,7 @@ enum Mode {
 ## (§3.4). Printed on the title screen later so "you're on 0.1.0, I'm on
 ## 0.1.1" is readable without debugging. The auth handshake compares this
 ## EXACTLY — mismatch means a clean refusal, never a half-join.
-const NET_VERSION := "0.1.1"
+const NET_VERSION := "0.1.2"
 
 # --------------------------------------------------- network constants ---
 # Transport plumbing, not gameplay tuning — so they live here, not in
