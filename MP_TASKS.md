@@ -571,3 +571,132 @@ self-gates on the recipient's OWN `completed_<ch>` flag. See FOR OWNER REVIEW.
   `cursed_` is the deliberate exception — accepting the bargain buffs the SHARED pack everyone fights, so
   it stays WORLD-routed. If the design ever makes a cache a SHARED party reward, flip that prefix back to
   world-routed (and add a per-head open-once guard elsewhere).
+
+## Co-op audit fixes (Wave 2 — combat)
+
+Second co-op audit, COMBAT consistency (host-authoritative). PRIME DIRECTIVE held: solo (offline)
+is bit-identical — every change is gated on `net_host()`/`net_guest()` or is a no-op with one player
+(`game.players` sweeps, `spawn_text_all`, the `_net_*`/`host_*` fan-outs all short-circuit offline or
+with `net_id == 0`). Files touched: `enemy.gd`, `boss.gd`, `player_combat.gd`, `net_session.gd`,
+`game_base.gd` (the callout helper). `chest.gd`/`balance.gd` untouched. Compile gate + test_quick +
+net_test (all stages) + full test.bat all green.
+
+### State-packet flags byte — layout after Wave 2
+`_stream_enemy_state`/`_rpc_enemy_state` (net_session.gd). 14 bytes/enemy unchanged; two free bits
+claimed:
+- bit0 (1) flip_h · bit1 (2) walking · bit2 (4) untargetable (pre-existing)
+- **bit3 (8) hidden** — `sprite.visible == false` (fix #1)
+- **bit4 (16) plated** — `plate_dr > 0.0` (fix #3)
+- bits 5-7 free.
+
+### 1 — HIGH: burrowed/submerged bosses stood VISIBLE on guests
+FINDING: Sexton `_shovelwork` (boss.gd:801) and Auroch `_submerge` (~boss.gd:2050) set
+`sprite.visible=false` host-only; the packet never carried it and the mirror never runs the boss think,
+so a guest saw the boss standing in the open (untargetable already synced via bit2, so it read as
+unhittable air).
+CHANGE: `net_session.gd:790-796` sources flags bit3 from `not sprite.visible`; `net_session.gd:878`
+unpacks it; `enemy.gd:667-675` `net_apply_state` sets `sprite.visible = not hidden` on the mirror. No
+boss.gd edits — the host's existing `visible=false` now simply rides the stream.
+
+### 2 — HIGH: mob combat-tell tints never reached guests
+FINDING: bite-windup yellow (enemy.gd), pounce-crouch purple, `_raise_guard` blue, `_raise_reflect`
+amber were `sprite.modulate` + local text only. The MECHANIC forwarded (counter/reflect/pounce all
+resolve on the host), but a guest firing into a reflect/counter mob got punished with ZERO tell.
+CHANGE (dedicated compact tell EVENT, not flags — see review): `enemy.gd:410-417` `_net_tell(color,dur)`
+fans at the 4 tint sites (enemy.gd:797 pounce, :803 windup, `_raise_guard`, `_raise_reflect`);
+`net_session.gd:739-741`/`:928-936` `host_enemy_tell`→`_rpc_enemy_tell`→`enemy.gd:689` `net_apply_tell`
+sets the mirror's `modulate` for the window; `_net_mirror_tick` (enemy.gd:633-638) reverts to `base_mod`
+on expiry — held ONCE, not re-asserted, so a hit-flash may stomp it early exactly like the host. The two
+PUNISH windows also fan their warn text (`GUARD`/`WARDED`) through the new `spawn_text_all`.
+
+### 3 — MEDIUM: plate_dr absent on guest mirrors → inflated optimism + execute/refund misfire
+FINDING: `_cinderhide` sets `plate_dr=0.82` host-side (boss.gd:1328/1354); the mirror's think never runs
+so its `plate_dr` stayed 0 and `_net_mirror_hit` showed ~5.5x real damage, cratering optimistic HP for
+the whole plated phase. Two leaks off the cratered HP: (a) `execute_dmg` (player_combat.gd) had no boss
+guard; (b) phantom-step refund/kill read `e.dying or e.hp<=0` (player_combat.gd:390,825) off the momentary
+zero.
+CHANGES: flags bit4 = `plate_dr > 0.0` (net_session.gd:794-796); mirror applies via a virtual
+`net_set_plated` — no-op on base `Enemy` (enemy.gd:695-699), overridden on `Boss` (boss.gd:60-66) to
+`plate_dr = PLATE_DR if on else 0.0` (avoids an `Enemy`→`Boss` cyclic const ref). Carried at spawn too
+(`_spawn_block` "plated", net_session.gd:708-712 → `net_apply_state` at :848) for a mid-plate late joiner.
+(a) `player_combat.gd:366` — added `not (e is Boss)` to the `execute_dmg` gate. (b) fixed BY the plate
+sync alone (optimistic HP no longer craters); no edit at :390/:825.
+
+### 4 — MEDIUM: frost_aura chilled only the sticky target
+FINDING: `_tick_traits` (enemy.gd) resolved `aura_prey=_get_target()` and chilled ONE player; an aura is
+positional.
+CHANGE: `enemy.gd:964-972` loops `game.players`, `apply_chill` each live player within `MOB_AURA_RADIUS`
+(`apply_chill` already forwards to a remote owner — no net plumbing). Solo = one player = identical.
+
+### 5 — MEDIUM: tether bond damage tested only the sticky target
+FINDING: `_tick_tether` (enemy.gd) tested segment distance for `_get_target()` only; the bond is a wall.
+CHANGE: `enemy.gd:1152-1162` tests every live player against the burning segment (`take_damage` already
+forwards). Solo identical.
+
+### 6 — MEDIUM: `Boss._floor_target()` skipped dead + downed but not GHOST
+FINDING: boss.gd `_floor_target` filtered `p.dead`/`p.downed` but not `p.ghost` (ghost is dead==false), so
+floor rotations wasted beats on an immaterial ghost.
+CHANGE: `boss.gd:100-105` adds a defensive `p.ghost` skip (mirrors `game_base.nearest_player`). One check.
+
+### 7 — MEDIUM: guest DoT ticks crit off the class-default SHELL, not the owner's build
+FINDING: a guest's burn/bleed/toxin re-applies host-side with the guest's SHELL as source
+(`_spawn_remote`, class-default, no gear/talent crit); each tick's crit rolls off `burn_src.crit`/
+`crit_dmg` (enemy.gd:470-472,487-489), so a crit-stacked DoT build silently underperforms in co-op.
+CHANGE (sync the substats onto the shell — see review): `_char_block` (net_session.gd:472-479) ships
+`crit`/`crit_dmg`; `_spawn_remote` (net_session.gd:451-458) overwrites the shell's class-default with them.
+Offensive-only — the shell never resolves its own attacks or defense host-side (incoming hits forward to
+the owner), so nothing else reads them; incoming enemy→player damage is unaffected. `pen` is NOT synced:
+DoT ticks read no pen (the guest bakes it into the pre-computed dps).
+
+### 8 — MEDIUM→LOW: boss enrage tints + callout banners were host-local
+FINDING: mechanical dodge info mirrors (telegraph tiles), but standalone `spawn_text` boss banners and
+Ordo's verdict half-wash glow didn't reach guests.
+CHANGES: new `game_base.spawn_text_all` (game_base.gd:2322-2331 — local render + host fan via
+`net_session.host_spawn_text`/`_rpc_spawn_text`, net_session.gd:986-1000). Routed the PRIORITY callouts:
+Ordo INTERCEPT (boss.gd:1531) and GUILTY verdict (boss.gd:1567); Vargoth (boss.gd) + Cinderhide
+(boss.gd:1368) ENRAGE banners. Verdict HALF-WASH: `_net_wash` (boss.gd:1623-1628) →
+`net_session.host_boss_wash`/`_rpc_boss_wash` (net_session.gd:1003-1015) re-runs `_half_wash` on the guest's
+boss mirror (geometry is seed-pure off `room_rect`). Enrage `sprite.modulate` tint + non-Ordo/Vargoth/
+Cinderhide enrage banners LEFT host-local — see review.
+
+### Tests
+- `net_test_session.gd` STAGE 4 (MP-10, the guest-fights stage): appended host-side asserts (h)-(k)
+  after the §5.2 floor-rotation test, plus guest probes `vis`/`plated`:
+  - (h) fix #1 — `boss.sprite.visible=false`→mirror hidden (bit3), then resurfaced. `host4: burrow
+    visibility round-tripped (state bit 3)`.
+  - (i) fix #3 — `boss.plate_dr=PLATE_DR`→mirror `plate_dr>0` (bit4), then dropped. `host4: plate wall
+    round-tripped (state bit 4)`.
+  - (j) fix #6 — `shell.ghost=true` ⇒ `_floor_target()` returns the sticky host, never the ghost.
+    `host4: floor rotation skips a ghost non-target (fix #6)`.
+  - (k) fix #4 — a planted frost_aura mob targets the SHELL; the host's NON-target player still gets
+    `chill_time>0` from the radius sweep. `host4: frost_aura chilled a non-target player (fix #4)`.
+  Fixes #2/#5/#7/#8 verified by code review (over-the-wire tell/DoT-crit/callout asserts would need a
+  second geared guest + cross-process readbacks — not cheap; the logic mirrors #4's proven pattern).
+- Stage 4 flaked ONCE on the pre-existing `snipe` XP probe (`gone:true, xp:0` — kill landed, XP fan
+  raced the 8 s poll), unrelated to these changes; green on immediate rerun.
+
+### FOR OWNER REVIEW (design calls)
+- **C9 (DOCUMENTED, not changed) — boss melee auto + charge CONTACT threaten only the sticky target.**
+  Every `if dist < _reach(): player.take_damage` and the charge-contact block (e.g. boss.gd:~230,~276,
+  and the per-boss charge blocks) hit only `_get_target()`, so a NON-target melee player face-tanks boss
+  basics/charge for FREE. This is a floor-vs-ceiling BALANCE question, not a sync bug — consistent
+  host/guest. CONSIDER, at party>1, sweeping the charge-contact + melee-auto to all players within
+  `_reach()` (the floor-rotation doctrine already does this for rains/lanes; melee contact is the one
+  imposed-damage vector still single-target). Owner's call.
+- **C10 (DOCUMENTED, by design) — Veyx `_arc` rod-shelter reads only the sticky target** (boss.gd, the
+  `_arc` shelter check). Single-target-aware by construction (the rod shelters the aimed player); leave.
+- **#2 approach — dedicated tell EVENT, not flags bits.** Chose a compact `host_enemy_tell(net_id,color,
+  dur)` RPC over folding 4 tint-windows into the flags byte: 4 windows + "none" need >2 bits, and mobs
+  (tells) vs bosses (hidden/plated) would have had to overload the same bits. The event decouples it and
+  carries the exact color/duration. Held-once-then-revert matches the host (hit-flash stomps it early on
+  both sides) — a guest could still eat one un-tinted frame if a hit lands the same frame the tell fires;
+  acceptable (the mechanic still forwards).
+- **#7 approach — sync crit onto the shell, not per-DoT riders.** Cleaner than threading crit/crit_dmg
+  through every `_mirror_status` DoT RPC + storing them on each DoT: one place, all the guest's DoTs
+  inherit real crit. Safe because the shell is offensive-inert host-side. If a future change makes the
+  shell resolve its OWN outgoing damage host-side, revisit (crit would then double-count).
+- **#8 approach — priority callouts + verdict wash only; enrage tint deferred.** Per-boss enrage
+  `sprite.modulate` colors can't ride one flag bit, and the tint is EPHEMERAL on the host too (the next
+  hit-flash tween reverts it to `base_mod`), so it's low-value to sync. `play_action("enrage")` already
+  mirrors the enrage ANIMATION for most bosses. Remaining non-Ordo/Vargoth/Cinderhide enrage BANNERS
+  follow the same one-line swap (`spawn_text`→`spawn_text_all`) if the owner wants full parity.

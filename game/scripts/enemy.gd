@@ -59,6 +59,11 @@ var net_id := 0            # session-unique id the HOST stamps at spawn (0 = una
 var net_mirror := false    # guest-side presentation clone: no AI, no damage, no collision
 var net_target := Vector2.ZERO  # last snapshot position (mirrors chase it)
 var net_walk := false      # last snapshot "moving" flag (drives the walk/idle strip)
+# MP-10 combat tell (Wave-2 co-op fix #2): the host broadcasts each trait-window
+# tint (bite windup, pounce crouch, guard, reflect) so a guest reads the same
+# warning its sim aims — a mirror shows the tint for the window, then reverts to
+# base_mod exactly like the host (a hit-flash may stomp it early on BOTH sides).
+var _net_tell_t := 0.0     # mirror: seconds of tell tint left (drives the revert)
 # MP-10: the striking PLAYER for the current take_damage call — hit_enemy
 # sets it before every player hit, and the host's hit RPC sets the guest's
 # shell. Captured-and-cleared at the top of take_damage; solo it always
@@ -402,6 +407,16 @@ func play_action(action: String) -> void:
 	_apply_strip(info)
 
 
+## Wave-2 co-op fix #2: broadcast a combat-tell tint to every guest mirror.
+## The host already set sprite.modulate itself at the call site (bite windup,
+## pounce crouch, guard, reflect); this fans the SAME color+window so a guest
+## sees the warning before firing into a counter/reflect. No-op solo / on a
+## mirror — wired exactly like play_action, so the tell rides for free.
+func _net_tell(color: Color, dur: float) -> void:
+	if net_id > 0 and not net_mirror and game != null and game.net_host():
+		game.net_session().host_enemy_tell(net_id, color, dur)
+
+
 ## Return from a one-shot ability strip to idle (the walk swap re-evaluates
 ## next frame). Frame filtering keeps it out of the physics-flush path.
 func _end_action() -> void:
@@ -615,6 +630,13 @@ func _net_mirror_tick(delta: float) -> void:
 		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
 	else:
 		sprite.position.y = 0.0
+	# Wave-2 fix #2: hold a combat-tell tint for its window, then revert to
+	# base_mod ONCE (no per-frame re-assert — matches the host, where the tint
+	# is set once and a hit-flash may stomp it early). net_apply_tell set it.
+	if _net_tell_t > 0.0:
+		_net_tell_t = maxf(0.0, _net_tell_t - delta)
+		if _net_tell_t <= 0.0 and sprite != null:
+			sprite.modulate = base_mod
 	# MP-10: tick the status BOOKKEEPING timers so the guest's own hit
 	# math (marked_crit, Killing Frost, Serpent's Due, crush/rupture,
 	# Enfeeble stacks) reads them exactly like solo. Pure timers — no DoT
@@ -638,18 +660,43 @@ func _net_mirror_tick(delta: float) -> void:
 
 ## MP-09: apply one host state sample to this MIRROR — position target,
 ## facing, walk flag, the hp fraction that drives the overhead bar, and
-## (MP-10) the untargetable phase flag that gates guest auto-aim.
-func net_apply_state(pos: Vector2, flip: bool, walk: bool, hp_frac: float, untarget := false) -> void:
+## (MP-10) the untargetable phase flag that gates guest auto-aim. Wave-2
+## co-op fixes: `hidden` mirrors a burrowed/submerged boss going invisible
+## (fix #1); `plated` carries the cinderhide plate wall so the guest's
+## optimistic hit math matches the host's plated cut (fix #3).
+func net_apply_state(pos: Vector2, flip: bool, walk: bool, hp_frac: float, untarget := false,
+		hidden := false, plated := false) -> void:
 	net_target = pos
 	net_walk = walk
 	untargetable = untarget
 	if sprite != null:
 		sprite.flip_h = flip
+		# Wave-2 fix #1: a burrowed/submerged boss is hidden host-side; without
+		# this the mirror stands visible in the open while the sim is underground.
+		sprite.visible = not hidden
+	net_set_plated(plated)  # Wave-2 fix #3: Boss overrides to raise/drop plate_dr
 	hp = max_hp * clampf(hp_frac, 0.0, 1.0)
 	if hp < max_hp and not dying and hp_bar_bg != null:
 		hp_bar_bg.visible = true
 		hp_bar_fg.visible = true
 		_update_hp_fill()
+
+
+## Wave-2 fix #2: apply a combat-tell tint to this MIRROR for `dur` seconds
+## (the host set the same tint at its call site). Held once, reverted to
+## base_mod on expiry in _net_mirror_tick — matching how the host holds it
+## (a hit-flash tween may stomp it early on either side; that's consistent).
+func net_apply_tell(color: Color, dur: float) -> void:
+	_net_tell_t = maxf(_net_tell_t, dur)
+	if sprite != null:
+		sprite.modulate = color
+
+
+## Wave-2 fix #3: the state packet's plated bit. Base enemies never plate
+## (no-op); Boss overrides to set plate_dr to its own PLATE_DR wall so a
+## guest mirror's optimistic damage math reads the plated cut like the host.
+func net_set_plated(_on: bool) -> void:
+	pass
 
 
 ## MP-09: the host said this mirror's original died — play the same die
@@ -795,12 +842,14 @@ func _think(delta: float) -> Vector2:
 			pounce_windup = Balance.MOB_LUNGE_WINDUP
 			pounce_dir = to_player.normalized()
 			sprite.modulate = Color(1.8, 0.7, 2.0)       # purple crouch = incoming pounce
+			_net_tell(Color(1.8, 0.7, 2.0), Balance.MOB_LUNGE_WINDUP + Balance.MOB_LUNGE_TIME)
 			return Vector2.ZERO
 		if dist < 42.0:
 			if attack_cd <= 0.0:
 				attack_cd = 0.92
 				windup = 0.27
 				sprite.modulate = Color(2.0, 1.7, 0.5)   # "about to bite!" flash
+				_net_tell(Color(2.0, 1.7, 0.5), 0.27)    # same window the host holds
 			return Vector2.ZERO
 		return to_player.normalized() * spd
 
@@ -912,13 +961,16 @@ func _tick_traits(delta: float) -> void:
 				sprite.modulate = base_mod
 		elif reflect_cd <= 0.0:
 			_raise_reflect()
-	# --- frost aura: chills the prey while near (ch5) ---
-	# MP: v1 chills the resolved target only; phase 2 should sweep ALL
-	# players in radius (an aura is positional, not single-target).
-	var aura_prey: Player = _get_target() if traits.has("frost_aura") else null
-	if aura_prey != null and not aura_prey.dead:
-		if global_position.distance_to(aura_prey.global_position) < Balance.MOB_AURA_RADIUS:
-			aura_prey.apply_chill(Balance.MOB_FROST_SLOW)
+	# --- frost aura: chills EVERY player in radius (ch5) ---
+	# Wave-2 co-op fix #4: an aura is positional, not single-target — sweep all
+	# live players within MOB_AURA_RADIUS (apply_chill forwards to a remote owner
+	# on its own, so no net plumbing). Solo = one player = bit-identical.
+	if traits.has("frost_aura"):
+		for pl in game.players:
+			if pl == null or not is_instance_valid(pl) or pl.dead:
+				continue
+			if global_position.distance_to(pl.global_position) < Balance.MOB_AURA_RADIUS:
+				pl.apply_chill(Balance.MOB_FROST_SLOW)
 	# --- sower: drip a burning trail as it moves (ch4) ---
 	if traits.has("sower") and velocity.length() > 30.0:
 		sow_t -= delta
@@ -1030,13 +1082,18 @@ func _raise_guard() -> void:
 	counter_t = Balance.MOB_COUNTER_TIME
 	counter_cd = Balance.MOB_COUNTER_CD
 	sprite.modulate = Color(0.7, 0.9, 1.6)  # blue guard glow
-	game.spawn_text(global_position + Vector2(0, -60), "GUARD", Color(0.7, 0.85, 1.0))
+	_net_tell(Color(0.7, 0.9, 1.6), Balance.MOB_COUNTER_TIME)  # fix #2: the counter tell
+	# The warn text is a punish tell — a guest firing into a raised guard gets
+	# staggered, so it must read it too (spawn_text_all no-ops solo).
+	game.spawn_text_all(global_position + Vector2(0, -60), "GUARD", Color(0.7, 0.85, 1.0))
 
 func _raise_reflect() -> void:
 	reflect_t = Balance.MOB_REFLECT_TIME
 	reflect_cd = Balance.MOB_REFLECT_CD
 	sprite.modulate = Color(1.5, 1.2, 0.6)  # amber forge-shield
-	game.spawn_text(global_position + Vector2(0, -60), "WARDED", Color(1.0, 0.85, 0.4))
+	_net_tell(Color(1.5, 1.2, 0.6), Balance.MOB_REFLECT_TIME)  # fix #2: the reflect tell
+	# The warn text is a punish tell (a guest's shot bounces back) — fan it.
+	game.spawn_text_all(global_position + Vector2(0, -60), "WARDED", Color(1.0, 0.85, 0.4))
 	game.burst(global_position, Color(1.0, 0.8, 0.4), 12)
 
 func _blink_to(player: Player) -> void:
@@ -1095,11 +1152,13 @@ func _tick_tether() -> void:
 		tether_line.z_index = 2
 		add_child(tether_line)
 	tether_line.points = [Vector2.ZERO, to_local(tether_partner.global_position)]
-	# The bond BURNS the player who stands across it (segment proximity).
-	# MP: v1 checks the resolved target only; phase 2 should test EVERY
-	# player against the segment (the bond is a wall, not a heat-seeker).
-	var pl: Player = _get_target()
-	if pl and not pl.dead:
+	# The bond BURNS every player who stands across it (segment proximity).
+	# Wave-2 co-op fix #5: the bond is a WALL, not a heat-seeker — test EVERY
+	# live player against the burning segment (take_damage already forwards to a
+	# remote owner). Solo = one player = bit-identical.
+	for pl in game.players:
+		if pl == null or not is_instance_valid(pl) or pl.dead:
+			continue
 		var d := _dist_to_segment(pl.global_position, global_position, tether_partner.global_position)
 		if d < 34.0:
 			pl.take_damage(dmg * 0.5, dmg_type, self)

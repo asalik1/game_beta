@@ -781,6 +781,78 @@ func _run_host4() -> void:
 		return _fail("MP-15: alternate floor coin never split sticky/non-target")
 	print("[net_session] host4: floor rotation picks the non-target; alternate coin splits (§5.2)")
 
+
+	# (h) Wave-2 fix #1: a burrowed/submerged boss goes INVISIBLE on the mirror
+	# (state bit 3) instead of standing in the open, unreadable.
+	boss.sprite.visible = false
+	r = await _watch(gid, "vis", {"id": boss.net_id, "want": false})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("mirror never hid the burrowed boss: %s" % str(r))
+	boss.sprite.visible = true
+	r = await _watch(gid, "vis", {"id": boss.net_id, "want": true})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("mirror never resurfaced the boss: %s" % str(r))
+	print("[net_session] host4: burrow visibility round-tripped (state bit 3)")
+
+	# (i) Wave-2 fix #3: the plate wall (state bit 4) reaches the mirror so its
+	# optimistic hit math matches the host plated cut (no execute/refund misfire).
+	boss.plate_dr = Boss.PLATE_DR
+	r = await _watch(gid, "plated", {"id": boss.net_id, "want": true})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("mirror never raised the plate wall: %s" % str(r))
+	boss.plate_dr = 0.0
+	r = await _watch(gid, "plated", {"id": boss.net_id, "want": false})
+	if r.is_empty():
+		return
+	if not bool(r.get("ok", false)):
+		return _fail("mirror never dropped the plate wall: %s" % str(r))
+	print("[net_session] host4: plate wall round-tripped (state bit 4)")
+
+	# (j) Wave-2 fix #6: a GHOST non-target is skipped by the floor rotation
+	# (boss.target is still pinned to the host from (g), so sticky is the host).
+	shell.ghost = true
+	var ghost_skipped := true
+	for k in 4:
+		if boss._floor_target() != game.local_player:
+			ghost_skipped = false
+	shell.ghost = false
+	if not ghost_skipped:
+		return _fail("fix #6: _floor_target aimed at a ghost non-target")
+	print("[net_session] host4: floor rotation skips a ghost non-target (fix #6)")
+
+	# (k) Wave-2 fix #4: a frost_aura sweeps EVERY player in radius, not just the
+	# sticky target. Plant an aura mob whose target is the SHELL; the host player
+	# (the non-target) stands in radius, so a chill on it can only be the sweep.
+	game.local_player.chill_time = 0.0
+	var apos: Vector2 = game.clamp_to_zone(
+		game.local_player.global_position + Vector2(100.0, 0.0), game.local_player.global_position)
+	var fm := Enemy.make(game, "wolf", apos, 3)
+	fm.dmg = 0.0
+	fm.speed = 0.0             # planted so it stays in the host player radius
+	fm.xp_value = 0
+	fm.gold_value = 0
+	fm.traits = {"frost_aura": true}
+	fm.force_aggro = true
+	game.add_enemy(fm)
+	await _frames(2)
+	fm.target = shell          # the shell is the sticky target...
+	fm.retarget_t = 9.9e9      # ...so the host player is definitively the non-target
+	if not await _wait_for(func() -> bool:
+			return game.local_player.chill_time > 0.0, 6.0, "host non-target chilled by the aura sweep"):
+		if is_instance_valid(fm):
+			fm.take_damage(9.9e9)
+		return
+	print("[net_session] host4: frost_aura chilled a non-target player (fix #4)")
+	if is_instance_valid(fm) and not fm.dying:
+		fm.take_damage(9.9e9)  # clear the fangs before quit hygiene
+	await _frames(2)
+
 	# Quit hygiene (stage-3 pattern): silence the fight, drain tweens.
 	boss.take_damage(9.9e9)
 	for w in wolves:
@@ -2201,6 +2273,22 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 				return {"ok": false, "why": "no mirror"}
 			return {"ok": e.untargetable == bool(args.get("want", true)),
 				"untargetable": e.untargetable}
+		"vis":
+			# Wave-2 fix #1: the hidden bit rides state bit 3 - a burrowed boss
+			# goes invisible on the mirror and comes back.
+			var ev: Enemy = sess.net_enemies.get(int(args.get("id", 0)))
+			if ev == null or not is_instance_valid(ev) or ev.sprite == null:
+				return {"ok": false, "why": "no mirror"}
+			return {"ok": ev.sprite.visible == bool(args.get("want", true)),
+				"visible": ev.sprite.visible}
+		"plated":
+			# Wave-2 fix #3: the plate bit rides state bit 4 - the mirror plate_dr
+			# matches the host plated cut (>0 up, 0 down).
+			var ep: Enemy = sess.net_enemies.get(int(args.get("id", 0)))
+			if ep == null or not is_instance_valid(ep):
+				return {"ok": false, "why": "no mirror"}
+			var up: bool = ep.plate_dr > 0.0
+			return {"ok": up == bool(args.get("want", true)), "plate_dr": ep.plate_dr}
 		# ---- stage 5 (MP-11) ----
 		"coins":
 			# Our OWN pile spawned locally from the personal kill event.

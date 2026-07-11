@@ -448,6 +448,13 @@ func _spawn_remote(pid: int, block: Dictionary) -> void:
 	p.max_mp = maxf(0.0, float(block.get("max_mp", p.max_mp)))
 	p.hp = clampf(float(block.get("hp", p.max_hp)), 1.0, p.max_hp)
 	p.mp = clampf(float(block.get("mp", p.max_mp)), 0.0, p.max_mp)
+	# Wave-2 co-op fix #7: overwrite the class-default crit with the owner's real
+	# values so a DoT this guest applies (host re-sources it to this shell) ticks
+	# its crit off the RIGHT sheet. Offensive-only — the shell never resolves its
+	# own attacks or defense host-side (incoming hits forward to the owner), so
+	# nothing else reads these. Absent (dev {cls,level} block) keeps the default.
+	p.crit = maxf(0.0, float(block.get("crit", p.crit)))
+	p.crit_dmg = maxf(1.0, float(block.get("crit_dmg", p.crit_dmg)))
 	# The owner's display name rides as metadata until name labels land
 	# (§5.6, phase 3) — nothing renders it yet, everything can reach it.
 	p.set_meta("net_name", String(block.get("name", "")))
@@ -462,9 +469,13 @@ func _char_block() -> Dictionary:
 	if game != null and game.local_player != null \
 			and is_instance_valid(game.local_player):
 		var p: Node = game.local_player
+		# Wave-2 co-op fix #7: crit/crit_dmg ride so the host-side SHELL DoT
+		# source ticks off the owner's REAL crit, not a class-default shell (a
+		# crit-stacked burn/bleed build otherwise silently underperforms in co-op).
 		return {"cls": String(p.cls), "level": int(p.level), "name": nm,
 			"hp": float(p.hp), "max_hp": float(p.max_hp),
-			"mp": float(p.mp), "max_mp": float(p.max_mp)}
+			"mp": float(p.mp), "max_mp": float(p.max_mp),
+			"crit": float(p.crit), "crit_dmg": float(p.crit_dmg)}
 	return {"cls": String(local_char.get("cls", "warrior")),
 		"level": int(local_char.get("level", 1)), "name": nm}
 
@@ -694,10 +705,13 @@ func _spawn_block(e: Enemy) -> Dictionary:
 	# "gold" rides along (MP-10): boss summons / spawner sprouts zero it
 	# host-side AFTER make(), and the guest's Hunger-execute math must see
 	# the same "this prey pays nothing" the host does.
+	# Wave-2 fix #3: "plated" so a guest joining DURING a cinderhide plated phase
+	# builds its mirror with the plate wall already up (the 20 Hz stream keeps it
+	# in sync thereafter; this just closes the spawn-to-first-packet gap).
 	return {"id": e.net_id, "kind": e.kind, "level": e.level,
 		"zone": e.zone_idx, "pos": e.global_position, "elite": e.elite,
 		"boss": e is Boss, "hp": clampf(e.hp / maxf(e.max_hp, 0.001), 0.0, 1.0),
-		"gold": e.gold_value}
+		"gold": e.gold_value, "plated": e.plate_dr > 0.0}
 
 
 ## HOST: a registered enemy died a REAL death (Enemy.die) — guests play
@@ -720,6 +734,13 @@ func host_enemy_elite(id: int) -> void:
 	_rpc_enemy_elite.rpc(id)
 
 
+## HOST: a combat-tell tint fired (bite windup, pounce, guard, reflect —
+## enemy.gd _net_tell) — mirrors tint their body for the window so a guest
+## reads the same warning the host's sim shows (Wave-2 co-op fix #2).
+func host_enemy_tell(id: int, color: Color, dur: float) -> void:
+	_rpc_enemy_tell.rpc(id, color, dur)
+
+
 ## HOST: a registered enemy left the tree without dying (room reset,
 ## despawn) — guests free the mirror, no juice.
 func _on_host_enemy_gone(id: int) -> void:
@@ -738,9 +759,10 @@ func _on_host_enemy_gone(id: int) -> void:
 ## (active_rooms, plus zone -1 homeless spawns — exactly the set whose
 ## _physics_process runs, so mirrors freeze on the same rule). Layout
 ## per enemy: net_id u32 | pos x f32 | pos y f32 | flags u8 (bit0 flip,
-## bit1 walking, bit2 untargetable — MP-10: burrow/submerge/blink phases
-## must gate guest auto-aim too) | hp u8 (fraction x255) = 14 bytes; a
-## 40-enemy worst case is ~560 B (§4.1 budget).
+## bit1 walking, bit2 untargetable — burrow/submerge/blink phases gate
+## guest auto-aim; bit3 hidden — Wave-2 fix #1 sprite invisible; bit4
+## plated — Wave-2 fix #3 cinderhide plate wall up; bits 5-7 free) | hp u8
+## (fraction x255) = 14 bytes; a 40-enemy worst case is ~560 B (§4.1 budget).
 func _stream_enemy_state() -> void:
 	if net_enemies.is_empty():
 		return
@@ -766,6 +788,14 @@ func _stream_enemy_state() -> void:
 			flags |= 2
 		if e.untargetable:
 			flags |= 4
+		# Wave-2 fix #1: a burrowed/submerged boss goes invisible host-side —
+		# carry it so the mirror doesn't stand visible in the open.
+		if e.sprite != null and not e.sprite.visible:
+			flags |= 8
+		# Wave-2 fix #3: the cinderhide plate wall — the mirror's think never
+		# raises plate_dr, so ship the bit and let net_set_plated match the cut.
+		if e.plate_dr > 0.0:
+			flags |= 16
 		buf.put_u8(flags)
 		buf.put_u8(int(clampf(e.hp / maxf(e.max_hp, 0.001), 0.0, 1.0) * 255.0))
 		n += 1
@@ -815,7 +845,8 @@ func _rpc_spawn_enemy(block: Dictionary) -> void:
 	e.collision_mask = 0
 	if bool(block.get("elite", false)):
 		e.promote_elite()
-	e.net_apply_state(pos, false, false, clampf(float(block.get("hp", 1.0)), 0.0, 1.0))
+	e.net_apply_state(pos, false, false, clampf(float(block.get("hp", 1.0)), 0.0, 1.0),
+		false, false, bool(block.get("plated", false)))
 	net_enemies[id] = e
 	if e is Boss:
 		# The per-frame boss bar (game.gd) reads this roster — a live
@@ -844,7 +875,7 @@ func _rpc_enemy_state(data: PackedByteArray) -> void:
 		if e == null or not is_instance_valid(e) or e.dying:
 			continue
 		e.net_apply_state(Vector2(px, py), (flags & 1) != 0, (flags & 2) != 0,
-			frac, (flags & 4) != 0)
+			frac, (flags & 4) != 0, (flags & 8) != 0, (flags & 16) != 0)
 
 
 ## GUEST: the original died — die juice on the mirror, then free.
@@ -893,6 +924,17 @@ func _rpc_enemy_elite(id: int) -> void:
 		e.promote_elite()
 
 
+## GUEST: a combat-tell tint fired on the host's enemy — apply it to the
+## mirror for the window (Wave-2 co-op fix #2).
+@rpc("authority", "call_remote", "reliable")
+func _rpc_enemy_tell(id: int, color: Color, dur: float) -> void:
+	if game == null or multiplayer.is_server():
+		return
+	var e: Enemy = net_enemies.get(id)
+	if e != null and is_instance_valid(e) and not e.dying:
+		e.net_apply_tell(color, dur)
+
+
 ## GUEST: a boss mirror is gone — stop drawing the bar once no live boss
 ## remains (the HOST runs the real kill flow with its banners; this is
 ## presentation cleanup only). Deferred so _live_bosses sees the death.
@@ -936,6 +978,43 @@ func _rpc_telegraph_safe(centers: Array, radius: float, delay: float, opts: Dict
 	var o: Dictionary = opts.duplicate()
 	o["net_visual"] = true
 	game.telegraph_safe(centers, radius, delay, 0.0, o)
+
+
+# ------------------------------------ boss callouts + verdict wash (Wave-2 #8) ---
+# The mechanical dodge info already mirrors (telegraph tiles); these carry the
+# READABILITY aids a guest's silent boss mirror never learned — standalone
+# spawn_text banners (enrage / intercept / verdict) and Ordo's half-wash glow
+# that paints which half is guilty. Host-only fans; no-ops offline.
+
+## HOST -> GUESTS: a boss/world callout banner at a world position. Fanned by
+## game.spawn_text_all (the host renders its own copy inline). Guests render the
+## SAME text at the same world point — their boss mirror sits there.
+func host_spawn_text(pos: Vector2, text: String, color: Color, hold: float) -> void:
+	_rpc_spawn_text.rpc(pos, text, color, hold)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_spawn_text(pos: Vector2, text: String, color: Color, hold: float) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	game.spawn_text(pos, text, color, hold)
+
+
+## HOST -> GUESTS: Ordo's verdict half-wash (boss.gd _half_wash) — the guilty
+## half glows for its fuse. The geometry is seed-pure (room_rect off the mirror's
+## zone), so the guest re-runs _half_wash on its own boss mirror to paint the
+## same half. Keyed by net_id; skipped if the mirror isn't up yet.
+func host_boss_wash(id: int, west: bool, dur: float, muted: bool) -> void:
+	_rpc_boss_wash.rpc(id, west, dur, muted)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_boss_wash(id: int, west: bool, dur: float, muted: bool) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	var b := net_enemies.get(id) as Boss
+	if b != null and is_instance_valid(b) and not b.dying:
+		b._half_wash(b._arena_rect(), west, dur, muted)
 
 
 # --------------------------------------- combat over the wire (MP-10) ---

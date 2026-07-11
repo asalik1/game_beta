@@ -358,8 +358,12 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# Serpent's Due (archer Venom talent): poisoned prey takes extra damage.
 	if poison_dmg > 0.0 and e.burn_time > 0.0:
 		dmg *= 1.0 + poison_dmg
-	# Coup de Grâce (assassin talent): finish wounded prey faster.
-	if execute_dmg > 0.0 and e.max_hp > 0.0 and e.hp < e.max_hp * 0.40:
+	# Coup de Grâce (assassin talent): finish wounded prey faster. Never bosses:
+	# their execute windows are design-owned (Hunger below already excludes them),
+	# and a plated cinderhide mirror can read <40% optimistically on a guest —
+	# without this guard the execute would fire on a boss it never should (Wave-2
+	# co-op fix #3a; the plate_dr mirror sync also stops the false <40% read).
+	if execute_dmg > 0.0 and not (e is Boss) and e.max_hp > 0.0 and e.hp < e.max_hp * 0.40:
 		dmg *= 1.0 + execute_dmg
 	# Hunger (tempted resonance lean): the shard savors the finish — wounded
 	# MOBS take extra. Never bosses (their execute windows stay design-owned),

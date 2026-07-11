@@ -2314,6 +2314,17 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 	tween.tween_callback(l.queue_free)
 
 
+## Wave-2 co-op fix #8: a floating banner shown on EVERY machine, not just the
+## caller's. Boss readability callouts — enrage, intercept orders, verdicts,
+## warn tells — are host-simulated on a guest, so a plain spawn_text stays home;
+## this renders locally AND (when hosting) fans the same text to every guest at
+## the same world point. Solo/offline is exactly spawn_text (net_host() false).
+func spawn_text_all(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
+	spawn_text(pos, text, color, hold)
+	if net_host():
+		net_session().host_spawn_text(pos, text, color, hold)
+
+
 ## MP-14 (§5.6): an ALLY's hit number — deliberately smaller and dimmer than
 ## your own (spawn_text), so a friend fighting beside you reads as background
 ## chatter and your own big numbers stay legible. Fanned by the host to the

@@ -55,6 +55,15 @@ func _reach(base: float) -> float:
 	return base + art_scale * 4.2
 
 
+## Wave-2 co-op fix #3: the state packet's plated bit lands here on a MIRROR.
+## The mirror's think never runs, so its plate_dr would stay 0 through a whole
+## cinderhide plated phase — the guest's optimistic hit math (_net_mirror_hit)
+## would then show ~5.5x the real damage and crater the optimistic HP (mis-
+## firing executes / dash refunds). Match the host's wall so the read is honest.
+func net_set_plated(on: bool) -> void:
+	plate_dr = PLATE_DR if on else 0.0
+
+
 # ------------------------------------------ §5.2 floor rotation (MP-15) ---
 # In a party the SIGNATURE mechanic keeps hunting the sticky target
 # (_get_target), but FLOOR damage — the non-opt-in pressure: rains, aimed
@@ -89,6 +98,12 @@ func _floor_target(alternate := false) -> Player:
 			continue
 		var down: Variant = p.get("downed")
 		if (down is bool and down) or (down is float and down > 0.0):
+			continue
+		# Wave-2 co-op fix #6: a GHOST is immaterial (dead==false) — skip it like
+		# nearest_player does, or floor rotations waste beats aiming at a body
+		# that can't be hit. Read defensively (ghost lands with MP-12).
+		var gh: Variant = p.get("ghost")
+		if gh is bool and gh:
 			continue
 		others.append(p)
 	if others.is_empty():
@@ -355,7 +370,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		speed *= 1.5
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "VARGOTH ENRAGES!", Color(1, 0.3, 0.3))
+		game.spawn_text_all(global_position + Vector2(0, -90), "VARGOTH ENRAGES!", Color(1, 0.3, 0.3))
 
 	# Signature: BLADE STORM — greatswords fall from the sky onto marked
 	# ground, chasing the player's position. Dodge or take heavy damage.
@@ -1350,7 +1365,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		sprite.modulate = Color(1.7, 0.6, 0.4)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "CINDERHIDE ENRAGES!", Color(1.0, 0.4, 0.2))
+		game.spawn_text_all(global_position + Vector2(0, -90), "CINDERHIDE ENRAGES!", Color(1.0, 0.4, 0.2))
 
 	if charging:
 		charge_time -= delta
@@ -1512,7 +1527,9 @@ func _spawn_sons() -> void:
 	# to every player's screen; anchoring to the target is the v1 seam.)
 	var callout_tgt: Player = _get_target()
 	if is_instance_valid(callout_tgt):
-		game.spawn_text(callout_tgt.global_position + Vector2(0, -84),
+		# Wave-2 co-op fix #8: the intercept ORDER is a readability aid a guest's
+		# silent mirror never showed — fan it to the whole party.
+		game.spawn_text_all(callout_tgt.global_position + Vector2(0, -84),
 			"SONS OF THE JUDGE — INTERCEPT THEM!", VERDICT)
 	var rect := _arena_rect()
 	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
@@ -1546,14 +1563,18 @@ func _verdict() -> void:
 		var call := "GUILTY: THE %s" % ("WEST" if west else "EAST")
 		if paired:
 			call += " — THEN THE %s" % ("EAST" if west else "WEST")
-		game.spawn_text(callout_tgt.global_position + Vector2(0, -84), call, VERDICT)
+		# Wave-2 co-op fix #8: fan the verdict — the guilty-half sentence is the
+		# tell that pairs with the washed floor below.
+		game.spawn_text_all(callout_tgt.global_position + Vector2(0, -84), call, VERDICT)
 	_judge_half(rect, west, 2.4, false)
 	_half_wash(rect, west, 2.4, false)
+	_net_wash(west, 2.4, false)  # fix #8: paint the guilty-half glow on guests too
 	if paired:
 		# The second sentence smolders DARKER until the first lands —
 		# the scorched first half is the shelter; step into the ashes.
 		_judge_half(rect, not west, 2.9, true)
 		_half_wash(rect, not west, 2.9, true)
+		_net_wash(not west, 2.9, true)
 
 
 ## Tile telegraphs across the judged half — the other half is the shelter.
@@ -1597,6 +1618,14 @@ func _half_wash(rect: Rect2, west: bool, dur: float, muted: bool) -> void:
 		tw.tween_interval(maxf(0.0, dur - 0.55))
 	tw.tween_property(wash, "color:a", 0.0, 0.2)
 	tw.tween_callback(wash.queue_free)
+
+
+## Wave-2 co-op fix #8: fan the verdict half-wash to guests. The wash geometry
+## is seed-pure (room_rect off the arena), so a guest re-runs _half_wash on its
+## own boss mirror. No-op solo / on a mirror — wired like the telegraph mirror.
+func _net_wash(west: bool, dur: float, muted: bool) -> void:
+	if net_id > 0 and not net_mirror and game != null and game.net_host():
+		game.net_session().host_boss_wash(net_id, west, dur, muted)
 
 
 # ========================================================== Chapter 5 ---
