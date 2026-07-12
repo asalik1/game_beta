@@ -1890,7 +1890,9 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 			continue
 		var pid := p.get_instance_id()
 		var acc: float = float(still_map.get(pid, 0.0))
-		if p.velocity.length() < 45.0:
+		if p.frozen_time > 0.0:
+			acc = maxf(0.0, acc - delta * 2.0)
+		elif p.velocity.length() < 45.0:
 			acc += delta * aura_mult
 		else:
 			acc = maxf(0.0, acc - delta * 2.0)
