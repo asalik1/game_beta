@@ -1719,6 +1719,22 @@ func clamp_to_zone(pos: Vector2, anchor: Vector2) -> Vector2:
 		clampf(pos.y, r.position.y + 90.0, r.end.y - 90.0)
 	)
 
+
+## clamp_to_zone that also nudges the point OFF any wall/obstacle (physics mask
+## 1) so a spawned boss / add / teleport doesn't land inside terrain. Spirals
+## out through a few rings of angles; falls back to the clamped point if the
+## room is too dense to find open floor.
+func free_spawn_pos(pos: Vector2, anchor: Vector2) -> Vector2:
+	var p := clamp_to_zone(pos, anchor)
+	if not _pos_in_wall(p):
+		return p
+	for rad in [72.0, 130.0, 190.0, 260.0]:
+		for i in 8:
+			var cand := clamp_to_zone(pos + Vector2.from_angle(TAU * i / 8.0) * rad, anchor)
+			if not _pos_in_wall(cand):
+				return cand
+	return p
+
 func _vol_db(linear: float) -> float:
 	return -80.0 if linear <= 0.01 else linear_to_db(linear)
 

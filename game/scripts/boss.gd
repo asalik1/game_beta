@@ -1037,7 +1037,7 @@ func _varo_teleport(player: Player) -> void:
 	game.sfx("blink")
 	game.burst(global_position, INCENSE, 14)
 	var ang := randf() * TAU
-	var dest: Vector2 = game.clamp_to_zone(
+	var dest: Vector2 = game.free_spawn_pos(
 		player.global_position + Vector2.from_angle(ang) * randf_range(240.0, 380.0), home)
 	global_position = dest
 	game.burst(dest, INCENSE, 14)
@@ -1053,7 +1053,7 @@ func _spawn_censers() -> void:
 		play_action("summon")
 	var base_ang := randf() * TAU
 	for i in maxi(0, 3 - live):
-		var at: Vector2 = game.clamp_to_zone(home
+		var at: Vector2 = game.free_spawn_pos(home
 			+ Vector2.from_angle(base_ang + TAU * i / 3.0) * 260.0, home)
 		var cens := Enemy.make(game, "choir_censer", at, level)
 		cens.xp_value = 0
