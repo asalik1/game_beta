@@ -1011,12 +1011,37 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 		for i in 14:
 			_bolt(Vector2.RIGHT.rotated(TAU * i / 14.0) * 210.0, dmg * 0.7)
 
+	# Adjacent penitents still get struck (throne or standing).
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.2
 			player.take_damage(dmg * 1.2, dmg_type, self)
 		return Vector2.ZERO
+
+	# THRONE phase: the enthroned relic does NOT walk — his sitting idle is his
+	# only pose. Instead he RELOCATES by faith, teleporting near the penitent
+	# every few seconds so he stays in toll/rain/slam range without a stride.
+	# Once he STANDS (enraged) he rises off the throne and walks normally.
+	if not enraged:
+		if blink_cd <= 0.0:
+			blink_cd = Balance.VARO_TELEPORT_CD
+			_varo_teleport(player)
+		return Vector2.ZERO
 	return to_player.normalized() * speed
+
+
+## Saint Varo's throne relocation: vanish in incense, reappear a short way off
+## the penitent (kept OUT of melee so it repositions rather than ambushes),
+## clamped to the arena. Idle-only — no walk pose needed.
+func _varo_teleport(player: Player) -> void:
+	game.sfx("blink")
+	game.burst(global_position, INCENSE, 14)
+	var ang := randf() * TAU
+	var dest: Vector2 = game.clamp_to_zone(
+		player.global_position + Vector2.from_angle(ang) * randf_range(240.0, 380.0), home)
+	global_position = dest
+	game.burst(dest, INCENSE, 14)
+	game.spawn_text(dest + Vector2(0, -84), "The throne is elsewhere.", INCENSE)
 
 
 func _spawn_censers() -> void:

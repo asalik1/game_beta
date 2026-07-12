@@ -610,6 +610,10 @@ const MOB_BLINK_CD := 5.0
 const MOB_COUNTER_CD := 4.0
 const MOB_COUNTER_TIME := 1.4
 const MOB_COUNTER_STAGGER := 0.6
+# Saint Varo (ch3): the enthroned relic does not walk — in his THRONE phase he
+# RELOCATES by teleport every few seconds (sitting idle only). Faster once he
+# has stood (enraged) but there he walks, so this only gates the throne blink.
+const VARO_TELEPORT_CD := 4.5
 
 # --------------------------------------------------------------- elites ---
 # The miniboss variant (Enemy.promote_elite). Multipliers apply on top
