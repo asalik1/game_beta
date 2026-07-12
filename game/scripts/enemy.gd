@@ -389,7 +389,18 @@ func play_action(action: String) -> void:
 		game.net_session().host_enemy_action(net_id, action)
 	if _strip_idle.is_empty():
 		return
-	# Directional ability art first: lock facing now, play that direction.
+	# Try the exact action strip; a boss with only its ONE signature clip
+	# installed routes every named move (slam/toll/bolt/...) to "<key>_ability"
+	# so all ~90 call sites light up from a single generated gesture.
+	if _try_action_strip(action):
+		return
+	_try_action_strip("ability")
+
+
+## Point the one-shot strip at <key>_<action> if that art exists. Prefers
+## the 8-direction set (facing locked at trigger); falls back to a flat
+## strip (L/R flip). Returns true if a strip was found and started.
+func _try_action_strip(action: String) -> bool:
 	var dset := Art.dir_set("%s_%s" % [_sprite_key, action])
 	if not dset.is_empty():
 		_action_dir = dset
@@ -398,14 +409,15 @@ func play_action(action: String) -> void:
 		_action_t = 0.0
 		_apply_strip(_strip_action)
 		sprite.flip_h = false
-		return
+		return true
 	var info := Art.action_info(_sprite_key, action)
 	if info.is_empty():
-		return
+		return false
 	_strip_action = info
 	_action_dir = {}
 	_action_t = 0.0
 	_apply_strip(info)
+	return true
 
 
 ## Re-point this enemy at a DIFFERENT sprite key mid-fight (Saint Varo's
