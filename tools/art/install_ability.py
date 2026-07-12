@@ -84,8 +84,12 @@ def main():
     char_id = sys.argv[2]
     count = int(sys.argv[3])
     dirmap = {}
+    action = "ability"  # strip suffix; pass act=<name> to install e.g. <key>_stab
     for a in sys.argv[4:]:
         d, aid = a.split("=", 1)
+        if d == "act":
+            action = aid
+            continue
         dirmap[d] = aid
     dname = {"s": "south", "se": "south-east", "e": "east", "ne": "north-east",
              "n": "north", "nw": "north-west", "w": "west", "sw": "south-west"}
@@ -129,11 +133,11 @@ def main():
     tallest = max(b[3] - b[1] for b in bxs.values())
     cell = max(ref, widest + MARGIN * 2, tallest + MARGIN * 2)
     for d in DIR8:
-        write_strip("%s_ability" % key, d, abil.get(d) or abil["s"], cell, bxs[d])
-    Image.open(os.path.join(SPR, "%s_ability_s.png" % key)).save(
-        os.path.join(SPR, "%s_ability.png" % key))
-    print("%s ability installed: dirs=%s cell=%d (idle ref=%d%s)"
-          % (key, "".join(sorted(abil)), cell, ref,
+        write_strip("%s_%s" % (key, action), d, abil.get(d) or abil["s"], cell, bxs[d])
+    Image.open(os.path.join(SPR, "%s_%s_s.png" % (key, action))).save(
+        os.path.join(SPR, "%s_%s.png" % (key, action)))
+    print("%s %s installed: dirs=%s cell=%d (idle ref=%d%s)"
+          % (key, action, "".join(sorted(abil)), cell, ref,
              ", GROWN" if cell > ref else ""))
 
 

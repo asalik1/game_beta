@@ -2311,7 +2311,7 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 			charging = false
 		if dist < _reach(76.0) and attack_cd <= 0.0:
 			attack_cd = 0.7
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
+			play_action("stab")  # Huntress charge lands her directional dagger stab (kaethra_stab; ability fallback if absent)
 			player.take_damage(dmg * 1.3, dmg_type, self)
 		return charge_dir * 620.0
 	if special_cd <= 0.0 and dist < 520.0 and not telegraphing:
@@ -2339,7 +2339,7 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.85
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
+			play_action("stab")  # Huntress melee lands her directional dagger stab (kaethra_stab; ability fallback if absent)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed

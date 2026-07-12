@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://8trj1jlyx7np"
-path="res://.godot/imported/hrolgar_walk_n.png-01bf0fc289a7b064ddf69e327fbd34e1.ctex"
+uid="uid://dd6bk727ivoc2"
+path="res://.godot/imported/kaethra_stab.png-ddd5b30820aef9a688f5dd4fb3a41495.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/hrolgar_walk_n.png"
-dest_files=["res://.godot/imported/hrolgar_walk_n.png-01bf0fc289a7b064ddf69e327fbd34e1.ctex"]
+source_file="res://assets/sprites/kaethra_stab.png"
+dest_files=["res://.godot/imported/kaethra_stab.png-ddd5b30820aef9a688f5dd4fb3a41495.ctex"]
 
 [params]
 

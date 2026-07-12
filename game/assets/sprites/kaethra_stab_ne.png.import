@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cgu0lqvheraev"
-path="res://.godot/imported/nullwarden_walk_n.png-b81cdf072368b4960d703ada09cfdf33.ctex"
+uid="uid://di5fri1sce8h3"
+path="res://.godot/imported/kaethra_stab_ne.png-b3bb4ebb4c500aec0c412d4f600207de.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/nullwarden_walk_n.png"
-dest_files=["res://.godot/imported/nullwarden_walk_n.png-b81cdf072368b4960d703ada09cfdf33.ctex"]
+source_file="res://assets/sprites/kaethra_stab_ne.png"
+dest_files=["res://.godot/imported/kaethra_stab_ne.png-b3bb4ebb4c500aec0c412d4f600207de.ctex"]
 
 [params]
 

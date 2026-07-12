@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://j1w4a4j7q7rw"
-path="res://.godot/imported/vess_walk_e.png-c3b78917a47cd69825fc55eeef6f21fc.ctex"
+uid="uid://bmtlh82jhop56"
+path="res://.godot/imported/kaethra_stab_sw.png-f4635b0e54f9c351a1aaeacc3c2bf5a1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/vess_walk_e.png"
-dest_files=["res://.godot/imported/vess_walk_e.png-c3b78917a47cd69825fc55eeef6f21fc.ctex"]
+source_file="res://assets/sprites/kaethra_stab_sw.png"
+dest_files=["res://.godot/imported/kaethra_stab_sw.png-f4635b0e54f9c351a1aaeacc3c2bf5a1.ctex"]
 
 [params]
 
