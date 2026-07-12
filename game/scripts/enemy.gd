@@ -393,21 +393,22 @@ func _apply_strip(info: Dictionary, is_action := false) -> void:
 ## unless the boss has an idle strip AND assets/sprites/<sprite>_<action>.png
 ## exists — so ability code can call it unconditionally and it lights up
 ## when the art lands. Re-triggering restarts the strip from frame 0.
-func play_action(action: String) -> void:
-	# MP-09: when hosting, the one-shot rides to every guest mirror as an
-	# event RPC — wired at the DEFINITION so all ~91 boss call sites
-	# broadcast for free. It precedes the art checks: both sides ship the
-	# same assets, so each machine resolves the strip locally.
-	if net_id > 0 and not net_mirror and game != null and game.net_host():
-		game.net_session().host_enemy_action(net_id, action)
+func play_action(action: String, fallback := true) -> void:
 	if _strip_idle.is_empty():
 		return
-	# Try the exact action strip; a boss with only its ONE signature clip
-	# installed routes every named move (slam/toll/bolt/...) to "<key>_ability"
-	# so all ~90 call sites light up from a single generated gesture.
-	if _try_action_strip(action):
-		return
-	_try_action_strip("ability")
+	# Try the exact action strip; when fallback (default), a boss with only its
+	# ONE signature clip installed routes every named move (slam/toll/bolt/...)
+	# to "<key>_ability" so all those call sites light up from one gesture.
+	# fallback=false is a TRUE no-op wire (e.g. "melee") — it plays ONLY when a
+	# dedicated <key>_melee lands, and until then does nothing (no anim, no RPC).
+	var played := _try_action_strip(action)
+	if not played and fallback:
+		played = _try_action_strip("ability")
+	# MP-09: the one-shot rides to every guest mirror as an event RPC — but only
+	# when something actually played, so a no-op wire costs zero network traffic.
+	# Both sides ship the same assets, so each machine resolves the strip locally.
+	if played and net_id > 0 and not net_mirror and game != null and game.net_host():
+		game.net_session().host_enemy_action(net_id, action)
 
 
 ## Point the one-shot strip at <key>_<action> if that art exists. Prefers

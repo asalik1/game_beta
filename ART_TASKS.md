@@ -227,8 +227,10 @@ Manifest notes:
 ## OWNER PLAYTEST NOTES — v3 boss sprite polish (2026-07-12)
 After the v3 hi-res bodies + ability strips + FX-sync shipped, owner q/a flagged:
 1. **Vess** — no smoke from her mouth; her keening/wail identity wants breath-
-   smoke. FIX: cheapest as an in-game particle FX at the mouth while keening
-   (0 gens); or regen the body with mouth-smoke baked in (~3 gens + re-cut).
+   smoke BAKED INTO the sprite, oriented per-direction across all 8 turns (an
+   in-game particle FX would be one generic puff that ignores facing + clashes
+   with the pixel style — NOT acceptable). FIX: regen the body with mouth-smoke
+   (~3 gens + re-cut).
 2. **Nullwarden** — weapon is inconsistent/choppy across clips: present in some
    frames/directions, absent in others (v3 gen artifact). FIX: regen with a
    firm single-weapon description (~3 gens + re-cut) — v3 won't *guarantee*
