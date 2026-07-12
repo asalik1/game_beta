@@ -514,7 +514,7 @@ const ENEMIES := {
 	# render wildly different sizes. Contact bites stay fair at any size
 	# via Boss._reach (body-edge, not center, distance); note the physics
 	# circle (enemy.gd: radius 6*scale*0.7) grows with the same knob.
-	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "direwolf", "hp": 1200.0,  "dmg": 30.0, "speed": 160.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 8.5,
+	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "fangmaw", "hp": 1200.0,  "dmg": 30.0, "speed": 160.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 8.5,
 		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 1.5, "AGI": 1.5},

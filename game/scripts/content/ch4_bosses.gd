@@ -49,7 +49,7 @@ const ENEMIES := {
 	# (at full melt the plates shed ~10s and the damage window opens, but a
 	# magma-rain tantrum rides the window). At 30% the plates stop regrowing.
 	"cinderhide": {
-		"name": "Cinderhide the Unquenched", "sprite": "direwolf",
+		"name": "Cinderhide the Unquenched", "sprite": "cinderhide",
 		"hp": 9500.0, "dmg": 110.0, "speed": 135.0, "xp": 330, "gold": 260,
 		"ranged": false, "scale": 8.5,
 		# Resists stay the honest SHED value the whole fight (~25 / ~17% DR).
