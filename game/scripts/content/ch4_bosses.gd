@@ -23,7 +23,7 @@ const ENEMIES := {
 	# + stacking damage buff). Body-block the pool and she quenches THROUGH
 	# you — the fight's hardest hit — and gains no buff.
 	"forgemistress": {
-		"name": "Forgemistress Calda", "sprite": "cultist",
+		"name": "Forgemistress Calda", "sprite": "forgemistress",
 		"hp": 11500.0, "dmg": 96.0, "speed": 150.0, "xp": 300, "gold": 240,
 		"ranged": false, "scale": 8.5,
 		"physres": 25.0, "magres": 20.0, "eva": 0.05, "critres": 5.0, "crit": 0.05, "dmg_type": "phys",

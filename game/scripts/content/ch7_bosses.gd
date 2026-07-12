@@ -53,7 +53,7 @@ const ENEMIES := {
 	# dagger-fan but the REAL one's is MIRRORED — read the tell, hit the
 	# real one. Void zones shrink the arena; blink-strike punishes lingering.
 	"unnamed_echo": {
-		"name": "The Echo of the Unnamed", "sprite": "assassin",
+		"name": "The Echo of the Unnamed", "sprite": "echo",
 		"hp": 48000.0, "dmg": 260.0, "speed": 170.0, "xp": 640, "gold": 1020,
 		# 2x the hero, no higher: he mirrors the HERO — a person, not a titan.
 		# (The assassin strip's body fills ~65% of its cell, so hitting a true

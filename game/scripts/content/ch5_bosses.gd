@@ -21,7 +21,7 @@ const ENEMIES := {
 	# across a patch and he overshoots into the wall (self-stun + vuln).
 	# Pack calls at 66%/33%. On death the pack drags him away.
 	"whitepelt": {
-		"name": "Hrolgar Whitepelt", "sprite": "whitepelt",
+		"name": "Hrolgar Whitepelt", "sprite": "hrolgar",
 		"hp": 22500.0, "dmg": 135.0, "speed": 155.0, "xp": 520, "gold": 400,
 		"ranged": false, "scale": 9.0,
 		"physres": 30.0, "magres": 25.0, "eva": 0.05, "critres": 6.0, "crit": 0.05, "dmg_type": "phys",
@@ -80,7 +80,7 @@ const ENEMIES := {
 	# she MENDS. DREAMERS drift toward her and thicken the aura; killing
 	# them is free and feels terrible. At 25% the Queen stirs.
 	"sleepkeeper": {
-		"name": "Mother Halla, Keeper of the Long Sleep", "sprite": "cultist",
+		"name": "Mother Halla, Keeper of the Long Sleep", "sprite": "halla",
 		# XP re-anchor (chapter-budget audit): 720 paid ~95% of a level —
 		# finales sit at ~85% so full clears land at boss level (DESIGN r5).
 		"hp": 48000.0, "dmg": 150.0, "speed": 85.0, "xp": 640, "gold": 560,
