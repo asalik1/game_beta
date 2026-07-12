@@ -226,18 +226,23 @@ Manifest notes:
 
 ## OWNER PLAYTEST NOTES — v3 boss sprite polish (2026-07-12)
 After the v3 hi-res bodies + ability strips + FX-sync shipped, owner q/a flagged:
-1. **Vess** — no smoke from her mouth; her keening/wail identity wants breath-
-   smoke BAKED INTO the sprite, oriented per-direction across all 8 turns (an
-   in-game particle FX would be one generic puff that ignores facing + clashes
-   with the pixel style — NOT acceptable). FIX: regen the body with mouth-smoke
-   (~3 gens + re-cut).
+1. **Vess** — REMOVE the smoke from her mouth (owner: "no smoke from mouth",
+   emphatic — I first mis-read it as *add* smoke and made it worse). The smoke
+   was baked into the ORIGINAL creation prompt: metadata.json literally reads
+   `faint blue-white keening light at the mouth`. FIX = regen from the ORIGINAL
+   prompt with ONLY that clause deleted (read metadata FIRST — see CLAUDE.md
+   "PixelLab characters — regenerating an EXISTING one"). ~3 gens + re-cut.
 2. **Nullwarden** — weapon is inconsistent/choppy across clips: present in some
    frames/directions, absent in others (v3 gen artifact). FIX: regen with a
    firm single-weapon description (~3 gens + re-cut) — v3 won't *guarantee*
    consistency, so may need a hand-fix pass.
 3. **Whitepelt (Hrolgar)** — idle/walk carry NO axe but the ability strip does
    → the axe pops in only on attack. FIX: regen idle/walk WITH the axe so every
-   clip matches (~3 gens + re-cut idle/walk).
+   clip matches — but KEEP the canonical **white-furred bone-SKULL hulk**; only
+   add the axe. (A from-scratch v3-128 re-roll on 2026-07-12 lost the skull face
+   + went blue/demonic = drift → REVERTED. Correct path: find the original
+   hrolgar's creation prompt in its export metadata.json, regen from THAT +
+   "holding a battle-axe". Deferred until the metadata prompt is pulled.)
 4. **Kaethra** — wants a directional STAB/lunge attack animation on her charge.
    FIX: `animate_character` a "stab" clip (8-dir) + `play_action("stab")` at the
    charge/contact site (~48 gens + wiring).
