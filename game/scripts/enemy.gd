@@ -110,6 +110,7 @@ var face_left := false  # sprite art natively faces left (Crawl tiles)
 var _dir_idle := {}     # {DIR8 suffix: strip_info} for idle, or {}
 var _dir_walk := {}     # {DIR8 suffix: strip_info} for walk, or {}
 var _cur_dir := "s"     # current facing suffix while directional
+var _body_cell := 0.0   # square idle/walk cell px; oversized ability strips scale off it
 var hover_amp := 0.0    # >0 = levitate: idle/glide floats instead of grounding
 var dying := false
 
@@ -372,8 +373,19 @@ func _apply_strip(info: Dictionary) -> void:
 	sprite.hframes = frames
 	sprite.frame = 0
 	anim_frames = frames
-	anim_fps = float(info["fps"])
-	sprite.scale = Art.scale_for(sprite.texture, art_scale, frames)
+	# A square strip (idle/walk) DEFINES the body reference cell. An ability
+	# strip may ship a LARGER cell (wider and/or taller) to fit a swung/raised
+	# weapon that reaches past the idle silhouette — it still renders at the
+	# SAME body scale off that reference (so the boss neither shrinks nor
+	# clips), with the sprite re-anchored so the feet stay put.
+	var cw := float(sprite.texture.get_width()) / maxf(1.0, float(frames))
+	var chh := float(sprite.texture.get_height())
+	if absf(chh - cw) < 1.0:
+		_body_cell = cw
+	var ref := _body_cell if _body_cell > 0.0 else cw
+	var s := art_scale * 16.0 / ref
+	sprite.scale = Vector2(s, s)
+	sprite.offset = Vector2(0, -(chh - ref) / 2.0)
 
 
 ## Play a one-shot ability strip once, then fall back to idle/walk. No-op

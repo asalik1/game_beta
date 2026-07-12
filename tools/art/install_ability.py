@@ -10,7 +10,7 @@ Usage:
       e=<id> ne=<id> n=<id> nw=<id> w=<id> sw=<id>
 Any direction omitted (failed gen) is mirror-filled from its L/R opposite.
 """
-import io, os, sys, urllib.request
+import io, os, sys, subprocess
 from PIL import Image
 
 SPR = r"C:\Users\asali\Projects\MMO\game\assets\sprites"
@@ -22,19 +22,28 @@ MIRROR = {"w": "e", "sw": "se", "nw": "ne", "e": "w", "se": "sw", "ne": "nw"}
 
 
 def fetch(url):
-    req = urllib.request.Request(url, headers=UA)
-    return Image.open(io.BytesIO(urllib.request.urlopen(req, timeout=60).read())).convert("RGBA")
+    # curl handles backblaze's throttling far better than urllib here
+    # (urllib got 429'd into multi-minute backoffs). --retry rides out blips.
+    r = subprocess.run(["curl", "-s", "--fail", "--retry", "6", "--retry-delay", "3",
+                        "--retry-all-errors",  # 429 throttling isn't retried by default
+                        "-H", "User-Agent: Mozilla/5.0", url],
+                       capture_output=True)
+    if r.returncode != 0 or not r.stdout:
+        raise RuntimeError("curl failed (%d) for %s" % (r.returncode, url))
+    return Image.open(io.BytesIO(r.stdout)).convert("RGBA")
 
 
 def ability_frames(char_id, anim_id, dname, count):
     base = ("https://backblaze.pixellab.ai/file/pixellab-characters/%s/%s/animations/%s/%s/"
             % (ACCT, char_id, anim_id, dname))
+    import time
     frames = []
-    for i in range(count + 2):  # keep_first_frame -> count+1; try one extra, stop at 404
+    for i in range(count + 1):  # keep_first_frame -> exactly frames 0..count
         try:
             frames.append(fetch(base + "%d.png" % i))
         except Exception:
             break
+        time.sleep(0.25)  # smooth the request rate so backblaze doesn't throttle
     return frames
 
 
@@ -54,19 +63,19 @@ def content_bbox(imgs):
             max(b[2] for b in boxes), max(b[3] for b in boxes))
 
 
-def place(fig, cell):
+def place(fig, cw, ch):
     fw, fh = fig.size
-    c = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
-    c.alpha_composite(fig, ((cell - fw) // 2, cell - fh - MARGIN))
+    c = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
+    c.alpha_composite(fig, ((cw - fw) // 2, ch - fh - MARGIN))
     return c
 
 
-def write_strip(base, suf, frames, cell, bbox):
+def write_strip(base, suf, frames, cw, ch, bbox):
     x0, y0, x1, y1 = bbox
-    cells = [place(f.crop((x0, y0, x1, y1)), cell) for f in frames]
-    strip = Image.new("RGBA", (cell * len(cells), cell), (0, 0, 0, 0))
+    cells = [place(f.crop((x0, y0, x1, y1)), cw, ch) for f in frames]
+    strip = Image.new("RGBA", (cw * len(cells), ch), (0, 0, 0, 0))
     for i, c in enumerate(cells):
-        strip.alpha_composite(c, (i * cell, 0))
+        strip.alpha_composite(c, (i * cw, 0))
     strip.save(os.path.join(SPR, "%s_%s.png" % (base, suf)))
 
 
@@ -95,25 +104,34 @@ def main():
     if "s" not in abil:
         raise SystemExit("no SOUTH ability frames for %s" % key)
 
-    # 2. The boss's idle strip defines the cell; the ability CONFORMS to it —
-    #    never grow it (growing would shrink the whole boss, whose scale stat
-    #    was tuned to this cell). A pose taller than the cell clips at the top
-    #    (a raised weapon tip), feet stay anchored, body size stays constant.
+    # 2. The idle cell fixes the WIDTH (scale_for is width-based, so keeping it
+    #    equal to the idle cell keeps the boss body the same size). The HEIGHT
+    #    grows to fit the tallest pose (a raised weapon) so nothing clips at the
+    #    top; enemy.gd::_apply_strip lifts the sprite by (h-w)/2 to keep the feet
+    #    anchored. Casters (compact pose) stay ~square -> ~zero lift.
     idle_s = os.path.join(SPR, "%s_anim_s.png" % key)
     if not os.path.exists(idle_s):
         raise SystemExit("%s has no installed idle (_anim_s) to size against" % key)
-    cell = Image.open(idle_s).height
+    cw = Image.open(idle_s).height
 
-    # 3. per-direction ability bbox = that direction's own frames (keeps the
-    #    swing centered per facing), placed bottom-center in the fixed cell.
+    # 3. per-direction content bbox (keeps the swing centered per facing); the
+    #    shared cell grows in BOTH dims to fit the widest/tallest pose (a
+    #    sideways or overhead weapon) across all directions. The render scales
+    #    the body off the idle reference (ref), so a bigger cell shows the full
+    #    weapon without shrinking the boss.
+    ref = cw
+    bxs = {d: content_bbox(abil.get(d) or abil["s"]) for d in DIR8}
+    widest = max(b[2] - b[0] for b in bxs.values())
+    tallest = max(b[3] - b[1] for b in bxs.values())
+    cw = max(ref, widest + MARGIN * 2)
+    ch = max(ref, tallest + MARGIN * 2)
     for d in DIR8:
-        frames = abil.get(d) or abil["s"]
-        bx = content_bbox(frames)
-        write_strip("%s_ability" % key, d, frames, cell, bx)
+        write_strip("%s_ability" % key, d, abil.get(d) or abil["s"], cw, ch, bxs[d])
     Image.open(os.path.join(SPR, "%s_ability_s.png" % key)).save(
         os.path.join(SPR, "%s_ability.png" % key))
-    print("%s ability installed: dirs=%s cell=%d (fixed to idle)"
-          % (key, "".join(sorted(abil)), cell))
+    print("%s ability installed: dirs=%s cell=%dx%d (idle ref=%d%s%s)"
+          % (key, "".join(sorted(abil)), cw, ch, ref,
+             ", WIDER" if cw > ref else "", ", TALLER" if ch > ref else ""))
 
 
 if __name__ == "__main__":
