@@ -957,6 +957,10 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 		_spawn_censers()
 		game.spawn_text(global_position + Vector2(0, -84), "The censers burn.", INCENSE)
 
+	# Throne (levitating skeletal saint) until 25%, then he RISES and walks.
+	# Driven off hp fraction so guest mirrors flip at the same instant.
+	_varo_phase_sprite()
+
 	# Incense: while any censer lives, he mends. Snuff them out.
 	var incense := false
 	for c in censers:

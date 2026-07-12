@@ -71,7 +71,7 @@ const ENEMIES := {
 	# (kill priority), the bell tolls shrink the shelter, and at 25%
 	# he stands up for the first time in sixty years.
 	"saint_varo": {
-		"name": "Saint Varo the Unrotting", "sprite": "king",
+		"name": "Saint Varo the Unrotting", "sprite": "saint_varo",
 		"hp": 14000.0, "dmg": 88.0, "speed": 70.0, "xp": 400, "gold": 310,
 		"ranged": false, "scale": 10.5,
 		"physres": 60.0, "magres": 40.0, "eva": 0.0, "critres": 9.0, "crit": 0.05, "dmg_type": "phys",

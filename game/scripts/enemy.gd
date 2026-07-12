@@ -110,6 +110,7 @@ var face_left := false  # sprite art natively faces left (Crawl tiles)
 var _dir_idle := {}     # {DIR8 suffix: strip_info} for idle, or {}
 var _dir_walk := {}     # {DIR8 suffix: strip_info} for walk, or {}
 var _cur_dir := "s"     # current facing suffix while directional
+var hover_amp := 0.0    # >0 = levitate: idle/glide floats instead of grounding
 var dying := false
 
 # --- status effects ---
@@ -407,6 +408,49 @@ func play_action(action: String) -> void:
 	_apply_strip(info)
 
 
+## Re-point this enemy at a DIFFERENT sprite key mid-fight (Saint Varo's
+## throne -> standing phase-swap). Re-runs the same idle/walk/8-dir setup
+## make() does, so the render path picks the new strips up on the next
+## frame. Any in-flight ability strip is dropped so the new idle takes over.
+func swap_sprite(new_key: String) -> void:
+	if _sprite_key == new_key:
+		return
+	_sprite_key = new_key
+	_strip_action = {}
+	_action_dir = {}
+	_strip_walking = false
+	_cur_dir = "s"
+	var anim := Art.anim_info(new_key)
+	if anim.is_empty():
+		_strip_idle = {}
+		_strip_walk = {}
+		_dir_idle = {}
+		_dir_walk = {}
+		sprite.texture = Art.tex(new_key)
+		sprite.scale = Art.scale_for(sprite.texture, art_scale)
+	else:
+		_strip_idle = anim
+		_strip_walk = Art.walk_info(new_key)
+		_dir_idle = Art.dir_set(new_key + "_anim")
+		_dir_walk = Art.dir_set(new_key + "_walk")
+		_apply_strip(anim)
+	face_left = Art.faces_left(new_key)
+
+
+## Saint Varo's throne <-> standing phase-swap, driven purely off hp
+## fraction so the host and every guest mirror flip at the SAME moment
+## with no extra RPC. Throne (the seated skeletal saint) LEVITATES; at 25%
+## he RISES for the first time in sixty years — swap to the standing body
+## that walks, feet on the ground. One-way; once risen the guard is inert.
+func _varo_phase_sprite() -> void:
+	if _sprite_key != "saint_varo":
+		return
+	hover_amp = 7.0
+	if hp <= max_hp * 0.25:
+		swap_sprite("saint_varo_standing")
+		hover_amp = 0.0
+
+
 ## Wave-2 co-op fix #2: broadcast a combat-tell tint to every guest mirror.
 ## The host already set sprite.modulate itself at the call site (bite windup,
 ## pounce crouch, guard, reflect); this fans the SAME color+window so a guest
@@ -597,8 +641,10 @@ func _physics_process(delta: float) -> void:
 	# while a single-facing one-shot action strip is playing.
 	if os != 0.0 and _action_dir.is_empty() and (_dir_idle.is_empty() or not _strip_action.is_empty()):
 		sprite.flip_h = (os > 0.0) if face_left else (os < 0.0)
-	# Little walk bob so they feel alive.
-	if _moving_anim:
+	# Little walk bob so they feel alive; hover_amp>0 levitates instead (Varo throne).
+	if hover_amp > 0.0:
+		sprite.position.y = -hover_amp + sin(anim_t * 2.2) * (hover_amp * 0.4)
+	elif _moving_anim:
 		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
 	else:
 		sprite.position.y = 0.0
@@ -626,7 +672,10 @@ func _net_mirror_tick(delta: float) -> void:
 		# moving — 1x idle, 2x walking. Same clock here.
 		anim_t += delta * (2.0 if net_walk else 1.0)
 		sprite.frame = int(anim_t * anim_fps) % anim_frames
-	if net_walk:
+	_varo_phase_sprite()  # guests flip throne->standing off replicated hp
+	if hover_amp > 0.0:
+		sprite.position.y = -hover_amp + sin(anim_t * 2.2) * (hover_amp * 0.4)
+	elif net_walk:
 		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
 	else:
 		sprite.position.y = 0.0
