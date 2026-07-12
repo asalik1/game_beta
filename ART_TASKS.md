@@ -242,10 +242,11 @@ After the v3 hi-res bodies + ability strips + FX-sync shipped, owner q/a flagged
    FIX: `animate_character` a "stab" clip (8-dir) + `play_action("stab")` at the
    charge/contact site (~48 gens + wiring).
 5. **GENERAL (all melee bosses)** — close-range contact hits (`take_damage` at
-   `_reach()`) currently play NO swing; the boss just deals damage. Give each
-   melee boss a close-range **melee attack** clip played on the contact hit.
-   FIX: a "melee"/"attack" `animate_character` clip per melee boss + `play_action`
-   at each `dist < _reach(): take_damage` site (~48 gens EACH — budget-gated).
+   `_reach()`) played NO swing. FIXED (4bc3850 + follow-up): `play_action("melee")`
+   wired at all 16 contact sites; with the ability-swing fallback the boss now
+   swings its attack animation on every close hit. A dedicated `<key>_melee`
+   `animate_character` clip auto-takes-over per boss IF generated later (optional
+   polish, ~48 gens each) — the wiring already prefers it over the ability.
 
 Priority vs the ~285-gen budget + shared PixelLab queue (other agent on base
 archer): do the CHEAP wins first — #1 as FX (0 gens), #3 whitepelt axe (~3),

@@ -250,7 +250,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 			charging = false
 		if dist < _reach(70.0) and attack_cd <= 0.0:
 			attack_cd = 0.72
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg * 1.4, dmg_type, self)
 		return charge_dir * 620.0
 
@@ -294,7 +294,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 	if dist < _reach(60.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.92
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -407,7 +407,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if dist < _reach(64.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -527,7 +527,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.92
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -675,7 +675,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if dist < _reach(74.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.15
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg * 1.2, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -798,7 +798,7 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	if dist < _reach(64.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -1039,7 +1039,7 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.2
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg * 1.2, dmg_type, self)
 		return Vector2.ZERO
 
@@ -1431,7 +1431,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 			charging = false
 		if dist < _reach(76.0) and attack_cd <= 0.0:
 			attack_cd = 0.8
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg * (1.5 if plated else 1.3), dmg_type, self)
 		return charge_dir * 600.0
 
@@ -1467,7 +1467,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 	if dist < _reach(72.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -1771,7 +1771,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 		slide_cap = maxf(0.0, slide_cap - delta)
 		if dist < _reach(78.0) and attack_cd <= 0.0:
 			attack_cd = 0.8
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg * 1.3, dmg_type, self)
 		if charge_time <= 0.0 or slide_cap <= 0.0:
 			charging = false
@@ -1808,7 +1808,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.95
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -2088,7 +2088,7 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 			charging = false
 		if dist < _reach(78.0) and attack_cd <= 0.0:
 			attack_cd = 0.8
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg * 1.3, dmg_type, self)
 		return charge_dir * 600.0
 
@@ -2115,7 +2115,7 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	if dist < _reach(72.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -2311,7 +2311,7 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 			charging = false
 		if dist < _reach(76.0) and attack_cd <= 0.0:
 			attack_cd = 0.7
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg * 1.3, dmg_type, self)
 		return charge_dir * 620.0
 	if special_cd <= 0.0 and dist < 520.0 and not telegraphing:
@@ -2339,7 +2339,7 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.85
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
@@ -2587,7 +2587,7 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.7
-			play_action("melee", false)  # no-op wire: lights up when <key>_melee art lands
+			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
 			player.take_damage(dmg, dmg_type, self)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
