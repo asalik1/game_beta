@@ -38,6 +38,22 @@ static func make_boss(game_node: Node2D, boss_kind: String, pos: Vector2, at_lev
 	return b
 
 
+## FX-SYNC (matches the class rule, [[attack-fx-anim-sync]]): a boss ability
+## with a real swing/cast strip should land its IMMEDIATE bolt/ring/beam on the
+## animation's contact frame, not the decision frame. play_action fires the
+## strip now; the fx Callable runs BOSS_STRIKE_DELAY later (guarded for a boss
+## that died/despawned mid-swing). Read positions/aim BEFORE calling — capture
+## them in the closure so the volley leaves from where the cast began.
+## Telegraphed abilities (game.telegraph) already carry a windup — don't wrap
+## those; the telegraph IS the delay.
+func _strike(action: String, fx: Callable, delay := -1.0) -> void:
+	play_action(action)
+	var d: float = delay if delay >= 0.0 else Balance.BOSS_STRIKE_DELAY
+	get_tree().create_timer(d).timeout.connect(func() -> void:
+		if is_instance_valid(self) and not dying:
+			fx.call())
+
+
 ## Hostile bolt that carries the boss's damage type and combat stats
 ## (crit/pen/dex) so it resolves against the player like any real hit.
 func _bolt(velocity: Vector2, damage: float) -> void:
@@ -340,19 +356,18 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ability_cd <= 0.0:
 		ability_cd = 2.6
 		game.sfx("bolt")
-		play_action("bolt")
 		var aim := (_floor_target(true).global_position - global_position).normalized()
-		for spread in [-0.25, 0.0, 0.25]:
-			_bolt(aim.rotated(spread) * 320.0, dmg)
+		_strike("bolt", func() -> void:
+			for spread in [-0.25, 0.0, 0.25]:
+				_bolt(aim.rotated(spread) * 320.0, dmg))
 
 	# Full ring of bolts.
 	if ring_cd <= 0.0:
 		ring_cd = 7.0
 		roar()
-		play_action("ring")
-		for i in 12:
-			var angle := TAU * i / 12.0
-			_bolt(Vector2.RIGHT.rotated(angle) * 200.0, dmg)
+		_strike("ring", func() -> void:
+			for i in 12:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 260.0, dmg))
 
 	# Drift to keep a comfortable distance.
 	if dist < 240.0:
@@ -382,12 +397,10 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ability_cd <= 0.0 and dist < 520.0:
 		ability_cd = 3.4 if enraged else 5.0
 		game.sfx("slam")
-		play_action("slam")
-		game.shake(8.0)
-		var count := 16
-		for i in count:
-			var angle := TAU * i / count
-			_bolt(Vector2.RIGHT.rotated(angle) * 230.0, dmg * 0.7)
+		_strike("slam", func() -> void:
+			game.shake(8.0)
+			for i in 16:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 16.0) * 270.0, dmg * 0.7))
 
 	if dist < _reach(64.0):
 		if attack_cd <= 0.0:
@@ -486,16 +499,21 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		special_cd = 5.0 if enraged else 7.5
 		_lightning_lash(player)
 
-	# Broken storm: stray bolts hammer the ground around the prey.
-	# §5.2 FLOOR: the strays rotate onto a non-target in a party.
-	if enraged and ring_cd <= 0.0:
-		ring_cd = 4.0
-		play_action("storm")
-		var struck: Player = _floor_target()
-		for i in 3:
-			game.telegraph(struck.global_position
-				+ Vector2(randf_range(-140.0, 140.0), randf_range(-110.0, 110.0)),
-				70.0, 0.55, dmg * 1.1, {"color": STORM})
+	# Storm bolt chip: keeps any range honest, not just enraged.
+	# §5.2 floor (alternate): every other volley arcs at a non-target.
+	if ring_cd <= 0.0:
+		ring_cd = 3.5 if enraged else 5.0
+		game.sfx("bolt")
+		var bolt_aim := (_floor_target(true).global_position - global_position).normalized()
+		_strike("storm" if enraged else "bolt", func() -> void:
+			for spread in [-0.2, 0.0, 0.2]:
+				_bolt(bolt_aim.rotated(spread) * 310.0, dmg))
+		if enraged:
+			var struck: Player = _floor_target()
+			for i in 3:
+				game.telegraph(struck.global_position
+					+ Vector2(randf_range(-140.0, 140.0), randf_range(-110.0, 110.0)),
+					70.0, 0.55, dmg * 1.1, {"color": STORM})
 
 	# Whip snap keeps mid-range honest.
 	if ability_cd <= 0.0 and dist > 80.0 and dist < 260.0:
@@ -557,11 +575,11 @@ func _choirmother(_player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ability_cd <= 0.0:
 		ability_cd = 2.2 if enraged else 3.0
 		game.sfx("bolt")
-		play_action("bolt")
 		var aim := (_floor_target(true).global_position - global_position).normalized()
 		var spreads := [-0.36, -0.12, 0.12, 0.36] if enraged else [-0.22, 0.0, 0.22]
-		for spread in spreads:
-			_bolt(aim.rotated(spread) * 300.0, dmg)
+		_strike("bolt", func() -> void:
+			for spread in spreads:
+				_bolt(aim.rotated(spread) * 300.0, dmg))
 
 	# Hymn of hunger: a marked strike — and the choir feeds her.
 	# §5.2 FLOOR: the hymn marks a rotating head; nobody kites her for free.
@@ -644,11 +662,11 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ability_cd <= 0.0 and dist < 480.0:
 		ability_cd = 3.0 if enraged else 4.8
 		game.sfx("slam")
-		play_action("slam")
-		game.shake(9.0)
 		var count := 20 if enraged else 12
-		for i in count:
-			_bolt(Vector2.RIGHT.rotated(TAU * i / count) * 210.0, dmg * 0.7)
+		_strike("slam", func() -> void:
+			game.shake(9.0)
+			for i in count:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / count) * 270.0, dmg * 0.7))
 
 	if dist < _reach(74.0):
 		if attack_cd <= 0.0:
@@ -873,9 +891,9 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if ring_cd <= 0.0:
 		ring_cd = 8.0
 		roar()
-		play_action("ring")
-		for i in 12:
-			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 190.0, dmg)
+		_strike("ring", func() -> void:
+			for i in 12:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 250.0, dmg))
 
 	# Blink away from blades (her grief is Morwen's lineage).
 	if dist < 160.0 and blink_cd <= 0.0:
@@ -930,10 +948,10 @@ func _quiet_spot(player: Player) -> Vector2:
 
 func _grief_fan(aim: Vector2) -> void:
 	game.sfx("bolt")
-	play_action("bolt")
 	var from := global_position
-	for spread in [-0.22, 0.0, 0.22]:
-		_bolt(aim.rotated(spread) * 320.0, dmg)
+	_strike("bolt", func() -> void:
+		for spread in [-0.22, 0.0, 0.22]:
+			_bolt(aim.rotated(spread) * 320.0, dmg))
 	await get_tree().create_timer(0.8).timeout
 	if dying:
 		return
@@ -1006,10 +1024,10 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 	if ability_cd <= 0.0 and dist < 500.0:
 		ability_cd = 3.4 if enraged else 5.0
 		game.sfx("slam")
-		play_action("slam")
-		game.shake(8.0)
-		for i in 14:
-			_bolt(Vector2.RIGHT.rotated(TAU * i / 14.0) * 210.0, dmg * 0.7)
+		_strike("slam", func() -> void:
+			game.shake(8.0)
+			for i in 14:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 14.0) * 210.0, dmg * 0.7))
 
 	# Adjacent penitents still get struck (throne or standing).
 	if dist < _reach(70.0):
@@ -1259,15 +1277,19 @@ func _forgemistress(player: Player, to_player: Vector2, dist: float, delta: floa
 		game.telegraph(lob, 100.0, 0.7, dmg * (1.0 + 0.12 * quench_stacks) * 1.3, {"color": FORGE})
 
 	# Hammer lines: forge-orange lash telegraphs, wider when white-hot.
+	# Slag bolts fly off the strike — chip a kiter can't walk out of.
 	# §5.2 floor (alternate): every other lane rakes toward a non-target.
 	if ability_cd <= 0.0 and dist < 520.0:
 		ability_cd = 3.4
+		game.sfx("bolt")
 		play_action("lash")
 		var dir := (_floor_target(true).global_position - global_position).normalized()
 		var rad := 105.0 if heat >= 1.0 else 75.0
 		for i in 4:
 			game.telegraph(global_position + dir * (110.0 + i * 95.0), rad,
 				0.45 + i * 0.10, dmg * (1.0 + 0.12 * quench_stacks) * 1.2, {"color": FORGE})
+		for spread in [-0.18, 0.18]:
+			_bolt(dir.rotated(spread) * 290.0, dmg * (1.0 + 0.12 * quench_stacks))
 
 	if dist < _reach(66.0):
 		if attack_cd <= 0.0:
@@ -1517,10 +1539,10 @@ func _ashpriest(_player: Player, to_player: Vector2, dist: float, delta: float) 
 	if ability_cd <= 0.0:
 		ability_cd = 2.6
 		game.sfx("bolt")
-		play_action("bolt")
 		var aim := (_floor_target(true).global_position - global_position).normalized()
-		for spread in [-0.28, -0.09, 0.09, 0.28]:
-			_bolt(aim.rotated(spread) * 300.0, dmg)
+		_strike("bolt", func() -> void:
+			for spread in [-0.28, -0.09, 0.09, 0.28]:
+				_bolt(aim.rotated(spread) * 300.0, dmg))
 
 	if dist < 250.0:
 		return -to_player.normalized() * speed
@@ -1768,10 +1790,10 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 	if ability_cd <= 0.0 and dist < 220.0:
 		ability_cd = 5.0
 		game.sfx("slam")
-		play_action("slam")
-		game.shake(7.0)
-		for i in 12:
-			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 200.0, dmg * 0.7)
+		_strike("slam", func() -> void:
+			game.shake(7.0)
+			for i in 12:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 260.0, dmg * 0.7))
 
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
@@ -1817,16 +1839,15 @@ func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -
 		ring_cd = 7.0
 		_shatter_lance(_floor_target(true))
 
-	# Icicle rain: Morwen-lineage scatter.
-	# §5.2 FLOOR: the scatter rains on a rotating non-target in a party.
+	# Ice bolt volley: chip pressure a mobile player can't walk out of.
+	# §5.2 floor (alternate): every other volley skewers a non-target.
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		game.sfx("bolt")
-		play_action("rain")
-		var iced: Player = _floor_target()
-		for i in 4:
-			var off := Vector2(randf_range(-180, 180), randf_range(-140, 140))
-			game.telegraph(iced.global_position + off, 70.0, 0.7, dmg * 1.1, {"color": FROST})
+		var aim := (_floor_target(true).global_position - global_position).normalized()
+		_strike("bolt", func() -> void:
+			for spread in [-0.22, 0.0, 0.22]:
+				_bolt(aim.rotated(spread) * 300.0, dmg))
 
 	if dist < 160.0 and blink_cd <= 0.0:
 		blink_cd = 3.2
@@ -1934,10 +1955,10 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		game.sfx("bolt")
-		play_action("bolt")
 		var aim := (_floor_target(true).global_position - global_position).normalized()
-		for spread in [-0.25, 0.0, 0.25]:
-			_bolt(aim.rotated(spread) * 290.0, dmg)
+		_strike("bolt", func() -> void:
+			for spread in [-0.25, 0.0, 0.25]:
+				_bolt(aim.rotated(spread) * 290.0, dmg))
 
 	if dist < 240.0:
 		return -to_player.normalized() * speed
@@ -2071,13 +2092,13 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	if ring_cd <= 0.0 and dist < 320.0:
 		ring_cd = 6.5
 		game.sfx("slam")
-		play_action("slam")
-		game.shake(8.0)
-		for i in 12:
-			_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 200.0, dmg * 0.7)
-		for i in 3:
-			var at: Vector2 = game.clamp_to_zone(global_position + Vector2.from_angle(randf() * TAU) * randf_range(90.0, 180.0), home)
-			_hazard(game.cur_room, "poison", at, 80.0, 8.0)
+		_strike("slam", func() -> void:
+			game.shake(8.0)
+			for i in 12:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 260.0, dmg * 0.7)
+			for i in 3:
+				var at: Vector2 = game.clamp_to_zone(global_position + Vector2.from_angle(randf() * TAU) * randf_range(90.0, 180.0), home)
+				_hazard(game.cur_room, "poison", at, 80.0, 8.0))
 
 	if dist < _reach(72.0):
 		if attack_cd <= 0.0:
@@ -2166,10 +2187,10 @@ func _gardener(player: Player, to_player: Vector2, dist: float, delta: float) ->
 	if ability_cd <= 0.0:
 		ability_cd = 2.8
 		game.sfx("bolt")
-		play_action("bolt")
 		var aim := (_floor_target(true).global_position - global_position).normalized()
-		for spread in [-0.22, 0.0, 0.22]:
-			_bolt(aim.rotated(spread) * 280.0, dmg)
+		_strike("bolt", func() -> void:
+			for spread in [-0.22, 0.0, 0.22]:
+				_bolt(aim.rotated(spread) * 280.0, dmg))
 
 	if dist < 250.0:
 		return -to_player.normalized() * speed
@@ -2297,10 +2318,10 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 	if ability_cd <= 0.0 and dist < 220.0:
 		ability_cd = 4.0
 		game.sfx("slam")
-		play_action("slam")
-		game.shake(6.0)
-		for i in 10:
-			_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0) * 190.0, dmg * 0.6)
+		_strike("slam", func() -> void:
+			game.shake(6.0)
+			for i in 10:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0) * 250.0, dmg * 0.6))
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.85
@@ -2321,17 +2342,17 @@ func _kaethra_bloom(_player: Player, _to_player: Vector2, _dist: float, delta: f
 	if special_cd <= 0.0:
 		special_cd = 5.0
 		game.sfx("bolt")
-		play_action("ring")
-		for i in 8:
-			_bolt(Vector2.RIGHT.rotated(TAU * i / 8.0 + randf() * 0.3) * 260.0, dmg)
+		_strike("ring", func() -> void:
+			for i in 8:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 8.0 + randf() * 0.3) * 280.0, dmg))
 	# §5.2 floor (alternate): rooted, her aimed fan sprays the party in turn.
 	if ability_cd <= 0.0:
 		ability_cd = 2.4
 		game.sfx("bolt")
-		play_action("bolt")
 		var aim := (_floor_target(true).global_position - global_position).normalized()
-		for spread in [-0.3, -0.1, 0.1, 0.3]:
-			_bolt(aim.rotated(spread) * 270.0, dmg)
+		_strike("bolt", func() -> void:
+			for spread in [-0.3, -0.1, 0.1, 0.3]:
+				_bolt(aim.rotated(spread) * 270.0, dmg))
 	return Vector2.ZERO  # rooted in place
 
 
@@ -2445,9 +2466,9 @@ func _veyx(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 	if ring_cd <= 0.0:
 		ring_cd = 6.0
 		game.sfx("bolt")
-		play_action("ring")
-		for i in 10:
-			_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0 + randf()) * 200.0, dmg * 0.7)
+		_strike("ring", func() -> void:
+			for i in 10:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0 + randf()) * 260.0, dmg * 0.7))
 
 	# Static field: strikes around the prey, hotter when no rods remain.
 	# §5.2 FLOOR: the strikes hammer a rotating non-target (the ARC — the
@@ -2543,10 +2564,10 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 	if ability_cd <= 0.0:
 		ability_cd = 2.4
 		game.sfx("bolt")
-		play_action("throw")
 		var aim := (_floor_target(true).global_position - global_position).normalized()
-		for spread in [-0.25, 0.0, 0.25]:
-			_bolt(aim.rotated(spread) * 340.0, dmg)
+		_strike("throw", func() -> void:
+			for spread in [-0.25, 0.0, 0.25]:
+				_bolt(aim.rotated(spread) * 340.0, dmg))
 
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
@@ -2629,10 +2650,10 @@ func _cyrraeth_speaker(player: Player, to_player: Vector2, dist: float) -> Vecto
 	if ability_cd <= 0.0:
 		ability_cd = 2.6
 		game.sfx("bolt")
-		play_action("bolt")
 		var aim := (_floor_target(true).global_position - global_position).normalized()
-		for spread in [-0.3, -0.1, 0.1, 0.3]:
-			_bolt(aim.rotated(spread) * 300.0, dmg)
+		_strike("bolt", func() -> void:
+			for spread in [-0.3, -0.1, 0.1, 0.3]:
+				_bolt(aim.rotated(spread) * 300.0, dmg))
 	if dist < 250.0:
 		return -to_player.normalized() * speed
 	elif dist > 380.0:

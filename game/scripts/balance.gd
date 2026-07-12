@@ -329,6 +329,13 @@ const WARRIOR_SWING_DELAY := 0.13 # delay Cleave's cut/quake to the sword swing'
 const MAGE_BOLT_DELAY := 0.12     # delay Firebolt to the staff-thrust release frame (same windup-vs-FX sync)
 const ARCHER_LOOSE_DELAY := 0.12  # delay Quick Shot / Multishot / Arrow Storm to the bow's draw-release frame (same windup-vs-FX sync)
 const WARLOCK_CAST_DELAY := 0.16  # delay Shadowbolt / Hex to the arm-snap/sigil-projection frame (~frame 4 of the re-rolled upright cast; Dark Pact = self-buff stays instant; Void Rift self-sequences via its telegraph)
+# Bosses got v3 ability strips (a real swing/cast windup) — same rule as the
+# classes. BOSS_ABILITY_FPS plays the ~7-frame one-shot snappily (~0.5s, not the
+# 6fps 1.2s sluggard); BOSS_STRIKE_DELAY defers an IMMEDIATE bolt/ring/beam to
+# the contact frame via Boss._strike(). Telegraphed abilities (game.telegraph)
+# already carry their own windup — they stay instant, the telegraph IS the wind-up.
+const BOSS_ABILITY_FPS := 14.0
+const BOSS_STRIKE_DELAY := 0.16
 const DASH_REFUND := 0.35         # dash cd refunded when the rider connects
 # Rounds 39/40: planting your feet at blade range is the riskiest act
 # in the kit — the STANDING stab pays for it. The dash's proc'd stab

@@ -421,6 +421,7 @@ func _try_action_strip(action: String) -> bool:
 		_strip_action = dset[suf]
 		_action_t = 0.0
 		_apply_strip(_strip_action, true)
+		anim_fps = Balance.BOSS_ABILITY_FPS  # one-shot swing/cast plays snappy, not the 6fps default
 		sprite.flip_h = false
 		return true
 	var info := Art.action_info(_sprite_key, action)
@@ -430,6 +431,7 @@ func _try_action_strip(action: String) -> bool:
 	_action_dir = {}
 	_action_t = 0.0
 	_apply_strip(info, true)
+	anim_fps = Balance.BOSS_ABILITY_FPS
 	return true
 
 
