@@ -367,25 +367,26 @@ func _facing_vec() -> Vector2:
 
 
 ## Point the Sprite2D at an idle/walk strip (hframes + normalized scale).
-func _apply_strip(info: Dictionary) -> void:
+func _apply_strip(info: Dictionary, is_action := false) -> void:
 	sprite.texture = info["tex"]
 	var frames := int(info["frames"])
 	sprite.hframes = frames
 	sprite.frame = 0
 	anim_frames = frames
-	# A square strip (idle/walk) DEFINES the body reference cell. An ability
-	# strip may ship a LARGER cell (wider and/or taller) to fit a swung/raised
-	# weapon that reaches past the idle silhouette — it still renders at the
-	# SAME body scale off that reference (so the boss neither shrinks nor
-	# clips), with the sprite re-anchored so the feet stay put.
-	var cw := float(sprite.texture.get_width()) / maxf(1.0, float(frames))
-	var chh := float(sprite.texture.get_height())
-	if absf(chh - cw) < 1.0:
-		_body_cell = cw
-	var ref := _body_cell if _body_cell > 0.0 else cw
+	anim_fps = float(info["fps"])
+	# Idle/walk cells DEFINE the body reference. An ability strip ships a bigger
+	# (still SQUARE — the loader reads frame count as width/height) cell so a
+	# swung/raised weapon reaching past the idle silhouette isn't clipped; it
+	# renders at the SAME body scale off that reference (boss neither shrinks
+	# nor clips), sprite re-anchored so the feet stay put. is_action keeps an
+	# oversized ability cell from redefining the reference.
+	var cell := float(sprite.texture.get_height())
+	if not is_action:
+		_body_cell = cell
+	var ref := _body_cell if _body_cell > 0.0 else cell
 	var s := art_scale * 16.0 / ref
 	sprite.scale = Vector2(s, s)
-	sprite.offset = Vector2(0, -(chh - ref) / 2.0)
+	sprite.offset = Vector2(0, -(cell - ref) / 2.0)
 
 
 ## Play a one-shot ability strip once, then fall back to idle/walk. No-op
@@ -419,7 +420,7 @@ func _try_action_strip(action: String) -> bool:
 		var suf := Art.dir8_suffix(_facing_vec())
 		_strip_action = dset[suf]
 		_action_t = 0.0
-		_apply_strip(_strip_action)
+		_apply_strip(_strip_action, true)
 		sprite.flip_h = false
 		return true
 	var info := Art.action_info(_sprite_key, action)
@@ -428,7 +429,7 @@ func _try_action_strip(action: String) -> bool:
 	_strip_action = info
 	_action_dir = {}
 	_action_t = 0.0
-	_apply_strip(info)
+	_apply_strip(info, true)
 	return true
 
 

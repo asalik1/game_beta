@@ -63,19 +63,19 @@ def content_bbox(imgs):
             max(b[2] for b in boxes), max(b[3] for b in boxes))
 
 
-def place(fig, cw, ch):
+def place(fig, cell):
     fw, fh = fig.size
-    c = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
-    c.alpha_composite(fig, ((cw - fw) // 2, ch - fh - MARGIN))
+    c = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
+    c.alpha_composite(fig, ((cell - fw) // 2, cell - fh - MARGIN))
     return c
 
 
-def write_strip(base, suf, frames, cw, ch, bbox):
+def write_strip(base, suf, frames, cell, bbox):
     x0, y0, x1, y1 = bbox
-    cells = [place(f.crop((x0, y0, x1, y1)), cw, ch) for f in frames]
-    strip = Image.new("RGBA", (cw * len(cells), ch), (0, 0, 0, 0))
+    cells = [place(f.crop((x0, y0, x1, y1)), cell) for f in frames]
+    strip = Image.new("RGBA", (cell * len(cells), cell), (0, 0, 0, 0))
     for i, c in enumerate(cells):
-        strip.alpha_composite(c, (i * cw, 0))
+        strip.alpha_composite(c, (i * cell, 0))
     strip.save(os.path.join(SPR, "%s_%s.png" % (base, suf)))
 
 
@@ -119,19 +119,22 @@ def main():
     #    sideways or overhead weapon) across all directions. The render scales
     #    the body off the idle reference (ref), so a bigger cell shows the full
     #    weapon without shrinking the boss.
+    # SQUARE cell (the loader derives frame count as width/height, so cells
+    # MUST stay square). Grow it to fit the widest/tallest pose across all
+    # directions; the render scales the body off the idle ref, so a bigger
+    # square just gives the swung weapon room without shrinking the boss.
     ref = cw
     bxs = {d: content_bbox(abil.get(d) or abil["s"]) for d in DIR8}
     widest = max(b[2] - b[0] for b in bxs.values())
     tallest = max(b[3] - b[1] for b in bxs.values())
-    cw = max(ref, widest + MARGIN * 2)
-    ch = max(ref, tallest + MARGIN * 2)
+    cell = max(ref, widest + MARGIN * 2, tallest + MARGIN * 2)
     for d in DIR8:
-        write_strip("%s_ability" % key, d, abil.get(d) or abil["s"], cw, ch, bxs[d])
+        write_strip("%s_ability" % key, d, abil.get(d) or abil["s"], cell, bxs[d])
     Image.open(os.path.join(SPR, "%s_ability_s.png" % key)).save(
         os.path.join(SPR, "%s_ability.png" % key))
-    print("%s ability installed: dirs=%s cell=%dx%d (idle ref=%d%s%s)"
-          % (key, "".join(sorted(abil)), cw, ch, ref,
-             ", WIDER" if cw > ref else "", ", TALLER" if ch > ref else ""))
+    print("%s ability installed: dirs=%s cell=%d (idle ref=%d%s)"
+          % (key, "".join(sorted(abil)), cell, ref,
+             ", GROWN" if cell > ref else ""))
 
 
 if __name__ == "__main__":
