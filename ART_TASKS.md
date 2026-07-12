@@ -224,6 +224,33 @@ Manifest notes:
 - Cyrraeth's P3 continuous lightning (1.5s cadence) intentionally has NO
   play_action — retriggering that fast would starve every other strip.
 
+## OWNER PLAYTEST NOTES — v3 boss sprite polish (2026-07-12)
+After the v3 hi-res bodies + ability strips + FX-sync shipped, owner q/a flagged:
+1. **Vess** — no smoke from her mouth; her keening/wail identity wants breath-
+   smoke. FIX: cheapest as an in-game particle FX at the mouth while keening
+   (0 gens); or regen the body with mouth-smoke baked in (~3 gens + re-cut).
+2. **Nullwarden** — weapon is inconsistent/choppy across clips: present in some
+   frames/directions, absent in others (v3 gen artifact). FIX: regen with a
+   firm single-weapon description (~3 gens + re-cut) — v3 won't *guarantee*
+   consistency, so may need a hand-fix pass.
+3. **Whitepelt (Hrolgar)** — idle/walk carry NO axe but the ability strip does
+   → the axe pops in only on attack. FIX: regen idle/walk WITH the axe so every
+   clip matches (~3 gens + re-cut idle/walk).
+4. **Kaethra** — wants a directional STAB/lunge attack animation on her charge.
+   FIX: `animate_character` a "stab" clip (8-dir) + `play_action("stab")` at the
+   charge/contact site (~48 gens + wiring).
+5. **GENERAL (all melee bosses)** — close-range contact hits (`take_damage` at
+   `_reach()`) currently play NO swing; the boss just deals damage. Give each
+   melee boss a close-range **melee attack** clip played on the contact hit.
+   FIX: a "melee"/"attack" `animate_character` clip per melee boss + `play_action`
+   at each `dist < _reach(): take_damage` site (~48 gens EACH — budget-gated).
+
+Priority vs the ~285-gen budget + shared PixelLab queue (other agent on base
+archer): do the CHEAP wins first — #1 as FX (0 gens), #3 whitepelt axe (~3),
+#2 nullwarden (~3). The ANIMATION items (#4, #5) are ~48 gens each and should
+wait for a budget reset or be scoped to 1–2 key bosses. #5 also needs a code
+pass (play_action at the melee contact sites) independent of the art.
+
 ## Source material
 - Raw packs: `C:\Users\asali\Downloads\*.zip` (Pixel Crawler bundle,
   Ninja Adventure CC0, Small_Bat, Bat_Fur). Re-extract to a scratch
