@@ -24,8 +24,8 @@ MIRROR = {"w": "e", "sw": "se", "nw": "ne", "e": "w", "se": "sw", "ne": "nw"}
 def fetch(url):
     # curl handles backblaze's throttling far better than urllib here
     # (urllib got 429'd into multi-minute backoffs). --retry rides out blips.
-    r = subprocess.run(["curl", "-s", "--fail", "--retry", "6", "--retry-delay", "3",
-                        "--retry-all-errors",  # 429 throttling isn't retried by default
+    r = subprocess.run(["curl", "-s", "--fail", "--max-time", "15",
+                        "--retry", "2", "--retry-delay", "1", "--retry-all-errors",
                         "-H", "User-Agent: Mozilla/5.0", url],
                        capture_output=True)
     if r.returncode != 0 or not r.stdout:
@@ -43,7 +43,7 @@ def ability_frames(char_id, anim_id, dname, count):
             frames.append(fetch(base + "%d.png" % i))
         except Exception:
             break
-        time.sleep(0.25)  # smooth the request rate so backblaze doesn't throttle
+        time.sleep(0.6)  # smooth the request rate so backblaze doesn't throttle
     return frames
 
 
