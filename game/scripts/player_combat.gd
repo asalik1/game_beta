@@ -699,19 +699,6 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 		spr.flip_v = to < from  # rising cut: the crescent's belly flips with it
 		spr.modulate = slash_col
 		pivot.add_child(spr)
-		if variant >= 0:
-			# The blade itself leads the swipe — held weapon's icon when
-			# armed, a bare blade otherwise — angled with the cut so the
-			# swing reads as a sword stroke, not an air-swipe.
-			var ahead: float = 0.18 * signf(to - from)
-			var blade := Sprite2D.new()
-			blade.texture = weapon_spr.texture if (weapon_spr != null
-				and weapon_spr.texture != null) else Art.tex("w_blade")
-			blade.position = Vector2.from_angle(ahead) * reach * 0.58
-			blade.rotation = PI / 2.0 + ahead  # icon art points up: lay it along the arm
-			blade.scale = Vector2(3.0, 3.0)
-			blade.z_index = 1
-			pivot.add_child(blade)
 		# A Ninja-pack slash crescent flashes along the strike (CC0), tinted
 		# to the swing colour — the drawn "cut" riding on top of the sweep.
 		_fx_flash("fx_slash", global_position + dir * reach * 0.52, 4, {

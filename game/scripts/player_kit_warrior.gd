@@ -6,8 +6,8 @@ extends "res://scripts/player_combat.gd"
 func _use_warrior(slot: String, f: float) -> void:
 	match slot:
 		"a1":
-			# Cleave cycles its cut: diagonal, crescent down, crescent up —
-			# a blade leads each arc (see _melee_arc variants).
+			# Cleave cycles its cut: diagonal, crescent down, crescent up
+			# (see _melee_arc variants).
 			var v := cleave_seq
 			cleave_seq = (cleave_seq + 1) % 3
 			# Sync the cut to the swing's contact frame — the sword windup means
