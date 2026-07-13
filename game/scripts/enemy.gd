@@ -91,6 +91,7 @@ var _action_dir := {}   # the dir set for the running action, {} if flat
 var _sprite_key := ""   # stats["sprite"] kept for action-strip lookups
 var _moving_anim := false  # hysteretic "moving" for walk/idle swap + bob
 var _face_vx := 0.0        # low-passed velocity.x for jitter-free facing
+var _avoid_turn := 0.0     # committed feeler-steer side (see _avoid_obstacles): keeps a mob rounding a corner instead of stuttering between the two ways past
 var art_scale := 1.0
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
@@ -599,6 +600,8 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var move := _think(delta)
+	move = _avoid_obstacles(move)  # steer around walls/props between us and prey (dashes pass through)
+	move = _reacquire_shot(move)   # ranged shooters sidestep terrain that blocks the shot
 	if slow_time > 0.0:
 		move *= slow_mult
 	move *= hazard_speed  # ice patches boost, void rifts slow
@@ -881,14 +884,20 @@ func _think(delta: float) -> Vector2:
 		return Vector2.ZERO
 
 	if ranged:
-		if attack_cd <= 0.0:
+		# Hold fire when terrain sits in the lane: a hostile bolt collides with
+		# walls (Projectile mask 1|2), so a blocked shot is a wasted shot into a
+		# tree/wall. attack_cd isn't spent while blocked, so it looses the instant
+		# the lane clears — and _reacquire_shot (movement layer) sidesteps to open
+		# it. Snare lob is a line shot too; gate it the same.
+		var shot_ok := _shot_clear(player.global_position)
+		if attack_cd <= 0.0 and shot_ok:
 			attack_cd = 1.58
 			game.sfx("bolt")
 			var p := Projectile.spawn(game, global_position, to_player.normalized() * 420.0, _hit_dmg(), false, "bolt")
 			p.hostile_type = dmg_type
 			p.source_enemy = self
 		# Snarer lobs a freeze-patch at the player's feet on its own cadence.
-		if traits.has("snare") and snare_cd <= 0.0 and dist < 420.0:
+		if traits.has("snare") and snare_cd <= 0.0 and dist < 420.0 and shot_ok:
 			snare_cd = Balance.MOB_SNARE_CD
 			_snare_patch(player.global_position)
 		if traits.has("skirmish"):
@@ -956,6 +965,107 @@ func _has_los(player: Node2D) -> bool:
 		if space.intersect_ray(q).is_empty():
 			return true
 	return false
+
+
+## Steer a WALKING move vector around walls and solid props (collision layer 1)
+## so a mob/boss doesn't wedge into a tree, building or wall-corner sitting
+## between it and its prey — and doesn't jitter as the straight-line steering
+## oscillates against one. Mobs still don't truly pathfind (no navmesh — see the
+## Balance MOB_AGGRO notes); this is cheap FEELER steering: one ray straight
+## ahead in the common CLEAR case, a short outward fan only when the way ahead
+## is blocked, committing to one turn side so a body rounds a corner instead of
+## stuttering between the two ways past. Committed dashes (charge/pounce — far
+## faster than any walk) pass straight through untouched: those are meant to
+## connect, and move_and_slide already stops them at a wall. Runs in
+## _physics_process, the query-safe window.
+func _avoid_obstacles(move: Vector2) -> Vector2:
+	var spd := move.length()
+	if spd < 1.0 or spd > speed * Balance.MOB_AVOID_MAX_SPEED:
+		return move  # idle/blocked-in-place, or a committed dash: leave it alone
+	var space := get_world_2d().direct_space_state
+	if space == null:
+		return move
+	var dir := move / spd
+	# Feeler length = body half-width (the physics circle, 6·scale·0.7 from
+	# _setup) + a lookahead margin, so a big boss body starts rounding an
+	# obstacle before its edge wedges.
+	var reach := 6.0 * art_scale * 0.7 + Balance.MOB_AVOID_LOOKAHEAD
+	if _feeler_clear(space, dir, reach):
+		_avoid_turn = 0.0
+		return move
+	# Blocked ahead: fan outward and take the first CLEAR heading, smallest turn
+	# first — and on a tie prefer the side already committed to this frame-run.
+	for ang in Balance.MOB_AVOID_FAN:
+		var s := _avoid_turn if _avoid_turn != 0.0 else 1.0
+		for turn in [s, -s]:
+			if _feeler_clear(space, dir.rotated(ang * turn), reach):
+				_avoid_turn = turn
+				return dir.rotated(ang * turn) * spd
+	return move  # boxed in on every feeler: let move_and_slide slide it along the wall
+
+
+## True when a ray `reach` px from the body center along `dir` hits no wall or
+## solid prop (collision layer 1 ONLY — players/enemies/loot never block a
+## path). Sibling to _has_los; runs in the same query-safe window.
+func _feeler_clear(space: PhysicsDirectSpaceState2D, dir: Vector2, reach: float) -> bool:
+	var q := PhysicsRayQueryParameters2D.create(
+		global_position, global_position + dir * reach, 1)
+	return space.intersect_ray(q).is_empty()
+
+
+## True when nothing on the WALL layer (1) sits between our muzzle and `to` — a
+## bolt/beam aimed there reaches it instead of splashing on a tree/wall. The
+## STRICT single-ray sibling of the lenient 3-ray _has_los (aggro sight): a
+## shot needs a real clean lane, not just an edge peek.
+func _shot_clear(to: Vector2) -> bool:
+	var space := get_world_2d().direct_space_state
+	if space == null:
+		return true
+	var q := PhysicsRayQueryParameters2D.create(global_position, to, 1)
+	return space.intersect_ray(q).is_empty()
+
+
+## A ranged attacker holding position whose line to its prey is blocked by
+## terrain sidesteps to reacquire a clean shot — repositioning "just enough" to
+## fire instead of looseing into a wall. Only nudges when it isn't already
+## moving with intent (|move| tiny, e.g. a turret holding its range) and it has
+## a live target within keep-range; never overrides a kite/approach. Bosses with
+## ranged=true (Morwen and kin) inherit it and reacquire the same way; melee
+## bosses (ranged=false) rely on _do_charge's clear-lane pick instead.
+func _reacquire_shot(move: Vector2) -> Vector2:
+	if not ranged or move.length() > 6.0:
+		return move
+	if not (alerted or force_aggro):
+		return move
+	var tgt: Player = _get_target()
+	if tgt == null or tgt.dead:
+		return move
+	if (tgt.global_position - global_position).length() > aggro_range * Balance.MOB_AGGRO_KEEP:
+		return move
+	if _shot_clear(tgt.global_position):
+		return move
+	return _strafe_for_shot(tgt.global_position, speed * Balance.MOB_REPOSITION_SPEED)
+
+
+## Sideways drift that opens a blocked line to `to`: probe a short step to each
+## flank (committed side first, jitter-free) and take whichever clears the lane;
+## if neither clears at one step, keep circling the committed way rather than
+## freezing or bashing forward. Magnitude `spd`.
+func _strafe_for_shot(to: Vector2, spd: float) -> Vector2:
+	var toward := to - global_position
+	if toward.length() < 1.0:
+		return Vector2.ZERO
+	var perp := toward.normalized().orthogonal()
+	var space := get_world_2d().direct_space_state
+	var probe := Balance.MOB_REPOSITION_PROBE
+	var s := _avoid_turn if _avoid_turn != 0.0 else 1.0
+	if space != null:
+		for turn in [s, -s]:
+			var q := PhysicsRayQueryParameters2D.create(global_position + perp * turn * probe, to, 1)
+			if space.intersect_ray(q).is_empty():
+				_avoid_turn = turn
+				return perp * turn * spd
+	return perp * s * spd
 
 
 # ---------------------------------------------------------------- traits ---

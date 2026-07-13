@@ -321,15 +321,48 @@ func _do_charge(_to_player: Vector2) -> void:
 	if dying or not is_instance_valid(tgt):
 		telegraphing = false
 		return
+	# Pick a heading with a clear lane so the charge doesn't just bash a wall or
+	# prop between us and the prey — the straight line if it's open, else the
+	# nearest angled lane still roughly at the target. Boxed in on every heading:
+	# skip the charge this cycle (short retry) and let normal movement +
+	# _avoid_obstacles reposition instead of grinding terrain.
+	charge_dir = _clear_charge_dir(tgt.global_position - global_position)
+	if charge_dir == Vector2.ZERO:
+		telegraphing = false
+		charging = false
+		ability_cd = 1.0
+		return
 	sprite.modulate = base_mod
 	roar()
-	charge_dir = (tgt.global_position - global_position).normalized()
 	charging = true
 	charge_time = 0.55
 	telegraphing = false
 	# Cinderhide charges more often while plated (a rampaging tank you must
 	# survive while setting up the melt); fangmaw's plated is always false.
 	ability_cd = 3.0 if plated else 4.0
+
+
+## Choose a charge heading that won't immediately crash into terrain: the direct
+## line to the prey when its lane is clear for the charge's reach, else the
+## nearest angled lane (small cone, both ways) that is. ZERO when every heading
+## is blocked, so the caller aborts and walk-repositions. Reach caps at the
+## distance to the prey (never demand clearance past the target) plus the body
+## half-width, mirroring the _avoid_obstacles feeler.
+func _clear_charge_dir(aim: Vector2) -> Vector2:
+	if aim.length() < 1.0:
+		return Vector2.ZERO
+	var space := get_world_2d().direct_space_state
+	if space == null:
+		return aim.normalized()
+	var dir := aim.normalized()
+	var reach: float = minf(aim.length(), Balance.BOSS_CHARGE_LANE) + 6.0 * art_scale * 0.7
+	if _feeler_clear(space, dir, reach):
+		return dir
+	for ang in Balance.BOSS_CHARGE_FAN:
+		for turn in [1.0, -1.0]:
+			if _feeler_clear(space, dir.rotated(ang * turn), reach):
+				return dir.rotated(ang * turn)
+	return Vector2.ZERO
 
 
 # -------------------------------------------------------------- Morwen ---

@@ -529,6 +529,34 @@ const MOB_RETARGET_EVERY := 1.0 # seconds between sticky target re-picks
 # room gains awareness and comes to you (the room "hears" the fight) — no
 # hunting stragglers across a large arena. First pack still wakes by sight.
 
+# --- obstacle avoidance (2026-07-12) ---
+# Chase is a straight line (no navmesh, see above); without help a mob/boss
+# wedges into a tree/building/wall-corner between it and its prey and jitters
+# as the steering oscillates. enemy._avoid_obstacles casts a feeler ray ahead
+# and, when blocked, fans outward to the nearest CLEAR heading. LOOKAHEAD is
+# added to the body half-width for the feeler length; FAN is the turn angles
+# (radians, smallest first) it tries. MAX_SPEED gates it OFF for committed
+# dashes (charge/pounce run far faster than any walk speed — those should
+# connect, not curve around cover).
+const MOB_AVOID_LOOKAHEAD := 24.0
+const MOB_AVOID_FAN: Array[float] = [0.6, 1.2, 1.9]  # ~34°, 69°, 109°
+const MOB_AVOID_MAX_SPEED := 1.5   # skip avoidance above walk_speed * this
+
+# Reposition-to-fire (enemy._reacquire_shot): a ranged shooter (mob, or a
+# ranged boss) whose LINE to the prey is blocked by terrain sidesteps to open
+# a clean lane instead of looseing a bolt into a wall — a hostile bolt collides
+# with layer 1. SPEED is the sidestep fraction of walk speed; PROBE is how far
+# to each flank it tests a would-be-clear lane before committing that way.
+const MOB_REPOSITION_SPEED := 0.7
+const MOB_REPOSITION_PROBE := 40.0
+
+# Charge lane-check (Boss._do_charge -> _clear_charge_dir): a melee charge
+# picks a heading whose lane is clear this far ahead (capped at the distance to
+# the prey) so it doesn't bash a wall/prop; FAN is the small cone (radians,
+# both ways) it tries when the straight line is blocked before it aborts.
+const BOSS_CHARGE_LANE := 300.0
+const BOSS_CHARGE_FAN: Array[float] = [0.35, 0.7]  # ~20°, 40°
+
 # --- co-op party scaling (MULTIPLAYER.md §5.2) ---
 # Applied per spawn in add_enemy, riding beside weekly_fx. Indexed by party
 # size; [0] unused, [1] = 1.0 so SOLO IS UNTOUCHED BY CONSTRUCTION. HP scales
