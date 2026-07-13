@@ -17,7 +17,7 @@ func _use_assassin(slot: String, f: float) -> void:
 			await get_tree().create_timer(swing_delay(Balance.STAB_STRIKE_DELAY)).timeout
 			if dead or downed or ghost:
 				return
-			var cut := _melee_arc(Balance.STAB_MULT * f, 118.0, "slash", {"stagger": 0.3, "knock": 260.0}, "stab", "stab")
+			var cut := _melee_arc(ability_coeff("a1") * f, 118.0, "slash", {"stagger": 0.3, "knock": 260.0}, "stab", "stab")
 			if cut > 0:
 				# Blood price, paid forward (round 25): dive in low, cut,
 				# ult through the answer, heal it back through knives.
@@ -43,7 +43,7 @@ func _shadow_dash(f := 1.0) -> void:
 	# stab_rider passes the talent scale only — the depth-tiered damage
 	# mult (near/far) is applied per victim inside _dash_strike. The eaten-cdr
 	# bonus rides the HIT mult only, leaving the surge rider (stab_rider = f) clean.
-	var dash_mult := 1.2 * f * (1.0 + eaten * Balance.DASH_CDR_TO_DMG)
+	var dash_mult := ability_coeff("a2") * f * (1.0 + eaten * Balance.DASH_CDR_TO_DMG)
 	if _tfx.has("kill_refund"):
 		# Shadow phantom step: ARM the refund window BEFORE the strike, so a kill
 		# from ANY source in the next PHANTOM_REFUND_WINDOW seconds refunds the
@@ -125,7 +125,7 @@ func _fan_of_knives(f := 1.0) -> void:
 	var step := float(_tfx.get("spread", 0.13))
 	for i in count:
 		var spread := (float(i) - (count - 1) / 2.0) * step
-		var p := _proj(dir.rotated(spread), Balance.KNIFE_MULT * surge_amp * f, "dart", 760.0)
+		var p := _proj(dir.rotated(spread), ability_coeff("a3") * surge_amp * f, "dart", 760.0)
 		p.spin = false
 		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 		_knife_glow(p)
@@ -167,12 +167,12 @@ func _death_mark() -> void:
 	_cast_shadow(global_position)
 	# Untouchable through the execution (round 18): longer than Shadow
 	# Dash's 0.5s — commit to the kill, not to the chip damage.
-	hurt_cd = maxf(hurt_cd, 0.8)
+	hurt_cd = maxf(hurt_cd, rider("ult", "iframe"))
 	hurt_was_heavy = true  # untouchable means untouchable — heavy telegraphs too
 	# Default mark is +50%; shadow's ult carries a leaner "vuln": 0.40 override
 	# (its power lives in the marked-window guaranteed crits, not the amp).
 	# apply_vuln is the MP-10 seam: a mirror target forwards the mark.
-	target.apply_vuln(5.0, 1.0 + float(_tfx.get("vuln", 0.5)))
+	target.apply_vuln(rider("ult", "amp_secs"), 1.0 + float(_tfx.get("vuln", rider("ult", "amp"))))
 	_stun_or_concuss(target, 0.6)
 	if _tfx.has("mark_dot"):
 		# Poison: the mark itself rots the target (and stacks toxin).
@@ -295,7 +295,7 @@ func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
 	play_action("ultidle")
 	_afterimages(from, global_position, Color(0.6, 0.25, 0.6), 3)
 	game.shake(6.0)
-	_melee_arc(1.3, 118.0, "slash", {"type": "true"}, "stab", "stab")
+	_melee_arc(ability_coeff("ult"), 118.0, "slash", {"type": "true"}, "stab", "stab")
 	if execute > 0.0 and is_instance_valid(target) and not target.dying \
 			and target.hp < target.max_hp * 0.3:
 		game.spawn_text(target.global_position + Vector2(0, -70), "EXECUTED", Color(1, 0.15, 0.25))

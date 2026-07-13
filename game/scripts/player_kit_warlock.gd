@@ -69,7 +69,7 @@ func _hex(f := 1.0) -> void:
 	for e in _enemies_within(center, radius):
 		# A dark tendril lashes from the curse's heart to each victim.
 		_beam_fx(center, e.global_position, col, 0.16)
-		hit_enemy(e, 0.35 * f, eff.duplicate())
+		hit_enemy(e, ability_coeff("a1") * f, eff.duplicate())
 		if not e.dying:
 			_hex_mark(e)
 
@@ -187,7 +187,7 @@ func _dark_pact(f := 1.0) -> void:
 	if _tfx.get("pull", 0):
 		eff["pull"] = 1
 	for e in _enemies_within(global_position, 170.0):
-		hit_enemy(e, 1.5 * f, eff.duplicate())
+		hit_enemy(e, ability_coeff("a2") * f, eff.duplicate())
 
 
 ## Void Rift: a rift tears open under the target, drags everything
@@ -325,7 +325,7 @@ func _void_rift(f := 1.0) -> void:
 	var saved := _tfx
 	_tfx = fx_copy
 	for e in _enemies_within(pos, radius):
-		hit_enemy(e, 3.0 * fmul, {"aoe": true})
+		hit_enemy(e, ability_coeff("ult") * fmul, {"aoe": true})
 		if heal_frac > 0.0:
 			gain_hp(max_hp * heal_frac)  # pact rift: each caught soul mends, SHOWN
 	_tfx = saved
@@ -352,6 +352,6 @@ func _voidmaw_wave() -> void:
 			var push := clampf(1.0 - dist / max_reach, 0.15, 1.0)  # closer = harder
 			e.apply_knock(away.normalized() * 640.0 * push)
 		_beam_fx(global_position, e.global_position, col, 0.14)
-		hit_enemy(e, 0.4, eff.duplicate())
+		hit_enemy(e, 0.4, eff.duplicate())   # Voidmaw S-passive wave — NOT the ult burst
 		if not e.dying:
 			_hex_mark(e)

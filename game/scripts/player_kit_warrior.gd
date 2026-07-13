@@ -15,7 +15,7 @@ func _use_warrior(slot: String, f: float) -> void:
 			await get_tree().create_timer(swing_delay(Balance.WARRIOR_SWING_DELAY)).timeout
 			if dead or downed or ghost:
 				return
-			_melee_arc(1.0 * f, 96.0, "slash", {"stagger": 0.35, "knock": 330.0}, "swing", "sword", v)
+			_melee_arc(ability_coeff("a1") * f, 96.0, "slash", {"stagger": 0.35, "knock": 330.0}, "swing", "sword", v)
 			if _tfx.get("quake", 0):
 				# Earth: a stone shockwave rolls down the lane.
 				var qdir := aim_dir(220.0)
@@ -46,8 +46,8 @@ func _use_warrior(slot: String, f: float) -> void:
 			game.sfx("slam")
 			# The ram parks you in the boss's face — a landing i-frame so the
 			# gap-close itself isn't punished (round 44).
-			_dash_strike(170.0 * float(_tfx.get("dash_mult", 1.0)), 1.3 * f,
-				{"stun": 1.3, "knock": 220.0}, 0.0, Balance.MELEE_DASH_IFRAME, true)
+			_dash_strike(170.0 * float(_tfx.get("dash_mult", 1.0)), ability_coeff("a2") * f,
+				{"stun": rider("a2", "stun"), "knock": 220.0}, 0.0, rider("a2", "iframe"), true)
 			_ring_fx(global_position, _tcolor if _themed else Color(0.85, 0.85, 0.95), 80.0)
 			if _tfx.get("end_slam", 0):
 				# Earth: the charge ends in a ground-shattering slam.
@@ -112,4 +112,4 @@ func _whirlwind(f := 1.0) -> void:
 	# Round 49 AoE pass: 0.9 -> 1.0 — the cyclone is the warrior's whole
 	# pack answer and it trailed the field.
 	for e in _enemies_within(global_position, radius):
-		hit_enemy(e, 1.0 * f, eff.duplicate())
+		hit_enemy(e, ability_coeff("a3") * f, eff.duplicate())

@@ -13,7 +13,7 @@ func _use_archer(slot: String, f: float) -> void:
 			if dead or downed or ghost:
 				return
 			_hunt_rhythm_tick()
-			_shoot(aim_dir(), 0.85 * f)
+			_shoot(aim_dir(), ability_coeff("a1") * f)
 		"a2": _multishot(f)
 		"a3": _tumble()
 		"ult":
@@ -66,7 +66,7 @@ func _multishot(f := 1.0) -> void:
 	var step := 0.05 if _tfx.get("narrow", 0) else float(_tfx.get("spread", 0.16))
 	for i in count:
 		var spread := (float(i) - (count - 1) / 2.0) * step
-		var p := _proj(dir.rotated(spread), 0.55 * f, "arrow", 520.0)
+		var p := _proj(dir.rotated(spread), ability_coeff("a2") * f, "arrow", 520.0)
 		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 
 
@@ -79,8 +79,8 @@ func _tumble() -> void:
 	# the reposition so an average pilot still has margin, not a wall.
 	hurt_cd = maxf(hurt_cd, 0.1)
 	hurt_was_heavy = true  # the perfect-dodge window blocks heavy telegraph hits too
-	dodge_time = 1.25
-	dodge_amt = 0.20
+	dodge_time = rider("a3", "eva_secs")
+	dodge_amt = rider("a3", "eva")
 	if tumble_dr > 0.0:
 		# Windrunner (talent): the landing steadies you — a DR window EARNED by
 		# rolling, the archer's purchasable floor (same rail as Arcane Ward).
@@ -142,5 +142,5 @@ func _storm_strike() -> void:
 	# (the Consecration save-restore idiom).
 	var saved := _tfx
 	_tfx = storm_fx
-	hit_enemy(e, 0.8, eff)
+	hit_enemy(e, ability_coeff("ult"), eff)
 	_tfx = saved

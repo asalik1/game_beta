@@ -432,6 +432,25 @@ func _run_systems() -> void:
 	if absf(ult_cd_now - ult_cd_data) > 0.01:
 		return _fail("Death Mark cd must be FIXED (haste leaked in: %.1fs vs %.1fs)" %
 			[ult_cd_now, ult_cd_data])
+	# Ability scaling reads from the single-source dmg data (drives the selector).
+	if Classes.ability_scaling("warrior", "a1") != "Physical · 100% ATK":
+		return _fail("ability_scaling(warrior a1) = '%s'" % Classes.ability_scaling("warrior", "a1"))
+	if Classes.ability_scaling("assassin", "ult") != "True · 130% ATK":
+		return _fail("ability_scaling must honor the per-ability type override")
+	if Classes.ability_scaling("warrior", "ult") != "":
+		return _fail("a buff (Berserk) must produce no scaling line")
+	# Rider line is generated from the single-source riders data (the same numbers
+	# the kit/recalc read — no drift). Blink's DR and Death Mark's amp must appear.
+	if not Classes.ability_riders("mage", "a3").contains("50% DR 0.8s"):
+		return _fail("Blink riders should generate '50% DR 0.8s' from data: %s" % Classes.ability_riders("mage", "a3"))
+	if not Classes.ability_riders("assassin", "ult").contains("+50% dmg taken"):
+		return _fail("Death Mark riders should surface the +50%% amp")
+	# The base-damage knob is dormant — every ability's base is 0 today, so the
+	# refactor is a pure no-op (change one to tune a class later).
+	for _sc in Classes.CLASSES:
+		for _ss in ["a1", "a2", "a3", "ult"]:
+			if float(Classes.CLASSES[_sc]["abilities"][_ss].get("dmg", {}).get("base", 0.0)) != 0.0:
+				return _fail("ability base must be 0 (dormant): %s %s" % [_sc, _ss])
 	graze_dummy.take_damage(9999999.0)
 	surge_dummy.take_damage(9999999.0)
 	await _frames(2)
@@ -2004,6 +2023,21 @@ func _test_reforge() -> void:
 	if not changed:
 		return _fail("reforge_sub never changed the value in 8 tries")
 
+	# Per-slot reforge: swaps ONE sub for a DIFFERENT affix, same sub count.
+	var rf_item := Items.roll_item_of("weapon", "A", rng, "warrior")
+	var target := String(rf_item["subs"].keys()[0])
+	var n_before: int = rf_item["subs"].size()
+	if not Items.can_reforge_affix(rf_item, target):
+		return _fail("a rolled A sub should be reforgeable")
+	var new_stat := Items.reforge_affix(rf_item, target, "warrior", rng)
+	if new_stat == "" or new_stat == target or rf_item["subs"].has(target):
+		return _fail("reforge_affix must replace the target with a different stat")
+	if rf_item["subs"].size() != n_before or not rf_item["subs"].has(new_stat):
+		return _fail("reforge_affix changed the sub count")
+	# Main stat is never reforgeable (quench-only).
+	if Items.can_reforge_affix(rf_item, String(rf_item["main"].keys()[0])):
+		return _fail("main stat must not be reforgeable")
+
 	# Add socket: A starts at 2 -> can add to 3, then hits the cap.
 	var slots0: int = int(it["gem_slots"])
 	if not Items.can_add_socket(it):
@@ -2014,10 +2048,15 @@ func _test_reforge() -> void:
 	if Items.can_add_socket(it):
 		return _fail("socket count past cap should be rejected")
 
-	# An S weapon starts at 3 sockets and is already at the cap.
+	# An S weapon starts at 3 sockets and can reforge ONE more to 4, then caps.
 	var s_it := Items.roll_item_of("weapon", "S", rng, "warrior")
-	if Items.can_add_socket(s_it):
-		return _fail("S item (3 sockets) should be at the socket cap")
+	if int(s_it["gem_slots"]) != 3:
+		return _fail("S gear should roll with 3 gem slots")
+	if not Items.can_add_socket(s_it):
+		return _fail("S gear should allow its one reforged 4th socket")
+	Items.add_socket(s_it)
+	if int(s_it["gem_slots"]) != 4 or Items.can_add_socket(s_it):
+		return _fail("S gear past its 4-socket cap should be rejected")
 
 	# C gear (2026-07-09): rolls 1 socket, reforge can add ONE more (cap 2).
 	var c_it := Items.roll_item_of("armor", "C", rng, "warrior")
@@ -3841,6 +3880,62 @@ func _test_merchant_economy() -> void:
 	var sstep: int = Items.upgrade_cost({"grade": "S", "plus": 0})
 	if cstep != 24 or sstep != cstep * 8:
 		return _fail("upgrade curve off (C step %d, S step %d)" % [cstep, sstep])
+	# Cost exponent bites: an S step at +9 must be much steeper than linear (10^1.5x base).
+	if Items.upgrade_cost({"grade": "S", "plus": 9}) < sstep * 30:
+		return _fail("upgrade cost exponent too shallow at high plus")
+	# Grade caps and the failure curve (upgrade-rework 2026-07-13).
+	if Balance.max_plus("S") != 20 or Balance.max_plus("C") != 10:
+		return _fail("MAX_PLUS caps wrong (S %d, C %d)" % [Balance.max_plus("S"), Balance.max_plus("C")])
+	if not Items.can_upgrade({"grade": "S", "plus": 19}) or Items.can_upgrade({"grade": "S", "plus": 20}):
+		return _fail("can_upgrade ignores the S cap")
+	if Balance.upgrade_success(0) < 1.0 or Balance.upgrade_success(3) < 1.0:
+		return _fail("early upgrades must be guaranteed")
+	if Balance.upgrade_success(19) != Balance.UPGRADE_MIN_SUCCESS:
+		return _fail("S cap success should hit the floor (%.2f)" % Balance.upgrade_success(19))
+	# +5% per plus, applied to EVERY rolled stat: a +10 item carries +50% of its
+	# main AND +50% of each sub (gems stay flat).
+	var up_item: Dictionary = Items.roll_item_of("weapon", "A", RandomNumberGenerator.new(), "warrior")
+	var main_key: String = String(up_item["main"].keys()[0])
+	var base_main: float = float(up_item["main"][main_key])
+	var sub_key: String = String(up_item["subs"].keys()[0])
+	var base_sub: float = float(up_item["subs"][sub_key])
+	up_item["plus"] = 10
+	var out10: Dictionary = Items.stats_of(up_item)
+	if not is_equal_approx(float(out10.get(main_key, 0.0)), base_main * 1.5):
+		return _fail("+plus main-stat bonus is not +5%%/plus")
+	if not is_equal_approx(float(out10.get(sub_key, 0.0)), base_sub * 1.5):
+		return _fail("+plus does not scale substats (should be +5%%/plus on all rolled stats)")
+
+	# Add-socket is steep + tier-scaled (upgrade-rework 2026-07-13).
+	if Items.reforge_cost({"grade": "A"}, "socket") != Balance.ADD_SOCKET_COST["A"]:
+		return _fail("add-socket cost not sourced from ADD_SOCKET_COST")
+	# Quench keeps the higher roll — never regresses, never exceeds the band max.
+	var q_item: Dictionary = Items.roll_item_of("weapon", "A", RandomNumberGenerator.new(), "archer")
+	if not Items.can_quench(q_item, main_key if q_item["main"].has(main_key) else String(q_item["main"].keys()[0])):
+		return _fail("main stat should be quenchable")
+	var qkey: String = String(q_item["main"].keys()[0])
+	var qrng := RandomNumberGenerator.new()
+	qrng.seed = 99
+	q_item["main"][qkey] = float(Items.stat_band(q_item, qkey)[0])   # start at the band floor
+	var qmax: float = float(Items.stat_band(q_item, qkey)[1])
+	var prev: float = float(q_item["main"][qkey])
+	for i in 40:
+		var r: Dictionary = Items.quench_stat(q_item, qkey, qrng)
+		if float(r["kept"]) < prev - 0.001 or float(r["kept"]) > qmax + 0.001:
+			return _fail("quench regressed or exceeded band max")
+		prev = float(r["kept"])
+	if prev <= float(Items.stat_band(q_item, qkey)[0]) + 0.001:
+		return _fail("40 quenches never improved the floor roll")
+	# Quench cost escalates toward the band max (expensive to perfect, cheap to fix).
+	var qc_item: Dictionary = Items.roll_item_of("weapon", "A", RandomNumberGenerator.new(), "archer")
+	var qck: String = String(qc_item["main"].keys()[0])
+	var qcb := Items.stat_band(qc_item, qck)
+	qc_item["main"][qck] = float(qcb[0])   # at the floor
+	var cost_lo: int = Items.quench_cost(qc_item, qck)
+	qc_item["main"][qck] = float(qcb[1])   # at the max
+	var cost_hi: int = Items.quench_cost(qc_item, qck)
+	if cost_lo != int(Balance.QUENCH_COST_BASE["A"]) or cost_hi <= cost_lo:
+		return _fail("quench cost should start at base (%d) and escalate to the max (got %d->%d)" % [int(Balance.QUENCH_COST_BASE["A"]), cost_lo, cost_hi])
 
 	# Bags cash out for exactly 1g (anti-exploit), never the sell formula.
 	if Balance.BAG_SELL_GOLD != 1:

@@ -372,6 +372,12 @@ var pending_theme_note := ""   # set when a new theme unlocks (game shows it)
 var _tfx := {}
 var _tcolor := Color(1, 1, 1)
 var _themed := false
+# Per-cast additive base damage = the ability's Balance `base` x level, set at
+# dispatch (use_ability) and folded into every hit the cast lands. ZERO for all
+# abilities today — a dormant tuning knob: a class that falls off at endgame can
+# be handed a flat per-level damage floor from data, no kit surgery. See
+# ability_base_flat() / hit_enemy().
+var _cast_base := 0.0
 
 var sprite: Sprite2D
 var weapon_spr: Sprite2D
@@ -943,8 +949,12 @@ func recalc() -> void:
 		# Archer S weapon: Second Wind kicks in after 1.5s untouched, not 3s —
 		# the endgame sustain fix (bullet-hell has brief gaps, not long lulls).
 		sw_delay = maxf(0.5, sw_delay - 1.5)
-	blink_dr = b["blink_dr"]
-	blink_dr_dur = b["blink_dr_dur"]
+	# Blink's Arcane Ward DR is single-sourced in the Blink ability's rider data
+	# (a3.riders.dr / dr_secs) — the same numbers the tooltip reads. Any class
+	# whose Blink carries a DR rider gets it (only the mage does today).
+	var a3r: Dictionary = Classes.CLASSES[cls]["abilities"].get("a3", {}).get("riders", {})
+	blink_dr = float(a3r.get("dr", 0.0))
+	blink_dr_dur = float(a3r.get("dr_secs", 0.0))
 	tumble_dr = b["tumble_dr"]
 	veil_shield = b["veil_shield"]
 	oath_shield = b["oath_shield"]

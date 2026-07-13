@@ -19,7 +19,7 @@ func _use_mage(slot: String, f: float) -> void:
 				_cast_bolt(aim_dir().rotated(0.09), 0.94 * f)
 				_cast_bolt(aim_dir().rotated(-0.09), 0.94 * f)
 			else:
-				_cast_bolt(aim_dir(), 1.5 * f)
+				_cast_bolt(aim_dir(), ability_coeff("a1") * f)
 		"a2": _frost_nova(f)
 		"a3": _blink()
 		"ult": _meteor()
@@ -53,12 +53,13 @@ func _frost_nova(f := 1.0) -> void:
 	# health and mana — the lower you run, the more it gives back. The
 	# mage's short-range button carries UTILITY, not damage budget
 	# (ranged kits can rarely connect close-range damage safely).
-	gain_hp((max_hp - hp) * 0.2)  # nova drinks the cold — SHOW the mend
+	var restore := rider("a2", "restore")
+	gain_hp((max_hp - hp) * restore)  # nova drinks the cold — SHOW the mend
 	if nova_regen > 0.0:
 		# Rimeheart (mage talent): the cold keeps mending — a long, slow trickle
 		# (recast RENEWS this window, never stacks the rate: spam ≠ more potency).
 		nova_regen_time = 6.0
-	mp = minf(max_mp, mp + (max_mp - mp) * 0.2)
+	mp = minf(max_mp, mp + (max_mp - mp) * restore)
 	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
 	var col := _tcolor if _themed else Color(0.45, 0.8, 1.0)
 	var inward: bool = _tfx.get("pull", 0)
@@ -128,7 +129,7 @@ func _frost_nova(f := 1.0) -> void:
 		eff["knock"] = 340.0
 		eff["knock_no_boss"] = 1  # mobs fly; bosses never get shove-kited
 	for e in _enemies_within(global_position, radius):
-		hit_enemy(e, 1.4 * f, eff.duplicate())
+		hit_enemy(e, ability_coeff("a2") * f, eff.duplicate())
 
 
 func _blink() -> void:
@@ -142,7 +143,7 @@ func _blink() -> void:
 	var start := global_position
 	# Round 45: iframe cut 0.3->0.1 (like the archer roll) — a perfect-dodge
 	# window, not a sloppy blink-through. Safety now rides the DR cloak below.
-	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), 0.8, eff, 0.0, 0.1)
+	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), ability_coeff("a3"), eff, 0.0, rider("a3", "iframe"))
 	# Fire leaves a burning wake on the ground; Ice a frozen one.
 	if _themed and (_tfx.has("dot") or _tfx.has("freeze_path")):
 		_floor_streak(start, global_position, _tcolor)
@@ -283,7 +284,7 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 			eff["aoe"] = true
 			if fx_copy.has("freeze"):
 				eff["stun"] = float(fx_copy["freeze"])  # glacial comet
-			hit_enemy(e, 3.5 * float(fx_copy.get("dmg_mult", 1.0)) * scale, eff)
+			hit_enemy(e, ability_coeff("ult") * float(fx_copy.get("dmg_mult", 1.0)) * scale, eff)
 		# on_land BEFORE the restore: Starfall's next comet snapshots _tfx in
 		# its own _meteor_at, so the whole salvo inherits the ULT's payload.
 		if on_land.is_valid():

@@ -534,6 +534,10 @@ func use_ability(slot: String) -> void:
 		wp.tween_property(weapon_spr, "scale", Vector2(3.0, 3.0), 0.06)
 		wp.tween_property(weapon_spr, "scale", Vector2(2.4, 2.4), 0.10)
 
+	# Data-driven flat base for this cast (ability `base` x level; 0 today).
+	# Folded into every hit the cast lands (player_combat.hit_enemy).
+	_cast_base = ability_base_flat(slot)
+
 	# Per-class kit dispatch — each class's four abilities (and their
 	# helpers) live in their own scripts/player_kit_<class>.gd layer.
 	match cls:

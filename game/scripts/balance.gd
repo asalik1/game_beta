@@ -239,11 +239,48 @@ static func regular_gems_drop(chid: String) -> bool:
 static func special_gems_drop(chid: String) -> bool:
 	return chapter_num(chid) >= SPECIAL_GEM_START_CH
 
-# Smith UPGRADE curve (round 51): S must cost WAY more than C. Per-step cost =
-# UPGRADE_BASE * UPGRADE_GRADE_FACTOR[grade] * (1+plus) — doubling per tier, so
-# an S step is 8x a C step at equal plus. base tuned so C +0->+1 = 24g.
+# Smith UPGRADE curve. Per-step cost = UPGRADE_BASE * UPGRADE_GRADE_FACTOR[grade]
+# * (1+plus)^UPGRADE_COST_EXP — grade doubles per tier (an S step is 8x a C step
+# at equal plus) and the ^1.5 exponent makes each successive plus bite harder.
+# Base tuned so C/S +0->+1 = 24/192g. Reworked 2026-07-13 (upgrade-rework round):
+# +plus grants +5% to every rolled stat (UPGRADE_PCT_PER_PLUS), is CAPPED per
+# grade (MAX_PLUS), and past the guaranteed floor each attempt can FAIL
+# (upgrade_success). A failed attempt costs the gold but the item KEEPS its
+# current plus — no downgrade (2026-07-13: downgrade made S->max a ~1.2M grind).
 const UPGRADE_BASE := 12.0
 const UPGRADE_GRADE_FACTOR := {"F": 0.5, "E": 0.75, "D": 1.0, "C": 2.0, "B": 4.0, "A": 8.0, "S": 16.0}
+const UPGRADE_COST_EXP := 1.5              # >1 => per-step cost climbs super-linearly with plus
+const UPGRADE_PCT_PER_PLUS := 0.05         # per plus, applied to EVERY rolled stat on the gear (main + subs, not gems). Cap/cost/failure are the guardrails.
+
+# Add-gem-socket is a ONE-TIME craft that PERMANENTLY grows a piece's power (a
+# whole extra gem forever), so it is priced as a heavy endgame commitment — not
+# something an early player can casually buy on their best gear. Tier-scaled hard:
+# an S socket costs ~16 full ch1 clears. F/E/D never socket; S ships at the cap
+# but can reforge a 4th (MAX_SOCKETS 4). 2026-07-13: 6k was far too cheap.
+const ADD_SOCKET_COST := {"C": 2500, "B": 7000, "A": 18000, "S": 40000}
+
+# Quenching: reroll ONE stat's band position, KEEPING the higher of old/new — a
+# repeatable, never-regressing grind to perfect a roll. EXPENSIVE by design
+# (2026-07-13): cheap to lift a bad roll off the floor, but the per-pull cost
+# ESCALATES toward the band max — base x (1 + ESCALATION x band-fraction) — so
+# squeezing out the last few % (true min-maxing) costs real gold. Tier-scaled.
+const QUENCH_COST_BASE := {"F": 20, "E": 35, "D": 60, "C": 120, "B": 280, "A": 600, "S": 1100}
+const QUENCH_COST_ESCALATION := 4.0        # per-pull cost at the band MAX = base x (1 + this)
+const MAX_PLUS := {"F": 5, "E": 6, "D": 8, "C": 10, "B": 12, "A": 15, "S": 20}
+const UPGRADE_SAFE_PLUS := 4               # +1..+4 are guaranteed (attempts never fail at/below this)
+const UPGRADE_FAIL_PER_PLUS := 0.04        # success drops this much per plus past the safe floor
+const UPGRADE_MIN_SUCCESS := 0.40          # success never falls below this (reached at the S cap)
+
+## Smith upgrade cap for a grade — plus may climb no higher than this.
+static func max_plus(grade: String) -> int:
+	return int(MAX_PLUS.get(grade, 10))
+
+## Success chance of the attempt taking an item FROM `plus` to `plus+1`.
+## Guaranteed through the safe floor, then slides to UPGRADE_MIN_SUCCESS at the cap.
+static func upgrade_success(plus: int) -> float:
+	if plus < UPGRADE_SAFE_PLUS:
+		return 1.0
+	return clampf(1.0 - UPGRADE_FAIL_PER_PLUS * float(plus - UPGRADE_SAFE_PLUS + 1), UPGRADE_MIN_SUCCESS, 1.0)
 
 # Measured per-chapter run economy (from econ_audit.gd — RE-RUN and update
 # these when reward numbers move; they drive every farm-cost price). "gems" is

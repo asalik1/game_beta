@@ -99,10 +99,10 @@ const CLASSES := {
 		"hp": 130.0, "hp_lvl": 19.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 15.5, "atk_lvl": 4.3, "speed": 250.0,
 		"abilities": {
-			"a1": {"name": "Cleave",      "cd": 0.74, "mp": 0.5,  "desc": "Swing your blade at the nearest enemy. The measured pace of a plated arm — BERSERK swings it at full speed."},
-			"a2": {"name": "Shield Bash", "cd": 4.5,  "mp": 10, "desc": "Charge forward, ramming everything in your path: damage, knockback and a 1.3s STUN."},
-			"a3": {"name": "Whirlwind",   "cd": 8.0,  "mp": 15, "desc": "Damage everything around you."},
-			"ult": {"name": "Berserk",    "cd": 40.0, "mp": 40,  "desc": "8s: +40% damage, +25% speed, 15% lifesteal — and the rage swings Cleave at its unchained speed."},
+			"a1": {"name": "Cleave",      "cd": 0.74, "mp": 0.5, "dmg": {"coeff": 1.0, "base": 0.0}, "desc": "Swing your blade at the nearest enemy. The measured pace of a plated arm — BERSERK swings it at full speed."},
+			"a2": {"name": "Shield Bash", "cd": 4.5,  "mp": 10,  "dmg": {"coeff": 1.3, "base": 0.0}, "riders": {"stun": 1.3, "knock": true, "iframe": 0.45}, "desc": "Charge forward, ramming everything in your path: damage, knockback and a 1.3s STUN. The crash-in is safe — a 0.45s landing i-frame."},
+			"a3": {"name": "Whirlwind",   "cd": 8.0,  "mp": 15,  "dmg": {"coeff": 1.0, "base": 0.0, "aoe": true}, "desc": "Damage everything around you."},
+			"ult": {"name": "Berserk",    "cd": 40.0, "mp": 40,  "riders": {"notes": ["+40% dmg", "+25% speed", "15% lifesteal", "8s"]}, "desc": "8s: +40% damage, +25% speed, 15% lifesteal — and the rage swings Cleave at its unchained speed."},
 		},
 	},
 	"archer": {
@@ -112,23 +112,23 @@ const CLASSES := {
 		"hp": 100.0, "hp_lvl": 14.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 11.66, "atk_lvl": 3.06, "speed": 265.0,   # round 47: −7.5%; round 49 (dps bench): +5% back — archer trailed the field
 		"abilities": {
-			"a1": {"name": "Quick Shot",  "cd": 0.36, "mp": 0.5,  "desc": "Fire an arrow at the nearest enemy."},
-			"a2": {"name": "Multishot",   "cd": 5.0,  "mp": 12, "desc": "Fan of 5 arrows."},
-			"a3": {"name": "Tumble",      "cd": 6.0,  "mp": 12, "desc": "Dodge-roll in your move direction: a split-second perfect-dodge window, then you stay nimble (+20% evasion) for 1.25s. Time it into a hit to negate it outright; otherwise the evasion covers your reposition."},
-			"ult": {"name": "Arrow Storm", "cd": 40.0, "mp": 20, "desc": "3s: arrows rain on every enemy near you."},
+			"a1": {"name": "Quick Shot",  "cd": 0.36, "mp": 0.5, "dmg": {"coeff": 0.85, "base": 0.0}, "desc": "Fire an arrow at the nearest enemy."},
+			"a2": {"name": "Multishot",   "cd": 5.0,  "mp": 12,  "dmg": {"coeff": 0.55, "base": 0.0, "hits": 5}, "desc": "Fan of 5 arrows."},
+			"a3": {"name": "Tumble",      "cd": 6.0,  "mp": 12, "riders": {"eva": 0.2, "eva_secs": 1.25, "notes": ["Perfect-dodge window"]}, "desc": "Dodge-roll in your move direction: a split-second perfect-dodge window, then you stay nimble (+20% evasion) for 1.25s. Time it into a hit to negate it outright; otherwise the evasion covers your reposition."},
+			"ult": {"name": "Arrow Storm", "cd": 40.0, "mp": 20, "dmg": {"coeff": 0.8, "base": 0.0, "hits": 20, "secs": 3, "aoe": true}, "desc": "3s: arrows rain on every enemy near you."},
 		},
 	},
 	"mage": {
 		"name": "Mage", "sprite": "mage", "primary": "INT", "dmg_type": "magic",
 		"desc": "Glass cannon. Huge burst, big mana pool, blink to survive.",
-		"passive": {"text": "Attuned — 50% faster mana regeneration, +10 magic penetration. Arcane Ward: Blink wraps you in magic — 50% damage reduction for 0.8s.", "magpen": 10.0, "blink_dr": 0.50, "blink_dr_dur": 0.8},
+		"passive": {"text": "Attuned — 50% faster mana regeneration, +10 magic penetration. Arcane Ward: Blink wraps you in magic — 50% damage reduction for 0.8s.", "magpen": 10.0},   # Blink's DR now lives in a3.riders (single source); recalc reads it there
 		"hp": 90.0, "hp_lvl": 12.0, "mp": 70.0, "mp_lvl": 8.0,
 		"atk": 13.5, "atk_lvl": 3.7, "speed": 255.0,
 		"abilities": {
-			"a1": {"name": "Firebolt",   "cd": 0.45, "mp": 3,  "desc": "Hurl a bolt at the nearest enemy."},
-			"a2": {"name": "Frost Nova", "cd": 7.0,  "mp": 15, "desc": "Blast around you: knocks enemies away, SLOWS them 50%, and restores 20% of your MISSING health and mana."},
-			"a3": {"name": "Blink",      "cd": 4.5,  "mp": 10, "desc": "Dash in your move direction, shocking everything in your path."},
-			"ult": {"name": "Meteor",    "cd": 44.0, "mp": 40, "desc": "Call a meteor onto the nearest enemy. Massive damage."},
+			"a1": {"name": "Firebolt",   "cd": 0.45, "mp": 3,  "dmg": {"coeff": 1.5, "base": 0.0}, "desc": "Hurl a bolt at the nearest enemy."},
+			"a2": {"name": "Frost Nova", "cd": 7.0,  "mp": 15, "dmg": {"coeff": 1.4, "base": 0.0, "aoe": true}, "riders": {"slow": 0.5, "knock": true, "restore": 0.2}, "desc": "Blast around you: knocks enemies away, SLOWS them 50%, and restores 20% of your MISSING health and mana."},
+			"a3": {"name": "Blink",      "cd": 4.5,  "mp": 10, "dmg": {"coeff": 0.8, "base": 0.0, "aoe": true}, "riders": {"iframe": 0.1, "dr": 0.5, "dr_secs": 0.8}, "desc": "Dash in your move direction, shocking everything in your path. Arcane Ward cloaks the blink — a split-second perfect-dodge i-frame, then 50% damage reduction for 0.8s."},
+			"ult": {"name": "Meteor",    "cd": 44.0, "mp": 40, "dmg": {"coeff": 3.5, "base": 0.0}, "desc": "Call a meteor onto the nearest enemy. Massive damage."},
 		},
 	},
 	"assassin": {
@@ -139,10 +139,10 @@ const CLASSES := {
 		"hp": 95.0, "hp_lvl": 13.0, "mp": 40.0, "mp_lvl": 3.0,
 		"atk": 14.5, "atk_lvl": 4.5, "speed": 275.0,
 		"abilities": {
-			"a1": {"name": "Stab",          "cd": 0.3,  "mp": 0,  "desc": "Quick-draw the long blade — a lightning strike with real reach. A CONNECTING cut surges your lifesteal for 4s; the lower your health, the bigger the surge."},
-			"a2": {"name": "Shadow Dash",   "cd": 3.75, "mp": 0,  "desc": "Dash in your move direction, slashing everything in your path — the blade reaches wide (a close pass cuts at FULL stab strength, the farthest graze lands lighter), and the blood surge is full at any depth. Its base cooldown MATCHES your Blood Surge: a CONNECTING cut refunds it so you keep dancing and keep the surge alive — but WHIFF and the full cooldown outlasts the surge, your Fan drops to normal, and you're exposed. Landing the blade is the whole game."},
-			"a3": {"name": "Fan of Knives", "cd": 0.3,  "mp": 0,  "desc": "Spammable dagger fan — thin chip on its own, but while your blood surge runs the blades bite TWICE as hard. The range damage is EARNED in close. Shares its cadence with Stab: spam either, never both."},
-			"ult": {"name": "Death Mark",   "cd": 30.0, "mp": 0,  "desc": "Mark your prey with the X: two shadows converge THROUGH it, then you appear behind it for the killing stab. TRUE damage; the marked target takes +50% damage for 5s. FIXED 30s cooldown — no haste can hurry the execution."},
+			"a1": {"name": "Stab",          "cd": 0.3,  "mp": 0,  "dmg": {"coeff": 1.2, "base": 0.0}, "riders": {"notes": ["Blood surge: lifesteal 4s (bigger when low)"]}, "desc": "Quick-draw the long blade — a lightning strike with real reach. A CONNECTING cut surges your lifesteal for 4s; the lower your health, the bigger the surge."},
+			"a2": {"name": "Shadow Dash",   "cd": 3.75, "mp": 0,  "dmg": {"coeff": 1.2, "base": 0.0}, "desc": "Dash in your move direction, slashing everything in your path — the blade reaches wide (a close pass cuts at FULL stab strength, the farthest graze lands lighter), and the blood surge is full at any depth. Its base cooldown MATCHES your Blood Surge: a CONNECTING cut refunds it so you keep dancing and keep the surge alive — but WHIFF and the full cooldown outlasts the surge, your Fan drops to normal, and you're exposed. Landing the blade is the whole game."},
+			"a3": {"name": "Fan of Knives", "cd": 0.3,  "mp": 0,  "dmg": {"coeff": 0.16, "base": 0.0, "hits": 3}, "desc": "Spammable dagger fan — thin chip on its own, but while your blood surge runs the blades bite TWICE as hard. The range damage is EARNED in close. Shares its cadence with Stab: spam either, never both."},
+			"ult": {"name": "Death Mark",   "cd": 30.0, "mp": 0,  "dmg": {"coeff": 1.3, "base": 0.0, "type": "true"}, "riders": {"amp": 0.5, "amp_secs": 5, "iframe": 0.8, "notes": ["Executes low HP"]}, "desc": "Mark your prey with the X: two shadows converge THROUGH it, then you appear behind it for the killing stab. TRUE damage; the marked target takes +50% damage for 5s. You are UNTOUCHABLE for 0.8s through the execution. FIXED 30s cooldown — no haste can hurry the execution."},
 		},
 	},
 	"paladin": {
@@ -152,10 +152,10 @@ const CLASSES := {
 		"hp": 125.0, "hp_lvl": 17.0, "mp": 55.0, "mp_lvl": 5.0,
 		"atk": 15.0, "atk_lvl": 4.3, "speed": 248.0,
 		"abilities": {
-			"a1": {"name": "Judgment",       "cd": 0.8,  "mp": 1,  "desc": "Bring the warhammer down on the nearest enemy — LEAPING to them if they stand beyond arm's reach (the leap arms every 5s; its brief landing guard rides the leap, not the swing)."},
-			"a2": {"name": "Consecration",   "cd": 8.0,  "mp": 15, "desc": "Sanctify the ground around you: two waves of holy fire, and every enemy struck MENDS you."},
-			"a3": {"name": "Aegis",          "cd": 9.0,  "mp": 12, "desc": "Raise the shield for 2.5s: massive resistances, and attackers are SMITTEN in return."},
-			"ult": {"name": "Conviction",    "cd": 8.0,  "mp": 30,  "desc": "Swap stances. Entering RETRIBUTION drags nearby enemies to your hammer in chains; returning to HOLY releases a mending blessing (10% max HP + brief guard). Sustain and damage are never yours at once — choose when to be which."},
+			"a1": {"name": "Judgment",       "cd": 0.8,  "mp": 1,  "dmg": {"coeff": 1.0, "base": 0.0}, "desc": "Bring the warhammer down on the nearest enemy — LEAPING to them if they stand beyond arm's reach (the leap arms every 5s; its brief landing guard rides the leap, not the swing)."},
+			"a2": {"name": "Consecration",   "cd": 8.0,  "mp": 15, "dmg": {"coeff": 0.9, "base": 0.0, "hits": 2, "aoe": true}, "riders": {"notes": ["Heals you per enemy struck"]}, "desc": "Sanctify the ground around you: two waves of holy fire, and every enemy struck MENDS you."},
+			"a3": {"name": "Aegis",          "cd": 9.0,  "mp": 12, "riders": {"notes": ["Huge resist 2.5s", "Smites attackers"]}, "desc": "Raise the shield for 2.5s: massive resistances, and attackers are SMITTEN in return."},
+			"ult": {"name": "Conviction",    "cd": 8.0,  "mp": 30,  "dmg": {"coeff": 2.2, "base": 0.0, "aoe": true}, "riders": {"notes": ["Swap stance", "Retri: chains pull in", "Holy: heal 10% + guard"]}, "desc": "Swap stances. Entering RETRIBUTION drags nearby enemies to your hammer in chains; returning to HOLY releases a mending blessing (10% max HP + brief guard). Sustain and damage are never yours at once — choose when to be which."},
 		},
 	},
 	"warlock": {
@@ -165,10 +165,10 @@ const CLASSES := {
 		"hp": 95.0, "hp_lvl": 13.0, "mp": 65.0, "mp_lvl": 7.0,
 		"atk": 11.5, "atk_lvl": 3.0, "speed": 258.0,
 		"abilities": {
-			"a1": {"name": "Shadowbolt", "cd": 0.5,  "mp": 1,  "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
-			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death. A MAINTAINED curse deepens: the longer it holds, the harder your every hit bites."},
-			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
-			"ult": {"name": "Void Rift", "cd": 50.0, "mp": 35, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS."},
+			"a1": {"name": "Shadowbolt", "cd": 0.5,  "mp": 1,  "dmg": {"coeff": 0.35, "base": 0.0}, "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
+			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "dmg": {"coeff": 1.5, "base": 0.0, "aoe": true}, "riders": {"notes": ["Expose (+dmg taken)", "Explodes on death", "Ramps while held"]}, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death. A MAINTAINED curse deepens: the longer it holds, the harder your every hit bites."},
+			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "riders": {"notes": ["−12% max HP", "Lifesteal surge 5s"]}, "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
+			"ult": {"name": "Void Rift", "cd": 50.0, "mp": 35, "dmg": {"coeff": 3.0, "base": 0.0, "aoe": true}, "riders": {"notes": ["Pulls enemies in", "Curses on burst"]}, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS."},
 		},
 	},
 }
@@ -549,6 +549,59 @@ static func variant_desc(cls_id: String, slot: String, theme_id: String) -> Stri
 
 static func ability(cls: String, slot: String) -> Dictionary:
 	return CLASSES[cls]["abilities"][slot]
+
+
+## Human-readable damage scaling for an ability, generated from its `dmg` data —
+## the SINGLE SOURCE the kit hits for. The selector reads this, so retuning a
+## coeff moves the shown text too. "" for buffs/utility (no dmg block).
+## e.g. "Physical · 100% ATK"  ·  "Magic · 55% ATK ×5"  ·  (+ base) "… + 12×lvl".
+static func ability_scaling(cls: String, slot: String) -> String:
+	var ab: Dictionary = CLASSES[cls]["abilities"].get(slot, {})
+	if not ab.has("dmg"):
+		return ""
+	var d: Dictionary = ab["dmg"]
+	var dtype := String(d.get("type", CLASSES[cls]["dmg_type"]))
+	var type_name: String = {"phys": "Physical", "magic": "Magic", "true": "True"}.get(dtype, dtype.capitalize())
+	var s := "%s · %d%% ATK" % [type_name, int(round(float(d.get("coeff", 0.0)) * 100.0))]
+	var hits := int(d.get("hits", 1))
+	if hits > 1:
+		s += " ×%d" % hits              # multi-hit / channel: coeff is PER hit
+	var secs := float(d.get("secs", 0.0))
+	if secs > 0.0:
+		s += " over %ss" % (str(int(secs)) if is_equal_approx(secs, float(int(secs))) else "%.1f" % secs)
+	if bool(d.get("aoe", false)):
+		s += " (AoE)"
+	var base := float(d.get("base", 0.0))
+	if base > 0.0:
+		s += "  +%s×lvl" % (str(int(base)) if is_equal_approx(base, float(int(base))) else "%.1f" % base)
+	return s
+
+
+## The ability's non-damage riders as a compact scannable line, GENERATED from
+## the single-source `riders` data (the same numbers the kit/recalc read, so no
+## drift). Numeric keys format themselves; freeform `notes` append verbatim.
+## "" if none. e.g. "Stun 1.3s · i-frame 0.45s · Knockback".
+static func ability_riders(cls: String, slot: String) -> String:
+	var r: Dictionary = CLASSES[cls]["abilities"].get(slot, {}).get("riders", {})
+	if r.is_empty():
+		return ""
+	var p: Array = []
+	if r.has("stun"):    p.append("Stun %ss" % _rn(r["stun"]))
+	if r.has("slow"):    p.append("Slow %d%%" % int(round(float(r["slow"]) * 100.0)))
+	if r.has("dr"):      p.append("%d%% DR%s" % [int(round(float(r["dr"]) * 100.0)), (" %ss" % _rn(r["dr_secs"])) if r.has("dr_secs") else ""])
+	if r.has("iframe"):  p.append("i-frame %ss" % _rn(r["iframe"]))
+	if r.has("eva"):     p.append("+%d%% eva%s" % [int(round(float(r["eva"]) * 100.0)), (" %ss" % _rn(r["eva_secs"])) if r.has("eva_secs") else ""])
+	if r.has("restore"): p.append("Restore %d%% missing HP/MP" % int(round(float(r["restore"]) * 100.0)))
+	if r.has("amp"):     p.append("+%d%% dmg taken%s" % [int(round(float(r["amp"]) * 100.0)), (" %ds" % int(r["amp_secs"])) if r.has("amp_secs") else ""])
+	if r.get("knock", false): p.append("Knockback")
+	for n in r.get("notes", []):
+		p.append(String(n))
+	return " · ".join(p)
+
+## Trim a float for display: "1.3" not "1.30", "0.8" not "0.80".
+static func _rn(v: Variant) -> String:
+	var f := float(v)
+	return str(int(f)) if is_equal_approx(f, float(int(f))) else ("%.2f" % f).trim_suffix("0")
 
 
 static func theme_by_id(cls: String, id: String) -> Dictionary:

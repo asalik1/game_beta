@@ -571,15 +571,16 @@ static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumbe
 # Deterministic-ish crafting on OWNED gear (gold sink). Three crafts:
 # reroll one substat's magnitude, reroll the whole affix set, or add a gem
 # socket (B+ only, capped). Costs scale with grade.
-const REFORGE_COST := {"F": 40, "E": 60, "D": 90, "C": 140, "B": 220, "A": 340, "S": 500}
-const MAX_SOCKETS := 3
+const REFORGE_COST := {"F": 120, "E": 200, "D": 350, "C": 600, "B": 1200, "A": 2200, "S": 3500}  # 2026-07-13: affix reroll = base x2 (S = 7k/pull). A RANDOM full-set reroll, so not priced to the moon — the RNG is already a wall.
+const MAX_SOCKETS := 4   # every grade may reforge exactly ONE extra socket; S (natural 3) can reach 4
 
 ## Gold cost of a reforge on this item. kind: "sub" | "affix" | "socket".
+## (Quench has its own escalating price — see quench_cost.)
 static func reforge_cost(item: Dictionary, kind: String) -> int:
 	var base: int = REFORGE_COST.get(String(item["grade"]), 100)
 	match kind:
 		"affix": return base * 2
-		"socket": return base * 3
+		"socket": return int(Balance.ADD_SOCKET_COST.get(String(item["grade"]), base * 3))
 		_: return base
 
 
@@ -594,8 +595,9 @@ static func reforge_sub(item: Dictionary, stat: String, rng: RandomNumberGenerat
 		item["subs"][stat] = snappedf(float(item["subs"][stat]) * rng.randf_range(0.8, 1.2), 0.01)
 
 
-## Reroll WHICH substats the item carries (and their values) — the affix
-## reroll loop. S-gear synergy subs are preserved (never rerolled away).
+## Reroll WHICH substats the item carries (and their values) — the whole affix
+## set at once. S-gear synergy subs are preserved. (No longer in the UI, which
+## rerolls one slot at a time via reforge_affix — kept as an API/for tests.)
 static func reforge_affixes(item: Dictionary, cls: String, rng: RandomNumberGenerator) -> void:
 	var fresh := roll_subs(String(item["grade"]), String(item.get("noun", "Blade")), cls, rng)
 	# Keep an S legendary's signature subs on top of the fresh roll.
@@ -604,6 +606,104 @@ static func reforge_affixes(item: Dictionary, cls: String, rng: RandomNumberGene
 		for stat in special.get("subs", {}):
 			fresh[stat] = special["subs"][stat]
 	item["subs"] = fresh
+
+
+## Can this ONE substat slot be reforged (rerolled into a different stat)? Any
+## rolled affix can — except an S legendary's fixed synergy subs, which are the
+## item's identity. The MAIN stat is never reforged (quench it — it's the class
+## primary attribute you'd never trade away).
+static func can_reforge_affix(item: Dictionary, stat: String) -> bool:
+	if not item.get("subs", {}).has(stat):
+		return false
+	if String(item["grade"]) == "S" and item.has("cls") and S_GEAR.has(String(item["cls"])):
+		var special: Dictionary = S_GEAR[String(item["cls"])].get(String(item["slot"]), {})
+		if special.get("subs", {}).has(stat):
+			return false   # synergy sub — locked
+	return true
+
+
+## Reforge ONE substat slot: drop `target_stat` and roll a DIFFERENT random affix
+## in its place (from the class-valid pool, no duplicates), at a fresh band roll —
+## the magnitude is then the player's to quench. Returns the new stat ("" if it
+## couldn't reroll). A targeted gamble on a single slot, not the whole set.
+static func reforge_affix(item: Dictionary, target_stat: String, cls: String, rng: RandomNumberGenerator) -> String:
+	if not can_reforge_affix(item, target_stat):
+		return ""
+	var subs: Dictionary = item["subs"]
+	var mult: float = GRADE_MULT[String(item["grade"])]
+	var pool: Array = SUBSTATS.keys()
+	var dmg_cls := String(item.get("cls", cls))
+	if CLASSES_DMG_TYPE.has(dmg_cls):
+		pool.erase("physpen" if CLASSES_DMG_TYPE[dmg_cls] == "magic" else "magpen")
+	for s in subs:
+		pool.erase(String(s))   # no duplicate affixes (also drops target_stat)
+	if pool.is_empty():
+		return ""
+	pool.shuffle()
+	var new_stat := String(pool[0])
+	subs.erase(target_stat)
+	subs[new_stat] = snappedf(float(SUBSTATS[new_stat]) * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
+	return new_stat
+
+
+## The [min, max] BASE (pre-plus) range a rolled stat can occupy on this item —
+## the band quenching rerolls within. Main: budget x grade x shape x [0.9, 1.15].
+## Sub: the shape's fixed part + the rollable pool part x [0.7, 1.3]. A degenerate
+## band (min == max) marks a fixed shape/legendary sub that quenching can't move.
+static func stat_band(item: Dictionary, stat: String) -> Array:
+	var grade := String(item["grade"])
+	var mult: float = GRADE_MULT.get(grade, 1.0)
+	var noun := String(item.get("noun", "Blade"))
+	var style: Dictionary = SHAPE_STYLE.get(noun, {"main": 1.0, "subs": {}})
+	if item.get("main", {}).has(stat):
+		var base: float = float(SLOT_MAIN_BUDGET.get(String(item["slot"]), 3.0)) * mult * float(style["main"])
+		return [snappedf(base * 0.9, 0.01), snappedf(base * 1.15, 0.01)]
+	if item.get("subs", {}).has(stat):
+		var shape_part := 0.0
+		if style["subs"].has(stat):
+			shape_part = float(style["subs"][stat]) * (0.75 + 0.25 * mult)
+		if SUBSTATS.has(stat):
+			var roll_base: float = float(SUBSTATS[stat]) * (1.0 + mult * 0.25)
+			return [snappedf(shape_part + roll_base * 0.7, 0.01), snappedf(shape_part + roll_base * 1.3, 0.01)]
+		var cur: float = float(item["subs"][stat])   # fixed shape/legendary sub — no band
+		return [cur, cur]
+	return [0.0, 0.0]
+
+
+## True if quenching could ever improve this stat (its band is non-degenerate).
+static func can_quench(item: Dictionary, stat: String) -> bool:
+	var band := stat_band(item, stat)
+	return float(band[1]) > float(band[0])
+
+
+## Quench a stat: reroll its band position and KEEP THE HIGHER of old/new — never
+## regresses. Returns {"old","rolled","kept","max","improved"} for the UI.
+static func quench_stat(item: Dictionary, stat: String, rng: RandomNumberGenerator) -> Dictionary:
+	var band := stat_band(item, stat)
+	var lo: float = float(band[0])
+	var hi: float = float(band[1])
+	var in_main: bool = item.get("main", {}).has(stat)
+	var store: Dictionary = item["main"] if in_main else item["subs"]
+	var old_val: float = float(store.get(stat, lo))
+	var rolled: float = snappedf(rng.randf_range(lo, hi), 0.01)
+	var kept: float = maxf(old_val, rolled)
+	store[stat] = kept
+	return {"old": old_val, "rolled": rolled, "kept": kept, "max": hi, "improved": kept > old_val}
+
+
+## Escalating gold cost to quench `stat`: cheap near the band floor, steeply
+## pricier near the max (base x (1 + ESCALATION x current-band-fraction)) so
+## perfecting a roll — the last few % — is where the real gold goes.
+static func quench_cost(item: Dictionary, stat: String) -> int:
+	var base: int = int(Balance.QUENCH_COST_BASE.get(String(item["grade"]), 60))
+	var band := stat_band(item, stat)
+	var lo: float = float(band[0])
+	var hi: float = float(band[1])
+	var in_main: bool = item.get("main", {}).has(stat)
+	var store: Dictionary = item["main"] if in_main else item.get("subs", {})
+	var cur: float = float(store.get(stat, lo))
+	var frac: float = 0.0 if hi <= lo else clampf((cur - lo) / (hi - lo), 0.0, 1.0)
+	return int(round(base * (1.0 + Balance.QUENCH_COST_ESCALATION * frac)))
 
 
 ## Can this item take another gem socket? C+ only (C joined 2026-07-09 with
@@ -657,15 +757,17 @@ static func count_set_pieces(equipment: Dictionary, cls: String) -> int:
 	return n
 
 
-## All stats an item grants (main stat gets +15% per upgrade level,
-## embedded gems contribute their stat too).
+## All stats an item grants. The smith upgrade (plus) scales EVERY rolled stat
+## — main AND subs — by +5%/plus (Balance.UPGRADE_PCT_PER_PLUS). Socketed gems
+## are the player's own investment, not part of the gear's roll, so plus never
+## touches them.
 static func stats_of(item: Dictionary) -> Dictionary:
 	var out := {}
-	var plus_mult: float = 1.0 + 0.15 * item["plus"]
+	var plus_mult: float = 1.0 + Balance.UPGRADE_PCT_PER_PLUS * item["plus"]
 	for stat in item["main"]:
 		out[stat] = item["main"][stat] * plus_mult
 	for stat in item["subs"]:
-		out[stat] = out.get(stat, 0.0) + item["subs"][stat]
+		out[stat] = out.get(stat, 0.0) + item["subs"][stat] * plus_mult
 	for gem in item.get("gems", []):
 		out[gem["stat"]] = out.get(gem["stat"], 0.0) + gem_value(gem)
 	return out
@@ -676,10 +778,15 @@ static func price(item: Dictionary) -> int:
 
 
 static func upgrade_cost(item: Dictionary) -> int:
-	# Round 51: steep per-tier curve (base * grade factor * (1+plus)) — an S
-	# step costs 8x a C step. Data curve; knobs in balance.gd.
+	# Steep per-tier curve (base * grade factor * (1+plus)^EXP) — an S step costs
+	# 8x a C step, and the exponent makes each plus bite harder. Knobs in balance.gd.
 	var f: float = float(Balance.UPGRADE_GRADE_FACTOR.get(String(item["grade"]), 1.0))
-	return int(Balance.UPGRADE_BASE * f * float(1 + int(item["plus"])))
+	return int(Balance.UPGRADE_BASE * f * pow(float(1 + int(item["plus"])), Balance.UPGRADE_COST_EXP))
+
+
+## True while the item's plus sits below its grade cap (the smith can still work it).
+static func can_upgrade(item: Dictionary) -> bool:
+	return int(item.get("plus", 0)) < Balance.max_plus(String(item.get("grade", "D")))
 
 
 ## FARM-COST buy price of a gear item in a `chid` merchant (round 51): the gold

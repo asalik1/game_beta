@@ -44,7 +44,7 @@ func _use_paladin(slot: String, f: float) -> void:
 				# A pillar of light falls with the hammer.
 				_light_pillar(global_position + aim_dir(220.0) * 70.0,
 					_tcolor if _themed else Color(1.0, 0.95, 0.6))
-			_melee_arc(1.0 * f, 92.0, "slash", jeff, "swing", "sword")
+			_melee_arc(ability_coeff("a1") * f, 92.0, "slash", jeff, "swing", "sword")
 			# The hammer lands with weight: a golden shock at the impact.
 			var jdir := aim_dir(220.0)
 			_ring_fx(global_position + jdir * 58.0,
@@ -107,7 +107,7 @@ func _consecration(f := 1.0) -> void:
 	if dead or downed or ghost:
 		return
 	var pos := global_position
-	_consecration_pulse(pos, radius, 0.9 * f, col, fx_copy)
+	_consecration_pulse(pos, radius, ability_coeff("a2") * f, col, fx_copy)
 	# The ground stays sanctified: a second wave erupts moments later.
 	get_tree().create_timer(0.7).timeout.connect(func() -> void:
 		if dead:
@@ -332,7 +332,7 @@ func _chains_of_wrath(f := 1.0) -> void:
 		_tfx = fx_copy
 		for e2 in _enemies_within(global_position, 150.0):
 			_smite_rip(e2.global_position, col)
-			hit_enemy(e2, 2.2 * fmul, {"aoe": true, "stun": 0.5})
+			hit_enemy(e2, ability_coeff("ult") * fmul, {"aoe": true, "stun": 0.5})
 			if heal_frac > 0.0:
 				gain_hp(max_hp * heal_frac)  # holy chains: each drag mends, SHOWN
 		_tfx = saved)

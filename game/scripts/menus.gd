@@ -24,6 +24,10 @@ var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
 var shop_tab := "buy"             # shop: which full-width tab is showing (persists across refreshes)
 var shop_junk_tier := "F"         # sell tab: floor grade the one-click junk-sell dumps (that grade and below)
+var _smith_msg := ""              # smith: last upgrade result, shown once in the panel (no silent effects)
+var _smith_msg_color := Color.WHITE
+var _reforge_msg := ""            # reforge bench: last quench/craft result, shown in the item panel
+var _reforge_msg_color := Color.WHITE
 var inv_cat := "all"              # inventory: last bag category filter (survives item-panel rebuilds)
 var title_stage := "cover"        # boot title: "cover" (splash) -> "slots" (roster)
 var chapter_replay := false       # chapter select opened from the pause menu
@@ -731,13 +735,26 @@ func open_class_select() -> void:
 		for slot in ["a1", "a2", "a3", "ult"]:
 			var ab: Dictionary = c["abilities"][slot]
 			var tag: String = "ULT" if slot == "ult" else slot.to_upper()
+			var scaling: String = Classes.ability_scaling(id, slot)
+			var riders: String = Classes.ability_riders(id, slot)
 			# Dense roster: ability names only — full text is one click away
 			# (opaque popover), and hover still previews it.
 			var line: String = "%s %s" % [tag, ab["name"]] if dense else "%s %s — %s" % [tag, ab["name"], ab["desc"]]
 			var l := _lbl(col, line, 11 if dense else 12, Color(0.65, 0.7, 0.8))
+			# Two readout lines under each ability (from its data): SCALING (type +
+			# %ATK, green) and RIDERS (CC/buffs/sustain/debuffs, amber). The
+			# tuning-transparency pair. Buffs with no damage show only riders.
+			if scaling != "":
+				_lbl(col, "    " + scaling, 10 if dense else 11, Color(0.58, 0.74, 0.66))
+			if riders != "":
+				_lbl(col, "    " + riders, 10 if dense else 11, Color(0.82, 0.72, 0.48))
 			if dense:
 				var ab_name: String = "%s %s" % [tag, String(ab["name"])]
 				var ab_desc: String = String(ab["desc"])
+				if scaling != "":
+					ab_desc += "\n\nScaling:  " + scaling
+				if riders != "":
+					ab_desc += "\nEffects:  " + riders
 				l.mouse_filter = Control.MOUSE_FILTER_STOP
 				l.gui_input.connect(func(e: InputEvent) -> void:
 					if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
@@ -1607,35 +1624,77 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var p: Player = game.local_player
 	_lbl(body, "REFORGE BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
+	if _reforge_msg != "":
+		_lbl(body, _reforge_msg, 12, _reforge_msg_color)
+		_reforge_msg = ""
 	var subs2: Dictionary = item.get("subs", {})
 	# S-gear reforges within its own class; everything else uses the wearer's.
 	var rcls: String = String(item.get("cls", p.cls))
-	if subs2.is_empty() and not Items.can_add_socket(item):
+	if subs2.is_empty() and not Items.can_add_socket(item) and item.get("main", {}).is_empty():
 		_lbl(body, "Nothing to reforge — no affixes to reroll or sockets to add.",
 			12, Color(0.55, 0.55, 0.6))
-	if not subs2.is_empty():
-		var acost := Items.reforge_cost(item, "affix")
-		var affix_cb := func() -> void:
+	# --- QUENCH: reroll a stat's band, keep the higher (never regresses) ---
+	# Main stat first, then each rollable sub. plus scales the kept value later.
+	var quench_stats: Array = item.get("main", {}).keys() + subs2.keys()
+	var any_quench := false
+	for stat in quench_stats:
+		var qs := String(stat)
+		if not Items.can_quench(item, qs):
+			continue
+		if not any_quench:
+			_lbl(body, "Quench — reroll a stat's roll, keep the better result:", 12, Color(0.7, 0.85, 1.0))
+			any_quench = true
+		var store: Dictionary = item["main"] if item.get("main", {}).has(qs) else subs2
+		var cur: float = float(store[qs])
+		var band := Items.stat_band(item, qs)
+		var qcost := Items.quench_cost(item, qs)
+		var at_max: bool = cur >= float(band[1]) - 0.01
+		var q_cb := func() -> void:
+			if game.local_player.gold >= qcost:
+				game.local_player.gold -= qcost
+				var r := Items.quench_stat(item, qs, game.loot_rng)
+				if bool(r["improved"]):
+					_reforge_msg = "%s quenched: %s → %s  (max %s)" % [Items.STAT_LABEL.get(qs, qs),
+						String.num(r["old"], 2), String.num(r["kept"], 2), String.num(r["max"], 2)]
+					_reforge_msg_color = Color(0.5, 1.0, 0.5)
+					game.sfx("ward")
+				else:
+					_reforge_msg = "%s: rolled %s, kept your %s" % [Items.STAT_LABEL.get(qs, qs),
+						String.num(r["rolled"], 2), String.num(r["kept"], 2)]
+					_reforge_msg_color = Color(0.85, 0.8, 0.6)
+					game.sfx("equip")
+				game.local_player.recalc()
+				open_item_panel(item, Vector2(-1, -1), "reforge")
+		if at_max:
+			_lbl(body, "   %s: %s / %s — MAX ROLL" % [Items.STAT_LABEL.get(qs, qs),
+				String.num(cur, 2), String.num(float(band[1]), 2)], 12, Color(0.6, 0.85, 0.6))
+		else:
+			_btn(body, "   Quench %s: %s / %s  —  %d gold" % [Items.STAT_LABEL.get(qs, qs),
+				String.num(cur, 2), String.num(float(band[1]), 2), qcost], q_cb,
+				Color(0.75, 0.85, 0.95) if p.gold >= qcost else Color(0.5, 0.5, 0.55))
+	# --- Reforge: reroll ONE substat slot into a different affix (you pick which) ---
+	var acost := Items.reforge_cost(item, "affix")
+	var reforgeable := false
+	for stat in subs2.keys():
+		var rs := String(stat)
+		if not Items.can_reforge_affix(item, rs):
+			continue
+		if not reforgeable:
+			_lbl(body, "Reforge — reroll a substat into a different affix:", 12, Color(1.0, 0.8, 0.6))
+			reforgeable = true
+		var rf_cb := func() -> void:
 			if game.local_player.gold >= acost:
 				game.local_player.gold -= acost
-				Items.reforge_affixes(item, rcls, game.loot_rng)
-				game.local_player.recalc()
-				game.sfx("equip")
-				open_item_panel(item, Vector2(-1, -1), "reforge")
-		_btn(body, "Reroll ALL affixes  —  %d gold" % acost, affix_cb,
-			Color(0.7, 0.9, 1.0) if p.gold >= acost else Color(0.5, 0.5, 0.55))
-		for stat in subs2.keys():
-			var s := String(stat)
-			var scost := Items.reforge_cost(item, "sub")
-			var sub_cb := func() -> void:
-				if game.local_player.gold >= scost:
-					game.local_player.gold -= scost
-					Items.reforge_sub(item, s, game.loot_rng)
-					game.local_player.recalc()
+				var new_stat := Items.reforge_affix(item, rs, rcls, game.loot_rng)
+				if new_stat != "":
+					_reforge_msg = "Reforged %s → %s" % [Items.STAT_LABEL.get(rs, rs), Items.STAT_LABEL.get(new_stat, new_stat)]
+					_reforge_msg_color = Color(1.0, 0.85, 0.5)
 					game.sfx("equip")
-					open_item_panel(item, Vector2(-1, -1), "reforge")
-			_btn(body, "   Reroll %s value  —  %d gold" % [Items.STAT_LABEL.get(s, s), scost], sub_cb,
-				Color(0.85, 0.85, 0.9) if p.gold >= scost else Color(0.5, 0.5, 0.55))
+				game.local_player.recalc()
+				open_item_panel(item, Vector2(-1, -1), "reforge")
+		_btn(body, "   Reforge %s → ?  —  %d gold" % [Items.STAT_LABEL.get(rs, rs), acost], rf_cb,
+			Color(0.9, 0.82, 0.7) if p.gold >= acost else Color(0.5, 0.5, 0.55))
+	# --- Add gem socket: ONE-TIME, steep, tier-scaled (Balance.ADD_SOCKET_COST) ---
 	if Items.can_add_socket(item):
 		var ccost := Items.reforge_cost(item, "socket")
 		var sock_cb := func() -> void:
@@ -1644,8 +1703,10 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 				Items.add_socket(item)
 				game.local_player.recalc()
 				game.sfx("chest")
+				_reforge_msg = "Socket added — this is the only one this piece can take."
+				_reforge_msg_color = Color(0.6, 1.0, 0.6)
 				open_item_panel(item, Vector2(-1, -1), "reforge")
-		_btn(body, "Add gem socket  —  %d gold" % ccost, sock_cb,
+		_btn(body, "Add gem socket (one-time)  —  %d gold" % ccost, sock_cb,
 			Color(0.6, 1.0, 0.6) if p.gold >= ccost else Color(0.5, 0.5, 0.55))
 	_lbl(body, "Your gold: %d" % p.gold, 13, Color(1.0, 0.85, 0.35))
 
@@ -1947,22 +2008,28 @@ func open_theme_picker(slot: String) -> void:
 	var vbox := _open("%s — choose a variant" % ab["name"], 940, 620)
 	current = "theme_pick"
 
-	var base_row := HBoxContainer.new()
-	base_row.add_theme_constant_override("separation", 12)
-	vbox.add_child(base_row)
-	var base_icon := TextureRect.new()
-	base_icon.texture = Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][slot])
-	base_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	base_row.add_child(base_icon)
-	var base_l := _lbl(base_row, "BASE — %s" % ab["desc"], 14, Color(0.85, 0.85, 0.9))
-	base_l.custom_minimum_size = Vector2(780, 0)
+	# Every variant below INHERITS this base ability and changes one facet of it —
+	# so the base is the option to read first.
+	_lbl(vbox, "Each variant inherits this base ability and changes one facet of it. Pick Base to run it unthemed.",
+		12, Color(0.62, 0.64, 0.72))
 
 	var is_base: bool = p.ability_theme.get(slot, "") == ""
 	var none_cb := func() -> void:
 		game.local_player.set_ability_theme(slot, "")
 		open_skills()
-	_btn(vbox, ("●  " if is_base else "   ") + "Use BASE (no theme)", none_cb, Color(0.85, 0.85, 0.9),
+	_btn(vbox, ("●  " if is_base else "   ") + "Base", none_cb, Color(0.9, 0.9, 0.95),
 		true, Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][slot]))
+	# The base ability's full readout sits directly under its button — mirroring
+	# the variant layout (option, then exactly what it does).
+	var base_scaling: String = Classes.ability_scaling(p.cls, slot)
+	var base_riders: String = Classes.ability_riders(p.cls, slot)
+	var base_text: String = String(ab["desc"])
+	if base_scaling != "":
+		base_text += "\n[ %s ]" % base_scaling
+	if base_riders != "":
+		base_text += "\n[ %s ]" % base_riders
+	var base_l := _lbl(vbox, base_text, 12, Color(0.72, 0.74, 0.82))
+	base_l.custom_minimum_size = Vector2(860, 0)
 
 	for i in Classes.THEMES[p.cls].size():
 		var theme: Dictionary = Classes.THEMES[p.cls][i]
@@ -2162,20 +2229,40 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			"%s — %d gold" % [Items.describe(it, _awk(it)), cost],
 			Items.GRADE_COLOR[it["grade"]], true, open_cb)
 	_lbl(buy, "Upgrade equipped gear", 13, Color(0.6, 0.85, 1.0))
+	if _smith_msg != "":
+		_lbl(buy, _smith_msg, 12, _smith_msg_color)
+		_smith_msg = ""
 	var up_grid := _shop_grid(buy)
 	for slot in ["weapon", "armor"]:
 		if p.equipment.has(slot):
 			var item: Dictionary = p.equipment[slot]
+			if not Items.can_upgrade(item):
+				_shop_card(up_grid, Art.icon_for(item), Items.title(item),
+					"MAX +%d — fully upgraded" % int(item["plus"]),
+					Color(0.72, 0.68, 0.5), false, func() -> void: pass)
+				continue
 			var cost := Items.upgrade_cost(item)
+			var succ := Balance.upgrade_success(int(item["plus"]))
 			var do_upgrade := func() -> void:
 				if p.gold >= cost:
 					p.gold -= cost
-					item["plus"] += 1
+					if randf() < succ:
+						item["plus"] = int(item["plus"]) + 1
+						_smith_msg = "%s upgraded to +%d!" % [Items.title(item), int(item["plus"])]
+						_smith_msg_color = Color(0.5, 1.0, 0.5)
+						game.sfx("levelup")
+					else:
+						# Gold-only fail (2026-07-13): the attempt is spent, but the
+						# item keeps its plus — no downgrade.
+						_smith_msg = "Upgrade FAILED — %s held at +%d (gold spent)" % [Items.title(item), int(item["plus"])]
+						_smith_msg_color = Color(1.0, 0.5, 0.4)
+						game.sfx("hurt")
 					p.recalc()
-					game.sfx("levelup")
 				open_shop(zone)
 			_shop_card(up_grid, Art.icon_for(item), Items.title(item),
-				"→ +%d  (main stat +15%%) — %d gold" % [item["plus"] + 1, cost],
+				"→ +%d  •  +%d%% all stats  •  %d%% success — %d gold" % [
+					int(item["plus"]) + 1, int(round(Balance.UPGRADE_PCT_PER_PLUS * 100.0)),
+					int(round(succ * 100.0)), cost],
 				Color(0.6, 0.9, 1.0), p.gold >= cost, do_upgrade)
 
 	# ========================================================= CONSUMABLES ===

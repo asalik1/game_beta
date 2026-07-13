@@ -269,6 +269,25 @@ func aim_focus(rng := 520.0) -> Enemy:
 
 # ================================================================= abilities
 
+## The data-driven damage knobs for one ability slot — the SINGLE SOURCE lives
+## in Classes.CLASSES[cls].abilities[slot].dmg. `coeff` is the %ATK the kit hits
+## for; `base` is the flat-per-level floor (0 today). Kits read the coeff from
+## here so tuning an ability = editing one number that the tooltip also reads.
+func ability_coeff(slot: String) -> float:
+	return float(Classes.CLASSES[cls]["abilities"][slot].get("dmg", {}).get("coeff", 1.0))
+
+## The ability's flat base damage at this level (base x level). Dormant (0) until
+## a class is handed a floor; see _cast_base.
+func ability_base_flat(slot: String) -> float:
+	return float(Classes.CLASSES[cls]["abilities"][slot].get("dmg", {}).get("base", 0.0)) * float(level)
+
+## One numeric RIDER value (stun / iframe / dr / slow / heal…) from the ability's
+## single-source `riders` data — the kit reads the mechanic from here so tuning
+## the number moves both the effect AND the tooltip (Classes.ability_riders).
+func rider(slot: String, key: String, default := 0.0) -> float:
+	return float(Classes.CLASSES[cls]["abilities"][slot].get("riders", {}).get(key, default))
+
+
 func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	for key in _tfx:
 		if not effects.has(key):
@@ -289,7 +308,7 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	var crit_exempt: float = effects.get("crit_bonus", 0.0)
 	if void_crit > 0.0 and effects.get("crush", 0):
 		crit_exempt += void_crit  # Nightfall (warlock): Void's crushing line crits more
-	var result := Stats.resolve(current_atk() * mult, dmg_type,
+	var result := Stats.resolve(current_atk() * mult + _cast_base, dmg_type,
 		crit, crit_dmg, pen, dex, e_res, e.eva, e.critres, crit_exempt)
 	if result["miss"]:
 		game.spawn_text(e.global_position + Vector2(0, -30), "MISS", Color(0.7, 0.7, 0.7))
