@@ -387,7 +387,51 @@ func _apply_strip(info: Dictionary, is_action := false) -> void:
 	var ref := _body_cell if _body_cell > 0.0 else cell
 	var s := art_scale * 16.0 / ref
 	sprite.scale = Vector2(s, s)
-	sprite.offset = Vector2(0, -(cell - ref) / 2.0)
+	# Re-anchor an oversized ability cell onto the idle body. The naive
+	# center-align (-(cell-ref)/2) keeps the feet put ONLY when the ability's
+	# feet sit at the same distance from the cell bottom as the idle's — true
+	# for an overhead/side swing, but a DOWNWARD slam whose blade drops past
+	# the feet (Nullwarden's greatsword) grows the cell BELOW the feet, so
+	# center-align lifts the whole body every time he attacks. When the cells
+	# differ, align the real FEET lines (frame-0 lowest opaque row) instead;
+	# fall back to the center-align when the image can't be read.
+	var off := -(cell - ref) / 2.0
+	if is_action and absf(cell - ref) > 0.5:
+		var bf := _strip_feet_y(_strip_idle.get("tex", null), ref)
+		var af := _strip_feet_y(sprite.texture, cell)
+		if bf >= 0.0 and af >= 0.0:
+			off = (bf - ref / 2.0) - (af - cell / 2.0)
+	sprite.offset = Vector2(0, off)
+
+
+## Lowest opaque row of a strip's FIRST frame (the feet line), in texture px,
+## or -1 when unreadable. Cached per texture RID — one decode per distinct
+## strip, shared across every enemy of that species (see _apply_strip's
+## feet-align: an ability cell that grows below the feet must anchor by feet).
+static var _feet_cache := {}
+static func _strip_feet_y(tex: Texture2D, cell: float) -> float:
+	if tex == null:
+		return -1.0
+	var key := tex.get_rid()
+	if _feet_cache.has(key):
+		return _feet_cache[key]
+	var fy := -1.0
+	var img := tex.get_image()
+	if img != null:
+		var c := int(cell)
+		var w: int = mini(c, img.get_width())
+		var h: int = mini(c, img.get_height())
+		for y in range(h - 1, -1, -1):
+			var hit := false
+			for x in w:
+				if img.get_pixel(x, y).a > 0.3:
+					hit = true
+					break
+			if hit:
+				fy = float(y)
+				break
+	_feet_cache[key] = fy
+	return fy
 
 
 ## Play a one-shot ability strip once, then fall back to idle/walk. No-op
