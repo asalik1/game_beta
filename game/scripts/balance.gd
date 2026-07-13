@@ -327,7 +327,7 @@ const STAB_STRIKE_DELAY := 0.10   # delay the stab's cut/slash to the lunge fram
 const PALADIN_SMITE_DELAY := 0.16 # delay Judgment/Consecration impact FX+damage to the warhammer's slam frame (the heavy overhead swing has a real windup — FX on the input frame reads ahead of the animation)
 const WARRIOR_SWING_DELAY := 0.13 # delay Cleave's cut/quake to the sword swing's contact frame (same windup-vs-FX sync)
 const MAGE_BOLT_DELAY := 0.12     # delay Firebolt to the staff-thrust release frame (same windup-vs-FX sync)
-const ARCHER_LOOSE_DELAY := 0.12  # delay Quick Shot / Multishot / Arrow Storm to the bow's draw-release frame (same windup-vs-FX sync)
+const ARCHER_LOOSE_DELAY := 0.25  # delay Quick Shot / Multishot / Arrow Storm to the bow's draw-release frame (~frame 7 of the re-rolled 9-frame draw@22fps — the string snaps forward at t≈0.25; 0.12 loosed mid-draw)
 const WARLOCK_CAST_DELAY := 0.16  # delay Shadowbolt / Hex to the arm-snap/sigil-projection frame (~frame 4 of the re-rolled upright cast; Dark Pact = self-buff stays instant; Void Rift self-sequences via its telegraph)
 # Bosses got v3 ability strips (a real swing/cast windup) — same rule as the
 # classes. BOSS_ABILITY_FPS plays the ~7-frame one-shot snappily (~0.5s, not the

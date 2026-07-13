@@ -27,8 +27,12 @@ NAME_MAP = {
     "animating": "anim", "breathing-idle": "anim", "idle": "anim",
     "walking": "walk", "walk": "walk",
     "running": "run", "run": "run",
-    "dash": "dash", "attack": "attack", "attack2": "attack2",
-    "cast": "cast", "ult": "ult", "ultidle": "ultidle", "death": "death",
+    "dash": "dash", "dodge_roll": "dash",
+    "attack": "attack", "bow_shot": "attack",
+    "attack2": "attack2", "bow_bash": "attack2",
+    "cast": "cast", "channel_cast": "cast",
+    "ult": "ult", "ultidle": "ultidle",
+    "death": "death", "falling_backward": "death",
 }
 # render suffix -> PixelLab direction folder name. All 8 so asymmetric
 # characters (weapon on one hand) install their REAL west-half art; the

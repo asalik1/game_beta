@@ -502,6 +502,14 @@ func use_ability(slot: String) -> void:
 		# north/south dash was rendering sideways toward a side target.
 		if action_clip == "dash":
 			action_face_hint = dash_vec()
+		# The archer's toward-camera (south) bow draw holds the bow FLAT across
+		# her body, so a due-south shot reads as aiming sideways, not down at the
+		# target. Bias a near-straight-south aim onto the SE/SW sprite (bow angles
+		# down toward the target); the arrow itself still flies at aim_dir().
+		elif cls == "archer" and action_clip in ["attack", "attack2"]:
+			var av := aim_dir()
+			if Art.dir8_suffix(av) == "s":
+				action_face_hint = Vector2(1.0 if av.x >= 0.0 else -1.0, 1.0)
 		play_action(action_clip)
 		action_face_hint = Vector2.ZERO
 	var f := dm(slot)
