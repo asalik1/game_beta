@@ -911,6 +911,33 @@ const WANDERERS := [
 # supplies the camp; T2/T3 append the acts). Base list stays empty.
 const CH2_ZONES := []
 
+# ---- Endgame arenas (ACT2_DESIGN.md §II) — deliberately kept OUT of
+# CHAPTER_LIST so the campaign machinery (chapter select, weekly rotation,
+# next_chapter, act gating) never sees them; chapter() below resolves them by
+# id. Each is a single-room world the endgame controller (endgame.gd) spawns
+# bosses/mobs into. `endgame` marks the world so flows can branch on it; the
+# room is `safe` (no authored packs) — the controller owns every spawn.
+const ENDGAME_ARENAS := {
+	"crucible": {
+		"name": "The Crucible",
+		"sub": "Ten bosses, back to back. No healing between them. How far can you push?",
+		"endgame": true,
+		"zones": [{"name": "The Crucible", "terrain": "magma", "type": "safe"}],
+		"start_quest": "",
+		"final_boss": "",
+		"start_pos": [520, 620],
+	},
+	"depths": {
+		"name": "The Waking Depths",
+		"sub": "An endless dark that deepens as you go. Descend as far as you dare.",
+		"endgame": true,
+		"zones": [{"name": "The Waking Depths", "terrain": "graveyard", "type": "safe"}],
+		"start_quest": "",
+		"final_boss": "",
+		"start_pos": [520, 620],
+	},
+}
+
 const CHAPTERS := {
 	"ch1": {
 		"name": "Chapter 1: The Hollow King",
@@ -1090,7 +1117,14 @@ static func wanderers_for(chid: String) -> Array:
 
 static func chapter(id: String) -> Dictionary:
 	load_content()
+	if ENDGAME_ARENAS.has(id):   # endgame arenas resolve here, never via CHAPTER_LIST
+		return ENDGAME_ARENAS[id]
 	return CHAPTER_LIST.get(id, CHAPTER_LIST.get("ch1", {}))
+
+
+## Is this chapter id one of the endgame arenas (The Crucible / Waking Depths)?
+static func is_endgame(id: String) -> bool:
+	return ENDGAME_ARENAS.has(id)
 
 
 static func quest_text(key: String) -> String:

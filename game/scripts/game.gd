@@ -344,6 +344,8 @@ func _process(delta: float) -> void:
 		talk_cd = 0.4
 	if play_started and state == ST_PLAYING:
 		run_time += delta  # chapter run clock (results card; pauses pause it)
+		if endgame_active and endgame != null:
+			endgame.tick(delta)  # endgame arena: watch for a Depths wave clearing
 	refresh_ambience()  # ambient bed tracks the room's terrain (cheap no-op)
 	track_footprints()  # snow remembers your steps (no-op off snow)
 	tick_footsteps(delta)  # and every step SOUNDS (plate classes clank)

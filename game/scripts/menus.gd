@@ -399,13 +399,27 @@ func open_pause() -> void:
 	if game.daily_available():
 		_btn(vbox, "  ★  " + Loc.t("daily_reward"),
 			func() -> void: open_daily(), Color(1.0, 0.88, 0.45))
-	var restart := func() -> void:
-		open_confirm("Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(game.chapter_id)["name"],
-			func() -> void: game.replay_chapter(game.chapter_id))
-	_btn(vbox, "  ↺  Restart chapter  (keeps your character)", restart, Color(1.0, 0.8, 0.5))
-	_btn(vbox, "  ⚑  Chapter select  (replay any chapter)", func() -> void: open_chapter_select(true), Color(1.0, 0.8, 0.5))
+	if game.endgame_active:
+		# In an endgame run: cash out (keep winnings) or abandon (forfeit).
+		var cash := func() -> void:
+			open_confirm("Cash out now? You keep everything you've earned this run and return to the title.",
+				func() -> void:
+					close()
+					if game.endgame:
+						game.endgame.cash_out())
+		_btn(vbox, "  💰  Cash out & bank rewards", cash, Color(1.0, 0.85, 0.4))
+	else:
+		var restart := func() -> void:
+			open_confirm("Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(game.chapter_id)["name"],
+				func() -> void: game.replay_chapter(game.chapter_id))
+		_btn(vbox, "  ↺  Restart chapter  (keeps your character)", restart, Color(1.0, 0.8, 0.5))
+		_btn(vbox, "  ⚑  Chapter select  (replay any chapter)", func() -> void: open_chapter_select(true), Color(1.0, 0.8, 0.5))
+		if game.endgame_unlocked():
+			_btn(vbox, "  ⚔  Endgame Trials  (Crucible · Waking Depths)",
+				func() -> void: open_endgame_select(), Color(1.0, 0.6, 0.5))
 	var to_title := func() -> void:
-		open_confirm("Exit to the title screen? Your progress is saved.",
+		open_confirm("Exit to the title screen? Your progress is saved." +
+			("\n\nThis ABANDONS the current endgame run — its rewards are forfeit." if game.endgame_active else ""),
 			func() -> void: game.exit_to_title())
 	_btn(vbox, "  ⇦  Exit to title  (switch character)", to_title, Color(1.0, 0.65, 0.55))
 	var quit_game := func() -> void:
@@ -498,6 +512,89 @@ func _settings_back() -> void:
 
 
 # ---------------------------------------------------------- chapter select ---
+
+# ------------------------------------------------------------ endgame trials ---
+
+## The endgame mode picker (ACT2_DESIGN.md §II) — reached from the pause menu
+## once Act 1 is cleared. Two never-ending arena modes; picking one tears down
+## the campaign world and drops the hero into the arena (game.enter_endgame).
+func open_endgame_select() -> void:
+	var vbox := _open("Endgame Trials", 860, 560, true)
+	current = "endgame_select"
+	_lbl(vbox, "Act 1 is behind you. These trials never end — push for the leaderboard, or cash out for the loot. They pay no XP; gold and mailed spoils are the prize, and a death still pays (at a tithe).", 14, Color(0.75, 0.75, 0.78))
+	var cls: String = game.local_player.cls
+
+	var cru_pb := game.endgame_pb("crucible", cls)
+	var cru_sub := "Ten bosses back to back, each wearing an elite affix, scaled to you. HP and MP carry over — no healing between fights, so potions are your only sustain. Bonus spoils at 3 / 6 / 10 kills; the full clear pays a boss-band piece."
+	if not cru_pb.is_empty():
+		cru_sub += "\n★ Best: %d bosses" % int(cru_pb.get("kills", 0))
+		if float(cru_pb.get("time", 0.0)) > 0.0:
+			cru_sub += "   ·   fastest 10-clear %d:%02d" % [int(cru_pb["time"]) / 60, int(cru_pb["time"]) % 60]
+	_endgame_card(vbox, "🔥  The Crucible", cru_sub, Color(1.0, 0.6, 0.45),
+		func() -> void: _start_endgame("crucible"))
+
+	var dep_pb := game.endgame_pb("depths", cls)
+	var dep_sub := "An endless descent. A prep camp, then combat only: each room's mobs scale a level deeper, a boss guards every fourth room, and affixes and pressure mount the further you fall. How deep can you go?"
+	if not dep_pb.is_empty():
+		dep_sub += "\n★ Deepest: %d" % int(dep_pb.get("depth", 0))
+	_endgame_card(vbox, "🕯  The Waking Depths", dep_sub, Color(0.72, 0.8, 1.0),
+		func() -> void: _start_endgame("depths"))
+
+	_hint(vbox, "Pick a trial, or ESC to go back")
+
+## One mode card: a big colored launch button with its rules beneath.
+func _endgame_card(parent: Node, title: String, sub: String, color: Color, cb: Callable) -> void:
+	var b := _btn(parent, "  " + title + "  ", cb, color)
+	b.add_theme_font_size_override("font_size", 20)
+	var sl := _lbl(parent, sub, 13, Color(0.72, 0.74, 0.82))
+	sl.custom_minimum_size = Vector2(800, 0)
+
+func _start_endgame(mode: String) -> void:
+	if root:
+		root.queue_free()
+		root = null
+	current = ""
+	game.enter_endgame(mode)
+
+## The settlement card shown when an endgame run ends (cash-out, death, or a full
+## Crucible clear). Rewards are already banked/mailed by the controller; the only
+## exit is back to the title.
+func open_endgame_result(summary: Dictionary) -> void:
+	var died: bool = summary.get("died", false)
+	var completed: bool = summary.get("completed", false)
+	var title := "RUN COMPLETE"
+	var col := Color(1.0, 0.85, 0.35)
+	if completed:
+		title = "THE CRUCIBLE CONQUERED"
+	elif died:
+		title = "YOU FELL"
+		col = Color(1.0, 0.6, 0.5)
+	var vbox := _open(title, 720, 500)
+	current = "endgame_result"
+	_lbl(vbox, String(summary.get("name", "")), 18, col)
+	if String(summary.get("mode", "")) == "crucible":
+		_lbl(vbox, "Bosses slain:  %d / %d" % [int(summary.get("kills", 0)), Balance.CRUCIBLE_BOSSES], 15)
+	else:
+		_lbl(vbox, "Depth reached:  %d      bosses slain:  %d" % [int(summary.get("depth", 0)), int(summary.get("kills", 0))], 15)
+	var rec: Dictionary = summary.get("record", {})
+	if rec.get("new_kills", false) or rec.get("new_time", false) or rec.get("new_depth", false):
+		_lbl(vbox, "★  NEW PERSONAL RECORD", 16, Color(0.6, 1.0, 0.7))
+	_lbl(vbox, " ", 8)
+	_lbl(vbox, "Gold banked:  %d%s" % [int(summary.get("gold", 0)),
+		"   (death tithe applied)" if died else ""], 15, Color(1.0, 0.85, 0.4))
+	var gems := int(summary.get("gems", 0))
+	var gear := int(summary.get("gear", 0))
+	if gems > 0 or gear > 0:
+		_lbl(vbox, "Spoils mailed:  %d gem%s, %d gear piece%s" %
+			[gems, "" if gems == 1 else "s", gear, "" if gear == 1 else "s"],
+			14, Color(0.7, 0.9, 1.0))
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(spacer)
+	_btn(vbox, "  Return to title  (spoils are in your mailbox)  ",
+		func() -> void: game.exit_to_title(), Color(0.6, 1.0, 0.6))
+	_hint(vbox, "Your rewards are banked. Press to return.")
+
 
 ## New game step one — or, from the pause menu (replay=true), jump an
 ## EXISTING character into any chapter from its beginning.

@@ -121,6 +121,13 @@ var current_boss: Boss = null    # the DISPLAYED boss: your target, else bosses[
 var shop_stock := {}             # room index -> Array of items for sale
 var shop_bags := {}              # room index -> Array of bags for sale (round 52)
 
+# Endgame modes (ACT2_DESIGN.md §II): the controller runs The Crucible / Waking
+# Depths in one arena world. `endgame_active` fences campaign autosave off the
+# arena chapter (rewards bank home via write_character_home only — see autosave)
+# and lets the death flow settle the run instead of respawning (game_flow).
+var endgame: Endgame = null
+var endgame_active := false
+
 # ------------------------------------------------------- fight report ---
 # Benchmark instrument: boss fights are timed from FIRST BLOOD (either
 # direction) to the roster emptying, and the kill prints a report —
@@ -522,7 +529,10 @@ func autosave() -> void:
 	# never sets downed/ghost, so offline is unaffected.
 	if save_slot > 0 and play_started and state == ST_PLAYING \
 			and not player.dead and not player.downed and not player.ghost:
-		if guest_world:
+		if guest_world or endgame_active:
+			# Endgame runs live in a throwaway arena world — bank only the
+			# character (take-home gold/gear/records), never the arena's world
+			# state, so the campaign position the save names stays untouched.
 			SaveGame.write_character_home(self, save_slot)
 		else:
 			SaveGame.write(self, save_slot)

@@ -19,6 +19,8 @@ var charge_dir := Vector2.ZERO
 var charge_time := 0.0
 var telegraphing := false
 var story_boss := false      # spawned by the zone flow (drives quests on death)
+var endgame_boss := false    # spawned by the endgame controller (drives the run on death)
+var affix := ""              # elite affix key worn in the endgame modes (Balance.AFFIXES), "" = none
 
 
 static func make_boss(game_node: Node2D, boss_kind: String, pos: Vector2, at_level := -1) -> Boss:
@@ -465,6 +467,10 @@ func die() -> void:
 		# Zone-spawned bosses — chapter 1's trio AND content bosses
 		# placed in zone data — drive quests/gates/epilogue.
 		game.on_boss_died.call_deferred(kind, self)
+	elif endgame_boss:
+		# Endgame arena bosses (The Crucible / Waking Depths): advance the
+		# run — no full heal (HP carries over), no boss_done, no gates.
+		game.on_endgame_boss_died.call_deferred(kind, self)
 	else:
 		# ANY boss killed outside the story flow (dev panel, tests):
 		# rewards only. No dialogue, no gates, no boss_done marks, no

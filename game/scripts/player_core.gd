@@ -125,6 +125,13 @@ var blink_dr := 0.0      # Arcane Ward: DR fraction Blink grants (mage passive)
 var blink_dr_dur := 0.0  # how long that DR window lasts after a Blink
 var dr_time := 0.0       # while > 0, incoming non-true damage is cut by dr_amt
 var dr_amt := 0.0        # active damage-reduction fraction (multiplicative)
+# Stacking debuff multipliers (endgame Waking Depths pressure band, ACT2 §II — a
+# general knob other systems can reuse). 1.0 = no effect. Applied at the three
+# choke points: current_atk (damage dealt), take_damage (damage taken), gain_hp
+# (healing received). The Depths controller sets these; they reset to 1.0 off-run.
+var debuff_dmg_out := 1.0
+var debuff_dmg_in := 1.0
+var debuff_heal_in := 1.0
 # Talent capstone survivability (2026-07-09 dominated-cell rework): defense the
 # tree SELLS instead of dead cd-micro — earned by playing the button, per the
 # floor-compensation doctrine (drip/window, never a free negate).
@@ -984,6 +991,7 @@ func recalc() -> void:
 func gain_hp(amount: float) -> void:
 	if amount <= 0.0 or dead:
 		return
+	amount *= debuff_heal_in   # endgame Depths −healing-received debuff (1.0 off-run)
 	var before := hp
 	hp = minf(max_hp, hp + amount)
 	heal_accum += hp - before
@@ -1015,6 +1023,7 @@ func current_atk() -> float:
 		# FLOOR, then flattens hard (linear+cap let it snowball to +19% at L100).
 		a *= 1.0 + minf(Balance.PLATE_RES_DMG_CAP,
 			Balance.PLATE_RES_DMG_LOG * log(1.0 + (physres + magres) * Balance.PLATE_RES_DMG_K))
+	a *= debuff_dmg_out   # endgame Depths −damage-dealt debuff (1.0 off-run)
 	return a
 
 

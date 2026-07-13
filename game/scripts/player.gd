@@ -646,6 +646,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		# game.gd can't save you from a lethal hit that triggers death the same
 		# frame it lands — this does.
 		return
+	amount *= debuff_dmg_in   # endgame Depths +damage-taken debuff (1.0 off-run)
 	if attacker is Enemy and (attacker as Enemy).toxin > 0:
 		# ENFEEBLE (round 49e; split 49f): YOUR toxin on the attacker turns
 		# its rot into your survival — class-flavored, scaled by live stacks

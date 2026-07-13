@@ -729,6 +729,38 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 		m._lbl(pbs, "Clear a chapter to set its first mark — time and grade are kept per class.",
 			13, Color(0.6, 0.62, 0.68))
 
+	# --- endgame trials (account-wide, this class) — the leaderboard brags ---
+	if m.game.endgame_unlocked():
+		m._lbl(list, "— ENDGAME TRIALS — %s, account-wide —" %
+			String(Classes.CLASSES[m.game.player.cls]["name"]), 16, Color(1.0, 0.62, 0.5))
+		var eg := VBoxContainer.new()
+		eg.add_theme_constant_override("separation", 3)
+		_card(list).add_child(eg)
+		var cru: Dictionary = m.game.endgame_pb("crucible", m.game.player.cls)
+		var cru_row := HBoxContainer.new()
+		cru_row.add_theme_constant_override("separation", 10)
+		eg.add_child(cru_row)
+		var cn := m._lbl(cru_row, "🔥 The Crucible", 14, Color(1.0, 0.75, 0.62))
+		cn.custom_minimum_size = Vector2(300, 0)
+		if cru.is_empty():
+			m._lbl(cru_row, "no run yet", 14, Color(0.6, 0.62, 0.68))
+		else:
+			var ck := m._lbl(cru_row, "best %d / %d bosses" % [int(cru.get("kills", 0)), Balance.CRUCIBLE_BOSSES], 14, Color(0.7, 1.0, 0.7))
+			ck.custom_minimum_size = Vector2(170, 0)
+			var ctime := int(float(cru.get("time", 0.0)))
+			if ctime > 0:
+				m._lbl(cru_row, "fastest clear %d:%02d" % [ctime / 60, ctime % 60], 14, Color(0.85, 0.9, 1.0))
+		var dep: Dictionary = m.game.endgame_pb("depths", m.game.player.cls)
+		var dep_row := HBoxContainer.new()
+		dep_row.add_theme_constant_override("separation", 10)
+		eg.add_child(dep_row)
+		var dn := m._lbl(dep_row, "🕯 The Waking Depths", 14, Color(0.78, 0.82, 1.0))
+		dn.custom_minimum_size = Vector2(300, 0)
+		if dep.is_empty():
+			m._lbl(dep_row, "no run yet", 14, Color(0.6, 0.62, 0.68))
+		else:
+			m._lbl(dep_row, "deepest %d" % int(dep.get("depth", 0)), 14, Color(0.7, 1.0, 0.7))
+
 	# --- titles (worn beside the class name on the HUD) ---
 	m._lbl(list, "— TITLES — earned by points, feats, lore and slaughter —", 16, Color(0.85, 0.6, 1.0))
 	var tbox := VBoxContainer.new()

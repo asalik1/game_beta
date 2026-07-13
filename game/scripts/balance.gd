@@ -1062,3 +1062,61 @@ const TIER_AURA_ALPHA := 0.20      # A/S aura PEAK opacity — deliberately fain
 # unearths its codex lore entry; unearthed entries feed the Lorekeeper title.
 const LORE_KILLS_MOB := 25         # kills to unearth a regular monster's lore
 const LORE_KILLS_BOSS := 3         # bosses die once a run — 3 clears is devotion
+
+
+# ============================================================= endgame modes ===
+# The two post-Act-1 combat modes (ACT2_DESIGN.md §II), unlocked once the
+# campaign's Act 1 (ch7) is cleared. Both run in ONE reused arena and drive
+# their content in from Boss.make_boss / Enemy.make. Rewards ACCRUE through the
+# run and pay at the end — a voluntary cash-out pays in full, a death pays at a
+# penalty (the death gold tithe, extended). Neither mode pays XP (same rule as
+# chapter replays). See endgame.gd for the controller.
+const ENDGAME_UNLOCK_META := "unlocked_endgame"  # meta.json flag, set on first ch7 clear
+const ENDGAME_DEATH_PENALTY := 0.75    # a death still cashes out, at 75% (ACT2 §II)
+const ENDGAME_ARENA_TERRAINS := ["magma", "ice", "bog", "storm", "graveyard", "holy", "crystal", "void", "desert"]
+
+# --- The Crucible (Boss Rush) ---
+const CRUCIBLE_BOSSES := 10            # a full run is ten bosses back to back
+const CRUCIBLE_MILESTONES := [3, 6, 10]  # milestone chests fall at these kill counts
+# Per-boss gold climbs with how far you are: base × (1 + STEP × killsSoFar),
+# then scaled by the arena level (daily_gold_mult).
+const CRUCIBLE_GOLD_BASE := 120
+const CRUCIBLE_GOLD_STEP := 0.35
+const CRUCIBLE_CLEAR_GEAR_GRADE := "A"   # the 10-boss clear pays a boss-band piece
+
+# --- The Waking Depths (Marathon) ---
+const DEPTHS_BOSS_EVERY := 4           # every 4th room is a boss (checkpoint)
+const DEPTHS_MOB_PER_ROOM := 1         # mobs scale +1 level per room descended
+const DEPTHS_WAVE_SIZE := 4            # trash spawned per non-boss room
+const DEPTHS_TERRAIN_ROTATE := 3       # re-theme the arena every N depths
+const DEPTHS_GOLD_PER_DEPTH := 45      # linear-with-depth gold, scaled by level
+const DEPTHS_MILESTONES := [12, 24, 36, 48]  # milestone chests at these depths
+# Escalation tiers (ACT2 §II): the compound growth curve does most of the work;
+# affix counts and the depth-37 pressure amp layer on top.
+const DEPTHS_TIER_1AFFIX := 13         # from here, mobs carry 1 random affix
+const DEPTHS_TIER_2AFFIX := 25         # mobs 2 affixes, bosses 1
+const DEPTHS_TIER_PRESSURE := 37       # the player-debuff band opens here
+const DEPTHS_TIER_MAX := 49            # mobs 3 affixes, bosses 2
+# Player debuffs (ACT2 §II): from depth 37, one stacking debuff every 4 rooms,
+# cycling −healing received → −damage dealt → +damage taken, forever.
+const DEPTHS_DEBUFF_EVERY := 4         # a new debuff stack per this many depths past the line
+const DEPTHS_DEBUFF_STEP := 0.10       # each stack is ±10%
+const DEPTHS_DEBUFF_FLOOR := 0.20      # −healing/−damage can't drop a multiplier below this
+
+# --- Elite affixes (ACT2 §VI) — spawn-time stat mutations, no per-frame hooks.
+# Each carries a display name (worn on the bar), stat scalars, and traits to
+# grant. Applied once when the boss/mob spawns (endgame.gd _apply_affix).
+const AFFIXES := {
+	"frenzied": {"name": "Frenzied", "dmg": 1.30, "speed": 1.20, "traits": ["frenzy"]},
+	"bulwark":  {"name": "Bulwark", "hp": 1.70},
+	"swift":    {"name": "Swift", "speed": 1.35, "traits": ["swift"]},
+	"savage":   {"name": "Savage", "dmg": 1.55},
+	"vampiric": {"name": "Vampiric", "dmg": 1.15, "traits": ["regen"]},
+}
+const AFFIX_KEYS := ["frenzied", "bulwark", "swift", "savage", "vampiric"]
+const AFFIX_REGEN_FRAC := 0.02         # the "regen" trait (Vampiric): heal this fraction of max HP/s
+
+## Gem level for endgame per-boss / milestone gems: the ch7 (Act-1 end) floor,
+## climbing one level per 10 bosses/depths so a deep run sockets richer.
+static func endgame_gem_level(progress: int) -> int:
+	return gem_drop_level("ch7") + progress / 10

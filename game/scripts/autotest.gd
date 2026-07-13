@@ -1321,6 +1321,137 @@ func _run_systems() -> void:
 	await _frames(2)
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
 
+	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
+	await _test_endgame()
+
+
+## Endgame arena modes end to end (headless): the Crucible spawns affixed
+## bosses that carry HP over and accrue reward, the Depths builds a camp then
+## descends through waves, and both settle (cash-out / death) into banked gold +
+## mailed spoils. Snapshots the shared character state and rebuilds ch1 after.
+func _test_endgame() -> void:
+	var kept_records: Dictionary = game.boss_records.duplicate(true)
+	var kept_gold: int = game.player.gold
+	var kept_mail: Array = game.mailbox.duplicate(true)
+	var kept_dev: bool = game.dev_mode
+	# A cleared-boss roster so the arena has bosses to draw from.
+	game.boss_records["fangmaw"] = {"ttk": 30.0, "dps": 100.0, "kills": 1}
+	game.boss_records["morwen"] = {"ttk": 30.0, "dps": 100.0, "kills": 1}
+	game.boss_records["vargoth"] = {"ttk": 30.0, "dps": 100.0, "kills": 1}
+	game.dev_mode = true  # unlocks the modes; no_saves already fences meta writes
+
+	# ---------------------------------------------------------- The Crucible ---
+	game.enter_endgame("crucible")
+	if not game.endgame_active or game.chapter_id != "crucible":
+		return _fail("crucible: arena world was not entered")
+	var eg: Endgame = game.endgame
+	await get_tree().create_timer(0.9).timeout  # first-boss beat (0.8) + margin
+	await _frames(2)
+	if eg.index != 1 or game._live_bosses().is_empty():
+		return _fail("crucible: first boss did not spawn")
+	var b: Boss = game._live_bosses()[0]
+	if not b.endgame_boss:
+		return _fail("crucible: boss not tagged endgame_boss")
+	if b.affix == "":
+		return _fail("crucible: boss carries no elite affix")
+	# Kill it: the run advances, reward accrues, and HP must NOT full-heal reset
+	# (passive class regen is legitimate sustain — only the old full-heal is barred).
+	game.player.hp = game.player.max_hp * 0.4
+	b.hp = 0.0
+	b.die()
+	await _frames(4)  # deferred on_endgame_boss_died
+	if eg.kills != 1:
+		return _fail("crucible: kill not counted (kills=%d)" % eg.kills)
+	if eg.pending_gold <= 0 or eg.pending_gems.is_empty():
+		return _fail("crucible: boss reward did not accrue")
+	if game.player.hp >= game.player.max_hp * 0.9:
+		return _fail("crucible: HP was reset toward full between fights (should carry over)")
+	await get_tree().create_timer(1.4).timeout  # next-boss beat (1.3) + margin
+	await _frames(2)
+	if eg.index != 2:
+		return _fail("crucible: did not advance to boss 2 (index=%d)" % eg.index)
+	# Cash out: gold banks, spoils mail, the run settles.
+	var gold_before: int = game.player.gold
+	var mail_before: int = game.mailbox.size()
+	eg.cash_out()
+	await _frames(2)
+	if eg.active:
+		return _fail("crucible: cash-out did not settle the run")
+	if game.player.gold <= gold_before:
+		return _fail("crucible: cash-out banked no gold")
+	if game.mailbox.size() <= mail_before:
+		return _fail("crucible: spoils were not mailed")
+	if game.menus.is_open():
+		game.menus.close()
+	game.endgame_active = false
+	await _frames(2)
+
+	# ------------------------------------------------------ The Waking Depths ---
+	game.enter_endgame("depths")
+	await _frames(3)
+	var d: Endgame = game.endgame
+	if game.chapter_id != "depths" or d.depth != 0:
+		return _fail("depths: prep camp was not established")
+	if not is_instance_valid(d._camp_merchant):
+		return _fail("depths: prep camp has no merchant")
+	var terrain_before: String = game.terrain_by_zone[d.arena_room]
+	d.descend()  # depth 1 is a trash wave (and the first terrain re-theme)
+	await _frames(3)
+	if d.depth != 1 or game.zone_alive.get(d.arena_room, 0) <= 0:
+		return _fail("depths: first wave did not spawn")
+	if not d.wave_active:
+		return _fail("depths: wave not marked active")
+	if game.terrain_by_zone[d.arena_room] == terrain_before:
+		return _fail("depths: arena did not re-theme on descent")
+	if is_instance_valid(d._camp_merchant):
+		return _fail("depths: camp merchant was not cleared on descend")
+	# Clear the wave; the per-frame tick then advances the descent.
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var en := node as Enemy
+		if en != null and en.zone_idx == d.arena_room:
+			en.hp = 0.0
+			en.die()
+	await _frames(5)
+	await get_tree().create_timer(1.5).timeout  # room-clear beat (1.3) + margin
+	await _frames(2)
+	if d.depth < 2:
+		return _fail("depths: did not descend after clearing the wave (depth=%d)" % d.depth)
+	# Player-debuff cycle (depth 37+): −healing, then −damage, then +damage-taken,
+	# stacking. Exercised directly (a 37-room descent would be a slog).
+	var real_depth: int = d.depth
+	d.depth = Balance.DEPTHS_TIER_PRESSURE  # 37: first stack cuts healing only
+	d._apply_player_debuffs()
+	if game.player.debuff_heal_in >= 1.0 or game.player.debuff_dmg_out < 1.0 or game.player.debuff_dmg_in > 1.0:
+		return _fail("depths: first debuff stack should cut healing only")
+	d.depth = Balance.DEPTHS_TIER_PRESSURE + 2 * Balance.DEPTHS_DEBUFF_EVERY  # 45: 3 stacks
+	d._apply_player_debuffs()
+	if game.player.debuff_heal_in >= 1.0 or game.player.debuff_dmg_out >= 1.0 or game.player.debuff_dmg_in <= 1.0:
+		return _fail("depths: three debuff stacks should apply all three penalties")
+	d.depth = real_depth
+	# A death settles the run at the penalty AND clears the debuffs.
+	d.on_player_death()
+	await _frames(2)
+	if eg.active:
+		return _fail("depths: a death did not settle the run")
+	if game.player.debuff_heal_in != 1.0 or game.player.debuff_dmg_out != 1.0 or game.player.debuff_dmg_in != 1.0:
+		return _fail("depths: player debuffs were not cleared on settle")
+	if game.menus.is_open():
+		game.menus.close()
+	game.endgame_active = false
+	game.request_pause(false)
+
+	# Restore the shared character + rebuild ch1 for the tests that follow.
+	game.boss_records = kept_records
+	game.player.gold = kept_gold
+	game.mailbox = kept_mail
+	game.dev_mode = kept_dev
+	game.state = game.ST_PLAYING
+	game.switch_chapter("ch1", true)
+	game.player.hp = game.player.max_hp
+	game.player.mp = game.player.max_mp
+	await _frames(3)
+	print("ok: endgame modes (Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)")
+
 
 ## Chapter 1 end to end: terrains, the darkwood walk, all three bosses.
 func _run_campaign_ch1() -> void:

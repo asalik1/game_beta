@@ -192,6 +192,53 @@ func chapter_pb(chid: String, cls: String) -> Dictionary:
 	return _meta.get("pb_%s_%s" % [chid, cls], {})
 
 
+## Endgame records (account-wide, meta.json) — the leaderboard brag numbers,
+## keyed mode × class exactly like chapter PBs. Crucible keeps best kills + the
+## fastest full (10-boss) clear; Depths keeps the deepest descent. Returns which
+## records this run broke so the results card can shout them.
+func record_endgame(mode: String, cls: String, kills: int, depth: int, time: float) -> Dictionary:
+	_load_meta()
+	var out := {}
+	if mode == "crucible":
+		var key := "crucible_pb_" + cls
+		var prev: Dictionary = _meta.get(key, {})
+		var best := {"kills": int(prev.get("kills", 0)), "time": float(prev.get("time", 0.0)),
+			"runs": int(prev.get("runs", 0)) + 1}
+		if kills > int(best["kills"]):
+			best["kills"] = kills
+			out["new_kills"] = true
+		if kills >= Balance.CRUCIBLE_BOSSES and (float(best["time"]) <= 0.0 or time < float(best["time"])):
+			best["time"] = time
+			out["new_time"] = true
+		_meta[key] = best
+	else:
+		var key := "depths_best_" + cls
+		var prev: Dictionary = _meta.get(key, {})
+		var best := {"depth": int(prev.get("depth", 0)), "runs": int(prev.get("runs", 0)) + 1}
+		if depth > int(best["depth"]):
+			best["depth"] = depth
+			out["new_depth"] = true
+		_meta[key] = best
+	_meta_write()
+	return out
+
+
+## This class's endgame record for a mode, or {} (menu/codex display).
+func endgame_pb(mode: String, cls: String) -> Dictionary:
+	_load_meta()
+	var key := ("crucible_pb_" if mode == "crucible" else "depths_best_") + cls
+	return _meta.get(key, {})
+
+
+## Are the endgame modes unlocked (Act 1 cleared)? The flag is set the first
+## time any character finishes ch7 (on_boss_died); dev mode always opens them.
+func endgame_unlocked() -> bool:
+	if dev_mode:
+		return true
+	_load_meta()
+	return bool(_meta.get(Balance.ENDGAME_UNLOCK_META, false))
+
+
 ## The account's best weekly-challenge clear for the CURRENT week, or {}.
 func weekly_best() -> Dictionary:
 	_load_meta()
@@ -382,6 +429,35 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 			{"k": "chest", "tier": "gold", "at": clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos)},
 			{"k": "gold", "n": int(Story.ALL_ENEMIES[kind].get("gold", 50)), "at": boss_pos}])
 
+## A boss killed inside an endgame arena run (Boss.endgame_boss): clear the bar
+## and advance the run. NO full heal — HP/MP carry between fights (ACT2 §II).
+func on_endgame_boss_died(kind: String, dead: Boss = null) -> void:
+	var src: Boss = dead if is_instance_valid(dead) else current_boss
+	_boss_roster_update(src)   # empties the roster, prints the fight report, hides the bar
+	if endgame != null:
+		endgame.on_boss_cleared(kind, src)
+
+
+## Enter one of the endgame arena modes ("crucible" | "depths"). Creates the
+## controller on first use; the run tears down back to title when it settles.
+## A full run-start like replay_chapter, minus the campaign flag wipe (the
+## arena world is throwaway) — the controller builds the arena in start().
+func enter_endgame(mode: String) -> void:
+	if endgame_active:
+		return
+	endgame_active = true
+	reset_run_stats()          # fresh run clock/deaths for the leaderboard PB
+	if endgame == null:
+		endgame = Endgame.new()
+		endgame.game = self
+		add_child(endgame)
+	endgame.start(mode)        # tears down the campaign world, builds the arena
+	state = ST_PLAYING         # a run always begins live (never mid-victory-card)
+	play_started = true
+	request_pause(false)
+	hud.visible = true
+
+
 func on_boss_died(kind: String, dead: Boss = null) -> void:
 	boss_done[kind] = true
 	# MP (Wave-1 co-op fix): fan the boss_done mark so every guest opens the
@@ -488,6 +564,12 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		# replays), and the NEXT chapter unlocks account-wide.
 		set_flag("completed_" + chapter_id, true)
 		unlock_achievement("clear_" + chapter_id)
+		# Clearing Act 1 (ch7) opens the endgame modes account-wide, forever.
+		if chapter_id == "ch7":
+			_load_meta()
+			if not bool(_meta.get(Balance.ENDGAME_UNLOCK_META, false)):
+				_meta[Balance.ENDGAME_UNLOCK_META] = true
+				_meta_write()
 		if first_clear:
 			_first_clear_reward(boss_lv)
 		var next_ch := Story.next_chapter(chapter_id)
@@ -859,6 +941,11 @@ func _purge_fx() -> void:
 ## wiping", keeping one death code path.
 func on_player_died() -> void:
 	if state != ST_PLAYING:
+		return
+	# Endgame runs don't respawn — a death SETTLES the run at a penalty and
+	# returns to title (ACT2_DESIGN.md §II). The controller pays the tithe/FX.
+	if endgame_active and endgame != null:
+		endgame.on_player_death()
 		return
 	var p: Player = player  # solo: THE player (co-op: the one who fell)
 	var death_room := cur_room

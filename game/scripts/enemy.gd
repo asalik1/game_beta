@@ -1218,6 +1218,9 @@ func _tick_traits(delta: float) -> void:
 	# --- tether: the bond burns the player who crosses it (ch6) ---
 	if traits.has("tether"):
 		_tick_tether()
+	# --- regen: the endgame "Vampiric" affix — slow self-heal until killed ---
+	if traits.has("regen") and hp < max_hp:
+		hp = minf(max_hp, hp + max_hp * Balance.AFFIX_REGEN_FRAC * delta)
 
 
 # ---- channel_heal (interruptible support) ----

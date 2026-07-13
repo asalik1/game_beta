@@ -30,7 +30,7 @@ func net_apply_boss_done(kind: String) -> void:
 func switch_chapter(id: String, force := false) -> void:
 	# World teardown: forgotten ground loot mails itself first (round 8).
 	flush_dropped_loot()
-	if not Story.CHAPTER_LIST.has(id) or (id == chapter_id and not force):
+	if not (Story.CHAPTER_LIST.has(id) or Story.is_endgame(id)) or (id == chapter_id and not force):
 		return
 	chapter_id = id
 	# Potion investment (2026-07-09): stock is BOUGHT and carries across
