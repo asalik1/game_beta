@@ -1114,6 +1114,26 @@ func _run_systems() -> void:
 		return _fail("save delete failed")
 	print("ok: save/load roundtrip (gold, resonance, factions, gear, room state)")
 
+	# 5b2. Chroma + skin system.
+	var p_sk: Player = game.player
+	var old_chroma: String = p_sk.chroma
+	p_sk.set_chroma("obsidian")
+	if p_sk.chroma != "obsidian":
+		return _fail("set_chroma did not store the id")
+	var mat_ck: ShaderMaterial = p_sk.sprite.material as ShaderMaterial
+	if mat_ck == null:
+		return _fail("chroma did not assign a ShaderMaterial to the sprite")
+	if mat_ck.shader == null:
+		return _fail("chroma ShaderMaterial has no shader")
+	var active_val: float = mat_ck.get_shader_parameter("chroma_active")
+	if active_val < 0.5:
+		return _fail("chroma_active uniform is %.1f (should be 1.0)" % active_val)
+	p_sk.set_chroma("")
+	if p_sk.chroma != "" or mat_ck.get_shader_parameter("chroma_active") > 0.5:
+		return _fail("clearing chroma failed")
+	p_sk.chroma = old_chroma
+	print("ok: chroma shader (apply, uniforms, clear)")
+
 	# 5c. Choice dialogue + flag engine: choices apply resonance/flags,
 	# and both flag- and band-gated text variants resolve.
 	var convo := {

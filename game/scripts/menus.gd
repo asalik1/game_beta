@@ -23,6 +23,7 @@ var current := ""
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
 var shop_tab := "buy"             # shop: which full-width tab is showing (persists across refreshes)
+var shop_junk_tier := "F"         # sell tab: floor grade the one-click junk-sell dumps (that grade and below)
 var inv_cat := "all"              # inventory: last bag category filter (survives item-panel rebuilds)
 var title_stage := "cover"        # boot title: "cover" (splash) -> "slots" (roster)
 var chapter_replay := false       # chapter select opened from the pause menu
@@ -1955,6 +1956,65 @@ func open_shop(zone: int, tab := "") -> void:
 	_hint(vbox)
 
 
+## A 2-up card grid for a shelf of items. The old shop stacked every item as a
+## full-width row, so a ~500px label sat in a ~1070px box and wasted the whole
+## right half; two roomy columns halve that whitespace and read like the bag.
+func _shop_grid(parent: Node) -> GridContainer:
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 6)
+	parent.add_child(grid)
+	return grid
+
+
+## One compact card in a _shop_grid: icon + grade-colored title over a detail/
+## price line, boxed like a bag slot. `title`/`detail` render as two lines of
+## the same grade color (matching the old single-color rows). Fills its column.
+func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: String,
+		color: Color, enabled: bool, cb: Callable) -> Button:
+	var b := Button.new()
+	b.text = "%s\n%s" % [title, detail] if detail != "" else title
+	b.disabled = not enabled
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.clip_text = true
+	b.add_theme_font_size_override("font_size", 14)
+	b.add_theme_color_override("font_color", color)
+	b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
+	b.add_theme_color_override("font_disabled_color", Color(color, 0.4))
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.custom_minimum_size = Vector2(0, 54)
+	if icon != null:
+		b.icon = icon
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Boxed like _bag_slot: grade border + dark fill, brighter border on hover.
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.09, 0.09, 0.12, 0.92)
+	sb.border_color = Color(color, 0.55 if enabled else 0.28)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(4)
+	sb.content_margin_left = 8
+	sb.content_margin_right = 8
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 4
+	b.add_theme_stylebox_override("normal", sb)
+	b.add_theme_stylebox_override("disabled", sb)
+	var sbh: StyleBoxFlat = sb.duplicate()
+	sbh.bg_color = Color(0.17, 0.17, 0.23, 0.95)
+	sbh.border_color = Color(color, 0.9)
+	b.add_theme_stylebox_override("hover", sbh)
+	b.add_theme_stylebox_override("pressed", sbh)
+	if enabled:
+		b.pressed.connect(func() -> void:
+			if game:
+				game.sfx("ui_click"))
+		b.pressed.connect(cb)
+	grid.add_child(b)
+	return b
+
+
 ## Buy tab (full width): rolled gear + upgrades, consumables, then the
 ## miscellaneous shelf (gems, bags, gamble). Scrolls — the full shelf is
 ## taller than the panel and otherwise spills into the HUD/quickbar.
@@ -1977,6 +2037,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	# ================================================================ GEAR ===
 	# The headline purchase leads the column: rolled stock, then upgrades.
 	_lbl(buy, "— Gear —", 13, Color(0.62, 0.64, 0.7))
+	var gear_grid := _shop_grid(buy)
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
 		var cost := int(ceil(Items.shop_buy_price(it, game.chapter_id) * haggle))
@@ -2000,11 +2061,11 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			else:
 				info += "\n\n(Not enough gold — %d short.)" % (cost - p.gold)
 			_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions)
-		var bb := _btn(buy, "%s  %s — %d gold" % [Items.title(it), Items.describe(it, _awk(it)), cost],
-			open_cb, Items.GRADE_COLOR[it["grade"]], true, Art.icon_for(it))
-		bb.clip_text = true
-		bb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_shop_card(gear_grid, Art.icon_for(it), Items.title(it),
+			"%s — %d gold" % [Items.describe(it, _awk(it)), cost],
+			Items.GRADE_COLOR[it["grade"]], true, open_cb)
 	_lbl(buy, "Upgrade equipped gear", 13, Color(0.6, 0.85, 1.0))
+	var up_grid := _shop_grid(buy)
 	for slot in ["weapon", "armor"]:
 		if p.equipment.has(slot):
 			var item: Dictionary = p.equipment[slot]
@@ -2016,12 +2077,13 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 					p.recalc()
 					game.sfx("levelup")
 				open_shop(zone)
-			var ub := _btn(buy, "%s → +%d  (main stat +15%%) — %d gold" % [Items.title(item), item["plus"] + 1, cost],
-				do_upgrade, Color(0.6, 0.9, 1.0), p.gold >= cost, Art.icon_for(item))
-			ub.clip_text = true
+			_shop_card(up_grid, Art.icon_for(item), Items.title(item),
+				"→ +%d  (main stat +15%%) — %d gold" % [item["plus"] + 1, cost],
+				Color(0.6, 0.9, 1.0), p.gold >= cost, do_upgrade)
 
 	# ========================================================= CONSUMABLES ===
 	_lbl(buy, "— Consumables —", 13, Color(0.62, 0.64, 0.7))
+	var cons_grid := _shop_grid(buy)
 	# Potion price scales with the chapter (2026-07-09 investment round):
 	# potions heal % HP, so their value — and price — grows with the game.
 	var potion_cost := int(ceil(float(Balance.potion_price(game.local_player.level)) * haggle))

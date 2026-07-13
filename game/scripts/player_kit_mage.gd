@@ -11,7 +11,7 @@ func _use_mage(slot: String, f: float) -> void:
 			# themes scale off this base, lifting Wind's ST and Fire's AoE).
 			# Sync the bolt to the staff-thrust release, not the input frame —
 			# the cast animation has a windup the FX was firing ahead of.
-			await get_tree().create_timer(Balance.MAGE_BOLT_DELAY).timeout
+			await get_tree().create_timer(swing_delay(Balance.MAGE_BOLT_DELAY)).timeout
 			if dead or downed or ghost:
 				return
 			if _tfx.get("twin", 0):

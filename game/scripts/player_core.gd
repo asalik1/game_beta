@@ -435,6 +435,10 @@ var _dir_pose_active := false
 var _dir_pose_t := 0.0       # elapsed time in the current directional animation
 var _dir_base := 0           # first strip frame of the chosen direction (dir * K)
 var _dir_k := 1              # sub-frames per direction (windup, action, ...)
+## The action clip the CURRENT ability swings (set by use_ability before the
+## kit dispatch). Lets swing_delay() sync a skin's FX to that clip's real
+## contact frame instead of the base-tuned Balance const. "" = none/reset.
+var _strike_clip := ""
 const DIR_ANIM_DUR := 0.22   # seconds to play one direction's sub-frames
 
 ## Ability slots that show a directional aim POSE instead of a swing clip.

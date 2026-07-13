@@ -1,15 +1,10 @@
 shader_type canvas_item;
-// Chroma (palette-swap) shader: recolors armor/clothing pixels based on
-// a three-stop luminance gradient (primary=dark, trim=mid, accent=light)
-// while preserving skin tones and near-black outlines.
 
 uniform float chroma_active : hint_range(0.0, 1.0) = 0.0;
 uniform vec3 chroma_primary = vec3(0.1, 0.1, 0.1);
 uniform vec3 chroma_trim    = vec3(0.25, 0.25, 0.25);
 uniform vec3 chroma_accent  = vec3(0.69, 0.69, 0.69);
-// How much of the original color bleeds through (0 = full recolor,
-// 1 = original untouched). 0.15 keeps light shading variation.
-uniform float original_keep : hint_range(0.0, 1.0) = 0.15;
+uniform float original_keep : hint_range(0.0, 1.0) = 0.08;
 
 vec3 rgb_to_hsv(vec3 c) {
 	vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -22,41 +17,34 @@ vec3 rgb_to_hsv(vec3 c) {
 
 void fragment() {
 	vec4 col = texture(TEXTURE, UV);
-	// Skip transparent or inactive
-	if (chroma_active < 0.5 || col.a < 0.01) {
-		COLOR = col;
-		return;
-	}
-
 	float lum = dot(col.rgb, vec3(0.299, 0.587, 0.114));
-
-	// Preserve near-black outlines
-	if (lum < 0.12) {
-		COLOR = col;
-		return;
-	}
-
-	// Preserve skin tones: warm hue (roughly 15-50 deg), moderate
-	// saturation, not too dark. In pixel art skin sits in a narrow band.
 	vec3 hsv = rgb_to_hsv(col.rgb);
-	float hue = hsv.x;    // 0..1 (0 = red, wraps)
+	float hue = hsv.x;
 	float sat = hsv.y;
 	float val = hsv.z;
-	// Hue 0.04-0.14 = ~15-50 degrees (peach/tan skin range)
-	if (hue > 0.04 && hue < 0.14 && sat > 0.15 && sat < 0.55 && val > 0.45) {
-		COLOR = col;
-		return;
-	}
 
-	// Map luminance to the three-stop chroma gradient
-	vec3 chroma_color;
-	if (lum < 0.35) {
-		chroma_color = mix(chroma_primary, chroma_trim, lum / 0.35);
+	bool is_active = chroma_active >= 0.5;
+	bool is_opaque = col.a >= 0.01;
+	bool is_warm_skin = hue > 0.02 && hue < 0.14 && sat > 0.08 && sat < 0.55 && val > 0.20;
+	bool is_alpha_masked = col.a > 0.995 && col.a < 0.999;
+	bool is_protected = is_warm_skin || is_alpha_masked;
+
+	if (is_active && is_opaque && !is_protected) {
+		vec3 chroma_color;
+		if (lum < 0.5) {
+			chroma_color = mix(chroma_primary, chroma_trim, lum * 2.0);
+		} else {
+			chroma_color = mix(chroma_trim, chroma_accent, (lum - 0.5) * 2.0);
+		}
+		float chroma_lum = dot(chroma_color, vec3(0.299, 0.587, 0.114));
+		if (chroma_lum > 0.001) {
+			chroma_color = min(chroma_color * (lum / chroma_lum), vec3(1.0));
+		}
+		vec3 result = mix(chroma_color, col.rgb, original_keep);
+		float out_a = col.a >= 0.5 ? 1.0 : col.a;
+		COLOR = vec4(result, out_a);
 	} else {
-		chroma_color = mix(chroma_trim, chroma_accent, clamp((lum - 0.35) / 0.55, 0.0, 1.0));
+		float out_a = col.a >= 0.5 ? 1.0 : col.a;
+		COLOR = vec4(col.rgb, out_a);
 	}
-
-	// Blend: keep a fraction of the original art for natural shading
-	vec3 result = mix(chroma_color, col.rgb, original_keep);
-	COLOR = vec4(result, col.a);
 }

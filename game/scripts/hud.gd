@@ -59,6 +59,8 @@ var _minimap_sig := ""
 
 # dialogue
 var dialogue_box: Control
+var dialogue_frame: ColorRect      # outer border — repositioned as the box grows
+var dialogue_inner: ColorRect      # dark fill — ditto
 var portrait_box: Control          # speaker portrait (right side of the box)
 var portrait_rect: TextureRect
 var _portrait_cache := {}          # speaker name -> sprite name ("" = none)
@@ -373,18 +375,18 @@ func _ready() -> void:
 	# The box grows UPWARD from a fixed bottom edge (648, clearing the
 	# quickbar): tall enough that a long paragraph (5-6 wrapped lines) fits
 	# instead of clipping its last line against the bottom border.
-	var frame := ColorRect.new()
-	frame.color = Color(0.9, 0.8, 0.5)
-	frame.position = Vector2(138, 448)
-	frame.size = Vector2(1004, 200)
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dialogue_box.add_child(frame)
-	var inner := ColorRect.new()
-	inner.color = Color(0.08, 0.07, 0.12, 0.97)
-	inner.position = Vector2(141, 451)
-	inner.size = Vector2(998, 194)
-	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dialogue_box.add_child(inner)
+	dialogue_frame = ColorRect.new()
+	dialogue_frame.color = Color(0.9, 0.8, 0.5)
+	dialogue_frame.position = Vector2(138, 448)
+	dialogue_frame.size = Vector2(1004, 200)
+	dialogue_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dialogue_box.add_child(dialogue_frame)
+	dialogue_inner = ColorRect.new()
+	dialogue_inner.color = Color(0.08, 0.07, 0.12, 0.97)
+	dialogue_inner.position = Vector2(141, 451)
+	dialogue_inner.size = Vector2(998, 194)
+	dialogue_inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dialogue_box.add_child(dialogue_inner)
 	speaker_label = Label.new()
 	speaker_label.position = Vector2(168, 462)
 	UITheme.title(speaker_label, 19)  # speaker names in the display face
@@ -2052,10 +2054,43 @@ func _set_portrait(who: String) -> void:
 		portrait_rect.texture = Art.tex(sprite_name)
 
 
+# The dialogue box hangs from a fixed BOTTOM edge and grows UPWARD to fit its
+# line, so a long paragraph can't spill past the bottom border (the box used to
+# be a static 200px and 6+ wrapped lines clipped through it). These anchor the
+# layout to that fixed bottom; see the dialogue box built in _build().
+const DIALOG_BOX_BOTTOM := 648.0   # outer frame bottom edge (fixed)
+const DIALOG_TEXT_BOTTOM := 640.0  # text_label bottom edge (fixed)
+const DIALOG_TEXT_MIN_H := 148.0   # original text capacity — box never shrinks below it
+const DIALOG_SPEAKER_GAP := 30.0   # speaker name sits this far above the text top
+const DIALOG_HEADER := 44.0        # frame top sits this far above the text top
+
+## Fit the box to whatever text_label currently holds: keep the bottom pinned
+## and push the top up as far as the wrapped text needs (never higher than the
+## original box). Returns the frame's top y so a choice panel can stack above
+## the ACTUAL top rather than the old fixed one. Both callers set the text first.
+func _fit_dialogue_box() -> float:
+	# get_line_count() forces the label to (re)shape, so the wrapped line count is
+	# accurate right after assigning .text as long as the label is in the tree (it
+	# is). All lines share one font, so height = lines * per-line height.
+	var wrapped_h := text_label.get_line_count() * text_label.get_line_height()
+	var text_h: float = max(float(wrapped_h), DIALOG_TEXT_MIN_H)
+	var text_top := DIALOG_TEXT_BOTTOM - text_h
+	text_label.position.y = text_top
+	text_label.size.y = text_h
+	speaker_label.position.y = text_top - DIALOG_SPEAKER_GAP
+	var frame_top := text_top - DIALOG_HEADER
+	dialogue_frame.position.y = frame_top
+	dialogue_frame.size.y = DIALOG_BOX_BOTTOM - frame_top
+	dialogue_inner.position.y = frame_top + 3.0
+	dialogue_inner.size.y = (DIALOG_BOX_BOTTOM - 3.0) - (frame_top + 3.0)
+	return frame_top
+
+
 func _show_line() -> void:
 	var line: Array = dialogue_lines[dialogue_index]
 	speaker_label.text = line[0]
 	text_label.text = line[1]
+	_fit_dialogue_box()
 	_set_portrait(String(line[0]))
 	game.sfx("talk")
 	# MP-13 (§5.4): when THIS machine drives a chapter beat, mirror the line
@@ -2170,6 +2205,7 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	dialogue_box.visible = true
 	speaker_label.text = who
 	text_label.text = text
+	var box_top := _fit_dialogue_box()
 	_set_portrait(who)
 	game.sfx("talk")
 	# MP-13 (§5.4): mirror the decision to spectators of a driven beat (they
@@ -2182,7 +2218,8 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	choice_count = options.size()
 	choices_active = true
 	var h := choice_count * 30 + 16
-	choice_frame.position = Vector2(138, 442 - h)  # 6px above the dialogue box top
+	var panel_top := box_top - 6 - h  # 6px above the (possibly grown) box top
+	choice_frame.position = Vector2(138, panel_top)
 	choice_frame.size = Vector2(1004, h)
 	choice_inner.position = choice_frame.position + Vector2(3, 3)
 	choice_inner.size = choice_frame.size - Vector2(6, 6)
@@ -2194,7 +2231,7 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 		opt.add_theme_color_override("font_color", Color(0.92, 0.9, 0.8))
 		if i < choice_count:
 			opt.text = "%d.  %s" % [i + 1, options[i]]
-			opt.position = Vector2(168, 442 - h + 10 + i * 30)
+			opt.position = Vector2(168, panel_top + 10 + i * 30)
 			# Full-width click target for the row (the label IS the target).
 			opt.size = Vector2(choice_inner.size.x - 33, 26)
 			hl.position = Vector2(choice_inner.position.x, opt.position.y - 2)

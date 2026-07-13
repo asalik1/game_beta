@@ -494,6 +494,7 @@ func use_ability(slot: String) -> void:
 	# 8-way directional POSE pointing at the target; everything else fires a
 	# one-shot swing clip. No-op if the class ships no matching art.
 	var dir_pose: String = DIR_POSE.get(cls, {}).get(slot, "")
+	_strike_clip = ""  # reset; set below to the clip this ability swings (skin FX-sync)
 	if dir_pose == "" or not play_dir_anim(dir_pose, aim_dir()):
 		var action_clip: String = ABILITY_CLIP.get(cls, {}).get(slot, "")
 		if cls == "warrior" and berserk_time > 0.0 and action_clip in ["attack", "attack2"]:
@@ -511,6 +512,7 @@ func use_ability(slot: String) -> void:
 			if Art.dir8_suffix(av) == "s":
 				action_face_hint = Vector2(1.0 if av.x >= 0.0 else -1.0, 1.0)
 		play_action(action_clip)
+		_strike_clip = action_clip  # skin FX-sync: swing_delay() reads this
 		action_face_hint = Vector2.ZERO
 	var f := dm(slot)
 

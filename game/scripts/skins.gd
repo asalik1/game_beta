@@ -24,99 +24,99 @@ static func _get_shader() -> Shader:
 const CHROMAS := {
 	"warrior": [
 		{"id": "obsidian", "name": "Obsidian",
-			"primary": Color(0.10, 0.10, 0.10),
-			"trim":    Color(0.25, 0.25, 0.25),
-			"accent":  Color(0.69, 0.69, 0.69)},
+			"primary": Color(0.05, 0.02, 0.12),
+			"trim":    Color(0.18, 0.08, 0.42),
+			"accent":  Color(0.52, 0.35, 0.82)},
 		{"id": "crimson", "name": "Crimson",
-			"primary": Color(0.55, 0.10, 0.10),
-			"trim":    Color(0.80, 0.13, 0.13),
-			"accent":  Color(0.96, 0.78, 0.78)},
+			"primary": Color(0.14, 0.01, 0.01),
+			"trim":    Color(0.58, 0.06, 0.06),
+			"accent":  Color(1.00, 0.25, 0.18)},
 		{"id": "gilded", "name": "Gilded",
-			"primary": Color(0.16, 0.12, 0.04),
-			"trim":    Color(0.83, 0.63, 0.09),
-			"accent":  Color(1.00, 0.95, 0.78)},
+			"primary": Color(0.14, 0.11, 0.00),
+			"trim":    Color(0.72, 0.55, 0.02),
+			"accent":  Color(1.00, 0.92, 0.15)},
 		{"id": "jade", "name": "Jade",
-			"primary": Color(0.04, 0.16, 0.10),
-			"trim":    Color(0.13, 0.77, 0.37),
-			"accent":  Color(0.73, 0.97, 0.82)},
+			"primary": Color(0.01, 0.08, 0.03),
+			"trim":    Color(0.06, 0.45, 0.18),
+			"accent":  Color(0.40, 0.92, 0.50)},
 	],
 	"archer": [
-		{"id": "frost", "name": "Frost",
-			"primary": Color(0.12, 0.23, 0.37),
-			"trim":    Color(0.38, 0.65, 0.98),
-			"accent":  Color(0.88, 0.95, 1.00)},
+		{"id": "ember", "name": "Ember",
+			"primary": Color(0.14, 0.05, 0.00),
+			"trim":    Color(0.68, 0.28, 0.02),
+			"accent":  Color(1.00, 0.52, 0.05)},
 		{"id": "rose", "name": "Rose",
-			"primary": Color(0.29, 0.10, 0.26),
-			"trim":    Color(0.93, 0.28, 0.60),
-			"accent":  Color(0.99, 0.91, 0.95)},
-		{"id": "obsidian", "name": "Obsidian",
-			"primary": Color(0.09, 0.09, 0.11),
-			"trim":    Color(0.32, 0.32, 0.36),
-			"accent":  Color(0.63, 0.63, 0.67)},
+			"primary": Color(0.12, 0.00, 0.10),
+			"trim":    Color(0.62, 0.03, 0.55),
+			"accent":  Color(1.00, 0.28, 0.90)},
+		{"id": "jade", "name": "Jade",
+			"primary": Color(0.01, 0.08, 0.03),
+			"trim":    Color(0.05, 0.42, 0.16),
+			"accent":  Color(0.35, 0.90, 0.48)},
 		{"id": "violet", "name": "Violet",
-			"primary": Color(0.18, 0.06, 0.40),
-			"trim":    Color(0.55, 0.36, 0.96),
-			"accent":  Color(0.93, 0.91, 1.00)},
+			"primary": Color(0.08, 0.01, 0.14),
+			"trim":    Color(0.38, 0.08, 0.62),
+			"accent":  Color(0.75, 0.42, 1.00)},
 	],
 	"mage": [
 		{"id": "void", "name": "Void",
-			"primary": Color(0.12, 0.06, 0.25),
-			"trim":    Color(0.49, 0.23, 0.93),
-			"accent":  Color(0.77, 0.71, 0.99)},
+			"primary": Color(0.06, 0.01, 0.14),
+			"trim":    Color(0.32, 0.10, 0.65),
+			"accent":  Color(0.68, 0.48, 1.00)},
 		{"id": "crimson", "name": "Crimson",
-			"primary": Color(0.27, 0.04, 0.04),
-			"trim":    Color(0.86, 0.15, 0.15),
-			"accent":  Color(1.00, 0.79, 0.79)},
+			"primary": Color(0.14, 0.01, 0.01),
+			"trim":    Color(0.60, 0.06, 0.06),
+			"accent":  Color(1.00, 0.30, 0.22)},
 		{"id": "gilded", "name": "Gilded",
-			"primary": Color(0.11, 0.07, 0.03),
-			"trim":    Color(0.92, 0.70, 0.03),
-			"accent":  Color(1.00, 0.98, 0.76)},
+			"primary": Color(0.12, 0.10, 0.00),
+			"trim":    Color(0.68, 0.52, 0.02),
+			"accent":  Color(1.00, 0.92, 0.20)},
 	],
 	"assassin": [
-		{"id": "arctic", "name": "Arctic",
-			"primary": Color(0.05, 0.29, 0.43),
-			"trim":    Color(0.22, 0.74, 0.97),
-			"accent":  Color(0.88, 0.95, 1.00)},
+		{"id": "crimson", "name": "Crimson",
+			"primary": Color(0.14, 0.01, 0.01),
+			"trim":    Color(0.62, 0.04, 0.04),
+			"accent":  Color(1.00, 0.18, 0.12)},
 		{"id": "gilded", "name": "Gilded",
-			"primary": Color(0.11, 0.10, 0.09),
-			"trim":    Color(0.96, 0.62, 0.04),
-			"accent":  Color(1.00, 0.95, 0.78)},
+			"primary": Color(0.14, 0.12, 0.00),
+			"trim":    Color(0.75, 0.58, 0.02),
+			"accent":  Color(1.00, 0.95, 0.12)},
 		{"id": "white", "name": "White",
-			"primary": Color(0.96, 0.96, 0.96),
-			"trim":    Color(0.84, 0.83, 0.82),
-			"accent":  Color(0.47, 0.44, 0.42)},
+			"primary": Color(0.04, 0.05, 0.12),
+			"trim":    Color(0.40, 0.46, 0.65),
+			"accent":  Color(0.82, 0.88, 1.00)},
 		{"id": "rose", "name": "Rose",
-			"primary": Color(0.31, 0.03, 0.14),
-			"trim":    Color(0.96, 0.25, 0.37),
-			"accent":  Color(1.00, 0.89, 0.90)},
+			"primary": Color(0.12, 0.00, 0.12),
+			"trim":    Color(0.62, 0.02, 0.58),
+			"accent":  Color(1.00, 0.22, 0.95)},
 	],
 	"paladin": [
 		{"id": "onyx", "name": "Onyx",
-			"primary": Color(0.09, 0.09, 0.11),
-			"trim":    Color(0.25, 0.25, 0.27),
-			"accent":  Color(0.63, 0.63, 0.67)},
+			"primary": Color(0.05, 0.02, 0.10),
+			"trim":    Color(0.18, 0.12, 0.35),
+			"accent":  Color(0.48, 0.38, 0.72)},
 		{"id": "emerald", "name": "Emerald",
-			"primary": Color(0.02, 0.18, 0.09),
-			"trim":    Color(0.09, 0.64, 0.29),
-			"accent":  Color(0.73, 0.97, 0.82)},
+			"primary": Color(0.01, 0.08, 0.03),
+			"trim":    Color(0.05, 0.45, 0.16),
+			"accent":  Color(0.38, 0.92, 0.48)},
 		{"id": "crimson", "name": "Crimson",
-			"primary": Color(0.27, 0.04, 0.04),
-			"trim":    Color(0.86, 0.15, 0.15),
-			"accent":  Color(1.00, 0.79, 0.79)},
+			"primary": Color(0.14, 0.01, 0.01),
+			"trim":    Color(0.58, 0.06, 0.06),
+			"accent":  Color(1.00, 0.28, 0.20)},
 	],
 	"warlock": [
 		{"id": "hellfire", "name": "Hellfire",
-			"primary": Color(0.10, 0.04, 0.00),
-			"trim":    Color(0.92, 0.35, 0.05),
-			"accent":  Color(1.00, 0.84, 0.67)},
+			"primary": Color(0.12, 0.03, 0.00),
+			"trim":    Color(0.62, 0.18, 0.02),
+			"accent":  Color(1.00, 0.50, 0.10)},
 		{"id": "blight", "name": "Blight",
-			"primary": Color(0.02, 0.18, 0.09),
-			"trim":    Color(0.13, 0.77, 0.37),
-			"accent":  Color(0.73, 0.97, 0.82)},
+			"primary": Color(0.01, 0.08, 0.02),
+			"trim":    Color(0.06, 0.48, 0.16),
+			"accent":  Color(0.42, 0.95, 0.45)},
 		{"id": "bone", "name": "Bone",
-			"primary": Color(0.96, 0.96, 0.96),
-			"trim":    Color(0.66, 0.64, 0.62),
-			"accent":  Color(0.34, 0.33, 0.31)},
+			"primary": Color(0.08, 0.07, 0.06),
+			"trim":    Color(0.50, 0.48, 0.42),
+			"accent":  Color(0.95, 0.92, 0.82)},
 	],
 }
 
@@ -132,10 +132,10 @@ const SKINS := {
 			"sprite": "skins/mythic/warrior_stormforged"},
 	],
 	"archer": [
-		{"id": "astral_marksman", "name": "Astral Marksman", "tier": "elite",
-			"sprite": "skins/elite/archer_astral_marksman"},
-		{"id": "plague_doctor", "name": "Plague Doctor", "tier": "mythic",
-			"sprite": "skins/mythic/archer_plague_doctor"},
+		{"id": "frostfall_ranger", "name": "Frostfall Ranger", "tier": "elite",
+			"sprite": "skins/elite/archer_frostfall_ranger"},
+		{"id": "voidwraith", "name": "Voidwraith", "tier": "mythic",
+			"sprite": "skins/mythic/archer_voidwraith"},
 	],
 	"mage": [
 		{"id": "void_weaver", "name": "Void Weaver", "tier": "elite",
@@ -162,6 +162,37 @@ const SKINS := {
 			"sprite": "skins/mythic/warlock_eldritch_herald"},
 	],
 }
+
+
+## Skin swing-sync (2026-07-13): a skin's AI-generated strike clips land their
+## contact on a DIFFERENT frame than the base-class clips the Balance delay
+## consts are tuned to — so the base delay fires the FX ahead of the skin's
+## swing. Maps class -> skin_id -> clip -> contact time (s), MEASURED from the
+## installed strike strips (motion-peak). Abilities that swing these clips
+## delay their FX to this time via player.swing_delay() instead of the shared
+## base const. Only skins that DIVERGE need an entry; missing = base const.
+## (Archers omitted — their loose already lands ~at ARCHER_LOOSE_DELAY.)
+const SWING := {
+	"warrior": {
+		"dreadknight": {"attack": 0.227},
+		"stormforged": {"attack": 0.227},
+	},
+	"mage": {
+		"void_weaver": {"attack": 0.182},
+		"crystal_archmage": {"attack": 0.227},
+	},
+	"assassin": {
+		"blade_dancer": {"attack": 0.182, "attack2": 0.227},
+		"phantom": {"attack": 0.227, "attack2": 0.182},
+	},
+}
+
+
+## Contact time (s) for a skin's strike clip, or -1.0 if none (use base delay).
+static func swing_time(cls: String, skin_id: String, clip: String) -> float:
+	var byskin: Dictionary = SWING.get(cls, {})
+	var byclip: Dictionary = byskin.get(skin_id, {})
+	return float(byclip.get(clip, -1.0))
 
 
 ## All chromas available for a class, or [] if none.
@@ -204,8 +235,6 @@ static func skin_sprite(cls: String, skin_id: String) -> String:
 ## to avoid thrashing the render state.
 static func apply_to_sprite(spr: Sprite2D, cls: String, chroma_id: String) -> void:
 	if chroma_id == "":
-		# Deactivate: if a chroma material is already on, flip the flag
-		# off instead of removing it (avoids alloc next time).
 		var mat: ShaderMaterial = spr.material as ShaderMaterial
 		if mat != null and mat.shader == _get_shader():
 			mat.set_shader_parameter("chroma_active", 0.0)

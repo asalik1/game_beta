@@ -14,7 +14,7 @@ func _use_assassin(slot: String, f: float) -> void:
 			# Shadow Dash now; the blade covers the distance instead.
 			# Sync the cut to the lunge frame (round 50): the slash/hit lands
 			# WITH the thrust, not on the input frame.
-			await get_tree().create_timer(Balance.STAB_STRIKE_DELAY).timeout
+			await get_tree().create_timer(swing_delay(Balance.STAB_STRIKE_DELAY)).timeout
 			if dead or downed or ghost:
 				return
 			var cut := _melee_arc(Balance.STAB_MULT * f, 118.0, "slash", {"stagger": 0.3, "knock": 260.0}, "stab", "stab")
@@ -105,7 +105,7 @@ func _fan_of_knives(f := 1.0) -> void:
 	# The range damage is EARNED in close (round 37): thin chip on its
 	# own, but the fan bites double while the stab surge runs.
 	var surge_amp: float = Balance.KNIFE_SURGE_MULT if stab_ls_time > 0.0 else 1.0
-	await get_tree().create_timer(Balance.KNIFE_THROW_RELEASE).timeout
+	await get_tree().create_timer(swing_delay(Balance.KNIFE_THROW_RELEASE)).timeout
 	if dead or downed or ghost:
 		return  # went down mid-windup — no knives leave the hand
 	game.sfx("knife", 1.55)  # short and SHARP — a dart leaving fingers

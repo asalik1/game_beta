@@ -72,6 +72,21 @@ func _refresh_down_visual() -> void:
 ## refresh keeps dashes cast between physics ticks (autotest, dev paths)
 ## on the same live key state the old inline Input reads saw; for a remote
 ## player the refresh no-ops and this returns the RPC-fed intent.
+
+## Skin FX-sync: the per-class Balance delay consts (WARRIOR_SWING_DELAY, …)
+## are tuned to the BASE class clips' contact frame. A skin's AI-generated
+## swing lands its contact on a DIFFERENT frame, so return that skin clip's
+## measured contact time instead — keeps the hit ON the swing. Falls back to
+## base_delay with no skin, or when the skin has no entry for the clip the
+## current ability is swinging (_strike_clip, set by use_ability). See
+## Skins.SWING.
+func swing_delay(base_delay: float) -> float:
+	if skin == "" or _strike_clip == "":
+		return base_delay
+	var t: float = Skins.swing_time(cls, skin, _strike_clip)
+	return t if t >= 0.0 else base_delay
+
+
 func _move_dir() -> Vector2:
 	_poll_local_intents()
 	return intent_move
