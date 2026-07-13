@@ -319,6 +319,8 @@ var hurt_was_heavy := false    # the live hurt_cd window blocks HEAVY hits too: 
                                # telegraph can pierce it (see player.gd take_damage)
 var berserk_time := 0.0
 var berserk_bonus := 0.4       # damage bonus while berserk (theme-tunable)
+var zeal_time := 0.0           # paladin: Zeal burst window, armed by a swap INTO Retribution
+var holy_charge := 0.0         # paladin: banked overheal (damage), spent by the next Judgment as a smite
 var next_crit := false         # Hunt: the next hit is a guaranteed crit
 var hunt_rhythm := 0           # Hunt: Quick Shots fired since the last rhythm crit (Balance.HUNT_RHYTHM_SHOTS)
 var dash_refund_t := 0.0       # Shadow phantom step: kill within this refunds the dash
@@ -1011,6 +1013,14 @@ func gain_hp(amount: float) -> void:
 		var overflow := amount - (hp - before)
 		if overflow > 0.0:
 			shield = minf(transfusion * max_hp, shield + overflow)
+	if cls == "paladin":
+		# Overheal -> Holy Charge: healing the paladin can't use banks as smite
+		# damage for the next Judgment. Its sustain budget becomes offense exactly
+		# when it would otherwise be wasted (topped off).
+		var over := amount - (hp - before)
+		if over > 0.0:
+			holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP,
+				holy_charge + over * Balance.PALADIN_OVERHEAL_DMG)
 
 
 func current_atk() -> float:
@@ -1025,6 +1035,8 @@ func current_atk() -> float:
 		# Conviction stance: Holy trades damage for mending, Retribution the
 		# reverse — sustain and damage are never simultaneous (round 48).
 		a *= Balance.PALADIN_HOLY_DMG if paladin_mode == "holy" else Balance.PALADIN_RETRI_DMG
+		if zeal_time > 0.0:
+			a *= 1.0 + Balance.PALADIN_ZEAL_DMG   # Zeal: the swap-into-Retribution burst
 	if cls == "warrior" or cls == "paladin":
 		# PLATE res→damage: the plate classes' damage-scaling axis — over-stacked
 		# resistance (past the survival knee) answers as a little damage, their

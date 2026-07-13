@@ -422,11 +422,27 @@ const HUNT_RHYTHM_SHOTS := 4
 # mutually exclusive IN TIME, so reading the fight (when to be which) is the
 # skill. Braindead pilots camp Holy (safe, slow); good ones camp Retribution
 # and flick out under pressure — the reward curve lives in stance uptime.
-const PALADIN_HOLY_DMG := 0.80      # Holy stance: damage dealt multiplier
+const PALADIN_HOLY_DMG := 0.90      # Holy stance: damage dealt multiplier (softened 0.80->0.90 in the 2026-07-13 rework — Holy now banks smite damage via overheal, so its stance penalty needn't double-punish the dance)
 const PALADIN_HOLY_MEND := 0.01     # Holy stance: max-HP fraction mended per hit landed
 const PALADIN_RETRI_DMG := 1.25     # Retribution stance: damage dealt multiplier
 const PALADIN_SWAP_HEAL := 0.10     # entering Holy: blessing burst (max-HP fraction)
 const PALADIN_SWAP_CHAINS := 0.5    # entering Retribution: chains cast at this scale
+# Paladin rework (2026-07-13): make the class's IDENTITY deal damage, fixing its
+# bottom-of-the-chart DPS without a boring coefficient bump.
+# ZEAL — swapping INTO Retribution ignites a burst window; camping never
+# re-triggers it, so damage rewards ACTIVE stance-dancing (a skill ceiling).
+# ZEAL is the PRIMARY lift and rewards ACTIVE stance-dancing: it fires on every
+# swap INTO Retribution and holds the whole Retri phase (cleared on the swap back
+# to Holy), so camping Retri lets it expire — you must keep swapping to keep it.
+# HP-independent, so the (never-hit) bench dummy measures it honestly.
+const PALADIN_ZEAL_DMG := 0.80      # +damage while Zeal is up (a swap into Retribution)
+const PALADIN_ZEAL_DUR := 8.0       # Zeal duration — covers a full Retri phase (~the ult cd)
+# OVERHEAL -> SMITE is now a small FLAVOR bonus only (not the lift): healing
+# wasted at full HP banks a little smite for the next Judgment. Deliberately
+# minor — in real endgame you rarely overheal (heals go to survival), and the
+# bench dummy never hits, so this must NOT carry the paladin's damage.
+const PALADIN_OVERHEAL_DMG := 0.8   # overheal-HP x this = smite damage banked
+const PALADIN_CHARGE_CAP := 2.0     # Holy Charge caps low (x ATK) — a topped-off bonus, not a backbone
 # Judgment's leap is a RIDER with its own cooldown (round 48): the hammer
 # swings at 0.5s but the leap (and its landing i-frame) only arms this often —
 # kills the perma-iframe exploit (dash out, leap back, repeat) at the root.

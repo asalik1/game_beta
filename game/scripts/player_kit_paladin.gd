@@ -44,7 +44,15 @@ func _use_paladin(slot: String, f: float) -> void:
 				# A pillar of light falls with the hammer.
 				_light_pillar(global_position + aim_dir(220.0) * 70.0,
 					_tcolor if _themed else Color(1.0, 0.95, 0.6))
-			_melee_arc(ability_coeff("a1") * f, 92.0, "slash", jeff, "swing", "sword")
+			# Holy Charge -> a heavier hammer: spend the banked overheal as bonus
+			# smite damage folded into THIS Judgment (flat, so it crits/mitigates
+			# like the swing). current_atk cancels — the smite lands as holy_charge*f.
+			var jcoeff := ability_coeff("a1")
+			if holy_charge > 0.0 and current_atk() > 0.0:
+				jcoeff += holy_charge / current_atk()
+				holy_charge = 0.0
+				game.spawn_text(global_position + Vector2(0, -50), "SMITE", Color(1.0, 0.95, 0.6))
+			_melee_arc(jcoeff * f, 92.0, "slash", jeff, "swing", "sword")
 			# The hammer lands with weight: a golden shock at the impact.
 			var jdir := aim_dir(220.0)
 			_ring_fx(global_position + jdir * 58.0,
@@ -238,7 +246,8 @@ func _conviction_swap(f := 1.0) -> void:
 		shield = maxf(shield, max_hp * oath_shield)
 	if paladin_mode == "holy":
 		paladin_mode = "retribution"
-		game.spawn_text(global_position + Vector2(0, -64), "RETRIBUTION", Color(1.0, 0.45, 0.25))
+		zeal_time = Balance.PALADIN_ZEAL_DUR   # Zeal: the swap into wrath ignites a burst window
+		game.spawn_text(global_position + Vector2(0, -64), "RETRIBUTION — ZEAL!", Color(1.0, 0.45, 0.25))
 		game.hud.flash_screen(Color(1.0, 0.4, 0.15), 0.3, 0.3)
 		# The wrath announces itself: chains drag the field in for the verdict.
 		_chains_of_wrath(f * Balance.PALADIN_SWAP_CHAINS)
@@ -248,6 +257,7 @@ func _conviction_swap(f := 1.0) -> void:
 		cds["ult"] = maxf(cds["ult"], ability_cd("ult"))
 	else:
 		paladin_mode = "holy"
+		zeal_time = 0.0   # Zeal is a Retribution burst — going defensive drops it
 		game.sfx("mend", 1.0, 0.0, -2.0)
 		game.spawn_text(global_position + Vector2(0, -64), "HOLY", Color(1.0, 0.92, 0.55))
 		game.hud.flash_screen(Color(1.0, 0.9, 0.5), 0.25, 0.3)

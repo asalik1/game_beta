@@ -40,6 +40,7 @@ func _physics_process(delta: float) -> void:
 	potion_swap_cd = maxf(0.0, potion_swap_cd - delta)
 	hurt_cd = maxf(0.0, hurt_cd - delta)
 	berserk_time = maxf(0.0, berserk_time - delta)
+	zeal_time = maxf(0.0, zeal_time - delta)   # paladin Zeal window
 	theme_speed_time = maxf(0.0, theme_speed_time - delta)
 	damp_time = maxf(0.0, damp_time - delta)
 	elixir_time = maxf(0.0, elixir_time - delta)
