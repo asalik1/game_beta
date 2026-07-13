@@ -163,6 +163,9 @@ var knife_probe := false       # --knifeprobe: count avg knives/fan connecting
 var defense := false           # --defense: print EHP / damage-taken vs the boss, no DPS sim
 var grade := GEAR_GRADE        # --grade=X: gear tier on every slot (realistic-kit runs)
 var gemlvl := GEM_LVL          # --gemlvl=N: gem level in every socket
+var plus_lvl := 0              # --plus=N: smith upgrade level on every piece
+var gear_seed := GEAR_SEED     # --gearseed=N: alternate sub-roll sequence (roll-variance probe)
+var godroll := false           # --godroll: reforge-chased ceiling (max main + max offense affixes)
 var plevel := PLAYER_LEVEL     # --level=N: hero level (also sets attr points = N-1)
 var dlevel := DUMMY_LEVEL      # --level=N sets this too; the target's level
 var boss_kind := ""            # --boss=X: dummy carries THIS boss's sheet, not the averaged one
@@ -325,6 +328,12 @@ func _parse_args() -> void:
 			grade = a.get_slice("=", 1)
 		elif a.begins_with("--gemlvl="):
 			gemlvl = int(a.get_slice("=", 1))
+		elif a.begins_with("--plus="):
+			plus_lvl = int(a.get_slice("=", 1))
+		elif a.begins_with("--gearseed="):
+			gear_seed = int(a.get_slice("=", 1))
+		elif a == "--godroll":
+			godroll = true
 		elif a.begins_with("--level="):
 			plevel = int(a.get_slice("=", 1))
 			dlevel = plevel
@@ -354,8 +363,11 @@ func _run() -> void:
 		print("[bench] target: %s at L%d (HP %.0f) — physres %.0f  magres %.0f  eva %.1f%%  critres %.0f" % [
 			boss_kind, dlevel, kh, block["physres"], block["magres"],
 			block["eva"] * 100.0, block["critres"]])
-	print("[bench] hero: L%d, full %s gear (seed %d), Lv%d gems, %.0fs window per case" % [
-		plevel, grade, GEAR_SEED, gemlvl, sim_secs])
+	print("[bench] hero: L%d, full %s gear (seed %d%s%s), Lv%d gems, %.0fs window per case" % [
+		plevel, grade, gear_seed,
+		", GODROLL" if godroll else "",
+		", +%d smith" % plus_lvl if plus_lvl > 0 else "",
+		gemlvl, sim_secs])
 	if aoe:
 		print("[bench] AOE MODE: %d boss pillars in a row + %d adds (%.0f hp) every %.0fs — effective damage, pooled" % [
 			PILLARS, ADD_WAVE_COUNT, ADD_HP, ADD_WAVE_SECS])
@@ -554,7 +566,7 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 ## piece socketed 1 special + 1 regular gem at the A-grade level cap.
 func _equip(p: Player, cls: String, tid: String) -> void:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = GEAR_SEED
+	rng.seed = gear_seed
 	var gems: Dictionary = _preset(GEM_PRESETS, cls, tid)
 	var specials: Array = gems.get("specials", [])
 	# TYPED SLOTS (2026-07-08): each A piece has 1 special slot + regular slots.
@@ -566,6 +578,9 @@ func _equip(p: Player, cls: String, tid: String) -> void:
 	for slot in Items.SLOTS:
 		var noun: String = Items.class_weapon_noun(cls) if slot == "weapon" else ""
 		var item := Items.roll_item_of(slot, grade, rng, cls, noun)
+		item["plus"] = plus_lvl
+		if godroll:
+			_godroll(item, cls)
 		var glist: Array = []
 		var s_placed := 0
 		for _s in int(item.get("gem_slots", 0)):
@@ -578,6 +593,41 @@ func _equip(p: Player, cls: String, tid: String) -> void:
 		item["gems"] = glist
 		p.equipment[slot] = item
 	p._update_weapon_visual()
+
+
+## --godroll: rebuild one rolled piece into its reforge-chased ceiling — max
+## main roll (1.15) and the grade's affix count filled with MAX-magnitude
+## offense (ATK% > Crit > your pen > DEX), mirroring roll_subs' formulas.
+## Affixes an S synergy sub would OVERWRITE are skipped (a rolled duplicate
+## is wasted — roll_item_of replaces, not adds); style + synergy subs then
+## land exactly as the real roller applies them.
+func _godroll(item: Dictionary, cls: String) -> void:
+	var g := String(item["grade"])
+	var mult: float = Items.GRADE_MULT[g]
+	var style: Dictionary = Items.SHAPE_STYLE.get(String(item.get("noun", "")), {"main": 1.0, "subs": {}})
+	var primary := String(Items.CLASS_PRIMARY.get(cls, "STR"))
+	item["main"] = {primary: snappedf(
+		float(Items.SLOT_MAIN_BUDGET[item["slot"]]) * mult * float(style["main"]) * 1.15, 0.01)}
+	var synergy := {}
+	if g == "S" and Items.S_GEAR.has(cls):
+		synergy = Items.S_GEAR[cls][String(item["slot"])].get("subs", {})
+	var pen := "magpen" if String(Items.CLASSES_DMG_TYPE.get(cls, "physical")) == "magic" else "physpen"
+	var sub_count: int = maxi(0, (Items.GRADES.find(g) - 1) / 2)
+	var scale: float = 1.3 * (1.0 + mult * 0.25)
+	var subs := {}
+	var picked := 0
+	for stat in ["atk_pct", "crit", pen, "dex"]:
+		if picked >= sub_count:
+			break
+		if synergy.has(stat):
+			continue
+		subs[stat] = snappedf(float(Items.SUBSTATS[stat]) * scale, 0.01)
+		picked += 1
+	for stat in style["subs"]:
+		subs[stat] = snappedf(subs.get(stat, 0.0) + float(style["subs"][stat]) * (0.75 + 0.25 * mult), 0.01)
+	for stat in synergy:
+		subs[stat] = synergy[stat]
+	item["subs"] = subs
 
 
 ## Clean combat slate between cases: cooldowns, buffs, windows, curses.
@@ -632,9 +682,9 @@ func _physics_process(_delta: float) -> void:
 	if rot_cls == "assassin":
 		_drive_assassin(p)
 		return
-	if rot_cls == "paladin" and not pala_swapped:
-		# One Conviction swap into RETRIBUTION; never flick back to Holy.
-		pala_swapped = true
+	if rot_cls == "paladin" and p.cds.get("ult", 0.0) <= 0.0:
+		# Stance-DANCE (2026-07-13 rework): swap on every Conviction cd (Holy<->Retri)
+		# to keep Zeal up and bank/spend overheal — the intended paladin DPS play.
 		p.use_ability("ult")
 		return
 	if rot_cls == "mage" and not aoe and p.mp <= 55.0 and p.cds["a2"] <= 0.0:
