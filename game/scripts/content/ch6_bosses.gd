@@ -19,7 +19,7 @@ const ENEMIES := {
 	# under you. Slowed in bog water (fight it near water when up, on land
 	# when down). No enrage; the cycles just shorten.
 	"auroch": {
-		"name": "The Drowned Auroch", "sprite": "spider",
+		"name": "The Drowned Auroch", "sprite": "auroch",
 		# XP re-anchored (chapter-budget audit): the first-pass 780/820/1150
 		# paid 100-136% of a level each — the chapter's fixed XP budget
 		# (30+22·lvl, DESIGN r5) had no room left for trash. Mids ~67-70%,
