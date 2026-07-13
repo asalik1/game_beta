@@ -2098,9 +2098,9 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			elif p.potions < Balance.POTION_MAX:
 				game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
 		open_shop(zone)
-	var hpb := _btn(buy, "Health Potion — %d gold  (you have %d, max %d)" % [potion_cost, p.potion_count(), Balance.POTION_MAX],
-		buy_potion, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < Balance.POTION_MAX)
-	hpb.clip_text = true
+	_shop_card(cons_grid, Art.tex("potion"), "Health Potion",
+		"%d gold  (you have %d, max %d)" % [potion_cost, p.potion_count(), Balance.POTION_MAX],
+		Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < Balance.POTION_MAX, buy_potion)
 
 	# Alchemist's shelf: utility consumables (bag items, used from inventory).
 	for spec in [["mana_potion", Items.make_mana_potion()], ["elixir_might", Items.make_elixir_might()],
@@ -2118,14 +2118,13 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				else:
 					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
 			open_shop(zone)
-		var cb := _btn(buy, "%s — %d gold   (%s)" % [made["name"], ccost, made["desc"]],
-			buy_cons, Items.GRADE_COLOR[made["grade"]], p.gold >= ccost,
-			Art.consumable_icon(made))
-		cb.clip_text = true
-		cb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_shop_card(cons_grid, Art.consumable_icon(made), String(made["name"]),
+			"%d gold   (%s)" % [ccost, made["desc"]],
+			Items.GRADE_COLOR[made["grade"]], p.gold >= ccost, buy_cons)
 
 	# ======================================================= MISCELLANEOUS ===
 	_lbl(buy, "— Miscellaneous —", 13, Color(0.62, 0.64, 0.7))
+	var misc_grid := _shop_grid(buy)
 	# Gem shelf (round 51): buy loose gems at the act's level(s), random stat.
 	# Farm-cost priced (Items.gem_buy_price) — a fraction of gear, scales by act.
 	# Gated to ch4+ (2026-07-09): merchants don't stock gems before they drop.
@@ -2143,10 +2142,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 					else:
 						game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
 				open_shop(zone)
-			var gemb := _btn(buy, "💎 Gem — Lv%d, random stat — %d gold" % [gl, gprice],
-				buy_gem, Color(0.6, 0.9, 1.0), p.gold >= gprice)
-			gemb.clip_text = true
-			gemb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			_shop_card(misc_grid, null, "💎 Gem — Lv%d" % gl, "random stat — %d gold" % gprice,
+				Color(0.6, 0.9, 1.0), p.gold >= gprice, buy_gem)
 
 	# Bag shelf (round 52): expand carry capacity. Capacity is QoL not power,
 	# so bags are priced FAR below gear. Buying joins the equipped set (over
@@ -2163,13 +2160,11 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				game.shop_bags[zone].erase(bit)
 				p.acquire_bag(bit)
 			open_shop(zone)
-		var blabel := "🎒 %s — +%d slots — %d gold" % [String(bit["name"]), int(bit["slots"]), bcost]
+		var bdetail := "+%d slots — %d gold" % [int(bit["slots"]), bcost]
 		if not bimproves:
-			blabel += "  (no gain — bags full & larger)"
-		var bagb := _btn(buy, blabel,
-			buy_bag, Items.GRADE_COLOR[String(bit["grade"])], p.gold >= bcost and bimproves)
-		bagb.clip_text = true
-		bagb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			bdetail += "  (no gain — bags full & larger)"
+		_shop_card(misc_grid, null, "🎒 %s" % String(bit["name"]), bdetail,
+			Items.GRADE_COLOR[String(bit["grade"])], p.gold >= bcost and bimproves, buy_bag)
 
 	# Gambling shelf (2026-07-09): the pity machine — rolls the chapter's
 	# BOSS band at ~0.8x its expected farm cost (game.gamble_cost). The
@@ -2187,45 +2182,31 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			game.spawn_text(p.global_position + Vector2(0, -60), "GAMBLED: %s" % Items.title(won),
 				Items.GRADE_COLOR[won["grade"]], 3.0)
 		open_shop(zone)
-	var gb := _btn(buy, "🎲 Gamble — %d gold  (a random BOSS-tier item for this chapter, sight unseen)" % gcost,
-		gamble_cb, Color(0.85, 0.6, 1.0), p.gold >= gcost)
-	gb.clip_text = true
-	gb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_shop_card(misc_grid, null, "🎲 Gamble — %d gold" % gcost,
+		"a random BOSS-tier item for this chapter, sight unseen",
+		Color(0.85, 0.6, 1.0), p.gold >= gcost, gamble_cb)
 
 
-## Sell tab (full width): gear (gems stripped back into the bag first),
-## loose gems, merchant-stocked consumables, then spare health potions.
+## Set the junk-sell floor grade and rebuild the sell tab so the chips + the
+## "Sell ≤ X" button reflect the new floor. Kept a named method so the chip's
+## callback stays a single-line lambda (a multi-statement one breaks the parse).
+func _pick_junk_tier(g: String, zone: int) -> void:
+	shop_junk_tier = g
+	open_shop(zone, "sell")
+
+
+## Sell tab: bulk actions (SELL ALL + junk-sell ≤ floor) lead, then gridded
+## cards for gear, loose gems, merchant-stocked consumables + spare potions.
 func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	_lbl(vbox, "Buy-back is %d%% of market." % int(Balance.MERCHANT_SELL_FRACTION * 100),
 		13, Color(0.7, 0.72, 0.78))
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	vbox.add_child(scroll)
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(list)
-	var sold_any := false
 
-	# --- gear (strips gems back into the bag, then sells the frame) ---
+	# ---- bulk actions lead the tab (fixed above the scroll, always in reach) ----
+	# gear sell values, computed up front so SELL ALL / junk-sell can headline.
 	var gear_total := 0
 	for item in p.backpack:
-		sold_any = true
-		var it: Dictionary = item
-		var value := maxi(1, int(Items.price(it) * Balance.MERCHANT_SELL_FRACTION))
-		gear_total += value
-		var sell_one := func() -> void:
-			p.strip_gems(it)  # gems pop back into your bag
-			p.backpack.erase(it)
-			p.gain_gold(value)
-			game.sfx("potion")
-			open_shop(zone)
-		var sb := _btn(list, "%s — sell for %d gold" % [Items.title(it), value],
-			sell_one, Items.GRADE_COLOR[it["grade"]], true, Art.icon_for(it))
-		sb.clip_text = true
-		sb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if gear_total > 0:
+		gear_total += maxi(1, int(Items.price(item) * Balance.MERCHANT_SELL_FRACTION))
+	if not p.backpack.is_empty():
 		var sell_all := func() -> void:
 			for item in p.backpack:
 				p.strip_gems(item)
@@ -2233,30 +2214,98 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			p.backpack.clear()
 			game.sfx("potion")
 			open_shop(zone)
-		_btn(list, "SELL ALL GEAR (%d) — %d gold" % [p.backpack.size(), gear_total],
+		var allb := _btn(vbox, "⚑  SELL ALL GEAR (%d) — %d gold" % [p.backpack.size(), gear_total],
 			sell_all, Color(1.0, 0.9, 0.4))
+		allb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+		# Junk-sell: pick a floor grade, then one click dumps that grade and every
+		# grade below it — higher gear is never touched. The floor persists across
+		# shop visits (shop_junk_tier). S is intentionally not offerable as a floor.
+		var junk_idx := Items.GRADES.find(shop_junk_tier)
+		var junk_total := 0
+		var junk_n := 0
+		for item in p.backpack:
+			if Items.GRADES.find(String(item["grade"])) <= junk_idx:
+				junk_n += 1
+				junk_total += maxi(1, int(Items.price(item) * Balance.MERCHANT_SELL_FRACTION))
+		var frow := HBoxContainer.new()
+		frow.add_theme_constant_override("separation", 6)
+		vbox.add_child(frow)
+		var flbl := _lbl(frow, "Junk floor:", 13, Color(0.7, 0.72, 0.78))
+		flbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		for gr in ["F", "E", "D", "C", "B", "A"]:
+			var g: String = gr
+			var picked: bool = shop_junk_tier == g
+			# Single-line lambda (via _pick_junk_tier) so the trailing color arg can
+			# sit after it — a multi-statement lambda here would be a parse error.
+			var chip := _btn(frow, " %s " % g, func() -> void: _pick_junk_tier(g, zone),
+				Items.GRADE_COLOR[g] if picked else Color(0.5, 0.5, 0.55))
+			chip.add_theme_font_size_override("font_size", 14)
+		var sell_junk := func() -> void:
+			for item in p.backpack.duplicate():  # erase-while-iterate: walk a copy
+				if Items.GRADES.find(String(item["grade"])) <= junk_idx:
+					p.strip_gems(item)
+					p.backpack.erase(item)
+			p.gain_gold(junk_total)
+			game.sfx("potion")
+			open_shop(zone)
+		var junkb := _btn(frow, "🧹  Sell ≤ %s  (%d) — %d gold" % [shop_junk_tier, junk_n, junk_total],
+			sell_junk, Color(0.95, 0.82, 0.5) if junk_n > 0 else Color(0.5, 0.5, 0.55), junk_n > 0)
+		junkb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 6)
+	scroll.add_child(list)
+	var sold_any := false
+
+	# --- gear cards (click sells one; strips gems back into the bag first) ---
+	if not p.backpack.is_empty():
+		sold_any = true
+		_lbl(list, "— Gear —", 13, Color(0.62, 0.64, 0.7))
+		var gear_grid := _shop_grid(list)
+		for item in p.backpack:
+			var it: Dictionary = item
+			var value := maxi(1, int(Items.price(it) * Balance.MERCHANT_SELL_FRACTION))
+			var sell_one := func() -> void:
+				p.strip_gems(it)  # gems pop back into your bag
+				p.backpack.erase(it)
+				p.gain_gold(value)
+				game.sfx("potion")
+				open_shop(zone)
+			_shop_card(gear_grid, Art.icon_for(it), Items.title(it),
+				"sell for %d gold" % value, Items.GRADE_COLOR[it["grade"]], true, sell_one)
 
 	# --- loose gems (priced on gem level, not player level) ---
 	var gem_groups := _gem_groups()
-	for key in _sorted_gem_keys(gem_groups):
+	var gem_keys := _sorted_gem_keys(gem_groups)
+	if not gem_keys.is_empty():
 		sold_any = true
-		var g: Dictionary = gem_groups[key]["gem"]
-		var gcount: int = gem_groups[key]["count"]
-		var gval := maxi(1, int(Balance.gem_gold_value(int(g["lvl"])) * Balance.MERCHANT_SELL_FRACTION))
-		var xn := "  (x%d)" % gcount if gcount > 1 else ""
-		var sell_gem := func() -> void:
-			p.gem_bag.erase(g)  # one of the interchangeable stack
-			p.gain_gold(gval)
-			game.sfx("potion")
-			open_shop(zone)
-		var gb2 := _btn(list, "%s%s — sell one for %d gold" % [Items.gem_title(g), xn, gval],
-			sell_gem, Items.gem_color(g), true, Art.gem_icon(Items.gem_color(g), int(g["lvl"])))
-		gb2.clip_text = true
-		gb2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_lbl(list, "— Gems —", 13, Color(0.62, 0.64, 0.7))
+		var gem_grid := _shop_grid(list)
+		for key in gem_keys:
+			var g: Dictionary = gem_groups[key]["gem"]
+			var gcount: int = gem_groups[key]["count"]
+			var gval := maxi(1, int(Balance.gem_gold_value(int(g["lvl"])) * Balance.MERCHANT_SELL_FRACTION))
+			var xn := "  (x%d)" % gcount if gcount > 1 else ""
+			var sell_gem := func() -> void:
+				p.gem_bag.erase(g)  # one of the interchangeable stack
+				p.gain_gold(gval)
+				game.sfx("potion")
+				open_shop(zone)
+			_shop_card(gem_grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
+				"%s%s" % [Items.gem_title(g), xn], "sell one for %d gold" % gval,
+				Items.gem_color(g), true, sell_gem)
 
-	# --- consumables: ONLY merchant-stocked ones (in CONSUMABLE_PRICES).
-	# Quest keepsakes (kind "quest") and elite utility (stone/tome) have no
-	# market price -> never sellable, so run-scoped quest items can't be lost. ---
+	# --- consumables: ONLY merchant-stocked ones (in CONSUMABLE_PRICES), plus
+	# spare health potions. Quest keepsakes (kind "quest") and elite utility
+	# (stone/tome) have no market price -> never sellable, so run-scoped quest
+	# items can't be lost. ---
 	var cg := {}
 	var corder: Array = []
 	for c in p.consumables:
@@ -2268,37 +2317,38 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			cg[gid] = {"c": cc0, "count": 0}
 			corder.append(gid)
 		cg[gid]["count"] += 1
-	for gid in corder:
+	if not corder.is_empty() or p.potions > 0:
 		sold_any = true
-		var cc: Dictionary = cg[gid]["c"]
-		var ccount: int = cg[gid]["count"]
-		var cval := maxi(1, int(float(Balance.CONSUMABLE_PRICES[gid]) * Balance.MERCHANT_SELL_FRACTION))
-		var xn2 := "  (x%d)" % ccount if ccount > 1 else ""
-		var sell_cons := func() -> void:
-			p.consumables.erase(cc)
-			p.gain_gold(cval)
-			game.sfx("potion")
-			open_shop(zone)
-		var cb2 := _btn(list, "%s%s — sell one for %d gold" % [String(cc["name"]), xn2, cval],
-			sell_cons, Items.GRADE_COLOR[String(cc.get("grade", "C"))], true, Art.consumable_icon(cc))
-		cb2.clip_text = true
-		cb2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-	# --- spare health potions (the on-player counter) ---
-	# BOUGHT stock only (potions_free — the expiring ch1-3 teaching potion —
-	# is never sellable), and the sell basis stays the flat ch1 base price:
-	# chapter-scaled buy prices must never open a haul-forward sell spiral.
-	if p.potions > 0:
-		sold_any = true
-		var hval := maxi(1, int(float(Balance.POTION_PRICE) * Balance.MERCHANT_SELL_FRACTION))
-		var sell_pot := func() -> void:
-			if p.potions > 0:
-				p.potions -= 1
-				p.gain_gold(hval)
+		_lbl(list, "— Consumables —", 13, Color(0.62, 0.64, 0.7))
+		var cons_grid := _shop_grid(list)
+		for gid in corder:
+			var cc: Dictionary = cg[gid]["c"]
+			var ccount: int = cg[gid]["count"]
+			var cval := maxi(1, int(float(Balance.CONSUMABLE_PRICES[gid]) * Balance.MERCHANT_SELL_FRACTION))
+			var xn2 := "  (x%d)" % ccount if ccount > 1 else ""
+			var sell_cons := func() -> void:
+				p.consumables.erase(cc)
+				p.gain_gold(cval)
 				game.sfx("potion")
-			open_shop(zone)
-		_btn(list, "Health Potion (x%d) — sell one for %d gold" % [p.potions, hval],
-			sell_pot, Color(1.0, 0.5, 0.5), true)
+				open_shop(zone)
+			_shop_card(cons_grid, Art.consumable_icon(cc), "%s%s" % [String(cc["name"]), xn2],
+				"sell one for %d gold" % cval, Items.GRADE_COLOR[String(cc.get("grade", "C"))],
+				true, sell_cons)
+
+		# Spare health potions (the on-player counter). BOUGHT stock only
+		# (potions_free — the expiring ch1-3 teaching potion — is never sellable),
+		# and the sell basis stays the flat ch1 base price: chapter-scaled buy
+		# prices must never open a haul-forward sell spiral.
+		if p.potions > 0:
+			var hval := maxi(1, int(float(Balance.POTION_PRICE) * Balance.MERCHANT_SELL_FRACTION))
+			var sell_pot := func() -> void:
+				if p.potions > 0:
+					p.potions -= 1
+					p.gain_gold(hval)
+					game.sfx("potion")
+				open_shop(zone)
+			_shop_card(cons_grid, Art.tex("potion"), "Health Potion (x%d)" % p.potions,
+				"sell one for %d gold" % hval, Color(1.0, 0.5, 0.5), true, sell_pot)
 
 	if not sold_any:
 		_lbl(list, "Nothing to sell.", 13, Color(0.5, 0.5, 0.5))

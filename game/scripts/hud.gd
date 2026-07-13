@@ -457,6 +457,9 @@ func _ready() -> void:
 		var opt := Label.new()
 		opt.add_theme_font_size_override("font_size", 17)
 		opt.add_theme_color_override("font_color", Color(0.92, 0.9, 0.8))
+		# A long option used to run off the right edge; wrap it, and dialogue_choice
+		# sizes each row to its wrapped height so wrapped rows don't overlap.
+		opt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		opt.visible = false
 		opt.mouse_filter = Control.MOUSE_FILTER_STOP
 		opt.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -2217,12 +2220,33 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	choice_cb = cb
 	choice_count = options.size()
 	choices_active = true
-	var h := choice_count * 30 + 16
-	var panel_top := box_top - 6 - h  # 6px above the (possibly grown) box top
+
+	# Options wrap now, so each row is as tall as its wrapped text. Set the text +
+	# width and MEASURE every row first (get_line_count forces a reshape), total
+	# the panel height, then stack the rows so a 2-line option can't overlap the
+	# next. ROW_W is the label width inside the fixed 1004 frame.
+	const ROW_W := 965.0
+	const PANEL_PAD := 8.0   # top & bottom padding inside the frame
+	const ROW_GAP := 6.0     # gap between option rows
+	var row_h: Array = []
+	var total := PANEL_PAD * 2.0
+	for i in choice_option_labels.size():
+		var opt: Label = choice_option_labels[i]
+		if i < choice_count:
+			opt.text = "%d.  %s" % [i + 1, options[i]]
+			opt.size.x = ROW_W
+			var rh: float = maxf(opt.get_line_count() * opt.get_line_height(), 22.0)
+			row_h.append(rh)
+			total += rh + (ROW_GAP if i > 0 else 0.0)
+		else:
+			row_h.append(0.0)
+
+	var panel_top := box_top - 6 - total  # 6px above the (possibly grown) box top
 	choice_frame.position = Vector2(138, panel_top)
-	choice_frame.size = Vector2(1004, h)
+	choice_frame.size = Vector2(1004, total)
 	choice_inner.position = choice_frame.position + Vector2(3, 3)
 	choice_inner.size = choice_frame.size - Vector2(6, 6)
+	var y := panel_top + PANEL_PAD
 	for i in choice_option_labels.size():
 		var opt: Label = choice_option_labels[i]
 		var hl: ColorRect = choice_hover_rects[i]
@@ -2230,12 +2254,13 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 		hl.visible = false  # fresh panel: no stale hover from the last decision
 		opt.add_theme_color_override("font_color", Color(0.92, 0.9, 0.8))
 		if i < choice_count:
-			opt.text = "%d.  %s" % [i + 1, options[i]]
-			opt.position = Vector2(168, panel_top + 10 + i * 30)
-			# Full-width click target for the row (the label IS the target).
-			opt.size = Vector2(choice_inner.size.x - 33, 26)
-			hl.position = Vector2(choice_inner.position.x, opt.position.y - 2)
-			hl.size = Vector2(choice_inner.size.x, 28)
+			var rh: float = row_h[i]
+			# Full-width click target for the row (the wrapped label IS the target).
+			opt.position = Vector2(168, y)
+			opt.size = Vector2(ROW_W, rh)
+			hl.position = Vector2(choice_inner.position.x, y - 2.0)
+			hl.size = Vector2(choice_inner.size.x, rh + 4.0)
+			y += rh + ROW_GAP
 	choice_panel.visible = true
 
 
