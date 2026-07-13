@@ -932,7 +932,7 @@ func _spawn_scenery(zi: int) -> void:
 	# Non-colliding ground decor (density scaled to the room's area —
 	# small rooms get proportionally less).
 	var decor_list: Array = terrain.get("decor", ["pebble"])
-	for i in int(ceil(58.0 * area_frac)):
+	for i in int(ceil(Balance.SCENERY_DECOR_BASE * area_frac)):
 		var decor_name: String = decor_list[rng.randi_range(0, decor_list.size() - 1)]
 		var spr := Sprite2D.new()
 		spr.texture = Art.tex(decor_name)
@@ -965,9 +965,9 @@ func _spawn_scenery(zi: int) -> void:
 				placed.append(bpos)
 				zone_scenery[zi].append(_add_building(String(bname), origin + bpos))
 				break
-	var count := int(ceil(float(terrain.get("count", 10)) * 2.2 * area_frac))
+	var count := int(ceil(float(terrain.get("count", 10)) * Balance.SCENERY_OBSTACLE_MULT * area_frac))
 	for i in count:
-		for attempt in 40:
+		for attempt in Balance.SCENERY_PLACE_TRIES:
 			var pos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
 			if pos.y > ph / 2.0 - 90.0 and pos.y < ph / 2.0 + 90.0:
 				continue  # the road / east-west door lane stays open
@@ -975,7 +975,7 @@ func _spawn_scenery(zi: int) -> void:
 				continue  # the north-south door lane stays open
 			var ok := true
 			for other in placed:
-				if pos.distance_to(other) < 85.0:
+				if pos.distance_to(other) < Balance.SCENERY_MIN_SPACING:
 					ok = false
 					break
 			if ok:

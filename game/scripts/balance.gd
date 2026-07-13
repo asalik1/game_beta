@@ -956,6 +956,18 @@ static func consumable_price(id: String, level: int) -> int:
 const SMALL_ROOM_TYPES := ["social", "dead_end", "resonance", "merchant"]
 const SMALL_ROOM_INSET := Vector2(420.0, 246.0)
 
+# Scenery density (anti-litter pass 2026-07-12): a room's props were reading
+# as clutter — the graveyard's 8-kind roster and the forests' big canopies
+# piled up. These are the four knobs _spawn_scenery multiplies against; tune
+# here, never inline. Ground decor = DECOR_BASE x area_frac (non-colliding).
+# Obstacles = terrain "count" x OBSTACLE_MULT x area_frac, each kept
+# MIN_SPACING apart across PLACE_TRIES attempts. Trees/crypts render ~144px
+# wide, so MIN_SPACING must exceed a trunk-to-trunk gap or canopies merge.
+const SCENERY_DECOR_BASE := 42.0     # was 58 — thinned the ground litter
+const SCENERY_OBSTACLE_MULT := 1.6   # was 2.2 — count 16 -> ~26, not ~36
+const SCENERY_MIN_SPACING := 120.0   # was 85 — stops 144px canopies overlapping
+const SCENERY_PLACE_TRIES := 48      # was 40 — tighter packing rejects more
+
 # -------------------------------------------------------- chapter results ---
 # The results card on every chapter clear (retention roadmap #1): run time,
 # deaths, elites, secrets, exploration -> one letter. TIME is deliberately

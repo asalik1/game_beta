@@ -62,7 +62,10 @@ const DATA := {
 		# Pale cold mist, NOT darkness: the old 0.78-avg tint buried the
 		# tombstones in their own ground (value-floor rule above).
 		"tint": Color(0.88, 0.91, 0.96), "ambient": "mist", "music": "graveyard",
-		"obstacles": ["tombstone", "tombstone", "tombstone", "grave_cross", "grave_cross", "grave_deadtree", "coffin", "crypt"], "decor": ["grave_bones", "grave_bones", "grave_crack"], "count": 16,
+		# Anti-litter (2026-07-12): dropped coffin+crypt from the random
+		# scatter — the 144px crypt sprayed ~4x/room read as clutter, not a
+		# yard. Roster is now the tombstone family only; count 16 -> 11.
+		"obstacles": ["tombstone", "tombstone", "tombstone", "grave_cross", "grave_cross", "grave_deadtree"], "decor": ["grave_bones", "grave_bones", "grave_crack"], "count": 11,
 		"patches": [], "event": "grave_spawn", "event_t": [5.0, 9.0]},
 	"desert": {"name": "Scorching Dunes", "ground": "sand", "path": "sand",
 		"tint": Color(1.05, 0.98, 0.85), "ambient": "sand", "music": "desert",
@@ -70,7 +73,7 @@ const DATA := {
 		"patches": [], "event": "gust", "event_t": [7.0, 11.0]},
 	"bog": {"name": "Poison Bog", "ground": "bogsoil", "path": "bogsoil",
 		"tint": Color(0.82, 0.9, 0.75), "ambient": "fireflies", "music": "marsh",
-		"obstacles": ["tree_teal", "deadtree"], "decor": ["mushroom", "mushroom", "bones"], "count": 13,
+		"obstacles": ["tree_teal", "deadtree", "rock"], "decor": ["mushroom", "mushroom", "bones"], "count": 13,
 		"patches": [{"type": "poison", "count": 8, "radius": [55, 95]}],
 		"event": "",
 		# The Greyrun runs BLACK through the blightlands (ch2 mill canon).
