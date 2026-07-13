@@ -1,5 +1,6 @@
 # Godot generated files
 game/.godot/
+mobile/game/.godot/
 
 # Bundled engine (re-download from godotengine.org if needed). Ignore the
 # CONTENTS of tools/, not the directory itself — git will not descend into
@@ -16,8 +17,11 @@ backup/
 # Exports
 build/
 executables/
+mobile/builds/
 *.exe
 *.apk
+*.aab
+*.ipa
 
 # Claude session scratch (never commit)
 claude_test_run.bat

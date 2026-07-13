@@ -86,25 +86,78 @@ can be built entirely from this Windows machine.
    Play Console + App Store Connect listings, icons/splash in all
    required sizes.
 
-## Build commands (once presets exist)
+## Mobile deltas (applied 2026-07-13)
+
+The snapshot is a copy of `game/` with these — and only these — divergences.
+On a re-sync (re-copy `game/` over `mobile/game/`), re-apply this exact list:
+
+1. **`project.godot`**
+   - `[rendering] renderer/rendering_method="mobile"` +
+     `renderer/rendering_method.mobile="gl_compatibility"` (Vulkan, GLES3 fallback).
+   - `config/features=PackedStringArray("4.4", "Mobile")`.
+   - `[display]` add `window/stretch/aspect="expand"` and
+     `window/handheld/orientation="landscape"`.
+   - `[input_devices] pointing/emulate_touch_from_mouse=true` (lets the touch
+     HUD be driven by the mouse on desktop for verification).
+   - `[autoload] MobileInput="*res://scripts/mobile_input.gd"`.
+2. **New files** (mobile-only; do NOT port to desktop):
+   - `scripts/mobile_input.gd` — autoload holding touch state (analog move +
+     held ability/action flags).
+   - `scripts/ui/touch_hud.gd` — the on-screen controls (`class_name TouchHud`).
+3. **`scripts/player_core.gd`** — `_poll_local_intents()` OR-s `MobileInput`
+   into the same `intent_*` fields the keyboard fills (the §10 touch seam),
+   right before the downed/ghost gate.
+4. **`scripts/game.gd`** — `_ready()` adds a `TouchHud` when
+   `OS.has_feature("mobile")` or the `--touch` dev arg is present.
+5. **`export_presets.cfg`** — Android + iOS presets (see below). NOT the
+   desktop presets (those are excluded from the snapshot).
+
+The touch HUD is pure presentation: it only ever writes an intent seam, so no
+gameplay/netcode forks per platform.
+
+## Build commands
+
+Run from the repo root with the bundled engine (`tools\Godot_v4.4.1-stable_win64_console.exe`):
 
 ```
-# Android (from Windows, headless)
-godot --headless --path mobile/game --export-release "Android" builds/emberfall.aab
+# Reimport after any re-sync (new class_name / autoload → mandatory)
+tools\Godot_v4.4.1-stable_win64_console.exe --headless --import --quit --path mobile/game
 
-# iOS (produces an Xcode project; sign + archive on a Mac)
-godot --headless --path mobile/game --export-release "iOS" builds/emberfall-ios
+# Verify on THIS desktop first — mouse drives the touch controls:
+tools\Godot_v4.4.1-stable_win64.exe --path mobile/game -- --touch
+
+# Android APK (sideload testing) — needs the toolchain below configured:
+tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-release "Android" ../builds/Emberfall.apk
+
+# iOS (emits an Xcode project; sign + archive on a Mac):
+tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-release "iOS" ../builds/ios/Emberfall.ipa
 ```
+
+### Producing device builds (toolchain — owner's machine/accounts)
+
+The presets are scaffolding; a real artifact still needs, per platform:
+
+- **Android `.apk`/`.aab`:** JDK 17 (this box has only Java 8), the Android SDK
+  (`ANDROID_HOME`), the matching **Godot Android build template**, and a
+  keystore configured under *Editor → Export*. For a Play Store `.aab`, flip
+  `gradle_build/use_gradle_build=true` and `gradle_build/export_format=1` in
+  `export_presets.cfg`. Google Play dev account: $25 one-time.
+- **iOS `.ipa`:** a Mac with Xcode, an Apple Developer account ($99/yr), and a
+  signing identity + provisioning profile filled into the iOS preset.
+- **Store listings:** app icons/splash in all sizes, privacy policy, content
+  rating questionnaires, Play Console + App Store Connect entries.
 
 ## Status
 
 - [x] Folder + plan (this README)
-- [ ] Snapshot `game/` → `mobile/game/`
-- [ ] Renderer + project settings divergence
-- [ ] Touch input layer
-- [ ] UI / safe-area pass
-- [ ] Android export preset + test build on device
-- [ ] iOS export preset + Mac signing pipeline
+- [x] Snapshot `game/` → `mobile/game/`
+- [x] Renderer + project settings divergence
+- [x] Touch input layer (Wild Rift joystick + ability arc + tap/swipe lock)
+- [~] UI / safe-area pass (crude fixed inset in place; precise notch mapping via
+  `DisplayServer.get_display_safe_area()` is a later refinement)
+- [x] Android + iOS export presets (scaffolded)
+- [ ] Android test build on a device (blocked on toolchain above)
+- [ ] iOS Mac signing pipeline (blocked on Mac + Apple account)
 - [ ] Store listings
 
-Nothing below "Folder + plan" happens until the user asks for mobile work.
+Reminder: this folder stays frozen between explicit mobile-work requests.

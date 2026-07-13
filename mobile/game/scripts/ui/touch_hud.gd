@@ -1,0 +1,300 @@
+class_name TouchHud extends CanvasLayer
+## On-screen touch controls for the mobile build (MULTIPLAYER.md §10, Wild Rift
+## layout). Pure presentation: every widget writes an `intent_*` seam and NOTHING
+## below it forks per platform —
+##   • left floating joystick  → MobileInput.move        (analog)
+##   • right ability arc a1/a2/a3/ult + potion + interact → MobileInput.<flag>
+##   • target-lock button       → game.local_player.intent_lock / _release
+##     (tap = lock/cycle, hold-and-swipe-off = drop the lock)
+##
+## Icons, cooldown dim, and mana affordability read the SAME sources the desktop
+## ability bar uses (hud.gd:1226-1265) — Classes.ability / Art.glyph_tex /
+## p.cds / p.ability_cd / p.ability_cost — so the arc tracks per-class abilities
+## and cooldowns automatically, with zero duplicated kit knowledge.
+##
+## Built in code, mirroring hud.gd's programmatic style. game.gd adds it only on
+## a mobile OS or with the `--touch` dev arg (so it's drivable with the mouse via
+## emulate_touch_from_mouse on this desktop for verification).
+
+var game                                   # the Game node (set by game.gd before add_child)
+
+# --- layout tuning (viewport-space px; the project stretches 1280x720) --------
+const SAFE_MARGIN := 30.0                  # crude inset; precise notch mapping is a later refinement
+const JOY_MAX := 118.0                     # max knob travel from the touch origin
+const JOY_DEAD := 0.20                     # inner deadzone (fraction of JOY_MAX)
+const JOY_BASE_D := 236.0
+const JOY_KNOB_D := 108.0
+const BTN_D := 104.0                       # ability-button diameter
+const BTN_SD := 80.0                       # secondary-button diameter
+const LOCK_SWIPE_OFF := 66.0               # drag this far off the lock button = release, not lock
+const ABILITY_SLOTS := ["a1", "a2", "a3", "ult"]
+
+# id -> relative offset from the cluster origin (origin = centre of the a1 button)
+const BTN_LAYOUT := {
+	"a1":          Vector2(0, 0),
+	"a2":          Vector2(-124, -22),
+	"a3":          Vector2(-104, -138),
+	"ult":         Vector2(10, -158),
+	"potion":      Vector2(-236, -86),
+	"potion_next": Vector2(-300, -182),
+	"interact":    Vector2(-206, -198),
+	"lock":        Vector2(-92, -270),
+}
+
+# --- runtime state ------------------------------------------------------------
+var _mi: Node                  # MobileInput autoload, reached by /root path (compile-gate trap)
+var _enabled := false
+var _btns := {}                # id -> {panel, icon, label, diam, center}
+var _joy_base: Panel
+var _joy_knob: Panel
+var _move_touch := -1          # finger index driving the joystick (-1 = none)
+var _joy_center := Vector2.ZERO
+var _btn_touch := {}           # finger index -> button id (held ability/action buttons)
+var _lock_idx := -1            # finger index on the lock button
+var _lock_start := Vector2.ZERO
+var _lock_moved := false
+
+
+func _ready() -> void:
+	_mi = get_node("/root/MobileInput")
+	layer = 5   # above the desktop HUD's world overlays; corners don't collide with its top bar
+	_joy_base = _circle(JOY_BASE_D, Color(0.10, 0.11, 0.16, 0.42), Color(0.65, 0.7, 0.85, 0.5), 4.0)
+	_joy_knob = _circle(JOY_KNOB_D, Color(0.55, 0.62, 0.85, 0.6), Color(0.85, 0.9, 1.0, 0.8), 3.0)
+	_joy_base.visible = false
+	_joy_knob.visible = false
+	add_child(_joy_base)
+	add_child(_joy_knob)
+	for id in BTN_LAYOUT.keys():
+		_make_button(String(id))
+	get_viewport().size_changed.connect(_layout)
+	_layout()
+
+
+# ------------------------------------------------------------------ building ---
+func _circle(diam: float, fill: Color, border_col: Color, border_w: float) -> Panel:
+	var pnl := Panel.new()
+	pnl.size = Vector2(diam, diam)
+	pnl.mouse_filter = Control.MOUSE_FILTER_IGNORE   # we hit-test manually in _input
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = fill
+	sb.set_corner_radius_all(int(diam / 2.0))
+	sb.border_color = border_col
+	sb.set_border_width_all(int(border_w))
+	pnl.add_theme_stylebox_override("panel", sb)
+	return pnl
+
+
+func _make_button(id: String) -> void:
+	var diam: float = BTN_D if ABILITY_SLOTS.has(id) else BTN_SD
+	var pnl := _circle(diam, Color(0.06, 0.07, 0.11, 0.72), Color(0.5, 0.55, 0.7, 0.7), 3.0)
+	add_child(pnl)
+	var icon := TextureRect.new()
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.position = Vector2(diam * 0.18, diam * 0.18)
+	icon.custom_minimum_size = Vector2(diam * 0.64, diam * 0.64)
+	icon.size = icon.custom_minimum_size
+	pnl.add_child(icon)
+	# Centre label: cooldown countdown for abilities, x-count for potion, glyph
+	# for the static action buttons (lock / interact / cycle).
+	var lbl := Label.new()
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.size = Vector2(diam, diam)
+	lbl.add_theme_font_size_override("font_size", 22 if ABILITY_SLOTS.has(id) else 16)
+	pnl.add_child(lbl)
+	# Static glyphs for the action buttons that have no per-frame icon.
+	match id:
+		"lock": lbl.text = "◎"
+		"interact": lbl.text = "USE"
+		"potion_next": lbl.text = "⟳"
+	_btns[id] = {"panel": pnl, "icon": icon, "label": lbl, "diam": diam, "center": Vector2.ZERO}
+
+
+## Position every widget relative to the bottom-right cluster origin. Re-runs on
+## viewport resize (rotation / different phone aspect ratios).
+func _layout() -> void:
+	var vp := get_viewport().get_visible_rect().size
+	var origin := Vector2(vp.x - SAFE_MARGIN - BTN_D / 2.0 - 8.0,
+						   vp.y - SAFE_MARGIN - BTN_D / 2.0 - 8.0)
+	for id in _btns.keys():
+		var b: Dictionary = _btns[id]
+		var c: Vector2 = origin + (BTN_LAYOUT[id] as Vector2)
+		b["center"] = c
+		(b["panel"] as Panel).position = c - Vector2(b["diam"], b["diam"]) / 2.0
+
+
+# --------------------------------------------------------------- per frame -----
+func _process(_delta: float) -> void:
+	var on: bool = game != null and game.state == game.ST_PLAYING \
+		and game.local_player != null and is_instance_valid(game.local_player)
+	if on != _enabled:
+		_enabled = on
+		visible = on
+		if not on:
+			_release_everything()
+	if not _enabled:
+		return
+	_refresh_ability_icons()
+
+
+## Mirror the desktop ability bar's per-frame icon/cooldown/affordability logic
+## (hud.gd:1226-1265) onto the touch arc + potion button.
+func _refresh_ability_icons() -> void:
+	var p = game.local_player
+	for slot in ABILITY_SLOTS:
+		var b: Dictionary = _btns[slot]
+		var theme: Dictionary = Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
+		var icon_tex: Texture2D = Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][slot],
+			theme.get("color", Color(0.85, 0.85, 0.92)))
+		(b["icon"] as TextureRect).texture = icon_tex
+		var remaining: float = p.cds[slot]
+		var max_cd: float = p.ability_cd(slot)
+		var cost: float = p.ability_cost(slot)
+		var ready: bool = remaining <= 0.0
+		var can_afford: bool = p.mp >= cost
+		var lbl := b["label"] as Label
+		var icon := b["icon"] as TextureRect
+		if not ready:
+			lbl.text = "%d" % ceil(remaining)
+			icon.modulate = Color(0.4, 0.44, 0.55, 0.9)
+		elif not can_afford:
+			lbl.text = ""
+			icon.modulate = Color(0.75, 0.5, 0.5, 0.9)
+		else:
+			lbl.text = ""
+			icon.modulate = Color(1, 1, 1, 1)
+	# Potion: icon + carried count (health uses the potion glyph; a slotted
+	# elixir uses its consumable icon). ability-agnostic, so kept separate.
+	var pb: Dictionary = _btns["potion"]
+	var picon := pb["icon"] as TextureRect
+	var plbl := pb["label"] as Label
+	if p.active_potion == "health":
+		picon.texture = Art.tex("potion")
+	else:
+		var ic: Texture2D = Art.consumable_icon({"id": p.active_potion})
+		picon.texture = ic if ic != null else Art.tex("potion")
+	var left: int = p.room_potions_left()
+	plbl.text = "x%d" % p.potion_count() if left > 0 else "—"
+	picon.modulate = Color(1, 1, 1, 1) if left > 0 else Color(0.4, 0.4, 0.4, 0.8)
+
+
+# ------------------------------------------------------------------ input ------
+func _input(event: InputEvent) -> void:
+	if not _enabled:
+		return
+	if event is InputEventScreenTouch:
+		_on_touch(event)
+	elif event is InputEventScreenDrag:
+		_on_drag(event)
+
+
+func _on_touch(e: InputEventScreenTouch) -> void:
+	if e.pressed:
+		var id := _button_at(e.position)
+		if id != "":
+			if id == "lock":
+				_lock_idx = e.index
+				_lock_start = e.position
+				_lock_moved = false
+			else:
+				_btn_touch[e.index] = id
+				_mi.set(id, true)
+				_press_fx(id, true)
+			_mark_active()
+			get_viewport().set_input_as_handled()
+		elif _move_touch == -1 and _in_joystick_zone(e.position):
+			_move_touch = e.index
+			_joy_center = e.position
+			_place_joystick(e.position, e.position)
+			_joy_base.visible = true
+			_joy_knob.visible = true
+			_mark_active()
+			get_viewport().set_input_as_handled()
+	else:
+		if e.index == _move_touch:
+			_move_touch = -1
+			_mi.move = Vector2.ZERO
+			_joy_base.visible = false
+			_joy_knob.visible = false
+		if e.index == _lock_idx:
+			# §10: a tap locks/cycles; a hold-then-swipe-off drops the lock.
+			if _lock_moved:
+				game.local_player.intent_lock_release = true
+			else:
+				game.local_player.intent_lock = true
+			_lock_idx = -1
+		if _btn_touch.has(e.index):
+			var id: String = _btn_touch[e.index]
+			_mi.set(id, false)
+			_press_fx(id, false)
+			_btn_touch.erase(e.index)
+		_mark_active()
+
+
+func _on_drag(e: InputEventScreenDrag) -> void:
+	if e.index == _move_touch:
+		var off := e.position - _joy_center
+		off = off.limit_length(JOY_MAX)
+		_place_joystick(_joy_center, _joy_center + off)
+		var mag := off.length() / JOY_MAX
+		if mag < JOY_DEAD:
+			_mi.move = Vector2.ZERO
+		else:
+			var scaled := clampf((mag - JOY_DEAD) / (1.0 - JOY_DEAD), 0.0, 1.0)
+			_mi.move = off.normalized() * scaled
+	elif e.index == _lock_idx:
+		if e.position.distance_to(_lock_start) > LOCK_SWIPE_OFF:
+			_lock_moved = true
+
+
+# ------------------------------------------------------------------ helpers ----
+## The button id whose circle contains `pos`, or "" — reverse iteration so the
+## visually-topmost (last-added) button wins any overlap.
+func _button_at(pos: Vector2) -> String:
+	for id in _btns.keys():
+		var b: Dictionary = _btns[id]
+		if pos.distance_to(b["center"] as Vector2) <= (b["diam"] as float) / 2.0:
+			return String(id)
+	return ""
+
+
+## Joystick may start only in the lower-left, clear of the desktop HUD's top bar.
+func _in_joystick_zone(pos: Vector2) -> bool:
+	var vp := get_viewport().get_visible_rect().size
+	return pos.x < vp.x * 0.5 and pos.y > vp.y * 0.30
+
+
+func _place_joystick(base_c: Vector2, knob_c: Vector2) -> void:
+	_joy_base.position = base_c - _joy_base.size / 2.0
+	_joy_knob.position = knob_c - _joy_knob.size / 2.0
+
+
+func _press_fx(id: String, down: bool) -> void:
+	var pnl := (_btns[id] as Dictionary)["panel"] as Panel
+	pnl.modulate = Color(1.4, 1.4, 1.5) if down else Color(1, 1, 1)
+
+
+func _mark_active() -> void:
+	_mi.active = _move_touch != -1 or not _btn_touch.is_empty()
+
+
+## Drop every held touch (focus loss / gameplay pause) so nothing sticks on.
+func _release_everything() -> void:
+	if _mi != null:
+		_mi.clear_held()
+	_move_touch = -1
+	_lock_idx = -1
+	_btn_touch.clear()
+	if _joy_base != null:
+		_joy_base.visible = false
+		_joy_knob.visible = false
+	for id in _btns.keys():
+		_press_fx(String(id), false)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		_release_everything()

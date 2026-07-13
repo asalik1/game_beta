@@ -1,0 +1,49 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+;
+; ---------------------------------------------------------------------------
+; MOBILE SNAPSHOT — this file DIVERGES from game/project.godot on purpose.
+; The mobile deltas (renderer, orientation, touch, MobileInput autoload) are
+; listed in mobile/README.md so a re-sync can re-apply them. Do NOT copy this
+; back over the desktop project.
+; ---------------------------------------------------------------------------
+
+config_version=5
+
+[application]
+
+config/name="Emberfall"
+config/description="Chapter 1: The Hollow King - a solo action RPG (first iteration of the MMO project)"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.4", "Mobile")
+config/icon="res://icon.svg"
+
+[autoload]
+
+NetworkManager="*res://scripts/net/net_manager.gd"
+MobileInput="*res://scripts/mobile_input.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation="landscape"
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+textures/vram_compression/import_etc2_astc=true
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="gl_compatibility"
+viewport/hdr_2d=true

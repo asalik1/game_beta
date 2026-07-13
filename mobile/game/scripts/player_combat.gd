@@ -1,0 +1,977 @@
+extends "res://scripts/player_core.gd"
+## PLAYER, layer 2 of 9 — targeting, hit resolution, and the shared
+## combat primitives/juice every class kit leans on (melee arcs,
+## projectiles, dashes, mists, beams). Class kits live in
+## player_kit_<class>.gd; see player_core.gd for the chain layout.
+
+
+# ================================================= downed presentation (MP-12)
+
+## The §5.3 bleed-out clock, drawn in the world: a red arc over the body
+## that empties as down_t runs out (the HUD banner shows the number). The
+## body reference stays untyped — Player is the END of this chain and a
+## typed forward reference here would be cyclic.
+class DownRing extends Node2D:
+	var plr = null
+	func _ready() -> void:
+		z_index = 40
+	func _process(_delta: float) -> void:
+		queue_redraw()
+	func _draw() -> void:
+		if plr == null or not is_instance_valid(plr):
+			return
+		var frac: float = clampf(float(plr.down_t) / float(plr.DOWN_BLEEDOUT), 0.0, 1.0)
+		draw_arc(Vector2.ZERO, 26.0, 0.0, TAU, 40, Color(0.08, 0.03, 0.03, 0.55), 5.0)
+		if frac > 0.0:
+			draw_arc(Vector2.ZERO, 26.0, -PI / 2.0, -PI / 2.0 + TAU * frac, 40,
+				Color(1.0, 0.3, 0.25, 0.9), 3.0)
+
+
+## MP-12 (§5.3) presentation, shared by the owner and every shell: prone
+## + drained while DOWNED (with the bleed-out ring), spectral + immaterial
+## while a GHOST, defaults restored on standing. Solo never enters the
+## down states, so the restore branch just re-asserts the _ready defaults.
+func _refresh_down_visual() -> void:
+	if sprite == null:
+		return
+	if downed or ghost:
+		if _down_ring == null or not is_instance_valid(_down_ring):
+			_down_ring = DownRing.new()
+			_down_ring.plr = self
+			add_child(_down_ring)
+		_down_ring.visible = downed  # the ring IS the bleed-out clock; ghosts have none
+	elif _down_ring != null:
+		if is_instance_valid(_down_ring):
+			_down_ring.queue_free()
+		_down_ring = null
+	if ghost:
+		sprite.rotation = 0.0
+		sprite.position.y = 0.0
+		sprite.modulate = Color(0.6, 0.8, 1.0, 0.4)  # spectral, translucent
+		collision_layer = 0      # immaterial: enemies/projectiles pass through
+		collision_mask = 1       # walls still hold; enemies don't body-block a ghost
+	elif downed:
+		# Prone: the body tips over its feet; face keeps the crawl heading.
+		sprite.rotation = (PI / 2.0) * (-1.0 if sprite.flip_h else 1.0)
+		sprite.position.y = 0.0
+		sprite.modulate = Color(0.7, 0.45, 0.45, 0.85)  # drained, bloodless
+		collision_layer = 2
+		collision_mask = 1 | 4
+	else:
+		sprite.rotation = 0.0
+		sprite.modulate = Color(1, 1, 1)
+		collision_layer = 2      # the _ready defaults, restored
+		collision_mask = 1 | 4
+
+
+# ================================================================ targeting
+
+## Current movement INTENT (locally: WASD/arrows), normalized; ZERO when
+## idle. Shared by the per-frame mover and abilities that step with you.
+## Reads the intents layer (MP seam, player_core.gd) — the poll-through
+## refresh keeps dashes cast between physics ticks (autotest, dev paths)
+## on the same live key state the old inline Input reads saw; for a remote
+## player the refresh no-ops and this returns the RPC-fed intent.
+
+## Skin FX-sync: the per-class Balance delay consts (WARRIOR_SWING_DELAY, …)
+## are tuned to the BASE class clips' contact frame. A skin's AI-generated
+## swing lands its contact on a DIFFERENT frame, so return that skin clip's
+## measured contact time instead — keeps the hit ON the swing. Falls back to
+## base_delay with no skin, or when the skin has no entry for the clip the
+## current ability is swinging (_strike_clip, set by use_ability). See
+## Skins.SWING.
+func swing_delay(base_delay: float) -> float:
+	if skin == "" or _strike_clip == "":
+		return base_delay
+	var t: float = Skins.swing_time(cls, skin, _strike_clip)
+	return t if t >= 0.0 else base_delay
+
+
+func _move_dir() -> Vector2:
+	_poll_local_intents()
+	return intent_move
+
+
+## The direction a movement dash travels: the HELD move input (8-way), or
+## straight along the facing when no key is down. Dashes follow your FEET,
+## not your aim — orientation can stay committed to a target while the dash
+## carries you any direction (player-reported: down+dash still fired sideways
+## because facing is a purely horizontal vector).
+func dash_vec() -> Vector2:
+	var dir := _move_dir()
+	return dir if dir != Vector2.ZERO else facing
+
+
+## Which way the hero is oriented: -1 left, +1 right. Facing is kept as a
+## horizontal unit vector (see player.gd), so its x sign IS the orientation.
+func _face_sign() -> float:
+	return -1.0 if facing.x < 0.0 else 1.0
+
+
+## Is a hard Tab-lock in force? A locked target overrides ALL targeting —
+## every aimed and seeking ability homes to it, and the hero's orientation
+## tracks it — until it dies (then per-frame clears the lock).
+func _hard_lock(rng: float) -> Enemy:
+	if is_instance_valid(locked_target) and not locked_target.dying \
+			and not locked_target.untargetable \
+			and global_position.distance_to(locked_target.global_position) <= rng * 1.4:
+		return locked_target
+	return null
+
+
+## Target for SEEKING abilities (ults, sky-drops, marks): they can't be
+## aimed, so they grab the BIGGEST THREAT — any boss outranks any mob, and
+## within a tier the lowest-HP one wins (finish the wounded). A hard lock
+## overrides this entirely.
+func auto_aim(rng := 520.0) -> Enemy:
+	var lock := _hard_lock(rng)
+	if lock:
+		return lock
+	var best: Enemy = null
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e.dying or e.untargetable:
+			continue
+		if global_position.distance_to(e.global_position) > rng:
+			continue
+		if best == null or _outranks(e, best):
+			best = e
+	return best
+
+
+func _outranks(e: Enemy, cur: Enemy) -> bool:
+	var eb := e is Boss
+	var cb := cur is Boss
+	if eb != cb:
+		return eb  # a boss always beats a mob
+	return e.hp < cur.hp  # same tier: the more wounded one
+
+
+## Target for AIMED attacks. Hard lock wins; otherwise the STICKY SOFT TARGET
+## (maintained once per frame by _update_soft_target) if it's within this
+## ability's reach — that's what makes your orientation and aim commit to one
+## enemy across frames, so kiting it onto your blind side doesn't drop it.
+## Only when there's no soft target in range do we fall back to the old
+## nearest-on-the-facing-side pick (short-range abilities whose soft target
+## is out of reach still hit whatever's actually in front of them).
+func _aim_target(rng: float) -> Enemy:
+	var lock := _hard_lock(rng)
+	if lock:
+		return lock
+	if is_instance_valid(soft_target) and not soft_target.dying \
+			and not soft_target.untargetable \
+			and global_position.distance_to(soft_target.global_position) <= rng:
+		return soft_target
+	var side := _face_sign()
+	var best: Enemy = null
+	var best_d := rng
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e.dying or e.untargetable:
+			continue
+		var to := e.global_position - global_position
+		var d := to.length()
+		if d > best_d:
+			continue
+		var overhead := absf(to.x) <= absf(to.y) * Balance.AIM_VERTICAL_CONE
+		if signf(to.x) == side or overhead:
+			best = e
+			best_d = d
+	return best
+
+
+## Maintain the sticky soft target — called once per physics frame from
+## player.gd with the current move input. Rules: keep the current target while
+## it's alive and inside SOFT_TARGET_KEEP; if the player is deliberately
+## steering toward the far side AND a real enemy waits there, switch to it
+## (else keep kiting the one behind you); otherwise (re)acquire the nearest
+## within SOFT_TARGET_ACQUIRE, biased to the pressed side. A hard lock overrides
+## everything downstream, so this can run harmlessly even while locked.
+func _update_soft_target(move: Vector2) -> void:
+	var keep := is_instance_valid(soft_target) and not soft_target.dying \
+			and not soft_target.untargetable \
+			and global_position.distance_to(soft_target.global_position) <= Balance.SOFT_TARGET_KEEP
+	var want := signf(move.x)  # horizontal input this frame; 0 when none
+	if keep and want != 0.0 and want != _side_of(soft_target):
+		var alt := _nearest_enemy(Balance.SOFT_TARGET_ACQUIRE, want)
+		if alt != null:
+			soft_target = alt
+		return
+	if keep:
+		return
+	soft_target = _nearest_enemy(Balance.SOFT_TARGET_ACQUIRE, want)
+
+
+## Which side an enemy sits on for orientation: -1/+1, or 0 when it's basically
+## overhead (inside the vertical cone — no clear left/right).
+func _side_of(e: Enemy) -> float:
+	var to := e.global_position - global_position
+	if absf(to.x) <= absf(to.y) * Balance.AIM_VERTICAL_CONE:
+		return 0.0
+	return signf(to.x)
+
+
+## Nearest live enemy within `rng`. When `side` is non-zero, prefer that
+## horizontal side and only fall back to the far side if that side is empty.
+func _nearest_enemy(rng: float, side: float) -> Enemy:
+	var best: Enemy = null
+	var best_d := rng
+	var far: Enemy = null
+	var far_d := rng
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e.dying or e.untargetable:
+			continue
+		var d := global_position.distance_to(e.global_position)
+		if d > rng:
+			continue
+		if side != 0.0 and _side_of(e) != side:
+			if d < far_d:
+				far = e
+				far_d = d
+			continue
+		if d < best_d:
+			best = e
+			best_d = d
+	return best if best != null else far
+
+
+func cycle_target() -> void:
+	var list: Array = []
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and not e.dying and not e.untargetable \
+				and global_position.distance_to(e.global_position) <= 560.0:
+			list.append(e)
+	if list.is_empty():
+		locked_target = null
+		return
+	list.sort_custom(func(a, b) -> bool:
+		return global_position.distance_to(a.global_position) < global_position.distance_to(b.global_position))
+	var idx := list.find(locked_target)
+	locked_target = list[(idx + 1) % list.size()]
+	game.sfx("talk")
+
+
+func aim_dir(rng := 520.0) -> Vector2:
+	var target := _aim_target(rng)
+	if target:
+		return (target.global_position - global_position).normalized()
+	return Vector2(_face_sign(), 0.0)  # nothing on your side: fire straight ahead
+
+
+## The enemy your AIMED attacks would strike right now (facing-gated, or the
+## hard-locked target) — drives the on-screen reticle so it always sits on
+## what a basic attack hits, and hides when nothing is on your side.
+func aim_focus(rng := 520.0) -> Enemy:
+	return _aim_target(rng)
+
+
+# ================================================================= abilities
+
+## The data-driven damage knobs for one ability slot — the SINGLE SOURCE lives
+## in Classes.CLASSES[cls].abilities[slot].dmg. `coeff` is the %ATK the kit hits
+## for; `base` is the flat-per-level floor (0 today). Kits read the coeff from
+## here so tuning an ability = editing one number that the tooltip also reads.
+func ability_coeff(slot: String) -> float:
+	return float(Classes.CLASSES[cls]["abilities"][slot].get("dmg", {}).get("coeff", 1.0))
+
+## The ability's flat base damage at this level (base x level). Dormant (0) until
+## a class is handed a floor; see _cast_base.
+func ability_base_flat(slot: String) -> float:
+	return float(Classes.CLASSES[cls]["abilities"][slot].get("dmg", {}).get("base", 0.0)) * float(level)
+
+## One numeric RIDER value (stun / iframe / dr / slow / heal…) from the ability's
+## single-source `riders` data — the kit reads the mechanic from here so tuning
+## the number moves both the effect AND the tooltip (Classes.ability_riders).
+func rider(slot: String, key: String, default := 0.0) -> float:
+	return float(Classes.CLASSES[cls]["abilities"][slot].get("riders", {}).get(key, default))
+
+
+func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
+	for key in _tfx:
+		if not effects.has(key):
+			effects[key] = _tfx[key]
+	var dmg_type: String = effects.get("type", Classes.CLASSES[cls]["dmg_type"])
+	var pen := 0.0
+	var e_res := 0.0
+	if dmg_type == "phys":
+		pen = physpen
+		e_res = e.physres
+	elif dmg_type == "magic":
+		pen = magpen
+		e_res = e.magres
+
+	# Theme crit bonuses (and theme-line talents like Nightfall) are
+	# CAP-EXEMPT (player rule 2026-07-06): they ride above the 35% knee
+	# at full value — the built stat knees, the themed edge never does.
+	var crit_exempt: float = effects.get("crit_bonus", 0.0)
+	if void_crit > 0.0 and effects.get("crush", 0):
+		crit_exempt += void_crit  # Nightfall (warlock): Void's crushing line crits more
+	var result := Stats.resolve(current_atk() * mult + _cast_base, dmg_type,
+		crit, crit_dmg, pen, dex, e_res, e.eva, e.critres, crit_exempt)
+	if result["miss"]:
+		game.spawn_text(e.global_position + Vector2(0, -30), "MISS", Color(0.7, 0.7, 0.7))
+		return
+	var dmg: float = result["dmg"]
+	var is_crit: bool = result["crit"]
+	# Shadow marked_crit: your MARKED / EXPOSED prey always crits. Keyed on
+	# vuln_time (Death Mark, Exposed) — NOT stun/slow, which a boss converts to
+	# concussion and never actually applies, so this fires on bosses too (the
+	# old "stunned/slowed prey" opportunist was dead on every boss door).
+	if effects.get("marked_crit", 0) and dmg_type != "true" \
+			and not is_crit and e.vuln_time > 0.0:
+		is_crit = true
+		dmg *= crit_dmg
+	# Hunt: a lined-up shot cannot fail to crit.
+	if next_crit and dmg_type != "true":
+		next_crit = false
+		if not is_crit:
+			is_crit = true
+			dmg *= crit_dmg
+
+	# ------------------------------------------------ theme / rider effects
+	# DoTs resolve like hits — no hidden true damage: the tick rate is
+	# mitigated by the target's res minus our pen, SNAPSHOT at
+	# application (fast refresh cadences re-snapshot within a beat).
+	# Mitigation relief only: no excess-pen flat bonus on ticks.
+	var dot_mit := 1.0 - Stats.res_frac(maxf(0.0, e_res - pen))
+	if effects.has("dot"):
+		var dot_color := Color(0.5, 1.2, 0.5) if _tcolor.g > _tcolor.r else Color(1.4, 0.8, 0.6)
+		var dot_dps: float = current_atk() * effects["dot"] * dot_mit
+		if effects.get("toxin", 0):
+			e.apply_toxin(dot_dps, 3.0, dot_color, self)
+		else:
+			e.apply_burn(dot_dps, 3.0, dot_color, self)
+	if effects.has("burn"):
+		e.apply_burn(float(effects["burn"]) * dot_mit, 3.0, Color(1.4, 0.8, 0.6), self)
+	if effects.has("bleed"):
+		# Wind Cuts (mage): a 3s physical bleed, armor-mitigated and
+		# refresh-don't-stack. effects["bleed"] is the pre-mit TOTAL wound;
+		# spread it across the 3s window as dps.
+		e.apply_bleed(float(effects["bleed"]) * dot_mit / 3.0, 3.0, self)
+	if effects.has("slow"):
+		e.apply_slow(1.0 - effects["slow"] if effects["slow"] < 1.0 else 0.5, effects.get("slow_dur", 2.0))
+	if effects.has("stun"):
+		_stun_or_concuss(e, effects["stun"])
+	if effects.has("stagger"):
+		_stun_or_concuss(e, effects["stagger"])
+	if effects.has("stun_chance") and randf() < effects["stun_chance"]:
+		_stun_or_concuss(e, 0.5)
+	if effects.has("vuln") and randf() < effects["vuln"]:
+		e.apply_vuln(3.0)  # MP-10 seam: a mirror forwards the mark to the host
+		game.spawn_text(e.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
+	if effects.has("heal"):
+		gain_hp(max_hp * effects["heal"])  # bulwark ram / holy strike: SHOWS
+	if effects.has("blood_amp"):
+		# Blood theme (round 32): the cut bites harder the deeper YOU
+		# bleed — missing health becomes DAMAGE (the base kit's surge
+		# already turns it into lifesteal; blood doubles down on the edge).
+		dmg *= 1.0 + effects["blood_amp"] * (1.0 - hp / max_hp)
+	# Warlock wither: a maintained hex deepens — every hit bites harder
+	# the longer the curse has held (only the warlock ever fills `wither`).
+	if wither.has(e):
+		dmg *= 1.0 + mini(int(float(wither[e]) / Balance.WITHER_STACK_EVERY),
+			Balance.WITHER_MAX_STACKS) * Balance.WITHER_PER_STACK
+	# Brittle (ice): cold cracks the target — this hit bites per existing
+	# stack, then deepens the crack for the next one.
+	if effects.get("brittle", 0):
+		dmg *= 1.0 + e.brittle * Balance.BRITTLE_PER_STACK
+		e.add_brittle()
+	# Crush (void): gravity hurts — a target recently displaced hard
+	# (shove, hard pull) takes the hit deeper.
+	if effects.get("crush", 0) and e.crush_t > 0.0:
+		dmg *= 1.0 + Balance.CRUSH_MULT
+	# Rupture (warlock Void talent): anything you've displaced hard takes more
+	# from EVERY hit — the payoff for choreographing shoves and pulls.
+	if crush_amp > 0.0 and e.crush_t > 0.0:
+		dmg *= 1.0 + crush_amp
+	# Killing Frost (mage Ice talent): bite harder into slowed or frozen prey.
+	if chill_dmg > 0.0 and (e.slow_time > 0.0 or e.stun_time > 0.0):
+		dmg *= 1.0 + chill_dmg
+	# Serpent's Due (archer Venom talent): poisoned prey takes extra damage.
+	if poison_dmg > 0.0 and e.burn_time > 0.0:
+		dmg *= 1.0 + poison_dmg
+	# Coup de Grâce (assassin talent): finish wounded prey faster. Never bosses:
+	# their execute windows are design-owned (Hunger below already excludes them),
+	# and a plated cinderhide mirror can read <40% optimistically on a guest —
+	# without this guard the execute would fire on a boss it never should (Wave-2
+	# co-op fix #3a; the plate_dr mirror sync also stops the false <40% read).
+	if execute_dmg > 0.0 and not (e is Boss) and e.max_hp > 0.0 and e.hp < e.max_hp * 0.40:
+		dmg *= 1.0 + execute_dmg
+	# Hunger (tempted resonance lean): the shard savors the finish — wounded
+	# MOBS take extra. Never bosses (their execute windows stay design-owned),
+	# and only prey that PAYS: boss summons / spawner sprouts / event mood
+	# spawns all zero gold_value, so the hunger ignores them — a boss's adds
+	# die at the fight's own pace.
+	if not (e is Boss) and e.gold_value > 0 and e.max_hp > 0.0 \
+			and e.hp < e.max_hp * Balance.RES_HUNGER_EXEC_AT:
+		var hunger := hunger_exec_bonus()
+		if hunger > 0.0:
+			dmg *= 1.0 + hunger
+
+	# Lifesteal (AoE hits only steal a third).
+	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
+	if ls > 0.0:
+		hp = minf(max_hp, hp + dmg * ls)
+	# Holy stance (paladin Conviction, round 48): every righteous blow mends —
+	# the stance IS the sustain (AoE hits mend at a third, like lifesteal).
+	if cls == "paladin" and paladin_mode == "holy":
+		gain_hp(max_hp * Balance.PALADIN_HOLY_MEND * (0.33 if effects.get("aoe", false) else 1.0))
+
+	var dir := (e.global_position - global_position).normalized()
+	e.hit_src = self  # MP-10: attribute the blow (reflect/counter/aggro; solo: THE player)
+	e.take_damage(dmg, dir, is_crit)
+	# Shadow phantom step: a dash armed a refund window — the kill that closes
+	# it (usually the Fan or ult-stab, rarely the dash itself) slashes the dash
+	# cd. One refund per window; a fresh dash re-arms it.
+	if dash_refund_t > 0.0 and dash_refund_frac > 0.0 and (e.dying or e.hp <= 0.0):
+		cds["a2"] = maxf(Balance.DASH_CONNECT_FLOOR, cds["a2"] * (1.0 - dash_refund_frac))
+		dash_refund_t = 0.0
+		dash_refund_frac = 0.0
+		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
+	# A Ninja-pack impact burst punctuates a CRIT (CC0) — elemental when
+	# themed, a warm shockburst otherwise. Single-target only: AoE and echo
+	# sub-hits stay quiet so a crowd hit doesn't turn to confetti.
+	if is_crit and not effects.get("aoe", false) and not effects.get("_echoed", false):
+		var icol := Color(1, 1, 1).lerp(_tcolor, 0.55) if _themed else Color(1.0, 0.72, 0.42)
+		_fx_flash("fx_impact", e.global_position, 9, {
+			"color": icol, "scale": 1.45, "z": 9, "frame_time": 0.03, "alpha": 0.95,
+		})
+	if effects.has("knock") and not e.dying \
+			and not (effects.get("knock_no_boss", 0) and e is Boss):
+		# knock_no_boss: the shove flings mobs but a boss holds its ground
+		# (mage Frost Nova — the mage spaces with its feet, never by shoving
+		# a boss; warlock Void is the deliberate exception and omits the flag).
+		e.apply_knock(dir * effects["knock"])
+	if effects.has("pull") and not e.dying:
+		e.apply_knock(-dir * 380.0)
+	if effects.has("shove") and not e.dying:
+		# Void's light shove: opens the crush window every hit, but a boss is
+		# barely moved (BOSS_SHOVE_FACTOR). The crush window is set DIRECTLY so
+		# it fires regardless of how far the target actually slid.
+		var sf: float = effects["shove"]
+		e.apply_knock(dir * (sf * Balance.BOSS_SHOVE_FACTOR if e is Boss else sf), true)
+	if effects.has("splash"):
+		game.burst(e.global_position, _tcolor if _themed else Color(1.0, 0.6, 0.2), 8)
+		for e2 in _enemies_within(e.global_position, 80.0):
+			if e2 != e and not e2.dying:
+				e2.hit_src = self
+				e2.take_damage(dmg * effects["splash"], (e2.global_position - e.global_position).normalized())
+	# Echo: the hit strikes again at half strength.
+	if effects.has("echo") and not effects.has("_echoed") and randf() < effects["echo"] and not e.dying:
+		var again := effects.duplicate()
+		again["_echoed"] = true
+		hit_enemy(e, mult * 0.5, again)
+
+
+## DoT rate mitigated by the target's res (class damage type) minus our
+## pen — for dot sources OUTSIDE hit_enemy (the mist primitive, the
+## poison Death Mark), which mirror the rider pipeline's snapshot rule.
+func _dot_dps(e: Enemy, dps: float) -> float:
+	var dmg_type: String = Classes.CLASSES[cls]["dmg_type"]
+	var pen := physpen if dmg_type == "phys" else magpen
+	var e_res := e.physres if dmg_type == "phys" else e.magres
+	return dps * (1.0 - Stats.res_frac(maxf(0.0, e_res - pen)))
+
+
+## Stun — or CONCUSSION: a CC-immune target (boss) takes the failed
+## stun as bonus damage instead (duration x mult x ATK), so stun riders
+## keep a boss-fight value without re-opening boss CC.
+func _stun_or_concuss(e: Enemy, dur: float) -> void:
+	if e is Boss:
+		if not e.dying:
+			e.hit_src = self
+			e.take_damage(current_atk() * dur * Balance.CONCUSSION_MULT,
+				(e.global_position - global_position).normalized())
+	else:
+		e.apply_stun(dur)
+
+
+func _enemies_within(center: Vector2, radius: float) -> Array:
+	var out: Array = []
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and not e.dying and not e.untargetable \
+				and center.distance_to(e.global_position) <= radius:
+			out.append(e)
+	return out
+
+
+# ------------------------------------------------------ shared juice ---
+
+## A shockwave ring at pos: expands outward, or collapses inward.
+func _ring_fx(pos: Vector2, color: Color, radius: float, collapse := false) -> void:
+	var ring := Sprite2D.new()
+	ring.texture = Art.tex("ring")
+	ring.modulate = Art.hdr(Color(color, 0.9))
+	ring.global_position = pos
+	ring.z_index = 7
+	game.add_child(ring)
+	var big := radius / 24.0
+	ring.scale = Vector2(big, big) if collapse else Vector2(0.3, 0.3)
+	var tw := ring.create_tween()
+	tw.tween_property(ring, "scale", Vector2(0.3, 0.3) if collapse else Vector2(big, big), 0.26) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN if collapse else Tween.EASE_OUT)
+	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(ring.queue_free)
+
+
+## Ghost copies of the hero along a dash path, fading in sequence.
+## `stagger`/`fade` shape the read: quick+sparse = a blink, slow+dense =
+## bulk in motion (the warrior's charge).
+func _afterimages(start: Vector2, end: Vector2, color: Color, count := 3,
+		stagger := 0.05, fade := 0.26) -> void:
+	if sprite == null:
+		return
+	for i in count:
+		var t := float(i + 1) / float(count + 1)
+		var ghost := Sprite2D.new()
+		ghost.texture = sprite.texture
+		ghost.hframes = sprite.hframes
+		ghost.frame = sprite.frame
+		ghost.flip_h = sprite.flip_h
+		ghost.rotation = sprite.rotation  # an aimed dash pose carries into its trail
+		ghost.scale = sprite.scale
+		ghost.global_position = start.lerp(end, t) + sprite.position
+		ghost.modulate = Color(color, 0.5)
+		ghost.z_index = 5
+		game.add_child(ghost)
+		var tw := ghost.create_tween()
+		tw.tween_interval(stagger * i)
+		tw.tween_property(ghost, "modulate:a", 0.0, fade)
+		tw.tween_callback(ghost.queue_free)
+
+
+## A glowing scorch/frost line left on the ground along a dash path.
+func _floor_streak(start: Vector2, end: Vector2, color: Color) -> void:
+	var streak := Sprite2D.new()
+	streak.texture = Art.tex("glow")
+	streak.modulate = Color(color, 0.5)
+	streak.global_position = (start + end) / 2.0
+	streak.rotation = (end - start).angle()
+	streak.scale = Vector2(maxf(1.0, start.distance_to(end) / 40.0), 0.8)
+	streak.z_index = -5
+	game.add_child(streak)
+	var tw := streak.create_tween()
+	tw.tween_property(streak, "modulate:a", 0.0, 1.1)
+	tw.tween_callback(streak.queue_free)
+
+
+## A single faint gust streak, trailing BEHIND a speed-buffed run (round
+## 44): the "this buff is live" tell for theme_speed. Kept very low-alpha
+## and short — a whisper of wind, not a comet. `back` is the drift/lean
+## direction (opposite travel).
+func _wind_wisp(back: Vector2) -> void:
+	var wisp := Sprite2D.new()
+	wisp.texture = Art.tex("glow")
+	wisp.modulate = Color(0.82, 0.94, 1.0, 0.13)  # pale, barely-there
+	wisp.global_position = global_position + back * 16.0 + Vector2(0, -6)
+	wisp.rotation = back.angle()
+	wisp.scale = Vector2(1.3, 0.32)               # stretched along the gust
+	wisp.z_index = -4                              # behind the hero
+	game.add_child(wisp)
+	var tw := wisp.create_tween()
+	tw.tween_property(wisp, "global_position", wisp.global_position + back * 26.0, 0.4)
+	tw.parallel().tween_property(wisp, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(wisp.queue_free)
+
+
+## Animated Ninja-FX flash (CC0 Ninja Adventure pack): loads a horizontal
+## frame strip from assets/sprites/fx/<name>.png, steps across its `frames`
+## cells, then frees itself. World-space by default (parented to `game`);
+## pass {"parent": self} for a flash that rides the hero, in which case
+## `pos` is treated as a LOCAL offset. `opts` keys: color, alpha, scale,
+## rot, flip_h, flip_v, z, frame_time, fade, parent.
+func _fx_flash(name: String, pos: Vector2, frames: int, opts := {}) -> void:
+	# Degrade gracefully if the pack asset isn't imported/present: Art.tex
+	# would otherwise fall through to the procedural SPRITES table and
+	# hard-error on an unknown "fx/..." key. No file ⇒ simply no flash.
+	if not ResourceLoader.exists("res://assets/sprites/fx/%s.png" % name):
+		return
+	var spr := Sprite2D.new()
+	spr.texture = Art.tex("fx/" + name)
+	spr.hframes = frames
+	spr.frame = 0
+	var scl: float = opts.get("scale", 1.0)
+	spr.scale = Vector2(scl, scl)
+	spr.rotation = opts.get("rot", 0.0)
+	spr.flip_h = opts.get("flip_h", false)
+	spr.flip_v = opts.get("flip_v", false)
+	spr.z_index = opts.get("z", 7)
+	var col: Color = opts.get("color", Color(1, 1, 1))
+	var alpha: float = opts.get("alpha", 1.0)
+	spr.modulate = Color(col.r, col.g, col.b, alpha)
+	var parent: Node = opts.get("parent", game)
+	if parent == self:
+		spr.position = pos
+	else:
+		spr.global_position = pos
+	parent.add_child(spr)
+	var per: float = opts.get("frame_time", 0.045)
+	var fade: float = opts.get("fade", 0.09)
+	# Step the strip frame-by-frame (bind snapshots each frame index), then
+	# fade the last frame out. The tween lives on the sprite, so a freed
+	# sprite (room rebuild, death) kills it cleanly.
+	var tw := spr.create_tween()
+	for f in range(1, frames):
+		tw.tween_interval(per)
+		tw.tween_callback(spr.set_frame.bind(f))
+	tw.tween_interval(per)
+	tw.tween_property(spr, "modulate:a", 0.0, fade)
+	tw.tween_callback(spr.queue_free)
+
+
+## Release flash at the weapon: shots visibly leave YOU, not thin air.
+func _muzzle(dir: Vector2, color: Color) -> void:
+	var fl := Sprite2D.new()
+	fl.texture = Art.tex("glow")
+	fl.modulate = Art.hdr(Color(color, 0.85))
+	fl.position = dir * 26.0
+	fl.scale = Vector2(0.5, 0.5)
+	fl.z_index = 6
+	add_child(fl)
+	var tw := fl.create_tween()
+	tw.tween_property(fl, "scale", Vector2(1.05, 1.05), 0.08)
+	tw.parallel().tween_property(fl, "modulate:a", 0.0, 0.11)
+	tw.tween_callback(fl.queue_free)
+
+
+## Melee strike. style "swing" = crescent arc; "stab" = straight thrust
+## (a piercing streak, and the held weapon lunges instead of swiping).
+## `variant` picks the swing's sweep path (-1 = classic fixed fan;
+## 0 diagonal / 1 crescent-down / 2 crescent-up — the warrior cycles
+## these so Cleave reads as swordplay, not a repeated air-swipe), and
+## variants lead the arc with a blade sprite (the equipped weapon's own
+## icon when one is held). Hit logic is untouched — visual only.
+func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style := "swing", snd := "slash", variant := -1) -> int:
+	game.sfx(snd)
+	melee_swing = 0.16
+	melee_style = style
+	var dir := aim_dir(220.0)
+	melee_dir = dir
+	# Base slash colour: theme tint if themed, else RED while berserk (so the
+	# crescent matches the rage), else plain white.
+	var slash_col := _tcolor if _themed else (Color(1.0, 0.3, 0.2) if berserk_time > 0.0 else Color(1, 1, 1))
+	if style == "stab":
+		# Dagger SLASH (round 50): a fast crescent that sweeps an arc OUT from
+		# the blade tip, riding the striking dagger — the assassin cuts, he
+		# doesn't fence with a floating sliver. White base; theme tints it.
+		var pivot := Node2D.new()
+		pivot.rotation = dir.angle() - 0.85  # wind the arc back...
+		pivot.z_index = 8
+		add_child(pivot)
+		var cres := Sprite2D.new()
+		cres.texture = Art.tex("slash")
+		cres.position = Vector2(reach * 0.42, 0)  # crescent out at the blade tip
+		cres.scale = Vector2(2.2, 2.2) * (reach / 118.0)
+		cres.modulate = slash_col
+		pivot.add_child(cres)
+		# The Ninja-pack drawn cut flashes along the arc (CC0), tinted to match.
+		_fx_flash("fx_slash", global_position + dir * reach * 0.46, 4, {
+			"color": slash_col, "rot": dir.angle(),
+			"scale": 1.9 * (reach / 118.0), "z": 9, "frame_time": 0.026, "alpha": 0.95,
+		})
+		var tw := pivot.create_tween()
+		tw.tween_property(pivot, "rotation", dir.angle() + 0.85, 0.1) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)  # ...and cut through
+		tw.parallel().tween_property(pivot, "modulate:a", 0.0, 0.13)
+		tw.tween_callback(pivot.queue_free)
+	else:
+		# The crescent SWEEPS across the arc instead of fading in place —
+		# a pivot at the hero swings the blade sprite through ~100°.
+		# Variant sweeps keep the strike centered on `dir` but change the
+		# path: diagonal cut, overhead crescent down, rising crescent up.
+		var from := -0.9
+		var to := 0.9
+		match variant:
+			0: from = -1.7; to = 0.55
+			1: from = -0.8; to = 1.25
+			2: from = 0.8; to = -1.25
+		var pivot := Node2D.new()
+		pivot.rotation = dir.angle() + from
+		pivot.z_index = 6
+		add_child(pivot)
+		var spr := Sprite2D.new()
+		spr.texture = Art.tex(fx_name)
+		spr.position = Vector2(reach * 0.5, 0)
+		spr.scale = Vector2(2.8, 2.8) * (reach / 78.0)
+		spr.flip_v = to < from  # rising cut: the crescent's belly flips with it
+		spr.modulate = slash_col
+		pivot.add_child(spr)
+		# A Ninja-pack slash crescent flashes along the strike (CC0), tinted
+		# to the swing colour — the drawn "cut" riding on top of the sweep.
+		_fx_flash("fx_slash", global_position + dir * reach * 0.52, 4, {
+			"color": slash_col, "rot": dir.angle(),
+			"scale": 2.4 * (reach / 78.0), "z": 8, "frame_time": 0.032,
+			"alpha": 0.9, "flip_v": to < from,
+		})
+		var tween := pivot.create_tween()
+		tween.tween_property(pivot, "rotation", dir.angle() + to, 0.13) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(pivot, "modulate:a", 0.0, 0.17)
+		tween.tween_callback(pivot.queue_free)
+	var hits := 0
+	for e in _enemies_within(global_position + dir * reach * 0.55, reach * 0.55):
+		hit_enemy(e, mult, effects.duplicate())
+		hits += 1
+	return hits
+
+
+func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectile:
+	var p := Projectile.spawn(game, global_position + dir * 24.0, dir * speed_px, 0.0, true, tex)
+	p.hit_player_mult = mult
+	p.source_player = self
+	p.fx = _tfx.duplicate()
+	if _themed:
+		p.modulate = Color(1, 1, 1).lerp(_tcolor, 0.55)
+	# Caster tell: a Ninja-pack summoning ring blooms at the hands on a
+	# magic-damage cast (CC0), tinted to the theme (or a cool arcane blue).
+	if Classes.CLASSES[cls]["dmg_type"] == "magic":
+		_fx_flash("fx_circle", global_position + dir * 18.0 + Vector2(0, 2), 4, {
+			"color": _tcolor if _themed else Color(0.62, 0.76, 1.0),
+			"scale": 1.5, "z": 3, "frame_time": 0.05, "alpha": 0.85,
+		})
+	return p
+
+
+## Per-class ultimate activation sound, falling back to the generic one.
+func _ult_sfx() -> void:
+	var key := "ult_" + cls
+	game.sfx(key if game.sounds.has(key) else "ult")
+
+
+## A thin beam of light/darkness between two points, fading fast
+## (hex tendrils, chain snaps, quick magical connections).
+func _beam_fx(from: Vector2, to: Vector2, col: Color, width := 0.18) -> void:
+	var seg := Sprite2D.new()
+	seg.texture = Art.tex("glow")
+	seg.modulate = Art.hdr(Color(col, 0.85))
+	seg.global_position = (from + to) / 2.0
+	seg.rotation = (to - from).angle()
+	seg.scale = Vector2(maxf(0.5, from.distance_to(to) / 44.0), width)
+	seg.z_index = 7
+	game.add_child(seg)
+	var tw := seg.create_tween()
+	tw.tween_property(seg, "scale:y", 0.03, 0.22)
+	tw.parallel().tween_property(seg, "modulate:a", 0.0, 0.24)
+	tw.tween_callback(seg.queue_free)
+
+
+## Dash `dist` pixels in the move direction, damaging every enemy along
+## the path. Used by mage Blink, assassin Shadow Dash and the warrior's
+## Shield Bash — and because it HITS things, ability themes fully apply
+## to it. Returns kill count (Phantom step refunds cooldown on kills).
+## A connecting stab's blood surge (round 25): lifesteal up for 4s,
+## scaling with MISSING health — low health is a resource.
+## (_grant_stab_surge lives HERE, not in the assassin layer: _dash_strike
+## fires it for the dash-stab rider, and calls only flow derived→base.)
+func _grant_stab_surge() -> void:
+	# Announce it once when it FIRST lights (a refresh mid-surge is silent —
+	# the stab cadence is 0.3s); the crimson aura carries the rest.
+	if stab_ls_time <= 0.0:
+		game.spawn_text(global_position + Vector2(0, -52), "BLOOD SURGE", Color(0.95, 0.35, 0.4))
+	stab_ls_time = 4.0
+	stab_ls_amt = Balance.SURGE_LS_FLOOR + Balance.SURGE_LS_SCALE * (1.0 - hp / max_hp)
+
+
+## Aim the PLAYING dash clip along the travel line. The sheets only author a
+## left/right dash, so an off-axis dash flips the art to the horizontal side
+## of travel and ROTATES it the rest of the way: straight up/down spins the
+## L/R art 90° (up-while-facing-left = 90° clockwise, up-while-facing-right =
+## 90° counter-clockwise — angle_to encodes exactly that), diagonals 45°. A
+## pure-vertical dash keeps whichever way the hero already faced. The held
+## pose is released by the next _play_clip (player.gd bob gate holds it).
+func _aim_dash_pose(dvec: Vector2) -> void:
+	if strip_frames == 0 or _clip_loop or _dir_pose_active or _action_dir_on or dvec == Vector2.ZERO:
+		return  # no sheet / no one-shot playing / 8-way pose or directional
+		        # dash strip already owns the facing (rotating it would mangle it)
+	var side := signf(dvec.x) if dvec.x != 0.0 else _face_sign()
+	_clip_flip = side
+	_clip_rot = Vector2(side, 0.0).angle_to(dvec)
+	sprite.flip_h = (side > 0.0) if face_left else (side < 0.0)
+	sprite.rotation = _clip_rot
+	sprite.position.y = 0.0
+
+
+## `heavy` sells mass instead of speed: a denser, slower-fading ghost
+## trail + landing dust/shake (the warrior's charge — an armored wall
+## arriving, not an assassin's blink; same instant mechanics).
+func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, iframe := 0.3, heavy := false) -> int:
+	game.sfx("blink")
+	var color := _tcolor if _themed else Color(0.6, 0.7, 1.0)
+	var start := global_position
+	var dvec := dash_vec()
+	global_position = game.clamp_to_zone(start + dvec * dist, start)
+	_aim_dash_pose(dvec)  # before the ghost trail below, so the afterimages copy the pose
+	var end := global_position
+	if iframe > 0.0:
+		hurt_cd = maxf(hurt_cd, iframe)  # brief immunity while dashing
+		hurt_was_heavy = true  # a deliberate i-frame blocks heavy telegraph hits too
+	game.burst(start, color, 8)
+	game.burst(end, color, 8)
+	game.dust(start + Vector2(0, 14), 4)  # kicked-up dust where you left
+	if heavy:
+		_afterimages(start, end, color, 7, 0.085, 0.40)
+		game.dust(end + Vector2(0, 14), 6)  # the landing hits like a wall
+		game.shake(2.5)
+	else:
+		_afterimages(start, end, color)
+
+	# Light trail between the two points.
+	var mid := (start + end) / 2.0
+	var trail := Sprite2D.new()
+	trail.texture = Art.tex("glow")
+	trail.modulate = Color(color, 0.7)
+	trail.global_position = mid
+	trail.rotation = (end - start).angle()
+	trail.scale = Vector2(maxf(1.0, start.distance_to(end) / 44.0), 1.1)
+	trail.z_index = 6
+	game.add_child(trail)
+	var tween := trail.create_tween()
+	tween.tween_property(trail, "modulate:a", 0.0, 0.25)
+	tween.tween_callback(trail.queue_free)
+
+	var kills := 0
+	var rider_hit := false
+	var rider_count := 0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e == null or e.dying or e.untargetable:
+			continue
+		var closest := Geometry2D.get_closest_point_to_segment(e.global_position, start, end)
+		var lane := e.global_position.distance_to(closest)
+		if lane <= 55.0:
+			hit_enemy(e, mult, effects.duplicate())
+			if stab_rider > 0.0:
+				# First stroke on the victim: the dash blade itself
+				# (round 36 — the pass-through finally LOOKS like a cut).
+				_cut_flash(e.global_position, 0.65, _tcolor if _themed else Color(1, 1, 1))
+			if e.dying or e.hp <= 0.0:
+				kills += 1
+		if stab_rider > 0.0 and lane <= 150.0 and not e.dying \
+				and rider_count < Balance.DASH_RIDER_CAP:
+			# Round 49 AoE pass: the rider lands on at most DASH_RIDER_CAP
+			# victims per pass — a dash through a PACK was paying the full
+			# stab on every body in the corridor. Boss doors never notice.
+			# The dash carries the knife (rounds 26/29), and the knife
+			# reaches FARTHER than the shoulder: a graze-pass NEXT to
+			# the boss still lands the stab + blood surge — thread the
+			# needle past the swing, cut, kite out already healing.
+			# Round 32: the dash-stab gets BONUS range over the standing
+			# stab (150px corridor vs 118px reach) — striking in stride
+			# reaches deeper than planting your feet.
+			# Round 40: the rider pays by DEPTH — inside the old 105px
+			# corridor the cut lands full (1.0x); only the far bonus-
+			# reach graze (105-150px) takes the discount. The surge is
+			# identical at every depth.
+			var rider_mult: float = (Balance.DASH_STAB_NEAR_MULT
+				if lane <= Balance.DASH_STAB_NEAR_LANE else Balance.DASH_STAB_MULT)
+			hit_enemy(e, rider_mult * stab_rider, {"stagger": 0.3})
+			_grant_stab_surge()
+			rider_hit = true
+			rider_count += 1
+			# The rider's stroke, opposite diagonal: a graze shows ONE
+			# cut; a full pass-through (lane + rider) crosses into an X.
+			_cut_flash(e.global_position, -0.65, _tcolor if _themed else Color(1, 1, 1))
+		if effects.get("graze_heal", 0) and lane > 55.0 and lane <= Balance.CHARGE_GRAZE_LANE and not e.dying:
+			# Bulwark ram (round 44): the shield-charge mends on a NEAR
+			# pass, not just a dead-center ram — like the assassin's safe-
+			# range graze, charging PAST a boss (threading its swing) still
+			# clips it for a lighter hit, and the heal rides that hit. A
+			# direct ram (lane <= 55) already healed via the fx above.
+			hit_enemy(e, mult * Balance.CHARGE_GRAZE_MULT, effects.duplicate())
+			_cut_flash(e.global_position, 0.4, _tcolor if _themed else Color(0.7, 0.85, 1.0))
+	if rider_hit:
+		# The connect refunds the dash — the SKILL lever (round 46): a landed
+		# cut claws the cd toward the connect floor (talent deepens the
+		# refund); a whiff pays full, and gear cdr can't push below the floor.
+		cds["a2"] = maxf(Balance.DASH_CONNECT_FLOOR,
+			cds["a2"] * (1.0 - (Balance.DASH_REFUND + dash_refund)))
+	return kills
+
+
+## A single blade-sliver flash across a point — the universal "you
+## were cut" mark (one diagonal per stroke; two strokes cross an X).
+func _cut_flash(pos: Vector2, ang: float, color := Color(1, 1, 1)) -> void:
+	var cut := Sprite2D.new()
+	cut.texture = Art.tex("slashline")
+	cut.modulate = color
+	cut.global_position = pos
+	cut.rotation = ang
+	cut.scale = Vector2(1.1, 0.45)
+	cut.z_index = 8
+	game.add_child(cut)
+	var tw := cut.create_tween()
+	tw.tween_interval(0.08)
+	tw.tween_property(cut, "modulate:a", 0.0, 0.1)
+	tw.tween_callback(cut.queue_free)
+
+
+## An expanding cloud that ticks poison on everything inside — the mist
+## primitive behind Venom Bloom, Toxic Wake and the archer's toxin cloud.
+## Not a flat glow: a ROILING mass of drifting blobs, rising toxic motes,
+## a burst ring on arrival, and venom bubbles on everything it eats.
+func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.5) -> void:
+	var root := Node2D.new()
+	root.global_position = pos
+	root.z_index = 4
+	game.add_child(root)
+	_ring_fx(pos, color, radius)
+	game.burst(pos, color, 10)
+
+	# Overlapping blobs, each swelling to its own size and slowly churning
+	# around the center — the cloud visibly boils instead of sitting still.
+	for i in 6:
+		var blob := Sprite2D.new()
+		blob.texture = Art.tex("glow")
+		var shade := randf_range(0.55, 1.0)
+		blob.modulate = Color(color.r * shade, color.g * shade, color.b * shade, 0.0)
+		var off := Vector2.from_angle(TAU * i / 6.0 + randf_range(-0.4, 0.4)) \
+			* randf_range(radius * 0.15, radius * 0.45)
+		blob.position = off
+		blob.scale = Vector2(0.6, 0.6)
+		root.add_child(blob)
+		var grow := blob.create_tween()
+		grow.tween_property(blob, "modulate:a", randf_range(0.4, 0.6), 0.35)
+		var target := randf_range(radius / 30.0, radius / 20.0)
+		grow.parallel().tween_property(blob, "scale", Vector2(target, target), 0.5)
+		var churn := blob.create_tween()
+		churn.set_loops()
+		churn.tween_property(blob, "position", off.rotated(0.9), randf_range(0.8, 1.3)) \
+			.set_trans(Tween.TRANS_SINE)
+		churn.tween_property(blob, "position", off, randf_range(0.8, 1.3)) \
+			.set_trans(Tween.TRANS_SINE)
+
+	# Toxic motes bubbling up out of the whole area for the cloud's life.
+	var motes := CPUParticles2D.new()
+	motes.amount = 30
+	motes.lifetime = 1.1
+	motes.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	motes.emission_sphere_radius = radius * 0.8
+	motes.direction = Vector2(0, -1)
+	motes.spread = 25.0
+	motes.gravity = Vector2(0, -26)
+	motes.initial_velocity_min = 8.0
+	motes.initial_velocity_max = 28.0
+	motes.scale_amount_min = 1.6
+	motes.scale_amount_max = 3.4
+	motes.color = Color(color, 0.85)
+	root.add_child(motes)
+
+	var ticks := int(dur / 0.4)
+	for i in ticks:
+		await get_tree().create_timer(0.4).timeout
+		if not is_instance_valid(root):
+			return
+		if dead:
+			root.queue_free()
+			return
+		for e in _enemies_within(pos, radius):
+			# The mist IS the poison primitive: its ticks stack toxin.
+			e.apply_toxin(_dot_dps(e, current_atk() * dps_mult), 1.2, Color(color, 1.0), self)
+			game.burst(e.global_position + Vector2(0, -10), color, 4)  # venom bubbles
+	motes.emitting = false
+	var fade := root.create_tween()
+	fade.tween_property(root, "modulate:a", 0.0, 0.6)
+	fade.tween_callback(root.queue_free)
