@@ -631,46 +631,23 @@ static func _set_level(m: Menus, target: int) -> void:
 		Color(0.5, 0.9, 1.0))
 
 
-## Write one fresh save per class (chapter 1, given level, all points
-## banked, no gear) — ALWAYS all six, every press. Free slots only
-## (existing saves are never touched); with 20 slots that's three full
-## rosters before anything needs deleting. Returns how many were
-## created (short only when the slots genuinely run out). Lives here
-## with the other dev tools, but the BUTTON is on the launcher screens
-## (Menus._dev_roster_row) — no need to enter a game first.
-static func create_roster(m: Menus, lvl: int) -> int:
+## Write 6 fresh saves (one per class) built EXACTLY like a named DPS-bench preset
+## (BenchBuild.PRESETS) — full baked gear/gems/+plus/tree/attr/theme, S legendaries
+## awakened. Free slots only (never overwrites). Shares BenchBuild with the bench,
+## so a generated hero and its bench case are byte-identical. Returns how many made.
+static func create_benchmark_roster(m: Menus, preset_key: String) -> int:
 	if m.game.no_saves:
 		return 0  # test runs must never write real save files
 	var made := 0
 	var slot := 1
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
 	for cid in Classes.CLASSES:
 		while slot <= SaveGame.MAX_SLOTS and SaveGame.exists(slot):
 			slot += 1
 		if slot > SaveGame.MAX_SLOTS:
 			break
-		var data := {
-			"version": SaveGame.VERSION,
-			"saved_at": Time.get_unix_time_from_system(),
-			"chapter": "ch1",
-			# v3 save shape: character/world sections (save.gd).
-			"character": {
-				"cls": cid,
-				"level": lvl, "xp": 0,
-				"skill_points": lvl * Balance.SKILL_POINTS_PER_LEVEL,
-				"unspent_attr": (lvl - 1) * Balance.ATTR_POINTS_PER_LEVEL,
-				"tree_points": {}, "attr_points": {},
-				"gold": 2000, "potions": 3,
-			},
-			"world": {
-				"quest_key": "talk",
-				"wander_seed": rng.randi(),
-			},
-		}
 		var f := FileAccess.open(SaveGame.path(slot), FileAccess.WRITE)
 		if f:
-			f.store_string(JSON.stringify(data))
+			f.store_string(JSON.stringify(BenchBuild.save_dict(cid, preset_key)))
 			made += 1
 		slot += 1
 	return made
