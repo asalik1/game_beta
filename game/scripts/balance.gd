@@ -24,6 +24,12 @@ const AIM_VERTICAL_CONE := 0.6
 # radii, aggro/attack ranges and speeds are unchanged. Tune to taste; 1.0 = old size.
 const CHAR_RENDER_SCALE := 1.7
 
+# Hero name (chosen at creation, shown in the co-op lobby/party). Capped so a
+# long name never overruns a roster row; empty falls back to the OS account
+# name. Matches os_name()'s substr(0, 16) so the fallback and the typed name
+# share a ceiling.
+const CHAR_NAME_MAX := 16
+
 # STICKY SOFT TARGET. With no Tab-lock the hero still commits to one enemy —
 # your orientation tracks it, and aimed attacks favour it — so you can kite it
 # onto your blind side without turning around. It's acquired within
@@ -381,6 +387,8 @@ const WARRIOR_SWING_DELAY := 0.13 # delay Cleave's cut/quake to the sword swing'
 const MAGE_BOLT_DELAY := 0.12     # delay Firebolt to the staff-thrust release frame (same windup-vs-FX sync)
 const ARCHER_LOOSE_DELAY := 0.25  # delay Quick Shot / Multishot / Arrow Storm to the bow's draw-release frame (~frame 7 of the re-rolled 9-frame draw@22fps — the string snaps forward at t≈0.25; 0.12 loosed mid-draw)
 const WARLOCK_CAST_DELAY := 0.16  # delay Shadowbolt / Hex to the arm-snap/sigil-projection frame (~frame 4 of the re-rolled upright cast; Dark Pact = self-buff stays instant; Void Rift self-sequences via its telegraph)
+const PHANTOM_ULT_SPLASH_OPACITY := 0.10        # Phantom ult: the splash-art screen wash opacity
+const PHANTOM_ULT_SPLASH_OPACITY_BRIGHT := 0.15 # +5% on "bright" maps (light backdrops wash the wash out)
 # Bosses got v3 ability strips (a real swing/cast windup) — same rule as the
 # classes. BOSS_ABILITY_FPS plays the ~7-frame one-shot snappily (~0.5s, not the
 # 6fps 1.2s sluggard); BOSS_STRIKE_DELAY defers an IMMEDIATE bolt/ring/beam to

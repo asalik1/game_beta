@@ -174,11 +174,14 @@ func _death_mark() -> void:
 	deathmark_time = rider("ult", "amp_secs")
 	var phantom := skin == "phantom"
 	if phantom:
-		# Phantom: a BLUE screen wash (the exact blue-for-red swap of the base
-		# ult flash) + a converging storm of 16 spectral knives that rings the
-		# marked target (see PhantomBladeStorm). Behaviour is unchanged — only
-		# the colour of the flash and the FX read spectral instead of bloody.
-		game.hud.flash_screen(Color(0.12, 0.4, 1.0), 0.6, 0.85)
+		# Phantom: a ghostly print of his splash art washes over the screen (in
+		# place of the base ult's red flash) + a converging storm of 16 spectral
+		# knives that rings the marked target (see PhantomBladeStorm). Behaviour
+		# is unchanged — only the presentation reads spectral instead of bloody.
+		# Bright maps (light backdrops) wash the wash out, so bump its opacity.
+		var bright: bool = Terrains.get_terrain(game.terrain_by_zone[game.cur_room]).get("bright", false)
+		var splash_op: float = Balance.PHANTOM_ULT_SPLASH_OPACITY_BRIGHT if bright else Balance.PHANTOM_ULT_SPLASH_OPACITY
+		game.hud.flash_splash(Art.tex("phantom_splash"), splash_op, 0.85)
 		var storm := PhantomBladeStorm.new()
 		storm.target = target
 		storm.game_ref = game

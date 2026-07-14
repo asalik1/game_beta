@@ -1,0 +1,113 @@
+# Codemagic CI/CD — iOS build for Emberfall (builds the mobile snapshot at
+# `mobile/game`, NOT the desktop `game/`). Lives at repo root because that's
+# where Codemagic looks for this file.
+#
+# WHAT IT DOES: on a Codemagic macOS machine it installs the exact Godot
+# 4.4.1-stable the project uses, exports the iOS Xcode project from
+# `mobile/game`, code-signs it, and builds a distributable `.ipa` (and can ship
+# it to TestFlight). You never touch a Mac.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# BEFORE THIS CAN RUN — all on your side (I can't create accounts / enter
+# payment / sign in for you):
+#   1. Apple Developer Program membership ($99/yr). This is the hard gate — the
+#      iOS export literally fails without a Team ID from it.
+#   2. In App Store Connect, create the app record with bundle id
+#      `com.emberfall.game`.
+#   3. In Codemagic: connect this GitHub repo (asalik1/game_beta), then add an
+#      "App Store Connect" API-key integration (Team settings → Integrations) so
+#      the signing CLI below can fetch certs/profiles automatically.
+#   4. Create a Codemagic environment group named `emberfall_ios` holding:
+#        APPLE_TEAM_ID     — your 10-char Apple Developer Team ID
+#        APP_STORE_APP_ID  — (TestFlight only) the app's numeric Apple ID
+#
+# Lines marked "ADJUST" are the ones most likely to need a one-line tweak on the
+# first real run (chiefly the Xcode scheme name Godot generates). Because this
+# can't be validated from Windows, treat the first Codemagic run as the shakeout.
+# ─────────────────────────────────────────────────────────────────────────────
+
+workflows:
+  ios-emberfall:
+    name: Emberfall iOS (App Store)
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    environment:
+      groups:
+        - emberfall_ios          # APPLE_TEAM_ID (+ APP_STORE_APP_ID for TestFlight)
+      vars:
+        GODOT_VERSION: "4.4.1-stable"
+        GODOT_PRESET: "iOS"        # matches the preset name in mobile/game/export_presets.cfg
+        BUNDLE_ID: "com.emberfall.game"
+        PROJECT_DIR: "mobile/game"
+        EXPORT_DIR: "build/ios"
+      xcode: latest
+
+    scripts:
+      - name: Install Godot ${GODOT_VERSION} + iOS export templates
+        script: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}"
+          curl -fL -o godot.zip "${BASE}/Godot_v${GODOT_VERSION}_macos.universal.zip"
+          unzip -q godot.zip
+          GODOT_BIN="$PWD/Godot.app/Contents/MacOS/Godot"
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GODOT_BIN" >> "$CM_ENV"
+          # Export templates must land in the version-named dir Godot looks in.
+          curl -fL -o templates.tpz "${BASE}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          TDIR="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION//-/.}"
+          mkdir -p "$TDIR"
+          unzip -q templates.tpz -d _tpz
+          mv _tpz/templates/* "$TDIR/"
+          "$GODOT_BIN" --version
+
+      - name: Inject the Apple Team ID into the iOS preset
+        script: |
+          set -euo pipefail
+          # The iOS export refuses to run without a Team ID (it comes from your
+          # Apple account). CI edits its own checkout only — the committed file
+          # keeps the empty placeholder. BSD sed (macOS) needs the '' after -i.
+          sed -i '' "s#application/app_store_team_id=\"\"#application/app_store_team_id=\"${APPLE_TEAM_ID}\"#" "${PROJECT_DIR}/export_presets.cfg"
+          grep app_store_team_id "${PROJECT_DIR}/export_presets.cfg"
+
+      - name: Export the iOS Xcode project from Godot
+        script: |
+          set -euo pipefail
+          # New class_name/autoload → import once before exporting (headless rule).
+          "$GODOT_BIN" --headless --path "$PROJECT_DIR" --import || true
+          mkdir -p "$EXPORT_DIR"
+          "$GODOT_BIN" --headless --path "$PROJECT_DIR" \
+            --export-release "$GODOT_PRESET" "$CM_BUILD_DIR/$EXPORT_DIR/emberfall.xcodeproj"
+
+      - name: Fetch signing files + prime the keychain
+        script: |
+          set -euo pipefail
+          keychain initialize
+          # Uses the App Store Connect API-key integration you added in Codemagic.
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+
+      - name: Build the signed .ipa
+        script: |
+          set -euo pipefail
+          cd "$EXPORT_DIR"
+          echo "Discovered Xcode projects/schemes:"
+          find . -maxdepth 2 -name "*.xcodeproj"
+          xcodebuild -list -project emberfall.xcodeproj || true
+          # ADJUST: set --scheme to what the line above prints (Godot usually
+          # names the scheme after the app, e.g. "emberfall" or "Godot").
+          xcode-project build-ipa --project "emberfall.xcodeproj" --scheme "emberfall"
+
+    artifacts:
+      - $EXPORT_DIR/**/*.ipa
+      - $EXPORT_DIR/**/*.dSYM
+      - /tmp/xcodebuild_logs/*.log
+
+    # publishing:
+    #   # Turn on once the app record + integration exist. submit_to_testflight
+    #   # puts each green build in front of your testers automatically.
+    #   app_store_connect:
+    #     auth: integration
+    #     submit_to_testflight: true
+    #     beta_groups:
+    #       - Internal Testers

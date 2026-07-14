@@ -22,6 +22,7 @@ const SPEED_BASE_REF := 260.0
 var game: Game  # set by game.gd
 
 # --- identity ---
+var char_name := ""   # hero name chosen at creation; "" falls back to the OS account name in co-op
 var cls := "warrior"
 var ability_theme := {"a1": "", "a2": "", "a3": "", "ult": ""}
 var themes_known := 0
@@ -509,7 +510,10 @@ func _apply_class_sprite() -> void:
 	if _clips.has("idle"):
 		var m := _measure_hero_frame(_clips["idle"])
 		_hero_scale = m["scale"]
-		_hero_offset_y = m["offset"]
+		# Per-skin anchor nudge: a skin whose weapon hangs below the boots is
+		# grounded on the blade tip by the lowest-pixel anchor; nudge it DOWN so
+		# the feet ground instead (default 0 — see Skins.ANCHOR_NUDGE).
+		_hero_offset_y = m["offset"] + Skins.anchor_nudge(skin)
 		for pose in _dir_clips:
 			_dir_meta[pose] = _measure_hero_frame(_dir_clips[pose])
 		_play_clip("idle", true)

@@ -218,7 +218,9 @@ static func swing_time(cls: String, skin_id: String, clip: String) -> float:
 ## so the approved robe/cape skins (incl. Phantom) are untouched. Owner-tuned by
 ## eye. See [[hero-anchor-blade-cutoff-diagnosis]].
 const ANCHOR_NUDGE := {
-	"stormforged": 11.0,
+	# (Stormforged tried here, but a nudge moves the whole sprite — it can't lift
+	# the blade OUT of the terrain without floating the feet, since the blade is
+	# drawn below the boots in the art itself. Left empty; fix is an art re-pose.)
 }
 
 static func anchor_nudge(skin_id: String) -> float:

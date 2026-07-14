@@ -1,0 +1,184 @@
+name: Mobile builds (APK / unsigned IPA)
+
+# Builds installable mobile artifacts from the Godot snapshot in mobile/game:
+#   * Android  -> a signed DEBUG .apk (Linux runner, 1x minutes). Ready to
+#                 install straight onto a phone (adb / just send the file).
+#   * iOS      -> an UNSIGNED .ipa (macOS runner, 10x minutes) that you
+#                 sideload to your OWN iPhone with AltStore / Sideloadly and a
+#                 free Apple ID. No Mac to own, no $99 Apple account.
+#
+# HOW TO RUN: Actions tab -> "Mobile builds" -> Run workflow -> pick platform.
+# Default is "android" so a stray run never spends the 10x macOS minutes.
+# Artifacts appear at the bottom of the finished run.
+#
+# HONEST NOTE: authored without live runners to test against, so a FIRST run
+# may go red on a config spot (iOS: xcodebuild scheme name; Android: SDK path
+# / keystore wiring). Each job echoes what it needs to self-diagnose. Run once,
+# and if red, grab the failing step's log rather than burning repeated builds.
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Which platform(s) to build"
+        type: choice
+        default: android
+        options: [android, ios, both]
+
+env:
+  GODOT_VERSION: "4.4.1"
+  GODOT_RELEASE: "stable"
+  APP_NAME: "Emberfall"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  build-apk:
+    if: ${{ github.event.inputs.platform == 'android' || github.event.inputs.platform == 'both' }}
+    runs-on: ubuntu-latest        # Linux -> 1x minutes (no macOS tax)
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK (platform 34 + build-tools 34)
+        uses: android-actions/setup-android@v3
+      - run: sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Install Godot ${{ env.GODOT_VERSION }} (headless) + export templates
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}"
+          curl -fL -o godot.zip "$BASE/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64.zip"
+          unzip -q godot.zip
+          GODOT_BIN="$PWD/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GODOT_BIN" >> "$GITHUB_ENV"
+          curl -fL -o templates.tpz "$BASE/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
+          unzip -q templates.tpz            # -> ./templates/
+          TDIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
+          mkdir -p "$TDIR"
+          cp -R templates/* "$TDIR/"
+
+      - name: Generate debug keystore + point Godot at SDK / JDK / keystore
+        run: |
+          set -euo pipefail
+          KS="$HOME/debug.keystore"
+          keytool -keyalg RSA -genkeypair -alias androiddebugkey \
+            -keypass android -keystore "$KS" -storepass android \
+            -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          # Godot reads the Android SDK path from editor settings; write both
+          # possible filenames to dodge the minor-version-specific name.
+          CFG="$HOME/.config/godot"; mkdir -p "$CFG"
+          {
+            echo '[gd_resource type="EditorSettings" format=3]'
+            echo ''
+            echo '[resource]'
+            echo "export/android/android_sdk_path = \"$ANDROID_SDK_ROOT\""
+            echo "export/android/java_sdk_path = \"$JAVA_HOME\""
+            echo "export/android/debug_keystore = \"$KS\""
+            echo 'export/android/debug_keystore_user = "androiddebugkey"'
+            echo 'export/android/debug_keystore_pass = "android"'
+          } > "$CFG/editor_settings-4.4.tres"
+          cp "$CFG/editor_settings-4.4.tres" "$CFG/editor_settings-4.tres"
+          # Belt-and-suspenders: keystore env-var override (Godot 4.2+).
+          {
+            echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$KS"
+            echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey"
+            echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android"
+          } >> "$GITHUB_ENV"
+
+      - name: Export Android debug .apk
+        run: |
+          set -euo pipefail
+          mkdir -p mobile/builds
+          "$GODOT_BIN" --headless --path mobile/game --import || true
+          "$GODOT_BIN" --headless --path mobile/game \
+            --export-debug "Android" "../builds/Emberfall.apk"
+          ls -lh mobile/builds/Emberfall.apk
+
+      - name: Upload .apk artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Emberfall-android-apk
+          path: mobile/builds/Emberfall.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  build-ipa:
+    if: ${{ github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'both' }}
+    runs-on: macos-14             # Apple Silicon; Xcode preinstalled. 10x minutes!
+    timeout-minutes: 45
+    env:
+      PRESET: "iOS"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot ${{ env.GODOT_VERSION }} + iOS export templates
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}"
+          curl -fL -o godot.zip "$BASE/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_macos.universal.zip"
+          unzip -q godot.zip
+          xattr -dr com.apple.quarantine Godot.app || true   # clear Gatekeeper
+          echo "GODOT_BIN=$PWD/Godot.app/Contents/MacOS/Godot" >> "$GITHUB_ENV"
+          curl -fL -o templates.tpz "$BASE/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
+          unzip -q templates.tpz
+          TDIR="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
+          mkdir -p "$TDIR"
+          cp -R templates/* "$TDIR/"
+
+      - name: Export iOS Xcode project from Godot
+        run: |
+          set -euo pipefail
+          mkdir -p mobile/builds/ios
+          "$GODOT_BIN" --headless --path mobile/game --import || true
+          # Godot's iOS exporter emits an Xcode PROJECT (it can't compile itself).
+          "$GODOT_BIN" --headless --path mobile/game \
+            --export-release "$PRESET" "../builds/ios/${APP_NAME}.ipa"
+          echo "---- generated tree ----"; ls -R mobile/builds/ios
+
+      - name: Build UNSIGNED .app with xcodebuild
+        run: |
+          set -euo pipefail
+          cd mobile/builds/ios
+          XCODEPROJ="$(find . -maxdepth 3 -name '*.xcodeproj' | head -n1)"
+          echo "Xcode project: $XCODEPROJ"
+          # >>> LIKELY FIRST-RUN FIX POINT: confirm scheme/target name below.
+          xcodebuild -list -project "$XCODEPROJ" || true
+          xcodebuild \
+            -project "$XCODEPROJ" \
+            -scheme "$APP_NAME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath dd \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build
+
+      - name: Package unsigned .ipa (Payload/ zip trick)
+        run: |
+          set -euo pipefail
+          cd mobile/builds/ios
+          APP="$(find dd/Build/Products -maxdepth 2 -name '*.app' | head -n1)"
+          echo "Packaging: $APP"
+          rm -rf Payload && mkdir Payload
+          cp -R "$APP" Payload/
+          rm -f "${APP_NAME}-unsigned.ipa"
+          zip -qr "${APP_NAME}-unsigned.ipa" Payload
+          ls -lh "${APP_NAME}-unsigned.ipa"
+
+      - name: Upload .ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Emberfall-ios-unsigned-ipa
+          path: mobile/builds/ios/*-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

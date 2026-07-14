@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emberfall backup/ gallery</title>
+<style>
+  :root {
+    --bg: #0e0d0b;
+    --bg-card: #1a1816;
+    --bg-hover: #242220;
+    --ink: #e0dcd2;
+    --ink-2: #9a968c;
+    --ink-3: #6a665e;
+    --border: #2a2826;
+    --accent: #d06030;
+    --accent-dim: rgba(208,96,48,0.15);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .page { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 0.25rem; }
+  h1 span { color: var(--accent); font-family: 'Courier New', monospace; font-weight: 400; }
+  .subtitle { color: var(--ink-2); font-size: 13px; margin-bottom: 2rem; }
+
+  .section { margin-bottom: 2.5rem; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-head h2 {
+    font-size: 15px; font-weight: 600;
+    font-family: 'Courier New', monospace;
+    color: var(--accent);
+  }
+  .section-head .meta { font-size: 12px; color: var(--ink-3); }
+
+  .sub-label {
+    font-size: 12px; color: var(--ink-2); font-weight: 500;
+    margin: 1rem 0 0.5rem;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  .grid {
+    display: grid;
+    gap: 8px;
+  }
+  .grid-review { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .grid-sprites { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .grid-large { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .grid-boss { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .grid-sm { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .card:hover { border-color: var(--accent); }
+
+  .card img {
+    width: 100%;
+    display: block;
+    image-rendering: pixelated;
+    background: #111;
+  }
+  .card img.smooth { image-rendering: auto; }
+
+  .card .label {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    color: var(--ink-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top: 1px solid var(--border);
+  }
+
+  .wide-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .wide-card img {
+    width: 100%;
+    display: block;
+    image-rendering: pixelated;
+    background: #111;
+  }
+  .wide-card img.smooth { image-rendering: auto; }
+  .wide-card .label {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    color: var(--ink-2);
+    border-top: 1px solid var(--border);
+  }
+
+  .lightbox {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1000;
+    cursor: zoom-out;
+    justify-content: center; align-items: center;
+    padding: 2rem;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img {
+    max-width: 95vw; max-height: 90vh;
+    image-rendering: pixelated;
+    border: 1px solid #333;
+    border-radius: 4px;
+  }
+  .lightbox img.smooth { image-rendering: auto; }
+  .lightbox-label {
+    position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
+    color: #888; font-size: 12px; font-family: 'Courier New', monospace;
+    background: rgba(0,0,0,0.7); padding: 4px 12px; border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Emberfall <span>backup/</span></h1>
+<p class="subtitle">1,027 archived sprites, sheets, and pipeline artifacts &mdash; click any image to zoom</p>
+
+<!-- =============================== -->
+<!-- REVIEW SHEETS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>review_sheets/</h2>
+    <span class="meta">art audit contact sheets &mdash; the owner review pass</span>
+  </div>
+
+  <p class="sub-label">Bosses</p>
+  <div class="grid grid-review">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/bosses_01.png" class="smooth"><div class="label">bosses_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/bosses_02.png" class="smooth"><div class="label">bosses_02</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/bosses_03.png" class="smooth"><div class="label">bosses_03</div></div>
+  </div>
+
+  <p class="sub-label">Heroes</p>
+  <div class="grid grid-review">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_archer_01.png" class="smooth"><div class="label">hero_archer_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_archer_02.png" class="smooth"><div class="label">hero_archer_02</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_assassin_01.png" class="smooth"><div class="label">hero_assassin_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_assassin_02.png" class="smooth"><div class="label">hero_assassin_02</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_mage_01.png" class="smooth"><div class="label">hero_mage_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_mage_02.png" class="smooth"><div class="label">hero_mage_02</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_paladin_01.png" class="smooth"><div class="label">hero_paladin_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_warlock_01.png" class="smooth"><div class="label">hero_warlock_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_warlock_02.png" class="smooth"><div class="label">hero_warlock_02</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_warrior_01.png" class="smooth"><div class="label">hero_warrior_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/hero_warrior_02.png" class="smooth"><div class="label">hero_warrior_02</div></div>
+  </div>
+
+  <p class="sub-label">Mobs</p>
+  <div class="grid grid-review">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/mobs_01.png" class="smooth"><div class="label">mobs_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/mobs_02.png" class="smooth"><div class="label">mobs_02</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/mobs_03.png" class="smooth"><div class="label">mobs_03</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/mobs_04.png" class="smooth"><div class="label">mobs_04</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/mobs_05.png" class="smooth"><div class="label">mobs_05</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/mobs_06.png" class="smooth"><div class="label">mobs_06</div></div>
+  </div>
+
+  <p class="sub-label">NPCs &middot; Props &middot; FX &middot; Icons</p>
+  <div class="grid grid-review">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/npcs_01.png" class="smooth"><div class="label">npcs_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/npcs_02.png" class="smooth"><div class="label">npcs_02</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/props_01.png" class="smooth"><div class="label">props_01</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/props_02.png" class="smooth"><div class="label">props_02</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/props_03.png" class="smooth"><div class="label">props_03</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/fx.png" class="smooth"><div class="label">fx</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/fx_zoom.png" class="smooth"><div class="label">fx_zoom</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/icons.png" class="smooth"><div class="label">icons</div></div>
+  </div>
+
+  <p class="sub-label">Zoom close-ups</p>
+  <div class="grid grid-review">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/zoom_p1_bones_crack.png" class="smooth"><div class="label">zoom_p1_bones_crack</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/zoom_p1_coffin.png" class="smooth"><div class="label">zoom_p1_coffin</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/zoom_p1_crypt.png" class="smooth"><div class="label">zoom_p1_crypt</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/zoom_p1_flower.png" class="smooth"><div class="label">zoom_p1_flower</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/zoom_p2_mushroom_rock.png" class="smooth"><div class="label">zoom_p2_mushroom_rock</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/zoom_p2_stall.png" class="smooth"><div class="label">zoom_p2_stall</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/contact_sheets/zoom_p2_tombstone.png" class="smooth"><div class="label">zoom_p2_tombstone</div></div>
+  </div>
+
+  <p class="sub-label">Full review sheets</p>
+  <div class="wide-card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/wave1_review_sheet.png" class="smooth"><div class="label">wave1_review_sheet</div></div>
+  <div class="wide-card" onclick="lb(this)"><img src="backup/art-audit-2026-07/review_sheets/wave2_polli_review.png" class="smooth"><div class="label">wave2_polli_review (Pollinate)</div></div>
+</div>
+
+<!-- =============================== -->
+<!-- SPRITE SURGERY ORIGINALS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>sprite_surgery_originals/</h2>
+    <span class="meta">pre-surgery mob sprites</span>
+  </div>
+
+  <p class="sub-label">Skeletons</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton.png"><div class="label">skeleton</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_anim.png"><div class="label">skeleton_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_walk.png"><div class="label">skeleton_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_mage.png"><div class="label">skeleton_mage</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_mage_anim.png"><div class="label">skel_mage_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_mage_walk.png"><div class="label">skel_mage_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_rogue.png"><div class="label">skeleton_rogue</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_rogue_anim.png"><div class="label">skel_rogue_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_rogue_walk.png"><div class="label">skel_rogue_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_warrior.png"><div class="label">skeleton_warrior</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_warrior_anim.png"><div class="label">skel_war_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/skeleton_warrior_walk.png"><div class="label">skel_war_walk</div></div>
+  </div>
+
+  <p class="sub-label">Orcs</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc.png"><div class="label">orc</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_anim.png"><div class="label">orc_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_walk.png"><div class="label">orc_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_rogue.png"><div class="label">orc_rogue</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_rogue_anim.png"><div class="label">orc_rogue_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_rogue_walk.png"><div class="label">orc_rogue_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_shaman.png"><div class="label">orc_shaman</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_shaman_anim.png"><div class="label">orc_sham_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_shaman_walk.png"><div class="label">orc_sham_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_warrior.png"><div class="label">orc_warrior</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_warrior_anim.png"><div class="label">orc_war_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/orc_warrior_walk.png"><div class="label">orc_war_walk</div></div>
+  </div>
+
+  <p class="sub-label">Other mobs</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/ooze.png"><div class="label">ooze</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/ooze_anim.png"><div class="label">ooze_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/ooze_walk.png"><div class="label">ooze_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/bat.png"><div class="label">bat</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/bat_anim.png"><div class="label">bat_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/direbat.png"><div class="label">direbat</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/direbat_anim.png"><div class="label">direbat_anim</div></div>
+  </div>
+
+  <p class="sub-label">Hero ability strips</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/archer_dash.png"><div class="label">archer_dash</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/assassin_stab_dir.png"><div class="label">assassin_stab_dir</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/sprite_surgery_originals/assassin_throw_dir.png"><div class="label">assassin_throw_dir</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- RECOLOR ORIGINALS + WORKSHEETS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>recolor_originals/ + worksheets/</h2>
+    <span class="meta">pre-recolor sprites and side-by-side comparisons</span>
+  </div>
+
+  <p class="sub-label">Originals (before palette correction)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/cyclops.png"><div class="label">cyclops</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/cyclops_anim.png"><div class="label">cyclops_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/cyclops_walk.png"><div class="label">cyclops_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/elf_wild.png"><div class="label">elf_wild</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/elf_wild_anim.png"><div class="label">elf_wild_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/elf_wild_walk.png"><div class="label">elf_wild_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/flame_giant.png"><div class="label">flame_giant</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/flame_giant_anim.png"><div class="label">flame_giant_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/great_spirit.png"><div class="label">great_spirit</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/great_spirit_anim.png"><div class="label">great_spirit_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/kraken.png"><div class="label">kraken</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/kraken_anim.png"><div class="label">kraken_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/tengu.png"><div class="label">tengu</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/tengu_anim.png"><div class="label">tengu_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_originals/tengu_walk.png"><div class="label">tengu_walk</div></div>
+  </div>
+
+  <p class="sub-label">Side-by-side comparisons</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_ashpriest.png" class="smooth"><div class="label">sbs_ashpriest</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_cyclops.png" class="smooth"><div class="label">sbs_cyclops</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_cyclops_tengu_v2.png" class="smooth"><div class="label">sbs_cyclops_tengu_v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_elf_wild.png" class="smooth"><div class="label">sbs_elf_wild</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_flame_giant.png" class="smooth"><div class="label">sbs_flame_giant</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_gardener.png" class="smooth"><div class="label">sbs_gardener</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_great_spirit.png" class="smooth"><div class="label">sbs_great_spirit</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_icebound.png" class="smooth"><div class="label">sbs_icebound</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_kraken.png" class="smooth"><div class="label">sbs_kraken</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_null_acolyte.png" class="smooth"><div class="label">sbs_null_acolyte</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_static_caller.png" class="smooth"><div class="label">sbs_static_caller</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_stormcult.png" class="smooth"><div class="label">sbs_stormcult</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_stormmouth.png" class="smooth"><div class="label">sbs_stormmouth</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_tengu.png" class="smooth"><div class="label">sbs_tengu</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_vow_sentinel.png" class="smooth"><div class="label">sbs_vow_sentinel</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sbs_whitepelt.png" class="smooth"><div class="label">sbs_whitepelt</div></div>
+  </div>
+
+  <p class="sub-label">Palette source references</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sources1.png" class="smooth"><div class="label">sources1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/recolor_worksheets/sources2.png" class="smooth"><div class="label">sources2</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- FX ORIGINALS + WORKSHEETS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>fx_originals/ + fx_worksheets/</h2>
+    <span class="meta">pre-redraw FX and comparison sheets</span>
+  </div>
+
+  <p class="sub-label">Original FX sprites</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_originals/fx_circle.png"><div class="label">fx_circle</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_originals/fx_circle_spark.png"><div class="label">fx_circle_spark</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_originals/fx_ice.png"><div class="label">fx_ice</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_originals/gate.png"><div class="label">gate</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_originals/grave_cross.png"><div class="label">grave_cross</div></div>
+  </div>
+
+  <p class="sub-label">Inspiration references + comparisons</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/insp_fx_circle.png" class="smooth"><div class="label">insp_fx_circle</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/insp_fx_circle_spark.png" class="smooth"><div class="label">insp_fx_circle_spark</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/insp_fx_ice.png" class="smooth"><div class="label">insp_fx_ice</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/insp_fx_impact.png" class="smooth"><div class="label">insp_fx_impact</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/insp_fx_slash.png" class="smooth"><div class="label">insp_fx_slash</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/insp_gate.png" class="smooth"><div class="label">insp_gate</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/insp_grave_cross.png" class="smooth"><div class="label">insp_grave_cross</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/cmp_fx_circle.png" class="smooth"><div class="label">cmp_fx_circle</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/cmp_fx_circle_spark.png" class="smooth"><div class="label">cmp_fx_circle_spark</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/cmp_fx_ice.png" class="smooth"><div class="label">cmp_fx_ice</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/cmp_gate.png" class="smooth"><div class="label">cmp_gate</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/agent_backups/fx_worksheets/cmp_grave_cross.png" class="smooth"><div class="label">cmp_grave_cross</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- GEN STAGING: CHARACTERS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>gen_staging/characters/</h2>
+    <span class="meta">PixelLab trial &mdash; 8-dir rotations + walk anims</span>
+  </div>
+
+  <p class="sub-label">grove_horror &mdash; contact + rotations + walk</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/grove_horror/contact_4x.png" class="smooth"><div class="label">contact_4x</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/grove_horror/rot_south.png"><div class="label">south</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/grove_horror/rot_west.png"><div class="label">west</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/grove_horror/rot_north.png"><div class="label">north</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/grove_horror/rot_east.png"><div class="label">east</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/grove_horror/walk_west_strip_3x.png"><div class="label">walk_west_strip</div></div>
+  </div>
+
+  <p class="sub-label">sexton &mdash; contact + rotations + walk</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/sexton/contact_4x.png" class="smooth"><div class="label">contact_4x</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/sexton/rot_south.png"><div class="label">south</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/sexton/rot_west.png"><div class="label">west</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/sexton/rot_north.png"><div class="label">north</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/sexton/rot_east.png"><div class="label">east</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/sexton/walk_west_strip_3x.png"><div class="label">walk_west_strip</div></div>
+  </div>
+
+  <p class="sub-label">vess &mdash; contact + originals vs fixes</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/vess/contact_4x.png" class="smooth"><div class="label">contact_4x</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/vess/rot_south.png"><div class="label">south</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/vess/rot_west.png"><div class="label">west</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/vess/rot_south_fix.png"><div class="label">south_fix</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/vess/rot_west_fix.png"><div class="label">west_fix</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/vess/before_after_fix.png" class="smooth"><div class="label">before_after_fix</div></div>
+  </div>
+
+  <p class="sub-label">choir_censer &mdash; contact + rotations</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/choir_censer/contact_4x.png" class="smooth"><div class="label">contact_4x</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/choir_censer/rot_south.png"><div class="label">south</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/choir_censer/rot_west.png"><div class="label">west</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/choir_censer/rot_north.png"><div class="label">north</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/characters/choir_censer/rot_east.png"><div class="label">east</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- GEN STAGING: PROPS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>gen_staging/props/</h2>
+    <span class="meta">PixelLab prop replacements</span>
+  </div>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/props/rock__v1.png"><div class="label">rock__v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/props/coffin__v1.png"><div class="label">coffin__v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/props/grave_bones__v1.png"><div class="label">grave_bones__v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/props/crypt__v1.png"><div class="label">crypt__v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/props/deadtree__v1.png"><div class="label">deadtree__v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/props/tree_spore__v1.png"><div class="label">tree_spore__v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/props/bridge__v1.png"><div class="label">bridge__v1</div></div>
+  </div>
+  <div class="wide-card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/props/_contact_sheet.png" class="smooth"><div class="label">contact sheet</div></div>
+</div>
+
+<!-- =============================== -->
+<!-- GEN STAGING: ICONS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>gen_staging/icons/</h2>
+    <span class="meta">gem candidate pack + icon drafts</span>
+  </div>
+  <div class="wide-card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/icons/gem_candidates_sheet.png" class="smooth"><div class="label">gem_candidates_sheet (64 candidates)</div></div>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/icons/icon_shield__v1.png"><div class="label">icon_shield__v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/icons/w_kunai__v1.png"><div class="label">w_kunai__v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/icons/shield_kunai_check.png" class="smooth"><div class="label">shield_kunai_check</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- REPLACED ORIGINALS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>replaced_originals/</h2>
+    <span class="meta">in-game sprites BEFORE upgrade</span>
+  </div>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/bridge.png"><div class="label">bridge</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/coffin.png"><div class="label">coffin</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/crypt.png"><div class="label">crypt</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/deadtree.png"><div class="label">deadtree</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/gem.png"><div class="label">gem</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/grave_bones.png"><div class="label">grave_bones</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/icon_shield.png"><div class="label">icon_shield</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/mushroom.png"><div class="label">mushroom</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/rock.png"><div class="label">rock</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/tree_autumn.png"><div class="label">tree_autumn</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/tree_green.png"><div class="label">tree_green</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/tree_spore.png"><div class="label">tree_spore</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/tree_teal.png"><div class="label">tree_teal</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/w_kunai.png"><div class="label">w_kunai</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/wall_ice.png"><div class="label">wall_ice</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/wall_sand.png"><div class="label">wall_sand</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/wall_volcanic.png"><div class="label">wall_volcanic</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/replaced_originals/wall_wood.png"><div class="label">wall_wood</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- BOSS REDESIGNS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>boss_redesigns/</h2>
+    <span class="meta">PixelLab 8-dir boss bodies &mdash; v3 contact sheets</span>
+  </div>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/auroch_v3/auroch.png"><div class="label">auroch</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/choirmother_v3/_sheet.png" class="smooth"><div class="label">choirmother</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/cinderhide_v3/_sheet.png" class="smooth"><div class="label">cinderhide</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/cyrraeth_v3/_sheet.png" class="smooth"><div class="label">cyrraeth</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/echo_v3/_sheet.png" class="smooth"><div class="label">echo</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/fangmaw_v3/_sheet.png" class="smooth"><div class="label">fangmaw</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/forgemistress_v3/_sheet.png" class="smooth"><div class="label">forgemistress</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/halla_v3/_sheet.png" class="smooth"><div class="label">halla</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/hrolgar_v3/_sheet.png" class="smooth"><div class="label">hrolgar</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/kaethra_v3/_sheet.png" class="smooth"><div class="label">kaethra</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/korrag_v3/_sheet.png" class="smooth"><div class="label">korrag</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/morwen_v3/_sheet.png" class="smooth"><div class="label">morwen</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/nullwarden_v3/_sheet.png" class="smooth"><div class="label">nullwarden</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/ordo_v3/_sheet.png" class="smooth"><div class="label">ordo</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/rotmaw_v3/_sheet.png" class="smooth"><div class="label">rotmaw</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/saint_varo_v3/_sheet.png" class="smooth"><div class="label">saint_varo</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/serane_v3/_sheet.png" class="smooth"><div class="label">serane</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/sexton_v3/_sheet.png" class="smooth"><div class="label">sexton</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/vargoth_v3/_sheet.png" class="smooth"><div class="label">vargoth</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/vess_v3/_sheet.png" class="smooth"><div class="label">vess</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/veyx_v3/_sheet.png" class="smooth"><div class="label">veyx</div></div>
+  </div>
+
+  <p class="sub-label">Older rounds (pre-v3) &mdash; 8-dir rotations</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/cyrraeth/rot_south.png"><div class="label">cyrraeth S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/cyrraeth/rot_west.png"><div class="label">cyrraeth W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/cyrraeth/rot_north.png"><div class="label">cyrraeth N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/cyrraeth/rot_east.png"><div class="label">cyrraeth E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/forgemistress/rot_south.png"><div class="label">forgemistress S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/forgemistress/rot_west.png"><div class="label">forgemistress W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/forgemistress/rot_north.png"><div class="label">forgemistress N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/forgemistress/rot_east.png"><div class="label">forgemistress E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/kaethra/rot_south.png"><div class="label">kaethra S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/kaethra/rot_west.png"><div class="label">kaethra W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/kaethra/rot_north.png"><div class="label">kaethra N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/kaethra/rot_east.png"><div class="label">kaethra E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/rotmaw/rot_south.png"><div class="label">rotmaw S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/rotmaw/rot_west.png"><div class="label">rotmaw W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/rotmaw/rot_north.png"><div class="label">rotmaw N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/rotmaw/rot_east.png"><div class="label">rotmaw E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/serane/rot_south.png"><div class="label">serane S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/serane/rot_west.png"><div class="label">serane W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/serane/rot_north.png"><div class="label">serane N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/serane/rot_east.png"><div class="label">serane E</div></div>
+  </div>
+
+  <p class="sub-label">Reject pool (r1 &mdash; failed designs)</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/_reject_pool/auroch_r1/auroch.png"><div class="label">auroch_r1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/_reject_pool/fangmaw_r1/_sheet.png" class="smooth"><div class="label">fangmaw_r1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/_reject_pool/hrolgar_r1/_sheet.png" class="smooth"><div class="label">hrolgar_r1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/_reject_pool/kaethra_r1/_sheet.png" class="smooth"><div class="label">kaethra_r1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/_reject_pool/serane_r1/_sheet.png" class="smooth"><div class="label">serane_r1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/boss_redesigns/_reject_pool/sexton_r1/_sheet.png" class="smooth"><div class="label">sexton_r1</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- CLASS DRAFTS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>class_drafts/</h2>
+    <span class="meta">hero class body candidates</span>
+  </div>
+
+  <p class="sub-label">v3 contact sheets</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/archer_v3/_sheet.png" class="smooth"><div class="label">archer</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/mage_v3/_sheet.png" class="smooth"><div class="label">mage</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/paladin_v3/_sheet.png" class="smooth"><div class="label">paladin</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/warlock_v3/_sheet.png" class="smooth"><div class="label">warlock</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/warrior_v3/_sheet.png" class="smooth"><div class="label">warrior</div></div>
+  </div>
+
+  <p class="sub-label">r2 (Flux hi-res) &mdash; review sheets</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/archer_sheet.png" class="smooth"><div class="label">archer_sheet</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/paladin_sheet.png" class="smooth"><div class="label">paladin_sheet</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/warlock_sheet.png" class="smooth"><div class="label">warlock_sheet</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/warrior_sheet.png" class="smooth"><div class="label">warrior_sheet</div></div>
+  </div>
+
+  <p class="sub-label">r2 individual variants</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/archer_v1.png" class="smooth"><div class="label">archer_v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/archer_v2.png" class="smooth"><div class="label">archer_v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/archer_v3.png" class="smooth"><div class="label">archer_v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/archer_v4.png" class="smooth"><div class="label">archer_v4</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/paladin_v1.png" class="smooth"><div class="label">paladin_v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/paladin_v2.png" class="smooth"><div class="label">paladin_v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/paladin_v3.png" class="smooth"><div class="label">paladin_v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/paladin_v4.png" class="smooth"><div class="label">paladin_v4</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/warlock_v1.png" class="smooth"><div class="label">warlock_v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/warlock_v2.png" class="smooth"><div class="label">warlock_v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/warlock_v3.png" class="smooth"><div class="label">warlock_v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/warlock_v4.png" class="smooth"><div class="label">warlock_v4</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/warrior_v2.png" class="smooth"><div class="label">warrior_v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/warrior_v3.png" class="smooth"><div class="label">warrior_v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/r2/warrior_v4.png" class="smooth"><div class="label">warrior_v4</div></div>
+  </div>
+
+  <p class="sub-label">Reject pool (r1 &mdash; failed designs)</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/_reject_pool/archer_r1/_sheet.png" class="smooth"><div class="label">archer_r1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/_reject_pool/paladin_r1/_sheet.png" class="smooth"><div class="label">paladin_r1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/class_drafts/_reject_pool/warlock_r1/_sheet.png" class="smooth"><div class="label">warlock_r1</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- FLUX DRAFTS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>flux_drafts/</h2>
+    <span class="meta">Flux/HF boss concept art &mdash; review sheets</span>
+  </div>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/ashpriest_ordo_sheet.png" class="smooth"><div class="label">ashpriest_ordo</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/auroch_widow_sheet.png" class="smooth"><div class="label">auroch_widow</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/choirmother_sheet.png" class="smooth"><div class="label">choirmother</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/cinderhide_cerberus_sheet.png" class="smooth"><div class="label">cinderhide_cerberus</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/cyrraeth_titan_sheet.png" class="smooth"><div class="label">cyrraeth_titan</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/fangmaw_sheet.png" class="smooth"><div class="label">fangmaw</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/forgemistress_sheet.png" class="smooth"><div class="label">forgemistress</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/forgemistress_r2_sheet.png" class="smooth"><div class="label">forgemistress_r2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/morwen_sheet.png" class="smooth"><div class="label">morwen</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/nullwarden_sheet.png" class="smooth"><div class="label">nullwarden</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/saint_varo_sheet.png" class="smooth"><div class="label">saint_varo</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/sleepkeeper_halla_sheet.png" class="smooth"><div class="label">sleepkeeper_halla</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/stormdrake_veyx_sheet.png" class="smooth"><div class="label">stormdrake_veyx</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/stormwarden_korrag_sheet.png" class="smooth"><div class="label">stormwarden_korrag</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/unnamed_echo_sheet.png" class="smooth"><div class="label">unnamed_echo</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/vargoth_sheet.png" class="smooth"><div class="label">vargoth</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/whitepelt_hrolgar_sheet.png" class="smooth"><div class="label">whitepelt_hrolgar</div></div>
+  </div>
+
+  <p class="sub-label">Individual variants (v1 / v2 / v3)</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/ashpriest_ordo_v1.png" class="smooth"><div class="label">ashpriest_ordo v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/ashpriest_ordo_v2.png" class="smooth"><div class="label">ashpriest_ordo v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/ashpriest_ordo_v3.png" class="smooth"><div class="label">ashpriest_ordo v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/auroch_widow_v1.png" class="smooth"><div class="label">auroch_widow v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/auroch_widow_v2.png" class="smooth"><div class="label">auroch_widow v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/auroch_widow_v3.png" class="smooth"><div class="label">auroch_widow v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/choirmother_v1.png" class="smooth"><div class="label">choirmother v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/choirmother_v2.png" class="smooth"><div class="label">choirmother v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/choirmother_v3.png" class="smooth"><div class="label">choirmother v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/cinderhide_cerberus_v1.png" class="smooth"><div class="label">cinderhide v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/cinderhide_cerberus_v2.png" class="smooth"><div class="label">cinderhide v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/cinderhide_cerberus_v3.png" class="smooth"><div class="label">cinderhide v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/cyrraeth_titan_v1.png" class="smooth"><div class="label">cyrraeth v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/cyrraeth_titan_v2.png" class="smooth"><div class="label">cyrraeth v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/cyrraeth_titan_v3.png" class="smooth"><div class="label">cyrraeth v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/fangmaw_v1.png" class="smooth"><div class="label">fangmaw v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/fangmaw_v2.png" class="smooth"><div class="label">fangmaw v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/fangmaw_v3.png" class="smooth"><div class="label">fangmaw v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/forgemistress_v1.png" class="smooth"><div class="label">forgemistress v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/forgemistress_v2.png" class="smooth"><div class="label">forgemistress v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/forgemistress_v3.png" class="smooth"><div class="label">forgemistress v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/forgemistress_r2_v1.png" class="smooth"><div class="label">forgemistress r2 v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/forgemistress_r2_v2.png" class="smooth"><div class="label">forgemistress r2 v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/forgemistress_r2_v3.png" class="smooth"><div class="label">forgemistress r2 v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/morwen_v1.png" class="smooth"><div class="label">morwen v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/morwen_v2.png" class="smooth"><div class="label">morwen v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/morwen_v3.png" class="smooth"><div class="label">morwen v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/nullwarden_v1.png" class="smooth"><div class="label">nullwarden v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/nullwarden_v2.png" class="smooth"><div class="label">nullwarden v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/nullwarden_v3.png" class="smooth"><div class="label">nullwarden v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/saint_varo_v1.png" class="smooth"><div class="label">saint_varo v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/saint_varo_v2.png" class="smooth"><div class="label">saint_varo v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/saint_varo_v3.png" class="smooth"><div class="label">saint_varo v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/sleepkeeper_halla_v1.png" class="smooth"><div class="label">halla v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/sleepkeeper_halla_v2.png" class="smooth"><div class="label">halla v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/sleepkeeper_halla_v3.png" class="smooth"><div class="label">halla v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/stormdrake_veyx_v1.png" class="smooth"><div class="label">veyx v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/stormdrake_veyx_v2.png" class="smooth"><div class="label">veyx v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/stormdrake_veyx_v3.png" class="smooth"><div class="label">veyx v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/stormwarden_korrag_v1.png" class="smooth"><div class="label">korrag v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/stormwarden_korrag_v2.png" class="smooth"><div class="label">korrag v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/stormwarden_korrag_v3.png" class="smooth"><div class="label">korrag v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/unnamed_echo_v1.png" class="smooth"><div class="label">echo v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/unnamed_echo_v2.png" class="smooth"><div class="label">echo v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/unnamed_echo_v3.png" class="smooth"><div class="label">echo v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/vargoth_v1.png" class="smooth"><div class="label">vargoth v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/vargoth_v2.png" class="smooth"><div class="label">vargoth v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/vargoth_v3.png" class="smooth"><div class="label">vargoth v3</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/whitepelt_hrolgar_v1.png" class="smooth"><div class="label">hrolgar v1</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/whitepelt_hrolgar_v2.png" class="smooth"><div class="label">hrolgar v2</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/flux_drafts/whitepelt_hrolgar_v3.png" class="smooth"><div class="label">hrolgar v3</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- CHEST LADDER -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>chest_ladder/</h2>
+    <span class="meta">loot rarity chest sprites</span>
+  </div>
+  <div class="wide-card" onclick="lb(this)"><img src="backup/chest_ladder/chest_ladder_review.png" class="smooth"><div class="label">chest_ladder_review</div></div>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_clean_compare.png" class="smooth"><div class="label">chest_clean_compare</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_artifacts_zoom.png" class="smooth"><div class="label">chest_artifacts_zoom</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/ladder_despilled.png" class="smooth"><div class="label">ladder_despilled</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/ladder_final.png" class="smooth"><div class="label">ladder_final</div></div>
+  </div>
+  <p class="sub-label">Individual tiers (s11 + s29 sizes)</p>
+  <div class="grid grid-sm">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_a__s11.png"><div class="label">a s11</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_a__s29.png"><div class="label">a s29</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_b__s11.png"><div class="label">b s11</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_b__s29.png"><div class="label">b s29</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_c__s11.png"><div class="label">c s11</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_c__s29.png"><div class="label">c s29</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_d__s11.png"><div class="label">d s11</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_d__s29.png"><div class="label">d s29</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_e__s11.png"><div class="label">e s11</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_e__s29.png"><div class="label">e s29</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_f__s11.png"><div class="label">f s11</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_f__s29.png"><div class="label">f s29</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_s__s11.png"><div class="label">s s11</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/chest_s__s29.png"><div class="label">s s29</div></div>
+  </div>
+
+  <p class="sub-label">Raw candidates &amp; seeds (99 files)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_s.png"><div class="label">chest_s</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/clean_chest_s.png"><div class="label">clean_chest_s</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_a.png"><div class="label">chest_a</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/clean_chest_a.png"><div class="label">clean_chest_a</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_b.png"><div class="label">chest_b</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/clean_chest_b.png"><div class="label">clean_chest_b</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_c.png"><div class="label">chest_c</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/clean_chest_c.png"><div class="label">clean_chest_c</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_d.png"><div class="label">chest_d</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/clean_chest_d.png"><div class="label">clean_chest_d</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_e.png"><div class="label">chest_e</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/clean_chest_e.png"><div class="label">clean_chest_e</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_f.png"><div class="label">chest_f</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/clean_chest_f.png"><div class="label">clean_chest_f</div></div>
+  </div>
+
+  <p class="sub-label">CK variants (Chest-Kit)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_chest_s.png"><div class="label">ck_s</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_clean_s.png"><div class="label">ck_clean_s</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_chest_a.png"><div class="label">ck_a</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_clean_a.png"><div class="label">ck_clean_a</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_chest_b.png"><div class="label">ck_b</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_clean_b.png"><div class="label">ck_clean_b</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_chest_c.png"><div class="label">ck_c</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_clean_c.png"><div class="label">ck_clean_c</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_chest_d.png"><div class="label">ck_d</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_clean_d.png"><div class="label">ck_clean_d</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_chest_e.png"><div class="label">ck_e</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_clean_e.png"><div class="label">ck_clean_e</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_chest_f.png"><div class="label">ck_f</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_clean_f.png"><div class="label">ck_clean_f</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ck_zoom.png" class="smooth"><div class="label">ck_zoom</div></div>
+  </div>
+
+  <p class="sub-label">A-tier re-rolls &amp; warmth variants</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_s_check.png"><div class="label">a_s_check</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_seed41.png"><div class="label">a_seed41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_clean_seed41.png"><div class="label">a_clean_41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_seed57.png"><div class="label">a_seed57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_clean_seed57.png"><div class="label">a_clean_57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_seed63.png"><div class="label">a_seed63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_clean_seed63.png"><div class="label">a_clean_63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_a_reroll.png"><div class="label">a_reroll</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_ds_seed41.png"><div class="label">a_ds_41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_ds_seed57.png"><div class="label">a_ds_57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_ds_seed63.png"><div class="label">a_ds_63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_a_despill.png"><div class="label">a_despill</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_w_41_5.png"><div class="label">a_w_41_5</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_w_41_7.png"><div class="label">a_w_41_7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_w_57_5.png"><div class="label">a_w_57_5</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/a_w_57_7.png"><div class="label">a_w_57_7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/chest_a_warm.png"><div class="label">a_warm</div></div>
+  </div>
+
+  <p class="sub-label">Despill / target variants (D-S tiers)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ds_chest_s.png"><div class="label">ds_s</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ds_chest_b.png"><div class="label">ds_b</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ds_chest_c.png"><div class="label">ds_c</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ds_chest_d.png"><div class="label">ds_d</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ds_chest_e.png"><div class="label">ds_e</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ds_chest_f.png"><div class="label">ds_f</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/tgt_chest_s.png"><div class="label">tgt_s</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/tgt_chest_b.png"><div class="label">tgt_b</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/tgt_chest_c.png"><div class="label">tgt_c</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/tgt_chest_d.png"><div class="label">tgt_d</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/tgt_chest_e.png"><div class="label">tgt_e</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/tgt_chest_f.png"><div class="label">tgt_f</div></div>
+  </div>
+
+  <p class="sub-label">Round-2 seed candidates (D/B/S/E/F tiers)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/d2_seed41.png"><div class="label">d2_seed41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/d2_clean_41.png"><div class="label">d2_clean_41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/d2_seed57.png"><div class="label">d2_seed57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/d2_clean_57.png"><div class="label">d2_clean_57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/d2_seed63.png"><div class="label">d2_seed63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/d2_clean_63.png"><div class="label">d2_clean_63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/b2_seed41.png"><div class="label">b2_seed41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/b2_clean_41.png"><div class="label">b2_clean_41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/b2_seed57.png"><div class="label">b2_seed57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/b2_clean_57.png"><div class="label">b2_clean_57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/b2_seed63.png"><div class="label">b2_seed63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/b2_clean_63.png"><div class="label">b2_clean_63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/s2_seed41.png"><div class="label">s2_seed41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/s2_clean_41.png"><div class="label">s2_clean_41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/s2_seed57.png"><div class="label">s2_seed57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/s2_clean_57.png"><div class="label">s2_clean_57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/s2_seed63.png"><div class="label">s2_seed63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/s2_clean_63.png"><div class="label">s2_clean_63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/e2_seed41.png"><div class="label">e2_seed41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/e2_clean_41.png"><div class="label">e2_clean_41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/e2_seed57.png"><div class="label">e2_seed57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/e2_clean_57.png"><div class="label">e2_clean_57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/e2_seed63.png"><div class="label">e2_seed63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/e2_clean_63.png"><div class="label">e2_clean_63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f2_seed41.png"><div class="label">f2_seed41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f2_clean_41.png"><div class="label">f2_clean_41</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f2_seed57.png"><div class="label">f2_seed57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f2_clean_57.png"><div class="label">f2_clean_57</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f2_seed63.png"><div class="label">f2_seed63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f2_clean_63.png"><div class="label">f2_clean_63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f3_seed7.png"><div class="label">f3_seed7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f3_clean_7.png"><div class="label">f3_clean_7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f3_seed11.png"><div class="label">f3_seed11</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f3_clean_11.png"><div class="label">f3_clean_11</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f3_seed29.png"><div class="label">f3_seed29</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f3_clean_29.png"><div class="label">f3_clean_29</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f3_seed63.png"><div class="label">f3_seed63</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f3_clean_63.png"><div class="label">f3_clean_63</div></div>
+  </div>
+
+  <p class="sub-label">Candidate comparison sheets</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/dbs_candidates.png" class="smooth"><div class="label">dbs_candidates</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/ef_candidates.png" class="smooth"><div class="label">ef_candidates</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/raw/f_reroll.png" class="smooth"><div class="label">f_reroll</div></div>
+  </div>
+
+  <p class="sub-label">Superseded v1 (full set)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v1/chest_s.png"><div class="label">v1 S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v1/chest_a.png"><div class="label">v1 A</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v1/chest_b.png"><div class="label">v1 B</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v1/chest_c.png"><div class="label">v1 C</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v1/chest_d.png"><div class="label">v1 D</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v1/chest_e.png"><div class="label">v1 E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v1/chest_f.png"><div class="label">v1 F</div></div>
+  </div>
+
+  <p class="sub-label">Superseded v2 (A only)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v2/chest_a.png"><div class="label">v2 A</div></div>
+  </div>
+
+  <p class="sub-label">Superseded v3 (partial)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v3/chest_s.png"><div class="label">v3 S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v3/chest_b.png"><div class="label">v3 B</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v3/chest_d.png"><div class="label">v3 D</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/chest_ladder/superseded_v3/chest_e.png"><div class="label">v3 E</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- WAVE2 CLEAN -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>wave2_clean/</h2>
+    <span class="meta">prop cleanup pipeline &mdash; trees, mushroom, walls</span>
+  </div>
+
+  <p class="sub-label">Comparison composites</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/wave2_compare.png" class="smooth"><div class="label">wave2_compare</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/despeck_compare.png" class="smooth"><div class="label">despeck_compare</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/despill_compare.png" class="smooth"><div class="label">despill_compare</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/final_compare.png" class="smooth"><div class="label">final_compare</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/tree_candidates.png" class="smooth"><div class="label">tree_candidates</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/autumn_variants.png" class="smooth"><div class="label">autumn_variants</div></div>
+  </div>
+
+  <p class="sub-label">Pipeline stages &mdash; mushroom</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/pre_despeck/mushroom.png"><div class="label">pre_despeck</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/clean_mushroom.png"><div class="label">clean</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/ds_mushroom.png"><div class="label">despill</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/w_clean_mushroom.png"><div class="label">w_clean</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/fix_mushroom.png"><div class="label">fix</div></div>
+  </div>
+
+  <p class="sub-label">Pipeline stages &mdash; tree_autumn</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/pre_despeck/tree_autumn.png"><div class="label">pre_despeck</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/clean_tree_autumn.png"><div class="label">clean</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/ds_tree_autumn.png"><div class="label">despill</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/w_clean_tree_autumn.png"><div class="label">w_clean</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/fix_tree_autumn.png"><div class="label">fix</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/autumn_final.png" class="smooth"><div class="label">autumn_final</div></div>
+  </div>
+
+  <p class="sub-label">Pre-tileable wall tiles</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/pre_tileable/wall_ice.png"><div class="label">wall_ice</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/pre_tileable/wall_sand.png"><div class="label">wall_sand</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/pre_tileable/wall_volcanic.png"><div class="label">wall_volcanic</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/pre_tileable/wall_wood.png"><div class="label">wall_wood</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/wave2_clean/pre_tileable/wallblock.png"><div class="label">wallblock</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- TONE PASS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>tone_pass/</h2>
+    <span class="meta">NPC sprites before gamma correction</span>
+  </div>
+  <div class="wide-card" onclick="lb(this)"><img src="backup/tone_pass/tone_compare.png" class="smooth"><div class="label">tone_compare (before/after)</div></div>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/tone_pass/elf_ranger.png"><div class="label">elf_ranger</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/tone_pass/elf_ranger_anim.png"><div class="label">elf_ranger_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/tone_pass/elf_ranger_walk.png"><div class="label">elf_ranger_walk</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/tone_pass/merchant.png"><div class="label">merchant</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/tone_pass/merchant_anim.png"><div class="label">merchant_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/tone_pass/villager.png"><div class="label">villager</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/tone_pass/villager_anim.png"><div class="label">villager_anim</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/tone_pass/warden_anim.png"><div class="label">warden_anim</div></div>
+  </div>
+  <div class="wide-card" onclick="lb(this)"><img src="backup/tone_pass/elf_final.png" class="smooth"><div class="label">elf_final (composite)</div></div>
+</div>
+
+<!-- =============================== -->
+<!-- POLLINATE RAW -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>gen_staging/polli/</h2>
+    <span class="meta">Pollinate raw outputs at two seeds</span>
+  </div>
+  <div class="wide-card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/_raw.png" class="smooth"><div class="label">_raw (all seeds combined)</div></div>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/mushroom__s7.png"><div class="label">mushroom s7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/mushroom__s23.png"><div class="label">mushroom s23</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/tree_autumn__s7.png"><div class="label">tree_autumn s7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/tree_autumn__s23.png"><div class="label">tree_autumn s23</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/tree_green__s7.png"><div class="label">tree_green s7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/tree_green__s23.png"><div class="label">tree_green s23</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/tree_teal__s7.png"><div class="label">tree_teal s7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/tree_teal__s23.png"><div class="label">tree_teal s23</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/wall_ice__s7.png"><div class="label">wall_ice s7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/wall_ice__s23.png"><div class="label">wall_ice s23</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/wall_sand__s7.png"><div class="label">wall_sand s7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/wall_sand__s23.png"><div class="label">wall_sand s23</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/wall_volcanic__s7.png"><div class="label">wall_volcanic s7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/wall_volcanic__s23.png"><div class="label">wall_volcanic s23</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/wall_wood__s7.png"><div class="label">wall_wood s7</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/art-audit-2026-07/gen_staging/polli/wall_wood__s23.png"><div class="label">wall_wood s23</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- PIXELLAB ARCHIVE — BOSSES -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>pixellab_archive/bosses/</h2>
+    <span class="meta">Superseded &amp; alternate PixelLab boss designs — 8 rotations each (19 entries, 4 generation-failed)</span>
+  </div>
+
+  <p class="sub-label">Fangmaw v1</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/fangmaw_v1/Fangmaw/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/fangmaw_v1/Fangmaw/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/fangmaw_v1/Fangmaw/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/fangmaw_v1/Fangmaw/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/fangmaw_v1/Fangmaw/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/fangmaw_v1/Fangmaw/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/fangmaw_v1/Fangmaw/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/fangmaw_v1/Fangmaw/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Sexton v1</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_v1/Sexton/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_v1/Sexton/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_v1/Sexton/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_v1/Sexton/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_v1/Sexton/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_v1/Sexton/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_v1/Sexton/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_v1/Sexton/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Serane v1</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_v1/Serane/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_v1/Serane/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_v1/Serane/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_v1/Serane/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_v1/Serane/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_v1/Serane/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_v1/Serane/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_v1/Serane/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Kaethra v1</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_v1/Kaethra/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_v1/Kaethra/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_v1/Kaethra/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_v1/Kaethra/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_v1/Kaethra/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_v1/Kaethra/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_v1/Kaethra/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_v1/Kaethra/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Whitepelt Hrolgar v1</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/whitepelt_hrolgar_v1/Whitepelt_Hrolgar/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/whitepelt_hrolgar_v1/Whitepelt_Hrolgar/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/whitepelt_hrolgar_v1/Whitepelt_Hrolgar/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/whitepelt_hrolgar_v1/Whitepelt_Hrolgar/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/whitepelt_hrolgar_v1/Whitepelt_Hrolgar/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/whitepelt_hrolgar_v1/Whitepelt_Hrolgar/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/whitepelt_hrolgar_v1/Whitepelt_Hrolgar/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/whitepelt_hrolgar_v1/Whitepelt_Hrolgar/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Forgemistress (legless — DEAD)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_legless_DEAD/Forgemistress/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_legless_DEAD/Forgemistress/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_legless_DEAD/Forgemistress/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_legless_DEAD/Forgemistress/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_legless_DEAD/Forgemistress/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_legless_DEAD/Forgemistress/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_legless_DEAD/Forgemistress/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_legless_DEAD/Forgemistress/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Cyrraeth Stormmouth 180 draft</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/cyrraeth_stormmouth_180_draft/Cyrraeth_Stormmouth/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/cyrraeth_stormmouth_180_draft/Cyrraeth_Stormmouth/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/cyrraeth_stormmouth_180_draft/Cyrraeth_Stormmouth/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/cyrraeth_stormmouth_180_draft/Cyrraeth_Stormmouth/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/cyrraeth_stormmouth_180_draft/Cyrraeth_Stormmouth/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/cyrraeth_stormmouth_180_draft/Cyrraeth_Stormmouth/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/cyrraeth_stormmouth_180_draft/Cyrraeth_Stormmouth/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/cyrraeth_stormmouth_180_draft/Cyrraeth_Stormmouth/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Forgemistress Calda 112 (variant a)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_calda_112_a/Forgemistress_Calda/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_calda_112_a/Forgemistress_Calda/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_calda_112_a/Forgemistress_Calda/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_calda_112_a/Forgemistress_Calda/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_calda_112_a/Forgemistress_Calda/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_calda_112_a/Forgemistress_Calda/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_calda_112_a/Forgemistress_Calda/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/forgemistress_calda_112_a/Forgemistress_Calda/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Rotmaw the Gardener 112 (variant a)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/rotmaw_gardener_112_a/Rotmaw_the_Gardener/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/rotmaw_gardener_112_a/Rotmaw_the_Gardener/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/rotmaw_gardener_112_a/Rotmaw_the_Gardener/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/rotmaw_gardener_112_a/Rotmaw_the_Gardener/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/rotmaw_gardener_112_a/Rotmaw_the_Gardener/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/rotmaw_gardener_112_a/Rotmaw_the_Gardener/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/rotmaw_gardener_112_a/Rotmaw_the_Gardener/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/rotmaw_gardener_112_a/Rotmaw_the_Gardener/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Serane Icebound 112</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_icebound_112/Serane_Icebound/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_icebound_112/Serane_Icebound/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_icebound_112/Serane_Icebound/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_icebound_112/Serane_Icebound/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_icebound_112/Serane_Icebound/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_icebound_112/Serane_Icebound/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_icebound_112/Serane_Icebound/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/serane_icebound_112/Serane_Icebound/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Kaethra Cure-Twisted 112</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_curetwisted_112/Kaethra_Cure-Twisted/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_curetwisted_112/Kaethra_Cure-Twisted/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_curetwisted_112/Kaethra_Cure-Twisted/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_curetwisted_112/Kaethra_Cure-Twisted/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_curetwisted_112/Kaethra_Cure-Twisted/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_curetwisted_112/Kaethra_Cure-Twisted/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_curetwisted_112/Kaethra_Cure-Twisted/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/kaethra_curetwisted_112/Kaethra_Cure-Twisted/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Choir Censer 56 (variant a)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/choir_censer_56_a/Choir_Censer/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/choir_censer_56_a/Choir_Censer/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/choir_censer_56_a/Choir_Censer/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/choir_censer_56_a/Choir_Censer/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/choir_censer_56_a/Choir_Censer/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/choir_censer_56_a/Choir_Censer/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/choir_censer_56_a/Choir_Censer/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/choir_censer_56_a/Choir_Censer/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Vess the First Widow 68</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/vess_widow_68/Vess_the_First_Widow/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/vess_widow_68/Vess_the_First_Widow/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/vess_widow_68/Vess_the_First_Widow/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/vess_widow_68/Vess_the_First_Widow/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/vess_widow_68/Vess_the_First_Widow/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/vess_widow_68/Vess_the_First_Widow/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/vess_widow_68/Vess_the_First_Widow/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/vess_widow_68/Vess_the_First_Widow/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Sexton 68</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_68/The_Sexton/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_68/The_Sexton/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_68/The_Sexton/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_68/The_Sexton/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_68/The_Sexton/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_68/The_Sexton/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_68/The_Sexton/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/sexton_68/The_Sexton/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Grove Horror 68</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/grove_horror_68/Grove_Horror/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/grove_horror_68/Grove_Horror/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/grove_horror_68/Grove_Horror/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/grove_horror_68/Grove_Horror/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/grove_horror_68/Grove_Horror/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/grove_horror_68/Grove_Horror/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/grove_horror_68/Grove_Horror/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/bosses/grove_horror_68/Grove_Horror/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label" style="color:#666">Generation-failed (metadata only, no rotations): cyrraeth_128_draft, choir_censer_56_b, forgemistress_calda_112_b, rotmaw_gardener_112_b</p>
+</div>
+
+<!-- =============================== -->
+<!-- PIXELLAB ARCHIVE — HI-RES SKIN REJECTS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>pixellab_archive/skins/</h2>
+    <span class="meta">Hi-res (128px) skin rejects from this session — 7 designs × 8 rotations</span>
+  </div>
+
+  <p class="sub-label">Assassin Phantom v1</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_phantom_v1/Phantom_hi-res/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_phantom_v1/Phantom_hi-res/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_phantom_v1/Phantom_hi-res/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_phantom_v1/Phantom_hi-res/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_phantom_v1/Phantom_hi-res/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_phantom_v1/Phantom_hi-res/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_phantom_v1/Phantom_hi-res/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_phantom_v1/Phantom_hi-res/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Crystal Archmage v1 (headcrystals)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/mage_crystal_archmage_v1_headcrystals/Crystal_Archmage_hi-res/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/mage_crystal_archmage_v1_headcrystals/Crystal_Archmage_hi-res/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/mage_crystal_archmage_v1_headcrystals/Crystal_Archmage_hi-res/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/mage_crystal_archmage_v1_headcrystals/Crystal_Archmage_hi-res/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/mage_crystal_archmage_v1_headcrystals/Crystal_Archmage_hi-res/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/mage_crystal_archmage_v1_headcrystals/Crystal_Archmage_hi-res/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/mage_crystal_archmage_v1_headcrystals/Crystal_Archmage_hi-res/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/mage_crystal_archmage_v1_headcrystals/Crystal_Archmage_hi-res/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Blade Dancer (silver)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_silver/Blade_Dancer_hi-res/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_silver/Blade_Dancer_hi-res/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_silver/Blade_Dancer_hi-res/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_silver/Blade_Dancer_hi-res/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_silver/Blade_Dancer_hi-res/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_silver/Blade_Dancer_hi-res/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_silver/Blade_Dancer_hi-res/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_silver/Blade_Dancer_hi-res/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Blade Dancer (aura female v2)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_aura_female/Blade_Dancer_hi-res_v2/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_aura_female/Blade_Dancer_hi-res_v2/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_aura_female/Blade_Dancer_hi-res_v2/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_aura_female/Blade_Dancer_hi-res_v2/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_aura_female/Blade_Dancer_hi-res_v2/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_aura_female/Blade_Dancer_hi-res_v2/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_aura_female/Blade_Dancer_hi-res_v2/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/assassin_blade_dancer_aura_female/Blade_Dancer_hi-res_v2/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Frostfall Ranger (NPC look)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_npc/Frostfall_Ranger_hi-res/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_npc/Frostfall_Ranger_hi-res/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_npc/Frostfall_Ranger_hi-res/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_npc/Frostfall_Ranger_hi-res/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_npc/Frostfall_Ranger_hi-res/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_npc/Frostfall_Ranger_hi-res/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_npc/Frostfall_Ranger_hi-res/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_npc/Frostfall_Ranger_hi-res/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Frostfall Ranger (aura female v2)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_aura_female/Frostfall_Ranger_hi-res_v2/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_aura_female/Frostfall_Ranger_hi-res_v2/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_aura_female/Frostfall_Ranger_hi-res_v2/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_aura_female/Frostfall_Ranger_hi-res_v2/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_aura_female/Frostfall_Ranger_hi-res_v2/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_aura_female/Frostfall_Ranger_hi-res_v2/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_aura_female/Frostfall_Ranger_hi-res_v2/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_frostfall_ranger_aura_female/Frostfall_Ranger_hi-res_v2/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Voidwraith (male)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_voidwraith_male/Voidwraith_hi-res/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_voidwraith_male/Voidwraith_hi-res/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_voidwraith_male/Voidwraith_hi-res/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_voidwraith_male/Voidwraith_hi-res/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_voidwraith_male/Voidwraith_hi-res/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_voidwraith_male/Voidwraith_hi-res/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_voidwraith_male/Voidwraith_hi-res/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins/archer_voidwraith_male/Voidwraith_hi-res/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- PIXELLAB ARCHIVE — ORIGINAL 92PX SKINS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>pixellab_archive/skins_original_92px/</h2>
+    <span class="meta">First-pass low-res skin designs (92-96px) — 12 skins × 8 rotations (incl. pre-redesign archer skins)</span>
+  </div>
+
+  <p class="sub-label">Archer — Astral Marksman (pre-redesign)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_astral_marksman_92/Archer_-_Astral_Marksman_Elite/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_astral_marksman_92/Archer_-_Astral_Marksman_Elite/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_astral_marksman_92/Archer_-_Astral_Marksman_Elite/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_astral_marksman_92/Archer_-_Astral_Marksman_Elite/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_astral_marksman_92/Archer_-_Astral_Marksman_Elite/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_astral_marksman_92/Archer_-_Astral_Marksman_Elite/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_astral_marksman_92/Archer_-_Astral_Marksman_Elite/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_astral_marksman_92/Archer_-_Astral_Marksman_Elite/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Archer — Plague Doctor (pre-redesign)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_plague_doctor_92/Archer_-_Plague_Doctor_Mythic/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_plague_doctor_92/Archer_-_Plague_Doctor_Mythic/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_plague_doctor_92/Archer_-_Plague_Doctor_Mythic/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_plague_doctor_92/Archer_-_Plague_Doctor_Mythic/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_plague_doctor_92/Archer_-_Plague_Doctor_Mythic/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_plague_doctor_92/Archer_-_Plague_Doctor_Mythic/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_plague_doctor_92/Archer_-_Plague_Doctor_Mythic/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/archer_plague_doctor_92/Archer_-_Plague_Doctor_Mythic/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Assassin — Blade Dancer 92</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_blade_dancer_92/Assassin_-_Blade_Dancer_Elite/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_blade_dancer_92/Assassin_-_Blade_Dancer_Elite/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_blade_dancer_92/Assassin_-_Blade_Dancer_Elite/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_blade_dancer_92/Assassin_-_Blade_Dancer_Elite/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_blade_dancer_92/Assassin_-_Blade_Dancer_Elite/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_blade_dancer_92/Assassin_-_Blade_Dancer_Elite/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_blade_dancer_92/Assassin_-_Blade_Dancer_Elite/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_blade_dancer_92/Assassin_-_Blade_Dancer_Elite/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Assassin — Phantom 96</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_phantom_96/Assassin_-_Phantom_Mythic/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_phantom_96/Assassin_-_Phantom_Mythic/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_phantom_96/Assassin_-_Phantom_Mythic/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_phantom_96/Assassin_-_Phantom_Mythic/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_phantom_96/Assassin_-_Phantom_Mythic/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_phantom_96/Assassin_-_Phantom_Mythic/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_phantom_96/Assassin_-_Phantom_Mythic/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/assassin_phantom_96/Assassin_-_Phantom_Mythic/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Mage — Crystal Archmage 92</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_crystal_archmage_92/Mage_-_Crystal_Archmage_Mythic/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_crystal_archmage_92/Mage_-_Crystal_Archmage_Mythic/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_crystal_archmage_92/Mage_-_Crystal_Archmage_Mythic/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_crystal_archmage_92/Mage_-_Crystal_Archmage_Mythic/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_crystal_archmage_92/Mage_-_Crystal_Archmage_Mythic/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_crystal_archmage_92/Mage_-_Crystal_Archmage_Mythic/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_crystal_archmage_92/Mage_-_Crystal_Archmage_Mythic/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_crystal_archmage_92/Mage_-_Crystal_Archmage_Mythic/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Mage — Void Weaver 92</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_void_weaver_92/Mage_-_Void_Weaver_Elite/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_void_weaver_92/Mage_-_Void_Weaver_Elite/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_void_weaver_92/Mage_-_Void_Weaver_Elite/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_void_weaver_92/Mage_-_Void_Weaver_Elite/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_void_weaver_92/Mage_-_Void_Weaver_Elite/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_void_weaver_92/Mage_-_Void_Weaver_Elite/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_void_weaver_92/Mage_-_Void_Weaver_Elite/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/mage_void_weaver_92/Mage_-_Void_Weaver_Elite/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Paladin — Eclipse Knight 96</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_eclipse_knight_96/Paladin_-_Eclipse_Knight_Elite/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_eclipse_knight_96/Paladin_-_Eclipse_Knight_Elite/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_eclipse_knight_96/Paladin_-_Eclipse_Knight_Elite/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_eclipse_knight_96/Paladin_-_Eclipse_Knight_Elite/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_eclipse_knight_96/Paladin_-_Eclipse_Knight_Elite/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_eclipse_knight_96/Paladin_-_Eclipse_Knight_Elite/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_eclipse_knight_96/Paladin_-_Eclipse_Knight_Elite/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_eclipse_knight_96/Paladin_-_Eclipse_Knight_Elite/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Paladin — Fallen Arbiter 96</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_fallen_arbiter_96/Paladin_-_Fallen_Arbiter_Mythic/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_fallen_arbiter_96/Paladin_-_Fallen_Arbiter_Mythic/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_fallen_arbiter_96/Paladin_-_Fallen_Arbiter_Mythic/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_fallen_arbiter_96/Paladin_-_Fallen_Arbiter_Mythic/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_fallen_arbiter_96/Paladin_-_Fallen_Arbiter_Mythic/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_fallen_arbiter_96/Paladin_-_Fallen_Arbiter_Mythic/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_fallen_arbiter_96/Paladin_-_Fallen_Arbiter_Mythic/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/paladin_fallen_arbiter_96/Paladin_-_Fallen_Arbiter_Mythic/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Warlock — Eldritch Herald 92</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_eldritch_herald_92/Warlock_-_Eldritch_Herald_Mythic/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_eldritch_herald_92/Warlock_-_Eldritch_Herald_Mythic/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_eldritch_herald_92/Warlock_-_Eldritch_Herald_Mythic/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_eldritch_herald_92/Warlock_-_Eldritch_Herald_Mythic/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_eldritch_herald_92/Warlock_-_Eldritch_Herald_Mythic/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_eldritch_herald_92/Warlock_-_Eldritch_Herald_Mythic/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_eldritch_herald_92/Warlock_-_Eldritch_Herald_Mythic/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_eldritch_herald_92/Warlock_-_Eldritch_Herald_Mythic/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Warlock — Hellfire Inquisitor 92</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_hellfire_inquisitor_92/Warlock_-_Hellfire_Inquisitor_Elite/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_hellfire_inquisitor_92/Warlock_-_Hellfire_Inquisitor_Elite/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_hellfire_inquisitor_92/Warlock_-_Hellfire_Inquisitor_Elite/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_hellfire_inquisitor_92/Warlock_-_Hellfire_Inquisitor_Elite/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_hellfire_inquisitor_92/Warlock_-_Hellfire_Inquisitor_Elite/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_hellfire_inquisitor_92/Warlock_-_Hellfire_Inquisitor_Elite/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_hellfire_inquisitor_92/Warlock_-_Hellfire_Inquisitor_Elite/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warlock_hellfire_inquisitor_92/Warlock_-_Hellfire_Inquisitor_Elite/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Warrior — Dreadknight 96</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_dreadknight_96/Warrior_-_Dreadknight_Elite/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_dreadknight_96/Warrior_-_Dreadknight_Elite/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_dreadknight_96/Warrior_-_Dreadknight_Elite/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_dreadknight_96/Warrior_-_Dreadknight_Elite/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_dreadknight_96/Warrior_-_Dreadknight_Elite/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_dreadknight_96/Warrior_-_Dreadknight_Elite/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_dreadknight_96/Warrior_-_Dreadknight_Elite/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_dreadknight_96/Warrior_-_Dreadknight_Elite/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+
+  <p class="sub-label">Warrior — Stormforged 92</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_stormforged_92/Warrior_-_Stormforged_Mythic/rotations/south.png"><div class="label">S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_stormforged_92/Warrior_-_Stormforged_Mythic/rotations/north.png"><div class="label">N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_stormforged_92/Warrior_-_Stormforged_Mythic/rotations/east.png"><div class="label">E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_stormforged_92/Warrior_-_Stormforged_Mythic/rotations/west.png"><div class="label">W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_stormforged_92/Warrior_-_Stormforged_Mythic/rotations/north-east.png"><div class="label">NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_stormforged_92/Warrior_-_Stormforged_Mythic/rotations/north-west.png"><div class="label">NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_stormforged_92/Warrior_-_Stormforged_Mythic/rotations/south-east.png"><div class="label">SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/pixellab_archive/skins_original_92px/warrior_stormforged_92/Warrior_-_Stormforged_Mythic/rotations/south-west.png"><div class="label">SW</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- SKIN REGEN REJECTS -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>skin_regen_rejects/</h2>
+    <span class="meta">5 elite skins rejected during 128px regen — 9 directions each (45 files)</span>
+  </div>
+
+  <p class="sub-label">Assassin — Phantom (rejected)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_phantom_anim.png"><div class="label">phantom S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_phantom_anim_n.png"><div class="label">phantom N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_phantom_anim_e.png"><div class="label">phantom E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_phantom_anim_w.png"><div class="label">phantom W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_phantom_anim_ne.png"><div class="label">phantom NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_phantom_anim_nw.png"><div class="label">phantom NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_phantom_anim_se.png"><div class="label">phantom SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_phantom_anim_sw.png"><div class="label">phantom SW</div></div>
+  </div>
+
+  <p class="sub-label">Assassin — Blade Dancer (rejected)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_blade_dancer_anim.png"><div class="label">blade_dancer S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_blade_dancer_anim_n.png"><div class="label">blade_dancer N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_blade_dancer_anim_e.png"><div class="label">blade_dancer E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_blade_dancer_anim_w.png"><div class="label">blade_dancer W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_blade_dancer_anim_ne.png"><div class="label">blade_dancer NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_blade_dancer_anim_nw.png"><div class="label">blade_dancer NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_blade_dancer_anim_se.png"><div class="label">blade_dancer SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/assassin_blade_dancer_anim_sw.png"><div class="label">blade_dancer SW</div></div>
+  </div>
+
+  <p class="sub-label">Mage — Crystal Archmage (rejected)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/mage_crystal_archmage_anim.png"><div class="label">archmage S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/mage_crystal_archmage_anim_n.png"><div class="label">archmage N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/mage_crystal_archmage_anim_e.png"><div class="label">archmage E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/mage_crystal_archmage_anim_w.png"><div class="label">archmage W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/mage_crystal_archmage_anim_ne.png"><div class="label">archmage NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/mage_crystal_archmage_anim_nw.png"><div class="label">archmage NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/mage_crystal_archmage_anim_se.png"><div class="label">archmage SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/mage_crystal_archmage_anim_sw.png"><div class="label">archmage SW</div></div>
+  </div>
+
+  <p class="sub-label">Archer — Frostfall Ranger (rejected)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_frostfall_ranger_anim.png"><div class="label">frostfall S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_frostfall_ranger_anim_n.png"><div class="label">frostfall N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_frostfall_ranger_anim_e.png"><div class="label">frostfall E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_frostfall_ranger_anim_w.png"><div class="label">frostfall W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_frostfall_ranger_anim_ne.png"><div class="label">frostfall NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_frostfall_ranger_anim_nw.png"><div class="label">frostfall NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_frostfall_ranger_anim_se.png"><div class="label">frostfall SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_frostfall_ranger_anim_sw.png"><div class="label">frostfall SW</div></div>
+  </div>
+
+  <p class="sub-label">Archer — Voidwraith (rejected)</p>
+  <div class="grid grid-sprites">
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_voidwraith_anim.png"><div class="label">voidwraith S</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_voidwraith_anim_n.png"><div class="label">voidwraith N</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_voidwraith_anim_e.png"><div class="label">voidwraith E</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_voidwraith_anim_w.png"><div class="label">voidwraith W</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_voidwraith_anim_ne.png"><div class="label">voidwraith NE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_voidwraith_anim_nw.png"><div class="label">voidwraith NW</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_voidwraith_anim_se.png"><div class="label">voidwraith SE</div></div>
+    <div class="card" onclick="lb(this)"><img src="backup/skin_regen_rejects/archer_voidwraith_anim_sw.png"><div class="label">voidwraith SW</div></div>
+  </div>
+</div>
+
+<!-- =============================== -->
+<!-- SKIN DRAFTS (art_src) -->
+<!-- =============================== -->
+<div class="section">
+  <div class="section-head">
+    <h2>art_src/splash_refs/skin_drafts/</h2>
+    <span class="meta">Flux-generated skin concept art — v1 picks + v2 re-rolls (20 files, outside backup/)</span>
+  </div>
+
+  <div class="wide-card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/_sheet.png" class="smooth"><div class="label">skin drafts sheet (v1)</div></div>
+  <div class="wide-card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/_reroll_sheet.png" class="smooth"><div class="label">re-roll sheet (v2)</div></div>
+
+  <p class="sub-label">v1 picks</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_warrior_dreadknight.png" class="smooth"><div class="label">warrior dreadknight</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_warrior_stormforged.png" class="smooth"><div class="label">warrior stormforged</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_mage_void_weaver.png" class="smooth"><div class="label">mage void weaver</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_mage_crystal_archmage.png" class="smooth"><div class="label">mage crystal archmage</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_assassin_blade_dancer.png" class="smooth"><div class="label">assassin blade dancer</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_assassin_phantom.png" class="smooth"><div class="label">assassin phantom</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_paladin_eclipse_knight.png" class="smooth"><div class="label">paladin eclipse knight</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_paladin_fallen_arbiter.png" class="smooth"><div class="label">paladin fallen arbiter</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_warlock_hellfire_inquisitor.png" class="smooth"><div class="label">warlock hellfire inquisitor</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_warlock_eldritch_herald.png" class="smooth"><div class="label">warlock eldritch herald</div></div>
+  </div>
+
+  <p class="sub-label">v2 re-rolls</p>
+  <div class="grid grid-large">
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_assassin_blade_dancer_v2a.png" class="smooth"><div class="label">blade dancer v2a</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_assassin_blade_dancer_v2b.png" class="smooth"><div class="label">blade dancer v2b</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_assassin_phantom_v2a.png" class="smooth"><div class="label">phantom v2a</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_assassin_phantom_v2b.png" class="smooth"><div class="label">phantom v2b</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_paladin_fallen_arbiter_v2a.png" class="smooth"><div class="label">fallen arbiter v2a</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_paladin_fallen_arbiter_v2b.png" class="smooth"><div class="label">fallen arbiter v2b</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_warlock_hellfire_inquisitor_v2a.png" class="smooth"><div class="label">hellfire inq v2a</div></div>
+    <div class="card" onclick="lb(this)"><img src="art_src/splash_refs/skin_drafts/skin_warlock_hellfire_inquisitor_v2b.png" class="smooth"><div class="label">hellfire inq v2b</div></div>
+  </div>
+</div>
+
+</div>
+
+<div class="lightbox" id="lb" onclick="this.classList.remove('open')">
+  <img id="lb-img">
+  <div class="lightbox-label" id="lb-label"></div>
+</div>
+
+<script>
+function lb(el) {
+  var img = el.querySelector('img');
+  var lbl = el.querySelector('.label');
+  var lbImg = document.getElementById('lb-img');
+  lbImg.src = img.src;
+  lbImg.className = img.classList.contains('smooth') ? 'smooth' : '';
+  document.getElementById('lb-label').textContent = lbl ? lbl.textContent : '';
+  document.getElementById('lb').classList.add('open');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') document.getElementById('lb').classList.remove('open');
+});
+</script>
+</body>
+</html>
