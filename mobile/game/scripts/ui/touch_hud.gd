@@ -29,16 +29,19 @@ const BTN_SD := 80.0                       # secondary-button diameter
 const LOCK_SWIPE_OFF := 66.0               # drag this far off the lock button = release, not lock
 const ABILITY_SLOTS := ["a1", "a2", "a3", "ult"]
 
-# id -> relative offset from the cluster origin (origin = centre of the a1 button)
+# id -> relative offset from the cluster origin (origin = centre of the a1
+# button, bottom-right). Compact arc tuned for a right-thumb pivot: the four
+# abilities fan up-left from a1, the three small utility buttons tuck just
+# inside them. Kept clear of the top-of-screen HUD.
 const BTN_LAYOUT := {
 	"a1":          Vector2(0, 0),
-	"a2":          Vector2(-124, -22),
-	"a3":          Vector2(-104, -138),
-	"ult":         Vector2(10, -158),
-	"potion":      Vector2(-236, -86),
-	"potion_next": Vector2(-300, -182),
-	"interact":    Vector2(-206, -198),
-	"lock":        Vector2(-92, -270),
+	"a2":          Vector2(-112, -30),
+	"a3":          Vector2(-88, -128),
+	"ult":         Vector2(20, -146),
+	"potion":      Vector2(-198, -72),
+	"potion_next": Vector2(-238, -158),
+	"interact":    Vector2(-180, -172),
+	"lock":        Vector2(-70, -224),
 }
 
 # --- runtime state ------------------------------------------------------------
@@ -57,6 +60,10 @@ var _lock_moved := false
 
 func _ready() -> void:
 	_mi = get_node("/root/MobileInput")
+	# Strip the keyboard-only chrome the touch controls replace (desktop ability
+	# bar + WASD/keys hint lines) so the phone screen isn't cluttered/misleading.
+	if game != null and game.hud != null:
+		game.hud.set_touch_mode(true)
 	layer = 5   # above the desktop HUD's world overlays; corners don't collide with its top bar
 	_joy_base = _circle(JOY_BASE_D, Color(0.10, 0.11, 0.16, 0.42), Color(0.65, 0.7, 0.85, 0.5), 4.0)
 	_joy_knob = _circle(JOY_KNOB_D, Color(0.55, 0.62, 0.85, 0.6), Color(0.85, 0.9, 1.0, 0.8), 3.0)

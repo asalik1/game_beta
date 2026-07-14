@@ -76,6 +76,7 @@ var choice_cb := Callable()
 var speaker_label: Label
 var text_label: Label
 var hint_labels: Array = []     # hidden during cutscenes
+var _touch_mode := false        # mobile: keyboard-only chrome stays hidden (touch_hud replaces it)
 var dialogue_lines: Array = []
 var dialogue_index := 0
 var dialogue_done: Callable
@@ -2119,7 +2120,21 @@ func _advance_dialogue() -> void:
 ## Cinematic mode: the few HUD bits a cutscene can't cover get hidden.
 func set_cinematic(on: bool) -> void:
 	for l in hint_labels:
+		l.visible = (not on) and not _touch_mode
+
+
+## MOBILE (touch_hud.gd calls this on mount): hide the keyboard-only HUD chrome
+## the on-screen controls replace — the bottom ability bar (its icons/cooldowns
+## live on the touch arc now) and the WASD/keys hint lines. Kept cinematic-safe
+## via _touch_mode so a cutscene end can't re-show the hints on a phone.
+func set_touch_mode(on: bool) -> void:
+	_touch_mode = on
+	for l in hint_labels:
 		l.visible = not on
+	for box in slot_boxes:
+		for k in ["border", "bg", "icon", "cd", "num", "key", "cost", "name"]:
+			if box.get(k) != null:
+				box[k].visible = not on
 
 
 # ------------------------------------------- beat mirror (MP-13, §5.4)
