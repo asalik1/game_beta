@@ -133,15 +133,38 @@ tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --expo
 tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-release "iOS" ../builds/ios/Emberfall.ipa
 ```
 
-### Producing device builds (toolchain — owner's machine/accounts)
+### Android toolchain — INSTALLED + wired (2026-07-13)
 
-The presets are scaffolding; a real artifact still needs, per platform:
+The Windows box now builds a signed debug APK end to end. Installed this session:
 
-- **Android `.apk`/`.aab`:** JDK 17 (this box has only Java 8), the Android SDK
-  (`ANDROID_HOME`), the matching **Godot Android build template**, and a
-  keystore configured under *Editor → Export*. For a Play Store `.aab`, flip
-  `gradle_build/use_gradle_build=true` and `gradle_build/export_format=1` in
-  `export_presets.cfg`. Google Play dev account: $25 one-time.
+- **JDK 17** (Microsoft OpenJDK) → `C:\Users\asali\Java\jdk-17.0.19+10`.
+- **Android SDK** (cmdline-tools + `platform-tools`, `build-tools;34.0.0`,
+  `platforms;android-34`) → `%LOCALAPPDATA%\Android\Sdk`.
+- **Debug keystore** → `%APPDATA%\Godot\keystores\debug.keystore` (alias
+  `androiddebugkey`, store/key pass `android`).
+- **Godot editor settings** (`%APPDATA%\Godot\editor_settings-4.4.tres`):
+  `export/android/android_sdk_path`, `java_sdk_path`, and the `debug_keystore*`
+  keys all point at the above.
+
+Build the test APK (prebuilt-template path — no gradle needed):
+
+```
+set JAVA_HOME=C:\Users\asali\Java\jdk-17.0.19+10
+tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-debug "Android" mobile/builds/Emberfall.apk
+```
+
+Produced `mobile/builds/Emberfall.apk` (~361 MB, arm64-v8a, min SDK 21 / target
+34, signed v1+v2+v3). Install on a plugged-in phone (USB debugging on):
+`%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install -r mobile\builds\Emberfall.apk`.
+
+Note: `gradle_build/min_sdk` was emptied — the prebuilt template fixes min SDK
+at 21 (a custom min like API 26 needs `use_gradle_build=true`).
+
+### Still needing the owner's accounts
+
+- **Android Play Store `.aab`:** flip `gradle_build/use_gradle_build=true` +
+  `export_format=1`, install the Godot **Android build template**, then a Google
+  Play dev account ($25 one-time) + a **release** keystore (keep it forever).
 - **iOS `.ipa`:** a Mac with Xcode, an Apple Developer account ($99/yr), and a
   signing identity + provisioning profile filled into the iOS preset.
 - **Store listings:** app icons/splash in all sizes, privacy policy, content
@@ -156,7 +179,9 @@ The presets are scaffolding; a real artifact still needs, per platform:
 - [~] UI / safe-area pass (crude fixed inset in place; precise notch mapping via
   `DisplayServer.get_display_safe_area()` is a later refinement)
 - [x] Android + iOS export presets (scaffolded)
-- [ ] Android test build on a device (blocked on toolchain above)
+- [x] Android toolchain installed + signed debug APK builds locally (2026-07-13)
+- [ ] Install/run the APK on a physical device (adb; needs a phone) — owner review
+- [ ] Android Play Store `.aab` (gradle build template + Google Play account)
 - [ ] iOS Mac signing pipeline (blocked on Mac + Apple account)
 - [ ] Store listings
 
