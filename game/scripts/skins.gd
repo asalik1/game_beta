@@ -185,6 +185,21 @@ const SWING := {
 		"blade_dancer": {"attack": 0.182, "attack2": 0.227},
 		"phantom": {"attack": 0.227, "attack2": 0.182},
 	},
+	# Judgment (a1) lands the golden shock on the overhead-hammer contact (~frame
+	# 4). Consecration (attack2) is a near-static channel with no crisp contact —
+	# left on the base const.
+	"paladin": {
+		"eclipse_knight": {"attack": 0.182},
+		"fallen_arbiter": {"attack": 0.182},
+	},
+	# Shadowbolt (a1, "attack" clip) looses as the bolt leaves the staff (~frame
+	# 5). Hex (a2) swings the "ult" clip, whose energy doesn't erupt until ~0.5s —
+	# syncing there would over-slow the curse per-skin, so Hex stays on the base
+	# WARLOCK_CAST_DELAY.
+	"warlock": {
+		"hellfire_inquisitor": {"attack": 0.227},
+		"eldritch_herald": {"attack": 0.227},
+	},
 }
 
 

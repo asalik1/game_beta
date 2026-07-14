@@ -226,6 +226,20 @@ static func _make_knife() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+## Phantom's cut: a sharp, CLEAN high transient that rings out and FADES —
+## ethereal spectral steel, not a solid clang. Same loudness as a normal slash,
+## it just dissolves into an airy tail like the ghost passing through.
+static func _make_phantom_slash() -> AudioStreamWAV:
+	# PURE SLICED AIR — no metal, no clank. A sharp, fast whoosh (the cut) that
+	# trails off into a soft airy fade, like a blade of wind passing through.
+	var b := _buf(0.5)
+	# 1) the cut: a fast, sharp bright->low air swoosh (the slice itself)
+	_noise_sweep(b, 0.0, 0.11, 0.55, 4200.0, 1100.0, 0.05)
+	# 2) the trail: a soft airy fade that dissolves — the ghost drifting off
+	_noise_sweep(b, 0.06, 0.42, 0.13, 1500.0, 450.0, 0.5)
+	return _to_wav(b)
+
+
 ## Bowshot: real plucked-string model + release click + arrow whoosh.
 static func _make_bow() -> AudioStreamWAV:
 	var b := _buf(0.22)
@@ -462,7 +476,10 @@ static func build_all() -> Dictionary:
 		"bow":      _make_bow(),
 		"fireball": _make_fireball(),
 		"blink":    _make_blink(),
-		"glide":    _make_glide(),   # Phantom skin's gliding footfall
+		"glide":    _make_glide(),           # Phantom skin's gliding footfall
+		"phantom_slash": _make_phantom_slash(),  # Phantom skin's ghostly cut
+		"phantom_knife": _make_knife(),      # Phantom skin's knife throw (override: assets/sounds/phantom_knife.*)
+		"dash":     _make_blink(),           # player dash — own key (override: assets/sounds/dash.*)
 		"nova":     _make_nova(),
 		"slam":     _make_slam(),
 		"slash":    _make_sword(),
