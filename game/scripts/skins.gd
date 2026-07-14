@@ -210,6 +210,21 @@ static func swing_time(cls: String, skin_id: String, clip: String) -> float:
 	return float(byclip.get(clip, -1.0))
 
 
+## Per-skin vertical anchor nudge (source-cell px). The hero render grounds every
+## character on its LOWEST opaque pixel; for a skin whose weapon points BELOW the
+## boots (Stormforged's E/W sword) that lands the blade tip on the ground line and
+## reads as "cut off." A positive nudge shifts the skin DOWN so the FEET ground and
+## the blade hangs below. Default 0 — every other skin keeps the shared anchor,
+## so the approved robe/cape skins (incl. Phantom) are untouched. Owner-tuned by
+## eye. See [[hero-anchor-blade-cutoff-diagnosis]].
+const ANCHOR_NUDGE := {
+	"stormforged": 11.0,
+}
+
+static func anchor_nudge(skin_id: String) -> float:
+	return float(ANCHOR_NUDGE.get(skin_id, 0.0))
+
+
 ## All chromas available for a class, or [] if none.
 static func chromas_for(cls: String) -> Array:
 	return CHROMAS.get(cls, [])

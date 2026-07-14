@@ -2007,6 +2007,37 @@ func flash_screen(color: Color, strength := 0.4, dur := 0.3) -> void:
 	tween.tween_property(flash_rect, "color:a", 0.0, dur)
 
 
+## A full-screen splash wash (Phantom ult): a transparent print of a splash
+## art covers the screen at `opacity`, then fades out over `dur` — the image
+## counterpart of flash_screen's colour wash. A blue-tint floor fills the WHOLE
+## viewport under it: the art is near-transparent at low opacity, so the tint
+## shows through its dark areas AND fills any space its aspect leaves, so the
+## wash reaches edge-to-edge with no game world peeking past the print.
+func flash_splash(tex: Texture2D, opacity := 0.1, dur := 0.85,
+		tint := Color(0.12, 0.4, 1.0)) -> void:
+	if tex == null:
+		return
+	var fill := ColorRect.new()
+	fill.color = Color(tint.r, tint.g, tint.b, opacity)
+	fill.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(fill)
+	var rect := TextureRect.new()
+	rect.texture = tex
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.modulate = Color(1, 1, 1, opacity)
+	add_child(rect)
+	var tween := create_tween()
+	tween.parallel().tween_property(fill, "color:a", 0.0, dur)
+	tween.parallel().tween_property(rect, "modulate:a", 0.0, dur)
+	tween.chain().tween_callback(func() -> void:
+		fill.queue_free()
+		rect.queue_free())
+
+
 # --------------------------------------------------------------- dialogue
 
 func dialogue(lines: Array, on_done := Callable()) -> void:
