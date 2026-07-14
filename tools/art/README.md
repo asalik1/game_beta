@@ -184,6 +184,31 @@ invisible for loops and harmless for one-shots.
 
 ---
 
+## Reviewing animations (`anim_sheet.py`)
+
+The owner's QA format for a character's generated animations: **labeled contact
+sheets, one image per clip** — not one giant grid (that made the labels too tiny
+and unclear which clip was which). Per clip you get a titled sheet with the 8
+facings down the left (S/SE/E/NE/N/NW/W/SW) and frames across the top (**f1..fN,
+1-based** — the owner counts from 1, so label 1-based), big fonts so a bad frame
+can be named exactly ("dash NE f4").
+
+```bash
+python tools/art/anim_sheet.py <art_base> [group] [out_dir] [scale]
+# groups: movement (idle/walk/run/dash), attacks (attack/attack2/cast),
+#         ult, death, all (default); or a comma-list like "walk,run,dash"
+python tools/art/anim_sheet.py skins/elite/assassin_blade_dancer movement
+python tools/art/anim_sheet.py skins/mythic/assassin_phantom_awakened attacks
+```
+
+`art_base` is the sprite base under `assets/sprites/` (no `_<clip>_<dir>` suffix).
+It reads the installed strips directly (no `--import`) and never touches game art.
+**Review loop:** generate a group, read the sheets one clip at a time, call out
+defects by facing+frame; then fix *per-frame* where possible — dupe a clean
+neighbour (`fTARGET←fDONOR`), skin-tone→shadow repaint, or single-direction
+re-roll — rather than re-rolling a whole clip. This is how the awakened-Phantom
+face-drift and Golden-Ronin frames were QA'd (see git `fd07035`).
+
 ## Directional aim ANIMATIONS (8-way)
 
 A flat left/right swing clip can't track a freely-aimed attack (the assassin's
