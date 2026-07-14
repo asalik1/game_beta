@@ -144,7 +144,10 @@ const SKINS := {
 			"sprite": "skins/mythic/mage_crystal_archmage"},
 	],
 	"assassin": [
-		{"id": "blade_dancer", "name": "Blade Dancer", "tier": "elite",
+		# Golden Ronin (id kept as "blade_dancer" for save/sprite-path compat).
+		# Signature FX: its knife-throw (Fan of Knives) hurls spinning shuriken
+		# with a fading after-image instead of the kunai — see player_kit_assassin.
+		{"id": "blade_dancer", "name": "Golden Ronin", "tier": "elite",
 			"sprite": "skins/elite/assassin_blade_dancer"},
 		{"id": "phantom", "name": "Phantom", "tier": "mythic",
 			"sprite": "skins/mythic/assassin_phantom",

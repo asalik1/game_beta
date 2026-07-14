@@ -59,6 +59,10 @@ func _shadow_dash(f := 1.0) -> void:
 	if _tfx.get("trail_mist", 0):
 		# Poison: the dash line blooms into a toxic wake.
 		_mist((start + global_position) / 2.0, 110.0, 0.3, _tcolor, 2.5)
+	if skin == "blade_dancer":
+		# Golden Ronin: a gold after-image streaks along the dash line (solid tint —
+		# a plain modulate can't read as gold).
+		_afterimages(start, global_position, Color(1.0, 0.82, 0.32), 4, 0.028, 0.24, true)
 
 
 ## Excess cdr past Shadow Dash's cd floor isn't wasted — this returns the
@@ -113,11 +117,15 @@ func _fan_of_knives(f := 1.0) -> void:
 	else:
 		game.sfx("knife", 1.55)  # short and SHARP — a dart leaving fingers
 	_muzzle(dir, _tcolor if _themed else Color(0.8, 0.85, 1.0))
+	# Golden Ronin (skin "blade_dancer") hurls spinning shuriken with a fading
+	# after-image; every other assassin throws the point-first kunai.
+	var ronin := skin == "blade_dancer"
+	var throw_tex := "shuriken" if ronin else "dart"
 	if _tfx.get("bloom", 0):
 		# Poison: ONE venom blade that detonates into a toxin cloud
 		# (chip-tuned: knives spam at stab cadence since round 25).
-		var p := _proj(dir, Balance.KNIFE_BLOOM_MULT * surge_amp * f, "dart", 660.0)
-		p.spin = false
+		var p := _proj(dir, Balance.KNIFE_BLOOM_MULT * surge_amp * f, throw_tex, 660.0)
+		p.spin = ronin
 		p.life = 0.45
 		p.scale = Vector2(1.5, 1.5)
 		p.fx["bloom_mist"] = 1
@@ -128,8 +136,8 @@ func _fan_of_knives(f := 1.0) -> void:
 	var step := float(_tfx.get("spread", 0.13))
 	for i in count:
 		var spread := (float(i) - (count - 1) / 2.0) * step
-		var p := _proj(dir.rotated(spread), ability_coeff("a3") * surge_amp * f, "dart", 760.0)
-		p.spin = false
+		var p := _proj(dir.rotated(spread), ability_coeff("a3") * surge_amp * f, throw_tex, 760.0)
+		p.spin = ronin
 		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 		_knife_glow(p)
 
@@ -148,6 +156,13 @@ func _knife_glow(p: Projectile) -> void:
 		tr.proj = p
 		tr.col = Color(0.5, 1.0, 0.92)
 		game.add_child(tr)
+	if skin == "blade_dancer":
+		col = Color(1.0, 0.82, 0.35)          # halo: Golden Ronin's warm gold
+		var echo := ShurikenEcho.new()        # spinning-star after-image
+		echo.proj = p
+		echo.tex = Art.tex("shuriken")
+		echo.col = Color(1.0, 0.85, 0.45)
+		game.add_child(echo)
 	var g := Sprite2D.new()
 	g.texture = Art.tex("glow")
 	# Subtle aura BEHIND the blade — enough to tint the kunai by variant, not
@@ -186,6 +201,11 @@ func _death_mark() -> void:
 		storm.target = target
 		storm.game_ref = game
 		game.add_child(storm)
+	elif skin == "blade_dancer":
+		# Golden Ronin: the world holds its breath — a soft gold wash as the mark
+		# sets. No strike yet; the cut (Gilded Iai) lands on the killing stab.
+		game.hud.flash_screen(Color(0.5, 0.4, 0.12), 0.32, 0.7)
+		game.burst(global_position, Color(1.0, 0.85, 0.4), 12)
 	else:
 		game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.8)
 		game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
@@ -200,8 +220,9 @@ func _death_mark() -> void:
 	if _tfx.has("mark_dot"):
 		# Poison: the mark itself rots the target (and stacks toxin).
 		target.apply_toxin(_dot_dps(target, current_atk() * float(_tfx["mark_dot"])), 5.0, Color(0.5, 1.2, 0.5), self)
-	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK",
-		Color(0.4, 0.72, 1.0) if phantom else Color(1, 0.25, 0.3))
+	var mark_col: Color = Color(0.4, 0.72, 1.0) if phantom else \
+		(Color(1.0, 0.82, 0.3) if skin == "blade_dancer" else Color(1, 0.25, 0.3))
+	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK", mark_col)
 	if not phantom:
 		_mark_overhead_x(target)
 	_death_mark_execution(target, float(_tfx.get("execute", 0.0)))
@@ -216,7 +237,7 @@ func _mark_overhead_x(target: Enemy) -> void:
 	for ang in [0.7, -0.7]:
 		var stroke := Sprite2D.new()
 		stroke.texture = Art.tex("slashline")
-		stroke.modulate = Color(1.0, 0.2, 0.3, 0.95)
+		stroke.modulate = Color(1.0, 0.82, 0.3, 0.95) if skin == "blade_dancer" else Color(1.0, 0.2, 0.3, 0.95)
 		stroke.rotation = ang
 		stroke.scale = Vector2(0.4, 0.5)
 		x_mark.add_child(stroke)
@@ -291,6 +312,53 @@ func _execution_slash(pos: Vector2, ang: float) -> void:
 		rt.tween_callback(rip.queue_free)
 
 
+## Golden Ronin ult payoff — the "one cut" (Gilded Iai): a single massive gold
+## cross-slash over the prey (two slashline strokes crossing in an X, gold over a
+## white-hot core), a gold screen-flash, and a scatter of drifting gold glints.
+## Pure spectacle; the damage rides the real stab arc that fires right after.
+func _gilded_iai_strike(target) -> void:
+	if not is_instance_valid(target):
+		return
+	var tpos: Vector2 = target.global_position
+	game.sfx("slash")  # the crisp cut lands
+	game.hud.flash_screen(Color(1.0, 0.82, 0.32), 0.55, 0.5)
+	game.shake(8.0)
+	game.burst(tpos, Color(1.0, 0.86, 0.42), 18)
+	# Two big gold strokes cross in an X through the prey — the drawn cut, popping
+	# from small to full so it reads as one decisive slash landing.
+	for ang in [0.72, -0.72]:
+		for layer in 2:
+			var rip := Sprite2D.new()
+			rip.texture = Art.tex("slashline")
+			rip.modulate = Art.hdr(Color(1.0, 0.84, 0.38, 1.0)) if layer == 0 else Color(1.0, 1.0, 0.92, 1.0)
+			rip.global_position = tpos
+			rip.rotation = ang
+			rip.scale = Vector2(1.4, 0.5) if layer == 0 else Vector2(1.2, 0.28)
+			rip.z_index = 20 + layer
+			game.add_child(rip)
+			var rt := rip.create_tween()
+			rt.tween_property(rip, "scale",
+				Vector2(3.6, 1.0) if layer == 0 else Vector2(3.2, 0.62), 0.13) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			rt.parallel().tween_property(rip, "modulate:a", 0.0, 0.32)
+			rt.tween_callback(rip.queue_free)
+	# Falling gold glints — petals of light drifting down around the prey.
+	for i in 10:
+		var gl := Sprite2D.new()
+		gl.texture = Art.tex("glow")
+		gl.global_position = tpos + Vector2(randf_range(-58, 58), randf_range(-72, -8))
+		gl.modulate = Art.hdr(Color(1.0, 0.86, 0.42, 0.9))
+		gl.scale = Vector2(0.11, 0.11)
+		gl.z_index = 19
+		game.add_child(gl)
+		var gt := gl.create_tween()
+		gt.tween_property(gl, "global_position:y",
+			gl.global_position.y + randf_range(48, 88), randf_range(0.5, 0.9)) \
+			.set_trans(Tween.TRANS_SINE)
+		gt.parallel().tween_property(gl, "modulate:a", 0.0, randf_range(0.5, 0.9))
+		gt.tween_callback(gl.queue_free)
+
+
 ## The execution itself: two shadows converge through the prey in an
 ## X (a slash and a 0.7x true hit each), then the assassin blinks
 ## BEHIND it and lands the killing stab (1.3x true, via the real stab
@@ -301,8 +369,15 @@ func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
 		if not is_instance_valid(target) or target.dying:
 			return
 		var tpos: Vector2 = target.global_position
-		if not phantom:
-			# Zed shadows converge in an X — Phantom shows the blade storm instead.
+		if phantom:
+			pass  # the blade storm plays the spectacle around the damage
+		elif skin == "blade_dancer":
+			# Golden Ronin: the stillness — a faint gold glint gathers on the prey;
+			# no strike yet (the Gilded Iai one-cut lands on the killing stab below).
+			game.burst(tpos, Color(1.0, 0.85, 0.4), 5)
+			game.shake(1.2)
+		else:
+			# Zed shadows converge in an X.
 			_shadow_ghost(tpos - diag * 150.0, tpos + diag * 150.0)
 			_execution_slash(tpos, diag.angle())
 			game.sfx("stab")
@@ -324,9 +399,15 @@ func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
 	# Reappear stance (Zed language): he materializes behind the prey already
 	# in the wide blades-out pose, then drives the killing stab home.
 	play_action("ultidle")
-	_afterimages(from, global_position,
-		Color(0.4, 0.72, 1.0) if phantom else Color(0.6, 0.25, 0.6), 3)
+	var blink_col: Color = Color(0.4, 0.72, 1.0) if phantom else \
+		(Color(1.0, 0.82, 0.35) if skin == "blade_dancer" else Color(0.6, 0.25, 0.6))
+	_afterimages(from, global_position, blink_col, 3, 0.05, 0.26, skin == "blade_dancer")
 	game.shake(6.0)
+	if skin == "blade_dancer":
+		# Gilded Iai: a held beat behind the prey, then the one cut lands.
+		await get_tree().create_timer(0.12).timeout
+		if is_instance_valid(target) and not target.dying:
+			_gilded_iai_strike(target)
 	_melee_arc(ability_coeff("ult"), 118.0, "slash", {"type": "true"}, "stab", "stab")
 	if execute > 0.0 and is_instance_valid(target) and not target.dying \
 			and target.hp < target.max_hp * 0.3:

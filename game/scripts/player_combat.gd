@@ -141,6 +141,47 @@ class ProjTrail extends Node2D:
 				Color(col.r, col.g, col.b, a))
 
 
+## Golden Ronin's throwing-star after-image: drops fading, rotated ghost copies
+## of the shuriken along its flight, each frozen at the star's spin angle of that
+## instant, so a fast-spinning star smears into a trail of echoes. Pure FX; the
+## ghosts parent to the game so they hang in place and fade as the star flies on.
+## Frees itself once the star is gone (its last ghosts fade on their own tweens).
+class ShurikenEcho extends Node2D:
+	const SPAWN_DT := 0.028        # a ghost every ~28 ms
+	const FADE := 0.20            # each ghost fades over 200 ms
+	const START_A := 0.42
+	var proj = null
+	var tex: Texture2D = null
+	var col := Color(1.0, 0.85, 0.4)
+	var _t := 0.0
+	func _process(delta: float) -> void:
+		if proj == null or not is_instance_valid(proj):
+			queue_free()          # ghosts already dropped fade on their own tweens
+			return
+		_t += delta
+		while _t >= SPAWN_DT:
+			_t -= SPAWN_DT
+			_drop()
+	func _drop() -> void:
+		if proj.spr == null or not is_instance_valid(proj.spr):
+			return
+		var parent := get_parent()
+		if parent == null:
+			return
+		var g := Sprite2D.new()
+		g.texture = tex
+		g.global_position = proj.global_position
+		g.rotation = proj.spr.rotation
+		g.scale = proj.spr.scale
+		g.z_index = 4             # just under the live star (projectile z_index 5)
+		g.modulate = Color(col.r, col.g, col.b, START_A)
+		parent.add_child(g)
+		var tw := g.create_tween()
+		tw.tween_property(g, "modulate:a", 0.0, FADE)
+		tw.parallel().tween_property(g, "scale", g.scale * 0.7, FADE)
+		tw.tween_callback(g.queue_free)
+
+
 ## Phantom ult presentation: a ring of 16 spectral knives around the marked
 ## target that CONVERGE on a schedule (each firing plays the knife sound). The
 ## ring follows the target as it moves; it hides AND pauses while the target is
@@ -747,8 +788,16 @@ func _ring_fx(pos: Vector2, color: Color, radius: float, collapse := false) -> v
 ## Ghost copies of the hero along a dash path, fading in sequence.
 ## `stagger`/`fade` shape the read: quick+sparse = a blink, slow+dense =
 ## bulk in motion (the warrior's charge).
+## Lazily-loaded tint shader for solid coloured after-images (see silhouette.gdshader).
+static var _silhouette_shader: Shader = null
+static func _get_silhouette_shader() -> Shader:
+	if _silhouette_shader == null:
+		_silhouette_shader = load("res://shaders/silhouette.gdshader")
+	return _silhouette_shader
+
+
 func _afterimages(start: Vector2, end: Vector2, color: Color, count := 3,
-		stagger := 0.05, fade := 0.26) -> void:
+		stagger := 0.05, fade := 0.26, solid := false) -> void:
 	if sprite == null:
 		return
 	for i in count:
@@ -760,8 +809,19 @@ func _afterimages(start: Vector2, end: Vector2, color: Color, count := 3,
 		ghost.flip_h = sprite.flip_h
 		ghost.rotation = sprite.rotation  # an aimed dash pose carries into its trail
 		ghost.scale = sprite.scale
+		ghost.offset = sprite.offset      # match the hero's feet-anchor offset (else it sits low)
 		ghost.global_position = start.lerp(end, t) + sprite.position
-		ghost.modulate = Color(color, 0.5)
+		if solid:
+			# A luminance-shaded solid tint so a LIGHT colour (gold) actually reads
+			# — a modulate multiply can only darken a textured sprite. modulate.a
+			# still drives the fade.
+			var mat := ShaderMaterial.new()
+			mat.shader = _get_silhouette_shader()
+			mat.set_shader_parameter("tint", Vector3(color.r, color.g, color.b))
+			ghost.material = mat
+			ghost.modulate = Color(1, 1, 1, 0.8)
+		else:
+			ghost.modulate = Color(color, 0.5)
 		ghost.z_index = 5
 		game.add_child(ghost)
 		var tw := ghost.create_tween()
@@ -903,6 +963,25 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			at.parallel().tween_property(arc, "modulate:a", 0.0, 0.3)
 			at.tween_callback(arc.queue_free)
+		elif skin == "blade_dancer":
+			# Golden Ronin: a faint gold glint-arc rides the stab — the same clean
+			# drawn crescent as Phantom's, warm gold and low-alpha (a glint, not a
+			# spectre's slash).
+			var garc := SlashArc.new()
+			garc.col = Color(1.0, 0.84, 0.38, 0.7)   # warm gold, faint
+			garc.radius = reach * 0.85
+			garc.span = 0.5
+			garc.width = 2.2
+			garc.rotation = dir.angle()
+			garc.position = dir * (-reach * 0.4)
+			garc.z_index = 8
+			garc.scale = Vector2(0.85, 0.85)
+			add_child(garc)
+			var gat := garc.create_tween()
+			gat.tween_property(garc, "scale", Vector2(1.12, 1.12), 0.1) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			gat.parallel().tween_property(garc, "modulate:a", 0.0, 0.24)
+			gat.tween_callback(garc.queue_free)
 		else:
 			var pivot := Node2D.new()
 			pivot.rotation = dir.angle() - 0.85  # wind the arc back...
