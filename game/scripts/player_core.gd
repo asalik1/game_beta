@@ -472,7 +472,10 @@ const DIR_POSE := {
 
 func _apply_class_sprite() -> void:
 	var art_name: String = Classes.CLASSES[cls]["sprite"]
-	var skin_art: String = Skins.skin_sprite(cls, skin)
+	# A skin with an awakened form (Phantom) evolves once this class's S-weapon
+	# awakening is complete (s_awakened_<cls>) — resolve to that base instead.
+	var awakened: bool = game != null and bool(game.get_flag("s_awakened_" + cls, false))
+	var skin_art: String = Skins.skin_sprite(cls, skin, awakened)
 	if skin_art != "":
 		art_name = skin_art
 	face_left = Art.faces_left(art_name)
@@ -547,6 +550,13 @@ func set_skin(skin_id: String) -> void:
 	if skin_id != "":
 		chroma = ""
 	_apply_class_sprite()
+
+
+## Re-resolve the current skin's sprite (e.g. after an S-weapon awakening flips
+## a skin to its awakened form). Safe to call live — same path as set_skin.
+func refresh_skin_sprite() -> void:
+	if sprite != null:
+		_apply_class_sprite()
 
 
 ## Read a strip's first frame alpha to find body height + feet row, and derive

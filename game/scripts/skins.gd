@@ -147,7 +147,13 @@ const SKINS := {
 		{"id": "blade_dancer", "name": "Blade Dancer", "tier": "elite",
 			"sprite": "skins/elite/assassin_blade_dancer"},
 		{"id": "phantom", "name": "Phantom", "tier": "mythic",
-			"sprite": "skins/mythic/assassin_phantom"},
+			"sprite": "skins/mythic/assassin_phantom",
+			# Awakened form: completing the assassin's S-weapon awakening
+			# (flag s_awakened_assassin) evolves the blue Phantom into the teal
+			# spectral "Nightfang" form — same skin, a progression payoff. The
+			# render resolver (player_core._apply_class_sprite) swaps to this
+			# base when the flag is set; falls back to `sprite` otherwise.
+			"awakened_sprite": "skins/mythic/assassin_phantom_awakened"},
 	],
 	"paladin": [
 		{"id": "eclipse_knight", "name": "Eclipse Knight", "tier": "elite",
@@ -254,11 +260,16 @@ static func find_skin(cls: String, skin_id: String) -> Dictionary:
 
 
 ## Return the Art sprite name for a skin, or "" if invalid/no skin.
-static func skin_sprite(cls: String, skin_id: String) -> String:
+## When `awakened` (the skin's class has completed its S-weapon awakening) and
+## the skin defines an `awakened_sprite`, returns that evolved base instead —
+## e.g. Phantom's teal Nightfang form. Skins without one ignore the flag.
+static func skin_sprite(cls: String, skin_id: String, awakened := false) -> String:
 	var data: Dictionary = find_skin(cls, skin_id)
 	if data.is_empty():
 		return ""
-	return data["sprite"]
+	if awakened and data.has("awakened_sprite"):
+		return String(data["awakened_sprite"])
+	return String(data["sprite"])
 
 
 ## Build (or update) a ShaderMaterial for the chroma effect. When

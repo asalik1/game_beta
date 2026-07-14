@@ -1113,6 +1113,13 @@ func set_flag(flag_name: String, value = true) -> void:
 	if value:
 		call("_recheck_gates")
 		_check_side_quests()
+	# An S-weapon awakening evolves a mythic skin to its awakened form (Phantom
+	# blue -> teal Nightfang). Refresh the sprite on ANY change of the owning
+	# class's awakening flag so it flips the instant the class awakens — and
+	# reverts cleanly if a dev toggle clears it. Covers the quest, the dev-panel
+	# toggle, and any other path. Only the owning class reacts.
+	if player != null and flag_name == "s_awakened_" + String(player.cls):
+		player.refresh_skin_sprite()
 	# MP-13 (§5.4): WORLD flags are shared story state — quest progress,
 	# opened ways, one-time reveals, pay-once desks, shrine/cache/curse
 	# once-per-room marks. Route them through the host so every machine in
