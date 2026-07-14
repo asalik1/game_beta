@@ -1780,6 +1780,12 @@ func tick_footsteps(delta: float) -> void:
 	_foot_t -= delta
 	if _foot_t > 0.0:
 		return
+	if player.skin == "phantom":
+		# Phantom drifts — a soft airy swish REPLACES the footfall so he reads
+		# as gliding, not stomping. Slow, even 1s cadence (a glide, not steps).
+		_foot_t = 1.0
+		sfx("glide", 1.0, 0.0, -18.0)
+		return
 	_foot_t = clampf(88.0 / maxf(player.velocity.length(), 1.0), 0.24, 0.42)
 	var armor := player.cls in ["warrior", "paladin"]
 	var key := "step_armor_%d" % (randi() % 3 + 1) if armor else "step_%d" % (randi() % 3 + 1)

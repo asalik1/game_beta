@@ -250,6 +250,18 @@ static func _make_blink() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+## Phantom's gliding footfall: a soft, breathy, low-passed swish — no impact,
+## just the sound of drifting. Deliberately quiet (played on a slow cadence
+## while the Phantom skin moves). Replaceable by assets/sounds/glide.wav.
+static func _make_glide() -> AudioStreamWAV:
+	# Long breathy swish that swells IN and releases OUT — attack 0.5 peaks the
+	# envelope mid-swish and fades symmetrically at both ends.
+	var b := _buf(0.9)
+	# Lighter/airier: higher band (less low-end body) and gentler amplitude.
+	_noise_sweep(b, 0.0, 0.88, 0.08, 650.0, 2200.0, 0.5)
+	return _to_wav(b)
+
+
 ## Frost nova: icy crystalline burst.
 static func _make_nova() -> AudioStreamWAV:
 	var b := _buf(0.35)
@@ -450,6 +462,7 @@ static func build_all() -> Dictionary:
 		"bow":      _make_bow(),
 		"fireball": _make_fireball(),
 		"blink":    _make_blink(),
+		"glide":    _make_glide(),   # Phantom skin's gliding footfall
 		"nova":     _make_nova(),
 		"slam":     _make_slam(),
 		"slash":    _make_sword(),
