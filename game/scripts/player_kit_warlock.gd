@@ -11,7 +11,7 @@ func _use_warlock(slot: String, f: float) -> void:
 		# EVERYWHERE by 25%+ — tax reverted, wither still owns the long game.
 		"a1":
 			# Loose the bolt on the hand-thrust frame, not the input frame.
-			await get_tree().create_timer(Balance.WARLOCK_CAST_DELAY).timeout
+			await get_tree().create_timer(swing_delay(Balance.WARLOCK_CAST_DELAY)).timeout
 			if dead or downed or ghost:
 				return
 			_cast_shadowbolt(aim_dir(), 1.0 * f)
@@ -31,7 +31,7 @@ func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
 ## primed to EXPLODE on death (the class identity).
 func _hex(f := 1.0) -> void:
 	# Land the curse on the sigil-projection frame, not the input frame.
-	await get_tree().create_timer(Balance.WARLOCK_CAST_DELAY).timeout
+	await get_tree().create_timer(swing_delay(Balance.WARLOCK_CAST_DELAY)).timeout
 	if dead or downed or ghost:
 		return
 	game.sfx("gate", 1.6)
@@ -324,8 +324,12 @@ func _void_rift(f := 1.0) -> void:
 	var heal_frac := float(fx_copy.get("rift_heal", 0.0))
 	var saved := _tfx
 	_tfx = fx_copy
+	var crit_cursed: bool = bool(Classes.CLASSES[cls]["abilities"]["ult"]["dmg"].get("crit_cursed", false))
 	for e in _enemies_within(pos, radius):
-		hit_enemy(e, ability_coeff("ult") * fmul, {"aoe": true})
+		var eff := {"aoe": true}
+		if crit_cursed and hexed.has(e):
+			eff["force_crit"] = 1   # Void Rift always crits a cursed victim (single-sourced flag)
+		hit_enemy(e, ability_coeff("ult") * fmul, eff)
 		if heal_frac > 0.0:
 			gain_hp(max_hp * heal_frac)  # pact rift: each caught soul mends, SHOWN
 	_tfx = saved

@@ -108,7 +108,10 @@ func _fan_of_knives(f := 1.0) -> void:
 	await get_tree().create_timer(swing_delay(Balance.KNIFE_THROW_RELEASE)).timeout
 	if dead or downed or ghost:
 		return  # went down mid-windup — no knives leave the hand
-	game.sfx("knife", 1.55)  # short and SHARP — a dart leaving fingers
+	if skin == "phantom":
+		game.sfx("stab", 0.85, 0.0, -3.0)  # Phantom: the Stab SFX, a little deeper
+	else:
+		game.sfx("knife", 1.55)  # short and SHARP — a dart leaving fingers
 	_muzzle(dir, _tcolor if _themed else Color(0.8, 0.85, 1.0))
 	if _tfx.get("bloom", 0):
 		# Poison: ONE venom blade that detonates into a toxin cloud
@@ -138,6 +141,13 @@ func _fan_of_knives(f := 1.0) -> void:
 ## art is one sprite; the colour is a runtime tint, so no per-variant art.
 func _knife_glow(p: Projectile) -> void:
 	var col: Color = _tcolor if _themed else Color(0.70, 0.85, 1.0)
+	if skin == "phantom":
+		col = Color(0.45, 0.95, 1.0)          # glow: Phantom's spectral blue
+		p.modulate = Color(0.80, 0.94, 0.98)  # lighter ghostly blade, matches his palette
+		var tr := ProjTrail.new()             # a short spectral streak trailing each blade
+		tr.proj = p
+		tr.col = Color(0.5, 1.0, 0.92)
+		game.add_child(tr)
 	var g := Sprite2D.new()
 	g.texture = Art.tex("glow")
 	# Subtle aura BEHIND the blade — enough to tint the kunai by variant, not
@@ -159,26 +169,38 @@ func _death_mark() -> void:
 	# converge THROUGH it in an X, slashing, then the assassin himself
 	# appears BEHIND it and drives the killing stab home.
 	_ult_sfx()
-	game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.8)
-	game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
-	# The shadow LEFT BEHIND (Zed language): he vanishes from HERE and
-	# reappears behind the prey — a dark echo holds the cast point for a
-	# beat so the eye can read where he went from.
-	_cast_shadow(global_position)
-	# Untouchable through the execution (round 18): longer than Shadow
-	# Dash's 0.5s — commit to the kill, not to the chip damage.
+	# The weave window (awakened Nightfang): for the mark's duration, Stab and Fan
+	# of Knives lose their shared lockout and fire together — the ult IS the burst.
+	deathmark_time = rider("ult", "amp_secs")
+	var phantom := skin == "phantom"
+	if phantom:
+		# Phantom: a BLUE screen wash (the exact blue-for-red swap of the base
+		# ult flash) + a converging storm of 16 spectral knives that rings the
+		# marked target (see PhantomBladeStorm). Behaviour is unchanged — only
+		# the colour of the flash and the FX read spectral instead of bloody.
+		game.hud.flash_screen(Color(0.12, 0.4, 1.0), 0.6, 0.85)
+		var storm := PhantomBladeStorm.new()
+		storm.target = target
+		storm.game_ref = game
+		game.add_child(storm)
+	else:
+		game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.8)
+		game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
+		# The shadow LEFT BEHIND (Zed language): a dark echo holds the cast point.
+		_cast_shadow(global_position)
+	# Untouchable through the execution (round 18): commit to the kill.
 	hurt_cd = maxf(hurt_cd, rider("ult", "iframe"))
 	hurt_was_heavy = true  # untouchable means untouchable — heavy telegraphs too
-	# Default mark is +50%; shadow's ult carries a leaner "vuln": 0.40 override
-	# (its power lives in the marked-window guaranteed crits, not the amp).
-	# apply_vuln is the MP-10 seam: a mirror target forwards the mark.
+	# The mark (+50%; apply_vuln is the MP-10 seam) + stun + optional poison — same.
 	target.apply_vuln(rider("ult", "amp_secs"), 1.0 + float(_tfx.get("vuln", rider("ult", "amp"))))
 	_stun_or_concuss(target, 0.6)
 	if _tfx.has("mark_dot"):
 		# Poison: the mark itself rots the target (and stacks toxin).
 		target.apply_toxin(_dot_dps(target, current_atk() * float(_tfx["mark_dot"])), 5.0, Color(0.5, 1.2, 0.5), self)
-	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK", Color(1, 0.25, 0.3))
-	_mark_overhead_x(target)
+	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK",
+		Color(0.4, 0.72, 1.0) if phantom else Color(1, 0.25, 0.3))
+	if not phantom:
+		_mark_overhead_x(target)
 	_death_mark_execution(target, float(_tfx.get("execute", 0.0)))
 
 
@@ -271,21 +293,27 @@ func _execution_slash(pos: Vector2, ang: float) -> void:
 ## BEHIND it and lands the killing stab (1.3x true, via the real stab
 ## arc). Shadow theme: a survivor under 30% is finished on the spot.
 func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
+	var phantom := skin == "phantom"
 	for diag in [Vector2(1, 1).normalized(), Vector2(-1, 1).normalized()]:
 		if not is_instance_valid(target) or target.dying:
 			return
 		var tpos: Vector2 = target.global_position
-		_shadow_ghost(tpos - diag * 150.0, tpos + diag * 150.0)
-		_execution_slash(tpos, diag.angle())
-		game.sfx("stab")
-		game.shake(3.5)
-		game.burst(tpos, Color(1.0, 0.2, 0.3), 10)
-		hit_enemy(target, 0.7, {"type": "true"})
+		if not phantom:
+			# Zed shadows converge in an X — Phantom shows the blade storm instead.
+			_shadow_ghost(tpos - diag * 150.0, tpos + diag * 150.0)
+			_execution_slash(tpos, diag.angle())
+			game.sfx("stab")
+			game.shake(3.5)
+			game.burst(tpos, Color(1.0, 0.2, 0.3), 10)
+		hit_enemy(target, 0.7, {"type": "true"})  # DAMAGE — identical for both
 		await get_tree().create_timer(0.16).timeout
 	if not is_instance_valid(target) or target.dying:
 		return
-	# The real blade: appear on the FAR side of the prey and stab back
-	# through it — the full stab visual, not a bolt-on flash.
+	# The real blade: appear on the FAR side of the prey and stab back through
+	# it — identical behaviour for both skins (teleport + killing stab arc).
+	# Phantom only recolours the reappear blink to spectral blue; its stab arc
+	# is already the ghostly one (see _melee_arc's skin check), and the blade
+	# storm plays around all of this as the added spectacle.
 	var from := global_position
 	var behind := (target.global_position - from).normalized()
 	global_position = game.clamp_to_zone(
@@ -293,7 +321,8 @@ func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
 	# Reappear stance (Zed language): he materializes behind the prey already
 	# in the wide blades-out pose, then drives the killing stab home.
 	play_action("ultidle")
-	_afterimages(from, global_position, Color(0.6, 0.25, 0.6), 3)
+	_afterimages(from, global_position,
+		Color(0.4, 0.72, 1.0) if phantom else Color(0.6, 0.25, 0.6), 3)
 	game.shake(6.0)
 	_melee_arc(ability_coeff("ult"), 118.0, "slash", {"type": "true"}, "stab", "stab")
 	if execute > 0.0 and is_instance_valid(target) and not target.dying \

@@ -598,9 +598,8 @@ func _equip(p: Player, cls: String, tid: String) -> void:
 ## --godroll: rebuild one rolled piece into its reforge-chased ceiling — max
 ## main roll (1.15) and the grade's affix count filled with MAX-magnitude
 ## offense (ATK% > Crit > your pen > DEX), mirroring roll_subs' formulas.
-## Affixes an S synergy sub would OVERWRITE are skipped (a rolled duplicate
-## is wasted — roll_item_of replaces, not adds); style + synergy subs then
-## land exactly as the real roller applies them.
+## S legendaries roll like any other grade now (no pinned synergy subs), so the
+## godroll fills every slot with offense; style personality subs land on top.
 func _godroll(item: Dictionary, cls: String) -> void:
 	var g := String(item["grade"])
 	var mult: float = Items.GRADE_MULT[g]
@@ -608,25 +607,18 @@ func _godroll(item: Dictionary, cls: String) -> void:
 	var primary := String(Items.CLASS_PRIMARY.get(cls, "STR"))
 	item["main"] = {primary: snappedf(
 		float(Items.SLOT_MAIN_BUDGET[item["slot"]]) * mult * float(style["main"]) * 1.15, 0.01)}
-	var synergy := {}
-	if g == "S" and Items.S_GEAR.has(cls):
-		synergy = Items.S_GEAR[cls][String(item["slot"])].get("subs", {})
 	var pen := "magpen" if String(Items.CLASSES_DMG_TYPE.get(cls, "physical")) == "magic" else "physpen"
-	var sub_count: int = maxi(0, (Items.GRADES.find(g) - 1) / 2)
+	var sub_count: int = Items.sub_count_for(g)
 	var scale: float = 1.3 * (1.0 + mult * 0.25)
 	var subs := {}
 	var picked := 0
 	for stat in ["atk_pct", "crit", pen, "dex"]:
 		if picked >= sub_count:
 			break
-		if synergy.has(stat):
-			continue
 		subs[stat] = snappedf(float(Items.SUBSTATS[stat]) * scale, 0.01)
 		picked += 1
 	for stat in style["subs"]:
 		subs[stat] = snappedf(subs.get(stat, 0.0) + float(style["subs"][stat]) * (0.75 + 0.25 * mult), 0.01)
-	for stat in synergy:
-		subs[stat] = synergy[stat]
 	item["subs"] = subs
 
 
@@ -725,11 +717,11 @@ func _tick_waves() -> void:
 		adds_spawned += 1
 
 
-## The assassin dance (player-specified): Death Mark the moment it's up,
-## then plant the blade — Stab-spam through the 5s vuln window (no dash,
-## no knives). Outside the window: Shadow Dash straight through the boss
-## right before the blood surge lapses (refreshing it at full strength,
-## lane 0 = near-lane cut), surged Fan of Knives every other beat.
+## The assassin dance (player-specified): Death Mark the moment it's up, then
+## plant the blade — Stab-spam through the 5s vuln window (an AWAKENED Nightfang
+## weaves Fan in too, both blades at once). Outside the window: Shadow Dash
+## straight through the boss right before the blood surge lapses (refreshing it at
+## full strength, lane 0 = near-lane cut), surged Fan of Knives every other beat.
 func _drive_assassin(p: Player) -> void:
 	if p.cds["ult"] <= 0.0 and sim_t >= ult_until:
 		p.use_ability("ult")
@@ -739,6 +731,8 @@ func _drive_assassin(p: Player) -> void:
 		return
 	if sim_t < ult_until:
 		p.use_ability("a1")
+		if p.s_passive() == "mirrorstep":
+			p.use_ability("a3")   # awakened Nightfang: Fan weaves into the mark window
 		return
 	if p.cds["a2"] <= 0.0 and p.stab_ls_time <= SURGE_REFRESH_AT:
 		p.facing = (dummy.global_position - p.global_position).normalized()

@@ -128,7 +128,7 @@ const CLASSES := {
 			"a1": {"name": "Firebolt",   "cd": 0.45, "mp": 3,  "dmg": {"coeff": 1.5, "base": 0.0}, "desc": "Hurl a bolt at the nearest enemy."},
 			"a2": {"name": "Frost Nova", "cd": 7.0,  "mp": 15, "dmg": {"coeff": 1.4, "base": 0.0, "aoe": true}, "riders": {"slow": 0.5, "knock": true, "restore": 0.2}, "desc": "Blast around you: knocks enemies away, SLOWS them 50%, and restores 20% of your MISSING health and mana."},
 			"a3": {"name": "Blink",      "cd": 4.5,  "mp": 10, "dmg": {"coeff": 0.8, "base": 0.0, "aoe": true}, "riders": {"iframe": 0.1, "dr": 0.5, "dr_secs": 0.8}, "desc": "Dash in your move direction, shocking everything in your path. Arcane Ward cloaks the blink — a split-second perfect-dodge i-frame, then 50% damage reduction for 0.8s."},
-			"ult": {"name": "Meteor",    "cd": 44.0, "mp": 40, "dmg": {"coeff": 3.5, "base": 0.0}, "desc": "Call a meteor onto the nearest enemy. Massive damage."},
+			"ult": {"name": "Meteor",    "cd": 44.0, "mp": 40, "dmg": {"coeff": 10.0, "base": 0.0, "true_frac": 0.25}, "desc": "Call a meteor onto the nearest enemy. Cataclysmic damage — a quarter of it burns through ALL defenses (true damage)."},
 		},
 	},
 	"assassin": {
@@ -163,12 +163,17 @@ const CLASSES := {
 		"desc": "Ranged hexer. Curses that detonate on death, blood paid for power, rifts that bite late.",
 		"passive": {"text": "Soulthirst — 5% of all damage returns as life; +8 magic penetration.", "lifesteal": 0.05, "magpen": 8.0},
 		"hp": 95.0, "hp_lvl": 13.0, "mp": 65.0, "mp_lvl": 7.0,
-		"atk": 11.5, "atk_lvl": 3.0, "speed": 258.0,
+		# atk raised toward the mage's 13.5/3.7 (was 11.5/3.0): the DPS bench showed
+		# warlock is the only genuinely ATK-STARVED class — lowest base primary AND
+		# lowest total atk, yet a decent dps-per-atk. Its DoT/nuke damage scales off
+		# current_atk() directly, so more atk lifts the WHOLE kit (Hex, wither, Void
+		# Rift). Pairs with the caster haste bonus for the endgame-scaling falloff.
+		"atk": 12.5, "atk_lvl": 3.4, "speed": 258.0,
 		"abilities": {
-			"a1": {"name": "Shadowbolt", "cd": 0.5,  "mp": 1,  "dmg": {"coeff": 0.35, "base": 0.0}, "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
+			"a1": {"name": "Shadowbolt", "cd": 0.5,  "mp": 1,  "dmg": {"coeff": 0.5, "base": 0.0}, "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
 			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "dmg": {"coeff": 1.5, "base": 0.0, "aoe": true}, "riders": {"notes": ["Expose (+dmg taken)", "Explodes on death", "Ramps while held"]}, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death. A MAINTAINED curse deepens: the longer it holds, the harder your every hit bites."},
 			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "riders": {"notes": ["−12% max HP", "Lifesteal surge 5s"]}, "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
-			"ult": {"name": "Void Rift", "cd": 50.0, "mp": 35, "dmg": {"coeff": 3.0, "base": 0.0, "aoe": true}, "riders": {"notes": ["Pulls enemies in", "Curses on burst"]}, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS."},
+			"ult": {"name": "Void Rift", "cd": 50.0, "mp": 35, "dmg": {"coeff": 6.5, "base": 0.0, "aoe": true, "crit_cursed": true}, "riders": {"notes": ["Pulls enemies in", "Curses on burst", "ALWAYS crits cursed foes"]}, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS — and a cursed victim is ALWAYS crit."},
 		},
 	},
 }
@@ -574,6 +579,9 @@ static func ability_scaling(cls: String, slot: String) -> String:
 	var base := float(d.get("base", 0.0))
 	if base > 0.0:
 		s += "  +%s×lvl" % (str(int(base)) if is_equal_approx(base, float(int(base))) else "%.1f" % base)
+	var tf := float(d.get("true_frac", 0.0))
+	if tf > 0.0:
+		s += " · %d%% as True" % int(round(tf * 100.0))   # converted slice ignores defenses
 	return s
 
 
