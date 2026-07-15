@@ -358,23 +358,36 @@ func open_slots() -> void:
 
 ## Dev launcher row (dev_mode.bat only): batch-create the 6-class
 ## roster straight from the launcher screens — no need to enter a
-## game and open F1 first. Level box → one save per class, free
-## slots only (never overwrites), then back to the title list.
+## game and open F1 first. Opens a modal that picks a DPS-bench preset; each
+## writes one save per class (free slots only, never overwrites), then back.
 func _dev_roster_row(vbox: VBoxContainer) -> void:
 	if not game.dev_mode:
 		return
-	var drow := HBoxContainer.new()
-	drow.add_theme_constant_override("separation", 8)
-	vbox.add_child(drow)
-	var lvl_box := LineEdit.new()
-	lvl_box.text = "40"
-	lvl_box.max_length = 3
-	lvl_box.custom_minimum_size = Vector2(64, 0)
-	drow.add_child(lvl_box)
-	_btn(drow, "  🛠  DEV: create roster — all 6 classes at this level  ", func() -> void:
-		var lvl := clampi(int(lvl_box.text) if lvl_box.text.is_valid_int() else 40, 1, Balance.LEVEL_CAP)
-		UIDevPanel.create_roster(self, lvl)
-		open_slots(), Color(0.6, 0.9, 1.0))
+	_btn(vbox, "  🛠  DEV: Generate benchmark roster ▸  ", func() -> void:
+		open_benchmark_roster(), Color(0.6, 0.9, 1.0))
+
+
+## The benchmark-roster modal: pick a build preset (BenchBuild.PRESETS) and it
+## rolls all six classes as that EXACT bench build into free save slots — the same
+## builds the DPS bench runs. ESC / Back return to the slot list.
+func open_benchmark_roster() -> void:
+	var vbox := _open("Benchmark Roster", 760, 480)
+	current = "benchmark_roster"
+	var desc := _lbl(vbox, "Generate all six classes as an exact DPS-bench build — full gear, gems, +plus, talents and theme baked in. Free save slots only; existing saves are never touched.", 13, Color(0.7, 0.74, 0.86))
+	desc.custom_minimum_size = Vector2(680, 0)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	for key in BenchBuild.PRESET_ORDER:
+		var pkey := String(key)
+		var cfg: Dictionary = BenchBuild.PRESETS[pkey]
+		var label := "  %s  —  L%d · %s gear · Lv%d gems · +%d%s  " % [
+			cfg["name"], cfg["level"], cfg["grade"], cfg["gemlvl"], cfg["plus"],
+			"  ·  godroll" if cfg["godroll"] else ""]
+		_btn(vbox, label, func() -> void:
+			UIDevPanel.create_benchmark_roster(self, pkey)
+			game.sfx("equip")
+			open_slots(), Color(0.6, 0.9, 1.0))
+	_btn(vbox, "  Back  ", func() -> void: open_slots(), Color(0.8, 0.85, 0.9))
+	_hint(vbox, "ESC to go back")
 
 
 # ---------------------------------------------------------------- pause ---
@@ -518,6 +531,23 @@ func _settings_back() -> void:
 # ---------------------------------------------------------- chapter select ---
 
 # ------------------------------------------------------------ endgame trials ---
+
+## Confirm-and-enter a mode from a HUD trial icon: a backable prompt carrying the
+## mode's record + rules, so a stray click on the HUD never tears the world down.
+func confirm_endgame(mode: String) -> void:
+	var cls: String = game.local_player.cls
+	var pb := game.endgame_pb(mode, cls)
+	var mname := "The Crucible" if mode == "crucible" else "The Waking Depths"
+	var rules := "Ten bosses back to back, each with an elite affix — HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" \
+		else "An endless descent: each room's mobs deepen a level and a boss guards every fourth. Rewards pay when you fall or cash out."
+	var best := ""
+	if not pb.is_empty():
+		best = ("\n\nYour best: %d bosses." % int(pb.get("kills", 0))) if mode == "crucible" \
+			else ("\n\nYour deepest: depth %d." % int(pb.get("depth", 0)))
+	open_confirm("Enter %s?\n\n%s%s\n\nYour campaign is saved — you'll return to the title when the run ends." % [mname, rules, best],
+		func() -> void: _start_endgame(mode),
+		func() -> void: close())
+
 
 ## The endgame mode picker (ACT2_DESIGN.md §II) — reached from the pause menu
 ## once Act 1 is cleared. Two never-ending arena modes; picking one tears down
@@ -690,12 +720,13 @@ func pick_chapter(id: String) -> void:
 # ------------------------------------------------------------ class select ---
 
 func open_class_select() -> void:
-	# 700 tall: the tallest card (paladin's stance passive) sets the columns'
+	# 708 tall: the tallest card (paladin's stance passive) sets the row's
 	# MINIMUM height — a shorter panel can't clip it (a Control never shrinks
-	# below its content), the buttons just spill past the frame.
-	var vbox := _open("Choose your class", 1240, 700)
+	# below its content). The WHOLE card is the button now (see the loop), so
+	# nothing spills past the frame the way the old bottom "choose" buttons did.
+	var vbox := _open("Choose your class", 1240, 716)
 	current = "class_select"
-	_lbl(vbox, "This choice defines your four abilities and your three THEMES — elemental playstyles that change how your abilities behave, unlocked as you level.", 15, Color(0.75, 0.75, 0.75))
+	_lbl(vbox, "This choice sets your four abilities and your three elemental THEMES — playstyles that reshape those abilities as you level.  Click any class to choose it.", 15, Color(0.75, 0.75, 0.75))
 
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 10)
@@ -710,21 +741,58 @@ func open_class_select() -> void:
 	var idx := 1
 	for id in Classes.CLASSES:
 		var c: Dictionary = Classes.CLASSES[id]
+		# The whole card IS the button (no bottom "choose" button that used to
+		# spill below the frame): a PanelContainer that picks the class on click,
+		# brightens + gains a gold rim on hover, and shows a pointing-hand cursor.
+		# Its VBox and every label inside pass mouse events through (IGNORE) so a
+		# click anywhere on the card reaches the panel.
+		var card := PanelContainer.new()
+		card.custom_minimum_size = Vector2(card_w, 0)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		card.add_theme_stylebox_override("panel", _class_card_style(false))
+		card.mouse_entered.connect(func() -> void:
+			card.add_theme_stylebox_override("panel", _class_card_style(true)))
+		card.mouse_exited.connect(func() -> void:
+			card.add_theme_stylebox_override("panel", _class_card_style(false)))
+		card.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				choose_class(id))
+		hbox.add_child(card)
+
 		var col := VBoxContainer.new()
-		col.custom_minimum_size = Vector2(card_w, 0)
-		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.add_theme_constant_override("separation", 4 if dense else 6)
-		hbox.add_child(col)
+		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col.add_theme_constant_override("separation", 2 if dense else 6)
+		card.add_child(col)
 
-		var icon := TextureRect.new()
-		icon.texture = Art.tex(c["sprite"])
-		var icon_px := 72.0 if dense else 96.0
-		icon.custom_minimum_size = Vector2(icon_px, icon_px)
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		col.add_child(icon)
-
-		_lbl(col, c["name"], 18 if dense else 20, Color(0.95, 0.85, 0.5))
+		# The name carries the number-key hint the old button used to ("(1)"):
+		# keys 1–6 still pick left-to-right (see _input). Dense (6-class) roster
+		# puts the icon and name on ONE row to reclaim height — the tallest card
+		# (Paladin's long passive + 4 abilities) has to clear the 720px frame.
+		if dense:
+			var header := HBoxContainer.new()
+			header.add_theme_constant_override("separation", 8)
+			col.add_child(header)
+			var icon := TextureRect.new()
+			icon.texture = Art.tex(c["sprite"])
+			icon.custom_minimum_size = Vector2(40, 40)
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			header.add_child(icon)
+			var nm := _lbl(header, "%s  (%d)" % [c["name"], idx], 18, Color(0.95, 0.85, 0.5))
+			# A wrapping label inside an HBox with no min width collapses to one
+			# char per line (CLAUDE.md trap) — the name is short, so don't wrap it.
+			nm.autowrap_mode = TextServer.AUTOWRAP_OFF
+			nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		else:
+			var icon := TextureRect.new()
+			icon.texture = Art.tex(c["sprite"])
+			icon.custom_minimum_size = Vector2(96, 96)
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			col.add_child(icon)
+			_lbl(col, "%s  (%d)" % [c["name"], idx], 20, Color(0.95, 0.85, 0.5))
 		_lbl(col, c["desc"], 12 if dense else 13, Color(0.8, 0.8, 0.8))
 		if c.has("passive"):
 			_lbl(col, "★ " + c["passive"]["text"], 11 if dense else 12, Color(0.5, 0.95, 0.8))
@@ -737,10 +805,11 @@ func open_class_select() -> void:
 			var tag: String = "ULT" if slot == "ult" else slot.to_upper()
 			var scaling: String = Classes.ability_scaling(id, slot)
 			var riders: String = Classes.ability_riders(id, slot)
-			# Dense roster: ability names only — full text is one click away
-			# (opaque popover), and hover still previews it.
+			# Dense roster shows ability names + the readout lines below; the full
+			# prose now sits behind the whole-card pick (a click anywhere chooses
+			# the class), so the old click-for-popover on ability lines is gone.
 			var line: String = "%s %s" % [tag, ab["name"]] if dense else "%s %s — %s" % [tag, ab["name"], ab["desc"]]
-			var l := _lbl(col, line, 11 if dense else 12, Color(0.65, 0.7, 0.8))
+			_lbl(col, line, 11 if dense else 12, Color(0.65, 0.7, 0.8))
 			# Two readout lines under each ability (from its data): SCALING (type +
 			# %ATK, green) and RIDERS (CC/buffs/sustain/debuffs, amber). The
 			# tuning-transparency pair. Buffs with no damage show only riders.
@@ -748,22 +817,100 @@ func open_class_select() -> void:
 				_lbl(col, "    " + scaling, 10 if dense else 11, Color(0.58, 0.74, 0.66))
 			if riders != "":
 				_lbl(col, "    " + riders, 10 if dense else 11, Color(0.82, 0.72, 0.48))
-			if dense:
-				var ab_name: String = "%s %s" % [tag, String(ab["name"])]
-				var ab_desc: String = String(ab["desc"])
-				if scaling != "":
-					ab_desc += "\n\nScaling:  " + scaling
-				if riders != "":
-					ab_desc += "\nEffects:  " + riders
-				l.mouse_filter = Control.MOUSE_FILTER_STOP
-				l.gui_input.connect(func(e: InputEvent) -> void:
-					if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-						_open_detail_popover(null, ab_name, Color(0.75, 0.82, 0.95), ab_desc, []))
 		var spacer := Control.new()
 		spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		col.add_child(spacer)
-		_btn(col, "  %s  (%d)" % [c["name"], idx], func() -> void: pick_class(id), Color(0.6, 1.0, 0.6))
+		# Every widget passes clicks through to the card panel above (recurse so
+		# the header row's icon + name don't swallow them either).
+		_ignore_mouse_recursive(col)
 		idx += 1
+
+
+## Make every Control under `n` transparent to the mouse, so clicks fall
+## through the card's content down to the PanelContainer that selects it.
+func _ignore_mouse_recursive(n: Node) -> void:
+	for ch in n.get_children():
+		if ch is Control:
+			(ch as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_ignore_mouse_recursive(ch)
+
+
+## Chrome for one class-picker card: a faint panel that brightens and gains a
+## gold rim on hover, so the whole card reads as one big button.
+func _class_card_style(hover: bool) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.12, 0.11, 0.15, 0.55) if hover else Color(0.06, 0.06, 0.08, 0.30)
+	sb.border_color = Color(0.95, 0.85, 0.5, 0.9) if hover else Color(0.42, 0.40, 0.34, 0.35)
+	sb.set_border_width_all(2 if hover else 1)
+	sb.set_corner_radius_all(6)
+	sb.content_margin_left = 8
+	sb.content_margin_right = 8
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 4
+	return sb
+
+
+## A class was picked — from a card click or a number key. Both funnel here so
+## the splash reveal always plays. Guarded so a second click/key mid-reveal
+## can't double-fire.
+func choose_class(id: String) -> void:
+	if current != "class_select":
+		return
+	_show_class_splash(id)
+
+
+## The "you chose the <Class>" beat: the class's splash art rises out of black
+## for ~1s, then name entry. Runs while the tree is paused — Menus is
+## PROCESS_MODE_ALWAYS, so the fade tween and the hold timer still tick.
+func _show_class_splash(id: String) -> void:
+	if root:
+		root.queue_free()
+		root = null
+	current = "class_splash"
+	game.request_pause(true)
+	if game and game.hud:
+		game.hud.visible = false
+	game.sfx("ui_click")
+
+	root = Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(root)
+
+	var bg := ColorRect.new()
+	bg.color = Color(0.02, 0.015, 0.03)  # deep black, matches the boot night
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(bg)
+
+	var art := TextureRect.new()
+	art.texture = Art.tex("class_splash_" + id)
+	art.set_anchors_preset(Control.PRESET_FULL_RECT)
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(art)
+
+	var c: Dictionary = Classes.CLASSES.get(id, {})
+	var name_lbl := Label.new()
+	name_lbl.text = String(c.get("name", "")).to_upper()
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.position = Vector2(0, 600)
+	name_lbl.size = Vector2(1280, 90)
+	UITheme.title(name_lbl, 48)
+	name_lbl.add_theme_color_override("font_color", Color(0.96, 0.86, 0.52))
+	name_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	name_lbl.add_theme_constant_override("outline_size", 8)
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(name_lbl)
+
+	# Rise out of black, hold, then step into naming.
+	root.modulate.a = 0.0
+	var tw := root.create_tween()
+	tw.tween_property(root, "modulate:a", 1.0, 0.3).set_trans(Tween.TRANS_SINE)
+	await get_tree().create_timer(1.15).timeout
+	if current != "class_splash":
+		return  # backed out or superseded during the hold
+	open_name_entry(id)
 
 
 func pick_class(id: String) -> void:
@@ -772,6 +919,63 @@ func pick_class(id: String) -> void:
 		root = null
 	current = ""
 	game.on_class_chosen(id)
+
+
+# ------------------------------------------------------------- name your hero ---
+
+## Between the class pick and the world build: name the hero. Pre-filled with
+## the OS account name (what co-op friends already recognize) so a player who
+## just wants to start can hit Enter. The name rides the save (SaveGame) and
+## becomes this character's co-op identity; blank stores "" so the live OS
+## name answers instead. Direct pick_class() callers (tests, launchers) skip
+## this and keep the empty-name fallback.
+func open_name_entry(id: String) -> void:
+	var vbox := _open("Name your hero", 640, 360)
+	current = "name_entry"
+	var c: Dictionary = Classes.CLASSES.get(id, {})
+	_lbl(vbox, "Your %s needs a name — it's how friends will find you in co-op. Leave it as-is to keep your account name." % String(c.get("name", "hero")).to_lower(),
+		14, Color(0.75, 0.75, 0.75))
+
+	var field := LineEdit.new()
+	field.max_length = Balance.CHAR_NAME_MAX
+	field.text = _default_char_name()
+	field.placeholder_text = "Hero"
+	field.custom_minimum_size = Vector2(0, 40)
+	field.add_theme_font_size_override("font_size", 18)
+	vbox.add_child(field)
+	field.grab_focus()
+	field.select_all()
+
+	var confirm := func() -> void: _confirm_name(id, field.text)
+	field.text_submitted.connect(func(_t: String) -> void: confirm.call())
+	_btn(vbox, "  Begin  ", func() -> void: confirm.call(), Color(0.6, 1.0, 0.6))
+	_btn(vbox, "  Back  ", func() -> void: open_class_select(), Color(0.8, 0.85, 0.9))
+	_hint(vbox, "Enter to begin · ESC to change class")
+
+
+## The name offered by default: the OS account name (co-op-recognizable),
+## read through the network session's os_name(); "Hero" if it can't be read.
+func _default_char_name() -> String:
+	var sess: Node = game.get_node_or_null("/root/NetworkManager/Session")
+	var nm := String(sess.os_name()) if sess != null else ""
+	return nm if nm != "" else "Hero"
+
+
+## Commit the typed name onto the fresh character (save.gd reads game.player),
+## then run the normal class entry.
+func _confirm_name(id: String, raw: String) -> void:
+	game.player.char_name = _sanitize_char_name(raw)
+	pick_class(id)
+
+
+## One trimmed line, control characters stripped, capped at CHAR_NAME_MAX.
+## Blank returns "" — the co-op name then falls back to the live OS name.
+func _sanitize_char_name(raw: String) -> String:
+	var out := ""
+	for ch in raw.strip_edges():
+		if ch.unicode_at(0) >= 32:  # drop control chars; keep it one clean line
+			out += ch
+	return out.strip_edges().substr(0, Balance.CHAR_NAME_MAX).strip_edges()
 
 
 # --------------------------------------------------------------- inventory ---
@@ -797,10 +1001,21 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(hbox)
 
+	# EQUIPPED runs long once every slot holds a socketed S-item (4 slots ×
+	# title + wrapped stats + a 40px socket row easily exceeds the panel body),
+	# and a container never shrinks a child below its min height — so the raw
+	# VBox used to spill past the panel bottom. Scroll it, the same way the bag
+	# grid on the right does, and the list stays inside the panel.
+	var left_scroll := ScrollContainer.new()
+	left_scroll.custom_minimum_size = Vector2(456, 0)  # 440 col + ~16 scrollbar
+	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	left_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hbox.add_child(left_scroll)
 	var left := VBoxContainer.new()
 	left.custom_minimum_size = Vector2(440, 0)
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 6)
-	hbox.add_child(left)
+	left_scroll.add_child(left)
 	UITheme.header(_lbl(left, "EQUIPPED", 16, Color(0.95, 0.85, 0.5)))
 	_lbl(left, "(click an item for its detail popover)", 12, Color(0.55, 0.55, 0.6))
 	for slot in Items.SLOTS:
@@ -2932,12 +3147,20 @@ func _input(event: InputEvent) -> void:
 			var ids: Array = Classes.CLASSES.keys()
 			var num: int = event.keycode - KEY_1
 			if num >= 0 and num < ids.size():
-				pick_class(ids[num])
+				choose_class(ids[num])  # same splash reveal as a card click
 				get_viewport().set_input_as_handled()
 			return  # can't ESC out of class select
-		if current in ["title", "class_select"] \
+		if current == "name_entry":
+			# ESC steps back to the class picker; every other key falls through
+			# UNHANDLED so the focused name field receives the typing (the same
+			# reason the dev-roster LineEdit works on the title screen below).
+			if event.keycode == KEY_ESCAPE:
+				open_class_select()
+				get_viewport().set_input_as_handled()
+			return
+		if current in ["title", "class_select", "class_splash"] \
 				or (current == "chapter_select" and not chapter_replay):
-			return  # boot menus: no escaping into a paused void
+			return  # boot menus (incl. the class splash beat): no escaping into a paused void
 		# ESC closes any open menu (alongside the on-screen ✕ + click-off);
 		# the toggle hotkeys (I / C / M …) also close their own screen.
 		if event.keycode == KEY_ESCAPE \
@@ -2955,6 +3178,8 @@ func _input(event: InputEvent) -> void:
 				UILobby.esc(self)  # one stage back / leave the lobby, never a void
 			elif current == "settings":
 				_settings_back()  # back to wherever settings was opened from
+			elif current == "benchmark_roster":
+				open_slots()  # dev roster modal → back to the slot list
 			elif current == "confirm" \
 					or (current == "chapter_select" and chapter_replay):
 				open_pause()  # back to the system menu, not out of it

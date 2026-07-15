@@ -1113,6 +1113,13 @@ func set_flag(flag_name: String, value = true) -> void:
 	if value:
 		call("_recheck_gates")
 		_check_side_quests()
+	# An S-weapon awakening evolves a mythic skin to its awakened form (Phantom
+	# blue -> teal Nightfang). Refresh the sprite on ANY change of the owning
+	# class's awakening flag so it flips the instant the class awakens — and
+	# reverts cleanly if a dev toggle clears it. Covers the quest, the dev-panel
+	# toggle, and any other path. Only the owning class reacts.
+	if player != null and flag_name == "s_awakened_" + String(player.cls):
+		player.refresh_skin_sprite()
 	# MP-13 (§5.4): WORLD flags are shared story state — quest progress,
 	# opened ways, one-time reveals, pay-once desks, shrine/cache/curse
 	# once-per-room marks. Route them through the host so every machine in
@@ -1779,6 +1786,12 @@ func tick_footsteps(delta: float) -> void:
 		return
 	_foot_t -= delta
 	if _foot_t > 0.0:
+		return
+	if player.skin == "phantom":
+		# Phantom drifts — a soft airy swish REPLACES the footfall so he reads
+		# as gliding, not stomping. Slow, even 1s cadence (a glide, not steps).
+		_foot_t = 1.0
+		sfx("glide", 1.0, 0.0, -18.0)
 		return
 	_foot_t = clampf(88.0 / maxf(player.velocity.length(), 1.0), 0.24, 0.42)
 	var armor := player.cls in ["warrior", "paladin"]

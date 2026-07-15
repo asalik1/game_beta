@@ -284,6 +284,7 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 			eff["aoe"] = true
 			if fx_copy.has("freeze"):
 				eff["stun"] = float(fx_copy["freeze"])  # glacial comet
+			eff["true_frac"] = ability_true_frac("ult")  # Meteor: a quarter lands as true
 			hit_enemy(e, ability_coeff("ult") * float(fx_copy.get("dmg_mult", 1.0)) * scale, eff)
 		# on_land BEFORE the restore: Starfall's next comet snapshots _tfx in
 		# its own _meteor_at, so the whole salvo inherits the ULT's payload.

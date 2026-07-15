@@ -41,6 +41,7 @@ func _physics_process(delta: float) -> void:
 	hurt_cd = maxf(0.0, hurt_cd - delta)
 	berserk_time = maxf(0.0, berserk_time - delta)
 	zeal_time = maxf(0.0, zeal_time - delta)   # paladin Zeal window
+	deathmark_time = maxf(0.0, deathmark_time - delta)   # assassin Death Mark weave window
 	theme_speed_time = maxf(0.0, theme_speed_time - delta)
 	damp_time = maxf(0.0, damp_time - delta)
 	elixir_time = maxf(0.0, elixir_time - delta)
@@ -217,8 +218,10 @@ func _physics_process(delta: float) -> void:
 		sprite.rotation = _clip_rot
 		sprite.position.y = 0.0
 	elif dir != Vector2.ZERO:
-		sprite.position.y = -absf(sin(anim_t * 11.0)) * 3.0
-		sprite.rotation = sin(anim_t * 11.0) * 0.06
+		# Walk bob (up/down hop) removed — old artifact, no class needs it.
+		sprite.position.y = 0.0
+		# Phantom (assassin mythic) additionally GLIDES — no side-to-side sway.
+		sprite.rotation = 0.0 if skin == "phantom" else sin(anim_t * 11.0) * 0.06
 	else:
 		sprite.position.y = 0.0
 		sprite.rotation = 0.0
@@ -226,7 +229,8 @@ func _physics_process(delta: float) -> void:
 	# Held weapon follows the facing side, with a light idle sway.
 	if weapon_spr and weapon_spr.visible:
 		var side := look_sign
-		weapon_spr.position = Vector2(20.0 * side, 8.0 + sprite.position.y)
+		var rs := Balance.CHAR_RENDER_SCALE  # held-weapon offsets track the enlarged body
+		weapon_spr.position = Vector2(20.0 * rs * side, 8.0 * rs + sprite.position.y)
 		weapon_spr.flip_h = side < 0.0
 		if melee_swing > 0.0:
 			melee_swing = maxf(0.0, melee_swing - delta)
@@ -234,7 +238,7 @@ func _physics_process(delta: float) -> void:
 			if melee_style == "stab":
 				# Blade points along the stab line and lunges out-and-back.
 				weapon_spr.rotation = melee_dir.angle() + PI / 2.0
-				weapon_spr.position += melee_dir * sin(prog * PI) * 20.0
+				weapon_spr.position += melee_dir * sin(prog * PI) * 20.0 * rs
 			else:
 				weapon_spr.rotation = side * lerpf(-1.4, 0.9, melee_swing / 0.16)
 		else:
@@ -288,7 +292,7 @@ func _physics_process(delta: float) -> void:
 			# ember-orange tell until the paladin swaps back to Holy (the
 			# timed buffs above outrank it while they run).
 			aura.modulate = Color(1.0, 0.45, 0.22, 0.5)
-		var pulse := 2.2 + sin(anim_t * shimmer) * 0.25
+		var pulse := (2.2 + sin(anim_t * shimmer) * 0.25) * Balance.CHAR_RENDER_SCALE
 		aura.scale = Vector2(pulse, pulse)
 	else:
 		aura.visible = false
@@ -346,7 +350,7 @@ func _remote_present(delta: float) -> void:
 		# doesn't glide like a statue.
 		sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
 		if velocity.length() > 20.0:
-			sprite.position.y = -absf(sin(anim_t * 11.0)) * 3.0
+			sprite.position.y = 0.0   # walk bob removed (old artifact)
 			sprite.rotation = sin(anim_t * 11.0) * 0.06
 		else:
 			sprite.position.y = 0.0
@@ -487,7 +491,11 @@ func use_ability(slot: String) -> void:
 	# lockout — Stab and Fan of Knives can each be spammed, but never
 	# WOVEN together. Point-blank stab+knives was double dps with ALL
 	# of it feeding the surge lifesteal: an immortality loop.
-	if cls == "assassin" and slot in ["a1", "a3"]:
+	# EXCEPTION: the awakened Nightfang (mirrorstep S weapon) DROPS the lockout
+	# for the Death Mark window — Stab AND Fan weave for a huge burst in that short
+	# 5s. Its 30s ult cd + the BiS/awakening gate keep the lifesteal loop contained.
+	if cls == "assassin" and slot in ["a1", "a3"] \
+			and not (deathmark_time > 0.0 and s_passive() == "mirrorstep"):
 		var twin := "a3" if slot == "a1" else "a1"
 		cds[twin] = maxf(cds[twin], cds[slot])
 	mp -= cost
@@ -513,6 +521,14 @@ func use_ability(slot: String) -> void:
 			if Art.dir8_suffix(av) == "s":
 				action_face_hint = Vector2(1.0 if av.x >= 0.0 else -1.0, 1.0)
 		play_action(action_clip)
+		if cls == "warrior" and action_clip == "ult":
+			# Berserk swings the red-blade cleave (the ult clip) at Cleave's
+			# rage cadence — 0.45s, less under cdr — but that clip is authored
+			# for a slower 0.64s one-shot, so each swing was chopped before its
+			# follow-through. Re-pace it to finish inside the real recast window
+			# so the cleave reads as a full swing at any attack speed (the ult
+			# ACTIVATION roar, on its 40s cd, stays at authored pace).
+			fit_action_clip(cds[slot])
 		_strike_clip = action_clip  # skin FX-sync: swing_delay() reads this
 		action_face_hint = Vector2.ZERO
 	var f := dm(slot)

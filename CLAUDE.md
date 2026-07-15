@@ -1,8 +1,8 @@
 # Emberfall — working practices (all agents)
 
-## Mobile version — frozen by default
-- `mobile/` (repo root) holds the planned iOS/Android version (see `mobile/README.md` for the framework: Godot native export from a snapshot copy of `game/`).
-- **Do NOT update, sync, or touch anything under `mobile/` unless the user explicitly asks for mobile work.** Desktop changes are never ported there automatically. All normal work happens in `game/` — treat `mobile/` as read-only.
+## Mobile version — kept in sync (unfrozen 2026-07-15)
+- `mobile/` (repo root) holds the iOS/Android version: a snapshot fork of `game/` plus a small, fixed set of mobile deltas (Mobile renderer, touch HUD, export presets — the exact list lives in `mobile/README.md`). Deployment is proven end to end — GitHub Actions **"Mobile builds"** produces a signed-debug APK and an unsigned iOS `.ipa`; both install/run on-device (sideload).
+- **Policy change (was "frozen, do not touch"):** keep `mobile/game/` in sync with `game/`. `game/` is still the **source of truth** — never edit `mobile/` to fix a desktop issue; fix it in `game/` and re-sync. To re-sync: re-copy `game/` over `mobile/game/`, re-apply the mobile deltas from `mobile/README.md`, then run the compile gate + `test_quick` against `mobile/game` before committing. Keep the delta list small and current.
 
 ## Code layout (see CODING_GUIDELINES.md §38)
 - Tuning knobs → `balance.gd`; data tables stay in domain files (classes/items/story). Never inline a bare tuning number.

@@ -85,6 +85,7 @@ static func _character_section(game: Game) -> Dictionary:
 	var p := game.player
 	return {
 		# --- identity / progression ---
+		"name": p.char_name,
 		"cls": p.cls,
 		"level": p.level, "xp": p.xp,
 		"skill_points": p.skill_points, "tree_points": p.tree_points,
@@ -175,7 +176,7 @@ static func world_of(data: Dictionary) -> Dictionary:
 
 # Where each v2 flat field lands in v3. "bag" is the round-52 legacy
 # single-bag key (pre-`bags` saves) — routed so load_bags still sees it.
-const _V2_CHARACTER_FIELDS := ["cls", "level", "xp", "skill_points", "tree_points",
+const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tree_points",
 	"attr_points", "unspent_attr", "gold", "potions", "potions_free", "ability_theme", "chroma", "skin",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
 	"consumables", "potion_rotation", "active_potion", "hp", "mp",
@@ -228,6 +229,7 @@ static func list() -> Array:
 		var c := character_of(d)
 		out.append({
 			"slot": slot,
+			"name": String(c.get("name", "")),
 			"cls": String(c.get("cls", "warrior")),
 			"level": int(c.get("level", 1)),
 			"quest": String(world_of(d).get("quest_key", "talk")),
@@ -333,6 +335,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 ## HOME geometry — while guesting they wait for the mailbox flush).
 static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true) -> void:
 	var p := game.player
+	p.char_name = String(c.get("name", ""))
 	p.level = int(c.get("level", 1))
 	p.set_class(String(c.get("cls", "warrior")))
 	p.xp = int(c.get("xp", 0))

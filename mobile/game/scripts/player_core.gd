@@ -22,6 +22,7 @@ const SPEED_BASE_REF := 260.0
 var game: Game  # set by game.gd
 
 # --- identity ---
+var char_name := ""   # hero name chosen at creation; "" falls back to the OS account name in co-op
 var cls := "warrior"
 var ability_theme := {"a1": "", "a2": "", "a3": "", "ult": ""}
 var themes_known := 0
@@ -345,6 +346,7 @@ var hurt_was_heavy := false    # the live hurt_cd window blocks HEAVY hits too: 
 var berserk_time := 0.0
 var berserk_bonus := 0.4       # damage bonus while berserk (theme-tunable)
 var zeal_time := 0.0           # paladin: Zeal burst window, armed by a swap INTO Retribution
+var deathmark_time := 0.0      # assassin: Death Mark window — awakened Nightfang weaves Stab+Fan here
 var holy_charge := 0.0         # paladin: banked overheal (damage), spent by the next Judgment as a smite
 var next_crit := false         # Hunt: the next hit is a guaranteed crit
 var hunt_rhythm := 0           # Hunt: Quick Shots fired since the last rhythm crit (Balance.HUNT_RHYTHM_SHOTS)
@@ -479,6 +481,10 @@ var _dir_k := 1              # sub-frames per direction (windup, action, ...)
 ## kit dispatch). Lets swing_delay() sync a skin's FX to that clip's real
 ## contact frame instead of the base-tuned Balance const. "" = none/reset.
 var _strike_clip := ""
+## Playback speedup applied to the current one-shot clip by fit_action_clip so
+## it finishes inside a fast recast window (1.0 = authored pace). swing_delay
+## divides by it to keep the hit FX on the now-earlier contact frame.
+var _clip_haste := 1.0
 const DIR_ANIM_DUR := 0.22   # seconds to play one direction's sub-frames
 
 ## Ability slots that show a directional aim POSE instead of a swing clip.
@@ -491,7 +497,10 @@ const DIR_POSE := {
 
 func _apply_class_sprite() -> void:
 	var art_name: String = Classes.CLASSES[cls]["sprite"]
-	var skin_art: String = Skins.skin_sprite(cls, skin)
+	# A skin with an awakened form (Phantom) evolves once this class's S-weapon
+	# awakening is complete (s_awakened_<cls>) — resolve to that base instead.
+	var awakened: bool = game != null and bool(game.get_flag("s_awakened_" + cls, false))
+	var skin_art: String = Skins.skin_sprite(cls, skin, awakened)
 	if skin_art != "":
 		art_name = skin_art
 	face_left = Art.faces_left(art_name)
@@ -529,7 +538,10 @@ func _apply_class_sprite() -> void:
 	if _clips.has("idle"):
 		var m := _measure_hero_frame(_clips["idle"])
 		_hero_scale = m["scale"]
-		_hero_offset_y = m["offset"]
+		# Per-skin anchor nudge: a skin whose weapon hangs below the boots is
+		# grounded on the blade tip by the lowest-pixel anchor; nudge it DOWN so
+		# the feet ground instead (default 0 — see Skins.ANCHOR_NUDGE).
+		_hero_offset_y = m["offset"] + Skins.anchor_nudge(skin)
 		for pose in _dir_clips:
 			_dir_meta[pose] = _measure_hero_frame(_dir_clips[pose])
 		_play_clip("idle", true)
@@ -565,6 +577,13 @@ func set_skin(skin_id: String) -> void:
 	_apply_class_sprite()
 
 
+## Re-resolve the current skin's sprite (e.g. after an S-weapon awakening flips
+## a skin to its awakened form). Safe to call live — same path as set_skin.
+func refresh_skin_sprite() -> void:
+	if sprite != null:
+		_apply_class_sprite()
+
+
 ## Read a strip's first frame alpha to find body height + feet row, and derive
 ## the sprite scale (body -> constant on-screen size) + vertical feet offset.
 ## Returned per strip so a different-sized strip (e.g. directional poses) still
@@ -585,7 +604,10 @@ func _measure_hero_frame(info: Dictionary) -> Dictionary:
 					bot = y
 				break
 	var body_h := maxi(1, bot - top)
-	var sc := HERO_TARGET_BODY / float(body_h)
+	# CHAR_RENDER_SCALE enlarges the on-screen body (less downscale = thin detail
+	# like the sword blade survives). Feet stay anchored at HERO_FEET_ANCHOR, so
+	# the bigger body grows UPWARD from the same ground line (shadow scales to match).
+	var sc := HERO_TARGET_BODY * Balance.CHAR_RENDER_SCALE / float(body_h)
 	return {"scale": sc, "offset": HERO_FEET_ANCHOR / sc - float(bot) + float(fh) / 2.0}
 
 
@@ -626,6 +648,7 @@ func _play_clip(name: String, loop: bool) -> void:
 	# (it doesn't own the strip on the sprite anymore).
 	_clip_rot = 0.0
 	_clip_flip = 0.0
+	_clip_haste = 1.0      # a fresh clip plays at authored pace until refitted
 	_dir_pose_active = false
 	_loco_dir_on = false   # a clip change drops directional drive; the loco
 	_action_dir_on = false # tail (loop) / the block below (one-shot) re-enable
@@ -661,6 +684,27 @@ func play_action(name: String) -> void:
 		return
 	if _clips.has(name):
 		_play_clip(name, false)
+
+
+## Re-pace the one-shot action clip that is currently playing so all its frames
+## land inside `window` seconds (the ability's own cooldown). A fixed-duration
+## clip is otherwise chopped when the recast beats it — the warrior's Berserk
+## cleave (a 0.64s clip swung on a 0.45s-or-less cadence) was cut ~30% short of
+## its follow-through. Speed-up ONLY and capped: a clip already brisk enough for
+## the window keeps its authored pace, and an ultra-short cd can't blur it past
+## ACTION_CLIP_MAX_HASTE. Records _clip_haste so swing_delay pulls the hit FX in
+## to the now-earlier contact frame (no visual/FX desync). Skins inherit it —
+## the caller keys on the class, not the (skin-specific) art name.
+func fit_action_clip(window: float) -> void:
+	if _clip_loop or strip_frames <= 0 or window <= 0.0:
+		return
+	var natural := strip_fps
+	if natural <= 0.0:
+		return
+	var fitted: float = clampf(float(strip_frames) / window, natural,
+		natural * Balance.ACTION_CLIP_MAX_HASTE)
+	strip_fps = fitted
+	_clip_haste = fitted / natural
 
 
 ## Play a DIRECTIONAL animation aimed by `dir`: an 8-way strip of K sub-frames
@@ -754,7 +798,7 @@ func _ready() -> void:
 
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
-	shadow.scale = Vector2(2, 2)
+	shadow.scale = Vector2(2, 2) * Balance.CHAR_RENDER_SCALE  # matches the enlarged body
 	shadow.position = Vector2(0, 20)
 	add_child(shadow)
 
@@ -779,14 +823,14 @@ func _ready() -> void:
 	add_child(halo)
 
 	weapon_spr = Sprite2D.new()
-	weapon_spr.scale = Vector2(2.4, 2.4)
+	weapon_spr.scale = Vector2(2.4, 2.4) * Balance.CHAR_RENDER_SCALE
 	weapon_spr.visible = false
 	weapon_spr.z_index = 1
 	add_child(weapon_spr)
 	weapon_glow = Sprite2D.new()
 	weapon_glow.texture = Art.tex("glow")
 	weapon_glow.visible = false
-	weapon_glow.scale = Vector2(1.1, 1.1)
+	weapon_glow.scale = Vector2(1.1, 1.1) * Balance.CHAR_RENDER_SCALE
 	weapon_glow.z_index = 0
 	add_child(weapon_glow)
 
@@ -967,7 +1011,14 @@ func recalc() -> void:
 	# stats are gem-only and SOFT-KNEE'd regardless of source — beyond
 	# the cap every point pays ~1/10 (never a dead stop). Late game may
 	# lift the caps a notch by level (L80+); deliberately not built yet.
-	cdr = Balance.soft_cap(maxf(0.0, b["cdr"]), Balance.CAP_CDR)
+	# INT casters (mage/warlock) squeeze more from haste as they level (the endgame
+	# throughput fix, Balance.CASTER_HASTE_BONUS): the multiplier lifts both the cdr
+	# value AND its soft cap, and scales ~linearly to +BONUS at LEVEL_CAP so early
+	# game is untouched. Non-casters get haste_mult 1.0 (unchanged). Ults ignore cdr.
+	var haste_mult := 1.0
+	if Classes.CLASSES[cls]["primary"] == "INT":
+		haste_mult += Balance.CASTER_HASTE_BONUS * float(level) / float(Balance.LEVEL_CAP)
+	cdr = Balance.soft_cap(maxf(0.0, b["cdr"]) * haste_mult, Balance.CAP_CDR * haste_mult)
 	lifesteal = Balance.soft_cap(maxf(0.0, b["lifesteal"]), Balance.CAP_LIFESTEAL)
 	regen_pct = b["regen_pct"]
 	sw_regen = b["sw_regen"]
@@ -1716,13 +1767,20 @@ func dm(slot: String) -> float:
 func ability_cd(slot: String) -> float:
 	var ab := Classes.ability(cls, slot)
 	if slot == "ult":
-		# ULTS ignore haste, EVERY class (player rule 2026-07-06: there's
-		# a reason they're called ults). Authored ult-cd TALENTS still
-		# apply — those are design-owned, not stat-stacking. The assassin's
-		# Death Mark stays FULLY fixed, talents included (round 38).
+		# ULTS ignore haste (player rule 2026-07-06: there's a reason they're
+		# called ults). Authored ult-cd TALENTS still apply — those are
+		# design-owned, not stat-stacking. The assassin's Death Mark stays
+		# FULLY fixed, talents included (round 38).
 		if cls == "assassin":
 			return float(ab["cd"])
-		return maxf(0.1, ab["cd"] * (1.0 + _amod(slot, "cd")))
+		var ult_cd: float = ab["cd"] * (1.0 + _amod(slot, "cd"))
+		# EXCEPTION (2026-07-13): INT casters' ults DO scale with haste. Meteor /
+		# Void Rift are their damage backbone, and casters fall off at the gear
+		# ceiling — letting their ult cool down with stacked endgame haste is a
+		# core throughput lever (paired with CASTER_HASTE_BONUS). No other class.
+		if Classes.CLASSES[cls]["primary"] == "INT":
+			ult_cd *= 1.0 - cdr
+		return maxf(0.1, ult_cd)
 	if cls == "assassin" and slot == "a2":
 		# Shadow Dash: this is the WHIFF cd — floored so gear cdr can't push
 		# it below DASH_WHIFF_FLOOR. A connecting refund (in _dash_strike)
@@ -1741,6 +1799,8 @@ func ability_cd(slot: String) -> float:
 		cd *= 1.0 - cast_haste_cdr
 	if s_passive() == "wellspring" and (slot == "a2" or slot == "a3"):
 		cd *= 0.92  # mage S weapon: Frost Nova & Blink cool down 8% faster
+	if slot == "a1" and s_passive() in ["wellspring", "voidmaw"]:
+		cd *= 1.0 - Balance.S_CASTER_BOLT_CDR  # mage/warlock S weapon: basic bolt cools faster
 	cd = cd * (1.0 - cdr)
 	if cls == "warrior" and slot == "a1" and berserk_time <= 0.0:
 		# Cleave has a HARD cd floor cdr can't pierce — plate hits hard, not fast,

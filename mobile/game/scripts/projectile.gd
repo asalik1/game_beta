@@ -36,6 +36,7 @@ const GLOWS := {
 	"arrow": Color(0.9, 1.0, 0.6), "knife": Color(0.8, 0.85, 1.0),
 	"slash": Color(1.0, 0.9, 0.5), "icelance": Color(0.5, 0.9, 1.0),
 	"shadowbolt": Color(0.7, 0.4, 1.0), "dart": Color(0.85, 0.92, 1.0),
+	"shuriken": Color(1.0, 0.85, 0.4),
 }
 
 
@@ -108,6 +109,15 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			# p.modulate, with the kit's _knife_glow halo behind it.
 			sprite.scale = Vector2(0.28, 0.28)
 			glow.visible = false
+		"shuriken":
+			# Golden Ronin's throwing star (assets/sprites/shuriken.png, 64px):
+			# spins on its own axis in flight (see _physics_process) and trails a
+			# fading after-image (kit ShurikenEcho). Keeps a soft GOLD aura framing
+			# the star (the glow sprite, gold-tinted via GLOWS) like the base kunai's
+			# halo / Phantom's blue glow; _knife_glow adds a tighter gold core.
+			sprite.scale = Vector2(0.4, 0.4)          # 20% smaller than before (0.5)
+			glow.scale = Vector2(0.8, 0.8)
+			glow.modulate = Art.hdr(Color(p.glow_color, 0.75))
 		_: sprite.scale = Vector2(3, 3)
 	sprite.rotation = velocity.angle()
 	p.add_child(sprite)
@@ -144,8 +154,11 @@ func _physics_process(delta: float) -> void:
 	if homing and friendly:
 		_steer_home(delta)
 	global_position += vel * delta
-	if tex_kind == "knife" and spr and spin:
-		spr.rotation += 16.0 * delta  # thrown blades tumble end over end
+	if spr and spin:
+		if tex_kind == "knife":
+			spr.rotation += 16.0 * delta   # thrown blades tumble end over end
+		elif tex_kind == "shuriken":
+			spr.rotation += 34.0 * delta   # a throwing star whirs fast on its axis
 	life -= delta
 	if life <= 0.0:
 		_bloom()

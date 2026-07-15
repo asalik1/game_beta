@@ -234,10 +234,34 @@ func _rpc_lobby_roster(roster: Dictionary) -> void:
 ## is the mirrored broadcast.
 func lobby_roster() -> Dictionary:
 	if not multiplayer.is_server():
-		return lobby_chars
+		return lobby_chars  # already de-duped: the host broadcasts this shape
 	var out := {1: _lobby_block()}
 	for pid in lobby_chars:
 		out[int(pid)] = lobby_chars[pid]
+	return dedup_roster(out)
+
+
+## Session-local name de-dup (DISPLAY only): when party members share a name,
+## the host — authoritative for the roster — suffixes the later ones "#2",
+## "#3"… so the lobby/party list stays legible. Stored names (lobby_chars)
+## are never touched; a global, server-assigned #tag waits on the account
+## backend. Stable by ascending peer id, so the host (id 1) and earlier
+## joiners keep the bare name and only the collisions grow a suffix.
+static func dedup_roster(roster: Dictionary) -> Dictionary:
+	var seen := {}   # lower-cased name -> how many already assigned
+	var out := {}
+	var ids := roster.keys()
+	ids.sort()
+	for pid in ids:
+		var src: Dictionary = roster[pid]
+		var block := src.duplicate()
+		var base := String(block.get("name", "Hero"))
+		var key := base.to_lower()
+		var n := int(seen.get(key, 0))
+		seen[key] = n + 1
+		if n > 0:
+			block["name"] = "%s #%d" % [base, n + 1]
+		out[int(pid)] = block
 	return out
 
 

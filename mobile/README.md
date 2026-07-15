@@ -4,10 +4,12 @@ This folder holds everything specific to the mobile release of Emberfall.
 The desktop game lives in `game/` and is the source of truth; **nothing in
 `game/` should ever be changed for mobile's sake.**
 
-> **Agent policy (also stated in CLAUDE.md):** the mobile version is
-> frozen by default. Do NOT port desktop changes here, keep this folder in
-> sync, or touch anything under `mobile/` unless the user explicitly asks
-> for mobile work. Desktop agents can ignore this folder entirely.
+> **Agent policy (also in CLAUDE.md):** the mobile version is **kept in sync**
+> with `game/` (unfrozen 2026-07-15, once on-device deployment was proven).
+> `game/` stays the **source of truth** — fix desktop issues there and re-sync
+> here, never patch `mobile/` directly. Re-sync = re-copy `game/` over
+> `mobile/game/`, re-apply the deltas listed below, compile-gate + `test_quick`
+> on `mobile/game`, commit.
 
 ---
 

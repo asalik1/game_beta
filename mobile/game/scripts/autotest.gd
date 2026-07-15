@@ -1082,6 +1082,7 @@ func _run_systems() -> void:
 
 	# 5b. Save / load roundtrip on a scratch slot (now with room state).
 	var p: Player = game.player
+	p.char_name = "Rowan"
 	p.gold = 4321
 	p.resonance = -37.0
 	p.faction_standing["cinderborn"] = 12
@@ -1094,6 +1095,7 @@ func _run_systems() -> void:
 	var kept_seed: int = game.wander_seed
 	var kept_visited: int = game.visited.size()
 	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	p.char_name = ""
 	p.gold = 0
 	p.resonance = 0.0
 	p.faction_standing["cinderborn"] = 0
@@ -1111,6 +1113,8 @@ func _run_systems() -> void:
 	await _frames(2)
 	if p.gold != 4321 or p.resonance != -37.0 or p.faction_standing["cinderborn"] != 12:
 		return _fail("save did not restore gold/resonance/faction")
+	if p.char_name != "Rowan":
+		return _fail("save did not restore character name (got '%s')" % p.char_name)
 	if game.quest_key != kept_quest or p.level != kept_level:
 		return _fail("save did not restore quest/level")
 	var got_weapon: String = p.equipment["weapon"]["name"] if p.equipment.has("weapon") else ""
@@ -1131,7 +1135,17 @@ func _run_systems() -> void:
 	SaveGame.delete(SaveGame.MAX_SLOTS)
 	if SaveGame.exists(SaveGame.MAX_SLOTS):
 		return _fail("save delete failed")
-	print("ok: save/load roundtrip (gold, resonance, factions, gear, room state)")
+	print("ok: save/load roundtrip (name, gold, resonance, factions, gear, room state)")
+
+	# 5b1. Session-local name de-dup: colliding party names get a display-only
+	# "#N" suffix (case-insensitive), host/earlier ids keep the bare name.
+	var NetSess := preload("res://scripts/net/net_session.gd")
+	var dd: Dictionary = NetSess.dedup_roster({
+		1: {"name": "Rowan"}, 4: {"name": "rowan"}, 7: {"name": "Bex"}, 9: {"name": "Rowan"}})
+	if String(dd[1]["name"]) != "Rowan" or String(dd[4]["name"]) != "rowan #2" \
+			or String(dd[7]["name"]) != "Bex" or String(dd[9]["name"]) != "Rowan #3":
+		return _fail("name de-dup wrong: %s" % str([dd[1]["name"], dd[4]["name"], dd[7]["name"], dd[9]["name"]]))
+	print("ok: session-local name de-dup (#N on collision, case-insensitive)")
 
 	# 5b2. Chroma + skin system.
 	var p_sk: Player = game.player
@@ -1359,6 +1373,11 @@ func _test_endgame() -> void:
 	game.boss_records["vargoth"] = {"ttk": 30.0, "dps": 100.0, "kills": 1}
 	game.dev_mode = true  # unlocks the modes; no_saves already fences meta writes
 
+	# HUD trial icons: shown under the mailbox once unlocked (not buried in ESC).
+	await _frames(2)  # let update_stats toggle them
+	if not (game.hud.crucible_btn.visible and game.hud.depths_btn.visible):
+		return _fail("endgame: HUD trial icons not shown when unlocked")
+
 	# ---------------------------------------------------------- The Crucible ---
 	game.enter_endgame("crucible")
 	if not game.endgame_active or game.chapter_id != "crucible":
@@ -1368,6 +1387,8 @@ func _test_endgame() -> void:
 	await _frames(2)
 	if eg.index != 1 or game._live_bosses().is_empty():
 		return _fail("crucible: first boss did not spawn")
+	if game.hud.crucible_btn.visible:
+		return _fail("endgame: HUD trial icons should hide during a live run")
 	var b: Boss = game._live_bosses()[0]
 	if not b.endgame_boss:
 		return _fail("crucible: boss not tagged endgame_boss")
@@ -1469,7 +1490,7 @@ func _test_endgame() -> void:
 	game.player.hp = game.player.max_hp
 	game.player.mp = game.player.max_mp
 	await _frames(3)
-	print("ok: endgame modes (Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)")
+	print("ok: endgame modes (HUD trial icons; Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)")
 
 
 ## Chapter 1 end to end: terrains, the darkwood walk, all three bosses.

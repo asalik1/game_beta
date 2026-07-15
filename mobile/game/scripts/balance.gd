@@ -14,6 +14,22 @@ class_name Balance
 # from either orientation (0.6 ~= a 31-degree cone off vertical).
 const AIM_VERTICAL_CONE := 0.6
 
+# ------------------------------------------------- character render scale ---
+# Heroes and regular mobs are authored at ~200px but render small on screen, so
+# the downscale decimates thin detail (a hero's sword blade in the E/W idle/walk
+# poses dropped out and read as "cut off"). This multiplier enlarges the hero
+# body target + its attachments (shadow, held weapon, aura) AND every enemy's
+# visual (sprite, shadow, HP-bar height) — mobs AND bosses — by the SAME factor,
+# so the whole cast keeps its relative proportion. Purely visual: collision
+# radii, aggro/attack ranges and speeds are unchanged. Tune to taste; 1.0 = old size.
+const CHAR_RENDER_SCALE := 1.7
+
+# Hero name (chosen at creation, shown in the co-op lobby/party). Capped so a
+# long name never overruns a roster row; empty falls back to the OS account
+# name. Matches os_name()'s substr(0, 16) so the fallback and the typed name
+# share a ceiling.
+const CHAR_NAME_MAX := 16
+
 # STICKY SOFT TARGET. With no Tab-lock the hero still commits to one enemy —
 # your orientation tracks it, and aimed attacks favour it — so you can kite it
 # onto your blind side without turning around. It's acquired within
@@ -267,6 +283,11 @@ const ADD_SOCKET_COST := {"C": 2500, "B": 7000, "A": 18000, "S": 40000}
 const QUENCH_COST_BASE := {"F": 20, "E": 35, "D": 60, "C": 120, "B": 280, "A": 600, "S": 1100}
 const QUENCH_COST_ESCALATION := 4.0        # per-pull cost at the band MAX = base x (1 + this)
 const MAX_PLUS := {"F": 5, "E": 6, "D": 8, "C": 10, "B": 12, "A": 15, "S": 20}
+# Random substats an S legendary rolls. The old formula `(find(S)-1)/2` truncated
+# to 2, but the design intent was always 3 (an off-by-one) — restored here now that
+# pinned synergy subs are gone, so S gets its documented stat weight, all random +
+# rerollable. Other grades still use the formula (F/E/D:0, C/B:1, A:2).
+const S_SUB_COUNT := 3
 const UPGRADE_SAFE_PLUS := 4               # +1..+4 are guaranteed (attempts never fail at/below this)
 const UPGRADE_FAIL_PER_PLUS := 0.04        # success drops this much per plus past the safe floor
 const UPGRADE_MIN_SUCCESS := 0.40          # success never falls below this (reached at the S cap)
@@ -366,6 +387,8 @@ const WARRIOR_SWING_DELAY := 0.13 # delay Cleave's cut/quake to the sword swing'
 const MAGE_BOLT_DELAY := 0.12     # delay Firebolt to the staff-thrust release frame (same windup-vs-FX sync)
 const ARCHER_LOOSE_DELAY := 0.25  # delay Quick Shot / Multishot / Arrow Storm to the bow's draw-release frame (~frame 7 of the re-rolled 9-frame draw@22fps — the string snaps forward at t≈0.25; 0.12 loosed mid-draw)
 const WARLOCK_CAST_DELAY := 0.16  # delay Shadowbolt / Hex to the arm-snap/sigil-projection frame (~frame 4 of the re-rolled upright cast; Dark Pact = self-buff stays instant; Void Rift self-sequences via its telegraph)
+const PHANTOM_ULT_SPLASH_OPACITY := 0.10        # Phantom ult: the splash-art screen wash opacity
+const PHANTOM_ULT_SPLASH_OPACITY_BRIGHT := 0.15 # +5% on "bright" maps (light backdrops wash the wash out)
 # Bosses got v3 ability strips (a real swing/cast windup) — same rule as the
 # classes. BOSS_ABILITY_FPS plays the ~7-frame one-shot snappily (~0.5s, not the
 # 6fps 1.2s sluggard); BOSS_STRIKE_DELAY defers an IMMEDIATE bolt/ring/beam to
@@ -403,6 +426,12 @@ const DASH_CONNECT_FLOOR := 1.0
 const DASH_RIDER_CAP := 2
 const DASH_CDR_TO_DMG := 0.75    # per second of floor-eaten cd -> +dash-HIT dmg
 const DASH_CDR_TO_ANIM := 0.25   # per second eaten -> anim speedup (capped at 10%)
+# One-shot action clips play at a FIXED wall-clock duration (frames/fps), so a
+# fast recast — high CDR, or the warrior's Berserk cadence (Cleave at 0.45s,
+# less under cdr) — chops the swing before its follow-through. fit_action_clip
+# re-paces the clip to finish inside its own cooldown; this caps how far it may
+# be sped up so an ultra-short cd can't blur the swing into a strobe.
+const ACTION_CLIP_MAX_HASTE := 2.6
 # Shadow phantom step (2026-07-08): the dash arms a refund window instead of
 # only refunding on the dash's OWN kill — ANY kill within this many seconds
 # (the Fan or ult-stab that actually does the killing) slashes the dash cd.
@@ -804,6 +833,20 @@ static func soft_cap(v: float, cap: float, rate := SOFT_CAP_RATE) -> float:
 	return v if v <= cap else cap + (v - cap) * rate
 
 const CAP_CDR := 0.40        # ults ignore haste ENTIRELY (they're ults)
+# INT casters (mage/warlock) get MORE out of haste as they level — the endgame
+# throughput fix. They lack the AGI classes' multiplicative crit/rate stacking, so
+# their damage falls off at the gear ceiling (early top-of-pack -> late bottom). Haste
+# (Sapphire gem + tree cdr) is their rate lever: for a caster it's worth up to this
+# much MORE at LEVEL_CAP, scaling ~linearly from ~0 at L1 (so early game — where
+# casters are already strong — is untouched). Lifts the cdr VALUE and its soft cap
+# together, so a stacked endgame caster gets both more haste and a higher ceiling.
+# Ults still ignore haste regardless. Applied in player_core recalc.
+const CASTER_HASTE_BONUS := 0.25
+# Mage/warlock S weapon (wellspring / voidmaw): their basic bolt (Firebolt /
+# Shadowbolt) cools down this much faster — an endgame throughput reward on the
+# awakened weapon, ON TOP of the weapon's other S-passive effect. Applied in
+# ability_cd (stacks multiplicatively with cdr, before the flat-haste term).
+const S_CASTER_BOLT_CDR := 0.08
 const CAP_LIFESTEAL := 0.35  # knee on the TOTAL incl. surges/berserk/pact
 const CAP_COMBO := 0.30
 const CAP_CRIT := 0.35       # the old 70%-curve was far too generous

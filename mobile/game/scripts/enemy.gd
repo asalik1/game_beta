@@ -92,7 +92,8 @@ var _sprite_key := ""   # stats["sprite"] kept for action-strip lookups
 var _moving_anim := false  # hysteretic "moving" for walk/idle swap + bob
 var _face_vx := 0.0        # low-passed velocity.x for jitter-free facing
 var _avoid_turn := 0.0     # committed feeler-steer side (see _avoid_obstacles): keeps a mob rounding a corner instead of stuttering between the two ways past
-var art_scale := 1.0
+var art_scale := 1.0     # GAMEPLAY body scale (collision, avoidance reach) — never rescaled
+var render_mult := 1.0   # VISUAL-only multiplier (Balance.CHAR_RENDER_SCALE for mobs, 1.0 for bosses)
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
 var sprite: Sprite2D
@@ -259,6 +260,11 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	anim_t = randf() * 10.0
 	add_to_group("enemies")
 
+	# VISUAL rescale (Balance.CHAR_RENDER_SCALE): every character — mobs AND
+	# bosses — grows to keep the hero:mob:boss proportion. Gameplay (collision,
+	# reach) uses art_scale untouched below.
+	render_mult = Balance.CHAR_RENDER_SCALE
+
 	collision_layer = 4
 	collision_mask = 1 | 2 | 4
 	var cs := CollisionShape2D.new()
@@ -269,8 +275,9 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
-	shadow.scale = Vector2(stats["scale"] * 0.75, stats["scale"] * 0.75)
-	shadow.position = Vector2(0, 6.0 * stats["scale"])
+	var vscale: float = float(stats["scale"]) * render_mult  # visual size (mob body)
+	shadow.scale = Vector2(vscale * 0.75, vscale * 0.75)
+	shadow.position = Vector2(0, 6.0 * vscale)
 	add_child(shadow)
 
 	sprite = Sprite2D.new()
@@ -279,7 +286,7 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	var anim := Art.anim_info(stats["sprite"])
 	if anim.is_empty():
 		sprite.texture = Art.tex(stats["sprite"])
-		sprite.scale = Art.scale_for(sprite.texture, art_scale)
+		sprite.scale = Art.scale_for(sprite.texture, art_scale * render_mult)
 	else:
 		# Animated override strip (Track C seam): same Sprite2D, hframes on.
 		_strip_idle = anim
@@ -303,7 +310,7 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	# Near-opaque bg = a full 1px dark outline all round the 4px fill, so
 	# the bar reads on ANY terrain (art audit 2026-07-10: the old 3px fill
 	# in a 70%-alpha bg collapsed to a 1px sliver on bright ground).
-	var bar_y: float = -8.0 * stats["scale"] - 8.0
+	var bar_y: float = -8.0 * vscale - 8.0  # rides above the (rescaled) sprite head
 	hp_bar_bg = ColorRect.new()
 	hp_bar_bg.color = Color(0.04, 0.03, 0.04, 0.95)
 	hp_bar_bg.position = Vector2(-16, bar_y - 1)
@@ -385,7 +392,7 @@ func _apply_strip(info: Dictionary, is_action := false) -> void:
 	if not is_action:
 		_body_cell = cell
 	var ref := _body_cell if _body_cell > 0.0 else cell
-	var s := art_scale * 16.0 / ref
+	var s := art_scale * render_mult * 16.0 / ref
 	sprite.scale = Vector2(s, s)
 	# Re-anchor an oversized ability cell onto the idle body. The naive
 	# center-align (-(cell-ref)/2) keeps the feet put ONLY when the ability's
@@ -500,7 +507,7 @@ func swap_sprite(new_key: String) -> void:
 		_dir_idle = {}
 		_dir_walk = {}
 		sprite.texture = Art.tex(new_key)
-		sprite.scale = Art.scale_for(sprite.texture, art_scale)
+		sprite.scale = Art.scale_for(sprite.texture, art_scale * render_mult)
 	else:
 		_strip_idle = anim
 		_strip_walk = Art.walk_info(new_key)
@@ -716,11 +723,9 @@ func _physics_process(delta: float) -> void:
 	# while a single-facing one-shot action strip is playing.
 	if os != 0.0 and _action_dir.is_empty() and (_dir_idle.is_empty() or not _strip_action.is_empty()):
 		sprite.flip_h = (os > 0.0) if face_left else (os < 0.0)
-	# Little walk bob so they feel alive; hover_amp>0 levitates instead (Varo throne).
+	# Walk bob removed (old artifact); hover_amp>0 still levitates (Varo throne).
 	if hover_amp > 0.0:
 		sprite.position.y = -hover_amp + sin(anim_t * 2.2) * (hover_amp * 0.4)
-	elif _moving_anim:
-		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
 	else:
 		sprite.position.y = 0.0
 
@@ -750,8 +755,6 @@ func _net_mirror_tick(delta: float) -> void:
 	_varo_phase_sprite()  # guests flip throne->standing off replicated hp
 	if hover_amp > 0.0:
 		sprite.position.y = -hover_amp + sin(anim_t * 2.2) * (hover_amp * 0.4)
-	elif net_walk:
-		sprite.position.y = -absf(sin(anim_t * 10.0)) * 2.5
 	else:
 		sprite.position.y = 0.0
 	# Wave-2 fix #2: hold a combat-tell tint for its window, then revert to

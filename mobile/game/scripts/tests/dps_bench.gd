@@ -52,59 +52,12 @@ const PLAYER_LEVEL := 40
 const DUMMY_LEVEL := 40
 const GEAR_GRADE := "A"
 const GEM_LVL := 6                # what A-grade sockets can bear
-const GEAR_SEED := 48815          # same gear roll sequence for every case
 const CLS_ORDER := ["warrior", "archer", "mage", "assassin", "paladin", "warlock"]
 
-# Skill-tree presets — DPS-OPTIMAL per variant (round 50, 2026-07-08):
-# best damage cell per row, 10/10/10/9 (39 pts at L40), the 9 dumped in
-# the class's weakest/defensive row. Highlights: Venom takes Serpent's
-# Due (+40% vs poisoned — its dots always poison), Ice takes Killing
-# Frost (+40% vs chilled — always slowed), crit_dmg row-4 only for the
-# two variants past the atk%-vs-critdmg crit threshold (Hunt, Shadow).
-# Mage/warlock row 1 is purely defensive (no dps cell) — the forced 9
-# filler points land there. "*" = every variant of the class.
-const TREE_PRESETS := {
-	"warrior": {"*": {"w00": 10, "w10": 9, "w20": 10, "w30": 10}},
-	"archer": {
-		"storm": {"a00": 10, "a10": 9, "a20": 10, "a30": 10},
-		"venom": {"a01": 10, "a10": 9, "a22": 10, "a30": 10},
-		"hunt":  {"a00": 10, "a10": 9, "a20": 10, "a32": 10},
-	},
-	"mage": {
-		"ice": {"m01": 10, "m12": 9, "m21": 10, "m30": 10},
-		"*":   {"m00": 10, "m12": 9, "m20": 10, "m30": 10},   # fire / wind (firebolt dmg + combo)
-	},
-	"assassin": {
-		"shadow": {"s00": 10, "s10": 9, "s20": 10, "s31": 10},
-		"*":      {"s00": 10, "s10": 9, "s20": 10, "s30": 10},  # poison / blood (atk% over crit_dmg)
-	},
-	"paladin": {
-		"wrath": {"p00": 10, "p12": 9, "p22": 10, "p32": 10},
-		"*":     {"p00": 10, "p12": 9, "p22": 10, "p30": 10},   # holy / aegis
-	},
-	"warlock": {
-		"void": {"k00": 10, "k12": 9, "k22": 10, "k32": 10},   # rupture + nightfall void-crit
-		"*":    {"k00": 10, "k11": 9, "k20": 10, "k30": 10},    # curse / pact
-	},
-}
-
-# Gem loadout — DPS-OPTIMAL under the TYPED-SLOT rule. Each piece = REGULAR
-# slot(s) (Ruby / flat ATK) + 1 SPECIAL slot; the special slots MUST each hold a
-# DISTINCT special (one per stat across gear). Of the 5 specials only THREE add
-# damage — `dmg_pct`, `combo`, `cdr` — so the max-DPS build is ALWAYS those three
-# plus the least-useless 4th, `lifesteal` (sustain). `greed` is farm-gold: it
-# does nothing for DPS and never belongs here. `cdr` weakly dominates `greed` for
-# every class (it can't starve mana — it only speeds casts WHEN mana is there),
-# so it's universal now (2026-07-09; the old "mana-bound skip cdr" rule was
-# wrong). Plate res→damage is a kit passive, not a gem.
-const GEM_PRESETS := {
-	"warrior":  {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
-	"paladin":  {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
-	"assassin": {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
-	"archer":   {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
-	"mage":     {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
-	"warlock":  {"*": {"specials": ["dmg_pct", "cdr", "combo", "lifesteal"]}},
-}
+# Skill-tree + gem presets, the gear seed, godroll and equip logic all live in
+# BenchBuild now (scripts/bench_build.gd) — the SINGLE source shared with the dev
+# panel's "Generate benchmark roster" tool, so a build here and a generated hero
+# are byte-identical. See BenchBuild.TREE_PRESETS / GEM_PRESETS / equip_dict.
 
 # Priority list attempted every physics frame (= holding the keys down;
 # use_ability's own cd/mana gates decide what actually fires). The
@@ -164,7 +117,7 @@ var defense := false           # --defense: print EHP / damage-taken vs the boss
 var grade := GEAR_GRADE        # --grade=X: gear tier on every slot (realistic-kit runs)
 var gemlvl := GEM_LVL          # --gemlvl=N: gem level in every socket
 var plus_lvl := 0              # --plus=N: smith upgrade level on every piece
-var gear_seed := GEAR_SEED     # --gearseed=N: alternate sub-roll sequence (roll-variance probe)
+var gear_seed := BenchBuild.GEAR_SEED   # --gearseed=N: alternate sub-roll sequence (roll-variance probe)
 var godroll := false           # --godroll: reforge-chased ceiling (max main + max offense affixes)
 var plevel := PLAYER_LEVEL     # --level=N: hero level (also sets attr points = N-1)
 var dlevel := DUMMY_LEVEL      # --level=N sets this too; the target's level
@@ -424,7 +377,7 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	p.resonance = 0.0  # pin NEUTRAL: the band leans (Hunger execute) must never skew a bench
 	p.set_class(cls)          # refunds all points, derives theme unlocks
 	p.set_all_themes(tid)     # MONO spec: one identity across all four slots
-	p.tree_points = _preset(TREE_PRESETS, cls, tid).duplicate()
+	p.tree_points = BenchBuild.preset_lookup(BenchBuild.TREE_PRESETS, cls, tid).duplicate()
 	p.skill_points = 0
 	for attr in p.attr_points:
 		p.attr_points[attr] = 0
@@ -565,69 +518,13 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 ## Full seeded A-grade set with the class's signature weapon shape, each
 ## piece socketed 1 special + 1 regular gem at the A-grade level cap.
 func _equip(p: Player, cls: String, tid: String) -> void:
+	# The build is single-sourced in BenchBuild (shared with the dev roster). Seed
+	# the roll with THIS run's gear_seed (--gearseed lets it vary for a variance probe).
 	var rng := RandomNumberGenerator.new()
 	rng.seed = gear_seed
-	var gems: Dictionary = _preset(GEM_PRESETS, cls, tid)
-	var specials: Array = gems.get("specials", [])
-	# TYPED SLOTS (2026-07-08): each A piece has 1 special slot + regular slots.
-	# Fill special slots from the DISTINCT `specials` list (one-per-stat rule);
-	# every regular slot is a Ruby (ATK%). No socket can be left empty or
-	# mis-typed — this is the max-DPS legal loadout under the new gem structure.
-	var spec_cap: int = Items.special_slots(grade)
-	var spec_idx := 0
-	for slot in Items.SLOTS:
-		var noun: String = Items.class_weapon_noun(cls) if slot == "weapon" else ""
-		var item := Items.roll_item_of(slot, grade, rng, cls, noun)
-		item["plus"] = plus_lvl
-		if godroll:
-			_godroll(item, cls)
-		var glist: Array = []
-		var s_placed := 0
-		for _s in int(item.get("gem_slots", 0)):
-			if s_placed < spec_cap and spec_idx < specials.size():
-				glist.append(Items.make_gem(String(specials[spec_idx]), gemlvl))
-				spec_idx += 1
-				s_placed += 1
-			else:
-				glist.append(Items.make_gem("atk_flat", gemlvl))  # Ruby regular
-		item["gems"] = glist
-		p.equipment[slot] = item
+	var cfg := {"grade": grade, "gemlvl": gemlvl, "plus": plus_lvl, "godroll": godroll}
+	p.equipment = BenchBuild.equip_dict(cls, tid, cfg, rng)
 	p._update_weapon_visual()
-
-
-## --godroll: rebuild one rolled piece into its reforge-chased ceiling — max
-## main roll (1.15) and the grade's affix count filled with MAX-magnitude
-## offense (ATK% > Crit > your pen > DEX), mirroring roll_subs' formulas.
-## Affixes an S synergy sub would OVERWRITE are skipped (a rolled duplicate
-## is wasted — roll_item_of replaces, not adds); style + synergy subs then
-## land exactly as the real roller applies them.
-func _godroll(item: Dictionary, cls: String) -> void:
-	var g := String(item["grade"])
-	var mult: float = Items.GRADE_MULT[g]
-	var style: Dictionary = Items.SHAPE_STYLE.get(String(item.get("noun", "")), {"main": 1.0, "subs": {}})
-	var primary := String(Items.CLASS_PRIMARY.get(cls, "STR"))
-	item["main"] = {primary: snappedf(
-		float(Items.SLOT_MAIN_BUDGET[item["slot"]]) * mult * float(style["main"]) * 1.15, 0.01)}
-	var synergy := {}
-	if g == "S" and Items.S_GEAR.has(cls):
-		synergy = Items.S_GEAR[cls][String(item["slot"])].get("subs", {})
-	var pen := "magpen" if String(Items.CLASSES_DMG_TYPE.get(cls, "physical")) == "magic" else "physpen"
-	var sub_count: int = maxi(0, (Items.GRADES.find(g) - 1) / 2)
-	var scale: float = 1.3 * (1.0 + mult * 0.25)
-	var subs := {}
-	var picked := 0
-	for stat in ["atk_pct", "crit", pen, "dex"]:
-		if picked >= sub_count:
-			break
-		if synergy.has(stat):
-			continue
-		subs[stat] = snappedf(float(Items.SUBSTATS[stat]) * scale, 0.01)
-		picked += 1
-	for stat in style["subs"]:
-		subs[stat] = snappedf(subs.get(stat, 0.0) + float(style["subs"][stat]) * (0.75 + 0.25 * mult), 0.01)
-	for stat in synergy:
-		subs[stat] = synergy[stat]
-	item["subs"] = subs
 
 
 ## Clean combat slate between cases: cooldowns, buffs, windows, curses.
@@ -725,11 +622,11 @@ func _tick_waves() -> void:
 		adds_spawned += 1
 
 
-## The assassin dance (player-specified): Death Mark the moment it's up,
-## then plant the blade — Stab-spam through the 5s vuln window (no dash,
-## no knives). Outside the window: Shadow Dash straight through the boss
-## right before the blood surge lapses (refreshing it at full strength,
-## lane 0 = near-lane cut), surged Fan of Knives every other beat.
+## The assassin dance (player-specified): Death Mark the moment it's up, then
+## plant the blade — Stab-spam through the 5s vuln window (an AWAKENED Nightfang
+## weaves Fan in too, both blades at once). Outside the window: Shadow Dash
+## straight through the boss right before the blood surge lapses (refreshing it at
+## full strength, lane 0 = near-lane cut), surged Fan of Knives every other beat.
 func _drive_assassin(p: Player) -> void:
 	if p.cds["ult"] <= 0.0 and sim_t >= ult_until:
 		p.use_ability("ult")
@@ -739,6 +636,8 @@ func _drive_assassin(p: Player) -> void:
 		return
 	if sim_t < ult_until:
 		p.use_ability("a1")
+		if p.s_passive() == "mirrorstep":
+			p.use_ability("a3")   # awakened Nightfang: Fan weaves into the mark window
 		return
 	if p.cds["a2"] <= 0.0 and p.stab_ls_time <= SURGE_REFRESH_AT:
 		p.facing = (dummy.global_position - p.global_position).normalized()
@@ -792,9 +691,6 @@ func _defense_readout(p: Player, cls: String, tid: String) -> void:
 
 # ================================================================== plumbing
 
-func _preset(table: Dictionary, cls: String, tid: String) -> Dictionary:
-	var per: Dictionary = table[cls]
-	return per.get(tid, per.get("*", {}))
 
 
 func _frames(n: int) -> void:

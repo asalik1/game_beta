@@ -95,54 +95,56 @@ const A_NAMES := {
 	"charm":  ["Eye of the Storm", "The Widow's Locket", "Emberheart", "Tear of the Old God", "Sigil of the Broken Pact"],
 }
 
-# S-grade gear is CLASS-EXCLUSIVE: unique name + synergy stats,
-# and S weapons carry a passive ability (implemented in player.gd).
+# S-grade gear is CLASS-EXCLUSIVE: a unique name, and S weapons carry a signature
+# passive ability (implemented in player.gd). Substats roll RANDOMLY like every
+# other grade — NO pinned synergy subs (2026-07-13): a legendary is chased for its
+# passive + top rolls, not handed a guaranteed stat line.
 const S_GEAR := {
 	"warrior": {
 		"weapon": {"name": "Kingsbane, Edge of the Fallen Crown", "passive": "kingsblade", "noun": "Blade"},
-		"armor":  {"name": "Aegis of the Mountain",   "subs": {"hp_pct": 0.15, "physres": 20.0}},
-		"boots":  {"name": "Earthshaker Sabatons",    "subs": {"hp_pct": 0.10, "physres": 10.0}},
-		"charm":  {"name": "Warlord's Iron Oath",     "subs": {"atk_pct": 0.10, "physpen": 10.0}},
+		"armor":  {"name": "Aegis of the Mountain"},
+		"boots":  {"name": "Earthshaker Sabatons"},
+		"charm":  {"name": "Warlord's Iron Oath"},
 	},
 	"archer": {
 		"weapon": {"name": "Stormcaller, Bow of the Tempest", "passive": "windward", "noun": "Bow"},
-		"armor":  {"name": "Cloak of a Thousand Leaves", "subs": {"hp_pct": 0.10, "eva": 0.05}},
-		"boots":  {"name": "Zephyr's Grace",             "subs": {"dex": 8.0, "crit": 0.06}},
-		"charm":  {"name": "The Hawk God's Eye",         "subs": {"crit": 0.10, "atk_pct": 0.12}},
+		"armor":  {"name": "Cloak of a Thousand Leaves"},
+		"boots":  {"name": "Zephyr's Grace"},
+		"charm":  {"name": "The Hawk God's Eye"},
 	},
 	"mage": {
 		"weapon": {"name": "Heart of the Phoenix", "passive": "wellspring", "noun": "Staff"},
-		"armor":  {"name": "Robes of the Infinite", "subs": {"hp_pct": 0.10, "magres": 18.0}},
-		"boots":  {"name": "Steps of the Void",     "subs": {"eva": 0.04, "magres": 12.0}},
-		"charm":  {"name": "The Archmage's Folly",  "subs": {"crit": 0.08, "magpen": 10.0}},
+		"armor":  {"name": "Robes of the Infinite"},
+		"boots":  {"name": "Steps of the Void"},
+		"charm":  {"name": "The Archmage's Folly"},
 	},
 	"assassin": {
 		"weapon": {"name": "Nightfang, Kiss of the Abyss", "passive": "mirrorstep", "noun": "Fang"},
-		"armor":  {"name": "Shroud of Silence", "subs": {"hp_pct": 0.08, "eva": 0.04}},
-		"boots":  {"name": "Whisperwind",       "subs": {"dex": 8.0, "crit": 0.05}},
-		"charm":  {"name": "The Bloodpact",     "subs": {"crit": 0.08, "atk_pct": 0.10}},
+		"armor":  {"name": "Shroud of Silence"},
+		"boots":  {"name": "Whisperwind"},
+		"charm":  {"name": "The Bloodpact"},
 	},
 	"paladin": {
 		"weapon": {"name": "Dawnbreaker, Hammer of the Highfather", "passive": "dawnbreaker", "noun": "Hammer"},
-		"armor":  {"name": "Bulwark of the Dawn",  "subs": {"hp_pct": 0.12, "physres": 14.0, "magres": 14.0}},
-		"boots":  {"name": "Greaves of the Vigil", "subs": {"hp_pct": 0.08, "magres": 10.0}},
-		"charm":  {"name": "The Highfather's Oath", "subs": {"atk_pct": 0.10, "physres": 8.0}},
+		"armor":  {"name": "Bulwark of the Dawn"},
+		"boots":  {"name": "Greaves of the Vigil"},
+		"charm":  {"name": "The Highfather's Oath"},
 	},
 	"warlock": {
 		"weapon": {"name": "Grimoire of the Hollow Choir", "passive": "voidmaw", "noun": "Tome"},
-		"armor":  {"name": "Vestments of the Long Bargain", "subs": {"hp_pct": 0.10, "magres": 16.0}},
-		"boots":  {"name": "Voidwalkers",                   "subs": {"magpen": 8.0, "hp_pct": 0.06}},
-		"charm":  {"name": "The First Debt",                "subs": {"atk_pct": 0.10, "magpen": 6.0}},
+		"armor":  {"name": "Vestments of the Long Bargain"},
+		"boots":  {"name": "Voidwalkers"},
+		"charm":  {"name": "The First Debt"},
 	},
 }
 
 const PASSIVES := {
 	"kingsblade":  "Cleave hurls a sword wave",
 	"windward":    "Second Wind kicks in after just 1.5s untouched (from 3s)",
-	"wellspring":  "+50% mana regen; Frost Nova and Blink cool down 8% faster",
-	"mirrorstep":  "Dashing reflects nearby projectiles and softens AoE damage",
+	"wellspring":  "+50% mana regen; Firebolt and (Frost Nova, Blink) cool down 8% faster",
+	"mirrorstep":  "Dashing reflects nearby projectiles and softens AoE damage; during Death Mark, Stab and Fan of Knives WEAVE — both fire at once for a burst",
 	"dawnbreaker": "Judgment calls down a pillar of light (splash + holy burn)",
-	"voidmaw":     "Void Rift ends with a curse-wave: shoves enemies off you and curses the room",
+	"voidmaw":     "Shadowbolt cools down 8% faster; Void Rift ends with a curse-wave that shoves enemies off you and curses the room",
 }
 
 # ------------------------------------------------------------------- gems ---
@@ -535,10 +537,16 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 			# but its signature passive SLEEPS — it grants no effect until the
 			# class's awakening quest sets s_awakened_<cls> (see Player.s_passive).
 			item["passive_dormant"] = true
-		if special.has("subs"):
-			for stat in special["subs"]:
-				subs[stat] = special["subs"][stat]
 	return item
+
+
+## How many RANDOM substats a grade rolls. Formula gives F/E/D:0, C/B:1, A:2; S is
+## overridden to Balance.S_SUB_COUNT (its legendary stat weight, all random now that
+## pinned synergy subs are gone). Single source for roll_subs AND the dps bench.
+static func sub_count_for(grade: String) -> int:
+	if grade == "S":
+		return Balance.S_SUB_COUNT
+	return maxi(0, (GRADES.find(grade) - 1) / 2)
 
 
 ## Roll an item's substat set: `sub_count` random affixes for the grade
@@ -548,8 +556,7 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumberGenerator) -> Dictionary:
 	var mult: float = GRADE_MULT[grade]
 	var style: Dictionary = SHAPE_STYLE.get(noun, {"main": 1.0, "subs": {}})
-	# Higher grades roll more substats (F/E: 0, D/C: 1, B/A: 2, S: 3).
-	var sub_count := maxi(0, (GRADES.find(grade) - 1) / 2)
+	var sub_count := sub_count_for(grade)
 	var subs := {}
 	var pool := SUBSTATS.keys()
 	# No dead stats (round 15): a class only rolls the penetration its own
@@ -596,30 +603,19 @@ static func reforge_sub(item: Dictionary, stat: String, rng: RandomNumberGenerat
 
 
 ## Reroll WHICH substats the item carries (and their values) — the whole affix
-## set at once. S-gear synergy subs are preserved. (No longer in the UI, which
-## rerolls one slot at a time via reforge_affix — kept as an API/for tests.)
+## set at once. Every grade (S included) rolls freely; there are no pinned synergy
+## subs. (No longer in the UI, which rerolls one slot at a time via reforge_affix
+## — kept as an API/for tests.)
 static func reforge_affixes(item: Dictionary, cls: String, rng: RandomNumberGenerator) -> void:
-	var fresh := roll_subs(String(item["grade"]), String(item.get("noun", "Blade")), cls, rng)
-	# Keep an S legendary's signature subs on top of the fresh roll.
-	if String(item["grade"]) == "S" and item.has("cls") and S_GEAR.has(String(item["cls"])):
-		var special: Dictionary = S_GEAR[String(item["cls"])][String(item["slot"])]
-		for stat in special.get("subs", {}):
-			fresh[stat] = special["subs"][stat]
-	item["subs"] = fresh
+	item["subs"] = roll_subs(String(item["grade"]), String(item.get("noun", "Blade")), cls, rng)
 
 
 ## Can this ONE substat slot be reforged (rerolled into a different stat)? Any
-## rolled affix can — except an S legendary's fixed synergy subs, which are the
-## item's identity. The MAIN stat is never reforged (quench it — it's the class
-## primary attribute you'd never trade away).
+## rolled affix can (S legendaries included — no fixed synergy subs anymore). The
+## MAIN stat is never reforged (quench it — it's the class primary attribute you'd
+## never trade away).
 static func can_reforge_affix(item: Dictionary, stat: String) -> bool:
-	if not item.get("subs", {}).has(stat):
-		return false
-	if String(item["grade"]) == "S" and item.has("cls") and S_GEAR.has(String(item["cls"])):
-		var special: Dictionary = S_GEAR[String(item["cls"])].get(String(item["slot"]), {})
-		if special.get("subs", {}).has(stat):
-			return false   # synergy sub — locked
-	return true
+	return item.get("subs", {}).has(stat)
 
 
 ## Reforge ONE substat slot: drop `target_stat` and roll a DIFFERENT random affix

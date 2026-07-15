@@ -859,15 +859,6 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 			var extra := ""
 			if special.has("passive"):
 				extra = "  ★ " + Items.PASSIVES[special["passive"]] + "  (DORMANT until you awaken it)"
-			elif special.has("subs"):
-				var bits: Array = []
-				for stat in special["subs"]:
-					var v: float = special["subs"][stat]
-					if stat in Items.FLAT_STATS:
-						bits.append("%s +%d" % [Items.STAT_LABEL[stat], int(v)])
-					else:
-						bits.append("%s +%d%%" % [Items.STAT_LABEL[stat], int(round(v * 100))])
-				extra = "  (" + ", ".join(bits) + ")"
 			var l := m._lbl(row, special["name"] + extra, 13, Items.GRADE_COLOR["S"])
 			l.custom_minimum_size = Vector2(780, 0)
 

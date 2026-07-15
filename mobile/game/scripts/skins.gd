@@ -144,10 +144,19 @@ const SKINS := {
 			"sprite": "skins/mythic/mage_crystal_archmage"},
 	],
 	"assassin": [
-		{"id": "blade_dancer", "name": "Blade Dancer", "tier": "elite",
+		# Golden Ronin (id kept as "blade_dancer" for save/sprite-path compat).
+		# Signature FX: its knife-throw (Fan of Knives) hurls spinning shuriken
+		# with a fading after-image instead of the kunai — see player_kit_assassin.
+		{"id": "blade_dancer", "name": "Golden Ronin", "tier": "elite",
 			"sprite": "skins/elite/assassin_blade_dancer"},
 		{"id": "phantom", "name": "Phantom", "tier": "mythic",
-			"sprite": "skins/mythic/assassin_phantom"},
+			"sprite": "skins/mythic/assassin_phantom",
+			# Awakened form: completing the assassin's S-weapon awakening
+			# (flag s_awakened_assassin) evolves the blue Phantom into the teal
+			# spectral "Nightfang" form — same skin, a progression payoff. The
+			# render resolver (player_core._apply_class_sprite) swaps to this
+			# base when the flag is set; falls back to `sprite` otherwise.
+			"awakened_sprite": "skins/mythic/assassin_phantom_awakened"},
 	],
 	"paladin": [
 		{"id": "eclipse_knight", "name": "Eclipse Knight", "tier": "elite",
@@ -185,6 +194,21 @@ const SWING := {
 		"blade_dancer": {"attack": 0.182, "attack2": 0.227},
 		"phantom": {"attack": 0.227, "attack2": 0.182},
 	},
+	# Judgment (a1) lands the golden shock on the overhead-hammer contact (~frame
+	# 4). Consecration (attack2) is a near-static channel with no crisp contact —
+	# left on the base const.
+	"paladin": {
+		"eclipse_knight": {"attack": 0.182},
+		"fallen_arbiter": {"attack": 0.182},
+	},
+	# Shadowbolt (a1, "attack" clip) looses as the bolt leaves the staff (~frame
+	# 5). Hex (a2) swings the "ult" clip, whose energy doesn't erupt until ~0.5s —
+	# syncing there would over-slow the curse per-skin, so Hex stays on the base
+	# WARLOCK_CAST_DELAY.
+	"warlock": {
+		"hellfire_inquisitor": {"attack": 0.227},
+		"eldritch_herald": {"attack": 0.227},
+	},
 }
 
 
@@ -193,6 +217,23 @@ static func swing_time(cls: String, skin_id: String, clip: String) -> float:
 	var byskin: Dictionary = SWING.get(cls, {})
 	var byclip: Dictionary = byskin.get(skin_id, {})
 	return float(byclip.get(clip, -1.0))
+
+
+## Per-skin vertical anchor nudge (source-cell px). The hero render grounds every
+## character on its LOWEST opaque pixel; for a skin whose weapon points BELOW the
+## boots (Stormforged's E/W sword) that lands the blade tip on the ground line and
+## reads as "cut off." A positive nudge shifts the skin DOWN so the FEET ground and
+## the blade hangs below. Default 0 — every other skin keeps the shared anchor,
+## so the approved robe/cape skins (incl. Phantom) are untouched. Owner-tuned by
+## eye. See [[hero-anchor-blade-cutoff-diagnosis]].
+const ANCHOR_NUDGE := {
+	# (Stormforged tried here, but a nudge moves the whole sprite — it can't lift
+	# the blade OUT of the terrain without floating the feet, since the blade is
+	# drawn below the boots in the art itself. Left empty; fix is an art re-pose.)
+}
+
+static func anchor_nudge(skin_id: String) -> float:
+	return float(ANCHOR_NUDGE.get(skin_id, 0.0))
 
 
 ## All chromas available for a class, or [] if none.
@@ -222,11 +263,16 @@ static func find_skin(cls: String, skin_id: String) -> Dictionary:
 
 
 ## Return the Art sprite name for a skin, or "" if invalid/no skin.
-static func skin_sprite(cls: String, skin_id: String) -> String:
+## When `awakened` (the skin's class has completed its S-weapon awakening) and
+## the skin defines an `awakened_sprite`, returns that evolved base instead —
+## e.g. Phantom's teal Nightfang form. Skins without one ignore the flag.
+static func skin_sprite(cls: String, skin_id: String, awakened := false) -> String:
 	var data: Dictionary = find_skin(cls, skin_id)
 	if data.is_empty():
 		return ""
-	return data["sprite"]
+	if awakened and data.has("awakened_sprite"):
+		return String(data["awakened_sprite"])
+	return String(data["sprite"])
 
 
 ## Build (or update) a ShaderMaterial for the chroma effect. When

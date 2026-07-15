@@ -123,6 +123,7 @@ static func _stage_char(m: Menus) -> void:
 		var slot: int = int(s["slot"])
 		var cls: String = String(s["cls"])
 		var level: int = int(s["level"])
+		var hname := String(s.get("name", ""))
 		var cname := String(Classes.CLASSES.get(cls, {}).get("name", cls))
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
@@ -131,12 +132,15 @@ static func _stage_char(m: Menus) -> void:
 			m.lobby["slot"] = slot
 			m.lobby["cls"] = cls
 			m.lobby["level"] = level
+			m.lobby["name"] = hname
 			if hosting:
 				m.lobby["saved_chapter"] = String(SaveGame.read(slot).get("chapter", "ch1"))
 				open(m, "chapter")
 			else:
 				_join_go(m)
-		var b := m._btn(row, "  %s — Lv %d" % [cname, level], pick, GOOD)
+		# Named heroes lead with their name; legacy (unnamed) saves show class only.
+		var label := "  %s — %s Lv %d" % [hname, cname, level] if hname != "" else "  %s — Lv %d" % [cname, level]
+		var b := m._btn(row, label, pick, GOOD)
 		b.custom_minimum_size = Vector2(420, 0)
 		var when := Time.get_datetime_string_from_unix_time(int(s["saved_at"])).replace("T", "  ")
 		var wl := m._lbl(row, when, 12, Color(0.55, 0.58, 0.66))
@@ -306,6 +310,13 @@ static func _stage_guest_lobby(m: Menus) -> void:
 
 # ---------------------------------------------------------------- actions ---
 
+## The lobby display name: the picked character's own name, or the live OS
+## account name when it was left blank (unnamed legacy saves / OS fallback).
+static func _lobby_name(m: Menus, sess: Node) -> String:
+	var nm := String(m.lobby.get("name", ""))
+	return nm if nm != "" else String(sess.os_name())
+
+
 ## HOST: raise the session. Internet lobby (noray) first; if the lobby
 ## service can't be reached, fall back to a direct LAN listen so friends
 ## on the same network still play tonight.
@@ -318,7 +329,7 @@ static func _host_go(m: Menus, chid: String, cont: bool) -> void:
 	sess.local_char = {"slot": int(m.lobby.get("slot", 0)),
 		"cls": String(m.lobby.get("cls", "warrior")),
 		"level": int(m.lobby.get("level", 1)),
-		"name": String(sess.os_name())}
+		"name": _lobby_name(m, sess)}
 	var err: Error = await net.host(NetMgr.Mode.NORAY)
 	if err != OK:
 		err = await net.host(NetMgr.Mode.ENET_DIRECT)
@@ -338,7 +349,7 @@ static func _join_go(m: Menus) -> void:
 	sess.local_char = {"slot": int(m.lobby.get("slot", 0)),
 		"cls": String(m.lobby.get("cls", "warrior")),
 		"level": int(m.lobby.get("level", 1)),
-		"name": String(sess.os_name())}
+		"name": _lobby_name(m, sess)}
 	_stage_wait(m, "Knocking...", "Reaching the host — a moment.")
 	m.lobby["quiet"] = false
 	_wire(m, net.peer_joined, func(id: int, _ci: Dictionary) -> void:
