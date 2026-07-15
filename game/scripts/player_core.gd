@@ -1272,6 +1272,17 @@ func potion_loadout() -> Array:
 	return out
 
 
+## Is cycling the active potion meaningful this room? Only when the loadout
+## holds 2+ DISTINCT types (a single slot, or an all-Health plan, has nothing
+## to swap to). The touch HUD hides its ⟳ swap button when this is false —
+## like the Act button vanishing with no interactable nearby.
+func potion_swap_useful() -> bool:
+	var seen := {}
+	for id in potion_loadout():
+		seen[id] = true
+	return seen.size() >= 2
+
+
 ## Room entry: the budget refills from the plan (game_world calls this
 ## on every room transition; death respawns cross a room, so they too).
 func reset_room_potions() -> void:

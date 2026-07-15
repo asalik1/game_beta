@@ -172,6 +172,10 @@ func _process(delta: float) -> void:
 	# with — permanently showing it was noise. Always shown in edit mode so it can
 	# be repositioned.
 	(_btns["interact"]["panel"] as Panel).visible = _edit_mode or (game != null and game.interact_in_range)
+	# Same treatment for the ⟳ potion-swap button: hidden when there's nothing to
+	# cycle to (a single loadout slot, or an all-Health plan).
+	(_btns["potion_next"]["panel"] as Panel).visible = _edit_mode \
+		or (game != null and game.local_player != null and game.local_player.potion_swap_useful())
 	if _edit_mode:
 		return
 	_refresh_ability_icons()
