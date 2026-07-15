@@ -963,7 +963,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	tl.custom_minimum_size = Vector2(880, 0)
 	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for util in [
-		"🜍 Health Potion — mends 15%% of your MISSING health (carry up to %d; each potion takes a bag slot and shows in your inventory — click the stack there to plan your loadout) — a helping hand, not an eraser: worth the most at death's door. Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with your level. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter." % Balance.POTION_MAX,
+		"🜍 Health Potion — mends 15% of your MISSING health (carry as many as your BAGS hold — each potion takes a bag slot and shows in your inventory, where you click the stack to plan your loadout) — a helping hand, not an eraser: worth the most at death's door. Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with your level. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter.",
 		"🜁 Mana Draught — restore %d%% of your MISSING mana (priced like a health potion). Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
 		"🜂 Elixir of Might — +%d%% damage for %ds: a BURST WINDOW — pop it into the kill shot, not the whole fight." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
 		"🜄 Elixir of Warding — cut incoming damage by %d%% for %ds. Bought from merchants." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)],

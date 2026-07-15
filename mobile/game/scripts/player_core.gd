@@ -1242,12 +1242,12 @@ func potion_count() -> int:
 	return potions + potions_free
 
 
-## Merchant buy guard: bought stock is capped (POTION_MAX) and every
-## potion occupies a bag slot (2026-07-09 v2) — a full bag refuses the
-## sale, same rule as gear/gems/consumables. No side effects; the shop
-## shows the standard "Bag full!" feedback.
+## Merchant buy guard: every potion occupies a bag slot (2026-07-09 v2), and
+## BAG SPACE is the only limit — carry as many as your bags hold (there's no
+## separate stock cap). A full bag refuses the sale, same rule as gear/gems/
+## consumables. No side effects; the shop shows the standard "Bag full!" feedback.
 func can_gain_potion() -> bool:
-	return potions < Balance.POTION_MAX and bag_used() < bag_capacity()
+	return bag_used() < bag_capacity()
 
 
 ## Consume one health potion from stock — the EXPIRING freebie first (it

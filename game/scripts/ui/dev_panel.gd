@@ -59,8 +59,8 @@ static func _tab_character(m: Menus, list: VBoxContainer) -> void:
 	m._btn(row1, ("■ God mode ON" if m.game.dev_god else "□ God mode off"), func() -> void:
 		m.game.dev_god = not m.game.dev_god
 		m.open_dev(), Color(0.5, 1.0, 0.5) if m.game.dev_god else Color(1, 1, 1))
-	m._btn(row1, "Max potions", func() -> void:
-		m.game.player.potions = Balance.POTION_MAX
+	m._btn(row1, "Fill potions", func() -> void:
+		m.game.player.potions += maxi(0, m.game.player.bag_capacity() - m.game.player.bag_used())
 		m.open_dev())
 	m._btn(row1, "Heal + reset CDs", func() -> void:
 		m.game.player.hp = m.game.player.max_hp

@@ -2575,18 +2575,20 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	var potion_cost := int(ceil(float(Balance.potion_price(game.local_player.level)) * haggle))
 	var buy_potion := func() -> void:
 		if p.gold >= potion_cost:
-			# Potions occupy bag slots (2026-07-09 v2): a full bag blocks
-			# the buy with the standard feedback, same as the alchemist shelf.
+			# Potions occupy bag slots (2026-07-09 v2): BAG SPACE is the only
+			# limit (no separate stock cap) — a full bag blocks the buy.
 			if p.can_gain_potion():
 				p.gold -= potion_cost
 				p.potions += 1
 				game.sfx("potion")
-			elif p.potions < Balance.POTION_MAX:
+			else:
 				game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
 		open_shop(zone)
+	var ptxt := "%d gold  (you have %d)" % [potion_cost, p.potion_count()]
+	if not p.can_gain_potion():
+		ptxt += "  — bag full"
 	_shop_card(cons_grid, Art.tex("potion"), "Health Potion",
-		"%d gold  (you have %d, max %d)" % [potion_cost, p.potion_count(), Balance.POTION_MAX],
-		Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.potions < Balance.POTION_MAX, buy_potion)
+		ptxt, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.can_gain_potion(), buy_potion)
 
 	# Alchemist's shelf: utility consumables (bag items, used from inventory).
 	for spec in [["mana_potion", Items.make_mana_potion()], ["elixir_might", Items.make_elixir_might()],

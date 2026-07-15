@@ -652,8 +652,11 @@ func _grant_daily_reward(streak: int) -> Array:
 		lines.append("%d gold" % g)
 	if r.has("potions"):
 		var pc := int(r["potions"])
-		player.potions = mini(player.potions + pc, Balance.POTION_MAX)
-		lines.append("%d potion%s" % [pc, "" if pc == 1 else "s"])
+		var room := maxi(0, player.bag_capacity() - player.bag_used())  # potions take bag slots
+		var got := mini(pc, room)
+		player.potions += got
+		if got > 0:
+			lines.append("%d potion%s" % [got, "" if got == 1 else "s"])
 	if r.has("gems"):
 		var gc := int(r["gems"])
 		var lvl := int(r.get("gem_lvl", 1))

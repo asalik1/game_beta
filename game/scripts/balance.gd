@@ -929,8 +929,8 @@ const GOLDRUSH_DUR := 150.0         # seconds
 const GOLDRUSH_DROP_CHANCE := 0.01  # per paying trash kill
 
 # ------------------------------------------------------ hero resources ---
-const POTION_MAX := 5
-# (BOSS_KILL_POTION_FLOOR retired 2026-07-09: boss kills no longer restock
+# (No stock cap: health-potion count is limited only by BAG SPACE — each takes
+# a slot. BOSS_KILL_POTION_FLOOR retired 2026-07-09: boss kills no longer restock
 # potions — stock is bought, an investment, never a handout.)
 
 # ------------------------------------------------- resonance rewards ---
