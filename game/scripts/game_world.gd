@@ -900,7 +900,7 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 		smoke.color = Color(0.75, 0.74, 0.7, 0.35)
 		npc.add_child(smoke)
 	var prompt := Label.new()
-	prompt.text = prompt_text
+	prompt.text = touchify(prompt_text)
 	prompt.position = Vector2(-40, -58)
 	prompt.size = Vector2(96, 20)
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

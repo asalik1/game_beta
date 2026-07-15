@@ -217,6 +217,39 @@ func _ready() -> void:
 			game.menus.open_mailbox())
 	add_child(mail_btn)
 
+	# Touch has no I/T/M/ESC keys, so the core screens need on-screen entry. A
+	# labeled column down the left edge (desktop uses hotkeys + the ✉ glyph, so
+	# this stays hidden there). Mail folds into the column; hide the glyph.
+	# (The HUD is hidden while any menu is open, so no re-entry guard is needed.)
+	if game and game.touch_mode:
+		mail_btn.visible = false
+		var _tm_specs := [
+			["Mail", func() -> void: game.menus.open_mailbox()],
+			["Bag", func() -> void: game.menus.open_inventory()],
+			["Skills", func() -> void: game.menus.open_skills()],
+			["Map", func() -> void: game.menus.open_map()],
+			["Settings", func() -> void: game.menus.open_settings()],
+		]
+		for i in _tm_specs.size():
+			var sp: Array = _tm_specs[i]
+			var mb := Button.new()
+			mb.text = "  " + String(sp[0])
+			mb.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			mb.add_theme_font_size_override("font_size", 15)
+			mb.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0))
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = Color(0.06, 0.07, 0.12, 0.75)
+			sb.border_color = Color(0.85, 0.75, 0.5, 0.4)
+			sb.set_border_width_all(1)
+			sb.set_corner_radius_all(5)
+			mb.add_theme_stylebox_override("normal", sb)
+			mb.add_theme_stylebox_override("hover", sb)
+			mb.add_theme_stylebox_override("pressed", sb)
+			mb.position = Vector2(10, 182 + i * 38)
+			mb.size = Vector2(116, 32)
+			mb.pressed.connect(sp[1])
+			add_child(mb)
+
 	var badge_style := StyleBoxFlat.new()
 	badge_style.bg_color = Color(0.86, 0.16, 0.16)
 	badge_style.set_corner_radius_all(9)  # 18px box + r9 = a circle
@@ -817,6 +850,12 @@ func _build_minimap() -> void:
 	minimap_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	minimap_root.visible = false
 	add_child(minimap_root)
+	if game and game.touch_mode:
+		# Tap the minimap to open the full map (no M key on touch).
+		minimap_root.mouse_filter = Control.MOUSE_FILTER_STOP
+		minimap_root.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventScreenTouch and e.pressed:
+				game.menus.open_map())
 	# Solid-enough panel + border so the map holds its shape on BLACK
 	# ground too (QA finding 7: it dissolved over void terrain).
 	var bg := Panel.new()
