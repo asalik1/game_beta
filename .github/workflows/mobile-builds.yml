@@ -177,6 +177,7 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
+            TARGETED_DEVICE_FAMILY="1,2" \
             clean build
 
       - name: Package unsigned .ipa (Payload/ zip trick)
