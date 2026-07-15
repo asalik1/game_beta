@@ -149,7 +149,36 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 			game.sfx("ui_click")
 			close())
 		root.add_child(xbtn)
+	# Under touch, let a finger-swipe on the content scroll (not just the scrollbar).
+	# Deferred so it runs AFTER the caller fills this panel with its scroll content.
+	call_deferred("_enable_all_touch_scroll", root)
 	return vbox
+
+
+## Touch has no drag-scroll by default: content Controls default to MOUSE_FILTER_STOP,
+## which eats the swipe before the ScrollContainer sees it. Walk every ScrollContainer
+## in a freshly built panel and set its content children to PASS so the drag propagates
+## up (Godot cancels the child press once the scroll takes over). Touch mode only.
+func _enable_all_touch_scroll(node: Node) -> void:
+	if game == null or not game.touch_mode or node == null:
+		return
+	_scan_touch_scroll(node)
+
+
+func _scan_touch_scroll(node: Node) -> void:
+	if node is ScrollContainer:
+		for child in node.get_children():
+			if not (child is ScrollBar):
+				_pass_filter(child)
+	for c in node.get_children():
+		_scan_touch_scroll(c)
+
+
+func _pass_filter(node: Node) -> void:
+	if node is Control:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_PASS
+	for c in node.get_children():
+		_pass_filter(c)
 
 
 func _lbl(parent: Node, text: String, size := 15, color := Color(0.9, 0.9, 0.9)) -> Label:
@@ -523,6 +552,14 @@ func open_settings(from := "pause") -> void:
 			game.save_settings()
 			open_settings(settings_return), Color(0.9, 0.9, 0.95))
 	lang_btn.tooltip_text = "Cycle UI language (localization foundation — most screens are English for now)."
+	# Control scheme (desktop only — mobile is always touch). Flips the on-screen
+	# joystick + buttons + click-to-talk on; keyboard shortcuts stay valid either way.
+	if not OS.has_feature("mobile"):
+		var tc_btn := _btn(vbox, "  Controls: %s  " % ("TOUCH" if game.settings.get("touch_controls", false) else "KEYBOARD"),
+			func() -> void:
+				game.set_touch_controls(not bool(game.settings.get("touch_controls", false)))
+				open_settings(settings_return), Color(0.9, 0.9, 0.95))
+		tc_btn.tooltip_text = "Touch: on-screen joystick + buttons + click-to-talk. Keyboard shortcuts always stay valid."
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back")
 

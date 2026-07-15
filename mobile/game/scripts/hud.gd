@@ -27,6 +27,8 @@ var daily_glow: Sprite2D        # pulsing shine behind the ★
 var quest_btn: Button           # ! opens the Quest Log; shines when a reward waits
 var quest_glow: Sprite2D        # red/orange pulse behind ! when the weekly vault is claimable
 var quest_sparkles: Array = []  # twinkles around ! during the shine
+var crucible_btn: Button        # 🔥 endgame — The Crucible; row under the mailbox, shown once Act 1 is cleared
+var depths_btn: Button          # 🕯 endgame — The Waking Depths
 var inv_btn: Button             # bag icon — opens the inventory
 var codex_btn: Button           # book icon — opens the codex
 
@@ -216,11 +218,12 @@ func _ready() -> void:
 			game.menus.open_mailbox())
 	add_child(mail_btn)
 
-	# Touch has no I/T/M/ESC keys, so the core screens need on-screen entry. A
-	# labeled column down the left edge (desktop uses hotkeys + the ✉ glyph, so
-	# this stays hidden there). Mail folds into the column; hide the glyph.
-	# (The HUD is hidden while any menu is open, so no re-entry guard is needed.)
-	if game and game.touch_mode:
+	# On-screen entry to the core screens — clickable on BOTH platforms (mobile has
+	# no I/T/M/ESC keys; desktop gets the convenience too, keyboard still works). A
+	# labeled column down the left edge; Mail folds into it (hide the ✉ glyph, which
+	# also fails to render in the mobile font). The HUD hides while a menu is open,
+	# so no re-entry guard is needed.
+	if game:
 		mail_btn.visible = false
 		var _tm_specs := [
 			["Mail", func() -> void: game.menus.open_mailbox()],
@@ -296,6 +299,14 @@ func _ready() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_daily())
 	add_child(daily_btn)
+
+	# Endgame trials: a short row of mode icons DIRECTLY UNDER the mailbox, shown
+	# once Act 1 is cleared (never buried in the pause menu). Like every HUD icon,
+	# a click opens a backable screen — here a confirm with your record + the
+	# rules — rather than tearing the world down on a stray click. Visibility is
+	# toggled per-frame in update_stats (hidden during a run itself).
+	crucible_btn = _endgame_icon("🔥", "The Crucible — Boss Rush", Vector2(16, 220), "crucible")
+	depths_btn = _endgame_icon("🕯", "The Waking Depths — Marathon", Vector2(45, 220), "depths")
 
 	# ---------------------------------------------------- quest tracker ---
 	zone_label = _label(Vector2(340, 12), 16, Color(0.95, 0.85, 0.5), 600, HORIZONTAL_ALIGNMENT_CENTER)
@@ -841,11 +852,11 @@ func _build_minimap() -> void:
 	minimap_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	minimap_root.visible = false
 	add_child(minimap_root)
-	if game and game.touch_mode:
-		# Tap the minimap to open the full map (no M key on touch).
+	if game:
+		# Click/tap the minimap to open the full map (both platforms; desktop keeps M too).
 		minimap_root.mouse_filter = Control.MOUSE_FILTER_STOP
 		minimap_root.gui_input.connect(func(e: InputEvent) -> void:
-			if e is InputEventScreenTouch and e.pressed:
+			if (e is InputEventMouseButton and e.pressed) or (e is InputEventScreenTouch and e.pressed):
 				game.menus.open_map())
 	# Solid-enough panel + border so the map holds its shape on BLACK
 	# ground too (QA finding 7: it dissolved over void terrain).
@@ -1142,6 +1153,27 @@ func _set_fill(fill: ColorRect, fraction: float) -> void:
 
 # ----------------------------------------------------------- API used by game
 
+## One endgame-mode HUD icon: a flat glyph button that opens a confirm (your
+## record + the rules) for `mode`, gated to safe moments. Returned so
+## update_stats can toggle its visibility.
+func _endgame_icon(glyph: String, tip: String, pos: Vector2, mode: String) -> Button:
+	var b := Button.new()
+	b.flat = true
+	b.text = glyph
+	b.tooltip_text = tip
+	b.add_theme_font_size_override("font_size", 20)
+	b.add_theme_color_override("font_color", Color(1.0, 0.72, 0.55))
+	b.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
+	b.position = pos
+	b.size = Vector2(32, 30)
+	b.visible = false
+	b.pressed.connect(func() -> void:
+		if game.play_started and not game.menus.is_open() and not game.endgame_active:
+			game.menus.confirm_endgame(mode))
+	add_child(b)
+	return b
+
+
 func update_stats(p: Player) -> void:
 	# A menu opened (e.g. via hotkey) over an open HUD popover — dismiss it so
 	# it doesn't linger behind the paused menu.
@@ -1188,6 +1220,11 @@ func update_stats(p: Player) -> void:
 	mail_badge.visible = unread > 0
 	if unread > 0:
 		mail_badge_num.text = str(unread) if unread < 10 else "9+"
+
+	# Endgame trial icons: shown once Act 1 is cleared, hidden during a run.
+	var eg_show: bool = game.play_started and not game.endgame_active and game.endgame_unlocked()
+	crucible_btn.visible = eg_show
+	depths_btn.visible = eg_show
 
 	# Daily star: visible only when a reward waits, with a pulsing golden
 	# shine behind it to catch the eye.
@@ -2188,11 +2225,6 @@ func _advance_dialogue() -> void:
 
 
 ## Cinematic mode: the few HUD bits a cutscene can't cover get hidden.
-func set_cinematic(on: bool) -> void:
-	for l in hint_labels:
-		l.visible = (not on) and not _touch_mode
-
-
 ## MOBILE (touch_hud.gd calls this on mount): hide the keyboard-only HUD chrome
 ## the on-screen controls replace — the bottom ability bar (its icons/cooldowns
 ## live on the touch arc now) and the WASD/keys hint lines. Kept cinematic-safe
@@ -2205,6 +2237,11 @@ func set_touch_mode(on: bool) -> void:
 		for k in ["border", "bg", "icon", "cd", "num", "key", "cost", "name"]:
 			if box.get(k) != null:
 				box[k].visible = not on
+
+
+func set_cinematic(on: bool) -> void:
+	for l in hint_labels:
+		l.visible = (not on) and not _touch_mode
 
 
 # ------------------------------------------- beat mirror (MP-13, §5.4)
