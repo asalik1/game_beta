@@ -27,6 +27,9 @@ const JOY_KNOB_D := 108.0
 const BTN_D := 104.0                       # ability-button diameter
 const BTN_SD := 80.0                       # secondary-button diameter
 const LOCK_SWIPE_OFF := 66.0               # drag this far off the lock button = release, not lock
+const LONG_PRESS := 0.45                    # hold a button this long = show its info (instead of using it)
+const TAP_PULSE := 0.12                     # how long a tap holds its intent flag true (so the sim polls it)
+const INFO_LINGER := 2.4                    # how long the info card stays after the finger lifts
 const ABILITY_SLOTS := ["a1", "a2", "a3", "ult"]
 
 # id -> relative offset from the cluster origin (origin = centre of the a1
@@ -59,6 +62,15 @@ var _lock_moved := false
 var _edit_mode := false         # layout-customization: drag buttons to rearrange
 var _drag_id := ""              # button being dragged in edit mode
 var _edit_ui: Control = null    # the Done/Reset banner overlay
+# Tap-vs-hold: a quick tap USES a button (fires on release); a long hold EXPLAINS
+# it (shows an info card, no use). Firing is deferred to release for that split.
+var _press_start := {}          # finger index -> press time (secs) for held buttons/lock
+var _explained := {}            # finger index -> true once this press has shown its info
+var _pulse := {}                # id -> secs remaining to hold its MobileInput flag true (a tap)
+var _info: PanelContainer = null # the long-press info card
+var _info_title: Label = null
+var _info_body: Label = null
+var _info_hide_t := 0.0         # linger countdown after the finger lifts
 
 
 func _ready() -> void:
@@ -115,10 +127,12 @@ func _make_button(id: String) -> void:
 	lbl.size = Vector2(diam, diam)
 	lbl.add_theme_font_size_override("font_size", 22 if ABILITY_SLOTS.has(id) else 16)
 	pnl.add_child(lbl)
-	# Static glyphs for the action buttons that have no per-frame icon.
+	# Static content for the action buttons that have no per-frame icon: the lock
+	# uses a drawn scope reticle (the ◎ glyph was thin + missing on mobile fonts);
+	# interact + cycle carry short labels.
 	match id:
-		"lock": lbl.text = "◎"
-		"interact": lbl.text = "USE"
+		"lock": icon.texture = Art.tex("crosshair")
+		"interact": lbl.text = "Act"
 		"potion_next": lbl.text = "⟳"
 	_btns[id] = {"panel": pnl, "icon": icon, "label": lbl, "diam": diam, "center": Vector2.ZERO}
 
@@ -144,7 +158,7 @@ func _layout() -> void:
 
 
 # --------------------------------------------------------------- per frame -----
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	var on: bool = game != null and game.state == game.ST_PLAYING \
 		and game.local_player != null and is_instance_valid(game.local_player)
 	if on != _enabled:
@@ -154,7 +168,14 @@ func _process(_delta: float) -> void:
 			_release_everything()
 	if not _enabled:
 		return
+	# The Act (interact) button appears only when next to something to interact
+	# with — permanently showing it was noise. Always shown in edit mode so it can
+	# be repositioned.
+	(_btns["interact"]["panel"] as Panel).visible = _edit_mode or (game != null and game.interact_in_range)
+	if _edit_mode:
+		return
 	_refresh_ability_icons()
+	_update_holds(delta)
 
 
 ## Mirror the desktop ability bar's per-frame icon/cooldown/affordability logic
@@ -219,13 +240,15 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 			return   # a miss lets the Done/Reset buttons receive the tap
 		var id := _button_at(e.position)
 		if id != "":
+			# Firing is DEFERRED to release so a long hold can be told from a tap
+			# (hold shows the info card instead of using the button).
+			_press_start[e.index] = _now()
 			if id == "lock":
 				_lock_idx = e.index
 				_lock_start = e.position
 				_lock_moved = false
 			else:
 				_btn_touch[e.index] = id
-				_mi.set(id, true)
 				_press_fx(id, true)
 			_mark_active()
 			get_viewport().set_input_as_handled()
@@ -256,17 +279,27 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 			_joy_base.visible = false
 			_joy_knob.visible = false
 		if e.index == _lock_idx:
-			# §10: a tap locks/cycles; a hold-then-swipe-off drops the lock.
-			if _lock_moved:
+			# §10: a tap locks/cycles; a hold-then-swipe-off drops the lock; a long
+			# hold (no swipe) showed the info card, so it neither locks nor releases.
+			if _explained.has(e.index):
+				pass
+			elif _lock_moved:
 				game.local_player.intent_lock_release = true
 			else:
 				game.local_player.intent_lock = true
 			_lock_idx = -1
 		if _btn_touch.has(e.index):
 			var id: String = _btn_touch[e.index]
-			_mi.set(id, false)
+			# A tap fires now (one short intent pulse); a long hold only explained.
+			if not _explained.has(e.index):
+				_mi.set(id, true)
+				_pulse[id] = TAP_PULSE
 			_press_fx(id, false)
 			_btn_touch.erase(e.index)
+		_press_start.erase(e.index)
+		_explained.erase(e.index)
+		if _btn_touch.is_empty() and _lock_idx == -1 and _info != null and _info.visible:
+			_info_hide_t = INFO_LINGER   # let the card linger so it can be read
 		_mark_active()
 
 
@@ -303,9 +336,41 @@ func _on_drag(e: InputEventScreenDrag) -> void:
 func _button_at(pos: Vector2) -> String:
 	for id in _btns.keys():
 		var b: Dictionary = _btns[id]
+		if not (b["panel"] as Panel).visible:
+			continue   # a hidden button (Act when out of range) isn't tappable
 		if pos.distance_to(b["center"] as Vector2) <= (b["diam"] as float) / 2.0:
 			return String(id)
 	return ""
+
+
+func _now() -> float:
+	return Time.get_ticks_msec() / 1000.0
+
+
+## Per-frame: promote long holds to an info card, expire tap pulses, fade the card.
+func _update_holds(delta: float) -> void:
+	var t := _now()
+	# A button held past LONG_PRESS shows its info instead of using it on release.
+	for idx in _btn_touch:
+		if not _explained.has(idx) and t - float(_press_start.get(idx, t)) >= LONG_PRESS:
+			_explained[idx] = true
+			_explain(String(_btn_touch[idx]))
+	if _lock_idx != -1 and not _lock_moved and not _explained.has(_lock_idx) \
+			and t - float(_press_start.get(_lock_idx, t)) >= LONG_PRESS:
+		_explained[_lock_idx] = true
+		_explain("lock")
+	# Tap pulses: hold each tapped intent true a few frames, then drop it (the sim
+	# is cooldown-gated, so this fires exactly once).
+	for id in _pulse.keys():
+		_pulse[id] = float(_pulse[id]) - delta
+		if float(_pulse[id]) <= 0.0:
+			_mi.set(id, false)
+			_pulse.erase(id)
+	# Info card fade once no finger is holding it.
+	if _info != null and _info.visible and _btn_touch.is_empty() and _lock_idx == -1:
+		_info_hide_t -= delta
+		if _info_hide_t <= 0.0:
+			_info.visible = false
 
 
 ## Joystick may start only in the lower-left, clear of the desktop HUD's top bar.
@@ -335,11 +400,105 @@ func _release_everything() -> void:
 	_move_touch = -1
 	_lock_idx = -1
 	_btn_touch.clear()
+	_press_start.clear()
+	_explained.clear()
+	_pulse.clear()
+	if _info != null:
+		_info.visible = false
 	if _joy_base != null:
 		_joy_base.visible = false
 		_joy_knob.visible = false
 	for id in _btns.keys():
 		_press_fx(String(id), false)
+
+
+# --------------------------------------------------------- long-press info ----
+## Build the info card lazily (top-centre, out of the thumb clusters).
+func _build_info() -> void:
+	_info = PanelContainer.new()
+	_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.06, 0.10, 0.96)
+	sb.border_color = Color(0.85, 0.75, 0.5, 0.7)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 16
+	sb.content_margin_right = 16
+	sb.content_margin_top = 12
+	sb.content_margin_bottom = 12
+	_info.add_theme_stylebox_override("panel", sb)
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 6)
+	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_info.add_child(vb)
+	_info_title = Label.new()
+	_info_title.add_theme_font_size_override("font_size", 20)
+	_info_title.add_theme_color_override("font_color", Color(0.98, 0.88, 0.55))
+	_info_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(_info_title)
+	_info_body = Label.new()
+	_info_body.add_theme_font_size_override("font_size", 15)
+	_info_body.add_theme_color_override("font_color", Color(0.9, 0.92, 0.96))
+	_info_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_info_body.custom_minimum_size = Vector2(500, 0)
+	_info_body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(_info_body)
+	_info.visible = false
+	add_child(_info)
+
+
+func _show_info(title: String, body: String) -> void:
+	if _info == null:
+		_build_info()
+	_info_title.text = title
+	_info_body.text = body
+	_info.visible = true
+	var vp := get_viewport().get_visible_rect().size
+	_info.position = Vector2(vp.x * 0.5 - 266.0, vp.y * 0.07)  # ~532px card, centred
+	_info_hide_t = INFO_LINGER
+
+
+## What each button does — abilities read the live kit/variant data (same source
+## as the desktop tooltip); the utility buttons carry hand-written blurbs.
+func _explain(id: String) -> void:
+	if game == null or game.local_player == null:
+		return
+	var p = game.local_player
+	var title := ""
+	var body := ""
+	match id:
+		"a1", "a2", "a3", "ult":
+			var ab: Dictionary = Classes.ability(p.cls, id)
+			title = String(ab.get("name", id.to_upper()))
+			body = String(ab.get("desc", ""))
+			var theme_id: String = String(p.ability_theme.get(id, ""))
+			if theme_id != "":
+				var vd := Classes.variant_desc(p.cls, id, theme_id)
+				if vd != "":
+					body = vd
+			var sc := Classes.ability_scaling(p.cls, id)
+			var ri := Classes.ability_riders(p.cls, id)
+			if sc != "":
+				body += "\n[ %s ]" % sc
+			if ri != "":
+				body += "\n[ %s ]" % ri
+			var cd: float = p.ability_cd(id)
+			body += "\nCost %d MP · %s cooldown" % [int(p.ability_cost(id)),
+				("%.1fs" % cd) if cd > 0.0 else "no"]
+		"potion":
+			title = "Drink potion"
+			body = "Quaff your ACTIVE potion — a health draught, or the elixir/mana you've slotted. Uses are budgeted per room, and health draughts spend your OWNED stock (bought, or the ch1-3 freebie) — never free."
+		"potion_next":
+			title = "Cycle potion"
+			body = "Switch which potion the drink button uses, among the types slotted in your rotation. Does nothing if you only carry health potions."
+		"interact":
+			title = "Act"
+			body = "Talk to an NPC, open a chest, or use whatever you're next to. (You can also just tap the target directly.)"
+		"lock":
+			title = "Target lock"
+			body = "Tap to lock onto / cycle the nearest enemy so your aim and abilities focus it. Hold and swipe your thumb off the button to release the lock."
+	_show_info(title, body)
+	game.sfx("ui_click")
 
 
 # ------------------------------------------------------ layout customization ---

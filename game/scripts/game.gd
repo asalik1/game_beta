@@ -519,6 +519,7 @@ func _process(delta: float) -> void:
 	# fires convos/chests/desks in the shared world — so it routes through
 	# the player's intents (MP seam). The poll-through refresh keeps the
 	# old live-read timing (_process outruns physics frames headless).
+	interact_in_range = false  # recomputed below; stays false while a menu/dialogue is up
 	if state == ST_PLAYING and not hud.dialogue_active and not menus.is_open():
 		player._poll_local_intents()
 		for entry in interactables:
@@ -526,6 +527,8 @@ func _process(delta: float) -> void:
 				continue
 			var near: bool = player.global_position.distance_to(entry["node"].position) < 80.0
 			entry["prompt"].visible = near
+			if near:
+				interact_in_range = true  # the touch Act button appears only when this is true
 			if near and talk_cd <= 0.0 and player.intent_interact:
 				talk_cd = 0.6
 				entry["action"].call()

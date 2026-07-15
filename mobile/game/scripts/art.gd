@@ -1366,6 +1366,8 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_gear())
 		"stash":  # HUD stash (treasure chest) button
 			t = ImageTexture.create_from_image(_make_stash())
+		"crosshair":  # touch target-lock button (red scope crosshair)
+			t = ImageTexture.create_from_image(_make_crosshair())
 		_:
 			t = ImageTexture.create_from_image(img(name))
 	_cache[name] = t
@@ -2336,6 +2338,38 @@ static func _make_stash() -> Image:
 			img.set_pixel(x, y, lock)
 	img.set_pixel(10, 12, ink)
 	_ink_outline(img, ink)
+	return img
+
+
+## Touch target-lock button: a red scope crosshair (arms with a centre gap,
+## graduation ticks, a bright core dot) — reads as "aim / lock on". (Distinct
+## from _make_reticle, the yellow auto-aim corner brackets.)
+static func _make_crosshair() -> Image:
+	var w := 24
+	var h := 24
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var red := Color(0.92, 0.18, 0.16)
+	var red_l := Color(1.0, 0.48, 0.42)
+	var cx := 12
+	var cy := 12
+	# Crosshair arms (2px) with a centre gap around the dot.
+	for i in range(1, 23):
+		if i >= 9 and i <= 15:
+			continue
+		img.set_pixel(cx - 1, i, red)
+		img.set_pixel(cx, i, red)
+		img.set_pixel(i, cy - 1, red)
+		img.set_pixel(i, cy, red)
+	# Graduation ticks near each arm's end (scope feel).
+	for tk in [3, 20]:
+		img.set_pixel(cx - 2, tk, red)
+		img.set_pixel(cx + 1, tk, red)
+		img.set_pixel(tk, cy - 2, red)
+		img.set_pixel(tk, cy + 1, red)
+	# Bright core dot.
+	for y in range(cy - 1, cy + 1):
+		for x in range(cx - 1, cx + 1):
+			img.set_pixel(x, y, red_l)
 	return img
 
 
