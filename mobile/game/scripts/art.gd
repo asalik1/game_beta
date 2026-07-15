@@ -1364,6 +1364,8 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_skills())
 		"settings":  # HUD menu/settings (gear) button
 			t = ImageTexture.create_from_image(_make_gear())
+		"stash":  # HUD stash (treasure chest) button
+			t = ImageTexture.create_from_image(_make_stash())
 		_:
 			t = ImageTexture.create_from_image(img(name))
 	_cache[name] = t
@@ -2296,6 +2298,43 @@ static func _make_gear() -> Image:
 		for x in range(0, w):
 			if Vector2(x - cx, y - cy).length() <= 2.4:
 				img.set_pixel(x, y, bore)
+	_ink_outline(img, ink)
+	return img
+
+
+## HUD stash icon: a banded treasure chest (distinct from the coin-pouch bag).
+static func _make_stash() -> Image:
+	var w := 20
+	var h := 22
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var wood := Color(0.54, 0.35, 0.18)
+	var wood_d := Color(0.37, 0.22, 0.10)
+	var wood_l := Color(0.66, 0.45, 0.24)
+	var band := Color(0.82, 0.68, 0.34)
+	var band_d := Color(0.56, 0.45, 0.20)
+	var lock := Color(0.88, 0.76, 0.42)
+	var ink := Color(0.13, 0.07, 0.03)
+	# Lower box (the chest body), y 11..19, x 3..17.
+	for y in range(11, 19):
+		for x in range(3, 17):
+			img.set_pixel(x, y, wood if x < 13 else wood_d)
+	# Domed lid, y 5..11 — pull the top row in a pixel each side to round it.
+	for y in range(5, 11):
+		var inset: int = 1 if y == 5 else 0
+		for x in range(3 + inset, 17 - inset):
+			img.set_pixel(x, y, wood_l if y < 8 else wood)
+	# Lid seam.
+	for x in range(3, 17):
+		img.set_pixel(x, 11, band_d)
+	# Two vertical brass bands.
+	for y in range(5, 19):
+		img.set_pixel(6, y, band if y % 2 == 0 else band_d)
+		img.set_pixel(13, y, band if y % 2 == 0 else band_d)
+	# Centre lock plate + keyhole.
+	for y in range(10, 14):
+		for x in range(9, 12):
+			img.set_pixel(x, y, lock)
+	img.set_pixel(10, 12, ink)
 	_ink_outline(img, ink)
 	return img
 

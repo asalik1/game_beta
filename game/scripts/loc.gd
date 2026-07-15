@@ -16,7 +16,7 @@ const STRINGS := {
 	"en": {
 		# pause / system menu
 		"resume": "Resume",
-		"settings": "Settings (sound)",
+		"settings": "Settings (sound & controls)",
 		"keybinds": "Keybinds",
 		"quest_log": "Quest Log",
 		"stash": "Stash  (shared across characters)",

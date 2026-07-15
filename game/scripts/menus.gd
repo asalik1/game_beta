@@ -442,27 +442,16 @@ func open_benchmark_roster() -> void:
 ## The system menu (ESC in-game): everything a session needs that isn't
 ## combat — resume, options, chapter control, and the exits.
 func open_pause() -> void:
-	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 600, true)
+	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 460, true)
 	current = "pause"
 	var zi := clampi(game.cur_room, 0, game.zone_count - 1)
 	_lbl(vbox, "%s, Level %d — %s" % [Classes.CLASSES[game.local_player.cls]["name"],
 		game.local_player.level, game.zones[zi]["name"]], 14, Color(0.7, 0.72, 0.78))
-	# UI strings route through Loc.t (localization pass) — translating is a
-	# table swap in loc.gd, not a code sweep.
-	_btn(vbox, "  ▶  " + Loc.t("resume"), func() -> void: close(), Color(0.6, 1.0, 0.6))
-	_btn(vbox, "  ⚑  " + Loc.t("quest_log"), func() -> void: open_journal(), Color(0.9, 0.9, 0.95))
-	_btn(vbox, "  ⛃  " + Loc.t("stash"), func() -> void: open_stash(), Color(0.9, 0.9, 0.95))
+	# Everything that has its own HUD icon (mail, daily, quest log, stash, endgame
+	# trials) is NOT repeated here — this is now just settings + chapter/session
+	# control + the exits. Resume is dropped too: ✕ / tap-outside / ESC already do it.
+	# UI strings route through Loc.t (localization pass — a table swap, not a sweep).
 	_btn(vbox, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
-	_btn(vbox, "  ⌨  " + Loc.t("keybinds"), func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
-	var unread := 0
-	for mail in game.mailbox:
-		if not mail["read"]:
-			unread += 1
-	_btn(vbox, "  ✉  Mailbox" + ("  (%d new)" % unread if unread > 0 else ""),
-		func() -> void: open_mailbox(), Color(0.8, 0.9, 1.0) if unread > 0 else Color(0.9, 0.9, 0.95))
-	if game.daily_available():
-		_btn(vbox, "  ★  " + Loc.t("daily_reward"),
-			func() -> void: open_daily(), Color(1.0, 0.88, 0.45))
 	if game.endgame_active:
 		# In an endgame run: cash out (keep winnings) or abandon (forfeit).
 		var cash := func() -> void:
@@ -478,9 +467,6 @@ func open_pause() -> void:
 				func() -> void: game.replay_chapter(game.chapter_id))
 		_btn(vbox, "  ↺  Restart chapter  (keeps your character)", restart, Color(1.0, 0.8, 0.5))
 		_btn(vbox, "  ⚑  Chapter select  (replay any chapter)", func() -> void: open_chapter_select(true), Color(1.0, 0.8, 0.5))
-		if game.endgame_unlocked():
-			_btn(vbox, "  ⚔  Endgame Trials  (Crucible · Waking Depths)",
-				func() -> void: open_endgame_select(), Color(1.0, 0.6, 0.5))
 	var to_title := func() -> void:
 		open_confirm("Exit to the title screen? Your progress is saved." +
 			("\n\nThis ABANDONS the current endgame run — its rewards are forfeit." if game.endgame_active else ""),
@@ -606,6 +592,10 @@ func open_settings(from := "pause") -> void:
 			sens_val.text = "%.1f×" % v)
 		_lbl(vbox, "1.0× = drag to the edge for full speed; higher = full speed on a shorter drag. Drag the joystick in the button editor to move it.", 12, Color(0.55, 0.58, 0.66))
 		_btn(vbox, "  Customize buttons…  ", func() -> void: _open_layout_editor(), Color(0.8, 0.95, 0.85))
+	# Keybinds live here now (moved out of the pause menu). Keyboard-only, so
+	# they're hidden under touch controls — there are no keys to rebind on a phone.
+	if not game.touch_mode:
+		_btn(vbox, "  ⌨  " + Loc.t("keybinds") + "…", func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back")
 
@@ -3197,9 +3187,9 @@ func open_keybinds() -> void:
 			open_keybinds()
 		_btn(klist, text, rebind_cb, Color(1, 1, 0.6) if listening_action == act else Color(1, 1, 1))
 	_lbl(vbox, "Movement is always WASD / arrows.", 13, Color(0.6, 0.6, 0.6))
-	# Keybinds is a sub-screen of the pause menu — a Back button returns there
-	# (touch has no ESC, and the ✕ would drop straight to the world instead).
-	_btn(vbox, "  ← Back  ", func() -> void: open_pause(), Color(0.8, 0.85, 0.9))
+	# Keybinds is a sub-screen of Settings now — Back returns there (the ✕ would
+	# drop straight to the world instead).
+	_btn(vbox, "  ← Back to settings  ", func() -> void: open_settings(settings_return), Color(0.8, 0.85, 0.9))
 	_hint(vbox)
 
 

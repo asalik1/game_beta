@@ -33,6 +33,7 @@ var inv_btn: Button             # bag icon — opens the inventory
 var codex_btn: Button           # book icon — opens the codex
 var skills_btn: Button          # skill-tree icon — opens the talents/skill tree
 var settings_btn: Button        # gear icon — opens the pause/ESC menu
+var stash_btn: Button           # chest icon — opens the account stash
 
 # quest / zone
 var zone_label: Label
@@ -371,6 +372,19 @@ func _ready() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_pause())
 	add_child(settings_btn)
+	# Stash (account storage) — moved off the pause menu onto the HUD row.
+	stash_btn = Button.new()
+	stash_btn.flat = true
+	var stash_tex: Texture2D = Art.ui_icon("ui_stash")  # pack art if present; else drawn chest
+	stash_btn.icon = stash_tex if stash_tex != null else Art.tex("stash")
+	stash_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stash_btn.tooltip_text = "Stash (shared storage)"
+	stash_btn.position = Vector2(254, 186)
+	stash_btn.size = Vector2(32, 30)
+	stash_btn.pressed.connect(func() -> void:
+		if game.play_started and not game.menus.is_open():
+			game.menus.open_stash())
+	add_child(stash_btn)
 
 	# --------------------------------------------------------- boss bar ---
 	boss_box = Control.new()
