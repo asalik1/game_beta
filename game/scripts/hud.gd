@@ -1330,7 +1330,7 @@ func set_zone(text: String) -> void:
 
 
 func set_quest(text: String) -> void:
-	quest_label.text = "◆  " + text
+	quest_label.text = "◆  " + game.touchify(text)
 
 
 # ------------------------------------------ downed / revive UI (MP-12 §5.3) ---
@@ -2159,7 +2159,7 @@ func _fit_dialogue_box() -> float:
 func _show_line() -> void:
 	var line: Array = dialogue_lines[dialogue_index]
 	speaker_label.text = line[0]
-	text_label.text = line[1]
+	text_label.text = game.touchify(line[1])
 	_fit_dialogue_box()
 	_set_portrait(String(line[0]))
 	game.sfx("talk")

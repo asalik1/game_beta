@@ -337,6 +337,25 @@ func _dev_review_input(delta: float) -> void:
 		camera.zoom = Vector2.ONE * clampf(z, 0.4, 4.0)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	# Touch-only tap-to-talk: a phone has no E key, so tapping an NPC you're standing
+	# next to fires its convo/desk — same range + action as the keyboard path below
+	# (~L484). Only UNCONSUMED taps reach here, so the touch HUD's joystick/ability
+	# arc never trigger it; desktop keeps press-E (touch_mode is false there).
+	if not touch_mode or state != ST_PLAYING or hud.dialogue_active or menus.is_open():
+		return
+	if event is InputEventScreenTouch and event.pressed and talk_cd <= 0.0:
+		var world: Vector2 = get_viewport().canvas_transform.affine_inverse() * event.position
+		for entry in interactables:
+			if not is_instance_valid(entry["node"]):
+				continue
+			var np: Vector2 = entry["node"].position
+			if player.global_position.distance_to(np) < 80.0 and world.distance_to(np) < 90.0:
+				talk_cd = 0.6
+				entry["action"].call()
+				break
+
+
 func _process(delta: float) -> void:
 	talk_cd = maxf(0.0, talk_cd - delta)
 	_dev_review_input(delta)   # dev_mode: slow-mo (\) + zoom (=/-)
@@ -479,6 +498,8 @@ func _process(delta: float) -> void:
 	if state == ST_PLAYING and not hud.dialogue_active and not menus.is_open():
 		player._poll_local_intents()
 		for entry in interactables:
+			if not is_instance_valid(entry["node"]):
+				continue
 			var near: bool = player.global_position.distance_to(entry["node"].position) < 80.0
 			entry["prompt"].visible = near
 			if near and talk_cd <= 0.0 and player.intent_interact:

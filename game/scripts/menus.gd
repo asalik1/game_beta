@@ -208,6 +208,12 @@ func _awk(item: Dictionary) -> bool:
 
 
 func _hint(vbox: Node, text := "ESC to close") -> void:
+	if game and game.touch_mode:
+		# Keyboard close-hints (ESC / panel hotkeys) mean nothing on touch; keep any
+		# info after the em-dash and swap the key list for the on-screen ways out.
+		var dash := text.find("—")
+		var extra: String = (" " + text.substr(dash)) if dash >= 0 else ""
+		text = "Tap ✕ or outside to close" + extra
 	var l := _lbl(vbox, text, 13, Color(0.55, 0.55, 0.55))
 	l.size_flags_vertical = Control.SIZE_SHRINK_END
 

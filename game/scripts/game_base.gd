@@ -25,6 +25,27 @@ const LEGACY_W := 34 * TILE
 const LEGACY_H := 15 * TILE
 const DOOR_TILES := 3            # door gap width, in tiles
 const DIRS := {"N": Vector2i(0, -1), "S": Vector2i(0, 1), "E": Vector2i(1, 0), "W": Vector2i(-1, 0)}
+
+# Touchscreen mode: true on a mobile export or with the --touch dev arg. Base-layer
+# flag (game/ is the source of truth); desktop stays false, so every touch-aware UI
+# branch below collapses to the keyboard path with no per-platform fork.
+var touch_mode: bool = OS.has_feature("mobile") or OS.get_cmdline_args().has("--touch")
+
+
+## Rewrite keyboard prompts ("press E/Q/Space") into touch wording in player-facing
+## strings when on a touchscreen — a no-op on desktop, so authored text keeps its
+## keyboard phrasing on PC. Applied at display points (quest line, dialogue). Menu
+## close-hints are handled separately in menus._hint.
+func touchify(s: String) -> String:
+	if not touch_mode:
+		return s
+	s = s.replace(" and press E", " and tap them")
+	s = s.replace("press E", "tap")
+	s = s.replace("press Q", "tap the potion button")
+	s = s.replace("Press Q", "Tap the potion button")
+	s = s.replace("press Space", "tap")
+	s = s.replace("Press Space", "Tap")
+	return s
 const OPP := {"N": "S", "S": "N", "E": "W", "W": "E"}
 
 # ------------------------------------------------------------- chapters ---
