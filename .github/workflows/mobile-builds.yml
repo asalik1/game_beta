@@ -144,10 +144,17 @@ jobs:
           sed -i '' 's|application/app_store_team_id=""|application/app_store_team_id="0000000000"|' mobile/game/export_presets.cfg
           grep app_store_team_id mobile/game/export_presets.cfg   # confirm it took
           "$GODOT_BIN" --headless --path mobile/game --import || true
-          # Godot's iOS exporter emits an Xcode PROJECT (it can't compile itself).
+          # Godot 4.4 generates the .xcodeproj AND then tries to xcodebuild-archive
+          # (i.e. SIGN) it, which cannot succeed with no signing credentials on the
+          # runner. We only need the generated project, so tolerate that archive
+          # failure — the UNSIGNED compile happens in the next step. Guard by
+          # requiring the .xcodeproj to actually exist afterwards.
           "$GODOT_BIN" --headless --path mobile/game \
-            --export-release "$PRESET" "../builds/ios/${APP_NAME}.ipa"
+            --export-release "$PRESET" "../builds/ios/${APP_NAME}.ipa" \
+            || echo "Godot archive/sign step failed as expected (no credentials) — using the generated project."
           echo "---- generated tree ----"; ls -R mobile/builds/ios
+          test -d "mobile/builds/ios/${APP_NAME}.xcodeproj" \
+            || { echo "ERROR: Godot did not generate the Xcode project"; exit 1; }
 
       - name: Build UNSIGNED .app with xcodebuild
         run: |
@@ -167,6 +174,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
             clean build
 
       - name: Package unsigned .ipa (Payload/ zip trick)
