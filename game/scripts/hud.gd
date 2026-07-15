@@ -301,7 +301,7 @@ func _ready() -> void:
 		quest_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 		quest_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
 	quest_btn.tooltip_text = "Quest Log"
-	quest_btn.position = Vector2(55, 185)
+	quest_btn.position = Vector2(50, 185)
 	quest_btn.size = Vector2(32, 30)
 	quest_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
