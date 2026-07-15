@@ -156,6 +156,34 @@ jobs:
           test -d "mobile/builds/ios/${APP_NAME}.xcodeproj" \
             || { echo "ERROR: Godot did not generate the Xcode project"; exit 1; }
 
+      - name: iPad full-screen / native-res hardening (+ diagnostics)
+        run: |
+          set -uo pipefail   # non-fatal: this must never break the build
+          cd mobile/builds/ios
+          echo "=== storyboards present (a launch storyboard is what grants native iPad resolution) ==="
+          find . -iname '*.storyboard' 2>/dev/null || echo "(none found)"
+          # Godot writes the app plist as <App>-Info.plist; fall back to Info.plist, skip pod/framework plists.
+          PLIST="$(find . -name "${APP_NAME}-Info.plist" 2>/dev/null | head -n1)"
+          [ -z "${PLIST:-}" ] && PLIST="$(find . -name '*-Info.plist' 2>/dev/null | grep -viE 'pod|framework' | head -n1)"
+          [ -z "${PLIST:-}" ] && PLIST="$(find . -maxdepth 4 -name 'Info.plist' 2>/dev/null | grep -viE 'pod|framework' | head -n1)"
+          echo "app Info.plist: ${PLIST:-NOT FOUND}"
+          if [ -n "${PLIST:-}" ]; then
+            echo "=== launch/device keys BEFORE ==="
+            plutil -p "$PLIST" | grep -iE 'device|launch|fullscreen|storyboard|highres' || echo "(none set)"
+            # A landscape game should own the whole screen (no split-view). Safe, standard key.
+            plutil -replace UIRequiresFullScreen -bool true "$PLIST" 2>/dev/null || true
+            # Reference Godot's generated launch storyboard -> iOS grants full native resolution (fixes the cap).
+            SB="$(find . -iname '*.storyboard' 2>/dev/null | head -n1)"
+            if [ -n "${SB:-}" ]; then
+              plutil -replace UILaunchStoryboardName -string "$(basename "$SB" .storyboard)" "$PLIST" 2>/dev/null || true
+              echo "referenced launch storyboard: $(basename "$SB" .storyboard)"
+            else
+              echo "WARNING: no launch storyboard in the export — iOS may still cap resolution; we'll add one next iteration if needed."
+            fi
+            echo "=== launch/device keys AFTER ==="
+            plutil -p "$PLIST" | grep -iE 'device|launch|fullscreen|storyboard' || true
+          fi
+
       - name: Build UNSIGNED .app with xcodebuild
         run: |
           set -euo pipefail
