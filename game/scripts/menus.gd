@@ -1064,6 +1064,68 @@ func _sanitize_char_name(raw: String) -> String:
 	return out.strip_edges().substr(0, Balance.CHAR_NAME_MAX).strip_edges()
 
 
+# ----------------------------------------------------------- potion loadout ---
+
+## The per-room potion ROTATION editor (reached from the inventory's "⚗ Potion
+## Loadout" tab). Shows the room slots, lets you slot/unslot any owned elixir or
+## mana potion, and — crucially — is visible and self-explaining even when you
+## carry only Health (the old potion-popover path showed nothing then).
+func open_potion_loadout() -> void:
+	var p = game.local_player
+	var vbox := _open("Potion Loadout", 760, 560, true)
+	current = "potion_loadout"
+	var cyc: String = "tap the ⟳ button" if game.touch_mode \
+		else "[%s]" % OS.get_keycode_string(game.binds.get("potion_next", KEY_R))
+	var intro := _lbl(vbox, "Your PER-ROOM potion budget. Every room refills these slots; each drink spends one, and any unassigned slot pours a Health potion. Slot an elixir or mana potion here to fold it into the rotation — %s cycles which one is active mid-fight." % cyc, 13, Color(0.72, 0.74, 0.82))
+	intro.custom_minimum_size = Vector2(700, 0)
+
+	var cap: int = p.potion_slot_cap()
+	var plan: Array = p.potion_loadout()
+	_lbl(vbox, "ROOM SLOTS  (%d):" % cap, 15, Color(0.95, 0.85, 0.5))
+	for i in cap:
+		var pid: String = String(plan[i]) if i < plan.size() else "health"
+		var pname: String = "Health" if pid == "health" else String(p.potion_display_name(pid))
+		_lbl(vbox, "   Slot %d  ▸  %s" % [i + 1, pname], 14,
+			Color(0.78, 0.42, 0.42) if pid == "health" else Color(0.6, 0.85, 1.0))
+
+	UITheme.rule(vbox)
+	_lbl(vbox, "YOUR POTIONS:", 15, Color(0.95, 0.85, 0.5))
+	var any_rot := false
+	for rid in Items.ROTATION_POTIONS:
+		var rid_c := String(rid)
+		var owned := 0
+		for c in p.consumables:
+			if String(c.get("id", "")) == rid_c:
+				owned += 1
+		if owned <= 0:
+			continue
+		any_rot = true
+		var in_rot: int = p.potion_rotation.count(rid_c)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		vbox.add_child(row)
+		var nl := _lbl(row, "%s  —  own x%d%s" % [String(p.potion_display_name(rid_c)), owned,
+			("  ·  slotted x%d" % in_rot) if in_rot > 0 else ""], 14, Color(0.82, 0.9, 1.0))
+		nl.custom_minimum_size = Vector2(300, 0)
+		_btn(row, "  ＋ Slot  ", func() -> void:
+			game.local_player.loadout_add(rid_c)
+			open_potion_loadout(), Color(0.7, 0.9, 1.0))
+		if in_rot > 0:
+			_btn(row, "  － Unslot  ", func() -> void:
+				game.local_player.loadout_remove(rid_c)
+				open_potion_loadout(), Color(0.7, 0.82, 0.95))
+	if not any_rot:
+		var warn := _lbl(vbox, "You only carry Health potions right now — every slot pours Health, so there's nothing to rotate yet. Buy a Mana Draught or an Elixir of Might from an alchemist's shelf, then come back here to slot it. That's how a rotation is built.", 13, Color(1.0, 0.82, 0.5))
+		warn.custom_minimum_size = Vector2(700, 0)
+	if not p.potion_rotation.is_empty():
+		_btn(vbox, "  ⟲  All slots back to Health  ", func() -> void:
+			game.local_player.potion_rotation.clear()
+			game.local_player.active_potion = "health"
+			open_potion_loadout(), Color(0.6, 1.0, 0.8))
+	_btn(vbox, "  ← Back to inventory  ", func() -> void: open_inventory("gear", inv_cat), Color(0.8, 0.85, 0.9))
+	_hint(vbox, "ESC to go back")
+
+
 # --------------------------------------------------------------- inventory ---
 
 func open_inventory(tab := "gear", cat := "all") -> void:
@@ -1079,6 +1141,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		Color(0.95, 0.85, 0.5) if tab == "gear" else Color(0.6, 0.6, 0.6))
 	_btn(tabs, "  Stats  ", func() -> void: open_inventory("stats"),
 		Color(0.95, 0.85, 0.5) if tab == "stats" else Color(0.6, 0.6, 0.6))
+	# Dedicated, always-visible entry to the per-room potion rotation editor —
+	# the old only-path (tap a potion stack, actions hidden unless you own an
+	# elixir) was undiscoverable.
+	_btn(tabs, "  ⚗ Potion Loadout  ", func() -> void: open_potion_loadout(), Color(0.7, 0.92, 0.85))
 	if tab == "stats":
 		_build_stats_tab(vbox, game.local_player)
 		return
