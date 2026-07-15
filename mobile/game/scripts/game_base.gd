@@ -45,6 +45,7 @@ func touchify(s: String) -> String:
 	s = s.replace("Press Q", "Tap the potion button")
 	s = s.replace("press Space", "tap")
 	s = s.replace("Press Space", "Tap")
+	s = s.replace("E — ", "")   # NPC over-head prompts: "E — Talk" -> "Talk"
 	return s
 const OPP := {"N": "S", "S": "N", "E": "W", "W": "E"}
 
