@@ -94,7 +94,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 		# Click-off-the-box to close. The panel sits on top and absorbs its
 		# own clicks, so only clicks in the surrounding dim reach here.
 		dim.gui_input.connect(func(e: InputEvent) -> void:
-			if e is InputEventMouseButton and e.pressed:
+			if (e is InputEventMouseButton and e.pressed) or (e is InputEventScreenTouch and e.pressed):
 				close())
 	root.add_child(dim)
 
@@ -208,6 +208,12 @@ func _awk(item: Dictionary) -> bool:
 
 
 func _hint(vbox: Node, text := "ESC to close") -> void:
+	if game and game.touch_mode:
+		# Keyboard close-hints (ESC / panel hotkeys) mean nothing on touch; keep any
+		# info after the em-dash and swap the key list for the on-screen ways out.
+		var dash := text.find("—")
+		var extra: String = (" " + text.substr(dash)) if dash >= 0 else ""
+		text = "Tap ✕ or outside to close" + extra
 	var l := _lbl(vbox, text, 13, Color(0.55, 0.55, 0.55))
 	l.size_flags_vertical = Control.SIZE_SHRINK_END
 
@@ -2036,7 +2042,7 @@ func _cell_glyph(cell: Dictionary) -> String:
 
 func open_skills(tab := "talents") -> void:
 	var p: Player = game.local_player
-	var vbox := _open("%s — %s" % [Classes.CLASSES[p.cls]["name"], "Skill Tree" if tab == "talents" else "Attributes"], 1120, 640)
+	var vbox := _open("%s — %s" % [Classes.CLASSES[p.cls]["name"], "Skill Tree" if tab == "talents" else "Attributes"], 1120, 640, true)
 	current = "skills"
 
 	# Subtabs: talents / attribute allocation.
@@ -2279,7 +2285,7 @@ func open_shop(zone: int, tab := "") -> void:
 	shop_tab = tab
 
 	var p: Player = game.local_player
-	var vbox := _open("Merchant — you have %d gold" % p.gold, 1120, 600)
+	var vbox := _open("Merchant — you have %d gold" % p.gold, 1120, 600, true)
 	current = "shop"
 	# (T7) The merchant reads the shard before quoting a price.
 	match Story.res_band(p.resonance):
@@ -2745,7 +2751,7 @@ const MAP_TYPE_ICON := {
 
 
 func open_map() -> void:
-	var vbox := _open("Map — %s" % String(Story.chapter(game.chapter_id)["name"]), 1180, 640)
+	var vbox := _open("Map — %s" % String(Story.chapter(game.chapter_id)["name"]), 1180, 640, true)
 	current = "map"
 	_lbl(vbox, "Rooms you have entered — click a lit safe camp to travel there. Notches on a room's edge are its doorways; stubs jut toward rooms you haven't explored.", 13, Color(0.7, 0.72, 0.78))
 
