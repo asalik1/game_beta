@@ -31,6 +31,8 @@ var crucible_btn: Button        # 🔥 endgame — The Crucible; row under the m
 var depths_btn: Button          # 🕯 endgame — The Waking Depths
 var inv_btn: Button             # bag icon — opens the inventory
 var codex_btn: Button           # book icon — opens the codex
+var skills_btn: Button          # skill-tree icon — opens the talents/skill tree
+var settings_btn: Button        # gear icon — opens the pause/ESC menu
 
 # quest / zone
 var zone_label: Label
@@ -201,62 +203,29 @@ func _ready() -> void:
 
 	# Mailbox shortcut: an envelope right under Resonance so letters (boss
 	# victory reports, dropped-loot, gifts) are reachable without the pause
-	# menu. A red unread badge rides its corner. Uses the ✉ glyph the pause
-	# menu already shows — the "icon_mail" texture is chainmail ARMOR, not
-	# an envelope.
+	# menu — clickable on BOTH platforms. A red unread badge rides its corner.
+	# Uses a DRAWN envelope (Art "mail"): the old ✉ glyph has no coverage in the
+	# mobile pixel font, so it rendered as nothing on-device. A ui_mail.png pack
+	# icon overrides it if one is ever dropped in.
 	mail_btn = Button.new()
 	mail_btn.flat = true
-	mail_btn.text = "✉"
+	var mail_tex: Texture2D = Art.ui_icon("ui_mail")  # pack art if present; else the drawn envelope
+	mail_btn.icon = mail_tex if mail_tex != null else Art.tex("mail")
+	mail_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mail_btn.tooltip_text = "Mailbox"
-	mail_btn.add_theme_font_size_override("font_size", 22)
-	mail_btn.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
-	mail_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
 	mail_btn.position = Vector2(16, 186)
-	mail_btn.size = Vector2(34, 30)
+	mail_btn.size = Vector2(32, 30)
 	mail_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_mailbox())
 	add_child(mail_btn)
-
-	# On-screen entry to the core screens — clickable on BOTH platforms (mobile has
-	# no I/T/M/ESC keys; desktop gets the convenience too, keyboard still works). A
-	# labeled column down the left edge; Mail folds into it (hide the ✉ glyph, which
-	# also fails to render in the mobile font). The HUD hides while a menu is open,
-	# so no re-entry guard is needed.
-	if game:
-		mail_btn.visible = false
-		var _tm_specs := [
-			["Mail", func() -> void: game.menus.open_mailbox()],
-			["Bag", func() -> void: game.menus.open_inventory()],
-			["Skills", func() -> void: game.menus.open_skills()],
-			["Settings", func() -> void: game.menus.open_settings()],
-		]
-		for i in _tm_specs.size():
-			var sp: Array = _tm_specs[i]
-			var mb := Button.new()
-			mb.text = "  " + String(sp[0])
-			mb.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			mb.add_theme_font_size_override("font_size", 15)
-			mb.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0))
-			var sb := StyleBoxFlat.new()
-			sb.bg_color = Color(0.06, 0.07, 0.12, 0.96)   # near-opaque so the world doesn't bleed through
-			sb.border_color = Color(0.85, 0.75, 0.5, 0.4)
-			sb.set_border_width_all(1)
-			sb.set_corner_radius_all(5)
-			mb.add_theme_stylebox_override("normal", sb)
-			mb.add_theme_stylebox_override("hover", sb)
-			mb.add_theme_stylebox_override("pressed", sb)
-			mb.position = Vector2(10, 182 + i * 38)
-			mb.size = Vector2(116, 32)
-			mb.pressed.connect(sp[1])
-			add_child(mb)
 
 	var badge_style := StyleBoxFlat.new()
 	badge_style.bg_color = Color(0.86, 0.16, 0.16)
 	badge_style.set_corner_radius_all(9)  # 18px box + r9 = a circle
 	mail_badge = Panel.new()
 	mail_badge.add_theme_stylebox_override("panel", badge_style)
-	mail_badge.position = Vector2(100, 180)   # sit the unread badge on the "Mail" button, not floating over it
+	mail_badge.position = Vector2(40, 182)   # ride the top-right corner of the mail icon
 	mail_badge.size = Vector2(18, 18)
 	mail_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mail_badge.visible = false
@@ -374,6 +343,34 @@ func _ready() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_codex())
 	add_child(codex_btn)
+	# Skill tree + menu(gear) icons — the two core screens that had no on-screen
+	# entry (touch has no T / ESC key). Same row, clickable on BOTH platforms.
+	# The gear opens the PAUSE menu (the ESC screen: resume / settings / keybinds
+	# / save+quit), NOT the audio/controls sub-panel.
+	skills_btn = Button.new()
+	skills_btn.flat = true
+	var skill_tex: Texture2D = Art.ui_icon("ui_skills")  # pack art if present; else drawn nodes
+	skills_btn.icon = skill_tex if skill_tex != null else Art.tex("skills")
+	skills_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	skills_btn.tooltip_text = "Skill Tree"
+	skills_btn.position = Vector2(186, 186)
+	skills_btn.size = Vector2(32, 30)
+	skills_btn.pressed.connect(func() -> void:
+		if game.play_started and not game.menus.is_open():
+			game.menus.open_skills())
+	add_child(skills_btn)
+	settings_btn = Button.new()
+	settings_btn.flat = true
+	var gear_tex: Texture2D = Art.ui_icon("ui_settings")  # pack art if present; else drawn cog
+	settings_btn.icon = gear_tex if gear_tex != null else Art.tex("settings")
+	settings_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	settings_btn.tooltip_text = "Menu"
+	settings_btn.position = Vector2(220, 186)
+	settings_btn.size = Vector2(32, 30)
+	settings_btn.pressed.connect(func() -> void:
+		if game.play_started and not game.menus.is_open():
+			game.menus.open_pause())
+	add_child(settings_btn)
 
 	# --------------------------------------------------------- boss bar ---
 	boss_box = Control.new()

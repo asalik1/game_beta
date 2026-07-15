@@ -1358,6 +1358,12 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_bag())
 		"book":  # HUD codex button
 			t = ImageTexture.create_from_image(_make_book())
+		"mail":  # HUD mailbox button (the ✉ glyph has no mobile font — draw an envelope)
+			t = ImageTexture.create_from_image(_make_mail())
+		"skills":  # HUD skill-tree button
+			t = ImageTexture.create_from_image(_make_skills())
+		"settings":  # HUD menu/settings (gear) button
+			t = ImageTexture.create_from_image(_make_gear())
 		_:
 			t = ImageTexture.create_from_image(img(name))
 	_cache[name] = t
@@ -2181,6 +2187,115 @@ static func _make_book() -> Image:
 		img.set_pixel(x, 8, gold)
 		img.set_pixel(x, 11, gold)
 	img.set_pixel(15, 10, gold)
+	_ink_outline(img, ink)
+	return img
+
+
+## HUD mailbox icon: a closed envelope with a folded flap (the ✉ glyph has no
+## coverage in the mobile pixel font, so the HUD draws this instead).
+static func _make_mail() -> Image:
+	var w := 20
+	var h := 22
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var paper := Color(0.93, 0.90, 0.80)
+	var paper_d := Color(0.74, 0.70, 0.58)
+	var crease := Color(0.56, 0.50, 0.40)
+	var ink := Color(0.16, 0.12, 0.07)
+	# Envelope body (wider than tall), y 6..17, x 2..17.
+	for y in range(6, 18):
+		for x in range(2, 18):
+			img.set_pixel(x, y, paper)
+	for x in range(2, 18):
+		img.set_pixel(x, 6, paper_d)   # top edge shade
+		img.set_pixel(x, 17, paper_d)  # bottom edge shade
+	# Flap: two diagonals from the top corners meeting at a low centre point.
+	var apex_x := 10
+	var apex_y := 13
+	for i in range(0, 9):
+		var t: float = float(i) / 8.0
+		var lx: int = int(round(2.0 + (float(apex_x) - 2.0) * t))
+		var ly: int = int(round(6.0 + (float(apex_y) - 6.0) * t))
+		img.set_pixel(clampi(lx, 0, w - 1), clampi(ly, 0, h - 1), crease)
+		var rx: int = int(round(17.0 + (float(apex_x) - 17.0) * t))
+		var ry: int = int(round(6.0 + (float(apex_y) - 6.0) * t))
+		img.set_pixel(clampi(rx, 0, w - 1), clampi(ry, 0, h - 1), crease)
+	_ink_outline(img, ink)
+	return img
+
+
+## HUD skill-tree icon: three talent nodes joined by branches (top node forking
+## to two below), reading as "skills / progression".
+static func _make_skills() -> Image:
+	var w := 20
+	var h := 22
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var node := Color(0.55, 0.80, 1.0)
+	var node_l := Color(0.82, 0.94, 1.0)
+	var line := Color(0.45, 0.62, 0.86)
+	var ink := Color(0.10, 0.14, 0.22)
+	var top := Vector2(10, 4)
+	var bl := Vector2(5, 16)
+	var br := Vector2(15, 16)
+	# Branches: top node down to each lower node (2px thick).
+	for pair in [[top, bl], [top, br]]:
+		var a: Vector2 = pair[0]
+		var b: Vector2 = pair[1]
+		for i in range(0, 15):
+			var t: float = float(i) / 14.0
+			var px: int = int(round(a.x + (b.x - a.x) * t))
+			var py: int = int(round(a.y + (b.y - a.y) * t))
+			img.set_pixel(clampi(px, 0, w - 1), clampi(py, 0, h - 1), line)
+			img.set_pixel(clampi(px + 1, 0, w - 1), clampi(py, 0, h - 1), line)
+	# Nodes as small filled discs.
+	for n: Vector2 in [top, bl, br]:
+		for y in range(0, h):
+			for x in range(0, w):
+				var d: float = Vector2(x - n.x, y - n.y).length()
+				if d <= 3.0:
+					img.set_pixel(x, y, node_l if d < 1.4 else node)
+	_ink_outline(img, ink)
+	return img
+
+
+## HUD menu/settings icon: a cogwheel (eight teeth, dark axle bore).
+static func _make_gear() -> Image:
+	var w := 20
+	var h := 22
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var metal := Color(0.62, 0.66, 0.74)
+	var metal_d := Color(0.42, 0.46, 0.54)
+	var metal_l := Color(0.80, 0.84, 0.92)
+	var bore := Color(0.20, 0.22, 0.27)
+	var ink := Color(0.12, 0.13, 0.16)
+	var cx := 10.0
+	var cy := 11.0
+	# Teeth: eight blocks around the rim (drawn first; the disc overlaps their base).
+	for k in range(0, 8):
+		var ang: float = float(k) * PI / 4.0
+		var tx: int = int(round(cx + cos(ang) * 8.0))
+		var ty: int = int(round(cy + sin(ang) * 8.0))
+		for dy in range(-1, 2):
+			for dx in range(-1, 2):
+				var px: int = tx + dx
+				var py: int = ty + dy
+				if px >= 0 and py >= 0 and px < w and py < h:
+					img.set_pixel(px, py, metal_d)
+	# Body disc with a diagonal light-to-dark shade.
+	for y in range(0, h):
+		for x in range(0, w):
+			var d: float = Vector2(x - cx, y - cy).length()
+			if d <= 6.5:
+				var c := metal
+				if (x - cx) + (y - cy) < -3.0:
+					c = metal_l
+				elif (x - cx) + (y - cy) > 3.0:
+					c = metal_d
+				img.set_pixel(x, y, c)
+	# Axle bore (dark, so it reads as a hole without punching transparency).
+	for y in range(0, h):
+		for x in range(0, w):
+			if Vector2(x - cx, y - cy).length() <= 2.4:
+				img.set_pixel(x, y, bore)
 	_ink_outline(img, ink)
 	return img
 

@@ -25,7 +25,7 @@ func load_settings() -> void:
 				if data[key] is Dictionary:
 					settings[key] = data[key]   # touch_layout (custom button offsets)
 			elif key == "joystick_sensitivity":
-				settings[key] = clampf(float(data[key]), 0.5, 2.5)  # not a [0,1] volume
+				settings[key] = clampf(float(data[key]), 1.0, 3.0)  # 1.0 floor: never caps max speed
 			else:
 				settings[key] = clampf(float(data[key]), 0.0, 1.0)
 		# joystick_pos is optional (only written once the stick is dragged in the

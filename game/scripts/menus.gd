@@ -79,6 +79,11 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 		root.queue_free()
 	game.request_pause(true)
 	_closable_now = closable  # so _hint tells the truth about the exits on touch
+	# Drop any held touch input: opening a menu pauses the tree, which freezes the
+	# touch HUD mid-gesture — a missed finger-release would otherwise leave the
+	# joystick "stuck held" and deaf to new touches after the menu closes.
+	if game._touch_hud != null:
+		game._touch_hud._release_everything()
 	# Hide the gameplay HUD while a menu is up: it sits on a lower CanvasLayer,
 	# so the dim only fades it — the quest banner and quickbar still bleed
 	# through behind the panel and crowd the title and both shop columns.
@@ -587,8 +592,8 @@ func open_settings(from := "pause") -> void:
 		var sens_name := _lbl(sens_row, "Joystick sensitivity", 15)
 		sens_name.custom_minimum_size = Vector2(180, 0)
 		var sens_slider := HSlider.new()
-		sens_slider.min_value = 0.5
-		sens_slider.max_value = 2.5
+		sens_slider.min_value = 1.0
+		sens_slider.max_value = 3.0
 		sens_slider.step = 0.1
 		sens_slider.value = float(game.settings.get("joystick_sensitivity", 1.0))
 		sens_slider.custom_minimum_size = Vector2(320, 24)
@@ -599,7 +604,7 @@ func open_settings(from := "pause") -> void:
 			game.settings["joystick_sensitivity"] = v
 			game.save_settings()
 			sens_val.text = "%.1f×" % v)
-		_lbl(vbox, "Higher = full speed on a shorter drag. Drag the joystick in the button editor to move it.", 12, Color(0.55, 0.58, 0.66))
+		_lbl(vbox, "1.0× = drag to the edge for full speed; higher = full speed on a shorter drag. Drag the joystick in the button editor to move it.", 12, Color(0.55, 0.58, 0.66))
 		_btn(vbox, "  Customize buttons…  ", func() -> void: _open_layout_editor(), Color(0.8, 0.95, 0.85))
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back")
