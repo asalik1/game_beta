@@ -532,23 +532,6 @@ func _settings_back() -> void:
 
 # ------------------------------------------------------------ endgame trials ---
 
-## Confirm-and-enter a mode from a HUD trial icon: a backable prompt carrying the
-## mode's record + rules, so a stray click on the HUD never tears the world down.
-func confirm_endgame(mode: String) -> void:
-	var cls: String = game.local_player.cls
-	var pb := game.endgame_pb(mode, cls)
-	var mname := "The Crucible" if mode == "crucible" else "The Waking Depths"
-	var rules := "Ten bosses back to back, each with an elite affix — HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" \
-		else "An endless descent: each room's mobs deepen a level and a boss guards every fourth. Rewards pay when you fall or cash out."
-	var best := ""
-	if not pb.is_empty():
-		best = ("\n\nYour best: %d bosses." % int(pb.get("kills", 0))) if mode == "crucible" \
-			else ("\n\nYour deepest: depth %d." % int(pb.get("depth", 0)))
-	open_confirm("Enter %s?\n\n%s%s\n\nYour campaign is saved — you'll return to the title when the run ends." % [mname, rules, best],
-		func() -> void: _start_endgame(mode),
-		func() -> void: close())
-
-
 ## The endgame mode picker (ACT2_DESIGN.md §II) — reached from the pause menu
 ## once Act 1 is cleared. Two never-ending arena modes; picking one tears down
 ## the campaign world and drops the hero into the arena (game.enter_endgame).
@@ -1001,21 +984,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(hbox)
 
-	# EQUIPPED runs long once every slot holds a socketed S-item (4 slots ×
-	# title + wrapped stats + a 40px socket row easily exceeds the panel body),
-	# and a container never shrinks a child below its min height — so the raw
-	# VBox used to spill past the panel bottom. Scroll it, the same way the bag
-	# grid on the right does, and the list stays inside the panel.
-	var left_scroll := ScrollContainer.new()
-	left_scroll.custom_minimum_size = Vector2(456, 0)  # 440 col + ~16 scrollbar
-	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	left_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	hbox.add_child(left_scroll)
 	var left := VBoxContainer.new()
 	left.custom_minimum_size = Vector2(440, 0)
-	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 6)
-	left_scroll.add_child(left)
+	hbox.add_child(left)
 	UITheme.header(_lbl(left, "EQUIPPED", 16, Color(0.95, 0.85, 0.5)))
 	_lbl(left, "(click an item for its detail popover)", 12, Color(0.55, 0.55, 0.6))
 	for slot in Items.SLOTS:
