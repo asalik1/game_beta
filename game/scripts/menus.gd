@@ -560,6 +560,16 @@ func open_settings(from := "pause") -> void:
 				game.set_touch_controls(not bool(game.settings.get("touch_controls", false)))
 				open_settings(settings_return), Color(0.9, 0.9, 0.95))
 		tc_btn.tooltip_text = "Touch: on-screen joystick + buttons + click-to-talk. Keyboard shortcuts always stay valid."
+	# Touch-layout options — shown whenever touch controls are active (mobile, or desktop
+	# with the toggle on): joystick lock + a drag-to-rearrange button editor.
+	if game.touch_mode:
+		var jl_btn := _btn(vbox, "  Joystick: %s  " % ("FIXED" if game.settings.get("joystick_locked", false) else "FLOATING"),
+			func() -> void:
+				game.settings["joystick_locked"] = not bool(game.settings.get("joystick_locked", false))
+				game.save_settings()
+				open_settings(settings_return), Color(0.9, 0.9, 0.95))
+		jl_btn.tooltip_text = "Floating: the stick springs to wherever your thumb lands. Fixed: it stays at one spot."
+		_btn(vbox, "  Customize buttons…  ", func() -> void: _open_layout_editor(), Color(0.8, 0.95, 0.85))
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back")
 
@@ -569,6 +579,13 @@ func _settings_back() -> void:
 		open_slots()  # back to the roster, not the splash
 	else:
 		open_pause()
+
+
+## Close the menu and drop into the on-screen button-layout editor (touch HUD).
+func _open_layout_editor() -> void:
+	close()
+	if game._touch_hud != null:
+		game._touch_hud.enter_edit_mode()
 
 
 # ---------------------------------------------------------- chapter select ---

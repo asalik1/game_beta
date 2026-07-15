@@ -21,6 +21,9 @@ func load_settings() -> void:
 				settings[key] = String(data[key])
 			elif settings[key] is bool:
 				settings[key] = bool(data[key])
+			elif settings[key] is Dictionary:
+				if data[key] is Dictionary:
+					settings[key] = data[key]   # touch_layout (custom button offsets)
 			else:
 				settings[key] = clampf(float(data[key]), 0.0, 1.0)
 	Loc.lang = String(settings.get("lang", "en"))

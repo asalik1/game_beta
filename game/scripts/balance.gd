@@ -13,6 +13,10 @@ class_name Balance
 # "overhead": a target with |dx| <= |dy| * AIM_VERTICAL_CONE is fair game
 # from either orientation (0.6 ~= a 31-degree cone off vertical).
 const AIM_VERTICAL_CONE := 0.6
+## Facing only flips on DECISIVE horizontal input; below this the last orientation
+## holds. Kills the analog-joystick jitter where a near-vertical push wobbled dir.x's
+## sign every frame and vibrated the sprite (keyboard input is discrete, never hit it).
+const FACE_DEADZONE := 0.35
 
 # ------------------------------------------------- character render scale ---
 # Heroes and regular mobs are authored at ~200px but render small on screen, so

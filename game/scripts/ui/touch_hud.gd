@@ -56,6 +56,9 @@ var _btn_touch := {}           # finger index -> button id (held ability/action 
 var _lock_idx := -1            # finger index on the lock button
 var _lock_start := Vector2.ZERO
 var _lock_moved := false
+var _edit_mode := false         # layout-customization: drag buttons to rearrange
+var _drag_id := ""              # button being dragged in edit mode
+var _edit_ui: Control = null    # the Done/Reset banner overlay
 
 
 func _ready() -> void:
@@ -126,11 +129,18 @@ func _layout() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	var origin := Vector2(vp.x - SAFE_MARGIN - BTN_D / 2.0 - 8.0,
 						   vp.y - SAFE_MARGIN - BTN_D / 2.0 - 8.0)
+	var custom: Dictionary = game.settings.get("touch_layout", {}) if game != null else {}
 	for id in _btns.keys():
 		var b: Dictionary = _btns[id]
-		var c: Vector2 = origin + (BTN_LAYOUT[id] as Vector2)
+		var off: Vector2 = BTN_LAYOUT[id]
+		if custom.has(id):
+			var a: Array = custom[id]     # player-saved offset overrides the default
+			off = Vector2(float(a[0]), float(a[1]))
+		var c: Vector2 = origin + off
 		b["center"] = c
 		(b["panel"] as Panel).position = c - Vector2(b["diam"], b["diam"]) / 2.0
+	if _edit_ui != null:
+		_edit_ui.size = get_viewport().get_visible_rect().size
 
 
 # --------------------------------------------------------------- per frame -----
@@ -200,6 +210,11 @@ func _input(event: InputEvent) -> void:
 
 func _on_touch(e: InputEventScreenTouch) -> void:
 	if e.pressed:
+		if _edit_mode:
+			_drag_id = _button_at(e.position)   # grab an ability button to reposition
+			if _drag_id != "":
+				get_viewport().set_input_as_handled()
+			return   # a miss lets the Done/Reset buttons receive the tap
 		var id := _button_at(e.position)
 		if id != "":
 			if id == "lock":
@@ -214,13 +229,25 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 			get_viewport().set_input_as_handled()
 		elif _move_touch == -1 and _in_joystick_zone(e.position):
 			_move_touch = e.index
-			_joy_center = e.position
-			_place_joystick(e.position, e.position)
+			# Floating: the base springs to the thumb. Locked: fixed bottom-left base,
+			# the touch just grabs the knob — persisted via the joystick_locked setting.
+			if _joystick_locked():
+				_joy_center = _joy_home()
+				_place_joystick(_joy_center, _joy_center)
+			else:
+				_joy_center = e.position
+				_place_joystick(e.position, e.position)
 			_joy_base.visible = true
 			_joy_knob.visible = true
 			_mark_active()
 			get_viewport().set_input_as_handled()
 	else:
+		if _edit_mode:
+			if _drag_id != "":
+				game.save_settings()   # persist the new position
+				_drag_id = ""
+				get_viewport().set_input_as_handled()
+			return
 		if e.index == _move_touch:
 			_move_touch = -1
 			_mi.move = Vector2.ZERO
@@ -242,6 +269,10 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 
 
 func _on_drag(e: InputEventScreenDrag) -> void:
+	if _edit_mode:
+		if _drag_id != "":
+			_move_button(_drag_id, e.position)
+		return
 	if e.index == _move_touch:
 		var off := e.position - _joy_center
 		off = off.limit_length(JOY_MAX)
@@ -300,6 +331,84 @@ func _release_everything() -> void:
 		_joy_knob.visible = false
 	for id in _btns.keys():
 		_press_fx(String(id), false)
+
+
+# ------------------------------------------------------ layout customization ---
+func _joystick_locked() -> bool:
+	return game != null and bool(game.settings.get("joystick_locked", false))
+
+
+func _joy_home() -> Vector2:
+	var vp := get_viewport().get_visible_rect().size
+	return Vector2(vp.x * 0.16, vp.y * 0.72)   # fixed bottom-left anchor when locked
+
+
+## Enter layout-customization: buttons become draggable; a Done/Reset banner appears.
+## Called from Settings > Customize Buttons (which closes the menu first).
+func enter_edit_mode() -> void:
+	_edit_mode = true
+	_release_everything()
+	_enabled = true
+	visible = true
+	if _edit_ui == null:
+		_build_edit_ui()
+	_edit_ui.visible = true
+
+
+func exit_edit_mode() -> void:
+	_edit_mode = false
+	_drag_id = ""
+	if _edit_ui != null:
+		_edit_ui.visible = false
+	if game != null:
+		game.save_settings()
+
+
+func _reset_layout() -> void:
+	if game != null:
+		game.settings["touch_layout"] = {}
+		game.save_settings()
+	_layout()
+
+
+## Drag a button to a new spot; store its offset relative to the cluster origin.
+func _move_button(id: String, pos: Vector2) -> void:
+	var vp := get_viewport().get_visible_rect().size
+	var origin := Vector2(vp.x - SAFE_MARGIN - BTN_D / 2.0 - 8.0, vp.y - SAFE_MARGIN - BTN_D / 2.0 - 8.0)
+	var off := pos - origin
+	var b: Dictionary = _btns[id]
+	b["center"] = origin + off
+	(b["panel"] as Panel).position = (origin + off) - Vector2(b["diam"], b["diam"]) / 2.0
+	var custom: Dictionary = game.settings.get("touch_layout", {})
+	custom[id] = [off.x, off.y]
+	game.settings["touch_layout"] = custom
+
+
+func _build_edit_ui() -> void:
+	var vp := get_viewport().get_visible_rect().size
+	_edit_ui = Control.new()
+	_edit_ui.size = vp
+	_edit_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_edit_ui)
+	var banner := Label.new()
+	banner.text = "Drag buttons to rearrange your layout"
+	banner.add_theme_font_size_override("font_size", 20)
+	banner.add_theme_color_override("font_color", Color(1.0, 0.95, 0.7))
+	banner.position = Vector2(vp.x * 0.5 - 200.0, 22.0)
+	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_edit_ui.add_child(banner)
+	var done := Button.new()
+	done.text = "  Done  "
+	done.add_theme_font_size_override("font_size", 18)
+	done.position = Vector2(vp.x * 0.5 - 110.0, 56.0)
+	done.pressed.connect(exit_edit_mode)
+	_edit_ui.add_child(done)
+	var reset := Button.new()
+	reset.text = "  Reset  "
+	reset.add_theme_font_size_override("font_size", 18)
+	reset.position = Vector2(vp.x * 0.5 + 30.0, 56.0)
+	reset.pressed.connect(_reset_layout)
+	_edit_ui.add_child(reset)
 
 
 func _notification(what: int) -> void:

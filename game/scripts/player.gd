@@ -178,9 +178,9 @@ func _physics_process(delta: float) -> void:
 		var sy := soft_target.global_position.y - global_position.y
 		if absf(sx) > absf(sy) * Balance.AIM_VERTICAL_CONE:
 			os = signf(sx)      # commit orientation to the soft target
-		elif dir.x != 0.0:
+		elif absf(dir.x) > Balance.FACE_DEADZONE:
 			os = signf(dir.x)   # target overhead: let movement steer
-	elif dir.x != 0.0:
+	elif absf(dir.x) > Balance.FACE_DEADZONE:
 		os = signf(dir.x)
 	facing = Vector2(os, 0.0)
 	var spd := speed * (1.25 if berserk_time > 0.0 else 1.0)
