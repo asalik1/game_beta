@@ -229,7 +229,6 @@ func _ready() -> void:
 			["Mail", func() -> void: game.menus.open_mailbox()],
 			["Bag", func() -> void: game.menus.open_inventory()],
 			["Skills", func() -> void: game.menus.open_skills()],
-			["Map", func() -> void: game.menus.open_map()],
 			["Settings", func() -> void: game.menus.open_settings()],
 		]
 		for i in _tm_specs.size():
@@ -240,7 +239,7 @@ func _ready() -> void:
 			mb.add_theme_font_size_override("font_size", 15)
 			mb.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0))
 			var sb := StyleBoxFlat.new()
-			sb.bg_color = Color(0.06, 0.07, 0.12, 0.75)
+			sb.bg_color = Color(0.06, 0.07, 0.12, 0.96)   # near-opaque so the world doesn't bleed through
 			sb.border_color = Color(0.85, 0.75, 0.5, 0.4)
 			sb.set_border_width_all(1)
 			sb.set_corner_radius_all(5)
@@ -257,7 +256,7 @@ func _ready() -> void:
 	badge_style.set_corner_radius_all(9)  # 18px box + r9 = a circle
 	mail_badge = Panel.new()
 	mail_badge.add_theme_stylebox_override("panel", badge_style)
-	mail_badge.position = Vector2(40, 182)
+	mail_badge.position = Vector2(100, 180)   # sit the unread badge on the "Mail" button, not floating over it
 	mail_badge.size = Vector2(18, 18)
 	mail_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mail_badge.visible = false

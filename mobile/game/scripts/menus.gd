@@ -485,7 +485,10 @@ func open_pause() -> void:
 ## flows fall back there on cancel; world prompts (shrines, cursed
 ## chests) pass an on_cancel that just closes.
 func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> void:
-	var vbox := _open("Are you sure?", 680, 320)
+	# Size to the message (the Crucible rules overflowed a fixed 320) + closable so the
+	# ✕ / tap-outside the touch hint promises actually work (dismiss == cancel).
+	var est_lines: int = int(ceil(msg.length() / 46.0)) + msg.count("\n")
+	var vbox := _open("Are you sure?", 680, clampf(300.0 + est_lines * 24.0, 320.0, 600.0), true)
 	current = "confirm"
 	var l := _lbl(vbox, msg, 15, Color(0.9, 0.9, 0.9))
 	l.custom_minimum_size = Vector2(600, 0)
