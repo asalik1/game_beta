@@ -24,8 +24,14 @@ func load_settings() -> void:
 			elif settings[key] is Dictionary:
 				if data[key] is Dictionary:
 					settings[key] = data[key]   # touch_layout (custom button offsets)
+			elif key == "joystick_sensitivity":
+				settings[key] = clampf(float(data[key]), 0.5, 2.5)  # not a [0,1] volume
 			else:
 				settings[key] = clampf(float(data[key]), 0.0, 1.0)
+		# joystick_pos is optional (only written once the stick is dragged in the
+		# layout editor), so it isn't a default key — load it on its own.
+		if data.has("joystick_pos") and data["joystick_pos"] is Array:
+			settings["joystick_pos"] = data["joystick_pos"]
 	Loc.lang = String(settings.get("lang", "en"))
 
 func save_settings() -> void:

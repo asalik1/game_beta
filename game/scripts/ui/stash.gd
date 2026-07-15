@@ -10,7 +10,7 @@ static func open(m: Menus) -> void:
 	var g := m.game
 	g.ensure_stash_loaded()
 	var p := g.player
-	var vbox := m._open("Stash — account storage  (%d / %d used)" % [g.stash.size(), Balance.STASH_SLOTS], 1040, 470)
+	var vbox := m._open("Stash — account storage  (%d / %d used)" % [g.stash.size(), Balance.STASH_SLOTS], 1040, 470, true)
 	m.current = "stash"
 	m._lbl(vbox, "Shared across ALL your characters. Click an entry to move it between your BAG and the STASH.",
 		13, Color(0.7, 0.72, 0.78))

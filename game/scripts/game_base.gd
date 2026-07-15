@@ -223,7 +223,8 @@ var guest_world := false
 ## can lose its host anew) — net_session._rpc_world_snapshot.
 var _host_lost_handled := false
 var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en", "touch_controls": false,
-	"joystick_locked": false, "touch_layout": {}}  # user://settings.json ("touch_layout": id -> [x,y] custom offset)
+	"joystick_locked": false, "joystick_sensitivity": 1.0, "touch_layout": {}}
+	# user://settings.json ("touch_layout": id -> [x,y] custom offset; "joystick_pos": [x,y] custom home)
 var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)
 var merchant_zones: Array = []        # rooms with a merchant present (saved)

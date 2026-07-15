@@ -212,6 +212,8 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 	if e.pressed:
 		if _edit_mode:
 			_drag_id = _button_at(e.position)   # grab an ability button to reposition
+			if _drag_id == "" and _near_joystick(e.position):
+				_drag_id = "__joy"              # grab the joystick base to move it
 			if _drag_id != "":
 				get_viewport().set_input_as_handled()
 			return   # a miss lets the Done/Reset buttons receive the tap
@@ -270,7 +272,9 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 
 func _on_drag(e: InputEventScreenDrag) -> void:
 	if _edit_mode:
-		if _drag_id != "":
+		if _drag_id == "__joy":
+			_move_joystick(e.position)
+		elif _drag_id != "":
 			_move_button(_drag_id, e.position)
 		return
 	if e.index == _move_touch:
@@ -281,7 +285,12 @@ func _on_drag(e: InputEventScreenDrag) -> void:
 		if mag < JOY_DEAD:
 			_mi.move = Vector2.ZERO
 		else:
+			# Sensitivity lets the player reach full speed on a shorter drag: the
+			# post-deadzone travel is multiplied, then clamped. 1.0 = raw stick
+			# (edge = max); >1 maxes out early ("slight drag = full speed").
+			var sens: float = float(game.settings.get("joystick_sensitivity", 1.0)) if game != null else 1.0
 			var scaled := clampf((mag - JOY_DEAD) / (1.0 - JOY_DEAD), 0.0, 1.0)
+			scaled = clampf(scaled * sens, 0.0, 1.0)
 			_mi.move = off.normalized() * scaled
 	elif e.index == _lock_idx:
 		if e.position.distance_to(_lock_start) > LOCK_SWIPE_OFF:
@@ -340,6 +349,10 @@ func _joystick_locked() -> bool:
 
 func _joy_home() -> Vector2:
 	var vp := get_viewport().get_visible_rect().size
+	# Player-dragged home (set in the layout editor) wins; else a bottom-left anchor.
+	var jp = game.settings.get("joystick_pos", null) if game != null else null
+	if jp is Array and (jp as Array).size() == 2:
+		return Vector2(float(jp[0]), float(jp[1]))
 	return Vector2(vp.x * 0.16, vp.y * 0.72)   # fixed bottom-left anchor when locked
 
 
@@ -350,6 +363,11 @@ func enter_edit_mode() -> void:
 	_release_everything()
 	_enabled = true
 	visible = true
+	# Show the joystick at its home so it can be dragged like the buttons.
+	_joy_center = _joy_home()
+	_place_joystick(_joy_center, _joy_center)
+	_joy_base.visible = true
+	_joy_knob.visible = true
 	if _edit_ui == null:
 		_build_edit_ui()
 	_edit_ui.visible = true
@@ -358,6 +376,8 @@ func enter_edit_mode() -> void:
 func exit_edit_mode() -> void:
 	_edit_mode = false
 	_drag_id = ""
+	_joy_base.visible = false   # the edit-mode preview; play hides it until a touch
+	_joy_knob.visible = false
 	if _edit_ui != null:
 		_edit_ui.visible = false
 	if game != null:
@@ -367,8 +387,12 @@ func exit_edit_mode() -> void:
 func _reset_layout() -> void:
 	if game != null:
 		game.settings["touch_layout"] = {}
+		game.settings.erase("joystick_pos")   # back to the default bottom-left home
 		game.save_settings()
 	_layout()
+	# Re-show the joystick preview at the restored default home.
+	_joy_center = _joy_home()
+	_place_joystick(_joy_center, _joy_center)
 
 
 ## Drag a button to a new spot; store its offset relative to the cluster origin.
@@ -384,6 +408,21 @@ func _move_button(id: String, pos: Vector2) -> void:
 	game.settings["touch_layout"] = custom
 
 
+## Is `pos` on the joystick base? (edit mode only — used to grab it for a move.)
+func _near_joystick(pos: Vector2) -> bool:
+	return _joy_base != null and _joy_base.visible \
+		and pos.distance_to(_joy_center) <= JOY_BASE_D / 2.0
+
+
+## Drag the joystick's home position in edit mode; saved so a locked stick spawns
+## there and a floating one springs from there (persisted as joystick_pos).
+func _move_joystick(pos: Vector2) -> void:
+	_joy_center = pos
+	_place_joystick(pos, pos)
+	if game != null:
+		game.settings["joystick_pos"] = [pos.x, pos.y]
+
+
 func _build_edit_ui() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	_edit_ui = Control.new()
@@ -391,10 +430,10 @@ func _build_edit_ui() -> void:
 	_edit_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_edit_ui)
 	var banner := Label.new()
-	banner.text = "Drag buttons to rearrange your layout"
+	banner.text = "Drag the buttons or the joystick to rearrange your layout"
 	banner.add_theme_font_size_override("font_size", 20)
 	banner.add_theme_color_override("font_color", Color(1.0, 0.95, 0.7))
-	banner.position = Vector2(vp.x * 0.5 - 200.0, 22.0)
+	banner.position = Vector2(vp.x * 0.5 - 260.0, 22.0)
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_edit_ui.add_child(banner)
 	var done := Button.new()

@@ -20,6 +20,7 @@ var detail_popover: Control = null  # click-to-reveal item/gem/shop popover
 var detail_return := ""             # screen the popover overlays (restored on close)
 var _popover_box: PanelContainer = null  # the current popover's panel (for re-anchoring)
 var current := ""
+var _closable_now := false        # does the open panel have a ✕ / click-outside exit?
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
 var shop_tab := "buy"             # shop: which full-width tab is showing (persists across refreshes)
@@ -77,6 +78,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	if root:
 		root.queue_free()
 	game.request_pause(true)
+	_closable_now = closable  # so _hint tells the truth about the exits on touch
 	# Hide the gameplay HUD while a menu is up: it sits on a lower CanvasLayer,
 	# so the dim only fades it — the quest banner and quickbar still bleed
 	# through behind the panel and crowd the title and both shop columns.
@@ -240,9 +242,14 @@ func _hint(vbox: Node, text := "ESC to close") -> void:
 	if game and game.touch_mode:
 		# Keyboard close-hints (ESC / panel hotkeys) mean nothing on touch; keep any
 		# info after the em-dash and swap the key list for the on-screen ways out.
+		# Only promise ✕/outside when the panel actually HAS them — otherwise the
+		# hint used to lie (keybinds had no exit yet still said "tap ✕ or outside").
 		var dash := text.find("—")
 		var extra: String = (" " + text.substr(dash)) if dash >= 0 else ""
-		text = "Tap ✕ or outside to close" + extra
+		if _closable_now:
+			text = "Tap ✕ or outside to close" + extra
+		else:
+			text = ("Use the Back button" + extra).strip_edges()
 	var l := _lbl(vbox, text, 13, Color(0.55, 0.55, 0.55))
 	l.size_flags_vertical = Control.SIZE_SHRINK_END
 
@@ -406,7 +413,7 @@ func _dev_roster_row(vbox: VBoxContainer) -> void:
 ## rolls all six classes as that EXACT bench build into free save slots — the same
 ## builds the DPS bench runs. ESC / Back return to the slot list.
 func open_benchmark_roster() -> void:
-	var vbox := _open("Benchmark Roster", 760, 480)
+	var vbox := _open("Benchmark Roster", 760, 480, true)
 	current = "benchmark_roster"
 	var desc := _lbl(vbox, "Generate all six classes as an exact DPS-bench build — full gear, gems, +plus, talents and theme baked in. Free save slots only; existing saves are never touched.", 13, Color(0.7, 0.74, 0.86))
 	desc.custom_minimum_size = Vector2(680, 0)
@@ -512,7 +519,7 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> voi
 var settings_return := "pause"
 func open_settings(from := "pause") -> void:
 	settings_return = from
-	var vbox := _open("Settings", 700, 440)
+	var vbox := _open("Settings", 700, 520, true)
 	current = "settings"
 	for spec in [["Music volume", "music"], ["Sound effects", "sfx"]]:
 		var key: String = spec[1]
@@ -572,6 +579,27 @@ func open_settings(from := "pause") -> void:
 				game.save_settings()
 				open_settings(settings_return), Color(0.9, 0.9, 0.95))
 		jl_btn.tooltip_text = "Floating: the stick springs to wherever your thumb lands. Fixed: it stays at one spot."
+		# Sensitivity: multiplies the stick's post-deadzone travel, so a higher value
+		# hits full speed on a shorter drag (calibrate to taste — 1.0× = raw stick).
+		var sens_row := HBoxContainer.new()
+		sens_row.add_theme_constant_override("separation", 14)
+		vbox.add_child(sens_row)
+		var sens_name := _lbl(sens_row, "Joystick sensitivity", 15)
+		sens_name.custom_minimum_size = Vector2(180, 0)
+		var sens_slider := HSlider.new()
+		sens_slider.min_value = 0.5
+		sens_slider.max_value = 2.5
+		sens_slider.step = 0.1
+		sens_slider.value = float(game.settings.get("joystick_sensitivity", 1.0))
+		sens_slider.custom_minimum_size = Vector2(320, 24)
+		sens_row.add_child(sens_slider)
+		var sens_val := _lbl(sens_row, "%.1f×" % float(game.settings.get("joystick_sensitivity", 1.0)), 15, Color(0.95, 0.85, 0.5))
+		sens_val.custom_minimum_size = Vector2(70, 0)
+		sens_slider.value_changed.connect(func(v: float) -> void:
+			game.settings["joystick_sensitivity"] = v
+			game.save_settings()
+			sens_val.text = "%.1f×" % v)
+		_lbl(vbox, "Higher = full speed on a shorter drag. Drag the joystick in the button editor to move it.", 12, Color(0.55, 0.58, 0.66))
 		_btn(vbox, "  Customize buttons…  ", func() -> void: _open_layout_editor(), Color(0.8, 0.95, 0.85))
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back")
@@ -594,6 +622,23 @@ func _open_layout_editor() -> void:
 # ---------------------------------------------------------- chapter select ---
 
 # ------------------------------------------------------------ endgame trials ---
+
+## Confirm-and-enter a mode from a HUD trial icon: a backable prompt carrying the
+## mode's record + rules, so a stray click on the HUD never tears the world down.
+func confirm_endgame(mode: String) -> void:
+	var cls: String = game.local_player.cls
+	var pb := game.endgame_pb(mode, cls)
+	var mname := "The Crucible" if mode == "crucible" else "The Waking Depths"
+	var rules := "Ten bosses back to back, each with an elite affix — HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" \
+		else "An endless descent: each room's mobs deepen a level and a boss guards every fourth. Rewards pay when you fall or cash out."
+	var best := ""
+	if not pb.is_empty():
+		best = ("\n\nYour best: %d bosses." % int(pb.get("kills", 0))) if mode == "crucible" \
+			else ("\n\nYour deepest: depth %d." % int(pb.get("depth", 0)))
+	open_confirm("Enter %s?\n\n%s%s\n\nYour campaign is saved — you'll return to the title when the run ends." % [mname, rules, best],
+		func() -> void: _start_endgame(mode),
+		func() -> void: close())
+
 
 ## The endgame mode picker (ACT2_DESIGN.md §II) — reached from the pause menu
 ## once Act 1 is cleared. Two never-ending arena modes; picking one tears down
@@ -1047,10 +1092,21 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(hbox)
 
+	# EQUIPPED runs long once every slot holds a socketed S-item (4 slots ×
+	# title + wrapped stats + a 40px socket row easily exceeds the panel body),
+	# and a container never shrinks a child below its min height — so the raw
+	# VBox used to spill past the panel bottom. Scroll it, the same way the bag
+	# grid on the right does, and the list stays inside the panel.
+	var left_scroll := ScrollContainer.new()
+	left_scroll.custom_minimum_size = Vector2(456, 0)  # 440 col + ~16 scrollbar
+	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	left_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hbox.add_child(left_scroll)
 	var left := VBoxContainer.new()
 	left.custom_minimum_size = Vector2(440, 0)
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 6)
-	hbox.add_child(left)
+	left_scroll.add_child(left)
 	UITheme.header(_lbl(left, "EQUIPPED", 16, Color(0.95, 0.85, 0.5)))
 	_lbl(left, "(click an item for its detail popover)", 12, Color(0.55, 0.55, 0.6))
 	for slot in Items.SLOTS:
@@ -2255,7 +2311,7 @@ func _attr_row(vbox: VBoxContainer, p: Player, a: String, label: String,
 func open_theme_picker(slot: String) -> void:
 	var p: Player = game.local_player
 	var ab := Classes.ability(p.cls, slot)
-	var vbox := _open("%s — choose a variant" % ab["name"], 940, 620)
+	var vbox := _open("%s — choose a variant" % ab["name"], 940, 620, true)
 	current = "theme_pick"
 
 	# Every variant below INHERITS this base ability and changes one facet of it —
@@ -2300,6 +2356,7 @@ func open_theme_picker(slot: String) -> void:
 		var d := _lbl(vbox, vdesc + ("\n" + vfx if vfx != "" else ""), 12,
 			Color(0.68, 0.7, 0.78) if unlocked else Color(0.45, 0.45, 0.5))
 		d.custom_minimum_size = Vector2(860, 0)
+	_btn(vbox, "  ← Back to skill tree  ", func() -> void: open_skills(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back to the skill tree")
 
 
@@ -3102,7 +3159,7 @@ func open_dev(tab := "") -> void:
 # ---------------------------------------------------------------- keybinds ---
 
 func open_keybinds() -> void:
-	var vbox := _open("Keybinds — click an action, then press a key", 700, 560)
+	var vbox := _open("Keybinds — click an action, then press a key", 700, 560, true)
 	current = "keybinds"
 	var actions := {
 		"a1": "Ability 1", "a2": "Ability 2", "a3": "Ability 3", "ult": "Ultimate",
@@ -3134,7 +3191,10 @@ func open_keybinds() -> void:
 			listening_action = act
 			open_keybinds()
 		_btn(klist, text, rebind_cb, Color(1, 1, 0.6) if listening_action == act else Color(1, 1, 1))
-	_lbl(vbox, "Movement is always WASD / arrows. ESC closes menus.", 13, Color(0.6, 0.6, 0.6))
+	_lbl(vbox, "Movement is always WASD / arrows.", 13, Color(0.6, 0.6, 0.6))
+	# Keybinds is a sub-screen of the pause menu — a Back button returns there
+	# (touch has no ESC, and the ✕ would drop straight to the world instead).
+	_btn(vbox, "  ← Back  ", func() -> void: open_pause(), Color(0.8, 0.85, 0.9))
 	_hint(vbox)
 
 
