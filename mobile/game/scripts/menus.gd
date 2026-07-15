@@ -1144,7 +1144,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	# Dedicated, always-visible entry to the per-room potion rotation editor —
 	# the old only-path (tap a potion stack, actions hidden unless you own an
 	# elixir) was undiscoverable.
-	_btn(tabs, "  ⚗ Potion Loadout  ", func() -> void: open_potion_loadout(), Color(0.7, 0.92, 0.85))
+	_btn(tabs, "  Potion Loadout  ", func() -> void: open_potion_loadout(), Color(0.7, 0.92, 0.85))
 	if tab == "stats":
 		_build_stats_tab(vbox, game.local_player)
 		return
@@ -1254,9 +1254,13 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	bh.custom_minimum_size = Vector2(360, 0)
 	# Equipped-bag chips on their own row (the old raw "F·15 F·15" string
 	# next to the header was a floating mystery): one framed chip per bag —
-	# pouch icon + grade + slot count, the bag's name on hover.
-	var chips := HBoxContainer.new()
-	chips.add_theme_constant_override("separation", 6)
+	# pouch icon + grade + slot count, the bag's name on hover. A FLOW container
+	# (not a plain HBox) so a full loadout of bags WRAPS to new rows instead of
+	# running off the right column and dragging the whole panel past its edge.
+	var chips := HFlowContainer.new()
+	chips.add_theme_constant_override("h_separation", 6)
+	chips.add_theme_constant_override("v_separation", 4)
+	chips.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_child(chips)
 	for bb2 in p.bags:
 		var bg2: String = String(bb2.get("grade", "F"))
