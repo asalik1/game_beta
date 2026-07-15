@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 NetworkManager="*res://scripts/net/net_manager.gd"
+MobileInput="*res://scripts/mobile_input.gd"
 
 [display]
 

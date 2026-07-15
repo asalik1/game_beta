@@ -298,6 +298,31 @@ func _poll_local_intents() -> void:
 	intent_potion = Input.is_key_pressed(binds["potion"])
 	intent_potion_next = Input.is_key_pressed(binds.get("potion_next", KEY_R))
 	intent_interact = Input.is_key_pressed(binds["interact"])
+	# --- mobile touch merge (MOBILE SNAPSHOT ONLY; §10 touch seam) ----------
+	# The touch HUD (scripts/ui/touch_hud.gd) writes held state into the
+	# MobileInput autoload each frame; OR it into the same intents the keyboard
+	# just filled so the sim (and the netcode) can't tell a tapped button from a
+	# pressed key. Movement is analog and NOT re-normalized: a partial joystick
+	# tilt = a slower walk (player.gd's `velocity = dir * spd` respects the
+	# magnitude). The target-LOCK edge is deliberately absent here — the lock
+	# button writes intent_lock directly (like hud.gd's Tab), and polling a
+	# one-shot edge each frame would eat it. Sits BEFORE the downed/ghost gate
+	# so touch abilities are frozen while down, exactly like the keyboard ones.
+	# The autoload is reached BY PATH, not by its global name: the compile gate
+	# parses scripts without registering autoload globals (the same "gate trap"
+	# _net_mgr dodges above). Null offline/desktop-without-touch — a no-op then.
+	var mi = get_node_or_null("/root/MobileInput") if is_inside_tree() else null
+	if mi != null:
+		var mv: Vector2 = mi.move
+		if mv != Vector2.ZERO:
+			intent_move = mv.limit_length(1.0)
+		intent_a1 = intent_a1 or mi.a1
+		intent_a2 = intent_a2 or mi.a2
+		intent_a3 = intent_a3 or mi.a3
+		intent_ult = intent_ult or mi.ult
+		intent_potion = intent_potion or mi.potion
+		intent_potion_next = intent_potion_next or mi.potion_next
+		intent_interact = intent_interact or mi.interact
 	if downed or ghost:
 		# MP-12 (§5.3): while down, only movement remains — no abilities, no
 		# potions, no interacting (being revived is passive). Zeroing at the

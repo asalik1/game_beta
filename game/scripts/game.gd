@@ -126,6 +126,7 @@ func _ready() -> void:
 	load_settings()
 	apply_audio_settings()
 	apply_display_settings()
+	refresh_touch_mode()
 
 	ambient = CanvasModulate.new()
 	ambient.color = Terrains.get_terrain(terrain_by_zone[0])["tint"]
@@ -185,6 +186,7 @@ func _ready() -> void:
 	hud = Hud.new()
 	hud.game = self
 	add_child(hud)
+	_apply_touch_mode()
 	refresh_quest()
 
 	menus = Menus.new()
@@ -337,6 +339,28 @@ func _dev_review_input(delta: float) -> void:
 		camera.zoom = Vector2.ONE * clampf(z, 0.4, 4.0)
 
 
+## Mount or remove the on-screen touch controls to match touch_mode. Called at boot
+## and whenever the control-scheme setting is toggled, so it flips live on desktop.
+func _apply_touch_mode() -> void:
+	if touch_mode and _touch_hud == null:
+		_touch_hud = TouchHud.new()
+		_touch_hud.game = self
+		add_child(_touch_hud)   # TouchHud._ready hides the keyboard ability bar
+	elif not touch_mode and _touch_hud != null:
+		_touch_hud.queue_free()
+		_touch_hud = null
+		if hud:
+			hud.set_touch_mode(false)   # restore the keyboard ability bar
+
+
+## Settings toggle: flip touch controls on/off, persist, and apply live.
+func set_touch_controls(on: bool) -> void:
+	settings["touch_controls"] = on
+	save_settings()
+	refresh_touch_mode()
+	_apply_touch_mode()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	# Touch-only tap-to-talk: a phone has no E key, so tapping an NPC you're standing
 	# next to fires its convo/desk — same range + action as the keyboard path below
@@ -344,7 +368,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# arc never trigger it; desktop keeps press-E (touch_mode is false there).
 	if not touch_mode or state != ST_PLAYING or hud.dialogue_active or menus.is_open():
 		return
-	if event is InputEventScreenTouch and event.pressed and talk_cd <= 0.0:
+	if ((event is InputEventScreenTouch and event.pressed) or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed)) and talk_cd <= 0.0:
 		var world: Vector2 = get_viewport().canvas_transform.affine_inverse() * event.position
 		for entry in interactables:
 			if not is_instance_valid(entry["node"]):

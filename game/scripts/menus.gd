@@ -523,6 +523,14 @@ func open_settings(from := "pause") -> void:
 			game.save_settings()
 			open_settings(settings_return), Color(0.9, 0.9, 0.95))
 	lang_btn.tooltip_text = "Cycle UI language (localization foundation — most screens are English for now)."
+	# Control scheme (desktop only — mobile is always touch). Flips the on-screen
+	# joystick + buttons + click-to-talk on; keyboard shortcuts stay valid either way.
+	if not OS.has_feature("mobile"):
+		var tc_btn := _btn(vbox, "  Controls: %s  " % ("TOUCH" if game.settings.get("touch_controls", false) else "KEYBOARD"),
+			func() -> void:
+				game.set_touch_controls(not bool(game.settings.get("touch_controls", false)))
+				open_settings(settings_return), Color(0.9, 0.9, 0.95))
+		tc_btn.tooltip_text = "Touch: on-screen joystick + buttons + click-to-talk. Keyboard shortcuts always stay valid."
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back")
 
