@@ -218,11 +218,12 @@ func _ready() -> void:
 			game.menus.open_mailbox())
 	add_child(mail_btn)
 
-	# Touch has no I/T/M/ESC keys, so the core screens need on-screen entry. A
-	# labeled column down the left edge (desktop uses hotkeys + the ✉ glyph, so
-	# this stays hidden there). Mail folds into the column; hide the glyph.
-	# (The HUD is hidden while any menu is open, so no re-entry guard is needed.)
-	if game and game.touch_mode:
+	# On-screen entry to the core screens — clickable on BOTH platforms (mobile has
+	# no I/T/M/ESC keys; desktop gets the convenience too, keyboard still works). A
+	# labeled column down the left edge; Mail folds into it (hide the ✉ glyph, which
+	# also fails to render in the mobile font). The HUD hides while a menu is open,
+	# so no re-entry guard is needed.
+	if game:
 		mail_btn.visible = false
 		var _tm_specs := [
 			["Mail", func() -> void: game.menus.open_mailbox()],
@@ -851,11 +852,11 @@ func _build_minimap() -> void:
 	minimap_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	minimap_root.visible = false
 	add_child(minimap_root)
-	if game and game.touch_mode:
-		# Tap the minimap to open the full map (no M key on touch).
+	if game:
+		# Click/tap the minimap to open the full map (both platforms; desktop keeps M too).
 		minimap_root.mouse_filter = Control.MOUSE_FILTER_STOP
 		minimap_root.gui_input.connect(func(e: InputEvent) -> void:
-			if e is InputEventScreenTouch and e.pressed:
+			if (e is InputEventMouseButton and e.pressed) or (e is InputEventScreenTouch and e.pressed):
 				game.menus.open_map())
 	# Solid-enough panel + border so the map holds its shape on BLACK
 	# ground too (QA finding 7: it dissolved over void terrain).

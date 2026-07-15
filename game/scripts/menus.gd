@@ -149,7 +149,36 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 			game.sfx("ui_click")
 			close())
 		root.add_child(xbtn)
+	# Under touch, let a finger-swipe on the content scroll (not just the scrollbar).
+	# Deferred so it runs AFTER the caller fills this panel with its scroll content.
+	call_deferred("_enable_all_touch_scroll", root)
 	return vbox
+
+
+## Touch has no drag-scroll by default: content Controls default to MOUSE_FILTER_STOP,
+## which eats the swipe before the ScrollContainer sees it. Walk every ScrollContainer
+## in a freshly built panel and set its content children to PASS so the drag propagates
+## up (Godot cancels the child press once the scroll takes over). Touch mode only.
+func _enable_all_touch_scroll(node: Node) -> void:
+	if game == null or not game.touch_mode or node == null:
+		return
+	_scan_touch_scroll(node)
+
+
+func _scan_touch_scroll(node: Node) -> void:
+	if node is ScrollContainer:
+		for child in node.get_children():
+			if not (child is ScrollBar):
+				_pass_filter(child)
+	for c in node.get_children():
+		_scan_touch_scroll(c)
+
+
+func _pass_filter(node: Node) -> void:
+	if node is Control:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_PASS
+	for c in node.get_children():
+		_pass_filter(c)
 
 
 func _lbl(parent: Node, text: String, size := 15, color := Color(0.9, 0.9, 0.9)) -> Label:
