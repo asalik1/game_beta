@@ -22,13 +22,17 @@ still stand.
 
 Every source of player power, sorted into "makes a number bigger" vs "changes a rule":
 
+Line numbers are deliberately omitted for `items.gd` — it is the file this whole
+arc rewrites, so any number pinned here is wrong by the next commit (it already
+happened once). Symbols are greppable and don't rot.
+
 | System | Entries | Rule-changers |
 |---|---|---|
-| Skill tree (`skills.gd`) | 72 cells | **1** (Last Rites) |
-| Gear substats (`items.gd:392`) | 12 | **0** |
-| Gems (`items.gd:185`) | 14 | **0** |
-| Set bonuses (`items.gd:732`) | 6 | **0** |
-| S-weapon passives (`items.gd:159`) | 6 | **6** |
+| Skill tree (`Skills.TREES`) | 72 cells | **1** (Last Rites) |
+| Gear substats (`Items.SUBSTATS`) | 12 | **0** |
+| Gems (`Items.GEM_STATS`) | 14 | **0** |
+| Set bonuses (`Items.SET_BONUSES`) | 6 | **0** |
+| S-weapon passives (`Items.PASSIVES`) | 6 | **6** |
 
 Seven things in the whole game change how you play. The loot pool isn't small —
 it's **one-dimensional**: every drop is a point on a single axis (power), which is
@@ -40,10 +44,10 @@ glue is arithmetic.
 An earlier claim in conversation — "the mechanism exists, it needs a table and a
 roll" — **is wrong.**
 
-- `Items.PASSIVES` (`items.gd:159`) is **UI text only** — rendered at `:827`, read
-  nowhere else. Not a behavior registry.
-- `passive` is only ever written onto `S_GEAR[cls]["weapon"]` (`items.gd:534`).
-  **Armor/boots/charm cannot carry one.**
+- `Items.PASSIVES` is **UI text only** — rendered once in `describe`, read nowhere
+  else. Not a behavior registry.
+- `passive` is only ever written onto `Items.S_GEAR[cls]["weapon"]` (in the S
+  special path of `roll_item_of`). **Armor/boots/charm cannot carry one.**
 - `player_core.s_passive()` (`:760`) reads **only `equipment["weapon"]`** and
   returns **one String**. Singular by construction.
 - Dispatch is 8 hardcoded literals (`if s_passive() == "kingsblade"` at
@@ -77,6 +81,28 @@ of many named items — which is what actually attacks the one-dimensionality.
 **L is quest-gated, therefore never dropped** — so it skips `CHEST_TIERS`, the
 per-chapter loot weights, and `GRADE_FLOORS` entirely, and needs no `BAG_SLOTS`/
 `BAG_NAMES` entry (no legendary bags). That removes most of the grade-table churn.
+
+### Why S survives L (settled 2026-07-17)
+
+**L outscales S, freely.** L is the grind trophy; making it the top of the stat
+ladder is the point. An earlier draft of this doc treated `GRADE_MULT` for L as
+the load-bearing number — "does S stay worth carrying?" — which was the wrong
+frame. It assumed S competes on stats, a fight S loses by definition.
+
+**S survives on rune flexibility, not numbers.** L's passive is LOCKED and fixed;
+S's is ROLLED. So the choice per slot is L's raw stats + a fixed keystone against
+an S carrying the rune your build actually wants. Self-balancing: a build-defining
+rune is worth eating a stat loss for, a mediocre one isn't. The L/S gap doesn't
+need to be tuned so S stays "competitive" — S is a *sidegrade with a reason*.
+
+**Open: how many L slots carry a locked passive?** Today only the S weapon has one
+(`Items.S_GEAR[cls]["weapon"]["passive"]`); armor/boots/charm are
+names + stats. Two coherent answers:
+- **L weapon only** — 6 authored (mirrors today's data). Your L weapon is a lock;
+  the other three slots stay a live L-stats-vs-S-rune choice.
+- **All four L slots** — 24 authored (4 × 6 classes). A full L set is four locked
+  passives, and S becomes the deliberate sidegrade you wear when a rune matters
+  more than the stat line.
 
 ---
 
@@ -144,16 +170,20 @@ Damage type is **already overridable per-hit** via `effects["type"]`, and `_tfx`
 > **Stormcalled** *(archer)* — your arrows deal magic damage instead of physical.
 
 Why this is a build reroute and not a stat tweak:
-- **It inverts which pen you stack.** `items.gd:566` already erases the off-type pen
-  from the substat roll pool per `CLASSES_DMG_TYPE`. The whole gearing path flips.
+- **It inverts which pen you stack** (physpen ↔ magpen) — the whole gearing path
+  flips, not one number.
 - **It changes which enemy resist you fight** (physres ↔ magres) — good into some
   rooms, bad into others. A build with *matchups*.
 - **It's felt** (NO SILENT EFFECTS) — damage numbers visibly change per enemy.
 
-Open interaction: `roll_subs` erases the off-type pen based on the **class**, not
-the equipped runes. A damage-type rune makes dead physpen substats live and live
-magpen dead. Decide whether the roll pool follows the rune (complex, correct) or
-stays class-keyed (simple — the rune carries a gearing tax by design).
+**The roll-pool question this section used to raise is now closed.** It asked
+whether `roll_subs` should keep erasing the off-type pen by class — which would
+have made a damage-type rune carry a gearing tax (you'd flip to magic and then be
+unable to *roll* magpen). The pen un-gate shipped 2026-07-17 settles it: below S
+the pool is class-agnostic, so a Stormcalled archer simply rolls the pen they now
+need. The un-gate isn't merely compatible with damage-type runes — it's the thing
+that makes them gearable at all. S's first roll stays class-usable, so a legendary
+still drops sane for the default build.
 
 ---
 
@@ -236,5 +266,7 @@ and inherits that targeting for free.
    "found it" moment. Suggest: no at v1.
 4. **How many named S items per class per slot?** `A_NAMES` carries 5–7 per slot as
    precedent.
-5. **L power delta.** `GRADE_MULT` S = 3.2. What's L — 3.6? 4.0? This is the "end
-   all be all" dial, and it decides whether S stays worth carrying.
+5. ~~**L power delta** — does S stay worth carrying?~~ **Resolved 2026-07-17:** L
+   outscales freely; S survives on rune flexibility, not stats. See "Why S survives
+   L" above. The live question is now how many L slots carry a locked passive
+   (weapon only = 6 authored, all four = 24).
