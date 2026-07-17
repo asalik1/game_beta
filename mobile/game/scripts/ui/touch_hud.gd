@@ -200,7 +200,7 @@ func _refresh_ability_icons() -> void:
 	for slot in ABILITY_SLOTS:
 		var b: Dictionary = _btns[slot]
 		var theme: Dictionary = Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
-		var icon_tex: Texture2D = Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][slot],
+		var icon_tex: Texture2D = Art.ability_icon(p.cls, slot,
 			theme.get("color", Color(0.85, 0.85, 0.92)))
 		(b["icon"] as TextureRect).texture = icon_tex
 		var remaining: float = p.cds[slot]

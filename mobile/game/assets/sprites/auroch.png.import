@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://m6w6pmn7ii6v"
-path="res://.godot/imported/class_splash_paladin.png-ca85ae14ad5aeb25f7aba891f6b5f1d8.ctex"
+uid="uid://t4wndqcn131d"
+path="res://.godot/imported/auroch.png-5eb83c8bbf2523ba0274e0bce3a110d0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/class_splash_paladin.png"
-dest_files=["res://.godot/imported/class_splash_paladin.png-ca85ae14ad5aeb25f7aba891f6b5f1d8.ctex"]
+source_file="res://assets/sprites/auroch.png"
+dest_files=["res://.godot/imported/auroch.png-5eb83c8bbf2523ba0274e0bce3a110d0.ctex"]
 
 [params]
 
@@ -21,7 +21,7 @@ compress/lossy_quality=0.7
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

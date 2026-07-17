@@ -1312,11 +1312,17 @@ func update_stats(p: Player) -> void:
 			continue
 		var ab := Classes.ability(p.cls, slot)
 		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
-		box["icon"].texture = Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][slot],
-			theme.get("color", Color(0.85, 0.85, 0.92)))
+		var tcol: Color = theme.get("color", Color(0.85, 0.85, 0.92))
+		box["icon"].texture = Art.ability_icon(p.cls, slot, tcol)
 		var cost := p.ability_cost(slot)
 		box["key"].text = OS.get_keycode_string(game.binds[slot])
 		box["name"].text = ab["name"]
+		# Which THEME an ability is running is an at-a-glance read, and on the
+		# procedural glyph the tint carried it. Hand-authored art is used
+		# untinted (Art.ability_icon), so the color moves to the ability NAME —
+		# the same place the skills menu already shows it (menus.gd _btn font).
+		box["name"].add_theme_color_override("font_color",
+			tcol if Art.has_ability_art(p.cls, slot) else Color(1, 1, 1))
 		box["cost"].text = _fmt_cost(cost) if cost > 0 else ""
 		# Paladin's ult is a STANCE SWAP, not a nuke — the slot itself reads out
 		# the form you're in RIGHT NOW (Conviction toggles it), so you never have
@@ -1326,7 +1332,10 @@ func update_stats(p: Player) -> void:
 			box["name"].text = "◆ HOLY" if holy else "◆ RETRI"
 			var scol := Color(1.0, 0.92, 0.55) if holy else Color(1.0, 0.5, 0.28)
 			box["name"].add_theme_color_override("font_color", scol)
-			box["icon"].modulate = scol
+			# The stance still reads off the NAME ("◆ HOLY" in gold) either way;
+			# only the 2-color glyph gets the stance modulate, for the same
+			# reason ability_icon() leaves hand art untinted.
+			box["icon"].modulate = Color(1, 1, 1) if Art.has_ability_art(p.cls, slot) else scol
 		elif box["icon"] != null:
 			box["icon"].modulate = Color(1, 1, 1)
 		# Detail card: name/key/cost/cd, the ability's own words, then the

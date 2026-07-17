@@ -977,6 +977,14 @@ func _show_class_splash(id: String) -> void:
 	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Class splashes are PAINTERLY illustrations, not pixel art, and they are
+	# always UPSCALED here: a square splash fits to height, so it's drawn 720px
+	# tall in canvas space = 1080px on a 1080p screen, 1440p on 1440, 2160 on 4K.
+	# The 768px splashes are therefore magnified 1.4x-2.8x. Under the project's
+	# global NEAREST filter that magnification is a blocky stair-step — nearest
+	# is right for pixel art and wrong for a painting. Per-node override; world
+	# sprites keep NEAREST.
+	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	root.add_child(art)
 
 	var c: Dictionary = Classes.CLASSES.get(id, {})
@@ -1069,7 +1077,7 @@ func _sanitize_char_name(raw: String) -> String:
 
 # ----------------------------------------------------------- potion loadout ---
 
-## The per-room potion ROTATION editor (reached from the inventory's "⚗ Potion
+## The per-room potion ROTATION editor (reached from the inventory's "Potion
 ## Loadout" tab). Shows the room slots, lets you slot/unslot any owned elixir or
 ## mana potion, and — crucially — is visible and self-explaining even when you
 ## carry only Health (the old potion-popover path showed nothing then).
@@ -1468,7 +1476,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						game.local_player.consumables.erase(cc)
 						game.discard_to_ground({"kind": "stone", "stone": cc})
 						open_inventory("gear", cat)
-					var actions: Array = [["  ⚗  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
+					# No alembic here: U+2697 has no glyph coverage on mobile and
+					# renders as tofu (dc673ab dropped it from the loadout tab —
+					# this Use button carried the same codepoint and was missed).
+					var actions: Array = [["  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
 					if cid in Items.ROTATION_POTIONS:
 						# Loadout editing (per-room potion budget, 2026-07-07 v2).
 						info += "\n\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. [%s] cycles potions in the field." % [
@@ -2302,7 +2313,7 @@ func open_skills(tab := "talents") -> void:
 		var pick_cb := func() -> void:
 			open_theme_picker(s)
 		_btn(trow, "%s: %s ▾" % [Classes.ability(p.cls, s)["name"], label], pick_cb,
-			tcolor, p.themes_known > 0, Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][s], tcolor))
+			tcolor, p.themes_known > 0, Art.ability_icon(p.cls, s, tcolor))
 	# One-click loadouts: opt every ability into a single theme.
 	var arow := HBoxContainer.new()
 	arow.add_theme_constant_override("separation", 10)
@@ -2392,7 +2403,7 @@ func open_theme_picker(slot: String) -> void:
 		game.local_player.set_ability_theme(slot, "")
 		open_skills()
 	_btn(vbox, ("●  " if is_base else "   ") + "Base", none_cb, Color(0.9, 0.9, 0.95),
-		true, Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][slot]))
+		true, Art.ability_icon(p.cls, slot))
 	# The base ability's full readout sits directly under its button — mirroring
 	# the variant layout (option, then exactly what it does).
 	var base_scaling: String = Classes.ability_scaling(p.cls, slot)
@@ -2417,7 +2428,7 @@ func open_theme_picker(slot: String) -> void:
 		if not unlocked:
 			title += "   (unlocks at Lv %d)" % Classes.THEME_LEVELS[i]
 		_btn(vbox, title, pick, tcolor, unlocked,
-			Art.glyph_tex(Art.ABILITY_GLYPH[p.cls][slot], tcolor))
+			Art.ability_icon(p.cls, slot, tcolor))
 		# What this theme does to THIS ability — every pair is unique.
 		var vdesc := Classes.variant_desc(p.cls, slot, theme["id"])
 		var vfx := Classes.fx_text(Classes.ability_fx(p.cls, slot, theme["id"]), p.cls)

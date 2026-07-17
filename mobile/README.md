@@ -104,6 +104,18 @@ On a re-sync (re-copy `game/` over `mobile/game/`), re-apply this exact list:
    different content: a re-sync must NOT copy the desktop one over it.
 3. **Mobile-only dev scenes** (not in `game/`): `shot_touch.gd/.tscn`,
    `shot_sf2.gd/.tscn`.
+4. **`*.uid` files** — never copy these across. Godot mints resource UIDs
+   per project, so the two trees legitimately hold different ones
+   (`scripts/ui/touch_hud.gd.uid` is `dphdbd1k4na7b` in `game/`, `c4m34x3nb0j4r`
+   here), and the mobile-only scenes in (3) resolve their scripts by **this**
+   tree's UID. Copying `game/`'s over them breaks `shot_touch.tscn`. Sync the
+   `.gd`, leave the `.uid`. (`.import` files are safe to copy — their `uid=`
+   lines already agree.)
+
+**Verifying a re-sync:** `diff -rq game mobile/game` is blinded by line endings
+(CRLF vs LF) — compare with those normalised, or drift hides. A correct re-sync
+leaves exactly two classes of difference: the files in (1)-(2), and the (3)/(4)
+entries above.
 
 ### No longer deltas — the touch layer now lives in `game/` too
 

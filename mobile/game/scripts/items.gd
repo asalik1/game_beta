@@ -575,9 +575,10 @@ static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumbe
 
 
 # ------------------------------------------------------------ reforge bench ---
-# Deterministic-ish crafting on OWNED gear (gold sink). Three crafts:
-# reroll one substat's magnitude, reroll the whole affix set, or add a gem
-# socket (B+ only, capped). Costs scale with grade.
+# Deterministic-ish crafting on OWNED gear (gold sink). FOUR crafts: reroll one
+# substat's magnitude, reroll the whole affix set, add a gem socket (C+ only —
+# C joined 2026-07-09, see can_add_socket — capped), or quench (reroll a stat's
+# band position, keeping the higher). Costs scale with grade.
 const REFORGE_COST := {"F": 120, "E": 200, "D": 350, "C": 600, "B": 1200, "A": 2200, "S": 3500}  # 2026-07-13: affix reroll = base x2 (S = 7k/pull). A RANDOM full-set reroll, so not priced to the moon — the RNG is already a wall.
 const MAX_SOCKETS := 4   # every grade may reforge exactly ONE extra socket; S (natural 3) can reach 4
 

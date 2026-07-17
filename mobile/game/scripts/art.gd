@@ -1675,6 +1675,54 @@ const ABILITY_GLYPH := {
 }
 
 
+## Hand-authored ability icon (assets/icons/ability_<class>_<slot>.png), or
+## null when no file is installed. Same seam as ui_icon()/consumable_icon():
+## drop a 32x32 PNG in by name and it takes over, no code change.
+##
+## The MISS is cached too (as null), not just the hit — unlike the bag/menu
+## seams this is polled EVERY FRAME by the ability bar (hud.gd, touch_hud.gd),
+## and an uncached miss would re-hit ResourceLoader.exists() 4x per frame
+## forever on the (current) all-procedural path.
+static func ability_art(cls: String, slot: String) -> ImageTexture:
+	var key := "abicon_%s_%s" % [cls, slot]
+	if _cache.has(key):
+		return _cache[key]
+	var im := _icon_override("ability_%s_%s" % [cls, slot])
+	var t: ImageTexture = null
+	if im != null:
+		if im.get_width() != 32 or im.get_height() != 32:
+			im.resize(32, 32, Image.INTERPOLATE_NEAREST)
+		t = ImageTexture.create_from_image(im)
+	_cache[key] = t
+	return t
+
+
+## True when a slot has hand-authored art (so it renders untinted, and the
+## caller must carry the theme color some other way — see ability_icon).
+static func has_ability_art(cls: String, slot: String) -> bool:
+	return ability_art(cls, slot) != null
+
+
+## The icon for one ability slot: hand-authored art if installed, else the
+## procedural ASCII glyph tinted with the ability theme's color.
+##
+## Hand art is used AS-IS, UNTINTED — the same rule (and reason) as the
+## item_icon/consumable_icon overrides. The glyph is a 2-color stencil, so
+## multiplying a theme color through it IS the art; a painted icon already
+## carries its own palette and modulating it just washes the whole thing to
+## one hue, which is exactly the "rudimentary" look we're replacing.
+##
+## The theme signal is NOT dropped, it MOVES to text — which is where the
+## menus already put it (menus.gd passes the same tcolor as the button's
+## font_color, so those screens lose nothing). On the ability bars, callers
+## paint the ability NAME in the theme color instead; see has_ability_art().
+static func ability_icon(cls: String, slot: String, tint := Color(0.92, 0.92, 0.98)) -> ImageTexture:
+	var art := ability_art(cls, slot)
+	if art != null:
+		return art
+	return glyph_tex(ABILITY_GLYPH[cls][slot], tint)
+
+
 ## Build (and cache) a tinted glyph texture, upscaled for UI use.
 static func glyph_tex(name: String, tint := Color(0.92, 0.92, 0.98)) -> ImageTexture:
 	var key := "glyph_%s_%s" % [name, tint.to_html(false)]
@@ -1994,6 +2042,13 @@ const CONSUMABLE_ICONS := {
 	"mana_potion": "mana_draught", "elixir_might": "might_elixir",
 	"recall_scroll": "recall_scroll", "reset_stone": "reset_stone",
 	"tree_tome": "tree_tome",
+	# 2026-07-16: the two merchant elixirs were live (stocked, priced, working)
+	# but unmapped here, so they fell back to the ⟲ glyph in bag/shop/ground —
+	# the "missing icon" the owner reported. File names follow the existing
+	# <descriptor>_<vessel> convention (cf. mana_draught / might_elixir).
+	# The PNGs are still to be drawn; until they land _icon_override returns
+	# null and every caller keeps its glyph, exactly as before.
+	"elixir_ward": "ward_elixir", "renewal_draught": "renewal_draught",
 }
 
 
