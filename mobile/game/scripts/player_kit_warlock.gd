@@ -200,6 +200,9 @@ func _void_rift(f := 1.0) -> void:
 	var col := _tcolor if _themed else Color(0.55, 0.45, 1.0)
 	var fx_copy := _tfx.duplicate()
 	var fmul := f
+	# Read at CAST time: the burst lands seconds later, and the class may have
+	# moved on by then (only warlock's ult carries a dmg block at all).
+	var crit_cursed: bool = bool(Classes.CLASSES[cls]["abilities"]["ult"].get("dmg", {}).get("crit_cursed", false))
 	# The growing maw on the ground — you can feel it coming.
 	var mark := Sprite2D.new()
 	mark.texture = Art.tex("telegraph")
@@ -324,7 +327,6 @@ func _void_rift(f := 1.0) -> void:
 	var heal_frac := float(fx_copy.get("rift_heal", 0.0))
 	var saved := _tfx
 	_tfx = fx_copy
-	var crit_cursed: bool = bool(Classes.CLASSES[cls]["abilities"]["ult"]["dmg"].get("crit_cursed", false))
 	for e in _enemies_within(pos, radius):
 		var eff := {"aoe": true}
 		if crit_cursed and hexed.has(e):
