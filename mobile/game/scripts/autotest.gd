@@ -1373,6 +1373,11 @@ func _test_endgame() -> void:
 	game.boss_records["vargoth"] = {"ttk": 30.0, "dps": 100.0, "kills": 1}
 	game.dev_mode = true  # unlocks the modes; no_saves already fences meta writes
 
+	# HUD trial icons: shown under the mailbox once unlocked (not buried in ESC).
+	await _frames(2)  # let update_stats toggle them
+	if not (game.hud.crucible_btn.visible and game.hud.depths_btn.visible):
+		return _fail("endgame: HUD trial icons not shown when unlocked")
+
 	# ---------------------------------------------------------- The Crucible ---
 	game.enter_endgame("crucible")
 	if not game.endgame_active or game.chapter_id != "crucible":
@@ -1382,6 +1387,8 @@ func _test_endgame() -> void:
 	await _frames(2)
 	if eg.index != 1 or game._live_bosses().is_empty():
 		return _fail("crucible: first boss did not spawn")
+	if game.hud.crucible_btn.visible:
+		return _fail("endgame: HUD trial icons should hide during a live run")
 	var b: Boss = game._live_bosses()[0]
 	if not b.endgame_boss:
 		return _fail("crucible: boss not tagged endgame_boss")
@@ -1483,7 +1490,7 @@ func _test_endgame() -> void:
 	game.player.hp = game.player.max_hp
 	game.player.mp = game.player.max_mp
 	await _frames(3)
-	print("ok: endgame modes (Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)")
+	print("ok: endgame modes (HUD trial icons; Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)")
 
 
 ## Chapter 1 end to end: terrains, the darkwood walk, all three bosses.
