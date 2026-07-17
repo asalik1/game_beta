@@ -30,6 +30,17 @@ static func build(m: Menus, root: Control) -> void:
 			tr.set_anchors_preset(Control.PRESET_FULL_RECT)
 			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			# The cover is drawn into the 1280x720 canvas rect, then the
+			# canvas_items stretch scales that to the real window — so a cover
+			# authored ABOVE 720p is net-DOWNSCALED on any sub-4K display
+			# (a 3840x2160 cover lands at 0.5x on 1080p, 0.667x on 1440p).
+			# The project filters NEAREST globally (pixel art wants that on the
+			# UPSCALE side), but nearest DOWNSCALING decimates — it drops whole
+			# pixels and shreds thin detail like the wordmark's edges (the same
+			# failure that fragmented the hero sword blade). This is a per-node
+			# override: full-screen chrome that shrinks, not a world sprite that
+			# grows, so it does NOT touch the crisp look anywhere else.
+			tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 			root.add_child(tr)
 			_prompt(root)
 			return

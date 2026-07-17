@@ -967,7 +967,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		"🜁 Mana Draught — restore %d%% of your MISSING mana (priced like a health potion). Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
 		"🜂 Elixir of Might — +%d%% damage for %ds: a BURST WINDOW — pop it into the kill shot, not the whole fight." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
 		"🜄 Elixir of Warding — cut incoming damage by %d%% for %ds. Bought from merchants." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)],
-		"🜔 Draught of Renewal — instantly restore %d%% of maximum health (stocks past the 5-potion cap). Bought from merchants." % int(Balance.RENEWAL_HEAL_FRAC * 100),
+		"🜔 Draught of Renewal — instantly restore %d%% of maximum health — a full heal in one gulp, where a potion only tops you up. Bought from merchants." % int(Balance.RENEWAL_HEAL_FRAC * 100),
 		"🜃 Scroll of Recall — whisk yourself back to the last safe room (not in combat). Bought from merchants."]:
 		var ul := m._lbl(cons, String(util), 13, Color(0.7, 0.72, 0.78))
 		ul.custom_minimum_size = Vector2(880, 0)

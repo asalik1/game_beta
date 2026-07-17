@@ -62,8 +62,15 @@ task, claim before starting**, verify visually before staging.
   → **Proposals ready: `PROPOSALS/README.md`. Note: the Garden
   "humans" turned out to be sandstone statues — not usable as faces.**
 - [ ] **A7 — claimed: agent-cover — Hand-made cover art.** `assets/sprites/cover.png`
-  (1280x720) replaces the procedural title screen wholesale. The crown
+  replaces the procedural title screen wholesale. The crown
   + four Embers motif is canon; go bigger than the procedural version.
+  → **SHIPPED, but RE-OPENED by the resolution audit (2026-07-16).** The
+  shipped cover is 1280x720 on disk yet is *exactly a 4x nearest upscale of a
+  320x180 image* (0.00% of its 4x4 blocks are non-uniform) — so it carries
+  320x180 of real detail and every authored pixel becomes an 8x8 block at
+  1440p, 12x12 at 4K. **New spec: 2560x1440 minimum, real detail, not an
+  integer upscale.** The loader takes any resolution as-is (no code change
+  needed). Prompt + palette hexes + generator workflow: `ART_PROMPTS.md`.
 
 ## Boss attack animations — STANDING RULE (owner call, 2026-07-10)
 
