@@ -5,6 +5,8 @@ rem Run test.bat (the FULL suite) before staging anything.
 rem
 rem Each run gets its own throwaway user:// via APPDATA redirect so
 rem concurrent runs can't race on shared save/meta files - see test.bat.
+rem
+rem VERDICT: log grep (suite_verdict.ps1), not the exit code alone - see test.bat.
 setlocal
 :uniq
 set "EF_TEST_APPDATA=%TEMP%\emberfall_tests\run_%RANDOM%%RANDOM%"
@@ -15,7 +17,9 @@ set "APPDATA=%EF_TEST_APPDATA%"
 "%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" --script res://check_compile.gd
 if errorlevel 1 goto fail
 
-"%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" res://scenes/test.tscn -- --quick
+set "EF_LOG=%EF_TEST_APPDATA%\suite.out"
+"%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" res://scenes/test.tscn -- --quick 2>&1 | powershell -NoProfile -Command "$input | Tee-Object -FilePath $env:EF_LOG"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0suite_verdict.ps1" -LogPath "%EF_LOG%" -PassMarker "AUTOTEST QUICK PASS"
 set "EF_EXIT=%ERRORLEVEL%"
 goto cleanup
 

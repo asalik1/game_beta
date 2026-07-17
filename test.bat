@@ -3,6 +3,12 @@ rem FULL test suite: compile gate, then both chapters end to end
 rem (several minutes). Required green before staging.
 rem For quick iteration use test_quick.bat.
 rem
+rem VERDICT: the run is teed to a log and the pass/fail is a LOG GREP
+rem (suite_verdict.ps1), not the exit code alone - a non-fatal SCRIPT ERROR
+rem does NOT stop Godot, so it used to slip through under "AUTOTEST PASS".
+rem Output still streams live, so a zombie run still looks different from a
+rem slow one. See suite_verdict.ps1 for the full rationale.
+rem
 rem Each run gets its own throwaway user:// by redirecting APPDATA
 rem (user:// = %%APPDATA%%\Godot\app_userdata\Emberfall on Windows;
 rem this Godot build has no --user-data-dir flag). Without this,
@@ -19,7 +25,11 @@ set "APPDATA=%EF_TEST_APPDATA%"
 "%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" --script res://check_compile.gd
 if errorlevel 1 goto fail
 
-"%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" res://scenes/test.tscn
+rem cmd merges stderr into the pipe BEFORE powershell sees it: piping the native
+rem exe's stderr inside powershell would wrap each line in a NativeCommandError.
+set "EF_LOG=%EF_TEST_APPDATA%\suite.out"
+"%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" res://scenes/test.tscn 2>&1 | powershell -NoProfile -Command "$input | Tee-Object -FilePath $env:EF_LOG"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0suite_verdict.ps1" -LogPath "%EF_LOG%" -PassMarker "AUTOTEST PASS"
 set "EF_EXIT=%ERRORLEVEL%"
 goto cleanup
 
