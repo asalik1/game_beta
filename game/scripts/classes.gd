@@ -17,7 +17,13 @@ class_name Classes
 ##   guard_buff   +physres/magres for 2.5s after casting
 
 # Levels at which a new theme unlocks (raise these for a bigger world).
-const THEME_LEVELS := [4, 8, 12]
+# 2026-07-17: [4, 8, 12] -> [5, 15, 25]. The old cadence handed out every
+# variant by L12 and left the back 28 levels of the climb with no build
+# choice left to make; worse, a new playstyle landed before the last one
+# had been played. Spreading them over the whole 1-40 run means the theme
+# you pick at 5 SHAPES the twenty levels before the next one arrives,
+# and the choice cadence runs continuous into the L40+ mastery layer.
+const THEME_LEVELS := [5, 15, 25]
 
 const THEMES := {
 	"assassin": [

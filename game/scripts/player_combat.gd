@@ -576,6 +576,11 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	if result["miss"] and true_frac <= 0.0:
 		game.spawn_text(e.global_position + Vector2(0, -30), "MISS", Color(0.7, 0.7, 0.7))
 		return
+	# GRAZE: your DEX is closing on their evasion, so the dodge only clipped
+	# you instead of erasing the hit. Called out loud — a half-damage number
+	# with no cause reads as a bad roll, and this one is a BUILD state.
+	if result.get("graze", false):
+		game.spawn_text(e.global_position + Vector2(0, -30), "GRAZE", Color(0.8, 0.85, 0.5))
 	var dmg: float = float(result["dmg"]) + base_amt * true_frac
 	var is_crit: bool = result["crit"]
 	# Shadow marked_crit: your MARKED / EXPOSED prey always crits. Keyed on

@@ -559,11 +559,15 @@ static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumbe
 	var sub_count := sub_count_for(grade)
 	var subs := {}
 	var pool := SUBSTATS.keys()
-	# No dead stats (round 15): a class only rolls the penetration its own
-	# damage type can use. Everything else stays class-neutral.
+	# Every grade below S rolls the FULL pool (2026-07-17, supersedes round 15's
+	# "no dead stats"). Round 15 assumed a class's damage type never changes —
+	# once a rune can reroute it, the off-type pen is DORMANT, not dead, and the
+	# bench is the player's to fix. S is the exception the rule now names: a
+	# legendary's FIRST roll is guaranteed class-usable (what the player reforges
+	# it into afterward is their own risk).
 	# (Special stats — Haste/Lifesteal/Combo/Tenacity/Dmg% — aren't in the pool at
 	# all since 2026-07-06: gem-only, superseding round 43's B-gate.)
-	if cls != "" and CLASSES_DMG_TYPE.has(cls):
+	if grade == "S" and cls != "" and CLASSES_DMG_TYPE.has(cls):
 		pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
 	pool.shuffle()
 	for i in mini(sub_count, pool.size()):
@@ -620,18 +624,19 @@ static func can_reforge_affix(item: Dictionary, stat: String) -> bool:
 
 
 ## Reforge ONE substat slot: drop `target_stat` and roll a DIFFERENT random affix
-## in its place (from the class-valid pool, no duplicates), at a fresh band roll —
-## the magnitude is then the player's to quench. Returns the new stat ("" if it
+## in its place (the FULL pool, no duplicates), at a fresh band roll — the
+## magnitude is then the player's to quench. Returns the new stat ("" if it
 ## couldn't reroll). A targeted gamble on a single slot, not the whole set.
-static func reforge_affix(item: Dictionary, target_stat: String, cls: String, rng: RandomNumberGenerator) -> String:
+## Un-gated for every grade including S (2026-07-17): the player chose to gamble
+## this slot, and an off-type pen goes live the moment a rune reroutes their
+## damage type. roll_subs' S first-roll guarantee is the only class-gating left.
+## `_cls` is kept for call-site compatibility; the pool no longer consults it.
+static func reforge_affix(item: Dictionary, target_stat: String, _cls: String, rng: RandomNumberGenerator) -> String:
 	if not can_reforge_affix(item, target_stat):
 		return ""
 	var subs: Dictionary = item["subs"]
 	var mult: float = GRADE_MULT[String(item["grade"])]
 	var pool: Array = SUBSTATS.keys()
-	var dmg_cls := String(item.get("cls", cls))
-	if CLASSES_DMG_TYPE.has(dmg_cls):
-		pool.erase("physpen" if CLASSES_DMG_TYPE[dmg_cls] == "magic" else "magpen")
 	for s in subs:
 		pool.erase(String(s))   # no duplicate affixes (also drops target_stat)
 	if pool.is_empty():
@@ -701,6 +706,57 @@ static func quench_cost(item: Dictionary, stat: String) -> int:
 	var cur: float = float(store.get(stat, lo))
 	var frac: float = 0.0 if hi <= lo else clampf((cur - lo) / (hi - lo), 0.0, 1.0)
 	return int(round(base * (1.0 + Balance.QUENCH_COST_ESCALATION * frac)))
+
+
+# ------------------------------------------------------- main transmute ---
+# The bench's answer to an off-meta build (2026-07-17). Gear mains still ROLL as
+# the wearer class's primary (CLASS_PRIMARY) — that keeps the drop's power
+# envelope honest (the SLOT_MAIN_BUDGET sizing every boss is pinned to) and means
+# a drop is never a brick. What changes is that the player may PAY to point that
+# budget somewhere else: a STR archer trading AGI's crit rider for STR's hp_flat,
+# a VIT tank, an INT hybrid. Transmute moves WHICH attribute the budget feeds,
+# never HOW MANY points it is — so it is a build commitment, not a reroll, and
+# it can't inflate an item. stat_band is slot/grade/shape-keyed and never reads
+# the attribute, so a transmuted main quenches exactly like a rolled one.
+
+## Mirror of Classes.ATTR_NAMES — items.gd must not preload classes.gd
+## (same rule as CLASS_PRIMARY / CLASSES_DMG_TYPE above).
+const ATTR_NAMES := ["STR", "AGI", "INT", "VIT"]
+
+
+## The attributes this item's main could be transmuted INTO — every attribute but
+## the one it carries. Empty unless the item has exactly one main. (A legacy
+## ATK/HP main from an old save lists all four: transmuting is its way forward.)
+static func transmute_targets(item: Dictionary) -> Array:
+	var main: Dictionary = item.get("main", {})
+	if main.size() != 1:
+		return []
+	var cur := String(main.keys()[0])
+	return ATTR_NAMES.filter(func(a: String) -> bool: return a != cur)
+
+
+## Can the bench transmute this item's main at all?
+static func can_transmute_main(item: Dictionary) -> bool:
+	return not transmute_targets(item).is_empty()
+
+
+## Gold cost to transmute this item's main. FLAT per grade — a one-off commitment
+## per piece, so unlike quench it doesn't escalate.
+static func transmute_cost(item: Dictionary) -> int:
+	return int(Balance.TRANSMUTE_MAIN_COST.get(String(item.get("grade", "D")), 600))
+
+
+## Convert the item's main to `attr`, KEEPING the rolled magnitude — you buy the
+## attribute, not a reroll. Returns the attribute it WAS ("" if it couldn't convert).
+static func transmute_main(item: Dictionary, attr: String) -> String:
+	if not attr in transmute_targets(item):
+		return ""
+	var main: Dictionary = item["main"]
+	var old := String(main.keys()[0])
+	var val: float = float(main[old])
+	main.erase(old)
+	main[attr] = val
+	return old
 
 
 ## Can this item take another gem socket? C+ only (C joined 2026-07-09 with

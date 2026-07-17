@@ -2079,6 +2079,28 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 				open_item_panel(item, Vector2(-1, -1), "reforge")
 		_btn(body, "   Reforge %s → ?  —  %d gold" % [Items.STAT_LABEL.get(rs, rs), acost], rf_cb,
 			Color(0.9, 0.82, 0.7) if p.gold >= acost else Color(0.5, 0.5, 0.55))
+	# --- Transmute main: point the rolled budget at another attribute ---
+	# Keeps the roll, changes what it feeds — the bench half of an off-meta build.
+	if Items.can_transmute_main(item):
+		var tcost := Items.transmute_cost(item)
+		var main_stat := String(item["main"].keys()[0])
+		_lbl(body, "Transmute — convert the main attribute (keeps its roll):", 12, Color(0.85, 0.72, 1.0))
+		for target in Items.transmute_targets(item):
+			var tgt := String(target)
+			var t_cb := func() -> void:
+				if game.local_player.gold >= tcost:
+					game.local_player.gold -= tcost
+					var was := Items.transmute_main(item, tgt)
+					if was != "":
+						_reforge_msg = "Transmuted %s → %s (roll kept)" % [
+							Items.STAT_LABEL.get(was, was), Items.STAT_LABEL.get(tgt, tgt)]
+						_reforge_msg_color = Color(0.85, 0.72, 1.0)
+						game.sfx("ward")
+					game.local_player.recalc()
+					open_item_panel(item, Vector2(-1, -1), "reforge")
+			_btn(body, "   %s → %s  —  %d gold" % [Items.STAT_LABEL.get(main_stat, main_stat),
+				Items.STAT_LABEL.get(tgt, tgt), tcost], t_cb,
+				Color(0.85, 0.75, 0.95) if p.gold >= tcost else Color(0.5, 0.5, 0.55))
 	# --- Add gem socket: ONE-TIME, steep, tier-scaled (Balance.ADD_SOCKET_COST) ---
 	if Items.can_add_socket(item):
 		var ccost := Items.reforge_cost(item, "socket")

@@ -424,6 +424,10 @@ func _apply_affix(e: Enemy, key: String) -> void:
 		e.dmg *= float(a["dmg"])
 	if a.has("speed"):
 		e.speed *= float(a["speed"])
+	# Evasion ADDS (Slippery): the scalars above multiply, but enemies ship
+	# eva 0.0, so a multiplier would never move it off zero.
+	if a.has("eva_add"):
+		e.eva += float(a["eva_add"])
 	for t in a.get("traits", []):
 		e.traits[String(t)] = true
 

@@ -286,6 +286,14 @@ const ADD_SOCKET_COST := {"C": 2500, "B": 7000, "A": 18000, "S": 40000}
 # squeezing out the last few % (true min-maxing) costs real gold. Tier-scaled.
 const QUENCH_COST_BASE := {"F": 20, "E": 35, "D": 60, "C": 120, "B": 280, "A": 600, "S": 1100}
 const QUENCH_COST_ESCALATION := 4.0        # per-pull cost at the band MAX = base x (1 + this)
+
+# Transmuting a gear MAIN to another attribute (2026-07-17) — the bench op that
+# makes an off-meta build gearable. Mains always ROLL as the class primary, so
+# this is never a REPAIR cost, only a commitment: pay once per piece to point its
+# budget at the attribute the build actually wants. Priced well over an affix
+# reroll (it decides the build, not a slot) but under a socket (it redirects
+# capacity rather than adding it) — converting a full set is a real decision.
+const TRANSMUTE_MAIN_COST := {"F": 200, "E": 350, "D": 600, "C": 1200, "B": 3000, "A": 8000, "S": 15000}
 const MAX_PLUS := {"F": 5, "E": 6, "D": 8, "C": 10, "B": 12, "A": 15, "S": 20}
 # Random substats an S legendary rolls. The old formula `(find(S)-1)/2` truncated
 # to 2, but the design intent was always 3 (an off-by-one) — restored here now that
@@ -851,6 +859,36 @@ const CASTER_HASTE_BONUS := 0.25
 # awakened weapon, ON TOP of the weapon's other S-passive effect. Applied in
 # ability_cd (stacks multiplicatively with cdr, before the flat-haste term).
 const S_CASTER_BOLT_CDR := 0.08
+# ------------------------------------------------- DEX vs evasion (gradient) ---
+# DEX answers evasion as a GRADIENT of three tiers, not a flat subtraction
+# (2026-07-17). Old rule: eva_curve(e_eva - dex*0.004) then one dodge roll —
+# so DEX quietly shaved a dodge CHANCE, and a whiff was a dice roll that
+# told the player nothing. New rule: the defender still rolls at its OWN
+# evasion, and the attacker's DEX decides what a successful evade DOES:
+#   under DEX_GRAZE_RATIO of what the evasion asks -> full MISS (0 damage)
+#   at or past it, but short of parity          -> GRAZE (GRAZE_DAMAGE)
+#   at or past parity                           -> evasion CANCELLED (no roll)
+# The tier is deterministic and legible, so an evasive fight reads as a
+# BUILD state you can see and answer, not as bad luck. Deliberately near
+# EV-neutral vs the old curve (at half the DEX needed: old = 5% total
+# dodges, new = 10% half-damage grazes — same damage through), so this
+# re-shapes feel without moving tuning.
+#
+# WHY NOT a flat tax: a universal "buy 1 DEX gem" is the WoW hit cap — one
+# right answer, always, which is an entry fee, not a decision. DEX is meant
+# to be a COUNTER-BUILD: only a minority of enemies (the quick lineage) and
+# the endgame evasion affix ask for it, so the skill is reading WHEN to slot
+# it. Sockets are scarce (A/S gear ~9 total), so paying 2 of them is a real
+# trade. Keep evasive enemies a minority or this decays into the hit cap.
+#
+# NOTE the tiers cut BOTH ways — Stats.resolve is symmetric (player hitting
+# an enemy, and enemies hitting a player whose eva came from archer Tumble /
+# assassin Enfeeble). An enemy's DEX (scaled off its AGI) reads the player's
+# evasion through this same ladder.
+const DEX_PER_EVA := 0.004     # DEX -> evasion answered. Parity DEX = e_eva / this (0.30 eva asks 75 DEX)
+const DEX_GRAZE_RATIO := 0.5   # fraction of parity DEX where a full miss softens into a graze
+const GRAZE_DAMAGE := 0.5      # what a grazed hit pays through
+
 const CAP_LIFESTEAL := 0.35  # knee on the TOTAL incl. surges/berserk/pact
 const CAP_COMBO := 0.30
 const CAP_CRIT := 0.35       # the old 70%-curve was far too generous
@@ -1212,8 +1250,17 @@ const AFFIXES := {
 	"swift":    {"name": "Swift", "speed": 1.35, "traits": ["swift"]},
 	"savage":   {"name": "Savage", "dmg": 1.55},
 	"vampiric": {"name": "Vampiric", "dmg": 1.15, "traits": ["regen"]},
+	# Slippery (2026-07-17) is the DEX counter-build's home. Evasion is ADDITIVE
+	# ("eva_add"): every scalar above multiplies, and ~every enemy ships eva 0.0,
+	# so a multiplier would be a no-op. This is deliberately the ONLY place the
+	# game asks for DEX right now — endgame-only, telegraphed on the bar, and one
+	# key in six, so slotting Amber is a read on the run rather than a standing
+	# tax (see §DEX vs evasion). It is NOT retrofitted onto campaign mobs: DEX
+	# gems don't drop until the C band, so an evasive ch1 spider would be a wall
+	# with no answer in the bag.
+	"slippery": {"name": "Slippery", "eva_add": 0.30, "speed": 1.10},
 }
-const AFFIX_KEYS := ["frenzied", "bulwark", "swift", "savage", "vampiric"]
+const AFFIX_KEYS := ["frenzied", "bulwark", "swift", "savage", "vampiric", "slippery"]
 const AFFIX_REGEN_FRAC := 0.02         # the "regen" trait (Vampiric): heal this fraction of max HP/s
 
 ## Gem level for endgame per-boss / milestone gems: the ch7 (Act-1 end) floor,

@@ -28,7 +28,8 @@ The Crown was four Embers — primal fragments carried by the Ember Guard's foun
 
 ## Bridge From Solo to Multiplayer
 
-- Ch1: Aldric kills Vargoth; Vargoth pours his will into the Crown and shatters it. Shards root in ordinary people. Years later = the player base: every PC's shard just awakened; their power is a fragment of the tyrant.
+- **Backstory (~30 years before play, never playable):** Aldric kills Vargoth; Vargoth pours his will into the Crown and shatters it. Shards root in ordinary people of old Guard bloodlines. This beat is TOLD (Aldric's ch2 conversation), never played — the player is never Aldric. (2026-07-17: this line used to read "Ch1: Aldric kills Vargoth", which was shorthand for the backstory but got implemented as ch1's script — the PC spoke as "Ser Aldric" while the class system underneath said otherwise. Retconned; ch1's beats now speak as "You".)
+- **Ch1 (playable):** every PC's shard has just awakened; their power is a fragment of the tyrant, and Vargoth is climbing out of his keep a SECOND time. You put him back down — the same kill Aldric made, made again by a nobody. Ch2's Aldric is the man who did it first: he knows it doesn't take.
 - **Aldric**: spent his ember on the killing blow; burned-out legend, can't fight, knows what's coming. Late-game lore NPC / "what I never told you" quest / optional superboss homage.
 - **Elder Maren**: trained under Aldric; finds newly-awakened bearers before the factions do. Onboarding NPC for all eight classes, reading each recruit differently.
 - **Fangmaw & Mórwyn** were corrupted Guard commanders (Stormwarden beastmaster; Emberwright battle-healer whose fire-healing curdled into blight). Killing them cut off the head — warbands and blight-plague still spread years later, justifying repeatable zones and the 14 terrains.
