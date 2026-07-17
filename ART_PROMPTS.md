@@ -24,6 +24,7 @@ text-to-image model — it also broke `tools/art/flux_draft.py` and polligen's
 | `ability_assassin_a2` (Shadow Dash) | **DONE** — re-roll installed 2026-07-17 (dagger afterimage strobe; reads distinct from a1 at 24px). |
 | `ability_paladin_ult` (Conviction) | **DONE** — re-roll installed 2026-07-17 (split holy/chained warhammer). |
 | `ability_mage_a3` (Blink) | **DONE** — v3 installed 2026-07-17 (bolt cut + displaced mid-strike; the break survives 24px). v1's afterimage died at bar size; v2's "two bars" prompt got faithful meaningless geometry — the fix was giving the displacement a recognizable OBJECT. |
+| `ability_archer_a3` (Tumble) | **DONE** — re-roll installed 2026-07-17. Warm leather-brown swoosh + speed ticks + dust; no longer a moon and now sits in the archer row's palette. |
 | `ability_warlock_a1` (Shadowbolt) | **DONE** — re-roll installed 2026-07-17. Rim-carries-the-silhouette worked: ~2x the bright pixels of the first render (p90 lum 135 -> 152), reads as a ringed void at 24px. Still the darkest icon in the set ON PURPOSE — it is a void bolt; the fix was the silhouette, not the mood. |
 
 **Two lessons the re-rolls encode.** (1) The generator ignores negatives ~1 in
@@ -726,17 +727,27 @@ PALETTE: outline #2E1C2C; shafts #B88F48 / #D7BE92; steel broadheads #95ADB4 /
 #BFDDD1 / #FFFFFF; fletchings #C4594B / #EC7E4E.
 ```
 
-### `ability_archer_a3.png` — Tumble
+### `ability_archer_a3.png` — Tumble  (RE-ROLL 2026-07-17)
 *Dodge-roll with a split-second perfect-dodge window, then +20% evasion 1.25s.*
+The first render kept the roll-comma silhouette but dropped the dust puffs (the
+generator's habit of shedding clauses) — and the prompt's own silver-steel
+palette did the real damage: a bare silver crescent IS a moon. The silhouette
+was never the problem, so this keeps it and changes hue + motion cues only:
+wood-brown like the rest of the archer row, with the speed ticks and dust made
+load-bearing instead of optional garnish.
 ```
-SUBJECT: a bold curved MOTION TRAIL shaped like a forward roll — a thick
-tapering comma/spiral sweeping from lower-right up and over to lower-left, with
-a scatter of three small dust puffs at its base. It reads as a body tucking and
-rolling WITHOUT drawing a figure: the trail is the subject. Empty centre.
-PALETTE: outline #2E1C2C; trail ramp #86718C / #95ADB4 / #BFDDD1 with a #FFFFFF
-leading edge; dust puffs #724E63 / #86718C.
+SUBJECT: a bold curved MOTION SWOOSH shaped like a forward roll — a thick
+tapering comma sweeping from lower-right up and over to lower-left, its empty
+centre intact. THREE short straight SPEED TICKS trail off its outer edge at its
+midpoint, and a cluster of 3-4 small square DUST PUFFS sits at its landing end,
+kicked up where the roll finishes. The ticks and dust are REQUIRED elements,
+the same visual weight as the swoosh's tail — an icon without them is wrong.
+It must read as tumbling motion, NOT a crescent moon: no face, no stars, no
+night-sky framing, warm earthy colour only.
+PALETTE: outline #2E1C2C; swoosh ramp warm leather-brown #705C4A / #9C7A54 /
+#C9A876 with a #F0E3C0 leading edge; speed ticks #9C7A54; dust puffs #86718C /
+#C9A876.
 ```
-
 ### `ability_archer_ult.png` — Arrow Storm
 *3s: arrows rain on every enemy near you.*
 ```

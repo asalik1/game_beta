@@ -561,10 +561,15 @@ func _build_ability_bar() -> void:
 		bg.size = Vector2(SLOT_SIZE, SLOT_SIZE)
 		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(bg)
-		# Ability glyph, tinted by the assigned theme's color.
+		# Ability art, centred at its NATIVE 32x32 (2026-07-17). The old box was
+		# SLOT_SIZE-16 = 44 — a 1.375x NEAREST magnification of 32px art, which
+		# duplicates pixel rows unevenly (some 1px, some 2px) and made the whole
+		# bar shimmer; the canvas_items stretch then multiplied it at 1080p. At
+		# 32 the art draws 1:1 and only the global canvas scale touches it —
+		# the same treatment every world sprite gets.
 		var icon := TextureRect.new()
-		icon.position = Vector2(x + 8, y + 8)
-		icon.custom_minimum_size = Vector2(SLOT_SIZE - 16, SLOT_SIZE - 16)
+		icon.position = Vector2(x + (SLOT_SIZE - 32.0) / 2.0, y + (SLOT_SIZE - 32.0) / 2.0)
+		icon.custom_minimum_size = Vector2(32, 32)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE

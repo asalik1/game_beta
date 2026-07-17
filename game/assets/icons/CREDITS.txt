@@ -65,7 +65,7 @@ any subset can be pulled without breaking anything.
   ability_warrior_ult.png — burning fist              -> Berserk
   ability_archer_a1.png   — single loosed arrow       -> Quick Shot
   ability_archer_a2.png   — three fanned arrows       -> Multishot
-  ability_archer_a3.png   — motion crescent           -> Tumble
+  ability_archer_a3.png   — brown roll-swoosh + dust   -> Tumble
   ability_archer_ult.png  — falling arrow volley      -> Arrow Storm
   ability_mage_a1.png     — comet of flame            -> Firebolt
   ability_mage_a2.png     — ice starburst             -> Frost Nova
