@@ -6,8 +6,59 @@ class_name UICover
 ## Procedural set by default — night sky, rising embers, the Ember
 ## Crown floating in a bloom halo, the four founders' Embers circling
 ## it. Drop assets/sprites/cover.png to replace the whole set with
-## hand-made art (it should carry its own logo; only the key prompt is
-## drawn on top). Static module per the scripts/ui/ pattern.
+## hand-made art; the wordmark and the key prompt are drawn on top of
+## either set. Static module per the scripts/ui/ pattern.
+##
+## The wordmark is ENGINE-drawn on both paths (2026-07-17). It used to be
+## baked into cover.png, which cost twice: image generators mangle
+## letterforms, and text is the element that reads worst when the art is
+## magnified — the old cover carried only 320x180 of real information, so
+## the logo was the first thing to fall apart. A vector font re-renders
+## crisp at every resolution forever and costs nothing to retitle.
+
+
+const COVER_MAX := 8      # cover.png + cover_2..cover_8
+const COVER_HOLD := 10.0  # seconds a cover is held before the next fades in
+const COVER_FADE := 1.4   # crossfade length
+
+
+## Every hand-made cover, in order: cover.png, then cover_2.png, cover_3.png…
+## stopping at the first gap. PROBED, never directory-scanned — an exported
+## .pck has no loose files to walk, and .import'd PNGs land as .ctex, so
+## DirAccess would come back empty in a real build and silently drop the art.
+static func _covers() -> Array[Texture2D]:
+	var out: Array[Texture2D] = []
+	if ResourceLoader.exists("res://assets/sprites/cover.png"):
+		out.append(load("res://assets/sprites/cover.png"))
+	for i in range(2, COVER_MAX + 1):
+		var p := "res://assets/sprites/cover_%d.png" % i
+		if not ResourceLoader.exists(p):
+			break  # contiguous: a gap ends the set
+		out.append(load(p))
+	return out
+
+
+## Crossfade the cover every COVER_HOLD seconds. Two layers: `back` holds what
+## you see, `front` fades the next one in on top, then back takes it and front
+## snaps invisible — so N covers need exactly 2 nodes and one looping tween.
+static func _cycle(root: Control, back: TextureRect, covers: Array[Texture2D]) -> void:
+	var front := TextureRect.new()
+	front.texture = back.texture
+	front.set_anchors_preset(Control.PRESET_FULL_RECT)
+	front.expand_mode = back.expand_mode
+	front.stretch_mode = back.stretch_mode
+	front.texture_filter = back.texture_filter
+	front.modulate.a = 0.0
+	root.add_child(front)
+
+	var tw := front.create_tween().set_loops()
+	for i in covers.size():
+		var nxt: Texture2D = covers[(i + 1) % covers.size()]
+		tw.tween_interval(COVER_HOLD)
+		tw.tween_callback(func() -> void: front.texture = nxt)
+		tw.tween_property(front, "modulate:a", 1.0, COVER_FADE)
+		tw.tween_callback(func() -> void: back.texture = nxt)
+		tw.tween_property(front, "modulate:a", 0.0, 0.0)
 
 
 static func build(m: Menus, root: Control) -> void:
@@ -18,12 +69,10 @@ static func build(m: Menus, root: Control) -> void:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(bg)
 
-	# Hand-made cover art overrides the whole procedural set. Loaded through
-	# the resource system so it works in exported builds (globalize_path only
-	# reaches loose files on disk, which don't exist inside a packed .pck).
-	var override_path := "res://assets/sprites/cover.png"
-	if ResourceLoader.exists(override_path):
-		var ctex: Texture2D = load(override_path)
+	# Hand-made cover art overrides the whole procedural set.
+	var covers := _covers()
+	if not covers.is_empty():
+		var ctex: Texture2D = covers[0]
 		if ctex != null:
 			var tr := TextureRect.new()
 			tr.texture = ctex
@@ -42,6 +91,9 @@ static func build(m: Menus, root: Control) -> void:
 			# grows, so it does NOT touch the crisp look anywhere else.
 			tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 			root.add_child(tr)
+			if covers.size() > 1:
+				_cycle(root, tr, covers)
+			_wordmark(root)
 			_prompt(root)
 			return
 
@@ -115,12 +167,25 @@ static func build(m: Menus, root: Control) -> void:
 	var spin := orbit.create_tween().set_loops()
 	spin.tween_property(orbit, "rotation", TAU, 14.0).as_relative()
 
+	_wordmark(root)
+	_prompt(root)
+
+
+## CROWNLESS / The Hollow King — drawn on BOTH the procedural set and the
+## hand-made cover, in the display face, as vector text: crisp at any window
+## size, and the one element a generated PNG reliably gets wrong.
+##
+## The kingdom in the fiction is still EMBERFALL and always will be (story.gd,
+## terrains.gd) — only the GAME is Crownless (2026-07-17). The title names the
+## question the whole story argues about (Accord: break the throne / Cinderborn:
+## a crown is a tool), not the setting it argues in.
+static func _wordmark(root: Control) -> void:
 	var title := Label.new()
-	title.text = "EMBERFALL"
+	title.text = "CROWNLESS"
 	title.position = Vector2(0, 396)
 	title.size = Vector2(1280, 110)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	UITheme.title(title, 84)  # display face — matches the hand-made cover's wordmark
+	UITheme.logo(title, 84)
 	title.add_theme_color_override("font_color", Color(0.98, 0.85, 0.45))
 	title.add_theme_color_override("font_outline_color", Color(0.08, 0.04, 0.02))
 	title.add_theme_constant_override("outline_size", 12)
@@ -130,11 +195,11 @@ static func build(m: Menus, root: Control) -> void:
 	sub.position = Vector2(0, 508)
 	sub.size = Vector2(1280, 30)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	UITheme.title(sub, 21)
+	UITheme.logo(sub, 21)
 	sub.add_theme_color_override("font_color", Color(0.72, 0.68, 0.62))
+	sub.add_theme_color_override("font_outline_color", Color(0.08, 0.04, 0.02))
+	sub.add_theme_constant_override("outline_size", 6)
 	root.add_child(sub)
-
-	_prompt(root)
 
 
 ## The blinking "press any key" line — drawn on both procedural and

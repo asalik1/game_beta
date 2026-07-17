@@ -234,7 +234,7 @@ func _on_auth_received(id: int, data: PackedByteArray) -> void:
 	var msg: Dictionary = parsed if typeof(parsed) == TYPE_DICTIONARY else {}
 	if multiplayer.is_server():
 		if msg.is_empty():
-			_reject(id, "malformed hello — not an Emberfall client?")
+			_reject(id, "malformed hello — not a Crownless client?")
 			return
 		var theirs: String = str(msg.get("version", "<none>"))
 		if theirs != NET_VERSION:

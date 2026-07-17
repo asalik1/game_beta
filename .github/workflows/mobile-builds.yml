@@ -28,7 +28,7 @@ on:
 env:
   GODOT_VERSION: "4.4.1"
   GODOT_RELEASE: "stable"
-  APP_NAME: "Emberfall"
+  APP_NAME: "Crownless"
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -98,14 +98,14 @@ jobs:
           mkdir -p mobile/builds
           "$GODOT_BIN" --headless --path mobile/game --import || true
           "$GODOT_BIN" --headless --path mobile/game \
-            --export-debug "Android" "../builds/Emberfall.apk"
-          ls -lh mobile/builds/Emberfall.apk
+            --export-debug "Android" "../builds/Crownless.apk"
+          ls -lh mobile/builds/Crownless.apk
 
       - name: Upload .apk artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Emberfall-android-apk
-          path: mobile/builds/Emberfall.apk
+          name: Crownless-android-apk
+          path: mobile/builds/Crownless.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -223,7 +223,7 @@ jobs:
       - name: Upload .ipa artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Emberfall-ios-unsigned-ipa
+          name: Crownless-ios-unsigned-ipa
           path: mobile/builds/ios/*-unsigned.ipa
           if-no-files-found: error
           retention-days: 14

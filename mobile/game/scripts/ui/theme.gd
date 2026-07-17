@@ -11,6 +11,12 @@ class_name UITheme
 ## bars with the shared palette constants.
 
 const FONT_PATH := "res://assets/fonts/PixelifySans.ttf"
+## The LOGO face — Cinzel Decorative (OFL), for the boot wordmark and NOTHING
+## else (2026-07-17). Kept separate from FONT_PATH on purpose: a smooth
+## inscriptional serif is right for one big word under the crown and wrong for
+## the pixel chrome on every other screen, so this must not leak into
+## title()/header(). See assets/fonts/CREDITS.txt.
+const LOGO_FONT_PATH := "res://assets/fonts/CinzelDecorative-Bold.ttf"
 
 # Shared palette — the parchment-gold chrome language of the cover.
 const GOLD := Color(0.9, 0.8, 0.5)
@@ -22,6 +28,8 @@ const BAR_FRAME := Color(0.52, 0.44, 0.26)
 
 static var _font: Font = null
 static var _font_missing := false
+static var _logo_font: Font = null
+static var _logo_font_missing := false
 static var _theme: Theme = null
 
 
@@ -34,6 +42,28 @@ static func display_font() -> Font:
 		else:
 			_font_missing = true
 	return _font
+
+
+## The logo face, for the boot wordmark ONLY. Null-safe like display_font().
+static func logo_font() -> Font:
+	if _logo_font == null and not _logo_font_missing:
+		if ResourceLoader.exists(LOGO_FONT_PATH):
+			_logo_font = load(LOGO_FONT_PATH)
+		else:
+			_logo_font_missing = true
+	return _logo_font
+
+
+## Wordmark treatment — Cinzel at a logo size. Falls back to title() (Pixelify)
+## if the TTF is absent, so the cover always draws something.
+static func logo(l: Label, size := 0) -> Label:
+	var f := logo_font()
+	if f == null:
+		return title(l, size)
+	l.add_theme_font_override("font", f)
+	if size > 0:
+		l.add_theme_font_size_override("font_size", size)
+	return l
 
 
 ## Panel/screen title treatment: display font at a title size.

@@ -320,7 +320,7 @@ func open_slots() -> void:
 	# Together row, MP-08) + ~68px a row, clamped to the old height so a
 	# 20-slot roster still just scrolls.
 	var slots_h := clampf(300.0 + saves.size() * 68.0 + (44.0 if game.dev_mode else 0.0), 380.0, 560.0)
-	var vbox := _open("EMBERFALL — your heroes", 760, slots_h)
+	var vbox := _open("CROWNLESS — your heroes", 760, slots_h)
 	current = "title"
 	title_stage = "slots"
 	game.set_music("roster")  # carries through chapter + class select
