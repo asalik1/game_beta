@@ -1357,6 +1357,10 @@ func _run_systems() -> void:
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
 	await _test_endgame()
 
+	# 5d. The touch HUD's overlay gate (mobile x co-op — the suite is the ONLY
+	# thing that ever mounts a TouchHud headless; see the section's header).
+	await _test_touch_overlay_gate()
+
 
 ## Endgame arena modes end to end (headless): the Crucible spawns affixed
 ## bosses that carry HP over and accrue reward, the Depths builds a camp then
@@ -4041,3 +4045,112 @@ func _test_mp_lobby_ui() -> void:
 	if game.menus.is_open():
 		return _fail("lobby did not close cleanly")
 	print("ok: Play Together lobby screens + codex co-op page render (offline)")
+
+
+## The touch HUD's OVERLAY GATE (2026-07-17). The suite runs WITHOUT --touch, so
+## a TouchHud never mounts on its own and the whole touch layer had no coverage —
+## which is exactly how this bug shipped. Mounts one through the real
+## _apply_touch_mode path (that also puts the keyboard ability bar back on
+## teardown), then asserts the controls go dead under a menu / dialogue / choice
+## while the world is NOT paused.
+##
+## "Overlay up + world still running" is a CO-OP-only state: §5.4 makes
+## request_pause(true) a no-op in a session, and the tree pause used to be the
+## ONLY thing stopping this node — so the joystick (the whole left half of the
+## screen) stayed live UNDER the menu's dim and a drag walked your hero
+## mid-fight. Solo pauses, so the bug is unreachable unless the unpause is forced
+## the way this does. It was invisible in both cheap tests too: solo-on-phone
+## pauses, and co-op-on-desktop has no touch HUD.
+##
+## Touches go into _input() DIRECTLY on purpose: Input.parse_input_event does NOT
+## reach _input headless — the throwaway rig that used it passed even with the
+## gate REMOVED. The first assertion is a live-control check for that same
+## reason: if the joystick ever stops writing intents for an unrelated reason,
+## every "stayed still" assert below would pass vacuously.
+func _test_touch_overlay_gate() -> void:
+	var touch_was: bool = game.touch_mode
+	var paused_was: bool = get_tree().paused
+	game.touch_mode = true
+	game._apply_touch_mode()
+	await _frames(2)
+	var th: TouchHud = game._touch_hud
+	if th == null:
+		return _fail("touch gate: TouchHud did not mount under touch_mode")
+	var mi: Node = get_node_or_null("/root/MobileInput")
+	if mi == null:
+		return _fail("touch gate: MobileInput autoload missing")
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	var jp: Vector2 = Vector2(vp.x * 0.22, vp.y * 0.72)   # left half, below 30% = joystick zone
+	var jp2: Vector2 = jp + Vector2(90.0, 0.0)
+
+	# CONTROL: nothing open — the joystick MUST drive an intent, or the asserts
+	# below prove nothing.
+	if not th._enabled:
+		return _fail("touch gate: HUD should be live while playing with no overlay")
+	_touch_ev(th, jp, true)
+	_drag_ev(th, jp2, Vector2(90.0, 0.0))
+	if mi.move == Vector2.ZERO:
+		return _fail("touch gate: joystick wrote no intent with nothing open — asserts would be vacuous")
+	_touch_ev(th, jp2, false)
+	await _frames(1)
+
+	# 1. A MENU, with the world still running (what a session does).
+	game.menus.open_pause()
+	await _frames(2)
+	get_tree().paused = false   # request_pause(true) no-ops online — same state, forced
+	await _frames(2)
+	if th._enabled or th.visible:
+		return _fail("touch gate: controls stayed live under an open menu (co-op)")
+	_touch_ev(th, jp, true)
+	_drag_ev(th, jp2, Vector2(90.0, 0.0))
+	if mi.move != Vector2.ZERO:
+		return _fail("touch gate: joystick still wrote a move intent under an open menu")
+	_touch_ev(th, jp2, false)
+	game.menus.close()
+	get_tree().paused = false
+	await _frames(2)
+	if not th._enabled:
+		return _fail("touch gate: controls not handed back when the menu closed")
+
+	# 2/3. Dialogue + choice prompts request_pause too, so they had the same hole.
+	game.hud.dialogue_active = true
+	await _frames(2)
+	if th._enabled:
+		return _fail("touch gate: controls stayed live under a dialogue box")
+	game.hud.dialogue_active = false
+	game.hud.choices_active = true
+	await _frames(2)
+	if th._enabled:
+		return _fail("touch gate: controls stayed live under a choice prompt")
+	game.hud.choices_active = false
+	await _frames(2)
+	if not th._enabled:
+		return _fail("touch gate: controls not handed back once the overlays cleared")
+
+	# RESTORE (sections never leave shared state moved): _apply_touch_mode(false)
+	# frees the HUD and hands the keyboard ability bar back to every later section.
+	mi.clear_held()
+	game.touch_mode = touch_was
+	game._apply_touch_mode()
+	get_tree().paused = paused_was
+	await _frames(2)
+	print("ok: touch HUD overlay gate (menu/dialogue/choice kill the controls with the world unpaused — co-op)")
+
+
+## Feed a touch/drag straight into the HUD's _input. Input.parse_input_event is
+## deliberately NOT used: headless never routes it to _input (only a windowed run
+## does), so a rig built on it passes with the gate removed.
+func _touch_ev(th: TouchHud, pos: Vector2, pressed: bool) -> void:
+	var e := InputEventScreenTouch.new()
+	e.index = 0
+	e.position = pos
+	e.pressed = pressed
+	th._input(e)
+
+
+func _drag_ev(th: TouchHud, pos: Vector2, rel: Vector2) -> void:
+	var e := InputEventScreenDrag.new()
+	e.index = 0
+	e.position = pos
+	e.relative = rel
+	th._input(e)
