@@ -51,4 +51,16 @@ const ENEMIES := {
 		"physres": 14.0, "magres": 6.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
 		"level": 8, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["frenzy"],
 		"lore": "The biggest thing the warren could grow, strapped into the biggest thing it could steal."},
+	# --- salvaged art (2026-07-17) ---
+	# The old spider-quintet body — a glossy amber "tick" (122-color AA gradient)
+	# — was replaced by a proper top-down spider (see ART_QUALITY_REPORT.md). The
+	# retired art reads honestly as a tick, so it's kept here as a spare mob for
+	# future repurposing rather than discarded. UNPLACED on purpose -> dev-launcher
+	# only, tagged [placeholder] in the codex. "placeholder": true documents intent
+	# (mob placeholder is derived from being unplaced; the key is inert for mobs but
+	# future-proofs the def). Stats cloned from the old Marsh Spider, web trait dropped.
+	"tick": {"name": "Gorged Tick", "sprite": "tick", "hp": 28.0, "dmg": 9.0, "speed": 215.0, "xp": 8, "gold": 5, "ranged": false, "scale": 3.0,
+		"physres": 0.0, "magres": 5.0, "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
+		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"], "placeholder": true,
+		"lore": "Bloated and blood-slow until it isn't. Salvaged art awaiting a home — a parasite for some future rot."},
 }
