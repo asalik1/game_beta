@@ -2483,11 +2483,15 @@ func _floor_text_color(color: Color) -> Color:
 func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 	var l := Label.new()
 	l.text = text
-	l.position = pos + Vector2(-70, -10)
-	l.size = Vector2(140, 22)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.z_index = 20
 	l.add_theme_font_size_override("font_size", 15)
+	# The rect clamps UP to the text's width, anchored at its left edge — so a
+	# long telegraph line ("FLASH FREEZE — FIND A VENT!") used to start at the
+	# 140px box's left edge and hang off to the RIGHT of the head it belongs
+	# over. Size first (clamp happens now), then center the REAL rect on pos.
+	l.size = Vector2(140, 22)
+	l.position = pos + Vector2(-l.size.x * 0.5, -10)
 	l.add_theme_color_override("font_color", _floor_text_color(color))
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	l.add_theme_constant_override("outline_size", 4)
