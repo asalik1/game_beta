@@ -20,13 +20,18 @@ text-to-image model — it also broke `tools/art/flux_draft.py` and polligen's
 | **Wordmark** | **MOOT — do not generate.** Engine-drawn now, in Cinzel Decorative. See below. |
 | `ward_elixir`, `renewal_draught` | **DONE** — installed. |
 | **All 24 ability icons** | **DONE** — installed 2026-07-17. Every class is on real art; the glyph table is now fallback-only. |
-| `ability_warrior_a2` (Shield Bash) | **WANTS A RE-ROLL** — installed but muddy at 24px: a grey shield on grey with fine rivets, no value contrast. The prompt already says *tilted ram, not a raised guard*; the generator didn't obey. |
-| `ability_assassin_a2` (Shadow Dash) | **WANTS A RE-ROLL** — came back as a full hooded CHARACTER with motion trails. `[NEGATIVES]` already forbids "no character, no full figure" — a figure cannot survive 32x32. Re-roll as an abstract motif (an afterimage streak, not a person). |
+| `ability_warrior_a2` (Shield Bash) | **KEPT** — owner reviewed 2026-07-17, reads fine in-game. |
+| `ability_assassin_a2` (Shadow Dash) | **DONE** — re-roll installed 2026-07-17 (dagger afterimage strobe; reads distinct from a1 at 24px). |
+| `ability_paladin_ult` (Conviction) | **DONE** — re-roll installed 2026-07-17 (split holy/chained warhammer). |
+| `ability_mage_a3` (Blink) | **RE-ROLL PENDING** — visually clean but the vanish/reappear bars died at 24px, leaving a generic bolt. Prompt rewritten below. |
+| `ability_warlock_a1` (Shadowbolt) | **RE-ROLL PENDING** — faithful to its prompt but too dark for the near-black action bar; the lowest-contrast icon in the set. Prompt rewritten below. |
 
-**The generator ignores negatives roughly 1 render in 12.** Both failures above
-are the same shape: the prompt said what not to draw and it drew it anyway. Check
-each render against `[NEGATIVES]` BEFORE cutting — a re-roll is cheap, and no
-downscale rescues a figure or a flat-value subject.
+**Two lessons the re-rolls encode.** (1) The generator ignores negatives ~1 in
+12 — the assassin figure is that: check every render against `[NEGATIVES]`
+BEFORE cutting, no downscale rescues a figure or a flat-value subject. (2) Don't
+describe a game icon in UI-symbol terms — the paladin ult asked for "a refresh
+symbol" and faithfully got UI chrome; that one was the prompt's fault, not the
+model's.
 
 **Cutting a render → a 32x32 icon** is done by script, not by hand, and the
 background cut is the whole difficulty. ChatGPT returns **two different
@@ -768,17 +773,23 @@ PALETTE: outline #2E1C2C; ice ramp #547BC5 / #00ADED / #7BDCFF / #BFEFFF;
 centre flash #FFFFFF.
 ```
 
-### `ability_mage_a3.png` — Blink
+### `ability_mage_a3.png` — Blink  (RE-ROLL 2026-07-17)
 *Dash in your move direction, shocking everything in your path; brief i-frame + 50% DR.*
+The first render obeyed its prompt — the failure was at 24px, where the two
+afterimage bars vanished and left a generic lightning bolt. This version makes
+the DISPLACEMENT the subject and the shock the connector, with both end-states
+big enough to survive the bar.
 ```
-SUBJECT: a bold jagged LIGHTNING BOLT running from upper-left to lower-right,
-thick and angular with 3–4 hard zigzag turns, and — flanking it — two vertical
-AFTERIMAGE bars, one at the far left and one at the far right, like a shape
-that vanished and reappeared. Thick strokes only.
-PALETTE: outline #2E1C2C; bolt core #FFFFFF into #BFEFFF; bolt body #7BDCFF /
-#00ADED; afterimage bars #547BC5 (the left one darker, the right one brighter).
+SUBJECT: two bold vertical BARS, pillar-thick, one in the lower-left corner and
+one in the upper-right — the SAME shape vanished and reappeared. The lower-left
+bar is a dark hollow GHOST (outline only, near-empty); the upper-right bar is
+solid, bright, fully arrived. ONE thick jagged lightning arc leaps between them
+along the diagonal, with 2 short spark ticks off its middle. The two bars are
+each at least a quarter of the frame tall; the arc is the only thin element.
+PALETTE: outline #2E1C2C; ghost bar #547BC5 hollow with a #2E1C2C interior;
+arrived bar #7BDCFF / #BFEFFF with a #FFFFFF edge; arc core #FFFFFF into
+#BFEFFF; spark ticks #7BDCFF.
 ```
-
 ### `ability_mage_ult.png` — Meteor
 *Call a meteor onto the nearest enemy. Cataclysmic; a quarter is true damage.*
 ```
@@ -804,15 +815,23 @@ PALETTE: outline #2E1C2C; blade #86718C / #95ADB4 / #BFDDD1 with a #FFFFFF
 point glint; grip #705C4A; blood bead #CB1E31; thrust streak #86718C.
 ```
 
-### `ability_assassin_a2.png` — Shadow Dash
+### `ability_assassin_a2.png` — Shadow Dash  (RE-ROLL 2026-07-17)
 *Dash in your move direction, slashing everything in your path.*
+First render came back a full hooded CHARACTER with motion trails — the one
+thing the negatives forbid. This version removes any excuse for a figure: the
+subject is ONLY blades. Three ghosted copies of the SAME dagger, echoing back
+along the dash line — pure motion, nothing that could be read as a body.
 ```
-SUBJECT: a thick tapering SHADOW TRAIL sweeping from lower-left to upper-right
-— a dense dark violet smoke-wedge, wide at the front and dissolving into three
-or four chunky trailing wisps at the back — with a single slim dagger blade
-riding at its bright leading edge. Dark mass with one bright edge.
-PALETTE: outline #2E1C2C; shadow ramp #2E1C2C / #724E63 / #86718C with #95ADB4
-wisp tips; dagger #BFDDD1 / #FFFFFF.
+SUBJECT: a single slim DAGGER pointing up-and-right at the bright leading edge,
+with TWO or THREE ghosted afterimage copies of the exact same dagger trailing
+behind it down-and-left, each fainter and more violet than the last — a
+strobe/echo of one blade in motion, evenly spaced along a straight diagonal.
+The front dagger is crisp steel; the echoes are flat violet-shadow silhouettes.
+No smoke, no cloud, no figure — just one blade repeated as it streaks. The three
+blades together are the whole subject and fill the frame corner-to-corner.
+PALETTE: outline #2E1C2C; lead dagger blade #95ADB4 / #BFDDD1 with a #FFFFFF
+point glint, grip #705C4A; echo silhouettes #2E1C2C / #724E63 / #86718C
+(solid flat fills, front echo brightest).
 ```
 
 ### `ability_assassin_a3.png` — Fan of Knives
@@ -874,33 +893,45 @@ PALETTE: outline #2E1C2C; shield face ramp #547BC5 / #7BDCFF / #BFEFFF; cross
 and sparks #FFC762 / #FFCE00; barrier halo #FFFFFF.
 ```
 
-### `ability_paladin_ult.png` — Conviction
+### `ability_paladin_ult.png` — Conviction  (RE-ROLL 2026-07-17)
 *Swap stances. RETRIBUTION drags enemies in on chains; HOLY releases a mending blessing.*
+My fault, not the generator's: the old prompt asked for "a refresh symbol" and
+got exactly that — UI chrome, not an ability. This version encodes the same
+Holy/Retribution duality as a real object: a warhammer head split down the
+middle. Centred and symmetric, so it also reads distinct from a1 (Judgment),
+which is a diagonal hammer mid-swing.
 ```
-SUBJECT: a two-sided STANCE SWAP — one bold circular arrow (two curved arrows
-head-to-tail forming a ring, like a refresh symbol) filling the icon, with the
-LEFT half of the ring rendered in warm retribution orange and trailing one short
-heavy CHAIN LINK run, and the RIGHT half in pale holy gold with a small cross.
-The duality is the point: one symbol, split down the middle.
-PALETTE: outline #2E1C2C; left/retribution arc #C4594B / #E86838 / #EC7E4E with
-#86718C chain links; right/holy arc #FFC762 / #FFCE00 / #FFFFFF with a #FFFFFF
-cross.
+SUBJECT: a heavy WARHAMMER shown UPRIGHT and centred, head at the top filling
+the width, short haft dropping straight down — seen flat and face-on. The
+hammer HEAD is split vertically down its centre into two halves: the LEFT half
+is radiant pale-gold holy metal stamped with a small white cross; the RIGHT
+half is dark iron bound by two heavy CHAIN links with a red-ember glow in the
+seams. One weapon, two natures, split down the middle. Bold blocky silhouette,
+symmetric, the head much larger than the haft.
+PALETTE: outline #2E1C2C; left/holy half #FFC762 / #FFCE00 / #FFFFFF with a
+#FFFFFF cross; right/retribution half iron #724E63 / #86718C with #C4594B /
+#E86838 ember seams and #86718C chain links; haft #705C4A.
 ```
 
 ## WARLOCK
 
-### `ability_warlock_a1.png` — Shadowbolt
+### `ability_warlock_a1.png` — Shadowbolt  (RE-ROLL 2026-07-17)
 *Hurl a bolt of hungry darkness at the nearest enemy.*
+The first render was faithful — and invisible: a near-black core with a dim rim
+sits on a near-black action bar. Same design, inverted emphasis: the RIM is now
+the brightest thing in the icon and carries the whole silhouette; the core stays
+void-dark inside it.
 ```
 SUBJECT: a compact ORB of dark energy hurtling diagonally from lower-left to
-upper-right — a near-black violet core rimmed with a bright arcane edge, with a
-short ragged tail of dark wisps behind it. The mirror of Firebolt in silhouette
-but unmistakably DARK: the core is the darkest thing in the icon, lit only at
-its rim.
-PALETTE: outline #2E1C2C; core #2E1C2C / #4C303F; rim #724E63 / #86718C; bright
-arcane edge #A0405A into #BFDDD1; wisp tail #4C303F / #724E63.
+upper-right. The core is a void — the darkest thing in the icon — but it is
+WRAPPED in a thick, bright arcane rim that reads as the actual shape: pale
+silver-violet, hottest at the leading edge with a white glint, trailing two
+short bright wisps behind. The rim must stay readable against a near-black
+background — it, not the core, is the silhouette.
+PALETTE: outline #2E1C2C; void core #2E1C2C / #4C303F; rim #86718C into
+#BFDDD1 with an #A0405A arcane seam; leading edge #BFDDD1 + #FFFFFF glint;
+trailing wisps #86718C / #724E63.
 ```
-
 ### `ability_warlock_a2.png` — Hex
 *Curse enemies around your target: withered and EXPOSED; cursed enemies EXPLODE on death; deepens while held.*
 ```

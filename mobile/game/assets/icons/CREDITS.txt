@@ -72,24 +72,23 @@ any subset can be pulled without breaking anything.
   ability_mage_a3.png     — blue bolt in a rift       -> Blink
   ability_mage_ult.png    — burning meteor            -> Meteor
   ability_assassin_a1.png — thrust dagger             -> Stab
-  ability_assassin_a2.png — hooded lunge + trails     -> Shadow Dash
+  ability_assassin_a2.png — dagger afterimage strobe  -> Shadow Dash
   ability_assassin_a3.png — spread of thrown knives   -> Fan of Knives
   ability_assassin_ult.png— red cross-slash mark      -> Death Mark
   ability_paladin_a1.png  — hammer + light arc        -> Judgment
   ability_paladin_a2.png  — crown of golden flame     -> Consecration
   ability_paladin_a3.png  — blue + gold cross shield  -> Aegis
-  ability_paladin_ult.png — haloed sun                -> Conviction
+  ability_paladin_ult.png — split holy/chained hammer -> Conviction
   ability_warlock_a1.png  — dark comet                -> Shadowbolt
   ability_warlock_a2.png  — skull sigil               -> Hex
   ability_warlock_a3.png  — bleeding heart            -> Dark Pact
   ability_warlock_ult.png — rift diamond              -> Void Rift
 
-  Two want a re-roll rather than a re-cut (2026-07-17): warrior_a2 and
-  assassin_a2 read muddy at the real 24px bar size. Both are SOURCE problems —
-  a2 is a grey shield on grey with fine rivets (no value contrast), and
-  assassin_a2 came back as a full character figure with motion trails, which
-  the prompt's negatives explicitly ruled out ("no character, no full figure").
-  A figure never survives 32x32. Nothing a downscale can fix.
+  Re-roll history (2026-07-17): assassin_a2's first render was a full character
+  figure and paladin_ult's a UI refresh symbol — both replaced same day with the
+  installed versions above. warrior_a2 (grey-on-grey shield) was reviewed by the
+  owner and KEPT; mage_a3 and warlock_a1 have re-rolls pending in ART_PROMPTS.md
+  (legibility at 24px, not correctness).
 
   Two icons were cut down from their renders on purpose: archer_ult and mage_a1
   each came with a ground-impact burst below the subject. Real art, but it
