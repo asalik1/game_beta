@@ -79,16 +79,17 @@ any subset can be pulled without breaking anything.
   ability_paladin_a2.png  — crown of golden flame     -> Consecration
   ability_paladin_a3.png  — blue + gold cross shield  -> Aegis
   ability_paladin_ult.png — split holy/chained hammer -> Conviction
-  ability_warlock_a1.png  — dark comet                -> Shadowbolt
+  ability_warlock_a1.png  — void orb, bright rim      -> Shadowbolt
   ability_warlock_a2.png  — skull sigil               -> Hex
   ability_warlock_a3.png  — bleeding heart            -> Dark Pact
   ability_warlock_ult.png — rift diamond              -> Void Rift
 
   Re-roll history (2026-07-17): assassin_a2's first render was a full character
-  figure and paladin_ult's a UI refresh symbol — both replaced same day with the
-  installed versions above. warrior_a2 (grey-on-grey shield) was reviewed by the
-  owner and KEPT; mage_a3 and warlock_a1 have re-rolls pending in ART_PROMPTS.md
-  (legibility at 24px, not correctness).
+  figure, paladin_ult's a UI refresh symbol, mage_a3's afterimage died at bar
+  size (its v2 got faithful meaningless geometry — see ART_PROMPTS.md for the
+  lesson), and warlock_a1 was too dark for the near-black bar. All four replaced
+  same day with the installed versions above. warrior_a2 (grey-on-grey shield)
+  was reviewed by the owner and KEPT. The set is at final quality.
 
   Two icons were cut down from their renders on purpose: archer_ult and mage_a1
   each came with a ground-impact burst below the subject. Real art, but it

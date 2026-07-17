@@ -24,7 +24,7 @@ text-to-image model — it also broke `tools/art/flux_draft.py` and polligen's
 | `ability_assassin_a2` (Shadow Dash) | **DONE** — re-roll installed 2026-07-17 (dagger afterimage strobe; reads distinct from a1 at 24px). |
 | `ability_paladin_ult` (Conviction) | **DONE** — re-roll installed 2026-07-17 (split holy/chained warhammer). |
 | `ability_mage_a3` (Blink) | **DONE** — v3 installed 2026-07-17 (bolt cut + displaced mid-strike; the break survives 24px). v1's afterimage died at bar size; v2's "two bars" prompt got faithful meaningless geometry — the fix was giving the displacement a recognizable OBJECT. |
-| `ability_warlock_a1` (Shadowbolt) | **RE-ROLL PENDING** — faithful to its prompt but too dark for the near-black action bar; the lowest-contrast icon in the set. Prompt rewritten below. |
+| `ability_warlock_a1` (Shadowbolt) | **DONE** — re-roll installed 2026-07-17. Rim-carries-the-silhouette worked: ~2x the bright pixels of the first render (p90 lum 135 -> 152), reads as a ringed void at 24px. Still the darkest icon in the set ON PURPOSE — it is a void bolt; the fix was the silhouette, not the mood. |
 
 **Two lessons the re-rolls encode.** (1) The generator ignores negatives ~1 in
 12 — the assassin figure is that: check every render against `[NEGATIVES]`
