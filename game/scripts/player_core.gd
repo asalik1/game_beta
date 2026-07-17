@@ -536,14 +536,17 @@ func _apply_class_sprite() -> void:
 	_clip_flip = 0.0
 	sprite.rotation = 0.0
 	if _clips.has("idle"):
-		var m := _measure_hero_frame(_clips["idle"])
+		# Fixed per-class hero size (broad warrior, lean assassin) — set once,
+		# purely visual identity; deterministic per class so co-op needs no sync.
+		var csize: float = Balance.HERO_CLASS_SIZE.get(cls, 1.0)
+		var m := _measure_hero_frame(_clips["idle"], csize)
 		_hero_scale = m["scale"]
 		# Per-skin anchor nudge: a skin whose weapon hangs below the boots is
 		# grounded on the blade tip by the lowest-pixel anchor; nudge it DOWN so
 		# the feet ground instead (default 0 — see Skins.ANCHOR_NUDGE).
 		_hero_offset_y = m["offset"] + Skins.anchor_nudge(skin)
 		for pose in _dir_clips:
-			_dir_meta[pose] = _measure_hero_frame(_dir_clips[pose])
+			_dir_meta[pose] = _measure_hero_frame(_dir_clips[pose], csize)
 		_play_clip("idle", true)
 	else:
 		# No animation strips installed: legacy static override / grid.
@@ -588,7 +591,7 @@ func refresh_skin_sprite() -> void:
 ## the sprite scale (body -> constant on-screen size) + vertical feet offset.
 ## Returned per strip so a different-sized strip (e.g. directional poses) still
 ## renders the body at the same size and its feet on the shadow.
-func _measure_hero_frame(info: Dictionary) -> Dictionary:
+func _measure_hero_frame(info: Dictionary, size_mult := 1.0) -> Dictionary:
 	var img: Image = info["tex"].get_image()
 	var frames := int(info["frames"])
 	var fw := int(img.get_width() / max(1, frames))
@@ -607,7 +610,9 @@ func _measure_hero_frame(info: Dictionary) -> Dictionary:
 	# CHAR_RENDER_SCALE enlarges the on-screen body (less downscale = thin detail
 	# like the sword blade survives). Feet stay anchored at HERO_FEET_ANCHOR, so
 	# the bigger body grows UPWARD from the same ground line (shadow scales to match).
-	var sc := HERO_TARGET_BODY * Balance.CHAR_RENDER_SCALE / float(body_h)
+	# size_mult = the class's fixed size (broad warrior / lean assassin); the
+	# offset uses the SAME sc so the feet stay grounded at any hero size.
+	var sc := HERO_TARGET_BODY * size_mult * Balance.CHAR_RENDER_SCALE / float(body_h)
 	return {"scale": sc, "offset": HERO_FEET_ANCHOR / sc - float(bot) + float(fh) / 2.0}
 
 

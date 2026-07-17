@@ -1016,3 +1016,108 @@ Install: drop into `game/assets/icons/`, let Godot import, done — no code
 change, and any subset can land alone. Then update `assets/icons/CREDITS.txt`
 (these are Crownless originals, not Raven pack art) and re-sync
 `mobile/game/assets/icons/` per CLAUDE.md.
+
+---
+
+# ENVIRONMENT ACCENTS — crystal + void biomes — CREATE (added 2026-07-17, diversity lane)
+
+The environment diversity pass left two biomes with an EMPTY accent list — they place
+zero distinctive landmarks and read as fill-only. These prompts create the missing
+accent props. Install-by-name to `game/assets/sprites/`, then add the names to the
+biome's `accents` in `terrains.gd` (crystal / void). Props render at scale 3.0 (a ~48px
+source → ~144px on screen), so author BIG and readable — these are room landmarks, not
+ground litter, and the accent system places them rarely (~1/room).
+
+## `[STYLE — PROPS]` — prepend to every prop below
+```
+A single top-down dark-fantasy game PROP, viewed from a high 3/4 overhead angle (the
+camera looks down and slightly forward, as in a top-down ARPG), centred on a fully
+transparent background.
+
+STYLE: hard-edged pixel art, every pixel square and grid-aligned. Flat blocks of colour
+only. NO anti-aliasing, NO gradients, NO dithering, NO soft edges, NO blur, NO glow
+bloom. A closed 1px dark outline around the whole silhouette. No more than ~16 colours.
+Shade each form as a 3-step ramp (bright / mid / dark), light from the upper LEFT.
+
+COMPOSITION: one single object, centred, standing on the ground with its BASE at the
+bottom of the image (it will be planted feet-down in the world). Bold readable
+silhouette — it must read at a glance as a room landmark. Roughly 48 pixels tall.
+```
+
+## `[NEGATIVES — PROPS]` — append to every prop below
+```
+NEGATIVES: no text, no letters, no runes-as-text, no border, no frame, no card, no
+background, no separate ground shadow, no scene, no landscape, no tiling, no character,
+no creature, no hand, no UI, no anti-aliasing, no gradient, no dithering, no noise, no
+glow bloom, no lens flare, not 3D, not rendered, not painterly, not photorealistic.
+```
+
+## CRYSTAL CAVERNS  (biome tint is cool blue-white; crystals glow teal, rock is dark slate)
+PALETTE: rock #23283A / #343B52 / #4A536E; crystal #2F9BA6 / #4FD0D8 / #86ECE6;
+crystal highlight #C8FFFB; secondary violet vein #7A5FB0. Outline #171A26.
+
+### `crystal_cluster.png` — a knot of shards
+```
+SUBJECT: a cluster of 4–5 angular six-sided TEAL crystal shards erupting at different
+heights and lean angles from a small dark slate rock base — the tallest shard in the
+centre, shorter ones fanning out around it. Each shard is a flat-faceted prism with a
+bright teal front face, a mid-teal side face, and one #C8FFFB specular pip near its tip.
+A faint inner-lit core (slightly brighter teal at the shard centres). The rock base is a
+low dark-slate lump the shards grow out of.
+```
+
+### `crystal_spire.png` — a single tall column
+```
+SUBJECT: ONE tall, slender, six-sided TEAL crystal COLUMN tapering to a sharp point at
+the top, standing vertically, about twice as tall as it is wide. Flat faceted faces
+(bright front, mid side, dark inner edge), a single #C8FFFB specular streak down the
+upper-left edge, faint inner glow. A little dark-slate rubble and two tiny teal shards
+at its foot where it meets the ground.
+```
+
+### `geode.png` — a cracked open rock
+```
+SUBJECT: a dark-slate BOULDER cracked open along a jagged vertical seam to reveal a
+hollow interior lined with dozens of small teal and violet crystals pointing inward. The
+outer rock is a heavy dark lump (3-step slate ramp); the exposed inner cavity is a
+darker recess studded with tiny bright #4FD0D8 and #7A5FB0 crystal points, a few
+#C8FFFB pips. The boulder sits flat on the ground.
+```
+
+## THE VOID  (biome tint is purple; ground is near-black; props are obsidian with violet rift-light)
+PALETTE: obsidian #14111C / #241E33 / #3A3152; rim-light #4A3E66; rift glow
+#7A3FB0 / #9B4FD0 / #C87FE8; rift highlight #E8C8FF. Outline #0C0A14.
+
+### `void_monolith.png` — a standing black slab
+```
+SUBJECT: a tall, narrow, upright OBSIDIAN SLAB / standing stone with clean angular
+edges, planted vertically in the ground, taller than it is wide. Near-black faceted
+faces (obsidian 3-step ramp), the upper-left edge catches a thin faint VIOLET rim-light
+(#4A3E66 into #9B4FD0). One hairline violet crack glowing faintly down its face. The
+base is planted flat, slightly wider than the top.
+```
+
+### `void_rift.png` — a tear in space
+```
+SUBJECT: a small vertical TEAR in reality hovering just above the ground — a jagged
+lens-shaped SLIT of pure black, edged with a thin ragged rim of glowing magenta-violet
+(#9B4FD0 core, #C87FE8 outer, a few #E8C8FF pips). The slit is wider at its middle and
+tapers to points top and bottom. Beneath it, a couple of tiny dark floating shards
+drift. No solid base — it floats, but keep the whole shape in the lower-middle of the
+frame.
+```
+
+### `void_obelisk.png` — a broken monument
+```
+SUBJECT: a four-sided black OBSIDIAN OBELISK, TALL but BROKEN — the top third snapped
+off at a jagged diagonal, the remaining stump leaning very slightly. Faceted near-black
+faces (obsidian ramp), faint violet rim-light on the upper-left edge, and a few faint
+violet glyph-marks glowing dimly on the front face (abstract angular shapes, NOT
+letters). A small pile of dark broken chunks at its base on the ground.
+```
+
+## Post-process (agent, after the owner drops renders)
+Generators won't give a clean grid or a tight crop. Downscale to ~48px tall with NEAREST,
+snap to the palette above (posterize to ≤16 colours, no dither), hard-alpha the
+background (threshold, no semi-transparent halo), trim to content, install by name,
+reimport, mirror to mobile, add to the `terrains.gd` accent list, run the gates.

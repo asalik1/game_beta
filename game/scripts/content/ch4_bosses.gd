@@ -51,7 +51,13 @@ const ENEMIES := {
 	"cinderhide": {
 		"name": "Cinderhide the Unquenched", "sprite": "cinderhide",
 		"hp": 9500.0, "dmg": 110.0, "speed": 135.0, "xp": 330, "gold": 260,
-		"ranged": false, "scale": 8.5,
+		# Scale 8.5 -> 10.5 (art audit 2026-07-17): at 8.5 it rendered 143px,
+		# the SMALLEST real boss despite armored-beast lore.
+		"ranged": false, "scale": 10.5,
+		# Dark-red AURA (2026-07-17): the obsidian Cerberus stays DARK (owner:
+		# too bright looked wrong) — an additive red glow behind him reads on
+		# the near-black magma terrain instead of lifting his art.
+		"aura": Color(0.55, 0.09, 0.06, 0.7),
 		# Resists stay the honest SHED value the whole fight (~25 / ~17% DR).
 		# The plating is a separate FLAT ~82% pen-proof wall (plate_dr, set at
 		# setup and dropped on melt) — not a resist swap, so a DPS build can't

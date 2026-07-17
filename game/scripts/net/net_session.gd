@@ -735,7 +735,7 @@ func _spawn_block(e: Enemy) -> Dictionary:
 	return {"id": e.net_id, "kind": e.kind, "level": e.level,
 		"zone": e.zone_idx, "pos": e.global_position, "elite": e.elite,
 		"boss": e is Boss, "hp": clampf(e.hp / maxf(e.max_hp, 0.001), 0.0, 1.0),
-		"gold": e.gold_value, "plated": e.plate_dr > 0.0}
+		"gold": e.gold_value, "plated": e.plate_dr > 0.0, "size": e.size_var}
 
 
 ## HOST: a registered enemy died a REAL death (Enemy.die) — guests play
@@ -856,7 +856,9 @@ func _rpc_spawn_enemy(block: Dictionary) -> void:
 	if bool(block.get("boss", false)):
 		e = Boss.make_boss(game, kind, pos, lvl)
 	else:
-		e = Enemy.make(game, kind, pos, lvl)
+		# Replay the HOST's size roll so the mob is the same size (and thus
+		# stats) on every screen — else guests re-roll and desync.
+		e = Enemy.make(game, kind, pos, lvl, float(block.get("size", 1.0)))
 	e.net_mirror = true
 	e.net_id = id
 	e.zone_idx = int(block.get("zone", -1))

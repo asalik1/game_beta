@@ -909,23 +909,28 @@ func fast_travel(i: int) -> void:
 func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: Callable) -> Node2D:
 	var npc := Node2D.new()
 	npc.position = pos
+	# Fixed per-INDIVIDUAL size (2026-07-17): a stable hash of identity+place
+	# so this NPC is always this size, but a crowd isn't clones — a tall guard
+	# or stooped elder can out/under-scale a hero. Deterministic -> co-op-safe.
+	var nhash := absi((sprite_name + str(int(pos.x)) + str(int(pos.y))).hash())
+	var nsize := 1.0 + (float(nhash % 1000) / 1000.0 - 0.5) * 2.0 * Balance.NPC_SIZE_VAR
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
-	shadow.scale = Vector2(2, 2)
+	shadow.scale = Vector2(2, 2) * nsize
 	shadow.position = Vector2(0, 20)
 	npc.add_child(shadow)
 	var spr := Sprite2D.new()
 	var anim := Art.anim_info(sprite_name)
 	if anim.is_empty():
 		spr.texture = Art.tex(sprite_name)
-		spr.scale = Art.scale_for(spr.texture, 3.0)
+		spr.scale = Art.scale_for(spr.texture, 3.0 * nsize)
 	else:
 		# NPCs breathe too (animation seam): slow frame flip on a tween,
 		# random phase so a crowd never inhales in unison.
 		spr.texture = anim["tex"]
 		var frames := int(anim["frames"])
 		spr.hframes = frames
-		spr.scale = Art.scale_for(spr.texture, 3.0, frames)
+		spr.scale = Art.scale_for(spr.texture, 3.0 * nsize, frames)
 		var tw := spr.create_tween().set_loops()
 		tw.tween_interval(randf_range(0.1, 0.8))
 		tw.tween_callback(func() -> void: spr.frame = (spr.frame + 1) % frames)
@@ -950,10 +955,13 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 		npc.add_child(smoke)
 	var prompt := Label.new()
 	prompt.text = touchify(prompt_text)
-	prompt.position = Vector2(-40, -58)
-	prompt.size = Vector2(96, 20)
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt.add_theme_font_size_override("font_size", 14)
+	# The rect clamps UP to the text's width — a long prompt ("E — Feed the
+	# shrine") anchored at a fixed left edge drifted right of the NPC. Size
+	# first, then center the real rect on the authored +8 anchor.
+	prompt.size = Vector2(96, 20)
+	prompt.position = Vector2(8.0 - prompt.size.x * 0.5, -58)
 	prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	prompt.add_theme_constant_override("outline_size", 4)
 	prompt.visible = false
@@ -961,6 +969,28 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	world.add_child(npc)
 	interactables.append({"node": npc, "prompt": prompt, "action": action})
 	return npc
+
+## Props that grow in natural CLUMPS (a stand of trees, a patch of mushrooms,
+## a clutch of grass) rather than always standing alone. Rocks, pillars,
+## sandstone, statues and every landmark stay solitary (they read as litter
+## when clustered). Prefix-matched so tree_green2 / bush_autumn clump too.
+func _groupable(name: String) -> bool:
+	if name.begins_with("tree") or name.begins_with("bush") or name.begins_with("grass"):
+		return true
+	return name in ["mushroom", "toadstool", "flower", "pebble"]
+
+
+## Clump size with a DECAYING tail: starts at 2, each extra member only GROW
+## as likely as the last (capped at MAX). Pairs/triples common, a dense stand
+## of 4 rare, 5+ impossible — a natural distribution, not a flat 2..4 roll.
+func _clump_size(rng: RandomNumberGenerator) -> int:
+	var n := 2
+	var grow := Balance.SCENERY_CLUSTER_GROW
+	while n < Balance.SCENERY_CLUSTER_MAX and rng.randf() < grow:
+		n += 1
+		grow *= Balance.SCENERY_CLUSTER_GROW_DECAY
+	return n
+
 
 ## (Re)build a room's decor + obstacles from its TERRAIN — tombstones in
 ## the graveyard, snowy pines on the ice, crystals in the caverns...
@@ -978,20 +1008,37 @@ func _spawn_scenery(zi: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
 
+	# Per-room density jitter: not every room is equally dense (see Balance).
+	var dens := rng.randf_range(Balance.SCENERY_DENSITY_JITTER.x, Balance.SCENERY_DENSITY_JITTER.y)
+
 	# Non-colliding ground decor (density scaled to the room's area —
 	# small rooms get proportionally less).
 	var decor_list: Array = terrain.get("decor", ["pebble"])
-	for i in int(ceil(Balance.SCENERY_DECOR_BASE * area_frac)):
+	var decor_target := int(ceil(Balance.SCENERY_DECOR_BASE * area_frac * dens))
+	var decor_n := 0
+	while decor_n < decor_target:
 		var decor_name: String = decor_list[rng.randi_range(0, decor_list.size() - 1)]
-		var spr := Sprite2D.new()
-		spr.texture = Art.tex(decor_name)
-		spr.scale = Vector2(3, 3)
-		spr.position = origin + Vector2(rng.randf_range(70.0, pw - 70.0), rng.randf_range(80.0, ph - 80.0))
-		spr.z_index = -8
-		if decor_name in ["flower", "mushroom"]:
-			spr.material = Art.wind_material()  # soft stems nod in the wind
-		world.add_child(spr)
-		zone_scenery[zi].append(spr)
+		# Groupable decor (mushrooms, grass, flowers) sometimes grows in a patch.
+		var dclump := 1
+		if _groupable(decor_name) and rng.randf() < Balance.SCENERY_CLUSTER_CHANCE:
+			dclump = _clump_size(rng)
+		var dcenter := origin + Vector2(rng.randf_range(70.0, pw - 70.0), rng.randf_range(80.0, ph - 80.0))
+		for k in dclump:
+			var dpos := dcenter
+			if k > 0:
+				dpos = dcenter + Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0)) * Balance.SCENERY_CLUSTER_RADIUS
+				dpos.x = clampf(dpos.x, origin.x + 70.0, origin.x + pw - 70.0)
+				dpos.y = clampf(dpos.y, origin.y + 80.0, origin.y + ph - 80.0)
+			var spr := Sprite2D.new()
+			spr.texture = Art.tex(decor_name)
+			spr.scale = Vector2(3, 3)
+			spr.position = dpos
+			spr.z_index = -8
+			if decor_name in ["flower", "mushroom"]:
+				spr.material = Art.wind_material()  # soft stems nod in the wind
+			world.add_child(spr)
+			zone_scenery[zi].append(spr)
+		decor_n += dclump
 
 	# Colliding obstacles, kept off the road band and the door lanes.
 	var obstacles: Array = terrain.get("obstacles", ["rock"])
@@ -1014,8 +1061,20 @@ func _spawn_scenery(zi: int) -> void:
 				placed.append(bpos)
 				zone_scenery[zi].append(_add_building(String(bname), origin + bpos))
 				break
-	var count := int(ceil(float(terrain.get("count", 10)) * Balance.SCENERY_OBSTACLE_MULT * area_frac))
-	for i in count:
+	var count := int(ceil(float(terrain.get("count", 10)) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
+	var placed_n := 0
+	var guard := 0
+	while placed_n < count and guard < count * 3:
+		guard += 1
+		var prop: String = obstacles[rng.randi_range(0, obstacles.size() - 1)]
+		# Groupable props (trees, bushes) sometimes form a STAND; rocks/pillars
+		# stay solo. A clump's members count toward `count`, so density holds.
+		var clump := 1
+		if _groupable(prop) and rng.randf() < Balance.SCENERY_CLUSTER_CHANCE:
+			clump = _clump_size(rng)
+		# Find a clump CENTRE that clears existing props and the road/door lanes.
+		var center := Vector2.ZERO
+		var got := false
 		for attempt in Balance.SCENERY_PLACE_TRIES:
 			var pos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
 			if pos.y > ph / 2.0 - 90.0 and pos.y < ph / 2.0 + 90.0:
@@ -1028,10 +1087,64 @@ func _spawn_scenery(zi: int) -> void:
 					ok = false
 					break
 			if ok:
-				placed.append(pos)
-				var body := _add_obstacle(obstacles[rng.randi_range(0, obstacles.size() - 1)], origin + pos)
-				zone_scenery[zi].append(body)
+				center = pos
+				got = true
 				break
+		if not got:
+			placed_n += 1  # couldn't fit this one; don't spin forever
+			continue
+		# Place the clump: centre first, then members on a tighter intra-clump
+		# spacing so a stand reads dense without canopies overlapping.
+		var intra := Balance.SCENERY_MIN_SPACING * 0.55
+		for k in clump:
+			var mpos := center
+			if k > 0:
+				mpos = center + Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0)) * Balance.SCENERY_CLUSTER_RADIUS
+				mpos.x = clampf(mpos.x, 90.0, max_x)
+				mpos.y = clampf(mpos.y, 100.0, ph - 100.0)
+				if mpos.y > ph / 2.0 - 90.0 and mpos.y < ph / 2.0 + 90.0:
+					continue
+				if absf(mpos.x - pw / 2.0) < 130.0:
+					continue
+				var okc := true
+				for other in placed:
+					if mpos.distance_to(other) < intra:
+						okc = false
+						break
+				if not okc:
+					continue
+			placed.append(mpos)
+			zone_scenery[zi].append(_add_obstacle(prop, origin + mpos))
+			placed_n += 1
+
+	# ACCENTS: distinctive props (skeletons, shovels, statues, big mushrooms)
+	# that read as litter when repeated — unlike trees/rocks, spammable above.
+	# Each accent rolls its OWN decaying-repeat count (real-world tail, not a
+	# hard cap): first copy at CHANCE, each extra only DECAY as likely as the
+	# last, so twice is uncommon, thrice rare, 4+ near-impossible-but-possible.
+	# A biome with a short accent list just shows fewer — those regions want
+	# more accent art (flagged in terrains.gd).
+	for aname in (terrain.get("accents", []) as Array):
+		var ap := minf(0.9, Balance.SCENERY_ACCENT_CHANCE * area_frac * dens)
+		var reps := 0
+		while rng.randf() < ap and reps < 6:
+			reps += 1
+			ap *= Balance.SCENERY_ACCENT_DECAY
+			for attempt in Balance.SCENERY_PLACE_TRIES:
+				var apos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
+				if apos.y > ph / 2.0 - 90.0 and apos.y < ph / 2.0 + 90.0:
+					continue
+				if absf(apos.x - pw / 2.0) < 130.0:
+					continue
+				var aok := true
+				for other in placed:
+					if apos.distance_to(other) < Balance.SCENERY_MIN_SPACING:
+						aok = false
+						break
+				if aok:
+					placed.append(apos)
+					zone_scenery[zi].append(_add_obstacle(String(aname), origin + apos))
+					break
 
 	# Ambient critters (birds/crows/butterflies) live with the scenery:
 	# room rebuilds and terrain repaints sweep them up too.
@@ -1082,11 +1195,11 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	body.collision_mask = 0
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex(sprite_name)
-	# Houses dwarf a person: ~120px on screen (the old 24px grid at 5x).
-	# Normalized by texture width so a higher-res override PNG lands at
-	# the SAME footprint, just denser — 24px grids at 5x read as flat
-	# cartoon blocks next to 30px pack characters at 3x.
-	var target_w := 120.0 if sprite_name.begins_with("cottage") else 108.0
+	# Houses DWARF a person (2026-07-17): a cottage renders ~250px wide ->
+	# ~180px tall, ~2x the 88px hero body — only bosses top a structure.
+	# (The old 120px made a house shorter than the hero.) Normalized by
+	# texture width so a higher-res override PNG lands at the same footprint.
+	var target_w := 250.0 if sprite_name.begins_with("cottage") else 150.0
 	var bscale := target_w / maxf(1.0, float(spr.texture.get_width()))
 	spr.scale = Vector2(bscale, bscale)
 	# Seeded mirroring: half the houses face the other way (free variety).

@@ -428,7 +428,8 @@ func _test_marsh_death_and_travel() -> void:
 	if not game.player.dead:
 		return _fail("player did not die")
 	var guard := 0
-	while game.player.dead and guard < 400:
+	# Guard sized for Balance.DEATH_BEAT_SECS (2.8s) at headless frame rates.
+	while game.player.dead and guard < 600:
 		await _frames(5)
 		guard += 1
 	if game.player.dead:
@@ -510,7 +511,8 @@ func _test_vargoth_victory() -> void:
 		return _fail("player did not die")
 	await _frames(20)
 	var guard := 0
-	while game.player.dead and guard < 400:
+	# Guard sized for Balance.DEATH_BEAT_SECS (2.8s) at headless frame rates.
+	while game.player.dead and guard < 600:
 		await _frames(5)
 		guard += 1
 	if game.player.dead:

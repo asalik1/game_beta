@@ -28,6 +28,31 @@ const FACE_DEADZONE := 0.35
 # radii, aggro/attack ranges and speeds are unchanged. Tune to taste; 1.0 = old size.
 const CHAR_RENDER_SCALE := 1.7
 
+# SIZE VARIANCE (2026-07-17) — living-world scale spread so a pack isn't
+# cardboard-cutout clones. BOSSES are exempt (fixed scale = their privilege).
+# Mobs: DYNAMIC per-spawn bell-curve (avg common, extremes rare) — ±MOB, and
+#   it couples to stats: HP full (x size), damage/speed at COUPLE of the size
+#   deviation, speed INVERSE (a big mob is tankier + hits harder + slower; a
+#   runt is frailer + softer + nimbler). Aggregate difficulty is unchanged —
+#   the curve is centered on 1.0. Kept < ELITE_SPRITE_MULT so elites stay the
+#   distinct "grew big enough to matter" tier.
+const MOB_SIZE_VAR := 0.20            # ±20% (0.8–1.2x)
+const MOB_SIZE_DMG_COUPLE := 0.5      # +20% size -> +10% dmg
+const MOB_SIZE_SPEED_COUPLE := 0.5    # +20% size -> -10% speed (inverse)
+# Heroes: FIXED per class (set once) — all human/elf, so a tight band; reads
+#   as class identity (broad warrior, lean assassin). No stat coupling.
+const HERO_CLASS_SIZE := {
+	# Owner's height ladder (warlock = the ~average anchor at 1.0):
+	# warrior > paladin > assassin > warlock > mage > archer. Tight human/elf
+	# band; "lean" assassin is thin from the ART, this only sets HEIGHT.
+	"warrior": 1.08, "paladin": 1.05, "assassin": 1.02,
+	"warlock": 1.0, "mage": 0.98, "archer": 0.95,
+}
+# NPCs: FIXED per individual (hashed from identity, never changes) — same
+#   human/elf world, a touch wider than heroes so a tall guard or stooped
+#   elder can out/under-scale a hero occasionally.
+const NPC_SIZE_VAR := 0.12            # ±12%
+
 # Hero name (chosen at creation, shown in the co-op lobby/party). Capped so a
 # long name never overruns a roster row; empty falls back to the OS account
 # name. Matches os_name()'s substr(0, 16) so the fallback and the typed name
@@ -96,6 +121,13 @@ const REWARD_PER_LEVEL := 0.12  # xp/gold grow LINEARLY per level (no farm spira
 # Fraction of CARRIED gold lost on death; respawn location / boss reset /
 # HP-MP restore stay free.
 const DEATH_GOLD_TITHE := 0.10
+# Death beat pacing (2026-07-17): the fall must READ. The dim now RAMPS in
+# over the first half of the beat instead of flash_title's instant
+# black-flash-and-fade, and the beat is long enough for the death clip
+# (~0.8s) plus a held corpse frame before the respawn pulls the camera.
+const DEATH_BEAT_SECS := 2.8    # death -> respawn (was 2.0)
+const DEATH_DIM := 0.55         # overlay darkness held through the beat
+const DEATH_DIM_RAMP := 1.4     # seconds the dim takes to ramp in (half the beat)
 
 # ------------------------------------------------------ merchant economy ---
 # Round 51 — FARM-COST pricing (supersedes round 50's flat level ladder).
@@ -756,6 +788,12 @@ const ELITE_CRITRES_BONUS := 3.0
 const ELITE_GOLD_MULT := 3
 const ELITE_AGGRO_MULT := 1.5   # elite-ROOM guardians only (pack elites keep pack aggro)
 const ELITE_SPRITE_MULT := 1.3
+# Elites read BIG (2026-07-17): on promotion, bias the mob's size variance to
+# the TOP of the band so an elite is the biggest thing short of a boss — size
+# itself is the "uh-oh" tell. Fixed (not random) so co-op host+guest agree with
+# no extra sync; never shrinks a mob that already rolled bigger. Stacks with
+# ELITE_SPRITE_MULT -> ~1.18 x 1.3 ≈ 1.5x on screen. Kept < boss scale.
+const ELITE_SIZE_BIAS := 1.18
 # Seeded spawn odds (per character, like the wanderer rolls).
 const ELITE_SOCIAL_ROOM_CHANCE := 0.30   # social room holds an elite, not a wanderer
 const ELITE_ROOM_LEVEL_BONUS := 1        # above the host area's toughest spawn
@@ -1141,6 +1179,31 @@ const SCENERY_DECOR_BASE := 42.0     # was 58 — thinned the ground litter
 const SCENERY_OBSTACLE_MULT := 1.6   # was 2.2 — count 16 -> ~26, not ~36
 const SCENERY_MIN_SPACING := 120.0   # was 85 — stops 144px canopies overlapping
 const SCENERY_PLACE_TRIES := 48      # was 40 — tighter packing rejects more
+# Per-room density JITTER (2026-07-17): rooms roll a fill multiplier in this
+# band so density VARIES — some sparse, some dense — instead of a flat count
+# everywhere. Scenery is cosmetic, so re-seeding room layouts is harmless.
+const SCENERY_DENSITY_JITTER := Vector2(0.6, 1.3)
+# ACCENT props are DISTINCTIVE (statues, whole skeletons, shovels, big
+# mushrooms) — litter when repeated. Each accent rolls its own DECAYING-repeat
+# count so the room reads natural, not capped: CHANCE is the odds a given
+# accent appears at all (area+jitter scaled); each EXTRA copy is only DECAY as
+# likely as the last. With 0.5/0.28: ~50% present, twice ~8%, 3x ~0.4%,
+# 4x+ ~0.004% (near-impossible but not forbidden). Trees/rocks stay spammable.
+const SCENERY_ACCENT_CHANCE := 0.5
+const SCENERY_ACCENT_DECAY := 0.28
+# Grouping (2026-07-17): some props grow in natural CLUMPS — a stand of trees,
+# a patch of mushrooms — instead of always solo; rocks/pillars/landmarks stay
+# single (see _groupable). A clump's members count toward the room budget, so
+# total density is unchanged — just distributed as some clusters + some singles.
+const SCENERY_CLUSTER_CHANCE := 0.25   # odds a groupable placement becomes a clump
+# Clump SIZE decays (not a flat roll): a clump starts at 2 and each extra tree
+# is only GROW as likely as the last. With GROW 0.5 / DECAY 0.2: 2 ~50%,
+# 3 ~45%, 4 ~5%, 5+ impossible (capped at MAX). So pairs/triples are common, a
+# dense stand of 4 is rare, and nothing bigger ever spawns.
+const SCENERY_CLUSTER_MAX := 4         # hard cap on clump size (5+ impossible)
+const SCENERY_CLUSTER_GROW := 0.5      # chance to add a 3rd member
+const SCENERY_CLUSTER_GROW_DECAY := 0.2  # each further member that much less likely
+const SCENERY_CLUSTER_RADIUS := 95.0   # px spread of a clump around its centre
 
 # -------------------------------------------------------- chapter results ---
 # The results card on every chapter clear (retention roadmap #1): run time,

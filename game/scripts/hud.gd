@@ -1996,15 +1996,20 @@ func boss_banner(boss_name: String) -> void:
 		title_label.scale = Vector2.ONE)
 
 
-func flash_title(text: String, sub := "", hold := 1.6) -> void:
+func flash_title(text: String, sub := "", hold := 1.6, overlay_fade := true) -> void:
 	title_label.text = text
 	subtitle_label.text = sub
-	# Every arrival (boot, load, replay, next chapter) fades in from
-	# black instead of cutting — the title rises out of the dark.
-	overlay.color = Color(0, 0, 0, 1)
 	var tween := create_tween()
-	tween.tween_property(overlay, "color:a", 0.0, 0.55)
-	tween.parallel().tween_property(title_label, "modulate:a", 1.0, 0.4)
+	if overlay_fade:
+		# Every arrival (boot, load, replay, next chapter) fades in from
+		# black instead of cutting — the title rises out of the dark.
+		# overlay_fade=false leaves the overlay to the caller (the death
+		# beat runs its own ramping dim that this snap would clobber).
+		overlay.color = Color(0, 0, 0, 1)
+		tween.tween_property(overlay, "color:a", 0.0, 0.55)
+		tween.parallel().tween_property(title_label, "modulate:a", 1.0, 0.4)
+	else:
+		tween.tween_property(title_label, "modulate:a", 1.0, 0.4)
 	tween.parallel().tween_property(subtitle_label, "modulate:a", 1.0, 0.4)
 	tween.tween_interval(hold)
 	tween.tween_property(title_label, "modulate:a", 0.0, 0.6)
@@ -2116,6 +2121,15 @@ func hide_results() -> void:
 
 func dim(amount: float) -> void:
 	overlay.color = Color(0, 0, 0, amount)
+
+
+## Death-beat dim: RAMP the overlay in so the death animation reads under a
+## gathering dark instead of behind an instant black flash. Cleared by the
+## respawn's dim(0.0).
+func death_dim(amount: float, ramp: float) -> void:
+	overlay.color = Color(0, 0, 0, overlay.color.a)
+	var tween := create_tween()
+	tween.tween_property(overlay, "color:a", amount, ramp)
 
 
 ## Inverse-telegraph dread (readability pass, 2026-07-07): while a

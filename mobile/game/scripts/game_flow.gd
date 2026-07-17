@@ -983,7 +983,7 @@ func on_player_died() -> void:
 	var p: Player = player  # solo: THE player (co-op: the one who fell)
 	var death_room := cur_room
 	_death_begin(p)
-	await get_tree().create_timer(2.0).timeout
+	await get_tree().create_timer(Balance.DEATH_BEAT_SECS).timeout
 	_death_respawn(p, death_room)
 
 
@@ -1001,8 +1001,8 @@ func _death_begin(p: Player) -> void:
 		p.gold = maxi(p.gold - tithe, 0)
 		spawn_text(p.global_position + Vector2(0, -64), "-%d gold" % tithe,
 			Color(1.0, 0.84, 0.35))
-	hud.dim(0.55)
-	hud.flash_title("YOU DIED", "The flame endures...", 1.0)
+	hud.death_dim(Balance.DEATH_DIM, Balance.DEATH_DIM_RAMP)
+	hud.flash_title("YOU DIED", "The flame endures...", 1.4, false)
 	for proj in get_tree().get_nodes_in_group("projectiles"):
 		proj.queue_free()
 
@@ -1065,7 +1065,7 @@ func _death_respawn(p: Player, death_room: int, forced_room := -1) -> void:
 ## MP-12 (§5.3): ALL players down — the WIPE. The host detected it
 ## (net_session._check_wipe) and broadcast the room decision; every
 ## machine now replays the solo death flow for its OWN player: the tithe
-## + 2.0 s beat of _death_begin, then _death_respawn at the HOST's
+## + DEATH_BEAT_SECS beat of _death_begin, then _death_respawn at the HOST's
 ## respawn room. The host's copy resets the death room and bosses exactly
 ## like solo; a guest's copy resets its mirror world the way a guest
 ## death always has (net_session's ST_DEAD watcher asks the host for an
@@ -1087,7 +1087,7 @@ func net_wipe(death_room: int, safe_room: int) -> void:
 	p.dead = true
 	p.play_death_anim()
 	_death_begin(p)
-	await get_tree().create_timer(2.0).timeout
+	await get_tree().create_timer(Balance.DEATH_BEAT_SECS).timeout
 	_death_respawn(p, death_room, safe_room)
 
 

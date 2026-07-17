@@ -49,7 +49,9 @@ func _buff() -> void:
 
 
 func _dummy(offset := Vector2(100, 0)) -> Enemy:
-	var e := Enemy.make(game, "wolf", game.player.global_position + offset)
+	# Pin size=1.0 so exact-stat assertions (weekly-mod ratios, curse deltas)
+	# aren't shaken by the per-spawn size variance real spawns roll.
+	var e := Enemy.make(game, "wolf", game.player.global_position + offset, -1, 1.0)
 	game.add_enemy(e)
 	return e
 

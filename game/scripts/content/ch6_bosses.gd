@@ -25,7 +25,10 @@ const ENEMIES := {
 		# (30+22·lvl, DESIGN r5) had no room left for trash. Mids ~67-70%,
 		# finale ~85%, like ch1-4. Gold untouched (gold has no budget).
 		"hp": 34000.0, "dmg": 178.0, "speed": 130.0, "xp": 520, "gold": 600,
-		"ranged": false, "scale": 9.0,
+		# Scale 9.0 -> 11.5 (art audit 2026-07-17): "a weather system with horns"
+		# rendered 211px, SMALLER than human casters (Halla 258, Ashpriest 254).
+		# 11.5 lands ~270px, above them. Paired with a bog-corruption body pass.
+		"ranged": false, "scale": 11.5,
 		"physres": 35.0, "magres": 25.0, "eva": 0.0, "critres": 7.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 34, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 2.0, "VIT": 1.0},

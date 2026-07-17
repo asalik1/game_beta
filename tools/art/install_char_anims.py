@@ -24,7 +24,7 @@ import install_dirset as ids
 # walk -> "walking", running-6-frames -> "running"); v3 customs keep the
 # animation_name we passed (attack/attack2/dash/ult/ultidle).
 NAME_MAP = {
-    "animating": "anim", "breathing-idle": "anim", "idle": "anim",
+    "animating": "anim", "breathing-idle": "anim", "idle": "anim", "hover": "anim",
     "walking": "walk", "walk": "walk",
     "running": "run", "run": "run",
     "dash": "dash", "dodge_roll": "dash",

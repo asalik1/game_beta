@@ -93,6 +93,7 @@ var _moving_anim := false  # hysteretic "moving" for walk/idle swap + bob
 var _face_vx := 0.0        # low-passed velocity.x for jitter-free facing
 var _avoid_turn := 0.0     # committed feeler-steer side (see _avoid_obstacles): keeps a mob rounding a corner instead of stuttering between the two ways past
 var art_scale := 1.0     # GAMEPLAY body scale (collision, avoidance reach) — never rescaled
+var size_var := 1.0      # per-spawn size multiplier (living-world variance; 1.0 for bosses/mirrors-until-set)
 var render_mult := 1.0   # VISUAL-only multiplier (Balance.CHAR_RENDER_SCALE for mobs, 1.0 for bosses)
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
@@ -195,10 +196,21 @@ const TRAIT_DESC := {
 }
 
 
-static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1) -> Enemy:
+## `size` < 0 rolls a fresh per-spawn size variance (living world); a caller
+## can PIN it (net mirrors replay the host's roll; tests want 1.0 for exact
+## stat math). Bosses ignore it — they stay their authored scale.
+static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1, size := -1.0) -> Enemy:
 	var e := Enemy.new()
-	e._setup(game_node, enemy_kind, pos, at_level)
+	e._setup(game_node, enemy_kind, pos, at_level, size)
 	return e
+
+
+## Per-spawn mob size multiplier: a bell curve (mean of 3 uniforms ≈ Irwin-
+## Hall) centered on 1.0 so AVERAGE is common and the ±MOB_SIZE_VAR extremes
+## are rare — a big brute or a runt is a treat, not the norm.
+static func _roll_mob_size() -> float:
+	var b := (randf() + randf() + randf()) / 3.0
+	return 1.0 + (b - 0.5) * 2.0 * Balance.MOB_SIZE_VAR
 
 
 func _ready() -> void:
@@ -210,21 +222,31 @@ func _ready() -> void:
 		game.net_session().host_register_enemy(self)
 
 
-func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1) -> void:
+func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1, size := -1.0) -> void:
 	game = game_node
 	kind = enemy_kind
 	var stats: Dictionary = _stats_for(enemy_kind)
 	display_name = stats["name"]
+	# Size variance (2026-07-17): bosses stay their authored scale; a pinned
+	# size (mirror replay / test) is honoured; otherwise roll the bell curve.
+	if self is Boss or bool(stats.get("boss", false)):
+		size_var = 1.0
+	else:
+		size_var = size if size > 0.0 else _roll_mob_size()
 	# Stats scale with the monster's LEVEL and its per-kind growth rates.
 	# The listed level is a MINIMUM (no downscaling): asking for less
 	# clamps UP — the monster arrives at its anchor, stats as-is.
 	var want: int = at_level if at_level > 0 else int(stats.get("level", 1))
 	var scaled := _stats_at(enemy_kind, want)
 	level = scaled["level"]
-	max_hp = scaled["hp"]
+	# Size couples to stats: HP full (mass), damage/speed at COUPLE of the
+	# size deviation, speed inverse (big = tankier + harder + slower). size_var
+	# is 1.0 for bosses, so this is a no-op for them.
+	var sdev := size_var - 1.0
+	max_hp = scaled["hp"] * size_var
 	hp = max_hp
-	dmg = scaled["dmg"]
-	speed = stats["speed"]
+	dmg = scaled["dmg"] * (1.0 + sdev * Balance.MOB_SIZE_DMG_COUPLE)
+	speed = stats["speed"] * (1.0 - sdev * Balance.MOB_SIZE_SPEED_COUPLE)
 	xp_value = scaled["xp"]
 	gold_value = scaled["gold"]
 	ranged = stats["ranged"]
@@ -269,19 +291,38 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1)
 	collision_mask = 1 | 2 | 4
 	var cs := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
-	shape.radius = 6.0 * stats["scale"] * 0.7
+	shape.radius = 6.0 * float(stats["scale"]) * size_var * 0.7
 	cs.shape = shape
 	add_child(cs)
 
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
-	var vscale: float = float(stats["scale"]) * render_mult  # visual size (mob body)
+	var vscale: float = float(stats["scale"]) * size_var * render_mult  # visual size (mob body)
 	shadow.scale = Vector2(vscale * 0.75, vscale * 0.75)
 	shadow.position = Vector2(0, 6.0 * vscale)
 	add_child(shadow)
 
+	# Signature AURA (def "aura" = Color): a soft ADDITIVE glow behind the body
+	# so a near-black boss reads on same-dark terrain WITHOUT brightening its
+	# own art (cinderhide's obsidian Cerberus on magma). Added above the shadow,
+	# below the body; gently pulses. Deterministic from the def -> co-op-safe.
+	var aura_col: Variant = stats.get("aura")
+	if aura_col is Color:
+		var aura := Sprite2D.new()
+		aura.texture = Art.tex("glow")
+		aura.modulate = aura_col
+		aura.scale = Art.scale_for(aura.texture, float(stats["scale"]) * size_var * 2.2)
+		aura.position = Vector2(0, -vscale)
+		var am := CanvasItemMaterial.new()
+		am.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		aura.material = am
+		add_child(aura)
+		var atw := aura.create_tween().set_loops()
+		atw.tween_property(aura, "modulate:a", (aura_col as Color).a * 0.55, 1.2).set_trans(Tween.TRANS_SINE)
+		atw.tween_property(aura, "modulate:a", (aura_col as Color).a, 1.2).set_trans(Tween.TRANS_SINE)
+
 	sprite = Sprite2D.new()
-	art_scale = float(stats["scale"])
+	art_scale = float(stats["scale"]) * size_var
 	_sprite_key = stats["sprite"]
 	var anim := Art.anim_info(stats["sprite"])
 	if anim.is_empty():
@@ -1462,6 +1503,21 @@ func promote_elite() -> void:
 		return
 	elite = true
 	display_name = "Elite " + display_name
+	# Elites read BIG: bias the body to the top of the size band BEFORE the
+	# elite stat bump, so size itself is the threat tell (owner-approved). Fixed
+	# target = host+guest agree with no extra sync; never shrinks a mob that
+	# already rolled huge. HP tracks the bigger body (full couple); dmg/speed
+	# re-couple off the new size. Visual-only for the sprite (matches how
+	# ELITE_SPRITE_MULT already scales the body, not the hitbox).
+	if size_var < Balance.ELITE_SIZE_BIAS:
+		var grow := Balance.ELITE_SIZE_BIAS / size_var
+		sprite.scale *= grow
+		max_hp *= grow
+		var osd := size_var - 1.0
+		var nsd := Balance.ELITE_SIZE_BIAS - 1.0
+		dmg *= (1.0 + nsd * Balance.MOB_SIZE_DMG_COUPLE) / (1.0 + osd * Balance.MOB_SIZE_DMG_COUPLE)
+		speed *= (1.0 - nsd * Balance.MOB_SIZE_SPEED_COUPLE) / (1.0 - osd * Balance.MOB_SIZE_SPEED_COUPLE)
+		size_var = Balance.ELITE_SIZE_BIAS
 	max_hp *= Balance.ELITE_HP_MULT
 	hp = max_hp
 	dmg *= Balance.ELITE_DMG_MULT

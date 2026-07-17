@@ -19,15 +19,18 @@ const ENEMIES := {
 	# 3 charges EXPLODE. Rotate rods, manage charges. At 30% rods respawn
 	# and arcs come in pairs.
 	"stormdrake_veyx": {
-		"name": "Veyx, the Unchained Current", "sprite": "stormwarden",
+		"name": "Veyx, the Unchained Current", "sprite": "veyx",
 		# XP re-anchored (chapter-budget audit): 1250/1300/2400 paid 1.4-2.5
 		# LEVELS each — Cyrraeth alone was two and a half. Mids ~70%, act
 		# finale ~86% of a level; Act 1 closes at ~L41-42 as designed.
 		# The finale's fanfare stays in its gold (gold has no XP budget).
 		"hp": 62000.0, "dmg": 205.0, "speed": 115.0, "xp": 600, "gold": 980,
-		# A drake the size of a weather front — the 4x+ tier is reserved
-		# for exactly this kind of thing (boss scale doctrine, story.gd).
-		"ranged": true, "scale": 13.0,
+		# A storm-front-sized elemental — the 4x+ tier (boss scale doctrine).
+		# Sprite 2026-07-17: retired the 32px `stormwarden` placeholder for a
+		# custom PixelLab storm-wraith (216px cell, floating, grinning arc-seam).
+		# Scale 13 -> 22 re-tunes for the bigger cell: at 22 the ~120px body
+		# renders ~332px on-screen (~3.8x hero), just under Cyrraeth's finale.
+		"ranged": true, "scale": 22.0,
 		"physres": 20.0, "magres": 45.0, "eva": 0.05, "critres": 9.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 38, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "AGI": 1.0},
