@@ -32,7 +32,15 @@ ROOT    = os.path.dirname(os.path.dirname(HERE))
 DEST    = os.path.join(ROOT, "game", "assets", "sprites")
 BACKUP  = os.path.join(ROOT, "art_src", "heroes_clips")
 EXTRACT = os.path.join(HERE, "extract_sheet.py")
-CUSTOM  = os.environ.get("CROWNLESS_ART_SRC", "C:/Users/asali/OneDrive/Assets/Custom")
+
+
+def _env(name, default):
+    """CROWNLESS_<name>, then the legacy EMBERFALL_<name> (pre-2026-07-17
+    rename), then default — a stale export keeps working."""
+    return os.environ.get("CROWNLESS_" + name) or os.environ.get("EMBERFALL_" + name) or default
+
+
+CUSTOM  = _env("ART_SRC", "C:/Users/asali/OneDrive/Assets/Custom")
 
 # Per class: the (2) sheet + its clip order (extract_sheet names, "idle"->_anim),
 # the body map {dest suffix: upscale-source stem}, and any 8-way directional
@@ -237,8 +245,7 @@ def _mirror_strip(im):
 
 def build(cls):
     cfg = CLASSES[cls]
-    upsrc = os.environ.get("CROWNLESS_UPSCALE_SRC",
-                           os.path.join(CUSTOM, cls + "_upscaled"))
+    upsrc = _env("UPSCALE_SRC", os.path.join(CUSTOM, cls + "_upscaled"))
     if not os.path.isdir(upsrc):
         sys.exit("missing upscale source dir: %s" % upsrc)
 
