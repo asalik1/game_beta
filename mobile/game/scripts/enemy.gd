@@ -941,6 +941,7 @@ func _think(delta: float) -> Vector2:
 			attack_cd = 1.58
 			game.sfx("bolt")
 			var p := Projectile.spawn(game, global_position, to_player.normalized() * 420.0, _hit_dmg(), false, "bolt")
+			p.rise = _muzzle_rise()
 			p.hostile_type = dmg_type
 			p.source_enemy = self
 		# Snarer lobs a freeze-patch at the player's feet on its own cadence.
@@ -1301,9 +1302,17 @@ func _heal_pulse() -> void:
 
 # ---- web / snare / reflect / counter / blink ----
 
+## Visual muzzle height for this body's bolts (Projectile.rise): lifts the
+## drawn shot from the center-anchored origin to chest/mouth height, scaling
+## with the body. Bosses inherit — their bigger scale raises it to match.
+func _muzzle_rise() -> float:
+	return Balance.MOB_MUZZLE_RISE * art_scale * render_mult
+
+
 func _web_shot(aim: Vector2) -> void:
 	game.sfx("bolt", 0.7)
 	var p := Projectile.spawn(game, global_position, aim * 300.0, dmg * 0.4, false, "bolt")
+	p.rise = _muzzle_rise()
 	p.hostile_type = dmg_type
 	p.source_enemy = self
 	p.root_dur = Balance.MOB_WEB_ROOT

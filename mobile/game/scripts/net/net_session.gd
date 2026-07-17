@@ -1484,6 +1484,7 @@ func announce_projectile(p: Projectile) -> void:
 		"pos": p.global_position, "vel": p.vel, "tex": p.tex_kind,
 		"f": p.friendly, "pi": p.pierce, "ho": p.homing, "li": p.life,
 		"mo": p.modulate, "gl": p.glow_color, "sp": p.spin, "sc": p.scale,
+		"ri": p.rise,
 	}
 	if not p.friendly and multiplayer.is_server():
 		_net_proj_counter += 1
@@ -1529,6 +1530,7 @@ func _spawn_projectile_visual(block: Dictionary) -> void:
 	p.glow_color = block.get("gl", p.glow_color)
 	p.spin = bool(block.get("sp", true))
 	p.scale = block.get("sc", Vector2.ONE)
+	p.rise = float(block.get("ri", 0.0))
 	var src_id := int(block.get("src", 0))
 	if src_id > 0:
 		var m: Enemy = net_enemies.get(src_id)

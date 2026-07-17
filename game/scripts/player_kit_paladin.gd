@@ -351,23 +351,26 @@ func _chains_of_wrath(f := 1.0) -> void:
 ## A taut chain of REAL links snapping from the hero to a tethered enemy,
 ## then reeling inward with the drag.
 func _chain_link_fx(to: Vector2, col: Color) -> void:
-	var span := to - global_position
+	# The chain leaves the HANDS, not the hip — the node origin sits at hip
+	# height on the feet-anchored body (same lift as the projectile muzzle).
+	var hands := global_position + Vector2(0, -Balance.PROJ_MUZZLE_RISE)
+	var span := to - hands
 	var links := maxi(3, int(span.length() / 26.0))
 	for i in links:
 		var t := (i + 0.5) / float(links)
 		var link := Sprite2D.new()
 		link.texture = Art.tex("ring")
 		link.modulate = Color(col, 0.95)
-		link.global_position = global_position + span * t
+		link.global_position = hands + span * t
 		link.rotation = span.angle()
 		link.scale = Vector2(0.24, 0.15)  # a squashed ring reads as a link
 		link.z_index = 7
 		game.add_child(link)
 		var tw := link.create_tween()
 		# Links reel in with the catch, vanishing as they arrive.
-		tw.tween_property(link, "global_position", global_position + span * t * 0.2, 0.3) \
+		tw.tween_property(link, "global_position", hands + span * t * 0.2, 0.3) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		tw.parallel().tween_property(link, "modulate:a", 0.0, 0.3)
 		tw.tween_callback(link.queue_free)
 	# The taut line itself flashes once as the chain snaps home.
-	_beam_fx(global_position, to, col, 0.14)
+	_beam_fx(hands, to, col, 0.14)

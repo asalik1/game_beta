@@ -19,6 +19,17 @@ var glow_color := Color(1, 1, 1)
 var tex_kind := ""
 var spr: Sprite2D = null       # thrown knives spin in flight
 var spin := true               # darts (assassin fan) fly POINT-FIRST instead
+## Visual-only muzzle height: the sprite/glow/trail DRAW this many px above
+## the physics position (hand height on the feet-anchored hero body), so an
+## arrow leaves the bow instead of the hip. The flight line, collision and
+## ground effects (bloom mist) stay on the origin plane — Y is a ground axis,
+## so raising the physics position would change what the shot hits.
+var rise := 0.0:
+	set(v):
+		rise = v
+		if _vis != null:  # applied on assignment — callers stamp it right after spawn
+			_vis.position.y = -v
+var _vis: Node2D = null        # container for every visual child (set in spawn)
 var homing := false            # Wind firebolt: friendly bolt curves to a target
 # --- MP-10 (§4.1 projectile row: spawn event + local flight) ---
 # net_visual: another peer's projectile flying HERE as pure presentation —
@@ -52,6 +63,12 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	p.tex_kind = tex_name
 	p.glow_color = GLOWS.get(tex_name, Color(1, 1, 1))
 
+	# Every visual child rides in _vis so `rise` can lift the drawn shot to
+	# hand height without moving the physics body (see the var's comment).
+	var vis := Node2D.new()
+	p._vis = vis
+	p.add_child(vis)
+
 	# Soft glow behind the bullet so it pops against any background.
 	# Magic bolts burn hotter.
 	var glow := Sprite2D.new()
@@ -59,11 +76,11 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	var hot := tex_name in ["fireball", "icelance", "shadowbolt"]
 	glow.modulate = Art.hdr(Color(p.glow_color, 0.8 if hot else 0.6))
 	glow.scale = Vector2(1.35, 1.35) if hot else Vector2(1.0, 1.0)
-	p.add_child(glow)
+	vis.add_child(glow)
 	if hot:
 		# Magic bolts CARRY light: walls and ground brighten as they pass
 		# (scaled to the room's darkness — daylight mutes it).
-		p.add_child(Art.light(p.glow_color, 95.0, 0.85 * p.game.light_mult))
+		vis.add_child(Art.light(p.glow_color, 95.0, 0.85 * p.game.light_mult))
 
 	# Fire magic trails sparks; ice trails frost; shadow trails void wisps.
 	if hot:
@@ -81,7 +98,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			"icelance": Color(0.75, 0.95, 1.0),
 			"shadowbolt": Color(0.6, 0.3, 0.9),
 		}[tex_name]
-		p.add_child(sparks)
+		vis.add_child(sparks)
 
 	# Arrows and knives streak: a thin motion trail behind the tip.
 	# Knives read SHARP (round 26): longer, thinner streak, dimmer glow,
@@ -93,7 +110,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 		trail.rotation = velocity.angle()
 		trail.position = -velocity.normalized() * 15.0
 		trail.scale = Vector2(1.6, 0.2) if tex_name == "arrow" else Vector2(2.6, 0.12)
-		p.add_child(trail)
+		vis.add_child(trail)
 	if tex_name == "knife":
 		glow.modulate.a = 0.35
 		glow.scale = Vector2(0.7, 0.7)
@@ -120,7 +137,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			glow.modulate = Art.hdr(Color(p.glow_color, 0.75))
 		_: sprite.scale = Vector2(3, 3)
 	sprite.rotation = velocity.angle()
-	p.add_child(sprite)
+	vis.add_child(sprite)
 	p.spr = sprite
 
 	var cs := CollisionShape2D.new()
@@ -208,6 +225,12 @@ func _bloom() -> void:
 			fx.get("bloom_color", Color(0.45, 0.95, 0.3)), 3.0)
 
 
+## Where the shot is DRAWN (physics position lifted by the muzzle rise) —
+## impact FX spawn here so the burst lands on the arrow, not below it.
+func _fx_pos() -> Vector2:
+	return global_position + Vector2(0, -rise)
+
+
 ## A quick expanding shockwave where a magic bolt lands.
 ## Darts get a smaller, snappier ring so fan-of-knives hits register
 ## even when the flight itself was too short to see (round 31).
@@ -218,7 +241,7 @@ func _impact_ring() -> void:
 	var ring := Sprite2D.new()
 	ring.texture = Art.tex("ring")
 	ring.modulate = Art.hdr(Color(glow_color, 0.9))
-	ring.global_position = global_position
+	ring.global_position = _fx_pos()
 	ring.scale = Vector2(0.25, 0.25) if small else Vector2(0.4, 0.4)
 	ring.z_index = 8
 	game.add_child(ring)
@@ -237,22 +260,22 @@ func _on_body_entered(body: Node) -> void:
 			if _already_hit.has(body):
 				return
 			_already_hit[body] = true
-			game.burst(global_position, glow_color, 5)
+			game.burst(_fx_pos(), glow_color, 5)
 			_impact_ring()
 			if not pierce:
 				queue_free()
 		elif not friendly and body is Player:
-			game.burst(global_position, glow_color, 5)
+			game.burst(_fx_pos(), glow_color, 5)
 			queue_free()
 		elif body is StaticBody2D:
-			game.burst(global_position, Color(glow_color, 0.5), 3)
+			game.burst(_fx_pos(), Color(glow_color, 0.5), 3)
 			queue_free()
 		return
 	if friendly and body is Enemy:
 		if _already_hit.has(body):
 			return
 		_already_hit[body] = true
-		game.burst(global_position, glow_color, 5)
+		game.burst(_fx_pos(), glow_color, 5)
 		_impact_ring()
 		if is_instance_valid(source_player):
 			# Resolve with the payload SNAPSHOT this shot was fired with (fx,
@@ -277,7 +300,7 @@ func _on_body_entered(body: Node) -> void:
 			_bloom()
 			queue_free()
 	elif not friendly and body is Player:
-		game.burst(global_position, glow_color, 5)
+		game.burst(_fx_pos(), glow_color, 5)
 		var shooter: Node = source_enemy if is_instance_valid(source_enemy) else null
 		body.take_damage(dmg, hostile_type, shooter)
 		# Webber's snare shot (mob mechanic): roots the player on hit —
@@ -286,7 +309,7 @@ func _on_body_entered(body: Node) -> void:
 			body.apply_root(root_dur)
 		queue_free()
 	elif body is StaticBody2D:
-		game.burst(global_position, Color(glow_color, 0.5), 3)
+		game.burst(_fx_pos(), Color(glow_color, 0.5), 3)
 		if friendly:
 			_impact_ring()
 			_bloom()
@@ -330,6 +353,7 @@ func _spawn_ricochet(dir: Vector2) -> void:
 	# The leap keeps the parent's look: arrows ricochet as arrows,
 	# shadowbolts (Hollow Choir) split as shadowbolts.
 	var p := Projectile.spawn(game, global_position + dir * 10.0, dir * 520.0, 0.0, true, tex_kind)
+	p.rise = rise  # the leap keeps flying at the parent's drawn height
 	p.modulate = modulate
 	p.source_player = source_player
 	p.hit_player_mult = hit_player_mult * 0.6

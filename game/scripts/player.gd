@@ -815,7 +815,10 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			aegis_proj_left -= 1
 			var shooter := attacker as Enemy
 			game.sfx("nova", 1.3)
-			_beam_fx(global_position, shooter.global_position, Color(1.0, 0.92, 0.55), 0.14)
+			# From the raised shield (hand height), not the hip — the node
+			# origin sits low on the feet-anchored body (same muzzle lift).
+			_beam_fx(global_position + Vector2(0, -Balance.PROJ_MUZZLE_RISE),
+					shooter.global_position, Color(1.0, 0.92, 0.55), 0.14)
 			_smite_rip(shooter.global_position, Color(1.0, 0.92, 0.55))
 			var saved_fx := _tfx
 			_tfx = aegis_fx

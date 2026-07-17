@@ -60,6 +60,7 @@ func _strike(action: String, fx: Callable, delay := -1.0) -> void:
 ## (crit/pen/dex) so it resolves against the player like any real hit.
 func _bolt(velocity: Vector2, damage: float) -> void:
 	var p := Projectile.spawn(game, global_position, velocity, damage, false, "bolt")
+	p.rise = _muzzle_rise()
 	p.hostile_type = dmg_type
 	p.source_enemy = self
 
@@ -1004,6 +1005,7 @@ func _grief_fan(aim: Vector2) -> void:
 	game.sfx("bolt")
 	for spread in [-0.22, 0.0, 0.22]:
 		var p := Projectile.spawn(game, from, aim.rotated(spread) * 320.0, dmg, false, "bolt")
+		p.rise = _muzzle_rise()
 		p.hostile_type = dmg_type
 		p.source_enemy = self
 

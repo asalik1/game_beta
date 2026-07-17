@@ -399,6 +399,8 @@ const WARRIOR_SWING_DELAY := 0.13 # delay Cleave's cut/quake to the sword swing'
 const MAGE_BOLT_DELAY := 0.12     # delay Firebolt to the staff-thrust release frame (same windup-vs-FX sync)
 const ARCHER_LOOSE_DELAY := 0.25  # delay Quick Shot / Multishot / Arrow Storm to the bow's draw-release frame (~frame 7 of the re-rolled 9-frame draw@22fps — the string snaps forward at t≈0.25; 0.12 loosed mid-draw)
 const WARLOCK_CAST_DELAY := 0.16  # delay Shadowbolt / Hex to the arm-snap/sigil-projection frame (~frame 4 of the re-rolled upright cast; Dark Pact = self-buff stays instant; Void Rift self-sequences via its telegraph)
+const PROJ_MUZZLE_RISE := 26.0    # friendly shots (arrow/bolt/knife) DRAW this many px above the node origin — hand/chest height of the feet-anchored hero body, so the arrow leaves the bow, not the hip. Visual only: the flight line and collision stay on the origin plane (Y is a ground axis)
+const MOB_MUZZLE_RISE := 4.0      # hostile bolts DRAW this ×(mob scale × CHAR_RENDER_SCALE) px above the caster's origin. Mob/boss sprites are CENTER-anchored (unlike the feet-anchored hero), so origin is mid-body — this lifts the bolt to chest/mouth height, scaling with the body (~quarter height). Same visual-only rise mechanism as PROJ_MUZZLE_RISE
 const PHANTOM_ULT_SPLASH_OPACITY := 0.10        # Phantom ult: the splash-art screen wash opacity
 const PHANTOM_ULT_SPLASH_OPACITY_BRIGHT := 0.15 # +5% on "bright" maps (light backdrops wash the wash out)
 # Bosses got v3 ability strips (a real swing/cast windup) — same rule as the

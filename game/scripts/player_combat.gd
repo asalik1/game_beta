@@ -919,7 +919,7 @@ func _muzzle(dir: Vector2, color: Color) -> void:
 	var fl := Sprite2D.new()
 	fl.texture = Art.tex("glow")
 	fl.modulate = Art.hdr(Color(color, 0.85))
-	fl.position = dir * 26.0
+	fl.position = dir * 26.0 + Vector2(0, -Balance.PROJ_MUZZLE_RISE)
 	fl.scale = Vector2(0.5, 0.5)
 	fl.z_index = 6
 	add_child(fl)
@@ -1051,6 +1051,10 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 
 func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectile:
 	var p := Projectile.spawn(game, global_position + dir * 24.0, dir * speed_px, 0.0, true, tex)
+	# Draw the shot at hand height (visual only — the flight line stays on the
+	# origin plane): the node origin sits at hip height on the feet-anchored
+	# body, and an arrow spawned there leaves ~26px below the drawn bow.
+	p.rise = Balance.PROJ_MUZZLE_RISE
 	p.hit_player_mult = mult
 	p.source_player = self
 	p.fx = _tfx.duplicate()
@@ -1059,7 +1063,8 @@ func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectil
 	# Caster tell: a Ninja-pack summoning ring blooms at the hands on a
 	# magic-damage cast (CC0), tinted to the theme (or a cool arcane blue).
 	if Classes.CLASSES[cls]["dmg_type"] == "magic":
-		_fx_flash("fx_circle", global_position + dir * 18.0 + Vector2(0, 2), 4, {
+		_fx_flash("fx_circle", global_position + dir * 18.0
+				+ Vector2(0, 2 - Balance.PROJ_MUZZLE_RISE), 4, {
 			"color": _tcolor if _themed else Color(0.62, 0.76, 1.0),
 			"scale": 1.5, "z": 3, "frame_time": 0.05, "alpha": 0.85,
 		})
