@@ -1723,6 +1723,28 @@ static func ability_icon(cls: String, slot: String, tint := Color(0.92, 0.92, 0.
 	return glyph_tex(ABILITY_GLYPH[cls][slot], tint)
 
 
+## A soft WHITE radial gradient (bright centre, transparent rim), cached once
+## and reused for every ability slot. The caller modulates it by the equipped
+## variant's theme color, so the icon reads as lit by its element and the slot
+## carries the variant colour at a glance. Peak alpha ~0.5 at centre; modulate
+## alpha scales it (dim neutral for a slot with no variant chosen yet). Drawn
+## at 64px and filtered LINEAR — it is a smooth gradient, not pixel art.
+static func ability_glow() -> ImageTexture:
+	if _cache.has("ability_glow"):
+		return _cache["ability_glow"]
+	var n := 64
+	var im := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
+	var c := (n - 1) / 2.0
+	for y in n:
+		for x in n:
+			var r: float = sqrt((x - c) * (x - c) + (y - c) * (y - c)) / (n * 0.5)
+			var a: float = clampf(0.5 * (1.0 - r), 0.0, 0.5)
+			im.set_pixel(x, y, Color(1, 1, 1, a))
+	var t := ImageTexture.create_from_image(im)
+	_cache["ability_glow"] = t
+	return t
+
+
 ## Build (and cache) a tinted glyph texture, upscaled for UI use.
 static func glyph_tex(name: String, tint := Color(0.92, 0.92, 0.98)) -> ImageTexture:
 	var key := "glyph_%s_%s" % [name, tint.to_html(false)]

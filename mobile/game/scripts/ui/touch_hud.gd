@@ -110,6 +110,20 @@ func _make_button(id: String) -> void:
 	var diam: float = BTN_D if ABILITY_SLOTS.has(id) else BTN_SD
 	var pnl := _circle(diam, Color(0.06, 0.07, 0.11, 0.72), Color(0.5, 0.55, 0.7, 0.7), 3.0)
 	add_child(pnl)
+	# Variant glow behind the icon (ability slots only), tinted per frame by the
+	# equipped theme — mirrors the desktop bar. Added before the icon so it sits
+	# under it; the radial fades to transparent, so a square glow reads fine
+	# inside the round panel.
+	var glow: TextureRect = null
+	if ABILITY_SLOTS.has(id):
+		glow = TextureRect.new()
+		glow.texture = Art.ability_glow()
+		glow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		glow.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		glow.position = Vector2.ZERO
+		glow.size = Vector2(diam, diam)
+		pnl.add_child(glow)
 	var icon := TextureRect.new()
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -134,7 +148,7 @@ func _make_button(id: String) -> void:
 		"lock": icon.texture = Art.tex("crosshair")
 		"interact": lbl.text = "Act"
 		"potion_next": lbl.text = "⟳"
-	_btns[id] = {"panel": pnl, "icon": icon, "label": lbl, "diam": diam, "center": Vector2.ZERO}
+	_btns[id] = {"panel": pnl, "icon": icon, "glow": glow, "label": lbl, "diam": diam, "center": Vector2.ZERO}
 
 
 ## Position every widget relative to the bottom-right cluster origin. Re-runs on
@@ -200,9 +214,12 @@ func _refresh_ability_icons() -> void:
 	for slot in ABILITY_SLOTS:
 		var b: Dictionary = _btns[slot]
 		var theme: Dictionary = Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
-		var icon_tex: Texture2D = Art.ability_icon(p.cls, slot,
-			theme.get("color", Color(0.85, 0.85, 0.92)))
+		var tcol: Color = theme.get("color", Color(0.85, 0.85, 0.92))
+		var icon_tex: Texture2D = Art.ability_icon(p.cls, slot, tcol)
 		(b["icon"] as TextureRect).texture = icon_tex
+		# Variant glow: theme colour when equipped, dim neutral when bare.
+		if b["glow"] != null:
+			(b["glow"] as TextureRect).modulate = tcol if not theme.is_empty() else Color(0.42, 0.46, 0.6, 0.55)
 		var remaining: float = p.cds[slot]
 		var max_cd: float = p.ability_cd(slot)
 		var cost: float = p.ability_cost(slot)

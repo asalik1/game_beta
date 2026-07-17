@@ -561,6 +561,18 @@ func _build_ability_bar() -> void:
 		bg.size = Vector2(SLOT_SIZE, SLOT_SIZE)
 		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(bg)
+		# Variant glow: a soft radial tinted by the equipped theme's colour, so
+		# the icon reads as lit by its element and the slot shows the variant at
+		# a glance (the untinted art can't carry that itself). Modulate is set
+		# per frame; a slot with no variant chosen falls to a dim neutral.
+		var glow := TextureRect.new()
+		glow.texture = Art.ability_glow()
+		glow.position = Vector2(x, y)
+		glow.size = Vector2(SLOT_SIZE, SLOT_SIZE)
+		glow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		glow.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR   # smooth gradient
+		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(glow)
 		# Ability art, centred at its NATIVE 32x32 (2026-07-17). The old box was
 		# SLOT_SIZE-16 = 44 — a 1.375x NEAREST magnification of 32px art, which
 		# duplicates pixel rows unevenly (some 1px, some 2px) and made the whole
@@ -586,7 +598,7 @@ func _build_ability_bar() -> void:
 		var key := _label(Vector2(x + 4, y - 1), 12, Color(0.95, 0.85, 0.5), 50)
 		var cost := _label(Vector2(x, y + SLOT_SIZE - 20), 12, Color(0.5, 0.7, 1.0), SLOT_SIZE - 5, HORIZONTAL_ALIGNMENT_RIGHT)
 		var name_l := _label(Vector2(x - 8, y + SLOT_SIZE + 4), 12, Color(1, 1, 1), SLOT_SIZE + 16, HORIZONTAL_ALIGNMENT_CENTER)
-		slot_boxes.append({"border": border, "bg": bg, "icon": icon, "cd": cd, "num": num,
+		slot_boxes.append({"border": border, "bg": bg, "glow": glow, "icon": icon, "cd": cd, "num": num,
 			"key": key, "cost": cost, "name": name_l, "was_ready": true, "flash_ms": 0})
 		x += 70.0
 
@@ -1316,6 +1328,9 @@ func update_stats(p: Player) -> void:
 			box["key"].text = OS.get_keycode_string(game.binds["potion"])
 			box["cd"].size.y = 0.0
 			box["cost"].text = ""
+			# The potion isn't a variant — a dim neutral glow, matching a bare
+			# ability slot, so it doesn't sit at the default full-white texture.
+			box["glow"].modulate = Color(0.42, 0.46, 0.6, 0.55)
 			# Per-room potion budget (2026-07-07 v2): the loadout's slots
 			# for the CURRENT room; spent loadout = the slot reads locked.
 			var left: int = p.room_potions_left()
@@ -1350,6 +1365,10 @@ func update_stats(p: Player) -> void:
 		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
 		var tcol: Color = theme.get("color", Color(0.85, 0.85, 0.92))
 		box["icon"].texture = Art.ability_icon(p.cls, slot, tcol)
+		# Variant glow behind the icon: the equipped theme's colour when one is
+		# chosen, a dim neutral when the slot is still bare (paladin's ult
+		# overrides this below to follow its stance).
+		box["glow"].modulate = tcol if not theme.is_empty() else Color(0.42, 0.46, 0.6, 0.55)
 		var cost := p.ability_cost(slot)
 		box["key"].text = OS.get_keycode_string(game.binds[slot])
 		box["name"].text = ab["name"]
@@ -1368,6 +1387,9 @@ func update_stats(p: Player) -> void:
 			box["name"].text = "◆ HOLY" if holy else "◆ RETRI"
 			var scol := Color(1.0, 0.92, 0.55) if holy else Color(1.0, 0.5, 0.28)
 			box["name"].add_theme_color_override("font_color", scol)
+			# The stance also lights the slot glow (gold Holy / ember Retri), so
+			# the whole slot reads the form you're in, not just the name.
+			box["glow"].modulate = scol
 			# The stance still reads off the NAME ("◆ HOLY" in gold) either way;
 			# only the 2-color glyph gets the stance modulate, for the same
 			# reason ability_icon() leaves hand art untinted.
