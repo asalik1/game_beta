@@ -130,6 +130,8 @@ var party_names_alpha := 0.85
 # A compact top-center transcript — the initiator picks the choices, the rest
 # of the party reads along. Built lazily on the first beat; solo never builds.
 var mirror_box: Control = null
+var mirror_frame: ColorRect = null
+var mirror_inner: ColorRect = null
 var mirror_header: Label = null
 var mirror_speaker: Label = null
 var mirror_text: Label = null
@@ -1041,6 +1043,14 @@ func achievement_toast(name: String, desc: String) -> void:
 	nm.add_theme_font_size_override("font_size", 15)
 	nm.add_theme_color_override("font_color", Color(1, 1, 1))
 	panel.add_child(nm)
+	# The longest name+desc pairs already brush the 440px frame; anything
+	# longer would spill past the gold border. Widen the panel to the line
+	# (keeping it centered) instead of letting the label outgrow it.
+	var line_w: float = nm.get_theme_font("font").get_string_size(
+		nm.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+	if line_w + 28.0 > panel.size.x:
+		panel.size.x = line_w + 28.0
+		panel.position.x = 640.0 - panel.size.x * 0.5
 	panel.modulate.a = 0.0
 	var tw := create_tween()
 	tw.tween_property(panel, "modulate:a", 1.0, 0.3)
@@ -1150,6 +1160,23 @@ func _label(pos: Vector2, font_size: int, color: Color, width := 500.0, align :=
 	_outline(l)
 	add_child(l)
 	return l
+
+
+## Ability names sit in a 76px label on the bar's 70px slot pitch, and a
+## Label's rect can't shrink below its text — so a long name ("Fan of
+## Knives") widened the rect and piled into the neighbour slot's label.
+## Step the font down until the name spans at most one slot pitch, and
+## re-pin the rect to its build width so centering stays on the slot.
+func _fit_name(l: Label) -> void:
+	if String(l.get_meta("fit_txt", "")) == l.text:
+		return
+	l.set_meta("fit_txt", l.text)
+	var f := l.get_theme_font("font")
+	var s := 12
+	while s > 8 and f.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x > SLOT_SIZE + 10.0:
+		s -= 1
+	l.add_theme_font_size_override("font_size", s)
+	l.size = Vector2(SLOT_SIZE + 16.0, s + 14.0)
 
 
 func _outline(l: Label) -> void:
@@ -1312,6 +1339,7 @@ func update_stats(p: Player) -> void:
 						p.potion_display_name(p.active_potion), cnt,
 						left, p.potion_slot_cap(),
 						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]))
+			_fit_name(box["name"])
 			continue
 		var ab := Classes.ability(p.cls, slot)
 		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
@@ -1341,6 +1369,7 @@ func update_stats(p: Player) -> void:
 			box["icon"].modulate = Color(1, 1, 1) if Art.has_ability_art(p.cls, slot) else scol
 		elif box["icon"] != null:
 			box["icon"].modulate = Color(1, 1, 1)
+		_fit_name(box["name"])
 		# Detail card: name/key/cost/cd, the ability's own words, then the
 		# assigned theme's variant line — built from live values, so cd
 		# talents and mana amods read truthfully.
@@ -1394,6 +1423,11 @@ func set_zone(text: String) -> void:
 
 func set_quest(text: String) -> void:
 	quest_label.text = "◆  " + game.touchify(text)
+	# The longest quest line + " — N monsters left" can exceed the 800px rect;
+	# the rect grows RIGHT from x=240, drifting the line off the 640 center.
+	# Re-clamp against the new text and re-pin the center.
+	quest_label.size = Vector2(800, 30)
+	quest_label.position.x = 640.0 - quest_label.size.x * 0.5
 
 
 # ------------------------------------------ downed / revive UI (MP-12 §5.3) ---
@@ -1864,13 +1898,18 @@ func loot_banner(item: Dictionary, bonus_gold: int) -> void:
 	box.add_child(icon)
 	var l := Label.new()
 	l.position = Vector2(40, -2)
-	l.size = Vector2(380, 44)
 	l.add_theme_font_size_override("font_size", 15)
 	l.add_theme_color_override("font_color", Items.GRADE_COLOR[item["grade"]])
 	_outline(l)
-	l.text = "+ %s  (+%d gold)\n   %s" % [Items.title(item), bonus_gold, Items.describe(item)]
+	# A legendary's describe line (stats + ★ passive) can run 150+ chars — a
+	# single-line label grows to fit and sails off the right screen edge. Fold
+	# it to the banner's width and let this banner take more vertical room.
+	var body := _wrap_tip(Items.describe(item), 46).replace("\n", "\n   ")
+	l.text = "+ %s  (+%d gold)\n   %s" % [Items.title(item), bonus_gold, body]
+	var lines: int = l.text.count("\n") + 1
+	l.size = Vector2(380, lines * 21.0 + 2.0)
 	box.add_child(l)
-	banner_y = 110.0 if banner_y > 260.0 else banner_y + 52.0
+	banner_y = 110.0 if banner_y > 260.0 else banner_y + maxf(52.0, lines * 21.0 + 10.0)
 	var tween := box.create_tween()
 	tween.tween_interval(3.2)
 	tween.tween_property(box, "modulate:a", 0.0, 0.6)
@@ -2277,18 +2316,18 @@ func _ensure_mirror() -> void:
 	mirror_box = Control.new()
 	mirror_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(mirror_box)
-	var frame := ColorRect.new()
-	frame.color = Color(0.55, 0.5, 0.75)  # a cooler frame than your own gold box
-	frame.position = Vector2(340, 150)
-	frame.size = Vector2(600, 132)
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	mirror_box.add_child(frame)
-	var inner := ColorRect.new()
-	inner.color = Color(0.08, 0.07, 0.12, 0.94)
-	inner.position = Vector2(343, 153)
-	inner.size = Vector2(594, 126)
-	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	mirror_box.add_child(inner)
+	mirror_frame = ColorRect.new()
+	mirror_frame.color = Color(0.55, 0.5, 0.75)  # a cooler frame than your own gold box
+	mirror_frame.position = Vector2(340, 150)
+	mirror_frame.size = Vector2(600, 132)
+	mirror_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mirror_box.add_child(mirror_frame)
+	mirror_inner = ColorRect.new()
+	mirror_inner.color = Color(0.08, 0.07, 0.12, 0.94)
+	mirror_inner.position = Vector2(343, 153)
+	mirror_inner.size = Vector2(594, 126)
+	mirror_inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mirror_box.add_child(mirror_inner)
 	mirror_header = Label.new()
 	mirror_header.position = Vector2(356, 158)
 	mirror_header.add_theme_font_size_override("font_size", 12)
@@ -2303,15 +2342,53 @@ func _ensure_mirror() -> void:
 	mirror_text.position = Vector2(356, 200)
 	mirror_text.size = Vector2(568, 48)
 	mirror_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Safety rail only (never a design behavior): a beat that trips the
+	# ellipsis should be edited shorter, not scrolled.
+	mirror_text.max_lines_visible = 8
+	mirror_text.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	mirror_text.add_theme_font_size_override("font_size", 14)
 	mirror_box.add_child(mirror_text)
 	mirror_options = Label.new()
 	mirror_options.position = Vector2(356, 252)
 	mirror_options.size = Vector2(568, 22)
+	mirror_options.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	mirror_options.max_lines_visible = 3
+	mirror_options.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	mirror_options.add_theme_font_size_override("font_size", 12)
 	mirror_options.add_theme_color_override("font_color", Color(0.62, 0.67, 0.82))
 	mirror_box.add_child(mirror_options)
 	mirror_box.visible = false
+
+
+## Size the frame to its content. The text label autowraps in a fixed
+## 568px column, and a wrapped Label's rect grows DOWN to its min height
+## — a paragraph-long beat used to spill straight past the fixed 132px
+## frame bottom (and a long 3-choice summary past its single row). Measure
+## the wrapped line counts, stack text → options, and pull the frame down
+## around them; short beats land on the same compact box as before.
+func _mirror_layout() -> void:
+	var f: Font = mirror_text.get_theme_font("font")
+	var text_h := 24.0
+	if mirror_text.text != "":
+		var lh: float = f.get_height(14) + 3.0   # +line spacing
+		var lines: int = maxi(1, int(roundf(
+			f.get_multiline_string_size(mirror_text.text, HORIZONTAL_ALIGNMENT_LEFT,
+				568.0, 14, mirror_text.max_lines_visible).y / f.get_height(14))))
+		text_h = lines * lh
+	mirror_text.size = Vector2(568, text_h)
+	var opt_y := 200.0 + text_h + 6.0
+	var opt_h := 0.0
+	if mirror_options.text != "":
+		var olh: float = f.get_height(12) + 3.0
+		var olines: int = maxi(1, int(roundf(
+			f.get_multiline_string_size(mirror_options.text, HORIZONTAL_ALIGNMENT_LEFT,
+				568.0, 12, mirror_options.max_lines_visible).y / f.get_height(12))))
+		opt_h = olines * olh
+	mirror_options.position.y = opt_y
+	mirror_options.size = Vector2(568, maxf(opt_h, 22.0))
+	var bottom := opt_y + opt_h + 8.0
+	mirror_frame.size.y = bottom - 150.0 + 3.0
+	mirror_inner.size.y = mirror_frame.size.y - 6.0
 
 
 ## A beat began — someone else is speaking. Open the read-only transcript.
@@ -2321,6 +2398,7 @@ func mirror_begin(initiator: String) -> void:
 	mirror_speaker.text = ""
 	mirror_text.text = ""
 	mirror_options.text = ""
+	_mirror_layout()
 	mirror_box.visible = true
 
 
@@ -2336,6 +2414,7 @@ func mirror_line(speaker: String, text: String, options: Array) -> void:
 		for o in options:
 			parts.append(String(o))
 		mirror_options.text = "deciding:  " + "   ·   ".join(parts)
+	_mirror_layout()
 	mirror_box.visible = true
 
 
