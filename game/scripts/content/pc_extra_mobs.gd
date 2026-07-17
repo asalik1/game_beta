@@ -53,14 +53,33 @@ const ENEMIES := {
 		"lore": "The biggest thing the warren could grow, strapped into the biggest thing it could steal."},
 	# --- salvaged art (2026-07-17) ---
 	# The old spider-quintet body — a glossy amber "tick" (122-color AA gradient)
-	# — was replaced by a proper top-down spider (see ART_QUALITY_REPORT.md). The
-	# retired art reads honestly as a tick, so it's kept here as a spare mob for
-	# future repurposing rather than discarded. UNPLACED on purpose -> dev-launcher
-	# only, tagged [placeholder] in the codex. "placeholder": true documents intent
-	# (mob placeholder is derived from being unplaced; the key is inert for mobs but
-	# future-proofs the def). Stats cloned from the old Marsh Spider, web trait dropped.
+	# and its four recolors — was replaced by a proper top-down spider (see
+	# ART_QUALITY_REPORT.md). The retired art reads honestly as a tick, so the WHOLE
+	# five-color set is kept here as spare mobs for future repurposing rather than
+	# discarded. All UNPLACED on purpose -> dev-launcher only, tagged [placeholder]
+	# in the codex. "placeholder": true documents intent (mob placeholder is derived
+	# from being unplaced; the key is inert for mobs but future-proofs the def). Stats
+	# cloned from the old Marsh Spider, web trait dropped. Sprites: tick (amber base) +
+	# tick_green/tick_pale/tick_cyan/tick_orange (old bog_lurker/casket_creeper/
+	# deep_stalker/vent_skitter recolors, restored under new names).
 	"tick": {"name": "Gorged Tick", "sprite": "tick", "hp": 28.0, "dmg": 9.0, "speed": 215.0, "xp": 8, "gold": 5, "ranged": false, "scale": 3.0,
 		"physres": 0.0, "magres": 5.0, "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
 		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"], "placeholder": true,
 		"lore": "Bloated and blood-slow until it isn't. Salvaged art awaiting a home — a parasite for some future rot."},
+	"tick_green": {"name": "Bog Tick", "sprite": "tick_green", "hp": 28.0, "dmg": 9.0, "speed": 215.0, "xp": 8, "gold": 5, "ranged": false, "scale": 3.0,
+		"physres": 0.0, "magres": 5.0, "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
+		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"], "placeholder": true,
+		"lore": "Green as the water it hides in, fat on whatever the marsh drowns. Salvaged art awaiting a home."},
+	"tick_pale": {"name": "Grave Tick", "sprite": "tick_pale", "hp": 28.0, "dmg": 9.0, "speed": 215.0, "xp": 8, "gold": 5, "ranged": false, "scale": 3.0,
+		"physres": 0.0, "magres": 5.0, "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
+		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"], "placeholder": true,
+		"lore": "Pale as gravecloth, swollen on the quiet dead. Salvaged art awaiting a home."},
+	"tick_cyan": {"name": "Rime Tick", "sprite": "tick_cyan", "hp": 28.0, "dmg": 9.0, "speed": 215.0, "xp": 8, "gold": 5, "ranged": false, "scale": 3.0,
+		"physres": 0.0, "magres": 5.0, "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
+		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"], "placeholder": true,
+		"lore": "Its shell gleams like cracked ice, cold to the bite. Salvaged art awaiting a home."},
+	"tick_orange": {"name": "Ember Tick", "sprite": "tick_orange", "hp": 28.0, "dmg": 9.0, "speed": 215.0, "xp": 8, "gold": 5, "ranged": false, "scale": 3.0,
+		"physres": 0.0, "magres": 5.0, "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
+		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"], "placeholder": true,
+		"lore": "Its back glows like a coal that refuses to gutter out. Salvaged art awaiting a home."},
 }
