@@ -1,4 +1,4 @@
-# Emberfall — Act 2 Design Bible: The Waking War
+# Crownless — Act 2 Design Bible: The Waking War
 
 Chapters 8–14 · L40–70 · Design companion to DESIGN.md and BOSSES.md.
 

@@ -15,7 +15,10 @@ License Info PDFs; no attribution required; do not redistribute the
 raw packs. Chosen by name/mood, gains RMS-measured (MUSIC_TUNE):
 - village.ogg     "Ancient Glow" — 50 Cozy Fantasy pack. The original
                   synth village theme (the beloved one) is preserved:
-                  exported to the asset library ("Emberfall Originals")
+                  exported to the asset library ("Emberfall Originals" —
+                  that folder keeps its name; it's a real path in
+                  OneDrive/Assets/Audio, not the game's title, which
+                  became Crownless 2026-07-17)
                   and still composed in music.gd — delete this file to
                   hear it again. Candidate for a future credits /
                   music-box diegetic reprise.

@@ -1,4 +1,4 @@
-# Emberfall — Story & Design Bible
+# Crownless — Story & Design Bible
 (Compressed for token economy — every decision/number kept, prose trimmed.)
 
 ## Phase Plan (agreed 2026-07)

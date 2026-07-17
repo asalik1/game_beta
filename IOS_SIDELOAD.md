@@ -1,6 +1,6 @@
 # iOS — sideload to your OWN iPhone (no Mac, no $99)
 
-Goal: get Emberfall running on **your** iPhone to feel the touch controls,
+Goal: get Crownless running on **your** iPhone to feel the touch controls,
 before spending a cent on an Apple Developer account. Compilation happens on
 a rented macOS CI runner; signing + install happen on your Windows PC with a
 free Apple ID.
@@ -19,8 +19,8 @@ Workflow: [`.github/workflows/mobile-builds.yml`](.github/workflows/mobile-build
 2. GitHub → **Actions** tab → enable workflows if prompted.
 3. Run **"Mobile builds"** → **Run workflow** → set **platform = ios** (default
    is `android`, so you must switch it to build the IPA).
-4. When green, open the run → download the **`Emberfall-ios-unsigned-ipa`**
-   artifact (a zip containing `Emberfall-unsigned.ipa`) to your PC.
+4. When green, open the run → download the **`Crownless-ios-unsigned-ipa`**
+   artifact (a zip containing `Crownless-unsigned.ipa`) to your PC.
 
 Cost: private-repo macOS minutes bill at **10×** — roughly 8–13 free builds
 a month. First run may go red once (see the workflow's "FIX POINT" note).
@@ -31,7 +31,7 @@ a month. First run may go red once (see the workflow's "FIX POINT" note).
 
 1. Install Apple's **Devices/iTunes** driver (Sideloadly + AltStore both need
    it to talk to the phone) — the non-Microsoft-Store version.
-2. **Sideloadly:** plug in iPhone → drop in `Emberfall-unsigned.ipa` → sign in
+2. **Sideloadly:** plug in iPhone → drop in `Crownless-unsigned.ipa` → sign in
    with a free Apple ID → Start. It re-signs (rewrites the bundle id) and
    installs. On the phone: Settings → General → VPN & Device Management →
    trust your Apple ID's developer cert.

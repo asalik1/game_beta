@@ -22,9 +22,9 @@ first, always):
    scan the sound/music folders; they read this manifest). Best-effort: falls back to the
    committed manifest if Python is absent, but fails if the manifest is missing entirely.
 4. **Headless export** — Godot 4.4.1 exports the **Windows Desktop** preset to
-   `build/Emberfall.exe` (single self-contained exe — see §3).
+   `build/Crownless.exe` (single self-contained exe — see §3).
 5. **Zip** — bundles the exe + `FRIENDS_README.txt` + `CREDITS.txt` into
-   `build/Emberfall_<NET_VERSION>_win64.zip`.
+   `build/Crownless_<NET_VERSION>_win64.zip`.
 
 `build/` is gitignored. The zip name's version is read live from `NET_VERSION` so it can
 never drift from the gate the game actually enforces.
@@ -36,7 +36,7 @@ never drift from the gate the game actually enforces.
 ### What's in the zip (and why)
 | File | Why it's there |
 |---|---|
-| `Emberfall.exe` | The whole game — a single self-contained executable (pck embedded). |
+| `Crownless.exe` | The whole game — a single self-contained executable (pck embedded). |
 | `FRIENDS_README.txt` | Non-technical setup: extract-first, the one-time SmartScreen click, how to join by code, "same version" note, three-line troubleshooting. |
 | `CREDITS.txt` | Third-party license notices (Godot + netfox, both MIT). Ships next to the exe **and** is baked into the pck — see §6. |
 
@@ -68,7 +68,7 @@ never on the table.
 
 ## 3. Preset decisions (`game/export_presets.cfg`, preset "Windows Desktop")
 
-- **`embed_pck=true` → one self-contained `Emberfall.exe` (~260 MB).** Chosen over exe+loose-pck
+- **`embed_pck=true` → one self-contained `Crownless.exe` (~260 MB).** Chosen over exe+loose-pck
   for a non-technical audience: a friend physically *cannot* separate the exe from its data
   and hit the classic "it won't launch" failure. One file in, one file out. The size penalty
   (~97 MB engine template baked in) is irrelevant for a zip shared among friends. Trade-off
@@ -79,7 +79,7 @@ never on the table.
   (`addons/CREDITS.txt`, both netfox `LICENSE` files) — see §6.
 - A `.console.exe` sidecar may be produced by the export (the preset keeps the console
   wrapper for the solo playtest flow). `make_build.bat` deliberately zips **only**
-  `Emberfall.exe`, so it never reaches friends.
+  `Crownless.exe`, so it never reaches friends.
 - **Owner nicety, not blocking:** the exe's *file* icon is the Godot default
   (`application/icon` is empty — a custom one needs a `.ico`; the in-game window/taskbar icon
   already comes from `icon.svg`). Add a `.ico` here later if you want the branded desktop icon.

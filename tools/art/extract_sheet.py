@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Turn a PRE-KEYED animation SHEET (transparent background, an NxM grid of
-labelled frames) into engine-ready horizontal clip strips for Emberfall.
+labelled frames) into engine-ready horizontal clip strips for Crownless.
 See tools/art/README.md for the full pipeline + rationale.
 
 Pipeline per frame:
@@ -12,7 +12,7 @@ Pipeline per frame:
      with no geometric masking (=> heads are never clipped).
   4. SOLIDIFY: fill interior holes + force alpha fully opaque so no background
      bleeds through the sprite (the fix for grass showing through as green).
-  5. mirror each frame to face LEFT (Emberfall's faces_left art contract),
+  5. mirror each frame to face LEFT (Crownless's faces_left art contract),
      preserving column/time order.
   6. re-center into a uniform GLOBAL square, feet-aligned to the bottom.
 

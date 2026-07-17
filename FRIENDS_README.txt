@@ -1,5 +1,5 @@
 ========================================
-  EMBERFALL - co-op build for friends
+  CROWNLESS - co-op build for friends
 ========================================
 
 Hi! Thanks for playing. This is a private build - not on any store yet -
@@ -17,7 +17,7 @@ delete or replace this folder later without losing progress.
 
 STEP 2 - RUN IT (Windows will warn once - that's expected)
 ----------------------------------------------------------
-Double-click  Emberfall.exe
+Double-click  Crownless.exe
 
 The first time, Windows may show a blue box:
     "Windows protected your PC"
@@ -65,4 +65,4 @@ IF SOMETHING GOES WRONG (three quick fixes)
   internet connection. Try again with a different host.
 
 
-Have fun out there. - The Emberfall crew
+Have fun out there. - The Crownless crew

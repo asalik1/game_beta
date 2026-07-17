@@ -1,4 +1,4 @@
-# Codemagic CI/CD — iOS build for Emberfall (builds the mobile snapshot at
+# Codemagic CI/CD — iOS build for Crownless (builds the mobile snapshot at
 # `mobile/game`, NOT the desktop `game/`). Lives at repo root because that's
 # where Codemagic looks for this file.
 #
@@ -13,11 +13,14 @@
 #   1. Apple Developer Program membership ($99/yr). This is the hard gate — the
 #      iOS export literally fails without a Team ID from it.
 #   2. In App Store Connect, create the app record with bundle id
-#      `com.emberfall.game`.
+#      `com.crownless.game`.
 #   3. In Codemagic: connect this GitHub repo (asalik1/game_beta), then add an
 #      "App Store Connect" API-key integration (Team settings → Integrations) so
 #      the signing CLI below can fetch certs/profiles automatically.
 #   4. Create a Codemagic environment group named `emberfall_ios` holding:
+#      (NOTE: still named 'emberfall_ios' — it's a Codemagic DASHBOARD name,
+#      not ours. The game renamed to Crownless 2026-07-17; rename the group
+#      in Codemagic's UI FIRST, then this line, or the build loses its vars.)
 #        APPLE_TEAM_ID     — your 10-char Apple Developer Team ID
 #        APP_STORE_APP_ID  — (TestFlight only) the app's numeric Apple ID
 #
@@ -27,8 +30,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 workflows:
-  ios-emberfall:
-    name: Emberfall iOS (App Store)
+  ios-crownless:
+    name: Crownless iOS (App Store)
     instance_type: mac_mini_m2
     max_build_duration: 120
     environment:
@@ -37,7 +40,10 @@ workflows:
       vars:
         GODOT_VERSION: "4.4.1-stable"
         GODOT_PRESET: "iOS"        # matches the preset name in mobile/game/export_presets.cfg
-        BUNDLE_ID: "com.emberfall.game"
+        # Matches mobile/game/export_presets.cfg (renamed with the game,
+        # 2026-07-17). App Store Connect must hold a record for THIS id —
+        # an App ID is registered, not just typed.
+        BUNDLE_ID: "com.crownless.game"
         PROJECT_DIR: "mobile/game"
         EXPORT_DIR: "build/ios"
       xcode: latest
@@ -76,7 +82,7 @@ workflows:
           "$GODOT_BIN" --headless --path "$PROJECT_DIR" --import || true
           mkdir -p "$EXPORT_DIR"
           "$GODOT_BIN" --headless --path "$PROJECT_DIR" \
-            --export-release "$GODOT_PRESET" "$CM_BUILD_DIR/$EXPORT_DIR/emberfall.xcodeproj"
+            --export-release "$GODOT_PRESET" "$CM_BUILD_DIR/$EXPORT_DIR/crownless.xcodeproj"
 
       - name: Fetch signing files + prime the keychain
         script: |
@@ -93,10 +99,10 @@ workflows:
           cd "$EXPORT_DIR"
           echo "Discovered Xcode projects/schemes:"
           find . -maxdepth 2 -name "*.xcodeproj"
-          xcodebuild -list -project emberfall.xcodeproj || true
+          xcodebuild -list -project crownless.xcodeproj || true
           # ADJUST: set --scheme to what the line above prints (Godot usually
-          # names the scheme after the app, e.g. "emberfall" or "Godot").
-          xcode-project build-ipa --project "emberfall.xcodeproj" --scheme "emberfall"
+          # names the scheme after the app, e.g. "crownless" or "Godot").
+          xcode-project build-ipa --project "crownless.xcodeproj" --scheme "crownless"
 
     artifacts:
       - $EXPORT_DIR/**/*.ipa

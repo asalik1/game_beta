@@ -21,7 +21,7 @@ SOURCE MAP — pick the sheet that CONTRASTS the character:
     sheets it came from no longer exist, so the extracted strips ARE the master.
 
 Source sheets live in the asset library, NOT the repo. Point at them with
-EMBERFALL_ART_SRC (defaults to the maintainer's OneDrive path).
+CROWNLESS_ART_SRC (defaults to the maintainer's OneDrive path).
 """
 import os, sys, subprocess, tempfile, shutil, glob
 import numpy as np
@@ -30,7 +30,7 @@ from scipy import ndimage
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-SRC  = os.environ.get("EMBERFALL_ART_SRC", r"C:/Users/asali/OneDrive/Assets/Custom")
+SRC  = os.environ.get("CROWNLESS_ART_SRC", r"C:/Users/asali/OneDrive/Assets/Custom")
 DEST = os.path.join(REPO, "game", "assets", "sprites")
 BACKUP = os.path.join(REPO, "art_src", "heroes_clips")
 EXTRACT = os.path.join(HERE, "extract_sheet.py")
@@ -99,7 +99,7 @@ def _trim_idle(path, keep):
 
 def main():
     if not os.path.isdir(SRC):
-        sys.exit("source dir not found: %s  (set EMBERFALL_ART_SRC)" % SRC)
+        sys.exit("source dir not found: %s  (set CROWNLESS_ART_SRC)" % SRC)
     for cls, (sheet, names, extra) in JOBS.items():
         inp = os.path.join(SRC, sheet)
         out = tempfile.mkdtemp()

@@ -1,4 +1,4 @@
-# Emberfall — Balance & Pacing Round Log
+# Crownless — Balance & Pacing Round Log
 
 The chronological record of every balance/pacing round: the trigger, the numbers moved, and the experiments later superseded. Moved out of DESIGN.md 2026-07-06 — **DESIGN.md keeps only the distilled standing rules** (its "Pacing & balance — standing rules" section); this file keeps the full history. **New rounds get logged here, at the TOP of the tuning-round list**; when a round produces a durable rule, promote the rule (not the narrative) to DESIGN.md.
 

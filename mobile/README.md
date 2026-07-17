@@ -1,6 +1,6 @@
-# Emberfall — Mobile (iOS / Android)
+# Crownless — Mobile (iOS / Android)
 
-This folder holds everything specific to the mobile release of Emberfall.
+This folder holds everything specific to the mobile release of Crownless.
 The desktop game lives in `game/` and is the source of truth; **nothing in
 `game/` should ever be changed for mobile's sake.**
 
@@ -15,7 +15,7 @@ The desktop game lives in `game/` and is the source of truth; **nothing in
 
 ## Framework: Godot native mobile export (no engine switch)
 
-Emberfall is built in **Godot 4.4**, and Godot exports natively to both
+Crownless is built in **Godot 4.4**, and Godot exports natively to both
 Android and iOS from the same project. We do **not** rewrite or wrap the
 game in another framework (Unity, Flutter, Capacitor, etc.) — we use
 Godot's own export pipeline. The mobile version is a **snapshot fork of
@@ -112,10 +112,9 @@ On a re-sync (re-copy `game/` over `mobile/game/`), re-apply this exact list:
    `.gd`, leave the `.uid`. (`.import` files are safe to copy — their `uid=`
    lines already agree.)
 
-**Verifying a re-sync:** `diff -rq game mobile/game` is blinded by line endings
-(CRLF vs LF) — compare with those normalised, or drift hides. A correct re-sync
-leaves exactly two classes of difference: the files in (1)-(2), and the (3)/(4)
-entries above.
+A correct re-sync leaves exactly these differences and nothing else: the files
+in (1)-(2), and the (3)/(4) entries above. See "Verifying a re-sync" below for
+how to compare without line endings hiding the drift.
 
 ### No longer deltas — the touch layer now lives in `game/` too
 
@@ -162,10 +161,10 @@ tools\Godot_v4.4.1-stable_win64_console.exe --headless --import --quit --path mo
 tools\Godot_v4.4.1-stable_win64.exe --path mobile/game -- --touch
 
 # Android APK (sideload testing) — needs the toolchain below configured:
-tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-release "Android" ../builds/Emberfall.apk
+tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-release "Android" ../builds/Crownless.apk
 
 # iOS (emits an Xcode project; sign + archive on a Mac):
-tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-release "iOS" ../builds/ios/Emberfall.ipa
+tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-release "iOS" ../builds/ios/Crownless.ipa
 ```
 
 ### Android toolchain — INSTALLED + wired (2026-07-13)
@@ -185,12 +184,12 @@ Build the test APK (prebuilt-template path — no gradle needed):
 
 ```
 set JAVA_HOME=C:\Users\asali\Java\jdk-17.0.19+10
-tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-debug "Android" mobile/builds/Emberfall.apk
+tools\Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --export-debug "Android" mobile/builds/Crownless.apk
 ```
 
-Produced `mobile/builds/Emberfall.apk` (~361 MB, arm64-v8a, min SDK 21 / target
+Produced `mobile/builds/Crownless.apk` (~361 MB, arm64-v8a, min SDK 21 / target
 34, signed v1+v2+v3). Install on a plugged-in phone (USB debugging on):
-`%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install -r mobile\builds\Emberfall.apk`.
+`%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install -r mobile\builds\Crownless.apk`.
 
 Note: `gradle_build/min_sdk` was emptied — the prebuilt template fixes min SDK
 at 21 (a custom min like API 26 needs `use_gradle_build=true`).

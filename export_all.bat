@@ -1,5 +1,5 @@
 @echo off
-rem Rebuild Emberfall for Windows, macOS, and Linux into executables\.
+rem Rebuild Crownless for Windows, macOS, and Linux into executables\.
 rem Regenerates the audio manifest first: exported builds can't scan the
 rem sound/music folders, so they read assets\asset_manifest.json instead.
 rem Output paths are set per-preset in game\export_presets.cfg.

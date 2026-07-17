@@ -1,4 +1,4 @@
-# MULTIPLAYER.md — Emberfall 4-Player Co-op: Design & Architecture
+# MULTIPLAYER.md — Crownless 4-Player Co-op: Design & Architecture
 
 *Written 2026-07-09. Planning document — no code has been changed. This is the blueprint for adding
 opt-in online co-op (2–4 players clearing chapters together) while leaving solo untouched.*

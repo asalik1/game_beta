@@ -6,6 +6,34 @@ MANIFEST). This file is a **prompt library**: the exact text to paste into an
 image generator for each asset a resolution/quality audit has flagged, so the
 art lane starts from a tightened prompt instead of re-deriving one.
 
+## STATUS (2026-07-17)
+
+The owner runs these through ChatGPT by hand and drops the renders in; an agent
+cuts and installs them. **HuggingFace inference is dead** for this (410 on every
+text-to-image model — it also broke `tools/art/flux_draft.py` and polligen's
+`hf` backend), and Pollinations averages a 512px render into a 2-colour smear at
+32x32. ChatGPT-by-hand is the lane.
+
+| Asset | State |
+|---|---|
+| **Cover** | **DONE** — both variants installed and CYCLING (`cover.png` pixel + `cover_2.png` painterly, crossfade every 10s; cover.gd probes `cover_2..cover_8`, so a 3rd just drops in). |
+| **Wordmark** | **MOOT — do not generate.** Engine-drawn now, in Cinzel Decorative. See below. |
+| `ward_elixir`, `renewal_draught` | **DONE** — installed. |
+| Ability icons: warrior + archer (8) | **DONE** — installed. |
+| Ability icons: mage, assassin, paladin, warlock (16) | **PROMPTS ONLY** — need renders. |
+| `ability_warrior_a2` (Shield Bash) | **WANTS A RE-ROLL** — installed but reads muddy at 24px: the render came back a grey shield on grey with fine rivets. Not a downscale problem; the prompt already says *tilted ram, not a raised guard* and the generator didn't obey. Push the silhouette and the value contrast. |
+
+**Cutting a render → a 32x32 icon** is done by script, not by hand. The
+generator returns the subject on a soft grey GRADIENT, so the background is cut
+by flooding inward from the border through low-gradient, desaturated territory
+only — the subject's hard outline is a wall the fill can't cross. Do NOT key on
+a fixed luminance band: the vignette's dark corners fall outside it and get
+welded onto the icon, which is what makes them read as mud. Keep every blob
+above ~2% of the largest, not just the largest — Arrow Storm is a volley of
+disjoint arrows and largest-only leaves exactly one. Then hard-alpha at 128 and
+quantise to ~12 colours to match the family (which has ZERO semi-transparent
+pixels).
+
 Same discipline as `tools/art/PIXELLAB_PROMPT_LESSONS.md` (PixelLab lane):
 loose prompts cost re-rolls. Every prompt below names the exact subject +
 composition, the exact target resolution, a palette anchored to hexes
@@ -61,22 +89,23 @@ it for 2560x1440 directly. Workflow:
 Even stopping at step 2 is a **4.8x-per-axis information gain** over today's
 320x180. The pixelation complaint dies at step 2; step 3 is polish.
 
-### The wordmark warning (most likely failure)
+### The wordmark — SETTLED 2026-07-17: never generate it
 
-Image generators mangle text. "EMBERFALL" will come back misspelled or with
-broken letterforms — budget re-rolls, **or** take the better path:
+This was flagged as the most likely failure (generators mangle letterforms).
+It's now moot, and the resolution went further than "budget re-rolls":
 
-> **Recommended: generate the scene with NO text and composite the wordmark.**
-> The prompt below is written this way. `cover.gd` already draws a real
-> "EMBERFALL" / "The Hollow King" title (`UITheme.title(title, 84)`) on the
-> *procedural* path — it is skipped for the hand-made cover only because the
-> art "should carry its own logo" (cover.gd:9). Text drawn by the engine is a
-> **vector font: perfectly crisp at every resolution, forever**, and it is the
-> single element that looks worst when pixelated. Letting the engine draw it
-> is a small code change and strictly better than baking it into the PNG.
-> Flagged, not implemented — it's a design call, not an audit fix.
+> **Generate the scene with NO text. The engine draws the wordmark.**
+> `cover.gd` `_wordmark()` draws "CROWNLESS" / "The Hollow King" on BOTH the
+> procedural set and the hand-made cover, via `UITheme.logo()` in **Cinzel
+> Decorative** (OFL). Vector text is perfectly crisp at every resolution
+> forever, it costs nothing to retitle — which was worth real money the week
+> the game stopped being called Emberfall — and text is the single element
+> that reads worst when the art is magnified. The old cover baked it in and
+> carried 320x180 of real information, so the logo was the first thing to fall
+> apart.
 
-If you want the wordmark baked in anyway, append the `[WORDMARK]` block below.
+Every cover prompt here is written text-free. **The `[WORDMARK]` block below is
+retained only as a record of the road not taken — do not use it.**
 
 ### Palette anchor (sampled from the real cover.png)
 
@@ -169,9 +198,14 @@ vignette, not pixel art, not cel-shaded, not anime, no photorealism, no lens
 flare, no chromatic aberration.
 ```
 
-### `[WORDMARK]` — only if baking the text into the PNG
+### `[WORDMARK]` — SUPERSEDED, kept as a record. Do not use.
 
-Append to either prompt. Expect re-rolls on the spelling regardless.
+The engine draws the wordmark (see "The wordmark — SETTLED" above). Baking text
+into the PNG is now the wrong path twice over: the spelling needs re-rolls, and
+a baked logo would have had to be REGENERATED when the game was renamed from
+Emberfall to Crownless — which is exactly what happened, one day after this
+block was written. It is left here so the next person can see the decision
+rather than re-open it.
 
 ```
 Across the lower-centre of the frame, the single word "EMBERFALL" in large
@@ -906,5 +940,5 @@ soft canvas with hundreds of colours; **do not install that.** Per icon:
 
 Install: drop into `game/assets/icons/`, let Godot import, done — no code
 change, and any subset can land alone. Then update `assets/icons/CREDITS.txt`
-(these are Emberfall originals, not Raven pack art) and re-sync
+(these are Crownless originals, not Raven pack art) and re-sync
 `mobile/game/assets/icons/` per CLAUDE.md.

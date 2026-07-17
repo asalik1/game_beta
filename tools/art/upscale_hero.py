@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rebuild a hero's sprites from the ChatGPT UPSCALES — the smoother,
 higher-detail redraws the user commissioned — normalised to drop into
-Emberfall's shared hero rig.
+Crownless's shared hero rig.
 
 Why this is separate from build_sprites.py: the other classes are extracted
 straight from the Custom sheets, but the upscaled classes are AI redraws that
@@ -32,7 +32,7 @@ ROOT    = os.path.dirname(os.path.dirname(HERE))
 DEST    = os.path.join(ROOT, "game", "assets", "sprites")
 BACKUP  = os.path.join(ROOT, "art_src", "heroes_clips")
 EXTRACT = os.path.join(HERE, "extract_sheet.py")
-CUSTOM  = os.environ.get("EMBERFALL_ART_SRC", "C:/Users/asali/OneDrive/Assets/Custom")
+CUSTOM  = os.environ.get("CROWNLESS_ART_SRC", "C:/Users/asali/OneDrive/Assets/Custom")
 
 # Per class: the (2) sheet + its clip order (extract_sheet names, "idle"->_anim),
 # the body map {dest suffix: upscale-source stem}, and any 8-way directional
@@ -237,7 +237,7 @@ def _mirror_strip(im):
 
 def build(cls):
     cfg = CLASSES[cls]
-    upsrc = os.environ.get("EMBERFALL_UPSCALE_SRC",
+    upsrc = os.environ.get("CROWNLESS_UPSCALE_SRC",
                            os.path.join(CUSTOM, cls + "_upscaled"))
     if not os.path.isdir(upsrc):
         sys.exit("missing upscale source dir: %s" % upsrc)

@@ -1,7 +1,7 @@
 # Sprite-sheet extraction pipeline (`extract_sheet.py`)
 
 Turns a **pre-keyed animation sheet** (one big grid of labelled frames on a
-transparent background) into the engine-ready horizontal clip strips Emberfall
+transparent background) into the engine-ready horizontal clip strips Crownless
 loads. Built for the six class sheets; **reuse it verbatim for boss/mob sheets.**
 
 This is the process that fixed the warrior's *green-holes*, *head cut-off*, and
@@ -59,7 +59,7 @@ tools/Godot_v4.4.1-stable_win64_console.exe --headless --path game --import
 
 | what | where | in repo? |
 |---|---|---|
-| Source sheets (raw art) | `OneDrive/Assets/Custom/` (`EMBERFALL_ART_SRC`) | no — asset library only |
+| Source sheets (raw art) | `OneDrive/Assets/Custom/` (`CROWNLESS_ART_SRC`) | no — asset library only |
 | Extracted engine strips | `game/assets/sprites/<class>_*.png` | yes — the shipped sprites |
 | Heroes-set backup + directional master | `art_src/heroes_clips/` | yes |
 
@@ -151,7 +151,7 @@ The tool does six things per frame. Each one killed a specific bug:
    the grass and tinting the sprite green; making the silhouette 100% opaque
    (and inpainting any hole with its nearest colour) means nothing behind the
    sprite ever shows through. Verify with the "green background" check below.
-5. **Mirror each frame to face LEFT.** Emberfall's `Art.faces_left` contract
+5. **Mirror each frame to face LEFT.** Crownless's `Art.faces_left` contract
    says art natively faces left (the engine flips it when moving right). Source
    art faces right, so every frame is mirrored — **per-frame, preserving column
    order** (mirroring the whole strip would reverse the animation).

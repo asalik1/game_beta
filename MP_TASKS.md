@@ -240,7 +240,7 @@ a discovered fangmaw-gold flake). The four logged flakes, understood:
 
 ### MP-18: Packaging — status: DONE (make_build.bat at repo root: compile gate -> test_quick.bat ->
 headless Windows export [game/export_presets.cfg "Windows Desktop", embed_pck=true single self-
-contained exe] -> build/Emberfall_<NET_VERSION>_win64.zip = Emberfall.exe + FRIENDS_README.txt +
+contained exe] -> build/Crownless_<NET_VERSION>_win64.zip = Crownless.exe + FRIENDS_README.txt +
 CREDITS.txt; NET_VERSION read live from net_manager.gd so the zip name can't drift; fails loudly at
 each step. export_presets.cfg include_filter HARDENED so the Godot+netfox MIT notices ship in the
 pck AND next to the exe in the zip [verified: export log stored addons/CREDITS.txt + both netfox

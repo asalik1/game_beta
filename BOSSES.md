@@ -1,4 +1,4 @@
-# Emberfall — Boss Bible: Early Game to Level 40
+# Crownless — Boss Bible: Early Game to Level 40
 
 Design companion to DESIGN.md. Covers every boss from the end of Chapter 2
 (~L16, Warden Null) to the end of early game — and early game IS Act 1:

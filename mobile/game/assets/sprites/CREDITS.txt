@@ -59,7 +59,8 @@ NINJA ADVENTURE (pixel-boy) — CC0 (LICENSE.txt in the pack), available
 
 
 BAT PACKS (Small_Bat, Bat_Fur) — purchased by the project owner and
-  confirmed cleared for commercial use in Emberfall (2026-07-08); the
+  confirmed cleared for commercial use in this game (2026-07-08, when it
+  was still titled Emberfall — renamed Crownless 2026-07-17); the
   zips ship no license file. Do NOT redistribute the raw packs.
   Installed as: bat / bat_anim (Cave Bat, from Small_Bat, side Move sheet)
   and direbat / direbat_anim (Blightbat, from Bat_Fur). Side-facing Move

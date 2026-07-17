@@ -1,4 +1,4 @@
-# Emberfall — Chapter 1: The Hollow King
+# Crownless — Chapter 1: The Hollow King
 
 Second iteration of the MMO project: a **solo, story-driven action RPG**
 with classes, gear, loot chests, merchants and a skill tree.

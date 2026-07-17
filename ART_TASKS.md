@@ -1,7 +1,7 @@
 # ART_TASKS — pack-art customization board (opened 2026-07-06)
 
 Goal: take the installed Pixel Crawler art from "great generic" to
-"unmistakably Emberfall". Same etiquette as CH2_TASKS: **one owner per
+"unmistakably Crownless". Same etiquette as CH2_TASKS: **one owner per
 task, claim before starting**, verify visually before staging.
 
 ## Ground rules (all tasks)

@@ -9,7 +9,7 @@ rem    3. regenerate the audio manifest      - exported builds read it, not the
 rem                                            live sound/music folders
 rem    4. headless Windows export            - single self-contained exe
 rem                                            (embed_pck=true) into build\
-rem    5. zip exe + FRIENDS_README + CREDITS  - build\Emberfall_<ver>_win64.zip
+rem    5. zip exe + FRIENDS_README + CREDITS  - build\Crownless_<ver>_win64.zip
 rem
 rem  The zip name's <ver> is read straight from NET_VERSION in
 rem  net_manager.gd (the ONE source of truth, and the value the join
@@ -39,7 +39,7 @@ if "%NETVER%"=="" (
   echo [make_build] FAILED: could not read NET_VERSION from net_manager.gd.
   exit /b 1
 )
-echo [make_build] Building Emberfall  NET_VERSION = %NETVER%
+echo [make_build] Building Crownless  NET_VERSION = %NETVER%
 
 rem --- 1. compile gate --------------------------------------------------------
 echo [make_build] [1/5] Compile gate...
@@ -77,22 +77,22 @@ if not exist "%PROJ%\assets\asset_manifest.json" (
 rem --- 4. headless export (single embedded-pck exe) into build\ ---------------
 echo [make_build] [4/5] Exporting Windows Desktop (headless)...
 if not exist "%BUILD%" mkdir "%BUILD%"
-if exist "%BUILD%\Emberfall.exe" del /q "%BUILD%\Emberfall.exe"
-"%GODOT%" --headless --path "%PROJ%" --export-release "Windows Desktop" "%BUILD%\Emberfall.exe"
+if exist "%BUILD%\Crownless.exe" del /q "%BUILD%\Crownless.exe"
+"%GODOT%" --headless --path "%PROJ%" --export-release "Windows Desktop" "%BUILD%\Crownless.exe"
 if errorlevel 1 (
   echo [make_build] FAILED at the export step.
   exit /b 1
 )
-if not exist "%BUILD%\Emberfall.exe" (
-  echo [make_build] FAILED: the export produced no Emberfall.exe.
+if not exist "%BUILD%\Crownless.exe" (
+  echo [make_build] FAILED: the export produced no Crownless.exe.
   exit /b 1
 )
 
 rem --- 5. zip: exe + FRIENDS_README + CREDITS (license notices) ---------------
 echo [make_build] [5/5] Zipping...
-set "ZIP=%BUILD%\Emberfall_%NETVER%_win64.zip"
+set "ZIP=%BUILD%\Crownless_%NETVER%_win64.zip"
 if exist "%ZIP%" del /q "%ZIP%"
-powershell -NoProfile -Command "Compress-Archive -Force -Path '%BUILD%\Emberfall.exe','%ROOT%FRIENDS_README.txt','%PROJ%\addons\CREDITS.txt' -DestinationPath '%ZIP%'"
+powershell -NoProfile -Command "Compress-Archive -Force -Path '%BUILD%\Crownless.exe','%ROOT%FRIENDS_README.txt','%PROJ%\addons\CREDITS.txt' -DestinationPath '%ZIP%'"
 if errorlevel 1 (
   echo [make_build] FAILED at the zip step.
   exit /b 1

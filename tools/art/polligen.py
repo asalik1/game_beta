@@ -55,7 +55,7 @@ def fetch(prompt, seed):
     else:
         q = urllib.parse.quote(f"{prompt}, {STYLE}")
         url = f"https://image.pollinations.ai/prompt/{q}?width=512&height=512&nologo=true&seed={seed}"
-        req = urllib.request.Request(url, headers={"User-Agent": "emberfall-polligen"})
+        req = urllib.request.Request(url, headers={"User-Agent": "crownless-polligen"})
         with urllib.request.urlopen(req, timeout=90) as r:
             data = r.read()
     tmp = os.path.join(OUT, "_raw.png")

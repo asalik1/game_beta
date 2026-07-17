@@ -1,4 +1,4 @@
-# Emberfall — working practices (all agents)
+# Crownless — working practices (all agents)
 
 ## Mobile version — kept in sync (unfrozen 2026-07-15)
 - `mobile/` (repo root) holds the iOS/Android version: a snapshot fork of `game/` plus a small, fixed set of mobile deltas (Mobile renderer, touch HUD, export presets — the exact list lives in `mobile/README.md`). Deployment is proven end to end — GitHub Actions **"Mobile builds"** produces a signed-debug APK and an unsigned iOS `.ipa`; both install/run on-device (sideload).
