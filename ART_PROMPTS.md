@@ -19,20 +19,43 @@ text-to-image model — it also broke `tools/art/flux_draft.py` and polligen's
 | **Cover** | **DONE** — both variants installed and CYCLING (`cover.png` pixel + `cover_2.png` painterly, crossfade every 10s; cover.gd probes `cover_2..cover_8`, so a 3rd just drops in). |
 | **Wordmark** | **MOOT — do not generate.** Engine-drawn now, in Cinzel Decorative. See below. |
 | `ward_elixir`, `renewal_draught` | **DONE** — installed. |
-| Ability icons: warrior + archer (8) | **DONE** — installed. |
-| Ability icons: mage, assassin, paladin, warlock (16) | **PROMPTS ONLY** — need renders. |
-| `ability_warrior_a2` (Shield Bash) | **WANTS A RE-ROLL** — installed but reads muddy at 24px: the render came back a grey shield on grey with fine rivets. Not a downscale problem; the prompt already says *tilted ram, not a raised guard* and the generator didn't obey. Push the silhouette and the value contrast. |
+| **All 24 ability icons** | **DONE** — installed 2026-07-17. Every class is on real art; the glyph table is now fallback-only. |
+| `ability_warrior_a2` (Shield Bash) | **WANTS A RE-ROLL** — installed but muddy at 24px: a grey shield on grey with fine rivets, no value contrast. The prompt already says *tilted ram, not a raised guard*; the generator didn't obey. |
+| `ability_assassin_a2` (Shadow Dash) | **WANTS A RE-ROLL** — came back as a full hooded CHARACTER with motion trails. `[NEGATIVES]` already forbids "no character, no full figure" — a figure cannot survive 32x32. Re-roll as an abstract motif (an afterimage streak, not a person). |
 
-**Cutting a render → a 32x32 icon** is done by script, not by hand. The
-generator returns the subject on a soft grey GRADIENT, so the background is cut
-by flooding inward from the border through low-gradient, desaturated territory
-only — the subject's hard outline is a wall the fill can't cross. Do NOT key on
-a fixed luminance band: the vignette's dark corners fall outside it and get
-welded onto the icon, which is what makes them read as mud. Keep every blob
-above ~2% of the largest, not just the largest — Arrow Storm is a volley of
-disjoint arrows and largest-only leaves exactly one. Then hard-alpha at 128 and
-quantise to ~12 colours to match the family (which has ZERO semi-transparent
-pixels).
+**The generator ignores negatives roughly 1 render in 12.** Both failures above
+are the same shape: the prompt said what not to draw and it drew it anyway. Check
+each render against `[NEGATIVES]` BEFORE cutting — a re-roll is cheap, and no
+downscale rescues a figure or a flat-value subject.
+
+**Cutting a render → a 32x32 icon** is done by script, not by hand, and the
+background cut is the whole difficulty. ChatGPT returns **two different
+backgrounds** and one mask cannot do both. Detect which by the border ring's
+MINIMUM luminance:
+
+* **GREY batch** (ring min ~34-85) — a soft grey gradient with a dark vignette.
+  Flood inward from the border through **low-gradient, desaturated** territory;
+  the subject's hard edge is a wall. Do NOT key on a fixed luminance band — the
+  vignette's dark corners fall outside it and get welded onto the icon. That is
+  what made the first batch read as mud.
+* **WHITE batch** (ring min ~240+) — near-white, uniform, slightly noisy. The
+  gradient test FAILS here: the noise shatters the passable region into ~4000
+  fragments and the flood cannot spread (5% cut). And colour alone can't work
+  either, because the subject is sometimes white too (the paladin's light rays).
+  Use the art's own **dark outline as the wall**: flood from the border, barrier
+  = luminance < 150. Not < 100 — some outlines run lighter, the flood finds the
+  gap and swallows the interior (one label covering 94% of the canvas, leaving a
+  "subject" of eroded outline crumbs). That exact failure ate the paladin shield.
+
+Then, both batches: keep every blob above ~2% of the largest — **not** just the
+largest, because Arrow Storm is a volley of disjoint arrows and largest-only
+leaves exactly one. Box-downscale in **premultiplied** alpha (otherwise the cut
+background bleeds a halo into the edge), hard-alpha at 128, and quantise to ~12
+colours to match the family, which has ZERO semi-transparent pixels.
+
+**Judge at 24px, not at 8x.** The action bar is 24px; an icon that reads
+beautifully zoomed can be mud at true size. Build a contact sheet at the real
+size before installing.
 
 Same discipline as `tools/art/PIXELLAB_PROMPT_LESSONS.md` (PixelLab lane):
 loose prompts cost re-rolls. Every prompt below names the exact subject +
