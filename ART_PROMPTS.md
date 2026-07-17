@@ -21,7 +21,7 @@ text-to-image model — it also broke `tools/art/flux_draft.py` and polligen's
 | `ward_elixir`, `renewal_draught` | **DONE** — installed. |
 | **All 24 ability icons** | **DONE** — installed 2026-07-17. Every class is on real art; the glyph table is now fallback-only. |
 | `ability_warrior_a2` (Shield Bash) | **KEPT** — owner reviewed 2026-07-17, reads fine in-game. |
-| `ability_assassin_a2` (Shadow Dash) | **DONE** — re-roll installed 2026-07-17 (dagger afterimage strobe; reads distinct from a1 at 24px). |
+| `ability_assassin_a2` (Shadow Dash) | **DONE (v4)** — bold flat SHADOW SILHOUETTE mid-dash, violet rim + streak. Owner's idea; the on-theme answer AND the only non-blade in the assassin row. v1 figure failed as a DETAILED figure; a flat pictogram-silhouette reads at 20px. |
 | `ability_paladin_ult` (Conviction) | **DONE** — re-roll installed 2026-07-17 (split holy/chained warhammer). |
 | `ability_mage_a3` (Blink) | **DONE** — v3 installed 2026-07-17 (bolt cut + displaced mid-strike; the break survives 24px). v1's afterimage died at bar size; v2's "two bars" prompt got faithful meaningless geometry — the fix was giving the displacement a recognizable OBJECT. |
 | `ability_archer_a3` (Tumble) | **DONE** — re-roll installed 2026-07-17. Warm leather-brown swoosh + speed ticks + dust; no longer a moon and now sits in the archer row's palette. |
@@ -833,25 +833,27 @@ PALETTE: outline #2E1C2C; blade #86718C / #95ADB4 / #BFDDD1 with a #FFFFFF
 point glint; grip #705C4A; blood bead #CB1E31; thrust streak #86718C.
 ```
 
-### `ability_assassin_a2.png` — Shadow Dash  (RE-ROLL 2026-07-17)
+### `ability_assassin_a2.png` — Shadow Dash  (RE-ROLL v3, 2026-07-17)
 *Dash in your move direction, slashing everything in your path.*
-First render came back a full hooded CHARACTER with motion trails — the one
-thing the negatives forbid. This version removes any excuse for a figure: the
-subject is ONLY blades. Three ghosted copies of the SAME dagger, echoing back
-along the dash line — pure motion, nothing that could be read as a body.
+v1 was a full figure. v2 (installed) is a dagger with violet afterimage echoes
+— reads fine ISOLATED at 24px, but in the variant menu / at a distance it
+smears into a muddy pink streak (owner). The flaw is the concept: afterimage
+"ghosts" are low-contrast by nature, and three thin violet copies on a dark bar
+merge into formless mush at small size. v3 drops the ghosts for ONE bold BRIGHT
+motion streak — a bright object survives the shrink where dark ghosts don't.
 ```
-SUBJECT: a single slim DAGGER pointing up-and-right at the bright leading edge,
-with TWO or THREE ghosted afterimage copies of the exact same dagger trailing
-behind it down-and-left, each fainter and more violet than the last — a
-strobe/echo of one blade in motion, evenly spaced along a straight diagonal.
-The front dagger is crisp steel; the echoes are flat violet-shadow silhouettes.
-No smoke, no cloud, no figure — just one blade repeated as it streaks. The three
-blades together are the whole subject and fill the frame corner-to-corner.
-PALETTE: outline #2E1C2C; lead dagger blade #95ADB4 / #BFDDD1 with a #FFFFFF
-point glint, grip #705C4A; echo silhouettes #2E1C2C / #724E63 / #86718C
-(solid flat fills, front echo brightest).
+SUBJECT: a single bold steel DAGGER streaking diagonally from lower-left up to
+upper-right, blade crisp and bright at the leading tip, trailing ONE thick
+BRIGHT motion streak behind it down to the lower-left. The streak is a solid
+tapering wedge of speed — WHITE-hot at its core fading to violet at its edges,
+wide and bold, NOT thin ghost lines and NOT faint copies of the blade. One
+dagger, one streak, high contrast against a dark background: blade + streak
+fill the frame corner to corner and read instantly at tiny size. NO multiple
+ghosted daggers, no dim violet after-images, no smoke.
+PALETTE: outline #2E1C2C; blade #95ADB4 / #BFDDD1 with a #FFFFFF edge and a
+#FFFFFF tip glint, grip #705C4A; motion streak #FFFFFF core into #B98CE6 then
+#7A4FBF violet at the trailing edge (bright and solid, brightest at the blade).
 ```
-
 ### `ability_assassin_a3.png` — Fan of Knives
 *Spammable dagger fan — thin chip alone; bites twice as hard while blood surge runs.*
 ```

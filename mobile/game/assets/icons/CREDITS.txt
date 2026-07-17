@@ -72,7 +72,7 @@ any subset can be pulled without breaking anything.
   ability_mage_a3.png     — bolt cut + displaced      -> Blink
   ability_mage_ult.png    — burning meteor            -> Meteor
   ability_assassin_a1.png — thrust dagger             -> Stab
-  ability_assassin_a2.png — dagger afterimage strobe  -> Shadow Dash
+  ability_assassin_a2.png — dashing shadow silhouette   -> Shadow Dash
   ability_assassin_a3.png — spread of thrown knives   -> Fan of Knives
   ability_assassin_ult.png— red cross-slash mark      -> Death Mark
   ability_paladin_a1.png  — hammer + light arc        -> Judgment
@@ -84,12 +84,15 @@ any subset can be pulled without breaking anything.
   ability_warlock_a3.png  — bleeding heart            -> Dark Pact
   ability_warlock_ult.png — rift diamond              -> Void Rift
 
-  Re-roll history (2026-07-17): assassin_a2's first render was a full character
-  figure, paladin_ult's a UI refresh symbol, mage_a3's afterimage died at bar
-  size (its v2 got faithful meaningless geometry — see ART_PROMPTS.md for the
-  lesson), and warlock_a1 was too dark for the near-black bar. All four replaced
-  same day with the installed versions above. warrior_a2 (grey-on-grey shield)
-  was reviewed by the owner and KEPT. The set is at final quality.
+  Re-roll history (2026-07-17): paladin_ult's first render was a UI refresh
+  symbol; mage_a3's afterimage died at bar size (its v2 got faithful meaningless
+  geometry — see ART_PROMPTS.md); warlock_a1 was too dark for the near-black bar.
+  assassin_a2 took FOUR: v1 a detailed figure (mush at 32px), v2 dagger + violet
+  afterimage ghosts (smeared to a pink streak at menu size), v4 the keeper — a
+  bold FLAT shadow silhouette mid-dash with a violet rim. The lesson: a figure
+  isn't impossible at icon size, a DETAILED figure is; a flat pictogram reads.
+  warrior_a2 (grey-on-grey shield) was reviewed by the owner and KEPT. The set
+  is at final quality.
 
   Two icons were cut down from their renders on purpose: archer_ult and mage_a1
   each came with a ground-impact burst below the subject. Real art, but it
