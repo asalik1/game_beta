@@ -369,8 +369,15 @@ static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bo
 	# Aligned stat columns.
 	var cols := HBoxContainer.new()
 	info.add_child(cols)
-	for pair in [["HP", int(live["hp"])], ["DMG", int(live["dmg"])], ["SPD", int(st["speed"])],
-			["XP", live["xp"]], ["Gold", live.get("gold", 0)]]:
+	var stat_pairs: Array = [["HP", int(live["hp"])], ["DMG", int(live["dmg"])], ["SPD", int(st["speed"])],
+			["XP", live["xp"]], ["Gold", live.get("gold", 0)]]
+	# EVA rides along only when the kind HAS evasion (nearly all ship 0.0, and a
+	# column of zeroes is noise). A foe you must answer with DEX can never be an
+	# invisible wall — the codex never lies about the wall (Stats.resolve).
+	var kind_eva: float = float(live.get("eva", 0.0))
+	if kind_eva > 0.0:
+		stat_pairs.append(["EVA", "%d%%" % int(kind_eva * 100.0)])
+	for pair in stat_pairs:
 		var c := m._lbl(cols, "%s %s" % [pair[0], str(pair[1])], 13, Color(0.78, 0.8, 0.86))
 		c.custom_minimum_size = Vector2(105, 0)
 	var type_l := m._lbl(cols, "Ranged caster" if st["ranged"] else "Melee", 13, Color(0.6, 0.7, 0.85))
@@ -562,6 +569,10 @@ static func _statuses(m: Menus, list: VBoxContainer) -> void:
 			"A marked target takes +50% damage while the mark holds (~3s). The assassin's Death Mark ult stretches it to 5s of true-damage setup."]],
 		["Silence", Color(0.75, 0.8, 1.0), [
 			"An INVERSE telegraph (debuts against Vess in Chapter 3): the whole arena screams lethal except one quiet safe circle — find it and stand INSIDE before the wail lands, the opposite of a normal red danger-zone."]],
+		["Evasion & DEX", Color(0.8, 0.85, 0.5), [
+			"An evasive foe rolls its EVASION against every hit you throw. Your DEX doesn't shave that roll — it decides what a successful dodge COSTS you, in three fixed steps. This is a build state, not luck: read it, then answer it.",
+			"Below %d%% of the DEX their evasion asks — the dodge is a clean MISS, for nothing. At %d%% or better — it only GRAZES, and still pays %d%% of the damage. At full parity or above — their evasion is CANCELLED and never rolls at all." % [int(Balance.DEX_GRAZE_RATIO * 100), int(Balance.DEX_GRAZE_RATIO * 100), int(Balance.GRAZE_DAMAGE * 100)],
+			"Parity is evasion × %d DEX: a %d%%-evasion foe asks %d. Amber gems and DEX substats buy it — and TRUE damage skips the question entirely, evasion and all. Little in the campaign evades; the endgame's SLIPPERY affix is what this is for, so carry Amber when you see it, not always." % [int(1.0 / Balance.DEX_PER_EVA), int(float(Balance.AFFIXES["slippery"]["eva_add"]) * 100.0), int(float(Balance.AFFIXES["slippery"]["eva_add"]) / Balance.DEX_PER_EVA)]]],
 	]
 	for e in effects:
 		var info := VBoxContainer.new()

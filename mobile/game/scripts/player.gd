@@ -706,6 +706,10 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
 			game.sfx("blink")
 			return
+		# A GRAZE on the receiving end: their DEX is good enough that your
+		# evasion only clipped the blow instead of voiding it (Stats.dex_tier).
+		if result.get("graze", false):
+			game.spawn_text(global_position + Vector2(0, -40), "GRAZE", Color(0.7, 0.9, 1.0))
 		amount = result["dmg"]
 		was_crit = result["crit"]
 	else:

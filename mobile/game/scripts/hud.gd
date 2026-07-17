@@ -1248,9 +1248,12 @@ func update_stats(p: Player) -> void:
 		daily_glow.modulate = Color(1.0, 0.88, 0.4, 0.25 + 0.4 * pulse)
 		daily_glow.scale = Vector2.ONE * (0.5 + 0.16 * pulse)
 
-	# Quest icon shine: a red/orange pulse + twinkles when a reward waits to be
-	# claimed in the Quest Log (currently the weekly vault).
-	var quest_ready := game.vault_ready()
+	# Quest icon shine: a red/orange pulse + twinkles when the log is worth
+	# opening — a claimable weekly vault, OR a side quest somebody in this
+	# chapter is still waiting to offer (2026-07-17). The shine used to watch
+	# the vault ALONE, which meant the one icon that says "there are quests"
+	# stayed dark through a chapter full of unasked ones.
+	var quest_ready := game.vault_ready() or game.any_quest_available()
 	quest_glow.visible = quest_ready
 	for spk in quest_sparkles:
 		spk.visible = quest_ready

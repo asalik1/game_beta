@@ -54,6 +54,46 @@ func _run_systems() -> void:
 	var r := Stats.resolve(100.0, "true", 0.0, 1.5, 0.0, 0.0, 500.0, 0.9, 50.0)
 	if r["miss"] or r["dmg"] != 100.0 or r["crit"]:
 		return _fail("true damage should ignore everything and never crit")
+	# 0b. DEX-vs-evasion GRADIENT (2026-07-17): the target rolls its own
+	# evasion and the attacker's DEX tier decides what that evade costs —
+	# full miss / graze / cancelled. The tier boundaries are deterministic
+	# (that's the whole point: an evasive fight is a build state you can
+	# read, never a dice roll), so they assert exactly.
+	var parity: float = 0.30 / Balance.DEX_PER_EVA   # 75 DEX answers 30% evasion
+	if Stats.dex_tier(0.0, 0.30) != 0:
+		return _fail("no DEX vs evasion must be tier 0 (full miss)")
+	if Stats.dex_tier(parity * 0.6, 0.30) != 1:
+		return _fail("DEX past the graze ratio must be tier 1 (graze)")
+	if Stats.dex_tier(parity, 0.30) != 2:
+		return _fail("parity DEX must CANCEL evasion (tier 2)")
+	if Stats.dex_tier(0.0, 0.0) != 2:
+		return _fail("zero evasion has nothing to answer — tier 2")
+	# Tier 2 never rolls at all: a parity build cannot be dodged, ever.
+	for _i in 200:
+		var t2 := Stats.resolve(100.0, "phys", 0.0, 1.5, 0.0, parity, 0.0, 0.30, 0.0)
+		if t2["miss"] or t2["graze"]:
+			return _fail("parity DEX still lost a hit to evasion")
+	# Tier 1 never MISSES — it grazes, and a graze pays exactly GRAZE_DAMAGE.
+	var saw_graze := false
+	for _i in 400:
+		var t1 := Stats.resolve(100.0, "phys", 0.0, 1.5, 0.0, parity * 0.6, 0.0, 0.30, 0.0)
+		if t1["miss"]:
+			return _fail("the graze tier must never MISS outright")
+		if t1["graze"]:
+			saw_graze = true
+			if absf(float(t1["dmg"]) - 100.0 * Balance.GRAZE_DAMAGE) > 0.01:
+				return _fail("a graze must pay exactly GRAZE_DAMAGE")
+	if not saw_graze:
+		return _fail("the graze tier never grazed across 400 rolls")
+	# Tier 0 CAN erase a hit outright — the wall that asks for DEX.
+	var saw_miss := false
+	for _i in 400:
+		if Stats.resolve(100.0, "phys", 0.0, 1.5, 0.0, 0.0, 0.0, 0.30, 0.0)["miss"]:
+			saw_miss = true
+			break
+	if not saw_miss:
+		return _fail("tier 0 never missed across 400 rolls vs 30% evasion")
+	print("ok: DEX vs evasion gradient (miss / graze / cancelled tiers)")
 	# Pacing retrofit + presence pass: mobs live ~2x longer (TTK) AND the
 	# 2026-07-07 mob HP mult stacks on top; bosses get neither.
 	var wolf_now := Story.enemy_stats_at("wolf", 2)
@@ -885,8 +925,12 @@ func _run_systems() -> void:
 		return _fail("Fang has no guaranteed crit substat")
 	print("ok: weapon shape identities")
 
-	# Class-aware drops (round 15): a class only loots weapons from its
-	# own arsenal and never rolls the other damage type's penetration.
+	# Class-aware drops (round 15): a class only loots weapons from its own
+	# arsenal. The pen half was NARROWED 2026-07-17 — only an S legendary's
+	# FIRST roll is guaranteed class-usable; every lesser grade rolls the full
+	# pool (a rune can reroute damage type, so the off-type pen is dormant, not
+	# dead). Both pen checks below roll "S" and so still hold; the un-gate for
+	# lesser grades is asserted in _test_reforge.
 	var crng := RandomNumberGenerator.new()
 	crng.seed = 42
 	for i in 30:
@@ -895,10 +939,10 @@ func _run_systems() -> void:
 			return _fail("archer looted a %s (not in the archer arsenal)" % aw["noun"])
 		var ai := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "archer")
 		if ai["subs"].has("magpen"):
-			return _fail("archer gear rolled MagPen (dead stat)")
+			return _fail("an S archer first roll carried MagPen (off-type pen)")
 		var mi := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "mage")
 		if mi["subs"].has("physpen"):
-			return _fail("mage gear rolled PhysPen (dead stat)")
+			return _fail("an S mage first roll carried PhysPen (off-type pen)")
 		# Endgame-only stats (round 43): nothing below B may carry
 		# lifesteal or combo — including shape personality stats
 		# (the Wand's built-in combo, the Tome's lifesteal).
@@ -907,7 +951,7 @@ func _run_systems() -> void:
 		if low["subs"].has("lifesteal") or low["subs"].has("combo") \
 				or wand_low["subs"].has("combo") or wand_low["subs"].has("lifesteal"):
 			return _fail("sub-B gear rolled an endgame-only stat (lifesteal/combo)")
-	print("ok: class-aware drops (arsenal + no dead pen stats + B-gated lifesteal/combo)")
+	print("ok: class-aware drops (arsenal + S first-roll pen guarantee + B-gated lifesteal/combo)")
 
 	# 4b. S weapon: legendary shape + 3 sockets; its passive is DORMANT
 	# (round 51b) until the class's awakening flag is set. Wrong-class flag
@@ -1697,6 +1741,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch6_chapter()
 	await _test_ch7_chapter()
 	await _test_side_quests()
+	await _test_quest_abandonment()
 	await _test_ch1_quests()
 	await _test_ch2_quests()
 	await _test_ch3_quests()
@@ -2092,7 +2137,47 @@ func _test_reforge() -> void:
 	Items.add_socket(c_it)
 	if Items.can_add_socket(c_it):
 		return _fail("C gear past its 2-socket cap should be rejected")
-	print("ok: reforge bench (affix reroll, value reroll, add socket + cap incl. C)")
+
+	# Pen un-gate (2026-07-17): every grade BELOW S rolls the full pool, so a mage
+	# can draw physpen it can't use today (a damage-type rune makes it live). This
+	# is probabilistic — physpen is 1 of 12 in an A's 2 draws, so 60 rolls missing
+	# it entirely is ~1-in-60k, not flake territory.
+	var saw_offtype := false
+	for i in 60:
+		if Items.roll_subs("A", "Staff", "mage", rng).has("physpen"):
+			saw_offtype = true
+			break
+	if not saw_offtype:
+		return _fail("non-S gear should be able to roll its off-type pen (un-gated 2026-07-17)")
+
+	# ...but an S legendary's FIRST roll stays class-usable — never the off-type pen.
+	for i in 60:
+		if Items.roll_subs("S", "Staff", "mage", rng).has("physpen"):
+			return _fail("an S first roll must never carry the off-type pen")
+
+	# Transmute: swaps WHICH attribute the main feeds, KEEPS the rolled magnitude.
+	var tm := Items.roll_item_of("weapon", "A", rng, "archer")
+	var old_attr := String(tm["main"].keys()[0])
+	if old_attr != "AGI":
+		return _fail("an archer weapon should roll an AGI main, got " + old_attr)
+	var old_val: float = float(tm["main"][old_attr])
+	var targets := Items.transmute_targets(tm)
+	if old_attr in targets or targets.size() != 3:
+		return _fail("transmute targets must be the 3 attributes the main is NOT")
+	var was := Items.transmute_main(tm, "STR")
+	if was != old_attr or not tm["main"].has("STR") or tm["main"].has(old_attr):
+		return _fail("transmute_main did not swap the main attribute")
+	if absf(float(tm["main"]["STR"]) - old_val) > 0.001:
+		return _fail("transmute must KEEP the rolled magnitude — it buys an attribute, not a reroll")
+	if tm["main"].size() != 1:
+		return _fail("transmute must leave exactly one main")
+	# The band is slot/grade/shape-keyed, so a transmuted main still quenches.
+	if not Items.can_quench(tm, "STR"):
+		return _fail("a transmuted main must still be quenchable")
+	# Junk in, "" out — never a silent partial write.
+	if Items.transmute_main(tm, "STR") != "" or Items.transmute_main(tm, "NOPE") != "":
+		return _fail("transmute to the current attribute (or a non-attribute) must no-op")
+	print("ok: reforge bench (affix reroll, value reroll, add socket + cap incl. C, pen un-gate, transmute)")
 
 
 # ---- CORE: set bonuses (count, cross-class isolation, recalc) ------------
@@ -3279,6 +3364,105 @@ func _test_side_quests() -> void:
 	game.player.gold = gold0
 	game.flags = snap_flags
 	print("ok: side quests (accept, step tracking, single payout)")
+
+
+## Quest ABANDONMENT + DISCOVERY (2026-07-17). Two halves of one feature:
+## a quest you accept and never finish is settled at the chapter's victory
+## (the pledge you were PAID for is revoked, plus the lean for keeping it),
+## and a quest nobody has offered you yet is discoverable rather than
+## invisible. SNAPSHOT + RESTORE shared state per the rule.
+func _test_quest_abandonment() -> void:
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var res0: float = game.player.resonance
+	var snap_stand: Dictionary = game.player.faction_standing.duplicate(true)
+	var ch0: String = game.chapter_id
+	game.chapter_id = "ch1"
+
+	# A finished quest is never charged for.
+	game.set_flag("sq_on_oslas_debt")
+	game.set_flag("sq_paid_oslas_debt")
+	game.player.resonance = 0.0
+	if not game._expire_side_quests().is_empty():
+		_fail("a COMPLETED quest was billed as abandoned")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if game.player.resonance != 0.0:
+		_fail("a completed quest moved resonance at chapter end")
+		await get_tree().create_timer(60.0).timeout
+		return
+
+	# An accepted-and-dropped quest: the pledge goes back, plus the penalty.
+	game.flags = snap_flags.duplicate(true)
+	game.set_flag("sq_on_oslas_debt")
+	game.flags["sq_pledge_oslas_debt"] = 1.0   # what the accept choice paid
+	game.player.resonance = 0.0
+	var broken: Array = game._expire_side_quests()
+	if broken.size() != 1:
+		_fail("an abandoned quest was not reported to the victory card")
+		await get_tree().create_timer(60.0).timeout
+		return
+	var want: float = -(1.0 + Balance.QUEST_ABANDON_RESONANCE)
+	if absf(game.player.resonance - want) > 0.01:
+		_fail("abandon cost %.2f resonance, expected %.2f (pledge + penalty)"
+			% [game.player.resonance, want])
+		await get_tree().create_timer(60.0).timeout
+		return
+	# The line must NAME the quest — an unexplained resonance drop reads as a bug.
+	if not String(broken[0]).contains(String(Story.ALL_SIDE_QUESTS["oslas_debt"]["name"])):
+		_fail("the broken-promise line did not name the quest")
+		await get_tree().create_timer(60.0).timeout
+		return
+
+	# Another chapter's open quest is NOT settled by this chapter's victory.
+	# (still_blue is ch2's; heron_feather looks like a pilot but is ch1's.)
+	game.flags = snap_flags.duplicate(true)
+	game.set_flag("sq_on_still_blue")
+	game.player.resonance = 0.0
+	game._expire_side_quests()
+	if game.player.resonance != 0.0:
+		_fail("ch1's victory charged for a quest belonging to another chapter")
+		await get_tree().create_timer(60.0).timeout
+		return
+
+	# DISCOVERY: every quest names a giver, so a ❢ always has somewhere to sit.
+	for sqid in ["oslas_debt", "hunters_rounds", "flame_at_window"]:
+		if Story.quest_givers(String(sqid)).is_empty():
+			_fail("side quest '%s' has no giver convo — nothing to mark" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Both directions of the index agree, and MULTI-giver quests keep every
+	# giver — heron_feather is offered by the boy AND by two ways of finding
+	# the hat, and an index that kept only the first would leave the props
+	# unmarked and test the wrong NPC for reachability.
+	if Story.quest_givers("heron_feather").size() < 2:
+		_fail("multi-giver quest collapsed to one giver")
+		await get_tree().create_timer(60.0).timeout
+		return
+	for giver in Story.quest_givers("oslas_debt"):
+		if not Story.quests_offered_by(String(giver)).has("oslas_debt"):
+			_fail("quest_givers / quests_offered_by disagree for '%s'" % giver)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# An ACCEPTED quest stops being "available" — the ❢ and the AVAILABLE
+	# section must not keep advertising a job already in your log.
+	game.flags = snap_flags.duplicate(true)
+	game.set_flag("sq_on_oslas_debt")
+	if game.side_quest_available("oslas_debt"):
+		_fail("an accepted quest still advertised itself as available")
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.set_flag("sq_paid_oslas_debt")
+	if game.side_quest_available("oslas_debt"):
+		_fail("a completed quest still advertised itself as available")
+		await get_tree().create_timer(60.0).timeout
+		return
+
+	game.chapter_id = ch0
+	game.player.resonance = res0
+	game.player.faction_standing = snap_stand
+	game.flags = snap_flags
+	game._quest_avail_cache = -1
+	print("ok: quest abandonment (pledge revoked + penalty, chapter-scoped, named) + discovery")
 
 
 ## Q1 — Chapter 1 side quests (ch1_quests.gd): the module's convo

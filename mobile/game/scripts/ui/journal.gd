@@ -110,9 +110,8 @@ static func _side_quests(m: Menus, list: VBoxContainer) -> void:
 		if not g.get_flag("sq_on_" + String(id), false):
 			continue
 		entries.append([String(id), q])
-	if entries.is_empty():
-		return
-	m._lbl(list, "— SIDE QUESTS —", 16, Color(0.7, 0.95, 0.7))
+	if not entries.is_empty():
+		m._lbl(list, "— SIDE QUESTS —", 16, Color(0.7, 0.95, 0.7))
 	for e in entries:
 		var id: String = e[0]
 		var q: Dictionary = e[1]
@@ -128,6 +127,35 @@ static func _side_quests(m: Menus, list: VBoxContainer) -> void:
 			var done: bool = g.get_flag(String(step["flag"]), false)
 			m._lbl(list, "   %s  %s" % ["✔" if done else "◇", String(step["text"])], 13,
 				Color(0.55, 0.8, 0.55) if done else Color(0.9, 0.85, 0.7))
+		# The DEADLINE, on every open promise. A quest that expires without a
+		# visible clock is a feel-bad every time — this line is what earns
+		# game_base._expire_side_quests the right to charge for it.
+		m._lbl(list, "   ⧗  Expires when this chapter ends — finish it BEFORE the final boss, or the promise is broken.",
+			12, Color(0.95, 0.7, 0.45))
+	_available_quests(m, list)
+
+
+## AVAILABLE: offered in this world, not yet taken. The journal used to list
+## ONLY accepted quests, so a player who walked past a giver had no way to
+## learn a quest existed at all — the log was a tracker with no discovery in
+## it. Gated on side_quest_available (the giver must actually be present in
+## THIS run), so it can never advertise a wanderer the seed never rolled.
+static func _available_quests(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	var open: Array = []
+	for id in Story.ALL_SIDE_QUESTS:
+		if g.side_quest_available(String(id)):
+			open.append(Story.ALL_SIDE_QUESTS[id])
+	if open.is_empty():
+		return
+	m._lbl(list, "— AVAILABLE —", 16, Color(0.95, 0.85, 0.5))
+	m._lbl(list, "Someone in this chapter is still waiting to ask. Look for the ❢ over their head.",
+		12, Color(0.7, 0.72, 0.78))
+	for q in open:
+		m._lbl(list, "❢  %s" % String(q["name"]), 15, Color(0.95, 0.9, 0.6))
+		var dl := m._lbl(list, "   " + String(q.get("desc", "")), 12, Color(0.75, 0.75, 0.8))
+		dl.custom_minimum_size = Vector2(780, 0)
+		dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
 static func _bounties(m: Menus, list: VBoxContainer) -> void:

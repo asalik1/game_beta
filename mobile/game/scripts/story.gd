@@ -66,11 +66,11 @@ const CONVOS := {
 	# ---- Maren's recruitment: her greeting reads what you did on the road.
 	"maren_warrior": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
-			"text": "Aldric! Thank the flame you came.",
+			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "owned_the_harm", "text": "Aldric. Bren showed me the arm — and told me you KNELT. Those who carry what you carry rarely kneel. Keep that, whatever else you lose."},
-				{"flag": "excused_the_harm", "text": "Aldric. 'The wolf isn't — that's what matters.' Bren repeated it, still shaking. I have heard those words before... from the man you have come to kill. Mind yourself."},
-				{"flag": "walked_away", "text": "Aldric. You walked past Bren's wreckage without a word. It follows you anyway. Better to face a thing than be trailed by it."},
+				{"flag": "owned_the_harm", "text": "Bearer. Bren showed me the arm — and told me you KNELT. Those who carry what you carry rarely kneel. Keep that, whatever else you lose."},
+				{"flag": "excused_the_harm", "text": "Bearer. 'The wolf isn't — that's what matters.' Bren repeated it, still shaking. I have heard those words before... from the man you have come to kill. Mind yourself."},
+				{"flag": "walked_away", "text": "Bearer. You walked past Bren's wreckage without a word. It follows you anyway. Better to face a thing than be trailed by it."},
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
@@ -98,11 +98,11 @@ const CONVOS := {
 	}},
 	"maren_assassin": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
-			"text": "Aldric! Thank the flame you came.",
+			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "gave_back", "text": "Aldric. The carter came through at first light — telling anyone who'd listen about the stranger who took his fire, then sat in the snow all night giving it back. Your bloodline usually only takes. Interesting."},
-				{"flag": "kept_taking", "text": "Aldric. A carter stumbled in this morning, grey to the elbows, saying the road stole his fire. You look... well-rested. We won't speak of it again. But I will remember it."},
-				{"flag": "fled_theft", "text": "Aldric. You came the long way, and cold. Running from what your hands did doesn't starve it — it only teaches it patience."},
+				{"flag": "gave_back", "text": "Bearer. The carter came through at first light — telling anyone who'd listen about the stranger who took his fire, then sat in the snow all night giving it back. Your bloodline usually only takes. Interesting."},
+				{"flag": "kept_taking", "text": "Bearer. A carter stumbled in this morning, grey to the elbows, saying the road stole his fire. You look... well-rested. We won't speak of it again. But I will remember it."},
+				{"flag": "fled_theft", "text": "Bearer. You came the long way, and cold. Running from what your hands did doesn't starve it — it only teaches it patience."},
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
@@ -130,11 +130,11 @@ const CONVOS := {
 	}},
 	"maren_mage": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
-			"text": "Aldric! Thank the flame you came.",
+			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "told_truth", "text": "Aldric. The ferrier's wife says you promised to UNDO what your magic did — to her face, with the mark still spreading. Mórwyn never once said 'I don't know how.' Hold on to those words."},
-				{"flag": "hid_truth", "text": "Aldric. The boy is cool, and his mother sings your praises... and yet the mark on his ribs tells a different spell than the one you described. Careful. That is precisely how it started with HER."},
-				{"flag": "left_silent", "text": "Aldric. Coin on the table and a closed door. Half the row thinks you modest; the other half found the mark. Questions do not rot away, spellwright — they ferment."},
+				{"flag": "told_truth", "text": "Bearer. The ferrier's wife says you promised to UNDO what your magic did — to her face, with the mark still spreading. Mórwyn never once said 'I don't know how.' Hold on to those words."},
+				{"flag": "hid_truth", "text": "Bearer. The boy is cool, and his mother sings your praises... and yet the mark on his ribs tells a different spell than the one you described. Careful. That is precisely how it started with HER."},
+				{"flag": "left_silent", "text": "Bearer. Coin on the table and a closed door. Half the row thinks you modest; the other half found the mark. Questions do not rot away, spellwright — they ferment."},
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
@@ -162,11 +162,11 @@ const CONVOS := {
 	}},
 	"maren_archer": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
-			"text": "Aldric! Thank the flame you came.",
+			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "said_farewell", "text": "Aldric. A farmer named Ren sent a letter ahead of you. Four words: 'The gate stays unlatched.' Severed bloodlines rarely leave anything standing behind them — you left a DOOR. Keep leaving them."},
-				{"flag": "cut_clean", "text": "Aldric. You came in light, drifter — no letters, no ties, nothing to carry. Fangmaw's kin walked that same weightless road all the way to its end. Have a care how light you get."},
-				{"flag": "walked_silent", "text": "Aldric. You didn't look back, they say. It follows anyway. The ones who walk from a thing always pack it by accident."},
+				{"flag": "said_farewell", "text": "Bearer. A farmer named Ren sent a letter ahead of you. Four words: 'The gate stays unlatched.' Severed bloodlines rarely leave anything standing behind them — you left a DOOR. Keep leaving them."},
+				{"flag": "cut_clean", "text": "Bearer. You came in light, drifter — no letters, no ties, nothing to carry. Fangmaw's kin walked that same weightless road all the way to its end. Have a care how light you get."},
+				{"flag": "walked_silent", "text": "Bearer. You didn't look back, they say. It follows anyway. The ones who walk from a thing always pack it by accident."},
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
@@ -194,11 +194,11 @@ const CONVOS := {
 	}},
 	"maren_paladin": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
-			"text": "Aldric! Thank the flame you came.",
+			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "delivered_verdict", "text": "Aldric. An arbiter who guts a raid, then walks back inside and convicts the man he saved? The chain you carry was FORGED to bind — and you just showed it who holds it. I have waited a long time to meet one of you."},
-				{"flag": "spared_guilty", "text": "Aldric. Osric the miller — alive, pardoned, and already hoarding again, they say. The chain told you 'mercy' and you called it your own idea. Learn the difference quickly."},
-				{"flag": "recused", "text": "Aldric. You stepped away from the bench rather than test the chain. Prudent. But the chain is patient, arbiter — one day there will be no other judge in the room."},
+				{"flag": "delivered_verdict", "text": "Bearer. An arbiter who guts a raid, then walks back inside and convicts the man he saved? The chain you carry was FORGED to bind — and you just showed it who holds it. I have waited a long time to meet one of you."},
+				{"flag": "spared_guilty", "text": "Bearer. Osric the miller — alive, pardoned, and already hoarding again, they say. The chain told you 'mercy' and you called it your own idea. Learn the difference quickly."},
+				{"flag": "recused", "text": "Bearer. You stepped away from the bench rather than test the chain. Prudent. But the chain is patient, arbiter — one day there will be no other judge in the room."},
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
@@ -226,11 +226,11 @@ const CONVOS := {
 	}},
 	"maren_warlock": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
-			"text": "Aldric! Thank the flame you came.",
+			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "closed_tome", "text": "Aldric. I can smell the loan on you from the gate. And yet — it's QUIET. You told it no, didn't you? Keep telling it no. I'll help where I can, and I'll be watching where I can't."},
-				{"flag": "borrowed_more", "text": "Aldric. The thing about candles of knowing: they light the room and burn the house. You borrowed again on the road here — don't trouble to deny it, your shadow leans wrong. I'll take your help, warlock. I won't take my eyes off you."},
-				{"flag": "burned_pages", "text": "Aldric. Burnt pages, fresh ink. You cannot fire a debt, only the record of it — and the creditor keeps better books than you do. Stay where I can see you."},
+				{"flag": "closed_tome", "text": "Bearer. I can smell the loan on you from the gate. And yet — it's QUIET. You told it no, didn't you? Keep telling it no. I'll help where I can, and I'll be watching where I can't."},
+				{"flag": "borrowed_more", "text": "Bearer. The thing about candles of knowing: they light the room and burn the house. You borrowed again on the road here — don't trouble to deny it, your shadow leans wrong. I'll take your help, warlock. I won't take my eyes off you."},
+				{"flag": "burned_pages", "text": "Bearer. Burnt pages, fresh ink. You cannot fire a debt, only the record of it — and the creditor keeps better books than you do. Stay where I can see you."},
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
@@ -941,7 +941,7 @@ const ENDGAME_ARENAS := {
 const CHAPTERS := {
 	"ch1": {
 		"name": "Chapter 1: The Hollow King",
-		"sub": "Aldric's story — the fall of Vargoth",
+		"sub": "A bearer's story — the second fall of Vargoth",
 		"zones": ZONES,
 		# Seeded procedural layout (playtest round 3: "every run is the
 		# same map"). The SPINE lists the boss path in story order; each
@@ -1076,6 +1076,53 @@ static var ALL_SIDE_QUESTS: Dictionary = {}
 static var ALL_QUEST_ITEMS: Dictionary = {}  # module keepsakes (Items.make_quest_item)
 static var ALL_WANDERERS: Dictionary = {}  # chapter id -> wanderer pool
 static var CHAPTER_LIST: Dictionary = {}
+static var _quest_givers: Dictionary = {}   # side-quest id -> Array of convo ids that OFFER it
+static var _quest_offers: Dictionary = {}   # convo id -> Array of side-quest ids it can hand out
+static var _givers_built := false
+
+
+## The reverse index of a choice's "side_quest" key, built lazily by scanning
+## every convo's choices once — content modules register nothing, because
+## authoring the offer IS the wiring. Drives the journal's AVAILABLE list and
+## the NPC ❢ marks, both of which must know WHO to point at.
+##
+## A quest may have SEVERAL givers and both directions are kept: heron_feather
+## is offered by the miller's boy AND by two different ways of finding the hat.
+## Keeping only the first would leave the other givers unmarked and would test
+## the wrong NPC for reachability.
+static func _build_quest_givers() -> void:
+	if _givers_built:
+		return
+	load_content()
+	_givers_built = true
+	for cid in ALL_CONVOS:
+		var nodes: Dictionary = ALL_CONVOS[cid].get("nodes", {})
+		for nid in nodes:
+			var node: Dictionary = nodes[nid]
+			for c in node.get("choices", []):
+				var offer := String(c.get("side_quest", ""))
+				if offer == "":
+					continue
+				if not _quest_givers.has(offer):
+					_quest_givers[offer] = []
+				if not _quest_givers[offer].has(String(cid)):
+					_quest_givers[offer].append(String(cid))
+				if not _quest_offers.has(String(cid)):
+					_quest_offers[String(cid)] = []
+				if not _quest_offers[String(cid)].has(offer):
+					_quest_offers[String(cid)].append(offer)
+
+
+## Every convo that can hand out this side quest (may be empty).
+static func quest_givers(sqid: String) -> Array:
+	_build_quest_givers()
+	return _quest_givers.get(sqid, [])
+
+
+## Every side quest this convo can hand out (may be empty).
+static func quests_offered_by(convo_id: String) -> Array:
+	_build_quest_givers()
+	return _quest_offers.get(convo_id, [])
 
 
 ## Merge base content + every registered module. Idempotent; call once
@@ -1175,19 +1222,22 @@ static func act_of(id: String) -> int:
 # Each beat is a list of [speaker, line].
 
 const BEATS := {
+	# FALLBACK intro: only reached when a class has no "open_<cls>" convo
+	# (game.gd). All six author one, so this is a safety net — but it still
+	# has to speak current canon: the player is a SHARD-BEARER, not Aldric.
 	"intro": [
-		["Narrator", "The kingdom of Emberfall has fallen quiet. The Ember Crown - the light that kept the dark at bay - has been stolen."],
-		["Narrator", "Vargoth, once a just king, was buried with honor sixty years ago. Now he walks again, hollow-eyed, and a blight spreads from his keep."],
-		["Ser Aldric", "I am Aldric, last knight of the Ember Guard. If no one else will go... then I will."],
+		["Narrator", "The kingdom of Emberfall has fallen quiet. Vargoth, once a just king, was buried with honor sixty years ago — then walked again, hollow-eyed, and wore the Ember Crown for sixty more."],
+		["Narrator", "Thirty years ago Ser Aldric put a blade through him, and the Crown shattered. It did not scatter into nothing. It scattered into PEOPLE."],
+		["You", "And now the blight is climbing out of his keep a second time — and the thing in my chest has started listening."],
 	],
 	"elder": [
-		["Elder Maren", "Aldric! Thank the flame you came. The wolves of the Darkwood grow bold - something twists them from within."],
+		["Elder Maren", "Bearer! Thank the flame you came. The wolves of the Darkwood grow bold - something twists them from within."],
 		["Elder Maren", "A beast they call FANGMAW leads the pack. Slay it, and the road east will be safe again."],
-		["Elder Maren", "Take these potions - press Q when your wounds are grave. And remember: keep moving. A still knight is a dead knight."],
-		["Ser Aldric", "I'll return with its pelt, Elder."],
+		["Elder Maren", "Take these potions - press Q when your wounds are grave. And remember: keep moving. A still flame is a snuffed one."],
+		["You", "I'll return with its pelt, Elder."],
 	],
 	"elder_repeat": [
-		["Elder Maren", "The road east awaits, Ser Aldric. May the flame keep you."],
+		["Elder Maren", "The road east awaits, bearer. May the flame keep you."],
 	],
 	# Boss doors read the bearer (2026-07-06): "key@flag:x" / "key@band"
 	# variants, resolved by Story.beat_for — flag variants outrank band
@@ -1203,56 +1253,56 @@ const BEATS := {
 	],
 	"post_fangmaw": [
 		["Narrator", "Fangmaw falls. The wolves scatter into the trees, their eyes clear for the first time in months."],
-		["Ser Aldric", "This rot on its fangs... no natural beast carries that. The blight of the marsh did this."],
+		["You", "This rot on its fangs... no natural beast carries that. The blight of the marsh did this."],
 		["Narrator", "The gate to the Blightmarsh creaks open. Your health and potions have been restored."],
 	],
 	"pre_morwen": [
-		["Morwen", "Another little candle, come to gutter out in my marsh? The spiders will pick your bones clean, knight."],
-		["Ser Aldric", "Talk less, witch."],
+		["Morwen", "Another little candle, come to gutter out in my marsh? The spiders will pick your bones clean, bearer."],
+		["You", "Talk less, witch."],
 	],
 	"pre_morwen@tempted": [
-		["Morwen", "Another little candle, come to gutter out in my marsh? ...No. Look at you. Not guttering — LEANING. I know that lean, knight. Mine began exactly so: just a little, toward the warm."],
-		["Ser Aldric", "Talk less, witch."],
+		["Morwen", "Another little candle, come to gutter out in my marsh? ...No. Look at you. Not guttering — LEANING. I know that lean, candle. Mine began exactly so: just a little, toward the warm."],
+		["You", "Talk less, witch."],
 	],
 	"pre_morwen@steady": [
-		["Morwen", "A candle that keeps its flame in MY wind? How it must cost you, all that holding. Set it down, knight — the rot asks nothing of anyone. That is its whole mercy."],
-		["Ser Aldric", "Talk less, witch."],
+		["Morwen", "A candle that keeps its flame in MY wind? How it must cost you, all that holding. Set it down, candle — the rot asks nothing of anyone. That is its whole mercy."],
+		["You", "Talk less, witch."],
 	],
 	"post_morwen": [
 		["Morwen", "You... cannot stop... what has already begun. The Hollow King... rises..."],
-		["Ser Aldric", "Then I'll put him back in the ground myself."],
+		["You", "Then I'll put him back in the ground myself. Again, if that's what it takes."],
 		["Narrator", "The witch crumbles to ash. Beyond the marsh, the towers of Vargoth's Keep pierce the grey sky. You feel restored."],
 	],
 	"pre_vargoth": [
-		["King Vargoth", "A knight of the Ember Guard... You come for the Crown, little flame?"],
+		["King Vargoth", "A piece of me, walking about in someone else's chest... You come for the Crown, little flame?"],
 		["King Vargoth", "I wore it for sixty years. It is MINE. Come - kneel before your king."],
-		["Ser Aldric", "My king died sixty years ago. You're just what's left."],
+		["You", "My king died sixty years ago. You're just what's left."],
 	],
 	# He FELT the hand on the crown-stand (shrine_reliquary r_hand).
 	"pre_vargoth@flag:chose_reliquary_hand": [
-		["King Vargoth", "A knight of the Ember Guard... You come for the Crown, little flame?"],
+		["King Vargoth", "A piece of me, walking about in someone else's chest... You come for the Crown, little flame?"],
 		["King Vargoth", "I felt your hand on the stand where it rested. One breath of wanting — but oh, the FIT of you. Sixty years I wore it; you wore it for a heartbeat, and you already know how to kneel. Spare us both the pretending."],
-		["Ser Aldric", "My king died sixty years ago. You're just what's left."],
+		["You", "My king died sixty years ago. You're just what's left."],
 	],
 	"pre_vargoth@tempted": [
-		["King Vargoth", "A knight of the Ember Guard... You come for the Crown, little flame?"],
+		["King Vargoth", "A piece of me, walking about in someone else's chest... You come for the Crown, little flame?"],
 		["King Vargoth", "I can hear yours whispering from HERE. It promised you small things first, didn't it? Mine did too. Kneel, little flame — and skip the wasted years of telling yourself you don't want the rest."],
-		["Ser Aldric", "My king died sixty years ago. You're just what's left."],
+		["You", "My king died sixty years ago. You're just what's left."],
 	],
 	"pre_vargoth@steady": [
-		["King Vargoth", "A knight of the Ember Guard... You come for the Crown, little flame?"],
-		["King Vargoth", "You hold it the way the founders held it. Steady. They knelt in the end, knight — to me, or to time; it hardly matters which. Everything steady breaks. Come and break."],
-		["Ser Aldric", "My king died sixty years ago. You're just what's left."],
+		["King Vargoth", "A piece of me, walking about in someone else's chest... You come for the Crown, little flame?"],
+		["King Vargoth", "You hold it the way the founders held it. Steady. They knelt in the end, bearer — to me, or to time; it hardly matters which. Everything steady breaks. Come and break."],
+		["You", "My king died sixty years ago. You're just what's left."],
 	],
 	"epilogue": [
 		["Narrator", "The Hollow King shatters like old porcelain. The Ember Crown clatters to the stones - still warm to the touch."],
-		["Ser Aldric", "It's over. The flame returns to Emberfall."],
+		["You", "It's over. The flame returns to Emberfall."],
 		["Narrator", "...But deep beneath the keep, something older stirs in its sleep. TO BE CONTINUED IN CHAPTER 2."],
 	],
 	# The deserter's loop closes (wander_deserter: "be braver than me").
 	"epilogue@flag:heard_deserter": [
 		["Narrator", "The Hollow King shatters like old porcelain. The Ember Crown clatters to the stones - still warm to the touch."],
-		["Ser Aldric", "It's over. The flame returns to Emberfall."],
+		["You", "It's over. The flame returns to Emberfall."],
 		["Narrator", "Miles west, on a road going nowhere in particular, a ragged soldier stops mid-stride. The stones have gone quiet. He stands a long moment — then turns, at last, toward home."],
 		["Narrator", "...But deep beneath the keep, something older stirs in its sleep. TO BE CONTINUED IN CHAPTER 2."],
 	],

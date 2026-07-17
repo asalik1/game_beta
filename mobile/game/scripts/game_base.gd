@@ -228,6 +228,8 @@ var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en", "t
 	# user://settings.json ("touch_layout": id -> [x,y] custom offset; "joystick_pos": [x,y] custom home)
 var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)
+var _quest_avail_cache := -1          # any_quest_available memo: -1 dirty, 0 no, 1 yes (not saved)
+var quest_marks: Array = []           # live ❢ giver markers: [{node, quests}] (rebuilt with the world)
 var merchant_zones: Array = []        # rooms with a merchant present (saved)
 var wander_seed := 0                  # per-character roll for seeded rooms (saved)
 var cutscene: Cutscene = null         # active opening cinematic (if any)
@@ -1142,12 +1144,19 @@ var beat_broadcasting := false
 
 func set_flag(flag_name: String, value = true) -> void:
 	flags[flag_name] = value
+	# Accepting or finishing a quest IS a flag, so any flag change may have
+	# changed what's on offer — drop the HUD shine's cache (any_quest_available).
+	_quest_avail_cache = -1
 	# Flag-locked gates: any built gate whose flag just got set unlocks.
 	# (Dynamic call: gates live a layer up in game_world.gd — the ONE
 	# deliberate upward call in the chain.)
 	if value:
 		call("_recheck_gates")
 		_check_side_quests()
+		# A ❢ must clear the instant you accept — and accepting is a flag.
+		# (Dynamic call: the marks live a layer up in game_world, same
+		# deliberate upward hop as _recheck_gates above.)
+		call("refresh_quest_marks")
 	# An S-weapon awakening evolves a mythic skin to its awakened form (Phantom
 	# blue -> teal Nightfang). Refresh the sprite on ANY change of the owning
 	# class's awakening flag so it flips the instant the class awakens — and
@@ -1226,6 +1235,102 @@ func _check_side_quests() -> void:
 			"SIDE QUEST COMPLETE — %s%s" % [String(q["name"]),
 				"  (+%d gold)" % gold if gold > 0 else ""],
 			Color(1.0, 0.85, 0.35), 4.0)
+
+## Settle every side quest ACCEPTED in this chapter and never finished.
+## Called from the victory beat (game_flow): victory is the chapter's point of
+## no return — the card only offers ENTER or R, so there is no walking back to
+## finish anything — which makes it the last honest moment to charge for a
+## broken promise, and it lands BEFORE _wipe_chapter_flags retires the sq_
+## flags. Returns one line per broken promise for the victory card: the
+## consequence is NEVER silent (Balance §quest abandonment explains the shape —
+## this revokes what you were paid, it does not fine you for exploring).
+func _expire_side_quests() -> Array:
+	var broken: Array = []
+	for id in Story.ALL_SIDE_QUESTS:
+		var sid := String(id)
+		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
+		if String(q.get("chapter", "")) != chapter_id:
+			continue
+		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
+			continue
+		var over: Dictionary = q.get("abandon", {})
+		# 1. The pledge goes back — you were paid resonance for the promise.
+		var pledge := float(get_flag("sq_pledge_" + sid, 0.0))
+		var res_cost: float = float(over.get("resonance",
+			-(pledge + Balance.QUEST_ABANDON_RESONANCE)))
+		if res_cost != 0.0:
+			player.add_resonance(res_cost)
+		# 2. The people who asked notice — softly, and only if they exist.
+		var standing: Dictionary = over.get("standing", _abandon_standing(q))
+		for fac in standing:
+			player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
+		var line := String(q.get("name", sid))
+		if res_cost != 0.0:
+			line += "  (%+d resonance)" % int(round(res_cost))
+		broken.append(line)
+	return broken
+
+
+## What an abandoned quest costs in STANDING: a share of the reward its asker
+## would have paid, lost instead of gained. A quest with no standing reward
+## costs none — a stranger's errand has no faction to disappoint.
+func _abandon_standing(q: Dictionary) -> Dictionary:
+	var out := {}
+	var reward: Dictionary = q.get("reward", {})
+	var standing: Dictionary = reward.get("standing", {})
+	for fac in standing:
+		var lost := int(round(float(standing[fac]) * Balance.QUEST_ABANDON_STANDING_FRAC))
+		if lost > 0:
+			out[fac] = -lost
+	return out
+
+
+## Is ANY side quest still waiting to be offered in this chapter? The HUD
+## polls this EVERY FRAME for the ⚑ shine, so the answer is cached:
+## side_quest_available walks the zone table and re-rolls the wanderer seed,
+## which is far too heavy per frame. -1 = dirty; set_flag dirties it (accepting
+## a quest is a flag) and so does a chapter switch.
+func any_quest_available() -> bool:
+	if _quest_avail_cache < 0:
+		_quest_avail_cache = 0
+		for id in Story.ALL_SIDE_QUESTS:
+			if side_quest_available(String(id)):
+				_quest_avail_cache = 1
+				break
+	return _quest_avail_cache == 1
+
+
+## Is this side quest OFFERABLE in the world right now — its giver actually
+## present in THIS run — and not yet accepted or paid? The journal's AVAILABLE
+## section and the NPC markers both read this, so neither can promise a quest
+## whose giver never rolled (wanderer givers are seeded per run).
+func side_quest_available(sqid: String) -> bool:
+	var q: Dictionary = Story.ALL_SIDE_QUESTS.get(sqid, {})
+	if q.is_empty() or String(q.get("chapter", "")) != chapter_id:
+		return false
+	if get_flag("sq_on_" + sqid, false) or get_flag("sq_paid_" + sqid, false):
+		return false
+	# ANY giver being present is enough — several quests can be started more
+	# than one way (heron_feather: the boy who asks, or just finding the hat).
+	for giver in Story.quest_givers(sqid):
+		if _convo_reachable(String(giver)):
+			return true
+	return false
+
+
+## Whether a convo can be reached in this run: either it is bolted to one of
+## the chapter's authored zone NPCs, or it is a wanderer this run's seed
+## actually rolled into a social room.
+func _convo_reachable(convo_id: String) -> bool:
+	for z in zones:
+		for npc_def in z.get("npcs", []):
+			if String(npc_def.get("convo", "")) == convo_id:
+				# Props riding a wanderer roll only exist where it rolled.
+				if npc_def.has("req_wanderer"):
+					return bool(call("_wanderer_rolled", String(npc_def["req_wanderer"])))
+				return true
+	return bool(call("_wanderer_rolled", convo_id))
+
 
 func get_flag(flag_name: String, def = false):
 	return flags.get(flag_name, def)
@@ -1306,6 +1411,13 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 				if not sq.is_empty() and String(sq.get("chapter", chapter_id)) == chapter_id \
 						and not get_flag("sq_on_" + sqid, false):
 					set_flag("sq_on_" + sqid)
+					# What saying YES paid (Balance §quest abandonment): the
+					# accept choice grants resonance for making the promise, so
+					# record the pledge — leaving the chapter with the job
+					# unfinished hands it straight back. Direct write like
+					# sq_paid_: a derived record, not a gate.
+					if res_delta != 0.0:
+						flags["sq_pledge_" + sqid] = res_delta
 					sfx("potion")
 					spawn_text(player.global_position + Vector2(0, -70),
 						"NEW SIDE QUEST — %s  (see the ⚑ journal)" % String(sq["name"]),

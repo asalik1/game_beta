@@ -26,6 +26,23 @@ static func eva_curve(e: float) -> float:
 	return Balance.soft_cap(maxf(0.0, e), Balance.CAP_EVA)
 
 
+## How well `dex` answers `e_eva` — the DEX-vs-evasion gradient (Balance
+## §DEX vs evasion). Returns the TIER, not a chance:
+##   0 = outmatched: an evade is a full MISS
+##   1 = closing:    an evade only GRAZES (Balance.GRAZE_DAMAGE)
+##   2 = parity+:    evasion is CANCELLED outright, no roll at all
+## Deterministic on purpose: the player can SEE which tier they're in and
+## build out of it, where the old flat subtraction just bled a hidden
+## dodge chance. Zero evasion is tier 2 — there is nothing to answer.
+static func dex_tier(dex: float, e_eva: float) -> int:
+	if e_eva <= 0.0:
+		return 2
+	var ratio: float = maxf(0.0, dex) * Balance.DEX_PER_EVA / e_eva
+	if ratio >= 1.0:
+		return 2
+	return 1 if ratio >= Balance.DEX_GRAZE_RATIO else 0
+
+
 ## Combo: chance an ability doesn't go on cooldown. Its knee lives in
 ## recalc (combo is gem-built with no temp sources); this only floors.
 static func combo_curve(c: float) -> float:
@@ -57,16 +74,23 @@ static func effective_crit(c: float, exempt: float, e_critres: float) -> float:
 
 
 ## Resolve one hit from the player against an enemy.
-## Returns {"dmg": float, "crit": bool, "miss": bool}.
+## Returns {"dmg": float, "crit": bool, "miss": bool, "graze": bool}.
 ## crit_exempt: cap-exempt crit (theme bonuses) added above the knee.
 static func resolve(atk_dmg: float, dmg_type: String, crit_chance: float, crit_dmg: float,
 		pen: float, dex: float, e_res: float, e_eva: float, e_critres: float,
 		crit_exempt := 0.0) -> Dictionary:
-	# DEX reduces enemy evasion before the dodge roll. True damage always hits.
+	# DEX answers evasion as a TIER (dex_tier), not a subtraction: the target
+	# rolls at its own evasion, and the tier decides whether that evade is a
+	# full miss, a graze, or nothing at all. True damage always hits.
+	var grazed := false
 	if dmg_type != "true":
-		var eva := eva_curve(e_eva - dex * 0.004)
-		if eva > 0.0 and randf() < eva:
-			return {"dmg": 0.0, "crit": false, "miss": true}
+		var tier := dex_tier(dex, e_eva)
+		if tier < 2:
+			var eva := eva_curve(e_eva)
+			if eva > 0.0 and randf() < eva:
+				if tier == 0:
+					return {"dmg": 0.0, "crit": false, "miss": true, "graze": false}
+				grazed = true  # tier 1: it connects, but only just
 
 	var dmg := atk_dmg
 	var is_crit := false
@@ -81,4 +105,8 @@ static func resolve(atk_dmg: float, dmg_type: String, crit_chance: float, crit_d
 		dmg *= (1.0 - res_frac(eff_res))
 		if pen > e_res:
 			dmg += (pen - e_res) * 0.5
-	return {"dmg": dmg, "crit": is_crit, "miss": false}
+	# The graze is the LAST cut, after crit/res/pen: it clips whatever the
+	# blow would otherwise have paid, so it reads as "you barely connected".
+	if grazed:
+		dmg *= Balance.GRAZE_DAMAGE
+	return {"dmg": dmg, "crit": is_crit, "miss": false, "graze": grazed}
