@@ -1741,6 +1741,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch6_chapter()
 	await _test_ch7_chapter()
 	await _test_side_quests()
+	await _test_quest_abandonment()
 	await _test_ch1_quests()
 	await _test_ch2_quests()
 	await _test_ch3_quests()
@@ -3363,6 +3364,105 @@ func _test_side_quests() -> void:
 	game.player.gold = gold0
 	game.flags = snap_flags
 	print("ok: side quests (accept, step tracking, single payout)")
+
+
+## Quest ABANDONMENT + DISCOVERY (2026-07-17). Two halves of one feature:
+## a quest you accept and never finish is settled at the chapter's victory
+## (the pledge you were PAID for is revoked, plus the lean for keeping it),
+## and a quest nobody has offered you yet is discoverable rather than
+## invisible. SNAPSHOT + RESTORE shared state per the rule.
+func _test_quest_abandonment() -> void:
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var res0: float = game.player.resonance
+	var snap_stand: Dictionary = game.player.faction_standing.duplicate(true)
+	var ch0: String = game.chapter_id
+	game.chapter_id = "ch1"
+
+	# A finished quest is never charged for.
+	game.set_flag("sq_on_oslas_debt")
+	game.set_flag("sq_paid_oslas_debt")
+	game.player.resonance = 0.0
+	if not game._expire_side_quests().is_empty():
+		_fail("a COMPLETED quest was billed as abandoned")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if game.player.resonance != 0.0:
+		_fail("a completed quest moved resonance at chapter end")
+		await get_tree().create_timer(60.0).timeout
+		return
+
+	# An accepted-and-dropped quest: the pledge goes back, plus the penalty.
+	game.flags = snap_flags.duplicate(true)
+	game.set_flag("sq_on_oslas_debt")
+	game.flags["sq_pledge_oslas_debt"] = 1.0   # what the accept choice paid
+	game.player.resonance = 0.0
+	var broken: Array = game._expire_side_quests()
+	if broken.size() != 1:
+		_fail("an abandoned quest was not reported to the victory card")
+		await get_tree().create_timer(60.0).timeout
+		return
+	var want: float = -(1.0 + Balance.QUEST_ABANDON_RESONANCE)
+	if absf(game.player.resonance - want) > 0.01:
+		_fail("abandon cost %.2f resonance, expected %.2f (pledge + penalty)"
+			% [game.player.resonance, want])
+		await get_tree().create_timer(60.0).timeout
+		return
+	# The line must NAME the quest — an unexplained resonance drop reads as a bug.
+	if not String(broken[0]).contains(String(Story.ALL_SIDE_QUESTS["oslas_debt"]["name"])):
+		_fail("the broken-promise line did not name the quest")
+		await get_tree().create_timer(60.0).timeout
+		return
+
+	# Another chapter's open quest is NOT settled by this chapter's victory.
+	# (still_blue is ch2's; heron_feather looks like a pilot but is ch1's.)
+	game.flags = snap_flags.duplicate(true)
+	game.set_flag("sq_on_still_blue")
+	game.player.resonance = 0.0
+	game._expire_side_quests()
+	if game.player.resonance != 0.0:
+		_fail("ch1's victory charged for a quest belonging to another chapter")
+		await get_tree().create_timer(60.0).timeout
+		return
+
+	# DISCOVERY: every quest names a giver, so a ❢ always has somewhere to sit.
+	for sqid in ["oslas_debt", "hunters_rounds", "flame_at_window"]:
+		if Story.quest_givers(String(sqid)).is_empty():
+			_fail("side quest '%s' has no giver convo — nothing to mark" % sqid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Both directions of the index agree, and MULTI-giver quests keep every
+	# giver — heron_feather is offered by the boy AND by two ways of finding
+	# the hat, and an index that kept only the first would leave the props
+	# unmarked and test the wrong NPC for reachability.
+	if Story.quest_givers("heron_feather").size() < 2:
+		_fail("multi-giver quest collapsed to one giver")
+		await get_tree().create_timer(60.0).timeout
+		return
+	for giver in Story.quest_givers("oslas_debt"):
+		if not Story.quests_offered_by(String(giver)).has("oslas_debt"):
+			_fail("quest_givers / quests_offered_by disagree for '%s'" % giver)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# An ACCEPTED quest stops being "available" — the ❢ and the AVAILABLE
+	# section must not keep advertising a job already in your log.
+	game.flags = snap_flags.duplicate(true)
+	game.set_flag("sq_on_oslas_debt")
+	if game.side_quest_available("oslas_debt"):
+		_fail("an accepted quest still advertised itself as available")
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.set_flag("sq_paid_oslas_debt")
+	if game.side_quest_available("oslas_debt"):
+		_fail("a completed quest still advertised itself as available")
+		await get_tree().create_timer(60.0).timeout
+		return
+
+	game.chapter_id = ch0
+	game.player.resonance = res0
+	game.player.faction_standing = snap_stand
+	game.flags = snap_flags
+	game._quest_avail_cache = -1
+	print("ok: quest abandonment (pledge revoked + penalty, chapter-scoped, named) + discovery")
 
 
 ## Q1 — Chapter 1 side quests (ch1_quests.gd): the module's convo

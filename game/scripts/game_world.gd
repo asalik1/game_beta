@@ -33,6 +33,8 @@ func switch_chapter(id: String, force := false) -> void:
 	if not (Story.CHAPTER_LIST.has(id) or Story.is_endgame(id)) or (id == chapter_id and not force):
 		return
 	chapter_id = id
+	_quest_avail_cache = -1  # a new chapter offers a whole new set (⚑ shine memo)
+	quest_marks.clear()      # the old world's ❢ nodes die with it
 	# Potion investment (2026-07-09): stock is BOUGHT and carries across
 	# chapters — no grants. The one exception: entering a teaching chapter
 	# (ch1-3) hands ONE free health potion that EXPIRES on leaving it. The
@@ -379,10 +381,11 @@ func _build_room(i: int) -> void:
 		if npc_def.get("placeholder", false) and not dev_mode:
 			continue
 		var convo_id: String = npc_def["convo"]
-		_make_npc(npc_def["sprite"],
+		var npc_node := _make_npc(npc_def["sprite"],
 			room_pos(i, npc_def["x"], npc_def["y"]),
 			npc_def.get("prompt", "E — Talk"), func() -> void:
 				run_convo_id(convo_id))
+		_mark_quest_giver(npc_node, convo_id)
 
 	# Elder Maren, the Chapter 1 quest giver in the village.
 	if chapter_id == "ch1" and i == 0:
@@ -791,8 +794,54 @@ func _spawn_wanderer(i: int) -> void:
 	var w: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
 	var convo_id: String = w["convo"]
 	var pos := room_center(i) + Vector2(rng.randf_range(-220.0, 220.0), rng.randf_range(-140.0, 140.0))
-	_make_npc(w["sprite"], pos, w.get("prompt", "E — Talk"), func() -> void:
+	var npc_node := _make_npc(w["sprite"], pos, w.get("prompt", "E — Talk"), func() -> void:
 		run_convo_id(convo_id))
+	_mark_quest_giver(npc_node, convo_id)
+
+## Hang a ❢ over an NPC who can still offer a side quest you haven't taken —
+## the genre's "!" and the actual fix for walking past a giver and never
+## learning the quest existed (the journal only ever tracked quests you'd
+## already accepted). Silent if this convo offers nothing, or if the offer is
+## already taken//paid, so the mark means exactly one thing: an unasked job.
+## The node self-polls rather than snapshotting at spawn — the mark must clear
+## the instant you say yes, and the NPC outlives the conversation.
+func _mark_quest_giver(npc: Node2D, convo_id: String) -> void:
+	var offered: Array = Story.quests_offered_by(convo_id)
+	if offered.is_empty():
+		return
+	var mark := Label.new()
+	mark.text = "❢"
+	mark.position = Vector2(-40, -84)
+	mark.size = Vector2(80, 22)
+	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mark.add_theme_font_size_override("font_size", 22)
+	mark.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+	mark.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	mark.add_theme_constant_override("outline_size", 5)
+	npc.add_child(mark)
+	# A slow bob so it reads as a marker, not scenery.
+	var tw := mark.create_tween().set_loops()
+	tw.tween_property(mark, "position:y", -90.0, 0.9).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(mark, "position:y", -84.0, 0.9).set_trans(Tween.TRANS_SINE)
+	quest_marks.append({"node": mark, "quests": offered})
+	refresh_quest_marks()  # a reloaded save may already hold this quest
+
+
+## Re-read every ❢ against the flags. Cheap (a handful of marks, two flag
+## lookups each), so it rides the same set_flag beat that accepts a quest.
+func refresh_quest_marks() -> void:
+	for mk in quest_marks.duplicate():
+		var node: Label = mk["node"]
+		if not is_instance_valid(node):
+			quest_marks.erase(mk)
+			continue
+		var any := false
+		for sqid in mk["quests"]:
+			if side_quest_available(String(sqid)):
+				any = true
+				break
+		node.visible = any
+
 
 ## Whether this run's seeded wanderer rolls put `convo_id` in SOME social
 ## room — mirrors _spawn_wanderer's roll exactly (same seed, same single

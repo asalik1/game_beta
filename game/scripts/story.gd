@@ -1076,6 +1076,53 @@ static var ALL_SIDE_QUESTS: Dictionary = {}
 static var ALL_QUEST_ITEMS: Dictionary = {}  # module keepsakes (Items.make_quest_item)
 static var ALL_WANDERERS: Dictionary = {}  # chapter id -> wanderer pool
 static var CHAPTER_LIST: Dictionary = {}
+static var _quest_givers: Dictionary = {}   # side-quest id -> Array of convo ids that OFFER it
+static var _quest_offers: Dictionary = {}   # convo id -> Array of side-quest ids it can hand out
+static var _givers_built := false
+
+
+## The reverse index of a choice's "side_quest" key, built lazily by scanning
+## every convo's choices once — content modules register nothing, because
+## authoring the offer IS the wiring. Drives the journal's AVAILABLE list and
+## the NPC ❢ marks, both of which must know WHO to point at.
+##
+## A quest may have SEVERAL givers and both directions are kept: heron_feather
+## is offered by the miller's boy AND by two different ways of finding the hat.
+## Keeping only the first would leave the other givers unmarked and would test
+## the wrong NPC for reachability.
+static func _build_quest_givers() -> void:
+	if _givers_built:
+		return
+	load_content()
+	_givers_built = true
+	for cid in ALL_CONVOS:
+		var nodes: Dictionary = ALL_CONVOS[cid].get("nodes", {})
+		for nid in nodes:
+			var node: Dictionary = nodes[nid]
+			for c in node.get("choices", []):
+				var offer := String(c.get("side_quest", ""))
+				if offer == "":
+					continue
+				if not _quest_givers.has(offer):
+					_quest_givers[offer] = []
+				if not _quest_givers[offer].has(String(cid)):
+					_quest_givers[offer].append(String(cid))
+				if not _quest_offers.has(String(cid)):
+					_quest_offers[String(cid)] = []
+				if not _quest_offers[String(cid)].has(offer):
+					_quest_offers[String(cid)].append(offer)
+
+
+## Every convo that can hand out this side quest (may be empty).
+static func quest_givers(sqid: String) -> Array:
+	_build_quest_givers()
+	return _quest_givers.get(sqid, [])
+
+
+## Every side quest this convo can hand out (may be empty).
+static func quests_offered_by(convo_id: String) -> Array:
+	_build_quest_givers()
+	return _quest_offers.get(convo_id, [])
 
 
 ## Merge base content + every registered module. Idempotent; call once

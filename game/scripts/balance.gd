@@ -1001,6 +1001,40 @@ const RES_CONSTANCY_HEAL_MAX := 0.25  # bonus potion healing at full lean
 # the most at death's door, worth nothing to a topped-off facetank.
 const POTION_HEAL_FRAC := 0.15        # health potion: fraction of MISSING hp (a hand up, never a crutch)
 
+# ----------------------------------------------------- quest abandonment ---
+# A side quest ACCEPTED and never finished is settled at the chapter's
+# victory beat (game_base._expire_side_quests) — 2026-07-17.
+#
+# The SHAPE is deliberate, and it is not "a penalty for not finishing". A
+# flat fine punishes EXPLORATION: players accept quests to read the content,
+# so if saying yes is a trap, the correct play becomes never talking to
+# anyone — the exact opposite of what side quests are for. So an abandoned
+# quest is never fined. Two things happen instead, and both only take back
+# something the player was already given:
+#
+#  1. The PLEDGE is revoked. Every quest's accept choice PAYS resonance for
+#     saying yes (ch1's three all grant +1) — you are paid for a promise at
+#     the moment you make it. Walk away and that payment goes back, plus
+#     ABANDON_RESONANCE on top: keeping credit for an oath you didn't honour
+#     is itself a lean toward Hunger, which is exactly what Resonance
+#     measures. This is the hard half, and it is thematically load-bearing —
+#     a game whose warlock identity is "the long bargain" cannot let you
+#     stroll away from a bargain for free.
+#  2. The WORLD reacts, softly. If the quest's reward named factions, the
+#     people who asked notice you didn't deliver and lose
+#     ABANDON_STANDING_FRAC of what they'd have gained. You lost a reward and
+#     gained a story — consequence, not a fine. A quest with no standing
+#     reward costs none: a stranger's errand has no faction to disappoint.
+#
+# Authors may override either half per quest with an "abandon" block on the
+# SIDE_QUESTS entry: {"resonance": float, "standing": {fac: int}}.
+#
+# The deadline must be VISIBLE or this is a feel-bad every time — the journal
+# prints it on every accepted quest, and the victory card names every promise
+# broken. Expiry without a shown clock was never on the table.
+const QUEST_ABANDON_RESONANCE := 3.0      # ON TOP of revoking the accept's pledge
+const QUEST_ABANDON_STANDING_FRAC := 0.5  # of the quest's standing reward, LOST instead of gained
+
 # --------------------------------------------------------------- mailbox ---
 # Unclaimed mail (dropped-loot letters, event gifts) expires after this
 # many days on the TRUSTED clock (game.trusted_now — monotonic, cheat-

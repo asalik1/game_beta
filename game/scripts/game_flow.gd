@@ -309,6 +309,19 @@ const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
 	"delivered_verdict", "spared_guilty", "recused", "closed_tome",
 	"borrowed_more", "burned_pages"]
 
+## The victory card's roll-call of promises left unkept (game_base
+## ._expire_side_quests already charged for them). Named on the card because
+## an unexplained resonance drop is indistinguishable from a bug — the whole
+## point is that the world noticed, so the player must be told it did.
+func _broken_promises_text(broken: Array) -> String:
+	if broken.is_empty():
+		return ""
+	var body := "\n\nLEFT UNDONE — you gave your word and rode on:"
+	for line in broken:
+		body += "\n   ✗  " + String(line)
+	return body
+
+
 func _wipe_chapter_flags() -> void:
 	var kept := {}
 	for fname in flags:
@@ -590,16 +603,27 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		var epilogue: Array = Story.beat_for("epilogue_" + chapter_id, band, flags)
 		if epilogue.is_empty():
 			epilogue = Story.beat_for("epilogue", band, flags)
+		# Promises left unkept settle HERE (Balance §quest abandonment). Victory
+		# is the chapter's point of no return — the card offers only ENTER or R,
+		# so nothing can be walked back and finished — which makes this the last
+		# honest moment to charge for them, and it lands before
+		# advance_chapter's _wipe_chapter_flags retires the sq_ flags. Fired
+		# AFTER the epilogue's band is read: the chapter you PLAYED picks its
+		# own send-off, and the reckoning arrives after it rather than reaching
+		# back to rewrite it.
+		var broken: Array = _expire_side_quests()
 		var vtext: String
 		if next_ch != "":
 			# Mid-campaign victory: the road goes on.
 			vtext = String(Story.chapter(chapter_id).get("victory_text",
 				"The Ember Crown is reclaimed. But the shards are still out there — and years from now, they will wake."))
+			vtext += _broken_promises_text(broken)
 			vtext += "\n\nENTER — journey on to %s        ·        R — start over" \
 				% String(Story.chapter(next_ch)["name"])
 		else:
 			vtext = String(Story.chapter(chapter_id).get("victory_text",
 				"Thanks for playing!\nPress R to play again."))
+			vtext += _broken_promises_text(broken)
 		var end_it := func() -> void:
 			state = ST_VICTORY
 			set_music("")
