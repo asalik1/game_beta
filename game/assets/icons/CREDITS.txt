@@ -69,7 +69,7 @@ any subset can be pulled without breaking anything.
   ability_archer_ult.png  — falling arrow volley      -> Arrow Storm
   ability_mage_a1.png     — comet of flame            -> Firebolt
   ability_mage_a2.png     — ice starburst             -> Frost Nova
-  ability_mage_a3.png     — blue bolt in a rift       -> Blink
+  ability_mage_a3.png     — bolt cut + displaced      -> Blink
   ability_mage_ult.png    — burning meteor            -> Meteor
   ability_assassin_a1.png — thrust dagger             -> Stab
   ability_assassin_a2.png — dagger afterimage strobe  -> Shadow Dash

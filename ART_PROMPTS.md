@@ -23,7 +23,7 @@ text-to-image model — it also broke `tools/art/flux_draft.py` and polligen's
 | `ability_warrior_a2` (Shield Bash) | **KEPT** — owner reviewed 2026-07-17, reads fine in-game. |
 | `ability_assassin_a2` (Shadow Dash) | **DONE** — re-roll installed 2026-07-17 (dagger afterimage strobe; reads distinct from a1 at 24px). |
 | `ability_paladin_ult` (Conviction) | **DONE** — re-roll installed 2026-07-17 (split holy/chained warhammer). |
-| `ability_mage_a3` (Blink) | **RE-ROLL PENDING** — visually clean but the vanish/reappear bars died at 24px, leaving a generic bolt. Prompt rewritten below. |
+| `ability_mage_a3` (Blink) | **DONE** — v3 installed 2026-07-17 (bolt cut + displaced mid-strike; the break survives 24px). v1's afterimage died at bar size; v2's "two bars" prompt got faithful meaningless geometry — the fix was giving the displacement a recognizable OBJECT. |
 | `ability_warlock_a1` (Shadowbolt) | **RE-ROLL PENDING** — faithful to its prompt but too dark for the near-black action bar; the lowest-contrast icon in the set. Prompt rewritten below. |
 
 **Two lessons the re-rolls encode.** (1) The generator ignores negatives ~1 in
@@ -773,22 +773,29 @@ PALETTE: outline #2E1C2C; ice ramp #547BC5 / #00ADED / #7BDCFF / #BFEFFF;
 centre flash #FFFFFF.
 ```
 
-### `ability_mage_a3.png` — Blink  (RE-ROLL 2026-07-17)
+### `ability_mage_a3.png` — Blink  (RE-ROLL v3, 2026-07-17)
 *Dash in your move direction, shocking everything in your path; brief i-frame + 50% DR.*
-The first render obeyed its prompt — the failure was at 24px, where the two
-afterimage bars vanished and left a generic lightning bolt. This version makes
-the DISPLACEMENT the subject and the shock the connector, with both end-states
-big enough to survive the bar.
+Third attempt; the second failed differently than the first, and the lesson is
+the reusable part. v1: a good bolt whose afterimage bars died at 24px. v2 asked
+for "two bold vertical BARS" — and a bar is semantically NOTHING, so the
+generator faithfully rendered meaningless geometry (it read as a percent sign /
+dumbbell). Same family as the paladin "refresh symbol" failure: the
+displacement concept needs a RECOGNIZABLE OBJECT to be displaced. So v3 keeps
+one object — a lightning bolt — and does the blink TO IT: the bolt is cut
+mid-strike and its lower half reappears offset. One object, bold silhouette,
+and the offset IS the teleport.
 ```
-SUBJECT: two bold vertical BARS, pillar-thick, one in the lower-left corner and
-one in the upper-right — the SAME shape vanished and reappeared. The lower-left
-bar is a dark hollow GHOST (outline only, near-empty); the upper-right bar is
-solid, bright, fully arrived. ONE thick jagged lightning arc leaps between them
-along the diagonal, with 2 short spark ticks off its middle. The two bars are
-each at least a quarter of the frame tall; the arc is the only thin element.
-PALETTE: outline #2E1C2C; ghost bar #547BC5 hollow with a #2E1C2C interior;
-arrived bar #7BDCFF / #BFEFFF with a #FFFFFF edge; arc core #FFFFFF into
-#BFEFFF; spark ticks #7BDCFF.
+SUBJECT: one thick, chunky zigzag LIGHTNING BOLT striking from upper-right
+toward lower-left, drawn massive — strokes as wide as a thumb, 3 hard angular
+turns, filling the frame corner to corner. The bolt is CUT clean through at its
+midpoint and the LOWER half is DISPLACED one full stroke-width to the left of
+where it should be, so the two halves visibly do not line up across the gap —
+the bolt teleported mid-strike. In the small diagonal gap between the halves,
+2 or 3 tiny drifting square sparks. Both halves are solid and bright; the break
+and misalignment must be obvious at a glance.
+PALETTE: outline #2E1C2C; bolt core #FFFFFF; bolt body #BFEFFF / #7BDCFF with
+a #00ADED shadowed underside; gap sparks #7BDCFF; a #547BC5 ghost edge one
+pixel wide on the displaced half's left side.
 ```
 ### `ability_mage_ult.png` — Meteor
 *Call a meteor onto the nearest enemy. Cataclysmic; a quarter is true damage.*
