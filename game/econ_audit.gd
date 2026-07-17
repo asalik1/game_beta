@@ -221,9 +221,13 @@ func _sinks() -> void:
 	for pchid in Balance.CHAPTER_ECON:
 		pots.append("%s %dg" % [pchid, Balance.potion_price(_chapter_story_level(String(pchid)))])
 	print("  potion (LEVEL-scaled, shown at each chapter's story level): " + " | ".join(pots))
-	print("  mana draught %d | elixir %d | recall %d" %
-		[Balance.CONSUMABLE_PRICES["mana_potion"], Balance.CONSUMABLE_PRICES["elixir_might"],
-		Balance.CONSUMABLE_PRICES["recall_scroll"]])
+	# Derived from the table, never retyped: this line listed 3 of 5 at flat
+	# base while the potion line above it level-scaled (2026-07-17).
+	var cons: Array = []
+	for cid in Balance.CONSUMABLE_PRICES:
+		cons.append("%s %d->%d" % [cid, Balance.consumable_price(String(cid), 1),
+			Balance.consumable_price(String(cid), 40)])
+	print("  consumables (L1 -> L40): " + " | ".join(cons))
 	var costs: Array = []
 	for g in ["C", "B", "A", "S"]:
 		var it := {"grade": g, "plus": 0}
@@ -240,7 +244,21 @@ func _sinks() -> void:
 		gam.append("%s %dg" % [gchid, _gamble_base(String(gchid))])
 	print("  gamble (boss-band pity, x%.1f expected farm cost): %s" %
 		[Balance.GAMBLE_DISCOUNT, " | ".join(gam)])
-	print("  reforge (sub/affix/socket): C 140/280/420 | B 220/440/660 | S 500/1000/1500")
+	# Derived from Items.reforge_cost / Balance.QUENCH_COST_BASE. These were
+	# hardcoded and 4-26x under the real prices (2026-07-13's repricing never
+	# reached this string) — the audit was under-reporting the game's BIGGEST
+	# gold sink, and DESIGN.md's sink sizing inherited the error. Quench was
+	# missing outright.
+	var rf: Array = []
+	var qn: Array = []
+	for g in ["C", "B", "A", "S"]:
+		var it := {"grade": g}
+		rf.append("%s %d/%d/%d" % [g, Items.reforge_cost(it, "sub"),
+			Items.reforge_cost(it, "affix"), Items.reforge_cost(it, "socket")])
+		var qb: int = Balance.QUENCH_COST_BASE[g]
+		qn.append("%s %d-%d" % [g, qb, int(round(float(qb) * (1.0 + Balance.QUENCH_COST_ESCALATION)))])
+	print("  reforge (sub/affix/socket, socket is C+ only): " + " | ".join(rf))
+	print("  quench (fresh roll -> perfecting the last %): " + " | ".join(qn))
 	print("  weekly challenge pays %d g (level-scaled) + %d gems | vault: gold chest + Lv2 gem" %
 		[Balance.WEEKLY_REWARD_GOLD, Balance.WEEKLY_REWARD_GEMS])
 

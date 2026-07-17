@@ -962,13 +962,16 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	var tl := m._lbl(cons, "⟲ Palimpsest of the Path — crush it to refund EVERY spent skill point and pick a new path down the tree. Elite drop, rarer than the Stone.", 13, Color(0.7, 0.72, 0.78))
 	tl.custom_minimum_size = Vector2(880, 0)
 	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# No alchemical bullets (U+1F70x): that block is rarer than the U+2697
+	# alembic dc673ab already proved renders as tofu on mobile, so these six
+	# were the same bug one screen over. Names carry the list on their own.
 	for util in [
-		"🜍 Health Potion — mends 15% of your MISSING health (carry as many as your BAGS hold — each potion takes a bag slot and shows in your inventory, where you click the stack to plan your loadout) — a helping hand, not an eraser: worth the most at death's door. Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with your level. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter.",
-		"🜁 Mana Draught — restore %d%% of your MISSING mana (priced like a health potion). Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
-		"🜂 Elixir of Might — +%d%% damage for %ds: a BURST WINDOW — pop it into the kill shot, not the whole fight." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
-		"🜄 Elixir of Warding — cut incoming damage by %d%% for %ds. Bought from merchants." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)],
-		"🜔 Draught of Renewal — instantly restore %d%% of maximum health — a full heal in one gulp, where a potion only tops you up. Bought from merchants." % int(Balance.RENEWAL_HEAL_FRAC * 100),
-		"🜃 Scroll of Recall — whisk yourself back to the last safe room (not in combat). Bought from merchants."]:
+		"Health Potion — mends 15% of your MISSING health (carry as many as your BAGS hold — each potion takes a bag slot and shows in your inventory, where you click the stack to plan your loadout) — a helping hand, not an eraser: worth the most at death's door. Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with your level. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter.",
+		"Mana Draught — restore %d%% of your MISSING mana (priced like a health potion). Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
+		"Elixir of Might — +%d%% damage for %ds: a BURST WINDOW — pop it into the kill shot, not the whole fight." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
+		"Elixir of Warding — cut incoming damage by %d%% for %ds. Bought from merchants." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)],
+		"Draught of Renewal — instantly restore %d%% of maximum health — a full heal in one gulp, where a potion only tops you up. Bought from merchants." % int(Balance.RENEWAL_HEAL_FRAC * 100),
+		"Scroll of Recall — whisk yourself back to the last safe room (not in combat). Bought from merchants."]:
 		var ul := m._lbl(cons, String(util), 13, Color(0.7, 0.72, 0.78))
 		ul.custom_minimum_size = Vector2(880, 0)
 		ul.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

@@ -1077,7 +1077,7 @@ func _sanitize_char_name(raw: String) -> String:
 
 # ----------------------------------------------------------- potion loadout ---
 
-## The per-room potion ROTATION editor (reached from the inventory's "⚗ Potion
+## The per-room potion ROTATION editor (reached from the inventory's "Potion
 ## Loadout" tab). Shows the room slots, lets you slot/unslot any owned elixir or
 ## mana potion, and — crucially — is visible and self-explaining even when you
 ## carry only Health (the old potion-popover path showed nothing then).
@@ -1476,7 +1476,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						game.local_player.consumables.erase(cc)
 						game.discard_to_ground({"kind": "stone", "stone": cc})
 						open_inventory("gear", cat)
-					var actions: Array = [["  ⚗  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
+					# No alembic here: U+2697 has no glyph coverage on mobile and
+					# renders as tofu (dc673ab dropped it from the loadout tab —
+					# this Use button carried the same codepoint and was missed).
+					var actions: Array = [["  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
 					if cid in Items.ROTATION_POTIONS:
 						# Loadout editing (per-room potion budget, 2026-07-07 v2).
 						info += "\n\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. [%s] cycles potions in the field." % [
