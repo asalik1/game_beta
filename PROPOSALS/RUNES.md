@@ -95,14 +95,64 @@ an S carrying the rune your build actually wants. Self-balancing: a build-defini
 rune is worth eating a stat loss for, a mediocre one isn't. The L/S gap doesn't
 need to be tuned so S stays "competitive" — S is a *sidegrade with a reason*.
 
-**Open: how many L slots carry a locked passive?** Today only the S weapon has one
-(`Items.S_GEAR[cls]["weapon"]["passive"]`); armor/boots/charm are
-names + stats. Two coherent answers:
-- **L weapon only** — 6 authored (mirrors today's data). Your L weapon is a lock;
-  the other three slots stay a live L-stats-vs-S-rune choice.
-- **All four L slots** — 24 authored (4 × 6 classes). A full L set is four locked
-  passives, and S becomes the deliberate sidegrade you wear when a rune matters
-  more than the stat line.
+### Rune tiers (settled 2026-07-17)
+
+**Every grade B through L carries a rune.** What differs is whether it's rolled or
+locked, and what job it does:
+
+| Tier | Rune | Job |
+|---|---|---|
+| B / A / S | **rolled** | weaker, OR carries a drawback, OR supports an alternative playstyle |
+| **L** | **locked, fixed** | strong, and **covers that class's endgame weakness** |
+
+**All four L slots carry a locked rune — 24 total (4 slots × 6 classes).**
+
+**Six of the 24 already exist and already do exactly this job.** `Items.PASSIVES`
+is, read honestly, a weakness-fixer table with one entry per class:
+
+| passive | the weakness it covers |
+|---|---|
+| `kingsblade` | warrior has no **range** → Cleave hurls a wave |
+| `windward` | archer has no **sustain** → Second Wind at 1.5s (from 3s) |
+| `wellspring` | mage is **mana-starved** → +50% regen |
+| `mirrorstep` | assassin is **fragile** → dash reflects projectiles, softens AoE |
+| `dawnbreaker` | paladin has no **AoE** → Judgment splashes |
+| `voidmaw` | warlock gets **swarmed** → curse-wave shoves the room off |
+
+All six are built and dispatched today (`player_kit_*.gd`). They become the L
+**weapon** runes unchanged. L is not a new idea — it is this pattern, extended
+from one slot to four.
+
+**The FRAMEWORK for L already exists — it's the owner's own S-passive rule.** Ruled
+2026-07-07: each passive is *"its class's bullet-hell DENSITY ADAPTER for endgame —
+the ceiling is still there, just a bit more forgiving if the player farms for the
+gear; forgiveness purchased with time, never granted."* Each channels power into
+that class's UNCONSTRAINED axis, never a raw damage/mobility crank. That IS "covers
+the class weakness in endgame." L inherits the rule whole; it does not need a new one.
+
+Two standing rulings that constrain L authoring:
+- **Parity is not a bug (2026-07-09).** kingsblade/dawnbreaker out-damage
+  wellspring/windward *intentionally* — plate scales less from damage stats, so the
+  legendary is plate's scaling compensation. **Do not re-flag in audits.**
+- **Gate crit CONDITIONALLY** (warlock Nightfall crits only on `crush`-tagged
+  abilities) so a rune never feeds a DoT double-dip.
+
+**THE REAL GATE is still design input, not authoring**, but it's narrower than it
+looks: the framework names the *shape* (density adapter on the unconstrained axis);
+what's missing is **18 specific weaknesses** — armor/boots/charm × 6 classes.
+`TIERLIST.md` won't supply them; it's a power ladder, not a weakness inventory
+(fragments only: assassin "squishy, manaless", paladin/warrior Bulwark "easiest
+pilots, lowest ceilings"). Answer "what are this class's other three endgame
+falloffs?" ×6 and the runes write themselves — the existing six are ~7 lines each.
+Skip it and L is 18 stat sticks wearing a passive's clothes.
+
+**Bonus: the B→L rune call closes a flagged watch-item.** The same 2026-07-07 note
+warns that *"the L40-70 pre-S window is where avoidance classes are weakest (adapter
+not yet farmable, density rising) — the ACQUISITION timing of each passive is the
+real tuning knob, more than its numbers."* Adapters used to exist ONLY at S, so that
+window had none. Rolled runes at B/A/S now fill it with partial ones. Note the
+inverse: moving locked adapters from S up to L *lengthens* that window — the rolled
+tiers are what keep it survivable, so they are not optional decoration.
 
 ---
 
