@@ -1751,6 +1751,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch7_quests()
 	await _test_promises_kept()
 	await _test_promises_kept_2()
+	await _test_endgame_no_placeholder_bosses()
 	await _test_pause_menu()
 	await _test_mp_lobby_ui()
 	# -----------------------------------------------------------------------
@@ -4338,3 +4339,32 @@ func _drag_ev(th: TouchHud, pos: Vector2, rel: Vector2) -> void:
 	e.position = pos
 	e.relative = rel
 	th._input(e)
+
+
+## Endgame boss pools must never roll a PLACEHOLDER boss (pc_bosses.gd: the
+## dev-only Ninja Adventure sweep, tagged "placeholder": true, unplaced, no
+## mechanics). Covers the _boss_pool() thin-record fallback that leaked them,
+## plus the earned-kills path (record_boss logs dev-panel placeholder kills).
+func _test_endgame_no_placeholder_bosses() -> void:
+	var kept_records: Dictionary = game.boss_records.duplicate(true)
+	# One recorded kill (< 3) forces _boss_pool onto the full-roster fallback.
+	game.boss_records = {"fangmaw": {"ttk": 30.0, "dps": 100.0, "kills": 1}}
+	var eg := Endgame.new()
+	eg.game = game
+	var roster: Array = eg._placed_boss_roster()
+	var pool: Array = eg._boss_pool()
+	# Earned path: 3 real kills keep _boss_pool off the fallback, so the
+	# placeholder kill would ride the record straight into the pool.
+	var rec := {"ttk": 30.0, "dps": 100.0, "kills": 1}
+	game.boss_records = {"fangmaw": rec, "morwen": rec, "vargoth": rec, "cyclops": rec}
+	var earned: Array = eg._boss_pool()
+	eg.free()
+	game.boss_records = kept_records
+	if roster.is_empty() or pool.is_empty():
+		return _fail("endgame pools: empty (roster %d / fallback %d)" % [roster.size(), pool.size()])
+	if earned.size() != 3 or "cyclops" in earned:
+		return _fail("endgame pools: earned pool wrong (%s) — placeholder kill should be skipped" % [earned])
+	for kind in roster + pool + earned:
+		if Story.ALL_ENEMIES.get(kind, {}).get("placeholder", false):
+			return _fail("endgame pools: placeholder boss '%s' leaked into the arena pool" % kind)
+	print("ok: endgame boss pools exclude placeholder bosses (roster + fallback + earned kills)")

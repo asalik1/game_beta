@@ -439,7 +439,8 @@ func _apply_affix(e: Enemy, key: String) -> void:
 func _boss_pool() -> Array:
 	var pool: Array = []
 	for kind in Menus.BOSS_KINDS:
-		if not Story.ALL_ENEMIES.get(kind, {}).get("boss", false):
+		var def: Dictionary = Story.ALL_ENEMIES.get(kind, {})
+		if not def.get("boss", false) or def.get("placeholder", false):
 			continue
 		if int(game.boss_records.get(kind, {}).get("kills", 0)) > 0:
 			pool.append(kind)
@@ -451,7 +452,8 @@ func _boss_pool() -> Array:
 func _placed_boss_roster() -> Array:
 	var pool: Array = []
 	for kind in Menus.BOSS_KINDS:
-		if Story.ALL_ENEMIES.get(kind, {}).get("boss", false):
+		var def: Dictionary = Story.ALL_ENEMIES.get(kind, {})
+		if def.get("boss", false) and not def.get("placeholder", false):
 			pool.append(kind)
 	return pool
 
