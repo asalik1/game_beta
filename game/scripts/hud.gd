@@ -1182,18 +1182,49 @@ func _label(pos: Vector2, font_size: int, color: Color, width := 500.0, align :=
 ## Ability names sit in a 76px label on the bar's 70px slot pitch, and a
 ## Label's rect can't shrink below its text — so a long name ("Fan of
 ## Knives") widened the rect and piled into the neighbour slot's label.
-## Step the font down until the name spans at most one slot pitch, and
-## re-pin the rect to its build width so centering stays on the slot.
-func _fit_name(l: Label) -> void:
-	if String(l.get_meta("fit_txt", "")) == l.text:
+## The whole row shares ONE font size per class (mixed sizes across the
+## bar read wonky): the largest size that fits every ability name in its
+## slot, applied to all five name labels — see _name_row_size.
+func _fit_name(l: Label, cap := 12) -> void:
+	var key := "%d|%s" % [cap, l.text]
+	if String(l.get_meta("fit_txt", "")) == key:
 		return
-	l.set_meta("fit_txt", l.text)
-	var f := l.get_theme_font("font")
-	var s := 12
-	while s > 8 and f.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x > SLOT_SIZE + 10.0:
-		s -= 1
+	l.set_meta("fit_txt", key)
+	var s := _fit_size(l, l.text, cap)
 	l.add_theme_font_size_override("font_size", s)
 	l.size = Vector2(SLOT_SIZE + 16.0, s + 14.0)
+
+
+## Largest font size (<= from, floor 8) at which `text` spans at most one
+## slot pitch.
+func _fit_size(l: Label, text: String, from := 12) -> int:
+	var f := l.get_theme_font("font")
+	var s := from
+	while s > 8 and f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x > SLOT_SIZE + 10.0:
+		s -= 1
+	return s
+
+
+## The class's shared name-row font size: the largest that fits its
+## longest ability name (paladin's stance reads included — the ult slot
+## renders those live). Potion-slot strings all fit at 12, so anything
+## <= 12 fits them too; they just wear the class size for consistency.
+var _row_size_cls := ""
+var _row_size := 12
+
+func _name_row_size(cls: String) -> int:
+	if cls == _row_size_cls:
+		return _row_size
+	var probe: Label = slot_boxes[0]["name"]
+	var s := 12
+	for slot in ["a1", "a2", "a3", "ult"]:
+		s = mini(s, _fit_size(probe, String(Classes.ability(cls, slot)["name"])))
+	if cls == "paladin":
+		for t in ["◆ HOLY", "◆ RETRI"]:
+			s = mini(s, _fit_size(probe, t))
+	_row_size_cls = cls
+	_row_size = s
+	return s
 
 
 func _outline(l: Label) -> void:
@@ -1321,6 +1352,7 @@ func update_stats(p: Player) -> void:
 
 	# Ability bar: cooldown shade + countdown number + affordability color.
 	var now_ms := Time.get_ticks_msec()
+	var row_fs := _name_row_size(p.cls)
 	for i in SLOTS.size():
 		var slot: String = SLOTS[i]
 		var box: Dictionary = slot_boxes[i]
@@ -1359,7 +1391,7 @@ func update_stats(p: Player) -> void:
 						p.potion_display_name(p.active_potion), cnt,
 						left, p.potion_slot_cap(),
 						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]))
-			_fit_name(box["name"])
+			_fit_name(box["name"], row_fs)
 			continue
 		var ab := Classes.ability(p.cls, slot)
 		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
@@ -1396,7 +1428,7 @@ func update_stats(p: Player) -> void:
 			box["icon"].modulate = Color(1, 1, 1) if Art.has_ability_art(p.cls, slot) else scol
 		elif box["icon"] != null:
 			box["icon"].modulate = Color(1, 1, 1)
-		_fit_name(box["name"])
+		_fit_name(box["name"], row_fs)
 		# Detail card: name/key/cost/cd, the ability's own words, then the
 		# assigned theme's variant line — built from live values, so cd
 		# talents and mana amods read truthfully.
