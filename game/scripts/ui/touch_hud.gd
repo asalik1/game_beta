@@ -159,8 +159,19 @@ func _layout() -> void:
 
 # --------------------------------------------------------------- per frame -----
 func _process(delta: float) -> void:
+	# Any overlay (menu / dialogue / choice) shuts the controls down — the same
+	# guard game.gd's tap-to-talk already uses (~L369). Solo got this for free:
+	# all three call request_pause(true), and the pause stops this node. But §5.4
+	# skips the pause in a SESSION, and nothing else gated us — the arc and the
+	# joystick zone (the whole left half, under the overlay's dim on layer 20)
+	# stayed live, so a drag inside a panel walked your hero mid-fight.
+	# `menus` is null-checked on purpose: game.gd mounts this HUD (_apply_touch_mode,
+	# ~L189) BEFORE it builds Menus (~L192). The layout editor closes the menu
+	# before calling enter_edit_mode, so it still runs with nothing open.
 	var on: bool = game != null and game.state == game.ST_PLAYING \
-		and game.local_player != null and is_instance_valid(game.local_player)
+		and game.local_player != null and is_instance_valid(game.local_player) \
+		and (game.menus == null or not game.menus.is_open()) \
+		and (game.hud == null or not (game.hud.dialogue_active or game.hud.choices_active))
 	if on != _enabled:
 		_enabled = on
 		visible = on

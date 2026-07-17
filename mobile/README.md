@@ -19,7 +19,8 @@ Emberfall is built in **Godot 4.4**, and Godot exports natively to both
 Android and iOS from the same project. We do **not** rewrite or wrap the
 game in another framework (Unity, Flutter, Capacitor, etc.) — we use
 Godot's own export pipeline. The mobile version is a **snapshot fork of
-the `game/` project** that lives here and gets updated only on request.
+the `game/` project** that lives here and is kept in sync with it (see the
+agent policy above).
 
 ### How the pieces fit
 
@@ -28,13 +29,10 @@ mobile/
 ├── README.md            ← this file
 ├── game/                ← snapshot copy of the desktop project, adapted for mobile
 │   ├── project.godot    ← mobile renderer + touch settings (diverges from desktop)
+│   ├── export_presets.cfg  ← Android + iOS export presets (desktop's holds Win/mac/Linux)
 │   └── ...
-├── export_presets.cfg   ← Android + iOS export presets (kept out of desktop project)
 └── builds/              ← output .apk / .aab / .ipa (git-ignored)
 ```
-
-(Only this README exists right now; the rest is created when mobile work
-actually starts.)
 
 ### Why a snapshot copy instead of sharing `game/` directly
 
@@ -88,34 +86,57 @@ can be built entirely from this Windows machine.
    Play Console + App Store Connect listings, icons/splash in all
    required sizes.
 
-## Mobile deltas (applied 2026-07-13)
+## Mobile deltas (applied 2026-07-13; re-verified 2026-07-16)
 
 The snapshot is a copy of `game/` with these — and only these — divergences.
 On a re-sync (re-copy `game/` over `mobile/game/`), re-apply this exact list:
 
-1. **`project.godot`**
+1. **`project.godot`** — the only source-of-truth file that still forks:
    - `[rendering] renderer/rendering_method="mobile"` +
      `renderer/rendering_method.mobile="gl_compatibility"` (Vulkan, GLES3 fallback).
-   - `config/features=PackedStringArray("4.4", "Mobile")`.
+   - `config/features=PackedStringArray("4.4", "Mobile")` (desktop: `"Forward Plus"`).
    - `[display]` add `window/stretch/aspect="expand"` and
      `window/handheld/orientation="landscape"`.
    - `[input_devices] pointing/emulate_touch_from_mouse=true` (lets the touch
      HUD be driven by the mouse on desktop for verification).
-   - `[autoload] MobileInput="*res://scripts/mobile_input.gd"`.
-2. **New files** (mobile-only; do NOT port to desktop):
-   - `scripts/mobile_input.gd` — autoload holding touch state (analog move +
-     held ability/action flags).
-   - `scripts/ui/touch_hud.gd` — the on-screen controls (`class_name TouchHud`).
-3. **`scripts/player_core.gd`** — `_poll_local_intents()` OR-s `MobileInput`
-   into the same `intent_*` fields the keyboard fills (the §10 touch seam),
-   right before the downed/ghost gate.
-4. **`scripts/game.gd`** — `_ready()` adds a `TouchHud` when
-   `OS.has_feature("mobile")` or the `--touch` dev arg is present.
-5. **`export_presets.cfg`** — Android + iOS presets (see below). NOT the
-   desktop presets (those are excluded from the snapshot).
+2. **`export_presets.cfg`** — this snapshot's copy holds the **Android + iOS**
+   presets; `game/export_presets.cfg` holds Windows/macOS/Linux. Same filename,
+   different content: a re-sync must NOT copy the desktop one over it.
+3. **Mobile-only dev scenes** (not in `game/`): `shot_touch.gd/.tscn`,
+   `shot_sf2.gd/.tscn`.
+
+### No longer deltas — the touch layer now lives in `game/` too
+
+Commit `2fc4e72` ("unified Keyboard/Touch control scheme (works on desktop too)")
+promoted the whole touch layer to the desktop project, so a re-sync just carries
+these across like any other file. **Do not re-apply them as deltas, and do not
+delete them from `game/` thinking they are mobile-only:**
+
+- `scripts/mobile_input.gd` (autoload: analog move + held ability/action flags)
+  and `scripts/ui/touch_hud.gd` (`class_name TouchHud`) — in BOTH projects.
+- `[autoload] MobileInput="*res://scripts/mobile_input.gd"` — in BOTH
+  `project.godot` files.
+- `scripts/player_core.gd`'s `_poll_local_intents()` MobileInput merge (the §10
+  touch seam) and `scripts/game.gd`'s `TouchHud` mount — identical in both.
+  Desktop reaches touch mode via the `--touch` dev arg or the `touch_controls`
+  setting (`game_base.gd`), not just `OS.has_feature("mobile")`.
 
 The touch HUD is pure presentation: it only ever writes an intent seam, so no
 gameplay/netcode forks per platform.
+
+### Verifying a re-sync
+
+`diff -rq game mobile/game -x .godot` is **blinded by line endings** — some
+`game/` files are CRLF while their synced copies are LF, so whole files report
+as differing and real drift hides in the noise. Compare content-only:
+
+```
+diff <(tr -d '\r' < game/scripts/foo.gd) <(tr -d '\r' < mobile/game/scripts/foo.gd)
+```
+
+(The `.uid` files for `mobile_input.gd`/`touch_hud.gd` differ between the two
+projects and that is harmless — each project generates its own; nothing
+references them by `uid://`.)
 
 ## Build commands
 
@@ -182,9 +203,12 @@ at 21 (a custom min like API 26 needs `use_gradle_build=true`).
   `DisplayServer.get_display_safe_area()` is a later refinement)
 - [x] Android + iOS export presets (scaffolded)
 - [x] Android toolchain installed + signed debug APK builds locally (2026-07-13)
-- [ ] Install/run the APK on a physical device (adb; needs a phone) — owner review
+- [x] Cloud builds: GitHub Actions **"Mobile builds"**
+      (`.github/workflows/mobile-builds.yml`) produces a signed-debug APK and an
+      unsigned iOS `.ipa`; both install/run on-device via sideload (see
+      `IOS_SIDELOAD.md`)
 - [ ] Android Play Store `.aab` (gradle build template + Google Play account)
-- [ ] iOS Mac signing pipeline (blocked on Mac + Apple account)
+- [ ] iOS App Store signing (Apple Developer account — sideload works today)
 - [ ] Store listings
 
-Reminder: this folder stays frozen between explicit mobile-work requests.
+This folder is **kept in sync** with `game/` — see the agent policy at the top.

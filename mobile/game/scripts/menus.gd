@@ -79,9 +79,12 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 		root.queue_free()
 	game.request_pause(true)
 	_closable_now = closable  # so _hint tells the truth about the exits on touch
-	# Drop any held touch input: opening a menu pauses the tree, which freezes the
-	# touch HUD mid-gesture — a missed finger-release would otherwise leave the
-	# joystick "stuck held" and deaf to new touches after the menu closes.
+	# Drop any held touch input NOW: the touch HUD disables itself on its next
+	# _process (it reads is_open()), and this closes that one-frame window — a
+	# missed finger-release would leave the joystick "stuck held" and deaf to new
+	# touches after the menu closes. Solo also freezes the HUD mid-gesture via the
+	# pause; a session never pauses (§5.4), so the HUD's overlay gate is the one
+	# thing stopping it there.
 	if game._touch_hud != null:
 		game._touch_hud._release_everything()
 	# Hide the gameplay HUD while a menu is up: it sits on a lower CanvasLayer,
