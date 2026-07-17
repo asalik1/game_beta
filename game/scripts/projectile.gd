@@ -27,9 +27,16 @@ var spin := true               # darts (assassin fan) fly POINT-FIRST instead
 var rise := 0.0:
 	set(v):
 		rise = v
-		if _vis != null:  # applied on assignment — callers stamp it right after spawn
-			_vis.position.y = -v
+		_apply_rise()  # applied on assignment — callers stamp it right after spawn
 var _vis: Node2D = null        # container for every visual child (set in spawn)
+
+
+## The hand height is a SCREEN distance: divide out the root scale (venom
+## blade 1.5x, net copies mirror the sender) so a scaled blade still leaves
+## the hand, not above it. Re-applied per-frame — scale lands after rise.
+func _apply_rise() -> void:
+	if _vis != null:
+		_vis.position.y = -rise / maxf(0.05, scale.y)
 var homing := false            # Wind firebolt: friendly bolt curves to a target
 # --- MP-10 (§4.1 projectile row: spawn event + local flight) ---
 # net_visual: another peer's projectile flying HERE as pure presentation —
@@ -170,6 +177,7 @@ func _physics_process(delta: float) -> void:
 		_net_announce()
 	if homing and friendly:
 		_steer_home(delta)
+	_apply_rise()
 	global_position += vel * delta
 	if spr and spin:
 		if tex_kind == "knife":

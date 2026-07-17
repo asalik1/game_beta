@@ -170,7 +170,7 @@ func _knife_glow(p: Projectile) -> void:
 	g.modulate = Art.hdr(Color(col, 0.4))
 	g.scale = Vector2(0.22, 0.22)
 	g.z_index = -1
-	p.add_child(g)
+	p._vis.add_child(g)  # ride the lifted visual container, not the physics root
 
 
 func _death_mark() -> void:

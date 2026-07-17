@@ -108,7 +108,10 @@ class ProjTrail extends Node2D:
 		global_position = Vector2.ZERO
 	func _process(_delta: float) -> void:
 		if proj != null and is_instance_valid(proj):
-			pts.insert(0, proj.global_position)
+			# A Projectile DRAWS above its physics position (muzzle rise) —
+			# ride the drawn height. Plain sprites (ult ring knives) draw
+			# where they are.
+			pts.insert(0, proj._fx_pos() if proj is Projectile else proj.global_position)
 			if pts.size() > MAXPTS:
 				pts.resize(MAXPTS)
 		elif pts.size() > 1:
@@ -170,7 +173,7 @@ class ShurikenEcho extends Node2D:
 			return
 		var g := Sprite2D.new()
 		g.texture = tex
-		g.global_position = proj.global_position
+		g.global_position = proj._fx_pos()  # the star DRAWS above its physics position
 		g.rotation = proj.spr.rotation
 		g.scale = proj.spr.scale
 		g.z_index = 4             # just under the live star (projectile z_index 5)
