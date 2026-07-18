@@ -63,9 +63,13 @@ work starts from the good version. Add a row every time a tightening fixes somet
     shares a hue band with a legit but DARK character element (Ronin cyan combat FX vs
     its blue-grey cape — both cyan-band, but the cape is high-sat / low-value), add
     `val ≥ 0.55` so only the bright FX shifts and the dark element is spared.
-13. **Awakened mythics are recolors.** When you regen a base direction, derive the HSV
-    shift from the OLD base→OLD awakened pair (median dHue/dSat/dVal) and apply it to
-    the NEW base frames → new awakened, so that dir stays consistent with its siblings.
+13. **Awakened mythics are PLACEHOLDER recolors — except Phantom.** Only the assassin
+    Phantom has a true, bespoke awakened sprite; every other mythic's awakened is a
+    stopgap HSV recolor of its base, meant to be replaced by real awakened art later.
+    So when you regen a base direction, KEEP the placeholder consistent (derive the
+    HSV shift from the OLD base→OLD awakened pair — median dHue/dSat/dVal — and reapply
+    to the NEW base frames), but don't treat the recolor as final: a true awakened
+    regen supersedes it. Don't sink effort polishing a placeholder recolor.
 14. **Face rules.** Pure cardinals (W/E) must NEVER show a face; back-3/4 views hide it
     in the hood. A design with a real face (voidwraith, void weaver) WILL leak it on
     toward-camera climax frames no matter the negative — re-roll once for hood/pose,
