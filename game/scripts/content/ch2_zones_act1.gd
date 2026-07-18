@@ -15,8 +15,6 @@ const CHAPTER_ZONES := {
 	"ch2": [
 		{
 			"name": "The Greyrun Mills", "terrain": "bog", "ground": "bogsoil", "path": "dirt",
-			"obstacles": ["tree_teal", "deadtree", "rock"], "obstacle_count": 13,
-			"decor": ["mushroom", "bones", "pebble"],
 			"merchant": [660, 560],
 			"enemies": [
 				["blightwolf", 300, 180], ["blightwolf", 420, 540], ["blightwolf", 560, 320],
@@ -35,8 +33,6 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Howling Fields", "terrain": "storm", "ground": "stormgrass", "path": "dirt",
-			"obstacles": ["tree_green", "rock", "rock"], "obstacle_count": 10,
-			"decor": ["flower", "pebble", "bones"],
 			"merchant": [540, 170],
 			"enemies": [
 				["beastkin_raider", 320, 200], ["wildkin_ranger", 450, 520], ["beastkin_raider", 600, 340],
@@ -48,8 +44,6 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Sporewood", "terrain": "spore", "ground": "sporesoil", "path": "dirt",
-			"obstacles": ["tree_spore", "tree_spore", "rock"], "obstacle_count": 14,
-			"decor": ["mushroom", "mushroom", "bones"],
 			"merchant": [700, 540],
 			"enemies": [
 				["sporeshambler", 300, 250], ["sporeshambler", 460, 520], ["sporeshambler", 640, 180],
@@ -62,8 +56,6 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "Choir's Hollow", "terrain": "graveyard", "ground": "gravedirt", "path": "gravedirt",
-			"obstacles": ["tombstone", "tombstone", "deadtree"], "obstacle_count": 15,
-			"decor": ["bones", "bones", "crack"],
 			"merchant": [820, 300],
 			"enemies": [
 				["zombie", 300, 220], ["zombie", 430, 540], ["zombie", 580, 330],

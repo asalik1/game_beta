@@ -6,8 +6,6 @@ const CHAPTER_ZONES := {
 	"ch2": [
 		{
 			"name": "The Scorching Dunes", "terrain": "desert", "ground": "sand", "path": "sand",
-			"obstacles": ["rock", "deadtree"], "obstacle_count": 9,
-			"decor": ["bones", "pebble"],
 			"merchant": [820, 300],
 			"enemies": [
 				["duneprowler", 300, 200], ["duneprowler", 460, 540], ["duneprowler", 620, 300],
@@ -19,8 +17,6 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Frozen Expanse", "terrain": "ice", "ground": "snow", "path": "snow",
-			"obstacles": ["tree_snow", "tree_snow", "rock"], "obstacle_count": 12,
-			"decor": ["pebble"],
 			"merchant": [660, 560],
 			"enemies": [
 				["frost_husk", 320, 220], ["frost_husk", 470, 530], ["frost_husk", 640, 180],
@@ -32,8 +28,6 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Crystal Deeps", "terrain": "crystal", "ground": "crystalfloor", "path": "crystalfloor",
-			"obstacles": ["crystal", "crystal", "pillar"], "obstacle_count": 13,
-			"decor": ["pebble", "crack"],
 			"merchant": [540, 170],
 			"enemies": [
 				["deep_stalker", 300, 250], ["deep_stalker", 450, 520], ["deep_stalker", 620, 200],
@@ -48,8 +42,6 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Sanctified Ruins", "terrain": "holy", "ground": "holystone", "path": "holystone",
-			"obstacles": ["pillar", "pillar", "rock"], "obstacle_count": 11,
-			"decor": ["flower", "crack"],
 			"merchant": [700, 540],
 			"enemies": [
 				["null_acolyte", 320, 220], ["null_acolyte", 480, 540], ["void_husk", 640, 300],
@@ -61,8 +53,6 @@ const CHAPTER_ZONES := {
 		},
 		{
 			"name": "The Null Bastion", "terrain": "void", "ground": "voidstone", "path": "voidstone",
-			"obstacles": ["pillar", "crystal"], "obstacle_count": 10,
-			"decor": ["crack", "crack"],
 			"merchant": [820, 300],
 			"enemies": [
 				["void_husk", 300, 240], ["void_husk", 450, 530], ["void_husk", 620, 190],

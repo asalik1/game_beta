@@ -30,9 +30,10 @@ const DATA := {
 	"village": {"name": "Emberfall Village", "ground": "grass", "path": "dirt",
 		"tint": Color(1.0, 0.98, 0.9), "ambient": "leaves_green", "music": "village",
 		"obstacles": ["tree_green", "tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3", "tree_green4"], "decor": ["flower", "flower", "pebble", "grass", "bush", "bush3", "toadstool", "toadstool2", "signpost"], "accents": ["log"], "count": 9,
-		# Two roof colorways per cottage (a2/b2 = PNG override variants) +
-		# seeded mirroring in _add_building keep the village from repeating.
-		"buildings": ["cottage_a", "cottage_b", "stall", "cottage_a2", "cottage_b2"],
+		# Buildings are AUTHORED PER ZONE (_spawn_scenery), not terrain
+		# scatter: this terrain paints the grass + props, and each village
+		# ZONE opts into its own cottages/stall/camp kit. (Cottage roof
+		# colorways a2/b2 = PNG override variants; _add_building mirrors.)
 		"patches": [], "event": ""},
 	"darkwood": {"name": "The Darkwood", "ground": "forest", "path": "dirt",
 		"tint": Color(0.87, 0.94, 0.88), "ambient": "leaves_autumn", "music": "darkwood",
