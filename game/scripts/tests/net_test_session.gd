@@ -116,6 +116,32 @@ extends Node
 ## Freed-object engine errors anywhere in the run are failures (net_test.bat
 ## greps the captured log for "previously freed").
 ##
+## STAGE 12 (`--net-stage=12` — MMO step A, the DEDICATED server): the
+## director boots a headless world authority (game.dedicated, NO local
+## player) and two real guests join it over ENet:
+##   (a) the server stands with local_player == null, an empty registry
+##       and an empty active_rooms set (nothing simulates unattended);
+##   (b) guest A joins: seed/layout handshake holds, NO phantom peer-1
+##       player spawns on the guest, the lobby roster carries no host
+##       entry, and the server's roster is exactly the guest's shell;
+##   (c) guest-first room build: A teleports into an unbuilt combat room —
+##       the server builds + arms it (no cur_room pin) and A sees the
+##       pack's mirrors stream in;
+##   (d) combat: A's real ability lands on a server enemy (attribution
+##       intact), and a server-side kill fans full XP to A;
+##   (e) guest B joins mid-run (the lobby never closes): both guests see
+##       each other, still no peer-1 body anywhere;
+##   (f) A then B leave: the world KEEPS RUNNING (roster drains to zero,
+##       active_rooms empties, session stays up) and the world file exists.
+##
+## STAGE 13 (`--net-stage=13` — MMO step B, world persistence): phase 1
+## boots a fresh dedicated world, mutates it through REAL paths (a world
+## flag; a combat room's pack slain to cleared — which autosaves), and
+## tears the server down. Phase 2 boots a NEW server instance from the
+## same user:// — seed, layout, flag, cleared room and quest key must all
+## restore — and a fresh guest joins it, receiving the persisted state in
+## its join snapshot.
+##
 ## Same discipline as net_test.gd (MP-05): one script, roles picked by
 ## `--net-role=`; the host orchestrates and SPAWNS the guest process
 ## itself (pids tracked, OS.kill on every failure path); every wait is a
@@ -141,6 +167,9 @@ const PORT_STAGE9 := 48227   # stage 9 disconnect hardening (MP-16)
 const PORT_STAGE9B := 48229  # stage 9(b): the throwaway sub-host the survivor joins
 const PORT_STAGE10 := 48231  # stage 10 soak (MP-17): host + 2 guests, ~4 min
 const PORT_STAGE11 := 48233  # stage 11 (Wave-1 co-op world consistency: boss gates)
+const PORT_STAGE12 := 48235  # stage 12 (MMO A: dedicated server, no host body)
+const PORT_STAGE13 := 48237  # stage 13 phase 1 (MMO B: the world that persists)
+const PORT_STAGE13B := 48239 # stage 13 phase 2 (the restarted server; guests join HERE)
 const STEP_TIMEOUT := 30.0   # s per observable step (boots include a world build)
 const EXIT_TIMEOUT := 15.0   # s for the guest process to exit after its work
 const MOVE_THRESHOLD := 120.0  # px the host must see the guest player travel
@@ -184,10 +213,16 @@ func _ready() -> void:
 			_stage = int(str(arg).get_slice("=", 1))
 	_net.peer_left.connect(func(id: int) -> void: _left.append(id))
 	match role:
+		"server1":
+			_run_server1_13()  # MMO B stage 13 phase 1: the world that gets saved
 		"subhost":
 			_run_subhost()  # MP-16 stage 9(b): a throwaway host to be killed
 		"host":
-			if _stage == 11:
+			if _stage == 13:
+				_run_host13()
+			elif _stage == 12:
+				_run_host12()
+			elif _stage == 11:
 				_run_host11()
 			elif _stage == 10:
 				_run_host10()
@@ -208,7 +243,11 @@ func _ready() -> void:
 			else:
 				_run_host()
 		"guest":
-			if _stage == 11:
+			if _stage == 13:
+				_run_guest13()
+			elif _stage == 12:
+				_run_guest12()
+			elif _stage == 11:
 				_run_guest11()
 			elif _stage == 10:
 				_run_guest10()
@@ -233,6 +272,10 @@ func _ready() -> void:
 
 
 func _port() -> int:
+	if _stage == 13:
+		return PORT_STAGE13B  # guests only ever join the RESTARTED server
+	if _stage == 12:
+		return PORT_STAGE12
 	if _stage == 11:
 		return PORT_STAGE11
 	if _stage == 10:
@@ -2174,6 +2217,15 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 			game.weekly_week = game._week_index()
 			game.weekly_claimed_week = -1
 			_gold_before8 = game.player.gold
+		# ---- stage 12 (MMO A, dedicated server) ----
+		"gotoroom":
+			# Walk into an as-yet-unbuilt room: the server (no cur_room pin of
+			# its own) must build + arm it off our presence alone.
+			game.player.global_position = game.room_center(int(args.get("zone", 0)))
+			await _frames(2)
+		"xpfan":
+			# Baseline before the server's kill fans full XP to us (§5.5).
+			_xp_before = game.player.level * 1000000 + game.player.xp
 		_:
 			pass
 
@@ -2480,6 +2532,46 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 		"merchant":
 			# A host-side dynamic merchant arrival reached our merchant_zones.
 			return {"ok": game.merchant_zones.has(int(args.get("zone", -1)))}
+		# ---- stage 12 (MMO A, dedicated server) ----
+		"nohost":
+			# A dedicated server contributes NO body: peer 1 is never a player
+			# here, and our OWN player is the one we control.
+			return {"ok": _player_of(1) == null and game.player != null \
+				and game.player.is_locally_controlled(),
+				"peer1": _player_of(1) != null}
+		"gotoroom":
+			# We stand in the room we walked into (setup teleported us there).
+			return {"ok": game.cur_room == int(args.get("zone", -1)),
+				"cur_room": game.cur_room}
+		"seeszone":
+			# The server built + armed the room we reached and its pack mirrors
+			# streamed to us (proves _host_ensure_active_rooms + the stream).
+			var zi: int = int(args.get("zone", -1))
+			var n := 0
+			for id in sess.net_enemies:
+				var e: Enemy = sess.net_enemies[id]
+				if e != null and is_instance_valid(e) and not e.dying and e.zone_idx == zi:
+					n += 1
+			return {"ok": n >= int(args.get("min", 1)), "mirrors": n}
+		"seespeer":
+			# Cross-guest fan-out without a host body: we see the other guest.
+			var pid: int = int(args.get("pid", -1))
+			return {"ok": _player_of(pid) != null and _player_of(1) == null,
+				"seen": _player_of(pid) != null}
+		"xpfan":
+			# The server's kill fanned FULL XP to us (§5.5) — no host body needed.
+			var xp_now: int = game.player.level * 1000000 + game.player.xp
+			return {"ok": xp_now > _xp_before, "gained": xp_now - _xp_before}
+		# ---- stage 13 (MMO B, world persistence) ----
+		"persisted":
+			# Our join snapshot carried the RESTORED world flag phase 1 set — the
+			# persisted world state reached a joiner of the RESTARTED server. (The
+			# full room/boss restore is asserted server-side by the director; the
+			# snapshot ships flags, and the guest re-derives the rest from the seed.)
+			return {"ok": bool(game.get_flag(String(args.get("flag", "")), false)) \
+				and game.wander_seed == int(args.get("seed", -1)),
+				"flag": bool(game.get_flag(String(args.get("flag", "")), false)),
+				"seed": game.wander_seed}
 	return {"ok": false, "why": "unknown probe %s" % what}
 
 
@@ -3187,4 +3279,302 @@ func _run_guest11() -> void:
 	_net.leave()
 	await get_tree().create_timer(0.5).timeout
 	print("[net_session] guest11: served all probes, left cleanly")
+	get_tree().quit(0)
+
+
+# ================================================ stage 12 (MMO A: dedicated) ===
+# The director IS the world authority — a game.dedicated instance with NO local
+# player — and two real guests join it. Proves the listen-server assumptions are
+# gone: nothing simulates unattended, no phantom "host is peer 1" body haunts the
+# roster/lobby, a guest-reached room builds off guest presence alone, combat and
+# the XP fan work without a host character, the lobby never closes to a second
+# joiner, and — the whole point vs a listen server — the world SURVIVES every
+# client leaving.
+
+## Boot a DEDICATED world authority as a child of the director (the same
+## instantiate-and-add_child shape as _host_boot, minus the roster flow —
+## the server has no character to pick). persist=false runs it no_saves so
+## it can't write a world file that leaks into a later stage.
+func _server_director_boot(port: int, fresh: bool, persist: bool) -> bool:
+	game = load("res://scenes/main.tscn").instantiate()
+	game.no_saves = not persist
+	game.dedicated = true
+	game.server_code = "127.0.0.1:%d" % port
+	game.server_fresh = fresh
+	game.server_chapter = "ch1"
+	add_child(game)
+	if not await _wait_for(func() -> bool: return game.play_started, STEP_TIMEOUT, "server play_started"):
+		return false
+	if not await _wait_for(func() -> bool: return _net.is_online() and _net.is_host(), STEP_TIMEOUT, "server listening"):
+		return false
+	print("[net_session] server up: no player=%s, seed %d, %s — listening %s"
+		% [str(game.local_player == null), game.wander_seed, game.chapter_id, _net.session_code])
+	return true
+
+
+## A DEDICATED-aware guest boot: like _guest_boot, but a server contributes
+## NO body — so it asserts our own player is here and locally controlled and
+## that peer 1 is NOT a player anywhere (no phantom host). Total roster size
+## is left open (it grows with each other guest).
+func _guest_boot_server(cls := "assassin") -> bool:
+	game = load("res://scenes/main.tscn").instantiate()
+	game.no_saves = true
+	game.mp_join_code = "127.0.0.1:%d" % _port()
+	game.mp_cls = cls
+	add_child(game)
+	var sess: Node = get_node("/root/NetworkManager/Session")
+	if not await _wait_for(func() -> bool: return bool(sess.world_ready), STEP_TIMEOUT, "world snapshot + rebuild"):
+		return false
+	if not game.play_started or game.player.cls != cls:
+		_fail("guest entry incomplete (play_started %s, cls %s)" % [str(game.play_started), game.player.cls])
+		return false
+	if not game.player.is_locally_controlled():
+		_fail("the guest's own player must stay locally controlled")
+		return false
+	if _player_of(1) != null:
+		_fail("a dedicated server contributed a peer-1 body (it must have none)")
+		return false
+	print("[net_session] guest: joined the server (seed %d), no host body present" % game.wander_seed)
+	return true
+
+
+func _first_combat_room() -> int:
+	for i in game.zone_count:
+		if game.room_type(i) == "combat":
+			return i
+	return -1
+
+
+func _run_host12() -> void:
+	if not await _server_director_boot(PORT_STAGE12, true, false):
+		return
+	var sess: Node = get_node("/root/NetworkManager/Session")
+
+	# (a) idle authority: no body, empty registry, empty sim gate. An empty
+	# server must idle EVERYTHING (the active_rooms union has no members).
+	if game.local_player != null:
+		return _fail("dedicated server holds a local player (must be null)")
+	if not game.players.is_empty():
+		return _fail("server registry non-empty at idle: %d" % game.players.size())
+	if not game.active_rooms.is_empty():
+		return _fail("server active_rooms non-empty at idle: %s (no player pins a room)" % str(game.active_rooms))
+	print("[net_session] host12: (a) idle authority — no body, empty registry + sim gate")
+
+	# (b) guest A joins the empty server. Its shell appears server-side; no
+	# peer-1 body is fanned; the lobby roster carries no host entry.
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn guest A")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "guest A admission"):
+		return
+	var ga: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return _player_of(ga) != null, STEP_TIMEOUT, "guest A shell server-side"):
+		return
+	if game.players.size() != 1:
+		return _fail("server roster should be exactly the one guest, is %d" % game.players.size())
+	if _player_of(1) != null:
+		return _fail("server spawned a phantom peer-1 body")
+	var roster: Dictionary = sess.lobby_roster()
+	if roster.has(1):
+		return _fail("lobby roster carries a host entry on a dedicated server: %s" % str(roster))
+	var r: Dictionary = await _watch(ga, "nohost", {})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest A sees a host body where there should be none: %s" % str(r))
+	print("[net_session] host12: (b) guest A joined empty server — roster is guest-only, no host body")
+
+	# (c) guest-first room build: A walks into an unbuilt combat room. The
+	# server (no cur_room pin) must build + arm it off A's presence alone.
+	var zi := _first_combat_room()
+	if zi < 0:
+		return _fail("no combat room in %s to prove guest-first build" % game.chapter_id)
+	if game.built.get(zi, false):
+		return _fail("combat room %d was already built at idle (should be lazy)" % zi)
+	r = await _watch(ga, "gotoroom", {"zone": zi})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest A never entered room %d: %s" % [zi, str(r)])
+	if not await _wait_for(func() -> bool: return game.built.get(zi, false), STEP_TIMEOUT, "server builds guest-reached room %d" % zi):
+		return
+	if not game.active_rooms.has(zi):
+		return _fail("server sim gate never picked up guest-occupied room %d" % zi)
+	r = await _watch(ga, "seeszone", {"zone": zi, "min": 1})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest A saw no pack mirrors in the server-built room: %s" % str(r))
+	print("[net_session] host12: (c) guest-reached room %d built + armed server-side — %d mirrors streamed" % [zi, int(r.get("mirrors", 0))])
+
+	# (d) combat: a controlled server enemy in the room; A's real ability
+	# lands on it (attribution intact), and a server-side kill fans FULL XP.
+	var wolf := Enemy.make(game, "wolf", game.room_center(zi) + Vector2(0.0, -120.0), 3)
+	wolf.dmg = 0.0
+	wolf.zone_idx = zi
+	game.add_enemy(wolf)
+	if not await _wait_for(func() -> bool: return int(wolf.net_id) > 0, 5.0, "server wolf announced"):
+		return
+	sess.last_hit = {}
+	var hp0: float = wolf.hp
+	r = await _watch(ga, "strike", {"id": wolf.net_id,
+		"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest A never saw its strike land on the server enemy: %s" % str(r))
+	if not await _wait_for(func() -> bool: return wolf.hp < hp0 - 0.01, 8.0, "server wolf hp drop"):
+		return
+	if int(sess.last_hit.get("peer", -1)) != ga or int(sess.last_hit.get("id", -1)) != wolf.net_id:
+		return _fail("hit attribution wrong on the server: %s" % str(sess.last_hit))
+	print("[net_session] host12: (d) guest strike applied server-side (hp -%.1f, attributed to peer %d)" % [hp0 - wolf.hp, ga])
+	# ...and a server kill pays A full XP (no host body between them).
+	r = await _watch(ga, "xpfan", {}, func() -> void: wolf.take_damage(9.9e9))
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("server kill never fanned XP to guest A: %s" % str(r))
+	print("[net_session] host12: (d) server kill fanned +%d XP to the guest" % int(r.get("gained", 0)))
+
+	# (e) guest B joins mid-run — the lobby never closes. Both shells stand
+	# server-side, still no peer-1 body, and A sees B (fan-out with no host).
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn guest B")
+	if not await _wait_for(func() -> bool: return _net.peers.size() == 2, STEP_TIMEOUT, "guest B admission"):
+		return
+	var gb: int = ga
+	for pid in _net.peers:
+		if int(pid) != ga:
+			gb = int(pid)
+	if not await _wait_for(func() -> bool: return _player_of(gb) != null, STEP_TIMEOUT, "guest B shell server-side"):
+		return
+	if game.players.size() != 2 or _player_of(1) != null:
+		return _fail("mid-run roster wrong: size %d, peer1 %s" % [game.players.size(), str(_player_of(1) != null)])
+	r = await _watch(ga, "seespeer", {"pid": gb})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest A never saw guest B (fan-out failed with no host): %s" % str(r))
+	print("[net_session] host12: (e) guest B joined mid-run — party of 2, no host body, A sees B")
+
+	# (f) THE point: both leave, and the world KEEPS RUNNING. The roster
+	# drains to zero, the sim gate empties, the session stays up.
+	_rpc_finish.rpc_id(ga)
+	_rpc_finish.rpc_id(gb)
+	if not await _wait_for(func() -> bool: return _left.has(ga) and _left.has(gb), STEP_TIMEOUT, "both guests peer_left"):
+		return
+	if not await _wait_for(func() -> bool: return game.players.is_empty(), 5.0, "server roster drains to zero"):
+		return
+	if not (game.play_started and _net.is_online() and _net.is_host()):
+		return _fail("the world did not survive the last client leaving (play_started %s, online %s)" % [str(game.play_started), str(_net.is_online())])
+	if not game.active_rooms.is_empty():
+		return _fail("sim gate did not empty after all clients left: %s" % str(game.active_rooms))
+	print("[net_session] host12: (f) both clients left — the world is still up, empty and idling")
+	# Reap both child processes cleanly before the verdict.
+	for pid in _pids.duplicate():
+		if not await _wait_for(func() -> bool: return not OS.is_process_running(pid), EXIT_TIMEOUT, "guest process %d exit" % pid):
+			return
+		if OS.get_process_exit_code(pid) != 0:
+			return _fail("a guest process exited nonzero — its own assertions failed")
+	await _pass()
+
+
+## Stage 12 & 13 guests are identical: join the server (no host body), then
+## serve the director's watch probes until the finish signal, then leave.
+func _run_guest12() -> void:
+	if not await _guest_boot_server("assassin"):
+		return
+	if not await _wait_for(func() -> bool: return _finish, 180.0, "server finish signal"):
+		return
+	_net.leave()
+	await get_tree().create_timer(0.5).timeout
+	print("[net_session] guest12: served all probes, left cleanly")
+	get_tree().quit(0)
+
+
+# ============================================= stage 13 (MMO B: persistence) ===
+# The world outlives the SERVER, not just the clients. Phase 1 is a throwaway
+# server process (role server1) that builds a fresh world, mutates it through
+# REAL paths (a world flag; a combat room cleared by killing its pack — which
+# autosaves), and exits. Phase 2 is the director: it boots a NEW server from the
+# SAME user:// and must restore the seed, the flag, and the cleared room; then a
+# fresh guest joins and receives the persisted world in its snapshot.
+
+## PHASE 1 (spawned child): the world that gets saved. Fresh + persisting.
+func _run_server1_13() -> void:
+	if not await _server_director_boot(PORT_STAGE13, true, true):
+		get_tree().quit(1)
+		return
+	var zi := _first_combat_room()
+	if zi < 0:
+		print("NET TEST FAIL  server1: no combat room to clear in %s" % game.chapter_id)
+		get_tree().quit(1)
+		return
+	# Build the room's pack and slay it — the REAL clear path (on_enemy_died
+	# decrements zone_alive, marks cleared, autosaves the world).
+	game._build_room(zi)
+	await _frames(4)
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e != null and not (e is Boss) and not e.dying and e.zone_idx == zi:
+			e.take_damage(9.9e9)
+	if not await _wait_for(func() -> bool: return game.cleared.get(zi, false), STEP_TIMEOUT, "server1 clears room %d" % zi):
+		get_tree().quit(1)
+		return
+	game.set_flag("persist_probe")  # a WORLD flag (not per-character) → persisted
+	game.autosave()                 # force the world write, then settle it
+	await get_tree().create_timer(0.4).timeout
+	if not SaveGame.exists_server_world():
+		print("NET TEST FAIL  server1: no world file written after mutate+save")
+		get_tree().quit(1)
+		return
+	print("[net_session] server1: world mutated (flag + room %d cleared, seed %d) and PERSISTED" % [zi, game.wander_seed])
+	if _net != null and _net.is_online():
+		_net.leave()
+		await get_tree().create_timer(0.3).timeout
+	get_tree().quit(0)
+
+
+func _run_host13() -> void:
+	# PHASE 1: run the throwaway server that saves, wait for it to exit clean.
+	if _spawn_peer("server1") < 0:
+		return _fail("could not spawn the phase-1 server process")
+	if not await _wait_exit("server1"):
+		return
+	var saved := SaveGame.read_server_world()
+	if saved.is_empty():
+		return _fail("phase 1 left no readable world file")
+	var saved_seed := int(SaveGame.world_of(saved).get("wander_seed", -1))
+	print("[net_session] host13: phase 1 done — persisted seed %d" % saved_seed)
+
+	# PHASE 2: boot a NEW server from the SAME user:// — it must RESTORE, not
+	# reroll. Not fresh (reads the file); persisting (keeps the contract).
+	if not await _server_director_boot(PORT_STAGE13B, false, true):
+		return
+	var zi := _first_combat_room()
+	if game.wander_seed != saved_seed:
+		return _fail("restart rerolled the seed (%d) instead of restoring %d" % [game.wander_seed, saved_seed])
+	if not game.get_flag("persist_probe", false):
+		return _fail("restart lost the persisted world flag")
+	if not game.cleared.get(zi, false):
+		return _fail("restart lost the cleared room %d" % zi)
+	print("[net_session] host13: (a) restart RESTORED the world — seed %d, flag + room %d cleared intact" % [game.wander_seed, zi])
+
+	# A joiner of the restarted server receives the persisted world (its
+	# snapshot ships the flag; it re-derives geometry from the restored seed).
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the persistence-check guest")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "guest admission"):
+		return
+	var gid: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return _player_of(gid) != null, STEP_TIMEOUT, "guest shell server-side"):
+		return
+	var r: Dictionary = await _watch(gid, "persisted", {"flag": "persist_probe", "seed": saved_seed})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("the joiner did not receive the persisted world: %s" % str(r))
+	print("[net_session] host13: (b) a fresh joiner received the persisted world in its snapshot")
+
+	_rpc_finish.rpc_id(gid)
+	if not await _wait_for(func() -> bool: return _left.has(gid), STEP_TIMEOUT, "guest peer_left"):
+		return
+	if not await _wait_exit("guest"):
+		return
+	await _pass()
+
+
+func _run_guest13() -> void:
+	if not await _guest_boot_server("warrior"):
+		return
+	if not await _wait_for(func() -> bool: return _finish, 180.0, "server finish signal"):
+		return
+	_net.leave()
+	await get_tree().create_timer(0.5).timeout
+	print("[net_session] guest13: served all probes, left cleanly")
 	get_tree().quit(0)

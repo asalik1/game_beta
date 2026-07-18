@@ -235,7 +235,11 @@ func _rpc_lobby_roster(roster: Dictionary) -> void:
 func lobby_roster() -> Dictionary:
 	if not multiplayer.is_server():
 		return lobby_chars  # already de-duped: the host broadcasts this shape
-	var out := {1: _lobby_block()}
+	var out := {}
+	# A DEDICATED server holds no seat — its roster is guests only (a
+	# phantom "warrior L1" host entry would haunt every party list).
+	if game == null or (game.local_player != null and is_instance_valid(game.local_player)):
+		out[1] = _lobby_block()
 	for pid in lobby_chars:
 		out[int(pid)] = lobby_chars[pid]
 	return dedup_roster(out)
@@ -419,8 +423,10 @@ func _rpc_join_ready(block: Dictionary) -> void:
 	var pid := multiplayer.get_remote_sender_id()
 	if pid <= 0 or not (pid in _net().peers):
 		return
-	# The newcomer learns the roster so far: the host's player...
-	_rpc_spawn_player.rpc_id(pid, 1, _char_block())
+	# The newcomer learns the roster so far: the host's player (a DEDICATED
+	# server has no body — nothing of peer 1 to brief)...
+	if game.local_player != null and is_instance_valid(game.local_player):
+		_rpc_spawn_player.rpc_id(pid, 1, _char_block())
 	# ...and every guest that is already standing in the world.
 	for q in peer_chars:
 		if int(q) != pid:
@@ -640,13 +646,16 @@ func _physics_process(delta: float) -> void:
 		return
 	if multiplayer.get_peers().is_empty():
 		return
+	# DEDICATED: the server has NO local player, but its host-side jobs
+	# (down sweep, enemy stream, damage fan) must still run — only the
+	# owner-side jobs (movement broadcast, vitals, death watch) gate on p.
 	var p: Node = game.local_player
-	if p == null or not is_instance_valid(p):
-		return
+	var has_p: bool = p != null and is_instance_valid(p)
 	# MP-10: the death watcher and the vitals sender ride every physics
 	# frame (both rate-limit themselves; the move gate below is 20 Hz).
-	_watch_guest_death()
-	_tick_vitals(delta, p)
+	if has_p:
+		_watch_guest_death()
+		_tick_vitals(delta, p)
 	# MP-12: the host's ghost-revive / wipe sweep (rate-limits itself).
 	if multiplayer.is_server():
 		_down_sweep_t += delta
@@ -658,7 +667,8 @@ func _physics_process(delta: float) -> void:
 	if _move_accum < step:
 		return
 	_move_accum = fmod(_move_accum, step)
-	_rpc_move.rpc(p.global_position, p.velocity, float(p.look_sign))
+	if has_p:
+		_rpc_move.rpc(p.global_position, p.velocity, float(p.look_sign))
 	# MP-09: the host's enemy state rides the same ~20 Hz tick.
 	# MP-14: the coalesced ally-damage numbers ride it too.
 	if multiplayer.is_server():

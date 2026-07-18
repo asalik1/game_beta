@@ -40,7 +40,8 @@ func switch_chapter(id: String, force := false) -> void:
 	# (ch1-3) hands ONE free health potion that EXPIRES on leaving it. The
 	# absolute set below is grant + expiry in one move (revisits can never
 	# stack freebies); loads overwrite it from the save right after this.
-	player.potions_free = 1 if chapter_id in Balance.FREE_POTION_CHAPTERS else 0
+	if has_local_player():
+		player.potions_free = 1 if chapter_id in Balance.FREE_POTION_CHAPTERS else 0
 	var chapter: Dictionary = Story.chapter(id)
 	zones = chapter["zones"]
 	zone_count = zones.size()
@@ -50,7 +51,9 @@ func switch_chapter(id: String, force := false) -> void:
 	world = Node2D.new()
 	world.y_sort_enabled = true
 	add_child(world)
-	move_child(world, player.get_index())  # draw under the hero again
+	# Draw under the hero again (a DEDICATED server renders nothing — any
+	# slot works, and there is no hero to sit under).
+	move_child(world, player.get_index() if has_local_player() else 0)
 
 	gates.clear()
 	interactables.clear()
@@ -81,8 +84,9 @@ func switch_chapter(id: String, force := false) -> void:
 	_build_door_seals()
 	quest_key = String(chapter.get("start_quest", "talk"))
 
-	player.global_position = _start_pos()
-	last_safe_room = maxi(0, room_at_pos(player.global_position))
+	if has_local_player():
+		player.global_position = _start_pos()
+	last_safe_room = maxi(0, room_at_pos(_start_pos()))
 	_enter_room(last_safe_room)
 	ambient.color = Terrains.get_terrain(terrain_by_zone[cur_room])["tint"]
 	refresh_quest()

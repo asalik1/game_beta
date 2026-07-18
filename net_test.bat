@@ -4,6 +4,10 @@ rem feature waves (MP-05/07/09/10/11/12/13/14/16); stage 10 is the MP-17 soak
 rem (host + guest, ~4 min: combat, transitions, down+revive, wipe, flag churn,
 rem a disconnect+fresh-rejoin) asserting session stability over time; stage 11
 rem is the Wave-1 co-op world-consistency fix (boss gates open for guests).
+rem Stages 12-13 are the MMO steps A/B: 12 boots a DEDICATED headless world
+rem authority (no host-player) and lands 2 guests on it — the world survives
+rem every client leaving; 13 proves that world PERSISTS across a full server
+rem restart (a throwaway server saves, a new server restores + a joiner reads it).
 rem
 rem VERDICT (MP-17 flake 1): each stage's stdout+stderr is captured to a log
 rem and the AUTHORITATIVE pass/fail is a LOG GREP, not the process exit code.
@@ -54,6 +58,10 @@ if errorlevel 1 goto cleanup
 call :stage 10 420000 "res://scenes/net_test_session.tscn"  "--net-stage=10"
 if errorlevel 1 goto cleanup
 call :stage 11 240000 "res://scenes/net_test_session.tscn"  "--net-stage=11"
+if errorlevel 1 goto cleanup
+call :stage 12 300000 "res://scenes/net_test_session.tscn"  "--net-stage=12"
+if errorlevel 1 goto cleanup
+call :stage 13 300000 "res://scenes/net_test_session.tscn"  "--net-stage=13"
 if errorlevel 1 goto cleanup
 
 set "EF_EXIT=0"

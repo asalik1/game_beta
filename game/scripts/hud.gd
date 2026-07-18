@@ -2216,6 +2216,15 @@ func flash_splash(tex: Texture2D, opacity := 0.1, dur := 0.85,
 # --------------------------------------------------------------- dialogue
 
 func dialogue(lines: Array, on_done := Callable()) -> void:
+	# DEDICATED (MMO step A): a headless world authority has no reader and
+	# no keyboard — story beats resolve IMMEDIATELY so kill/victory flows
+	# (post-boss beats, epilogues) never wait on a keypress. Safe because
+	# server-side dialogue is only ever those flow beats: convos are always
+	# player-initiated and a server never interacts.
+	if game != null and game.dedicated:
+		if on_done.is_valid():
+			on_done.call()
+		return
 	dialogue_lines = lines
 	dialogue_index = 0
 	dialogue_done = on_done
