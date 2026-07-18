@@ -33,6 +33,25 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		Color(0.95, 0.85, 0.5) if tab == "records" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Co-op  ", func() -> void: m.open_codex("coop"),
 		Color(0.95, 0.85, 0.5) if tab == "coop" else Color(0.6, 0.6, 0.6))
+	# The FUTURE shelf (dev launcher only): every placeholder in the project,
+	# by category — mined art awaiting a story/system home. Players never
+	# see the tab; the shipping codex stays clean.
+	var in_future := tab.begins_with("future")
+	if m.game.dev_mode:
+		m._btn(tabs, "  Future  ", func() -> void: m.open_codex("future_terrains"),
+			Color(0.7, 0.95, 0.85) if in_future else Color(0.45, 0.65, 0.58))
+
+	# Future subtabs — one per placeholder category.
+	if in_future:
+		var fsubs := HBoxContainer.new()
+		fsubs.add_theme_constant_override("separation", 10)
+		vbox.add_child(fsubs)
+		for pair in [["future_terrains", "Terrains"], ["future_mobs", "Mobs"], ["future_items", "Items"],
+				["future_armory", "Armory"], ["future_supplies", "Supplies"],
+				["future_provisions", "Provisions"], ["future_relics", "Relics"]]:
+			var ft: String = pair[0]
+			m._btn(fsubs, "  %s  " % pair[1], func() -> void: m.open_codex(ft),
+				Color(0.75, 1.0, 0.9) if tab == ft else Color(0.5, 0.58, 0.55))
 
 	# Bestiary subtabs — Monsters / Bosses / NPCs under the one parent tab.
 	if in_bestiary:
@@ -65,6 +84,8 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		_terrains(m, list)
 	elif tab == "curios":
 		_curios(m, list)
+	elif tab.begins_with("future"):
+		_future(m, list, tab)
 	elif tab == "status":
 		_statuses(m, list)
 	elif tab == "records":
@@ -997,7 +1018,8 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 ## Placeholder-flagged entries (mined art awaiting a story home) appear in
 ## the dev launcher only, tagged [placeholder] — the unplaced-bestiary rule.
 static func _curios(m: Menus, list: VBoxContainer) -> void:
-	var dev: bool = m.game.dev_mode
+	# Player-facing shelf: SHIPPED content only. Every placeholder lives in
+	# the dev-only Future tab instead (one home per category, never here).
 	UITheme.header(m._lbl(list, "— QUEST ITEMS —", 16, Color(0.95, 0.85, 0.5)))
 	m._lbl(list, "Keepsakes and story tokens. They ride in your bag until their moment comes.", 13, Color(0.62, 0.62, 0.68))
 	var ids: Array = Story.ALL_QUEST_ITEMS.keys()
@@ -1005,10 +1027,9 @@ static func _curios(m: Menus, list: VBoxContainer) -> void:
 	var shown := 0
 	for id in ids:
 		var q: Dictionary = Story.ALL_QUEST_ITEMS[id]
-		var ph: bool = q.get("placeholder", false)
-		if ph and not dev:
+		if q.get("placeholder", false):
 			continue
-		_curio_card(m, list, String(q.get("name", id)), String(q.get("desc", "")), String(q.get("icon", "")), ph)
+		_curio_card(m, list, String(q.get("name", id)), String(q.get("desc", "")), String(q.get("icon", "")), false)
 		shown += 1
 	if shown == 0:
 		m._lbl(list, "None catalogued yet — the road will provide.", 13, Color(0.55, 0.55, 0.6))
@@ -1019,15 +1040,88 @@ static func _curios(m: Menus, list: VBoxContainer) -> void:
 		# consumable_icon, NOT icon_for — stone-kind items carry no gear slot.
 		_curio_card(m, list, String(item["name"]), String(item.get("desc", "")), "", false, Art.consumable_icon(item))
 
-	UITheme.header(m._lbl(list, "— RELICS & LANDMARKS —", 16, Color(0.8, 0.75, 0.95)))
+	# Relic entries carry an optional "group" (armory/supplies live in the
+	# Future tab until promoted); the player shelf shows SHIPPED relics only.
+	var sect_shown := 0
 	var rids: Array = Story.ALL_RELICS.keys()
 	rids.sort()
 	for id in rids:
 		var r: Dictionary = Story.ALL_RELICS[id]
-		var ph2: bool = r.get("placeholder", false)
-		if ph2 and not dev:
+		if r.get("placeholder", false) or String(r.get("group", "")) != "":
 			continue
-		_curio_card(m, list, String(r.get("name", id)), String(r.get("lore", "")), String(r.get("sprite", "")), ph2)
+		if sect_shown == 0:
+			UITheme.header(m._lbl(list, "— RELICS & LANDMARKS —", 16, Color(0.8, 0.75, 0.95)))
+		_curio_card(m, list, String(r.get("name", id)), String(r.get("lore", "")), String(r.get("sprite", "")), false)
+		sect_shown += 1
+
+
+## The FUTURE shelf (dev launcher only): every placeholder in the project,
+## one subtab per category — paintable terrains, salvaged mobs, quest-item
+## curios, the themed armory, profession supplies, and world relics. This is
+## the owner's review board: promote an entry by dropping its placeholder
+## flag and giving it a real home.
+static func _future(m: Menus, list: VBoxContainer, tab: String) -> void:
+	if tab == "future_terrains":
+		UITheme.header(m._lbl(list, "— PLACEHOLDER TERRAINS — paint any room via the dev panel —", 16, Color(0.7, 0.95, 0.85)))
+		var tids: Array = Terrains.DATA.keys()
+		tids.sort()
+		for tid in tids:
+			var t: Dictionary = Terrains.DATA[tid]
+			if not t.get("placeholder", false):
+				continue
+			var roster := "fill: %s   ·   accents: %s" % [
+				", ".join(_uniq(t.get("obstacles", []))), ", ".join(_uniq(t.get("accents", [])))]
+			_curio_card(m, list, "%s   (%s)" % [String(t["name"]), String(tid)], roster,
+				String((t.get("obstacles", ["rock"]) as Array)[0]), true)
+	elif tab == "future_mobs":
+		UITheme.header(m._lbl(list, "— SALVAGED MOBS — spawnable via the dev panel —", 16, Color(0.7, 0.95, 0.85)))
+		var kinds: Array = Story.ALL_ENEMIES.keys()
+		kinds.sort()
+		for kind in kinds:
+			if Story.ALL_ENEMIES[kind].get("placeholder", false) and not bool(Story.ALL_ENEMIES[kind].get("boss", false)):
+				_enemy_card(m, list, kind, false, false, true)
+	elif tab == "future_items":
+		UITheme.header(m._lbl(list, "— PLACEHOLDER QUEST ITEMS —", 16, Color(0.7, 0.95, 0.85)))
+		_future_gallery(m, list, Story.ALL_QUEST_ITEMS, "", "icon", "desc")
+	elif tab == "future_armory":
+		UITheme.header(m._lbl(list, "— PLACEHOLDER ARMORY — themed pack weapons awaiting itemization —", 16, Color(0.95, 0.7, 0.6)))
+		_future_gallery(m, list, Story.ALL_RELICS, "armory", "sprite", "lore")
+	elif tab == "future_supplies":
+		UITheme.header(m._lbl(list, "— TOOLS & MATERIALS — the professions seed —", 16, Color(0.75, 0.9, 0.7)))
+		_future_gallery(m, list, Story.ALL_RELICS, "supplies", "sprite", "lore")
+	elif tab == "future_provisions":
+		UITheme.header(m._lbl(list, "— PROVISIONS — food, the future cooking consumables —", 16, Color(0.95, 0.85, 0.6)))
+		_future_gallery(m, list, Story.ALL_RELICS, "provisions", "sprite", "lore")
+	else:  # future_relics
+		UITheme.header(m._lbl(list, "— PLACEHOLDER RELICS & LANDMARKS —", 16, Color(0.8, 0.75, 0.95)))
+		_future_gallery(m, list, Story.ALL_RELICS, "", "sprite", "lore")
+
+
+## One Future gallery: placeholder-flagged entries of `table` whose "group"
+## matches, rendered as curio cards.
+static func _future_gallery(m: Menus, list: VBoxContainer, table: Dictionary, group: String, art_key: String, text_key: String) -> void:
+	var ids: Array = table.keys()
+	ids.sort()
+	var shown := 0
+	for id in ids:
+		var e: Dictionary = table[id]
+		if not e.get("placeholder", false) or String(e.get("group", "")) != group:
+			continue
+		_curio_card(m, list, String(e.get("name", id)), String(e.get(text_key, "")), String(e.get(art_key, "")), true)
+		shown += 1
+	if shown == 0:
+		m._lbl(list, "Nothing waiting in this category.", 13, Color(0.55, 0.55, 0.6))
+
+
+## Unique names of a pool list (weighted lists repeat entries).
+static func _uniq(pool: Array) -> Array:
+	var seen := {}
+	var out: Array = []
+	for n in pool:
+		if not seen.has(n):
+			seen[n] = true
+			out.append(String(n))
+	return out
 
 
 ## One curio row: pixel icon (sprite key, or a prebuilt item texture) +

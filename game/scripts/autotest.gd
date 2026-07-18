@@ -4385,7 +4385,12 @@ func _test_pc_curios() -> void:
 	game.dev_mode = true
 	game.menus.open_codex("curios")
 	await _frames(3)
+	# The Future shelf: every placeholder category renders in dev mode.
+	for ft in ["future_terrains", "future_mobs", "future_items",
+			"future_armory", "future_supplies", "future_provisions", "future_relics"]:
+		game.menus.open_codex(ft)
+		await _frames(2)
 	game.menus.close()
 	game.dev_mode = _dev0
 	await _frames(2)
-	print("ok: pc_curios (quest-item curios + draughts + relics gallery)")
+	print("ok: pc_curios (curios shelf + Future tab: terrains/mobs/items/armory/supplies/relics)")

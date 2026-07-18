@@ -62,7 +62,14 @@ PIXEL CRAWLER (Anokolisa) — purchased bundle, 2026-07-06: some sprites
   unused humanoids as placeholder mobs (verdant_* — pillarbox pipeline);
   second-pass sweep: Free Pack tree MODELS (tree_green4/autumn3/winter/
   deadtree2/pine/pine2/tall*/stumps), desert cacti + sand drifts, Forge
-  statue/brazier/cauldron (magma biome).
+  statue/brazier/cauldron (magma biome); round-3 armory/supplies: one
+  signature weapon per themed Weapons sheet (armory_*, placeholder gallery
+  in the codex Curios tab) + smith tools and crafting materials
+  (tool_*/mat_*, Free Pack Tools/Resources — professions seed); final
+  completeness round: wetland cattails, signposts, lupines, blue mushroom,
+  farm fence, stalagmite, interior dressing (carpet/candelabra/banners/
+  chair/amphora/buckets/window box) + PROVISIONS food set (food_*, Meat +
+  Farm sheets — future cooking consumables, codex Future > Provisions).
 
 PIXEL CRAWLER - CEMETERY (Anokolisa) — purchased pack, licensed for
   commercial game use. Credit optional; the raw pack must NOT be
