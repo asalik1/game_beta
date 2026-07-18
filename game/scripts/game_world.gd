@@ -925,16 +925,21 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	npc.add_child(shadow)
 	var spr := Sprite2D.new()
 	var anim := Art.anim_info(sprite_name)
+	# NPCs ride the same global CHAR_RENDER_SCALE as heroes and mobs so the whole
+	# cast enlarges together and NPCs keep their size relationship to the hero
+	# (~90% of the hero body). Previously the NPC path skipped this multiplier, so
+	# NPCs stayed at the un-enlarged base and read tiny beside the 1.7x-scaled hero.
+	var render_scale: float = Balance.NPC_RENDER_SCALE * Balance.CHAR_RENDER_SCALE
 	if anim.is_empty():
 		spr.texture = Art.tex(sprite_name)
-		spr.scale = Art.scale_for(spr.texture, 3.0 * nsize)
+		spr.scale = Art.scale_for(spr.texture, render_scale * nsize)
 	else:
 		# NPCs breathe too (animation seam): slow frame flip on a tween,
 		# random phase so a crowd never inhales in unison.
 		spr.texture = anim["tex"]
 		var frames := int(anim["frames"])
 		spr.hframes = frames
-		spr.scale = Art.scale_for(spr.texture, 3.0 * nsize, frames)
+		spr.scale = Art.scale_for(spr.texture, render_scale * nsize, frames)
 		var tw := spr.create_tween().set_loops()
 		tw.tween_interval(randf_range(0.1, 0.8))
 		tw.tween_callback(func() -> void: spr.frame = (spr.frame + 1) % frames)

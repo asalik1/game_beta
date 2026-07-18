@@ -52,6 +52,13 @@ const HERO_CLASS_SIZE := {
 #   human/elf world, a touch wider than heroes so a tall guard or stooped
 #   elder can out/under-scale a hero occasionally.
 const NPC_SIZE_VAR := 0.12            # ±12%
+# NPC on-screen size (base). The NPC render path multiplies this by
+# CHAR_RENDER_SCALE — exactly like heroes and mobs — so NPCs enlarge with the
+# rest of the cast and hold their size relationship to the hero (~90% of the
+# hero body). See game_world.gd _make_npc. Authored 160px bodies and legacy 32px
+# sprites both land in range; a legacy sprite scaled up just reads chunkier
+# until it receives an authored body.
+const NPC_RENDER_SCALE := 3.0
 
 # Hero name (chosen at creation, shown in the co-op lobby/party). Capped so a
 # long name never overruns a roster row; empty falls back to the OS account
