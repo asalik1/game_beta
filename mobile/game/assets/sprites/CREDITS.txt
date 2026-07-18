@@ -121,4 +121,6 @@ Generated for this project; no third-party attribution required.
 OpenAI image generation — project-generated art (2026-07-18):
   wall_moss (64px seamless mossy-stone wall texture; generated source was
   palette-reduced for the game's pixel-art texture scale).
+  gate (16px reinforced timber-and-iron portcullis segment; generated source
+  was chroma-keyed, palette-reduced, and normalized to the runtime tile size).
 Generated for this project; no third-party attribution required.
