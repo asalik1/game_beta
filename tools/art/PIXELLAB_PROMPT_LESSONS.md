@@ -21,6 +21,16 @@ work starts from the good version. Add a row every time a tightening fixes somet
    reversing tail → keep the good half and loop it (frames 0-4, then 5←0 6←1 …);
    a pose won't hold → `custom_start_frame_base64` seed (but a >~a-few-KB base64
    corrupts passed as a tool arg — downscale the seed first).
+7. **Body-level dir drift (v3 north/west rotations are a different outfit) can't be
+   fixed by anim re-rolls** — the anim inherits the broken rotation. Fix with
+   `create_character_state` (edit + `use_color_palette_from_reference=true`), verify
+   all 8 state rotations, then re-animate the broken dirs on the state character
+   (frostfall hood-up state `4ecf0b0d`, 2026-07-17).
+8. **Billing + API quirks (2026-07-17):** v3 anims cost `frame_count` gens PER
+   direction (~0.9¢/gen on credit fallback). A repeat `animate_character` with the
+   same `action_description` returns "already complete" WITHOUT generating — reword
+   the text to actually re-roll. Jobs occasionally drop silently — re-fire missing
+   dirs into the same `animation_group_id`.
 
 ## Cases (BAD → GOOD → outcome)
 
@@ -31,3 +41,6 @@ work starts from the good version. Add a row every time a tightening fixes somet
 | Paladin Fallen Arbiter, west walk moonwalks | `walking forward with a natural leg stride` | `walking **to the left**, each foot stepping **leftward** and planting ahead, body **facing left**, **no turning**` (+ loop the good half) | Feet stopped reversing |
 | Hellfire west attack, wrong-side fire burst | (frame 6 FX flipped to the wrong side) | — no regen — **dupe frame 5 over frame 6** | Wrong-side burst gone |
 | Stormforged idle, sword down | `standing idle` | `standing idle, greatsword **shouldered, blade angled up and back over the shoulder, tip high, never lowered toward the ground**, wings folded` | Idle held the blade up (v3 refused the same for WALK — fix at body) |
+| Paladin attack, weapon morphs mid-swing (flail→hammer→axe) | `a heavy attack with his weapon` (orig, loose) | `a single overhead smash with the chained flail-hammer, **the same chained flail-hammer held for the entire swing, chain and hammer-head visible in every frame, no weapon change**` | Weapon held identity in 8/8 dirs (drift-regen 2026-07-17) |
+| "small pale impact flash" → full-body WHITE frame | `small pale impact flash at the hit` | — no reword fixes it reliably — **numeric-screen every batch** (mean-lum per frame vs f0; >+40 = bleach) and **dupe the neighbour frame over the bleach frame** | 2 bleach frames caught + patched, zero re-rolls |
+| Warlock cast N/W dirs keep re-inventing FX (black rings roll 1, pink bubbles roll 2) despite explicit negatives | `...no black rings, no white fire...` (2 rolls) | — stop re-rolling — **mirror the clean e/se/nw dirs onto w/sw/ne** (`install_dirset.mirror_fill` convention) | Perfect FX consistency, 0 gens; accept the familiar/tome side-flip |
