@@ -496,8 +496,44 @@ func _unhandled_input(event: InputEvent) -> void:
 			var np: Vector2 = entry["node"].position
 			if player.global_position.distance_to(np) < 80.0 and world.distance_to(np) < 90.0:
 				talk_cd = 0.6
+				_face_interactable_to_player(entry)
 				entry["action"].call()
 				break
+
+
+## Directional NPC bodies turn toward the local player when spoken to. Only
+## sprites shipping `<name>_anim_<dir>.png` opt in; existing static NPC art
+## remains on its original, single-facing path.
+func _face_interactable_to_player(entry: Dictionary) -> void:
+	var dirs: Dictionary = entry.get("dir_anims", {})
+	if dirs.is_empty():
+		return
+	var npc := entry.get("node") as Node2D
+	var spr := entry.get("sprite") as Sprite2D
+	if not is_instance_valid(npc) or not is_instance_valid(spr):
+		return
+	var face: String = Art.dir8_suffix(player.global_position - npc.global_position)
+	var info: Dictionary = dirs.get(face, {})
+	if info.is_empty():
+		return
+	var frames: int = int(info.get("frames", 1))
+	spr.texture = info["tex"]
+	spr.hframes = frames
+	spr.frame = 0
+	var body_target: float = float(entry.get("body_target", 0.0))
+	if body_target > 0.0:
+		var legacy_scale := Art.scale_for(spr.texture,
+			float(entry.get("render_scale", Balance.NPC_RENDER_SCALE))
+				* float(entry.get("size_var", 1.0)), frames)
+		spr.scale = Art.scale_for_alpha_height(spr.texture,
+			body_target * Balance.CHAR_RENDER_SCALE
+				* float(entry.get("size_var", 1.0)), frames)
+		spr.position.y = Art.alpha_feet_offset(spr.texture, legacy_scale.y, frames) \
+			- Art.alpha_feet_offset(spr.texture, spr.scale.y, frames)
+	else:
+		spr.scale = Art.scale_for(spr.texture,
+			float(entry.get("render_scale", Balance.NPC_RENDER_SCALE))
+				* float(entry.get("size_var", 1.0)), frames)
 
 
 func _process(delta: float) -> void:
@@ -654,6 +690,7 @@ func _process(delta: float) -> void:
 				interact_in_range = true  # the touch Act button appears only when this is true
 			if near and talk_cd <= 0.0 and player.intent_interact:
 				talk_cd = 0.6
+				_face_interactable_to_player(entry)
 				entry["action"].call()
 				break
 		# Menu hotkeys. MP: UI-local, per-client — opening your inventory or

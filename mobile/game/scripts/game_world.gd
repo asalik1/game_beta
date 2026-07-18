@@ -384,7 +384,7 @@ func _build_room(i: int) -> void:
 		var npc_node := _make_npc(npc_def["sprite"],
 			room_pos(i, npc_def["x"], npc_def["y"]),
 			npc_def.get("prompt", "E — Talk"), func() -> void:
-				run_convo_id(convo_id))
+				run_convo_id(convo_id), convo_id)
 		_mark_quest_giver(npc_node, convo_id)
 
 	# Elder Maren, the Chapter 1 quest giver in the village.
@@ -795,7 +795,7 @@ func _spawn_wanderer(i: int) -> void:
 	var convo_id: String = w["convo"]
 	var pos := room_center(i) + Vector2(rng.randf_range(-220.0, 220.0), rng.randf_range(-140.0, 140.0))
 	var npc_node := _make_npc(w["sprite"], pos, w.get("prompt", "E — Talk"), func() -> void:
-		run_convo_id(convo_id))
+		run_convo_id(convo_id), convo_id)
 	_mark_quest_giver(npc_node, convo_id)
 
 ## Hang a ❢ over an NPC who can still offer a side quest you haven't taken —
@@ -906,14 +906,19 @@ func fast_travel(i: int) -> void:
 	_enter_room(i)
 	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)
 
-func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: Callable) -> Node2D:
+func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: Callable,
+		profile_key := "") -> Node2D:
 	var npc := Node2D.new()
 	npc.position = pos
-	# Fixed per-INDIVIDUAL size (2026-07-17): a stable hash of identity+place
-	# so this NPC is always this size, but a crowd isn't clones — a tall guard
-	# or stooped elder can out/under-scale a hero. Deterministic -> co-op-safe.
-	var nhash := absi((sprite_name + str(int(pos.x)) + str(int(pos.y))).hash())
-	var nsize := 1.0 + (float(nhash % 1000) / 1000.0 - 0.5) * 2.0 * Balance.NPC_SIZE_VAR
+	# Live people use the lore-authored height profile in Balance. Everything
+	# outside that roster (props and dev-only NPC gallery entries) retains this
+	# stable hash fallback, so co-op never rolls a different footprint.
+	var nsize: float = float(Balance.NPC_HEIGHT_BY_SPRITE.get(sprite_name, 0.0))
+	if not profile_key.is_empty():
+		nsize = float(Balance.NPC_HEIGHT_BY_CONVO.get(profile_key, nsize))
+	if nsize <= 0.0:
+		var nhash := absi((sprite_name + str(int(pos.x)) + str(int(pos.y))).hash())
+		nsize = 1.0 + (float(nhash % 1000) / 1000.0 - 0.5) * 2.0 * Balance.NPC_SIZE_VAR
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
 	shadow.scale = Vector2(2, 2) * nsize
@@ -921,24 +926,44 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	npc.add_child(shadow)
 	var spr := Sprite2D.new()
 	var anim := Art.anim_info(sprite_name)
-	# NPCs ride the same global CHAR_RENDER_SCALE as heroes and mobs so the whole
-	# cast enlarges together and NPCs keep their size relationship to the hero
-	# (~90% of the hero body). Previously the NPC path skipped this multiplier, so
-	# NPCs stayed at the un-enlarged base and read tiny beside the 1.7x-scaled hero.
+	# Directional idle art is optional. It is consumed on interaction (the NPC
+	# turns toward its visitor); a single-facing body keeps the legacy path.
+	var dir_anims := Art.dir_set("%s_anim" % sprite_name)
+	# Legacy interaction targets ride the global character scale; the humanoid
+	# roster below instead uses alpha-body normalization and its authored height
+	# profile, so a padded source export cannot make a citizen look child-sized.
 	var render_scale: float = Balance.NPC_RENDER_SCALE * Balance.CHAR_RENDER_SCALE
+	var body_target: float = float(Balance.NPC_BODY_TARGETS.get(sprite_name, 0.0))
 	if anim.is_empty():
 		spr.texture = Art.tex(sprite_name)
-		spr.scale = Art.scale_for(spr.texture, render_scale * nsize)
+		if body_target > 0.0:
+			var legacy_scale := Art.scale_for(spr.texture, render_scale * nsize)
+			spr.scale = Art.scale_for_alpha_height(spr.texture,
+				body_target * Balance.CHAR_RENDER_SCALE * nsize)
+			spr.position.y = Art.alpha_feet_offset(spr.texture, legacy_scale.y) \
+				- Art.alpha_feet_offset(spr.texture, spr.scale.y)
+		else:
+			spr.scale = Art.scale_for(spr.texture, render_scale * nsize)
 	else:
 		# NPCs breathe too (animation seam): slow frame flip on a tween,
 		# random phase so a crowd never inhales in unison.
 		spr.texture = anim["tex"]
 		var frames := int(anim["frames"])
 		spr.hframes = frames
-		spr.scale = Art.scale_for(spr.texture, render_scale * nsize, frames)
+		if body_target > 0.0:
+			var legacy_scale := Art.scale_for(spr.texture, render_scale * nsize, frames)
+			spr.scale = Art.scale_for_alpha_height(spr.texture,
+				body_target * Balance.CHAR_RENDER_SCALE * nsize, frames)
+			spr.position.y = Art.alpha_feet_offset(spr.texture, legacy_scale.y, frames) \
+				- Art.alpha_feet_offset(spr.texture, spr.scale.y, frames)
+		else:
+			spr.scale = Art.scale_for(spr.texture, render_scale * nsize, frames)
 		var tw := spr.create_tween().set_loops()
 		tw.tween_interval(randf_range(0.1, 0.8))
-		tw.tween_callback(func() -> void: spr.frame = (spr.frame + 1) % frames)
+		# Directional NPC idle strips can have a different number of frames than
+		# the initial south-facing strip. Read hframes at playback time so changing
+		# direction during an interaction keeps the new idle looping correctly.
+		tw.tween_callback(func() -> void: spr.frame = (spr.frame + 1) % maxi(1, spr.hframes))
 		tw.tween_interval(0.45)
 	npc.add_child(spr)
 	if sprite_name == "mill":
@@ -972,7 +997,9 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	prompt.visible = false
 	npc.add_child(prompt)
 	world.add_child(npc)
-	interactables.append({"node": npc, "prompt": prompt, "action": action})
+	interactables.append({"node": npc, "prompt": prompt, "action": action,
+		"sprite": spr, "dir_anims": dir_anims, "render_scale": render_scale,
+		"size_var": nsize, "body_target": body_target})
 	return npc
 
 ## Props that grow in natural CLUMPS (a stand of trees, a patch of mushrooms,

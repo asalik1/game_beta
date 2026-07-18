@@ -2821,6 +2821,44 @@ static func scale_for(texture: Texture2D, scale_16px: float, frames := 1) -> Vec
 	return Vector2(s, s)
 
 
+## Scale a strip from the actual painted body height rather than its square
+## export canvas. High-resolution character exports often carry wide transparent
+## padding; using their full width makes the body visibly smaller than legacy
+## 16/32px sprites. This mirrors Player._measure_hero_frame's alpha rule.
+static func scale_for_alpha_height(texture: Texture2D, target_height: float, frames := 1) -> Vector2:
+	var img: Image = texture.get_image()
+	var frame_w := int(img.get_width() / maxi(1, frames))
+	var top := img.get_height()
+	var bot := -1
+	for y in img.get_height():
+		for x in frame_w:
+			if img.get_pixel(x, y).a > 0.15:
+				top = mini(top, y)
+				bot = maxi(bot, y)
+				break
+	if bot <= top:
+		return scale_for(texture, target_height / 16.0, frames)
+	var s := target_height / float(bot - top)
+	return Vector2(s, s)
+
+
+## Vertical offset from a Sprite2D's centered frame origin to its painted feet.
+## Lets a newly normalized high-res body grow upward from its existing ground
+## line instead of sinking into it as its scale increases.
+static func alpha_feet_offset(texture: Texture2D, scale: float, frames := 1) -> float:
+	var img: Image = texture.get_image()
+	var frame_w := int(img.get_width() / maxi(1, frames))
+	var bot := -1
+	for y in img.get_height():
+		for x in frame_w:
+			if img.get_pixel(x, y).a > 0.15:
+				bot = maxi(bot, y)
+				break
+	if bot < 0:
+		return 0.0
+	return (float(bot) - float(img.get_height()) * 0.5) * scale
+
+
 ## Build an Image from a sprite's character grid.
 static func img(name: String) -> Image:
 	var def: Dictionary = SPRITES[name]

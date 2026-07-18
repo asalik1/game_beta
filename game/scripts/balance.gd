@@ -48,17 +48,67 @@ const HERO_CLASS_SIZE := {
 	"warrior": 1.08, "paladin": 1.05, "assassin": 1.02,
 	"warlock": 1.0, "mage": 0.98, "archer": 0.95,
 }
-# NPCs: FIXED per individual (hashed from identity, never changes) — same
-#   human/elf world, a touch wider than heroes so a tall guard or stooped
-#   elder can out/under-scale a hero occasionally.
-const NPC_SIZE_VAR := 0.12            # ±12%
-# NPC on-screen size (base). The NPC render path multiplies this by
-# CHAR_RENDER_SCALE — exactly like heroes and mobs — so NPCs enlarge with the
-# rest of the cast and hold their size relationship to the hero (~90% of the
-# hero body). See game_world.gd _make_npc. Authored 160px bodies and legacy 32px
-# sprites both land in range; a legacy sprite scaled up just reads chunkier
-# until it receives an authored body.
+# NPC height is authored for the live humanoid roster below. The retained
+# generic variance applies only to non-person interactables and dev previews.
+const NPC_SIZE_VAR := 0.12            # legacy non-person / placeholder fallback
+# The warlock (1.0) is the adult-man baseline; the archer (0.95) is the
+# adult-woman baseline. Conversation overrides cover every live named person
+# whose shared temporary sprite would otherwise erase that distinction. Only
+# a few lore-led outliers depart from the tight 0.92–1.04 adult band; no adult
+# exceeds the warrior's 1.08 ceiling. Dev-only `npc_*` gallery art falls back
+# to the hashed spread below and is deliberately not part of this roster.
+const NPC_HEIGHT_BY_SPRITE := {
+	"elder": 0.96, "merchant": 1.00, "sentry": 1.00, "archer": 0.98,
+	"villager": 0.96, "warden": 0.98, "envoy": 0.97, "choirmother": 0.95,
+	"beastkin": 0.98, "cultist": 0.98, "aldric": 0.99, "onna": 0.97,
+}
+const NPC_HEIGHT_BY_CONVO := {
+	# Chapter 1 road people.
+	"wander_tinker": 0.90, "wander_deserter": 0.99, "wander_pilgrim": 0.96,
+	"wander_hunter": 0.98, "wander_peddler": 1.00, "wander_orphan": 0.88,
+	# Maren's Camp.
+	"maren": 0.96, "ch2_maren_hub": 0.96, "ch2_sentry": 1.00,
+	"ch2_refugee": 0.95, "ch2_accord_recruit": 0.95,
+	"ch2_cinder_recruit": 0.98, "ch2_beastkin_cage": 0.98,
+	"ch2_choir_pilgrim": 0.95, "ch2_aldric": 0.99,
+	# Vale.
+	"ch3_briefing": 0.94, "ch3_accord": 1.00, "ch3_cinder": 0.97,
+	"ch3_refugee": 0.92, "ch3_wander_digger": 0.95,
+	"ch3_wander_mute": 0.95, "ch3_wander_defector": 0.99,
+	"ch3_wander_archivist": 0.95, "ch3_wander_peddler": 0.96,
+	# Foundry.
+	"ch4_briefing": 1.04, "ch4_wander_smith": 0.98,
+	"ch4_wander_clerk": 0.99, "ch4_wander_preacher": 0.98,
+	"ch4_wander_charms": 0.96, "ch4_wander_sapper": 0.97,
+	"shrine_court": 0.95,
+	# Frozen shore.
+	"ch5_briefing": 0.95, "ch5_accord": 0.95, "ch5_cult": 0.96,
+	"ch5_mother": 0.95, "ch5_wander_skald": 1.00,
+	"ch5_wander_driver": 0.99, "ch5_wander_mapper": 0.95,
+	"ch5_wander_memories": 0.97, "ch5_wander_deserter": 0.99,
+	# The Deep.
+	"ch6_briefing": 0.96, "ch6_wildfang": 0.99, "ch6_accord": 0.95,
+	"ch6_wander_fisher": 0.98, "ch6_wander_convert": 0.98,
+	"ch6_wander_doubter": 0.94, "ch6_wander_scout": 0.98,
+	"ch6_wander_botanist": 0.99,
+	# Last relay.
+	"ch7_accord": 1.00, "ch7_cinder": 0.97, "ch7_wander_chaser": 0.98,
+	"ch7_wander_quarter": 0.99, "ch7_wander_bellringer": 0.93,
+	"ch7_wander_undertaker": 0.96,
+}
+# NPC on-screen size for legacy non-human interaction targets. The humanoid
+# roster below is alpha-body normalized to the hero height ladder instead.
 const NPC_RENDER_SCALE := 3.0
+# Authored humanoid NPCs use their painted alpha body rather than their full
+# transparent export canvas for sizing. Values are the pre-CHAR_RENDER_SCALE
+# body height. The warlock (1.0 class-size anchor) is the baseline for an
+# Emberfall citizen; the named profile tables above supply individual variation.
+# This prevents a generous 256px export canvas from shrinking the person.
+const NPC_BODY_TARGETS := {
+	"elder": 52.0, "villager": 52.0, "sentry": 52.0, "merchant": 52.0,
+	"archer": 52.0, "warden": 52.0, "envoy": 52.0, "choirmother": 52.0,
+	"beastkin": 52.0, "cultist": 52.0, "aldric": 52.0, "onna": 52.0,
+}
 
 # Hero name (chosen at creation, shown in the co-op lobby/party). Capped so a
 # long name never overruns a roster row; empty falls back to the OS account

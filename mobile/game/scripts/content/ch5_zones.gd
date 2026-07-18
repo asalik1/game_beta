@@ -263,7 +263,7 @@ const WANDERERS := {
 		{"sprite": "beastkin", "prompt": "E — Talk", "convo": "ch5_wander_skald"},
 		{"sprite": "cultist", "prompt": "E — Talk", "convo": "ch5_wander_driver"},
 		{"sprite": "warden", "prompt": "E — Talk", "convo": "ch5_wander_mapper"},
-		{"sprite": "merchant", "prompt": "E — Talk", "convo": "ch5_wander_memories"},
+		{"sprite": "onna", "prompt": "E — Talk", "convo": "ch5_wander_memories"},
 		{"sprite": "sentry", "prompt": "E — Talk", "convo": "ch5_wander_deserter"},
 	],
 }
