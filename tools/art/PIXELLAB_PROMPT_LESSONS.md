@@ -27,10 +27,53 @@ work starts from the good version. Add a row every time a tightening fixes somet
    all 8 state rotations, then re-animate the broken dirs on the state character
    (frostfall hood-up state `4ecf0b0d`, 2026-07-17).
 8. **Billing + API quirks (2026-07-17):** v3 anims cost `frame_count` gens PER
-   direction (~0.9¢/gen on credit fallback). A repeat `animate_character` with the
+   direction (~0.9¢/gen on credit fallback; larger canvases cost more — a 252px
+   char ran ~5.7¢/gen). A repeat `animate_character` with the
    same `action_description` returns "already complete" WITHOUT generating — reword
    the text to actually re-roll. Jobs occasionally drop silently — re-fire missing
-   dirs into the same `animation_group_id`.
+   dirs into the same `animation_group_id`. **Downloading the result:** frame URLs
+   use the per-DIRECTION animation id shown inside `get_character`'s frame-URL list
+   (`animations/<per-dir-id>/<dir>/N.png`), NOT the `[group: …]` id — polling the
+   group id 404s forever. `get_character` also caches ~2-4 min, so a just-finished
+   group won't appear until the cache refreshes (watch the response size change);
+   the API reports the anim complete while the CDN still 404s briefly.
+
+9. **"Correct" for a direction = CONSISTENT with the other 7, not whatever that
+   direction's rotation happens to hold.** The warrior's NE rotation had empty hands,
+   so a plain idle re-roll came out weaponless — but every other facing holds the
+   molten greatsword, so weaponless was WRONG. Infer the target from the SET, not one
+   rotation. Corollary: an animation that *invents* a weapon (a silver scimitar on
+   warrior idle-NE) is usually a rotation MISSING the element, not a bad animation —
+   fix by seeding from a clip that has it, prompting the prop in (rule 10), or fixing
+   the rotation (rule 7).
+10. **Directional held props (sword, bow) point the way the body faces.** Two payoffs:
+    (a) *generation* — if a held-prop pose keeps failing (empty rotation invents;
+    run-seed drags a walking lean), prompt the prop **extended OUTWARD in the facing
+    direction, clearly out to the side away from the torso** — an unambiguous visible
+    target the model renders cleanly. (b) *cheap fix for a wrong-facing prop* — if the
+    loose/climax frames point it the WRONG way, **mirror the last N frames in place**;
+    a back-facing cloak body is symmetric enough the flip is invisible.
+11. **Mirror ONLY for symmetric designs (this supersedes the blanket "mirror wins" in
+    the Warlock case below).** Asymmetric (one-handed weapon/staff/shield/skull) →
+    REGEN. Severity scales: an off-hand PROP (book/orb) swapping sides is soft and can
+    slide; a PRIMARY/dominant weapon (warrior sword, archer bow) swapping hands is a
+    hard no. Two things still FORCE a mirror even on asymmetric: the native rotation
+    for that dir is broken, or v3 keeps re-inventing the FX/pose past all negatives.
+12. **Hue-remapping FX: gate on VALUE, not hue+sat alone.** When the off-palette FX
+    shares a hue band with a legit but DARK character element (Ronin cyan combat FX vs
+    its blue-grey cape — both cyan-band, but the cape is high-sat / low-value), add
+    `val ≥ 0.55` so only the bright FX shifts and the dark element is spared.
+13. **Awakened mythics are recolors.** When you regen a base direction, derive the HSV
+    shift from the OLD base→OLD awakened pair (median dHue/dSat/dVal) and apply it to
+    the NEW base frames → new awakened, so that dir stays consistent with its siblings.
+14. **Face rules.** Pure cardinals (W/E) must NEVER show a face; back-3/4 views hide it
+    in the hood. A design with a real face (voidwraith, void weaver) WILL leak it on
+    toward-camera climax frames no matter the negative — re-roll once for hood/pose,
+    then shadow the residual with a spatial (head-zone) + saturation-capped (spare the
+    gold trim) repaint to the hood-interior colour.
+15. **Confirm which clip/STATE before diagnosing.** "Berserk stormforged NE" was the
+    ULT, not the base Cleave attack — chasing the wrong clip burned time. Pin clip +
+    state (base / ult / awakened) and its source char up front.
 
 ## Cases (BAD → GOOD → outcome)
 
@@ -43,4 +86,9 @@ work starts from the good version. Add a row every time a tightening fixes somet
 | Stormforged idle, sword down | `standing idle` | `standing idle, greatsword **shouldered, blade angled up and back over the shoulder, tip high, never lowered toward the ground**, wings folded` | Idle held the blade up (v3 refused the same for WALK — fix at body) |
 | Paladin attack, weapon morphs mid-swing (flail→hammer→axe) | `a heavy attack with his weapon` (orig, loose) | `a single overhead smash with the chained flail-hammer, **the same chained flail-hammer held for the entire swing, chain and hammer-head visible in every frame, no weapon change**` | Weapon held identity in 8/8 dirs (drift-regen 2026-07-17) |
 | "small pale impact flash" → full-body WHITE frame | `small pale impact flash at the hit` | — no reword fixes it reliably — **numeric-screen every batch** (mean-lum per frame vs f0; >+40 = bleach) and **dupe the neighbour frame over the bleach frame** | 2 bleach frames caught + patched, zero re-rolls |
-| Warlock cast N/W dirs keep re-inventing FX (black rings roll 1, pink bubbles roll 2) despite explicit negatives | `...no black rings, no white fire...` (2 rolls) | — stop re-rolling — **mirror the clean e/se/nw dirs onto w/sw/ne** (`install_dirset.mirror_fill` convention) | Perfect FX consistency, 0 gens; accept the familiar/tome side-flip |
+| Warlock cast N/W dirs keep re-inventing FX (black rings roll 1, pink bubbles roll 2) despite explicit negatives | `...no black rings, no white fire...` (2 rolls) | — stop re-rolling — **mirror the clean e/se/nw dirs onto w/sw/ne** (`install_dirset.mirror_fill` convention) | Perfect FX consistency, 0 gens; accept the familiar/tome side-flip. **REFINED 2026-07-18 (rule 11):** the warlock is asymmetric (skull/tome), so W/SW were re-done with NATIVE-hand generation; only NE stays mirrored (its body rotation is broken + it's "just a book", owner-accepted) |
+| Warrior idle-NE invents a silver scimitar (empty NE rotation → v3 fills the hand) | `standing idle` (invents a curved silver blade) | seed the v3 from a run frame that HOLDS the molten sword + `…molten glowing greatsword blade extended OUTWARD to the right in the direction he faces, clearly out to the side away from the torso, no silver blade, no curved scimitar…` | Upright + visible molten blade out east (curved-vs-straight drift owner-accepted) |
+| Archer bows point EAST on W/NW shots | (loose frames were drawn aiming east) | — no regen — **mirror the last N loose frames in place** (frostfall attack_nw last-3, voidwraith attack_w/nw last-4, multishot attack2_nw last-5) | Bow points the facing dir; back-cloak flip invisible |
+| Voidwraith NW quickshot shows a chibi face | `…draws the bow…` | `…seen from behind at a north-west angle, the deep hood stays up the whole time with the face completely hidden in shadow, no face and no eyes ever visible, bow and arrow point up-left…` | Hood/no-face + bow points NW |
+| Voidwraith SE quickshot draws too shallow | `…draws and looses an arrow…` | `…nocks and draws the bowstring **all the way back to a full deep draw with the drawing arm pulled right back to the cheek**, holds the tension, then looses…` | Proper full-draw archery form |
+| Stormforged ult-NE weird curled hook FX | (v3 storm FX came out as C-hooks / floating blobs) | follow the good SW dir + `…smooth tall vertical streamers of pale-blue storm lightning rise straight upward around the blade, clean flowing streamers, no hooks, no curled loops, no scribbles…` | Clean vertical storm streamers (matches SW) |
