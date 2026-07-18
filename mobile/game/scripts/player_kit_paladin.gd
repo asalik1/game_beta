@@ -22,7 +22,7 @@ func _use_paladin(slot: String, f: float) -> void:
 				global_position = game.clamp_to_zone(
 					j_tgt.global_position + (global_position - j_tgt.global_position).normalized() * 58.0,
 					j_tgt.global_position)
-				_afterimages(j_from, global_position, Color(1.0, 0.9, 0.55), 3)
+				_afterimages(j_from, global_position, _pal_skin_col(Color(1.0, 0.9, 0.55)), 3)
 				game.sfx("slam", 1.4)
 				# Landing i-frame rides the LEAP only (round 44) — and the
 				# leap's own cd now caps it at once per 5s, the sanctioned
@@ -54,9 +54,14 @@ func _use_paladin(slot: String, f: float) -> void:
 				game.spawn_text(global_position + Vector2(0, -50), "SMITE", Color(1.0, 0.95, 0.6))
 			_melee_arc(jcoeff * f, 92.0, "slash", jeff, "swing", "sword")
 			# The hammer lands with weight: a golden shock at the impact.
+			# Eclipse Knight's shock is the CORONA — a dark inner ring inside
+			# the gold one (the eclipse read); the Arbiter's shock is cold.
 			var jdir := aim_dir(220.0)
-			_ring_fx(global_position + jdir * 58.0,
-				_tcolor if _themed else Color(1.0, 0.9, 0.55), 34.0)
+			var jcol := _tcolor if _themed else Color(1.0, 0.9, 0.55)
+			jcol = _pal_skin_col(jcol)
+			_ring_fx(global_position + jdir * 58.0, jcol, 34.0)
+			if skin == "eclipse_knight":
+				_ring_fx(global_position + jdir * 58.0, Color(0.30, 0.16, 0.45), 20.0)
 			if _tfx.get("wave2", 0):
 				# Wrath: a burning backswing follows.
 				var jf2 := f
@@ -66,6 +71,17 @@ func _use_paladin(slot: String, f: float) -> void:
 		"a2": _consecration(f)
 		"a3": _aegis()
 		"ult": _conviction_swap(f)
+
+
+## Paladin skin signature light (Ronin pattern — the skin's light wins over
+## theme): Eclipse Knight burns corona-gold with dark accents; the Fallen
+## Arbiter's light has gone COLD — pale silver, no warmth left in it.
+func _pal_skin_col(base: Color) -> Color:
+	if skin == "eclipse_knight":
+		return Color(1.00, 0.70, 0.25)
+	if skin == "fallen_arbiter":
+		return Color(0.90, 0.92, 1.00)
+	return base
 
 
 ## A shaft of light stabs down from the sky and blooms where it lands.
@@ -107,7 +123,7 @@ func _smite_rip(pos: Vector2, col: Color) -> void:
 ## fire, and every enemy struck MENDS you (heal-on-hit is the identity).
 func _consecration(f := 1.0) -> void:
 	var radius := 150.0 * float(_tfx.get("radius_mult", 1.0))
-	var col := _tcolor if _themed else Color(1.0, 0.9, 0.5)
+	var col := _pal_skin_col(_tcolor if _themed else Color(1.0, 0.9, 0.5))
 	var fx_copy := _tfx.duplicate()
 	var fmul := f
 	# Land the nova on the warhammer's slam frame, not the input frame.
@@ -199,6 +215,10 @@ func _aegis() -> void:
 	aegis_proj_left = Balance.AEGIS_PROJ_CAP  # arrows answered per cast
 	aegis_fx = _tfx.duplicate()
 	var col := _tcolor if _themed else Color(0.7, 0.85, 1.0)
+	if skin == "eclipse_knight":
+		col = Color(0.55, 0.38, 0.85)  # the ward is the dark of the disc
+	elif skin == "fallen_arbiter":
+		col = Color(0.88, 0.92, 1.00)
 	_ring_fx(global_position, col, 95.0)
 	game.burst(global_position, col, 10)
 	game.spawn_text(global_position + Vector2(0, -60), "AEGIS", col)
@@ -259,10 +279,13 @@ func _conviction_swap(f := 1.0) -> void:
 		paladin_mode = "holy"
 		zeal_time = 0.0   # Zeal is a Retribution burst — going defensive drops it
 		game.sfx("mend", 1.0, 0.0, -2.0)
-		game.spawn_text(global_position + Vector2(0, -64), "HOLY", Color(1.0, 0.92, 0.55))
-		game.hud.flash_screen(Color(1.0, 0.9, 0.5), 0.25, 0.3)
-		_ring_fx(global_position, Color(1.0, 0.92, 0.55), 130.0)
-		game.burst(global_position, Color(1.0, 0.95, 0.7), 14)
+		# (Retribution's hot red flash stays UN-skinned — Zeal is a gameplay
+		# read; only the holy side wears the skin's light.)
+		var holy_col := _pal_skin_col(Color(1.0, 0.92, 0.55))
+		game.spawn_text(global_position + Vector2(0, -64), "HOLY", holy_col)
+		game.hud.flash_screen(_pal_skin_col(Color(1.0, 0.9, 0.5)), 0.25, 0.3)
+		_ring_fx(global_position, holy_col, 130.0)
+		game.burst(global_position, _pal_skin_col(Color(1.0, 0.95, 0.7)), 14)
 		# The blessing: a burst of mending and a brief guard to cover the
 		# retreat into the defensive stance.
 		gain_hp(max_hp * Balance.PALADIN_SWAP_HEAL)
@@ -287,8 +310,8 @@ func _chains_of_wrath(f := 1.0) -> void:
 		return
 	_ult_sfx()
 	game.shake(7.0)
-	game.hud.flash_screen(Color(1.0, 0.85, 0.4), 0.4, 0.35)
-	var col := _tcolor if _themed else Color(1.0, 0.85, 0.45)
+	game.hud.flash_screen(_pal_skin_col(Color(1.0, 0.85, 0.4)), 0.4, 0.35)
+	var col := _pal_skin_col(_tcolor if _themed else Color(1.0, 0.85, 0.45))
 	_ring_fx(global_position, col, radius, true)
 	game.spawn_text(global_position + Vector2(0, -64), "CHAINS OF WRATH", Color(1, 0.8, 0.4))
 	if _tfx.has("chain_guard"):
@@ -317,7 +340,7 @@ func _chains_of_wrath(f := 1.0) -> void:
 	# The hammer of verdict falls from the sky while the chains reel in.
 	var hammer := Sprite2D.new()
 	hammer.texture = Art.tex("w_hammer")
-	hammer.modulate = Color(1.0, 0.95, 0.7)
+	hammer.modulate = Color(0.88, 0.90, 1.0) if skin == "fallen_arbiter" else Color(1.0, 0.95, 0.7)
 	hammer.scale = Vector2(7, 7)
 	hammer.global_position = global_position + Vector2(0, -320)
 	hammer.z_index = 30
@@ -333,7 +356,7 @@ func _chains_of_wrath(f := 1.0) -> void:
 			return
 		game.sfx("slam")
 		game.shake(9.0)
-		game.hud.flash_screen(Color(1.0, 0.9, 0.5), 0.35, 0.3)
+		game.hud.flash_screen(_pal_skin_col(Color(1.0, 0.9, 0.5)), 0.35, 0.3)
 		_light_pillar(global_position, col, 1.4)
 		game.burst(global_position, col, 24)
 		game.burst(global_position, Color(1, 1, 1), 10)

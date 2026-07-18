@@ -23,9 +23,16 @@ func _use_archer(slot: String, f: float) -> void:
 			storm_time = 3.0
 			storm_fx = _tfx.duplicate()
 			_ult_sfx()
-			_ring_fx(global_position, _tcolor if _themed else Color(0.6, 1.0, 0.6), 190.0)
-			game.hud.flash_screen(Color(0.6, 1.0, 0.6), 0.3, 0.35)
-			game.spawn_text(global_position + Vector2(0, -60), "ARROW STORM!", Color(0.6, 1, 0.6))
+			# Skin storms announce in their element: Frostfall's sky goes pale
+			# ice, Voidwraith's goes dark violet (Ronin pattern — colour only).
+			var storm_call := _tcolor if _themed else Color(0.6, 1.0, 0.6)
+			if skin == "frostfall_ranger":
+				storm_call = Color(0.66, 0.90, 1.00)
+			elif skin == "voidwraith":
+				storm_call = Color(0.55, 0.32, 0.90)
+			_ring_fx(global_position, storm_call, 190.0)
+			game.hud.flash_screen(storm_call, 0.3, 0.35)
+			game.spawn_text(global_position + Vector2(0, -60), "ARROW STORM!", storm_call)
 
 
 ## Hunt rhythm (2026-07-09): the free +25% cap-exempt crit is gone — instead
@@ -43,12 +50,43 @@ func _hunt_rhythm_tick() -> void:
 func _shoot(dir: Vector2, mult: float) -> void:
 	game.sfx("bow")
 	var col: Color = _tcolor if _themed else Color(0.9, 1.0, 0.6)
+	col = _skin_arrow_col(col)
 	if next_crit:
 		# The lethal arrow reads before it lands: a white-hot muzzle instead
 		# of the theme tint (the hunt rhythm's 4th shot, or a lined-up shot).
 		col = Color(1.0, 0.95, 0.75)
 	_muzzle(dir, col)
-	_proj(dir, mult, "arrow", 520.0)
+	_skin_arrow(_proj(dir, mult, "arrow", 520.0))
+
+
+## Archer skin signature colour: Frostfall looses ice, Voidwraith looses
+## void — over theme, like the assassin skins' knives (Ronin pattern).
+func _skin_arrow_col(base: Color) -> Color:
+	if skin == "frostfall_ranger":
+		return Color(0.62, 0.88, 1.00)
+	if skin == "voidwraith":
+		return Color(0.62, 0.38, 0.95)
+	return base
+
+
+## Dress a loosed arrow in its skin: Frostfall's carry an ice-pale shaft and
+## a frost glint riding behind the head; Voidwraith's fly dark with a violet
+## void-streak trailing them (the Phantom knife-trail language).
+func _skin_arrow(p: Projectile) -> void:
+	if skin == "frostfall_ranger":
+		p.modulate = Color(0.78, 0.92, 1.00)
+		var g := Sprite2D.new()
+		g.texture = Art.tex("glow")
+		g.modulate = Art.hdr(Color(0.60, 0.85, 1.0, 0.38))
+		g.scale = Vector2(0.18, 0.18)
+		g.z_index = -1
+		p._vis.add_child(g)
+	elif skin == "voidwraith":
+		p.modulate = Color(0.74, 0.62, 0.96)
+		var tr := ProjTrail.new()
+		tr.proj = p
+		tr.col = Color(0.55, 0.30, 0.90)
+		game.add_child(tr)
 
 
 func _multishot(f := 1.0) -> void:
@@ -61,13 +99,14 @@ func _multishot(f := 1.0) -> void:
 	# Pitched lower than Quick Shot so the two are distinguishable.
 	game.sfx("slash", 0.85)
 	var dir := aim_dir()
-	_muzzle(dir, _tcolor if _themed else Color(0.9, 1.0, 0.6))
+	_muzzle(dir, _skin_arrow_col(_tcolor if _themed else Color(0.9, 1.0, 0.6)))
 	var count := int(_tfx.get("knives", 5))
 	var step := 0.05 if _tfx.get("narrow", 0) else float(_tfx.get("spread", 0.16))
 	for i in count:
 		var spread := (float(i) - (count - 1) / 2.0) * step
 		var p := _proj(dir.rotated(spread), ability_coeff("a2") * f, "arrow", 520.0)
 		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+		_skin_arrow(p)
 
 
 func _tumble() -> void:
@@ -91,8 +130,18 @@ func _tumble() -> void:
 	global_position = game.clamp_to_zone(origin + dvec * 130.0, origin)
 	_aim_dash_pose(dvec)  # before the trail below, so the ghosts copy the pose
 	# The roll reads as motion: ghost trail + kicked-up dust behind you.
-	_afterimages(origin, global_position, _tcolor if _themed else Color(0.9, 0.95, 1.0), 2)
-	game.burst(origin, Color(0.75, 0.7, 0.6), 6)
+	# Skin rolls kick up their element instead of dust: Frostfall a puff of
+	# rime, Voidwraith a swallow of dark (solid-tinted ghosts, Ronin-style).
+	if skin == "frostfall_ranger":
+		_afterimages(origin, global_position, Color(0.66, 0.90, 1.00), 2, 0.05, 0.28, true)
+		game.burst(origin, Color(0.80, 0.94, 1.00), 6)
+	elif skin == "voidwraith":
+		_afterimages(origin, global_position, Color(0.36, 0.18, 0.55), 2, 0.05, 0.28, true)
+		game.burst(origin, Color(0.50, 0.28, 0.80), 6)
+		_ring_fx(origin, Color(0.50, 0.28, 0.80), 46.0, true)  # the dark swallows the spot
+	else:
+		_afterimages(origin, global_position, _tcolor if _themed else Color(0.9, 0.95, 1.0), 2)
+		game.burst(origin, Color(0.75, 0.7, 0.6), 6)
 	if _tfx.has("burst_origin"):
 		# Storm: discharge where you left.
 		game.sfx("nova", 1.2)
@@ -132,8 +181,15 @@ func _storm_strike() -> void:
 	var tween := arrow.create_tween()
 	tween.tween_property(arrow, "global_position:y", e.global_position.y, 0.11)
 	tween.tween_callback(arrow.queue_free)
-	game.burst(e.global_position, Color(0.7, 1.0, 0.7))
 	var storm_col := _theme_color("ult") if ability_theme.get("ult", "") != "" else Color(0.7, 1.0, 0.7)
+	# Skin rain: ice-shafted hail / dark void bolts (skin wins over theme).
+	if skin == "frostfall_ranger":
+		storm_col = Color(0.70, 0.90, 1.00)
+		arrow.modulate = Color(0.78, 0.92, 1.00)
+	elif skin == "voidwraith":
+		storm_col = Color(0.58, 0.34, 0.92)
+		arrow.modulate = Color(0.55, 0.42, 0.80)
+	game.burst(e.global_position, storm_col)
 	_ring_fx(e.global_position, storm_col, 42.0)
 	var eff := storm_fx.duplicate()
 	eff["aoe"] = true

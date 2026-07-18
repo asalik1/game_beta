@@ -253,18 +253,23 @@ class PhantomBladeStorm extends Node2D:
 		# Each flame tongue wavers on its own phase (two beating sines) — an
 		# uneven, living flame rather than a steady glow.
 		for i in flames.size():
-			var fl: Sprite2D = flames[i]
-			if not is_instance_valid(fl):
+			# UNTYPED first: a typed Sprite2D assign THROWS on a freed instance
+			# before is_instance_valid can guard it — and every converged blade
+			# frees its flame, so the typed form error-spammed each ult.
+			var fl_ref = flames[i]
+			if not is_instance_valid(fl_ref):
 				continue
+			var fl := fl_ref as Sprite2D
 			var ph := float(i) * 0.7
 			var fk: float = absf(sin(t * 19.0 + ph) * sin(t * 7.7 + ph * 1.6))
 			fl.scale = Vector2(0.58 + 0.42 * fk, 0.22 + 0.14 * fk)
 			fl.position.x = -8.0 - 5.0 * fk             # the tongue leaps and shrinks
 			fl.modulate.a = 0.42 + 0.4 * fk
 	func _converge(idx: int) -> void:
-		var spr: Sprite2D = blades[idx]
-		if not is_instance_valid(spr):
+		var spr_ref = blades[idx]  # untyped for the same freed-assign hazard
+		if not is_instance_valid(spr_ref):
 			return
+		var spr := spr_ref as Sprite2D
 		if game_ref != null:
 			game_ref.sfx("stab", 0.72, 0.0, -3.0)  # ult blades: a little deeper than the throw
 			var tr := ProjTrail.new()          # spectral streak, same as the knife throw
@@ -949,6 +954,15 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 	# Base slash colour: theme tint if themed, else RED while berserk (so the
 	# crescent matches the rage), else plain white.
 	var slash_col := _tcolor if _themed else (Color(1.0, 0.3, 0.2) if berserk_time > 0.0 else Color(1, 1, 1))
+	# Melee-skin signature tints (the Ronin/Phantom pattern): the skin's cut
+	# always carries its identity colour — over theme AND berserk, like the
+	# assassin skins' arcs below. Ids are per-class unique, so one map serves
+	# every melee class.
+	match skin:
+		"dreadknight":     slash_col = Color(0.88, 0.18, 0.22)   # dread red
+		"stormforged":     slash_col = Color(0.50, 0.78, 1.00)   # storm-charged edge
+		"eclipse_knight":  slash_col = Color(1.00, 0.72, 0.28)   # corona gold
+		"fallen_arbiter":  slash_col = Color(0.92, 0.93, 1.00)   # cold verdict light
 	if style == "stab":
 		# Dagger SLASH (round 50): a fast crescent that sweeps an arc OUT from
 		# the blade tip, riding the striking dagger — the assassin cuts, he

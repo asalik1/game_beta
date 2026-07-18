@@ -20,11 +20,36 @@ func _use_warlock(slot: String, f: float) -> void:
 		"ult": _void_rift(f)
 
 
+## Warlock skin signature colour (Ronin pattern — the skin's magic wins over
+## theme): the Inquisitor's craft burns hellfire-orange; the Herald's seeps
+## abyssal ichor-green.
+func _wl_skin_col(base: Color) -> Color:
+	if skin == "hellfire_inquisitor":
+		return Color(1.00, 0.45, 0.12)
+	if skin == "eldritch_herald":
+		return Color(0.42, 0.90, 0.58)
+	return base
+
+
 func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
 	game.sfx("fireball", 0.7)  # deeper, hungrier whoosh than the mage's
-	_muzzle(dir, _tcolor if _themed else Color(0.75, 0.4, 1.0))
+	_muzzle(dir, _wl_skin_col(_tcolor if _themed else Color(0.75, 0.4, 1.0)))
 	var p := _proj(dir, mult, "shadowbolt", 460.0)
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+	if skin == "hellfire_inquisitor":
+		# The bolt is a thrown coal: ember-hot shaft with a fire-streak tail.
+		p.modulate = Color(1.00, 0.62, 0.30)
+		var tr := ProjTrail.new()
+		tr.proj = p
+		tr.col = Color(1.00, 0.45, 0.15)
+		game.add_child(tr)
+	elif skin == "eldritch_herald":
+		# The bolt drips: sickly green shaft, an ichor-streak trailing it.
+		p.modulate = Color(0.55, 0.92, 0.66)
+		var tr := ProjTrail.new()
+		tr.proj = p
+		tr.col = Color(0.35, 0.85, 0.55)
+		game.add_child(tr)
 
 
 ## Hex: curse everything around your target — withered, EXPOSED, and
@@ -40,7 +65,7 @@ func _hex(f := 1.0) -> void:
 	# Round 49 AoE pass: 140 -> 120 — the curse's whole-pack EXPOSE was
 	# carrying every warlock variant's pack damage at once.
 	var radius := 120.0
-	var col := _tcolor if _themed else Color(0.75, 0.4, 1.0)
+	var col := _wl_skin_col(_tcolor if _themed else Color(0.75, 0.4, 1.0))
 	# The curse arrives: a collapsing ring — power drawn INTO the victims.
 	_ring_fx(center, col, radius, true)
 	game.burst(center, col, 12)
@@ -93,7 +118,7 @@ func _hex_mark(e: Enemy) -> void:
 		return
 	var rune := Sprite2D.new()
 	rune.name = "hex_rune"
-	rune.texture = Art.glyph_tex("ab_hex", Color(0.8, 0.45, 1.0))
+	rune.texture = Art.glyph_tex("ab_hex", _wl_skin_col(Color(0.8, 0.45, 1.0)))
 	rune.position = Vector2(0, -30)
 	rune.scale = Vector2(0.9, 0.9)
 	e.add_child(rune)
@@ -101,7 +126,7 @@ func _hex_mark(e: Enemy) -> void:
 
 ## A cursed enemy died: the hex detonates onto its neighbors.
 func _hex_detonate(pos: Vector2) -> void:
-	var col := Color(0.8, 0.45, 1.0)
+	var col := _wl_skin_col(Color(0.8, 0.45, 1.0))
 	game.sfx("nova", 0.65)
 	game.burst(pos, col, 14)
 	game.burst(pos, Color(1, 1, 1), 6)
@@ -143,7 +168,9 @@ func _dark_pact(f := 1.0) -> void:
 	game.spawn_text(global_position + Vector2(0, -44), "-%d" % int(sacrifice), Color(1.0, 0.3, 0.4))
 	pact_time = 5.0
 	pact_ls = float(_tfx.get("pact_ls", 0.15))
-	var col := _tcolor if _themed else Color(1.0, 0.3, 0.45)
+	# The pact's rays take the skin's craft; the BLOOD price particles below
+	# stay blood-red — the cost is the cost, whoever pays it.
+	var col := _wl_skin_col(_tcolor if _themed else Color(1.0, 0.3, 0.45))
 	game.sfx("nova", 0.6)
 	game.shake(5.0)
 	game.hud.flash_screen(Color(0.6, 0.05, 0.15), 0.35, 0.3)
@@ -197,7 +224,7 @@ func _void_rift(f := 1.0) -> void:
 	var target := auto_aim()
 	var pos: Vector2 = target.global_position if target else global_position + facing * 180.0
 	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
-	var col := _tcolor if _themed else Color(0.55, 0.45, 1.0)
+	var col := _wl_skin_col(_tcolor if _themed else Color(0.55, 0.45, 1.0))
 	var fx_copy := _tfx.duplicate()
 	var fmul := f
 	# Read at CAST time: the burst lands seconds later, and the class may have

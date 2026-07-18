@@ -7,6 +7,15 @@ cell (taken from a reference on-disk strip), bottom-center feet-anchored with
 margin 3 to match install_dirset geometry. Originals are backed up first;
 installs are mirrored to mobile/.
 
+ANCHOR INVARIANT (learned the hard way, 2026-07-18): the hero render measures
+scale + vertical offset from the IDLE strip ONLY (player_core._measure_hero_frame)
+and reuses them for EVERY clip — so an installed clip's f0 body-feet row must sit
+at the SAME row as the character's flat `<art>_anim.png` f0 feet, or the body
+visibly sinks/floats while that clip plays. Bottom-anchoring the clip's own
+union bbox VIOLATES this whenever any frame has FX below the feet (ground
+slams, lightning). After installing, verify f0 feet == idle feet (alpha>0.15)
+and shift the strip vertically if not — see scratchpad anchor_fix.py pattern.
+
 Usage (as a library from driver scripts; see main() examples at bottom).
 """
 import os, shutil

@@ -27,10 +27,22 @@ func _use_mage(slot: String, f: float) -> void:
 
 func _cast_bolt(dir: Vector2, mult: float) -> void:
 	game.sfx("fireball")  # a breathy fire fwoosh, not an arcane laser
-	_muzzle(dir, _tcolor if _themed else Color(1.0, 0.6, 0.2))
+	var bolt_col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
+	# Mage-skin bolts (Ronin pattern — the skin's magic wins over theme):
+	# Void Weaver casts woven void; Crystal Archmage casts CRYSTAL — every
+	# bolt flies as a lance of it, whatever the theme.
+	if skin == "void_weaver":
+		bolt_col = Color(0.62, 0.38, 0.98)
+	elif skin == "crystal_archmage":
+		bolt_col = Color(0.80, 0.94, 1.00)
+	_muzzle(dir, bolt_col)
 	# The Ice variant flies as a crystal lance, not a ball of fire.
-	var tex := "icelance" if _tfx.get("pierce", 0) else "fireball"
+	var tex := "icelance" if _tfx.get("pierce", 0) or skin == "crystal_archmage" else "fireball"
 	var p := _proj(dir, mult, tex, 440.0 * float(_tfx.get("proj_speed", 1.0)))
+	if skin == "void_weaver":
+		p.modulate = Color(0.72, 0.48, 1.00)
+	elif skin == "crystal_archmage":
+		p.modulate = Color(0.86, 0.96, 1.00)
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 	if _tfx.get("homing", 0):
 		p.homing = true  # Wind firebolt SEEKS its mark — baseline wind behavior, no talent
@@ -62,6 +74,11 @@ func _frost_nova(f := 1.0) -> void:
 	mp = minf(max_mp, mp + (max_mp - mp) * restore)
 	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
 	var col := _tcolor if _themed else Color(0.45, 0.8, 1.0)
+	# Skin novas ring in the skin's magic (skin wins over theme).
+	if skin == "void_weaver":
+		col = Color(0.60, 0.36, 0.96)
+	elif skin == "crystal_archmage":
+		col = Color(0.80, 0.94, 1.00)
 	var inward: bool = _tfx.get("pull", 0)
 	var fiery: bool = _tfx.get("no_knock", 0)
 
@@ -144,6 +161,13 @@ func _blink() -> void:
 	# Round 45: iframe cut 0.3->0.1 (like the archer roll) — a perfect-dodge
 	# window, not a sloppy blink-through. Safety now rides the DR cloak below.
 	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), ability_coeff("a3"), eff, 0.0, rider("a3", "iframe"))
+	# Skin blinks leave a signature at the departure point: the Weaver's void
+	# folds shut behind him; the Archmage shatters into a spray of light.
+	if skin == "void_weaver":
+		_ring_fx(start, Color(0.55, 0.32, 0.95), 52.0, true)
+	elif skin == "crystal_archmage":
+		game.burst(start, Color(0.86, 0.96, 1.00), 9)
+		game.burst(start, Color(1, 1, 1), 4)
 	# Fire leaves a burning wake on the ground; Ice a frozen one.
 	if _themed and (_tfx.has("dot") or _tfx.has("freeze_path")):
 		_floor_streak(start, global_position, _tcolor)
@@ -217,6 +241,12 @@ func _lowest_hp_enemy(radius: float) -> Enemy:
 func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 	var fx_copy := _tfx.duplicate()
 	var col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
+	# Skin comets: the Weaver calls down folded void; the Archmage a shard
+	# of pure crystal (skin wins over theme, per the Ronin pattern).
+	if skin == "void_weaver":
+		col = Color(0.60, 0.36, 0.96)
+	elif skin == "crystal_archmage":
+		col = Color(0.78, 0.92, 1.00)
 
 	# Growing impact shadow on the ground — you can feel it coming.
 	var mark := Sprite2D.new()
@@ -257,9 +287,17 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 			mark.queue_free()
 		game.sfx("meteor")
 		game.shake(14.0)
-		game.hud.flash_screen(Color(1.0, 0.75, 0.4), 0.55, 0.35)
+		var impact_flash := Color(1.0, 0.75, 0.4)
+		var impact_pop := Color(1.0, 0.9, 0.5)
+		if skin == "void_weaver":
+			impact_flash = Color(0.50, 0.30, 0.85)
+			impact_pop = Color(0.78, 0.60, 1.00)
+		elif skin == "crystal_archmage":
+			impact_flash = Color(0.75, 0.90, 1.00)
+			impact_pop = Color(0.92, 0.98, 1.00)
+		game.hud.flash_screen(impact_flash, 0.55, 0.35)
 		game.burst(pos, col, 30)
-		game.burst(pos, Color(1.0, 0.9, 0.5), 16)
+		game.burst(pos, impact_pop, 16)
 		_ring_fx(pos, col, 150.0 * float(fx_copy.get("radius_mult", 1.0)))
 		# Scorched ground lingers for a moment.
 		var scorch := Sprite2D.new()

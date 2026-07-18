@@ -125,23 +125,38 @@ const CHROMAS := {
 ## {id, name, tier, sprite} where sprite is the Art name (looked up via
 ## Art.tex / hero_clips / dir_set under assets/sprites/).
 const SKINS := {
+	# Every MYTHIC skin carries an awakened form (the Phantom->Nightfang
+	# pattern): completing the class's S-weapon awakening evolves the skin's
+	# palette family. The five non-assassin forms are baked band-recolors of
+	# the skin's own strips (2026-07-18) — same silhouette + animation,
+	# evolved hue story; each can be upgraded to fresh-generated art later by
+	# just replacing the <base>_awakened_* strips.
 	"warrior": [
 		{"id": "dreadknight", "name": "Dreadknight", "tier": "elite",
 			"sprite": "skins/elite/warrior_dreadknight"},
+		# Awakened: the storm wakes — the plate deepens toward violet, the
+		# charged accents flare, and the face itself ignites storm-light.
 		{"id": "stormforged", "name": "Stormforged", "tier": "mythic",
-			"sprite": "skins/mythic/warrior_stormforged"},
+			"sprite": "skins/mythic/warrior_stormforged",
+			"awakened_sprite": "skins/mythic/warrior_stormforged_awakened"},
 	],
 	"archer": [
 		{"id": "frostfall_ranger", "name": "Frostfall Ranger", "tier": "elite",
 			"sprite": "skins/elite/archer_frostfall_ranger"},
+		# Awakened: the void deepens — the grey cloak drinks dusk-violet and
+		# every purple accent surges toward glowing magenta.
 		{"id": "voidwraith", "name": "Voidwraith", "tier": "mythic",
-			"sprite": "skins/mythic/archer_voidwraith"},
+			"sprite": "skins/mythic/archer_voidwraith",
+			"awakened_sprite": "skins/mythic/archer_voidwraith_awakened"},
 	],
 	"mage": [
 		{"id": "void_weaver", "name": "Void Weaver", "tier": "elite",
 			"sprite": "skins/elite/mage_void_weaver"},
+		# Awakened: prismatic — bright facets bleach to white light while the
+		# robe's shadows refract indigo-violet.
 		{"id": "crystal_archmage", "name": "Crystal Archmage", "tier": "mythic",
-			"sprite": "skins/mythic/mage_crystal_archmage"},
+			"sprite": "skins/mythic/mage_crystal_archmage",
+			"awakened_sprite": "skins/mythic/mage_crystal_archmage_awakened"},
 	],
 	"assassin": [
 		# Golden Ronin (id kept as "blade_dancer" for save/sprite-path compat).
@@ -161,14 +176,21 @@ const SKINS := {
 	"paladin": [
 		{"id": "eclipse_knight", "name": "Eclipse Knight", "tier": "elite",
 			"sprite": "skins/elite/paladin_eclipse_knight"},
+		# Awakened: the light goes cold — halo, crown and every gold trim
+		# bleach to silver-white over the black wings; the verdict has no
+		# warmth left in it.
 		{"id": "fallen_arbiter", "name": "Fallen Arbiter", "tier": "mythic",
-			"sprite": "skins/mythic/paladin_fallen_arbiter"},
+			"sprite": "skins/mythic/paladin_fallen_arbiter",
+			"awakened_sprite": "skins/mythic/paladin_fallen_arbiter_awakened"},
 	],
 	"warlock": [
 		{"id": "hellfire_inquisitor", "name": "Hellfire Inquisitor", "tier": "elite",
 			"sprite": "skins/elite/warlock_hellfire_inquisitor"},
+		# Awakened: the abyss answers — tarnished gold trim and violet flame
+		# both re-light in luminous eldritch green; the robes stay drowned.
 		{"id": "eldritch_herald", "name": "Eldritch Herald", "tier": "mythic",
-			"sprite": "skins/mythic/warlock_eldritch_herald"},
+			"sprite": "skins/mythic/warlock_eldritch_herald",
+			"awakened_sprite": "skins/mythic/warlock_eldritch_herald_awakened"},
 	],
 }
 
