@@ -117,3 +117,8 @@ PixelLab (pixellab.ai) AI-generated, project-commissioned art (2026-07-09):
   grove_horror*, sexton*, vess, choir_censer (sprites)
   gem_lv1..gem_lv10, gem (icons — neutral bases, stat-tinted in code)
 Generated for this project; no third-party attribution required.
+
+OpenAI image generation — project-generated art (2026-07-18):
+  wall_moss (64px seamless mossy-stone wall texture; generated source was
+  palette-reduced for the game's pixel-art texture scale).
+Generated for this project; no third-party attribution required.
