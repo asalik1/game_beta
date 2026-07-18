@@ -79,6 +79,29 @@ PIXEL CRAWLER - CEMETERY (Anokolisa) — purchased pack, licensed for
 
 NINJA ADVENTURE (pixel-boy) — CC0 (LICENSE.txt in the pack), available
   as gap-filler for creatures Pixel Crawler lacks.
+  Animal sweep (2026-07-18): 13 livestock/wildlife critters cut from
+  Actor/Animal side sheets (chicken, cow, pig, horse, dog, cat, boar,
+  racoon, frog, monkey, parrot, hyena, lion — <name>.png + 2-frame
+  <name>_anim.png). Frames pillarboxed square, bottom-anchored, mirrored
+  to face LEFT (convention), gamma 0.78 pre-brighten. All PLACEHOLDER
+  (codex Future > Critters, content/rv_na_gallery.gd) — future village
+  livestock / farm dressing / hunt-quest wildlife. Donkey skipped (front-
+  facing sheet only, reads badly side-on).
+
+RAVEN FANTASY ICONS (Clockwork Raven Studios / Caio) — from the owner's
+  purchased asset library (no in-zip license file; commercial use cleared,
+  credit appreciated, raw pack must NOT be redistributed). 32x32 icon
+  sweep (2026-07-18): 145 curated icons installed as rv_*.png — RAW crops
+  (no gamma: they render in UI, not the world). Families: alchemy potions/
+  essences (rv_pot_*/rv_ess_*), provisions food (rv_food_*), crafting
+  mats + tools (rv_mat_*/rv_tool_*), quest curios (keys/tomes/scrolls/
+  runes/etc.), armory gear icons (rv_arm_* — weapon tiers, shields,
+  armor wardrobe). All PLACEHOLDER via content/rv_na_gallery.gd (codex
+  Future tab: Alchemy/Items/Armory/Supplies/Provisions). NOT extracted:
+  ~2,040 remaining icons (16px + 64px duplicates of the same set, ~300
+  skill/status/buff glyphs, deep armor recolor runs, fish/dye variant
+  rows) — the sheet is a LIBRARY; re-cut on demand by grid coords, see
+  PACK_RESIDUALS.html.
 
 
 BAT PACKS (Small_Bat, Bat_Fur) — purchased by the project owner and

@@ -1064,6 +1064,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/pc_npc_gallery.gd"), # Pixel Crawler asset pass: placeholder NPC convos (humans wired into ch2 hub for review)
 	preload("res://scripts/content/pc_bosses.gd"),      # Ninja Adventure sweep (2026-07-08): 6 placeholder bosses — dev-only, TODO real fights
 	preload("res://scripts/content/pc_curios.gd"),      # Pixel Crawler mining (2026-07-18): placeholder quest-item curios + codex relics gallery
+	preload("res://scripts/content/rv_na_gallery.gd"),  # Raven Icons + Ninja animals (2026-07-18): placeholder alchemy/armory/supplies/provisions/critters
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]

@@ -46,9 +46,9 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		var fsubs := HBoxContainer.new()
 		fsubs.add_theme_constant_override("separation", 10)
 		vbox.add_child(fsubs)
-		for pair in [["future_terrains", "Terrains"], ["future_mobs", "Mobs"], ["future_items", "Items"],
-				["future_armory", "Armory"], ["future_supplies", "Supplies"],
-				["future_provisions", "Provisions"], ["future_relics", "Relics"]]:
+		for pair in [["future_terrains", "Terrains"], ["future_mobs", "Mobs"], ["future_critters", "Critters"],
+				["future_items", "Items"], ["future_armory", "Armory"], ["future_supplies", "Supplies"],
+				["future_provisions", "Provisions"], ["future_alchemy", "Alchemy"], ["future_relics", "Relics"]]:
 			var ft: String = pair[0]
 			m._btn(fsubs, "  %s  " % pair[1], func() -> void: m.open_codex(ft),
 				Color(0.75, 1.0, 0.9) if tab == ft else Color(0.5, 0.58, 0.55))
@@ -1092,6 +1092,12 @@ static func _future(m: Menus, list: VBoxContainer, tab: String) -> void:
 	elif tab == "future_provisions":
 		UITheme.header(m._lbl(list, "— PROVISIONS — food, the future cooking consumables —", 16, Color(0.95, 0.85, 0.6)))
 		_future_gallery(m, list, Story.ALL_RELICS, "provisions", "sprite", "lore")
+	elif tab == "future_alchemy":
+		UITheme.header(m._lbl(list, "— ALCHEMY — draughts & essences awaiting the brewing loop —", 16, Color(0.95, 0.6, 0.65)))
+		_future_gallery(m, list, Story.ALL_RELICS, "alchemy", "sprite", "lore")
+	elif tab == "future_critters":
+		UITheme.header(m._lbl(list, "— CRITTERS — livestock & wildlife for the living world —", 16, Color(0.85, 0.9, 0.6)))
+		_future_gallery(m, list, Story.ALL_RELICS, "critters", "sprite", "lore")
 	else:  # future_relics
 		UITheme.header(m._lbl(list, "— PLACEHOLDER RELICS & LANDMARKS —", 16, Color(0.8, 0.75, 0.95)))
 		_future_gallery(m, list, Story.ALL_RELICS, "", "sprite", "lore")

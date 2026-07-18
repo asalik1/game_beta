@@ -41,14 +41,16 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		m._btn(tabs, "  Future  ", func() -> void: m.open_codex("future_terrains"),
 			Color(0.7, 0.95, 0.85) if in_future else Color(0.45, 0.65, 0.58))
 
-	# Future subtabs — one per placeholder category.
+	# Future subtabs — one per placeholder category (a flow container: eleven
+	# buttons wrap to a second row instead of overflowing the panel).
 	if in_future:
-		var fsubs := HBoxContainer.new()
-		fsubs.add_theme_constant_override("separation", 10)
+		var fsubs := HFlowContainer.new()
+		fsubs.add_theme_constant_override("h_separation", 10)
 		vbox.add_child(fsubs)
-		for pair in [["future_terrains", "Terrains"], ["future_mobs", "Mobs"], ["future_items", "Items"],
-				["future_armory", "Armory"], ["future_supplies", "Supplies"],
-				["future_provisions", "Provisions"], ["future_relics", "Relics"]]:
+		for pair in [["future_terrains", "Terrains"], ["future_mobs", "Mobs"], ["future_bosses", "Bosses"],
+				["future_npcs", "NPCs"], ["future_critters", "Critters"],
+				["future_items", "Items"], ["future_armory", "Armory"], ["future_supplies", "Supplies"],
+				["future_provisions", "Provisions"], ["future_alchemy", "Alchemy"], ["future_relics", "Relics"]]:
 			var ft: String = pair[0]
 			m._btn(fsubs, "  %s  " % pair[1], func() -> void: m.open_codex(ft),
 				Color(0.75, 1.0, 0.9) if tab == ft else Color(0.5, 0.58, 0.55))
@@ -141,10 +143,9 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 		tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# Bosses moved to their own subtab (2026-07-08); this subtab keeps the
 	# Elites/Temptations copy above plus the regular-mob bestiary.
-	# Only mobs actually placed in a room show outside dev mode; extracted-
-	# but-unplaced ones appear in the dev launcher only, tagged [placeholder].
+	# Only mobs actually placed in a room show here — extracted-but-unplaced
+	# ones live on the dev-only Future > Mobs shelf instead (2026-07-18).
 	var used := _used_enemy_kinds()
-	var dev: bool = m.game.dev_mode
 	UITheme.header(m._lbl(list, "— MONSTERS —", 16, Color(0.95, 0.85, 0.5)))
 	for kind in Story.ALL_ENEMIES:
 		if kind in m.BOSS_KINDS:
@@ -154,31 +155,29 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 		# scenery-with-hp, not catalogue monsters — skip them.
 		if st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
 			continue
-		var unplaced: bool = not used.has(kind)
-		if unplaced and not dev:
+		if not used.has(kind) or st.get("placeholder", false):
 			continue
-		_enemy_card(m, list, kind, false, false, unplaced)
+		_enemy_card(m, list, kind, false)
 
 
 ## Bosses subtab: just the boss cards (each links to its mechanics detail).
-## Same used-filter as monsters — an unplaced boss is dev-only, tagged.
+## Same placed-filter as monsters — unplaced/placeholder bosses live on the
+## dev-only Future > Bosses shelf instead.
 static func _bosses(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	var used := _used_enemy_kinds()
-	var dev: bool = m.game.dev_mode
 	UITheme.header(m._lbl(list, "— BOSSES —", 16, Color(1, 0.5, 0.5)))
 	for kind in Story.ALL_ENEMIES:
 		if not (kind in m.BOSS_KINDS):
 			continue
-		var unplaced: bool = not used.has(kind)
-		if unplaced and not dev:
+		if not used.has(kind) or Story.ALL_ENEMIES[kind].get("placeholder", false):
 			continue
-		_enemy_card(m, list, kind, true, false, unplaced)
+		_enemy_card(m, list, kind, true)
 
 
 ## Enemy kinds actually placed in the world: any zone's `enemies` spawns or
 ## `boss`, plus each chapter's `final_boss`. Everything else in ALL_ENEMIES is
-## extracted-but-unplaced — hidden from the codex outside dev mode.
+## extracted-but-unplaced — off the bestiary, on the dev-only Future shelf.
 static func _used_enemy_kinds() -> Dictionary:
 	var used := {}
 	for chid in Story.CHAPTER_LIST:
@@ -256,8 +255,7 @@ static func _npcs(m: Menus, list: VBoxContainer) -> void:
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# Placeholder NPCs (extracted art wired for review, `placeholder: true` in
-	# their zone entry) are dev-launcher only, and tagged [placeholder] there.
-	var dev: bool = m.game.dev_mode
+	# their zone entry) live on the dev-only Future > NPCs shelf, never here.
 	var seen := {}
 	var entries: Array = []
 	var any_merchant := false
@@ -266,8 +264,7 @@ static func _npcs(m: Menus, list: VBoxContainer) -> void:
 			if zone.has("merchant"):
 				any_merchant = true
 			for npc in zone.get("npcs", []):
-				var ph: bool = npc.get("placeholder", false)
-				if ph and not dev:
+				if npc.get("placeholder", false):
 					continue
 				var spr: String = String(npc.get("sprite", ""))
 				if spr == "":
@@ -281,13 +278,13 @@ static func _npcs(m: Menus, list: VBoxContainer) -> void:
 				var nm := _npc_name(npc)
 				if nm == "" or nm == "Narrator":
 					continue  # narrator-voiced scenery: a lore read, not a person
-				var e := {"name": nm, "sprite": spr, "placeholder": ph, "quest": quest}
+				var e := {"name": nm, "sprite": spr, "quest": quest}
 				seen[spr] = e
 				entries.append(e)
 	# The merchant spawns from the zones' `merchant` spot, not an npcs list —
 	# but they're absolutely someone you speak to.
 	if any_merchant and not seen.has("merchant"):
-		entries.append({"name": "Merchant", "sprite": "merchant", "placeholder": false, "quest": false})
+		entries.append({"name": "Merchant", "sprite": "merchant", "quest": false})
 	if entries.is_empty():
 		m._lbl(list, "No NPCs catalogued.", 13, Color(0.6, 0.62, 0.68))
 		return
@@ -326,8 +323,7 @@ static func _npcs(m: Menus, list: VBoxContainer) -> void:
 		info.add_theme_constant_override("separation", 2)
 		info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(info)
-		var nm_txt: String = String(e["name"]) + ("   [placeholder]" if e.get("placeholder", false) else "")
-		var nm2 := m._lbl(info, nm_txt, 16, Color(0.72, 0.68, 0.55) if e.get("placeholder", false) else Color(0.9, 0.92, 0.98))
+		var nm2 := m._lbl(info, String(e["name"]), 16, Color(0.9, 0.92, 0.98))
 		nm2.custom_minimum_size = Vector2(760, 0)
 		var role := _npc_role(String(e["sprite"]), bool(e.get("quest", false)))
 		if role != "":
@@ -489,29 +485,31 @@ static func _boss_detail(m: Menus, kind: String) -> void:
 	m._hint(vbox, "ESC, ✕, click outside, or C to close")
 
 
+const PATCH_DESC := {
+	"lava": "Lava pools — the floor burns anyone standing in them, you AND monsters",
+	"ice": "Sheet ice — slippery patches speed everyone up by 35%",
+	"poison": "Poison pools — standing in them poisons you",
+	"heal": "Blessed ground — standing in it slowly heals you",
+	"slow": "Clinging murk — wading through slows you by 30%",
+}
+const EVENT_DESC := {
+	"magma_rain": "Magma rain — molten rock crashes onto telegraphed spots and the floor collapses into lava",
+	"grave_spawn": "Restless dead — zombies periodically claw out of the ground beside you",
+	"gust": "Sandstorm gusts — sudden wind shoves everyone sideways",
+	"lightning": "Lightning strikes — bolts hammer telegraphed spots around you",
+	"shard": "Shard eruptions — crystal bursts explode at random spots",
+}
+const AMBIENT_DESC := {
+	"leaves_green": "drifting green leaves", "leaves_autumn": "falling autumn leaves",
+	"fireflies": "fireflies", "embers": "rising embers", "snow": "falling snow",
+	"rain": "heavy rain", "sand": "blowing sand", "mist": "creeping mist",
+	"twinkle": "twinkling lights", "motes": "drifting void motes",
+	"sparkle": "golden sparkles", "spores": "floating spores",
+}
+
+
 static func _terrains(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
-	var patch_desc := {
-		"lava": "Lava pools — the floor burns anyone standing in them, you AND monsters",
-		"ice": "Sheet ice — slippery patches speed everyone up by 35%",
-		"poison": "Poison pools — standing in them poisons you",
-		"heal": "Blessed ground — standing in it slowly heals you",
-		"slow": "Clinging murk — wading through slows you by 30%",
-	}
-	var event_desc := {
-		"magma_rain": "Magma rain — molten rock crashes onto telegraphed spots and the floor collapses into lava",
-		"grave_spawn": "Restless dead — zombies periodically claw out of the ground beside you",
-		"gust": "Sandstorm gusts — sudden wind shoves everyone sideways",
-		"lightning": "Lightning strikes — bolts hammer telegraphed spots around you",
-		"shard": "Shard eruptions — crystal bursts explode at random spots",
-	}
-	var ambient_desc := {
-		"leaves_green": "drifting green leaves", "leaves_autumn": "falling autumn leaves",
-		"fireflies": "fireflies", "embers": "rising embers", "snow": "falling snow",
-		"rain": "heavy rain", "sand": "blowing sand", "mist": "creeping mist",
-		"twinkle": "twinkling lights", "motes": "drifting void motes",
-		"sparkle": "golden sparkles", "spores": "floating spores",
-	}
 	# Which Chapter 1 zone (if any) uses each terrain.
 	var found_in := {}
 	for chid in Story.CHAPTER_LIST:
@@ -519,54 +517,72 @@ static func _terrains(m: Menus, list: VBoxContainer) -> void:
 			if not found_in.has(zone.get("terrain", "")):
 				found_in[zone.get("terrain", "")] = zone["name"]
 
-	var dev: bool = m.game.dev_mode
 	for id in Terrains.DATA:
-		var t: Dictionary = Terrains.DATA[id]
-		# Placeholder terrains (authored from the asset packs for review) are
-		# dev-launcher only, tagged [placeholder] there. The dev panel can
-		# still paint any room with them regardless.
-		var ph: bool = t.get("placeholder", false)
-		if ph and not dev:
+		# Placeholder terrains (authored from the asset packs, unplaced) live
+		# on the dev-only Future > Terrains shelf, never on the player list.
+		# The dev panel can still paint any room with them regardless.
+		if Terrains.DATA[id].get("placeholder", false):
 			continue
-		var info := VBoxContainer.new()
-		info.add_theme_constant_override("separation", 2)
-		_card(list).add_child(info)
+		_terrain_card(m, list, String(id), String(found_in.get(id, "")), false)
 
-		# Name ................................... where it appears
-		var head := HBoxContainer.new()
-		info.add_child(head)
-		var name_l := m._lbl(head, String(t["name"]) + ("   [placeholder]" if ph else ""), 16, Color(0.72, 0.68, 0.55) if ph else Color(1, 1, 1))
-		name_l.custom_minimum_size = Vector2(560, 0)
-		name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var where: String = found_in.get(id, "")
-		var where_l := m._lbl(head, where if where != "" else "Beyond Chapter 1", 13,
-			Color(0.95, 0.85, 0.5) if where != "" else Color(0.55, 0.58, 0.66))
-		where_l.custom_minimum_size = Vector2(220, 0)
-		where_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
-		var amb: String = t.get("ambient", "")
-		var w := m._lbl(info, "Weather:   " + String(ambient_desc.get(amb, "still air")),
-			13, Color(0.7, 0.72, 0.78))
-		w.custom_minimum_size = Vector2(700, 0)
+## One terrain card: name + where-it-appears, weather line, hazard/quirk
+## lines. Shared by the player Terrains tab and the dev-only Future shelf —
+## `ph` adds the [placeholder] tag, a dev-panel hint and the prop roster.
+static func _terrain_card(m: Menus, list: VBoxContainer, id: String, where: String, ph: bool) -> void:
+	var t: Dictionary = Terrains.DATA[id]
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 2)
+	_card(list).add_child(info)
 
-		var quirks: Array = []
-		for p in t.get("patches", []):
-			var d: String = patch_desc.get(p["type"], "")
-			if p.get("drift", false):
-				d += " — and the clouds DRIFT, so keep moving"
-			quirks.append(d)
-		if t.get("event", "") != "":
-			quirks.append(event_desc.get(t["event"], ""))
-		if t.get("mp_boost", false):
-			quirks.append("Latent magic — your mana recovers much faster here")
-		if t.has("river"):
-			quirks.append("Rivers cross these lands — wading leaves you DAMP (-%d%% move speed for %ds) and slows monsters; the bridge crosses dry" % [
-				int(round((1.0 - Balance.DAMP_SLOW_MULT) * 100.0)), int(Balance.DAMP_DURATION)])
-		if quirks.is_empty():
-			quirks.append("No hazards — safe ground")
-		for q in quirks:
-			var ql := m._lbl(info, "◆ " + String(q), 13, Color(0.55, 0.65, 0.8))
-			ql.custom_minimum_size = Vector2(700, 0)
+	# Name ................................... where it appears
+	var head := HBoxContainer.new()
+	info.add_child(head)
+	var name_l := m._lbl(head, String(t["name"]) + ("   [placeholder]" if ph else ""), 16, Color(0.72, 0.68, 0.55) if ph else Color(1, 1, 1))
+	name_l.custom_minimum_size = Vector2(560, 0)
+	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var where_txt: String = where
+	if where_txt == "":
+		where_txt = "Dev panel only" if ph else "Beyond Chapter 1"
+	var where_l := m._lbl(head, where_txt, 13,
+		Color(0.95, 0.85, 0.5) if where != "" else Color(0.55, 0.58, 0.66))
+	where_l.custom_minimum_size = Vector2(220, 0)
+	where_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+
+	var amb: String = t.get("ambient", "")
+	var w := m._lbl(info, "Weather:   " + String(AMBIENT_DESC.get(amb, "still air")),
+		13, Color(0.7, 0.72, 0.78))
+	w.custom_minimum_size = Vector2(700, 0)
+
+	var quirks: Array = []
+	for p in t.get("patches", []):
+		var d: String = PATCH_DESC.get(p["type"], "")
+		if p.get("drift", false):
+			d += " — and the clouds DRIFT, so keep moving"
+		quirks.append(d)
+	if t.get("event", "") != "":
+		quirks.append(EVENT_DESC.get(t["event"], ""))
+	if t.get("mp_boost", false):
+		quirks.append("Latent magic — your mana recovers much faster here")
+	if t.has("river"):
+		quirks.append("Rivers cross these lands — wading leaves you DAMP (-%d%% move speed for %ds) and slows monsters; the bridge crosses dry" % [
+			int(round((1.0 - Balance.DAMP_SLOW_MULT) * 100.0)), int(Balance.DAMP_DURATION)])
+	if quirks.is_empty():
+		quirks.append("No hazards — safe ground")
+	for q in quirks:
+		var ql := m._lbl(info, "◆ " + String(q), 13, Color(0.55, 0.65, 0.8))
+		ql.custom_minimum_size = Vector2(700, 0)
+
+	# The Future shelf also lists the prop kit so the owner can judge the set.
+	if ph:
+		var parts: Array = []
+		for pool in [["fill", "obstacles"], ["decor", "decor"], ["accents", "accents"]]:
+			var names: Array = _uniq(t.get(pool[1], []))
+			if not names.is_empty():
+				parts.append("%s: %s" % [pool[0], ", ".join(names)])
+		var rl := m._lbl(info, "Props —  " + "   ·   ".join(parts), 12, Color(0.6, 0.66, 0.63))
+		rl.custom_minimum_size = Vector2(700, 0)
+		rl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
 static func _statuses(m: Menus, list: VBoxContainer) -> void:
@@ -1015,8 +1031,8 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 
 ## ------------------------------------------------------------- curios ---
 ## Quest items, draughts and notable world relics (mining sweep 2026-07-18).
-## Placeholder-flagged entries (mined art awaiting a story home) appear in
-## the dev launcher only, tagged [placeholder] — the unplaced-bestiary rule.
+## Placeholder-flagged entries (mined art awaiting a story home) never show
+## here — they live on the dev-only Future shelf, one subtab per category.
 static func _curios(m: Menus, list: VBoxContainer) -> void:
 	# Player-facing shelf: SHIPPED content only. Every placeholder lives in
 	# the dev-only Future tab instead (one home per category, never here).
@@ -1057,29 +1073,31 @@ static func _curios(m: Menus, list: VBoxContainer) -> void:
 
 ## The FUTURE shelf (dev launcher only): every placeholder in the project,
 ## one subtab per category — paintable terrains, salvaged mobs, quest-item
-## curios, the themed armory, profession supplies, and world relics. This is
-## the owner's review board: promote an entry by dropping its placeholder
-## flag and giving it a real home.
+## curios, the themed armory, profession supplies, and world relics — plus
+## the unplaced bestiary (mobs and bosses in no zone) and the review NPCs.
+## This is the owner's review board: promote an entry by dropping its
+## placeholder flag (or placing it in a zone) and giving it a real home.
 static func _future(m: Menus, list: VBoxContainer, tab: String) -> void:
 	if tab == "future_terrains":
 		UITheme.header(m._lbl(list, "— PLACEHOLDER TERRAINS — paint any room via the dev panel —", 16, Color(0.7, 0.95, 0.85)))
 		var tids: Array = Terrains.DATA.keys()
 		tids.sort()
+		var shown := 0
 		for tid in tids:
-			var t: Dictionary = Terrains.DATA[tid]
-			if not t.get("placeholder", false):
+			if not Terrains.DATA[tid].get("placeholder", false):
 				continue
-			var roster := "fill: %s   ·   accents: %s" % [
-				", ".join(_uniq(t.get("obstacles", []))), ", ".join(_uniq(t.get("accents", [])))]
-			_curio_card(m, list, "%s   (%s)" % [String(t["name"]), String(tid)], roster,
-				String((t.get("obstacles", ["rock"]) as Array)[0]), true)
+			_terrain_card(m, list, String(tid), "", true)
+			shown += 1
+		_none_waiting(m, list, shown)
 	elif tab == "future_mobs":
 		UITheme.header(m._lbl(list, "— SALVAGED MOBS — spawnable via the dev panel —", 16, Color(0.7, 0.95, 0.85)))
-		var kinds: Array = Story.ALL_ENEMIES.keys()
-		kinds.sort()
-		for kind in kinds:
-			if Story.ALL_ENEMIES[kind].get("placeholder", false) and not bool(Story.ALL_ENEMIES[kind].get("boss", false)):
-				_enemy_card(m, list, kind, false, false, true)
+		_future_enemies(m, list, false)
+	elif tab == "future_bosses":
+		UITheme.header(m._lbl(list, "— PLACEHOLDER BOSSES — spawnable via the dev panel; no mechanics yet —", 16, Color(0.95, 0.7, 0.7)))
+		_future_enemies(m, list, true)
+	elif tab == "future_npcs":
+		UITheme.header(m._lbl(list, "— PLACEHOLDER NPCS — wired into Maren's Camp for review —", 16, Color(0.7, 0.9, 1.0)))
+		_future_npcs(m, list)
 	elif tab == "future_items":
 		UITheme.header(m._lbl(list, "— PLACEHOLDER QUEST ITEMS —", 16, Color(0.7, 0.95, 0.85)))
 		_future_gallery(m, list, Story.ALL_QUEST_ITEMS, "", "icon", "desc")
@@ -1092,23 +1110,103 @@ static func _future(m: Menus, list: VBoxContainer, tab: String) -> void:
 	elif tab == "future_provisions":
 		UITheme.header(m._lbl(list, "— PROVISIONS — food, the future cooking consumables —", 16, Color(0.95, 0.85, 0.6)))
 		_future_gallery(m, list, Story.ALL_RELICS, "provisions", "sprite", "lore")
+	elif tab == "future_alchemy":
+		UITheme.header(m._lbl(list, "— ALCHEMY — draughts & essences awaiting the brewing loop —", 16, Color(0.95, 0.6, 0.65)))
+		_future_gallery(m, list, Story.ALL_RELICS, "alchemy", "sprite", "lore")
+	elif tab == "future_critters":
+		UITheme.header(m._lbl(list, "— CRITTERS — livestock & wildlife for the living world —", 16, Color(0.85, 0.9, 0.6)))
+		_future_gallery(m, list, Story.ALL_RELICS, "critters", "sprite", "lore")
 	else:  # future_relics
 		UITheme.header(m._lbl(list, "— PLACEHOLDER RELICS & LANDMARKS —", 16, Color(0.8, 0.75, 0.95)))
 		_future_gallery(m, list, Story.ALL_RELICS, "", "sprite", "lore")
 
 
+## Relic groups that own a dedicated Future subtab. The Relics shelf is the
+## catch-all for every OTHER group (and the ungrouped) — a newly minted
+## group lands there visibly instead of going invisible everywhere.
+const FUTURE_GROUP_TABS := ["armory", "supplies", "alchemy", "provisions", "critters"]
+
+
 ## One Future gallery: placeholder-flagged entries of `table` whose "group"
-## matches, rendered as curio cards.
+## matches (group "" = the catch-all above), rendered as curio cards.
 static func _future_gallery(m: Menus, list: VBoxContainer, table: Dictionary, group: String, art_key: String, text_key: String) -> void:
 	var ids: Array = table.keys()
 	ids.sort()
 	var shown := 0
 	for id in ids:
 		var e: Dictionary = table[id]
-		if not e.get("placeholder", false) or String(e.get("group", "")) != group:
+		if not e.get("placeholder", false):
+			continue
+		var g: String = String(e.get("group", ""))
+		if group == "":
+			if g in FUTURE_GROUP_TABS:
+				continue
+		elif g != group:
 			continue
 		_curio_card(m, list, String(e.get("name", id)), String(e.get(text_key, "")), String(e.get(art_key, "")), true)
 		shown += 1
+	_none_waiting(m, list, shown)
+
+
+## Future bestiary shelves: every enemy of the bucket (mob / boss, split by
+## the same BOSS_KINDS list the bestiary buckets by) that is placeholder-
+## flagged OR placed in no zone — the same derivation the bestiary hides by,
+## so nothing can fall between the two lists. Zero-reward boss-summon props
+## (censers, roots, rods) are scenery, not candidates.
+static func _future_enemies(m: Menus, list: VBoxContainer, bosses: bool) -> void:
+	var used := _used_enemy_kinds()
+	var kinds: Array = Story.ALL_ENEMIES.keys()
+	kinds.sort()
+	var shown := 0
+	for kind in kinds:
+		if (kind in m.BOSS_KINDS) != bosses:
+			continue
+		var st: Dictionary = Story.ALL_ENEMIES[kind]
+		if st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
+			continue
+		if used.has(kind) and not st.get("placeholder", false):
+			continue
+		_enemy_card(m, list, kind, bosses, false, true)
+		shown += 1
+	_none_waiting(m, list, shown)
+
+
+## Future NPC shelf: zone npc entries flagged `placeholder: true`, deduped
+## by sprite, with the clean name (no "(placeholder)" suffix — the card tag
+## already says it). The convo's review note, if any, rides along as the
+## description.
+static func _future_npcs(m: Menus, list: VBoxContainer) -> void:
+	var seen := {}
+	var shown := 0
+	for chid in Story.CHAPTER_LIST:
+		for zone in Story.CHAPTER_LIST[chid].get("zones", []):
+			for npc in zone.get("npcs", []):
+				if not npc.get("placeholder", false):
+					continue
+				var spr: String = String(npc.get("sprite", ""))
+				if spr == "" or seen.has(spr):
+					continue
+				seen[spr] = true
+				var nm: String = _npc_name(npc).replace(" (placeholder)", "")
+				var desc := "Mined NPC art awaiting a role."
+				var convo: String = String(npc.get("convo", ""))
+				if convo != "" and Story.ALL_CONVOS.has(convo):
+					var c: Dictionary = Story.ALL_CONVOS[convo]
+					var nodes: Dictionary = c.get("nodes", {})
+					var text: String = String(nodes.get(String(c.get("start", "")), {}).get("text", ""))
+					# The convo text is boilerplate-in-brackets + optional note.
+					var cut: int = text.find("]")
+					if cut >= 0 and cut + 1 < text.length():
+						var note: String = text.substr(cut + 1).strip_edges()
+						if note != "":
+							desc = note
+				_curio_card(m, list, nm, desc, spr, true)
+				shown += 1
+	_none_waiting(m, list, shown)
+
+
+## Shared empty-state line for the Future shelves.
+static func _none_waiting(m: Menus, list: VBoxContainer, shown: int) -> void:
 	if shown == 0:
 		m._lbl(list, "Nothing waiting in this category.", 13, Color(0.55, 0.55, 0.6))
 

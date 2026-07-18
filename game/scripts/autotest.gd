@@ -1337,12 +1337,21 @@ func _run_systems() -> void:
 	game.menus.open_codex("terrains")
 	await _frames(2)
 	var _dev0: bool = game.dev_mode
-	game.dev_mode = true  # exercise the [placeholder] cards/tags in the bestiary
+	game.dev_mode = true  # bestiary stays placeholder-free even in dev (2026-07-18)
 	game.menus.open_codex("monsters")
 	await _frames(2)
 	game.menus.open_codex("bosses")
 	await _frames(2)
 	game.menus.open_codex("npcs")
+	await _frames(2)
+	# The Future bestiary shelves (unplaced mobs/bosses + review NPCs).
+	game.menus.open_codex("future_mobs")
+	await _frames(2)
+	game.menus.open_codex("future_bosses")
+	await _frames(2)
+	game.menus.open_codex("future_npcs")
+	await _frames(2)
+	game.menus.open_codex("future_terrains")
 	await _frames(2)
 	game.dev_mode = _dev0
 	game.menus.open_codex("status")
@@ -1744,6 +1753,7 @@ func _run_campaign_ch2() -> void:
 	await _test_quest_abandonment()
 	await _test_ch1_quests()
 	await _test_pc_curios()
+	await _test_rv_na()
 	await _test_ch2_quests()
 	await _test_ch3_quests()
 	await _test_ch4_quests()
@@ -4394,3 +4404,25 @@ func _test_pc_curios() -> void:
 	game.dev_mode = _dev0
 	await _frames(2)
 	print("ok: pc_curios (curios shelf + Future tab: terrains/mobs/items/armory/supplies/relics)")
+
+
+# ---- CONTENT: rv_na_gallery — Raven icons + Ninja animals ----------------
+## Second-source sweep (2026-07-18): merge + art-resolution selftest for the
+## Raven icon families (alchemy/armory/supplies/provisions curios) and the
+## Ninja Adventure critter strips, then a UI smoke of the two new Future
+## subtabs. Content-module hook; never touches existing sections.
+func _test_rv_na() -> void:
+	var err: String = await preload("res://scripts/content/rv_na_gallery.gd").selftest(game)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	var _dev0: bool = game.dev_mode
+	game.dev_mode = true
+	for ft in ["future_alchemy", "future_critters"]:
+		game.menus.open_codex(ft)
+		await _frames(2)
+	game.menus.close()
+	game.dev_mode = _dev0
+	await _frames(2)
+	print("ok: rv_na_gallery (145 Raven icons + 13 critters; Future: alchemy/critters)")
