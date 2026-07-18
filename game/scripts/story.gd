@@ -1063,6 +1063,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/pc_extra_mobs.gd"),  # Pixel Crawler asset pass (2026-07-08): 8 extra mobs — roster/codex only, TODO placement
 	preload("res://scripts/content/pc_npc_gallery.gd"), # Pixel Crawler asset pass: placeholder NPC convos (humans wired into ch2 hub for review)
 	preload("res://scripts/content/pc_bosses.gd"),      # Ninja Adventure sweep (2026-07-08): 6 placeholder bosses — dev-only, TODO real fights
+	preload("res://scripts/content/pc_curios.gd"),      # Pixel Crawler mining (2026-07-18): placeholder quest-item curios + codex relics gallery
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]
@@ -1074,6 +1075,7 @@ static var ALL_QUESTS: Dictionary = {}
 static var ALL_BEATS: Dictionary = {}
 static var ALL_SIDE_QUESTS: Dictionary = {}
 static var ALL_QUEST_ITEMS: Dictionary = {}  # module keepsakes (Items.make_quest_item)
+static var ALL_RELICS: Dictionary = {}  # notable world props (codex Curios tab)
 static var ALL_WANDERERS: Dictionary = {}  # chapter id -> wanderer pool
 static var CHAPTER_LIST: Dictionary = {}
 static var _quest_givers: Dictionary = {}   # side-quest id -> Array of convo ids that OFFER it
@@ -1136,6 +1138,7 @@ static func load_content() -> void:
 	ALL_QUESTS = QUESTS.duplicate(true)
 	ALL_BEATS = BEATS.duplicate(true)
 	ALL_SIDE_QUESTS = SIDE_QUESTS.duplicate(true)
+	ALL_RELICS = {}
 	ALL_WANDERERS = {}
 	CHAPTER_LIST = CHAPTERS.duplicate(true)
 	for m in CONTENT_MODULES:
@@ -1146,6 +1149,7 @@ static func load_content() -> void:
 		ALL_BEATS.merge(consts.get("BEATS", {}), true)
 		ALL_SIDE_QUESTS.merge(consts.get("SIDE_QUESTS", {}), true)
 		ALL_QUEST_ITEMS.merge(consts.get("QUEST_ITEMS", {}), true)
+		ALL_RELICS.merge(consts.get("RELICS", {}), true)
 		# Per-chapter social-wanderer pools ({"ch3": [...]}) — chapters
 		# without one fall back to the Chapter 1 WANDERERS pool.
 		ALL_WANDERERS.merge(consts.get("WANDERERS", {}), true)

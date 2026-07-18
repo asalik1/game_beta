@@ -47,6 +47,22 @@ PIXEL CRAWLER (Anokolisa) — purchased bundle, 2026-07-06: some sprites
   (npc_*, see content/pc_npc_gallery.gd + ch2_hub.gd). New PNGs need a Godot
   --import (ResourceLoader-loaded) — run tools\Godot --import after dropping
   any new sprite. Skipped as redundant: Pixel Crawler Rat-Base, Elf-Hunter.
+  Environment mining sweeps (2026-07-17/18, same license terms): graveyard
+  variants + tree/bush/rock/mushroom fill variants (Cemetery, Fairy Forest,
+  Free Pack, Desert, Cave sheets); wall_moss rebuilt from the Cemetery wall
+  face + blob moss; prop kits for the ph_castle / ph_library / ph_hideout /
+  ph_camp placeholder terrains cut from Castle/Library/Hideout Assets/Tiles
+  and Free Pack Structures/Stations (castle_*, library_*, hideout_*, camp_*,
+  web, candle sprites); MMO-seed pass: station tier ladders (station_*_t1-3),
+  gathering nodes (node_ore/gold/crystal/herb — ore chunks composited onto
+  base rocks) and crop growth stages (crop_*) from the Free Pack
+  Stations/Rocks/Farm sheets, wired into ph_guildhall + ph_fields; curio
+  quest-item icons (curio_*, Esoteric/Sewer/Hideout sheets — see
+  content/pc_curios.gd + the codex Curios tab) and the Garden pack's three
+  unused humanoids as placeholder mobs (verdant_* — pillarbox pipeline);
+  second-pass sweep: Free Pack tree MODELS (tree_green4/autumn3/winter/
+  deadtree2/pine/pine2/tall*/stumps), desert cacti + sand drifts, Forge
+  statue/brazier/cauldron (magma biome).
 
 PIXEL CRAWLER - CEMETERY (Anokolisa) — purchased pack, licensed for
   commercial game use. Credit optional; the raw pack must NOT be

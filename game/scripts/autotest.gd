@@ -1743,6 +1743,7 @@ func _run_campaign_ch2() -> void:
 	await _test_side_quests()
 	await _test_quest_abandonment()
 	await _test_ch1_quests()
+	await _test_pc_curios()
 	await _test_ch2_quests()
 	await _test_ch3_quests()
 	await _test_ch4_quests()
@@ -4368,3 +4369,23 @@ func _test_endgame_no_placeholder_bosses() -> void:
 		if Story.ALL_ENEMIES.get(kind, {}).get("placeholder", false):
 			return _fail("endgame pools: placeholder boss '%s' leaked into the arena pool" % kind)
 	print("ok: endgame boss pools exclude placeholder bosses (roster + fallback + earned kills)")
+
+
+# ---- CONTENT: pc_curios — quest-item curios + codex Curios tab -----------
+## Mining sweep (2026-07-18): merge + icon-resolution selftest, then a UI
+## smoke — the Curios tab builds in dev mode (placeholders visible) and
+## closes cleanly. Content-module hook; never touches existing sections.
+func _test_pc_curios() -> void:
+	var err: String = await preload("res://scripts/content/pc_curios.gd").selftest(game)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	var _dev0: bool = game.dev_mode
+	game.dev_mode = true
+	game.menus.open_codex("curios")
+	await _frames(3)
+	game.menus.close()
+	game.dev_mode = _dev0
+	await _frames(2)
+	print("ok: pc_curios (quest-item curios + draughts + relics gallery)")

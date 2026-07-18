@@ -1544,7 +1544,25 @@ func room_rect(i: int) -> Rect2:
 func room_inset(i: int) -> Vector2:
 	if room_type(i) in Balance.SMALL_ROOM_TYPES:
 		return Balance.SMALL_ROOM_INSET
-	return Vector2.ZERO
+	# Combat arenas vary on a bell curve so rooms aren't identical (extremes
+	# rare). Boss arenas (tuned) + safe hubs (authored NPC/building layout)
+	# stay full-size. Deterministic per room -> co-op-safe + stable on rebuild.
+	if room_type(i) != "combat":
+		return Vector2.ZERO
+	var shrink := 1.0 - _room_size_factor(i)   # 0 .. ROOM_SIZE_VAR
+	return Vector2(ROOM_W, ROOM_H) * shrink / 2.0
+
+
+## Deterministic per-room size factor in [1 - ROOM_SIZE_VAR, 1.0]: an Irwin-Hall
+## bell from three decorrelated hashes of the room index, so the CENTRE of the
+## band is common and both a near-full and a notably-small arena are rare. No
+## RNG object (called often) — cheap, and identical on every machine (co-op).
+func _room_size_factor(i: int) -> float:
+	var a := float((i * 73856093) & 1023) / 1023.0
+	var b := float((i * 19349663) & 1023) / 1023.0
+	var c := float((i * 83492791) & 1023) / 1023.0
+	var bell := (a + b + c) / 3.0   # ~centred 0.5, extremes rare
+	return (1.0 - Balance.ROOM_SIZE_VAR) + Balance.ROOM_SIZE_VAR * bell
 
 ## The walled, walkable area of a room (equals room_rect for full-size
 ## rooms). Cameras, spawns and clamps all use THIS rect.

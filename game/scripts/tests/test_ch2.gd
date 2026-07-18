@@ -563,9 +563,17 @@ func _test_elites_bags_smallrooms() -> void:
 					or game.play_rect(i).size.y >= float(Game.ROOM_H):
 				return _fail("small room type did not shrink its play rect (room %d)" % i)
 			checked += 1
-		elif game.room_type(i) in ["combat", "boss"]:
+		elif game.room_type(i) == "boss":
 			if game.play_rect(i).size != Vector2(Game.ROOM_W, Game.ROOM_H):
-				return _fail("combat/boss room %d lost its full size" % i)
+				return _fail("boss room %d lost its full size" % i)
+		elif game.room_type(i) == "combat":
+			# Combat arenas now vary on a bell within ROOM_SIZE_VAR of the full
+			# cell (2026-07-17) — never bigger than the cell, never below the band.
+			var sz: Vector2 = game.play_rect(i).size
+			if sz.x > float(Game.ROOM_W) + 1.0 or sz.y > float(Game.ROOM_H) + 1.0 \
+					or sz.x < float(Game.ROOM_W) * (1.0 - Balance.ROOM_SIZE_VAR) - 1.0 \
+					or sz.y < float(Game.ROOM_H) * (1.0 - Balance.ROOM_SIZE_VAR) - 1.0:
+				return _fail("combat room %d size %s outside the variance band" % [i, sz])
 	if checked == 0:
 		return _fail("no small-room types found in this chapter")
 

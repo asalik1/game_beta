@@ -25,6 +25,8 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		Color(0.95, 0.85, 0.5) if tab == "gear" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Terrains  ", func() -> void: m.open_codex("terrains"),
 		Color(0.95, 0.85, 0.5) if tab == "terrains" else Color(0.6, 0.6, 0.6))
+	m._btn(tabs, "  Curios  ", func() -> void: m.open_codex("curios"),
+		Color(0.95, 0.85, 0.5) if tab == "curios" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Status  ", func() -> void: m.open_codex("status"),
 		Color(0.95, 0.85, 0.5) if tab == "status" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Records  ", func() -> void: m.open_codex("records"),
@@ -61,6 +63,8 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		_npcs(m, list)
 	elif tab == "terrains":
 		_terrains(m, list)
+	elif tab == "curios":
+		_curios(m, list)
 	elif tab == "status":
 		_statuses(m, list)
 	elif tab == "records":
@@ -986,3 +990,69 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		var ul := m._lbl(cons, String(util), 13, Color(0.7, 0.72, 0.78))
 		ul.custom_minimum_size = Vector2(880, 0)
 		ul.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+
+## ------------------------------------------------------------- curios ---
+## Quest items, draughts and notable world relics (mining sweep 2026-07-18).
+## Placeholder-flagged entries (mined art awaiting a story home) appear in
+## the dev launcher only, tagged [placeholder] — the unplaced-bestiary rule.
+static func _curios(m: Menus, list: VBoxContainer) -> void:
+	var dev: bool = m.game.dev_mode
+	UITheme.header(m._lbl(list, "— QUEST ITEMS —", 16, Color(0.95, 0.85, 0.5)))
+	m._lbl(list, "Keepsakes and story tokens. They ride in your bag until their moment comes.", 13, Color(0.62, 0.62, 0.68))
+	var ids: Array = Story.ALL_QUEST_ITEMS.keys()
+	ids.sort()
+	var shown := 0
+	for id in ids:
+		var q: Dictionary = Story.ALL_QUEST_ITEMS[id]
+		var ph: bool = q.get("placeholder", false)
+		if ph and not dev:
+			continue
+		_curio_card(m, list, String(q.get("name", id)), String(q.get("desc", "")), String(q.get("icon", "")), ph)
+		shown += 1
+	if shown == 0:
+		m._lbl(list, "None catalogued yet — the road will provide.", 13, Color(0.55, 0.55, 0.6))
+
+	UITheme.header(m._lbl(list, "— DRAUGHTS & TONICS —", 16, Color(0.6, 0.95, 0.7)))
+	for item in [Items.make_mana_potion(), Items.make_elixir_might(), Items.make_elixir_ward(),
+			Items.make_renewal_draught(), Items.make_recall_scroll()]:
+		# consumable_icon, NOT icon_for — stone-kind items carry no gear slot.
+		_curio_card(m, list, String(item["name"]), String(item.get("desc", "")), "", false, Art.consumable_icon(item))
+
+	UITheme.header(m._lbl(list, "— RELICS & LANDMARKS —", 16, Color(0.8, 0.75, 0.95)))
+	var rids: Array = Story.ALL_RELICS.keys()
+	rids.sort()
+	for id in rids:
+		var r: Dictionary = Story.ALL_RELICS[id]
+		var ph2: bool = r.get("placeholder", false)
+		if ph2 and not dev:
+			continue
+		_curio_card(m, list, String(r.get("name", id)), String(r.get("lore", "")), String(r.get("sprite", "")), ph2)
+
+
+## One curio row: pixel icon (sprite key, or a prebuilt item texture) +
+## name + flavor line. Small art renders NEAREST so it stays crisp.
+static func _curio_card(m: Menus, list: VBoxContainer, name: String, desc: String, sprite: String, placeholder := false, tex: ImageTexture = null) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	_card(list).add_child(row)
+	var icon := TextureRect.new()
+	if tex != null:
+		icon.texture = tex
+	elif sprite != "":
+		icon.texture = Art.tex(sprite)
+	icon.custom_minimum_size = Vector2(48, 48)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	row.add_child(icon)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_theme_constant_override("separation", 2)
+	row.add_child(info)
+	var nm_txt := name + ("   [placeholder]" if placeholder else "")
+	m._lbl(info, nm_txt, 16, Color(0.72, 0.68, 0.55) if placeholder else Color(0.92, 0.92, 0.98))
+	if desc != "":
+		var d := m._lbl(info, desc, 13, Color(0.66, 0.66, 0.72))
+		d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		d.custom_minimum_size = Vector2(620, 0)

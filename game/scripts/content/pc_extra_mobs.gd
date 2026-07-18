@@ -82,4 +82,31 @@ const ENEMIES := {
 		"physres": 0.0, "magres": 5.0, "eva": 0.12, "critres": 0.0, "dmg_type": "phys",
 		"level": 2, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"], "placeholder": true,
 		"lore": "Its back glows like a coal that refuses to gutter out. Salvaged art awaiting a home."},
+	# Full-pack mining sweep (2026-07-18): the Garden pack's three unused
+	# humanoids (Masculine/Feminine/Old), cut via the pillarbox pipeline —
+	# overgrown garden-keeper statues, kin to Medusa's gallery. Unplaced ->
+	# dev-only; natural home would be a garden/estate zone (ph_garden vibe).
+	"verdant_sentinel": {"name": "Verdant Sentinel", "sprite": "verdant_sentinel", "hp": 860.0, "dmg": 52.0, "speed": 120.0, "xp": 60, "gold": 34, "ranged": false, "scale": 3.2,
+		"physres": 20.0, "magres": 10.0, "eva": 0.0, "critres": 4.0, "dmg_type": "phys",
+		"level": 20, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["warded"], "placeholder": true,
+		"lore": "It tended these beds before the vines tended it. Salvaged art awaiting a garden to guard."},
+	"verdant_matron": {"name": "Verdant Matron", "sprite": "verdant_matron", "hp": 780.0, "dmg": 48.0, "speed": 130.0, "xp": 60, "gold": 34, "ranged": false, "scale": 3.2,
+		"physres": 14.0, "magres": 16.0, "eva": 0.05, "critres": 4.0, "dmg_type": "phys",
+		"level": 20, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["skirmish"], "placeholder": true,
+		"lore": "She still carries her shears, and the hedges still straighten when she passes. Salvaged art awaiting a home."},
+	"verdant_elder": {"name": "Verdant Elder", "sprite": "verdant_elder", "hp": 920.0, "dmg": 55.0, "speed": 105.0, "xp": 64, "gold": 38, "ranged": false, "scale": 3.2,
+		"physres": 24.0, "magres": 12.0, "eva": 0.0, "critres": 5.0, "dmg_type": "phys",
+		"level": 21, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["mend"], "placeholder": true,
+		"lore": "Bent like an old root and about as easy to pull up. Salvaged art awaiting a home."},
+	# Second-pass completeness (2026-07-18): the Library pack's two unused
+	# scholars (Researcher/Cataloguer — Censor/Director already serve as
+	# NPCs). Library-faction casters; would slot beside null_acolyte's kin.
+	"pale_archivist": {"name": "Pale Archivist", "sprite": "scholar_researcher", "hp": 620.0, "dmg": 58.0, "speed": 115.0, "xp": 58, "gold": 40, "ranged": true, "scale": 3.2,
+		"physres": 6.0, "magres": 24.0, "eva": 0.0, "critres": 4.0, "dmg_type": "magic",
+		"level": 22, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["warded"], "placeholder": true,
+		"lore": "It has read every ending and approves of none of them. Salvaged art awaiting a wing of the stacks."},
+	"cataloguer": {"name": "The Cataloguer", "sprite": "scholar_cataloguer", "hp": 700.0, "dmg": 52.0, "speed": 110.0, "xp": 58, "gold": 40, "ranged": true, "scale": 3.2,
+		"physres": 8.0, "magres": 22.0, "eva": 0.0, "critres": 4.0, "dmg_type": "magic",
+		"level": 22, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["mend"], "placeholder": true,
+		"lore": "Everything gets an entry: names, debts, deaths. Yours is already drafted. Salvaged art awaiting a home."},
 }

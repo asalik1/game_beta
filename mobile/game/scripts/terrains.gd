@@ -29,18 +29,18 @@ const DATA := {
 	# ------------------------------------------------ story terrains ---
 	"village": {"name": "Emberfall Village", "ground": "grass", "path": "dirt",
 		"tint": Color(1.0, 0.98, 0.9), "ambient": "leaves_green", "music": "village",
-		"obstacles": ["tree_green", "tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3"], "decor": ["flower", "flower", "pebble", "grass", "bush", "bush3", "toadstool", "toadstool2"], "accents": ["log"], "count": 9,
+		"obstacles": ["tree_green", "tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3", "tree_green4"], "decor": ["flower", "flower", "pebble", "grass", "bush", "bush3", "toadstool", "toadstool2"], "accents": ["log"], "count": 9,
 		# Two roof colorways per cottage (a2/b2 = PNG override variants) +
 		# seeded mirroring in _add_building keep the village from repeating.
 		"buildings": ["cottage_a", "cottage_b", "stall", "cottage_a2", "cottage_b2"],
 		"patches": [], "event": ""},
 	"darkwood": {"name": "The Darkwood", "ground": "forest", "path": "dirt",
 		"tint": Color(0.87, 0.94, 0.88), "ambient": "leaves_autumn", "music": "darkwood",
-		"obstacles": ["tree_autumn", "tree_autumn", "rock", "rock2", "boulder", "tree_autumn2"], "decor": ["mushroom", "pebble", "flower", "grass_autumn", "bush_autumn", "toadstool", "toadstool2"], "accents": ["log", "tree_gnarled"], "count": 16,
+		"obstacles": ["tree_autumn", "tree_autumn", "rock", "rock2", "boulder", "tree_autumn2", "tree_autumn3"], "decor": ["mushroom", "pebble", "flower", "grass_autumn", "bush_autumn", "toadstool", "toadstool2", "tree_stump"], "accents": ["log", "tree_gnarled", "tree_tall_red"], "count": 16,
 		"patches": [], "event": ""},
 	"marsh": {"name": "The Blightmarsh", "ground": "marsh", "path": "dirt",
 		"tint": Color(0.9, 0.95, 0.8), "ambient": "fireflies", "music": "marsh",
-		"obstacles": ["tree_teal", "deadtree", "rock", "tree_teal2"], "decor": ["mushroom", "pebble", "grass", "bush"], "accents": ["dead_shrub", "log", "mushroom_purple", "bones"], "count": 14,
+		"obstacles": ["tree_teal", "deadtree", "rock", "tree_teal2", "tree_pine"], "decor": ["mushroom", "pebble", "grass", "bush"], "accents": ["dead_shrub", "log", "mushroom_purple", "bones"], "count": 14,
 		"patches": [], "event": "",
 		"river": {"chance": 0.45, "color": Color(0.10, 0.20, 0.19, 0.82)}},
 	"keep": {"name": "Vargoth's Keep", "ground": "stone", "path": "stone",
@@ -50,12 +50,12 @@ const DATA := {
 	# ------------------------------------------------- new terrains ---
 	"magma": {"name": "Scorched Wastes", "ground": "basalt", "path": "basalt",
 		"tint": Color(1.0, 0.8, 0.7), "ambient": "embers", "music": "magma",
-		"obstacles": ["rock", "rock", "pillar", "rock_volcanic", "boulder", "rock3"], "decor": ["crack", "crack", "pebble", "rubble"], "accents": ["bones"], "count": 12,
+		"obstacles": ["rock", "rock", "pillar", "rock_volcanic", "boulder", "rock3", "forge_cauldron"], "decor": ["crack", "crack", "pebble", "rubble", "forge_brazier"], "accents": ["bones", "forge_statue"], "count": 12,
 		"patches": [{"type": "lava", "count": 4, "radius": [55, 85]}],
 		"event": "magma_rain", "event_t": [3.5, 6.5]},
 	"ice": {"name": "Frozen Expanse", "ground": "snow", "path": "snow",
 		"tint": Color(0.88, 0.93, 1.05), "ambient": "snow", "music": "icefield",
-		"obstacles": ["tree_snow", "tree_snow", "rock", "rock_ice", "boulder", "tree_snow2"], "decor": ["pebble", "grass_frost"], "accents": ["log"], "count": 12,
+		"obstacles": ["tree_snow", "tree_snow", "rock", "rock_ice", "boulder", "tree_snow2", "tree_winter"], "decor": ["pebble", "grass_frost", "stump_snow"], "accents": ["log"], "count": 12,
 		"patches": [{"type": "ice", "count": 10, "radius": [60, 110]}],
 		"event": "", "bright": true},
 	"graveyard": {"name": "Restless Graveyard", "ground": "gravedirt", "path": "gravedirt",
@@ -73,11 +73,11 @@ const DATA := {
 		"patches": [], "event": "grave_spawn", "event_t": [5.0, 9.0]},
 	"desert": {"name": "Scorching Dunes", "ground": "sand", "path": "sand",
 		"tint": Color(1.05, 0.98, 0.85), "ambient": "sand", "music": "desert",
-		"obstacles": ["rock", "deadtree", "sandstone", "sandstone2", "boulder"], "decor": ["pebble"], "accents": ["dead_shrub", "bones", "bone"], "count": 9,
+		"obstacles": ["rock", "deadtree", "sandstone", "sandstone2", "boulder", "cactus", "cactus2"], "decor": ["pebble", "sand_drift", "sand_drift2"], "accents": ["dead_shrub", "bones", "bone"], "count": 9,
 		"patches": [], "event": "gust", "event_t": [7.0, 11.0], "bright": true},
 	"bog": {"name": "Poison Bog", "ground": "bogsoil", "path": "bogsoil",
 		"tint": Color(0.82, 0.9, 0.75), "ambient": "fireflies", "music": "marsh",
-		"obstacles": ["tree_teal", "deadtree", "rock", "tree_teal2"], "decor": ["mushroom", "mushroom", "toadstool", "bush"], "accents": ["dead_shrub", "mushroom_purple", "log", "bones", "tree_gnarled"], "count": 13,
+		"obstacles": ["tree_teal", "deadtree", "rock", "tree_teal2", "tree_pine"], "decor": ["mushroom", "mushroom", "toadstool", "bush"], "accents": ["dead_shrub", "mushroom_purple", "log", "bones", "tree_gnarled"], "count": 13,
 		"patches": [{"type": "poison", "count": 8, "radius": [55, 95]}],
 		"event": "",
 		# The Greyrun runs BLACK through the blightlands (ch2 mill canon).
@@ -89,7 +89,7 @@ const DATA := {
 	"storm": {"name": "Thunder Plains", "ground": "stormgrass", "path": "dirt",
 		# Rain-grey does the mood; the grey-blue GROUND carries the biome.
 		"tint": Color(0.8, 0.86, 0.95), "ambient": "rain", "music": "rainstorm",
-		"obstacles": ["tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3"], "decor": ["flower", "pebble", "grass", "bush", "bush3"], "accents": ["log"], "count": 8,
+		"obstacles": ["tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3", "deadtree2"], "decor": ["flower", "pebble", "grass", "bush", "bush3"], "accents": ["log"], "count": 8,
 		"patches": [], "event": "lightning", "event_t": [4.0, 7.5]},
 	"void": {"name": "The Void", "ground": "voidstone", "path": "voidstone",
 		# Purple hue-skew keeps the menace; the near-black GROUND is the
@@ -114,9 +114,52 @@ const DATA := {
 	# [placeholder]; the dev panel can still paint any room with them to
 	# preview the vibe. No zone references them, so normal play never uses
 	# them. All reuse existing ground types / props / hazards.
+	"ph_garden": {"name": "Palace Gardens", "ground": "grass", "path": "stone",
+		"tint": Color(1.0, 0.98, 0.92), "ambient": "sparkle", "music": "holy",
+		"obstacles": ["topiary", "topiary", "garden_statue", "garden_bench", "garden_urns", "rock2"], "decor": ["flowerbed_pink", "flowerbed_red", "flowerbed_purple", "flowers_mixed", "flower", "grass"], "accents": ["garden_fountain", "clay_pot"], "count": 10,
+		"patches": [], "event": "", "bright": true,
+		"placeholder": true},
+	# ---- MMO-seed placeholder terrains (2026-07-18): guild/profession
+	# previews for the multiplayer future (guild halls, crafting professions,
+	# gathering). Station TIER LADDERS (t1->t3) + gathering nodes + crop
+	# growth stages, all cut from the Free Pack station/Farm/Rocks sheets.
+	"ph_guildhall": {"name": "Guild Hall", "ground": "holystone", "path": "holystone",
+		"tint": Color(0.95, 0.9, 0.85), "ambient": "embers", "music": "village",
+		"obstacles": ["station_anvil_t1", "station_anvil_t2", "station_anvil_t3", "station_furnace_t1", "station_furnace_t2", "station_furnace_t3", "station_alchemy_t1", "station_alchemy_t2", "station_alchemy_t3", "station_sawmill_t1", "station_sawmill_t2", "station_sawmill_t3", "library_shelf", "hideout_table"], "decor": ["library_rug", "candle", "castle_sconce", "pebble"], "accents": ["castle_throne", "castle_banner", "camp_bonfire"], "count": 12,
+		"patches": [], "event": "", "bright": true,
+		"placeholder": true},
+	"ph_fields": {"name": "Harvest Fields", "ground": "grass", "path": "dirt",
+		"tint": Color(1.0, 0.97, 0.88), "ambient": "leaves_green", "music": "village",
+		"obstacles": ["node_ore", "node_gold", "rock", "boulder", "tree_green"], "decor": ["crop_sprout", "crop_mid", "crop_carrot", "crop_cabbage", "crop_turnip", "node_herb", "grass", "flower"], "accents": ["node_crystal", "camp_sawtable"], "count": 10,
+		"patches": [], "event": "", "bright": true,
+		"placeholder": true},
+	# ---- placeholder terrains (2026-07-18 full-pack mining sweep) ----
+	# Prop kits cut from the Castle / Library / Hideout / Free Pack station
+	# sheets; dev-panel-only until the owner assigns them a home. Same rules
+	# as the 2026-07-08 batch: no zone references them, codex hides them.
+	"ph_castle": {"name": "Royal Gallery", "ground": "stone", "path": "stone",
+		"tint": Color(0.85, 0.82, 0.92), "ambient": "embers", "music": "keep",
+		"obstacles": ["castle_bust", "castle_bust2", "castle_statue", "pillar"], "decor": ["castle_sconce", "crack", "pebble"], "accents": ["castle_throne", "castle_banner"], "count": 10,
+		"patches": [], "event": "",
+		"placeholder": true},
+	"ph_library": {"name": "The Great Library", "ground": "holystone", "path": "holystone",
+		"tint": Color(0.98, 0.92, 0.82), "ambient": "sparkle", "music": "holy",
+		"obstacles": ["library_shelf", "library_shelf2", "library_cabinet", "library_desk"], "decor": ["library_rug", "candle", "pebble"], "accents": ["library_planter"], "count": 9,
+		"patches": [], "event": "", "bright": true,
+		"placeholder": true},
+	"ph_hideout": {"name": "Bandit Hideout", "ground": "stone", "path": "dirt",
+		"tint": Color(0.86, 0.82, 0.74), "ambient": "embers", "music": "darkwood",
+		"obstacles": ["hideout_table", "hideout_cabinet", "hideout_locker", "hideout_kegs", "hideout_barrel"], "decor": ["web", "candle", "hideout_poster", "pebble"], "accents": ["hideout_firepit"], "count": 11,
+		"patches": [], "event": "",
+		"placeholder": true},
+	"ph_camp": {"name": "Wayfarer's Camp", "ground": "grass", "path": "dirt",
+		"tint": Color(1.0, 0.96, 0.88), "ambient": "fireflies", "music": "village",
+		"obstacles": ["camp_anvil", "camp_furnace", "camp_workbench", "camp_sawtable"], "decor": ["log2", "grass", "pebble"], "accents": ["camp_bonfire", "camp_tripod", "camp_meatrack"], "count": 9,
+		"patches": [], "event": "",
+		"placeholder": true},
 	"ph_sewer": {"name": "Undercroft Sewer", "ground": "stone", "path": "stone",
 		"tint": Color(0.72, 0.82, 0.78), "ambient": "mist", "music": "marsh",
-		"obstacles": ["pillar", "rock", "deadtree"], "decor": ["bones", "crack", "pebble"], "count": 12,
+		"obstacles": ["pillar", "rock", "sewer_pipe", "sewer_pipe2", "clay_pot", "clay_pot2"], "decor": ["bones", "crack", "pebble", "sewer_lantern", "web"], "count": 12,
 		"patches": [{"type": "poison", "count": 5, "radius": [60, 95]}], "event": "",
 		"placeholder": true},
 	"ph_hall": {"name": "Castle Hall", "ground": "holystone", "path": "holystone",
@@ -182,7 +225,11 @@ static func get_terrain(id: String) -> Dictionary:
 const WALL := {
 	"village": "wall_wood",
 	"darkwood": "wall_moss", "marsh": "wall_moss", "bog": "wall_moss",
-	"spore": "wall_moss", "ph_fae": "wall_moss", "ph_sewer": "wall_moss",
+	"spore": "wall_moss", "ph_fae": "wall_moss",
+	# mining sweep 2026-07-18: placeholder terrains wear their OWN walls
+	"ph_sewer": "wall_sewer", "ph_garden": "wall_hedge",
+	"ph_castle": "wall_castle", "ph_guildhall": "wall_castle", "ph_library": "wall_castle",
+	"ph_hideout": "wall_wood",
 	"magma": "wall_volcanic", "void": "wall_volcanic",
 	"ice": "wall_ice",
 	"graveyard": "wall_grave",
