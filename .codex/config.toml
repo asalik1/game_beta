@@ -1,0 +1,15 @@
+[mcp_servers.huggingface]
+url = "https://huggingface.co/mcp"
+bearer_token_env_var = "HF_TOKEN"
+
+[mcp_servers.pixelforge]
+command = "npx"
+args = [
+    "-y",
+    "pixelforge-mcp@0.2.0",
+]
+env_vars = ["GEMINI_API_KEY"]
+
+[mcp_servers.pixellab]
+url = "https://api.pixellab.ai/mcp"
+bearer_token_env_var = "PIXELLAB_SECRET"
