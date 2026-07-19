@@ -298,6 +298,19 @@ static func _tab_world(m: Menus, list: VBoxContainer) -> void:
 		14, Color(0.85, 0.9, 1.0) if report != "" else Color(0.6, 0.62, 0.68))
 	rlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+	# ----------------------------------------------- standalone worlds ---
+	# Crownfall, the 50-room capital hub (dev-only for now). See
+	# CROWNFALL_HUB.html. Drops the hero on the Crown Plaza; the Portal
+	# Sanctum's Story gate returns to whatever chapter we jumped in from.
+	_section(m, list, "CAPITAL HUB (Crownfall — dev only)")
+	var rowc := _flow(list)
+	m._btn(rowc, "▶ Go To Capital", func() -> void:
+		m.game.enter_capital()
+		m.close(), Color(0.95, 0.7, 0.4))
+	if m.game.chapter_id == "capital":
+		m._lbl(list, "You are in Crownfall. Use the Portal Sanctum's Story gate (or jump to a chapter below) to leave.",
+			13, Color(0.7, 0.75, 0.82))
+
 	# ------------------------------------------------------------ world ---
 	_section(m, list, "WORLD (rooms of this chapter's graph)")
 	var row4 := _flow(list)

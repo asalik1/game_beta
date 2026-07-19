@@ -1758,6 +1758,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch1_quests()
 	await _test_pc_curios()
 	await _test_rv_na()
+	await _test_capital()
 	await _test_ch2_quests()
 	await _test_ch3_quests()
 	await _test_ch4_quests()
@@ -4548,3 +4549,56 @@ func _test_rv_na() -> void:
 	game.dev_mode = _dev0
 	await _frames(2)
 	print("ok: rv_na_gallery (145 Raven icons + 13 critters; Future: alchemy/critters)")
+
+
+# ---- CONTENT: capital_hub — Crownfall, the 50-room dev capital -----------
+## Data integrity (module selftest) + a REAL load: enter Crownfall, verify the
+## fixed 50-room graph builds safe with the hero on the Crown Plaza and every
+## room reachable, then restore the chapter we were in. Content-module hook.
+func _test_capital() -> void:
+	var err: String = await preload("res://scripts/content/capital_hub.gd").selftest(game)
+	if err != "":
+		_fail(err)
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Connectivity: BFS the authored coord graph — every room reachable from 0.
+	var zs: Array = Story.chapter("capital")["zones"]
+	var at_coord := {}
+	for zi in zs.size():
+		var c: Array = zs[zi]["coord"]
+		at_coord["%d,%d" % [int(c[0]), int(c[1])]] = zi
+	var seen := {0: true}
+	var stack: Array = [0]
+	var steps := [Vector2i(0, -1), Vector2i(0, 1), Vector2i(1, 0), Vector2i(-1, 0)]
+	while not stack.is_empty():
+		var cur: int = stack.pop_back()
+		var cc: Array = zs[cur]["coord"]
+		for s in steps:
+			var k := "%d,%d" % [int(cc[0]) + s.x, int(cc[1]) + s.y]
+			if at_coord.has(k) and not seen.has(at_coord[k]):
+				seen[at_coord[k]] = true
+				stack.append(at_coord[k])
+	if seen.size() != zs.size():
+		_fail("capital: graph not connected (%d/%d reachable from the plaza)" % [seen.size(), zs.size()])
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Real load: enter the hub, confirm it built safe on the plaza.
+	var prev: String = game.chapter_id
+	game.enter_capital()
+	await _frames(6)
+	if game.chapter_id != "capital":
+		return _fail("capital: enter_capital did not switch (chapter is %s)" % game.chapter_id)
+	if game.zone_count != 50:
+		return _fail("capital: expected 50 rooms live, got %d" % game.zone_count)
+	if String(game.zones[game.cur_room].get("name", "")) != "Crown Plaza":
+		return _fail("capital: hero did not spawn on Crown Plaza (in %s)" % game.zones[game.cur_room].get("name", "?"))
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e and e.zone_idx == game.cur_room:
+			return _fail("capital: a supposedly-safe hub room has an enemy")
+	# Leave the way a player does — back to the chapter we came from.
+	game.switch_chapter(prev, true)
+	await _frames(4)
+	if game.chapter_id != prev:
+		return _fail("capital: failed to restore chapter %s" % prev)
+	print("ok: capital hub (50-room fixed graph, connected, safe, spawns on Crown Plaza, leaves clean)")

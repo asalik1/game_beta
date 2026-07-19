@@ -1,0 +1,916 @@
+<title>Crownfall — Spawn Hub Register</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ground: #16110c;
+    --surface: #1f1811;
+    --surface-2: #271f16;
+    --ink: #ece2d0;
+    --ink-soft: #a99a82;
+    --ink-faint: #7d715f;
+    --accent: #e8792e;
+    --accent-soft: #b95c22;
+    --accent-glow: rgba(232,121,46,.35);
+    --line: #3a2e22;
+    --line-soft: #2b2219;
+    --f-accord: #e0a93a;
+    --f-cinder: #c04452;
+    --f-wild: #74a558;
+    --f-choir: #a186c0;
+    --f-craft: #e8792e;
+    --f-civic: #6f95b0;
+    --shadow: rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground: #e7e1d4;
+      --surface: #f2ecdf;
+      --surface-2: #e9e2d2;
+      --ink: #241b12;
+      --ink-soft: #5e5342;
+      --ink-faint: #857a67;
+      --accent: #c25a17;
+      --accent-soft: #a94e15;
+      --accent-glow: rgba(194,90,23,.20);
+      --line: #ccc1ab;
+      --line-soft: #d8cdb7;
+      --f-accord: #b1811b;
+      --f-cinder: #a5303d;
+      --f-wild: #4d7735;
+      --f-choir: #6f5698;
+      --f-civic: #3f6d8c;
+      --shadow: rgba(90,70,40,.18);
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #16110c; --surface: #1f1811; --surface-2: #271f16;
+    --ink: #ece2d0; --ink-soft: #a99a82; --ink-faint: #7d715f;
+    --accent: #e8792e; --accent-soft: #b95c22; --accent-glow: rgba(232,121,46,.35);
+    --line: #3a2e22; --line-soft: #2b2219;
+    --f-accord: #e0a93a; --f-cinder: #c04452; --f-wild: #74a558; --f-choir: #a186c0;
+    --f-craft: #e8792e; --f-civic: #6f95b0; --shadow: rgba(0,0,0,.5); color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --ground: #e7e1d4; --surface: #f2ecdf; --surface-2: #e9e2d2;
+    --ink: #241b12; --ink-soft: #5e5342; --ink-faint: #857a67;
+    --accent: #c25a17; --accent-soft: #a94e15; --accent-glow: rgba(194,90,23,.20);
+    --line: #ccc1ab; --line-soft: #d8cdb7;
+    --f-accord: #b1811b; --f-cinder: #a5303d; --f-wild: #4d7735; --f-choir: #6f5698;
+    --f-civic: #3f6d8c; --shadow: rgba(90,70,40,.18); color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 600px at 50% -8%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%),
+      var(--ground);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display {
+    font-family: "Cinzel", "Trajan Pro", "Optima", "Perpetua Titling MT", Georgia, serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+  .mono {
+    font-family: "Iosevka", "Consolas", "SFMono-Regular", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 22px 90px; }
+  .bleed { max-width: 1180px; margin: 0 auto; padding: 0 22px; }
+
+  /* ---- masthead ---- */
+  header.mast {
+    padding: 74px 22px 30px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .eyebrow {
+    font-family: "Iosevka","Consolas",ui-monospace,monospace;
+    text-transform: uppercase; letter-spacing: .34em; font-size: 11.5px;
+    color: var(--accent); margin: 0 0 18px;
+  }
+  h1.title {
+    font-family: "Cinzel","Trajan Pro","Optima",Georgia,serif;
+    text-transform: uppercase; letter-spacing: .14em; font-weight: 700;
+    font-size: clamp(42px, 9vw, 88px); line-height: .98; margin: 0;
+    text-wrap: balance;
+    background: linear-gradient(178deg, var(--ink), color-mix(in srgb, var(--accent) 55%, var(--ink)));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .subtitle { font-style: italic; color: var(--ink-soft); font-size: 19px; margin: 14px 0 0; text-wrap: balance; }
+  .mast-meta {
+    display: flex; flex-wrap: wrap; gap: 8px 10px; justify-content: center; margin: 28px 0 4px;
+  }
+  .chip {
+    font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: 12px;
+    letter-spacing: .04em; padding: 5px 12px; border: 1px solid var(--line);
+    border-radius: 2px; background: var(--surface); color: var(--ink-soft);
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  /* ---- toc ---- */
+  nav.toc {
+    max-width: 960px; margin: 26px auto 0; padding: 0 22px;
+    display: flex; flex-wrap: wrap; gap: 6px 8px; justify-content: center;
+  }
+  nav.toc a {
+    font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: 12px;
+    text-decoration: none; color: var(--ink-soft); padding: 5px 11px;
+    border: 1px solid var(--line-soft); border-radius: 2px; transition: .18s;
+  }
+  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+  nav.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  h2.sect {
+    font-family: "Cinzel","Trajan Pro","Optima",Georgia,serif;
+    text-transform: uppercase; letter-spacing: .1em; font-weight: 600;
+    font-size: clamp(24px, 4vw, 34px); margin: 68px 0 6px; text-wrap: balance;
+    display: flex; align-items: baseline; gap: 14px;
+  }
+  h2.sect .num {
+    font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: 15px;
+    color: var(--accent); letter-spacing: 0; font-weight: 400; -webkit-text-fill-color: var(--accent);
+  }
+  .sect-lede { color: var(--ink-soft); font-size: 17px; margin: 0 0 30px; max-width: 68ch; }
+  h3.sub {
+    font-family: "Cinzel","Trajan Pro",Georgia,serif; text-transform: uppercase;
+    letter-spacing: .07em; font-size: 17px; font-weight: 600; margin: 40px 0 14px;
+    color: var(--ink); padding-bottom: 8px; border-bottom: 1px solid var(--line-soft);
+  }
+  p { margin: 0 0 16px; }
+  p.lead { font-size: 19px; }
+  a.inl { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); }
+  a.inl:hover { border-bottom-color: var(--accent); }
+  code {
+    font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: .86em;
+    background: var(--surface-2); padding: 1px 6px; border-radius: 3px; color: var(--accent);
+    border: 1px solid var(--line-soft);
+  }
+  em.q { color: var(--ink); font-style: italic; }
+  .rule { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+  /* ---- map ---- */
+  .mapframe {
+    margin: 34px 0 10px; border: 1px solid var(--line); border-radius: 6px;
+    background:
+      radial-gradient(700px 420px at 50% 42%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 70%),
+      var(--surface);
+    padding: 14px; overflow-x: auto; box-shadow: 0 18px 40px -28px var(--shadow);
+  }
+  #cityMap { display: block; width: 100%; min-width: 760px; height: auto; }
+  .maplegend {
+    display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: center;
+    margin: 14px 0 2px; font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .maplegend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 13px; height: 13px; border-radius: 3px; display: inline-block; border: 1px solid rgba(255,255,255,.15); }
+  .mapcaption { text-align: center; font-size: 13px; color: var(--ink-faint); font-style: italic; margin: 10px 0 0; }
+
+  /* ---- room cards ---- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 14px; margin: 8px 0 10px; }
+  .room {
+    border: 1px solid var(--line); border-left: 3px solid var(--rc, var(--accent));
+    border-radius: 5px; background: var(--surface); padding: 15px 16px 16px;
+    transition: transform .16s, box-shadow .16s, border-color .16s;
+  }
+  .room:hover { transform: translateY(-2px); box-shadow: 0 12px 26px -18px var(--shadow); }
+  .room .rtop { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .room .rname { font-family: "Cinzel","Trajan Pro",Georgia,serif; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; font-size: 15px; color: var(--ink); }
+  .room .rcoord { font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: 11px; color: var(--ink-faint); white-space: nowrap; }
+  .room .rrole { font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--rc, var(--accent)); margin-bottom: 8px; }
+  .room p { font-size: 14.5px; line-height: 1.5; margin: 0 0 9px; color: var(--ink-soft); }
+  .room p:last-child { margin-bottom: 0; }
+  .room .meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .tag {
+    font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: 10.5px;
+    padding: 2px 7px; border-radius: 2px; border: 1px solid var(--line);
+    background: var(--surface-2); color: var(--ink-soft);
+  }
+  .tag.npc { color: var(--rc, var(--accent)); border-color: color-mix(in srgb, var(--rc, var(--accent)) 45%, var(--line)); }
+  .tag.built { color: var(--f-wild); border-color: color-mix(in srgb, var(--f-wild) 40%, var(--line)); }
+  .tag.plan { color: var(--f-accord); border-color: color-mix(in srgb, var(--f-accord) 40%, var(--line)); }
+
+  .ward-banner {
+    display: flex; align-items: center; gap: 14px; margin: 30px 0 4px;
+    padding: 14px 18px; border-radius: 6px; border: 1px solid var(--line);
+    border-left: 5px solid var(--rc); background: linear-gradient(100deg, color-mix(in srgb, var(--rc) 12%, var(--surface)), var(--surface));
+  }
+  .ward-banner .wtitle { font-family: "Cinzel","Trajan Pro",Georgia,serif; text-transform: uppercase; letter-spacing: .08em; font-size: 20px; font-weight: 600; color: var(--ink); }
+  .ward-banner .wsub { font-style: italic; color: var(--ink-soft); font-size: 14.5px; margin-top: 2px; }
+  .ward-banner .wtag { margin-left: auto; font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: 11px; color: var(--rc); text-transform: uppercase; letter-spacing: .12em; text-align: right; white-space: nowrap; }
+
+  /* ---- tables ---- */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; margin: 8px 0 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14.5px; }
+  thead th {
+    text-align: left; font-family: "Iosevka","Consolas",ui-monospace,monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .09em; color: var(--ink-soft);
+    padding: 11px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); position: sticky; top: 0;
+  }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+  td .fac { font-family:"Iosevka",ui-monospace,monospace; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  td.name { font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .star { color: var(--accent); }
+
+  .callout {
+    border: 1px solid var(--line); border-radius: 6px; background: var(--surface);
+    padding: 18px 20px; margin: 18px 0; border-top: 3px solid var(--accent);
+  }
+  .callout h4 { font-family: "Cinzel",Georgia,serif; text-transform: uppercase; letter-spacing: .06em; font-size: 14px; margin: 0 0 10px; color: var(--accent); }
+  .callout ul { margin: 0; padding-left: 20px; }
+  .callout li { margin-bottom: 8px; font-size: 15px; color: var(--ink-soft); }
+  .callout li b { color: var(--ink); }
+
+  .phase { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 12px; margin: 8px 0; }
+  .phase .p {
+    border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 14px 16px;
+  }
+  .phase .p .pn { font-family:"Iosevka",ui-monospace,monospace; font-size: 11px; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; }
+  .phase .p h4 { font-family:"Cinzel",Georgia,serif; text-transform: uppercase; letter-spacing:.05em; font-size: 14px; margin: 6px 0 8px; color: var(--ink); }
+  .phase .p p { font-size: 13.5px; color: var(--ink-soft); margin: 0; }
+
+  footer { margin-top: 70px; padding-top: 26px; border-top: 1px solid var(--line); color: var(--ink-faint); font-size: 13.5px; }
+  footer b { color: var(--ink-soft); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .spawnpulse { animation: pulse 2.6s ease-in-out infinite; transform-origin: center; }
+    @keyframes pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+  }
+  @media (max-width: 620px) {
+    body { font-size: 16px; }
+    h2.sect { flex-direction: column; gap: 2px; }
+  }
+</style>
+
+<header class="mast">
+  <p class="eyebrow">Vaelscar · Kingdom of Emberfall · Civic Register</p>
+  <h1 class="title">Crownfall</h1>
+  <p class="subtitle">The spawn hub — a fixed 50-room capital, and everything in it</p>
+  <div class="mast-meta">
+    <span class="chip"><b>50</b> rooms</span>
+    <span class="chip"><b>Fixed</b> layout</span>
+    <span class="chip"><b>8</b> craft &amp; service rooms</span>
+    <span class="chip"><b>3</b> mode portals</span>
+    <span class="chip"><b>4</b> faction wards</span>
+    <span class="chip"><b>8</b> daily quest-givers</span>
+    <span class="chip" style="border-color:var(--f-wild);color:var(--f-wild)"><b style="color:var(--f-wild)">✓ Phase 1 BUILT</b></span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#premise">Premise</a>
+  <a href="#map">City Map</a>
+  <a href="#craft">Craftworks Ward</a>
+  <a href="#portals">Portal Sanctum</a>
+  <a href="#civic">Civic Ring</a>
+  <a href="#approach">The Approach</a>
+  <a href="#wards">The Four Wards</a>
+  <a href="#roster">NPC Roster</a>
+  <a href="#dailies">Daily Quests</a>
+  <a href="#outer">Outer Ring</a>
+  <a href="#tech">Build Notes</a>
+  <a href="#open">Open Questions</a>
+</nav>
+
+<div class="wrap">
+
+  <!-- ================= PREMISE ================= -->
+  <section id="premise">
+    <h2 class="sect"><span class="num">§0</span>The premise</h2>
+    <p class="lead">Crownfall is the capital the player calls home — the walled city they spawn into, return to
+    between runs, and never have to fight through. Emberfall's crown was stolen and its king went hollow; Crownfall
+    is what the survivors rebuilt in the ash around the empty throne. It is the <em class="q">town</em> half of the
+    loop: everything you do out in the world — story, Crucible, the Waking Depths — is <b>launched from here and
+    settles back here.</b></p>
+    <div class="callout" style="border-top-color:var(--f-wild)">
+      <h4 style="color:var(--f-wild)">✓ Phase 1 is built (2026-07-19)</h4>
+      <p style="margin:0;color:var(--ink-soft)">The walkable shell exists in-engine: all 50 rooms in their fixed
+      layout, correct terrains, the hero spawning on the Crown Plaza, the resident NPCs placed, the three portals
+      wired (Story / Crucible / Depths), and the civic desks opening real menus. It's <b>dev-only</b> for now —
+      reach it from the <b>dev panel → World tab → "▶ Go To Capital"</b>. Everything below marked <span class="tag plan"
+      style="display:inline-block">planned</span> (professions, guilds, PvP, daily quests) is still roadmap; the
+      city they live in is now real.</p>
+    </div>
+    <p>Mechanically it is one <b>fixed-layout zone of 50 rooms</b> (unlike the seeded, procedural spines of the
+    story chapters — see <a class="inl" href="#tech">Build Notes</a>). The rooms fall into six rings:</p>
+    <div class="callout">
+      <ul>
+        <li><b>The Heart</b> — Crown Plaza, the fountain square you spawn on.</li>
+        <li><b>The Craftworks Ward</b> — 8 rooms clustered tight around the Plaza: the guild hall, the five crafting
+          professions, the arena sign-up, and the Portal Sanctum. All interconnected, so you circulate between them
+          without leaving the core.</li>
+        <li><b>The Civic Ring</b> — 7 rooms that give the systems you already have (stash, reforge, records, daily
+          rewards, shop) a physical address.</li>
+        <li><b>The Approach</b> — 4 rooms: the main gate and the causeway up into the city.</li>
+        <li><b>The Four Wards</b> — 24 rooms, one district per faction (6 each), where the prominent residents live.
+          Two quest-giver homes per ward = the <b>8 daily quest-givers</b>, split 2 / 2 / 2 / 2.</li>
+        <li><b>The Outer Ring</b> — 6 rooms: ramparts, the undercroft, the stables, the physic garden.</li>
+      </ul>
+    </div>
+    <p>Nearly every room reuses a terrain and prop kit that <b>already exists</b> in the build — the environment-seam
+    showcase terrains (<code>ph_forge</code>, <code>ph_kitchen</code>, <code>ph_market</code>, <code>ph_guildhall</code>,
+    <code>ph_garden</code>, <code>ph_fields</code>, <code>ph_library</code>, <code>ph_castle</code>, <code>ph_crypt</code>…).
+    This document is the plan to <em>assemble</em> them into a city, not a request for new art.</p>
+  </section>
+
+  <!-- ================= MAP ================= -->
+  <section id="map">
+    <h2 class="sect"><span class="num">§1</span>The city map</h2>
+    <p class="sect-lede">Crownfall reads from the center out. You spawn on the Crown Plaza (★); the working core
+    wraps it; the four faction wards hold the corners, colour-coded below; the gate is due south. Streets connect
+    adjacent rooms.</p>
+  </section>
+</div>
+
+<div class="bleed">
+  <div class="mapframe">
+    <svg id="cityMap" viewBox="0 0 1140 1000" role="img" aria-label="Fixed map of the 50-room Crownfall hub, districts colour-coded by faction"></svg>
+  </div>
+  <div class="maplegend">
+    <span><i class="swatch" style="background:var(--f-craft)"></i> Craftworks &amp; Heart</span>
+    <span><i class="swatch" style="background:var(--f-civic)"></i> Civic Ring &amp; Approach</span>
+    <span><i class="swatch" style="background:var(--f-accord)"></i> Ember Accord</span>
+    <span><i class="swatch" style="background:var(--f-cinder)"></i> Cinderborn</span>
+    <span><i class="swatch" style="background:var(--f-wild)"></i> Wildfang Tribes</span>
+    <span><i class="swatch" style="background:var(--f-choir)"></i> Hollow Choir</span>
+    <span><i class="swatch" style="background:transparent;border-color:var(--accent)"></i> ★ spawn &nbsp;·&nbsp; ◆ portal &nbsp;·&nbsp; ● quest-giver</span>
+  </div>
+  <p class="mapcaption">Grid coordinates are a suggested authored layout for the room graph, not a literal pixel plan.</p>
+</div>
+
+<div class="wrap">
+
+  <!-- ================= CRAFTWORKS ================= -->
+  <section id="craft">
+    <h2 class="sect"><span class="num">§2</span>The Craftworks Ward</h2>
+    <p class="sect-lede">Eight rooms in a tight 3×3 cluster with the Crown Plaza at its center — the working heart of
+    Crownfall. Every functional room you asked for lives here, each adjacent to the Plaza and to its neighbours, so a
+    player can loop the whole core in seconds. Five of these front the <b>crafting professions</b> (the profession
+    system is a design seed, not yet built — flagged <span class="tag plan" style="display:inline-block">planned</span>).</p>
+
+    <div class="cards" id="craftCards"></div>
+  </section>
+
+  <!-- ================= PORTAL SANCTUM ================= -->
+  <section id="portals">
+    <h3 class="sub">The Portal Sanctum — the way out</h3>
+    <p>At the north apex of the cluster, three standing portals are the only doors that leave Crownfall for a run.
+    Each is a <b>built</b> destination — the plumbing exists; the Sanctum just gives it a front door.</p>
+    <div class="cards">
+      <div class="room" style="--rc:var(--accent)">
+        <div class="rtop"><span class="rname">◆ The Story Gate</span><span class="rcoord">portal 1</span></div>
+        <div class="rrole">Campaign · Act I</div>
+        <p>Steps into the story campaign — the road to Emberfall Village and the seven chapters of Act I. Resumes
+        the player's chapter; the hollow-king arc.</p>
+        <div class="meta"><span class="tag built">built: chapters 1–7</span><span class="tag">enter_chapter</span></div>
+      </div>
+      <div class="room" style="--rc:var(--f-cinder)">
+        <div class="rtop"><span class="rname">◆ The Crucible Gate</span><span class="rcoord">portal 2</span></div>
+        <div class="rrole">Endgame · Boss Rush</div>
+        <p>Ten bosses, no mercy — the Crucible. Ch7-unlocked, affixed, HP carries between fights, spoils mailed on
+        cash-out. Shows the player's personal best.</p>
+        <div class="meta"><span class="tag built">built: endgame.gd</span><span class="tag">mode "crucible"</span></div>
+      </div>
+      <div class="room" style="--rc:var(--f-choir)">
+        <div class="rtop"><span class="rname">◆ The Depths Gate</span><span class="rcoord">portal 3</span></div>
+        <div class="rrole">Endgame · Marathon</div>
+        <p>The Waking Depths — a descending marathon of rotating terrain, cycling debuffs, and a camp merchant
+        between waves. Meta personal-bests tracked.</p>
+        <div class="meta"><span class="tag built">built: endgame.gd</span><span class="tag">mode "depths"</span></div>
+      </div>
+    </div>
+    <p style="margin-top:16px;color:var(--ink-soft);font-size:15px">A fourth plinth stands empty in the Sanctum — reserved
+    for <b>co-op / party matchmaking</b> (the multiplayer layer is built but currently lobby-code driven). It reads as
+    intentional: the room is designed to grow a door.</p>
+  </section>
+
+  <!-- ================= CIVIC RING ================= -->
+  <section id="civic">
+    <h2 class="sect"><span class="num">§3</span>The Civic Ring</h2>
+    <p class="sect-lede">Seven rooms that turn menus you already ship into places. None of these need new systems —
+    they give the vault, the reforge bench, the records book and the daily reward a wall and a keeper, so the hub
+    teaches its own features by being walked.</p>
+    <div class="cards" id="civicCards"></div>
+  </section>
+
+  <!-- ================= APPROACH ================= -->
+  <section id="approach">
+    <h2 class="sect"><span class="num">§4</span>The Approach</h2>
+    <p class="sect-lede">Four rooms south of the core — the way in. New players arrive through the Emberward Gate and
+    are funnelled up the causeway to the Plaza, so the first thing they ever see is the city rising toward its
+    fountain and its portals.</p>
+    <div class="cards" id="approachCards"></div>
+  </section>
+
+  <!-- ================= WARDS ================= -->
+  <section id="wards">
+    <h2 class="sect"><span class="num">§5</span>The Four Wards</h2>
+    <p class="sect-lede">One district per faction, six rooms each, in the four corners of the city. Each ward holds
+    <b>two prominent quest-giver homes</b> (marked ●) plus a commons and flavour rooms where the residents live their
+    lives. The two joinable factions — Accord and Cinderborn — hold true wards; the two aloof factions — Wildfang and
+    the Hollow Choir — hold <b>enclaves</b> inside the walls: tolerated, watched, and useful. See
+    <a class="inl" href="#open">Open Questions</a> on that framing.</p>
+
+    <!-- Accord -->
+    <div class="ward-banner" style="--rc:var(--f-accord)">
+      <div>
+        <div class="wtitle">Accord Ward</div>
+        <div class="wsub">The Ember Accord — Maren's loyalists. Gather the shards, break the hollow throne for good.</div>
+      </div>
+      <div class="wtag">SW quarter<br>2 quest-givers · joinable</div>
+    </div>
+    <div class="cards" id="accordCards"></div>
+
+    <!-- Cinderborn -->
+    <div class="ward-banner" style="--rc:var(--f-cinder)">
+      <div>
+        <div class="wtitle">Cinderborn Ward</div>
+        <div class="wsub">The Cinderborn — old-regime nobles. Order needs a crown; find a worthy head for it.</div>
+      </div>
+      <div class="wtag">SE quarter<br>2 quest-givers · joinable</div>
+    </div>
+    <div class="cards" id="cinderCards"></div>
+
+    <!-- Wildfang -->
+    <div class="ward-banner" style="--rc:var(--f-wild)">
+      <div>
+        <div class="wtitle">Wildfang Enclave</div>
+        <div class="wsub">The Wildfang Tribes — Fangmaw's beastkin descendants. They remember who opens doors.</div>
+      </div>
+      <div class="wtag">NW quarter<br>2 quest-givers · not joinable</div>
+    </div>
+    <div class="cards" id="wildCards"></div>
+
+    <!-- Choir -->
+    <div class="ward-banner" style="--rc:var(--f-choir)">
+      <div>
+        <div class="wtitle">Choir Enclave</div>
+        <div class="wsub">The Hollow Choir — blight-plague survivors turned faithful. They do not recruit; they wait.</div>
+      </div>
+      <div class="wtag">NE quarter<br>2 quest-givers · not joinable</div>
+    </div>
+    <div class="cards" id="choirCards"></div>
+  </section>
+
+  <!-- ================= ROSTER ================= -->
+  <section id="roster">
+    <h2 class="sect"><span class="num">§6</span>The resident roster</h2>
+    <p class="sect-lede">Every prominent NPC is drawn from the game's existing cast — the same voices the campaign
+    already writes. ● marks the eight who give a rotating daily quest; the rest give the city its life (barter,
+    ambient dialogue, faction flavour), and are candidates for future quests.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Resident</th><th>Faction</th><th>Home room</th><th>Role in the city</th></tr></thead>
+        <tbody id="rosterBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= DAILIES ================= -->
+  <section id="dailies">
+    <h2 class="sect"><span class="num">§7</span>Daily quest rotation</h2>
+    <p class="sect-lede">Each of the eight quest-givers offers exactly one quest per day, chosen from a small
+    <b>pre-determined pool</b> unique to that resident. The choice is <b>seeded by the date</b> (plus the NPC id), so
+    every player in a session sees the same board and it resets on a fixed clock — no per-player RNG, no server
+    needed for the single-player build.</p>
+
+    <div class="callout">
+      <h4>How the rotation works</h4>
+      <ul>
+        <li><b>Pool per NPC.</b> Each quest-giver owns a fixed list of ~6 quests, authored to their faction's theme
+          and voice. Nothing is generated; the pool is data.</li>
+        <li><b>Deterministic pick.</b> <code>quest_of_day = pool[ hash(date, npc_id) % pool.size ]</code>. Same day →
+          same quest for everyone; rolls over at the daily reset the game already runs.</li>
+        <li><b>One turn-in a day.</b> Completing it grants <b>faction standing</b> (the existing
+          <code>faction_standing</code> track), an event currency, and profession mats — then greys out until reset,
+          exactly like the daily-reward desk.</li>
+        <li><b>Anti-repeat.</b> Optional: exclude the last <em>N</em> days' picks so a giver doesn't repeat within a
+          week, keeping the eight-quest board fresh.</li>
+      </ul>
+    </div>
+
+    <h3 class="sub">Example pools — flavoured by faction</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Quest-giver</th><th>Faction</th><th>Sample of their daily pool</th></tr></thead>
+        <tbody id="poolBody"></tbody>
+      </table>
+    </div>
+    <p style="color:var(--ink-soft);font-size:15px">Quest <em>bodies</em> are future work — most reuse loops that
+    already exist (kill-X in a story zone, clear a Crucible tier, gather Y mats, deliver Z). The rotation shell,
+    the pools, and the faction-standing payout are the buildable near-term slice.</p>
+  </section>
+
+  <!-- ================= OUTER ================= -->
+  <section id="outer">
+    <h2 class="sect"><span class="num">§8</span>The Outer Ring</h2>
+    <p class="sect-lede">Six rooms on the wall and under it — the city's edge. Mostly atmosphere and future hooks:
+    the ramparts you can walk, the cistern down into the dark, a stable for mounts that don't exist yet.</p>
+    <div class="cards" id="outerCards"></div>
+  </section>
+
+  <!-- ================= TECH ================= -->
+  <section id="tech">
+    <h2 class="sect"><span class="num">§9</span>Build notes</h2>
+    <p class="sect-lede">How the hub plugs into what exists, and what has to be written.</p>
+
+    <h3 class="sub">Fixed layout vs. the procedural spine</h3>
+    <p>Story chapters build their room graph with a <b>seeded random walk</b> (<code>game_world._generate_layout</code>
+    walks a spine, then attaches side rooms to same-terrain hosts). Crownfall wants the opposite: a <b>hand-authored,
+    stable</b> graph so the guild is always north-west of the fountain and the gate is always due south — muscle
+    memory. The engine's room model is already coordinate-based (each room is a <code>Vector2i</code> cell with
+    per-direction <code>exits</code>), so a fixed hub is an <em>authored</em> coordinate list feeding the same
+    runtime meta the procedural path produces — no new room engine, just a second layout source that skips the walk.</p>
+
+    <h3 class="sub">Terrain &amp; prop reuse</h3>
+    <p>Every room maps to a terrain that already ships. The environment-seam work means a room like the Forge is
+    <em>already</em> a working, lit, animated space — drop the player in and the furnace pulses, the flame licks, the
+    fountain shimmers. No room in this plan needs net-new art; it needs <b>authored NPC placement</b> (the
+    ch2 "safe zone" pattern — NPCs at fixed coords with an <code>E — talk</code> prompt) and a handful of new
+    interaction props (a portal, a crafting bench that opens a menu).</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Status</th><th>System</th><th>What the hub needs</th></tr></thead>
+        <tbody>
+          <tr><td><span class="fac" style="color:var(--f-wild)">BUILT</span></td><td>Portals → Story / Crucible / Depths</td><td>An interaction prop that calls the existing enter-chapter / enter-endgame paths.</td></tr>
+          <tr><td><span class="fac" style="color:var(--f-wild)">BUILT</span></td><td>Vault, reforge, records, daily, shop, codex</td><td>A keeper NPC / desk that opens the existing menu screen. Pure wiring.</td></tr>
+          <tr><td><span class="fac" style="color:var(--f-wild)">BUILT</span></td><td>Faction standing track</td><td>Daily payouts write to <code>faction_standing</code>; already saved.</td></tr>
+          <tr><td><span class="fac" style="color:var(--f-accord)">SEED</span></td><td>Daily quest rotation</td><td>Pools as data + a date-seeded pick + a turn-in that greys out. Small.</td></tr>
+          <tr><td><span class="fac" style="color:var(--f-cinder)">PLANNED</span></td><td>Crafting professions (potion / forge / bag / cook / crop)</td><td>The five craft rooms are shells until the profession loop exists (recipes, mats, stations). The rooms &amp; stations are ready to receive it.</td></tr>
+          <tr><td><span class="fac" style="color:var(--f-cinder)">PLANNED</span></td><td>Guilds &amp; PvP / Arena</td><td>The Chartered Hall and Proving Gate are placeholders for the social layer (guild charter, arena queue) — not yet designed to spec.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub">Suggested build order</h3>
+    <div class="phase">
+      <div class="p"><div class="pn">Phase 1 — the shell</div><h4>A walkable capital</h4><p>Author the 50-room fixed layout + terrains. Spawn on the Plaza. Wire the three portals and the Civic Ring desks to existing menus. Now the hub is <em>usable</em> as a launcher on day one.</p></div>
+      <div class="p"><div class="pn">Phase 2 — the living city</div><h4>Residents &amp; dailies</h4><p>Place the roster NPCs at fixed coords with dialogue. Ship the daily-quest rotation shell + the eight pools + faction-standing payout.</p></div>
+      <div class="p"><div class="pn">Phase 3 — the professions</div><h4>Craft rooms go live</h4><p>As the profession loop lands, the five craft rooms turn from diorama to workshop — recipes at the Forge, brews at the Alembic, meals in the Kitchen.</p></div>
+      <div class="p"><div class="pn">Phase 4 — the social layer</div><h4>Guild &amp; arena</h4><p>Guild charters in the Chartered Hall; the Proving Gate opens the PvP queue. Fills the reserved co-op plinth in the Sanctum.</p></div>
+    </div>
+  </section>
+
+  <!-- ================= OPEN QUESTIONS ================= -->
+  <section id="open">
+    <h2 class="sect"><span class="num">§10</span>Open questions</h2>
+    <p class="sect-lede">Three calls I made that are worth your eye before anything is coded.</p>
+    <div class="callout">
+      <h4>Decisions to confirm</h4>
+      <ul>
+        <li><b>The name.</b> You called it <em>Crownfall</em>; the codebase's kingdom is <em>Emberfall</em> (region
+          Vaelscar). I ran with <b>Crownfall</b> as the capital's name — it reads well against <em>Crownless</em>,
+          the city that endured after the crown fell. Say the word if the hub should just be <em>Emberfall</em> (or
+          the rebuilt capital of it).</li>
+        <li><b>Enemies of the state, living inside the walls.</b> The Wildfang and the Hollow Choir aren't joinable
+          and are semi-adversarial. I framed their wards as <b>enclaves</b> — embassies, tolerated for trade and
+          truce — rather than full districts, so all four factions get their 2/2/2/2 rooms without breaking lore. If
+          you'd rather they be somewhere else (outside the gate, a caravan, a shrine on the wall), that's a small
+          re-map.</li>
+        <li><b>Scope of "sign-up" rooms.</b> The Chartered Hall (guilds) and Proving Gate (PvP) front systems that
+          don't exist yet. I kept them as real rooms so the city is complete, but they're the two most speculative —
+          fine to build as locked "coming soon" doors in Phase 1.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <hr class="rule" style="margin-bottom:20px">
+    <p><b>Crownfall — Spawn Hub Register.</b> A design document, not shipped content: it plans how to assemble the
+    existing environment-seam terrains, the existing NPC cast, and the existing game systems into one fixed 50-room
+    social hub. Built systems are wiring; seeded and planned systems are the roadmap. Companion to
+    <code>PACK_RESIDUALS.html</code> and the environment-seam showcase terrains.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // ---------- room data: single source for the map + the cards ----------
+  // gx,gy = schematic grid cell (0..11 x, 0..10 y). d = district key. star: spawn.
+  // portal: ◆. npc: ● quest-giver. Every room also carries its dossier copy.
+  var D = {
+    heart:  { name:"The Heart",        color:"var(--f-craft)" },
+    craft:  { name:"Craftworks Ward",  color:"var(--f-craft)" },
+    civic:  { name:"Civic Ring",       color:"var(--f-civic)" },
+    approach:{ name:"The Approach",    color:"var(--f-civic)" },
+    accord: { name:"Accord Ward",      color:"var(--f-accord)" },
+    cinder: { name:"Cinderborn Ward",  color:"var(--f-cinder)" },
+    wild:   { name:"Wildfang Enclave", color:"var(--f-wild)" },
+    choir:  { name:"Choir Enclave",    color:"var(--f-choir)" },
+    outer:  { name:"Outer Ring",       color:"var(--f-civic)" }
+  };
+  var R = [
+    // --- heart / craftworks (3x3 around plaza) ---
+    { id:"plaza", n:"Crown Plaza", gx:5, gy:5, d:"heart", star:true, role:"Spawn · fountain square", terr:"ph_market", tags:["spawn","town_fountain"],
+      p:"Where every player spawns and returns. A broad fountain square under open sky, ringed by the eight craft-and-service doors. The social anchor of the whole game." },
+    { id:"portal", n:"Portal Sanctum", gx:5, gy:4, d:"craft", portal:true, role:"3 mode portals", terr:"ph_hall", tags:["built","story/crucible/depths"],
+      p:"The north apex. Three standing portals — Story, Crucible, Waking Depths — plus a reserved fourth plinth for co-op. The only doors out of the city." },
+    { id:"guild", n:"The Chartered Hall", gx:4, gy:4, d:"craft", role:"Guild hall", terr:"ph_guildhall", tags:["planned","guilds"],
+      p:"Charter a guild, join one, sign up for guild activities and events. Banners of every chartered company hang from the rafters. Fronts the future social layer." },
+    { id:"forge", n:"The Ashfire Forge", gx:6, gy:4, d:"craft", role:"Craft: gear", terr:"ph_forge", tags:["planned","smithing"], npcs:["Smith Petra","Old Smith Harl"],
+      p:"Forge and reforge gear. The furnace pulses, the flame licks the coals, the anvil rings — already a working, animated room. Smith Petra of Crew Five keeps the fire." },
+    { id:"alembic", n:"The Alembic", gx:4, gy:5, d:"craft", role:"Craft: potions", terr:"ph_forge", tags:["planned","alchemy"], npcs:["Herbalist Kesh","Apprentice Sorrel"],
+      p:"Brew potions and draughts. Retorts bubble over a burner flame; the shelves are the Raven alchemy set. Herbalist Kesh measures; Sorrel spills." },
+    { id:"kitchen", n:"The Provisioner's Kitchen", gx:6, gy:5, d:"craft", role:"Craft: cooking", terr:"ph_kitchen", tags:["planned","cooking"], npcs:["Old Fenna"],
+      p:"Cook food into consumables — the grill sizzles, the pan smokes, the hearth crackles. Old Fenna runs the pass and remembers everyone's order." },
+    { id:"tannery", n:"The Tannery", gx:4, gy:6, d:"craft", role:"Craft: bags", terr:"ph_hideout", tags:["planned","leatherwork"], npcs:["Tinker Osla"],
+      p:"Craft and upgrade bags. Cured hides on the racks, an honest workbench, the smell of tallow. Tinker Osla stitches carry-space out of scraps." },
+    { id:"verdant", n:"The Verdant Tiers", gx:5, gy:6, d:"craft", role:"Craft: crops", terr:"ph_fields", tags:["planned","harvest"],
+      p:"Sow and harvest crops for the kitchen and the alembic. Tiered allotments and a glasshouse against the north wall — the growth-stage crop props in rows." },
+    { id:"arena", n:"The Proving Gate", gx:6, gy:6, d:"craft", role:"PvP / arena sign-up", terr:"ph_castle", tags:["planned","arena"],
+      p:"Sign up for the arena and PvP queues. A barred gate onto a sand pit you can watch but not enter from here. Fronts the PvP-tuning layer to come." },
+
+    // --- civic ring ---
+    { id:"vault", n:"The King's Vault", gx:3, gy:4, d:"civic", role:"Stash / bank", terr:"ph_castle", tags:["built","stash"],
+      p:"The shared stash — deposit, withdraw, sort. A vaulted room of iron-banded chests behind a warden's counter." },
+    { id:"reliquary", n:"The Reliquary", gx:7, gy:4, d:"civic", role:"Reforge / enchant", terr:"ph_library", tags:["built","reforge"], npcs:["Retired Keeper Vasse"],
+      p:"Reforge substats and affixes. A quiet room of gem-lit workbenches; the enchant bench glows. Retired Keeper Vasse minds the relics." },
+    { id:"archive", n:"The Grand Archive", gx:3, gy:5, d:"civic", role:"Codex / lore / bestiary", terr:"ph_library", tags:["built","codex"], npcs:["Scholar Ivo"],
+      p:"The codex made physical — monsters, bosses, terrains, gear, and the placeholder Future shelf. Scholar Ivo files knowledge and gives it away free." },
+    { id:"market", n:"Market Row", gx:7, gy:5, d:"civic", role:"Shop / merchant", terr:"ph_market", tags:["built","shop"], npcs:["Charm Peddler Nix"],
+      p:"The merchant stalls with their swaying awnings — buy, sell, browse the day's stock. Charm Peddler Nix sells luck that does nothing and everything." },
+    { id:"echoes", n:"The Hall of Echoes", gx:3, gy:6, d:"civic", role:"Records / achievements", terr:"ph_library", tags:["built","records"], npcs:["Skald Ottar"],
+      p:"Personal bests, records, lore titles, the fanfare wall. Skald Ottar sets your deeds to a short, unadorned song." },
+    { id:"alms", n:"The Almswindow", gx:7, gy:6, d:"civic", role:"Daily rewards", terr:"ph_market", tags:["built","daily"],
+      p:"Claim the daily login reward and the bounty vault. A shuttered window that opens once a day onto a full hand." },
+    { id:"tankard", n:"The Ashen Tankard", gx:5, gy:7, d:"civic", role:"Tavern / commons", terr:"ph_hideout", tags:["social","hub"], npcs:["Old Digger Haim"],
+      p:"The city's common room — warmth, rumour, and a fire. The social crossroads between the core and the gate; where residents drift after dark." },
+
+    // --- approach ---
+    { id:"gate", n:"The Emberward Gate", gx:5, gy:10, d:"approach", role:"Main city gate", terr:"ph_castle", tags:["entry"],
+      p:"The great south gate in the wall — where new arrivals enter Crownfall. A lit brazier at each pillar, the portcullis raised in peace." },
+    { id:"causeway", n:"The Causeway", gx:5, gy:9, d:"approach", role:"Bridge approach", terr:"ph_market", tags:["street"],
+      p:"The raised road from the gate up to the Plaza — the city rising ahead of you, fountain and portals in the sightline. The first view of home." },
+    { id:"muster", n:"Muster Square", gx:4, gy:9, d:"approach", role:"Gate plaza", terr:"ph_market", tags:["street"], npcs:["Warden Sighne"],
+      p:"The staging square just inside the gate — noticeboards, a well, a warden checking who comes and goes." },
+    { id:"toll", n:"The Toll House", gx:6, gy:9, d:"approach", role:"Gatekeeper", terr:"ph_hideout", tags:["service"], npcs:["Toll-Warden Palla"],
+      p:"Where the gate's ledger is kept. A small office of stamps and seals; the first friendly (or unfriendly) face in the city." },
+
+    // --- accord ward (SW) ---
+    { id:"acc_commons", n:"Accord Commons", gx:2, gy:7, d:"accord", role:"Ward plaza", terr:"ph_market", tags:["ward"],
+      p:"The Accord's open square — market carts, drying nets, kids underfoot. The honest, working face of Crownfall." },
+    { id:"acc_maren", n:"Maren's Longhouse", gx:1, gy:7, d:"accord", npc:true, role:"● Quest-giver", terr:"ph_hall", tags:["daily"], npcs:["Elder Maren"],
+      p:"Elder Maren's hall — the Accord's heart. She hands out the day's honest work: shards to gather, roads to keep, the throne to break." },
+    { id:"acc_menders", n:"The Menders' Row", gx:2, gy:6, d:"accord", npc:true, role:"● Quest-giver", terr:"ph_garden", tags:["daily"], npcs:["Herbalist Kesh"],
+      p:"A row of healers and herb-women. Herbalist Kesh sets the day's gathering: cures for the ward, reagents for the Alembic." },
+    { id:"acc_tinker", n:"Tinker's Yard", gx:1, gy:6, d:"accord", role:"Artisan", terr:"ph_hideout", tags:["flavour"], npcs:["Tinker Osla"],
+      p:"Osla's cluttered yard of half-mended things. Barter, small repairs, and the occasional honest shoulder for someone armed to the teeth." },
+    { id:"acc_fisher", n:"Fisher's Steps", gx:3, gy:7, d:"accord", role:"Waterside", terr:"ph_garden", tags:["flavour"], npcs:["Fisher Dov","Ansa of the Shore"],
+      p:"Steps down to the cistern-water where the Accord still fishes. Dov mends line; Ansa of the Shore watches the tide that isn't there." },
+    { id:"acc_well", n:"The Wellspring", gx:3, gy:8, d:"accord", role:"Communal", terr:"ph_garden", tags:["flavour"], npcs:["Old Fenna"],
+      p:"The ward's shared well and washing square — the animated fountain, benches, gossip. The Accord gathers here at dusk." },
+
+    // --- cinderborn ward (SE) ---
+    { id:"cin_court", n:"Cinder Court", gx:9, gy:7, d:"cinder", role:"Ward plaza", terr:"ph_castle", tags:["ward"],
+      p:"Marble and old banners — the Cinderborn keep the forms of a court that lost its crown. Colder, prouder, better dressed than the Accord." },
+    { id:"cin_aldric", n:"The Sable Hall", gx:8, gy:7, d:"cinder", npc:true, role:"● Quest-giver", terr:"ph_castle", tags:["daily"], npcs:["Ser Aldric"],
+      p:"Ser Aldric's hall beneath a throne no one sits. He sets tasks in the old chivalric key — recover, restore, avenge — for a crown that might yet be found a head." },
+    { id:"cin_vessa", n:"Envoy's Rest", gx:9, gy:6, d:"cinder", npc:true, role:"● Quest-giver", terr:"ph_library", tags:["daily"], npcs:["Envoy Vessa"],
+      p:"The envoy's office of maps and commissions. Envoy Vessa pays well and remembers better: courier runs, quiet errands, imperial paperwork with teeth." },
+    { id:"cin_foundry", n:"The Foundry Office", gx:10, gy:7, d:"cinder", role:"Industry", terr:"ph_forge", tags:["flavour"], npcs:["Overseer Brann"],
+      p:"Where the Compact's reopened foundries are run from. Overseer Brann keeps an honest ledger and the best ore two years running." },
+    { id:"cin_keeper", n:"The Keeper's Study", gx:8, gy:6, d:"cinder", role:"Scholar", terr:"ph_library", tags:["flavour"], npcs:["Retired Keeper Vasse"],
+      p:"A study of pre-Vargoth history — the Cinderborn's claim written in old ink. Vasse guards the argument that a crown is a thing that can be re-forged." },
+    { id:"cin_muster", n:"The Muster Yard", gx:10, gy:6, d:"cinder", role:"Barracks", terr:"ph_castle", tags:["flavour"], npcs:["Warden-Commander Ashe","Warden Corin","Warden Edda"],
+      p:"The Wardens' drill yard — the old-regime's order-keepers, still marching. Warden-Commander Ashe trains those who'll hold a line for the idea of a king." },
+
+    // --- wildfang enclave (NW) ---
+    { id:"wf_moot", n:"Fangmoot Circle", gx:2, gy:2, d:"wild", role:"Gathering", terr:"ph_fae", tags:["enclave"],
+      p:"A ring of standing stones the tribes claimed inside the walls — turf, not marble. The beastkin gather here to argue in the old way." },
+    { id:"wf_callis", n:"The Skinworks", gx:1, gy:2, d:"wild", npc:true, role:"● Quest-giver", terr:"ph_hideout", tags:["daily"], npcs:["Warden Callis"],
+      p:"Warden Callis' lodge of hides and honest work. He sends you east into what the Waking has made of the land — survey it, clear it, bring the tribes word." },
+    { id:"wf_ottar", n:"Ottar's Fire", gx:2, gy:1, d:"wild", npc:true, role:"● Quest-giver", terr:"ph_camp", tags:["daily"], npcs:["Skald Ottar"],
+      p:"A bonfire that never dies and a skald who never stops. Ottar trades tasks for verses — go do a thing worth singing, and he'll sing it." },
+    { id:"wf_warren", n:"The Green Warren", gx:1, gy:1, d:"wild", role:"Wild", terr:"ph_fae", tags:["flavour"], npcs:["Old Hunter"],
+      p:"A tangle of transplanted wildwood the city tolerates. The Old Hunter waits in it, patient as the treeline, teaching the young to read tracks." },
+    { id:"wf_digger", n:"Digger's Cut", gx:3, gy:2, d:"wild", role:"Undercity", terr:"ph_dungeon", tags:["flavour"], npcs:["Old Digger Haim"],
+      p:"A shaft the tribes sank under their enclave, into the old bones of the city. Haim knows what's down there and charges to guide you." },
+    { id:"wf_trophy", n:"The Trophy Walk", gx:3, gy:1, d:"wild", role:"Wild", terr:"ph_crypt", tags:["flavour"],
+      p:"A gallery of hunt-trophies and beast-skulls strung along the wall — the Wildfang's memory of every thing that tried to eat them and lost." },
+
+    // --- choir enclave (NE) ---
+    { id:"ch_vigil", n:"The Vigil Yard", gx:9, gy:2, d:"choir", role:"Approach", terr:"ph_crypt", tags:["enclave"],
+      p:"The graves the Choir keeps inside the walls — unburied, because rot is the land's honest truth. A hush hangs over it the city steps around." },
+    { id:"ch_ilse", n:"The Rot-Chapel", gx:8, gy:2, d:"choir", npc:true, role:"● Quest-giver", terr:"ph_crypt", tags:["daily"], npcs:["Cantor Ilse"],
+      p:"Cantor Ilse's chapel, where the dead walk their own vigil. She sets tasks of tending and waiting — the Choir's patient, unsettling errands." },
+    { id:"ch_vela", n:"Deacon's Cell", gx:9, gy:1, d:"choir", npc:true, role:"● Quest-giver", terr:"ph_library", tags:["daily"], npcs:["Deacon Vela"],
+      p:"Deacon Vela's cell of blight-scripture. She asks quieter things: recover a relic, carry a message north to the sleepers, witness something and return." },
+    { id:"ch_waiting", n:"The Waiting Halls", gx:10, gy:2, d:"choir", role:"Sanctum", terr:"ph_crypt", tags:["flavour"], npcs:["Brother Osk"],
+      p:"Long halls where the faithful lie down to wait for the Waking. Brother Osk — formerly something else — tends the sleepers and does not explain." },
+    { id:"ch_suli", n:"Suli's Ward", gx:8, gy:1, d:"choir", role:"Mender", terr:"ph_garden", tags:["flavour"], npcs:["Gentle Suli"],
+      p:"A soft room where Gentle Suli mends the Choir's living — the one warm corner of a cold faith. Even the aloof get sick." },
+    { id:"ch_sexton", n:"The Sexton's Gate", gx:10, gy:1, d:"choir", role:"Threshold", terr:"ph_crypt", tags:["flavour"], npcs:["Widow Sera"],
+      p:"The enclave's gate onto the undercroft, kept by Widow Sera. She decides who goes down among the dead, and rarely says yes." },
+
+    // --- outer ring ---
+    { id:"ramp_n", n:"North Rampart", gx:5, gy:0, d:"outer", role:"Wall-walk", terr:"ph_castle", tags:["walls"], npcs:["Warden Palla"],
+      p:"The wall-walk over the north wall, looking out at the wild the Wildfang came from. A patrol route with a long view." },
+    { id:"ramp_w", n:"West Rampart", gx:0, gy:5, d:"outer", role:"Wall-walk", terr:"ph_castle", tags:["walls"],
+      p:"The western wall-walk above the Accord and Wildfang quarters. Braziers, arrow-slits, the animated flame in every cresset." },
+    { id:"ramp_e", n:"East Rampart", gx:11, gy:5, d:"outer", role:"Wall-walk", terr:"ph_castle", tags:["walls"],
+      p:"The eastern wall-walk above the Cinderborn and Choir quarters. The Wardens keep it; the Choir is watched from it." },
+    { id:"undercroft", n:"The Undercroft", gx:6, gy:8, d:"outer", role:"Cistern / sewer", terr:"ph_sewer", tags:["undercity"],
+      p:"Down into the old city under the new one — the cistern, the sewer outfalls, the animated sludge. A dark hook for future content." },
+    { id:"stables", n:"The Stables", gx:7, gy:9, d:"outer", role:"Mounts (future)", terr:"ph_camp", tags:["future"],
+      p:"Stalls of the city's beasts of burden — a home for mounts that don't exist yet. Chickens and a bored donkey in the meantime." },
+    { id:"physic", n:"The Physic Garden", gx:0, gy:3, d:"outer", role:"Green space", terr:"ph_garden", tags:["flavour"], npcs:["Gentle Suli"],
+      p:"A walled herb-garden against the west wall, shared by the menders and the Alembic. Flowerbeds, a fountain, bees that shouldn't be here." }
+  ];
+
+  // ---------- render the SVG city map ----------
+  var svg = document.getElementById("cityMap");
+  var NS = "http://www.w3.org/2000/svg";
+  var COLS = 12, ROWS = 11, CELL = 92, PAD = 20;
+  function px(gx) { return PAD + gx * CELL + CELL / 2; }
+  function py(gy) { return PAD + gy * CELL + CELL / 2; }
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    (parent || svg).appendChild(e); return e;
+  }
+  var byCell = {};
+  R.forEach(function (r) { byCell[r.gx + "," + r.gy] = r; });
+
+  // wall boundary
+  el("rect", { x: PAD - 8, y: PAD - 8, width: COLS * CELL + 16, height: ROWS * CELL + 16,
+    rx: 14, fill: "none", stroke: "var(--line)", "stroke-width": 3, "stroke-dasharray": "2 0", opacity: .8 });
+  // south gate gap indicator
+  el("rect", { x: px(5) - 34, y: PAD + ROWS * CELL - 4, width: 68, height: 16, rx: 4,
+    fill: "var(--ground)", stroke: "var(--accent)", "stroke-width": 2 });
+
+  // streets: connect orthogonally-adjacent rooms
+  var seen = {};
+  R.forEach(function (r) {
+    [[1,0],[0,1]].forEach(function (dd) {
+      var nb = byCell[(r.gx+dd[0]) + "," + (r.gy+dd[1])];
+      if (!nb) return;
+      el("line", { x1: px(r.gx), y1: py(r.gy), x2: px(nb.gx), y2: py(nb.gy),
+        stroke: "var(--line)", "stroke-width": 6, "stroke-linecap": "round", opacity: .55 });
+    });
+  });
+  // a few authored connective streets (diagonal spokes core->wards, core->gate)
+  [["plaza","acc_commons"],["plaza","cin_court"],["portal","wf_moot"],["portal","ch_vigil"],
+   ["plaza","tankard"],["tankard","causeway"],["causeway","gate"],
+   ["acc_commons","acc_maren"],["cin_court","cin_aldric"],["wf_moot","wf_callis"],["ch_vigil","ch_ilse"]
+  ].forEach(function (pair) {
+    var a = R.find(function(x){return x.id===pair[0];}), b = R.find(function(x){return x.id===pair[1];});
+    if (a && b) el("line", { x1: px(a.gx), y1: py(a.gy), x2: px(b.gx), y2: py(b.gy),
+      stroke: "var(--line)", "stroke-width": 5, "stroke-linecap": "round", opacity: .4, "stroke-dasharray": "3 9" });
+  });
+
+  // room tiles
+  function abbr(n) {
+    n = n.replace(/^The /, "");
+    var w = n.split(/[ ']/).filter(Boolean);
+    if (w.length === 1) return w[0].slice(0, 9);
+    return (w[0].slice(0, 6) + " " + w[w.length - 1].slice(0, 7)).trim();
+  }
+  R.forEach(function (r) {
+    var col = D[r.d].color;
+    var cx = px(r.gx), cy = py(r.gy), w = CELL - 18, h = CELL - 26;
+    var g = el("g", {});
+    el("rect", { x: cx - w/2, y: cy - h/2, width: w, height: h, rx: 8,
+      fill: "color-mix(in srgb, " + col + " 16%, var(--surface))",
+      stroke: col, "stroke-width": r.star ? 3 : (r.npc || r.portal ? 2.2 : 1.3),
+      opacity: r.star ? 1 : .96 }, g);
+    if (r.star) {
+      el("circle", { cx: cx, cy: cy - 12, r: 20, fill: "none", stroke: "var(--accent)",
+        "stroke-width": 1.4, opacity: .5, class: "spawnpulse" }, g);
+    }
+    // marker glyph
+    var glyph = r.star ? "★" : r.portal ? "◆" : r.npc ? "●" : "";
+    if (glyph) el("text", { x: cx, y: cy - 6, "text-anchor": "middle",
+      "font-size": r.star ? 20 : 14, fill: "var(--accent)",
+      "font-family": "Iosevka, Consolas, monospace" }, g).textContent = glyph;
+    // label
+    var t = el("text", { x: cx, y: cy + (glyph ? 17 : 4), "text-anchor": "middle",
+      "font-size": 11, fill: "var(--ink)", "font-family": "Iosevka, Consolas, monospace" }, g);
+    t.textContent = abbr(r.n);
+    // hover title
+    var ti = el("title", {}, g); ti.textContent = r.n + "  (" + r.gx + "," + r.gy + ")";
+  });
+
+  // district labels
+  var labels = [
+    ["WILDFANG", 2, 0.1, "var(--f-wild)"], ["HOLLOW CHOIR", 9, 0.1, "var(--f-choir)"],
+    ["ACCORD", 2, 8.6, "var(--f-accord)"], ["CINDERBORN", 9, 8.6, "var(--f-cinder)"],
+    ["CRAFTWORKS", 5, 2.7, "var(--f-craft)"], ["THE GATE", 5, 10.4, "var(--f-civic)"]
+  ];
+  labels.forEach(function (l) {
+    el("text", { x: px(l[1]), y: py(l[2]), "text-anchor": "middle", "font-size": 13,
+      fill: l[3], "font-family": "Cinzel, Georgia, serif", "letter-spacing": "2",
+      "font-weight": "600", opacity: .85 }).textContent = l[0];
+  });
+
+  // ---------- render room cards into their sections ----------
+  function card(r) {
+    var col = D[r.d].color;
+    var tags = (r.tags || []).map(function (t) {
+      var cls = t === "built" ? "tag built" : (t === "planned" || t === "future" ? "tag plan" : "tag");
+      return '<span class="' + cls + '">' + t + "</span>";
+    }).join("");
+    var npc = (r.npcs || []).length
+      ? '<span class="tag npc">' + r.npcs.join(" · ") + "</span>" : "";
+    return '<div class="room" style="--rc:' + col + '">'
+      + '<div class="rtop"><span class="rname">' + (r.star ? "★ " : r.portal ? "◆ " : r.npc ? "● " : "") + r.n
+      + '</span><span class="rcoord">' + r.gx + "," + r.gy + "</span></div>"
+      + '<div class="rrole">' + (r.role || "") + "</div>"
+      + "<p>" + r.p + "</p>"
+      + '<div class="meta">' + (r.terr ? '<span class="tag">' + r.terr + "</span>" : "") + tags + npc + "</div>"
+      + "</div>";
+  }
+  function fill(id, keys) {
+    var host = document.getElementById(id);
+    if (!host) return;
+    host.innerHTML = R.filter(function (r) { return keys.indexOf(r.d) >= 0 && (id !== "craftCards" || !r.portal); })
+      .map(card).join("");
+  }
+  // craftworks section shows heart + craft (minus the portal, which has its own block)
+  document.getElementById("craftCards").innerHTML =
+    R.filter(function (r) { return (r.d === "heart" || r.d === "craft") && !r.portal; }).map(card).join("");
+  fill("civicCards", ["civic"]);
+  fill("approachCards", ["approach"]);
+  fill("accordCards", ["accord"]);
+  fill("cinderCards", ["cinder"]);
+  fill("wildCards", ["wild"]);
+  fill("choirCards", ["choir"]);
+  fill("outerCards", ["outer"]);
+
+  // ---------- roster table ----------
+  var facMeta = {
+    accord: ["Ember Accord", "var(--f-accord)"], cinder: ["Cinderborn", "var(--f-cinder)"],
+    wild: ["Wildfang", "var(--f-wild)"], choir: ["Hollow Choir", "var(--f-choir)"],
+    craft: ["Crafters' Guild", "var(--f-craft)"], civic: ["Civic / Crown", "var(--f-civic)"],
+    approach: ["City Watch", "var(--f-civic)"], outer: ["City Watch", "var(--f-civic)"], heart: ["—", "var(--ink-soft)"]
+  };
+  // explicit roster (name -> faction override, room, role, quest-giver?)
+  var roster = [
+    ["Elder Maren", "accord", "Maren's Longhouse", "Accord leader · daily quests", true],
+    ["Herbalist Kesh", "accord", "The Menders' Row / Alembic", "Herbalist · daily quests", true],
+    ["Tinker Osla", "accord", "Tinker's Yard / Tannery", "Bag-crafter & tinker", false],
+    ["Fisher Dov", "accord", "Fisher's Steps", "Waterside flavour", false],
+    ["Ansa of the Shore", "accord", "Fisher's Steps", "Waterside flavour", false],
+    ["Old Fenna", "accord", "The Wellspring / Kitchen", "Kitchen matron", false],
+    ["Ser Aldric", "cinder", "The Sable Hall", "Cinderborn knight · daily quests", true],
+    ["Envoy Vessa", "cinder", "Envoy's Rest", "Imperial envoy · daily quests", true],
+    ["Overseer Brann", "cinder", "The Foundry Office", "Foundry overseer", false],
+    ["Retired Keeper Vasse", "cinder", "Keeper's Study / Reliquary", "Reforge keeper & historian", false],
+    ["Warden-Commander Ashe", "cinder", "The Muster Yard", "Warden order commander", false],
+    ["Warden Corin / Edda", "cinder", "The Muster Yard", "Wardens (drill)", false],
+    ["Warden Callis", "wild", "The Skinworks", "Wildfang recruiter · daily quests", true],
+    ["Skald Ottar", "wild", "Ottar's Fire / Hall of Echoes", "Skald · daily quests", true],
+    ["Old Hunter", "wild", "The Green Warren", "Tracker & teacher", false],
+    ["Old Digger Haim", "wild", "Digger's Cut / Tankard", "Undercity guide", false],
+    ["Cantor Ilse", "choir", "The Rot-Chapel", "Choir cantor · daily quests", true],
+    ["Deacon Vela", "choir", "Deacon's Cell", "Choir deacon · daily quests", true],
+    ["Brother Osk", "choir", "The Waiting Halls", "Sleeper-tender", false],
+    ["Gentle Suli", "choir", "Suli's Ward / Physic Garden", "Mender of the faithful", false],
+    ["Widow Sera", "choir", "The Sexton's Gate", "Sexton of the undercroft", false],
+    ["Smith Petra (Crew Five)", "craft", "The Ashfire Forge", "Master smith", false],
+    ["Old Smith Harl", "craft", "The Ashfire Forge", "Forge elder", false],
+    ["Apprentice Sorrel", "craft", "The Alembic", "Alchemy apprentice", false],
+    ["Scholar Ivo", "civic", "The Grand Archive", "Archivist / codex", false],
+    ["Charm Peddler Nix", "civic", "Market Row", "Merchant", false],
+    ["Warden Sighne", "civic", "Muster Square", "Gate warden", false],
+    ["Toll-Warden Palla", "civic", "Toll House / Ramparts", "Gatekeeper", false]
+  ];
+  document.getElementById("rosterBody").innerHTML = roster.map(function (x) {
+    var fm = facMeta[x[1]];
+    return "<tr><td class='name'>" + (x[4] ? "<span class='star'>●</span> " : "") + x[0] + "</td>"
+      + "<td><span class='fac' style='color:" + fm[1] + "'>" + fm[0] + "</span></td>"
+      + "<td>" + x[2] + "</td><td>" + x[3] + "</td></tr>";
+  }).join("");
+
+  // ---------- daily-quest example pools ----------
+  var pools = [
+    ["Elder Maren", "accord", "Keep the eastern road · Gather 3 shard-fragments · Escort a mender to the Warren · Clear a blight-nest · Bank 500 gold for the ward stores"],
+    ["Herbalist Kesh", "accord", "Harvest 8 herbs from the fields · Brew a batch of cures · Deliver medicine to the Waiting Halls · Find a rare reagent in a story zone"],
+    ["Ser Aldric", "cinder", "Recover a relic of the old regime · Win a duel in the Proving Gate · Restore a defaced monument · Guard an envoy's courier run"],
+    ["Envoy Vessa", "cinder", "Run an imperial commission · Deliver sealed orders · Collect a debt from a story boss · Map an unrecorded ruin"],
+    ["Warden Callis", "wild", "Survey what the Waking made of the east · Hunt a marked beast · Clear a warren of vermin · Bring the tribes a trophy"],
+    ["Skald Ottar", "wild", "Do a thing worth a song (clear a Crucible tier) · Recover a lost verse · Best a rival at the fire · Walk the whole wall at dawn"],
+    ["Cantor Ilse", "choir", "Tend the unburied · Sit a vigil (survive a Depths wave) · Carry a sleeper north · Witness a death and return"],
+    ["Deacon Vela", "choir", "Recover a blight-relic · Read a name over the dead · Escort the faithful to the undercroft · Fast through a run (no potions)"]
+  ];
+  document.getElementById("poolBody").innerHTML = pools.map(function (x) {
+    var fm = facMeta[x[1]];
+    return "<tr><td class='name'>" + x[0] + "</td>"
+      + "<td><span class='fac' style='color:" + fm[1] + "'>" + fm[0] + "</span></td>"
+      + "<td style='color:var(--ink-soft)'>" + x[2] + "</td></tr>";
+  }).join("");
+})();
+</script>

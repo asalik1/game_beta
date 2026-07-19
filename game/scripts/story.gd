@@ -1075,6 +1075,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/pc_bosses.gd"),      # Ninja Adventure sweep (2026-07-08): 6 placeholder bosses — dev-only, TODO real fights
 	preload("res://scripts/content/pc_curios.gd"),      # Pixel Crawler mining (2026-07-18): placeholder quest-item curios + codex relics gallery
 	preload("res://scripts/content/rv_na_gallery.gd"),  # Raven Icons + Ninja animals (2026-07-18): placeholder alchemy/armory/supplies/provisions/critters
+	preload("res://scripts/content/capital_hub.gd"),    # Crownfall (2026-07-19): standalone 50-room dev-only capital hub — CONVOS merge here; CHAPTER resolved in chapter()
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]
@@ -1181,12 +1182,20 @@ static func chapter(id: String) -> Dictionary:
 	load_content()
 	if ENDGAME_ARENAS.has(id):   # endgame arenas resolve here, never via CHAPTER_LIST
 		return ENDGAME_ARENAS[id]
+	if id == "capital":          # Crownfall hub — standalone, dev-only (like the arenas)
+		return CapitalHub.CHAPTER
 	return CHAPTER_LIST.get(id, CHAPTER_LIST.get("ch1", {}))
 
 
 ## Is this chapter id one of the endgame arenas (The Crucible / Waking Depths)?
 static func is_endgame(id: String) -> bool:
 	return ENDGAME_ARENAS.has(id)
+
+
+## A STANDALONE world resolved by chapter() but kept out of CHAPTER_LIST — not
+## campaign, not endgame. Crownfall, the capital hub. switch_chapter allows it.
+static func is_standalone(id: String) -> bool:
+	return id == "capital"
 
 
 static func quest_text(key: String) -> String:

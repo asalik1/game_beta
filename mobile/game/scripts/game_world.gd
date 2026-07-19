@@ -30,7 +30,7 @@ func net_apply_boss_done(kind: String) -> void:
 func switch_chapter(id: String, force := false) -> void:
 	# World teardown: forgotten ground loot mails itself first (round 8).
 	flush_dropped_loot()
-	if not (Story.CHAPTER_LIST.has(id) or Story.is_endgame(id)) or (id == chapter_id and not force):
+	if not (Story.CHAPTER_LIST.has(id) or Story.is_endgame(id) or Story.is_standalone(id)) or (id == chapter_id and not force):
 		return
 	chapter_id = id
 	_quest_avail_cache = -1  # a new chapter offers a whole new set (⚑ shine memo)
@@ -90,6 +90,37 @@ func switch_chapter(id: String, force := false) -> void:
 	_enter_room(last_safe_room)
 	ambient.color = Terrains.get_terrain(terrain_by_zone[cur_room])["tint"]
 	refresh_quest()
+
+
+## Enter Crownfall, the standalone capital hub (dev panel "Go To Capital").
+## Remembers the chapter we left so the hub's Story gate can return there.
+func enter_capital() -> void:
+	if chapter_id != "capital":
+		_pre_capital_chapter = chapter_id
+	switch_chapter("capital", true)
+
+
+## An interaction dispatched by a Crownfall hub prop (a portal or a civic desk).
+## The three portals leave for a mode; the desks open an existing menu. Keyed
+## off the "action" field on the zone's npc def (see _build_room). enter_endgame
+## lives in the derived game_flow layer, so it is reached via a dynamic call.
+func _hub_action(act: String) -> void:
+	match act:
+		"portal_story":
+			# Back to the campaign we came from (dev may have jumped in cold).
+			switch_chapter(_pre_capital_chapter if _pre_capital_chapter != "" else "ch1", true)
+		"portal_crucible":
+			call("enter_endgame", "crucible")
+		"portal_depths":
+			call("enter_endgame", "depths")
+		"vault":
+			menus.open_stash()
+		"codex":
+			menus.open_codex("monsters")
+		"daily":
+			menus.open_daily()
+		_:
+			push_warning("hub action unhandled: %s" % act)
 
 
 # ------------------------------------------------------- the room graph ---
@@ -383,6 +414,16 @@ func _build_room(i: int) -> void:
 		# Placeholder NPCs (extracted art wired for review) only exist in the
 		# dev launcher — a normal playthrough never sees them in the world.
 		if npc_def.get("placeholder", false) and not dev_mode:
+			continue
+		# Action interactables (Crownfall hub): a portal or a civic desk whose
+		# prompt fires a game action (enter a mode, open a menu) instead of a
+		# conversation. Handled by _hub_action; no convo, no quest marker.
+		if npc_def.has("action"):
+			var act: String = npc_def["action"]
+			_make_npc(npc_def["sprite"],
+				room_pos(i, npc_def["x"], npc_def["y"]),
+				npc_def.get("prompt", "E — Use"), func() -> void:
+					_hub_action(act), "")
 			continue
 		var convo_id: String = npc_def["convo"]
 		var npc_node := _make_npc(npc_def["sprite"],

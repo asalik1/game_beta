@@ -60,6 +60,7 @@ const OPP := {"N": "S", "S": "N", "E": "W", "W": "E"}
 # The world is data: Story.CHAPTER_LIST[chapter_id] decides the rooms,
 # starting quest and final boss. switch_chapter() rebuilds everything.
 var chapter_id := "ch1"
+var _pre_capital_chapter := ""  # chapter to return to when leaving Crownfall via the Story gate
 var zones: Array = []            # this chapter's room dicts
 var zone_count := 0
 var rooms: Array = []            # runtime graph meta per room:
