@@ -308,3 +308,43 @@ one `DIR_POSE` slot.
   survives; 30 was the sweet spot here. Note `solidify`'s hole-fill only
   restores *enclosed* holes, so an eaten silhouette *edge* like a sole won't
   come back on its own — fix it at the key.
+
+
+## Environment art — the three Track-D drop-in seams (`install_env_asset.py`)
+
+The engine seams that used to block whole environment sheets are gone
+(DESIGN.md Track D, 2026-07-18). Unlocking a pack sheet is now a naming +
+square/grid normalize, then the import gate — no code. `install_env_asset.py`
+does the mechanical step; drop-in is otherwise just a PNG at the right name.
+
+1. **Ground tilesets** → `assets/sprites/ground_<kind>.png`. A single seamless
+   square tile, or a grid of variation cells (`--grid RxC`). `Art.ground` tiles
+   it for that ground KIND, seeding a variation cell per 16px floor tile and
+   skipping the procedural noise/macro there. Kinds are `Art.GROUND`'s keys
+   (grass, forest, stone, snow, sand, basalt, voidstone, …). Absent → the biome
+   is byte-identical, so shipping terrains are untouched until art lands.
+     `python install_env_asset.py ground grass_sheet.png grass --grid 2x2 --cell 16`
+2. **Composite structures** → data, not just art. Add a def to
+   `Terrains.STRUCTURES` (base sprite + `parts` + multi-shape `colliders` +
+   `decals` with optional `light`/`fire`), then list its name in a zone/terrain
+   `structures` array. `game_world._add_structure` builds the composite body;
+   an unlisted name still places as a single sprite + footprint rect. Any part
+   is an ordinary sprite name, so a `<part>.png` / `<part>_anim.png` override
+   upgrades it in place. Preview catalog: the dev-only `ph_ruins` terrain.
+3. **Animated props** → `assets/sprites/<name>_anim.png` (horizontal strip of
+   square frames, same format as the creature `_anim` seam). ANY scenery prop
+   of that name — obstacle, decor, accent, or a structure part/decal — then
+   self-animates via a looping `AnimatedSprite2D`; strip-less props stay static.
+     `python install_env_asset.py animprop torch_strip.png torch --frames 4`
+
+After any install, run the import gate ONCE (headless can't load an un-imported
+PNG — it silently falls back to procedural art / a missing-key error):
+    `tools/Godot_v4.4.1-stable_win64_console.exe --headless --path game --import`
+
+Pack → lane map (owned, license-vetted; see the asset-library memory): Pixel
+Crawler environment packs (Castle/Cave/Cemetery/Desert/Forge/Garden/Hideout/
+Library/Sewer/Free Pack) carry the ground tilesets and structure kits; animated
+props (torches, braziers, banners, fires, water, foliage) come from the same
+packs' FX/prop sheets and Ninja Adventure. Live-biome art is owner-review-gated
+(taste call) — stage new environment art as a dev-only placeholder terrain
+first, exactly like `ph_ruins`.

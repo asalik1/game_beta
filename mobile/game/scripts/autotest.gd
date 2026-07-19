@@ -890,6 +890,10 @@ func _run_systems() -> void:
 	# healer pulse, lunge, frenzy damage).
 	await _test_mob_traits()
 
+	# 3d18. Environment asset seams (2026-07-18): ground PNG tilesets,
+	# composite structures + wall decals, animated scenery props.
+	await _test_asset_seams()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -3118,6 +3122,83 @@ func _test_mob_traits() -> void:
 	if not untagged.is_empty():
 		return _fail("untagged mobs (need a trait): %s" % ", ".join(untagged))
 	print("ok: mob mechanics (presence + pounce/web/channel/warded/bloat... all ch1-7 tagged)")
+
+
+## Environment asset seams (2026-07-18): the three engine unlocks that let
+## pack sheets drop in — ground PNG tilesets (Lane 1), composite structures +
+## wall decals (Lane 2), animated scenery props (Lane 3). Each is verified at
+## the seam so a regression that re-freezes an asset lane fails the gate.
+func _test_asset_seams() -> void:
+	# --- Lane 1: ground tile seam -------------------------------------
+	# An absent override leaves the procedural floor untouched...
+	if not Art._ground_tileset("no_such_ground_zzz").is_empty():
+		return _fail("ground tileset seam: absent kind should return {}")
+	# ...and the procedural ground still bakes at the right size (6*16).
+	var g := Art.ground("grass", "dirt", 6, 6, 3)
+	if g == null or g.get_width() != 96 or g.get_height() != 96:
+		return _fail("Art.ground broke (want 96x96, got %s)" % (g.get_size() if g else "null"))
+	# The tiler blits a synthetic tileset across a fresh image.
+	var tile := Image.create_empty(16, 16, false, Image.FORMAT_RGBA8)
+	tile.fill(Color(1, 0, 0))  # pure red: exactly representable in RGBA8
+	var ts := {"img": tile, "cell": 16, "cols": 1, "rows": 1}
+	var canvas := Image.create_empty(48, 48, false, Image.FORMAT_RGBA8)
+	var trng := RandomNumberGenerator.new()
+	Art._tile_fill(canvas, Rect2i(0, 0, 48, 48), ts, trng)
+	var laid := canvas.get_pixel(24, 24)  # middle tile
+	if laid.a < 0.9 or laid.r < 0.9 or laid.g > 0.02 or laid.b > 0.02:
+		return _fail("ground _tile_fill did not lay the tile (got %s)" % laid)
+
+	# --- Lane 3: animated scenery props -------------------------------
+	# A synthetic 4-frame strip becomes a looping SpriteFrames.
+	var strip := Image.create_empty(64, 16, false, Image.FORMAT_RGBA8)
+	var strip_tex := ImageTexture.create_from_image(strip)
+	var sf := Art._prop_frames("test_synth_prop", {"tex": strip_tex, "frames": 4, "fps": 6.0})
+	if sf.get_frame_count("default") != 4 or not sf.get_animation_loop("default"):
+		return _fail("animated-prop SpriteFrames wrong (frames/loop)")
+	if sf.get_frame_texture("default", 0).get_size() != Vector2(16, 16):
+		return _fail("animated-prop frame cell should be 16x16")
+	# No strip -> null, so the static Sprite2D path stays.
+	if Art.anim_prop("no_such_prop_zzz") != null:
+		return _fail("anim_prop should be null when no _anim strip exists")
+	# The prop-visual seam falls back to a static Sprite2D for plain props.
+	var pv := game._prop_visual("rock")
+	if not (pv is Sprite2D):
+		return _fail("_prop_visual should return a static Sprite2D for a strip-less prop")
+	pv.queue_free()
+
+	# --- Lane 2: composite structures + wall decals -------------------
+	var gate := game._add_structure("ruined_gate", Vector2(-4000, -4000))
+	var gate_cols := 0
+	var gate_vis := 0
+	for c in gate.get_children():
+		if c is CollisionShape2D:
+			gate_cols += 1
+		elif c is Sprite2D or c is AnimatedSprite2D:
+			gate_vis += 1
+	if gate_cols != 2:
+		return _fail("ruined_gate should have a 2-shape composite footprint (got %d)" % gate_cols)
+	if gate_vis < 4:  # base arch + 2 pillars + banner decal
+		return _fail("ruined_gate should composite >=4 sprites (got %d)" % gate_vis)
+	gate.queue_free()
+	# A lit structure carries a point light (torch glow).
+	var brazier := game._add_structure("watch_brazier", Vector2(-4200, -4200))
+	var has_light := false
+	for c in brazier.get_children():
+		if c is PointLight2D:
+			has_light = true
+	if not has_light:
+		return _fail("watch_brazier decal should carry a PointLight2D")
+	brazier.queue_free()
+	# An unlisted name degrades to a single base sprite + one footprint rect.
+	var fallback := game._add_structure("rock", Vector2(-4400, -4400))
+	var fb_cols := 0
+	for c in fallback.get_children():
+		if c is CollisionShape2D:
+			fb_cols += 1
+	if fb_cols != 1:
+		return _fail("unlisted structure should degrade to one footprint collider (got %d)" % fb_cols)
+	fallback.queue_free()
+	print("ok: asset seams (ground tilesets / composite structures + decals / animated props)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

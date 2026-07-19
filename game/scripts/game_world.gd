@@ -1077,8 +1077,7 @@ func _spawn_scenery(zi: int) -> void:
 				dpos = dcenter + Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0)) * Balance.SCENERY_CLUSTER_RADIUS
 				dpos.x = clampf(dpos.x, origin.x + 70.0, origin.x + pw - 70.0)
 				dpos.y = clampf(dpos.y, origin.y + 80.0, origin.y + ph - 80.0)
-			var spr := Sprite2D.new()
-			spr.texture = Art.tex(decor_name)
+			var spr := _prop_visual(decor_name)  # animates if a _anim strip ships
 			spr.scale = Vector2(3, 3)
 			spr.position = dpos
 			spr.z_index = -8
@@ -1110,6 +1109,26 @@ func _spawn_scenery(zi: int) -> void:
 				placed.append(bpos)
 				zone_scenery[zi].append(_add_building(String(bname), origin + bpos))
 				break
+
+	# Composite STRUCTURES (Lane 2): multi-part builds — ruined gates, lit
+	# braziers, wells — with a composite footprint + wall decals. Placed like
+	# buildings: authored per zone/terrain, seeded, clear of the road and door
+	# lanes, spaced off other landmarks.
+	for sname in zone.get("structures", terrain.get("structures", [])):
+		for attempt in 60:
+			var spos := Vector2(rng.randf_range(200.0, max_x - 160.0), rng.randf_range(170.0, ph - 180.0))
+			if absf(spos.y - ph / 2.0) < 160.0 or absf(spos.x - pw / 2.0) < 190.0:
+				continue  # keep the road and door lanes open
+			var sok := true
+			for other in placed:
+				if spos.distance_to(other) < 240.0:
+					sok = false
+					break
+			if sok:
+				placed.append(spos)
+				zone_scenery[zi].append(_add_structure(String(sname), origin + spos))
+				break
+
 	var count := int(ceil(float(zone.get("obstacle_count", terrain.get("count", 10))) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
 	var placed_n := 0
 	var guard := 0
@@ -1321,8 +1340,9 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	shadow.scale = Vector2(4, 2.4) if is_tree else Vector2(3, 2)
 	shadow.position = Vector2(0, 38 if is_tree else 22)
 	body.add_child(shadow)
-	var spr := Sprite2D.new()
-	spr.texture = Art.tex(sprite_name)
+	# Static Sprite2D, or a self-animating AnimatedSprite2D when the prop ships
+	# a <name>_anim.png strip (Lane 3) — same 3x footprint either way.
+	var spr := _prop_visual(sprite_name)
 	spr.scale = Vector2(3, 3)
 	if is_tree:
 		spr.position = Vector2(0, -18)  # trunk base sits at the body origin
@@ -1330,6 +1350,129 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	body.add_child(spr)
 	if sprite_name == "camp_bonfire":
 		_attach_fire_audio(body)  # an open camp fire crackles like a hearth
+	world.add_child(body)
+	return body
+
+
+## The visual node for a scenery prop: a looping AnimatedSprite2D when the
+## prop ships a <name>_anim.png strip (Lane 3), else a static Sprite2D. The
+## caller owns scale / position / z / material — both node types are Node2D +
+## CanvasItem, so every existing call still type-checks. This is the ONE seam
+## every prop path (obstacles, decor, accents, structure parts) routes through.
+func _prop_visual(name: String) -> Node2D:
+	var anim := Art.anim_prop(name)
+	if anim != null:
+		return anim
+	var spr := Sprite2D.new()
+	spr.texture = Art.tex(name)
+	return spr
+
+
+## The native (unscaled) pixel size of a prop visual, whether it's a static
+## Sprite2D or an animated prop's first frame — so structures can width-
+## normalize either kind.
+func _visual_size(vis: Node2D) -> Vector2:
+	if vis is Sprite2D and (vis as Sprite2D).texture != null:
+		return (vis as Sprite2D).texture.get_size()
+	if vis is AnimatedSprite2D:
+		var sf: SpriteFrames = (vis as AnimatedSprite2D).sprite_frames
+		if sf != null and sf.get_frame_count("default") > 0:
+			var t := sf.get_frame_texture("default", 0)
+			if t != null:
+				return t.get_size()
+	return Vector2(16, 16)
+
+
+## One width-normalized part of a composite structure (Lane 2). Returns the
+## visual (static or animated) scaled so it renders `target_w` px wide, with
+## its scaled w/h stashed as meta so the caller can anchor + place decals.
+func _structure_sprite(name: String, target_w: float, wind: bool) -> Node2D:
+	var vis := _prop_visual(name)
+	var native := _visual_size(vis)
+	var s := target_w / maxf(1.0, native.x)
+	vis.scale = Vector2(s, s)
+	if wind:
+		vis.material = Art.wind_material()
+	vis.set_meta("wpx", native.x * s)
+	vis.set_meta("hpx", native.y * s)
+	return vis
+
+
+## A composite STRUCTURE (Lane 2 unlock): several sprites y-sorted as ONE
+## base-anchored body, a MULTI-shape footprint collider (an L-ruin or a gate
+## needs more than one circle), and non-colliding WALL DECALS (banners,
+## torches, moss) that can themselves animate and carry a point light. Driven
+## by Terrains.STRUCTURES; an unlisted name degrades to a single base-anchored
+## sprite with a footprint rect (like _add_building), so a zone can reference
+## pack art before a full def is authored. Contrast _add_obstacle: one sprite,
+## one circle.
+func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
+	var def: Dictionary = Terrains.STRUCTURES.get(name, {})
+	var body := StaticBody2D.new()
+	body.position = pos  # the base line is the y-sort anchor
+	body.collision_layer = 1
+	body.collision_mask = 0
+
+	# Base sprite (the structure's main art), width-normalized like a building
+	# so any-res override art lands the same on-screen size.
+	var base_spr := _structure_sprite(String(def.get("sprite", name)),
+		float(def.get("w", 180.0)), def.get("wind", false))
+	var bw: float = base_spr.get_meta("wpx")
+	var bh: float = base_spr.get_meta("hpx")
+	base_spr.flip_h = def.get("mirror", false) and (int(pos.x) + int(pos.y)) % 2 == 1
+	base_spr.position = Vector2(0, -bh * 0.5 + 12.0)
+	body.add_child(base_spr)
+	var target_w: float = float(def.get("w", 180.0))
+
+	# Extra composited parts (a tower beside a gate, a roof over a wall). Each
+	# is a fraction of the base width, offset in world px from the anchor.
+	for part in def.get("parts", []):
+		var ps := _structure_sprite(String(part["sprite"]),
+			target_w * float(part.get("scale", 1.0)), part.get("wind", false))
+		ps.position = part.get("off", Vector2.ZERO)
+		ps.z_index = int(part.get("z", 0))
+		body.add_child(ps)
+
+	# Footprint collider(s): a composite of rects/circles. Default = one rect
+	# spanning ~62% of the base width, matching _add_building.
+	var colliders: Array = def.get("colliders",
+		[{"shape": "rect", "size": Vector2(bw * 0.62, 34.0), "off": Vector2(0, -8.0)}])
+	for c in colliders:
+		var cshape := CollisionShape2D.new()
+		cshape.position = c.get("off", Vector2.ZERO)
+		if String(c.get("shape", "rect")) == "circle":
+			var circ := CircleShape2D.new()
+			circ.radius = float(c.get("radius", 12.0))
+			cshape.shape = circ
+		else:
+			var rect := RectangleShape2D.new()
+			rect.size = c.get("size", Vector2(bw * 0.62, 34.0))
+			cshape.shape = rect
+		body.add_child(cshape)
+
+	# Wall decals: non-colliding overlays (banners, torches, moss). A decal can
+	# animate (Lane 3) and can carry a point light — a torch's glow.
+	for d in def.get("decals", []):
+		var ds := _structure_sprite(String(d["sprite"]),
+			target_w * float(d.get("scale", 0.2)), d.get("wind", false))
+		ds.position = d.get("off", Vector2.ZERO)
+		ds.z_index = int(d.get("z", 1))
+		body.add_child(ds)
+		var lcol: Variant = d.get("light")
+		if lcol is Color:
+			var lt := PointLight2D.new()
+			lt.texture = Art.tex("light")
+			lt.color = lcol
+			# Scale by the terrain's light budget (Track A doctrine): an unscaled
+			# additive torch glow blooms a daylight scene to white. Scenery
+			# rebuilds on terrain change, so this re-reads a fresh light_mult.
+			lt.energy = float(d.get("light_energy", 0.8)) * light_mult
+			lt.texture_scale = float(d.get("light_scale", 0.7))
+			lt.position = d.get("off", Vector2.ZERO)
+			body.add_child(lt)
+
+	if def.get("fire", false):
+		_attach_fire_audio(body)  # a lit structure crackles as you pass
 	world.add_child(body)
 	return body
 

@@ -173,6 +173,17 @@ const DATA := {
 		"obstacles": ["tree_green", "tree_green", "rock"], "decor": ["flower", "flower", "mushroom"], "count": 15,
 		"patches": [{"type": "heal", "count": 3, "radius": [55, 80]}], "event": "",
 		"placeholder": true},
+	# ---- composite-structure preview (2026-07-18, Lane 2) ----------------
+	# Dev-only terrain that opts into the STRUCTURES catalog so the owner can
+	# preview multi-part builds (a ruined gate, a lit brazier, a well, a
+	# signal fire) in one room. No zone references it; normal play never sees
+	# it. Structures place alongside the light scatter below.
+	"ph_ruins": {"name": "Broken Bastion", "ground": "stone", "path": "stone",
+		"tint": Color(0.84, 0.82, 0.86), "ambient": "embers", "music": "keep",
+		"obstacles": ["pillar", "rock", "boulder", "rubble"], "decor": ["crack", "pebble", "rubble"], "accents": ["bones"], "count": 7,
+		"structures": ["ruined_gate", "watch_brazier", "old_well", "signal_fire"],
+		"patches": [], "event": "",
+		"placeholder": true},
 }
 
 # Ambient AUDIO bed per terrain (Sfx.make_ambient kinds; "" = silence).
@@ -240,3 +251,55 @@ const WALL := {
 
 static func wall_for(id: String) -> String:
 	return WALL.get(id, "wallblock")
+
+
+# Composite STRUCTURES (2026-07-18, Lane 2 unlock): multi-part builds placed
+# by game_world._add_structure — several sprites y-sorted as ONE body, a
+# MULTI-shape footprint collider, and non-colliding WALL DECALS (banners,
+# torches) that can animate and carry a point light. Zones/terrains opt in via
+# a "structures" list, exactly like "buildings". Every referenced sprite is
+# EXISTING art, so these compose with no new assets; a drop-in <name>.png (or
+# <name>_anim.png) override upgrades any part in place. An unlisted structure
+# name still places — it degrades to a single base sprite + footprint rect.
+# Schema per structure:
+#   sprite      base art (defaults to the structure's own name)
+#   w           base sprite target width (px); parts/decals scale off it
+#   wind        base sways in the wind material (banners, foliage)
+#   mirror      seeded horizontal flip for free left/right variety
+#   parts[]     {sprite, off:Vector2, scale (x base w), z, wind}
+#   colliders[] {shape:"rect"|"circle", size:Vector2 | radius:float, off:Vector2}
+#               omitted -> one rect ~62% of the base width (building default)
+#   decals[]    {sprite, off, scale, z, wind, light:Color, light_energy, light_scale}
+#   fire        positional campfire/hearth crackle as you pass
+const STRUCTURES := {
+	# A ruined gateway: an arch flanked by two pillars, EACH its own collider
+	# (a composite footprint no single circle could describe), a banner slung
+	# over the span as a wall decal.
+	"ruined_gate": {"sprite": "keep_arch", "w": 200.0, "mirror": true,
+		"parts": [
+			{"sprite": "pillar", "off": Vector2(-92, -26), "scale": 0.30, "z": 1},
+			{"sprite": "pillar", "off": Vector2(92, -26), "scale": 0.30, "z": 1}],
+		"colliders": [
+			{"shape": "circle", "radius": 15.0, "off": Vector2(-92, -4)},
+			{"shape": "circle", "radius": 15.0, "off": Vector2(92, -4)}],
+		"decals": [{"sprite": "banner_red", "off": Vector2(0, -74), "scale": 0.22, "z": 2, "wind": true}]},
+	# A lit watch-brazier: a pillar topped by a brazier decal that GLOWS
+	# (point light) and CRACKLES (positional fire audio).
+	"watch_brazier": {"sprite": "pillar", "w": 120.0,
+		"colliders": [{"shape": "circle", "radius": 13.0, "off": Vector2(0, -4)}],
+		"decals": [{"sprite": "keep_brazier", "off": Vector2(0, -92), "scale": 0.34, "z": 2,
+			"light": Color(1.0, 0.62, 0.28, 0.9), "light_energy": 1.1, "light_scale": 0.9}],
+		"fire": true},
+	# An old well: a broad boulder ring (a wide flat footprint, not a point)
+	# with a bucket resting on the rim.
+	"old_well": {"sprite": "boulder", "w": 150.0, "mirror": true,
+		"colliders": [{"shape": "rect", "size": Vector2(104.0, 40.0), "off": Vector2(0, -4)}],
+		"decals": [{"sprite": "water_bucket", "off": Vector2(34, -24), "scale": 0.16, "z": 2}]},
+	# A signal fire: a stacked-log pyre that BURNS — an open flame decal with
+	# light + audio, ringed by a small footprint.
+	"signal_fire": {"sprite": "log", "w": 96.0,
+		"colliders": [{"shape": "circle", "radius": 14.0, "off": Vector2(0, 2)}],
+		"decals": [{"sprite": "camp_bonfire", "off": Vector2(0, -18), "scale": 0.5, "z": 2,
+			"light": Color(1.0, 0.55, 0.22, 0.95), "light_energy": 1.3, "light_scale": 1.0}],
+		"fire": true},
+}

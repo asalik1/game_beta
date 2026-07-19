@@ -2720,6 +2720,50 @@ static func _strip_info(base: String) -> Dictionary:
 	return info
 
 
+# --------------------------------------------------- animated props ---
+# Lane 3 asset unlock: SCENERY props (torches, banners, water wheels, forge
+# fires, waving grass) self-animate off the SAME <name>_anim.png strip seam
+# the creatures use — but a prop has no per-frame script, so it drives itself
+# with a looping AnimatedSprite2D built from the strip's frames. Callers set
+# scale / z / material / flip exactly as they did on the static Sprite2D, so a
+# prop with an _anim strip drops in with no call-site change; without one,
+# anim_prop returns null and the static Sprite2D path is untouched.
+static var _prop_frames_cache := {}
+static func _prop_frames(name: String, info: Dictionary) -> SpriteFrames:
+	if _prop_frames_cache.has(name):
+		return _prop_frames_cache[name]
+	var frames := SpriteFrames.new()  # ships with a "default" animation
+	frames.set_animation_loop("default", true)
+	frames.set_animation_speed("default", float(info["fps"]))
+	var tex: Texture2D = info["tex"]
+	var cell := tex.get_height()
+	for i in int(info["frames"]):
+		var at := AtlasTexture.new()
+		at.atlas = tex
+		at.region = Rect2(i * cell, 0, cell, cell)
+		frames.add_frame("default", at)
+	_prop_frames_cache[name] = frames
+	return frames
+
+
+## A self-driving animated scenery node, or null when the prop ships no
+## <name>_anim.png strip (caller then keeps its static Sprite2D). The node
+## auto-plays a looping clip; one shared SpriteFrames per prop name is reused
+## across every copy in the world.
+static func anim_prop(name: String) -> AnimatedSprite2D:
+	var info := anim_info(name)
+	if info.is_empty():
+		return null
+	var spr := AnimatedSprite2D.new()
+	spr.sprite_frames = _prop_frames(name, info)
+	spr.animation = "default"
+	# Random per-instance start frame so a row of identical props (a wall of
+	# torches) doesn't flicker in lockstep — ambient phase, never gameplay.
+	spr.frame = randi() % maxi(1, int(info["frames"]))
+	spr.play()
+	return spr
+
+
 # ------------------------------------------------ 8-direction render ---
 # Optional per-facing art. A directional clip is eight strips
 # assets/sprites/<base>_<dir>.png, dir in DIR8. When the SOUTH anchor
@@ -2894,10 +2938,68 @@ static func _make_slash() -> Image:
 	return image
 
 
+# -------------------------------------------------- ground tile seam ---
+# Lane 1 asset unlock: a ground KIND can ship a PNG tileset that replaces
+# its procedural palette fill. Drop assets/sprites/ground_<kind>.png — a
+# single seamless square tile OR a GRID of square variation tiles (a 4x1
+# strip, a 1xN column, or an NxM sheet of grass/stone variants). Cell size
+# is inferred from the SHORTER axis so any of those shapes parse; the floor
+# tiles it, picking a seeded variation cell per 16px tile so a multi-cell
+# sheet reads non-repeating. No override -> {} and the procedural floor is
+# byte-for-byte untouched, so every shipping biome is unaffected until art
+# lands. Pack tiles resize to the 16px ground grid, matching the props'
+# pixel density. Both the parse and the resized cells cache per kind.
+static var _ground_ts_cache := {}
+static func _ground_tileset(kind: String) -> Dictionary:
+	if _ground_ts_cache.has(kind):
+		return _ground_ts_cache[kind]
+	var info := {}
+	var im := _override_image("res://assets/sprites/ground_%s.png" % kind)
+	if im != null and im.get_width() > 0 and im.get_height() > 0:
+		if im.get_format() != Image.FORMAT_RGBA8:
+			im.convert(Image.FORMAT_RGBA8)
+		var w := im.get_width()
+		var h := im.get_height()
+		var cell := maxi(1, mini(w, h))
+		info = {"img": im, "cell": cell, "cols": maxi(1, w / cell), "rows": maxi(1, h / cell)}
+	_ground_ts_cache[kind] = info
+	return info
+
+
+## Fill `rect` by tiling a ground tileset — one 16px floor tile per step,
+## a seeded variation cell each — so a multi-cell sheet covers without an
+## obvious repeat. Source cells resize to 16px once and cache on the shared
+## tileset dict (cheap across every room that paints the same kind).
+static func _tile_fill(image: Image, rect: Rect2i, ts: Dictionary, rng: RandomNumberGenerator) -> void:
+	var cache: Array = ts.get("_cells16", [])
+	if cache.is_empty():
+		var cell: int = ts["cell"]
+		var src: Image = ts["img"]
+		for r in int(ts["rows"]):
+			for c in int(ts["cols"]):
+				var piece := Image.create_empty(cell, cell, false, Image.FORMAT_RGBA8)
+				piece.blit_rect(src, Rect2i(c * cell, r * cell, cell, cell), Vector2i.ZERO)
+				if cell != 16:
+					piece.resize(16, 16, Image.INTERPOLATE_NEAREST)
+				cache.append(piece)
+		ts["_cells16"] = cache
+	var y := rect.position.y
+	while y < rect.end.y:
+		var x := rect.position.x
+		while x < rect.end.x:
+			var piece: Image = cache[rng.randi() % cache.size()]
+			var dst := Rect2i(x, y, 16, 16).intersection(rect)
+			if dst.size.x > 0 and dst.size.y > 0:
+				image.blit_rect(piece, Rect2i(0, 0, dst.size.x, dst.size.y), dst.position)
+			x += 16
+		y += 16
+
+
 ## Compose one big ground texture for a zone (34 x 15 tiles of 16px art).
 ## Organic look: patch blobs instead of a tile checkerboard, litter (fallen
 ## leaves / puddles), an edge-highlighted road, and depth shading under
-## the top wall. path_kind is painted across the middle rows.
+## the top wall. path_kind is painted across the middle rows. A ground kind
+## with a PNG tileset (_ground_tileset) tiles that instead of the palette.
 static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: int, seed_val: int, exits: Array = ["W", "E"]) -> ImageTexture:
 	var dirs: Array = exits.duplicate()
 	dirs.sort()
@@ -2931,14 +3033,29 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		arms.append(Rect2i(vleft, path_bottom, 48, ph - path_bottom))
 	var image := Image.create_empty(pw, ph, false, Image.FORMAT_RGBA8)
 
+	# Optional PNG ground tilesets (Lane 1 seam). When present they REPLACE
+	# the palette fill for that band; the procedural noise/macro passes then
+	# skip the tiled band so the pack art carries its own detail. Absent ->
+	# tiled_* stay false and every pass below runs exactly as before.
+	var base_ts := _ground_tileset(base_kind)
+	var path_ts := _ground_tileset(path_kind)
+	var tiled_base := not base_ts.is_empty()
+	var tiled_path := not path_ts.is_empty()
+
 	var g_cols: Array = GROUND[base_kind]
 	var p_cols: Array = GROUND[path_kind]
-	image.fill_rect(Rect2i(0, 0, pw, ph), g_cols[0])
+	if tiled_base:
+		_tile_fill(image, Rect2i(0, 0, pw, ph), base_ts, rng)
+	else:
+		image.fill_rect(Rect2i(0, 0, pw, ph), g_cols[0])
 	var mask := PackedByteArray()
 	mask.resize(pw * ph)
 	for arm in arms:
 		var ar: Rect2i = arm
-		image.fill_rect(ar, p_cols[0])
+		if tiled_path:
+			_tile_fill(image, ar, path_ts, rng)
+		else:
+			image.fill_rect(ar, p_cols[0])
 		for y in range(ar.position.y, ar.end.y):
 			var row := y * pw
 			for x in range(ar.position.x, ar.end.x):
@@ -2951,6 +3068,8 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		var cy := rng.randi_range(0, ph - 1)
 		var r := rng.randi_range(3, 9)
 		var on_path := mask[cy * pw + cx] == 1
+		if (on_path and tiled_path) or (not on_path and tiled_base):
+			continue  # a PNG-tiled band carries its own detail
 		var cols: Array = p_cols if on_path else g_cols
 		var col: Color = cols[1] if rng.randf() < 0.5 else cols[2]
 		for y in range(maxi(0, cy - r), mini(ph, cy + r)):
@@ -2963,14 +3082,18 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	for i in int(noise_prof[1]):
 		var x := rng.randi_range(0, pw - 1)
 		var y := rng.randi_range(0, ph - 1)
-		var cols: Array = p_cols if mask[y * pw + x] == 1 else g_cols
+		var on_path_px := mask[y * pw + x] == 1
+		if (on_path_px and tiled_path) or (not on_path_px and tiled_base):
+			continue  # skip speckle over a PNG-tiled band
+		var cols: Array = p_cols if on_path_px else g_cols
 		image.set_pixel(x, y, cols[1] if rng.randf() < 0.5 else cols[2])
 
 	# Road edges catch the light (top/left) and fall to shadow
-	# (bottom/right); a few stones scattered along the arms.
+	# (bottom/right); a few stones scattered along the arms. A PNG-tiled
+	# path ships its own edges, so this painted rim + stones skip it.
 	var edge: Color = p_cols[2].lightened(0.12)
 	var dark: Color = p_cols[1].darkened(0.15)
-	for y in ph:
+	for y in (0 if tiled_path else ph):
 		var row := y * pw
 		for x in pw:
 			if mask[row + x] == 0:
@@ -2981,7 +3104,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 				image.set_pixel(x, y, edge)
 			elif shad and rng.randf() < 0.85:
 				image.set_pixel(x, y, dark)
-	for i in 26:
+	for i in (0 if tiled_path else 26):
 		for attempt in 14:
 			var sx := rng.randi_range(2, pw - 3)
 			var sy := rng.randi_range(2, ph - 3)
@@ -2996,8 +3119,10 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	# Each ground kind now draws sparse LANDMARK features (flagstone seams,
 	# puddles, dune ripples, drift ridges, buried slabs...) with chunkier
 	# strokes, so the floor reads at the same pixel density as the props
-	# standing on it. Everything respects the road mask.
-	_ground_macro(image, mask, base_kind, pw, ph, rng)
+	# standing on it. Everything respects the road mask. A PNG-tiled base
+	# ships its own landmark detail, so the macro pass skips it.
+	if not tiled_base:
+		_ground_macro(image, mask, base_kind, pw, ph, rng)
 
 	# Depth: the ground darkens in the wall's shadow at the top.
 	for y in range(16, 24):
