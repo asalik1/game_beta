@@ -1337,12 +1337,21 @@ func _run_systems() -> void:
 	game.menus.open_codex("terrains")
 	await _frames(2)
 	var _dev0: bool = game.dev_mode
-	game.dev_mode = true  # exercise the [placeholder] cards/tags in the bestiary
+	game.dev_mode = true  # bestiary stays placeholder-free even in dev (2026-07-18)
 	game.menus.open_codex("monsters")
 	await _frames(2)
 	game.menus.open_codex("bosses")
 	await _frames(2)
 	game.menus.open_codex("npcs")
+	await _frames(2)
+	# The Future bestiary shelves (unplaced mobs/bosses + review NPCs).
+	game.menus.open_codex("future_mobs")
+	await _frames(2)
+	game.menus.open_codex("future_bosses")
+	await _frames(2)
+	game.menus.open_codex("future_npcs")
+	await _frames(2)
+	game.menus.open_codex("future_terrains")
 	await _frames(2)
 	game.dev_mode = _dev0
 	game.menus.open_codex("status")

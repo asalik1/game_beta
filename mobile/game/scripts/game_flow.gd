@@ -58,8 +58,9 @@ func apply_display_settings() -> void:
 ## gear, Resonance, opening history); the chapter's story state resets.
 func replay_chapter(id: String) -> void:
 	_wipe_chapter_flags()
-	for fac in player.faction_standing:
-		player.faction_standing[fac] = 0
+	if has_local_player():
+		for fac in player.faction_standing:
+			player.faction_standing[fac] = 0
 	wander_seed = randi() % 1000000  # replays meet a fresh set of rolled rooms
 	weekly_active = false            # a fresh seed is never the weekly run
 	reset_run_stats()
@@ -94,6 +95,35 @@ func start_weekly() -> void:
 	hud.flash_title(zones[cur_room]["name"],
 		"WEEKLY CHALLENGE — %s" % String(weekly_mod()["name"]))
 	autosave()
+
+## DEDICATED (MMO step A): the server's victory card has no reader. After a
+## grace window (guests read their own synced cards), the world moves on by
+## itself: the next chapter, or — after the last one — a fresh reroll of the
+## same chapter (a persistent world never just stops). Wall-clock timer; the
+## server tree never pauses (request_pause no-ops while dedicated).
+const SERVER_VICTORY_LINGER := 10.0
+
+func _server_after_victory(next_ch: String) -> void:
+	await get_tree().create_timer(SERVER_VICTORY_LINGER).timeout
+	if state != ST_VICTORY:
+		return  # something else already moved the world on
+	if next_ch != "":
+		advance_chapter()
+	else:
+		print("[server] campaign complete — rerolling %s" % chapter_id)
+		# replay_chapter (unlike advance_chapter) doesn't clear ST_VICTORY —
+		# it's normally reached from the menu — so the server does it here, or
+		# _server_process would stay frozen behind its `state != ST_PLAYING` gate.
+		state = ST_PLAYING
+		replay_chapter(chapter_id)
+		# replay is a fresh WORLD: brief the party through the same rebuild
+		# an advance uses (advance_chapter does this inline for next_ch).
+		if net_host():
+			for q in players:
+				if q != null and is_instance_valid(q) and q != local_player:
+					q.global_position = room_center(cur_room)
+			net_session().host_advance_party()
+
 
 ## Chapter PROGRESSION: the character who just won carries straight on
 ## into the next chapter — build, gear, Resonance, faction standings and
@@ -334,9 +364,10 @@ func _wipe_chapter_flags() -> void:
 	flags = kept
 	# Quest keepsakes are run-scoped like the flags that earned them:
 	# an undelivered hat does not outlive its world.
-	for c in player.consumables.duplicate():
-		if String(c.get("kind", "")) == "quest":
-			player.consumables.erase(c)
+	if has_local_player():
+		for c in player.consumables.duplicate():
+			if String(c.get("kind", "")) == "quest":
+				player.consumables.erase(c)
 
 
 ## MP-13 (§5.4): is this a PER-CHARACTER flag — one that stays LOCAL to its
@@ -433,15 +464,17 @@ func _boss_roster_update(src: Boss) -> void:
 ## dialogue, no boss_done marks, no chapter end.
 func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 	var src: Boss = dead if is_instance_valid(dead) else current_boss
-	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
+	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) \
+		else (player.global_position if has_local_player() else room_center(cur_room))
 	_boss_roster_update(src)
 	# MP-12: a DOWNED/GHOST host skips the heal — the §5.3 paths (channel /
 	# room-clear) own how a fallen body stands. Solo: flags always false.
-	if not player.downed and not player.ghost:
+	if has_local_player() and not player.downed and not player.ghost:
 		player.hp = player.max_hp
 		player.mp = player.max_mp
-	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
-	Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), boss_pos)
+	if has_local_player():
+		Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
+		Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), boss_pos)
 	# MP-11 (§5.5): the brawl pays every head — each guest gets its own
 	# personal chest + pile (its machine spawns and collects them).
 	# MP-12 fold-in (b): the boss-kill full heal reaches every head too.
@@ -496,18 +529,22 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	bounty_progress("boss_kills")
 	vault_note_boss()
 	var src: Boss = dead if is_instance_valid(dead) else current_boss
-	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) else player.global_position
+	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) \
+		else (player.global_position if has_local_player() else room_center(cur_room))
 	var mzi: int = clampi(src.zone_idx if is_instance_valid(src) else cur_room, 0, zone_count - 1)
 	_boss_roster_update(src)
 	# MP-12: a DOWNED/GHOST host skips the heal (see on_rogue_boss_died).
-	if not player.downed and not player.ghost:
+	# DEDICATED: no host body to heal — guests get host_full_heal below.
+	if has_local_player() and not player.downed and not player.ghost:
 		player.hp = player.max_hp
 		player.mp = player.max_mp
 	# (No potion restock — 2026-07-09 investment round: stock is bought.)
 
-	# Bosses always drop a golden chest + a pile of gold.
-	Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
-	Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), boss_pos)
+	# Bosses always drop a golden chest + a pile of gold (host-personal;
+	# guests' shares fan via host_boss_kill below, a server drops none).
+	if has_local_player():
+		Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
+		Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), boss_pos)
 
 	# Boss gems (round 44): first clear of the chapter = 3 guaranteed
 	# gems per boss (this runs BEFORE completed_<ch> is set below, so
@@ -515,33 +552,35 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	# chance scaling with the boss's level — 1/25 early, sure at L40+.
 	var boss_lv: int = src.level if is_instance_valid(src) else 1
 	var first_clear: bool = not flags.get("completed_" + chapter_id, false)
-	var gem_count := 0
-	if Balance.regular_gems_drop(chapter_id):   # ch1-3 bosses drop no gems (gear only)
-		if first_clear:
-			gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
-		elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
-			gem_count = 1
-	# First-clear catch-up bundle rolls one level richer than the act floor.
-	var boss_gem_lvl := Balance.gem_drop_level(chapter_id) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
-	for gi in gem_count:
-		var boss_gem := drop_gem(boss_gem_lvl)
-		if give_loot({"kind": "gem", "gem": boss_gem}, boss_pos + Vector2(-34.0 + 34.0 * gi, 30)):
-			spawn_text(boss_pos + Vector2(0, -70 - 20 * gi),
-				"+ " + Items.gem_title(boss_gem), Items.gem_color(boss_gem))
+	# Host-personal boss spoils (gems / gear / bag). DEDICATED skips them
+	# whole — each guest's package rolls in host_boss_kill below.
+	if has_local_player():
+		var gem_count := 0
+		if Balance.regular_gems_drop(chapter_id):   # ch1-3 bosses drop no gems (gear only)
+			if first_clear:
+				gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
+			elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
+				gem_count = 1
+		# First-clear catch-up bundle rolls one level richer than the act floor.
+		var boss_gem_lvl := Balance.gem_drop_level(chapter_id) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
+		for gi in gem_count:
+			var boss_gem := drop_gem(boss_gem_lvl)
+			if give_loot({"kind": "gem", "gem": boss_gem}, boss_pos + Vector2(-34.0 + 34.0 * gi, 30)):
+				spawn_text(boss_pos + Vector2(0, -70 - 20 * gi),
+					"+ " + Items.gem_title(boss_gem), Items.gem_color(boss_gem))
 
-	# Boss GEAR channel (round 51): a NEW drop on top of gems/gold/spoils.
-	# Grade from the act table (Act1 ch1-6 B@1/3; ch7 +A@1/10; Act2/3 richer).
-	var ggrade := Items.roll_boss_gear_grade(chapter_id, loot_rng)
-	if ggrade != "":
-		var gear := Items.roll_gear_of_grade(ggrade, loot_rng, player.cls)
-		if give_loot({"kind": "item", "item": gear}, boss_pos + Vector2(40, 30)):
-			spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
-	# Bags: a SEPARATE, rarer roll (round 51b) — inventory expansion, not every
-	# run. Chance is per-act (Balance.bag_drop_chance); the GRADE follows the
-	# chapter's boss band (2026-07-09); over MAX_BAGS keeps the best set.
-	var bag_act: int = Story.act_of(chapter_id)
-	if loot_rng.randf() < Balance.bag_drop_chance(bag_act):
-		player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
+		# Boss GEAR channel (round 51): a NEW drop on top of gems/gold/spoils.
+		# Grade from the act table (Act1 ch1-6 B@1/3; ch7 +A@1/10; Act2/3 richer).
+		var ggrade := Items.roll_boss_gear_grade(chapter_id, loot_rng)
+		if ggrade != "":
+			var gear := Items.roll_gear_of_grade(ggrade, loot_rng, player.cls)
+			if give_loot({"kind": "item", "item": gear}, boss_pos + Vector2(40, 30)):
+				spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
+		# Bags: a SEPARATE, rarer roll (round 51b) — inventory expansion, not every
+		# run. Chance is per-act (Balance.bag_drop_chance); the GRADE follows the
+		# chapter's boss band (2026-07-09); over MAX_BAGS keeps the best set.
+		if loot_rng.randf() < Balance.bag_drop_chance(Story.act_of(chapter_id)):
+			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
 
 	# MP-11 (§5.5): the same boss pays every head. One personal package
 	# per guest — host-rolled (loot_rng, one full roll sequence per player,
@@ -592,14 +631,15 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			if not bool(_meta.get(Balance.ENDGAME_UNLOCK_META, false)):
 				_meta[Balance.ENDGAME_UNLOCK_META] = true
 				_meta_write()
-		if first_clear:
+		if first_clear and has_local_player():
 			_first_clear_reward(boss_lv)
 		var next_ch := Story.next_chapter(chapter_id)
 		if next_ch != "":
 			meta_unlock(next_ch)
 		# Chapter-specific epilogue beat and victory card, with the
-		# Chapter 1 texts as the fallback.
-		var band := Story.res_band(player.resonance)
+		# Chapter 1 texts as the fallback. DEDICATED: no host character —
+		# the epilogue reads the neutral band (guests see their own cards).
+		var band := Story.res_band(player.resonance if has_local_player() else 0.0)
 		var epilogue: Array = Story.beat_for("epilogue_" + chapter_id, band, flags)
 		if epilogue.is_empty():
 			epilogue = Story.beat_for("epilogue", band, flags)
@@ -630,12 +670,15 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			sfx("victory")
 			# Results card + personal bests (retention roadmap #1): grade the
 			# run, keep account-wide chapter × class bests, shout new ones.
-			var res := run_results()
-			if weekly_active:
-				_finish_weekly(res)
-			var pb := record_chapter_result(res)
-			hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
-			hud.show_results(res, pb)
+			# DEDICATED: no host character — no card, no PB row; the run
+			# stats live in the world save, guests each grade their own.
+			if has_local_player():
+				var res := run_results()
+				if weekly_active:
+					_finish_weekly(res)
+				var pb := record_chapter_result(res)
+				hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
+				hud.show_results(res, pb)
 			# MP-14 (§5.4): the party sees the card at the same moment. Each
 			# guest runs net_victory — its OWN run stats + its OWN chapter
 			# credit / weekly reward, applied owner-side (§5.7). Fan BEFORE the
@@ -643,6 +686,10 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			if net_host():
 				net_session().host_victory(vtext, next_ch != "")
 			request_pause(true)
+			# DEDICATED: nobody presses ENTER on a server — after a grace
+			# window for guests to read their cards, the world marches on.
+			if dedicated:
+				_server_after_victory(next_ch)
 		if epilogue.is_empty():
 			end_it.call()
 		else:
@@ -698,10 +745,16 @@ func _kill_gold(base: int) -> int:
 func on_enemy_died(e: Enemy) -> void:
 	if e is Boss:
 		return  # boss drops are handled in on_boss_died
-	Pickup.drop_gold(self, _kill_gold(e.gold_value), e.global_position)
+	# DEDICATED: the host-personal drops (own pile, own chest rolls) need a
+	# local player to receive them — guests' shares fan below regardless.
+	# (The old outer `e.elite and is_instance_valid(player)` gate would have
+	# swallowed host_elite_kill on a server: no player, no elite pinatas for
+	# anyone. Solo behavior is identical — the player is always valid there.)
+	if has_local_player():
+		Pickup.drop_gold(self, _kill_gold(e.gold_value), e.global_position)
 	if e.xp_value > 0 or e.gold_value > 0 or e.elite:
 		note_kill(e.kind)  # codex completion (scenery props and event mood spawns don't count)
-	if e.elite and is_instance_valid(player):
+	if e.elite:
 		run_elites += 1
 		bounty_progress("elite_kills")
 		# Elite loot pinata (playtest round 6): a guaranteed gem, a
@@ -711,40 +764,44 @@ func on_enemy_died(e: Enemy) -> void:
 		# the gem guarantee starts at ELITE_GEM_SURE_LEVEL — below it
 		# the gem is a chance, so chapter-1 bags stop drowning in gems
 		# nobody can socket yet.
-		if Balance.regular_gems_drop(chapter_id) and (e.level >= Balance.ELITE_GEM_SURE_LEVEL \
-				or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE):
-			var gem := drop_gem(Balance.gem_drop_level(chapter_id))
-			if give_loot({"kind": "gem", "gem": gem}, e.global_position):
-				spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
-		Chest.drop(self, "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
-			e.global_position + Vector2(44, 0))
-		if loot_rng.randf() < Balance.ELITE_STONE_CHANCE:
-			if give_loot({"kind": "stone", "stone": Items.make_reset_stone()}, e.global_position + Vector2(-36, 8)):
-				spawn_text(e.global_position + Vector2(0, -92), "+ Stone of Unlearning", Color(0.6, 0.9, 1.0))
-		elif loot_rng.randf() < Balance.ELITE_TOME_CHANCE:
-			if give_loot({"kind": "stone", "stone": Items.make_respec_tome()}, e.global_position + Vector2(-36, 8)):
-				spawn_text(e.global_position + Vector2(0, -92), "+ Palimpsest of the Path", Color(0.6, 0.9, 1.0))
-		elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
-			# 2026-07-09: bag grade follows the chapter's boss table (like boss bags).
-			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
+		if has_local_player():
+			if Balance.regular_gems_drop(chapter_id) and (e.level >= Balance.ELITE_GEM_SURE_LEVEL \
+					or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE):
+				var gem := drop_gem(Balance.gem_drop_level(chapter_id))
+				if give_loot({"kind": "gem", "gem": gem}, e.global_position):
+					spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
+			Chest.drop(self, "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
+				e.global_position + Vector2(44, 0))
+			if loot_rng.randf() < Balance.ELITE_STONE_CHANCE:
+				if give_loot({"kind": "stone", "stone": Items.make_reset_stone()}, e.global_position + Vector2(-36, 8)):
+					spawn_text(e.global_position + Vector2(0, -92), "+ Stone of Unlearning", Color(0.6, 0.9, 1.0))
+			elif loot_rng.randf() < Balance.ELITE_TOME_CHANCE:
+				if give_loot({"kind": "stone", "stone": Items.make_respec_tome()}, e.global_position + Vector2(-36, 8)):
+					spawn_text(e.global_position + Vector2(0, -92), "+ Palimpsest of the Path", Color(0.6, 0.9, 1.0))
+			elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
+				# 2026-07-09: bag grade follows the chapter's boss table (like boss bags).
+				player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
 		# MP-11 (§5.5): the pinata pays every head — a personal, host-rolled
 		# package per guest (roll_elite_pack mirrors the block above; keep
 		# them in step) + their own elite bounty credit.
 		if net_host():
 			net_session().host_elite_kill(e)
 	else:
-		# Chance-based chest drops (Greed nudges the odds up from its first point).
-		var bonus := Stats.greed_loot(player.current_greed()) if is_instance_valid(player) else 0.0
-		var roll := loot_rng.randf()
-		if roll < Balance.MOB_SILVER_CHEST_CHANCE + bonus * 0.3:
-			Chest.drop(self, "silver", e.global_position)
-		elif roll < Balance.MOB_WOOD_CHEST_CHANCE + bonus:
-			Chest.drop(self, "wood", e.global_position)
-		# Gold Rush: rarely, a PAYING trash kill spills a charged coin — grab
-		# it and greed surges for a window. The farm loop's slot-machine beat
-		# (summons/mood spawns pay nothing and can never spill one).
-		if e.gold_value > 0 and loot_rng.randf() < Balance.GOLDRUSH_DROP_CHANCE:
-			Pickup.drop_goldrush(self, e.global_position + Vector2(0, 26))
+		# Chance-based chest drops (Greed nudges the odds up from its first
+		# point). Host-personal — skipped whole on a dedicated server
+		# (unopenable chests would just litter the room until reset).
+		if has_local_player():
+			var bonus := Stats.greed_loot(player.current_greed())
+			var roll := loot_rng.randf()
+			if roll < Balance.MOB_SILVER_CHEST_CHANCE + bonus * 0.3:
+				Chest.drop(self, "silver", e.global_position)
+			elif roll < Balance.MOB_WOOD_CHEST_CHANCE + bonus:
+				Chest.drop(self, "wood", e.global_position)
+			# Gold Rush: rarely, a PAYING trash kill spills a charged coin — grab
+			# it and greed surges for a window. The farm loop's slot-machine beat
+			# (summons/mood spawns pay nothing and can never spill one).
+			if e.gold_value > 0 and loot_rng.randf() < Balance.GOLDRUSH_DROP_CHANCE:
+				Pickup.drop_goldrush(self, e.global_position + Vector2(0, 26))
 		# MP-11 (§5.5): the same trash kill pays every head — each guest gets
 		# a personal kill event: the BASE pile (their machine applies its own
 		# Hunger/weekly/greed), their own chest-chance roll (it reads THEIR
@@ -791,14 +848,16 @@ func on_enemy_died(e: Enemy) -> void:
 ## retention roadmap #4).
 func _curse_payout(zi: int) -> void:
 	var pos := room_center(zi) + Vector2(0, -60)
-	Chest.drop(self, "gold", pos)
-	if Balance.regular_gems_drop(chapter_id):   # gem reward only once gems drop (ch4+)
-		var gem := drop_gem(
-			2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
-		if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(44, 24)):
-			spawn_text(pos + Vector2(0, -40), "+ " + Items.gem_title(gem), Items.gem_color(gem))
-	sfx("nova", 0.8)
-	if is_instance_valid(player):
+	# Host-personal hoard — a DEDICATED server skips it (guests' shares
+	# fan below; the sfx/toast are per-machine presentation anyway).
+	if has_local_player():
+		Chest.drop(self, "gold", pos)
+		if Balance.regular_gems_drop(chapter_id):   # gem reward only once gems drop (ch4+)
+			var gem := drop_gem(
+				2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
+			if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(44, 24)):
+				spawn_text(pos + Vector2(0, -40), "+ " + Items.gem_title(gem), Items.gem_color(gem))
+		sfx("nova", 0.8)
 		spawn_text(player.global_position + Vector2(0, -78),
 			"THE CURSE LIFTS — its hoard is yours", Color(0.8, 0.6, 1.0), 3.5)
 	# MP-11 (§5.5): the party shared the crueler pack, so the bargain pays
@@ -1012,7 +1071,12 @@ func _death_begin(p: Player) -> void:
 ## nearest pacified room and play resumes. forced_room (MP-12): a wipe
 ## respawns GUESTS at the HOST's respawn-room decision — their own
 ## cleared/zone_alive maps are mirrors, not truth. Solo callers omit it.
-func _death_respawn(p: Player, death_room: int, forced_room := -1) -> void:
+## The WORLD half of a death/wipe: bosses walk home and heal, the death
+## room re-arms, homeless spawns despawn, survivors calm down. Shared by
+## _death_respawn (solo + every machine's wipe replay) and the DEDICATED
+## server's wipe path (net_wipe), which has no local body to respawn but
+## still owns the authoritative reset.
+func _death_world_reset(death_room: int) -> void:
 	for b in _live_bosses().duplicate():
 		var live_b: Boss = b
 		if live_b.zone_idx < 0:
@@ -1045,6 +1109,10 @@ func _death_respawn(p: Player, death_room: int, forced_room := -1) -> void:
 			e.alerted = false
 			e.global_position = e.home
 
+
+func _death_respawn(p: Player, death_room: int, forced_room := -1) -> void:
+	_death_world_reset(death_room)
+
 	# Respawn at the nearest pacified room to where you fell — a cleared
 	# combat room counts, so a boss wipe no longer marches you back through
 	# the whole chapter (2026-07-09).
@@ -1074,15 +1142,28 @@ func _death_respawn(p: Player, death_room: int, forced_room := -1) -> void:
 func net_wipe(death_room: int, safe_room: int) -> void:
 	if state != ST_PLAYING:
 		return
-	var p: Player = local_player
-	if p == null or not is_instance_valid(p):
-		return
 	# The fall is now a death: drop the §5.3 detour state on EVERY player
 	# object — owners never broadcast an "up" through a wipe, so shells
 	# must shed their downed/ghost flags here (vitals re-truth the bars).
 	for q in players:
 		if q != null and is_instance_valid(q):
 			q.net_clear_down_local()
+	var p: Player = local_player
+	if p == null or not is_instance_valid(p):
+		# DEDICATED: no local body fell, but the AUTHORITATIVE world still
+		# runs the death beat — bosses walk home and heal, the death room
+		# re-arms — while each guest replays the flow on its own machine
+		# (their ST_DEAD watcher asks for an enemy resync on recovery).
+		if not dedicated:
+			return
+		state = ST_DEAD
+		run_deaths += 1
+		fight_wipe()
+		await get_tree().create_timer(Balance.DEATH_BEAT_SECS).timeout
+		_death_world_reset(death_room)
+		state = ST_PLAYING
+		autosave()  # a wipe is a world event — persist it (step B)
+		return
 	p.hp = 0.0
 	p.dead = true
 	p.play_death_anim()
@@ -1184,22 +1265,27 @@ func recall_to_safe() -> bool:
 # ================================================================== helpers
 
 ## Timed terrain happenings (magma rain, zombies, gusts, lightning...).
-func run_terrain_event(ev: String) -> void:
+## `zi_in`/`anchor` (MMO step A): the DEDICATED server fires events per
+## OCCUPIED room, anchored on a player standing in it — solo callers pass
+## nothing and keep the exact old cur_room + local-player behavior.
+func run_terrain_event(ev: String, zi_in := -1, anchor: Player = null) -> void:
 	# MP-12 fold-in (a): terrain weather is WORLD simulation — in a session
 	# only the HOST rolls it; its tells reach guests as the telegraph events
 	# game_base already broadcasts plus the hazard event below (a guest
 	# rolling its own would double the weather and desync the ground truth).
-	# Solo: net_guest() is false, nothing changes. Aiming events at guest
-	# positions (a guest alone in a lava room) is MP-15's terrain sweep.
+	# Solo: net_guest() is false, nothing changes.
 	if net_guest():
 		return
-	var zi := cur_room
+	var zi := zi_in if zi_in >= 0 else cur_room
+	var p: Player = anchor if anchor != null else local_player
+	if p == null or not is_instance_valid(p) or p.dead:
+		return
 	match ev:
 		"magma_rain":
 			# Magma falls from the sky — sometimes the floor collapses
 			# into a lingering lava pool instead.
 			if randf() < 0.3:
-				var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), player.global_position)
+				var pos := clamp_to_zone(p.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), p.global_position)
 				telegraph(pos, 75.0, 1.3, 10.0, {"color": Color(1.0, 0.35, 0.1, 0.5)})
 				_add_hazard.call_deferred(zi, "lava", pos, 70.0, 22.0)
 				# MP-10 hazard-event pattern: guests paint the same pool and
@@ -1208,14 +1294,14 @@ func run_terrain_event(ev: String) -> void:
 					net_session().host_hazard(zi, "lava", pos, 70.0, 22.0)
 			else:
 				for i in randi_range(1, 2):
-					var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-260, 260), randf_range(-180, 180)), player.global_position)
+					var pos := clamp_to_zone(p.global_position + Vector2(randf_range(-260, 260), randf_range(-180, 180)), p.global_position)
 					telegraph(pos, 65.0, 1.0, 16.0, {"color": Color(1.0, 0.35, 0.1, 0.55), "fireball": true})
 		"grave_spawn":
 			if zone_alive.get(zi, 0) > 0 or is_instance_valid(current_boss):
-				var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-220, 220), randf_range(-160, 160)), player.global_position)
+				var pos := clamp_to_zone(p.global_position + Vector2(randf_range(-220, 220), randf_range(-160, 160)), p.global_position)
 				burst(pos, Color(0.5, 0.45, 0.35), 12)
 				sfx("gate", 1.4)
-				var z := Enemy.make(self, "zombie", pos, player.level)  # scales with you
+				var z := Enemy.make(self, "zombie", pos, p.level)  # scales with you
 				z.xp_value = 0   # event spawns are mood, not a farm —
 				z.gold_value = 0  # chapter XP/gold stays a fixed total
 				z.force_aggro = true
@@ -1225,24 +1311,28 @@ func run_terrain_event(ev: String) -> void:
 			gust_vec = Vector2.RIGHT.rotated(randf() * TAU) * 220.0
 			gust_t = 1.8
 			sfx("blink", 0.6)
-			burst(player.global_position + gust_vec.normalized() * -80.0, Color(0.85, 0.72, 0.45), 16)
+			burst(p.global_position + gust_vec.normalized() * -80.0, Color(0.85, 0.72, 0.45), 16)
 			# Wave-1 co-op fix: weather is host-only (guests early-return above),
 			# so the gust push never reached them — fan the vector/timer so it
 			# shoves their player + enemies too (game.gd per-frame decays it).
 			if net_host():
 				net_session().host_gust(gust_vec, gust_t)
 		"lightning":
-			var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-160, 160), randf_range(-120, 120)), player.global_position)
+			var pos := clamp_to_zone(p.global_position + Vector2(randf_range(-160, 160), randf_range(-120, 120)), p.global_position)
 			telegraph(pos, 60.0, 0.55, 24.0, {"color": Color(0.7, 0.85, 1.0, 0.6)})
 			hud.flash_screen(Color(0.8, 0.9, 1.0), 0.25, 0.2)
 		"shard":
-			var pos := clamp_to_zone(player.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), player.global_position)
+			var pos := clamp_to_zone(p.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), p.global_position)
 			telegraph(pos, 55.0, 0.7, 14.0, {"color": Color(0.5, 0.85, 1.0, 0.55)})
 			sfx("nova", 1.3)
 
 ## Apply floor-patch effects to the player and enemies (ticked at 2.5Hz).
+## DEDICATED: the player half skips whole (each guest's own machine ticks
+## its own player — §4.1 hazards row); the enemy half is authority work.
 func _apply_hazards() -> void:
-	player.hazard_speed = 1.0
+	var lp: Player = local_player if has_local_player() else null
+	if lp != null:
+		lp.hazard_speed = 1.0
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e:
@@ -1267,22 +1357,22 @@ func _apply_hazards() -> void:
 		# Player effects. MP-12: a DOWNED/GHOST body is past hazard reach —
 		# take_damage would no-op anyway, and the heal patch must not lift
 		# a fallen player above 0 (the §5.3 paths own standing up).
-		if not player.dead and not player.downed and not player.ghost \
-				and player.global_position.distance_to(h["pos"]) <= h["radius"]:
+		if lp != null and not lp.dead and not lp.downed and not lp.ghost \
+				and lp.global_position.distance_to(h["pos"]) <= h["radius"]:
 			match h["type"]:
 				"lava":
-					player.take_damage(12.0, "magic")
+					lp.take_damage(12.0, "magic")
 				"churned":  # Sexton's grave-earth: imposed floor, phys, boss-only
-					player.take_damage(9.0, "phys")
+					lp.take_damage(9.0, "phys")
 				"poison":
-					player.take_damage(6.0, "true")
+					lp.take_damage(6.0, "true")
 				"ice":
-					player.hazard_speed = 1.35
+					lp.hazard_speed = 1.35
 				"slow":
-					player.hazard_speed = 0.7
+					lp.hazard_speed = 0.7
 				"heal":
-					if player.hp < player.max_hp:
-						player.hp = minf(player.max_hp, player.hp + player.max_hp * 0.02)
+					if lp.hp < lp.max_hp:
+						lp.hp = minf(lp.max_hp, lp.hp + lp.max_hp * 0.02)
 		# Enemies share physical patches (ice, slow, lava).
 		if h["type"] in ["ice", "slow", "lava"]:
 			for node in get_tree().get_nodes_in_group("enemies"):
@@ -1304,15 +1394,15 @@ func _apply_hazards() -> void:
 	if not rv.is_empty():
 		var rect: Rect2 = rv["rect"]
 		var bridge: Rect2 = rv["bridge"]
-		if not player.dead and rect.has_point(player.global_position) \
-				and not bridge.has_point(player.global_position):
+		if lp != null and not lp.dead and rect.has_point(lp.global_position) \
+				and not bridge.has_point(lp.global_position):
 			wading = true
-			player.damp_time = Balance.DAMP_DURATION  # Damp: refreshes while wading, lingers after
+			lp.damp_time = Balance.DAMP_DURATION  # Damp: refreshes while wading, lingers after
 			if not was_wading:
 				sfx("splash")
-				burst(player.global_position + Vector2(0, 14), Color(0.75, 0.85, 0.9), 8)
+				burst(lp.global_position + Vector2(0, 14), Color(0.75, 0.85, 0.9), 8)
 			elif randf() < 0.45:
-				_ripple(player.global_position + Vector2(0, 14))
+				_ripple(lp.global_position + Vector2(0, 14))
 		for node in get_tree().get_nodes_in_group("enemies"):
 			var e := node as Enemy
 			if e and not e.dying and rect.has_point(e.global_position) \
@@ -1323,7 +1413,7 @@ func _apply_hazards() -> void:
 	# Grass rustle (visual pass): brushing past swaying decor (the wind
 	# material marks it; water/planks are non-centered and skipped) kicks
 	# a few leaves loose. Per-plant cooldown keeps it a whisper.
-	if not player.dead and player.velocity.length() > 30.0:
+	if lp != null and not lp.dead and lp.velocity.length() > 30.0:
 		var scenery: Array = zone_scenery.get(cur_room, [])
 		for i in range(scenery.size() - 1, -1, -1):
 			# Ambience nodes free themselves (fled birds, riverless ripples)
@@ -1334,7 +1424,7 @@ func _apply_hazards() -> void:
 			var ds := scenery[i] as Sprite2D
 			if ds == null or ds.material == null or not ds.centered:
 				continue
-			if ds.global_position.distance_to(player.global_position) > 30.0:
+			if ds.global_position.distance_to(lp.global_position) > 30.0:
 				continue
 			if Time.get_ticks_msec() < int(ds.get_meta("rustle_at", 0)):
 				continue

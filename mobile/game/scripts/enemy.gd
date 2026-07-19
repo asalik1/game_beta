@@ -603,6 +603,11 @@ func _physics_process(delta: float) -> void:
 	# is exactly {cur_room}, so this is the old gate to the frame.
 	if zone_idx >= 0 and not game.active_rooms.has(zone_idx):
 		return
+	# DEDICATED: an EMPTY registry means an empty server — even homeless
+	# spawns freeze (there is no prey; _think/ability coroutines would
+	# chase a null target). Solo/host/guest always hold at least one entry.
+	if game.players.is_empty():
+		return
 	# MP-09: mirrors are presentation clones — the sim lives on the host.
 	# They chase the ~20 Hz snapshot and run the strip clock; nothing
 	# below (AI, statuses, windups, contact damage) may run on one.

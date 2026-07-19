@@ -40,7 +40,8 @@ func switch_chapter(id: String, force := false) -> void:
 	# (ch1-3) hands ONE free health potion that EXPIRES on leaving it. The
 	# absolute set below is grant + expiry in one move (revisits can never
 	# stack freebies); loads overwrite it from the save right after this.
-	player.potions_free = 1 if chapter_id in Balance.FREE_POTION_CHAPTERS else 0
+	if has_local_player():
+		player.potions_free = 1 if chapter_id in Balance.FREE_POTION_CHAPTERS else 0
 	var chapter: Dictionary = Story.chapter(id)
 	zones = chapter["zones"]
 	zone_count = zones.size()
@@ -50,7 +51,9 @@ func switch_chapter(id: String, force := false) -> void:
 	world = Node2D.new()
 	world.y_sort_enabled = true
 	add_child(world)
-	move_child(world, player.get_index())  # draw under the hero again
+	# Draw under the hero again (a DEDICATED server renders nothing — any
+	# slot works, and there is no hero to sit under).
+	move_child(world, player.get_index() if has_local_player() else 0)
 
 	gates.clear()
 	interactables.clear()
@@ -81,8 +84,9 @@ func switch_chapter(id: String, force := false) -> void:
 	_build_door_seals()
 	quest_key = String(chapter.get("start_quest", "talk"))
 
-	player.global_position = _start_pos()
-	last_safe_room = maxi(0, room_at_pos(player.global_position))
+	if has_local_player():
+		player.global_position = _start_pos()
+	last_safe_room = maxi(0, room_at_pos(_start_pos()))
 	_enter_room(last_safe_room)
 	ambient.color = Terrains.get_terrain(terrain_by_zone[cur_room])["tint"]
 	refresh_quest()
@@ -999,7 +1003,12 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	world.add_child(npc)
 	interactables.append({"node": npc, "prompt": prompt, "action": action,
 		"sprite": spr, "dir_anims": dir_anims, "render_scale": render_scale,
-		"size_var": nsize, "body_target": body_target})
+		"size_var": nsize, "body_target": body_target,
+		# Interaction-facing is presentation-only. Preserve the exact authored
+		# rest pose so leaving a conversation or shop never leaves a citizen
+		# rotated, rescaled, or vertically shifted.
+		"rest_tex": spr.texture, "rest_frames": spr.hframes, "rest_frame": spr.frame,
+		"rest_scale": spr.scale, "rest_pos": spr.position})
 	return npc
 
 ## Props that grow in natural CLUMPS (a stand of trees, a patch of mushrooms,
@@ -1032,6 +1041,13 @@ func _spawn_scenery(zi: int) -> void:
 			node.queue_free()
 	zone_scenery[zi] = []
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	# Scenery is TERRAIN-keyed by default, but a ZONE may author its own
+	# props — buildings / obstacles / decor / accents / obstacle_count on the
+	# zone dict override the terrain. Without this, the one "village" terrain
+	# paints Emberfall, the Outskirts and Maren's Camp identically (same five
+	# cottages everywhere). Absent fields fall back to the terrain, so combat
+	# zones just inherit their biome.
+	var zone: Dictionary = zones[zi]
 	var pr := play_rect(zi)
 	var origin: Vector2 = pr.position
 	var pw := pr.size.x
@@ -1045,7 +1061,7 @@ func _spawn_scenery(zi: int) -> void:
 
 	# Non-colliding ground decor (density scaled to the room's area —
 	# small rooms get proportionally less).
-	var decor_list: Array = terrain.get("decor", ["pebble"])
+	var decor_list: Array = zone.get("decor", terrain.get("decor", ["pebble"]))
 	var decor_target := int(ceil(Balance.SCENERY_DECOR_BASE * area_frac * dens))
 	var decor_n := 0
 	while decor_n < decor_target:
@@ -1073,13 +1089,14 @@ func _spawn_scenery(zi: int) -> void:
 		decor_n += dclump
 
 	# Colliding obstacles, kept off the road band and the door lanes.
-	var obstacles: Array = terrain.get("obstacles", ["rock"])
+	var obstacles: Array = zone.get("obstacles", terrain.get("obstacles", ["rock"]))
 	var placed: Array = []
 	var max_x := pw - 760.0 if zones[zi].get("boss", "") != "" else pw - 90.0
 
-	# Buildings first (visual pass): a few homes make the village a
-	# village. Seeded like everything else; obstacles keep clear of them.
-	for bname in terrain.get("buildings", []):
+	# Buildings first (visual pass): AUTHORED landmarks a zone opts into —
+	# Emberfall's cottages + stall, Maren's camp kit — not terrain scatter.
+	# Seeded like everything else; obstacles keep clear of them.
+	for bname in zone.get("buildings", terrain.get("buildings", [])):
 		for attempt in 60:
 			var bpos := Vector2(rng.randf_range(200.0, max_x - 160.0), rng.randf_range(170.0, ph - 180.0))
 			if absf(bpos.y - ph / 2.0) < 160.0 or absf(bpos.x - pw / 2.0) < 190.0:
@@ -1093,7 +1110,7 @@ func _spawn_scenery(zi: int) -> void:
 				placed.append(bpos)
 				zone_scenery[zi].append(_add_building(String(bname), origin + bpos))
 				break
-	var count := int(ceil(float(terrain.get("count", 10)) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
+	var count := int(ceil(float(zone.get("obstacle_count", terrain.get("count", 10))) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
 	var placed_n := 0
 	var guard := 0
 	while placed_n < count and guard < count * 3:
@@ -1156,7 +1173,7 @@ func _spawn_scenery(zi: int) -> void:
 	# last, so twice is uncommon, thrice rare, 4+ near-impossible-but-possible.
 	# A biome with a short accent list just shows fewer — those regions want
 	# more accent art (flagged in terrains.gd).
-	for aname in (terrain.get("accents", []) as Array):
+	for aname in (zone.get("accents", terrain.get("accents", [])) as Array):
 		var ap := minf(0.9, Balance.SCENERY_ACCENT_CHANCE * area_frac * dens)
 		var reps := 0
 		while rng.randf() < ap and reps < 6:
@@ -1229,9 +1246,13 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	spr.texture = Art.tex(sprite_name)
 	# Houses DWARF a person (2026-07-17): a cottage renders ~250px wide ->
 	# ~180px tall, ~2x the 88px hero body — only bosses top a structure.
-	# (The old 120px made a house shorter than the hero.) Normalized by
-	# texture width so a higher-res override PNG lands at the same footprint.
-	var target_w := 250.0 if sprite_name.begins_with("cottage") else 150.0
+	# The stall is mid; the camp kit (bonfire/tripod/meat rack) is person-
+	# scale. Normalized by texture width so an override PNG lands the same.
+	var target_w := 150.0
+	if sprite_name.begins_with("cottage"):
+		target_w = 250.0
+	elif sprite_name.begins_with("camp_"):
+		target_w = 90.0
 	var bscale := target_w / maxf(1.0, float(spr.texture.get_width()))
 	spr.scale = Vector2(bscale, bscale)
 	# Seeded mirroring: half the houses face the other way (free variety).
@@ -1246,17 +1267,9 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	cs.position = Vector2(0, -8.0)
 	cs.shape = shape
 	body.add_child(cs)
+	if sprite_name.begins_with("cottage") or sprite_name == "camp_bonfire":
+		_attach_fire_audio(body)  # hearth / camp fire crackles as you pass
 	if sprite_name.begins_with("cottage"):
-		# The hearth CRACKLES as you walk past (first positional audio).
-		var fire := AudioStreamPlayer2D.new()
-		var fstream: AudioStream = game_stream("campfire")
-		if fstream:
-			fire.stream = fstream
-			fire.max_distance = 340.0
-			fire.attenuation = 1.6
-			fire.volume_db = -6.0
-			fire.autoplay = true
-			body.add_child(fire)
 		var smoke := CPUParticles2D.new()
 		smoke.amount = 8
 		smoke.lifetime = 3.5
@@ -1274,6 +1287,21 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 		body.add_child(smoke)
 	world.add_child(body)
 	return body
+
+
+## Positional hearth / campfire crackle (first positional audio) — cottages
+## and open camp fires both get it, so a flame you walk past sounds alive.
+func _attach_fire_audio(body: Node2D) -> void:
+	var fstream: AudioStream = game_stream("campfire")
+	if not fstream:
+		return
+	var fire := AudioStreamPlayer2D.new()
+	fire.stream = fstream
+	fire.max_distance = 340.0
+	fire.attenuation = 1.6
+	fire.volume_db = -6.0
+	fire.autoplay = true
+	body.add_child(fire)
 
 
 func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
@@ -1300,6 +1328,8 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 		spr.position = Vector2(0, -18)  # trunk base sits at the body origin
 		spr.material = Art.wind_material()  # canopy sways in the wind
 	body.add_child(spr)
+	if sprite_name == "camp_bonfire":
+		_attach_fire_audio(body)  # an open camp fire crackles like a hearth
 	world.add_child(body)
 	return body
 

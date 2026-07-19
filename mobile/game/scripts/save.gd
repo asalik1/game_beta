@@ -150,6 +150,93 @@ static func write_character_home(game: Game, slot: int) -> void:
 		f.store_string(JSON.stringify(out))
 
 
+# ------------------------------------------ dedicated server world (MMO B) ---
+# The DEDICATED server (--server) owns a world with no character attached:
+# its save is exactly the v3 `world` section a character save carries —
+# same fields, same shape — minus the player-position pair (no host body),
+# plus the server's own trusted-clock anchor. Kept format-compatible so a
+# future account backend (MMO step C) lifts it unchanged.
+
+const SERVER_WORLD_PATH := "user://server_world.json"
+
+static func write_server_world(game: Game) -> void:
+	var world := {
+		"quest_key": game.quest_key,
+		"talked_to_elder": game.talked_to_elder,
+		"flags": game.flags,
+		"merchant_zones": game.merchant_zones,
+		"run_time": game.run_time, "run_deaths": game.run_deaths,
+		"run_elites": game.run_elites, "run_secrets": game.run_secrets,
+		# A server world is never the weekly-challenge run (that is a
+		# per-player replay mode) — persisted false by construction.
+		"weekly_active": false, "weekly_week": -1,
+		"bosses_slain": game.boss_done.keys(),
+		"cur_room": game.cur_room,
+		"last_safe_room": game.last_safe_room,
+		"visited_rooms": game.visited.keys(),
+		"cleared_rooms": game.cleared.keys(),
+		"door_seen": game.door_seen.keys(),
+		"wander_seed": game.wander_seed,
+	}
+	var data := {
+		"version": VERSION,
+		"saved_at": Time.get_unix_time_from_system(),
+		"chapter": game.chapter_id,
+		# The server owns the session's trusted clock (§4.1 clock row);
+		# persisting the anchor keeps it monotonic across restarts.
+		"clock_anchor": game.trusted_now(),
+		"world": world,
+	}
+	var f := FileAccess.open(SERVER_WORLD_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(data))
+
+
+static func exists_server_world() -> bool:
+	return FileAccess.file_exists(SERVER_WORLD_PATH)
+
+
+static func read_server_world() -> Dictionary:
+	if not FileAccess.file_exists(SERVER_WORLD_PATH):
+		return {}
+	var f := FileAccess.open(SERVER_WORLD_PATH, FileAccess.READ)
+	if f == null:
+		return {}
+	var data = JSON.parse_string(f.get_as_text())
+	return data if data is Dictionary else {}
+
+
+## Apply a server world file onto a freshly rebuilt world — the world half
+## of apply(), player-free. The caller honors load_save's contract: set
+## wander_seed and switch_chapter(chapter, true) BEFORE calling this.
+static func apply_server_world(game: Game, data: Dictionary) -> void:
+	var w := world_of(data)
+	game.clock_anchor = maxi(game.clock_anchor, int(data.get("clock_anchor", 0)))
+	game.quest_key = String(w.get("quest_key", "talk"))
+	game.talked_to_elder = bool(w.get("talked_to_elder", false))
+	game.flags = w.get("flags", {})
+	game.run_time = float(w.get("run_time", 0.0))
+	game.run_deaths = int(w.get("run_deaths", 0))
+	game.run_elites = int(w.get("run_elites", 0))
+	game.run_secrets = int(w.get("run_secrets", 0))
+	game.boss_done = {}
+	for kind in w.get("bosses_slain", []):
+		game.boss_done[String(kind)] = true
+	for r in w.get("visited_rooms", []):
+		game.visited[int(r)] = true
+	for r in w.get("cleared_rooms", []):
+		game.cleared[int(r)] = true
+	for r in w.get("door_seen", []):
+		game.door_seen[int(r)] = true
+	game.last_safe_room = clampi(int(w.get("last_safe_room", 0)), 0, game.zone_count - 1)
+	for z in w.get("merchant_zones", []):
+		game._spawn_merchant(int(z))
+	# Stand the world at its last safe room: the join snapshot's spawn_room
+	# is cur_room, so joiners arrive somewhere pacified.
+	game._enter_room(game.last_safe_room)
+	game.reconcile_after_load()
+
+
 ## Reads always return the v3 shape: legacy flat blobs are lifted in
 ## memory here (the file on disk stays as-is until the next autosave).
 static func read(slot: int) -> Dictionary:

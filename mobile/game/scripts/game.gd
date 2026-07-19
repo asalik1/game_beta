@@ -14,6 +14,16 @@ var mp_host := false        # --mp-host[=ip:port]: host while playing normally
 var mp_host_code := ""      # optional listen override (default 127.0.0.1:9999)
 var mp_join_code := ""      # --mp-join=<code>: skip the title flow, join + handshake
 var mp_cls := "warrior"     # --mp-cls=<class>: the joiner's dev character class
+# --- DEDICATED server boot (MMO step A; `dedicated` itself lives in
+# game_base — cross-layer code gates on it). Layer-local: boot flow only.
+var server_code := ""       # --server[=port|ip:port]: listen address
+var server_chapter := "ch1" # --chapter=<id>: fresh-world chapter pick
+var server_fresh := false   # --fresh: ignore any persisted world file
+var _server_save_t := 0.0   # periodic world-save cadence (MMO step B)
+const SERVER_SAVE_EVERY := 60.0  # s between periodic world writes
+const SERVER_EVENT_SPAN := [5.0, 8.0]  # terrain-event re-arm span (solo reads
+                                       # the room's own event_t; the server
+                                       # shares one timer across rooms)
 
 
 ## Filenames in an override asset dir (assets/<dir>, e.g. "sounds"/"music").
@@ -54,6 +64,21 @@ func _ready() -> void:
 			mp_join_code = s.get_slice("=", 1)
 		elif s.begins_with("--mp-cls="):
 			mp_cls = s.get_slice("=", 1)
+		elif s == "--server" or s.begins_with("--server="):
+			# DEDICATED (MMO step A): headless world authority, no local
+			# player. `--server=48300` or `--server=ip:port`; default port 9999.
+			dedicated = true
+			var v := s.get_slice("=", 1) if s.contains("=") else ""
+			if v == "":
+				server_code = "0.0.0.0:%d" % NetManager.DEFAULT_PORT
+			elif v.contains(":"):
+				server_code = v
+			else:
+				server_code = "0.0.0.0:%d" % int(v)
+		elif s.begins_with("--chapter="):
+			server_chapter = s.get_slice("=", 1)
+		elif s == "--fresh":
+			server_fresh = true
 	# Hand the session bridge its game: net_session.gd (a child of the
 	# NetworkManager autoload) owns the join handshake + movement sync.
 	var net_session: Node = get_node_or_null("/root/NetworkManager/Session")
@@ -154,10 +179,14 @@ func _ready() -> void:
 	add_child(world)
 	_build_door_seals()
 
-	player = Player.new()
-	player.game = self
-	player.global_position = _start_pos()
-	add_child(player)
+	# DEDICATED: no local player, ever — the whole point of step A. Every
+	# lingering "there is always a player on this machine" assumption gates
+	# on has_local_player() / the dedicated _process branch below.
+	if not dedicated:
+		player = Player.new()
+		player.game = self
+		player.global_position = _start_pos()
+		add_child(player)
 
 	reticle = Sprite2D.new()
 	reticle.texture = Art.tex("reticle")
@@ -180,7 +209,10 @@ func _ready() -> void:
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 8.0
 	camera.zoom = Vector2(1.12, 1.12)  # slightly closer = chunkier pixels
-	player.add_child(camera)
+	if dedicated:
+		add_child(camera)  # no hero to ride; _enter_room still sets limits
+	else:
+		player.add_child(camera)
 	camera.make_current()
 
 	hud = Hud.new()
@@ -194,12 +226,15 @@ func _ready() -> void:
 	add_child(menus)
 
 	# Build and enter the starting room (the rest of the graph is lazy).
-	_enter_room(room_at_pos(player.global_position))
+	_enter_room(0 if dedicated else room_at_pos(player.global_position))
 
 	# First: pick a class. Then the story begins.
 	call_deferred("_start_flow")
 
 func _start_flow() -> void:
+	if dedicated:
+		_server_boot()   # pure authority: no title flow, no class pick
+		return
 	if mp_join_code != "":
 		_mp_join_boot()  # joiner: no title flow — the world comes from the host
 		return
@@ -236,6 +271,91 @@ func _mp_join_boot() -> void:
 	var net: Node = get_node("/root/NetworkManager")
 	var err: Error = await net.join(mp_join_code)
 	print("[mp] join %s: %s" % [mp_join_code, error_string(err)])
+
+
+## --server (MMO step A): boot the DEDICATED world authority. Listen first
+## (guests may knock while the world builds — the snapshot handshake waits
+## on play_started), then stand the world up: the persisted one if a
+## server_world.json exists (MMO step B), else a fresh roll of --chapter.
+## The lobby stays open forever — drop-in joins are the point.
+func _server_boot() -> void:
+	var net: Node = get_node("/root/NetworkManager")
+	var err: Error = await net.host(NetManager.Mode.ENET_DIRECT, server_code,
+		NetManager.MAX_SERVER_GUESTS)
+	if err != OK:
+		print("[server] FATAL: cannot listen on %s (%s)" % [server_code, error_string(err)])
+		get_tree().quit(1)
+		return
+	var data := SaveGame.read_server_world()
+	if server_fresh or data.is_empty():
+		wander_seed = randi() % 1000000
+		reset_run_stats()
+		switch_chapter(server_chapter, true)
+		print("[server] fresh world: %s, seed %d" % [chapter_id, wander_seed])
+	else:
+		# load_save's contract: seed first, rebuild, then apply the rest.
+		wander_seed = int(SaveGame.world_of(data).get("wander_seed", 0))
+		switch_chapter(String(data.get("chapter", server_chapter)), true)
+		SaveGame.apply_server_world(self, data)
+		print("[server] restored world: %s, seed %d, %d rooms cleared, %d bosses down"
+			% [chapter_id, wander_seed, cleared.size(), boss_done.size()])
+	state = ST_PLAYING
+	play_started = true
+	autosave()  # a fresh world persists its seed immediately (step B)
+	print("[server] world authority up — listening on %s (%d seats)"
+		% [str(net.session_code), NetManager.MAX_SERVER_GUESTS])
+
+
+## DEDICATED per-frame driver: the sim-relevant subset of _process below,
+## with no local player to read. Presentation (HUD binding, reticle, boss
+## bar, camera shake, footsteps, NPC chatter) is skipped whole — guests
+## each render their own.
+func _server_process(delta: float) -> void:
+	# The sim gate follows every CONNECTED player; rooms a guest reached
+	# first build + arm here (same pair the listen host runs per frame).
+	_refresh_active_rooms()
+	_host_ensure_active_rooms()
+	if state != ST_PLAYING:
+		return
+	run_time += delta
+	# Fight-report bookkeeping (boss records/TTK stay meaningful on a
+	# server): first blood engages via take_damage, the clock rides here.
+	if fight_active:
+		for b in _live_bosses():
+			fight_track(b)
+		fight_time += delta
+	# Terrain events fire in every OCCUPIED eventful room, anchored on a
+	# player standing in it (solo anchors on the local player + cur_room).
+	terrain_event_t -= delta
+	if terrain_event_t <= 0.0:
+		terrain_event_t = randf_range(SERVER_EVENT_SPAN[0], SERVER_EVENT_SPAN[1])
+		for r in active_rooms:
+			var zi := int(r)
+			if zi < 0 or zi >= zone_count:
+				continue
+			var ev := String(Terrains.get_terrain(terrain_by_zone[zi]).get("event", ""))
+			if ev == "":
+				continue
+			var anchors := players_in_room(zi)
+			if not anchors.is_empty():
+				run_terrain_event(ev, zi, anchors[randi() % anchors.size()])
+	# Hazard patches tick enemies (and drift/expire) exactly like solo;
+	# each guest's own machine ticks its own player (§4.1 hazards row).
+	hazard_tick -= delta
+	if hazard_tick <= 0.0:
+		hazard_tick = 0.4
+		_apply_hazards()
+	if gust_t > 0.0:
+		gust_t -= delta
+		if gust_t <= 0.0:
+			gust_vec = Vector2.ZERO
+	# Periodic world persistence (step B): autosave() routes to
+	# write_server_world while dedicated. Event saves (room clears, boss
+	# kills, story flags) ride the existing autosave call sites.
+	_server_save_t += delta
+	if _server_save_t >= SERVER_SAVE_EVERY:
+		_server_save_t = 0.0
+		autosave()
 
 func on_class_chosen(id: String) -> void:
 	player.set_class(id)
@@ -396,6 +516,7 @@ func _face_interactable_to_player(entry: Dictionary) -> void:
 	var info: Dictionary = dirs.get(face, {})
 	if info.is_empty():
 		return
+	active_facing_interactable = entry
 	var frames: int = int(info.get("frames", 1))
 	spr.texture = info["tex"]
 	spr.hframes = frames
@@ -416,9 +537,36 @@ func _face_interactable_to_player(entry: Dictionary) -> void:
 				* float(entry.get("size_var", 1.0)), frames)
 
 
+## A conversation/shop owns the temporary facing state. Once its overlay has
+## gone, restore the original south-facing idle instead of leaving the NPC
+## staring at the last player who spoke to them.
+func _restore_interactable_rest_pose() -> void:
+	if active_facing_interactable.is_empty():
+		return
+	var entry := active_facing_interactable
+	active_facing_interactable = {}
+	var spr := entry.get("sprite") as Sprite2D
+	if not is_instance_valid(spr):
+		return
+	var rest_tex := entry.get("rest_tex") as Texture2D
+	if rest_tex == null:
+		return
+	spr.texture = rest_tex
+	spr.hframes = int(entry.get("rest_frames", 1))
+	spr.frame = int(entry.get("rest_frame", 0))
+	spr.scale = entry.get("rest_scale", Vector2.ONE) as Vector2
+	spr.position = entry.get("rest_pos", Vector2.ZERO) as Vector2
+
+
 func _process(delta: float) -> void:
+	if dedicated:
+		_server_process(delta)
+		return
 	talk_cd = maxf(0.0, talk_cd - delta)
 	_dev_review_input(delta)   # dev_mode: slow-mo (\) + zoom (=/-)
+	if not active_facing_interactable.is_empty() and not hud.dialogue_active \
+			and not hud.choices_active and not menus.is_open():
+		_restore_interactable_rest_pose()
 	if hud.dialogue_active or menus.is_open():
 		talk_cd = 0.4
 	if play_started and state == ST_PLAYING:

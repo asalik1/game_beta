@@ -30,9 +30,10 @@ const DATA := {
 	"village": {"name": "Emberfall Village", "ground": "grass", "path": "dirt",
 		"tint": Color(1.0, 0.98, 0.9), "ambient": "leaves_green", "music": "village",
 		"obstacles": ["tree_green", "tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3", "tree_green4"], "decor": ["flower", "flower", "pebble", "grass", "bush", "bush3", "toadstool", "toadstool2", "signpost"], "accents": ["log"], "count": 9,
-		# Two roof colorways per cottage (a2/b2 = PNG override variants) +
-		# seeded mirroring in _add_building keep the village from repeating.
-		"buildings": ["cottage_a", "cottage_b", "stall", "cottage_a2", "cottage_b2"],
+		# Buildings are AUTHORED PER ZONE (_spawn_scenery), not terrain
+		# scatter: this terrain paints the grass + props, and each village
+		# ZONE opts into its own cottages/stall/camp kit. (Cottage roof
+		# colorways a2/b2 = PNG override variants; _add_building mirrors.)
 		"patches": [], "event": ""},
 	"darkwood": {"name": "The Darkwood", "ground": "forest", "path": "dirt",
 		"tint": Color(0.87, 0.94, 0.88), "ambient": "leaves_autumn", "music": "darkwood",
@@ -45,17 +46,17 @@ const DATA := {
 		"river": {"chance": 0.45, "color": Color(0.10, 0.20, 0.19, 0.82)}},
 	"keep": {"name": "Vargoth's Keep", "ground": "stone", "path": "stone",
 		"tint": Color(0.8, 0.78, 0.88), "ambient": "embers", "music": "keep",
-		"obstacles": ["pillar", "pillar", "rock", "rock2", "boulder", "rock3", "boulder2"], "decor": ["crack", "pebble", "rubble"], "accents": ["bones"], "count": 10,
+		"obstacles": ["pillar", "pillar", "rock", "rock2", "boulder", "rock3", "boulder2"], "decor": ["crack", "pebble", "rubble"], "accents": ["bones", "keep_brazier", "keep_arch"], "count": 10,
 		"patches": [], "event": ""},
 	# ------------------------------------------------- new terrains ---
 	"magma": {"name": "Scorched Wastes", "ground": "basalt", "path": "basalt",
 		"tint": Color(1.0, 0.8, 0.7), "ambient": "embers", "music": "magma",
-		"obstacles": ["rock", "rock", "pillar", "rock_volcanic", "boulder", "rock3", "forge_cauldron"], "decor": ["crack", "crack", "pebble", "rubble", "forge_brazier"], "accents": ["bones", "forge_statue"], "count": 12,
+		"obstacles": ["rock", "rock", "pillar", "rock_volcanic", "boulder", "rock3", "forge_cauldron"], "decor": ["crack", "crack", "pebble", "rubble", "forge_brazier"], "accents": ["bones", "forge_statue", "magma_furnace", "magma_chainrig"], "count": 12,
 		"patches": [{"type": "lava", "count": 4, "radius": [55, 85]}],
 		"event": "magma_rain", "event_t": [3.5, 6.5]},
 	"ice": {"name": "Frozen Expanse", "ground": "snow", "path": "snow",
 		"tint": Color(0.88, 0.93, 1.05), "ambient": "snow", "music": "icefield",
-		"obstacles": ["tree_snow", "tree_snow", "rock", "rock_ice", "boulder", "tree_snow2", "tree_winter"], "decor": ["pebble", "grass_frost", "stump_snow"], "accents": ["log"], "count": 12,
+		"obstacles": ["tree_snow", "tree_snow", "rock", "rock_ice", "boulder", "tree_snow2", "tree_winter"], "decor": ["pebble", "grass_frost", "stump_snow"], "accents": ["log", "ice_cairn", "ice_sled"], "count": 12,
 		"patches": [{"type": "ice", "count": 10, "radius": [60, 110]}],
 		"event": "", "bright": true},
 	"graveyard": {"name": "Restless Graveyard", "ground": "gravedirt", "path": "gravedirt",
@@ -89,7 +90,7 @@ const DATA := {
 	"storm": {"name": "Thunder Plains", "ground": "stormgrass", "path": "dirt",
 		# Rain-grey does the mood; the grey-blue GROUND carries the biome.
 		"tint": Color(0.8, 0.86, 0.95), "ambient": "rain", "music": "rainstorm",
-		"obstacles": ["tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3", "deadtree2"], "decor": ["flower", "pebble", "grass", "bush", "bush3"], "accents": ["log"], "count": 8,
+		"obstacles": ["tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3", "deadtree2"], "decor": ["flower", "pebble", "grass", "bush", "bush3"], "accents": ["log", "storm_conductor", "storm_standing_stone"], "count": 8,
 		"patches": [], "event": "lightning", "event_t": [4.0, 7.5]},
 	"void": {"name": "The Void", "ground": "voidstone", "path": "voidstone",
 		# Purple hue-skew keeps the menace; the near-black GROUND is the
@@ -105,7 +106,7 @@ const DATA := {
 		"event": "", "bright": true},
 	"spore": {"name": "Spore Glade", "ground": "sporesoil", "path": "sporesoil",
 		"tint": Color(0.95, 0.85, 1.0), "ambient": "spores", "music": "spore",
-		"obstacles": ["tree_spore", "tree_spore", "rock", "boulder", "tree_spore2"], "decor": ["mushroom", "mushroom", "toadstool", "toadstool2", "grass", "mushroom_blue"], "accents": ["mushroom_purple"], "count": 13,
+		"obstacles": ["tree_spore", "tree_spore", "rock", "boulder", "tree_spore2"], "decor": ["mushroom", "mushroom", "toadstool", "toadstool2", "grass", "mushroom_blue"], "accents": ["mushroom_purple", "spore_vent", "spore_shrine"], "count": 13,
 		"patches": [{"type": "poison", "count": 5, "radius": [60, 90], "drift": true}],
 		"event": ""},
 	# ---- placeholder terrains (2026-07-08 environment-pack sweep) ----

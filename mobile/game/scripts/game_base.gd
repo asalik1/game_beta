@@ -141,6 +141,7 @@ var last_safe_room := 0          # death returns you here
 
 var elder: Node2D
 var interactables: Array = []    # [{node, prompt, action}]
+var active_facing_interactable: Dictionary = {} # NPC temporarily turned toward the local player
 var interact_in_range := false   # is the player next to any interactable? (touch Act-button gate)
 var gates := {}                  # edge key "a_b" -> gate Node2D (locked edges only)
 var zone_alive := {}             # room index -> monsters still alive
@@ -212,6 +213,13 @@ var _halo_pool: Sprite2D = null  # the hero's additive floor-glow (QA 5)
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
 var no_saves := false                 # autotest: never touch real save files
+## DEDICATED SERVER (--server, MMO step A): this process is a headless world
+## authority with NO local player — pure host, peers connect in. Every
+## "host-personal" path (own loot share, own heals, HUD-driven story beats,
+## the solo pause) gates on this or on has_local_player(). The world it runs
+## persists to its own file (SaveGame.write_server_world — MMO step B), and
+## its lobby never closes (drop-in joins are the point).
+var dedicated := false
 # MP-08 (§5.7): this machine is standing in ANOTHER player's world (a
 # guest join built it from the host's snapshot). Autosaves then write
 # ONLY the character block home — never this world's flags/rooms/seed.
@@ -350,6 +358,13 @@ const MUSIC_DB := -16.0
 # second player is a registry entry, not a rewrite. With one registered
 # player they all trivially return that player — solo is bit-identical.
 
+## Does THIS machine drive a player body? False only on a dedicated
+## server (--server) — solo, host and guest always have one. The guard
+## for every host-personal path (own loot/heal/HUD beat/tithe).
+func has_local_player() -> bool:
+	return local_player != null and is_instance_valid(local_player)
+
+
 ## Nearest LIVING player to pos. Falls back to the nearest player
 ## regardless of death if none are alive (so callers that only check
 ## validity — not `dead` — keep their exact solo behavior). Returns
@@ -441,7 +456,10 @@ func unregister_player(pid: int) -> void:
 ## players' rooms union in on top; -1 (outside the graph) never counts.
 func _refresh_active_rooms() -> void:
 	active_rooms.clear()
-	active_rooms[cur_room] = true
+	# DEDICATED: no local player pins a room — the gate is purely the union
+	# of connected players' rooms, so an empty server idles every enemy.
+	if not dedicated:
+		active_rooms[cur_room] = true
 	for p in players:
 		if p == null or not is_instance_valid(p) or p == local_player:
 			continue
@@ -496,7 +514,9 @@ func request_pause(on: bool) -> void:
 	# over, nothing left to simulate, so the results card may freeze every
 	# machine (the host's continue unpauses the party). RPCs are event-driven,
 	# not process-gated, so the advance/end handshake still flows while paused.
-	if on and net_online() and state != ST_VICTORY:
+	# DEDICATED: the world authority NEVER pauses, victory included — its
+	# auto-advance timer must keep ticking with nobody at the keyboard.
+	if on and (dedicated or (net_online() and state != ST_VICTORY)):
 		return
 	get_tree().paused = on
 
@@ -557,6 +577,13 @@ func gamble(tier: String) -> Dictionary:
 ## Guesting in another world (MP-08, §5.7): only the character block
 ## travels home — the host's world must never colonize the guest's save.
 func autosave() -> void:
+	# DEDICATED (MMO step B): the server has no character — its save IS the
+	# world. Every existing autosave call site (room clears, boss kills, flag
+	# changes via story flow, WM_CLOSE) now persists the world file instead.
+	if dedicated:
+		if play_started and not no_saves:
+			SaveGame.write_server_world(self)
+		return
 	# MP (Wave-1 co-op fix): a DOWNED/GHOST player (§5.3) sits at hp<=0 while
 	# still ST_PLAYING — banking that state would load the hero clamped to 1 HP
 	# (apply_character floors hp >= 1). Skip the write until they stand. Solo
@@ -1258,12 +1285,15 @@ func _expire_side_quests() -> Array:
 		var pledge := float(get_flag("sq_pledge_" + sid, 0.0))
 		var res_cost: float = float(over.get("resonance",
 			-(pledge + Balance.QUEST_ABANDON_RESONANCE)))
-		if res_cost != 0.0:
+		# DEDICATED: the world authority has no character to charge — the
+		# roll-call text still builds (guests read it on their cards).
+		if res_cost != 0.0 and has_local_player():
 			player.add_resonance(res_cost)
 		# 2. The people who asked notice — softly, and only if they exist.
 		var standing: Dictionary = over.get("standing", _abandon_standing(q))
-		for fac in standing:
-			player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
+		if has_local_player():
+			for fac in standing:
+				player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
 		var line := String(q.get("name", sid))
 		if res_cost != 0.0:
 			line += "  (%+d resonance)" % int(round(res_cost))
@@ -1814,8 +1844,9 @@ func fight_report() -> void:
 	var tail := "taken %.0f (%.1f/s) · potions %d · wipes %d" % [
 		fight_dmg_taken, fight_dmg_taken / secs, fight_potions, fight_wipes]
 	last_fight_report = head + "\n" + mid + "\n" + tail
-	print("[fight] %s | %s Lv%d | ttk %d:%02d | pool %.0f | dps %.1f | taken %.0f | potions %d | wipes %d" % [
-		roster, player.cls, player.level, mins, int(secs) % 60,
+	var who := "%s Lv%d" % [player.cls, player.level] if has_local_player() else "server"
+	print("[fight] %s | %s | ttk %d:%02d | pool %.0f | dps %.1f | taken %.0f | potions %d | wipes %d" % [
+		roster, who, mins, int(secs) % 60,
 		fight_pool, fight_pool / secs, fight_dmg_taken, fight_potions, fight_wipes])
 	fight_wipes = 0
 	if is_instance_valid(player):

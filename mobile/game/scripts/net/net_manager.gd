@@ -46,6 +46,9 @@ const NET_VERSION := "0.1.2"
 # Transport plumbing, not gameplay tuning — so they live here, not in
 # balance.gd (party scalars etc. stay there).
 const MAX_GUESTS := 3                 # host + 3 = 4-player parties (§0)
+const MAX_SERVER_GUESTS := 4          # DEDICATED (--server): no host body, so
+                                      # 4 guests = the same 4-player ceiling the
+                                      # party-scaling tables (§5.2) are tuned for
 const DEFAULT_ADDRESS := "127.0.0.1"  # ENET_DIRECT dev default
 const DEFAULT_PORT := 9999
 const AUTH_TIMEOUT := 5.0             # s a joiner may dawdle pre-admission
@@ -132,15 +135,17 @@ func _ready() -> void:
 ## (default 127.0.0.1:9999 — the ip half is only what's shown in
 ## session_code; the server listens on all interfaces). NORAY: `code` is an
 ## optional noray server override ("host[:port]", default the public
-## instance). Coroutine — await it. OK = listening; session_code is set.
-func host(p_mode: int = Mode.ENET_DIRECT, code: String = "") -> Error:
+## instance). `max_guests` widens the seat count (the dedicated server
+## passes MAX_SERVER_GUESTS). Coroutine — await it. OK = listening;
+## session_code is set.
+func host(p_mode: int = Mode.ENET_DIRECT, code: String = "", max_guests: int = MAX_GUESTS) -> Error:
 	if _session_active:
 		return ERR_ALREADY_IN_USE
 	match p_mode:
 		Mode.ENET_DIRECT:
-			return _host_enet(code)
+			return _host_enet(code, max_guests)
 		Mode.NORAY:
-			var err: Error = await _host_noray(code if code != "" else NORAY_ADDRESS)
+			var err: Error = await _host_noray(code if code != "" else NORAY_ADDRESS, max_guests)
 			return err
 	return ERR_INVALID_PARAMETER
 
@@ -170,7 +175,7 @@ func is_host() -> bool:
 
 # --------------------------------------------------------- ENet direct ---
 
-func _host_enet(listen: String) -> Error:
+func _host_enet(listen: String, max_guests: int = MAX_GUESTS) -> Error:
 	var address := DEFAULT_ADDRESS
 	var port := DEFAULT_PORT
 	if listen.contains(":"):
@@ -179,7 +184,7 @@ func _host_enet(listen: String) -> Error:
 			address = parts[0]
 		port = int(parts[1])
 	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_server(port, MAX_GUESTS)
+	var err := peer.create_server(port, max_guests)
 	if err != OK:
 		return err
 	multiplayer.multiplayer_peer = peer
@@ -381,14 +386,14 @@ func _noray_register(server: String) -> Error:
 	var remote_err: Error = await _noray.register_remote()
 	return remote_err
 
-func _host_noray(server: String) -> Error:
+func _host_noray(server: String, max_guests: int = MAX_GUESTS) -> Error:
 	var err: Error = await _noray_register(server)
 	if err != OK:
 		return err
 	_noray_role = 1
 	var listen_port: int = _noray.local_port
 	var peer := ENetMultiplayerPeer.new()
-	err = peer.create_server(listen_port, MAX_GUESTS)
+	err = peer.create_server(listen_port, max_guests)
 	if err != OK:
 		return err
 	multiplayer.multiplayer_peer = peer

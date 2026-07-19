@@ -10,8 +10,13 @@
 const CHAPTER_ZONES := {
 	"ch2": [{
 		"name": "Maren's Camp", "terrain": "village", "ground": "grass", "path": "dirt",
-		"obstacles": ["tree_autumn", "tree_green", "rock"], "obstacle_count": 8,
-		"decor": ["flower", "pebble", "mushroom"],
+		# A refugee crossroads, NOT a village (lore) — so no cottages. A
+		# curated camp kit stands in as authored landmarks: the bonfire
+		# (crackles as you pass), a cooking tripod and a meat rack; a
+		# makeshift fence line + wood clutter fill the rest.
+		"buildings": ["camp_bonfire", "camp_tripod", "camp_meatrack"],
+		"obstacles": ["fence", "fence", "tree_autumn", "rock"], "obstacle_count": 6,
+		"decor": ["log2", "grass", "pebble", "tree_stump"],
 		"merchant": [820, 300],
 		"enemies": [], "boss": "",
 		"gate_flag": "ch2_briefed",  # the road east opens after the briefing

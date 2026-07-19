@@ -681,11 +681,21 @@ const ZONES := [
 		"coord": [0, 1], "exits": ["E", "S"], "locks": {"E": "flag:met_elder"},
 		"lock_next": "flag:met_elder",
 		"merchant": [1050, 480], "shop_tier": "wood",
+		# Authored landmarks: two cottages + the market stall (was five
+		# identical facades the village terrain sprayed every room). Props
+		# stay terrain default — village trees/flowers.
+		"buildings": ["cottage_a", "cottage_b", "stall"],
 		"enemies": [], "boss": "",
 	},
 	{
 		"name": "Village Outskirts", "terrain": "village", "type": "social",
 		"coord": [0, 2], "exits": ["N"],
+		# The cultivated EDGE of town, not more cottages: fenced plots, crop
+		# rows, a signpost and roadside stumps. No buildings until a quest
+		# home earns one. Overrides the village terrain's tree/flower scatter.
+		"buildings": [],
+		"obstacles": ["fence", "fence", "tree_green", "rock"], "obstacle_count": 8,
+		"decor": ["crop_carrot", "crop_cabbage", "crop_turnip", "crop_mid", "crop_sprout", "signpost", "tree_stump", "grass", "flower", "pebble"],
 		"enemies": [], "boss": "",
 	},
 	# ------------------------------------------------------- the darkwood ---
