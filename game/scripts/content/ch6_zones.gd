@@ -27,10 +27,10 @@ const CHAPTER_ZONES := {
 			"merchant": [1050, 480], "shop_tier": "silver",
 			"enemies": [], "boss": "",
 			"npcs": [
-				{"sprite": "choirmother", "x": 620, "y": 500, "prompt": "E — Deacon Vela", "convo": "ch6_briefing"},
-				{"sprite": "beastkin", "x": 1400, "y": 400, "prompt": "E — Herbalist Kesh", "convo": "ch6_wildfang"},
-				{"sprite": "warden", "x": 1500, "y": 760, "prompt": "E — Accord", "convo": "ch6_accord"},
-				{"sprite": "villager", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch6_fisher"},
+				{"sprite": "deacon_vela", "x": 620, "y": 500, "prompt": "E — Deacon Vela", "convo": "ch6_briefing"},
+				{"sprite": "herbalist_kesh", "x": 1400, "y": 400, "prompt": "E — Herbalist Kesh", "convo": "ch6_wildfang"},
+				{"sprite": "warden_palla", "x": 1500, "y": 760, "prompt": "E — Accord", "convo": "ch6_accord"},
+				{"sprite": "fisher_dov", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch6_fisher"},
 			],
 		},
 		{
@@ -253,11 +253,11 @@ const BEATS := {
 
 const WANDERERS := {
 	"ch6": [
-		{"sprite": "cultist", "prompt": "E — Talk", "convo": "ch6_wander_convert"},
-		{"sprite": "choirmother", "prompt": "E — Talk", "convo": "ch6_wander_doubter"},
-		{"sprite": "beastkin", "prompt": "E — Talk", "convo": "ch6_wander_scout"},
-		{"sprite": "villager", "prompt": "E — Talk", "convo": "ch6_wander_fisher"},
-		{"sprite": "warden", "prompt": "E — Talk", "convo": "ch6_wander_botanist"},
+		{"sprite": "blooming_convert", "prompt": "E — Talk", "convo": "ch6_wander_convert"},
+		{"sprite": "sister_ottilie", "prompt": "E — Talk", "convo": "ch6_wander_doubter"},
+		{"sprite": "scout_renn", "prompt": "E — Talk", "convo": "ch6_wander_scout"},
+		{"sprite": "reed_cutter_ama", "prompt": "E — Talk", "convo": "ch6_wander_fisher"},
+		{"sprite": "botanist_ferro", "prompt": "E — Talk", "convo": "ch6_wander_botanist"},
 	],
 }
 

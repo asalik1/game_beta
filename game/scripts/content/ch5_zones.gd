@@ -28,10 +28,10 @@ const CHAPTER_ZONES := {
 			"merchant": [1050, 480], "shop_tier": "silver",
 			"enemies": [], "boss": "",
 			"npcs": [
-				{"sprite": "beastkin", "x": 620, "y": 500, "prompt": "E — Tracker Yri", "convo": "ch5_briefing"},
-				{"sprite": "warden", "x": 1400, "y": 400, "prompt": "E — Accord", "convo": "ch5_accord"},
+				{"sprite": "tracker_yri", "x": 620, "y": 500, "prompt": "E — Tracker Yri", "convo": "ch5_briefing"},
+				{"sprite": "warden_sighne", "x": 1400, "y": 400, "prompt": "E — Accord", "convo": "ch5_accord"},
 				{"sprite": "suli", "x": 1500, "y": 760, "prompt": "E — Gentle Suli", "convo": "ch5_cult"},
-				{"sprite": "villager", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch5_mother"},
+				{"sprite": "ansa_shore", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch5_mother"},
 			],
 		},
 		{
@@ -260,11 +260,11 @@ const BEATS := {
 
 const WANDERERS := {
 	"ch5": [
-		{"sprite": "beastkin", "prompt": "E — Talk", "convo": "ch5_wander_skald"},
-		{"sprite": "cultist", "prompt": "E — Talk", "convo": "ch5_wander_driver"},
-		{"sprite": "warden", "prompt": "E — Talk", "convo": "ch5_wander_mapper"},
+		{"sprite": "skald_ottar", "prompt": "E — Talk", "convo": "ch5_wander_skald"},
+		{"sprite": "driver_pell", "prompt": "E — Talk", "convo": "ch5_wander_driver"},
+		{"sprite": "cartographer_bree", "prompt": "E — Talk", "convo": "ch5_wander_mapper"},
 		{"sprite": "onna", "prompt": "E — Talk", "convo": "ch5_wander_memories"},
-		{"sprite": "sentry", "prompt": "E — Talk", "convo": "ch5_wander_deserter"},
+		{"sprite": "ridge_deserter", "prompt": "E — Talk", "convo": "ch5_wander_deserter"},
 	],
 }
 

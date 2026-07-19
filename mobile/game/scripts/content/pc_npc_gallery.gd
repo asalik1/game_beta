@@ -22,4 +22,11 @@ const CONVOS := {
 	"pc_ph_scholar_a":  {"start": "a", "nodes": {"a": {"who": "Scholar (placeholder)",      "text": _PH, "next": ""}}},
 	"pc_ph_scholar_b":  {"start": "a", "nodes": {"a": {"who": "Scholar (placeholder)",      "text": _PH, "next": ""}}},
 	"pc_ph_elder_legacy": {"start": "a", "nodes": {"a": {"who": "Legacy Elder (placeholder)", "text": _PH + " Retired live art; retained for visual comparison only.", "next": ""}}},
+	"pc_ph_legacy_villager": {"start": "a", "nodes": {"a": {"who": "Legacy Villager (placeholder)", "text": _PH + " Retired generic live-NPC art.", "next": ""}}},
+	"pc_ph_legacy_sentry": {"start": "a", "nodes": {"a": {"who": "Legacy Sentry (placeholder)", "text": _PH + " Retired generic live-NPC art.", "next": ""}}},
+	"pc_ph_legacy_warden": {"start": "a", "nodes": {"a": {"who": "Legacy Warden (placeholder)", "text": _PH + " Retired generic live-NPC art.", "next": ""}}},
+	"pc_ph_legacy_envoy": {"start": "a", "nodes": {"a": {"who": "Legacy Envoy (placeholder)", "text": _PH + " Retired generic live-NPC art.", "next": ""}}},
+	"pc_ph_legacy_beastkin": {"start": "a", "nodes": {"a": {"who": "Legacy Beastkin (placeholder)", "text": _PH + " Retired generic live-NPC art.", "next": ""}}},
+	"pc_ph_legacy_choir": {"start": "a", "nodes": {"a": {"who": "Legacy Choir Mother (placeholder)", "text": _PH + " Retired generic live-NPC art.", "next": ""}}},
+	"pc_ph_halla_concept": {"start": "a", "nodes": {"a": {"who": "Mother Halla concept (placeholder)", "text": _PH + " Lore concept retained for review; Halla is not a live hub speaker.", "next": ""}}},
 }

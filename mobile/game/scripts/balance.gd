@@ -64,6 +64,23 @@ const NPC_HEIGHT_BY_SPRITE := {
 	"piet": 1.00, "sera": 0.95, "callis": 0.95, "vessa": 0.98,
 	"choir_pilgrim": 0.95, "caged_beastkin": 0.98, "suli": 0.96,
 	"old_hunter": 0.98,
+	"tinker_osla": 0.90, "ragged_soldier": 0.99, "flame_pilgrim": 0.96,
+	"roadside_peddler": 1.00, "millers_boy": 0.88,
+	"cantor_ilse": 0.94, "warden_corin": 1.00, "factor_imre": 0.97,
+	"old_fenna": 0.92, "digger_haim": 0.95, "mute_mourner": 0.95,
+	"brother_osk": 0.99, "archivist_lene": 0.95, "grave_goods_peddler": 0.96,
+	"overseer_brann": 1.04, "envoy_cassia": 0.97, "warden_edda": 0.98,
+	"smith_petra": 0.95, "smith_harl": 0.98, "clerk_voss": 0.99,
+	"preacher_immo": 0.98, "peddler_nix": 0.96, "sapper_ruel": 0.97,
+	"tracker_yri": 0.95, "warden_sighne": 0.95, "ansa_shore": 0.95,
+	"mother_halla": 0.95, "skald_ottar": 1.00, "driver_pell": 0.99,
+	"cartographer_bree": 0.95, "ridge_deserter": 0.99,
+	"deacon_vela": 0.96, "herbalist_kesh": 0.99, "warden_palla": 0.95,
+	"fisher_dov": 0.98, "blooming_convert": 0.98, "sister_ottilie": 0.94,
+	"scout_renn": 0.98, "reed_cutter_ama": 0.94, "botanist_ferro": 0.99,
+	"commander_ashe": 1.00, "consul_verane": 0.97, "apprentice_sorrel": 0.90,
+	"keeper_vasse": 0.94, "storm_chaser_ilya": 0.98, "quartermaster_bel": 0.99,
+	"bellringer_tam": 0.93, "undertaker_prue": 0.96,
 }
 const NPC_HEIGHT_BY_CONVO := {
 	# Chapter 1 road people.
@@ -80,10 +97,10 @@ const NPC_HEIGHT_BY_CONVO := {
 	"ch3_wander_mute": 0.95, "ch3_wander_defector": 0.99,
 	"ch3_wander_archivist": 0.95, "ch3_wander_peddler": 0.96,
 	# Foundry.
-	"ch4_briefing": 1.04, "ch4_wander_smith": 0.98,
+	"ch4_briefing": 1.04, "ch4_cinder": 0.97, "ch4_accord": 0.98,
+	"ch4_survivor": 0.95, "ch4_shrine_court": 0.95, "ch4_wander_smith": 0.98,
 	"ch4_wander_clerk": 0.99, "ch4_wander_preacher": 0.98,
 	"ch4_wander_charms": 0.96, "ch4_wander_sapper": 0.97,
-	"shrine_court": 0.95,
 	# Frozen shore.
 	"ch5_briefing": 0.95, "ch5_accord": 0.95, "ch5_cult": 0.96,
 	"ch5_mother": 0.95, "ch5_wander_skald": 1.00,
@@ -91,11 +108,12 @@ const NPC_HEIGHT_BY_CONVO := {
 	"ch5_wander_memories": 0.97, "ch5_wander_deserter": 0.99,
 	# The Deep.
 	"ch6_briefing": 0.96, "ch6_wildfang": 0.99, "ch6_accord": 0.95,
-	"ch6_wander_fisher": 0.98, "ch6_wander_convert": 0.98,
+	"ch6_fisher": 0.98, "ch6_wander_fisher": 0.94, "ch6_wander_convert": 0.98,
 	"ch6_wander_doubter": 0.94, "ch6_wander_scout": 0.98,
 	"ch6_wander_botanist": 0.99,
 	# Last relay.
-	"ch7_accord": 1.00, "ch7_cinder": 0.97, "ch7_wander_chaser": 0.98,
+	"ch7_briefing": 0.96, "ch7_accord": 1.00, "ch7_cinder": 0.97,
+	"ch7_apprentice": 0.90, "ch7_wander_keeper": 0.94, "ch7_wander_chaser": 0.98,
 	"ch7_wander_quarter": 0.99, "ch7_wander_bellringer": 0.93,
 	"ch7_wander_undertaker": 0.96,
 }
@@ -114,6 +132,23 @@ const NPC_BODY_TARGETS := {
 	"piet": 52.0, "sera": 52.0, "callis": 52.0, "vessa": 52.0,
 	"choir_pilgrim": 52.0, "caged_beastkin": 52.0, "suli": 52.0,
 	"old_hunter": 52.0,
+	"tinker_osla": 52.0, "ragged_soldier": 52.0, "flame_pilgrim": 52.0,
+	"roadside_peddler": 52.0, "millers_boy": 52.0,
+	"cantor_ilse": 52.0, "warden_corin": 52.0, "factor_imre": 52.0,
+	"old_fenna": 52.0, "digger_haim": 52.0, "mute_mourner": 52.0,
+	"brother_osk": 52.0, "archivist_lene": 52.0, "grave_goods_peddler": 52.0,
+	"overseer_brann": 52.0, "envoy_cassia": 52.0, "warden_edda": 52.0,
+	"smith_petra": 52.0, "smith_harl": 52.0, "clerk_voss": 52.0,
+	"preacher_immo": 52.0, "peddler_nix": 52.0, "sapper_ruel": 52.0,
+	"tracker_yri": 52.0, "warden_sighne": 52.0, "ansa_shore": 52.0,
+	"mother_halla": 52.0, "skald_ottar": 52.0, "driver_pell": 52.0,
+	"cartographer_bree": 52.0, "ridge_deserter": 52.0,
+	"deacon_vela": 52.0, "herbalist_kesh": 52.0, "warden_palla": 52.0,
+	"fisher_dov": 52.0, "blooming_convert": 52.0, "sister_ottilie": 52.0,
+	"scout_renn": 52.0, "reed_cutter_ama": 52.0, "botanist_ferro": 52.0,
+	"commander_ashe": 52.0, "consul_verane": 52.0, "apprentice_sorrel": 52.0,
+	"keeper_vasse": 52.0, "storm_chaser_ilya": 52.0, "quartermaster_bel": 52.0,
+	"bellringer_tam": 52.0, "undertaker_prue": 52.0,
 }
 
 # Hero name (chosen at creation, shown in the co-op lobby/party). Capped so a

@@ -27,10 +27,10 @@ const CHAPTER_ZONES := {
 			"merchant": [1050, 480], "shop_tier": "silver",
 			"enemies": [], "boss": "",
 			"npcs": [
-				{"sprite": "villager", "x": 620, "y": 500, "prompt": "E — Overseer Brann", "convo": "ch4_briefing"},
-				{"sprite": "envoy", "x": 1400, "y": 400, "prompt": "E — Cinderborn", "convo": "ch4_cinder"},
-				{"sprite": "warden", "x": 1500, "y": 760, "prompt": "E — Accord", "convo": "ch4_accord"},
-				{"sprite": "villager", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch4_survivor"},
+				{"sprite": "overseer_brann", "x": 620, "y": 500, "prompt": "E — Overseer Brann", "convo": "ch4_briefing"},
+				{"sprite": "envoy_cassia", "x": 1400, "y": 400, "prompt": "E — Cinderborn", "convo": "ch4_cinder"},
+				{"sprite": "warden_edda", "x": 1500, "y": 760, "prompt": "E — Accord", "convo": "ch4_accord"},
+				{"sprite": "smith_petra", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch4_survivor"},
 			],
 		},
 		{
@@ -186,7 +186,7 @@ const CHAPTER_ZONES := {
 		{
 			"name": "The Foreman's Court", "terrain": "magma", "type": "resonance",
 			"enemies": [], "boss": "",
-			"npcs": [{"sprite": "villager", "x": 1056, "y": 500, "prompt": "E — The Crew", "convo": "ch4_shrine_court"}],
+			"npcs": [{"sprite": "smith_petra", "x": 1056, "y": 500, "prompt": "E — The Crew", "convo": "ch4_shrine_court"}],
 		},
 		{
 			"name": "The Cold Forge", "terrain": "magma", "type": "dead_end", "cache": "silver",
@@ -257,11 +257,11 @@ const BEATS := {
 
 const WANDERERS := {
 	"ch4": [
-		{"sprite": "villager", "prompt": "E — Talk", "convo": "ch4_wander_smith"},
-		{"sprite": "envoy", "prompt": "E — Talk", "convo": "ch4_wander_clerk"},
-		{"sprite": "cultist", "prompt": "E — Talk", "convo": "ch4_wander_preacher"},
-		{"sprite": "merchant", "prompt": "E — Talk", "convo": "ch4_wander_charms"},
-		{"sprite": "warden", "prompt": "E — Talk", "convo": "ch4_wander_sapper"},
+		{"sprite": "smith_harl", "prompt": "E — Talk", "convo": "ch4_wander_smith"},
+		{"sprite": "clerk_voss", "prompt": "E — Talk", "convo": "ch4_wander_clerk"},
+		{"sprite": "preacher_immo", "prompt": "E — Talk", "convo": "ch4_wander_preacher"},
+		{"sprite": "peddler_nix", "prompt": "E — Talk", "convo": "ch4_wander_charms"},
+		{"sprite": "sapper_ruel", "prompt": "E — Talk", "convo": "ch4_wander_sapper"},
 	],
 }
 

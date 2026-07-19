@@ -196,6 +196,7 @@ visually outrank the player character.
 | NPC | Lore anchor | Prompt tail |
 | --- | --- | --- |
 | **Overseer Brann** | `ch4_zones.gd : ch4_briefing` — signed the dockets and owns the foundry's terrible arithmetic. | Broad, soot-marked foundry overseer; heat-cracked leather apron, brass tally counter, ash goggles pushed up rather than worn, work gloves. Guilty manager, not steampunk inventor. |
+| **Warden Edda** | `ch4_zones.gd : ch4_accord` — reads the foundry as a seal being broken by attention. | Weathered Accord field warden; ash-gray practical coat, restrained leather reinforcement, sealed pattern-map folio, soot scarf, one heat-cracked glove. Blunt analyst, not knight or mage. |
 | **Old Smith Harl** | `ch4_quests.gd : ch4_wander_smith` — still quenches in water because ordinary iron matters. | Elderly smith; water-stained apron, simple tongs, small blue-gray quench flask, burnt forearms, quiet work stance. The water is the story accent; no flaming hammer. |
 | **Compact Clerk Voss** | `ch4_zones.gd : ch4_wander_clerk` — administrative Compact presence in the heat. | Neat Compact clerk with soot-protective sleeve covers, document satchel, brass seal press, dark oxblood collar. Precise but physically out of place in the forge. |
 | **Lay Preacher Immo** | `ch4_zones.gd : ch4_wander_preacher` — industrial faith near the heat. | Working-class preacher; heat-faded mourning coat, small folded sermon page, coal-blackened nails, modest ember-red thread. Never a fire mage. |
@@ -210,7 +211,7 @@ visually outrank the player character.
 | **Tracker Yri** | `ch5_quests.gd : ch5_briefing` — asks the player to understand a chieftain feeding forty mouths before confronting him. | Lean Wildfang tracker; snow-stiff hide coat, wolf-tooth tally cord, practical hood, tracker's staff, grain sack patch. Clan authority and compassion, no feral warrior pose. |
 | **Warden Sighne** | `ch5_zones.gd : ch5_accord` — carries the unbearable decision around Serane's failing vigil. | Older Accord warden; layered ice-gray field cloak, ledger of vigil names, frosted iron clasp, steady exhausted posture. Duty weighed, not heroic. |
 | **Gentle Suli** | `ch5_zones.gd : ch5_cult` — cult-side voice in a chapter about soft madness and sleep. | Soft-spoken Long Sleep adherent; quilted white-gray layers, folded blanket bundle, carefully mended sleep charm. Gentle, human, and unsettling; no sinister cult robe. |
-| **Mother Halla** | `ch5_zones.gd : ch5_mother` — shepherd of sleepers and the human cost of the valley. | Older caravan mother; heavy wool mantle, wooden counting beads, grain-sack gloves, one child's scarf tied to pack. No queenly silhouette. |
+| **Ansa of the Shore** | `ch5_zones.gd : ch5_mother` — counts wagons while waiting for Toma and the other sleepers to wake. | Sturdy middle-aged shore woman; salt-stiff wool, tide rope, waxed wagon ledger, wind-reddened face. Civilian endurance, no warrior gear. |
 | **Skald Ottar** | `ch5_quests.gd : ch5_wander_skald` — writes songs about what people stay hard for. | Lean beastkin skald; weather cape, small travel fiddle or frame harp, paper ration tucked in belt, thaw-blue thread. Musician at a fire, not bard spectacle. |
 | **Wagon-Driver Pell** | `ch5_zones.gd : ch5_wander_driver` — road labor among sleeper wagons. | Frost-bitten wagon driver; layered gloves, reins looped around waist, cracked lantern, pale road salt on boots. No cult insignia unless lore specifies it. |
 | **Cartographer Bree** | `ch5_zones.gd : ch5_wander_mapper` — maps a terrain where memory and snow fail. | Accord cartographer; fur-lined gray-blue coat, map tube, weighted ruler, wind-pinched cheeks. Maps must be a readable prop, not a large scroll. |
@@ -228,6 +229,7 @@ visually outrank the player character.
 | **Blooming Convert** | `ch6_zones.gd : ch6_wander_convert` — a former Choir member joyful about sproutings. | Adult convert in a salvaged Choir coat, flowering reed held carefully, subtle bloom-colored stitch at throat, genuinely happy expression. No body horror. |
 | **Sister Ottilie** | `ch6_zones.gd : ch6_wander_doubter` — counts because numbers make small madness manageable. | Exhausted Choir sister; faded habit, tally cord and numbered bone counters, damp cloak, eyes fixed on arithmetic. No green magic. |
 | **Cure-Camp Scout Renn** | `ch6_zones.gd : ch6_wander_scout` — field scout caught between camps. | Lean scout; mud gaiters, reed whistle, lightly furred Wildfang features, survey ribbon tied to wrist. Navigation rather than combat silhouette. |
+| **Reed-Cutter Ama** | `ch6_zones.gd : ch6_wander_fisher` — forty years of reed labor taught her that use goes both directions. | Older wiry reed-cutter; waxed reed cape, bundled cut reeds, sheathed work knife, wet gloves, canal-line cord. Laborer, not druid or fighter. |
 | **Botanist Ferro** | `ch6_zones.gd : ch6_wander_botanist` — measures the Root because what can be budgeted can be starved. | Accord botanist; oversized rain hood, sample satchel, calipers, sealed measuring vials, ink-stained field notes. Rational fear, not plant magic. |
 
 ### Chapter 7: the last relay
@@ -235,7 +237,7 @@ visually outrank the player character.
 | NPC | Lore anchor | Prompt tail |
 | --- | --- | --- |
 | **Warden-Commander Ashe** | `ch7_zones.gd : ch7_accord` — Accord's final chapter field authority. | Senior Accord commander; storm-dark coat over restrained armor panels, wet map case, plain command whistle, one frayed blue-gray tabard edge. Command through posture, not ornate rank. |
-| **Envoy Cassia** | `ch7_zones.gd : ch7_cinder` — Cinderborn presence at the summit. | Senior Cinderborn envoy; rainproof oxblood half-cloak, brass-sealed quartermaster ledger, compact umbrella frame or storm hood, carefully maintained gloves. Pragmatic power, no court gown. |
+| **Consul Verane** | `ch7_zones.gd : ch7_cinder` — the Compact's actual leadership makes its final pitch at the summit. | Senior Cinderborn statesman; rainproof oxblood half-cloak, brass-edged policy ledger, formal gloves, folded storm hood. Pragmatic authority, no crown or weapon. |
 | **Apprentice Sorrel** | `ch7_quests.gd : ch7_apprentice` — sixteen, last of a six-hundred-year relay, carrying four lines of a vow. | Thin teenage apprentice, not childlike; soaked keeper coat too large at shoulders, storm-iron shift token, four tiny knot marks on a cord, upright despite fear. No battle weapon. |
 | **Retired Keeper Vasse** | `ch7_quests.gd : ch7_wander_keeper` — lost her voice after thirty years of relay shifts but refuses to miss the work. | Older keeper; storm cloak, scarred throat wrapped in practical wool, rain-dark vow slate, hour cord, posture of someone still standing watch. Not a lightning mage. |
 | **Storm-Chaser Ilya** | `ch7_zones.gd : ch7_wander_chaser` — civilian reader of dangerous weather. | Agile storm observer; layered oilskin, wind ribbon, compact glass weather gauge, boots tied high. Curious but not reckless hero. |
@@ -254,7 +256,7 @@ that moment.
 | --- | --- | --- |
 | **Bren / Carter / Ren / Osric / The Mother** | `story.gd : opening_*` | Emberfall civilian variants: respectively frightened witness, cold carter, gatekeeper, condemned petitioner, and protective parent. Give each a work-specific prop; none needs a combat silhouette. |
 | **The Tome** | `story.gd : opening_warlock` | Do not make a humanoid NPC. Treat as a separate cursed-object art brief: bound book, no face, no floating magic unless its interaction needs it. |
-| **Ansa of the Shore** | `ch5_quests.gd : ch5_ansa` | Winter shore woman who counts wagons and waits for Toma; salt-stiff wool, tide rope, waxed ledger, no warrior gear. |
+| **Mother Halla** | `ch5_zones.gd : boss_intro` | Do not use as a live hub NPC: she is the Long Sleep shepherd encountered through the boss/story pipeline. The generated civilian concept is retained in the dev-only placeholder gallery. |
 | **Kaethra** | `ch6_quests.gd : ch6_kaethra` | Do not create as an NPC sprite in this pass: she is a story-critical transformed figure and needs a separate boss/NPC continuity brief. |
 | **Hrolgar Whitepelt / Serane / Cyrraeth** | `ch5_quests.gd`, `ch5_zones.gd`, `ch7_quests.gd` | Do not create as civilian NPCs. They belong to boss and historical-figure pipelines with their own gameplay silhouettes. |
 

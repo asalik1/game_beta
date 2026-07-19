@@ -904,12 +904,12 @@ const ZONES := [
 # Social rooms roll ONE wanderer from this pool, seeded per character —
 # replays meet different people. Convos live in CONVOS ("wander_*").
 const WANDERERS := [
-	{"sprite": "villager", "prompt": "E — Talk", "convo": "wander_tinker"},
-	{"sprite": "sentry", "prompt": "E — Talk", "convo": "wander_deserter"},
-	{"sprite": "villager", "prompt": "E — Talk", "convo": "wander_pilgrim"},
+	{"sprite": "tinker_osla", "prompt": "E — Talk", "convo": "wander_tinker"},
+	{"sprite": "ragged_soldier", "prompt": "E — Talk", "convo": "wander_deserter"},
+	{"sprite": "flame_pilgrim", "prompt": "E — Talk", "convo": "wander_pilgrim"},
 	{"sprite": "old_hunter", "prompt": "E — Talk", "convo": "wander_hunter"},
-	{"sprite": "merchant", "prompt": "E — Talk", "convo": "wander_peddler"},
-	{"sprite": "villager", "prompt": "E — Talk", "convo": "wander_orphan"},
+	{"sprite": "roadside_peddler", "prompt": "E — Talk", "convo": "wander_peddler"},
+	{"sprite": "millers_boy", "prompt": "E — Talk", "convo": "wander_orphan"},
 ]
 
 # --------------------------------------------------------------- chapters ---

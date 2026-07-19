@@ -54,6 +54,15 @@ const CHAPTER_ZONES := {
 			# Retired live elder body: retained as a dev-only comparison asset;
 			# never appears in a normal playthrough.
 			{"sprite": "npc_elder_legacy",   "x": 1460, "y": 150, "prompt": "E — [ph] Legacy Elder", "convo": "pc_ph_elder_legacy", "placeholder": true},
+			# Retired generic live-NPC bodies. These remain available only in the
+			# dev gallery after the authored roster replaced their story usage.
+			{"sprite": "villager",       "x": 200,  "y": 90, "prompt": "E — [ph] Legacy Villager", "convo": "pc_ph_legacy_villager", "placeholder": true},
+			{"sprite": "sentry",         "x": 340,  "y": 90, "prompt": "E — [ph] Legacy Sentry",   "convo": "pc_ph_legacy_sentry",   "placeholder": true},
+			{"sprite": "warden",         "x": 480,  "y": 90, "prompt": "E — [ph] Legacy Warden",   "convo": "pc_ph_legacy_warden",   "placeholder": true},
+			{"sprite": "envoy",          "x": 620,  "y": 90, "prompt": "E — [ph] Legacy Envoy",    "convo": "pc_ph_legacy_envoy",    "placeholder": true},
+			{"sprite": "beastkin",       "x": 760,  "y": 90, "prompt": "E — [ph] Legacy Beastkin", "convo": "pc_ph_legacy_beastkin", "placeholder": true},
+			{"sprite": "choirmother",    "x": 900,  "y": 90, "prompt": "E — [ph] Legacy Choir",    "convo": "pc_ph_legacy_choir",    "placeholder": true},
+			{"sprite": "mother_halla",   "x": 1040, "y": 90, "prompt": "E — [ph] Halla Concept",   "convo": "pc_ph_halla_concept",   "placeholder": true},
 		],
 	}],
 }

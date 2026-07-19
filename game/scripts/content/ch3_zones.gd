@@ -30,10 +30,10 @@ const CHAPTER_ZONES := {
 			"merchant": [1050, 480], "shop_tier": "silver",
 			"enemies": [], "boss": "",
 			"npcs": [
-				{"sprite": "choirmother", "x": 620, "y": 500, "prompt": "E — Cantor Ilse", "convo": "ch3_briefing"},
-				{"sprite": "warden", "x": 1400, "y": 400, "prompt": "E — Accord", "convo": "ch3_accord"},
-				{"sprite": "envoy", "x": 1500, "y": 760, "prompt": "E — Cinderborn", "convo": "ch3_cinder"},
-				{"sprite": "villager", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch3_refugee"},
+				{"sprite": "cantor_ilse", "x": 620, "y": 500, "prompt": "E — Cantor Ilse", "convo": "ch3_briefing"},
+				{"sprite": "warden_corin", "x": 1400, "y": 400, "prompt": "E — Accord", "convo": "ch3_accord"},
+				{"sprite": "factor_imre", "x": 1500, "y": 760, "prompt": "E — Cinderborn", "convo": "ch3_cinder"},
+				{"sprite": "old_fenna", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch3_refugee"},
 			],
 		},
 		{
@@ -265,11 +265,11 @@ const BEATS := {
 # Per-chapter social wanderers (rolled seeded per character).
 const WANDERERS := {
 	"ch3": [
-		{"sprite": "villager", "prompt": "E — Talk", "convo": "ch3_wander_digger"},
-		{"sprite": "villager", "prompt": "E — Talk", "convo": "ch3_wander_mute"},
-		{"sprite": "cultist", "prompt": "E — Talk", "convo": "ch3_wander_defector"},
-		{"sprite": "warden", "prompt": "E — Talk", "convo": "ch3_wander_archivist"},
-		{"sprite": "merchant", "prompt": "E — Talk", "convo": "ch3_wander_peddler"},
+		{"sprite": "digger_haim", "prompt": "E — Talk", "convo": "ch3_wander_digger"},
+		{"sprite": "mute_mourner", "prompt": "E — Talk", "convo": "ch3_wander_mute"},
+		{"sprite": "brother_osk", "prompt": "E — Talk", "convo": "ch3_wander_defector"},
+		{"sprite": "archivist_lene", "prompt": "E — Talk", "convo": "ch3_wander_archivist"},
+		{"sprite": "grave_goods_peddler", "prompt": "E — Talk", "convo": "ch3_wander_peddler"},
 	],
 }
 

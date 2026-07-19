@@ -30,9 +30,9 @@ const CHAPTER_ZONES := {
 			"enemies": [], "boss": "",
 			"npcs": [
 				{"sprite": "elder", "x": 620, "y": 500, "prompt": "E — Elder Maren", "convo": "ch7_briefing"},
-				{"sprite": "warden", "x": 1400, "y": 400, "prompt": "E — Accord", "convo": "ch7_accord"},
-				{"sprite": "envoy", "x": 1500, "y": 760, "prompt": "E — Cinderborn", "convo": "ch7_cinder"},
-				{"sprite": "sentry", "x": 800, "y": 800, "prompt": "E — The Last Apprentice", "convo": "ch7_apprentice"},
+				{"sprite": "commander_ashe", "x": 1400, "y": 400, "prompt": "E — Accord", "convo": "ch7_accord"},
+				{"sprite": "consul_verane", "x": 1500, "y": 760, "prompt": "E — Cinderborn", "convo": "ch7_cinder"},
+				{"sprite": "apprentice_sorrel", "x": 800, "y": 800, "prompt": "E — The Last Apprentice", "convo": "ch7_apprentice"},
 			],
 		},
 		{
@@ -262,11 +262,11 @@ const BEATS := {
 
 const WANDERERS := {
 	"ch7": [
-		{"sprite": "sentry", "prompt": "E — Talk", "convo": "ch7_wander_keeper"},
-		{"sprite": "villager", "prompt": "E — Talk", "convo": "ch7_wander_chaser"},
-		{"sprite": "envoy", "prompt": "E — Talk", "convo": "ch7_wander_quarter"},
-		{"sprite": "villager", "prompt": "E — Talk", "convo": "ch7_wander_bellringer"},
-		{"sprite": "merchant", "prompt": "E — Talk", "convo": "ch7_wander_undertaker"},
+		{"sprite": "keeper_vasse", "prompt": "E — Talk", "convo": "ch7_wander_keeper"},
+		{"sprite": "storm_chaser_ilya", "prompt": "E — Talk", "convo": "ch7_wander_chaser"},
+		{"sprite": "quartermaster_bel", "prompt": "E — Talk", "convo": "ch7_wander_quarter"},
+		{"sprite": "bellringer_tam", "prompt": "E — Talk", "convo": "ch7_wander_bellringer"},
+		{"sprite": "undertaker_prue", "prompt": "E — Talk", "convo": "ch7_wander_undertaker"},
 	],
 }
 
