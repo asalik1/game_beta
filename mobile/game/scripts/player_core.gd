@@ -28,6 +28,8 @@ var ability_theme := {"a1": "", "a2": "", "a3": "", "ult": ""}
 var themes_known := 0
 var chroma := ""   # active chroma id ("" = base skin, e.g. "obsidian")
 var skin := ""     # active skin id ("" = default, e.g. "dreadknight")
+var _skin_ambient: Node2D = null  # mythic locomotion/idle identity; built by player_combat
+var _skin_ambient_id := ""
 
 # --- Phase 1 story trackers (persisted with the save from day one) ---
 var resonance := 0.0     # -100 (Temptation) .. +100 (Virtue), per DESIGN.md
@@ -355,6 +357,10 @@ var dash_refund_frac := 0.0    # ...how much of the dash cd a closing kill retur
 var storm_time := 0.0
 var storm_tick := 0.0
 var storm_fx := {}
+var storm_center := Vector2.ZERO  # visual anchor for skin-specific storm fields
+var void_tentacles: Array = []    # Voidwraith ult: eight rooted actors around the portal rim
+var void_tentacle_cursor := 0
+var void_target_cursor := 0
 var theme_speed_time := 0.0
 var theme_speed_amt := 0.0
 var damp_time := 0.0     # Damp debuff: while > 0, move speed x Balance.DAMP_SLOW_MULT (river wading)

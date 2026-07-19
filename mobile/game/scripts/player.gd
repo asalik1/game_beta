@@ -7,6 +7,7 @@ class_name Player extends "res://scripts/player_kit_warlock.gd"
 # ================================================================= per frame
 
 func _physics_process(delta: float) -> void:
+	_sync_skin_ambient()
 	# MP (wave 4): a remote peer's player is PRESENTATION ONLY on this
 	# machine — position/facing/anim ride the 20 Hz sync; no input
 	# polling, no survival sim (regen/DoT/cooldowns/potions), no ability
@@ -221,7 +222,7 @@ func _physics_process(delta: float) -> void:
 		# Walk bob (up/down hop) removed — old artifact, no class needs it.
 		sprite.position.y = 0.0
 		# Phantom (assassin mythic) additionally GLIDES — no side-to-side sway.
-		sprite.rotation = 0.0 if skin == "phantom" else sin(anim_t * 11.0) * 0.06
+		sprite.rotation = 0.0 if skin in ["phantom", "crystal_archmage"] else sin(anim_t * 11.0) * 0.06
 	else:
 		sprite.position.y = 0.0
 		sprite.rotation = 0.0
@@ -467,6 +468,10 @@ func _loco_dir_frame() -> void:
 ## Which looping clip fits the current movement: run while a speed buff or
 ## berserk carries you, walk on foot, berserk-idle when standing enraged.
 func _loco_clip() -> String:
+	# Crystal Archmage never walks: velocity still picks the directional idle
+	# strip while the animated dais in SkinAmbient performs the movement.
+	if skin == "crystal_archmage":
+		return "idle"
 	if velocity.length() <= 20.0:
 		if berserk_time > 0.0 and _clips.has("ultidle"):
 			return "ultidle"

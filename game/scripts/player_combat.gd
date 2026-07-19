@@ -102,18 +102,29 @@ class ProjTrail extends Node2D:
 	const MAXPTS := 8              # short (the dash streak is longer)
 	var proj = null
 	var col := Color(0.5, 1.0, 0.9)
+	var max_points := MAXPTS
+	var width := 1.0
+	var opacity := 0.55
+	var draw_z := 2
+	var core_width := 0.0
+	var core_opacity := 0.0
+	var core_col := Color.WHITE
 	var pts := PackedVector2Array()
 	func _ready() -> void:
-		z_index = 2
+		z_index = draw_z
 		global_position = Vector2.ZERO
 	func _process(_delta: float) -> void:
 		if proj != null and is_instance_valid(proj):
 			# A Projectile DRAWS above its physics position (muzzle rise) —
 			# ride the drawn height. Plain sprites (ult ring knives) draw
 			# where they are.
-			pts.insert(0, proj._fx_pos() if proj is Projectile else proj.global_position)
-			if pts.size() > MAXPTS:
-				pts.resize(MAXPTS)
+			var next_point: Vector2 = proj._fx_pos() if proj is Projectile else proj.global_position
+			# A stationary first frame otherwise adds coincident points, producing
+			# a zero-area ribbon polygon when the projectile begins moving.
+			if pts.is_empty() or pts[0].distance_squared_to(next_point) > 0.04:
+				pts.insert(0, next_point)
+			if pts.size() > max_points:
+				pts.resize(max_points)
 		elif pts.size() > 1:
 			pts.remove_at(pts.size() - 1)   # knife gone: drain the streak, then vanish
 		else:
@@ -124,8 +135,8 @@ class ProjTrail extends Node2D:
 		var n := pts.size()
 		if n < 3:
 			return
-		var base_w := 1.0          # ~half the dash streak's width
-		var base_a := 0.55
+		var base_w := width        # ~half the dash streak's width by default
+		var base_a := opacity * col.a
 		var nrm := []
 		nrm.resize(n)
 		for i in n:
@@ -138,10 +149,107 @@ class ProjTrail extends Node2D:
 			var w0 := base_w * (1.0 - t0)
 			var w1 := base_w * (1.0 - t1)
 			var a := base_a * pow(1.0 - (t0 + t1) * 0.5, 1.3)
-			draw_colored_polygon(PackedVector2Array([
-				pts[i] + nrm[i] * w0, pts[i + 1] + nrm[i + 1] * w1,
-				pts[i + 1] - nrm[i + 1] * w1, pts[i] - nrm[i] * w0]),
-				Color(col.r, col.g, col.b, a))
+			var ribbon_col := Color(col.r, col.g, col.b, a)
+			if i == n - 2:
+				# The tail converges to one point. Submit a real triangle instead of
+				# a quad with duplicate vertices (which Godot cannot triangulate).
+				draw_colored_polygon(PackedVector2Array([
+					pts[i] + nrm[i] * w0, pts[i + 1], pts[i] - nrm[i] * w0]), ribbon_col)
+			else:
+				draw_colored_polygon(PackedVector2Array([
+					pts[i] + nrm[i] * w0, pts[i + 1] + nrm[i + 1] * w1,
+					pts[i + 1] - nrm[i + 1] * w1, pts[i] - nrm[i] * w0]), ribbon_col)
+			if core_width > 0.0 and core_opacity > 0.0:
+				var core_a := core_opacity * pow(1.0 - (t0 + t1) * 0.5, 1.15)
+				draw_line(pts[i], pts[i + 1],
+					Color(core_col.r, core_col.g, core_col.b, core_a),
+					maxf(0.35, core_width * (1.0 - t0)), true)
+
+
+## One rooted limb in Voidwraith's eight-tentacle ult circle. The authored
+## sheets are temporal animations (eight idle + eight whip frames); this node
+## supplies the eight compass directions by rotating around the painted root.
+## The root itself never moves or stretches toward a victim.
+class VoidTentacle extends Node2D:
+	const IDLE_FRAME_TIME := 0.105
+	const ATTACK_FRAME_TIME := 0.042
+	const SPR_SCALE := 0.82
+	const ROOT_FROM_CELL_CENTER := 59.0
+	var spr := Sprite2D.new()
+	var idle_tex: Texture2D = null
+	var attack_tex: Texture2D = null
+	var rest_rotation := 0.0
+	var idle_clock := 0.0
+	var attack_clock := 0.0
+	var attacking := false
+	var contact_done := false
+	var victim = null
+	var contact := Callable()
+
+	func setup(idle: Texture2D, attack: Texture2D, phase: float, outward_angle: float) -> void:
+		idle_tex = idle
+		attack_tex = attack
+		idle_clock = phase
+		# The sheet points along local -Y, hence the +PI/2 conversion.
+		rest_rotation = outward_angle + PI / 2.0
+		rotation = rest_rotation
+		spr.texture = idle_tex
+		spr.hframes = 8
+		spr.frame = int(idle_clock / IDLE_FRAME_TIME) % 8
+		# Every generated cell pins the root at y=123: 59 source pixels below
+		# its centre. Account for the sprite scale when shifting it upward. The
+		# old unscaled -59 shift put the painted stem ~11 world pixels beyond its
+		# logical root, making it visibly orbit/detach whenever the actor aimed.
+		spr.position = Vector2(0, -ROOT_FROM_CELL_CENTER * SPR_SCALE)
+		spr.scale = Vector2(SPR_SCALE, SPR_SCALE)
+		add_child(spr)
+
+	func strike(enemy, callback: Callable) -> void:
+		victim = enemy
+		contact = callback
+		contact_done = false
+		attack_clock = 0.0
+		attacking = true
+		spr.texture = attack_tex
+		spr.frame = 0
+		if victim != null and is_instance_valid(victim):
+			var direction: Vector2 = victim.global_position - global_position
+			if direction.length_squared() > 0.01:
+				var octant := roundf(direction.angle() / (PI / 4.0)) * (PI / 4.0)
+				rotation = octant + PI / 2.0
+
+	func _process(delta: float) -> void:
+		if attacking:
+			attack_clock += delta
+			var attack_frame := mini(7, int(attack_clock / ATTACK_FRAME_TIME))
+			spr.frame = attack_frame
+			if attack_frame >= 4 and not contact_done:
+				contact_done = true
+				if victim != null and is_instance_valid(victim) and contact.is_valid():
+					contact.call(victim)
+			if attack_clock >= ATTACK_FRAME_TIME * 8.0:
+				attacking = false
+				spr.texture = idle_tex
+				idle_clock = 0.0
+			return
+		idle_clock = fmod(idle_clock + delta, IDLE_FRAME_TIME * 8.0)
+		spr.frame = int(idle_clock / IDLE_FRAME_TIME) % 8
+		rotation = lerp_angle(rotation, rest_rotation, minf(1.0, delta * 7.0))
+
+
+## Frostfall's blizzard footprint: a real circular ground field rather than a
+## stretched glow texture. Concentric translucent fills create a soft sky-blue
+## falloff; the rim identifies the attacked area without covering combatants.
+class FrostStormField extends Node2D:
+	var radius := 186.0
+	func _draw() -> void:
+		draw_circle(Vector2.ZERO, radius, Color(0.30, 0.72, 1.0, 0.055))
+		draw_circle(Vector2.ZERO, radius * 0.82, Color(0.36, 0.78, 1.0, 0.040))
+		draw_circle(Vector2.ZERO, radius * 0.58, Color(0.46, 0.84, 1.0, 0.032))
+		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 72,
+			Color(0.48, 0.86, 1.0, 0.28), 2.0, true)
+		draw_arc(Vector2.ZERO, radius - 9.0, 0.0, TAU, 72,
+			Color(0.58, 0.90, 1.0, 0.09), 1.0, true)
 
 
 ## Golden Ronin's throwing-star after-image: drops fading, rotated ghost copies
@@ -183,6 +291,193 @@ class ShurikenEcho extends Node2D:
 		tw.tween_property(g, "modulate:a", 0.0, FADE)
 		tw.parallel().tween_property(g, "scale", g.scale * 0.7, FADE)
 		tw.tween_callback(g.queue_free)
+
+
+## Persistent mythic locomotion language. It reacts to velocity, changes shape
+## over time, and emits sparse moving accents instead of sitting as a glow.
+class SkinAmbient extends Node2D:
+	var plr = null
+	var skin_id := ""
+	var t := 0.0
+	var emit_t := 0.0
+	var blink_t := 0.0
+	func _ready() -> void:
+		z_index = -1
+		blink_t = 1.6
+	func _process(delta: float) -> void:
+		if plr == null or not is_instance_valid(plr):
+			queue_free()
+			return
+		t += delta
+		emit_t -= delta
+		blink_t -= delta
+		if emit_t <= 0.0:
+			if skin_id == "voidwraith" and plr.velocity.length() > 25.0:
+				_emit_feather(Color(0.45, 0.22, 0.72, 0.7), -plr.velocity.normalized())
+				emit_t = 0.18
+			elif skin_id == "fallen_arbiter" and plr.velocity.length() > 20.0:
+				_emit_feather(Color(0.92, 0.94, 1.0, 0.72), Vector2(0, 0.7))
+				emit_t = 0.34
+			elif skin_id == "stormforged":
+				emit_t = 0.22 if plr.velocity.length() > 25.0 else 0.48
+		if blink_t <= 0.0:
+			blink_t = 2.4 + randf_range(0.0, 1.4)
+		queue_redraw()
+	func _emit_feather(col: Color, drift: Vector2) -> void:
+		var feather := Sprite2D.new()
+		feather.texture = Art.tex("slashline")
+		feather.modulate = col
+		feather.position = Vector2(randf_range(-18.0, 18.0), randf_range(-38.0, -8.0))
+		feather.rotation = randf_range(-1.0, 1.0)
+		feather.scale = Vector2(0.16, 0.28)
+		feather.z_index = 1
+		add_child(feather)
+		var dest := feather.position + drift * 34.0 + Vector2(randf_range(-10.0, 10.0), 24.0)
+		var tw := feather.create_tween()
+		tw.tween_property(feather, "position", dest, 0.62).set_trans(Tween.TRANS_SINE)
+		tw.parallel().tween_property(feather, "rotation", feather.rotation + randf_range(-1.2, 1.2), 0.62)
+		tw.parallel().tween_property(feather, "modulate:a", 0.0, 0.62)
+		tw.tween_callback(feather.queue_free)
+	func _draw() -> void:
+		match skin_id:
+			"stormforged":
+				# Charge crawls shoulder -> blade -> earth and reconnects along
+				# different broken paths each beat.
+				var phase := int(t * (9.0 if plr.velocity.length() > 25.0 else 4.0)) % 3
+				var pts := PackedVector2Array([Vector2(-8, -38), Vector2(12, -23), Vector2(4, -8), Vector2(22, 7)])
+				for i in range(phase, pts.size() - 1, 2):
+					draw_polyline(PackedVector2Array([pts[i], (pts[i] + pts[i + 1]) * 0.5 + Vector2(5, -4), pts[i + 1]]), Color(0.62, 0.86, 1.0, 0.82), 2.0)
+			"voidwraith":
+				var a := 0.16 + sin(t * 1.7) * 0.05
+				draw_arc(Vector2(0, -20), 29.0, -1.15, 1.15, 18, Color(0.58, 0.34, 0.9, a), 2.0)
+			"crystal_archmage":
+				# Hero remains on directional idle while this rotating dais leans
+				# into travel: a moving platform, not a replacement walk bob.
+				var lean := clampf(plr.velocity.x / maxf(plr.speed, 1.0), -1.0, 1.0) * 5.0
+				var y := 27.0 + sin(t * 3.0) * 1.5
+				var poly := PackedVector2Array([Vector2(-25 + lean, y), Vector2(-13 + lean, y - 8), Vector2(14 + lean, y - 8), Vector2(27 + lean, y), Vector2(13, y + 7), Vector2(-14, y + 7)])
+				draw_colored_polygon(poly, Color(0.34, 0.64, 0.92, 0.7))
+				var facet := int(t * 6.0) % 3
+				var cuts := [Vector2(-13 + lean, y - 8), Vector2(0 + lean * 0.5, y - 8), Vector2(14 + lean, y - 8)]
+				for i in 3:
+					var c := Color(0.76, 0.94, 1.0, 0.9) if i == facet else Color(0.52, 0.76, 1.0, 0.52)
+					draw_colored_polygon(PackedVector2Array([cuts[i], Vector2(0, y + 6), Vector2(cuts[i].x + 11, y)]), c)
+			"fallen_arbiter":
+				var wing_a := 0.18 + sin(t * 1.2) * 0.04
+				draw_arc(Vector2(-12, -20), 31, 2.6, 4.4, 12, Color(0.9, 0.92, 1.0, wing_a), 2.0)
+				draw_arc(Vector2(12, -20), 31, -1.25, 0.55, 12, Color(0.9, 0.92, 1.0, wing_a), 2.0)
+			"eldritch_herald":
+				var lid := 0.15 if blink_t < 0.13 else 1.0
+				_draw_ellipse(Vector2(16, -34), Vector2(7, 3 * lid), Color(0.46, 1.0, 0.64, 0.72))
+				var hem := PackedVector2Array()
+				for i in 7:
+					hem.append(Vector2(-18 + i * 6, 22 + sin(t * 2.0 + i * 0.7) * 3.0))
+				draw_polyline(hem, Color(0.28, 0.68, 0.48, 0.42), 2.0)
+	func _draw_ellipse(center: Vector2, radius: Vector2, col: Color) -> void:
+		var pts := PackedVector2Array()
+		for i in 17:
+			var a := TAU * float(i) / 16.0
+			pts.append(center + Vector2(cos(a) * radius.x, sin(a) * radius.y))
+		draw_polyline(pts, col, 2.0)
+
+
+## Keep exactly one persistent ambient identity attached to the current skin.
+func _sync_skin_ambient() -> void:
+	var wanted := skin if skin in ["stormforged", "voidwraith", "crystal_archmage", "fallen_arbiter", "eldritch_herald"] else ""
+	if wanted == _skin_ambient_id and (_skin_ambient == null or is_instance_valid(_skin_ambient)):
+		return
+	if _skin_ambient != null and is_instance_valid(_skin_ambient):
+		_skin_ambient.queue_free()
+	_skin_ambient = null
+	_skin_ambient_id = wanted
+	if wanted == "":
+		return
+	var ambient := SkinAmbient.new()
+	ambient.plr = self
+	ambient.skin_id = wanted
+	add_child(ambient)
+	move_child(ambient, 0)
+	_skin_ambient = ambient
+
+
+## A live relation between two actors. The line redraws as either endpoint
+## moves and a bead travels along it, so a mark reads as pursuit/judgment.
+class LivingTether extends Node2D:
+	var a = null
+	var b = null
+	var col := Color(0.8, 0.8, 1.0, 0.8)
+	var life := 0.8
+	var t := 0.0
+	var jagged := false
+	func _ready() -> void:
+		global_position = Vector2.ZERO
+		z_index = 7
+	func _process(delta: float) -> void:
+		life -= delta
+		t += delta
+		if life <= 0.0 or a == null or b == null or not is_instance_valid(a) or not is_instance_valid(b):
+			queue_free()
+			return
+		queue_redraw()
+	func _draw() -> void:
+		if a == null or b == null or not is_instance_valid(a) or not is_instance_valid(b):
+			return
+		var p0: Vector2 = a.global_position + Vector2(0, -24)
+		var p1: Vector2 = b.global_position + Vector2(0, -24)
+		var pts := PackedVector2Array([p0])
+		if jagged:
+			for i in range(1, 5):
+				var f := float(i) / 5.0
+				var normal := (p1 - p0).normalized().orthogonal()
+				pts.append(p0.lerp(p1, f) + normal * sin(t * 17.0 + i * 2.3) * 6.0)
+		pts.append(p1)
+		draw_polyline(pts, Color(col.r, col.g, col.b, col.a * clampf(life * 2.0, 0.0, 1.0)), 2.0)
+		var bead := p0.lerp(p1, fmod(t * 2.4, 1.0))
+		draw_circle(bead, 3.0, Color(col.r, col.g, col.b, 0.95))
+
+
+func _living_tether(a, b, col: Color, life := 0.8, jagged := false) -> void:
+	var tether := LivingTether.new()
+	tether.a = a
+	tether.b = b
+	tether.col = col
+	tether.life = life
+	tether.jagged = jagged
+	game.add_child(tether)
+
+
+## Ordered assembly helper used by seals, moons, brands and shield plates.
+## Segments enter one at a time, hold as a completed shape, then break out.
+func _staged_segment_ring(parent: Node, pos: Vector2, col: Color, radius: float,
+		count := 8, step := 0.055, hold := 0.28, texture := "slashline",
+		clockwise := true, inward := true) -> Node2D:
+	var pivot := Node2D.new()
+	pivot.position = pos
+	pivot.z_index = 7
+	parent.add_child(pivot)
+	for i in count:
+		var ang := TAU * float(i) / float(count) * (1.0 if clockwise else -1.0)
+		var seg := Sprite2D.new()
+		seg.texture = Art.tex(texture)
+		seg.modulate = Color(col.r, col.g, col.b, 0.0)
+		seg.rotation = ang + PI / 2.0
+		seg.position = Vector2.from_angle(ang) * radius * (1.42 if inward else 0.34)
+		seg.scale = Vector2(0.34, 0.2)
+		pivot.add_child(seg)
+		var tw := seg.create_tween()
+		tw.tween_interval(step * i)
+		tw.tween_property(seg, "modulate:a", col.a, 0.06)
+		tw.parallel().tween_property(seg, "position", Vector2.from_angle(ang) * radius, 0.12) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_interval(hold)
+		tw.tween_property(seg, "position", Vector2.from_angle(ang) * radius * 1.32, 0.18)
+		tw.parallel().tween_property(seg, "modulate:a", 0.0, 0.18)
+		tw.tween_callback(seg.queue_free)
+	var total := step * float(count - 1) + 0.06 + hold + 0.2
+	get_tree().create_timer(total).timeout.connect(func() -> void:
+		if is_instance_valid(pivot):
+			pivot.queue_free())
+	return pivot
 
 
 ## Phantom ult presentation: a ring of 16 spectral knives around the marked

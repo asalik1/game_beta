@@ -53,6 +53,7 @@ const GLOWS := {
 	"fireball": Color(1.0, 0.55, 0.15), "bolt": Color(1.0, 0.35, 0.85),
 	"arrow": Color(0.9, 1.0, 0.6), "arrow_base": Color(0.90, 0.78, 0.52),
 	"arrow_frost": Color(0.55, 0.90, 1.0), "arrow_void": Color(0.62, 0.32, 0.95),
+	"arrow_void_eye": Color(0.68, 0.36, 1.0),
 	"knife": Color(0.8, 0.85, 1.0),
 	"slash": Color(1.0, 0.9, 0.5), "icelance": Color(0.5, 0.9, 1.0),
 	"shadowbolt": Color(0.7, 0.4, 1.0), "dart": Color(0.85, 0.92, 1.0),
@@ -133,7 +134,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	var sprite := Sprite2D.new()
 	sprite.texture = Art.tex(tex_name)
 	match tex_name:
-		"arrow_base", "arrow_frost", "arrow_void":
+		"arrow_base", "arrow_frost", "arrow_void", "arrow_void_eye":
 			sprite.scale = Vector2.ONE
 		"mage_firebolt", "warlock_shadowbolt":
 			sprite.scale = Vector2(1.2, 1.2)
@@ -274,6 +275,26 @@ func _impact_ring() -> void:
 	rt.tween_callback(ring.queue_free)
 
 
+## Frostfall arrows leave one small complete crystal at every enemy contact.
+## It fades in place rather than replaying the cast strip's transitional poses.
+func _frost_arrow_impact() -> void:
+	if tex_kind != "arrow_frost":
+		return
+	var flake := Sprite2D.new()
+	flake.texture = Art.tex("fx/frost_snowflake_radial")
+	flake.global_position = _fx_pos()
+	flake.rotation = randf_range(-0.35, 0.35)
+	flake.scale = Vector2(0.18, 0.18)
+	flake.modulate = Color(0.82, 0.96, 1.0, 0.88)
+	flake.z_index = 9
+	game.add_child(flake)
+	var fade := flake.create_tween()
+	fade.tween_property(flake, "scale", Vector2(0.10, 0.10), 0.34) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	fade.parallel().tween_property(flake, "modulate:a", 0.0, 0.35)
+	fade.tween_callback(flake.queue_free)
+
+
 func _on_body_entered(body: Node) -> void:
 	if net_visual:
 		# MP-10 visual copy: burst where the real one bites, never damage
@@ -283,6 +304,7 @@ func _on_body_entered(body: Node) -> void:
 				return
 			_already_hit[body] = true
 			game.burst(_fx_pos(), glow_color, 5)
+			_frost_arrow_impact()
 			_impact_ring()
 			if not pierce:
 				queue_free()
@@ -298,6 +320,7 @@ func _on_body_entered(body: Node) -> void:
 			return
 		_already_hit[body] = true
 		game.burst(_fx_pos(), glow_color, 5)
+		_frost_arrow_impact()
 		_impact_ring()
 		if is_instance_valid(source_player):
 			# Resolve with the payload SNAPSHOT this shot was fired with (fx,
