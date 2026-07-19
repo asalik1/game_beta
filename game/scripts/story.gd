@@ -907,7 +907,7 @@ const WANDERERS := [
 	{"sprite": "villager", "prompt": "E — Talk", "convo": "wander_tinker"},
 	{"sprite": "sentry", "prompt": "E — Talk", "convo": "wander_deserter"},
 	{"sprite": "villager", "prompt": "E — Talk", "convo": "wander_pilgrim"},
-	{"sprite": "archer", "prompt": "E — Talk", "convo": "wander_hunter"},
+	{"sprite": "old_hunter", "prompt": "E — Talk", "convo": "wander_hunter"},
 	{"sprite": "merchant", "prompt": "E — Talk", "convo": "wander_peddler"},
 	{"sprite": "villager", "prompt": "E — Talk", "convo": "wander_orphan"},
 ]

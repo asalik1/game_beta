@@ -30,7 +30,7 @@ const CHAPTER_ZONES := {
 			"npcs": [
 				{"sprite": "beastkin", "x": 620, "y": 500, "prompt": "E — Tracker Yri", "convo": "ch5_briefing"},
 				{"sprite": "warden", "x": 1400, "y": 400, "prompt": "E — Accord", "convo": "ch5_accord"},
-				{"sprite": "cultist", "x": 1500, "y": 760, "prompt": "E — Gentle Suli", "convo": "ch5_cult"},
+				{"sprite": "suli", "x": 1500, "y": 760, "prompt": "E — Gentle Suli", "convo": "ch5_cult"},
 				{"sprite": "villager", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch5_mother"},
 			],
 		},

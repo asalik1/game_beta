@@ -61,6 +61,9 @@ const NPC_HEIGHT_BY_SPRITE := {
 	"elder": 0.96, "merchant": 1.00, "sentry": 1.00, "archer": 0.98,
 	"villager": 0.96, "warden": 0.98, "envoy": 0.97, "choirmother": 0.95,
 	"beastkin": 0.98, "cultist": 0.98, "aldric": 0.99, "onna": 0.97,
+	"piet": 1.00, "sera": 0.95, "callis": 0.95, "vessa": 0.98,
+	"choir_pilgrim": 0.95, "caged_beastkin": 0.98, "suli": 0.96,
+	"old_hunter": 0.98,
 }
 const NPC_HEIGHT_BY_CONVO := {
 	# Chapter 1 road people.
@@ -108,6 +111,9 @@ const NPC_BODY_TARGETS := {
 	"elder": 52.0, "villager": 52.0, "sentry": 52.0, "merchant": 52.0,
 	"archer": 52.0, "warden": 52.0, "envoy": 52.0, "choirmother": 52.0,
 	"beastkin": 52.0, "cultist": 52.0, "aldric": 52.0, "onna": 52.0,
+	"piet": 52.0, "sera": 52.0, "callis": 52.0, "vessa": 52.0,
+	"choir_pilgrim": 52.0, "caged_beastkin": 52.0, "suli": 52.0,
+	"old_hunter": 52.0,
 }
 
 # Hero name (chosen at creation, shown in the co-op lobby/party). Capped so a

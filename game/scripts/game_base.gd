@@ -141,6 +141,7 @@ var last_safe_room := 0          # death returns you here
 
 var elder: Node2D
 var interactables: Array = []    # [{node, prompt, action}]
+var active_facing_interactable: Dictionary = {} # NPC temporarily turned toward the local player
 var interact_in_range := false   # is the player next to any interactable? (touch Act-button gate)
 var gates := {}                  # edge key "a_b" -> gate Node2D (locked edges only)
 var zone_alive := {}             # room index -> monsters still alive

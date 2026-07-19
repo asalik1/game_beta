@@ -22,20 +22,20 @@ const CHAPTER_ZONES := {
 		"gate_flag": "ch2_briefed",  # the road east opens after the briefing
 		"npcs": [
 			{"sprite": "elder", "x": 520, "y": 330, "prompt": "E — Maren", "convo": "ch2_maren_hub"},
-			{"sprite": "sentry", "x": 1150, "y": 380, "prompt": "E — Talk", "convo": "ch2_sentry"},
-			{"sprite": "villager", "x": 340, "y": 500, "prompt": "E — Talk", "convo": "ch2_refugee"},
+			{"sprite": "piet", "x": 1150, "y": 380, "prompt": "E — Talk", "convo": "ch2_sentry"},
+			{"sprite": "sera", "x": 340, "y": 500, "prompt": "E — Talk", "convo": "ch2_refugee"},
 			# Faction presences (convos live in ch2_factions.gd — T5):
-			{"sprite": "warden", "x": 660, "y": 200, "prompt": "E — Accord", "convo": "ch2_accord_recruit"},
-			{"sprite": "envoy", "x": 950, "y": 500, "prompt": "E — Cinderborn", "convo": "ch2_cinder_recruit"},
+			{"sprite": "callis", "x": 660, "y": 200, "prompt": "E — Accord", "convo": "ch2_accord_recruit"},
+			{"sprite": "vessa", "x": 950, "y": 500, "prompt": "E — Cinderborn", "convo": "ch2_cinder_recruit"},
 			# Playtest casting fixes: the scout renders IN its cage (bars
 			# composited over the sprite), and the pilgrim wears the
 			# Choir's grey habit — the same one the Choir Mother wears.
-			{"sprite": "beastkin_caged", "x": 1290, "y": 560, "prompt": "E — The Cage", "convo": "ch2_beastkin_cage"},
-			{"sprite": "choirmother", "x": 140, "y": 250, "prompt": "E — Pilgrim", "convo": "ch2_choir_pilgrim"},
+			{"sprite": "caged_beastkin", "x": 1290, "y": 560, "prompt": "E — The Cage", "convo": "ch2_beastkin_cage"},
+			{"sprite": "choir_pilgrim", "x": 140, "y": 250, "prompt": "E — Pilgrim", "convo": "ch2_choir_pilgrim"},
 			# The man who killed Vargoth, by his own small fire (T6):
 			{"sprite": "aldric", "x": 700, "y": 600, "prompt": "E — Ser Aldric", "convo": "ch2_aldric"},
 			# TODO(review): Pixel Crawler asset-extraction pass (2026-07-08).
-			# 9 HUMAN sprites wired as PLACEHOLDER NPCs along the camp's back
+			# 10 HUMAN sprites wired as PLACEHOLDER NPCs along the camp's back
 			# edge so they can be reviewed in-game (this safe hub is zone 0 of
 			# ch2). Reposition into real roles or delete this whole block.
 			# Convos are one-line placeholders in pc_npc_gallery.gd. NOTE:
@@ -51,6 +51,9 @@ const CHAPTER_ZONES := {
 			{"sprite": "npc_royal_archer",   "x": 1040, "y": 150, "prompt": "E — [ph] Archer",   "convo": "pc_ph_archer",     "placeholder": true},
 			{"sprite": "npc_scholar_a",      "x": 1180, "y": 150, "prompt": "E — [ph] Scholar",  "convo": "pc_ph_scholar_a",  "placeholder": true},
 			{"sprite": "npc_scholar_b",      "x": 1320, "y": 150, "prompt": "E — [ph] Scholar",  "convo": "pc_ph_scholar_b",  "placeholder": true},
+			# Retired live elder body: retained as a dev-only comparison asset;
+			# never appears in a normal playthrough.
+			{"sprite": "npc_elder_legacy",   "x": 1460, "y": 150, "prompt": "E — [ph] Legacy Elder", "convo": "pc_ph_elder_legacy", "placeholder": true},
 		],
 	}],
 }

@@ -516,6 +516,7 @@ func _face_interactable_to_player(entry: Dictionary) -> void:
 	var info: Dictionary = dirs.get(face, {})
 	if info.is_empty():
 		return
+	active_facing_interactable = entry
 	var frames: int = int(info.get("frames", 1))
 	spr.texture = info["tex"]
 	spr.hframes = frames
@@ -536,12 +537,36 @@ func _face_interactable_to_player(entry: Dictionary) -> void:
 				* float(entry.get("size_var", 1.0)), frames)
 
 
+## A conversation/shop owns the temporary facing state. Once its overlay has
+## gone, restore the original south-facing idle instead of leaving the NPC
+## staring at the last player who spoke to them.
+func _restore_interactable_rest_pose() -> void:
+	if active_facing_interactable.is_empty():
+		return
+	var entry := active_facing_interactable
+	active_facing_interactable = {}
+	var spr := entry.get("sprite") as Sprite2D
+	if not is_instance_valid(spr):
+		return
+	var rest_tex := entry.get("rest_tex") as Texture2D
+	if rest_tex == null:
+		return
+	spr.texture = rest_tex
+	spr.hframes = int(entry.get("rest_frames", 1))
+	spr.frame = int(entry.get("rest_frame", 0))
+	spr.scale = entry.get("rest_scale", Vector2.ONE) as Vector2
+	spr.position = entry.get("rest_pos", Vector2.ZERO) as Vector2
+
+
 func _process(delta: float) -> void:
 	if dedicated:
 		_server_process(delta)
 		return
 	talk_cd = maxf(0.0, talk_cd - delta)
 	_dev_review_input(delta)   # dev_mode: slow-mo (\) + zoom (=/-)
+	if not active_facing_interactable.is_empty() and not hud.dialogue_active \
+			and not hud.choices_active and not menus.is_open():
+		_restore_interactable_rest_pose()
 	if hud.dialogue_active or menus.is_open():
 		talk_cd = 0.4
 	if play_started and state == ST_PLAYING:

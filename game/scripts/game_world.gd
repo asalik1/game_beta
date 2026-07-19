@@ -1003,7 +1003,12 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	world.add_child(npc)
 	interactables.append({"node": npc, "prompt": prompt, "action": action,
 		"sprite": spr, "dir_anims": dir_anims, "render_scale": render_scale,
-		"size_var": nsize, "body_target": body_target})
+		"size_var": nsize, "body_target": body_target,
+		# Interaction-facing is presentation-only. Preserve the exact authored
+		# rest pose so leaving a conversation or shop never leaves a citizen
+		# rotated, rescaled, or vertically shifted.
+		"rest_tex": spr.texture, "rest_frames": spr.hframes, "rest_frame": spr.frame,
+		"rest_scale": spr.scale, "rest_pos": spr.position})
 	return npc
 
 ## Props that grow in natural CLUMPS (a stand of trees, a patch of mushrooms,

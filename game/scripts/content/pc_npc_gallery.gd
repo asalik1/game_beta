@@ -21,4 +21,5 @@ const CONVOS := {
 	"pc_ph_archer":     {"start": "a", "nodes": {"a": {"who": "Royal Archer (placeholder)", "text": _PH + " (reads as royal guard — could be an enemy variant instead.)", "next": ""}}},
 	"pc_ph_scholar_a":  {"start": "a", "nodes": {"a": {"who": "Scholar (placeholder)",      "text": _PH, "next": ""}}},
 	"pc_ph_scholar_b":  {"start": "a", "nodes": {"a": {"who": "Scholar (placeholder)",      "text": _PH, "next": ""}}},
+	"pc_ph_elder_legacy": {"start": "a", "nodes": {"a": {"who": "Legacy Elder (placeholder)", "text": _PH + " Retired live art; retained for visual comparison only.", "next": ""}}},
 }
