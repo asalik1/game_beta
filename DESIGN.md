@@ -228,6 +228,40 @@ Cover → roster → creation, like a grown-up RPG: **stage 1 = the COVER** (`ui
 - Any ambient detail that gains mechanics (river slow, hazard weather) graduates to a terrain mechanic: codex entry + telegraph-readability rules apply.
 - Transmog/cosmetics (retention roadmap №6) unblocks after Track C — it's the art pipeline it was waiting on.
 
+## Cosmetic skins — tier audit & locked briefs
+
+**Tier contract (locked 2026-07-18):** A skin changes presentation only: it may
+never change damage, hit timing, targeting, collision, or progression. **Elite**
+means a precise alternate reading of the base fantasy: a distinct combat
+silhouette across the kit, a movement accent, and one short bespoke ult beat.
+**Mythic** means a complete alternate fantasy: ambient/movement presence,
+distinct silhouettes on every ability, a staged showstopper ult, and a bespoke
+awakened form after that class's S-weapon awakening. Golden Ronin is the elite
+bar; Phantom is the mythic bar. Colour swaps and generic-FX substitutions do
+not satisfy either tier on their own.
+
+**Tier audit:** Keep all five current elite/mythic pairings. Dreadknight and
+Hellfire Inquisitor currently read more authored than some mythics, but that is
+an implementation gap, not a reason to invert the fantasy hierarchy. Their
+motifs are focused martial/caster variants; Stormforged and Eldritch Herald
+respectively have the broader transformational, world-facing scope required of
+mythic skins. No promotions or demotions are authorized by this audit.
+
+| Class | Elite — locked brief | Mythic — locked brief | Tier decision |
+|---|---|---|---|
+| Warrior | **Dreadknight: Blood Oath.** Jagged crimson soul-cuts; Charge leaves a banner-like wake of harvested spirits; Whirlwind carries spectral greatswords. **Ult:** the sword impales the ground and a bleeding war-standard rises before Berserk ignites. | **Stormforged: Eye of the Tempest.** Static crackles from movement, strikes discharge into victims, and Charge is a lightning-body bolt. **Ult:** an eye of storm opens overhead; three bolts strike around the warrior, then storm-light locks into the armour for Berserk. **Awakening:** violet stormfire and a visibly living storm crown, not a palette-only change. | Keep — oathbound knight is a focused elite; living storm avatar is mythic. |
+| Archer | **Frostfall Ranger: Winter Hunt.** Faceted ice arrows leave small frost blooms; Multishot is an icicle fan; Tumble sheds snow and broken rime. **Ult:** a frost-moon sigil forms above the archer before the hail-arrow storm begins. | **Voidwraith: Eclipse Hunt.** Void feathers/motes accompany movement; arrows bend into barbed dark streaks; Tumble folds through a small rift. **Ult:** a black moon opens above the arena, silhouettes a volley, and releases the rain of arrows from its centre. **Awakening:** the moon becomes a constellation-eye and arrows leave starless afterimages. | Keep — winter hunter is elite; eclipse predator changes the whole battlefield's read. |
+| Mage | **Void Weaver: Spindle of Ruin.** Bolts are woven knots that unravel on impact; Nova is a reverse-spinning spatial tear; Blink folds shut behind the caster. **Ult:** violet threads stitch a falling rift-meteor to the target, then snap at impact. | **Crystal Archmage: Prismatic Cataclysm.** Walking sheds refracting facets; bolts split light; Blink shatters and reassembles the body; Nova grows crystal spokes. **Ult:** orbiting prism glyphs focus into a crystal monolith that fractures into luminous shards on impact. **Awakening:** orbiting living facets and a higher, white-prismatic form. | Keep — a specialist void caster is elite; a self-refracting archmage is mythic. |
+| Paladin | **Eclipse Knight: Last Corona.** Every gold beat is opposed by a black inner disc: crescent Judgment, black-sun Consecration, umbral Aegis. **Ult:** an eclipse crosses the verdict zone and a corona hammer falls through the dark. | **Fallen Arbiter: Cold Verdict.** Frost motes and pale wing-shadow follow movement; attacks leave judgment seals on victims; Aegis is an angular ice-law sigil. **Ult:** spectral court seals condemn the field, then an immense white verdict blade descends. **Awakening:** the tribunal gains animated wings/crown and colder, near-white law-light. | Keep — an eclipsed knight is elite; an inhuman executioner of a celestial court is mythic. |
+| Warlock | **Hellfire Inquisitor: Brandbearer.** Ember footfalls, branded coal bolts, hot-iron Hex marks, and a brazier-like Dark Pact. **Ult:** iron brands close inward, chains flare orange, and the rift resolves as an Inquisition pyre. | **Eldritch Herald: The Door Opens.** Ink/ichor motes on movement, floating eye-runes on curses, living tendrils on bolts, and an iris revealed during Pact. **Ult:** the rift becomes a colossal opening eye; tentacles draw victims inward before the eye closes in the blast. **Awakening:** the herald grows a luminous eldritch crown and the opened eye changes form, not merely hue. | Keep — infernal interrogator is elite; emissary of an outer presence is mythic. |
+
+**Production gate:** before art or FX work begins on a skin, its brief must
+identify its movement accent, all four ability silhouettes, its ult timeline,
+and—if mythic—its awakened-form concept. A skin cannot be called complete
+until those beats are visible in-game and its player-facing cosmetic
+description reflects the finished fantasy. The in-game codex does not document
+cosmetics, so it does not need a parallel entry for these changes.
+
 ## The Eight Classes
 
 Six ship Phase 1; Death Knight + Summoner are expansion. All openings share one scaffold: combat encounter → consequence scene → Maren recruitment (branch on class, then `first_choice_flag` from the consequence scene — it shapes Maren's tone all game).
