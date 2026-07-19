@@ -34,18 +34,43 @@ func _wl_skin_col(base: Color) -> Color:
 func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
 	game.sfx("fireball", 0.7)  # deeper, hungrier whoosh than the mage's
 	_muzzle(dir, _wl_skin_col(_tcolor if _themed else Color(0.75, 0.4, 1.0)))
-	var p := _proj(dir, mult, "shadowbolt", 460.0)
+	# Base is a hooked void-spear, Inquisitor throws a living coal, and Herald
+	# carries a curse-rune on the bolt itself — distinct shapes, not tints.
+	var bolt_tex := "warlock_shadowbolt"
+	if skin == "hellfire_inquisitor":
+		bolt_tex = "hellfire_brand_bolt"
+	var p := _proj(dir, mult, bolt_tex, 460.0)
+	# Base curse bolts keep the active ability-variant tint; skin assets retain
+	# their bespoke fire/ichor treatment below.
+	p.modulate = Color.WHITE.lerp(_tcolor, 0.55) if skin == "" and _themed else Color.WHITE
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 	if skin == "hellfire_inquisitor":
-		# The bolt is a thrown coal: ember-hot shaft with a fire-streak tail.
-		p.modulate = Color(1.00, 0.62, 0.30)
+		# The branded spear sheds a small trail of real embers that fade behind it.
 		var tr := ProjTrail.new()
 		tr.proj = p
 		tr.col = Color(1.00, 0.45, 0.15)
 		game.add_child(tr)
+		var embers := CPUParticles2D.new()
+		embers.amount = 14
+		embers.lifetime = 0.32
+		embers.local_coords = false
+		embers.direction = Vector2.LEFT
+		embers.spread = 22.0
+		embers.initial_velocity_min = 24.0
+		embers.initial_velocity_max = 52.0
+		embers.gravity = Vector2.ZERO
+		embers.scale_amount_min = 0.7
+		embers.scale_amount_max = 1.5
+		embers.color = Color(1.0, 0.26, 0.06, 0.78)
+		p._vis.add_child(embers)
 	elif skin == "eldritch_herald":
-		# The bolt drips: sickly green shaft, an ichor-streak trailing it.
+		# The bolt drips: a green rune rides the black spear and leaves ichor.
 		p.modulate = Color(0.55, 0.92, 0.66)
+		var rune := Sprite2D.new()
+		rune.texture = Art.tex("fx_hex_rune")
+		rune.modulate = Color(0.50, 1.0, 0.62, 0.78)
+		rune.scale = Vector2(0.35, 0.35)
+		p._vis.add_child(rune)
 		var tr := ProjTrail.new()
 		tr.proj = p
 		tr.col = Color(0.35, 0.85, 0.55)
@@ -66,6 +91,22 @@ func _hex(f := 1.0) -> void:
 	# carrying every warlock variant's pack damage at once.
 	var radius := 120.0
 	var col := _wl_skin_col(_tcolor if _themed else Color(0.75, 0.4, 1.0))
+	var hex_tex := "fx_hex_rune"
+	if skin == "hellfire_inquisitor":
+		hex_tex = "fx_dark_pact"
+	elif skin == "eldritch_herald":
+		hex_tex = "fx_void_rift"
+	var cast_rune := Sprite2D.new()
+	cast_rune.texture = Art.tex(hex_tex)
+	cast_rune.modulate = Art.hdr(Color(col, 1.0), 1.35)
+	cast_rune.global_position = center
+	cast_rune.scale = Vector2.ONE * (radius / 32.0)
+	cast_rune.z_index = -4
+	game.add_child(cast_rune)
+	var cast_tw := cast_rune.create_tween()
+	cast_tw.tween_property(cast_rune, "rotation", TAU * (1.0 if skin == "hellfire_inquisitor" else -1.0), 0.38)
+	cast_tw.parallel().tween_property(cast_rune, "modulate:a", 0.0, 0.62)
+	cast_tw.tween_callback(cast_rune.queue_free)
 	# The curse arrives: a collapsing ring — power drawn INTO the victims.
 	_ring_fx(center, col, radius, true)
 	game.burst(center, col, 12)
@@ -118,9 +159,14 @@ func _hex_mark(e: Enemy) -> void:
 		return
 	var rune := Sprite2D.new()
 	rune.name = "hex_rune"
-	rune.texture = Art.glyph_tex("ab_hex", _wl_skin_col(Color(0.8, 0.45, 1.0)))
+	var mark_tex := "fx_hex_rune"
+	if skin == "hellfire_inquisitor":
+		mark_tex = "fx_dark_pact"
+	elif skin == "eldritch_herald":
+		mark_tex = "fx_void_rift"
+	rune.texture = Art.tex(mark_tex)
 	rune.position = Vector2(0, -30)
-	rune.scale = Vector2(0.9, 0.9)
+	rune.scale = Vector2(0.9, 0.9) if mark_tex == "fx_hex_rune" else Vector2(0.42, 0.42)
 	e.add_child(rune)
 
 
@@ -171,6 +217,21 @@ func _dark_pact(f := 1.0) -> void:
 	# The pact's rays take the skin's craft; the BLOOD price particles below
 	# stay blood-red — the cost is the cost, whoever pays it.
 	var col := _wl_skin_col(_tcolor if _themed else Color(1.0, 0.3, 0.45))
+	var pact_tex := "fx_dark_pact"
+	if skin == "hellfire_inquisitor":
+		pact_tex = "fx_consecration"
+	elif skin == "eldritch_herald":
+		pact_tex = "fx_void_rift"
+	var seal := Sprite2D.new()
+	seal.texture = Art.tex(pact_tex)
+	seal.modulate = Color(col, 0.88)
+	seal.scale = Vector2(5.2, 5.2)
+	seal.z_index = -4
+	add_child(seal)
+	var seal_tw := seal.create_tween()
+	seal_tw.tween_property(seal, "rotation", TAU * (-1.0 if skin == "eldritch_herald" else 1.0), 0.42)
+	seal_tw.parallel().tween_property(seal, "modulate:a", 0.0, 0.58)
+	seal_tw.tween_callback(seal.queue_free)
 	game.sfx("nova", 0.6)
 	game.shake(5.0)
 	game.hud.flash_screen(Color(0.6, 0.05, 0.15), 0.35, 0.3)
@@ -232,14 +293,16 @@ func _void_rift(f := 1.0) -> void:
 	var crit_cursed: bool = bool(Classes.CLASSES[cls]["abilities"]["ult"].get("dmg", {}).get("crit_cursed", false))
 	# The growing maw on the ground — you can feel it coming.
 	var mark := Sprite2D.new()
-	mark.texture = Art.tex("telegraph")
-	mark.modulate = Color(col, 0.55)
+	var rift_is_wide := skin != "hellfire_inquisitor"
+	mark.texture = Art.tex("fx_void_rift" if rift_is_wide else "fx_consecration")
+	mark.modulate = Art.hdr(Color(col, 0.86), 1.3)
 	mark.global_position = pos
-	mark.scale = Vector2(0.6, 0.6)
+	# The source rift is wide, so correct its aspect to the circular hit radius.
+	mark.scale = Vector2(0.6, 0.96 if rift_is_wide else 0.6)
 	mark.z_index = -6
 	game.add_child(mark)
 	var mt := mark.create_tween()
-	mt.tween_property(mark, "scale", Vector2(radius / 32.0, radius / 32.0), 0.3)
+	mt.tween_property(mark, "scale", Vector2(radius / 32.0, radius / 20.0 if rift_is_wide else radius / 32.0), 0.3)
 	# Indrawn particles: the rift visibly EATS light.
 	var indraw := CPUParticles2D.new()
 	indraw.amount = 30
@@ -345,7 +408,7 @@ func _void_rift(f := 1.0) -> void:
 	scar.texture = Art.tex("glow")
 	scar.modulate = Color(col.r * 0.4, col.g * 0.25, col.b * 0.7, 0.5)
 	scar.global_position = pos
-	scar.scale = Vector2(radius / 26.0, radius / 34.0)
+	scar.scale = Vector2(radius / 26.0, radius / 26.0)
 	scar.z_index = -5
 	game.add_child(scar)
 	var sct := scar.create_tween()

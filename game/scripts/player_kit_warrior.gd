@@ -101,6 +101,18 @@ func _use_warrior(slot: String, f: float) -> void:
 				for i in 3:
 					var strike := global_position + Vector2(randf_range(-70, 70), randf_range(-40, 40))
 					_beam_fx(strike + Vector2(randf_range(-40, 40), -320), strike, Color(0.72, 0.90, 1.0), 0.12)
+			# Rage is a physical war-mark now: base iron crest, Dreadknight's
+			# bleeding pact seal, Stormforged's charged crest under sky-bolts.
+			var brand := Sprite2D.new()
+			brand.texture = Art.tex("fx_dark_pact" if skin == "dreadknight" else "fx_berserk_brand")
+			brand.modulate = Color(rage_col, 0.9)
+			brand.scale = Vector2(1.9, 1.9) if skin == "dreadknight" else Vector2(1.45, 1.45)
+			brand.z_index = 7
+			add_child(brand)
+			var brand_tw := brand.create_tween()
+			brand_tw.tween_property(brand, "scale", brand.scale * 1.28, 0.25)
+			brand_tw.parallel().tween_property(brand, "modulate:a", 0.0, 0.38)
+			brand_tw.tween_callback(brand.queue_free)
 			_ring_fx(global_position, rage_col,
 				150.0 if _tfx.get("awaken_slam", 0) else 110.0)
 			_ult_sfx()
@@ -133,11 +145,11 @@ func _whirlwind(f := 1.0) -> void:
 	for i in 3:
 		var ang := TAU * i / 3.0
 		var blade := Sprite2D.new()
-		blade.texture = Art.tex("slash")
+		blade.texture = Art.tex("fx_whirl_blade")
 		blade.modulate = Color(col, 0.9)
 		blade.rotation = ang
 		blade.position = Vector2.from_angle(ang) * radius * 0.55
-		blade.scale = Vector2(2.6, 2.6)
+		blade.scale = Vector2(1.45, 1.45)
 		pivot.add_child(blade)
 	var tw := pivot.create_tween()
 	tw.tween_property(pivot, "rotation", TAU * (-1.0 if inward else 1.0), 0.32) \

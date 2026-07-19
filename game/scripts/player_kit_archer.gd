@@ -56,7 +56,7 @@ func _shoot(dir: Vector2, mult: float) -> void:
 		# of the theme tint (the hunt rhythm's 4th shot, or a lined-up shot).
 		col = Color(1.0, 0.95, 0.75)
 	_muzzle(dir, col)
-	_skin_arrow(_proj(dir, mult, "arrow", 520.0))
+	_skin_arrow(_proj(dir, mult, _skin_arrow_tex(), 520.0))
 
 
 ## Archer skin signature colour: Frostfall looses ice, Voidwraith looses
@@ -69,12 +69,25 @@ func _skin_arrow_col(base: Color) -> Color:
 	return base
 
 
+## Each ranger identity looses a distinct physical arrow: seasoned steel for
+## base, a faceted ice shaft for Frostfall, and a barbed void head for
+## Voidwraith.  Themes still colour the muzzle/impact, never the arrow body.
+func _skin_arrow_tex() -> String:
+	if skin == "frostfall_ranger":
+		return "arrow_frost"
+	if skin == "voidwraith":
+		return "arrow_void"
+	return "arrow_base"
+
+
 ## Dress a loosed arrow in its skin: Frostfall's carry an ice-pale shaft and
 ## a frost glint riding behind the head; Voidwraith's fly dark with a violet
 ## void-streak trailing them (the Phantom knife-trail language).
 func _skin_arrow(p: Projectile) -> void:
+	# Base arrows still inherit the active ability-variant colour. Skin arrows
+	# keep their authored material palette instead of being theme-recoloured.
+	p.modulate = Color.WHITE.lerp(_tcolor, 0.55) if skin == "" and _themed else Color.WHITE
 	if skin == "frostfall_ranger":
-		p.modulate = Color(0.78, 0.92, 1.00)
 		var g := Sprite2D.new()
 		g.texture = Art.tex("glow")
 		g.modulate = Art.hdr(Color(0.60, 0.85, 1.0, 0.38))
@@ -82,7 +95,6 @@ func _skin_arrow(p: Projectile) -> void:
 		g.z_index = -1
 		p._vis.add_child(g)
 	elif skin == "voidwraith":
-		p.modulate = Color(0.74, 0.62, 0.96)
 		var tr := ProjTrail.new()
 		tr.proj = p
 		tr.col = Color(0.55, 0.30, 0.90)
@@ -104,7 +116,7 @@ func _multishot(f := 1.0) -> void:
 	var step := 0.05 if _tfx.get("narrow", 0) else float(_tfx.get("spread", 0.16))
 	for i in count:
 		var spread := (float(i) - (count - 1) / 2.0) * step
-		var p := _proj(dir.rotated(spread), ability_coeff("a2") * f, "arrow", 520.0)
+		var p := _proj(dir.rotated(spread), ability_coeff("a2") * f, _skin_arrow_tex(), 520.0)
 		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 		_skin_arrow(p)
 
@@ -170,25 +182,34 @@ func _storm_strike() -> void:
 		return
 	# Falling-arrow whoosh (deep-pitched), NOT the synth laser zap.
 	game.sfx("knife", 0.75)
-	# An arrow visibly falls out of the sky onto the target.
-	var arrow := Sprite2D.new()
-	arrow.texture = Art.tex("arrow")
-	arrow.rotation = PI / 2.0
-	arrow.scale = Vector2(3, 3)
-	arrow.global_position = e.global_position + Vector2(randf_range(-10, 10), -160)
-	arrow.z_index = 30
-	game.add_child(arrow)
-	var tween := arrow.create_tween()
-	tween.tween_property(arrow, "global_position:y", e.global_position.y, 0.11)
-	tween.tween_callback(arrow.queue_free)
 	var storm_col := _theme_color("ult") if ability_theme.get("ult", "") != "" else Color(0.7, 1.0, 0.7)
 	# Skin rain: ice-shafted hail / dark void bolts (skin wins over theme).
 	if skin == "frostfall_ranger":
 		storm_col = Color(0.70, 0.90, 1.00)
-		arrow.modulate = Color(0.78, 0.92, 1.00)
 	elif skin == "voidwraith":
 		storm_col = Color(0.58, 0.34, 0.92)
-		arrow.modulate = Color(0.55, 0.42, 0.80)
+	# An arrow visibly falls out of the sky onto the target.
+	var arrow := Sprite2D.new()
+	# Arrow Storm always uses the new physical arrow set; it never falls back
+	# to the legacy procedural "arrow" glyph.
+	arrow.texture = Art.tex(_skin_arrow_tex())
+	arrow.modulate = Color.WHITE.lerp(_tcolor, 0.55) if skin == "" and _themed else Color.WHITE
+	arrow.rotation = PI / 2.0
+	arrow.scale = Vector2(2, 2)
+	arrow.global_position = e.global_position + Vector2(randf_range(-10, 10), -160)
+	arrow.z_index = 30
+	game.add_child(arrow)
+	# Sky arrows need the same tight glow as a Quick Shot — it rides BEHIND the
+	# shaft and turns with the fall, so the impact read stays a real arrow.
+	var arrow_glow := Sprite2D.new()
+	arrow_glow.texture = Art.tex("glow")
+	arrow_glow.modulate = Art.hdr(Color(storm_col, 0.78))
+	arrow_glow.scale = Vector2(1.25, 0.48)
+	arrow_glow.z_index = -1
+	arrow.add_child(arrow_glow)
+	var tween := arrow.create_tween()
+	tween.tween_property(arrow, "global_position:y", e.global_position.y, 0.11)
+	tween.tween_callback(arrow.queue_free)
 	game.burst(e.global_position, storm_col)
 	_ring_fx(e.global_position, storm_col, 42.0)
 	var eff := storm_fx.duplicate()

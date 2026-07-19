@@ -51,10 +51,14 @@ var _already_hit := {}
 # Glow tint per projectile type — bright and readable at a glance.
 const GLOWS := {
 	"fireball": Color(1.0, 0.55, 0.15), "bolt": Color(1.0, 0.35, 0.85),
-	"arrow": Color(0.9, 1.0, 0.6), "knife": Color(0.8, 0.85, 1.0),
+	"arrow": Color(0.9, 1.0, 0.6), "arrow_base": Color(0.90, 0.78, 0.52),
+	"arrow_frost": Color(0.55, 0.90, 1.0), "arrow_void": Color(0.62, 0.32, 0.95),
+	"knife": Color(0.8, 0.85, 1.0),
 	"slash": Color(1.0, 0.9, 0.5), "icelance": Color(0.5, 0.9, 1.0),
 	"shadowbolt": Color(0.7, 0.4, 1.0), "dart": Color(0.85, 0.92, 1.0),
-	"shuriken": Color(1.0, 0.85, 0.4),
+	"shuriken": Color(1.0, 0.85, 0.4), "mage_firebolt": Color(1.0, 0.48, 0.12),
+	"warlock_shadowbolt": Color(0.68, 0.34, 0.98),
+	"hellfire_brand_bolt": Color(1.0, 0.28, 0.06),
 }
 
 
@@ -80,7 +84,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	# Magic bolts burn hotter.
 	var glow := Sprite2D.new()
 	glow.texture = Art.tex("glow")
-	var hot := tex_name in ["fireball", "icelance", "shadowbolt"]
+	var hot := tex_name in ["fireball", "icelance", "shadowbolt", "mage_firebolt", "warlock_shadowbolt", "hellfire_brand_bolt"]
 	glow.modulate = Art.hdr(Color(p.glow_color, 0.8 if hot else 0.6))
 	glow.scale = Vector2(1.35, 1.35) if hot else Vector2(1.0, 1.0)
 	vis.add_child(glow)
@@ -100,23 +104,27 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 		sparks.gravity = Vector2.ZERO
 		sparks.scale_amount_min = 1.2
 		sparks.scale_amount_max = 2.8
-		sparks.color = {
+		var spark_col: Color = {
 			"fireball": Color(1.0, 0.8, 0.3),
 			"icelance": Color(0.75, 0.95, 1.0),
 			"shadowbolt": Color(0.6, 0.3, 0.9),
-		}[tex_name]
+			"mage_firebolt": Color(1.0, 0.64, 0.18),
+			"warlock_shadowbolt": Color(0.65, 0.32, 0.95),
+			"hellfire_brand_bolt": Color(1.0, 0.24, 0.06),
+		}.get(tex_name, Color.WHITE)
+		sparks.color = spark_col
 		vis.add_child(sparks)
 
 	# Arrows and knives streak: a thin motion trail behind the tip.
 	# Knives read SHARP (round 26): longer, thinner streak, dimmer glow,
 	# blade stretched along the flight line — a dart, not a glowstick.
-	if tex_name in ["arrow", "knife"]:
+	if tex_name in ["arrow", "arrow_base", "arrow_frost", "arrow_void", "knife"]:
 		var trail := Sprite2D.new()
 		trail.texture = Art.tex("glow")
-		trail.modulate = Color(p.glow_color, 0.4 if tex_name == "arrow" else 0.5)
+		trail.modulate = Color(p.glow_color, 0.4 if tex_name.begins_with("arrow") else 0.5)
 		trail.rotation = velocity.angle()
 		trail.position = -velocity.normalized() * 15.0
-		trail.scale = Vector2(1.6, 0.2) if tex_name == "arrow" else Vector2(2.6, 0.12)
+		trail.scale = Vector2(1.6, 0.2) if tex_name.begins_with("arrow") else Vector2(2.6, 0.12)
 		vis.add_child(trail)
 	if tex_name == "knife":
 		glow.modulate.a = 0.35
@@ -125,6 +133,12 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	var sprite := Sprite2D.new()
 	sprite.texture = Art.tex(tex_name)
 	match tex_name:
+		"arrow_base", "arrow_frost", "arrow_void":
+			sprite.scale = Vector2.ONE
+		"mage_firebolt", "warlock_shadowbolt":
+			sprite.scale = Vector2(1.2, 1.2)
+		"hellfire_brand_bolt":
+			sprite.scale = Vector2(0.84, 0.84)  # 30% smaller than the caster bolts
 		"knife": sprite.scale = Vector2(3.8, 2.1)
 		"dart":
 			# The assassin's thrown KUNAI (round 50): a sleek generated blade

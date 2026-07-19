@@ -146,11 +146,17 @@ func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, f
 	game.sfx("nova", 0.75)
 	_ring_fx(pos, col, radius)
 	game.burst(pos, col, 12)
-	# Hallowed floor glow that lingers a moment.
+	# Hallowed floor seal lingers a moment: sunfire for base, a bleeding corona
+	# for Eclipse, and a frozen verdict sigil for the Fallen Arbiter.
 	var floor_glow := Sprite2D.new()
-	floor_glow.texture = Art.tex("glow")
+	var ground_tex := "fx_consecration"
+	if skin == "eclipse_knight":
+		ground_tex = "fx_dark_pact"
+	elif skin == "fallen_arbiter":
+		ground_tex = "fx_frost_nova"
+	floor_glow.texture = Art.tex(ground_tex)
 	floor_glow.modulate = Color(col, 0.45)
-	floor_glow.scale = Vector2(radius / 24.0, radius / 32.0)
+	floor_glow.scale = Vector2.ONE * (radius / 32.0)
 	floor_glow.global_position = pos
 	floor_glow.z_index = -5
 	game.add_child(floor_glow)
@@ -222,17 +228,44 @@ func _aegis() -> void:
 	_ring_fx(global_position, col, 95.0)
 	game.burst(global_position, col, 10)
 	game.spawn_text(global_position + Vector2(0, -60), "AEGIS", col)
-	# The ward is VISIBLE: four motes of light orbit the hero while the
-	# shield holds, then gutter out.
+	# The ward is an actual shield crest, with four smaller plates orbiting it;
+	# Eclipse carries a dark seal and the Fallen Arbiter a cold rune instead.
+	var ward_tex := "fx_aegis"
+	if skin == "eclipse_knight":
+		ward_tex = "fx_hex_rune"
+	elif skin == "fallen_arbiter":
+		ward_tex = "fx_frost_nova"
+	var ward := Sprite2D.new()
+	ward.texture = Art.tex(ward_tex)
+	# The ward is a translucent full-body barrier, lifted to the chest rather
+	# than a small crest at the feet.
+	ward.position = Vector2(0, -34)
+	ward.modulate = Color(col, 0.68 if skin == "eclipse_knight" else 0.42)
+	ward.scale = Vector2(2.15, 2.35) if ward_tex == "fx_aegis" else Vector2(1.7, 1.7)
+	ward.z_index = 6
+	add_child(ward)
+	var ward_tw := ward.create_tween()
+	ward_tw.tween_property(ward, "scale", ward.scale * 1.12, 0.22)
+	get_tree().create_timer(aegis_time).timeout.connect(func() -> void:
+		if is_instance_valid(ward):
+			ward.queue_free())
+	# Four physical ward plates orbit while the shield holds, then gutter out.
 	var orbit := Node2D.new()
+	# Center the orbit on the whole body, not the feet/torso origin.
+	orbit.position = Vector2(0, -34)
 	orbit.z_index = 6
 	add_child(orbit)
+	var orbit_tex := "fx_aegis"
+	if skin == "eclipse_knight":
+		orbit_tex = "fx_hex_rune"
+	elif skin == "fallen_arbiter":
+		orbit_tex = "fx_frost_nova"
 	for i in 4:
 		var mote := Sprite2D.new()
-		mote.texture = Art.tex("glow")
-		mote.modulate = Art.hdr(Color(col, 0.85), 1.6)  # gentle: they orbit for seconds
-		mote.position = Vector2.from_angle(TAU * i / 4.0) * 34.0
-		mote.scale = Vector2(0.42, 0.42)
+		mote.texture = Art.tex(orbit_tex)
+		mote.modulate = Art.hdr(Color(col, 0.95), 1.45)
+		mote.position = Vector2.from_angle(TAU * i / 4.0) * 64.0
+		mote.scale = Vector2(0.30, 0.30) if orbit_tex == "fx_aegis" else Vector2(0.38, 0.38)
 		orbit.add_child(mote)
 	var spin := orbit.create_tween()
 	spin.set_loops()
@@ -339,9 +372,16 @@ func _chains_of_wrath(f := 1.0) -> void:
 				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	# The hammer of verdict falls from the sky while the chains reel in.
 	var hammer := Sprite2D.new()
-	hammer.texture = Art.tex("w_hammer")
-	hammer.modulate = Color(0.88, 0.90, 1.0) if skin == "fallen_arbiter" else Color(1.0, 0.95, 0.7)
-	hammer.scale = Vector2(7, 7)
+	var hammer_tex := "fx_hammer_base"
+	if skin == "eclipse_knight":
+		hammer_tex = "fx_hammer_eclipse"
+	elif skin == "fallen_arbiter":
+		hammer_tex = "fx_hammer_fallen"
+	hammer.texture = Art.tex(hammer_tex)
+	# Base Verdict takes the active variant's holy hue; named skin hammers keep
+	# their authored eclipse/cold-metal palettes.
+	hammer.modulate = Color.WHITE.lerp(col, 0.45) if skin == "" and _themed else Color.WHITE
+	hammer.scale = Vector2(3.2, 3.2)
 	hammer.global_position = global_position + Vector2(0, -320)
 	hammer.z_index = 30
 	game.add_child(hammer)
@@ -357,6 +397,22 @@ func _chains_of_wrath(f := 1.0) -> void:
 		game.sfx("slam")
 		game.shake(9.0)
 		game.hud.flash_screen(_pal_skin_col(Color(1.0, 0.9, 0.5)), 0.35, 0.3)
+		var verdict := Sprite2D.new()
+		var verdict_tex := "fx_consecration"
+		if skin == "eclipse_knight":
+			verdict_tex = "fx_dark_pact"
+		elif skin == "fallen_arbiter":
+			verdict_tex = "fx_frost_nova"
+		verdict.texture = Art.tex(verdict_tex)
+		verdict.modulate = Color(col, 0.92)
+		verdict.global_position = global_position
+		verdict.scale = Vector2(4.7, 4.7)
+		verdict.z_index = -4
+		game.add_child(verdict)
+		var verdict_tw := verdict.create_tween()
+		verdict_tw.tween_property(verdict, "rotation", TAU * (1.0 if skin == "fallen_arbiter" else -1.0), 0.38)
+		verdict_tw.parallel().tween_property(verdict, "modulate:a", 0.0, 0.48)
+		verdict_tw.tween_callback(verdict.queue_free)
 		_light_pillar(global_position, col, 1.4)
 		game.burst(global_position, col, 24)
 		game.burst(global_position, Color(1, 1, 1), 10)

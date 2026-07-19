@@ -36,8 +36,13 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 	elif skin == "crystal_archmage":
 		bolt_col = Color(0.80, 0.94, 1.00)
 	_muzzle(dir, bolt_col)
-	# The Ice variant flies as a crystal lance, not a ball of fire.
-	var tex := "icelance" if _tfx.get("pierce", 0) or skin == "crystal_archmage" else "fireball"
+	# Each identity owns a bolt silhouette: base flame dart, void curse-spear,
+	# or hard crystal lance. Themes affect the muzzle and riders, not the body.
+	var tex := "mage_firebolt"
+	if skin == "void_weaver":
+		tex = "warlock_shadowbolt"
+	elif _tfx.get("pierce", 0) or skin == "crystal_archmage":
+		tex = "icelance"
 	var p := _proj(dir, mult, tex, 440.0 * float(_tfx.get("proj_speed", 1.0)))
 	if skin == "void_weaver":
 		p.modulate = Color(0.72, 0.48, 1.00)
@@ -81,6 +86,22 @@ func _frost_nova(f := 1.0) -> void:
 		col = Color(0.80, 0.94, 1.00)
 	var inward: bool = _tfx.get("pull", 0)
 	var fiery: bool = _tfx.get("no_knock", 0)
+
+	# Establish the cold with a hard ground mark before its shards move: base
+	# and Crystal use ice; the Void Weaver folds a literal spatial tear.
+	var sigil := Sprite2D.new()
+	sigil.texture = Art.tex("fx_void_rift" if skin == "void_weaver" else "fx_frost_nova")
+	sigil.modulate = Color(col, 0.9)
+	sigil.scale = Vector2.ONE * (radius / 32.0)
+	sigil.z_index = -4
+	add_child(sigil)
+	if skin == "crystal_archmage":
+		sigil.rotation = PI / 4.0
+		sigil.scale *= 1.12
+	var sigil_tw := sigil.create_tween()
+	sigil_tw.tween_property(sigil, "rotation", sigil.rotation + (0.55 if skin == "void_weaver" else -0.3), 0.32)
+	sigil_tw.parallel().tween_property(sigil, "modulate:a", 0.0, 0.5)
+	sigil_tw.tween_callback(sigil.queue_free)
 
 	# Shockwave RING — expands for the blast, COLLAPSES for the implosion.
 	var r_scale := radius / 24.0
@@ -261,12 +282,42 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 
 	# The meteor itself: big, burning, with a particle trail.
 	var spr := Sprite2D.new()
-	spr.texture = Art.tex("fireball")
-	spr.scale = Vector2(11, 11)
+	spr.texture = Art.tex("meteor_down")
+	# This is the mage's signature impact: three times the former comet scale.
+	spr.scale = Vector2(7.2, 7.2)
 	spr.modulate = Art.hdr(col)  # the comet head burns past white — it blooms
-	spr.global_position = pos + Vector2(90, -460)
+	# Vertical asset and vertical travel: the rock now falls straight down.
+	spr.global_position = pos + Vector2(0, -460)
 	spr.z_index = 30
 	game.add_child(spr)
+	# Brief world-space fire remnants mark the descent. They do not follow the
+	# comet: each fades where it was shed, leaving a clean decaying light trail.
+	for i in 5:
+		get_tree().create_timer(0.09 * i).timeout.connect(func() -> void:
+			if not is_instance_valid(spr):
+				return
+			var ember := Sprite2D.new()
+			ember.texture = Art.tex("glow")
+			ember.modulate = Art.hdr(Color(col, 0.72), 1.4)
+			ember.global_position = spr.global_position + Vector2(0, -24)
+			ember.scale = Vector2(0.34, 1.15)
+			ember.z_index = 29
+			game.add_child(ember)
+			var ember_tw := ember.create_tween()
+			ember_tw.tween_property(ember, "scale", Vector2(0.7, 2.8), 0.32)
+			ember_tw.parallel().tween_property(ember, "modulate:a", 0.0, 0.38)
+			ember_tw.tween_callback(ember.queue_free))
+	# Skin comets carry their magic as a distinct companion mark: a folding
+	# rift for the Weaver and a spinning crystal seal for the Archmage.
+	if skin == "void_weaver" or skin == "crystal_archmage":
+		var core_mark := Sprite2D.new()
+		core_mark.texture = Art.tex("fx_void_rift" if skin == "void_weaver" else "fx_frost_nova")
+		core_mark.modulate = Color(col, 0.8)
+		core_mark.scale = Vector2(0.55, 0.55)
+		core_mark.z_index = -1
+		spr.add_child(core_mark)
+		var cm_tw := core_mark.create_tween()
+		cm_tw.tween_property(core_mark, "rotation", TAU * (-1.0 if skin == "void_weaver" else 1.0), 0.5)
 	var trail := CPUParticles2D.new()
 	trail.amount = 26
 	trail.lifetime = 0.5

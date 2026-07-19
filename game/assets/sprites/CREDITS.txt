@@ -123,4 +123,10 @@ OpenAI image generation — project-generated art (2026-07-18):
   palette-reduced for the game's pixel-art texture scale).
   gate (16px reinforced timber-and-iron portcullis segment; generated source
   was chroma-keyed, palette-reduced, and normalized to the runtime tile size).
+  Combat FX pass: arrow_base, arrow_frost, arrow_void, fx_hammer_base,
+  fx_hammer_eclipse, fx_hammer_fallen, meteor_down, fx_void_rift,
+  fx_frost_nova, fx_hex_rune, fx_dark_pact, fx_whirl_blade,
+  fx_berserk_brand, fx_consecration, fx_aegis, mage_firebolt,
+  warlock_shadowbolt, hellfire_brand_bolt (chroma-keyed, palette-reduced
+  combat sprites).
 Generated for this project; no third-party attribution required.
