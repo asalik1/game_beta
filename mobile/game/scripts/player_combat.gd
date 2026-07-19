@@ -379,32 +379,15 @@ func _hard_lock(rng: float) -> Enemy:
 	return null
 
 
-## Target for SEEKING abilities (ults, sky-drops, marks): they can't be
-## aimed, so they grab the BIGGEST THREAT — any boss outranks any mob, and
-## within a tier the lowest-HP one wins (finish the wounded). A hard lock
-## overrides this entirely.
+## Target for what used to be SEEKING abilities (ults, sky-drops, marks). As of
+## the targeting unification these resolve to the SAME enemy an aimed attack
+## would strike — hard lock, else the sticky soft target, else nearest on your
+## facing side (see _aim_target) — so every single-target ability commits to one
+## consistent target instead of sniping the biggest threat. The two deliberate
+## multi-target spreads (mage Starfall's lowest-HP cascade, baseline archer
+## Storm's random scatter) pick their own way and don't route through here.
 func auto_aim(rng := 520.0) -> Enemy:
-	var lock := _hard_lock(rng)
-	if lock:
-		return lock
-	var best: Enemy = null
-	for node in get_tree().get_nodes_in_group("enemies"):
-		var e := node as Enemy
-		if e == null or e.dying or e.untargetable:
-			continue
-		if global_position.distance_to(e.global_position) > rng:
-			continue
-		if best == null or _outranks(e, best):
-			best = e
-	return best
-
-
-func _outranks(e: Enemy, cur: Enemy) -> bool:
-	var eb := e is Boss
-	var cb := cur is Boss
-	if eb != cb:
-		return eb  # a boss always beats a mob
-	return e.hp < cur.hp  # same tier: the more wounded one
+	return _aim_target(rng)
 
 
 ## Target for AIMED attacks. Hard lock wins; otherwise the STICKY SOFT TARGET
