@@ -153,9 +153,9 @@
   <div class="tablewrap">
     <table class="summary">
       <tr><th>Lane</th><th>Rough volume</th><th>Blocking gap</th><th>Unlock</th></tr>
-      <tr><td class="pack">1 · Ground tilesets</td><td>~10 sheets</td><td>Floors are painted procedurally in <code>art.gd</code></td><td><span class="unlock">Ground-override seam</span> (per-terrain PNG tile support)</td></tr>
-      <tr><td class="pack">2 · Multi-tile structures</td><td>~8 pack kits</td><td><code>_add_obstacle</code> places one sprite + one circle collider</td><td><span class="unlock">Composite-structure placement</span> (+ wall decals)</td></tr>
-      <tr><td class="pack">3 · Animated content</td><td>~30 sheets</td><td>Scenery props are static <code>Sprite2D</code>s</td><td><span class="unlock">Animated-prop support</span> — highest-value unlock</td></tr>
+      <tr><td class="pack">1 · Ground tilesets</td><td>~10 sheets</td><td>Floors are painted procedurally in <code>art.gd</code></td><td><span class="unlock">Ground-override seam ✓ BUILT</span> — 5 authored floors wired</td></tr>
+      <tr><td class="pack">2 · Multi-tile structures</td><td>~8 pack kits</td><td><code>_add_obstacle</code> places one sprite + one circle collider</td><td><span class="unlock">Composite-structure placement ✓ BUILT</span> — 14 structures wired</td></tr>
+      <tr><td class="pack">3 · Animated content</td><td>~30 sheets</td><td>Scenery props are static <code>Sprite2D</code>s</td><td><span class="unlock">Animated-prop support ✓ BUILT</span> — 8 animated props wired</td></tr>
       <tr><td class="pack">4 · Item-scale passes</td><td>~150 pieces</td><td>None — deliberate thin-value / duplicate calls</td><td>Re-cut on demand (indexed sheets archived)</td></tr>
       <tr><td class="pack">5 · Character content</td><td>~40 sheets</td><td>Engine uses idle+run only; die-juice not death strips</td><td>Per-feature (combat NPCs, mob death anims)</td></tr>
       <tr><td class="pack">+ · Second-source packs</td><td>2 packs</td><td>Raven = icon library (cut on demand); Ninja = style clash</td><td><a href="#sweep2">See the addendum section</a></td></tr>
@@ -229,10 +229,11 @@
   <!-- ============================ LANE 3 ============================ -->
   <section class="lane" id="lane3" style="--lc: var(--lane-anim)">
     <div class="lanehead"><span class="no">LANE 3</span><h2>Animated content</h2></div>
-    <p class="gate"><b>Why the lane is blocked:</b> scenery props are static <code>Sprite2D</code>s — no hframes,
-    no clock. Mobs animate through a separate strip system that scenery never touches. The unlock (an animated-prop
-    path: hframes + a shared timer, exactly like mob idle strips) is small and is flagged as the
-    <b>single highest-value residual unlock</b>: it would light every camp bonfire and set every station working.</p>
+    <p class="gate"><b>Was blocked; now UNLOCKED (2026-07-18):</b> scenery props were static <code>Sprite2D</code>s —
+    no hframes, no clock. The animated-prop path (hframes + a shared timer, like mob idle strips) shipped in
+    <code>8b6afc3</code>, and eight strips were cut and wired (bonfire, flame, smoke, forge hearth, grill, pan,
+    sewer + fountain water). The rows below are what stayed behind <em>after</em> that pass — the complex
+    multi-action station grids that don't loop cleanly as a single strip.</p>
     <div class="tablewrap">
       <table>
         <tr><th>Preview</th><th>Source</th><th>Assets left behind</th><th>Detailed reason skipped</th></tr>
@@ -365,21 +366,37 @@
   <hr class="rule" />
 
   <section id="unlocks">
-    <h2>Unlock priorities — what re-opens each lane</h2>
-    <h3>1 · Animated-prop support <span style="color:var(--lane-anim)">(highest value)</span></h3>
-    <p>Small engine feature: give scenery props the same hframes-plus-clock the mob idle strips use.
-    Instantly unlocks: living bonfires with smoke, all four working station loops (the Guild Hall goes from
-    diorama to workshop), animated cookware, sewer water. This is the one that makes camps breathe.</p>
-    <h3>2 · Composite structures + wall decals</h3>
-    <p>Unlocks the Buildings kit — real constructed guild halls, interiors with fireplaces and counters —
-    plus stained glass, mausoleums, the oasis, the grand fountain, sconces and notice boards. The natural
-    partner to the guilds/halls roadmap.</p>
-    <h3>3 · Ground-tile override seam</h3>
-    <p>Per-terrain authored floors (lava channels, dungeon sets, sand paths). Touches the tonemap/tint tuning,
-    so it re-opens biome readability validation — schedule with an art pass, not casually.</p>
+    <h2>Unlock priorities — <span style="color:var(--lane-anim)">all three now BUILT</span></h2>
+    <p style="border-left:3px solid var(--lane-anim); padding-left:14px; margin-bottom:22px;">
+    <b>Status update (2026-07-18):</b> the three engine seams that gated Lanes 1–3 shipped in commit
+    <code>8b6afc3</code> (Track D), and a showcase pass then wired them with real pack art. What were
+    "priorities" are now demonstrations you can walk into from the dev panel — the terrains named below are
+    all placeholder, so normal play is untouched.</p>
+    <h3>1 · Animated-prop support <span style="color:var(--lane-anim)">✓ built + demonstrated</span></h3>
+    <p>Scenery props now take the same hframes-plus-clock the mob idle strips use: any prop whose sprite ships a
+    <code>&lt;name&gt;_anim.png</code> strip self-animates. Cut and wired: <b>camp_bonfire, flame, ember_smoke,
+    forge_hearth, cook_grill, cook_pan, sewer_flow</b> and a blue-shifted <b>fountain_flow</b>. Living bonfires,
+    a pulsing forge, a licking hearth, shimmering water — the camps breathe. (Left behind as too-complex-to-loop:
+    the 36-cell anvil, 64-cell sawmill, and 55-cell alchemy grids — multi-action sheets that don't loop as one
+    strip; represented statically instead.)</p>
+    <h3>2 · Composite structures + wall decals <span style="color:var(--lane-anim)">✓ built + demonstrated</span></h3>
+    <p>Multi-part builds with composite footprints and animated, lit wall decals now place from a
+    <code>Terrains.STRUCTURES</code> catalog. Fourteen authored: ruined gate, watch brazier, old well, signal
+    fire, plus a working <b>guild_forge</b> (animated furnace + flame + smoke + light), <b>cook_hearth</b>,
+    <b>brew_stand</b>, <b>town_fountain</b>, <b>sewer_outfall</b>, <b>great_hearth</b>, <b>market_stall</b>,
+    <b>notice_board</b>, <b>mausoleum</b>, and <b>torch_pillar</b>.</p>
+    <h3>3 · Ground-tile override seam <span style="color:var(--lane-anim)">✓ built + demonstrated</span></h3>
+    <p>Per-terrain authored floors drop in as <code>ground_&lt;kind&gt;.png</code> (seamless tile or variation
+    grid). Cut: <b>forgefloor</b>, a seamless molten <b>lavafield</b> (used as a lava-channel road),
+    <b>dungeonfloor</b>, <b>hallwood</b>, <b>castletile</b>. No override still means byte-identical shipping
+    biomes; these ride new ground kinds so nothing existing shifts.</p>
+    <p style="margin-top:14px;"><b>Walk them in the dev panel:</b> <code>ph_forge</code> (basalt floor + lava
+    road + working forge), <code>ph_kitchen</code>, <code>ph_dungeon</code>, <code>ph_market</code>,
+    <code>ph_crypt</code> — each fires all three seams at once.</p>
     <h3>4 · On-demand re-cuts (no feature needed)</h3>
-    <p>Full themed weapon lines, complete crop ladders, A_Hunter combat animations — all sitting in archived,
-    indexed cut sheets. Cut them the day a system asks, in minutes, against real requirements.</p>
+    <p>Full themed weapon lines, complete crop ladders, A_Hunter combat animations, the anvil/sawmill/alchemy
+    station loops — all sitting in archived, indexed cut sheets. Cut them the day a system asks, in minutes,
+    against real requirements.</p>
   </section>
 
   <div class="foot">

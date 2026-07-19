@@ -3198,7 +3198,48 @@ func _test_asset_seams() -> void:
 	if fb_cols != 1:
 		return _fail("unlisted structure should degrade to one footprint collider (got %d)" % fb_cols)
 	fallback.queue_free()
+
+	# --- SHOWCASE assets (2026-07-18): the five authored floors, eight
+	# animated props, and the animated composite structures are installed, so
+	# assert the real art landed (a dropped strip or a bad terrain regresses
+	# here, not silently in play). Placeholder-terrain content, dev-only.
+	for gk in ["forgefloor", "lavafield", "dungeonfloor", "hallwood", "castletile"]:
+		if Art._ground_tileset(gk).is_empty():
+			return _fail("showcase ground_%s.png tileset did not load" % gk)
+	for pn in ["flame", "ember_smoke", "forge_hearth", "cook_grill", "cook_pan",
+			"sewer_flow", "fountain_flow", "camp_bonfire"]:
+		if Art.anim_info(pn).is_empty():
+			return _fail("showcase animated prop %s has no _anim strip" % pn)
+		if Art.anim_prop(pn) == null:
+			return _fail("showcase prop %s did not build an AnimatedSprite2D" % pn)
+	# The working forge composites an animated furnace part + an animated flame
+	# decal (both self-animate off their strips), carries a forge light, and
+	# has its 2-shape footprint — Lane 2 x Lane 3 in one build.
+	var forge := game._add_structure("guild_forge", Vector2(-4600, -4600))
+	var forge_anim := 0
+	var forge_cols := 0
+	var forge_lit := false
+	for c in forge.get_children():
+		if c is AnimatedSprite2D:
+			forge_anim += 1
+		elif c is CollisionShape2D:
+			forge_cols += 1
+		elif c is PointLight2D:
+			forge_lit = true
+	if forge_anim < 2:
+		return _fail("guild_forge should self-animate its furnace + flame (got %d AnimatedSprite2D)" % forge_anim)
+	if forge_cols != 2 or not forge_lit:
+		return _fail("guild_forge wants a 2-shape footprint + forge light (cols %d, lit %s)" % [forge_cols, forge_lit])
+	forge.queue_free()
+	# Every showcase terrain paints (ground kind resolves + structures/props
+	# reference real art) — build each ground texture headless.
+	for tid in ["ph_forge", "ph_kitchen", "ph_dungeon", "ph_market", "ph_crypt"]:
+		var t: Dictionary = Terrains.DATA[tid]
+		var gt := Art.ground(String(t["ground"]), String(t["path"]), 6, 6, 3)
+		if gt == null:
+			return _fail("showcase terrain %s ground failed to bake" % tid)
 	print("ok: asset seams (ground tilesets / composite structures + decals / animated props)")
+	print("ok: seam showcase (5 authored floors + 8 animated props + animated forge/hearth/fountain structures)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

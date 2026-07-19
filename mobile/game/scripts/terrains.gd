@@ -127,6 +127,7 @@ const DATA := {
 	"ph_guildhall": {"name": "Guild Hall", "ground": "holystone", "path": "holystone",
 		"tint": Color(0.95, 0.9, 0.85), "ambient": "embers", "music": "village",
 		"obstacles": ["station_anvil_t1", "station_anvil_t2", "station_anvil_t3", "station_furnace_t1", "station_furnace_t2", "station_furnace_t3", "station_alchemy_t1", "station_alchemy_t2", "station_alchemy_t3", "station_sawmill_t1", "station_sawmill_t2", "station_sawmill_t3", "library_shelf", "hideout_table", "amphora", "bench2"], "decor": ["library_rug", "candle", "castle_sconce", "pebble", "banner_red", "banner_blue", "banner_green"], "accents": ["castle_throne", "castle_banner", "camp_bonfire"], "count": 12,
+		"structures": ["guild_forge", "brew_stand"],
 		"patches": [], "event": "", "bright": true,
 		"placeholder": true},
 	"ph_fields": {"name": "Harvest Fields", "ground": "grass", "path": "dirt",
@@ -182,6 +183,52 @@ const DATA := {
 		"tint": Color(0.84, 0.82, 0.86), "ambient": "embers", "music": "keep",
 		"obstacles": ["pillar", "rock", "boulder", "rubble"], "decor": ["crack", "pebble", "rubble"], "accents": ["bones"], "count": 7,
 		"structures": ["ruined_gate", "watch_brazier", "old_well", "signal_fire"],
+		"patches": [], "event": "",
+		"placeholder": true},
+	# ---- SEAM-SHOWCASE terrains (2026-07-18) — each demonstrates all three
+	# environment seams at once: an authored PNG FLOOR (ground_<kind>.png,
+	# Lane 1), composite STRUCTURES (Lane 2), and ANIMATED props (Lane 3, any
+	# obstacle/decor/decal whose sprite ships a _anim strip self-animates).
+	# Dev-panel-only; no zone references them; normal play is untouched.
+	# The Great Forge: an authored basalt floor with a molten-LAVA road (path
+	# tileset), a working forge + brew stand + torch pillars, and standalone
+	# pulsing furnaces. Ground + structures + animation, all lit.
+	"ph_forge": {"name": "The Great Forge", "ground": "forgefloor", "path": "lavafield",
+		"tint": Color(0.95, 0.82, 0.74), "ambient": "embers", "music": "keep",
+		"obstacles": ["forge_hearth", "station_anvil_t3", "forge_cauldron", "boulder", "pillar"], "decor": ["flame", "crack", "pebble"], "accents": ["node_ore", "forge_statue"], "count": 9,
+		"structures": ["guild_forge", "brew_stand", "torch_pillar"],
+		"patches": [], "event": "",
+		"placeholder": true},
+	# The Kitchens: an authored WOOD floor with a stone walkway, a cooking
+	# hearth + great hearth, standalone animated grills and a frying pan.
+	"ph_kitchen": {"name": "The Kitchens", "ground": "hallwood", "path": "castletile",
+		"tint": Color(1.0, 0.94, 0.84), "ambient": "embers", "music": "village",
+		"obstacles": ["cook_grill", "camp_meatrack", "hideout_table", "amphora", "bench2"], "decor": ["cook_pan", "clay_pot", "water_bucket", "pebble"], "accents": ["camp_bonfire"], "count": 10,
+		"structures": ["cook_hearth", "great_hearth"],
+		"patches": [], "event": "", "bright": true,
+		"placeholder": true},
+	# Sunless Warren: an authored DUNGEON-STONE floor with a stone walkway,
+	# torch pillars + a sludge outfall + a mausoleum, animated flame torches.
+	"ph_dungeon": {"name": "Sunless Warren", "ground": "dungeonfloor", "path": "castletile",
+		"tint": Color(0.78, 0.82, 0.88), "ambient": "mist", "music": "darkwood",
+		"obstacles": ["pillar", "sewer_pipe", "sewer_pipe2", "clay_pot", "boulder"], "decor": ["flame", "bones", "crack", "web", "sewer_lantern"], "accents": ["node_crystal"], "count": 12,
+		"structures": ["torch_pillar", "sewer_outfall", "mausoleum"],
+		"patches": [{"type": "poison", "count": 4, "radius": [60, 90]}], "event": "",
+		"placeholder": true},
+	# Merchant Row: an authored TILE floor with a wood walkway, market stalls
+	# with swaying awnings + a shimmering fountain + a notice board.
+	"ph_market": {"name": "Merchant Row", "ground": "castletile", "path": "hallwood",
+		"tint": Color(1.0, 0.96, 0.9), "ambient": "sparkle", "music": "village",
+		"obstacles": ["hideout_table", "amphora", "clay_pot", "clay_pot2", "bench2"], "decor": ["banner_red", "carpet", "sprout", "pebble"], "accents": ["signpost"], "count": 11,
+		"structures": ["market_stall", "market_stall", "town_fountain", "notice_board"],
+		"patches": [], "event": "", "bright": true,
+		"placeholder": true},
+	# The Sunken Tombs: an authored dungeon floor, a mausoleum + torch pillars,
+	# a full graveyard prop set with animated torch flames.
+	"ph_crypt": {"name": "The Sunken Tombs", "ground": "dungeonfloor", "path": "dungeonfloor",
+		"tint": Color(0.8, 0.82, 0.9), "ambient": "mist", "music": "keep",
+		"obstacles": ["crypt", "tombstone", "tombstone2", "grave_cross", "coffin", "pillar"], "decor": ["flame", "grave_bones", "grave_crack", "bones", "web"], "accents": ["grave_statue", "grave_angel"], "count": 11,
+		"structures": ["mausoleum", "torch_pillar"],
 		"patches": [], "event": "",
 		"placeholder": true},
 }
@@ -242,6 +289,9 @@ const WALL := {
 	"ph_sewer": "wall_sewer", "ph_garden": "wall_hedge",
 	"ph_castle": "wall_castle", "ph_guildhall": "wall_castle", "ph_library": "wall_castle",
 	"ph_hideout": "wall_wood",
+	# seam-showcase terrains
+	"ph_forge": "wall_volcanic", "ph_kitchen": "wall_wood", "ph_dungeon": "wall_sewer",
+	"ph_market": "wall_castle", "ph_crypt": "wall_grave",
 	"magma": "wall_volcanic", "void": "wall_volcanic",
 	"ice": "wall_ice",
 	"graveyard": "wall_grave",
@@ -301,5 +351,88 @@ const STRUCTURES := {
 		"colliders": [{"shape": "circle", "radius": 14.0, "off": Vector2(0, 2)}],
 		"decals": [{"sprite": "camp_bonfire", "off": Vector2(0, -18), "scale": 0.5, "z": 2,
 			"light": Color(1.0, 0.55, 0.22, 0.95), "light_energy": 1.3, "light_scale": 1.0}],
+		"fire": true},
+	# ---- ANIMATED composite structures (2026-07-18, Lane 2 x Lane 3) --------
+	# These pair the composite-structure seam with the animated-prop seam: a
+	# decal whose sprite ships a <name>_anim.png strip SELF-ANIMATES with no
+	# code change. So a forge glows and pulses, a hearth's flame licks, a
+	# fountain's water shimmers — all driven by the strips installed alongside.
+	# A working forge: the anvil is the base, a pulsing furnace beside it
+	# (forge_hearth ANIMATES), an open flame at the coals, and a rising smoke
+	# column — plus the forge-glow light and crackle. The Guild Hall's centerpiece.
+	"guild_forge": {"sprite": "station_anvil_t3", "w": 150.0, "mirror": true,
+		"parts": [{"sprite": "forge_hearth", "off": Vector2(78, -20), "scale": 0.7, "z": 1}],
+		"colliders": [
+			{"shape": "rect", "size": Vector2(96.0, 34.0), "off": Vector2(0, -6)},
+			{"shape": "circle", "radius": 22.0, "off": Vector2(78, -8)}],
+		"decals": [
+			{"sprite": "flame", "off": Vector2(-6, -30), "scale": 0.28, "z": 2,
+				"light": Color(1.0, 0.58, 0.24, 0.95), "light_energy": 1.0, "light_scale": 0.8},
+			{"sprite": "ember_smoke", "off": Vector2(78, -78), "scale": 0.4, "z": 3}],
+		"fire": true},
+	# A cooking hearth: a workbench with a lit grill (cook_grill ANIMATES) and
+	# a smoke wisp, warm light, crackle.
+	"cook_hearth": {"sprite": "camp_workbench", "w": 128.0,
+		"colliders": [{"shape": "rect", "size": Vector2(88.0, 32.0), "off": Vector2(0, -6)}],
+		"decals": [
+			{"sprite": "cook_grill", "off": Vector2(2, -30), "scale": 0.5, "z": 2,
+				"light": Color(1.0, 0.66, 0.34, 0.85), "light_energy": 0.8, "light_scale": 0.7},
+			{"sprite": "ember_smoke", "off": Vector2(2, -74), "scale": 0.34, "z": 3}],
+		"fire": true},
+	# A brew stand: the top-tier alchemy table with a small burner flame
+	# (flame ANIMATES) under the retort, a cool green glow.
+	"brew_stand": {"sprite": "station_alchemy_t3", "w": 128.0, "mirror": true,
+		"colliders": [{"shape": "rect", "size": Vector2(84.0, 30.0), "off": Vector2(0, -6)}],
+		"decals": [{"sprite": "flame", "off": Vector2(-2, -26), "scale": 0.16, "z": 2,
+			"light": Color(0.5, 0.9, 0.55, 0.8), "light_energy": 0.7, "light_scale": 0.6}]},
+	# A town fountain: a stone basin with SHIMMERING water (fountain_flow
+	# ANIMATES). No light, no fire — just a calm centerpiece with a broad
+	# rim footprint.
+	"town_fountain": {"sprite": "garden_fountain", "w": 150.0,
+		"colliders": [{"shape": "circle", "radius": 30.0, "off": Vector2(0, -6)}],
+		"decals": [{"sprite": "fountain_flow", "off": Vector2(0, -30), "scale": 0.22, "z": 1}]},
+	# A sewer outfall: a broad pipe spilling a pool of FLOWING sludge
+	# (sewer_flow ANIMATES) across a wide flat footprint.
+	"sewer_outfall": {"sprite": "sewer_pipe", "w": 140.0, "mirror": true,
+		"colliders": [{"shape": "rect", "size": Vector2(96.0, 34.0), "off": Vector2(0, -6)}],
+		"decals": [{"sprite": "sewer_flow", "off": Vector2(30, -8), "scale": 0.34, "z": 1}]},
+	# A great hearth: a hall fireplace — a brazier base with a tall licking
+	# flame (flame ANIMATES), a smoke column, firelight and crackle.
+	"great_hearth": {"sprite": "forge_brazier", "w": 110.0,
+		"colliders": [{"shape": "circle", "radius": 20.0, "off": Vector2(0, -4)}],
+		"decals": [
+			{"sprite": "flame", "off": Vector2(0, -46), "scale": 0.4, "z": 2,
+				"light": Color(1.0, 0.6, 0.26, 0.95), "light_energy": 1.2, "light_scale": 1.0},
+			{"sprite": "ember_smoke", "off": Vector2(0, -96), "scale": 0.46, "z": 3}],
+		"fire": true},
+	# A market stall: a counter under an awning of two hung banners that SWAY
+	# (wind material). No light; a simple wide footprint.
+	"market_stall": {"sprite": "hideout_table", "w": 140.0, "mirror": true,
+		"colliders": [{"shape": "rect", "size": Vector2(100.0, 30.0), "off": Vector2(0, -4)}],
+		"decals": [
+			{"sprite": "banner_blue", "off": Vector2(-38, -70), "scale": 0.2, "z": 2, "wind": true},
+			{"sprite": "banner_green", "off": Vector2(38, -70), "scale": 0.2, "z": 2, "wind": true}]},
+	# A notice board: a signpost hung with two posters — the town's job board.
+	"notice_board": {"sprite": "signpost", "w": 84.0,
+		"colliders": [{"shape": "circle", "radius": 12.0, "off": Vector2(0, -2)}],
+		"decals": [
+			{"sprite": "hideout_poster", "off": Vector2(-16, -40), "scale": 0.22, "z": 2},
+			{"sprite": "hideout_poster", "off": Vector2(18, -46), "scale": 0.2, "z": 2}]},
+	# A mausoleum: a crypt flanked by two grave statues, a COMPOSITE footprint
+	# (three rects no single circle could describe). Static — the dead keep still.
+	"mausoleum": {"sprite": "crypt", "w": 168.0, "mirror": true,
+		"parts": [
+			{"sprite": "grave_statue", "off": Vector2(-84, -8), "scale": 0.26, "z": 1},
+			{"sprite": "grave_statue", "off": Vector2(84, -8), "scale": 0.26, "z": 1}],
+		"colliders": [
+			{"shape": "rect", "size": Vector2(120.0, 40.0), "off": Vector2(0, -8)},
+			{"shape": "circle", "radius": 12.0, "off": Vector2(-84, -2)},
+			{"shape": "circle", "radius": 12.0, "off": Vector2(84, -2)}]},
+	# A torch pillar: a stone column crowned with a live FLAME (flame ANIMATES)
+	# — the animated cousin of watch_brazier, for lit halls and dungeons.
+	"torch_pillar": {"sprite": "pillar", "w": 96.0,
+		"colliders": [{"shape": "circle", "radius": 12.0, "off": Vector2(0, -4)}],
+		"decals": [{"sprite": "flame", "off": Vector2(0, -80), "scale": 0.24, "z": 2,
+			"light": Color(1.0, 0.64, 0.3, 0.9), "light_energy": 1.0, "light_scale": 0.8}],
 		"fire": true},
 }

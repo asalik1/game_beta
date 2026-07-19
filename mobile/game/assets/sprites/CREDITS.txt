@@ -70,6 +70,18 @@ PIXEL CRAWLER (Anokolisa) — purchased bundle, 2026-07-06: some sprites
   farm fence, stalagmite, interior dressing (carpet/candelabra/banners/
   chair/amphora/buckets/window box) + PROVISIONS food set (food_*, Meat +
   Farm sheets — future cooking consumables, codex Future > Provisions).
+  ENVIRONMENT-SEAM showcase (2026-07-18, Track D): the three drop-in seams
+  (ground tilesets / composite structures / animated props) unfroze whole
+  pack sheets. ANIMATED strips (<name>_anim.png, square-frame, gamma 0.82)
+  cut from the Free Pack Structures/Stations + Props/Animated sheets:
+  camp_bonfire (Bonfire), flame (Fire), ember_smoke (Smoke), forge_hearth
+  (Furnace/Stone), cook_grill (Grill), cook_pan (Pan); sewer_flow from the
+  Sewer Water.png column, fountain_flow a blue-shifted recolor of it. GROUND
+  tilesets (ground_<kind>.png, seamless variation cells): forgefloor + a
+  seamless molten lavafield (Forge Assets/Tiles), dungeonfloor + hallwood
+  (Free Pack Dungeon_Tiles), castletile (Castle Assets/Tiles). All feed the
+  dev-only seam-showcase terrains (ph_forge / ph_kitchen / ph_dungeon /
+  ph_market / ph_crypt in terrains.gd) — placeholder, normal play untouched.
 
 PIXEL CRAWLER - CEMETERY (Anokolisa) — purchased pack, licensed for
   commercial game use. Credit optional; the raw pack must NOT be
@@ -132,4 +144,15 @@ OpenAI image generation — project-generated art (2026-07-18):
   fx_berserk_brand, fx_consecration, fx_aegis, mage_firebolt,
   warlock_shadowbolt, hellfire_brand_bolt (chroma-keyed, palette-reduced
   combat sprites).
+  Skin FX pass: fx_dread_banner, fx_storm_eye, fx_frost_moon,
+  fx_void_eclipse, mage_void_spindle, mage_prism_monolith,
+  fx_eclipse_corona, fx_fallen_verdict, fx_inquisition_brand,
+  fx_eldritch_eye, fx_inquisition_pyre, warlock_eldritch_bolt
+  (chroma-keyed, palette-reduced combat sprites).
+  fx_dread_soulcut, fx_dread_greatsword, mage_crystal_bolt
+  (chroma-keyed, palette-reduced combat sprites).
+  Archer skin animation pass: fx/frost_snowflake_cast,
+  fx/void_eye_portal, fx/void_tentacle_rift, fx/void_tentacle_lash,
+  arrow_void_eye, frost_ice_lance (chroma-keyed, frame-normalized pixel-art
+  strips/projectiles generated to the Frostfall and Voidwraith briefs).
 Generated for this project; no third-party attribution required.

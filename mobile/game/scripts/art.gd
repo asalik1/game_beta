@@ -1253,6 +1253,14 @@ const GROUND := {
 	"voidstone":    [Color(0.11, 0.08, 0.16), Color(0.07, 0.05, 0.11), Color(0.18, 0.13, 0.26)],
 	"holystone":    [Color(0.66, 0.61, 0.49), Color(0.58, 0.53, 0.42), Color(0.76, 0.71, 0.58)],
 	"sporesoil":    [Color(0.31, 0.23, 0.31), Color(0.25, 0.18, 0.25), Color(0.40, 0.30, 0.40)],
+	# ----- authored-floor demo kinds (2026-07-18, Lane 1): each has a
+	# ground_<kind>.png tileset drop-in, so these palettes only tint the road
+	# blend/fallback; the PNG carries the real look. Placeholder-terrain only.
+	"forgefloor":   [Color(0.16, 0.09, 0.09), Color(0.22, 0.12, 0.11), Color(0.11, 0.06, 0.06)],
+	"lavafield":    [Color(0.90, 0.42, 0.12), Color(1.00, 0.62, 0.20), Color(0.65, 0.25, 0.08)],
+	"dungeonfloor": [Color(0.20, 0.24, 0.30), Color(0.28, 0.33, 0.40), Color(0.14, 0.17, 0.22)],
+	"hallwood":     [Color(0.34, 0.24, 0.15), Color(0.44, 0.32, 0.20), Color(0.24, 0.17, 0.10)],
+	"castletile":   [Color(0.34, 0.32, 0.34), Color(0.42, 0.40, 0.42), Color(0.26, 0.24, 0.26)],
 }
 
 # Per-ground generation profile: [organic patch count, fine speckle count].
