@@ -2966,8 +2966,28 @@ const MAP_TYPE_ICON := {
 	"dead_end": "", "combat": "", "boss": "☠",
 }
 
+# District palette for the capital's detailed map (every hub room is "safe", so
+# the type colour is useless there — colour by DISTRICT instead, matching the
+# CROWNFALL_HUB.html plan).
+const DISTRICT_COLOR := {
+	"heart":    Color(0.72, 0.42, 0.18), "craft":  Color(0.52, 0.31, 0.16),
+	"civic":    Color(0.24, 0.35, 0.45), "approach": Color(0.30, 0.34, 0.40),
+	"accord":   Color(0.52, 0.40, 0.15), "cinder": Color(0.50, 0.21, 0.25),
+	"wild":     Color(0.27, 0.41, 0.23), "choir":  Color(0.39, 0.30, 0.49),
+	"outer":    Color(0.27, 0.27, 0.31),
+}
+const DISTRICT_NAME := {
+	"heart": "The Heart", "craft": "Craftworks", "civic": "Civic Ring",
+	"approach": "The Approach", "accord": "Ember Accord", "cinder": "Cinderborn",
+	"wild": "Wildfang", "choir": "Hollow Choir", "outer": "Outer Ring",
+}
+
 
 func open_map() -> void:
+	# The capital gets its own always-charted, high-detail city map.
+	if Story.is_standalone(game.chapter_id):
+		_open_capital_map()
+		return
 	var vbox := _open("Map — %s" % String(Story.chapter(game.chapter_id)["name"]), 1180, 640, true)
 	current = "map"
 	_lbl(vbox, "Rooms you have entered — click a lit safe camp to travel there. Notches on a room's edge are its doorways; stubs jut toward rooms you haven't explored.", 13, Color(0.7, 0.72, 0.78))
@@ -3204,6 +3224,144 @@ func open_map() -> void:
 		ll.custom_minimum_size = Vector2(float(spec[2]), 0)  # HBox label-collapse trap
 	_hint(vbox, "ESC / M to close" +
 		("   ·   the doors are sealed mid-fight" if game.barrier_active else ""))
+
+
+## Crownfall's own map: the WHOLE city, always charted (no fog), rendered far
+## richer than a chapter map — every room named, coloured by DISTRICT, marked
+## for the spawn (★) / portals (◆) / daily quest-givers (●), and click-to-travel
+## anywhere. Standalone-world only (open_map routes here).
+func _open_capital_map() -> void:
+	var vbox := _open("Crownfall — the capital city", 1220, 760, true)
+	current = "map"
+	_lbl(vbox, "The whole city is charted. Click any room to travel there.  ★ spawn   ◆ portals   ● daily quest-giver",
+		13, Color(0.72, 0.74, 0.8))
+
+	var board := Control.new()
+	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	board.custom_minimum_size = Vector2(1160, 540)
+	vbox.add_child(board)
+	var bbg := Panel.new()
+	var bsb := StyleBoxFlat.new()
+	bsb.bg_color = Color(0.10, 0.088, 0.064, 0.97)
+	bsb.set_corner_radius_all(8)
+	bsb.border_color = Color(0.9, 0.8, 0.5, 0.35)
+	bsb.set_border_width_all(1)
+	bbg.add_theme_stylebox_override("panel", bsb)
+	bbg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bbg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	board.add_child(bbg)
+
+	# Extent over EVERY room (the city is always fully drawn).
+	var min_c := Vector2i(1 << 20, 1 << 20)
+	var max_c := Vector2i(-(1 << 20), -(1 << 20))
+	for i in game.zone_count:
+		var c: Vector2i = game.rooms[i]["coord"]
+		min_c = Vector2i(mini(min_c.x, c.x - 1), mini(min_c.y, c.y - 1))
+		max_c = Vector2i(maxi(max_c.x, c.x + 1), maxi(max_c.y, c.y + 1))
+	var cols := max_c.x - min_c.x + 1
+	var rows := max_c.y - min_c.y + 1
+	var gap := 9.0
+	var cw := clampf((1150.0 - (cols - 1) * gap) / cols, 40.0, 128.0)
+	var ch := clampf((528.0 - (rows - 1) * gap) / rows, 34.0, 92.0)
+	var org := Vector2(maxf(0.0, (1150.0 - cols * (cw + gap)) / 2.0),
+		maxf(0.0, (528.0 - rows * (ch + gap)) / 2.0))
+	var cell_pos := func(c: Vector2i) -> Vector2:
+		return org + Vector2((c.x - min_c.x) * (cw + gap), (c.y - min_c.y) * (ch + gap))
+
+	# Streets under the cells — every adjacency is a road (all charted).
+	for i in game.zone_count:
+		var p: Vector2 = cell_pos.call(game.rooms[i]["coord"])
+		for dir in game.rooms[i]["exits"].keys():
+			var nb: int = game.neighbor(i, String(dir))
+			if nb < 0 or nb < i:
+				continue  # draw each edge once
+			var delta: Vector2i = Game.DIRS[dir]
+			var mid := p + Vector2(cw / 2.0, ch / 2.0)
+			var to := mid + Vector2(delta.x * (cw + gap), delta.y * (ch + gap))
+			var link := ColorRect.new()
+			link.color = Color(0.55, 0.5, 0.4, 0.7)
+			var thick := 5.0
+			link.position = Vector2(minf(mid.x, to.x) - thick / 2.0, minf(mid.y, to.y) - thick / 2.0)
+			link.size = Vector2(absf(to.x - mid.x) + thick, absf(to.y - mid.y) + thick)
+			link.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			board.add_child(link)
+
+	# Room cells: district colour + name + mark, click-to-travel.
+	for i in game.zone_count:
+		var c: Vector2i = game.rooms[i]["coord"]
+		var p: Vector2 = cell_pos.call(c)
+		var zone: Dictionary = game.zones[i]
+		var dist := String(zone.get("district", "civic"))
+		var col: Color = DISTRICT_COLOR.get(dist, Color(0.3, 0.3, 0.34))
+		var is_here: bool = i == game.cur_room
+		var travel: bool = game.travel_target(i)
+
+		var cell: Control = Button.new() if travel else Panel.new()
+		var csb := StyleBoxFlat.new()
+		csb.bg_color = col.lightened(0.06) if is_here else col
+		csb.set_corner_radius_all(5)
+		csb.border_color = Color(0.95, 0.85, 0.5) if is_here else col.lightened(0.28)
+		csb.set_border_width_all(3 if is_here else 1)
+		cell.position = p
+		cell.size = Vector2(cw, ch)
+		cell.tooltip_text = "%s  ·  %s%s" % [String(zone["name"]), DISTRICT_NAME.get(dist, dist),
+			"  —  travel here" if travel else ("  —  you are here" if is_here else "")]
+		if cell is Button:
+			var room_idx: int = i
+			var bh: StyleBoxFlat = csb.duplicate()
+			bh.bg_color = col.lightened(0.16)
+			bh.border_color = Color(0.95, 0.85, 0.5, 0.8)
+			(cell as Button).add_theme_stylebox_override("normal", csb)
+			(cell as Button).add_theme_stylebox_override("hover", bh)
+			(cell as Button).add_theme_stylebox_override("pressed", bh)
+			(cell as Button).pressed.connect(func() -> void:
+				close()
+				game.fast_travel(room_idx))
+		else:
+			(cell as Panel).add_theme_stylebox_override("panel", csb)
+			cell.mouse_filter = Control.MOUSE_FILTER_STOP
+		board.add_child(cell)
+
+		# Room name — the detail a chapter map never shows. "The " trimmed to fit.
+		var nm := String(zone["name"])
+		if nm.begins_with("The "):
+			nm = nm.substr(4)
+		var nlbl := _lbl(board, nm, 11, Color(0.97, 0.94, 0.86) if is_here else Color(0.92, 0.90, 0.84))
+		nlbl.position = p + Vector2(4, 3)
+		nlbl.size = Vector2(cw - 8, ch - 6)
+		nlbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		nlbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		nlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		nlbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+		# Mark glyph (spawn / portal / quest-giver) top-left corner.
+		var mk := String(zone.get("mark", ""))
+		if is_here:
+			mk = "◆"
+		if mk != "":
+			var mcol := Color(0.95, 0.85, 0.5) if (is_here or mk == "◆" or mk == "★") else Color(1.0, 0.8, 0.55)
+			var ml := _lbl(board, mk, 13, mcol)
+			ml.position = p + Vector2(3, -2)
+			ml.size = Vector2(16, 16)
+			ml.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# District legend — the map's colour vocabulary.
+	var legend := HBoxContainer.new()
+	legend.add_theme_constant_override("separation", 14)
+	vbox.add_child(legend)
+	for dk in ["heart", "craft", "civic", "accord", "cinder", "wild", "choir", "outer"]:
+		var chip := HBoxContainer.new()
+		chip.add_theme_constant_override("separation", 5)
+		legend.add_child(chip)
+		var sw := Panel.new()
+		var ssb := StyleBoxFlat.new()
+		ssb.bg_color = DISTRICT_COLOR[dk]
+		ssb.set_corner_radius_all(3)
+		sw.add_theme_stylebox_override("panel", ssb)
+		sw.custom_minimum_size = Vector2(13, 13)
+		chip.add_child(sw)
+		_lbl(chip, String(DISTRICT_NAME[dk]), 12, Color(0.8, 0.82, 0.86))
+	_hint(vbox, "ESC / M to close")
 
 
 # ------------------------------------------------------------------- codex ---

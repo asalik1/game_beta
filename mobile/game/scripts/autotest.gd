@@ -4596,9 +4596,22 @@ func _test_capital() -> void:
 		var e := node as Enemy
 		if e and e.zone_idx == game.cur_room:
 			return _fail("capital: a supposedly-safe hub room has an enemy")
+	# The whole city is charted from the first step (no fog), and every room is
+	# a fast-travel target — so the detailed map shows all 50 and lets you jump.
+	var far := game.zone_count - 1
+	if not game.charted(far) or not game.charted(0):
+		return _fail("capital: map should chart every room (unvisited room %d not charted)" % far)
+	if not game.travel_target(far):
+		return _fail("capital: every hub room should be a fast-travel target")
+	game.menus.open_map()   # routes to the capital's detailed map
+	await _frames(3)
+	if game.menus.current != "map":
+		return _fail("capital: detailed map did not open")
+	game.menus.close()
+	await _frames(2)
 	# Leave the way a player does — back to the chapter we came from.
 	game.switch_chapter(prev, true)
 	await _frames(4)
 	if game.chapter_id != prev:
 		return _fail("capital: failed to restore chapter %s" % prev)
-	print("ok: capital hub (50-room fixed graph, connected, safe, spawns on Crown Plaza, leaves clean)")
+	print("ok: capital hub (50-room fixed graph, connected, safe, spawns on Crown Plaza, fully-charted detailed map, travel-anywhere, leaves clean)")

@@ -1685,8 +1685,20 @@ func respawn_room(death_room: int) -> int:
 
 ## Map fast-travel rule: visited safe pockets, plus boss arenas after
 ## the kill. Combat rooms are never travel targets (DESIGN.md).
+## Charted for the map: a room the player has entered — OR any room of a
+## standalone world (the capital), which is fully mapped from the first step.
+func charted(i: int) -> bool:
+	return Story.is_standalone(chapter_id) or visited.get(i, false)
+
+
 func travel_target(i: int) -> bool:
-	if not visited.get(i, false) or i == cur_room:
+	if i == cur_room:
+		return false
+	# In the capital every room is a safe fast-travel target (the whole city is
+	# charted), so a click on the map walks you there — no "must visit first".
+	if Story.is_standalone(chapter_id):
+		return room_safe(i)
+	if not visited.get(i, false):
 		return false
 	if room_type(i) == "boss":
 		var kind: String = zones[i].get("boss", "")

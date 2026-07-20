@@ -548,6 +548,7 @@
         <tbody>
           <tr><td><span class="fac" style="color:var(--f-wild)">BUILT</span></td><td>Portals → Story / Crucible / Depths</td><td>An interaction prop that calls the existing enter-chapter / enter-endgame paths.</td></tr>
           <tr><td><span class="fac" style="color:var(--f-wild)">BUILT</span></td><td>Vault, reforge, records, daily, shop, codex</td><td>A keeper NPC / desk that opens the existing menu screen. Pure wiring.</td></tr>
+          <tr><td><span class="fac" style="color:var(--f-wild)">BUILT</span></td><td>The capital map</td><td>A bespoke map for the hub: always fully charted (no fog), every room named &amp; colour-coded by district, spawn/portal/quest-giver marks, and click-any-room-to-travel — far richer than a chapter map. Minimap reveals the whole city too.</td></tr>
           <tr><td><span class="fac" style="color:var(--f-wild)">BUILT</span></td><td>Faction standing track</td><td>Daily payouts write to <code>faction_standing</code>; already saved.</td></tr>
           <tr><td><span class="fac" style="color:var(--f-accord)">SEED</span></td><td>Daily quest rotation</td><td>Pools as data + a date-seeded pick + a turn-in that greys out. Small.</td></tr>
           <tr><td><span class="fac" style="color:var(--f-cinder)">PLANNED</span></td><td>Crafting professions (potion / forge / bag / cook / crop)</td><td>The five craft rooms are shells until the profession loop exists (recipes, mats, stations). The rooms &amp; stations are ready to receive it.</td></tr>
@@ -621,8 +622,8 @@
       p:"The north apex. Three standing portals — Story, Crucible, Waking Depths — plus a reserved fourth plinth for co-op. The only doors out of the city." },
     { id:"guild", n:"The Chartered Hall", gx:4, gy:4, d:"craft", role:"Guild hall", terr:"ph_guildhall", tags:["planned","guilds"],
       p:"Charter a guild, join one, sign up for guild activities and events. Banners of every chartered company hang from the rafters. Fronts the future social layer." },
-    { id:"forge", n:"The Ashfire Forge", gx:6, gy:4, d:"craft", role:"Craft: gear", terr:"ph_forge", tags:["planned","smithing"], npcs:["Smith Petra","Old Smith Harl"],
-      p:"Forge and reforge gear. The furnace pulses, the flame licks the coals, the anvil rings — already a working, animated room. Smith Petra of Crew Five keeps the fire." },
+    { id:"forge", n:"The Ashfire Forge", gx:6, gy:4, d:"craft", role:"Gear: forge + reforge", terr:"ph_forge", tags:["planned","smithing","reforge"], npcs:["Smith Petra","Old Smith Harl"],
+      p:"The whole gear umbrella under one roof — forge new pieces (planned profession) AND reforge what you carry (reroll substats, re-cut affixes — the existing system). The furnace pulses, the anvil rings. Smith Petra of Crew Five keeps the fire." },
     { id:"alembic", n:"The Alembic", gx:4, gy:5, d:"craft", role:"Craft: potions", terr:"ph_forge", tags:["planned","alchemy"], npcs:["Herbalist Kesh","Apprentice Sorrel"],
       p:"Brew potions and draughts. Retorts bubble over a burner flame; the shelves are the Raven alchemy set. Herbalist Kesh measures; Sorrel spills." },
     { id:"kitchen", n:"The Provisioner's Kitchen", gx:6, gy:5, d:"craft", role:"Craft: cooking", terr:"ph_kitchen", tags:["planned","cooking"], npcs:["Old Fenna"],
@@ -637,8 +638,8 @@
     // --- civic ring ---
     { id:"vault", n:"The King's Vault", gx:3, gy:4, d:"civic", role:"Stash / bank", terr:"ph_castle", tags:["built","stash"],
       p:"The shared stash — deposit, withdraw, sort. A vaulted room of iron-banded chests behind a warden's counter." },
-    { id:"reliquary", n:"The Reliquary", gx:7, gy:4, d:"civic", role:"Reforge / enchant", terr:"ph_library", tags:["built","reforge"], npcs:["Retired Keeper Vasse"],
-      p:"Reforge substats and affixes. A quiet room of gem-lit workbenches; the enchant bench glows. Retired Keeper Vasse minds the relics." },
+    { id:"lapidary", n:"The Lapidary", gx:7, gy:4, d:"civic", role:"Gems + enchant", terr:"ph_library", tags:["built","gems"], npcs:["The Lapidary"],
+      p:"Cut, socket and synthesize gems, and bind enchantment into a piece — the jeweller's craft, distinct from the smithy up the row (reforge lives at the Forge now). A quiet room of gem-lit benches that glow." },
     { id:"archive", n:"The Grand Archive", gx:3, gy:5, d:"civic", role:"Codex / lore / bestiary", terr:"ph_library", tags:["built","codex"], npcs:["Scholar Ivo"],
       p:"The codex made physical — monsters, bosses, terrains, gear, and the placeholder Future shelf. Scholar Ivo files knowledge and gives it away free." },
     { id:"market", n:"Market Row", gx:7, gy:5, d:"civic", role:"Shop / merchant", terr:"ph_market", tags:["built","shop"], npcs:["Charm Peddler Nix"],
@@ -868,7 +869,8 @@
     ["Ser Aldric", "cinder", "The Sable Hall", "Cinderborn knight · daily quests", true],
     ["Envoy Vessa", "cinder", "Envoy's Rest", "Imperial envoy · daily quests", true],
     ["Overseer Brann", "cinder", "The Foundry Office", "Foundry overseer", false],
-    ["Retired Keeper Vasse", "cinder", "Keeper's Study / Reliquary", "Reforge keeper & historian", false],
+    ["Retired Keeper Vasse", "cinder", "The Keeper's Study", "Historian of the old regime", false],
+    ["The Lapidary", "civic", "The Lapidary", "Gem-cutter & enchanter", false],
     ["Warden-Commander Ashe", "cinder", "The Muster Yard", "Warden order commander", false],
     ["Warden Corin / Edda", "cinder", "The Muster Yard", "Wardens (drill)", false],
     ["Warden Callis", "wild", "The Skinworks", "Wildfang recruiter · daily quests", true],

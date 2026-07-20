@@ -149,7 +149,7 @@ OpenAI image generation — project-generated art (2026-07-18):
   warlock_shadowbolt, hellfire_brand_bolt (chroma-keyed, palette-reduced
   combat sprites).
   Skin FX pass: fx_dread_banner, fx_storm_eye, fx_frost_moon,
-  fx_void_eclipse, mage_void_spindle, mage_prism_monolith,
+  fx_void_eclipse, mage_prism_monolith,
   fx_eclipse_corona, fx_fallen_verdict, fx_inquisition_brand,
   fx_eldritch_eye, fx_inquisition_pyre, warlock_eldritch_bolt
   (chroma-keyed, palette-reduced combat sprites).
@@ -159,4 +159,7 @@ OpenAI image generation — project-generated art (2026-07-18):
   fx/void_eye_portal, fx/void_tentacle_rift, fx/void_tentacle_lash,
   arrow_void_eye, frost_ice_lance (chroma-keyed, frame-normalized pixel-art
   strips/projectiles generated to the Frostfall and Voidwraith briefs).
+  Void Weaver animation pass: fx/mage_void_cast_eye, mage_void_bullet,
+  fx/mage_void_thread_wrap, fx/mage_void_thread_eruption (chroma-keyed,
+  frame-normalized pixel-art strips/projectile generated to the revised brief).
 Generated for this project; no third-party attribution required.

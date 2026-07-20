@@ -420,10 +420,16 @@ func _build_room(i: int) -> void:
 		# conversation. Handled by _hub_action; no convo, no quest marker.
 		if npc_def.has("action"):
 			var act: String = npc_def["action"]
-			_make_npc(npc_def["sprite"],
+			var action_node := _make_npc(npc_def["sprite"],
 				room_pos(i, npc_def["x"], npc_def["y"]),
 				npc_def.get("prompt", "E — Use"), func() -> void:
 					_hub_action(act), "")
+			# A landmark can carry the whole visual while this node supplies only
+			# its interaction hotspot and prompt (the three Crownfall portals).
+			if npc_def.get("hidden", false):
+				for child in action_node.get_children():
+					if child is Sprite2D:
+						child.visible = false
 			continue
 		var convo_id: String = npc_def["convo"]
 		var npc_node := _make_npc(npc_def["sprite"],
@@ -1096,6 +1102,24 @@ func _spawn_scenery(zi: int) -> void:
 	var area_frac := (pw * ph) / float(ROOM_W * ROOM_H)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
+	var placed: Array = []
+	var reserved: Array = []
+
+	# Authored LANDMARKS are the visual anchors of civic spaces. Unlike the
+	# terrain's shuffled structures, these use exact room-local coordinates and
+	# reserve enough breathing room that random clutter cannot pile against a
+	# facade, fountain, gate, or ward monument.
+	for landmark in zone.get("landmarks", []):
+		var spec: Dictionary = landmark
+		var landmark_name: String = String(spec.get("name", ""))
+		if landmark_name.is_empty():
+			continue
+		var landmark_pos := Vector2(float(spec.get("x", pw * 0.5)),
+			float(spec.get("y", ph * 0.5)))
+		placed.append(landmark_pos)
+		reserved.append({"pos": landmark_pos,
+			"radius": float(spec.get("clearance", 190.0))})
+		zone_scenery[zi].append(_add_structure(landmark_name, origin + landmark_pos))
 
 	# Per-room density jitter: not every room is equally dense (see Balance).
 	var dens := rng.randf_range(Balance.SCENERY_DENSITY_JITTER.x, Balance.SCENERY_DENSITY_JITTER.y)
@@ -1103,15 +1127,28 @@ func _spawn_scenery(zi: int) -> void:
 	# Non-colliding ground decor (density scaled to the room's area —
 	# small rooms get proportionally less).
 	var decor_list: Array = zone.get("decor", terrain.get("decor", ["pebble"]))
-	var decor_target := int(ceil(Balance.SCENERY_DECOR_BASE * area_frac * dens))
+	var decor_target := int(zone.get("decor_count",
+		ceil(Balance.SCENERY_DECOR_BASE * area_frac * dens)))
+	if decor_list.is_empty():
+		decor_target = 0
 	var decor_n := 0
-	while decor_n < decor_target:
+	var decor_guard := 0
+	while decor_n < decor_target and decor_guard < maxi(8, decor_target * 5):
+		decor_guard += 1
 		var decor_name: String = decor_list[rng.randi_range(0, decor_list.size() - 1)]
 		# Groupable decor (mushrooms, grass, flowers) sometimes grows in a patch.
 		var dclump := 1
 		if _groupable(decor_name) and rng.randf() < Balance.SCENERY_CLUSTER_CHANCE:
 			dclump = _clump_size(rng)
 		var dcenter := origin + Vector2(rng.randf_range(70.0, pw - 70.0), rng.randf_range(80.0, ph - 80.0))
+		var decor_blocked := false
+		for reservation in reserved:
+			var reserve: Dictionary = reservation
+			if (dcenter - origin).distance_to(reserve["pos"]) < float(reserve["radius"]):
+				decor_blocked = true
+				break
+		if decor_blocked:
+			continue
 		for k in dclump:
 			var dpos := dcenter
 			if k > 0:
@@ -1130,7 +1167,6 @@ func _spawn_scenery(zi: int) -> void:
 
 	# Colliding obstacles, kept off the road band and the door lanes.
 	var obstacles: Array = zone.get("obstacles", terrain.get("obstacles", ["rock"]))
-	var placed: Array = []
 	var max_x := pw - 760.0 if zones[zi].get("boss", "") != "" else pw - 90.0
 
 	# Buildings first (visual pass): AUTHORED landmarks a zone opts into —
@@ -1191,6 +1227,11 @@ func _spawn_scenery(zi: int) -> void:
 			if absf(pos.x - pw / 2.0) < 130.0:
 				continue  # the north-south door lane stays open
 			var ok := true
+			for reservation in reserved:
+				var reserve: Dictionary = reservation
+				if pos.distance_to(reserve["pos"]) < float(reserve["radius"]):
+					ok = false
+					break
 			for other in placed:
 				if pos.distance_to(other) < Balance.SCENERY_MIN_SPACING:
 					ok = false

@@ -39,6 +39,9 @@ func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
 	var bolt_tex := "warlock_shadowbolt"
 	if skin == "hellfire_inquisitor":
 		bolt_tex = "hellfire_brand_bolt"
+	elif skin == "eldritch_herald":
+		bolt_tex = "warlock_eldritch_bolt"
+		_herald_bolt_eye(dir)
 	var p := _proj(dir, mult, bolt_tex, 460.0)
 	# Base curse bolts keep the active ability-variant tint; skin assets retain
 	# their bespoke fire/ichor treatment below.
@@ -64,17 +67,63 @@ func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
 		embers.color = Color(1.0, 0.26, 0.06, 0.78)
 		p._vis.add_child(embers)
 	elif skin == "eldritch_herald":
-		# The bolt drips: a green rune rides the black spear and leaves ichor.
-		p.modulate = Color(0.55, 0.92, 0.66)
-		var rune := Sprite2D.new()
-		rune.texture = Art.tex("fx_hex_rune")
-		rune.modulate = Color(0.50, 1.0, 0.62, 0.78)
-		rune.scale = Vector2(0.35, 0.35)
-		p._vis.add_child(rune)
+		# The living eye-bolt already owns the silhouette; only its ichor trail
+		# is added at runtime.
+		p.modulate = Color.WHITE
 		var tr := ProjTrail.new()
 		tr.proj = p
 		tr.col = Color(0.35, 0.85, 0.55)
 		game.add_child(tr)
+		_living_tether(self, p, Color(0.36, 0.86, 0.56, 0.65), 0.48, true)
+
+
+func _herald_bolt_eye(dir: Vector2) -> void:
+	var eye := Sprite2D.new()
+	eye.texture = Art.tex("fx_eldritch_eye")
+	eye.position = dir * 25.0
+	eye.rotation = dir.angle()
+	eye.scale = Vector2(0.42, 0.04)
+	eye.modulate = Color(0.58, 1.0, 0.68, 0.88)
+	eye.z_index = 8
+	add_child(eye)
+	var tw := eye.create_tween()
+	tw.tween_property(eye, "scale:y", 0.42, 0.12).set_trans(Tween.TRANS_BACK)
+	tw.tween_interval(0.08)
+	tw.tween_property(eye, "scale:y", 0.03, 0.1)
+	tw.parallel().tween_property(eye, "modulate:a", 0.0, 0.1)
+	tw.tween_callback(eye.queue_free)
+
+
+func _inquisitor_brand_stamp(e: Enemy) -> void:
+	var brand := Sprite2D.new()
+	brand.texture = Art.tex("fx_inquisition_brand")
+	brand.position = Vector2(0, -28)
+	brand.scale = Vector2(1.45, 1.45)
+	brand.modulate = Color(1.0, 0.82, 0.5, 0.0)
+	brand.z_index = 9
+	e.add_child(brand)
+	var tw := brand.create_tween()
+	tw.tween_property(brand, "modulate:a", 1.0, 0.04)
+	tw.parallel().tween_property(brand, "scale", Vector2(0.48, 0.48), 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.18)
+	tw.tween_property(brand, "modulate", Color(0.28, 0.12, 0.08, 0.36), 0.28)
+	tw.tween_callback(brand.queue_free)
+
+
+func _herald_eye_curse(e: Enemy) -> void:
+	var eye := Sprite2D.new()
+	eye.texture = Art.tex("fx_eldritch_eye")
+	eye.position = Vector2(0, -34)
+	eye.scale = Vector2(0.58, 0.04)
+	eye.modulate = Color(0.5, 1.0, 0.65, 0.86)
+	eye.z_index = 9
+	e.add_child(eye)
+	var tw := eye.create_tween()
+	tw.tween_property(eye, "scale:y", 0.58, 0.12).set_trans(Tween.TRANS_BACK)
+	tw.tween_interval(0.18)
+	tw.tween_property(eye, "scale:y", 0.03, 0.09)
+	tw.parallel().tween_property(eye, "modulate:a", 0.0, 0.11)
+	tw.tween_callback(eye.queue_free)
 
 
 ## Hex: curse everything around your target — withered, EXPOSED, and
@@ -93,9 +142,9 @@ func _hex(f := 1.0) -> void:
 	var col := _wl_skin_col(_tcolor if _themed else Color(0.75, 0.4, 1.0))
 	var hex_tex := "fx_hex_rune"
 	if skin == "hellfire_inquisitor":
-		hex_tex = "fx_dark_pact"
+		hex_tex = "fx_inquisition_brand"
 	elif skin == "eldritch_herald":
-		hex_tex = "fx_void_rift"
+		hex_tex = "fx_eldritch_eye"
 	var cast_rune := Sprite2D.new()
 	cast_rune.texture = Art.tex(hex_tex)
 	cast_rune.modulate = Art.hdr(Color(col, 1.0), 1.35)
@@ -137,6 +186,10 @@ func _hex(f := 1.0) -> void:
 		_beam_fx(center, e.global_position, col, 0.16)
 		hit_enemy(e, ability_coeff("a1") * f, eff.duplicate())
 		if not e.dying:
+			if skin == "hellfire_inquisitor":
+				_inquisitor_brand_stamp(e)
+			elif skin == "eldritch_herald":
+				_herald_eye_curse(e)
 			_hex_mark(e)
 
 
@@ -161,9 +214,9 @@ func _hex_mark(e: Enemy) -> void:
 	rune.name = "hex_rune"
 	var mark_tex := "fx_hex_rune"
 	if skin == "hellfire_inquisitor":
-		mark_tex = "fx_dark_pact"
+		mark_tex = "fx_inquisition_brand"
 	elif skin == "eldritch_herald":
-		mark_tex = "fx_void_rift"
+		mark_tex = "fx_eldritch_eye"
 	rune.texture = Art.tex(mark_tex)
 	rune.position = Vector2(0, -30)
 	rune.scale = Vector2(0.9, 0.9) if mark_tex == "fx_hex_rune" else Vector2(0.42, 0.42)
@@ -219,16 +272,25 @@ func _dark_pact(f := 1.0) -> void:
 	var col := _wl_skin_col(_tcolor if _themed else Color(1.0, 0.3, 0.45))
 	var pact_tex := "fx_dark_pact"
 	if skin == "hellfire_inquisitor":
-		pact_tex = "fx_consecration"
+		pact_tex = "fx_inquisition_pyre"
 	elif skin == "eldritch_herald":
-		pact_tex = "fx_void_rift"
+		pact_tex = "fx_eldritch_eye"
 	var seal := Sprite2D.new()
 	seal.texture = Art.tex(pact_tex)
 	seal.modulate = Color(col, 0.88)
 	seal.scale = Vector2(5.2, 5.2)
 	seal.z_index = -4
 	add_child(seal)
+	if skin == "hellfire_inquisitor":
+		seal.scale = Vector2(0.45, 0.45)
+		_staged_segment_ring(self, Vector2.ZERO, Color(1.0, 0.44, 0.1, 0.86), 68.0, 6, 0.045, 0.28, "fx_inquisition_brand", true, true)
+	elif skin == "eldritch_herald":
+		seal.scale = Vector2(3.8, 0.18)
 	var seal_tw := seal.create_tween()
+	if skin == "hellfire_inquisitor":
+		seal_tw.tween_property(seal, "scale", Vector2(4.4, 4.4), 0.18).set_trans(Tween.TRANS_BACK)
+	elif skin == "eldritch_herald":
+		seal_tw.tween_property(seal, "scale:y", 3.8, 0.18).set_trans(Tween.TRANS_BACK)
 	seal_tw.tween_property(seal, "rotation", TAU * (-1.0 if skin == "eldritch_herald" else 1.0), 0.42)
 	seal_tw.parallel().tween_property(seal, "modulate:a", 0.0, 0.58)
 	seal_tw.tween_callback(seal.queue_free)
@@ -278,6 +340,23 @@ func _dark_pact(f := 1.0) -> void:
 		hit_enemy(e, ability_coeff("a2") * f, eff.duplicate())
 
 
+func _inquisition_rift_scene(pos: Vector2, radius: float) -> void:
+	# Brands stamp the perimeter as an ordered interrogation circle. Heated
+	# chain strokes then tighten from each brand into the pyre mouth.
+	_staged_segment_ring(game, pos, Color(1.0, 0.44, 0.1, 0.92), radius * 0.72, 8, 0.075, 0.7, "fx_inquisition_brand", true, false)
+	for i in 8:
+		var ang := TAU * float(i) / 8.0
+		get_tree().create_timer(0.32 + 0.04 * i).timeout.connect(func() -> void:
+			_beam_fx(pos + Vector2.from_angle(ang) * radius * 0.72, pos, Color(1.0, 0.34, 0.08), 0.32))
+
+
+func _eldritch_rift_open(mark: Sprite2D, pos: Vector2, radius: float) -> void:
+	# Lid segments peel apart around the closed eye; the mark itself opens on
+	# Y while these pieces hold the doorway's rim.
+	mark.scale = Vector2(radius / 34.0, 0.06)
+	_staged_segment_ring(game, pos, Color(0.4, 0.92, 0.6, 0.82), radius * 0.68, 6, 0.06, 0.72, "slashline", false, true)
+
+
 ## Void Rift: a rift tears open under the target, drags everything
 ## inward for a breath, then BURSTS — the delay IS the ability.
 func _void_rift(f := 1.0) -> void:
@@ -293,16 +372,26 @@ func _void_rift(f := 1.0) -> void:
 	var crit_cursed: bool = bool(Classes.CLASSES[cls]["abilities"]["ult"].get("dmg", {}).get("crit_cursed", false))
 	# The growing maw on the ground — you can feel it coming.
 	var mark := Sprite2D.new()
-	var rift_is_wide := skin != "hellfire_inquisitor"
-	mark.texture = Art.tex("fx_void_rift" if rift_is_wide else "fx_consecration")
+	var rift_is_wide := skin == ""
+	var rift_tex := "fx_void_rift"
+	if skin == "hellfire_inquisitor":
+		rift_tex = "fx_inquisition_pyre"
+	elif skin == "eldritch_herald":
+		rift_tex = "fx_eldritch_eye"
+	mark.texture = Art.tex(rift_tex)
 	mark.modulate = Art.hdr(Color(col, 0.86), 1.3)
 	mark.global_position = pos
 	# The source rift is wide, so correct its aspect to the circular hit radius.
 	mark.scale = Vector2(0.6, 0.96 if rift_is_wide else 0.6)
 	mark.z_index = -6
 	game.add_child(mark)
+	if skin == "hellfire_inquisitor":
+		_inquisition_rift_scene(pos, radius)
+	elif skin == "eldritch_herald":
+		_eldritch_rift_open(mark, pos, radius)
 	var mt := mark.create_tween()
-	mt.tween_property(mark, "scale", Vector2(radius / 32.0, radius / 20.0 if rift_is_wide else radius / 32.0), 0.3)
+	var mark_scale := Vector2(radius / 32.0, radius / 20.0) if rift_is_wide else (Vector2(1.85, 1.85) if skin == "hellfire_inquisitor" else Vector2(1.65, 1.65))
+	mt.tween_property(mark, "scale", mark_scale, 0.3)
 	# Indrawn particles: the rift visibly EATS light.
 	var indraw := CPUParticles2D.new()
 	indraw.amount = 30
@@ -352,8 +441,11 @@ func _void_rift(f := 1.0) -> void:
 		await get_tree().create_timer(0.22).timeout
 		if dead:
 			break
-		_ring_fx(pos, col, radius, true)
+		if skin == "":
+			_ring_fx(pos, col, radius, true)
 		for e in _enemies_within(pos, radius * 1.3):
+			if skin == "eldritch_herald" and is_instance_valid(mark):
+				_living_tether(mark, e, Color(0.36, 0.88, 0.58, 0.72), 0.3, true)
 			var to_rift: Vector2 = pos - e.global_position
 			if to_rift.length() > 20.0:
 				# apply_knock (MP-10 seam): a mirror ships the pull to the host
@@ -370,11 +462,12 @@ func _void_rift(f := 1.0) -> void:
 		return
 	game.sfx("meteor")
 	game.shake(12.0)
-	game.hud.flash_screen(Color(col, 1.0), 0.5, 0.35)
+	game.hud.flash_screen(Color(col, 1.0), 0.28 if skin == "eldritch_herald" else 0.5, 0.35)
 	game.burst(pos, col, 26)
 	game.burst(pos, Color(1, 1, 1), 10)
-	_ring_fx(pos, col, radius)
-	_ring_fx(pos, Color(1, 1, 1), radius * 0.6)
+	_ring_fx(pos, col, radius * (0.46 if skin == "eldritch_herald" else (0.78 if skin == "hellfire_inquisitor" else 1.0)))
+	if skin == "":
+		_ring_fx(pos, Color(1, 1, 1), radius * 0.6)
 	# The collapse blows back out: void rays and a popping white core.
 	var vcore := Sprite2D.new()
 	vcore.texture = Art.tex("glow")
@@ -405,14 +498,21 @@ func _void_rift(f := 1.0) -> void:
 		rt.tween_callback(ray.queue_free)
 	# Scarred space lingers where the rift fed.
 	var scar := Sprite2D.new()
-	scar.texture = Art.tex("glow")
+	scar.texture = Art.tex("fx_eldritch_eye" if skin == "eldritch_herald" else ("fx_inquisition_brand" if skin == "hellfire_inquisitor" else "glow"))
 	scar.modulate = Color(col.r * 0.4, col.g * 0.25, col.b * 0.7, 0.5)
 	scar.global_position = pos
 	scar.scale = Vector2(radius / 26.0, radius / 26.0)
 	scar.z_index = -5
 	game.add_child(scar)
 	var sct := scar.create_tween()
-	sct.tween_property(scar, "modulate:a", 0.0, 1.2)
+	if skin == "eldritch_herald":
+		scar.scale = Vector2(radius / 34.0, radius / 34.0)
+		for i in 3:
+			sct.tween_property(scar, "scale:y", 0.08, 0.08)
+			sct.tween_property(scar, "scale:y", radius / 34.0, 0.11)
+		sct.tween_property(scar, "modulate:a", 0.0, 0.36)
+	else:
+		sct.tween_property(scar, "modulate:a", 0.0, 1.2)
 	sct.tween_callback(scar.queue_free)
 	var heal_frac := float(fx_copy.get("rift_heal", 0.0))
 	var saved := _tfx

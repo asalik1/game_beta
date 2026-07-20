@@ -62,6 +62,21 @@ func _use_paladin(slot: String, f: float) -> void:
 			_ring_fx(global_position + jdir * 58.0, jcol, 34.0)
 			if skin == "eclipse_knight":
 				_ring_fx(global_position + jdir * 58.0, Color(0.30, 0.16, 0.45), 20.0)
+			if skin == "eclipse_knight":
+				_eclipse_judgment(global_position + jdir * 58.0)
+			elif skin == "fallen_arbiter" and j_tgt != null and is_instance_valid(j_tgt):
+				_staged_segment_ring(j_tgt, Vector2(0, -20), Color(0.92, 0.94, 1.0, 0.9), 34.0, 7, 0.035, 0.3, "slashline", true, true)
+			if skin == "eclipse_knight" or skin == "fallen_arbiter":
+				var judgment_seal := Sprite2D.new()
+				judgment_seal.texture = Art.tex("fx_eclipse_corona" if skin == "eclipse_knight" else "fx_fallen_verdict")
+				judgment_seal.global_position = global_position + jdir * 58.0
+				judgment_seal.scale = Vector2(0.5, 0.5)
+				judgment_seal.z_index = 7
+				game.add_child(judgment_seal)
+				var judgment_tw := judgment_seal.create_tween()
+				judgment_tw.tween_property(judgment_seal, "scale", Vector2(1.05, 1.05), 0.18)
+				judgment_tw.parallel().tween_property(judgment_seal, "modulate:a", 0.0, 0.24)
+				judgment_tw.tween_callback(judgment_seal.queue_free)
 			if _tfx.get("wave2", 0):
 				# Wrath: a burning backswing follows.
 				var jf2 := f
@@ -82,6 +97,70 @@ func _pal_skin_col(base: Color) -> Color:
 	if skin == "fallen_arbiter":
 		return Color(0.90, 0.92, 1.00)
 	return base
+
+
+func _eclipse_judgment(pos: Vector2) -> void:
+	var core := Sprite2D.new()
+	core.texture = Art.tex("glow")
+	core.global_position = pos
+	core.modulate = Color(0.08, 0.03, 0.13, 0.88)
+	core.scale = Vector2(1.2, 1.2)
+	core.z_index = 7
+	game.add_child(core)
+	_staged_segment_ring(game, pos, Color(1.0, 0.72, 0.28, 0.94), 25.0, 2, 0.075, 0.18, "slashline", false, true)
+	var tw := core.create_tween()
+	tw.tween_interval(0.17)
+	tw.tween_property(core, "scale", Vector2(0.35, 0.35), 0.12)
+	tw.parallel().tween_property(core, "modulate:a", 0.0, 0.14)
+	tw.tween_callback(core.queue_free)
+
+
+func _eclipse_conviction_scene(targets: Array) -> void:
+	var disc := Sprite2D.new()
+	disc.texture = Art.tex("fx_eclipse_corona")
+	disc.position = Vector2(0, -34)
+	disc.scale = Vector2(0.18, 1.28)
+	disc.modulate = Color(1, 1, 1, 0.0)
+	disc.z_index = 8
+	add_child(disc)
+	var tw := disc.create_tween()
+	tw.tween_property(disc, "modulate:a", 0.92, 0.07)
+	tw.parallel().tween_property(disc, "scale:x", 1.28, 0.2).set_trans(Tween.TRANS_BACK)
+	tw.tween_interval(0.26)
+	tw.tween_property(disc, "scale:y", 0.08, 0.13).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(disc, "scale", Vector2(1.48, 1.48), 0.16).set_trans(Tween.TRANS_BACK)
+	tw.tween_property(disc, "modulate:a", 0.0, 0.28)
+	tw.tween_callback(disc.queue_free)
+	for node in targets:
+		var e := node as Enemy
+		if e != null:
+			_living_tether(e, self, Color(1.0, 0.68, 0.24, 0.82), 0.62, false)
+
+
+func _arbiter_tribunal_scene(targets: Array) -> void:
+	for node in targets:
+		var e := node as Enemy
+		if e == null:
+			continue
+		_staged_segment_ring(e, Vector2.ZERO, Color(0.92, 0.94, 1.0, 0.9), 38.0, 6, 0.035, 0.46, "slashline", true, true)
+		_living_tether(e, self, Color(0.9, 0.93, 1.0, 0.86), 0.72, false)
+	# The verdict blade is authored as three cold pieces that align before the
+	# existing gameplay hammer resolves on the pile.
+	for i in 3:
+		var piece := Sprite2D.new()
+		piece.texture = Art.tex("fx_hammer_fallen")
+		piece.global_position = global_position + Vector2((i - 1) * 42.0, -230 - abs(i - 1) * 22.0)
+		piece.modulate = Color(0.94, 0.96, 1.0, 0.0)
+		piece.scale = Vector2(1.1, 1.1)
+		piece.z_index = 29
+		game.add_child(piece)
+		var tw := piece.create_tween()
+		tw.tween_interval(0.05 * i)
+		tw.tween_property(piece, "modulate:a", 0.78, 0.06)
+		tw.parallel().tween_property(piece, "global_position:x", global_position.x, 0.2).set_trans(Tween.TRANS_CUBIC)
+		tw.tween_interval(0.1)
+		tw.tween_property(piece, "modulate:a", 0.0, 0.12)
+		tw.tween_callback(piece.queue_free)
 
 
 ## A shaft of light stabs down from the sky and blooms where it lands.
@@ -146,14 +225,18 @@ func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, f
 	game.sfx("nova", 0.75)
 	_ring_fx(pos, col, radius)
 	game.burst(pos, col, 12)
+	if skin == "eclipse_knight":
+		_staged_segment_ring(game, pos, Color(1.0, 0.7, 0.25, 0.88), radius * 0.82, 10, 0.045, 0.36, "slashline", true, false)
+	elif skin == "fallen_arbiter":
+		_staged_segment_ring(game, pos, Color(0.92, 0.94, 1.0, 0.9), radius * 0.72, 8, 0.04, 0.42, "slashline", true, true)
 	# Hallowed floor seal lingers a moment: sunfire for base, a bleeding corona
 	# for Eclipse, and a frozen verdict sigil for the Fallen Arbiter.
 	var floor_glow := Sprite2D.new()
 	var ground_tex := "fx_consecration"
 	if skin == "eclipse_knight":
-		ground_tex = "fx_dark_pact"
+		ground_tex = "fx_eclipse_corona"
 	elif skin == "fallen_arbiter":
-		ground_tex = "fx_frost_nova"
+		ground_tex = "fx_fallen_verdict"
 	floor_glow.texture = Art.tex(ground_tex)
 	floor_glow.modulate = Color(col, 0.45)
 	floor_glow.scale = Vector2.ONE * (radius / 32.0)
@@ -232,9 +315,9 @@ func _aegis() -> void:
 	# Eclipse carries a dark seal and the Fallen Arbiter a cold rune instead.
 	var ward_tex := "fx_aegis"
 	if skin == "eclipse_knight":
-		ward_tex = "fx_hex_rune"
+		ward_tex = "fx_eclipse_corona"
 	elif skin == "fallen_arbiter":
-		ward_tex = "fx_frost_nova"
+		ward_tex = "fx_fallen_verdict"
 	var ward := Sprite2D.new()
 	ward.texture = Art.tex(ward_tex)
 	# The ward is a translucent full-body barrier, lifted to the chest rather
@@ -257,18 +340,28 @@ func _aegis() -> void:
 	add_child(orbit)
 	var orbit_tex := "fx_aegis"
 	if skin == "eclipse_knight":
-		orbit_tex = "fx_hex_rune"
+		orbit_tex = "fx_eclipse_corona"
 	elif skin == "fallen_arbiter":
-		orbit_tex = "fx_frost_nova"
+		orbit_tex = "fx_fallen_verdict"
 	for i in 4:
 		var mote := Sprite2D.new()
 		mote.texture = Art.tex(orbit_tex)
 		mote.modulate = Art.hdr(Color(col, 0.95), 1.45)
-		mote.position = Vector2.from_angle(TAU * i / 4.0) * 64.0
+		var plate_ang := TAU * i / 4.0
+		mote.position = Vector2.from_angle(plate_ang) * (108.0 if skin in ["eclipse_knight", "fallen_arbiter"] else 64.0)
 		mote.scale = Vector2(0.30, 0.30) if orbit_tex == "fx_aegis" else Vector2(0.38, 0.38)
+		if skin in ["eclipse_knight", "fallen_arbiter"]:
+			mote.modulate.a = 0.0
 		orbit.add_child(mote)
+		if skin in ["eclipse_knight", "fallen_arbiter"]:
+			var lock_tw := mote.create_tween()
+			lock_tw.tween_interval(0.075 * i)
+			lock_tw.tween_property(mote, "modulate:a", 0.95, 0.05)
+			lock_tw.parallel().tween_property(mote, "position", Vector2.from_angle(plate_ang) * 64.0, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	var spin := orbit.create_tween()
 	spin.set_loops()
+	if skin in ["eclipse_knight", "fallen_arbiter"]:
+		spin.tween_interval(0.34)
 	spin.tween_property(orbit, "rotation", TAU, 1.1).as_relative()
 	get_tree().create_timer(aegis_time).timeout.connect(func() -> void:
 		if is_instance_valid(orbit):
@@ -345,7 +438,8 @@ func _chains_of_wrath(f := 1.0) -> void:
 	game.shake(7.0)
 	game.hud.flash_screen(_pal_skin_col(Color(1.0, 0.85, 0.4)), 0.4, 0.35)
 	var col := _pal_skin_col(_tcolor if _themed else Color(1.0, 0.85, 0.45))
-	_ring_fx(global_position, col, radius, true)
+	if skin == "":
+		_ring_fx(global_position, col, radius, true)
 	game.spawn_text(global_position + Vector2(0, -64), "CHAINS OF WRATH", Color(1, 0.8, 0.4))
 	if _tfx.has("chain_guard"):
 		# Aegis: the chains anchor YOU.
@@ -354,6 +448,10 @@ func _chains_of_wrath(f := 1.0) -> void:
 	var fx_copy := _tfx.duplicate()
 	var heal_frac := float(_tfx.get("chain_heal", 0.0))
 	var fmul := f
+	if skin == "eclipse_knight":
+		_eclipse_conviction_scene(targets)
+	elif skin == "fallen_arbiter":
+		_arbiter_tribunal_scene(targets)
 	for node in targets:
 		var e := node as Enemy
 		_chain_link_fx(e.global_position, col)
@@ -400,13 +498,13 @@ func _chains_of_wrath(f := 1.0) -> void:
 		var verdict := Sprite2D.new()
 		var verdict_tex := "fx_consecration"
 		if skin == "eclipse_knight":
-			verdict_tex = "fx_dark_pact"
+			verdict_tex = "fx_eclipse_corona"
 		elif skin == "fallen_arbiter":
-			verdict_tex = "fx_frost_nova"
+			verdict_tex = "fx_fallen_verdict"
 		verdict.texture = Art.tex(verdict_tex)
 		verdict.modulate = Color(col, 0.92)
 		verdict.global_position = global_position
-		verdict.scale = Vector2(4.7, 4.7)
+		verdict.scale = Vector2(1.8, 1.8) if skin in ["eclipse_knight", "fallen_arbiter"] else Vector2(4.7, 4.7)
 		verdict.z_index = -4
 		game.add_child(verdict)
 		var verdict_tw := verdict.create_tween()

@@ -925,8 +925,8 @@ func _update_minimap() -> void:
 		return
 	minimap_root.visible = true
 	# Cheap change-detection: only the counts that alter the drawing.
-	var sig := "%d|%d|%d|%d" % [game.cur_room, game.visited.size(),
-		game.door_seen.size(), game.boss_done.size()]
+	var sig := "%d|%d|%d|%d|%d" % [game.cur_room, game.visited.size(),
+		game.door_seen.size(), game.boss_done.size(), int(Story.is_standalone(game.chapter_id))]
 	if sig == _minimap_sig:
 		return
 	_minimap_sig = sig
@@ -938,7 +938,7 @@ func _update_minimap() -> void:
 	var max_c := Vector2i(-(1 << 20), -(1 << 20))
 	var have := false
 	for i in game.zone_count:
-		if not game.visited.get(i, false):
+		if not game.charted(i):
 			continue
 		have = true
 		var c: Vector2i = game.rooms[i]["coord"]
@@ -958,7 +958,7 @@ func _update_minimap() -> void:
 
 	# Links + seen-boss-door pips, under the room cells.
 	for i in game.zone_count:
-		if not game.visited.get(i, false):
+		if not game.charted(i):
 			continue
 		var p: Vector2 = cell_pos.call(game.rooms[i]["coord"])
 		for dir in game.rooms[i]["exits"].keys():
@@ -967,7 +967,7 @@ func _update_minimap() -> void:
 				continue
 			var delta: Vector2i = Game.DIRS[dir]
 			var mid := p + Vector2(cw / 2.0, ch / 2.0)
-			var nb_vis: bool = game.visited.get(nb, false)
+			var nb_vis: bool = game.charted(nb)
 			var to := mid + Vector2(delta.x * (cw + gap), delta.y * (ch + gap)) * 0.5 * (1.0 if nb_vis else 0.6)
 			var link := ColorRect.new()
 			link.color = Color(0.5, 0.47, 0.4, 0.9) if nb_vis else Color(0.4, 0.38, 0.34, 0.8)
@@ -985,7 +985,7 @@ func _update_minimap() -> void:
 
 	# Room cells (current room framed gold; cleared boss rooms tinted green).
 	for i in game.zone_count:
-		if not game.visited.get(i, false):
+		if not game.charted(i):
 			continue
 		var p: Vector2 = cell_pos.call(game.rooms[i]["coord"])
 		var t: String = game.room_type(i)
