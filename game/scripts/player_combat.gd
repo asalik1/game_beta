@@ -118,6 +118,9 @@ class ProjTrail extends Node2D:
 	var core_width := 0.0
 	var core_opacity := 0.0
 	var core_col := Color.WHITE
+	# Optional authored color sequence for prism/rainbow trails. Existing users
+	# leave this empty and retain their single-color ribbon exactly.
+	var segment_colors: Array[Color] = []
 	var pts := PackedVector2Array()
 	func _ready() -> void:
 		z_index = draw_z
@@ -145,7 +148,6 @@ class ProjTrail extends Node2D:
 		if n < 3:
 			return
 		var base_w := width        # ~half the dash streak's width by default
-		var base_a := opacity * col.a
 		var nrm := []
 		nrm.resize(n)
 		for i in n:
@@ -162,8 +164,11 @@ class ProjTrail extends Node2D:
 			var t1 := float(i + 1) / float(n - 1)
 			var w0 := base_w * (1.0 - t0)
 			var w1 := base_w * (1.0 - t1)
-			var alpha := base_a * pow(1.0 - (t0 + t1) * 0.5, 1.3)
-			var ribbon_col := Color(col.r, col.g, col.b, alpha)
+			var segment_col := col
+			if not segment_colors.is_empty():
+				segment_col = segment_colors[i % segment_colors.size()]
+			var alpha := opacity * segment_col.a * pow(1.0 - (t0 + t1) * 0.5, 1.3)
+			var ribbon_col := Color(segment_col.r, segment_col.g, segment_col.b, alpha)
 			if i == n - 2:
 				# The tail converges to one point. Submit a real triangle instead of
 				# a quad with duplicate vertices (which Godot cannot triangulate).
@@ -321,6 +326,12 @@ class SkinAmbient extends Node2D:
 	var dais_frame_t := 0.0
 	var dais: Sprite2D = null
 	var prism_shadow: Sprite2D = null
+	# The authored idle bank (frames 0-3) sits 28 source pixels lower than the
+	# glide bank (4-7). At 0.62 display scale that is ~17 screen pixels. Offset
+	# the idle node upward so the platform surface and underside remain at the
+	# exact accepted glide distance from the Archmage's feet in both states.
+	const DAIS_IDLE_Y := 11.0
+	const DAIS_GLIDE_Y := 28.0
 	func _ready() -> void:
 		z_index = -1
 		blink_t = 1.6
@@ -363,7 +374,7 @@ class SkinAmbient extends Node2D:
 		dais.texture = Art.tex("fx/mage_crystal_dais")
 		dais.hframes = 8
 		dais.frame = 0
-		dais.position = Vector2(0, 28)
+		dais.position = Vector2(0, DAIS_IDLE_Y)
 		dais.scale = Vector2(0.62, 0.62)
 		dais.modulate = Color(0.92, 0.98, 1.0, 0.96)
 		add_child(dais)
@@ -375,7 +386,8 @@ class SkinAmbient extends Node2D:
 		dais.frame = (4 if moving else 0) + int(dais_frame_t) % 4
 		var nx := clampf(plr.velocity.x / maxf(plr.speed, 1.0), -1.0, 1.0)
 		dais.rotation = lerp_angle(dais.rotation, nx * 0.065, minf(1.0, delta * 10.0))
-		dais.position = Vector2(nx * 2.5, 28.0 + sin(t * 3.0) * 1.2)
+		var anchor_y := DAIS_GLIDE_Y if moving else DAIS_IDLE_Y
+		dais.position = Vector2(nx * 2.5, anchor_y + sin(t * 3.0) * 1.2)
 		if prism_shadow != null and is_instance_valid(prism_shadow):
 			prism_shadow.position = Vector2(nx * 1.4, 32.0)
 			prism_shadow.scale.x = lerpf(prism_shadow.scale.x, 2.05 if moving else 1.75,
@@ -1410,7 +1422,8 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 	return hits
 
 
-func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectile:
+func _proj(dir: Vector2, mult: float, tex: String, speed_px: float,
+		caster_tell := true) -> Projectile:
 	var p := Projectile.spawn(game, global_position + dir * 24.0, dir * speed_px, 0.0, true, tex)
 	# Draw the shot at hand height (visual only — the flight line stays on the
 	# origin plane): the node origin sits at hip height on the feet-anchored
@@ -1423,7 +1436,7 @@ func _proj(dir: Vector2, mult: float, tex: String, speed_px: float) -> Projectil
 		p.modulate = Color(1, 1, 1).lerp(_tcolor, 0.55)
 	# Caster tell: a Ninja-pack summoning ring blooms at the hands on a
 	# magic-damage cast (CC0), tinted to the theme (or a cool arcane blue).
-	if Classes.CLASSES[cls]["dmg_type"] == "magic":
+	if caster_tell and Classes.CLASSES[cls]["dmg_type"] == "magic":
 		_fx_flash("fx_circle", global_position + dir * 18.0
 				+ Vector2(0, 2 - Balance.PROJ_MUZZLE_RISE), 4, {
 			"color": _tcolor if _themed else Color(0.62, 0.76, 1.0),

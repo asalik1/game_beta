@@ -134,13 +134,19 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	glow.modulate = Art.hdr(Color(p.glow_color, 0.8 if hot else 0.6))
 	glow.scale = Vector2(1.35, 1.35) if hot else Vector2(1.0, 1.0)
 	vis.add_child(glow)
-	if hot:
+	# A Court-lance begins beside the Archmage, where a 95px point light washes
+	# her reflective body into a giant white bloom. Its sprite glow and authored
+	# prism trail carry the flight cleanly without that generic caster washout.
+	if hot and tex_name != "mage_crystal_decree":
 		# Magic bolts CARRY light: walls and ground brighten as they pass
 		# (scaled to the room's darkness — daylight mutes it).
 		vis.add_child(Art.light(p.glow_color, 95.0, 0.85 * p.game.light_mult))
 
 	# Fire magic trails sparks; ice trails frost; shadow trails void wisps.
-	if hot:
+	# Crystal Decree owns an authored multicolor ribbon. The generic magic-spark
+	# emitter becomes oversized clutter while its visual origin folds in from a
+	# floating Court focus, so let the crystal sheet and prism trail read cleanly.
+	if hot and tex_name != "mage_crystal_decree":
 		var sparks := CPUParticles2D.new()
 		sparks.amount = 16
 		sparks.lifetime = 0.4

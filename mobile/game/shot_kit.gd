@@ -231,11 +231,14 @@ func _ready() -> void:
 	await get_tree().create_timer(0.24).timeout
 	_shot("ult_midbeat")
 	# Mage skins resolve at 0.62s; hold a frame just before contact so the
-	# authored thread eruption / segmented judgment is reviewable in isolation.
+	# authored thread eruption / four-prism convergence is reviewable alone.
 	if cls == "mage" and skin in ["void_weaver", "crystal_archmage"]:
 		await get_tree().create_timer(0.24).timeout
-		_shot("mage_ult_eruption" if skin == "void_weaver" else "mage_ult_descent")
+		_shot("mage_ult_eruption" if skin == "void_weaver" else "mage_ult_convergence")
 		await get_tree().create_timer(0.10).timeout
+		# Timer callbacks run before the viewport's next draw. Advance through that
+		# draw so the payoff capture records the actual 0.62s impact frame.
+		await _frames(2)
 	else:
 		await get_tree().create_timer(0.34).timeout
 	_shot("ult_payoff")

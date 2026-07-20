@@ -63,6 +63,7 @@ func _run_class(cls: String) -> void:
 	if cls == "mage":
 		await _assert_void_bolt_cosmetic_parity(p)
 		await _assert_void_eye_spam_cleanup(p)
+		await _assert_crystal_bolt_cosmetic_parity(p)
 		await _assert_mage_ult_circle(p)
 	elif cls == "archer":
 		await _assert_archer_cosmetic_parity(p, dummy)
@@ -156,6 +157,41 @@ func _assert_void_eye_spam_cleanup(p: Player) -> void:
 		print("qa ok: mage/void_weaver repeated-cast eye cleanup")
 	p.skin = saved_skin
 	p.refresh_skin_sprite()
+
+
+func _assert_crystal_bolt_cosmetic_parity(p: Player) -> void:
+	# The Court may choose a floating visual origin, but the paid skin must keep
+	# every gameplay-bearing property of the base Firebolt.
+	var dir := Vector2.RIGHT
+	var speed := 440.0 * float(p._tfx.get("proj_speed", 1.0))
+	var base: Projectile = p._proj(dir, 1.0, "mage_firebolt", speed)
+	p._finish_mage_bolt(base, 1.0)
+	var focus: Node2D = p._spawn_crystal_cast_focus(dir, 0.0)
+	var focus_center := focus.global_position
+	var crystal_bolt: Projectile = p._cast_crystal_focus_bolt(focus, dir, 1.0)
+	var physics_match := base.global_position.is_equal_approx(crystal_bolt.global_position) \
+		and base.vel.is_equal_approx(crystal_bolt.vel) \
+		and is_equal_approx(base.life, crystal_bolt.life) \
+		and base.collision_mask == crystal_bolt.collision_mask \
+		and base.pierce == crystal_bolt.pierce \
+		and base.homing == crystal_bolt.homing \
+		and is_equal_approx(base.hit_player_mult, crystal_bolt.hit_player_mult) \
+		and base.fx == crystal_bolt.fx
+	var visual_match := crystal_bolt._fx_pos().distance_to(focus_center) < 0.05
+	if not physics_match or not visual_match:
+		print("QA FAIL: Crystal Firebolt changed base physics or missed Court focus")
+		fails += 1
+	else:
+		print("qa ok: mage/crystal_archmage cosmetic projectile parity")
+	base.queue_free()
+	crystal_bolt.queue_free()
+	await _frames(2)
+	var survivors := get_tree().get_nodes_in_group("crystal_archmage_cast_focus").size()
+	if survivors > 0:
+		print("QA FAIL: Crystal Firebolt left a Court focus behind")
+		fails += 1
+	else:
+		print("qa ok: mage/crystal_archmage focus handoff cleanup")
 
 
 func _assert_mage_ult_circle(p: Player) -> void:
