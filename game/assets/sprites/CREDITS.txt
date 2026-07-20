@@ -131,6 +131,10 @@ PixelLab (pixellab.ai) AI-generated, project-commissioned art (2026-07-09):
 Generated for this project; no third-party attribution required.
 
 OpenAI image generation — project-generated art (2026-07-18):
+  Class-selection splash portraits: class_splash_warrior, class_splash_archer,
+  class_splash_mage, class_splash_assassin, class_splash_paladin,
+  class_splash_warlock (painterly base-class portraits, designed from the live
+  PixelLab base sprites; 2026-07-19).
   wall_moss (64px seamless mossy-stone wall texture; generated source was
   palette-reduced for the game's pixel-art texture scale).
   gate (16px reinforced timber-and-iron portcullis segment; generated source
