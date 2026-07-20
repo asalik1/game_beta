@@ -3232,6 +3232,31 @@ func _test_asset_seams() -> void:
 	if forge_cols != 2 or not forge_lit:
 		return _fail("guild_forge wants a 2-shape footprint + forge light (cols %d, lit %s)" % [forge_cols, forge_lit])
 	forge.queue_free()
+	# Crownfall's generated landmark art contains baked fire shapes. Each exposed
+	# flame gets a live animated-prop decal over that socket, so the capital does
+	# not regress to motionless braziers beside the existing animated scenery.
+	var capital_flames := {
+		"capital_emberward_gate": 2,
+		"capital_portal_crucible": 2,
+		"capital_ashfire_forge": 1,
+		"capital_ashen_tankard": 1,
+		"capital_wildfang_fangmoot": 1,
+		"capital_accord_longhouse": 1,
+		"capital_sable_hall": 2,
+		"capital_watchtower": 1,
+		"capital_proving_gate": 4,
+	}
+	for structure_name: String in capital_flames:
+		var landmark := game._add_structure(structure_name, Vector2(-4800, -4800))
+		var animated_flames := 0
+		for child in landmark.get_children():
+			if child is AnimatedSprite2D:
+				animated_flames += 1
+		var expected: int = capital_flames[structure_name]
+		if animated_flames != expected:
+			return _fail("%s wants %d animated fire socket(s), got %d" % [
+				structure_name, expected, animated_flames])
+		landmark.queue_free()
 	# Every showcase terrain paints (ground kind resolves + structures/props
 	# reference real art) — build each ground texture headless.
 	for tid in ["ph_forge", "ph_kitchen", "ph_dungeon", "ph_market", "ph_crypt"]:
@@ -3240,7 +3265,7 @@ func _test_asset_seams() -> void:
 		if gt == null:
 			return _fail("showcase terrain %s ground failed to bake" % tid)
 	print("ok: asset seams (ground tilesets / composite structures + decals / animated props)")
-	print("ok: seam showcase (5 authored floors + 8 animated props + animated forge/hearth/fountain structures)")
+	print("ok: seam showcase (5 authored floors + 8 animated props + animated forge/hearth/fountain/capital structures)")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

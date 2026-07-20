@@ -446,6 +446,9 @@ const STRUCTURES := {
 		"colliders": [
 			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(-142, -9)},
 			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(142, -9)}],
+		"decals": [
+			{"sprite": "flame", "off": Vector2(-133, -66), "scale": 0.08, "z": 2},
+			{"sprite": "flame", "off": Vector2(133, -66), "scale": 0.08, "z": 2}],
 		"fire": true},
 	"capital_market_stall": {"sprite": "capital_market_stall", "w": 280.0,
 		"colliders": [{"shape": "rect", "size": Vector2(178, 42), "off": Vector2(0, -8)}]},
@@ -457,27 +460,39 @@ const STRUCTURES := {
 		"colliders": [
 			{"shape": "circle", "radius": 24.0, "off": Vector2(-88, -8)},
 			{"shape": "circle", "radius": 24.0, "off": Vector2(88, -8)}],
+		"decals": [
+			{"sprite": "flame", "off": Vector2(-96, -37), "scale": 0.08, "z": 2},
+			{"sprite": "flame", "off": Vector2(96, -37), "scale": 0.08, "z": 2}],
 		"fire": true},
 	"capital_portal_depths": {"sprite": "capital_portal_depths", "w": 230.0,
 		"colliders": [{"shape": "rect", "size": Vector2(132, 42), "off": Vector2(0, -8)}]},
 	"capital_chartered_hall": {"sprite": "capital_chartered_hall", "w": 330.0},
 	"capital_ashfire_forge": {"sprite": "capital_ashfire_forge", "w": 360.0,
+		"decals": [{"sprite": "flame", "off": Vector2(44, -122), "scale": 0.07, "z": 2}],
 		"fire": true},
 	"capital_grand_archive": {"sprite": "capital_grand_archive", "w": 340.0},
 	"capital_ashen_tankard": {"sprite": "capital_ashen_tankard", "w": 360.0,
+		"decals": [{"sprite": "flame", "off": Vector2(-32, -94), "scale": 0.07, "z": 2}],
 		"fire": true},
 	"capital_wildfang_fangmoot": {"sprite": "capital_wildfang_fangmoot", "w": 330.0,
 		"colliders": [{"shape": "circle", "radius": 72.0, "off": Vector2(0, -10)}],
+		"decals": [{"sprite": "camp_bonfire", "off": Vector2(0, -116), "scale": 0.12, "z": 2}],
 		"fire": true},
 	"capital_rot_chapel": {"sprite": "capital_rot_chapel", "w": 350.0},
 	"capital_accord_longhouse": {"sprite": "capital_accord_longhouse", "w": 420.0,
+		"decals": [{"sprite": "flame", "off": Vector2(3, -103), "scale": 0.07, "z": 2}],
 		"fire": true},
 	"capital_sable_hall": {"sprite": "capital_sable_hall", "w": 420.0,
+		"decals": [
+			{"sprite": "flame", "off": Vector2(-92, -107), "scale": 0.08, "z": 2},
+			{"sprite": "flame", "off": Vector2(92, -107), "scale": 0.08, "z": 2}],
 		"fire": true},
 	"capital_wellspring": {"sprite": "capital_wellspring", "w": 330.0,
 		"colliders": [{"shape": "circle", "radius": 70.0, "off": Vector2(0, -10)}]},
 	"capital_stables": {"sprite": "capital_stables", "w": 410.0},
-	"capital_watchtower": {"sprite": "capital_watchtower", "w": 250.0},
+	"capital_watchtower": {"sprite": "capital_watchtower", "w": 250.0,
+		"decals": [{"sprite": "flame", "off": Vector2(51, -190), "scale": 0.10, "z": 2}],
+		"fire": true},
 	"capital_undercroft": {"sprite": "capital_undercroft", "w": 360.0,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(68, 40), "off": Vector2(-118, -8)},
@@ -486,5 +501,10 @@ const STRUCTURES := {
 		"colliders": [
 			{"shape": "rect", "size": Vector2(82, 44), "off": Vector2(-132, -8)},
 			{"shape": "rect", "size": Vector2(82, 44), "off": Vector2(132, -8)}],
+		"decals": [
+			{"sprite": "flame", "off": Vector2(-123, -58), "scale": 0.07, "z": 2},
+			{"sprite": "flame", "off": Vector2(123, -58), "scale": 0.07, "z": 2},
+			{"sprite": "flame", "off": Vector2(-181, -101), "scale": 0.03, "z": 2},
+			{"sprite": "flame", "off": Vector2(181, -101), "scale": 0.03, "z": 2}],
 		"fire": true},
 }
