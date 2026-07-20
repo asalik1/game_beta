@@ -3,6 +3,8 @@ class_name Projectile extends Area2D
 ## Friendly shots route their damage through the owning Player
 ## (so crit, lifesteal and burns apply); hostile shots hurt the player.
 
+signal visual_impact
+
 var vel := Vector2.ZERO
 var dmg := 10.0                # used by hostile (enemy) projectiles
 var hostile_type := "magic"    # hostile: damage type (set from the shooter)
@@ -19,6 +21,20 @@ var glow_color := Color(1, 1, 1)
 var tex_kind := ""
 var spr: Sprite2D = null       # thrown knives spin in flight
 var spin := true               # darts (assassin fan) fly POINT-FIRST instead
+var anim_fps := 0.0            # authored projectile strips opt in per texture
+var anim_first := 0
+var anim_last := 0
+var anim_clock := 0.0
+var path_trail: Line2D = null
+var path_core: Line2D = null
+var path_start := Vector2.ZERO
+var path_ready := false
+var path_closing := false
+var visual_impact_sent := false
+var visual_offset := Vector2.ZERO
+var visual_offset_start := Vector2.ZERO
+var visual_offset_time := 0.0
+var visual_offset_elapsed := 0.0
 ## Visual-only muzzle height: the sprite/glow/trail DRAW this many px above
 ## the physics position (hand height on the feet-anchored hero body), so an
 ## arrow leaves the bow instead of the hip. The flight line, collision and
@@ -36,7 +52,33 @@ var _vis: Node2D = null        # container for every visual child (set in spawn)
 ## the hand, not above it. Re-applied per-frame — scale lands after rise.
 func _apply_rise() -> void:
 	if _vis != null:
-		_vis.position.y = -rise / maxf(0.05, scale.y)
+		# Offset is presentation-only and expressed in world pixels. Collision,
+		# range and network flight remain on the projectile node itself.
+		_vis.position = Vector2(
+			visual_offset.x / maxf(0.05, scale.x),
+			(visual_offset.y - rise) / maxf(0.05, scale.y))
+
+
+## Begin the rendered shot somewhere other than its physics muzzle, then fold
+## that offset back onto the unchanged base trajectory. Used by cosmetic skins
+## whose projectile appears to leave a summoned focus rather than the caster.
+func set_visual_origin(world_pos: Vector2, settle_time: float) -> void:
+	visual_offset = world_pos - (global_position + Vector2(0, -rise))
+	visual_offset_start = visual_offset
+	visual_offset_time = maxf(0.001, settle_time)
+	visual_offset_elapsed = 0.0
+	_apply_rise()
+
+
+func _advance_visual_offset(delta: float) -> void:
+	if visual_offset_time <= 0.0:
+		return
+	visual_offset_elapsed += delta
+	var weight := clampf(visual_offset_elapsed / visual_offset_time, 0.0, 1.0)
+	visual_offset = visual_offset_start.lerp(Vector2.ZERO, weight)
+	if weight >= 1.0:
+		visual_offset = Vector2.ZERO
+		visual_offset_time = 0.0
 var homing := false            # Wind firebolt: friendly bolt curves to a target
 # --- MP-10 (§4.1 projectile row: spawn event + local flight) ---
 # net_visual: another peer's projectile flying HERE as pure presentation —
@@ -58,6 +100,8 @@ const GLOWS := {
 	"slash": Color(1.0, 0.9, 0.5), "icelance": Color(0.5, 0.9, 1.0),
 	"shadowbolt": Color(0.7, 0.4, 1.0), "dart": Color(0.85, 0.92, 1.0),
 	"shuriken": Color(1.0, 0.85, 0.4), "mage_firebolt": Color(1.0, 0.48, 0.12),
+	"mage_void_bullet": Color(0.72, 0.28, 1.0),
+	"mage_crystal_decree": Color(0.76, 0.94, 1.0),
 	"warlock_shadowbolt": Color(0.68, 0.34, 0.98),
 	"hellfire_brand_bolt": Color(1.0, 0.28, 0.06),
 }
@@ -85,7 +129,8 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	# Magic bolts burn hotter.
 	var glow := Sprite2D.new()
 	glow.texture = Art.tex("glow")
-	var hot := tex_name in ["fireball", "icelance", "shadowbolt", "mage_firebolt", "warlock_shadowbolt", "hellfire_brand_bolt"]
+	var hot := tex_name in ["fireball", "icelance", "shadowbolt", "mage_firebolt",
+		"mage_crystal_decree", "warlock_shadowbolt", "hellfire_brand_bolt"]
 	glow.modulate = Art.hdr(Color(p.glow_color, 0.8 if hot else 0.6))
 	glow.scale = Vector2(1.35, 1.35) if hot else Vector2(1.0, 1.0)
 	vis.add_child(glow)
@@ -110,6 +155,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			"icelance": Color(0.75, 0.95, 1.0),
 			"shadowbolt": Color(0.6, 0.3, 0.9),
 			"mage_firebolt": Color(1.0, 0.64, 0.18),
+			"mage_crystal_decree": Color(0.78, 0.94, 1.0),
 			"warlock_shadowbolt": Color(0.65, 0.32, 0.95),
 			"hellfire_brand_bolt": Color(1.0, 0.24, 0.06),
 		}.get(tex_name, Color.WHITE)
@@ -138,6 +184,18 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			sprite.scale = Vector2.ONE
 		"mage_firebolt", "warlock_shadowbolt":
 			sprite.scale = Vector2(1.2, 1.2)
+		"mage_void_bullet":
+			# The Weaver-eye fires a compressed pin, never a hand-sized fireball.
+			sprite.scale = Vector2(0.55, 0.55)
+			glow.scale = Vector2(0.42, 0.42)
+			glow.modulate = Art.hdr(Color(p.glow_color, 0.46), 1.15)
+		"mage_crystal_decree":
+			# The cast sheet assembles three shards; flight holds the locked verdict.
+			sprite.hframes = 8
+			sprite.frame = 7
+			sprite.scale = Vector2(0.42, 0.42)
+			glow.scale = Vector2(0.72, 0.72)
+			glow.modulate.a = 0.62
 		"hellfire_brand_bolt":
 			sprite.scale = Vector2(0.84, 0.84)  # 30% smaller than the caster bolts
 		"knife": sprite.scale = Vector2(3.8, 2.1)
@@ -176,6 +234,8 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	# CLASS (`body is Player`), never by identity against game.player.
 	p.collision_mask = (1 | 4) if is_friendly else (1 | 2)
 	game_node.add_child(p)
+	if tex_name == "mage_void_bullet":
+		p._build_path_trail()
 	return p
 
 
@@ -192,8 +252,14 @@ func _physics_process(delta: float) -> void:
 		_net_announce()
 	if homing and friendly:
 		_steer_home(delta)
+	_advance_visual_offset(delta)
 	_apply_rise()
 	global_position += vel * delta
+	_update_path_trail()
+	if spr and anim_fps > 0.0 and anim_last >= anim_first:
+		anim_clock += delta
+		var count := anim_last - anim_first + 1
+		spr.frame = anim_first + int(anim_clock * anim_fps) % count
 	if spr and spin:
 		if tex_kind == "knife":
 			spr.rotation += 16.0 * delta   # thrown blades tumble end over end
@@ -201,8 +267,72 @@ func _physics_process(delta: float) -> void:
 			spr.rotation += 34.0 * delta   # a throwing star whirs fast on its axis
 	life -= delta
 	if life <= 0.0:
+		_notify_visual_impact()
 		_bloom()
 		queue_free()
+
+
+## The eye-bolt leaves one continuous thread from its casting eye to the live
+## projectile. Contact collapses the whole path at once instead of draining a
+## short ribbon segment-by-segment.
+func _build_path_trail() -> void:
+	path_trail = Line2D.new()
+	path_trail.width = 2.5
+	path_trail.default_color = Color(0.54, 0.16, 0.92, 0.78)
+	path_trail.z_index = 4
+	game.add_child(path_trail)
+	path_core = Line2D.new()
+	path_core.width = 0.85
+	path_core.default_color = Color(0.92, 0.64, 1.0, 0.90)
+	path_core.z_index = 4
+	game.add_child(path_core)
+
+
+func _update_path_trail() -> void:
+	if path_closing or path_trail == null or not is_instance_valid(path_trail):
+		return
+	var at := _fx_pos()
+	if not path_ready:
+		path_ready = true
+		path_start = at
+		path_trail.add_point(at)
+		if path_core != null and is_instance_valid(path_core):
+			path_core.add_point(at)
+		return
+	# Preserve each bend made by homing variants. A two-point chord erased the
+	# actual travelled route as soon as the needle curved toward its target.
+	var last := path_trail.points[path_trail.points.size() - 1]
+	if last.distance_to(at) >= 1.5:
+		if tex_kind == "mage_void_bullet" and spr != null and is_instance_valid(spr):
+			spr.rotation = (at - last).angle()
+		path_trail.add_point(at)
+		if path_core != null and is_instance_valid(path_core):
+			path_core.add_point(at)
+
+
+func _fade_path_trail() -> void:
+	if path_closing:
+		return
+	path_closing = true
+	for line in [path_trail, path_core]:
+		if line != null and is_instance_valid(line):
+			var fade: Tween = line.create_tween()
+			fade.tween_property(line, "modulate:a", 0.0, 0.11)
+			fade.tween_callback(line.queue_free)
+	path_trail = null
+	path_core = null
+
+
+func _notify_visual_impact() -> void:
+	if visual_impact_sent:
+		return
+	visual_impact_sent = true
+	visual_impact.emit()
+	_fade_path_trail()
+
+
+func _exit_tree() -> void:
+	_fade_path_trail()
 
 
 ## MP-10: real projectiles fan out as spawn events; everyone else flies a
@@ -251,7 +381,7 @@ func _bloom() -> void:
 ## Where the shot is DRAWN (physics position lifted by the muzzle rise) —
 ## impact FX spawn here so the burst lands on the arrow, not below it.
 func _fx_pos() -> Vector2:
-	return global_position + Vector2(0, -rise)
+	return global_position + Vector2(0, -rise) + visual_offset
 
 
 ## A quick expanding shockwave where a magic bolt lands.
@@ -295,6 +425,31 @@ func _frost_arrow_impact() -> void:
 	fade.tween_callback(flake.queue_free)
 
 
+## Skin-owned Mage projectile contacts. These are deliberately geometric and
+## brief: the projectile sheet carries the flight identity, while contact
+## completes its story without falling back to the shared magic ring.
+func _mage_skin_impact() -> void:
+	if tex_kind != "mage_crystal_decree":
+		return
+	var at := _fx_pos()
+	# A precise six-sided crack reads as a sentence stamped into the target.
+	for i in 6:
+		var edge := Line2D.new()
+		var ang := TAU * float(i) / 6.0
+		var inner := at + Vector2.from_angle(ang) * 5.0
+		var elbow := at + Vector2.from_angle(ang + (0.16 if i % 2 == 0 else -0.16)) * 16.0
+		var outer := at + Vector2.from_angle(ang) * 28.0
+		edge.points = PackedVector2Array([inner, elbow, outer])
+		edge.width = 1.5
+		edge.default_color = Color(0.82, 0.96, 1.0, 0.9)
+		edge.z_index = 9
+		game.add_child(edge)
+		var fade_edge := edge.create_tween()
+		fade_edge.tween_interval(0.06)
+		fade_edge.tween_property(edge, "modulate:a", 0.0, 0.18)
+		fade_edge.tween_callback(edge.queue_free)
+
+
 func _on_body_entered(body: Node) -> void:
 	if net_visual:
 		# MP-10 visual copy: burst where the real one bites, never damage
@@ -303,15 +458,19 @@ func _on_body_entered(body: Node) -> void:
 			if _already_hit.has(body):
 				return
 			_already_hit[body] = true
+			_notify_visual_impact()
 			game.burst(_fx_pos(), glow_color, 5)
 			_frost_arrow_impact()
+			_mage_skin_impact()
 			_impact_ring()
 			if not pierce:
 				queue_free()
 		elif not friendly and body is Player:
+			_notify_visual_impact()
 			game.burst(_fx_pos(), glow_color, 5)
 			queue_free()
 		elif body is StaticBody2D:
+			_notify_visual_impact()
 			game.burst(_fx_pos(), Color(glow_color, 0.5), 3)
 			queue_free()
 		return
@@ -319,8 +478,10 @@ func _on_body_entered(body: Node) -> void:
 		if _already_hit.has(body):
 			return
 		_already_hit[body] = true
+		_notify_visual_impact()
 		game.burst(_fx_pos(), glow_color, 5)
 		_frost_arrow_impact()
+		_mage_skin_impact()
 		_impact_ring()
 		if is_instance_valid(source_player):
 			# Resolve with the payload SNAPSHOT this shot was fired with (fx,
@@ -345,6 +506,7 @@ func _on_body_entered(body: Node) -> void:
 			_bloom()
 			queue_free()
 	elif not friendly and body is Player:
+		_notify_visual_impact()
 		game.burst(_fx_pos(), glow_color, 5)
 		var shooter: Node = source_enemy if is_instance_valid(source_enemy) else null
 		body.take_damage(dmg, hostile_type, shooter)
@@ -354,8 +516,10 @@ func _on_body_entered(body: Node) -> void:
 			body.apply_root(root_dur)
 		queue_free()
 	elif body is StaticBody2D:
+		_notify_visual_impact()
 		game.burst(_fx_pos(), Color(glow_color, 0.5), 3)
 		if friendly:
+			_mage_skin_impact()
 			_impact_ring()
 			_bloom()
 		queue_free()

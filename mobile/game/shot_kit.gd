@@ -95,9 +95,20 @@ func _ready() -> void:
 	# Close-up lens: FX are unjudgeable at full zoom-out.
 	game.camera.zoom = Vector2(2.4, 2.4)
 	await _frames(8)
+	if cls == "mage" and skin == "crystal_archmage":
+		_shot("dais_idle")
+		# Hold real velocity while the player mover is paused so the persistent
+		# ambient actor selects its authored glide bank and lean deterministically.
+		game.player.set_physics_process(false)
+		game.player.velocity = Vector2.RIGHT * game.player.speed
+		await get_tree().create_timer(0.24).timeout
+		_shot("dais_glide")
+		game.player.velocity = Vector2.ZERO
+		game.player.set_physics_process(true)
+		await _frames(2)
 
 	# STAB mid-lunge (swing anim is 0.16s ~= 10 frames).
-	if cls == "archer":
+	if cls in ["archer", "mage"]:
 		# Give the delayed release enough flight line to expose its skin trail.
 		dummy.global_position = game.player.global_position + Vector2(300, 0)
 		await _frames(3)
@@ -108,11 +119,18 @@ func _ready() -> void:
 		# Archer releases after an authored bow windup. Bracket the arrow in
 		# flight so skin trails are visible instead of photographing empty air.
 		await get_tree().create_timer(0.14).timeout
+	elif cls == "mage":
+		# Catch the court shards/thread braid before the delayed release frame.
+		await get_tree().create_timer(0.035).timeout
 	else:
 		await _frames(2)
 	_shot("stab_early")
-	await _frames(3)
-	_shot("stab_mid")
+	if cls == "mage":
+		await get_tree().create_timer(0.11).timeout
+		_shot("mage_bolt_release")
+	else:
+		await _frames(3)
+		_shot("stab_mid")
 	if cls == "archer" and skin == "frostfall_ranger":
 		# The dummy is 300px out: catch the small contact snowflake immediately
 		# after the delayed arrow reaches it, before its 0.25s fade completes.
@@ -125,6 +143,17 @@ func _ready() -> void:
 		await _frames(6)
 		_shot("void_trail_flight")
 		await _frames(34)
+	elif cls == "mage":
+		# Follow the assembled projectile through flight and through its authored
+		# full-path collapse / geometric-verdict contact beat.
+		await get_tree().create_timer(0.04).timeout
+		_shot("mage_bolt_flight_early")
+		await get_tree().create_timer(0.07).timeout
+		_shot("mage_bolt_flight")
+		await get_tree().create_timer(0.12).timeout
+		_shot("mage_bolt_flight_late")
+		await get_tree().create_timer(0.39).timeout
+		_shot("mage_bolt_impact")
 	else:
 		await _frames(40)
 
@@ -148,6 +177,14 @@ func _ready() -> void:
 		await _frames(8)
 		_shot("frost_dash_idle_handoff")
 		await _frames(8)
+	elif cls == "mage":
+		# Blink moves the physics body immediately; this later frame proves the
+		# destination threads unwind and then reveal the caster—not a pop-in.
+		await get_tree().create_timer(0.17).timeout
+		_shot("mage_blink_arrival")
+		await get_tree().create_timer(0.08).timeout
+		_shot("mage_blink_reveal")
+		await _frames(24)
 	else:
 		await _frames(40)
 	dummy.global_position = game.player.global_position + Vector2(110, 0)
@@ -161,7 +198,14 @@ func _ready() -> void:
 	game.player.use_ability("a2")
 	await _frames(2)
 	_shot("dash_x")
-	await _frames(30)
+	if cls == "mage":
+		await get_tree().create_timer(0.13).timeout
+		_shot("mage_nova_mid")
+		await get_tree().create_timer(0.18).timeout
+		_shot("mage_nova_payoff")
+		await _frames(10)
+	else:
+		await _frames(30)
 	dummy.global_position = game.player.global_position + Vector2(110, 0)
 	await _frames(3)
 
@@ -186,7 +230,14 @@ func _ready() -> void:
 	_shot("ult_declaration")
 	await get_tree().create_timer(0.24).timeout
 	_shot("ult_midbeat")
-	await get_tree().create_timer(0.34).timeout
+	# Mage skins resolve at 0.62s; hold a frame just before contact so the
+	# authored thread eruption / segmented judgment is reviewable in isolation.
+	if cls == "mage" and skin in ["void_weaver", "crystal_archmage"]:
+		await get_tree().create_timer(0.24).timeout
+		_shot("mage_ult_eruption" if skin == "void_weaver" else "mage_ult_descent")
+		await get_tree().create_timer(0.10).timeout
+	else:
+		await get_tree().create_timer(0.34).timeout
 	_shot("ult_payoff")
 	await get_tree().create_timer(0.50).timeout
 	_shot("ult_aftermath")

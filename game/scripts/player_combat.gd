@@ -83,15 +83,24 @@ class PhantomTrail extends Node2D:
 			var sl := seg.length()
 			nrm[i] = Vector2(-seg.y, seg.x) / sl if sl > 0.001 else Vector2.ZERO
 		for i in n - 1:
+			if pts[i].distance_squared_to(pts[i + 1]) <= 0.04:
+				continue
 			var t0 := float(i) / float(n - 1)      # 0 = head (at Phantom), 1 = tail
 			var t1 := float(i + 1) / float(n - 1)
 			var w0 := base_w * (1.0 - t0)
 			var w1 := base_w * (1.0 - t1)
 			var a := base_a * pow(1.0 - (t0 + t1) * 0.5, 1.3)   # FADE OUT toward the tail
-			draw_colored_polygon(PackedVector2Array([
-				pts[i] + nrm[i] * w0, pts[i + 1] + nrm[i + 1] * w1,
-				pts[i + 1] - nrm[i + 1] * w1, pts[i] - nrm[i] * w0]),
-				Color(0.5, 1.0, 0.86, a))
+			var ribbon_col := Color(0.5, 1.0, 0.86, a)
+			if i == n - 2:
+				draw_colored_polygon(PackedVector2Array([
+					pts[i] + nrm[i] * w0, pts[i + 1], pts[i] - nrm[i] * w0]), ribbon_col)
+			else:
+				var side_a: Vector2 = pts[i] + nrm[i] * w0
+				var side_b: Vector2 = pts[i + 1] + nrm[i + 1] * w1
+				var side_c: Vector2 = pts[i + 1] - nrm[i + 1] * w1
+				var side_d: Vector2 = pts[i] - nrm[i] * w0
+				draw_colored_polygon(PackedVector2Array([side_a, side_b, side_c]), ribbon_col)
+				draw_colored_polygon(PackedVector2Array([side_a, side_c, side_d]), ribbon_col)
 
 
 ## A short, thin spectral streak that FOLLOWS a flying projectile (Phantom's
@@ -144,21 +153,29 @@ class ProjTrail extends Node2D:
 			var sl := seg.length()
 			nrm[i] = Vector2(-seg.y, seg.x) / sl if sl > 0.001 else Vector2.ZERO
 		for i in n - 1:
+			# Very tight curved paths can briefly fold a four-corner ribbon back
+			# across itself. Skip coincident samples and submit two explicit
+			# triangles per segment so Godot never has to triangulate a bow-tie quad.
+			if pts[i].distance_squared_to(pts[i + 1]) <= 0.04:
+				continue
 			var t0 := float(i) / float(n - 1)
 			var t1 := float(i + 1) / float(n - 1)
 			var w0 := base_w * (1.0 - t0)
 			var w1 := base_w * (1.0 - t1)
-			var a := base_a * pow(1.0 - (t0 + t1) * 0.5, 1.3)
-			var ribbon_col := Color(col.r, col.g, col.b, a)
+			var alpha := base_a * pow(1.0 - (t0 + t1) * 0.5, 1.3)
+			var ribbon_col := Color(col.r, col.g, col.b, alpha)
 			if i == n - 2:
 				# The tail converges to one point. Submit a real triangle instead of
 				# a quad with duplicate vertices (which Godot cannot triangulate).
 				draw_colored_polygon(PackedVector2Array([
 					pts[i] + nrm[i] * w0, pts[i + 1], pts[i] - nrm[i] * w0]), ribbon_col)
 			else:
-				draw_colored_polygon(PackedVector2Array([
-					pts[i] + nrm[i] * w0, pts[i + 1] + nrm[i + 1] * w1,
-					pts[i + 1] - nrm[i + 1] * w1, pts[i] - nrm[i] * w0]), ribbon_col)
+				var a: Vector2 = pts[i] + nrm[i] * w0
+				var b: Vector2 = pts[i + 1] + nrm[i + 1] * w1
+				var c: Vector2 = pts[i + 1] - nrm[i + 1] * w1
+				var d: Vector2 = pts[i] - nrm[i] * w0
+				draw_colored_polygon(PackedVector2Array([a, b, c]), ribbon_col)
+				draw_colored_polygon(PackedVector2Array([a, c, d]), ribbon_col)
 			if core_width > 0.0 and core_opacity > 0.0:
 				var core_a := core_opacity * pow(1.0 - (t0 + t1) * 0.5, 1.15)
 				draw_line(pts[i], pts[i + 1],
@@ -172,7 +189,10 @@ class ProjTrail extends Node2D:
 ## The root itself never moves or stretches toward a victim.
 class VoidTentacle extends Node2D:
 	const IDLE_FRAME_TIME := 0.105
-	const ATTACK_FRAME_TIME := 0.042
+	# Frame 4 is contact: 4 * 0.0275 = the base Arrow Storm's 0.11s visual fall.
+	# Damage still resolves on the shared tick; this keeps the skin's contact tell
+	# on the same presentation clock as the falling base arrow and Frost lance.
+	const ATTACK_FRAME_TIME := 0.0275
 	const SPR_SCALE := 0.82
 	const ROOT_FROM_CELL_CENTER := 59.0
 	var spr := Sprite2D.new()
@@ -239,17 +259,14 @@ class VoidTentacle extends Node2D:
 
 ## Frostfall's blizzard footprint: a real circular ground field rather than a
 ## stretched glow texture. Concentric translucent fills create a soft sky-blue
-## falloff; the rim identifies the attacked area without covering combatants.
+## falloff. There is intentionally no hard rim: Arrow Storm acquires individual
+## targets around the archer rather than using this decorative field as a hitbox.
 class FrostStormField extends Node2D:
 	var radius := 186.0
 	func _draw() -> void:
 		draw_circle(Vector2.ZERO, radius, Color(0.30, 0.72, 1.0, 0.055))
 		draw_circle(Vector2.ZERO, radius * 0.82, Color(0.36, 0.78, 1.0, 0.040))
 		draw_circle(Vector2.ZERO, radius * 0.58, Color(0.46, 0.84, 1.0, 0.032))
-		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 72,
-			Color(0.48, 0.86, 1.0, 0.28), 2.0, true)
-		draw_arc(Vector2.ZERO, radius - 9.0, 0.0, TAU, 72,
-			Color(0.58, 0.90, 1.0, 0.09), 1.0, true)
 
 
 ## Golden Ronin's throwing-star after-image: drops fading, rotated ghost copies
@@ -301,9 +318,14 @@ class SkinAmbient extends Node2D:
 	var t := 0.0
 	var emit_t := 0.0
 	var blink_t := 0.0
+	var dais_frame_t := 0.0
+	var dais: Sprite2D = null
+	var prism_shadow: Sprite2D = null
 	func _ready() -> void:
 		z_index = -1
 		blink_t = 1.6
+		if skin_id == "crystal_archmage":
+			_build_crystal_dais()
 	func _process(delta: float) -> void:
 		if plr == null or not is_instance_valid(plr):
 			queue_free()
@@ -315,6 +337,9 @@ class SkinAmbient extends Node2D:
 			if skin_id == "voidwraith" and plr.velocity.length() > 25.0:
 				_emit_feather(Color(0.45, 0.22, 0.72, 0.7), -plr.velocity.normalized())
 				emit_t = 0.18
+			elif skin_id == "crystal_archmage" and plr.velocity.length() > 20.0:
+				_emit_crystal_glint()
+				emit_t = 0.11
 			elif skin_id == "fallen_arbiter" and plr.velocity.length() > 20.0:
 				_emit_feather(Color(0.92, 0.94, 1.0, 0.72), Vector2(0, 0.7))
 				emit_t = 0.34
@@ -322,7 +347,56 @@ class SkinAmbient extends Node2D:
 				emit_t = 0.22 if plr.velocity.length() > 25.0 else 0.48
 		if blink_t <= 0.0:
 			blink_t = 2.4 + randf_range(0.0, 1.4)
+		if skin_id == "crystal_archmage":
+			_update_crystal_dais(delta)
 		queue_redraw()
+	func _build_crystal_dais() -> void:
+		# The platform is authored animation, not the old procedural polygon.
+		# Frames 0-3 settle at rest; 4-7 carry the directional glide read.
+		prism_shadow = Sprite2D.new()
+		prism_shadow.texture = Art.tex("glow")
+		prism_shadow.position = Vector2(0, 31)
+		prism_shadow.scale = Vector2(1.75, 0.48)
+		prism_shadow.modulate = Color(0.32, 0.65, 0.95, 0.18)
+		add_child(prism_shadow)
+		dais = Sprite2D.new()
+		dais.texture = Art.tex("fx/mage_crystal_dais")
+		dais.hframes = 8
+		dais.frame = 0
+		dais.position = Vector2(0, 28)
+		dais.scale = Vector2(0.62, 0.62)
+		dais.modulate = Color(0.92, 0.98, 1.0, 0.96)
+		add_child(dais)
+	func _update_crystal_dais(delta: float) -> void:
+		if dais == null or not is_instance_valid(dais):
+			return
+		var moving: bool = plr.velocity.length() > 20.0
+		dais_frame_t += delta * (8.5 if moving else 5.0)
+		dais.frame = (4 if moving else 0) + int(dais_frame_t) % 4
+		var nx := clampf(plr.velocity.x / maxf(plr.speed, 1.0), -1.0, 1.0)
+		dais.rotation = lerp_angle(dais.rotation, nx * 0.065, minf(1.0, delta * 10.0))
+		dais.position = Vector2(nx * 2.5, 28.0 + sin(t * 3.0) * 1.2)
+		if prism_shadow != null and is_instance_valid(prism_shadow):
+			prism_shadow.position = Vector2(nx * 1.4, 32.0)
+			prism_shadow.scale.x = lerpf(prism_shadow.scale.x, 2.05 if moving else 1.75,
+				minf(1.0, delta * 6.0))
+			prism_shadow.modulate.a = 0.23 if moving else 0.16
+	func _emit_crystal_glint() -> void:
+		var glint := Sprite2D.new()
+		glint.texture = Art.tex("mage_crystal_decree")
+		glint.hframes = 8
+		glint.frame = 0
+		glint.position = Vector2(randf_range(-18.0, 18.0), randf_range(18.0, 31.0))
+		glint.scale = Vector2(0.12, 0.12)
+		glint.modulate = Color(0.78, 0.94, 1.0, 0.72)
+		glint.z_index = -1
+		add_child(glint)
+		var back: Vector2 = -plr.velocity.normalized()
+		var tw := glint.create_tween()
+		tw.tween_property(glint, "position", glint.position + back * 22.0 + Vector2(0, 7), 0.38)
+		tw.parallel().tween_property(glint, "rotation", glint.rotation + 1.2, 0.38)
+		tw.parallel().tween_property(glint, "modulate:a", 0.0, 0.38)
+		tw.tween_callback(glint.queue_free)
 	func _emit_feather(col: Color, drift: Vector2) -> void:
 		var feather := Sprite2D.new()
 		feather.texture = Art.tex("slashline")
@@ -351,17 +425,9 @@ class SkinAmbient extends Node2D:
 				var a := 0.16 + sin(t * 1.7) * 0.05
 				draw_arc(Vector2(0, -20), 29.0, -1.15, 1.15, 18, Color(0.58, 0.34, 0.9, a), 2.0)
 			"crystal_archmage":
-				# Hero remains on directional idle while this rotating dais leans
-				# into travel: a moving platform, not a replacement walk bob.
-				var lean := clampf(plr.velocity.x / maxf(plr.speed, 1.0), -1.0, 1.0) * 5.0
-				var y := 27.0 + sin(t * 3.0) * 1.5
-				var poly := PackedVector2Array([Vector2(-25 + lean, y), Vector2(-13 + lean, y - 8), Vector2(14 + lean, y - 8), Vector2(27 + lean, y), Vector2(13, y + 7), Vector2(-14, y + 7)])
-				draw_colored_polygon(poly, Color(0.34, 0.64, 0.92, 0.7))
-				var facet := int(t * 6.0) % 3
-				var cuts := [Vector2(-13 + lean, y - 8), Vector2(0 + lean * 0.5, y - 8), Vector2(14 + lean, y - 8)]
-				for i in 3:
-					var c := Color(0.76, 0.94, 1.0, 0.9) if i == facet else Color(0.52, 0.76, 1.0, 0.52)
-					draw_colored_polygon(PackedVector2Array([cuts[i], Vector2(0, y + 6), Vector2(cuts[i].x + 11, y)]), c)
+				# The authored dais and moving prism-shadow are Sprite2D children.
+				# Keeping this draw branch empty prevents a flat polygon duplicate.
+				pass
 			"fallen_arbiter":
 				var wing_a := 0.18 + sin(t * 1.2) * 0.04
 				draw_arc(Vector2(-12, -20), 31, 2.6, 4.4, 12, Color(0.9, 0.92, 1.0, wing_a), 2.0)
@@ -1438,6 +1504,7 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 	global_position = game.clamp_to_zone(start + dvec * dist, start)
 	_aim_dash_pose(dvec)  # before the ghost trail below, so the afterimages copy the pose
 	var end := global_position
+	var skin_owned_dash := skin in ["void_weaver", "crystal_archmage"]
 	if skin == "phantom":
 		# A thin spectral streak along the dash path — fades out and self-frees.
 		var trail := PhantomTrail.new()
@@ -1448,29 +1515,30 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 	if iframe > 0.0:
 		hurt_cd = maxf(hurt_cd, iframe)  # brief immunity while dashing
 		hurt_was_heavy = true  # a deliberate i-frame blocks heavy telegraph hits too
-	game.burst(start, color, 8)
-	game.burst(end, color, 8)
-	game.dust(start + Vector2(0, 14), 4)  # kicked-up dust where you left
-	if heavy:
-		_afterimages(start, end, color, 7, 0.085, 0.40)
-		game.dust(end + Vector2(0, 14), 6)  # the landing hits like a wall
-		game.shake(2.5)
-	else:
-		_afterimages(start, end, color)
+	if not skin_owned_dash:
+		game.burst(start, color, 8)
+		game.burst(end, color, 8)
+		game.dust(start + Vector2(0, 14), 4)  # kicked-up dust where you left
+		if heavy:
+			_afterimages(start, end, color, 7, 0.085, 0.40)
+			game.dust(end + Vector2(0, 14), 6)  # the landing hits like a wall
+			game.shake(2.5)
+		else:
+			_afterimages(start, end, color)
 
-	# Light trail between the two points.
-	var mid := (start + end) / 2.0
-	var trail := Sprite2D.new()
-	trail.texture = Art.tex("glow")
-	trail.modulate = Color(color, 0.7)
-	trail.global_position = mid
-	trail.rotation = (end - start).angle()
-	trail.scale = Vector2(maxf(1.0, start.distance_to(end) / 44.0), 1.1)
-	trail.z_index = 6
-	game.add_child(trail)
-	var tween := trail.create_tween()
-	tween.tween_property(trail, "modulate:a", 0.0, 0.25)
-	tween.tween_callback(trail.queue_free)
+		# Light trail between the two points.
+		var mid := (start + end) / 2.0
+		var trail := Sprite2D.new()
+		trail.texture = Art.tex("glow")
+		trail.modulate = Color(color, 0.7)
+		trail.global_position = mid
+		trail.rotation = (end - start).angle()
+		trail.scale = Vector2(maxf(1.0, start.distance_to(end) / 44.0), 1.1)
+		trail.z_index = 6
+		game.add_child(trail)
+		var tween := trail.create_tween()
+		tween.tween_property(trail, "modulate:a", 0.0, 0.25)
+		tween.tween_callback(trail.queue_free)
 
 	var kills := 0
 	var rider_hit := false

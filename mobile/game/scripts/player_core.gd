@@ -360,7 +360,6 @@ var storm_fx := {}
 var storm_center := Vector2.ZERO  # visual anchor for skin-specific storm fields
 var void_tentacles: Array = []    # Voidwraith ult: eight rooted actors around the portal rim
 var void_tentacle_cursor := 0
-var void_target_cursor := 0
 var theme_speed_time := 0.0
 var theme_speed_amt := 0.0
 var damp_time := 0.0     # Damp debuff: while > 0, move speed x Balance.DAMP_SLOW_MULT (river wading)

@@ -404,10 +404,9 @@ func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
 	_afterimages(from, global_position, blink_col, 3, 0.05, 0.26, skin == "blade_dancer")
 	game.shake(6.0)
 	if skin == "blade_dancer":
-		# Gilded Iai: a held beat behind the prey, then the one cut lands.
-		await get_tree().create_timer(0.12).timeout
-		if is_instance_valid(target) and not target.dying:
-			_gilded_iai_strike(target)
+		# Gilded Iai lands on the shared execution frame. A skin-only held beat
+		# previously moved the final true hit 120ms later than base and Phantom.
+		_gilded_iai_strike(target)
 	_melee_arc(ability_coeff("ult"), 118.0, "slash", {"type": "true"}, "stab", "stab")
 	if execute > 0.0 and is_instance_valid(target) and not target.dying \
 			and target.hp < target.max_hp * 0.3:

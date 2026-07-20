@@ -11,15 +11,36 @@ func _use_mage(slot: String, f: float) -> void:
 			# themes scale off this base, lifting Wind's ST and Fire's AoE).
 			# Sync the bolt to the staff-thrust release, not the input frame —
 			# the cast animation has a windup the FX was firing ahead of.
-			await get_tree().create_timer(swing_delay(Balance.MAGE_BOLT_DELAY)).timeout
+			var cast_delay := swing_delay(Balance.MAGE_BOLT_DELAY)
+			var prelude_dir := aim_dir()
+			var void_eyes: Array[Node2D] = []
+			if skin == "void_weaver":
+				var eye_count := 2 if _tfx.get("twin", 0) else 1
+				for i in eye_count:
+					void_eyes.append(_spawn_void_cast_eye(prelude_dir, cast_delay))
+			elif skin == "crystal_archmage":
+				_mage_bolt_prelude(prelude_dir, cast_delay)
+			await get_tree().create_timer(cast_delay).timeout
 			if dead or downed or ghost:
+				for eye in void_eyes:
+					_dismiss_void_eye(eye)
 				return
+			# Preserve the base spell's release-time targeting. The prelude may begin
+			# earlier, but no skin is allowed to snapshot aim or alter behavior.
+			var release_dir := aim_dir()
 			if _tfx.get("twin", 0):
 				# Wind: split the bolt.
-				_cast_bolt(aim_dir().rotated(0.09), 0.94 * f)
-				_cast_bolt(aim_dir().rotated(-0.09), 0.94 * f)
+				if skin == "void_weaver":
+					_cast_void_eye_bolt(void_eyes[0], release_dir.rotated(0.09), 0.94 * f)
+					_cast_void_eye_bolt(void_eyes[1], release_dir.rotated(-0.09), 0.94 * f)
+				else:
+					_cast_bolt(release_dir.rotated(0.09), 0.94 * f)
+					_cast_bolt(release_dir.rotated(-0.09), 0.94 * f)
 			else:
-				_cast_bolt(aim_dir(), ability_coeff("a1") * f)
+				if skin == "void_weaver":
+					_cast_void_eye_bolt(void_eyes[0], release_dir, ability_coeff("a1") * f)
+				else:
+					_cast_bolt(release_dir, ability_coeff("a1") * f)
 		"a2": _frost_nova(f)
 		"a3": _blink()
 		"ult": _meteor()
@@ -31,23 +52,32 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 	# Mage-skin bolts (Ronin pattern — the skin's magic wins over theme):
 	# Void Weaver casts woven void; Crystal Archmage casts CRYSTAL — every
 	# bolt flies as a lance of it, whatever the theme.
-	if skin == "void_weaver":
-		bolt_col = Color(0.62, 0.38, 0.98)
-	elif skin == "crystal_archmage":
+	if skin == "crystal_archmage":
 		bolt_col = Color(0.80, 0.94, 1.00)
 	_muzzle(dir, bolt_col)
-	# Each identity owns a bolt silhouette: base flame dart, void curse-spear,
+	# Each identity owns a bolt silhouette: base flame dart, woven void spindle,
 	# or hard crystal lance. Themes affect the muzzle and riders, not the body.
 	var tex := "mage_firebolt"
-	if skin == "void_weaver":
-		tex = "warlock_shadowbolt"
-	elif _tfx.get("pierce", 0) or skin == "crystal_archmage":
+	if skin == "crystal_archmage":
+		tex = "mage_crystal_decree"
+	elif _tfx.get("pierce", 0):
 		tex = "icelance"
 	var p := _proj(dir, mult, tex, 440.0 * float(_tfx.get("proj_speed", 1.0)))
-	if skin == "void_weaver":
-		p.modulate = Color(0.72, 0.48, 1.00)
-	elif skin == "crystal_archmage":
-		p.modulate = Color(0.86, 0.96, 1.00)
+	if skin == "crystal_archmage":
+		var shard_trail := ProjTrail.new()
+		shard_trail.proj = p
+		shard_trail.col = Color(0.78, 0.94, 1.0, 0.82)
+		shard_trail.max_points = 7
+		shard_trail.width = 0.75
+		shard_trail.opacity = 0.50
+		shard_trail.core_width = 0.35
+		shard_trail.core_opacity = 0.62
+		shard_trail.core_col = Color.WHITE
+		game.add_child(shard_trail)
+	_finish_mage_bolt(p, mult)
+
+
+func _finish_mage_bolt(p: Projectile, mult: float) -> void:
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 	if _tfx.get("homing", 0):
 		p.homing = true  # Wind firebolt SEEKS its mark — baseline wind behavior, no talent
@@ -57,6 +87,161 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 		# a single wound (~+13% DPS); split the twin onto two foes and each bleeds
 		# (~+26% total). Sized off atk here so ticks crit off the sheet like burn.
 		p.fx["bleed"] = current_atk() * bolt_bleed * mult * 2.0
+
+
+func _pick_void_eye_origin() -> Vector2:
+	# Sample a ring around the caster and reject pockets already occupied by a
+	# live Weaver-eye. The fallback is the clearest random pocket we inspected.
+	var fallback := global_position + Vector2(52.0, -12.0)
+	var best_clearance := -1.0
+	for attempt in 14:
+		var candidate := global_position + Vector2.from_angle(randf() * TAU) \
+			* randf_range(46.0, 72.0)
+		var clearance := 9999.0
+		for node in get_tree().get_nodes_in_group("void_weaver_cast_eye"):
+			if node is Node2D and is_instance_valid(node):
+				clearance = minf(clearance, candidate.distance_to(node.global_position))
+		if clearance > best_clearance:
+			best_clearance = clearance
+			fallback = candidate
+		if clearance >= 52.0:
+			return candidate
+	return fallback
+
+
+func _spawn_void_cast_eye(dir: Vector2, duration: float) -> Node2D:
+	var eye := Node2D.new()
+	eye.global_position = _pick_void_eye_origin()
+	eye.add_to_group("void_weaver_cast_eye")
+	game.add_child(eye)
+	var spr := Sprite2D.new()
+	spr.name = "Eye"
+	spr.texture = Art.tex("fx/mage_void_cast_eye")
+	spr.hframes = 8
+	spr.frame = 0
+	spr.position = Vector2(0, -30)
+	spr.rotation = dir.angle()
+	spr.scale = Vector2(0.58, 0.58)
+	spr.modulate = Color(1.0, 1.0, 1.0, 0.96)
+	spr.z_index = 10
+	eye.add_child(spr)
+	var form := spr.create_tween()
+	var per := maxf(0.018, duration / 4.0)
+	for frame in range(1, 5):
+		form.tween_interval(per)
+		form.tween_callback(spr.set_frame.bind(frame))
+	return eye
+
+
+func _cast_void_eye_bolt(eye: Node2D, intended_dir: Vector2, mult: float) -> Projectile:
+	if eye == null or not is_instance_valid(eye):
+		eye = _spawn_void_cast_eye(intended_dir, 0.0)
+	var shot_dir := intended_dir.normalized()
+	var eye_spr := eye.get_node_or_null("Eye") as Sprite2D
+	game.sfx("fireball")
+	var speed := 440.0 * float(_tfx.get("proj_speed", 1.0))
+	# Physics are exactly base Firebolt: same player-relative muzzle, direction,
+	# speed, life, collision and riders. Only the rendered container starts at
+	# the eye and converges onto that unchanged trajectory.
+	var p := _proj(shot_dir, mult, "mage_void_bullet", speed)
+	_finish_mage_bolt(p, mult)
+	var eye_center := eye.global_position + Vector2(0, -30)
+	if eye_spr != null:
+		eye_center = eye.to_global(eye_spr.position)
+	var base_visual_origin := p.global_position + Vector2(0, -p.rise)
+	var offset := eye_center - base_visual_origin
+	var settle := clampf(offset.length() / maxf(speed, 1.0), 0.10, 0.22)
+	p.set_visual_origin(eye_center, settle)
+	if eye_spr != null:
+		eye_spr.frame = 5
+		var initial_visual_velocity := p.vel - offset / settle
+		eye_spr.rotation = initial_visual_velocity.angle()
+	p.visual_impact.connect(_dismiss_void_eye.bind(eye), CONNECT_ONE_SHOT)
+	# Impact is the normal path, but room resets and projectile sweeps may free a
+	# shot directly. Tree exit is unconditional; the eye's dismissal meta makes
+	# both callbacks safely idempotent. The timer is a visual-only final fuse for
+	# any future path that leaves a projectile alive with processing disabled.
+	p.tree_exiting.connect(_dismiss_void_eye.bind(eye), CONNECT_ONE_SHOT)
+	# Bind only the integer id to the long fuse. Capturing the eye object itself
+	# makes Godot warn when normal impact cleanup frees it before this timer.
+	get_tree().create_timer(p.life + 0.20).timeout.connect(
+		_dismiss_void_eye_by_id.bind(eye.get_instance_id()), CONNECT_ONE_SHOT)
+	return p
+
+
+func _dismiss_void_eye_by_id(eye_id: int) -> void:
+	var eye: Node2D = instance_from_id(eye_id) as Node2D
+	if eye != null and is_instance_valid(eye):
+		_dismiss_void_eye(eye)
+
+
+func _dismiss_void_eye(eye: Node2D) -> void:
+	if eye == null or not is_instance_valid(eye) or eye.get_meta("dismissing", false):
+		return
+	eye.set_meta("dismissing", true)
+	var spr := eye.get_node_or_null("Eye") as Sprite2D
+	if spr == null:
+		eye.queue_free()
+		return
+	spr.frame = 6
+	var close := spr.create_tween()
+	close.tween_interval(0.045)
+	close.tween_callback(spr.set_frame.bind(7))
+	close.tween_property(spr, "modulate:a", 0.0, 0.12)
+	close.tween_callback(eye.queue_free)
+
+
+## Play any generated eight-frame Mage strip. Frame ranges let Blink use the
+## closing and opening halves separately while keeping one authored asset.
+func _mage_sheet(tex_name: String, pos: Vector2, first: int, last: int,
+		opts := {}) -> Sprite2D:
+	var spr := Sprite2D.new()
+	spr.texture = Art.tex(tex_name)
+	spr.hframes = 8
+	spr.frame = first
+	var scl: float = opts.get("scale", 1.0)
+	spr.scale = Vector2(scl, scl)
+	spr.rotation = opts.get("rot", 0.0)
+	spr.z_index = opts.get("z", 8)
+	var alpha: float = opts.get("alpha", 1.0)
+	spr.modulate = Color(1.0, 1.0, 1.0, alpha)
+	var parent: Node = opts.get("parent", game)
+	if parent == self:
+		spr.position = pos
+	else:
+		spr.global_position = pos
+	parent.add_child(spr)
+	var frame_time: float = opts.get("frame_time", 0.045)
+	var delay: float = opts.get("delay", 0.0)
+	var hold: float = opts.get("hold", 0.0)
+	var fade: float = opts.get("fade", 0.08)
+	var step := 1 if last >= first else -1
+	var frame := first + step
+	var tw := spr.create_tween()
+	if delay > 0.0:
+		spr.modulate.a = 0.0
+		tw.tween_interval(delay)
+		tw.tween_property(spr, "modulate:a", alpha, 0.015)
+	while (frame <= last if step > 0 else frame >= last):
+		tw.tween_interval(frame_time)
+		tw.tween_callback(spr.set_frame.bind(frame))
+		frame += step
+	if hold > 0.0:
+		tw.tween_interval(hold)
+	if fade > 0.0:
+		tw.tween_property(spr, "modulate:a", 0.0, fade)
+	tw.tween_callback(spr.queue_free)
+	return spr
+
+
+func _mage_bolt_prelude(dir: Vector2, duration: float) -> void:
+	var per := maxf(0.018, duration / 7.0)
+	var pos := dir * 25.0 + Vector2(0, -Balance.PROJ_MUZZLE_RISE)
+	if skin == "crystal_archmage":
+		_mage_sheet("mage_crystal_decree", pos, 0, 7, {
+			"parent": self, "scale": 0.46, "rot": dir.angle(), "z": 9,
+			"frame_time": per, "fade": 0.04,
+		})
 
 
 func _frost_nova(f := 1.0) -> void:
@@ -86,20 +271,24 @@ func _frost_nova(f := 1.0) -> void:
 		col = Color(0.80, 0.94, 1.00)
 	var inward: bool = _tfx.get("pull", 0)
 	var fiery: bool = _tfx.get("no_knock", 0)
+	if skin == "void_weaver":
+		_void_weaver_nova_visual(radius, col)
+		_apply_nova_gameplay(f, radius, inward, fiery)
+		return
+	elif skin == "crystal_archmage":
+		_crystal_archmage_nova_visual(radius, col)
+		_apply_nova_gameplay(f, radius, inward, fiery)
+		return
 
-	# Establish the cold with a hard ground mark before its shards move: base
-	# and Crystal use ice; the Void Weaver folds a literal spatial tear.
+	# Establish the cold with a hard ground mark before its shards move.
 	var sigil := Sprite2D.new()
-	sigil.texture = Art.tex("fx_void_rift" if skin == "void_weaver" else "fx_frost_nova")
+	sigil.texture = Art.tex("fx_frost_nova")
 	sigil.modulate = Color(col, 0.9)
 	sigil.scale = Vector2.ONE * (radius / 32.0)
 	sigil.z_index = -4
 	add_child(sigil)
-	if skin == "crystal_archmage":
-		sigil.rotation = PI / 4.0
-		sigil.scale *= 1.12
 	var sigil_tw := sigil.create_tween()
-	sigil_tw.tween_property(sigil, "rotation", sigil.rotation + (0.55 if skin == "void_weaver" else -0.3), 0.32)
+	sigil_tw.tween_property(sigil, "rotation", sigil.rotation - 0.3, 0.32)
 	sigil_tw.parallel().tween_property(sigil, "modulate:a", 0.0, 0.5)
 	sigil_tw.tween_callback(sigil.queue_free)
 
@@ -160,14 +349,68 @@ func _frost_nova(f := 1.0) -> void:
 	game.burst(global_position, col, 18)
 	game.burst(global_position, Color(1, 1, 1), 8)
 
-	# A real panic button: big damage, shove everything away, slow it.
-	# (Fire ring burns instead of shoving; Wind implodes them INTO you.)
+	_apply_nova_gameplay(f, radius, inward, fiery)
+
+
+func _apply_nova_gameplay(f: float, radius: float, inward: bool, fiery: bool) -> void:
+	# Mechanics remain shared and resolve on the original cast frame regardless
+	# of how long a skin's presentation continues afterward.
 	var eff := {"slow": 0.5, "slow_dur": 2.5, "aoe": true}
 	if not (fiery or inward):
 		eff["knock"] = 340.0
-		eff["knock_no_boss"] = 1  # mobs fly; bosses never get shove-kited
+		eff["knock_no_boss"] = 1
 	for e in _enemies_within(global_position, radius):
 		hit_enemy(e, ability_coeff("a2") * f, eff.duplicate())
+
+
+func _void_weaver_nova_visual(radius: float, col: Color) -> void:
+	# The authored strip performs the whole sentence: clockwise stitches appear,
+	# the final knot closes, then the ring whips apart into needle-like strands.
+	_mage_sheet("fx/mage_void_unravel", Vector2.ZERO, 0, 7, {
+		"parent": self, "scale": 2.05 * radius / 160.0, "z": 8,
+		"frame_time": 0.038, "fade": 0.10,
+	})
+	game.hud.flash_screen(Color(col, 1.0), 0.10, 0.20)
+
+
+func _crystal_archmage_nova_visual(radius: float, col: Color) -> void:
+	# The Court rises one seat at a time, holds a complete formation, then issues
+	# its radial edict in the same order. Each prism is a real eight-frame strip.
+	for i in 8:
+		var ang := TAU * float(i) / 8.0
+		var prism := Sprite2D.new()
+		prism.texture = Art.tex("fx/mage_crystal_court_prism")
+		prism.hframes = 8
+		prism.frame = 0
+		prism.position = Vector2.from_angle(ang) * radius * 0.50
+		prism.rotation = ang
+		prism.scale = Vector2(0.46, 0.46)
+		prism.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		prism.z_index = 8
+		add_child(prism)
+		var tw := prism.create_tween()
+		tw.tween_interval(0.025 * i)
+		tw.tween_property(prism, "modulate:a", 0.96, 0.025)
+		for frame in range(1, 6):
+			tw.tween_interval(0.032)
+			tw.tween_callback(prism.set_frame.bind(frame))
+		tw.tween_interval(0.065)
+		for frame in [6, 7]:
+			tw.tween_interval(0.034)
+			tw.tween_callback(prism.set_frame.bind(frame))
+		tw.tween_property(prism, "modulate:a", 0.0, 0.11)
+		tw.tween_callback(prism.queue_free)
+	var floor_light := Sprite2D.new()
+	floor_light.texture = Art.tex("glow")
+	floor_light.global_position = global_position
+	floor_light.scale = Vector2(radius / 28.0, radius / 38.0)
+	floor_light.modulate = Color(col, 0.24)
+	floor_light.z_index = -5
+	game.add_child(floor_light)
+	var floor_tw := floor_light.create_tween()
+	floor_tw.tween_property(floor_light, "modulate:a", 0.0, 0.70)
+	floor_tw.tween_callback(floor_light.queue_free)
+	game.hud.flash_screen(Color(col, 1.0), 0.10, 0.20)
 
 
 func _blink() -> void:
@@ -182,15 +425,11 @@ func _blink() -> void:
 	# Round 45: iframe cut 0.3->0.1 (like the archer roll) — a perfect-dodge
 	# window, not a sloppy blink-through. Safety now rides the DR cloak below.
 	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), ability_coeff("a3"), eff, 0.0, rider("a3", "iframe"))
-	# Skin blinks leave a signature at the departure point: the Weaver's void
-	# folds shut behind him; the Archmage shatters into a spray of light.
-	if skin == "void_weaver":
-		_ring_fx(start, Color(0.55, 0.32, 0.95), 52.0, true)
-	elif skin == "crystal_archmage":
-		game.burst(start, Color(0.86, 0.96, 1.00), 9)
-		game.burst(start, Color(1, 1, 1), 4)
+	var finish := global_position
+	if skin in ["void_weaver", "crystal_archmage"]:
+		_mage_skin_blink_visual(start, finish)
 	# Fire leaves a burning wake on the ground; Ice a frozen one.
-	if _themed and (_tfx.has("dot") or _tfx.has("freeze_path")):
+	if skin == "" and _themed and (_tfx.has("dot") or _tfx.has("freeze_path")):
 		_floor_streak(start, global_position, _tcolor)
 	if blink_dr > 0.0:
 		# Arcane Ward (round 45): Blink no longer erases a hit — it wraps
@@ -200,6 +439,82 @@ func _blink() -> void:
 		dr_amt = blink_dr
 		game.sfx("ward", 1.0, 0.0, -3.0)
 		game.spawn_text(global_position + Vector2(0, -52), "WARD", Color(0.6, 0.9, 1.0))
+
+
+func _mage_skin_blink_visual(start: Vector2, finish: Vector2) -> void:
+	if skin == "void_weaver":
+		_void_weaver_blink_visual(start, finish)
+		return
+	var tex := "fx/mage_crystal_blink_facets"
+	var scale := 0.70
+	var raised := Vector2(0, -24)
+	# Departure plays only the closing half. Arrival waits until the body is
+	# absent, then plays only the reopening half of the same authored strip.
+	_mage_sheet(tex, start + raised, 0, 3, {
+		"scale": scale, "z": 10, "frame_time": 0.040, "fade": 0.05,
+	})
+	_mage_sheet(tex, finish + raised, 4, 7, {
+		"scale": scale, "z": 10, "frame_time": 0.040, "delay": 0.105,
+		"fade": 0.08,
+	})
+	if sprite != null and is_instance_valid(sprite):
+		sprite.modulate.a = 0.0
+	if _skin_ambient != null and is_instance_valid(_skin_ambient):
+		_skin_ambient.modulate.a = 0.0
+	get_tree().create_timer(0.145).timeout.connect(func() -> void:
+		if sprite != null and is_instance_valid(sprite):
+			sprite.modulate.a = 1.0
+		if _skin_ambient != null and is_instance_valid(_skin_ambient):
+			_skin_ambient.modulate.a = 1.0)
+
+
+func _void_weaver_blink_visual(start: Vector2, finish: Vector2) -> void:
+	# Mechanics move the body immediately, so leave a visual copy at departure
+	# long enough for the first threads to visibly wrap it before the cocoon
+	# contracts into nothing. Arrival reverses the same sheet around the hidden
+	# real body and reveals it only as the final strands unwind.
+	var ghost := Sprite2D.new()
+	if sprite != null and is_instance_valid(sprite):
+		ghost.texture = sprite.texture
+		ghost.hframes = sprite.hframes
+		ghost.vframes = sprite.vframes
+		ghost.frame = sprite.frame
+		ghost.flip_h = sprite.flip_h
+		ghost.offset = sprite.offset
+		ghost.scale = sprite.scale
+		ghost.modulate = sprite.modulate
+		ghost.material = sprite.material
+	ghost.global_position = start
+	ghost.z_index = 9
+	game.add_child(ghost)
+	var raised := Vector2(0, -42)
+	_mage_sheet("fx/mage_void_thread_wrap", start + raised, 0, 7, {
+		"scale": 0.56, "z": 10, "frame_time": 0.034, "fade": 0.05,
+	})
+	_mage_sheet("fx/mage_void_thread_wrap", finish + raised, 7, 0, {
+		# Arrival is deliberately much snappier than departure. Blink movement is
+		# already complete and input is live; a long hidden-body unwrap made a
+		# moving mage appear invisible beside a cocoon left at the landing.
+		"scale": 0.56, "z": 10, "frame_time": 0.018, "delay": 0.07,
+		"fade": 0.05,
+	})
+	if sprite != null and is_instance_valid(sprite):
+		# player.gd refreshes modulate for hurt feedback every frame, so alpha
+		# cannot own this disappearance window. Visibility stays authoritative.
+		sprite.visible = false
+	if _skin_ambient != null and is_instance_valid(_skin_ambient):
+		_skin_ambient.modulate.a = 0.0
+	get_tree().create_timer(0.095).timeout.connect(func() -> void:
+		if is_instance_valid(ghost):
+			ghost.queue_free())
+	# Reveal as soon as the destination cocoon starts opening. The remaining
+	# frames play over the body as a presentation overlay, never as an input or
+	# movement penalty tied to this skin.
+	get_tree().create_timer(0.075).timeout.connect(func() -> void:
+		if sprite != null and is_instance_valid(sprite):
+			sprite.visible = true
+		if _skin_ambient != null and is_instance_valid(_skin_ambient):
+			_skin_ambient.modulate.a = 1.0)
 
 
 func _meteor() -> void:
@@ -268,6 +583,12 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 		col = Color(0.60, 0.36, 0.96)
 	elif skin == "crystal_archmage":
 		col = Color(0.78, 0.92, 1.00)
+	if skin == "void_weaver":
+		_void_weaver_ult_scene(pos, scale, on_land, fx_copy, col)
+		return
+	elif skin == "crystal_archmage":
+		_crystal_archmage_ult_scene(pos, scale, on_land, fx_copy, col)
+		return
 
 	# Growing impact shadow on the ground — you can feel it coming.
 	var mark := Sprite2D.new()
@@ -278,14 +599,17 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 	mark.z_index = -6
 	game.add_child(mark)
 	var mark_tw := mark.create_tween()
-	mark_tw.tween_property(mark, "scale", Vector2(4.6, 4.6), 0.62)
+	var base_radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
+	var exact_mark_scale := base_radius / 32.0
+	mark_tw.tween_property(mark, "scale", Vector2.ONE * exact_mark_scale, 0.62)
 
-	# The meteor itself: big, burning, with a particle trail.
+	# The base meteor itself: big, burning, with a particle trail. Skin scenes
+	# returned above and never share this body or its impact language.
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex("meteor_down")
 	# This is the mage's signature impact: three times the former comet scale.
 	spr.scale = Vector2(7.2, 7.2)
-	spr.modulate = Art.hdr(col)  # the comet head burns past white — it blooms
+	spr.modulate = Art.hdr(col)
 	# Vertical asset and vertical travel: the rock now falls straight down.
 	spr.global_position = pos + Vector2(0, -460)
 	spr.z_index = 30
@@ -307,17 +631,6 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 			ember_tw.tween_property(ember, "scale", Vector2(0.7, 2.8), 0.32)
 			ember_tw.parallel().tween_property(ember, "modulate:a", 0.0, 0.38)
 			ember_tw.tween_callback(ember.queue_free))
-	# Skin comets carry their magic as a distinct companion mark: a folding
-	# rift for the Weaver and a spinning crystal seal for the Archmage.
-	if skin == "void_weaver" or skin == "crystal_archmage":
-		var core_mark := Sprite2D.new()
-		core_mark.texture = Art.tex("fx_void_rift" if skin == "void_weaver" else "fx_frost_nova")
-		core_mark.modulate = Color(col, 0.8)
-		core_mark.scale = Vector2(0.55, 0.55)
-		core_mark.z_index = -1
-		spr.add_child(core_mark)
-		var cm_tw := core_mark.create_tween()
-		cm_tw.tween_property(core_mark, "rotation", TAU * (-1.0 if skin == "void_weaver" else 1.0), 0.5)
 	var trail := CPUParticles2D.new()
 	trail.amount = 26
 	trail.lifetime = 0.5
@@ -340,12 +653,6 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 		game.shake(14.0)
 		var impact_flash := Color(1.0, 0.75, 0.4)
 		var impact_pop := Color(1.0, 0.9, 0.5)
-		if skin == "void_weaver":
-			impact_flash = Color(0.50, 0.30, 0.85)
-			impact_pop = Color(0.78, 0.60, 1.00)
-		elif skin == "crystal_archmage":
-			impact_flash = Color(0.75, 0.90, 1.00)
-			impact_pop = Color(0.92, 0.98, 1.00)
 		game.hud.flash_screen(impact_flash, 0.55, 0.35)
 		game.burst(pos, col, 30)
 		game.burst(pos, impact_pop, 16)
@@ -381,3 +688,246 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 			on_land.call()
 		_tfx = saved
 	)
+
+
+func _mage_ult_mark(pos: Vector2, col: Color, radius: float) -> Sprite2D:
+	# Retain a quiet hit-area telegraph for combat readability; the authored
+	# sequence above it owns the fantasy and never changes the real radius.
+	var mark := Sprite2D.new()
+	mark.texture = Art.tex("telegraph")
+	mark.global_position = pos
+	mark.modulate = Color(col, 0.30)
+	mark.scale = Vector2(1.0, 1.0)
+	mark.z_index = -6
+	game.add_child(mark)
+	var tw := mark.create_tween()
+	# The procedural telegraph is exactly 64px wide: radius / 32 puts its rim
+	# on the literal gameplay-radius boundary rather than merely near it.
+	var exact_scale := radius / 32.0
+	tw.tween_property(mark, "scale", Vector2.ONE * exact_scale, 0.62)
+	return mark
+
+
+func _void_weaver_ult_scene(pos: Vector2, hit_scale: float, on_land: Callable,
+		fx_copy: Dictionary, col: Color) -> void:
+	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
+	var mark := _mage_ult_mark(pos, col, radius)
+	mark.modulate = Color(0.58, 0.18, 0.94, 0.50)
+	var floor_light := Sprite2D.new()
+	floor_light.texture = Art.tex("glow")
+	floor_light.global_position = pos
+	var light_scale := radius / 24.0
+	floor_light.scale = Vector2.ONE * light_scale * 0.50
+	floor_light.modulate = Color(0.50, 0.10, 0.90, 0.22)
+	floor_light.z_index = -5
+	game.add_child(floor_light)
+	var light_up := floor_light.create_tween()
+	light_up.tween_property(floor_light, "scale", Vector2.ONE * light_scale, 0.32) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	light_up.parallel().tween_property(floor_light, "modulate:a", 0.52, 0.26)
+	light_up.tween_interval(0.22)
+	light_up.tween_property(floor_light, "modulate:a", 0.0, 0.30)
+	light_up.tween_callback(floor_light.queue_free)
+
+	# One side-on strip only paints a wall across the far half of a top-down
+	# circle. Lay five copies across circular chords instead: narrow at the back
+	# and front, widest through the victim's feet. Together they fill the literal
+	# telegraph footprint without changing the one real radius or damage query.
+	var depth_bands := [-0.72, -0.36, 0.0, 0.36, 0.72]
+	for band_index in depth_bands.size():
+		_spawn_void_thread_band(pos, radius, depth_bands[band_index], band_index)
+	get_tree().create_timer(0.62).timeout.connect(func() -> void:
+		if is_instance_valid(mark):
+			mark.queue_free()
+		_resolve_mage_skin_ult(pos, hit_scale, on_land, fx_copy, col, "void"))
+
+
+func _spawn_void_thread_band(center: Vector2, radius: float,
+		depth_fraction: float, band_index: int) -> void:
+	var chord_factor := sqrt(maxf(0.0, 1.0 - depth_fraction * depth_fraction))
+	var diameter := radius * 2.0
+	# At the ripping peak the authored visible field is ~224px wide inside its
+	# 256px cell. Scale that content—not its transparent frame—to the circle's
+	# exact chord at this depth.
+	var scale_x := diameter * chord_factor / 224.0
+	# Five full-height copies become an opaque curtain. Half-height bands still
+	# rip well above combatants, but leave their separate ground origins readable.
+	var scale_y := diameter / 256.0 * 0.52 * lerpf(0.82, 1.0, chord_factor)
+	var ground := center + Vector2(0.0, depth_fraction * radius)
+	var eruption := Sprite2D.new()
+	eruption.texture = Art.tex("fx/mage_void_thread_eruption")
+	eruption.hframes = 8
+	eruption.frame = 0
+	eruption.scale = Vector2(scale_x, scale_y)
+	# Row 210 is the sheet's dense woven root line. Anchor that row—not the
+	# transparent 256px cell edge—to this ground chord so threads visibly erupt
+	# from beneath combatants instead of floating above their heads.
+	eruption.global_position = ground + Vector2(0.0, -82.0 * scale_y)
+	eruption.flip_h = band_index % 2 == 1
+	var band_alpha := 0.78 if band_index == 2 else (0.62 if band_index in [1, 3] else 0.46)
+	eruption.modulate = Color(1.0, 1.0, 1.0, band_alpha)
+	eruption.z_index = -4
+	game.add_child(eruption)
+	var rip := eruption.create_tween()
+	rip.tween_interval(0.30)
+	rip.tween_callback(eruption.set_frame.bind(1))
+	rip.tween_interval(0.07)
+	rip.tween_callback(func() -> void:
+		eruption.z_index = 11 + band_index
+		eruption.frame = 2)
+	for frame in [3, 4, 5]:
+		rip.tween_interval(0.052)
+		rip.tween_callback(eruption.set_frame.bind(frame))
+	# Hold the ripping peak across the real 0.62s damage frame, then retract.
+	rip.tween_interval(0.11)
+	rip.tween_callback(eruption.set_frame.bind(6))
+	rip.tween_interval(0.06)
+	rip.tween_callback(eruption.set_frame.bind(7))
+	rip.tween_property(eruption, "modulate:a", 0.0, 0.20)
+	rip.tween_callback(eruption.queue_free)
+
+
+func _crystal_archmage_ult_scene(pos: Vector2, hit_scale: float,
+		on_land: Callable, fx_copy: Dictionary, col: Color) -> void:
+	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
+	var mark := _mage_ult_mark(pos, col, radius)
+	var witnesses: Array[Sprite2D] = []
+	for i in 4:
+		var ang := -PI / 2.0 + TAU * float(i) / 4.0
+		var witness := Sprite2D.new()
+		witness.texture = Art.tex("fx/mage_crystal_court_prism")
+		witness.hframes = 8
+		witness.frame = 0
+		witness.global_position = pos + Vector2.from_angle(ang - 0.42) * 106.0
+		witness.rotation = ang
+		witness.scale = Vector2(0.48, 0.48)
+		witness.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		witness.z_index = 10
+		game.add_child(witness)
+		witnesses.append(witness)
+		var rise := witness.create_tween()
+		rise.tween_interval(0.026 * i)
+		rise.tween_property(witness, "modulate:a", 0.94, 0.045)
+		rise.parallel().tween_property(witness, "global_position",
+			pos + Vector2.from_angle(ang) * 86.0, 0.20).set_trans(Tween.TRANS_CUBIC)
+		for frame in range(1, 5):
+			rise.tween_interval(0.030)
+			rise.tween_callback(witness.set_frame.bind(frame))
+	# Once the witnesses snap into formation, light-lines establish the seal and
+	# every bright facet turns inward at the same instant.
+	get_tree().create_timer(0.245).timeout.connect(func() -> void:
+		_crystal_court_seal(pos, 86.0)
+		for i in witnesses.size():
+			var witness := witnesses[i]
+			if witness != null and is_instance_valid(witness):
+				witness.frame = 5
+				witness.rotation = -PI / 2.0 + TAU * float(i) / 4.0 + PI)
+
+	var judgment := Sprite2D.new()
+	judgment.texture = Art.tex("fx/mage_crystal_judgment")
+	judgment.hframes = 8
+	judgment.frame = 0
+	judgment.global_position = pos + Vector2(0, -245)
+	judgment.scale = Vector2(0.92, 0.92)
+	judgment.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	judgment.z_index = 28
+	game.add_child(judgment)
+	var assemble := judgment.create_tween()
+	assemble.tween_interval(0.225)
+	assemble.tween_property(judgment, "modulate:a", 0.96, 0.020)
+	for frame in range(1, 8):
+		assemble.tween_interval(0.050)
+		assemble.tween_callback(judgment.set_frame.bind(frame))
+	var descend := judgment.create_tween()
+	descend.tween_interval(0.225)
+	descend.tween_property(judgment, "global_position", pos, 0.395) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	descend.tween_callback(func() -> void:
+		judgment.queue_free()
+		for witness in witnesses:
+			if witness != null and is_instance_valid(witness):
+				witness.queue_free()
+		if is_instance_valid(mark):
+			mark.queue_free()
+		_resolve_mage_skin_ult(pos, hit_scale, on_land, fx_copy, col, "crystal"))
+
+
+func _crystal_court_seal(pos: Vector2, radius: float) -> void:
+	var points := PackedVector2Array()
+	for i in 4:
+		points.append(pos + Vector2.from_angle(-PI / 2.0 + TAU * float(i) / 4.0) * radius)
+	var outline := Line2D.new()
+	outline.points = points
+	outline.closed = true
+	outline.width = 1.7
+	outline.default_color = Color(0.78, 0.94, 1.0, 0.74)
+	outline.z_index = -1
+	game.add_child(outline)
+	var cross_a := Line2D.new()
+	cross_a.points = PackedVector2Array([points[0], points[2]])
+	cross_a.width = 1.0
+	cross_a.default_color = Color(0.90, 0.98, 1.0, 0.50)
+	cross_a.z_index = -1
+	game.add_child(cross_a)
+	var cross_b := Line2D.new()
+	cross_b.points = PackedVector2Array([points[1], points[3]])
+	cross_b.width = 1.0
+	cross_b.default_color = Color(0.90, 0.98, 1.0, 0.50)
+	cross_b.z_index = -1
+	game.add_child(cross_b)
+	for line in [outline, cross_a, cross_b]:
+		var fade: Tween = line.create_tween()
+		fade.tween_interval(0.27)
+		fade.tween_property(line, "modulate:a", 0.0, 0.10)
+		fade.tween_callback(line.queue_free)
+
+
+func _resolve_mage_skin_ult(pos: Vector2, hit_scale: float, on_land: Callable,
+		fx_copy: Dictionary, col: Color, kind: String) -> void:
+	game.sfx("meteor")
+	game.shake(14.0)
+	if kind == "void":
+		game.hud.flash_screen(Color(0.50, 0.20, 0.88), 0.18, 0.22)
+	else:
+		game.hud.flash_screen(Color(0.75, 0.90, 1.0), 0.27, 0.30)
+		_crystal_judgment_roots(pos)
+	game.burst(pos, col, 10)
+	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
+	var saved := _tfx
+	_tfx = fx_copy
+	for e in _enemies_within(pos, radius):
+		var eff := fx_copy.duplicate()
+		eff["burn"] = current_atk() * 0.4 * float(fx_copy.get("burn_mult", 1.0)) * hit_scale
+		eff["aoe"] = true
+		if fx_copy.has("freeze"):
+			eff["stun"] = float(fx_copy["freeze"])
+		eff["true_frac"] = ability_true_frac("ult")
+		hit_enemy(e, ability_coeff("ult") * float(fx_copy.get("dmg_mult", 1.0)) * hit_scale, eff)
+	if on_land.is_valid():
+		on_land.call()
+	_tfx = saved
+
+
+func _crystal_judgment_roots(pos: Vector2) -> void:
+	# Controlled lances answer the verdict in a ring, then retract instead of
+	# lingering as terrain clutter.
+	for i in 8:
+		var ang := TAU * float(i) / 8.0
+		var lance := Sprite2D.new()
+		lance.texture = Art.tex("fx/mage_crystal_court_prism")
+		lance.hframes = 8
+		lance.frame = 4
+		lance.global_position = pos + Vector2.from_angle(ang) * 76.0
+		lance.rotation = ang + PI / 2.0
+		lance.scale = Vector2(0.12, 0.12)
+		lance.modulate = Color(0.88, 0.98, 1.0, 0.94)
+		lance.z_index = 11
+		game.add_child(lance)
+		var rise := lance.create_tween()
+		rise.tween_interval(0.018 * i)
+		rise.tween_property(lance, "scale", Vector2(0.46, 0.46), 0.11) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		rise.tween_interval(0.10)
+		rise.tween_property(lance, "scale", Vector2(0.08, 0.08), 0.20)
+		rise.parallel().tween_property(lance, "modulate:a", 0.0, 0.20)
+		rise.tween_callback(lance.queue_free)

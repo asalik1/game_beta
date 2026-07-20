@@ -181,7 +181,11 @@ func _tumble() -> void:
 	var origin := global_position
 	var dvec := dash_vec()
 	if skin == "voidwraith":
-		await _voidwraith_phase_tumble(origin, dvec)
+		# The portal sequence is presentation only. Relocate on the exact base
+		# Tumble frame and let its departure/arrival beats continue asynchronously.
+		global_position = game.clamp_to_zone(origin + dvec * 130.0, origin)
+		_aim_dash_pose(dvec)
+		_voidwraith_phase_tumble(origin, global_position, dvec)
 	else:
 		global_position = game.clamp_to_zone(origin + dvec * 130.0, origin)
 		_aim_dash_pose(dvec)  # before the trail below, so the ghosts copy the pose
@@ -271,8 +275,7 @@ func _frost_snowflake_fade(pos: Vector2, parent: Node, size: float, rot: float,
 	fade.tween_callback(flake.queue_free)
 
 
-func _voidwraith_phase_tumble(origin: Vector2, dvec: Vector2) -> void:
-	var destination := game.clamp_to_zone(origin + dvec * 130.0, origin)
+func _voidwraith_phase_tumble(origin: Vector2, destination: Vector2, dvec: Vector2) -> void:
 	# The dash clip contributes only its departure frame. The portal ruptures
 	# behind it while the body rapidly vanishes; no travelling body/afterimages.
 	if strip_frames > 0:
@@ -289,26 +292,24 @@ func _voidwraith_phase_tumble(origin: Vector2, dvec: Vector2) -> void:
 	if _skin_ambient != null:
 		var ambient_out := _skin_ambient.create_tween()
 		ambient_out.tween_property(_skin_ambient, "modulate:a", 0.0, 0.055)
-	await get_tree().create_timer(0.085).timeout
-	global_position = destination
-	_aim_dash_pose(dvec)
-	# Destination begins closed, ruptures around the final dash frame, and the
-	# body snaps back into visibility while the eye is fully open.
-	if strip_frames > 0:
-		strip_t = maxf(0.0, float(strip_frames - 1) / maxf(strip_fps, 1.0))
-		sprite.frame = strip_frames - 1
-	_fx_flash("void_eye_portal", destination + Vector2(0, -24), 8, {
-		"scale": 1.12, "z": 9, "frame_time": 0.035, "fade": 0.08,
-	})
-	await get_tree().create_timer(0.09).timeout
-	var appear := sprite.create_tween()
-	appear.tween_property(sprite, "modulate:a", 1.0, 0.055)
-	if weapon_spr != null:
-		var weapon_in := weapon_spr.create_tween()
-		weapon_in.tween_property(weapon_spr, "modulate:a", 1.0, 0.055)
-	if _skin_ambient != null:
-		var ambient_in := _skin_ambient.create_tween()
-		ambient_in.tween_property(_skin_ambient, "modulate:a", 1.0, 0.055)
+	# Schedule the reappearance without awaiting it. Nothing below this visual
+	# helper can delay Tumble's riders, damage burst, recovery, or next input.
+	get_tree().create_timer(0.085).timeout.connect(func() -> void:
+		if strip_frames > 0:
+			strip_t = maxf(0.0, float(strip_frames - 1) / maxf(strip_fps, 1.0))
+			sprite.frame = strip_frames - 1
+		_fx_flash("void_eye_portal", destination + Vector2(0, -24), 8, {
+			"scale": 1.12, "z": 9, "frame_time": 0.035, "fade": 0.08,
+		})
+		get_tree().create_timer(0.09).timeout.connect(func() -> void:
+			var appear := sprite.create_tween()
+			appear.tween_property(sprite, "modulate:a", 1.0, 0.055)
+			if weapon_spr != null:
+				var weapon_in := weapon_spr.create_tween()
+				weapon_in.tween_property(weapon_spr, "modulate:a", 1.0, 0.055)
+			if _skin_ambient != null:
+				var ambient_in := _skin_ambient.create_tween()
+				ambient_in.tween_property(_skin_ambient, "modulate:a", 1.0, 0.055)))
 
 
 func _storm_target_center() -> Vector2:
@@ -396,11 +397,11 @@ func _frost_lance_drop(ground: Vector2, primary: bool) -> void:
 	lance.z_index = 30 if primary else 21
 	game.add_child(lance)
 	var fall := lance.create_tween()
-	fall.tween_property(lance, "global_position:y", ground.y, 0.13 if primary else 0.17) \
+	fall.tween_property(lance, "global_position:y", ground.y, 0.11 if primary else 0.17) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	fall.tween_callback(lance.queue_free)
 	if primary:
-		get_tree().create_timer(0.13).timeout.connect(func() -> void:
+		get_tree().create_timer(0.11).timeout.connect(func() -> void:
 			_fx_flash("frost_snowflake_cast", ground, 8, {
 				"scale": 0.58, "z": 24, "frame_time": 0.022, "fade": 0.06,
 			})
@@ -443,7 +444,6 @@ func _voidwraith_storm_scene() -> void:
 			old_tentacle.queue_free()
 	void_tentacles.clear()
 	void_tentacle_cursor = 0
-	void_target_cursor = 0
 	var idle_tex := Art.tex("fx/void_tentacle_idle")
 	var attack_tex := Art.tex("fx/void_tentacle_attack")
 	var root_radius := 92.0
@@ -528,22 +528,18 @@ func _storm_strike() -> void:
 		_apply_archer_storm_hit(e)
 		return
 	if skin == "voidwraith":
-		# Cycle targets rather than randomly dog-piling one victim. The six
-		# independently rooted actors take turns, so the full circle attacks all
-		# enemies inside the same 560px Arrow Storm acquisition range.
-		var void_targets := _enemies_within(global_position, 560.0)
-		if void_targets.is_empty():
-			return
-		e = void_targets[void_target_cursor % void_targets.size()]
-		void_target_cursor += 1
+		# Keep the target selected by the shared base Arrow Storm logic above and
+		# resolve damage on this exact tick. Tentacle contact is only an impact FX;
+		# it cannot retarget the storm or move damage later on the skin's timeline.
 		game.sfx("stab", 0.72, 0.0, -4.0)
+		_apply_archer_storm_hit(e)
 		if not void_tentacles.is_empty():
 			var tentacle = void_tentacles[void_tentacle_cursor % void_tentacles.size()]
 			void_tentacle_cursor += 1
 			if is_instance_valid(tentacle):
-				tentacle.strike(e, _void_tentacle_contact)
+				tentacle.strike(e, _void_tentacle_contact_fx)
 				return
-		_void_tentacle_contact(e)
+		_void_tentacle_contact_fx(e)
 		return
 	# Falling-arrow whoosh (deep-pitched), NOT the synth laser zap.
 	game.sfx("knife", 0.75)
@@ -597,9 +593,8 @@ func _apply_archer_storm_hit(enemy: Enemy) -> void:
 	_tfx = saved
 
 
-func _void_tentacle_contact(enemy: Enemy) -> void:
+func _void_tentacle_contact_fx(enemy: Enemy) -> void:
 	if not is_instance_valid(enemy):
 		return
 	game.burst(enemy.global_position, Color(0.66, 0.36, 1.0), 7)
 	_ring_fx(enemy.global_position, Color(0.48, 0.18, 0.78), 34.0)
-	_apply_archer_storm_hit(enemy)
