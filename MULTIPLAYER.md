@@ -19,7 +19,7 @@ opt-in online co-op (2–4 players clearing chapters together) while leaving sol
 | Saves | Host's save owns the world (flags, rooms, seed). Guests bring their own character and take home XP/gold/gems/gear + chapter-completion credit |
 | Can I hand friends an .exe? | **Yes.** Godot exports are royalty-free (MIT). No Steam needed. See §7 |
 | Mobile port (future) | Same netcode compiles for Android/iOS. The noray/ENet path is **kept after the Steam swap** — it's the cross-play transport for mobile (§3.2, §10) |
-| Scope guard | `mobile/` stays frozen. All work in `game/`. MMO and mobile ambitions inform the architecture but are NOT this milestone |
+| Scope guard | All work in `game/`; `mobile/` was frozen for this milestone (since unfrozen 2026-07-15 — see `CLAUDE.md`). MMO and mobile ambitions inform the architecture but are NOT this milestone |
 
 ---
 
@@ -436,23 +436,12 @@ bench with a party-size dummy preset), correct, and log rounds in `BALANCE_HISTO
 
 ## 7. Distribution without Steam — "can I just give friends the .exe?"
 
-**Yes, unconditionally.** Godot is MIT-licensed: exported games are royalty-free and yours to give
-to anyone, commercially or privately, no Steam or any storefront required. Only obligation: include
-Godot's copyright + MIT notice in the credits (we already ship a credits file — add the engine
-notice there).
-
-Practicalities:
-- **Ship a .zip** (exe + .pck), tell friends to extract before running.
-- **SmartScreen will warn once per build** ("Windows protected your PC") because the exe is
-  unsigned and unknown: the fix is *More info → Run anyway*, once. Tell them in the same message as
-  the lobby code. If an AV heuristic quarantines it (occasionally happens to Godot exports), submit
-  the false positive to Microsoft — or don't bother during the friends phase.
-- **Connectivity is solved by noray, not by the exe** — no port forwarding or router surgery for
-  anyone; host reads out the lobby code, friends type it. Works behind CGNAT (relay fallback).
-- If distribution widens before Steam: Azure Artifact Signing (né Trusted Signing) is ~$10/mo and
-  open to individuals — signing shows a publisher name and speeds reputation, though even signed
-  builds start cold with SmartScreen. On Steam the whole problem vanishes (Steam-installed games
-  don't hit SmartScreen).
+**Yes, unconditionally** — Godot exports are royalty-free (MIT) and need no storefront; noray
+solves connectivity so there's no port forwarding. The full playbook — cutting the build,
+what goes in the zip, the SmartScreen/antivirus escalation ladder, the noray posture, and the
+Godot/netfox license notices — is **[`DISTRIBUTION.md`](DISTRIBUTION.md)** (the owner's shipping
+doc). It is the single home for those mechanics; this section only flags that co-op needs no
+special distribution beyond what's there.
 
 ---
 
@@ -523,7 +512,8 @@ This plan deliberately builds the three seams the future needs and nothing more:
    a headless Linux dedicated-server export becomes a deployment choice. That's the bridge from
    listen-server co-op to persistent shared worlds — at which point the backend conversation is
    W4 Cloud (AGPL, Godot-native, by Godot's founders) or Nakama, and nothing built here is thrown
-   away.
+   away. *(This seam has since been exercised end-to-end — headless world authority + world
+   persistence are built and documented in [`DEDICATED_SERVER.md`](DEDICATED_SERVER.md).)*
 3. **Data seam** (character/world save split): "your character travels between worlds" is already
    the MMO's data model in miniature — same split, bigger world registry.
 
@@ -532,8 +522,8 @@ Android/iOS, so a mobile build joins the same sessions through the same NetworkM
 transport seam is the cross-play plan (§3.2), not a parallel stack. Specifics to hold in mind now,
 so the port inherits multiplayer instead of retrofitting it:
 
-- **Build parity is enforced automatically.** The `NET_VERSION` handshake (§3.4) fences the frozen
-  `mobile/` snapshot out of live sessions by construction — cross-play requires re-cutting the
+- **Build parity is enforced automatically.** The `NET_VERSION` handshake (§3.4) fences any
+  `mobile/` build out of live sessions by construction — cross-play requires re-cutting the
   mobile snapshot from the same revision as the desktop build, which is the existing porting model
   anyway (snapshot copy of `game/`). No skew can half-join.
 - **Phones join; desktops host.** A listen server on a phone dies to screen-lock, thermal

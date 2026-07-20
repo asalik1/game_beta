@@ -1,9 +1,11 @@
 # Crownless — Chapter 1: The Hollow King
 
-Second iteration of the MMO project: a **solo, story-driven action RPG**
-with classes, gear, loot chests, merchants and a skill tree.
-You play Aldric, last of the Ember Guard, fighting through three zones and
-three bosses to reclaim the stolen Ember Crown.
+Second iteration of the MMO project: a **story-driven action RPG** (single-player,
+with opt-in 2–4 player co-op) featuring classes, gear, loot chests, merchants
+and a skill tree.
+You play a newly-awakened shard-bearer — one of the shattered Ember Crown's
+fragments has caught in you — fighting through three zones and three bosses as
+the tyrant Vargoth climbs out of his keep a second time.
 
 Built with **Godot 4.4** (free, open source — no fees ever, unlike Unity),
 which exports to **Windows/Steam and Android** from the same project.
@@ -37,11 +39,12 @@ Combat is **keyboard only**: your abilities auto-aim at the nearest enemy
 
 ## ⚔ The systems
 
-- **4 classes** — Warrior (STR), Archer (AGI), Mage (INT), Assassin (AGI) —
-  each with 3 basics + 1 ultimate and a class passive.
-- **Themes** — every class has 3 elemental playstyles (Assassin:
-  Poison/Shadow/Blood; Mage: Fire/Ice/Wind; Warrior: Fury/Bulwark/Earth;
-  Archer: Storm/Venom/Hunt), unlocked as you level. **Each ability can be
+- **6 classes** — Warrior (STR), Paladin (STR/holy), Archer (AGI), Assassin (AGI),
+  Mage (INT), Warlock (INT) — each with 3 basics + 1 ultimate and a class passive.
+- **Themes** — every class has 3 elemental playstyles (Warrior:
+  Fury/Bulwark/Earth; Paladin: Holy/Aegis/Wrath; Assassin: Poison/Shadow/Blood;
+  Archer: Storm/Venom/Hunt; Mage: Fire/Ice/Wind; Warlock: Curse/Pact/Void),
+  unlocked as you level. **Each ability can be
   assigned any unlocked theme independently** — poison Stab with shadow
   Shadowstep is a build. Themes change behavior: DoTs, roots, echo hits,
   crit riders, self-buffs.
@@ -111,7 +114,7 @@ Combat is **keyboard only**: your abilities auto-aim at the nearest enemy
 
 - **`game/`** — the whole Godot project.
   - `scripts/story.gd` — **all dialogue, quests, zones, enemy stats.**
-  - `scripts/classes.gd` — the 4 classes, their abilities and evolutions.
+  - `scripts/classes.gd` — the 6 classes, their abilities and evolutions.
   - `scripts/items.gd` — gear grades, chest tiers, random stat rolls, prices.
   - `scripts/skills.gd` — the skill tree nodes.
   - `scripts/art.gd` — every sprite, drawn as a grid of characters (one char =
@@ -136,24 +139,30 @@ MIT-licensed. See `game/assets/sprites/CREDITS.txt`.
 
 ## 🗺 Roadmap (how this becomes the MMO)
 
-1. **Done**: solo storyline, 3 bosses, 4 classes + themes, gear/loot,
+1. **Done — solo core**: story campaign, bosses, 6 classes + themes, gear/loot,
    skill tree, merchants, keybinding, auto-aim keyboard combat, 14 terrains,
    monster level scaling, **save games** (autosaved to `user://save_<n>.json`
    on story progress / zone changes / menu closes; title screen lists saved
    heroes with continue + delete; up to 6 characters).
-2. **Phase 1** (see `DESIGN.md` Phase Plan): choice dialogue + Resonance,
-   class openings, Paladin + Warlock, two joinable factions, Chapter 2.
-3. **Polish**: real sprite sheets with walk/attack animations (swap the pixel
-   grids in `art.gd` — e.g. free CC0 packs from kenney.nl or itch.io),
-   more zones and quests.
-3. **Steam**: in the Godot editor: *Project → Export → Windows Desktop* gives
-   you an `.exe`; upload via Steamworks (one-time $100 Steam Direct fee).
-4. **Android**: *Project → Export → Android* (needs the free Android SDK once;
-   Godot walks you through it). Add a virtual joystick for touch.
-5. **Multiplayer**: Godot has built-in high-level multiplayer
-   (`MultiplayerSpawner` / `MultiplayerSynchronizer`). Start co-op (2–4
-   friends, one player hosts), then dedicated servers. A true MMO server is a
-   much bigger project — co-op first is the proven path.
+2. **Done — Phase 1** (see `DESIGN.md` Phase Plan, shipped 2026-07-04): choice
+   dialogue + Resonance, cinematic class openings, Paladin + Warlock, two
+   joinable factions (Ember Accord / Cinderborn), Chapter 2.
+3. **Done — co-op** (see `MULTIPLAYER.md`, shipped 2026-07-10): opt-in 2–4
+   player sessions via lobby codes — host-authoritative combat, instanced loot,
+   downed/revive, party UI. Built on Godot's high-level multiplayer
+   (`MultiplayerSpawner` / `MultiplayerSynchronizer`).
+4. **In progress — art & content depth**: real sprite sheets with walk/attack
+   animations replacing code-drawn art (drop CC0/CC-BY PNGs into
+   `game/assets/sprites/`), difficulty tiers, and deeper Act 2–3 content.
+5. **Steam**: *Project → Export → Windows Desktop* gives you an `.exe`; upload
+   via Steamworks (one-time $100 Steam Direct fee). `SteamMultiplayerPeer` drops
+   in behind the netcode — lobby codes become Steam invites.
+6. **Mobile**: the Android/iOS port core is built (`mobile/`); GitHub Actions
+   ("Mobile builds") produces a signed-debug APK and an unsigned iOS `.ipa`,
+   both sideload-proven on-device. See `mobile/README.md` and `DISTRIBUTION.md`.
+7. **MMO server**: a true persistent server is a much bigger project — co-op
+   first was the proven path; a dedicated headless server is a later deployment
+   change, not a rewrite (see `DEDICATED_SERVER.md`).
 
 ## 💡 Tips for a beginner
 

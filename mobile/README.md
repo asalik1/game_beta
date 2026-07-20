@@ -199,8 +199,11 @@ at 21 (a custom min like API 26 needs `use_gradle_build=true`).
 - **Android Play Store `.aab`:** flip `gradle_build/use_gradle_build=true` +
   `export_format=1`, install the Godot **Android build template**, then a Google
   Play dev account ($25 one-time) + a **release** keystore (keep it forever).
-- **iOS `.ipa`:** a Mac with Xcode, an Apple Developer account ($99/yr), and a
-  signing identity + provisioning profile filled into the iOS preset.
+- **iOS `.ipa` (App Store / friends' phones):** a Mac with Xcode, an Apple
+  Developer account ($99/yr), and a signing identity + provisioning profile
+  filled into the iOS preset. *(To run it on **your own** iPhone for free — no
+  Mac, no $99 — use the cloud-build + free-Apple-ID sideload route, which is the
+  single home for that walkthrough: [`IOS_SIDELOAD.md`](../IOS_SIDELOAD.md).)*
 - **Store listings:** app icons/splash in all sizes, privacy policy, content
   rating questionnaires, Play Console + App Store Connect entries.
 

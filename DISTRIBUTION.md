@@ -166,9 +166,10 @@ Nothing here needs a rewrite to reach the next milestones — the seams exist by
   Read **MULTIPLAYER.md §3.2** ("Later (Steam)") and **§10 (1)**.
 - **Mobile port** — the same netcode compiles for Android/iOS and joins the same sessions via
   the same noray path (the noray/ENet transport is kept *permanently* as the cross-play seam,
-  even after the Steam swap). The `NET_VERSION` handshake fences the frozen `mobile/` snapshot
-  out of live sessions until it's re-cut from the same revision. **§10** — and remember
-  `mobile/` stays frozen (`CLAUDE.md`) until you explicitly greenlight mobile work.
+  even after the Steam swap). The `NET_VERSION` handshake fences any `mobile/` build
+  out of live sessions until it's re-cut from the same revision. **§10** — and note that
+  `mobile/` is now kept in sync with `game/` (unfrozen 2026-07-15; `CLAUDE.md`); a live mobile
+  session just needs a build re-cut from the current revision with a matching `NET_VERSION`.
 - **Dedicated server / MMO** — every gameplay branch keys on `multiplayer.is_server()`, never
   "am I player 1," so a headless server is a deployment change, not a redesign. **§10 (2–3)**.
 

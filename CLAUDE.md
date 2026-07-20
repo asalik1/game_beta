@@ -20,7 +20,7 @@
 2. Iterate with `test_quick.bat` (~15s): gate → boot → one class kit → systems → UI smoke → pause menu.
 3. `test.bat` (full suite, minutes; plays both chapters end to end) must be green before staging.
 
-## GDScript traps (each has bitten us)
+## GDScript traps (each has bitten us) — review-time deep list: `CODING_GUIDELINES.md` §38
 - `var x := obj.method()` on a loosely-typed obj (or any Variant expression, e.g. `Dictionary.get`) = PARSE ERROR "cannot infer type". Annotate: `var x: float = ...`.
 - New `class_name` → `--import` first or headless silently hangs.
 - Labels inside HBoxContainer collapse to one char per line without `custom_minimum_size`.
@@ -46,11 +46,11 @@
 - Install flow: probe/download, and LOOK at the image (or listen to the audio) before installing; overrides drop into `assets/sounds|music|sprites/` by name (a PNG/wav there overrides the procedural version of the same name).
 - Audio taste: semantic fit over quality; no melodic-jingle chiptunes for ults/terrains; never human grunts on casts; never touch `ult_mage.wav` or the village/story/boss synth tracks.
 
-## PixelLab characters — regenerating an EXISTING one
+## PixelLab characters — regenerating an EXISTING one (deep dive: `tools/art/PIXELLAB_BOSS_EDITS.md`)
 - **RULE: before you regenerate, re-roll, or tweak an existing PixelLab character (boss/hero/skin), ALWAYS read its export metadata FIRST.** Download the zip (`curl -H "Authorization: Bearer $PIXELLAB_SECRET" https://api.pixellab.ai/mcp/characters/<id>/download -o out.zip`) and read `metadata.json` — it stores the ORIGINAL creation `prompt` (plus size, `template_id`, view). Regenerate from that EXACT prompt and change ONLY the clause the owner flagged.
 - **Never invent a fresh description from a screenshot or memory** — it silently drifts the design (proportions, palette, silhouette) even when the fix was one word. `get_character` does NOT return the creation prompt; the zip's `metadata.json` is the only source of truth.
 
-## PixelLab characters — new generation workflow
+## PixelLab characters — new generation workflow (prompt-craft cases: `tools/art/PIXELLAB_PROMPT_LESSONS.md`)
 - **CHECK ALL 8 ROTATIONS before generating animations.** After a character body is created, visually inspect every direction (S, SE, E, NE, N, NW, W, SW) for consistency — same proportions, same gear, same silhouette. v3 mode frequently produces inconsistent north/west directions (wrong body shape, missing equipment, different outfit). If any direction is broken, re-roll the body first. Generating animations on a broken body wastes hundreds of generations.
 - **Heroes use v3 mode (NOT pro).** The gold-standard assassin and warlock were both v3. Pro mode produces stocky proportions for visible-face characters. The `style: -, -, -` field in `get_character` appears in BOTH v3 and pro — it cannot distinguish modes.
 - **Standard mode is useless for proportions testing.** Its template skeleton produces chibi proportions regardless of description. Only useful for testing color palette and design elements.
