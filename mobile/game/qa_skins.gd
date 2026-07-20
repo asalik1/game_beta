@@ -17,6 +17,7 @@ func _frames(n: int) -> void:
 
 
 func _ready() -> void:
+	_assert_skin_roster()
 	var run_classes: Array = CLASSES.duplicate()
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--class="):
@@ -61,10 +62,11 @@ func _run_class(cls: String) -> void:
 	dummy.hp = 999999.0
 	await _frames(4)
 	if cls == "mage":
-		await _assert_void_bolt_cosmetic_parity(p)
-		await _assert_void_eye_spam_cleanup(p)
 		await _assert_crystal_bolt_cosmetic_parity(p)
 		await _assert_mage_ult_circle(p)
+	elif cls == "warlock":
+		await _assert_eldritch_bolt_cosmetic_parity(p)
+		await _assert_eldritch_eye_spam_cleanup(p)
 	elif cls == "archer":
 		await _assert_archer_cosmetic_parity(p, dummy)
 	elif cls == "assassin":
@@ -87,7 +89,7 @@ func _run_class(cls: String) -> void:
 				p.use_ability(slot)
 				# Swing/cast delays are wall-clock; skin ults resolve at 0.62s,
 				# so keep their owners alive through impact and cleanup callbacks.
-				await get_tree().create_timer(0.72).timeout
+				await get_tree().create_timer(1.0 if cls == "warlock" and slot == "ult" else 0.72).timeout
 				if not is_instance_valid(dummy) or dummy.dying:
 					dummy = Enemy.make(game, "wolf", p.global_position + Vector2(0, -150))
 					game.add_enemy(dummy)
@@ -99,15 +101,30 @@ func _run_class(cls: String) -> void:
 	await _frames(6)
 
 
-func _assert_void_bolt_cosmetic_parity(p: Player) -> void:
+func _assert_skin_roster() -> void:
+	var mage_elites := Skins.skins_for("mage").filter(func(entry): return entry["tier"] == "elite")
+	var arcane := Skins.find_skin("warlock", "arcane_warlock")
+	var eldritch := Skins.find_skin("warlock", "eldritch_warlock")
+	var exact_shared_art := String(eldritch.get("sprite", "")) == "skins/elite/mage_void_weaver"
+	if not mage_elites.is_empty() or arcane.get("tier", "") != "elite" \
+			or eldritch.get("tier", "") != "mythic" or not exact_shared_art:
+		print("QA FAIL: Mage/Warlock skin roster migration is inconsistent")
+		fails += 1
+	else:
+		print("qa ok: Arcane elite / Eldritch mythic roster and shared sprite")
+
+
+func _assert_eldritch_bolt_cosmetic_parity(p: Player) -> void:
 	# Regression guard for the skin contract: the eye may own the rendered
-	# origin, but the real projectile must remain the base Firebolt in space.
+	# origin, but the real projectile must remain the base Shadowbolt in space.
+	var saved_skin := p.skin
+	p.skin = "eldritch_warlock"
+	p.refresh_skin_sprite()
 	var dir := Vector2.RIGHT
-	var speed := 440.0 * float(p._tfx.get("proj_speed", 1.0))
-	var base: Projectile = p._proj(dir, 1.0, "mage_firebolt", speed)
-	p._finish_mage_bolt(base, 1.0)
-	var eye: Node2D = p._spawn_void_cast_eye(dir, 0.0)
-	var void_bolt: Projectile = p._cast_void_eye_bolt(eye, dir, 1.0)
+	var base: Projectile = p._proj(dir, 1.0, "warlock_shadowbolt", 460.0)
+	base.pierce = base.pierce or bool(p._tfx.get("pierce", 0))
+	var eye: Node2D = p._spawn_eldritch_cast_eye(dir, 0.0)
+	var void_bolt: Projectile = p._cast_eldritch_eye_bolt(eye, dir, 1.0)
 	var physics_match := base.global_position.is_equal_approx(void_bolt.global_position) \
 		and base.vel.is_equal_approx(void_bolt.vel) \
 		and is_equal_approx(base.life, void_bolt.life) \
@@ -120,23 +137,25 @@ func _assert_void_bolt_cosmetic_parity(p: Player) -> void:
 	var eye_center := eye.to_global(eye_spr.position) if eye_spr != null else eye.global_position
 	var visual_match := void_bolt._fx_pos().distance_to(eye_center) < 0.05
 	if not physics_match or not visual_match:
-		print("QA FAIL: Void Firebolt changed base physics or missed eye centre")
+		print("QA FAIL: Eldritch Shadowbolt changed base physics or missed eye centre")
 		fails += 1
 	else:
-		print("qa ok: mage/void_weaver cosmetic projectile parity")
+		print("qa ok: warlock/eldritch_warlock cosmetic projectile parity")
 	base.queue_free()
 	void_bolt.queue_free()
 	await _frames(2)
 	if is_instance_valid(eye) and not eye.get_meta("dismissing", false):
-		print("QA FAIL: Void Firebolt eye survived projectile tree exit")
+		print("QA FAIL: Eldritch Shadowbolt eye survived projectile tree exit")
 		fails += 1
 	else:
-		print("qa ok: mage/void_weaver eye cleanup on projectile exit")
+		print("qa ok: warlock/eldritch_warlock eye cleanup on projectile exit")
+	p.skin = saved_skin
+	p.refresh_skin_sprite()
 
 
-func _assert_void_eye_spam_cleanup(p: Player) -> void:
+func _assert_eldritch_eye_spam_cleanup(p: Player) -> void:
 	var saved_skin := p.skin
-	p.skin = "void_weaver"
+	p.skin = "eldritch_warlock"
 	p.refresh_skin_sprite()
 	for i in 8:
 		p.cds["a1"] = 0.0
@@ -147,14 +166,14 @@ func _assert_void_eye_spam_cleanup(p: Player) -> void:
 	# that miss every body and wall must leave no orphaned focuses behind.
 	await get_tree().create_timer(2.95).timeout
 	var survivors := 0
-	for eye in get_tree().get_nodes_in_group("void_weaver_cast_eye"):
+	for eye in get_tree().get_nodes_in_group("eldritch_warlock_cast_eye"):
 		if is_instance_valid(eye):
 			survivors += 1
 	if survivors > 0:
-		print("QA FAIL: %d Void Firebolt eye(s) survived spam cleanup" % survivors)
+		print("QA FAIL: %d Eldritch Shadowbolt eye(s) survived spam cleanup" % survivors)
 		fails += 1
 	else:
-		print("qa ok: mage/void_weaver repeated-cast eye cleanup")
+		print("qa ok: warlock/eldritch_warlock repeated-cast eye cleanup")
 	p.skin = saved_skin
 	p.refresh_skin_sprite()
 

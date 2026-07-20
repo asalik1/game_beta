@@ -657,6 +657,11 @@ func _physics_process(delta: float) -> void:
 				tick *= src.crit_dmg
 			take_damage(tick, Vector2.ZERO, false, true)
 			if not dying:
+				# Eldritch Warlock reacts to the authoritative DoT beat. This is
+				# presentation-only: the damage, cadence and curse lifetime above stay
+				# shared with every Warlock skin.
+				if src != null and src.skin == "eldritch_warlock" and src.hexed.has(self):
+					src._eldritch_curse_tick(self)
 				sprite.modulate = burn_color
 	else:
 		toxin = 0  # the stack dies with the burn

@@ -11,37 +11,47 @@ func _use_warlock(slot: String, f: float) -> void:
 		# EVERYWHERE by 25%+ — tax reverted, wither still owns the long game.
 		"a1":
 			# Loose the bolt on the hand-thrust frame, not the input frame.
-			await get_tree().create_timer(swing_delay(Balance.WARLOCK_CAST_DELAY)).timeout
+			var cast_delay := swing_delay(Balance.WARLOCK_CAST_DELAY)
+			var cast_eye: Node2D = null
+			if skin == "eldritch_warlock":
+				cast_eye = _spawn_eldritch_cast_eye(aim_dir(), cast_delay)
+			await get_tree().create_timer(cast_delay).timeout
 			if dead or downed or ghost:
+				_dismiss_eldritch_cast_eye(cast_eye)
 				return
-			_cast_shadowbolt(aim_dir(), 1.0 * f)
+			_cast_shadowbolt(aim_dir(), 1.0 * f, cast_eye)
 		"a2": _hex(f)
 		"a3": _dark_pact(f)
 		"ult": _void_rift(f)
 
 
 ## Warlock skin signature colour (Ronin pattern — the skin's magic wins over
-## theme): the Inquisitor's craft burns hellfire-orange; the Herald's seeps
-## abyssal ichor-green.
+## theme): the Inquisitor's craft burns hellfire-orange; Arcane Warlock's
+## existing kit seeps ichor-green; Eldritch Warlock owns woven violet.
 func _wl_skin_col(base: Color) -> Color:
 	if skin == "hellfire_inquisitor":
 		return Color(1.00, 0.45, 0.12)
-	if skin == "eldritch_herald":
+	if skin == "arcane_warlock":
 		return Color(0.42, 0.90, 0.58)
+	if skin == "eldritch_warlock":
+		return Color(0.66, 0.24, 1.00)
 	return base
 
 
-func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
+func _cast_shadowbolt(dir: Vector2, mult: float, cast_eye: Node2D = null) -> void:
+	if skin == "eldritch_warlock":
+		_cast_eldritch_eye_bolt(cast_eye, dir, mult)
+		return
 	game.sfx("fireball", 0.7)  # deeper, hungrier whoosh than the mage's
 	_muzzle(dir, _wl_skin_col(_tcolor if _themed else Color(0.75, 0.4, 1.0)))
-	# Base is a hooked void-spear, Inquisitor throws a living coal, and Herald
+	# Base is a hooked void-spear, Inquisitor throws a living coal, and Arcane
 	# carries a curse-rune on the bolt itself — distinct shapes, not tints.
 	var bolt_tex := "warlock_shadowbolt"
 	if skin == "hellfire_inquisitor":
 		bolt_tex = "hellfire_brand_bolt"
-	elif skin == "eldritch_herald":
+	elif skin == "arcane_warlock":
 		bolt_tex = "warlock_eldritch_bolt"
-		_herald_bolt_eye(dir)
+		_arcane_bolt_eye(dir)
 	var p := _proj(dir, mult, bolt_tex, 460.0)
 	# Base curse bolts keep the active ability-variant tint; skin assets retain
 	# their bespoke fire/ichor treatment below.
@@ -66,7 +76,7 @@ func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
 		embers.scale_amount_max = 1.5
 		embers.color = Color(1.0, 0.26, 0.06, 0.78)
 		p._vis.add_child(embers)
-	elif skin == "eldritch_herald":
+	elif skin == "arcane_warlock":
 		# The living eye-bolt already owns the silhouette; only its ichor trail
 		# is added at runtime.
 		p.modulate = Color.WHITE
@@ -77,7 +87,100 @@ func _cast_shadowbolt(dir: Vector2, mult: float) -> void:
 		_living_tether(self, p, Color(0.36, 0.86, 0.56, 0.65), 0.48, true)
 
 
-func _herald_bolt_eye(dir: Vector2) -> void:
+func _pick_eldritch_eye_origin() -> Vector2:
+	# Cosmetic placement uses an isolated RNG so a paid skin never advances the
+	# gameplay random stream. Reject pockets already occupied by another eye.
+	var fallback := global_position + Vector2(52.0, -38.0)
+	var best_clearance := -1.0
+	var visual_rng := RandomNumberGenerator.new()
+	visual_rng.randomize()
+	for attempt in 14:
+		var candidate := global_position + Vector2.from_angle(visual_rng.randf() * TAU) \
+			* visual_rng.randf_range(46.0, 72.0) + Vector2(0, -30.0)
+		var clearance := 9999.0
+		for node in get_tree().get_nodes_in_group("eldritch_warlock_cast_eye"):
+			if node is Node2D and is_instance_valid(node):
+				clearance = minf(clearance, candidate.distance_to(node.global_position))
+		if clearance > best_clearance:
+			best_clearance = clearance
+			fallback = candidate
+		if clearance >= 52.0:
+			return candidate
+	return fallback
+
+
+func _spawn_eldritch_cast_eye(_dir: Vector2, duration: float) -> Node2D:
+	var eye := Node2D.new()
+	eye.global_position = _pick_eldritch_eye_origin()
+	eye.add_to_group("eldritch_warlock_cast_eye")
+	game.add_child(eye)
+	var spr := Sprite2D.new()
+	spr.name = "Eye"
+	spr.texture = Art.tex("fx/warlock_eldritch_cast_eye")
+	spr.hframes = 8
+	spr.frame = 0
+	spr.scale = Vector2(0.66, 0.66)
+	spr.modulate = Color(1.0, 1.0, 1.0, 0.98)
+	spr.z_index = 10
+	eye.add_child(spr)
+	# Frames 2-5 make the living pupil scan left, centre and right before firing.
+	var form := spr.create_tween()
+	var per := maxf(0.016, duration / 5.0)
+	for frame in range(1, 6):
+		form.tween_interval(per)
+		form.tween_callback(spr.set_frame.bind(frame))
+	return eye
+
+
+func _cast_eldritch_eye_bolt(eye: Node2D, intended_dir: Vector2,
+		mult: float) -> Projectile:
+	if eye == null or not is_instance_valid(eye):
+		eye = _spawn_eldritch_cast_eye(intended_dir, 0.0)
+	var shot_dir := intended_dir.normalized()
+	var eye_spr := eye.get_node_or_null("Eye") as Sprite2D
+	var eye_center := eye.global_position
+	if eye_spr != null:
+		# Frame 6 contains a baked rightward streak; the real bullet/path is
+		# runtime-directed, so fire from the centred charge frame instead.
+		eye_spr.frame = 5
+		eye_center = eye.to_global(eye_spr.position)
+	game.sfx("fireball", 0.7)
+	var p := _proj(shot_dir, mult, "mage_void_bullet", 460.0)
+	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+	var base_visual_origin := p.global_position + Vector2(0, -p.rise)
+	var offset := eye_center - base_visual_origin
+	var settle := clampf(offset.length() / 460.0, 0.10, 0.22)
+	# Physics remain the exact base Shadowbolt. Only its rendered origin folds
+	# from the eye pupil onto that unchanged path.
+	p.set_visual_origin(eye_center, settle)
+	p.visual_impact.connect(_dismiss_eldritch_cast_eye.bind(eye), CONNECT_ONE_SHOT)
+	p.tree_exiting.connect(_dismiss_eldritch_cast_eye.bind(eye), CONNECT_ONE_SHOT)
+	get_tree().create_timer(p.life + 0.20).timeout.connect(
+		_dismiss_eldritch_cast_eye_by_id.bind(eye.get_instance_id()), CONNECT_ONE_SHOT)
+	return p
+
+
+func _dismiss_eldritch_cast_eye_by_id(eye_id: int) -> void:
+	var eye := instance_from_id(eye_id) as Node2D
+	if eye != null and is_instance_valid(eye):
+		_dismiss_eldritch_cast_eye(eye)
+
+
+func _dismiss_eldritch_cast_eye(eye: Node2D) -> void:
+	if eye == null or not is_instance_valid(eye) or eye.get_meta("dismissing", false):
+		return
+	eye.set_meta("dismissing", true)
+	var spr := eye.get_node_or_null("Eye") as Sprite2D
+	if spr == null:
+		eye.queue_free()
+		return
+	spr.frame = 7
+	var close := spr.create_tween()
+	close.tween_property(spr, "modulate:a", 0.0, 0.11)
+	close.tween_callback(eye.queue_free)
+
+
+func _arcane_bolt_eye(dir: Vector2) -> void:
 	var eye := Sprite2D.new()
 	eye.texture = Art.tex("fx_eldritch_eye")
 	eye.position = dir * 25.0
@@ -110,7 +213,7 @@ func _inquisitor_brand_stamp(e: Enemy) -> void:
 	tw.tween_callback(brand.queue_free)
 
 
-func _herald_eye_curse(e: Enemy) -> void:
+func _arcane_eye_curse(e: Enemy) -> void:
 	var eye := Sprite2D.new()
 	eye.texture = Art.tex("fx_eldritch_eye")
 	eye.position = Vector2(0, -34)
@@ -143,7 +246,7 @@ func _hex(f := 1.0) -> void:
 	var hex_tex := "fx_hex_rune"
 	if skin == "hellfire_inquisitor":
 		hex_tex = "fx_inquisition_brand"
-	elif skin == "eldritch_herald":
+	elif skin == "arcane_warlock":
 		hex_tex = "fx_eldritch_eye"
 	var cast_rune := Sprite2D.new()
 	cast_rune.texture = Art.tex(hex_tex)
@@ -188,8 +291,8 @@ func _hex(f := 1.0) -> void:
 		if not e.dying:
 			if skin == "hellfire_inquisitor":
 				_inquisitor_brand_stamp(e)
-			elif skin == "eldritch_herald":
-				_herald_eye_curse(e)
+			elif skin == "arcane_warlock":
+				_arcane_eye_curse(e)
 			_hex_mark(e)
 
 
@@ -215,12 +318,54 @@ func _hex_mark(e: Enemy) -> void:
 	var mark_tex := "fx_hex_rune"
 	if skin == "hellfire_inquisitor":
 		mark_tex = "fx_inquisition_brand"
-	elif skin == "eldritch_herald":
+	elif skin == "arcane_warlock":
 		mark_tex = "fx_eldritch_eye"
+	elif skin == "eldritch_warlock":
+		mark_tex = "fx/warlock_eldritch_curse_eye"
 	rune.texture = Art.tex(mark_tex)
 	rune.position = Vector2(0, -30)
-	rune.scale = Vector2(0.9, 0.9) if mark_tex == "fx_hex_rune" else Vector2(0.42, 0.42)
+	if skin == "eldritch_warlock":
+		rune.hframes = 8
+		rune.frame = 1
+		rune.position = Vector2(0, -42)
+		rune.scale = Vector2(0.52, 0.52)
+		rune.z_index = 10
+	else:
+		rune.scale = Vector2(0.9, 0.9) if mark_tex == "fx_hex_rune" else Vector2(0.42, 0.42)
 	e.add_child(rune)
+
+
+## Visual-only curse beat. Enemy owns the authoritative 0.5s DoT clock and
+## calls this after applying that unchanged tick; the watcher merely reacts.
+func _eldritch_curse_tick(e: Enemy) -> void:
+	if skin != "eldritch_warlock" or e == null or not is_instance_valid(e):
+		return
+	var watcher := e.get_node_or_null("hex_rune") as Sprite2D
+	if watcher == null or watcher.texture != Art.tex("fx/warlock_eldritch_curse_eye"):
+		return
+	watcher.frame = 4
+	var recoil := watcher.create_tween()
+	recoil.tween_property(watcher, "scale", Vector2(0.58, 0.46), 0.035)
+	recoil.tween_callback(watcher.set_frame.bind(5))
+	recoil.tween_property(watcher, "scale", Vector2(0.52, 0.52), 0.075)
+	var thread := Line2D.new()
+	thread.width = 2.4
+	thread.default_color = Color(0.72, 0.24, 1.0, 0.92)
+	thread.z_index = 11
+	thread.add_point(watcher.global_position)
+	thread.add_point(e.global_position + Vector2(0, -7))
+	game.add_child(thread)
+	var core := Line2D.new()
+	core.width = 0.75
+	core.default_color = Color(0.96, 0.72, 1.0, 0.96)
+	core.z_index = 12
+	core.add_point(watcher.global_position)
+	core.add_point(e.global_position + Vector2(0, -7))
+	game.add_child(core)
+	for line in [thread, core]:
+		var fade: Tween = line.create_tween()
+		fade.tween_property(line, "modulate:a", 0.0, 0.11)
+		fade.tween_callback(line.queue_free)
 
 
 ## A cursed enemy died: the hex detonates onto its neighbors.
@@ -273,26 +418,40 @@ func _dark_pact(f := 1.0) -> void:
 	var pact_tex := "fx_dark_pact"
 	if skin == "hellfire_inquisitor":
 		pact_tex = "fx_inquisition_pyre"
-	elif skin == "eldritch_herald":
+	elif skin == "arcane_warlock":
 		pact_tex = "fx_eldritch_eye"
+	elif skin == "eldritch_warlock":
+		pact_tex = "fx/mage_void_unravel"
 	var seal := Sprite2D.new()
 	seal.texture = Art.tex(pact_tex)
-	seal.modulate = Color(col, 0.88)
+	seal.modulate = Color.WHITE if skin == "eldritch_warlock" else Color(col, 0.88)
 	seal.scale = Vector2(5.2, 5.2)
 	seal.z_index = -4
+	if skin == "eldritch_warlock":
+		seal.z_index = 8
 	add_child(seal)
 	if skin == "hellfire_inquisitor":
 		seal.scale = Vector2(0.45, 0.45)
 		_staged_segment_ring(self, Vector2.ZERO, Color(1.0, 0.44, 0.1, 0.86), 68.0, 6, 0.045, 0.28, "fx_inquisition_brand", true, true)
-	elif skin == "eldritch_herald":
+	elif skin == "arcane_warlock":
 		seal.scale = Vector2(3.8, 0.18)
+	elif skin == "eldritch_warlock":
+		seal.hframes = 8
+		seal.frame = 0
+		seal.scale = Vector2.ONE * 2.18
 	var seal_tw := seal.create_tween()
-	if skin == "hellfire_inquisitor":
+	if skin == "eldritch_warlock":
+		for frame in range(1, 8):
+			seal_tw.tween_interval(0.038)
+			seal_tw.tween_callback(seal.set_frame.bind(frame))
+		seal_tw.tween_property(seal, "modulate:a", 0.0, 0.10)
+	elif skin == "hellfire_inquisitor":
 		seal_tw.tween_property(seal, "scale", Vector2(4.4, 4.4), 0.18).set_trans(Tween.TRANS_BACK)
-	elif skin == "eldritch_herald":
+	elif skin == "arcane_warlock":
 		seal_tw.tween_property(seal, "scale:y", 3.8, 0.18).set_trans(Tween.TRANS_BACK)
-	seal_tw.tween_property(seal, "rotation", TAU * (-1.0 if skin == "eldritch_herald" else 1.0), 0.42)
-	seal_tw.parallel().tween_property(seal, "modulate:a", 0.0, 0.58)
+	if skin != "eldritch_warlock":
+		seal_tw.tween_property(seal, "rotation", TAU * (-1.0 if skin == "arcane_warlock" else 1.0), 0.42)
+		seal_tw.parallel().tween_property(seal, "modulate:a", 0.0, 0.58)
 	seal_tw.tween_callback(seal.queue_free)
 	game.sfx("nova", 0.6)
 	game.shake(5.0)
@@ -313,10 +472,11 @@ func _dark_pact(f := 1.0) -> void:
 	blood.color = Color(0.9, 0.15, 0.25)
 	add_child(blood)
 	get_tree().create_timer(0.8).timeout.connect(blood.queue_free)
-	_ring_fx(global_position, col, 170.0, true)
-	game.burst(global_position, col, 18)
+	if skin != "eldritch_warlock":
+		_ring_fx(global_position, col, 170.0, true)
+		game.burst(global_position, col, 18)
 	# ...then the blast: dark rays lash outward from the pact's heart.
-	for i in 8:
+	for i in (0 if skin == "eldritch_warlock" else 8):
 		var ang := TAU * i / 8.0 + randf_range(-0.1, 0.1)
 		var ray := Sprite2D.new()
 		ray.texture = Art.tex("glow")
@@ -350,11 +510,45 @@ func _inquisition_rift_scene(pos: Vector2, radius: float) -> void:
 			_beam_fx(pos + Vector2.from_angle(ang) * radius * 0.72, pos, Color(1.0, 0.34, 0.08), 0.32))
 
 
-func _eldritch_rift_open(mark: Sprite2D, pos: Vector2, radius: float) -> void:
+func _arcane_rift_open(mark: Sprite2D, pos: Vector2, radius: float) -> void:
 	# Lid segments peel apart around the closed eye; the mark itself opens on
 	# Y while these pieces hold the doorway's rim.
 	mark.scale = Vector2(radius / 34.0, 0.06)
 	_staged_segment_ring(game, pos, Color(0.4, 0.92, 0.6, 0.82), radius * 0.68, 6, 0.06, 0.72, "slashline", false, true)
+
+
+func _eldritch_thread_rift_scene(pos: Vector2, radius: float) -> void:
+	# Five circular chords fill the real Void Rift footprint. Their authored root
+	# row is anchored to each ground chord, so the threads rise from beneath feet
+	# rather than hovering over actors. This begins on the unchanged burst tick.
+	var depth_bands := [-0.72, -0.36, 0.0, 0.36, 0.72]
+	for band_index in depth_bands.size():
+		var depth_fraction: float = depth_bands[band_index]
+		var chord_factor := sqrt(maxf(0.0, 1.0 - depth_fraction * depth_fraction))
+		var scale_x := radius * 2.0 * chord_factor / 224.0
+		var scale_y := radius * 2.0 / 256.0 * 0.52 * lerpf(0.82, 1.0, chord_factor)
+		var eruption := Sprite2D.new()
+		eruption.texture = Art.tex("fx/mage_void_thread_eruption")
+		eruption.hframes = 8
+		eruption.frame = 2
+		eruption.scale = Vector2(scale_x, scale_y)
+		var ground := pos + Vector2(0.0, depth_fraction * radius)
+		eruption.global_position = ground + Vector2(0.0, -82.0 * scale_y)
+		eruption.flip_h = band_index % 2 == 1
+		eruption.modulate = Color(1.0, 1.0, 1.0,
+			0.82 if band_index == 2 else (0.68 if band_index in [1, 3] else 0.52))
+		eruption.z_index = -3 + band_index
+		game.add_child(eruption)
+		var rip := eruption.create_tween()
+		for frame in [3, 4, 5]:
+			rip.tween_interval(0.052)
+			rip.tween_callback(eruption.set_frame.bind(frame))
+		rip.tween_interval(0.11)
+		rip.tween_callback(eruption.set_frame.bind(6))
+		rip.tween_interval(0.06)
+		rip.tween_callback(eruption.set_frame.bind(7))
+		rip.tween_property(eruption, "modulate:a", 0.0, 0.20)
+		rip.tween_callback(eruption.queue_free)
 
 
 ## Void Rift: a rift tears open under the target, drags everything
@@ -376,8 +570,10 @@ func _void_rift(f := 1.0) -> void:
 	var rift_tex := "fx_void_rift"
 	if skin == "hellfire_inquisitor":
 		rift_tex = "fx_inquisition_pyre"
-	elif skin == "eldritch_herald":
+	elif skin == "arcane_warlock":
 		rift_tex = "fx_eldritch_eye"
+	elif skin == "eldritch_warlock":
+		rift_tex = "telegraph"
 	mark.texture = Art.tex(rift_tex)
 	mark.modulate = Art.hdr(Color(col, 0.86), 1.3)
 	mark.global_position = pos
@@ -387,10 +583,10 @@ func _void_rift(f := 1.0) -> void:
 	game.add_child(mark)
 	if skin == "hellfire_inquisitor":
 		_inquisition_rift_scene(pos, radius)
-	elif skin == "eldritch_herald":
-		_eldritch_rift_open(mark, pos, radius)
+	elif skin == "arcane_warlock":
+		_arcane_rift_open(mark, pos, radius)
 	var mt := mark.create_tween()
-	var mark_scale := Vector2(radius / 32.0, radius / 20.0) if rift_is_wide else (Vector2(1.85, 1.85) if skin == "hellfire_inquisitor" else Vector2(1.65, 1.65))
+	var mark_scale := Vector2.ONE * (radius / 32.0) if skin == "eldritch_warlock" else (Vector2(radius / 32.0, radius / 20.0) if rift_is_wide else (Vector2(1.85, 1.85) if skin == "hellfire_inquisitor" else Vector2(1.65, 1.65)))
 	mt.tween_property(mark, "scale", mark_scale, 0.3)
 	# Indrawn particles: the rift visibly EATS light.
 	var indraw := CPUParticles2D.new()
@@ -412,6 +608,8 @@ func _void_rift(f := 1.0) -> void:
 	vortex.global_position = pos
 	vortex.z_index = 5
 	game.add_child(vortex)
+	if skin == "eldritch_warlock":
+		vortex.visible = false
 	for i in 3:
 		var ang := TAU * i / 3.0
 		var blade := Sprite2D.new()
@@ -431,6 +629,8 @@ func _void_rift(f := 1.0) -> void:
 	heart.scale = Vector2(0.6, 0.6)
 	heart.z_index = 6
 	game.add_child(heart)
+	if skin == "eldritch_warlock":
+		heart.visible = false
 	var heart_tw := heart.create_tween()
 	heart_tw.tween_property(heart, "scale", Vector2(3.2, 3.2), 0.85) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -444,7 +644,7 @@ func _void_rift(f := 1.0) -> void:
 		if skin == "":
 			_ring_fx(pos, col, radius, true)
 		for e in _enemies_within(pos, radius * 1.3):
-			if skin == "eldritch_herald" and is_instance_valid(mark):
+			if skin == "arcane_warlock" and is_instance_valid(mark):
 				_living_tether(mark, e, Color(0.36, 0.88, 0.58, 0.72), 0.3, true)
 			var to_rift: Vector2 = pos - e.global_position
 			if to_rift.length() > 20.0:
@@ -462,10 +662,13 @@ func _void_rift(f := 1.0) -> void:
 		return
 	game.sfx("meteor")
 	game.shake(12.0)
-	game.hud.flash_screen(Color(col, 1.0), 0.28 if skin == "eldritch_herald" else 0.5, 0.35)
+	if skin == "eldritch_warlock":
+		_eldritch_thread_rift_scene(pos, radius)
+	game.hud.flash_screen(Color(col, 1.0), 0.28 if skin == "arcane_warlock" else 0.5, 0.35)
 	game.burst(pos, col, 26)
 	game.burst(pos, Color(1, 1, 1), 10)
-	_ring_fx(pos, col, radius * (0.46 if skin == "eldritch_herald" else (0.78 if skin == "hellfire_inquisitor" else 1.0)))
+	if skin != "eldritch_warlock":
+		_ring_fx(pos, col, radius * (0.46 if skin == "arcane_warlock" else (0.78 if skin == "hellfire_inquisitor" else 1.0)))
 	if skin == "":
 		_ring_fx(pos, Color(1, 1, 1), radius * 0.6)
 	# The collapse blows back out: void rays and a popping white core.
@@ -480,7 +683,7 @@ func _void_rift(f := 1.0) -> void:
 	vct.tween_property(vcore, "scale", Vector2(3.4, 3.4), 0.18)
 	vct.parallel().tween_property(vcore, "modulate:a", 0.0, 0.22)
 	vct.tween_callback(vcore.queue_free)
-	for i in 10:
+	for i in (0 if skin == "eldritch_warlock" else 10):
 		var rang := TAU * i / 10.0 + randf_range(-0.12, 0.12)
 		var ray := Sprite2D.new()
 		ray.texture = Art.tex("glow")
@@ -498,14 +701,14 @@ func _void_rift(f := 1.0) -> void:
 		rt.tween_callback(ray.queue_free)
 	# Scarred space lingers where the rift fed.
 	var scar := Sprite2D.new()
-	scar.texture = Art.tex("fx_eldritch_eye" if skin == "eldritch_herald" else ("fx_inquisition_brand" if skin == "hellfire_inquisitor" else "glow"))
+	scar.texture = Art.tex("fx_eldritch_eye" if skin == "arcane_warlock" else ("fx_inquisition_brand" if skin == "hellfire_inquisitor" else "glow"))
 	scar.modulate = Color(col.r * 0.4, col.g * 0.25, col.b * 0.7, 0.5)
 	scar.global_position = pos
 	scar.scale = Vector2(radius / 26.0, radius / 26.0)
 	scar.z_index = -5
 	game.add_child(scar)
 	var sct := scar.create_tween()
-	if skin == "eldritch_herald":
+	if skin == "arcane_warlock":
 		scar.scale = Vector2(radius / 34.0, radius / 34.0)
 		for i in 3:
 			sct.tween_property(scar, "scale:y", 0.08, 0.08)

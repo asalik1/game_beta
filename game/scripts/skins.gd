@@ -125,12 +125,10 @@ const CHROMAS := {
 ## {id, name, tier, sprite} where sprite is the Art name (looked up via
 ## Art.tex / hero_clips / dir_set under assets/sprites/).
 const SKINS := {
-	# Every MYTHIC skin carries an awakened form (the Phantom->Nightfang
-	# pattern): completing the class's S-weapon awakening evolves the skin's
-	# palette family. The five non-assassin forms are baked band-recolors of
-	# the skin's own strips (2026-07-18) — same silhouette + animation,
-	# evolved hue story; each can be upgraded to fresh-generated art later by
-	# just replacing the <base>_awakened_* strips.
+	# Completed MYTHIC awakening art follows the Phantom->Nightfang pattern:
+	# completing the class's S-weapon awakening evolves the skin's palette
+	# family. Eldritch Warlock intentionally ships without that sprite upgrade;
+	# the awakening-art pass is later and must not block nailing its abilities.
 	"warrior": [
 		{"id": "dreadknight", "name": "Dreadknight", "tier": "elite",
 			"sprite": "skins/elite/warrior_dreadknight"},
@@ -150,8 +148,6 @@ const SKINS := {
 			"awakened_sprite": "skins/mythic/archer_voidwraith_awakened"},
 	],
 	"mage": [
-		{"id": "void_weaver", "name": "Void Weaver", "tier": "elite",
-			"sprite": "skins/elite/mage_void_weaver"},
 		# Awakened: prismatic — bright facets bleach to white light while the
 		# robe's shadows refract indigo-violet.
 		{"id": "crystal_archmage", "name": "Crystal Archmage", "tier": "mythic",
@@ -186,11 +182,15 @@ const SKINS := {
 	"warlock": [
 		{"id": "hellfire_inquisitor", "name": "Hellfire Inquisitor", "tier": "elite",
 			"sprite": "skins/elite/warlock_hellfire_inquisitor"},
-		# Awakened: the abyss answers — tarnished gold trim and violet flame
-		# both re-light in luminous eldritch green; the robes stay drowned.
-		{"id": "eldritch_herald", "name": "Eldritch Herald", "tier": "mythic",
-			"sprite": "skins/mythic/warlock_eldritch_herald",
-			"awakened_sprite": "skins/mythic/warlock_eldritch_herald_awakened"},
+		# The former Eldritch Herald is retained as an elite under its new identity.
+		# Its existing green kit remains untouched and receives no awakening pass.
+		{"id": "arcane_warlock", "name": "Arcane Warlock", "tier": "elite",
+			"sprite": "skins/mythic/warlock_eldritch_herald"},
+		# Eldritch Warlock inherits the exact Void Weaver character art. The Mage
+		# no longer exposes an elite skin; there is one shared source asset, not a
+		# duplicate copy under a second class path.
+		{"id": "eldritch_warlock", "name": "Eldritch Warlock", "tier": "mythic",
+			"sprite": "skins/elite/mage_void_weaver"},
 	],
 }
 
@@ -209,7 +209,6 @@ const SWING := {
 		"stormforged": {"attack": 0.227},
 	},
 	"mage": {
-		"void_weaver": {"attack": 0.182},
 		"crystal_archmage": {"attack": 0.227},
 	},
 	"assassin": {
@@ -229,7 +228,8 @@ const SWING := {
 	# WARLOCK_CAST_DELAY.
 	"warlock": {
 		"hellfire_inquisitor": {"attack": 0.227},
-		"eldritch_herald": {"attack": 0.227},
+		"arcane_warlock": {"attack": 0.227},
+		"eldritch_warlock": {"attack": 0.182},
 	},
 }
 

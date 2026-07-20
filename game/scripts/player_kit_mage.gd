@@ -13,20 +13,13 @@ func _use_mage(slot: String, f: float) -> void:
 			# the cast animation has a windup the FX was firing ahead of.
 			var cast_delay := swing_delay(Balance.MAGE_BOLT_DELAY)
 			var prelude_dir := aim_dir()
-			var void_eyes: Array[Node2D] = []
 			var crystal_focuses: Array[Node2D] = []
-			if skin == "void_weaver":
-				var eye_count := 2 if _tfx.get("twin", 0) else 1
-				for i in eye_count:
-					void_eyes.append(_spawn_void_cast_eye(prelude_dir, cast_delay))
-			elif skin == "crystal_archmage":
+			if skin == "crystal_archmage":
 				var crystal_count := 2 if _tfx.get("twin", 0) else 1
 				for i in crystal_count:
 					crystal_focuses.append(_spawn_crystal_cast_focus(prelude_dir, cast_delay))
 			await get_tree().create_timer(cast_delay).timeout
 			if dead or downed or ghost:
-				for eye in void_eyes:
-					_dismiss_void_eye(eye)
 				for focus in crystal_focuses:
 					_dismiss_crystal_focus(focus)
 				return
@@ -35,19 +28,14 @@ func _use_mage(slot: String, f: float) -> void:
 			var release_dir := aim_dir()
 			if _tfx.get("twin", 0):
 				# Wind: split the bolt.
-				if skin == "void_weaver":
-					_cast_void_eye_bolt(void_eyes[0], release_dir.rotated(0.09), 0.94 * f)
-					_cast_void_eye_bolt(void_eyes[1], release_dir.rotated(-0.09), 0.94 * f)
-				elif skin == "crystal_archmage":
+				if skin == "crystal_archmage":
 					_cast_crystal_focus_bolt(crystal_focuses[0], release_dir.rotated(0.09), 0.94 * f)
 					_cast_crystal_focus_bolt(crystal_focuses[1], release_dir.rotated(-0.09), 0.94 * f)
 				else:
 					_cast_bolt(release_dir.rotated(0.09), 0.94 * f)
 					_cast_bolt(release_dir.rotated(-0.09), 0.94 * f)
 			else:
-				if skin == "void_weaver":
-					_cast_void_eye_bolt(void_eyes[0], release_dir, ability_coeff("a1") * f)
-				elif skin == "crystal_archmage":
+				if skin == "crystal_archmage":
 					_cast_crystal_focus_bolt(crystal_focuses[0], release_dir, ability_coeff("a1") * f)
 				else:
 					_cast_bolt(release_dir, ability_coeff("a1") * f)
@@ -60,21 +48,19 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 	game.sfx("fireball")  # a breathy fire fwoosh, not an arcane laser
 	var bolt_col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
 	# Mage-skin bolts (Ronin pattern — the skin's magic wins over theme):
-	# Void Weaver casts woven void; Crystal Archmage casts CRYSTAL — every
+	# Crystal Archmage casts CRYSTAL — every
 	# bolt flies as a lance of it, whatever the theme.
 	if skin == "crystal_archmage":
 		bolt_col = Color(0.80, 0.94, 1.00)
 	_muzzle(dir, bolt_col)
-	# Each identity owns a bolt silhouette: base flame dart, woven void spindle,
-	# or hard crystal lance. Themes affect the muzzle and riders, not the body.
+	# Each identity owns a bolt silhouette: base flame dart or hard crystal lance.
+	# Themes affect the muzzle and riders, not the body.
 	var tex := "mage_firebolt"
 	if skin == "crystal_archmage":
 		tex = "mage_crystal_decree"
 	elif _tfx.get("pierce", 0):
 		tex = "icelance"
 	var p := _proj(dir, mult, tex, 440.0 * float(_tfx.get("proj_speed", 1.0)))
-	if skin == "crystal_archmage":
-		_attach_crystal_prism_trail(p)
 	_finish_mage_bolt(p, mult)
 
 
@@ -278,7 +264,6 @@ func _cast_crystal_focus_bolt(focus: Node2D, intended_dir: Vector2,
 	var offset := crystal_center - base_visual_origin
 	var settle := clampf(offset.length() / maxf(speed, 1.0), 0.10, 0.22)
 	p.set_visual_origin(crystal_center, settle)
-	_attach_crystal_prism_trail(p)
 	# Swap the assembled focus for the projectile on the same frame, making the
 	# crystal itself launch rather than spawning a second bolt over it.
 	if crystal != null:
@@ -326,6 +311,7 @@ func _mage_sheet(tex_name: String, pos: Vector2, first: int, last: int,
 	spr.texture = Art.tex(tex_name)
 	spr.hframes = 8
 	spr.frame = first
+	spr.flip_h = bool(opts.get("flip_h", false))
 	var scl: float = opts.get("scale", 1.0)
 	spr.scale = Vector2(scl, scl)
 	spr.rotation = opts.get("rot", 0.0)
@@ -382,17 +368,11 @@ func _frost_nova(f := 1.0) -> void:
 	var radius := 160.0 * float(_tfx.get("radius_mult", 1.0))
 	var col := _tcolor if _themed else Color(0.45, 0.8, 1.0)
 	# Skin novas ring in the skin's magic (skin wins over theme).
-	if skin == "void_weaver":
-		col = Color(0.60, 0.36, 0.96)
-	elif skin == "crystal_archmage":
+	if skin == "crystal_archmage":
 		col = Color(0.80, 0.94, 1.00)
 	var inward: bool = _tfx.get("pull", 0)
 	var fiery: bool = _tfx.get("no_knock", 0)
-	if skin == "void_weaver":
-		_void_weaver_nova_visual(radius, col)
-		_apply_nova_gameplay(f, radius, inward, fiery)
-		return
-	elif skin == "crystal_archmage":
+	if skin == "crystal_archmage":
 		_crystal_archmage_nova_visual(radius, col)
 		_apply_nova_gameplay(f, radius, inward, fiery)
 		return
@@ -557,7 +537,7 @@ func _blink() -> void:
 	# window, not a sloppy blink-through. Safety now rides the DR cloak below.
 	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), ability_coeff("a3"), eff, 0.0, rider("a3", "iframe"))
 	var finish := global_position
-	if skin in ["void_weaver", "crystal_archmage"]:
+	if skin == "crystal_archmage":
 		_mage_skin_blink_visual(start, finish)
 	# Fire leaves a burning wake on the ground; Ice a frozen one.
 	if skin == "" and _themed and (_tfx.has("dot") or _tfx.has("freeze_path")):
@@ -573,13 +553,10 @@ func _blink() -> void:
 
 
 func _mage_skin_blink_visual(start: Vector2, finish: Vector2) -> void:
-	if skin == "void_weaver":
-		_void_weaver_blink_visual(start, finish)
-		return
 	_crystal_archmage_blink_visual(start, finish)
 
 
-func _crystal_archmage_blink_visual(start: Vector2, _finish: Vector2) -> void:
+func _crystal_archmage_blink_visual(start: Vector2, finish: Vector2) -> void:
 	# Leave the exact live directional pose behind for the first instant, then
 	# dissolve it through the authored crystal double. This removes the old
 	# "facets close around an already absent body" pop at departure.
@@ -604,6 +581,13 @@ func _crystal_archmage_blink_visual(start: Vector2, _finish: Vector2) -> void:
 
 	var tex := "fx/mage_crystal_blink_shatter"
 	var raised := Vector2(0, -50)
+	# The reconstruction double inherits only horizontal intent. Diagonals map
+	# cleanly onto east/west, while a pure vertical Blink keeps current facing.
+	var arrival_flip := sprite.flip_h if sprite != null else false
+	if absf(finish.x - start.x) > 0.01:
+		# The authored reconstruction strip faces left natively, opposite the
+		# hero sheet, so east/west use the inverse flip mapping.
+		arrival_flip = finish.x > start.x
 	# Departure loses body mass outward in four beats. Arrival is parented to the
 	# real player, so continued movement cannot leave an invisible Mage walking
 	# away from the reconstruction. The last crystal double holds its chest-wide
@@ -613,7 +597,7 @@ func _crystal_archmage_blink_visual(start: Vector2, _finish: Vector2) -> void:
 	})
 	_mage_sheet(tex, raised, 4, 7, {
 		"parent": self, "scale": 0.64, "z": 10, "frame_time": 0.030,
-		"delay": 0.025, "hold": 0.030, "fade": 0.070,
+		"delay": 0.025, "hold": 0.030, "fade": 0.070, "flip_h": arrival_flip,
 	})
 	if sprite != null and is_instance_valid(sprite):
 		# player.gd owns modulate for hurt feedback, so visibility is the stable
@@ -737,16 +721,10 @@ func _lowest_hp_enemy(radius: float) -> Enemy:
 func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 	var fx_copy := _tfx.duplicate()
 	var col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
-	# Skin comets: the Weaver calls down folded void; the Archmage a shard
-	# of pure crystal (skin wins over theme, per the Ronin pattern).
-	if skin == "void_weaver":
-		col = Color(0.60, 0.36, 0.96)
-	elif skin == "crystal_archmage":
+	# The Archmage calls down pure crystal (skin wins over theme).
+	if skin == "crystal_archmage":
 		col = Color(0.78, 0.92, 1.00)
-	if skin == "void_weaver":
-		_void_weaver_ult_scene(pos, scale, on_land, fx_copy, col)
-		return
-	elif skin == "crystal_archmage":
+	if skin == "crystal_archmage":
 		_crystal_archmage_ult_scene(pos, scale, on_land, fx_copy, col)
 		return
 

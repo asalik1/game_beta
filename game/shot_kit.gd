@@ -122,12 +122,17 @@ func _ready() -> void:
 	elif cls == "mage":
 		# Catch the court shards/thread braid before the delayed release frame.
 		await get_tree().create_timer(0.035).timeout
+	elif cls == "warlock" and skin == "eldritch_warlock":
+		await get_tree().create_timer(0.035).timeout
 	else:
 		await _frames(2)
 	_shot("stab_early")
 	if cls == "mage":
 		await get_tree().create_timer(0.11).timeout
 		_shot("mage_bolt_release")
+	elif cls == "warlock" and skin == "eldritch_warlock":
+		await get_tree().create_timer(0.13).timeout
+		_shot("eldritch_eye_release")
 	else:
 		await _frames(3)
 		_shot("stab_mid")
@@ -177,6 +182,10 @@ func _ready() -> void:
 		await _frames(8)
 		_shot("frost_dash_idle_handoff")
 		await _frames(8)
+	elif cls == "warlock" and skin == "eldritch_warlock":
+		await get_tree().create_timer(0.12).timeout
+		_shot("eldritch_dark_pact")
+		await _frames(32)
 	elif cls == "mage":
 		# Blink moves the physics body immediately; this later frame proves the
 		# destination threads unwind and then reveal the caster—not a pop-in.
@@ -204,6 +213,10 @@ func _ready() -> void:
 		await get_tree().create_timer(0.18).timeout
 		_shot("mage_nova_payoff")
 		await _frames(10)
+	elif cls == "warlock" and skin == "eldritch_warlock":
+		await get_tree().create_timer(0.65).timeout
+		_shot("eldritch_curse_tick")
+		await _frames(8)
 	else:
 		await _frames(30)
 	dummy.global_position = game.player.global_position + Vector2(110, 0)
@@ -232,13 +245,17 @@ func _ready() -> void:
 	_shot("ult_midbeat")
 	# Mage skins resolve at 0.62s; hold a frame just before contact so the
 	# authored thread eruption / four-prism convergence is reviewable alone.
-	if cls == "mage" and skin in ["void_weaver", "crystal_archmage"]:
+	if cls == "mage" and skin == "crystal_archmage":
 		await get_tree().create_timer(0.24).timeout
-		_shot("mage_ult_eruption" if skin == "void_weaver" else "mage_ult_convergence")
+		_shot("mage_ult_convergence")
 		await get_tree().create_timer(0.10).timeout
 		# Timer callbacks run before the viewport's next draw. Advance through that
 		# draw so the payoff capture records the actual 0.62s impact frame.
 		await _frames(2)
+	elif cls == "warlock" and skin == "eldritch_warlock":
+		await get_tree().create_timer(0.56).timeout
+		await _frames(2)
+		_shot("eldritch_ult_eruption")
 	else:
 		await get_tree().create_timer(0.34).timeout
 	_shot("ult_payoff")

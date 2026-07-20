@@ -326,6 +326,8 @@ class SkinAmbient extends Node2D:
 	var dais_frame_t := 0.0
 	var dais: Sprite2D = null
 	var prism_shadow: Sprite2D = null
+	var eldritch_familiar: Sprite2D = null
+	var familiar_frame_t := 0.0
 	# The authored idle bank (frames 0-3) sits 28 source pixels lower than the
 	# glide bank (4-7). At 0.62 display scale that is ~17 screen pixels. Offset
 	# the idle node upward so the platform surface and underside remain at the
@@ -337,6 +339,8 @@ class SkinAmbient extends Node2D:
 		blink_t = 1.6
 		if skin_id == "crystal_archmage":
 			_build_crystal_dais()
+		elif skin_id == "eldritch_warlock":
+			_build_eldritch_familiar()
 	func _process(delta: float) -> void:
 		if plr == null or not is_instance_valid(plr):
 			queue_free()
@@ -360,7 +364,29 @@ class SkinAmbient extends Node2D:
 			blink_t = 2.4 + randf_range(0.0, 1.4)
 		if skin_id == "crystal_archmage":
 			_update_crystal_dais(delta)
+		elif skin_id == "eldritch_warlock":
+			_update_eldritch_familiar(delta)
 		queue_redraw()
+	func _build_eldritch_familiar() -> void:
+		eldritch_familiar = Sprite2D.new()
+		eldritch_familiar.texture = Art.tex("fx/warlock_eldritch_familiar")
+		eldritch_familiar.hframes = 8
+		eldritch_familiar.frame = 0
+		eldritch_familiar.position = Vector2(-28, -42)
+		eldritch_familiar.scale = Vector2(0.34, 0.34)
+		eldritch_familiar.modulate = Color(1.0, 1.0, 1.0, 0.96)
+		eldritch_familiar.z_index = 7
+		add_child(eldritch_familiar)
+	func _update_eldritch_familiar(delta: float) -> void:
+		if eldritch_familiar == null or not is_instance_valid(eldritch_familiar):
+			return
+		familiar_frame_t += delta * (9.0 if plr.velocity.length() > 20.0 else 6.0)
+		eldritch_familiar.frame = int(familiar_frame_t) % 8
+		var side: float = plr._face_sign()
+		var drift: Vector2 = -plr.velocity.normalized() * 7.0 if plr.velocity.length() > 1.0 else Vector2.ZERO
+		var target: Vector2 = Vector2(-28.0 * side, -42.0 + sin(t * 2.6) * 3.0) + drift
+		eldritch_familiar.position = eldritch_familiar.position.lerp(target,
+			minf(1.0, delta * 5.5))
 	func _build_crystal_dais() -> void:
 		# The platform is authored animation, not the old procedural polygon.
 		# Frames 0-3 settle at rest; 4-7 carry the directional glide read.
@@ -444,7 +470,7 @@ class SkinAmbient extends Node2D:
 				var wing_a := 0.18 + sin(t * 1.2) * 0.04
 				draw_arc(Vector2(-12, -20), 31, 2.6, 4.4, 12, Color(0.9, 0.92, 1.0, wing_a), 2.0)
 				draw_arc(Vector2(12, -20), 31, -1.25, 0.55, 12, Color(0.9, 0.92, 1.0, wing_a), 2.0)
-			"eldritch_herald":
+			"arcane_warlock":
 				var lid := 0.15 if blink_t < 0.13 else 1.0
 				_draw_ellipse(Vector2(16, -34), Vector2(7, 3 * lid), Color(0.46, 1.0, 0.64, 0.72))
 				var hem := PackedVector2Array()
@@ -461,7 +487,7 @@ class SkinAmbient extends Node2D:
 
 ## Keep exactly one persistent ambient identity attached to the current skin.
 func _sync_skin_ambient() -> void:
-	var wanted := skin if skin in ["stormforged", "voidwraith", "crystal_archmage", "fallen_arbiter", "eldritch_herald"] else ""
+	var wanted := skin if skin in ["stormforged", "voidwraith", "crystal_archmage", "fallen_arbiter", "arcane_warlock", "eldritch_warlock"] else ""
 	if wanted == _skin_ambient_id and (_skin_ambient == null or is_instance_valid(_skin_ambient)):
 		return
 	if _skin_ambient != null and is_instance_valid(_skin_ambient):
@@ -1517,7 +1543,7 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 	global_position = game.clamp_to_zone(start + dvec * dist, start)
 	_aim_dash_pose(dvec)  # before the ghost trail below, so the afterimages copy the pose
 	var end := global_position
-	var skin_owned_dash := skin in ["void_weaver", "crystal_archmage"]
+	var skin_owned_dash := skin == "crystal_archmage"
 	if skin == "phantom":
 		# A thin spectral streak along the dash path — fades out and self-frees.
 		var trail := PhantomTrail.new()

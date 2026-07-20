@@ -577,10 +577,13 @@ func set_chroma(chroma_id: String) -> void:
 ## class's skin list; "" clears to the default appearance. Skins and chromas
 ## are mutually exclusive — activating a skin clears the chroma.
 func set_skin(skin_id: String) -> void:
-	if skin_id != "" and Skins.find_skin(cls, skin_id).is_empty():
+	# Save-compatible rename: the former green Eldritch Herald is now the elite
+	# Arcane Warlock. Resolve the legacy id without duplicating a roster entry.
+	var resolved_id := "arcane_warlock" if cls == "warlock" and skin_id == "eldritch_herald" else skin_id
+	if resolved_id != "" and Skins.find_skin(cls, resolved_id).is_empty():
 		return
-	skin = skin_id
-	if skin_id != "":
+	skin = resolved_id
+	if resolved_id != "":
 		chroma = ""
 	_apply_class_sprite()
 

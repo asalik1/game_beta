@@ -240,7 +240,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	# CLASS (`body is Player`), never by identity against game.player.
 	p.collision_mask = (1 | 4) if is_friendly else (1 | 2)
 	game_node.add_child(p)
-	if tex_name == "mage_void_bullet":
+	if tex_name in ["mage_void_bullet", "mage_crystal_decree"]:
 		p._build_path_trail()
 	return p
 
@@ -278,18 +278,28 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 
-## The eye-bolt leaves one continuous thread from its casting eye to the live
-## projectile. Contact collapses the whole path at once instead of draining a
-## short ribbon segment-by-segment.
+## Eye and Court bolts leave one continuous authored path from their floating
+## cast focus to the live projectile. Contact collapses the whole path at once
+## instead of draining a short ribbon segment-by-segment.
 func _build_path_trail() -> void:
 	path_trail = Line2D.new()
-	path_trail.width = 2.5
-	path_trail.default_color = Color(0.54, 0.16, 0.92, 0.78)
+	path_trail.width = 3.2 if tex_kind == "mage_crystal_decree" else 2.5
+	path_trail.default_color = Color(1.0, 1.0, 1.0, 0.84) \
+		if tex_kind == "mage_crystal_decree" else Color(0.54, 0.16, 0.92, 0.78)
+	if tex_kind == "mage_crystal_decree":
+		var prism := Gradient.new()
+		prism.offsets = PackedFloat32Array([0.0, 0.34, 0.68, 1.0])
+		prism.colors = PackedColorArray([
+			Color(1.0, 0.46, 0.92, 0.88), Color(1.0, 0.82, 0.34, 0.88),
+			Color(0.38, 0.96, 1.0, 0.88), Color(0.62, 0.48, 1.0, 0.88),
+		])
+		path_trail.gradient = prism
 	path_trail.z_index = 4
 	game.add_child(path_trail)
 	path_core = Line2D.new()
-	path_core.width = 0.85
-	path_core.default_color = Color(0.92, 0.64, 1.0, 0.90)
+	path_core.width = 0.75 if tex_kind == "mage_crystal_decree" else 0.85
+	path_core.default_color = Color(0.96, 1.0, 1.0, 0.90) \
+		if tex_kind == "mage_crystal_decree" else Color(0.92, 0.64, 1.0, 0.90)
 	path_core.z_index = 4
 	game.add_child(path_core)
 
