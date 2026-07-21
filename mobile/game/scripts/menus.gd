@@ -624,6 +624,16 @@ func _open_layout_editor() -> void:
 ## Confirm-and-enter a mode from a HUD trial icon: a backable prompt carrying the
 ## mode's record + rules, so a stray click on the HUD never tears the world down.
 func confirm_endgame(mode: String) -> void:
+	# MP: the trials are SOLO. endgame.start() tears down THIS machine's world
+	# only (net_session has no endgame fan), so in-session entry desyncs every
+	# machine. This is the player-facing gate for the HUD icons;
+	# game_flow.enter_endgame carries the hard backstop. (Follow-up: hide the
+	# icons themselves online — hud.gd:1419 — once that file is free.)
+	if game.net_online():
+		open_confirm("Endgame trials are SOLO for now — a shared arena needs its own netcode.\n\nLeave the co-op session first; the trials will be waiting.",
+			func() -> void: close(),
+			func() -> void: close())
+		return
 	var cls: String = game.local_player.cls
 	var pb := game.endgame_pb(mode, cls)
 	var mname := "The Crucible" if mode == "crucible" else "The Waking Depths"

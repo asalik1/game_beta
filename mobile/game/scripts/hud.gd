@@ -1362,7 +1362,11 @@ func _endgame_icon(glyph: String, tip: String, pos: Vector2, mode: String) -> Bu
 	b.size = Vector2(32, 30)
 	b.visible = false
 	b.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open() and not game.endgame_active:
+		# not-online: the trials are SOLO (menus.confirm_endgame explains if
+		# reached; game_flow.enter_endgame is the hard backstop — the arena
+		# swap is local-only, no session fan exists).
+		if game.play_started and not game.menus.is_open() and not game.endgame_active \
+				and not game.net_online():
 			game.menus.confirm_endgame(mode))
 	add_child(b)
 	return b
@@ -1415,8 +1419,11 @@ func update_stats(p: Player) -> void:
 	if unread > 0:
 		mail_badge_num.text = str(unread) if unread < 10 else "9+"
 
-	# Endgame trial icons: shown once Act 1 is cleared, hidden during a run.
-	var eg_show: bool = game.play_started and not game.endgame_active and game.endgame_unlocked()
+	# Endgame trial icons: shown once Act 1 is cleared, hidden during a run —
+	# and hidden IN-SESSION: the trials are solo (the arena swap is local-only,
+	# no session fan), so the icons vanish rather than dangle a dead door.
+	var eg_show: bool = game.play_started and not game.endgame_active \
+		and game.endgame_unlocked() and not game.net_online()
 	crucible_btn.visible = eg_show
 	depths_btn.visible = eg_show
 

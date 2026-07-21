@@ -1417,6 +1417,9 @@ func _run_systems() -> void:
 	# 5d. The touch HUD's overlay gate (mobile x co-op — the suite is the ONLY
 	# thing that ever mounts a TouchHud headless; see the section's header).
 	await _test_touch_overlay_gate()
+	# 5e. The keyboard twin: stale polled intents must die under any overlay
+	# (desktop x co-op — same forced-unpause simulation; see its header).
+	await _test_overlay_intent_gate()
 
 
 ## Endgame arena modes end to end (headless): the Crucible spawns affixed
@@ -4640,3 +4643,43 @@ func _test_capital() -> void:
 	if game.chapter_id != prev:
 		return _fail("capital: failed to restore chapter %s" % prev)
 	print("ok: capital hub (50-room fixed graph, connected, safe, spawns on Crown Plaza, fully-charted detailed map, travel-anywhere, leaves clean)")
+
+
+## The KEYBOARD twin of the touch overlay gate (cross-product audit 2026-07-21).
+## game.gd polls local intents only while NO overlay is up, and intents HOLD
+## their last polled value — so in a session (§5.4: nothing pauses) a key held
+## at the instant a menu/dialogue/choice opened kept walking or casting the
+## hero under the overlay for its whole lifetime. game.gd now zeroes intents
+## every overlay frame (player_core.clear_local_intents). Same simulation trick
+## as the touch section above: fake the overlay flags with the world FORCE-
+## unpaused (the co-op state — solo's pause made this unreachable, which is how
+## it shipped). The CHOICE flag is asserted separately on purpose: it is its
+## own overlay (dialogue_active drops before dialogue_choice raises it) and was
+## missing from every one of these gates.
+func _test_overlay_intent_gate() -> void:
+	var paused_was: bool = get_tree().paused
+	var p: Player = game.local_player
+	# 1. Dialogue overlay: stale move/ability/interact intents must die.
+	get_tree().paused = false
+	game.hud.dialogue_active = true
+	p.intent_move = Vector2.RIGHT
+	p.intent_a1 = true
+	p.intent_interact = true
+	await _frames(2)
+	var stale_dlg: bool = p.intent_move != Vector2.ZERO or p.intent_a1 or p.intent_interact
+	game.hud.dialogue_active = false
+	if stale_dlg:
+		get_tree().paused = paused_was
+		return _fail("overlay intent gate: stale keyboard intents survived a dialogue overlay")
+	# 2. CHOICE overlay — its own flag, not dialogue_active.
+	game.hud.choices_active = true
+	get_tree().paused = false
+	p.intent_move = Vector2.RIGHT
+	p.intent_interact = true
+	await _frames(2)
+	var stale_choice: bool = p.intent_move != Vector2.ZERO or p.intent_interact
+	game.hud.choices_active = false
+	get_tree().paused = paused_was
+	if stale_choice:
+		return _fail("overlay intent gate: stale keyboard intents survived a CHOICE overlay")
+	print("ok: overlay intent gate (stale keyboard intents die under dialogue + choice overlays, world unpaused — co-op)")
