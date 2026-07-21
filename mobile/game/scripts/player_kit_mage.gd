@@ -581,6 +581,10 @@ func _crystal_archmage_blink_visual(start: Vector2, finish: Vector2) -> void:
 
 	var tex := "fx/mage_crystal_blink_shatter"
 	var raised := Vector2(0, -50)
+	# The arrival double's painted footing sits slightly high relative to the
+	# live feet-anchored hero. Lower only the reconstruction by three world
+	# pixels; departure already aligns with the ghost left at the start point.
+	var arrival_raised := raised + Vector2(0, 3)
 	# The reconstruction double inherits only horizontal intent. Diagonals map
 	# cleanly onto east/west, while a pure vertical Blink keeps current facing.
 	var arrival_flip := sprite.flip_h if sprite != null else false
@@ -595,7 +599,7 @@ func _crystal_archmage_blink_visual(start: Vector2, finish: Vector2) -> void:
 	_mage_sheet(tex, start + raised, 0, 3, {
 		"scale": 0.64, "z": 10, "frame_time": 0.030, "fade": 0.045,
 	})
-	_mage_sheet(tex, raised, 4, 7, {
+	_mage_sheet(tex, arrival_raised, 4, 7, {
 		"parent": self, "scale": 0.64, "z": 10, "frame_time": 0.030,
 		"delay": 0.025, "hold": 0.030, "fade": 0.070, "flip_h": arrival_flip,
 	})
