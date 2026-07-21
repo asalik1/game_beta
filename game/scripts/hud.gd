@@ -86,6 +86,27 @@ var dialogue_lines: Array = []
 var dialogue_index := 0
 var dialogue_done: Callable
 var dialogue_active := false
+# CQ-style speaker splash (visual-novel framing): full-bleed painted art behind
+# the box when the speaker HAS splash art (class_splash_<cls> for the hero, or
+# assets/sprites/splash_<sprite>.png for any named speaker). Absent -> the box
+# falls back to the small portrait slot, so content without splash never
+# regresses. Drop a splash_<sprite>.png in and that speaker lights up for free.
+var splash_layer: Control
+var splash_rect: TextureRect
+var splash_scrim: ColorRect        # gentle dim so gold UI + text read over the art
+var _splash_cache := {}            # speaker -> splash sprite name ("" = none)
+# Dialogue chrome (LOG / SKIP / AUTO), the CQ reader controls. The row rides
+# just above the box (repositioned as the box grows in _fit_dialogue_box).
+var dlg_ctrl_row: Control
+var dlg_log_btn: Button
+var dlg_skip_btn: Button
+var dlg_auto_btn: Button
+var _auto_on := false              # AUTO: dwell then advance (persists across a convo)
+var _auto_t := 0.0
+var _auto_dwell := 0.0
+var _dialogue_history: Array = []  # [[who, text], ...] backlog for the LOG panel
+var log_panel: Control
+var log_list: VBoxContainer
 
 var overlay: ColorRect
 var vignette: TextureRect
@@ -429,6 +450,29 @@ func _ready() -> void:
 	dialogue_box = Control.new()
 	dialogue_box.visible = false
 	add_child(dialogue_box)
+
+	# CQ-style speaker splash — built FIRST so it draws behind the box/portrait.
+	# The art is square painted key-art (1254²) with its own background; shown
+	# width-fit and top-aligned so the face sits above the box, which overlaps
+	# the lower body (classic visual-novel framing).
+	splash_layer = Control.new()
+	splash_layer.visible = false
+	splash_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dialogue_box.add_child(splash_layer)
+	splash_rect = TextureRect.new()
+	splash_rect.position = Vector2.ZERO
+	splash_rect.size = Vector2(1280, 1280)
+	splash_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	splash_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	splash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	splash_layer.add_child(splash_rect)
+	splash_scrim = ColorRect.new()
+	splash_scrim.color = Color(0.02, 0.02, 0.05, 0.34)
+	splash_scrim.position = Vector2.ZERO
+	splash_scrim.size = Vector2(1280, 720)
+	splash_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	splash_layer.add_child(splash_scrim)
+
 	# The box grows UPWARD from a fixed bottom edge (648, clearing the
 	# quickbar): tall enough that a long paragraph (5-6 wrapped lines) fits
 	# instead of clipping its last line against the bottom border.
@@ -488,6 +532,71 @@ func _ready() -> void:
 	portrait_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	portrait_box.add_child(portrait_rect)
+
+	# ------------------------------------------- LOG / SKIP / AUTO ---
+	# The CQ reader controls, riding just above the box's top-right (moved to
+	# track the box top in _fit_dialogue_box). Children of dialogue_box, so they
+	# appear/vanish with it. LOG opens the backlog; SKIP fast-forwards the
+	# current line/batch; AUTO dwells then advances on its own.
+	dlg_ctrl_row = Control.new()
+	dlg_ctrl_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dialogue_box.add_child(dlg_ctrl_row)
+	dlg_log_btn = _dlg_chip("LOG", 0)
+	dlg_skip_btn = _dlg_chip("SKIP", 1)
+	dlg_auto_btn = _dlg_chip("AUTO", 2)
+	dlg_ctrl_row.add_child(dlg_log_btn)
+	dlg_ctrl_row.add_child(dlg_skip_btn)
+	dlg_ctrl_row.add_child(dlg_auto_btn)
+	dlg_log_btn.pressed.connect(_toggle_log)
+	dlg_skip_btn.pressed.connect(_skip_dialogue)
+	dlg_auto_btn.pressed.connect(_toggle_auto)
+
+	# Backlog overlay (hidden until LOG is pressed): a scroll of lines seen so
+	# far. Its own child of the HUD so it layers over the box.
+	log_panel = Control.new()
+	log_panel.visible = false
+	add_child(log_panel)
+	var lback := ColorRect.new()   # full-screen shade; eats clicks so the box behind can't advance
+	lback.color = Color(0.0, 0.0, 0.0, 0.55)
+	lback.position = Vector2.ZERO
+	lback.size = Vector2(1280, 720)
+	lback.mouse_filter = Control.MOUSE_FILTER_STOP
+	lback.gui_input.connect(func(e: InputEvent) -> void:  # click off the panel closes the log
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			_toggle_log()
+			get_viewport().set_input_as_handled())
+	log_panel.add_child(lback)
+	var lframe := ColorRect.new()
+	lframe.color = Color(0.9, 0.8, 0.5)
+	lframe.position = Vector2(238, 96)
+	lframe.size = Vector2(804, 470)
+	lframe.mouse_filter = Control.MOUSE_FILTER_STOP  # eat clicks so the box doesn't advance
+	log_panel.add_child(lframe)
+	var linner := ColorRect.new()
+	linner.color = Color(0.07, 0.06, 0.11, 0.98)
+	linner.position = Vector2(241, 99)
+	linner.size = Vector2(798, 464)
+	linner.mouse_filter = Control.MOUSE_FILTER_STOP
+	log_panel.add_child(linner)
+	var ltitle := Label.new()
+	ltitle.position = Vector2(262, 110)
+	UITheme.title(ltitle, 19)
+	ltitle.add_theme_color_override("font_color", Color(0.95, 0.8, 0.4))
+	ltitle.text = "Backlog"
+	log_panel.add_child(ltitle)
+	var lclose := _dlg_chip("CLOSE", 0)
+	lclose.position = Vector2(956, 108)
+	log_panel.add_child(lclose)
+	lclose.pressed.connect(_toggle_log)
+	var lscroll := ScrollContainer.new()
+	lscroll.position = Vector2(262, 146)
+	lscroll.size = Vector2(760, 404)
+	lscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	log_panel.add_child(lscroll)
+	log_list = VBoxContainer.new()
+	log_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	log_list.add_theme_constant_override("separation", 10)
+	lscroll.add_child(log_list)
 
 	# ------------------------------------------- choice options panel ---
 	# Sits directly above the dialogue box when a conversation offers a
@@ -2308,6 +2417,150 @@ func _set_portrait(who: String) -> void:
 		portrait_rect.texture = Art.tex(sprite_name)
 
 
+## CQ-style splash: resolve the speaker to painted key-art. Reuses _portrait_for
+## to map the name to a sprite key, then looks for splash art for it — "" when
+## none exists (the caller then falls back to the small portrait slot). Hero
+## speakers ("you"/"hero") use their class splash; the Narrator stays faceless.
+func _splash_for(who: String) -> String:
+	if _splash_cache.has(who):
+		return _splash_cache[who]
+	var found := ""
+	var low := who.to_lower()
+	if low in ["you", "hero"]:
+		var cand := "class_splash_" + String(game.local_player.cls)
+		if Art.has_sprite(cand):
+			found = cand
+	elif low != "narrator":
+		# Any named speaker lights up the moment splash_<their sprite>.png ships.
+		var sprite := _portrait_for(who)
+		if sprite != "" and Art.has_sprite("splash_" + sprite):
+			found = "splash_" + sprite
+	_splash_cache[who] = found
+	return found
+
+
+## Show `who`'s splash full-bleed (CQ framing) if art exists, else fall back to
+## the small portrait slot. Tunes box translucency so the art reads through.
+func _set_splash(who: String) -> void:
+	var sp := _splash_for(who)
+	if sp != "":
+		splash_rect.texture = Art.tex(sp)
+		splash_layer.visible = true
+		portrait_box.visible = false
+		dialogue_inner.color = Color(0.06, 0.05, 0.10, 0.85)  # see-through for the art
+	else:
+		splash_layer.visible = false
+		dialogue_inner.color = Color(0.08, 0.07, 0.12, 0.97)  # opaque default
+		_set_portrait(who)
+
+
+## A small CQ reader chip (LOG/SKIP/AUTO). Unparented — the caller adds it and
+## may override its position (the CLOSE chip does). idx lays them out in a row.
+func _dlg_chip(txt: String, idx: int) -> Button:
+	var b := Button.new()
+	b.text = txt
+	b.size = Vector2(66, 28)
+	b.position = Vector2(float(idx) * 74.0, 0.0)
+	b.focus_mode = Control.FOCUS_NONE
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b.add_theme_font_size_override("font_size", 13)
+	_style_chip(b, false)
+	return b
+
+
+## Dark pill with a gold border; turns green when `active` (AUTO engaged).
+func _style_chip(b: Button, active: bool) -> void:
+	var edge := Color(0.45, 0.86, 0.5) if active else Color(0.9, 0.8, 0.5)
+	var fill := Color(0.06, 0.16, 0.08, 0.92) if active else Color(0.08, 0.07, 0.12, 0.92)
+	for state in ["normal", "hover", "pressed"]:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = fill.lightened(0.08) if state == "hover" else fill
+		sb.set_border_width_all(2)
+		sb.border_color = edge
+		sb.set_corner_radius_all(5)
+		b.add_theme_stylebox_override(state, sb)
+	b.add_theme_color_override("font_color", edge)
+	b.add_theme_color_override("font_hover_color", edge.lightened(0.25))
+	b.add_theme_color_override("font_pressed_color", edge)
+
+
+## AUTO: toggle dwell-then-advance. Persists across a convo (CQ behaviour).
+func _toggle_auto() -> void:
+	_auto_on = not _auto_on
+	_style_chip(dlg_auto_btn, _auto_on)
+	_auto_t = 0.0
+	_auto_dwell = _dwell_for(text_label.text)
+
+
+## How long AUTO lingers on a line before advancing — scales with length.
+func _dwell_for(s: String) -> float:
+	return clampf(1.1 + 0.045 * float(s.length()), 1.5, 6.0)
+
+
+## SKIP: fast-forward to the end of the current dialogue() batch. Never resolves
+## a choice (a decision must be made), so it no-ops while options are up.
+func _skip_dialogue() -> void:
+	if not dialogue_active or choices_active:
+		return
+	dialogue_index = dialogue_lines.size() - 1
+	_advance_dialogue()
+
+
+## LOG: open/close the backlog of lines seen this conversation.
+func _toggle_log() -> void:
+	if log_panel.visible:
+		log_panel.visible = false
+		return
+	_rebuild_log()
+	log_panel.visible = true
+
+
+func _rebuild_log() -> void:
+	for c in log_list.get_children():
+		c.queue_free()
+	for entry in _dialogue_history:
+		var who_l := Label.new()
+		who_l.text = String(entry[0])
+		who_l.add_theme_font_size_override("font_size", 15)
+		who_l.add_theme_color_override("font_color", Color(0.95, 0.8, 0.4))
+		log_list.add_child(who_l)
+		var txt_l := Label.new()
+		txt_l.text = String(entry[1])
+		txt_l.custom_minimum_size = Vector2(748, 0)
+		txt_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		txt_l.add_theme_font_size_override("font_size", 15)
+		txt_l.add_theme_color_override("font_color", Color(0.86, 0.85, 0.8))
+		log_list.add_child(txt_l)
+
+
+func _log_push(who: String, text: String) -> void:
+	_dialogue_history.append([who, text])
+	if _dialogue_history.size() > 80:
+		_dialogue_history = _dialogue_history.slice(_dialogue_history.size() - 80)
+
+
+## Clear CQ chrome when a conversation (or a choice) ends.
+func _reset_dialogue_chrome() -> void:
+	splash_layer.visible = false
+	dialogue_inner.color = Color(0.08, 0.07, 0.12, 0.97)
+	if log_panel != null:
+		log_panel.visible = false
+
+
+func _process(_delta: float) -> void:
+	# AUTO drives line advance while dialogue is up (never through a choice or an
+	# open backlog). The HUD processes even while the tree is paused, which is
+	# exactly when a convo is showing, so real delta accrues here.
+	if not _auto_on or not dialogue_active or choices_active:
+		return
+	if log_panel != null and log_panel.visible:
+		return
+	_auto_t += _delta
+	if _auto_t >= _auto_dwell:
+		_auto_t = 0.0
+		_advance_dialogue()
+
+
 # The dialogue box hangs from a fixed BOTTOM edge and grows UPWARD to fit its
 # line, so a long paragraph can't spill past the bottom border (the box used to
 # be a static 200px and 6+ wrapped lines clipped through it). These anchor the
@@ -2337,6 +2590,9 @@ func _fit_dialogue_box() -> float:
 	dialogue_frame.size.y = DIALOG_BOX_BOTTOM - frame_top
 	dialogue_inner.position.y = frame_top + 3.0
 	dialogue_inner.size.y = (DIALOG_BOX_BOTTOM - 3.0) - (frame_top + 3.0)
+	# LOG/SKIP/AUTO ride just above the box's top-right, tracking the grown top.
+	if dlg_ctrl_row != null:
+		dlg_ctrl_row.position = Vector2(922.0, frame_top - 34.0)
 	return frame_top
 
 
@@ -2345,7 +2601,10 @@ func _show_line() -> void:
 	speaker_label.text = line[0]
 	text_label.text = game.touchify(line[1])
 	_fit_dialogue_box()
-	_set_portrait(String(line[0]))
+	_set_splash(String(line[0]))
+	_log_push(String(line[0]), text_label.text)
+	_auto_t = 0.0
+	_auto_dwell = _dwell_for(text_label.text)
 	game.sfx("talk")
 	# MP-13 (§5.4): when THIS machine drives a chapter beat, mirror the line
 	# to the spectating party (read-only). Inert offline / for private convos.
@@ -2360,6 +2619,7 @@ func _advance_dialogue() -> void:
 	if dialogue_index >= dialogue_lines.size():
 		dialogue_active = false
 		dialogue_box.visible = false
+		_reset_dialogue_chrome()
 		game.request_pause(false)
 		if dialogue_done.is_valid():
 			dialogue_done.call()
@@ -2514,7 +2774,8 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	speaker_label.text = who
 	text_label.text = text
 	var box_top := _fit_dialogue_box()
-	_set_portrait(who)
+	_set_splash(who)
+	_log_push(who, text)
 	game.sfx("talk")
 	# MP-13 (§5.4): mirror the decision to spectators of a driven beat (they
 	# see the prompt and options read-only; the initiator makes the call).
@@ -2575,6 +2836,7 @@ func _choose(idx: int) -> void:
 	choices_active = false
 	choice_panel.visible = false
 	dialogue_box.visible = false
+	_reset_dialogue_chrome()
 	game.request_pause(false)
 	game.sfx("talk")
 	var cb := choice_cb
@@ -2662,7 +2924,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		pressed_confirm = true
 
-	if pressed_confirm and dialogue_active:
+	if pressed_confirm and dialogue_active and not (log_panel != null and log_panel.visible):
 		_advance_dialogue()
 		get_viewport().set_input_as_handled()
 
