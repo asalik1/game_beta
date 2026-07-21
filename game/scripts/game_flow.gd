@@ -498,7 +498,13 @@ func on_endgame_boss_died(kind: String, dead: Boss = null) -> void:
 ## A full run-start like replay_chapter, minus the campaign flag wipe (the
 ## arena world is throwaway) — the controller builds the arena in start().
 func enter_endgame(mode: String) -> void:
-	if endgame_active:
+	# MP backstop (menus.confirm_endgame carries the player-facing message):
+	# the arena swap is LOCAL-ONLY — endgame.start() tears down this machine's
+	# world and net_session fans none of it — so a session must never reach
+	# here from ANY entry point (HUD icons, dev panel, tests). A guest entering
+	# would keep receiving host state for a world it just deleted; a host
+	# entering strands every guest in an unsimulated mirror.
+	if endgame_active or net_online():
 		return
 	endgame_active = true
 	reset_run_stats()          # fresh run clock/deaths for the leaderboard PB

@@ -486,7 +486,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	# next to fires its convo/desk — same range + action as the keyboard path below
 	# (~L484). Only UNCONSUMED taps reach here, so the touch HUD's joystick/ability
 	# arc never trigger it; desktop keeps press-E (touch_mode is false there).
-	if not touch_mode or state != ST_PLAYING or hud.dialogue_active or menus.is_open():
+	# choices_active is its OWN overlay flag: dialogue_active drops before
+	# dialogue_choice raises it (hud.gd) — without the check, a stray tap near
+	# the NPC re-fires their convo UNDER a pending decision in a session
+	# (solo the pause blocks this handler; §5.4 skips the pause online).
+	if not touch_mode or state != ST_PLAYING or hud.dialogue_active \
+			or hud.choices_active or menus.is_open():
 		return
 	if ((event is InputEventScreenTouch and event.pressed) or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed)) and talk_cd <= 0.0:
 		var world: Vector2 = get_viewport().canvas_transform.affine_inverse() * event.position
@@ -567,7 +572,7 @@ func _process(delta: float) -> void:
 	if not active_facing_interactable.is_empty() and not hud.dialogue_active \
 			and not hud.choices_active and not menus.is_open():
 		_restore_interactable_rest_pose()
-	if hud.dialogue_active or menus.is_open():
+	if hud.dialogue_active or hud.choices_active or menus.is_open():
 		talk_cd = 0.4
 	if play_started and state == ST_PLAYING:
 		run_time += delta  # chapter run clock (results card; pauses pause it)
@@ -704,7 +709,13 @@ func _process(delta: float) -> void:
 	# the player's intents (MP seam). The poll-through refresh keeps the
 	# old live-read timing (_process outruns physics frames headless).
 	interact_in_range = false  # recomputed below; stays false while a menu/dialogue is up
-	if state == ST_PLAYING and not hud.dialogue_active and not menus.is_open():
+	# A CHOICE prompt is its own overlay flag — dialogue_active drops before
+	# dialogue_choice raises choices_active (hud.gd) — so it gates here too:
+	# in a session nothing pauses (§5.4), and an ungated poll kept firing
+	# E-interacts (re-entering the convo under its own pending decision) and
+	# moving the hero beneath the panel.
+	var overlay_up: bool = hud.dialogue_active or hud.choices_active or menus.is_open()
+	if state == ST_PLAYING and not overlay_up:
 		player._poll_local_intents()
 		for entry in interactables:
 			if not is_instance_valid(entry["node"]):
@@ -718,6 +729,19 @@ func _process(delta: float) -> void:
 				_face_interactable_to_player(entry)
 				entry["action"].call()
 				break
+		# MP-12 × touch: the Act button must ALSO appear beside a fallen ally —
+		# holding it IS the revive channel (player.gd _revive_channel_tick reads
+		# intent_interact), and a phone has no E key. Range mirrors the channel's
+		# own REVIVE_REACH so the button shows exactly where holding it works.
+		# Without this the button never surfaced (interactables holds NPCs and
+		# desks, never players) and revive was unreachable on touch.
+		if net_online() and not player.downed and not player.ghost:
+			for q in players:
+				if q != null and is_instance_valid(q) and q != player \
+						and (q.downed or q.ghost) \
+						and player.global_position.distance_to(q.global_position) <= player.REVIVE_REACH:
+					interact_in_range = true
+					break
 		# Menu hotkeys. MP: UI-local, per-client — opening your inventory or
 		# map is presentation, not simulation; these never become intents.
 		if talk_cd <= 0.0:
@@ -735,6 +759,13 @@ func _process(delta: float) -> void:
 				menus.open_map()
 			# (ESC → pause menu lives in hud._on_escape, event-driven —
 			# a polled duplicate here caused double-open/close races.)
+	elif state == ST_PLAYING and has_local_player():
+		# Overlay up: polling is skipped, and intents HOLD their last polled
+		# value — online (no pause) a key held when the overlay opened would
+		# keep walking/casting the hero underneath it. Zero them every frame
+		# an overlay is up; the touch HUD already zeroes its own side
+		# (_release_everything on the overlay gate).
+		player.clear_local_intents()
 
 	shake_amt = move_toward(shake_amt, 0.0, 20.0 * delta)
 	if camera:

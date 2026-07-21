@@ -948,8 +948,12 @@ func _merchant_arrives(zi: int) -> void:
 ## Teleport to a visited safe room from the map screen. Walking through
 ## a LIVE room is content; re-walking a cleared one is not (DESIGN.md).
 func fast_travel(i: int) -> void:
+	# `downed` blocks too: bleed-out is a state you get carried out of, not one
+	# you teleport out of (matches the §5.3 exclusions in game_flow's boss-heal
+	# paths). GHOSTS stay free to travel — a bled-out spectator catching up with
+	# the party is convenience, not combat power. Solo never sets either flag.
 	if not travel_target(i) or state != ST_PLAYING or barrier_active \
-			or hud.dialogue_active or player.dead:
+			or hud.dialogue_active or player.dead or player.downed:
 		return
 	sfx("blink")
 	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)

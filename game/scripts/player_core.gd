@@ -337,6 +337,26 @@ func _poll_local_intents() -> void:
 		intent_potion_next = false
 		intent_interact = false
 
+
+## Zero every locally-polled intent. game.gd calls this each frame an overlay
+## (menu / dialogue / choice prompt) is up: polling stops then, and intents
+## HOLD their last polled value — so in a session, where §5.4 never pauses the
+## world, a key held at the moment the overlay opened would keep walking or
+## casting the hero underneath it for the overlay's whole lifetime (the
+## keyboard twin of the touch-HUD joystick bug). The touch HUD zeroes its own
+## MobileInput side on disable (_release_everything); this owns the keyboard's.
+func clear_local_intents() -> void:
+	if not is_locally_controlled():
+		return  # shells act on RPC'd intents — never zero those from here
+	intent_move = Vector2.ZERO
+	intent_a1 = false
+	intent_a2 = false
+	intent_a3 = false
+	intent_ult = false
+	intent_potion = false
+	intent_potion_next = false
+	intent_interact = false
+
 # --- combat state ---
 var cds := {"a1": 0.0, "a2": 0.0, "a3": 0.0, "ult": 0.0}
 var potion_cd := 0.0
