@@ -20,6 +20,12 @@
 2. Iterate with `test_quick.bat` (~15s): gate → boot → one class kit → systems → UI smoke → pause menu.
 3. `test.bat` (full suite, minutes; plays both chapters end to end) must be green before staging.
 
+## Agent toolkit (the map: `tools/INDEX.md` — check it before writing a helper script)
+- `preflight.bat` — the traps below, mechanized: stale/forgotten `--import`, codex/BOSS_KINDS staleness, unregistered content modules, diff-scoped balance-number + CONNECT_DEFERRED lints. Run it before staging; every finding prints its one-line fix.
+- `python tools/safe_commit.py -m "msg" <your paths>` — the serialized-commit etiquette as a guardrail: path-scoped commit that lists sibling-staged work instead of swallowing it.
+- `python tools/sync_mobile.py` — mobile drift report; `--apply [--gate]` performs the re-sync ritual from `mobile/README.md`.
+- `python tools/art/verify_art.py <base>` — post-install sprite checks (strip geometry, 8-dir completeness, green-bleed, stale import).
+
 ## GDScript traps (each has bitten us) — review-time deep list: `CODING_GUIDELINES.md` §38
 - `var x := obj.method()` on a loosely-typed obj (or any Variant expression, e.g. `Dictionary.get`) = PARSE ERROR "cannot infer type". Annotate: `var x: float = ...`.
 - New `class_name` → `--import` first or headless silently hangs.

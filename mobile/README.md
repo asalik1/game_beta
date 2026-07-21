@@ -109,8 +109,11 @@ On a re-sync (re-copy `game/` over `mobile/game/`), re-apply this exact list:
    (`scripts/ui/touch_hud.gd.uid` is `dphdbd1k4na7b` in `game/`, `c4m34x3nb0j4r`
    here), and the mobile-only scenes in (3) resolve their scripts by **this**
    tree's UID. Copying `game/`'s over them breaks `shot_touch.tscn`. Sync the
-   `.gd`, leave the `.uid`. (`.import` files are safe to copy — their `uid=`
-   lines already agree.)
+   `.gd`, leave the `.uid`. (`.import` files SHOULD be copied: assets added
+   after the snapshot were imported independently on each side, so their
+   `uid=` lines drifted apart — measured 2026-07-21, ~1k files — while the
+   synced `.tscn`s reference game-side uids. `tools/sync_mobile.py` copies
+   them and the post-sync `--import` settles the uid cache.)
 
 A correct re-sync leaves exactly these differences and nothing else: the files
 in (1)-(2), and the (3)/(4) entries above. See "Verifying a re-sync" below for
