@@ -2417,10 +2417,22 @@ func _set_portrait(who: String) -> void:
 		portrait_rect.texture = Art.tex(sprite_name)
 
 
-## CQ-style splash: resolve the speaker to painted key-art. Reuses _portrait_for
-## to map the name to a sprite key, then looks for splash art for it — "" when
-## none exists (the caller then falls back to the small portrait slot). Hero
-## speakers ("you"/"hero") use their class splash; the Narrator stays faceless.
+## Genuine name reorderings the word-run matcher can't reach — the art keys the
+## same character under a differently-ordered name.
+const SPLASH_ALIAS := {
+	"caged beastkin": "captive_wildfang_scout",
+	"pilgrim of the flame": "flame_pilgrim",
+	"ansa of the shore": "ansa_shore",
+	"maren": "elder_maren",           # short form of Elder Maren
+	"villager": "emberfall_villager",  # the generic-villager splash
+}
+
+
+## CQ-style splash: resolve the speaker to painted key-art (assets/sprites/
+## splash_<name-slug>.png — each NPC has their OWN art, so we key on the speaker
+## NAME, not the world sprite many of them share). "" when none exists (caller
+## falls back to the small portrait slot). Hero speakers use their class splash;
+## the Narrator stays faceless.
 func _splash_for(who: String) -> String:
 	if _splash_cache.has(who):
 		return _splash_cache[who]
@@ -2430,13 +2442,51 @@ func _splash_for(who: String) -> String:
 		var cand := "class_splash_" + String(game.local_player.cls)
 		if Art.has_sprite(cand):
 			found = cand
+	elif SPLASH_ALIAS.has(low) and Art.has_sprite("splash_" + String(SPLASH_ALIAS[low])):
+		found = "splash_" + String(SPLASH_ALIAS[low])
 	elif low != "narrator":
-		# Any named speaker lights up the moment splash_<their sprite>.png ships.
-		var sprite := _portrait_for(who)
-		if sprite != "" and Art.has_sprite("splash_" + sprite):
-			found = "splash_" + sprite
+		found = _resolve_splash(_splash_slug(who))
+		if found == "":
+			# Shared world-sprite splash (bosses / variants), then no splash.
+			var sprite := _portrait_for(who)
+			if sprite != "" and Art.has_sprite("splash_" + sprite):
+				found = "splash_" + sprite
 	_splash_cache[who] = found
 	return found
+
+
+## Installed splash for a name slug: exact match first, else the longest
+## contiguous run of its words — so a decorated name still resolves the base
+## art ("toll_warden_palla" -> splash_warden_palla, "old_smith_harl" ->
+## splash_smith_harl). "" if nothing matches.
+func _resolve_splash(slug: String) -> String:
+	if slug == "":
+		return ""
+	if Art.has_sprite("splash_" + slug):
+		return "splash_" + slug
+	var words := slug.split("_", false)
+	for span in range(words.size() - 1, 0, -1):  # longest run first, full already tried
+		for start in range(0, words.size() - span + 1):
+			var cand: String = "_".join(words.slice(start, start + span))
+			if Art.has_sprite("splash_" + cand):
+				return "splash_" + cand
+	return ""
+
+
+## Speaker name -> filename slug: lowercase, each run of non-alphanumerics
+## becomes one underscore, ends trimmed. "Elder Maren" -> "elder_maren",
+## "Warden-Commander Ashe" -> "warden_commander_ashe".
+func _splash_slug(s: String) -> String:
+	var out := ""
+	var prev_us := true  # leading true so a leading separator can't open with "_"
+	for ch in s.to_lower():
+		if (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9"):
+			out += ch
+			prev_us = false
+		elif not prev_us:
+			out += "_"
+			prev_us = true
+	return out.trim_suffix("_")
 
 
 ## Show `who`'s splash full-bleed (CQ framing) if art exists, else fall back to
