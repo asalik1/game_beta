@@ -159,6 +159,22 @@ static func _tab_character(m: Menus, list: VBoxContainer) -> void:
 			m.game.player.set_skin(sk_id)
 			m.open_dev(), Color(0.5, 1.0, 0.5) if sk_on else tier_color)
 
+	# Judge the CQ-style dialogue frame in-game — three states in one preview:
+	# the hero shows their class splash, Maren shows her own NPC splash, and the
+	# Narrator is faceless (falls back to no art). LOG/SKIP/AUTO ride the box.
+	_section(m, list, "DIALOGUE FRAME")
+	var row_dlg := _flow(list)
+	m._btn(row_dlg, "▶ Preview dialogue (CQ splash)", func() -> void:
+		var g := m.game
+		if g.player == null or g.state != g.ST_PLAYING:
+			return
+		m.close()
+		g.hud.dialogue([
+			["You", "So this is what the Ember left me — my own hands, and something else looking out through them."],
+			["Elder Maren", "Steady, child. Whatever woke in you, we'll name it together. Come inside."],
+			["Narrator", "The elder's door closed behind you. The road to Crownfall waited in the dark."],
+		]), Color(0.7, 0.9, 1.0))
+
 
 ## Dailies, bounties, vault, achievements, records, economy levers.
 static func _tab_econ(m: Menus, list: VBoxContainer) -> void:

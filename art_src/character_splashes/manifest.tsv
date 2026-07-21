@@ -1,0 +1,82 @@
+type	sprite	name	role
+npc	elder	Elder Maren	veteran village elder and shard-bearer mentor
+npc	piet	Sentry Piet	weary refugee-camp sentry
+npc	sera	Widow Sera	resilient refugee and widow
+npc	callis	Warden Callis	stern Accord recruiter
+npc	vessa	Envoy Vessa	charismatic Cinderborn envoy
+npc	caged_beastkin	Captive Wildfang Scout	imprisoned beastkin scout behind iron cage bars
+npc	choir_pilgrim	Choir Pilgrim	grey-habited pilgrim of the Choir
+npc	aldric	Ser Aldric	aged knight who slew the Hollow King
+npc	villager	Emberfall Villager	weathered commoner of the fallen kingdom
+npc	cantor_ilse	Cantor Ilse	Choir defector and guide of the Unburied Vale
+npc	warden_corin	Warden Corin	seasoned Accord warden
+npc	factor_imre	Factor Imre	sharp-eyed Cinderborn factor and trader
+npc	old_fenna	Old Fenna	elderly refugee matriarch and cook
+npc	overseer_brann	Overseer Brann	exhausted foundry overseer
+npc	envoy_cassia	Envoy Cassia	Cinderborn envoy of the Slagfields
+npc	warden_edda	Warden Edda	battle-worn Accord warden
+npc	smith_petra	Smith Petra	powerful soot-streaked blacksmith
+npc	tracker_yri	Tracker Yri	winter tracker and chapter guide
+npc	warden_sighne	Warden Sighne	cold-weather Accord commander
+npc	suli	Gentle Suli	soft-spoken cult survivor
+npc	ansa_shore	Ansa Shore	grieving mother of the Long Sleep
+npc	deacon_vela	Deacon Vela	grey-robed pilgrimage deacon
+npc	herbalist_kesh	Herbalist Kesh	Wildfang herbalist of the Blooming Deep
+npc	warden_palla	Warden Palla	Accord toll-warden and pilgrim guard
+npc	fisher_dov	Fisher Dov	marsh fisher and survivor
+npc	cultist	Blight Cultist	masked schismatic pilgrim
+npc	commander_ashe	Warden-Commander Ashe	Accord commander at the summit
+npc	consul_verane	Consul Verane	refined Cinderborn consul
+npc	apprentice_sorrel	Apprentice Sorrel	young alchemist and last apprentice
+npc	clerk_voss	Clerk Voss	precise charter-hall clerk
+npc	roadside_peddler	Roadside Peddler	traveling leatherworker and trader
+npc	botanist_ferro	Botanist Ferro	field botanist and gardener
+npc	archivist_lene	Archivist Lene	scholarly keeper of records
+npc	peddler_nix	Peddler Nix	charm seller and tavern proprietor
+npc	skald_ottar	Skald Ottar	weathered northern storyteller
+npc	digger_haim	Digger Haim	old gravedigger and excavator
+npc	brother_osk	Brother Osk	quiet former Choir brother
+npc	tinker_osla	Tinker Osla	practical roadside mechanic
+npc	keeper_vasse	Keeper Vasse	retired keeper of old vows
+npc	ragged_soldier	Ragged Soldier	deserter in a mud-caked keep tabard
+npc	flame_pilgrim	Flame Pilgrim	road-worn religious pilgrim
+npc	old_hunter	Old Hunter	aged woodsman and tracker
+npc	millers_boy	Miller's Boy	orphaned miller's apprentice
+npc	mute_mourner	Mute Mourner	silent black-clad mourner
+npc	grave_goods_peddler	Grave-Goods Peddler	macabre trader of funerary wares
+npc	smith_harl	Smith Harl	wandering slagfields smith
+npc	preacher_immo	Preacher Immo	fire-and-brimstone foundry preacher
+npc	sapper_ruel	Sapper Ruel	burn-scarred demolition worker
+npc	driver_pell	Driver Pell	winter caravan driver
+npc	cartographer_bree	Cartographer Bree	fur-wrapped mountain mapmaker
+npc	onna	Onna	memory-haunted sleeper of the northern road
+npc	ridge_deserter	Ridge Deserter	frostbitten military deserter
+npc	blooming_convert	Blooming Convert	pilgrim overtaken by strange verdant faith
+npc	sister_ottilie	Sister Ottilie	doubting Choir sister
+npc	scout_renn	Scout Renn	marshland Wildfang scout
+npc	reed_cutter_ama	Reed-Cutter Ama	marsh worker carrying a reed knife
+npc	storm_chaser_ilya	Storm-Chaser Ilya	daredevil scholar of living storms
+npc	quartermaster_bel	Quartermaster Bel	hardened summit quartermaster
+npc	bellringer_tam	Bellringer Tam	weather-beaten keeper of the warning bell
+npc	undertaker_prue	Undertaker Prue	calm undertaker of the high road
+boss	fangmaw	Fangmaw the Ravener	blight-maddened colossal wolf alpha
+boss	morwen	Morwen the Blightcaller	corrupted witch and blight sorceress
+boss	vargoth	King Vargoth the Hollow	undead fallen king in ruined royal armor
+boss	korrag	Korrag, Stormwarden Broken	shattered storm warden and giant warrior
+boss	choirmother	The Choir Mother	terrible matriarch of the deathless Choir
+boss	nullwarden	Warden Null, the Last Sentinel	ancient empty armored sentinel
+boss	sexton	The Sexton, Gravedigger of the Vale	monstrous gravedigger lord
+boss	vess	Vess the Unburied, First Widow	unburied spectral widow
+boss	saint_varo	Saint Varo the Unrotting	incorruptible corpse-saint
+boss	forgemistress	Forgemistress Calda	master of the living forge
+boss	cinderhide	Cinderhide the Unquenched	massive fire-scarred beast
+boss	ashpriest	Ashpriest Ordo, Voice of the Molten Judge	fanatical volcanic priest
+boss	hrolgar	Hrolgar Whitepelt	colossal white-furred northern warlord
+boss	serane	Serane the Icebound	ice-entombed knight
+boss	halla	Mother Halla, Keeper of the Long Sleep	ancient sleep-keeper matriarch
+boss	auroch	The Drowned Auroch	gigantic drowned horned beast
+boss	rotmaw	Rotmaw the Gardener	grotesque gardener of fungal corruption
+boss	kaethra	Kaethra Cure-Twisted	former healer transformed by her cure
+boss	veyx	Veyx, the Unchained Current	living lightning storm-drake
+boss	echo	The Echo of the Unnamed	faceless echo-knight of forgotten vows
+boss	stormmouth	Cyrraeth, Mouth of the Storm	apocalyptic storm dragon

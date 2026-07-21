@@ -1289,6 +1289,14 @@ static func _override_image(path: String) -> Image:
 	return t.get_image() if t else null
 
 
+## True when assets/sprites/<name>.png ships (imported into the pack). Lets a
+## caller light up an optional override — e.g. the dialogue splash frame shows a
+## speaker's art only when splash_<sprite>.png exists, else falls back — without
+## paying tex()'s procedural-fallback path just to test presence.
+static func has_sprite(name: String) -> bool:
+	return ResourceLoader.exists("res://assets/sprites/%s.png" % name)
+
+
 ## Hand-authored UI icon override (assets/icons/<name>.png), or null.
 ## A separate seam from assets/sprites/: icons are UI art (bag slots,
 ## HUD), never world sprites, and are used AS-IS — no grade tinting;
