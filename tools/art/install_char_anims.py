@@ -29,6 +29,10 @@ NAME_MAP = {
     "running": "run", "run": "run",
     "dash": "dash", "dodge_roll": "dash",
     "attack": "attack", "bow_shot": "attack",
+    # A PixelLab re-fire can rename an existing group to the latest custom
+    # action description instead of preserving its requested animation_name.
+    # This mage group is still the runtime's basic attack.
+    "a_clean_down-left_staff_jab_while_facing_down-left": "attack",
     "attack2": "attack2", "bow_bash": "attack2",
     "cast": "cast", "channel_cast": "cast",
     "ult": "ult", "ultidle": "ultidle",
@@ -69,6 +73,17 @@ def install(zip_path, art, out_dir, symmetric=True):
             df = merged.setdefault(clip, {})
             for suf, dname in DIR_NAME.items():
                 d = os.path.join(anim_root, folder, dname)
+                # Repeated single-direction re-fires can export sibling
+                # directories such as "south-west-02856b1b" inside the same
+                # animation folder. Prefer a repair directory when the plain
+                # direction is absent so the repaired facing is not dropped.
+                if not os.path.isdir(d):
+                    repairs = sorted(
+                        n for n in os.listdir(os.path.join(anim_root, folder))
+                        if n.startswith(dname + "-") and
+                        os.path.isdir(os.path.join(anim_root, folder, n)))
+                    if repairs:
+                        d = os.path.join(anim_root, folder, repairs[0])
                 # A repair folder ALWAYS wins (it re-rolled a bad direction);
                 # a base folder only fills a direction not already present.
                 if os.path.isdir(d) and (is_repair or suf not in df):
