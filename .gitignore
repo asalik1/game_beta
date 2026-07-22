@@ -12,9 +12,7 @@ tools/*
 !tools/content/
 !tools/*.py
 !tools/INDEX.md
-tools/art/__pycache__/
-tools/content/__pycache__/
-tools/__pycache__/
+__pycache__/
 
 # Local art backups (replaced originals + generation candidates; never commit)
 backup/
