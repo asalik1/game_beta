@@ -94,6 +94,31 @@ func _boss_projectile_key() -> String:
 		_: return "earthshard"
 
 
+## Aimed-volley bolt speed (2026-07-22 speed audit): trash-bolt speed at the
+## ch1 door, laddering with boss level so the dodge exam hardens as the
+## player's own read does. RINGS never use this — they stay readable walls
+## at Balance.BOSS_BOLT_RING, dodged through the gaps, not outrun.
+func _aimed_speed() -> float:
+	return minf(Balance.BOSS_BOLT_AIMED_CAP, Balance.BOSS_BOLT_AIMED_BASE
+		+ Balance.BOSS_BOLT_AIMED_PER_LVL * maxf(0.0, float(level) - Balance.BOSS_BOLT_AIMED_ANCHOR))
+
+
+## Standing melee contact swing (same audit): the strip leads via _strike,
+## and damage lands on the contact frame only IF the victim is still inside
+## reach + BOSS_MELEE_CONTACT_GRACE — stepping out during the visible
+## wind-up is the dodge (Cinderhide's contact pattern, promoted to the
+## boss-wide grammar; contact damage used to be instant on the decision
+## frame, which no reaction kit could answer). Charge/pounce CONTACT hits
+## must NOT route here: the charge telegraph was their wind-up, and a
+## mid-overshoot re-check would let every committed dash whiff for free.
+func _melee_swing(victim: Player, base_reach: float, amount: float, action := "melee") -> void:
+	_strike(action, func() -> void:
+		if is_instance_valid(victim) and not victim.dead \
+				and global_position.distance_to(victim.global_position) \
+					< _reach(base_reach + Balance.BOSS_MELEE_CONTACT_GRACE):
+			victim.take_damage(amount, dmg_type, self))
+
+
 ## Range-aware caster locomotion. Retreat and pursue are blended with a
 ## committed strafe, so a caster circles inside its firing band instead of
 ## freezing in place or running straight into a wall. The side flips when the
@@ -409,8 +434,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 	if dist < _reach(60.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.92
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
-			player.take_damage(dmg, dmg_type, self)
+			_melee_swing(player, 60.0, dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -509,7 +533,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		var aim := (_floor_target(true).global_position - global_position).normalized()
 		_strike("bolt", func() -> void:
 			for spread in [-0.25, 0.0, 0.25]:
-				_bolt(aim.rotated(spread) * 320.0, dmg))
+				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 
 	# Full ring of bolts.
 	if ring_cd <= 0.0:
@@ -517,7 +541,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		roar()
 		_strike("ring", func() -> void:
 			for i in 12:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 260.0, dmg))
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * Balance.BOSS_BOLT_RING, dmg))
 
 	# Drift to keep a comfortable firing band.
 	return _caster_move(to_player, dist, 240.0, 340.0)
@@ -546,13 +570,12 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		_strike("slam", func() -> void:
 			game.shake(8.0)
 			for i in 16:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / 16.0) * 270.0, dmg * 0.7))
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 16.0) * Balance.BOSS_BOLT_RING, dmg * 0.7))
 
 	if dist < _reach(64.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
-			player.take_damage(dmg, dmg_type, self)
+			_melee_swing(player, 64.0, dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -663,7 +686,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		var bolt_aim := (_floor_target(true).global_position - global_position).normalized()
 		_strike("storm" if enraged else "bolt", func() -> void:
 			for spread in [-0.2, 0.0, 0.2]:
-				_bolt(bolt_aim.rotated(spread) * 310.0, dmg))
+				_bolt(bolt_aim.rotated(spread) * _aimed_speed(), dmg))
 		if enraged:
 			var struck: Player = _floor_target()
 			for i in 3:
@@ -680,8 +703,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.92
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
-			player.take_damage(dmg, dmg_type, self)
+			_melee_swing(player, 70.0, dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -736,7 +758,7 @@ func _choirmother(_player: Player, to_player: Vector2, dist: float) -> Vector2:
 		var spreads := [-0.36, -0.12, 0.12, 0.36] if enraged else [-0.22, 0.0, 0.22]
 		_strike("bolt", func() -> void:
 			for spread in spreads:
-				_bolt(aim.rotated(spread) * 300.0, dmg))
+				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 
 	# Hymn of hunger: a marked strike — and the choir feeds her.
 	# §5.2 FLOOR: the hymn marks a rotating head; nobody kites her for free.
@@ -819,13 +841,12 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		_strike("slam", func() -> void:
 			game.shake(9.0)
 			for i in count:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / count) * 270.0, dmg * 0.7))
+				_bolt(Vector2.RIGHT.rotated(TAU * i / count) * Balance.BOSS_BOLT_RING, dmg * 0.7))
 
 	if dist < _reach(74.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.15
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
-			player.take_damage(dmg * 1.2, dmg_type, self)
+			_melee_swing(player, 74.0, dmg * 1.2)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -947,8 +968,7 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	if dist < _reach(64.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
-			player.take_damage(dmg, dmg_type, self)
+			_melee_swing(player, 64.0, dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -1048,7 +1068,7 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		roar()
 		_strike("ring", func() -> void:
 			for i in 12:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 250.0, dmg))
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * Balance.BOSS_BOLT_RING, dmg))
 
 	# Blink away from blades (her grief is Morwen's lineage).
 	if dist < 160.0 and blink_cd <= 0.0:
@@ -1102,14 +1122,14 @@ func _grief_fan(aim: Vector2) -> void:
 	var from := global_position
 	_strike("bolt", func() -> void:
 		for spread in [-0.22, 0.0, 0.22]:
-			_bolt(aim.rotated(spread) * 320.0, dmg))
+			_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 	await get_tree().create_timer(0.8).timeout
 	if dying:
 		return
 	# The echo fires from where she CAST it — dodge the memory too.
 	game.sfx("grief_echo")
 	for spread in [-0.22, 0.0, 0.22]:
-		var p := Projectile.spawn(game, from, aim.rotated(spread) * 320.0, dmg,
+		var p := Projectile.spawn(game, from, aim.rotated(spread) * _aimed_speed(), dmg,
 			false, _boss_projectile_key())
 		p.rise = _muzzle_rise()
 		p.hostile_type = dmg_type
@@ -1180,14 +1200,13 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 		_strike("slam", func() -> void:
 			game.shake(8.0)
 			for i in 14:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / 14.0) * 210.0, dmg * 0.7))
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 14.0) * Balance.BOSS_BOLT_RING, dmg * 0.7))
 
 	# Adjacent penitents still get struck (throne or standing).
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.2
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
-			player.take_damage(dmg * 1.2, dmg_type, self)
+			_melee_swing(player, 70.0, dmg * 1.2)
 		return Vector2.ZERO
 
 	# THRONE phase: the enthroned relic does NOT walk — his sitting idle is his
@@ -1446,13 +1465,13 @@ func _forgemistress(player: Player, to_player: Vector2, dist: float, delta: floa
 				0.45 + i * 0.10, dmg * (1.0 + 0.12 * quench_stacks) * 1.2,
 				{"color": FORGE, "impact_sfx": "boss_fire_impact_v2"})
 		for spread in [-0.18, 0.18]:
-			_bolt(dir.rotated(spread) * 290.0, dmg * (1.0 + 0.12 * quench_stacks))
+			_bolt(dir.rotated(spread) * _aimed_speed(), dmg * (1.0 + 0.12 * quench_stacks))
 
 	if dist < _reach(66.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.9
 			var hit := dmg * (1.0 + 0.12 * quench_stacks) * (1.3 if heat >= 1.0 else 1.0)
-			player.take_damage(hit, dmg_type, self)
+			_melee_swing(player, 66.0, hit)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -1622,13 +1641,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 	if dist < _reach(72.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			var melee_target := player
-			_strike("melee", func() -> void:
-				# The clean three-frame swing lands on frame 3 (~0.16s). Recheck
-				# reach at contact so the visible wind-up is also a real dodge window.
-				if is_instance_valid(melee_target) and not melee_target.dead \
-						and global_position.distance_to(melee_target.global_position) < _reach(90.0):
-					melee_target.take_damage(dmg, dmg_type, self))
+			_melee_swing(player, 72.0, dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -1717,7 +1730,7 @@ func _ashpriest(_player: Player, to_player: Vector2, dist: float, delta: float) 
 		var aim := (_floor_target(true).global_position - global_position).normalized()
 		_strike("bolt", func() -> void:
 			for spread in [-0.28, -0.09, 0.09, 0.28]:
-				_bolt(aim.rotated(spread) * 300.0, dmg))
+				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 
 	return _caster_move(to_player, dist, 250.0, 380.0)
 
@@ -1969,13 +1982,12 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 		_strike("slam", func() -> void:
 			game.shake(7.0)
 			for i in 12:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 260.0, dmg * 0.7))
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * Balance.BOSS_BOLT_RING, dmg * 0.7))
 
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.95
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
-			player.take_damage(dmg, dmg_type, self)
+			_melee_swing(player, 70.0, dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -2024,7 +2036,7 @@ func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -
 		var aim := (_floor_target(true).global_position - global_position).normalized()
 		_strike("bolt", func() -> void:
 			for spread in [-0.22, 0.0, 0.22]:
-				_bolt(aim.rotated(spread) * 300.0, dmg))
+				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 
 	if dist < 160.0 and blink_cd <= 0.0:
 		blink_cd = 3.2
@@ -2135,7 +2147,7 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 		var aim := (_floor_target(true).global_position - global_position).normalized()
 		_strike("bolt", func() -> void:
 			for spread in [-0.25, 0.0, 0.25]:
-				_bolt(aim.rotated(spread) * 290.0, dmg))
+				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 
 	return _caster_move(to_player, dist, 240.0, 380.0)
 
@@ -2271,7 +2283,7 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 		_strike("slam", func() -> void:
 			game.shake(8.0)
 			for i in 12:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * 260.0, dmg * 0.7)
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * Balance.BOSS_BOLT_RING, dmg * 0.7)
 			for i in 3:
 				var at: Vector2 = game.clamp_to_zone(global_position + Vector2.from_angle(randf() * TAU) * randf_range(90.0, 180.0), home)
 				_hazard(game.cur_room, "poison", at, 80.0, 8.0))
@@ -2279,8 +2291,7 @@ func _auroch(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 	if dist < _reach(72.0):
 		if attack_cd <= 0.0:
 			attack_cd = 1.0
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
-			player.take_damage(dmg, dmg_type, self)
+			_melee_swing(player, 72.0, dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -2371,7 +2382,7 @@ func _gardener(player: Player, to_player: Vector2, dist: float, delta: float) ->
 		var aim := (_floor_target(true).global_position - global_position).normalized()
 		_strike("bolt", func() -> void:
 			for spread in [-0.22, 0.0, 0.22]:
-				_bolt(aim.rotated(spread) * 280.0, dmg))
+				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 
 	return _caster_move(to_player, dist, 250.0, 380.0)
 
@@ -2502,12 +2513,11 @@ func _kaethra_huntress(player: Player, to_player: Vector2, dist: float, delta: f
 		_strike("slam", func() -> void:
 			game.shake(6.0)
 			for i in 10:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0) * 250.0, dmg * 0.6))
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0) * Balance.BOSS_BOLT_RING, dmg * 0.6))
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.85
-			play_action("stab")  # Huntress melee lands her directional dagger stab (kaethra_stab; ability fallback if absent)
-			player.take_damage(dmg, dmg_type, self)
+			_melee_swing(player, 70.0, dmg, "stab")  # Huntress stab (kaethra_stab; ability fallback if absent)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -2526,7 +2536,7 @@ func _kaethra_bloom(_player: Player, _to_player: Vector2, _dist: float, delta: f
 		game.sfx("nova")
 		_strike("ring", func() -> void:
 			for i in 8:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / 8.0 + randf() * 0.3) * 280.0, dmg))
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 8.0 + randf() * 0.3) * Balance.BOSS_BOLT_RING, dmg))
 	# §5.2 floor (alternate): rooted, her aimed fan sprays the party in turn.
 	if ability_cd <= 0.0:
 		ability_cd = 2.4
@@ -2534,7 +2544,7 @@ func _kaethra_bloom(_player: Player, _to_player: Vector2, _dist: float, delta: f
 		var aim := (_floor_target(true).global_position - global_position).normalized()
 		_strike("bolt", func() -> void:
 			for spread in [-0.3, -0.1, 0.1, 0.3]:
-				_bolt(aim.rotated(spread) * 270.0, dmg))
+				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 	return Vector2.ZERO  # rooted in place
 
 
@@ -2650,7 +2660,7 @@ func _veyx(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 		game.sfx(_boss_cast_sfx())
 		_strike("ring", func() -> void:
 			for i in 10:
-				_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0 + randf()) * 260.0, dmg * 0.7))
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 10.0 + randf()) * Balance.BOSS_BOLT_RING, dmg * 0.7))
 
 	# Static field: strikes around the prey, hotter when no rods remain.
 	# §5.2 FLOOR: the strikes hammer a rotating non-target (the ARC — the
@@ -2733,7 +2743,7 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 		blink_cd = 4.0
 		game.sfx("blink")
 		play_action("blink")
-		global_position = game.clamp_to_zone(player.global_position + Vector2.from_angle(randf() * TAU) * 90.0, home)
+		global_position = game.clamp_to_zone(player.global_position + Vector2.from_angle(randf() * TAU) * Balance.ECHO_BLINK_LAND, home)
 		game.burst(global_position, VOIDC, 12)
 		return Vector2.ZERO
 
@@ -2745,13 +2755,12 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 		var aim := (_floor_target(true).global_position - global_position).normalized()
 		_strike("throw", func() -> void:
 			for spread in [-0.25, 0.0, 0.25]:
-				_bolt(aim.rotated(spread) * 340.0, dmg))
+				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 
 	if dist < _reach(70.0):
 		if attack_cd <= 0.0:
 			attack_cd = 0.7
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
-			player.take_damage(dmg, dmg_type, self)
+			_melee_swing(player, 70.0, dmg)
 		return Vector2.ZERO
 	return to_player.normalized() * speed
 
@@ -2832,7 +2841,7 @@ func _cyrraeth_speaker(player: Player, to_player: Vector2, dist: float) -> Vecto
 		var aim := (_floor_target(true).global_position - global_position).normalized()
 		_strike("bolt", func() -> void:
 			for spread in [-0.3, -0.1, 0.1, 0.3]:
-				_bolt(aim.rotated(spread) * 300.0, dmg))
+				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 	return _caster_move(to_player, dist, 250.0, 380.0)
 
 

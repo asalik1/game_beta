@@ -564,6 +564,36 @@ const BOSS_MELEE_SPEED_MULT := 1.10
 const BOSS_CASTER_STRAFE_WEIGHT := 0.55
 const BOSS_CASTER_WALL_PROBE := 96.0
 const BOSS_CASTER_WALL_EPSILON := 2.0
+# Boss speed audit (2026-07-22): boss bolts were the SLOWEST projectiles in
+# the game — aimed volleys 270-340 px/s, rings 210-280, against a 248-275
+# player walk and a 420 trash bolt. Fired from the 240-380 caster band, an
+# aimed bolt took ~1s to arrive (a strafing player exits the whole fan), and
+# over the 2.5s projectile life a bolt chasing a back-pedaling archer closed
+# ~87px TOTAL — past ~90px of head start it could mathematically never land.
+# AIMED fire (volleys/fans at a target, Boss._aimed_speed) now starts at
+# trash-bolt speed and ladders with boss level, so the dodge exam hardens as
+# the player's own read does. RING bolts stay deliberately slow-and-readable
+# (opt-in walls, dodged through the gaps — player ruling: a fast radial wall
+# is unplayable chip) but are floored AT walk speed so radial flight is no
+# longer auto-dodge (Varo's 210 ring was slower than every class).
+const BOSS_BOLT_AIMED_BASE := 420.0     # aimed-volley speed at the anchor level
+const BOSS_BOLT_AIMED_ANCHOR := 10.0    # boss level where the ladder starts
+const BOSS_BOLT_AIMED_PER_LVL := 2.0    # + per boss level above the anchor...
+const BOSS_BOLT_AIMED_CAP := 480.0      # ...capped at the finale tier (~L40)
+const BOSS_BOLT_RING := 300.0         # radial ring/burst bolts, every boss
+# Same audit: boss STANDING melee contact damage was frame-instant (the swing
+# strip played after the hit), while every trash mob telegraphs its bite.
+# Standing swings now ride _strike to the contact frame and RE-CHECK reach
+# there plus this grace — stepping out during the visible wind-up IS the
+# dodge (the Cinderhide contact pattern, promoted to the boss-wide grammar).
+# Charge/pounce CONTACT hits stay instant: the charge telegraph was their
+# wind-up, and a mid-overshoot re-check would let committed dashes whiff free.
+const BOSS_MELEE_CONTACT_GRACE := 18.0
+# The Echo's blink-strike used to land 90px out — INSIDE his ~112px contact
+# reach, so arrival WAS the hit (one AI tick, ~half a squishy's bar, re-armed
+# every 4s by correct kiting). It now lands OUTSIDE reach (the Varo rule:
+# "repositions rather than ambushes") — a readable beat of approach + swing.
+const ECHO_BLINK_LAND := 150.0
 const DASH_REFUND := 0.35         # dash cd refunded when the rider connects
 # Rounds 39/40: planting your feet at blade range is the riskiest act
 # in the kit — the STANDING stab pays for it. The dash's proc'd stab
