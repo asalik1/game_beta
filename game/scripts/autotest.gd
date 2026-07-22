@@ -1424,6 +1424,8 @@ func _run_systems() -> void:
 	# 5e. The keyboard twin: stale polled intents must die under any overlay
 	# (desktop x co-op — same forced-unpause simulation; see its header).
 	await _test_overlay_intent_gate()
+	# 5f. Two-regime mob growth + overcap (Depths audit 2026-07-21).
+	_test_far_regime_growth()
 
 
 ## Endgame arena modes end to end (headless): the Crucible spawns affixed
@@ -1503,39 +1505,61 @@ func _test_endgame() -> void:
 	if not is_instance_valid(d._camp_merchant):
 		return _fail("depths: prep camp has no merchant")
 	var terrain_before: String = game.terrain_by_zone[d.arena_room]
-	d.descend()  # depth 1 is a trash wave (and the first terrain re-theme)
+	# RESTRUCTURE (2026-07-21): depth == content level. A fresh character's
+	# first dive enters at the floor (40) — which is a CHECKPOINT depth, so
+	# the ladder opens with its gatekeeper boss.
+	var kept_checkpoint: int = game.player.depths_checkpoint
+	game.player.depths_checkpoint = 0
+	d.descend()
 	await _frames(3)
-	if d.depth != 1 or game.zone_alive.get(d.arena_room, 0) <= 0:
-		return _fail("depths: first wave did not spawn")
-	if not d.wave_active:
-		return _fail("depths: wave not marked active")
+	if d.depth != Balance.DEPTHS_ENTRY_FLOOR:
+		return _fail("depths: first dive should enter at the floor (depth=%d)" % d.depth)
+	if not d.boss_room or game.current_boss == null or not game.current_boss.endgame_boss:
+		return _fail("depths: the entry checkpoint should be guarded by a boss")
+	if game.current_boss.level != Balance.DEPTHS_ENTRY_FLOOR:
+		return _fail("depths: depth IS the content level (boss at L%d)" % game.current_boss.level)
+	# Boss BUDGET (owner ruling): pool = depth budget x kind flavor (0.85-1.15),
+	# regardless of which kind the shuffle drew — the anchor lottery is dead.
+	var want_pool: float = Balance.depths_boss_pool(Balance.DEPTHS_ENTRY_FLOOR)
+	if game.current_boss.max_hp < want_pool * 0.8 or game.current_boss.max_hp > want_pool * 1.2:
+		return _fail("depths: entry boss pool %.0f is off the depth budget %.0f" % [
+			game.current_boss.max_hp, want_pool])
 	if game.terrain_by_zone[d.arena_room] == terrain_before:
 		return _fail("depths: arena did not re-theme on descent")
 	if is_instance_valid(d._camp_merchant):
 		return _fail("depths: camp merchant was not cleared on descend")
-	# Clear the wave; the per-frame tick then advances the descent.
-	for node in get_tree().get_nodes_in_group("enemies"):
-		var en := node as Enemy
-		if en != null and en.zone_idx == d.arena_room:
-			en.hp = 0.0
-			en.die()
-	await _frames(5)
+	# Fell the gatekeeper: checkpoint banked, milestone spoils accrue, and the
+	# descent advances to a TRASH depth (41 % 5 != 0).
+	var gear_before: int = d.pending_gear.size()
+	game.current_boss.hp = 0.0
+	game.current_boss.die()
+	await _frames(4)
+	if game.player.depths_checkpoint != Balance.DEPTHS_ENTRY_FLOOR:
+		return _fail("depths: cleared checkpoint was not banked for re-entry")
+	if d.pending_gear.size() <= gear_before:
+		return _fail("depths: checkpoint milestone did not bank spoils")
 	await get_tree().create_timer(1.5).timeout  # room-clear beat (1.3) + margin
-	await _frames(2)
-	if d.depth < 2:
-		return _fail("depths: did not descend after clearing the wave (depth=%d)" % d.depth)
-	# Player-debuff cycle (depth 37+): −healing, then −damage, then +damage-taken,
-	# stacking. Exercised directly (a 37-room descent would be a slog).
+	await _frames(3)
+	if d.depth != Balance.DEPTHS_ENTRY_FLOOR + 1:
+		return _fail("depths: did not descend after the boss (depth=%d)" % d.depth)
+	if game.zone_alive.get(d.arena_room, 0) <= 0 or not d.wave_active:
+		return _fail("depths: trash wave did not spawn on a non-boss depth")
+	# Player-debuff cycle (the pressure band): −damage dealt, then +damage
+	# taken, alternating. HEALING is never touched (removed 2026-07-21 —
+	# sustain is class design, not a depth tax). Exercised directly.
 	var real_depth: int = d.depth
-	d.depth = Balance.DEPTHS_TIER_PRESSURE  # 37: first stack cuts healing only
+	d.depth = Balance.DEPTHS_TIER_PRESSURE  # first stack weakens strikes only
 	d._apply_player_debuffs()
-	if game.player.debuff_heal_in >= 1.0 or game.player.debuff_dmg_out < 1.0 or game.player.debuff_dmg_in > 1.0:
-		return _fail("depths: first debuff stack should cut healing only")
-	d.depth = Balance.DEPTHS_TIER_PRESSURE + 2 * Balance.DEPTHS_DEBUFF_EVERY  # 45: 3 stacks
+	if game.player.debuff_dmg_out >= 1.0 or game.player.debuff_dmg_in > 1.0 \
+			or game.player.debuff_heal_in != 1.0:
+		return _fail("depths: first debuff stack should weaken strikes only (heal untouched)")
+	d.depth = Balance.DEPTHS_TIER_PRESSURE + 2 * Balance.DEPTHS_DEBUFF_EVERY  # 3 stacks
 	d._apply_player_debuffs()
-	if game.player.debuff_heal_in >= 1.0 or game.player.debuff_dmg_out >= 1.0 or game.player.debuff_dmg_in <= 1.0:
-		return _fail("depths: three debuff stacks should apply all three penalties")
+	if game.player.debuff_dmg_out >= 1.0 or game.player.debuff_dmg_in <= 1.0 \
+			or game.player.debuff_heal_in != 1.0:
+		return _fail("depths: stacked debuffs should hit both damage knobs and NEVER healing")
 	d.depth = real_depth
+	game.player.depths_checkpoint = kept_checkpoint  # restore shared state
 	# A death settles the run at the penalty AND clears the debuffs.
 	d.on_player_death()
 	await _frames(2)
@@ -2409,24 +2433,58 @@ func _test_consumables() -> void:
 	var keep_barrier: bool = game.barrier_active
 	var keep_pos: Vector2 = p.global_position
 	var keep_safe: int = game.last_safe_room
+	var keep_rotation: Array = p.potion_rotation.duplicate()
+	var keep_room_pots: Dictionary = p.room_potions.duplicate()
+	var keep_pcd: float = p.potion_cd
+	var keep_hp: float = p.hp
 	p.consumables = []
 
-	# Mana Draught restores mana and is consumed.
+	# Drink-gate (2026-07-21): EVERY budgeted drink — bag click included —
+	# spends a per-room loadout slot. Unbudgeted bag chugging was the renewal
+	# exploit (unlimited 30%-max heals, gold the only gate).
+	# (a) A drink whose type is NOT in this room's plan is REFUSED.
+	p.potion_cd = 0.0
+	p.potion_rotation = []
+	p.reset_room_potions()
 	p.mp = 0.0
 	var mana := Items.make_mana_potion()
 	p.consumables.append(mana)
 	p.use_consumable(mana)
+	if p.mp > 0.0 or not p.consumables.has(mana):
+		return _fail("unbudgeted bag drink should be refused (renewal-exploit fix)")
+
+	# (b) Slotted in the rotation + budgeted, the same drink works and is consumed.
+	# (Budget granted directly: the suite sits in ch1 whose loadout cap is 1
+	# slot — the point here is the gate mechanics, not the chapter band.)
+	p.potion_rotation = ["mana_potion", "elixir_might", "renewal_draught"]
+	p.room_potions = {"health": 1, "mana_potion": 1, "elixir_might": 1, "renewal_draught": 1}
+	p.potion_cd = 0.0
+	p.use_consumable(mana)
 	if p.mp <= 0.0 or p.consumables.has(mana):
 		return _fail("mana draught did not restore mana / wasn't consumed")
 
-	# Elixir of Might raises current_atk while it holds.
+	# (c) Elixir of Might raises current_atk while it holds (shares the drink cd).
 	p.elixir_time = 0.0
 	var atk0 := p.current_atk()
 	var elix := Items.make_elixir_might()
 	p.consumables.append(elix)
 	p.use_consumable(elix)
+	if p.elixir_time > 0.0:
+		return _fail("might elixir should respect the shared drink cd (mana just drunk)")
+	p.potion_cd = 0.0
+	p.use_consumable(elix)
 	if p.elixir_time <= 0.0 or p.current_atk() <= atk0:
 		return _fail("elixir of might did not buff damage")
+
+	# (d) Renewal heals 30% max, budgeted like everything else.
+	p.potion_cd = 0.0
+	p.hp = maxf(1.0, p.max_hp * 0.25)
+	var before_hp: float = p.hp
+	var renew := Items.make_renewal_draught()
+	p.consumables.append(renew)
+	p.use_consumable(renew)
+	if p.hp < before_hp + p.max_hp * Balance.RENEWAL_HEAL_FRAC - 0.01 or p.consumables.has(renew):
+		return _fail("budgeted renewal draught should heal 30% max and be consumed")
 
 	# Recall: refused mid-combat (scroll survives), allowed otherwise.
 	var scroll := Items.make_recall_scroll()
@@ -2448,7 +2506,11 @@ func _test_consumables() -> void:
 	game.barrier_active = keep_barrier
 	game.last_safe_room = keep_safe
 	p.global_position = keep_pos
-	print("ok: consumables (mana draught, might elixir, recall scroll)")
+	p.potion_rotation = keep_rotation
+	p.room_potions = keep_room_pots
+	p.potion_cd = keep_pcd
+	p.hp = keep_hp
+	print("ok: consumables (drink gate refusal + budgeted mana/might/renewal, recall scroll)")
 
 
 # ---- CORE: resonance band leans (2026-07-09) ------------------------------
@@ -4457,6 +4519,12 @@ func _test_merchant_economy() -> void:
 	var before: float = p.hp
 	var draught := Items.make_renewal_draught()
 	p.consumables.append(draught)
+	# Drink gate (2026-07-21): renewal is budgeted now — grant it a room slot
+	# and a clear drink cd like a planned loadout would.
+	var keep_room_pots: Dictionary = p.room_potions.duplicate()
+	var keep_pcd: float = p.potion_cd
+	p.room_potions = {"health": 1, "renewal_draught": 1}
+	p.potion_cd = 0.0
 	p.use_consumable(draught)
 	if p.hp <= before or p.consumables.has(draught):
 		return _fail("draught of renewal did not heal / wasn't consumed")
@@ -4466,6 +4534,8 @@ func _test_merchant_economy() -> void:
 	p.dr_time = keep_dr
 	p.dr_amt = keep_dra
 	p.hp = keep_hp
+	p.room_potions = keep_room_pots
+	p.potion_cd = keep_pcd
 	print("ok: merchant economy (farm-cost buy, act-gated grades, upgrade curve, bag=1g, sell + quest-item guard, ward+renewal)")
 
 
@@ -4788,3 +4858,34 @@ func _test_overlay_intent_gate() -> void:
 	if stale_choice:
 		return _fail("overlay intent gate: stale keyboard intents survived a CHOICE overlay")
 	print("ok: overlay intent gate (stale keyboard intents die under dialogue + choice overlays, world unpaused — co-op)")
+
+
+## Two-regime mob growth (2026-07-21, Depths audit): per-kind hp_g through the
+## native band, then the flat player-tracking BOSS dials. Guards the inversion
+## fix — a kind pulled far above its anchor must scale like a boss, not
+## compound its authored rate into 100x-1900x pools that out-wall the boss
+## beside it. Also proves the overcap seam the Depths blocks ride.
+func _test_far_regime_growth() -> void:
+	var band: int = Balance.MOB_NATIVE_GROWTH_BAND
+	var anchor: int = int(Story.ALL_ENEMIES["wolf"]["level"])
+	var at_band := Story.enemy_stats_at("wolf", anchor + band)
+	var past := Story.enemy_stats_at("wolf", anchor + band + 10)
+	var far_ratio: float = float(past["hp"]) / float(at_band["hp"])
+	var want := pow(1.0 + Balance.BOSS_HP_GROWTH, 10)
+	if absf(far_ratio - want) > 0.01:
+		return _fail("far-regime mob HP should grow on the boss dial (got %.3f, want %.3f)" % [far_ratio, want])
+	# The inversion is dead: an upscaled boss out-pools same-level trash even
+	# at the extreme deltas the Depths reaches (a full L100 room).
+	var wolf100 := Story.enemy_stats_at("wolf", 100)
+	var fang100 := Story.enemy_stats_at("fangmaw", 100)
+	if float(fang100["hp"]) <= float(wolf100["hp"]):
+		return _fail("boss vs trash inverted at L100 (%.0f <= %.0f)" % [fang100["hp"], wolf100["hp"]])
+	# Overcap (Depths blocks): the virtual level keeps climbing past LEVEL_CAP
+	# for endgame spawns only; every capped caller is untouched.
+	var over := Story.enemy_stats_at("wolf", Balance.LEVEL_CAP + 30, true)
+	var capped := Story.enemy_stats_at("wolf", Balance.LEVEL_CAP + 30)
+	if int(over["level"]) != Balance.LEVEL_CAP + 30 or int(capped["level"]) != Balance.LEVEL_CAP:
+		return _fail("overcap flag should lift (only) the endgame level clamp")
+	if float(over["hp"]) <= float(capped["hp"]):
+		return _fail("overcap levels should keep compounding")
+	print("ok: two-regime growth (native band -> boss dial far-field; no L100 inversion; overcap blocks)")

@@ -23,9 +23,14 @@ var endgame_boss := false    # spawned by the endgame controller (drives the run
 var affix := ""              # elite affix key worn in the endgame modes (Balance.AFFIXES), "" = none
 
 
-static func make_boss(game_node: Node2D, boss_kind: String, pos: Vector2, at_level := -1) -> Boss:
+static func make_boss(game_node: Node2D, boss_kind: String, pos: Vector2, at_level := -1, overcap := false) -> Boss:
 	var b := Boss.new()
+	b.overcap_levels = overcap  # Depths blocks: virtual level may exceed LEVEL_CAP
 	b._setup(game_node, boss_kind, pos, at_level)
+	# Melee bosses must be able to close instead of being permanently walked
+	# backward by any ranged build. Caster movement is handled by _caster_move.
+	if not b.ranged:
+		b.speed *= Balance.BOSS_MELEE_SPEED_MULT
 	b.aggro_range = 900.0
 	# MP-09: party scaling for bosses (MULTIPLAYER.md §5.2) — bosses don't
 	# route through add_enemy, so the scalars ride the factory (every

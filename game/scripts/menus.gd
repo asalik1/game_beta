@@ -638,7 +638,7 @@ func confirm_endgame(mode: String) -> void:
 	var pb := game.endgame_pb(mode, cls)
 	var mname := "The Crucible" if mode == "crucible" else "The Waking Depths"
 	var rules := "Ten bosses back to back, each with an elite affix — HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" \
-		else "An endless descent: each room's mobs deepen a level and a boss guards every fourth. Rewards pay when you fall or cash out."
+		else "An endless descent where DEPTH IS THE MONSTERS' LEVEL — the ladder starts at 40, or at your deepest cleared checkpoint. A boss guards every 5th depth, a checkpoint boss every 10th; past 100 the dark only deepens. Rewards pay when you fall or cash out."
 	var best := ""
 	if not pb.is_empty():
 		best = ("\n\nYour best: %d bosses." % int(pb.get("kills", 0))) if mode == "crucible" \
@@ -667,7 +667,7 @@ func open_endgame_select() -> void:
 		func() -> void: _start_endgame("crucible"))
 
 	var dep_pb := game.endgame_pb("depths", cls)
-	var dep_sub := "An endless descent. A prep camp, then combat only: each room's mobs scale a level deeper, a boss guards every fourth room, and affixes and pressure mount the further you fall. How deep can you go?"
+	var dep_sub := "An endless descent. A prep camp, then combat only: depth IS the monsters' level, a boss guards every 5th, a checkpoint boss every 10th — clear one and future runs start there. Affixes and pressure mount by band; past 100 the dark wears a harder name. How deep can you go?"
 	if not dep_pb.is_empty():
 		dep_sub += "\n★ Deepest: %d" % int(dep_pb.get("depth", 0))
 	_endgame_card(vbox, "🕯  The Waking Depths", dep_sub, Color(0.72, 0.8, 1.0),

@@ -110,7 +110,7 @@ Small affix pool (Frenzied, Bulwark, Vampiric, Stormtouched, Splitting…) on ex
 **Normal / Nightmare (+20 levels) / Torment (+40)**, loot-grade floors rising per tier. Reuses replay + level scaling — the cheapest multiplier in the plan.
 
 ### Endless mode — the Waking Depths
-Procedural chapter: terrain-family rooms chained, rising levels + affix density, checkpoints every N rooms, depth counter as the brag. Built from zone graph + palette + elites (why those come first). Hours 30–100 live here.
+SHIPPED as an arena marathon (endgame.gd; restructured 2026-07-21): **DEPTH == CONTENT LEVEL** — one comparable ladder, entry at 40 (or your highest cleared checkpoint), a boss every 5th depth, a **checkpoint boss every 10th** (cleared = milestone spoils + permanent per-character re-entry point), escalation bands on the 10s (1-affix 50 / 2-affix 60 / player-debuffs 70 / max 80), and past each 100-block the dark wears the next difficulty's name (Nightmare's hundred, then Torment's) while the virtual level keeps climbing past the player cap — effectively endless, ended by the soft wall. Depth is never player-relative: leveling up must never make your own record harder to chase. Hours 30–100 live here.
 
 ### Pacing & balance — standing rules
 The distilled, currently-true rules. The full round-by-round history (48 rounds of triggers, numbers moved, superseded experiments) lives in **BALANCE_HISTORY.md** — new rounds get logged THERE; a rule graduates to this list only once it's durable.
@@ -155,7 +155,7 @@ Solo-now, shaped to seed the future multiplayer backend (account/economy boundar
 - **Reforge bench** — gold-cost gear crafting (the deliberate gold sink).
 - **Gambling vendor** — the pity machine (reworked 2026-07-09): gold → a roll from the chapter's BOSS band (`CHAPTER_BOSS_WEIGHTS` — the B/A piece the general faucets can't reach), priced at the boss-table-weighted expected farm cost × `GAMBLE_DISCOUNT` 0.8 (`game_base.gamble_cost`; ch2 ≈ 1.3k, ch5 ≈ 7.4k, ch7 ≈ 13.3k before haggle).
 - **S-legendary set bonuses** (2pc/4pc) — the chase on top of S gear.
-- **Utility consumables:** mana draught, might elixir, recall scroll.
+- **Utility consumables:** mana draught, might elixir, ward elixir (burst window), renewal draught, recall scroll. **Standing rule (2026-07-21): every rotation-eligible DRINK spends the per-room potion budget through one gate (`player_core._drink_gate`) — bag click or Q alike.** The bag is never a budget bypass (the renewal exploit); scrolls/stones stay unbudgeted utilities, and buff elixirs stay burst windows, never fight-long layers.
 - **Quest log, buff-icon timer bar, corner minimap, achievements + boss records** (codex Records tab), **mailbox** (round 8).
 - **Localization string-table foundation** (`Loc`) — strings routed early so translation is a table, not a rewrite.
 - Inventory QoL: unequip, bag category tabs, bigger stacking bags (F15…S45 each, slots sum).

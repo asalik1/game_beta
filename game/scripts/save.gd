@@ -106,6 +106,8 @@ static func _character_section(game: Game) -> Dictionary:
 		"equipment": p.equipment, "backpack": p.backpack, "gem_bag": p.gem_bag,
 		"bags": p.bags, "consumables": p.consumables,
 		"potion_rotation": p.potion_rotation, "active_potion": p.active_potion,
+		# Waking Depths: highest cleared checkpoint depth (re-entry point).
+		"depths_checkpoint": p.depths_checkpoint,
 		# --- vitals ---
 		"hp": p.hp, "mp": p.mp,
 		# Mailbox + dropped loot are CHARACTER-owned (§5.5 loot instancing:
@@ -270,7 +272,7 @@ static func world_of(data: Dictionary) -> Dictionary:
 const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tree_points",
 	"attr_points", "unspent_attr", "gold", "potions", "potions_free", "ability_theme", "chroma", "skin",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
-	"consumables", "potion_rotation", "active_potion", "hp", "mp",
+	"consumables", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
 	"achievements", "boss_records", "kill_counts", "player_title",
 	"bounties", "bounty_day", "bounty_week",
@@ -467,6 +469,7 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	p.consumables = c.get("consumables", [])
 	p.potion_rotation = c.get("potion_rotation", [])
 	p.active_potion = String(c.get("active_potion", "health"))
+	p.depths_checkpoint = int(c.get("depths_checkpoint", 0))  # pre-restructure saves: no checkpoint yet
 
 	p.recalc()
 	p.hp = clampf(float(c.get("hp", p.max_hp)), 1.0, p.max_hp)

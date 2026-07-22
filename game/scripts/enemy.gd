@@ -198,14 +198,16 @@ const TRAIT_DESC := {
 	"mend":    "Knits — slowly heals its own wounds; burst it down.",
 	"frenzy":  "Frenzied — wounded, it strikes faster and harder.",
 	"swift":   "Swift — quicker on its feet than its kin.",
+	"lifesteal": "Vampiric — DRINKS from every blow it lands on you. It can't out-heal a fight it can't touch: don't feed it.",
 }
 
 
 ## `size` < 0 rolls a fresh per-spawn size variance (living world); a caller
 ## can PIN it (net mirrors replay the host's roll; tests want 1.0 for exact
 ## stat math). Bosses ignore it — they stay their authored scale.
-static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1, size := -1.0) -> Enemy:
+static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1, size := -1.0, overcap := false) -> Enemy:
 	var e := Enemy.new()
+	e.overcap_levels = overcap  # Depths blocks: virtual level may exceed LEVEL_CAP
 	e._setup(game_node, enemy_kind, pos, at_level, size)
 	return e
 
@@ -404,8 +406,14 @@ func _stats_for(k: String) -> Dictionary:
 	return Story.ALL_ENEMIES[k]  # base table + registered content modules
 
 
+# Depths blocks (2026-07-21): the endless ladder's virtual content level keeps
+# climbing past LEVEL_CAP; the endgame controller spawns with this set so
+# stats keep compounding on the far-regime dials. Campaign spawns leave it
+# false and keep the cap.
+var overcap_levels := false
+
 func _stats_at(k: String, lvl: int) -> Dictionary:
-	return Story.enemy_stats_at(k, lvl)
+	return Story.enemy_stats_at(k, lvl, overcap_levels)
 
 
 ## 2D facing vector for 8-direction art: toward the prey when engaged

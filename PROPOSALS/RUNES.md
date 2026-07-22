@@ -4,6 +4,63 @@ Design + cost document. Owner picks; build happens in a follow-up task.
 
 **Status (2026-07-17): the itemization groundwork is BUILT; the rune system is not.**
 
+---
+
+## REVISION — owner direction 2026-07-21 (supersedes the tier table below where they conflict)
+
+Re-stated from scratch four days later, the owner's rune categories came back
+**verbatim** (weaker / drawback / variant-gated / alt-playstyle — the settled
+table holds). Three changes of direction:
+
+1. **The L tier is dropped — S stays the top letter.** The distinction the L
+   tier carried moves INSIDE S: **generic S** (no passive — pure stats, the
+   VESSEL) vs **named S** (carries a passive from the S pool — the FIND).
+   The six class-signature passives stay on their named S weapons, awakening
+   gate intact. The 07-17 halo language survives as the named/generic visual
+   split, not a new letter.
+2. **The act ladder (new):** Act 2's best drops are **named A pieces WITH
+   passives** (special names — `A_NAMES` is the pattern) plus **generic S**
+   (statline only, no passive). **Named S — including today's signature
+   pieces — is Act 3's drop.** Consequence for DIFFICULTY_TIERS.md: Torment's
+   +8 loot shift (pre-Act-3) reads the generic-S band — Torment pays vessels,
+   never crowns; the passive chase stays act-gated.
+3. **Runes are EXTRACTABLE (the new mechanic).** All A+ gear carries ONE rune
+   slot. Pay gold to EXTRACT a rune from a piece and EMBED it into another —
+   e.g. pull a named-A's rune into a generic-S vessel. This replaces
+   "runes roll at B+" as the acquisition model: named drops are rune
+   SOURCES you hunt, generic S is the vessel you build. (The B-grade
+   "first rune moment" from the 07-17 table is dropped with it; the
+   pre-S adapter window concern in "Bonus" below re-opens ~one grade and
+   should be re-checked when this builds.)
+
+**Slot philosophy (owner, 2026-07-21):** all four slots carry passives in the
+end state — weapon leans offense, armor defense, charm utility — from pools
+where some passives are OPTIMAL BY DESIGN (those go in the bench presets),
+some are skill-compensating (trade DPS for survivability — the class
+doctrine's forgiveness-costs-payout rule expressed as loot), and some keep
+off-meta builds viable.
+
+**Rulings this revision needs before build (new open questions):**
+- **Signature souls:** recommend class-signature passives are NON-extractable
+  (soulbound to their named piece, awakening-gated) — otherwise extraction
+  dissolves the legendary fantasy and the awakening quest becomes a
+  rune-unlock tax. Everything else extracts.
+- **Extraction destroys the donor** (recommended): keeps named drops
+  farmable, doubles as the gold+item sink; embedding over an occupied slot
+  overwrites (with confirm).
+- **Extracted runes are CHARACTER-BOUND** (same MT4 weld as masterwork):
+  when the market lands, raw unextracted gear may circulate someday — a
+  freed rune never. Power must stay unpurchasable.
+- **A>S legibility:** a named A with the right rune can beat a generic S —
+  the grade letter stops being a total power order. The halo/name split has
+  to carry that teaching (codex gear card + name colors), or the F→S ladder
+  the whole game taught gets muddied.
+
+**Composition with MASTERWORK.md (same session):** generic S is the shared
+vessel of both systems — extracted rune (behavior) + masterwork steps
+(magnitude) + gems (stats) on one crafted piece, versus the found named-S
+alternative. Two endgame paths: BUILD your legendary or FIND one.
+
 Shipped (full suite green):
 - Substat pens **un-gated** for every grade below S (`roll_subs`), and un-gated for
   all grades at the bench (`reforge_affix`). Round 15's "no dead stats" is now

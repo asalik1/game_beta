@@ -196,6 +196,17 @@ const ENEMY_DMG_MULT := 1.3     # ALL monster damage (round 10: "bosses don't hi
 # parity holds at ANY level, and gaps still bite (+10 = ~2x dmg = ~2
 # mistakes; +20 Nightmare = ~3x = brutal).
 const GROWTH_SCALE := 0.55
+# Two-regime mob growth (2026-07-21, Depths audit): the authored per-kind
+# curve is a kind's NATIVE band — this many levels above its anchor, where
+# the level-gap walls (+10 ≈ 2x dmg, +20 Nightmare ≈ 3x) and kind identity
+# live, exactly as tuned. BEYOND the band, growth continues on the flat
+# player-tracking BOSS dials instead: per-kind rates (0.044-0.0825 effective)
+# straddle the player curve, so compounding them 60+ levels above anchor sent
+# high-g trash to 100x-1900x pools — an order of magnitude past upscaled
+# bosses (pinned at 1.8%/lvl) — walling high-level Depths rooms while the
+# boss next door melted. Far-field, every kind now tracks the player curve
+# like bosses do, so boss > trash holds at EVERY level. (story.enemy_stats_at)
+const MOB_NATIVE_GROWTH_BAND := 20
 # Global BOSS damage factor (+20% skill tilt), constant at every level; trash
 # keeps its own ENEMY_DMG_MULT/MOB_DMG_MULT. A blunt global halving (2026-07-09)
 # was reverted — it fixed the over-tuned finale but made already-gentle EARLY
@@ -1248,7 +1259,7 @@ const ELIXIR_MIGHT_DUR := 5.0    # a BURST WINDOW, not a whole boss fight (2026-
 # and a burst bag-heal (distinct from the 5-cap health-potion counter, and
 # not budgeted by it — a real reason to spend at the alchemist's shelf).
 const ELIXIR_WARD_AMT := 0.25    # incoming non-true damage cut while it holds
-const ELIXIR_WARD_DUR := 20.0    # seconds
+const ELIXIR_WARD_DUR := 6.0     # a BURST WINDOW to eat one telegraphed hit (2026-07-21: 25%/20s was a fight-long free mitigation layer — the exact trap the Might nerf closed at 20%/30s)
 const RENEWAL_HEAL_FRAC := 0.3   # instant heal, fraction of MAX hp — the premium flask (shares the drink cd; level-priced ~2.5x a potion)
 # BASE prices (L1). The whole shelf LEVEL-SCALES like the health potion
 # (2026-07-09: flat prices went dirt-cheap against level-scaled income — a
@@ -1432,23 +1443,66 @@ const CRUCIBLE_GOLD_STEP := 0.35
 const CRUCIBLE_CLEAR_GEAR_GRADE := "A"   # the 10-boss clear pays a boss-band piece
 
 # --- The Waking Depths (Marathon) ---
-const DEPTHS_BOSS_EVERY := 4           # every 4th room is a boss (checkpoint)
-const DEPTHS_MOB_PER_ROOM := 1         # mobs scale +1 level per room descended
+# RESTRUCTURED 2026-07-21 (owner call): DEPTH == CONTENT LEVEL, 1:1 — "depth
+# 73 is level-73 content", one comparable ladder for everyone. The old
+# player-relative baseline (player.level + depth) made the same depth a
+# different fight per character and punished leveling between runs. The
+# ladder starts at the Act-1 cap and never really ends: past each 100-block
+# the virtual level keeps climbing (overcap spawns) while the player is
+# capped, and the block wears the next difficulty's name — Nightmare's
+# hundred, then Torment's. Checkpoints every 10 (a checkpoint boss guards
+# each) persist per character; a run re-enters at the highest earned.
+const DEPTHS_ENTRY_FLOOR := 40         # depth the first-ever descent starts at (the Act-1 cap)
+const DEPTHS_BOSS_EVERY := 5           # a boss guards every 5th depth...
+const DEPTHS_CHECKPOINT_EVERY := 10    # ...and every 10th is a CHECKPOINT boss: chest + earned re-entry
+const DEPTHS_BLOCK := 100              # each 100-depth block wears the next tier's name
+const DEPTHS_BLOCK_NAMES := ["", "THE NIGHTMARE DEPTHS", "THE TORMENT DEPTHS", "THE DEPTHS BEYOND NAMES"]
 const DEPTHS_WAVE_SIZE := 4            # trash spawned per non-boss room
 const DEPTHS_TERRAIN_ROTATE := 3       # re-theme the arena every N depths
-const DEPTHS_GOLD_PER_DEPTH := 45      # linear-with-depth gold, scaled by level
-const DEPTHS_MILESTONES := [12, 24, 36, 48]  # milestone chests at these depths
-# Escalation tiers (ACT2 §II): the compound growth curve does most of the work;
-# affix counts and the depth-37 pressure amp layer on top.
-const DEPTHS_TIER_1AFFIX := 13         # from here, mobs carry 1 random affix
-const DEPTHS_TIER_2AFFIX := 25         # mobs 2 affixes, bosses 1
-const DEPTHS_TIER_PRESSURE := 37       # the player-debuff band opens here
-const DEPTHS_TIER_MAX := 49            # mobs 3 affixes, bosses 2
-# Player debuffs (ACT2 §II): from depth 37, one stacking debuff every 4 rooms,
-# cycling −healing received → −damage dealt → +damage taken, forever.
-const DEPTHS_DEBUFF_EVERY := 4         # a new debuff stack per this many depths past the line
+const DEPTHS_GOLD_PER_DEPTH := 45      # linear gold per depth PAST THE FLOOR (keeps the audited curve, shifted)
+# Escalation bands, re-keyed to the 10-ladder (spike every 10, owner call):
+const DEPTHS_TIER_1AFFIX := 50         # from here, mobs carry 1 random affix
+const DEPTHS_TIER_2AFFIX := 60         # mobs 2 affixes, bosses 1
+const DEPTHS_TIER_PRESSURE := 70       # the player-debuff band opens here
+const DEPTHS_TIER_MAX := 80            # mobs 3 affixes, bosses 2
+const DEPTHS_S_MILESTONE_DEPTH := 70   # checkpoint spoils roll S from here (was MILESTONES[2])
+# Player debuffs: from the pressure line, one stacking debuff per checkpoint
+# band, alternating −damage dealt → +damage taken, forever. The HEALING cut
+# was REMOVED (owner call 2026-07-21): it taxed sustain-identity classes
+# (archer Second Wind, Grit, the potion economy) asymmetrically while burst-
+# mitigation barely noticed — sustain is class design, not a depth tax.
+const DEPTHS_DEBUFF_EVERY := 10        # a new debuff stack per this many depths past the line
 const DEPTHS_DEBUFF_STEP := 0.10       # each stack is ±10%
-const DEPTHS_DEBUFF_FLOOR := 0.20      # −healing/−damage can't drop a multiplier below this
+const DEPTHS_DEBUFF_FLOOR := 0.20      # −damage-dealt can't drop below this
+
+# Depths boss BUDGET (owner ruling 2026-07-21): a depth-D boss presents as a
+# TRUE level-D boss, never an upscaled tourist. The flat boss dial was fit on
+# the late-game segment and under-scales low anchors — fangmaw at depth 100
+# was a half-second speedbump beside stormmouth's 30s war, a 56x draw
+# lottery. The controller now BUDGETS every depth boss's pool/damage
+# (endgame._spawn_boss); the roster supplies mechanics and tells, the depth
+# supplies the difficulty. Anchored to the 2-MINUTE ruling: a true L100 boss
+# holds a MAX-SPECCED player ~120s (pool ~1.3M vs the bench's ~11k ceiling
+# DPS). Entry = finale-grade; growth to the cap prices the player's real
+# S-gear/gem power curve, then the flat overcap rails carry the blocks.
+# Kinds keep a weight-class flavor (later legends weigh more, ±15%);
+# affixes multiply ON TOP, so Bulwark still means something.
+const DEPTHS_BOSS_POOL_ENTRY := 130000.0   # finale-grade pool at the entry floor (D40)
+const DEPTHS_BOSS_POOL_GROWTH := 0.039     # per-depth to the cap → ~1.3M at D100 (the 2-min ruling)
+const DEPTHS_BOSS_DMG_ENTRY := 430.0       # finale-grade hit at the entry floor
+const DEPTHS_BOSS_DMG_GROWTH := 0.02       # per-depth to the cap → ~73% of a squishy per x1.0 hit at D100
+
+static func depths_boss_pool(depth: int) -> float:
+	var to_cap := mini(depth, LEVEL_CAP) - DEPTHS_ENTRY_FLOOR
+	var past := maxi(0, depth - LEVEL_CAP)
+	return DEPTHS_BOSS_POOL_ENTRY * pow(1.0 + DEPTHS_BOSS_POOL_GROWTH, to_cap) \
+		* pow(1.0 + BOSS_HP_GROWTH, past)
+
+static func depths_boss_dmg(depth: int) -> float:
+	var to_cap := mini(depth, LEVEL_CAP) - DEPTHS_ENTRY_FLOOR
+	var past := maxi(0, depth - LEVEL_CAP)
+	return DEPTHS_BOSS_DMG_ENTRY * pow(1.0 + DEPTHS_BOSS_DMG_GROWTH, to_cap) \
+		* pow(1.0 + BOSS_DMG_GROWTH, past)
 
 # --- Elite affixes (ACT2 §VI) — spawn-time stat mutations, no per-frame hooks.
 # Each carries a display name (worn on the bar), stat scalars, and traits to
@@ -1458,7 +1512,13 @@ const AFFIXES := {
 	"bulwark":  {"name": "Bulwark", "hp": 1.70},
 	"swift":    {"name": "Swift", "speed": 1.35, "traits": ["swift"]},
 	"savage":   {"name": "Savage", "dmg": 1.55},
-	"vampiric": {"name": "Vampiric", "dmg": 1.15, "traits": ["regen"]},
+	# Vampiric reworked 2026-07-21 (owner call): was 2%-max-HP/s regen — a
+	# fraction of ITS OWN pool, so Bulwark/upscale inflation pushed the
+	# break-even DPS past whole builds (Depths dmg-out debuff made it a
+	# literal stalemate). Now LIFESTEAL: heals a fraction of the damage it
+	# actually lands on a player — scales with its threat, not its bulk;
+	# a vampire you don't feed starves.
+	"vampiric": {"name": "Vampiric", "dmg": 1.15, "traits": ["lifesteal"]},
 	# Slippery (2026-07-17) is the DEX counter-build's home. Evasion is ADDITIVE
 	# ("eva_add"): every scalar above multiplies, and ~every enemy ships eva 0.0,
 	# so a multiplier would be a no-op. This is deliberately the ONLY place the
@@ -1470,7 +1530,13 @@ const AFFIXES := {
 	"slippery": {"name": "Slippery", "eva_add": 0.30, "speed": 1.10},
 }
 const AFFIX_KEYS := ["frenzied", "bulwark", "swift", "savage", "vampiric", "slippery"]
-const AFFIX_REGEN_FRAC := 0.02         # the "regen" trait (Vampiric): heal this fraction of max HP/s
+# Pair exclusion (2026-07-21): the two heavy damage scalars never co-roll.
+# Savage x Frenzied multiplied to ~x2 damage, which turns the "+10 levels =
+# 2 mistakes" budget into one-shots at the 3-affix depths. One damage
+# identity per monster; endgame._pick_affixes enforces it.
+const AFFIX_EXCLUSIVE := [["savage", "frenzied"]]
+const AFFIX_REGEN_FRAC := 0.02         # the "regen" trait: heal this fraction of max HP/s (no affix uses it since the vampiric rework; kinds may)
+const AFFIX_LIFESTEAL_FRAC := 0.30     # "lifesteal" (Vampiric): attacker heals this fraction of damage it lands on a player
 
 ## Gem level for endgame per-boss / milestone gems: the ch7 (Act-1 end) floor,
 ## climbing one level per 10 bosses/depths so a deep run sockets richer.

@@ -102,6 +102,12 @@ var potion_rotation: Array = []    # consumable ids slotted for rotation
 var active_potion := "health"      # "health" or a Items.ROTATION_POTIONS id
 var potion_swap_cd := 0.0          # debounce for the held cycle key
 
+# Waking Depths (2026-07-21 restructure): highest CHECKPOINT depth this
+# character has cleared (multiples of DEPTHS_CHECKPOINT_EVERY; depth ==
+# content level). Future runs re-enter the ladder here. Persisted with the
+# character — an alt earns its own footing.
+var depths_checkpoint := 0
+
 # --- vitals ---
 var max_hp := 100.0
 var hp := 100.0
@@ -1406,6 +1412,28 @@ func potion_display_name(id: String) -> String:
 	return id
 
 
+## Shared drink gate (2026-07-21): EVERY budgeted drink — Q-rotation or a bag
+## click — passes here. The bag path used to skip the per-room budget entirely
+## (a renewal chain was unlimited in-fight healing, gold the only gate, which
+## un-designed the potion-investment round), and the Q path double-managed the
+## cd/spend (arming potion_cd BEFORE use_consumable made the renewal branch
+## no-op while still eating the slot). ONE owner now: gate the drink cd,
+## require + spend a budgeted slot of this drink type, arm the cd. A type not
+## in this room's loadout refuses — planning is the skill, from the bag too.
+func _drink_gate(kind: String) -> bool:
+	if potion_cd > 0.0 or dead or downed or ghost:
+		return false
+	if int(room_potions.get(kind, 0)) <= 0:
+		potion_cd = 0.3
+		game.spawn_text(global_position + Vector2(0, -40),
+			"Not in this room's plan" if room_potions_left() > 0 else "No potions left this room",
+			Color(0.85, 0.7, 0.5))
+		return false
+	room_potions[kind] = int(room_potions[kind]) - 1
+	potion_cd = 0.6
+	return true
+
+
 ## Use a consumable from the bag (the bag UI calls this).
 func use_consumable(c: Dictionary) -> void:
 	if not consumables.has(c):
@@ -1434,11 +1462,15 @@ func use_consumable(c: Dictionary) -> void:
 			game.spawn_text(global_position + Vector2(0, -56),
 				"SKILL TREE RESET — %d points refunded (press T)" % back, Color(0.6, 0.9, 1.0))
 		"mana_potion":
+			if not _drink_gate("mana_potion"):
+				return
 			mp = minf(max_mp, mp + (max_mp - mp) * Balance.MANA_POTION_FRAC)
 			consumables.erase(c)
 			game.sfx("potion", 1.3)
 			game.spawn_text(global_position + Vector2(0, -56), "MANA RESTORED", Color(0.5, 0.7, 1.0))
 		"elixir_might":
+			if not _drink_gate("elixir_might"):
+				return
 			elixir_time = Balance.ELIXIR_MIGHT_DUR
 			elixir_atk = Balance.ELIXIR_MIGHT_AMT
 			consumables.erase(c)
@@ -1451,9 +1483,8 @@ func use_consumable(c: Dictionary) -> void:
 			game.sfx("potion", 0.75)
 			game.spawn_text(global_position + Vector2(0, -56), "WARDED!", Color(0.5, 0.8, 1.0))
 		"renewal_draught":
-			if potion_cd > 0.0:
-				return  # shares the drink cooldown — no chain-chugging past the gate
-			potion_cd = 0.6
+			if not _drink_gate("renewal_draught"):
+				return
 			gain_hp(max_hp * Balance.RENEWAL_HEAL_FRAC)
 			consumables.erase(c)
 			game.sfx("potion", 1.15)

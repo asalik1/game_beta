@@ -8,8 +8,11 @@ class_name Endgame extends Node
 ## heal between fights; potions are the only sustain. Milestone spoils at 3/6/10.
 ##
 ## THE WAKING DEPTHS (Marathon): an endless descent. A prep camp, then combat
-## only — each room's mobs scale +1 level, a boss guards every 4th room, and
-## affixes/pressure escalate by depth band. How far can you go?
+## only. DEPTH == CONTENT LEVEL (2026-07-21): the ladder starts at 40 (or
+## your earned checkpoint), every 5th depth is a boss, every 10th a
+## CHECKPOINT boss, and past each 100-block the dark wears the next
+## difficulty's name while the virtual level keeps climbing. One comparable
+## ladder; how deep can you go?
 ##
 ## Both modes ACCRUE rewards through the run (nothing granted mid-run) and pay at
 ## the END: a voluntary cash-out (pause menu) pays in full, a death pays at a
@@ -130,9 +133,21 @@ func _make_camp() -> void:
 	_camp_merchant = game._make_npc("merchant", c + Vector2(-220, 20),
 		"E — Shop", func() -> void: game.menus.open_shop(arena_room))
 	_camp_prompt = game._make_npc("tombstone", c + Vector2(0, -40),
-		"E — Descend into the dark", func() -> void: descend())
+		"E — Descend into the dark (Depth %d)" % _entry_depth(), func() -> void: descend())
 
-## Drop one room deeper: mob room, or a boss every 4th.
+## Where this character's next run enters the ladder: the highest earned
+## checkpoint, floored at the ladder's start. Depth == content level, so
+## the Depths always meet a fresh 40 at 40 and a veteran at their proof.
+func _entry_depth() -> int:
+	return maxi(Balance.DEPTHS_ENTRY_FLOOR, int(game.player.depths_checkpoint))
+
+## Drop one room deeper. DEPTH == CONTENT LEVEL (2026-07-21): the counter IS
+## the monsters' level — one ladder, comparable for every character, and
+## leveling up between runs never makes your own record harder to chase.
+## Every 5th depth is a boss; every 10th a CHECKPOINT boss. Past each
+## 100-block the dark changes name (the harder difficulty's hundred) and the
+## virtual level just keeps climbing against a capped player — the endless
+## soft wall.
 func descend() -> void:
 	if not active:
 		return
@@ -142,10 +157,20 @@ func descend() -> void:
 	if is_instance_valid(_camp_merchant):
 		_camp_merchant.queue_free()   # no restocking mid-descent — the camp is one-time
 		_camp_merchant = null
-	depth += 1
+	if depth == 0:
+		depth = _entry_depth()   # first dive: enter at the earned checkpoint
+	else:
+		depth += 1
 	_maybe_retheme()
-	var new_debuff := _apply_player_debuffs()   # the depth-37+ stacking curse
+	var new_debuff := _apply_player_debuffs()   # the pressure-band stacking curse
 	boss_room = (depth % Balance.DEPTHS_BOSS_EVERY == 0)
+	# Crossing into a new 100-block (101, 201, ...): announce whose dark this is.
+	if depth > Balance.DEPTHS_BLOCK and (depth - 1) % Balance.DEPTHS_BLOCK == 0:
+		var block: int = mini((depth - 1) / Balance.DEPTHS_BLOCK,
+			Balance.DEPTHS_BLOCK_NAMES.size() - 1)
+		game.spawn_text(game.player.global_position + Vector2(0, -190),
+			String(Balance.DEPTHS_BLOCK_NAMES[block]), Color(0.9, 0.5, 0.6), 4.0)
+		game.sfx("boss")
 	game.spawn_text(game.player.global_position + Vector2(0, -110),
 		"DEPTH %d" % depth, Color(0.8, 0.84, 1.0), 2.5)
 	if new_debuff != "":
@@ -153,16 +178,22 @@ func descend() -> void:
 			"THE DARK PRESSES IN — %s" % new_debuff, Color(0.85, 0.5, 0.9), 3.5)
 		game.sfx("nova", 0.6)
 	if boss_room:
-		_spawn_boss(_pick_depth_boss(), game.player.level + depth, _boss_affix_count())
+		_spawn_boss(_pick_depth_boss(), depth, _boss_affix_count())
 	else:
-		_spawn_wave(Balance.DEPTHS_WAVE_SIZE, game.player.level + depth - 1, _mob_affix_count())
+		_spawn_wave(Balance.DEPTHS_WAVE_SIZE, depth, _mob_affix_count())
 
 ## A Depths room fell (trash cleared, or its boss died). Award, then dive on.
 func _on_room_cleared(was_boss: bool) -> void:
 	if was_boss:
-		_award_boss(game.player.level + depth)   # boss rooms pay the boss reward
+		_award_boss(depth)   # boss rooms pay the boss reward
+		# A cleared CHECKPOINT boss is banked forever: future runs re-enter here.
+		if depth % Balance.DEPTHS_CHECKPOINT_EVERY == 0 \
+				and depth > int(game.player.depths_checkpoint):
+			game.player.depths_checkpoint = depth
+			game.spawn_text(game.player.global_position + Vector2(0, -170),
+				"CHECKPOINT — the Depths will remember you here", Color(0.6, 0.9, 1.0), 3.5)
 	else:
-		_award_depth(game.player.level + depth - 1)
+		_award_depth(depth)
 	_check_milestones()
 	game.spawn_text(game.player.global_position + Vector2(0, -92),
 		"Depth %d cleared" % depth, Color(0.7, 0.95, 0.75), 2.0)
@@ -175,7 +206,14 @@ func _maybe_retheme() -> void:
 	if depth % Balance.DEPTHS_TERRAIN_ROTATE != 1:
 		return
 	var terrains: Array = Balance.ENDGAME_ARENA_TERRAINS
-	var t: String = terrains[(depth / Balance.DEPTHS_TERRAIN_ROTATE) % terrains.size()]
+	var idx: int = (depth / Balance.DEPTHS_TERRAIN_ROTATE) % terrains.size()
+	var t: String = terrains[idx]
+	# A roll that lands on the CURRENT look is a wasted beat (the entry jump
+	# to depth 40 rolls index 4 = the camp's own graveyard) — step past it.
+	var tz: Array = game.terrain_by_zone   # per-room terrain ids, Array by zone index
+	var cur: String = String(tz[arena_room]) if arena_room >= 0 and arena_room < tz.size() else ""
+	if t == cur:
+		t = terrains[(idx + 1) % terrains.size()]
 	game.apply_terrain(arena_room, t)
 
 
@@ -184,9 +222,21 @@ func _maybe_retheme() -> void:
 func _spawn_boss(kind: String, level: int, affix_n: int) -> void:
 	var c := game.room_center(arena_room)
 	var pos := game.clamp_to_zone(c + Vector2(300, -40), c)
-	var b := Boss.make_boss(game, kind, pos, level)
+	var b := Boss.make_boss(game, kind, pos, level, mode == "depths")  # depths: level may exceed the cap (blocks)
 	b.endgame_boss = true
 	b.zone_idx = arena_room
+	# Depths boss BUDGET (owner ruling 2026-07-21): whatever face the shuffle
+	# picked, a depth-D boss fights at TRUE level-D weight — pool/damage come
+	# from the depth budget (Balance.depths_boss_pool/dmg), the kind keeps its
+	# mechanics, tells and a weight-class flavor (later legends weigh more).
+	# Kills the 56x anchor lottery (fangmaw speedbump vs stormmouth war at the
+	# same depth). Applied BEFORE affixes so Bulwark still multiplies on top.
+	if mode == "depths":
+		var anchor := int(Story.ALL_ENEMIES[kind]["level"])
+		var flavor := 0.85 + 0.3 * clampf(float(anchor - 5) / 36.0, 0.0, 1.0)
+		b.max_hp = Balance.depths_boss_pool(depth) * flavor
+		b.hp = b.max_hp
+		b.dmg = Balance.depths_boss_dmg(depth) * flavor
 	# Affixes: pick distinct keys, mutate stats, and wear the names on the bar.
 	var names: Array = []
 	for key in _pick_affixes(affix_n):
@@ -212,7 +262,7 @@ func _spawn_wave(count: int, level: int, affix_n: int) -> void:
 		var kind: String = pool[_rng.randi() % pool.size()]
 		var ang := TAU * float(i) / float(count) + _rng.randf_range(-0.3, 0.3)
 		var pos := game.clamp_to_zone(c + Vector2.from_angle(ang) * 300.0, c)
-		var e := Enemy.make(game, kind, pos, level)
+		var e := Enemy.make(game, kind, pos, level, -1.0, mode == "depths")  # depths: overcap blocks
 		e.zone_idx = arena_room
 		e.pack_id = 0
 		for key in _pick_affixes(affix_n):
@@ -303,36 +353,50 @@ func settle(died: bool, completed: bool) -> void:
 
 # ------------------------------------------------------------ reward math ---
 
+## Depth-mode reward PROGRESS is measured from the ladder's floor (depth ==
+## level now, and the ladder starts at 40): gold/gem curves keep the exact
+## audited shape the old 1-based ladder had, just anchored to real levels.
+func _depth_progress() -> int:
+	return maxi(1, depth - Balance.DEPTHS_ENTRY_FLOOR + 1)
+
 func _award_boss(level: int) -> void:
 	kills += 1
 	var g: int
 	if mode == "crucible":
 		g = int(Balance.CRUCIBLE_GOLD_BASE * (1.0 + Balance.CRUCIBLE_GOLD_STEP * float(kills - 1)))
 	else:
-		g = int(Balance.DEPTHS_GOLD_PER_DEPTH * depth)
+		g = int(Balance.DEPTHS_GOLD_PER_DEPTH * _depth_progress())
 	pending_gold += int(float(g) * Balance.daily_gold_mult(level))
-	pending_gems.append(Balance.endgame_gem_level(maxi(kills, depth)))   # a gem per boss
+	pending_gems.append(Balance.endgame_gem_level(
+		kills if mode == "crucible" else _depth_progress()))   # a gem per boss
 
 func _award_depth(level: int) -> void:
 	# A cleared trash room pays a slice of the depth gold (bosses pay the rest).
-	var g := int(float(Balance.DEPTHS_GOLD_PER_DEPTH) * float(depth) * 0.5)
+	var g := int(float(Balance.DEPTHS_GOLD_PER_DEPTH) * float(_depth_progress()) * 0.5)
 	pending_gold += int(float(g) * Balance.daily_gold_mult(level))
 
-## Crossing a milestone (kills 3/6/10, or depth 12/24/36/48) banks a bonus gem
-## bundle + a boss-band gear roll — kept even through a death (you reached it).
+## Crossing a milestone (Crucible kills 3/6/10; Depths: every cleared
+## CHECKPOINT depth) banks a bonus gem bundle + a boss-band gear roll —
+## kept even through a death (you reached it).
 func _check_milestones() -> void:
-	var marks: Array = Balance.CRUCIBLE_MILESTONES if mode == "crucible" else Balance.DEPTHS_MILESTONES
-	var reached: int = kills if mode == "crucible" else depth
-	for m in marks:
-		var mark := int(m)
-		if reached >= mark and not reached_milestones.get(mark, false):
-			reached_milestones[mark] = true
-			for _i in 2:
-				pending_gems.append(Balance.endgame_gem_level(reached) + 1)
-			pending_gear.append(_reward_gear_grade())
-			game.spawn_text(game.player.global_position + Vector2(0, -128),
-				"MILESTONE — bonus spoils banked", Color(1.0, 0.85, 0.4), 3.0)
-			game.sfx("chest")
+	if mode == "crucible":
+		for m in Balance.CRUCIBLE_MILESTONES:
+			var mark := int(m)
+			if kills >= mark and not reached_milestones.get(mark, false):
+				reached_milestones[mark] = true
+				_bank_milestone(kills)
+		return
+	if depth % Balance.DEPTHS_CHECKPOINT_EVERY == 0 and not reached_milestones.get(depth, false):
+		reached_milestones[depth] = true
+		_bank_milestone(_depth_progress())
+
+func _bank_milestone(progress: int) -> void:
+	for _i in 2:
+		pending_gems.append(Balance.endgame_gem_level(progress) + 1)
+	pending_gear.append(_reward_gear_grade())
+	game.spawn_text(game.player.global_position + Vector2(0, -128),
+		"MILESTONE — bonus spoils banked", Color(1.0, 0.85, 0.4), 3.0)
+	game.sfx("chest")
 
 ## The 10-boss Crucible clear pays the headline reward on top of milestones.
 func _grant_clear_bonus() -> void:
@@ -342,36 +406,35 @@ func _grant_clear_bonus() -> void:
 
 ## Reward gear grade: the Act-1 boss band by default, richer on a deep run.
 func _reward_gear_grade() -> String:
-	var reached: int = kills if mode == "crucible" else depth
-	if mode == "depths" and reached >= Balance.DEPTHS_MILESTONES[2]:
+	if mode == "depths" and depth >= Balance.DEPTHS_S_MILESTONE_DEPTH:
 		return "S"
 	return Balance.CRUCIBLE_CLEAR_GEAR_GRADE
 
 
 # --------------------------------------------------------- escalation dials ---
 
-## The Depths player-debuff band (depth 37+, ACT2 §II): one stacking debuff every
-## 4 rooms, cycling −healing received → −damage dealt → +damage taken, forever.
+## The Depths player-debuff band (the pressure line, ACT2 §II): one stacking
+## debuff per band, alternating −damage dealt → +damage taken, forever. The
+## HEALING cut was removed 2026-07-21 (owner call): it taxed sustain-identity
+## classes asymmetrically — sustain is class design, not a depth tax.
 ## Recomputed each descent and written straight onto the player's debuff knobs
 ## (reset to 1.0 off-run). Returns a short label of the newest stack, or "".
 func _apply_player_debuffs() -> String:
-	var heal := 1.0
 	var dmg_out := 1.0
 	var dmg_in := 1.0
 	var stacks := 0
 	if mode == "depths" and depth >= Balance.DEPTHS_TIER_PRESSURE:
 		stacks = (depth - Balance.DEPTHS_TIER_PRESSURE) / Balance.DEPTHS_DEBUFF_EVERY + 1
 		for s in stacks:
-			match s % 3:
-				0: heal -= Balance.DEPTHS_DEBUFF_STEP
-				1: dmg_out -= Balance.DEPTHS_DEBUFF_STEP
-				2: dmg_in += Balance.DEPTHS_DEBUFF_STEP
-	game.player.debuff_heal_in = maxf(Balance.DEPTHS_DEBUFF_FLOOR, heal)
+			match s % 2:
+				0: dmg_out -= Balance.DEPTHS_DEBUFF_STEP
+				1: dmg_in += Balance.DEPTHS_DEBUFF_STEP
+	game.player.debuff_heal_in = 1.0
 	game.player.debuff_dmg_out = maxf(Balance.DEPTHS_DEBUFF_FLOOR, dmg_out)
 	game.player.debuff_dmg_in = dmg_in
 	# Announce a stack only on the depth that ADDED it (the cycle line).
 	if stacks > 0 and (depth - Balance.DEPTHS_TIER_PRESSURE) % Balance.DEPTHS_DEBUFF_EVERY == 0:
-		return ["weakened healing", "weakened strikes", "exposed — you take more"][(stacks - 1) % 3]
+		return ["weakened strikes", "exposed — you take more"][(stacks - 1) % 2]
 	return ""
 
 ## Reset the player's debuff knobs to neutral (run end / new run).
@@ -407,10 +470,25 @@ func _boss_affix_count() -> int:
 func _pick_affixes(n: int) -> Array:
 	if n <= 0:
 		return []
+	# Distinct keys, honoring Balance.AFFIX_EXCLUSIVE (2026-07-21): walk the
+	# shuffle and skip any key whose exclusion partner is already worn —
+	# Savage x Frenzied multiplied to ~x2 damage, one-shot territory at the
+	# 3-affix depths. The pool is deep enough that n never comes up short.
 	var keys: Array = Balance.AFFIX_KEYS.duplicate()
 	_shuffle(keys)
-	keys.resize(mini(n, keys.size()))
-	return keys
+	var out: Array = []
+	for k in keys:
+		if out.size() >= n:
+			break
+		var blocked := false
+		for pair in Balance.AFFIX_EXCLUSIVE:
+			if (k in pair):
+				for other in pair:
+					if String(other) != String(k) and (other in out):
+						blocked = true
+		if not blocked:
+			out.append(k)
+	return out
 
 ## Apply an affix's stat mutation once, at spawn (no per-frame hook needed).
 func _apply_affix(e: Enemy, key: String) -> void:

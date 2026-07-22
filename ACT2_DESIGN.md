@@ -88,28 +88,46 @@ Infinite combat dungeon. How deep can you go?
 - **First room is the only safe room:** merchant, stash access, loadout prep.
   After that, combat only.
 - Rooms pull from the full terrain/mob pool of cleared chapters. Terrain
-  rotates every few rooms for visual variety.
-- Mobs start at player level, scale +1 per room. By room 20 they're +20
-  levels above you. The compound growth curve does the work.
-- **Every 4th room is a boss** from the cleared roster, scaled to that
-  depth's level. Seeded shuffle — no repeats until the pool cycles.
+  rotates every few rooms for visual variety (never re-rolling the current
+  look — a re-theme that changes nothing is a dead beat).
+- **DEPTH == CONTENT LEVEL (restructured 2026-07-21, player call).** The old
+  player-relative baseline (player level + depth) made the same depth a
+  different fight per character and punished leveling between runs. Now depth
+  73 IS level-73 monsters: one ladder, comparable for everyone. The ladder
+  enters at depth 40 (the Act-1 cap) — or at the character's highest cleared
+  checkpoint (`depths_checkpoint`, persisted per character).
+- **A boss every 5th depth; every 10th is a CHECKPOINT boss** from the
+  cleared roster. Clearing a checkpoint banks milestone spoils AND the
+  re-entry point. Seeded shuffle — no repeats until the pool cycles.
+- **Boss pools are DEPTH-BUDGETED (owner ruling 2026-07-21):** whatever face
+  the shuffle draws fights at true level-D weight (`Balance.depths_boss_pool/
+  dmg` × a ±15% kind weight-class flavor; affixes multiply on top). The
+  roster supplies mechanics and tells; the depth supplies the difficulty.
+  Anchor: a true L100 boss holds a MAX-SPECCED player ~2 minutes. Kills the
+  anchor lottery (a depth-100 fangmaw was a half-second speedbump beside
+  stormmouth's 30s war).
+- **Past 100 the ladder keeps going in 100-blocks** — the Nightmare Depths,
+  then the Torment Depths (`DEPTHS_BLOCK_NAMES`): the virtual content level
+  keeps climbing past the player cap (overcap spawns, two-regime growth), so
+  each block is the harder difficulty's hundred. Effectively endless; the
+  soft wall ends every run eventually.
 
-**Escalation tiers:**
+**Escalation bands (re-keyed to the 10-ladder, 2026-07-21):**
 
 | Depth | What happens |
 |---|---|
-| 1–12 | Mobs scale, straightforward. Learning the mode. |
-| 13–24 | Mobs gain 1 random elite affix each. |
-| 25–36 | Mobs gain 2 affixes. Bosses gain 1 affix. |
-| 37–48 | **Player debuffs start.** One stacking debuff every 4 rooms: −10% healing received, then −10% damage dealt, then +10% damage taken, cycling. |
-| 49+ | Mobs 3 affixes, bosses 2 affixes, player debuffs keep stacking. The "how far can you really go" zone. |
+| 40–49 | At-parity fights, checkpoint rhythm. Learning the mode. |
+| 50–59 | Mobs gain 1 random elite affix each. |
+| 60–69 | Mobs 2 affixes. Bosses 1 affix. |
+| 70–79 | **Player debuffs start.** One stacking debuff every 10 depths, alternating −10% damage dealt → +10% damage taken. Healing is NEVER debuffed (owner call 2026-07-21: sustain is class design, not a depth tax). |
+| 80+ | Mobs 3 affixes (Savage+Frenzied never co-roll — pair exclusion), bosses 2, debuffs keep stacking. The "how deep can you really go" zone. |
 
 **Rewards — paid at the END (death or voluntary exit at any boss checkpoint):**
 
-- Gold scales linearly with depth
-- Gems: 1 per boss killed, quality scaling with depth
-- Milestone chests at depth 12 / 24 / 36 / 48 (boss-band gear rolls)
-- **Depth record** per class in codex Records — the brag number
+- Gold scales linearly with depth-past-the-floor (the audited curve, shifted)
+- Gems: 1 per boss killed, quality scaling with progress past the floor
+- Milestone chests at every cleared CHECKPOINT depth (boss-band gear rolls; S from depth 70)
+- **Depth record** per class in codex Records — the brag number (records from before the restructure use the old 1-based scale and wash out naturally)
 - No XP (same rule as chapter replays)
 - Exit at any boss checkpoint = full rewards. Die = 25% penalty.
 

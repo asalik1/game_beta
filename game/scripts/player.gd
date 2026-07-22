@@ -599,7 +599,9 @@ func drink_potion() -> void:
 		cycle_potion()  # active type spent: fall to the next budgeted one
 		return
 	# Rotation potions route through the same bag effects as clicking
-	# them in the inventory.
+	# them in the inventory. use_consumable's _drink_gate owns the cd +
+	# budget spend now (2026-07-21) — arming potion_cd here first made the
+	# renewal branch refuse while the slot was already spent.
 	if active_potion != "health":
 		if active_potion == "mana_potion" and mp >= max_mp - 0.5:
 			return  # never chug mana at full — held Q would drain the stack
@@ -607,8 +609,6 @@ func drink_potion() -> void:
 			return  # elixir already running: don't burn a second vial
 		for c in consumables:
 			if String(c.get("id", "")) == active_potion:
-				potion_cd = 0.6
-				room_potions[active_potion] = int(room_potions[active_potion]) - 1
 				use_consumable(c)
 				if int(room_potions.get(active_potion, 0)) <= 0 \
 						or consumable_count(active_potion) <= 0:
@@ -762,6 +762,15 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 				Color(1.0, 0.75, 0.35))
 		grit_time = 6.0
 	hp -= amount
+	# Vampiric (endgame affix, reworked 2026-07-21): the attacker DRINKS a
+	# fraction of the damage it actually lands (post-mitigation, post-shield).
+	# Replaces the old %-of-own-max regen, which scaled with the mob's pool
+	# and stalemated runs once inflation pushed break-even past a build's
+	# DPS. This scales with ITS damage instead — starve it by not being hit.
+	if attacker is Enemy and (attacker as Enemy).traits.get("lifesteal", false):
+		var vamp := attacker as Enemy
+		vamp.hp = minf(vamp.max_hp, vamp.hp + amount * Balance.AFFIX_LIFESTEAL_FRAC)
+		game.spawn_text(vamp.global_position + Vector2(0, -50), "DRINKS", Color(0.9, 0.35, 0.55))
 	game.fight_note_damage(amount, attacker)
 	game.stat_taken(self, amount)  # battle stats: HP actually lost (owner-side)
 	game.sfx("hurt")
