@@ -600,16 +600,27 @@ static func monster_build(base: Dictionary) -> Dictionary:
 ## defensive substat climbs linearly via the monster's attribute
 ## build. At the listed level nothing changes, codex numbers stay
 ## honest, and rewards stay LINEAR (no farm spiral).
-static func enemy_stats_at(kind: String, level: int) -> Dictionary:
+## `overcap` (2026-07-21, Depths blocks): the Depths' virtual content level
+## keeps climbing past LEVEL_CAP (depth 130 spawns as-if L130 against a
+## capped L100 player — the endless soft wall). Campaign/codex callers keep
+## the cap; only the endgame controller passes true.
+static func enemy_stats_at(kind: String, level: int, overcap := false) -> Dictionary:
 	load_content()
 	var base: Dictionary = ALL_ENEMIES[kind]
-	var lvl := clampi(level, int(base["level"]), Balance.LEVEL_CAP)
+	var lvl := maxi(level, int(base["level"])) if overcap \
+		else clampi(level, int(base["level"]), Balance.LEVEL_CAP)
 	var d := lvl - int(base["level"])
 	var is_boss := bool(base.get("boss", false))
-	# Bosses grow HP on the global BOSS_HP_GROWTH (tracks the player DPS curve so
-	# TTK stays flat when scaled above native); mobs keep their per-kind hp_g.
+	# Bosses grow HP on the global BOSS_HP_GROWTH (tracks the player DPS curve
+	# so TTK stays flat when scaled above native). Mobs run TWO regimes
+	# (2026-07-21): their per-kind hp_g through the native band (walls + kind
+	# identity, exactly as tuned), then the same flat player-tracking dial as
+	# bosses — compounding per-kind rates 60+ levels above anchor sent high-g
+	# trash to 100x-1900x pools, an order of magnitude past upscaled bosses.
+	var d_near := d if is_boss else mini(d, Balance.MOB_NATIVE_GROWTH_BAND)
+	var d_far := d - d_near
 	var hp_growth: float = Balance.BOSS_HP_GROWTH if is_boss else float(base["hp_g"]) * Balance.GROWTH_SCALE
-	var hp_m := pow(1.0 + hp_growth, d)
+	var hp_m := pow(1.0 + hp_growth, d_near) * pow(1.0 + Balance.BOSS_HP_GROWTH, d_far)
 	if not is_boss:
 		# Mobs only (boss pools are budgeted directly): the TTK retune plus
 		# the 2026-07-07 presence pass — fatter pools so trash needs real
@@ -625,7 +636,9 @@ static func enemy_stats_at(kind: String, level: int) -> Dictionary:
 		# must not widen with level (round 13: L42 A-gear playtest).
 		dmg_growth = Balance.BOSS_DMG_GROWTH
 		dmg_flat *= Balance.BOSS_DMG_MULT
-	var dmg_m := pow(1.0 + dmg_growth, d) * dmg_flat
+	# Mob damage runs the same two regimes as HP: native band on the authored
+	# rate, player-tracking (BOSS_DMG_GROWTH) beyond it.
+	var dmg_m := pow(1.0 + dmg_growth, d_near) * pow(1.0 + Balance.BOSS_DMG_GROWTH, d_far) * dmg_flat
 	# Gem-expectation ramp (2026-07-06): the TIERLIST benchmark was
 	# gemless, but real players arrive socketed — UPSCALED bosses gain a
 	# small premium per level above where gems come online (round 45's

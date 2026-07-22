@@ -69,6 +69,11 @@ var _net_tell_t := 0.0     # mirror: seconds of tell tint left (drives the rever
 # shell. Captured-and-cleared at the top of take_damage; solo it always
 # resolves to THE player, so reflect/counter/aggro reads are bit-identical.
 var hit_src: Player = null
+# Battle-stats credit for damage that must NOT drive aggro/reflect: DoT
+# ticks and AoE sub-hits set this instead of hit_src, so the meter counts
+# them without a burn tick re-taunting the victim every half second.
+# Captured-and-cleared beside hit_src in take_damage.
+var stat_src: Player = null
 # MP-10: squelch the mirror status forward while apply_toxin calls
 # apply_burn internally — one "toxin" event carries both to the host.
 var _status_mute := false
@@ -193,14 +198,16 @@ const TRAIT_DESC := {
 	"mend":    "Knits — slowly heals its own wounds; burst it down.",
 	"frenzy":  "Frenzied — wounded, it strikes faster and harder.",
 	"swift":   "Swift — quicker on its feet than its kin.",
+	"lifesteal": "Vampiric — DRINKS from every blow it lands on you. It can't out-heal a fight it can't touch: don't feed it.",
 }
 
 
 ## `size` < 0 rolls a fresh per-spawn size variance (living world); a caller
 ## can PIN it (net mirrors replay the host's roll; tests want 1.0 for exact
 ## stat math). Bosses ignore it — they stay their authored scale.
-static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1, size := -1.0) -> Enemy:
+static func make(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1, size := -1.0, overcap := false) -> Enemy:
 	var e := Enemy.new()
+	e.overcap_levels = overcap  # Depths blocks: virtual level may exceed LEVEL_CAP
 	e._setup(game_node, enemy_kind, pos, at_level, size)
 	return e
 
@@ -399,8 +406,14 @@ func _stats_for(k: String) -> Dictionary:
 	return Story.ALL_ENEMIES[k]  # base table + registered content modules
 
 
+# Depths blocks (2026-07-21): the endless ladder's virtual content level keeps
+# climbing past LEVEL_CAP; the endgame controller spawns with this set so
+# stats keep compounding on the far-regime dials. Campaign spawns leave it
+# false and keep the cap.
+var overcap_levels := false
+
 func _stats_at(k: String, lvl: int) -> Dictionary:
-	return Story.enemy_stats_at(k, lvl)
+	return Story.enemy_stats_at(k, lvl, overcap_levels)
 
 
 ## 2D facing vector for 8-direction art: toward the prey when engaged
@@ -655,6 +668,7 @@ func _physics_process(delta: float) -> void:
 			var src: Player = burn_src if burn_src != null and is_instance_valid(burn_src) else game.player
 			if src != null and randf() < Stats.crit_curve(src.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
 				tick *= src.crit_dmg
+			stat_src = src  # battle-stats credit only — never aggro
 			take_damage(tick, Vector2.ZERO, false, true)
 			if not dying:
 				# Eldritch Warlock reacts to the authoritative DoT beat. This is
@@ -677,6 +691,7 @@ func _physics_process(delta: float) -> void:
 			var bsrc: Player = bleed_src if bleed_src != null and is_instance_valid(bleed_src) else game.player
 			if bsrc != null and randf() < Stats.crit_curve(bsrc.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
 				btick *= bsrc.crit_dmg
+			stat_src = bsrc  # battle-stats credit only — never aggro
 			take_damage(btick, Vector2.ZERO, false, true)
 			if not dying:
 				sprite.modulate = Color(1.5, 0.35, 0.4)  # crimson wound flash
@@ -1667,6 +1682,13 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	# shell. Solo it is always THE player — reads below are bit-identical.
 	var striker: Player = hit_src if hit_src != null and is_instance_valid(hit_src) else null
 	hit_src = null
+	# Battle-stats credit: the striker, else the tick/sub-hit source. Read
+	# BEFORE the reflect fallback below reassigns striker (that fallback
+	# must never credit hazard damage to whoever happened to be targeted).
+	var stat_credit: Player = striker
+	if stat_credit == null and stat_src != null and is_instance_valid(stat_src):
+		stat_credit = stat_src
+	stat_src = null
 	if net_mirror:
 		# MP-10: a guest's hit — optimistic local juice + the funnel RPC
 		# (MP-09 dropped it silently; mirror hp truth still rides the sync).
@@ -1732,6 +1754,7 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	if plate_dr > 0.0:
 		amount *= 1.0 - plate_dr
 	hp -= amount
+	game.stat_dmg(stat_credit, amount)  # battle stats: the APPLIED number
 	knock = from_dir * (220.0 if is_crit else 160.0)
 	if not silent:
 		game.sfx("ehit", 1.0, 0.0, 4.0)  # +4dB: the Punch source runs quiet

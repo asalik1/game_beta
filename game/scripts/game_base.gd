@@ -192,6 +192,12 @@ var party_stats_net := {}  # GUEST: the host's merged table (~1 Hz fan) — disp
 var shake_amt := 0.0
 var sounds: Dictionary = {}
 var sound_pool: Array = []
+# Variant groups are discovered from override names ending in `_vN`.
+# Callers play the stable semantic key (for example `boss_fire_cast`), and
+# this bank chooses a different installed take without immediately repeating.
+var sound_groups: Dictionary = {}       # semantic key -> sorted stream keys
+var sound_group_last: Dictionary = {}   # semantic key -> last chosen index
+var sfx_rng := RandomNumberGenerator.new()
 var loot_rng := RandomNumberGenerator.new()
 var ambient_fx: CPUParticles2D = null
 var npc_emote_t := 4.0
@@ -2260,8 +2266,51 @@ func set_music(name: String) -> void:
 ## Play a sound. pitch shifts the base pitch (still ±6% randomized);
 ## cutoff > 0 fades the sound out after that many seconds — lets long
 ## recordings (like a real wolf howl) play only their opening.
+func _build_sound_groups() -> void:
+	sound_groups.clear()
+	sound_group_last.clear()
+	sfx_rng.randomize()
+	for raw_key in sounds.keys():
+		var stream_key := String(raw_key)
+		var marker := stream_key.rfind("_v")
+		if marker <= 0:
+			continue
+		var suffix := stream_key.substr(marker + 2)
+		if not suffix.is_valid_int():
+			continue
+		var group_key := stream_key.substr(0, marker)
+		if not sound_groups.has(group_key):
+			sound_groups[group_key] = []
+		var group: Array = sound_groups[group_key]
+		group.append(stream_key)
+	for raw_group in sound_groups.values():
+		var group: Array = raw_group
+		group.sort()
+
+
+func _sound_variant(name: String) -> String:
+	if not sound_groups.has(name):
+		return name
+	var group: Array = sound_groups[name]
+	if group.size() <= 1:
+		return String(group[0]) if not group.is_empty() else name
+	var last := int(sound_group_last.get(name, -1))
+	if last < 0:
+		var first := sfx_rng.randi_range(0, group.size() - 1)
+		sound_group_last[name] = first
+		return String(group[first])
+	# Draw from N-1 slots, then skip over the previous index. This is a
+	# shuffle-bag-sized guarantee: variety without mutating gameplay RNG.
+	var pick := sfx_rng.randi_range(0, group.size() - 2)
+	if pick >= last:
+		pick += 1
+	sound_group_last[name] = pick
+	return String(group[pick])
+
+
 func sfx(name: String, pitch := 1.0, cutoff := 0.0, vol_db := 0.0) -> void:
-	if not sounds.has(name):
+	var stream_key := _sound_variant(name)
+	if not sounds.has(stream_key):
 		return
 	var chosen: AudioStreamPlayer = sound_pool[0]
 	for sp in sound_pool:
@@ -2273,7 +2322,7 @@ func sfx(name: String, pitch := 1.0, cutoff := 0.0, vol_db := 0.0) -> void:
 	# vol_db offsets the base level (e.g. quiet ambient stings).
 	chosen.pitch_scale = pitch * randf_range(0.94, 1.06)
 	chosen.volume_db = -8.0 + vol_db
-	chosen.stream = sounds[name]
+	chosen.stream = sounds[stream_key]
 	chosen.play()
 	if cutoff > 0.0:
 		var this_stream: AudioStream = chosen.stream
@@ -2345,7 +2394,9 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	if not is_instance_valid(zone):
 		return
 	zone.queue_free()
-	sfx("slam")
+	var impact_sfx := String(opts.get("impact_sfx", "slam"))
+	if not impact_sfx.is_empty():
+		sfx(impact_sfx)
 	shake(6.0)
 	burst(pos, opts.get("color", Color(1.0, 0.35, 0.2)), 18)
 	if sword and is_instance_valid(sword):
@@ -2498,7 +2549,9 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		if is_instance_valid(hud):
 			hud.danger_end(true)
 		return
-	sfx("slam")
+	var impact_sfx := String(opts.get("impact_sfx", "slam"))
+	if not impact_sfx.is_empty():
+		sfx(impact_sfx)
 	shake(9.0)
 	# The LOCAL player's verdict drives THIS machine's HUD dread ramp and
 	# shelter burst — exactly the old single-player reads.

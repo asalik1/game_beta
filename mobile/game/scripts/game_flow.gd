@@ -222,6 +222,7 @@ func record_chapter_result(res: Dictionary) -> Dictionary:
 		out["new_grade"] = true
 	_meta[key] = best
 	_meta_write()
+	check_track_achievements()  # Pathfinder tiers ride the clear tally
 	return out
 
 
@@ -259,6 +260,7 @@ func record_endgame(mode: String, cls: String, kills: int, depth: int, time: flo
 			out["new_depth"] = true
 		_meta[key] = best
 	_meta_write()
+	check_track_achievements()  # Depthcrawler tiers ride the descent record
 	return out
 
 
@@ -267,6 +269,49 @@ func endgame_pb(mode: String, cls: String) -> Dictionary:
 	_load_meta()
 	var key := ("crucible_pb_" if mode == "crucible" else "depths_best_") + cls
 	return _meta.get(key, {})
+
+
+# ------------------------------------------------- record tracks (tiered) ---
+
+## Live value of a record track (Achievements.TRACKS): the lifetime counter
+## its tier medals grade. Character-scoped tallies read the base layer;
+## account-wide ones read meta.json (this layer owns meta) across classes.
+func track_value(track: String) -> int:
+	match track:
+		"kills":
+			return total_kills()
+		"bosses":
+			var n := 0
+			for kind in boss_records:
+				n += int(boss_records[kind].get("kills", 0))
+			return n
+		"lore":
+			return lore_unearthed()
+		"clears":
+			var runs := 0
+			for chid in Story.CHAPTER_LIST:
+				for cls in Classes.CLASSES:
+					runs += int(chapter_pb(String(chid), String(cls)).get("runs", 0))
+			return runs
+		"depth":
+			var d := 0
+			for cls in Classes.CLASSES:
+				d = maxi(d, int(endgame_pb("depths", String(cls)).get("depth", 0)))
+			return d
+	return 0
+
+
+## Cross every record-track tier the counters have passed (idempotent:
+## unlock_achievement no-ops repeats). Called after a tracked counter moves
+## — kills/lore ride note_kill, bosses ride the concluded fight, clears and
+## depth ride their meta writes below.
+func check_track_achievements() -> void:
+	for track in Achievements.TRACKS:
+		var v := track_value(String(track))
+		var tiers: Array = Achievements.TRACKS[track]["tiers"]
+		for i in tiers.size():
+			if v >= int(tiers[i]):
+				unlock_achievement("%s_%d" % [track, i + 1])
 
 
 ## Are the endgame modes unlocked (Act 1 cleared)? The flag is set the first

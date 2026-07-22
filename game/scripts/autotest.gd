@@ -1218,6 +1218,30 @@ func _run_systems() -> void:
 		return _fail("clearing chroma failed")
 	p_sk.chroma = old_chroma
 	print("ok: chroma shader (apply, uniforms, clear)")
+	for skin_cls in Skins.SKINS:
+		for skin_data in Skins.skins_for(skin_cls):
+			var skin_id: String = String(skin_data["id"])
+			var splash_key: String = Skins.skin_splash(skin_cls, skin_id, false)
+			if splash_key == "" or not Art.has_sprite(splash_key):
+				return _fail("missing skin splash: %s/%s -> %s" % [skin_cls, skin_id, splash_key])
+			if skin_data.has("awakened_sprite"):
+				var awakened_key: String = Skins.skin_splash(skin_cls, skin_id, true)
+				if awakened_key == splash_key or not Art.has_sprite(awakened_key):
+					return _fail("missing awakened skin splash: %s/%s -> %s" % [skin_cls, skin_id, awakened_key])
+	print("ok: every skin + awakened form has an installed splash")
+	var old_skin: String = p_sk.skin
+	var awakened_flag := "s_awakened_" + p_sk.cls
+	var old_awakened: bool = bool(game.get_flag(awakened_flag, false))
+	p_sk.set_skin("dreadknight")
+	if game.hud._splash_for("You") != "splash_skin_warrior_dreadknight":
+		return _fail("hero dialogue did not resolve the equipped skin splash")
+	p_sk.set_skin("stormforged")
+	game.set_flag(awakened_flag, true)
+	if game.hud._splash_for("You") != "splash_skin_warrior_stormforged_awakened":
+		return _fail("hero dialogue did not resolve the live awakened skin splash")
+	game.set_flag(awakened_flag, old_awakened)
+	p_sk.set_skin(old_skin)
+	print("ok: hero dialogue splash follows live equipped + awakened skin")
 
 	# 5c. Choice dialogue + flag engine: choices apply resonance/flags,
 	# and both flag- and band-gated text variants resolve.
@@ -2136,7 +2160,7 @@ func _test_battle_stats() -> void:
 	var keep_log: Dictionary = game.convo_log.duplicate(true)
 	var keep_order: Array = game.convo_log_order.duplicate()
 	game.log_story_line("Elder Maren", "The vale remembers what you did for it.")
-	game.log_story_line("You", "\u27a4 A test choice, archived.")
+	game.log_story_line("You", "➤ A test choice, archived.")
 	if game.convo_log_order.is_empty():
 		return _fail("log_story_line recorded nothing")
 	game.menus.open_journal("story")

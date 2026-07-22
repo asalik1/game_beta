@@ -160,7 +160,7 @@ static func _tab_character(m: Menus, list: VBoxContainer) -> void:
 			m.open_dev(), Color(0.5, 1.0, 0.5) if sk_on else tier_color)
 
 	# Judge the CQ-style dialogue frame in-game — three states in one preview:
-	# the hero shows their class splash, Maren shows her own NPC splash, and the
+	# the hero shows their equipped-skin/class splash, Maren shows her own NPC splash, and the
 	# Narrator is faceless (falls back to no art). LOG/SKIP/AUTO ride the box.
 	_section(m, list, "DIALOGUE FRAME")
 	var row_dlg := _flow(list)

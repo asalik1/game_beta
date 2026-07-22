@@ -12,11 +12,20 @@ const FACTION_NAME := {
 }
 
 
-static func open(m: Menus) -> void:
+static func open(m: Menus, tab := "log") -> void:
 	var g := m.game
 	g.refresh_bounties()  # make sure the day/week sets are current
 	var vbox := m._open("Quest Log — %s" % String(Story.chapter(g.chapter_id)["name"]), 860, 640, true)
 	m.current = "journal"
+
+	# Tabs: the LIVE log | the story-so-far archive (past quests, re-readable).
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 12)
+	vbox.add_child(tabs)
+	m._btn(tabs, "  Quest Log  ", func() -> void: m.open_journal("log"),
+		Color(0.95, 0.85, 0.5) if tab == "log" else Color(0.6, 0.6, 0.6))
+	m._btn(tabs, "  Story So Far  ", func() -> void: m.open_journal("story"),
+		Color(0.95, 0.85, 0.5) if tab == "story" else Color(0.6, 0.6, 0.6))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -27,6 +36,11 @@ static func open(m: Menus) -> void:
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.add_theme_constant_override("separation", 6)
 	scroll.add_child(list)
+
+	if tab == "story":
+		_archive(m, list)
+		m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
+		return
 
 	# --- current objective ---
 	m._lbl(list, "— CURRENT OBJECTIVE —", 16, Color(0.95, 0.85, 0.5))
@@ -93,6 +107,100 @@ static func open(m: Menus) -> void:
 	if neutral:
 		m._lbl(list, "No faction has taken your measure yet.", 13, Color(0.6, 0.62, 0.68))
 
+	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
+
+
+# -------------------------------------------------------- story so far ---
+# The past-quests archive: every conversation this character has lived,
+# bucketed under the quest that was live when it played (game.convo_log,
+# recorded at the dialogue box so variants, beats and choices land exactly
+# as seen), grouped by chapter, re-readable in full.
+
+static func _archive(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	if g.convo_log_order.is_empty():
+		m._lbl(list, "Nothing is written yet — the road will fill these pages.",
+			14, Color(0.6, 0.62, 0.68))
+		return
+	var placed := {}
+	for chid in Story.CHAPTER_LIST:
+		var keys: Array = []
+		for key in g.convo_log_order:
+			if String(g.convo_log.get(key, {}).get("chapter", "")) == String(chid):
+				keys.append(key)
+				placed[key] = true
+		if keys.is_empty():
+			continue
+		m._lbl(list, "— %s —" % String(Story.chapter(String(chid))["name"]).to_upper(),
+			16, Color(0.95, 0.85, 0.5))
+		for key in keys:
+			_archive_row(m, list, String(key))
+	# Anything bucketed outside the campaign list (endgame trials, oddities).
+	var leftovers: Array = []
+	for key in g.convo_log_order:
+		if not placed.has(key):
+			leftovers.append(key)
+	if not leftovers.is_empty():
+		m._lbl(list, "— ELSEWHERE —", 16, Color(0.85, 0.6, 1.0))
+		for key in leftovers:
+			_archive_row(m, list, String(key))
+
+
+static func _archive_row(m: Menus, list: VBoxContainer, key: String) -> void:
+	var g := m.game
+	var lines: Array = g.convo_log.get(key, {}).get("lines", [])
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	list.add_child(row)
+	m._btn(row, "  Read  ", func() -> void: _read(m, key), Color(0.8, 0.9, 1.0))
+	var tl := m._lbl(row, "%s   ·  %d lines" % [_archive_title(key), lines.size()],
+		14, Color(0.9, 0.88, 0.8))
+	tl.custom_minimum_size = Vector2(620, 0)
+	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+
+## A bucket's heading: the quest objective that was live, or the roadside
+## catch-all for talk between quests ("wanders_<chapter>" keys).
+static func _archive_title(key: String) -> String:
+	if key.begins_with("wanders_"):
+		return "Wanderings — talk of the road"
+	var t := Story.quest_text(key)
+	return t if t != "" else key.capitalize()
+
+
+## The transcript, exactly as it played: choices in green, the Narrator in
+## dusk-blue, every named speaker in parchment gold.
+static func _read(m: Menus, key: String) -> void:
+	var title := _archive_title(key)
+	if title.length() > 64:
+		title = title.substr(0, 61) + "..."
+	var vbox := m._open("Story — %s" % title, 900, 640, true)
+	m.current = "journal"
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 8)
+	scroll.add_child(list)
+	for l in m.game.convo_log.get(key, {}).get("lines", []):
+		var who := String(l[0])
+		var text := String(l[1])
+		var lbl: Label
+		if who == "You":
+			lbl = m._lbl(list, text, 14, Color(0.7, 1.0, 0.7))
+		elif who == "" or who == "Narrator":
+			lbl = m._lbl(list, text, 13, Color(0.72, 0.76, 0.92))
+		else:
+			lbl = m._lbl(list, "%s —  %s" % [who, text], 14, Color(0.92, 0.88, 0.72))
+		lbl.custom_minimum_size = Vector2(830, 0)
+		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var row := HBoxContainer.new()
+	vbox.add_child(row)
+	m._btn(row, "  ← Back to the archive  ", func() -> void: m.open_journal("story"),
+		Color(0.8, 0.9, 1.0))
 	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
 
 

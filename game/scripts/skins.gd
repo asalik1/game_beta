@@ -297,6 +297,19 @@ static func skin_sprite(cls: String, skin_id: String, awakened := false) -> Stri
 	return String(data["sprite"])
 
 
+## Return the installed dialogue/Codex splash for a skin. Awakened art is used
+## only when that skin actually defines an awakened world sprite, keeping the
+## portrait and the live character on the same visual form.
+static func skin_splash(cls: String, skin_id: String, awakened := false) -> String:
+	var data: Dictionary = find_skin(cls, skin_id)
+	if data.is_empty():
+		return ""
+	var key := "splash_skin_%s_%s" % [cls, skin_id]
+	if awakened and data.has("awakened_sprite"):
+		key += "_awakened"
+	return key
+
+
 ## Build (or update) a ShaderMaterial for the chroma effect. When
 ## chroma_id is "" the material is deactivated (chroma_active = 0).
 ## Reuses the existing material on the sprite when one is already set

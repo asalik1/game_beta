@@ -259,7 +259,11 @@ static func bag_buy_price(grade: String) -> int:
 # the inventory, cycled with the potion_next bind, budgeted per room
 # (Balance.potion_slots, chapter-banded; unassigned slots drink as health).
 # Scrolls and stones stay inventory-clicked utilities.
-const ROTATION_POTIONS := ["mana_potion", "elixir_might"]
+# renewal_draught joined 2026-07-21: it shipped round 50 as a bag-only click
+# and BYPASSED the room budget entirely (unlimited 30%-max heals, gold the
+# only gate). Rule now: if it can slot in the rotation, it ALWAYS spends the
+# room budget — bag click or Q alike (player_core._drink_gate).
+const ROTATION_POTIONS := ["mana_potion", "elixir_might", "renewal_draught"]
 static func make_reset_stone() -> Dictionary:
 	return {"kind": "stone", "id": "reset_stone", "grade": "B",
 		"name": "Stone of Unlearning",

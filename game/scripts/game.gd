@@ -104,6 +104,7 @@ func _ready() -> void:
 		var snd := load(res_path) as AudioStream
 		if snd:
 			sounds[file.get_basename()] = snd
+	_build_sound_groups()
 	for i in 10:
 		var sp := AudioStreamPlayer.new()
 		sp.volume_db = -8.0

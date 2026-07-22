@@ -638,7 +638,7 @@ func confirm_endgame(mode: String) -> void:
 	var pb := game.endgame_pb(mode, cls)
 	var mname := "The Crucible" if mode == "crucible" else "The Waking Depths"
 	var rules := "Ten bosses back to back, each with an elite affix — HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" \
-		else "An endless descent: each room's mobs deepen a level and a boss guards every fourth. Rewards pay when you fall or cash out."
+		else "An endless descent where DEPTH IS THE MONSTERS' LEVEL — the ladder starts at 40, or at your deepest cleared checkpoint. A boss guards every 5th depth, a checkpoint boss every 10th; past 100 the dark only deepens. Rewards pay when you fall or cash out."
 	var best := ""
 	if not pb.is_empty():
 		best = ("\n\nYour best: %d bosses." % int(pb.get("kills", 0))) if mode == "crucible" \
@@ -667,7 +667,7 @@ func open_endgame_select() -> void:
 		func() -> void: _start_endgame("crucible"))
 
 	var dep_pb := game.endgame_pb("depths", cls)
-	var dep_sub := "An endless descent. A prep camp, then combat only: each room's mobs scale a level deeper, a boss guards every fourth room, and affixes and pressure mount the further you fall. How deep can you go?"
+	var dep_sub := "An endless descent. A prep camp, then combat only: depth IS the monsters' level, a boss guards every 5th, a checkpoint boss every 10th — clear one and future runs start there. Affixes and pressure mount by band; past 100 the dark wears a harder name. How deep can you go?"
 	if not dep_pb.is_empty():
 		dep_sub += "\n★ Deepest: %d" % int(dep_pb.get("depth", 0))
 	_endgame_card(vbox, "🕯  The Waking Depths", dep_sub, Color(0.72, 0.8, 1.0),
@@ -721,6 +721,23 @@ func open_endgame_result(summary: Dictionary) -> void:
 		_lbl(vbox, "Spoils mailed:  %d gem%s, %d gear piece%s" %
 			[gems, "" if gems == 1 else "s", gear, "" if gear == 1 else "s"],
 			14, Color(0.7, 0.9, 1.0))
+	# --- battle stats (run window; solo shows your own line) ---
+	var stats: Dictionary = game.party_stats_view()
+	if not stats.is_empty():
+		_lbl(vbox, " ", 6)
+		_lbl(vbox, "— BATTLE STATS —   damage · healed · taken", 14, Color(0.7, 0.95, 0.85))
+		var rows: Array = stats.values()
+		rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			return float(a.get("dmg", 0.0)) > float(b.get("dmg", 0.0)))
+		for r in rows:
+			var nm := String(r.get("name", ""))
+			if nm == "":
+				nm = String(Classes.CLASSES.get(String(r.get("cls", "")), {}).get("name", "Ally"))
+			_lbl(vbox, "%s   —   %s dmg   ·   %s healed   ·   %s taken" %
+				[nm, game.fmt_meter(float(r.get("dmg", 0.0))),
+				game.fmt_meter(float(r.get("heal", 0.0))),
+				game.fmt_meter(float(r.get("taken", 0.0)))],
+				13, Color(0.85, 0.88, 0.94))
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(spacer)
@@ -3412,8 +3429,8 @@ func open_daily() -> void:
 
 
 ## The quest log / journal lives in ui/journal.gd.
-func open_journal() -> void:
-	UIJournal.open(self)
+func open_journal(tab := "log") -> void:
+	UIJournal.open(self, tab)
 
 
 ## The account-wide stash lives in ui/stash.gd.

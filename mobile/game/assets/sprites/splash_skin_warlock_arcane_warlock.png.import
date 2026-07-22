@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://df83mt8ke6elb"
-path="res://.godot/imported/phantom_splash.png-5d5acfab38730eac974195c99cbb24d8.ctex"
+uid="uid://dp72t7is4huah"
+path="res://.godot/imported/splash_skin_warlock_arcane_warlock.png-5e3677efcdfa3f8a69a6398806ef4f34.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/phantom_splash.png"
-dest_files=["res://.godot/imported/phantom_splash.png-5d5acfab38730eac974195c99cbb24d8.ctex"]
+source_file="res://assets/sprites/splash_skin_warlock_arcane_warlock.png"
+dest_files=["res://.godot/imported/splash_skin_warlock_arcane_warlock.png-5e3677efcdfa3f8a69a6398806ef4f34.ctex"]
 
 [params]
 

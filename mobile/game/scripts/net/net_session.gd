@@ -129,6 +129,8 @@ var last_ally_dmg := {}
 ## MP-10: what this machine last broadcast for its OWN player's vitals.
 var _vitals_sent := {}
 var _vitals_accum := 0.0
+## Battle-stats sync cadence (guest report up / host table fan down, ~1 Hz).
+var _stats_accum := 0.0
 var _status_throttle := {}  # "pid:kind" -> last send ms (per-frame chill refresh)
 ## MP-10, GUEST: the local death flow ran (game_flow resets rooms/frees
 ## homeless enemies AS IF this were its world) — on respawn we ask the
@@ -613,6 +615,9 @@ func _on_session_ended(reason: String) -> void:
 	_dmg_fan.clear()  # MP-14: no session, no ally-number fan
 	_vitals_sent = {}
 	_vitals_accum = 0.0
+	_stats_accum = 0.0
+	if game != null:
+		game.party_stats_net.clear()  # no session, no host table to mirror
 	_status_throttle.clear()
 	_guest_was_dead = false
 	_revive_claims.clear()
@@ -663,6 +668,7 @@ func _physics_process(delta: float) -> void:
 			_down_sweep_t = 0.0
 			_host_down_sweep()
 	_move_accum += delta
+	_stats_accum += delta
 	var step := 1.0 / MOVE_HZ
 	if _move_accum < step:
 		return
@@ -674,6 +680,11 @@ func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
 		_stream_enemy_state()
 		_flush_dmg_fan()
+	# Battle-stats sync (~1 Hz): guests report owner-side heal/taken totals
+	# up; the host fans the merged meter table down for the live meter.
+	if _stats_accum >= 1.0:
+		_stats_accum = 0.0
+		_tick_stats()
 
 
 ## The owner's 20 Hz movement snapshot: ~24 payload bytes over an
@@ -1256,6 +1267,49 @@ func _rpc_vitals(hp: float, max_hp: float, mp: float) -> void:
 	# already steers AI off it via nearest_player's downed filter. `dead`
 	# now only marks the wipe flow's real deaths.
 	q.dead = q.hp <= 0.0 and not q.downed and not q.ghost
+
+
+# ---- battle-stats sync (owner heal/taken up, host meter table down) ----
+
+## ~1 Hz (physics tick above): DAMAGE is host-authoritative already (every
+## real hit applies host-side), but HEAL and TAKEN accrue on each player's
+## OWNER — so guests report their absolute totals up, and the host fans
+## the merged table to everyone. Absolute numbers over unreliable: a lost
+## or reordered packet self-heals on the next one.
+func _tick_stats() -> void:
+	if game == null or not _net().is_online():
+		return
+	if multiplayer.is_server():
+		if not game.party_stats.is_empty() and not multiplayer.get_peers().is_empty():
+			_rpc_stats_table.rpc(game.party_stats)
+	else:
+		var p: Node = game.local_player
+		if p == null or not is_instance_valid(p):
+			return
+		var mine: Dictionary = game.party_stats.get(int(p.peer_id), {})
+		if not mine.is_empty():
+			_rpc_stats_report.rpc_id(1, float(mine.get("heal", 0.0)), float(mine.get("taken", 0.0)))
+
+
+## HOST: a guest's owner-side totals. maxf guards against reordered
+## packets (totals only climb within a run).
+@rpc("any_peer", "call_remote", "unreliable")
+func _rpc_stats_report(heal: float, taken: float) -> void:
+	if game == null or not multiplayer.is_server():
+		return
+	var q: Player = _player_of(multiplayer.get_remote_sender_id())
+	if q == null:
+		return
+	var row: Dictionary = game._stat_bucket(game.party_stats, q)
+	row["heal"] = maxf(float(row["heal"]), heal)
+	row["taken"] = maxf(float(row["taken"]), taken)
+
+
+## GUEST: the host's merged table — the display copy the meter reads.
+@rpc("authority", "call_remote", "unreliable")
+func _rpc_stats_table(stats: Dictionary) -> void:
+	if game != null:
+		game.party_stats_net = stats
 
 
 # ---- XP on kill (§5.5: full XP to every party member) ----

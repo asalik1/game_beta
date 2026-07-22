@@ -122,6 +122,14 @@ var godroll := false           # --godroll: reforge-chased ceiling (max main + m
 var plevel := PLAYER_LEVEL     # --level=N: hero level (also sets attr points = N-1)
 var dlevel := DUMMY_LEVEL      # --level=N sets this too; the target's level
 var boss_kind := ""            # --boss=X: dummy carries THIS boss's sheet, not the averaged one
+# --depth=D (2026-07-21, Depths restructure): simulate a Depths room at depth D.
+# Depth == content level: the dummy carries the depth's (overcap-allowed) boss
+# sheet, the hero is capped at LEVEL_CAP, and the live pressure-band debuff
+# formula (endgame._apply_player_debuffs — keep in sync) is applied to the
+# hero, so measured DPS already includes −damage-dealt and the defense
+# readout includes +damage-taken. Answers "can an optimized build clear
+# depth D" with numbers instead of vibes.
+var depth_sim := 0             # 0 = off
 var results: Array = []
 
 # --- rotation driver state (one case at a time) ---
@@ -292,6 +300,10 @@ func _parse_args() -> void:
 			dlevel = plevel
 		elif a.begins_with("--boss="):
 			boss_kind = a.get_slice("=", 1)
+		elif a.begins_with("--depth="):
+			depth_sim = int(a.get_slice("=", 1))
+			dlevel = depth_sim
+			plevel = mini(depth_sim, Balance.LEVEL_CAP)
 
 
 func _run() -> void:
@@ -347,14 +359,16 @@ func _boss_stat_block(lvl: int) -> Dictionary:
 	var block := {"physres": 0.0, "magres": 0.0, "eva": 0.0, "critres": 0.0,
 		"crit": 0.0, "dex": 0.0}
 	# --boss=X: carry that ONE boss's actual defensive sheet, not the average.
+	# overcap: a --depth past LEVEL_CAP keeps compounding (the Depths blocks).
+	var over := lvl > Balance.LEVEL_CAP
 	if boss_kind != "":
-		var s := Story.enemy_stats_at(boss_kind, lvl)
+		var s := Story.enemy_stats_at(boss_kind, lvl, over)
 		for stat in block:
 			block[stat] = float(s.get(stat, 0.0))
 		return block
 	var kinds: Array = Menus.BOSS_KINDS
 	for kind in kinds:
-		var s := Story.enemy_stats_at(String(kind), lvl)
+		var s := Story.enemy_stats_at(String(kind), lvl, over)
 		for stat in block:
 			block[stat] += float(s.get(stat, 0.0))
 	for stat in block:
@@ -389,6 +403,29 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	_equip(p, cls, tid)
 	p.recalc()
 	_reset_player(p)
+
+	# --depth: apply the live pressure-band debuffs for this depth (mirror of
+	# endgame._apply_player_debuffs — keep the two in sync). debuff_dmg_out
+	# multiplies at the hit calc (player_core), so the measured DPS below is
+	# already the debuffed number; the defense readout folds debuff_dmg_in.
+	if depth_sim > 0:
+		var dmg_out := 1.0
+		var dmg_in := 1.0
+		var stacks := 0
+		if depth_sim >= Balance.DEPTHS_TIER_PRESSURE:
+			stacks = (depth_sim - Balance.DEPTHS_TIER_PRESSURE) / Balance.DEPTHS_DEBUFF_EVERY + 1
+			for s in stacks:
+				match s % 2:
+					0: dmg_out -= Balance.DEPTHS_DEBUFF_STEP
+					1: dmg_in += Balance.DEPTHS_DEBUFF_STEP
+		p.debuff_heal_in = 1.0  # heal cut removed 2026-07-21 (sustain is class design)
+		p.debuff_dmg_out = maxf(Balance.DEPTHS_DEBUFF_FLOOR, dmg_out)
+		p.debuff_dmg_in = dmg_in
+		# The boss pool is the BUDGET now (owner ruling: a true level-D boss),
+		# so implied TTK = budget / measured dps, straight off this line.
+		print("[depth] D=%d (hero L%d): %d stacks — dmg-out x%.2f  dmg-in x%.2f | boss budget: pool %.0f  dmg %.0f (x kind flavor 0.85-1.15)" % [
+			depth_sim, plevel, stacks, p.debuff_dmg_out, p.debuff_dmg_in,
+			Balance.depths_boss_pool(depth_sim), Balance.depths_boss_dmg(depth_sim)])
 
 	if defense:
 		_defense_readout(p, cls, tid)
@@ -671,8 +708,11 @@ func _count_fan_connects(p: Player) -> void:
 ## boss's damage type); boss pen is ~0 for most bosses so it's omitted (noted).
 func _defense_readout(p: Player, cls: String, tid: String) -> void:
 	var kind := boss_kind if boss_kind != "" else "stormmouth"
-	var bs := Story.enemy_stats_at(kind, dlevel)
-	var bdmg: float = bs["dmg"]
+	var bs := Story.enemy_stats_at(kind, dlevel, dlevel > Balance.LEVEL_CAP)
+	var bdmg: float = bs["dmg"] * p.debuff_dmg_in  # depth sim: +damage-taken folds in
+	if depth_sim > 0:
+		# Depth mode: the boss budget owns the hit size, not any one kind's sheet.
+		bdmg = Balance.depths_boss_dmg(depth_sim) * p.debuff_dmg_in
 	var dtype: String = String(Story.ALL_ENEMIES[kind].get("dmg_type", "phys"))
 	var res: float = p.physres if dtype == "phys" else p.magres
 	var mit: float = (1.0 - Stats.res_frac(res)) * (1.0 - p.flat_dr)

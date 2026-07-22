@@ -2560,18 +2560,29 @@ const SPLASH_ALIAS := {
 ## CQ-style splash: resolve the speaker to painted key-art (assets/sprites/
 ## splash_<name-slug>.png — each NPC has their OWN art, so we key on the speaker
 ## NAME, not the world sprite many of them share). "" when none exists (caller
-## falls back to the small portrait slot). Hero speakers use their class splash;
-## the Narrator stays faceless.
+## falls back to the small portrait slot). Hero speakers use their equipped skin
+## splash (including an awakened form), then their class splash; the Narrator
+## stays faceless.
 func _splash_for(who: String) -> String:
+	var low := who.to_lower()
+	# Resolve the hero live instead of caching it under "You": skins can be
+	# equipped or awakened without rebuilding the HUD.
+	if low in ["you", "hero"]:
+		var player = game.local_player
+		if player != null:
+			var cls: String = String(player.cls)
+			var awakened: bool = bool(game.get_flag("s_awakened_" + cls, false))
+			var skin_cand: String = Skins.skin_splash(cls, String(player.skin), awakened)
+			if skin_cand != "" and Art.has_sprite(skin_cand):
+				return skin_cand
+			var class_cand := "class_splash_" + cls
+			if Art.has_sprite(class_cand):
+				return class_cand
+		return ""
 	if _splash_cache.has(who):
 		return _splash_cache[who]
 	var found := ""
-	var low := who.to_lower()
-	if low in ["you", "hero"]:
-		var cand := "class_splash_" + String(game.local_player.cls)
-		if Art.has_sprite(cand):
-			found = cand
-	elif SPLASH_ALIAS.has(low) and Art.has_sprite("splash_" + String(SPLASH_ALIAS[low])):
+	if SPLASH_ALIAS.has(low) and Art.has_sprite("splash_" + String(SPLASH_ALIAS[low])):
 		found = "splash_" + String(SPLASH_ALIAS[low])
 	elif low != "narrator":
 		found = _resolve_splash(_splash_slug(who))

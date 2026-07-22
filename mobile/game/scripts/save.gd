@@ -106,6 +106,8 @@ static func _character_section(game: Game) -> Dictionary:
 		"equipment": p.equipment, "backpack": p.backpack, "gem_bag": p.gem_bag,
 		"bags": p.bags, "consumables": p.consumables,
 		"potion_rotation": p.potion_rotation, "active_potion": p.active_potion,
+		# Waking Depths: highest cleared checkpoint depth (re-entry point).
+		"depths_checkpoint": p.depths_checkpoint,
 		# --- vitals ---
 		"hp": p.hp, "mp": p.mp,
 		# Mailbox + dropped loot are CHARACTER-owned (§5.5 loot instancing:
@@ -122,6 +124,10 @@ static func _character_section(game: Game) -> Dictionary:
 		# (codex lore thresholds) — are this hero's story, not this world's.
 		"achievements": game.achievements.keys(), "boss_records": game.boss_records,
 		"kill_counts": game.kill_counts, "player_title": game.player_title,
+		# Gallery portraits met + the story-so-far archive (journal): this
+		# hero's memory of faces and conversations, so it travels with them.
+		"splashes_seen": game.splashes_seen.keys(),
+		"convo_log": game.convo_log, "convo_log_order": game.convo_log_order,
 		# Bounty board / vault / weekly-claim ledger: per-player reward
 		# faucets (instanced per player in co-op — §5.5). The weekly RUN
 		# marker itself is world state; only the claim ledger travels.
@@ -266,7 +272,7 @@ static func world_of(data: Dictionary) -> Dictionary:
 const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tree_points",
 	"attr_points", "unspent_attr", "gold", "potions", "potions_free", "ability_theme", "chroma", "skin",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
-	"consumables", "potion_rotation", "active_potion", "hp", "mp",
+	"consumables", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
 	"achievements", "boss_records", "kill_counts", "player_title",
 	"bounties", "bounty_day", "bounty_week",
@@ -463,6 +469,7 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	p.consumables = c.get("consumables", [])
 	p.potion_rotation = c.get("potion_rotation", [])
 	p.active_potion = String(c.get("active_potion", "health"))
+	p.depths_checkpoint = int(c.get("depths_checkpoint", 0))  # pre-restructure saves: no checkpoint yet
 
 	p.recalc()
 	p.hp = clampf(float(c.get("hp", p.max_hp)), 1.0, p.max_hp)
@@ -476,6 +483,22 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	game.achievements = {}
 	for aid in c.get("achievements", []):
 		game.achievements[String(aid)] = true
+	game.splashes_seen = {}
+	for sp in c.get("splashes_seen", []):
+		game.splashes_seen[String(sp)] = true
+	game.convo_log = {}
+	var cl: Dictionary = c.get("convo_log", {})
+	for ck in cl:
+		var ce: Dictionary = cl[ck]
+		var clines: Array = []
+		for l in ce.get("lines", []):
+			if l is Array and l.size() >= 2:
+				clines.append([String(l[0]), String(l[1])])
+		game.convo_log[String(ck)] = {"chapter": String(ce.get("chapter", "")), "lines": clines}
+	game.convo_log_order = []
+	for ck2 in c.get("convo_log_order", []):
+		if game.convo_log.has(String(ck2)):
+			game.convo_log_order.append(String(ck2))
 	game.boss_records = {}
 	var br: Dictionary = c.get("boss_records", {})
 	for k in br:

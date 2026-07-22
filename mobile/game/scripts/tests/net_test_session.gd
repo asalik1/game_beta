@@ -172,6 +172,15 @@ const PORT_STAGE13 := 48237  # stage 13 phase 1 (MMO B: the world that persists)
 const PORT_STAGE13B := 48239 # stage 13 phase 2 (the restarted server; guests join HERE)
 const STEP_TIMEOUT := 30.0   # s per observable step (boots include a world build)
 const EXIT_TIMEOUT := 15.0   # s for the guest process to exit after its work
+const DROP_TIMEOUT := 45.0   # s for a KILLED peer to register as gone (MP-16 flake 2).
+                             # The transport band (NetworkManager PEER_TIMEOUT_MIN/MAX,
+                             # 8-15 s since MP-17) is NOT the worst case: ENet counts
+                             # timeout_max from the FIRST RETRANSMIT EXPIRY of the oldest
+                             # unacked command, so a load-inflated RTO at kill time adds
+                             # itself on top (measured 15.4 s and 27.6 s on a contended
+                             # box; the old 15.0 s wait tied the nominal ceiling and lost
+                             # by a frame). Stage 9(a) prints the observed latency —
+                             # read it before tightening this. Re-check if the band widens.
 const MOVE_THRESHOLD := 120.0  # px the host must see the guest player travel
 const SOAK_SECS := 240.0        # stage-10 soak duration (~4 min wall clock)
 const SOAK_GUESTS := 1          # host + this many guests (1 = reliable on a contended box; 2 = full 3-way, drops a guest ~50s in here)
@@ -1766,8 +1775,10 @@ func _run_host9() -> void:
 	boss.retarget_t = 9.9e9       # ...and won't re-pick on its own for a while
 	print("[net_session] host9(a): guest downed + revive claim held, boss targeting the shell — KILLING the guest process")
 	OS.kill(gpid)                 # taskkill-equivalent: abrupt, no graceful leave
-	if not await _wait_for(func() -> bool: return _left.has(gid), 15.0, "host peer_left after the kill (a)"):
+	var killed_at: int = Time.get_ticks_msec()
+	if not await _wait_for(func() -> bool: return _left.has(gid), DROP_TIMEOUT, "host peer_left after the kill (a)"):
 		return
+	print("[net_session] host9(a): peer_left landed %d ms after the kill" % (Time.get_ticks_msec() - killed_at))
 	if not await _wait_for(func() -> bool: return game.players.size() == 1, 5.0, "host roster back to 1 (a)"):
 		return
 	if not sess._revive_claims.is_empty():
@@ -1807,7 +1818,7 @@ func _run_host9() -> void:
 	var eid: int = _net.peers[0]
 	# Still building — no character announced yet (a true pre-ready ghost).
 	OS.kill(epid)
-	if not await _wait_for(func() -> bool: return _left.has(eid), 25.0, "host dropped the ghost (e)"):
+	if not await _wait_for(func() -> bool: return _left.has(eid), DROP_TIMEOUT, "host dropped the ghost (e)"):
 		return
 	if not await _wait_for(func() -> bool: return game.players.size() == 1 and sess.peer_chars.is_empty(), 5.0, "host roster clean after the ghost (e)"):
 		return
@@ -1894,7 +1905,7 @@ func _run_host9() -> void:
 	game._host_lost_handled = false
 	print("[net_session] host9(b): in the sub-host world as a guest — KILLING the sub-host process")
 	OS.kill(hpid)
-	if not await _wait_for(func() -> bool: return not _net.is_online(), 20.0, "director-guest saw host loss (b)"):
+	if not await _wait_for(func() -> bool: return not _net.is_online(), DROP_TIMEOUT, "director-guest saw host loss (b)"):
 		return
 	if not await _wait_for(func() -> bool: return String(_net.last_session_notice) != "", 8.0, "title notice staged (b)"):
 		return
