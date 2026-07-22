@@ -69,6 +69,11 @@ var _net_tell_t := 0.0     # mirror: seconds of tell tint left (drives the rever
 # shell. Captured-and-cleared at the top of take_damage; solo it always
 # resolves to THE player, so reflect/counter/aggro reads are bit-identical.
 var hit_src: Player = null
+# Battle-stats credit for damage that must NOT drive aggro/reflect: DoT
+# ticks and AoE sub-hits set this instead of hit_src, so the meter counts
+# them without a burn tick re-taunting the victim every half second.
+# Captured-and-cleared beside hit_src in take_damage.
+var stat_src: Player = null
 # MP-10: squelch the mirror status forward while apply_toxin calls
 # apply_burn internally — one "toxin" event carries both to the host.
 var _status_mute := false
@@ -655,6 +660,7 @@ func _physics_process(delta: float) -> void:
 			var src: Player = burn_src if burn_src != null and is_instance_valid(burn_src) else game.player
 			if src != null and randf() < Stats.crit_curve(src.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
 				tick *= src.crit_dmg
+			stat_src = src  # battle-stats credit only — never aggro
 			take_damage(tick, Vector2.ZERO, false, true)
 			if not dying:
 				# Eldritch Warlock reacts to the authoritative DoT beat. This is
@@ -677,6 +683,7 @@ func _physics_process(delta: float) -> void:
 			var bsrc: Player = bleed_src if bleed_src != null and is_instance_valid(bleed_src) else game.player
 			if bsrc != null and randf() < Stats.crit_curve(bsrc.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
 				btick *= bsrc.crit_dmg
+			stat_src = bsrc  # battle-stats credit only — never aggro
 			take_damage(btick, Vector2.ZERO, false, true)
 			if not dying:
 				sprite.modulate = Color(1.5, 0.35, 0.4)  # crimson wound flash
@@ -1667,6 +1674,13 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	# shell. Solo it is always THE player — reads below are bit-identical.
 	var striker: Player = hit_src if hit_src != null and is_instance_valid(hit_src) else null
 	hit_src = null
+	# Battle-stats credit: the striker, else the tick/sub-hit source. Read
+	# BEFORE the reflect fallback below reassigns striker (that fallback
+	# must never credit hazard damage to whoever happened to be targeted).
+	var stat_credit: Player = striker
+	if stat_credit == null and stat_src != null and is_instance_valid(stat_src):
+		stat_credit = stat_src
+	stat_src = null
 	if net_mirror:
 		# MP-10: a guest's hit — optimistic local juice + the funnel RPC
 		# (MP-09 dropped it silently; mirror hp truth still rides the sync).
@@ -1732,6 +1746,7 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	if plate_dr > 0.0:
 		amount *= 1.0 - plate_dr
 	hp -= amount
+	game.stat_dmg(stat_credit, amount)  # battle stats: the APPLIED number
 	knock = from_dir * (220.0 if is_crit else 160.0)
 	if not silent:
 		game.sfx("ehit", 1.0, 0.0, 4.0)  # +4dB: the Punch source runs quiet

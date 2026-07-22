@@ -177,6 +177,18 @@ var fight_kinds: Array = []      # roster, as raw kinds (personal-best records)
 var fight_seen := {}             # boss instance id -> true (already pooled)
 var last_fight_report := ""      # most recent report (tests / dev panel)
 
+# ------------------------------------------------- party battle stats ---
+# Per-player damage / healing / damage-taken meters (the CQ battle-stats
+# pattern). DAMAGE is host-authoritative — every real hit lands through
+# enemy.take_damage on the host, attributed via hit_src/stat_src — while
+# HEAL and TAKEN accumulate on each player's OWNER (its machine runs
+# gain_hp/take_damage) and ride the session's stat sync to the host.
+# The host fans the merged table to guests ~1 Hz for the live meter.
+# Solo: one bucket, peer 1 — the endgame results card reads it too.
+var party_stats := {}   # peer id -> {name, cls, dmg, heal, taken} — RUN window
+var fight_stats := {}   # same shape, boss-FIGHT window (fight_engage resets)
+var party_stats_net := {}  # GUEST: the host's merged table (~1 Hz fan) — display copy
+
 var shake_amt := 0.0
 var sounds: Dictionary = {}
 var sound_pool: Array = []
@@ -295,6 +307,11 @@ var weekly_claimed_week := -1  # week the completion reward was last paid
 # --- codex completion + titles (persisted) ---
 var kill_counts := {}          # enemy kind -> lifetime kills (this character)
 var player_title := ""         # equipped title id ("" = none)
+
+# --- codex gallery + story archive (persisted) ---
+var splashes_seen := {}        # splash sprite name -> true (gallery unlocks)
+var convo_log := {}            # quest key -> {"chapter": chid, "lines": [[who, text], ...]}
+var convo_log_order: Array = []  # quest keys in first-seen order (journal archive)
 
 # --- elective risk events (curse state persists via flags) ---
 var curse_pending := {}        # room idx -> true (accepted, payout on purge)
@@ -739,6 +756,36 @@ func note_kill(kind: String) -> void:
 	if int(kill_counts[kind]) == Lore.threshold(kind) and is_instance_valid(player):
 		spawn_text(player.global_position + Vector2(0, -92),
 			"LORE UNEARTHED — see the Codex", Color(0.75, 0.9, 1.0), 3.0)
+	call("check_track_achievements")  # kills + lore tiers (game_flow owns tracks)
+
+
+## A speaker's painted splash displayed in dialogue: the codex Gallery
+## unlocks that portrait. Rides the next autosave (convo ends autosave).
+func note_splash_seen(sprite: String) -> void:
+	if sprite != "":
+		splashes_seen[sprite] = true
+
+
+## Journal story archive: every dialogue line shown lands in the bucket of
+## the quest that was live when it played, in order, exactly as the player
+## saw it (variants and choices included). Repeated greetings archive once
+## (exact who+text de-dup per bucket); a hard cap guards the save size.
+const CONVO_LOG_MAX_LINES := 400
+
+func log_story_line(who: String, text: String) -> void:
+	if text.strip_edges() == "":
+		return
+	var key := quest_key if quest_key != "" else "wanders_" + chapter_id
+	if not convo_log.has(key):
+		convo_log[key] = {"chapter": chapter_id, "lines": []}
+		convo_log_order.append(key)
+	var lines: Array = convo_log[key]["lines"]
+	if lines.size() >= CONVO_LOG_MAX_LINES:
+		return
+	for l in lines:
+		if String(l[0]) == who and String(l[1]) == text:
+			return
+	lines.append([who, text])
 
 
 ## How many lore entries this character has unearthed (Lorekeeper title).
@@ -784,6 +831,9 @@ func reset_run_stats() -> void:
 	run_deaths = 0
 	run_elites = 0
 	run_secrets = 0
+	party_stats.clear()   # battle-stats meters restart with the run
+	fight_stats.clear()
+	party_stats_net.clear()
 	curse_pending.clear()
 	# A fresh run counter means THIS machine begins its own world (new
 	# hero / replay / weekly / next chapter): full autosaves again (MP-08).
@@ -1800,8 +1850,70 @@ func fight_engage() -> void:
 	fight_titles.clear()
 	fight_kinds.clear()
 	fight_seen.clear()
+	fight_stats.clear()  # fresh per-player battle-stats window for this fight
 	for b in _live_bosses():
 		fight_track(b)
+
+
+# ------------------------------------------------- party battle stats ---
+
+## The meter row for a player, created on first contribution. Name/class
+## snapshot at that moment (a guest's shell carries its net_name meta).
+func _stat_bucket(store: Dictionary, p: Player) -> Dictionary:
+	var pid := int(p.peer_id)
+	if not store.has(pid):
+		var nm := String(p.get_meta("net_name", ""))
+		if nm == "" and is_instance_valid(local_player) and p == local_player:
+			nm = p.char_name
+		store[pid] = {"name": nm, "cls": p.cls, "dmg": 0.0, "heal": 0.0, "taken": 0.0}
+	return store[pid]
+
+
+## Damage a player's blow actually APPLIED to an enemy (post-mitigation).
+## Called from enemy.take_damage on the machine that applied it — the host
+## in a session (guest hits arrive through the funnel RPC with their shell
+## as striker), this machine solo. DoT ticks credit their source.
+func stat_dmg(p: Player, amount: float) -> void:
+	if p == null or not is_instance_valid(p) or amount <= 0.0:
+		return
+	_stat_bucket(party_stats, p)["dmg"] += amount
+	if fight_active:
+		_stat_bucket(fight_stats, p)["dmg"] += amount
+
+## HP a player actually recovered (gain_hp, post-cap). Owner-side.
+func stat_heal(p: Player, amount: float) -> void:
+	if p == null or not is_instance_valid(p) or amount <= 0.0:
+		return
+	_stat_bucket(party_stats, p)["heal"] += amount
+	if fight_active:
+		_stat_bucket(fight_stats, p)["heal"] += amount
+
+## HP a player actually lost to a hit (take_damage, post-mitigation). Owner-side.
+func stat_taken(p: Player, amount: float) -> void:
+	if p == null or not is_instance_valid(p) or amount <= 0.0:
+		return
+	_stat_bucket(party_stats, p)["taken"] += amount
+	if fight_active:
+		_stat_bucket(fight_stats, p)["taken"] += amount
+
+
+## The table to DISPLAY: local truth everywhere except a guest in a
+## session, who shows the host's merged fan (its own rows lag ~1 s).
+func party_stats_view() -> Dictionary:
+	if net_online() and not net_host() and not party_stats_net.is_empty():
+		return party_stats_net
+	return party_stats
+
+
+## Meter number formatting: 12.4K / 1.2M — the bar labels stay short.
+static func fmt_meter(v: float) -> String:
+	if v >= 1_000_000.0:
+		return "%.1fM" % (v / 1_000_000.0)
+	if v >= 10_000.0:
+		return "%.0fK" % (v / 1_000.0)
+	if v >= 1_000.0:
+		return "%.1fK" % (v / 1_000.0)
+	return str(int(v))
 
 
 ## Pool a boss into the running fight (engage roster or a brawl
@@ -1877,8 +1989,23 @@ func fight_report() -> void:
 	var subject := titles
 	if name_list.size() > 2:
 		subject = "%s + %s + %d more" % [name_list[0], name_list[1], name_list.size() - 2]
+	# Party battle stats (host-side truth): a per-member damage breakdown
+	# rides the victory letter whenever a session fight had 2+ contributors.
+	var party_block := ""
+	if net_online() and fight_stats.size() >= 2:
+		var brows: Array = fight_stats.values()
+		brows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			return float(a.get("dmg", 0.0)) > float(b.get("dmg", 0.0)))
+		party_block = "\n\nThe party's blades:"
+		for r in brows:
+			var pn := String(r.get("name", ""))
+			if pn == "":
+				pn = String(Classes.CLASSES.get(String(r.get("cls", "")), {}).get("name", "Ally"))
+			party_block += "\n  %s — %s dmg (%.0f%%)" % [pn,
+				fmt_meter(float(r.get("dmg", 0.0))),
+				100.0 * float(r.get("dmg", 0.0)) / maxf(1.0, fight_pool)]
 	send_mail("Victory — %s" % subject,
-		"You brought down %s!\n\nThe record of the fight:\n\n%s" % [titles, last_fight_report], [])
+		"You brought down %s!\n\nThe record of the fight:\n\n%s%s" % [titles, last_fight_report, party_block], [])
 
 	# Personal bests + achievements from the concluded fight. (dps here is
 	# the encounter's realized dps; for solo story bosses it's exact.)
@@ -1890,6 +2017,7 @@ func fight_report() -> void:
 			unlock_achievement("flawless")
 		if fight_potions <= 0:
 			unlock_achievement("no_potion_boss")
+		call("check_track_achievements")  # Bossbreaker tiers (game_flow owns tracks)
 
 
 ## The fight's music. Multi-boss brawls use the boss_x2..boss_x5

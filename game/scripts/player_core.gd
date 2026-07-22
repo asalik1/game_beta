@@ -1116,6 +1116,7 @@ func gain_hp(amount: float) -> void:
 	var before := hp
 	hp = minf(max_hp, hp + amount)
 	heal_accum += hp - before
+	game.stat_heal(self, hp - before)  # battle stats: HP actually recovered
 	# Transfusion (warlock talent): healing wasted at full HP pools into a
 	# temporary shield, HARD-CAPPED so it never stacks past the limit.
 	if transfusion > 0.0:

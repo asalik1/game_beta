@@ -31,6 +31,11 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		Color(0.95, 0.85, 0.5) if tab == "status" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Records  ", func() -> void: m.open_codex("records"),
 		Color(0.95, 0.85, 0.5) if tab == "records" else Color(0.6, 0.6, 0.6))
+	# Portrait gallery (CQ Illustration-Tome pattern): shares one top-level
+	# tab across its Heroes / Bosses / Folk shelves, like the bestiary.
+	var in_gallery := tab.begins_with("gallery")
+	m._btn(tabs, "  Gallery  ", func() -> void: m.open_codex("gallery_heroes"),
+		Color(0.95, 0.85, 0.5) if in_gallery else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Co-op  ", func() -> void: m.open_codex("coop"),
 		Color(0.95, 0.85, 0.5) if tab == "coop" else Color(0.6, 0.6, 0.6))
 	# The FUTURE shelf (dev launcher only): every placeholder in the project,
@@ -67,6 +72,18 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		m._btn(subs, "  NPCs  ", func() -> void: m.open_codex("npcs"),
 			Color(0.7, 0.9, 1.0) if tab == "npcs" else Color(0.55, 0.55, 0.58))
 
+	# Gallery subtabs — Heroes / Bosses / Folk of the Vale.
+	if in_gallery:
+		var gsubs := HBoxContainer.new()
+		gsubs.add_theme_constant_override("separation", 10)
+		vbox.add_child(gsubs)
+		m._btn(gsubs, "  Heroes  ", func() -> void: m.open_codex("gallery_heroes"),
+			Color(1.0, 0.9, 0.6) if tab == "gallery_heroes" else Color(0.55, 0.55, 0.58))
+		m._btn(gsubs, "  Bosses  ", func() -> void: m.open_codex("gallery_bosses"),
+			Color(1.0, 0.7, 0.7) if tab == "gallery_bosses" else Color(0.55, 0.55, 0.58))
+		m._btn(gsubs, "  Folk  ", func() -> void: m.open_codex("gallery_npcs"),
+			Color(0.7, 0.9, 1.0) if tab == "gallery_npcs" else Color(0.55, 0.55, 0.58))
+
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -92,6 +109,8 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		_statuses(m, list)
 	elif tab == "records":
 		_records(m, list)
+	elif tab.begins_with("gallery"):
+		_gallery(m, list, tab)
 	elif tab == "coop":
 		_coop(m, list)
 	else:
@@ -645,6 +664,8 @@ static func _coop(m: Menus, list: VBoxContainer) -> void:
 			"Hit zero among friends and you fall DOWNED instead of dead: 30 seconds of crawling while you bleed out. Any teammate can kneel beside you for 3 seconds (a hit interrupts them) to lift you back up at 30% health; bleed out fully and you ghost until the room is cleared. Only the WHOLE party falling ends the run — the usual death price, paid together."],
 		["Loot is personal", Color(0.6, 1.0, 0.6),
 			"Every drop, coin and gem you see is YOURS — each player is rolled their own rewards, nothing is split and nothing can be sniped. Guests take home everything their character earns; the world and its story stay the host's."],
+		["The battle meter", Color(0.95, 0.6, 0.25),
+			"In a party, a compact DAMAGE meter sits under the ally frames — everyone's damage this run, live. Boss victory letters carry the party's per-member breakdown, and endgame results tally damage, healing and damage taken for the whole crew."],
 		["One build, one road", Color(0.85, 0.6, 1.0),
 			"Both games must run the SAME build to connect — yours is printed on the title screen (build %s). A mismatch is refused with both versions named, so you'll know exactly who updates." % String(net_script.NET_VERSION)],
 	]
@@ -663,12 +684,15 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 
 	# --- achievements ---
+	# The header counts the FEAT list below (ORDER); record-track tier
+	# medals live in their own card and count their own stars. Points are
+	# global — feats and tiers both pay into the one pool titles read.
 	var unlocked := 0
-	for id in Achievements.DATA:
+	for id in Achievements.ORDER:
 		if m.game.achievements.has(id):
 			unlocked += 1
 	m._lbl(list, "— ACHIEVEMENTS —   %d / %d   ·   %d points" %
-		[unlocked, Achievements.DATA.size(), m.game.achievement_points()], 16, Color(1.0, 0.85, 0.4))
+		[unlocked, Achievements.ORDER.size(), m.game.achievement_points()], 16, Color(1.0, 0.85, 0.4))
 	var ach := VBoxContainer.new()
 	ach.add_theme_constant_override("separation", 3)
 	_card(list).add_child(ach)
@@ -693,6 +717,57 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 			var pl := m._lbl(row, prog, 13, Color(0.75, 0.7, 0.5))
 			pl.custom_minimum_size = Vector2(140, 0)
 			pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+
+	# --- record tracks: tiered lifetime tallies, a medal per crossed tier ---
+	m._lbl(list, "— RECORD TRACKS —   lifetime tallies · a medal per tier", 16, Color(0.7, 0.95, 0.85))
+	var tracks := VBoxContainer.new()
+	tracks.add_theme_constant_override("separation", 6)
+	_card(list).add_child(tracks)
+	for track in Achievements.TRACK_ORDER:
+		var t: Dictionary = Achievements.TRACKS[track]
+		var tiers: Array = t["tiers"]
+		var v: int = m.game.track_value(String(track))
+		var done := 0
+		for i in tiers.size():
+			if m.game.achievements.has("%s_%d" % [track, i + 1]):
+				done += 1
+		var mastered: bool = done >= tiers.size()
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		tracks.add_child(row)
+		var stars := ""
+		for i in tiers.size():
+			stars += "★" if i < done else "☆"
+		var sl := m._lbl(row, stars, 14, Color(1.0, 0.85, 0.4) if done > 0 else Color(0.45, 0.45, 0.52))
+		sl.custom_minimum_size = Vector2(64, 0)
+		var nm := m._lbl(row, String(t["name"]), 14,
+			Color(1.0, 0.88, 0.45) if mastered else Color(0.85, 0.88, 0.94))
+		nm.custom_minimum_size = Vector2(150, 0)
+		# Bar toward the NEXT tier (a full gold bar once mastered).
+		var prev_th: int = 0 if done == 0 else int(tiers[done - 1])
+		var next_th: int = int(tiers[mini(done, tiers.size() - 1)])
+		var frac := 1.0
+		if not mastered:
+			frac = clampf(float(v - prev_th) / float(maxi(1, next_th - prev_th)), 0.0, 1.0)
+		var bar := Control.new()
+		bar.custom_minimum_size = Vector2(200, 12)
+		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(bar)
+		var bbg := ColorRect.new()
+		bbg.color = Color(0, 0, 0, 0.55)
+		bbg.size = Vector2(200, 12)
+		bar.add_child(bbg)
+		var fill := ColorRect.new()
+		fill.color = Color(1.0, 0.85, 0.4) if mastered else Color(0.55, 0.9, 0.7)
+		fill.position = Vector2(1, 1)
+		fill.size = Vector2(198.0 * frac, 10)
+		bar.add_child(fill)
+		var cnt_text := "%d — MASTERED" % v if mastered else "%d / %d" % [v, next_th]
+		var cnt := m._lbl(row, cnt_text, 13,
+			Color(1.0, 0.88, 0.45) if mastered else Color(0.8, 0.82, 0.88))
+		cnt.custom_minimum_size = Vector2(130, 0)
+		var how := m._lbl(row, String(t["how"]), 12, Color(0.6, 0.62, 0.7))
+		how.custom_minimum_size = Vector2(280, 0)
 
 	# --- boss personal bests ---
 	m._lbl(list, "— BOSS RECORDS —   fastest clear · best dps · kills", 16, Color(1, 0.6, 0.6))
@@ -1248,3 +1323,240 @@ static func _curio_card(m: Menus, list: VBoxContainer, name: String, desc: Strin
 		var d := m._lbl(info, desc, 13, Color(0.66, 0.66, 0.72))
 		d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		d.custom_minimum_size = Vector2(620, 0)
+
+
+# ------------------------------------------------------------------ gallery ---
+# The portrait gallery: every painted splash installed in the build,
+# silhouetted until this character has MET its bearer in dialogue
+# (game.splashes_seen, marked by hud._set_splash). Heroes = the class
+# splashes; Bosses = splashes matching a BOSS_KINDS enemy name; Folk = the
+# rest of the cast. Click an unlocked portrait for the full painting.
+# Decorated duplicates of one character (splash_fangmaw +
+# splash_fangmaw_the_ravener) merge into a single entry — seen if EITHER
+# was seen — mirroring hud._resolve_splash word-run matching.
+
+static var _gallery_cache: Array = []  # built once per session; files never change mid-run
+static var _thumbs := {}               # sprite -> downscaled ImageTexture (memory guard)
+
+
+static func _gallery(m: Menus, list: VBoxContainer, tab: String) -> void:
+	var bucket := tab.trim_prefix("gallery_")
+	var entries: Array = []
+	var seen_n := 0
+	for e in _gallery_entries(m):
+		if String(e["bucket"]) != bucket:
+			continue
+		if _gallery_seen(m, e):
+			seen_n += 1
+		entries.append(e)
+	var shelf: String = {"heroes": "HEROES", "bosses": "BOSSES", "npcs": "FOLK OF THE VALE"}.get(bucket, "PORTRAITS")
+	m._lbl(list, "— %s —   met %d / %d" % [shelf, seen_n, entries.size()], 16, Color(0.95, 0.85, 0.5))
+	m._lbl(list, "Painted key art unlocks as you MEET its bearer in conversation. Click a portrait to see the full painting.",
+		12, Color(0.7, 0.72, 0.78))
+	if entries.is_empty():
+		m._lbl(list, "Nothing hangs on this shelf yet.", 13, Color(0.6, 0.62, 0.68))
+		return
+	var grid := GridContainer.new()
+	grid.columns = 5
+	grid.add_theme_constant_override("h_separation", 14)
+	grid.add_theme_constant_override("v_separation", 14)
+	list.add_child(grid)
+	for e in entries:
+		var unlocked := _gallery_seen(m, e)
+		var sprite := String(e["sprite"])
+		var disp := String(e["name"])
+		var back_tab := tab
+		var cell := VBoxContainer.new()
+		cell.add_theme_constant_override("separation", 4)
+		grid.add_child(cell)
+		var tr := TextureRect.new()
+		tr.custom_minimum_size = Vector2(168, 126)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.texture = _gallery_thumb(sprite)
+		if unlocked:
+			tr.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			tr.gui_input.connect(func(ev: InputEvent) -> void:
+				if ev is InputEventMouseButton and ev.pressed \
+						and ev.button_index == MOUSE_BUTTON_LEFT:
+					_portrait_view(m, sprite, disp, back_tab))
+		else:
+			# Silhouette: the shape teases, the face stays earned.
+			tr.modulate = Color(0.05, 0.05, 0.08)
+		cell.add_child(tr)
+		var nm := m._lbl(cell, disp if unlocked else "???", 13,
+			Color(0.92, 0.92, 0.98) if unlocked else Color(0.5, 0.52, 0.58))
+		nm.custom_minimum_size = Vector2(168, 0)
+		nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+
+## The full painting, one click deep. Back returns to the shelf it came from.
+static func _portrait_view(m: Menus, sprite: String, disp: String, back_tab: String) -> void:
+	var vbox := m._open(disp, 980, 640, true)
+	m.current = "codex"
+	var tr := TextureRect.new()
+	tr.texture = Art.tex(sprite)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tr.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(tr)
+	var row := HBoxContainer.new()
+	vbox.add_child(row)
+	m._btn(row, "  Back to the gallery  ", func() -> void: m.open_codex(back_tab),
+		Color(0.8, 0.9, 1.0))
+	m._hint(vbox, "ESC, X, or click outside to close")
+
+
+## Downscaled thumbnail, cached per session — the shelf never decodes the
+## full paintings (a hundred full-size splashes would eat hundreds of MB;
+## the viewer loads full art one portrait at a time via Art.tex).
+static func _gallery_thumb(sprite: String) -> Texture2D:
+	if _thumbs.has(sprite):
+		return _thumbs[sprite]
+	var tex: Texture2D = null
+	var res := ResourceLoader.load("res://assets/sprites/%s.png" % sprite, "",
+		ResourceLoader.CACHE_MODE_IGNORE)
+	if res is Texture2D:
+		var img: Image = (res as Texture2D).get_image()
+		if img != null:
+			if img.is_compressed():
+				img.decompress()
+			var w := img.get_width()
+			if w > 220:
+				img.resize(220, int(float(img.get_height()) * 220.0 / float(w)),
+					Image.INTERPOLATE_BILINEAR)
+			tex = ImageTexture.create_from_image(img)
+	_thumbs[sprite] = tex
+	return tex
+
+
+static func _gallery_seen(m: Menus, e: Dictionary) -> bool:
+	if m.game.splashes_seen.has(String(e["sprite"])):
+		return true
+	for aka in e.get("aka", []):
+		if m.game.splashes_seen.has(String(aka)):
+			return true
+	return false
+
+
+## Build the shelf inventory: scan installed splash_*.png / class_splash_*
+## sprites, merge decorated duplicates, resolve display names against the
+## cast (Story.ALL_ENEMIES) and bucket into heroes / bosses / npcs.
+static func _gallery_entries(m: Menus) -> Array:
+	if not _gallery_cache.is_empty():
+		return _gallery_cache
+	var names: Array = []
+	var dir := DirAccess.open("res://assets/sprites")
+	if dir != null:
+		for f in dir.get_files():
+			var fname := String(f)
+			if fname.ends_with(".import") or fname.ends_with(".remap"):
+				fname = fname.get_basename()  # exported builds list the stubs
+			if not fname.ends_with(".png"):
+				continue
+			var base := fname.trim_suffix(".png")
+			if (base.begins_with("splash_") or base.begins_with("class_splash_")) \
+					and not names.has(base):
+				names.append(base)
+
+	# The cast by name-slug: display names + boss bucketing.
+	var cast_by_slug := {}
+	var boss_slugs := {}
+	for kind in Story.ALL_ENEMIES:
+		var nm := String(Story.ALL_ENEMIES[kind].get("name", kind))
+		var sl := _gallery_slug(nm)
+		cast_by_slug[sl] = nm
+		if kind in m.BOSS_KINDS:
+			boss_slugs[sl] = true
+
+	# Heroes first (fixed shelf), then the world cast.
+	var out: Array = []
+	var world: Array = []
+	for base in names:
+		if base.begins_with("class_splash_"):
+			var cls := String(base).trim_prefix("class_splash_")
+			out.append({"sprite": base, "aka": [],
+				"name": String(Classes.CLASSES.get(cls, {}).get("name", cls.capitalize())),
+				"bucket": "heroes"})
+		else:
+			world.append(base)
+
+	# Merge decorated duplicates: a shorter slug folds into the longest
+	# entry that contains its words as a contiguous run (or its compact
+	# spelling, "choirmother" inside "the_choir_mother"). Longest names
+	# first so the decorated painting is the one that hangs.
+	world.sort_custom(func(a: String, b: String) -> bool:
+		return a.split("_").size() > b.split("_").size())
+	var merged: Array = []
+	for base in world:
+		var slug := String(base).trim_prefix("splash_")
+		var words := slug.split("_", false)
+		var host: Dictionary = {}
+		for entry in merged:
+			var ewords: PackedStringArray = String(entry["slug"]).split("_", false)
+			if _gallery_word_run(words, ewords) \
+					or (slug.replace("_", "").length() >= 5
+						and String(entry["slug"]).replace("_", "").contains(slug.replace("_", ""))):
+				host = entry
+				break
+		if host.is_empty():
+			merged.append({"sprite": base, "slug": slug, "aka": []})
+		else:
+			(host["aka"] as Array).append(base)
+
+	for entry in merged:
+		var slug := String(entry["slug"])
+		var disp: String = cast_by_slug.get(slug, "")
+		var is_boss: bool = boss_slugs.has(slug)
+		if disp == "":
+			# The aka slugs may carry the cast match ("vargoth" merged under
+			# a decorated file) — check them before falling back to a
+			# title-cased filename.
+			for aka in entry["aka"]:
+				var aslug := String(aka).trim_prefix("splash_")
+				if cast_by_slug.has(aslug):
+					disp = String(cast_by_slug[aslug])
+					is_boss = is_boss or boss_slugs.has(aslug)
+					break
+		if disp == "":
+			disp = slug.capitalize()
+		out.append({"sprite": String(entry["sprite"]), "aka": entry["aka"],
+			"name": disp, "bucket": "bosses" if is_boss else "npcs"})
+
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return String(a["name"]) < String(b["name"]))
+	_gallery_cache = out
+	return out
+
+
+## Are the shorter slug words a contiguous run inside the longer ones?
+## ("vargoth" in "king_vargoth_the_hollow" — hud._resolve_splash rule.)
+static func _gallery_word_run(short_w: PackedStringArray, long_w: PackedStringArray) -> bool:
+	var span := short_w.size()
+	if span == 0 or span >= long_w.size():
+		return false
+	for start in range(0, long_w.size() - span + 1):
+		var okay := true
+		for i in span:
+			if long_w[start + i] != short_w[i]:
+				okay = false
+				break
+		if okay:
+			return true
+	return false
+
+
+## Speaker/enemy name -> filename slug (hud._splash_slug rule, static).
+static func _gallery_slug(s: String) -> String:
+	var out := ""
+	var prev_us := true
+	for ch in s.to_lower():
+		if (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9"):
+			out += ch
+			prev_us = false
+		elif not prev_us:
+			out += "_"
+			prev_us = true
+	return out.trim_suffix("_")

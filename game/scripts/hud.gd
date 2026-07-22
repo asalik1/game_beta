@@ -141,6 +141,12 @@ var party_root: Control = null    # holds the frames; freed on session end
 var party_slots: Array = []       # [{root,accent,icon,name,hp_bg,hp_fill,hp_text,state,cls}]
 var party_arrows: Array = []      # pooled Polygon2D edge arrows (offscreen allies)
 var party_names: Array = []       # pooled Label name tags over on-screen remotes
+# Battle meter (§ battle stats): compact per-member damage rows under the
+# party frames — sessions only, hidden until someone has numbers. Reads
+# game.party_stats_view() (host truth; guests show the ~1 Hz fan).
+var meter_root: Control = null
+var meter_rows: Array = []        # [{root, name, fill, val}]
+var _meter_next_ms := 0
 ## §5.6 dimmable knob: name-tag opacity (0.0 hides them, 1.0 full). A settings
 ## toggle can drive this; the default reads clearly without shouting.
 var party_names_alpha := 0.85
@@ -1862,6 +1868,7 @@ func _build_party_frame(pos: Vector2) -> Dictionary:
 func _update_party_ui(_p: Player) -> void:
 	var online: bool = game.net_online()
 	var data: Array = party_frame_data() if online else []
+	_update_meter(online and not data.is_empty())
 	if not online or data.is_empty():
 		if party_root != null:
 			_hide_party_ui()
@@ -2032,9 +2039,124 @@ func _hide_party_ui() -> void:
 		(n as Label).visible = false
 
 
+# ------------------------------------------------------- battle meter ---
+
+func _ensure_meter_ui() -> void:
+	if meter_root != null:
+		return
+	meter_root = Control.new()
+	meter_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	meter_root.position = Vector2(12, 228.0 + PARTY_MAX * (PARTY_FRAME_H + 6.0) + 6.0)
+	add_child(meter_root)
+	var bg := ColorRect.new()
+	bg.color = Color(0.05, 0.05, 0.09, 0.55)
+	bg.size = Vector2(PARTY_FRAME_W, 22.0 + (PARTY_MAX + 1) * 18.0)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	meter_root.add_child(bg)
+	var title := Label.new()
+	title.text = "DAMAGE — this run"
+	title.position = Vector2(6, 3)
+	title.add_theme_font_size_override("font_size", 11)
+	title.add_theme_color_override("font_color", Color(0.85, 0.8, 0.6))
+	title.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	title.add_theme_constant_override("outline_size", 3)
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	meter_root.add_child(title)
+	for i in PARTY_MAX + 1:  # the whole party, local player included
+		var row := Control.new()
+		row.position = Vector2(0, 22.0 + i * 18.0)
+		row.visible = false
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		meter_root.add_child(row)
+		var nm := Label.new()
+		nm.position = Vector2(6, 0)
+		nm.size = Vector2(92, 14)
+		nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		nm.add_theme_font_size_override("font_size", 11)
+		nm.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		nm.add_theme_constant_override("outline_size", 3)
+		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(nm)
+		var bar_bg := ColorRect.new()
+		bar_bg.color = Color(0, 0, 0, 0.6)
+		bar_bg.position = Vector2(100, 3)
+		bar_bg.size = Vector2(62, 10)
+		bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(bar_bg)
+		var fill := ColorRect.new()
+		fill.color = Color(0.95, 0.6, 0.25)
+		fill.position = Vector2(101, 4)
+		fill.size = Vector2(60, 8)
+		fill.set_meta("full_w", 60.0)
+		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(fill)
+		var val := Label.new()
+		val.position = Vector2(164, 0)
+		val.size = Vector2(46, 14)
+		val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		val.add_theme_font_size_override("font_size", 11)
+		val.add_theme_color_override("font_color", Color(0.92, 0.92, 0.98))
+		val.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		val.add_theme_constant_override("outline_size", 3)
+		val.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(val)
+		meter_rows.append({"root": row, "name": nm, "fill": fill, "val": val})
+
+
+## ~2 Hz refresh from _update_party_ui. Shows only in a session with a
+## party, and only once somebody has numbers on the board.
+func _update_meter(show: bool) -> void:
+	if not show:
+		if meter_root != null:
+			meter_root.visible = false
+		return
+	var now := int(Time.get_ticks_msec())
+	if meter_root != null and meter_root.visible and now < _meter_next_ms:
+		return
+	_meter_next_ms = now + 500
+	var stats: Dictionary = game.party_stats_view()
+	var rows: Array = []
+	for pid in stats:
+		var r: Dictionary = stats[pid]
+		if float(r.get("dmg", 0.0)) > 0.0 or float(r.get("heal", 0.0)) > 0.0:
+			rows.append(r)
+	if rows.is_empty():
+		if meter_root != null:
+			meter_root.visible = false
+		return
+	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("dmg", 0.0)) > float(b.get("dmg", 0.0)))
+	_ensure_meter_ui()
+	meter_root.visible = true
+	var top := maxf(1.0, float(rows[0].get("dmg", 0.0)))
+	for i in meter_rows.size():
+		var slot: Dictionary = meter_rows[i]
+		if i >= rows.size():
+			(slot["root"] as Control).visible = false
+			continue
+		var r2: Dictionary = rows[i]
+		(slot["root"] as Control).visible = true
+		var cls := String(r2.get("cls", ""))
+		var nm := String(r2.get("name", ""))
+		if nm == "":
+			nm = String(Classes.CLASSES.get(cls, {}).get("name", "Ally"))
+		var name_l := slot["name"] as Label
+		name_l.text = nm
+		name_l.add_theme_color_override("font_color",
+			CLASS_TINT.get(cls, Color(0.85, 0.85, 0.9)))
+		var fill := slot["fill"] as ColorRect
+		fill.size.x = float(fill.get_meta("full_w")) \
+			* clampf(float(r2.get("dmg", 0.0)) / top, 0.0, 1.0)
+		(slot["val"] as Label).text = game.fmt_meter(float(r2.get("dmg", 0.0)))
+
+
 ## Freed on session end (§5.6: solo never allocates; a closed session frees
 ## the frames). Called from net_session._on_session_ended.
 func reset_party_ui() -> void:
+	if meter_root != null:
+		meter_root.queue_free()
+		meter_root = null
+	meter_rows.clear()
 	if party_root != null:
 		party_root.queue_free()
 		party_root = null
@@ -2505,6 +2627,7 @@ func _set_splash(who: String) -> void:
 		splash_layer.visible = true
 		portrait_box.visible = false
 		dialogue_inner.color = Color(0.06, 0.05, 0.10, 0.85)  # see-through for the art
+		game.note_splash_seen(sp)  # codex Gallery: this portrait is now met
 	else:
 		splash_layer.visible = false
 		dialogue_inner.color = Color(0.08, 0.07, 0.12, 0.97)  # opaque default
@@ -2594,6 +2717,10 @@ func _log_push(who: String, text: String) -> void:
 	_dialogue_history.append([who, text])
 	if _dialogue_history.size() > 80:
 		_dialogue_history = _dialogue_history.slice(_dialogue_history.size() - 80)
+	# Journal "Story So Far": every displayed line lands in the persistent
+	# archive too (this is the one choke point every path crosses — convo
+	# nodes, chapter beats, mirrored co-op beat lines).
+	game.log_story_line(who, text)
 
 
 ## Clear CQ chrome when a conversation (or a choice) ends.
@@ -2890,6 +3017,11 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 func _choose(idx: int) -> void:
 	if not choices_active or idx < 0 or idx >= choice_count:
 		return
+	# Archive the decision (journal "Story So Far") — the row label carries
+	# the option text behind its "N.  " prefix.
+	var opt_lbl: Label = choice_option_labels[idx]
+	var picked := String(opt_lbl.text).substr(String("%d.  " % (idx + 1)).length())
+	game.log_story_line("You", "➤ " + picked)
 	choices_active = false
 	choice_panel.visible = false
 	dialogue_box.visible = false

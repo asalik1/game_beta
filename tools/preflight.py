@@ -159,8 +159,11 @@ def check_codex_data() -> None:
 def _added_lines() -> list[tuple[str, int, str]]:
     """(repo-relative posix path, line number, text) for every added/new line."""
     out: list[tuple[str, int, str]] = []
+    # encoding pinned: git emits UTF-8, but text=True decodes with the Windows
+    # ANSI codepage (cp1252) and a multibyte glyph in the diff crashed the run.
     diff = subprocess.run(["git", "diff", "HEAD", "--unified=0", "--", "game/scripts"],
-                          capture_output=True, text=True, cwd=ROOT).stdout
+                          capture_output=True, text=True, cwd=ROOT,
+                          encoding="utf-8", errors="replace").stdout or ""
     path, lineno = "", 0
     for raw in diff.splitlines():
         if raw.startswith("+++ b/"):
@@ -172,7 +175,8 @@ def _added_lines() -> list[tuple[str, int, str]]:
             out.append((path, lineno, raw[1:]))
             lineno += 1
     status = subprocess.run(["git", "status", "--porcelain", "--", "game/scripts"],
-                            capture_output=True, text=True, cwd=ROOT).stdout
+                            capture_output=True, text=True, cwd=ROOT,
+                            encoding="utf-8", errors="replace").stdout or ""
     for line in status.splitlines():
         if line.startswith("??") and line.strip().endswith(".gd"):
             p = line[3:].strip()

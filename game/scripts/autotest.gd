@@ -844,6 +844,10 @@ func _run_systems() -> void:
 	# 3d7. Records + achievements: best-time keeping and idempotent unlock.
 	_test_records()
 
+	# 3d7b. Battle stats: attribution buckets, fight window, record tracks;
+	# plus the new codex Gallery / journal Story So Far surfaces build.
+	await _test_battle_stats()
+
 	# 3d8. Bounties + weekly vault: roll, progress reward, vault claim.
 	_test_bounties()
 
@@ -2023,6 +2027,107 @@ func _test_records() -> void:
 	game.achievements = keep_ach
 	game.boss_records = keep_rec
 	print("ok: records + achievements (best-time keeping, idempotent unlock)")
+
+
+# ---- CORE: battle stats (attribution buckets, fight window, record tracks) -
+func _test_battle_stats() -> void:
+	var keep_party: Dictionary = game.party_stats.duplicate(true)
+	var keep_fight: Dictionary = game.fight_stats.duplicate(true)
+	var keep_ach: Dictionary = game.achievements.duplicate()
+	var keep_kills: Dictionary = game.kill_counts.duplicate()
+	var keep_fa: bool = game.fight_active
+
+	# Accumulators: dmg/heal/taken land in the run window; the fight
+	# window only fills while a fight is live.
+	game.party_stats = {}
+	game.fight_stats = {}
+	game.fight_active = false
+	game.stat_dmg(game.player, 120.0)
+	game.stat_heal(game.player, 30.0)
+	game.stat_taken(game.player, 45.0)
+	var pid := int(game.player.peer_id)
+	if not game.party_stats.has(pid):
+		return _fail("stat bucket missing for the local player")
+	var row: Dictionary = game.party_stats[pid]
+	if absf(float(row["dmg"]) - 120.0) > 0.01 or absf(float(row["heal"]) - 30.0) > 0.01 \
+			or absf(float(row["taken"]) - 45.0) > 0.01:
+		return _fail("battle-stat accumulation wrong (%s)" % str(row))
+	if not game.fight_stats.is_empty():
+		return _fail("fight window filled while no fight was live")
+	game.fight_active = true
+	game.stat_dmg(game.player, 80.0)
+	game.fight_active = false
+	if absf(float(game.party_stats[pid]["dmg"]) - 200.0) > 0.01:
+		return _fail("run window missed the in-fight hit")
+	if not game.fight_stats.has(pid) or absf(float(game.fight_stats[pid]["dmg"]) - 80.0) > 0.01:
+		return _fail("fight window missed the in-fight hit")
+	# Credit-less damage (hazards) never lands a row.
+	game.stat_dmg(null, 500.0)
+	if game.party_stats.size() != 1:
+		return _fail("credit-less damage grew the meter")
+	# Offline the view is the local truth.
+	if game.party_stats_view() != game.party_stats:
+		return _fail("party_stats_view diverged offline")
+
+	# Record tracks: tiers cross from live counters, idempotently.
+	game.achievements = {}
+	game.kill_counts = {"wolf": 120}
+	game.check_track_achievements()
+	if not game.achievements.has("kills_1"):
+		return _fail("kills tier 1 did not unlock at 120 lifetime kills")
+	if game.achievements.has("kills_2"):
+		return _fail("kills tier 2 unlocked early")
+	game.check_track_achievements()
+	var kills_tiers := 0
+	for id in game.achievements:
+		if String(id).begins_with("kills_"):
+			kills_tiers += 1
+	if kills_tiers != 1:
+		return _fail("tier re-check duplicated unlocks")
+
+	# Meter label formatting stays short.
+	if game.fmt_meter(950.0) != "950" or game.fmt_meter(1500.0) != "1.5K" \
+			or game.fmt_meter(12400.0) != "12K" or game.fmt_meter(1_300_000.0) != "1.3M":
+		return _fail("fmt_meter formatting drifted")
+
+	# Restore.
+	game.party_stats = keep_party
+	game.fight_stats = keep_fight
+	game.achievements = keep_ach
+	game.kill_counts = keep_kills
+	game.fight_active = keep_fa
+
+	# The new codex/journal surfaces build cleanly: gallery shelves and
+	# the story archive + its transcript reader.
+	game.menus.open_codex("gallery_heroes")
+	await _frames(2)
+	if game.menus.current != "codex":
+		return _fail("codex Gallery (heroes) did not open")
+	game.menus.open_codex("gallery_bosses")
+	await _frames(2)
+	game.menus.open_codex("gallery_npcs")
+	await _frames(2)
+	if game.menus.current != "codex":
+		return _fail("codex Gallery shelves did not build")
+	var keep_log: Dictionary = game.convo_log.duplicate(true)
+	var keep_order: Array = game.convo_log_order.duplicate()
+	game.log_story_line("Elder Maren", "The vale remembers what you did for it.")
+	game.log_story_line("You", "\u27a4 A test choice, archived.")
+	if game.convo_log_order.is_empty():
+		return _fail("log_story_line recorded nothing")
+	game.menus.open_journal("story")
+	await _frames(2)
+	if game.menus.current != "journal":
+		return _fail("journal Story So Far did not open")
+	UIJournal._read(game.menus, String(game.convo_log_order[game.convo_log_order.size() - 1]))
+	await _frames(2)
+	if game.menus.current != "journal":
+		return _fail("story transcript reader did not open")
+	game.menus.close()
+	await _frames(2)
+	game.convo_log = keep_log
+	game.convo_log_order = keep_order
+	print("ok: battle stats (attribution buckets, fight window, record tracks) + gallery/archive UI")
 
 
 # ---- CORE: bounties + weekly vault (roll, progress reward, vault claim) --

@@ -763,6 +763,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		grit_time = 6.0
 	hp -= amount
 	game.fight_note_damage(amount, attacker)
+	game.stat_taken(self, amount)  # battle stats: HP actually lost (owner-side)
 	game.sfx("hurt")
 	# Getting hit should FEEL like something went wrong: harder shake and
 	# a red edge-flash, scaled a touch by how big the bite was.

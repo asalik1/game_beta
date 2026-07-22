@@ -122,6 +122,10 @@ static func _character_section(game: Game) -> Dictionary:
 		# (codex lore thresholds) — are this hero's story, not this world's.
 		"achievements": game.achievements.keys(), "boss_records": game.boss_records,
 		"kill_counts": game.kill_counts, "player_title": game.player_title,
+		# Gallery portraits met + the story-so-far archive (journal): this
+		# hero's memory of faces and conversations, so it travels with them.
+		"splashes_seen": game.splashes_seen.keys(),
+		"convo_log": game.convo_log, "convo_log_order": game.convo_log_order,
 		# Bounty board / vault / weekly-claim ledger: per-player reward
 		# faucets (instanced per player in co-op — §5.5). The weekly RUN
 		# marker itself is world state; only the claim ledger travels.
@@ -476,6 +480,22 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	game.achievements = {}
 	for aid in c.get("achievements", []):
 		game.achievements[String(aid)] = true
+	game.splashes_seen = {}
+	for sp in c.get("splashes_seen", []):
+		game.splashes_seen[String(sp)] = true
+	game.convo_log = {}
+	var cl: Dictionary = c.get("convo_log", {})
+	for ck in cl:
+		var ce: Dictionary = cl[ck]
+		var clines: Array = []
+		for l in ce.get("lines", []):
+			if l is Array and l.size() >= 2:
+				clines.append([String(l[0]), String(l[1])])
+		game.convo_log[String(ck)] = {"chapter": String(ce.get("chapter", "")), "lines": clines}
+	game.convo_log_order = []
+	for ck2 in c.get("convo_log_order", []):
+		if game.convo_log.has(String(ck2)):
+			game.convo_log_order.append(String(ck2))
 	game.boss_records = {}
 	var br: Dictionary = c.get("boss_records", {})
 	for k in br:
