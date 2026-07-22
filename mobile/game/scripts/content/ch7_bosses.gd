@@ -119,7 +119,7 @@ const ENEMIES := {
 	# zero rewards, stationary decoys that fan alongside the real him;
 	# cutting one detonates a void zone underfoot.
 	"echo_clone": {
-		"name": "Mirror of the Unnamed", "sprite": "assassin",
+		"name": "Mirror of the Unnamed", "sprite": "echo",
 		"hp": 1.0, "dmg": 0.0, "speed": 0.0, "xp": 0, "gold": 0,
 		# Must MATCH unnamed_echo's scale — the decoys only work same-size.
 		"ranged": true, "scale": 10.0,
@@ -159,6 +159,13 @@ static func selftest(game: Node2D) -> String:
 		await game.get_tree().create_timer(0.2).timeout
 		if not is_instance_valid(b) or absf(b.max_hp - float(ENEMIES[kind]["hp"])) > 0.01:
 			return "ch7 boss %s: stats did not resolve" % kind
+		var expected_projectile: String = {
+			"stormdrake_veyx": "windslash",
+			"unnamed_echo": "knife",
+			"stormmouth": "stormbolt",
+		}[kind]
+		if b._boss_projectile_key() != expected_projectile:
+			return "ch7 boss %s: archetype projectile regressed" % kind
 
 		# The signature move: forcing the cd to zero must re-arm it.
 		b.special_cd = 0.0
@@ -177,6 +184,14 @@ static func selftest(game: Node2D) -> String:
 				waited += 0.1
 			if game.get_tree().get_nodes_in_group("enemies").size() < 2:
 				return "ch7 boss unnamed_echo: the mirror copies never appeared"
+			var matched_echo := false
+			for node in game.get_tree().get_nodes_in_group("enemies"):
+				var copy := node as Enemy
+				if copy and copy.kind == "echo_clone":
+					matched_echo = copy._sprite_key == "echo"
+					break
+			if not matched_echo:
+				return "ch7 boss unnamed_echo: mirror copy did not wear Echo's sprite"
 		elif kind == "stormmouth":
 			# The 3-phase finale must advance past P1 (the Mouth at 60%).
 			b.take_damage(b.max_hp * 0.45, Vector2.ZERO, false, true)

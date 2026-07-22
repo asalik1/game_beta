@@ -99,6 +99,10 @@ const GLOWS := {
 	"knife": Color(0.8, 0.85, 1.0),
 	"slash": Color(1.0, 0.9, 0.5), "icelance": Color(0.5, 0.9, 1.0),
 	"shadowbolt": Color(0.7, 0.4, 1.0), "dart": Color(0.85, 0.92, 1.0),
+	"stormbolt": Color(0.65, 0.92, 1.0), "windslash": Color(0.55, 0.95, 1.0),
+	"rotbolt": Color(0.45, 0.85, 0.25), "earthshard": Color(0.62, 0.42, 0.24),
+	"metalshard": Color(0.72, 0.78, 0.9), "holybolt": Color(1.0, 0.88, 0.36),
+	"griefwave": Color(0.72, 0.78, 1.0), "sigilbolt": Color(0.82, 0.68, 1.0),
 	"shuriken": Color(1.0, 0.85, 0.4), "mage_firebolt": Color(1.0, 0.48, 0.12),
 	"mage_void_bullet": Color(0.72, 0.28, 1.0),
 	"mage_crystal_decree": Color(0.76, 0.94, 1.0),
@@ -129,7 +133,8 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	# Magic bolts burn hotter.
 	var glow := Sprite2D.new()
 	glow.texture = Art.tex("glow")
-	var hot := tex_name in ["fireball", "icelance", "shadowbolt", "mage_firebolt",
+	var hot := tex_name in ["fireball", "icelance", "shadowbolt", "stormbolt",
+		"windslash", "rotbolt", "holybolt", "griefwave", "sigilbolt", "mage_firebolt",
 		"mage_crystal_decree", "warlock_shadowbolt", "hellfire_brand_bolt"]
 	glow.modulate = Art.hdr(Color(p.glow_color, 0.8 if hot else 0.6))
 	glow.scale = Vector2(1.35, 1.35) if hot else Vector2(1.0, 1.0)
@@ -160,6 +165,12 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			"fireball": Color(1.0, 0.8, 0.3),
 			"icelance": Color(0.75, 0.95, 1.0),
 			"shadowbolt": Color(0.6, 0.3, 0.9),
+			"stormbolt": Color(0.62, 0.9, 1.0),
+			"windslash": Color(0.62, 1.0, 1.0),
+			"rotbolt": Color(0.52, 0.9, 0.28),
+			"holybolt": Color(1.0, 0.9, 0.42),
+			"griefwave": Color(0.72, 0.82, 1.0),
+			"sigilbolt": Color(0.86, 0.72, 1.0),
 			"mage_firebolt": Color(1.0, 0.64, 0.18),
 			"mage_crystal_decree": Color(0.78, 0.94, 1.0),
 			"warlock_shadowbolt": Color(0.65, 0.32, 0.95),
@@ -404,7 +415,9 @@ func _fx_pos() -> Vector2:
 ## Darts get a smaller, snappier ring so fan-of-knives hits register
 ## even when the flight itself was too short to see (round 31).
 func _impact_ring() -> void:
-	if not tex_kind in ["fireball", "icelance", "shadowbolt", "dart"]:
+	if not tex_kind in ["fireball", "icelance", "shadowbolt", "stormbolt",
+		"windslash", "rotbolt", "earthshard", "metalshard", "holybolt",
+		"griefwave", "sigilbolt", "dart"]:
 		return
 	var small := tex_kind == "dart"
 	var ring := Sprite2D.new()

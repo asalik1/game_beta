@@ -137,6 +137,8 @@ static func selftest(game: Node2D) -> String:
 		await game.get_tree().create_timer(0.2).timeout
 		if not is_instance_valid(b) or absf(b.max_hp - float(ENEMIES[kind]["hp"])) > 0.01:
 			return "ch5 boss %s: stats did not resolve" % kind
+		if b._boss_projectile_key() != "icelance":
+			return "ch5 boss %s: frost archetype lost its ice projectile" % kind
 
 		# The signature move: forcing the cd to zero must re-arm it.
 		b.special_cd = 0.0

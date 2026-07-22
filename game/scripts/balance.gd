@@ -557,6 +557,13 @@ const PHANTOM_ULT_SPLASH_OPACITY_BRIGHT := 0.15 # +5% on "bright" maps (light ba
 # already carry their own windup — they stay instant, the telegraph IS the wind-up.
 const BOSS_ABILITY_FPS := 14.0
 const BOSS_STRIKE_DELAY := 0.16
+# Boss pursuit profiles: melee gets a small universal closing-speed edge;
+# casters circle inside their authored firing band and flip before grinding
+# against arena walls.
+const BOSS_MELEE_SPEED_MULT := 1.10
+const BOSS_CASTER_STRAFE_WEIGHT := 0.55
+const BOSS_CASTER_WALL_PROBE := 96.0
+const BOSS_CASTER_WALL_EPSILON := 2.0
 const DASH_REFUND := 0.35         # dash cd refunded when the rider connects
 # Rounds 39/40: planting your feet at blade range is the riskiest act
 # in the kit — the STANDING stab pays for it. The dash's proc'd stab

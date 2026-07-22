@@ -25,3 +25,19 @@ no raw-pack redistribution; user-approved casting):
   (footstep system; plate classes clank).
 Talk sounds from the pack were REJECTED (user: bad) — dialogue blip
 stays synthesized. bow/arrow candidates rejected too.
+
+Attack-audio review pass (2026-07-21): semantic override families use
+<key>_v1, <key>_v2, ... filenames. Game.sfx("<key>") discovers the group,
+randomizes it without immediate repeats, and retains the existing subtle pitch
+jitter. Class changes from this pass are currently unwired for a separate,
+original-by-original review. Bosses retain the approved earth, fire, frost,
+storm-impact, and holy-impact candidates; individual boss moves select their
+own cue so family material does not replace every attack indiscriminately. The
+rejected shared void-cast family was removed: Vess now has two short synthesized
+grief cues (initial fan + delayed memory), and Echo throws with the knife cue.
+Storm casts, rot casts, and boss teleports use three synthesized non-repeating
+variants apiece (electrical intake, damp root-strain, and heavy spatial rupture)
+instead of the rejected generic/magical cues.
+Whitepelt, Gardener, Cure-Twisted, and Saint Varo now use separately sourced
+CC0 snarl/deep-roar/horror-screech/human-battle-roar recordings.
+See CREDITS.txt for the shipped sources, licenses, and attribution.

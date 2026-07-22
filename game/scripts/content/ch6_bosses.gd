@@ -9,25 +9,25 @@
 ## Rotmaw (censer-blooms + root + compost) are deliberately CHEAP — the
 ## chapter's engine budget goes to Kaethra. Needs a playtest pass.
 ##
-## PLACEHOLDER ASSETS: sprites reuse existing art; music/roar keys are the
-## FINAL names, else _boss_track() falls back to a shipped theme.
+## Boss art is bespoke where installed; music/roar keys are the FINAL names,
+## else _boss_track() falls back to a shipped theme.
 
 const ENEMIES := {
-	# A bog-bull that drowned a century ago and never stopped growing —
-	# a weather system with horns. SUBMERGE cycle (Sexton's burrow at
+	# A minotaur warlord that drowned a century ago and never stopped growing —
+	# an intelligent weather system with horns. SUBMERGE cycle (Sexton's burrow at
 	# scale): it sinks untargetable, chases with eruption lines + surfaces
 	# under you. Slowed in bog water (fight it near water when up, on land
 	# when down). No enrage; the cycles just shorten.
 	"auroch": {
-		"name": "The Drowned Auroch", "sprite": "auroch",
+		"name": "The Drowned Auroch", "sprite": "auroch_minotaur",
 		# XP re-anchored (chapter-budget audit): the first-pass 780/820/1150
 		# paid 100-136% of a level each — the chapter's fixed XP budget
 		# (30+22·lvl, DESIGN r5) had no room left for trash. Mids ~67-70%,
 		# finale ~85%, like ch1-4. Gold untouched (gold has no budget).
 		"hp": 34000.0, "dmg": 178.0, "speed": 130.0, "xp": 520, "gold": 600,
-		# Scale 9.0 -> 11.5 (art audit 2026-07-17): "a weather system with horns"
-		# rendered 211px, SMALLER than human casters (Halla 258, Ashpriest 254).
-		# 11.5 lands ~270px, above them. Paired with a bog-corruption body pass.
+		# The generated minotaur is normalized to the same 128px body cell as the
+		# directional boss sets. Scale 11.5 keeps him imposing without changing
+		# combat footprint or range tuning during the quadruped -> minotaur retcon.
 		"ranged": false, "scale": 11.5,
 		"physres": 35.0, "magres": 25.0, "eva": 0.0, "critres": 7.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 34, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -142,6 +142,18 @@ static func selftest(game: Node2D) -> String:
 			return "ch6 boss %s: stats did not resolve" % kind
 
 		if kind == "auroch":
+			if b._sprite_key != "auroch_minotaur":
+				return "ch6 boss auroch: did not load the minotaur identity"
+			if b._dir_walk.size() != 8 or int(b._strip_walk.get("frames", 0)) < 4:
+				return "ch6 boss auroch: directional walk set is incomplete"
+			var attack_frames := {"melee": 3, "slam": 4, "charge": 8}
+			for action in attack_frames:
+				var action_set := Art.dir_set("auroch_minotaur_" + action)
+				if action_set.size() != 8:
+					return "ch6 boss auroch: %s directional set is incomplete" % action
+				for facing in Art.DIR8:
+					if int(action_set[facing].get("frames", 0)) != int(attack_frames[action]):
+						return "ch6 boss auroch: %s/%s has wrong frame count" % [action, facing]
 			# Submerge must round-trip: untargetable under, then back up.
 			b.special_cd = 0.0
 			var t := 0.0

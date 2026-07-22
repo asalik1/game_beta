@@ -147,6 +147,8 @@ static func selftest(game: Node2D) -> String:
 			waited += 0.1
 		if not b.enraged:
 			return "ch2 boss %s: did not enrage" % kind
+		if kind == "stormwarden" and (not b.sprite.visible or b.untargetable):
+			return "ch2 boss stormwarden: pack call left Korrag hidden"
 		# Death goes through the rogue kill-flow: the boss dies, and the
 		# story must NOT move — no quest change, no boss_done mark
 		# (that belongs to real zone bosses).

@@ -1,0 +1,60 @@
+CROWNLESS SOUND EFFECT CREDITS
+==============================
+
+JC Sounds - Fantasy SFX Pack Vol. 1
+Source: https://opengameart.org/content/jc-sounds-fantasy-sfx-pack-vol-1
+License: Creative Commons Attribution 4.0
+License text: https://creativecommons.org/licenses/by/4.0/
+Attribution: "Fantasy SFX Pack Vol. 1" by JC Sounds.
+Used for: fire and frost boss casts/impacts, plus storm boss impacts.
+
+qubodup - Earth Element Magic Spell
+Source: https://opengameart.org/content/earth-element-magic-spell
+License: CC0 1.0 Universal / public domain dedication
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+Used for: earth/root boss-impact candidate.
+
+BMacZero (Brian MacIntosh) - Metal Impact Sounds
+Source: https://opengameart.org/content/metal-impact-sounds
+License: CC0 1.0 Universal / public domain dedication
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+Used for: two short earth/ground impact variants.
+
+spookymodem - Magic Smite
+Source: https://opengameart.org/content/magic-smite
+License: Creative Commons Attribution 3.0
+License text: https://creativecommons.org/licenses/by/3.0/
+Attribution: "Magic Smite" by spookymodem.
+Used for: holy boss-impact candidate.
+
+rubberduck - 80 CC0 Creature SFX
+Source: https://opengameart.org/content/80-cc0-creature-sfx
+License: CC0 1.0 Universal / public domain dedication
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+Used for provisional individual voices for Sexton, Vess, Forgemistress,
+Ashpriest, Icebound, Sleepkeeper, Auroch, Veyx, the Unnamed Echo, and
+Cyrraeth/Stormmouth.
+
+Darsycho - Monster Snarls
+Source: https://opengameart.org/content/monster-snarls
+License: CC0 1.0 Universal / public domain dedication
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+Used for: Hrolgar Whitepelt's attack snarl.
+
+trazzz123 - CC0 Deep Monster Roar
+Source: https://opengameart.org/content/cc0-deep-monster-roar
+License: CC0 1.0 Universal / public domain dedication
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+Used for: Rotmaw the Gardener's deep chest-maw roar.
+
+Nocturnal_Vanguard / AuraVoice - Evil Screech 1
+Source: https://opengameart.org/content/evil-screech-1
+License: CC0 1.0 Universal / public domain dedication
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+Used for: Kaethra Cure-Twisted's horror screech.
+
+HaelDB - Male Grunt/Yelling sounds
+Source: https://opengameart.org/content/male-gruntyelling-sounds
+License: CC0 1.0 Universal / public domain dedication
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+Used for: Saint Varo's human battle roar (3yell13.wav).

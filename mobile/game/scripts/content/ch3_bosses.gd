@@ -141,6 +141,13 @@ static func selftest(game: Node2D) -> String:
 		await game.get_tree().create_timer(0.2).timeout
 		if not is_instance_valid(b) or absf(b.max_hp - float(ENEMIES[kind]["hp"])) > 0.01:
 			return "ch3 boss %s: stats did not resolve" % kind
+		var expected_projectile: String = {
+			"sexton": "sigilbolt",
+			"vess": "griefwave",
+			"saint_varo": "holybolt",
+		}[kind]
+		if b._boss_projectile_key() != expected_projectile:
+			return "ch3 boss %s: archetype projectile regressed" % kind
 
 		if kind == "saint_varo":
 			# Censers place themselves on the first think...

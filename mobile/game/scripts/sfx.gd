@@ -264,6 +264,43 @@ static func _make_blink() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+## Boss displacement is a heavy spatial rupture rather than the player's
+## bright dash hiss. Three shapes keep repeated blinks from sounding stamped.
+static func _make_boss_blink(variant: int) -> AudioStreamWAV:
+	var duration := 0.34 + float(variant) * 0.035
+	var b := _buf(duration)
+	var low := 78.0 + float(variant) * 17.0
+	_sine_sweep(b, 0.0, low, low * 0.48, duration * 0.92, 0.26)
+	_noise_sweep(b, 0.0, duration * 0.72, 0.22, 2100.0 + variant * 360.0,
+		260.0, 0.42)
+	return _to_wav(b)
+
+
+## Electrical intake: a dry high-voltage snap with a rising charged body.
+## It deliberately avoids the tonal magic-chime character of the old cue.
+static func _make_storm_cast(variant: int) -> AudioStreamWAV:
+	var duration := 0.28 + float(variant) * 0.045
+	var b := _buf(duration)
+	_noise_sweep(b, 0.0, 0.055, 0.56, 7600.0 - variant * 620.0,
+		1800.0, 0.05)
+	_noise_sweep(b, 0.025, duration * 0.9, 0.24, 900.0 + variant * 180.0,
+		5200.0, 0.68)
+	_sine_sweep(b, 0.01, 105.0 + variant * 18.0, 68.0, duration * 0.75, 0.14)
+	return _to_wav(b)
+
+
+## Rot magic is damp, fibrous and low: root strain plus a short wet collapse,
+## with no bells or whimsical pitch contour.
+static func _make_rot_cast(variant: int) -> AudioStreamWAV:
+	var duration := 0.38 + float(variant) * 0.04
+	var b := _buf(duration)
+	_noise_sweep(b, 0.0, duration * 0.88, 0.20, 720.0 + variant * 90.0,
+		150.0, 0.58)
+	_sine_sweep(b, 0.025, 92.0 + variant * 13.0, 46.0, duration * 0.78, 0.20)
+	_noise_sweep(b, 0.12, 0.11, 0.18, 430.0, 120.0, 0.18)
+	return _to_wav(b)
+
+
 ## Phantom's gliding footfall: a soft, breathy, low-passed swish — no impact,
 ## just the sound of drifting. Deliberately quiet (played on a slow cadence
 ## while the Phantom skin moves). Replaceable by assets/sounds/glide.wav.
@@ -390,6 +427,24 @@ static func _make_keen() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
+## Vess's normal fan is a short spectral inhale, deliberately separate from
+## the two-second KEEN that telegraphs The Silence. Its delayed replay has a
+## thinner falling tail, so the memory volley is audible without repeating the
+## exact same cast sample twice in under a second.
+static func _make_grief_cast() -> AudioStreamWAV:
+	var b := _buf(0.42)
+	_noise_sweep(b, 0.0, 0.38, 0.18, 4200.0, 620.0, 0.52)
+	_sine_sweep(b, 0.02, 880.0, 290.0, 0.34, 0.16)
+	return _to_wav(b)
+
+
+static func _make_grief_echo() -> AudioStreamWAV:
+	var b := _buf(0.34)
+	_sine_sweep(b, 0.0, 520.0, 170.0, 0.30, 0.12)
+	_noise_sweep(b, 0.02, 0.28, 0.12, 2400.0, 480.0, 0.34)
+	return _to_wav(b)
+
+
 ## Morwen's spectral wail: a witch's warbling moan. A voiced formant glide
 ## with a slow quaver ululates up then SAGS as it decays into a sickly
 ## rot-breath, over low spectral weight (she's a scale-6 boss). Lower and
@@ -506,6 +561,17 @@ static func build_all() -> Dictionary:
 		"equip":    tone(300, 200, 0.12, 0.3, 0.4),
 		"chest":    tone(200, 120, 0.15, 0.35, 0.5),
 		"keen":     _make_keen(),
+		"boss_blink_v1": _make_boss_blink(0),
+		"boss_blink_v2": _make_boss_blink(1),
+		"boss_blink_v3": _make_boss_blink(2),
+		"boss_storm_cast_v1": _make_storm_cast(0),
+		"boss_storm_cast_v2": _make_storm_cast(1),
+		"boss_storm_cast_v3": _make_storm_cast(2),
+		"boss_rot_cast_v1": _make_rot_cast(0),
+		"boss_rot_cast_v2": _make_rot_cast(1),
+		"boss_rot_cast_v3": _make_rot_cast(2),
+		"grief_cast": _make_grief_cast(),
+		"grief_echo": _make_grief_echo(),
 		# Loot fanfare chimes (rarity is audible; see loot_fanfare).
 		"loot_low": _make_loot_low(),
 		"loot_mid": _make_loot_mid(),

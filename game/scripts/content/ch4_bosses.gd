@@ -147,6 +147,8 @@ static func selftest(game: Node2D) -> String:
 		await game.get_tree().create_timer(0.2).timeout
 		if not is_instance_valid(b) or absf(b.max_hp - float(ENEMIES[kind]["hp"])) > 0.01:
 			return "ch4 boss %s: stats did not resolve" % kind
+		if b._boss_projectile_key() != "fireball":
+			return "ch4 boss %s: fire archetype lost its fire projectile" % kind
 
 		if kind == "cinderhide":
 			# Plates on at setup: the flat wall (plate_dr) is up and the honest
