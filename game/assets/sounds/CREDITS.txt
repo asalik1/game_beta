@@ -47,14 +47,14 @@ License: CC0 1.0 Universal / public domain dedication
 License text: https://creativecommons.org/publicdomain/zero/1.0/
 Used for: Rotmaw the Gardener's deep chest-maw roar.
 
-Nocturnal_Vanguard / AuraVoice - Evil Screech 1
-Source: https://opengameart.org/content/evil-screech-1
+rubberduck - 80 CC0 Creature SFX #2
+Source: https://opengameart.org/content/80-cc0-creture-sfx-2
 License: CC0 1.0 Universal / public domain dedication
 License text: https://creativecommons.org/publicdomain/zero/1.0/
-Used for: Kaethra Cure-Twisted's horror screech.
+Used for: Kaethra Cure-Twisted's wet creature roar (roar_05.ogg).
 
-HaelDB - Male Grunt/Yelling sounds
-Source: https://opengameart.org/content/male-gruntyelling-sounds
+Roars Games - NHFEA: Sound
+Source: https://opengameart.org/content/nhfea-sound
 License: CC0 1.0 Universal / public domain dedication
 License text: https://creativecommons.org/publicdomain/zero/1.0/
-Used for: Saint Varo's human battle roar (3yell13.wav).
+Used for: Saint Varo's resonant monster roar (as_d_roar.wav).

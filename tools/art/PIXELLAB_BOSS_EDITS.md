@@ -106,6 +106,23 @@ isn't swept. **New untracked files** (e.g. `kaethra_stab*`) must be `git add`-ed
 first — a pathspec `git commit --` skips untracked files and aborts the whole
 commit if a pathspec matches nothing.
 
+## 10. Weapon-preserving boss walks (2026-07-22)
+- **Hrolgar:** validated identity-linked axe state
+  `58295e83-65cc-4f07-a406-7c4c72d6f379`. The shipped 9-frame walk uses
+  custom-v3 groups `be9a835d-9e01-4990-b97c-f5f478ec011f` (S/NE/W) and
+  `735da7a8-9769-4197-bc28-0022c6495f53` (SE/E/N/NW/SW).
+- **Nullwarden:** identity-linked sword state
+  `9099de43-55ab-490c-8c76-bd777ba3a7fe`, created from canonical
+  `7bfca42a-74d2-4ffb-b158-c1ac8777c336`. The shipped 9-frame walk uses
+  custom-v3 groups `78287644-7d71-49db-9ba8-3f598a9a11c9` (N/NW/W),
+  `90e74535-e474-44de-b7de-3e23ce6a2a9d` (SW), and
+  `3d032647-cb20-422f-ba62-1055b4bd9eac` (S/SE/E/NE).
+- Prompt invariant for both: exactly one named weapon, firmly held and visible
+  in every frame; no duplicate, hand swap, redesign, attack, or FX. All 72
+  cells per boss were reviewed before installation. Template walking was
+  rejected: it dropped Hrolgar's axe and badly drifted the west silhouette.
+- Review/source backup: `backup/pixellab_weapon_fix_20260722/` (ignored).
+
 ---
 Related: `boss-sprite-pipeline` + `read-metadata-before-regen` memories;
 CLAUDE.md "PixelLab characters" sections; `tools/art/README.md` (the older
