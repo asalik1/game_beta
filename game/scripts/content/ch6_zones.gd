@@ -179,7 +179,7 @@ const CHAPTER_ZONES := {
 		{
 			"name": "The Pilgrims' Schism", "terrain": "bog", "type": "resonance",
 			"enemies": [], "boss": "",
-			"npcs": [{"sprite": "cultist", "x": 1056, "y": 500, "prompt": "E — The Schism", "convo": "ch6_shrine_schism"}],
+			"npcs": [{"sprite": "pilgrims_schism", "x": 1056, "y": 500, "prompt": "E — The Schism", "convo": "ch6_shrine_schism"}],
 		},
 		{
 			"name": "The Strangled Grove", "terrain": "bog", "type": "combat",

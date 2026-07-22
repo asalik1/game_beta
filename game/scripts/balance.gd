@@ -129,6 +129,7 @@ const NPC_BODY_TARGETS := {
 	"elder": 52.0, "villager": 52.0, "sentry": 52.0, "merchant": 52.0,
 	"archer": 52.0, "warden": 52.0, "envoy": 52.0, "choirmother": 52.0,
 	"beastkin": 52.0, "cultist": 52.0, "aldric": 52.0, "onna": 52.0,
+	"pilgrims_schism": 58.0, # static two-pilgrim + bread-table interaction tableau
 	"piet": 52.0, "sera": 52.0, "callis": 52.0, "vessa": 52.0,
 	"choir_pilgrim": 52.0, "caged_beastkin": 52.0, "suli": 52.0,
 	"old_hunter": 52.0,
