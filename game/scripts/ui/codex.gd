@@ -1471,15 +1471,20 @@ static func _gallery_entries(m: Menus) -> Array:
 		if kind in m.BOSS_KINDS:
 			boss_slugs[sl] = true
 
-	# Heroes first (fixed shelf), then the world cast.
+	# Heroes first (fixed shelf: base classes, then skin forms), then the
+	# world cast. Skin portraits (splash_skin_<cls>_<skin>[_awakened], the
+	# Skins.skin_splash key) never enter the word-run merge below — each
+	# form is its own painting, so awakened art can't fold into its base.
 	var out: Array = []
 	var world: Array = []
 	for base in names:
 		if base.begins_with("class_splash_"):
 			var cls := String(base).trim_prefix("class_splash_")
-			out.append({"sprite": base, "aka": [],
-				"name": String(Classes.CLASSES.get(cls, {}).get("name", cls.capitalize())),
-				"bucket": "heroes"})
+			var cname := String(Classes.CLASSES.get(cls, {}).get("name", cls.capitalize()))
+			out.append({"sprite": base, "aka": [], "name": cname,
+				"bucket": "heroes", "sort": "0_" + cname})
+		elif base.begins_with("splash_skin_"):
+			out.append(_gallery_skin_entry(String(base)))
 		else:
 			world.append(base)
 
@@ -1523,12 +1528,36 @@ static func _gallery_entries(m: Menus) -> Array:
 		if disp == "":
 			disp = slug.capitalize()
 		out.append({"sprite": String(entry["sprite"]), "aka": entry["aka"],
-			"name": disp, "bucket": "bosses" if is_boss else "npcs"})
+			"name": disp, "bucket": "bosses" if is_boss else "npcs", "sort": disp})
 
 	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return String(a["name"]) < String(b["name"]))
+		return String(a.get("sort", a["name"])) < String(b.get("sort", b["name"])))
 	_gallery_cache = out
 	return out
+
+
+## A skin portrait entry: class parsed off the filename, display name from
+## the skins registry ("Stormforged — Awakened  (Warrior)"). Skins shelve
+## AFTER the base classes, grouped by class, base form before awakened.
+static func _gallery_skin_entry(base: String) -> Dictionary:
+	var rest := base.trim_prefix("splash_skin_")
+	var awakened := rest.ends_with("_awakened")
+	if awakened:
+		rest = rest.trim_suffix("_awakened")
+	var cls := ""
+	for c in Classes.CLASSES:
+		if rest.begins_with(String(c) + "_"):
+			cls = String(c)
+			break
+	var skin_id := rest.trim_prefix(cls + "_") if cls != "" else rest
+	var skin: Dictionary = Skins.find_skin(cls, skin_id) if cls != "" else {}
+	var nm := String(skin.get("name", skin_id.capitalize()))
+	if awakened:
+		nm += " — Awakened"
+	if cls != "":
+		nm += "  (%s)" % String(Classes.CLASSES.get(cls, {}).get("name", cls.capitalize()))
+	return {"sprite": base, "aka": [], "name": nm, "bucket": "heroes",
+		"sort": "1_%s_%s_%s" % [cls, skin_id, "1" if awakened else "0"]}
 
 
 ## Are the shorter slug words a contiguous run inside the longer ones?
