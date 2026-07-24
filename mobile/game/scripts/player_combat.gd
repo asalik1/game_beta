@@ -328,6 +328,8 @@ class SkinAmbient extends Node2D:
 	var prism_shadow: Sprite2D = null
 	var eldritch_familiar: Sprite2D = null
 	var familiar_frame_t := 0.0
+	var orbit: Array = []
+	var eye_t := 0.0
 	# The authored idle bank (frames 0-3) sits 28 source pixels lower than the
 	# glide bank (4-7). At 0.62 display scale that is ~17 screen pixels. Offset
 	# the idle node upward so the platform surface and underside remain at the
@@ -341,6 +343,9 @@ class SkinAmbient extends Node2D:
 			_build_crystal_dais()
 		elif skin_id == "eldritch_warlock":
 			_build_eldritch_familiar()
+			eye_t = randf_range(2.0, 4.0)
+		elif skin_id == "voidwraith":
+			_build_void_orbit()
 	func _process(delta: float) -> void:
 		if plr == null or not is_instance_valid(plr):
 			queue_free()
@@ -349,12 +354,23 @@ class SkinAmbient extends Node2D:
 		emit_t -= delta
 		blink_t -= delta
 		if emit_t <= 0.0:
-			if skin_id == "voidwraith" and plr.velocity.length() > 25.0:
-				_emit_feather(Color(0.45, 0.22, 0.72, 0.7), -plr.velocity.normalized())
-				emit_t = 0.18
-			elif skin_id == "crystal_archmage" and plr.velocity.length() > 20.0:
+			if skin_id == "phantom":
+				# Moving: a spectral after-image trail. Idle: soul-mist wisps
+				# rising at the feet. The Phantom had NO out-of-combat identity
+				# at all before this — its body art is the base assassin's.
+				if plr.velocity.length() > 25.0:
+					_emit_phantom_ghost()
+					emit_t = 0.14
+				else:
+					_emit_phantom_mist()
+					emit_t = randf_range(0.9, 1.5)
+			elif skin_id == "voidwraith" and plr.velocity.length() > 25.0:
+				_emit_feather(Color(0.58, 0.30, 0.92, 0.8), -plr.velocity.normalized())
+				emit_t = 0.16
+			elif skin_id == "crystal_archmage":
 				_emit_crystal_glint()
-				emit_t = 0.11
+				# Refraction never stops: dense while gliding, sparse at rest.
+				emit_t = 0.11 if plr.velocity.length() > 20.0 else randf_range(1.2, 2.0)
 			elif skin_id == "fallen_arbiter" and plr.velocity.length() > 20.0:
 				_emit_feather(Color(0.92, 0.94, 1.0, 0.72), Vector2(0, 0.7))
 				emit_t = 0.34
@@ -366,6 +382,12 @@ class SkinAmbient extends Node2D:
 			_update_crystal_dais(delta)
 		elif skin_id == "eldritch_warlock":
 			_update_eldritch_familiar(delta)
+			eye_t -= delta
+			if eye_t <= 0.0:
+				_bloom_eye()
+				eye_t = randf_range(3.0, 5.5)
+		elif skin_id == "voidwraith":
+			_update_void_orbit()
 		queue_redraw()
 	func _build_eldritch_familiar() -> void:
 		eldritch_familiar = Sprite2D.new()
@@ -450,6 +472,87 @@ class SkinAmbient extends Node2D:
 		tw.parallel().tween_property(feather, "rotation", feather.rotation + randf_range(-1.2, 1.2), 0.62)
 		tw.parallel().tween_property(feather, "modulate:a", 0.0, 0.62)
 		tw.tween_callback(feather.queue_free)
+	func _emit_phantom_ghost() -> void:
+		# One spectral echo of the CURRENT walk frame, left behind in the world
+		# (not player-parented — a trail must stay where the hero was). Same
+		# silhouette-shader recipe as the dash after-images, fainter, so the
+		# dash still reads as the bigger beat.
+		var spr: Sprite2D = plr.sprite
+		if spr == null or spr.texture == null:
+			return
+		var g := Sprite2D.new()
+		g.texture = spr.texture
+		g.hframes = spr.hframes
+		g.frame = spr.frame
+		g.flip_h = spr.flip_h
+		g.rotation = spr.rotation
+		g.scale = spr.scale
+		g.offset = spr.offset
+		g.global_position = plr.global_position + spr.position
+		var mat := ShaderMaterial.new()
+		mat.shader = plr._get_silhouette_shader()
+		mat.set_shader_parameter("tint", Vector3(0.40, 0.85, 1.0))
+		g.material = mat
+		g.modulate = Color(1, 1, 1, 0.34)
+		g.z_index = 4
+		plr.game.add_child(g)
+		var tw := g.create_tween()
+		tw.tween_property(g, "modulate:a", 0.0, 0.42)
+		tw.tween_callback(g.queue_free)
+	func _emit_phantom_mist() -> void:
+		var m := Sprite2D.new()
+		m.texture = Art.tex("glow")
+		m.position = Vector2(randf_range(-11.0, 11.0), randf_range(-2.0, 4.0))
+		m.scale = Vector2(randf_range(0.26, 0.40), 0.20)
+		m.modulate = Color(0.45, 0.85, 1.0, 0.0)
+		m.z_index = 1
+		add_child(m)
+		var tw := m.create_tween()
+		tw.tween_property(m, "modulate:a", randf_range(0.20, 0.30), 0.40)
+		tw.parallel().tween_property(m, "position", m.position + Vector2(randf_range(-7.0, 7.0), -13.0), 1.15)
+		tw.tween_property(m, "modulate:a", 0.0, 0.55)
+		tw.tween_callback(m.queue_free)
+	func _build_void_orbit() -> void:
+		# Three void motes circling the torso — the old 2px chest arc at 0.16
+		# alpha was invisible at gameplay zoom. Front-pass shards overdraw the
+		# hero (net z +1), back-pass duck behind (net z -1).
+		for i in 3:
+			var s := Sprite2D.new()
+			s.texture = Art.tex("mage_void_spindle")
+			s.scale = Vector2(0.15, 0.15)
+			s.modulate = Color(0.88, 0.72, 1.0, 0.8)
+			add_child(s)
+			orbit.append(s)
+	func _update_void_orbit() -> void:
+		for i in orbit.size():
+			var s: Sprite2D = orbit[i]
+			if not is_instance_valid(s):
+				continue
+			var a: float = t * 1.7 + TAU * float(i) / 3.0
+			s.position = Vector2(cos(a) * 23.0, -21.0 + sin(a) * 7.0)
+			s.rotation = sin(t * 1.3 + float(i)) * 0.5
+			s.z_index = 2 if sin(a) > 0.0 else 0
+			s.modulate.a = 0.55 + 0.30 * (0.5 + 0.5 * sin(a))
+	func _bloom_eye() -> void:
+		# A watching eye unfolds from a knot in the air near the warlock, holds,
+		# then knots shut — the curse_eye strip animates knot->open across
+		# frames 0..4 (8-frame sheet; later frames are its own unravel).
+		var eye := Sprite2D.new()
+		eye.texture = Art.tex("fx/warlock_eldritch_curse_eye")
+		eye.hframes = 8
+		eye.frame = 0
+		eye.position = Vector2(randf_range(-30.0, 30.0), randf_range(-44.0, -2.0))
+		eye.scale = Vector2(0.22, 0.22)
+		eye.modulate = Color(1, 1, 1, 0.0)
+		eye.z_index = 2 if randf() < 0.35 else 0
+		add_child(eye)
+		var tw := eye.create_tween()
+		tw.tween_property(eye, "modulate:a", 0.85, 0.30)
+		tw.parallel().tween_method(func(f: float) -> void: eye.frame = clampi(int(f), 0, 7), 0.0, 4.9, 0.45)
+		tw.tween_interval(randf_range(0.6, 1.3))
+		tw.tween_method(func(f: float) -> void: eye.frame = clampi(int(f), 0, 7), 4.9, 0.0, 0.35)
+		tw.parallel().tween_property(eye, "modulate:a", 0.0, 0.35)
+		tw.tween_callback(eye.queue_free)
 	func _draw() -> void:
 		match skin_id:
 			"stormforged":
@@ -460,8 +563,9 @@ class SkinAmbient extends Node2D:
 				for i in range(phase, pts.size() - 1, 2):
 					draw_polyline(PackedVector2Array([pts[i], (pts[i] + pts[i + 1]) * 0.5 + Vector2(5, -4), pts[i + 1]]), Color(0.62, 0.86, 1.0, 0.82), 2.0)
 			"voidwraith":
-				var a := 0.16 + sin(t * 1.7) * 0.05
-				draw_arc(Vector2(0, -20), 29.0, -1.15, 1.15, 18, Color(0.58, 0.34, 0.9, a), 2.0)
+				# Identity lives in the orbiting void motes (Sprite2D children)
+				# — the old 2px chest arc was invisible at gameplay zoom.
+				pass
 			"crystal_archmage":
 				# The authored dais and moving prism-shadow are Sprite2D children.
 				# Keeping this draw branch empty prevents a flat polygon duplicate.
@@ -487,7 +591,7 @@ class SkinAmbient extends Node2D:
 
 ## Keep exactly one persistent ambient identity attached to the current skin.
 func _sync_skin_ambient() -> void:
-	var wanted := skin if skin in ["stormforged", "voidwraith", "crystal_archmage", "fallen_arbiter", "arcane_warlock", "eldritch_warlock"] else ""
+	var wanted := skin if skin in ["phantom", "stormforged", "voidwraith", "crystal_archmage", "fallen_arbiter", "arcane_warlock", "eldritch_warlock"] else ""
 	if wanted == _skin_ambient_id and (_skin_ambient == null or is_instance_valid(_skin_ambient)):
 		return
 	if _skin_ambient != null and is_instance_valid(_skin_ambient):

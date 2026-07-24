@@ -584,8 +584,10 @@ func _apply_class_sprite() -> void:
 		sprite.offset = Vector2.ZERO
 		sprite.texture = Art.tex(art_name)
 		sprite.scale = Art.scale_for(sprite.texture, 3.0)
-	# Re-apply the active chroma (if any) after the sprite changed.
+	# Re-apply the active chroma (if any) after the sprite changed, then the
+	# mythic aura — mutually exclusive, and each clears only its own shader.
 	Skins.apply_to_sprite(sprite, cls, chroma)
+	Skins.apply_aura(sprite, skin, awakened)
 
 
 ## Set or clear the active chroma for this character. Validates the id

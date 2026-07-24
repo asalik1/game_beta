@@ -19,6 +19,18 @@ static func _get_shader() -> Shader:
 	return _shader
 
 
+## The preloaded mythic aura shader (see shaders/mythic_aura.gdshader):
+## animated outline emissive + optional interior push. Chromas can only remap
+## hue; LIGHT and MOTION are what make a mythic read as its own tier, so the
+## flagged mythics carry a signature rim even out of combat.
+static var _aura_shader: Shader = null
+
+static func _get_aura_shader() -> Shader:
+	if _aura_shader == null:
+		_aura_shader = load("res://shaders/mythic_aura.gdshader")
+	return _aura_shader
+
+
 ## Per-class chroma definitions. Each entry: {id, name, primary, trim, accent}.
 ## primary = dark armor tones, trim = mid tones, accent = highlights.
 const CHROMAS := {
@@ -45,18 +57,23 @@ const CHROMAS := {
 			"primary": Color(0.14, 0.05, 0.00),
 			"trim":    Color(0.68, 0.28, 0.02),
 			"accent":  Color(1.00, 0.52, 0.05)},
+		# Retuned 2026-07-24 warmer: the old fuchsia accent collided with the
+		# awakened Voidwraith's magenta surge (same reason as Violet->Azure).
 		{"id": "rose", "name": "Rose",
-			"primary": Color(0.12, 0.00, 0.10),
-			"trim":    Color(0.62, 0.03, 0.55),
-			"accent":  Color(1.00, 0.28, 0.90)},
+			"primary": Color(0.13, 0.01, 0.05),
+			"trim":    Color(0.64, 0.08, 0.26),
+			"accent":  Color(1.00, 0.40, 0.52)},
 		{"id": "jade", "name": "Jade",
 			"primary": Color(0.01, 0.08, 0.03),
 			"trim":    Color(0.05, 0.42, 0.16),
 			"accent":  Color(0.35, 0.90, 0.48)},
-		{"id": "violet", "name": "Violet",
-			"primary": Color(0.08, 0.01, 0.14),
-			"trim":    Color(0.38, 0.08, 0.62),
-			"accent":  Color(0.75, 0.42, 1.00)},
+		# Retuned 2026-07-24: the old Violet chroma sat exactly in Voidwraith's
+		# dusk-violet slot, making the mythic read as a free recolor. Id kept
+		# for save compat (Golden Ronin precedent); now a cold azure.
+		{"id": "violet", "name": "Azure",
+			"primary": Color(0.01, 0.05, 0.14),
+			"trim":    Color(0.06, 0.30, 0.60),
+			"accent":  Color(0.40, 0.78, 1.00)},
 	],
 	"mage": [
 		{"id": "void", "name": "Void",
@@ -232,6 +249,64 @@ const SWING := {
 		"eldritch_warlock": {"attack": 0.182},
 	},
 }
+
+
+## Per-skin mythic aura params (mythic_aura.gdshader uniforms). Keys:
+## color (rim), strength, pulse (rad/s-ish speed), hue_drift (rev/s rim hue
+## rotation — prismatic), tint + tint_amount (interior push). The optional
+## "awakened" sub-dict overlays when the class's S-weapon awakening flag is
+## set, so awakening also intensifies the live glow, not only the strip swap.
+## Owner-tuned by eye (2026-07-24 mythic identity pass — the four flagged
+## skins; Stormforged/Fallen Arbiter read distinct already, extend on request).
+const AURA := {
+	# Spectral cold teal — matches Phantom's existing kit FX color.
+	"phantom": {"color": Color(0.40, 0.85, 1.00), "strength": 0.5, "pulse": 2.4,
+		"awakened": {"color": Color(0.30, 1.00, 0.85), "strength": 0.72}},
+	# Void violet rim over a dusk-deepened body; awakening surges magenta.
+	"voidwraith": {"color": Color(0.66, 0.34, 1.00), "strength": 0.5, "pulse": 1.8,
+		"tint": Color(0.55, 0.40, 0.88), "tint_amount": 0.14,
+		"awakened": {"color": Color(1.00, 0.36, 0.92), "strength": 0.62}},
+	# Prismatic: the rim hue slowly refracts; interior pushed icy so the robe
+	# separates from the base mage's warm white-and-gold.
+	"crystal_archmage": {"color": Color(0.62, 0.86, 1.00), "strength": 0.45,
+		"pulse": 1.6, "hue_drift": 0.05,
+		"tint": Color(0.72, 0.86, 1.00), "tint_amount": 0.20,
+		"awakened": {"strength": 0.60, "hue_drift": 0.09}},
+	# Sickly green breathing rim (its bolt/hex family color).
+	"eldritch_warlock": {"color": Color(0.42, 1.00, 0.55), "strength": 0.5,
+		"pulse": 1.1, "awakened": {"strength": 0.66}},
+}
+
+
+## Install (or clear) the mythic aura material for the active skin. Skins and
+## chromas are mutually exclusive, so the single material slot is shared:
+## apply_to_sprite handles the chroma case, this handles the mythic case, and
+## each only clears a material of its OWN shader type.
+static func apply_aura(spr: Sprite2D, skin_id: String, awakened := false) -> void:
+	var params: Dictionary = AURA.get(skin_id, {})
+	if params.is_empty():
+		var old: ShaderMaterial = spr.material as ShaderMaterial
+		if old != null and old.shader == _get_aura_shader():
+			spr.material = null
+		return
+	if awakened and params.has("awakened"):
+		var merged: Dictionary = params.duplicate()
+		merged.merge(params["awakened"], true)
+		params = merged
+	var mat: ShaderMaterial = spr.material as ShaderMaterial
+	if mat == null or mat.shader != _get_aura_shader():
+		mat = ShaderMaterial.new()
+		mat.shader = _get_aura_shader()
+		spr.material = mat
+	var rim: Color = params["color"]
+	var tint: Color = params.get("tint", Color.WHITE)
+	mat.set_shader_parameter("aura_active", 1.0)
+	mat.set_shader_parameter("aura_color", Vector3(rim.r, rim.g, rim.b))
+	mat.set_shader_parameter("aura_strength", float(params.get("strength", 0.5)))
+	mat.set_shader_parameter("pulse_speed", float(params.get("pulse", 2.0)))
+	mat.set_shader_parameter("hue_drift", float(params.get("hue_drift", 0.0)))
+	mat.set_shader_parameter("tint_color", Vector3(tint.r, tint.g, tint.b))
+	mat.set_shader_parameter("tint_amount", float(params.get("tint_amount", 0.0)))
 
 
 ## Contact time (s) for a skin's strike clip, or -1.0 if none (use base delay).
