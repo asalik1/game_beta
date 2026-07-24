@@ -3437,8 +3437,23 @@ func _open_capital_map() -> void:
 			var action := String(npc.get("action", ""))
 			if action.begins_with("portal_"):
 				service_rooms["portals"] = i
-			elif action != "":
+			elif action != "" and not service_rooms.has(action):
 				service_rooms[action] = i
+		# Crownfall's accessible facades now own their services directly. Keep
+		# the directory derived from those typed landmark stations too; looking
+		# only at NPC actions made the city map forget every building except the
+		# one remaining clerk.
+		for landmark_def in zone.get("landmarks", []):
+			var landmark: Dictionary = landmark_def
+			for use_def in landmark.get("uses", []):
+				var landmark_use: Dictionary = use_def
+				if String(landmark_use.get("type", "")) != "action":
+					continue
+				var landmark_action := String(landmark_use.get("ref", ""))
+				if landmark_action.begins_with("portal_"):
+					service_rooms["portals"] = i
+				elif landmark_action != "" and not service_rooms.has(landmark_action):
+					service_rooms[landmark_action] = i
 
 	# Room cells: ward color, bounded name, service mark, and an unmistakable
 	# current-location frame. Every label is clipped inside its own cell.

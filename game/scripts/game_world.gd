@@ -136,6 +136,12 @@ func _hub_action(act: String) -> void:
 			menus.open_inventory("gear")
 		"map":
 			menus.open_map()
+		"shop":
+			# Landmark-owned bazaar stalls use the room they stand in, so the
+			# inventory and sell state match the room's actual merchant stock.
+			menus.open_shop(cur_room)
+		"potions":
+			menus.open_potion_loadout()
 		_:
 			push_warning("hub action unhandled: %s" % act)
 
@@ -1132,6 +1138,24 @@ func _spawn_scenery(zi: int) -> void:
 	var placed: Array = []
 	var reserved: Array = []
 
+	# Connected city-edge architecture gives the capital a skyline without
+	# pretending that every background window is another shop. Backdrops sit
+	# behind the existing perimeter walls, carry no collider, and leave their
+	# authored central arch aligned with the room's real north road.
+	var room_scale: float = float(zone.get("room_scale", 1.0))
+	for backdrop in zone.get("backdrops", []):
+		var backdrop_spec: Dictionary = backdrop
+		var backdrop_name: String = String(backdrop_spec.get("name", ""))
+		if backdrop_name.is_empty():
+			continue
+		var backdrop_world: Vector2 = room_pos(
+			zi, float(backdrop_spec.get("x", ROOM_CENTER.x)),
+			float(backdrop_spec.get("y", ROOM_CENTER.y)))
+		var authored_width: float = float(backdrop_spec.get(
+			"w", Balance.CAPITAL_BACKDROP_WIDTH_FALLBACK))
+		zone_scenery[zi].append(
+			_add_backdrop(backdrop_name, backdrop_world, authored_width * room_scale))
+
 	# Authored LANDMARKS are the visual anchors of civic spaces. Unlike the
 	# terrain's shuffled structures, these use exact room-local coordinates and
 	# reserve enough breathing room that random clutter cannot pile against a
@@ -1152,14 +1176,27 @@ func _spawn_scenery(zi: int) -> void:
 		reserved.append({"pos": landmark_pos,
 			"radius": float(spec.get("clearance", 190.0))})
 		zone_scenery[zi].append(_add_structure(landmark_name, landmark_world))
-		# Large authored structures should never be dead scenery. Core service
-		# landmarks already own action hotspots in their zone NPC data; the
-		# remaining civic/faction landmarks expose their physical purpose.
-		if spec.has("prompt") and spec.has("text"):
-			var use_pos := landmark_world + Vector2(0, float(spec.get("use_y", 80.0)))
-			var hotspot := _make_npc("book", use_pos, String(spec["prompt"]),
-				Callable(self, "_inspect_landmark").bind(
-					String(spec.get("title", landmark_name)), String(spec["text"])), "")
+		# Every foreground landmark owns typed interaction stations. Most are
+		# real service actions; only true monuments/lookouts use inspect text.
+		# Multiple stations may be spaced across one facade (the Archive).
+		for landmark_use in spec.get("uses", []):
+			var use_spec: Dictionary = landmark_use
+			var use_pos := landmark_world + Vector2(
+				float(use_spec.get("x", 0.0)),
+				float(use_spec.get("y", Balance.CAPITAL_LANDMARK_USE_Y_FALLBACK)))
+			var use_action := Callable()
+			if String(use_spec.get("type", "")) == "action":
+				use_action = Callable(self, "_hub_action").bind(
+					String(use_spec.get("ref", "")))
+			elif String(use_spec.get("type", "")) == "inspect":
+				use_action = Callable(self, "_inspect_landmark").bind(
+					String(use_spec.get("title", landmark_name)),
+					String(use_spec.get("text", "")))
+			else:
+				push_warning("landmark %s has invalid interaction type" % landmark_name)
+				continue
+			var hotspot := _make_npc("book", use_pos,
+				String(use_spec.get("prompt", "E — Use")), use_action, "")
 			for child in hotspot.get_children():
 				if child is Sprite2D:
 					child.visible = false
@@ -1535,6 +1572,25 @@ func _structure_sprite(name: String, target_w: float, wind: bool) -> Node2D:
 	vis.set_meta("wpx", native.x * s)
 	vis.set_meta("hpx", native.y * s)
 	return vis
+
+
+## A non-colliding city-edge layer. Unlike _add_structure this intentionally
+## renders only one coherent architectural silhouette: no default footprint,
+## no fire audio, and no service affordance. Room walls remain the authoritative
+## physical boundary, so the central painted arch can frame a real door lane
+## without introducing an invisible blocker.
+func _add_backdrop(name: String, pos: Vector2, target_w: float) -> Node2D:
+	var def: Dictionary = Terrains.STRUCTURES.get(name, {})
+	var layer := Node2D.new()
+	layer.position = pos
+	layer.z_index = Balance.CAPITAL_BACKDROP_Z
+	var visual: Node2D = _structure_sprite(
+		String(def.get("sprite", name)), target_w, false)
+	var height: float = float(visual.get_meta("hpx"))
+	visual.position = Vector2(0, -height * 0.5 + 12.0)
+	layer.add_child(visual)
+	world.add_child(layer)
+	return layer
 
 
 ## A composite STRUCTURE (Lane 2 unlock): several sprites y-sorted as ONE

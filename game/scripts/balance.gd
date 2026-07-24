@@ -1367,6 +1367,12 @@ const SCENERY_CLUSTER_GROW := 0.5      # chance to add a 3rd member
 const SCENERY_CLUSTER_GROW_DECAY := 0.2  # each further member that much less likely
 const SCENERY_CLUSTER_RADIUS := 95.0   # px spread of a clump around its centre
 
+# Crownfall composition fallbacks. Authored zone data normally supplies the
+# width/offset; these keep malformed or hand-written capital content legible.
+const CAPITAL_BACKDROP_WIDTH_FALLBACK := 1200.0
+const CAPITAL_LANDMARK_USE_Y_FALLBACK := 80.0
+const CAPITAL_BACKDROP_Z := -4
+
 # -------------------------------------------------------- chapter results ---
 # The results card on every chapter clear (retention roadmap #1): run time,
 # deaths, elites, secrets, exploration -> one letter. TIME is deliberately

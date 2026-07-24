@@ -3431,6 +3431,7 @@ func _test_asset_seams() -> void:
 	# The former static base + smaller flame decal produced a visible "fire
 	# inside fire"; exactly one AnimatedSprite2D proves the nested overlay is gone.
 	var capital_fire_structures := [
+		"capital_crown_spire_gate",
 		"capital_emberward_gate", "capital_portal_crucible",
 		"capital_ashfire_forge", "capital_ashen_tankard",
 		"capital_wildfang_fangmoot", "capital_accord_longhouse",
@@ -3452,6 +3453,18 @@ func _test_asset_seams() -> void:
 			return _fail("%s should animate as one structure, not %d nested parts" %
 				[structure_name, animated_parts])
 		landmark.queue_free()
+	# City-edge arcades are a skyline layer, not another inaccessible building:
+	# they must render without introducing a physics shape or service hotspot.
+	var arcade := game._add_backdrop(
+		"capital_city_arcade", Vector2(-4900, -4900), 900.0)
+	for child in arcade.get_children():
+		if child is CollisionShape2D:
+			arcade.queue_free()
+			return _fail("capital city arcade backdrop introduced a collider")
+	if arcade.get_child_count() != 1:
+		arcade.queue_free()
+		return _fail("capital city arcade should be one coherent visual layer")
+	arcade.queue_free()
 	# The capital fountain and wellspring ship full-structure animation strips:
 	# water moves within the authored basins/jets without a rectangular overlay.
 	for water_name in ["capital_crown_fountain", "capital_wellspring"]:
@@ -4914,7 +4927,10 @@ func _test_capital() -> void:
 	var has_intimate_room := false
 	var hub_actions := {}
 	var landmark_use_count := 0
+	var landmark_action_count := 0
+	var faction_contract_count := 0
 	var furnishing_count := 0
+	var backdrop_count := 0
 	var premium_vault := false
 	for zi in game.zone_count:
 		var zone: Dictionary = game.zones[zi]
@@ -4927,9 +4943,43 @@ func _test_capital() -> void:
 		has_intimate_room = has_intimate_room or room_scale <= 0.65
 		if zone.get("landmarks", []).is_empty():
 			return _fail("capital: %s has no authored landmark/composition" % zone.get("name", "?"))
+		if not String(zone.get("terrain", "")).begins_with("capital_"):
+			return _fail("capital: %s still uses placeholder terrain %s" %
+				[zone.get("name", "?"), zone.get("terrain", "?")])
+		if int(zone.get("obstacle_count", 0)) != 0 or int(zone.get("decor_count", 0)) != 0:
+			return _fail("capital: %s returned to random prop scatter" % zone.get("name", "?"))
+		backdrop_count += (zone.get("backdrops", []) as Array).size()
+		var zone_has_contract_action := false
 		for landmark in zone.get("landmarks", []):
-			if (landmark as Dictionary).has("prompt"):
+			var landmark_def: Dictionary = landmark
+			var uses: Array = landmark_def.get("uses", [])
+			if uses.is_empty():
+				return _fail("capital: foreground landmark %s in %s has no direct interaction" %
+					[landmark_def.get("name", "?"), zone.get("name", "?")])
+			for landmark_use in uses:
+				var use_def: Dictionary = landmark_use
+				var use_type := String(use_def.get("type", ""))
+				if use_type not in ["action", "inspect"]:
+					return _fail("capital: landmark %s has invalid interaction type '%s'" %
+						[landmark_def.get("name", "?"), use_type])
 				landmark_use_count += 1
+				if use_type == "action":
+					var landmark_action := String(use_def.get("ref", ""))
+					if landmark_action == "":
+						return _fail("capital: landmark %s action has no ref" %
+							landmark_def.get("name", "?"))
+					hub_actions[landmark_action] = true
+					landmark_action_count += 1
+					zone_has_contract_action = zone_has_contract_action \
+						or landmark_action == "journal"
+				elif String(use_def.get("text", "")).is_empty():
+					return _fail("capital: landmark %s inspect has no purpose text" %
+						landmark_def.get("name", "?"))
+		if String(zone.get("mark", "")) == "●":
+			if not zone_has_contract_action:
+				return _fail("capital: faction contract mark in %s does not open the journal" %
+					zone.get("name", "?"))
+			faction_contract_count += 1
 		furnishing_count += (zone.get("furnishings", []) as Array).size()
 		if "bench2" in zone.get("obstacles", []) or "garden_bench" in zone.get("obstacles", []):
 			return _fail("capital: legacy low-quality bench returned to random scenery")
@@ -4942,14 +4992,20 @@ func _test_capital() -> void:
 				premium_vault = true
 	if not has_grand_room or not has_intimate_room:
 		return _fail("capital: room hierarchy needs both a grand hub and an intimate service room")
-	if landmark_use_count < 20:
-		return _fail("capital: prominent structures need physical-purpose interactions (%d/20)" %
-			landmark_use_count)
+	if landmark_use_count < 32 or landmark_action_count < 25:
+		return _fail("capital: foreground landmarks need direct typed uses/actions (%d uses, %d actions)" %
+			[landmark_use_count, landmark_action_count])
+	if faction_contract_count != 5:
+		return _fail("capital: expected five real faction contract journal links, got %d" %
+			faction_contract_count)
 	if furnishing_count < 8:
 		return _fail("capital: authored social furniture is missing (%d/8)" % furnishing_count)
+	if backdrop_count < 8:
+		return _fail("capital: connected city-edge architecture is missing (%d/8)" % backdrop_count)
 	if not premium_vault:
 		return _fail("capital: Artisans' Court did not install the premium vault coffer")
 	for action in ["map", "mail", "journal", "records", "guild", "skills", "gear",
+			"shop", "potions",
 			"vault", "codex", "daily", "portal_story", "portal_crucible", "portal_depths"]:
 		if not hub_actions.has(action):
 			return _fail("capital: meaningful service action '%s' is not placed" % action)

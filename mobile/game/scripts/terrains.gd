@@ -109,6 +109,45 @@ const DATA := {
 		"obstacles": ["tree_spore", "tree_spore", "rock", "boulder", "tree_spore2"], "decor": ["mushroom", "mushroom", "toadstool", "toadstool2", "grass", "mushroom_blue"], "accents": ["mushroom_purple", "spore_vent", "spore_shrine"], "count": 13,
 		"patches": [{"type": "poison", "count": 5, "radius": [60, 90], "drift": true}],
 		"event": ""},
+	# ---------------------------------------- Crownfall capital districts ---
+	# Safe civic palettes use the brighter procedural midtones rather than the
+	# dark placeholder showcase floors. Capital zones author their own scenery,
+	# so these profiles deliberately carry no random obstacle/decor scatter.
+	"capital_civic": {"name": "Crownfall Civic Heart",
+		"ground": "holystone", "path": "castletile",
+		"tint": Color(1.0, 0.96, 0.90), "ambient": "sparkle", "music": "village",
+		"obstacles": [], "decor": [], "accents": [], "count": 0,
+		"patches": [], "event": "", "bright": true},
+	"capital_wayfinder": {"name": "Crownfall Wayfinder Ward",
+		"ground": "stone", "path": "holystone",
+		"tint": Color(0.90, 0.92, 1.0), "ambient": "embers", "music": "keep",
+		"obstacles": [], "decor": [], "accents": [], "count": 0,
+		"patches": [], "event": ""},
+	"capital_wildfang": {"name": "Crownfall Wildfang Enclave",
+		"ground": "grass", "path": "dirt",
+		"tint": Color(0.92, 0.98, 0.90), "ambient": "fireflies", "music": "darkwood",
+		"obstacles": [], "decor": [], "accents": [], "count": 0,
+		"patches": [], "event": "", "bright": true},
+	"capital_choir": {"name": "Crownfall Hollow Choir",
+		"ground": "gravedirt", "path": "stone",
+		"tint": Color(0.90, 0.90, 1.0), "ambient": "mist", "music": "graveyard",
+		"obstacles": [], "decor": [], "accents": [], "count": 0,
+		"patches": [], "event": ""},
+	"capital_accord": {"name": "Crownfall Accord Ward",
+		"ground": "stormgrass", "path": "holystone",
+		"tint": Color(0.96, 1.0, 0.94), "ambient": "leaves_green", "music": "village",
+		"obstacles": [], "decor": [], "accents": [], "count": 0,
+		"patches": [], "event": "", "bright": true},
+	"capital_cinderborn": {"name": "Crownfall Cinderborn Ward",
+		"ground": "stone", "path": "holystone",
+		"tint": Color(1.0, 0.90, 0.84), "ambient": "embers", "music": "keep",
+		"obstacles": [], "decor": [], "accents": [], "count": 0,
+		"patches": [], "event": ""},
+	"capital_approach": {"name": "Crownfall Emberward",
+		"ground": "stone", "path": "holystone",
+		"tint": Color(0.94, 0.95, 1.0), "ambient": "embers", "music": "keep",
+		"obstacles": [], "decor": [], "accents": [], "count": 0,
+		"patches": [], "event": ""},
 	# ---- placeholder terrains (2026-07-08 environment-pack sweep) ----
 	# Authored from the owned Pixel Crawler environment packs, dev-only:
 	# the codex hides them outside the dev launcher and tags them
@@ -292,6 +331,12 @@ const WALL := {
 	# seam-showcase terrains
 	"ph_forge": "wall_volcanic", "ph_kitchen": "wall_wood", "ph_dungeon": "wall_sewer",
 	"ph_market": "wall_castle", "ph_crypt": "wall_grave",
+	# Crownfall districts: civic masonry stays consistent while each enclave
+	# gets one restrained edge material of its own.
+	"capital_civic": "wall_castle", "capital_wayfinder": "wall_castle",
+	"capital_wildfang": "wall_moss", "capital_choir": "wall_grave",
+	"capital_accord": "wall_hedge", "capital_cinderborn": "wall_castle",
+	"capital_approach": "wall_castle",
 	"magma": "wall_volcanic", "void": "wall_volcanic",
 	"ice": "wall_ice",
 	"graveyard": "wall_grave",
@@ -442,8 +487,18 @@ const STRUCTURES := {
 	# resolution never dictates world scale. Civic facades use a shallow base
 	# footprint; open gates reserve only their side piers so the arch remains a
 	# readable passage instead of an invisible wall.
-	"capital_crown_fountain": {"sprite": "capital_crown_fountain", "w": 340.0,
-		"colliders": [{"shape": "circle", "radius": 68.0, "off": Vector2(0, -12)}]},
+	"capital_crown_spire_gate": {"sprite": "capital_crown_spire_gate", "w": 900.0,
+		"colliders": [
+			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(-310, -9)},
+			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(310, -9)}],
+		"fire": true},
+	# A single connected city-edge silhouette. It is spawned only through
+	# _add_backdrop (never as an accessible building), but the empty collider
+	# list keeps accidental structure previews honest and non-blocking.
+	"capital_city_arcade": {"sprite": "capital_city_arcade", "w": 1680.0,
+		"colliders": []},
+	"capital_crown_fountain": {"sprite": "capital_crown_fountain", "w": 380.0,
+		"colliders": [{"shape": "circle", "radius": 76.0, "off": Vector2(0, -12)}]},
 	"capital_emberward_gate": {"sprite": "capital_emberward_gate", "w": 420.0,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(-142, -9)},

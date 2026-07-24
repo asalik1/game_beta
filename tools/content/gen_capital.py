@@ -22,90 +22,79 @@ P = "convo"; A = "action"; H = "hotspot"
 HUB_ACTIONS = {
     "portal_story", "portal_crucible", "portal_depths",
     "vault", "codex", "daily", "map", "mail", "journal", "records",
-    "guild", "skills", "gear",
+    "guild", "skills", "gear", "shop", "potions",
 }
 ROOMS = [
   # --- THE HEART: every everyday service is within one room of the plaza ---
-  ("plaza","Crown Plaza",0,0,"ph_market",1.00,[
-      ("factor_imre","E — Ask for directions","cap_citizen",P),
-      ("book","E — View the city map","map",H)]),
-  ("portal","Wayfinder Sanctum",0,-1,"ph_hall",0.82,[
-      ("void_rift","◆ The Story Gate","portal_story",A),
-      ("void_monolith","◆ The Crucible Gate","portal_crucible",A),
-      ("void_obelisk","◆ The Depths Gate","portal_depths",A)]),
+  ("plaza","Crown Plaza",0,0,"capital_civic",1.00,[
+      ("factor_imre","E — Ask for directions","cap_citizen",P)]),
+  ("portal","Wayfinder Sanctum",0,-1,"capital_wayfinder",0.82,[]),
   # One gear destination: forge, gemcraft, and stash share an artisans' court.
-  ("artisans","Artisans' Court",-1,-1,"ph_castle",0.88,[
+  ("artisans","Artisans' Court",-1,-1,"capital_wayfinder",0.82,[
       ("smith_petra","E — Smith Petra","cap_petra",P),
       ("archivist_lene","E — Master Lapidary","cap_lapidary",P),
-      ("capital_vault_chest","E — Open your vault","vault",A),
-      ("settings","E — Manage your gear","gear",H)]),
-  ("archive","The Grand Archive",1,-1,"ph_library",0.76,[
-      ("book","E — Browse the Codex","codex",H),
-      ("book","E — Read your journal","journal",H),
-      ("book","E — Review your records","records",H)]),
-  ("guild","The Chartered Hall",-1,0,"ph_guildhall",0.68,[
-      ("clerk_voss","E — Open Play Together","guild",A)]),
-  ("market","Crown Bazaar",1,0,"ph_market",0.92,[
-      ("clerk_voss","E — Claim the daily alms","daily",A),
-      ("mail","E — Check your mailbox","mail",H)]),  # merchant field below
+      ("capital_vault_chest","E — Open your vault","vault",A)]),
+  ("archive","The Grand Archive",1,-1,"capital_civic",0.72,[]),
+  ("guild","The Chartered Hall",-1,0,"capital_civic",0.64,[]),
+  ("market","Crown Bazaar",1,0,"capital_civic",0.86,[
+      ("clerk_voss","E — Claim the daily alms","daily",A)]),  # merchant field below
   # Cooking and alchemy belong together: both consume the garden's harvest.
-  ("hearth","The Hearthworks",-1,1,"ph_kitchen",0.78,[
+  ("hearth","The Hearthworks",-1,1,"capital_civic",0.70,[
       ("old_fenna","E — Old Fenna","cap_fenna",P),
       ("apprentice_sorrel","E — Apprentice Sorrel","cap_sorrel",P)]),
-  ("tankard","The Ashen Tankard",0,1,"ph_kitchen",0.72,[
+  ("tankard","The Ashen Tankard",0,1,"capital_civic",0.68,[
       ("peddler_nix","E — Tavern Keeper Nix","cap_tankard",P)]),
-  ("proving","The Proving Grounds",1,1,"ph_castle",0.90,[
-      ("warden_corin","E — Proving Marshal Corin","cap_arena",P),
-      ("skills","E — Open your skill tree","skills",H)]),
+  ("proving","The Proving Grounds",1,1,"capital_wayfinder",0.82,[
+      ("warden_corin","E — Proving Marshal Corin","cap_arena",P)]),
 
   # --- NORTHERN OVERLOOK: a destination, not three duplicate ramparts ---
-  ("rampart","Crownwatch Rampart",0,-2,"ph_castle",0.68,[
+  ("rampart","Crownwatch Rampart",0,-2,"capital_approach",0.58,[
       ("warden_palla","E — Toll-Warden Palla","cap_palla",P)]),
 
   # --- WILDFANG ENCLAVE (NW): public moot, living green, old-city descent ---
-  ("wf_moot","Fangmoot Circle",-2,-1,"ph_camp",0.82,[
+  ("wf_moot","Fangmoot Circle",-2,-1,"capital_wildfang",0.78,[
       ("callis","E — Warden Callis","cap_callis",P),
       ("skald_ottar","E — Skald Ottar","cap_ottar",P)]),
-  ("wf_warren","The Green Warren",-3,-1,"ph_fae",0.68,[
+  ("wf_warren","The Green Warren",-3,-1,"capital_wildfang",0.58,[
       ("npc_hunter","E — The Old Hunter","cap_hunter",P)]),
-  ("wf_digger","Digger's Cut",-2,-2,"ph_dungeon",0.62,[
+  ("wf_digger","Digger's Cut",-2,-2,"capital_wildfang",0.56,[
       ("digger_haim","E — Old Digger Haim","cap_haim",P)]),
 
   # --- CHOIR ENCLAVE (NE): faith, remembrance, and a warm infirmary ---
-  ("ch_chapel","The Rot-Chapel",2,-1,"ph_crypt",0.82,[
+  ("ch_chapel","The Rot-Chapel",2,-1,"capital_choir",0.78,[
       ("cantor_ilse","E — Cantor Ilse","cap_ilse",P),
       ("deacon_vela","E — Deacon Vela","cap_vela",P)]),
-  ("ch_waiting","The Waiting Hall",3,-1,"ph_crypt",0.62,[
+  ("ch_waiting","The Waiting Hall",3,-1,"capital_choir",0.56,[
       ("brother_osk","E — Brother Osk","cap_osk",P),
       ("sera","E — Widow Sera","cap_sera",P)]),
-  ("ch_suli","Suli's Hospice",2,-2,"ph_garden",0.68,[
+  ("ch_suli","Suli's Hospice",2,-2,"capital_choir",0.58,[
       ("suli","E — Gentle Suli","cap_suli",P)]),
 
   # --- ACCORD WARD (SW): civic hearth, medicine, and shared water ---
-  ("acc_commons","Accord Commons",-2,1,"ph_hall",0.82,[
+  ("acc_commons","Accord Commons",-2,1,"capital_accord",0.78,[
       ("elder","E — Elder Maren","cap_maren",P),
       ("tinker_osla","E — Tinker Osla","cap_osla",P)]),
-  ("acc_menders","The Menders' Row",-3,1,"ph_garden",0.68,[
+  ("acc_menders","The Menders' Row",-3,1,"capital_accord",0.58,[
       ("herbalist_kesh","E — Herbalist Kesh","cap_kesh",P)]),
-  ("acc_well","The Wellspring",-2,2,"ph_garden",0.68,[
+  ("acc_well","The Wellspring",-2,2,"capital_accord",0.60,[
       ("fisher_dov","E — Fisher Dov","cap_dov",P)]),
 
   # --- CINDERBORN WARD (SE): court, industry, and disciplined memory ---
-  ("cin_court","The Sable Court",2,1,"ph_castle",0.82,[
+  ("cin_court","The Sable Court",2,1,"capital_cinderborn",0.78,[
       ("aldric","E — Ser Aldric","cap_aldric",P),
       ("vessa","E — Envoy Vessa","cap_vessa",P)]),
-  ("cin_foundry","Compact Foundry",3,1,"ph_castle",0.68,[
+  ("cin_foundry","Compact Foundry",3,1,"capital_cinderborn",0.58,[
       ("overseer_brann","E — Overseer Brann","cap_brann",P)]),
-  ("cin_bastion","The Keeper's Bastion",2,2,"ph_library",0.72,[
+  ("cin_bastion","The Keeper's Bastion",2,2,"capital_cinderborn",0.60,[
       ("keeper_vasse","E — Retired Keeper Vasse","cap_vasse",P),
       ("commander_ashe","E — Commander Ashe","cap_ashe",P)]),
 
   # --- SOUTHERN APPROACH: processional road, gate, compact stable yard ---
-  ("causeway","Crown Causeway",0,2,"ph_market",0.76,[
+  ("causeway","Crown Causeway",0,2,"capital_approach",0.72,[
       ("warden_sighne","E — Warden Sighne","cap_sighne",P)]),
-  ("gate","The Emberward Gate",0,3,"ph_castle",0.90,[
+  ("gate","The Emberward Gate",0,3,"capital_approach",0.82,[
       ("warden_corin","E — Gate Sergeant Corin","cap_gate",P)]),
-  ("stables","Emberward Stables",1,3,"ph_camp",0.62,[
+  ("stables","Emberward Stables",1,3,"capital_approach",0.56,[
       ("warden_palla","E — Ask about the road","cap_stables",P)]),
 ]
 
@@ -118,8 +107,9 @@ MERCHANTS = {"market": [CX, 560]}
 # tuple: (structure id, x, y, clearance radius)
 LANDMARKS = {
     "plaza": [
-        ("capital_crown_fountain", 1056, 600, 300),
-        ("capital_city_directory", 1056, 850, 150),
+        ("capital_crown_spire_gate", 1056, 525, 430),
+        ("capital_crown_fountain", 1056, 720, 265),
+        ("capital_city_directory", 1640, 850, 140),
     ],
     "portal": [
         ("capital_portal_story", 560, 560, 150),
@@ -154,12 +144,28 @@ LANDMARKS = {
     "stables": [("capital_stables", 1056, 590, 315)],
 }
 
+# Wide connected architecture sits behind the accessible landmarks. It has no
+# door/service affordance and no collider: existing room walls own the edge,
+# while the open central arch frames the actual north road. This makes the city
+# feel continuous without adding fake shops or invisible blockers.
+# tuple: (sprite id, x, y, authored width)
+BACKDROPS = {
+    "portal": [("capital_city_arcade", 1056, 405, 1680)],
+    "guild": [("capital_city_arcade", 1056, 405, 1680)],
+    "market": [("capital_city_arcade", 1056, 405, 1680)],
+    "hearth": [("capital_city_arcade", 1056, 405, 1680)],
+    "tankard": [("capital_city_arcade", 1056, 405, 1680)],
+    "proving": [("capital_city_arcade", 1056, 405, 1680)],
+    "causeway": [("capital_city_arcade", 1056, 405, 1680)],
+    "gate": [("capital_city_arcade", 1056, 405, 1680)],
+}
+
 # Exact supporting furniture. Capital rooms do not use generic furniture
 # scatter: every bench has a deliberate social-space placement and enough
 # clearance to remain inside the authored walls.
 FURNISHINGS = {
-    "plaza": [("capital_city_bench", 760, 865, 110),
-              ("capital_city_bench", 1352, 865, 110)],
+    "plaza": [("capital_city_bench", 650, 825, 110),
+              ("capital_city_bench", 1330, 825, 110)],
     "hearth": [("capital_city_bench", 1056, 820, 110)],
     "tankard": [("capital_city_bench", 760, 810, 110),
                 ("capital_city_bench", 1352, 810, 110)],
@@ -169,53 +175,61 @@ FURNISHINGS = {
                  ("capital_city_bench", 1352, 825, 110)],
 }
 
-# Prominent structures without an existing service hotspot still explain
-# themselves when approached. System buildings (portals, forge, archive,
-# guild hall, proving gate, map board) already own real action hotspots.
-# key: (room id, landmark index) -> (prompt, title, one-line purpose, y offset)
+# Every foreground landmark owns its affordance. Actions open a real game
+# surface or destination; inspect is reserved for genuine monuments/lookouts.
+# A landmark may expose several separated stations (the archive has three).
+# key: (room id, landmark index) -> list of typed use dictionaries.
+def ACTION(prompt, ref, x=0, y=80):
+    return {"type": "action", "prompt": prompt, "ref": ref, "x": x, "y": y}
+
+def INSPECT(prompt, title, text, x=0, y=80):
+    return {"type": "inspect", "prompt": prompt, "title": title,
+            "text": text, "x": x, "y": y}
+
 LANDMARK_USES = {
-    ("plaza", 0): ("E — Inspect the Crown Fountain", "Crown Fountain",
-        "The four ward roads meet at this basin. Companies use its crown as the city's easiest rally point.", 105),
-    ("hearth", 0): ("E — Warm yourself", "The Great Hearth",
-        "A public fire for cooking, waiting, and finding companions between expeditions.", 90),
-    ("hearth", 1): ("E — Inspect the alembic", "Hearthworks Alembic",
-        "Garden harvests become medicine here; Sorrel keeps the day's mixtures under watch.", 80),
-    ("tankard", 0): ("E — Enter the Ashen Tankard", "The Ashen Tankard",
-        "Crownfall's common room: rumours, company recruitment, and a warm seat after dark.", 95),
-    ("rampart", 0): ("E — Survey the rampart", "Crownwatch Rampart",
-        "The watch records every caravan, returning company, and threat on the southern road.", 75),
-    ("wf_moot", 0): ("E — Inspect the Fangmoot", "Fangmoot Circle",
-        "Wildfang companies trade hunts, daily work, and stories around the undying fire.", 95),
-    ("wf_warren", 0): ("E — Inspect the longhouse", "The Green Warren",
-        "A transplanted piece of wildwood where hunters rest, recruit, and plan their next trail.", 90),
-    ("wf_digger", 0): ("E — Inspect the descent", "Digger's Cut",
-        "Haim's guarded shaft reaches the buried foundations of the old capital.", 85),
-    ("ch_chapel", 0): ("E — Inspect the chapel", "The Rot-Chapel",
-        "The Choir keeps remembrance, faction work, and its patient rites beneath this roof.", 90),
-    ("ch_waiting", 0): ("E — Inspect the undercroft", "The Waiting Hall",
-        "A quiet threshold between the living ward and the sleepers below.", 85),
-    ("ch_suli", 0): ("E — Inspect the hospice", "Suli's Hospice",
-        "The Choir's living receive treatment around this clean spring.", 105),
-    ("acc_commons", 0): ("E — Inspect the commons", "Accord Commons",
-        "The Accord settles disputes, posts daily work, and keeps a public fire here.", 95),
-    ("acc_menders", 0): ("E — Inspect the springhouse", "Menders' Row",
-        "Kesh's remedies and Hearthworks reagents begin at this ward spring.", 105),
-    ("acc_well", 0): ("E — Inspect the Wellspring", "The Wellspring",
-        "A civic reservoir, quiet meeting place, and the Accord ward's clean-water reserve.", 105),
-    ("cin_court", 0): ("E — Inspect the Sable Court", "The Sable Court",
-        "The Cinderborn receive commissions and preserve the ceremonies of their lost crown.", 95),
-    ("cin_foundry", 0): ("E — Inspect the foundry", "Compact Foundry",
-        "Recovered ore is weighed and prepared here before Petra's forge receives it.", 95),
-    ("cin_bastion", 0): ("E — Inspect the bastion", "The Keeper's Bastion",
-        "The Cinderborn keep their rolls, histories, and disciplined watch under one roof.", 90),
-    ("causeway", 0): ("E — Inspect the west watch", "Causeway Watch",
-        "One half of the gate watch, positioned to keep the market road clear.", 75),
-    ("causeway", 1): ("E — Inspect the east watch", "Causeway Watch",
-        "One half of the gate watch, positioned to keep the proving road clear.", 75),
-    ("gate", 0): ("E — Inspect the Emberward Gate", "Emberward Gate",
-        "The capital's southern threshold, guarded day and night without blocking the road.", 80),
-    ("stables", 0): ("E — Inspect the stables", "Emberward Stables",
-        "Mounts, messengers, and caravan tack stay close to the road and outside the plaza.", 90),
+    ("plaza", 0): [ACTION("E — View services at the Crown Spire", "map", y=30)],
+    ("plaza", 1): [INSPECT("E — Inspect the Crown Fountain", "Crown Fountain",
+        "The four ward roads meet at this basin. Companies use its crown as the city's easiest rally point.", y=105)],
+    ("plaza", 2): [ACTION("E — View the city map", "map", y=65)],
+    ("portal", 0): [ACTION("E — Enter the Story Gate", "portal_story", y=30)],
+    ("portal", 1): [ACTION("E — Enter the Crucible Gate", "portal_crucible", y=30)],
+    ("portal", 2): [ACTION("E — Enter the Depths Gate", "portal_depths", y=30)],
+    ("artisans", 0): [ACTION("E — Manage gear and reforging", "gear", y=70)],
+    ("artisans", 1): [ACTION("E — Manage gems and sockets", "gear", y=70)],
+    ("archive", 0): [
+        ACTION("E — Browse the Codex", "codex", x=-170, y=100),
+        ACTION("E — Read your journal", "journal", y=100),
+        ACTION("E — Review your records", "records", x=170, y=100),
+    ],
+    ("guild", 0): [ACTION("E — Open Play Together", "guild", y=90)],
+    ("market", 0): [ACTION("E — Browse the bazaar", "shop", y=100)],
+    ("market", 1): [ACTION("E — Check your mailbox", "mail", y=100)],
+    ("hearth", 0): [INSPECT("E — Warm yourself", "The Great Hearth",
+        "A public fire for cooking, waiting, and finding companions between expeditions.", y=90)],
+    ("hearth", 1): [ACTION("E — Prepare your potion loadout", "potions", y=80)],
+    ("tankard", 0): [ACTION("E — Find a company at the Tankard", "guild", y=95)],
+    ("proving", 0): [ACTION("E — Open your skill tree", "skills", y=70)],
+    ("rampart", 0): [INSPECT("E — Survey the rampart", "Crownwatch Rampart",
+        "The watch records every caravan, returning company, and threat on the southern road.", y=75)],
+    ("wf_moot", 0): [ACTION("E — Review Wildfang contracts", "journal", y=95)],
+    ("wf_warren", 0): [ACTION("E — Find a hunting company", "guild", y=90)],
+    ("wf_digger", 0): [ACTION("E — Descend into the Depths", "portal_depths", y=85)],
+    ("ch_chapel", 0): [ACTION("E — Review Choir contracts", "journal", y=90)],
+    ("ch_waiting", 0): [ACTION("E — Read the sleepers' roll", "records", y=85)],
+    ("ch_suli", 0): [ACTION("E — Prepare your potion loadout", "potions", y=105)],
+    ("acc_commons", 0): [ACTION("E — Review Accord contracts", "journal", y=95)],
+    ("acc_menders", 0): [ACTION("E — Review gathering contracts", "journal", y=105)],
+    ("acc_well", 0): [INSPECT("E — Inspect the Wellspring", "The Wellspring",
+        "A civic reservoir, quiet meeting place, and the Accord ward's clean-water reserve.", y=105)],
+    ("cin_court", 0): [ACTION("E — Review Cinderborn contracts", "journal", y=95)],
+    ("cin_foundry", 0): [ACTION("E — Manage gear and reforging", "gear", y=95)],
+    ("cin_bastion", 0): [ACTION("E — Review the keepers' records", "records", y=90)],
+    ("causeway", 0): [INSPECT("E — Inspect the west watch", "Causeway Watch",
+        "One half of the gate watch, positioned to keep the market road clear.", y=75)],
+    ("causeway", 1): [INSPECT("E — Inspect the east watch", "Causeway Watch",
+        "One half of the gate watch, positioned to keep the proving road clear.", y=75)],
+    ("gate", 0): [ACTION("E — Leave Crownfall", "portal_story", y=80)],
+    ("stables", 0): [ACTION("E — Ride back to the campaign", "portal_story", y=90)],
 }
 
 # Restrained supporting dressing. Landmarks and people carry the composition;
@@ -226,9 +240,9 @@ DISTRICT_SCENERY = {
     "craft":    {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
     "civic":    {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
     "approach": {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
-    "wild":     {"obstacles": ["tree_green", "rock", "bush"], "decor": ["grass", "flower", "pebble"], "count": 3, "decor_count": 3},
-    "choir":    {"obstacles": ["tombstone", "grave_cross", "pillar"], "decor": ["grave_crack", "web", "pebble"], "count": 2, "decor_count": 2},
-    "accord":   {"obstacles": ["garden_urns", "amphora"], "decor": ["grass", "flower"], "count": 1, "decor_count": 2},
+    "wild":     {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
+    "choir":    {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
+    "accord":   {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
     "cinder":   {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
     "outer":    {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
 }
@@ -296,14 +310,38 @@ room_ids = {room[0] for room in ROOMS}
 if not set(FURNISHINGS).issubset(room_ids):
     sys.exit("FURNISHINGS reference unknown room(s): %s" %
              sorted(set(FURNISHINGS) - room_ids))
-for (rid, landmark_index) in LANDMARK_USES:
-    if rid not in room_ids or landmark_index >= len(LANDMARKS.get(rid, [])):
-        sys.exit("LANDMARK_USES references unknown landmark: %s[%d]" %
-                 (rid, landmark_index))
+if not set(BACKDROPS).issubset(room_ids):
+    sys.exit("BACKDROPS reference unknown room(s): %s" %
+             sorted(set(BACKDROPS) - room_ids))
+for rid in BACKDROPS:
+    if "N" not in exits_for(*coord_of[rid]):
+        sys.exit("BACKDROP central arch has no north road: %s" % rid)
+landmark_keys = {
+    (rid, landmark_index)
+    for rid, landmarks in LANDMARKS.items()
+    for landmark_index in range(len(landmarks))
+}
+if set(LANDMARK_USES) != landmark_keys:
+    sys.exit("LANDMARK_USES coverage mismatch — missing=%s extra=%s" %
+             (sorted(landmark_keys - set(LANDMARK_USES)),
+              sorted(set(LANDMARK_USES) - landmark_keys)))
+for landmark_key, uses in LANDMARK_USES.items():
+    if not uses:
+        sys.exit("LANDMARK_USES has no affordance: %s" % (landmark_key,))
+    for use in uses:
+        use_type = use.get("type", "")
+        if use_type not in ["action", "inspect"]:
+            sys.exit("LANDMARK_USES has invalid type %r: %s" %
+                     (use_type, landmark_key))
+        if use_type == "action" and use.get("ref", "") not in HUB_ACTIONS:
+            sys.exit("LANDMARK_USES has unhandled action %r: %s" %
+                     (use.get("ref", ""), landmark_key))
+        if use_type == "inspect" and (not use.get("title") or not use.get("text")):
+            sys.exit("LANDMARK_USES inspect is incomplete: %s" % (landmark_key,))
 for district, scenery in DISTRICT_SCENERY.items():
     if "bench2" in scenery["obstacles"] or "garden_bench" in scenery["obstacles"]:
         sys.exit("legacy bench leaked into capital district %s" % district)
-if len(LANDMARK_USES) < 20 or sum(map(len, FURNISHINGS.values())) < 8:
+if len(LANDMARK_USES) != len(landmark_keys) or sum(map(len, FURNISHINGS.values())) < 8:
     sys.exit("capital polish coverage too low: landmark uses / furnishings")
 print("OK: %d rooms, unique coords, single connected component" % len(ROOMS))
 
@@ -353,11 +391,19 @@ def gd_zone(i, room):
     for landmark_index,(landmark_name,x,y,clearance) in enumerate(LANDMARKS.get(rid, [])):
         fields = ['"name": "%s"' % landmark_name, '"x": %d' % x, '"y": %d' % y,
                   '"clearance": %d' % clearance]
-        use = LANDMARK_USES.get((rid, landmark_index))
-        if use:
-            prompt,title,text,use_y = use
-            fields.extend(['"prompt": "%s"' % prompt, '"title": "%s"' % title,
-                           '"text": "%s"' % text, '"use_y": %d' % use_y])
+        use_lines = []
+        for use in LANDMARK_USES[(rid, landmark_index)]:
+            use_fields = ['"type": "%s"' % use["type"],
+                          '"prompt": "%s"' % use["prompt"],
+                          '"x": %d' % int(use.get("x", 0)),
+                          '"y": %d' % int(use.get("y", 80))]
+            if use["type"] == "action":
+                use_fields.append('"ref": "%s"' % use["ref"])
+            else:
+                use_fields.extend(['"title": "%s"' % use["title"],
+                                   '"text": "%s"' % use["text"]])
+            use_lines.append("{" + ", ".join(use_fields) + "}")
+        fields.append('"uses": [%s]' % ", ".join(use_lines))
         landmark_lines.append("{" + ", ".join(fields) + "}")
     lines.append('\t\t"landmarks": [%s],' % ", ".join(landmark_lines))
     furnishing_lines = [
@@ -365,6 +411,11 @@ def gd_zone(i, room):
         for item in FURNISHINGS.get(rid, [])
     ]
     lines.append('\t\t"furnishings": [%s],' % ", ".join(furnishing_lines))
+    backdrop_lines = [
+        '{"name": "%s", "x": %d, "y": %d, "w": %d}' % item
+        for item in BACKDROPS.get(rid, [])
+    ]
+    lines.append('\t\t"backdrops": [%s],' % ", ".join(backdrop_lines))
     if rid in MERCHANTS:
         mx,my = MERCHANTS[rid]
         lines.append('\t\t"merchant": [%d, %d],' % (mx, my))
@@ -424,6 +475,12 @@ used_convos = {ref for *_,ref,kind in (cast_item for *_,cast in ROOMS for cast_i
                if kind == P}
 used_actions = {ref for *_,ref,kind in (cast_item for *_,cast in ROOMS for cast_item in cast)
                 if kind in [A, H]}
+used_actions.update(
+    use["ref"]
+    for uses in LANDMARK_USES.values()
+    for use in uses
+    if use["type"] == "action"
+)
 if used_convos != set(CONVOS):
     sys.exit("CONVO COVERAGE MISMATCH — %s" % sorted(used_convos ^ set(CONVOS)))
 if not used_actions.issubset(HUB_ACTIONS):
@@ -433,7 +490,8 @@ for rid,*_,scale,cast in ROOMS:
         sys.exit("INVALID ROOM SCALE — %s: %.2f" % (rid, scale))
     if rid not in LANDMARKS:
         sys.exit("ROOM HAS NO LANDMARK — %s" % rid)
-    if not cast and rid not in MERCHANTS:
+    if not cast and rid not in MERCHANTS \
+            and not any(key[0] == rid for key in LANDMARK_USES):
         sys.exit("ROOM HAS NO INTERACTION — %s" % rid)
 print("OK: authored scale, landmark, interaction, convo, and action coverage")
 
@@ -504,7 +562,19 @@ static func selftest(_game: Node2D) -> String:
 \t\t\treturn "capital: zone %s has invalid room_scale %.2f" % [z.get("name","?"), room_scale]
 \t\tif z.get("landmarks", []).is_empty():
 \t\t\treturn "capital: zone %s has no authored landmark" % z.get("name", "?")
-\t\tif z.get("npcs", []).is_empty() and not z.has("merchant"):
+\t\tvar landmark_interaction := false
+\t\tfor landmark in z.get("landmarks", []):
+\t\t\tvar uses: Array = landmark.get("uses", [])
+\t\t\tif uses.is_empty():
+\t\t\t\treturn "capital: landmark %s has no direct interaction" % landmark.get("name", "?")
+\t\t\tlandmark_interaction = true
+\t\t\tfor use in uses:
+\t\t\t\tvar use_type := String(use.get("type", ""))
+\t\t\t\tif use_type not in ["action", "inspect"]:
+\t\t\t\t\treturn "capital: landmark %s has invalid interaction type" % landmark.get("name", "?")
+\t\t\t\tif use_type == "action" and String(use.get("ref", "")) not in known_actions:
+\t\t\t\t\treturn "capital: landmark action %s is not handled" % use.get("ref", "")
+\t\tif z.get("npcs", []).is_empty() and not z.has("merchant") and not landmark_interaction:
 \t\t\treturn "capital: zone %s has no interaction" % z.get("name", "?")
 \t\tvar c: Array = z.get("coord", [])
 \t\tvar key := "%d,%d" % [int(c[0]), int(c[1])]
