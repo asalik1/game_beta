@@ -1373,6 +1373,12 @@ const CAPITAL_BACKDROP_WIDTH_FALLBACK := 1200.0
 const CAPITAL_LANDMARK_USE_Y_FALLBACK := 80.0
 const CAPITAL_BACKDROP_Z := -4
 
+# NPC / station interaction reach (E key, touch Act button, tap-to-talk).
+# Capital stations park an attendant NPC beside their hotspot, so several
+# interactables can share one reach — the NEAREST candidate wins (game.gd).
+const INTERACT_RANGE := 80.0           # player must stand this close to interact
+const TAP_TALK_RADIUS := 90.0          # tap-to-talk: max tap distance from the target
+
 # -------------------------------------------------------- chapter results ---
 # The results card on every chapter clear (retention roadmap #1): run time,
 # deaths, elites, secrets, exploration -> one letter. TIME is deliberately

@@ -496,15 +496,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if ((event is InputEventScreenTouch and event.pressed) or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed)) and talk_cd <= 0.0:
 		var world: Vector2 = get_viewport().canvas_transform.affine_inverse() * event.position
+		# Overlapping interactables (see the E-key loop): among everything in
+		# interact reach, the entry nearest the TAP wins, so tapping the NPC
+		# standing on a station's hotspot talks to them instead of array order
+		# deciding.
+		var tap_entry: Dictionary = {}
+		var tap_d: float = Balance.TAP_TALK_RADIUS
 		for entry in interactables:
 			if not is_instance_valid(entry["node"]):
 				continue
 			var np: Vector2 = entry["node"].position
-			if player.global_position.distance_to(np) < 80.0 and world.distance_to(np) < 90.0:
-				talk_cd = 0.6
-				_face_interactable_to_player(entry)
-				entry["action"].call()
-				break
+			if player.global_position.distance_to(np) >= Balance.INTERACT_RANGE:
+				continue
+			var d: float = world.distance_to(np)
+			if d < tap_d:
+				tap_d = d
+				tap_entry = entry
+		if not tap_entry.is_empty():
+			talk_cd = 0.6
+			_face_interactable_to_player(tap_entry)
+			tap_entry["action"].call()
 
 
 ## NPC bodies turn toward the local player when spoken to. Directional bodies
@@ -732,18 +743,28 @@ func _process(delta: float) -> void:
 	var overlay_up: bool = hud.dialogue_active or hud.choices_active or menus.is_open()
 	if state == ST_PLAYING and not overlay_up:
 		player._poll_local_intents()
+		# Several interactables can share one interact reach (capital stations
+		# park an attendant NPC beside their hotspot: Sorrel vs. the Alembic,
+		# Fenna vs. the hearth). The NEAREST one wins — it alone shows a prompt
+		# and takes the E press — so stepping toward the one you want selects
+		# it instead of registration order deciding.
+		var near_entry: Dictionary = {}
+		var near_d: float = Balance.INTERACT_RANGE
 		for entry in interactables:
 			if not is_instance_valid(entry["node"]):
 				continue
-			var near: bool = player.global_position.distance_to(entry["node"].position) < 80.0
-			entry["prompt"].visible = near
-			if near:
-				interact_in_range = true  # the touch Act button appears only when this is true
-			if near and talk_cd <= 0.0 and player.intent_interact:
+			entry["prompt"].visible = false
+			var d: float = player.global_position.distance_to(entry["node"].position)
+			if d < near_d:
+				near_d = d
+				near_entry = entry
+		if not near_entry.is_empty():
+			near_entry["prompt"].visible = true
+			interact_in_range = true  # the touch Act button appears only when this is true
+			if talk_cd <= 0.0 and player.intent_interact:
 				talk_cd = 0.6
-				_face_interactable_to_player(entry)
-				entry["action"].call()
-				break
+				_face_interactable_to_player(near_entry)
+				near_entry["action"].call()
 		# MP-12 × touch: the Act button must ALSO appear beside a fallen ally —
 		# holding it IS the revive channel (player.gd _revive_channel_tick reads
 		# intent_interact), and a phone has no E key. Range mirrors the channel's
