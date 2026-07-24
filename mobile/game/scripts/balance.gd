@@ -1325,6 +1325,9 @@ const SMALL_ROOM_INSET := Vector2(420.0, 246.0)
 # (boss size may become a per-boss mechanic later). The band tops out at the
 # full grid cell, so rooms range (1-VAR)..1.0 of the cell, centred ~1-VAR/2.
 const ROOM_SIZE_VAR := 0.15   # max shrink from the full cell (each dimension)
+## Safety floor for authored hub-room scales. Content chooses the actual scale;
+## this only prevents malformed data collapsing a playable room.
+const AUTHORED_ROOM_SCALE_MIN := 0.5
 
 # Scenery density (anti-litter pass 2026-07-12): a room's props were reading
 # as clutter — the graveyard's 8-kind roster and the forests' big canopies

@@ -1,173 +1,183 @@
-"""Generate game/scripts/content/capital_hub.gd — the standalone 50-room
+"""Generate game/scripts/content/capital_hub.gd — the standalone 25-room
 Crownfall hub. Auto-derives exits from grid adjacency, verifies the graph is
 one connected component, and emits the GDScript content module (CHAPTER const
-+ per-NPC CONVOS). Plaza is room 0 at coord (0,0)."""
++ per-NPC CONVOS). Plaza is room 0 at coord (0,0).
+
+The layout is deliberately compact: a nine-room service heart, four distinct
+three-room faction wards, one northern overlook, and a three-room gate
+approach. Room scale is authored per zone so gathering spaces feel grand while
+private chambers and single-purpose services do not waste a full map cell."""
 import collections, sys
 
 ROOM_W, ROOM_H = 2112, 1248
 CX, CY = ROOM_W // 2, ROOM_H // 2  # 1056, 624
 
-# Each room: (id, Name, gx, gy, terrain, cast)
-# cast entry: (sprite, prompt, ref, kind)  kind: "convo" | "action" | "merchant"
+# Each room: (id, Name, gx, gy, terrain, room_scale, cast)
+# cast entry: (sprite, prompt, ref, kind)
+#   kind: "convo" | "action" | "hotspot"
 #   convo -> ref is a convo id (text supplied in CONVOS below)
 #   action -> ref is a hub action key handled by game._hub_action
-P = "convo"; A = "action"
+#   hotspot -> action with an invisible interaction node over landmark art
+P = "convo"; A = "action"; H = "hotspot"
+HUB_ACTIONS = {
+    "portal_story", "portal_crucible", "portal_depths",
+    "vault", "codex", "daily", "map", "mail", "journal", "records",
+    "guild", "skills", "gear",
+}
 ROOMS = [
-  # --- CORE (plaza is index 0) ---
-  ("plaza","Crown Plaza",0,0,"ph_market",[("factor_imre","E — A citizen of Crownfall","cap_citizen",P)]),
-  ("portal","The Portal Sanctum",0,-1,"ph_hall",[
+  # --- THE HEART: every everyday service is within one room of the plaza ---
+  ("plaza","Crown Plaza",0,0,"ph_market",1.00,[
+      ("factor_imre","E — Ask for directions","cap_citizen",P),
+      ("book","E — View the city map","map",H)]),
+  ("portal","Wayfinder Sanctum",0,-1,"ph_hall",0.82,[
       ("void_rift","◆ The Story Gate","portal_story",A),
       ("void_monolith","◆ The Crucible Gate","portal_crucible",A),
       ("void_obelisk","◆ The Depths Gate","portal_depths",A)]),
-  ("guild","The Chartered Hall",-1,-1,"ph_guildhall",[("clerk_voss","E — The Chartered Hall","cap_guild",P)]),
-  ("forge","The Ashfire Forge",1,-1,"ph_forge",[("smith_petra","E — Smith Petra","cap_petra",P)]),
-  ("alembic","The Alembic",-1,0,"ph_forge",[("apprentice_sorrel","E — Apprentice Sorrel","cap_sorrel",P)]),
-  ("kitchen","The Provisioner's Kitchen",1,0,"ph_kitchen",[("old_fenna","E — Old Fenna","cap_fenna",P)]),
-  ("tannery","The Tannery",-1,1,"ph_hideout",[("roadside_peddler","E — The tannery bench","cap_tannery",P)]),
-  ("verdant","The Verdant Tiers",0,1,"ph_fields",[("botanist_ferro","E — The gardener","cap_gardener",P)]),
-  ("arena","The Proving Gate",1,1,"ph_castle",[("warden_corin","E — The Proving Gate","cap_arena",P)]),
-  # --- CIVIC RING ---
-  ("vault","The King's Vault",-2,-1,"ph_castle",[("clerk_voss","E — The King's Vault","vault",A)]),
-  ("lapidary","The Lapidary",2,-1,"ph_library",[("archivist_lene","E — The Lapidary","cap_lapidary",P)]),
-  ("archive","The Grand Archive",-2,0,"ph_library",[("archivist_lene","E — The Grand Archive","codex",A)]),
-  ("market","Market Row",2,0,"ph_market",[]),  # merchant field below
-  ("echoes","The Hall of Echoes",-2,1,"ph_library",[("archivist_lene","E — The Hall of Echoes","cap_echoes",P)]),
-  ("alms","The Almswindow",2,1,"ph_market",[("clerk_voss","E — Claim the daily alms","daily",A)]),
-  ("tankard","The Ashen Tankard",0,2,"ph_hideout",[("peddler_nix","E — The Ashen Tankard","cap_tankard",P)]),
-  # --- APPROACH ---
-  ("causeway","The Causeway",0,3,"ph_market",[]),
-  ("gate","The Emberward Gate",0,4,"ph_castle",[("warden_corin","E — The Emberward Gate","cap_gate",P)]),
-  ("muster","Muster Square",-1,4,"ph_market",[("warden_sighne","E — Warden Sighne","cap_sighne",P)]),
-  ("toll","The Toll House",1,4,"ph_hideout",[("warden_palla","E — Toll-Warden Palla","cap_palla",P)]),
-  # --- WILDFANG ENCLAVE (NW) ---
-  ("wf_moot","Fangmoot Circle",-3,-1,"ph_fae",[]),
-  ("wf_callis","The Skinworks",-4,-1,"ph_hideout",[("callis","E — Warden Callis","cap_callis",P)]),
-  ("wf_ottar","Ottar's Fire",-3,-2,"ph_camp",[("skald_ottar","E — Skald Ottar","cap_ottar",P)]),
-  ("wf_warren","The Green Warren",-4,-2,"ph_fae",[("npc_hunter","E — The Old Hunter","cap_hunter",P)]),
-  ("wf_digger","Digger's Cut",-3,-3,"ph_dungeon",[("digger_haim","E — Old Digger Haim","cap_haim",P)]),
-  ("wf_trophy","The Trophy Walk",-4,-3,"ph_crypt",[]),
-  # --- CHOIR ENCLAVE (NE) ---
-  ("ch_vigil","The Vigil Yard",3,-1,"ph_crypt",[]),
-  ("ch_ilse","The Rot-Chapel",4,-1,"ph_crypt",[("cantor_ilse","E — Cantor Ilse","cap_ilse",P)]),
-  ("ch_vela","Deacon's Cell",3,-2,"ph_library",[("deacon_vela","E — Deacon Vela","cap_vela",P)]),
-  ("ch_waiting","The Waiting Halls",4,-2,"ph_crypt",[("brother_osk","E — Brother Osk","cap_osk",P)]),
-  ("ch_suli","Suli's Ward",3,-3,"ph_garden",[("suli","E — Gentle Suli","cap_suli",P)]),
-  ("ch_sexton","The Sexton's Gate",4,-3,"ph_crypt",[("sera","E — Widow Sera","cap_sera",P)]),
-  # --- ACCORD WARD (SW) ---
-  ("acc_commons","Accord Commons",-3,1,"ph_market",[]),
-  ("acc_maren","Maren's Longhouse",-4,1,"ph_hall",[("elder","E — Elder Maren","cap_maren",P)]),
-  ("acc_menders","The Menders' Row",-3,2,"ph_garden",[("herbalist_kesh","E — Herbalist Kesh","cap_kesh",P)]),
-  ("acc_tinker","Tinker's Yard",-4,2,"ph_hideout",[("tinker_osla","E — Tinker Osla","cap_osla",P)]),
-  ("acc_fisher","Fisher's Steps",-2,2,"ph_garden",[("fisher_dov","E — Fisher Dov","cap_dov",P)]),
-  ("acc_well","The Wellspring",-3,3,"ph_garden",[]),
-  # --- CINDERBORN WARD (SE) ---
-  ("cin_court","Cinder Court",3,1,"ph_castle",[]),
-  ("cin_aldric","The Sable Hall",4,1,"ph_castle",[("aldric","E — Ser Aldric","cap_aldric",P)]),
-  ("cin_envoy","Envoy's Rest",3,2,"ph_library",[("vessa","E — Envoy Vessa","cap_vessa",P)]),
-  ("cin_foundry","The Foundry Office",4,2,"ph_forge",[("overseer_brann","E — Overseer Brann","cap_brann",P)]),
-  ("cin_keeper","The Keeper's Study",3,0,"ph_library",[("keeper_vasse","E — Retired Keeper Vasse","cap_vasse",P)]),
-  ("cin_muster","The Muster Yard",4,0,"ph_castle",[("commander_ashe","E — Warden-Commander Ashe","cap_ashe",P)]),
-  # --- OUTER RING ---
-  ("ramp_n","North Rampart",0,-2,"ph_castle",[]),
-  ("ramp_w","West Rampart",-5,-1,"ph_castle",[]),
-  ("ramp_e","East Rampart",5,-1,"ph_castle",[]),
-  ("undercroft","The Undercroft",1,2,"ph_sewer",[]),
-  ("stables","The Stables",2,4,"ph_camp",[]),
-  ("physic","The Physic Garden",-3,0,"ph_garden",[]),
+  # One gear destination: forge, gemcraft, and stash share an artisans' court.
+  ("artisans","Artisans' Court",-1,-1,"ph_castle",0.88,[
+      ("smith_petra","E — Smith Petra","cap_petra",P),
+      ("archivist_lene","E — Master Lapidary","cap_lapidary",P),
+      ("chest_gold","E — Open your vault","vault",A),
+      ("settings","E — Manage your gear","gear",H)]),
+  ("archive","The Grand Archive",1,-1,"ph_library",0.76,[
+      ("book","E — Browse the Codex","codex",H),
+      ("book","E — Read your journal","journal",H),
+      ("book","E — Review your records","records",H)]),
+  ("guild","The Chartered Hall",-1,0,"ph_guildhall",0.68,[
+      ("clerk_voss","E — Open Play Together","guild",A)]),
+  ("market","Crown Bazaar",1,0,"ph_market",0.92,[
+      ("clerk_voss","E — Claim the daily alms","daily",A),
+      ("mail","E — Check your mailbox","mail",H)]),  # merchant field below
+  # Cooking and alchemy belong together: both consume the garden's harvest.
+  ("hearth","The Hearthworks",-1,1,"ph_kitchen",0.78,[
+      ("old_fenna","E — Old Fenna","cap_fenna",P),
+      ("apprentice_sorrel","E — Apprentice Sorrel","cap_sorrel",P)]),
+  ("tankard","The Ashen Tankard",0,1,"ph_kitchen",0.72,[
+      ("peddler_nix","E — Tavern Keeper Nix","cap_tankard",P)]),
+  ("proving","The Proving Grounds",1,1,"ph_castle",0.90,[
+      ("warden_corin","E — Proving Marshal Corin","cap_arena",P),
+      ("skills","E — Open your skill tree","skills",H)]),
+
+  # --- NORTHERN OVERLOOK: a destination, not three duplicate ramparts ---
+  ("rampart","Crownwatch Rampart",0,-2,"ph_castle",0.68,[
+      ("warden_palla","E — Toll-Warden Palla","cap_palla",P)]),
+
+  # --- WILDFANG ENCLAVE (NW): public moot, living green, old-city descent ---
+  ("wf_moot","Fangmoot Circle",-2,-1,"ph_camp",0.82,[
+      ("callis","E — Warden Callis","cap_callis",P),
+      ("skald_ottar","E — Skald Ottar","cap_ottar",P)]),
+  ("wf_warren","The Green Warren",-3,-1,"ph_fae",0.68,[
+      ("npc_hunter","E — The Old Hunter","cap_hunter",P)]),
+  ("wf_digger","Digger's Cut",-2,-2,"ph_dungeon",0.62,[
+      ("digger_haim","E — Old Digger Haim","cap_haim",P)]),
+
+  # --- CHOIR ENCLAVE (NE): faith, remembrance, and a warm infirmary ---
+  ("ch_chapel","The Rot-Chapel",2,-1,"ph_crypt",0.82,[
+      ("cantor_ilse","E — Cantor Ilse","cap_ilse",P),
+      ("deacon_vela","E — Deacon Vela","cap_vela",P)]),
+  ("ch_waiting","The Waiting Hall",3,-1,"ph_crypt",0.62,[
+      ("brother_osk","E — Brother Osk","cap_osk",P),
+      ("sera","E — Widow Sera","cap_sera",P)]),
+  ("ch_suli","Suli's Hospice",2,-2,"ph_garden",0.68,[
+      ("suli","E — Gentle Suli","cap_suli",P)]),
+
+  # --- ACCORD WARD (SW): civic hearth, medicine, and shared water ---
+  ("acc_commons","Accord Commons",-2,1,"ph_hall",0.82,[
+      ("elder","E — Elder Maren","cap_maren",P),
+      ("tinker_osla","E — Tinker Osla","cap_osla",P)]),
+  ("acc_menders","The Menders' Row",-3,1,"ph_garden",0.68,[
+      ("herbalist_kesh","E — Herbalist Kesh","cap_kesh",P)]),
+  ("acc_well","The Wellspring",-2,2,"ph_garden",0.68,[
+      ("fisher_dov","E — Fisher Dov","cap_dov",P)]),
+
+  # --- CINDERBORN WARD (SE): court, industry, and disciplined memory ---
+  ("cin_court","The Sable Court",2,1,"ph_castle",0.82,[
+      ("aldric","E — Ser Aldric","cap_aldric",P),
+      ("vessa","E — Envoy Vessa","cap_vessa",P)]),
+  ("cin_foundry","Compact Foundry",3,1,"ph_castle",0.68,[
+      ("overseer_brann","E — Overseer Brann","cap_brann",P)]),
+  ("cin_bastion","The Keeper's Bastion",2,2,"ph_library",0.72,[
+      ("keeper_vasse","E — Retired Keeper Vasse","cap_vasse",P),
+      ("commander_ashe","E — Commander Ashe","cap_ashe",P)]),
+
+  # --- SOUTHERN APPROACH: processional road, gate, compact stable yard ---
+  ("causeway","Crown Causeway",0,2,"ph_market",0.76,[
+      ("warden_sighne","E — Warden Sighne","cap_sighne",P)]),
+  ("gate","The Emberward Gate",0,3,"ph_castle",0.90,[
+      ("warden_corin","E — Gate Sergeant Corin","cap_gate",P)]),
+  ("stables","Emberward Stables",1,3,"ph_camp",0.62,[
+      ("warden_palla","E — Ask about the road","cap_stables",P)]),
 ]
 
 # merchant rooms (existing shop system): id -> [x,y]
 MERCHANTS = {"market": [CX, 560]}
 
-# Exact room-local landmark placement. Crownfall used to inherit the ph_*
-# showcase terrains wholesale, so every visit shuffled giant rugs, furniture,
-# and tiny 16px props into a new pile. These anchors give each service and ward
-# a stable visual identity; minor scenery remains sparse and district-specific.
+# Exact room-local landmark placement. The landmark, NPCs, and at most a few
+# supporting props form a composed scene; capital rooms never inherit the
+# terrain showcase's shuffled buildings/structures.
 # tuple: (structure id, x, y, clearance radius)
 LANDMARKS = {
-    "plaza": [("capital_crown_fountain", 650, 610, 260)],
+    "plaza": [
+        ("capital_crown_fountain", 1056, 600, 300),
+        ("notice_board", 1056, 850, 110),
+    ],
     "portal": [
         ("capital_portal_story", 560, 560, 150),
         ("capital_portal_crucible", 1056, 560, 160),
         ("capital_portal_depths", 1552, 560, 145)],
-    "guild": [("capital_chartered_hall", 650, 600, 245)],
-    "forge": [("capital_ashfire_forge", 650, 600, 260)],
-    "alembic": [("brew_stand", 650, 560, 170)],
-    "kitchen": [("great_hearth", 650, 560, 155), ("cook_hearth", 1460, 560, 165)],
-    "tannery": [("capital_market_stall", 650, 600, 220)],
-    "verdant": [("capital_wellspring", 650, 600, 240)],
-    "arena": [("capital_proving_gate", 1056, 560, 260)],
-    "vault": [("capital_chartered_hall", 650, 600, 245)],
-    "lapidary": [("capital_grand_archive", 650, 600, 245)],
-    "archive": [("capital_grand_archive", 650, 600, 245)],
+    "artisans": [("capital_ashfire_forge", 610, 585, 270),
+                  ("capital_grand_archive", 1500, 585, 235)],
+    "archive": [("capital_grand_archive", 1056, 585, 285)],
+    "guild": [("capital_chartered_hall", 1056, 590, 285)],
     "market": [("capital_market_stall", 620, 600, 215),
                ("capital_market_stall", 1492, 600, 215)],
-    "echoes": [("capital_grand_archive", 650, 600, 245)],
-    "alms": [("capital_chartered_hall", 650, 600, 245)],
-    "tankard": [("capital_ashen_tankard", 650, 600, 260)],
+    "hearth": [("great_hearth", 620, 560, 175),
+               ("brew_stand", 1492, 560, 175)],
+    "tankard": [("capital_ashen_tankard", 1056, 590, 285)],
+    "proving": [("capital_proving_gate", 1056, 560, 290)],
+    "rampart": [("capital_watchtower", 1056, 560, 235)],
+    "wf_moot": [("capital_wildfang_fangmoot", 1056, 570, 285)],
+    "wf_warren": [("capital_accord_longhouse", 1056, 590, 300)],
+    "wf_digger": [("capital_undercroft", 1056, 580, 270)],
+    "ch_chapel": [("capital_rot_chapel", 1056, 590, 290)],
+    "ch_waiting": [("capital_undercroft", 1056, 590, 260)],
+    "ch_suli": [("capital_wellspring", 1056, 590, 265)],
+    "acc_commons": [("capital_accord_longhouse", 1056, 590, 315)],
+    "acc_menders": [("capital_wellspring", 1056, 590, 260)],
+    "acc_well": [("capital_wellspring", 1056, 590, 280)],
+    "cin_court": [("capital_sable_hall", 1056, 590, 315)],
+    "cin_foundry": [("capital_ashfire_forge", 1056, 590, 285)],
+    "cin_bastion": [("capital_grand_archive", 1056, 590, 285)],
     "causeway": [("capital_watchtower", 580, 560, 180),
                  ("capital_watchtower", 1532, 560, 180)],
     "gate": [("capital_emberward_gate", 1056, 560, 280)],
-    "muster": [("capital_proving_gate", 1056, 560, 260)],
-    "toll": [("capital_chartered_hall", 650, 600, 245)],
-    "wf_moot": [("capital_wildfang_fangmoot", 1056, 570, 250)],
-    "wf_callis": [("capital_market_stall", 650, 600, 220)],
-    "wf_ottar": [("capital_wildfang_fangmoot", 650, 600, 245)],
-    "wf_warren": [("capital_accord_longhouse", 650, 600, 285)],
-    "wf_digger": [("capital_undercroft", 650, 600, 245)],
-    "wf_trophy": [("capital_wildfang_fangmoot", 1056, 570, 250)],
-    "ch_vigil": [("capital_rot_chapel", 650, 600, 260)],
-    "ch_ilse": [("capital_rot_chapel", 650, 600, 260)],
-    "ch_vela": [("capital_rot_chapel", 650, 600, 260)],
-    "ch_waiting": [("capital_rot_chapel", 650, 600, 260)],
-    "ch_suli": [("capital_wellspring", 650, 600, 240)],
-    "ch_sexton": [("capital_undercroft", 650, 600, 245)],
-    "acc_commons": [("capital_accord_longhouse", 650, 600, 285)],
-    "acc_maren": [("capital_accord_longhouse", 650, 600, 285)],
-    "acc_menders": [("capital_wellspring", 650, 600, 240)],
-    "acc_tinker": [("capital_market_stall", 650, 600, 220)],
-    "acc_fisher": [("capital_wellspring", 650, 600, 240)],
-    "acc_well": [("capital_wellspring", 1056, 590, 250)],
-    "cin_court": [("capital_sable_hall", 650, 600, 290)],
-    "cin_aldric": [("capital_sable_hall", 650, 600, 290)],
-    "cin_envoy": [("capital_chartered_hall", 650, 600, 245)],
-    "cin_foundry": [("capital_ashfire_forge", 650, 600, 260)],
-    "cin_keeper": [("capital_grand_archive", 650, 600, 245)],
-    "cin_muster": [("capital_proving_gate", 1056, 560, 260)],
-    "ramp_n": [("capital_watchtower", 1056, 560, 190)],
-    "ramp_w": [("capital_watchtower", 1056, 560, 190)],
-    "ramp_e": [("capital_watchtower", 1056, 560, 190)],
-    "undercroft": [("capital_undercroft", 1056, 580, 255)],
-    "stables": [("capital_stables", 650, 600, 285)],
-    "physic": [("capital_wellspring", 650, 600, 240)],
+    "stables": [("capital_stables", 1056, 590, 315)],
 }
 
-# Sparse supporting dressing. The hero and landmark carry the room; these are
-# texture, never the composition. Every capital zone emits empty `structures`
-# and `accents` arrays so none of the old showcase set leaks back in.
+# Restrained supporting dressing. Landmarks and people carry the composition;
+# these props only reinforce district material language. Counts are deliberately
+# below combat-terrain density and scale again with the authored room footprint.
 DISTRICT_SCENERY = {
-    "heart":    {"obstacles": ["bench2", "amphora"], "decor": ["pebble", "banner_red"], "count": 2, "decor_count": 3},
-    "craft":    {"obstacles": ["bench2", "amphora", "station_anvil_t1"], "decor": ["pebble", "candle"], "count": 3, "decor_count": 4},
-    "civic":    {"obstacles": ["bench2", "amphora", "library_desk"], "decor": ["pebble", "candle"], "count": 3, "decor_count": 4},
-    "approach": {"obstacles": ["barrel", "crate", "pillar"], "decor": ["pebble", "banner_red"], "count": 3, "decor_count": 3},
-    "wild":     {"obstacles": ["tree_green", "rock", "bush"], "decor": ["grass", "flower", "pebble"], "count": 4, "decor_count": 5},
-    "choir":    {"obstacles": ["tombstone", "grave_cross", "pillar"], "decor": ["grave_crack", "web", "pebble"], "count": 3, "decor_count": 4},
-    "accord":   {"obstacles": ["garden_bench", "garden_urns", "amphora"], "decor": ["grass", "flower", "pebble"], "count": 3, "decor_count": 5},
-    "cinder":   {"obstacles": ["pillar", "castle_bust", "bench2"], "decor": ["candle", "pebble", "banner_red"], "count": 3, "decor_count": 4},
-    "outer":    {"obstacles": ["barrel", "crate", "pillar"], "decor": ["pebble", "crack"], "count": 3, "decor_count": 3},
+    "heart":    {"obstacles": ["bench2", "amphora"], "decor": ["pebble", "banner_red"], "count": 2, "decor_count": 2},
+    "craft":    {"obstacles": ["bench2", "amphora", "station_anvil_t1"], "decor": ["pebble", "candle"], "count": 2, "decor_count": 2},
+    "civic":    {"obstacles": ["bench2", "amphora", "library_desk"], "decor": ["pebble", "candle"], "count": 2, "decor_count": 2},
+    "approach": {"obstacles": ["hideout_barrel", "hideout_kegs", "pillar"], "decor": ["pebble", "banner_red"], "count": 2, "decor_count": 2},
+    "wild":     {"obstacles": ["tree_green", "rock", "bush"], "decor": ["grass", "flower", "pebble"], "count": 3, "decor_count": 3},
+    "choir":    {"obstacles": ["tombstone", "grave_cross", "pillar"], "decor": ["grave_crack", "web", "pebble"], "count": 2, "decor_count": 2},
+    "accord":   {"obstacles": ["garden_bench", "garden_urns", "amphora"], "decor": ["grass", "flower", "pebble"], "count": 2, "decor_count": 3},
+    "cinder":   {"obstacles": ["pillar", "castle_bust", "bench2"], "decor": ["candle", "pebble", "banner_red"], "count": 2, "decor_count": 2},
+    "outer":    {"obstacles": ["hideout_barrel", "hideout_kegs", "pillar"], "decor": ["pebble", "crack"], "count": 2, "decor_count": 2},
 }
 
 # District per room (colours the in-game capital map). Derived by id prefix +
 # explicit for the core/civic/approach rooms.
 _DISTRICT_EXPLICIT = {
     "plaza": "heart",
-    "portal": "craft", "guild": "craft", "forge": "craft", "alembic": "craft",
-    "kitchen": "craft", "tannery": "craft", "verdant": "craft", "arena": "craft",
-    "vault": "civic", "lapidary": "civic", "archive": "civic", "market": "civic",
-    "echoes": "civic", "alms": "civic", "tankard": "civic",
-    "causeway": "approach", "gate": "approach", "muster": "approach", "toll": "approach",
-    "ramp_n": "outer", "ramp_w": "outer", "ramp_e": "outer",
-    "undercroft": "outer", "stables": "outer", "physic": "outer",
+    "portal": "civic", "artisans": "craft", "hearth": "craft",
+    "guild": "civic", "archive": "civic", "market": "civic",
+    "tankard": "civic", "proving": "civic",
+    "causeway": "approach", "gate": "approach", "stables": "approach",
+    "rampart": "outer",
 }
 def district_of(rid):
     if rid in _DISTRICT_EXPLICIT: return _DISTRICT_EXPLICIT[rid]
@@ -178,8 +188,8 @@ def district_of(rid):
     return "civic"
 
 # Map marks: spawn star, portal diamond, quest-giver dot.
-_QUESTGIVERS = {"acc_maren","acc_menders","cin_aldric","cin_envoy",
-                "wf_callis","wf_ottar","ch_ilse","ch_vela"}
+_QUESTGIVERS = {"acc_commons","acc_menders","cin_court",
+                "wf_moot","ch_chapel"}
 def mark_of(rid):
     if rid == "plaza":  return "★"   # star
     if rid == "portal": return "◆"   # diamond
@@ -189,7 +199,7 @@ def mark_of(rid):
 # ---------- verify: unique coords, connected graph ----------
 coord_of = {}
 by_coord = {}
-for i,(rid,name,gx,gy,terr,cast) in enumerate(ROOMS):
+for i,(rid,name,gx,gy,terr,room_scale,cast) in enumerate(ROOMS):
     if (gx,gy) in by_coord:
         sys.exit("COORD COLLISION at (%d,%d): %s and %s" % (gx,gy,by_coord[(gx,gy)],rid))
     by_coord[(gx,gy)] = rid
@@ -221,24 +231,39 @@ if len(seen) != len(ROOMS):
 print("OK: %d rooms, unique coords, single connected component" % len(ROOMS))
 
 # ---------- emit GDScript ----------
-# NPC local placement: distribute cast around room center
-SLOTS = [(CX, CY-70), (CX-360, CY+90), (CX+360, CY+90), (CX-560, CY-140),
+# NPC local placement: the default station is in front of a centred landmark,
+# not directly on top of its facade.
+SLOTS = [(CX, CY+190), (CX-360, CY+90), (CX+360, CY+90), (CX-560, CY-140),
          (CX+560, CY-140), (CX, CY+220)]
 PORTAL_SLOTS = [(CX-480, CY-30), (CX, CY-90), (CX+480, CY-30)]
 NPC_SLOT_OVERRIDES = {
     # Keep the first citizen off the fountain silhouette; the portal action
     # cores sit directly in front of their three authored arches.
-    "plaza": [(1400, 650)],
+    "plaza": [(1400, 650), (1056, 850)],
     "portal": [(560, 590), (1056, 570), (1552, 590)],
+    "market": [(720, 790), (1390, 790)],
+    "archive": [(620, 760), (1056, 760), (1492, 760)],
+    # Two-sided workshops and hearths read as a shared court, not a queue.
+    "artisans": [(660, 690), (1450, 690), (1056, 800), (610, 520)],
+    "hearth": [(650, 650), (1460, 650)],
+    "proving": [(1056, 800), (1056, 535)],
+    # Faction public rooms keep their two principals flanking the landmark.
+    "wf_moot": [(720, 650), (1390, 650)],
+    "ch_chapel": [(720, 650), (1390, 650)],
+    "acc_commons": [(720, 650), (1390, 650)],
+    "cin_court": [(720, 650), (1390, 650)],
+    "cin_bastion": [(720, 650), (1390, 650)],
+    "ch_waiting": [(720, 650), (1390, 650)],
 }
 
 def gd_zone(i, room):
-    rid,name,gx,gy,terr,cast = room
+    rid,name,gx,gy,terr,room_scale,cast = room
     ex = exits_for(gx,gy)
     exs = ", ".join('"%s"' % d for d in ex)
     lines = []
     lines.append('\t{"name": "%s", "terrain": "%s", "type": "safe",' % (name, terr))
-    lines.append('\t\t"coord": [%d, %d], "exits": [%s], "enemies": [], "boss": "",' % (gx, gy, exs))
+    lines.append('\t\t"coord": [%d, %d], "room_scale": %.2f, "exits": [%s], "enemies": [], "boss": "",' %
+                 (gx, gy, room_scale, exs))
     lines.append('\t\t"district": "%s", "mark": "%s",' % (district_of(rid), mark_of(rid)))
     scenery = DISTRICT_SCENERY[district_of(rid)]
     obstacle_names = ", ".join('"%s"' % value for value in scenery["obstacles"])
@@ -261,8 +286,8 @@ def gd_zone(i, room):
         slots = NPC_SLOT_OVERRIDES.get(rid, PORTAL_SLOTS if is_portal else SLOTS)
         for j,(spr,prompt,ref,kind) in enumerate(cast):
             x,y = slots[j % len(slots)]
-            if kind == A:
-                hidden = ', "hidden": true' if rid == "portal" else ''
+            if kind in [A, H]:
+                hidden = ', "hidden": true' if rid == "portal" or kind == H else ''
                 npc_lines.append('\t\t\t{"sprite": "%s", "x": %d, "y": %d, "prompt": "%s", "action": "%s"%s}'
                                  % (spr, x, y, prompt, ref, hidden))
             else:
@@ -275,20 +300,17 @@ def gd_zone(i, room):
 
 # ---------- CONVOS: one short node per named NPC ----------
 CONVOS = {
- "cap_citizen": ("A Citizen", "New in Crownfall? Spawn's the fountain, portals are up top, and everything you need to make is a door away. Mind the Choir."),
- "cap_guild": ("Guild Steward", "The Chartered Hall — charter a company, join one, sign on for guild work. The charters aren't drawn up yet, but the benches are warm. Soon."),
- "cap_petra": ("Smith Petra", "Crew Five ran the old royal foundry; now I run this fire. Everything with an edge comes through me — forge it new, or reforge what you've got: reroll a substat, re-cut an affix, right here at the anvil. Recipes pending; the reforge bench is already warm. Bring ore and patience."),
+ "cap_citizen": ("A Citizen", "First visit? The Wayfinder gates are north. Your vault, forge, and lapidary share the northwest court; Codex east, bazaar southeast. The four faction wards begin at the corners. Meet your company back here when you're done."),
+ "cap_petra": ("Smith Petra", "One court for one kit: blades and armour at my forge, stones at the lapidary opposite, personal vault between us. No more marching across Crownfall because one buckle and one gemstone answer to different roofs."),
  "cap_sorrel": ("Apprentice Sorrel", "Herbalist Kesh lets me mind the Alembic when she's at the Menders' Row. Don't touch the green one. ...You touched the green one."),
- "cap_fenna": ("Old Fenna", "The Kitchen's mine. Grill sizzles, pan smokes, hearth never dies. Cook a thing worth eating and I'll teach you two more. Recipes pending, love."),
- "cap_tannery": ("Tanner", "Cured hides, honest stitching — this is where bags get made and made bigger. The trade's not open yet. Leave your measurements."),
- "cap_gardener": ("Gardener", "The Verdant Tiers feed the Kitchen and the Alembic both. Sow, wait, harvest. Nothing's growing on a schedule yet — but the beds are turned."),
- "cap_arena": ("Proving Marshal", "The Proving Gate. Sign your name and wait for the sand. No queue running today — the arena's a promise, not a pit. Yet."),
- "cap_lapidary": ("The Lapidary", "Gems and enchantment, not gearwork — take the anvil up the row for that. Here we cut and socket stones, synthesize the small ones into something worth setting, and bind the glow into a piece. Bring me raw stones and a steady hand."),
- "cap_echoes": ("Hall Warden", "Every deed you've done is filed here — bests, records, the fanfare wall. Skald Ottar sets the good ones to a verse, when he's not at his fire."),
+ "cap_fenna": ("Old Fenna", "Kitchen on this side, Alembic on that. Kesh's herbs become supper or medicine without crossing the square. Sit by the hearth if you're waiting on friends; someone always knows who just came through a gate."),
+ "cap_arena": ("Proving Marshal Corin", "Crownfall's companies drill here before they take the northern gates. For live trials, use the Crucible arch in the Wayfinder Sanctum. For bragging, use the rail — everyone in the plaza can hear you from there."),
+ "cap_lapidary": ("Master Lapidary", "Petra handles metal; I handle what lives inside it. Raw stones, synthesis, sockets, enchantment — all in this half of the court. Your vault chest is between our benches so nothing needs carrying through the streets."),
  "cap_tankard": ("Tavern Keeper", "The Ashen Tankard — warmth, rumour, a fire that behaves. The whole city drifts through after dark. First cup's on the house for a shard-bearer."),
  "cap_gate": ("Gate Sergeant", "The Emberward Gate. Portcullis stays up in peacetime; the wild stays out on its honour. You came in clean — most do."),
- "cap_sighne": ("Warden Sighne", "Muster Square. I mark who comes and goes. You go a lot, by the look of that gear. Safe roads, shard-bearer."),
+ "cap_sighne": ("Warden Sighne", "This causeway is the city's spine: gate south, plaza north, Tankard to the west and Proving Grounds east. I mark who comes and goes. You go a lot, by the look of that gear."),
  "cap_palla": ("Toll-Warden Palla", "Stamps, seals, the gate ledger. No toll for the crowned and shard-touched — the city's glad enough you came back breathing."),
+ "cap_stables": ("Stable Warden Palla", "Mounts, messengers, and caravan tack stay in this little yard beside the gate — close to the road and out of the plaza. If you're leaving on foot, take the centre causeway and keep the watchfires to your right."),
  "cap_callis": ("Warden Callis", "The tribes hold this enclave by truce, not welcome. Honest work, then: survey what the Waking's made of the east, and bring us word. Daily, if you're able."),
  "cap_ottar": ("Skald Ottar", "A fire that never dies and a skald who never stops. Go do a thing worth singing — I'll trade you the doing for the song. Come back with a story."),
  "cap_hunter": ("The Old Hunter", "This green's transplanted wildwood — the city lets us keep a scrap of the world we came from. Sit. Watch the treeline. It watches back."),
@@ -306,8 +328,26 @@ CONVOS = {
  "cap_vessa": ("Envoy Vessa", "Work with us and be paid, protected, and remembered. I've a commission most days — a courier run, a quiet errand, imperial paper with teeth. First one's waiting."),
  "cap_brann": ("Overseer Brann", "Here's the honest ledger: the Compact reopened these foundries, best ore two years running. The Forge upstairs eats what we dig. Good trade, if you can haul."),
  "cap_vasse": ("Retired Keeper Vasse", "Pre-Vargoth history, all of it — the Cinderborn's whole claim, written in old ink. A crown is a thing that can be re-forged, if you read the right page. I guard the page."),
- "cap_ashe": ("Warden-Commander Ashe", "The Muster Yard. I drill those who'll hold a line for the idea of a king — old-regime steel, still marching. Fall in or pass through; either's fine, shard-bearer."),
+ "cap_ashe": ("Warden-Commander Ashe", "This bastion keeps both the old rolls and the soldiers who still answer them. Vasse guards the memory; I drill the line. Read if you came for history. Fall in if you came to make it."),
 }
+
+# ---------- content integrity before write ----------
+used_convos = {ref for *_,ref,kind in (cast_item for *_,cast in ROOMS for cast_item in cast)
+               if kind == P}
+used_actions = {ref for *_,ref,kind in (cast_item for *_,cast in ROOMS for cast_item in cast)
+                if kind in [A, H]}
+if used_convos != set(CONVOS):
+    sys.exit("CONVO COVERAGE MISMATCH — %s" % sorted(used_convos ^ set(CONVOS)))
+if not used_actions.issubset(HUB_ACTIONS):
+    sys.exit("UNHANDLED HUB ACTIONS — %s" % sorted(used_actions - HUB_ACTIONS))
+for rid,*_,scale,cast in ROOMS:
+    if not 0.55 <= scale <= 1.0:
+        sys.exit("INVALID ROOM SCALE — %s: %.2f" % (rid, scale))
+    if rid not in LANDMARKS:
+        sys.exit("ROOM HAS NO LANDMARK — %s" % rid)
+    if not cast and rid not in MERCHANTS:
+        sys.exit("ROOM HAS NO INTERACTION — %s" % rid)
+print("OK: authored scale, landmark, interaction, convo, and action coverage")
 
 # ---------- write the file ----------
 zones = "\n".join(gd_zone(i, r) for i, r in enumerate(ROOMS))
@@ -318,18 +358,20 @@ for cid,(who,text) in CONVOS.items():
 convos = "\n".join(convo_lines)
 
 OUT = r"C:/Users/asali/Projects/MMO/game/scripts/content/capital_hub.gd"
-header = '''## capital_hub — Crownfall, the spawn-hub capital (2026-07-19). A STANDALONE
-## 50-room fixed-layout world (see CROWNFALL_HUB.html): the guild/craft/portal
-## core, the four faction wards, and the civic + outer rings. Dev-only for now —
+header = '''## capital_hub — Crownfall, the spawn-hub capital (2026-07-24). A STANDALONE
+## 25-room authored city: a dense service heart, four compact faction wards,
+## one northern overlook, and the southern gate approach. Dev-only for now —
 ## reached via the dev panel "Go To Capital" button (Story.chapter("capital")
 ## resolves this CHAPTER; game_world.switch_chapter allows it as a standalone).
 ##
 ## Fixed layout: every zone carries an authored "coord" + "exits", so
-## game_world._prepare_rooms lays them out verbatim (no seeded spine). All zones
-## are "safe" (no packs). Ground/props come from each room's ph_* terrain (the
-## environment-seam showcase terrains). NPCs use the ch2-hub data pattern; three
-## portal props carry an "action" (handled by game._hub_action) that leaves for
-## Story / Crucible / Depths, and a few civic desks open existing menus.
+## game_world._prepare_rooms lays them out verbatim (no seeded spine). Authored
+## room_scale makes social halls grand and single-purpose chambers intimate.
+## All zones are "safe" (no packs). Exact landmarks and restrained district
+## scenery replace inherited terrain scatter. NPCs use the ch2-hub data pattern;
+## portal props leave for Story / Crucible / Depths, and civic interactables
+## open the existing shop, gear, skills, social, mail, journal, records, vault,
+## Codex, map, and daily-service screens.
 ## GENERATED by tools/content/gen_capital.py — edit the generator, not this file.
 class_name CapitalHub
 
@@ -338,7 +380,7 @@ class_name CapitalHub
 # never sees it — exactly like the endgame arenas.
 const CHAPTER := {
 \t"name": "Crownfall",
-\t"sub": "The capital hub — guild, crafts, portals, and the four wards",
+\t"sub": "A gathering city — services at the heart, four wards at the corners",
 \t"standalone": true,
 \t"loot_cap": "C",
 \t"start_quest": "",
@@ -356,18 +398,26 @@ const CONVOS := {
 }
 
 
-## Merge + integrity selftest: the world resolves, every zone is safe with a
-## valid terrain, every NPC convo/action is wired, the graph is connected.
+## Merge + integrity selftest: the world resolves, every zone is safe, scaled,
+## furnished around a landmark, and has an interaction; NPC refs are wired.
 static func selftest(_game: Node2D) -> String:
 \tvar ch: Dictionary = Story.chapter("capital")
 \tif ch.get("zones", []).size() != @NZONES@:
 \t\treturn "capital: expected @NZONES@ zones, got %d" % ch.get("zones", []).size()
 \tvar coords := {}
+\tvar known_actions := [@ACTIONS@]
 \tfor z in ch["zones"]:
 \t\tif z.get("type", "") != "safe":
 \t\t\treturn "capital: zone %s is not safe" % z.get("name", "?")
 \t\tif not Terrains.DATA.has(String(z.get("terrain", ""))):
 \t\t\treturn "capital: zone %s has unknown terrain %s" % [z.get("name","?"), z.get("terrain","")]
+\t\tvar room_scale: float = float(z.get("room_scale", 1.0))
+\t\tif room_scale < 0.55 or room_scale > 1.0:
+\t\t\treturn "capital: zone %s has invalid room_scale %.2f" % [z.get("name","?"), room_scale]
+\t\tif z.get("landmarks", []).is_empty():
+\t\t\treturn "capital: zone %s has no authored landmark" % z.get("name", "?")
+\t\tif z.get("npcs", []).is_empty() and not z.has("merchant"):
+\t\t\treturn "capital: zone %s has no interaction" % z.get("name", "?")
 \t\tvar c: Array = z.get("coord", [])
 \t\tvar key := "%d,%d" % [int(c[0]), int(c[1])]
 \t\tif coords.has(key):
@@ -376,6 +426,8 @@ static func selftest(_game: Node2D) -> String:
 \t\tfor npc in z.get("npcs", []):
 \t\t\tif npc.has("convo") and not Story.ALL_CONVOS.has(String(npc["convo"])):
 \t\t\t\treturn "capital: NPC convo %s not registered" % npc["convo"]
+\t\t\tif npc.has("action") and String(npc["action"]) not in known_actions:
+\t\t\t\treturn "capital: NPC action %s is not handled" % npc["action"]
 \t\t\tif Art.tex(String(npc["sprite"])) == null:
 \t\t\t\treturn "capital: NPC sprite %s missing" % npc["sprite"]
 \treturn ""
@@ -383,7 +435,8 @@ static func selftest(_game: Node2D) -> String:
 
 body = (header.replace("@START_X@", str(CX)).replace("@START_Y@", str(CY))
         .replace("@ZONES@", zones).replace("@CONVOS@", convos)
-        .replace("@NZONES@", str(len(ROOMS))))
+        .replace("@NZONES@", str(len(ROOMS)))
+        .replace("@ACTIONS@", ", ".join('"%s"' % action for action in sorted(HUB_ACTIONS))))
 open(OUT, "w", encoding="utf-8", newline="\n").write(body)
 print("wrote", OUT)
 print("zones:", len(ROOMS), "| convos:", len(CONVOS), "| start_pos:", [CX, CY])

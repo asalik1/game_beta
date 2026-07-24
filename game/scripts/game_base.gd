@@ -19,6 +19,7 @@ const TILES_W := 44              # rooms grew: ~2 screens of walkable space
 const TILES_H := 26
 const ROOM_W := TILES_W * TILE   # 2112
 const ROOM_H := TILES_H * TILE   # 1248
+const ROOM_CENTER := Vector2(ROOM_W, ROOM_H) / 2.0
 # Legacy zone-authoring space (Chapter 2 content modules): positions
 # written for the old 34x15 strip get rescaled into the bigger rooms.
 const LEGACY_W := 34 * TILE
@@ -1629,6 +1630,18 @@ func room_rect(i: int) -> Rect2:
 # elite arena — shrink their walled playable area; short corridors
 # connect the doorways to the cell edges.
 func room_inset(i: int) -> Vector2:
+	# Authored hubs can deliberately vary their spatial hierarchy: a plaza or
+	# portal court uses the whole cell, while a single-service workshop or
+	# quiet ward room closes its walls in around the player.  The grid cell
+	# remains fixed (so adjacency/network coordinates never change); only the
+	# playable rectangle shrinks, exactly like the existing small-room seam.
+	# A scalar keeps rooms proportionate and authored positions are remapped by
+	# room_pos().  Clamp defensively so malformed content cannot make a room
+	# vanish or overlap the cell boundary.
+	var authored_scale := clampf(float(zones[i].get("room_scale", 1.0)),
+		Balance.AUTHORED_ROOM_SCALE_MIN, 1.0)
+	if authored_scale < 1.0:
+		return Vector2(ROOM_W, ROOM_H) * (1.0 - authored_scale) / 2.0
 	if room_type(i) in Balance.SMALL_ROOM_TYPES:
 		return Balance.SMALL_ROOM_INSET
 	# Combat arenas vary on a bell curve so rooms aren't identical (extremes

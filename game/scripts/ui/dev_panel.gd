@@ -315,7 +315,7 @@ static func _tab_world(m: Menus, list: VBoxContainer) -> void:
 	rlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# ----------------------------------------------- standalone worlds ---
-	# Crownfall, the 50-room capital hub (dev-only for now). See
+	# Crownfall, the compact 25-room capital hub (dev-only for now). See
 	# CROWNFALL_HUB.html. Drops the hero on the Crown Plaza; the Portal
 	# Sanctum's Story gate returns to whatever chapter we jumped in from.
 	_section(m, list, "CAPITAL HUB (Crownfall — dev only)")

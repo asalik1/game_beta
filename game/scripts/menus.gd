@@ -3004,9 +3004,9 @@ const DISTRICT_COLOR := {
 	"outer":    Color(0.27, 0.27, 0.31),
 }
 const DISTRICT_NAME := {
-	"heart": "The Heart", "craft": "Craftworks", "civic": "Civic Ring",
-	"approach": "The Approach", "accord": "Ember Accord", "cinder": "Cinderborn",
-	"wild": "Wildfang", "choir": "Hollow Choir", "outer": "Outer Ring",
+	"heart": "The Heart", "craft": "Artisans", "civic": "Crown Core",
+	"approach": "Emberward", "accord": "The Accord", "cinder": "Cinderborn",
+	"wild": "Wildfang", "choir": "Hollow Choir", "outer": "Ramparts",
 }
 
 
@@ -3253,67 +3253,195 @@ func open_map() -> void:
 		("   ·   the doors are sealed mid-fight" if game.barrier_active else ""))
 
 
-## Crownfall's own map: the WHOLE city, always charted (no fog), rendered far
-## richer than a chapter map — every room named, coloured by DISTRICT, marked
-## for the spawn (★) / portals (◆) / daily quest-givers (●), and click-to-travel
-## anywhere. Standalone-world only (open_map routes here).
+## Short service copy for the capital map and its hover directory. Only active,
+## player-facing interactions are listed — decorative residents and planned
+## crafting stations do not pretend to be usable services.
+func _capital_zone_services(zone: Dictionary) -> String:
+	var services: Array[String] = []
+	if zone.has("merchant"):
+		services.append("MERCHANT")
+	var has_portal := false
+	for npc_def in zone.get("npcs", []):
+		var npc: Dictionary = npc_def
+		var action := String(npc.get("action", ""))
+		if action.begins_with("portal_"):
+			has_portal = true
+		elif action == "vault":
+			services.append("STASH")
+		elif action == "codex":
+			services.append("CODEX")
+		elif action == "daily":
+			services.append("DAILY REWARD")
+		elif action == "map":
+			services.append("CITY MAP")
+		elif action == "mail":
+			services.append("MAILBOX")
+		elif action == "journal":
+			services.append("JOURNAL")
+		elif action == "records":
+			services.append("RECORDS")
+		elif action == "guild":
+			services.append("GUILD")
+		elif action == "skills":
+			services.append("SKILLS")
+		elif action == "gear":
+			services.append("GEAR")
+	if has_portal:
+		services.append("STORY · CRUCIBLE · DEPTHS")
+	if String(zone.get("mark", "")) == "●":
+		services.append("DAILY CONTRACT")
+	return "  ·  ".join(services)
+
+
+## Crownfall's own map: the whole city, always charted. The panel is deliberately
+## kept inside the project's 1280×720 logical viewport (the old 760px panel
+## clipped above and below it), while room labels have hard bounds at every
+## canvas scale. The right rail is a useful city directory, not another legend.
 func _open_capital_map() -> void:
-	var vbox := _open("Crownfall — the capital city", 1220, 760, true)
+	var vbox := _open("Crownfall — Capital Directory", 1216, 672, true)
 	current = "map"
-	_lbl(vbox, "The whole city is charted. Click any room to travel there.  ★ spawn   ◆ portals   ● daily quest-giver",
-		13, Color(0.72, 0.74, 0.8))
 
+	# One bounded instruction strip. Each HBox label gets a minimum width so it
+	# cannot collapse into one-character columns on narrow physical displays.
+	var intro_panel := PanelContainer.new()
+	var intro_sb := StyleBoxFlat.new()
+	intro_sb.bg_color = Color(0.16, 0.145, 0.11, 0.92)
+	intro_sb.border_color = Color(UITheme.BRONZE, 0.52)
+	intro_sb.set_border_width_all(1)
+	intro_sb.set_corner_radius_all(5)
+	intro_sb.content_margin_left = 12
+	intro_sb.content_margin_right = 12
+	intro_sb.content_margin_top = 5
+	intro_sb.content_margin_bottom = 5
+	intro_panel.add_theme_stylebox_override("panel", intro_sb)
+	intro_panel.custom_minimum_size = Vector2(0, 32)
+	vbox.add_child(intro_panel)
+	var intro := HBoxContainer.new()
+	intro.add_theme_constant_override("separation", 16)
+	intro_panel.add_child(intro)
+	var instruction := _lbl(intro, "SELECT A DESTINATION TO FAST TRAVEL", 12, Color(0.92, 0.84, 0.60))
+	instruction.autowrap_mode = TextServer.AUTOWRAP_OFF
+	instruction.custom_minimum_size = Vector2(360, 18)
+	instruction.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	instruction.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var marks := _lbl(intro, "★  ARRIVAL   ◆  GATEWAYS   ●  DAILY CONTRACT", 11, Color(0.72, 0.76, 0.82))
+	marks.autowrap_mode = TextServer.AUTOWRAP_OFF
+	marks.custom_minimum_size = Vector2(350, 18)
+	marks.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	marks.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+
+	var content := HBoxContainer.new()
+	content.add_theme_constant_override("separation", 12)
+	content.custom_minimum_size = Vector2(0, 458)
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(content)
+
+	# Map frame and fixed inner chart. The logical canvas scales down as one unit
+	# on smaller windows, so fixed inner bounds preserve both overview and touch
+	# targets without spawning a horizontal scrollbar.
+	var map_frame := PanelContainer.new()
+	map_frame.custom_minimum_size = Vector2(896, 458)
+	map_frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	map_frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var map_sb := StyleBoxFlat.new()
+	map_sb.bg_color = Color(0.085, 0.076, 0.058, 0.98)
+	map_sb.border_color = Color(0.82, 0.70, 0.42, 0.48)
+	map_sb.set_border_width_all(1)
+	map_sb.set_corner_radius_all(7)
+	map_frame.add_theme_stylebox_override("panel", map_sb)
+	content.add_child(map_frame)
+	var map_center := CenterContainer.new()
+	map_frame.add_child(map_center)
 	var board := Control.new()
-	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	board.custom_minimum_size = Vector2(1160, 540)
-	vbox.add_child(board)
-	var bbg := Panel.new()
-	var bsb := StyleBoxFlat.new()
-	bsb.bg_color = Color(0.10, 0.088, 0.064, 0.97)
-	bsb.set_corner_radius_all(8)
-	bsb.border_color = Color(0.9, 0.8, 0.5, 0.35)
-	bsb.set_border_width_all(1)
-	bbg.add_theme_stylebox_override("panel", bsb)
-	bbg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bbg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	board.add_child(bbg)
+	board.name = "CapitalMapBoard"
+	board.custom_minimum_size = Vector2(890, 452)
+	board.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	board.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	board.clip_contents = true
+	map_center.add_child(board)
 
-	# Extent over EVERY room (the city is always fully drawn).
+	# Quiet cartographic grid, title, and compass. Drawn as one control so the
+	# Clickable room controls remain the only substantial node cost.
+	var chrome := Control.new()
+	chrome.set_anchors_preset(Control.PRESET_FULL_RECT)
+	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	board.add_child(chrome)
+	chrome.draw.connect(func() -> void:
+		var sz: Vector2 = chrome.size
+		for gx in range(18, int(sz.x), 36):
+			chrome.draw_line(Vector2(gx, 24), Vector2(gx, sz.y - 12), Color(0.86, 0.77, 0.55, 0.035), 1.0)
+		for gy in range(28, int(sz.y), 32):
+			chrome.draw_line(Vector2(10, gy), Vector2(sz.x - 10, gy), Color(0.86, 0.77, 0.55, 0.035), 1.0)
+		var compass_pos := Vector2(sz.x - 23.0, 21.0)
+		chrome.draw_arc(compass_pos, 11.0, 0.0, TAU, 24, Color(0.9, 0.8, 0.5, 0.35), 1.0)
+		chrome.draw_line(compass_pos + Vector2(0, 8), compass_pos + Vector2(0, -9), Color(0.9, 0.8, 0.5, 0.58), 1.5)
+		chrome.draw_line(compass_pos + Vector2(-6, 0), compass_pos + Vector2(6, 0), Color(0.9, 0.8, 0.5, 0.28), 1.0))
+	chrome.resized.connect(func() -> void: chrome.queue_redraw())
+	var chart_title := _lbl(board, "THE CROWN WARDS  ·  %d DESTINATIONS" % game.zone_count, 10, Color(0.72, 0.65, 0.48, 0.78))
+	chart_title.position = Vector2(13, 5)
+	chart_title.size = Vector2(310, 16)
+	chart_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Exact city extent — unlike the old map, no phantom row/column is added on
+	# every side. That reclaimed space makes even three-line names readable.
 	var min_c := Vector2i(1 << 20, 1 << 20)
 	var max_c := Vector2i(-(1 << 20), -(1 << 20))
 	for i in game.zone_count:
 		var c: Vector2i = game.rooms[i]["coord"]
-		min_c = Vector2i(mini(min_c.x, c.x - 1), mini(min_c.y, c.y - 1))
-		max_c = Vector2i(maxi(max_c.x, c.x + 1), maxi(max_c.y, c.y + 1))
+		min_c = Vector2i(mini(min_c.x, c.x), mini(min_c.y, c.y))
+		max_c = Vector2i(maxi(max_c.x, c.x), maxi(max_c.y, c.y))
 	var cols := max_c.x - min_c.x + 1
 	var rows := max_c.y - min_c.y + 1
-	var gap := 9.0
-	var cw := clampf((1150.0 - (cols - 1) * gap) / cols, 40.0, 128.0)
-	var ch := clampf((528.0 - (rows - 1) * gap) / rows, 34.0, 92.0)
-	var org := Vector2(maxf(0.0, (1150.0 - cols * (cw + gap)) / 2.0),
-		maxf(0.0, (528.0 - rows * (ch + gap)) / 2.0))
+	var map_w := 890.0
+	var map_h := 452.0
+	var gap := 5.0
+	var side_pad := 16.0
+	var top_pad := 27.0
+	var bottom_pad := 14.0
+	var cw: float = (map_w - side_pad * 2.0 - float(cols - 1) * gap) / float(cols)
+	var ch: float = (map_h - top_pad - bottom_pad - float(rows - 1) * gap) / float(rows)
+	var org := Vector2(side_pad, top_pad)
 	var cell_pos := func(c: Vector2i) -> Vector2:
 		return org + Vector2((c.x - min_c.x) * (cw + gap), (c.y - min_c.y) * (ch + gap))
 
-	# Streets under the cells — every adjacency is a road (all charted).
+	# Streets first, with a darker under-stroke and warm paving above it.
 	for i in game.zone_count:
 		var p: Vector2 = cell_pos.call(game.rooms[i]["coord"])
 		for dir in game.rooms[i]["exits"].keys():
 			var nb: int = game.neighbor(i, String(dir))
 			if nb < 0 or nb < i:
-				continue  # draw each edge once
+				continue
 			var delta: Vector2i = Game.DIRS[dir]
 			var mid := p + Vector2(cw / 2.0, ch / 2.0)
 			var to := mid + Vector2(delta.x * (cw + gap), delta.y * (ch + gap))
-			var link := ColorRect.new()
-			link.color = Color(0.55, 0.5, 0.4, 0.7)
-			var thick := 5.0
-			link.position = Vector2(minf(mid.x, to.x) - thick / 2.0, minf(mid.y, to.y) - thick / 2.0)
-			link.size = Vector2(absf(to.x - mid.x) + thick, absf(to.y - mid.y) + thick)
-			link.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			board.add_child(link)
+			for road_spec in [[7.0, Color(0.035, 0.03, 0.024, 0.95)], [3.0, Color(0.64, 0.56, 0.40, 0.62)]]:
+				var thick: float = float(road_spec[0])
+				var link := ColorRect.new()
+				link.color = road_spec[1]
+				link.position = Vector2(minf(mid.x, to.x) - thick / 2.0, minf(mid.y, to.y) - thick / 2.0)
+				link.size = Vector2(absf(to.x - mid.x) + thick, absf(to.y - mid.y) + thick)
+				link.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				board.add_child(link)
 
-	# Room cells: district colour + name + mark, click-to-travel.
+	# Collect active services for the directory while building room controls.
+	var service_rooms := {}
+	var daily_count := 0
+	for i in game.zone_count:
+		var zone: Dictionary = game.zones[i]
+		if zone.has("merchant"):
+			service_rooms["merchant"] = i
+		if String(zone.get("mark", "")) == "●":
+			daily_count += 1
+		for npc_def in zone.get("npcs", []):
+			var npc: Dictionary = npc_def
+			var action := String(npc.get("action", ""))
+			if action.begins_with("portal_"):
+				service_rooms["portals"] = i
+			elif action != "":
+				service_rooms[action] = i
+
+	# Room cells: ward color, bounded name, service mark, and an unmistakable
+	# current-location frame. Every label is clipped inside its own cell.
 	for i in game.zone_count:
 		var c: Vector2i = game.rooms[i]["coord"]
 		var p: Vector2 = cell_pos.call(c)
@@ -3321,26 +3449,34 @@ func _open_capital_map() -> void:
 		var dist := String(zone.get("district", "civic"))
 		var col: Color = DISTRICT_COLOR.get(dist, Color(0.3, 0.3, 0.34))
 		var is_here: bool = i == game.cur_room
-		var travel: bool = game.travel_target(i)
+		var travel: bool = game.travel_target(i) and not is_here
+		var services := _capital_zone_services(zone)
 
 		var cell: Control = Button.new() if travel else Panel.new()
-		var csb := StyleBoxFlat.new()
-		csb.bg_color = col.lightened(0.06) if is_here else col
-		csb.set_corner_radius_all(5)
-		csb.border_color = Color(0.95, 0.85, 0.5) if is_here else col.lightened(0.28)
-		csb.set_border_width_all(3 if is_here else 1)
 		cell.position = p
 		cell.size = Vector2(cw, ch)
-		cell.tooltip_text = "%s  ·  %s%s" % [String(zone["name"]), DISTRICT_NAME.get(dist, dist),
-			"  —  travel here" if travel else ("  —  you are here" if is_here else "")]
+		cell.z_index = 2
+		cell.clip_contents = true
+		var district_text := String(DISTRICT_NAME.get(dist, dist))
+		cell.tooltip_text = "%s\n%s%s\n%s" % [String(zone["name"]), district_text,
+			("  ·  " + services) if services != "" else "",
+			"Click to fast travel" if travel else "You are here"]
+		var csb := StyleBoxFlat.new()
+		csb.bg_color = col.lightened(0.09) if is_here else Color(col, 0.94)
+		csb.set_corner_radius_all(4)
+		csb.border_color = Color(1.0, 0.85, 0.45) if is_here else col.lightened(0.30)
+		csb.set_border_width_all(3 if is_here else 1)
 		if cell is Button:
 			var room_idx: int = i
 			var bh: StyleBoxFlat = csb.duplicate()
-			bh.bg_color = col.lightened(0.16)
-			bh.border_color = Color(0.95, 0.85, 0.5, 0.8)
+			bh.bg_color = col.lightened(0.20)
+			bh.border_color = Color(0.98, 0.86, 0.52, 0.88)
+			var bp: StyleBoxFlat = bh.duplicate()
+			bp.bg_color = col.lightened(0.08)
+			(cell as Button).focus_mode = Control.FOCUS_NONE
 			(cell as Button).add_theme_stylebox_override("normal", csb)
 			(cell as Button).add_theme_stylebox_override("hover", bh)
-			(cell as Button).add_theme_stylebox_override("pressed", bh)
+			(cell as Button).add_theme_stylebox_override("pressed", bp)
 			(cell as Button).pressed.connect(func() -> void:
 				close()
 				game.fast_travel(room_idx))
@@ -3349,45 +3485,170 @@ func _open_capital_map() -> void:
 			cell.mouse_filter = Control.MOUSE_FILTER_STOP
 		board.add_child(cell)
 
-		# Room name — the detail a chapter map never shows. "The " trimmed to fit.
 		var nm := String(zone["name"])
 		if nm.begins_with("The "):
 			nm = nm.substr(4)
-		var nlbl := _lbl(board, nm, 11, Color(0.97, 0.94, 0.86) if is_here else Color(0.92, 0.90, 0.84))
-		nlbl.position = p + Vector2(4, 3)
-		nlbl.size = Vector2(cw - 8, ch - 6)
+		# Configure this Label before it enters the tree. _lbl() intentionally
+		# enables wrapping before add_child; at width zero Godot then caches a
+		# hundreds-of-pixels-tall minimum for long room names. That was the
+		# original capital-map overflow, even when `size` was assigned later.
+		var nlbl := Label.new()
+		nlbl.text = nm
+		nlbl.autowrap_mode = TextServer.AUTOWRAP_OFF
+		nlbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		nlbl.clip_text = true
+		nlbl.add_theme_font_size_override("font_size", 10)
+		nlbl.add_theme_color_override("font_color",
+			Color(1.0, 0.95, 0.82) if is_here else Color(0.93, 0.91, 0.85))
+		nlbl.position = p + Vector2(4, (ch - 17.0) / 2.0)
+		nlbl.size = Vector2(cw - 8, 17)
 		nlbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		nlbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		nlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		nlbl.z_index = 4
+		nlbl.add_theme_color_override("font_shadow_color", Color(0.015, 0.012, 0.01, 0.95))
+		nlbl.add_theme_constant_override("shadow_offset_x", 1)
+		nlbl.add_theme_constant_override("shadow_offset_y", 1)
 		nlbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		board.add_child(nlbl)
 
-		# Mark glyph (spawn / portal / quest-giver) top-left corner.
 		var mk := String(zone.get("mark", ""))
-		if is_here:
-			mk = "◆"
 		if mk != "":
-			var mcol := Color(0.95, 0.85, 0.5) if (is_here or mk == "◆" or mk == "★") else Color(1.0, 0.8, 0.55)
-			var ml := _lbl(board, mk, 13, mcol)
-			ml.position = p + Vector2(3, -2)
-			ml.size = Vector2(16, 16)
+			var mcol := Color(1.0, 0.86, 0.47) if mk in ["◆", "★"] else Color(1.0, 0.72, 0.38)
+			var ml := _lbl(board, mk, 11, mcol)
+			ml.position = p + Vector2(3, -1)
+			ml.size = Vector2(14, 14)
+			ml.z_index = 5
 			ml.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if is_here:
+			var here := _lbl(board, "HERE", 8, Color(1.0, 0.88, 0.52))
+			here.position = p + Vector2(cw - 27, -1)
+			here.size = Vector2(25, 13)
+			here.z_index = 5
+			here.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			here.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# District legend — the map's colour vocabulary.
+	# Service rail: a current-location card, then direct travel to every active
+	# civic utility. The list uses short single-line labels and full tooltips.
+	var directory := PanelContainer.new()
+	directory.name = "CapitalServiceDirectory"
+	directory.custom_minimum_size = Vector2(260, 458)
+	directory.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var dir_sb := StyleBoxFlat.new()
+	dir_sb.bg_color = Color(0.105, 0.10, 0.095, 0.98)
+	dir_sb.border_color = Color(UITheme.BRONZE, 0.55)
+	dir_sb.set_border_width_all(1)
+	dir_sb.set_corner_radius_all(7)
+	dir_sb.content_margin_left = 12
+	dir_sb.content_margin_right = 12
+	dir_sb.content_margin_top = 11
+	dir_sb.content_margin_bottom = 10
+	directory.add_theme_stylebox_override("panel", dir_sb)
+	content.add_child(directory)
+	var dir_box := VBoxContainer.new()
+	dir_box.add_theme_constant_override("separation", 7)
+	directory.add_child(dir_box)
+	var dir_head := _lbl(dir_box, "CITY DIRECTORY", 14, Color(0.95, 0.84, 0.53))
+	UITheme.header(dir_head)
+
+	var current_zone: Dictionary = game.zones[game.cur_room]
+	var current_dist := String(current_zone.get("district", "civic"))
+	var here_panel := PanelContainer.new()
+	var here_sb := StyleBoxFlat.new()
+	here_sb.bg_color = Color(DISTRICT_COLOR.get(current_dist, Color(0.3, 0.3, 0.34)), 0.50)
+	here_sb.border_color = Color(0.95, 0.84, 0.48, 0.72)
+	here_sb.set_border_width_all(1)
+	here_sb.set_corner_radius_all(5)
+	here_sb.content_margin_left = 9
+	here_sb.content_margin_right = 9
+	here_sb.content_margin_top = 6
+	here_sb.content_margin_bottom = 6
+	here_panel.add_theme_stylebox_override("panel", here_sb)
+	here_panel.custom_minimum_size = Vector2(0, 56)
+	dir_box.add_child(here_panel)
+	var here_box := VBoxContainer.new()
+	here_box.add_theme_constant_override("separation", 1)
+	here_panel.add_child(here_box)
+	var here_kicker := _lbl(here_box, "YOU ARE HERE  ·  %s" % String(DISTRICT_NAME.get(current_dist, current_dist)).to_upper(),
+		9, Color(0.86, 0.78, 0.58))
+	here_kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
+	here_kicker.custom_minimum_size = Vector2(0, 14)
+	here_kicker.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var here_name := _lbl(here_box, String(current_zone["name"]), 13, Color(1.0, 0.96, 0.84))
+	here_name.autowrap_mode = TextServer.AUTOWRAP_OFF
+	here_name.custom_minimum_size = Vector2(0, 19)
+	here_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+
+	_lbl(dir_box, "ACTIVE SERVICES", 10, Color(0.61, 0.65, 0.72))
+	var directory_specs := [
+		["portals", "◆  GATEWAYS", "Story, Crucible, and Depths portals"],
+		["gear", "▣  ARTISANS  ·  GEAR / STASH", "Gearwork and your account-wide stash"],
+		["codex", "◈  ARCHIVE  ·  CODEX / RECORDS", "Codex, quest journal, and combat records"],
+		["guild", "⚑  CHARTERED HALL  ·  GUILD", "Guild and social services"],
+		["merchant", "⚖  BAZAAR  ·  MARKET / DAILY", "Merchant, daily reward, and mailbox"],
+		["skills", "✦  PROVING GROUNDS  ·  SKILLS", "Talents, attributes, and training"],
+		["map", "⌖  CROWN PLAZA  ·  CITY MAP", "The city's arrival point and map table"],
+	]
+	for spec in directory_specs:
+		var key := String(spec[0])
+		var room_idx: int = int(service_rooms.get(key, -1))
+		if room_idx < 0:
+			continue
+		var b := Button.new()
+		b.text = String(spec[1])
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.clip_text = true
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(0, 30)
+		b.add_theme_font_size_override("font_size", 11)
+		b.add_theme_color_override("font_color", Color(0.88, 0.88, 0.84))
+		var at_service: bool = room_idx == game.cur_room
+		b.disabled = at_service
+		b.tooltip_text = "%s\n%s\n%s" % [String(game.zones[room_idx]["name"]), String(spec[2]),
+			"You are here" if at_service else "Click to fast travel"]
+		if not at_service:
+			b.pressed.connect(func() -> void:
+				game.sfx("ui_click")
+				close()
+				game.fast_travel(room_idx))
+		dir_box.add_child(b)
+	var quest_rule := HSeparator.new()
+	quest_rule.add_theme_constant_override("separation", 5)
+	dir_box.add_child(quest_rule)
+	var quests := _lbl(dir_box, "●  %d DAILY CONTRACTS" % daily_count, 11, Color(0.95, 0.69, 0.40))
+	quests.tooltip_text = "Faction quest-givers are marked ● on the ward map."
+	var rail_hint := _lbl(dir_box, "Hover for details · select any room to travel.", 10, Color(0.56, 0.59, 0.64))
+	rail_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rail_hint.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rail_hint.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+
+	# Ward legend. Explicit chip widths prevent the classic HBox label-collapse
+	# failure while keeping all eight wards on one readable line.
 	var legend := HBoxContainer.new()
-	legend.add_theme_constant_override("separation", 14)
+	legend.add_theme_constant_override("separation", 9)
 	vbox.add_child(legend)
-	for dk in ["heart", "craft", "civic", "accord", "cinder", "wild", "choir", "outer"]:
+	var used_districts := {}
+	for zone_def in game.zones:
+		var zone: Dictionary = zone_def
+		used_districts[String(zone.get("district", "civic"))] = true
+	for dk in ["heart", "craft", "civic", "approach", "accord", "cinder", "wild", "choir", "outer"]:
+		if not used_districts.has(dk):
+			continue
 		var chip := HBoxContainer.new()
-		chip.add_theme_constant_override("separation", 5)
+		chip.add_theme_constant_override("separation", 4)
 		legend.add_child(chip)
 		var sw := Panel.new()
 		var ssb := StyleBoxFlat.new()
 		ssb.bg_color = DISTRICT_COLOR[dk]
-		ssb.set_corner_radius_all(3)
+		ssb.border_color = Color(DISTRICT_COLOR[dk], 1.0).lightened(0.30)
+		ssb.set_border_width_all(1)
+		ssb.set_corner_radius_all(2)
 		sw.add_theme_stylebox_override("panel", ssb)
-		sw.custom_minimum_size = Vector2(13, 13)
+		sw.custom_minimum_size = Vector2(11, 11)
 		chip.add_child(sw)
-		_lbl(chip, String(DISTRICT_NAME[dk]), 12, Color(0.8, 0.82, 0.86))
+		var district_label := _lbl(chip, String(DISTRICT_NAME[dk]).replace("The ", ""), 10, Color(0.72, 0.75, 0.79))
+		district_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		district_label.custom_minimum_size = Vector2(39 + district_label.text.length() * 3.8, 16)
+		district_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_hint(vbox, "ESC / M to close")
 
 

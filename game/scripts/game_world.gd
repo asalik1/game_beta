@@ -117,8 +117,25 @@ func _hub_action(act: String) -> void:
 			menus.open_stash()
 		"codex":
 			menus.open_codex("monsters")
+		"records":
+			menus.open_codex("records")
 		"daily":
 			menus.open_daily()
+		"journal":
+			menus.open_journal("log")
+		"mail":
+			menus.open_mailbox()
+		"guild":
+			# The Chartered Hall is Crownfall's player-to-player gathering
+			# point. Reuse the real party/lobby surface instead of leaving the
+			# largest civic building as flavour-only scenery.
+			menus.open_lobby("menu")
+		"skills":
+			menus.open_skills("talents")
+		"gear":
+			menus.open_inventory("gear")
+		"map":
+			menus.open_map()
 		_:
 			push_warning("hub action unhandled: %s" % act)
 
@@ -1118,12 +1135,17 @@ func _spawn_scenery(zi: int) -> void:
 		var landmark_name: String = String(spec.get("name", ""))
 		if landmark_name.is_empty():
 			continue
-		var landmark_pos := Vector2(float(spec.get("x", pw * 0.5)),
-			float(spec.get("y", ph * 0.5)))
+		# Landmark coordinates use the same full-cell authoring space as NPCs
+		# and merchants.  Remap them through room_pos so an intentionally small
+		# capital service room preserves its composition instead of pushing the
+		# landmark beyond the inset walls.
+		var landmark_world := room_pos(zi, float(spec.get("x", ROOM_CENTER.x)),
+			float(spec.get("y", ROOM_CENTER.y)))
+		var landmark_pos := landmark_world - origin
 		placed.append(landmark_pos)
 		reserved.append({"pos": landmark_pos,
 			"radius": float(spec.get("clearance", 190.0))})
-		zone_scenery[zi].append(_add_structure(landmark_name, origin + landmark_pos))
+		zone_scenery[zi].append(_add_structure(landmark_name, landmark_world))
 
 	# Per-room density jitter: not every room is equally dense (see Balance).
 	var dens := rng.randf_range(Balance.SCENERY_DENSITY_JITTER.x, Balance.SCENERY_DENSITY_JITTER.y)

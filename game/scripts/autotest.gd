@@ -3429,28 +3429,59 @@ func _test_asset_seams() -> void:
 	# Crownfall's generated landmark art contains baked fire shapes. Each exposed
 	# flame gets a live animated-prop decal over that socket, so the capital does
 	# not regress to motionless braziers beside the existing animated scenery.
+	# `min_width` is the rendered animation-cell width in world pixels. It is
+	# intentionally a little larger than each baked fire socket so the moving
+	# silhouette reads as the flame, rather than as a tiny flicker inside it.
 	var capital_flames := {
-		"capital_emberward_gate": 2,
-		"capital_portal_crucible": 2,
-		"capital_ashfire_forge": 1,
-		"capital_ashen_tankard": 1,
-		"capital_wildfang_fangmoot": 1,
-		"capital_accord_longhouse": 1,
-		"capital_sable_hall": 2,
-		"capital_watchtower": 1,
-		"capital_proving_gate": 4,
+		"capital_emberward_gate": {"count": 2, "min_width": 40.0},
+		"capital_portal_crucible": {"count": 2, "min_width": 27.0},
+		"capital_ashfire_forge": {"count": 1, "min_width": 52.0},
+		"capital_ashen_tankard": {"count": 1, "min_width": 31.0},
+		"capital_wildfang_fangmoot": {"count": 1, "min_width": 50.0},
+		"capital_accord_longhouse": {"count": 1, "min_width": 37.0},
+		"capital_sable_hall": {"count": 2, "min_width": 40.0},
+		"capital_watchtower": {"count": 1, "min_width": 31.0},
+		# The proving gate has two deliberately small hanging braziers. Assert
+		# their 16px floor separately while also requiring the two broad fires.
+		"capital_proving_gate": {"count": 4, "min_width": 15.5,
+			"broad_count": 2, "broad_width": 35.0},
 	}
 	for structure_name: String in capital_flames:
 		var landmark := game._add_structure(structure_name, Vector2(-4800, -4800))
 		var animated_flames := 0
+		var broad_flames := 0
+		var spec: Dictionary = capital_flames[structure_name]
 		for child in landmark.get_children():
 			if child is AnimatedSprite2D:
 				animated_flames += 1
-		var expected: int = capital_flames[structure_name]
+				var cell_width: float = game._visual_size(child).x * child.scale.x
+				if cell_width + 0.01 < float(spec["min_width"]):
+					return _fail("%s fire animation is undersized (%.1fpx, want >= %.1fpx)" %
+						[structure_name, cell_width, spec["min_width"]])
+				if cell_width >= float(spec.get("broad_width", INF)):
+					broad_flames += 1
+		var expected: int = int(spec["count"])
 		if animated_flames != expected:
 			return _fail("%s wants %d animated fire socket(s), got %d" % [
 				structure_name, expected, animated_flames])
+		if broad_flames != int(spec.get("broad_count", 0)):
+			return _fail("%s wants %d broad fire socket(s), got %d" % [
+				structure_name, spec.get("broad_count", 0), broad_flames])
 		landmark.queue_free()
+	# The capital fountain and wellspring ship full-structure animation strips:
+	# water moves within the authored basins/jets without a rectangular overlay.
+	for water_name in ["capital_crown_fountain", "capital_wellspring"]:
+		if Art.anim_info(water_name).is_empty():
+			return _fail("%s needs its authored water-motion strip" % water_name)
+		var water_landmark := game._add_structure(water_name, Vector2(-5000, -5000))
+		var animated_base := false
+		for child in water_landmark.get_children():
+			if child is AnimatedSprite2D:
+				animated_base = true
+				break
+		if not animated_base:
+			return _fail("%s did not render its animated water base" % water_name)
+		water_landmark.queue_free()
 	# Every showcase terrain paints (ground kind resolves + structures/props
 	# reference real art) — build each ground texture headless.
 	for tid in ["ph_forge", "ph_kitchen", "ph_dungeon", "ph_market", "ph_crypt"]:
@@ -4778,9 +4809,9 @@ func _test_rv_na() -> void:
 	print("ok: rv_na_gallery (145 Raven icons + 13 critters; Future: alchemy/critters)")
 
 
-# ---- CONTENT: capital_hub — Crownfall, the 50-room dev capital -----------
+# ---- CONTENT: capital_hub — Crownfall, the 25-room dev capital -----------
 ## Data integrity (module selftest) + a REAL load: enter Crownfall, verify the
-## fixed 50-room graph builds safe with the hero on the Crown Plaza and every
+## fixed 25-room graph builds safe with the hero on the Crown Plaza and every
 ## room reachable, then restore the chapter we were in. Content-module hook.
 func _test_capital() -> void:
 	var err: String = await preload("res://scripts/content/capital_hub.gd").selftest(game)
@@ -4815,16 +4846,41 @@ func _test_capital() -> void:
 	await _frames(6)
 	if game.chapter_id != "capital":
 		return _fail("capital: enter_capital did not switch (chapter is %s)" % game.chapter_id)
-	if game.zone_count != 50:
-		return _fail("capital: expected 50 rooms live, got %d" % game.zone_count)
+	if game.zone_count != 25:
+		return _fail("capital: expected 25 rooms live, got %d" % game.zone_count)
 	if String(game.zones[game.cur_room].get("name", "")) != "Crown Plaza":
 		return _fail("capital: hero did not spawn on Crown Plaza (in %s)" % game.zones[game.cur_room].get("name", "?"))
+	var has_grand_room := false
+	var has_intimate_room := false
+	var hub_actions := {}
+	for zi in game.zone_count:
+		var zone: Dictionary = game.zones[zi]
+		var room_scale := float(zone.get("room_scale", 1.0))
+		var expected_size := Vector2(Game.ROOM_W, Game.ROOM_H) * room_scale
+		if not game.play_rect(zi).size.is_equal_approx(expected_size):
+			return _fail("capital: %s room_scale %.2f built at %s instead of %s" %
+				[zone.get("name", "?"), room_scale, game.play_rect(zi).size, expected_size])
+		has_grand_room = has_grand_room or room_scale >= 0.99
+		has_intimate_room = has_intimate_room or room_scale <= 0.65
+		if zone.get("landmarks", []).is_empty():
+			return _fail("capital: %s has no authored landmark/composition" % zone.get("name", "?"))
+		for npc in zone.get("npcs", []):
+			var npc_def: Dictionary = npc
+			var action := String(npc_def.get("action", ""))
+			if action != "":
+				hub_actions[action] = true
+	if not has_grand_room or not has_intimate_room:
+		return _fail("capital: room hierarchy needs both a grand hub and an intimate service room")
+	for action in ["map", "mail", "journal", "records", "guild", "skills", "gear",
+			"vault", "codex", "daily", "portal_story", "portal_crucible", "portal_depths"]:
+		if not hub_actions.has(action):
+			return _fail("capital: meaningful service action '%s' is not placed" % action)
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e and e.zone_idx == game.cur_room:
 			return _fail("capital: a supposedly-safe hub room has an enemy")
 	# The whole city is charted from the first step (no fog), and every room is
-	# a fast-travel target — so the detailed map shows all 50 and lets you jump.
+	# a fast-travel target — so the detailed map shows all 25 and lets you jump.
 	var far := game.zone_count - 1
 	if not game.charted(far) or not game.charted(0):
 		return _fail("capital: map should chart every room (unvisited room %d not charted)" % far)
@@ -4841,7 +4897,7 @@ func _test_capital() -> void:
 	await _frames(4)
 	if game.chapter_id != prev:
 		return _fail("capital: failed to restore chapter %s" % prev)
-	print("ok: capital hub (50-room fixed graph, connected, safe, spawns on Crown Plaza, fully-charted detailed map, travel-anywhere, leaves clean)")
+	print("ok: capital hub (25-room composed graph, authored size hierarchy + service actions, connected, safe, fully-charted map, travel-anywhere, leaves clean)")
 
 
 ## The KEYBOARD twin of the touch overlay gate (cross-product audit 2026-07-21).
