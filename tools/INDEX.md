@@ -56,6 +56,7 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 | `tools/art/skin_install.py` | PixelLab 8 rotation stills → static skin sprite set. |
 | `tools/art/install_env_asset.py` | environment art into the Track-D seams: ground tilesets, animated props (grid/square normalize + naming). |
 | `tools/art/build_capital_water_anim.py` | generated 2×2 capital water storyboard + locked static landmark → geometry-stable horizontal animation strip (only blue/cyan water pixels may change). |
+| `tools/art/build_capital_polish.py` | generated Crownfall furniture/hearth sources → normalized production props, plus integrated four-frame fire strips for every fire-bearing capital landmark (no nested flame decals). |
 | `tools/art/clean_sprite.py` | FLUX/Pollinations render → clean pixel sprite (normalize). |
 | `tools/art/polligen.py` / `tools/art/flux_draft.py` | free generation lanes (pollinations.ai textures/props / FLUX concept drafts — note: HF inference is dead, see memory/ART docs). |
 | `tools/art/pl_anim_ids.py` | print a PixelLab character's per-direction anim ids for a clip (frame-URL gotcha). |
@@ -67,7 +68,7 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 `shot_kit` (class FX/abilities) · `shot_loot` (loot fanfare grades) · `shot_mobs`
 (mob mechanics/tells) · `shot_ui` (HUD + every menu) · `shot_audit`/`2`/`3`
 (full visual surface passes) · `shot_chests` (chest grades in-world) ·
-`shot_capital` (every Crownfall room + desktop/compact capital maps) ·
+`shot_capital` (every Crownfall room + Citizen right-side facing proof + desktop/compact capital maps) ·
 `shot_dirtest`/`shot_dirinstall`/`shot_actiontest` (8-direction render/install
 proofs) · `shot_silence`/`shot_verdict`/`shot_readability`/`shot_wall`/
 `shot_assassin_fx` (one-off readability rigs — reusable patterns). All live in

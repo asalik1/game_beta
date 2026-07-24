@@ -37,7 +37,7 @@ ROOMS = [
   ("artisans","Artisans' Court",-1,-1,"ph_castle",0.88,[
       ("smith_petra","E — Smith Petra","cap_petra",P),
       ("archivist_lene","E — Master Lapidary","cap_lapidary",P),
-      ("chest_gold","E — Open your vault","vault",A),
+      ("capital_vault_chest","E — Open your vault","vault",A),
       ("settings","E — Manage your gear","gear",H)]),
   ("archive","The Grand Archive",1,-1,"ph_library",0.76,[
       ("book","E — Browse the Codex","codex",H),
@@ -119,7 +119,7 @@ MERCHANTS = {"market": [CX, 560]}
 LANDMARKS = {
     "plaza": [
         ("capital_crown_fountain", 1056, 600, 300),
-        ("notice_board", 1056, 850, 110),
+        ("capital_city_directory", 1056, 850, 150),
     ],
     "portal": [
         ("capital_portal_story", 560, 560, 150),
@@ -132,7 +132,7 @@ LANDMARKS = {
     "market": [("capital_market_stall", 620, 600, 215),
                ("capital_market_stall", 1492, 600, 215)],
     "hearth": [("great_hearth", 620, 560, 175),
-               ("brew_stand", 1492, 560, 175)],
+               ("capital_alembic_station", 1492, 560, 205)],
     "tankard": [("capital_ashen_tankard", 1056, 590, 285)],
     "proving": [("capital_proving_gate", 1056, 560, 290)],
     "rampart": [("capital_watchtower", 1056, 560, 235)],
@@ -154,19 +154,83 @@ LANDMARKS = {
     "stables": [("capital_stables", 1056, 590, 315)],
 }
 
+# Exact supporting furniture. Capital rooms do not use generic furniture
+# scatter: every bench has a deliberate social-space placement and enough
+# clearance to remain inside the authored walls.
+FURNISHINGS = {
+    "plaza": [("capital_city_bench", 760, 865, 110),
+              ("capital_city_bench", 1352, 865, 110)],
+    "hearth": [("capital_city_bench", 1056, 820, 110)],
+    "tankard": [("capital_city_bench", 760, 810, 110),
+                ("capital_city_bench", 1352, 810, 110)],
+    "acc_commons": [("capital_city_bench", 760, 815, 110),
+                    ("capital_city_bench", 1352, 815, 110)],
+    "acc_well": [("capital_city_bench", 760, 825, 110),
+                 ("capital_city_bench", 1352, 825, 110)],
+}
+
+# Prominent structures without an existing service hotspot still explain
+# themselves when approached. System buildings (portals, forge, archive,
+# guild hall, proving gate, map board) already own real action hotspots.
+# key: (room id, landmark index) -> (prompt, title, one-line purpose, y offset)
+LANDMARK_USES = {
+    ("plaza", 0): ("E — Inspect the Crown Fountain", "Crown Fountain",
+        "The four ward roads meet at this basin. Companies use its crown as the city's easiest rally point.", 105),
+    ("hearth", 0): ("E — Warm yourself", "The Great Hearth",
+        "A public fire for cooking, waiting, and finding companions between expeditions.", 90),
+    ("hearth", 1): ("E — Inspect the alembic", "Hearthworks Alembic",
+        "Garden harvests become medicine here; Sorrel keeps the day's mixtures under watch.", 80),
+    ("tankard", 0): ("E — Enter the Ashen Tankard", "The Ashen Tankard",
+        "Crownfall's common room: rumours, company recruitment, and a warm seat after dark.", 95),
+    ("rampart", 0): ("E — Survey the rampart", "Crownwatch Rampart",
+        "The watch records every caravan, returning company, and threat on the southern road.", 75),
+    ("wf_moot", 0): ("E — Inspect the Fangmoot", "Fangmoot Circle",
+        "Wildfang companies trade hunts, daily work, and stories around the undying fire.", 95),
+    ("wf_warren", 0): ("E — Inspect the longhouse", "The Green Warren",
+        "A transplanted piece of wildwood where hunters rest, recruit, and plan their next trail.", 90),
+    ("wf_digger", 0): ("E — Inspect the descent", "Digger's Cut",
+        "Haim's guarded shaft reaches the buried foundations of the old capital.", 85),
+    ("ch_chapel", 0): ("E — Inspect the chapel", "The Rot-Chapel",
+        "The Choir keeps remembrance, faction work, and its patient rites beneath this roof.", 90),
+    ("ch_waiting", 0): ("E — Inspect the undercroft", "The Waiting Hall",
+        "A quiet threshold between the living ward and the sleepers below.", 85),
+    ("ch_suli", 0): ("E — Inspect the hospice", "Suli's Hospice",
+        "The Choir's living receive treatment around this clean spring.", 105),
+    ("acc_commons", 0): ("E — Inspect the commons", "Accord Commons",
+        "The Accord settles disputes, posts daily work, and keeps a public fire here.", 95),
+    ("acc_menders", 0): ("E — Inspect the springhouse", "Menders' Row",
+        "Kesh's remedies and Hearthworks reagents begin at this ward spring.", 105),
+    ("acc_well", 0): ("E — Inspect the Wellspring", "The Wellspring",
+        "A civic reservoir, quiet meeting place, and the Accord ward's clean-water reserve.", 105),
+    ("cin_court", 0): ("E — Inspect the Sable Court", "The Sable Court",
+        "The Cinderborn receive commissions and preserve the ceremonies of their lost crown.", 95),
+    ("cin_foundry", 0): ("E — Inspect the foundry", "Compact Foundry",
+        "Recovered ore is weighed and prepared here before Petra's forge receives it.", 95),
+    ("cin_bastion", 0): ("E — Inspect the bastion", "The Keeper's Bastion",
+        "The Cinderborn keep their rolls, histories, and disciplined watch under one roof.", 90),
+    ("causeway", 0): ("E — Inspect the west watch", "Causeway Watch",
+        "One half of the gate watch, positioned to keep the market road clear.", 75),
+    ("causeway", 1): ("E — Inspect the east watch", "Causeway Watch",
+        "One half of the gate watch, positioned to keep the proving road clear.", 75),
+    ("gate", 0): ("E — Inspect the Emberward Gate", "Emberward Gate",
+        "The capital's southern threshold, guarded day and night without blocking the road.", 80),
+    ("stables", 0): ("E — Inspect the stables", "Emberward Stables",
+        "Mounts, messengers, and caravan tack stay close to the road and outside the plaza.", 90),
+}
+
 # Restrained supporting dressing. Landmarks and people carry the composition;
 # these props only reinforce district material language. Counts are deliberately
 # below combat-terrain density and scale again with the authored room footprint.
 DISTRICT_SCENERY = {
-    "heart":    {"obstacles": ["bench2", "amphora"], "decor": ["pebble", "banner_red"], "count": 2, "decor_count": 2},
-    "craft":    {"obstacles": ["bench2", "amphora", "station_anvil_t1"], "decor": ["pebble", "candle"], "count": 2, "decor_count": 2},
-    "civic":    {"obstacles": ["bench2", "amphora", "library_desk"], "decor": ["pebble", "candle"], "count": 2, "decor_count": 2},
-    "approach": {"obstacles": ["hideout_barrel", "hideout_kegs", "pillar"], "decor": ["pebble", "banner_red"], "count": 2, "decor_count": 2},
+    "heart":    {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
+    "craft":    {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
+    "civic":    {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
+    "approach": {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
     "wild":     {"obstacles": ["tree_green", "rock", "bush"], "decor": ["grass", "flower", "pebble"], "count": 3, "decor_count": 3},
     "choir":    {"obstacles": ["tombstone", "grave_cross", "pillar"], "decor": ["grave_crack", "web", "pebble"], "count": 2, "decor_count": 2},
-    "accord":   {"obstacles": ["garden_bench", "garden_urns", "amphora"], "decor": ["grass", "flower", "pebble"], "count": 2, "decor_count": 3},
-    "cinder":   {"obstacles": ["pillar", "castle_bust", "bench2"], "decor": ["candle", "pebble", "banner_red"], "count": 2, "decor_count": 2},
-    "outer":    {"obstacles": ["hideout_barrel", "hideout_kegs", "pillar"], "decor": ["pebble", "crack"], "count": 2, "decor_count": 2},
+    "accord":   {"obstacles": ["garden_urns", "amphora"], "decor": ["grass", "flower"], "count": 1, "decor_count": 2},
+    "cinder":   {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
+    "outer":    {"obstacles": [], "decor": [], "count": 0, "decor_count": 0},
 }
 
 # District per room (colours the in-game capital map). Derived by id prefix +
@@ -228,6 +292,19 @@ while q:
 if len(seen) != len(ROOMS):
     missing = [r[0] for r in ROOMS if r[0] not in seen]
     sys.exit("GRAPH NOT CONNECTED — unreachable from plaza: %s" % missing)
+room_ids = {room[0] for room in ROOMS}
+if not set(FURNISHINGS).issubset(room_ids):
+    sys.exit("FURNISHINGS reference unknown room(s): %s" %
+             sorted(set(FURNISHINGS) - room_ids))
+for (rid, landmark_index) in LANDMARK_USES:
+    if rid not in room_ids or landmark_index >= len(LANDMARKS.get(rid, [])):
+        sys.exit("LANDMARK_USES references unknown landmark: %s[%d]" %
+                 (rid, landmark_index))
+for district, scenery in DISTRICT_SCENERY.items():
+    if "bench2" in scenery["obstacles"] or "garden_bench" in scenery["obstacles"]:
+        sys.exit("legacy bench leaked into capital district %s" % district)
+if len(LANDMARK_USES) < 20 or sum(map(len, FURNISHINGS.values())) < 8:
+    sys.exit("capital polish coverage too low: landmark uses / furnishings")
 print("OK: %d rooms, unique coords, single connected component" % len(ROOMS))
 
 # ---------- emit GDScript ----------
@@ -273,10 +350,21 @@ def gd_zone(i, room):
     lines.append('\t\t"decor": [%s], "decor_count": %d, "accents": [], "structures": [],' %
                  (decor_names, scenery["decor_count"]))
     landmark_lines = []
-    for landmark_name,x,y,clearance in LANDMARKS.get(rid, []):
-        landmark_lines.append('{"name": "%s", "x": %d, "y": %d, "clearance": %d}' %
-                              (landmark_name, x, y, clearance))
+    for landmark_index,(landmark_name,x,y,clearance) in enumerate(LANDMARKS.get(rid, [])):
+        fields = ['"name": "%s"' % landmark_name, '"x": %d' % x, '"y": %d' % y,
+                  '"clearance": %d' % clearance]
+        use = LANDMARK_USES.get((rid, landmark_index))
+        if use:
+            prompt,title,text,use_y = use
+            fields.extend(['"prompt": "%s"' % prompt, '"title": "%s"' % title,
+                           '"text": "%s"' % text, '"use_y": %d' % use_y])
+        landmark_lines.append("{" + ", ".join(fields) + "}")
     lines.append('\t\t"landmarks": [%s],' % ", ".join(landmark_lines))
+    furnishing_lines = [
+        '{"name": "%s", "x": %d, "y": %d, "clearance": %d}' % item
+        for item in FURNISHINGS.get(rid, [])
+    ]
+    lines.append('\t\t"furnishings": [%s],' % ", ".join(furnishing_lines))
     if rid in MERCHANTS:
         mx,my = MERCHANTS[rid]
         lines.append('\t\t"merchant": [%d, %d],' % (mx, my))

@@ -897,6 +897,7 @@ func _run_systems() -> void:
 	# 3d18. Environment asset seams (2026-07-18): ground PNG tilesets,
 	# composite structures + wall decals, animated scenery props.
 	await _test_asset_seams()
+	_test_npc_interaction_facing()
 
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
@@ -3426,47 +3427,30 @@ func _test_asset_seams() -> void:
 	if forge_cols != 2 or not forge_lit:
 		return _fail("guild_forge wants a 2-shape footprint + forge light (cols %d, lit %s)" % [forge_cols, forge_lit])
 	forge.queue_free()
-	# Crownfall's generated landmark art contains baked fire shapes. Each exposed
-	# flame gets a live animated-prop decal over that socket, so the capital does
-	# not regress to motionless braziers beside the existing animated scenery.
-	# `min_width` is the rendered animation-cell width in world pixels. It is
-	# intentionally a little larger than each baked fire socket so the moving
-	# silhouette reads as the flame, rather than as a tiny flicker inside it.
-	var capital_flames := {
-		"capital_emberward_gate": {"count": 2, "min_width": 40.0},
-		"capital_portal_crucible": {"count": 2, "min_width": 27.0},
-		"capital_ashfire_forge": {"count": 1, "min_width": 52.0},
-		"capital_ashen_tankard": {"count": 1, "min_width": 31.0},
-		"capital_wildfang_fangmoot": {"count": 1, "min_width": 50.0},
-		"capital_accord_longhouse": {"count": 1, "min_width": 37.0},
-		"capital_sable_hall": {"count": 2, "min_width": 40.0},
-		"capital_watchtower": {"count": 1, "min_width": 31.0},
-		# The proving gate has two deliberately small hanging braziers. Assert
-		# their 16px floor separately while also requiring the two broad fires.
-		"capital_proving_gate": {"count": 4, "min_width": 15.5,
-			"broad_count": 2, "broad_width": 35.0},
-	}
-	for structure_name: String in capital_flames:
+	# Crownfall's fire-bearing landmarks animate as a single full structure.
+	# The former static base + smaller flame decal produced a visible "fire
+	# inside fire"; exactly one AnimatedSprite2D proves the nested overlay is gone.
+	var capital_fire_structures := [
+		"capital_emberward_gate", "capital_portal_crucible",
+		"capital_ashfire_forge", "capital_ashen_tankard",
+		"capital_wildfang_fangmoot", "capital_accord_longhouse",
+		"capital_sable_hall", "capital_watchtower", "capital_proving_gate",
+		"great_hearth",
+	]
+	for structure_name: String in capital_fire_structures:
+		var sprite_name := String(Terrains.STRUCTURES[structure_name].get(
+			"sprite", structure_name))
+		var fire_info := Art.anim_info(sprite_name)
+		if int(fire_info.get("frames", 0)) != 4:
+			return _fail("%s needs a four-frame integrated fire strip" % structure_name)
 		var landmark := game._add_structure(structure_name, Vector2(-4800, -4800))
-		var animated_flames := 0
-		var broad_flames := 0
-		var spec: Dictionary = capital_flames[structure_name]
+		var animated_parts := 0
 		for child in landmark.get_children():
 			if child is AnimatedSprite2D:
-				animated_flames += 1
-				var cell_width: float = game._visual_size(child).x * child.scale.x
-				if cell_width + 0.01 < float(spec["min_width"]):
-					return _fail("%s fire animation is undersized (%.1fpx, want >= %.1fpx)" %
-						[structure_name, cell_width, spec["min_width"]])
-				if cell_width >= float(spec.get("broad_width", INF)):
-					broad_flames += 1
-		var expected: int = int(spec["count"])
-		if animated_flames != expected:
-			return _fail("%s wants %d animated fire socket(s), got %d" % [
-				structure_name, expected, animated_flames])
-		if broad_flames != int(spec.get("broad_count", 0)):
-			return _fail("%s wants %d broad fire socket(s), got %d" % [
-				structure_name, spec.get("broad_count", 0), broad_flames])
+				animated_parts += 1
+		if animated_parts != 1:
+			return _fail("%s should animate as one structure, not %d nested parts" %
+				[structure_name, animated_parts])
 		landmark.queue_free()
 	# The capital fountain and wellspring ship full-structure animation strips:
 	# water moves within the authored basins/jets without a rectangular overlay.
@@ -3491,6 +3475,82 @@ func _test_asset_seams() -> void:
 			return _fail("showcase terrain %s ground failed to bake" % tid)
 	print("ok: asset seams (ground tilesets / composite structures + decals / animated props)")
 	print("ok: seam showcase (5 authored floors + 8 animated props + animated forge/hearth/fountain/capital structures)")
+
+
+## A legacy side-profile NPC has no eight-way strip to select, but must still
+## mirror toward a visitor on either side and return to its authored rest pose.
+## This is the exact presentation seam used by Crownfall's Old Hunter.
+func _test_npc_interaction_facing() -> void:
+	var keep_pos: Vector2 = game.player.global_position
+	var keep_facing: Vector2 = game.player.facing
+	var keep_look: float = game.player.look_sign
+	var npc := Node2D.new()
+	var spr := Sprite2D.new()
+	spr.texture = Art.tex("npc_hunter")
+	npc.add_child(spr)
+	game.world.add_child(npc)
+	npc.global_position = keep_pos + Vector2(0, -300)
+	var entry := {
+		"node": npc, "sprite": spr, "dir_anims": {},
+		"faces_left": Art.faces_left("npc_hunter"),
+		"rest_tex": spr.texture, "rest_frames": 1, "rest_frame": 0,
+		"rest_scale": spr.scale, "rest_pos": spr.position, "rest_flip_h": false,
+	}
+	if not bool(entry["faces_left"]):
+		npc.free()
+		return _fail("NPC facing probe expects npc_hunter's authored left-facing pose")
+
+	# Player stands to the NPC's right: NPC looks right, player looks left.
+	game.player.global_position = npc.global_position + Vector2(60, 0)
+	game._face_interactable_to_player(entry)
+	if not spr.flip_h or game.player.look_sign != -1.0:
+		npc.free()
+		return _fail("NPC interaction did not turn both actors toward a visitor on the right")
+	game._restore_interactable_rest_pose()
+	if spr.flip_h:
+		npc.free()
+		return _fail("NPC interaction did not restore its authored rest orientation")
+
+	# Player crosses to the left: the unmirrored native-left pose is correct,
+	# while the hero turns right to meet it.
+	game.player.global_position = npc.global_position + Vector2(-60, 0)
+	game._face_interactable_to_player(entry)
+	if spr.flip_h or game.player.look_sign != 1.0:
+		npc.free()
+		return _fail("NPC interaction did not turn both actors toward a visitor on the left")
+	game._restore_interactable_rest_pose()
+	game.player.global_position = keep_pos
+	game.player.facing = keep_facing
+	game.player.look_sign = keep_look
+	npc.free()
+
+	# Directional capital Citizen: a visitor on screen-right must explicitly
+	# select the east strip, never the west/rest texture.
+	var citizen := Node2D.new()
+	var citizen_spr := Sprite2D.new()
+	var citizen_dirs := Art.dir_set("factor_imre_anim")
+	citizen_spr.texture = citizen_dirs["s"]["tex"]
+	citizen.add_child(citizen_spr)
+	game.world.add_child(citizen)
+	citizen.global_position = keep_pos + Vector2(0, -300)
+	var citizen_entry := {
+		"node": citizen, "sprite": citizen_spr, "dir_anims": citizen_dirs,
+		"render_scale": 1.0, "size_var": 1.0, "body_target": 0.0,
+		"rest_tex": citizen_spr.texture, "rest_frames": 1, "rest_frame": 0,
+		"rest_scale": citizen_spr.scale, "rest_pos": citizen_spr.position,
+		"rest_flip_h": false,
+	}
+	game.player.global_position = citizen.global_position + Vector2(60, 0)
+	game._face_interactable_to_player(citizen_entry)
+	if citizen_spr.texture != citizen_dirs["e"]["tex"] or citizen_spr.flip_h:
+		citizen.free()
+		return _fail("capital Citizen selected the wrong directional strip for a right-side visitor")
+	game._restore_interactable_rest_pose()
+	game.player.global_position = keep_pos
+	game.player.facing = keep_facing
+	game.player.look_sign = keep_look
+	citizen.free()
+	print("ok: NPC interactions face the visitor from either side (including Citizen) + restore rest pose")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
@@ -4853,6 +4913,9 @@ func _test_capital() -> void:
 	var has_grand_room := false
 	var has_intimate_room := false
 	var hub_actions := {}
+	var landmark_use_count := 0
+	var furnishing_count := 0
+	var premium_vault := false
 	for zi in game.zone_count:
 		var zone: Dictionary = game.zones[zi]
 		var room_scale := float(zone.get("room_scale", 1.0))
@@ -4864,13 +4927,28 @@ func _test_capital() -> void:
 		has_intimate_room = has_intimate_room or room_scale <= 0.65
 		if zone.get("landmarks", []).is_empty():
 			return _fail("capital: %s has no authored landmark/composition" % zone.get("name", "?"))
+		for landmark in zone.get("landmarks", []):
+			if (landmark as Dictionary).has("prompt"):
+				landmark_use_count += 1
+		furnishing_count += (zone.get("furnishings", []) as Array).size()
+		if "bench2" in zone.get("obstacles", []) or "garden_bench" in zone.get("obstacles", []):
+			return _fail("capital: legacy low-quality bench returned to random scenery")
 		for npc in zone.get("npcs", []):
 			var npc_def: Dictionary = npc
 			var action := String(npc_def.get("action", ""))
 			if action != "":
 				hub_actions[action] = true
+			if action == "vault" and String(npc_def.get("sprite", "")) == "capital_vault_chest":
+				premium_vault = true
 	if not has_grand_room or not has_intimate_room:
 		return _fail("capital: room hierarchy needs both a grand hub and an intimate service room")
+	if landmark_use_count < 20:
+		return _fail("capital: prominent structures need physical-purpose interactions (%d/20)" %
+			landmark_use_count)
+	if furnishing_count < 8:
+		return _fail("capital: authored social furniture is missing (%d/8)" % furnishing_count)
+	if not premium_vault:
+		return _fail("capital: Artisans' Court did not install the premium vault coffer")
 	for action in ["map", "mail", "journal", "records", "guild", "skills", "gear",
 			"vault", "codex", "daily", "portal_story", "portal_crucible", "portal_depths"]:
 		if not hub_actions.has(action):

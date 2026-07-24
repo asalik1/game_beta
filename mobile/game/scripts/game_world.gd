@@ -140,6 +140,10 @@ func _hub_action(act: String) -> void:
 			push_warning("hub action unhandled: %s" % act)
 
 
+func _inspect_landmark(title: String, text: String) -> void:
+	hud.dialogue([[title, text]])
+
+
 # ------------------------------------------------------- the room graph ---
 
 ## Build the runtime graph meta (grid coords, exits, locks, scales)
@@ -998,8 +1002,8 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	npc.add_child(shadow)
 	var spr := Sprite2D.new()
 	var anim := Art.anim_info(sprite_name)
-	# Directional idle art is optional. It is consumed on interaction (the NPC
-	# turns toward its visitor); a single-facing body keeps the legacy path.
+	# Directional idle art is optional. On interaction an eight-way NPC selects
+	# the visitor-facing strip; a single-facing body mirrors horizontally.
 	var dir_anims := Art.dir_set("%s_anim" % sprite_name)
 	# Legacy interaction targets ride the global character scale; the humanoid
 	# roster below instead uses alpha-body normalization and its authored height
@@ -1070,13 +1074,15 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	npc.add_child(prompt)
 	world.add_child(npc)
 	interactables.append({"node": npc, "prompt": prompt, "action": action,
-		"sprite": spr, "dir_anims": dir_anims, "render_scale": render_scale,
+		"sprite": spr, "sprite_name": sprite_name, "dir_anims": dir_anims,
+		"render_scale": render_scale,
 		"size_var": nsize, "body_target": body_target,
+		"faces_left": Art.faces_left(sprite_name),
 		# Interaction-facing is presentation-only. Preserve the exact authored
 		# rest pose so leaving a conversation or shop never leaves a citizen
 		# rotated, rescaled, or vertically shifted.
 		"rest_tex": spr.texture, "rest_frames": spr.hframes, "rest_frame": spr.frame,
-		"rest_scale": spr.scale, "rest_pos": spr.position})
+		"rest_scale": spr.scale, "rest_pos": spr.position, "rest_flip_h": spr.flip_h})
 	return npc
 
 ## Props that grow in natural CLUMPS (a stand of trees, a patch of mushrooms,
@@ -1146,6 +1152,31 @@ func _spawn_scenery(zi: int) -> void:
 		reserved.append({"pos": landmark_pos,
 			"radius": float(spec.get("clearance", 190.0))})
 		zone_scenery[zi].append(_add_structure(landmark_name, landmark_world))
+		# Large authored structures should never be dead scenery. Core service
+		# landmarks already own action hotspots in their zone NPC data; the
+		# remaining civic/faction landmarks expose their physical purpose.
+		if spec.has("prompt") and spec.has("text"):
+			var use_pos := landmark_world + Vector2(0, float(spec.get("use_y", 80.0)))
+			var hotspot := _make_npc("book", use_pos, String(spec["prompt"]),
+				Callable(self, "_inspect_landmark").bind(
+					String(spec.get("title", landmark_name)), String(spec["text"])), "")
+			for child in hotspot.get_children():
+				if child is Sprite2D:
+					child.visible = false
+			zone_scenery[zi].append(hotspot)
+
+	# Capital furniture is placed deliberately, not scattered. This prevents
+	# generic benches from clipping the inset walls or reading as fence scraps.
+	for furnishing in zone.get("furnishings", []):
+		var furnish_spec: Dictionary = furnishing
+		var furnish_world := room_pos(zi, float(furnish_spec.get("x", ROOM_CENTER.x)),
+			float(furnish_spec.get("y", ROOM_CENTER.y)))
+		var furnish_pos := furnish_world - origin
+		placed.append(furnish_pos)
+		reserved.append({"pos": furnish_pos,
+			"radius": float(furnish_spec.get("clearance", 0.0))})
+		zone_scenery[zi].append(
+			_add_structure(String(furnish_spec.get("name", "")), furnish_world))
 
 	# Per-room density jitter: not every room is equally dense (see Balance).
 	var dens := rng.randf_range(Balance.SCENERY_DENSITY_JITTER.x, Balance.SCENERY_DENSITY_JITTER.y)

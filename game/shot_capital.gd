@@ -56,6 +56,21 @@ func _ready() -> void:
 		var slug := String(game.zones[room_index]["name"]).to_snake_case()
 		_shot("room_%02d_%s" % [room_index, slug])
 
+	# Regression frame: interact with the Plaza Citizen while standing on his
+	# screen-right. The Citizen must select factor_imre_anim_e, facing the hero.
+	game.fast_travel(0)
+	await get_tree().create_timer(1.6).timeout
+	for entry in game.interactables:
+		if String((entry as Dictionary).get("sprite_name", "")) == "factor_imre":
+			var citizen := (entry as Dictionary)["node"] as Node2D
+			game.player.global_position = citizen.global_position + Vector2(70, 0)
+			game._face_interactable_to_player(entry)
+			(entry as Dictionary)["action"].call()
+			await _frames(4)
+			_shot("npc_citizen_right")
+			await _dismiss_opening()
+			break
+
 	game.camera.zoom = Vector2.ONE
 	game.menus.open_map()
 	await _frames(6)

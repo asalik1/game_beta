@@ -398,13 +398,15 @@ const STRUCTURES := {
 		"decals": [{"sprite": "sewer_flow", "off": Vector2(30, -8), "scale": 0.34, "z": 1}]},
 	# A great hearth: a hall fireplace — a brazier base with a tall licking
 	# flame (flame ANIMATES), a smoke column, firelight and crackle.
-	"great_hearth": {"sprite": "forge_brazier", "w": 110.0,
-		"colliders": [{"shape": "circle", "radius": 20.0, "off": Vector2(0, -4)}],
-		"decals": [
-			{"sprite": "flame", "off": Vector2(0, -46), "scale": 0.4, "z": 2,
-				"light": Color(1.0, 0.6, 0.26, 0.95), "light_energy": 1.2, "light_scale": 1.0},
-			{"sprite": "ember_smoke", "off": Vector2(0, -96), "scale": 0.46, "z": 3}],
+	"great_hearth": {"sprite": "capital_great_hearth", "w": 270.0,
+		"colliders": [{"shape": "rect", "size": Vector2(180, 42), "off": Vector2(0, -8)}],
 		"fire": true},
+	"capital_city_bench": {"sprite": "capital_city_bench", "w": 150.0,
+		"colliders": [{"shape": "rect", "size": Vector2(112, 34), "off": Vector2(0, -7)}]},
+	"capital_city_directory": {"sprite": "capital_city_directory", "w": 190.0,
+		"colliders": [{"shape": "rect", "size": Vector2(138, 36), "off": Vector2(0, -7)}]},
+	"capital_alembic_station": {"sprite": "capital_alembic_station", "w": 235.0,
+		"colliders": [{"shape": "rect", "size": Vector2(174, 40), "off": Vector2(0, -8)}]},
 	# A market stall: a counter under an awning of two hung banners that SWAY
 	# (wind material). No light; a simple wide footprint.
 	"market_stall": {"sprite": "hideout_table", "w": 140.0, "mirror": true,
@@ -446,9 +448,6 @@ const STRUCTURES := {
 		"colliders": [
 			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(-142, -9)},
 			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(142, -9)}],
-		"decals": [
-			{"sprite": "flame", "off": Vector2(-133, -66), "scale": 0.10, "z": 2},
-			{"sprite": "flame", "off": Vector2(133, -66), "scale": 0.10, "z": 2}],
 		"fire": true},
 	"capital_market_stall": {"sprite": "capital_market_stall", "w": 280.0,
 		"colliders": [{"shape": "rect", "size": Vector2(178, 42), "off": Vector2(0, -8)}]},
@@ -460,40 +459,27 @@ const STRUCTURES := {
 		"colliders": [
 			{"shape": "circle", "radius": 24.0, "off": Vector2(-88, -8)},
 			{"shape": "circle", "radius": 24.0, "off": Vector2(88, -8)}],
-		"decals": [
-			{"sprite": "flame", "off": Vector2(-96, -37), "scale": 0.10, "z": 2},
-			{"sprite": "flame", "off": Vector2(96, -37), "scale": 0.10, "z": 2}],
 		"fire": true},
 	"capital_portal_depths": {"sprite": "capital_portal_depths", "w": 230.0,
 		"colliders": [{"shape": "rect", "size": Vector2(132, 42), "off": Vector2(0, -8)}]},
 	"capital_chartered_hall": {"sprite": "capital_chartered_hall", "w": 330.0},
 	"capital_ashfire_forge": {"sprite": "capital_ashfire_forge", "w": 360.0,
-		# The baked firebox is broad; the old 25px strip sat as a tiny flicker
-		# in its centre. 54px covers the authored flame silhouette.
-		"decals": [{"sprite": "flame", "off": Vector2(44, -122), "scale": 0.15, "z": 2}],
 		"fire": true},
 	"capital_grand_archive": {"sprite": "capital_grand_archive", "w": 340.0},
 	"capital_ashen_tankard": {"sprite": "capital_ashen_tankard", "w": 360.0,
-		"decals": [{"sprite": "flame", "off": Vector2(-32, -94), "scale": 0.09, "z": 2}],
 		"fire": true},
 	"capital_wildfang_fangmoot": {"sprite": "capital_wildfang_fangmoot", "w": 330.0,
 		"colliders": [{"shape": "circle", "radius": 72.0, "off": Vector2(0, -10)}],
-		"decals": [{"sprite": "camp_bonfire", "off": Vector2(0, -116), "scale": 0.16, "z": 2}],
 		"fire": true},
 	"capital_rot_chapel": {"sprite": "capital_rot_chapel", "w": 350.0},
 	"capital_accord_longhouse": {"sprite": "capital_accord_longhouse", "w": 420.0,
-		"decals": [{"sprite": "flame", "off": Vector2(3, -103), "scale": 0.09, "z": 2}],
 		"fire": true},
 	"capital_sable_hall": {"sprite": "capital_sable_hall", "w": 420.0,
-		"decals": [
-			{"sprite": "flame", "off": Vector2(-92, -107), "scale": 0.10, "z": 2},
-			{"sprite": "flame", "off": Vector2(92, -107), "scale": 0.10, "z": 2}],
 		"fire": true},
 	"capital_wellspring": {"sprite": "capital_wellspring", "w": 330.0,
 		"colliders": [{"shape": "circle", "radius": 70.0, "off": Vector2(0, -10)}]},
 	"capital_stables": {"sprite": "capital_stables", "w": 410.0},
 	"capital_watchtower": {"sprite": "capital_watchtower", "w": 250.0,
-		"decals": [{"sprite": "flame", "off": Vector2(51, -190), "scale": 0.13, "z": 2}],
 		"fire": true},
 	"capital_undercroft": {"sprite": "capital_undercroft", "w": 360.0,
 		"colliders": [
@@ -503,10 +489,5 @@ const STRUCTURES := {
 		"colliders": [
 			{"shape": "rect", "size": Vector2(82, 44), "off": Vector2(-132, -8)},
 			{"shape": "rect", "size": Vector2(82, 44), "off": Vector2(132, -8)}],
-		"decals": [
-			{"sprite": "flame", "off": Vector2(-123, -58), "scale": 0.09, "z": 2},
-			{"sprite": "flame", "off": Vector2(123, -58), "scale": 0.09, "z": 2},
-			{"sprite": "flame", "off": Vector2(-181, -101), "scale": 0.04, "z": 2},
-			{"sprite": "flame", "off": Vector2(181, -101), "scale": 0.04, "z": 2}],
 		"fire": true},
 }

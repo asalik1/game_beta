@@ -507,18 +507,30 @@ func _unhandled_input(event: InputEvent) -> void:
 				break
 
 
-## Directional NPC bodies turn toward the local player when spoken to. Only
-## sprites shipping `<name>_anim_<dir>.png` opt in; existing static NPC art
-## remains on its original, single-facing path.
+## NPC bodies turn toward the local player when spoken to. Directional bodies
+## select the matching eight-way idle; legacy side-profile bodies mirror their
+## authored pose horizontally. The local hero also turns back toward the NPC so
+## a conversation always reads as two people addressing one another.
 func _face_interactable_to_player(entry: Dictionary) -> void:
-	var dirs: Dictionary = entry.get("dir_anims", {})
-	if dirs.is_empty():
-		return
 	var npc := entry.get("node") as Node2D
 	var spr := entry.get("sprite") as Sprite2D
 	if not is_instance_valid(npc) or not is_instance_valid(spr):
 		return
-	var face: String = Art.dir8_suffix(player.global_position - npc.global_position)
+	var to_player := player.global_position - npc.global_position
+	if absf(to_player.x) > 1.0:
+		player.look_sign = -signf(to_player.x)
+		player.facing = Vector2(player.look_sign, 0.0)
+	var dirs: Dictionary = entry.get("dir_anims", {})
+	if dirs.is_empty():
+		# A flat side-profile can only answer left/right. Preserve a frontal
+		# authored pose when the visitor is directly above or below it.
+		if absf(to_player.x) <= 1.0:
+			return
+		active_facing_interactable = entry
+		var native_left := bool(entry.get("faces_left", true))
+		spr.flip_h = (to_player.x > 0.0) if native_left else (to_player.x < 0.0)
+		return
+	var face: String = Art.dir8_suffix(to_player)
 	var info: Dictionary = dirs.get(face, {})
 	if info.is_empty():
 		return
@@ -527,6 +539,7 @@ func _face_interactable_to_player(entry: Dictionary) -> void:
 	spr.texture = info["tex"]
 	spr.hframes = frames
 	spr.frame = 0
+	spr.flip_h = false
 	var body_target: float = float(entry.get("body_target", 0.0))
 	if body_target > 0.0:
 		var legacy_scale := Art.scale_for(spr.texture,
@@ -562,6 +575,7 @@ func _restore_interactable_rest_pose() -> void:
 	spr.frame = int(entry.get("rest_frame", 0))
 	spr.scale = entry.get("rest_scale", Vector2.ONE) as Vector2
 	spr.position = entry.get("rest_pos", Vector2.ZERO) as Vector2
+	spr.flip_h = bool(entry.get("rest_flip_h", false))
 
 
 func _process(delta: float) -> void:
