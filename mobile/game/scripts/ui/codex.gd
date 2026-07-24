@@ -870,13 +870,15 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 		var cn := m._lbl(cru_row, "🔥 The Crucible", 14, Color(1.0, 0.75, 0.62))
 		cn.custom_minimum_size = Vector2(300, 0)
 		if cru.is_empty():
-			m._lbl(cru_row, "no run yet", 14, Color(0.6, 0.62, 0.68))
+			var cnr := m._lbl(cru_row, "no run yet", 14, Color(0.6, 0.62, 0.68))
+			cnr.custom_minimum_size = Vector2(170, 0)
 		else:
 			var ck := m._lbl(cru_row, "best %d / %d bosses" % [int(cru.get("kills", 0)), Balance.CRUCIBLE_BOSSES], 14, Color(0.7, 1.0, 0.7))
 			ck.custom_minimum_size = Vector2(170, 0)
 			var ctime := int(float(cru.get("time", 0.0)))
 			if ctime > 0:
-				m._lbl(cru_row, "fastest clear %d:%02d" % [ctime / 60, ctime % 60], 14, Color(0.85, 0.9, 1.0))
+				var ct := m._lbl(cru_row, "fastest clear %d:%02d" % [ctime / 60, ctime % 60], 14, Color(0.85, 0.9, 1.0))
+				ct.custom_minimum_size = Vector2(200, 0)
 		var dep: Dictionary = m.game.endgame_pb("depths", m.game.player.cls)
 		var dep_row := HBoxContainer.new()
 		dep_row.add_theme_constant_override("separation", 10)
@@ -884,9 +886,11 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 		var dn := m._lbl(dep_row, "🕯 The Waking Depths", 14, Color(0.78, 0.82, 1.0))
 		dn.custom_minimum_size = Vector2(300, 0)
 		if dep.is_empty():
-			m._lbl(dep_row, "no run yet", 14, Color(0.6, 0.62, 0.68))
+			var dnr := m._lbl(dep_row, "no run yet", 14, Color(0.6, 0.62, 0.68))
+			dnr.custom_minimum_size = Vector2(170, 0)
 		else:
-			m._lbl(dep_row, "deepest %d" % int(dep.get("depth", 0)), 14, Color(0.7, 1.0, 0.7))
+			var dd := m._lbl(dep_row, "deepest %d" % int(dep.get("depth", 0)), 14, Color(0.7, 1.0, 0.7))
+			dd.custom_minimum_size = Vector2(170, 0)
 
 	# --- titles (worn beside the class name on the HUD) ---
 	m._lbl(list, "— TITLES — earned by points, feats, lore and slaughter —", 16, Color(0.85, 0.6, 1.0))
