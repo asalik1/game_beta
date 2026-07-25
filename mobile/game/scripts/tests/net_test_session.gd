@@ -2271,7 +2271,13 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 			var mirror_wait: int = Time.get_ticks_msec() + 3000
 			while _mirror_of(sess, int(args.get("id", 0))) == null and Time.get_ticks_msec() < mirror_wait:
 				await get_tree().create_timer(0.1).timeout
-			for i in 5:
+			# Tap budget is ARG-tunable (default 5 = stage 4's untouched use).
+			# Stage 12 widens it: on a starved box its 5-tap/3 s burst was the
+			# whole landing window inside the watch, and every tap could whiff
+			# (the 2026-07-25 RESIDUAL in the stage-12 block comment). The
+			# loop still breaks on the first landed hit — a widened budget
+			# only spends time on the whiff path.
+			for i in int(args.get("taps", 5)):
 				_press(KEY_J, true)   # a1 — the assassin stab (melee arc)
 				await get_tree().create_timer(0.15).timeout
 				_press(KEY_J, false)
@@ -3522,6 +3528,24 @@ func _run_guest11() -> void:
 # mirror to exist before spending its tap budget; (3) the director arms the
 # strike probe through _watch_try with ONE re-arm — a fresh _rpc_watch restarts
 # the guest's serve loop even if the first one died mid-flow.
+#
+# RESIDUAL, layer 3 added 2026-07-25 (same night): under FOREIGN CPU load
+# (a sibling suite mid-run — once in 8 contended executions, 0-in-9
+# serialized) the strike still failed with a LIVE serve honestly replying
+# {ok:false, frac:1.0} on BOTH attempts, no wipe involved. One observation
+# can't split the two remaining faces, so both are covered: (a) the 5-tap/
+# 3 s burst was the WHOLE landing window inside each watch — a starved
+# guest can whiff all of it — so the serve's tap budget is now ARG-tunable
+# ("taps"; stage 4's default-5 use untouched — and no stage-4/5 "rearm"
+# baseline wrinkle applies here, strike asserts an hp THRESHOLD not a
+# delta) and stage 12 arms 20 taps under a 35 s window; (b) the hit may
+# have landed SERVER-side with only the mirror's hp echo lagging past the
+# serve's 8 s poll — on a non-empty ok:false reply the director now
+# consults wolf.hp truth first, and a confirmed server-side drop demotes
+# the miss to a separately-asserted CONVERGENCE watch (the mirror echo is
+# stage 4's claim, not this stage's). An EMPTY reply still fails hard: a
+# serve silent through two windows and a re-arm is wedged, and every
+# later probe needs it.
 
 ## Boot a DEDICATED world authority as a child of the director (the same
 ## instantiate-and-add_child shape as _host_boot, minus the roster flow —
@@ -3652,18 +3676,36 @@ func _run_host12() -> void:
 	sess.last_hit = {}
 	var hp0: float = wolf.hp
 	# _watch_try + ONE re-arm (MP-17 style): a fresh _rpc_watch restarts the
-	# guest's serve loop even if the first one died mid-flow, and 20 s per
-	# attempt clears the serve's worst honest path (~14 s: 3 s mirror wait +
-	# 3 s taps + 8 s poll). Args rebuilt per attempt — the wolf wanders.
-	r = await _watch_try(ga, "strike", {"id": wolf.net_id,
-		"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y}, 20.0)
+	# guest's serve loop even if the first one died mid-flow. Layer 3 (the
+	# 2026-07-25 RESIDUAL — see the stage block comment): taps 20, not the
+	# serve default 5 — the old 5-tap/3 s burst was the whole landing window
+	# and a starved box whiffed ALL of it, twice. 35 s per attempt clears the
+	# widened worst honest path (~23 s: 3 s mirror wait + 12 s taps + 8 s
+	# poll) with load headroom. Args rebuilt per attempt — the wolf wanders.
+	r = await _watch_try(ga, "strike", {"id": wolf.net_id, "taps": 20,
+		"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y}, 35.0)
 	if r.is_empty() or not bool(r.get("ok", false)):
 		print("[net_session] host12: (d) strike probe returned %s — re-arming once"
 			% ("EMPTY (reply timeout)" if r.is_empty() else str(r)))
-		r = await _watch_try(ga, "strike", {"id": wolf.net_id,
-			"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y}, 20.0)
+		r = await _watch_try(ga, "strike", {"id": wolf.net_id, "taps": 20,
+			"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y}, 35.0)
 	if r.is_empty() or not bool(r.get("ok", false)):
-		return _fail("guest A never saw its strike land on the server enemy: %s" % str(r))
+		# Layer 3, the other face: consult SERVER-side truth before failing.
+		# A live serve honestly reporting {ok:false, frac:1.0} while the
+		# wolf's hp DID drop means the strike landed and only the mirror's
+		# hp echo lagged past the serve's poll — that echo is stage 4's
+		# claim, not this stage's; assert it separately as CONVERGENCE
+		# below. An EMPTY reply still fails: a serve loop silent through
+		# two 35 s windows and a re-arm is wedged, and every later (d)-(f)
+		# probe needs it — server truth must not paper over that.
+		if r.is_empty() or not (wolf.hp < hp0 - 0.01):
+			return _fail("guest A never saw its strike land on the server enemy: %s" % str(r))
+		print("[net_session] host12: (d) strike reply %s but SERVER hp dropped %.1f — echo lag, asserting convergence"
+			% [str(r), hp0 - wolf.hp])
+		r = await _watch(ga, "converge", {"id": wolf.net_id,
+			"frac": wolf.hp / maxf(wolf.max_hp, 0.001), "tol": 0.03})
+		if r.is_empty() or not bool(r.get("ok", false)):
+			return _fail("strike landed server-side but the mirror never converged: %s" % str(r))
 	if not await _wait_for(func() -> bool: return wolf.hp < hp0 - 0.01, 8.0, "server wolf hp drop"):
 		return
 	if int(sess.last_hit.get("peer", -1)) != ga or int(sess.last_hit.get("id", -1)) != wolf.net_id:
@@ -3721,7 +3763,12 @@ func _run_host12() -> void:
 func _run_guest12() -> void:
 	if not await _guest_boot_server("assassin"):
 		return
-	if not await _wait_for(func() -> bool: return _finish, 180.0, "server finish signal"):
+	# 300 s, not 180 (the stage-12 RESIDUAL layer): guest A serves through
+	# the director's whole (b)-(f) flow, whose strike failure/rescue path
+	# now runs up to two 35 s watches + a converge — under the very load
+	# that path exists for, 180 s could expire the guest mid-rescue. The
+	# wrapper's own 300 s stage cap still bounds a wedged director.
+	if not await _wait_for(func() -> bool: return _finish, 300.0, "server finish signal"):
 		return
 	_net.leave()
 	await get_tree().create_timer(0.5).timeout
