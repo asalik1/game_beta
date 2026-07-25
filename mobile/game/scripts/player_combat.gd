@@ -36,6 +36,19 @@ class SlashArc extends Node2D:
 	var radius := 90.0
 	var span := 0.62     # half-angle — small span + big radius = a shallow arc
 	var width := 2.4     # HALF-thickness of the line (thin); sin-tapers at tips
+	## Validate-then-draw. Godot's triangulator picks a polygon's winding from a
+	## shoelace sum over RAW float32 coordinates, so for a sliver polygon (near-
+	## collinear points — e.g. a ribbon fold-back's miter normal running almost
+	## parallel to its segment) the sign is rounding noise at world-scale coords:
+	## winding comes out wrong at random and the renderer spams "Invalid polygon
+	## data, triangulation failed". Geometry2D.triangulate_polygon is the exact
+	## C++ path behind canvas_item_add_polygon, so pre-checking it and skipping
+	## empties silences precisely the polys the renderer would reject — all
+	## sub-pixel slivers, nothing visible. (Knife-trail tails were bitten.)
+	func _poly(p: PackedVector2Array, c: Color) -> void:
+		if Geometry2D.triangulate_polygon(p).is_empty():
+			return
+		draw_colored_polygon(p, c)
 	func _draw() -> void:
 		var steps := 24
 		for i in steps:
@@ -50,7 +63,7 @@ class SlashArc extends Node2D:
 			var tm := (t0 + t1) * 0.5
 			var f := col.a * pow(sin(PI * tm), 2.4)  # STRONG fade — the tips nearly vanish
 			var c := Color(col.r, col.g, col.b, f)
-			draw_colored_polygon(PackedVector2Array([
+			_poly(PackedVector2Array([
 				d0 * (radius + w0), d1 * (radius + w1),
 				d1 * (radius - w1), d0 * (radius - w0)]), c)
 
@@ -61,6 +74,10 @@ class SlashArc extends Node2D:
 ## Only spawned by the Phantom's dash (see _dash_strike) — not on walking.
 class PhantomTrail extends Node2D:
 	var pts := PackedVector2Array()   # dash path, [0] = head (end), last = tail (start)
+	func _poly(p: PackedVector2Array, c: Color) -> void:  # see SlashArc._poly
+		if Geometry2D.triangulate_polygon(p).is_empty():
+			return
+		draw_colored_polygon(p, c)
 	func _ready() -> void:
 		z_index = 2
 		global_position = Vector2.ZERO
@@ -92,15 +109,15 @@ class PhantomTrail extends Node2D:
 			var a := base_a * pow(1.0 - (t0 + t1) * 0.5, 1.3)   # FADE OUT toward the tail
 			var ribbon_col := Color(0.5, 1.0, 0.86, a)
 			if i == n - 2:
-				draw_colored_polygon(PackedVector2Array([
+				_poly(PackedVector2Array([
 					pts[i] + nrm[i] * w0, pts[i + 1], pts[i] - nrm[i] * w0]), ribbon_col)
 			else:
 				var side_a: Vector2 = pts[i] + nrm[i] * w0
 				var side_b: Vector2 = pts[i + 1] + nrm[i + 1] * w1
 				var side_c: Vector2 = pts[i + 1] - nrm[i + 1] * w1
 				var side_d: Vector2 = pts[i] - nrm[i] * w0
-				draw_colored_polygon(PackedVector2Array([side_a, side_b, side_c]), ribbon_col)
-				draw_colored_polygon(PackedVector2Array([side_a, side_c, side_d]), ribbon_col)
+				_poly(PackedVector2Array([side_a, side_b, side_c]), ribbon_col)
+				_poly(PackedVector2Array([side_a, side_c, side_d]), ribbon_col)
 
 
 ## A short, thin spectral streak that FOLLOWS a flying projectile (Phantom's
@@ -122,6 +139,10 @@ class ProjTrail extends Node2D:
 	# leave this empty and retain their single-color ribbon exactly.
 	var segment_colors: Array[Color] = []
 	var pts := PackedVector2Array()
+	func _poly(p: PackedVector2Array, c: Color) -> void:  # see SlashArc._poly
+		if Geometry2D.triangulate_polygon(p).is_empty():
+			return
+		draw_colored_polygon(p, c)
 	func _ready() -> void:
 		z_index = draw_z
 		global_position = Vector2.ZERO
@@ -172,15 +193,15 @@ class ProjTrail extends Node2D:
 			if i == n - 2:
 				# The tail converges to one point. Submit a real triangle instead of
 				# a quad with duplicate vertices (which Godot cannot triangulate).
-				draw_colored_polygon(PackedVector2Array([
+				_poly(PackedVector2Array([
 					pts[i] + nrm[i] * w0, pts[i + 1], pts[i] - nrm[i] * w0]), ribbon_col)
 			else:
 				var a: Vector2 = pts[i] + nrm[i] * w0
 				var b: Vector2 = pts[i + 1] + nrm[i + 1] * w1
 				var c: Vector2 = pts[i + 1] - nrm[i + 1] * w1
 				var d: Vector2 = pts[i] - nrm[i] * w0
-				draw_colored_polygon(PackedVector2Array([a, b, c]), ribbon_col)
-				draw_colored_polygon(PackedVector2Array([a, c, d]), ribbon_col)
+				_poly(PackedVector2Array([a, b, c]), ribbon_col)
+				_poly(PackedVector2Array([a, c, d]), ribbon_col)
 			if core_width > 0.0 and core_opacity > 0.0:
 				var core_a := core_opacity * pow(1.0 - (t0 + t1) * 0.5, 1.15)
 				draw_line(pts[i], pts[i + 1],
