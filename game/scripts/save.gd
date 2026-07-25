@@ -51,6 +51,10 @@ static func write(game: Game, slot: int) -> void:
 		# The NG+ tier THIS run launched at (snapshot; the standing choice
 		# rides the character as run_tier above).
 		"run_tier_world": game.world_run_tier,
+		# The Waking Incursion week THIS world's breach rooms were built
+		# for (-1 = none) — geography, so load_save restores it BEFORE the
+		# rebuild, exactly like wander_seed below.
+		"waking_week": game.waking_week,
 		# Slain bosses resolve THIS world's rooms and gates on load
 		# (reconcile_after_load) — world state. PBs stay in character.
 		"bosses_slain": game.boss_done.keys(),
@@ -142,6 +146,9 @@ static func _character_section(game: Game) -> Dictionary:
 		"weekly_claimed_week": game.weekly_claimed_week,
 		# Renown supply-cache ledger (the wallet itself is account meta).
 		"renown_cache_week": game.renown_cache_week,
+		# Waking Incursion kill ledger (per-head faucet, like the vault).
+		"waking_kills_week": game.waking_kills_week,
+		"waking_kills": game.waking_kills,
 	}
 
 
@@ -288,10 +295,10 @@ const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tr
 	"achievements", "boss_records", "kill_counts", "player_title",
 	"bounties", "bounty_day", "bounty_week",
 	"vault_week", "vault_progress", "vault_claimed_week", "weekly_claimed_week",
-	"renown_cache_week"]
+	"renown_cache_week", "waking_kills_week", "waking_kills"]
 const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "merchant_zones",
 	"run_time", "run_deaths", "run_elites", "run_secrets",
-	"weekly_active", "weekly_week", "bosses_slain", "pos",
+	"weekly_active", "weekly_week", "waking_week", "bosses_slain", "pos",
 	"cur_room", "last_safe_room", "visited_rooms", "cleared_rooms", "door_seen",
 	"wander_seed"]
 
@@ -397,6 +404,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.run_secrets = int(w.get("run_secrets", 0))
 	game.weekly_active = bool(w.get("weekly_active", false))
 	game.weekly_week = int(w.get("weekly_week", -1))
+	game.waking_week = int(w.get("waking_week", -1))
 	game.world_run_tier = clampi(int(w.get("run_tier_world", 0)), 0, Balance.TIER_NAMES.size() - 1)
 	game.boss_done = {}
 	for kind in w.get("bosses_slain", []):
@@ -537,6 +545,10 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	game.vault_claimed_week = int(c.get("vault_claimed_week", -1))
 	game.weekly_claimed_week = int(c.get("weekly_claimed_week", -1))
 	game.renown_cache_week = int(c.get("renown_cache_week", -1))
+	game.waking_kills_week = int(c.get("waking_kills_week", -1))
+	game.waking_kills = []
+	for wk in c.get("waking_kills", []):
+		game.waking_kills.append(String(wk))
 	game.kill_counts = {}
 	var kc: Dictionary = c.get("kill_counts", {})
 	for k in kc:

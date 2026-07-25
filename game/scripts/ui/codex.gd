@@ -967,7 +967,7 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 	var rbal := m._lbl(rrow, "◈  %d Renown" % m.game.renown(), 16, Balance.RENOWN_COLOR)
 	rbal.custom_minimum_size = Vector2(180, 0)
 	m._btn(rrow, "  Open Wardrobe  ", func() -> void: m.open_wardrobe(), Color(0.85, 0.7, 1.0))
-	var rdesc := m._lbl(rbox, "Earned once each from weeklies, the vault, bounties, dailies, new personal records and first NG+ tier clears — never farmable. Buys chromas, elite and mythic skins, and a weekly supply cache. Cosmetic only: Renown never touches gold, gear or power.",
+	var rdesc := m._lbl(rbox, "Earned once each from weeklies, the vault, bounties, dailies, Waking breaches, new personal records and first NG+ tier clears — never farmable. Buys chromas, elite and mythic skins, and a weekly supply cache. Cosmetic only: Renown never touches gold, gear or power.",
 		13, Color(0.8, 0.82, 0.88))
 	rdesc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rdesc.custom_minimum_size = Vector2(880, 0)

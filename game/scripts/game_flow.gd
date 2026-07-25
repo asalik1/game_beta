@@ -659,6 +659,40 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 		net_session().host_award_all([
 			{"k": "chest", "tier": "gold", "at": clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos)},
 			{"k": "gold", "n": int(Story.ALL_ENEMIES[kind].get("gold", 50)), "at": boss_pos}])
+	# A Waking breach echo also banks toward the week's incursion reward.
+	if is_instance_valid(src) and src.waking_boss:
+		_waking_bank_kill(kind, boss_pos)
+
+
+## Bank a breach-echo kill (once per kind per trusted-clock week, per
+## character): the guaranteed bright gem + bonus gold land now; the third
+## bank of the week pays the Waking Chest + Renown. A run that outlived
+## its week keeps the fight but pays nothing (the weekly_fx precedent).
+func _waking_bank_kill(kind: String, pos: Vector2) -> void:
+	if not has_local_player():
+		return
+	if waking_week != _week_index():
+		spawn_text(player.global_position + Vector2(0, -70),
+			"The week turned — the Waking has moved on.", Color(0.8, 0.8, 0.85), 4.0)
+		return
+	if waking_kills_week != _week_index():
+		waking_kills_week = _week_index()
+		waking_kills = []
+	if waking_kills.has(kind):
+		return
+	waking_kills.append(kind)
+	var g := int(float(Balance.WAKING_GOLD) * Balance.daily_gold_mult(player.level))
+	Pickup.drop_gold(self, g, pos + Vector2(0, 36))
+	give_loot({"kind": "gem", "gem": drop_gem(Balance.WAKING_GEM_LVL)}, pos + Vector2(40, 44))
+	spawn_text(player.global_position + Vector2(0, -92),
+		"THE BREACH SEALS  (%d/%d this week — +%d gold, a bright gem)" %
+			[waking_kills.size(), Balance.WAKING_ROOMS, g], Color(0.7, 0.85, 1.0), 5.0)
+	if waking_kills.size() == Balance.WAKING_ROOMS:
+		Chest.drop(self, "gold", clamp_to_zone(pos + Vector2(-70, 50), pos))
+		add_renown(Balance.RENOWN_WAKING)
+		spawn_text(player.global_position + Vector2(0, -134),
+			"THE WAKING RECEDES — the week's chest is yours", Color(1.0, 0.85, 0.4), 5.0)
+	autosave()
 
 ## A boss killed inside an endgame arena run (Boss.endgame_boss): clear the bar
 ## and advance the run. NO full heal — HP/MP carry between fights (ACT2 §II).

@@ -133,6 +133,15 @@ Infinite combat dungeon. How deep can you go?
 
 ### Waking Incursions — Weekly World Events
 
+> **SHIPPED 2026-07-24** (current decisions: DESIGN "Waking Incursions";
+> round narrative: BALANCE_HISTORY). Deltas from this spec, all deliberate:
+> rewards bank per WEEK not per run (collected-not-farmed doctrine); the
+> cosmetic token is **Renown**; mini-boss level is `max(chapter finale +5,
+> native)` — the no-downscaling rule floors late-act echoes, so the roster
+> prefers at-or-under-target picks; gem is Lv3 (gems have levels, not
+> grades); solo worlds only for now (co-op room sync = flagged follow-up)
+> and ch2 sits out until its graph-retrofit lands a spine.
+
 Weekly rotating events that overlay onto existing chapters.
 
 - Each week (trusted clock), one cleared chapter is marked as **Waking**. The

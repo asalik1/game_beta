@@ -338,3 +338,21 @@ static func _weekly(m: Menus, list: VBoxContainer) -> void:
 				"Begin this week's challenge? It restarts %s from its beginning on the week's fixed map, with '%s' live (%s). Your character, gear and Resonance carry in — chapter story progress resets, like any replay." %
 					[chname, String(mod["name"]), String(mod["desc"])],
 				func() -> void: g.start_weekly()), Color(0.85, 0.7, 1.0))
+
+	# --- the Waking Incursion (rides the same rotating chapter) ---
+	m._lbl(list, "— THE WAKING —", 16, Color(0.7, 0.85, 1.0))
+	var wk_ch := g.weekly_chapter()
+	var can_wake: bool = g.get_flag("completed_" + wk_ch, false) \
+		and not Story.chapter(wk_ch).get("spine", []).is_empty()
+	var banked: int = g.waking_kills.size() if g.waking_kills_week == g._week_index() else 0
+	if can_wake:
+		var wl := m._lbl(list, "%s is Waking this week: three breach rooms off the spine, each holding an echo from another god-king's domain (finale level +%d, one affix). Replay the chapter solo to hunt them." %
+			[chname, Balance.WAKING_LEVEL_BONUS], 13, Color(0.85, 0.88, 0.94))
+		wl.custom_minimum_size = Vector2(800, 0)
+		wl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		m._lbl(list, "Breaches sealed this week:  %d / %d  →  a bright gem + gold each; all %d pay the Waking Chest + ◈%d Renown." %
+			[banked, Balance.WAKING_ROOMS, Balance.WAKING_ROOMS, Balance.RENOWN_WAKING],
+			13, Color(0.7, 1.0, 0.7) if banked > 0 else Color(0.7, 0.72, 0.78))
+	else:
+		m._lbl(list, "The Waking stirs where the weekly points — clear %s and its breaches will open to you." % chname,
+			13, Color(0.6, 0.62, 0.68))

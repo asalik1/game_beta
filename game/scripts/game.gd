@@ -405,8 +405,10 @@ func load_save(slot: int) -> void:
 	save_slot = slot
 	guest_world = false  # resuming OUR world: full autosaves again (MP-08)
 	# The layout is a pure function of wander_seed: restore the seed
-	# FIRST, then force-rebuild so the world matches the saved one.
+	# FIRST, then force-rebuild so the world matches the saved one. The
+	# Waking week rides the same contract — breach rooms are geography.
 	wander_seed = int(SaveGame.world_of(data).get("wander_seed", 0))
+	_waking_restore = int(SaveGame.world_of(data).get("waking_week", -1))
 	switch_chapter(String(data.get("chapter", "ch1")), true)
 	SaveGame.apply(self, data)
 	request_pause(false)

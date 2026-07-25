@@ -1375,6 +1375,23 @@ const RENOWN_CACHE_PRICE := 25
 const RENOWN_CACHE_ITEMS := ["mana_potion", "elixir_might", "elixir_ward", "renewal_draught"]
 const RENOWN_COLOR := Color(0.78, 0.55, 1.0)   # the violet every Renown surface shares
 
+# ----------------------------------------------------- waking incursions ---
+# Weekly world event (ACT2_DESIGN "Waking Incursions", SOCIAL_LAYER step 3):
+# the week's rotating chapter (the weekly challenge's own), once CLEARED,
+# grows WAKING_ROOMS bonus breach rooms off the spine, each holding a boss
+# from a DIFFERENT god-king's domain — the terrain mismatch IS the story.
+# Solo worlds only for now (co-op sync is the flagged follow-up, same as
+# tiers shipped). Kills bank once per trusted-clock week per character:
+# a banked kill pays the gem + gold; banking all three pays the Waking
+# Chest + Renown. Repeat visits in the week spawn nothing — collected,
+# not farmed.
+const WAKING_ROOMS := 3
+const WAKING_LEVEL_BONUS := 5     # breaches fight at the chapter finale's level + 5
+const WAKING_AFFIXES := 1         # each wears one week-seeded elite affix
+const WAKING_GEM_LVL := 3         # banked kill: one bright gem (above the vault's Lv2)
+const WAKING_GOLD := 350          # banked kill: bonus gold (level-scaled like the daily)
+const RENOWN_WAKING := 25         # all three banked in a week -> the chest + this
+
 static func renown_price(kind: String, tier := "") -> int:
 	if kind == "chroma":
 		return RENOWN_PRICE_CHROMA

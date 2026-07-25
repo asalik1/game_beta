@@ -19,6 +19,7 @@ var charge_dir := Vector2.ZERO
 var charge_time := 0.0
 var telegraphing := false
 var story_boss := false      # spawned by the zone flow (drives quests on death)
+var waking_boss := false     # a Waking Incursion breach echo (rogue-path death + weekly bank)
 var endgame_boss := false    # spawned by the endgame controller (drives the run on death)
 var affix := ""              # elite affix key worn in the endgame modes (Balance.AFFIXES), "" = none
 

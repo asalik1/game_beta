@@ -909,6 +909,12 @@ func _run_systems() -> void:
 	# weekly supply cache, cache-ledger save round-trip, Wardrobe smoke.
 	await _test_renown()
 
+	# 3d21. Waking Incursions (2026-07-24): week-seeded cross-domain
+	# roster, pure zone injection, the once-per-week bank (gem/gold per
+	# breach, chest + Renown on the sweep, stale-week refusal), and the
+	# world-week + character-ledger save round-trip.
+	await _test_waking()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -5395,3 +5401,116 @@ func _test_renown() -> void:
 	game.player.consumables = keep_cons
 	game.dropped_loot = keep_dropped
 	print("ok: renown (prices, wallet, buy/own, PB + tier faucets pay once, weekly cache, save round-trip, wardrobe UI)")
+
+
+func _test_waking() -> void:
+	# --- roster: pure, week-seeded, cross-domain, distinct ---
+	var r1: Array = game._waking_roster("ch3", 1234)
+	if r1.size() != Balance.WAKING_ROOMS:
+		return _fail("waking roster should hold %d echoes" % Balance.WAKING_ROOMS)
+	if str(r1) != str(game._waking_roster("ch3", 1234)):
+		return _fail("waking roster must be deterministic per week")
+	var ch3_bosses := {}
+	for z in Story.chapter("ch3")["zones"]:
+		if String(z.get("boss", "")) != "":
+			ch3_bosses[String(z["boss"])] = true
+	var fb_lvl: int = int(Story.ALL_ENEMIES[String(Story.chapter("ch3")["final_boss"])]["level"])
+	var seen := {}
+	for e in r1:
+		if ch3_bosses.has(String(e["kind"])):
+			return _fail("a waking echo must come from ANOTHER domain")
+		if seen.has(String(e["kind"])):
+			return _fail("waking echoes must be distinct")
+		seen[String(e["kind"])] = true
+		# The target is finale + bonus; a rare over-level fill-in keeps its
+		# native floor (no-downscaling rule) — the entry pins the real value.
+		var native: int = int(Story.ALL_ENEMIES[String(e["kind"])].get("level", 1))
+		if int(e["level"]) != maxi(fb_lvl + Balance.WAKING_LEVEL_BONUS, native):
+			return _fail("waking level should be max(finale + bonus, native)")
+		if String(e["terrain"]) == "":
+			return _fail("a waking echo carries its home terrain")
+
+	# --- injection: appends to a DUPLICATE, breach defs complete ---
+	var authored: Array = Story.chapter("ch3")["zones"]
+	var n0: int = authored.size()
+	var inj: Array = game._waking_inject(authored, "ch3", 1234)
+	if authored.size() != n0:
+		return _fail("injection must never grow the shared Story array")
+	if inj.size() != n0 + Balance.WAKING_ROOMS:
+		return _fail("injection should append the breach rooms")
+	for i in range(n0, inj.size()):
+		var bz: Dictionary = inj[i]
+		if String(bz.get("waking", "")) == "" or String(bz.get("boss", "")) != String(bz["waking"]):
+			return _fail("a breach zone should carry waking == boss kind")
+		if not (bz.get("enemies", [null]) as Array).is_empty():
+			return _fail("breach rooms are exploration-only (no packs)")
+		var bz_native: int = int(Story.ALL_ENEMIES[String(bz["boss"])].get("level", 1))
+		if int(bz.get("boss_level", -1)) != maxi(fb_lvl + Balance.WAKING_LEVEL_BONUS, bz_native):
+			return _fail("breach zone should pin the lifted boss level")
+
+	# --- the weekly bank: once per kind, chest + Renown on the sweep ---
+	game._load_meta()
+	var keep_ren = game._meta.get("renown")
+	var keep_wweek: int = game.waking_week
+	var keep_kweek: int = game.waking_kills_week
+	var keep_kills: Array = game.waking_kills.duplicate()
+	var keep_drop: Array = game.dropped_loot.duplicate(true)
+	var keep_gems: Array = game.player.gem_bag.duplicate(true)
+	var keep_cons: Array = game.player.consumables.duplicate(true)
+	game._meta["renown"] = 0
+	game.waking_week = game._week_index()
+	game.waking_kills_week = -1
+	game.waking_kills = []
+	var pos: Vector2 = game.player.global_position
+	game._waking_bank_kill("fangmaw", pos)
+	if game.waking_kills != ["fangmaw"]:
+		return _fail("the first bank should record its kind")
+	if not game.waking_banked("fangmaw") or game.waking_banked("morwen"):
+		return _fail("waking_banked should read the week's ledger")
+	game._waking_bank_kill("fangmaw", pos)
+	if game.waking_kills.size() != 1:
+		return _fail("a kind banks once per week")
+	if game.renown() != 0:
+		return _fail("Renown pays only on the full sweep")
+	game._waking_bank_kill("morwen", pos)
+	game._waking_bank_kill("vargoth", pos)
+	if game.renown() != Balance.RENOWN_WAKING:
+		return _fail("the third bank should pay the Waking Renown")
+	game._waking_bank_kill("stormwarden", pos)
+	if game.renown() != Balance.RENOWN_WAKING:
+		return _fail("a fourth echo must not double-pay the sweep")
+	game.waking_week = game._week_index() - 1  # a run that outlived its week
+	game.waking_kills_week = -1
+	game.waking_kills = []
+	game._waking_bank_kill("fangmaw", pos)
+	if not game.waking_kills.is_empty():
+		return _fail("a stale-week run must bank nothing")
+
+	# --- save round-trip: world week + character ledger ---
+	game.waking_week = 777
+	game.waking_kills_week = 888
+	game.waking_kills = ["fangmaw", "morwen"]
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	game.waking_week = -1
+	game.waking_kills_week = -1
+	game.waking_kills = []
+	var wk_save := SaveGame.read(SaveGame.MAX_SLOTS)
+	SaveGame.apply(game, wk_save)
+	await _frames(2)
+	if game.waking_week != 777 or game.waking_kills_week != 888 \
+			or game.waking_kills != ["fangmaw", "morwen"]:
+		return _fail("waking week/ledger lost in the save round-trip")
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+
+	# --- restore shared state ---
+	if keep_ren == null:
+		game._meta.erase("renown")
+	else:
+		game._meta["renown"] = keep_ren
+	game.waking_week = keep_wweek
+	game.waking_kills_week = keep_kweek
+	game.waking_kills = keep_kills
+	game.dropped_loot = keep_drop
+	game.player.gem_bag = keep_gems
+	game.player.consumables = keep_cons
+	print("ok: waking incursions (cross-domain seeded roster, pure injection, weekly bank + Renown sweep, stale refusal, save round-trip)")

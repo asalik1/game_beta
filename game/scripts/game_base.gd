@@ -305,6 +305,25 @@ var vault_claimed_week := -1   # week the vault was last claimed
 # meta — game_flow.renown()). ---
 var renown_cache_week := -1
 
+# --- Waking Incursion (ACT2_DESIGN; solo worlds for now) ---
+# waking_week is WORLD state: the trusted-clock week THIS world's breach
+# rooms were built for (-1 = none), armed in switch_chapter and restored
+# by load_save BEFORE the rebuild — the wander_seed contract, because the
+# breaches are room GEOGRAPHY and the graph must match the save. A stale
+# week keeps the map but pays nothing (the weekly_fx precedent).
+var waking_week := -1
+var _waking_restore := -2      # transient load hand-off (-2 = arm normally)
+# The kill ledger is the CHARACTER's (per-head faucet, like the vault):
+# which breach echoes this hero banked this week.
+var waking_kills_week := -1
+var waking_kills: Array = []
+
+
+## Has this character already banked this week's kill of `kind`? (Guards
+## the breach spawn — a banked echo does not rise again this week.)
+func waking_banked(kind: String) -> bool:
+	return waking_kills_week == _week_index() and waking_kills.has(kind)
+
 # --- chapter run stats (results card; persisted mid-run, reset per run) ---
 var run_time := 0.0            # seconds in ST_PLAYING this chapter run
 var run_deaths := 0

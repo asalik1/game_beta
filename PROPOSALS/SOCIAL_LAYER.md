@@ -204,8 +204,12 @@ can carry, and it needs the server. Lowest priority of the six; sequence it last
    cache. Awakenings deliberately NOT sold (they stay quest-earned status).
    Titles stayed identity-only per the doctrine — the "buying titles" reading
    of this step was rejected.
-3. **Waking Incursions** — the login-reason loop, already spec'd; pays Renown.
-   No server needed. **The named next step.**
+3. **Waking Incursions** — **SHIPPED 2026-07-24** (same session as step 2;
+   DESIGN "Waking Incursions", round narrative in BALANCE_HISTORY). Weekly
+   breach rooms on the rotating cleared chapter, cross-domain affixed echoes,
+   once-a-week bank paying gem/gold + the Waking Chest and Renown on the
+   sweep. Solo-only v1; co-op room sync + the ch2 graph-retrofit inherit
+   the event later.
 4. **Async guilds** — roster/ladder/crests as STATE. The retention test before
    committing to servers. Needs lightweight persistence (could ride meta.json
    short-term) but not full presence.

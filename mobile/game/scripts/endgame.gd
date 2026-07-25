@@ -491,7 +491,9 @@ func _pick_affixes(n: int) -> Array:
 	return out
 
 ## Apply an affix's stat mutation once, at spawn (no per-frame hook needed).
-func _apply_affix(e: Enemy, key: String) -> void:
+## Static so non-arena spawns (Waking Incursion breaches) share the one
+## implementation instead of copying the mutation table.
+static func apply_affix(e: Enemy, key: String) -> void:
 	var a: Dictionary = Balance.AFFIXES.get(key, {})
 	if a.is_empty():
 		return
@@ -508,6 +510,10 @@ func _apply_affix(e: Enemy, key: String) -> void:
 		e.eva += float(a["eva_add"])
 	for t in a.get("traits", []):
 		e.traits[String(t)] = true
+
+
+func _apply_affix(e: Enemy, key: String) -> void:
+	apply_affix(e, key)
 
 
 # ----------------------------------------------------------------- pools ---

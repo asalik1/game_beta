@@ -42,6 +42,26 @@ func switch_chapter(id: String, force := false) -> void:
 	# net_advance, the weekly-flags pattern).
 	if not Story.is_endgame(id) and not net_guest():
 		world_run_tier = player.run_tier if has_local_player() else 0
+	# Waking Incursion snapshot (world state, wander_seed contract): a LOAD
+	# hands the saved week through _waking_restore so the rebuilt graph
+	# matches the save; a fresh launch arms only for a SOLO visit to the
+	# week's rotating chapter once THIS character has cleared it, and only
+	# on spine chapters (the legacy ch2 strip has no attach pass — its
+	# graph-retrofit inherits the event). Co-op sync = flagged follow-up.
+	# A GUEST always clears the value — the host's world has no breaches,
+	# and a stale solo week must never inject rooms into a briefed world.
+	if not Story.is_endgame(id):
+		if net_guest():
+			waking_week = -1
+		elif _waking_restore != -2:
+			waking_week = _waking_restore
+			_waking_restore = -2
+		else:
+			waking_week = -1
+			if not net_online() and Story.CHAPTER_LIST.has(id) and id == weekly_chapter() \
+					and get_flag("completed_" + id, false) \
+					and not Story.chapter(id).get("spine", []).is_empty():
+				waking_week = _week_index()
 	_quest_avail_cache = -1  # a new chapter offers a whole new set (⚑ shine memo)
 	quest_marks.clear()      # the old world's ❢ nodes die with it
 	# Potion investment (2026-07-09): stock is BOUGHT and carries across
@@ -54,6 +74,13 @@ func switch_chapter(id: String, force := false) -> void:
 	var chapter: Dictionary = Story.chapter(id)
 	zones = chapter["zones"]
 	zone_count = zones.size()
+	# Campaign-only: an endgame arena PARKS the campaign's waking_week (the
+	# run_tier pattern) and must never grow breach rooms of its own.
+	if waking_week >= 0 and Story.CHAPTER_LIST.has(id):
+		# Breach rooms append to a DUPLICATE of the authored array — the
+		# chapter dict is shared Story data and must never grow permanently.
+		zones = _waking_inject(zones, id, waking_week)
+		zone_count = zones.size()
 
 	if is_instance_valid(world):
 		world.free()  # immediate: everything world-owned dies with it
@@ -161,6 +188,72 @@ func _hub_action(act: String) -> void:
 
 func _inspect_landmark(title: String, text: String) -> void:
 	hud.dialogue([[title, text]])
+
+
+# ------------------------------------------------- waking incursions ---
+
+## The week's breach roster for a chapter: WAKING_ROOMS distinct story
+## bosses authored in OTHER chapters (the wrong god-king's domain — the
+## terrain mismatch IS the story), deterministic from the week, so every
+## player faces the same echoes. Each entry: {kind, terrain (the boss's
+## own home room), level (this chapter's finale + WAKING_LEVEL_BONUS)}.
+## Pure function of (chid, week) — the autotest exercises it directly.
+func _waking_roster(chid: String, week: int) -> Array:
+	var pool: Array = []          # [kind, home terrain] from other chapters
+	for cid in Story.CHAPTER_LIST:
+		if String(cid) == chid:
+			continue
+		for z in Story.chapter(String(cid))["zones"]:
+			var bk := String(z.get("boss", ""))
+			if bk != "" and Story.ALL_ENEMIES.has(bk):
+				pool.append([bk, String(z.get("terrain", "village"))])
+	var rng := RandomNumberGenerator.new()
+	rng.seed = week * 8117 + chid.hash() % 100003
+	for i in range(pool.size() - 1, 0, -1):  # seeded Fisher-Yates
+		var j := rng.randi_range(0, i)
+		var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp
+	var fb := String(Story.chapter(chid).get("final_boss", ""))
+	var target := int(Story.ALL_ENEMIES.get(fb, {}).get("level", 10)) + Balance.WAKING_LEVEL_BONUS
+	# Eligibility: prefer echoes at or UNDER the chapter's target — the
+	# no-downscaling rule means an over-level echo fights at its NATIVE
+	# level (make_boss treats authored level as a minimum), and a late-act
+	# legend would wall an early chapter's sweep. Fill from the lowest
+	# natives above only when the eligible pool runs short.
+	var eligible: Array = []
+	var high: Array = []
+	var seen := {}
+	for entry in pool:
+		if seen.has(entry[0]):
+			continue
+		seen[entry[0]] = true
+		var native := int(Story.ALL_ENEMIES[entry[0]].get("level", 1))
+		(eligible if native <= target else high).append(entry)
+	high.sort_custom(func(a, b) -> bool:
+		var la := int(Story.ALL_ENEMIES[a[0]].get("level", 1))
+		var lb := int(Story.ALL_ENEMIES[b[0]].get("level", 1))
+		return la < lb if la != lb else String(a[0]) < String(b[0]))
+	var out: Array = []
+	for entry in eligible + high:
+		if out.size() >= Balance.WAKING_ROOMS:
+			break
+		var native := int(Story.ALL_ENEMIES[entry[0]].get("level", 1))
+		out.append({"kind": entry[0], "terrain": entry[1], "level": maxi(target, native)})
+	return out
+
+
+## Extend a chapter's authored zone list with the week's breach rooms —
+## returns a NEW array (the input is shared Story data). The breaches are
+## exploration-only boss rooms; the spine layout's side-attach pass places
+## them (foreign terrain falls through to the any-host pass by design).
+func _waking_inject(zones_in: Array, chid: String, week: int) -> Array:
+	var out: Array = zones_in.duplicate()
+	for e in _waking_roster(chid, week):
+		out.append({"name": "Waking Breach", "type": "combat",
+			"terrain": String(e["terrain"]), "enemies": [],
+			"boss": String(e["kind"]), "boss_level": int(e["level"]),
+			"waking": String(e["kind"]),
+			"obstacle_count": 0, "decor_count": 0})
+	return out
 
 
 # ------------------------------------------------------- the room graph ---
@@ -1882,6 +1975,9 @@ func _on_boss_trigger(zi: int) -> void:
 	if boss_done.get(kind, false):
 		return
 	boss_spawned[zi] = true
+	if String(zones[zi].get("waking", "")) != "":
+		_spawn_boss(zi, kind)  # a breach echo: no story beat out of its chapter
+		return
 	var beat: Array = Story.beat_for("pre_" + kind,
 		Story.res_band(player.resonance), flags)
 	if beat.is_empty():
@@ -1898,13 +1994,27 @@ func _spawn_boss(zi: int, kind: String) -> void:
 	current_boss = Boss.make_boss(self, kind,
 		rooms[zi]["origin"] + Vector2(ROOM_W - 420.0, ROOM_H / 2.0),
 		tiered_level(kind, int(zones[zi].get("boss_level", -1))))
-	current_boss.story_boss = true  # its death advances the chapter
+	var waking: bool = String(zones[zi].get("waking", "")) != ""
+	# A breach echo dies down the ROGUE path (rewards only, no story) plus
+	# the weekly bank; a zone boss drives quests/gates as always.
+	current_boss.story_boss = not waking
+	if waking:
+		current_boss.waking_boss = true
+		# One week-seeded elite affix — the same exam for everyone this week.
+		var wrng := RandomNumberGenerator.new()
+		wrng.seed = waking_week * 6659 + kind.hash() % 100003
+		for i in Balance.WAKING_AFFIXES:
+			var akey := String(Balance.AFFIX_KEYS[wrng.randi_range(0, Balance.AFFIX_KEYS.size() - 1)])
+			Endgame.apply_affix(current_boss, akey)
+			current_boss.affix = String(Balance.AFFIXES[akey]["name"])
+		if current_boss.affix != "":
+			current_boss.display_name = current_boss.affix + " " + current_boss.display_name
 	current_boss.zone_idx = zi
 	bosses.append(current_boss)
 	world.add_child(current_boss)
 	current_boss.roar()
-	hud.show_boss_bar(Story.ALL_ENEMIES[kind]["name"])
-	hud.boss_banner(Story.ALL_ENEMIES[kind]["name"])  # the name SLAMS in
+	hud.show_boss_bar(current_boss.display_name if waking else Story.ALL_ENEMIES[kind]["name"])
+	hud.boss_banner(current_boss.display_name if waking else Story.ALL_ENEMIES[kind]["name"])
 	set_music(_boss_music())
 
 func _try_spawn_boss(zi: int, force := false) -> void:
@@ -1922,6 +2032,8 @@ func _try_spawn_boss(zi: int, force := false) -> void:
 	var kind: String = zones[zi].get("boss", "")
 	if kind == "" or boss_done.get(kind, false) or boss_spawned.get(zi, false):
 		return
+	if String(zones[zi].get("waking", "")) != "" and waking_banked(kind):
+		return  # a banked echo does not rise again this week
 	_on_boss_trigger(zi)
 
 func add_enemy(e: Enemy) -> void:
