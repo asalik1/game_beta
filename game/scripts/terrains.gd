@@ -489,8 +489,8 @@ const STRUCTURES := {
 	# readable passage instead of an invisible wall.
 	"capital_crown_spire_gate": {"sprite": "capital_crown_spire_gate", "w": 900.0,
 		"colliders": [
-			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(-310, -9)},
-			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(310, -9)}],
+			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(-310, -24)},
+			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(310, -24)}],
 		"fire": true},
 	# A single connected city-edge silhouette, spawned only through
 	# _add_backdrop. Its base carries ONE thin full-width strip (owner report
@@ -499,23 +499,28 @@ const STRUCTURES := {
 	# front of, never inside.
 	"capital_city_arcade": {"sprite": "capital_city_arcade", "w": 1680.0,
 		"colliders": [{"shape": "rect", "size": Vector2(1680, 26), "off": Vector2(0, -8)}]},
+	# Collider-vs-art rule (owner 2026-07-25, the fangmoot "invisible wall"):
+	# a capital collider's SOUTH edge must sit at the art's lowest opaque row
+	# (base-anchor render: local +12 minus the rendered bottom padding) —
+	# never hanging into the visually empty grass below. Enforced by the
+	# autotest capital contract.
 	"capital_crown_fountain": {"sprite": "capital_crown_fountain", "w": 380.0,
-		"colliders": [{"shape": "circle", "radius": 76.0, "off": Vector2(0, -12)}]},
+		"colliders": [{"shape": "rect", "size": Vector2(300, 130), "off": Vector2(0, -65)}]},
 	"capital_emberward_gate": {"sprite": "capital_emberward_gate", "w": 420.0,
 		"colliders": [
-			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(-142, -9)},
-			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(142, -9)}],
+			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(-142, -34)},
+			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(142, -34)}],
 		"fire": true},
 	"capital_market_stall": {"sprite": "capital_market_stall", "w": 280.0,
-		"colliders": [{"shape": "rect", "size": Vector2(178, 42), "off": Vector2(0, -8)}]},
+		"colliders": [{"shape": "rect", "size": Vector2(178, 42), "off": Vector2(0, -18)}]},
 	"capital_portal_story": {"sprite": "capital_portal_story", "w": 260.0,
 		"colliders": [
 			{"shape": "circle", "radius": 22.0, "off": Vector2(-78, -8)},
 			{"shape": "circle", "radius": 22.0, "off": Vector2(78, -8)}]},
 	"capital_portal_crucible": {"sprite": "capital_portal_crucible", "w": 280.0,
 		"colliders": [
-			{"shape": "circle", "radius": 24.0, "off": Vector2(-88, -8)},
-			{"shape": "circle", "radius": 24.0, "off": Vector2(88, -8)}],
+			{"shape": "circle", "radius": 24.0, "off": Vector2(-88, -26)},
+			{"shape": "circle", "radius": 24.0, "off": Vector2(88, -26)}],
 		"fire": true},
 	"capital_portal_depths": {"sprite": "capital_portal_depths", "w": 230.0,
 		"colliders": [{"shape": "rect", "size": Vector2(132, 42), "off": Vector2(0, -8)}]},
@@ -526,7 +531,7 @@ const STRUCTURES := {
 	"capital_chartered_hall": {"sprite": "capital_chartered_hall", "w": 330.0,
 		"colliders": [{"shape": "rect", "size": Vector2(275, 170), "off": Vector2(0, -90)}]},
 	"capital_ashfire_forge": {"sprite": "capital_ashfire_forge", "w": 360.0,
-		"colliders": [{"shape": "rect", "size": Vector2(300, 180), "off": Vector2(0, -95)}],
+		"colliders": [{"shape": "rect", "size": Vector2(300, 170), "off": Vector2(0, -76)}],
 		"fire": true},
 	"capital_grand_archive": {"sprite": "capital_grand_archive", "w": 340.0,
 		"colliders": [{"shape": "rect", "size": Vector2(285, 175), "off": Vector2(0, -93)}]},
@@ -534,12 +539,12 @@ const STRUCTURES := {
 		"colliders": [{"shape": "rect", "size": Vector2(300, 190), "off": Vector2(0, -100)}],
 		"fire": true},
 	"capital_wildfang_fangmoot": {"sprite": "capital_wildfang_fangmoot", "w": 330.0,
-		"colliders": [{"shape": "circle", "radius": 72.0, "off": Vector2(0, -10)}],
+		"colliders": [{"shape": "rect", "size": Vector2(280, 150), "off": Vector2(0, -66)}],
 		"fire": true},
 	"capital_rot_chapel": {"sprite": "capital_rot_chapel", "w": 350.0,
 		"colliders": [{"shape": "rect", "size": Vector2(290, 185), "off": Vector2(0, -98)}]},
 	"capital_accord_longhouse": {"sprite": "capital_accord_longhouse", "w": 420.0,
-		"colliders": [{"shape": "rect", "size": Vector2(350, 200), "off": Vector2(0, -105)}],
+		"colliders": [{"shape": "rect", "size": Vector2(350, 170), "off": Vector2(0, -76)}],
 		"fire": true},
 	"capital_sable_hall": {"sprite": "capital_sable_hall", "w": 420.0,
 		"colliders": [{"shape": "rect", "size": Vector2(350, 200), "off": Vector2(0, -105)}],

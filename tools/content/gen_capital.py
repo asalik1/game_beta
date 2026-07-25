@@ -15,6 +15,10 @@ import collections, sys
 
 ROOM_W, ROOM_H = 2112, 1248
 CX, CY = ROOM_W // 2, ROOM_H // 2  # 1056, 624
+# Spawn sits between the spire arch and the fountain — 28px north of center
+# so the fountain's corrected body (north edge at 635) clears the hero's
+# radius on every arrival (no first-frame physics nudge).
+START_Y = CY - 28
 
 # Each room: (id, Name, gx, gy, terrain, room_scale, cast)
 # cast entry: (sprite, prompt, ref, kind[, greet])
@@ -572,10 +576,10 @@ static func selftest(_game: Node2D) -> String:
 \treturn ""
 '''
 
-body = (header.replace("@START_X@", str(CX)).replace("@START_Y@", str(CY))
+body = (header.replace("@START_X@", str(CX)).replace("@START_Y@", str(START_Y))
         .replace("@ZONES@", zones).replace("@CONVOS@", convos)
         .replace("@NZONES@", str(len(ROOMS)))
         .replace("@ACTIONS@", ", ".join('"%s"' % action for action in sorted(HUB_ACTIONS))))
 open(OUT, "w", encoding="utf-8", newline="\n").write(body)
 print("wrote", OUT)
-print("zones:", len(ROOMS), "| convos:", len(CONVOS), "| start_pos:", [CX, CY])
+print("zones:", len(ROOMS), "| convos:", len(CONVOS) + len(GOSSIP), "| start_pos:", [CX, START_Y])

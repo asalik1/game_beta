@@ -2397,37 +2397,40 @@ func _boss_splash_intro(bname: String) -> void:
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layer.z_index = 90
 	add_child(layer)
-	var scrim := ColorRect.new()
-	scrim.color = Color(0, 0, 0, 0.55)
-	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(scrim)
+	# CQ-style presentation (owner 2026-07-25): the art COVERS the screen,
+	# exactly like the dialogue box's splash layer — aspect-cover crop, not
+	# a floating card. A light scrim keeps the name readable.
 	var art := TextureRect.new()
 	art.texture = Art.tex(art_key)
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	art.position = Vector2(340, 56)
-	art.size = Vector2(600, 520)
+	art.position = Vector2.ZERO
+	art.size = Vector2(1280, 720)
 	art.pivot_offset = art.size / 2.0
-	art.scale = Vector2(0.86, 0.86)
+	art.scale = Vector2(1.06, 1.06)
 	layer.add_child(art)
+	var scrim := ColorRect.new()
+	scrim.color = Color(0, 0, 0, 0.22)
+	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(scrim)
 	var nm := Label.new()
 	nm.text = bname
-	nm.position = Vector2(0, 592)
-	nm.size = Vector2(1280, 60)
+	nm.position = Vector2(0, 566)
+	nm.size = Vector2(1280, 70)
 	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	nm.add_theme_font_size_override("font_size", 40)
+	nm.add_theme_font_size_override("font_size", 48)
 	nm.add_theme_color_override("font_color", Color(0.95, 0.3, 0.25))
 	nm.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	nm.add_theme_constant_override("outline_size", 8)
+	nm.add_theme_constant_override("outline_size", 9)
 	layer.add_child(nm)
 	layer.modulate.a = 0.0
 	var tw := layer.create_tween()
 	tw.tween_property(layer, "modulate:a", 1.0, 0.18)
-	tw.parallel().tween_property(art, "scale", Vector2.ONE, 0.55) \
+	tw.parallel().tween_property(art, "scale", Vector2.ONE, 0.7) \
 		.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	tw.tween_interval(0.85)
+	tw.tween_interval(0.95)
 	tw.tween_property(layer, "modulate:a", 0.0, 0.4)
 	tw.tween_callback(layer.queue_free)
 

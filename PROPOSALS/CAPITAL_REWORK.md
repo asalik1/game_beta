@@ -143,6 +143,38 @@ Three reports from the owner's first in-game look, all fixed same morning:
   authored for tankard/forge/archive/chapel/longhouse/sable/chartered
   halls, and the city-edge arcade backdrop gained one shallow base strip
   (the room walls never actually owned that edge).
+- **Invisible walls** (the fangmoot screenshot): the inverse defect — some
+  authored colliders hung 22–74px BELOW their art's lowest opaque row
+  (padded 512px sources render their visual bottom above the base anchor),
+  so the block stood in visually empty grass. Retuned: fangmoot
+  (circle→platform rect — it also under-covered the sides), fountain,
+  forge, longhouse, market stall, gate piers, spire piers, crucible piers
+  (caught by the new contract test, not by eye); plaza spawn nudged clear
+  of the fountain's corrected body.
+- **Stand-points now DERIVE from colliders** (round 3 — "prompt still far
+  below / doesn't show when I hug the structure"): the authored hotspot
+  offsets were tuned against the old oversized colliders, so once colliders
+  hugged the art, standing against it fell OUTSIDE the trigger band. Every
+  landmark hotspot now stands `PROP_HOTSPOT_STAND` (34px) south of its
+  collider's south edge — adjacency always triggers; the archive desks and
+  market stalls had the same latent gap and are cured by the same rule.
+- **Art self-alignment** (round 4 — "his head is overlapped by the hearth"):
+  the third face of the padding disease — the drawn base floated above the
+  y-sort anchor, so a hero standing in the phantom band sorted BEHIND the
+  structure. `_add_structure`/`_add_backdrop` now measure each art's bottom
+  padding (cached alpha scan) and shift the sprite so its lowest opaque row
+  sits at the +12 grounding line — pixels, collision and y-sort agree for
+  EVERY structure, chapters included (tight-cropped art is unchanged).
+  Collider contract v2 became pure data: south edge ≤ the grounded line.
+- **Battle seals are visible gates now** (round 5 — "no visual indicator
+  that the room is locked"): the hot-room door seal parks a step OUTSIDE
+  the room, beyond the camera clamp — its red glow was literally off-screen.
+  Each seal now renders ch1-style gate bars AT the door line (red-tinted,
+  pulsing) so a locked exit is always visibly barred.
+- Intro-quest fix caught by the suite: the Lapidary's gem quest was
+  uncompletable for a fresh ch1 hero (socket floor is C-grade; F/E gear
+  can't socket, and the random gem could roll a special). She now hands a
+  training KIT — a socketed C-grade keepsake + a guaranteed-regular stone.
 
 ## 7. Open questions for the owner
 - Flow nit: after the first-clear route to Crownfall, the Wayfinder story

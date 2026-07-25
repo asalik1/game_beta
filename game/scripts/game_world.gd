@@ -249,7 +249,7 @@ const CAP_ARTISANS := {
 		"who": "Master Lapidary", "greet": "cap_lapidary", "quest": "gem",
 		"qname": "A Stone Well Set",
 		"hub": "Benches are clear. Stones and sockets — or something else?",
-		"offer": "You've never set a stone? Then your first is on the house. Here — a cut gem. Seat it in a socketed piece of your gear and come show me the fit.",
+		"offer": "You've never set a stone? Then your first lesson is on the house. Here — a cut gem, and a keepsake with an empty socket to seat it in. Bring me back the fit.",
 		"turnin": "A clean seat. You have the hands for it. Bring me your patronage and your rough stones — patient patrons get my patient prices.",
 	},
 }
@@ -291,7 +291,19 @@ func _cap_artisan_choice(npc: String, acts: Array, idx: int) -> void:
 		"offer":
 			set_flag("cap_q_%s_on" % qid)
 			if qid == "gem" and has_local_player():
-				var gem: Dictionary = Items.random_gem(loot_rng, 1)
+				# The training KIT (2026-07-25): gems need a socketed vessel
+				# and the socket floor is C-grade — a fresh ch1 hero owns
+				# nothing socketable, so the lesson supplies both halves: a
+				# socketed keepsake charm + a REGULAR cut stone (specials
+				# would be refused by the very vessel she hands over).
+				var charm: Dictionary = Items.roll_item_of("charm", "C", loot_rng, player.cls)
+				if int(charm.get("gem_slots", 0)) < 1:
+					Items.add_socket(charm)
+				var gem: Dictionary = Items.make_gem("atk_flat", 1)
+				if not player.add_item(charm):
+					send_mail("The Lapidary's keepsake",
+						"Your bag was full at the bench — the training keepsake waits here.",
+						[{"kind": "item", "item": charm}])
 				if not player.gain_gem(gem):
 					send_mail("The Lapidary's training stone",
 						"Your bag was full at the bench — the training gem waits here.",
@@ -412,12 +424,15 @@ func spawn_victory_gates(zi: int = -1) -> void:
 	var room := zi if zi >= 0 else cur_room
 	var c := room_center(room)
 	var next_ch := Story.next_chapter(chapter_id)
+	# Each gate wears its own TINT (owner 2026-07-25: three identical blue
+	# arches read as one choice) — Crownfall warm gold, Return cool violet,
+	# the Road onward verdant. A photo-filter wash over the shared arch art.
 	var defs: Array = [
-		["capital", "E — Gate of Crownfall  (the capital)", Vector2(-300, -20)],
-		["replay", "E — Gate of Return  (a fresh pass at %s)" % String(Story.chapter(chapter_id)["name"]), Vector2(0, -90)],
+		["capital", "E — Gate of Crownfall  (the capital)", Vector2(-300, -20), Color(1.0, 0.86, 0.6)],
+		["replay", "E — Gate of Return  (a fresh pass at %s)" % String(Story.chapter(chapter_id)["name"]), Vector2(0, -90), Color(0.85, 0.75, 1.0)],
 	]
 	if next_ch != "":
-		defs.append(["next", "E — Gate of the Road  (onward to %s)" % String(Story.chapter(next_ch)["name"]), Vector2(300, -20)])
+		defs.append(["next", "E — Gate of the Road  (onward to %s)" % String(Story.chapter(next_ch)["name"]), Vector2(300, -20), Color(0.7, 1.0, 0.72)])
 	for d in defs:
 		var kind: String = d[0]
 		# The arch is a STRUCTURE (width-normalized, base collider) — the NPC
@@ -426,6 +441,7 @@ func spawn_victory_gates(zi: int = -1) -> void:
 		# reach (same idiom as the capital's own Wayfinder portals).
 		var gate_world: Vector2 = c + (d[2] as Vector2)
 		var gate_node := _add_structure("capital_portal_story", gate_world)
+		gate_node.modulate = d[3]
 		var gate_h: float = float(gate_node.get_child(0).get_meta("hpx", 200.0))
 		var hotspot := _make_npc("book", gate_world + Vector2(0, 34),
 			String(d[1]), func() -> void:
@@ -1596,9 +1612,22 @@ func _spawn_scenery(zi: int) -> void:
 		# Every foreground landmark owns typed interaction stations. Most are
 		# real service actions; only true monuments/lookouts use inspect text.
 		# Multiple stations may be spaced across one facade (the Archive).
+		# STAND-POINTS DERIVE from the collider's south edge (owner 2026-07-25
+		# round 3): the authored y offsets were tuned against the old oversized
+		# colliders — once colliders hugged the art, a hero standing against it
+		# fell OUTSIDE the trigger band. Derived = collider edge + a step back,
+		# so adjacency always triggers; the authored x still spaces stations.
+		var sdef: Dictionary = Terrains.STRUCTURES.get(landmark_name, {})
+		var south_edge := 9.0   # the unlisted-def default base strip (-8 + 17)
+		for scol in sdef.get("colliders", []):
+			var sc2: Dictionary = scol
+			var s_reach: float = float(sc2.get("radius", 0.0)) \
+				if String(sc2.get("shape", "rect")) == "circle" \
+				else (sc2.get("size", Vector2.ZERO) as Vector2).y * 0.5
+			south_edge = maxf(south_edge, (sc2.get("off", Vector2.ZERO) as Vector2).y + s_reach)
 		for landmark_use in spec.get("uses", []):
 			var use_spec: Dictionary = landmark_use
-			var use_dy := float(use_spec.get("y", Balance.CAPITAL_LANDMARK_USE_Y_FALLBACK))
+			var use_dy: float = south_edge + Balance.PROP_HOTSPOT_STAND
 			var use_pos := landmark_world + Vector2(
 				float(use_spec.get("x", 0.0)), use_dy)
 			var use_action := Callable()
@@ -2004,6 +2033,33 @@ func _structure_sprite(name: String, target_w: float, wind: bool) -> Node2D:
 ## no fire audio, and no service affordance. Room walls remain the authoritative
 ## physical boundary, so the central painted arch can frame a real door lane
 ## without introducing an invisible blocker.
+## Cached bottom padding (SOURCE px) of structure art. Padded exports used
+## to render their visual base above the y-sort anchor — every consumer
+## shifts its art down by this so pixels, collision, and sort agree.
+static var _pad_cache := {}
+
+func _art_pad_bottom(tex: Texture2D, key: String) -> int:
+	if _pad_cache.has(key):
+		return int(_pad_cache[key])
+	var img: Image = tex.get_image()
+	if img.is_compressed():
+		img.decompress()
+	var iw := img.get_width()
+	var ih := img.get_height()
+	var pad := 0
+	for y in range(ih - 1, -1, -1):
+		var found := false
+		for x in range(0, iw, 2):
+			if img.get_pixel(x, y).a > 0.08:
+				found = true
+				break
+		if found:
+			pad = ih - 1 - y
+			break
+	_pad_cache[key] = pad
+	return pad
+
+
 func _add_backdrop(name: String, pos: Vector2, target_w: float) -> Node2D:
 	var def: Dictionary = Terrains.STRUCTURES.get(name, {})
 	var layer := Node2D.new()
@@ -2013,6 +2069,10 @@ func _add_backdrop(name: String, pos: Vector2, target_w: float) -> Node2D:
 		String(def.get("sprite", name)), target_w, false)
 	var height: float = float(visual.get_meta("hpx"))
 	visual.position = Vector2(0, -height * 0.5 + 12.0)
+	var bprobe: Texture2D = Art.tex(String(def.get("sprite", name)))
+	if bprobe != null:
+		visual.position.y += float(_art_pad_bottom(bprobe, String(def.get("sprite", name)))) \
+			* (height / maxf(1.0, float(bprobe.get_height())))
 	layer.add_child(visual)
 	# The silhouette's authored base strip (owner report 2026-07-25): the
 	# room walls were supposed to own this edge but don't reach it — without
@@ -2057,13 +2117,22 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	body.collision_mask = 0
 
 	# Base sprite (the structure's main art), width-normalized like a building
-	# so any-res override art lands the same on-screen size.
+	# so any-res override art lands the same on-screen size. SELF-ALIGNED
+	# (owner 2026-07-25 round 4): padded exports drew their visual base above
+	# the anchor, so a hero standing in the gap y-sorted BEHIND the art (head
+	# under the masonry). The measured bottom padding shifts the art down so
+	# its lowest opaque row always sits at the +12 grounding line tight-
+	# cropped art already had — y-sort, collider, and pixels finally agree.
 	var base_spr := _structure_sprite(String(def.get("sprite", name)),
 		float(def.get("w", 180.0)), def.get("wind", false))
 	var bw: float = base_spr.get_meta("wpx")
 	var bh: float = base_spr.get_meta("hpx")
 	base_spr.flip_h = def.get("mirror", false) and (int(pos.x) + int(pos.y)) % 2 == 1
 	base_spr.position = Vector2(0, -bh * 0.5 + 12.0)
+	var probe_tex: Texture2D = Art.tex(String(def.get("sprite", name)))
+	if probe_tex != null:
+		base_spr.position.y += float(_art_pad_bottom(probe_tex, String(def.get("sprite", name)))) \
+			* (bh / maxf(1.0, float(probe_tex.get_height())))
 	body.add_child(base_spr)
 	var target_w: float = float(def.get("w", 180.0))
 
@@ -2301,9 +2370,27 @@ func _build_door_seals() -> void:
 		glow.scale = Vector2(1.4, 3.6)
 		glow.z_index = 4
 		body.add_child(glow)
+		# Visible GATE BARS at the door line (owner 2026-07-25): the seal body
+		# parks a step OUTSIDE the room — beyond the camera clamp — so its red
+		# glow alone was invisible from inside; the exit read as an unexplained
+		# invisible block. The bars reuse the ch1 quest-gate look (rows of the
+		# gate sprite), red-tinted so a battle seal reads different from a
+		# story gate, offset back onto the door line where the camera can see.
+		var bars := Node2D.new()
+		var bar_sprites: Array = []
+		for r in DOOR_TILES:
+			var bspr := Sprite2D.new()
+			bspr.texture = Art.tex("gate")
+			bspr.scale = Vector2(3, 3)
+			bspr.modulate = Color(1.0, 0.62, 0.58)
+			bspr.z_index = 3
+			bars.add_child(bspr)
+			bar_sprites.append(bspr)
+		body.add_child(bars)
 		body.position = Vector2(-4000, -4000)  # parked (inactive)
 		world.add_child(body)
-		door_seals.append({"body": body, "shape": shape, "glow": glow})
+		door_seals.append({"body": body, "shape": shape, "glow": glow,
+			"bars": bars, "bar_sprites": bar_sprites})
 
 
 # ==================================================================== bosses
@@ -2434,6 +2521,14 @@ func _update_barrier() -> void:
 				else Vector2(DOOR_TILES * TILE + 24.0, TILE * 1.4)
 			entry["glow"].scale = Vector2(1.4, 3.6) if vertical else Vector2(3.6, 1.4)
 			entry["glow"].modulate.a = pulse
+			# The bars sit back ON the door line (the body itself parks a
+			# step outside — see below — where the camera clamp can't see).
+			(entry["bars"] as Node2D).position = -Vector2(DIRS[dir]) * (TILE * 0.9)
+			for r in DOOR_TILES:
+				var bspr: Sprite2D = entry["bar_sprites"][r]
+				var bar_off := float(r - 1) * TILE
+				bspr.position = Vector2(0, bar_off) if vertical else Vector2(bar_off, 0)
+				bspr.modulate.a = 0.7 + 0.3 * pulse
 			# Seals sit a step OUTSIDE the room (into the doorway
 			# corridor) so one never spawns on top of a player who just
 			# walked in — they pass it, then it bars the way back.

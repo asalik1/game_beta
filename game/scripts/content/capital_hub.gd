@@ -25,7 +25,7 @@ const CHAPTER := {
 	"loot_cap": "C",
 	"start_quest": "",
 	"final_boss": "",
-	"start_pos": [1056, 624],
+	"start_pos": [1056, 596],
 	"zones": [
 	{"name": "Crown Plaza", "terrain": "capital_civic", "type": "safe",
 		"coord": [0, 0], "room_scale": 1.00, "exits": ["N", "S", "E", "W"], "enemies": [], "boss": "",

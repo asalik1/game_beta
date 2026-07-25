@@ -4968,6 +4968,38 @@ func _test_capital() -> void:
 		_fail("capital: graph not connected (%d/%d reachable from the plaza)" % [seen.size(), zs.size()])
 		await get_tree().create_timer(60.0).timeout
 		return
+	# Collider-vs-art contract v2 (owner 2026-07-25 rounds 3-4): structures
+	# SELF-ALIGN their art now (game_world._add_structure shifts the base
+	# sprite so its lowest opaque row sits at the +12 grounding line), so
+	# the rule is pure data — a placed capital landmark's collision may
+	# never reach below +14 local, where it would stand in visually empty
+	# ground (the old fangmoot "invisible wall").
+	var col_checked := {}
+	for z2 in preload("res://scripts/content/capital_hub.gd").CHAPTER["zones"]:
+		var lm_names: Array = []
+		for lm in z2.get("landmarks", []):
+			lm_names.append(String(lm["name"]))
+		for bd in z2.get("backdrops", []):
+			lm_names.append(String(bd["name"]))
+		for lname_v in lm_names:
+			var lname := String(lname_v)
+			if col_checked.has(lname):
+				continue
+			col_checked[lname] = true
+			var sdef: Dictionary = Terrains.STRUCTURES.get(lname, {})
+			for col in sdef.get("colliders", []):
+				var cdef: Dictionary = col
+				var coff: Vector2 = cdef.get("off", Vector2.ZERO)
+				var south: float = coff.y
+				if String(cdef.get("shape", "rect")) == "circle":
+					south += float(cdef.get("radius", 0.0))
+				else:
+					south += (cdef.get("size", Vector2.ZERO) as Vector2).y * 0.5
+				if south > 14.0:
+					return _fail("capital: %s collider reaches %.0fpx below the grounded art line" %
+						[lname, south - 12.0])
+	print("ok: capital collider contract (%d landmark defs end at the grounded base line)" % col_checked.size())
+
 	# Real load: enter the hub, confirm it built safe on the plaza.
 	var prev: String = game.chapter_id
 	game.enter_capital()
@@ -5175,12 +5207,19 @@ func _test_capital() -> void:
 	if game.menus.is_open():
 		game.menus.close()
 	await _frames(1)
-	var q_item: Dictionary = Items.roll_item_of("armor", "B", RandomNumberGenerator.new(), p_cap.cls)
-	if int(q_item.get("gem_slots", 0)) < 1:
-		Items.add_socket(q_item)
+	# The deed uses HER kit (2026-07-25): a fresh ch1 hero owns nothing
+	# socketable (socket floor = C), so the offer hands over a socketed
+	# keepsake charm + a REGULAR cut stone — seat one in the other.
+	var kit_charm: Dictionary = {}
+	for it in p_cap.backpack:
+		var bd: Dictionary = it
+		if String(bd.get("slot", "")) == "charm" and int(bd.get("gem_slots", 0)) >= 1:
+			kit_charm = bd
+	if kit_charm.is_empty():
+		return _fail("capital: the lapidary kit charm was neither bagged nor mailed")
 	var train_gem: Dictionary = p_cap.gem_bag[p_cap.gem_bag.size() - 1]
-	if not p_cap.embed_gem_into(q_item, train_gem):
-		return _fail("capital: could not seat the training gem at the benches")
+	if not p_cap.embed_gem_into(kit_charm, train_gem):
+		return _fail("capital: could not seat the training stone in the kit charm")
 	if not game.get_flag("cap_q_gem_done", false):
 		return _fail("capital: seating a stone did not settle the lapidary deed")
 	game._hub_action("lapidary")
