@@ -328,7 +328,6 @@ class SkinAmbient extends Node2D:
 	var prism_shadow: Sprite2D = null
 	var eldritch_familiar: Sprite2D = null
 	var familiar_frame_t := 0.0
-	var orbit: Array = []
 	var eye_t := 0.0
 	# The authored idle bank (frames 0-3) sits 28 source pixels lower than the
 	# glide bank (4-7). At 0.62 display scale that is ~17 screen pixels. Offset
@@ -344,8 +343,6 @@ class SkinAmbient extends Node2D:
 		elif skin_id == "eldritch_warlock":
 			_build_eldritch_familiar()
 			eye_t = randf_range(2.0, 4.0)
-		elif skin_id == "voidwraith":
-			_build_void_orbit()
 	func _process(delta: float) -> void:
 		if plr == null or not is_instance_valid(plr):
 			queue_free()
@@ -365,8 +362,8 @@ class SkinAmbient extends Node2D:
 					_emit_phantom_mist()
 					emit_t = randf_range(0.9, 1.5)
 			elif skin_id == "voidwraith" and plr.velocity.length() > 25.0:
-				_emit_feather(Color(0.58, 0.30, 0.92, 0.8), -plr.velocity.normalized())
-				emit_t = 0.16
+				_emit_feather(Color(0.45, 0.22, 0.72, 0.7), -plr.velocity.normalized())
+				emit_t = 0.18
 			elif skin_id == "crystal_archmage":
 				_emit_crystal_glint()
 				# Refraction never stops: dense while gliding, sparse at rest.
@@ -386,8 +383,6 @@ class SkinAmbient extends Node2D:
 			if eye_t <= 0.0:
 				_bloom_eye()
 				eye_t = randf_range(3.0, 5.5)
-		elif skin_id == "voidwraith":
-			_update_void_orbit()
 		queue_redraw()
 	func _build_eldritch_familiar() -> void:
 		eldritch_familiar = Sprite2D.new()
@@ -512,27 +507,6 @@ class SkinAmbient extends Node2D:
 		tw.parallel().tween_property(m, "position", m.position + Vector2(randf_range(-7.0, 7.0), -13.0), 1.15)
 		tw.tween_property(m, "modulate:a", 0.0, 0.55)
 		tw.tween_callback(m.queue_free)
-	func _build_void_orbit() -> void:
-		# Three void motes circling the torso — the old 2px chest arc at 0.16
-		# alpha was invisible at gameplay zoom. Front-pass shards overdraw the
-		# hero (net z +1), back-pass duck behind (net z -1).
-		for i in 3:
-			var s := Sprite2D.new()
-			s.texture = Art.tex("mage_void_spindle")
-			s.scale = Vector2(0.15, 0.15)
-			s.modulate = Color(0.88, 0.72, 1.0, 0.8)
-			add_child(s)
-			orbit.append(s)
-	func _update_void_orbit() -> void:
-		for i in orbit.size():
-			var s: Sprite2D = orbit[i]
-			if not is_instance_valid(s):
-				continue
-			var a: float = t * 1.7 + TAU * float(i) / 3.0
-			s.position = Vector2(cos(a) * 23.0, -21.0 + sin(a) * 7.0)
-			s.rotation = sin(t * 1.3 + float(i)) * 0.5
-			s.z_index = 2 if sin(a) > 0.0 else 0
-			s.modulate.a = 0.55 + 0.30 * (0.5 + 0.5 * sin(a))
 	func _bloom_eye() -> void:
 		# A watching eye unfolds from a knot in the air near the warlock, holds,
 		# then knots shut — the curse_eye strip animates knot->open across
@@ -563,9 +537,8 @@ class SkinAmbient extends Node2D:
 				for i in range(phase, pts.size() - 1, 2):
 					draw_polyline(PackedVector2Array([pts[i], (pts[i] + pts[i + 1]) * 0.5 + Vector2(5, -4), pts[i + 1]]), Color(0.62, 0.86, 1.0, 0.82), 2.0)
 			"voidwraith":
-				# Identity lives in the orbiting void motes (Sprite2D children)
-				# — the old 2px chest arc was invisible at gameplay zoom.
-				pass
+				var a := 0.16 + sin(t * 1.7) * 0.05
+				draw_arc(Vector2(0, -20), 29.0, -1.15, 1.15, 18, Color(0.58, 0.34, 0.9, a), 2.0)
 			"crystal_archmage":
 				# The authored dais and moving prism-shadow are Sprite2D children.
 				# Keeping this draw branch empty prevents a flat polygon duplicate.
