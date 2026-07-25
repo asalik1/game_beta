@@ -494,7 +494,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# the NPC re-fires their convo UNDER a pending decision in a session
 	# (solo the pause blocks this handler; §5.4 skips the pause online).
 	if not touch_mode or state != ST_PLAYING or hud.dialogue_active \
-			or hud.choices_active or menus.is_open():
+			or hud.choices_active or hud.chat_active or menus.is_open():
 		return
 	if ((event is InputEventScreenTouch and event.pressed) or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed)) and talk_cd <= 0.0:
 		var world: Vector2 = get_viewport().canvas_transform.affine_inverse() * event.position
@@ -742,7 +742,8 @@ func _process(delta: float) -> void:
 	# in a session nothing pauses (§5.4), and an ungated poll kept firing
 	# E-interacts (re-entering the convo under its own pending decision) and
 	# moving the hero beneath the panel.
-	var overlay_up: bool = hud.dialogue_active or hud.choices_active or menus.is_open()
+	var overlay_up: bool = hud.dialogue_active or hud.choices_active or menus.is_open() \
+		or hud.chat_active  # MP-19: an open chat line is an input overlay (§5.4)
 	if state == ST_PLAYING and not overlay_up:
 		player._poll_local_intents()
 		# Several interactables can share one interact reach (capital stations

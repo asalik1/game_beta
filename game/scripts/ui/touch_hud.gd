@@ -45,6 +45,7 @@ const BTN_LAYOUT := {
 	"potion_next": Vector2(-238, -158),
 	"interact":    Vector2(-180, -172),
 	"lock":        Vector2(-70, -224),
+	"chat":        Vector2(-150, -268),  # MP-19: sessions only (hidden solo)
 }
 
 # --- runtime state ------------------------------------------------------------
@@ -148,6 +149,7 @@ func _make_button(id: String) -> void:
 		"lock": icon.texture = Art.tex("crosshair")
 		"interact": lbl.text = "Act"
 		"potion_next": lbl.text = "⟳"
+		"chat": lbl.text = "Say"  # text like Act — emoji glyphs go missing on mobile fonts
 	_btns[id] = {"panel": pnl, "icon": icon, "glow": glow, "label": lbl, "diam": diam, "center": Vector2.ZERO}
 
 
@@ -185,7 +187,8 @@ func _process(delta: float) -> void:
 	var on: bool = game != null and game.state == game.ST_PLAYING \
 		and game.local_player != null and is_instance_valid(game.local_player) \
 		and (game.menus == null or not game.menus.is_open()) \
-		and (game.hud == null or not (game.hud.dialogue_active or game.hud.choices_active))
+		and (game.hud == null or not (game.hud.dialogue_active or game.hud.choices_active \
+			or game.hud.chat_active))
 	if on != _enabled:
 		_enabled = on
 		visible = on
@@ -201,6 +204,9 @@ func _process(delta: float) -> void:
 	# cycle to (a single loadout slot, or an all-Health plan).
 	(_btns["potion_next"]["panel"] as Panel).visible = _edit_mode \
 		or (game != null and game.local_player != null and game.local_player.potion_swap_useful())
+	# Chat is a SESSION verb — solo screens never show it (MP-19).
+	(_btns["chat"]["panel"] as Panel).visible = _edit_mode \
+		or (game != null and game.net_online())
 	if _edit_mode:
 		return
 	_refresh_ability_icons()
@@ -324,8 +330,14 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 			var id: String = _btn_touch[e.index]
 			# A tap fires now (one short intent pulse); a long hold only explained.
 			if not _explained.has(e.index):
-				_mi.set(id, true)
-				_pulse[id] = TAP_PULSE
+				if id == "chat":
+					# MP-19: pure-UI action — opens the chat input, no intent
+					# flag (the OS keyboard rises on the LineEdit focus grab).
+					if game != null and game.hud != null:
+						game.hud.open_chat()
+				else:
+					_mi.set(id, true)
+					_pulse[id] = TAP_PULSE
 			_press_fx(id, false)
 			_btn_touch.erase(e.index)
 		_press_start.erase(e.index)
@@ -499,6 +511,9 @@ func _explain(id: String) -> void:
 	var title := ""
 	var body := ""
 	match id:
+		"chat":
+			title = "Party chat"
+			body = "Say a line to your party — everyone in the session sees it."
 		"a1", "a2", "a3", "ult":
 			var ab: Dictionary = Classes.ability(p.cls, id)
 			title = String(ab.get("name", id.to_upper()))

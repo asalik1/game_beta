@@ -718,7 +718,7 @@ wave's integration gate (not per-task) and lands a net_test stage. The net
 suite only reads true on a quiet machine + stable tree — see
 [[godot-instance-contention]] memory before believing a red stage.
 
-### MP-19: Party chat (v1: session text) — OWNER: unclaimed — status: PENDING
+### MP-19: Party chat (v1: session text) — OWNER: this session — status: DONE (say()/relay/fan in net_session — sender renders optimistically, guests relay any_peer→host w/ sender check, host stamps the roster name + enforces the 120-char cap and a 3-per-rolling-second per-peer throttle, fans authority→others; `channel` field ships from day one ("party"); HUD: lazy bottom-left line stack (6 visible, 8 s hold + fade) + ENTER-opened LineEdit — chat_active is the OVERLAY FLAG the intents poll, tap-to-talk and the touch HUD all gate on (§5.4, the co-op pause trap); ESC closes, submit says; mobile: "Say" BTN_LAYOUT button (sessions-only visibility, fires open_chat directly — no intent flag; OS keyboard rises on focus grab; text label per the mobile-font-glyph rule); net stage 14 a/b/c proves both directions + the throttle)
 Files: `net/net_session.gd`, `hud.gd`, `menus.gd` (hotkey routing), mobile deltas (chat button)
 Reliable `_rpc_chat{from_name, channel, text}` fan (host relays guest→all, the
 flag-sync idiom); HUD chat panel: collapsed 4-line log above the party frames,
@@ -731,7 +731,7 @@ chat toggle on the touch HUD, OS virtual keyboard via LineEdit focus
 (mobile/README.md delta list gains one line). Net stage: guest line reaches
 host + other guest, throttle drops the 4th-in-a-second, solo allocates nothing.
 
-### MP-20: Content proposal + ready check — OWNER: unclaimed — status: PENDING
+### MP-20: Content proposal + ready check — OWNER: this session — status: DONE (propose_content(mode, chid, tier, cont) host-side: party of 1 returns true = launch straight through, a live check refuses re-proposals; guests get _rpc_propose{seq, mode, chapter, tier, cont} → proposal_open renders as the answer card (lobby stage if open, else the lazy HUD center card — built for the victory-screen advance gate) with the chapter AND NG+ tier named (the deferred joiner-side tier visibility, delivered); answer_ready → _rpc_ready; ONE decline or the 20 s timer cancels via _finish_check → _rpc_check_over fans "<name> didn't accept."/timeout to every head (bark + lobby line); all-ready → mode routes: "start" emits check_passed for the lobby's _launch_session, "advance" calls advance_chapter directly, "reprise" feeds MP-22; the victory card's ENTER now proposes instead of advancing when hosting online; net stage 14 d/e proves named-content delivery, decline-cancels-nothing-launches, all-ready-passes-the-exact-pick)
 Files: `ui/lobby.gd`, `net/net_session.gd`, `game_flow.gd` (advance gate), `hud.gd` (in-session card)
 Replace the host's bare "Start the chapter" with propose→confirm→launch:
 `_rpc_propose{chapter, tier, continue, seq}` fans a card to every member —
@@ -747,7 +747,7 @@ scope (Crucible/Depths are solo modes today — separate owner call). Net
 stage: propose renders on the guest, decline cancels + names the decliner,
 full-accept lands everyone in the chapter at the proposed tier.
 
-### MP-21: Kick + leave etiquette — OWNER: unclaimed — status: PENDING
+### MP-21: Kick + leave etiquette — OWNER: this session — status: DONE (host_kick(pid, reason): the kicked machine hears the REASON first (reliable _rpc_kicked) and runs the normal deliberate-leave teardown itself — character written home, generic host-lost card suppressed, the reason staged on net.last_session_notice + the lobby msg line, lobby-stage kicks land back on the Play Together menu, mid-run kicks reboot to the title with the reason greeting; a 1.5 s fuse hands lingerers to MP-16's existing drop_peer (the ghost reaper — found the hard way: a duplicate definition was the wave's one parse error); UI: host-only ✕ per lobby roster row (no confirm — rejoinable) + pause-menu "Remove <name>" behind the open_confirm gate mid-run (lobby locked = no rejoin, the confirm says so); net stage 14 f proves reason'd removal, clean guest exit 0, roster reaped, host world intact)
 Files: `ui/lobby.gd`, `net/net_manager.gd`, `net/net_session.gd`
 Lobby-stage kick: a ✕ beside each roster row (host only) → targeted
 disconnect with a readable reason ("The host removed you from the party"),
@@ -760,7 +760,7 @@ dialog so a mid-fight misclick can't strand a friend. Net stage: kick from
 lobby (reason lands, roster shrinks, re-join works), kick in-session (guest
 autosaved + clean, host world unaffected).
 
-### MP-22: Party persists between content — OWNER: unclaimed — status: PENDING
+### MP-22: Party persists between content — OWNER: this session — status: DONE (the victory card IS the between-content lobby — no separate return-to-lobby state needed: the host presses N → the lobby CHAPTER stage opens in reprise mode (no Continue button — that chapter just ended; the NG+ tier row rides along; ESC backs out to the victory card, not the roster) → the pick runs the MP-20 check ("reprise" mode) → on pass game_flow.reprise_chapter(chid, tier): advance_chapter's proven victory-exit sequence, then replay semantics (flag wipe, faction reset, fresh seed) to the ARBITRARY pick, then host_advance_party — the SAME advance snap net_advance already handles carries every guest, session intact, zero new guest UI and zero new snap fields; lobby_open stays false (new joiners still need a fresh lobby — flagged, not hidden); reprise's world-switch plumbing rides stage 8(d)'s proven advance road, stage 14 proves the new wire)
 Files: `ui/lobby.gd`, `net/net_session.gd`, `game_flow.gd`
 Today exit-to-title DISBANDS (host_end_session). New: "Return to the lobby
 together" on the victory card (host choice, ready-check-free) — session stays
@@ -782,3 +782,23 @@ migration with the world snapshot re-homed (guest promotes, save stays the
 ORIGINAL host's — weird save custody), (b) defer to the server phase where
 the world outlives every client (SOCIAL_LAYER.md's "new project phase" —
 the clean answer). Recommendation: (b); revisit when the server phase prices.
+
+
+## Wave 9 — the capital party town (owner spec 2026-07-25: "if u are in the capital u just make a party and add people as u need and then the leader enters chapters via portal which prompts a ready check")
+
+The refinement that makes Wave 8 an MMO flow instead of a menu flow: the
+SAFE HUB is where parties form (joins open, people gather in person, shop,
+talk), the PORTAL is the content queue, and chapter runs stay sealed. In a
+host-owns-world architecture "being in the party" = "standing in the host's
+world" — so the capital plaza IS the waiting room, and waiting is playing.
+
+### W9-1: Hub-open lobby lifecycle — status: DONE (lobby_open is no longer a one-way latch: switch_chapter sets it from Story.is_standalone(id) on every host-side world move — OPEN standing in Crownfall, LOCKED the moment real content starts, OPEN again on the ride home; the §5.1 no-mid-run-joins rule survives exactly where it matters)
+### W9-2: Player-facing capital + open-gates hosting — status: DONE (pause menu "Travel to Crownfall" — offline campaign only, so a host can never strand guests via free travel; the Chartered Hall's lobby gains "Open your gates (host from right here)": the session raises AROUND the live world — no save pick, no relaunch, sess.local_char from the standing hero, friends join the plaza via the live-world snapshot; the host_lobby panel in a live hub drops the Start button ("lead the party to the PORTAL"), and ESC/close keeps the gates open — ending the session is the explicit button; capital's "dev-only" comments retired)
+### W9-3: The portal is the party queue — status: DONE (capital portal_story: host with guests → the reprise picker (chapter + NG+ tier row) → MP-20 ready check → game_flow.reprise_chapter, whose guard now admits SAFE-HUB launches (mid-play there, never mid-combat: a mid-chapter reprise stays refused — the no-yank rule, asserted); guests at the portal get "The party leader chooses the road"; solo keeps the simple door back to the campaign)
+### W9-4: Return home together — status: DONE (the victory reprise picker gains "⌂ Return to the Capital together" — reprise_chapter("capital") rides the same advance snap; arriving reopens the gates for the next friend)
+### W9-5: Net stage 15 — status: DONE (the whole loop asserted: gates open in the capital → friend lands in the LIVE plaza (chapter=="capital", no relaunch) → portal proposes ch1 at tier 1, guest readies, party lands in ch1 AT TIER 1 with lobby_open false → mid-chapter yank home REFUSED → gates reopen at home; passed first run)
+
+Still open after Wave 9: joiner-side pre-join content badge (lobby-payload
+field); guests joining DURING a chapter run (deliberately out — the hub is
+the join window, per the owner's own model); MP-23 host transfer (parked —
+server phase).

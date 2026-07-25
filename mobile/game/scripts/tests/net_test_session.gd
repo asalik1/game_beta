@@ -170,6 +170,8 @@ const PORT_STAGE11 := 48233  # stage 11 (Wave-1 co-op world consistency: boss ga
 const PORT_STAGE12 := 48235  # stage 12 (MMO A: dedicated server, no host body)
 const PORT_STAGE13 := 48237  # stage 13 phase 1 (MMO B: the world that persists)
 const PORT_STAGE13B := 48239 # stage 13 phase 2 (the restarted server; guests join HERE)
+const PORT_STAGE14 := 48241  # stage 14 (Wave 8: chat / ready check / kick)
+const PORT_STAGE15 := 48243  # stage 15 (Wave 9: the capital party town)
 const STEP_TIMEOUT := 30.0   # s per observable step (boots include a world build)
 const EXIT_TIMEOUT := 15.0   # s for the guest process to exit after its work
 const DROP_TIMEOUT := 45.0   # s for a KILLED peer to register as gone (MP-16 flake 2).
@@ -210,6 +212,16 @@ var _gold_before7 := 0              # guest7: wallet baseline before a payout ch
 var _gold_before8 := 0              # guest8: wallet baseline before the weekly victory reward
 var _soak_stop := false             # guest10: stop the autonomous wander loop
 var _soak_key := KEY_D              # guest10: the key currently held (release on stop)
+var _chat_seen: Array = []          # stage 14: chat_line recorder (both roles)
+var _check14: Array = []            # stage 14 host: check_passed recorder
+
+
+func _on_chat14(from_name: String, channel: String, text: String) -> void:
+	_chat_seen.append({"from": from_name, "channel": channel, "text": text})
+
+
+func _on_check14(mode: String, chid: String, tier: int, cont: bool) -> void:
+	_check14.append({"mode": mode, "chapter": chid, "tier": tier, "cont": cont})
 
 
 func _ready() -> void:
@@ -227,7 +239,11 @@ func _ready() -> void:
 		"subhost":
 			_run_subhost()  # MP-16 stage 9(b): a throwaway host to be killed
 		"host":
-			if _stage == 13:
+			if _stage == 15:
+				_run_host15()
+			elif _stage == 14:
+				_run_host14()
+			elif _stage == 13:
 				_run_host13()
 			elif _stage == 12:
 				_run_host12()
@@ -252,7 +268,11 @@ func _ready() -> void:
 			else:
 				_run_host()
 		"guest":
-			if _stage == 13:
+			if _stage == 15:
+				_run_guest14()  # stage 15 reuses 14's serve-until-finished guest
+			elif _stage == 14:
+				_run_guest14()
+			elif _stage == 13:
 				_run_guest13()
 			elif _stage == 12:
 				_run_guest12()
@@ -281,6 +301,10 @@ func _ready() -> void:
 
 
 func _port() -> int:
+	if _stage == 15:
+		return PORT_STAGE15
+	if _stage == 14:
+		return PORT_STAGE14
 	if _stage == 13:
 		return PORT_STAGE13B  # guests only ever join the RESTARTED server
 	if _stage == 12:
@@ -2104,6 +2128,17 @@ func _serve_watch(what: String, args: Dictionary) -> void:
 ## key intents. "strike" re-taps on a miss so one landed hit is certain.
 func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 	match what:
+		"chat_last":
+			# Stage 14: record every incoming line BEFORE the host speaks.
+			if not sess.chat_line.is_connected(_on_chat14):
+				sess.chat_line.connect(_on_chat14)
+		"say":
+			sess.say(String(args.get("text", "")))
+		"say_flood":
+			for i in int(args.get("n", 5)):
+				sess.say("%s %d" % [String(args.get("text", "spam")), i])
+		"answer":
+			sess.answer_ready(bool(args.get("ok", false)))
 		"strike":
 			game.player.global_position = Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
 			await _frames(6)  # a beat: soft target acquires the mirror
@@ -2244,6 +2279,28 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 ## GUEST: one probe evaluation against the LOCAL scene state.
 func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 	match what:
+		"chat_last":
+			# Stage 14: did the wanted line arrive? (Polling absorbs wire lag.)
+			var want := String(args.get("text", ""))
+			var hit := false
+			for line_v in _chat_seen:
+				if String((line_v as Dictionary).get("text", "")) == want:
+					hit = true
+			return {"ok": hit, "n": _chat_seen.size()}
+		"proposal_state":
+			var po: Dictionary = sess.proposal_open
+			return {"ok": not po.is_empty()
+				and String(po.get("chapter", "")) == String(args.get("chapter", ""))
+				and int(po.get("tier", -1)) == int(args.get("tier", -1)),
+				"open": not po.is_empty()}
+		"say", "say_flood", "answer":
+			return {"ok": true}  # the setup already acted; nothing to poll
+		"world_state":
+			# Stage 15: which world is this machine in, at which NG+ tier?
+			# Polling absorbs the advance-snap rebuild lag.
+			return {"ok": String(game.chapter_id) == String(args.get("chapter", ""))
+				and game.world_run_tier == int(args.get("tier", -1)),
+				"chapter": String(game.chapter_id), "tier": game.world_run_tier}
 		"mirrors":
 			var count := 0
 			var gated := true
@@ -3589,3 +3646,217 @@ func _run_guest13() -> void:
 	await get_tree().create_timer(0.5).timeout
 	print("[net_session] guest13: served all probes, left cleanly")
 	get_tree().quit(0)
+
+
+# ---------------------------- stage 14 (Wave 8) chat / ready check / kick ---
+# The party-layer wave in one session story: (a) host->guest chat, (b)
+# guest->host chat, (c) the host-side relay throttle drops a flood, (d) a
+# proposal reaches the guest with the CONTENT named (chapter + tier), one
+# decline cancels it with the decliner named and NOTHING launches, (e) a
+# second proposal passes on Ready and check_passed carries the exact pick,
+# (f) the kick: reason'd removal, clean guest exit (code 0 — its own
+# teardown assertions), host world + roster intact. Reprise's world-switch
+# plumbing itself rides advance_chapter's proven road (stage 8d) — what
+# stage 14 proves is the NEW wire: names, answers, outcomes, removal.
+
+func _run_host14() -> void:
+	if not await _host_boot():
+		return
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the guest process")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "guest admission"):
+		return
+	var gid: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return bool(_report.get("ready", false)), STEP_TIMEOUT, "guest ready report"):
+		return
+	var sess: Node = get_node("/root/NetworkManager/Session")
+	sess.chat_line.connect(_on_chat14)
+	sess.check_passed.connect(_on_check14)
+	print("[net_session] host14: guest %d standing in the world" % gid)
+
+	# ---- (a) host -> guest chat ----
+	var r: Dictionary = await _watch(gid, "chat_last", {"text": "the road is long"},
+		func() -> void: sess.say("the road is long"))
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest never saw the host's chat line: %s" % str(r))
+	print("[net_session] host14: (a) host line reached the guest")
+
+	# ---- (b) guest -> host chat ----
+	r = await _watch(gid, "say", {"text": "hail from the guest"})
+	if r.is_empty():
+		return
+	if not await _wait_for(func() -> bool:
+			return _chat_seen.any(func(l: Dictionary) -> bool:
+				return String(l.get("text", "")) == "hail from the guest"),
+			STEP_TIMEOUT, "guest line on the host"):
+		return
+	print("[net_session] host14: (b) guest line reached the host")
+
+	# ---- (c) the relay throttle: 5 in a burst, at most CHAT_BURST arrive ----
+	# Let (b)'s line age out of the ROLLING window first — the throttle
+	# rightly counts it otherwise (the first run of this stage proved that
+	# by letting exactly 3-minus-1 spam lines through).
+	await get_tree().create_timer(1.2).timeout
+	r = await _watch(gid, "say_flood", {"n": 5, "text": "spam"})
+	if r.is_empty():
+		return
+	await get_tree().create_timer(1.5).timeout
+	var spam := 0
+	for l_v in _chat_seen:
+		if String((l_v as Dictionary).get("text", "")).begins_with("spam"):
+			spam += 1
+	if spam != int(sess.CHAT_BURST):
+		return _fail("throttle let %d of 5 flood lines through (want %d)" % [spam, int(sess.CHAT_BURST)])
+	print("[net_session] host14: (c) flood throttled to %d lines" % spam)
+
+	# ---- (d) proposal + DECLINE: named content, named decliner, no launch ----
+	var before_ch := String(game.chapter_id)
+	if bool(sess.propose_content("reprise", "ch1", 1, false)):
+		return _fail("propose_content launched immediately with a guest present")
+	r = await _watch(gid, "proposal_state", {"chapter": "ch1", "tier": 1})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("the guest's card missed the content (chapter+tier): %s" % str(r))
+	r = await _watch(gid, "answer", {"ok": false})
+	if r.is_empty():
+		return
+	if not await _wait_for(func() -> bool: return (sess.proposal_open as Dictionary).is_empty(),
+			STEP_TIMEOUT, "check cancel on decline"):
+		return
+	if not String(sess.last_check_msg).contains("didn't accept"):
+		return _fail("decline outcome not named: '%s'" % String(sess.last_check_msg))
+	if not _check14.is_empty() or String(game.chapter_id) != before_ch:
+		return _fail("a DECLINED check launched something")
+	print("[net_session] host14: (d) decline cancelled the check, decliner named, nothing launched")
+
+	# ---- (e) proposal + READY: all-accept fires check_passed with the pick ----
+	if bool(sess.propose_content("reprise", "ch1", 2, false)):
+		return _fail("second propose launched immediately")
+	r = await _watch(gid, "answer", {"ok": true})
+	if r.is_empty():
+		return
+	if not await _wait_for(func() -> bool: return not _check14.is_empty(), STEP_TIMEOUT, "check_passed on all-ready"):
+		return
+	var passed: Dictionary = _check14[0]
+	if String(passed.get("mode", "")) != "reprise" or String(passed.get("chapter", "")) != "ch1" \
+			or int(passed.get("tier", -1)) != 2:
+		return _fail("check_passed carried the wrong pick: %s" % str(passed))
+	print("[net_session] host14: (e) all-ready passed the check with the exact pick (ch1, tier 2)")
+
+	# ---- (f) the kick: reason'd, clean exit, host intact ----
+	sess.host_kick(gid, "The host removed you from the party.")
+	if not await _wait_for(func() -> bool: return _left.has(gid), STEP_TIMEOUT, "peer_left after the kick"):
+		return
+	if not await _wait_for(func() -> bool: return _net.peers.is_empty(), STEP_TIMEOUT, "roster reaped"):
+		return
+	if not await _wait_exit("kicked guest"):
+		return
+	if not game.play_started or game.player == null or not is_instance_valid(game.player):
+		return _fail("the host world did not survive the kick")
+	print("[net_session] host14: (f) kick clean — reasoned exit 0, roster reaped, host world intact")
+	await _pass()
+
+
+func _run_guest14() -> void:
+	if not await _guest_boot():
+		return
+	_rpc_report.rpc_id(1, {"ready": true})
+	# Serve probes until the host finishes us — or KICKS us: the kicked path
+	# (net_session._rpc_kicked) must land this machine OFFLINE with its
+	# character written home and no reload under the harness. Exiting 0 is
+	# this process's own assertion that the teardown stayed clean.
+	if not await _wait_for(func() -> bool: return _finish or not _net.is_online(), 300.0, "host finish signal or kick"):
+		return
+	if not _net.is_online():
+		var notice := String(_net.last_session_notice)
+		if not notice.contains("removed you"):
+			print("NET TEST FAIL  kicked guest's notice wrong: '%s'" % notice)
+			get_tree().quit(1)
+			return
+		print("[net_session] guest14: kicked — reason staged ('%s'), teardown clean" % notice)
+		await get_tree().create_timer(0.3).timeout
+		get_tree().quit(0)
+		return
+	_net.leave()
+	await get_tree().create_timer(0.5).timeout
+	print("[net_session] guest14: served all probes, left cleanly")
+	get_tree().quit(0)
+
+
+# ------------------------------- stage 15 (Wave 9) the capital party town ---
+# The owner's loop, end to end: the host stands in Crownfall with the GATES
+# OPEN (lobby_open rides the safe-hub lifecycle), a friend joins the PLAZA
+# (live-world snapshot — no chapter relaunch), the PORTAL proposes content
+# (chapter + NG+ tier, the MP-20 check), all-ready carries the whole party
+# into the chapter with the gates LOCKING behind them — and a mid-chapter
+# "reprise home" is REFUSED (the no-yank guard), while returning to the
+# hub REOPENS the gates. The victory-path return home rides the proven
+# stage-8(d)/14 advance machinery and isn't re-proven here.
+
+func _run_host15() -> void:
+	if not await _host_boot():
+		return
+	var sess: Node = get_node("/root/NetworkManager/Session")
+	# Opt INTO the production lobby lifecycle: every other stage keeps the
+	# MP-08 join-anytime harness seam (mp_host), but stage 15 IS the
+	# gate-lifecycle test — it must feel the real open/lock/reopen.
+	game.mp_host = false
+	# To the party town: the world moves to the capital; the gates open.
+	game.enter_capital()
+	await _frames(20)
+	if String(game.chapter_id) != "capital":
+		return _fail("host never reached the capital")
+	if not bool(_net.lobby_open):
+		return _fail("the gates should be OPEN in the capital (lobby_open)")
+	print("[net_session] host15: standing in Crownfall, gates open")
+
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the guest process")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "guest admission"):
+		return
+	var gid: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return bool(_report.get("ready", false)), STEP_TIMEOUT, "guest ready report"):
+		return
+	var r: Dictionary = await _watch(gid, "world_state", {"chapter": "capital", "tier": 0})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("the friend did not land in the capital plaza: %s" % str(r))
+	print("[net_session] host15: (a) friend joined the LIVE hub — no relaunch, plaza shared")
+
+	# ---- the portal: propose ch1 at Nightmare, party says yes ----
+	sess.check_passed.connect(_on_check14)
+	if bool(sess.propose_content("reprise", "ch1", 1, false)):
+		return _fail("portal propose launched immediately with a guest present")
+	r = await _watch(gid, "proposal_state", {"chapter": "ch1", "tier": 1})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("the portal card missed the content: %s" % str(r))
+	r = await _watch(gid, "answer", {"ok": true})
+	if r.is_empty():
+		return
+	if not await _wait_for(func() -> bool: return not _check14.is_empty(), STEP_TIMEOUT, "portal check_passed"):
+		return
+	game.reprise_chapter("ch1", 1)  # headless stand-in for the reprise UI wire
+	if not await _wait_for(func() -> bool: return String(game.chapter_id) == "ch1", STEP_TIMEOUT, "host into ch1"):
+		return
+	if bool(_net.lobby_open):
+		return _fail("the gates must LOCK when content starts")
+	r = await _watch(gid, "world_state", {"chapter": "ch1", "tier": 1})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("the party did not follow through the portal: %s" % str(r))
+	print("[net_session] host15: (b) portal check passed — party in ch1 at NIGHTMARE, gates locked")
+
+	# ---- the no-yank rule: a mid-chapter reprise home is refused ----
+	game.reprise_chapter("capital", 0)
+	await _frames(10)
+	if String(game.chapter_id) != "ch1":
+		return _fail("mid-chapter reprise should be REFUSED (no-yank guard)")
+	print("[net_session] host15: (c) mid-chapter yank home refused — the guard holds")
+
+	# ---- finish the friend, then prove the gates REOPEN at home ----
+	_rpc_finish.rpc_id(gid)
+	if not await _wait_exit("guest"):
+		return
+	game.enter_capital()
+	await _frames(20)
+	if String(game.chapter_id) != "capital" or not bool(_net.lobby_open):
+		return _fail("returning to the capital should reopen the gates")
+	print("[net_session] host15: (d) home again — gates open for the next friend")
+	await _pass()

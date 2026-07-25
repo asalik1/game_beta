@@ -40,7 +40,7 @@ enum Mode {
 ## (§3.4). Printed on the title screen later so "you're on 0.1.0, I'm on
 ## 0.1.1" is readable without debugging. The auth handshake compares this
 ## EXACTLY — mismatch means a clean refusal, never a half-join.
-const NET_VERSION := "0.1.3"  # 0.1.3: NG+ tier rides the world brief/advance snaps
+const NET_VERSION := "0.2.0"  # 0.2.0: the party layer (Wave 8 — chat, ready check, kick, reprise)
 
 # --------------------------------------------------- network constants ---
 # Transport plumbing, not gameplay tuning — so they live here, not in

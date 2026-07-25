@@ -164,6 +164,36 @@ func advance_chapter() -> void:
 	autosave()
 
 
+## MP-22: the party persists BETWEEN contents. From the victory card the
+## HOST picks ANY unlocked chapter (+ NG+ tier) and the whole session
+## rides into it — no disband, no codes re-read. Runs advance_chapter's
+## victory-exit sequence, then a REPLAY of the pick (replay semantics:
+## flag wipe, faction reset, fresh seed), then the SAME advance snap
+## net_advance already handles carries every guest. The MP-20 ready
+## check gates it at the UI layer (lobby reprise mode) — by the time
+## this runs, the party already said yes.
+func reprise_chapter(chid: String, tier: int) -> void:
+	# Launchable from the victory card OR a safe hub (Wave 9: the capital
+	# portal is the party's content queue — mid-play there, not mid-combat).
+	if net_guest() or (state != ST_VICTORY and not Story.is_standalone(chapter_id)):
+		return
+	if has_local_player():
+		player.run_tier = clampi(tier, 0, Balance.TIER_NAMES.size() - 1)
+	state = ST_PLAYING
+	request_pause(false)
+	hud.visible = true
+	hud.overlay.color = Color(0, 0, 0, 0)
+	hud.title_label.modulate.a = 0.0
+	hud.subtitle_label.modulate.a = 0.0
+	hud.hide_results()
+	replay_chapter(chid)
+	if net_host():
+		for q in players:
+			if q != null and is_instance_valid(q) and q != local_player:
+				q.global_position = room_center(cur_room)
+		net_session().host_advance_party()
+
+
 # ------------------------------------------------- meta progression ---
 # Account-wide unlocks that outlive characters (user://meta.json):
 # finishing a chapter with ANY character opens the next one on the

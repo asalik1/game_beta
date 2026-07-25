@@ -459,6 +459,28 @@ func open_pause() -> void:
 	# above only bars duplicating screens that have one).
 	_btn(vbox, "  ◈  Wardrobe  (skins & chromas, bought with Renown)",
 		func() -> void: open_wardrobe(), Color(0.85, 0.7, 1.0))
+	# Wave 9: Crownfall is the PARTY TOWN — travel there from any campaign
+	# chapter (its portal brings you back; in-session travel rides the
+	# victory reprise picker instead, so a host can never strand guests).
+	if not game.endgame_active and game.chapter_id != "capital" and not game.net_online():
+		_btn(vbox, "  ⌂  Travel to Crownfall  (the Capital)", func() -> void:
+			close()
+			game.enter_capital(), Color(0.7, 0.9, 1.0))
+	# MP-21: session control — the HOST may remove a member mid-run, behind
+	# the confirm gate (a mid-fight misclick must never strand a friend).
+	if game.net_online() and game.net_host():
+		var kick_sess: Node = get_node("/root/NetworkManager/Session")
+		for pid_v in kick_sess.peer_chars:
+			var pid: int = int(pid_v)
+			if pid == 1:
+				continue
+			var pname := String(kick_sess.peer_chars[pid].get("name", "player"))
+			var kick := func() -> void:
+				open_confirm("Remove %s from the party? They keep everything they've earned — but the lobby is locked mid-run, so they can't rejoin until you host again." % pname,
+					func() -> void:
+						kick_sess.host_kick(pid)
+						close())
+			_btn(vbox, "  ✕  Remove %s from the party" % pname, kick, Color(1.0, 0.6, 0.55))
 	if game.endgame_active:
 		# In an endgame run: cash out (keep winnings) or abandon (forfeit).
 		var cash := func() -> void:
