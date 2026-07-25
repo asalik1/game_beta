@@ -239,12 +239,32 @@ func chapter_pb(chid: String, cls: String, tier := 0) -> Dictionary:
 
 ## Highest NG+ tier this ACCOUNT may pick is the largest t with
 ## tier_unlocked(t); clearing the Act-1 finale at tier T unlocks T+1
-## (see on_boss_died). Tier 0 (Normal) is always open.
+## (_maybe_unlock_next_tier). Tier 0 (Normal) is always open.
 func tier_unlocked(t: int) -> bool:
 	if t <= 0:
 		return true
 	_load_meta()
 	return bool(_meta.get("tier_unlocked_%d" % t, false))
+
+
+## NG+ ladder: the Act-1 finale cleared at tier T opens tier T+1 —
+## account-wide, forever, like the endgame modes (DESIGN "Difficulty
+## tiers / NG+"). Normal ch7 opens Nightmare; Nightmare ch7, Torment.
+## Runs on the host's boss-kill path AND each guest's net_victory —
+## per-head meta (§5.7): everyone who fought the clear earns the ladder.
+func _maybe_unlock_next_tier() -> void:
+	if chapter_id != Balance.TIER_FINALE_CH:
+		return
+	var next_tier := run_tier() + 1
+	if next_tier >= Balance.TIER_NAMES.size() or tier_unlocked(next_tier):
+		return
+	_load_meta()
+	_meta["tier_unlocked_%d" % next_tier] = true
+	_meta_write()
+	if has_local_player():
+		spawn_text(player.global_position + Vector2(0, -128),
+			"%s UNLOCKED — replay any chapter at the new tier" % Balance.tier_name(next_tier).to_upper(),
+			Balance.tier_color(next_tier), 5.0)
 
 
 ## Endgame records (account-wide, meta.json) — the leaderboard brag numbers,
@@ -697,19 +717,8 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			if not bool(_meta.get(Balance.ENDGAME_UNLOCK_META, false)):
 				_meta[Balance.ENDGAME_UNLOCK_META] = true
 				_meta_write()
-		# NG+ ladder: the Act-1 finale cleared at tier T opens tier T+1 —
-		# account-wide, forever, like the endgame modes (DESIGN "Difficulty
-		# tiers / NG+"). Normal ch7 opens Nightmare; Nightmare ch7, Torment.
-		if chapter_id == Balance.TIER_FINALE_CH:
-			var next_tier := run_tier() + 1
-			if next_tier < Balance.TIER_NAMES.size() and not tier_unlocked(next_tier):
-				_load_meta()
-				_meta["tier_unlocked_%d" % next_tier] = true
-				_meta_write()
-				if has_local_player():
-					spawn_text(player.global_position + Vector2(0, -128),
-						"%s UNLOCKED — replay any chapter at the new tier" % Balance.tier_name(next_tier).to_upper(),
-						Balance.tier_color(next_tier), 5.0)
+		# NG+ ladder credit (host's own; guests mirror in net_victory).
+		_maybe_unlock_next_tier()
 		if first_clear and has_local_player():
 			_first_clear_reward(boss_lv)
 		var next_ch := Story.next_chapter(chapter_id)
@@ -1268,6 +1277,7 @@ func net_victory(vtext: String, has_next: bool) -> void:
 	var pb := record_chapter_result(res)
 	set_flag("completed_" + chapter_id, true)  # KEPT flag: local, rides home
 	unlock_achievement("clear_" + chapter_id)
+	_maybe_unlock_next_tier()  # this guest's OWN NG+ ladder credit (fought tier)
 	if has_next:
 		var next_ch := Story.next_chapter(chapter_id)
 		if next_ch != "":
@@ -1297,9 +1307,12 @@ func net_advance(snap: Dictionary) -> void:
 	guest_world = true  # STILL a guest (reset_run_stats cleared it)
 	switch_chapter(String(snap.get("chapter", chapter_id)), true)
 	# weekly state rides the brief (set AFTER switch — its callers, not it,
-	# clear the flag), mirroring the join snapshot.
+	# clear the flag), mirroring the join snapshot. The NG+ tier rides it
+	# too: the guest's own switch_chapter leaves world_run_tier alone
+	# (net_guest guard) — the host's snap owns it.
 	weekly_active = bool(snap.get("weekly_active", false))
 	weekly_week = int(snap.get("weekly_week", weekly_week))
+	world_run_tier = clampi(int(snap.get("run_tier_world", 0)), 0, Balance.TIER_NAMES.size() - 1)
 	# Re-home the remote shells to the shared start so they never linger in the
 	# freed world; the movement sync re-converges them within a tick.
 	for q in players:

@@ -555,12 +555,13 @@ func request_pause(on: bool) -> void:
 ## NG+ tier governing THIS run's spawns and drops (0 = Normal;
 ## Balance.TIER_NAMES). Reads the RUN-START snapshot (world_run_tier) —
 ## the character's standing choice (player.run_tier, picked in the replay
-## chapter select) arms it on the next chapter launch. Gates: the endgame
-## modes own their own ladders, the weekly races a shared seed at parity,
-## and co-op sessions run Normal until the tier syncs (follow-up) — all
-## three force 0.
+## chapter select) arms it on the next chapter launch. In co-op the
+## HOST's tier briefs the party (net_session world snapshot + advance
+## snap): every head fights, earns and records at the world's actual
+## tier. Gates: the endgame modes own their own ladders and the weekly
+## races a shared seed at parity — both force 0.
 func run_tier() -> int:
-	if player == null or endgame_active or weekly_active or net_online():
+	if player == null or endgame_active or weekly_active:
 		return 0
 	return world_run_tier
 

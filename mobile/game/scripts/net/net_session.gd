@@ -323,6 +323,9 @@ func _send_snapshot(id: int) -> void:
 		# cleared by switch_chapter's CALLERS, never by switch_chapter).
 		"weekly_active": game.weekly_active,
 		"weekly_week": game.weekly_week,
+		# The NG+ tier is world state the same way: the host's world runs
+		# it, so every guest must fight — and pay XP/loot/records — at it.
+		"run_tier_world": game.world_run_tier,
 	})
 	_watch_ready(id)  # MP-16: bounded ghost-peer drop if it never gets ready
 
@@ -375,6 +378,9 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	# journal read these — set AFTER switch_chapter, which never clears them.
 	g.weekly_active = bool(snap.get("weekly_active", false))
 	g.weekly_week = int(snap.get("weekly_week", g.weekly_week))
+	# The host's NG+ tier (same after-switch_chapter ordering — the guest's
+	# own switch_chapter deliberately leaves world_run_tier alone).
+	g.world_run_tier = clampi(int(snap.get("run_tier_world", 0)), 0, Balance.TIER_NAMES.size() - 1)
 	g.guest_world = true  # from here on autosaves are character-only (§5.7)
 	g._host_lost_handled = false  # MP-16: a fresh session can lose its host anew
 	# The character (MP-08, §5.7): the lobby put the joiner's OWN roster
@@ -2479,6 +2485,7 @@ func host_advance_party() -> void:
 		"wander_seed": game.wander_seed,
 		"weekly_active": game.weekly_active,
 		"weekly_week": game.weekly_week,
+		"run_tier_world": game.world_run_tier,
 	}
 	for pid in peer_chars:
 		_rpc_advance_world.rpc_id(int(pid), snap)

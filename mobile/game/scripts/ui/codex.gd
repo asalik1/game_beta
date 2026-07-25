@@ -657,7 +657,7 @@ static func _coop(m: Menus, list: VBoxContainer) -> void:
 		["Lobby codes", Color(0.95, 0.85, 0.5),
 			"From the title screen choose PLAY TOGETHER. The host picks a hero and a chapter and receives a lobby CODE; friends choose Join, type the code, and bring a hero from their own roster. Up to four heroes walk the host's world — and the lobby closes when the chapter starts, so gather before you set out."],
 		["The road rises to meet you", Color(1.0, 0.7, 0.7),
-			"Monsters grow tougher for every extra hero in the party — more health, a little more bite. A party of one plays exactly the solo game."],
+			"Monsters grow tougher for every extra hero in the party — more health, a little more bite. A party of one plays exactly the solo game. The HOST's difficulty tier (Nightmare / Torment) sets the whole party's world — the tier chip on everyone's buff bar says so, and every head earns its unlocks and records at the tier actually fought."],
 		["Bosses fight the whole party", Color(1.0, 0.6, 0.4),
 			"A boss keeps its signature move trained on whoever it's hunting — but its floor pressure (rains, strays, eruptions underfoot) seeks out the REST of the party in turn. Nobody stands in guaranteed safety: keep your feet moving even when it isn't looking at you."],
 		["Falling, and getting up", Color(0.7, 1.0, 0.8),

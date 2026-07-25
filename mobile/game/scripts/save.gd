@@ -179,8 +179,10 @@ static func write_server_world(game: Game) -> void:
 		"run_time": game.run_time, "run_deaths": game.run_deaths,
 		"run_elites": game.run_elites, "run_secrets": game.run_secrets,
 		# A server world is never the weekly-challenge run (that is a
-		# per-player replay mode) — persisted false by construction. Same
-		# for the NG+ tier: co-op sessions run Normal (game_base.run_tier).
+		# per-player replay mode) — persisted false by construction. The
+		# NG+ tier: a DEDICATED server world runs Normal (no host character
+		# owns a choice); a player-hosted world's tier lives in that
+		# host's own save, not here.
 		"weekly_active": false, "weekly_week": -1,
 		"run_tier_world": 0,
 		"bosses_slain": game.boss_done.keys(),

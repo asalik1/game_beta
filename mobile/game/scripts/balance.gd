@@ -422,10 +422,11 @@ static func special_gems_drop(chid: String) -> bool:
 # per level), gem QUALITY, and the shifted band's gear. Unlocks are
 # ACCOUNT-wide (meta.json): clearing the Act-1 finale at tier T opens
 # T+1. The endgame modes own their own ladders and the weekly races a
-# shared seed at parity — game_base.run_tier() returns 0 in both, and in
-# co-op sessions until the tier syncs (follow-up). Names deliberately
-# share the Depths block vocabulary (DEPTHS_BLOCK_NAMES) — one difficulty
-# language everywhere.
+# shared seed at parity — game_base.run_tier() returns 0 in both. In
+# co-op the HOST's tier briefs the party (net_session world/advance
+# snaps; NET_VERSION-gated): every head fights, earns and records at the
+# world's actual tier. Names deliberately share the Depths block
+# vocabulary (DEPTHS_BLOCK_NAMES) — one difficulty language everywhere.
 const TIER_NAMES := ["Normal", "Nightmare", "Torment"]
 const TIER_LEVEL_OFFSET := [0, 20, 40]   # content-level add on every authored campaign spawn
 const TIER_BAND_SHIFT := [0, 4, 8]       # chapter-table shift: tracks the level offset at ~5 lvl/ch

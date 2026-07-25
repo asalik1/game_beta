@@ -760,8 +760,9 @@ func open_chapter_select(replay := false) -> void:
 	# is unlocked (account-wide — clear the Act-1 finale). The pick is the
 	# character's STANDING campaign tier; it arms on the next launch below
 	# (switch_chapter snapshots it — a mid-run flip never mixes a live run).
-	# Hidden online: co-op runs Normal until the tier syncs (follow-up).
-	if replay and game.tier_unlocked(1) and not game.net_online():
+	# In a session only the HOST sees it (the world is theirs; guests ride
+	# the briefed tier and pick their own back in solo).
+	if replay and game.tier_unlocked(1) and (not game.net_online() or game.net_host()):
 		var trow := HBoxContainer.new()
 		trow.add_theme_constant_override("separation", 10)
 		vbox.add_child(trow)

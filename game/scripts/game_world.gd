@@ -37,8 +37,10 @@ func switch_chapter(id: String, force := false) -> void:
 	# picker edits the character's STANDING choice; it arms HERE, where
 	# every campaign (re)launch passes (replay/advance/new game). Endgame
 	# arenas keep the campaign's snapshot parked (run_tier() forces 0
-	# there anyway).
-	if not Story.is_endgame(id):
+	# there anyway). A net GUEST never arms its own — the host's brief
+	# owns the value, applied AFTER this rebuild (join snapshot /
+	# net_advance, the weekly-flags pattern).
+	if not Story.is_endgame(id) and not net_guest():
 		world_run_tier = player.run_tier if has_local_player() else 0
 	_quest_avail_cache = -1  # a new chapter offers a whole new set (⚑ shine memo)
 	quest_marks.clear()      # the old world's ❢ nodes die with it
