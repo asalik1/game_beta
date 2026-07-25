@@ -225,6 +225,14 @@ func record_chapter_result(res: Dictionary) -> Dictionary:
 		out["new_grade"] = true
 	_meta[key] = best
 	_meta_write()
+	# NG+ status track: the first ANY-class clear of this chapter at this
+	# tier pays Renown, once per chapter x tier for the whole account —
+	# the tier ladder feeds the cosmetic track without per-alt farming.
+	if run_tier() > 0:
+		var rkey := "ren_tier_%s_t%d" % [chapter_id, run_tier()]
+		if not bool(_meta.get(rkey, false)):
+			_meta[rkey] = true
+			add_renown(Balance.RENOWN_TIER_FIRST_CLEAR)
 	check_track_achievements()  # Pathfinder tiers ride the clear tally
 	return out
 
@@ -280,6 +288,9 @@ func record_endgame(mode: String, cls: String, kills: int, depth: int, time: flo
 		var best := {"kills": int(prev.get("kills", 0)), "time": float(prev.get("time", 0.0)),
 			"runs": int(prev.get("runs", 0)) + 1}
 		if kills > int(best["kills"]):
+			# Renown pays the PUSH — per boss past the old best, so the
+			# faucet is unfarmable by construction (a PB spends itself).
+			add_renown((kills - int(best["kills"])) * Balance.RENOWN_PB_CRUCIBLE)
 			best["kills"] = kills
 			out["new_kills"] = true
 		if kills >= Balance.CRUCIBLE_BOSSES and (float(best["time"]) <= 0.0 or time < float(best["time"])):
@@ -291,12 +302,95 @@ func record_endgame(mode: String, cls: String, kills: int, depth: int, time: flo
 		var prev: Dictionary = _meta.get(key, {})
 		var best := {"depth": int(prev.get("depth", 0)), "runs": int(prev.get("runs", 0)) + 1}
 		if depth > int(best["depth"]):
+			add_renown((depth - int(best["depth"])) * Balance.RENOWN_PB_DEPTHS)
 			best["depth"] = depth
 			out["new_depth"] = true
 		_meta[key] = best
 	_meta_write()
 	check_track_achievements()  # Depthcrawler tiers ride the descent record
 	return out
+
+
+# ---------------------------------------------------------------- renown ---
+# The SEGREGATED event currency (DESIGN "Renown & the Wardrobe"): an
+# ACCOUNT-wide wallet in meta.json. Earned only from collected-not-farmed
+# faucets (daily/bounty tables in Balance; weekly, vault, PB pushes and
+# tier first-clears via the consts); spent only in the Wardrobe on
+# zero-balance-impact goods. Story gold never converts to or from it.
+# In co-op every grant already rides a per-head owner-side path (§5.5) —
+# each peer credits its OWN meta, like bounty/vault credit.
+
+func renown() -> int:
+	_load_meta()
+	return int(_meta.get("renown", 0))
+
+
+## Grant Renown with the shared violet toast (stacked above the caller's
+## own reward text). Zero/negative grants are no-ops.
+func add_renown(n: int) -> void:
+	if n <= 0:
+		return
+	_load_meta()
+	_meta["renown"] = int(_meta.get("renown", 0)) + n
+	_meta_write()
+	if has_local_player():
+		spawn_text(player.global_position + Vector2(0, -114), "+%d RENOWN" % n,
+			Balance.RENOWN_COLOR, 4.0)
+
+
+## Spend Renown; false (and no charge) when the balance is short.
+func spend_renown(n: int) -> bool:
+	if n < 0 or renown() < n:
+		return false
+	_meta["renown"] = renown() - n
+	_meta_write()
+	return true
+
+
+## Account-wide cosmetic ownership (kind "skin"|"chroma"). Ownership is
+## the ACCOUNT's collection; the EQUIPPED skin/chroma stays per-character
+## (save.gd character section). The dev panel bypasses ownership — it's a
+## dev tool; the Wardrobe is the production path.
+func owns_cosmetic(kind: String, cls: String, id: String) -> bool:
+	_load_meta()
+	return bool(_meta.get("own_%s_%s_%s" % [kind, cls, id], false))
+
+
+## Buy a catalog cosmetic with Renown: validates the id, refuses repeats,
+## charges, records ownership. True when the purchase landed.
+func buy_cosmetic(kind: String, cls: String, id: String) -> bool:
+	if owns_cosmetic(kind, cls, id):
+		return false
+	var entry: Dictionary = Skins.find_skin(cls, id) if kind == "skin" else Skins.find(cls, id)
+	if entry.is_empty():
+		return false
+	if not spend_renown(Balance.renown_price(kind, String(entry.get("tier", "")))):
+		return false
+	_meta["own_%s_%s_%s" % [kind, cls, id]] = true
+	_meta_write()
+	return true
+
+
+## The weekly supply cache (per character, per trusted-clock week).
+func cache_available() -> bool:
+	return renown_cache_week != _week_index()
+
+
+## Buy the cache: one of each utility consumable, granted through
+## give_loot so a full bag routes to the mailbox, never the void.
+func buy_weekly_cache() -> bool:
+	if not cache_available() or not spend_renown(Balance.RENOWN_CACHE_PRICE):
+		return false
+	renown_cache_week = _week_index()
+	var makers := {"mana_potion": Items.make_mana_potion, "elixir_might": Items.make_elixir_might,
+		"elixir_ward": Items.make_elixir_ward, "renewal_draught": Items.make_renewal_draught}
+	var i := 0
+	for id in Balance.RENOWN_CACHE_ITEMS:
+		give_loot({"kind": "stone", "stone": (makers[id] as Callable).call()},
+			player.global_position + Vector2(-45.0 + 30.0 * i, 40.0))
+		i += 1
+	autosave()
+	return true
 
 
 ## This class's endgame record for a mode, or {} (menu/codex display).
@@ -387,9 +481,11 @@ func _finish_weekly(res: Dictionary) -> void:
 		for i in Balance.WEEKLY_REWARD_GEMS:
 			give_loot({"kind": "gem", "gem": drop_gem(Balance.WEEKLY_REWARD_GEM_LVL)},
 				player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
+		add_renown(Balance.RENOWN_WEEKLY)
 		sfx("chest")
 		spawn_text(player.global_position + Vector2(0, -92),
-			"WEEKLY CHALLENGE COMPLETE  (+%d gold, %d gems)" % [g, Balance.WEEKLY_REWARD_GEMS],
+			"WEEKLY CHALLENGE COMPLETE  (+%d gold, %d gems, +%d Renown)" % [g,
+				Balance.WEEKLY_REWARD_GEMS, Balance.RENOWN_WEEKLY],
 			Color(1.0, 0.85, 0.4), 5.0)
 
 ## Progression gating for the chapter select: the first chapter is

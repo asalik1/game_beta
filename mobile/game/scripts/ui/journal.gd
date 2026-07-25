@@ -277,7 +277,8 @@ static func _bounties(m: Menus, list: VBoxContainer) -> void:
 				continue
 			var done: bool = b["done"]
 			var tag := "DAILY" if scope == "daily" else "WEEKLY"
-			var reward := "%d gold" % int(b["gold"]) + ("  + gem" if int(b["gems"]) > 0 else "")
+			var reward := "%d gold" % int(b["gold"]) + ("  + gem" if int(b["gems"]) > 0 else "") \
+				+ ("  + ◈%d" % int(b.get("renown", 0)) if int(b.get("renown", 0)) > 0 else "")
 			var line := "%s  [%s]  %s  —  %d/%d   (%s)" % [
 				"✓" if done else "○", tag, String(b["desc"]),
 				int(b["progress"]), int(b["target"]), reward]
@@ -290,8 +291,8 @@ static func _vault(m: Menus, list: VBoxContainer) -> void:
 	m._lbl(list, "— WEEKLY VAULT —", 16, Color(1.0, 0.85, 0.4))
 	var prog: int = g.vault_progress if g._week_index() == g.vault_week else 0
 	var goal: int = Balance.VAULT_BOSS_GOAL
-	m._lbl(list, "Bosses this week:  %d / %d  →  a guaranteed golden chest" % [mini(prog, goal), goal],
-		14, Color(0.9, 0.85, 0.7))
+	m._lbl(list, "Bosses this week:  %d / %d  →  a guaranteed golden chest + ◈%d Renown" %
+		[mini(prog, goal), goal, Balance.RENOWN_VAULT], 14, Color(0.9, 0.85, 0.7))
 	if g.vault_ready():
 		var row := HBoxContainer.new()
 		list.add_child(row)
@@ -323,6 +324,9 @@ static func _weekly(m: Menus, list: VBoxContainer) -> void:
 	if g.weekly_claimed_week == g._week_index():
 		m._lbl(list, "Reward claimed this week — the seed still races for a better time.",
 			13, Color(0.6, 0.62, 0.68))
+	else:
+		m._lbl(list, "Completion pays gold, gems and ◈%d Renown, once per week." % Balance.RENOWN_WEEKLY,
+			13, Color(0.7, 0.72, 0.78))
 	if g.weekly_active and g.weekly_week == g._week_index():
 		m._lbl(list, "◆ The challenge is LIVE — this run rides the week's modifier.",
 			14, Color(1.0, 0.88, 0.45))

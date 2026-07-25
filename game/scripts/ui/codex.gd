@@ -956,6 +956,22 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 			Color(0.8, 0.82, 0.88) if can else Color(0.5, 0.52, 0.58))
 		how.custom_minimum_size = Vector2(480, 0)
 
+	# --- Renown (the identity ledger's spendable cousin lives one door over) ---
+	m._lbl(list, "— RENOWN — the event currency, spent in the Wardrobe —", 16, Balance.RENOWN_COLOR)
+	var rbox := VBoxContainer.new()
+	rbox.add_theme_constant_override("separation", 4)
+	_card(list).add_child(rbox)
+	var rrow := HBoxContainer.new()
+	rrow.add_theme_constant_override("separation", 12)
+	rbox.add_child(rrow)
+	var rbal := m._lbl(rrow, "◈  %d Renown" % m.game.renown(), 16, Balance.RENOWN_COLOR)
+	rbal.custom_minimum_size = Vector2(180, 0)
+	m._btn(rrow, "  Open Wardrobe  ", func() -> void: m.open_wardrobe(), Color(0.85, 0.7, 1.0))
+	var rdesc := m._lbl(rbox, "Earned once each from weeklies, the vault, bounties, dailies, new personal records and first NG+ tier clears — never farmable. Buys chromas, elite and mythic skins, and a weekly supply cache. Cosmetic only: Renown never touches gold, gear or power.",
+		13, Color(0.8, 0.82, 0.88))
+	rdesc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rdesc.custom_minimum_size = Vector2(880, 0)
+
 
 static func _gear(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)

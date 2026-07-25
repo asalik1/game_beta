@@ -1298,13 +1298,13 @@ const MAIL_EXPIRY_DAYS := 30
 # are flat. Gear is deliberately omitted — dailies must not short-circuit
 # the act-gated loot curve.
 const DAILY_REWARDS := [
-	{"gold": 120},
-	{"gold": 180, "potions": 1},
-	{"gems": 1, "gem_lvl": 1},
-	{"gold": 300},
-	{"gems": 1, "gem_lvl": 1, "potions": 1},
-	{"gold": 500, "potions": 2},
-	{"gold": 400, "gems": 1, "gem_lvl": 2},   # day 7 jackpot
+	{"gold": 120, "renown": 5},
+	{"gold": 180, "potions": 1, "renown": 5},
+	{"gems": 1, "gem_lvl": 1, "renown": 5},
+	{"gold": 300, "renown": 5},
+	{"gems": 1, "gem_lvl": 1, "potions": 1, "renown": 5},
+	{"gold": 500, "potions": 2, "renown": 5},
+	{"gold": 400, "gems": 1, "gem_lvl": 2, "renown": 15},   # day 7 jackpot
 ]
 
 ## Gold rewards scale with level so a daily stays meaningful late (a flat
@@ -1322,14 +1322,14 @@ const BOUNTY_DAILY_COUNT := 2
 const BOUNTY_WEEKLY_COUNT := 1
 const BOUNTY_POOL := {
 	"daily": [
-		{"type": "boss_kills",    "target": 1, "desc": "Slay a boss",        "gold": 220},
-		{"type": "rooms_cleared", "target": 4, "desc": "Clear 4 rooms",      "gold": 150},
-		{"type": "elite_kills",   "target": 2, "desc": "Slay 2 elites",      "gold": 180},
+		{"type": "boss_kills",    "target": 1, "desc": "Slay a boss",        "gold": 220, "renown": 5},
+		{"type": "rooms_cleared", "target": 4, "desc": "Clear 4 rooms",      "gold": 150, "renown": 5},
+		{"type": "elite_kills",   "target": 2, "desc": "Slay 2 elites",      "gold": 180, "renown": 5},
 	],
 	"weekly": [
-		{"type": "boss_kills",    "target": 5,  "desc": "Slay 5 bosses",    "gold": 800, "gems": 1, "gem_lvl": 2},
-		{"type": "rooms_cleared", "target": 25, "desc": "Clear 25 rooms",   "gold": 700, "gems": 1, "gem_lvl": 2},
-		{"type": "elite_kills",   "target": 10, "desc": "Slay 10 elites",   "gold": 750, "gems": 1, "gem_lvl": 2},
+		{"type": "boss_kills",    "target": 5,  "desc": "Slay 5 bosses",    "gold": 800, "gems": 1, "gem_lvl": 2, "renown": 15},
+		{"type": "rooms_cleared", "target": 25, "desc": "Clear 25 rooms",   "gold": 700, "gems": 1, "gem_lvl": 2, "renown": 15},
+		{"type": "elite_kills",   "target": 10, "desc": "Slay 10 elites",   "gold": 750, "gems": 1, "gem_lvl": 2, "renown": 15},
 	],
 }
 
@@ -1341,6 +1341,44 @@ const VAULT_BOSS_GOAL := 5
 # character; lives in user://stash.json, not the per-character save). Kept
 # deliberately TIGHT — the stash is a curated keep-safe, not a warehouse.
 const STASH_SLOTS := 20
+
+# ----------------------------------------------------------------- renown ---
+# Renown — the SEGREGATED event currency (PROPOSALS/SOCIAL_LAYER.md §4,
+# DESIGN "Renown & the Wardrobe"): account-wide (meta.json), earned ONLY
+# from collected-not-farmed sources (dailies/bounties carry per-entry
+# amounts in their tables above; the rest are the consts below), spent
+# ONLY on zero-balance-impact goods (chromas, skins, one weekly supply
+# cache). Story gold never converts to or from it, so no faucet here
+# needs econ_audit calibration — that segregation is the design.
+const RENOWN_WEEKLY := 30            # weekly challenge completion (once/week)
+const RENOWN_VAULT := 20             # weekly vault claim (once/week)
+# First ANY-class clear of a chapter at each NG+ tier (account, one-time
+# per chapter x tier) — the tier ladder feeds the status track without
+# per-alt farming (per-class would 6x the pool).
+const RENOWN_TIER_FIRST_CLEAR := 25
+# New-record pushes: paid per unit PAST the class's previous best, so the
+# faucet is unfarmable by construction (you can't re-earn a PB).
+const RENOWN_PB_CRUCIBLE := 3        # per boss past the previous Crucible PB
+const RENOWN_PB_DEPTHS := 2          # per depth past the previous Depths best
+# Wardrobe prices. Steady weekly income is ~180 (dailies 45 + bounties
+# 85 + vault 20 + weekly 30): a chroma is pocket change, an elite ~1.5
+# engaged weeks, a mythic a season goal. First guesses — cosmetic-only,
+# so mispricing costs patience, never balance.
+const RENOWN_PRICE_CHROMA := 60
+const RENOWN_PRICE_ELITE := 240
+const RENOWN_PRICE_MYTHIC := 600
+# The weekly supply cache: once per trusted-clock week PER CHARACTER, a
+# bundle of one of each utility consumable. Renown's only consumable
+# faucet — capped so it stays collected-not-farmed and never undercuts
+# the alchemist's level-scaled gold shelf.
+const RENOWN_CACHE_PRICE := 25
+const RENOWN_CACHE_ITEMS := ["mana_potion", "elixir_might", "elixir_ward", "renewal_draught"]
+const RENOWN_COLOR := Color(0.78, 0.55, 1.0)   # the violet every Renown surface shares
+
+static func renown_price(kind: String, tier := "") -> int:
+	if kind == "chroma":
+		return RENOWN_PRICE_CHROMA
+	return RENOWN_PRICE_MYTHIC if tier == "mythic" else RENOWN_PRICE_ELITE
 
 # ------------------------------------------------------------ consumables ---
 # Utility consumables beyond the health potion (bag items, used from the

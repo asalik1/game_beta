@@ -124,6 +124,10 @@ func _hub_action(act: String) -> void:
 			call("enter_endgame", "depths")
 		"vault":
 			menus.open_stash()
+		"wardrobe":
+			# Not yet placed in the generated capital (gen_capital.py owns
+			# that file); the case is ready for the wardrobe desk it will add.
+			menus.open_wardrobe()
 		"codex":
 			menus.open_codex("monsters")
 		"records":

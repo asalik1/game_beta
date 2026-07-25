@@ -84,4 +84,6 @@ static func _reward_label(m: Menus, r: Dictionary) -> String:
 		parts.append("%d gem Lv%d" % [int(r["gems"]), int(r.get("gem_lvl", 1))])
 	if r.has("potions"):
 		parts.append("%d potion" % int(r["potions"]))
+	if r.has("renown"):
+		parts.append("◈ %d Renown" % int(r["renown"]))
 	return "\n".join(parts)

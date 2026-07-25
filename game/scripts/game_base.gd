@@ -300,6 +300,11 @@ var vault_week := -1           # trusted-clock week the current progress belongs
 var vault_progress := 0        # boss kills this week
 var vault_claimed_week := -1   # week the vault was last claimed
 
+# --- Renown supply cache (persisted): week THIS character last bought the
+# Wardrobe's weekly consumable bundle (the wallet itself is account-wide
+# meta — game_flow.renown()). ---
+var renown_cache_week := -1
+
 # --- chapter run stats (results card; persisted mid-run, reset per run) ---
 var run_time := 0.0            # seconds in ST_PLAYING this chapter run
 var run_deaths := 0
@@ -764,6 +769,9 @@ func _grant_daily_reward(streak: int) -> Array:
 			give_loot({"kind": "gem", "gem": drop_gem(lvl)},
 				player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
 		lines.append("%d Lv%d gem%s" % [gc, lvl, "" if gc == 1 else "s"])
+	if r.has("renown"):
+		call("add_renown", int(r["renown"]))  # wallet lives in the game_flow layer
+		lines.append("%d Renown" % int(r["renown"]))
 	return lines
 
 
@@ -1034,7 +1042,8 @@ func _roll_bounties(scope: String, count: int, seed_val: int) -> void:
 		var t: Dictionary = pool[idxs[k]]
 		bounties.append({"scope": scope, "type": String(t["type"]), "target": int(t["target"]),
 			"progress": 0, "desc": String(t["desc"]), "gold": int(t.get("gold", 0)),
-			"gems": int(t.get("gems", 0)), "gem_lvl": int(t.get("gem_lvl", 1)), "done": false})
+			"gems": int(t.get("gems", 0)), "gem_lvl": int(t.get("gem_lvl", 1)),
+			"renown": int(t.get("renown", 0)), "done": false})
 
 
 ## Advance every active bounty of `type`; award and flag any that finish.
@@ -1062,6 +1071,7 @@ func _award_bounty(b: Dictionary) -> void:
 		give_loot({"kind": "gem", "gem": drop_gem(int(b["gem_lvl"]))},
 			player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
 		extra = " + gem"
+	call("add_renown", int(b.get("renown", 0)))  # its own violet toast, stacked above
 	sfx("chest")
 	spawn_text(player.global_position + Vector2(0, -78),
 		"BOUNTY: %s  (+%d gold%s)" % [b["desc"], g, extra], Color(0.6, 1.0, 0.6), 4.0)
@@ -1102,10 +1112,11 @@ func claim_vault() -> Array:
 	vault_claimed_week = _week_index()
 	Chest.drop(self, "gold", clamp_to_zone(player.global_position + Vector2(64, 0), player.global_position))
 	give_loot({"kind": "gem", "gem": drop_gem(2)}, player.global_position + Vector2(0, 44))
+	call("add_renown", Balance.RENOWN_VAULT)
 	sfx("chest")
 	spawn_text(player.global_position + Vector2(0, -70), "WEEKLY VAULT CLAIMED!", Color(1.0, 0.85, 0.4), 4.0)
 	autosave()
-	return ["a golden chest", "a bright gem"]
+	return ["a golden chest", "a bright gem", "%d Renown" % Balance.RENOWN_VAULT]
 
 
 # ----------------------------------------------------------- account stash ---

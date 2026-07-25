@@ -904,6 +904,11 @@ func _run_systems() -> void:
 	# save round-trip of the standing choice + run snapshot.
 	await _test_difficulty()
 
+	# 3d20. Renown event currency (2026-07-24): price ladder, wallet math,
+	# buy/ownership flow, PB-push + tier-first-clear faucets pay once,
+	# weekly supply cache, cache-ledger save round-trip, Wardrobe smoke.
+	await _test_renown()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -5230,3 +5235,163 @@ func _test_difficulty() -> void:
 	game.endgame_active = keep_endgame
 	game.weekly_active = keep_weekly
 	print("ok: difficulty tiers (offsets, band shift + S table, gates, zero XP, unlock meta, tier PBs, save round-trip)")
+
+
+func _test_renown() -> void:
+	# --- pure Balance math (no world state) ---
+	if Balance.renown_price("chroma") != Balance.RENOWN_PRICE_CHROMA \
+			or Balance.renown_price("skin", "elite") != Balance.RENOWN_PRICE_ELITE \
+			or Balance.renown_price("skin", "mythic") != Balance.RENOWN_PRICE_MYTHIC:
+		return _fail("renown_price table wrong")
+	if Balance.RENOWN_PRICE_CHROMA >= Balance.RENOWN_PRICE_ELITE \
+			or Balance.RENOWN_PRICE_ELITE >= Balance.RENOWN_PRICE_MYTHIC:
+		return _fail("renown price ladder must climb chroma < elite < mythic")
+
+	# --- wallet math (meta is test-redirected in-memory under no_saves) ---
+	game._load_meta()
+	var keep_ren = game._meta.get("renown")
+	game._meta["renown"] = 0
+	game.add_renown(30)
+	game.add_renown(0)
+	game.add_renown(-5)
+	if game.renown() != 30:
+		return _fail("add_renown should bank 30 and ignore zero/negative grants")
+	if game.spend_renown(31):
+		return _fail("overdraft must refuse")
+	if not game.spend_renown(12) or game.renown() != 18:
+		return _fail("spend_renown should charge exactly")
+
+	# --- buy flow + account-wide ownership ---
+	var own_key := "own_skin_warrior_dreadknight"
+	var keep_own = game._meta.get(own_key)
+	game._meta.erase(own_key)
+	if game.owns_cosmetic("skin", "warrior", "dreadknight"):
+		return _fail("unbought skin reads owned")
+	if game.buy_cosmetic("skin", "warrior", "no_such_skin"):
+		return _fail("bogus id must refuse")
+	game._meta["renown"] = Balance.RENOWN_PRICE_ELITE - 1
+	if game.buy_cosmetic("skin", "warrior", "dreadknight"):
+		return _fail("buy while short must refuse")
+	game._meta["renown"] = Balance.RENOWN_PRICE_ELITE
+	if not game.buy_cosmetic("skin", "warrior", "dreadknight") \
+			or not game.owns_cosmetic("skin", "warrior", "dreadknight") or game.renown() != 0:
+		return _fail("elite buy should charge the full price and record ownership")
+	game._meta["renown"] = 500
+	if game.buy_cosmetic("skin", "warrior", "dreadknight") or game.renown() != 500:
+		return _fail("double-buy must refuse without charging")
+
+	# --- record faucets pay the PUSH, once. Achievements snapshotted:
+	# record_* re-checks tracks and can unlock tiers mid-test. ---
+	var keep_ach := game.achievements.duplicate()
+	var cls: String = game.player.cls
+	var ckey := "crucible_pb_" + cls
+	var dkey := "depths_best_" + cls
+	var keep_cru = game._meta.get(ckey)
+	var keep_dep = game._meta.get(dkey)
+	game._meta[ckey] = {"kills": 3, "time": 0.0, "runs": 1}
+	game._meta["renown"] = 0
+	game.record_endgame("crucible", cls, 5, 0, 0.0)
+	if game.renown() != 2 * Balance.RENOWN_PB_CRUCIBLE:
+		return _fail("crucible push should pay per boss past the PB")
+	game.record_endgame("crucible", cls, 5, 0, 0.0)
+	if game.renown() != 2 * Balance.RENOWN_PB_CRUCIBLE:
+		return _fail("matching the PB again must pay nothing")
+	game._meta[dkey] = {"depth": 40, "runs": 1}
+	game.record_endgame("depths", cls, 0, 46, 0.0)
+	if game.renown() != 2 * Balance.RENOWN_PB_CRUCIBLE + 6 * Balance.RENOWN_PB_DEPTHS:
+		return _fail("depths push should pay per depth past the best")
+
+	# --- NG+ tier first-clear: account-wide, once per chapter x tier ---
+	var keep_std: int = game.player.run_tier
+	var keep_world: int = game.world_run_tier
+	var keep_endgame: bool = game.endgame_active
+	var keep_weekly: bool = game.weekly_active
+	game.endgame_active = false
+	game.weekly_active = false
+	game.world_run_tier = 1
+	var rkey := "ren_tier_%s_t1" % game.chapter_id
+	var pbkey := "pb_%s_%s_t1" % [game.chapter_id, cls]
+	var keep_rt = game._meta.get(rkey)
+	var keep_pb = game._meta.get(pbkey)
+	game._meta.erase(rkey)
+	game._meta.erase(pbkey)
+	game._meta["renown"] = 0
+	game.record_chapter_result({"time": 100.0, "grade": "B"})
+	if game.renown() != Balance.RENOWN_TIER_FIRST_CLEAR:
+		return _fail("first tier clear should pay Renown")
+	game.record_chapter_result({"time": 90.0, "grade": "A"})
+	if game.renown() != Balance.RENOWN_TIER_FIRST_CLEAR:
+		return _fail("tier-clear Renown must be one-time per chapter x tier")
+
+	# --- weekly supply cache: capped, charged, bag-safe ---
+	var keep_cache: int = game.renown_cache_week
+	var keep_cons: Array = game.player.consumables.duplicate(true)
+	var keep_dropped: Array = game.dropped_loot.duplicate(true)
+	game.renown_cache_week = -1
+	game._meta["renown"] = Balance.RENOWN_CACHE_PRICE - 1
+	if game.buy_weekly_cache():
+		return _fail("cache while short must refuse")
+	game._meta["renown"] = Balance.RENOWN_CACHE_PRICE + 7
+	if not game.buy_weekly_cache() or game.renown() != 7:
+		return _fail("cache buy should charge RENOWN_CACHE_PRICE")
+	var granted: int = (game.player.consumables.size() - keep_cons.size()) \
+		+ (game.dropped_loot.size() - keep_dropped.size())
+	if granted != Balance.RENOWN_CACHE_ITEMS.size():
+		return _fail("cache should hand over every item (bag or ground), got %d" % granted)
+	if game.buy_weekly_cache():
+		return _fail("second cache in the same week must refuse")
+
+	# --- cache-ledger save round-trip (character section) ---
+	game.renown_cache_week = 1234
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	game.renown_cache_week = -1
+	var ren_save := SaveGame.read(SaveGame.MAX_SLOTS)
+	SaveGame.apply(game, ren_save)
+	await _frames(2)
+	if game.renown_cache_week != 1234:
+		return _fail("renown_cache_week lost in the save round-trip")
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+
+	# --- Wardrobe UI smoke (records-tab Renown card rides the existing
+	# codex smoke; this opens the store itself) ---
+	game.menus.open_wardrobe()
+	await _frames(2)
+	if game.menus.current != "wardrobe":
+		return _fail("wardrobe screen did not open")
+	game.menus.close()
+	await _frames(1)
+
+	# --- restore shared state ---
+	if keep_ren == null:
+		game._meta.erase("renown")
+	else:
+		game._meta["renown"] = keep_ren
+	if keep_own == null:
+		game._meta.erase(own_key)
+	else:
+		game._meta[own_key] = keep_own
+	if keep_cru == null:
+		game._meta.erase(ckey)
+	else:
+		game._meta[ckey] = keep_cru
+	if keep_dep == null:
+		game._meta.erase(dkey)
+	else:
+		game._meta[dkey] = keep_dep
+	if keep_rt == null:
+		game._meta.erase(rkey)
+	else:
+		game._meta[rkey] = keep_rt
+	if keep_pb == null:
+		game._meta.erase(pbkey)
+	else:
+		game._meta[pbkey] = keep_pb
+	game.achievements = keep_ach
+	game.player.run_tier = keep_std
+	game.world_run_tier = keep_world
+	game.endgame_active = keep_endgame
+	game.weekly_active = keep_weekly
+	game.renown_cache_week = keep_cache
+	game.player.consumables = keep_cons
+	game.dropped_loot = keep_dropped
+	print("ok: renown (prices, wallet, buy/own, PB + tier faucets pay once, weekly cache, save round-trip, wardrobe UI)")

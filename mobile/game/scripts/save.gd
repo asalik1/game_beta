@@ -140,6 +140,8 @@ static func _character_section(game: Game) -> Dictionary:
 		"vault_week": game.vault_week, "vault_progress": game.vault_progress,
 		"vault_claimed_week": game.vault_claimed_week,
 		"weekly_claimed_week": game.weekly_claimed_week,
+		# Renown supply-cache ledger (the wallet itself is account meta).
+		"renown_cache_week": game.renown_cache_week,
 	}
 
 
@@ -285,7 +287,8 @@ const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tr
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
 	"achievements", "boss_records", "kill_counts", "player_title",
 	"bounties", "bounty_day", "bounty_week",
-	"vault_week", "vault_progress", "vault_claimed_week", "weekly_claimed_week"]
+	"vault_week", "vault_progress", "vault_claimed_week", "weekly_claimed_week",
+	"renown_cache_week"]
 const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "merchant_zones",
 	"run_time", "run_deaths", "run_elites", "run_secrets",
 	"weekly_active", "weekly_week", "bosses_slain", "pos",
@@ -525,6 +528,7 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 			"target": int(b.get("target", 1)), "progress": int(b.get("progress", 0)),
 			"desc": String(b.get("desc", "")), "gold": int(b.get("gold", 0)),
 			"gems": int(b.get("gems", 0)), "gem_lvl": int(b.get("gem_lvl", 1)),
+			"renown": int(b.get("renown", 0)),
 			"done": bool(b.get("done", false))})
 	game.bounty_day = int(c.get("bounty_day", -1))
 	game.bounty_week = int(c.get("bounty_week", -1))
@@ -532,6 +536,7 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	game.vault_progress = int(c.get("vault_progress", 0))
 	game.vault_claimed_week = int(c.get("vault_claimed_week", -1))
 	game.weekly_claimed_week = int(c.get("weekly_claimed_week", -1))
+	game.renown_cache_week = int(c.get("renown_cache_week", -1))
 	game.kill_counts = {}
 	var kc: Dictionary = c.get("kill_counts", {})
 	for k in kc:

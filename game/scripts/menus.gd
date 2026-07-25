@@ -455,6 +455,10 @@ func open_pause() -> void:
 	# control + the exits. Resume is dropped too: ✕ / tap-outside / ESC already do it.
 	# UI strings route through Loc.t (localization pass — a table swap, not a sweep).
 	_btn(vbox, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
+	# The Wardrobe is the one service screen WITHOUT a HUD icon (the rule
+	# above only bars duplicating screens that have one).
+	_btn(vbox, "  ◈  Wardrobe  (skins & chromas, bought with Renown)",
+		func() -> void: open_wardrobe(), Color(0.85, 0.7, 1.0))
 	if game.endgame_active:
 		# In an endgame run: cash out (keep winnings) or abandon (forfeit).
 		var cash := func() -> void:
@@ -3748,6 +3752,11 @@ func open_journal(tab := "log") -> void:
 ## The account-wide stash lives in ui/stash.gd.
 func open_stash() -> void:
 	UIStash.open(self)
+
+
+## The Wardrobe (Renown cosmetics store + equip) lives in ui/wardrobe.gd.
+func open_wardrobe() -> void:
+	UIWardrobe.open(self)
 
 
 ## Debug panel (F1, only when launched via dev_mode.bat) — ui/dev_panel.gd.

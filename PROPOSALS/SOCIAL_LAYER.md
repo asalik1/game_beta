@@ -195,11 +195,17 @@ can carry, and it needs the server. Lowest priority of the six; sequence it last
 1. **Difficulty tiers / NG+** — **DONE 2026-07-24** (unlock gate = one constant,
    `Balance.TIER_FINALE_CH`, movable to Act 3's finale when it exists). The
    "meta systems" freeze is unblocked.
-2. **Status rewards + segregated event currency** — no server needed. Titles on
-   the existing achievement system; event currency buying skins/awakenings that
-   already exist. Highest value-per-effort.
-3. **Waking Incursions** — the login-reason loop, already spec'd; pays the event
-   currency. No server needed.
+2. **Status rewards + segregated event currency** — **SHIPPED 2026-07-24** as
+   **Renown + the Wardrobe** (DESIGN "Renown & the Wardrobe"; round narrative in
+   BALANCE_HISTORY). Account-wide wallet in meta.json; faucets = the existing
+   collected-not-farmed set + endgame PB pushes + NG+ tier first-clears;
+   sinks = chromas / elite / mythic skins (cosmetics' first production
+   acquisition path — they were dev-panel-only) + a capped weekly consumable
+   cache. Awakenings deliberately NOT sold (they stay quest-earned status).
+   Titles stayed identity-only per the doctrine — the "buying titles" reading
+   of this step was rejected.
+3. **Waking Incursions** — the login-reason loop, already spec'd; pays Renown.
+   No server needed. **The named next step.**
 4. **Async guilds** — roster/ladder/crests as STATE. The retention test before
    committing to servers. Needs lightweight persistence (could ride meta.json
    short-term) but not full presence.
