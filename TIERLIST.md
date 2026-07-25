@@ -64,7 +64,7 @@ holy 1413; shadow's standing mean 3574).
 | **A** | Assassin · Poison | Pack 5175 (90/95 adds reaped) with a real boss floor (2621). The DoT tax is priced correctly and the bloom does its job in crowds. |
 | **A** | Warlock · Curse | PROMOTED 2026-07-24 on a mean: boss #2 (3350 six-run mean, tight 8.4% spread — within ~6% of the flagship) and pack #3 (5859). The attrition engine arrived; wither ramps reward long fights. |
 | **A−** | Mage · Wind | Boss ~2732 AND top-half pack (4094) — the best generalist mage since the mp-2/cdr era let caster cadence scale. |
-| **A−** | Archer · Venom | Boss #3 single (3242), pack 3511 — quietly excellent on both boards; toxin uptime is trivial (see §10: Serpent's Due). Single reads above Hunt now — mean it next board; A candidate. |
+| **A−** | Archer · Venom | Boss mean 3126 (same-night 6-run; the 3242 single was a high outlier), pack 3511 — quietly excellent on both boards, tie-band with Hunt; toxin uptime is trivial (see §10: Serpent's Due). |
 | **A−** | Warlock · Pact | Pack #2 (6285, 90/95) once Dark Pact is point-blank; boss mean 2707. Promoted from B+ on the poison precedent (pack-top + real boss floor) — the live HP price still keeps it under Poison. |
 | **B+** | Assassin · Blood | Boss 2731 at FULL HP — blood_amp stretches toward Shadow as the pilot bleeds; the most self-sufficient melee. Pack fine (4735). |
 | **B+** | Mage · Fire | Pack #4 (5398, 90/95) — the farm engine; boss 2303 is its tax. |
@@ -75,7 +75,7 @@ holy 1413; shadow's standing mean 3574).
 | **B−** | Mage · Ice | 2262/3442 — the control tax on a glass body; Killing Frost helps but the loop is the slowest in the class. |
 | **C+** | Paladin · Wrath | 2085/3643 — the paladin's damage pole, still trailing warrior on bosses but a real pack presence now (90/95 consecration coverage). Magic-lean tank credit (wards spell), and the stance-swap shield talent adds real play. |
 | **C+** | Paladin · Holy | 1413 dps (six-run mean) is the price of the game's strongest sustain stance; the safe/slow pole is deliberate — graded for players buying the floor. |
-| **C** | Paladin · Aegis / Warrior · Bulwark | 1146–1297 dps tank poles (aegis' single read low — mean it next board). Post guard-trim they finally pay gear-res opportunity cost like everyone else. Easiest pilots in the game; lowest ceilings. Fine as identities, weak as mains. |
+| **C** | Paladin · Aegis / Warrior · Bulwark | 1297–1350 dps tank poles (aegis mean 1350, same-night 6-run — the 1146 single was a low outlier). Post guard-trim they finally pay gear-res opportunity cost like everyone else. Easiest pilots in the game; lowest ceilings. Fine as identities, weak as mains. |
 
 No F tier: the dominated-talent rework and the caster-cdr era pulled every
 spec's floor into playable range.
@@ -86,7 +86,7 @@ spec's floor into playable range.
 |---|------|-----|--------|------|-------|
 | 1 | assassin/shadow | 3628 | 16.8 | 24% | standing mean 3574; marked-window crits |
 | 2 | warlock/curse | 3350* | 4.7 | 9% | *six-run mean (single 3343, spread 8.4%); wither ramp |
-| 3 | archer/venom | 3242 | 7.4 | 16% | toxin stack + Serpent's Due; mean next board |
+| 3 | archer/venom | 3126* | 7.4 | 15% | *six-run mean (single 3242, spread 12.5%); toxin + Serpent's Due |
 | 4 | archer/hunt | 3026 | 5.5 | 35% | 4th-shot rhythm + built crit; mp-starve noted |
 | 5 | mage/wind | 2732 | 7.4 | 18% | echo flurry, cdr era |
 | 6 | assassin/blood | 2731 | 14.3 | 16% | full-HP floor; amp climbs as you bleed |
@@ -101,7 +101,7 @@ spec's floor into playable range.
 | 15 | warrior/earth | 2076 | 7.3 | 10% | quake flavor |
 | 16 | paladin/holy | 1413* | 4.3 | 4% | *six-run mean (single 1620); sustain pole |
 | 17 | warrior/bulwark | 1297 | 4.1 | 8% | tank pole, post guard-trim |
-| 18 | paladin/aegis | 1146 | 2.7 | 6% | tank pole; single read low — mean next board |
+| 18 | paladin/aegis | 1350* | 3.1 | 6% | *six-run mean (single 1146 was a low outlier, spread 20%) |
 
 ## 5. The pack board (AoE — 3 pillars + add waves, verified 2026-07-24)
 
@@ -219,10 +219,11 @@ interesting number.
 - **2026-07-24 board refresh findings:** the warlock family's rise is REAL
   (curse boss mean 3350 — within ~6% of shadow's 3574; if a future round
   lifts it further, the S conversation starts) and the archer/mage staleness
-  flag is resolved (this board post-dates the mana-cost round). Singles left
-  UNMEANED that read >8% off their §3 citation: venom 3242 boss (A
-  candidate over hunt) and aegis 1146 (read low) — take 6-run means next
-  board before grading either. Variance lesson re-learned: pact's single
+  flag is resolved (this board post-dates the mana-cost round). The two flagged
+  singles were MEANED the same night: venom 3126 (A− stands — tie-band with
+  hunt; the 3242 single was a high outlier) and aegis 1350 (C stands; the
+  1146 single was a LOW outlier at 20% spread). Every §3 grade now rests on
+  a mean or an in-band single. Variance lesson re-learned: pact's single
   read +27% while its mean moved +13% (17.4% spread) — never grade a mover
   off one run.
 - **Paladin mp-starve across all three specs** (a1 starves ~2s in, ults 0 all
