@@ -151,7 +151,23 @@ var _meter_next_ms := 0
 ## toggle can drive this; the default reads clearly without shouting.
 var party_names_alpha := 0.85
 
-# MP-13 (§5.4): read-only mirror of a chapter beat another player is driving.
+# MP-19 party chat: a bottom-left line stack + an ENTER-opened input line.
+# Built lazily on first use (open or first received line) — solo allocates
+# nothing and never shows it. While the input is open, chat_active is the
+# OVERLAY FLAG the intents poll, tap-to-talk and the touch HUD all gate on
+# (the §5.4 co-op rule: gate on overlay state, never the pause).
+var chat_root: Control = null
+var chat_lines_box: VBoxContainer = null
+var chat_input: LineEdit = null
+var chat_active := false          # input line open — a gameplay-input overlay
+const CHAT_SHOW_LINES := 6        # visible history (older labels are freed)
+const CHAT_FADE_AFTER := 8.0      # seconds a line holds before fading
+const CHAT_COLOR := Color(0.78, 0.86, 1.0)
+
+# MP-20 in-session ready-check card (the advance gate's surface; a check
+# raised while the LOBBY UI is open renders there instead). Lazy build.
+var ready_root: PanelContainer = null
+var ready_body: VBoxContainer = null
 
 # MP-13 (§5.4): read-only mirror of a chapter beat another player is driving.
 # A compact top-center transcript — the initiator picks the choices, the rest
@@ -171,6 +187,12 @@ const SLOTS := ["a1", "a2", "a3", "ult", "potion"]
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 10
+	# MP-20: the ready-check card redraws off the session's signal. A METHOD
+	# connection, never a lambda — it auto-disconnects when this HUD frees,
+	# so test-spawned game scenes can't leave dead callables on the autoload.
+	var mp_sess := get_node_or_null("/root/NetworkManager/Session")
+	if mp_sess != null and not mp_sess.proposal_changed.is_connected(_on_proposal_changed):
+		mp_sess.proposal_changed.connect(_on_proposal_changed)
 
 	# Vignette (drawn under all UI, over the world). Pulses red at low HP.
 	vignette = TextureRect.new()
@@ -1738,6 +1760,182 @@ func _place_down_mark(idx: int, xf: Transform2D, at: Vector2, text: String, prog
 ## The ally roster the party UI draws: ONE row per REMOTE player (never the
 ## local player — that's the main HUD). Read live off game.players each call,
 ## so it reflects vitals/downed the instant they change (net_test asserts here).
+# ---- ready check card (MP-20) ----
+
+## Mid-session checks (the victory card's advance gate) render HERE; while
+## the lobby UI is open, the lobby's own stages draw the card instead.
+func _on_proposal_changed() -> void:
+	var sess := _chat_session()
+	if sess == null or game == null:
+		_hide_ready_card()
+		return
+	var data: Dictionary = sess.proposal_open
+	if data.is_empty() or not game.net_online() \
+			or (game.menus != null and game.menus.is_open()):
+		_hide_ready_card()
+		return
+	_show_ready_card(sess, data)
+
+
+func _hide_ready_card() -> void:
+	if ready_root != null:
+		ready_root.visible = false
+
+
+func _show_ready_card(sess: Node, data: Dictionary) -> void:
+	if ready_root == null:
+		ready_root = PanelContainer.new()
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.07, 0.08, 0.13, 0.94)
+		sb.border_color = Color(0.95, 0.85, 0.5, 0.8)
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(8)
+		sb.content_margin_left = 18
+		sb.content_margin_right = 18
+		sb.content_margin_top = 12
+		sb.content_margin_bottom = 12
+		ready_root.add_theme_stylebox_override("panel", sb)
+		add_child(ready_root)
+		ready_body = VBoxContainer.new()
+		ready_body.add_theme_constant_override("separation", 6)
+		ready_root.add_child(ready_body)
+	ready_root.visible = true
+	ready_root.position = Vector2(get_viewport().get_visible_rect().size.x * 0.5 - 235.0, 130.0)
+	ready_root.custom_minimum_size = Vector2(470, 0)
+	# Rebuild the body. queue_free (hidden first), never free(): the Ready
+	# button's own pressed signal can be what triggered this rebuild.
+	for c in ready_body.get_children():
+		c.visible = false
+		c.queue_free()
+	var t := Label.new()
+	t.text = "READY CHECK"
+	t.add_theme_font_size_override("font_size", 16)
+	t.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
+	ready_body.add_child(t)
+	var chid := String(data.get("chapter", "ch1"))
+	var line := Label.new()
+	line.text = String(Story.chapter(chid)["name"]) \
+		+ (" — onward" if String(data.get("mode", "")) == "advance"
+			else (" — as the host's save left it" if bool(data.get("cont", true)) else " — from the beginning"))
+	line.add_theme_font_size_override("font_size", 14)
+	ready_body.add_child(line)
+	var ptier: int = int(data.get("tier", 0))
+	if ptier > 0:
+		var tl := Label.new()
+		tl.text = "%s — every spawn +%d levels, richer loot, no XP" % [
+			Balance.tier_name(ptier).to_upper(), Balance.tier_level_offset(ptier)]
+		tl.add_theme_font_size_override("font_size", 13)
+		tl.add_theme_color_override("font_color", Balance.tier_color(ptier))
+		ready_body.add_child(tl)
+	if bool(data.get("mine", false)) or bool(data.get("answered", false)):
+		var w := Label.new()
+		w.text = "⌛ Waiting on the party…" if bool(data.get("mine", false)) \
+			else "✓ Ready — waiting for the others…"
+		w.add_theme_font_size_override("font_size", 13)
+		w.add_theme_color_override("font_color", Color(0.7, 1.0, 0.7))
+		ready_body.add_child(w)
+	else:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 16)
+		ready_body.add_child(row)
+		var yes := Button.new()
+		yes.text = "  ✓  Ready  "
+		yes.pressed.connect(func() -> void: sess.answer_ready(true))
+		row.add_child(yes)
+		var no := Button.new()
+		no.text = "  ✕  Decline  "
+		no.pressed.connect(func() -> void: sess.answer_ready(false))
+		row.add_child(no)
+
+
+# ---- party chat (MP-19) ----
+
+func _chat_session() -> Node:
+	return get_node_or_null("/root/NetworkManager/Session")
+
+
+## Lazy build: solo never allocates any of this. The input line lives at the
+## bottom-left; received lines stack UPWARD above it and fade on their own.
+func _ensure_chat() -> void:
+	if chat_root != null:
+		return
+	chat_root = Control.new()
+	chat_root.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	chat_root.position = Vector2(12, 0)
+	chat_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(chat_root)
+	chat_lines_box = VBoxContainer.new()
+	chat_lines_box.add_theme_constant_override("separation", 2)
+	chat_lines_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chat_lines_box.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	chat_lines_box.position = Vector2(0, -206)
+	chat_root.add_child(chat_lines_box)
+	chat_input = LineEdit.new()
+	chat_input.custom_minimum_size = Vector2(360, 30)
+	chat_input.position = Vector2(0, -200)
+	chat_input.placeholder_text = "party chat…  (ENTER sends · ESC closes)"
+	chat_input.max_length = 120
+	chat_input.visible = false
+	chat_input.text_submitted.connect(_on_chat_submit)
+	chat_input.focus_exited.connect(func() -> void: _close_chat())
+	chat_input.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventKey and e.pressed and e.keycode == KEY_ESCAPE:
+			_close_chat()
+			get_viewport().set_input_as_handled())
+	chat_root.add_child(chat_input)
+	var sess := _chat_session()
+	if sess != null and not sess.chat_line.is_connected(_on_chat_line):
+		sess.chat_line.connect(_on_chat_line)
+
+
+## Open the input line (desktop: ENTER in a session; mobile: the 💬 button).
+## chat_active is the overlay flag the intents poll / tap-to-talk / touch
+## HUD gate on — the world keeps running (§5.4), the INPUT is what stops.
+func open_chat() -> void:
+	if game == null or not game.net_online() or game.state != game.ST_PLAYING:
+		return
+	_ensure_chat()
+	chat_active = true
+	chat_input.visible = true
+	chat_input.grab_focus()
+
+
+func _close_chat() -> void:
+	if chat_input != null:
+		chat_input.clear()
+		chat_input.visible = false
+		if chat_input.has_focus():
+			chat_input.release_focus()
+	chat_active = false
+
+
+func _on_chat_submit(text: String) -> void:
+	var sess := _chat_session()
+	if sess != null and not text.strip_edges().is_empty():
+		sess.say(text)
+	_close_chat()
+
+
+## One line in from the session (own lines echo here too — the optimistic
+## local render). Oldest labels free once past the visible window.
+func _on_chat_line(from_name: String, _channel: String, text: String) -> void:
+	_ensure_chat()
+	var l := Label.new()
+	l.text = "%s: %s" % [from_name, text]
+	l.add_theme_font_size_override("font_size", 13)
+	l.add_theme_color_override("font_color", CHAT_COLOR)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	l.add_theme_constant_override("outline_size", 4)
+	l.custom_minimum_size = Vector2(380, 0)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	chat_lines_box.add_child(l)
+	while chat_lines_box.get_child_count() > CHAT_SHOW_LINES:
+		chat_lines_box.get_child(0).free()
+	var tw := l.create_tween()
+	tw.tween_interval(CHAT_FADE_AFTER)
+	tw.tween_property(l, "modulate:a", 0.0, 1.2)
+
+
 func party_frame_data() -> Array:
 	var out: Array = []
 	if game == null or not game.net_online():
@@ -3092,8 +3290,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode in [KEY_SPACE, KEY_ENTER, KEY_E] \
 				and game.state == game.ST_VICTORY \
 				and Story.next_chapter(game.chapter_id) != "":
-			# Mid-campaign victory card: carry this character onward.
-			game.advance_chapter()
+			# Mid-campaign victory card: carry this character onward — in a
+			# session the party CONFIRMS first (MP-20 ready check; a party
+			# of 1 falls straight through, and a repeat press while a check
+			# is live is a no-op until it resolves).
+			if game.net_host():
+				var adv_sess := get_node_or_null("/root/NetworkManager/Session")
+				if adv_sess == null or adv_sess.propose_content("advance",
+						Story.next_chapter(game.chapter_id), game.world_run_tier, false):
+					game.advance_chapter()
+			else:
+				game.advance_chapter()  # guests: net_guest() gates inside (MP-14)
+			get_viewport().set_input_as_handled()
+		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER] and game.net_online() \
+				and game.state == game.ST_PLAYING and not chat_active \
+				and not dialogue_active:
+			# MP-19: ENTER opens party chat — sessions only, mid-play only
+			# (the victory card's advance above and dialogue's confirm below
+			# keep their meanings; while typing, the LineEdit consumes keys
+			# before they ever reach here).
+			open_chat()
 			get_viewport().set_input_as_handled()
 		elif event.keycode in [KEY_SPACE, KEY_ENTER, KEY_E]:
 			pressed_confirm = true
@@ -3108,6 +3324,15 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_ESCAPE:
 			_on_escape()
+		elif event.keycode == KEY_N and game.state == game.ST_VICTORY \
+				and game.net_online() and game.net_host():
+			# MP-22: the party persists between contents — N opens the
+			# chapter pick in reprise mode (tier row included); the MP-20
+			# check names the pick to everyone and the advance snap carries
+			# the whole party, session intact, no codes re-read.
+			game.menus.lobby["reprise"] = true
+			game.menus.open_lobby("chapter")
+			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_R and game.state == game.ST_VICTORY:
 			# MP-14 (§5.4/§5.7): in a session, restarting ENDS the run — the
 			# host tells the party to autosave + drop out; both sides leave the

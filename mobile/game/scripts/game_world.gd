@@ -42,6 +42,18 @@ func switch_chapter(id: String, force := false) -> void:
 	# net_advance, the weekly-flags pattern).
 	if not Story.is_endgame(id) and not net_guest():
 		world_run_tier = player.run_tier if has_local_player() else 0
+	# Wave 9, the party-town contract: the lobby is OPEN while the session
+	# world is a SAFE HUB (the capital — friends join the plaza and the
+	# party gathers in person) and LOCKS the moment real content starts
+	# (the §5.1 rule, now a LIFECYCLE instead of a one-way latch). Scope:
+	# PLAYER-HOSTED listen sessions only — a DEDICATED server world has no
+	# local player and admits joiners at any time (the MMO-step contract;
+	# this line closing it was stage 12's admission timeout), and the dev
+	# CLI/harness seam stays join-anytime (MP-08 --mp-host; the flag lives
+	# in the derived layer — the MP-12 get("downed") idiom). Stage 15
+	# clears mp_host to opt INTO production semantics; it IS this test.
+	if net_host() and has_local_player() and not bool(get("mp_host")):
+		get_node("/root/NetworkManager").lobby_open = Story.is_standalone(id)
 	# Waking Incursion snapshot (world state, wander_seed contract): a LOAD
 	# hands the saved week through _waking_restore so the rebuilt graph
 	# matches the save; a fresh launch arms only for a SOLO visit to the
@@ -143,8 +155,20 @@ func enter_capital() -> void:
 func _hub_action(act: String) -> void:
 	match act:
 		"portal_story":
-			# Back to the campaign we came from (dev may have jumped in cold).
-			switch_chapter(_pre_capital_chapter if _pre_capital_chapter != "" else "ch1", true)
+			# Wave 9: in a PARTY the portal is the content queue — the HOST
+			# picks the road (chapter + NG+ tier, the reprise picker) and the
+			# MP-20 ready check reaches every head in the plaza; guests are
+			# told who leads. Solo (or a party of 1) keeps the simple door:
+			# back to the campaign we came from (dev may have jumped in cold).
+			if net_online() and net_guest():
+				spawn_text(player.global_position + Vector2(0, -90),
+					"The party leader chooses the road — gather at the portal.",
+					Color(0.8, 0.85, 1.0), 3.0)
+			elif net_host() and not get_node("/root/NetworkManager").peers.is_empty():
+				menus.lobby["reprise"] = true
+				menus.open_lobby("chapter")
+			else:
+				switch_chapter(_pre_capital_chapter if _pre_capital_chapter != "" else "ch1", true)
 		"portal_crucible":
 			call("enter_endgame", "crucible")
 		"portal_depths":

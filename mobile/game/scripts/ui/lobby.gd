@@ -51,11 +51,22 @@ static func esc(m: Menus) -> void:
 		"char":
 			open(m, "join" if String(m.lobby.get("path", "host")) == "join" else "menu")
 		"chapter":
-			open(m, "char")
+			if bool(m.lobby.get("reprise", false)):
+				# MP-22: reprise picking backs out to the victory card, not
+				# the hero roster — the session (and hero) are live.
+				m.lobby.erase("reprise")
+				m.close()
+			else:
+				open(m, "char")
 		"join":
 			open(m, "menu")
 		"host_lobby":
-			_leave(m, "You closed the lobby.")
+			# Wave 9: in a live hub, ESC just closes the PANEL — the session
+			# (and the open gates) persist; ending it is the explicit button.
+			if m.game != null and m.game.play_started and Story.is_standalone(m.game.chapter_id):
+				m.close()
+			else:
+				_leave(m, "You closed the lobby.")
 		"guest_lobby":
 			_leave(m, "You left the lobby.")
 		"wait":
@@ -79,6 +90,15 @@ static func _stage_menu(m: Menus) -> void:
 		ml.custom_minimum_size = Vector2(680, 0)
 	m._lbl(vbox, "Up to four heroes share one road — the host's world, everyone's own hero. Host a session and read your code to friends, or join theirs. Monsters grow tougher for every extra head; the loot each of you sees is your own.", 14, Color(0.75, 0.75, 0.75))
 	_gap(vbox, 6)
+	# Wave 9: standing in a safe hub with a live hero, hosting means
+	# OPENING YOUR GATES — the session raises around the world you're
+	# already in (no save pick, no relaunch); friends join the plaza
+	# beside you and the party sets out via the portal's ready check.
+	if m.game != null and m.game.play_started \
+			and Story.is_standalone(m.game.chapter_id) \
+			and not m.get_node("/root/NetworkManager").is_online():
+		m._btn(vbox, "  ⚑  Open your gates  (host from right here)", func() -> void:
+			_host_here(m), GOOD)
 	m._btn(vbox, "  ⚑  Host a session  ", func() -> void:
 		m.lobby["path"] = "host"
 		open(m, "char"), GOLD)
@@ -162,17 +182,42 @@ static func _stage_char(m: Menus) -> void:
 ## world); any unlocked chapter can be started from its beginning
 ## instead (the solo replay semantics — fresh seed, story state resets).
 static func _stage_chapter(m: Menus) -> void:
-	var vbox := m._open("Play Together — choose the chapter", 900, 540)
+	# MP-22 reprise: the SAME screen doubles as the between-content pick —
+	# session live, party gathered on the victory card. No Continue button
+	# (that chapter just ended); picks route through the ready check and
+	# the advance snap instead of raising a session.
+	var reprise: bool = bool(m.lobby.get("reprise", false))
+	var vbox := m._open("The party rides on — choose the next chapter" if reprise
+		else "Play Together — choose the chapter", 900, 540)
 	m.current = "lobby"
 	m.lobby["stage"] = "chapter"
-	var saved_ch := String(m.lobby.get("saved_chapter", "ch1"))
-	var saved_name := String(Story.chapter(saved_ch)["name"])
-	var saved_tier: int = int(m.lobby.get("saved_world_tier", 0))
-	var cont_btn := m._btn(vbox, "  ▶  Continue — %s (as your save left it)%s  " % [saved_name,
-			"" if saved_tier == 0 else " · " + Balance.tier_name(saved_tier).to_upper()],
-		func() -> void: _host_go(m, saved_ch, true), GOOD)
-	cont_btn.add_theme_font_size_override("font_size", 17)
-	UITheme.header(m._lbl(vbox, "— OR START A CHAPTER FROM ITS BEGINNING —", 14, GOLD))
+	if reprise:
+		var rsess: Node = m.get_node("/root/NetworkManager/Session")
+		if not (rsess.proposal_open as Dictionary).is_empty():
+			m._lbl(vbox, "⌛ READY CHECK — waiting on the party…", 14, GOLD)
+		elif String(rsess.last_check_msg) != "":
+			m._lbl(vbox, "◆ " + String(rsess.last_check_msg), 14, BAD)
+		_wire(m, rsess.proposal_changed, func() -> void:
+			if m.current == "lobby" and String(m.lobby.get("stage", "")) == "chapter":
+				_stage_chapter(m))
+		_wire(m, rsess.check_passed, func(mode: String, chid2: String, tier2: int, _cont2: bool) -> void:
+			if mode == "reprise":
+				_reprise_launch(m, chid2, tier2))
+		# Wave 9: from a victory card, the party can head HOME instead —
+		# the capital reopens the gates (new friends can join the plaza).
+		if String(m.game.chapter_id) != "capital":
+			m._btn(vbox, "  ⌂  Return to the Capital together  ",
+				func() -> void: _reprise_go(m, "capital"), Color(0.7, 0.9, 1.0))
+	else:
+		var saved_ch := String(m.lobby.get("saved_chapter", "ch1"))
+		var saved_name := String(Story.chapter(saved_ch)["name"])
+		var saved_tier: int = int(m.lobby.get("saved_world_tier", 0))
+		var cont_btn := m._btn(vbox, "  ▶  Continue — %s (as your save left it)%s  " % [saved_name,
+				"" if saved_tier == 0 else " · " + Balance.tier_name(saved_tier).to_upper()],
+			func() -> void: _host_go(m, saved_ch, true), GOOD)
+		cont_btn.add_theme_font_size_override("font_size", 17)
+	UITheme.header(m._lbl(vbox, "— PICK A CHAPTER TO START FROM ITS BEGINNING —" if reprise
+		else "— OR START A CHAPTER FROM ITS BEGINNING —", 14, GOLD))
 	# NG+ tier for from-the-beginning picks (2026-07-24): the HOST sets the
 	# whole party's world here — same standing-choice semantics as the solo
 	# replay picker (the pick persists on this hero at session start).
@@ -208,9 +253,13 @@ static func _stage_chapter(m: Menus) -> void:
 		var pick_id: String = chid
 		var unlocked: bool = m.game.chapter_available(pick_id)
 		var chname := String(Story.CHAPTER_LIST[chid]["name"])
+		var pick_act := func() -> void:
+			if bool(m.lobby.get("reprise", false)):
+				_reprise_go(m, pick_id)
+			else:
+				_host_go(m, pick_id, false)
 		m._btn(list, "  %d.  %s%s  " % [idx, "" if unlocked else "🔒 ", chname],
-			func() -> void: _host_go(m, pick_id, false),
-			GOLD if unlocked else Color(0.5, 0.5, 0.55), unlocked)
+			pick_act, GOLD if unlocked else Color(0.5, 0.5, 0.55), unlocked)
 		idx += 1
 	m._lbl(vbox, "Replays reset that chapter's story for your save; your hero's build, gear and Resonance ride along untouched.", 13, Color(0.55, 0.58, 0.66))
 	m._btn(vbox, "  Back  ", func() -> void: open(m, "char"), Color(0.8, 0.85, 0.9))
@@ -304,6 +353,11 @@ static func _stage_host_lobby(m: Menus) -> void:
 			Balance.tier_name(host_tier).to_upper(), Balance.tier_level_offset(host_tier)],
 			13, Balance.tier_color(host_tier))
 		htl.custom_minimum_size = Vector2(800, 0)
+	# MP-20: a ready check in flight — or its outcome — reads right here.
+	if not (sess.proposal_open as Dictionary).is_empty():
+		m._lbl(vbox, "⌛ READY CHECK — waiting on the party…", 14, GOLD)
+	elif String(sess.last_check_msg) != "":
+		m._lbl(vbox, "◆ " + String(sess.last_check_msg) + "  You can start again, or remove them.", 14, BAD)
 	_party(m, vbox)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -311,11 +365,26 @@ static func _stage_host_lobby(m: Menus) -> void:
 	var brow := HBoxContainer.new()
 	brow.add_theme_constant_override("separation", 16)
 	vbox.add_child(brow)
-	var start := m._btn(brow, "  ▶  Start the chapter  ", func() -> void: _start_session(m), GOOD)
-	start.add_theme_font_size_override("font_size", 17)
+	# Wave 9: hosting a LIVE hub, content starts at the PORTAL (ready
+	# check), not here — the lobby is the meeting room, the plaza is the
+	# town. Closing this panel keeps the gates open; friends keep joining.
+	var live_hub: bool = m.game != null and m.game.play_started \
+		and Story.is_standalone(m.game.chapter_id)
+	if live_hub:
+		m._lbl(vbox, "Your gates are open — friends appear in the plaza beside you. Lead the party to the PORTAL when it's time to set out.", 14, Color(0.75, 0.85, 0.75))
+		m._btn(brow, "  ▼  Close this panel (stay hosting)  ", func() -> void: m.close(), GOOD)
+	else:
+		var start := m._btn(brow, "  ▶  Start the chapter  ", func() -> void: _start_session(m), GOOD)
+		start.add_theme_font_size_override("font_size", 17)
 	m._btn(brow, "  ✕  Close the lobby  ", func() -> void: _leave(m, "You closed the lobby."), BAD)
-	m._hint(vbox, "Start any time — a party of 1 plays the solo game; joins lock once the chapter begins")
+	m._hint(vbox, "The portal sets the party moving — joins stay open while you stand in the Capital" if live_hub
+		else "Start any time — a party of 1 plays the solo game; joins lock once the chapter begins")
 	_wire(m, sess.lobby_changed, func() -> void: _refresh(m, "host_lobby"))
+	# MP-20: the check's lifecycle redraws this screen; a pass launches.
+	_wire(m, sess.proposal_changed, func() -> void: _refresh(m, "host_lobby"))
+	_wire(m, sess.check_passed, func(mode: String, _chid: String, _tier: int, _cont: bool) -> void:
+		if mode == "start":
+			_launch_session(m))
 	_wire(m, net.peer_rejected, func(_id: int, reason: String) -> void:
 		m.lobby["msg"] = "A knock was turned away — %s" % reason
 		_refresh(m, "host_lobby"))
@@ -336,6 +405,29 @@ static func _stage_guest_lobby(m: Menus) -> void:
 	m.current = "lobby"
 	m.lobby["stage"] = "guest_lobby"
 	m._lbl(vbox, "You're in. The host starts the chapter once everyone has gathered — you'll all set out together.", 14, Color(0.75, 0.75, 0.75))
+	# MP-20: the host's proposal is a CARD this guest answers — the content
+	# is named (chapter + NG+ tier) before anyone is moved anywhere.
+	var prop: Dictionary = sess.proposal_open
+	if not prop.is_empty():
+		UITheme.header(m._lbl(vbox, "— THE HOST PROPOSES —", 15, GOLD))
+		m._lbl(vbox, String(Story.chapter(String(prop.get("chapter", "ch1")))["name"])
+			+ (" — as the host's save left it" if bool(prop.get("cont", true)) else " — from the beginning"),
+			15, Color(0.9, 0.92, 0.98))
+		var ptier: int = int(prop.get("tier", 0))
+		if ptier > 0:
+			m._lbl(vbox, "%s — every spawn +%d levels, richer loot, no XP" % [
+				Balance.tier_name(ptier).to_upper(), Balance.tier_level_offset(ptier)],
+				13, Balance.tier_color(ptier))
+		if bool(prop.get("answered", false)):
+			m._lbl(vbox, "✓ Ready — waiting for the others…", 14, GOOD)
+		else:
+			var arow := HBoxContainer.new()
+			arow.add_theme_constant_override("separation", 14)
+			vbox.add_child(arow)
+			m._btn(arow, "  ✓  Ready  ", func() -> void: sess.answer_ready(true), GOOD)
+			m._btn(arow, "  ✕  Decline  ", func() -> void: sess.answer_ready(false), BAD)
+	elif String(sess.last_check_msg) != "":
+		m._lbl(vbox, "◆ " + String(sess.last_check_msg), 14, BAD)
 	_party(m, vbox)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -343,6 +435,7 @@ static func _stage_guest_lobby(m: Menus) -> void:
 	m._btn(vbox, "  ✕  Leave the lobby  ", func() -> void: _leave(m, "You left the lobby."), BAD)
 	m._hint(vbox, "ESC to leave the lobby")
 	_wire(m, sess.lobby_changed, func() -> void: _refresh(m, "guest_lobby"))
+	_wire(m, sess.proposal_changed, func() -> void: _refresh(m, "guest_lobby"))
 	_wire(m, sess.session_started, func() -> void:
 		if m.current == "lobby":
 			m.close())
@@ -356,6 +449,56 @@ static func _stage_guest_lobby(m: Menus) -> void:
 static func _lobby_name(m: Menus, sess: Node) -> String:
 	var nm := String(m.lobby.get("name", ""))
 	return nm if nm != "" else String(sess.os_name())
+
+
+## Wave 9 HOST: raise the session around the LIVE world (a safe hub) —
+## the character and world are already standing; no save pick, no
+## relaunch. The join snapshot ships the live hub and friends walk in.
+static func _host_here(m: Menus) -> void:
+	var net: Node = m.get_node("/root/NetworkManager")
+	var sess: Node = m.get_node("/root/NetworkManager/Session")
+	var p = m.game.player
+	m.lobby["slot"] = int(m.game.save_slot)
+	m.lobby["cls"] = String(p.cls)
+	m.lobby["level"] = int(p.level)
+	m.lobby["name"] = String(p.char_name)
+	m.lobby["chapter"] = String(m.game.chapter_id)
+	m.lobby["continue"] = true
+	_stage_wait(m, "Opening the gates...", "Raising a lobby — a few seconds.")
+	sess.local_char = {"slot": int(m.game.save_slot), "cls": String(p.cls),
+		"level": int(p.level), "name": _lobby_name(m, sess)}
+	var err: Error = await net.host(NetMgr.Mode.NORAY)
+	if err != OK:
+		err = await net.host(NetMgr.Mode.ENET_DIRECT)
+	if err != OK:
+		m.lobby["msg"] = "Could not open a session (%s)." % error_string(err)
+		open(m, "menu")
+		return
+	open(m, "host_lobby")
+
+
+## MP-22 HOST: a mid-session content pick — the session stays UP. The
+## ready check gates it; a party of 1 rides straight through. On pass,
+## _reprise_launch rebuilds host-side and the advance snap carries the
+## party (the exact road MP-14's next-chapter advance walks).
+static func _reprise_go(m: Menus, chid: String) -> void:
+	var sess: Node = m.get_node("/root/NetworkManager/Session")
+	m.lobby["chapter"] = chid
+	m.lobby["continue"] = false
+	var tier: int = int(m.lobby.get("tier", 0))
+	if sess.propose_content("reprise", chid, tier, false):
+		_reprise_launch(m, chid, tier)
+	else:
+		_stage_chapter(m)  # redraw — the check-in-flight line shows
+
+
+static func _reprise_launch(m: Menus, chid: String, tier: int) -> void:
+	m.lobby.erase("reprise")
+	if m.root:
+		m.root.queue_free()
+		m.root = null
+	m.current = ""
+	m.game.reprise_chapter(chid, tier)
 
 
 ## HOST: raise the session. Internet lobby (noray) first; if the lobby
@@ -406,12 +549,28 @@ static func _join_go(m: Menus) -> void:
 		open(m, "join")
 
 
-## HOST: Start. Lock the lobby (§5.1 — late knocks get a readable
-## refusal), then run the exact solo entry: load the picked save (its
-## world IS the session world, §5.7) and, for a from-the-beginning pick,
-## the exact solo replay. play_started flips and the MP-07 snapshot flow
-## carries every admitted guest into the chapter.
+## HOST: Start — via the MP-20 READY CHECK when guests are present: the
+## party sees the content (chapter + NG+ tier) and confirms; one decline
+## or the timeout cancels with the reason named. A party of 1 launches
+## straight through (propose_content returns true).
 static func _start_session(m: Menus) -> void:
+	var sess: Node = m.get_node("/root/NetworkManager/Session")
+	var chid := String(m.lobby.get("chapter", "ch1"))
+	var cont: bool = bool(m.lobby.get("continue", true))
+	var tier: int = int(m.lobby.get("saved_world_tier", 0)) if cont else int(m.lobby.get("tier", 0))
+	if sess.propose_content("start", chid, tier, cont):
+		_launch_session(m)
+	else:
+		_refresh(m, "host_lobby")  # the lobby shows the check in flight
+
+
+## HOST: the actual launch (all-ready, or a party of 1). Lock the lobby
+## (§5.1 — late knocks get a readable refusal), then run the exact solo
+## entry: load the picked save (its world IS the session world, §5.7)
+## and, for a from-the-beginning pick, the exact solo replay.
+## play_started flips and the MP-07 snapshot flow carries every admitted
+## guest into the chapter.
+static func _launch_session(m: Menus) -> void:
 	var net: Node = m.get_node("/root/NetworkManager")
 	net.lobby_open = false
 	var slot: int = int(m.lobby.get("slot", 0))
@@ -502,6 +661,11 @@ static func _party(m: Menus, vbox: VBoxContainer) -> void:
 		lv.custom_minimum_size = Vector2(80, 0)
 		var rd := m._lbl(row, "host" if pid == 1 else "ready", 14, GOOD)
 		rd.custom_minimum_size = Vector2(100, 0)
+		# MP-21: lobby-stage kick — host-only, never on the host seat. No
+		# confirm here (low stakes: they can re-enter the code while the
+		# lobby is open); the MID-RUN kick in the pause menu confirms.
+		if bool(net.is_host()) and pid != 1:
+			m._btn(row, " ✕ ", func() -> void: sess.host_kick(pid), BAD)
 	var free: int = (NetMgr.MAX_GUESTS + 1) - ids.size()
 	if free > 0:
 		m._lbl(vbox, "%d seat%s open." % [free, "" if free == 1 else "s"], 13, Color(0.55, 0.58, 0.66))

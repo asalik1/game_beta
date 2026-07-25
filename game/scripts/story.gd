@@ -1195,7 +1195,7 @@ static func chapter(id: String) -> Dictionary:
 	load_content()
 	if ENDGAME_ARENAS.has(id):   # endgame arenas resolve here, never via CHAPTER_LIST
 		return ENDGAME_ARENAS[id]
-	if id == "capital":          # Crownfall hub — standalone, dev-only (like the arenas)
+	if id == "capital":          # Crownfall hub — standalone; the PARTY TOWN (Wave 9: pause-menu travel, open-gates hosting, portal ready checks)
 		return CapitalHub.CHAPTER
 	return CHAPTER_LIST.get(id, CHAPTER_LIST.get("ch1", {}))
 

@@ -655,7 +655,9 @@ static func _coop(m: Menus, list: VBoxContainer) -> void:
 	var net_script := load("res://scripts/net/net_manager.gd")
 	var entries := [
 		["Lobby codes", Color(0.95, 0.85, 0.5),
-			"From the title screen choose PLAY TOGETHER. The host picks a hero and a chapter and receives a lobby CODE; friends choose Join, type the code, and bring a hero from their own roster. Up to four heroes walk the host's world — and the lobby closes when the chapter starts, so gather before you set out."],
+			"From the title screen choose PLAY TOGETHER. The host picks a hero and a chapter and receives a lobby CODE; friends choose Join, type the code, and bring a hero from their own roster. Up to four heroes walk the host's world. Joins close when a chapter run begins — but stay OPEN while the party stands in Crownfall, the Capital (see below)."],
+		["Crownfall is the party town", Color(0.7, 0.9, 1.0),
+			"Travel to the Capital from the pause menu, then OPEN YOUR GATES at the Chartered Hall — the session raises around the world you're standing in, and friends join the plaza beside you. Shop, talk, sort your bags; joining stays open the whole time. When it's time, the leader uses the PORTAL: the pick (chapter and difficulty tier) goes to the party as a ready check, and everyone sets out together — the gates sealing behind you until you ride home."],
 		["The road rises to meet you", Color(1.0, 0.7, 0.7),
 			"Monsters grow tougher for every extra hero in the party — more health, a little more bite. A party of one plays exactly the solo game. The HOST's difficulty tier (Nightmare / Torment) sets the whole party's world — the tier chip on everyone's buff bar says so, and every head earns its unlocks and records at the tier actually fought."],
 		["Bosses fight the whole party", Color(1.0, 0.6, 0.4),
@@ -664,6 +666,8 @@ static func _coop(m: Menus, list: VBoxContainer) -> void:
 			"Hit zero among friends and you fall DOWNED instead of dead: 30 seconds of crawling while you bleed out. Any teammate can kneel beside you for 3 seconds (a hit interrupts them) to lift you back up at 30% health; bleed out fully and you ghost until the room is cleared. Only the WHOLE party falling ends the run — the usual death price, paid together."],
 		["Loot is personal", Color(0.6, 1.0, 0.6),
 			"Every drop, coin and gem you see is YOURS — each player is rolled their own rewards, nothing is split and nothing can be sniped. Guests take home everything their character earns; the world and its story stay the host's."],
+		["The party is the unit", Color(0.7, 0.9, 1.0),
+			"Press ENTER in a session to talk to your party (phones: the Say button). Entering content is a PROPOSAL: the host names the chapter — and its difficulty tier — and everyone clicks Ready; one decline cancels the check and names who declined. After a victory the host presses N and the whole party rides into the next pick together, no codes re-read. The host can also remove a member (the ✕ in the lobby, or the pause menu mid-run)."],
 		["The battle meter", Color(0.95, 0.6, 0.25),
 			"In a party, a compact DAMAGE meter sits under the ally frames — everyone's damage this run, live. Boss victory letters carry the party's per-member breakdown, and endgame results tally damage, healing and damage taken for the whole crew."],
 		["One build, one road", Color(0.85, 0.6, 1.0),

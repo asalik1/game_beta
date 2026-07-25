@@ -2498,6 +2498,256 @@ func _rpc_advance_world(snap: Dictionary) -> void:
 	game.net_advance(snap)
 
 
+# ---- party chat (MP-19) ----
+# Session text. The SENDER renders its own line at once (optimistic, like
+# damage numbers); a guest RELAYS through the host (any_peer + sender check,
+# the hit-relay idiom) and the HOST is the only fanner — it stamps the
+# sender's roster name, enforces the length cap and a per-peer rolling
+# throttle, and fans to every OTHER head. `channel` is DATA from day one
+# ("party" is v1's only value) so guild/world/private later are new values,
+# not a protocol break. The HUD renders via the chat_line signal.
+
+const CHAT_MAX_LEN := 120
+const CHAT_BURST := 3          # messages allowed...
+const CHAT_WINDOW := 1.0       # ...per this many rolling seconds, per peer
+var _chat_stamps := {}         # host: pid -> Array of recent send times
+
+signal chat_line(from_name: String, channel: String, text: String)
+
+
+## ANY HEAD: say a line to the party. Shows locally immediately; the wire
+## carries it to everyone else. Silently a no-op offline or when empty.
+func say(text: String, channel := "party") -> void:
+	if game == null or not _net().is_online():
+		return
+	text = text.strip_edges().left(CHAT_MAX_LEN)
+	if text.is_empty():
+		return
+	var me := String(local_char.get("name", ""))
+	if me.is_empty():
+		me = os_name()
+	chat_line.emit(me, channel, text)
+	if multiplayer.is_server():
+		_fan_chat(me, channel, text, 1)
+	else:
+		_rpc_chat_relay.rpc_id(1, channel, text)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_chat_relay(channel: String, text: String) -> void:
+	if not multiplayer.is_server():
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers):
+		return
+	# Rolling throttle: floods drop silently (the speaker already saw its
+	# own optimistic line — a "slow down" bark would just be more noise).
+	var now: float = Time.get_ticks_msec() / 1000.0
+	var stamps: Array = _chat_stamps.get(pid, [])
+	stamps = stamps.filter(func(t: float) -> bool: return now - t < CHAT_WINDOW)
+	if stamps.size() >= CHAT_BURST:
+		_chat_stamps[pid] = stamps
+		return
+	stamps.append(now)
+	_chat_stamps[pid] = stamps
+	text = text.strip_edges().left(CHAT_MAX_LEN)
+	if text.is_empty():
+		return
+	var nm := String(peer_chars.get(pid, {}).get("name", "…"))
+	chat_line.emit(nm, channel, text)   # the host's own screen
+	_fan_chat(nm, channel, text, pid)
+
+
+## HOST: one line to every head except the speaker (they rendered it
+## optimistically) and the host itself (chat_line already emitted).
+func _fan_chat(from_name: String, channel: String, text: String, skip_pid: int) -> void:
+	for pid_v in peer_chars:
+		var pid := int(pid_v)
+		if pid == skip_pid or pid == 1:
+			continue
+		_rpc_chat.rpc_id(pid, from_name, channel, text)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_chat(from_name: String, channel: String, text: String) -> void:
+	if multiplayer.is_server():
+		return
+	chat_line.emit(from_name, channel, text)
+
+
+# ---- content proposal + ready check (MP-20) ----
+# The MMO contract the owner specced: entering content is a PROPOSAL every
+# member sees and confirms. The host names the content (chapter + NG+ tier);
+# each guest gets a card with Ready/Decline and a timer; ONE decline (or the
+# timeout) cancels the check and names the decliner to everyone; all-ready
+# launches. A party of 1 skips the ceremony entirely. `mode` routes the
+# launch: "start" fires check_passed for the lobby's launcher; "advance"
+# calls the host's advance_chapter directly (the MP-14 flow).
+
+const CHECK_TIMEOUT := 20.0
+var _proposal := {}         # host: {seq, mode, chapter, tier, cont, pending:{pid:true}}
+var _proposal_seq := 0
+var proposal_open := {}     # EVERY head: the live card's data ({} = none) — UI/tests read this
+var last_check_msg := ""    # one-line outcome for the lobby/HUD to show ("" = none)
+
+signal proposal_changed
+signal check_passed(mode: String, chid: String, tier: int, cont: bool)
+
+
+## HOST: propose content. Returns true when it LAUNCHED IMMEDIATELY (party
+## of 1 — no check needed); false means the check is in flight.
+func propose_content(mode: String, chid: String, tier: int, cont: bool) -> bool:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return true
+	if not _proposal.is_empty():
+		return false  # a check is already in flight — let it resolve
+	var guests: Array = []
+	for pid_v in peer_chars:
+		if int(pid_v) != 1:
+			guests.append(int(pid_v))
+	if guests.is_empty():
+		return true
+	_proposal_seq += 1
+	var pending := {}
+	for pid in guests:
+		pending[pid] = true
+	_proposal = {"seq": _proposal_seq, "mode": mode, "chapter": chid,
+		"tier": tier, "cont": cont, "pending": pending}
+	proposal_open = {"mode": mode, "chapter": chid, "tier": tier,
+		"cont": cont, "mine": true}
+	last_check_msg = ""
+	proposal_changed.emit()
+	for pid in guests:
+		_rpc_propose.rpc_id(pid, _proposal_seq, mode, chid, tier, cont)
+	var seq_now := _proposal_seq
+	get_tree().create_timer(CHECK_TIMEOUT).timeout.connect(func() -> void:
+		if not _proposal.is_empty() and int(_proposal.get("seq", -1)) == seq_now:
+			_finish_check(false, "", true))
+	return false
+
+
+## GUEST: the card arrives. UI renders off proposal_open (lobby stage if
+## open, the HUD card mid-session).
+@rpc("authority", "call_remote", "reliable")
+func _rpc_propose(seq: int, mode: String, chid: String, tier: int, cont: bool) -> void:
+	if multiplayer.is_server():
+		return
+	proposal_open = {"seq": seq, "mode": mode, "chapter": chid,
+		"tier": tier, "cont": cont, "mine": false}
+	last_check_msg = ""
+	proposal_changed.emit()
+
+
+## GUEST: answer the live card (Ready = true / Decline = false).
+func answer_ready(ok: bool) -> void:
+	if proposal_open.is_empty() or bool(proposal_open.get("mine", false)):
+		return
+	var seq := int(proposal_open.get("seq", -1))
+	proposal_open = {} if not ok else proposal_open
+	if ok:
+		proposal_open["answered"] = true  # the card shows "waiting for the others…"
+	proposal_changed.emit()
+	_rpc_ready.rpc_id(1, seq, ok)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_ready(seq: int, ok: bool) -> void:
+	if not multiplayer.is_server() or _proposal.is_empty():
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers) or int(_proposal.get("seq", -1)) != seq:
+		return
+	if not ok:
+		_finish_check(false, String(peer_chars.get(pid, {}).get("name", "A player")), false)
+		return
+	var pending: Dictionary = _proposal.get("pending", {})
+	pending.erase(pid)
+	if pending.is_empty():
+		_finish_check(true, "", false)
+
+
+## HOST: close the check both ways — fan the outcome, then launch or bark.
+func _finish_check(passed: bool, decliner: String, timed_out: bool) -> void:
+	var p := _proposal
+	_proposal = {}
+	proposal_open = {}
+	var why := ""
+	if not passed:
+		why = "The ready check timed out." if timed_out else "%s didn't accept." % decliner
+	last_check_msg = why
+	proposal_changed.emit()
+	for pid_v in peer_chars:
+		if int(pid_v) != 1:
+			_rpc_check_over.rpc_id(int(pid_v), passed, why)
+	if not passed:
+		if game != null and game.has_local_player():
+			game.spawn_text(game.player.global_position + Vector2(0, -120), why,
+				Color(1.0, 0.6, 0.55), 4.0)
+		return
+	var mode := String(p.get("mode", "start"))
+	if mode == "advance":
+		game.advance_chapter()
+	else:
+		check_passed.emit(mode, String(p.get("chapter", "ch1")),
+			int(p.get("tier", 0)), bool(p.get("cont", true)))
+
+
+## GUEST: the check resolved. A pass needs no action here (the launch
+## arrives as the world brief / advance snap); a fail closes the card
+## with the reason on it.
+@rpc("authority", "call_remote", "reliable")
+func _rpc_check_over(passed: bool, why: String) -> void:
+	if multiplayer.is_server():
+		return
+	proposal_open = {}
+	last_check_msg = why if not passed else ""
+	proposal_changed.emit()
+	if not passed and game != null and game.has_local_player() and game.play_started:
+		game.spawn_text(game.player.global_position + Vector2(0, -120), why,
+			Color(1.0, 0.6, 0.55), 4.0)
+
+
+# ---- kick (MP-21) ----
+
+## HOST: remove one member, lobby-stage or mid-run. The kicked machine
+## hears the REASON first (reliable), then runs the normal deliberate-
+## leave teardown on its own; a short fuse hands lingerers (crash/hang)
+## to MP-16's drop_peer — the ghost-peer reaper already does the
+## transport disconnect + immediate roster reap this needs.
+func host_kick(pid: int, reason := "The host removed you from the party.") -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	if pid == 1 or not (pid in _net().peers):
+		return
+	_rpc_kicked.rpc_id(pid, reason)
+	var kick_pid := pid
+	get_tree().create_timer(1.5).timeout.connect(func() -> void:
+		_net().drop_peer(kick_pid))
+
+
+## GUEST: the host removed us. Stage the TRUE reason on every surface it
+## can greet us from, silence the generic host-lost card, and run the
+## normal deliberate-leave teardown (character home + clean leave).
+@rpc("authority", "call_remote", "reliable")
+func _rpc_kicked(reason: String) -> void:
+	if multiplayer.is_server() or game == null:
+		return
+	_net().last_session_notice = reason
+	var mid_run: bool = game.play_started and game.state != game.ST_VICTORY
+	var in_lobby_ui: bool = game.menus != null and game.menus.current == "lobby"
+	game._host_lost_handled = true      # the generic host-lost path stays silent
+	if game.menus != null:
+		game.menus.lobby["quiet"] = true  # the lobby's _ended defers to us
+	game.net_session_over()               # write character home + net.leave()
+	if game.menus != null:
+		game.menus.lobby["quiet"] = false
+		game.menus.lobby["msg"] = reason
+	if in_lobby_ui:
+		game.menus.open_lobby("menu")     # land on Play Together, reason readable
+	elif mid_run and get_tree().current_scene == game:
+		get_tree().reload_current_scene() # title reboot; the staged notice greets
+
+
 # ---- graceful session end (exit-to-title after victory) ----
 
 ## HOST: the host chose to leave the run (replay / title) rather than advance —
