@@ -372,6 +372,55 @@ static func _npc_name(npc: Dictionary) -> String:
 ## One boxed card per monster/boss: icon, name, Lv, live stats, growth,
 ## projections, traits and lore. Shared by the bestiary list and the boss
 ## detail view. In the LIST, a boss with authored `mechanics` also grows a
+## Bestiary icon: frame 0 of a strip, cropped to the FIGURE's opaque bounds.
+## The codex is an ARCHIVE, not a scale chart (owner 2026-07-25): every
+## portrait — wolf or god-king — is normalized to one box, so the shelf reads
+## as a catalogue instead of a size comparison. Cropping is what makes that
+## normalization honest: raw frames carry wildly different padding (a 224px
+## boss square vs a tight 32px mob), and a multi-frame STRIP would otherwise
+## squeeze all its frames into the box. Alpha threshold (not get_used_rect)
+## so a stray 1-alpha pixel in a padded export can't defeat the crop.
+## Cached per sprite for the session.
+static var _enemy_icons := {}
+const ICON_ALPHA := 0.08
+const ICON_BOX := 64.0   # the one bestiary portrait size, every entry
+
+static func _enemy_icon(sprite: String) -> Texture2D:
+	if _enemy_icons.has(sprite):
+		return _enemy_icons[sprite]
+	var tex: Texture2D = Art.tex(sprite)
+	var out: Texture2D = tex
+	if tex != null:
+		var frames := 1
+		var ai: Dictionary = Art.anim_info(sprite)
+		if not ai.is_empty():
+			frames = maxi(1, int(ai.get("frames", 1)))
+		var img: Image = tex.get_image()
+		if img != null:
+			if img.is_compressed():
+				img.decompress()
+			var fw: int = int(img.get_width() / frames)
+			var fh: int = img.get_height()
+			var x0 := fw
+			var y0 := fh
+			var x1 := -1
+			var y1 := -1
+			for y in fh:
+				for x in fw:
+					if img.get_pixel(x, y).a > ICON_ALPHA:
+						x0 = mini(x0, x)
+						y0 = mini(y0, y)
+						x1 = maxi(x1, x)
+						y1 = maxi(y1, y)
+			if x1 >= x0 and y1 >= y0:
+				var at := AtlasTexture.new()
+				at.atlas = tex
+				at.region = Rect2(Vector2(x0, y0), Vector2(x1 - x0 + 1, y1 - y0 + 1))
+				out = at
+	_enemy_icons[sprite] = out
+	return out
+
+
 ## "▸ Mechanics & Tells" button that opens its focused detail; in the
 ## DETAIL view (`detail = true`) that button is suppressed (already there).
 static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bool, detail := false, placeholder := false) -> void:
@@ -384,8 +433,12 @@ static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bo
 	row.add_theme_constant_override("separation", 14)
 	_card(list).add_child(row)
 	var icon := TextureRect.new()
-	icon.texture = Art.tex(st["sprite"])
-	icon.custom_minimum_size = Vector2(52, 52)
+	# ONE box for every entry (owner 2026-07-25): the codex archives what a
+	# foe LOOKS like — it is not a scale chart, so a wolf and a god-king
+	# hang at the same size. _enemy_icon crops to the figure so that
+	# normalization is real rather than padding-dependent.
+	icon.texture = _enemy_icon(String(st["sprite"]))
+	icon.custom_minimum_size = Vector2(ICON_BOX, ICON_BOX)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	row.add_child(icon)
@@ -1403,6 +1456,10 @@ static var _thumbs := {}               # sprite -> downscaled ImageTexture (memo
 
 
 static func _gallery(m: Menus, list: VBoxContainer, tab: String) -> void:
+	# Fold the live hero's memory + identity into the account ledger, then
+	# write every unlock the union derives (kills, ownership) back into it —
+	# so what one character earned stays lit for every other (2026-07-25).
+	m.game.call("meta_fold_gallery")
 	var bucket := tab.trim_prefix("gallery_")
 	var entries: Array = []
 	var seen_n := 0
@@ -1411,6 +1468,7 @@ static func _gallery(m: Menus, list: VBoxContainer, tab: String) -> void:
 			continue
 		if _gallery_seen(m, e):
 			seen_n += 1
+			m.game.call("meta_note_splash", String(e["sprite"]))
 		entries.append(e)
 	var shelf: String = {"heroes": "HEROES", "bosses": "BOSSES", "npcs": "FOLK OF THE VALE"}.get(bucket, "PORTRAITS")
 	m._lbl(list, "— %s —   met %d / %d" % [shelf, seen_n, entries.size()], 16, Color(0.95, 0.85, 0.5))
@@ -1496,10 +1554,27 @@ static func _gallery_thumb(sprite: String) -> Texture2D:
 
 
 static func _gallery_seen(m: Menus, e: Dictionary) -> bool:
-	if m.game.splashes_seen.has(String(e["sprite"])):
+	# Union of THIS hero's memory and the account ledger (owner 2026-07-25:
+	# the gallery spans every character you own).
+	var g = m.game
+	if g.splashes_seen.has(String(e["sprite"])) \
+			or bool(g.call("meta_gallery_seen", String(e["sprite"]))):
 		return true
 	for aka in e.get("aka", []):
-		if m.game.splashes_seen.has(String(aka)):
+		if g.splashes_seen.has(String(aka)) \
+				or bool(g.call("meta_gallery_seen", String(aka))):
+			return true
+	# Fought = met: a boss this hero has KILLED hangs its painting even if it
+	# never spoke (Fangmaw). kill_counts is the lifetime per-kind ledger.
+	if String(e.get("kind", "")) != "" \
+			and int(g.kill_counts.get(String(e["kind"]), 0)) > 0:
+		return true
+	# Owning a look hangs its painting (wardrobe purchases are account meta);
+	# an awakened form additionally needs the awakening actually earned.
+	if String(e.get("skin_cls", "")) != "":
+		var owned: bool = bool(g.owns_cosmetic("skin", String(e["skin_cls"]), String(e["skin_id"])))
+		if owned and (not bool(e.get("awakened", false))
+				or bool(g.get_flag("s_awakened_" + String(e["skin_cls"]), false))):
 			return true
 	return false
 
@@ -1524,13 +1599,16 @@ static func _gallery_entries(m: Menus) -> Array:
 					and not names.has(base):
 				names.append(base)
 
-	# The cast by name-slug: display names + boss bucketing.
+	# The cast by name-slug: display names + boss bucketing + the enemy KIND
+	# (kill_counts is keyed by kind — fought counts as met, owner 2026-07-25).
 	var cast_by_slug := {}
+	var kind_by_slug := {}
 	var boss_slugs := {}
 	for kind in Story.ALL_ENEMIES:
 		var nm := String(Story.ALL_ENEMIES[kind].get("name", kind))
 		var sl := _gallery_slug(nm)
 		cast_by_slug[sl] = nm
+		kind_by_slug[sl] = String(kind)
 		if kind in m.BOSS_KINDS:
 			boss_slugs[sl] = true
 
@@ -1577,6 +1655,7 @@ static func _gallery_entries(m: Menus) -> Array:
 	for entry in merged:
 		var slug := String(entry["slug"])
 		var disp: String = cast_by_slug.get(slug, "")
+		var ekind: String = kind_by_slug.get(slug, "")
 		var is_boss: bool = boss_slugs.has(slug)
 		if disp == "":
 			# The aka slugs may carry the cast match ("vargoth" merged under
@@ -1586,12 +1665,14 @@ static func _gallery_entries(m: Menus) -> Array:
 				var aslug := String(aka).trim_prefix("splash_")
 				if cast_by_slug.has(aslug):
 					disp = String(cast_by_slug[aslug])
+					ekind = String(kind_by_slug.get(aslug, ekind))
 					is_boss = is_boss or boss_slugs.has(aslug)
 					break
 		if disp == "":
 			disp = slug.capitalize()
 		out.append({"sprite": String(entry["sprite"]), "aka": entry["aka"],
-			"name": disp, "bucket": "bosses" if is_boss else "npcs", "sort": disp})
+			"name": disp, "kind": ekind,
+			"bucket": "bosses" if is_boss else "npcs", "sort": disp})
 
 	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return String(a.get("sort", a["name"])) < String(b.get("sort", b["name"])))
@@ -1602,6 +1683,8 @@ static func _gallery_entries(m: Menus) -> Array:
 ## A skin portrait entry: class parsed off the filename, display name from
 ## the skins registry ("Stormforged — Awakened  (Warrior)"). Skins shelve
 ## AFTER the base classes, grouped by class, base form before awakened.
+## Carries skin_cls/skin_id so OWNING the look hangs its painting (account
+## meta — owner 2026-07-25: the gallery spans your whole roster).
 static func _gallery_skin_entry(base: String) -> Dictionary:
 	var rest := base.trim_prefix("splash_skin_")
 	var awakened := rest.ends_with("_awakened")
@@ -1620,6 +1703,7 @@ static func _gallery_skin_entry(base: String) -> Dictionary:
 	if cls != "":
 		nm += "  (%s)" % String(Classes.CLASSES.get(cls, {}).get("name", cls.capitalize()))
 	return {"sprite": base, "aka": [], "name": nm, "bucket": "heroes",
+		"skin_cls": cls, "skin_id": skin_id, "awakened": awakened,
 		"sort": "1_%s_%s_%s" % [cls, skin_id, "1" if awakened else "0"]}
 
 

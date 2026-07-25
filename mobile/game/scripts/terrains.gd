@@ -513,14 +513,18 @@ const STRUCTURES := {
 		"fire": true},
 	"capital_market_stall": {"sprite": "capital_market_stall", "w": 280.0,
 		"colliders": [{"shape": "rect", "size": Vector2(178, 42), "off": Vector2(0, -18)}]},
+	# Portal piers are PILLAR FOOTPRINTS, not dots (owner 2026-07-25: the r22
+	# circles were narrower than the pillar art, so a hero slipped sideways
+	# and stood inside the column). Rects span each pillar's base; the
+	# center passage stays open so the arch still reads as a way through.
 	"capital_portal_story": {"sprite": "capital_portal_story", "w": 260.0,
 		"colliders": [
-			{"shape": "circle", "radius": 22.0, "off": Vector2(-78, -8)},
-			{"shape": "circle", "radius": 22.0, "off": Vector2(78, -8)}]},
+			{"shape": "rect", "size": Vector2(54, 42), "off": Vector2(-78, -12)},
+			{"shape": "rect", "size": Vector2(54, 42), "off": Vector2(78, -12)}]},
 	"capital_portal_crucible": {"sprite": "capital_portal_crucible", "w": 280.0,
 		"colliders": [
-			{"shape": "circle", "radius": 24.0, "off": Vector2(-88, -26)},
-			{"shape": "circle", "radius": 24.0, "off": Vector2(88, -26)}],
+			{"shape": "rect", "size": Vector2(58, 44), "off": Vector2(-88, -13)},
+			{"shape": "rect", "size": Vector2(58, 44), "off": Vector2(88, -13)}],
 		"fire": true},
 	"capital_portal_depths": {"sprite": "capital_portal_depths", "w": 230.0,
 		"colliders": [{"shape": "rect", "size": Vector2(132, 42), "off": Vector2(0, -8)}]},

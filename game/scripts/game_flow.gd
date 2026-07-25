@@ -424,6 +424,50 @@ func owns_cosmetic(kind: String, cls: String, id: String) -> bool:
 	return bool(_meta.get("own_%s_%s_%s" % [kind, cls, id], false))
 
 
+# ------------------------------------------- account-wide gallery ledger ---
+# (owner 2026-07-25) The codex gallery celebrates the ACCOUNT's story — every
+# face any of your heroes met, every class you've played, every look you own.
+# Character saves keep their own splashes_seen (their journal's memory); the
+# meta union is what the shelves read across characters.
+
+func meta_note_splash(sprite: String) -> void:
+	if sprite == "":
+		return
+	_load_meta()
+	var seen: Dictionary = _meta.get("gallery_seen", {})
+	if bool(seen.get(sprite, false)):
+		return
+	seen[sprite] = true
+	_meta["gallery_seen"] = seen
+	_meta_write()
+
+
+func meta_gallery_seen(sprite: String) -> bool:
+	_load_meta()
+	return bool((_meta.get("gallery_seen", {}) as Dictionary).get(sprite, false))
+
+
+## Fold the LIVE character's memory + identity into the account ledger —
+## called when the gallery opens, so older heroes' histories accrete the
+## first time you visit the shelves while playing them.
+func meta_fold_gallery() -> void:
+	_load_meta()
+	var seen: Dictionary = _meta.get("gallery_seen", {})
+	var dirty := false
+	for sp in splashes_seen:
+		if not bool(seen.get(String(sp), false)):
+			seen[String(sp)] = true
+			dirty = true
+	if has_local_player():
+		var base_key := "class_splash_" + player.cls
+		if not bool(seen.get(base_key, false)):
+			seen[base_key] = true
+			dirty = true
+	if dirty:
+		_meta["gallery_seen"] = seen
+		_meta_write()
+
+
 ## Buy a catalog cosmetic with Renown: validates the id, refuses repeats,
 ## charges, records ownership. True when the purchase landed.
 func buy_cosmetic(kind: String, cls: String, id: String) -> bool:

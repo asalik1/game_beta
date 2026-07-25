@@ -2392,6 +2392,9 @@ func _boss_splash_intro(bname: String) -> void:
 	if art_key == "" or not Art.has_sprite(art_key):
 		return
 	_boss_splash_shown[bname] = true
+	# Facing it in battle MEETS it (owner 2026-07-25: cleared ch1, Fangmaw —
+	# who never speaks — stayed a silhouette in the gallery).
+	game.note_splash_seen(art_key)
 	var layer := Control.new()
 	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)

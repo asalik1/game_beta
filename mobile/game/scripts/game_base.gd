@@ -942,9 +942,12 @@ func note_kill(kind: String) -> void:
 
 ## A speaker's painted splash displayed in dialogue: the codex Gallery
 ## unlocks that portrait. Rides the next autosave (convo ends autosave).
+## Mirrored into the ACCOUNT ledger too (owner 2026-07-25: the gallery
+## celebrates the account, not one hero) — game_flow owns the meta file.
 func note_splash_seen(sprite: String) -> void:
 	if sprite != "":
 		splashes_seen[sprite] = true
+		call("meta_note_splash", sprite)
 
 
 ## Journal story archive: every dialogue line shown lands in the bucket of
