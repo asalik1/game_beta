@@ -1403,8 +1403,8 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			open_inventory()
 		var ab := _btn(right, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nGems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag)."
-	_lbl(right, "Click any bag item for its detail card — equip/use/synthesize or drop it there · DRAG a gem onto an equipped item (left) to socket it, or drag a socketed gem back here · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
+		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, gems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag); on the road only\nthe bag merges — socketed work waits for the Lapidary."
+	_lbl(right, "Click any bag item for its detail card — equip/use/synthesize or drop it there · socketing and unsocketing are the Lapidary's trade in Crownfall (drag gems onto gear at her benches) · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
 	# Bag category filter: All (default) + per-slot gear, gems, consumables.
 	var catrow := HBoxContainer.new()
@@ -2041,11 +2041,24 @@ func _item_info_tab(body: VBoxContainer, item: Dictionary) -> void:
 ## unsocket, drop a bag gem onto an empty one), then the insert-from-bag list.
 func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var p: Player = game.local_player
+	# Capital rework (§2): gem work is the Lapidary's trade — the sockets
+	# still SHOW anywhere (gem_socket_error refuses the actions), but the
+	# tab says where the bench is instead of letting buttons fail quietly.
+	if game.chapter_id != "capital":
+		_lbl(body, "THE LAPIDARY'S BENCHES", 16, Color(0.95, 0.85, 0.5))
+		_lbl(body, "Socketing and unsocketing happen at the Master Lapidary on the Crownfall plaza.\nTravel there from the pause menu (⌂).", 13, Color(0.7, 0.72, 0.78))
+		var srow0 := HBoxContainer.new()
+		srow0.add_theme_constant_override("separation", 6)
+		body.add_child(srow0)
+		_socket_row(srow0, item, func() -> void: open_item_panel(item, Vector2(-1, -1), "gems"))
+		return
 	var slots: int = item.get("gem_slots", 0)
 	var gems: Array = item.get("gems", [])
 	if slots == 0:
 		_lbl(body, "This item has no sockets — only B-grade gear and above can hold gems.", 13, Color(0.55, 0.55, 0.6))
 		return
+	_lbl(body, "The Lapidary counts you a %s." % game.favor_tier_name("lapidary"),
+		12, Color(0.75, 0.95, 0.7))
 	var spec_cap: int = Items.special_slots(String(item.get("grade", "")))
 	if spec_cap > 0:
 		var spec_names: Array = []
@@ -2094,13 +2107,29 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 					db.custom_minimum_size = Vector2(414, 0)
 
 
-## Reforge tab: gold-cost crafting on this item.
+## Reforge tab: gold-cost crafting on this item. Capital rework (§2): this IS
+## Smith Petra's bench — it only works in Crownfall, her favor tier discounts
+## it (visible, never silent), and gold spent here builds that favor.
 func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var p: Player = game.local_player
-	_lbl(body, "REFORGE BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
+	if game.chapter_id != "capital":
+		_lbl(body, "THE ASHFIRE FORGE", 16, Color(0.95, 0.85, 0.5))
+		_lbl(body, "Reforging is bench work — Smith Petra handles it at the Crownfall plaza.\nTravel there from the pause menu (⌂).", 13, Color(0.7, 0.72, 0.78))
+		return
+	var petra_mult: float = game.favor_price_mult("petra")
+	_lbl(body, "PETRA'S BENCH (spend gold)", 16, Color(0.95, 0.85, 0.5))
+	_lbl(body, "Petra counts you a %s%s" % [game.favor_tier_name("petra"),
+		"" if petra_mult >= 1.0 else " — her rate is %d%% kinder for you." % int(round((1.0 - petra_mult) * 100.0))],
+		12, Color(0.75, 0.95, 0.7))
 	if _reforge_msg != "":
 		_lbl(body, _reforge_msg, 12, _reforge_msg_color)
 		_reforge_msg = ""
+	# Gold spent at Petra's bench builds her favor and settles her intro
+	# quest's deed ("temper any piece once").
+	var petra_spend := func(amount: int) -> void:
+		game.favor_spend("petra", amount)
+		if game.get_flag("cap_q_forge_on", false) and not game.get_flag("cap_q_forge_done", false):
+			game.set_flag("cap_q_forge_done")
 	var subs2: Dictionary = item.get("subs", {})
 	# S-gear reforges within its own class; everything else uses the wearer's.
 	var rcls: String = String(item.get("cls", p.cls))
@@ -2121,11 +2150,12 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 		var store: Dictionary = item["main"] if item.get("main", {}).has(qs) else subs2
 		var cur: float = float(store[qs])
 		var band := Items.stat_band(item, qs)
-		var qcost := Items.quench_cost(item, qs)
+		var qcost := int(ceil(Items.quench_cost(item, qs) * petra_mult))
 		var at_max: bool = cur >= float(band[1]) - 0.01
 		var q_cb := func() -> void:
 			if game.local_player.gold >= qcost:
 				game.local_player.gold -= qcost
+				petra_spend.call(qcost)
 				var r := Items.quench_stat(item, qs, game.loot_rng)
 				if bool(r["improved"]):
 					_reforge_msg = "%s quenched: %s → %s  (max %s)" % [Items.STAT_LABEL.get(qs, qs),
@@ -2147,7 +2177,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 				String.num(cur, 2), String.num(float(band[1]), 2), qcost], q_cb,
 				Color(0.75, 0.85, 0.95) if p.gold >= qcost else Color(0.5, 0.5, 0.55))
 	# --- Reforge: reroll ONE substat slot into a different affix (you pick which) ---
-	var acost := Items.reforge_cost(item, "affix")
+	var acost := int(ceil(Items.reforge_cost(item, "affix") * petra_mult))
 	var reforgeable := false
 	for stat in subs2.keys():
 		var rs := String(stat)
@@ -2159,6 +2189,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 		var rf_cb := func() -> void:
 			if game.local_player.gold >= acost:
 				game.local_player.gold -= acost
+				petra_spend.call(acost)
 				var new_stat := Items.reforge_affix(item, rs, rcls, game.loot_rng)
 				if new_stat != "":
 					_reforge_msg = "Reforged %s → %s" % [Items.STAT_LABEL.get(rs, rs), Items.STAT_LABEL.get(new_stat, new_stat)]
@@ -2171,7 +2202,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 	# --- Transmute main: point the rolled budget at another attribute ---
 	# Keeps the roll, changes what it feeds — the bench half of an off-meta build.
 	if Items.can_transmute_main(item):
-		var tcost := Items.transmute_cost(item)
+		var tcost := int(ceil(Items.transmute_cost(item) * petra_mult))
 		var main_stat := String(item["main"].keys()[0])
 		_lbl(body, "Transmute — convert the main attribute (keeps its roll):", 12, Color(0.85, 0.72, 1.0))
 		for target in Items.transmute_targets(item):
@@ -2179,6 +2210,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 			var t_cb := func() -> void:
 				if game.local_player.gold >= tcost:
 					game.local_player.gold -= tcost
+					petra_spend.call(tcost)
 					var was := Items.transmute_main(item, tgt)
 					if was != "":
 						_reforge_msg = "Transmuted %s → %s (roll kept)" % [
@@ -2192,10 +2224,12 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 				Color(0.85, 0.75, 0.95) if p.gold >= tcost else Color(0.5, 0.5, 0.55))
 	# --- Add gem socket: ONE-TIME, steep, tier-scaled (Balance.ADD_SOCKET_COST) ---
 	if Items.can_add_socket(item):
-		var ccost := Items.reforge_cost(item, "socket")
+		# Socket-cutting is the LAPIDARY's trade — her favor rates this one.
+		var ccost := int(ceil(Items.reforge_cost(item, "socket") * game.favor_price_mult("lapidary")))
 		var sock_cb := func() -> void:
 			if game.local_player.gold >= ccost:
 				game.local_player.gold -= ccost
+				game.favor_spend("lapidary", ccost)
 				Items.add_socket(item)
 				game.local_player.recalc()
 				game.sfx("chest")
@@ -2555,7 +2589,31 @@ func open_theme_picker(slot: String) -> void:
 ## `tab` empty = keep the current tab (so buy/sell actions refresh in place).
 func open_shop(zone: int, tab := "") -> void:
 	shop_zone = zone
-	# Each merchant keeps their stock until you buy it out.
+	var at_capital: bool = game.chapter_id == "capital"
+	var price_ch := game.shop_chapter()
+	if at_capital:
+		# The Crown Bazaar restocks at DAWN (capital rework §3): the shelf is
+		# a daily roll for the character's road ahead, not a buy-out pool. The
+		# rolled shelf rides the save — re-entering the city never re-rolls it.
+		var today := game.daily_day_index()
+		if game.capital_shop_day != today:
+			game.capital_shop_day = today
+			var crng := RandomNumberGenerator.new()
+			crng.randomize()
+			game.capital_stock = []
+			for i in int(Balance.SHOP_STOCK_BY_TIER.get(Balance.CAPITAL_SHOP_TIER, 5)):
+				var sg := Items.roll_shop_grade(price_ch, crng, game.loot_cap())
+				game.capital_stock.append(Items.roll_gear_of_grade(sg, crng, game.local_player.cls))
+			var cact: int = Story.act_of(price_ch)
+			var ccount: Array = Balance.SHOP_BAG_COUNT.get(cact, [1, 1])
+			game.capital_bags = []
+			for i in crng.randi_range(int(ccount[0]), int(ccount[1])):
+				game.capital_bags.append(Items.make_bag(Balance.roll_bag_grade(price_ch, crng)))
+		# Alias the plaza room onto the persistent shelf: buys erase from both
+		# views of the SAME array, so buy-out still sticks until dawn.
+		game.shop_stock[zone] = game.capital_stock
+		game.shop_bags[zone] = game.capital_bags
+	# Each ROAD merchant keeps their stock until you buy it out.
 	if not game.shop_stock.has(zone):
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
@@ -2589,7 +2647,8 @@ func open_shop(zone: int, tab := "") -> void:
 	shop_tab = tab
 
 	var p: Player = game.local_player
-	var vbox := _open("Merchant — you have %d gold" % p.gold, 1120, 600, true)
+	var vbox := _open(("The Crown Bazaar — you have %d gold" if at_capital
+		else "Merchant — you have %d gold") % p.gold, 1120, 600, true)
 	current = "shop"
 	# (T7) The merchant reads the shard before quoting a price.
 	match Story.res_band(p.resonance):
@@ -2599,6 +2658,16 @@ func open_shop(zone: int, tab := "") -> void:
 			_lbl(vbox, "\"Prices are... firm today. Nothing personal — the till gets nervous around your sort.\"  (prices 10% wary)", 14, Color(1.0, 0.65, 0.55))
 		_:
 			_lbl(vbox, "\"Ah, a customer! Dangerous roads make good business.\"", 14, Color(0.75, 0.7, 0.6))
+	if at_capital:
+		# Dawn countdown: the shelf's whole identity is that it comes back.
+		var left: int = maxi(0, (game.daily_day_index() + 1) * 86400 - game.trusted_now())
+		_lbl(vbox, "Fresh stock at dawn — new shelf in %dh %02dm." % [left / 3600, (left % 3600) / 60],
+			13, Color(0.85, 0.8, 0.55))
+	elif game.shop_markup(zone) > 1.0:
+		# Road prices (capital rework §3): named on the sign so the markup
+		# reads as a rate, never a bug. Provision at the capital instead.
+		_lbl(vbox, "Road prices — everything +%d%% out here. The Crown Bazaar sells fair." %
+			int(round((game.shop_markup(zone) - 1.0) * 100.0)), 13, Color(1.0, 0.75, 0.5))
 
 	# Codex-style tabs: Buy / Sell, each a full-width view. They used to sit
 	# side-by-side in two columns, which cramped both lists (2026-07-09).
@@ -2690,7 +2759,12 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	buy.add_theme_constant_override("separation", 6)
 	buy_scroll.add_child(buy)
 
-	var haggle: float = game.band_price_mult()
+	# Road markup rides the same multiplier the shard-haggle does, so every
+	# shelf below prices consistently (capital + Depths camp = 1.0).
+	var haggle: float = game.band_price_mult() * game.shop_markup(zone)
+	# The capital quotes the character's NEXT chapter's economy (shop_chapter);
+	# road merchants quote their own chapter's, as always.
+	var price_ch := game.shop_chapter()
 	# Round 51: gear buy = FARM-COST (Items.shop_buy_price), so buying never
 	# beats farming. Consumables/health potion stay flat staples; the old
 	# per-level ladder is retired.
@@ -2701,7 +2775,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	var gear_grid := _shop_grid(buy)
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
-		var cost := int(ceil(Items.shop_buy_price(it, game.chapter_id) * haggle))
+		var cost := int(ceil(Items.shop_buy_price(it, price_ch) * haggle))
 		var can_afford: bool = p.gold >= cost
 		# Click opens the same detail popover the bag uses — full breakdown +
 		# "Compared to equipped" + a Buy button — instead of buying on contact.
@@ -2811,12 +2885,12 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	# Gem shelf (round 51): buy loose gems at the act's level(s), random stat.
 	# Farm-cost priced (Items.gem_buy_price) — a fraction of gear, scales by act.
 	# Gated to ch4+ (2026-07-09): merchants don't stock gems before they drop.
-	if Balance.regular_gems_drop(game.chapter_id):
-		var gem_act: int = int(Balance.CHAPTER_ECON.get(game.chapter_id, {}).get("act", 1))
+	if Balance.regular_gems_drop(price_ch):
+		var gem_act: int = int(Balance.CHAPTER_ECON.get(price_ch, {}).get("act", 1))
 		var gem_range: Array = Balance.SHOP_GEM_RANGE.get(gem_act, [1, 1])
 		for glvl in range(int(gem_range[0]), int(gem_range[1]) + 1):
 			var gl := glvl
-			var gprice := int(ceil(Items.gem_buy_price(gl, game.chapter_id) * haggle))
+			var gprice := int(ceil(Items.gem_buy_price(gl, price_ch) * haggle))
 			var buy_gem := func() -> void:
 				if p.gold >= gprice:
 					if p.gain_gem(Items.random_gem(game.loot_rng, gl)):
@@ -2852,6 +2926,10 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	# Gambling shelf (2026-07-09): the pity machine — rolls the chapter's
 	# BOSS band at ~0.8x its expected farm cost (game.gamble_cost). The
 	# legacy merchant tier is still passed but no longer shapes anything.
+	# Capital rework: the bazaar does NOT gamble — the pity machine is a
+	# road vice, and "capital" has no boss band of its own to roll.
+	if game.chapter_id == "capital":
+		return
 	var gamble_tier := String(game.zones[zone].get("shop_tier",
 		["wood", "silver", "silver", "gold"][clampi(zone, 0, 3)]))
 	var gcost := game.gamble_cost(gamble_tier)

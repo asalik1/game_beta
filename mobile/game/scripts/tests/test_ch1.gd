@@ -539,3 +539,19 @@ func _test_vargoth_victory() -> void:
 	if game.state != Game.ST_VICTORY:
 		return _fail("no victory state after final boss")
 	print("ok: vargoth killed + victory screen")
+	# Rework §6: the card DISMISSES into the world and the way-gates carry
+	# the choice. cap_seen is set first — a first ch1 clear would instead
+	# route this solo hero straight to Crownfall (that branch would swap the
+	# world under the resume test below, so it stays a reviewed-by-eye path).
+	game.set_flag("cap_seen")
+	game.victory_dismiss()
+	await _frames(4)
+	if game.state != Game.ST_PLAYING or get_tree().paused:
+		return _fail("victory card did not dismiss into a live world")
+	if not game.victory_gates_up:
+		return _fail("way-gates did not rise after the victory card")
+	# The gate path must still drive the advance with the card long gone —
+	# the guard accepts gates-up ST_PLAYING (asserted via the same guard
+	# reprise uses; the actual advance is exercised by ch2's progression test).
+	game.flags.erase("cap_seen")
+	print("ok: victory way-gates (card dismisses, gates rise, world live)")

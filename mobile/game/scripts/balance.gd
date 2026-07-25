@@ -276,6 +276,32 @@ static func potion_price(level: int) -> int:
 const FREE_POTION_CHAPTERS := ["ch1", "ch2", "ch3"]
 const BAG_SELL_GOLD := 1             # bags ALWAYS cash out for exactly 1g (never the 0.45 formula — anti-exploit)
 const SHOP_STOCK_BY_TIER := {"wood": 3, "silver": 4, "gold": 5}  # rolled-gear count
+
+# --------------------------------------------------------- capital rework ---
+# (2026-07-25, PROPOSALS/CAPITAL_REWORK.md) The capital is THE shop; the road
+# charges for convenience. Campaign chapters no longer open with a start-room
+# merchant — mid-run camps and wandering merchants stay, but quote ROAD PRICES:
+# a seeded bell-curve markup per merchant per run (a curve, not a uniform
+# roll), clamped so it never reads as either a rounding error or a scam.
+const ROAD_MARKUP_MEAN := 0.15
+const ROAD_MARKUP_SD := 0.025
+const ROAD_MARKUP_MIN := 0.10
+const ROAD_MARKUP_MAX := 0.20
+# The plaza bazaar restocks at dawn (trusted-clock day index) instead of
+# holding stock until bought out — fresh daily, fair-priced, never marked up.
+const CAPITAL_SHOP_TIER := "gold"       # 5 rolled pieces (SHOP_STOCK_BY_TIER)
+# NPC favorability v1 (Petra the smith / the Master Lapidary): earned by
+# spending gold at that artisan's bench (1 point per FAVOR_GOLD_PER_POINT)
+# and by intro-quest turn-ins. Gains read the shard the way the merchant's
+# haggle does — a steady band is trusted, a tempted one watched.
+const FAVOR_GOLD_PER_POINT := 25
+const FAVOR_TIERS := [0, 25, 75, 150]   # Stranger / Regular / Friend / Confidant
+const FAVOR_TIER_NAMES := ["Stranger", "Regular", "Friend", "Confidant"]
+const FAVOR_DISCOUNT_PER_TIER := 0.02   # bench costs: -2%/-4%/-6% by tier — shown, never silent
+const FAVOR_RES_STEADY_MULT := 1.25
+const FAVOR_RES_TEMPTED_MULT := 0.75
+const FAVOR_QUEST_POINTS := 15          # favor chunk an intro-quest turn-in pays
+const CAPITAL_INTRO_GOLD := 120         # gold reward per capital intro quest (flat teaching beat)
 const GAMBLE_DISCOUNT := 0.8         # gamble costs this x the EXPECTED farm price of a chapter boss-band roll (sight-unseen risk; see game_base.gamble_cost)
 # A loose gem's INTRINSIC value (gold), tripling per level like the 3-into-1
 # combine. Drives the SELL price (x MERCHANT_SELL_FRACTION); BUY is farm-cost.

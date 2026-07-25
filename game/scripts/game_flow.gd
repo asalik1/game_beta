@@ -136,7 +136,9 @@ func advance_chapter() -> void:
 	if net_guest():
 		return
 	var next_ch := Story.next_chapter(chapter_id)
-	if next_ch == "" or state != ST_VICTORY:
+	# Rework §6: the way-gates carry the advance AFTER the card is dismissed
+	# (state back to ST_PLAYING, gates standing) — both moments are legal.
+	if next_ch == "" or (state != ST_VICTORY and not victory_gates_up):
 		return
 	state = ST_PLAYING
 	request_pause(false)
@@ -164,6 +166,32 @@ func advance_chapter() -> void:
 	autosave()
 
 
+## Rework §6: dismiss the victory card back INTO the world. The card stays
+## the celebration (grades, PBs); the CHOICE moved to three way-gates beside
+## the arena. Local-only — each head dismisses its own card (online worlds
+## never paused; solo unpauses here). First ch1 clear routes solo newcomers
+## straight to Crownfall instead (capital rework §5) — the city makes its
+## own gates the lesson.
+func victory_dismiss() -> void:
+	if state != ST_VICTORY:
+		return
+	state = ST_PLAYING
+	request_pause(false)
+	hud.hide_results()
+	hud.overlay.color = Color(0, 0, 0, 0)
+	hud.title_label.modulate.a = 0.0
+	hud.subtitle_label.modulate.a = 0.0
+	hud.visible = true
+	if chapter_id == "ch1" and not net_online() and not get_flag("cap_seen", false) \
+			and has_local_player():
+		enter_capital()
+		return
+	spawn_victory_gates()
+	if has_local_player():
+		spawn_text(player.global_position + Vector2(0, -110),
+			"The way-gates stand open.", Color(0.85, 0.9, 1.0), 3.0)
+
+
 ## MP-22: the party persists BETWEEN contents. From the victory card the
 ## HOST picks ANY unlocked chapter (+ NG+ tier) and the whole session
 ## rides into it — no disband, no codes re-read. Runs advance_chapter's
@@ -173,9 +201,10 @@ func advance_chapter() -> void:
 ## check gates it at the UI layer (lobby reprise mode) — by the time
 ## this runs, the party already said yes.
 func reprise_chapter(chid: String, tier: int) -> void:
-	# Launchable from the victory card OR a safe hub (Wave 9: the capital
-	# portal is the party's content queue — mid-play there, not mid-combat).
-	if net_guest() or (state != ST_VICTORY and not Story.is_standalone(chapter_id)):
+	# Launchable from the victory card, its way-gates (rework §6), OR a safe
+	# hub (Wave 9: the capital portal is the party's content queue).
+	if net_guest() or (state != ST_VICTORY and not victory_gates_up
+			and not Story.is_standalone(chapter_id)):
 		return
 	if has_local_player():
 		player.run_tier = clampi(tier, 0, Balance.TIER_NAMES.size() - 1)
@@ -547,7 +576,10 @@ func chapter_available(chid: String, replay := false) -> bool:
 # Everything else is story state.
 # "s_awakened_" persists a class's legendary-passive awakening across chapters
 # (round 51b) — it is earned once per character, like completed_.
-const KEPT_FLAG_PREFIXES := ["opened_", "chose_", "completed_", "s_awakened_"]
+# cap_ (2026-07-25 capital rework): Crownfall quest/meet progress describes
+# the CHARACTER — it survives chapter wipes and stays per-head in co-op via
+# the same list §5.4's set_flag routing reads.
+const KEPT_FLAG_PREFIXES := ["opened_", "chose_", "completed_", "s_awakened_", "cap_"]
 const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
 	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
 	"left_silent", "said_farewell", "cut_clean", "walked_silent",
@@ -911,16 +943,23 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		var broken: Array = _expire_side_quests()
 		var vtext: String
 		if next_ch != "":
-			# Mid-campaign victory: the road goes on.
+			# Mid-campaign victory: the road goes on — through the way-gates
+			# beside the arena (rework §6), not a forced card choice.
 			vtext = String(Story.chapter(chapter_id).get("victory_text",
 				"The Ember Crown is reclaimed. But the shards are still out there — and years from now, they will wake."))
 			vtext += _broken_promises_text(broken)
-			vtext += "\n\nENTER — journey on to %s        ·        R — start over" \
-				% String(Story.chapter(next_ch)["name"])
+			if chapter_id == "ch1" and not net_online() and not get_flag("cap_seen", false):
+				# First ch1 clear (capital rework §5): the campaign routes the
+				# newcomer to Crownfall — the dismiss below carries them there.
+				vtext += "\n\nENTER — the road bends north, to CROWNFALL, the capital."
+			else:
+				vtext += "\n\nENTER — rise. The way-gates stand beside the arena:\nCrownfall  ·  a fresh pass  ·  onward to %s" \
+					% String(Story.chapter(next_ch)["name"])
 		else:
 			vtext = String(Story.chapter(chapter_id).get("victory_text",
-				"Thanks for playing!\nPress R to play again."))
+				"Thanks for playing!"))
 			vtext += _broken_promises_text(broken)
+			vtext += "\n\nENTER — rise. The way-gates stand beside the arena."
 		var end_it := func() -> void:
 			state = ST_VICTORY
 			set_music("")

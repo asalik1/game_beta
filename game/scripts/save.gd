@@ -109,6 +109,13 @@ static func _character_section(game: Game) -> Dictionary:
 		# lean travel into a friend's world and come home with you.
 		"resonance": p.resonance,
 		"faction_standing": p.faction_standing,
+		# Capital NPC favorability (2026-07-25 rework) — the city remembers
+		# its patrons; rides the character like resonance does.
+		"npc_favor": p.npc_favor,
+		# The plaza bazaar's daily shelf (capital rework §3): what dawn rolled
+		# and when — re-entering the city must NOT re-roll the day's stock.
+		"capital_stock": game.capital_stock, "capital_bags": game.capital_bags,
+		"capital_shop_day": game.capital_shop_day,
 		# --- gear ---
 		"equipment": p.equipment, "backpack": p.backpack, "gem_bag": p.gem_bag,
 		"bags": p.bags, "consumables": p.consumables,
@@ -475,6 +482,10 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	var fs: Dictionary = c.get("faction_standing", {})
 	for k in p.faction_standing:
 		p.faction_standing[k] = int(fs.get(k, 0))
+	p.npc_favor = {}
+	var nf: Dictionary = c.get("npc_favor", {})
+	for k in nf:
+		p.npc_favor[String(k)] = int(nf[k])
 
 	p.equipment = {}
 	var eq: Dictionary = c.get("equipment", {})
@@ -502,6 +513,11 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	game.clock_anchor = maxi(game.clock_anchor, int(c.get("clock_anchor", 0)))
 	game.daily_last_day = int(c.get("daily_last_day", -1))
 	game.daily_streak = int(c.get("daily_streak", 0))
+	game.capital_stock = []
+	for it in c.get("capital_stock", []):
+		game.capital_stock.append(_fix_item(it))
+	game.capital_bags = c.get("capital_bags", [])
+	game.capital_shop_day = int(c.get("capital_shop_day", -1))
 	game.achievements = {}
 	for aid in c.get("achievements", []):
 		game.achievements[String(aid)] = true

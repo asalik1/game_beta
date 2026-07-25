@@ -423,18 +423,12 @@ func _ready() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_pause())
 	add_child(settings_btn)
-	# Stash (account storage) — moved off the pause menu onto the HUD row.
+	# Stash access moved AGAIN (capital rework 2026-07-25 §2): off the HUD row
+	# entirely — the vault coffer on the Crownfall plaza IS the stash now, so
+	# the account bank has a street address instead of a floating icon. The
+	# node survives hidden so anything poking stash_btn stays valid.
 	stash_btn = Button.new()
-	stash_btn.flat = true
-	var stash_tex: Texture2D = Art.ui_icon("ui_stash")  # pack art if present; else drawn chest
-	stash_btn.icon = stash_tex if stash_tex != null else Art.tex("stash")
-	stash_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stash_btn.tooltip_text = "Stash (shared storage)"
-	stash_btn.position = Vector2(254, 186)
-	stash_btn.size = Vector2(32, 30)
-	stash_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
-			game.menus.open_stash())
+	stash_btn.visible = false
 	add_child(stash_btn)
 
 	# --------------------------------------------------------- boss bar ---
@@ -2380,6 +2374,62 @@ func show_boss_bar(bname: String) -> void:
 	boss_base_name = bname
 	boss_name.text = bname
 	boss_box.visible = true
+	_boss_splash_intro(bname)
+
+
+# --- boss splash intro (2026-07-25): the boss's splash art flashes for a
+# beat as its bar first appears — the fight announces its face. Purely
+# visual: no pause, no input capture (co-op-safe — §5.4's no-pause rule),
+# once per boss name per chapter (flash_title clears the ledger). Resolves
+# art through the dialogue box's own _splash_for, so every boss that can
+# speak with a face fights with one too.
+var _boss_splash_shown := {}
+
+func _boss_splash_intro(bname: String) -> void:
+	if _boss_splash_shown.get(bname, false):
+		return
+	var art_key := _splash_for(bname)
+	if art_key == "" or not Art.has_sprite(art_key):
+		return
+	_boss_splash_shown[bname] = true
+	var layer := Control.new()
+	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.z_index = 90
+	add_child(layer)
+	var scrim := ColorRect.new()
+	scrim.color = Color(0, 0, 0, 0.55)
+	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(scrim)
+	var art := TextureRect.new()
+	art.texture = Art.tex(art_key)
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.position = Vector2(340, 56)
+	art.size = Vector2(600, 520)
+	art.pivot_offset = art.size / 2.0
+	art.scale = Vector2(0.86, 0.86)
+	layer.add_child(art)
+	var nm := Label.new()
+	nm.text = bname
+	nm.position = Vector2(0, 592)
+	nm.size = Vector2(1280, 60)
+	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nm.add_theme_font_size_override("font_size", 40)
+	nm.add_theme_color_override("font_color", Color(0.95, 0.3, 0.25))
+	nm.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	nm.add_theme_constant_override("outline_size", 8)
+	layer.add_child(nm)
+	layer.modulate.a = 0.0
+	var tw := layer.create_tween()
+	tw.tween_property(layer, "modulate:a", 1.0, 0.18)
+	tw.parallel().tween_property(art, "scale", Vector2.ONE, 0.55) \
+		.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.85)
+	tw.tween_property(layer, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(layer.queue_free)
 
 
 func update_boss_bar(fraction: float) -> void:
@@ -2442,6 +2492,9 @@ func boss_banner(boss_name: String) -> void:
 
 
 func flash_title(text: String, sub := "", hold := 1.6, overlay_fade := true) -> void:
+	# Every arrival is a fresh run for boss-splash purposes: a replayed
+	# chapter's bosses get their entrance flash again.
+	_boss_splash_shown.clear()
 	title_label.text = text
 	subtitle_label.text = sub
 	var tween := create_tween()
@@ -3288,19 +3341,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	var pressed_confirm := false
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_SPACE, KEY_ENTER, KEY_E] \
-				and game.state == game.ST_VICTORY \
-				and Story.next_chapter(game.chapter_id) != "":
-			# Mid-campaign victory card: carry this character onward — in a
-			# session the party CONFIRMS first (MP-20 ready check; a party
-			# of 1 falls straight through, and a repeat press while a check
-			# is live is a no-op until it resolves).
-			if game.net_host():
-				var adv_sess := get_node_or_null("/root/NetworkManager/Session")
-				if adv_sess == null or adv_sess.propose_content("advance",
-						Story.next_chapter(game.chapter_id), game.world_run_tier, false):
-					game.advance_chapter()
-			else:
-				game.advance_chapter()  # guests: net_guest() gates inside (MP-14)
+				and game.state == game.ST_VICTORY:
+			# Rework §6: the card DISMISSES into the world — the way-gates
+			# beside the arena carry the choice now (each head closes its own
+			# card; the host's gate use runs the MP-20 proposal machinery).
+			game.victory_dismiss()
 			get_viewport().set_input_as_handled()
 		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER] and game.net_online() \
 				and game.state == game.ST_PLAYING and not chat_active \
@@ -3356,6 +3401,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			game.menus.open_dev()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# A tap/click dismisses the victory card too (rework §6) — the touch
+		# HUD has no ENTER, and the card must never strand a phone.
+		if game.state == game.ST_VICTORY:
+			game.victory_dismiss()
+			get_viewport().set_input_as_handled()
+			return
 		pressed_confirm = true
 
 	if pressed_confirm and dialogue_active and not (log_panel != null and log_panel.visible):

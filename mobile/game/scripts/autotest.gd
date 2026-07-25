@@ -161,8 +161,10 @@ func _run_systems() -> void:
 		return _fail("opening choice did not move resonance / set its flag")
 	await _skip_dialogue()  # Bren's reply + closing narration
 	print("ok: class select + warrior opening (owned the harm)")
-	if game.merchant_zones != [0]:
-		return _fail("only the village should start with a merchant (got %s)" % str(game.merchant_zones))
+	# Capital rework (2026-07-25 §3): campaign chapters no longer OPEN with a
+	# shop — the village merchant is gone; you provision in Crownfall.
+	if not game.merchant_zones.is_empty():
+		return _fail("campaign start rooms must not spawn a merchant (got %s)" % str(game.merchant_zones))
 	_buff()
 
 	# 1b. The room graph itself: shape, reciprocity, reachability, and
@@ -1014,6 +1016,10 @@ func _run_systems() -> void:
 	print("ok: S weapon dormant passive + awakening (%s sleeps until s_awakened_warrior)" % s_wpn["name"])
 
 	# 4c. Gems: targeted socket, removal, stat change, synthesize, sell-return.
+	# Capital rework (§2): socket/unsocket are Lapidary bench work — borrow
+	# the city context for these RULE asserts (the gate has its own test).
+	var _keep_ch_4c: String = game.chapter_id
+	game.chapter_id = "capital"
 	var cg := Items.make_gem("crit", 1)
 	game.player.gem_bag.append(cg)
 	var crit_before := game.player.crit
@@ -1058,6 +1064,7 @@ func _run_systems() -> void:
 	if game.player.gem_bag.size() != bag_gems + 1:
 		return _fail("strip_gems did not return the socketed gem")
 	game.player.recalc()
+	game.chapter_id = _keep_ch_4c
 	print("ok: gems (socket, synthesize, sell-return)")
 
 	# 4d. Telegraph resolves — and it lands HEAVY (2026-07-09): a chip-armed
@@ -1128,6 +1135,9 @@ func _run_systems() -> void:
 	print("ok: skill tree rows (caps + gating)")
 
 	# 5a2. Auto-synthesize: socketed gems level first, then the bag rolls up.
+	# Equipped-first is bench work now (capital rework §2) — city context.
+	var _keep_ch_5a2: String = game.chapter_id
+	game.chapter_id = "capital"
 	var socketed_item: Dictionary = game.player.equipment["weapon"]
 	socketed_item["gems"].clear()
 	game.player.gem_bag.clear()
@@ -1147,6 +1157,7 @@ func _run_systems() -> void:
 	game.player.gem_bag.clear()
 	socketed_item["gems"].clear()
 	game.player.recalc()
+	game.chapter_id = _keep_ch_5a2
 	print("ok: auto-synthesize (equipped-first, %d upgrades)" % ups)
 
 	# 5b. Save / load roundtrip on a scratch slot (now with room state).
@@ -1690,6 +1701,7 @@ func _run_campaign_ch2() -> void:
 	get_tree().paused = false
 	SaveGame.write(game, SaveGame.MAX_SLOTS)
 	var visited_at_save := game.visited.size()
+	var merchants_at_save: Array = game.merchant_zones.duplicate()
 	game.queue_free()
 	await _frames(3)
 	game = main_scene.instantiate()
@@ -1714,8 +1726,13 @@ func _run_campaign_ch2() -> void:
 		return _fail("resume did not restore the finished character")
 	if not game.boss_done.get("vargoth", false):
 		return _fail("resume lost boss progress")
-	if not game.merchant_zones.has(0):
-		return _fail("village merchant missing after resume")
+	# Capital rework: the village never starts with a merchant any more —
+	# resume must round-trip whichever rooms one wandered into (the marsh
+	# camp from 7c at minimum), and must NOT resurrect a start-room shop.
+	if game.merchant_zones != merchants_at_save:
+		return _fail("merchant rooms lost on resume (%s vs %s)" % [str(game.merchant_zones), str(merchants_at_save)])
+	if game.merchant_zones.has(0):
+		return _fail("resume resurrected the retired start-room merchant")
 	if game.visited.size() != visited_at_save:
 		return _fail("resume lost the charted map (%d vs %d rooms)" % [game.visited.size(), visited_at_save])
 	if not game.cleared.get(2, false):
@@ -1802,8 +1819,10 @@ func _run_campaign_ch2() -> void:
 			hub_hostiles += 1
 	if hub_hostiles != 0:
 		return _fail("chapter 2 hub should be safe (found %d hostiles)" % hub_hostiles)
-	if not game.merchant_zones.has(0):
-		return _fail("chapter 2 hub merchant missing")
+	# Capital rework §3: chapter start rooms open SHOPLESS — Crownfall is
+	# the provisioning stop; hub merchants only wander in post-clear.
+	if game.merchant_zones.has(0):
+		return _fail("chapter 2 hub still opens with a merchant")
 	print("ok: chapter 2 hub boots as a legacy chain (%d room[s])" % game.zone_count)
 
 	# ---- CONTENT-MODULE TEST HOOK ----------------------------------------
@@ -1831,6 +1850,7 @@ func _run_campaign_ch2() -> void:
 	await _test_pc_curios()
 	await _test_rv_na()
 	await _test_capital()
+	await _test_capital_rework_economy()
 	await _test_ch2_quests()
 	await _test_ch3_quests()
 	await _test_ch4_quests()
@@ -3104,6 +3124,11 @@ func _test_retention() -> void:
 	game.player.cdr = keep_cdr
 
 	# --- gem LEVEL limits by grade: B holds Lv3 at most ---
+	# Capital rework (§2): socketing is bench work — these are pure RULE
+	# assertions, so borrow the Lapidary's context for the block (the gate
+	# itself is asserted in _test_capital). RESTORED after the typed-slot run.
+	var _keep_ch_gem: String = game.chapter_id
+	game.chapter_id = "capital"
 	var b_host := {"slot": "armor", "grade": "B", "name": "t2", "noun": "Plate",
 		"main": {}, "subs": {}, "plus": 0, "gem_slots": 1, "gems": []}
 	var g_lv4 := Items.make_gem("hp_pct", 4)
@@ -3180,6 +3205,7 @@ func _test_retention() -> void:
 			return _fail("a 2nd dmg_pct accepted while one is worn (one per stat across gear!)")
 		game.player.gem_bag.erase(g_cd3)
 	# RESTORE.
+	game.chapter_id = _keep_ch_gem
 	for eslot in _saved_gems:
 		game.player.equipment[eslot]["gems"] = _saved_gems[eslot]
 	for gg in [g_cd, g_cb, g_rb3]:
@@ -4898,10 +4924,11 @@ func _test_rv_na() -> void:
 	print("ok: rv_na_gallery (145 Raven icons + 13 critters; Future: alchemy/critters)")
 
 
-# ---- CONTENT: capital_hub — Crownfall, the 25-room dev capital -----------
+# ---- CONTENT: capital_hub — Crownfall, the 9-room capital (rework) --------
 ## Data integrity (module selftest) + a REAL load: enter Crownfall, verify the
-## fixed 25-room graph builds safe with the hero on the Crown Plaza and every
-## room reachable, then restore the chapter we were in. Content-module hook.
+## fixed 3x3 graph builds safe with the hero on the Crown Plaza and every
+## room reachable, service NPCs own their functions (one access point each),
+## then restore the chapter we were in. Content-module hook.
 func _test_capital() -> void:
 	var err: String = await preload("res://scripts/content/capital_hub.gd").selftest(game)
 	if err != "":
@@ -4935,8 +4962,12 @@ func _test_capital() -> void:
 	await _frames(6)
 	if game.chapter_id != "capital":
 		return _fail("capital: enter_capital did not switch (chapter is %s)" % game.chapter_id)
-	if game.zone_count != 25:
-		return _fail("capital: expected 25 rooms live, got %d" % game.zone_count)
+	# First arrival plays the one-time welcome beat (rework §5) — clear it so
+	# the map/menu smoke below isn't running under a dialogue overlay.
+	if game.hud.dialogue_active:
+		await _skip_dialogue()
+	if game.zone_count != 9:
+		return _fail("capital: expected 9 rooms live, got %d" % game.zone_count)
 	if String(game.zones[game.cur_room].get("name", "")) != "Crown Plaza":
 		return _fail("capital: hero did not spawn on Crown Plaza (in %s)" % game.zones[game.cur_room].get("name", "?"))
 	var has_grand_room := false
@@ -4956,7 +4987,9 @@ func _test_capital() -> void:
 			return _fail("capital: %s room_scale %.2f built at %s instead of %s" %
 				[zone.get("name", "?"), room_scale, game.play_rect(zi).size, expected_size])
 		has_grand_room = has_grand_room or room_scale >= 0.99
-		has_intimate_room = has_intimate_room or room_scale <= 0.65
+		# 9-room rework: the tightest branch rooms sit at 0.72 — the hierarchy
+		# is grand plaza vs sub-0.75 service rooms now.
+		has_intimate_room = has_intimate_room or room_scale <= 0.72
 		if zone.get("landmarks", []).is_empty():
 			return _fail("capital: %s has no authored landmark/composition" % zone.get("name", "?"))
 		if not String(zone.get("terrain", "")).begins_with("capital_"):
@@ -4968,10 +5001,9 @@ func _test_capital() -> void:
 		var zone_has_contract_action := false
 		for landmark in zone.get("landmarks", []):
 			var landmark_def: Dictionary = landmark
+			# Rework: a landmark MAY be pure scenery when the NPC in front of
+			# it owns the function (one access point — forge/lapidary rule).
 			var uses: Array = landmark_def.get("uses", [])
-			if uses.is_empty():
-				return _fail("capital: foreground landmark %s in %s has no direct interaction" %
-					[landmark_def.get("name", "?"), zone.get("name", "?")])
 			for landmark_use in uses:
 				var use_def: Dictionary = landmark_use
 				var use_type := String(use_def.get("type", ""))
@@ -5008,29 +5040,35 @@ func _test_capital() -> void:
 				premium_vault = true
 	if not has_grand_room or not has_intimate_room:
 		return _fail("capital: room hierarchy needs both a grand hub and an intimate service room")
-	if landmark_use_count < 32 or landmark_action_count < 25:
+	if landmark_use_count < 16 or landmark_action_count < 14:
 		return _fail("capital: foreground landmarks need direct typed uses/actions (%d uses, %d actions)" %
 			[landmark_use_count, landmark_action_count])
-	if faction_contract_count != 5:
-		return _fail("capital: expected five real faction contract journal links, got %d" %
+	if faction_contract_count != 4:
+		return _fail("capital: expected four real faction contract journal links, got %d" %
 			faction_contract_count)
 	if furnishing_count < 8:
 		return _fail("capital: authored social furniture is missing (%d/8)" % furnishing_count)
-	if backdrop_count < 8:
-		return _fail("capital: connected city-edge architecture is missing (%d/8)" % backdrop_count)
+	if backdrop_count < 6:
+		return _fail("capital: connected city-edge architecture is missing (%d/6)" % backdrop_count)
 	if not premium_vault:
-		return _fail("capital: Artisans' Court did not install the premium vault coffer")
-	for action in ["map", "mail", "journal", "records", "guild", "skills", "gear",
-			"shop", "potions",
+		return _fail("capital: the plaza did not install the premium vault coffer")
+	# Rework contract: forge/lapidary/drill are NPC-owned services; gear/shop/
+	# skills desks are gone (one access point per function — the merchant node
+	# is the shop, the HUD keeps skills).
+	for action in ["map", "mail", "journal", "records", "guild", "potions", "wardrobe",
+			"forge", "lapidary", "drill",
 			"vault", "codex", "daily", "portal_story", "portal_crucible", "portal_depths"]:
 		if not hub_actions.has(action):
 			return _fail("capital: meaningful service action '%s' is not placed" % action)
+	for retired in ["gear", "shop", "skills"]:
+		if hub_actions.has(retired):
+			return _fail("capital: retired duplicate access point '%s' is back" % retired)
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e and e.zone_idx == game.cur_room:
 			return _fail("capital: a supposedly-safe hub room has an enemy")
 	# The whole city is charted from the first step (no fog), and every room is
-	# a fast-travel target — so the detailed map shows all 25 and lets you jump.
+	# a fast-travel target — so the detailed map shows all 9 and lets you jump.
 	var far := game.zone_count - 1
 	if not game.charted(far) or not game.charted(0):
 		return _fail("capital: map should chart every room (unvisited room %d not charted)" % far)
@@ -5042,12 +5080,112 @@ func _test_capital() -> void:
 		return _fail("capital: detailed map did not open")
 	game.menus.close()
 	await _frames(2)
+
+	# ---- capital rework mechanics (2026-07-25, PROPOSALS/CAPITAL_REWORK.md):
+	# fair home prices, the dawn shelf, favor math, the Lapidary's intro
+	# quest end to end, and the bench gate. All while standing in the city.
+	var p_cap: Player = game.local_player
+	if game.shop_markup(game.cur_room) != 1.0:
+		return _fail("capital: the bazaar must never charge road markup")
+	game.capital_shop_day = -1
+	game.menus.open_shop(game.cur_room)
+	await _frames(2)
+	if game.capital_stock.size() != int(Balance.SHOP_STOCK_BY_TIER.get(Balance.CAPITAL_SHOP_TIER, 5)):
+		return _fail("capital: dawn shelf rolled %d pieces" % game.capital_stock.size())
+	if game.capital_shop_day != game.daily_day_index():
+		return _fail("capital: restock did not stamp the day")
+	var first_title: String = Items.title(game.capital_stock[0])
+	game.menus.close()
+	await _frames(1)
+	game.shop_stock.erase(game.cur_room)   # simulate a room rebuild, same day
+	game.menus.open_shop(game.cur_room)
+	await _frames(2)
+	if game.capital_stock.is_empty() or Items.title(game.capital_stock[0]) != first_title:
+		return _fail("capital: same-day re-entry re-rolled the dawn shelf")
+	game.menus.close()
+	await _frames(1)
+	# Favor math: face value on a neutral shard, visible tier discounts,
+	# spend conversion with carry, the steady-shard trust bonus.
+	var keep_favor: Dictionary = p_cap.npc_favor.duplicate(true)
+	var keep_res: float = p_cap.resonance
+	p_cap.resonance = 0.0
+	p_cap.npc_favor.clear()
+	game.favor_add("petra", 10)
+	if game.favor_points("petra") != 10 or game.favor_tier("petra") != 0:
+		return _fail("capital: neutral favor_add should bank face value")
+	p_cap.npc_favor["petra"] = 25
+	if game.favor_tier("petra") != 1 or not is_equal_approx(game.favor_price_mult("petra"), 0.98):
+		return _fail("capital: favor tier 1 should read Regular at -2%")
+	p_cap.npc_favor["petra"] = 150
+	if game.favor_tier_name("petra") != "Confidant" or not is_equal_approx(game.favor_price_mult("petra"), 0.94):
+		return _fail("capital: favor tier 3 should read Confidant at -6%")
+	p_cap.npc_favor.clear()
+	game.favor_spend("petra", 60)
+	if game.favor_points("petra") != 2 or int(p_cap.npc_favor.get("petra__carry", 0)) != 10:
+		return _fail("capital: favor_spend conversion/carry math off")
+	p_cap.resonance = 100.0
+	if Story.res_band(p_cap.resonance) == "steady":
+		p_cap.npc_favor.clear()
+		game.favor_add("petra", 8)
+		if game.favor_points("petra") != 10:
+			return _fail("capital: steady shard should pay 1.25x favor")
+	p_cap.resonance = keep_res
+	# The Lapidary end to end: greet -> offer hands a training gem -> the
+	# seat-a-stone deed at her benches -> turn-in pays gold + favor.
+	p_cap.npc_favor.clear()
+	var keep_gold: int = p_cap.gold
+	var gems_before: int = p_cap.gem_bag.size()
+	game._hub_action("lapidary")
+	await _frames(2)
+	if game.hud.dialogue_active:
+		await _skip_dialogue()   # her greet line
+	await _frames(2)
+	if game.hud.dialogue_active:
+		await _skip_dialogue()   # the quest offer
+	await _frames(2)
+	if not game.get_flag("cap_q_gem_on", false):
+		return _fail("capital: lapidary visit did not open her intro quest")
+	if p_cap.gem_bag.size() != gems_before + 1 and game.mailbox.is_empty():
+		return _fail("capital: the training gem was neither bagged nor mailed")
+	if game.menus.is_open():
+		game.menus.close()
+	await _frames(1)
+	var q_item: Dictionary = Items.roll_item_of("armor", "B", RandomNumberGenerator.new(), p_cap.cls)
+	if int(q_item.get("gem_slots", 0)) < 1:
+		Items.add_socket(q_item)
+	var train_gem: Dictionary = p_cap.gem_bag[p_cap.gem_bag.size() - 1]
+	if not p_cap.embed_gem_into(q_item, train_gem):
+		return _fail("capital: could not seat the training gem at the benches")
+	if not game.get_flag("cap_q_gem_done", false):
+		return _fail("capital: seating a stone did not settle the lapidary deed")
+	game._hub_action("lapidary")
+	await _frames(2)
+	if game.hud.dialogue_active:
+		await _skip_dialogue()   # the turn-in line
+	if not game.get_flag("cap_q_gem_paid", false) or p_cap.gold != keep_gold + Balance.CAPITAL_INTRO_GOLD:
+		return _fail("capital: lapidary turn-in did not pay out")
+	if game.favor_points("lapidary") < Balance.FAVOR_QUEST_POINTS:
+		return _fail("capital: lapidary turn-in did not bank favor")
+	if game.menus.is_open():
+		game.menus.close()
+	await _frames(1)
+	p_cap.npc_favor = keep_favor
+	p_cap.gold = keep_gold
+
 	# Leave the way a player does — back to the chapter we came from.
 	game.switch_chapter(prev, true)
 	await _frames(4)
 	if game.chapter_id != prev:
 		return _fail("capital: failed to restore chapter %s" % prev)
-	print("ok: capital hub (25-room composed graph, authored size hierarchy + service actions, connected, safe, fully-charted map, travel-anywhere, leaves clean)")
+	# The bench gate: gem work is refused the moment you're back on the road.
+	if p_cap != null and game.has_local_player():
+		var road_gem: Dictionary = Items.random_gem(game.loot_rng, 1)
+		var road_item: Dictionary = Items.roll_item_of("armor", "B", RandomNumberGenerator.new(), p_cap.cls)
+		if int(road_item.get("gem_slots", 0)) < 1:
+			Items.add_socket(road_item)
+		if p_cap.gem_socket_error(road_item, road_gem) == "":
+			return _fail("capital: field socketing should be refused outside Crownfall")
+	print("ok: capital hub (9-room 3x3, NPC-owned services + dawn shelf + favor + lapidary quest end-to-end, bench gate holds on the road, leaves clean)")
 
 
 ## The KEYBOARD twin of the touch overlay gate (cross-product audit 2026-07-21).
@@ -5514,3 +5652,48 @@ func _test_waking() -> void:
 	game.player.gem_bag = keep_gems
 	game.player.consumables = keep_cons
 	print("ok: waking incursions (cross-domain seeded roster, pure injection, weekly bank + Renown sweep, stale refusal, save round-trip)")
+
+
+# ---- CORE: capital rework economy — road markup curve + save round-trip ---
+## (2026-07-25, PROPOSALS/CAPITAL_REWORK.md) The seeded road markup is a
+## clamped bell curve, deterministic per (run, room); npc_favor and the
+## bazaar's dawn shelf ride the character save.
+func _test_capital_rework_economy() -> void:
+	var lo := 1.0 + Balance.ROAD_MARKUP_MIN
+	var hi := 1.0 + Balance.ROAD_MARKUP_MAX
+	if game.shop_markup(3) != game.shop_markup(3):
+		return _fail("road markup must be deterministic per merchant per run")
+	var distinct := {}
+	for zi in 12:
+		var m: float = game.shop_markup(zi)
+		if m < lo - 0.0001 or m > hi + 0.0001:
+			return _fail("road markup %.3f left the [%.2f, %.2f] clamp" % [m, lo, hi])
+		distinct["%.4f" % m] = true
+	if distinct.size() < 2:
+		return _fail("road markup rolled identical for 12 rooms — the curve is dead")
+	# --- save round-trip: favor + the dawn shelf ---
+	var keep_favor: Dictionary = game.player.npc_favor.duplicate(true)
+	var keep_stock: Array = game.capital_stock.duplicate(true)
+	var keep_bags: Array = game.capital_bags.duplicate(true)
+	var keep_day: int = game.capital_shop_day
+	game.player.npc_favor = {"petra": 42}
+	game.capital_stock = [Items.roll_item_of("armor", "F", RandomNumberGenerator.new(), "warrior")]
+	game.capital_bags = []
+	game.capital_shop_day = 555
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	game.player.npc_favor = {}
+	game.capital_stock = []
+	game.capital_shop_day = -1
+	var sv := SaveGame.read(SaveGame.MAX_SLOTS)
+	SaveGame.apply(game, sv)
+	await _frames(2)
+	if int(game.player.npc_favor.get("petra", 0)) != 42:
+		return _fail("npc_favor lost in the save round-trip")
+	if game.capital_shop_day != 555 or game.capital_stock.size() != 1:
+		return _fail("the dawn shelf lost in the save round-trip")
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+	game.player.npc_favor = keep_favor
+	game.capital_stock = keep_stock
+	game.capital_bags = keep_bags
+	game.capital_shop_day = keep_day
+	print("ok: capital rework economy (deterministic clamped road-markup curve; favor + dawn shelf save round-trip)")

@@ -119,6 +119,7 @@ func switch_chapter(id: String, force := false) -> void:
 	cleared.clear()
 	door_seen.clear()
 	bosses.clear()
+	victory_gates_up = false   # the way-gates died with the old world's nodes
 	current_boss = null
 	elder = null
 	barrier_active = false
@@ -146,6 +147,14 @@ func enter_capital() -> void:
 	if chapter_id != "capital":
 		_pre_capital_chapter = chapter_id
 	switch_chapter("capital", true)
+	# First arrival (capital rework §5): one short welcome, once per character.
+	# The plaza artisans' ❢ marks carry the onboarding from here.
+	if not get_flag("cap_seen", false) and has_local_player():
+		set_flag("cap_seen")
+		hud.dialogue([
+			["Narrator", "CROWNFALL — the capital. Whatever the road takes, the city holds: forge and lapidary, vault and bazaar, and every gate worth walking through."],
+			["Narrator", "The marked folk on the plaza have work for a newcomer. Speak to them."],
+		])
 
 
 ## An interaction dispatched by a Crownfall hub prop (a portal or a civic desk).
@@ -206,12 +215,207 @@ func _hub_action(act: String) -> void:
 			menus.open_shop(cur_room)
 		"potions":
 			menus.open_potion_loadout()
+		"forge":
+			_cap_artisan("petra")
+		"lapidary":
+			_cap_artisan("lapidary")
+		"drill":
+			_cap_drill()
 		_:
 			push_warning("hub action unhandled: %s" % act)
 
 
 func _inspect_landmark(title: String, text: String) -> void:
 	hud.dialogue([[title, text]])
+
+
+# ------------------------------------- capital rework: services + quests ---
+# (2026-07-25, PROPOSALS/CAPITAL_REWORK.md §4-5) The plaza artisans OWN their
+# services — one access point per function. Each carries a small intro quest
+# accepted and turned in AT the NPC (reward + favor), and a ❢ that self-polls
+# so the mark always means "this person has something for you".
+# All cap_* flags are character-scoped (KEPT_FLAG_PREFIXES) — they survive
+# chapter wipes and stay per-head in co-op.
+
+const CAP_ARTISANS := {
+	"petra": {
+		"who": "Smith Petra", "greet": "cap_petra", "quest": "forge",
+		"offer": "Bench rules: your coin, my fire. Here's a bargain for a new patron — temper any piece once, quench, reforge or transmute, and I'll stand you the fee back with interest. Deal's open till it's done.",
+		"turnin": "So the fire took. That's the bench paid back, as promised — and I'll remember the name over the coin. Regulars get my better rates.",
+	},
+	"lapidary": {
+		"who": "Master Lapidary", "greet": "cap_lapidary", "quest": "gem",
+		"offer": "You've never set a stone? Then your first is on the house. Here — a cut gem. Seat it in a socketed piece of your gear and come show me the fit.",
+		"turnin": "A clean seat. You have the hands for it. Bring me your patronage and your rough stones — patient patrons get my patient prices.",
+	},
+}
+
+## A plaza artisan interaction: one-time greet, then the intro-quest state
+## machine (offer -> deed elsewhere -> turn-in HERE), then the service.
+func _cap_artisan(npc: String) -> void:
+	var d: Dictionary = CAP_ARTISANS[npc]
+	var qid := String(d["quest"])
+	var who := String(d["who"])
+	if not get_flag("cap_met_" + npc, false):
+		set_flag("cap_met_" + npc)
+		run_convo_id(String(d["greet"]), func() -> void: _cap_artisan(npc))
+		return
+	if not get_flag("cap_q_%s_on" % qid, false):
+		set_flag("cap_q_%s_on" % qid)
+		if qid == "gem" and has_local_player():
+			var gem: Dictionary = Items.random_gem(loot_rng, 1)
+			if not player.gain_gem(gem):
+				send_mail("The Lapidary's training stone",
+					"Your bag was full at the bench — the training gem waits here.",
+					[{"kind": "gem", "gem": gem}])
+		hud.dialogue([[who, String(d["offer"])]], func() -> void: _cap_open_service(npc))
+		refresh_quest_marks()
+		return
+	if get_flag("cap_q_%s_done" % qid, false) and not get_flag("cap_q_%s_paid" % qid, false):
+		set_flag("cap_q_%s_paid" % qid)
+		if has_local_player():
+			player.gold += Balance.CAPITAL_INTRO_GOLD
+			spawn_text(player.global_position + Vector2(0, -56),
+				"+%d gold" % Balance.CAPITAL_INTRO_GOLD, Color(1.0, 0.85, 0.35))
+		favor_add(npc, Balance.FAVOR_QUEST_POINTS)
+		sfx("chest")
+		hud.dialogue([[who, String(d["turnin"])]])
+		refresh_quest_marks()
+		autosave()
+		return
+	_cap_open_service(npc)
+
+
+func _cap_open_service(npc: String) -> void:
+	menus.open_inventory("gear")
+
+
+## Marshal Corin, the plaza drillmaster: no bench — just the talent intro
+## quest and a drill-yard line once it's settled.
+func _cap_drill() -> void:
+	var who := "Marshal Corin"
+	if not get_flag("cap_q_talent_on", false):
+		set_flag("cap_q_talent_on")
+		hud.dialogue([[who, "Fresh through the gates and green as the Warren. Open your talents, commit one point — the tree remembers what the arm forgets. Show me you've chosen, and the drill yard pays for the lesson."]])
+		refresh_quest_marks()
+		return
+	if get_flag("cap_q_talent_done", false) and not get_flag("cap_q_talent_paid", false):
+		set_flag("cap_q_talent_paid")
+		if has_local_player():
+			player.gold += Balance.CAPITAL_INTRO_GOLD
+			spawn_text(player.global_position + Vector2(0, -56),
+				"+%d gold" % Balance.CAPITAL_INTRO_GOLD, Color(1.0, 0.85, 0.35))
+		sfx("chest")
+		hud.dialogue([[who, "Committed, and to something with a spine. The yard pays its debts — now go spend the rest of yourself the same way."]])
+		refresh_quest_marks()
+		autosave()
+		return
+	hud.dialogue([[who, "Companies drill here before they take the northern gates. The Crucible arch in the Sanctum is the live trial — the rail is for bragging."]])
+
+
+## Does this capital service NPC have something NEW for the player? Drives
+## the self-polling ❢ (unmet greet, unasked quest, or a turn-in owed).
+func _cap_mark_active(act: String) -> bool:
+	match act:
+		"forge":
+			return not get_flag("cap_met_petra", false) \
+				or not get_flag("cap_q_forge_on", false) \
+				or (get_flag("cap_q_forge_done", false) and not get_flag("cap_q_forge_paid", false))
+		"lapidary":
+			return not get_flag("cap_met_lapidary", false) \
+				or not get_flag("cap_q_gem_on", false) \
+				or (get_flag("cap_q_gem_done", false) and not get_flag("cap_q_gem_paid", false))
+		"drill":
+			return not get_flag("cap_q_talent_on", false) \
+				or (get_flag("cap_q_talent_done", false) and not get_flag("cap_q_talent_paid", false))
+	return false
+
+
+## Hang the bobbing ❢ over a capital service NPC (same look as the side-quest
+## giver mark). Registered in quest_marks with a "cap" key; refresh_quest_marks
+## polls _cap_mark_active on the same set_flag beats.
+func _mark_capital_npc(npc: Node2D, act: String) -> void:
+	if act not in ["forge", "lapidary", "drill"]:
+		return
+	var mark := Label.new()
+	mark.text = "❢"
+	mark.position = Vector2(-40, -84)
+	mark.size = Vector2(80, 22)
+	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mark.add_theme_font_size_override("font_size", 22)
+	mark.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+	mark.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	mark.add_theme_constant_override("outline_size", 5)
+	npc.add_child(mark)
+	var tw := mark.create_tween().set_loops()
+	tw.tween_property(mark, "position:y", -90.0, 0.9).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(mark, "position:y", -84.0, 0.9).set_trans(Tween.TRANS_SINE)
+	quest_marks.append({"node": mark, "cap": act})
+	refresh_quest_marks()
+
+
+# --------------------------------- capital rework §6: victory way-gates ---
+# The chapter-end choice lives in the WORLD now: three gates rise beside the
+# fallen final boss — Crownfall, a fresh pass, the road on. Solo they act
+# directly; a HOST with a party rides the Wave-9 machinery (the reprise
+# picker / the MP-20 "advance" proposal), so nobody can be stranded; a guest
+# is told the leader picks the road. Rebuilt with the arena on load, so a
+# save made after the kill still finds its way out.
+
+func spawn_victory_gates(zi: int = -1) -> void:
+	if victory_gates_up:
+		return
+	victory_gates_up = true
+	var room := zi if zi >= 0 else cur_room
+	var c := room_center(room)
+	var next_ch := Story.next_chapter(chapter_id)
+	var defs: Array = [
+		["capital", "E — Gate of Crownfall  (the capital)", Vector2(-300, -20)],
+		["replay", "E — Gate of Return  (a fresh pass at %s)" % String(Story.chapter(chapter_id)["name"]), Vector2(0, -90)],
+	]
+	if next_ch != "":
+		defs.append(["next", "E — Gate of the Road  (onward to %s)" % String(Story.chapter(next_ch)["name"]), Vector2(300, -20)])
+	for d in defs:
+		var kind: String = d[0]
+		_make_npc("capital_portal_story", c + (d[2] as Vector2), String(d[1]), func() -> void:
+			_gate_use(kind), "")
+
+
+func _gate_use(kind: String) -> void:
+	if net_online() and net_guest():
+		spawn_text(player.global_position + Vector2(0, -90),
+			"The party leader chooses the road — gather at the gates.",
+			Color(0.8, 0.85, 1.0), 3.0)
+		return
+	var partied: bool = net_host() and not get_node("/root/NetworkManager").peers.is_empty()
+	match kind:
+		"capital":
+			if partied:
+				# The party heads home TOGETHER — the reprise picker's capital
+				# row runs the ready check and the advance snap (Wave 9).
+				menus.lobby["reprise"] = true
+				menus.open_lobby("chapter")
+			else:
+				enter_capital()
+		"replay":
+			if partied:
+				menus.lobby["reprise"] = true
+				menus.open_lobby("chapter")
+			else:
+				call("reprise_chapter", chapter_id,
+					player.run_tier if has_local_player() else 0)
+		"next":
+			var nxt := Story.next_chapter(chapter_id)
+			if nxt == "":
+				return
+			if partied:
+				# MP-20: the road on is a PROPOSAL — _finish_check launches the
+				# advance itself when every head confirms.
+				var sess: Node = get_node_or_null("/root/NetworkManager/Session")
+				if sess == null or bool(sess.propose_content("advance", nxt, world_run_tier, false)):
+					call("advance_chapter")
+			else:
+				call("advance_chapter")
 
 
 # ------------------------------------------------- waking incursions ---
@@ -587,6 +791,8 @@ func _build_room(i: int) -> void:
 				for child in action_node.get_children():
 					if child is Sprite2D:
 						child.visible = false
+			# Capital service NPCs advertise their intro quests (rework §5).
+			_mark_capital_npc(action_node, act)
 			continue
 		var convo_id: String = npc_def["convo"]
 		var npc_node := _make_npc(npc_def["sprite"],
@@ -616,11 +822,23 @@ func _build_room(i: int) -> void:
 	# Merchants: SAFE rooms with a merchant spot keep one from the start
 	# (or one who already wandered in, restored from the save). Combat
 	# rooms only get theirs through the post-clear arrival roll.
+	# Capital rework (2026-07-25 §3): campaign chapters no longer OPEN with a
+	# shop — the start room's static merchant is gone (provision in Crownfall
+	# first). Mid-chapter safe camps and wander-in arrivals stay, at road
+	# prices (game_base.shop_markup). Standalones (capital/arenas) unaffected.
 	if merchant_zones.has(i):
 		_merchant_node(i)
 	elif zone.has("merchant") and String(zone.get("boss", "")) == "" \
-			and zone.get("enemies", []).is_empty():
+			and zone.get("enemies", []).is_empty() \
+			and not (i == 0 and Story.CHAPTER_LIST.has(chapter_id)):
 		_spawn_merchant(i)
+
+	# Victory way-gates rebuild with the arena (rework §6): a save made after
+	# the final boss fell still finds its road out on reload.
+	var arena_boss := String(zone.get("boss", ""))
+	if arena_boss != "" and arena_boss == String(Story.chapter(chapter_id).get("final_boss", "")) \
+			and boss_done.get(arena_boss, false):
+		spawn_victory_gates(i)
 
 	# Room-type extras.
 	var cache_tier := String(zone.get("cache", ""))
@@ -1044,6 +1262,10 @@ func refresh_quest_marks() -> void:
 		var node: Label = mk["node"]
 		if not is_instance_valid(node):
 			quest_marks.erase(mk)
+			continue
+		# Capital service marks poll their own state machine (capital rework).
+		if mk.has("cap"):
+			node.visible = _cap_mark_active(String(mk["cap"]))
 			continue
 		var any := false
 		for sqid in mk["quests"]:

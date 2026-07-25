@@ -1121,3 +1121,114 @@ Generators won't give a clean grid or a tight crop. Downscale to ~48px tall with
 snap to the palette above (posterize to ≤16 colours, no dither), hard-alpha the
 background (threshold, no semi-transparent halo), trim to content, install by name,
 reimport, mirror to mobile, add to the `terrains.gd` accent list, run the gates.
+
+
+---
+
+# BATCH 2026-07-25 — low-quality flag sweep (overnight audit refresh)
+
+Re-probe of the 2026-07-17 ART_QUALITY_REPORT offenders: much of that list has
+since been fixed (tombstone/tree_snow/grave_deadtree/spider are clean pack art
+now, fx_ripple went procedural, mannequin NPCs retired, boss beasts are the
+PixelLab lane — NOT here). What remains below is every asset that is STILL
+shipping bad art AND belongs to the ChatGPT lane (world art, FX, icons,
+splash — never characters). Ranked by how often a player sees it. Paste one
+SUBJECT block per render; shared conventions:
+
+```
+STYLE (prepend to every prompt): clean-celled pixel art, muted somber
+dark-fantasy palette, flat shading with a single rim-light from the upper-left,
+crisp 1px silhouette, NO anti-aliasing, NO gradients, NO soft glow, transparent
+background, subject fills ~85% of a square frame.
+[NEGATIVES]: no photorealism, no painterly blending, no text, no watermark,
+no drop shadow baked under the subject (the engine draws shadows).
+```
+
+### 1. `gate.png` — the worst-magnified asset in the game (16px stretched 6.75x)
+Every chapter's room seals draw this. Target: re-cut at **64px source** (the
+render path stretches to ~108px on screen; 64px lands it in the world's 2.5-3x
+band). Same silhouette so colliders/anchors hold.
+```
+SUBJECT: a heavy medieval WOODEN GATE seen from the front in a low top-down RPG
+view — two thick vertical oak planks bound by three dark iron bands, a black
+iron ring handle at center-right, stone jamb posts just visible at both edges.
+Weathered dark oak (#4a3620 base, #6b4e2e worn highlights, #2a1c10 shadow
+grooves), iron near-black with a faint cold sheen. Square frame, gate fills it.
+```
+
+### 2. `shuriken.png` — 546-colour AA mush on the Golden Ronin's signature throw
+The skin's Fan of Knives projectile — seen every fight on that skin. Target:
+**64px source**, ≤16 colours after snap.
+```
+SUBJECT: a four-pointed steel SHURIKEN, viewed flat from above, rotated ~15° so
+no blade sits axis-aligned. Blades are simple kite shapes meeting a small round
+hub with a dark center hole. Cold steel ramp (#cfd6de edge light, #8a97a6 face,
+#4a5560 shade), one thin gold accent line on the hub (the Ronin's gold). Hard
+edges only.
+```
+
+### 3. The tick quintet — `tick.png` + `_cyan/_green/_orange/_pale` (70-125 colour AA at 32px)
+Five recolors of one AA-gradient body; the whole family reads as mush beside
+the clean-celled roster. Generate ONE clean base; the recolors are scripted
+(tools/art recolor pipeline), do NOT prompt five times. Target: **32px source**,
+2-frame idle wiggle optional (the `_anim` strips are 2x32 — frame 2 is a 1px
+leg shuffle an agent can derive).
+```
+SUBJECT: a fat blood-tick MONSTER from a low top-down RPG view — a bulbous
+teardrop abdomen swollen behind a tiny head, eight short hooked legs splayed
+four per side, two small mandibles. Sickly bruise-purple abdomen (#5a3a4a base,
+#7a4f63 highlight, #3a2430 underside) with a few darker mottle spots, dull bone
+mandibles. Legs read as single clean strokes.
+```
+
+### 4. The 16px wall set — `wall_hedge` (2 colours!), `wallblock`, `wall_sewer`, `wall_castle`, `wall_grave`
+The room-boundary tiles every chapter shows at a flat 3x. The 32px walls
+(ice/sand/volcanic/wood/moss) read fine; these five are flat noise. Target:
+**32px tileable source each** (edges must wrap horizontally AND vertically).
+One prompt each — hedge shown; castle/grave/sewer/block follow the same shape
+with their material swapped (grey ashlar blocks / mossy tomb slabs / slime-
+stained brick / plain field stone).
+```
+SUBJECT: a seamless TILEABLE square texture of a dense HEDGE WALL for a dark
+fantasy RPG — tightly packed small leaves in three greens (#2e4a2a shadow,
+#3f6236 mid, #567d43 sparse top highlights), a few woody twig breaks, clipped
+flat like a garden maze wall. The pattern must continue seamlessly across all
+four edges. No border, no vignette.
+```
+
+### 5. `stone_broken.png` (the slag_brute source) — 23px body at 3.5x scale
+The one remaining true density outlier besides the gate. Target: **36px
+source** so the brute keeps its ~95px screen body at a sane 2.6x.
+```
+SUBJECT: a cracked BOULDER-GOLEM torso rising from rubble, low top-down RPG
+view — a hunched mass of dark basalt slabs with a glowing seam of dull ember
+orange (#c96a2a) in its central crack, two stumpy arm-slabs, no legs (it ends
+in broken rock at the ground line). Basalt ramp (#3a3a40, #55555e, #23232a),
+ember light only inside the cracks.
+```
+
+### 6. `class_splash_mage.png` — the one off-style class splash
+The audit's only splash flag (72 vs 85-92 for the others): it reads brighter
+and more storybook than the somber warlock/paladin/warrior boards. Target:
+match the committed mage design (the female mage, hooded blue-white robe —
+see `art_src/splash_refs/class_mage.png` for the canon face/outfit) at
+1254x1254, painterly like the other splashes (splash art is the ONE lane where
+painterly is correct — drop the pixel-art STYLE block for this one).
+```
+SUBJECT: dramatic dark-fantasy character splash art of a young woman mage —
+pale sharp features under a deep blue-white hood, silver-blond hair escaping at
+the cheek, layered blue-and-white robes with silver trim, both hands guiding a
+sphere of cold arcane light that lights her face from below. Background: a
+ruined dark stone hall swallowed in blue-black gloom, faint drifting embers.
+Palette anchored to cold blues and bone whites over near-black; single light
+source = her own spell. Somber, painterly, high detail on the face and hands.
+[NEGATIVES]: no smile, no bright daylight, no saturated rainbow magic, no
+anime gloss, no text.
+```
+
+## Post-process (agent, after the owner drops renders)
+Same as the standing pipeline above: NEAREST downscale to the target source
+size, posterize to the entry's colour budget, hard-alpha, trim, install by
+name into `game/assets/sprites/` (+ mirror to mobile), reimport, and run
+`tools/art/verify_art.py` + the gates. The wall tiles additionally need the
+wrap check (offset by half-tile, look for seams) before install.

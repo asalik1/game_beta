@@ -34,6 +34,10 @@ var _skin_ambient_id := ""
 # --- Phase 1 story trackers (persisted with the save from day one) ---
 var resonance := 0.0     # -100 (Temptation) .. +100 (Virtue), per DESIGN.md
 var faction_standing := {"accord": 0, "cinderborn": 0, "wildfang": 0, "choir": 0}
+# Capital NPC favorability (2026-07-25 rework): npc id -> lifetime points
+# (plus "<npc>__carry" spend remainders). Per-character like resonance —
+# unlike faction_standing it NEVER resets; the city remembers its patrons.
+var npc_favor := {}
 
 
 ## Nudge Resonance. The world reacts through dialogue and haggle bands
@@ -1615,6 +1619,11 @@ func strip_gems(item: Dictionary) -> void:
 ## regular gems only in regular slots — and specials are limited to ONE of
 ## each stat across your whole equipped loadout. Can't stack, can't skip.
 func gem_socket_error(item: Dictionary, gem: Dictionary) -> String:
+	# Capital rework (2026-07-25 §2): gem work is the Lapidary's trade — no
+	# field socketing. Every socket path consults this, so the refusal is
+	# explained wherever the player tries.
+	if game.chapter_id != "capital":
+		return "Gem work happens at the Lapidary in Crownfall."
 	if item.get("gems", []).size() >= int(item.get("gem_slots", 0)):
 		return "No open sockets."
 	# A vessel holds what it can bear: B ≤ Lv3, A ≤ Lv6, S ≤ Lv10.
@@ -1666,11 +1675,19 @@ func embed_gem_into(item: Dictionary, gem: Dictionary) -> bool:
 	gem_bag.erase(gem)
 	recalc()
 	game.sfx("levelup")
+	# Capital intro quest: the Lapidary's "seat a stone" deed (rework §5).
+	if game.get_flag("cap_q_gem_on", false) and not game.get_flag("cap_q_gem_done", false):
+		game.set_flag("cap_q_gem_done")
 	return true
 
 
 ## Pop one gem out of an item's socket back into the bag.
 func remove_gem(item: Dictionary, index: int) -> void:
+	# Capital rework (§2): unsocketing is bench work too — Crownfall only.
+	if game.chapter_id != "capital":
+		game.spawn_text(global_position + Vector2(0, -56),
+			"Gem work happens at the Lapidary in Crownfall.", Color(1.0, 0.7, 0.5))
+		return
 	var gems: Array = item.get("gems", [])
 	if index < 0 or index >= gems.size():
 		return
@@ -1689,8 +1706,10 @@ func auto_synthesize() -> int:
 	var upgrades := 0
 	while true:
 		# Equipped gems always get first pick of the bag — even of gems
-		# the bag itself just merged into existence.
-		if _upgrade_equipped_once():
+		# the bag itself just merged into existence. Capital rework (§2):
+		# upgrading SOCKETED gems is bench work (Crownfall only); bag-only
+		# merges stay available anywhere so the road never clogs your bag.
+		if game.chapter_id == "capital" and _upgrade_equipped_once():
 			upgrades += 1
 			continue
 		if _bag_merge_once():
@@ -1834,6 +1853,9 @@ func add_tree_point(id: String) -> bool:
 	tree_points[id] = tree_points.get(id, 0) + 1
 	recalc()
 	game.sfx("levelup")
+	# Capital intro quest: Marshal Corin's "commit a point" deed (rework §5).
+	if game.get_flag("cap_q_talent_on", false) and not game.get_flag("cap_q_talent_done", false):
+		game.set_flag("cap_q_talent_done")
 	return true
 
 

@@ -153,6 +153,16 @@ var bosses: Array = []           # every LIVE boss (endgame: up to 5 at once)
 var current_boss: Boss = null    # the DISPLAYED boss: your target, else bosses[0]
 var shop_stock := {}             # room index -> Array of items for sale
 var shop_bags := {}              # room index -> Array of bags for sale (round 52)
+# Capital bazaar (2026-07-25 rework): the plaza shop restocks at dawn instead
+# of holding stock until bought out. Character-owned (rides the save) — the
+# capital is this hero's home base, and the daily roll is theirs alone.
+var capital_stock: Array = []
+var capital_bags: Array = []
+var capital_shop_day := -1       # daily_day_index() of the last restock
+# Victory way-gates (2026-07-25 rework §6): the chapter-end choice moved off
+# the blocking card into three world gates at the arena. True while they
+# stand — advance/reprise accept it in place of ST_VICTORY.
+var victory_gates_up := false
 
 # Endgame modes (ACT2_DESIGN.md §II): the controller runs The Crucible / Waking
 # Depths in one arena world. `endgame_active` fences campaign autosave off the
@@ -631,6 +641,97 @@ func band_price_mult() -> float:
 		"steady": return 0.9
 		"tempted": return 1.1
 	return 1.0
+
+
+# ------------------------------------------- capital rework: road prices ---
+
+## The chapter whose loot bands + economy the CURRENT shop quotes. On the
+## road that's the chapter you're standing in; the capital bazaar stocks and
+## prices for the road AHEAD — the successor of the furthest campaign chapter
+## this character has completed (their next destination).
+func shop_chapter() -> String:
+	if chapter_id != "capital":
+		return chapter_id
+	var best := "ch1"
+	for cid in Story.CHAPTER_LIST:
+		if get_flag("completed_" + String(cid), false):
+			var nxt := Story.next_chapter(String(cid))
+			best = nxt if nxt != "" else String(cid)
+	return best
+
+## The buy-price multiplier a merchant in THIS room quotes (2026-07-25,
+## PROPOSALS/CAPITAL_REWORK.md §3). The capital bazaar and the endgame
+## arenas (the Depths prep camp is its own designed economy) sell fair;
+## every campaign-road merchant rolls a seeded bell-curve markup — stable
+## for that merchant for the whole run, so it reads as a rate, not a bug.
+func shop_markup(zone: int) -> float:
+	if chapter_id == "capital" or endgame_active or not Story.CHAPTER_LIST.has(chapter_id):
+		return 1.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(wander_seed) * 31 + zone * 977 + chapter_id.hash() % 65536
+	var markup := rng.randfn(Balance.ROAD_MARKUP_MEAN, Balance.ROAD_MARKUP_SD)
+	return 1.0 + clampf(markup, Balance.ROAD_MARKUP_MIN, Balance.ROAD_MARKUP_MAX)
+
+
+# ------------------------------------------ capital rework: NPC favor ---
+# v1 (Petra / the Lapidary): a per-character meter that climbs when you spend
+# at that artisan's bench or turn in their intro quest. Tiers pay a VISIBLE
+# bench discount (no silent effects). Gains read the shard: steady kinder,
+# tempted warier — the same read the merchant's haggle already makes.
+
+func favor_points(npc: String) -> int:
+	if not has_local_player():
+		return 0
+	return int(player.npc_favor.get(npc, 0))
+
+
+func favor_tier(npc: String) -> int:
+	var pts := favor_points(npc)
+	var tier := 0
+	for i in Balance.FAVOR_TIERS.size():
+		if pts >= int(Balance.FAVOR_TIERS[i]):
+			tier = i
+	return tier
+
+
+func favor_tier_name(npc: String) -> String:
+	return String(Balance.FAVOR_TIER_NAMES[favor_tier(npc)])
+
+
+## The artisan's bench-cost multiplier for this patron (1.0 at Stranger).
+func favor_price_mult(npc: String) -> float:
+	return 1.0 - Balance.FAVOR_DISCOUNT_PER_TIER * float(favor_tier(npc))
+
+
+## Add favor with the shard read applied; announces tier climbs. Favor is
+## per-character (rides the save like resonance) and only ever climbs.
+func favor_add(npc: String, points: int) -> void:
+	if not has_local_player() or points <= 0:
+		return
+	var mult := 1.0
+	match Story.res_band(player.resonance):
+		"steady": mult = Balance.FAVOR_RES_STEADY_MULT
+		"tempted": mult = Balance.FAVOR_RES_TEMPTED_MULT
+	var before := favor_tier(npc)
+	player.npc_favor[npc] = favor_points(npc) + maxi(1, int(round(float(points) * mult)))
+	if favor_tier(npc) > before and is_instance_valid(player):
+		sfx("levelup")
+		spawn_text(player.global_position + Vector2(0, -70),
+			"%s now counts you a %s!" % [npc.capitalize(), favor_tier_name(npc)],
+			Color(0.75, 0.95, 0.7), 3.0)
+
+
+## Gold spent at a capital bench converts to favor (1 per FAVOR_GOLD_PER_POINT,
+## fractional spends accumulate via a per-npc remainder).
+func favor_spend(npc: String, gold_spent: int) -> void:
+	if gold_spent <= 0 or chapter_id != "capital":
+		return
+	var carry_key := npc + "__carry"
+	var carry: int = int(player.npc_favor.get(carry_key, 0)) + gold_spent
+	var points := carry / Balance.FAVOR_GOLD_PER_POINT
+	player.npc_favor[carry_key] = carry % Balance.FAVOR_GOLD_PER_POINT
+	if points > 0:
+		favor_add(npc, points)
 
 
 ## Gambling vendor price (2026-07-09 rework): the gamble is the PITY path —

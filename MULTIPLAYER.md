@@ -317,8 +317,13 @@ pause point (solo keeps pausing exactly as today).
   through the host, and other players get a one-line toast ("Ashka accepted: The Long Sleep").
   Story-critical chapter beats (the handful that gate progression) require the party within the
   beat's room and mirror the text to everyone — the initiating player drives the choices.
-- **Victory/results screen** (`game_flow.gd:403`): shown to all simultaneously (chapter's over —
-  it may pause, nothing left to simulate); host's continue advances the party.
+- **Victory/results screen**: shown to all simultaneously (chapter's over — solo it pauses,
+  online it never does). 2026-07-25 capital rework §6: each head DISMISSES its own card
+  (`game_flow.victory_dismiss`) back into the live world, where three way-gates stand at the
+  arena — Crownfall / replay / onward. The host's gate use runs the MP-20 "advance" proposal
+  or the reprise picker (same machinery as the capital portal); guests at a gate are told the
+  leader picks the road. `advance_chapter`/`reprise_chapter` accept `victory_gates_up`
+  alongside `ST_VICTORY`; the dedicated server keeps its linger-then-advance.
 - Death's `await create_timer(2.0)` is replaced by the §5.3 state machine.
 
 ### 5.5 Loot, rewards, economy
