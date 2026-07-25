@@ -41,87 +41,90 @@ when mana is there.
 ~52% of these numbers with the SAME ordering — the ladder shape is
 gear-invariant; only the magnitude moves.
 
-## 2. The measured order (single runs; shadow's 6-run mean is 3574)
+## 2. The measured order (2026-07-24 board; means where taken, singles else)
 
-> **Boss:** Shadow ≫ Hunt > Venom ~ Wind ~ Curse ~ Blood > Poison > Pact ~
-> Void > Fire > Storm ~ Fury ~ Earth > Ice > Wrath ≫ Aegis ~ Holy ~ Bulwark
+> **Boss:** Shadow > Curse > Venom ~ Hunt > Wind ~ Blood ~ Pact > Poison >
+> Void > Fury > Fire ~ Ice > Storm ~ Wrath ~ Earth > Holy > Bulwark ~ Aegis
 >
-> **Pack:** Shadow > Poison > Fire ~ Pact > Storm ~ Curse ~ Void ~ Wind >
-> Blood > Venom > Hunt ~ Ice > Fury ~ Wrath ~ Earth > Holy ~ Aegis ~ Bulwark
+> **Pack:** Shadow > Pact > Curse > Fire > Poison > Void > Blood > Wind ~
+> Storm > Wrath > Venom ~ Ice > Fury > Hunt > Earth > Holy > Aegis > Bulwark
 
-The mid-board is a healthy tie band: ranks 3–7 on the boss board sit within
-~5% of each other — matchup and pilot taste decide, not the sheet.
+The mid-board stays a healthy tie band — and this refresh measured the
+variance honestly: single runs swing up to ~17% peak-to-peak (warlock/pact's
+single read 3033 against a 6-run mean of 2707), so ranks inside a band are
+taste, not truth. Means were taken for the movers (curse 3350, pact 2707,
+holy 1413; shadow's standing mean 3574).
 
 ## 3. Overall holistic tier (F–S)
 
 | Tier | Spec | Why |
 |------|------|-----|
-| **S** | Assassin · Shadow | Boss #1 (3837; 3574 six-run mean) and pack #1 (6554). The lead is priced: part of the boss number is the accepted fan-spam sim tax (~4.1 of 5 knives land on a boss the sim lets you camp; real fights don't), and the crit is now EARNED (Death Mark window) + built, not free. Squishy, manaless, highest skill ceiling in the game. |
-| **A** | Archer · Hunt | Boss #2 (3129) on the new 4th-shot rhythm — power-neutral with the old free-crit era but the crit is a played cadence now. Pack-blind by design (3184, 14/95 adds). The single-target specialist. |
-| **A** | Assassin · Poison | Pack #2 (5619, 90/95 adds reaped) with a real boss floor (2708). The DoT tax is priced correctly and the bloom does its job in crowds. |
-| **A−** | Mage · Wind | Boss #4 (2957) AND top-half pack (4359) — the best generalist mage since the mp-2/cdr era let caster cadence scale. |
-| **A−** | Warlock · Curse | Boss #5 (2881), pack 4520 — the attrition engine holds both boards; wither ramps reward long fights. |
-| **A−** | Archer · Venom | Boss #3 (2958), pack 3996 — quietly excellent on both boards; toxin uptime is trivial (see §10: Serpent's Due). |
-| **B+** | Assassin · Blood | Boss 2838 at FULL HP — blood_amp stretches toward Shadow as the pilot bleeds; the most self-sufficient melee. Pack fine (4277). |
-| **B+** | Mage · Fire | Pack #3 (5231, 90/95) — the farm engine; boss 2261 is its tax. |
-| **B+** | Warlock · Pact | Pack #4 (5126) once Dark Pact is point-blank; boss mid (2392). The HP price is free on the bench — live Pact runs a notch riskier. |
-| **B** | Archer · Storm | Pack 4693 at 26 hits/s; boss 2186 even with the ric-back floor. The AoE archer. |
-| **B** | Warlock · Void | Crit-flavored burst (peak 5270 in packs) but mid on both boards (2363/4487). |
-| **B** | Warrior · Fury | Boss 2167 under the Cleave floor, pack 2832 — but plate survives what squishies dodge (earned DR off physres, Grit feeds on hits). The easy-to-pilot bruiser; endgame density is where it collects. |
-| **B−** | Warrior · Earth | Fury's numbers (2139/2681) with control flavor; same plate credit. |
-| **B−** | Mage · Ice | 2021/3075 — the control tax on a glass body; Killing Frost helps but the loop is the slowest in the class. |
-| **C+** | Paladin · Wrath | 1879/2831 — the paladin's damage pole, still trailing warrior. Magic-lean tank credit (wards spell), and the stance-swap shield talent adds real play. |
-| **C+** | Paladin · Holy | 1323 dps is the price of the game's strongest sustain stance; the safe/slow pole is deliberate — graded for players buying the floor. |
-| **C** | Paladin · Aegis / Warrior · Bulwark | 1269–1334 dps tank poles. Post guard-trim they finally pay gear-res opportunity cost like everyone else. Easiest pilots in the game; lowest ceilings. Fine as identities, weak as mains. |
+| **S** | Assassin · Shadow | Boss #1 (3628 this board; 3574 six-run mean) and pack #1 (6677). The lead is priced: part of the boss number is the accepted fan-spam sim tax (~4.1 of 5 knives land on a boss the sim lets you camp; real fights don't), and the crit is now EARNED (Death Mark window) + built, not free. Squishy, manaless, highest skill ceiling in the game — and Curse's mean now sits within ~6%: the first real challenger. |
+| **A** | Archer · Hunt | Boss 3026 on the 4th-shot rhythm — power-neutral with the old free-crit era but the crit is a played cadence now. Pack-blind by design (2899, 21/95 adds). The single-target specialist. |
+| **A** | Assassin · Poison | Pack 5175 (90/95 adds reaped) with a real boss floor (2621). The DoT tax is priced correctly and the bloom does its job in crowds. |
+| **A** | Warlock · Curse | PROMOTED 2026-07-24 on a mean: boss #2 (3350 six-run mean, tight 8.4% spread — within ~6% of the flagship) and pack #3 (5859). The attrition engine arrived; wither ramps reward long fights. |
+| **A−** | Mage · Wind | Boss ~2732 AND top-half pack (4094) — the best generalist mage since the mp-2/cdr era let caster cadence scale. |
+| **A−** | Archer · Venom | Boss #3 single (3242), pack 3511 — quietly excellent on both boards; toxin uptime is trivial (see §10: Serpent's Due). Single reads above Hunt now — mean it next board; A candidate. |
+| **A−** | Warlock · Pact | Pack #2 (6285, 90/95) once Dark Pact is point-blank; boss mean 2707. Promoted from B+ on the poison precedent (pack-top + real boss floor) — the live HP price still keeps it under Poison. |
+| **B+** | Assassin · Blood | Boss 2731 at FULL HP — blood_amp stretches toward Shadow as the pilot bleeds; the most self-sufficient melee. Pack fine (4735). |
+| **B+** | Mage · Fire | Pack #4 (5398, 90/95) — the farm engine; boss 2303 is its tax. |
+| **B** | Archer · Storm | Pack 4023 at 23 hits/s; boss 2138 even with the ric-back floor. The AoE archer. |
+| **B** | Warlock · Void | Crit-flavored burst (peak 11431 in packs) and top-half pack (5046); boss mid (2535). |
+| **B** | Warrior · Fury | Boss 2413 under the Cleave floor, pack 3166 — but plate survives what squishies dodge (earned DR off physres, Grit feeds on hits). The easy-to-pilot bruiser; endgame density is where it collects. |
+| **B−** | Warrior · Earth | Fury's shape (2076/2725) with control flavor; same plate credit. |
+| **B−** | Mage · Ice | 2262/3442 — the control tax on a glass body; Killing Frost helps but the loop is the slowest in the class. |
+| **C+** | Paladin · Wrath | 2085/3643 — the paladin's damage pole, still trailing warrior on bosses but a real pack presence now (90/95 consecration coverage). Magic-lean tank credit (wards spell), and the stance-swap shield talent adds real play. |
+| **C+** | Paladin · Holy | 1413 dps (six-run mean) is the price of the game's strongest sustain stance; the safe/slow pole is deliberate — graded for players buying the floor. |
+| **C** | Paladin · Aegis / Warrior · Bulwark | 1146–1297 dps tank poles (aegis' single read low — mean it next board). Post guard-trim they finally pay gear-res opportunity cost like everyone else. Easiest pilots in the game; lowest ceilings. Fine as identities, weak as mains. |
 
 No F tier: the dominated-talent rework and the caster-cdr era pulled every
 spec's floor into playable range.
 
-## 4. The boss board (single target, 180s, verified this date)
+## 4. The boss board (single target, 180s, verified 2026-07-24)
 
 | # | Spec | DPS | hits/s | crit | notes |
 |---|------|-----|--------|------|-------|
-| 1 | assassin/shadow | 3837 | 17.0 | 23% | mean 3574 over 6 runs; marked-window crits |
-| 2 | archer/hunt | 3129 | 5.7 | 36% | 4th-shot rhythm + built crit |
-| 3 | archer/venom | 2958 | 6.7 | 13% | toxin stack + Serpent's Due |
-| 4 | mage/wind | 2957 | 7.4 | 10% | echo flurry, cdr era |
-| 5 | warlock/curse | 2881 | 4.6 | 8% | wither ramp, peak 3641 |
-| 6 | assassin/blood | 2838 | 14.8 | 18% | full-HP floor; amp climbs as you bleed |
-| 7 | assassin/poison | 2708 | 7.5 | 10% | DoT tax priced |
-| 8 | warlock/pact | 2392 | 3.6 | 11% | no Dark Pact at boss range |
-| 9 | warlock/void | 2363 | 3.6 | 21% | crush windows |
-| 10 | mage/fire | 2261 | 4.9 | 5% | splash wasted on one body |
-| 11 | archer/storm | 2186 | 9.3 | 22% | ric-back single-target floor |
-| 12 | warrior/fury | 2167 | 8.6 | 14% | Cleave floor holds the cadence |
-| 13 | warrior/earth | 2139 | 7.6 | 8% | quake flavor |
-| 14 | mage/ice | 2021 | 3.4 | 11% | control tax |
-| 15 | paladin/wrath | 1879 | 7.4 | 11% | retribution stance |
-| 16 | paladin/aegis | 1334 | 4.1 | 6% | tank pole |
-| 17 | paladin/holy | 1323 | 5.4 | 5% | sustain pole |
-| 18 | warrior/bulwark | 1269 | 4.2 | 9% | tank pole, post guard-trim |
+| 1 | assassin/shadow | 3628 | 16.8 | 24% | standing mean 3574; marked-window crits |
+| 2 | warlock/curse | 3350* | 4.7 | 9% | *six-run mean (single 3343, spread 8.4%); wither ramp |
+| 3 | archer/venom | 3242 | 7.4 | 16% | toxin stack + Serpent's Due; mean next board |
+| 4 | archer/hunt | 3026 | 5.5 | 35% | 4th-shot rhythm + built crit; mp-starve noted |
+| 5 | mage/wind | 2732 | 7.4 | 18% | echo flurry, cdr era |
+| 6 | assassin/blood | 2731 | 14.3 | 16% | full-HP floor; amp climbs as you bleed |
+| 7 | warlock/pact | 2707* | 3.8 | 8% | *six-run mean (single 3033, spread 17.4%!) |
+| 8 | assassin/poison | 2621 | 7.8 | 12% | DoT tax priced |
+| 9 | warlock/void | 2535 | 3.6 | 26% | crush windows |
+| 10 | warrior/fury | 2413 | 9.0 | 10% | Cleave floor holds the cadence |
+| 11 | mage/fire | 2303 | 4.9 | 10% | splash wasted on one body |
+| 12 | mage/ice | 2262 | 3.3 | 12% | control tax |
+| 13 | archer/storm | 2138 | 9.8 | 16% | ric-back single-target floor; mp-starve noted |
+| 14 | paladin/wrath | 2085 | 6.0 | 13% | retribution stance |
+| 15 | warrior/earth | 2076 | 7.3 | 10% | quake flavor |
+| 16 | paladin/holy | 1413* | 4.3 | 4% | *six-run mean (single 1620); sustain pole |
+| 17 | warrior/bulwark | 1297 | 4.1 | 8% | tank pole, post guard-trim |
+| 18 | paladin/aegis | 1146 | 2.7 | 6% | tank pole; single read low — mean next board |
 
-## 5. The pack board (AoE — 3 pillars + add waves, verified this date)
+## 5. The pack board (AoE — 3 pillars + add waves, verified 2026-07-24)
 
 | # | Spec | DPS | adds | notes |
 |---|------|-----|------|-------|
-| 1 | assassin/shadow | 6554 | 29/95 | fans FOCUS pillars under sticky aim (§10) |
-| 2 | assassin/poison | 5619 | 90/95 | bloom reaps the waves |
-| 3 | mage/fire | 5231 | 90/95 | the farm engine |
-| 4 | warlock/pact | 5126 | 87/95 | point-blank drain |
-| 5 | archer/storm | 4693 | 88/95 | 26 hits/s fork storm |
-| 6 | warlock/curse | 4520 | 87/95 | hex detonation chains |
-| 7 | warlock/void | 4487 | 89/95 | rift peaks 5270 |
-| 8 | mage/wind | 4359 | 87/95 | flurry |
-| 9 | assassin/blood | 4277 | 19/95 | echo carries; pierce cap holds add reaping |
-| 10 | archer/venom | 3996 | 70/95 | mist wake |
-| 11 | archer/hunt | 3184 | 14/95 | pack-blind by design |
-| 12 | mage/ice | 3075 | 87/95 | control, not clear |
-| 13 | warrior/fury | 2832 | 36/95 | arcs reach the row, not the ring |
-| 14 | paladin/wrath | 2831 | 68/95 | consecration coverage |
-| 15 | warrior/earth | 2681 | 51/95 | quake |
-| 16 | paladin/holy | 2049 | 75/95 | mends off every body |
-| 17 | paladin/aegis | 1981 | 61/95 | |
-| 18 | warrior/bulwark | 1717 | 24/95 | |
+| 1 | assassin/shadow | 6677 | 29/95 | fans FOCUS pillars under sticky aim (§10) |
+| 2 | warlock/pact | 6285 | 90/95 | point-blank drain |
+| 3 | warlock/curse | 5859 | 90/95 | hex detonation chains |
+| 4 | mage/fire | 5398 | 90/95 | the farm engine |
+| 5 | assassin/poison | 5175 | 90/95 | bloom reaps the waves |
+| 6 | warlock/void | 5046 | 90/95 | rift peaks 11431 |
+| 7 | assassin/blood | 4735 | 27/95 | echo carries; pierce cap holds add reaping |
+| 8 | mage/wind | 4094 | 84/95 | flurry |
+| 9 | archer/storm | 4023 | 53/95 | 23 hits/s fork storm; mp-starve noted |
+| 10 | paladin/wrath | 3643 | 90/95 | consecration coverage |
+| 11 | archer/venom | 3511 | 75/95 | mist wake |
+| 12 | mage/ice | 3442 | 80/95 | control, not clear |
+| 13 | warrior/fury | 3166 | 43/95 | arcs reach the row, not the ring |
+| 14 | archer/hunt | 2899 | 21/95 | pack-blind by design |
+| 15 | warrior/earth | 2725 | 51/95 | quake |
+| 16 | paladin/holy | 2550 | 90/95 | mends off every body |
+| 17 | paladin/aegis | 2192 | 83/95 | |
+| 18 | warrior/bulwark | 1792 | 24/95 | |
 
 ## 6. Class deep dives
 
@@ -213,7 +216,20 @@ interesting number.
 
 ## 10. Standing watch items
 
-- **Shadow pack #1 at 6554** — up from ~5250: the sticky soft-target aiming
+- **2026-07-24 board refresh findings:** the warlock family's rise is REAL
+  (curse boss mean 3350 — within ~6% of shadow's 3574; if a future round
+  lifts it further, the S conversation starts) and the archer/mage staleness
+  flag is resolved (this board post-dates the mana-cost round). Singles left
+  UNMEANED that read >8% off their §3 citation: venom 3242 boss (A
+  candidate over hunt) and aegis 1146 (read low) — take 6-run means next
+  board before grading either. Variance lesson re-learned: pact's single
+  read +27% while its mean moved +13% (17.4% spread) — never grade a mover
+  off one run.
+- **Paladin mp-starve across all three specs** (a1 starves ~2s in, ults 0 all
+  board) — long-standing bench profile, but wrath's pack showing (3643,
+  90/95) says the kit works around it; if paladin mains report dead buttons
+  in real fights, Conviction's 30 mp is the first knob.
+- **Shadow pack #1 at 6677** — up from ~5250: the sticky soft-target aiming
   change makes fans FOCUS the committed target, so more knives pool into
   pillars (hits/s 21→29) while add-reaping collapsed (81→29 of 95). Real
   current-game behavior, not a bench artifact — but it widened shadow's pack
