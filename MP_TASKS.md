@@ -700,3 +700,85 @@ Cinderhide enrage banners LEFT host-local — see review.
   hit-flash tween reverts it to `base_mod`), so it's low-value to sync. `play_action("enrage")` already
   mirrors the enrage ANIMATION for most bosses. Remaining non-Ordo/Vargoth/Cinderhide enrage BANNERS
   follow the same one-line swap (`spawn_text`→`spawn_text_all`) if the owner wants full parity.
+
+
+## Wave 8 — the party layer (owner spec 2026-07-24: "the standard coop interface for making/disbanding/communicating/ready check/changing host is missing")
+
+The owner's shape, from live MMO reference (screenshots 2026-07-24): you join a
+HOST'S PARTY, not a chapter launch; the party is the standing social unit;
+entering content is a PROPOSAL every member sees and confirms (ready check —
+name the content, click Ready; one decline cancels with "Player X didn't
+accept" fanned to all; host may kick or re-propose); party CHAT rides
+underneath, channel-tagged so guild/server/world/private extend later.
+Existing seams this builds on: lobby roster + lobby_changed (MP-08),
+reliable per-head RPC fans (MP-11 award / MP-13 flag-sync idioms), the
+advance/brief flow (MP-14), NG+ tier in the brief (2026-07-24, NET_VERSION
+0.1.3). EVERY task here that adds an RPC bumps NET_VERSION once at the
+wave's integration gate (not per-task) and lands a net_test stage. The net
+suite only reads true on a quiet machine + stable tree — see
+[[godot-instance-contention]] memory before believing a red stage.
+
+### MP-19: Party chat (v1: session text) — OWNER: unclaimed — status: PENDING
+Files: `net/net_session.gd`, `hud.gd`, `menus.gd` (hotkey routing), mobile deltas (chat button)
+Reliable `_rpc_chat{from_name, channel, text}` fan (host relays guest→all, the
+flag-sync idiom); HUD chat panel: collapsed 4-line log above the party frames,
+ENTER opens the input line — input capture MUST ride the overlay-state gate
+(`hud.dialogue_active`-style flag the touch HUD + intents poll already
+respect; the co-op pause trap in CLAUDE.md is the checklist). `channel` field
+ships from day one ("party" only in v1) so guild/world/private are data, not
+a protocol break. Length cap + a 3/s per-peer throttle host-side. Mobile: a
+chat toggle on the touch HUD, OS virtual keyboard via LineEdit focus
+(mobile/README.md delta list gains one line). Net stage: guest line reaches
+host + other guest, throttle drops the 4th-in-a-second, solo allocates nothing.
+
+### MP-20: Content proposal + ready check — OWNER: unclaimed — status: PENDING
+Files: `ui/lobby.gd`, `net/net_session.gd`, `game_flow.gd` (advance gate), `hud.gd` (in-session card)
+Replace the host's bare "Start the chapter" with propose→confirm→launch:
+`_rpc_propose{chapter, tier, continue, seq}` fans a card to every member —
+chapter name + sub, NG+ tier in its color with the +levels line (this IS the
+deferred joiner-side tier visibility), Ready / Decline buttons + a 20 s
+timer. Host collects `_rpc_ready{seq, ok}`; all-ready → the existing
+`_start_session` path; any decline or timeout → cancel + fan
+"<name> didn't accept" (party-chat line if MP-19 landed, spawn_text bark
+otherwise) and the lobby stays open. SAME machinery mid-session for the
+next-chapter advance (host's ENTER currently just advances — gate it on a
+ready check when online; solo untouched). Endgame entry online stays out of
+scope (Crucible/Depths are solo modes today — separate owner call). Net
+stage: propose renders on the guest, decline cancels + names the decliner,
+full-accept lands everyone in the chapter at the proposed tier.
+
+### MP-21: Kick + leave etiquette — OWNER: unclaimed — status: PENDING
+Files: `ui/lobby.gd`, `net/net_manager.gd`, `net/net_session.gd`
+Lobby-stage kick: a ✕ beside each roster row (host only) → targeted
+disconnect with a readable reason ("The host removed you from the party"),
+roster refresh fans (lobby_changed already covers it), kicked player lands on
+the lobby menu with the reason — the `_reject`/`_ended` idiom. Re-join stays
+possible unless the host closes the lobby (no ban list in v1). In-session
+kick: reuse the targeted `_rpc_session_over` path (guest autosaves home +
+clean leave — MP-16 hardening already proves the departure); host confirm
+dialog so a mid-fight misclick can't strand a friend. Net stage: kick from
+lobby (reason lands, roster shrinks, re-join works), kick in-session (guest
+autosaved + clean, host world unaffected).
+
+### MP-22: Party persists between content — OWNER: unclaimed — status: PENDING
+Files: `ui/lobby.gd`, `net/net_session.gd`, `game_flow.gd`
+Today exit-to-title DISBANDS (host_end_session). New: "Return to the lobby
+together" on the victory card (host choice, ready-check-free) — session stays
+up, `lobby_open` re-opens, every machine lands back on its lobby stage with
+the roster intact; the host proposes the next content from there (MP-20).
+This makes the party the standing unit and content the activity — the owner's
+core framing. Guests' characters keep riding write_character_home on every
+transition (already true). Net stage: victory → return-to-lobby → roster
+intact → propose ch2 → everyone lands in ch2 without re-entering codes.
+
+### MP-23: Host transfer — status: PARKED (needs an owner design session, not a wave slot)
+The one item in the spec that is NOT an increment: MULTIPLAYER.md's model is
+host-OWNS-the-world (host quit ends the session — a §2.2 architectural
+decision, "no host migration" a written non-goal at :44). Transferring the
+host means transferring the WORLD (flags, rooms, seed, enemy authority,
+save-ownership semantics: whose file does the world write to afterward?) —
+a phase, not a task. Options when the owner wants it: (a) session-scoped
+migration with the world snapshot re-homed (guest promotes, save stays the
+ORIGINAL host's — weird save custody), (b) defer to the server phase where
+the world outlives every client (SOCIAL_LAYER.md's "new project phase" —
+the clean answer). Recommendation: (b); revisit when the server phase prices.
