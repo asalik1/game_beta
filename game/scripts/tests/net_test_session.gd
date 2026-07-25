@@ -644,6 +644,29 @@ func _run_guest3() -> void:
 # hurt it back, and every screen agrees. Same director/probe shape as
 # stage 3; the guest-side probes now ACT (teleport + real key intents)
 # before they poll.
+#
+# FLAKE, closed 2026-07-25 — (d)'s "knives never flew here as visual
+# copies" had TWO faces, and the overnight full-suite miss could be either:
+#   1. TIGHT WINDOWS (the stage-12 pattern — see that stage's block
+#      comment for the full finding): the 10 s _proj_monitor opened BEFORE
+#      the watch RPC and could expire mid-serve on a loaded box with the
+#      knives still to come — the reply then arrived ok and the stage
+#      failed anyway. Widened: the monitor outlives both snipe attempts
+#      (45 s), the post-reply check is a bounded wait, the snipe probe
+#      arms through _watch_try with ONE re-arm, and the serve fetches
+#      mirrors via _mirror_of (freed-proof). New wrinkle over stage 12's
+#      strike: snipe asserts an XP DELTA, so the re-arm carries "rearm"
+#      and the guest keeps its first baseline — attempt 1 may have killed
+#      and been paid between the two arms.
+#   2. GEOMETRY (caught by proof run 2 of this fix's own series, QUIET
+#      field — kill + XP landed, zero copies in 45 s, so no window can
+#      close it): w2 hunts the shell and closes the 90 px teleport gap
+#      before the fan's windup ends; knives fired from inside its shape
+#      still kill, but their host-side copies spawn inside the REAL wolf
+#      and queue_free within ONE physics step — invisible to a 50 ms
+#      poll. Fixed: w2 is PLANTED (speed 0) at sliver time, and
+#      _proj_monitor is SIGNAL-armed (child_entered_tree) so even a
+#      one-step copy is caught.
 
 func _run_host4() -> void:
 	if not await _host_boot():
@@ -766,20 +789,50 @@ func _run_host4() -> void:
 	# it — physics-layer mirror hits, death event, kill XP to the guest.
 	# The host must also have seen the knives' visual copies fly here.
 	var w2: Enemy = wolves[2]
+	# Planted (the frost-aura idiom): w2 aggros the shell stepping beside it
+	# and at 150 px/s closes the 90 px teleport gap before the fan's windup
+	# ends. Knives fired from INSIDE its shape still kill (the physics hit
+	# is real) — but host-side their visual copies then spawn inside the
+	# REAL wolf standing here and queue_free within ONE physics step
+	# (projectile.gd's net_visual hit branch), faster than any sane poll:
+	# proof run 2 (2026-07-25, QUIET field) landed kill + XP with zero
+	# copies seen across a 45 s window. The knives must have air to fly.
+	w2.speed = 0.0
 	w2.take_damage(w2.hp - 1.0, Vector2.ZERO, false, true)
 	var dead_id: int = w2.net_id
 	_saw_visual_proj = false
-	_proj_monitor(10.0)
-	r = await _watch(gid, "snipe", {"id": dead_id,
-		"x": w2.global_position.x - 90.0, "y": w2.global_position.y})
-	if r.is_empty():
-		return
-	if not bool(r.get("ok", false)):
+	# 45 s, not 10 (widened 2026-07-25): the window opens BEFORE the watch
+	# RPC and must outlive the serve's whole honest path — teleport + up to
+	# 4 fans + its 8 s poll + ENet transit, TWICE on the re-arm path. The
+	# 10 s window expired mid-serve on a loaded box with the knives still
+	# to come; the reply then arrived ok and the stage failed on "never
+	# flew here" (green solo — the stage-4 face of the stage-12 flake).
+	_proj_monitor(45.0)
+	# _watch_try + ONE re-arm (the stage-12 pattern). The re-arm rebuilds
+	# the teleport spot only while the wolf still stands (it wanders; a
+	# freed one keeps the old spot), and carries "rearm" so the guest KEEPS
+	# its first XP baseline — attempt 1 may have killed and been paid after
+	# its reply window closed, and a re-captured baseline would demand a
+	# second payout that never comes.
+	var snipe_at: Vector2 = w2.global_position + Vector2(-90.0, 0.0)
+	r = await _watch_try(gid, "snipe", {"id": dead_id,
+		"x": snipe_at.x, "y": snipe_at.y}, 20.0)
+	if r.is_empty() or not bool(r.get("ok", false)):
+		print("[net_session] host4: (d) snipe probe returned %s — re-arming once"
+			% ("EMPTY (reply timeout)" if r.is_empty() else str(r)))
+		if is_instance_valid(w2) and not w2.dying:
+			snipe_at = w2.global_position + Vector2(-90.0, 0.0)
+		r = await _watch_try(gid, "snipe", {"id": dead_id,
+			"x": snipe_at.x, "y": snipe_at.y, "rearm": true}, 20.0)
+	if r.is_empty() or not bool(r.get("ok", false)):
 		return _fail("guest snipe failed (kill or XP missing): %s" % str(r))
 	if sess.net_enemies.has(dead_id):
 		return _fail("host registry kept the sniped wolf")
-	if not _saw_visual_proj:
-		return _fail("the guest's knives never flew here as visual copies")
+	# Bounded, not instant: the copies' spawn events can trail the reply by
+	# a beat, and the monitor above is still polling for them.
+	if not await _wait_for(func() -> bool: return _saw_visual_proj, 5.0,
+			"the guest's knife visual copies flying here"):
+		return
 	print("[net_session] host4: guest projectile kill — mirror freed, +%d XP guest-side, copies seen"
 		% int(r.get("xp", -1)))
 
@@ -935,6 +988,17 @@ func _run_guest4() -> void:
 # Loot instancing: the host's kills pay EVERY head its own personal
 # stream. Director/probe shape as stages 3-4; wallet/bag deltas are
 # asserted on the machine that OWNS them.
+#
+# FLAKE, widened 2026-07-25 (the stage-12 pattern is the full finding —
+# see that stage's block comment): an overnight full-suite run tied (a)'s
+# collect window on a loaded box, green solo right after. The serve's
+# fixed 8 s poll is the guest's whole stand-on-pile magnet window ("the
+# guest's wallet never grew from its own pile"). collect and openchest
+# (the same trigger+open+payout window shape) now arm through _watch_try
+# with ONE re-arm. New wrinkle over stage 12's strike: both assert
+# wallet/bag DELTAS, so the re-arm carries "rearm" and the guest keeps
+# its first baselines — the first window may already have banked part
+# (or all) of the payout, and re-capturing would hide it from the assert.
 
 func _run_host5() -> void:
 	if not await _host_boot():
@@ -1001,11 +1065,21 @@ func _run_host5() -> void:
 	if host_coins.size() != clampi(int(float(pay2) / 3.0), 1, 5) or host_sum != _pile_total(pay2):
 		return _fail("host-side pile wrong (%d coins, %d gold — expected %d gold): guests' piles must not spawn here"
 			% [host_coins.size(), host_sum, _pile_total(pay2)])
-	# The guest collects ITS pile into ITS wallet...
-	r = await _watch(gid, "collect", {"x": kp.x, "y": kp.y, "min": guest_sum})
-	if r.is_empty():
-		return
-	if not bool(r.get("ok", false)):
+	# The guest collects ITS pile into ITS wallet... _watch_try + ONE
+	# re-arm (the stage-12 pattern, widened here 2026-07-25): the serve's
+	# fixed 8 s poll is the guest's whole stand-on-pile magnet window, and
+	# a loaded box tied it ("wallet never grew from its own pile", green
+	# solo). The re-arm buys a second window; "rearm" makes the guest KEEP
+	# its first gold baseline — the magnet may have banked part (or all)
+	# of the pile between the two arms, and a re-captured baseline would
+	# hide those coins from the assert.
+	r = await _watch_try(gid, "collect", {"x": kp.x, "y": kp.y, "min": guest_sum}, 20.0)
+	if r.is_empty() or not bool(r.get("ok", false)):
+		print("[net_session] host5: (a) collect probe returned %s — re-arming once"
+			% ("EMPTY (reply timeout)" if r.is_empty() else str(r)))
+		r = await _watch_try(gid, "collect", {"x": kp.x, "y": kp.y,
+			"min": guest_sum, "rearm": true}, 20.0)
+	if r.is_empty() or not bool(r.get("ok", false)):
 		return _fail("the guest's wallet never grew from its own pile: %s" % str(r))
 	# ...and while its shell stood on OUR coins, the ownership gate held.
 	if _coins_near(kp).size() != host_coins.size():
@@ -1036,10 +1110,17 @@ func _run_host5() -> void:
 		return _fail("the guest never got its own boss chest: %s" % str(r))
 	# The guest opens ITS copy — ours must not so much as creak while the
 	# shell stands on it (the trigger gate, applied without chest.gd).
-	r = await _watch(gid, "openchest", {"x": chest_at.x, "y": chest_at.y})
-	if r.is_empty():
-		return
-	if not bool(r.get("ok", false)):
+	# _watch_try + ONE re-arm, same tight-window shape as collect above:
+	# the serve's 8 s poll covers trigger + open + payout, and "rearm"
+	# keeps the first gold/bag baselines (attempt 1 may already have
+	# opened and been paid, with only the reply lost to the window).
+	r = await _watch_try(gid, "openchest", {"x": chest_at.x, "y": chest_at.y}, 20.0)
+	if r.is_empty() or not bool(r.get("ok", false)):
+		print("[net_session] host5: (b) openchest probe returned %s — re-arming once"
+			% ("EMPTY (reply timeout)" if r.is_empty() else str(r)))
+		r = await _watch_try(gid, "openchest", {"x": chest_at.x, "y": chest_at.y,
+			"rearm": true}, 20.0)
+	if r.is_empty() or not bool(r.get("ok", false)):
 		return _fail("the guest's own chest never paid it: %s" % str(r))
 	await get_tree().create_timer(1.0).timeout
 	if not is_instance_valid(hchest) or hchest.opened:
@@ -2057,7 +2138,19 @@ func _pummel_shell(shell: Player, wolf: Enemy) -> void:
 
 ## HOST: watch (bounded) for any of the guest's projectiles arriving here
 ## as friendly visual copies. Fire-and-forget beside the snipe probe.
+## SIGNAL-armed, not poll-only (2026-07-25): a copy that spawns touching the
+## real enemy queue_frees within ONE physics step (projectile.gd's net_visual
+## hit branch) — a 50 ms poll can miss a whole fan. child_entered_tree fires
+## at the copy's add_child (projectiles are children of game; `friendly` is
+## already set there, `net_visual` is not yet — but during the (d) window the
+## guest's copies are the ONLY friendly spawns here: the host player is idle
+## and (e)'s bolt is hostile). The poll stays as belt and braces.
 func _proj_monitor(timeout: float) -> void:
+	var catcher: Callable = func(node: Node) -> void:
+		var cp := node as Projectile
+		if cp != null and cp.friendly:
+			_saw_visual_proj = true
+	game.child_entered_tree.connect(catcher)
 	var deadline: int = Time.get_ticks_msec() + int(timeout * 1000.0)
 	while Time.get_ticks_msec() < deadline and not _saw_visual_proj:
 		for node in get_tree().get_nodes_in_group("projectiles"):
@@ -2066,6 +2159,7 @@ func _proj_monitor(timeout: float) -> void:
 				_saw_visual_proj = true
 				break
 		await get_tree().create_timer(0.05).timeout
+	game.child_entered_tree.disconnect(catcher)
 
 
 ## HOST: ask the guest to WATCH for a condition (it polls locally,
@@ -2083,6 +2177,21 @@ func _watch(gid: int, what: String, args: Dictionary, act: Callable = Callable()
 	return _watch_replies[what]
 
 
+## HOST: like _watch, but a missed reply comes back as {} for the CALLER
+## to handle — no _fail, no stage abort. For probes wrapped in a re-arm
+## retry (stage 12's strike): _watch's _wait_for kills the whole stage on
+## the first silent serve, so a retrying caller can never see the miss.
+func _watch_try(gid: int, what: String, args: Dictionary, timeout: float) -> Dictionary:
+	_watch_replies.erase(what)
+	_rpc_watch.rpc_id(gid, what, args)
+	var deadline: int = Time.get_ticks_msec() + int(timeout * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		if _watch_replies.has(what):
+			return _watch_replies[what]
+		await get_tree().create_timer(0.1).timeout
+	return {}
+
+
 ## GUEST: act if the probe calls for it (stage 4), then poll until it
 ## reads ok or ~8 s pass, and report.
 func _serve_watch(what: String, args: Dictionary) -> void:
@@ -2098,6 +2207,20 @@ func _serve_watch(what: String, args: Dictionary) -> void:
 	_rpc_watch_reply.rpc_id(1, what, out)
 
 
+## GUEST: fetch a mirror by net id, FREED-PROOF. A guest-local death flow
+## (a wipe replays it) frees mirrors WITHOUT erasing net_enemies — the
+## registry then holds stale FREED instances until the post-recovery resync
+## rebuilds them (net_session._rpc_spawn_enemy's stale-entry branch). A
+## typed `var e: Enemy = dict.get(id)` on one is a SCRIPT ERROR that kills
+## the running coroutine — in the serve loop that means the watch reply
+## NEVER sends and the director reads pure silence (the stage-12 flake).
+func _mirror_of(sess: Node, id: int) -> Enemy:
+	var v: Variant = sess.net_enemies.get(id)
+	if v == null or not is_instance_valid(v):
+		return null
+	return v as Enemy
+
+
 ## GUEST, stage 4: the ACT half of the acting probes — teleport beside
 ## the mirror (the sticky soft target then commits aim/orientation to it,
 ## proving mirrors are valid targets) and drive the REAL ability through
@@ -2107,16 +2230,27 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 		"strike":
 			game.player.global_position = Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
 			await _frames(6)  # a beat: soft target acquires the mirror
+			# Don't tap before the mirror EXISTS (bounded): a not-yet-streamed
+			# mirror read as "gone" below and spent the whole tap budget on
+			# air — a truly absent one still reports "no mirror" via the poll.
+			var mirror_wait: int = Time.get_ticks_msec() + 3000
+			while _mirror_of(sess, int(args.get("id", 0))) == null and Time.get_ticks_msec() < mirror_wait:
+				await get_tree().create_timer(0.1).timeout
 			for i in 5:
 				_press(KEY_J, true)   # a1 — the assassin stab (melee arc)
 				await get_tree().create_timer(0.15).timeout
 				_press(KEY_J, false)
 				await get_tree().create_timer(0.45).timeout
-				var e: Enemy = sess.net_enemies.get(int(args.get("id", 0)))
-				if e == null or not is_instance_valid(e) or e.hp < e.max_hp:
+				var e: Enemy = _mirror_of(sess, int(args.get("id", 0)))
+				if e == null or e.hp < e.max_hp:
 					break  # landed (or the mirror is gone) — stop tapping
 		"snipe":
-			_xp_before = game.player.level * 1000000 + game.player.xp
+			# A re-arm KEEPS the first baseline (the director sends
+			# "rearm"): attempt 1 may have killed and collected the XP
+			# after its reply window closed — re-capturing here would
+			# demand a second payout that never comes.
+			if not bool(args.get("rearm", false)):
+				_xp_before = game.player.level * 1000000 + game.player.xp
 			game.player.global_position = Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
 			await _frames(6)
 			for i in 4:
@@ -2124,8 +2258,8 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 				await get_tree().create_timer(0.15).timeout
 				_press(KEY_L, false)
 				await get_tree().create_timer(0.6).timeout
-				var e: Enemy = sess.net_enemies.get(int(args.get("id", 0)))
-				if e == null or not is_instance_valid(e) or e.dying:
+				var e: Enemy = _mirror_of(sess, int(args.get("id", 0)))
+				if e == null or e.dying:
 					break  # the kill event landed — stop throwing
 		"burnit":
 			# The rider probe drives hit_enemy directly with an ability-
@@ -2139,13 +2273,18 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 				await get_tree().create_timer(0.1).timeout
 		# ---- stage 5 (MP-11) ----
 		"collect":
-			# Stand on OUR OWN pile; the magnet does the rest.
-			_gold_before = game.player.gold
+			# Stand on OUR OWN pile; the magnet does the rest. A re-arm
+			# KEEPS the baseline — the first window may already have
+			# banked coins, and re-capturing would hide them.
+			if not bool(args.get("rearm", false)):
+				_gold_before = game.player.gold
 			game.player.global_position = Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
 		"openchest":
 			# Stand on OUR OWN chest copy; its (gated) trigger opens it.
-			_gold_before = game.player.gold
-			_bp_before = game.player.backpack.size()
+			# Same re-arm rule: attempt 1 may have opened + been paid.
+			if not bool(args.get("rearm", false)):
+				_gold_before = game.player.gold
+				_bp_before = game.player.backpack.size()
 			var c: Chest = _chest_near(Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0))))
 			if c != null:
 				game.player.global_position = c.global_position
@@ -2294,8 +2433,10 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 		# ---- stage 4 (MP-10) ----
 		"strike":
 			# The optimistic local hit landed on the mirror (juice + funnel).
-			var e: Enemy = sess.net_enemies.get(int(args.get("id", 0)))
-			if e == null or not is_instance_valid(e):
+			# _mirror_of, not a typed .get: a freed stale entry (guest death
+			# flow) must degrade to "no mirror", never kill the serve loop.
+			var e: Enemy = _mirror_of(sess, int(args.get("id", 0)))
+			if e == null:
 				return {"ok": false, "why": "no mirror"}
 			return {"ok": e.hp < e.max_hp - 0.01, "frac": e.hp / maxf(e.max_hp, 0.001)}
 		"converge":
@@ -2316,11 +2457,12 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 				"hp": game.player.hp, "max": game.player.max_hp}
 		"snipe":
 			# Kill confirmed (mirror freed by the death event) AND the kill
-			# XP reached this guest's real progression (§5.5).
+			# XP reached this guest's real progression (§5.5). _mirror_of,
+			# not a typed .get: a freed stale entry must degrade to "gone",
+			# never kill the serve loop (the stage-12 lesson).
 			var id: int = int(args.get("id", 0))
-			var e: Enemy = sess.net_enemies.get(id)
-			var gone: bool = (not sess.net_enemies.has(id)) or e == null \
-				or not is_instance_valid(e) or e.dying
+			var e: Enemy = _mirror_of(sess, id)
+			var gone: bool = (not sess.net_enemies.has(id)) or e == null or e.dying
 			var xp_now: int = game.player.level * 1000000 + game.player.xp
 			return {"ok": gone and xp_now > _xp_before, "gone": gone,
 				"xp": xp_now - _xp_before}
@@ -2560,8 +2702,8 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 			var zi: int = int(args.get("zone", -1))
 			var n := 0
 			for id in sess.net_enemies:
-				var e: Enemy = sess.net_enemies[id]
-				if e != null and is_instance_valid(e) and not e.dying and e.zone_idx == zi:
+				var e: Enemy = _mirror_of(sess, int(id))  # freed-proof fetch
+				if e != null and not e.dying and e.zone_idx == zi:
 					n += 1
 			return {"ok": n >= int(args.get("min", 1)), "mirrors": n}
 		"seespeer":
@@ -2733,10 +2875,14 @@ func _spawn_peer(role: String) -> int:
 
 
 ## Wait for the most recently spawned peer to exit with code 0 (its own
-## in-process assertions all passed).
-func _wait_exit(label: String) -> bool:
+## in-process assertions all passed). EXIT_TIMEOUT is sized for a peer
+## whose WORK IS DONE (guests exit within a beat of the finish signal) —
+## a caller whose child still has a whole lifecycle to run passes its own
+## budget (stage 13's server1: full boot + world build + kill + autosave
+## + quit; 15 s tied that on a contended box, 2026-07-25 run 2-of-5).
+func _wait_exit(label: String, timeout: float = EXIT_TIMEOUT) -> bool:
 	var pid: int = _pids[-1]
-	if not await _wait_for(func() -> bool: return not OS.is_process_running(pid), EXIT_TIMEOUT, "%s process exit" % label):
+	if not await _wait_for(func() -> bool: return not OS.is_process_running(pid), timeout, "%s process exit" % label):
 		return false
 	var code := OS.get_process_exit_code(pid)
 	if code != 0:
@@ -3301,6 +3447,24 @@ func _run_guest11() -> void:
 # the XP fan work without a host character, the lobby never closes to a second
 # joiner, and — the whole point vs a listen server — the world SURVIVES every
 # client leaving.
+#
+# FLAKE, closed 2026-07-25 (the MP-17 pattern — "guest A never saw its strike
+# land on the server enemy" with an EMPTY reply, ~1-in-3 full-suite runs, green
+# solo): the (c) room pack was never DEFANGED — stage 4 pulls its cast's fangs
+# ("dmg 0 — the guest stands in bite range during probes") but here only the
+# injected (d) wolf got dmg 0, while guest A stood inside a live fresh-seed pack
+# from gotoroom through the strike probe (~10-20 s, longer on a loaded box —
+# hence worse late in the suite). A pack that downs A collapses the party of 1
+# into the WIPE: A's death flow frees its mirrors WITHOUT erasing net_enemies
+# (net_session._rpc_spawn_enemy's stale-entry branch documents this), and the
+# serve coroutine's next typed fetch (`var e: Enemy = net_enemies.get(id)`) on
+# a freed instance is a SCRIPT ERROR that kills the coroutine — the reply never
+# sends, and the director reads 30 s of silence (the empty dict). Fix, harness
+# only: (1) defang the whole standing cast the moment the room arms; (2) the
+# strike serve fetches mirrors via _mirror_of (freed-proof) and waits for the
+# mirror to exist before spending its tap budget; (3) the director arms the
+# strike probe through _watch_try with ONE re-arm — a fresh _rpc_watch restarts
+# the guest's serve loop even if the first one died mid-flow.
 
 ## Boot a DEDICATED world authority as a child of the director (the same
 ## instantiate-and-add_child shape as _host_boot, minus the roster flow —
@@ -3406,6 +3570,15 @@ func _run_host12() -> void:
 		return
 	if not game.active_rooms.has(zi):
 		return _fail("server sim gate never picked up guest-occupied room %d" % zi)
+	# Stage-4 discipline, applied late (the 2026-07-25 flake fix): guest A
+	# STANDS IN BITE RANGE of this fresh-seed pack through the (d) probes —
+	# a pack that downs it wipes the party of 1 and the death flow wedges
+	# the serve loop (see the stage block comment). The pack already proved
+	# the build; its fangs are not under test. The (d) wolf spawns dmg 0.
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var pe := node as Enemy
+		if pe != null and is_instance_valid(pe) and not pe.dying:
+			pe.dmg = 0.0
 	r = await _watch(ga, "seeszone", {"zone": zi, "min": 1})
 	if r.is_empty() or not bool(r.get("ok", false)):
 		return _fail("guest A saw no pack mirrors in the server-built room: %s" % str(r))
@@ -3421,8 +3594,17 @@ func _run_host12() -> void:
 		return
 	sess.last_hit = {}
 	var hp0: float = wolf.hp
-	r = await _watch(ga, "strike", {"id": wolf.net_id,
-		"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y})
+	# _watch_try + ONE re-arm (MP-17 style): a fresh _rpc_watch restarts the
+	# guest's serve loop even if the first one died mid-flow, and 20 s per
+	# attempt clears the serve's worst honest path (~14 s: 3 s mirror wait +
+	# 3 s taps + 8 s poll). Args rebuilt per attempt — the wolf wanders.
+	r = await _watch_try(ga, "strike", {"id": wolf.net_id,
+		"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y}, 20.0)
+	if r.is_empty() or not bool(r.get("ok", false)):
+		print("[net_session] host12: (d) strike probe returned %s — re-arming once"
+			% ("EMPTY (reply timeout)" if r.is_empty() else str(r)))
+		r = await _watch_try(ga, "strike", {"id": wolf.net_id,
+			"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y}, 20.0)
 	if r.is_empty() or not bool(r.get("ok", false)):
 		return _fail("guest A never saw its strike land on the server enemy: %s" % str(r))
 	if not await _wait_for(func() -> bool: return wolf.hp < hp0 - 0.01, 8.0, "server wolf hp drop"):
@@ -3535,9 +3717,12 @@ func _run_server1_13() -> void:
 
 func _run_host13() -> void:
 	# PHASE 1: run the throwaway server that saves, wait for it to exit clean.
+	# 60 s, not EXIT_TIMEOUT: this wait covers server1's ENTIRE run (boot,
+	# world build, room clear, autosave, orderly quit) — 15 s lost to a
+	# loaded box mid-suite (2026-07-25, the stage-12 flake-hunt series).
 	if _spawn_peer("server1") < 0:
 		return _fail("could not spawn the phase-1 server process")
-	if not await _wait_exit("server1"):
+	if not await _wait_exit("server1", 60.0):
 		return
 	var saved := SaveGame.read_server_world()
 	if saved.is_empty():
