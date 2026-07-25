@@ -3495,17 +3495,29 @@ func _test_asset_seams() -> void:
 			return _fail("%s should animate as one structure, not %d nested parts" %
 				[structure_name, animated_parts])
 		landmark.queue_free()
-	# City-edge arcades are a skyline layer, not another inaccessible building:
-	# they must render without introducing a physics shape or service hotspot.
+	# City-edge arcades are a skyline layer with ONE shallow base strip
+	# (owner report 2026-07-25: with no body at all, the hero strolled INTO
+	# the silhouette — the room walls never actually owned that edge). The
+	# strip must stay a base LINE, never a building footprint, and no
+	# service hotspot may ride along.
 	var arcade := game._add_backdrop(
 		"capital_city_arcade", Vector2(-4900, -4900), 900.0)
+	var arcade_bodies := 0
+	var arcade_visuals := 0
 	for child in arcade.get_children():
-		if child is CollisionShape2D:
-			arcade.queue_free()
-			return _fail("capital city arcade backdrop introduced a collider")
-	if arcade.get_child_count() != 1:
+		if child is StaticBody2D:
+			arcade_bodies += 1
+			for cs in child.get_children():
+				var rs := (cs as CollisionShape2D).shape as RectangleShape2D
+				if rs == null or rs.size.y > 40.0:
+					arcade.queue_free()
+					return _fail("capital city arcade base strip must be a shallow rect")
+		else:
+			arcade_visuals += 1
+	if arcade_bodies != 1 or arcade_visuals != 1:
 		arcade.queue_free()
-		return _fail("capital city arcade should be one coherent visual layer")
+		return _fail("capital city arcade should be one visual layer + one base strip (%d/%d)" %
+			[arcade_visuals, arcade_bodies])
 	arcade.queue_free()
 	# The capital fountain and wellspring ship full-structure animation strips:
 	# water moves within the authored basins/jets without a rectangular overlay.
@@ -5038,6 +5050,14 @@ func _test_capital() -> void:
 				hub_actions[action] = true
 			if action == "vault" and String(npc_def.get("sprite", "")) == "capital_vault_chest":
 				premium_vault = true
+			# Gossip hubs place actions through convo CHOICES (owner 2026-07-25:
+			# Nix's "Find a company" IS the guild access point).
+			if npc_def.has("convo"):
+				var cv: Dictionary = Story.ALL_CONVOS.get(String(npc_def["convo"]), {})
+				for nid in cv.get("nodes", {}):
+					for chc in (cv["nodes"][nid] as Dictionary).get("choices", []):
+						if (chc as Dictionary).has("hub_action"):
+							hub_actions[String(chc["hub_action"])] = true
 	if not has_grand_room or not has_intimate_room:
 		return _fail("capital: room hierarchy needs both a grand hub and an intimate service room")
 	if landmark_use_count < 16 or landmark_action_count < 14:
@@ -5130,8 +5150,9 @@ func _test_capital() -> void:
 		if game.favor_points("petra") != 10:
 			return _fail("capital: steady shard should pay 1.25x favor")
 	p_cap.resonance = keep_res
-	# The Lapidary end to end: greet -> offer hands a training gem -> the
-	# seat-a-stone deed at her benches -> turn-in pays gold + favor.
+	# The Lapidary end to end: greet -> the GOSSIP HUB (owner 2026-07-25:
+	# one press, splash dialogue, options) -> the offer hands a training
+	# gem -> the seat-a-stone deed at her benches -> turn-in pays gold+favor.
 	p_cap.npc_favor.clear()
 	var keep_gold: int = p_cap.gold
 	var gems_before: int = p_cap.gem_bag.size()
@@ -5139,6 +5160,10 @@ func _test_capital() -> void:
 	await _frames(2)
 	if game.hud.dialogue_active:
 		await _skip_dialogue()   # her greet line
+	await _frames(3)
+	if not game.hud.choices_active:
+		return _fail("capital: the lapidary gossip hub did not open its options")
+	game.hud._choose(1)          # options: bench / "Any work for a newcomer?" / leave
 	await _frames(2)
 	if game.hud.dialogue_active:
 		await _skip_dialogue()   # the quest offer
@@ -5159,6 +5184,10 @@ func _test_capital() -> void:
 	if not game.get_flag("cap_q_gem_done", false):
 		return _fail("capital: seating a stone did not settle the lapidary deed")
 	game._hub_action("lapidary")
+	await _frames(3)
+	if not game.hud.choices_active:
+		return _fail("capital: the lapidary hub did not reopen for the turn-in")
+	game.hud._choose(1)          # options: bench / "Turn in — A Stone Well Set" / leave
 	await _frames(2)
 	if game.hud.dialogue_active:
 		await _skip_dialogue()   # the turn-in line

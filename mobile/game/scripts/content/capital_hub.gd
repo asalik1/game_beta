@@ -32,7 +32,7 @@ const CHAPTER := {
 		"district": "heart", "mark": "★",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_crown_spire_gate", "x": 1056, "y": 500, "clearance": 430, "uses": [{"type": "action", "prompt": "E — View the city map", "x": 0, "y": 30, "ref": "map"}]}, {"name": "capital_crown_fountain", "x": 1056, "y": 765, "clearance": 250, "uses": [{"type": "inspect", "prompt": "E — Inspect the Crown Fountain", "x": 0, "y": 105, "title": "Crown Fountain", "text": "The ward roads meet at this basin. Companies use its crown as the city's easiest rally point."}]}, {"name": "capital_ashfire_forge", "x": 430, "y": 560, "clearance": 260, "uses": []}, {"name": "capital_grand_archive", "x": 1680, "y": 560, "clearance": 235, "uses": []}, {"name": "capital_market_stall", "x": 1620, "y": 860, "clearance": 200, "uses": [{"type": "action", "prompt": "E — Browse the Wardrobe", "x": 0, "y": 100, "ref": "wardrobe"}]}, {"name": "capital_market_stall", "x": 490, "y": 860, "clearance": 200, "uses": [{"type": "action", "prompt": "E — Check your mailbox", "x": 0, "y": 100, "ref": "mail"}]}],
+		"landmarks": [{"name": "capital_crown_spire_gate", "x": 1056, "y": 500, "clearance": 430, "uses": [{"type": "action", "prompt": "E — View the city map", "x": 0, "y": 30, "ref": "map"}]}, {"name": "capital_crown_fountain", "x": 1056, "y": 765, "clearance": 250, "uses": [{"type": "inspect", "prompt": "E — Inspect the Crown Fountain", "x": 0, "y": 60, "title": "Crown Fountain", "text": "The ward roads meet at this basin. Companies use its crown as the city's easiest rally point."}]}, {"name": "capital_ashfire_forge", "x": 430, "y": 560, "clearance": 260, "uses": []}, {"name": "capital_grand_archive", "x": 1680, "y": 560, "clearance": 235, "uses": []}, {"name": "capital_market_stall", "x": 1620, "y": 860, "clearance": 200, "uses": [{"type": "action", "prompt": "E — Browse the Wardrobe", "x": 0, "y": 100, "ref": "wardrobe"}]}, {"name": "capital_market_stall", "x": 490, "y": 860, "clearance": 200, "uses": [{"type": "action", "prompt": "E — Check your mailbox", "x": 0, "y": 100, "ref": "mail"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 700, "y": 990, "clearance": 110}, {"name": "capital_city_bench", "x": 1410, "y": 990, "clearance": 110}],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1680}],
 		"merchant": [1470, 830],
@@ -69,7 +69,7 @@ const CHAPTER := {
 		"district": "civic", "mark": "",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_ashen_tankard", "x": 1056, "y": 590, "clearance": 285, "uses": [{"type": "action", "prompt": "E — Find a company at the Tankard", "x": 0, "y": 95, "ref": "guild"}]}, {"name": "great_hearth", "x": 620, "y": 560, "clearance": 175, "uses": [{"type": "inspect", "prompt": "E — Warm yourself", "x": 0, "y": 90, "title": "The Great Hearth", "text": "A public fire for cooking, waiting, and finding companions between expeditions."}]}, {"name": "capital_alembic_station", "x": 1492, "y": 560, "clearance": 205, "uses": [{"type": "action", "prompt": "E — Prepare your potion loadout", "x": 0, "y": 80, "ref": "potions"}]}],
+		"landmarks": [{"name": "capital_ashen_tankard", "x": 1056, "y": 590, "clearance": 285, "uses": []}, {"name": "great_hearth", "x": 620, "y": 560, "clearance": 175, "uses": []}, {"name": "capital_alembic_station", "x": 1492, "y": 560, "clearance": 205, "uses": [{"type": "action", "prompt": "E — Prepare your potion loadout", "x": 0, "y": 80, "ref": "potions"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 760, "y": 810, "clearance": 110}, {"name": "capital_city_bench", "x": 1352, "y": 810, "clearance": 110}],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1680}],
 		"npcs": [
@@ -144,8 +144,6 @@ const CONVOS := {
 	"cap_citizen": {"start": "a", "nodes": {"a": {"who": "A Citizen", "text": "First visit? Everything a returning company needs rings this plaza — Petra's forge west, the Lapidary east, your vault by the fountain, the bazaar and mail at the south stalls. Gates north, Tankard west, Archive east, the four ward halls at the corners.", "next": ""}}},
 	"cap_petra": {"start": "a", "nodes": {"a": {"who": "Smith Petra", "text": "The city's one forge worth the name. Quench, reforge, transmute — bring me the piece and the coin and I'll bring the fire. Spend enough seasons at my bench and you'll find my rates soften for a regular.", "next": ""}}},
 	"cap_lapidary": {"start": "a", "nodes": {"a": {"who": "Master Lapidary", "text": "Petra handles metal; I handle what lives inside it. Stones, sockets, synthesis — all of it at these benches and nowhere else. Gems are patient work; patrons who keep coming back get my patient prices.", "next": ""}}},
-	"cap_fenna": {"start": "a", "nodes": {"a": {"who": "Old Fenna", "text": "Kitchen on this side, Alembic on that — supper or medicine without crossing the square. Sit by the hearth if you're waiting on friends; someone always knows who just came through a gate.", "next": ""}}},
-	"cap_tankard": {"start": "a", "nodes": {"a": {"who": "Tavern Keeper", "text": "The Ashen Tankard — warmth, rumour, a fire that behaves. The whole city drifts through after dark. First cup's on the house for a shard-bearer.", "next": ""}}},
 	"cap_gate": {"start": "a", "nodes": {"a": {"who": "Gate Sergeant", "text": "The Emberward Gate. Portcullis stays up in peacetime; the wild stays out on its honour. You came in clean — most do.", "next": ""}}},
 	"cap_callis": {"start": "a", "nodes": {"a": {"who": "Warden Callis", "text": "The tribes hold this enclave by truce, not welcome. Honest work, then: survey what the Waking's made of the east, and bring us word. Daily, if you're able.", "next": ""}}},
 	"cap_ottar": {"start": "a", "nodes": {"a": {"who": "Skald Ottar", "text": "A fire that never dies and a skald who never stops. Go do a thing worth singing — I'll trade you the doing for the song. Come back with a story.", "next": ""}}},
@@ -155,6 +153,8 @@ const CONVOS := {
 	"cap_kesh": {"start": "a", "nodes": {"a": {"who": "Herbalist Kesh", "text": "Cures for the ward, reagents for the Alembic across the plaza. I set the day's gathering. Bring back the right leaves and no one dies of the wrong ones.", "next": ""}}},
 	"cap_aldric": {"start": "a", "nodes": {"a": {"who": "Ser Aldric", "text": "The Cinderborn keep the forms of a court that lost its crown. I keep its sword arm. There's work in the old key — recover, restore, avenge — for a crown that might yet find a head. Daily, if you've the stomach.", "next": ""}}},
 	"cap_vessa": {"start": "a", "nodes": {"a": {"who": "Envoy Vessa", "text": "Work with us and be paid, protected, and remembered. I've a commission most days — a courier run, a quiet errand, imperial paper with teeth. First one's waiting.", "next": ""}}},
+	"cap_fenna": {"start": "a", "nodes": {"a": {"who": "Old Fenna", "text": "Warmth or words, dear? The hearth gives both, and neither costs a thing.", "choices": [{"text": "Warm yourself at the Great Hearth", "next": "warm"}, {"text": "\"Tell me about this place.\"", "next": "talk"}, {"text": "(Leave)", "next": ""}]}, "warm": {"who": "Narrator", "text": "You stand a while at the Great Hearth \u2014 a public fire for cooking, waiting, and finding companions between expeditions. The road's cold lets go of your shoulders.", "next": ""}, "talk": {"who": "Old Fenna", "text": "Kitchen on this side, Alembic on that \u2014 supper or medicine without crossing the square. Sit by the hearth if you're waiting on friends; someone always knows who just came through a gate.", "next": ""}}},
+	"cap_tankard": {"start": "a", "nodes": {"a": {"who": "Tavern Keeper", "text": "The Ashen Tankard \u2014 warmth, rumour, a fire that behaves. First cup's on the house for a shard-bearer. Looking for company, or just the fire?", "choices": [{"text": "Find a company  (Play Together)", "hub_action": "guild", "next": "gates"}, {"text": "\"Just the news, Nix.\"", "next": "talk"}, {"text": "(Leave)", "next": ""}]}, "gates": {"who": "Tavern Keeper", "text": "Aye \u2014 the whole city drifts through here after dark. Let's see who's drinking.", "next": ""}, "talk": {"who": "Tavern Keeper", "text": "News? The wards keep their corners, the plaza keeps the coin, and the gates keep out exactly as much of the wild as the wild allows. Same as ever. Stay for a cup.", "next": ""}}},
 }
 
 
@@ -202,4 +202,11 @@ static func selftest(_game: Node2D) -> String:
 				return "capital: NPC action %s is not handled" % npc["action"]
 			if Art.tex(String(npc["sprite"])) == null:
 				return "capital: NPC sprite %s missing" % npc["sprite"]
+			# Gossip hubs: every hub_action a choice can fire must be handled.
+			if npc.has("convo"):
+				var cv: Dictionary = Story.ALL_CONVOS.get(String(npc["convo"]), {})
+				for nid in cv.get("nodes", {}):
+					for chc in (cv["nodes"][nid] as Dictionary).get("choices", []):
+						if chc.has("hub_action") and String(chc["hub_action"]) not in known_actions:
+							return "capital: gossip hub_action %s is not handled" % chc["hub_action"]
 	return ""

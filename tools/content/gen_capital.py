@@ -129,8 +129,10 @@ def INSPECT(prompt, title, text, x=0, y=80):
 
 LANDMARK_USES = {
     ("plaza", 0): [ACTION("E — View the city map", "map", y=30)],
+    # Fountain stand-point hugs the basin (its collider circle ends at +64;
+    # +60 keeps the prompt adjacency-only — owner report 2026-07-25).
     ("plaza", 1): [INSPECT("E — Inspect the Crown Fountain", "Crown Fountain",
-        "The ward roads meet at this basin. Companies use its crown as the city's easiest rally point.", y=105)],
+        "The ward roads meet at this basin. Companies use its crown as the city's easiest rally point.", y=60)],
     # plaza 2 (forge) and 3 (lapidary benches) are owned by Petra / the Lapidary.
     ("plaza", 4): [ACTION("E — Browse the Wardrobe", "wardrobe", y=100)],
     ("plaza", 5): [ACTION("E — Check your mailbox", "mail", y=100)],
@@ -142,9 +144,10 @@ LANDMARK_USES = {
         ACTION("E — Read your journal", "journal", y=100),
         ACTION("E — Review your records", "records", x=170, y=100),
     ],
-    ("tankard", 0): [ACTION("E — Find a company at the Tankard", "guild", y=95)],
-    ("tankard", 1): [INSPECT("E — Warm yourself", "The Great Hearth",
-        "A public fire for cooking, waiting, and finding companions between expeditions.", y=90)],
+    # tankard 0 (the hall) and 1 (the hearth) are owned by their PEOPLE now
+    # (owner report 2026-07-25: a structure prompt stacked on Old Fenna read
+    # as her talking): Nix's gossip hub opens the party lobby, Fenna's offers
+    # the warm-up. Only the unattended alembic keeps a prop hotspot.
     ("tankard", 2): [ACTION("E — Prepare your potion loadout", "potions", y=80)],
     ("gate", 0): [ACTION("E — Leave Crownfall", "portal_story", y=80)],
     ("wf_moot", 0): [ACTION("E — Review Wildfang contracts", "journal", y=95)],
@@ -353,12 +356,44 @@ def gd_zone(i, room):
     return "\n".join(lines) + "\n\t},"
 
 # ---------- CONVOS: one short node per named NPC ----------
+# A value is either ("Who", "text") -> one linear node, or a full convo dict
+# (start/nodes, the story.gd schema) -> emitted verbatim as JSON. Dict convos
+# are the GOSSIP HUBS (owner 2026-07-25): an NPC who owns several functions
+# opens ONE splash dialogue whose choices route to each — a choice may carry
+# "hub_action": <game_world._hub_action ref> to open a game surface when its
+# path ends.
+GOSSIP = {
+ "cap_fenna": {"start": "a", "nodes": {
+    "a": {"who": "Old Fenna",
+          "text": "Warmth or words, dear? The hearth gives both, and neither costs a thing.",
+          "choices": [
+             {"text": "Warm yourself at the Great Hearth", "next": "warm"},
+             {"text": "\"Tell me about this place.\"", "next": "talk"},
+             {"text": "(Leave)", "next": ""}]},
+    "warm": {"who": "Narrator",
+          "text": "You stand a while at the Great Hearth — a public fire for cooking, waiting, and finding companions between expeditions. The road's cold lets go of your shoulders.",
+          "next": ""},
+    "talk": {"who": "Old Fenna",
+          "text": "Kitchen on this side, Alembic on that — supper or medicine without crossing the square. Sit by the hearth if you're waiting on friends; someone always knows who just came through a gate.",
+          "next": ""}}},
+ "cap_tankard": {"start": "a", "nodes": {
+    "a": {"who": "Tavern Keeper",
+          "text": "The Ashen Tankard — warmth, rumour, a fire that behaves. First cup's on the house for a shard-bearer. Looking for company, or just the fire?",
+          "choices": [
+             {"text": "Find a company  (Play Together)", "hub_action": "guild", "next": "gates"},
+             {"text": "\"Just the news, Nix.\"", "next": "talk"},
+             {"text": "(Leave)", "next": ""}]},
+    "gates": {"who": "Tavern Keeper",
+          "text": "Aye — the whole city drifts through here after dark. Let's see who's drinking.",
+          "next": ""},
+    "talk": {"who": "Tavern Keeper",
+          "text": "News? The wards keep their corners, the plaza keeps the coin, and the gates keep out exactly as much of the wild as the wild allows. Same as ever. Stay for a cup.",
+          "next": ""}}},
+}
 CONVOS = {
  "cap_citizen": ("A Citizen", "First visit? Everything a returning company needs rings this plaza — Petra's forge west, the Lapidary east, your vault by the fountain, the bazaar and mail at the south stalls. Gates north, Tankard west, Archive east, the four ward halls at the corners."),
  "cap_petra": ("Smith Petra", "The city's one forge worth the name. Quench, reforge, transmute — bring me the piece and the coin and I'll bring the fire. Spend enough seasons at my bench and you'll find my rates soften for a regular."),
  "cap_lapidary": ("Master Lapidary", "Petra handles metal; I handle what lives inside it. Stones, sockets, synthesis — all of it at these benches and nowhere else. Gems are patient work; patrons who keep coming back get my patient prices."),
- "cap_fenna": ("Old Fenna", "Kitchen on this side, Alembic on that — supper or medicine without crossing the square. Sit by the hearth if you're waiting on friends; someone always knows who just came through a gate."),
- "cap_tankard": ("Tavern Keeper", "The Ashen Tankard — warmth, rumour, a fire that behaves. The whole city drifts through after dark. First cup's on the house for a shard-bearer."),
  "cap_gate": ("Gate Sergeant", "The Emberward Gate. Portcullis stays up in peacetime; the wild stays out on its honour. You came in clean — most do."),
  "cap_callis": ("Warden Callis", "The tribes hold this enclave by truce, not welcome. Honest work, then: survey what the Waking's made of the east, and bring us word. Daily, if you're able."),
  "cap_ottar": ("Skald Ottar", "A fire that never dies and a skald who never stops. Go do a thing worth singing — I'll trade you the doing for the song. Come back with a story."),
@@ -388,13 +423,38 @@ used_actions.update(
     for use in uses
     if use["type"] == "action"
 )
-if used_convos != set(CONVOS):
-    sys.exit("CONVO COVERAGE MISMATCH — %s" % sorted(used_convos ^ set(CONVOS)))
+# Gossip-hub choices place hub actions too (Nix's "Find a company" IS the
+# guild access point).
+for convo in GOSSIP.values():
+    for node in convo["nodes"].values():
+        for choice in node.get("choices", []):
+            if "hub_action" in choice:
+                used_actions.add(choice["hub_action"])
+if set(CONVOS) & set(GOSSIP):
+    sys.exit("CONVO DEFINED TWICE — %s" % sorted(set(CONVOS) & set(GOSSIP)))
+if used_convos != set(CONVOS) | set(GOSSIP):
+    sys.exit("CONVO COVERAGE MISMATCH — %s" % sorted(used_convos ^ (set(CONVOS) | set(GOSSIP))))
 if not used_actions.issubset(HUB_ACTIONS):
     sys.exit("UNHANDLED HUB ACTIONS — %s" % sorted(used_actions - HUB_ACTIONS))
 missing_actions = HUB_ACTIONS - used_actions
 if missing_actions:
     sys.exit("HUB ACTIONS NEVER PLACED — %s" % sorted(missing_actions))
+# One-access-point holds through the gossip hubs too: a convo choice's
+# hub_action must not duplicate a landmark/NPC access in the same room.
+for room in ROOMS:
+    rid, cast = room[0], room[6]
+    room_refs = [use["ref"] for key, uses in LANDMARK_USES.items() if key[0] == rid
+                 for use in uses if use["type"] == "action"]
+    room_refs += [cast_fields(e)[2] for e in cast if cast_fields(e)[3] == A]
+    for e in cast:
+        _spr, _prompt, ref, kind, _greet = cast_fields(e)
+        if kind == P and ref in GOSSIP:
+            for node in GOSSIP[ref]["nodes"].values():
+                for choice in node.get("choices", []):
+                    if choice.get("hub_action", "") in room_refs:
+                        sys.exit("GOSSIP DUPLICATES A ROOM ACCESS POINT — %s: %s"
+                                 % (rid, choice["hub_action"]))
+
 for rid,*_rest,scale,cast in ROOMS:
     if not 0.55 <= scale <= 1.0:
         sys.exit("INVALID ROOM SCALE — %s: %.2f" % (rid, scale))
@@ -406,11 +466,15 @@ for rid,*_rest,scale,cast in ROOMS:
 print("OK: authored scale, landmark, interaction, convo, and action coverage")
 
 # ---------- write the file ----------
+import json
 zones = "\n".join(gd_zone(i, r) for i, r in enumerate(ROOMS))
 convo_lines = []
 for cid,(who,text) in CONVOS.items():
     t = text.replace('"', '\\"')
     convo_lines.append('\t"%s": {"start": "a", "nodes": {"a": {"who": "%s", "text": "%s", "next": ""}}},' % (cid, who, t))
+# Gossip hubs emit verbatim — JSON literals are valid GDScript dicts.
+for cid, convo in GOSSIP.items():
+    convo_lines.append('\t"%s": %s,' % (cid, json.dumps(convo)))
 convos = "\n".join(convo_lines)
 
 OUT = r"C:/Users/asali/Projects/MMO/game/scripts/content/capital_hub.gd"
@@ -498,6 +562,13 @@ static func selftest(_game: Node2D) -> String:
 \t\t\t\treturn "capital: NPC action %s is not handled" % npc["action"]
 \t\t\tif Art.tex(String(npc["sprite"])) == null:
 \t\t\t\treturn "capital: NPC sprite %s missing" % npc["sprite"]
+\t\t\t# Gossip hubs: every hub_action a choice can fire must be handled.
+\t\t\tif npc.has("convo"):
+\t\t\t\tvar cv: Dictionary = Story.ALL_CONVOS.get(String(npc["convo"]), {})
+\t\t\t\tfor nid in cv.get("nodes", {}):
+\t\t\t\t\tfor chc in (cv["nodes"][nid] as Dictionary).get("choices", []):
+\t\t\t\t\t\tif chc.has("hub_action") and String(chc["hub_action"]) not in known_actions:
+\t\t\t\t\t\t\treturn "capital: gossip hub_action %s is not handled" % chc["hub_action"]
 \treturn ""
 '''
 

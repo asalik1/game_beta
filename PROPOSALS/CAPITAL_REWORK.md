@@ -122,6 +122,28 @@ Wayfinder portal_story); guests at a gate are told the leader picks the road.
 The dedicated server keeps its linger-then-advance behavior. No NET_VERSION
 bump expected (no new messages; the victory fan already carries everything).
 
+## 6b. Morning-review fixes (2026-07-25, owner's first pass)
+Three reports from the owner's first in-game look, all fixed same morning:
+- **Prompts floated below their landmarks and fired from too far** (the
+  fountain screenshot): prop hotspots now carry a tighter reach
+  (`PROP_HOTSPOT_REACH` 70 vs 80 for people), the prompt label anchors ON
+  the landmark art (mid-height over the station's own x — the Archive's
+  three desks still label their own doors), and the fountain stand-point
+  hugs the basin. The victory way-gates were rebuilt on the structure path
+  in the same pass (the NPC render path would have drawn the 512px arch ~5×).
+- **A structure prompt stacked on Old Fenna** ("Warm yourself" read as her
+  talking): NPCs who own several functions are now GOSSIP HUBS — one press
+  opens the CQ splash dialogue with options (mouse / number keys / tap).
+  Fenna offers the hearth warm-up + chat; Nix offers "Find a company"
+  (opens Play Together via the new `hub_action` convo-choice key) + news;
+  Petra / the Lapidary / Corin offer bench + quest line + leave. Pure
+  structure stations (alembic, archive desks, portals) stay prop hotspots.
+- **Walkable building interiors** (the tavern screenshot): the big capital
+  halls only had the default 34px base-strip collider — body colliders
+  authored for tankard/forge/archive/chapel/longhouse/sable/chartered
+  halls, and the city-edge arcade backdrop gained one shallow base strip
+  (the room walls never actually owned that edge).
+
 ## 7. Open questions for the owner
 - Flow nit: after the first-clear route to Crownfall, the Wayfinder story
   gate returns to the COMPLETED ch1 world (its way-gates still stand at the

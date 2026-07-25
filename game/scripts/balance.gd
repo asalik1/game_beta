@@ -302,6 +302,11 @@ const FAVOR_RES_STEADY_MULT := 1.25
 const FAVOR_RES_TEMPTED_MULT := 0.75
 const FAVOR_QUEST_POINTS := 15          # favor chunk an intro-quest turn-in pays
 const CAPITAL_INTRO_GOLD := 120         # gold reward per capital intro quest (flat teaching beat)
+# Prop hotspots (landmark stations, way-gates) demand ADJACENCY — tighter than
+# the person-to-person INTERACT_RANGE so a prompt never fires tiles away from
+# the art it belongs to (owner report 2026-07-25: fountain text at a distance).
+const PROP_HOTSPOT_REACH := 70.0
+const PROP_PROMPT_HEIGHT := 0.55        # prompt anchors this fraction up the landmark art
 const GAMBLE_DISCOUNT := 0.8         # gamble costs this x the EXPECTED farm price of a chapter boss-band roll (sight-unseen risk; see game_base.gamble_cost)
 # A loose gem's INTRINSIC value (gold), tripling per level like the 3-into-1
 # combine. Drives the SELL price (x MERCHANT_SELL_FRACTION); BUY is farm-cost.

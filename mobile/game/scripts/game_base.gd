@@ -1716,6 +1716,18 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 			if c.has("quest"):
 				quest_key = String(c["quest"])
 				refresh_quest()
+			# Capital gossip hubs (2026-07-25): a choice may open a game
+			# surface ("hub_action": a game_world._hub_action ref). It fires
+			# when the CHOSEN PATH ends, so any reply line reads before the
+			# menu covers it. Local-only by construction — the callback runs
+			# on the machine driving the convo (§5.4).
+			var done_after := on_done
+			if c.has("hub_action"):
+				var act := String(c["hub_action"])
+				done_after = func() -> void:
+					call("_hub_action", act)
+					if on_done.is_valid():
+						on_done.call()
 			# MP-13 (§5.4): resonance, standings, keepsakes and coins above all
 			# hit `player` = local_player, so a GUEST's choice moves only the
 			# guest — owner-side by construction (§5.4). The one SHARED
@@ -1732,7 +1744,7 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 							s2.convo_toast("accepted", String(sq2.get("name", "a quest")))
 					elif _choice_sets_world_flag(c):
 						s2.convo_toast("chose", String(c.get("text", "")))
-			_convo_node(convo, String(c.get("next", "")), on_done))
+			_convo_node(convo, String(c.get("next", "")), done_after))
 
 
 ## MP-13: does this choice set at least one WORLD flag (worth a toast to the

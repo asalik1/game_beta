@@ -508,7 +508,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			if not is_instance_valid(entry["node"]):
 				continue
 			var np: Vector2 = entry["node"].position
-			if player.global_position.distance_to(np) >= Balance.INTERACT_RANGE:
+			if player.global_position.distance_to(np) >= float(entry.get("reach", Balance.INTERACT_RANGE)):
 				continue
 			var d: float = world.distance_to(np)
 			if d < tap_d:
@@ -758,7 +758,9 @@ func _process(delta: float) -> void:
 				continue
 			entry["prompt"].visible = false
 			var d: float = player.global_position.distance_to(entry["node"].position)
-			if d < near_d:
+			# Prop hotspots carry a TIGHTER reach (capital rework fix): the
+			# entry's own reach caps eligibility; nearest eligible still wins.
+			if d < float(entry.get("reach", Balance.INTERACT_RANGE)) and d < near_d:
 				near_d = d
 				near_entry = entry
 		if not near_entry.is_empty():

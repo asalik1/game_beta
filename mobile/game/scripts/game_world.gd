@@ -240,18 +240,23 @@ func _inspect_landmark(title: String, text: String) -> void:
 const CAP_ARTISANS := {
 	"petra": {
 		"who": "Smith Petra", "greet": "cap_petra", "quest": "forge",
+		"qname": "Tempered Once",
+		"hub": "The forge is lit. What do you need?",
 		"offer": "Bench rules: your coin, my fire. Here's a bargain for a new patron — temper any piece once, quench, reforge or transmute, and I'll stand you the fee back with interest. Deal's open till it's done.",
 		"turnin": "So the fire took. That's the bench paid back, as promised — and I'll remember the name over the coin. Regulars get my better rates.",
 	},
 	"lapidary": {
 		"who": "Master Lapidary", "greet": "cap_lapidary", "quest": "gem",
+		"qname": "A Stone Well Set",
+		"hub": "Benches are clear. Stones and sockets — or something else?",
 		"offer": "You've never set a stone? Then your first is on the house. Here — a cut gem. Seat it in a socketed piece of your gear and come show me the fit.",
 		"turnin": "A clean seat. You have the hands for it. Bring me your patronage and your rough stones — patient patrons get my patient prices.",
 	},
 }
 
-## A plaza artisan interaction: one-time greet, then the intro-quest state
-## machine (offer -> deed elsewhere -> turn-in HERE), then the service.
+## A plaza artisan is a GOSSIP HUB (owner 2026-07-25): one press opens the
+## splash dialogue with options — the bench, the intro-quest line whenever it
+## has something to say, and a way out. First meeting still plays the greet.
 func _cap_artisan(npc: String) -> void:
 	var d: Dictionary = CAP_ARTISANS[npc]
 	var qid := String(d["quest"])
@@ -260,57 +265,95 @@ func _cap_artisan(npc: String) -> void:
 		set_flag("cap_met_" + npc)
 		run_convo_id(String(d["greet"]), func() -> void: _cap_artisan(npc))
 		return
+	var options: Array = ["Use the bench"]
+	var acts: Array = ["bench"]
 	if not get_flag("cap_q_%s_on" % qid, false):
-		set_flag("cap_q_%s_on" % qid)
-		if qid == "gem" and has_local_player():
-			var gem: Dictionary = Items.random_gem(loot_rng, 1)
-			if not player.gain_gem(gem):
-				send_mail("The Lapidary's training stone",
-					"Your bag was full at the bench — the training gem waits here.",
-					[{"kind": "gem", "gem": gem}])
-		hud.dialogue([[who, String(d["offer"])]], func() -> void: _cap_open_service(npc))
-		refresh_quest_marks()
-		return
-	if get_flag("cap_q_%s_done" % qid, false) and not get_flag("cap_q_%s_paid" % qid, false):
-		set_flag("cap_q_%s_paid" % qid)
-		if has_local_player():
-			player.gold += Balance.CAPITAL_INTRO_GOLD
-			spawn_text(player.global_position + Vector2(0, -56),
-				"+%d gold" % Balance.CAPITAL_INTRO_GOLD, Color(1.0, 0.85, 0.35))
-		favor_add(npc, Balance.FAVOR_QUEST_POINTS)
-		sfx("chest")
-		hud.dialogue([[who, String(d["turnin"])]])
-		refresh_quest_marks()
-		autosave()
-		return
-	_cap_open_service(npc)
+		options.append("\"Any work for a newcomer?\"")
+		acts.append("offer")
+	elif get_flag("cap_q_%s_done" % qid, false) and not get_flag("cap_q_%s_paid" % qid, false):
+		options.append("Turn in — %s" % String(d["qname"]))
+		acts.append("turnin")
+	options.append("(Leave)")
+	acts.append("leave")
+	hud.dialogue_choice(who, String(d["hub"]), options, func(idx: int) -> void:
+		_cap_artisan_choice(npc, acts, idx))
+
+
+## One picked option from an artisan's gossip hub (named method — a match
+## statement can't close a multiline lambda, GDScript trap §38).
+func _cap_artisan_choice(npc: String, acts: Array, idx: int) -> void:
+	var d: Dictionary = CAP_ARTISANS[npc]
+	var qid := String(d["quest"])
+	var who := String(d["who"])
+	match String(acts[clampi(idx, 0, acts.size() - 1)]):
+		"bench":
+			_cap_open_service(npc)
+		"offer":
+			set_flag("cap_q_%s_on" % qid)
+			if qid == "gem" and has_local_player():
+				var gem: Dictionary = Items.random_gem(loot_rng, 1)
+				if not player.gain_gem(gem):
+					send_mail("The Lapidary's training stone",
+						"Your bag was full at the bench — the training gem waits here.",
+						[{"kind": "gem", "gem": gem}])
+			hud.dialogue([[who, String(d["offer"])]], func() -> void: _cap_open_service(npc))
+			refresh_quest_marks()
+		"turnin":
+			set_flag("cap_q_%s_paid" % qid)
+			if has_local_player():
+				player.gold += Balance.CAPITAL_INTRO_GOLD
+				spawn_text(player.global_position + Vector2(0, -56),
+					"+%d gold" % Balance.CAPITAL_INTRO_GOLD, Color(1.0, 0.85, 0.35))
+			favor_add(npc, Balance.FAVOR_QUEST_POINTS)
+			sfx("chest")
+			hud.dialogue([[who, String(d["turnin"])]])
+			refresh_quest_marks()
+			autosave()
 
 
 func _cap_open_service(npc: String) -> void:
 	menus.open_inventory("gear")
 
 
-## Marshal Corin, the plaza drillmaster: no bench — just the talent intro
-## quest and a drill-yard line once it's settled.
+## Marshal Corin, the plaza drillmaster: the same gossip-hub shape — quest
+## line when it has something to say, drill-yard flavor always.
 func _cap_drill() -> void:
 	var who := "Marshal Corin"
+	var options: Array = []
+	var acts: Array = []
 	if not get_flag("cap_q_talent_on", false):
-		set_flag("cap_q_talent_on")
-		hud.dialogue([[who, "Fresh through the gates and green as the Warren. Open your talents, commit one point — the tree remembers what the arm forgets. Show me you've chosen, and the drill yard pays for the lesson."]])
-		refresh_quest_marks()
-		return
-	if get_flag("cap_q_talent_done", false) and not get_flag("cap_q_talent_paid", false):
-		set_flag("cap_q_talent_paid")
-		if has_local_player():
-			player.gold += Balance.CAPITAL_INTRO_GOLD
-			spawn_text(player.global_position + Vector2(0, -56),
-				"+%d gold" % Balance.CAPITAL_INTRO_GOLD, Color(1.0, 0.85, 0.35))
-		sfx("chest")
-		hud.dialogue([[who, "Committed, and to something with a spine. The yard pays its debts — now go spend the rest of yourself the same way."]])
-		refresh_quest_marks()
-		autosave()
-		return
-	hud.dialogue([[who, "Companies drill here before they take the northern gates. The Crucible arch in the Sanctum is the live trial — the rail is for bragging."]])
+		options.append("\"Any work for a newcomer?\"")
+		acts.append("offer")
+	elif get_flag("cap_q_talent_done", false) and not get_flag("cap_q_talent_paid", false):
+		options.append("Turn in — The Marshal's Approval")
+		acts.append("turnin")
+	options.append("Ask about the drill yard")
+	acts.append("talk")
+	options.append("(Leave)")
+	acts.append("leave")
+	hud.dialogue_choice(who, "Fresh boots on my yard. Speak.", options, func(idx: int) -> void:
+		_cap_drill_choice(acts, idx))
+
+
+func _cap_drill_choice(acts: Array, idx: int) -> void:
+	var who := "Marshal Corin"
+	match String(acts[clampi(idx, 0, acts.size() - 1)]):
+		"offer":
+			set_flag("cap_q_talent_on")
+			hud.dialogue([[who, "Green as the Warren, then. Open your talents, commit one point — the tree remembers what the arm forgets. Show me you've chosen, and the drill yard pays for the lesson."]])
+			refresh_quest_marks()
+		"turnin":
+			set_flag("cap_q_talent_paid")
+			if has_local_player():
+				player.gold += Balance.CAPITAL_INTRO_GOLD
+				spawn_text(player.global_position + Vector2(0, -56),
+					"+%d gold" % Balance.CAPITAL_INTRO_GOLD, Color(1.0, 0.85, 0.35))
+			sfx("chest")
+			hud.dialogue([[who, "Committed, and to something with a spine. The yard pays its debts — now go spend the rest of yourself the same way."]])
+			refresh_quest_marks()
+			autosave()
+		"talk":
+			hud.dialogue([[who, "Companies drill here before they take the northern gates. The Crucible arch in the Sanctum is the live trial — the rail is for bragging."]])
 
 
 ## Does this capital service NPC have something NEW for the player? Drives
@@ -377,8 +420,21 @@ func spawn_victory_gates(zi: int = -1) -> void:
 		defs.append(["next", "E — Gate of the Road  (onward to %s)" % String(Story.chapter(next_ch)["name"]), Vector2(300, -20)])
 	for d in defs:
 		var kind: String = d[0]
-		_make_npc("capital_portal_story", c + (d[2] as Vector2), String(d[1]), func() -> void:
-			_gate_use(kind), "")
+		# The arch is a STRUCTURE (width-normalized, base collider) — the NPC
+		# render path would blow the 512px source up ~5x. The interaction is a
+		# separate hidden hotspot in front, prompt lifted onto the arch, prop
+		# reach (same idiom as the capital's own Wayfinder portals).
+		var gate_world: Vector2 = c + (d[2] as Vector2)
+		var gate_node := _add_structure("capital_portal_story", gate_world)
+		var gate_h: float = float(gate_node.get_child(0).get_meta("hpx", 200.0))
+		var hotspot := _make_npc("book", gate_world + Vector2(0, 34),
+			String(d[1]), func() -> void:
+				_gate_use(kind), "", Balance.PROP_HOTSPOT_REACH)
+		for child in hotspot.get_children():
+			if child is Sprite2D:
+				child.visible = false
+			elif child is Label:
+				child.position.y = -(34.0 + gate_h * Balance.PROP_PROMPT_HEIGHT)
 
 
 func _gate_use(kind: String) -> void:
@@ -1343,7 +1399,9 @@ func fast_travel(i: int) -> void:
 	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)
 
 func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: Callable,
-		profile_key := "") -> Node2D:
+		profile_key := "", reach := 0.0) -> Node2D:
+	# reach 0.0 = the standard person-to-person INTERACT_RANGE; prop hotspots
+	# pass Balance.PROP_HOTSPOT_REACH so their prompts demand adjacency.
 	var npc := Node2D.new()
 	npc.position = pos
 	# Live people use the lore-authored height profile in Balance. Everything
@@ -1434,6 +1492,7 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	npc.add_child(prompt)
 	world.add_child(npc)
 	interactables.append({"node": npc, "prompt": prompt, "action": action,
+		"reach": reach if reach > 0.0 else Balance.INTERACT_RANGE,
 		"sprite": spr, "sprite_name": sprite_name, "dir_anims": dir_anims,
 		"render_scale": render_scale,
 		"size_var": nsize, "body_target": body_target,
@@ -1529,15 +1588,19 @@ func _spawn_scenery(zi: int) -> void:
 		placed.append(landmark_pos)
 		reserved.append({"pos": landmark_pos,
 			"radius": float(spec.get("clearance", 190.0))})
-		zone_scenery[zi].append(_add_structure(landmark_name, landmark_world))
+		var landmark_node := _add_structure(landmark_name, landmark_world)
+		zone_scenery[zi].append(landmark_node)
+		# The structure's rendered height (base sprite meta) — the prompt
+		# anchors ON the art, not at the invisible stand-point below it.
+		var landmark_h: float = float(landmark_node.get_child(0).get_meta("hpx", 120.0))
 		# Every foreground landmark owns typed interaction stations. Most are
 		# real service actions; only true monuments/lookouts use inspect text.
 		# Multiple stations may be spaced across one facade (the Archive).
 		for landmark_use in spec.get("uses", []):
 			var use_spec: Dictionary = landmark_use
+			var use_dy := float(use_spec.get("y", Balance.CAPITAL_LANDMARK_USE_Y_FALLBACK))
 			var use_pos := landmark_world + Vector2(
-				float(use_spec.get("x", 0.0)),
-				float(use_spec.get("y", Balance.CAPITAL_LANDMARK_USE_Y_FALLBACK)))
+				float(use_spec.get("x", 0.0)), use_dy)
 			var use_action := Callable()
 			if String(use_spec.get("type", "")) == "action":
 				use_action = Callable(self, "_hub_action").bind(
@@ -1549,11 +1612,19 @@ func _spawn_scenery(zi: int) -> void:
 			else:
 				push_warning("landmark %s has invalid interaction type" % landmark_name)
 				continue
+			# Prop hotspots demand adjacency (owner report 2026-07-25: the
+			# fountain's prompt fired tiles away and floated below the art).
 			var hotspot := _make_npc("book", use_pos,
-				String(use_spec.get("prompt", "E — Use")), use_action, "")
+				String(use_spec.get("prompt", "E — Use")), use_action, "",
+				Balance.PROP_HOTSPOT_REACH)
 			for child in hotspot.get_children():
 				if child is Sprite2D:
 					child.visible = false
+				elif child is Label:
+					# Lift the prompt from the stand-point up onto the landmark
+					# itself — mid-height over THIS station's x, so the Archive's
+					# three desks still label their own doors.
+					child.position.y = -(use_dy + landmark_h * Balance.PROP_PROMPT_HEIGHT)
 			zone_scenery[zi].append(hotspot)
 
 	# Capital furniture is placed deliberately, not scattered. This prevents
@@ -1943,6 +2014,29 @@ func _add_backdrop(name: String, pos: Vector2, target_w: float) -> Node2D:
 	var height: float = float(visual.get_meta("hpx"))
 	visual.position = Vector2(0, -height * 0.5 + 12.0)
 	layer.add_child(visual)
+	# The silhouette's authored base strip (owner report 2026-07-25): the
+	# room walls were supposed to own this edge but don't reach it — without
+	# a body the hero strolls INTO the city-edge art. Scaled to the render
+	# width like the sprite itself.
+	var bscale: float = float(visual.get_meta("wpx")) / maxf(1.0, float(def.get("w", target_w)))
+	var bdef: Array = def.get("colliders", [])
+	if not bdef.is_empty():
+		var body := StaticBody2D.new()
+		body.collision_layer = 1
+		body.collision_mask = 0
+		for c in bdef:
+			var cshape := CollisionShape2D.new()
+			cshape.position = (c.get("off", Vector2.ZERO) as Vector2) * bscale
+			if String(c.get("shape", "rect")) == "circle":
+				var circ := CircleShape2D.new()
+				circ.radius = float(c.get("radius", 12.0)) * bscale
+				cshape.shape = circ
+			else:
+				var rect := RectangleShape2D.new()
+				rect.size = (c.get("size", Vector2(60, 26)) as Vector2) * bscale
+				cshape.shape = rect
+			body.add_child(cshape)
+		layer.add_child(body)
 	world.add_child(layer)
 	return layer
 

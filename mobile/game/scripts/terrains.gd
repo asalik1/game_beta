@@ -492,11 +492,13 @@ const STRUCTURES := {
 			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(-310, -9)},
 			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(310, -9)}],
 		"fire": true},
-	# A single connected city-edge silhouette. It is spawned only through
-	# _add_backdrop (never as an accessible building), but the empty collider
-	# list keeps accidental structure previews honest and non-blocking.
+	# A single connected city-edge silhouette, spawned only through
+	# _add_backdrop. Its base carries ONE thin full-width strip (owner report
+	# 2026-07-25: the hero could stroll INTO the silhouette — the room walls
+	# don't actually own this edge), so the city stays scenery you stand in
+	# front of, never inside.
 	"capital_city_arcade": {"sprite": "capital_city_arcade", "w": 1680.0,
-		"colliders": []},
+		"colliders": [{"shape": "rect", "size": Vector2(1680, 26), "off": Vector2(0, -8)}]},
 	"capital_crown_fountain": {"sprite": "capital_crown_fountain", "w": 380.0,
 		"colliders": [{"shape": "circle", "radius": 76.0, "off": Vector2(0, -12)}]},
 	"capital_emberward_gate": {"sprite": "capital_emberward_gate", "w": 420.0,
@@ -517,19 +519,30 @@ const STRUCTURES := {
 		"fire": true},
 	"capital_portal_depths": {"sprite": "capital_portal_depths", "w": 230.0,
 		"colliders": [{"shape": "rect", "size": Vector2(132, 42), "off": Vector2(0, -8)}]},
-	"capital_chartered_hall": {"sprite": "capital_chartered_hall", "w": 330.0},
+	# CLOSED capital buildings carry BODY colliders, not just the default
+	# 34px base strip (owner report 2026-07-25: the strip let the hero wander
+	# INSIDE the tavern art from the sides). Rects cover the visual body;
+	# every authored NPC/hotspot stand-point stays south of them.
+	"capital_chartered_hall": {"sprite": "capital_chartered_hall", "w": 330.0,
+		"colliders": [{"shape": "rect", "size": Vector2(275, 170), "off": Vector2(0, -90)}]},
 	"capital_ashfire_forge": {"sprite": "capital_ashfire_forge", "w": 360.0,
+		"colliders": [{"shape": "rect", "size": Vector2(300, 180), "off": Vector2(0, -95)}],
 		"fire": true},
-	"capital_grand_archive": {"sprite": "capital_grand_archive", "w": 340.0},
+	"capital_grand_archive": {"sprite": "capital_grand_archive", "w": 340.0,
+		"colliders": [{"shape": "rect", "size": Vector2(285, 175), "off": Vector2(0, -93)}]},
 	"capital_ashen_tankard": {"sprite": "capital_ashen_tankard", "w": 360.0,
+		"colliders": [{"shape": "rect", "size": Vector2(300, 190), "off": Vector2(0, -100)}],
 		"fire": true},
 	"capital_wildfang_fangmoot": {"sprite": "capital_wildfang_fangmoot", "w": 330.0,
 		"colliders": [{"shape": "circle", "radius": 72.0, "off": Vector2(0, -10)}],
 		"fire": true},
-	"capital_rot_chapel": {"sprite": "capital_rot_chapel", "w": 350.0},
+	"capital_rot_chapel": {"sprite": "capital_rot_chapel", "w": 350.0,
+		"colliders": [{"shape": "rect", "size": Vector2(290, 185), "off": Vector2(0, -98)}]},
 	"capital_accord_longhouse": {"sprite": "capital_accord_longhouse", "w": 420.0,
+		"colliders": [{"shape": "rect", "size": Vector2(350, 200), "off": Vector2(0, -105)}],
 		"fire": true},
 	"capital_sable_hall": {"sprite": "capital_sable_hall", "w": 420.0,
+		"colliders": [{"shape": "rect", "size": Vector2(350, 200), "off": Vector2(0, -105)}],
 		"fire": true},
 	"capital_wellspring": {"sprite": "capital_wellspring", "w": 330.0,
 		"colliders": [{"shape": "circle", "radius": 70.0, "off": Vector2(0, -10)}]},

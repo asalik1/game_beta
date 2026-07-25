@@ -2814,6 +2814,8 @@ const SPLASH_ALIAS := {
 	"ansa of the shore": "ansa_shore",
 	"maren": "elder_maren",           # short form of Elder Maren
 	"villager": "emberfall_villager",  # the generic-villager splash
+	"master lapidary": "archivist_lene",  # Crownfall's lapidary wears Lene's art
+	"tavern keeper": "peddler_nix",       # the Ashen Tankard's keeper
 }
 
 
