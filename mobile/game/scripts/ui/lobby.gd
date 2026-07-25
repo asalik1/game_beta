@@ -134,7 +134,15 @@ static func _stage_char(m: Menus) -> void:
 			m.lobby["level"] = level
 			m.lobby["name"] = hname
 			if hosting:
-				m.lobby["saved_chapter"] = String(SaveGame.read(slot).get("chapter", "ch1"))
+				var sdata: Dictionary = SaveGame.read(slot)
+				m.lobby["saved_chapter"] = String(sdata.get("chapter", "ch1"))
+				# NG+ (2026-07-24): the save carries both tiers — the world's
+				# LIVE one (shown on Continue) and the hero's STANDING choice
+				# (the default for from-the-beginning picks).
+				m.lobby["saved_world_tier"] = clampi(
+					int(SaveGame.world_of(sdata).get("run_tier_world", 0)), 0, Balance.TIER_NAMES.size() - 1)
+				m.lobby["tier"] = clampi(
+					int(SaveGame.character_of(sdata).get("run_tier", 0)), 0, Balance.TIER_NAMES.size() - 1)
 				open(m, "chapter")
 			else:
 				_join_go(m)
@@ -159,10 +167,33 @@ static func _stage_chapter(m: Menus) -> void:
 	m.lobby["stage"] = "chapter"
 	var saved_ch := String(m.lobby.get("saved_chapter", "ch1"))
 	var saved_name := String(Story.chapter(saved_ch)["name"])
-	var cont_btn := m._btn(vbox, "  ▶  Continue — %s (as your save left it)  " % saved_name,
+	var saved_tier: int = int(m.lobby.get("saved_world_tier", 0))
+	var cont_btn := m._btn(vbox, "  ▶  Continue — %s (as your save left it)%s  " % [saved_name,
+			"" if saved_tier == 0 else " · " + Balance.tier_name(saved_tier).to_upper()],
 		func() -> void: _host_go(m, saved_ch, true), GOOD)
 	cont_btn.add_theme_font_size_override("font_size", 17)
 	UITheme.header(m._lbl(vbox, "— OR START A CHAPTER FROM ITS BEGINNING —", 14, GOLD))
+	# NG+ tier for from-the-beginning picks (2026-07-24): the HOST sets the
+	# whole party's world here — same standing-choice semantics as the solo
+	# replay picker (the pick persists on this hero at session start).
+	# Continue keeps the save world's live tier, named on the button above.
+	if m.game.tier_unlocked(1):
+		var trow := HBoxContainer.new()
+		trow.add_theme_constant_override("separation", 10)
+		vbox.add_child(trow)
+		var tlab := m._lbl(trow, "Difficulty:", 14, Color(0.8, 0.8, 0.85))
+		tlab.custom_minimum_size = Vector2(100, 0)
+		for t in Balance.TIER_NAMES.size():
+			var tier: int = t
+			var open_t: bool = m.game.tier_unlocked(tier)
+			var selected: bool = int(m.lobby.get("tier", 0)) == tier
+			var on_pick := func() -> void:
+				m.lobby["tier"] = tier
+				_stage_chapter(m)
+			m._btn(trow, "  %s%s%s  " % ["▶ " if selected else "", Balance.tier_name(tier),
+					"" if open_t else " 🔒"], on_pick,
+				Balance.tier_color(tier) if open_t else Color(0.5, 0.5, 0.55),
+				open_t and not selected)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -263,6 +294,16 @@ static func _stage_host_lobby(m: Menus) -> void:
 		m.lobby["msg"] = ""
 		var ml := m._lbl(vbox, "◆ " + msg, 14, BAD)
 		ml.custom_minimum_size = Vector2(800, 0)
+	# NG+ visibility (2026-07-24): name what the party is setting out into
+	# BEFORE Start — the whole session runs the host's tier.
+	var host_cont: bool = bool(m.lobby.get("continue", true))
+	var host_tier: int = int(m.lobby.get("saved_world_tier", 0)) if host_cont else int(m.lobby.get("tier", 0))
+	if host_tier > 0:
+		var htl := m._lbl(vbox, "%s — %s: every spawn +%d levels, richer loot, no XP. The whole party fights at this tier." % [
+			String(Story.chapter(String(m.lobby.get("chapter", "ch1")))["name"]),
+			Balance.tier_name(host_tier).to_upper(), Balance.tier_level_offset(host_tier)],
+			13, Balance.tier_color(host_tier))
+		htl.custom_minimum_size = Vector2(800, 0)
 	_party(m, vbox)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -382,6 +423,12 @@ static func _start_session(m: Menus) -> void:
 	m.current = ""
 	m.game.load_save(slot)
 	if not cont and m.game.play_started:
+		# NG+ (2026-07-24): the lobby's tier pick is this hero's standing
+		# choice (solo-picker semantics); replay_chapter's switch_chapter
+		# snapshots it as the session world's tier and the brief carries
+		# it to every guest.
+		m.game.player.run_tier = clampi(int(m.lobby.get("tier", m.game.player.run_tier)),
+			0, Balance.TIER_NAMES.size() - 1)
 		m.game.replay_chapter(chid)
 
 
