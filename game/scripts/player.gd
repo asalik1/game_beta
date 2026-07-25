@@ -268,8 +268,8 @@ func _physics_process(delta: float) -> void:
 
 	# Buff aura pulse — the persistent "this is active" tell for every held
 	# buff (berserk = red, Aegis = gold, Ward = arcane cyan, blood surge =
-	# crimson-red, Pact = crimson, guard = blue). Classes don't share these
-	# so the colors never collide in play.
+	# skin-matched (crimson base), Pact = crimson, guard = blue). Classes
+	# don't share these so the colors never collide in play.
 	if berserk_time > 0.0 or theme_guard_time > 0.0 or aegis_time > 0.0 \
 			or pact_time > 0.0 or dr_time > 0.0 or stab_ls_time > 0.0 \
 			or (cls == "paladin" and paladin_mode == "retribution"):
@@ -283,7 +283,15 @@ func _physics_process(delta: float) -> void:
 			aura.modulate = Color(0.45, 0.85, 1.0, 0.6)  # arcane shield
 			shimmer = 16.0                               # crystalline flicker
 		elif stab_ls_time > 0.0:
-			aura.modulate = Color(0.95, 0.25, 0.30, 0.5)  # blood surge
+			# Blood surge tell wears the skin's identity color: Phantom surges
+			# spectral teal, the Golden Ronin gold, base assassin crimson.
+			if skin == "phantom":
+				# Deep intense blue (owner round 2; the lighter teal read weak).
+				aura.modulate = Color(0.16, 0.34, 1.0, 0.62)
+			elif skin == "blade_dancer":
+				aura.modulate = Color(1.0, 0.82, 0.30, 0.5)
+			else:
+				aura.modulate = Color(0.95, 0.25, 0.30, 0.5)
 		elif pact_time > 0.0 and theme_guard_time <= 0.0:
 			aura.modulate = Color(0.9, 0.15, 0.35, 0.55)
 		elif theme_guard_time > 0.0:

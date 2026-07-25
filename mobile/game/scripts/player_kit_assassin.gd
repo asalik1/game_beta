@@ -156,6 +156,16 @@ func _knife_glow(p: Projectile) -> void:
 		tr.proj = p
 		tr.col = Color(0.5, 1.0, 0.92)
 		game.add_child(tr)
+		# Mini-Phantom blades (owner-designed): each kunai inherits the hero's
+		# current spectral charge and keeps brightening in flight (30% faster,
+		# same shader ceiling), shedding the same ghost-echo trail.
+		var kc := PhantomKnifeCharge.new()
+		kc.proj = p
+		if _skin_ambient != null and is_instance_valid(_skin_ambient):
+			var amb_charge = _skin_ambient.get("charge")
+			if amb_charge != null:
+				kc.charge = float(amb_charge)
+		game.add_child(kc)
 	if skin == "blade_dancer":
 		col = Color(1.0, 0.82, 0.35)          # halo: Golden Ronin's warm gold
 		var echo := ShurikenEcho.new()        # spinning-star after-image

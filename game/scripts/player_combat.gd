@@ -315,6 +315,66 @@ class ShurikenEcho extends Node2D:
 		tw.tween_callback(g.queue_free)
 
 
+## Phantom kunai spectral charge (owner-designed): each thrown blade is a
+## mini-Phantom — it inherits the hero's charge at release and ramps toward
+## full on the knife's OWN timescale (~0.3s; a hero-relative rate was
+## invisible across a sub-second flight — owner spec), through the SAME
+## phantom_charge shader with a 20% hotter gain, shedding a teal ghost-echo
+## trail like the hero's walk. Parents to the game; frees itself when the
+## blade dies (ShurikenEcho shape).
+class PhantomKnifeCharge extends Node2D:
+	const RAMP := 0.3          # s from seed to full charge, knife-local clock
+	const SPAWN_DT := 0.045    # echo ghost cadence (~34px apart at 760px/s)
+	const FADE := 0.30
+	const START_A := 0.42
+	var proj = null
+	var charge := 0.0
+	var mat: ShaderMaterial = null
+	var _t := 0.0
+	func _process(delta: float) -> void:
+		if proj == null or not is_instance_valid(proj):
+			queue_free()       # dropped echoes fade on their own tweens
+			return
+		if mat == null and proj.spr != null and is_instance_valid(proj.spr):
+			mat = ShaderMaterial.new()
+			mat.shader = load("res://shaders/phantom_charge.gdshader")
+			# Knife ceiling runs 20% hotter than the hero's gain (owner-set).
+			mat.set_shader_parameter("bright_gain", 1.62)
+			proj.spr.material = mat
+		charge = minf(charge + delta / RAMP, 1.0)
+		if mat != null:
+			mat.set_shader_parameter("charge", charge)
+		_t += delta
+		while _t >= SPAWN_DT:
+			_t -= SPAWN_DT
+			_drop_echo()
+	func _drop_echo() -> void:
+		if proj.spr == null or not is_instance_valid(proj.spr):
+			return
+		var parent := get_parent()
+		if parent == null:
+			return
+		var g := Sprite2D.new()
+		g.texture = proj.spr.texture
+		g.global_position = proj._fx_pos()
+		g.rotation = proj.spr.global_rotation
+		g.scale = proj.spr.global_scale
+		# The hero's after-images are SOLID silhouette fills, not translucent
+		# copies — a faint raw-texture ghost melts into the streak on a blade
+		# this small/fast (owner: "where is the after image? i dont see it").
+		# Same shader + teal as the body trail.
+		var mat := ShaderMaterial.new()
+		mat.shader = load("res://shaders/silhouette.gdshader")
+		mat.set_shader_parameter("tint", Vector3(0.40, 0.85, 1.0))
+		g.material = mat
+		g.modulate = Color(1, 1, 1, START_A)
+		g.z_index = 4          # just under the live blade (projectile z_index 5)
+		parent.add_child(g)
+		var tw := g.create_tween()
+		tw.tween_property(g, "modulate:a", 0.0, FADE)
+		tw.tween_callback(g.queue_free)
+
+
 ## Persistent mythic locomotion language. It reacts to velocity, changes shape
 ## over time, and emits sparse moving accents instead of sitting as a glow.
 class SkinAmbient extends Node2D:
@@ -331,9 +391,9 @@ class SkinAmbient extends Node2D:
 	var eye_t := 0.0
 	var charge := 0.0
 	var charge_mat: ShaderMaterial = null
-	# Phantom spectral charge: seconds of sustained motion to fully bleach
+	# Phantom spectral charge: seconds of sustained motion to fully brighten
 	# (up) and to settle fully back into the dark (down). Owner-tuned by eye.
-	const CHARGE_UP := 3.0
+	const CHARGE_UP := 4.2
 	const CHARGE_DOWN := 2.4
 	# The authored idle bank (frames 0-3) sits 28 source pixels lower than the
 	# glide bank (4-7). At 0.62 display scale that is ~17 screen pixels. Offset
@@ -1608,9 +1668,16 @@ func _beam_fx(from: Vector2, to: Vector2, col: Color, width := 0.18) -> void:
 ## fires it for the dash-stab rider, and calls only flow derived→base.)
 func _grant_stab_surge() -> void:
 	# Announce it once when it FIRST lights (a refresh mid-surge is silent —
-	# the stab cadence is 0.3s); the crimson aura carries the rest.
+	# the stab cadence is 0.3s); the aura carries the rest, in the skin's
+	# identity color (teal Phantom / gold Ronin / crimson base — see the
+	# buff-aura block in player.gd).
 	if stab_ls_time <= 0.0:
-		game.spawn_text(global_position + Vector2(0, -52), "BLOOD SURGE", Color(0.95, 0.35, 0.4))
+		var surge_col := Color(0.95, 0.35, 0.4)
+		if skin == "phantom":
+			surge_col = Color(0.28, 0.50, 1.0)
+		elif skin == "blade_dancer":
+			surge_col = Color(1.0, 0.85, 0.35)
+		game.spawn_text(global_position + Vector2(0, -52), "BLOOD SURGE", surge_col)
 	stab_ls_time = 4.0
 	stab_ls_amt = Balance.SURGE_LS_FLOOR + Balance.SURGE_LS_SCALE * (1.0 - hp / max_hp)
 
