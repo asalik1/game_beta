@@ -22,7 +22,7 @@ P = "convo"; A = "action"; H = "hotspot"
 HUB_ACTIONS = {
     "portal_story", "portal_crucible", "portal_depths",
     "vault", "codex", "daily", "map", "mail", "journal", "records",
-    "guild", "skills", "gear", "shop", "potions",
+    "guild", "skills", "gear", "shop", "potions", "wardrobe",
 }
 ROOMS = [
   # --- THE HEART: every everyday service is within one room of the plaza ---
@@ -202,7 +202,10 @@ LANDMARK_USES = {
         ACTION("E — Review your records", "records", x=170, y=100),
     ],
     ("guild", 0): [ACTION("E — Open Play Together", "guild", y=90)],
-    ("market", 0): [ACTION("E — Browse the bazaar", "shop", y=100)],
+    # The shop stall doubles as the outfitter's: gold goods on one side,
+    # the Renown Wardrobe (skins/chromas) on the other.
+    ("market", 0): [ACTION("E — Browse the bazaar", "shop", x=-90, y=100),
+                    ACTION("E — Browse the Wardrobe", "wardrobe", x=90, y=100)],
     ("market", 1): [ACTION("E — Check your mailbox", "mail", y=100)],
     ("hearth", 0): [INSPECT("E — Warm yourself", "The Great Hearth",
         "A public fire for cooking, waiting, and finding companions between expeditions.", y=90)],

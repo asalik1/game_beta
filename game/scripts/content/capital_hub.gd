@@ -86,7 +86,7 @@ const CHAPTER := {
 		"district": "civic", "mark": "",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_market_stall", "x": 620, "y": 600, "clearance": 215, "uses": [{"type": "action", "prompt": "E — Browse the bazaar", "x": 0, "y": 100, "ref": "shop"}]}, {"name": "capital_market_stall", "x": 1492, "y": 600, "clearance": 215, "uses": [{"type": "action", "prompt": "E — Check your mailbox", "x": 0, "y": 100, "ref": "mail"}]}],
+		"landmarks": [{"name": "capital_market_stall", "x": 620, "y": 600, "clearance": 215, "uses": [{"type": "action", "prompt": "E — Browse the bazaar", "x": -90, "y": 100, "ref": "shop"}, {"type": "action", "prompt": "E — Browse the Wardrobe", "x": 90, "y": 100, "ref": "wardrobe"}]}, {"name": "capital_market_stall", "x": 1492, "y": 600, "clearance": 215, "uses": [{"type": "action", "prompt": "E — Check your mailbox", "x": 0, "y": 100, "ref": "mail"}]}],
 		"furnishings": [],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1680}],
 		"merchant": [1056, 560],
@@ -354,7 +354,7 @@ static func selftest(_game: Node2D) -> String:
 	if ch.get("zones", []).size() != 25:
 		return "capital: expected 25 zones, got %d" % ch.get("zones", []).size()
 	var coords := {}
-	var known_actions := ["codex", "daily", "gear", "guild", "journal", "mail", "map", "portal_crucible", "portal_depths", "portal_story", "potions", "records", "shop", "skills", "vault"]
+	var known_actions := ["codex", "daily", "gear", "guild", "journal", "mail", "map", "portal_crucible", "portal_depths", "portal_story", "potions", "records", "shop", "skills", "vault", "wardrobe"]
 	for z in ch["zones"]:
 		if z.get("type", "") != "safe":
 			return "capital: zone %s is not safe" % z.get("name", "?")
