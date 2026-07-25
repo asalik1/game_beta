@@ -329,6 +329,12 @@ class SkinAmbient extends Node2D:
 	var eldritch_familiar: Sprite2D = null
 	var familiar_frame_t := 0.0
 	var eye_t := 0.0
+	var charge := 0.0
+	var charge_mat: ShaderMaterial = null
+	# Phantom spectral charge: seconds of sustained motion to fully bleach
+	# (up) and to settle fully back into the dark (down). Owner-tuned by eye.
+	const CHARGE_UP := 3.0
+	const CHARGE_DOWN := 2.4
 	# The authored idle bank (frames 0-3) sits 28 source pixels lower than the
 	# glide bank (4-7). At 0.62 display scale that is ~17 screen pixels. Offset
 	# the idle node upward so the platform surface and underside remain at the
@@ -343,6 +349,12 @@ class SkinAmbient extends Node2D:
 		elif skin_id == "eldritch_warlock":
 			_build_eldritch_familiar()
 			eye_t = randf_range(2.0, 4.0)
+		elif skin_id == "phantom":
+			# Spectral-charge material on the hero sprite (chromas are inactive
+			# while a skin is equipped, so the material slot is free).
+			charge_mat = ShaderMaterial.new()
+			charge_mat.shader = load("res://shaders/phantom_charge.gdshader")
+			plr.sprite.material = charge_mat
 	func _process(delta: float) -> void:
 		if plr == null or not is_instance_valid(plr):
 			queue_free()
@@ -383,6 +395,8 @@ class SkinAmbient extends Node2D:
 			if eye_t <= 0.0:
 				_bloom_eye()
 				eye_t = randf_range(3.0, 5.5)
+		elif skin_id == "phantom":
+			_update_phantom_charge(delta)
 		queue_redraw()
 	func _build_eldritch_familiar() -> void:
 		eldritch_familiar = Sprite2D.new()
@@ -467,6 +481,19 @@ class SkinAmbient extends Node2D:
 		tw.parallel().tween_property(feather, "rotation", feather.rotation + randf_range(-1.2, 1.2), 0.62)
 		tw.parallel().tween_property(feather, "modulate:a", 0.0, 0.62)
 		tw.tween_callback(feather.queue_free)
+	func _update_phantom_charge(delta: float) -> void:
+		if charge_mat == null:
+			return
+		var moving: bool = plr.velocity.length() > 25.0
+		charge = clampf(charge + (delta / CHARGE_UP if moving else -delta / CHARGE_DOWN), 0.0, 1.0)
+		charge_mat.set_shader_parameter("charge", charge)
+	func _exit_tree() -> void:
+		# Skin unequipped / player freed: take the spectral-charge material
+		# with us so the base assassin (or next skin) renders clean.
+		if charge_mat == null or plr == null or not is_instance_valid(plr):
+			return
+		if plr.sprite != null and plr.sprite.material == charge_mat:
+			plr.sprite.material = null
 	func _emit_phantom_ghost() -> void:
 		# One spectral echo of the CURRENT walk frame, left behind in the world
 		# (not player-parented — a trail must stay where the hero was). Same
