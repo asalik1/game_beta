@@ -332,10 +332,19 @@ func add_renown(n: int) -> void:
 		return
 	_load_meta()
 	_meta["renown"] = int(_meta.get("renown", 0)) + n
+	# First grant ever (account): say WHERE it spends, once — the vault's
+	# "open the Quest Log" shout pattern.
+	var first: bool = not bool(_meta.get("renown_hint", false))
+	if first:
+		_meta["renown_hint"] = true
 	_meta_write()
 	if has_local_player():
 		spawn_text(player.global_position + Vector2(0, -114), "+%d RENOWN" % n,
 			Balance.RENOWN_COLOR, 4.0)
+		if first:
+			spawn_text(player.global_position + Vector2(0, -136),
+				"Renown buys skins & chromas — open the WARDROBE (pause menu)",
+				Balance.RENOWN_COLOR, 6.0)
 
 
 ## Spend Renown; false (and no charge) when the balance is short.
