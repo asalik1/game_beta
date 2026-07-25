@@ -43,10 +43,11 @@ walked back once servers are running.
 retention layer is already ahead of the content it retains players in."* Three
 of the five topics below are meta systems. The multiplier the doc names as next
 and cheapest — **difficulty tiers / NG+ (Normal / Nightmare +20 / Torment +40)**
-— is still **unbuilt** (`DESIGN.md:199`). Owner leaning: unlock Nightmare after
-Act 3 is done. The honest first question before any social build is whether
-difficulty tiers come first. This doctrine was written when the game was
-single-player; "social backbone" is a legitimate reason to revisit it.
+— **SHIPPED 2026-07-24** (DESIGN.md "Difficulty tiers / NG+"). The unlock
+currently rides the Act-1 finale (`Balance.TIER_FINALE_CH` = "ch7" — only Act 1
+exists); the owner leaning recorded here (unlock Nightmare after Act 3) is a
+one-constant flip when Act 3 lands. The tiers-first question this section
+raised is answered; the meta-systems freeze is unblocked on its own terms.
 
 ---
 
@@ -191,8 +192,9 @@ can carry, and it needs the server. Lowest priority of the six; sequence it last
 
 ## Suggested build order (dependency, not priority)
 
-1. **Difficulty tiers / NG+** — resolve the `DESIGN.md:163` gate first (owner:
-   after Act 3). Cheapest content multiplier; unblocks the "meta systems" freeze.
+1. **Difficulty tiers / NG+** — **DONE 2026-07-24** (unlock gate = one constant,
+   `Balance.TIER_FINALE_CH`, movable to Act 3's finale when it exists). The
+   "meta systems" freeze is unblocked.
 2. **Status rewards + segregated event currency** — no server needed. Titles on
    the existing achievement system; event currency buying skins/awakenings that
    already exist. Highest value-per-effort.

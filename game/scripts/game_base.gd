@@ -310,6 +310,12 @@ var run_secrets := 0           # caches unearthed this run
 var weekly_active := false     # the CURRENT run is this week's challenge
 var weekly_week := -1          # week the active run belongs to
 var weekly_claimed_week := -1  # week the completion reward was last paid
+# NG+ difficulty tier THIS RUN launched at — a snapshot of the character's
+# standing choice (player.run_tier), taken in switch_chapter. run_tier()
+# reads THIS, never the live preference, so a mid-run picker flip can't
+# mix spawn levels or launder records/unlocks; a change arms on the next
+# chapter launch. World-saved (save.gd "run_tier_world").
+var world_run_tier := 0
 
 # --- codex completion + titles (persisted) ---
 var kill_counts := {}          # enemy kind -> lifetime kills (this character)
@@ -546,13 +552,52 @@ func request_pause(on: bool) -> void:
 	get_tree().paused = on
 
 
+## NG+ tier governing THIS run's spawns and drops (0 = Normal;
+## Balance.TIER_NAMES). Reads the RUN-START snapshot (world_run_tier) —
+## the character's standing choice (player.run_tier, picked in the replay
+## chapter select) arms it on the next chapter launch. Gates: the endgame
+## modes own their own ladders, the weekly races a shared seed at parity,
+## and co-op sessions run Normal until the tier syncs (follow-up) — all
+## three force 0.
+func run_tier() -> int:
+	if player == null or endgame_active or weekly_active or net_online():
+		return 0
+	return world_run_tier
+
+
+## The chapter id this run's DROPS pay from — the tier-shifted loot band
+## (Balance.tier_chapter). Drop faucets (chests, boss gear, spoils, elite
+## gems, bags, the gem gates) read this; the SHOP and GAMBLE stay keyed to
+## the real chapter_id — they price off measured CHAPTER_ECON farm-cost,
+## which a shifted id doesn't have (the fallthrough would sell S at
+## commodity price), and the village doesn't get harder with the world.
+## The tier's gold rate already makes buying cheaper in farm-minutes.
+func loot_chapter() -> String:
+	return Balance.tier_chapter(chapter_id, run_tier())
+
+
+## An authored campaign spawn level, lifted by the run's NG+ tier (0 = as
+## authored). `lvl` -1 means "kind base": resolve the anchor FIRST so the
+## offset stacks on the authored level (the factory would clamp the
+## sentinel up unshifted). Derived spawns — boss adds, summons — inherit
+## their parent's already-lifted level and must NOT come through here
+## (double-dip).
+func tiered_level(kind: String, lvl: int) -> int:
+	var off := Balance.tier_level_offset(run_tier())
+	if off == 0:
+		return lvl
+	var base: int = lvl if lvl > 0 else int(Story.ALL_ENEMIES.get(kind, {}).get("level", 1))
+	return base + off
+
+
 ## The best gear grade this chapter can drop (act gating, DESIGN.md):
 ## The best grade a GENERAL faucet (chest/shop/gamble/spoils) can yield this
-## chapter — the ceiling of the chapter's general band table (2026-07-09).
+## chapter — the ceiling of the chapter's general band table (2026-07-09),
+## tier-shifted on NG+ runs like every drop faucet.
 ## Display/gating probes only; the drop channels roll the band directly
 ## (the gamble prices itself off the BOSS band now — see gamble_cost).
 func loot_cap() -> String:
-	return Balance.chapter_gear_ceiling(chapter_id)
+	return Balance.chapter_gear_ceiling(loot_chapter())
 
 ## (T7) Merchants read the shard: the steady get kinder prices, the
 ## tempted make the till nervous. Surfaced, never explained in numbers.
@@ -1128,7 +1173,7 @@ func give_loot(payload: Dictionary, pos: Vector2) -> bool:
 ## in-world gem DROP routes through here so the early-game rule holds in one
 ## place; shop stock and dev tools roll specials directly.
 func drop_gem(lvl: int) -> Dictionary:
-	return Items.random_gem(loot_rng, lvl, Balance.special_gems_drop(chapter_id))
+	return Items.random_gem(loot_rng, lvl, Balance.special_gems_drop(loot_chapter()))
 
 
 ## Nudge a ground-drop OUT of walls/props so loot stays reachable. Boss loot

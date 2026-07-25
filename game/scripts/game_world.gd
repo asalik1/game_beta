@@ -33,6 +33,13 @@ func switch_chapter(id: String, force := false) -> void:
 	if not (Story.CHAPTER_LIST.has(id) or Story.is_endgame(id) or Story.is_standalone(id)) or (id == chapter_id and not force):
 		return
 	chapter_id = id
+	# NG+ tier snapshot: the RUN owns its tier from launch to clear. The
+	# picker edits the character's STANDING choice; it arms HERE, where
+	# every campaign (re)launch passes (replay/advance/new game). Endgame
+	# arenas keep the campaign's snapshot parked (run_tier() forces 0
+	# there anyway).
+	if not Story.is_endgame(id):
+		world_run_tier = player.run_tier if has_local_player() else 0
 	_quest_avail_cache = -1  # a new chapter offers a whole new set (⚑ shine memo)
 	quest_marks.clear()      # the old world's ❢ nodes die with it
 	# Potion investment (2026-07-09): stock is BOUGHT and carries across
@@ -555,7 +562,8 @@ func _spawn_room_enemies(i: int) -> void:
 			count = 2
 		for c in count:
 			var jit := Vector2.ZERO if c == 0 else Vector2(drng.randf_range(-70, 70), drng.randf_range(-60, 60))
-			var e := Enemy.make(self, spawn[0], room_pos(i, spawn[1], spawn[2]) + jit, lvl)
+			# NG+ tier lifts every AUTHORED spawn level (game_base.tiered_level).
+			var e := Enemy.make(self, spawn[0], room_pos(i, spawn[1], spawn[2]) + jit, tiered_level(spawn[0], lvl))
 			e.zone_idx = i
 			e.pack_id = pack
 			if xp_override >= 0:
@@ -611,7 +619,8 @@ func _spawn_elite_room(i: int, rng: RandomNumberGenerator) -> void:
 		break
 	if kind == "":
 		return
-	var e := Enemy.make(self, kind, room_center(i) + Vector2(0, -60), lvl + Balance.ELITE_ROOM_LEVEL_BONUS)
+	var e := Enemy.make(self, kind, room_center(i) + Vector2(0, -60),
+		tiered_level(kind, lvl + Balance.ELITE_ROOM_LEVEL_BONUS))
 	e.zone_idx = i
 	e.pack_id = 0
 	e.promote_elite()
@@ -832,7 +841,7 @@ func _shrine_outcome(cost: int) -> void:
 		sfx("nova", 1.1)
 		burst(pos, Color(1.0, 0.9, 0.5), 16)
 		var roll := loot_rng.randf()
-		if roll < 0.4 and Balance.regular_gems_drop(chapter_id):
+		if roll < 0.4 and Balance.regular_gems_drop(loot_chapter()):
 			var gem := drop_gem(
 				2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
 			if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(0, 44)):
@@ -1878,10 +1887,11 @@ func _on_boss_trigger(zi: int) -> void:
 
 func _spawn_boss(zi: int, kind: String) -> void:
 	shake(6.0)
-	# Rooms may spawn a boss off its "story" level (Act pacing).
+	# Rooms may spawn a boss off its "story" level (Act pacing); NG+ tiers
+	# lift the authored level like every campaign spawn (tiered_level).
 	current_boss = Boss.make_boss(self, kind,
 		rooms[zi]["origin"] + Vector2(ROOM_W - 420.0, ROOM_H / 2.0),
-		int(zones[zi].get("boss_level", -1)))
+		tiered_level(kind, int(zones[zi].get("boss_level", -1))))
 	current_boss.story_boss = true  # its death advances the chapter
 	current_boss.zone_idx = zi
 	bosses.append(current_boss)

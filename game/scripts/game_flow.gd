@@ -208,7 +208,10 @@ func _meta_write() -> void:
 ## which bests this run broke (the results card shouts them).
 func record_chapter_result(res: Dictionary) -> Dictionary:
 	_load_meta()
-	var key := "pb_%s_%s" % [chapter_id, player.cls]
+	# NG+ runs keep their OWN record track (…_t1/_t2): a Torment clear is a
+	# different race and must never stomp — or inherit — the Normal PB.
+	var key := "pb_%s_%s" % [chapter_id, player.cls] + \
+		("_t%d" % run_tier() if run_tier() > 0 else "")
 	var prev: Dictionary = _meta.get(key, {})
 	var best := {"time": float(prev.get("time", 0.0)), "grade": String(prev.get("grade", "")),
 		"runs": int(prev.get("runs", 0)) + 1}
@@ -226,10 +229,22 @@ func record_chapter_result(res: Dictionary) -> Dictionary:
 	return out
 
 
-## This class's chapter PB, or {} (codex/journal display).
-func chapter_pb(chid: String, cls: String) -> Dictionary:
+## This class's chapter PB, or {} (codex/journal display). `tier` > 0
+## reads the NG+ record track for that tier (…_t1/_t2).
+func chapter_pb(chid: String, cls: String, tier := 0) -> Dictionary:
 	_load_meta()
-	return _meta.get("pb_%s_%s" % [chid, cls], {})
+	var key := "pb_%s_%s" % [chid, cls] + ("_t%d" % tier if tier > 0 else "")
+	return _meta.get(key, {})
+
+
+## Highest NG+ tier this ACCOUNT may pick is the largest t with
+## tier_unlocked(t); clearing the Act-1 finale at tier T unlocks T+1
+## (see on_boss_died). Tier 0 (Normal) is always open.
+func tier_unlocked(t: int) -> bool:
+	if t <= 0:
+		return true
+	_load_meta()
+	return bool(_meta.get("tier_unlocked_%d" % t, false))
 
 
 ## Endgame records (account-wide, meta.json) — the leaderboard brag numbers,
@@ -607,13 +622,13 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	# whole — each guest's package rolls in host_boss_kill below.
 	if has_local_player():
 		var gem_count := 0
-		if Balance.regular_gems_drop(chapter_id):   # ch1-3 bosses drop no gems (gear only)
+		if Balance.regular_gems_drop(loot_chapter()):   # ch1-3 bosses drop no gems (gear only)
 			if first_clear:
 				gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
 			elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
 				gem_count = 1
 		# First-clear catch-up bundle rolls one level richer than the act floor.
-		var boss_gem_lvl := Balance.gem_drop_level(chapter_id) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
+		var boss_gem_lvl := Balance.gem_drop_level(loot_chapter()) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
 		for gi in gem_count:
 			var boss_gem := drop_gem(boss_gem_lvl)
 			if give_loot({"kind": "gem", "gem": boss_gem}, boss_pos + Vector2(-34.0 + 34.0 * gi, 30)):
@@ -622,16 +637,16 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 
 		# Boss GEAR channel (round 51): a NEW drop on top of gems/gold/spoils.
 		# Grade from the act table (Act1 ch1-6 B@1/3; ch7 +A@1/10; Act2/3 richer).
-		var ggrade := Items.roll_boss_gear_grade(chapter_id, loot_rng)
+		var ggrade := Items.roll_boss_gear_grade(loot_chapter(), loot_rng)
 		if ggrade != "":
 			var gear := Items.roll_gear_of_grade(ggrade, loot_rng, player.cls)
 			if give_loot({"kind": "item", "item": gear}, boss_pos + Vector2(40, 30)):
 				spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
 		# Bags: a SEPARATE, rarer roll (round 51b) — inventory expansion, not every
 		# run. Chance is per-act (Balance.bag_drop_chance); the GRADE follows the
-		# chapter's boss band (2026-07-09); over MAX_BAGS keeps the best set.
+		# chapter's boss band (2026-07-09, tier-shifted); over MAX_BAGS keeps the best set.
 		if loot_rng.randf() < Balance.bag_drop_chance(Story.act_of(chapter_id)):
-			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
+			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(loot_chapter(), loot_rng)))
 
 	# MP-11 (§5.5): the same boss pays every head. One personal package
 	# per guest — host-rolled (loot_rng, one full roll sequence per player,
@@ -682,6 +697,19 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			if not bool(_meta.get(Balance.ENDGAME_UNLOCK_META, false)):
 				_meta[Balance.ENDGAME_UNLOCK_META] = true
 				_meta_write()
+		# NG+ ladder: the Act-1 finale cleared at tier T opens tier T+1 —
+		# account-wide, forever, like the endgame modes (DESIGN "Difficulty
+		# tiers / NG+"). Normal ch7 opens Nightmare; Nightmare ch7, Torment.
+		if chapter_id == Balance.TIER_FINALE_CH:
+			var next_tier := run_tier() + 1
+			if next_tier < Balance.TIER_NAMES.size() and not tier_unlocked(next_tier):
+				_load_meta()
+				_meta["tier_unlocked_%d" % next_tier] = true
+				_meta_write()
+				if has_local_player():
+					spawn_text(player.global_position + Vector2(0, -128),
+						"%s UNLOCKED — replay any chapter at the new tier" % Balance.tier_name(next_tier).to_upper(),
+						Balance.tier_color(next_tier), 5.0)
 		if first_clear and has_local_player():
 			_first_clear_reward(boss_lv)
 		var next_ch := Story.next_chapter(chapter_id)
@@ -766,11 +794,11 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 func _first_clear_reward(boss_lv: int) -> void:
 	var g := int(Balance.FIRST_CLEAR_GOLD * Balance.daily_gold_mult(boss_lv))
 	player.gold += g
-	var spoils := Items.roll_chapter_gear(chapter_id, loot_rng, player.cls)
+	var spoils := Items.roll_chapter_gear(loot_chapter(), loot_rng, player.cls)
 	var spoil_rewards: Array = [{"kind": "item", "item": spoils}]
-	if Balance.regular_gems_drop(chapter_id):   # ch1-3 spoils are gear + gold only
+	if Balance.regular_gems_drop(loot_chapter()):   # ch1-3 spoils are gear + gold only
 		spoil_rewards.append({"kind": "gem", "gem": drop_gem(
-			Balance.gem_drop_level(chapter_id) + Balance.BOSS_FIRST_CLEAR_GEM_BONUS)})
+			Balance.gem_drop_level(loot_chapter()) + Balance.BOSS_FIRST_CLEAR_GEM_BONUS)})
 	send_mail("Spoils of %s" % String(Story.chapter(chapter_id)["name"]),
 		"The chapter is conquered. These spoils are yours by right — and the road behind you stays open for the farming.",
 		spoil_rewards)
@@ -816,9 +844,9 @@ func on_enemy_died(e: Enemy) -> void:
 		# the gem is a chance, so chapter-1 bags stop drowning in gems
 		# nobody can socket yet.
 		if has_local_player():
-			if Balance.regular_gems_drop(chapter_id) and (e.level >= Balance.ELITE_GEM_SURE_LEVEL \
+			if Balance.regular_gems_drop(loot_chapter()) and (e.level >= Balance.ELITE_GEM_SURE_LEVEL \
 					or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE):
-				var gem := drop_gem(Balance.gem_drop_level(chapter_id))
+				var gem := drop_gem(Balance.gem_drop_level(loot_chapter()))
 				if give_loot({"kind": "gem", "gem": gem}, e.global_position):
 					spawn_text(e.global_position + Vector2(0, -70), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 			Chest.drop(self, "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
@@ -831,7 +859,7 @@ func on_enemy_died(e: Enemy) -> void:
 					spawn_text(e.global_position + Vector2(0, -92), "+ Palimpsest of the Path", Color(0.6, 0.9, 1.0))
 			elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
 				# 2026-07-09: bag grade follows the chapter's boss table (like boss bags).
-				player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(chapter_id, loot_rng)))
+				player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(loot_chapter(), loot_rng)))
 		# MP-11 (§5.5): the pinata pays every head — a personal, host-rolled
 		# package per guest (roll_elite_pack mirrors the block above; keep
 		# them in step) + their own elite bounty credit.
@@ -903,7 +931,7 @@ func _curse_payout(zi: int) -> void:
 	# fan below; the sfx/toast are per-machine presentation anyway).
 	if has_local_player():
 		Chest.drop(self, "gold", pos)
-		if Balance.regular_gems_drop(chapter_id):   # gem reward only once gems drop (ch4+)
+		if Balance.regular_gems_drop(loot_chapter()):   # gem reward only once gems drop (ch4+)
 			var gem := drop_gem(
 				2 if loot_rng.randf() < Balance.gem_lv2_chance(player.level) else 1)
 			if give_loot({"kind": "gem", "gem": gem}, pos + Vector2(44, 24)):
@@ -1006,21 +1034,21 @@ func roll_boss_pack(kind: String, boss_pos: Vector2, boss_lv: int,
 		{"k": "gold", "n": int(Story.ALL_ENEMIES[kind].get("gold", 50)), "at": boss_pos},
 	]
 	var gem_count := 0
-	if Balance.regular_gems_drop(chapter_id):
+	if Balance.regular_gems_drop(loot_chapter()):
 		if first_clear:
 			gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
 		elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
 			gem_count = 1
-	var gem_lvl := Balance.gem_drop_level(chapter_id) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
+	var gem_lvl := Balance.gem_drop_level(loot_chapter()) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
 	for gi in gem_count:
 		evs.append({"k": "gem", "gem": drop_gem(gem_lvl),
 			"at": boss_pos + Vector2(-34.0 + 34.0 * gi, 30), "ty": -70 - 20 * gi})
-	var ggrade := Items.roll_boss_gear_grade(chapter_id, loot_rng)
+	var ggrade := Items.roll_boss_gear_grade(loot_chapter(), loot_rng)
 	if ggrade != "":
 		evs.append({"k": "item", "item": Items.roll_gear_of_grade(ggrade, loot_rng, cls),
 			"at": boss_pos + Vector2(40, 30)})
 	if loot_rng.randf() < Balance.bag_drop_chance(Story.act_of(chapter_id)):
-		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(chapter_id, loot_rng)})
+		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(loot_chapter(), loot_rng)})
 	return evs
 
 
@@ -1030,9 +1058,9 @@ func roll_boss_pack(kind: String, boss_pos: Vector2, boss_lv: int,
 func roll_elite_pack(e: Enemy) -> Array:
 	var pos := e.global_position
 	var evs: Array = [{"k": "gold", "n": e.gold_value, "at": pos}]
-	if Balance.regular_gems_drop(chapter_id) and (e.level >= Balance.ELITE_GEM_SURE_LEVEL \
+	if Balance.regular_gems_drop(loot_chapter()) and (e.level >= Balance.ELITE_GEM_SURE_LEVEL \
 			or loot_rng.randf() < Balance.ELITE_GEM_EARLY_CHANCE):
-		evs.append({"k": "gem", "gem": drop_gem(Balance.gem_drop_level(chapter_id)),
+		evs.append({"k": "gem", "gem": drop_gem(Balance.gem_drop_level(loot_chapter())),
 			"at": pos, "ty": -70})
 	evs.append({"k": "chest",
 		"tier": "gold" if loot_rng.randf() < Balance.ELITE_GOLD_CHEST_CHANCE else "silver",
@@ -1042,7 +1070,7 @@ func roll_elite_pack(e: Enemy) -> Array:
 	elif loot_rng.randf() < Balance.ELITE_TOME_CHANCE:
 		evs.append({"k": "stone", "stone": Items.make_respec_tome(), "at": pos + Vector2(-36, 8)})
 	elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
-		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(chapter_id, loot_rng)})
+		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(loot_chapter(), loot_rng)})
 	return evs
 
 
@@ -1052,7 +1080,7 @@ func roll_elite_pack(e: Enemy) -> Array:
 func roll_curse_pack(zi: int, level: int) -> Array:
 	var pos := room_center(zi) + Vector2(0, -60)
 	var evs: Array = [{"k": "chest", "tier": "gold", "at": pos}]
-	if Balance.regular_gems_drop(chapter_id):
+	if Balance.regular_gems_drop(loot_chapter()):
 		evs.append({"k": "gem",
 			"gem": drop_gem(2 if loot_rng.randf() < Balance.gem_lv2_chance(level) else 1),
 			"at": pos + Vector2(44, 24), "ty": -40})

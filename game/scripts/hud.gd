@@ -879,6 +879,15 @@ func _close_hud_popover() -> void:
 func _active_buffs() -> Array:
 	var p: Player = game.local_player  # the HUD is per-client: MY buffs
 	var out: Array = []
+	# NG+ tier badge leads everything — the run's difficulty is standing
+	# state worn to the run's end (run_tier() = the run-start snapshot),
+	# and NO SILENT EFFECTS: if the world is +20, the HUD says so.
+	var rt: int = game.run_tier()
+	if rt > 0:
+		out.append({"id": "ng_tier", "glyph": "ab_flame", "color": Balance.tier_color(rt),
+			"t": -1.0, "text": "+%d" % Balance.tier_level_offset(rt),
+			"tip": "%s — every spawn +%d levels, loot bands +%d chapters richer, no XP. The run holds this tier to its end; change it in the replay chapter select." % [
+				Balance.tier_name(rt).to_upper(), Balance.tier_level_offset(rt), int(Balance.TIER_BAND_SHIFT[rt])]})
 	# Persistent class states lead the row, so chips don't reshuffle as
 	# timed buffs come and go around them.
 	if p.cls == "paladin":

@@ -48,6 +48,9 @@ static func write(game: Game, slot: int) -> void:
 		"run_time": game.run_time, "run_deaths": game.run_deaths,
 		"run_elites": game.run_elites, "run_secrets": game.run_secrets,
 		"weekly_active": game.weekly_active, "weekly_week": game.weekly_week,
+		# The NG+ tier THIS run launched at (snapshot; the standing choice
+		# rides the character as run_tier above).
+		"run_tier_world": game.world_run_tier,
 		# Slain bosses resolve THIS world's rooms and gates on load
 		# (reconcile_after_load) — world state. PBs stay in character.
 		"bosses_slain": game.boss_done.keys(),
@@ -108,6 +111,8 @@ static func _character_section(game: Game) -> Dictionary:
 		"potion_rotation": p.potion_rotation, "active_potion": p.active_potion,
 		# Waking Depths: highest cleared checkpoint depth (re-entry point).
 		"depths_checkpoint": p.depths_checkpoint,
+		# NG+ difficulty tier the campaign runs at (0 = Normal).
+		"run_tier": p.run_tier,
 		# --- vitals ---
 		"hp": p.hp, "mp": p.mp,
 		# Mailbox + dropped loot are CHARACTER-owned (§5.5 loot instancing:
@@ -174,8 +179,10 @@ static func write_server_world(game: Game) -> void:
 		"run_time": game.run_time, "run_deaths": game.run_deaths,
 		"run_elites": game.run_elites, "run_secrets": game.run_secrets,
 		# A server world is never the weekly-challenge run (that is a
-		# per-player replay mode) — persisted false by construction.
+		# per-player replay mode) — persisted false by construction. Same
+		# for the NG+ tier: co-op sessions run Normal (game_base.run_tier).
 		"weekly_active": false, "weekly_week": -1,
+		"run_tier_world": 0,
 		"bosses_slain": game.boss_done.keys(),
 		"cur_room": game.cur_room,
 		"last_safe_room": game.last_safe_room,
@@ -385,6 +392,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.run_secrets = int(w.get("run_secrets", 0))
 	game.weekly_active = bool(w.get("weekly_active", false))
 	game.weekly_week = int(w.get("weekly_week", -1))
+	game.world_run_tier = clampi(int(w.get("run_tier_world", 0)), 0, Balance.TIER_NAMES.size() - 1)
 	game.boss_done = {}
 	for kind in w.get("bosses_slain", []):
 		game.boss_done[String(kind)] = true
@@ -470,6 +478,7 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	p.potion_rotation = c.get("potion_rotation", [])
 	p.active_potion = String(c.get("active_potion", "health"))
 	p.depths_checkpoint = int(c.get("depths_checkpoint", 0))  # pre-restructure saves: no checkpoint yet
+	p.run_tier = clampi(int(c.get("run_tier", 0)), 0, Balance.TIER_NAMES.size() - 1)  # pre-tier saves: Normal
 
 	p.recalc()
 	p.hp = clampf(float(c.get("hp", p.max_hp)), 1.0, p.max_hp)

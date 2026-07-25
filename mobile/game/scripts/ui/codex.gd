@@ -769,6 +769,35 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 		var how := m._lbl(row, String(t["how"]), 12, Color(0.6, 0.62, 0.7))
 		how.custom_minimum_size = Vector2(280, 0)
 
+	# --- NG+ difficulty tiers (DESIGN "Difficulty tiers / NG+") — numbers
+	# pull live from Balance so the card can never drift from the tuning.
+	m._lbl(list, "— DIFFICULTY TIERS — replay the campaign harder, for richer loot —", 16, Color(0.72, 0.45, 1.0))
+	var tcard := VBoxContainer.new()
+	tcard.add_theme_constant_override("separation", 3)
+	_card(list).add_child(tcard)
+	for tier in Balance.TIER_NAMES.size():
+		var open_t: bool = m.game.tier_unlocked(tier)
+		var trow := HBoxContainer.new()
+		trow.add_theme_constant_override("separation", 10)
+		tcard.add_child(trow)
+		var tnm := m._lbl(trow, ("" if open_t else "🔒 ") + Balance.tier_name(tier), 14,
+			Balance.tier_color(tier) if open_t else Color(0.5, 0.5, 0.55))
+		tnm.custom_minimum_size = Vector2(150, 0)
+		var tdesc: String
+		if tier == 0:
+			tdesc = "The campaign as authored."
+		else:
+			tdesc = "Every spawn +%d levels · loot bands +%d chapters · no XP" % [
+				Balance.tier_level_offset(tier), int(Balance.TIER_BAND_SHIFT[tier])]
+		var tds := m._lbl(trow, tdesc, 13, Color(0.78, 0.8, 0.86) if open_t else Color(0.55, 0.57, 0.63))
+		tds.custom_minimum_size = Vector2(430, 0)
+		if not open_t:
+			var thw := m._lbl(trow, "Clear Chapter 7 at %s." % Balance.tier_name(tier - 1), 12, Color(0.6, 0.62, 0.7))
+			thw.custom_minimum_size = Vector2(240, 0)
+	var tfoot := m._lbl(tcard, "Pick the tier in the replay chapter select (pause → Chapter select). Each tier keeps its own chapter bests below.", 12, Color(0.6, 0.62, 0.7))
+	tfoot.custom_minimum_size = Vector2(860, 0)
+	tfoot.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
 	# --- boss personal bests ---
 	m._lbl(list, "— BOSS RECORDS —   fastest clear · best dps · kills", 16, Color(1, 0.6, 0.6))
 	_records_bosses_and_rest(m, list)
@@ -835,23 +864,30 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 	_card(list).add_child(pbs)
 	var any_pb := false
 	for chid in Story.CHAPTER_LIST:
-		var pb: Dictionary = m.game.chapter_pb(String(chid), m.game.player.cls)
-		if pb.is_empty():
-			continue
-		any_pb = true
-		var secs := int(float(pb.get("time", 0.0)))
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-		pbs.add_child(row)
-		var nm := m._lbl(row, String(Story.chapter(String(chid))["name"]), 14, Color(0.85, 0.9, 1.0))
-		nm.custom_minimum_size = Vector2(300, 0)
-		var t := m._lbl(row, "%d:%02d" % [secs / 60, secs % 60], 14, Color(0.7, 1.0, 0.7))
-		t.custom_minimum_size = Vector2(90, 0)
-		var gr := String(pb.get("grade", "D"))
-		var g := m._lbl(row, "grade %s" % gr, 14, Items.GRADE_COLOR.get(gr, Color(1, 1, 1)))
-		g.custom_minimum_size = Vector2(120, 0)
-		var runs := m._lbl(row, "×%d runs" % int(pb.get("runs", 1)), 14, Color(0.8, 0.82, 0.88))
-		runs.custom_minimum_size = Vector2(100, 0)
+		# One row per TIER with a mark (NG+ tracks are separate races —
+		# a Torment best never stomps, or hides behind, the Normal one).
+		for tier in Balance.TIER_NAMES.size():
+			var pb: Dictionary = m.game.chapter_pb(String(chid), m.game.player.cls, tier)
+			if pb.is_empty():
+				continue
+			any_pb = true
+			var secs := int(float(pb.get("time", 0.0)))
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 10)
+			pbs.add_child(row)
+			var nm_text := String(Story.chapter(String(chid))["name"])
+			if tier > 0:
+				nm_text += "  ·  " + Balance.tier_name(tier)
+			var nm := m._lbl(row, nm_text, 14,
+				Balance.tier_color(tier) if tier > 0 else Color(0.85, 0.9, 1.0))
+			nm.custom_minimum_size = Vector2(300, 0)
+			var t := m._lbl(row, "%d:%02d" % [secs / 60, secs % 60], 14, Color(0.7, 1.0, 0.7))
+			t.custom_minimum_size = Vector2(90, 0)
+			var gr := String(pb.get("grade", "D"))
+			var g := m._lbl(row, "grade %s" % gr, 14, Items.GRADE_COLOR.get(gr, Color(1, 1, 1)))
+			g.custom_minimum_size = Vector2(120, 0)
+			var runs := m._lbl(row, "×%d runs" % int(pb.get("runs", 1)), 14, Color(0.8, 0.82, 0.88))
+			runs.custom_minimum_size = Vector2(100, 0)
 	if not any_pb:
 		m._lbl(pbs, "Clear a chapter to set its first mark — time and grade are kept per class.",
 			13, Color(0.6, 0.62, 0.68))

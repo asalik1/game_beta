@@ -289,11 +289,13 @@ const GEM_GOLD_PER_LEVEL := 3.0
 #   BOSS    — the boss gear channel + ALL bag sources (reaches the ceiling)
 # Tiers phase in/out on a sliding window (intent; the tables are the truth):
 #   F ch1-3 | E ch2-4 | D ch3-7 | C ch4-11 | B ch5-.. | A ch6-.. | S ch12-..
-# Regular gems drop ch4+, special gems ch6+ (see *_gems_drop below). ch12+
-# tables are set later (unbuilt) — gear_weights/boss_weights fall back to the
-# richest authored table so nothing rolls empty.
+# Regular gems drop ch4+, special gems ch6+ (see *_gems_drop below). ch12 is
+# the S-band table (S ch12-∞ per the window) — authored 2026-07-24 because the
+# NG+ tier shift (tier_chapter below) makes it reachable from Torment ch4+.
+# ch13+ tables are set later (unbuilt) — gear_weights/boss_weights fall back
+# to the richest authored table so nothing rolls empty.
 const GEAR_TIER_ORDER := ["F", "E", "D", "C", "B", "A", "S"]
-const RICHEST_CH := "ch11"   # fallback table for unbuilt ch12+
+const RICHEST_CH := "ch12"   # fallback table for unbuilt ch13+
 const CHAPTER_GEAR_WEIGHTS := {
 	"ch1":  {"F": 100},
 	"ch2":  {"F": 40, "E": 60},
@@ -306,6 +308,7 @@ const CHAPTER_GEAR_WEIGHTS := {
 	"ch9":  {"C": 10, "B": 89, "A": 1},
 	"ch10": {"C": 6, "B": 92, "A": 2},
 	"ch11": {"C": 2, "B": 96, "A": 2},
+	"ch12": {"B": 90, "A": 9, "S": 1},
 }
 const CHAPTER_BOSS_WEIGHTS := {
 	"ch1":  {"F": 100},
@@ -319,6 +322,7 @@ const CHAPTER_BOSS_WEIGHTS := {
 	"ch9":  {"B": 65, "A": 35},
 	"ch10": {"B": 65, "A": 35},
 	"ch11": {"B": 65, "A": 35},
+	"ch12": {"B": 50, "A": 45, "S": 5},
 }
 # Per-boss chance to drop a gear item AT ALL (grade then rolled from the boss
 # table) — preserved from the old B@1/3 channel so gear FREQUENCY is unchanged,
@@ -401,6 +405,49 @@ static func regular_gems_drop(chid: String) -> bool:
 	return chapter_num(chid) >= REGULAR_GEM_START_CH
 static func special_gems_drop(chid: String) -> bool:
 	return chapter_num(chid) >= SPECIAL_GEM_START_CH
+
+# ---------------------------------------------------- difficulty tiers ---
+# NG+ (DESIGN "Difficulty tiers / NG+", built 2026-07-24): a per-CHARACTER
+# run setting picked in the replay chapter select. A tier adds a flat
+# CONTENT-LEVEL offset to every authored campaign spawn — mobs and bosses
+# run through the same enemy_stats_at growth as always, no hidden
+# multipliers, so the codex stays honest (+20 ≈ 3x damage on the
+# GROWTH_SCALE curve; derived spawns like boss adds inherit their parent's
+# lifted level, see game_base.tiered_level) — and shifts every
+# chapter-keyed LOOT lookup by whole chapters (~5 levels per Act-1
+# chapter), so the grade floor rises with the danger: F/E phase out, B/A/S
+# phase in, and the gem gates + act floors ride the same shift. Tier runs
+# pay ZERO XP at any completion state (player_core.gain_xp — XP stays
+# story currency, paid once at parity); a tier pays in gold RATE (linear
+# per level), gem QUALITY, and the shifted band's gear. Unlocks are
+# ACCOUNT-wide (meta.json): clearing the Act-1 finale at tier T opens
+# T+1. The endgame modes own their own ladders and the weekly races a
+# shared seed at parity — game_base.run_tier() returns 0 in both, and in
+# co-op sessions until the tier syncs (follow-up). Names deliberately
+# share the Depths block vocabulary (DEPTHS_BLOCK_NAMES) — one difficulty
+# language everywhere.
+const TIER_NAMES := ["Normal", "Nightmare", "Torment"]
+const TIER_LEVEL_OFFSET := [0, 20, 40]   # content-level add on every authored campaign spawn
+const TIER_BAND_SHIFT := [0, 4, 8]       # chapter-table shift: tracks the level offset at ~5 lvl/ch
+const TIER_COLORS := [Color(0.75, 0.85, 0.8), Color(0.72, 0.45, 1.0), Color(1.0, 0.4, 0.35)]
+const TIER_FINALE_CH := "ch7"            # the clear that opens the next tier (Act-1 finale)
+
+static func tier_name(t: int) -> String:
+	return String(TIER_NAMES[clampi(t, 0, TIER_NAMES.size() - 1)])
+static func tier_color(t: int) -> Color:
+	return Color(TIER_COLORS[clampi(t, 0, TIER_COLORS.size() - 1)])
+static func tier_level_offset(t: int) -> int:
+	return int(TIER_LEVEL_OFFSET[clampi(t, 0, TIER_LEVEL_OFFSET.size() - 1)])
+
+## The chapter whose LOOT tables a tier-t run of `chid` pays from. Shifted
+## ids resolve through the authored ch8-12 tables (ch12 = the S band), then
+## the RICHEST_CH fallback; non-"chN" ids (endgame arenas) pass through.
+static func tier_chapter(chid: String, t: int) -> String:
+	var shift: int = int(TIER_BAND_SHIFT[clampi(t, 0, TIER_BAND_SHIFT.size() - 1)])
+	var n := chapter_num(chid)
+	if shift == 0 or n <= 0:
+		return chid
+	return "ch%d" % (n + shift)
 
 # Smith UPGRADE curve. Per-step cost = UPGRADE_BASE * UPGRADE_GRADE_FACTOR[grade]
 # * (1+plus)^UPGRADE_COST_EXP — grade doubles per tier (an S step is 8x a C step
@@ -496,6 +543,12 @@ static func boss_gear_odds(chid: String) -> Dictionary:
 ## Elite/boss gem drop LEVEL for a chapter's act (round 51: replaces the
 ## gem_lv2_chance ramp for the act floor). Act1 L1, Act2 L2, Act3 L5.
 static func gem_drop_level(chid: String) -> int:
+	if not CHAPTER_ECON.has(chid):
+		# Tier-shifted / unbuilt ids carry no measured econ row: derive the
+		# act from the chapter number (~7 chapters per act, Story.act_of's
+		# rule) so a Nightmare/Torment band pays its act's gem floor.
+		var derived: int = clampi(1 + (chapter_num(chid) - 1) / 7, 1, 3)
+		return int(GEM_ACT_LEVEL.get(derived, 1))
 	var act: int = int(CHAPTER_ECON.get(chid, {}).get("act", 1))
 	return int(GEM_ACT_LEVEL.get(act, 1))
 

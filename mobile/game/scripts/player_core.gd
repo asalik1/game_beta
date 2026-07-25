@@ -108,6 +108,12 @@ var potion_swap_cd := 0.0          # debounce for the held cycle key
 # character — an alt earns its own footing.
 var depths_checkpoint := 0
 
+# NG+ difficulty tier this character runs the CAMPAIGN at (0 = Normal;
+# Balance.TIER_NAMES). Chosen in the replay chapter select, persisted with
+# the character; unlocks are account-wide (meta.json tier_unlocked_N).
+# game_base.run_tier() is the gated read — endgame/weekly/co-op force 0.
+var run_tier := 0
+
 # --- vitals ---
 var max_hp := 100.0
 var hp := 100.0
@@ -1758,6 +1764,12 @@ func gain_xp(amount: int) -> void:
 	# never levels (playtest round 3: "clear ch1 2000 times, come out
 	# max level"). Dev mode keeps its level buttons for testing.
 	if game.get_flag("completed_" + game.chapter_id, false) and not game.dev_mode:
+		return
+	# NG+ tiers farm gold, gear and gems — never levels. XP is story
+	# currency, paid once at parity (DESIGN "XP = story currency"); an
+	# UNCOMPLETED chapter entered at +20/+40 would otherwise pay 3-6x
+	# (REWARD_PER_LEVEL rides the lifted spawn levels).
+	if game.run_tier() > 0 and not game.dev_mode:
 		return
 	xp += amount
 	game.spawn_text(global_position + Vector2(0, -56), "+%d XP" % amount, Color(1.0, 0.9, 0.4))

@@ -756,6 +756,41 @@ func open_chapter_select(replay := false) -> void:
 		_lbl(vbox, "Return to any unlocked chapter with this character — farm, finish arcs, take other paths. Story progress there resets; your build, gear and Resonance travel with you.", 14, Color(0.75, 0.75, 0.75))
 	else:
 		_lbl(vbox, "One campaign, chapter by chapter: win a chapter and your hero journeys on to the next. Later chapters unlock once you've beaten the one before.", 14, Color(0.75, 0.75, 0.75))
+	# NG+ tier row (DESIGN "Difficulty tiers / NG+"): appears once Nightmare
+	# is unlocked (account-wide — clear the Act-1 finale). The pick is the
+	# character's STANDING campaign tier; it arms on the next launch below
+	# (switch_chapter snapshots it — a mid-run flip never mixes a live run).
+	# Hidden online: co-op runs Normal until the tier syncs (follow-up).
+	if replay and game.tier_unlocked(1) and not game.net_online():
+		var trow := HBoxContainer.new()
+		trow.add_theme_constant_override("separation", 10)
+		vbox.add_child(trow)
+		var tlab := _lbl(trow, "Difficulty:", 15, Color(0.8, 0.8, 0.85))
+		tlab.custom_minimum_size = Vector2(100, 0)
+		for t in Balance.TIER_NAMES.size():
+			var tier: int = t
+			var open_t: bool = game.tier_unlocked(tier)
+			var selected: bool = game.player.run_tier == tier
+			var on_pick := func() -> void:
+				game.player.run_tier = tier
+				open_chapter_select(true)
+			_btn(trow, "  %s%s%s  " % ["▶ " if selected else "", Balance.tier_name(tier),
+					"" if open_t else " 🔒"], on_pick,
+				Balance.tier_color(tier) if open_t else Color(0.5, 0.5, 0.55),
+				open_t and not selected)
+		var cur: int = game.player.run_tier
+		var off := Balance.tier_level_offset(cur)
+		var tdesc: String
+		if off == 0:
+			tdesc = "The world as authored — the campaign's own pacing and rewards."
+		else:
+			var shift: int = int(Balance.TIER_BAND_SHIFT[cur])
+			var top_g := Balance.chapter_gear_ceiling(Balance.tier_chapter(Balance.TIER_FINALE_CH, cur))
+			tdesc = "Every spawn +%d levels · loot bands +%d chapters (finale chests reach %s-grade) · no XP — the tier pays in gold rate, gem quality and gear." % [off, shift, top_g]
+		if cur + 1 < Balance.TIER_NAMES.size() and not game.tier_unlocked(cur + 1):
+			tdesc += "  Clear Chapter 7 at %s to unlock %s." % [Balance.tier_name(cur), Balance.tier_name(cur + 1)]
+		var td := _lbl(vbox, tdesc, 13, Balance.tier_color(cur) if off > 0 else Color(0.65, 0.68, 0.78))
+		td.custom_minimum_size = Vector2(800, 0)
 	# The list SCROLLS (QA finding 4: seven chapters overflowed the fixed
 	# panel) — same pattern as the save roster. A holder Control wraps the
 	# scroll so a bottom fade can float over it: the last row dissolves

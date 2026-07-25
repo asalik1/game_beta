@@ -899,6 +899,11 @@ func _run_systems() -> void:
 	await _test_asset_seams()
 	_test_npc_interaction_facing()
 
+	# 3d19. NG+ difficulty tiers (2026-07-24): offsets, band shift + the
+	# S-band ch12 table, run_tier gates, zero XP, unlock meta, tier PBs,
+	# save round-trip of the standing choice + run snapshot.
+	await _test_difficulty()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -5103,3 +5108,125 @@ func _test_far_regime_growth() -> void:
 	if float(over["hp"]) <= float(capped["hp"]):
 		return _fail("overcap levels should keep compounding")
 	print("ok: two-regime growth (native band -> boss dial far-field; no L100 inversion; overcap blocks)")
+
+
+## NG+ difficulty tiers (2026-07-24, DESIGN "Difficulty tiers / NG+"):
+## the Balance math (level offset, chapter-band shift, the authored ch12
+## S-band table, gem gates riding the shift), the gated run_tier read
+## (snapshot governs; endgame/weekly force Normal), tiered_level's lift
+## (and the -1 sentinel resolve), loot_chapter, the zero-XP rule, the
+## account-wide unlock meta keys, per-tier PB keying, and the save
+## round-trip of both the standing choice and the run snapshot.
+func _test_difficulty() -> void:
+	# --- pure Balance math (no world state) ---
+	if Balance.tier_level_offset(0) != 0 or Balance.tier_level_offset(1) != 20 \
+			or Balance.tier_level_offset(2) != 40:
+		return _fail("tier level offsets wrong")
+	if Balance.tier_chapter("ch3", 0) != "ch3" or Balance.tier_chapter("ch3", 1) != "ch7" \
+			or Balance.tier_chapter("ch3", 2) != "ch11" or Balance.tier_chapter("ch5", 2) != "ch13":
+		return _fail("tier_chapter shift wrong")
+	if Balance.tier_chapter("crucible", 2) != "crucible":
+		return _fail("tier_chapter must pass non-chapter ids through")
+	var w12: Dictionary = Balance.gear_weights(Balance.tier_chapter("ch7", 2))
+	if not w12.has("S"):
+		return _fail("Torment ch7 general band should reach S (ch12 fallback table)")
+	if not Balance.boss_weights("ch12").has("S"):
+		return _fail("ch12 boss band should carry S")
+	if Balance.chapter_gear_ceiling("ch1") != "F" or Balance.chapter_gear_ceiling("ch7") != "B":
+		return _fail("authored band ceilings moved (ch12 row should be additive)")
+	if not Balance.regular_gems_drop(Balance.tier_chapter("ch1", 1)):
+		return _fail("Nightmare ch1 should open the regular-gem gate (band ch5)")
+	if Balance.gem_drop_level("ch15") != int(Balance.GEM_ACT_LEVEL[3]):
+		return _fail("shifted gem_drop_level should derive its act from the chapter number")
+
+	# --- world state: snapshot, poke, restore ---
+	var keep_std: int = game.player.run_tier
+	var keep_world: int = game.world_run_tier
+	var keep_endgame: bool = game.endgame_active
+	var keep_weekly: bool = game.weekly_active
+	game.endgame_active = false
+	game.weekly_active = false
+
+	# Gated read: the RUN snapshot governs, never the standing choice.
+	game.world_run_tier = 2
+	game.player.run_tier = 1
+	if game.run_tier() != 2:
+		return _fail("run_tier must read the run snapshot, not the standing choice")
+	game.endgame_active = true
+	if game.run_tier() != 0:
+		return _fail("endgame must force tier 0")
+	game.endgame_active = false
+	game.weekly_active = true
+	if game.run_tier() != 0:
+		return _fail("weekly must force tier 0")
+	game.weekly_active = false
+
+	# Spawn lift: authored levels rise by the offset; the -1 sentinel
+	# resolves the anchor FIRST. (Derived spawns — boss adds at the
+	# parent's level — never route through tiered_level: no double-dip.)
+	game.world_run_tier = 1
+	var wolf_base: int = int(Story.ALL_ENEMIES["wolf"]["level"])
+	if game.tiered_level("wolf", -1) != wolf_base + 20 or game.tiered_level("wolf", 8) != 28:
+		return _fail("tiered_level should lift authored levels by the tier offset")
+	if game.loot_chapter() != Balance.tier_chapter(game.chapter_id, 1):
+		return _fail("loot_chapter should shift by the run tier")
+
+	# Save round-trip: standing choice (character) + run snapshot (world).
+	game.player.run_tier = 2
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	game.player.run_tier = 0
+	game.world_run_tier = 0
+	var tier_save := SaveGame.read(SaveGame.MAX_SLOTS)
+	SaveGame.apply(game, tier_save)
+	await _frames(2)
+	if game.player.run_tier != 2 or game.world_run_tier != 1:
+		return _fail("run_tier save round-trip lost the choice/snapshot (%d/%d)" % [
+			game.player.run_tier, game.world_run_tier])
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+
+	# Zero-XP rule: a tier run pays nothing even on an UNCOMPLETED chapter.
+	var flag_key := "completed_" + game.chapter_id
+	var keep_flag = game.flags.get(flag_key)
+	game.flags.erase(flag_key)
+	var keep_dev: bool = game.dev_mode
+	game.dev_mode = false
+	var xp0: float = float(game.player.xp)
+	var lvl0: int = game.player.level
+	game.player.gain_xp(500)
+	if float(game.player.xp) != xp0 or game.player.level != lvl0:
+		return _fail("NG+ runs must pay zero XP")
+	game.dev_mode = keep_dev
+	if keep_flag != null:
+		game.flags[flag_key] = keep_flag
+
+	# Unlock meta + per-tier PB keys (meta.json is test-redirected).
+	game._load_meta()
+	var keep_t1 = game._meta.get("tier_unlocked_1")
+	game._meta["tier_unlocked_1"] = true
+	if not (game.tier_unlocked(0) and game.tier_unlocked(1)):
+		return _fail("tier_unlocked should read the meta key (0 always open)")
+	if keep_t1 == null and game.tier_unlocked(2):
+		return _fail("tier 2 should stay locked without its meta key")
+	if keep_t1 == null:
+		game._meta.erase("tier_unlocked_1")
+	else:
+		game._meta["tier_unlocked_1"] = keep_t1
+	var keep_pb = game._meta.get("pb_ch1_warrior_t2")
+	game._meta["pb_ch1_warrior_t2"] = {"time": 12.0, "grade": "A", "runs": 1}
+	var pb_t2: Dictionary = game.chapter_pb("ch1", "warrior", 2)
+	if float(pb_t2.get("time", 0.0)) != 12.0:
+		return _fail("chapter_pb(tier) should read the _t2 track")
+	if not game.chapter_pb("ch1", "warrior", 0).is_empty() \
+			and game.chapter_pb("ch1", "warrior", 0) == pb_t2:
+		return _fail("tier PB track must not alias the Normal track")
+	if keep_pb == null:
+		game._meta.erase("pb_ch1_warrior_t2")
+	else:
+		game._meta["pb_ch1_warrior_t2"] = keep_pb
+
+	# --- restore shared state ---
+	game.player.run_tier = keep_std
+	game.world_run_tier = keep_world
+	game.endgame_active = keep_endgame
+	game.weekly_active = keep_weekly
+	print("ok: difficulty tiers (offsets, band shift + S table, gates, zero XP, unlock meta, tier PBs, save round-trip)")
