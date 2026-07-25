@@ -513,13 +513,15 @@ static func upgrade_success(plus: int) -> float:
 # ch7 is ~flat. Gems are GATED to ch4+ (regular_gems_drop), so ch1-3 = 0 (their
 # gem-price denominator is unused — the shop stocks no gems there).
 const CHAPTER_ECON := {
-	"ch1": {"act": 1, "first": 1545, "replay": 1228, "gems": 0.0},
-	"ch2": {"act": 1, "first": 1574, "replay": 1148, "gems": 0.0},
-	"ch3": {"act": 1, "first": 2758, "replay": 2222, "gems": 0.0},
-	"ch4": {"act": 1, "first": 3344, "replay": 2698, "gems": 19.4},
-	"ch5": {"act": 1, "first": 3987, "replay": 3249, "gems": 19.4},
-	"ch6": {"act": 1, "first": 4871, "replay": 4060, "gems": 19.6},
-	"ch7": {"act": 1, "first": 6616, "replay": 5733, "gems": 19.9},
+	# Re-measured 2026-07-24 (econ_audit.gd, post-loot-band tables): the
+	# prior 07-06 table drifted only 1-3% — farm-cost pricing was sound.
+	"ch1": {"act": 1, "first": 1558, "replay": 1241, "gems": 0.0},
+	"ch2": {"act": 1, "first": 1595, "replay": 1169, "gems": 0.0},
+	"ch3": {"act": 1, "first": 2797, "replay": 2262, "gems": 0.0},
+	"ch4": {"act": 1, "first": 3393, "replay": 2746, "gems": 19.4},
+	"ch5": {"act": 1, "first": 4105, "replay": 3367, "gems": 19.4},
+	"ch6": {"act": 1, "first": 4952, "replay": 4141, "gems": 19.6},
+	"ch7": {"act": 1, "first": 6685, "replay": 5802, "gems": 19.9},
 }
 
 static func gem_gold_value(lvl: int) -> float:
