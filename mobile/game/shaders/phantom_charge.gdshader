@@ -13,14 +13,17 @@ shader_type canvas_item;
 // owner saw "only gets darker, never white". Reuse ONLY COLOR.a
 // (silhouette.gdshader convention).
 uniform float charge : hint_range(0.0, 1.0) = 0.0;
-// Extra darkening at full rest ("slightly darker"); 0 = authored sprite.
-uniform float dark_dip : hint_range(0.0, 1.0) = 0.19;
+// Extra darkening at full rest; 0 = authored sprite. Owner-set: 30%.
+uniform float dark_dip : hint_range(0.0, 1.0) = 0.30;
+// Cap on the white blend at full charge. Owner-set: 30%.
+uniform float max_light : hint_range(0.0, 1.0) = 0.30;
 
 void fragment() {
 	vec4 t = texture(TEXTURE, UV);
 	float lum = dot(t.rgb, vec3(0.299, 0.587, 0.114));
-	// Pale spectre at full charge (owner dialed back from near-pure white).
 	vec3 lit = min(vec3(0.90, 0.96, 1.00) * (0.74 + 0.30 * lum), vec3(1.0));
-	vec3 rested = t.rgb * (1.0 - dark_dip);
-	COLOR = vec4(mix(rested, lit, charge), t.a * COLOR.a);
+	// The dip fades out as charge rises, so full charge lightens the TRUE
+	// authored colors (the rest-darkness must not leak into max lightness).
+	vec3 base = t.rgb * (1.0 - dark_dip * (1.0 - charge));
+	COLOR = vec4(mix(base, lit, max_light * charge), t.a * COLOR.a);
 }
