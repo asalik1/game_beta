@@ -295,8 +295,10 @@ func _assert_archer_cosmetic_parity(p: Player, dummy: Enemy) -> void:
 
 
 func _assert_assassin_execution_timing(p: Player, dummy: Enemy) -> void:
-	# All three executions must have delivered both shadow cuts and the final
-	# stab by the shared ~0.32s frame. Crit is disabled so losses are comparable.
+	# All three executions must deliver the same total (both shadow cuts + the
+	# final stab); each skin's loss is sampled once it stops growing, so timer
+	# overshoot under headless load can't clip the tail hits. Crit is disabled
+	# so losses are comparable.
 	var saved_skin := p.skin
 	var saved_crit := p.crit
 	var saved_tfx: Dictionary = p._tfx
@@ -312,7 +314,23 @@ func _assert_assassin_execution_timing(p: Player, dummy: Enemy) -> void:
 		dummy.hp = dummy.max_hp
 		var before := dummy.hp
 		p._death_mark_execution(dummy, 0.0)
-		await get_tree().create_timer(0.37).timeout
+		# The execution lands three hits across two chained 0.16s timers; a
+		# single fixed-delay sample raced them under headless load. Poll until
+		# the loss stops growing (quiet for well over one hit gap), ceiling'd.
+		var loss: float = 0.0
+		var quiet: float = 0.0
+		var elapsed: float = 0.0
+		while elapsed < 2.0:
+			await get_tree().create_timer(0.05).timeout
+			elapsed += 0.05
+			var now_loss: float = before - dummy.hp
+			if now_loss > 0.0 and is_equal_approx(now_loss, loss):
+				quiet += 0.05
+				if quiet >= 0.4:
+					break
+			else:
+				quiet = 0.0
+				loss = now_loss
 		losses.append(before - dummy.hp)
 		await get_tree().create_timer(0.10).timeout
 	var timing_match := losses[0] > 0.0 \
