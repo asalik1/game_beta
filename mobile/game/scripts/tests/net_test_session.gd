@@ -2083,6 +2083,21 @@ func _watch(gid: int, what: String, args: Dictionary, act: Callable = Callable()
 	return _watch_replies[what]
 
 
+## HOST: like _watch, but a missed reply comes back as {} for the CALLER
+## to handle — no _fail, no stage abort. For probes wrapped in a re-arm
+## retry (stage 12's strike): _watch's _wait_for kills the whole stage on
+## the first silent serve, so a retrying caller can never see the miss.
+func _watch_try(gid: int, what: String, args: Dictionary, timeout: float) -> Dictionary:
+	_watch_replies.erase(what)
+	_rpc_watch.rpc_id(gid, what, args)
+	var deadline: int = Time.get_ticks_msec() + int(timeout * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		if _watch_replies.has(what):
+			return _watch_replies[what]
+		await get_tree().create_timer(0.1).timeout
+	return {}
+
+
 ## GUEST: act if the probe calls for it (stage 4), then poll until it
 ## reads ok or ~8 s pass, and report.
 func _serve_watch(what: String, args: Dictionary) -> void:
@@ -2098,6 +2113,20 @@ func _serve_watch(what: String, args: Dictionary) -> void:
 	_rpc_watch_reply.rpc_id(1, what, out)
 
 
+## GUEST: fetch a mirror by net id, FREED-PROOF. A guest-local death flow
+## (a wipe replays it) frees mirrors WITHOUT erasing net_enemies — the
+## registry then holds stale FREED instances until the post-recovery resync
+## rebuilds them (net_session._rpc_spawn_enemy's stale-entry branch). A
+## typed `var e: Enemy = dict.get(id)` on one is a SCRIPT ERROR that kills
+## the running coroutine — in the serve loop that means the watch reply
+## NEVER sends and the director reads pure silence (the stage-12 flake).
+func _mirror_of(sess: Node, id: int) -> Enemy:
+	var v: Variant = sess.net_enemies.get(id)
+	if v == null or not is_instance_valid(v):
+		return null
+	return v as Enemy
+
+
 ## GUEST, stage 4: the ACT half of the acting probes — teleport beside
 ## the mirror (the sticky soft target then commits aim/orientation to it,
 ## proving mirrors are valid targets) and drive the REAL ability through
@@ -2107,13 +2136,19 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 		"strike":
 			game.player.global_position = Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
 			await _frames(6)  # a beat: soft target acquires the mirror
+			# Don't tap before the mirror EXISTS (bounded): a not-yet-streamed
+			# mirror read as "gone" below and spent the whole tap budget on
+			# air — a truly absent one still reports "no mirror" via the poll.
+			var mirror_wait: int = Time.get_ticks_msec() + 3000
+			while _mirror_of(sess, int(args.get("id", 0))) == null and Time.get_ticks_msec() < mirror_wait:
+				await get_tree().create_timer(0.1).timeout
 			for i in 5:
 				_press(KEY_J, true)   # a1 — the assassin stab (melee arc)
 				await get_tree().create_timer(0.15).timeout
 				_press(KEY_J, false)
 				await get_tree().create_timer(0.45).timeout
-				var e: Enemy = sess.net_enemies.get(int(args.get("id", 0)))
-				if e == null or not is_instance_valid(e) or e.hp < e.max_hp:
+				var e: Enemy = _mirror_of(sess, int(args.get("id", 0)))
+				if e == null or e.hp < e.max_hp:
 					break  # landed (or the mirror is gone) — stop tapping
 		"snipe":
 			_xp_before = game.player.level * 1000000 + game.player.xp
@@ -2294,8 +2329,10 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 		# ---- stage 4 (MP-10) ----
 		"strike":
 			# The optimistic local hit landed on the mirror (juice + funnel).
-			var e: Enemy = sess.net_enemies.get(int(args.get("id", 0)))
-			if e == null or not is_instance_valid(e):
+			# _mirror_of, not a typed .get: a freed stale entry (guest death
+			# flow) must degrade to "no mirror", never kill the serve loop.
+			var e: Enemy = _mirror_of(sess, int(args.get("id", 0)))
+			if e == null:
 				return {"ok": false, "why": "no mirror"}
 			return {"ok": e.hp < e.max_hp - 0.01, "frac": e.hp / maxf(e.max_hp, 0.001)}
 		"converge":
@@ -2560,8 +2597,8 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 			var zi: int = int(args.get("zone", -1))
 			var n := 0
 			for id in sess.net_enemies:
-				var e: Enemy = sess.net_enemies[id]
-				if e != null and is_instance_valid(e) and not e.dying and e.zone_idx == zi:
+				var e: Enemy = _mirror_of(sess, int(id))  # freed-proof fetch
+				if e != null and not e.dying and e.zone_idx == zi:
 					n += 1
 			return {"ok": n >= int(args.get("min", 1)), "mirrors": n}
 		"seespeer":
@@ -2733,10 +2770,14 @@ func _spawn_peer(role: String) -> int:
 
 
 ## Wait for the most recently spawned peer to exit with code 0 (its own
-## in-process assertions all passed).
-func _wait_exit(label: String) -> bool:
+## in-process assertions all passed). EXIT_TIMEOUT is sized for a peer
+## whose WORK IS DONE (guests exit within a beat of the finish signal) —
+## a caller whose child still has a whole lifecycle to run passes its own
+## budget (stage 13's server1: full boot + world build + kill + autosave
+## + quit; 15 s tied that on a contended box, 2026-07-25 run 2-of-5).
+func _wait_exit(label: String, timeout: float = EXIT_TIMEOUT) -> bool:
 	var pid: int = _pids[-1]
-	if not await _wait_for(func() -> bool: return not OS.is_process_running(pid), EXIT_TIMEOUT, "%s process exit" % label):
+	if not await _wait_for(func() -> bool: return not OS.is_process_running(pid), timeout, "%s process exit" % label):
 		return false
 	var code := OS.get_process_exit_code(pid)
 	if code != 0:
@@ -3301,6 +3342,24 @@ func _run_guest11() -> void:
 # the XP fan work without a host character, the lobby never closes to a second
 # joiner, and — the whole point vs a listen server — the world SURVIVES every
 # client leaving.
+#
+# FLAKE, closed 2026-07-25 (the MP-17 pattern — "guest A never saw its strike
+# land on the server enemy" with an EMPTY reply, ~1-in-3 full-suite runs, green
+# solo): the (c) room pack was never DEFANGED — stage 4 pulls its cast's fangs
+# ("dmg 0 — the guest stands in bite range during probes") but here only the
+# injected (d) wolf got dmg 0, while guest A stood inside a live fresh-seed pack
+# from gotoroom through the strike probe (~10-20 s, longer on a loaded box —
+# hence worse late in the suite). A pack that downs A collapses the party of 1
+# into the WIPE: A's death flow frees its mirrors WITHOUT erasing net_enemies
+# (net_session._rpc_spawn_enemy's stale-entry branch documents this), and the
+# serve coroutine's next typed fetch (`var e: Enemy = net_enemies.get(id)`) on
+# a freed instance is a SCRIPT ERROR that kills the coroutine — the reply never
+# sends, and the director reads 30 s of silence (the empty dict). Fix, harness
+# only: (1) defang the whole standing cast the moment the room arms; (2) the
+# strike serve fetches mirrors via _mirror_of (freed-proof) and waits for the
+# mirror to exist before spending its tap budget; (3) the director arms the
+# strike probe through _watch_try with ONE re-arm — a fresh _rpc_watch restarts
+# the guest's serve loop even if the first one died mid-flow.
 
 ## Boot a DEDICATED world authority as a child of the director (the same
 ## instantiate-and-add_child shape as _host_boot, minus the roster flow —
@@ -3406,6 +3465,15 @@ func _run_host12() -> void:
 		return
 	if not game.active_rooms.has(zi):
 		return _fail("server sim gate never picked up guest-occupied room %d" % zi)
+	# Stage-4 discipline, applied late (the 2026-07-25 flake fix): guest A
+	# STANDS IN BITE RANGE of this fresh-seed pack through the (d) probes —
+	# a pack that downs it wipes the party of 1 and the death flow wedges
+	# the serve loop (see the stage block comment). The pack already proved
+	# the build; its fangs are not under test. The (d) wolf spawns dmg 0.
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var pe := node as Enemy
+		if pe != null and is_instance_valid(pe) and not pe.dying:
+			pe.dmg = 0.0
 	r = await _watch(ga, "seeszone", {"zone": zi, "min": 1})
 	if r.is_empty() or not bool(r.get("ok", false)):
 		return _fail("guest A saw no pack mirrors in the server-built room: %s" % str(r))
@@ -3421,8 +3489,17 @@ func _run_host12() -> void:
 		return
 	sess.last_hit = {}
 	var hp0: float = wolf.hp
-	r = await _watch(ga, "strike", {"id": wolf.net_id,
-		"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y})
+	# _watch_try + ONE re-arm (MP-17 style): a fresh _rpc_watch restarts the
+	# guest's serve loop even if the first one died mid-flow, and 20 s per
+	# attempt clears the serve's worst honest path (~14 s: 3 s mirror wait +
+	# 3 s taps + 8 s poll). Args rebuilt per attempt — the wolf wanders.
+	r = await _watch_try(ga, "strike", {"id": wolf.net_id,
+		"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y}, 20.0)
+	if r.is_empty() or not bool(r.get("ok", false)):
+		print("[net_session] host12: (d) strike probe returned %s — re-arming once"
+			% ("EMPTY (reply timeout)" if r.is_empty() else str(r)))
+		r = await _watch_try(ga, "strike", {"id": wolf.net_id,
+			"x": wolf.global_position.x - 70.0, "y": wolf.global_position.y}, 20.0)
 	if r.is_empty() or not bool(r.get("ok", false)):
 		return _fail("guest A never saw its strike land on the server enemy: %s" % str(r))
 	if not await _wait_for(func() -> bool: return wolf.hp < hp0 - 0.01, 8.0, "server wolf hp drop"):
@@ -3535,9 +3612,12 @@ func _run_server1_13() -> void:
 
 func _run_host13() -> void:
 	# PHASE 1: run the throwaway server that saves, wait for it to exit clean.
+	# 60 s, not EXIT_TIMEOUT: this wait covers server1's ENTIRE run (boot,
+	# world build, room clear, autosave, orderly quit) — 15 s lost to a
+	# loaded box mid-suite (2026-07-25, the stage-12 flake-hunt series).
 	if _spawn_peer("server1") < 0:
 		return _fail("could not spawn the phase-1 server process")
-	if not await _wait_exit("server1"):
+	if not await _wait_exit("server1", 60.0):
 		return
 	var saved := SaveGame.read_server_world()
 	if saved.is_empty():
