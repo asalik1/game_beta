@@ -834,7 +834,7 @@ func _update_weapon_visual() -> void:
 	# as a persistent overlay.
 	weapon_glow.visible = false
 	var w = equipment.get("weapon")
-	weapon_spr.texture = Art.weapon_tex(w.get("noun", "Blade"), w["grade"]) if w != null else null
+	weapon_spr.texture = Art.weapon_tex(w.get("noun", "Blade"), w["grade"], w.get("art", "")) if w != null else null
 	weapon_spr.visible = false
 
 

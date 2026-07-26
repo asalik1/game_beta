@@ -353,31 +353,94 @@ static func gem_title(gem: Dictionary) -> String:
 static func gem_color(gem: Dictionary) -> Color:
 	return GEM_STATS[gem["stat"]]["color"]
 
-# Every shape has a stat personality: a main-stat multiplier plus
-# guaranteed bonus stats. A Claymore hits like a truck, a Shuriken crits.
+# Every shape has a stat personality: a main-stat multiplier plus a substat BIAS.
+#
+# 2026-07-26 (player rule) — a shape NEVER GRANTS A STAT. The old `subs` table
+# tacked flat bonus stats onto every rolled item, which meant a Shuriken's crit
+# arrived free and OUTSIDE the grade's affix count: an S Shuriken showed six stat
+# lines on a "3-substat" item, and the shape's stats couldn't be chased, quenched
+# or traded away. A shape is now a WEIGHTING on the roll, in both axes:
+#   * POOL WEIGHT   — a biased stat is `bias`x as LIKELY to be drawn
+#   * MAGNITUDE     — when it does land it rolls `bias`x bigger, which also widens
+#                     its quench band (stat_band), so a bad Shuriken can be
+#                     quenched up toward a crit ceiling a Hammer can never reach
+# 1.0 = neutral. Shapes with an empty bias carry their whole identity in `main`
+# (a Claymore hits like a truck; Plate is bulk) — that was always true of them.
+#
+# Biased stats MUST exist in SUBSTATS or the bias is dead data (it can neither be
+# drawn nor scaled). That retired the old `hp_flat` tack-on on Hammer/Treads —
+# hp_flat is not in the pool; the pool's bulk stat is hp_pct.
+# BREADTH COSTS DEPTH (2026-07-26, PROPOSALS/GEAR_SHAPE_MATRIX.md §3). Every
+# shape spends the SAME budget — Sum(bias - 1.0) == SHAPE_BIAS_BUDGET — so the
+# only thing that varies is how thinly it is spread. One stat leans hardest and
+# quenches to the highest ceiling in the game; three stats each lean weakly. That
+# is the whole trade: specialists reach further, generalists cover more. Stat
+# COUNT is the only input — crit+pen pays exactly what crit+physres pays.
+const SHAPE_BIAS_BUDGET := 0.60
+const SHAPE_BIAS_ONE := 1.60      # sole stat — the highest cap available
+const SHAPE_BIAS_TWO := 1.30      # each of two
+const SHAPE_BIAS_THREE := 1.20    # each of three
+const DEFAULT_STYLE := {"main": 1.0, "bias": {}}
 const SHAPE_STYLE := {
-	"Blade":    {"main": 1.0,  "subs": {"atk_pct": 0.05}, "tag": "balanced"},
-	"Edge":     {"main": 1.2,  "subs": {}, "tag": "heavy hits"},
-	"Fang":     {"main": 0.85, "subs": {"crit": 0.05}, "tag": "crit"},
-	"Shuriken": {"main": 0.8,  "subs": {"crit": 0.04, "dex": 3.0}, "tag": "crit + aim"},
-	"Kunai":    {"main": 0.8,  "subs": {"crit": 0.04, "dex": 3.0}, "tag": "crit + aim"},  # back-compat: pre-2026-07-08 saves stored the "Kunai" noun
-	"Claymore": {"main": 1.4,  "subs": {}, "tag": "massive damage"},
-	"Bow":      {"main": 0.9,  "subs": {"dex": 5.0}, "tag": "true aim"},
-	"Crossbow": {"main": 1.05, "subs": {"physpen": 5.0}, "tag": "penetration"},
-	"Staff":    {"main": 0.95, "subs": {"mp_flat": 15.0, "atk_pct": 0.04}, "tag": "mana + power"},
-	"Wand":     {"main": 0.85, "subs": {"crit": 0.03, "magpen": 3.0}, "tag": "crit + magic pen"},
-	"Hammer":   {"main": 1.25, "subs": {"hp_flat": 20.0}, "tag": "crushing + sturdy"},
-	"Tome":     {"main": 0.9,  "subs": {"magpen": 4.0, "mp_flat": 12.0}, "tag": "dark power"},
-	"Plate":    {"main": 1.15, "subs": {}, "tag": "bulk"},
-	"Mail":     {"main": 0.9,  "subs": {"eva": 0.015}, "tag": "elusive"},
-	"Guard":    {"main": 0.95, "subs": {"physres": 10.0}, "tag": "physical resistance"},
-	"Boots":    {"main": 1.0,  "subs": {}, "tag": "balanced"},
-	"Striders": {"main": 0.9,  "subs": {"eva": 0.02}, "tag": "elusive"},
-	"Treads":   {"main": 0.85, "subs": {"hp_flat": 25.0}, "tag": "sturdy"},
-	"Charm":    {"main": 1.0,  "subs": {}, "tag": "balanced"},
-	"Talisman": {"main": 0.85, "subs": {"atk_pct": 0.05}, "tag": "power"},
-	"Sigil":    {"main": 0.85, "subs": {"crit": 0.05}, "tag": "crit"},
+	"Blade":    {"main": 1.0,  "bias": {"atk_pct": 1.60}, "tag": "balanced"},
+	"Edge":     {"main": 1.2,  "bias": {}, "tag": "heavy hits"},
+	"Fang":     {"main": 0.85, "bias": {"crit": 1.60}, "tag": "crit"},
+	"Shuriken": {"main": 0.8,  "bias": {"crit": 1.30, "dex": 1.30}, "tag": "crit + aim"},
+	"Kunai":    {"main": 0.8,  "bias": {"crit": 1.30, "dex": 1.30}, "tag": "crit + aim"},  # back-compat: pre-2026-07-08 saves stored the "Kunai" noun
+	"Claymore": {"main": 1.4,  "bias": {}, "tag": "massive damage"},
+	"Bow":      {"main": 0.9,  "bias": {"dex": 1.60}, "tag": "true aim"},
+	"Crossbow": {"main": 1.05, "bias": {"physpen": 1.60}, "tag": "penetration"},
+	# The three caster shapes split three ways now that mana is off the table:
+	# Staff = raw power, Wand = crit + pen, Tome = pen + the warlock's OWN fuel
+	# (Dark Pact spends max HP; ATTR_SCALE already prices VIT higher for warlock).
+	"Staff":    {"main": 0.95, "bias": {"atk_pct": 1.60}, "tag": "raw power"},
+	"Wand":     {"main": 0.85, "bias": {"magpen": 1.30, "crit": 1.30}, "tag": "crit + magic pen"},
+	"Hammer":   {"main": 1.25, "bias": {"hp_pct": 1.60}, "tag": "crushing + sturdy"},
+	"Tome":     {"main": 0.9,  "bias": {"magpen": 1.30, "hp_pct": 1.30}, "tag": "dark power"},
+	"Plate":    {"main": 1.15, "bias": {}, "tag": "bulk"},
+	"Mail":     {"main": 0.9,  "bias": {"eva": 1.60}, "tag": "elusive"},
+	"Guard":    {"main": 0.95, "bias": {"physres": 1.60}, "tag": "physical resistance"},
+	"Boots":    {"main": 1.0,  "bias": {}, "tag": "balanced"},
+	"Striders": {"main": 0.9,  "bias": {"eva": 1.60}, "tag": "elusive"},
+	"Treads":   {"main": 0.85, "bias": {"hp_pct": 1.60}, "tag": "sturdy"},
+	"Charm":    {"main": 1.0,  "bias": {}, "tag": "balanced"},
+	"Talisman": {"main": 0.85, "bias": {"atk_pct": 1.60}, "tag": "power"},
+	"Sigil":    {"main": 0.85, "bias": {"crit": 1.60}, "tag": "crit"},
 }
+
+
+## The bias every stat on an N-stat shape carries, per the flat budget above.
+static func bias_for_count(n: int) -> float:
+	match n:
+		1: return SHAPE_BIAS_ONE
+		2: return SHAPE_BIAS_TWO
+		3: return SHAPE_BIAS_THREE
+	return 1.0 + SHAPE_BIAS_BUDGET / float(maxi(1, n))
+
+
+## Draw ONE stat from `pool` with shape weighting and REMOVE it (draw without
+## replacement). A stat with bias b is b times as likely as a neutral one.
+static func _weighted_take(pool: Array, bias: Dictionary, rng: RandomNumberGenerator) -> String:
+	var total := 0.0
+	for s in pool:
+		total += float(bias.get(s, 1.0))
+	var r: float = rng.randf() * total
+	var chosen: String = String(pool[pool.size() - 1])   # float-drift fallback
+	for s in pool:
+		r -= float(bias.get(s, 1.0))
+		if r <= 0.0:
+			chosen = String(s)
+			break
+	pool.erase(chosen)
+	return chosen
+
+
+## This shape's bias multiplier for `stat` (1.0 = neutral). Single reader so the
+## roll, the reforge and the quench BAND can never disagree about a stat's ceiling.
+static func shape_bias(noun: String, stat: String) -> float:
+	var style: Dictionary = SHAPE_STYLE.get(noun, DEFAULT_STYLE)
+	var bias: Dictionary = style.get("bias", {})
+	return float(bias.get(stat, 1.0))
 
 # Substat pool: stat -> base roll (scaled a little by grade).
 # Mirror of Classes.CLASSES[cls]["dmg_type"] — items.gd must not preload
@@ -393,11 +456,20 @@ const CLASSES_DMG_TYPE := {
 # gem. MOVEMENT SPEED is absent for a harder reason: it is sovereign —
 # only terrain and abilities may touch it (dodging is life or death;
 # player rule 2026-07-06). Supersedes round 43's B-gate.
+# MP_FLAT IS NOT A GEAR STAT (2026-07-26, player rule). Mana is a CLASS resource:
+# it comes from the class's base pool and its per-level growth, nothing else. No
+# attribute ever converted to it either (Classes.ATTR_SCALE has no mp_flat entry —
+# the branch in Classes' attribute blurb is dead), so as a substat it was a flat
+# handout that no build could scale, chase or care about: dead on the assassin
+# (a kit that costs 0 MP end to end) and near-dead on warrior/archer. Its label
+# and FLAT_STATS entry stay so pre-2026-07-26 gear still DISPLAYS its MP; that
+# stat is now unquenchable (stat_band returns a degenerate band for anything
+# outside this pool) and reforging the slot rolls it into a live stat.
 const SUBSTATS := {
 	"atk_pct": 0.05, "hp_pct": 0.06, "crit": 0.03,
 	"VIT": 3.0,
 	"physres": 9.0, "magres": 9.0, "critres": 6.0, "eva": 0.02, "dex": 4.0,
-	"physpen": 5.0, "magpen": 5.0, "mp_flat": 12.0,
+	"physpen": 5.0, "magpen": 5.0,
 }
 
 const STAT_LABEL := {
@@ -559,7 +631,8 @@ static func sub_count_for(grade: String) -> int:
 ## reforge bench (reforge_affixes).
 static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumberGenerator) -> Dictionary:
 	var mult: float = GRADE_MULT[grade]
-	var style: Dictionary = SHAPE_STYLE.get(noun, {"main": 1.0, "subs": {}})
+	var style: Dictionary = SHAPE_STYLE.get(noun, DEFAULT_STYLE)
+	var bias: Dictionary = style.get("bias", {})
 	var sub_count := sub_count_for(grade)
 	var subs := {}
 	var pool := SUBSTATS.keys()
@@ -573,12 +646,15 @@ static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumbe
 	# all since 2026-07-06: gem-only, superseding round 43's B-gate.)
 	if grade == "S" and cls != "" and CLASSES_DMG_TYPE.has(cls):
 		pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
-	pool.shuffle()
-	for i in mini(sub_count, pool.size()):
-		var stat: String = pool[i]
-		subs[stat] = snappedf(SUBSTATS[stat] * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
-	for stat in style["subs"]:
-		subs[stat] = snappedf(subs.get(stat, 0.0) + style["subs"][stat] * (0.75 + 0.25 * mult), 0.01)
+	# Shape-WEIGHTED draw without replacement (2026-07-26): a Shuriken pulls crit
+	# more often than a Hammer does, and rolls it bigger when it lands. No stat is
+	# ever GRANTED — a Shuriken that draws three defensive subs is just a bad
+	# Shuriken, and the bench is the player's way out.
+	var count := mini(sub_count, pool.size())
+	for _i in count:
+		var stat := _weighted_take(pool, bias, rng)
+		var b: float = float(bias.get(stat, 1.0))
+		subs[stat] = snappedf(SUBSTATS[stat] * b * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
 	return subs
 
 
@@ -606,7 +682,12 @@ static func reforge_sub(item: Dictionary, stat: String, rng: RandomNumberGenerat
 		return
 	var mult: float = GRADE_MULT[item["grade"]]
 	if SUBSTATS.has(stat):
-		item["subs"][stat] = snappedf(SUBSTATS[stat] * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
+		# Shape bias applies here too. Before 2026-07-26 this reroll silently DROPPED
+		# the shape's contribution (it re-rolled the bare pool value while stat_band
+		# still counted a shape part) — a bench-side downgrade trap. A multiplier has
+		# no additive part to lose, so roll/reforge/band now agree by construction.
+		var b: float = shape_bias(String(item.get("noun", "")), stat)
+		item["subs"][stat] = snappedf(SUBSTATS[stat] * b * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
 	else:
 		item["subs"][stat] = snappedf(float(item["subs"][stat]) * rng.randf_range(0.8, 1.2), 0.01)
 
@@ -645,10 +726,14 @@ static func reforge_affix(item: Dictionary, target_stat: String, _cls: String, r
 		pool.erase(String(s))   # no duplicate affixes (also drops target_stat)
 	if pool.is_empty():
 		return ""
-	pool.shuffle()
-	var new_stat := String(pool[0])
+	var noun := String(item.get("noun", ""))
+	var style: Dictionary = SHAPE_STYLE.get(noun, DEFAULT_STYLE)
+	var bias: Dictionary = style.get("bias", {})
+	# Weighted like a fresh roll: gambling a slot on a Shuriken leans toward crit.
+	var new_stat := _weighted_take(pool, bias, rng)
 	subs.erase(target_stat)
-	subs[new_stat] = snappedf(float(SUBSTATS[new_stat]) * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
+	subs[new_stat] = snappedf(float(SUBSTATS[new_stat]) * shape_bias(noun, new_stat)
+		* rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
 	return new_stat
 
 
@@ -660,18 +745,18 @@ static func stat_band(item: Dictionary, stat: String) -> Array:
 	var grade := String(item["grade"])
 	var mult: float = GRADE_MULT.get(grade, 1.0)
 	var noun := String(item.get("noun", "Blade"))
-	var style: Dictionary = SHAPE_STYLE.get(noun, {"main": 1.0, "subs": {}})
+	var style: Dictionary = SHAPE_STYLE.get(noun, DEFAULT_STYLE)
 	if item.get("main", {}).has(stat):
 		var base: float = float(SLOT_MAIN_BUDGET.get(String(item["slot"]), 3.0)) * mult * float(style["main"])
 		return [snappedf(base * 0.9, 0.01), snappedf(base * 1.15, 0.01)]
 	if item.get("subs", {}).has(stat):
-		var shape_part := 0.0
-		if style["subs"].has(stat):
-			shape_part = float(style["subs"][stat]) * (0.75 + 0.25 * mult)
 		if SUBSTATS.has(stat):
-			var roll_base: float = float(SUBSTATS[stat]) * (1.0 + mult * 0.25)
-			return [snappedf(shape_part + roll_base * 0.7, 0.01), snappedf(shape_part + roll_base * 1.3, 0.01)]
-		var cur: float = float(item["subs"][stat])   # fixed shape/legendary sub — no band
+			# The shape's bias scales the whole band, so quenching a Shuriken's crit
+			# climbs toward a ceiling a Hammer's crit can never reach. Same reader as
+			# the roll (shape_bias) — band and roll cannot drift apart.
+			var roll_base: float = float(SUBSTATS[stat]) * shape_bias(noun, stat) * (1.0 + mult * 0.25)
+			return [snappedf(roll_base * 0.7, 0.01), snappedf(roll_base * 1.3, 0.01)]
+		var cur: float = float(item["subs"][stat])   # legendary/off-pool sub — no band
 		return [cur, cur]
 	return [0.0, 0.0]
 

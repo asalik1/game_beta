@@ -961,7 +961,12 @@ func _run_systems() -> void:
 		return _fail("equip failed")
 	print("ok: chest loot + equip (%s)" % Items.title(got))
 
-	# 4a. Weapon shape identities.
+	# 4a. Weapon shape identities. Since 2026-07-26 a shape GRANTS NOTHING — it
+	# BIASES the roll on two axes (pool weight + magnitude, the latter widening the
+	# quench band). Four contracts below: the main budget still orders by shape; a
+	# shape never adds a stat outside the grade's affix count (the old tack-on put
+	# six stat lines on a 3-substat S Shuriken); a Fang's crit CEILING outreaches a
+	# Claymore's; and a Fang DRAWS crit more often than a neutral shape.
 	var wrng := RandomNumberGenerator.new()
 	wrng.seed = 3
 	var clay := Items.roll_item_of("weapon", "C", wrng, "warrior", "Claymore")
@@ -970,9 +975,75 @@ func _run_systems() -> void:
 	# the BUDGET (Claymore 1.4x > Fang 0.85x), just in attribute points.
 	if clay["main"]["STR"] <= fang["main"]["AGI"]:
 		return _fail("Claymore does not out-budget Fang")
-	if not fang["subs"].has("crit"):
-		return _fail("Fang has no guaranteed crit substat")
-	print("ok: weapon shape identities")
+	# A bias on a stat outside SUBSTATS is DEAD DATA — it can neither be drawn nor
+	# scaled, so the shape silently loses its personality. (This caught Hammer/Treads
+	# leaning on hp_flat, and Staff/Tome on mp_flat after mana left the pool.)
+	for noun in Items.SHAPE_STYLE:
+		var sbias: Dictionary = Items.SHAPE_STYLE[noun].get("bias", {})
+		for st in sbias:
+			if not Items.SUBSTATS.has(st):
+				return _fail("shape %s biases '%s', which is not in the substat pool" % [noun, st])
+		# BREADTH COSTS DEPTH: every biased shape spends the SAME budget, so the
+		# only variable is how thinly it spreads. Pins both halves — the per-stat
+		# value matches its count tier, and the total lands on the budget.
+		if not sbias.is_empty():
+			var tier_bias: float = Items.bias_for_count(sbias.size())
+			var spend := 0.0
+			for st in sbias:
+				var have: float = float(sbias[st])
+				if absf(have - tier_bias) > 0.001:
+					return _fail("shape %s biases %s at %.2f; a %d-stat shape pays %.2f each"
+						% [noun, st, have, sbias.size(), tier_bias])
+				spend += have - 1.0
+			if absf(spend - Items.SHAPE_BIAS_BUDGET) > 0.01:
+				return _fail("shape %s spends %.2f of the %.2f bias budget"
+					% [noun, spend, Items.SHAPE_BIAS_BUDGET])
+	# A rollable noun with no art entry does NOT error — Art._shape_for falls back
+	# to shapes.values()[0], so a new sword silently renders as a Blade. Four tables
+	# have to agree per shape (PROPOSALS/GEAR_SHAPE_MATRIX.md s6); this pins the pair
+	# that fails quietly.
+	for slot in Items.SLOTS:
+		for noun in Items.SLOT_NAMES[slot]:
+			if not Art.GEAR_SHAPES[slot].has(noun):
+				return _fail("%s noun '%s' can roll but has no Art.GEAR_SHAPES entry — it would render as %s"
+					% [slot, noun, Art.GEAR_SHAPES[slot].keys()[0]])
+		if not Items.SHAPE_STYLE.has(String(Items.SLOT_NAMES[slot][0])):
+			return _fail("%s nouns are missing SHAPE_STYLE entries" % slot)
+	for g in ["C", "B", "A", "S"]:
+		for nn in ["Fang", "Claymore", "Shuriken", "Staff", "Wand", "Tome", "Guard", "Treads", "Mail"]:
+			var sl := "weapon"
+			if nn in ["Guard", "Mail"]:
+				sl = "armor"
+			elif nn == "Treads":
+				sl = "boots"
+			var it := Items.roll_item_of(sl, String(g), wrng, "", String(nn))
+			var n_subs: int = it["subs"].size()
+			if n_subs != Items.sub_count_for(String(g)):
+				return _fail("%s %s carries %d subs, grade allows %d — a shape granted a stat"
+					% [g, nn, n_subs, Items.sub_count_for(String(g))])
+	# Magnitude bias reaches the QUENCH BAND: chasing crit on a Fang beats a Claymore.
+	var fang_band := Items.stat_band(
+		{"grade": "S", "slot": "weapon", "noun": "Fang", "main": {}, "subs": {"crit": 0.0}}, "crit")
+	var clay_band := Items.stat_band(
+		{"grade": "S", "slot": "weapon", "noun": "Claymore", "main": {}, "subs": {"crit": 0.0}}, "crit")
+	if float(fang_band[1]) <= float(clay_band[1]):
+		return _fail("a Fang's crit ceiling (%.3f) does not beat a Claymore's (%.3f)"
+			% [float(fang_band[1]), float(clay_band[1])])
+	# Pool bias, over a seeded sample (deterministic — same seed, same counts).
+	var brng := RandomNumberGenerator.new()
+	brng.seed = 11
+	var fang_hits := 0
+	var clay_hits := 0
+	for i in 600:
+		if Items.roll_item_of("weapon", "C", brng, "", "Fang")["subs"].has("crit"):
+			fang_hits += 1
+		if Items.roll_item_of("weapon", "C", brng, "", "Claymore")["subs"].has("crit"):
+			clay_hits += 1
+	if fang_hits <= clay_hits:
+		return _fail("Fang drew crit %d/600 vs neutral Claymore %d/600 — pool bias absent"
+			% [fang_hits, clay_hits])
+	print("ok: weapon shape identities (budget order, zero granted stats, crit band + pool bias %d/600 vs %d/600)"
+		% [fang_hits, clay_hits])
 
 	# Class-aware drops (round 15): a class only loots weapons from its own
 	# arsenal. The pen half was NARROWED 2026-07-17 — only an S legendary's
@@ -992,9 +1063,10 @@ func _run_systems() -> void:
 		var mi := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "mage")
 		if mi["subs"].has("physpen"):
 			return _fail("an S mage first roll carried PhysPen (off-type pen)")
-		# Endgame-only stats (round 43): nothing below B may carry
-		# lifesteal or combo — including shape personality stats
-		# (the Wand's built-in combo, the Tome's lifesteal).
+		# Endgame-only stats (round 43): nothing below B may carry lifesteal or
+		# combo. Both are gem-ONLY since 2026-07-06 (they left SUBSTATS entirely),
+		# and since 2026-07-26 a shape grants no stats either — so this now guards
+		# the pool contract itself rather than the retired Wand/Tome tack-ons.
 		var low := Items.roll_item_of(Items.SLOTS[i % 4], ["F", "E", "D", "C"][i % 4], crng)
 		var wand_low := Items.roll_item_of("weapon", "C", crng, "", "Wand")
 		if low["subs"].has("lifesteal") or low["subs"].has("combo") \

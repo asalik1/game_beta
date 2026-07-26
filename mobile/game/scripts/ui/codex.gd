@@ -1039,6 +1039,23 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		"charm": "Main: your class attribute.",
 	}
 
+	# What a shape TAG means (2026-07-26). It used to mean "grants these stats"; a
+	# shape now only LEANS the roll, so the gallery below needs saying out loud or
+	# the tags read as promises the item never makes.
+	m._lbl(list, "— SHAPES — a shape leans a roll; it never grants a stat —", 16, Color(0.95, 0.85, 0.5))
+	var shape_desc := VBoxContainer.new()
+	shape_desc.add_theme_constant_override("separation", 2)
+	_card(list).add_child(shape_desc)
+	for line in [
+		"The tag beside each shape names its signature stats. Those are more LIKELY to be rolled, and roll BIGGER when they land.",
+		"BREADTH COSTS DEPTH. A shape that leans on ONE stat leans hardest — %.2fx. Two stats get %.2fx each, three get %.2fx each. Every shape spends the same total; the specialist just spends it all in one place." % [Items.SHAPE_BIAS_ONE, Items.SHAPE_BIAS_TWO, Items.SHAPE_BIAS_THREE],
+		"That bigger roll raises the CEILING too — quenching a Fang's crit at the bench climbs toward a number a Claymore's crit can never reach. Chase a stat on the shape that leans into it.",
+		"Nothing is promised. A Fang that rolls three defensive substats is simply a poor Fang; the reforge bench is your way out of it. A shape's main-stat budget (a Claymore's heft, a Shuriken's lightness) is the part that never rolls.",
+	]:
+		var sl_l := m._lbl(shape_desc, String(line), 13, Color(0.8, 0.82, 0.88))
+		sl_l.custom_minimum_size = Vector2(880, 0)
+		sl_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
 	# ------------------ visual gallery: every shape at every grade ------
 	for slot in Items.SLOTS:
 		m._lbl(list, "— %sS — %s" % [slot.to_upper(), slot_desc[slot]], 16, Color(0.95, 0.85, 0.5))

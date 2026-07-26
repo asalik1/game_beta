@@ -1911,18 +1911,41 @@ static func _shape_for(slot: String, noun: String) -> String:
 	return shapes.values()[0]
 
 
-## Convenience: the icon for a rolled item Dictionary.
+## Convenience: the icon for a rolled item Dictionary. An item may carry its OWN
+## art key (`item["art"]`) — that is the named-unique seam: "End of Night" is not
+## an S Shuriken in a different color, it is its own object with its own sprite,
+## so it outranks both the per-grade and the family art. Every gear UI in the game
+## routes through here, so the key lights up bag, shop, mail, popovers and drops
+## at once (the hero's HAND reads it too — see Player weapon_spr / weapon_tex).
 static func icon_for(item: Dictionary) -> ImageTexture:
-	return item_icon(item["slot"], item["grade"], item.get("noun", ""))
+	return item_icon(item["slot"], item["grade"], item.get("noun", ""), item.get("art", ""))
 
 
-## Held weapon sprite tinted by grade (drawn in the hero's hand).
-static func weapon_tex(noun: String, grade: String) -> ImageTexture:
+## Held weapon sprite (drawn in the hero's hand). Same override cascade as
+## item_icon, so authored gear art reaches the HAND and not just the bag slot —
+## before 2026-07-26 this read img() only, meaning a hand-drawn assets/icons/
+## weapon changed the inventory icon while the hero still swung the procedural
+## one. Tier-1 art (<shape>_<grade>.png) is used as authored: no tint, no
+## embellish, because the artist already made it read as its grade.
+static func weapon_tex(noun: String, grade: String, art := "") -> ImageTexture:
 	var shape := _shape_for("weapon", noun)
-	var key := "wpn_%s_%s" % [shape, grade]
+	var key := "wpn_%s_%s_%s" % [shape, grade, art]
 	if _cache.has(key):
 		return _cache[key]
-	var image := img(shape)
+	if art != "":   # tier 0: the named unique's own blade, in the hero's hand
+		var uniq := _icon_override(art)
+		if uniq != null:
+			var ut := ImageTexture.create_from_image(uniq)
+			_cache[key] = ut
+			return ut
+	var authored := _icon_override("%s_%s" % [shape, grade])
+	if authored != null:
+		var at := ImageTexture.create_from_image(authored)
+		_cache[key] = at
+		return at
+	var image := _icon_override(shape)
+	if image == null:
+		image = img(shape)
 	var tint: Color = Items.GRADE_COLOR[grade]
 	for y in image.get_height():
 		for x in image.get_width():
@@ -2097,23 +2120,48 @@ static func _make_telegraph() -> Image:
 ## If assets/icons/<shape>.png exists (hand-colored icon packs, e.g.
 ## Raven Fantasy Icons) it wins: used untinted and un-embellished —
 ## grade stays legible via bag-slot borders and item-name colors.
-static func item_icon(slot: String, grade: String, noun := "") -> ImageTexture:
+static func item_icon(slot: String, grade: String, noun := "", art := "") -> ImageTexture:
 	var shape := _shape_for(slot, noun)
-	var key := "itemicon_%s_%s" % [shape, grade]
+	var key := "itemicon_%s_%s_%s" % [shape, grade, art]
 	if _cache.has(key):
 		return _cache[key]
+	# Tier 0 — a NAMED UNIQUE's own sprite, outranking everything. Used exactly as
+	# authored. Falls through if the file is missing, so a unique declared before
+	# its art exists still renders as its shape instead of vanishing.
+	if art != "":
+		var uniq := _icon_override(art)
+		if uniq != null:
+			if uniq.get_width() != 32 or uniq.get_height() != 32:
+				uniq.resize(32, 32, Image.INTERPOLATE_NEAREST)
+			var ut := ImageTexture.create_from_image(_tier_frame(uniq, grade))
+			_cache[key] = ut
+			return ut
 	# Base 32x32: the hand-colored override if present, else procedural. Both
 	# take a grade tint — the override gently (it keeps its own palette), the
 	# procedural fully — so a Trainee's Blade and an S Blade never look alike.
-	var base := _icon_override(shape)
+	# Override cascade, most specific first (PROPOSALS/GEAR_SHAPE_MATRIX.md §5):
+	#   1. <shape>_<grade>.png — art authored FOR this tier. Used AS-IS: no tint,
+	#      because the art already IS the grade. An S Guard and a D Guard are meant
+	#      to be different objects, not one object in two colors.
+	#   2. <shape>.png         — one hand-drawn sprite for the whole family, tinted
+	#      gently (it keeps its own palette).
+	#   3. procedural          — the built-in shape, tinted hard.
+	# Grades with no bespoke file fall through to 2/3, so a family can be authored
+	# tier by tier without a code change or a half-finished look.
+	var base := _icon_override("%s_%s" % [shape, grade])
 	if base != null:
 		if base.get_width() != 32 or base.get_height() != 32:
 			base.resize(32, 32, Image.INTERPOLATE_NEAREST)
-		_grade_tint(base, Items.GRADE_COLOR[grade], Balance.ICON_OVERRIDE_TINT)
 	else:
-		base = img(shape)
-		_grade_tint(base, Items.GRADE_COLOR[grade], Balance.ICON_PROC_TINT)
-		base.resize(32, 32, Image.INTERPOLATE_NEAREST)
+		base = _icon_override(shape)
+		if base != null:
+			if base.get_width() != 32 or base.get_height() != 32:
+				base.resize(32, 32, Image.INTERPOLATE_NEAREST)
+			_grade_tint(base, Items.GRADE_COLOR[grade], Balance.ICON_OVERRIDE_TINT)
+		else:
+			base = img(shape)
+			_grade_tint(base, Items.GRADE_COLOR[grade], Balance.ICON_PROC_TINT)
+			base.resize(32, 32, Image.INTERPOLATE_NEAREST)
 	var t := ImageTexture.create_from_image(_tier_frame(base, grade))
 	_cache[key] = t
 	return t

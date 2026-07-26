@@ -70,11 +70,14 @@ static func preset_lookup(table: Dictionary, cls: String, tid: String) -> Dictio
 
 ## Rebuild one rolled piece into its reforge-chased ceiling — max main roll (1.15)
 ## and the grade's affix count filled with MAX-magnitude offense (ATK% > Crit > pen >
-## DEX), mirroring roll_subs' formulas; style personality subs land on top.
+## DEX), mirroring roll_subs' formulas. Since 2026-07-26 a shape GRANTS nothing: its
+## bias scales the affixes that do land (the same ceiling stat_band quenches toward),
+## so the godroll is exactly the grade's affix count — no tacked-on personality subs.
 static func godroll_item(item: Dictionary, cls: String) -> void:
 	var g := String(item["grade"])
 	var mult: float = Items.GRADE_MULT[g]
-	var style: Dictionary = Items.SHAPE_STYLE.get(String(item.get("noun", "")), {"main": 1.0, "subs": {}})
+	var noun := String(item.get("noun", ""))
+	var style: Dictionary = Items.SHAPE_STYLE.get(noun, Items.DEFAULT_STYLE)
 	var primary := String(Items.CLASS_PRIMARY.get(cls, "STR"))
 	item["main"] = {primary: snappedf(
 		float(Items.SLOT_MAIN_BUDGET[item["slot"]]) * mult * float(style["main"]) * 1.15, 0.01)}
@@ -86,10 +89,8 @@ static func godroll_item(item: Dictionary, cls: String) -> void:
 	for stat in ["atk_pct", "crit", pen, "dex"]:
 		if picked >= sub_count:
 			break
-		subs[stat] = snappedf(float(Items.SUBSTATS[stat]) * scale, 0.01)
+		subs[stat] = snappedf(float(Items.SUBSTATS[stat]) * Items.shape_bias(noun, stat) * scale, 0.01)
 		picked += 1
-	for stat in style["subs"]:
-		subs[stat] = snappedf(subs.get(stat, 0.0) + float(style["subs"][stat]) * (0.75 + 0.25 * mult), 0.01)
 	item["subs"] = subs
 
 
