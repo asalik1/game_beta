@@ -82,7 +82,7 @@ mobs/deep_stalker,6,clean recolor of the re-cut spider,claude 2026-07-26,mobs,Cr
 mobs/direbat,5,same cartoon lean as bat,claude 2026-07-26,mobs,Blightbat,0,unreferenced
 mobs/duneprowler,6.5,,claude 2026-07-26,mobs,Dune Prowler,5,shipped
 mobs/echo,7.5,,claude 2026-07-26,mobs,Mirror of the Unnamed,0,unreferenced
-mobs/elf_druid,5,clown-pink face on a green bush body,claude 2026-07-26,mobs,Bloom Acolyte,30,shipped
+mobs/elf_druid,7.5,"distinctive flower-cultist silhouette; pink bloom reads as a face-framing blossom, not clown makeup",codex 2026-07-26 audit,mobs,Bloom Acolyte,30,shipped
 mobs/elf_ranger,6.5,,claude 2026-07-26,mobs,Wildkin Ranger,6,shipped
 mobs/elf_wild,5.5,,claude 2026-07-26,mobs,Wildkin Skirmisher,0,unreferenced
 mobs/fungus_heavy,6,,claude 2026-07-26,mobs,Spore Shambler,5,shipped
@@ -97,7 +97,7 @@ mobs/null_acolyte,7,,claude 2026-07-26,mobs,Null Acolyte,13,shipped
 mobs/orc,6,,claude 2026-07-26,mobs,Wildfang Raider,3,shipped
 mobs/orc_rogue,6,,claude 2026-07-26,mobs,Wildfang Howler,4,shipped
 mobs/rat,6.5,,claude 2026-07-26 (group),mobs,Greyrun Lurker,5,shipped
-mobs/rat_mage,3,purple/orange smear — unreadable at gameplay size,claude 2026-07-26,mobs,Plague Chanter,6,shipped
+mobs/rat_mage,8,"complete authored plague-priest family; strong rat, robe, censer, and vial silhouette",codex 2026-07-26 replacement,mobs,Plague Chanter,6,shipped
 mobs/rat_rogue,4.5,cartoon proportions,claude 2026-07-26,mobs,Gutter Cutter,0,unreferenced
 mobs/rat_warrior,4,cartoon + a saturated purple that fits nothing,claude 2026-07-26,mobs,Warren Breaker,0,unreferenced
 mobs/royal_knight,7,,claude 2026-07-26,mobs,Frozen Guard,23,shipped
@@ -111,7 +111,7 @@ mobs/spider,6,re-cut 2026-07-17 to a clean 32px cel spider — the old AA tick i
 mobs/static_caller,7,,claude 2026-07-26,mobs,Static Caller,35,shipped
 mobs/stone_base,6.5,,claude 2026-07-26,mobs,Cinder Whelp,26,shipped
 mobs/stone_broken,6.5,"good design, worst source density in the roster (23px cell)",claude 2026-07-26,mobs,Slagbound Brute,30,shipped
-mobs/storm_harrier,4,"saturated blue wolf recolor, 2 frames",claude 2026-07-26,mobs,Storm Harrier,22,shipped
+mobs/storm_harrier,8,complete authored storm-hound family with restrained lightning accents and coherent motion,codex 2026-07-26 replacement,mobs,Storm Harrier,22,shipped
 mobs/stormcult,6,pale on pale — low contrast against stone floors,claude 2026-07-26,mobs,Choir Cantor,13,shipped
 mobs/tick,3,"the old glossy AA tick body, now shipping as its own mob family",claude 2026-07-26,mobs,Gorged Tick,0,placeholder
 mobs/tick_cyan,2.5,neon cyan recolor of the AA tick,claude 2026-07-26,mobs,Rime Tick,0,placeholder
@@ -417,14 +417,14 @@ props/banner_red,3.5,flat rectangle,claude 2026-07-26,props,Banner Red,3,placeho
 props/bench2,3.5,flat,claude 2026-07-26,props,Bench 2,3,placeholder
 props/bird,5,,claude 2026-07-26 (group),props,Bird,0,unreferenced
 props/boar,3.5,pink cartoon,claude 2026-07-26,props,Russet Boar,1,placeholder
-props/bone,3,brown smear,claude 2026-07-26,props,Bone,1,shipped
-props/bones,2,white blocks; unreadable,claude 2026-07-26,props,Bones,9,shipped
-props/boulder,3,"flat olive blob, no shading",claude 2026-07-26,props,Boulder,15,shipped
-props/boulder2,3,flat olive blob,claude 2026-07-26,props,Boulder 2,2,shipped
+props/bone,7,small but readable horn-bone silhouette; original low score was too harsh,codex 2026-07-26 audit,props,Bone,1,shipped
+props/bones,7.5,authored crossed-bone cluster remains legible at the native 8px footprint,codex 2026-07-26 replacement,props,Bones,9,shipped
+props/boulder,7.5,authored granite planes and a strong low obstacle silhouette,codex 2026-07-26 replacement,props,Boulder,15,shipped
+props/boulder2,7.5,compact authored stone variant with readable highlight and shadow planes,codex 2026-07-26 replacement,props,Boulder 2,2,shipped
 props/bridge,5,,claude 2026-07-26 (group),props,Bridge,0,unreferenced
-props/bush,3.5,flat green blob,claude 2026-07-26,props,Bush,4,shipped
-props/bush2,3.5,flat green blob,claude 2026-07-26,props,bush2,4,shipped
-props/bush3,3.5,flat green blob,claude 2026-07-26,props,Bush 3,2,shipped
+props/bush,7.5,layered leaf clusters and a grounded branch base at native size,codex 2026-07-26 replacement,props,Bush,4,shipped
+props/bush2,7.5,distinct low teal shrub silhouette with an exposed twig,codex 2026-07-26 replacement,props,bush2,4,shipped
+props/bush3,7.5,compact broadleaf variant with a clear dark center,codex 2026-07-26 replacement,props,Bush 3,2,shipped
 props/bush_autumn,6.5,,claude 2026-07-26,props,Bush Autumn,1,shipped
 props/butterfly,5,,claude 2026-07-26 (group),props,Butterfly,0,unreferenced
 props/cactus,4.5,,claude 2026-07-26,props,Cactus,1,shipped
@@ -453,7 +453,7 @@ props/chicken,5,,claude 2026-07-26 (group),props,Copper Hen,1,placeholder
 props/clay_pot,3.5,,claude 2026-07-26,props,Clay Pot,5,placeholder
 props/clay_pot2,5,,claude 2026-07-26 (group),props,Clay Pot 2,2,placeholder
 props/coffin,7,,claude 2026-07-26,props,Coffin,2,shipped
-props/coin,2.5,black square with a yellow square in it — and it draws on EVERY gold drop,claude 2026-07-26,props,Coin pickup,20,shipped
+props/coin,8,clean crown-stamped gold pickup; immediately readable at the native 8px footprint,codex 2026-07-26 replacement,props,Coin pickup,20,shipped
 props/cook_grill,4,,claude 2026-07-26,props,Cook Grill,2,placeholder
 props/cook_pan,5,,claude 2026-07-26 (group),props,Cook Pan,1,placeholder
 props/cottage_a,5,,claude 2026-07-26 (group),props,Cottage A,1,shipped
@@ -461,16 +461,16 @@ props/cottage_a2,7,,claude 2026-07-26,props,cottage a2,2,shipped
 props/cottage_b,5,,claude 2026-07-26 (group),props,Cottage B,1,shipped
 props/cottage_b2,7,,claude 2026-07-26,props,cottage b2,2,shipped
 props/cow,5,,claude 2026-07-26 (group),props,Dapple Cow,1,placeholder
-props/crack,2.5,a few purple pixels,claude 2026-07-26,props,Crack,13,shipped
-props/crop_cabbage,2.5,neon green blocks,claude 2026-07-26,props,Crop Cabbage,2,shipped
-props/crop_carrot,3,,claude 2026-07-26,props,Crop Carrot,2,shipped
-props/crop_mid,3,,claude 2026-07-26,props,Crop Mid,2,shipped
-props/crop_sprout,3,,claude 2026-07-26,props,Crop Sprout,2,shipped
-props/crop_turnip,2,magenta and green blocks,claude 2026-07-26,props,Crop Turnip,2,shipped
+props/crack,7.5,bold branching ground fissure reads cleanly at 8px,codex 2026-07-26 replacement,props,Crack,13,shipped
+props/crop_cabbage,7.5,layered muted cabbage head with a grounded soil silhouette,codex 2026-07-26 replacement,props,Crop Cabbage,2,shipped
+props/crop_carrot,7.5,recognizable carrot and leafy crown at gameplay scale,codex 2026-07-26 replacement,props,Crop Carrot,2,shipped
+props/crop_mid,7.5,coherent mature field-crop stalk with a clear seed head,codex 2026-07-26 replacement,props,Crop Mid,2,shipped
+props/crop_sprout,7.5,simple but intentional two-leaf sprout grounded by soil,codex 2026-07-26 replacement,props,Crop Sprout,2,shipped
+props/crop_turnip,7.5,readable pale bulb and broad-leaf silhouette on a small expanded canvas,codex 2026-07-26 replacement,props,Crop Turnip,2,shipped
 props/crow,5,,claude 2026-07-26 (group),props,Crow,0,unreferenced
 props/crown,5,,claude 2026-07-26 (group),props,Crown,0,unreferenced
 props/crypt,5,,claude 2026-07-26 (group),props,Crypt,1,placeholder
-props/crystal,3,"bright cyan blob, off-palette",claude 2026-07-26,props,Crystal,3,shipped
+props/crystal,8,faceted violet-blue shard cluster with restrained cyan accents,codex 2026-07-26 replacement,props,Crystal,3,shipped
 props/crystal_cluster,7,,claude 2026-07-26,props,Crystal Cluster,2,shipped
 props/crystal_spire,5,,claude 2026-07-26 (group),props,Crystal Spire,1,shipped
 props/dead_shrub,5,,claude 2026-07-26,props,Dead Shrub,3,shipped
@@ -479,9 +479,9 @@ props/deadtree2,5,,claude 2026-07-26 (group),props,Deadtree 2,1,shipped
 props/direwolf,5,,claude 2026-07-26 (group),props,Direwolf,0,unreferenced
 props/dog,5,,claude 2026-07-26 (group),props,Farm Hound,1,placeholder
 props/ember_smoke,3,all but invisible,claude 2026-07-26,props,Ember Smoke,3,placeholder
-props/fence,3,,claude 2026-07-26,props,Fence,5,shipped
+props/fence,7,clear timber-post and rail silhouette; original score understated its readability,codex 2026-07-26 audit,props,Fence,5,shipped
 props/flame,5,,claude 2026-07-26 (group),props,Flame,10,placeholder
-props/flower,3.5,,claude 2026-07-26,props,Flower,10,shipped
+props/flower,7.5,"muted ivory bloom, gold center, stem, and leaves remain distinct at gameplay scale",codex 2026-07-26 replacement,props,Flower,10,shipped
 props/flower_pink,5,,claude 2026-07-26 (group),props,Flower Pink,1,shipped
 props/flowerbed_pink,5,,claude 2026-07-26 (group),props,Flowerbed Pink,1,placeholder
 props/flowerbed_purple,5,,claude 2026-07-26 (group),props,Flowerbed Purple,1,placeholder
@@ -512,13 +512,13 @@ props/garden_urns,5,,claude 2026-07-26 (group),props,Garden Urns,1,placeholder
 props/gate,5,,claude 2026-07-26 (group),props,Gate,0,unreferenced
 props/gem,5,,claude 2026-07-26 (group),props,Gem,0,unreferenced
 props/geode,5,,claude 2026-07-26 (group),props,Geode,1,shipped
-props/grass,4,,claude 2026-07-26,props,Grass,9,shipped
+props/grass,7,simple intentional grass tuft that reads cleanly in context,codex 2026-07-26 audit,props,Grass,9,shipped
 props/grass2,5,,claude 2026-07-26,props,grass2,4,shipped
 props/grass_autumn,5,,claude 2026-07-26 (group),props,Grass Autumn,1,shipped
 props/grass_frost,5,,claude 2026-07-26 (group),props,Grass Frost,1,shipped
 props/grave_angel,7.5,,claude 2026-07-26,props,Grave Angel,4,shipped
 props/grave_bones,7,,claude 2026-07-26,props,Grave Bones,2,shipped
-props/grave_crack,3,brown smear,claude 2026-07-26,props,Grave Crack,2,shipped
+props/grave_crack,7.5,authored branching earth fissure with readable edge highlights,codex 2026-07-26 replacement,props,Grave Crack,2,shipped
 props/grave_cross,6.5,replaced 2026-07-17,claude 2026-07-26,props,Grave Cross,3,shipped
 props/grave_cross2,5,,claude 2026-07-26 (group),props,Grave Cross 2,1,shipped
 props/grave_deadtree,5,,claude 2026-07-26 (group),props,Grave Deadtree,1,shipped
@@ -550,8 +550,8 @@ props/library_rug,4,flat,claude 2026-07-26,props,Library Rug,2,placeholder
 props/library_shelf,4.5,,claude 2026-07-26,props,Library Shelf,2,placeholder
 props/library_shelf2,5,,claude 2026-07-26 (group),props,Library Shelf 2,1,placeholder
 props/lion,5,,claude 2026-07-26 (group),props,Dune Lion,1,placeholder
-props/log,3.5,brown rectangle,claude 2026-07-26,props,Log,6,shipped
-props/log2,3,brown diagonal bar,claude 2026-07-26,props,Log 2,2,shipped
+props/log,7.5,bark texture and cut growth rings make the horizontal log immediately readable,codex 2026-07-26 replacement,props,Log,6,shipped
+props/log2,7.5,distinct diagonal broken-log silhouette with bark and splintered end,codex 2026-07-26 replacement,props,Log 2,2,shipped
 props/magma_chainrig,5,,claude 2026-07-26 (group),props,Magma Chainrig,1,shipped
 props/magma_furnace,5,,claude 2026-07-26 (group),props,Magma Furnace,1,shipped
 props/mat_bread,5,,claude 2026-07-26 (group),props,Traveler's Loaf,1,placeholder
@@ -570,18 +570,18 @@ props/node_gold,5,,claude 2026-07-26 (group),props,Node Gold,1,placeholder
 props/node_herb,5,,claude 2026-07-26 (group),props,Node Herb,1,placeholder
 props/node_ore,3.5,,claude 2026-07-26,props,Node Ore,2,placeholder
 props/parrot,5,,claude 2026-07-26 (group),props,Scarlet Parrot,1,placeholder
-props/pebble,3,5-pixel grey plus-sign,claude 2026-07-26,props,Pebble,24,shipped
+props/pebble,7.5,intentional three-stone cluster at the native 8px footprint,codex 2026-07-26 replacement,props,Pebble,24,shipped
 props/pig,5,,claude 2026-07-26 (group),props,Pink Sow,1,placeholder
-props/pillar,3.5,flat grey I-beam — the keep's primary obstacle,claude 2026-07-26,props,Pillar,17,shipped
+props/pillar,7.5,ruined masonry pillar with chipped silhouette and readable planes,codex 2026-07-26 replacement,props,Pillar,17,shipped
 props/potion,5,,claude 2026-07-26 (group),props,Potion,0,unreferenced
 props/racoon,5,,claude 2026-07-26 (group),props,Masked Thief,1,placeholder
 props/rock,7,clean cel rock — the standard the flat blobs should meet,claude 2026-07-26,props,Rock,19,shipped
-props/rock2,3,flat olive blob,claude 2026-07-26,props,Rock 2,7,shipped
-props/rock3,3,flat olive blob,claude 2026-07-26,props,Rock 3,2,shipped
+props/rock2,7.5,authored cool-stone variant with distinct highlight and shadow planes,codex 2026-07-26 replacement,props,Rock 2,7,shipped
+props/rock3,7.5,low-profile authored stone variant with a clean gameplay silhouette,codex 2026-07-26 replacement,props,Rock 3,2,shipped
 props/rock_ice,5,,claude 2026-07-26 (group),props,Rock Ice,1,shipped
 props/rock_pale,5,,claude 2026-07-26 (group),props,Rock Pale,1,shipped
 props/rock_volcanic,5,,claude 2026-07-26 (group),props,Rock Volcanic,1,shipped
-props/rubble,3,black blobs,claude 2026-07-26,props,Rubble,7,shipped
+props/rubble,7.5,cohesive broken-masonry pile with differentiated stone and brick pieces,codex 2026-07-26 replacement,props,Rubble,7,shipped
 props/rv_arm_amulet,5,,claude 2026-07-26 (group),props,Jade Amulet,1,placeholder
 props/rv_arm_axe,5,,claude 2026-07-26 (group),props,Iron Battleaxe,1,placeholder
 props/rv_arm_boots,5,,claude 2026-07-26 (group),props,Riding Boots,1,placeholder
@@ -760,7 +760,7 @@ props/tree_teal2,6.5,,claude 2026-07-26,props,Tree Teal 2,2,shipped
 props/tree_winter,5,,claude 2026-07-26 (group),props,Tree Winter,1,shipped
 props/void_monolith,7,,claude 2026-07-26,props,Void Monolith,2,shipped
 props/void_obelisk,5,,claude 2026-07-26 (group),props,Void Obelisk,1,shipped
-props/void_rift,3,magenta triangle,claude 2026-07-26,props,Void Rift,2,shipped
+props/void_rift,7.5,sharp authored void tear with a restrained magenta core; original score misread the silhouette,codex 2026-07-26 audit,props,Void Rift,2,shipped
 props/water_bucket,5,,claude 2026-07-26,props,Water Bucket,3,placeholder
 props/web,4,,claude 2026-07-26,props,Web,4,placeholder
 props/whitepelt,6,,claude 2026-07-26,props,whitepelt,4,shipped
@@ -803,26 +803,26 @@ structures/sewer_pipe,3,pink/white arch,claude 2026-07-26,structures,Sewer Outfa
 structures/signpost,4,,claude 2026-07-26,structures,Notice Board,1,placeholder
 structures/station_alchemy_t3,4.5,busy pack art,claude 2026-07-26,structures,Brew Stand,2,placeholder
 structures/station_anvil_t3,4.5,busy pack art,claude 2026-07-26,structures,Guild Forge,2,placeholder
-walls/wall_castle,3.5,nearly featureless dark panel,claude 2026-07-26,walls,Wall Castle,8,shipped
+walls/wall_castle,7.5,64px authored charcoal ashlar macro-tile with readable mortar and no obvious seams,codex 2026-07-26 replacement,walls,Wall Castle,8,shipped
 walls/wall_grave,4,"flat tan, no texture",claude 2026-07-26,walls,Wall Grave,3,shipped
-walls/wall_hedge,3,"flat olive green, zero structure",claude 2026-07-26,walls,Wall Hedge,2,shipped
+walls/wall_hedge,7.5,64px authored leaf-cluster macro-tile with organic structure and clean repetition,codex 2026-07-26 replacement,walls,Wall Hedge,2,shipped
 walls/wall_ice,5,brightness outlier: far lighter than every other wall,claude 2026-07-26,walls,Wall Ice,1,shipped
 walls/wall_moss,5.5,serves four shipped biomes — highest exposure of any wall,claude 2026-07-26,walls,Wall Moss,6,shipped
 walls/wall_sand,6,,claude 2026-07-26,walls,Wall Sand,1,shipped
 walls/wall_sewer,4.5,,claude 2026-07-26,walls,Wall Sewer,2,placeholder
 walls/wall_volcanic,5,very dark — risks reading as void after the tonemap,claude 2026-07-26,walls,Wall Volcanic,3,shipped
 walls/wall_wood,5.5,,claude 2026-07-26,walls,Wall Wood,3,shipped
-walls/wallblock,4,flat tan default; the fallback for any unlisted biome,claude 2026-07-26,walls,Wallblock,8,shipped
+walls/wallblock,7.5,64px neutral fieldstone macro-tile; authored fallback with readable masonry,codex 2026-07-26 replacement,walls,Wallblock,8,shipped
 chests/chest_a,,,,chests,Chest — grade A,2,shipped
 chests/chest_b,,,,chests,Chest — grade B,2,shipped
 chests/chest_c,,,,chests,Chest — grade C,2,shipped
 chests/chest_d,,,,chests,Chest — grade D,2,shipped
 chests/chest_e,,,,chests,Chest — grade E,2,shipped
 chests/chest_f,,,,chests,Chest — grade F,2,shipped
-chests/chest_gold,,,,chests,Gold chest,4,shipped
+chests/chest_gold,7.5,authored gold chest with a compact silhouette and red jewel latch,codex 2026-07-26 replacement,chests,Gold chest,4,shipped
 chests/chest_s,,,,chests,Chest — grade S,2,shipped
-chests/chest_silver,,,,chests,Silver chest,4,shipped
-chests/chest_wood,,,,chests,Wood chest,4,shipped
+chests/chest_silver,7.5,authored silver chest with cool plates and a pale-blue gem latch,codex 2026-07-26 replacement,chests,Silver chest,4,shipped
+chests/chest_wood,7.5,authored oak chest with dark iron bands and a clear latch,codex 2026-07-26 replacement,chests,Wood chest,4,shipped
 gear/held_w_blade,4,grade tint flattens the held weapon to a coloured blob,claude 2026-07-26,gear,Blade — held,5,shipped
 gear/held_w_bow,4,same flattening,claude 2026-07-26,gear,Bow — held,5,shipped
 gear/held_w_claymore,4,same flattening,claude 2026-07-26,gear,Claymore — held,5,shipped
@@ -941,16 +941,16 @@ quest_items/sera_loaf,8,,claude 2026-07-26,quest_items,Sera's Road Loaf,1,shippe
 quest_items/sexton_stone,7.5,,claude 2026-07-26,quest_items,The Digger's Stone,1,shipped
 quest_items/slag_core,7.5,,claude 2026-07-26,quest_items,Cold Slag Core,1,shipped
 quest_items/vale_bread,8,,claude 2026-07-26,quest_items,Fenna's Loaf,1,shipped
-projectiles/arrow,3,brown/black/white bar,claude 2026-07-26,projectiles,arrow,6,shipped
+projectiles/arrow,7.5,clean fletched arrow silhouette with readable metal tip and motion accent,codex 2026-07-26 replacement,projectiles,arrow,6,shipped
 projectiles/arrow_base,6,,claude 2026-07-26,projectiles,arrow base,6,shipped
 projectiles/arrow_frost,6,,claude 2026-07-26,projectiles,arrow frost,6,shipped
 projectiles/arrow_void,6,,claude 2026-07-26,projectiles,arrow void,6,shipped
 projectiles/arrow_void_eye,6.5,,claude 2026-07-26,projectiles,arrow void eye,6,shipped
-projectiles/bolt,2.5,magenta block — the shared mob bolt,claude 2026-07-26,projectiles,bolt,6,shipped
+projectiles/bolt,7.5,distinct arcane bolt silhouette with a bright core and controlled magenta trail,codex 2026-07-26 replacement,projectiles,bolt,6,shipped
 projectiles/choir_censer,8,excellent projectile identity,claude 2026-07-26,projectiles,choir censer,6,shipped
-projectiles/dart,3.5,grey blob,claude 2026-07-26,projectiles,dart,6,shipped
-projectiles/earthshard,3,brown blocks,claude 2026-07-26,projectiles,earthshard,6,shipped
-projectiles/fireball,2.5,red/yellow checkerboard,claude 2026-07-26,projectiles,fireball,6,shipped
+projectiles/dart,7.5,small steel dart with a crisp point and compact flight trail,codex 2026-07-26 replacement,projectiles,dart,6,shipped
+projectiles/earthshard,7.5,jagged earthen shard with stone planes and a dust wake,codex 2026-07-26 replacement,projectiles,earthshard,6,shipped
+projectiles/fireball,8,authored ember-cored fireball with a strong flame silhouette,codex 2026-07-26 replacement,projectiles,fireball,6,shipped
 projectiles/fx_boss_earth_fang,5.5,,claude 2026-07-26 (group),projectiles,fx boss earth fang,6,shipped
 projectiles/fx_boss_fire_comet,5.5,,claude 2026-07-26 (group),projectiles,fx boss fire comet,6,shipped
 projectiles/fx_boss_frost_lance,5.5,,claude 2026-07-26 (group),projectiles,fx boss frost lance,6,shipped
@@ -962,15 +962,15 @@ projectiles/fx_sexton_sigilbolt,5.5,,claude 2026-07-26 (group),projectiles,fx se
 projectiles/fx_varo_reliquary_bolt,5.5,,claude 2026-07-26 (group),projectiles,fx varo reliquary bolt,6,shipped
 projectiles/fx_vess_griefwave,5.5,,claude 2026-07-26 (group),projectiles,fx vess griefwave,6,shipped
 projectiles/fx_veyx_windslash,5.5,,claude 2026-07-26 (group),projectiles,fx veyx windslash,6,shipped
-projectiles/griefwave,3,purple/white blocks,claude 2026-07-26,projectiles,griefwave,6,shipped
+projectiles/griefwave,7.5,layered violet grief-wave crescent with a pale spectral core,codex 2026-07-26 replacement,projectiles,griefwave,6,shipped
 projectiles/hellfire_brand_bolt,5,reads as a red smudge in flight,claude 2026-07-26,projectiles,hellfire brand bolt,6,shipped
-projectiles/holybolt,3,yellow/white blocks,claude 2026-07-26,projectiles,holybolt,6,shipped
-projectiles/icelance,3,cyan/white bar,claude 2026-07-26,projectiles,icelance,6,shipped
-projectiles/knife,3,grey bar,claude 2026-07-26,projectiles,knife,6,shipped
+projectiles/holybolt,7.5,restrained gold-white holy bolt with a readable radiant spearhead,codex 2026-07-26 replacement,projectiles,holybolt,6,shipped
+projectiles/icelance,7.5,faceted cyan ice lance with a cold core and shard wake,codex 2026-07-26 replacement,projectiles,icelance,6,shipped
+projectiles/knife,7.5,"compact throwing knife with a clear blade, hilt, and motion accent",codex 2026-07-26 replacement,projectiles,knife,6,shipped
 projectiles/mage_crystal_decree,6.5,,claude 2026-07-26,projectiles,mage crystal decree,6,shipped
 projectiles/mage_firebolt,6,,claude 2026-07-26,projectiles,mage firebolt,6,shipped
 projectiles/mage_void_bullet,6,,claude 2026-07-26,projectiles,mage void bullet,6,shipped
-projectiles/metalshard,3,grey blocks,claude 2026-07-26,projectiles,metalshard,6,shipped
+projectiles/metalshard,7.5,angular steel shard with crisp highlights and a dark metallic wake,codex 2026-07-26 replacement,projectiles,metalshard,6,shipped
 projectiles/mob_blight_thorn,5.5,,claude 2026-07-26 (group),projectiles,mob blight thorn,6,shipped
 projectiles/mob_bloom_seed,5.5,,claude 2026-07-26 (group),projectiles,mob bloom seed,6,shipped
 projectiles/mob_forge_brand,5.5,,claude 2026-07-26 (group),projectiles,mob forge brand,6,shipped
@@ -980,13 +980,13 @@ projectiles/mob_hush_wave,5.5,,claude 2026-07-26 (group),projectiles,mob hush wa
 projectiles/mob_null_shard,5.5,,claude 2026-07-26 (group),projectiles,mob null shard,6,shipped
 projectiles/mob_plague_spore,5.5,,claude 2026-07-26 (group),projectiles,mob plague spore,6,shipped
 projectiles/mob_storm_fork,5.5,,claude 2026-07-26 (group),projectiles,mob storm fork,6,shipped
-projectiles/rotbolt,2.5,green plus-sign,claude 2026-07-26,projectiles,rotbolt,6,shipped
-projectiles/shadowbolt,3,purple blocks,claude 2026-07-26,projectiles,shadowbolt,6,shipped
+projectiles/rotbolt,7.5,sickly green rot bolt with a dark core and organic spore trail,codex 2026-07-26 replacement,projectiles,rotbolt,6,shipped
+projectiles/shadowbolt,7.5,dark-violet shadow bolt with a bright edge and wispy wake,codex 2026-07-26 replacement,projectiles,shadowbolt,6,shipped
 projectiles/shuriken,6.5,"smooth/AA outlier, but reads",claude 2026-07-26,projectiles,shuriken,6,shipped
-projectiles/sigilbolt,3,purple/white cross,claude 2026-07-26,projectiles,sigilbolt,6,shipped
-projectiles/stormbolt,3,cyan blocks,claude 2026-07-26,projectiles,stormbolt,6,shipped
+projectiles/sigilbolt,7.5,compact rune-sigil projectile with a controlled violet-white trail,codex 2026-07-26 replacement,projectiles,sigilbolt,6,shipped
+projectiles/stormbolt,7.5,forked electric-blue storm bolt with a bright charged core,codex 2026-07-26 replacement,projectiles,stormbolt,6,shipped
 projectiles/warlock_shadowbolt,5,"dark smear, low contrast on dark floors",claude 2026-07-26,projectiles,warlock shadowbolt,6,shipped
-projectiles/windslash,3,cyan blocks,claude 2026-07-26,projectiles,windslash,6,shipped
+projectiles/windslash,7.5,clean pale-cyan wind crescent with a strong directional silhouette,codex 2026-07-26 replacement,projectiles,windslash,6,shipped
 abilities/ability_archer_a1,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A1,30,shipped
 abilities/ability_archer_a1_hunt,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A1 (Hunt),8,shipped
 abilities/ability_archer_a1_storm,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A1 (Storm),8,shipped
