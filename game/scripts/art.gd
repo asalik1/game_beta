@@ -1853,10 +1853,16 @@ static func ability_glow() -> ImageTexture:
 ## Soft-edged white disc used by TextureProgressBar for the clockwise cooldown
 ## sweep. Every class gets the same recharge language without baking UI state
 ## into its painted medallion.
-static func ability_cooldown_mask() -> ImageTexture:
-	if _cache.has("ability_cooldown_mask"):
-		return _cache["ability_cooldown_mask"]
-	var n := 64
+##
+## `n` must be the EXACT pixel size the bar renders at: TextureProgressBar
+## clamps its control size UP to the texture's native size and draws it
+## un-scaled from the top-left, so an oversized mask lands off-centre in the
+## slot (the sweep read ~6px down-right of the medallion when this was a
+## fixed 64 inside a 52px rect).
+static func ability_cooldown_mask(n := 64) -> ImageTexture:
+	var key := "ability_cooldown_mask_%d" % n
+	if _cache.has(key):
+		return _cache[key]
 	var im := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
 	var c := (n - 1) / 2.0
 	for y in n:
@@ -1864,11 +1870,11 @@ static func ability_cooldown_mask() -> ImageTexture:
 			var r: float = sqrt((x - c) * (x - c) + (y - c) * (y - c))
 			# The production medallion occupies 60px of its 64px canvas. Inset
 			# the sweep another pixel so its dark edge stays inside the painted
-			# gold rim after the HUD downsamples both textures.
+			# gold rim.
 			var a: float = clampf((n * 0.455 - r) * 1.5, 0.0, 1.0)
 			im.set_pixel(x, y, Color(1, 1, 1, a))
 	var t := ImageTexture.create_from_image(im)
-	_cache["ability_cooldown_mask"] = t
+	_cache[key] = t
 	return t
 
 
@@ -1897,7 +1903,7 @@ static func glyph_tex(name: String, tint := Color(0.92, 0.92, 0.98)) -> ImageTex
 
 # Every gear family (noun) has its own sprite; grade adds the tint.
 const GEAR_SHAPES := {
-	"weapon": {"Blade": "w_blade", "Edge": "w_edge", "Fang": "w_fang", "Shuriken": "w_kunai", "Kunai": "w_kunai", "Claymore": "w_claymore", "Bow": "w_bow", "Crossbow": "w_crossbow", "Staff": "w_staff", "Wand": "w_wand", "Hammer": "w_hammer", "Tome": "w_tome"},
+	"weapon": {"Blade": "w_blade", "Edge": "w_edge", "Fang": "w_fang", "Shuriken": "w_kunai", "Kunai": "w_kunai", "Pike": "w_pike", "Warblade": "w_warblade", "Saber": "w_saber", "Bulwark Blade": "w_bulwark_blade", "Claymore": "w_claymore", "Bow": "w_bow", "Crossbow": "w_crossbow", "Staff": "w_staff", "Wand": "w_wand", "Hammer": "w_hammer", "Tome": "w_tome"},
 	"armor":  {"Plate": "icon_armor", "Mail": "icon_mail", "Guard": "icon_shield"},
 	"boots":  {"Boots": "icon_boots", "Striders": "icon_striders", "Treads": "icon_treads"},
 	"charm":  {"Charm": "icon_charm", "Talisman": "icon_talisman", "Sigil": "icon_sigil"},
@@ -2133,7 +2139,7 @@ static func item_icon(slot: String, grade: String, noun := "", art := "") -> Ima
 		if uniq != null:
 			if uniq.get_width() != 32 or uniq.get_height() != 32:
 				uniq.resize(32, 32, Image.INTERPOLATE_NEAREST)
-			var ut := ImageTexture.create_from_image(_tier_frame(uniq, grade))
+			var ut := ImageTexture.create_from_image(_tier_frame(uniq, grade, false))
 			_cache[key] = ut
 			return ut
 	# Base 32x32: the hand-colored override if present, else procedural. Both
@@ -2148,8 +2154,10 @@ static func item_icon(slot: String, grade: String, noun := "", art := "") -> Ima
 	#   3. procedural          — the built-in shape, tinted hard.
 	# Grades with no bespoke file fall through to 2/3, so a family can be authored
 	# tier by tier without a code change or a half-finished look.
+	var authored := false
 	var base := _icon_override("%s_%s" % [shape, grade])
 	if base != null:
+		authored = true   # drawn FOR this grade: no tint, no aura, no embellish
 		if base.get_width() != 32 or base.get_height() != 32:
 			base.resize(32, 32, Image.INTERPOLATE_NEAREST)
 	else:
@@ -2162,7 +2170,7 @@ static func item_icon(slot: String, grade: String, noun := "", art := "") -> Ima
 			base = img(shape)
 			_grade_tint(base, Items.GRADE_COLOR[grade], Balance.ICON_PROC_TINT)
 			base.resize(32, 32, Image.INTERPOLATE_NEAREST)
-	var t := ImageTexture.create_from_image(_tier_frame(base, grade))
+	var t := ImageTexture.create_from_image(_tier_frame(base, grade, not authored))
 	_cache[key] = t
 	return t
 
@@ -2181,10 +2189,25 @@ static func _grade_tint(image: Image, tint: Color, strength: float) -> void:
 ## Pad a 32px icon into a fixed margin canvas (so every tier renders the
 ## SAME size in a row), paint the A/S misty aura into that margin, then run
 ## the grade embellishment. The pad also gives B+'s rim glow room to bloom.
-static func _tier_frame(icon32: Image, grade: String) -> Image:
+## `decorate` = false pads only, leaving the art untouched. That is the contract
+## for AUTHORED art (a named unique's own sprite, or <shape>_<grade>.png drawn for
+## one tier): the artist already expressed the grade in condition, ornament and
+## palette, so painting an aura or an embellish rim over it fights the drawing and
+## flattens every shape back onto the same rarity ramp. 2026-07-26: the tier-0/1
+## cascade skipped _grade_tint but still landed here with decoration ON, which is
+## exactly how a hand-authored gold S and blue B both came out reading as the
+## stock orange/purple in the codex.
+static func _tier_frame(icon32: Image, grade: String, decorate := true) -> Image:
 	var pad: int = Balance.TIER_AURA_PAD
 	var w := icon32.get_width()
 	var h := icon32.get_height()
+	if not decorate:
+		# Authored art wears no aura, so it needs no transparent margin to bleed
+		# into. Returning it UNPADDED means the drawing fills its whole frame
+		# wherever it is shown (bag, shop, gallery) instead of sitting in a 42px box
+		# at 32/42 = 76% size — a free legibility win for the art the owner invests
+		# in, at no cost to the tinted/aura'd icons that still pad below.
+		return icon32
 	var canvas := Image.create_empty(w + pad * 2, h + pad * 2, false, Image.FORMAT_RGBA8)
 	canvas.blit_rect(icon32, Rect2i(0, 0, w, h), Vector2i(pad, pad))
 	# A/S read via a SUBTLE colored mist (orange / red), not the loud gold

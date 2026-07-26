@@ -776,9 +776,10 @@ func _build_ability_bar() -> void:
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(icon)
-		# Clockwise cooldown sweep clipped to the circular icon.
+		# Clockwise cooldown sweep clipped to the circular icon. The mask must
+		# be generated at the drawn size — TextureProgressBar won't downscale.
 		var cd := TextureProgressBar.new()
-		cd.texture_progress = Art.ability_cooldown_mask()
+		cd.texture_progress = Art.ability_cooldown_mask(int(SLOT_SIZE - 8))
 		cd.tint_progress = Color(0.025, 0.035, 0.075, 0.8)
 		cd.fill_mode = TextureProgressBar.FILL_CLOCKWISE
 		cd.min_value = 0.0
