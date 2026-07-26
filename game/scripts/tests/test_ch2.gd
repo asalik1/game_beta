@@ -3,6 +3,21 @@ extends "res://scripts/tests/test_ch1.gd"
 ## the cross-cutting feature tests (elites/bags/small rooms).
 
 
+## Waking Incursion breach rooms currently injected into the live graph.
+## ch2 became ELIGIBLE for these when the graph retrofit gave it a spine
+## (`game_world.gd` arms the week only for spine chapters), and this suite
+## completes ch2 mid-run — `completed_` is a KEPT_FLAG_PREFIX, so the flag
+## survives the replay in `_test_pause_menu`. On the one week in seven when
+## ch2 is `weekly_chapter()`, the built world therefore carries breach rooms
+## ON TOP of the authored 20, entirely legitimately. Room-count assertions
+## have to allow for them or the suite fails on a calendar.
+func _breach_rooms() -> int:
+	var n := 0
+	for zi in game.zone_count:
+		if game.zones[zi].has("waking"):
+			n += 1
+	return n
+
 ## (T1) Maren's camp hub: briefing reads the common opening flags, sets
 ## the quest + gate flag, and short-circuits on repeat visits.
 func _test_ch2_hub() -> void:
@@ -254,7 +269,10 @@ func _test_ch2_act1() -> void:
 
 ## (T3) Act 2: four crossings, the scholar, and the chapter's end.
 func _test_ch2_act2() -> void:
-	if game.zone_count != 10:
+	# 10 spine rooms + the 10 side rooms of the graph retrofit
+	# (CH2_RETROFIT_TASKS). The spine keeps indices 0-9, which is what
+	# lets the index-based walk below stay valid.
+	if game.zone_count != 20 + _breach_rooms():
 		return _fail("act 2 zones did not append (zones=%d)" % game.zone_count)
 	_buff()
 	# The four bossless crossings: clear each, its way east must open.
@@ -405,7 +423,7 @@ func _test_pause_menu() -> void:
 		return _fail("chapter replay wiped the character's opening history")
 	if game.player.level != lvl or game.player.resonance != res:
 		return _fail("chapter replay touched the character build")
-	if game.quest_key != "ch2_start" or game.zone_count != 10:
+	if game.quest_key != "ch2_start" or game.zone_count != 20 + _breach_rooms():
 		return _fail("chapter replay world wrong (quest=%s zones=%d)" % [game.quest_key, game.zone_count])
 	if game.player.faction_standing["accord"] != 0 or game.get_flag("joined_accord", false):
 		return _fail("chapter replay should reset faction commitments")

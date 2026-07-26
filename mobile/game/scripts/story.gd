@@ -981,6 +981,15 @@ const CHAPTERS := {
 		"name": "Chapter 2: The Waking",
 		"sub": "Years later — the scattered shards choose their bearers",
 		"zones": CH2_ZONES,
+		# Graph retrofit (CH2_RETROFIT_TASKS, DESIGN open item #1): ch2 was
+		# the last LEGACY STRIP — no spine, so it laid out as a fixed
+		# one-row chain and, having no side-attach pass, could not carry the
+		# social/dead-end/resonance rooms the premium path seeds off. The
+		# ten authored spine rooms keep indices 0-9 (camp, Mills, Fields,
+		# Sporewood, Hollow, Dunes, Expanse, Deeps, Ruins, Bastion) and
+		# ch2_zones_side.gd appends the rest — so this list is [0..9] and
+		# new side rooms are always authored at the END.
+		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch2_start",
 		"final_boss": "nullwarden",
@@ -1063,6 +1072,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch2_hub.gd"),        # (T1) zone 0
 	preload("res://scripts/content/ch2_zones_act1.gd"), # (T2) zones 1-4
 	preload("res://scripts/content/ch2_zones_act2.gd"), # (T3) zones 5-9
+	preload("res://scripts/content/ch2_zones_side.gd"), # (CR) zones 10-19 — side rooms, MUST stay after the spine modules
 	preload("res://scripts/content/ch2_factions.gd"),   # (T5)
 	preload("res://scripts/content/ch2_aldric.gd"),     # (T6)
 	preload("res://scripts/content/ch2_bosses.gd"),     # (T4)

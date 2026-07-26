@@ -2,62 +2,76 @@
 ## zones across the wild terrains, ~Lv 9-16, ending at the Null Bastion
 ## where Warden Null (T4's construct, act-scaled) closes the chapter.
 
+## GRAPH RETROFIT (CH2_RETROFIT_TASKS): spine indices 5-9. Same three
+## changes as act 1 — explicit `type`, `lock_next` replacing the legacy
+## `gate_flag`, and full-cell pack coordinates in the ch3 idiom. The
+## Bastion is the final room and needs no `lock_next`.
 const CHAPTER_ZONES := {
 	"ch2": [
 		{
 			"name": "The Scorching Dunes", "terrain": "desert", "ground": "sand", "path": "sand",
-			"merchant": [820, 300],
+			"type": "combat",
+			# Melee-only by design (room banding): the crossing that teaches
+			# the act-2 power step before the ranged kinds arrive.
 			"enemies": [
-				["duneprowler", 300, 200], ["duneprowler", 460, 540], ["duneprowler", 620, 300],
-				["sun_bleached", 540, 610], ["sun_bleached", 720, 160],
-				["sun_bleached", 860, 470], ["duneprowler", 960, 550],
+				["duneprowler", 460, 310, 0], ["duneprowler", 600, 240, 0], ["duneprowler", 530, 440, 0],
+				["sun_bleached", 1380, 870, 1], ["sun_bleached", 1500, 790, 1],
+				["sun_bleached", 1760, 410, 2], ["duneprowler", 1870, 520, 2],
 			],
 			"boss": "",
-			"clear_flag": "dunes_crossed", "gate_flag": "dunes_crossed",
+			"clear_flag": "dunes_crossed", "lock_next": "flag:dunes_crossed",
 		},
 		{
 			"name": "The Frozen Expanse", "terrain": "ice", "ground": "snow", "path": "snow",
-			"merchant": [660, 560],
+			"type": "combat",
 			"enemies": [
-				["frost_husk", 320, 220], ["frost_husk", 470, 530], ["frost_husk", 640, 180],
-				["duneprowler", 560, 600], ["null_acolyte", 760, 340, 0, 13, 48],
-				["frost_husk", 880, 520], ["null_acolyte", 980, 220],
+				["frost_husk", 460, 300, 0], ["frost_husk", 600, 240, 0], ["frost_husk", 530, 440, 0],
+				["duneprowler", 1380, 870, 1], ["frost_husk", 1500, 800, 1],
+				# Both acolytes now carry the SAME authored XP: the pair was
+				# split 48 / native-70 for no stated reason, and the audit
+				# was reading 70 for both (econ_audit ignored the override).
+				["null_acolyte", 1760, 410, 2, 13, 48], ["null_acolyte", 1870, 520, 2, 13, 48],
 			],
 			"boss": "",
-			"clear_flag": "expanse_crossed", "gate_flag": "expanse_crossed",
+			"clear_flag": "expanse_crossed", "lock_next": "flag:expanse_crossed",
 		},
 		{
 			"name": "The Crystal Deeps", "terrain": "crystal", "ground": "crystalfloor", "path": "crystalfloor",
-			"merchant": [540, 170],
+			"type": "combat",
 			"enemies": [
-				["deep_stalker", 300, 250], ["deep_stalker", 450, 520], ["deep_stalker", 620, 200],
-				["frost_husk", 560, 600], ["null_acolyte", 760, 350],
-				["deep_stalker", 850, 550], ["null_acolyte", 950, 200],
+				["deep_stalker", 460, 310, 0, 12, 48], ["deep_stalker", 600, 240, 0, 12, 48],
+				["deep_stalker", 530, 440, 0, 12, 48],
+				["frost_husk", 1380, 870, 1], ["deep_stalker", 1500, 800, 1, 12, 48],
+				["null_acolyte", 1760, 410, 2, 13, 48], ["null_acolyte", 1870, 520, 2, 13, 48],
 			],
 			"boss": "",
-			"clear_flag": "deeps_mapped", "gate_flag": "deeps_mapped",
+			"clear_flag": "deeps_mapped", "lock_next": "flag:deeps_mapped",
 			"npcs": [
-				{"sprite": "villager", "x": 1240, "y": 240, "prompt": "E — A Scholar", "convo": "ch2_scholar"},
+				{"sprite": "villager", "x": 1030, "y": 250, "prompt": "E — A Scholar", "convo": "ch2_scholar"},
 			],
 		},
 		{
 			"name": "The Sanctified Ruins", "terrain": "holy", "ground": "holystone", "path": "holystone",
-			"merchant": [700, 540],
+			"type": "combat",
+			# Ranged-heavy artillery room (room banding): the Choir's
+			# successors hold the nave and shoot down the aisle.
 			"enemies": [
-				["null_acolyte", 320, 220], ["null_acolyte", 480, 540], ["void_husk", 640, 300],
-				["null_acolyte", 580, 610, 0, 13, 55], ["null_acolyte", 780, 170],
-				["void_husk", 900, 480],
+				["null_acolyte", 460, 300, 0, 13, 55], ["null_acolyte", 600, 240, 0, 13, 55],
+				["void_husk", 530, 440, 0, 15, 60],
+				["null_acolyte", 1380, 870, 1, 13, 55], ["null_acolyte", 1500, 790, 1, 13, 55],
+				["void_husk", 1760, 420, 2, 15, 60],
 			],
 			"boss": "",
-			"clear_flag": "ruins_reclaimed", "gate_flag": "ruins_reclaimed",
+			"clear_flag": "ruins_reclaimed", "lock_next": "flag:ruins_reclaimed",
 		},
 		{
 			"name": "The Null Bastion", "terrain": "void", "ground": "voidstone", "path": "voidstone",
-			"merchant": [820, 300],
+			"type": "boss",
 			"enemies": [
-				["void_husk", 300, 240], ["void_husk", 450, 530], ["void_husk", 620, 190],
-				["null_acolyte", 560, 600], ["null_acolyte", 740, 340],
-				["deep_stalker", 860, 520], ["void_husk", 960, 240],
+				["void_husk", 460, 300, 0, 15, 60], ["void_husk", 600, 240, 0, 15, 60],
+				["void_husk", 530, 440, 0, 15, 60],
+				["null_acolyte", 1380, 870, 1, 13, 50], ["null_acolyte", 1500, 790, 1, 13, 50],
+				["deep_stalker", 1760, 420, 2, 12, 45], ["void_husk", 1870, 520, 2, 15, 60],
 			],
 			"boss": "nullwarden",
 			"boss_level": 16,
