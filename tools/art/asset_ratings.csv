@@ -1,0 +1,1226 @@
+id,rating,notes,rated_by,category,label,exposure,status
+classes/archer,7.5,"highest-res body, only complete 10-clip 8-dir family",claude 2026-07-26,classes,Archer,100,shipped
+classes/assassin,7.5,strongest silhouette identity,claude 2026-07-26,classes,Assassin,100,shipped
+classes/mage,8,frost-elder body reads best of the six at gameplay zoom,claude 2026-07-26,classes,Mage,100,shipped
+classes/paladin,7,"solid, least distinctive of the six",claude 2026-07-26,classes,Paladin,100,shipped
+classes/warlock,7.5,skull + grimoire reads instantly,claude 2026-07-26,classes,Warlock,100,shipped
+classes/warrior,7.5,ember black-plate; strongest theme fit,claude 2026-07-26,classes,Warrior,100,shipped
+skins/skins/elite/archer_frostfall_ranger,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Frostfall Ranger (archer elite),8,shipped
+skins/skins/elite/assassin_blade_dancer,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Golden Ronin (assassin elite),8,shipped
+skins/skins/elite/mage_void_weaver,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Eldritch Warlock (warlock mythic),8,shipped
+skins/skins/elite/paladin_eclipse_knight,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Eclipse Knight (paladin elite),8,shipped
+skins/skins/elite/warlock_hellfire_inquisitor,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Hellfire Inquisitor (warlock elite),8,shipped
+skins/skins/elite/warrior_dreadknight,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Dreadknight (warrior elite),8,shipped
+skins/skins/mythic/archer_voidwraith,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Voidwraith (archer mythic),8,shipped
+skins/skins/mythic/archer_voidwraith_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Voidwraith — Awakened (archer),4,shipped
+skins/skins/mythic/assassin_phantom,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Phantom (assassin mythic),8,shipped
+skins/skins/mythic/assassin_phantom_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Phantom — Awakened (assassin),4,shipped
+skins/skins/mythic/mage_crystal_archmage,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Crystal Archmage (mage mythic),8,shipped
+skins/skins/mythic/mage_crystal_archmage_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Crystal Archmage — Awakened (mage),4,shipped
+skins/skins/mythic/paladin_fallen_arbiter,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Fallen Arbiter (paladin mythic),8,shipped
+skins/skins/mythic/paladin_fallen_arbiter_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Fallen Arbiter — Awakened (paladin),4,shipped
+skins/skins/mythic/warlock_eldritch_herald,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Arcane Warlock (warlock elite),8,shipped
+skins/skins/mythic/warrior_stormforged,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Stormforged (warrior mythic),8,shipped
+skins/skins/mythic/warrior_stormforged_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Stormforged — Awakened (warrior),4,shipped
+chromas/chroma_archer_ember,,,,chromas,Archer — Ember,2,shipped
+chromas/chroma_archer_jade,,,,chromas,Archer — Jade,2,shipped
+chromas/chroma_archer_rose,,,,chromas,Archer — Rose,2,shipped
+chromas/chroma_archer_violet,,,,chromas,Archer — Azure,2,shipped
+chromas/chroma_assassin_crimson,,,,chromas,Assassin — Crimson,2,shipped
+chromas/chroma_assassin_gilded,,,,chromas,Assassin — Gilded,2,shipped
+chromas/chroma_assassin_rose,,,,chromas,Assassin — Rose,2,shipped
+chromas/chroma_assassin_white,,,,chromas,Assassin — White,2,shipped
+chromas/chroma_mage_crimson,,,,chromas,Mage — Crimson,2,shipped
+chromas/chroma_mage_gilded,,,,chromas,Mage — Gilded,2,shipped
+chromas/chroma_mage_void,,,,chromas,Mage — Void,2,shipped
+chromas/chroma_paladin_crimson,,,,chromas,Paladin — Crimson,2,shipped
+chromas/chroma_paladin_emerald,,,,chromas,Paladin — Emerald,2,shipped
+chromas/chroma_paladin_onyx,,,,chromas,Paladin — Onyx,2,shipped
+chromas/chroma_warlock_blight,,,,chromas,Warlock — Blight,2,shipped
+chromas/chroma_warlock_bone,,,,chromas,Warlock — Bone,2,shipped
+chromas/chroma_warlock_hellfire,,,,chromas,Warlock — Hellfire,2,shipped
+chromas/chroma_warrior_crimson,,,,chromas,Warrior — Crimson,2,shipped
+chromas/chroma_warrior_gilded,,,,chromas,Warrior — Gilded,2,shipped
+chromas/chroma_warrior_jade,,,,chromas,Warrior — Jade,2,shipped
+chromas/chroma_warrior_obsidian,,,,chromas,Warrior — Obsidian,2,shipped
+bosses/ashpriest,7.5,,claude 2026-07-26,bosses,"Ashpriest Ordo, Voice of the Molten Judge",1,shipped
+bosses/auroch_minotaur,7.5,replaces the old flat `auroch`; reads as a boss now,claude 2026-07-26,bosses,The Drowned Auroch,1,shipped
+bosses/choirmother,8,,claude 2026-07-26,bosses,The Choir Mother,1,shipped
+bosses/cinderhide,6,near-black on dark terrain; heads merge at gameplay size,claude 2026-07-26,bosses,Cinderhide the Unquenched,1,shipped
+bosses/cyclops,2.5,"dev placeholder: pastel pack art, wrong palette entirely",claude 2026-07-26,bosses,Cyclopean Horror,0,placeholder
+bosses/echo,7.5,,claude 2026-07-26,bosses,The Echo of the Unnamed,1,shipped
+bosses/fangmaw,5,generic near-black wolf — the campaign's FIRST boss impression,claude 2026-07-26,bosses,Fangmaw the Ravener,1,shipped
+bosses/flame_giant,2,dev placeholder; byte-identical twin of great_spirit,claude 2026-07-26,bosses,Cinder Colossus,0,placeholder
+bosses/forgemistress,8,,claude 2026-07-26,bosses,Forgemistress Calda,1,shipped
+bosses/great_spirit,2,dev placeholder; recolor pair with flame_giant,claude 2026-07-26,bosses,Hollow Revenant,0,placeholder
+bosses/halla,8.5,most distinctive silhouette — moth-winged,claude 2026-07-26,bosses,"Mother Halla, Keeper of the Long Sleep",1,shipped
+bosses/hrolgar,7.5,,claude 2026-07-26,bosses,Hrolgar Whitepelt,1,shipped
+bosses/kaethra,8,,claude 2026-07-26,bosses,Kaethra Cure-Twisted,1,shipped
+bosses/korrag,7.5,"idle holds a chain-flail, ability swings a maul — mismatched weapons",claude 2026-07-26,bosses,"Korrag, Stormwarden Broken",1,shipped
+bosses/kraken,2,dev placeholder: pink cartoon octopus,claude 2026-07-26,bosses,Deepmaw Kraken,0,placeholder
+bosses/morwen,7.5,,claude 2026-07-26,bosses,Morwen the Blightcaller,1,shipped
+bosses/nullwarden,8,,claude 2026-07-26,bosses,"Warden Null, the Last Sentinel",1,shipped
+bosses/ooze,2,dev placeholder: pastel blob,claude 2026-07-26,bosses,Devouring Ooze,0,placeholder
+bosses/rotmaw,7.5,,claude 2026-07-26,bosses,Rotmaw the Gardener,1,shipped
+bosses/saint_varo,8.5,best staging in the roster (throne + standing),claude 2026-07-26,bosses,Saint Varo the Unrotting,1,shipped
+bosses/serane,8,,claude 2026-07-26,bosses,Serane the Icebound,1,shipped
+bosses/sexton,7.5,,claude 2026-07-26,bosses,"The Sexton, Gravedigger of the Vale",1,shipped
+bosses/stormmouth,8,,claude 2026-07-26,bosses,"Cyrraeth, Mouth of the Storm",1,shipped
+bosses/tengu,2.5,dev placeholder; also smaller than the hero,claude 2026-07-26,bosses,Crimson Tengu,0,placeholder
+bosses/vargoth,8.5,top-tier silhouette and staging,claude 2026-07-26,bosses,King Vargoth the Hollow,1,shipped
+bosses/vess,7,base cell is half padding — small on screen for its role,claude 2026-07-26,bosses,"Vess the Unburied, First Widow",1,shipped
+bosses/veyx,8,"REGENERATED since the 2026-07-17 audit — now a real storm elemental, not the retired 32px stormwarden knight. Old score (1.2) is dead.",claude 2026-07-26,bosses,"Veyx, the Unchained Current",1,shipped
+mobs/bandit_scout,7,,claude 2026-07-26,mobs,Void Shade,20,shipped
+mobs/banshee,6.5,,claude 2026-07-26,mobs,Hushcaller,36,shipped
+mobs/bat,5,purchased pack; cute/cartoon lean against a somber roster,claude 2026-07-26,mobs,Cave Bat,0,unreferenced
+mobs/blightwolf,6.5,,claude 2026-07-26,mobs,Waking Wolf,5,shipped
+mobs/bog_lurker,6,clean recolor of the re-cut spider,claude 2026-07-26,mobs,Bog Lurker,28,shipped
+mobs/casket_creeper,6,clean recolor of the re-cut spider,claude 2026-07-26,mobs,Casket Creeper,14,shipped
+mobs/choir_censer,8,excellent boss-projectile identity,claude 2026-07-26,mobs,Blighted Censer,0,unreferenced
+mobs/cultist,7.5,best mob against the art bible,claude 2026-07-26,mobs,Blight Cultist,87,shipped
+mobs/deep_stalker,6,clean recolor of the re-cut spider,claude 2026-07-26,mobs,Crystal Stalker,5,shipped
+mobs/direbat,5,same cartoon lean as bat,claude 2026-07-26,mobs,Blightbat,0,unreferenced
+mobs/duneprowler,6.5,,claude 2026-07-26,mobs,Dune Prowler,5,shipped
+mobs/echo,7.5,,claude 2026-07-26,mobs,Mirror of the Unnamed,0,unreferenced
+mobs/elf_druid,5,clown-pink face on a green bush body,claude 2026-07-26,mobs,Bloom Acolyte,30,shipped
+mobs/elf_ranger,6.5,,claude 2026-07-26,mobs,Wildkin Ranger,6,shipped
+mobs/elf_wild,5.5,,claude 2026-07-26,mobs,Wildkin Skirmisher,0,unreferenced
+mobs/fungus_heavy,6,,claude 2026-07-26,mobs,Spore Shambler,5,shipped
+mobs/fungus_immature,4.5,bright orange cap; cartoon lean,claude 2026-07-26,mobs,Sporeling,0,unreferenced
+mobs/fungus_long,6,,claude 2026-07-26,mobs,Root Shambler,26,shipped
+mobs/grove_horror,7,genuinely creepy; full 8-frame anim,claude 2026-07-26,mobs,Grove Horror,22,shipped
+mobs/mummy,6,,claude 2026-07-26,mobs,Sun-Bleached Husk,3,shipped
+mobs/mummy_mage,6.5,,claude 2026-07-26 (group),mobs,Forge Acolyte,38,shipped
+mobs/mummy_rogue,4,bright Egyptian teal/gold — reads as another game's desert,claude 2026-07-26,mobs,Grave Cutter,0,unreferenced
+mobs/mummy_warrior,4,same off-palette Egyptian kit,claude 2026-07-26,mobs,Tomb Warden,0,unreferenced
+mobs/null_acolyte,7,,claude 2026-07-26,mobs,Null Acolyte,13,shipped
+mobs/orc,6,,claude 2026-07-26,mobs,Wildfang Raider,3,shipped
+mobs/orc_rogue,6,,claude 2026-07-26,mobs,Wildfang Howler,4,shipped
+mobs/rat,6.5,,claude 2026-07-26 (group),mobs,Greyrun Lurker,5,shipped
+mobs/rat_mage,3,purple/orange smear — unreadable at gameplay size,claude 2026-07-26,mobs,Plague Chanter,6,shipped
+mobs/rat_rogue,4.5,cartoon proportions,claude 2026-07-26,mobs,Gutter Cutter,0,unreferenced
+mobs/rat_warrior,4,cartoon + a saturated purple that fits nothing,claude 2026-07-26,mobs,Warren Breaker,0,unreferenced
+mobs/royal_knight,7,,claude 2026-07-26,mobs,Frozen Guard,23,shipped
+mobs/scholar_cataloguer,3,bright blue/orange JRPG chibi; wrong game,claude 2026-07-26,mobs,The Cataloguer,0,placeholder
+mobs/scholar_researcher,3,bright blue/orange JRPG chibi; wrong game,claude 2026-07-26,mobs,Pale Archivist,0,placeholder
+mobs/skeleton,6.5,,claude 2026-07-26,mobs,Hollow Soldier,19,shipped
+mobs/skeleton_mage,6.5,,claude 2026-07-26,mobs,Voidbound Husk,6,shipped
+mobs/skeleton_rogue,6.5,,claude 2026-07-26,mobs,Barrow Wight,35,shipped
+mobs/skeleton_warrior,6.5,,claude 2026-07-26,mobs,Frost-Bound Soldier,5,shipped
+mobs/spider,6,re-cut 2026-07-17 to a clean 32px cel spider — the old AA tick is gone,claude 2026-07-26,mobs,Marsh Spider,25,shipped
+mobs/static_caller,7,,claude 2026-07-26,mobs,Static Caller,35,shipped
+mobs/stone_base,6.5,,claude 2026-07-26,mobs,Cinder Whelp,26,shipped
+mobs/stone_broken,6.5,"good design, worst source density in the roster (23px cell)",claude 2026-07-26,mobs,Slagbound Brute,30,shipped
+mobs/storm_harrier,4,"saturated blue wolf recolor, 2 frames",claude 2026-07-26,mobs,Storm Harrier,22,shipped
+mobs/stormcult,6,pale on pale — low contrast against stone floors,claude 2026-07-26,mobs,Choir Cantor,13,shipped
+mobs/tick,3,"the old glossy AA tick body, now shipping as its own mob family",claude 2026-07-26,mobs,Gorged Tick,0,placeholder
+mobs/tick_cyan,2.5,neon cyan recolor of the AA tick,claude 2026-07-26,mobs,Rime Tick,0,placeholder
+mobs/tick_green,2.5,neon green recolor of the AA tick,claude 2026-07-26,mobs,Bog Tick,0,placeholder
+mobs/tick_orange,2.5,neon orange recolor of the AA tick,claude 2026-07-26,mobs,Ember Tick,0,placeholder
+mobs/tick_pale,3,bone-white recolor of the AA tick,claude 2026-07-26,mobs,Grave Tick,0,placeholder
+mobs/vent_skitter,6,clean recolor of the re-cut spider,claude 2026-07-26,mobs,Vent Skitter,23,shipped
+mobs/verdant_elder,1.5,unpainted beige mannequin,claude 2026-07-26,mobs,Verdant Elder,0,placeholder
+mobs/verdant_matron,1.5,unpainted beige mannequin,claude 2026-07-26,mobs,Verdant Matron,0,placeholder
+mobs/verdant_sentinel,1.5,unpainted beige mannequin,claude 2026-07-26,mobs,Verdant Sentinel,0,placeholder
+mobs/vow_sentinel,7,,claude 2026-07-26,mobs,Vow Sentinel,30,shipped
+mobs/winterfang,6.5,,claude 2026-07-26,mobs,Winterfang,26,shipped
+mobs/wolf,6.5,,claude 2026-07-26,mobs,Blighted Wolf,28,shipped
+mobs/zombie,6,,claude 2026-07-26,mobs,Risen Corpse,49,shipped
+mobs/zombie_overweight,4,raw magenta patches on the body — looks like broken art,claude 2026-07-26,mobs,Bloated Dead,0,unreferenced
+npcs/aldric,5.5,named character with no visual hook,claude 2026-07-26,npcs,Aldric,2,shipped
+npcs/ansa_shore,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Ansa Shore,1,shipped
+npcs/apprentice_sorrel,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Apprentice Sorrel,1,shipped
+npcs/archivist_lene,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Archivist Lene,3,shipped
+npcs/beastkin,4,bright yellow/green cartoon,claude 2026-07-26,npcs,Beastkin,1,placeholder
+npcs/bellringer_tam,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Bellringer Tam,2,shipped
+npcs/blooming_convert,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Blooming Convert,2,shipped
+npcs/bones,2,a few white blocks — unreadable as an interactable,claude 2026-07-26,npcs,Bones,1,shipped
+npcs/botanist_ferro,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Botanist Ferro,2,shipped
+npcs/brother_osk,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Brother Osk,2,shipped
+npcs/caged_beastkin,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Caged Beastkin,1,shipped
+npcs/callis,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Callis,2,shipped
+npcs/cantor_ilse,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Cantor Ilse,2,shipped
+npcs/capital_vault_chest,7.5,,claude 2026-07-26,npcs,Capital Vault Chest,1,shipped
+npcs/cartographer_bree,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Cartographer Bree,2,shipped
+npcs/choir_pilgrim,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Choir Pilgrim,1,shipped
+npcs/choirmother,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Choirmother,1,placeholder
+npcs/clerk_voss,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Clerk Voss,3,shipped
+npcs/commander_ashe,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Commander Ashe,1,shipped
+npcs/consul_verane,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Consul Verane,1,shipped
+npcs/crystal,3.5,"bright cyan blob, off-palette",claude 2026-07-26,npcs,Crystal,5,shipped
+npcs/deacon_vela,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Deacon Vela,2,shipped
+npcs/deadtree,5,,claude 2026-07-26,npcs,Deadtree,5,shipped
+npcs/digger_haim,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Digger Haim,2,shipped
+npcs/driver_pell,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Driver Pell,2,shipped
+npcs/elder,5,old batch; simpler and smaller than its neighbours,claude 2026-07-26,npcs,Elder,3,shipped
+npcs/envoy,3.5,"pink boots + gold hair + flame hand — JRPG-cheerful, off-tone",claude 2026-07-26,npcs,Envoy,1,placeholder
+npcs/envoy_cassia,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Envoy Cassia,1,shipped
+npcs/factor_imre,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Factor Imre,2,shipped
+npcs/fisher_dov,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Fisher Dov,1,shipped
+npcs/flame_pilgrim,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Flame Pilgrim,2,shipped
+npcs/grave_goods_peddler,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Grave Goods Peddler,2,shipped
+npcs/herbalist_kesh,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Herbalist Kesh,2,shipped
+npcs/keeper_vasse,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Keeper Vasse,2,shipped
+npcs/mill,3,flat grey/blue procedural building,claude 2026-07-26,npcs,Mill,1,shipped
+npcs/millers_boy,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Millers Boy,2,shipped
+npcs/mother_halla,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Mother Halla,1,placeholder
+npcs/mute_mourner,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Mute Mourner,2,shipped
+npcs/npc_bandit_tracker,5.5,distinct silhouette; ships nowhere,claude 2026-07-26,npcs,Npc Bandit Tracker,1,placeholder
+npcs/npc_elder2,1.5,unpainted beige mannequin (dev launcher only),claude 2026-07-26,npcs,Npc Elder 2,1,placeholder
+npcs/npc_elder_legacy,3,"purple/yellow pack art, wrong palette",claude 2026-07-26,npcs,Npc Elder Legacy,1,placeholder
+npcs/npc_hunter,6.5,best of the placeholder batch — ships nowhere (owner call pending),claude 2026-07-26,npcs,Npc Hunter,1,placeholder
+npcs/npc_royal_archer,4,generic; dev-only,claude 2026-07-26,npcs,Npc Royal Archer,1,placeholder
+npcs/npc_scholar_a,3,bright chibi pack art,claude 2026-07-26,npcs,Npc Scholar A,1,placeholder
+npcs/npc_scholar_b,3,bright chibi pack art,claude 2026-07-26,npcs,Npc Scholar B,1,placeholder
+npcs/npc_villager_f,1.5,unpainted beige mannequin (dev launcher only),claude 2026-07-26,npcs,Npc Villager F,1,placeholder
+npcs/npc_villager_m,1.5,unpainted beige mannequin (dev launcher only),claude 2026-07-26,npcs,Npc Villager M,1,placeholder
+npcs/npc_wanderer,1,naked base body (dev launcher only),claude 2026-07-26,npcs,Npc Wanderer,1,placeholder
+npcs/old_fenna,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Old Fenna,2,shipped
+npcs/old_hunter,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Old Hunter,2,shipped
+npcs/onna,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Onna,2,shipped
+npcs/overseer_brann,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Overseer Brann,1,shipped
+npcs/peddler_nix,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Peddler Nix,3,shipped
+npcs/piet,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Piet,1,shipped
+npcs/pilgrims_schism,6,two-figure staging prop; small but reads,claude 2026-07-26,npcs,Pilgrims Schism,1,shipped
+npcs/pillar,3.5,"flat grey I-beam, 3 colors",claude 2026-07-26,npcs,Pillar,6,shipped
+npcs/preacher_immo,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Preacher Immo,2,shipped
+npcs/quartermaster_bel,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Quartermaster Bel,2,shipped
+npcs/ragged_soldier,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Ragged Soldier,2,shipped
+npcs/reed_cutter_ama,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Reed Cutter Ama,2,shipped
+npcs/ridge_deserter,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Ridge Deserter,2,shipped
+npcs/roadside_peddler,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Roadside Peddler,2,shipped
+npcs/rock,7,,claude 2026-07-26,npcs,Rock,3,shipped
+npcs/sapper_ruel,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Sapper Ruel,2,shipped
+npcs/scout_renn,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Scout Renn,2,shipped
+npcs/sentry,4,arcade cyan armor + orange boots,claude 2026-07-26,npcs,Sentry,1,placeholder
+npcs/sera,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Sera,1,shipped
+npcs/sister_ottilie,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Sister Ottilie,2,shipped
+npcs/skald_ottar,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Skald Ottar,3,shipped
+npcs/smith_harl,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Smith Harl,2,shipped
+npcs/smith_petra,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Smith Petra,3,shipped
+npcs/storm_chaser_ilya,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Storm Chaser Ilya,2,shipped
+npcs/suli,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Suli,1,shipped
+npcs/tinker_osla,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Tinker Osla,2,shipped
+npcs/tombstone,6.5,,claude 2026-07-26,npcs,Tombstone,5,shipped
+npcs/tracker_yri,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Tracker Yri,1,shipped
+npcs/undertaker_prue,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Undertaker Prue,2,shipped
+npcs/vessa,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Vessa,2,shipped
+npcs/villager,4.5,"old generation: blocky, baked shadow, reused as ~25 named characters",claude 2026-07-26,npcs,Villager,5,placeholder
+npcs/warden,5,"distinctive eldritch octopus, but old-batch outlines + baked shadow",claude 2026-07-26,npcs,Warden,1,placeholder
+npcs/warden_corin,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Warden Corin,2,shipped
+npcs/warden_edda,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Warden Edda,1,shipped
+npcs/warden_palla,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Warden Palla,1,shipped
+npcs/warden_sighne,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Warden Sighne,2,shipped
+splash/class_splash_archer,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Archer — class splash,12,shipped
+splash/class_splash_assassin,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Assassin — class splash,12,shipped
+splash/class_splash_mage,7,clean anime render breaks the painterly set; green staff crystal vs the sprite's cyan,claude 2026-07-26,splash,Mage — class splash,12,shipped
+splash/class_splash_paladin,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Paladin — class splash,12,shipped
+splash/class_splash_warlock,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Warlock — class splash,12,shipped
+splash/class_splash_warrior,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Warrior — class splash,12,shipped
+splash/cover,8,"on-title composition; AI faux-pixel dither, no true grid",claude 2026-07-26,splash,Title cover 1,5,shipped
+splash/cover_2,8,,claude 2026-07-26,splash,Title cover 2,5,shipped
+splash/splash_ansa_shore,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,ansa_shore — splash,1,shipped
+splash/splash_apprentice_sorrel,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,apprentice_sorrel — splash,1,shipped
+splash/splash_archivist_lene,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,archivist_lene — splash,3,shipped
+splash/splash_ashpriest,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Ashpriest Ordo, Voice of the Molten Judge — splash",3,shipped
+splash/splash_ashpriest_ordo_voice_of_the_molten_judge,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Ashpriest Ordo, Voice of the Molten Judge — splash",3,shipped
+splash/splash_auroch,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,auroch,0,unreferenced
+splash/splash_bellringer_tam,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,bellringer_tam — splash,2,shipped
+splash/splash_blight_cultist,5.5,small pale figure; low detail beside its neighbours,claude 2026-07-26,splash,Blight Cultist — splash,3,shipped
+splash/splash_blooming_convert,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,blooming_convert — splash,2,shipped
+splash/splash_botanist_ferro,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,botanist_ferro — splash,2,shipped
+splash/splash_brother_osk,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,brother_osk — splash,2,shipped
+splash/splash_cantor_ilse,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,cantor_ilse — splash,2,shipped
+splash/splash_captive_wildfang_scout,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,captive wildfang scout,0,unreferenced
+splash/splash_cartographer_bree,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,cartographer_bree — splash,2,shipped
+splash/splash_choir_pilgrim,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,choir_pilgrim — splash,1,shipped
+splash/splash_choirmother,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,The Choir Mother — splash,4,shipped
+splash/splash_cinderhide,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Cinderhide the Unquenched — splash,3,shipped
+splash/splash_cinderhide_the_unquenched,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Cinderhide the Unquenched — splash,3,shipped
+splash/splash_clerk_voss,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,clerk_voss — splash,3,shipped
+splash/splash_consul_verane,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,consul_verane — splash,1,shipped
+splash/splash_cyrraeth_mouth_of_the_storm,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Cyrraeth, Mouth of the Storm — splash",3,shipped
+splash/splash_deacon_vela,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,deacon_vela — splash,2,shipped
+splash/splash_digger_haim,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,digger_haim — splash,2,shipped
+splash/splash_driver_pell,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,driver_pell — splash,2,shipped
+splash/splash_echo,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,The Echo of the Unnamed — splash,6,shipped
+splash/splash_elder_maren,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,elder maren,0,unreferenced
+splash/splash_emberfall_villager,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,emberfall villager,0,unreferenced
+splash/splash_envoy_cassia,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,envoy_cassia — splash,1,shipped
+splash/splash_envoy_vessa,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,envoy vessa,0,unreferenced
+splash/splash_factor_imre,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,factor_imre — splash,2,shipped
+splash/splash_fangmaw,7,"near-black wolf, hard to read",claude 2026-07-26,splash,Fangmaw the Ravener — splash,3,shipped
+splash/splash_fangmaw_the_ravener,7,"near-black wolf, hard to read",claude 2026-07-26,splash,Fangmaw the Ravener — splash,3,shipped
+splash/splash_fisher_dov,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,fisher_dov — splash,1,shipped
+splash/splash_flame_pilgrim,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,flame_pilgrim — splash,2,shipped
+splash/splash_forgemistress,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Forgemistress Calda — splash,3,shipped
+splash/splash_forgemistress_calda,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Forgemistress Calda — splash,3,shipped
+splash/splash_gentle_suli,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,gentle suli,0,unreferenced
+splash/splash_grave_goods_peddler,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,grave_goods_peddler — splash,2,shipped
+splash/splash_halla,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Mother Halla, Keeper of the Long Sleep — splash",3,shipped
+splash/splash_herbalist_kesh,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,herbalist_kesh — splash,2,shipped
+splash/splash_hrolgar,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Hrolgar Whitepelt — splash,3,shipped
+splash/splash_hrolgar_whitepelt,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Hrolgar Whitepelt — splash,3,shipped
+splash/splash_kaethra,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Kaethra Cure-Twisted — splash,3,shipped
+splash/splash_kaethra_cure_twisted,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Kaethra Cure-Twisted — splash,3,shipped
+splash/splash_keeper_vasse,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,keeper_vasse — splash,2,shipped
+splash/splash_king_vargoth_the_hollow,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,King Vargoth the Hollow — splash,3,shipped
+splash/splash_korrag,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Korrag, Stormwarden Broken — splash",3,shipped
+splash/splash_korrag_stormwarden_broken,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Korrag, Stormwarden Broken — splash",3,shipped
+splash/splash_miller_s_boy,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,miller s boy,0,unreferenced
+splash/splash_morwen,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Morwen the Blightcaller — splash,3,shipped
+splash/splash_morwen_the_blightcaller,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Morwen the Blightcaller — splash,3,shipped
+splash/splash_mother_halla_keeper_of_the_long_sleep,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Mother Halla, Keeper of the Long Sleep — splash",3,shipped
+splash/splash_mute_mourner,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,mute_mourner — splash,2,shipped
+splash/splash_nullwarden,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Warden Null, the Last Sentinel — splash",3,shipped
+splash/splash_old_fenna,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,old_fenna — splash,2,shipped
+splash/splash_old_hunter,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,old_hunter — splash,2,shipped
+splash/splash_onna,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,onna — splash,2,shipped
+splash/splash_overseer_brann,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,overseer_brann — splash,1,shipped
+splash/splash_peddler_nix,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,peddler_nix — splash,3,shipped
+splash/splash_preacher_immo,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,preacher_immo — splash,2,shipped
+splash/splash_quartermaster_bel,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,quartermaster_bel — splash,2,shipped
+splash/splash_ragged_soldier,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,ragged_soldier — splash,2,shipped
+splash/splash_reed_cutter_ama,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,reed_cutter_ama — splash,2,shipped
+splash/splash_ridge_deserter,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,ridge_deserter — splash,2,shipped
+splash/splash_roadside_peddler,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,roadside_peddler — splash,2,shipped
+splash/splash_rotmaw,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Rotmaw the Gardener — splash,3,shipped
+splash/splash_rotmaw_the_gardener,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Rotmaw the Gardener — splash,3,shipped
+splash/splash_saint_varo,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Saint Varo the Unrotting — splash,3,shipped
+splash/splash_saint_varo_the_unrotting,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Saint Varo the Unrotting — splash,3,shipped
+splash/splash_sapper_ruel,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,sapper_ruel — splash,2,shipped
+splash/splash_scout_renn,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,scout_renn — splash,2,shipped
+splash/splash_sentry_piet,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,sentry piet,0,unreferenced
+splash/splash_ser_aldric,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,ser aldric,0,unreferenced
+splash/splash_serane,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Serane the Icebound — splash,3,shipped
+splash/splash_serane_the_icebound,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Serane the Icebound — splash,3,shipped
+splash/splash_sexton,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"The Sexton, Gravedigger of the Vale — splash",3,shipped
+splash/splash_sister_ottilie,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,sister_ottilie — splash,2,shipped
+splash/splash_skald_ottar,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,skald_ottar — splash,3,shipped
+splash/splash_skin_archer_frostfall_ranger,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Frostfall Ranger splash,12,shipped
+splash/splash_skin_archer_voidwraith,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Voidwraith splash,6,shipped
+splash/splash_skin_archer_voidwraith_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Voidwraith splash (awakened),6,shipped
+splash/splash_skin_assassin_blade_dancer,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Golden Ronin splash,12,shipped
+splash/splash_skin_assassin_phantom,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Phantom splash,6,shipped
+splash/splash_skin_assassin_phantom_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Phantom splash (awakened),6,shipped
+splash/splash_skin_mage_crystal_archmage,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Crystal Archmage splash,6,shipped
+splash/splash_skin_mage_crystal_archmage_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Crystal Archmage splash (awakened),6,shipped
+splash/splash_skin_paladin_eclipse_knight,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Eclipse Knight splash,12,shipped
+splash/splash_skin_paladin_fallen_arbiter,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Fallen Arbiter splash,6,shipped
+splash/splash_skin_paladin_fallen_arbiter_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Fallen Arbiter splash (awakened),6,shipped
+splash/splash_skin_warlock_arcane_warlock,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Arcane Warlock splash,12,shipped
+splash/splash_skin_warlock_eldritch_warlock,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Eldritch Warlock splash,12,shipped
+splash/splash_skin_warlock_hellfire_inquisitor,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Hellfire Inquisitor splash,12,shipped
+splash/splash_skin_warrior_dreadknight,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Dreadknight splash,12,shipped
+splash/splash_skin_warrior_stormforged,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Stormforged splash,6,shipped
+splash/splash_skin_warrior_stormforged_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Stormforged splash (awakened),6,shipped
+splash/splash_smith_harl,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,smith_harl — splash,2,shipped
+splash/splash_smith_petra,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,smith_petra — splash,3,shipped
+splash/splash_storm_chaser_ilya,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,storm_chaser_ilya — splash,2,shipped
+splash/splash_stormmouth,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Cyrraeth, Mouth of the Storm — splash",3,shipped
+splash/splash_the_choir_mother,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,The Choir Mother — splash,3,shipped
+splash/splash_the_drowned_auroch,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,The Drowned Auroch — splash,3,shipped
+splash/splash_the_echo_of_the_unnamed,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,The Echo of the Unnamed — splash,3,shipped
+splash/splash_the_sexton_gravedigger_of_the_vale,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"The Sexton, Gravedigger of the Vale — splash",3,shipped
+splash/splash_tinker_osla,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,tinker_osla — splash,2,shipped
+splash/splash_tracker_yri,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,tracker_yri — splash,1,shipped
+splash/splash_undertaker_prue,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,undertaker_prue — splash,2,shipped
+splash/splash_vargoth,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,King Vargoth the Hollow — splash,3,shipped
+splash/splash_vess,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Vess the Unburied, First Widow — splash",3,shipped
+splash/splash_vess_the_unburied_first_widow,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Vess the Unburied, First Widow — splash",3,shipped
+splash/splash_veyx,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Veyx, the Unchained Current — splash",3,shipped
+splash/splash_veyx_the_unchained_current,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Veyx, the Unchained Current — splash",3,shipped
+splash/splash_warden_callis,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,warden callis,0,unreferenced
+splash/splash_warden_commander_ashe,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,warden commander ashe,0,unreferenced
+splash/splash_warden_corin,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,warden_corin — splash,2,shipped
+splash/splash_warden_edda,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,warden_edda — splash,1,shipped
+splash/splash_warden_null_the_last_sentinel,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,"Warden Null, the Last Sentinel — splash",3,shipped
+splash/splash_warden_palla,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,warden_palla — splash,1,shipped
+splash/splash_warden_sighne,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,warden_sighne — splash,2,shipped
+splash/splash_widow_sera,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,widow sera,0,unreferenced
+terrains/ground_basalt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — basalt,1,shipped
+terrains/ground_bogsoil,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — bogsoil,1,shipped
+terrains/ground_castletile,5,,claude 2026-07-26,terrains,Ground tiles — castletile,4,shipped
+terrains/ground_crystalfloor,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — crystalfloor,1,shipped
+terrains/ground_dirt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — dirt,9,shipped
+terrains/ground_dungeonfloor,4.5,,claude 2026-07-26,terrains,Ground tiles — dungeonfloor,2,shipped
+terrains/ground_forest,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — forest,2,shipped
+terrains/ground_forgefloor,4.5,,claude 2026-07-26,terrains,Ground tiles — forgefloor,1,shipped
+terrains/ground_grass,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — grass,5,shipped
+terrains/ground_gravedirt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — gravedirt,2,shipped
+terrains/ground_hallwood,5,,claude 2026-07-26,terrains,Ground tiles — hallwood,2,shipped
+terrains/ground_holystone,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — holystone,9,shipped
+terrains/ground_lavafield,3.5,"flat orange fill, no structure",claude 2026-07-26,terrains,Ground tiles — lavafield,1,shipped
+terrains/ground_marsh,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — marsh,1,shipped
+terrains/ground_sand,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — sand,1,shipped
+terrains/ground_snow,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — snow,1,shipped
+terrains/ground_sporesoil,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — sporesoil,1,shipped
+terrains/ground_stone,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — stone,10,shipped
+terrains/ground_stormgrass,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — stormgrass,2,shipped
+terrains/ground_voidstone,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — voidstone,1,shipped
+terrains/terrain_bog,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Poison Bog,1,shipped
+terrains/terrain_capital_accord,5,same undifferentiated capital tan,claude 2026-07-26,terrains,Crownfall Accord Ward,1,shipped
+terrains/terrain_capital_approach,5,same undifferentiated capital tan,claude 2026-07-26,terrains,Crownfall Emberward,1,shipped
+terrains/terrain_capital_choir,5,same undifferentiated capital tan,claude 2026-07-26,terrains,Crownfall Hollow Choir,1,shipped
+terrains/terrain_capital_cinderborn,5,same undifferentiated capital tan,claude 2026-07-26,terrains,Crownfall Cinderborn Ward,1,shipped
+terrains/terrain_capital_civic,5,capital wards all share one tan floor — the six ward rooms are visually interchangeable,claude 2026-07-26,terrains,Crownfall Civic Heart,1,shipped
+terrains/terrain_capital_wayfinder,5,same undifferentiated capital tan,claude 2026-07-26,terrains,Crownfall Wayfinder Ward,1,shipped
+terrains/terrain_capital_wildfang,5,same undifferentiated capital tan,claude 2026-07-26,terrains,Crownfall Wildfang Enclave,1,shipped
+terrains/terrain_crystal,6.5,,claude 2026-07-26,terrains,Crystal Caverns,1,shipped
+terrains/terrain_darkwood,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Darkwood,1,shipped
+terrains/terrain_desert,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Scorching Dunes,1,shipped
+terrains/terrain_graveyard,6.5,,claude 2026-07-26,terrains,Restless Graveyard,1,shipped
+terrains/terrain_holy,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Sanctified Ruins,1,shipped
+terrains/terrain_ice,7,,claude 2026-07-26,terrains,Frozen Expanse,1,shipped
+terrains/terrain_keep,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Vargoth's Keep,1,shipped
+terrains/terrain_magma,7,"strong identity, unmistakable floor",claude 2026-07-26,terrains,Scorched Wastes,1,shipped
+terrains/terrain_marsh,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Blightmarsh,1,shipped
+terrains/terrain_ph_camp,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Wayfarer's Camp,1,placeholder
+terrains/terrain_ph_castle,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Royal Gallery,1,placeholder
+terrains/terrain_ph_crypt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Sunken Tombs,1,placeholder
+terrains/terrain_ph_dungeon,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Sunless Warren,1,placeholder
+terrains/terrain_ph_fae,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Fae Grove,1,placeholder
+terrains/terrain_ph_fields,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Harvest Fields,1,placeholder
+terrains/terrain_ph_forge,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Great Forge,1,placeholder
+terrains/terrain_ph_garden,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Palace Gardens,1,placeholder
+terrains/terrain_ph_guildhall,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Guild Hall,1,placeholder
+terrains/terrain_ph_hall,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Castle Hall,1,placeholder
+terrains/terrain_ph_hideout,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Bandit Hideout,1,placeholder
+terrains/terrain_ph_kitchen,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Kitchens,1,placeholder
+terrains/terrain_ph_library,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Great Library,1,placeholder
+terrains/terrain_ph_market,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Merchant Row,1,placeholder
+terrains/terrain_ph_ruins,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Broken Bastion,1,placeholder
+terrains/terrain_ph_sewer,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Undercroft Sewer,1,placeholder
+terrains/terrain_spore,6.5,,claude 2026-07-26,terrains,Spore Glade,1,shipped
+terrains/terrain_storm,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Thunder Plains,1,shipped
+terrains/terrain_village,6,,claude 2026-07-26,terrains,Emberfall Village,1,shipped
+terrains/terrain_void,7,,claude 2026-07-26,terrains,The Void,1,shipped
+props/amphora,4,,claude 2026-07-26,props,Amphora,3,placeholder
+props/armory_arcane_blade,5,,claude 2026-07-26 (group),props,Librarian's Theorem,1,placeholder
+props/armory_bone_scythe,5,,claude 2026-07-26 (group),props,Harvest of the Barrow,1,placeholder
+props/armory_crossbow,5,,claude 2026-07-26 (group),props,Wall-Watch Arbalest,1,placeholder
+props/armory_cursed_bow,5,,claude 2026-07-26 (group),props,Mourner's Recurve,1,placeholder
+props/armory_cursed_saw,5,,claude 2026-07-26 (group),props,The Grinning Edge,1,placeholder
+props/armory_flame_sword,5,,claude 2026-07-26 (group),props,Slagfield Brand,1,placeholder
+props/armory_khopesh,5,,claude 2026-07-26 (group),props,Dune-Gold Khopesh,1,placeholder
+props/armory_knight_sword,5,,claude 2026-07-26 (group),props,Oathkeeper Pattern Blade,1,placeholder
+props/armory_moon_blade,5,,claude 2026-07-26 (group),props,Sliver of the Moon,1,placeholder
+props/armory_owl_shield,5,,claude 2026-07-26 (group),props,Owl-Sigil Ward,1,placeholder
+props/armory_plank_shield,5,,claude 2026-07-26 (group),props,Deserter's Door,1,placeholder
+props/armory_poison_star,5,,claude 2026-07-26 (group),props,Blightwater Star,1,placeholder
+props/armory_root_club,5,,claude 2026-07-26 (group),props,Sporewood Maul,1,placeholder
+props/armory_vine_blade,5,,claude 2026-07-26 (group),props,Gardener's Mercy,1,placeholder
+props/auroch,6,"the retired boss body, now a curio",claude 2026-07-26,props,auroch,4,shipped
+props/banner_blue,3.5,flat rectangle,claude 2026-07-26,props,Banner Blue,3,placeholder
+props/banner_green,3.5,flat rectangle,claude 2026-07-26,props,Banner Green,3,placeholder
+props/banner_red,3.5,flat rectangle,claude 2026-07-26,props,Banner Red,3,placeholder
+props/bench2,3.5,flat,claude 2026-07-26,props,Bench 2,3,placeholder
+props/bird,5,,claude 2026-07-26 (group),props,Bird,0,unreferenced
+props/boar,3.5,pink cartoon,claude 2026-07-26,props,Russet Boar,1,placeholder
+props/bone,3,brown smear,claude 2026-07-26,props,Bone,1,shipped
+props/bones,2,white blocks; unreadable,claude 2026-07-26,props,Bones,9,shipped
+props/boulder,3,"flat olive blob, no shading",claude 2026-07-26,props,Boulder,15,shipped
+props/boulder2,3,flat olive blob,claude 2026-07-26,props,Boulder 2,2,shipped
+props/bridge,5,,claude 2026-07-26 (group),props,Bridge,0,unreferenced
+props/bush,3.5,flat green blob,claude 2026-07-26,props,Bush,4,shipped
+props/bush2,3.5,flat green blob,claude 2026-07-26,props,bush2,4,shipped
+props/bush3,3.5,flat green blob,claude 2026-07-26,props,Bush 3,2,shipped
+props/bush_autumn,6.5,,claude 2026-07-26,props,Bush Autumn,1,shipped
+props/butterfly,5,,claude 2026-07-26 (group),props,Butterfly,0,unreferenced
+props/cactus,4.5,,claude 2026-07-26,props,Cactus,1,shipped
+props/cactus2,4.5,,claude 2026-07-26,props,Cactus 2,1,shipped
+props/camp_anvil,5,,claude 2026-07-26 (group),props,Camp Anvil,1,placeholder
+props/camp_bonfire,3.5,,claude 2026-07-26,props,Camp Bonfire,6,shipped
+props/camp_furnace,6.5,,claude 2026-07-26,props,Camp Furnace,1,placeholder
+props/camp_meatrack,4,,claude 2026-07-26,props,Camp Meatrack,3,shipped
+props/camp_sawtable,4,,claude 2026-07-26,props,Camp Sawtable,2,placeholder
+props/camp_tripod,5,,claude 2026-07-26,props,Camp Tripod,2,shipped
+props/camp_workbench,5,,claude 2026-07-26 (group),props,Camp Workbench,1,placeholder
+props/candelabra,5,,claude 2026-07-26,props,Candelabra,2,placeholder
+props/candle,5,,claude 2026-07-26,props,Candle,3,placeholder
+props/carpet,3,flat red rectangle,claude 2026-07-26,props,Carpet,2,placeholder
+props/castle_banner,5.5,,claude 2026-07-26,props,Castle Banner,2,placeholder
+props/castle_bust,5.5,,claude 2026-07-26,props,Castle Bust,2,shipped
+props/castle_bust2,6.5,,claude 2026-07-26,props,Castle Bust 2,1,placeholder
+props/castle_sconce,5,,claude 2026-07-26,props,Castle Sconce,2,placeholder
+props/castle_statue,6.5,,claude 2026-07-26,props,Castle Statue,1,placeholder
+props/castle_throne,4.5,,claude 2026-07-26,props,Castle Throne,2,placeholder
+props/cat,5,,claude 2026-07-26 (group),props,Barn Cat,1,placeholder
+props/cattail,5.5,,claude 2026-07-26,props,Cattail,2,shipped
+props/cattail2,5,,claude 2026-07-26 (group),props,Cattail 2,1,shipped
+props/chair,5,,claude 2026-07-26 (group),props,Chair,1,placeholder
+props/chicken,5,,claude 2026-07-26 (group),props,Copper Hen,1,placeholder
+props/clay_pot,3.5,,claude 2026-07-26,props,Clay Pot,5,placeholder
+props/clay_pot2,5,,claude 2026-07-26 (group),props,Clay Pot 2,2,placeholder
+props/coffin,7,,claude 2026-07-26,props,Coffin,2,shipped
+props/coin,2.5,black square with a yellow square in it — and it draws on EVERY gold drop,claude 2026-07-26,props,Coin pickup,20,shipped
+props/cook_grill,4,,claude 2026-07-26,props,Cook Grill,2,placeholder
+props/cook_pan,5,,claude 2026-07-26 (group),props,Cook Pan,1,placeholder
+props/cottage_a,5,,claude 2026-07-26 (group),props,Cottage A,1,shipped
+props/cottage_a2,7,,claude 2026-07-26,props,cottage a2,2,shipped
+props/cottage_b,5,,claude 2026-07-26 (group),props,Cottage B,1,shipped
+props/cottage_b2,7,,claude 2026-07-26,props,cottage b2,2,shipped
+props/cow,5,,claude 2026-07-26 (group),props,Dapple Cow,1,placeholder
+props/crack,2.5,a few purple pixels,claude 2026-07-26,props,Crack,13,shipped
+props/crop_cabbage,2.5,neon green blocks,claude 2026-07-26,props,Crop Cabbage,2,shipped
+props/crop_carrot,3,,claude 2026-07-26,props,Crop Carrot,2,shipped
+props/crop_mid,3,,claude 2026-07-26,props,Crop Mid,2,shipped
+props/crop_sprout,3,,claude 2026-07-26,props,Crop Sprout,2,shipped
+props/crop_turnip,2,magenta and green blocks,claude 2026-07-26,props,Crop Turnip,2,shipped
+props/crow,5,,claude 2026-07-26 (group),props,Crow,0,unreferenced
+props/crown,5,,claude 2026-07-26 (group),props,Crown,0,unreferenced
+props/crypt,5,,claude 2026-07-26 (group),props,Crypt,1,placeholder
+props/crystal,3,"bright cyan blob, off-palette",claude 2026-07-26,props,Crystal,3,shipped
+props/crystal_cluster,7,,claude 2026-07-26,props,Crystal Cluster,2,shipped
+props/crystal_spire,5,,claude 2026-07-26 (group),props,Crystal Spire,1,shipped
+props/dead_shrub,5,,claude 2026-07-26,props,Dead Shrub,3,shipped
+props/deadtree,5,,claude 2026-07-26,props,Deadtree,3,shipped
+props/deadtree2,5,,claude 2026-07-26 (group),props,Deadtree 2,1,shipped
+props/direwolf,5,,claude 2026-07-26 (group),props,Direwolf,0,unreferenced
+props/dog,5,,claude 2026-07-26 (group),props,Farm Hound,1,placeholder
+props/ember_smoke,3,all but invisible,claude 2026-07-26,props,Ember Smoke,3,placeholder
+props/fence,3,,claude 2026-07-26,props,Fence,5,shipped
+props/flame,5,,claude 2026-07-26 (group),props,Flame,10,placeholder
+props/flower,3.5,,claude 2026-07-26,props,Flower,10,shipped
+props/flower_pink,5,,claude 2026-07-26 (group),props,Flower Pink,1,shipped
+props/flowerbed_pink,5,,claude 2026-07-26 (group),props,Flowerbed Pink,1,placeholder
+props/flowerbed_purple,5,,claude 2026-07-26 (group),props,Flowerbed Purple,1,placeholder
+props/flowerbed_red,5,,claude 2026-07-26 (group),props,Flowerbed Red,1,placeholder
+props/flowers_mixed,5,,claude 2026-07-26 (group),props,Flowers Mixed,1,placeholder
+props/food_cabbages,5,,claude 2026-07-26 (group),props,Market Cabbages,1,placeholder
+props/food_carrot,5,,claude 2026-07-26 (group),props,Field Carrot,1,placeholder
+props/food_cutlet,5,,claude 2026-07-26 (group),props,Pale Cutlet,1,placeholder
+props/food_fish,5,,claude 2026-07-26 (group),props,River Fillet,1,placeholder
+props/food_ham,5,,claude 2026-07-26 (group),props,Smoked Ham,1,placeholder
+props/food_hock,5,,claude 2026-07-26 (group),props,Salted Hock,1,placeholder
+props/food_loaf,5,,claude 2026-07-26 (group),props,Round Loaf,1,placeholder
+props/food_onion,5,,claude 2026-07-26 (group),props,White Onion,1,placeholder
+props/food_sausage,5,,claude 2026-07-26 (group),props,Hunter's Link,1,placeholder
+props/food_skewer,5,,claude 2026-07-26 (group),props,Camp Skewer,1,placeholder
+props/food_steak,5,,claude 2026-07-26 (group),props,Marbled Cut,1,placeholder
+props/forge_brazier,5,,claude 2026-07-26 (group),props,Forge Brazier,1,shipped
+props/forge_cauldron,5,,claude 2026-07-26 (group),props,Forge Cauldron,2,shipped
+props/forge_hearth,6.5,,claude 2026-07-26,props,Forge Hearth,3,placeholder
+props/forge_statue,4.5,,claude 2026-07-26,props,Forge Statue,2,shipped
+props/fountain_flow,5,,claude 2026-07-26 (group),props,Fountain Flow,1,placeholder
+props/frog,5,,claude 2026-07-26 (group),props,Pond Frog,1,placeholder
+props/frost_ice_lance,5,,claude 2026-07-26 (group),props,frost ice lance,1,shipped
+props/garden_bench,5,,claude 2026-07-26 (group),props,Garden Bench,1,placeholder
+props/garden_fountain,6.5,,claude 2026-07-26,props,Garden Fountain,2,shipped
+props/garden_statue,4.5,,claude 2026-07-26,props,Garden Statue,2,shipped
+props/garden_urns,5,,claude 2026-07-26 (group),props,Garden Urns,1,placeholder
+props/gate,5,,claude 2026-07-26 (group),props,Gate,0,unreferenced
+props/gem,5,,claude 2026-07-26 (group),props,Gem,0,unreferenced
+props/geode,5,,claude 2026-07-26 (group),props,Geode,1,shipped
+props/grass,4,,claude 2026-07-26,props,Grass,9,shipped
+props/grass2,5,,claude 2026-07-26,props,grass2,4,shipped
+props/grass_autumn,5,,claude 2026-07-26 (group),props,Grass Autumn,1,shipped
+props/grass_frost,5,,claude 2026-07-26 (group),props,Grass Frost,1,shipped
+props/grave_angel,7.5,,claude 2026-07-26,props,Grave Angel,4,shipped
+props/grave_bones,7,,claude 2026-07-26,props,Grave Bones,2,shipped
+props/grave_crack,3,brown smear,claude 2026-07-26,props,Grave Crack,2,shipped
+props/grave_cross,6.5,replaced 2026-07-17,claude 2026-07-26,props,Grave Cross,3,shipped
+props/grave_cross2,5,,claude 2026-07-26 (group),props,Grave Cross 2,1,shipped
+props/grave_deadtree,5,,claude 2026-07-26 (group),props,Grave Deadtree,1,shipped
+props/grave_mound,5,,claude 2026-07-26 (group),props,Grave Mound,1,shipped
+props/grave_statue,7,,claude 2026-07-26,props,Grave Statue,8,shipped
+props/greatsword,5,,claude 2026-07-26 (group),props,Greatsword,0,unreferenced
+props/herb_bundle,5,,claude 2026-07-26 (group),props,Dried Herb Bundle,1,placeholder
+props/hideout_barrel,5,,claude 2026-07-26 (group),props,Hideout Barrel,1,placeholder
+props/hideout_cabinet,5,,claude 2026-07-26 (group),props,Hideout Cabinet,1,placeholder
+props/hideout_firepit,5,,claude 2026-07-26 (group),props,Hideout Firepit,1,placeholder
+props/hideout_kegs,5,,claude 2026-07-26 (group),props,Hideout Kegs,1,placeholder
+props/hideout_locker,5,,claude 2026-07-26 (group),props,Hideout Locker,1,placeholder
+props/hideout_poster,2.5,flat tan rectangle,claude 2026-07-26,props,Hideout Poster,3,placeholder
+props/hideout_table,3.5,flat brown box,claude 2026-07-26,props,Hideout Table,4,placeholder
+props/horse,5,,claude 2026-07-26 (group),props,Bay Courser,1,placeholder
+props/hyena,5,,claude 2026-07-26 (group),props,Gravel Hyena,1,placeholder
+props/ice_cairn,5,,claude 2026-07-26 (group),props,Ice Cairn,1,shipped
+props/ice_sled,5,,claude 2026-07-26 (group),props,Ice Sled,1,shipped
+props/icebound,7,,claude 2026-07-26,props,icebound,4,shipped
+props/icon_weapon,5,,claude 2026-07-26 (group),props,Icon Weapon,0,unreferenced
+props/keep_arch,5,,claude 2026-07-26 (group),props,Keep Arch,1,shipped
+props/keep_brazier,6.5,,claude 2026-07-26,props,Keep Brazier,2,shipped
+props/king,5,"reads 'fire knight', not king",claude 2026-07-26,props,King,0,unreferenced
+props/knight,5,,claude 2026-07-26 (group),props,Knight,0,unreferenced
+props/library_cabinet,4.5,"teal/orange, off-palette",claude 2026-07-26,props,Library Cabinet,2,shipped
+props/library_desk,5,,claude 2026-07-26 (group),props,Library Desk,1,placeholder
+props/library_planter,5,,claude 2026-07-26 (group),props,Library Planter,1,placeholder
+props/library_rug,4,flat,claude 2026-07-26,props,Library Rug,2,placeholder
+props/library_shelf,4.5,,claude 2026-07-26,props,Library Shelf,2,placeholder
+props/library_shelf2,5,,claude 2026-07-26 (group),props,Library Shelf 2,1,placeholder
+props/lion,5,,claude 2026-07-26 (group),props,Dune Lion,1,placeholder
+props/log,3.5,brown rectangle,claude 2026-07-26,props,Log,6,shipped
+props/log2,3,brown diagonal bar,claude 2026-07-26,props,Log 2,2,shipped
+props/magma_chainrig,5,,claude 2026-07-26 (group),props,Magma Chainrig,1,shipped
+props/magma_furnace,5,,claude 2026-07-26 (group),props,Magma Furnace,1,shipped
+props/mat_bread,5,,claude 2026-07-26 (group),props,Traveler's Loaf,1,placeholder
+props/mat_coal,5,,claude 2026-07-26 (group),props,Forge Coal,1,placeholder
+props/mat_gem,5,,claude 2026-07-26 (group),props,Raw Teal Gem,1,placeholder
+props/mat_hide,5,,claude 2026-07-26 (group),props,Cured Hide,1,placeholder
+props/mat_plank,5,,claude 2026-07-26 (group),props,Milled Plank,1,placeholder
+props/merchant,5,"old batch, busiest sprite in the game (123 colors in 32px)",claude 2026-07-26,props,Merchant,0,unreferenced
+props/meteor_down,5,,claude 2026-07-26 (group),props,meteor down,1,shipped
+props/monkey,5,,claude 2026-07-26 (group),props,Rust Monkey,1,placeholder
+props/mushroom,4.5,bright salmon cartoon,claude 2026-07-26,props,Mushroom,7,shipped
+props/mushroom_blue,5,,claude 2026-07-26 (group),props,Mushroom Blue,1,shipped
+props/mushroom_purple,5.5,,claude 2026-07-26,props,Mushroom Purple,3,shipped
+props/node_crystal,4.5,,claude 2026-07-26,props,Node Crystal,2,placeholder
+props/node_gold,5,,claude 2026-07-26 (group),props,Node Gold,1,placeholder
+props/node_herb,5,,claude 2026-07-26 (group),props,Node Herb,1,placeholder
+props/node_ore,3.5,,claude 2026-07-26,props,Node Ore,2,placeholder
+props/parrot,5,,claude 2026-07-26 (group),props,Scarlet Parrot,1,placeholder
+props/pebble,3,5-pixel grey plus-sign,claude 2026-07-26,props,Pebble,24,shipped
+props/pig,5,,claude 2026-07-26 (group),props,Pink Sow,1,placeholder
+props/pillar,3.5,flat grey I-beam — the keep's primary obstacle,claude 2026-07-26,props,Pillar,17,shipped
+props/potion,5,,claude 2026-07-26 (group),props,Potion,0,unreferenced
+props/racoon,5,,claude 2026-07-26 (group),props,Masked Thief,1,placeholder
+props/rock,7,clean cel rock — the standard the flat blobs should meet,claude 2026-07-26,props,Rock,19,shipped
+props/rock2,3,flat olive blob,claude 2026-07-26,props,Rock 2,7,shipped
+props/rock3,3,flat olive blob,claude 2026-07-26,props,Rock 3,2,shipped
+props/rock_ice,5,,claude 2026-07-26 (group),props,Rock Ice,1,shipped
+props/rock_pale,5,,claude 2026-07-26 (group),props,Rock Pale,1,shipped
+props/rock_volcanic,5,,claude 2026-07-26 (group),props,Rock Volcanic,1,shipped
+props/rubble,3,black blobs,claude 2026-07-26,props,Rubble,7,shipped
+props/rv_arm_amulet,5,,claude 2026-07-26 (group),props,Jade Amulet,1,placeholder
+props/rv_arm_axe,5,,claude 2026-07-26 (group),props,Iron Battleaxe,1,placeholder
+props/rv_arm_boots,5,,claude 2026-07-26 (group),props,Riding Boots,1,placeholder
+props/rv_arm_bow,5,,claude 2026-07-26 (group),props,Hunting Bow,1,placeholder
+props/rv_arm_buckler,5,,claude 2026-07-26 (group),props,Wooden Buckler,1,placeholder
+props/rv_arm_chainmail,5,,claude 2026-07-26 (group),props,Chain Hauberk,1,placeholder
+props/rv_arm_crossbow,5,,claude 2026-07-26 (group),props,Crossbow,1,placeholder
+props/rv_arm_crystal_saber,5,,claude 2026-07-26 (group),props,Crystal Saber,1,placeholder
+props/rv_arm_ember_blade,5,,claude 2026-07-26 (group),props,Ember Blade,1,placeholder
+props/rv_arm_fey_arrow,5,,claude 2026-07-26 (group),props,Fey Arrow,1,placeholder
+props/rv_arm_frost_blade,5,,claude 2026-07-26 (group),props,Frost Blade,1,placeholder
+props/rv_arm_frost_bow,5,,claude 2026-07-26 (group),props,Frost Bow,1,placeholder
+props/rv_arm_frost_pike,5,,claude 2026-07-26 (group),props,Frost Pike,1,placeholder
+props/rv_arm_gauntlet,5,,claude 2026-07-26 (group),props,Clawed Gauntlet,1,placeholder
+props/rv_arm_gold_axe,5,,claude 2026-07-26 (group),props,Gilded Axe,1,placeholder
+props/rv_arm_gold_blade,5,,claude 2026-07-26 (group),props,Gilded Blade,1,placeholder
+props/rv_arm_gold_bow,5,,claude 2026-07-26 (group),props,Gilded Bow,1,placeholder
+props/rv_arm_greatsword,5,,claude 2026-07-26 (group),props,Iron Greatsword,1,placeholder
+props/rv_arm_greaves,5,,claude 2026-07-26 (group),props,Gilded Greaves,1,placeholder
+props/rv_arm_hammer,5,,claude 2026-07-26 (group),props,Iron Warhammer,1,placeholder
+props/rv_arm_hat_witch,5,,claude 2026-07-26 (group),props,Pointed Hat,1,placeholder
+props/rv_arm_helm,5,,claude 2026-07-26 (group),props,Steel Helm,1,placeholder
+props/rv_arm_helm_gold,5,,claude 2026-07-26 (group),props,Gilded Helm,1,placeholder
+props/rv_arm_morningstar,5,,claude 2026-07-26 (group),props,Morning Star,1,placeholder
+props/rv_arm_night_blade,5,,claude 2026-07-26 (group),props,Night Blade,1,placeholder
+props/rv_arm_plate,5,,claude 2026-07-26 (group),props,Steel Plate,1,placeholder
+props/rv_arm_plate_gold,5,,claude 2026-07-26 (group),props,Gilded Plate,1,placeholder
+props/rv_arm_ring_gold,5,,claude 2026-07-26 (group),props,Gold Ring,1,placeholder
+props/rv_arm_ring_teal,5,,claude 2026-07-26 (group),props,Seaglass Ring,1,placeholder
+props/rv_arm_robe,5,,claude 2026-07-26 (group),props,Scholar's Robe,1,placeholder
+props/rv_arm_scimitar,5,,claude 2026-07-26 (group),props,Iron Scimitar,1,placeholder
+props/rv_arm_scythe,5,,claude 2026-07-26 (group),props,Reaper's Scythe,1,placeholder
+props/rv_arm_shield_gilded,5,,claude 2026-07-26 (group),props,Gilded Shield,1,placeholder
+props/rv_arm_shield_round,5,,claude 2026-07-26 (group),props,Steel Roundshield,1,placeholder
+props/rv_arm_shuriken,5,,claude 2026-07-26 (group),props,Throwing Star,1,placeholder
+props/rv_arm_staff,5,,claude 2026-07-26 (group),props,Ashwood Staff,1,placeholder
+props/rv_arm_sword,5,,claude 2026-07-26 (group),props,Iron Sword,1,placeholder
+props/rv_arm_wild_bow,5,,claude 2026-07-26 (group),props,Wildwood Bow,1,placeholder
+props/rv_ess_blue,5,,claude 2026-07-26 (group),props,Azure Essence,1,placeholder
+props/rv_ess_green,5,,claude 2026-07-26 (group),props,Verdant Essence,1,placeholder
+props/rv_ess_violet,5,,claude 2026-07-26 (group),props,Violet Essence,1,placeholder
+props/rv_food_ale,5,,claude 2026-07-26 (group),props,Mug of Ale,1,placeholder
+props/rv_food_apple,5,,claude 2026-07-26 (group),props,Apple,1,placeholder
+props/rv_food_bacon,5,,claude 2026-07-26 (group),props,Bacon Strips,1,placeholder
+props/rv_food_carrot,5,,claude 2026-07-26 (group),props,Carrot,1,placeholder
+props/rv_food_cheese,5,,claude 2026-07-26 (group),props,Wedge of Cheese,1,placeholder
+props/rv_food_cherry,5,,claude 2026-07-26 (group),props,Cherries,1,placeholder
+props/rv_food_cookie,5,,claude 2026-07-26 (group),props,Cookie,1,placeholder
+props/rv_food_corn,5,,claude 2026-07-26 (group),props,Corn Cob,1,placeholder
+props/rv_food_cream,5,,claude 2026-07-26 (group),props,Cream Jug,1,placeholder
+props/rv_food_croissant,5,,claude 2026-07-26 (group),props,Croissant,1,placeholder
+props/rv_food_cupcake,5,,claude 2026-07-26 (group),props,Cupcake,1,placeholder
+props/rv_food_donut,5,,claude 2026-07-26 (group),props,Glazed Ring,1,placeholder
+props/rv_food_drumstick,5,,claude 2026-07-26 (group),props,Drumstick,1,placeholder
+props/rv_food_fillet,5,,claude 2026-07-26 (group),props,Salmon Fillet,1,placeholder
+props/rv_food_fish,5,,claude 2026-07-26 (group),props,Fresh Catch,1,placeholder
+props/rv_food_goldpie,5,,claude 2026-07-26 (group),props,Golden Pie,1,placeholder
+props/rv_food_grapes,5,,claude 2026-07-26 (group),props,Grapes,1,placeholder
+props/rv_food_honey,5,,claude 2026-07-26 (group),props,Honey Jar,1,placeholder
+props/rv_food_loaf,5,,claude 2026-07-26 (group),props,Fresh Loaf,1,placeholder
+props/rv_food_meatcut,5,,claude 2026-07-26 (group),props,Cut of Meat,1,placeholder
+props/rv_food_melon,5,,claude 2026-07-26 (group),props,Melon,1,placeholder
+props/rv_food_onion,5,,claude 2026-07-26 (group),props,Onion,1,placeholder
+props/rv_food_pie,5,,claude 2026-07-26 (group),props,Berry Pie,1,placeholder
+props/rv_food_pizza,5,,claude 2026-07-26 (group),props,Flatbread Pie,1,placeholder
+props/rv_food_potato,5,,claude 2026-07-26 (group),props,Potato,1,placeholder
+props/rv_food_preserves,5,,claude 2026-07-26 (group),props,Jar of Preserves,1,placeholder
+props/rv_food_pumpkin,5,,claude 2026-07-26 (group),props,Pumpkin,1,placeholder
+props/rv_food_sandwich,5,,claude 2026-07-26 (group),props,Sandwich,1,placeholder
+props/rv_food_sausage,5,,claude 2026-07-26 (group),props,Sausage,1,placeholder
+props/rv_food_spice_green,5,,claude 2026-07-26 (group),props,Green Spice Bowl,1,placeholder
+props/rv_food_spice_red,5,,claude 2026-07-26 (group),props,Red Spice Bowl,1,placeholder
+props/rv_food_steak,5,,claude 2026-07-26 (group),props,Smoked Steak,1,placeholder
+props/rv_food_stew,5,,claude 2026-07-26 (group),props,Hearty Stew,1,placeholder
+props/rv_food_strawberry,5,,claude 2026-07-26 (group),props,Strawberry,1,placeholder
+props/rv_food_sushi,5,,claude 2026-07-26 (group),props,Fish Roll,1,placeholder
+props/rv_food_tea,5,,claude 2026-07-26 (group),props,Cup of Tea,1,placeholder
+props/rv_mat_bone,5,,claude 2026-07-26 (group),props,Beast Bone,1,placeholder
+props/rv_mat_coral,5,,claude 2026-07-26 (group),props,Blood Coral,1,placeholder
+props/rv_mat_crystal_raw,5,,claude 2026-07-26 (group),props,Raw Crystal,1,placeholder
+props/rv_mat_egg,5,,claude 2026-07-26 (group),props,Speckled Egg,1,placeholder
+props/rv_mat_frond,5,,claude 2026-07-26 (group),props,Crimson Frond,1,placeholder
+props/rv_mat_gem_amber,5,,claude 2026-07-26 (group),props,Amber Drop,1,placeholder
+props/rv_mat_gem_blue,5,,claude 2026-07-26 (group),props,Cut Sapphire,1,placeholder
+props/rv_mat_gem_green,5,,claude 2026-07-26 (group),props,Cut Emerald,1,placeholder
+props/rv_mat_gem_moon,5,,claude 2026-07-26 (group),props,Moonstone,1,placeholder
+props/rv_mat_gem_red,5,,claude 2026-07-26 (group),props,Cut Ruby,1,placeholder
+props/rv_mat_gem_violet,5,,claude 2026-07-26 (group),props,Cut Amethyst,1,placeholder
+props/rv_mat_ingot_copper,5,,claude 2026-07-26 (group),props,Copper Ingot,1,placeholder
+props/rv_mat_ingot_gold,5,,claude 2026-07-26 (group),props,Gold Ingot,1,placeholder
+props/rv_mat_ingot_silver,5,,claude 2026-07-26 (group),props,Silver Ingot,1,placeholder
+props/rv_mat_ingots_copper,5,,claude 2026-07-26 (group),props,Copper Ingots,1,placeholder
+props/rv_mat_ingots_gold,5,,claude 2026-07-26 (group),props,Gold Ingots,1,placeholder
+props/rv_mat_ingots_silver,5,,claude 2026-07-26 (group),props,Silver Ingots,1,placeholder
+props/rv_mat_mushroom_red,5,,claude 2026-07-26 (group),props,Crimson Cap,1,placeholder
+props/rv_mat_mushroom_teal,5,,claude 2026-07-26 (group),props,Glowcap,1,placeholder
+props/rv_mat_ore_copper,5,,claude 2026-07-26 (group),props,Copper Ore,1,placeholder
+props/rv_mat_ore_iron,5,,claude 2026-07-26 (group),props,Iron Ore,1,placeholder
+props/rv_mat_pearl,5,,claude 2026-07-26 (group),props,Pearl,1,placeholder
+props/rv_mat_pearl_gold,5,,claude 2026-07-26 (group),props,Golden Pearl,1,placeholder
+props/rv_mat_pelt,5,,claude 2026-07-26 (group),props,Tanned Pelt,1,placeholder
+props/rv_mat_root,5,,claude 2026-07-26 (group),props,Twisted Root,1,placeholder
+props/rv_mat_skull,5,,claude 2026-07-26 (group),props,Beast Skull,1,placeholder
+props/rv_pot_bulb,5,,claude 2026-07-26 (group),props,Bulb Flask,1,placeholder
+props/rv_pot_carafe,5,,claude 2026-07-26 (group),props,Wide Carafe,1,placeholder
+props/rv_pot_corked,5,,claude 2026-07-26 (group),props,Corked Flask,1,placeholder
+props/rv_pot_flagon,5,,claude 2026-07-26 (group),props,Red Flagon,1,placeholder
+props/rv_pot_greater,5,,claude 2026-07-26 (group),props,Greater Draught,1,placeholder
+props/rv_pot_jar,5,,claude 2026-07-26 (group),props,Stoppered Jar,1,placeholder
+props/rv_pot_mini,5,,claude 2026-07-26 (group),props,Pocket Vial,1,placeholder
+props/rv_pot_phial,5,,claude 2026-07-26 (group),props,Crimson Phial,1,placeholder
+props/rv_pot_round,5,,claude 2026-07-26 (group),props,Round Draught,1,placeholder
+props/rv_pot_slim,5,,claude 2026-07-26 (group),props,Slim Red Vial,1,placeholder
+props/rv_tool_anvil,5,,claude 2026-07-26 (group),props,Smith's Anvil,1,placeholder
+props/rv_tool_bait,5,,claude 2026-07-26 (group),props,Bait Bucket,1,placeholder
+props/rv_tool_mortar,5,,claude 2026-07-26 (group),props,Mortar & Pestle,1,placeholder
+props/rv_tool_rod,5,,claude 2026-07-26 (group),props,Fishing Rod,1,placeholder
+props/rv_tool_scales,5,,claude 2026-07-26 (group),props,Merchant's Scales,1,placeholder
+props/sand_drift,5,,claude 2026-07-26 (group),props,Sand Drift,1,shipped
+props/sand_drift2,5,,claude 2026-07-26 (group),props,Sand Drift 2,1,shipped
+props/sandstone,5,,claude 2026-07-26 (group),props,Sandstone,1,shipped
+props/sandstone2,5,,claude 2026-07-26 (group),props,Sandstone 2,1,shipped
+props/sewer_flow,5,,claude 2026-07-26 (group),props,Sewer Flow,1,placeholder
+props/sewer_lantern,5,,claude 2026-07-26 (group),props,Sewer Lantern,2,placeholder
+props/sewer_pipe,3,pink lines,claude 2026-07-26,props,Sewer Pipe,2,placeholder
+props/sewer_pipe2,3,pink lines,claude 2026-07-26,props,Sewer Pipe 2,2,placeholder
+props/signpost,4,,claude 2026-07-26,props,Signpost,3,shipped
+props/spore_shrine,5,,claude 2026-07-26 (group),props,Spore Shrine,1,shipped
+props/spore_vent,5,,claude 2026-07-26 (group),props,Spore Vent,1,shipped
+props/sprout,3,,claude 2026-07-26,props,Sprout,2,placeholder
+props/stalagmite,5,,claude 2026-07-26 (group),props,Stalagmite,1,shipped
+props/stall,5,,claude 2026-07-26 (group),props,Stall,1,shipped
+props/station_alchemy_t1,5,,claude 2026-07-26 (group),props,Station Alchemy T 1,1,placeholder
+props/station_alchemy_t2,5,,claude 2026-07-26 (group),props,Station Alchemy T 2,1,placeholder
+props/station_alchemy_t3,5,,claude 2026-07-26 (group),props,Station Alchemy T 3,1,placeholder
+props/station_anvil_t1,5,,claude 2026-07-26 (group),props,Station Anvil T 1,1,placeholder
+props/station_anvil_t2,5,,claude 2026-07-26 (group),props,Station Anvil T 2,1,placeholder
+props/station_anvil_t3,4,"busy pack art, unreadable small",claude 2026-07-26,props,Station Anvil T 3,3,shipped
+props/station_furnace_t1,5,,claude 2026-07-26 (group),props,Station Furnace T 1,1,placeholder
+props/station_furnace_t2,5,,claude 2026-07-26 (group),props,Station Furnace T 2,1,placeholder
+props/station_furnace_t3,5,,claude 2026-07-26 (group),props,Station Furnace T 3,1,placeholder
+props/station_sawmill_t1,5,,claude 2026-07-26 (group),props,Station Sawmill T 1,1,placeholder
+props/station_sawmill_t2,5,,claude 2026-07-26 (group),props,Station Sawmill T 2,1,placeholder
+props/station_sawmill_t3,5,,claude 2026-07-26 (group),props,Station Sawmill T 3,1,placeholder
+props/storm_conductor,5,,claude 2026-07-26 (group),props,Storm Conductor,1,shipped
+props/storm_standing_stone,5,,claude 2026-07-26 (group),props,Storm Standing Stone,1,shipped
+props/stormwarden,5,retired 32px knight kept as a prop,claude 2026-07-26,props,stormwarden,4,shipped
+props/stump_snow,5,,claude 2026-07-26 (group),props,Stump Snow,1,shipped
+props/toadstool,5,,claude 2026-07-26,props,Toadstool,4,shipped
+props/toadstool2,5,,claude 2026-07-26,props,Toadstool 2,3,shipped
+props/tombstone,6.5,replaced 2026-07-17 with a clean headstone,claude 2026-07-26,props,Tombstone,3,shipped
+props/tombstone2,6.5,,claude 2026-07-26,props,Tombstone 2,2,shipped
+props/tombstone3,5,,claude 2026-07-26 (group),props,Tombstone 3,1,shipped
+props/tool_hammer,5,,claude 2026-07-26 (group),props,Smith's Cross-Peen,1,placeholder
+props/tool_sawblade,5,,claude 2026-07-26 (group),props,Mill Blade,1,placeholder
+props/topiary,4,,claude 2026-07-26,props,Topiary,2,placeholder
+props/torch,5,,claude 2026-07-26 (group),props,Torch,0,unreferenced
+props/tree,5,,claude 2026-07-26 (group),props,Tree,0,unreferenced
+props/tree_autumn,7,,claude 2026-07-26,props,Tree Autumn,3,shipped
+props/tree_autumn2,5,,claude 2026-07-26 (group),props,Tree Autumn 2,1,shipped
+props/tree_autumn3,5,,claude 2026-07-26 (group),props,Tree Autumn 3,1,shipped
+props/tree_gnarled,6.5,,claude 2026-07-26,props,Tree Gnarled,3,shipped
+props/tree_green,6,,claude 2026-07-26,props,Tree Green,7,shipped
+props/tree_green2,6.5,,claude 2026-07-26,props,Tree Green 2,2,shipped
+props/tree_green3,6.5,,claude 2026-07-26,props,Tree Green 3,2,shipped
+props/tree_green4,5,,claude 2026-07-26 (group),props,Tree Green 4,1,shipped
+props/tree_pine,6.5,,claude 2026-07-26,props,Tree Pine,2,shipped
+props/tree_snow,6,replaced 2026-07-17 with a clean frost pine,claude 2026-07-26,props,Tree Snow,2,shipped
+props/tree_snow2,5,,claude 2026-07-26 (group),props,Tree Snow 2,1,shipped
+props/tree_spore,7,,claude 2026-07-26,props,Tree Spore,2,shipped
+props/tree_spore2,5,,claude 2026-07-26 (group),props,Tree Spore 2,1,shipped
+props/tree_stump,5.5,,claude 2026-07-26,props,Tree Stump,3,shipped
+props/tree_tall_red,5,,claude 2026-07-26 (group),props,Tree Tall Red,1,shipped
+props/tree_teal,6.5,,claude 2026-07-26,props,Tree Teal,2,shipped
+props/tree_teal2,6.5,,claude 2026-07-26,props,Tree Teal 2,2,shipped
+props/tree_winter,5,,claude 2026-07-26 (group),props,Tree Winter,1,shipped
+props/void_monolith,7,,claude 2026-07-26,props,Void Monolith,2,shipped
+props/void_obelisk,5,,claude 2026-07-26 (group),props,Void Obelisk,1,shipped
+props/void_rift,3,magenta triangle,claude 2026-07-26,props,Void Rift,2,shipped
+props/water_bucket,5,,claude 2026-07-26,props,Water Bucket,3,placeholder
+props/web,4,,claude 2026-07-26,props,Web,4,placeholder
+props/whitepelt,6,,claude 2026-07-26,props,whitepelt,4,shipped
+props/window_box,5,,claude 2026-07-26 (group),props,Window Box,1,placeholder
+props/witch,5,,claude 2026-07-26 (group),props,Witch,0,unreferenced
+structures/boulder,3,flat olive blob,claude 2026-07-26,structures,Old Well,1,placeholder
+structures/camp_workbench,4.5,,claude 2026-07-26,structures,Cook Hearth,1,placeholder
+structures/capital_accord_longhouse,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Accord Longhouse,1,shipped
+structures/capital_alembic_station,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Alembic Station,1,shipped
+structures/capital_ashen_tankard,8.5,,claude 2026-07-26,structures,Capital Ashen Tankard,1,shipped
+structures/capital_ashfire_forge,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Ashfire Forge,1,shipped
+structures/capital_chartered_hall,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Chartered Hall,0,unreferenced
+structures/capital_city_arcade,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital City Arcade,6,shipped
+structures/capital_city_bench,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital City Bench,8,shipped
+structures/capital_city_directory,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital City Directory,0,unreferenced
+structures/capital_crown_fountain,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Crown Fountain,1,shipped
+structures/capital_crown_spire_gate,9,best single piece of architecture in the game,claude 2026-07-26,structures,Capital Crown Spire Gate,1,shipped
+structures/capital_emberward_gate,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Emberward Gate,1,shipped
+structures/capital_grand_archive,8.5,,claude 2026-07-26,structures,Capital Grand Archive,2,shipped
+structures/capital_great_hearth,8.5,,claude 2026-07-26,structures,Great Hearth,2,shipped
+structures/capital_market_stall,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Market Stall,2,shipped
+structures/capital_portal_crucible,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Portal Crucible,1,shipped
+structures/capital_portal_depths,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Portal Depths,1,shipped
+structures/capital_portal_story,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Portal Story,1,shipped
+structures/capital_proving_gate,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Proving Gate,0,unreferenced
+structures/capital_rot_chapel,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Rot Chapel,1,shipped
+structures/capital_sable_hall,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Sable Hall,1,shipped
+structures/capital_stables,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Stables,0,unreferenced
+structures/capital_undercroft,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Undercroft,0,unreferenced
+structures/capital_watchtower,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Watchtower,0,unreferenced
+structures/capital_wellspring,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Wellspring,0,unreferenced
+structures/capital_wildfang_fangmoot,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Wildfang Fangmoot,1,shipped
+structures/crypt,6.5,,claude 2026-07-26,structures,Mausoleum,2,placeholder
+structures/garden_fountain,4.5,flat teal oval,claude 2026-07-26,structures,Town Fountain,1,placeholder
+structures/hideout_table,3,flat brown box,claude 2026-07-26,structures,Market Stall,2,placeholder
+structures/keep_arch,6,,claude 2026-07-26,structures,Ruined Gate,1,placeholder
+structures/log,3,flat brown rectangle,claude 2026-07-26,structures,Signal Fire,1,placeholder
+structures/pillar,3.5,flat grey I-beam standing in a hand-painted city,claude 2026-07-26,structures,Watch Brazier,4,placeholder
+structures/sewer_pipe,3,pink/white arch,claude 2026-07-26,structures,Sewer Outfall,1,placeholder
+structures/signpost,4,,claude 2026-07-26,structures,Notice Board,1,placeholder
+structures/station_alchemy_t3,4.5,busy pack art,claude 2026-07-26,structures,Brew Stand,2,placeholder
+structures/station_anvil_t3,4.5,busy pack art,claude 2026-07-26,structures,Guild Forge,2,placeholder
+walls/wall_castle,3.5,nearly featureless dark panel,claude 2026-07-26,walls,Wall Castle,8,shipped
+walls/wall_grave,4,"flat tan, no texture",claude 2026-07-26,walls,Wall Grave,3,shipped
+walls/wall_hedge,3,"flat olive green, zero structure",claude 2026-07-26,walls,Wall Hedge,2,shipped
+walls/wall_ice,5,brightness outlier: far lighter than every other wall,claude 2026-07-26,walls,Wall Ice,1,shipped
+walls/wall_moss,5.5,serves four shipped biomes — highest exposure of any wall,claude 2026-07-26,walls,Wall Moss,6,shipped
+walls/wall_sand,6,,claude 2026-07-26,walls,Wall Sand,1,shipped
+walls/wall_sewer,4.5,,claude 2026-07-26,walls,Wall Sewer,2,placeholder
+walls/wall_volcanic,5,very dark — risks reading as void after the tonemap,claude 2026-07-26,walls,Wall Volcanic,3,shipped
+walls/wall_wood,5.5,,claude 2026-07-26,walls,Wall Wood,3,shipped
+walls/wallblock,4,flat tan default; the fallback for any unlisted biome,claude 2026-07-26,walls,Wallblock,8,shipped
+chests/chest_a,,,,chests,Chest — grade A,2,shipped
+chests/chest_b,,,,chests,Chest — grade B,2,shipped
+chests/chest_c,,,,chests,Chest — grade C,2,shipped
+chests/chest_d,,,,chests,Chest — grade D,2,shipped
+chests/chest_e,,,,chests,Chest — grade E,2,shipped
+chests/chest_f,,,,chests,Chest — grade F,2,shipped
+chests/chest_gold,,,,chests,Gold chest,4,shipped
+chests/chest_s,,,,chests,Chest — grade S,2,shipped
+chests/chest_silver,,,,chests,Silver chest,4,shipped
+chests/chest_wood,,,,chests,Wood chest,4,shipped
+gear/held_w_blade,4,grade tint flattens the held weapon to a coloured blob,claude 2026-07-26,gear,Blade — held,5,shipped
+gear/held_w_bow,4,same flattening,claude 2026-07-26,gear,Bow — held,5,shipped
+gear/held_w_claymore,4,same flattening,claude 2026-07-26,gear,Claymore — held,5,shipped
+gear/held_w_crossbow,4,same flattening,claude 2026-07-26,gear,Crossbow — held,5,shipped
+gear/held_w_edge,4,same flattening,claude 2026-07-26,gear,Edge — held,5,shipped
+gear/held_w_fang,4,same flattening,claude 2026-07-26,gear,Fang — held,5,shipped
+gear/held_w_hammer,4,same flattening,claude 2026-07-26,gear,Hammer — held,5,shipped
+gear/held_w_kunai,4,same flattening,claude 2026-07-26,gear,Shuriken — held,5,shipped
+gear/held_w_staff,4,same flattening,claude 2026-07-26,gear,Staff — held,5,shipped
+gear/held_w_tome,4,same flattening,claude 2026-07-26,gear,Tome — held,5,shipped
+gear/held_w_wand,4,same flattening,claude 2026-07-26,gear,Wand — held,5,shipped
+gear/icon_armor,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Plate (armor),7,shipped
+gear/icon_boots,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Boots (boots),7,shipped
+gear/icon_charm,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Charm (charm),7,shipped
+gear/icon_mail,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Mail (armor),7,shipped
+gear/icon_shield,6.5,smooth-shaded style outlier in the icon folder,claude 2026-07-26,gear,Guard (armor),7,shipped
+gear/icon_sigil,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Sigil (charm),7,shipped
+gear/icon_striders,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Striders (boots),7,shipped
+gear/icon_talisman,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Talisman (charm),7,shipped
+gear/icon_treads,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Treads (boots),7,shipped
+gear/w_blade,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Blade (weapon),7,shipped
+gear/w_bow,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Bow (weapon),7,shipped
+gear/w_claymore,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Claymore (weapon),7,shipped
+gear/w_crossbow,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Crossbow (weapon),7,shipped
+gear/w_edge,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Edge (weapon),7,shipped
+gear/w_fang,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Fang (weapon),7,shipped
+gear/w_hammer,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Hammer (weapon),7,shipped
+gear/w_kunai,6.5,smooth-shaded style outlier in the icon folder,claude 2026-07-26,gear,Shuriken (weapon),7,shipped
+gear/w_staff,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Staff (weapon),7,shipped
+gear/w_tome,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Tome (weapon),7,shipped
+gear/w_wand,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Wand (weapon),7,shipped
+gems/gem,,,,gems,Gem — shared base icon,3,shipped
+gems/gem_lv1,,,,gems,Gem cut — Lv1,2,shipped
+gems/gem_lv10,,,,gems,Gem cut — Lv10,2,shipped
+gems/gem_lv2,,,,gems,Gem cut — Lv2,2,shipped
+gems/gem_lv3,,,,gems,Gem cut — Lv3,2,shipped
+gems/gem_lv4,,,,gems,Gem cut — Lv4,2,shipped
+gems/gem_lv5,,,,gems,Gem cut — Lv5,2,shipped
+gems/gem_lv6,,,,gems,Gem cut — Lv6,2,shipped
+gems/gem_lv7,,,,gems,Gem cut — Lv7,2,shipped
+gems/gem_lv8,,,,gems,Gem cut — Lv8,2,shipped
+gems/gem_lv9,,,,gems,Gem cut — Lv9,2,shipped
+gems/gem_stat_atk_flat,,,,gems,Gem — Ruby,1,shipped
+gems/gem_stat_cdr,,,,gems,Gem — Sapphire,1,shipped
+gems/gem_stat_combo,,,,gems,Gem — Opal,1,shipped
+gems/gem_stat_crit,,,,gems,Gem — Topaz,1,shipped
+gems/gem_stat_dex,,,,gems,Gem — Amber,1,shipped
+gems/gem_stat_dmg_pct,,,,gems,Gem — Sunstone,1,shipped
+gems/gem_stat_eva,,,,gems,Gem — Jade,1,shipped
+gems/gem_stat_flat_dr,,,,gems,Gem — Tenacity,1,shipped
+gems/gem_stat_hp_pct,,,,gems,Gem — Garnet,1,shipped
+gems/gem_stat_lifesteal,,,,gems,Gem — Vampire Eye,1,shipped
+gems/gem_stat_magpen,,,,gems,Gem — Amethyst,1,shipped
+gems/gem_stat_magres,,,,gems,Gem — Lapis,1,shipped
+gems/gem_stat_physpen,,,,gems,Gem — Bloodstone,1,shipped
+gems/gem_stat_physres,,,,gems,Gem — Onyx,1,shipped
+consumables/mana_draught,,,,consumables,Mana Potion,3,shipped
+consumables/might_elixir,,,,consumables,Elixir Might,3,shipped
+consumables/potion,,,,consumables,Health potion,10,shipped
+consumables/recall_scroll,,,,consumables,Recall Scroll,3,shipped
+consumables/renewal_draught,,,,consumables,Renewal Draught,3,shipped
+consumables/reset_stone,,,,consumables,Reset Stone,3,shipped
+consumables/tree_tome,,,,consumables,Tree Tome,3,shipped
+consumables/ward_elixir,,,,consumables,Elixir Ward,3,shipped
+quest_items/bastion_ash,8,hand-painted quest item — the standard for this category,claude 2026-07-26,quest_items,Jar of Bastion Ash,1,shipped
+quest_items/ch5_grain_bundle,7.5,,claude 2026-07-26,quest_items,Ridge-Toll Grain,1,shipped
+quest_items/ch5_spring_verse,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Ottar's Spring Song,1,shipped
+quest_items/ch6_gate_loaf,7.5,,claude 2026-07-26,quest_items,The Gate Camp's Loaf,1,shipped
+quest_items/ch7_korrag_token,7.5,,claude 2026-07-26,quest_items,Speaker's Shift-Token,1,shipped
+quest_items/ch7_void_letter,7.5,,claude 2026-07-26,quest_items,A Sealed Letter,1,shipped
+quest_items/curio_flask_blue,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Pale Blue Flask,1,placeholder
+quest_items/curio_flask_green,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Bile-Green Flask,1,placeholder
+quest_items/curio_key,5,blocky,claude 2026-07-26,quest_items,Tarnished Key,1,placeholder
+quest_items/curio_letter,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Unsent Letter,1,placeholder
+quest_items/curio_mug,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,The Deserter's Mug,1,placeholder
+quest_items/curio_openbook,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,A Book Left Open,1,placeholder
+quest_items/curio_potion_amber,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Amber Draught,1,placeholder
+quest_items/curio_potion_blue,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Coldwater Draught,1,placeholder
+quest_items/curio_quill,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Clerk's Quill,1,placeholder
+quest_items/curio_scroll,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Sealed Dispatch,1,placeholder
+quest_items/curio_specimen,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Sealed Specimen,1,placeholder
+quest_items/curio_tome,5,blocky,claude 2026-07-26,quest_items,Green-Bound Tome,1,placeholder
+quest_items/curio_tube_rack,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Alchemist's Rack,1,placeholder
+quest_items/harl_token,7.5,,claude 2026-07-26,quest_items,Water-Quenched Token,1,shipped
+quest_items/nix_refund,7.5,,claude 2026-07-26,quest_items,Nix's Refund Pouch,1,shipped
+quest_items/osla_pouch,7.5,,claude 2026-07-26,quest_items,Osla's Coin Pouch,1,shipped
+quest_items/pine_stick,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Stick of Pine,1,shipped
+quest_items/rv_banner,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,War Banner,1,placeholder
+quest_items/rv_candle,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Tallow Candle,1,placeholder
+quest_items/rv_case_crimson,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Crimson Scroll Case,1,placeholder
+quest_items/rv_case_teal,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Teal Scroll Case,1,placeholder
+quest_items/rv_charm,5,brighter and cartoonier than the game's own item art,claude 2026-07-26,quest_items,Frog Charm,1,placeholder
+quest_items/rv_chest,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Banded Chest,1,placeholder
+quest_items/rv_conch,5,same brightness mismatch,claude 2026-07-26,quest_items,Deep Conch,1,placeholder
+quest_items/rv_goblet_bronze,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Bronze Goblet,1,placeholder
+quest_items/rv_goblet_crystal,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Crystal Goblet,1,placeholder
+quest_items/rv_grimoire,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Sealed Grimoire,1,placeholder
+quest_items/rv_horseshoe,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Lucky Horseshoe,1,placeholder
+quest_items/rv_key_emerald,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Emerald Key,1,placeholder
+quest_items/rv_key_gold,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Gilded Key,1,placeholder
+quest_items/rv_key_iron,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Iron Key,1,placeholder
+quest_items/rv_key_violet,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Violet Key,1,placeholder
+quest_items/rv_lamp,5,same brightness mismatch,claude 2026-07-26,quest_items,Ancient Lamp,1,placeholder
+quest_items/rv_lantern,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Watch Lantern,1,placeholder
+quest_items/rv_map,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Map Fragment,1,placeholder
+quest_items/rv_medal,5,same brightness mismatch,claude 2026-07-26,quest_items,Gold Medal,1,placeholder
+quest_items/rv_pack,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Traveler's Pack,1,placeholder
+quest_items/rv_rune_pebble,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Rune Pebble,1,placeholder
+quest_items/rv_runestone,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Runestone,1,placeholder
+quest_items/rv_scroll,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Worn Parchment,1,placeholder
+quest_items/rv_star,5,same brightness mismatch,claude 2026-07-26,quest_items,Star Talisman,1,placeholder
+quest_items/rv_tome_blue,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Azure Tome,1,placeholder
+quest_items/rv_tome_red,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Crimson Tome,1,placeholder
+quest_items/rv_urn,6,Raven/Pixel-Crawler pack icons — clean but brighter than the game,claude 2026-07-26 (group),quest_items,Clay Urn,1,placeholder
+quest_items/sera_loaf,8,,claude 2026-07-26,quest_items,Sera's Road Loaf,1,shipped
+quest_items/sexton_stone,7.5,,claude 2026-07-26,quest_items,The Digger's Stone,1,shipped
+quest_items/slag_core,7.5,,claude 2026-07-26,quest_items,Cold Slag Core,1,shipped
+quest_items/vale_bread,8,,claude 2026-07-26,quest_items,Fenna's Loaf,1,shipped
+projectiles/arrow,3,brown/black/white bar,claude 2026-07-26,projectiles,arrow,6,shipped
+projectiles/arrow_base,6,,claude 2026-07-26,projectiles,arrow base,6,shipped
+projectiles/arrow_frost,6,,claude 2026-07-26,projectiles,arrow frost,6,shipped
+projectiles/arrow_void,6,,claude 2026-07-26,projectiles,arrow void,6,shipped
+projectiles/arrow_void_eye,6.5,,claude 2026-07-26,projectiles,arrow void eye,6,shipped
+projectiles/bolt,2.5,magenta block — the shared mob bolt,claude 2026-07-26,projectiles,bolt,6,shipped
+projectiles/choir_censer,8,excellent projectile identity,claude 2026-07-26,projectiles,choir censer,6,shipped
+projectiles/dart,3.5,grey blob,claude 2026-07-26,projectiles,dart,6,shipped
+projectiles/earthshard,3,brown blocks,claude 2026-07-26,projectiles,earthshard,6,shipped
+projectiles/fireball,2.5,red/yellow checkerboard,claude 2026-07-26,projectiles,fireball,6,shipped
+projectiles/fx_boss_earth_fang,5.5,,claude 2026-07-26 (group),projectiles,fx boss earth fang,6,shipped
+projectiles/fx_boss_fire_comet,5.5,,claude 2026-07-26 (group),projectiles,fx boss fire comet,6,shipped
+projectiles/fx_boss_frost_lance,5.5,,claude 2026-07-26 (group),projectiles,fx boss frost lance,6,shipped
+projectiles/fx_boss_metal_crownshard,5.5,,claude 2026-07-26 (group),projectiles,fx boss metal crownshard,6,shipped
+projectiles/fx_boss_rot_spore,5.5,,claude 2026-07-26 (group),projectiles,fx boss rot spore,6,shipped
+projectiles/fx_boss_storm_javelin,5.5,,claude 2026-07-26 (group),projectiles,fx boss storm javelin,6,shipped
+projectiles/fx_echo_knife,5.5,,claude 2026-07-26 (group),projectiles,fx echo knife,6,shipped
+projectiles/fx_sexton_sigilbolt,5.5,,claude 2026-07-26 (group),projectiles,fx sexton sigilbolt,6,shipped
+projectiles/fx_varo_reliquary_bolt,5.5,,claude 2026-07-26 (group),projectiles,fx varo reliquary bolt,6,shipped
+projectiles/fx_vess_griefwave,5.5,,claude 2026-07-26 (group),projectiles,fx vess griefwave,6,shipped
+projectiles/fx_veyx_windslash,5.5,,claude 2026-07-26 (group),projectiles,fx veyx windslash,6,shipped
+projectiles/griefwave,3,purple/white blocks,claude 2026-07-26,projectiles,griefwave,6,shipped
+projectiles/hellfire_brand_bolt,5,reads as a red smudge in flight,claude 2026-07-26,projectiles,hellfire brand bolt,6,shipped
+projectiles/holybolt,3,yellow/white blocks,claude 2026-07-26,projectiles,holybolt,6,shipped
+projectiles/icelance,3,cyan/white bar,claude 2026-07-26,projectiles,icelance,6,shipped
+projectiles/knife,3,grey bar,claude 2026-07-26,projectiles,knife,6,shipped
+projectiles/mage_crystal_decree,6.5,,claude 2026-07-26,projectiles,mage crystal decree,6,shipped
+projectiles/mage_firebolt,6,,claude 2026-07-26,projectiles,mage firebolt,6,shipped
+projectiles/mage_void_bullet,6,,claude 2026-07-26,projectiles,mage void bullet,6,shipped
+projectiles/metalshard,3,grey blocks,claude 2026-07-26,projectiles,metalshard,6,shipped
+projectiles/mob_blight_thorn,5.5,,claude 2026-07-26 (group),projectiles,mob blight thorn,6,shipped
+projectiles/mob_bloom_seed,5.5,,claude 2026-07-26 (group),projectiles,mob bloom seed,6,shipped
+projectiles/mob_forge_brand,5.5,,claude 2026-07-26 (group),projectiles,mob forge brand,6,shipped
+projectiles/mob_grave_nail,5.5,,claude 2026-07-26 (group),projectiles,mob grave nail,6,shipped
+projectiles/mob_howl_wave,5.5,,claude 2026-07-26 (group),projectiles,mob howl wave,6,shipped
+projectiles/mob_hush_wave,5.5,,claude 2026-07-26 (group),projectiles,mob hush wave,6,shipped
+projectiles/mob_null_shard,5.5,,claude 2026-07-26 (group),projectiles,mob null shard,6,shipped
+projectiles/mob_plague_spore,5.5,,claude 2026-07-26 (group),projectiles,mob plague spore,6,shipped
+projectiles/mob_storm_fork,5.5,,claude 2026-07-26 (group),projectiles,mob storm fork,6,shipped
+projectiles/rotbolt,2.5,green plus-sign,claude 2026-07-26,projectiles,rotbolt,6,shipped
+projectiles/shadowbolt,3,purple blocks,claude 2026-07-26,projectiles,shadowbolt,6,shipped
+projectiles/shuriken,6.5,"smooth/AA outlier, but reads",claude 2026-07-26,projectiles,shuriken,6,shipped
+projectiles/sigilbolt,3,purple/white cross,claude 2026-07-26,projectiles,sigilbolt,6,shipped
+projectiles/stormbolt,3,cyan blocks,claude 2026-07-26,projectiles,stormbolt,6,shipped
+projectiles/warlock_shadowbolt,5,"dark smear, low contrast on dark floors",claude 2026-07-26,projectiles,warlock shadowbolt,6,shipped
+projectiles/windslash,3,cyan blocks,claude 2026-07-26,projectiles,windslash,6,shipped
+abilities/ability_archer_a1,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A1,30,shipped
+abilities/ability_archer_a1_hunt,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A1 (Hunt),8,shipped
+abilities/ability_archer_a1_storm,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A1 (Storm),8,shipped
+abilities/ability_archer_a1_venom,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A1 (Venom),8,shipped
+abilities/ability_archer_a2,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A2,30,shipped
+abilities/ability_archer_a2_hunt,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A2 (Hunt),8,shipped
+abilities/ability_archer_a2_storm,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A2 (Storm),8,shipped
+abilities/ability_archer_a2_venom,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A2 (Venom),8,shipped
+abilities/ability_archer_a3,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A3,30,shipped
+abilities/ability_archer_a3_hunt,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A3 (Hunt),8,shipped
+abilities/ability_archer_a3_storm,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A3 (Storm),8,shipped
+abilities/ability_archer_a3_venom,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — A3 (Venom),8,shipped
+abilities/ability_archer_ult,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — ULT,30,shipped
+abilities/ability_archer_ult_hunt,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — ULT (Hunt),8,shipped
+abilities/ability_archer_ult_storm,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — ULT (Storm),8,shipped
+abilities/ability_archer_ult_venom,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Archer — ULT (Venom),8,shipped
+abilities/ability_assassin_a1,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A1,30,shipped
+abilities/ability_assassin_a1_blood,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A1 (Blood),8,shipped
+abilities/ability_assassin_a1_poison,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A1 (Poison),8,shipped
+abilities/ability_assassin_a1_shadow,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A1 (Shadow),8,shipped
+abilities/ability_assassin_a2,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A2,30,shipped
+abilities/ability_assassin_a2_blood,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A2 (Blood),8,shipped
+abilities/ability_assassin_a2_poison,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A2 (Poison),8,shipped
+abilities/ability_assassin_a2_shadow,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A2 (Shadow),8,shipped
+abilities/ability_assassin_a3,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A3,30,shipped
+abilities/ability_assassin_a3_blood,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A3 (Blood),8,shipped
+abilities/ability_assassin_a3_poison,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A3 (Poison),8,shipped
+abilities/ability_assassin_a3_shadow,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — A3 (Shadow),8,shipped
+abilities/ability_assassin_ult,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — ULT,30,shipped
+abilities/ability_assassin_ult_blood,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — ULT (Blood),8,shipped
+abilities/ability_assassin_ult_poison,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — ULT (Poison),8,shipped
+abilities/ability_assassin_ult_shadow,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Assassin — ULT (Shadow),8,shipped
+abilities/ability_mage_a1,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A1,30,shipped
+abilities/ability_mage_a1_fire,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A1 (Fire),8,shipped
+abilities/ability_mage_a1_ice,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A1 (Ice),8,shipped
+abilities/ability_mage_a1_wind,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A1 (Wind),8,shipped
+abilities/ability_mage_a2,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A2,30,shipped
+abilities/ability_mage_a2_fire,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A2 (Fire),8,shipped
+abilities/ability_mage_a2_ice,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A2 (Ice),8,shipped
+abilities/ability_mage_a2_wind,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A2 (Wind),8,shipped
+abilities/ability_mage_a3,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A3,30,shipped
+abilities/ability_mage_a3_fire,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A3 (Fire),8,shipped
+abilities/ability_mage_a3_ice,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A3 (Ice),8,shipped
+abilities/ability_mage_a3_wind,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — A3 (Wind),8,shipped
+abilities/ability_mage_ult,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — ULT,30,shipped
+abilities/ability_mage_ult_fire,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — ULT (Fire),8,shipped
+abilities/ability_mage_ult_ice,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — ULT (Ice),8,shipped
+abilities/ability_mage_ult_wind,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Mage — ULT (Wind),8,shipped
+abilities/ability_paladin_a1,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A1,30,shipped
+abilities/ability_paladin_a1_aegis,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A1 (Aegis),8,shipped
+abilities/ability_paladin_a1_holy,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A1 (Holy),8,shipped
+abilities/ability_paladin_a1_wrath,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A1 (Wrath),8,shipped
+abilities/ability_paladin_a2,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A2,30,shipped
+abilities/ability_paladin_a2_aegis,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A2 (Aegis),8,shipped
+abilities/ability_paladin_a2_holy,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A2 (Holy),8,shipped
+abilities/ability_paladin_a2_wrath,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A2 (Wrath),8,shipped
+abilities/ability_paladin_a3,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A3,30,shipped
+abilities/ability_paladin_a3_aegis,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A3 (Aegis),8,shipped
+abilities/ability_paladin_a3_holy,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A3 (Holy),8,shipped
+abilities/ability_paladin_a3_wrath,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — A3 (Wrath),8,shipped
+abilities/ability_paladin_ult,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — ULT,30,shipped
+abilities/ability_paladin_ult_aegis,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — ULT (Aegis),8,shipped
+abilities/ability_paladin_ult_holy,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — ULT (Holy),8,shipped
+abilities/ability_paladin_ult_wrath,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Paladin — ULT (Wrath),8,shipped
+abilities/ability_warlock_a1,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A1,30,shipped
+abilities/ability_warlock_a1_curse,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A1 (Curse),8,shipped
+abilities/ability_warlock_a1_pact,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A1 (Pact),8,shipped
+abilities/ability_warlock_a1_void,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A1 (Void),8,shipped
+abilities/ability_warlock_a2,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A2,30,shipped
+abilities/ability_warlock_a2_curse,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A2 (Curse),8,shipped
+abilities/ability_warlock_a2_pact,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A2 (Pact),8,shipped
+abilities/ability_warlock_a2_void,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A2 (Void),8,shipped
+abilities/ability_warlock_a3,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A3,30,shipped
+abilities/ability_warlock_a3_curse,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A3 (Curse),8,shipped
+abilities/ability_warlock_a3_pact,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A3 (Pact),8,shipped
+abilities/ability_warlock_a3_void,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — A3 (Void),8,shipped
+abilities/ability_warlock_ult,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — ULT,30,shipped
+abilities/ability_warlock_ult_curse,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — ULT (Curse),8,shipped
+abilities/ability_warlock_ult_pact,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — ULT (Pact),8,shipped
+abilities/ability_warlock_ult_void,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warlock — ULT (Void),8,shipped
+abilities/ability_warrior_a1,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A1,30,shipped
+abilities/ability_warrior_a1_bulwark,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A1 (Bulwark),8,shipped
+abilities/ability_warrior_a1_earth,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A1 (Earth),8,shipped
+abilities/ability_warrior_a1_fury,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A1 (Fury),8,shipped
+abilities/ability_warrior_a2,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A2,30,shipped
+abilities/ability_warrior_a2_bulwark,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A2 (Bulwark),8,shipped
+abilities/ability_warrior_a2_earth,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A2 (Earth),8,shipped
+abilities/ability_warrior_a2_fury,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A2 (Fury),8,shipped
+abilities/ability_warrior_a3,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A3,30,shipped
+abilities/ability_warrior_a3_bulwark,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A3 (Bulwark),8,shipped
+abilities/ability_warrior_a3_earth,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A3 (Earth),8,shipped
+abilities/ability_warrior_a3_fury,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — A3 (Fury),8,shipped
+abilities/ability_warrior_ult,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — ULT,30,shipped
+abilities/ability_warrior_ult_bulwark,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — ULT (Bulwark),8,shipped
+abilities/ability_warrior_ult_earth,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — ULT (Earth),8,shipped
+abilities/ability_warrior_ult_fury,8.5,painted gold-framed icon set — cohesive and readable,claude 2026-07-26 (group),abilities,Warrior — ULT (Fury),8,shipped
+glyphs/ab_arrow,,,,glyphs,ab arrow,1,shipped
+glyphs/ab_blink,,,,glyphs,ab blink,1,shipped
+glyphs/ab_chain,,,,glyphs,ab chain,1,shipped
+glyphs/ab_dagger,,,,glyphs,ab dagger,1,shipped
+glyphs/ab_fist,,,,glyphs,ab fist,1,shipped
+glyphs/ab_flame,,,,glyphs,ab flame,1,shipped
+glyphs/ab_hammer,,,,glyphs,ab hammer,1,shipped
+glyphs/ab_hex,,,,glyphs,ab hex,1,shipped
+glyphs/ab_knives,,,,glyphs,ab knives,1,shipped
+glyphs/ab_meteor,,,,glyphs,ab meteor,1,shipped
+glyphs/ab_multi,,,,glyphs,ab multi,1,shipped
+glyphs/ab_orb,,,,glyphs,ab orb,1,shipped
+glyphs/ab_pact,,,,glyphs,ab pact,1,shipped
+glyphs/ab_rain,,,,glyphs,ab rain,1,shipped
+glyphs/ab_rift,,,,glyphs,ab rift,1,shipped
+glyphs/ab_roll,,,,glyphs,ab roll,1,shipped
+glyphs/ab_shield,,,,glyphs,ab shield,1,shipped
+glyphs/ab_skull,,,,glyphs,ab skull,1,shipped
+glyphs/ab_slash,,,,glyphs,ab slash,1,shipped
+glyphs/ab_snow,,,,glyphs,ab snow,1,shipped
+glyphs/ab_sun,,,,glyphs,ab sun,1,shipped
+glyphs/ab_whirl,,,,glyphs,ab whirl,1,shipped
+glyphs/ic_cd,,,,glyphs,ic cd,1,shipped
+glyphs/ic_coin,,,,glyphs,ic coin,1,shipped
+glyphs/ic_combo,,,,glyphs,ic combo,1,shipped
+glyphs/ic_crit,,,,glyphs,ic crit,1,shipped
+glyphs/ic_eye,,,,glyphs,ic eye,1,shipped
+glyphs/ic_hp,,,,glyphs,ic hp,1,shipped
+glyphs/ic_mp,,,,glyphs,ic mp,1,shipped
+glyphs/ic_pen,,,,glyphs,ic pen,1,shipped
+fx/bubble,4,white box with a black border,claude 2026-07-26,fx,Bubble,15,shipped
+fx/dangerrim,4.5,grey gradient square,claude 2026-07-26,fx,Dangerrim,15,shipped
+fx/fx/frost_snowflake_cast,5.5,,claude 2026-07-26,fx,frost snowflake cast,5,shipped
+fx/fx/frost_snowflake_radial,7.5,,claude 2026-07-26 (group),fx,frost snowflake radial,5,shipped
+fx/fx/fx_circle,5,,claude 2026-07-26,fx,fx circle,5,shipped
+fx/fx/fx_circle_spark,5,,claude 2026-07-26,fx,fx circle spark,5,shipped
+fx/fx/fx_ice,8,best of the generic FX strips,claude 2026-07-26,fx,fx ice,5,shipped
+fx/fx/fx_impact,5,cream/orange cartoon burst — the biggest tonal clash in the FX set,claude 2026-07-26,fx,fx impact,5,shipped
+fx/fx/fx_ripple,3.5,flat blurred disc; the 4 'frames' differ by ~10px,claude 2026-07-26,fx,fx ripple,5,shipped
+fx/fx/fx_slash,5.5,,claude 2026-07-26,fx,fx slash,5,shipped
+fx/fx/fx_slash_arc,7.5,,claude 2026-07-26 (group),fx,fx slash arc,5,shipped
+fx/fx/mage_crystal_blink_facets,7.5,,claude 2026-07-26 (group),fx,mage crystal blink facets,5,shipped
+fx/fx/mage_crystal_blink_shatter,7.5,,claude 2026-07-26 (group),fx,mage crystal blink shatter,5,shipped
+fx/fx/mage_crystal_court_prism,7.5,,claude 2026-07-26 (group),fx,mage crystal court prism,5,shipped
+fx/fx/mage_crystal_dais,7.5,,claude 2026-07-26 (group),fx,mage crystal dais,5,shipped
+fx/fx/mage_crystal_judgment,7.5,,claude 2026-07-26 (group),fx,mage crystal judgment,5,shipped
+fx/fx/mage_crystal_lotus_nova,7.5,,claude 2026-07-26 (group),fx,mage crystal lotus nova,5,shipped
+fx/fx/mage_crystal_prism_lotus_ult,7.5,,claude 2026-07-26 (group),fx,mage crystal prism lotus ult,5,shipped
+fx/fx/mage_void_cast_eye,7.5,,claude 2026-07-26 (group),fx,mage void cast eye,5,shipped
+fx/fx/mage_void_seam,7.5,,claude 2026-07-26 (group),fx,mage void seam,5,shipped
+fx/fx/mage_void_sky_spindle,7.5,,claude 2026-07-26 (group),fx,mage void sky spindle,5,shipped
+fx/fx/mage_void_thread_braid,7.5,,claude 2026-07-26 (group),fx,mage void thread braid,5,shipped
+fx/fx/mage_void_thread_eruption,7.5,,claude 2026-07-26 (group),fx,mage void thread eruption,5,shipped
+fx/fx/mage_void_thread_wrap,7.5,,claude 2026-07-26 (group),fx,mage void thread wrap,5,shipped
+fx/fx/mage_void_unravel,7.5,,claude 2026-07-26 (group),fx,mage void unravel,5,shipped
+fx/fx/void_eye_portal,7.5,,claude 2026-07-26 (group),fx,void eye portal,5,shipped
+fx/fx/void_portal_eye,7.5,,claude 2026-07-26 (group),fx,void portal eye,5,shipped
+fx/fx/void_portal_ground,7.5,,claude 2026-07-26 (group),fx,void portal ground,5,shipped
+fx/fx/void_tentacle_attack,7.5,,claude 2026-07-26 (group),fx,void tentacle attack,5,shipped
+fx/fx/void_tentacle_idle,7.5,,claude 2026-07-26 (group),fx,void tentacle idle,5,shipped
+fx/fx/warlock_eldritch_cast_eye,7.5,,claude 2026-07-26 (group),fx,warlock eldritch cast eye,5,shipped
+fx/fx/warlock_eldritch_curse_eye,7.5,,claude 2026-07-26 (group),fx,warlock eldritch curse eye,5,shipped
+fx/fx/warlock_eldritch_familiar,7.5,,claude 2026-07-26 (group),fx,warlock eldritch familiar,5,shipped
+fx/fx_aegis,7.5,,claude 2026-07-26 (group),fx,fx aegis,4,shipped
+fx/fx_berserk_brand,7.5,,claude 2026-07-26 (group),fx,fx berserk brand,1,shipped
+fx/fx_consecration,7.5,,claude 2026-07-26 (group),fx,fx consecration,2,shipped
+fx/fx_dark_pact,7.5,,claude 2026-07-26 (group),fx,fx dark pact,1,shipped
+fx/fx_dread_banner,7.5,,claude 2026-07-26 (group),fx,fx dread banner,2,shipped
+fx/fx_dread_greatsword,7.5,,claude 2026-07-26 (group),fx,fx dread greatsword,1,shipped
+fx/fx_dread_soulcut,7.5,,claude 2026-07-26 (group),fx,fx dread soulcut,1,shipped
+fx/fx_eclipse_corona,7.5,,claude 2026-07-26 (group),fx,fx eclipse corona,4,shipped
+fx/fx_eldritch_eye,7.5,,claude 2026-07-26 (group),fx,fx eldritch eye,4,shipped
+fx/fx_fallen_verdict,7.5,,claude 2026-07-26 (group),fx,fx fallen verdict,4,shipped
+fx/fx_frost_nova,7.5,,claude 2026-07-26 (group),fx,fx frost nova,1,shipped
+fx/fx_hammer_base,6.5,,claude 2026-07-26,fx,fx hammer base,1,shipped
+fx/fx_hammer_eclipse,6.5,,claude 2026-07-26,fx,fx hammer eclipse,1,shipped
+fx/fx_hammer_fallen,6.5,,claude 2026-07-26,fx,fx hammer fallen,2,shipped
+fx/fx_hex_rune,4.5,blurry purple blob,claude 2026-07-26,fx,fx hex rune,3,shipped
+fx/fx_inquisition_brand,7.5,,claude 2026-07-26 (group),fx,fx inquisition brand,4,shipped
+fx/fx_inquisition_pyre,7.5,,claude 2026-07-26 (group),fx,fx inquisition pyre,2,shipped
+fx/fx_storm_eye,7.5,,claude 2026-07-26 (group),fx,fx storm eye,1,shipped
+fx/fx_vargoth_skyblade,7.5,,claude 2026-07-26 (group),fx,fx vargoth skyblade,3,shipped
+fx/fx_varo_reliquary_blade,7.5,,claude 2026-07-26 (group),fx,fx varo reliquary blade,3,shipped
+fx/fx_void_rift,7.5,,claude 2026-07-26 (group),fx,fx void rift,1,shipped
+fx/fx_whirl_blade,7.5,,claude 2026-07-26 (group),fx,fx whirl blade,1,shipped
+fx/glow,6.5,utility,claude 2026-07-26,fx,Glow,15,shipped
+fx/light,6.5,utility,claude 2026-07-26,fx,Light,15,shipped
+fx/lootbeam,6.5,,claude 2026-07-26,fx,Lootbeam,15,shipped
+fx/reticle,6.5,,claude 2026-07-26,fx,Reticle,15,shipped
+fx/ring,6.5,,claude 2026-07-26,fx,Ring,15,shipped
+fx/shadow,6,"utility texture, does its job",claude 2026-07-26,fx,Shadow,15,shipped
+fx/slash,5,plain grey crescent,claude 2026-07-26,fx,Slash,15,shipped
+fx/slashline,4.5,grey smear,claude 2026-07-26,fx,Slashline,15,shipped
+fx/telegraph,5.5,,claude 2026-07-26,fx,Telegraph,15,shipped
+fx/vignette,6,utility,claude 2026-07-26,fx,Vignette,15,shipped
+fx/white,6,utility,claude 2026-07-26,fx,White,15,shipped
+ui/ability_cooldown_mask,6,utility,claude 2026-07-26,ui,Cooldown sweep mask,30,shipped
+ui/ability_glow,6,utility,claude 2026-07-26,ui,Ability slot glow,30,shipped
+ui/bag,5.5,procedural fallback; plain beside the Raven pack art,claude 2026-07-26,ui,Bag,40,shipped
+ui/book,5.5,procedural fallback,claude 2026-07-26,ui,Book,40,shipped
+ui/buff_armor,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff armor,2,shipped
+ui/buff_atk,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff atk,3,shipped
+ui/buff_blood,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff blood,2,shipped
+ui/buff_damp,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff damp,1,shipped
+ui/buff_heal,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff heal,2,shipped
+ui/buff_speed,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff speed,3,shipped
+ui/buff_ward,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff ward,2,shipped
+ui/crosshair,5.5,procedural fallback,claude 2026-07-26,ui,Crosshair,40,shipped
+ui/mail,5.5,procedural fallback,claude 2026-07-26,ui,Mail,40,shipped
+ui/settings,5.5,procedural fallback,claude 2026-07-26,ui,Settings,40,shipped
+ui/skills,5.5,procedural fallback,claude 2026-07-26,ui,Skills,40,shipped
+ui/stash,5.5,procedural fallback,claude 2026-07-26,ui,Stash,40,shipped
+ui/ui_bag,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui bag,2,shipped
+ui/ui_book,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui book,2,shipped
+ui/ui_daily,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui daily,2,shipped
+ui/ui_mail,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui mail,2,shipped
+ui/ui_party,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui party,2,shipped
+ui/ui_quest,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui quest,2,shipped
+ui/ui_settings,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui settings,2,shipped
+ui/ui_skills,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui skills,2,shipped
+orphan/bandit_fighter,,,,orphan,bandit fighter,0,unwired
+orphan/bandit_sorcerer,,,,orphan,bandit sorcerer,0,unwired
+orphan/fungus_old,,,,orphan,fungus old,0,unwired
+orphan/fx_frost_moon,,,,orphan,fx frost moon,0,unwired
+orphan/fx_void_eclipse,,,,orphan,fx void eclipse,0,unwired
+orphan/medusa,,,,orphan,medusa,0,unwired
+orphan/placeholders/aldric_placeholder,,,,orphan,aldric placeholder,0,placeholder
+orphan/placeholders/elder_maren_round1_direction_sources/elder_anim,,,,orphan,elder anim,0,placeholder
+orphan/placeholders/elder_maren_round1_superseded/elder,,,,orphan,elder,0,placeholder
+orphan/placeholders/merchant_placeholder,,,,orphan,merchant placeholder,0,placeholder
+orphan/placeholders/merchant_pre_pixellab,,,,orphan,merchant pre pixellab,0,placeholder
+orphan/placeholders/merchant_round1_alpha_failed,,,,orphan,merchant round1 alpha failed,0,placeholder
+orphan/placeholders/merchant_round2_readable_but_wrong_style,,,,orphan,merchant round2 readable but wrong style,0,placeholder
+orphan/royal_priest,,,,orphan,royal priest,0,unwired
+orphan/royal_soldier,,,,orphan,royal soldier,0,unwired
+orphan/scholar_censor,,,,orphan,scholar censor,0,unwired
+orphan/scholar_director,,,,orphan,scholar director,0,unwired
+orphan/skins/archive/archer_astral_marksman_anim,,,,orphan,archer astral marksman anim,0,placeholder
+orphan/skins/archive/archer_plague_doctor_anim,,,,orphan,archer plague doctor anim,0,placeholder
+orphan/stone_golem,,,,orphan,stone golem,0,unwired
+orphan/stone_lava,,,,orphan,stone lava,0,unwired

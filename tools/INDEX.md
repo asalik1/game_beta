@@ -36,6 +36,7 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 | tool | what it does |
 |---|---|
+| `tools/art/asset_gallery.py` (+ `game/asset_dump.gd`) | THE visual catalogue: walks every data table in the real engine, assembles each key's file family, measures it, and writes one HTML page showing every wired visual asset with a 0–10 rating. Ratings live in `tools/art/asset_ratings.csv` (hand-managed, preserved across runs; the page can also rate inline and export it). `--sheets` writes labelled per-category contact sheets. Also reports art wired-but-absent and files nothing resolves. |
 | `tools/art/verify_art.py` | post-install sprite checks for a base name: strip geometry (engine floors frames = w/h), 8-dir completeness, `*_dir` 8·K frame count, green-bleed semi-alpha, stale `--import`. `--all` sweeps the whole sprites dir. |
 | `tools/art/anim_sheet.py` | labeled per-clip contact sheets (8 facings × frames, 1-based) — the owner's QA format for animation review. |
 | `tools/art/dip_check.py` | flags a character whose weapon dips below its feet per direction (anchor trouble). |

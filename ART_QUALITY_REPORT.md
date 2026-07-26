@@ -1,5 +1,14 @@
 # Crownless — Art Quality Audit (2026-07-17)
 
+> **Per-asset scores now live in the asset gallery, not here.** Run
+> `python tools/art/asset_gallery.py --open`; ratings are hand-managed in
+> `tools/art/asset_ratings.csv` and regenerate against whatever is currently
+> wired. This document is kept as the 2026-07-17 *narrative* — the method, the
+> systemic findings, and the fixes applied that day. Several of its scores are
+> already stale (Veyx, the spider quintet, the ability-icon set and the six
+> replaced props were all redone since), which is exactly why the scores moved
+> to a file that rebuilds.
+
 Full-catalog review of `game/assets/` (~2,336 images) by six parallel audit agents, one per category.
 Every asset family scored 1–100 overall plus five axes: **Res** (pixel density / resolution consistency vs the ~128px PixelLab hero standard at gameplay zoom), **Design** (silhouette, readability), **Theme** (muted somber dark-fantasy palette), **Creativity** (distinctiveness), **Technical** (padding, frame/direction consistency, artifacts).
 
