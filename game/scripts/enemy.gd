@@ -14,6 +14,7 @@ var speed := 150.0
 var xp_value := 12
 var gold_value := 4
 var ranged := false
+var projectile_kind := "bolt"
 # Combat substats (see Stats for the curves). ALL of them scale with
 # level via the monster's attribute build (Story.enemy_stats_at).
 var physres := 0.0
@@ -85,7 +86,7 @@ var anim_t := 0.0
 var _strip_idle := {}
 var _strip_walk := {}
 var _strip_walking := false
-# One-shot ability strip (Track C round 3): plays through once on a boss
+# One-shot action strip: plays through once on an enemy
 # cast, then reverts to idle/walk. Empty when nothing is playing.
 var _strip_action := {}
 var _action_t := 0.0
@@ -257,6 +258,7 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 	xp_value = scaled["xp"]
 	gold_value = scaled["gold"]
 	ranged = stats["ranged"]
+	projectile_kind = Projectile.hostile_art(enemy_kind)
 	physres = scaled["physres"]
 	magres = scaled["magres"]
 	eva = scaled["eva"]
@@ -496,13 +498,13 @@ static func _strip_feet_y(tex: Texture2D, cell: float) -> float:
 
 
 ## Play a one-shot ability strip once, then fall back to idle/walk. No-op
-## unless the boss has an idle strip AND assets/sprites/<sprite>_<action>.png
+## unless the enemy has an idle strip AND assets/sprites/<sprite>_<action>.png
 ## exists — so ability code can call it unconditionally and it lights up
 ## when the art lands. Re-triggering restarts the strip from frame 0.
 func play_action(action: String, fallback := true) -> void:
 	if _strip_idle.is_empty():
 		return
-	# Try the exact action strip; when fallback (default), a boss with only its
+	# Try the exact action strip; when fallback (default), an enemy with only its
 	# ONE signature clip installed routes every named move (slam/toll/bolt/...)
 	# to "<key>_ability" so all those call sites light up from one gesture.
 	# fallback=false is a TRUE no-op wire (e.g. "melee") — it plays ONLY when a
@@ -607,6 +609,17 @@ func _end_action() -> void:
 		_apply_strip(_strip_idle)
 
 
+func _advance_action_anim(delta: float) -> void:
+	if _strip_action.is_empty():
+		return
+	_action_t += delta
+	var idx := int(_action_t * anim_fps)
+	if idx >= anim_frames:
+		_end_action()
+	else:
+		sprite.frame = idx
+
+
 func _physics_process(delta: float) -> void:
 	if dying:
 		return
@@ -706,6 +719,7 @@ func _physics_process(delta: float) -> void:
 	# Bite wind-up: the monster flashes yellow, then snaps. Gives the
 	# player a beat to dodge or knock it back — readable combat.
 	if windup > 0.0:
+		_advance_action_anim(delta)
 		windup -= delta
 		if windup <= 0.0:
 			sprite.modulate = base_mod
@@ -736,12 +750,7 @@ func _physics_process(delta: float) -> void:
 		_moving_anim = true
 	if not _strip_action.is_empty():
 		# One-shot ability strip: play frames 0..N-1 once, then revert.
-		_action_t += delta
-		var idx := int(_action_t * anim_fps)
-		if idx >= anim_frames:
-			_end_action()
-		else:
-			sprite.frame = idx
+		_advance_action_anim(delta)
 	elif anim_frames > 1 or not _dir_idle.is_empty():
 		# Walk/idle split. Single-facing art keeps the flip path; 8-direction
 		# art also picks the strip by facing — and runs even for 1-frame idle
@@ -804,12 +813,7 @@ func _physics_process(delta: float) -> void:
 func _net_mirror_tick(delta: float) -> void:
 	global_position = global_position.lerp(net_target, minf(1.0, delta * 10.0))
 	if not _strip_action.is_empty():
-		_action_t += delta
-		var idx := int(_action_t * anim_fps)
-		if idx >= anim_frames:
-			_end_action()
-		else:
-			sprite.frame = idx
+		_advance_action_anim(delta)
 	elif anim_frames > 1:
 		if not _strip_walk.is_empty() and net_walk != _strip_walking:
 			_strip_walking = net_walk
@@ -1005,8 +1009,9 @@ func _think(delta: float) -> Vector2:
 		var shot_ok := _shot_clear(player.global_position)
 		if attack_cd <= 0.0 and shot_ok:
 			attack_cd = 1.58
+			play_action("attack", false)
 			game.sfx("bolt")
-			var p := Projectile.spawn(game, global_position, to_player.normalized() * 420.0, _hit_dmg(), false, "bolt")
+			var p := Projectile.spawn(game, global_position, to_player.normalized() * 420.0, _hit_dmg(), false, projectile_kind)
 			p.rise = _muzzle_rise()
 			p.hostile_type = dmg_type
 			p.source_enemy = self
@@ -1048,6 +1053,7 @@ func _think(delta: float) -> Vector2:
 			if attack_cd <= 0.0:
 				attack_cd = 0.92
 				windup = 0.27
+				play_action("attack", false)
 				sprite.modulate = Color(2.0, 1.7, 0.5)   # "about to bite!" flash
 				_net_tell(Color(2.0, 1.7, 0.5), 0.27)    # same window the host holds
 			return Vector2.ZERO

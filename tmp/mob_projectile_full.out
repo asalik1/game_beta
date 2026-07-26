@@ -1,0 +1,149 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+COMPILE OK (92 scripts)
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+ok: DEX vs evasion gradient (miss / graze / cancelled tiers)
+ok: stat curves + true damage + TTK retune
+ok: class select + warrior opening (owned the harm)
+ok: room graph (25 rooms, 15 on the boss path, seeded layout, lazy build)
+ok: elder talk reads opening choice + village gate opens
+ok: warrior abilities
+ok: archer abilities
+ok: mage abilities
+ok: assassin abilities
+ok: paladin abilities
+ok: warlock abilities
+ok: melee passive regen
+ok: archer second wind (untouched -> recovery)
+ok: mage arcane ward (blink DR softens hits, pierced by true) + plate DR
+ok: mage Wind Cuts (wind-only bleed, bites + refreshes)
+ok: assassin stab surge (stab + dash-stab, scales with missing health)
+ok: directional dash (held keys steer it, L/R art spins to match)
+ok: target lock cycling
+ok: themes unlock + assignment (fury on Cleave)
+ok: all-in theme loadout
+ok: per-ability theme variants (quake / berserk tune / venom bloom / lined shot)
+ok: paladin kit (aegis smite, holy mend, chains drag)
+ok: warlock kit (hex detonation, dark pact, void rift)
+ok: combo stat (129/200 resets)
+ok: attributes + combat rating (CR 389 -> 402)
+ok: substat allocation (PhysRes 80 -> 82)
+ok: monster levels + growth scaling
+ok: boss music (every BOSS_KINDS entry resolves to a real fight track)
+ok: elites (no-xp loot pinata) + reset stone + bag tiers + small rooms
+ok: mailbox (ground overflow, flush, claim, 30d expiry, trusted clock)
+ok: daily login reward (new-day claim, streak advance + reset)
+ok: records + achievements (best-time keeping, idempotent unlock)
+ok: battle stats (attribution buckets, fight window, record tracks) + gallery/archive UI
+ok: bounties + weekly vault (deterministic roll, progress reward, vault claim)
+ok: reforge bench (affix reroll, value reroll, add socket + cap incl. C, pen un-gate, transmute)
+ok: set bonuses (piece count, cross-class isolation, 2/4 detection)
+ok: account stash (deposit, withdraw to bag, capacity cap)
+ok: localization (lookup, key fallback, format, language swap)
+ok: consumables (drink gate refusal + budgeted mana/might/renewal, recall scroll)
+ok: resonance band leans (Hunger / Constancy)
+ok: gold rush surge (sourceless baseline, window pay, touch trigger)
+ok: gamble vendor (afford gate, cost deduction, boss-band roll + pricing)
+ok: merchant economy (farm-cost buy, act-gated grades, upgrade curve, bag=1g, sell + quest-item guard, ward+renewal)
+ok: equip / unequip (slot empties to bag, bag-full guard)
+ok: stacking bags (sum-capacity, keep-best-N, +5/tier curve, UNIT-counting incl. health potions, grey-out, act drops, shop price, migration) + discard-throw
+ok: typed gem slots (C/B regular-only incl. C's new socket, A = 1 regular + 1 special, one special per stat across gear)
+ok: retention pass (grades + PBs, weekly fx, lore titles, curse, fanfare)
+ok: mob mechanics (presence + pounce/web/channel/warded/bloat... all ch1-7 tagged)
+ok: asset seams (ground tilesets / composite structures + decals / animated props)
+ok: seam showcase (5 authored floors + 8 animated props + animated forge/hearth/fountain/capital structures)
+ok: NPC shadows follow painted feet + interactions face the visitor (including Citizen/Fenna) + restore rest pose
+ok: difficulty tiers (offsets, band shift + S table, gates, zero XP, unlock meta, tier PBs, save round-trip)
+ok: renown (prices, wallet, buy/own, PB + tier faucets pay once, weekly cache, save round-trip, wardrobe UI)
+ok: waking incursions (cross-domain seeded roster, pure injection, weekly bank + Renown sweep, stale refusal, save round-trip)
+ok: kill xp
+ok: chest loot + equip ([F] Cracked Charm)
+ok: weapon shape identities
+ok: class-aware drops (arsenal + S first-roll pen guarantee + B-gated lifesteal/combo)
+ok: S weapon dormant passive + awakening (Kingsbane, Edge of the Fallen Crown sleeps until s_awakened_warrior)
+ok: gems (socket, synthesize, sell-return)
+ok: telegraph + unique boss falling weapons (heavy gate semantics)
+ok: all 11 boss projectile families use authored 64px art
+ok: skill tree rows (caps + gating)
+ok: auto-synthesize (equipped-first, 5 upgrades)
+ok: save/load roundtrip (name, gold, resonance, factions, gear, room state)
+ok: session-local name de-dup (#N on collision, case-insensitive)
+ok: chroma shader (apply, uniforms, clear)
+ok: every skin + awakened form has an installed splash
+ok: hero dialogue splash follows live equipped + awakened skin
+ok: choice dialogue engine (choices, flags, factions, resonance bands)
+ok: opening convo data integrity (135 convos)
+ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI
+ok: endgame modes (HUD trial icons; Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)
+ok: touch HUD overlay gate (menu/dialogue/choice kill the controls with the world unpaused — co-op)
+ok: overlay intent gate (stale keyboard intents die under dialogue + choice overlays, world unpaused — co-op)
+ok: two-regime growth (native band -> boss dial far-field; no L100 inversion; overcap blocks)
+ok: all 37 terrains applied + events fired
+ok: hot room locks the exit (no walking out mid-fight)
+ok: darkwood road (lazy build, per-pack aggro, door seals, clear)
+ok: doorway walk-through (E door is passable, not painted shut)
+ok: dead-end cache (guarded, once per character)
+ok: social room (pool wanderer talks)
+ok: resonance shrine (+8, once)
+ok: fog of war (visited-only map state)
+ok: room cleared -> fangmaw spawned (Lv 5)
+[fight] fangmaw Lv5 | warrior Lv11 | ttk 0:00 | pool 1222 | dps 1673.7 | taken 26 | potions 0 | wipes 0
+ok: fangmaw killed + loot (gate opened)
+ok: fast travel (village <-> stilt camp; combat rooms excluded)
+ok: death -> last safe room + death room reset
+ok: morwen killed (Lv 8, gate opened)
+ok: vargoth enrage
+ok: death, respawn at nearest cleared/safe room, boss reset
+[fight] vargoth Lv12 | warrior Lv13 | ttk 0:02 | pool 4353 | dps 1480.8 | taken 0 | potions 0 | wipes 1
+ok: vargoth killed + victory screen
+ok: victory way-gates (card dismisses, gates rise, world live)
+ok: title screen + resume from save (map + clears intact)
+ok: assassin opening (temptation path)
+ok: paladin opening (virtue path)
+ok: warlock opening (virtue path)
+ok: chapter 2 hub boots as a legacy chain (10 room[s])
+ok: T1 hub (Maren briefing reads flags, quest set, short-circuit)
+ok: T5 factions (exclusive join, standings, ambient Wildfang/Choir)
+ok: T6 Aldric (question hub, act gate, the truth)
+ok: T2 act 1 (Mills/Fields/Sporewood/Hollow, scaled bosses, arc flags)
+ok: T3 act 2 (crossings, scholar, Warden Null ends the chapter)
+ok: T7 resonance surfacing (haggle bands, NPCs read the shard)
+ok: ch3 bosses (spawn / signature / phase / story-neutral death) — sexton, vess, saint_varo
+ok: ch4 bosses (spawn / signature / phase / story-neutral death) — forgemistress, cinderhide, ashpriest
+ok: ch5 bosses (spawn / signature / phase / story-neutral death) — whitepelt, icebound, sleepkeeper
+ok: ch6 bosses (spawn / signature / phase / story-neutral death) — auroch, gardener, curetwisted
+ok: ch7 bosses (spawn / signature / phase / story-neutral death) — veyx, echo, cyrraeth
+ok: ch3 chapter (Vale spine end-to-end — briefing, packs, sexton/vess/varo, victory)
+ok: ch4 chapter (Slagfields spine end-to-end — calda/cinderhide/ordo, victory)
+ok: ch5 chapter (Long Sleep spine end-to-end — whitepelt/serane/halla, victory)
+[fight] curetwisted Lv37 | warrior Lv36 | ttk 0:00 | pool 69000 | dps 120999.8 | taken 0 | potions 0 | wipes 0
+ok: ch6 chapter (Blooming Deep spine — auroch/rotmaw/kaethra strike-or-sheathe, victory)
+ok: ch7 chapter (Breaking Sky spine — veyx/echo/cyrraeth, ACT 1 COMPLETE)
+ok: side quests (accept, step tracking, single payout)
+ok: quest abandonment (pledge revoked + penalty, chapter-scoped, named) + discovery
+ok: ch1 side quests (oslas_debt, hunters_rounds, flame_at_window — single payouts)
+ok: pc_curios (curios shelf + Future tab: terrains/mobs/items/armory/supplies/relics)
+ok: rv_na_gallery (145 Raven icons + 13 critters; Future: alchemy/critters)
+ok: capital collider contract (17 landmark defs end at the grounded base line)
+ok: capital hub (9-room 3x3, NPC-owned services + dawn shelf + favor + lapidary quest end-to-end, bench gate holds on the road, leaves clean)
+ok: capital rework economy (deterministic clamped road-markup curve; favor + dawn shelf save round-trip)
+ok: ch2 side quests (still_blue, bread_for_the_road, ash_for_aldric — single payouts)
+ok: ch3 side quests (unfilled_row, bread_kneeling, sexton_stone — single payouts)
+ok: ch4 side quests (out_of_tolerance, nix_receipts, quench_prayer - single payouts)
+ok: ch5 side quests (forty_mouths, spring_song, count_sleepers - single payouts)
+ok: ch6 side quests (ch6_far_shore, ch6_gate_bread, ch6_kesh_tally — single payouts + standings)
+ok: ch7 side quests (relay_stands, void_letter, korrags_due — single payouts + standing)
+ok: promises kept (facing_home, nine_names — single payouts; beat variants resolve)
+ok: promises kept 2 (Osk's falling count on vess_dead; kneeling-field epilogue beat)
+ok: endgame boss pools exclude placeholder bosses (roster + fallback + earned kills)
+ok: pause menu (pause/resume, audio settings, chapter replay)
+ok: Play Together lobby screens + codex co-op page render (offline)
+ok: ch2 bosses (spawn / signature / enrage / story-neutral death) — stormwarden, choirmother, nullwarden
+ok: chapter progression (victory carries the hero into ch2; ch1 stays farmable)
+AUTOTEST PASS
+WARNING: 8 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2679)
+ERROR: 8 RID allocations of type 'PN13RendererDummy14TextureStorage12DummyTextureE' were leaked at exit.
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2378)

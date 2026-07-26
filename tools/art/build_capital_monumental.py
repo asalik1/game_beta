@@ -14,14 +14,16 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageFilter
 
+from tight_crop import crop_family, save_png
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "art_src" / "capital_monumental"
 SPRITES = ROOT / "game" / "assets" / "sprites"
 
-# Animated prop strips are inferred as width / height by Art.anim_info, so an
-# animated structure frame must remain square even when its painted silhouette
-# is wide. Transparent headroom preserves that contract without distorting art.
+# The large square canvases are staging space for fitting and fire-socket
+# authoring. Production outputs are tight-cropped afterward; Art.anim_info
+# reads their matching static dimensions as rectangular animation frames.
 CROWN_SIZE = (1024, 1024)
 ARCADE_SIZE = (1024, 1024)
 
@@ -138,7 +140,7 @@ def _write_strip(frames: list[Image.Image], output: Path) -> None:
     for index, frame in enumerate(frames):
         strip.alpha_composite(frame, (index * frame_w, 0))
     output.parent.mkdir(parents=True, exist_ok=True)
-    strip.save(output, optimize=True)
+    save_png(strip, output)
 
 
 def main() -> None:
@@ -166,6 +168,8 @@ def main() -> None:
     _write_strip(
         crown_frames, SPRITES / "capital_crown_spire_gate_anim.png"
     )
+    crop_family(SPRITES / "capital_crown_spire_gate.png")
+    crop_family(SPRITES / "capital_city_arcade.png")
 
     changed = [
         sum(

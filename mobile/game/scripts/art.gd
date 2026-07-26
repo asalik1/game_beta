@@ -1773,23 +1773,29 @@ const ABILITY_GLYPH := {
 }
 
 
-## Hand-authored ability icon (assets/icons/ability_<class>_<slot>.png), or
-## null when no file is installed. Same seam as ui_icon()/consumable_icon():
-## drop a 32x32 PNG in by name and it takes over, no code change.
+## Hand-authored ability icon, or null when no file is installed. An equipped
+## theme first looks for assets/icons/ability_<class>_<slot>_<theme>.png and
+## falls back to the base ability_<class>_<slot>.png. This lets every gameplay
+## variant carry distinct art without making a partial art set unsafe.
 ##
 ## The MISS is cached too (as null), not just the hit — unlike the bag/menu
 ## seams this is polled EVERY FRAME by the ability bar (hud.gd, touch_hud.gd),
 ## and an uncached miss would re-hit ResourceLoader.exists() 4x per frame
 ## forever on the (current) all-procedural path.
-static func ability_art(cls: String, slot: String) -> ImageTexture:
-	var key := "abicon_%s_%s" % [cls, slot]
+static func ability_art(cls: String, slot: String, theme_id := "") -> ImageTexture:
+	var key := "abicon_%s_%s_%s" % [cls, slot, theme_id]
 	if _cache.has(key):
 		return _cache[key]
-	var im := _icon_override("ability_%s_%s" % [cls, slot])
+	var base_name := "ability_%s_%s" % [cls, slot]
+	var im: Image = null
+	if theme_id != "":
+		im = _icon_override("%s_%s" % [base_name, theme_id])
+	if im == null:
+		im = _icon_override(base_name)
 	var t: ImageTexture = null
 	if im != null:
-		if im.get_width() != 32 or im.get_height() != 32:
-			im.resize(32, 32, Image.INTERPOLATE_NEAREST)
+		if im.get_width() != 64 or im.get_height() != 64:
+			im.resize(64, 64, Image.INTERPOLATE_LANCZOS)
 		t = ImageTexture.create_from_image(im)
 	_cache[key] = t
 	return t
@@ -1797,8 +1803,8 @@ static func ability_art(cls: String, slot: String) -> ImageTexture:
 
 ## True when a slot has hand-authored art (so it renders untinted, and the
 ## caller must carry the theme color some other way — see ability_icon).
-static func has_ability_art(cls: String, slot: String) -> bool:
-	return ability_art(cls, slot) != null
+static func has_ability_art(cls: String, slot: String, theme_id := "") -> bool:
+	return ability_art(cls, slot, theme_id) != null
 
 
 ## The icon for one ability slot: hand-authored art if installed, else the
@@ -1814,8 +1820,9 @@ static func has_ability_art(cls: String, slot: String) -> bool:
 ## menus already put it (menus.gd passes the same tcolor as the button's
 ## font_color, so those screens lose nothing). On the ability bars, callers
 ## paint the ability NAME in the theme color instead; see has_ability_art().
-static func ability_icon(cls: String, slot: String, tint := Color(0.92, 0.92, 0.98)) -> ImageTexture:
-	var art := ability_art(cls, slot)
+static func ability_icon(cls: String, slot: String, tint := Color(0.92, 0.92, 0.98),
+		theme_id := "") -> ImageTexture:
+	var art := ability_art(cls, slot, theme_id)
 	if art != null:
 		return art
 	return glyph_tex(ABILITY_GLYPH[cls][slot], tint)
@@ -1840,6 +1847,28 @@ static func ability_glow() -> ImageTexture:
 			im.set_pixel(x, y, Color(1, 1, 1, a))
 	var t := ImageTexture.create_from_image(im)
 	_cache["ability_glow"] = t
+	return t
+
+
+## Soft-edged white disc used by TextureProgressBar for the clockwise cooldown
+## sweep. Every class gets the same recharge language without baking UI state
+## into its painted medallion.
+static func ability_cooldown_mask() -> ImageTexture:
+	if _cache.has("ability_cooldown_mask"):
+		return _cache["ability_cooldown_mask"]
+	var n := 64
+	var im := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
+	var c := (n - 1) / 2.0
+	for y in n:
+		for x in n:
+			var r: float = sqrt((x - c) * (x - c) + (y - c) * (y - c))
+			# The production medallion occupies 60px of its 64px canvas. Inset
+			# the sweep another pixel so its dark edge stays inside the painted
+			# gold rim after the HUD downsamples both textures.
+			var a: float = clampf((n * 0.455 - r) * 1.5, 0.0, 1.0)
+			im.set_pixel(x, y, Color(1, 1, 1, a))
+	var t := ImageTexture.create_from_image(im)
+	_cache["ability_cooldown_mask"] = t
 	return t
 
 
@@ -2809,9 +2838,25 @@ static func _strip_info(base: String) -> Dictionary:
 	var path := "res://assets/sprites/%s.png" % base
 	var img := _override_image(path)
 	if img != null and img.get_height() > 0:
+		# Square cells remain the universal fallback. A matching static sprite
+		# may define a rectangular idle frame when its dimensions evenly tile
+		# the strip; structures can then ship tight-cropped instead of carrying
+		# transparent padding solely for the old square-frame convention.
+		var frame_size := Vector2i(img.get_height(), img.get_height())
+		var frames := maxi(1, int(img.get_width() / img.get_height()))
+		if base.ends_with("_anim"):
+			var static_base := base.trim_suffix("_anim")
+			var static_img := _override_image(
+				"res://assets/sprites/%s.png" % static_base)
+			if static_img != null \
+					and static_img.get_height() == img.get_height() \
+					and img.get_width() % static_img.get_width() == 0:
+				frame_size = static_img.get_size()
+				frames = maxi(1, int(img.get_width() / static_img.get_width()))
 		info = {
 			"tex": ImageTexture.create_from_image(img),
-			"frames": maxi(1, int(img.get_width() / img.get_height())),
+			"frames": frames,
+			"frame_size": frame_size,
 			"fps": 6.0,
 		}
 	_anim_cache[base] = info
@@ -2834,11 +2879,13 @@ static func _prop_frames(name: String, info: Dictionary) -> SpriteFrames:
 	frames.set_animation_loop("default", true)
 	frames.set_animation_speed("default", float(info["fps"]))
 	var tex: Texture2D = info["tex"]
-	var cell := tex.get_height()
+	var frame_size: Vector2i = info.get(
+		"frame_size", Vector2i(tex.get_height(), tex.get_height()))
 	for i in int(info["frames"]):
 		var at := AtlasTexture.new()
 		at.atlas = tex
-		at.region = Rect2(i * cell, 0, cell, cell)
+		at.region = Rect2(
+			i * frame_size.x, 0, frame_size.x, frame_size.y)
 		frames.add_frame("default", at)
 	_prop_frames_cache[name] = frames
 	return frames
@@ -2874,6 +2921,14 @@ static func anim_prop(name: String) -> AnimatedSprite2D:
 static var _dir_cache := {}
 const DIR8 := ["s", "se", "e", "ne", "n", "nw", "w", "sw"]
 
+## A few generated rotation sets arrived with mislabeled source views. Keep the
+## correction beside the direction seam instead of teaching individual NPC
+## interactions about asset filenames. Only the proven-bad views are remapped;
+## Fenna's north-east/north-west rotations are already authored correctly.
+const DIR8_SOURCE_REMAP := {
+	"old_fenna": {"se": "sw", "e": "w", "w": "e", "sw": "se"},
+}
+
 ## Screen-space vector (+y is DOWN) -> one of the eight DIR8 suffixes.
 ## Zero rests facing the camera ("s").
 static func dir8_suffix(d: Vector2) -> String:
@@ -2889,6 +2944,14 @@ static func dir8_suffix(d: Vector2) -> String:
 		-2: return "n"
 		-1: return "ne"
 	return "s"
+
+
+## Direction suffix for a particular sprite, including narrow corrections for
+## generated source sets whose east/west filenames do not match their artwork.
+static func dir8_suffix_for(name: String, d: Vector2) -> String:
+	var suffix := dir8_suffix(d)
+	var remap: Dictionary = DIR8_SOURCE_REMAP.get(name, {})
+	return String(remap.get(suffix, suffix))
 
 ## The eight per-direction strips for a clip base, or {} when no
 ## directional art exists on disk. Keyed by DIR8 suffix; absent sides

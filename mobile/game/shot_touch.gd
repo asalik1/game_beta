@@ -84,8 +84,30 @@ func _ready() -> void:
 		print("TOUCH RIG DONE  (fails=%d)" % _fails)
 		get_tree().quit(1)
 		return
-	_check(th._btns.size() == 8, "ability arc + action buttons built (got %d)" % th._btns.size())
+	var variant_ids := {
+		"warrior": ["fury", "bulwark", "earth"],
+		"archer": ["storm", "venom", "hunt"],
+		"mage": ["fire", "ice", "wind"],
+		"assassin": ["poison", "shadow", "blood"],
+		"paladin": ["holy", "aegis", "wrath"],
+		"warlock": ["curse", "pact", "void"],
+	}
+	var installed_variants := 0
+	for cls in variant_ids:
+		for theme_id in variant_ids[cls]:
+			for slot in TouchHud.ABILITY_SLOTS:
+				if Art.ability_art(cls, slot, theme_id) != null:
+					installed_variants += 1
+	_check(installed_variants == 72, "all 72 class/theme ability icons resolve")
+	_check(th._btns.size() == 9, "ability arc + action buttons built (got %d)" % th._btns.size())
 	_check(th._enabled, "touch HUD enabled while playing")
+	# Mix all three Assassin themes across the live arc so this screenshot also
+	# verifies that the touch HUD displays variant-specific art, not base art.
+	game.player.ability_theme["a1"] = "poison"
+	game.player.ability_theme["a2"] = "shadow"
+	game.player.ability_theme["a3"] = "blood"
+	game.player.ability_theme["ult"] = "poison"
+	await _frames(3)
 	_shot("touch_rest")
 
 	var vp := get_viewport().get_visible_rect().size
@@ -115,14 +137,17 @@ func _ready() -> void:
 	game.player.cds["a1"] = 0.0
 	game.player.mp = game.player.max_mp
 	var a1c: Vector2 = th._btns["a1"]["center"]
-	_touch(a1c, true)                      # hold the button down
-	await _frames(6)
-	_shot("touch_ability")
-	_check(bool(game.get_node("/root/MobileInput").a1), "a1 button sets MobileInput.a1 while held")
-	_check(game.player.cds["a1"] > 0.0, "a1 button fired a real cast (cd=%.2f)" % game.player.cds["a1"])
-	_touch(a1c, false)
+	_touch(a1c, true)
 	await _frames(2)
-	_check(not bool(game.get_node("/root/MobileInput").a1), "a1 released → flag cleared")
+	_shot("touch_ability")
+	# Tap-vs-hold semantics defer the cast to release so a long hold can open
+	# the info card without firing the ability.
+	_touch(a1c, false)
+	await _frames(1)
+	_check(bool(game.get_node("/root/MobileInput").a1), "a1 tap pulses MobileInput.a1 on release")
+	_check(game.player.cds["a1"] > 0.0, "a1 button fired a real cast (cd=%.2f)" % game.player.cds["a1"])
+	await _frames(12)
+	_check(not bool(game.get_node("/root/MobileInput").a1), "a1 tap pulse expired")
 
 	# --- 3) lock button: tap = lock, hold+swipe-off = release ----------------
 	var dummy := Enemy.make(game, "wolf", game.player.global_position + Vector2(120, 0))

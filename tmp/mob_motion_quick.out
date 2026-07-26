@@ -1,0 +1,83 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+COMPILE OK (92 scripts)
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+ok: DEX vs evasion gradient (miss / graze / cancelled tiers)
+ok: stat curves + true damage + TTK retune
+ok: class select + warrior opening (owned the harm)
+ok: room graph (25 rooms, 15 on the boss path, seeded layout, lazy build)
+ok: elder talk reads opening choice + village gate opens
+ok: warrior abilities
+ok: melee passive regen
+ok: archer second wind (untouched -> recovery)
+ok: mage arcane ward (blink DR softens hits, pierced by true) + plate DR
+ok: mage Wind Cuts (wind-only bleed, bites + refreshes)
+ok: assassin stab surge (stab + dash-stab, scales with missing health)
+ok: directional dash (held keys steer it, L/R art spins to match)
+ok: target lock cycling
+ok: themes unlock + assignment (fury on Cleave)
+ok: all-in theme loadout
+ok: per-ability theme variants (quake / berserk tune / venom bloom / lined shot)
+ok: paladin kit (aegis smite, holy mend, chains drag)
+ok: warlock kit (hex detonation, dark pact, void rift)
+ok: combo stat (113/200 resets)
+ok: attributes + combat rating (CR 389 -> 402)
+ok: substat allocation (PhysRes 80 -> 82)
+ok: monster levels + growth scaling
+ok: boss music (every BOSS_KINDS entry resolves to a real fight track)
+ok: elites (no-xp loot pinata) + reset stone + bag tiers + small rooms
+ok: mailbox (ground overflow, flush, claim, 30d expiry, trusted clock)
+ok: daily login reward (new-day claim, streak advance + reset)
+ok: records + achievements (best-time keeping, idempotent unlock)
+ok: battle stats (attribution buckets, fight window, record tracks) + gallery/archive UI
+ok: bounties + weekly vault (deterministic roll, progress reward, vault claim)
+ok: reforge bench (affix reroll, value reroll, add socket + cap incl. C, pen un-gate, transmute)
+ok: set bonuses (piece count, cross-class isolation, 2/4 detection)
+ok: account stash (deposit, withdraw to bag, capacity cap)
+ok: localization (lookup, key fallback, format, language swap)
+ok: consumables (drink gate refusal + budgeted mana/might/renewal, recall scroll)
+ok: resonance band leans (Hunger / Constancy)
+ok: gold rush surge (sourceless baseline, window pay, touch trigger)
+ok: gamble vendor (afford gate, cost deduction, boss-band roll + pricing)
+ok: merchant economy (farm-cost buy, act-gated grades, upgrade curve, bag=1g, sell + quest-item guard, ward+renewal)
+ok: equip / unequip (slot empties to bag, bag-full guard)
+ok: stacking bags (sum-capacity, keep-best-N, +5/tier curve, UNIT-counting incl. health potions, grey-out, act drops, shop price, migration) + discard-throw
+ok: typed gem slots (C/B regular-only incl. C's new socket, A = 1 regular + 1 special, one special per stat across gear)
+ok: retention pass (grades + PBs, weekly fx, lore titles, curse, fanfare)
+ok: mob mechanics (presence + pounce/web/channel/warded/bloat... all ch1-7 tagged)
+ok: asset seams (ground tilesets / composite structures + decals / animated props)
+ok: seam showcase (5 authored floors + 8 animated props + animated forge/hearth/fountain/capital structures)
+ok: NPC shadows follow painted feet + interactions face the visitor (including Citizen/Fenna) + restore rest pose
+ok: difficulty tiers (offsets, band shift + S table, gates, zero XP, unlock meta, tier PBs, save round-trip)
+ok: renown (prices, wallet, buy/own, PB + tier faucets pay once, weekly cache, save round-trip, wardrobe UI)
+ok: waking incursions (cross-domain seeded roster, pure injection, weekly bank + Renown sweep, stale refusal, save round-trip)
+ok: kill xp
+ok: chest loot + equip ([F] Chipped Claymore)
+ok: weapon shape identities
+ok: class-aware drops (arsenal + S first-roll pen guarantee + B-gated lifesteal/combo)
+ok: S weapon dormant passive + awakening (Kingsbane, Edge of the Fallen Crown sleeps until s_awakened_warrior)
+ok: gems (socket, synthesize, sell-return)
+ok: telegraph + unique boss falling weapons (heavy gate semantics)
+ok: all 11 boss projectile families use authored 64px art
+ok: skill tree rows (caps + gating)
+ok: auto-synthesize (equipped-first, 5 upgrades)
+ok: save/load roundtrip (name, gold, resonance, factions, gear, room state)
+ok: session-local name de-dup (#N on collision, case-insensitive)
+ok: chroma shader (apply, uniforms, clear)
+ok: every skin + awakened form has an installed splash
+ok: hero dialogue splash follows live equipped + awakened skin
+ok: choice dialogue engine (choices, flags, factions, resonance bands)
+ok: opening convo data integrity (135 convos)
+ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI
+ok: endgame modes (HUD trial icons; Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)
+ok: touch HUD overlay gate (menu/dialogue/choice kill the controls with the world unpaused — co-op)
+ok: overlay intent gate (stale keyboard intents die under dialogue + choice overlays, world unpaused — co-op)
+ok: two-regime growth (native band -> boss dial far-field; no L100 inversion; overcap blocks)
+ok: pause menu (pause/resume, audio settings, chapter replay)
+AUTOTEST QUICK PASS  (core systems only — run the FULL suite before staging)
+WARNING: 8 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2679)
+ERROR: 8 RID allocations of type 'PN13RendererDummy14TextureStorage12DummyTextureE' were leaked at exit.
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2378)

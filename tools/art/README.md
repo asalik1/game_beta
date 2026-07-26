@@ -167,6 +167,27 @@ invisible for loops and harmless for one-shots.
 
 ## Install + verify
 
+### Transparent padding is not production geometry
+
+Before installing generated structures or codex portraits, tight-crop their
+alpha bounds. Padded exports previously caused five separate downstream bugs:
+colliders, interaction stand-points, y-sort anchors, bestiary icon scale, and
+portal-pier footprints.
+
+`tight_crop.py` crops a static PNG and, by default, rebuilds its matching
+`<name>_anim.png` strip frame-by-frame to the same rectangle:
+
+```bash
+python tools/art/tight_crop.py game/assets/sprites/capital_portal_story.png
+python tools/art/tight_crop.py --static-only game/assets/sprites/fangmaw.png
+```
+
+Use `--static-only` only when the static file is a redundant portrait/reference
+and the independently normalized animation strip must not change. Capital
+builders call this helper themselves. The runtime accepts rectangular
+`_anim.png` frames when their dimensions match the static sprite, so animation
+is no longer a reason to retain a padded square canvas.
+
 1. Copy the named clip PNGs (skip `_rowNN` and `_QA`) into
    `game/assets/sprites/`.
 2. Re-import: `tools/Godot_v4.4.1-stable_win64_console.exe --headless --path game --import`
@@ -308,6 +329,38 @@ one `DIR_POSE` slot.
   survives; 30 was the sweet spot here. Note `solidify`'s hole-fill only
   restores *enclosed* holes, so an eaten silhouette *edge* like a sole won't
   come back on its own — fix it at the key.
+
+
+## Crownfall mob redesign sheets (`build_mob_redesigns.py`)
+
+The 2026-07-25 mob quality pass uses label-free 4×4 ImageGen masters: idle,
+walk, attack, and defeat from top to bottom, four left-facing frames per row.
+The builder removes the deliberately artificial green/magenta screen, slices
+the exact grid, normalizes every frame to a 192px square, and writes the base
+sprite plus `_anim`, `_walk`, `_attack`, and `_death` strips.
+
+Source masters default to
+`~/OneDrive/Assets/Custom/MobRedesign_2026-07-25`. Override that location with
+`CROWNLESS_ART_SRC`, then rebuild with:
+
+    python tools/art/build_mob_redesigns.py
+
+The runtime triggers `_attack` automatically for ordinary ranged shots and
+melee windups. `_death` is installed as a future-ready one-shot seam; the
+existing death dissolve remains the live defeat presentation.
+
+The companion ranged-projectile family is built from a label-free 3×3 master:
+
+    python tools/art/build_mob_projectiles.py
+
+Its source defaults to
+`~/OneDrive/Assets/Custom/MobProjectiles_2026-07-25/mob_projectiles_master.png`.
+The builder keys and slices nine 64px assets. `Projectile.ENEMY_PROJECTILE_ART`
+then maps every ranged enemy kind to one of those silhouettes, the existing
+player arrow, or an existing boss-signature projectile. `Projectile.MOB_MOTION`
+adds a short material-specific world-space trail and persistent motes to each
+authored mob shot; a few also receive visual-only sway/pulse. Those offsets
+never alter the projectile node, collision path, speed, or hit timing.
 
 
 ## Environment art — the three Track-D drop-in seams (`install_env_asset.py`)

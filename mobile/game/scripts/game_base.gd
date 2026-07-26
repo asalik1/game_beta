@@ -47,14 +47,45 @@ func refresh_touch_mode() -> void:
 func touchify(s: String) -> String:
 	if not touch_mode:
 		return s
-	s = s.replace(" and press E", " and tap them")
+	# Quest copy names the NPC with a gendered pronoun; keep the action copy
+	# grammatical and match the touch HUD's actual interaction-button label.
+	s = s.replace("walk up to her and press E", "walk up to her and tap Act")
+	s = s.replace("walk up to him and press E", "walk up to him and tap Act")
+	s = s.replace(" and press E", " and tap Act")
 	s = s.replace("press E", "tap")
 	s = s.replace("press Q", "tap the potion button")
 	s = s.replace("Press Q", "Tap the potion button")
 	s = s.replace("press Space", "tap")
 	s = s.replace("Press Space", "Tap")
+	s = s.replace("press T", "tap Skills")
+	s = s.replace("Press T", "Tap Skills")
 	s = s.replace("E — ", "")   # NPC over-head prompts: "E — Talk" -> "Talk"
 	return s
+
+
+## Explicit UI-instruction copy. Dialogue deliberately does not use this:
+## the word "click" can be story prose there rather than a pointer command.
+func ui_copy(s: String) -> String:
+	if not touch_mode:
+		return s
+	s = touchify(s)
+	s = s.replace("press any key", "tap to continue")
+	s = s.replace("Press any key", "Tap to continue")
+	s = s.replace("Enter to begin", "Tap Begin to continue")
+	s = s.replace("ESC to change class", "select Back to change class")
+	s = s.replace("ESC to go back", "select Back to return")
+	s = s.replace("ESC to cancel", "select Back to cancel")
+	s = s.replace("Press to return", "Tap to return")
+	s = s.replace("Click", "Tap")
+	s = s.replace("click", "tap")
+	return s
+
+
+## A live binding on keyboard, the painted on-screen control on touch.
+func control_hint(action: String, touch_label: String) -> String:
+	if touch_mode:
+		return touch_label
+	return "[%s]" % OS.get_keycode_string(binds.get(action, KEY_NONE))
 const OPP := {"N": "S", "S": "N", "E": "W", "W": "E"}
 
 # ------------------------------------------------------------- chapters ---
@@ -2545,7 +2576,11 @@ func shake(amount: float) -> void:
 
 ## Telegraphed ground attack: a danger zone appears, pulses for `delay`
 ## seconds, then erupts — heavy damage if the player is still inside.
-## opts: {"color": Color, "sword": true} (sword = a blade falls from the sky).
+## opts may add a falling object with:
+##   {"falling_sprite": String, "falling_scale": float, "falling_end_y": float}
+## The old {"sword": true} and {"fireball": true} forms remain compatible for
+## non-boss callers, but bosses name their own sprite so signature weapons do
+## not silently bleed from one encounter into another.
 ## A world position sheltered by any LIVE SafeDome? (Ground warded by an
 ## airborne safe-spot exam — see SafeDome above.)
 func _sheltered(pos: Vector2) -> bool:
@@ -2582,18 +2617,29 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	pulse.tween_property(zone, "modulate:a", 0.85, 0.18)
 	pulse.tween_property(zone, "modulate:a", 0.45, 0.18)
 
-	var sword: Sprite2D = null
-	if opts.get("sword", false) or opts.get("fireball", false):
-		sword = Sprite2D.new()
-		sword.texture = Art.tex("fireball" if opts.get("fireball", false) else "greatsword")
-		sword.scale = Vector2(6, 6) if opts.get("fireball", false) else Vector2(4.5, 4.5)
-		if opts.get("fireball", false):
-			sword.modulate = Color(1.0, 0.55, 0.2)
-		sword.global_position = pos + Vector2(0, -420)
-		sword.z_index = 30
-		add_child(sword)
-		var fall := sword.create_tween()
-		fall.tween_property(sword, "global_position", pos + Vector2(0, -20), delay).set_ease(Tween.EASE_IN)
+	var falling: Sprite2D = null
+	var falling_key: String = String(opts.get("falling_sprite", ""))
+	if falling_key.is_empty() and opts.get("fireball", false):
+		falling_key = "fireball"
+	elif falling_key.is_empty() and opts.get("sword", false):
+		falling_key = "greatsword"
+	if not falling_key.is_empty():
+		falling = Sprite2D.new()
+		falling.texture = Art.tex(falling_key)
+		var default_scale := Balance.FALLING_FIREBALL_SCALE if falling_key == "fireball" \
+			else (Balance.FALLING_LEGACY_SWORD_SCALE if falling_key == "greatsword" else 1.0)
+		var falling_scale: float = float(opts.get("falling_scale", default_scale))
+		falling.scale = Vector2(falling_scale, falling_scale)
+		if falling_key == "fireball":
+			falling.modulate = Color(1.0, 0.55, 0.2)
+		falling.global_position = pos + Vector2(0, -420)
+		falling.z_index = Balance.FALLING_OBJECT_Z_INDEX
+		add_child(falling)
+		var fall := falling.create_tween()
+		var falling_end_y: float = float(opts.get("falling_end_y",
+			Balance.FALLING_OBJECT_DEFAULT_END_Y))
+		fall.tween_property(falling, "global_position",
+			pos + Vector2(0, falling_end_y), delay).set_ease(Tween.EASE_IN)
 
 	await get_tree().create_timer(delay).timeout
 	if not is_instance_valid(zone):
@@ -2604,10 +2650,10 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 		sfx(impact_sfx)
 	shake(6.0)
 	burst(pos, opts.get("color", Color(1.0, 0.35, 0.2)), 18)
-	if sword and is_instance_valid(sword):
-		var sink := sword.create_tween()
-		sink.tween_property(sword, "modulate:a", 0.0, 0.35)
-		sink.tween_callback(sword.queue_free)
+	if falling and is_instance_valid(falling):
+		var sink := falling.create_tween()
+		sink.tween_property(falling, "modulate:a", 0.0, Balance.FALLING_OBJECT_FADE)
+		sink.tween_callback(falling.queue_free)
 	if opts.get("net_visual", false):
 		return  # MP-09: a mirror of the danger, not the danger — damage and
 		        # riders stay host-side (guest hits arrive via MP-10's RPC)

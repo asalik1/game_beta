@@ -19,6 +19,8 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageFilter
 
+from tight_crop import save_png
+
 
 def _water_mask(image: Image.Image) -> Image.Image:
     """Select the fountain's blue/cyan water without touching warm masonry."""
@@ -90,7 +92,7 @@ def build(storyboard_path: Path, static_path: Path, output_path: Path) -> None:
     for index, frame in enumerate(frames):
         strip.alpha_composite(frame, (index * static.width, 0))
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    strip.save(output_path, optimize=True)
+    save_png(strip, output_path)
     print(
         f"Wrote {output_path} ({strip.width}x{strip.height}); "
         f"changed pixels per frame: {changed_counts}"

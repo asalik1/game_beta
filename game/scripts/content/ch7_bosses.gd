@@ -160,9 +160,9 @@ static func selftest(game: Node2D) -> String:
 		if not is_instance_valid(b) or absf(b.max_hp - float(ENEMIES[kind]["hp"])) > 0.01:
 			return "ch7 boss %s: stats did not resolve" % kind
 		var expected_projectile: String = {
-			"stormdrake_veyx": "windslash",
-			"unnamed_echo": "knife",
-			"stormmouth": "stormbolt",
+			"stormdrake_veyx": "fx_veyx_windslash",
+			"unnamed_echo": "fx_echo_knife",
+			"stormmouth": "fx_boss_storm_javelin",
 		}[kind]
 		if b._boss_projectile_key() != expected_projectile:
 			return "ch7 boss %s: archetype projectile regressed" % kind

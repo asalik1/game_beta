@@ -75,23 +75,22 @@ slightly softer boss-quality treatment.
 
 ## Production contract
 
-1. Create one **new** south-facing pixel-character body per named NPC or
+1. **NPC art uses the agent's built-in image-generation tool by default.**
+   PixelLab requires explicit owner authorization for the specific task; never
+   infer authorization from existing PixelLab assets, scripts, or workflows.
+2. Create one **new** south-facing pixel-character body per named NPC or
    approved named variant at boss-level detail density. Preserve the native
    export; do not resample it to force a common dimension.
-2. Use a four-frame horizontal idle strip only after the single south-facing
+3. Use a four-frame horizontal idle strip only after the single south-facing
    body passes review. Its width is four times its native frame width. At game
    size it must read by silhouette, posture, and at most three
    color/material signals.
-3. After a body passes review, inspect all eight rotations before requesting
-   idle or walk animation. Reject a body if a direction changes its body type,
-   outfit, or carried object.
-4. For an existing PixelLab character, download and read `metadata.json` first;
-   regenerate from its exact original prompt and change only the approved
-   clause. These NPCs are new work, so the prompts below are the source of
-   truth until a body exists.
-5. Keep the source prompt, character id, rotation review, and approved export
-   name beside the final asset. Do not overwrite a live sprite until the body
-   is approved in-game.
+4. If the owner explicitly authorizes a tool that produces rotations, inspect
+   all eight before requesting idle or walk animation. Reject a body if a
+   direction changes its body type, outfit, or carried object.
+5. Keep the source prompt, generator, review notes, and approved export name
+   beside the final asset. Do not overwrite a live sprite until the body is
+   approved in-game.
 
 ## Shared prompt
 

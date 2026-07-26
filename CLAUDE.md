@@ -53,7 +53,13 @@
 - Install flow: probe/download, and LOOK at the image (or listen to the audio) before installing; overrides drop into `assets/sounds|music|sprites/` by name (a PNG/wav there overrides the procedural version of the same name).
 - Audio taste: semantic fit over quality; no melodic-jingle chiptunes for ults/terrains; never human grunts on casts; never touch `ult_mage.wav` or the village/story/boss synth tracks.
 
+## Generated art tool authorization
+- **NEVER assume PixelLab is authorized. PixelLab may be used only when the owner explicitly authorizes PixelLab for the specific task.** Existing PixelLab assets, PixelLab helper scripts, character metadata, or a matching PixelLab workflow elsewhere in the repo do not grant permission for a new generation.
+- When an agent has a built-in image-generation/editing tool (for example, ChatGPT/Codex image generation), that built-in tool is the default for generated art unless the owner explicitly requests or authorizes another generator.
+- This rule applies even when another generator appears technically better suited. If the built-in tool cannot meet the requirement, stop and ask the owner; do not silently switch tools or spend external generation credits.
+
 ## PixelLab characters — regenerating an EXISTING one (deep dive: `tools/art/PIXELLAB_BOSS_EDITS.md`)
+- **Authorization gate:** this section applies only after the owner has explicitly authorized PixelLab for the current task. It is not permission to choose PixelLab.
 - **RULE: before you regenerate, re-roll, or tweak an existing PixelLab character (boss/hero/skin), ALWAYS read its export metadata FIRST.** Download the zip (`curl -H "Authorization: Bearer $PIXELLAB_SECRET" https://api.pixellab.ai/mcp/characters/<id>/download -o out.zip`) and read `metadata.json` — it stores the ORIGINAL creation `prompt` (plus size, `template_id`, view). Regenerate from that EXACT prompt and change ONLY the clause the owner flagged.
 - **Never invent a fresh description from a screenshot or memory** — it silently drifts the design (proportions, palette, silhouette) even when the fix was one word. `get_character` does NOT return the creation prompt; the zip's `metadata.json` is the only source of truth.
 

@@ -12,6 +12,14 @@ var xp_fill: ColorRect
 var hp_text: Label              # current/max, right-aligned inside the bar
 var mp_text: Label
 var stats_label: Label
+# Local-hero portrait: splash-art face inside a circular mask. The border is a
+# separate layer on purpose — future cosmetic rewards can replace it with a
+# texture or AnimatedSprite2D without touching the portrait/crop machinery.
+var avatar_root: Control
+var avatar_portrait: TextureRect
+var avatar_border_layer: Control
+var avatar_default_border: Panel
+var _avatar_art_key := ""
 var gold_label: Label
 var cr_label: Label
 var res_label: Label            # shard resonance, right under Combat Rating
@@ -33,6 +41,7 @@ var inv_btn: Button             # bag icon — opens the inventory
 var codex_btn: Button           # book icon — opens the codex
 var skills_btn: Button          # skill-tree icon — opens the talents/skill tree
 var settings_btn: Button        # gear icon — opens the pause/ESC menu
+var party_btn: Button           # live-session chip — reopens the persistent party panel
 var stash_btn: Button           # chest icon — opens the account stash
 
 # quest / zone
@@ -82,6 +91,8 @@ var speaker_label: Label
 var text_label: Label
 var hint_labels: Array = []     # hidden during cutscenes
 var _touch_mode := false        # mobile: keyboard-only chrome stays hidden (touch_hud replaces it)
+var dialogue_hint: Label = null # desktop advance keys vs touch tap-to-continue
+var minimap_title: Label = null # desktop hotkey suffix is omitted on touch
 var dialogue_lines: Array = []
 var dialogue_index := 0
 var dialogue_done: Callable
@@ -181,6 +192,26 @@ var mirror_text: Label = null
 var mirror_options: Label = null
 
 const BAR_W := 280.0
+const BAR_X := 72.0
+const HUD_ICON_BUTTON := Vector2(40, 39)
+const HUD_ICON_STEP := 42.0
+const HUD_ICON_Y := 182.0
+const AVATAR_CROP_SCALE := 0.28
+# Splash faces do not share an exact vertical anchor. These normalized focal
+# points keep the eyes/helmet at the center of the circular portrait.
+const AVATAR_FOCUS := {
+	"warrior": Vector2(0.50, 0.18),
+	"archer": Vector2(0.50, 0.19),
+	"mage": Vector2(0.50, 0.225),
+	"assassin": Vector2(0.50, 0.18),
+	"paladin": Vector2(0.50, 0.18),
+	"warlock": Vector2(0.50, 0.18),
+}
+# Boss paintings are usually square while their reveal is 16:9. Keep the
+# aspect-cover presentation, but spend only this share of the vertical overflow
+# above the canvas; the old centered crop spent 50% and cut off tall bosses'
+# heads. The remaining overflow comes from the less-important lower painting.
+const BOSS_SPLASH_CROP_FROM_TOP := 0.12
 const SLOTS := ["a1", "a2", "a3", "ult", "potion"]
 
 
@@ -204,13 +235,14 @@ func _ready() -> void:
 	add_child(vignette)
 
 	# ------------------------------------------------- player stat bars ---
-	_panel(Vector2(14, 12), Vector2(BAR_W + 8, 66))
-	hp_fill = _bar(Vector2(18, 16), Vector2(BAR_W, 20), Color(0.8, 0.2, 0.2))
-	mp_fill = _bar(Vector2(18, 40), Vector2(BAR_W, 14), Color(0.25, 0.45, 0.9))
-	xp_fill = _bar(Vector2(18, 58), Vector2(BAR_W, 8), Color(0.95, 0.8, 0.25))
-	hp_text = _bar_text(Vector2(18, 16), Vector2(BAR_W, 20), 12)
-	mp_text = _bar_text(Vector2(18, 40), Vector2(BAR_W, 14), 10)
-	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1))
+	_build_avatar()
+	_panel(Vector2(BAR_X - 4.0, 12), Vector2(BAR_W + 8, 66))
+	hp_fill = _bar(Vector2(BAR_X, 16), Vector2(BAR_W, 20), Color(0.8, 0.2, 0.2))
+	mp_fill = _bar(Vector2(BAR_X, 40), Vector2(BAR_W, 14), Color(0.25, 0.45, 0.9))
+	xp_fill = _bar(Vector2(BAR_X, 58), Vector2(BAR_W, 8), Color(0.95, 0.8, 0.25))
+	hp_text = _bar_text(Vector2(BAR_X, 16), Vector2(BAR_W, 20), 12)
+	mp_text = _bar_text(Vector2(BAR_X, 40), Vector2(BAR_W, 14), 10)
+	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1), 650)
 	gold_label = _label(Vector2(18, 104), 15, Color(1.0, 0.85, 0.35))
 	cr_label = _label(Vector2(18, 126), 15, Color(0.65, 0.9, 1.0))
 	cr_label.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -265,8 +297,8 @@ func _ready() -> void:
 	mail_btn.icon = mail_tex if mail_tex != null else Art.tex("mail")
 	mail_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mail_btn.tooltip_text = "Mailbox"
-	mail_btn.position = Vector2(16, 186)
-	mail_btn.size = Vector2(32, 30)
+	mail_btn.position = Vector2(16, HUD_ICON_Y)
+	mail_btn.size = HUD_ICON_BUTTON
 	mail_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_mailbox())
@@ -277,7 +309,7 @@ func _ready() -> void:
 	badge_style.set_corner_radius_all(9)  # 18px box + r9 = a circle
 	mail_badge = Panel.new()
 	mail_badge.add_theme_stylebox_override("panel", badge_style)
-	mail_badge.position = Vector2(40, 182)   # ride the top-right corner of the mail icon
+	mail_badge.position = Vector2(46, 178)   # ride the top-right corner of the larger mail icon
 	mail_badge.size = Vector2(18, 18)
 	mail_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mail_badge.visible = false
@@ -296,7 +328,7 @@ func _ready() -> void:
 	# claim screen. The glow is added first so it sits BEHIND the star.
 	daily_glow = Sprite2D.new()
 	daily_glow.texture = Art.tex("glow")
-	daily_glow.position = Vector2(168, 204)  # centered on the ★ (end of the icon row)
+	daily_glow.position = Vector2(204, 201)  # centered on the ★ (conditional tail of the icon row)
 	daily_glow.modulate = Color(1.0, 0.85, 0.35, 0.0)
 	daily_glow.visible = false
 	add_child(daily_glow)
@@ -312,8 +344,8 @@ func _ready() -> void:
 		daily_btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
 		daily_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.7))
 	daily_btn.tooltip_text = "Daily reward ready!"
-	daily_btn.position = Vector2(152, 185)  # end of the icon row: ✉ ! bag book ★
-	daily_btn.size = Vector2(32, 30)
+	daily_btn.position = Vector2(184, HUD_ICON_Y)
+	daily_btn.size = HUD_ICON_BUTTON
 	daily_btn.visible = false
 	daily_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
@@ -325,19 +357,19 @@ func _ready() -> void:
 	# a click opens a backable screen — here a confirm with your record + the
 	# rules — rather than tearing the world down on a stray click. Visibility is
 	# toggled per-frame in update_stats (hidden during a run itself).
-	crucible_btn = _endgame_icon("🔥", "The Crucible — Boss Rush", Vector2(16, 220), "crucible")
-	depths_btn = _endgame_icon("🕯", "The Waking Depths — Marathon", Vector2(45, 220), "depths")
+	crucible_btn = _endgame_icon("🔥", "The Crucible — Boss Rush", Vector2(16, 226), "crucible")
+	depths_btn = _endgame_icon("🕯", "The Waking Depths — Marathon", Vector2(45, 226), "depths")
 
 	# ---------------------------------------------------- quest tracker ---
-	zone_label = _label(Vector2(340, 12), 16, Color(0.95, 0.85, 0.5), 600, HORIZONTAL_ALIGNMENT_CENTER)
+	zone_label = _label(Vector2(360, 12), 16, Color(0.95, 0.85, 0.5), 560, HORIZONTAL_ALIGNMENT_CENTER)
 	UITheme.title(zone_label, 17)  # the location name is a header
-	quest_label = _label(Vector2(240, 36), 16, Color(1, 1, 1), 800, HORIZONTAL_ALIGNMENT_CENTER)
+	quest_label = _label(Vector2(360, 36), 16, Color(1, 1, 1), 560, HORIZONTAL_ALIGNMENT_CENTER)
 	# Icon row under Resonance: ✉ mail · ! quest · bag inventory · book codex · ★ daily.
 	# The quest ! wears a red/orange SHINE (glow + twinkles) when a reward waits
 	# to be claimed in the log (the weekly vault). Glow is added BEHIND the !.
 	quest_glow = Sprite2D.new()
 	quest_glow.texture = Art.tex("glow")
-	quest_glow.position = Vector2(66, 202)  # centered on the !
+	quest_glow.position = Vector2(78, 201)  # centered on the quest icon
 	quest_glow.modulate = Color(1.0, 0.42, 0.18, 0.0)
 	quest_glow.visible = false
 	add_child(quest_glow)
@@ -353,8 +385,8 @@ func _ready() -> void:
 		quest_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 		quest_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
 	quest_btn.tooltip_text = "Quest Log"
-	quest_btn.position = Vector2(50, 185)
-	quest_btn.size = Vector2(32, 30)
+	quest_btn.position = Vector2(58, HUD_ICON_Y)
+	quest_btn.size = HUD_ICON_BUTTON
 	quest_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_journal())
@@ -363,7 +395,7 @@ func _ready() -> void:
 	for off: Vector2i in [Vector2i(-9, -7), Vector2i(11, -5), Vector2i(3, 11)]:
 		var sp := Sprite2D.new()
 		sp.texture = Art.tex("glow")
-		sp.position = Vector2(66, 200) + Vector2(off)
+		sp.position = Vector2(78, 199) + Vector2(off)
 		sp.scale = Vector2(0.1, 0.1)
 		sp.modulate = Color(1.0, 0.95, 0.75, 0.0)
 		sp.visible = false
@@ -377,8 +409,8 @@ func _ready() -> void:
 	inv_btn.icon = bag_tex if bag_tex != null else Art.tex("bag")
 	inv_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	inv_btn.tooltip_text = "Inventory"
-	inv_btn.position = Vector2(84, 187)
-	inv_btn.size = Vector2(32, 30)
+	inv_btn.position = Vector2(100, HUD_ICON_Y)
+	inv_btn.size = HUD_ICON_BUTTON
 	inv_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_inventory())
@@ -389,8 +421,8 @@ func _ready() -> void:
 	codex_btn.icon = book_tex if book_tex != null else Art.tex("book")
 	codex_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	codex_btn.tooltip_text = "Codex"
-	codex_btn.position = Vector2(118, 186)
-	codex_btn.size = Vector2(32, 30)
+	codex_btn.position = Vector2(142, HUD_ICON_Y)
+	codex_btn.size = HUD_ICON_BUTTON
 	codex_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_codex())
@@ -405,8 +437,8 @@ func _ready() -> void:
 	skills_btn.icon = skill_tex if skill_tex != null else Art.tex("skills")
 	skills_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	skills_btn.tooltip_text = "Skill Tree"
-	skills_btn.position = Vector2(186, 186)
-	skills_btn.size = Vector2(32, 30)
+	skills_btn.position = Vector2(226, HUD_ICON_Y)
+	skills_btn.size = HUD_ICON_BUTTON
 	skills_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_skills())
@@ -417,12 +449,28 @@ func _ready() -> void:
 	settings_btn.icon = gear_tex if gear_tex != null else Art.tex("settings")
 	settings_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	settings_btn.tooltip_text = "Menu"
-	settings_btn.position = Vector2(220, 186)
-	settings_btn.size = Vector2(32, 30)
+	settings_btn.position = Vector2(268, HUD_ICON_Y)
+	settings_btn.size = HUD_ICON_BUTTON
 	settings_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_pause())
 	add_child(settings_btn)
+	# A session persists when its lobby panel closes, so it needs a durable way
+	# back in even for a party of one (the ally frames intentionally do not exist
+	# until another player joins). A dedicated three-adventurer icon keeps it
+	# compact and legible on desktop and in the mobile HUD.
+	party_btn = Button.new()
+	party_btn.flat = true
+	party_btn.icon = Art.ui_icon("ui_party")
+	party_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	party_btn.tooltip_text = "Party — 1/4 members"
+	party_btn.position = Vector2(310, HUD_ICON_Y)
+	party_btn.size = HUD_ICON_BUTTON
+	party_btn.visible = false
+	party_btn.pressed.connect(func() -> void:
+		if game.play_started and game.net_online() and not game.menus.is_open():
+			game.menus.open_party())
+	add_child(party_btn)
 	# Stash access moved AGAIN (capital rework 2026-07-25 §2): off the HUD row
 	# entirely — the vault coffer on the Crownfall plaza IS the stash now, so
 	# the account bank has a street address instead of a floating icon. The
@@ -521,12 +569,13 @@ func _ready() -> void:
 	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_label.add_theme_font_size_override("font_size", 19)
 	dialogue_box.add_child(text_label)
-	var dhint := Label.new()
-	dhint.position = Vector2(856, 618)
-	dhint.text = "SPACE / click ▸"
-	dhint.add_theme_font_size_override("font_size", 13)
-	dhint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	dialogue_box.add_child(dhint)
+	dialogue_hint = Label.new()
+	dialogue_hint.name = "DialogueAdvanceHint"
+	dialogue_hint.position = Vector2(856, 618)
+	dialogue_hint.text = "SPACE / click ▸"
+	dialogue_hint.add_theme_font_size_override("font_size", 13)
+	dialogue_hint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	dialogue_box.add_child(dialogue_hint)
 
 	# Speaker portrait (visual pass): the cast's face beside their words,
 	# in a reserved slot on the box's right (Crawl art faces left — into
@@ -676,20 +725,32 @@ func _build_ability_bar() -> void:
 	var x := 640.0 - (5 * 70.0 - 10.0) / 2.0
 	var y := 634.0
 	for slot in SLOTS:
-		var border := ColorRect.new()
-		border.color = Color(0.35, 0.35, 0.4)
+		# The painted icon supplies the inner medallion. This raised outer ring
+		# stays functional: it carries ready/cooldown/affordability state.
+		var border := Panel.new()
 		border.position = Vector2(x - 3, y - 3)
 		border.size = Vector2(SLOT_SIZE + 6, SLOT_SIZE + 6)
-		# PASS (not IGNORE): the border is the slot's hover target — Godot's
+		var ring_style := StyleBoxFlat.new()
+		ring_style.bg_color = Color(0.025, 0.025, 0.045, 0.96)
+		ring_style.border_color = Color(0.35, 0.35, 0.4)
+		ring_style.set_border_width_all(2)
+		ring_style.set_corner_radius_all(int((SLOT_SIZE + 6) * 0.5))
+		ring_style.shadow_color = Color(0, 0, 0, 0.75)
+		ring_style.shadow_size = 5
+		border.add_theme_stylebox_override("panel", ring_style)
+		# PASS (not IGNORE): the ring is the slot's hover target — Godot's
 		# built-in tooltip needs a non-ignoring control, and PASS still lets
 		# the click fall through to _unhandled_input (dialogue advance).
 		border.mouse_filter = Control.MOUSE_FILTER_PASS
 		_click_to_popover(border, "")
 		add_child(border)
-		var bg := ColorRect.new()
-		bg.color = Color(0.05, 0.05, 0.09, 0.9)
+		var bg := Panel.new()
 		bg.position = Vector2(x, y)
 		bg.size = Vector2(SLOT_SIZE, SLOT_SIZE)
+		var bg_style := StyleBoxFlat.new()
+		bg_style.bg_color = Color(0.05, 0.05, 0.09, 0.94)
+		bg_style.set_corner_radius_all(int(SLOT_SIZE * 0.5))
+		bg.add_theme_stylebox_override("panel", bg_style)
 		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(bg)
 		# Variant glow: a soft radial tinted by the equipped theme's colour, so
@@ -704,24 +765,29 @@ func _build_ability_bar() -> void:
 		glow.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR   # smooth gradient
 		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(glow)
-		# Ability art, centred at its NATIVE 32x32 (2026-07-17). The old box was
-		# SLOT_SIZE-16 = 44 — a 1.375x NEAREST magnification of 32px art, which
-		# duplicates pixel rows unevenly (some 1px, some 2px) and made the whole
-		# bar shimmer; the canvas_items stretch then multiplied it at 1080p. At
-		# 32 the art draws 1:1 and only the global canvas scale touches it —
-		# the same treatment every world sprite gets.
+		# The 64px production art is drawn slightly inside the status ring.
+		# Linear filtering preserves painted bevels and highlights at HUD size.
 		var icon := TextureRect.new()
-		icon.position = Vector2(x + (SLOT_SIZE - 32.0) / 2.0, y + (SLOT_SIZE - 32.0) / 2.0)
-		icon.custom_minimum_size = Vector2(32, 32)
+		icon.position = Vector2(x + 4, y + 4)
+		icon.custom_minimum_size = Vector2(SLOT_SIZE - 8, SLOT_SIZE - 8)
+		icon.size = icon.custom_minimum_size
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(icon)
-		# Cooldown "shade" that drains from top to bottom as the ability recharges.
-		var cd := ColorRect.new()
-		cd.color = Color(0.25, 0.3, 0.45, 0.75)
-		cd.position = Vector2(x, y)
-		cd.size = Vector2(SLOT_SIZE, 0)
+		# Clockwise cooldown sweep clipped to the circular icon.
+		var cd := TextureProgressBar.new()
+		cd.texture_progress = Art.ability_cooldown_mask()
+		cd.tint_progress = Color(0.025, 0.035, 0.075, 0.8)
+		cd.fill_mode = TextureProgressBar.FILL_CLOCKWISE
+		cd.min_value = 0.0
+		cd.max_value = 1.0
+		cd.step = 0.001
+		cd.value = 0.0
+		cd.position = Vector2(x + 4, y + 4)
+		cd.size = Vector2(SLOT_SIZE - 8, SLOT_SIZE - 8)
+		cd.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		cd.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(cd)
 		# Big countdown number in the middle of the slot.
@@ -729,9 +795,15 @@ func _build_ability_bar() -> void:
 		var key := _label(Vector2(x + 4, y - 1), 12, Color(0.95, 0.85, 0.5), 50)
 		var cost := _label(Vector2(x, y + SLOT_SIZE - 20), 12, Color(0.5, 0.7, 1.0), SLOT_SIZE - 5, HORIZONTAL_ALIGNMENT_RIGHT)
 		var name_l := _label(Vector2(x - 8, y + SLOT_SIZE + 4), 12, Color(1, 1, 1), SLOT_SIZE + 16, HORIZONTAL_ALIGNMENT_CENTER)
-		slot_boxes.append({"border": border, "bg": bg, "glow": glow, "icon": icon, "cd": cd, "num": num,
+		slot_boxes.append({"border": border, "ring_style": ring_style, "bg": bg, "glow": glow, "icon": icon, "cd": cd, "num": num,
 			"key": key, "cost": cost, "name": name_l, "was_ready": true, "flash_ms": 0})
 		x += 70.0
+
+
+func _set_ability_ring(box: Dictionary, color: Color) -> void:
+	var ring: StyleBoxFlat = box["ring_style"]
+	ring.border_color = color
+	ring.shadow_color = Color(color, 0.22)
 
 
 const BUFF_SLOTS := 8
@@ -1039,12 +1111,13 @@ func _build_minimap() -> void:
 	bg.size = Vector2(198, 170)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	minimap_root.add_child(bg)
-	var title := Label.new()
-	title.text = "MAP  (M)"
-	title.position = Vector2(8, 3)
-	title.add_theme_font_size_override("font_size", 12)
-	title.add_theme_color_override("font_color", Color(0.75, 0.77, 0.83))
-	minimap_root.add_child(title)
+	minimap_title = Label.new()
+	minimap_title.name = "MinimapTitle"
+	minimap_title.text = "MAP  (M)"
+	minimap_title.position = Vector2(8, 3)
+	minimap_title.add_theme_font_size_override("font_size", 12)
+	minimap_title.add_theme_color_override("font_color", Color(0.75, 0.77, 0.83))
+	minimap_root.add_child(minimap_title)
 	var legend := Label.new()
 	legend.text = "◆ here   ☠ boss   ✓ cleared"
 	legend.position = Vector2(8, 150)
@@ -1240,6 +1313,103 @@ static func _wrap_tip(text: String, width := 56) -> String:
 	return "\n".join(out)
 
 
+## Circular local-hero portrait, built as three independent layers:
+## backplate -> masked splash crop -> cosmetic border slot.
+func _build_avatar() -> void:
+	avatar_root = Control.new()
+	avatar_root.position = Vector2(4, 8)
+	avatar_root.size = Vector2(70, 70)
+	avatar_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avatar_root.z_index = 2
+	add_child(avatar_root)
+
+	var back := Panel.new()
+	var back_style := StyleBoxFlat.new()
+	back_style.bg_color = Color(0.025, 0.028, 0.04, 0.98)
+	back_style.set_corner_radius_all(35)
+	back.set_anchors_preset(Control.PRESET_FULL_RECT)
+	back.add_theme_stylebox_override("panel", back_style)
+	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avatar_root.add_child(back)
+
+	avatar_portrait = TextureRect.new()
+	avatar_portrait.position = Vector2(5, 5)
+	avatar_portrait.size = Vector2(60, 60)
+	avatar_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	avatar_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	avatar_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	avatar_portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var portrait_shader := Shader.new()
+	portrait_shader.code = """
+shader_type canvas_item;
+uniform vec4 crop_uv = vec4(0.0, 0.0, 1.0, 1.0);
+void fragment() {
+	vec2 d = UV - vec2(0.5);
+	float mask = 1.0 - smoothstep(0.475, 0.5, length(d));
+	vec2 source_uv = crop_uv.xy + UV * crop_uv.zw;
+	vec4 c = texture(TEXTURE, source_uv);
+	COLOR = vec4(c.rgb, c.a * mask);
+}
+"""
+	var portrait_mat := ShaderMaterial.new()
+	portrait_mat.shader = portrait_shader
+	avatar_portrait.material = portrait_mat
+	avatar_root.add_child(avatar_portrait)
+
+	# Stable cosmetic seam: earned static or animated borders belong under
+	# avatar_border_layer, above the face. The plain bronze ring is today's
+	# default and can simply be hidden when a reward border is equipped.
+	avatar_border_layer = Control.new()
+	avatar_border_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	avatar_border_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avatar_border_layer.set_meta("cosmetic_slot", "avatar_border")
+	avatar_root.add_child(avatar_border_layer)
+	avatar_default_border = Panel.new()
+	var border_style := StyleBoxFlat.new()
+	border_style.bg_color = Color(0, 0, 0, 0)
+	border_style.border_color = Color(0.64, 0.49, 0.25, 1.0)
+	border_style.set_border_width_all(4)
+	border_style.set_corner_radius_all(35)
+	avatar_default_border.set_anchors_preset(Control.PRESET_FULL_RECT)
+	avatar_default_border.add_theme_stylebox_override("panel", border_style)
+	avatar_default_border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avatar_border_layer.add_child(avatar_default_border)
+
+
+## Crop the current skin/class splash to its upper-center face. Splash layouts
+## share this portrait composition, so the same square crop follows class,
+## equipped skin and awakened art without maintaining six parallel thumbnails.
+func _update_avatar() -> void:
+	var art_key := _splash_for("You")
+	if art_key == _avatar_art_key:
+		return
+	_avatar_art_key = art_key
+	if art_key == "":
+		avatar_portrait.visible = false
+		return
+	var source: Texture2D = Art.tex(art_key)
+	if source == null:
+		avatar_portrait.visible = false
+		return
+	# A tight head-and-shoulders crop keeps the actual face readable at 60px.
+	var source_size := Vector2(source.get_width(), source.get_height())
+	var side := minf(source_size.x, source_size.y) * AVATAR_CROP_SCALE
+	var crop_size := Vector2(side / source_size.x, side / source_size.y)
+	var focus: Vector2 = AVATAR_FOCUS.get(game.player.cls, Vector2(0.5, 0.19))
+	var crop_origin := focus - crop_size * 0.5
+	crop_origin.x = clampf(crop_origin.x, 0.0, 1.0 - crop_size.x)
+	crop_origin.y = clampf(crop_origin.y, 0.0, 1.0 - crop_size.y)
+	var portrait_mat := avatar_portrait.material as ShaderMaterial
+	portrait_mat.set_shader_parameter(
+		"crop_uv",
+		Vector4(crop_origin.x, crop_origin.y, crop_size.x, crop_size.y))
+	# Feed the original texture to the shader. AtlasTexture rewrites UV into
+	# atlas space before the canvas shader sees it, which made the old circular
+	# mask offset and left square corners visible.
+	avatar_portrait.texture = source
+	avatar_portrait.visible = true
+
+
 func _panel(pos: Vector2, panel_size: Vector2) -> void:
 	var bg := ColorRect.new()
 	bg.color = Color(0, 0, 0, 0.45)
@@ -1376,6 +1546,22 @@ func _set_fill(fill: ColorRect, fraction: float) -> void:
 	fill.size.x = maxf(0.0, fill.get_meta("full_w") * clampf(fraction, 0.0, 1.0))
 
 
+## Pack the conditional tail of the top-left icon row. The daily reward and
+## party controls come and go; fixed x slots left a conspicuous empty cell
+## whenever either was hidden.
+func _layout_hud_icons() -> void:
+	var next_x := 184.0  # mail, quest, bag and codex always occupy 16..142
+	if daily_btn.visible:
+		daily_btn.position.x = next_x
+		next_x += HUD_ICON_STEP
+	skills_btn.position.x = next_x
+	next_x += HUD_ICON_STEP
+	settings_btn.position.x = next_x
+	next_x += HUD_ICON_STEP
+	if party_btn.visible:
+		party_btn.position.x = next_x
+
+
 # ----------------------------------------------------------- API used by game
 
 ## One endgame-mode HUD icon: a flat glyph button that opens a confirm (your
@@ -1419,14 +1605,22 @@ func update_stats(p: Player) -> void:
 		vignette.modulate = Color(1, 1, 1)
 	_set_fill(hp_fill, hp_frac)
 	_set_fill(xp_fill, float(p.xp) / float(p.xp_needed()))
-	var cls_name: String = Classes.CLASSES[p.cls]["name"]
+	_update_avatar()
+	var identity: String = Classes.CLASSES[p.cls]["name"]
+	var hero_name := String(p.char_name).strip_edges()
+	if hero_name == "":
+		var sess := get_node_or_null("/root/NetworkManager/Session")
+		hero_name = String(sess.os_name()).strip_edges() if sess != null else ""
+	if hero_name == "":
+		hero_name = "Hero"
+	identity = hero_name + ", " + identity
 	if game.player_title != "" and Achievements.TITLES.has(game.player_title):
-		# The worn title rides the class name (codex Records tab to change).
-		cls_name += ", %s" % String(Achievements.TITLES[game.player_title]["name"])
-	var pts := "  (+%d pts, press T)" % p.skill_points if p.skill_points > 0 else ""
+		# Identity remains one readable chain: name, class, earned title, level.
+		identity += ", %s" % String(Achievements.TITLES[game.player_title]["name"])
+	var pts := "  (+%d pts, open Skills)" % p.skill_points if p.skill_points > 0 else ""
 	# Current/max lives INSIDE each bar now (theme pass) — the text line
 	# under them keeps class, level and the skill-point nudge.
-	stats_label.text = "%s  Lv %d%s" % [cls_name, p.level, pts]
+	stats_label.text = "%s, Lv %d%s" % [identity, p.level, pts]
 	hp_text.text = "%d / %d" % [int(p.hp), int(p.max_hp)]
 	if Classes.CLASSES[p.cls].get("manaless", false):
 		# Manaless classes (assassin, round 31): no MP number, no blue bar.
@@ -1435,7 +1629,9 @@ func update_stats(p: Player) -> void:
 	else:
 		mp_text.text = "%d / %d" % [int(p.mp), int(p.max_mp)]
 		_set_fill(mp_fill, p.mp / p.max_mp)
-	gold_label.text = "◉ %d gold    Potions [%s] x%d" % [p.gold, OS.get_keycode_string(game.binds["potion"]), p.potion_count()]
+	gold_label.text = ("◉ %d gold    Potions x%d" % [p.gold, p.potion_count()]) if game.touch_mode \
+		else "◉ %d gold    Potions [%s] x%d" % [
+			p.gold, OS.get_keycode_string(game.binds["potion"]), p.potion_count()]
 	if p.gold >= 5000:
 		game.unlock_achievement("wealthy")  # idempotent: fires once
 	cr_label.text = "Combat Rating: %d" % p.combat_rating()
@@ -1458,6 +1654,17 @@ func update_stats(p: Player) -> void:
 	crucible_btn.visible = eg_show
 	depths_btn.visible = eg_show
 
+	# The party chip is the persistent session affordance. It stays present for
+	# a lone host, unlike ally frames, and names the occupied seats at a glance.
+	party_btn.visible = game.play_started and game.net_online()
+	if party_btn.visible:
+		var party_sess: Node = get_node_or_null("/root/NetworkManager/Session")
+		var party_count := 1
+		if party_sess != null:
+			var party_roster: Dictionary = party_sess.lobby_roster()
+			party_count = maxi(1, party_roster.size())
+		party_btn.tooltip_text = "Party — %d/%d members" % [party_count, PARTY_MAX + 1]
+
 	# Daily star: visible only when a reward waits, with a pulsing golden
 	# shine behind it to catch the eye.
 	daily_btn.visible = game.daily_available()
@@ -1469,6 +1676,7 @@ func update_stats(p: Player) -> void:
 		# Shine: the glow breathes in size and brightness under the star.
 		daily_glow.modulate = Color(1.0, 0.88, 0.4, 0.25 + 0.4 * pulse)
 		daily_glow.scale = Vector2.ONE * (0.5 + 0.16 * pulse)
+	_layout_hud_icons()
 
 	# Quest icon shine: a red/orange pulse + twinkles when the log is worth
 	# opening — a claimable weekly vault, OR a side quest somebody in this
@@ -1505,7 +1713,7 @@ func update_stats(p: Player) -> void:
 		var box: Dictionary = slot_boxes[i]
 		if slot == "potion":
 			box["key"].text = OS.get_keycode_string(game.binds["potion"])
-			box["cd"].size.y = 0.0
+			box["cd"].value = 0.0
 			box["cost"].text = ""
 			# The potion isn't a variant — a dim neutral glow, matching a bare
 			# ability slot, so it doesn't sit at the default full-white texture.
@@ -1518,32 +1726,35 @@ func update_stats(p: Player) -> void:
 				box["name"].text = "Potion ▸%d" % active_left if left > 0 else "Spent"
 				box["num"].text = "x%d" % p.potion_count()
 				box["icon"].texture = Art.tex("potion")
-				box["border"].color = (Color(0.75, 0.35, 0.35) if p.potion_count() > 0 else Color(0.3, 0.15, 0.15)) \
-					if left > 0 else Color(0.18, 0.12, 0.12)
+				_set_ability_ring(box,
+					(Color(0.75, 0.35, 0.35) if p.potion_count() > 0 else Color(0.3, 0.15, 0.15)) \
+					if left > 0 else Color(0.18, 0.12, 0.12))
 				box["border"].set_meta("tip", _wrap_tip(
-					"Health Potion — mends 15%% of your MISSING health (x%d carried — bought from merchants, each takes a bag slot, so BAG SPACE is your only stock limit; the price grows with your LEVEL). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. [%s] cycles the loadout; open the inventory and click a potion stack to plan it." % [
+					"Health Potion — mends 15%% of your MISSING health (x%d carried — bought from merchants, each takes a bag slot, so BAG SPACE is your only stock limit; the price grows with your LEVEL). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. %s cycles the loadout; open the inventory and select a potion stack to plan it." % [
 						p.potion_count(),
 						left, p.potion_slot_cap(),
-						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]))
+						game.control_hint("potion_next", "↻")]))
 			else:
 				var cnt := p.consumable_count(p.active_potion)
 				box["name"].text = ("%s ▸%d" % ["Mana" if p.active_potion == "mana_potion" else "Might", active_left]) if left > 0 else "Spent"
 				box["num"].text = "x%d" % cnt
 				var ic: Texture2D = Art.consumable_icon({"id": p.active_potion})
 				box["icon"].texture = ic if ic != null else Art.tex("potion")
-				box["border"].color = (Color(0.4, 0.6, 0.95) if cnt > 0 else Color(0.15, 0.2, 0.35)) \
-					if left > 0 else Color(0.18, 0.12, 0.12)
+				_set_ability_ring(box,
+					(Color(0.4, 0.6, 0.95) if cnt > 0 else Color(0.15, 0.2, 0.35)) \
+					if left > 0 else Color(0.18, 0.12, 0.12))
 				box["border"].set_meta("tip", _wrap_tip(
-					"%s — slotted in your loadout (x%d carried). ROOM BUDGET: %d of %d slots left this room. [%s] cycles the loadout." % [
+					"%s — slotted in your loadout (x%d carried). ROOM BUDGET: %d of %d slots left this room. %s cycles the loadout." % [
 						p.potion_display_name(p.active_potion), cnt,
 						left, p.potion_slot_cap(),
-						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]))
+						game.control_hint("potion_next", "↻")]))
 			_fit_name(box["name"], row_fs)
 			continue
 		var ab := Classes.ability(p.cls, slot)
-		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
+		var theme_id: String = p.ability_theme.get(slot, "")
+		var theme := Classes.theme_by_id(p.cls, theme_id)
 		var tcol: Color = theme.get("color", Color(0.85, 0.85, 0.92))
-		box["icon"].texture = Art.ability_icon(p.cls, slot, tcol)
+		box["icon"].texture = Art.ability_icon(p.cls, slot, tcol, theme_id)
 		# Variant glow behind the icon: the equipped theme's colour when one is
 		# chosen, a dim neutral when the slot is still bare (paladin's ult
 		# overrides this below to follow its stance).
@@ -1556,7 +1767,7 @@ func update_stats(p: Player) -> void:
 		# untinted (Art.ability_icon), so the color moves to the ability NAME —
 		# the same place the skills menu already shows it (menus.gd _btn font).
 		box["name"].add_theme_color_override("font_color",
-			tcol if Art.has_ability_art(p.cls, slot) else Color(1, 1, 1))
+			tcol if Art.has_ability_art(p.cls, slot, theme_id) else Color(1, 1, 1))
 		box["cost"].text = _fmt_cost(cost) if cost > 0 else ""
 		# Paladin's ult is a STANCE SWAP, not a nuke — the slot itself reads out
 		# the form you're in RIGHT NOW (Conviction toggles it), so you never have
@@ -1572,7 +1783,7 @@ func update_stats(p: Player) -> void:
 			# The stance still reads off the NAME ("◆ HOLY" in gold) either way;
 			# only the 2-color glyph gets the stance modulate, for the same
 			# reason ability_icon() leaves hand art untinted.
-			box["icon"].modulate = Color(1, 1, 1) if Art.has_ability_art(p.cls, slot) else scol
+			box["icon"].modulate = Color(1, 1, 1) if Art.has_ability_art(p.cls, slot, theme_id) else scol
 		elif box["icon"] != null:
 			box["icon"].modulate = Color(1, 1, 1)
 		_fit_name(box["name"], row_fs)
@@ -1584,7 +1795,6 @@ func update_stats(p: Player) -> void:
 			tip += "  ·  %s mana" % _fmt_cost(cost)
 		tip += "  ·  %.1fs cooldown" % p.ability_cd(slot)
 		tip += "\n" + String(ab["desc"])
-		var theme_id: String = p.ability_theme.get(slot, "")
 		if theme_id != "":
 			var vdesc := Classes.variant_desc(p.cls, slot, theme_id)
 			if vdesc != "":
@@ -1596,7 +1806,7 @@ func update_stats(p: Player) -> void:
 		var remaining: float = p.cds[slot]
 		var max_cd: float = p.ability_cd(slot)
 		var frac: float = clampf(remaining / max_cd, 0.0, 1.0)
-		box["cd"].size.y = SLOT_SIZE * frac
+		box["cd"].value = frac
 		var ready := remaining <= 0.0
 		var can_afford: bool = p.mp >= cost
 
@@ -1612,15 +1822,15 @@ func update_stats(p: Player) -> void:
 		box["was_ready"] = ready
 
 		if now_ms < box["flash_ms"]:
-			box["border"].color = Color(1, 1, 1)
+			_set_ability_ring(box, Color(1, 1, 1))
 		elif not ready:
-			box["border"].color = Color(0.28, 0.28, 0.33)
+			_set_ability_ring(box, Color(0.28, 0.28, 0.33))
 		elif not can_afford:
-			box["border"].color = Color(0.3, 0.4, 0.8)   # ready but not enough mana
+			_set_ability_ring(box, Color(0.3, 0.4, 0.8))   # ready but not enough mana
 		elif slot == "ult":
-			box["border"].color = Color(1.0, 0.65, 0.15)  # ultimate ready: orange
+			_set_ability_ring(box, Color(1.0, 0.65, 0.15))  # ultimate ready: orange
 		else:
-			box["border"].color = Color(0.85, 0.75, 0.35) # ready: gold
+			_set_ability_ring(box, Color(0.85, 0.75, 0.35)) # ready: gold
 
 
 func set_zone(text: String) -> void:
@@ -1629,10 +1839,8 @@ func set_zone(text: String) -> void:
 
 func set_quest(text: String) -> void:
 	quest_label.text = "◆  " + game.touchify(text)
-	# The longest quest line + " — N monsters left" can exceed the 800px rect;
-	# the rect grows RIGHT from x=240, drifting the line off the 640 center.
-	# Re-clamp against the new text and re-pin the center.
-	quest_label.size = Vector2(800, 30)
+	# Keep the tracker clear of the wider player bars while pinning it to center.
+	quest_label.size = Vector2(560, 30)
 	quest_label.position.x = 640.0 - quest_label.size.x * 0.5
 
 
@@ -1685,8 +1893,7 @@ func _update_down_ui(p: Player) -> void:
 		return  # solo: nothing was ever built, nothing to hide
 	_ensure_down_ui()
 	if online and p.downed:
-		var tail := "  (an ally can hold [%s] beside you)" \
-			% OS.get_keycode_string(game.binds["interact"])
+		var tail := "  (an ally can revive you from nearby)"
 		if p.being_revived_by != 0:
 			tail = "  — an ally is reviving you!"
 		down_banner.text = "DOWNED — %d s%s" % [int(ceil(p.down_t)), tail]
@@ -1867,7 +2074,8 @@ func _ensure_chat() -> void:
 	chat_input = LineEdit.new()
 	chat_input.custom_minimum_size = Vector2(360, 30)
 	chat_input.position = Vector2(0, -200)
-	chat_input.placeholder_text = "party chat…  (ENTER sends · ESC closes)"
+	chat_input.placeholder_text = "party chat…  (Return sends · tap outside closes)" if game.touch_mode \
+		else "party chat…  (ENTER sends · ESC closes)"
 	chat_input.max_length = 120
 	chat_input.visible = false
 	chat_input.text_submitted.connect(_on_chat_submit)
@@ -2398,19 +2606,23 @@ func _boss_splash_intro(bname: String) -> void:
 	var layer := Control.new()
 	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.clip_contents = true
 	layer.z_index = 90
 	add_child(layer)
 	# CQ-style presentation (owner 2026-07-25): the art COVERS the screen,
-	# exactly like the dialogue box's splash layer — aspect-cover crop, not
-	# a floating card. A light scrim keeps the name readable.
+	# but the cover crop is biased toward the painting's top so tall helmets
+	# and heads stay in frame. A light scrim keeps the name readable.
 	var art := TextureRect.new()
 	art.texture = Art.tex(art_key)
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	art.stretch_mode = TextureRect.STRETCH_SCALE
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	art.position = Vector2.ZERO
-	art.size = Vector2(1280, 720)
-	art.pivot_offset = art.size / 2.0
+	var art_rect := _boss_splash_cover_rect(art.texture.get_size(), Vector2(1280, 720))
+	art.position = art_rect.position
+	art.size = art_rect.size
+	# Zoom from the painting's top-center. A centered pivot would briefly crop
+	# farther into the top during the 1.06 -> 1.0 settle and undo the headroom.
+	art.pivot_offset = Vector2(art.size.x * 0.5, 0.0)
 	art.scale = Vector2(1.06, 1.06)
 	layer.add_child(art)
 	var scrim := ColorRect.new()
@@ -2436,6 +2648,22 @@ func _boss_splash_intro(bname: String) -> void:
 	tw.tween_interval(0.95)
 	tw.tween_property(layer, "modulate:a", 0.0, 0.4)
 	tw.tween_callback(layer.queue_free)
+
+
+## Aspect-cover `texture_size` over `target_size`, keeping the crop centered
+## horizontally and top-weighted vertically. Returning the explicit draw rect
+## gives TextureRect the focal control that STRETCH_KEEP_ASPECT_COVERED lacks.
+func _boss_splash_cover_rect(texture_size: Vector2, target_size: Vector2) -> Rect2:
+	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+		return Rect2(Vector2.ZERO, target_size)
+	var cover_scale: float = maxf(
+		target_size.x / texture_size.x,
+		target_size.y / texture_size.y)
+	var draw_size := texture_size * cover_scale
+	var overflow := draw_size - target_size
+	return Rect2(
+		Vector2(-overflow.x * 0.5, -overflow.y * BOSS_SPLASH_CROP_FROM_TOP),
+		draw_size)
 
 
 func update_boss_bar(fraction: float) -> void:
@@ -3097,6 +3325,13 @@ func _advance_dialogue() -> void:
 ## via _touch_mode so a cutscene end can't re-show the hints on a phone.
 func set_touch_mode(on: bool) -> void:
 	_touch_mode = on
+	if dialogue_hint != null:
+		dialogue_hint.text = "TAP ▸" if on else "SPACE / click ▸"
+	if minimap_title != null:
+		minimap_title.text = "MAP" if on else "MAP  (M)"
+	if chat_input != null:
+		chat_input.placeholder_text = "party chat…  (Return sends · tap outside closes)" if on \
+			else "party chat…  (ENTER sends · ESC closes)"
 	for l in hint_labels:
 		l.visible = not on
 	for box in slot_boxes:

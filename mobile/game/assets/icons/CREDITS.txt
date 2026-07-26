@@ -35,13 +35,23 @@ border already carries the buff color. Same pack + terms; gamma 0.78.
   buff_blood.png — fb607 (red heart + star)    -> Dark Pact / Blood Surge
   buff_speed.png — fb635 (running figure)      -> Fleet / Nimble / Tailwind
 
-HUD navigation icons (hud.gd left icon row, via Art.ui_icon), same pack
-+ terms; fit to 24px. Procedural fallbacks live in art.gd (_make_bag /
-_make_book) if a file is ever missing.
-  ui_bag.png   — fb305 (loot sack)  -> Inventory button
-  ui_book.png  — fb97  (red book)   -> Codex button
-  ui_quest.png — fb301 (scroll)     -> Quest Log button (glyph "!" fallback)
-  ui_daily.png — fb12  (gold star)  -> Daily reward button (glyph "★" fallback)
+HUD navigation icons (hud.gd left icon row, via Art.ui_icon) are Crownless
+originals generated for this project with OpenAI's built-in image generation
+tool, then chroma-keyed, hard-alpha reduced, palette-quantised and fitted to
+31x31. No third-party attribution is required. Procedural fallbacks remain in
+art.gd if a file is missing.
+  ui_mail.png     — sealed parchment envelope + crimson wax -> Mailbox
+  ui_quest.png    — rolled parchment + crimson ribbon       -> Quest Log
+  ui_bag.png      — weathered leather satchel + brass clasp  -> Inventory
+  ui_book.png     — red leather codex + gold fittings        -> Codex
+  ui_daily.png    — gold star medal + pale central gem       -> Daily reward
+  ui_skills.png   — pale-blue branching talent nodes         -> Skill Tree
+  ui_settings.png — forged steel cog                         -> Menu
+  ui_party.png    — three adventurer busts                   -> Party
+
+../../icon.png — Crownless/Emberfall desktop application icon; Crownless
+  original generated with OpenAI's built-in image generation tool. Ember-flame
+  sigil rising through a cracked crown-like iron ring on a dark plum tile.
 
 buff_damp.png — Crownless original (hand-drawn water droplet, not Raven);
   marks the DAMP status effect (river-wading move-speed debuff).
@@ -97,3 +107,11 @@ any subset can be pulled without breaking anything.
   Two icons were cut down from their renders on purpose: archer_ult and mage_a1
   each came with a ground-impact burst below the subject. Real art, but it
   smears to a grey bar at 24px AND steals pixels from the thing that reads.
+
+Ability theme variants (2026-07-25)
+  Files: ability_<class>_<slot>_<theme>.png (72 icons)
+  Source: original project artwork generated with Codex's built-in image tool;
+          no third-party source material or trademarks.
+  Masters and prompt notes:
+          art_src/ability_icons_generated/variants/
+  License: Crownless project asset.

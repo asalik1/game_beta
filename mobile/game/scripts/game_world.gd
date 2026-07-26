@@ -1909,6 +1909,8 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	var hpx := float(spr.texture.get_height()) * bscale
 	var wpx := float(spr.texture.get_width()) * bscale
 	spr.position = Vector2(0, -hpx * 0.5 + 12.0)
+	spr.set_meta("occlusion_sort_y", pos.y)
+	spr.add_to_group("structure_occluders")
 	body.add_child(spr)
 	var cs := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
@@ -2068,11 +2070,14 @@ func _add_backdrop(name: String, pos: Vector2, target_w: float) -> Node2D:
 	var visual: Node2D = _structure_sprite(
 		String(def.get("sprite", name)), target_w, false)
 	var height: float = float(visual.get_meta("hpx"))
-	visual.position = Vector2(0, -height * 0.5 + 12.0)
+	visual.position = Vector2(
+		float(def.get("visual_x", 0.0)), -height * 0.5 + 12.0)
 	var bprobe: Texture2D = Art.tex(String(def.get("sprite", name)))
 	if bprobe != null:
 		visual.position.y += float(_art_pad_bottom(bprobe, String(def.get("sprite", name)))) \
 			* (height / maxf(1.0, float(bprobe.get_height())))
+	visual.set_meta("occlusion_sort_y", pos.y)
+	visual.add_to_group("structure_occluders")
 	layer.add_child(visual)
 	# The silhouette's authored base strip (owner report 2026-07-25): the
 	# room walls were supposed to own this edge but don't reach it — without
@@ -2128,11 +2133,16 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	var bw: float = base_spr.get_meta("wpx")
 	var bh: float = base_spr.get_meta("hpx")
 	base_spr.flip_h = def.get("mirror", false) and (int(pos.x) + int(pos.y)) % 2 == 1
-	base_spr.position = Vector2(0, -bh * 0.5 + 12.0)
+	# A one-time horizontal crop offset preserves the exact old art centre for
+	# sources whose removed left/right margins were asymmetric.
+	base_spr.position = Vector2(
+		float(def.get("visual_x", 0.0)), -bh * 0.5 + 12.0)
 	var probe_tex: Texture2D = Art.tex(String(def.get("sprite", name)))
 	if probe_tex != null:
 		base_spr.position.y += float(_art_pad_bottom(probe_tex, String(def.get("sprite", name)))) \
 			* (bh / maxf(1.0, float(probe_tex.get_height())))
+	base_spr.set_meta("occlusion_sort_y", pos.y)
+	base_spr.add_to_group("structure_occluders")
 	body.add_child(base_spr)
 	var target_w: float = float(def.get("w", 180.0))
 

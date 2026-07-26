@@ -1003,7 +1003,7 @@ func _guest_boss_gone() -> void:
 # Ground tells are the co-op dodging language: the host broadcasts the
 # same parameters its own telegraph renders from (game_base hooks), and
 # guests re-enter the SAME functions flagged net_visual — full visuals
-# (pulse, sword/fireball, beacons, decoys, dread ramp), zero damage.
+# (pulse, boss-specific falling objects, beacons, decoys, dread ramp), zero damage.
 
 ## HOST -> GUESTS: a danger telegraph formed (game_base.telegraph).
 func host_telegraph(pos: Vector2, radius: float, delay: float, opts: Dictionary) -> void:

@@ -4,8 +4,7 @@ Generated source sheets live in ``art_src/capital_polish``.  This script:
 
 * turns the generated 2x2 Hearthworks storyboard into one stable four-frame
   horizontal strip (only the fire pixels vary);
-* normalizes the generated bench and vault chest onto transparent 512px
-  production canvases; and
+* normalizes and tight-crops the generated bench and vault chest; and
 * animates the baked fire regions of Crownfall's existing large structures,
   allowing the old nested flame decals to be removed.
 
@@ -19,6 +18,8 @@ import math
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageFilter
+
+from tight_crop import crop_family, save_png
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -44,6 +45,26 @@ FIRE_RECTS: dict[str, list[tuple[int, int, int, int]]] = {
         (468, 334, 510, 390),
     ],
 }
+
+# Original 512px-canvas crop origins. Once the canonical sprites have been
+# tight-cropped, shift the authored fire sockets back into local coordinates.
+# A legacy untrimmed input still uses the original coordinates unchanged.
+FIRE_CROP_ORIGINS: dict[str, tuple[int, int]] = {
+    "capital_emberward_gate": (11, 56),
+    "capital_portal_crucible": (24, 86),
+    "capital_ashfire_forge": (19, 73),
+    "capital_ashen_tankard": (15, 68),
+    "capital_wildfang_fangmoot": (19, 65),
+    "capital_accord_longhouse": (6, 102),
+    "capital_sable_hall": (12, 52),
+    "capital_watchtower": (69, 33),
+    "capital_proving_gate": (10, 82),
+}
+
+# The Story Gate's blue fire occupies the open centre of its tight-cropped
+# source.  Keep this separate from FIRE_RECTS: the portal's blue masonry runes
+# must remain perfectly still while only the flame and its loose sparks move.
+STORY_FIRE_RECT = (170, 185, 276, 366)
 
 
 def _fit_subject(image: Image.Image, pad: int = 18) -> Image.Image:
@@ -90,11 +111,18 @@ def _warm_mask(
 
 
 def _write_strip(frames: list[Image.Image], output: Path) -> None:
-    strip = Image.new("RGBA", (CANVAS * len(frames), CANVAS), (0, 0, 0, 0))
+    frame_width, frame_height = frames[0].size
+    if any(frame.size != (frame_width, frame_height) for frame in frames):
+        raise ValueError("animation frames must share one tight-cropped size")
+    strip = Image.new(
+        "RGBA",
+        (frame_width * len(frames), frame_height),
+        (0, 0, 0, 0),
+    )
     for index, frame in enumerate(frames):
-        strip.alpha_composite(frame, (index * CANVAS, 0))
+        strip.alpha_composite(frame, (index * frame_width, 0))
     output.parent.mkdir(parents=True, exist_ok=True)
-    strip.save(output, optimize=True)
+    save_png(strip, output)
 
 
 def _build_generated_hearth() -> None:
@@ -182,12 +210,115 @@ def _animated_fire_frame(
     return frame
 
 
+def _blue_fire_mask(image: Image.Image) -> Image.Image:
+    """Select the Story Gate's blue flame without catching its fixed runes."""
+    rgba = image.convert("RGBA")
+    px = rgba.load()
+    mask = Image.new("L", rgba.size, 0)
+    selected = mask.load()
+    left, top, right, bottom = STORY_FIRE_RECT
+    for y in range(top, min(rgba.height, bottom)):
+        for x in range(left, min(rgba.width, right)):
+            red, green, blue, alpha = px[x, y]
+            if (
+                alpha > 20
+                and blue > 105
+                and blue > red * 1.18
+                and blue > green * 1.03
+            ):
+                selected[x, y] = 255
+    return mask
+
+
+def _animated_blue_fire_frame(
+    static: Image.Image,
+    fire_mask: Image.Image,
+    phase: int,
+) -> Image.Image:
+    """Sway and breathe the Story Gate flame while its stone stays locked."""
+    frame = static.copy()
+    src = static.load()
+    dst = frame.load()
+    selected = fire_mask.load()
+    left, top, right, bottom = STORY_FIRE_RECT
+    base_y = bottom - 1
+
+    # Remove only the selected flame pixels. The socket behind the upper flame
+    # is transparent; its grounded bottom remains fixed so no pedestal pixels
+    # can be exposed by the deformation.
+    for y in range(top, bottom):
+        for x in range(left, right):
+            if selected[x, y] and y < base_y - 13:
+                dst[x, y] = (0, 0, 0, 0)
+
+    vertical_scale = [0.94, 1.06, 0.98, 0.88][phase]
+    sway = [-5.0, 2.0, 6.0, -1.0][phase]
+    curve = [2.0, -2.5, 1.5, 3.0][phase]
+    brightness = [0.96, 1.08, 1.0, 0.90][phase]
+
+    # Inverse-map each output row so stretching never leaves horizontal gaps.
+    for out_y in range(top, base_y - 12):
+        src_y = round(base_y - (base_y - out_y) / vertical_scale)
+        if src_y < top or src_y >= base_y - 12:
+            continue
+        height_t = (base_y - src_y) / max(1.0, base_y - top)
+        row_shift = round(
+            sway * height_t
+            + curve * math.sin((base_y - src_y) * 0.105 + phase * 1.4)
+        )
+        for out_x in range(left, right):
+            src_x = out_x - row_shift
+            if src_x < left or src_x >= right or not selected[src_x, src_y]:
+                continue
+            red, green, blue, alpha = src[src_x, src_y]
+            flicker = brightness * (
+                0.94 + 0.08 * math.sin(src_y * 0.23 + phase * math.pi / 2)
+            )
+            dst[out_x, out_y] = (
+                min(255, round(red * flicker)),
+                min(255, round(green * flicker)),
+                min(255, round(blue * (0.98 + (flicker - 1.0) * 0.35))),
+                alpha,
+            )
+    return frame
+
+
+def _build_story_portal() -> None:
+    """Build the blue Story Gate's four-frame integrated flame strip."""
+    name = "capital_portal_story"
+    static = Image.open(SPRITES / f"{name}.png").convert("RGBA")
+    mask = _blue_fire_mask(static)
+    if mask.getbbox() is None:
+        raise ValueError(f"{name} fire socket selected no pixels")
+    frames = [_animated_blue_fire_frame(static, mask, phase) for phase in range(4)]
+    _write_strip(frames, SPRITES / f"{name}_anim.png")
+    changed = [
+        sum(
+            1
+            for pixel in ImageChops.difference(frame, static).get_flattened_data()
+            if pixel != (0, 0, 0, 0)
+        )
+        for frame in frames
+    ]
+    print(f"{name}: integrated blue fire changed pixels {changed}")
+
+
 def _build_existing_fire_structures() -> None:
     for name, rects in FIRE_RECTS.items():
         static = Image.open(SPRITES / f"{name}.png").convert("RGBA")
+        local_rects = rects
         if static.size != (CANVAS, CANVAS):
-            raise ValueError(f"{name} must remain a 512x512 capital structure")
-        mask = _warm_mask(static, rects)
+            origin_x, origin_y = FIRE_CROP_ORIGINS[name]
+            local_rects = [
+                (
+                    left - origin_x,
+                    top - origin_y,
+                    right - origin_x,
+                    bottom - origin_y,
+                )
+                for left, top, right, bottom in rects
+            ]
+        mask = _warm_mask(static, local_rects)
         if mask.getbbox() is None:
             raise ValueError(f"{name} fire socket selected no pixels")
         frames = [_animated_fire_frame(static, mask, phase) for phase in range(4)]
@@ -207,6 +338,10 @@ def main() -> None:
     _build_generated_hearth()
     _build_generated_props()
     _build_existing_fire_structures()
+    _build_story_portal()
+    for path in sorted(SPRITES.glob("capital_*.png")):
+        if not path.stem.endswith("_anim"):
+            crop_family(path)
     print("Capital polish assets built.")
 
 

@@ -94,7 +94,7 @@ static func build(m: Menus, root: Control) -> void:
 			if covers.size() > 1:
 				_cycle(root, tr, covers)
 			_wordmark(root)
-			_prompt(root)
+			_prompt(root, m.game)
 			return
 
 	# ---- procedural set -------------------------------------------
@@ -168,7 +168,7 @@ static func build(m: Menus, root: Control) -> void:
 	spin.tween_property(orbit, "rotation", TAU, 14.0).as_relative()
 
 	_wordmark(root)
-	_prompt(root)
+	_prompt(root, m.game)
 
 
 ## CROWNLESS / The Hollow King — drawn on BOTH the procedural set and the
@@ -202,11 +202,11 @@ static func _wordmark(root: Control) -> void:
 	root.add_child(sub)
 
 
-## The blinking "press any key" line — drawn on both procedural and
-## hand-made covers.
-static func _prompt(root: Control) -> void:
+## Platform-aware entry prompt, drawn on both procedural and hand-made covers.
+static func _prompt(root: Control, game: Game) -> void:
 	var p := Label.new()
-	p.text = "—  press any key  —"
+	p.name = "CoverPrompt"
+	p.text = game.ui_copy("—  press any key  —")
 	p.position = Vector2(0, 636)
 	p.size = Vector2(1280, 30)
 	p.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

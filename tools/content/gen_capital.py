@@ -101,12 +101,12 @@ LANDMARKS = {
 # carry one).
 # tuple: (sprite id, x, y, authored width)
 BACKDROPS = {
-    "plaza": [("capital_city_arcade", 1056, 405, 1680)],
-    "tankard": [("capital_city_arcade", 1056, 405, 1680)],
-    "archive": [("capital_city_arcade", 1056, 405, 1680)],
-    "gate": [("capital_city_arcade", 1056, 405, 1680)],
-    "acc_commons": [("capital_city_arcade", 1056, 405, 1680)],
-    "cin_court": [("capital_city_arcade", 1056, 405, 1680)],
+    "plaza": [("capital_city_arcade", 1056, 405, 1653.75)],
+    "tankard": [("capital_city_arcade", 1056, 405, 1653.75)],
+    "archive": [("capital_city_arcade", 1056, 405, 1653.75)],
+    "gate": [("capital_city_arcade", 1056, 405, 1653.75)],
+    "acc_commons": [("capital_city_arcade", 1056, 405, 1653.75)],
+    "cin_court": [("capital_city_arcade", 1056, 405, 1653.75)],
 }
 
 # Exact supporting furniture: deliberate social placements only.
@@ -284,7 +284,9 @@ SLOTS = [(CX, CY+190), (CX-360, CY+90), (CX+360, CY+90), (CX-560, CY-140),
          (CX+560, CY-140), (CX, CY+220)]
 NPC_SLOT_OVERRIDES = {
     # Plaza stations sit in front of the landmark each NPC owns.
-    "plaza": [(1290, 830), (470, 700), (1640, 700), (1240, 580), (830, 830), (1056, 950)],
+    # Petra and the Lapidary stand outside the two south-stall roof spans.
+    # Their old x=470/1640 positions put their bodies behind the awnings.
+    "plaza": [(1290, 830), (300, 700), (1810, 700), (1240, 580), (830, 830), (1056, 950)],
     "tankard": [(1056, 814), (650, 650)],
     "gate": [(1056, 814)],
     "wf_moot": [(720, 650), (1390, 650)],
@@ -334,7 +336,8 @@ def gd_zone(i, room):
     ]
     lines.append('\t\t"furnishings": [%s],' % ", ".join(furnishing_lines))
     backdrop_lines = [
-        '{"name": "%s", "x": %d, "y": %d, "w": %d}' % item
+        '{"name": "%s", "x": %d, "y": %d, "w": %s}' %
+        (item[0], item[1], item[2], item[3])
         for item in BACKDROPS.get(rid, [])
     ]
     lines.append('\t\t"backdrops": [%s],' % ", ".join(backdrop_lines))

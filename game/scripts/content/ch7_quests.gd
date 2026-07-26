@@ -54,9 +54,9 @@ const SIDE_QUESTS := {
 }
 
 const QUEST_ITEMS := {
-	"ch7_void_letter": {"name": "A Sealed Letter", "grade": "C",
+	"ch7_void_letter": {"name": "A Sealed Letter", "icon": "ch7_void_letter", "grade": "C",
 		"desc": "Addressed in a hand that makes the shard flinch: TO SOMEONE WHO WILL REMEMBER. The seal is unbroken. Keep it that way — that is the entire job."},
-	"ch7_korrag_token": {"name": "Speaker's Shift-Token", "grade": "C",
+	"ch7_korrag_token": {"name": "Speaker's Shift-Token", "icon": "ch7_korrag_token", "grade": "C",
 		"desc": "Storm-iron, thumb-polished, passed warm at every relay change for six hundred years. The order's last. Owed, long since, to a cairn on the downs."},
 }
 

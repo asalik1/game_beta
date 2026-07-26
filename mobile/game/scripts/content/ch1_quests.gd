@@ -41,10 +41,10 @@ const SIDE_QUESTS := {
 }
 
 const QUEST_ITEMS := {
-	"osla_pouch": {"name": "Osla's Coin Pouch",
+	"osla_pouch": {"name": "Osla's Coin Pouch", "icon": "osla_pouch",
 		"desc": "What a tinker owes a dead smith, counted twice and tied with waxed cord. Bound for the Hollow Oak's offering hollow — the old wood keeps the accounts now.",
 		"grade": "C"},
-	"pine_stick": {"name": "Stick of Pine",
+	"pine_stick": {"name": "Stick of Pine", "icon": "pine_stick",
 		"desc": "Cut for burning at hearths the blight has touched. It does nothing, the scholars say. The pilgrim gave you the good one.",
 		"grade": "C"},
 }

@@ -47,9 +47,9 @@ const SIDE_QUESTS := {
 }
 
 const QUEST_ITEMS := {
-	"vale_bread": {"name": "Fenna's Loaf", "grade": "C",
+	"vale_bread": {"name": "Fenna's Loaf", "icon": "vale_bread", "grade": "C",
 		"desc": "Dense, dark, still warm at the middle. Baked by a woman the Choir sang 'no' at, for the people still kneeling to the singing."},
-	"sexton_stone": {"name": "The Digger's Stone", "grade": "C",
+	"sexton_stone": {"name": "The Digger's Stone", "icon": "sexton_stone", "grade": "C",
 		"desc": "A headstone no bigger than a loaf, blank, edges cut true. Forty years of craft and no name yet — Haim says the Vale will provide one."},
 }
 

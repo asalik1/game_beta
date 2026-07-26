@@ -450,6 +450,8 @@ var _themed := false
 var _cast_base := 0.0
 
 var sprite: Sprite2D
+var _occlusion_outline: Sprite2D
+var _occlusion_images := {}
 var weapon_spr: Sprite2D
 var weapon_glow: Sprite2D
 var aura: Sprite2D
@@ -861,6 +863,17 @@ func _ready() -> void:
 	_apply_class_sprite()
 	sprite.flip_h = face_left  # start facing right regardless of art
 	add_child(sprite)
+	_occlusion_outline = Sprite2D.new()
+	var outline_mat := ShaderMaterial.new()
+	outline_mat.shader = load("res://shaders/occluded_outline.gdshader")
+	outline_mat.set_shader_parameter("outline_color",
+		Balance.PLAYER_OCCLUDED_OUTLINE_COLOR)
+	outline_mat.set_shader_parameter("outline_width",
+		Balance.PLAYER_OCCLUDED_OUTLINE_WIDTH)
+	_occlusion_outline.material = outline_mat
+	_occlusion_outline.z_index = Balance.PLAYER_OCCLUDED_OUTLINE_Z
+	_occlusion_outline.visible = false
+	add_child(_occlusion_outline)
 
 	# The shard-bearer sheds a faint warm light: invisible in daylight,
 	# a small readable halo in dark-tinted terrains (void/grave/night).
@@ -886,6 +899,113 @@ func _ready() -> void:
 	recalc()
 	hp = max_hp
 	mp = max_mp
+
+
+## A structure that y-sorts over the hero should actually hide the body. This
+## second sprite draws only a faint outer edge at z=1, and only while opaque
+## structure pixels cover representative points down the hero's silhouette.
+func _refresh_occlusion_outline() -> void:
+	if _occlusion_outline == null or sprite == null:
+		return
+	_occlusion_outline.texture = sprite.texture
+	_occlusion_outline.hframes = sprite.hframes
+	_occlusion_outline.vframes = sprite.vframes
+	_occlusion_outline.frame = sprite.frame
+	_occlusion_outline.centered = sprite.centered
+	_occlusion_outline.offset = sprite.offset
+	_occlusion_outline.flip_h = sprite.flip_h
+	_occlusion_outline.flip_v = sprite.flip_v
+	_occlusion_outline.position = sprite.position
+	_occlusion_outline.rotation = sprite.rotation
+	_occlusion_outline.scale = sprite.scale
+	_occlusion_outline.modulate.a = sprite.modulate.a
+	_occlusion_outline.visible = sprite.visible and _structure_covers_player()
+
+
+func _structure_covers_player() -> bool:
+	if get_tree() == null:
+		return false
+	for candidate in get_tree().get_nodes_in_group("structure_occluders"):
+		var visual := candidate as Node2D
+		if visual == null or not visual.is_visible_in_tree():
+			continue
+		var sort_y: float = float(visual.get_meta(
+			"occlusion_sort_y", visual.global_position.y))
+		if global_position.y >= sort_y:
+			continue
+		for probe in Balance.PLAYER_OCCLUSION_PROBES:
+			if _visual_alpha_at(visual, global_position + probe) \
+					>= Balance.PLAYER_OCCLUSION_ALPHA_THRESHOLD:
+				return true
+	return false
+
+
+func _visual_alpha_at(visual: Node2D, world_point: Vector2) -> float:
+	var tex: Texture2D = null
+	var centered := true
+	var offset := Vector2.ZERO
+	var flip_h := false
+	var flip_v := false
+	var hframes := 1
+	var vframes := 1
+	var frame := 0
+	if visual is Sprite2D:
+		var spr := visual as Sprite2D
+		tex = spr.texture
+		centered = spr.centered
+		offset = spr.offset
+		flip_h = spr.flip_h
+		flip_v = spr.flip_v
+		hframes = spr.hframes
+		vframes = spr.vframes
+		frame = spr.frame
+	elif visual is AnimatedSprite2D:
+		var anim := visual as AnimatedSprite2D
+		if anim.sprite_frames != null:
+			tex = anim.sprite_frames.get_frame_texture(anim.animation, anim.frame)
+		centered = anim.centered
+		offset = anim.offset
+		flip_h = anim.flip_h
+		flip_v = anim.flip_v
+	if tex == null:
+		return 0.0
+	var frame_size := Vector2(
+		float(tex.get_width()) / float(maxi(1, hframes)),
+		float(tex.get_height()) / float(maxi(1, vframes)))
+	var local_point := visual.to_local(world_point)
+	var rect_position := offset
+	if centered:
+		rect_position -= frame_size * 0.5
+	var pixel := local_point - rect_position
+	if flip_h:
+		pixel.x = frame_size.x - pixel.x
+	if flip_v:
+		pixel.y = frame_size.y - pixel.y
+	if pixel.x < 0.0 or pixel.y < 0.0 \
+			or pixel.x >= frame_size.x or pixel.y >= frame_size.y:
+		return 0.0
+	var frame_x := frame % maxi(1, hframes)
+	var frame_y := frame / maxi(1, hframes)
+	var source := Vector2i(
+		int(pixel.x) + frame_x * int(frame_size.x),
+		int(pixel.y) + frame_y * int(frame_size.y))
+	var image := _occlusion_image(tex)
+	if image == null or source.x < 0 or source.y < 0 \
+			or source.x >= image.get_width() or source.y >= image.get_height():
+		return 0.0
+	return image.get_pixelv(source).a
+
+
+func _occlusion_image(tex: Texture2D) -> Image:
+	var key := tex.get_instance_id()
+	var cached: Variant = _occlusion_images.get(key)
+	if cached is Image:
+		return cached
+	var image := tex.get_image()
+	if image != null and image.is_compressed():
+		image.decompress()
+	_occlusion_images[key] = image
+	return image
 
 
 func set_class(id: String) -> void:
@@ -1195,7 +1315,7 @@ func attr_total(attr: String) -> int:
 
 ## Summary block (attributes tab / quick views).
 func stat_sheet() -> String:
-	var unspent := "  (%d unspent — press T)" % unspent_attr if unspent_attr > 0 else ""
+	var unspent := "  (%d unspent — open Skills)" % unspent_attr if unspent_attr > 0 else ""
 	return "STR %d  AGI %d  INT %d  VIT %d%s\nATK %d (%s)\nCrit %d%% (x%.1f)   Combo %d%%\nPhysRes %d   MagRes %d   CritRes %d\nEVA %d%%   DEX %d\nPen %d phys / %d mag\nHaste %d%%   Speed %d   Lifesteal %d%%   Greed %d%%" % [
 		attr_total("STR"), attr_total("AGI"), attr_total("INT"), attr_total("VIT"), unspent,
 		int(atk), Classes.CLASSES[cls]["dmg_type"],
@@ -1395,8 +1515,9 @@ func loadout_add(id: String) -> void:
 		return
 	if potion_rotation.size() >= potion_slot_cap():
 		game.spawn_text(global_position + Vector2(0, -52),
-			"Loadout full — %d slot%s this chapter (CTRL-click removes)" % [potion_slot_cap(),
-				"" if potion_slot_cap() == 1 else "s"], Color(1.0, 0.7, 0.4))
+			"Loadout full — %d slot%s this chapter; remove one before adding another" % [
+				potion_slot_cap(), "" if potion_slot_cap() == 1 else "s"],
+			Color(1.0, 0.7, 0.4))
 		return
 	potion_rotation.append(id)
 	game.sfx("ui_click")
@@ -1459,7 +1580,7 @@ func use_consumable(c: Dictionary) -> void:
 			recalc()
 			game.sfx("levelup")
 			game.spawn_text(global_position + Vector2(0, -56),
-				"TALENTS RESET — %d points refunded (press T)" % refunded, Color(0.6, 0.9, 1.0))
+				"TALENTS RESET — %d points refunded (open Skills)" % refunded, Color(0.6, 0.9, 1.0))
 		"tree_tome":
 			var back := 0
 			for id in tree_points:
@@ -1470,7 +1591,7 @@ func use_consumable(c: Dictionary) -> void:
 			recalc()
 			game.sfx("levelup")
 			game.spawn_text(global_position + Vector2(0, -56),
-				"SKILL TREE RESET — %d points refunded (press T)" % back, Color(0.6, 0.9, 1.0))
+				"SKILL TREE RESET — %d points refunded (open Skills)" % back, Color(0.6, 0.9, 1.0))
 		"mana_potion":
 			if not _drink_gate("mana_potion"):
 				return
@@ -1801,7 +1922,7 @@ func gain_xp(amount: int) -> void:
 		# fast, and the resets made potions — and merchants — pointless.
 		# recalc() keeps your hp/mp FRACTION as the pools grow.
 		game.sfx("levelup")
-		game.spawn_text(global_position + Vector2(0, -72), "LEVEL UP!  Lv %d  (+1 skill, +1 attribute point — press T)" % level, Color(0.5, 0.9, 1.0))
+		game.spawn_text(global_position + Vector2(0, -72), "LEVEL UP!  Lv %d  (+1 skill, +1 attribute point — open Skills)" % level, Color(0.5, 0.9, 1.0))
 		var unlocked := Classes.themes_unlocked(level)
 		if unlocked > themes_known:
 			themes_known = unlocked

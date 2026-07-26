@@ -977,7 +977,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		if epilogue.is_empty():
 			epilogue = Story.beat_for("epilogue", band, flags)
 		# Promises left unkept settle HERE (Balance §quest abandonment). Victory
-		# is the chapter's point of no return — the card offers only ENTER or R,
+		# is the chapter's point of no return — the card only continues forward,
 		# so nothing can be walked back and finished — which makes this the last
 		# honest moment to charge for them, and it lands before
 		# advance_chapter's _wipe_chapter_flags retires the sq_ flags. Fired
@@ -995,15 +995,15 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			if chapter_id == "ch1" and not net_online() and not get_flag("cap_seen", false):
 				# First ch1 clear (capital rework §5): the campaign routes the
 				# newcomer to Crownfall — the dismiss below carries them there.
-				vtext += "\n\nENTER — the road bends north, to CROWNFALL, the capital."
+				vtext += "\n\nCONTINUE — the road bends north, to CROWNFALL, the capital."
 			else:
-				vtext += "\n\nENTER — rise. The way-gates stand beside the arena:\nCrownfall  ·  a fresh pass  ·  onward to %s" \
+				vtext += "\n\nCONTINUE — rise. The way-gates stand beside the arena:\nCrownfall  ·  a fresh pass  ·  onward to %s" \
 					% String(Story.chapter(next_ch)["name"])
 		else:
 			vtext = String(Story.chapter(chapter_id).get("victory_text",
 				"Thanks for playing!"))
 			vtext += _broken_promises_text(broken)
-			vtext += "\n\nENTER — rise. The way-gates stand beside the arena."
+			vtext += "\n\nCONTINUE — rise. The way-gates stand beside the arena."
 		var end_it := func() -> void:
 			state = ST_VICTORY
 			set_music("")

@@ -12,7 +12,7 @@ static func open(m: Menus) -> void:
 	var p := g.player
 	var vbox := m._open("Stash — account storage  (%d / %d used)" % [g.stash.size(), Balance.STASH_SLOTS], 1040, 470, true)
 	m.current = "stash"
-	m._lbl(vbox, "Shared across ALL your characters. Click an entry to move it between your BAG and the STASH.",
+	m._lbl(vbox, "Shared across ALL your characters. Select an entry to move it between your BAG and the STASH.",
 		13, Color(0.7, 0.72, 0.78))
 
 	var cols := HBoxContainer.new()
@@ -20,7 +20,7 @@ static func open(m: Menus) -> void:
 	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(cols)
 
-	_column(m, cols, "◀  YOUR BAG  (click to deposit)", _bag_entries(p), func(pl: Dictionary) -> void:
+	_column(m, cols, "◀  YOUR BAG  (select to deposit)", _bag_entries(p), func(pl: Dictionary) -> void:
 		if g.stash_deposit(pl):
 			_remove_from_bag(p, pl)
 			g.sfx("equip")
@@ -46,7 +46,7 @@ static func _stash_grid(m: Menus, parent: HBoxContainer, entries: Array, cb: Cal
 	var box := VBoxContainer.new()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(box)
-	m._lbl(box, "STASH  (click to withdraw)  ▶", 15, Color(0.95, 0.85, 0.5))
+	m._lbl(box, "STASH  (select to withdraw)  ▶", 15, Color(0.95, 0.85, 0.5))
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL

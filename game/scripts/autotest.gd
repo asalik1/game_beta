@@ -43,6 +43,28 @@ func _run() -> void:
 	await _run_campaign_ch2()
 
 
+func _tree_has_label_text(node: Node, needle: String) -> bool:
+	if node is Label and needle in (node as Label).text:
+		return true
+	for child in node.get_children():
+		if _tree_has_label_text(child, needle):
+			return true
+	return false
+
+
+func _tree_ui_text(node: Node) -> String:
+	var out := ""
+	if node is Label:
+		out += (node as Label).text + "\n"
+	elif node is Button:
+		out += (node as Button).text + "\n"
+	elif node is LineEdit:
+		out += (node as LineEdit).placeholder_text + "\n"
+	for child in node.get_children():
+		out += _tree_ui_text(child)
+	return out
+
+
 ## The core-systems tier (everything the --quick run covers before the
 ## pause-menu check): engine math, boot, kits, gear, gems, saves, UI.
 func _run_systems() -> void:
@@ -1075,7 +1097,19 @@ func _run_systems() -> void:
 	game.player.shield = 0.0
 	game.player.hp = game.player.max_hp
 	game.player.hurt_cd = 0.0
-	game.telegraph(game.player.global_position + Vector2(40, 0), 60.0, 0.3, 50.0, {"sword": true})
+	game.telegraph(game.player.global_position + Vector2(40, 0), 60.0, 0.3, 50.0, {
+		"falling_sprite": "fx_vargoth_skyblade",
+		"falling_scale": Balance.BOSS_FALLING_WEAPON_SCALE,
+		"falling_end_y": Balance.BOSS_FALLING_WEAPON_END_Y,
+	})
+	var saw_vargoth_blade := false
+	for child in game.get_children():
+		var vargoth_sprite := child as Sprite2D
+		if vargoth_sprite and vargoth_sprite.texture == Art.tex("fx_vargoth_skyblade"):
+			saw_vargoth_blade = true
+			break
+	if not saw_vargoth_blade:
+		return _fail("Vargoth telegraph did not render his skyblade sprite")
 	game.player.take_damage(1.0, "phys")  # chip: arms the gate ahead of the blast
 	if game.player.hurt_cd <= 0.0:
 		return _fail("chip hit did not arm the hurt gate")
@@ -1105,8 +1139,36 @@ func _run_systems() -> void:
 	game.player.hurt_cd = 0.0
 	game.player.hurt_was_heavy = false
 	game.player.hp = game.player.max_hp
-	await _frames(20)  # let the falling-sword fx finish
-	print("ok: telegraph + falling sword (heavy pierces chip gate, not heavy gate)")
+	game.telegraph(game.player.global_position + Vector2(500, 0), 60.0, 0.3, 0.0, {
+		"falling_sprite": "fx_varo_reliquary_blade",
+		"falling_scale": Balance.BOSS_FALLING_WEAPON_SCALE,
+		"falling_end_y": Balance.BOSS_FALLING_WEAPON_END_Y,
+	})
+	var saw_varo_blade := false
+	for child in game.get_children():
+		var varo_sprite := child as Sprite2D
+		if varo_sprite and varo_sprite.texture == Art.tex("fx_varo_reliquary_blade"):
+			saw_varo_blade = true
+			break
+	if not saw_varo_blade:
+		return _fail("Varo telegraph reused or omitted his reliquary blade sprite")
+	await get_tree().create_timer(0.45).timeout
+	await _frames(2)  # let both falling-weapon fx finish
+	print("ok: telegraph + unique boss falling weapons (heavy gate semantics)")
+	# Boss projectile art-quality floor: every live archetype routes to a
+	# shipped 64px authored core, never silently back to the old 8/16px
+	# procedural shapes. This cannot judge taste, but it preserves the
+	# production seam that the visual audit established.
+	for projectile_key in Projectile.BOSS_PROJECTILE_STYLE:
+		var boss_fx_key := String(projectile_key)
+		if not Art.has_sprite(boss_fx_key):
+			return _fail("boss projectile lost its authored sprite: %s" % boss_fx_key)
+		var boss_fx_image: Image = Art.tex(boss_fx_key).get_image()
+		if boss_fx_image == null or boss_fx_image.get_width() < 64 \
+				or boss_fx_image.get_height() < 64:
+			return _fail("boss projectile dropped below the 64px art floor: %s" % boss_fx_key)
+	print("ok: all %d boss projectile families use authored 64px art" %
+		Projectile.BOSS_PROJECTILE_STYLE.size())
 
 	# 5. Skill tree: row caps and gating. Drive it at a controlled level so
 	# the assertions don't depend on how far ch1 leveled us (rows now unlock
@@ -1387,10 +1449,19 @@ func _run_systems() -> void:
 	if not game.menus.is_open() or game.shop_stock[0].size() != 3:
 		return _fail("shop did not open with stock")
 	# The Sell tab builds too (full-width Buy/Sell tabs, 2026-07-09).
+	var sell_layout_probe := Items.roll_item_of("weapon", "F", game.loot_rng, game.player.cls)
+	game.player.backpack.append(sell_layout_probe)
 	game.menus.open_shop(0, "sell")
 	await _frames(2)
 	if not game.menus.is_open() or game.menus.shop_tab != "sell":
 		return _fail("shop sell tab did not open")
+	var junk_floor_row := game.menus.root.find_child("ShopJunkFloorRow", true, false) as HBoxContainer
+	if junk_floor_row == null or junk_floor_row.size.y > 64.0:
+		return _fail("shop junk-floor controls collapsed into a tall wrapped row")
+	var junk_floor_label := junk_floor_row.get_child(0) as Label
+	if junk_floor_label == null or junk_floor_label.size.x < 80.0:
+		return _fail("shop junk-floor label collapsed below its readable width")
+	game.player.backpack.erase(sell_layout_probe)
 	game.menus.shop_tab = "buy"  # restore the default for later shop opens
 	game.menus.open_codex("gear")
 	await _frames(2)
@@ -1453,6 +1524,93 @@ func _run_systems() -> void:
 	await _frames(2)
 	if game.menus.current != "journal":
 		return _fail("quest log did not open")
+	var journal_tabs := game.menus.root.find_child("JournalTabs", true, false) as HBoxContainer
+	if journal_tabs == null or journal_tabs.get_child_count() != 4:
+		return _fail("journal did not expose its four intent-based sections")
+	for journal_tab in ["quests", "activities", "progress", "story"]:
+		game.menus.open_journal(journal_tab)
+		await _frames(1)
+		if game.menus.root.find_child("JournalTab_" + journal_tab, true, false) == null \
+				or game.menus.root.find_child("JournalContent", true, false) == null:
+			return _fail("journal section did not build: %s" % journal_tab)
+	if String(game.menus.get_meta("journal_tab", "")) != "story":
+		return _fail("journal did not remember its last section")
+	var keep_touch_mode: bool = game.touch_mode
+	var keep_journal_quest: String = game.quest_key
+	game.touch_mode = true
+	game.quest_key = "talk"
+	game.menus.open_journal("quests")
+	await _frames(1)
+	var journal_content := game.menus.root.find_child("JournalContent", true, false)
+	if journal_content == null or _tree_has_label_text(journal_content, "press E") \
+			or not _tree_has_label_text(journal_content, "tap Act"):
+		game.touch_mode = keep_touch_mode
+		game.quest_key = keep_journal_quest
+		return _fail("journal did not translate its interaction prompt for touch")
+
+	# Mobile copy must describe controls that actually exist on the touch HUD.
+	# Exercise the shared chrome plus each high-traffic information surface so
+	# a later desktop-first string cannot silently ship to phones.
+	game.hud.set_touch_mode(true)
+	game.hud.update_stats(game.player)
+	if game.hud.dialogue_hint.text != "TAP ▸" or game.hud.minimap_title.text != "MAP" \
+			or "Potions [" in game.hud.gold_label.text \
+			or "press T" in game.hud.stats_label.text:
+		game.touch_mode = keep_touch_mode
+		game.quest_key = keep_journal_quest
+		game.hud.set_touch_mode(keep_touch_mode)
+		return _fail("touch HUD exposed keyboard-only control copy")
+	if game.ui_copy("Click or press any key") != "Tap or tap to continue" \
+			or game.touchify("walk up to her and press E") != "walk up to her and tap Act" \
+			or game.control_hint("potion", "Potion button") != "Potion button":
+		game.touch_mode = keep_touch_mode
+		game.quest_key = keep_journal_quest
+		game.hud.set_touch_mode(keep_touch_mode)
+		return _fail("shared touch instruction copy regressed")
+
+	var touch_cover := Control.new()
+	touch_cover.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game.menus.add_child(touch_cover)
+	UICover.build(game.menus, touch_cover)
+	await _frames(1)
+	var cover_prompt := touch_cover.find_child("CoverPrompt", true, false) as Label
+	if cover_prompt == null or "tap to continue" not in cover_prompt.text \
+			or "press any key" in cover_prompt.text:
+		touch_cover.queue_free()
+		game.touch_mode = keep_touch_mode
+		game.quest_key = keep_journal_quest
+		game.hud.set_touch_mode(keep_touch_mode)
+		return _fail("cover prompt did not switch to touch copy")
+	touch_cover.queue_free()
+
+	var touch_surfaces := [
+		["hero roster", func() -> void: game.menus.open_slots()],
+		["chapter select", func() -> void: game.menus.open_chapter_select(false)],
+		["inventory", func() -> void: game.menus.open_inventory("gear")],
+		["stats", func() -> void: game.menus.open_inventory("stats")],
+		["skills", func() -> void: game.menus.open_skills("talents")],
+		["map", func() -> void: game.menus.open_map()],
+		["stash", func() -> void: game.menus.open_stash()],
+		["codex", func() -> void: game.menus.open_codex("gear")],
+	]
+	var banned_touch_copy := [
+		"click", "hover for", "press t", "potions [", "map (m)",
+		"space /", "ctrl-click", "use the back button",
+	]
+	for surface in touch_surfaces:
+		(surface[1] as Callable).call()
+		await _frames(1)
+		var screen_copy := _tree_ui_text(game.menus.root).to_lower()
+		for banned in banned_touch_copy:
+			if String(banned) in screen_copy:
+				game.touch_mode = keep_touch_mode
+				game.quest_key = keep_journal_quest
+				game.hud.set_touch_mode(keep_touch_mode)
+				return _fail("touch %s exposed desktop-only copy: %s" % [
+					String(surface[0]), String(banned)])
+	game.touch_mode = keep_touch_mode
+	game.quest_key = keep_journal_quest
+	game.hud.set_touch_mode(keep_touch_mode)
 	game.menus.open_stash()
 	await _frames(2)
 	if game.menus.current != "stash":
@@ -3474,7 +3632,8 @@ func _test_asset_seams() -> void:
 	# inside fire"; exactly one AnimatedSprite2D proves the nested overlay is gone.
 	var capital_fire_structures := [
 		"capital_crown_spire_gate",
-		"capital_emberward_gate", "capital_portal_crucible",
+		"capital_emberward_gate", "capital_portal_story",
+		"capital_portal_crucible",
 		"capital_ashfire_forge", "capital_ashen_tankard",
 		"capital_wildfang_fangmoot", "capital_accord_longhouse",
 		"capital_sable_hall", "capital_watchtower", "capital_proving_gate",
@@ -3486,6 +3645,11 @@ func _test_asset_seams() -> void:
 		var fire_info := Art.anim_info(sprite_name)
 		if int(fire_info.get("frames", 0)) != 4:
 			return _fail("%s needs a four-frame integrated fire strip" % structure_name)
+		var static_size := Vector2i(Art.tex(sprite_name).get_size())
+		var frame_size: Vector2i = fire_info.get("frame_size", Vector2i.ZERO)
+		if frame_size != static_size:
+			return _fail("%s animation frame %s != tight static source %s" %
+				[structure_name, frame_size, static_size])
 		var landmark := game._add_structure(structure_name, Vector2(-4800, -4800))
 		var animated_parts := 0
 		for child in landmark.get_children():
@@ -3495,6 +3659,35 @@ func _test_asset_seams() -> void:
 			return _fail("%s should animate as one structure, not %d nested parts" %
 				[structure_name, animated_parts])
 		landmark.queue_free()
+	# Generated capital sources are a tight-crop contract now. Padding caused
+	# five separate defects (colliders, interaction stand-points, y-sort,
+	# codex portraits, portal piers); catch a padded export at the asset seam
+	# before those systems each need another runtime compensation.
+	var tight_sources := {}
+	for structure_name: String in Terrains.STRUCTURES:
+		var sprite_name := String(Terrains.STRUCTURES[structure_name].get(
+			"sprite", structure_name))
+		if not sprite_name.begins_with("capital_") or tight_sources.has(sprite_name):
+			continue
+		tight_sources[sprite_name] = true
+		var source_img: Image = Art.tex(sprite_name).get_image()
+		var used: Rect2i = source_img.get_used_rect()
+		if used.position != Vector2i.ZERO or used.size != source_img.get_size():
+			return _fail("%s source regressed to a padded export (%s in %s)" %
+				[sprite_name, used, source_img.get_size()])
+	for portrait_name in [
+			"fangmaw", "morwen", "vargoth", "korrag", "choirmother",
+			"nullwarden", "sexton", "vess", "saint_varo", "forgemistress",
+			"cinderhide", "ashpriest", "hrolgar", "serane", "halla",
+			"auroch_minotaur", "rotmaw", "kaethra", "veyx", "echo",
+			"stormmouth",
+	]:
+		var portrait_img: Image = Art.tex(portrait_name).get_image()
+		var portrait_used: Rect2i = portrait_img.get_used_rect()
+		if portrait_used.position != Vector2i.ZERO \
+				or portrait_used.size != portrait_img.get_size():
+			return _fail("%s bestiary portrait source is padded (%s in %s)" %
+				[portrait_name, portrait_used, portrait_img.get_size()])
 	# City-edge arcades are a skyline layer with ONE shallow base strip
 	# (owner report 2026-07-25: with no body at all, the hero strolled INTO
 	# the silhouette — the room walls never actually owned that edge). The
@@ -3617,7 +3810,37 @@ func _test_npc_interaction_facing() -> void:
 	game.player.facing = keep_facing
 	game.player.look_sign = keep_look
 	citizen.free()
-	print("ok: NPC interactions face the visitor from either side (including Citizen) + restore rest pose")
+
+	# Fenna's generated east/west source views were mislabeled: her authored W
+	# texture is the one that visually faces screen-right. The sprite-aware
+	# suffix correction must select it for the exact right-side hearth exchange
+	# that originally left her showing the visitor her back.
+	var fenna := Node2D.new()
+	var fenna_spr := Sprite2D.new()
+	var fenna_dirs := Art.dir_set("old_fenna_anim")
+	fenna_spr.texture = fenna_dirs["s"]["tex"]
+	fenna.add_child(fenna_spr)
+	game.world.add_child(fenna)
+	fenna.global_position = keep_pos + Vector2(0, -300)
+	var fenna_entry := {
+		"node": fenna, "sprite": fenna_spr, "sprite_name": "old_fenna",
+		"dir_anims": fenna_dirs,
+		"render_scale": 1.0, "size_var": 1.0, "body_target": 0.0,
+		"rest_tex": fenna_spr.texture, "rest_frames": 1, "rest_frame": 0,
+		"rest_scale": fenna_spr.scale, "rest_pos": fenna_spr.position,
+		"rest_flip_h": false,
+	}
+	game.player.global_position = fenna.global_position + Vector2(60, 0)
+	game._face_interactable_to_player(fenna_entry)
+	if fenna_spr.texture != fenna_dirs["w"]["tex"] or fenna_spr.flip_h:
+		fenna.free()
+		return _fail("Fenna did not correct her mislabeled view toward a right-side visitor")
+	game._restore_interactable_rest_pose()
+	game.player.global_position = keep_pos
+	game.player.facing = keep_facing
+	game.player.look_sign = keep_look
+	fenna.free()
+	print("ok: NPC interactions face the visitor (including Citizen/Fenna) + restore rest pose")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
@@ -4727,6 +4950,63 @@ func _test_merchant_economy() -> void:
 # Co-op tab in the same change (the codex-staleness rule), so it renders
 # under the same eyes as the other tabs.
 func _test_mp_lobby_ui() -> void:
+	if game.hud.party_btn == null or game.hud.party_btn.icon == null:
+		return _fail("persistent party HUD icon was not built")
+	if game.hud.party_btn.visible:
+		return _fail("party HUD icon should stay hidden offline")
+	for icon_key: String in [
+			"ui_mail", "ui_quest", "ui_bag", "ui_book",
+			"ui_daily", "ui_skills", "ui_settings", "ui_party"]:
+		var icon_tex: Texture2D = Art.ui_icon(icon_key)
+		if icon_tex == null or icon_tex.get_width() != 31 or icon_tex.get_height() != 31:
+			return _fail("HUD icon %s is missing or not 31x31" % icon_key)
+	if game.hud.avatar_root == null or game.hud.avatar_portrait == null \
+			or game.hud.avatar_border_layer == null \
+			or String(game.hud.avatar_border_layer.get_meta("cosmetic_slot", "")) != "avatar_border":
+		return _fail("portrait or future cosmetic-border slot was not built")
+	game.hud._update_avatar()
+	if game.hud.avatar_portrait.texture == null or game.hud.avatar_portrait.material == null:
+		return _fail("class splash portrait was not cropped/masked into the HUD")
+	if game.hud.avatar_portrait.texture is AtlasTexture:
+		return _fail("avatar crop regressed to atlas UVs (circular mask will leak square corners)")
+	var portrait_mat := game.hud.avatar_portrait.material as ShaderMaterial
+	var crop_uv: Vector4 = portrait_mat.get_shader_parameter("crop_uv")
+	if crop_uv.z >= 1.0 or crop_uv.w >= 1.0:
+		return _fail("avatar shader is not using the focused face crop")
+
+	# The identity line reads as one comma-delimited chain, with the chosen
+	# player name first and any equipped title inserted before the level.
+	var keep_name: String = game.player.char_name
+	var keep_title: String = game.player_title
+	game.player.char_name = "Player1"
+	game.player_title = ""
+	game.hud.update_stats(game.player)
+	var cls_label: String = Classes.CLASSES[game.player.cls]["name"]
+	if not game.hud.stats_label.text.begins_with("Player1, %s, Lv %d" % [
+			cls_label, game.player.level]):
+		return _fail("HUD identity line omitted the player name or comma chain")
+	var title_keys: Array = Achievements.TITLES.keys()
+	if not title_keys.is_empty():
+		game.player_title = String(title_keys[0])
+		game.hud.update_stats(game.player)
+		var title_name: String = Achievements.TITLES[game.player_title]["name"]
+		if not game.hud.stats_label.text.begins_with(
+				"Player1, %s, %s, Lv %d" % [cls_label, title_name, game.player.level]):
+			return _fail("HUD identity line did not chain the equipped title")
+	game.player.char_name = keep_name
+	game.player_title = keep_title
+	game.hud.update_stats(game.player)
+	# Conditional icons reflow instead of reserving blank cells. This is the
+	# common no-daily state from the player's HUD report.
+	game.hud.daily_btn.visible = false
+	game.hud.party_btn.visible = true
+	game.hud._layout_hud_icons()
+	if game.hud.mail_btn.size != Vector2(40, 39) \
+			or not is_equal_approx(game.hud.skills_btn.position.x, 184.0) \
+			or not is_equal_approx(game.hud.settings_btn.position.x, 226.0) \
+			or not is_equal_approx(game.hud.party_btn.position.x, 268.0):
+		return _fail("HUD icon row left a blank conditional slot")
+	game.hud.party_btn.visible = false
 	game.menus.open_codex("coop")
 	await _frames(2)
 	if game.menus.current != "codex":

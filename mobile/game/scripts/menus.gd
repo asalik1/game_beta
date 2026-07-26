@@ -211,6 +211,8 @@ func _btn(parent: Node, text: String, cb: Callable, color := Color(1, 1, 1), ena
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	if icon:
 		b.icon = icon
+		b.expand_icon = true
+		b.add_theme_constant_override("icon_max_width", 42)
 	if enabled:
 		b.pressed.connect(func() -> void:
 			if game:
@@ -246,18 +248,24 @@ func _awk(item: Dictionary) -> bool:
 	return bool(game.get_flag("s_awakened_" + String(item.get("cls", "")), false))
 
 
-func _hint(vbox: Node, text := "ESC to close") -> void:
+func _hint(vbox: Node, text := "ESC to close", touch_text := "") -> void:
 	if game and game.touch_mode:
+		if touch_text != "":
+			text = touch_text
+		else:
 		# Keyboard close-hints (ESC / panel hotkeys) mean nothing on touch; keep any
 		# info after the em-dash and swap the key list for the on-screen ways out.
 		# Only promise ✕/outside when the panel actually HAS them — otherwise the
 		# hint used to lie (keybinds had no exit yet still said "tap ✕ or outside").
-		var dash := text.find("—")
-		var extra: String = (" " + text.substr(dash)) if dash >= 0 else ""
-		if _closable_now:
-			text = "Tap ✕ or outside to close" + extra
-		else:
-			text = ("Use the Back button" + extra).strip_edges()
+			var dash := text.find("—")
+			var extra: String = (" " + text.substr(dash)) if dash >= 0 else ""
+			if _closable_now:
+				text = "Tap ✕ or outside to close" + extra
+			else:
+				# Some non-closable screens (the save roster) have no Back
+				# control at all. Preserve their useful instruction and only
+				# translate keyboard terms when the copy actually contains one.
+				text = game.ui_copy(text)
 	var l := _lbl(vbox, text, 13, Color(0.55, 0.55, 0.55))
 	l.size_flags_vertical = Control.SIZE_SHRINK_END
 
@@ -883,7 +891,8 @@ func open_chapter_select(replay := false) -> void:
 	fade_upd.call_deferred()
 	if not replay:
 		_dev_roster_row(vbox)
-	_hint(vbox, "Press the chapter's number, or click" + ("  ·  ESC to go back" if replay else ""))
+	_hint(vbox, "Press the chapter's number, or click" + ("  ·  ESC to go back" if replay else ""),
+		"Select an unlocked chapter" + ("  ·  close to return" if replay else ""))
 
 
 func pick_chapter(id: String) -> void:
@@ -904,7 +913,7 @@ func open_class_select() -> void:
 	# nothing spills past the frame the way the old bottom "choose" buttons did.
 	var vbox := _open("Choose your class", 1240, 716)
 	current = "class_select"
-	_lbl(vbox, "This choice sets your four abilities and your three elemental THEMES — playstyles that reshape those abilities as you level.  Click any class to choose it.", 15, Color(0.75, 0.75, 0.75))
+	_lbl(vbox, "This choice sets your four abilities and your three elemental THEMES — playstyles that reshape those abilities as you level. Select any class to choose it.", 15, Color(0.75, 0.75, 0.75))
 
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 10)
@@ -1269,7 +1278,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	left.add_theme_constant_override("separation", 6)
 	left_scroll.add_child(left)
 	UITheme.header(_lbl(left, "EQUIPPED", 16, Color(0.95, 0.85, 0.5)))
-	_lbl(left, "(click an item for its detail popover)", 12, Color(0.55, 0.55, 0.6))
+	_lbl(left, "(select an item for its detail card)", 12, Color(0.55, 0.55, 0.6))
 	for slot in Items.SLOTS:
 		if game.local_player.equipment.has(slot):
 			var item: Dictionary = game.local_player.equipment[slot]
@@ -1404,7 +1413,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var ab := _btn(right, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, gems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag); on the road only\nthe bag merges — socketed work waits for the Lapidary."
-	_lbl(right, "Click any bag item for its detail card — equip/use/synthesize or drop it there · socketing and unsocketing are the Lapidary's trade in Crownfall (drag gems onto gear at her benches) · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
+	_lbl(right, "Select any bag item for its detail card — equip/use/synthesize or drop it there · socketing and unsocketing are the Lapidary's trade in Crownfall (drag gems onto gear at her benches) · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
 	# Bag category filter: All (default) + per-slot gear, gems, consumables.
 	var catrow := HBoxContainer.new()
@@ -1474,7 +1483,8 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var pot_stacks: Array = []
 		if p.potions > 0:
 			pot_stacks.append([p.potions, "", Color(1.0, 0.5, 0.5),
-				"Mends 15%% of your MISSING health. Drink with [%s] in the field (per-room budget); sell spare stock at any merchant. Each potion rides in your bags — one slot per potion." % OS.get_keycode_string(game.binds["potion"])])
+				"Mends 15%% of your MISSING health. Drink with the %s in the field (per-room budget); sell spare stock at any merchant. Each potion rides in your bags — one slot per potion." %
+					game.control_hint("potion", "Potion button")])
 		if p.potions_free > 0:
 			pot_stacks.append([p.potions_free, " (chapter gift)", Color(1.0, 0.78, 0.45),
 				"The chapter's free teaching potion — drunk FIRST, never sellable, and it EXPIRES the moment you leave this chapter. It still takes a bag slot while you hold it."])
@@ -1496,9 +1506,9 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						comp.append(p.potion_display_name(String(rid)))
 					for _h in range(p.potion_slot_cap() - p.potion_rotation.size()):
 						comp.append("Health")
-					info += "\n\nROOM LOADOUT (%d slots): %s — unassigned slots drink as HEALTH. [%s] cycles in the field." % [
+					info += "\n\nROOM LOADOUT (%d slots): %s — unassigned slots drink as HEALTH. %s cycles in the field." % [
 						p.potion_slot_cap(), " | ".join(comp),
-						OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]
+						game.control_hint("potion_next", "The ↻ button")]
 					var actions: Array = []
 					for rid in Items.ROTATION_POTIONS:
 						var rid_c := String(rid)
@@ -1571,10 +1581,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					var actions: Array = [["  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
 					if cid in Items.ROTATION_POTIONS:
 						# Loadout editing (per-room potion budget, 2026-07-07 v2).
-						info += "\n\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. [%s] cycles potions in the field." % [
+						info += "\n\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. %s cycles potions in the field." % [
 							p.potion_rotation.size(), p.potion_slot_cap(),
 							("  (this: x%d)" % slotted) if slotted > 0 else "",
-							OS.get_keycode_string(game.binds.get("potion_next", KEY_R))]
+							game.control_hint("potion_next", "The ↻ button")]
 						var slot_cb := func() -> void:
 							game.local_player.loadout_add(cid)
 							open_inventory("gear", cat)
@@ -1600,7 +1610,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				if can_synth:
 					info += "Synthesize combines three of these into one Lv%d gem." % (g["lvl"] + 1)
 				else:
-					info += "Socket it into an equipped item (click a piece of gear on the left), or gather three to synthesize a stronger one."
+					info += "Socket it into an equipped item (select a piece of gear on the left), or gather three to synthesize a stronger one."
 				var synth_cb := func() -> void:
 					game.local_player.synthesize(g["stat"], g["lvl"])
 					open_inventory("gear", cat)
@@ -1810,14 +1820,14 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	list.add_theme_constant_override("separation", 4)
 	scroll.add_child(list)
 
-	_lbl(list, "ATTRIBUTES  (click any stat to learn what it does)", 16, Color(0.95, 0.85, 0.5))
+	_lbl(list, "ATTRIBUTES  (select any stat to learn what it does)", 16, Color(0.95, 0.85, 0.5))
 	for attr in Classes.ATTR_NAMES:
 		var is_primary: bool = Classes.CLASSES[p.cls]["primary"] == attr
 		_stat_row(list, "%s%s" % [attr, "  ★" if is_primary else ""], str(p.attr_total(attr)),
 			Classes.attr_help(p.cls, attr),
 			Color(0.95, 0.85, 0.5) if is_primary else Color(0.85, 0.85, 0.9))
 	if p.unspent_attr > 0:
-		_lbl(list, "     %d unspent points — allocate in the skill menu (T)" % p.unspent_attr, 13, Color(0.5, 1.0, 0.5))
+		_lbl(list, "     %d unspent points — allocate in Skills" % p.unspent_attr, 13, Color(0.5, 1.0, 0.5))
 
 	_lbl(list, "COMBAT", 16, Color(0.95, 0.85, 0.5))
 	var rows := [
@@ -2071,7 +2081,7 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 	srow.add_theme_constant_override("separation", 6)
 	body.add_child(srow)
 	_socket_row(srow, item, refresh)
-	_lbl(body, "Click a gem for its card · drag it off the box to unsocket it.", 12, Color(0.55, 0.58, 0.66))
+	_lbl(body, "Select a gem for its card · drag it off the box to unsocket it.", 12, Color(0.55, 0.58, 0.66))
 
 	if slots > gems.size():
 		if p.gem_bag.is_empty():
@@ -2302,7 +2312,7 @@ func _socket_square(row: Control, item: Dictionary, gem_idx: int, special: bool,
 		b.icon = Art.gem_icon(Items.gem_color(g), int(g["lvl"]))
 		b.expand_icon = true
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		b.tooltip_text = "%s — in the %s\nClick for its card · drag to the bag to unsocket." % [Items.gem_title(g), kind_txt]
+		b.tooltip_text = "%s — in the %s\nSelect for its card · drag to the bag to unsocket." % [Items.gem_title(g), kind_txt]
 		b.pressed.connect(func() -> void: _open_socketed_gem_popover(item, gem_idx, refresh))
 		var drag_fn := func(_pos: Vector2) -> Variant:
 			b.set_drag_preview(_drag_preview(Art.gem_icon(Items.gem_color(g), int(g["lvl"]))))
@@ -2446,19 +2456,20 @@ func open_skills(tab := "talents") -> void:
 
 	# ------------------------------------------------- theme assignment ---
 	var next_note := "" if p.themes_known >= 3 else " — next unlocks at Lv %d" % Classes.THEME_LEVELS[mini(p.themes_known, 2)]
-	_lbl(vbox, "ABILITY VARIANTS — click an ability to choose its theme (%d/3 unlocked%s)" % [p.themes_known, next_note], 15, Color(0.95, 0.85, 0.5))
+	_lbl(vbox, "ABILITY VARIANTS — select an ability to choose its theme (%d/3 unlocked%s)" % [p.themes_known, next_note], 15, Color(0.95, 0.85, 0.5))
 	var trow := HBoxContainer.new()
 	trow.add_theme_constant_override("separation", 10)
 	vbox.add_child(trow)
 	for slot in ["a1", "a2", "a3", "ult"]:
 		var s: String = slot
-		var theme := Classes.theme_by_id(p.cls, p.ability_theme.get(s, ""))
+		var theme_id: String = p.ability_theme.get(s, "")
+		var theme := Classes.theme_by_id(p.cls, theme_id)
 		var label: String = theme.get("name", "Base")
 		var tcolor: Color = theme.get("color", Color(0.75, 0.75, 0.8))
 		var pick_cb := func() -> void:
 			open_theme_picker(s)
 		_btn(trow, "%s: %s ▾" % [Classes.ability(p.cls, s)["name"], label], pick_cb,
-			tcolor, p.themes_known > 0, Art.ability_icon(p.cls, s, tcolor))
+			tcolor, p.themes_known > 0, Art.ability_icon(p.cls, s, tcolor, theme_id))
 	# One-click loadouts: opt every ability into a single theme.
 	var arow := HBoxContainer.new()
 	arow.add_theme_constant_override("separation", 10)
@@ -2573,7 +2584,7 @@ func open_theme_picker(slot: String) -> void:
 		if not unlocked:
 			title += "   (unlocks at Lv %d)" % Classes.THEME_LEVELS[i]
 		_btn(vbox, title, pick, tcolor, unlocked,
-			Art.ability_icon(p.cls, slot, tcolor))
+			Art.ability_icon(p.cls, slot, tcolor, String(theme["id"])))
 		# What this theme does to THIS ability — every pair is unique.
 		var vdesc := Classes.variant_desc(p.cls, slot, theme["id"])
 		var vfx := Classes.fx_text(Classes.ability_fx(p.cls, slot, theme["id"]), p.cls)
@@ -2990,9 +3001,15 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				junk_n += 1
 				junk_total += maxi(1, int(Items.price(item) * Balance.MERCHANT_SELL_FRACTION))
 		var frow := HBoxContainer.new()
+		frow.name = "ShopJunkFloorRow"
+		frow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		frow.add_theme_constant_override("separation", 6)
 		vbox.add_child(frow)
 		var flbl := _lbl(frow, "Junk floor:", 13, Color(0.7, 0.72, 0.78))
+		# Autowrapped labels inside an HBox report an almost-zero minimum width.
+		# Without an explicit floor this becomes one character per line, making
+		# the entire filter row hundreds of pixels tall.
+		flbl.custom_minimum_size = Vector2(88, 0)
 		flbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		for gr in ["F", "E", "D", "C", "B", "A"]:
 			var g: String = gr
@@ -3157,7 +3174,7 @@ func open_map() -> void:
 		return
 	var vbox := _open("Map — %s" % String(Story.chapter(game.chapter_id)["name"]), 1180, 640, true)
 	current = "map"
-	_lbl(vbox, "Rooms you have entered — click a lit safe camp to travel there. Notches on a room's edge are its doorways; stubs jut toward rooms you haven't explored.", 13, Color(0.7, 0.72, 0.78))
+	_lbl(vbox, "Rooms you have entered — select a lit safe camp to travel there. Notches on a room's edge are its doorways; stubs jut toward rooms you haven't explored.", 13, Color(0.7, 0.72, 0.78))
 
 	var board := Control.new()
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -3615,7 +3632,7 @@ func _open_capital_map() -> void:
 		var district_text := String(DISTRICT_NAME.get(dist, dist))
 		cell.tooltip_text = "%s\n%s%s\n%s" % [String(zone["name"]), district_text,
 			("  ·  " + services) if services != "" else "",
-			"Click to fast travel" if travel else "You are here"]
+			"Select to fast travel" if travel else "You are here"]
 		var csb := StyleBoxFlat.new()
 		csb.bg_color = col.lightened(0.09) if is_here else Color(col, 0.94)
 		csb.set_corner_radius_all(4)
@@ -3759,7 +3776,7 @@ func _open_capital_map() -> void:
 		var at_service: bool = room_idx == game.cur_room
 		b.disabled = at_service
 		b.tooltip_text = "%s\n%s\n%s" % [String(game.zones[room_idx]["name"]), String(spec[2]),
-			"You are here" if at_service else "Click to fast travel"]
+			"You are here" if at_service else "Select to fast travel"]
 		if not at_service:
 			b.pressed.connect(func() -> void:
 				game.sfx("ui_click")
@@ -3771,7 +3788,7 @@ func _open_capital_map() -> void:
 	dir_box.add_child(quest_rule)
 	var quests := _lbl(dir_box, "●  %d DAILY CONTRACTS" % daily_count, 11, Color(0.95, 0.69, 0.40))
 	quests.tooltip_text = "Faction quest-givers are marked ● on the ward map."
-	var rail_hint := _lbl(dir_box, "Hover for details · select any room to travel.", 10, Color(0.56, 0.59, 0.64))
+	var rail_hint := _lbl(dir_box, "Select any destination to travel.", 10, Color(0.56, 0.59, 0.64))
 	rail_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rail_hint.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rail_hint.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
@@ -3832,6 +3849,15 @@ func open_lobby(stage := "menu") -> void:
 	UILobby.open(self, stage)
 
 
+## Reopen the party that persists behind a closed lobby panel. The HUD calls
+## this in live play; role routing keeps host controls away from guests.
+func open_party() -> void:
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	if not game.play_started or net == null or not net.is_online():
+		return
+	open_lobby("host_lobby" if net.is_host() else "guest_lobby")
+
+
 # ---------------------------------------------------------------- dev mode ---
 
 ## The mailbox (dropped-loot letters, gifts) lives in ui/mailbox.gd.
@@ -3845,7 +3871,7 @@ func open_daily() -> void:
 
 
 ## The quest log / journal lives in ui/journal.gd.
-func open_journal(tab := "log") -> void:
+func open_journal(tab := "") -> void:
 	UIJournal.open(self, tab)
 
 

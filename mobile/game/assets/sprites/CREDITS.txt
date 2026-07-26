@@ -162,4 +162,25 @@ OpenAI image generation — project-generated art (2026-07-18):
   Void Weaver animation pass: fx/mage_void_cast_eye, mage_void_bullet,
   fx/mage_void_thread_wrap, fx/mage_void_thread_eruption (chroma-keyed,
   frame-normalized pixel-art strips/projectile generated to the revised brief).
+  Boss falling-weapon pass: fx_vargoth_skyblade,
+  fx_varo_reliquary_blade (boss-specific chroma-keyed, palette-reduced
+  pixel-art sprites replacing the shared procedural greatsword).
+  Boss projectile quality pass: fx_boss_fire_comet, fx_boss_frost_lance,
+  fx_boss_storm_javelin, fx_boss_rot_spore, fx_boss_earth_fang,
+  fx_boss_metal_crownshard, fx_varo_reliquary_bolt, fx_vess_griefwave,
+  fx_sexton_sigilbolt, fx_veyx_windslash, fx_echo_knife (boss-family and
+  boss-specific chroma-keyed, palette-reduced 64px combat sprites replacing
+  enlarged 8/16px procedural cores).
+  Mob quality pass (2026-07-25): skeleton, zombie, orc, orc_rogue,
+  fungus_heavy, elf_ranger, skeleton_warrior, null_acolyte, mummy,
+  skeleton_mage, skeleton_rogue, stone_base, mummy_mage, stone_broken,
+  royal_knight, banshee, elf_druid, fungus_long, static_caller, bandit_scout,
+  vow_sentinel (four-frame idle, walk, attack, and defeat strips generated to
+  Crownfall-specific silhouettes and combat briefs; chroma-keyed and
+  frame-normalized to 192px cells).
+  Mob projectile identity pass (2026-07-25): mob_blight_thorn,
+  mob_storm_fork, mob_howl_wave, mob_null_shard, mob_grave_nail,
+  mob_forge_brand, mob_hush_wave, mob_bloom_seed, mob_plague_spore
+  (nine materially distinct 64px projectiles replacing the shared generic
+  energy bullet for ordinary ranged enemies).
 Generated for this project; no third-party attribution required.

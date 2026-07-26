@@ -27,6 +27,16 @@ const FACE_DEADZONE := 0.35
 # so the whole cast keeps its relative proportion. Purely visual: collision
 # radii, aggro/attack ranges and speeds are unchanged. Tune to taste; 1.0 = old size.
 const CHAR_RENDER_SCALE := 1.7
+# Structures y-sort over a hero who walks north of their base. Keep only this
+# thin cool edge above the architecture so the hidden hero remains trackable.
+const PLAYER_OCCLUDED_OUTLINE_COLOR := Color(0.78, 0.94, 1.0, 0.60)
+const PLAYER_OCCLUDED_OUTLINE_WIDTH := 3.25
+const PLAYER_OCCLUDED_OUTLINE_Z := 4
+const PLAYER_OCCLUSION_ALPHA_THRESHOLD := 0.16
+const PLAYER_OCCLUSION_PROBES := [
+	Vector2(-14, -20), Vector2(0, -20), Vector2(14, -20),
+	Vector2(-12, -48), Vector2(0, -48), Vector2(12, -48),
+	Vector2(0, -76)]
 
 # SIZE VARIANCE (2026-07-17) — living-world scale spread so a pack isn't
 # cardboard-cutout clones. BOSSES are exempt (fixed scale = their privilege).
@@ -650,6 +660,24 @@ const PHANTOM_ULT_SPLASH_OPACITY_BRIGHT := 0.15 # +5% on "bright" maps (light ba
 # already carry their own windup — they stay instant, the telegraph IS the wind-up.
 const BOSS_ABILITY_FPS := 14.0
 const BOSS_STRIKE_DELAY := 0.16
+# Falling-object presentation (telegraphed sky attacks). Boss signature
+# weapons use a detailed 96px sprite at near-native scale; the larger legacy
+# scales remain only for old 16px procedural callers.
+const FALLING_FIREBALL_SCALE := 6.0
+const FALLING_LEGACY_SWORD_SCALE := 4.5
+const BOSS_FALLING_WEAPON_SCALE := 1.15
+const FALLING_OBJECT_DEFAULT_END_Y := -20.0
+const BOSS_FALLING_WEAPON_END_Y := -43.0
+const FALLING_OBJECT_Z_INDEX := 30
+const FALLING_OBJECT_FADE := 0.35
+# Authored regular-mob projectiles also use 64px source cells, but their combat
+# footprint stays smaller than a boss shot so the silhouette reads without
+# overstating the collision or threat.
+const MOB_PROJECTILE_ART_SCALE := 0.70
+# Authored boss projectiles are 64px source cells (versus the old 8/16px
+# procedural cores enlarged 3x). Near-native scale preserves their material
+# detail while keeping the same ~48px combat footprint.
+const BOSS_PROJECTILE_ART_SCALE := 0.95
 # Boss pursuit profiles: melee gets a small universal closing-speed edge;
 # casters circle inside their authored firing band and flip before grinding
 # against arena walls.
@@ -1518,7 +1546,9 @@ const SCENERY_CLUSTER_RADIUS := 95.0   # px spread of a clump around its centre
 # width/offset; these keep malformed or hand-written capital content legible.
 const CAPITAL_BACKDROP_WIDTH_FALLBACK := 1200.0
 const CAPITAL_LANDMARK_USE_Y_FALLBACK := 80.0
-const CAPITAL_BACKDROP_Z := -4
+# The arcade is scenery, but it still participates in y-sort: south of its
+# baseline the hero is in front; north of it the masonry is in front.
+const CAPITAL_BACKDROP_Z := 0
 
 # NPC / station interaction reach (E key, touch Act button, tap-to-talk).
 # Capital stations park an attendant NPC beside their hotspot, so several

@@ -77,22 +77,22 @@ func _bolt(velocity: Vector2, damage: float) -> void:
 ## cut, metal/earth physical shards, and Echo throws actual knives.
 func _boss_projectile_key() -> String:
 	if kind == "unnamed_echo":
-		return "knife"
+		return "fx_echo_knife"
 	if kind == "vess":
-		return "griefwave"
+		return "fx_vess_griefwave"
 	if kind == "sexton":
-		return "sigilbolt"
+		return "fx_sexton_sigilbolt"
 	if kind == "stormdrake_veyx":
-		return "windslash"
+		return "fx_veyx_windslash"
 	match _boss_audio_family():
-		"fire": return "fireball"
-		"frost": return "icelance"
-		"storm": return "stormbolt"
-		"rot": return "rotbolt"
+		"fire": return "fx_boss_fire_comet"
+		"frost": return "fx_boss_frost_lance"
+		"storm": return "fx_boss_storm_javelin"
+		"rot": return "fx_boss_rot_spore"
 		"void", "arcane": return "shadowbolt"
-		"holy": return "holybolt"
-		"metal": return "metalshard"
-		_: return "earthshard"
+		"holy": return "fx_varo_reliquary_bolt"
+		"metal": return "fx_boss_metal_crownshard"
+		_: return "fx_boss_earth_fang"
 
 
 ## Aimed-volley bolt speed (2026-07-22 speed audit): trash-bolt speed at the
@@ -589,7 +589,12 @@ func _blade_storm() -> void:
 		var tgt: Player = _get_target()  # per swing — the chase re-aims across awaits
 		if dying or not is_instance_valid(tgt) or tgt.dead:
 			return
-		_boss_telegraph(tgt.global_position, 85.0, 0.72, dmg * 1.3, {"sword": true})
+		_boss_telegraph(tgt.global_position, 85.0, 0.72, dmg * 1.3, {
+			"color": Color(1.0, 0.3, 0.08, 0.6),
+			"falling_sprite": "fx_vargoth_skyblade",
+			"falling_scale": Balance.BOSS_FALLING_WEAPON_SCALE,
+			"falling_end_y": Balance.BOSS_FALLING_WEAPON_END_Y,
+		})
 		await get_tree().create_timer(0.45 if enraged else 0.6).timeout
 
 
@@ -1297,7 +1302,12 @@ func _reliquary_rain() -> void:
 		var tgt: Player = _floor_target()
 		if dying or not is_instance_valid(tgt) or tgt.dead:
 			return
-		_boss_telegraph(tgt.global_position, 85.0, 0.75, dmg * 1.3, {"sword": true})
+		_boss_telegraph(tgt.global_position, 85.0, 0.75, dmg * 1.3, {
+			"color": INCENSE,
+			"falling_sprite": "fx_varo_reliquary_blade",
+			"falling_scale": Balance.BOSS_FALLING_WEAPON_SCALE,
+			"falling_end_y": Balance.BOSS_FALLING_WEAPON_END_Y,
+		})
 		await get_tree().create_timer(0.55).timeout
 
 

@@ -1,126 +1,430 @@
 class_name UIJournal
-## The Quest Log / journal. Static builder taking the Menus instance, like
-## ui/mailbox.gd and ui/codex.gd. The game's live quest is a single active
-## line (game.quest_key -> Story.ALL_QUESTS); this screen frames it with
-## chapter boss progress, exploration, factions and Resonance so the
-## player has one place to see "where am I and what's next".
-## Reached from the HUD ⚑ (left of the quest tracker) and the pause menu.
+## Player journal: four intent-based surfaces instead of one long mixed feed.
+## Static module taking the Menus instance, like ui/mailbox.gd and ui/codex.gd.
 
 const FACTION_NAME := {
 	"accord": "The Accord", "cinderborn": "The Cinderborn",
 	"wildfang": "The Wildfang", "choir": "The Hollow Choir",
 }
+const GOLD := Color(0.95, 0.85, 0.5)
+const GREEN := Color(0.58, 1.0, 0.65)
+const BLUE := Color(0.62, 0.86, 1.0)
+const PURPLE := Color(0.86, 0.65, 1.0)
+const MUTED := Color(0.63, 0.65, 0.72)
+const BODY := Color(0.86, 0.88, 0.94)
+const CARD_TEXT_WIDTH := 744.0
 
 
-static func open(m: Menus, tab := "log") -> void:
+static func open(m: Menus, requested_tab := "") -> void:
 	var g := m.game
-	g.refresh_bounties()  # make sure the day/week sets are current
-	var vbox := m._open("Quest Log — %s" % String(Story.chapter(g.chapter_id)["name"]), 860, 640, true)
-	m.current = "journal"
+	g.refresh_bounties()
+	var tab := String(requested_tab)
+	if tab == "log":
+		tab = "quests" # Backward compatibility for old callers.
+	if tab == "":
+		tab = String(m.get_meta("journal_tab", "quests"))
+	if not tab in ["quests", "activities", "progress", "story"]:
+		tab = "quests"
+	m.set_meta("journal_tab", tab)
 
-	# Tabs: the LIVE log | the story-so-far archive (past quests, re-readable).
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 12)
-	vbox.add_child(tabs)
-	m._btn(tabs, "  Quest Log  ", func() -> void: m.open_journal("log"),
-		Color(0.95, 0.85, 0.5) if tab == "log" else Color(0.6, 0.6, 0.6))
-	m._btn(tabs, "  Story So Far  ", func() -> void: m.open_journal("story"),
-		Color(0.95, 0.85, 0.5) if tab == "story" else Color(0.6, 0.6, 0.6))
+	var vbox := m._open("Journal — %s" % String(Story.chapter(g.chapter_id)["name"]), 920, 650, true)
+	m.current = "journal"
+	_tabs(m, vbox, tab)
+	_context_strip(m, vbox, tab)
 
 	var scroll := ScrollContainer.new()
+	scroll.name = "JournalScroll"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vbox.add_child(scroll)
 	var list := VBoxContainer.new()
+	list.name = "JournalContent"
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 6)
+	list.add_theme_constant_override("separation", 10)
 	scroll.add_child(list)
 
-	if tab == "story":
-		_archive(m, list)
-		m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
-		return
+	match tab:
+		"activities":
+			_activities(m, list)
+		"progress":
+			_progress_page(m, list)
+		"story":
+			_archive(m, list)
+		_:
+			_quests(m, list)
+	m._hint(vbox, "1–4 switch sections  ·  ESC, ✕, or click outside to close")
 
-	# --- current objective ---
-	m._lbl(list, "— CURRENT OBJECTIVE —", 16, Color(0.95, 0.85, 0.5))
-	var obj := Story.quest_text(g.quest_key)
-	var ol := m._lbl(list, "◆  " + (obj if obj != "" else "Explore."), 16, Color(1, 1, 1))
-	ol.custom_minimum_size = Vector2(800, 0)
-	ol.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+static func _tabs(m: Menus, parent: VBoxContainer, active: String) -> void:
+	var tabs := HBoxContainer.new()
+	tabs.name = "JournalTabs"
+	tabs.add_theme_constant_override("separation", 7)
+	parent.add_child(tabs)
+
+	var active_side := _active_side_count(m.game)
+	var nearby := _available_side_count(m.game)
+	var bounty_done := 0
+	for b in m.game.bounties:
+		if bool(b.get("done", false)):
+			bounty_done += 1
+	var visited := _visited_count(m.game)
+	var story_count: int = m.game.convo_log_order.size()
+	var quest_suffix := str(1 + active_side)
+	if nearby > 0:
+		quest_suffix += " +%d" % nearby
+	var key_prefix := ["", "", "", ""] if m.game.touch_mode else ["1  ", "2  ", "3  ", "4  "]
+	var specs := [
+		["quests", "%sQUESTS  ·  %s" % [key_prefix[0], quest_suffix], GOLD, KEY_1],
+		["activities", "%sACTIVITIES  ·  %d/%d" % [key_prefix[1], bounty_done, m.game.bounties.size()], GREEN, KEY_2],
+		["progress", "%sPROGRESS  ·  %d/%d" % [key_prefix[2], visited, m.game.zone_count], BLUE, KEY_3],
+		["story", "%sSTORY  ·  %d" % [key_prefix[3], story_count], PURPLE, KEY_4],
+	]
+	for spec in specs:
+		_nav_button(m, tabs, String(spec[0]), String(spec[1]), spec[2], int(spec[3]), active)
+
+
+static func _nav_button(m: Menus, parent: HBoxContainer, id: String, text: String,
+		color: Color, keycode: int, active: String) -> void:
+	var b := m._btn(parent, text, func() -> void: m.open_journal(id),
+		color if id == active else Color(0.72, 0.72, 0.76))
+	b.name = "JournalTab_" + id
+	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.custom_minimum_size = Vector2(0, 44)
+	b.tooltip_text = "Open %s  [%d]" % [id.capitalize(), keycode - KEY_0]
+	if not m.game.touch_mode:
+		var shortcut := Shortcut.new()
+		var key := InputEventKey.new()
+		key.keycode = keycode as Key
+		shortcut.events = [key]
+		b.shortcut = shortcut
+		b.shortcut_in_tooltip = false
+	if id == active:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(color, 0.13)
+		sb.border_color = Color(color, 0.95)
+		sb.border_width_bottom = 3
+		sb.set_corner_radius_all(4)
+		sb.content_margin_left = 8
+		sb.content_margin_right = 8
+		b.add_theme_stylebox_override("normal", sb)
+		b.add_theme_stylebox_override("hover", sb)
+		b.add_theme_color_override("font_color", color)
+
+
+static func _context_strip(m: Menus, parent: VBoxContainer, tab: String) -> void:
+	var g := m.game
+	var text := ""
+	var color := MUTED
+	match tab:
+		"quests":
+			var room_left: int = g.zone_alive.get(clampi(g.cur_room, 0, g.zone_count - 1), 0)
+			text = "ACTIVE PATH  •  %d side quest%s  •  %d nearby  •  %d enem%s in this room" % [
+				_active_side_count(g), "" if _active_side_count(g) == 1 else "s",
+				_available_side_count(g), room_left, "y" if room_left == 1 else "ies"]
+			color = GOLD
+		"activities":
+			text = "ROTATING ACTIVITIES  •  rewards are granted automatically when bounties complete"
+			if g.vault_ready():
+				text += "  •  VAULT REWARD READY"
+				color = GOLD
+			else:
+				color = GREEN
+		"progress":
+			text = "CHAPTER OVERVIEW  •  route, bosses, Resonance, and faction standing"
+			color = BLUE
+		"story":
+			text = "YOUR ARCHIVE  •  replay every conversation and choice recorded on this character"
+			color = PURPLE
+	var strip := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(color, 0.07)
+	sb.border_color = Color(color, 0.28)
+	sb.border_width_left = 3
+	sb.content_margin_left = 10
+	sb.content_margin_right = 10
+	sb.content_margin_top = 5
+	sb.content_margin_bottom = 5
+	strip.add_theme_stylebox_override("panel", sb)
+	parent.add_child(strip)
+	var label := m._lbl(strip, text, 12, color)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+
+# -------------------------------------------------------------- QUESTS ---
+
+static func _quests(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	_section(m, list, "MAIN QUEST", "Your immediate path", GOLD)
+	var main := _card(list, GOLD)
+	var obj := g.touchify(Story.quest_text(g.quest_key))
+	_status_line(m, main, "◆  IN PROGRESS", "STORY", GOLD)
+	var title := m._lbl(main, obj if obj != "" else "Explore.", 18, Color.WHITE)
+	_wrap(title)
 	var zi: int = clampi(g.cur_room, 0, g.zone_count - 1)
 	var left: int = g.zone_alive.get(zi, 0)
 	if left > 0:
-		m._lbl(list, "   This room: %d monster%s left to clear." % [left, "" if left == 1 else "s"],
-			13, Color(0.8, 0.7, 0.5))
-
+		m._lbl(main, "Current room  ·  %d monster%s remain" % [left, "" if left == 1 else "s"],
+			13, Color(0.88, 0.72, 0.48))
+	else:
+		m._lbl(main, "Current room clear  ·  continue along the route", 13, GREEN)
 	_side_quests(m, list)
+	_available_quests(m, list)
+
+
+static func _side_quests(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	var entries: Array = []
+	for id in Story.ALL_SIDE_QUESTS:
+		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
+		if String(q.get("chapter", "")) == g.chapter_id \
+				and g.get_flag("sq_on_" + String(id), false):
+			entries.append([String(id), q])
+	if entries.is_empty():
+		return
+	_section(m, list, "SIDE QUESTS", "%d accepted promise%s" % [
+		entries.size(), "" if entries.size() == 1 else "s"], GREEN)
+	for entry in entries:
+		var id: String = entry[0]
+		var q: Dictionary = entry[1]
+		var paid: bool = g.get_flag("sq_paid_" + id, false)
+		var card := _card(list, GREEN if paid else Color(0.75, 0.9, 0.6))
+		_status_line(m, card, "✓  COMPLETE" if paid else "⚑  ACTIVE",
+			"SIDE QUEST", GREEN if paid else Color(0.9, 0.88, 0.55))
+		var name := m._lbl(card, String(q["name"]), 16, Color(0.84, 1.0, 0.82) if paid else Color.WHITE)
+		_wrap(name)
+		if paid:
+			m._lbl(card, "Promise kept and reward collected.", 12, MUTED)
+			continue
+		var desc := m._lbl(card, String(q.get("desc", "")), 13, BODY)
+		_wrap(desc)
+		var steps: Array = q.get("steps", [])
+		var done_steps := 0
+		for step in steps:
+			if g.get_flag(String(step["flag"]), false):
+				done_steps += 1
+		_meter(m, card, done_steps, steps.size(), GREEN,
+			"OBJECTIVES", "%d / %d" % [done_steps, steps.size()])
+		for step in steps:
+			var done: bool = g.get_flag(String(step["flag"]), false)
+			m._lbl(card, "%s  %s" % ["✓" if done else "◇", String(step["text"])],
+				13, GREEN if done else Color(0.9, 0.85, 0.7))
+		m._lbl(card, "⌛  Chapter deadline  ·  finish before the final boss",
+			12, Color(0.98, 0.7, 0.42))
+
+
+static func _available_quests(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	var open_quests: Array = []
+	for id in Story.ALL_SIDE_QUESTS:
+		if g.side_quest_available(String(id)):
+			open_quests.append(Story.ALL_SIDE_QUESTS[id])
+	if open_quests.is_empty():
+		return
+	_section(m, list, "NEARBY OPPORTUNITIES", "Not accepted yet", Color(0.95, 0.75, 0.38))
+	for q in open_quests:
+		var card := _card(list, Color(0.95, 0.75, 0.38))
+		_status_line(m, card, "❢  AVAILABLE", "LOOK FOR THE MARKED LOCAL", Color(0.95, 0.78, 0.4))
+		var name := m._lbl(card, String(q["name"]), 16, Color.WHITE)
+		_wrap(name)
+		var desc := m._lbl(card, String(q.get("desc", "")), 13, BODY)
+		_wrap(desc)
+
+
+# ---------------------------------------------------------- ACTIVITIES ---
+
+static func _activities(m: Menus, list: VBoxContainer) -> void:
 	_bounties(m, list)
 	_vault(m, list)
 	_weekly(m, list)
+	_waking(m, list)
 
-	# --- chapter boss checklist ---
-	m._lbl(list, "— CHAPTER BOSSES —", 16, Color(1, 0.6, 0.6))
-	var bosses := VBoxContainer.new()
-	bosses.add_theme_constant_override("separation", 2)
-	list.add_child(bosses)
+
+static func _bounties(m: Menus, list: VBoxContainer) -> void:
+	_section(m, list, "BOUNTIES", "Automatic rewards · daily and weekly rotations", GREEN)
+	if m.game.bounties.is_empty():
+		var empty := _card(list, MUTED)
+		m._lbl(empty, "No bounties active.", 14, MUTED)
+		return
+	for scope in ["daily", "weekly"]:
+		var scope_entries: Array = []
+		for b in m.game.bounties:
+			if String(b["scope"]) == scope:
+				scope_entries.append(b)
+		if scope_entries.is_empty():
+			continue
+		var scope_name := "DAILY" if scope == "daily" else "WEEKLY"
+		for b in scope_entries:
+			var done: bool = bool(b["done"])
+			var card := _card(list, GREEN if done else (BLUE if scope == "daily" else PURPLE))
+			_status_line(m, card, "✓  COMPLETE" if done else "○  %s BOUNTY" % scope_name,
+				"REWARD PAID" if done else "IN PROGRESS", GREEN if done else BODY)
+			var title := m._lbl(card, String(b["desc"]), 15, Color.WHITE)
+			_wrap(title)
+			_meter(m, card, int(b["progress"]), int(b["target"]),
+				GREEN if done else (BLUE if scope == "daily" else PURPLE),
+				"PROGRESS", "%d / %d" % [int(b["progress"]), int(b["target"])])
+			var reward := "%d gold" % int(b["gold"])
+			if int(b["gems"]) > 0:
+				reward += "  + 1 gem"
+			if int(b.get("renown", 0)) > 0:
+				reward += "  + ◈%d Renown" % int(b["renown"])
+			m._lbl(card, "Reward  ·  " + reward, 12, Color(0.9, 0.82, 0.58))
+
+
+static func _vault(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	_section(m, list, "WEEKLY VAULT", "A guaranteed high-value reward", GOLD)
+	var ready: bool = g.vault_ready()
+	var claimed: bool = g.vault_claimed_week == g._week_index()
+	var card := _card(list, GOLD if ready else Color(0.76, 0.65, 0.38))
+	_status_line(m, card, "◆  REWARD READY" if ready else ("✓  CLAIMED" if claimed else "◇  BUILDING"),
+		"WEEKLY", GOLD if ready else (GREEN if claimed else BODY))
+	var prog: int = g.vault_progress if g._week_index() == g.vault_week else 0
+	var goal: int = Balance.VAULT_BOSS_GOAL
+	_meter(m, card, mini(prog, goal), goal, GOLD, "BOSSES DEFEATED",
+		"%d / %d" % [mini(prog, goal), goal])
+	m._lbl(card, "Golden chest  +  ◈%d Renown" % Balance.RENOWN_VAULT, 13, Color(0.95, 0.86, 0.58))
+	if ready:
+		var claim := m._btn(card, "  ◆  CLAIM VAULT REWARD  ", func() -> void:
+			g.claim_vault()
+			m.open_journal("activities"), GOLD)
+		claim.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		claim.custom_minimum_size = Vector2(0, 44)
+	elif claimed:
+		m._lbl(card, "Collected for this rotation · returns next week.", 12, MUTED)
+	else:
+		m._lbl(card, "%d more boss%s to unlock." % [
+			maxi(0, goal - prog), "" if goal - prog == 1 else "es"], 12, MUTED)
+
+
+static func _weekly(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	_section(m, list, "WEEKLY CHALLENGE", "Fixed map · shared rules · personal best", PURPLE)
+	var mod: Dictionary = g.weekly_mod()
+	var chname := String(Story.chapter(g.weekly_chapter())["name"])
+	var live: bool = g.weekly_active and g.weekly_week == g._week_index()
+	var card := _card(list, PURPLE)
+	_status_line(m, card, "◆  LIVE RUN" if live else "◇  AVAILABLE", chname.to_upper(), PURPLE)
+	var title := m._lbl(card, String(mod["name"]), 17, Color.WHITE)
+	_wrap(title)
+	var desc := m._lbl(card, String(mod["desc"]), 13, BODY)
+	_wrap(desc)
+	m._lbl(card, "Same seed for every player this week.", 12, MUTED)
+	var best: Dictionary = g.weekly_best()
+	if not best.is_empty():
+		var secs := int(float(best.get("time", 0.0)))
+		m._lbl(card, "Personal best  ·  %d:%02d  ·  %s  ·  grade %s" % [
+			secs / 60, secs % 60,
+			String(Classes.CLASSES.get(String(best.get("cls", "warrior")), {}).get("name", "?")),
+			String(best.get("grade", "?"))], 13, GREEN)
+	if g.weekly_claimed_week == g._week_index():
+		m._lbl(card, "Weekly reward collected · keep racing to improve your time.", 12, MUTED)
+	else:
+		m._lbl(card, "First clear pays gold, gems, and ◈%d Renown." % Balance.RENOWN_WEEKLY,
+			12, Color(0.9, 0.82, 0.58))
+	if not live:
+		var start := m._btn(card, "  BEGIN WEEKLY RUN  →  ", func() -> void:
+			m.open_confirm(
+				"Begin this week's challenge? It restarts %s from its beginning on the week's fixed map, with '%s' live (%s). Your character, gear and Resonance carry in — chapter story progress resets, like any replay." %
+					[chname, String(mod["name"]), String(mod["desc"])],
+				func() -> void: g.start_weekly()), PURPLE)
+		start.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		start.custom_minimum_size = Vector2(0, 44)
+
+
+static func _waking(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	_section(m, list, "THE WAKING", "Weekly incursion", BLUE)
+	var wk_ch := g.weekly_chapter()
+	var chname := String(Story.chapter(wk_ch)["name"])
+	var can_wake: bool = g.get_flag("completed_" + wk_ch, false) \
+		and not Story.chapter(wk_ch).get("spine", []).is_empty()
+	var banked: int = g.waking_kills.size() if g.waking_kills_week == g._week_index() else 0
+	var card := _card(list, BLUE if can_wake else MUTED)
+	_status_line(m, card, "◆  OPEN" if can_wake else "◇  LOCKED", chname.to_upper(),
+		BLUE if can_wake else MUTED)
+	if can_wake:
+		var desc := m._lbl(card,
+			"Three breach rooms branch off the chapter spine. Hunt the echoes solo.",
+			13, BODY)
+		_wrap(desc)
+		_meter(m, card, banked, Balance.WAKING_ROOMS, BLUE, "BREACHES SEALED",
+			"%d / %d" % [banked, Balance.WAKING_ROOMS])
+		m._lbl(card, "Each breach pays a bright gem + gold; seal all for the Waking Chest + ◈%d Renown." %
+			Balance.RENOWN_WAKING, 12, Color(0.82, 0.9, 1.0))
+	else:
+		var lock_text := m._lbl(card, "Clear %s to open its breaches." % chname, 13, MUTED)
+		_wrap(lock_text)
+
+
+# ------------------------------------------------------------ PROGRESS ---
+
+static func _progress_page(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	_section(m, list, "CHAPTER ROUTE", "What you have charted and conquered", BLUE)
+	var route := _card(list, BLUE)
+	var visited := _visited_count(g)
+	_meter(m, route, visited, g.zone_count, BLUE, "ROOMS CHARTED",
+		"%d / %d" % [visited, g.zone_count])
+	m._lbl(route, "Current position  ·  room %d of %d" % [
+		clampi(g.cur_room + 1, 1, g.zone_count), g.zone_count], 13, BODY)
+
+	_section(m, list, "CHAPTER BOSSES", "Unique encounters on this route", Color(1.0, 0.62, 0.62))
+	var bosses := _card(list, Color(1.0, 0.62, 0.62))
 	var seen := {}
 	var any_boss := false
+	var boss_total := 0
+	var boss_done := 0
 	for i in g.zone_count:
 		var kind := String(g.zones[i].get("boss", ""))
 		if kind == "" or seen.has(kind):
 			continue
 		seen[kind] = true
 		any_boss = true
+		boss_total += 1
 		var done: bool = g.boss_done.get(kind, false)
+		if done:
+			boss_done += 1
 		var nm := String(Story.ALL_ENEMIES.get(kind, {}).get("name", kind))
 		m._lbl(bosses, "%s  %s" % ["✓" if done else "○", nm],
-			14, Color(0.6, 1.0, 0.6) if done else Color(0.85, 0.85, 0.9))
-	if not any_boss:
-		m._lbl(bosses, "None charted yet.", 13, Color(0.6, 0.62, 0.68))
+			14, GREEN if done else BODY)
+	if any_boss:
+		_meter(m, bosses, boss_done, boss_total, Color(1.0, 0.62, 0.62),
+			"BOSSES DEFEATED", "%d / %d" % [boss_done, boss_total])
+	else:
+		m._lbl(bosses, "None charted yet.", 13, MUTED)
 
-	# --- exploration + resonance ---
-	m._lbl(list, "— PROGRESS —", 16, Color(0.6, 0.9, 1.0))
-	var visited := 0
-	for i in g.zone_count:
-		if g.visited.get(i, false):
-			visited += 1
-	m._lbl(list, "Rooms charted:  %d / %d" % [visited, g.zone_count], 14, Color(0.85, 0.88, 0.94))
+	_section(m, list, "CHARACTER PATH", "Consequences carried by this character", PURPLE)
+	var path := _card(list, PURPLE)
 	var res := int(g.player.resonance)
 	var band := "Virtuous" if res > 20 else ("Tempted" if res < -20 else "Balanced")
-	m._lbl(list, "Resonance:  %+d  (%s)" % [res, band], 14,
-		Color(1.0, 0.85, 0.4) if res > 20 else (Color(0.7, 0.5, 0.95) if res < -20 else Color(0.85, 0.85, 0.9)))
-
-	# --- factions ---
-	m._lbl(list, "— STANDING —", 16, Color(0.8, 0.9, 0.7))
+	_status_line(m, path, "RESONANCE", "%+d  ·  %s" % [res, band],
+		Color(1.0, 0.85, 0.4) if res > 20 else (PURPLE if res < -20 else BODY))
+	var any_standing := false
 	for fid in g.player.faction_standing:
-		var v: int = int(g.player.faction_standing[fid])
-		if v == 0:
+		var value: int = int(g.player.faction_standing[fid])
+		if value == 0:
 			continue
+		any_standing = true
 		var fname: String = FACTION_NAME.get(fid, String(fid).capitalize())
-		m._lbl(list, "%s:  %+d" % [fname, v], 14,
-			Color(0.7, 1.0, 0.7) if v > 0 else Color(1.0, 0.7, 0.6))
-	var neutral := true
-	for fid in g.player.faction_standing:
-		if int(g.player.faction_standing[fid]) != 0:
-			neutral = false
-	if neutral:
-		m._lbl(list, "No faction has taken your measure yet.", 13, Color(0.6, 0.62, 0.68))
-
-	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
+		m._lbl(path, "%s   %+d" % [fname, value], 14,
+			GREEN if value > 0 else Color(1.0, 0.68, 0.58))
+	if not any_standing:
+		m._lbl(path, "No faction has taken your measure yet.", 13, MUTED)
 
 
-# -------------------------------------------------------- story so far ---
-# The past-quests archive: every conversation this character has lived,
-# bucketed under the quest that was live when it played (game.convo_log,
-# recorded at the dialogue box so variants, beats and choices land exactly
-# as seen), grouped by chapter, re-readable in full.
+# --------------------------------------------------------- STORY ARCHIVE ---
 
 static func _archive(m: Menus, list: VBoxContainer) -> void:
 	var g := m.game
+	_section(m, list, "STORY SO FAR", "Re-read dialogue, choices, and roadside conversations", PURPLE)
 	if g.convo_log_order.is_empty():
-		m._lbl(list, "Nothing is written yet — the road will fill these pages.",
-			14, Color(0.6, 0.62, 0.68))
+		var empty := _card(list, MUTED)
+		m._lbl(empty, "Nothing is written yet.", 15, BODY)
+		m._lbl(empty, "The road will fill these pages as you speak, choose, and remember.",
+			13, MUTED)
 		return
 	var placed := {}
 	for chid in Story.CHAPTER_LIST:
@@ -131,47 +435,41 @@ static func _archive(m: Menus, list: VBoxContainer) -> void:
 				placed[key] = true
 		if keys.is_empty():
 			continue
-		m._lbl(list, "— %s —" % String(Story.chapter(String(chid))["name"]).to_upper(),
-			16, Color(0.95, 0.85, 0.5))
+		_section(m, list, String(Story.chapter(String(chid))["name"]).to_upper(),
+			"%d entr%s" % [keys.size(), "y" if keys.size() == 1 else "ies"], GOLD)
 		for key in keys:
 			_archive_row(m, list, String(key))
-	# Anything bucketed outside the campaign list (endgame trials, oddities).
 	var leftovers: Array = []
 	for key in g.convo_log_order:
 		if not placed.has(key):
 			leftovers.append(key)
 	if not leftovers.is_empty():
-		m._lbl(list, "— ELSEWHERE —", 16, Color(0.85, 0.6, 1.0))
+		_section(m, list, "ELSEWHERE", "%d entr%s" % [
+			leftovers.size(), "y" if leftovers.size() == 1 else "ies"], PURPLE)
 		for key in leftovers:
 			_archive_row(m, list, String(key))
 
 
 static func _archive_row(m: Menus, list: VBoxContainer, key: String) -> void:
-	var g := m.game
-	var lines: Array = g.convo_log.get(key, {}).get("lines", [])
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	list.add_child(row)
-	m._btn(row, "  Read  ", func() -> void: _read(m, key), Color(0.8, 0.9, 1.0))
-	var tl := m._lbl(row, "%s   ·  %d lines" % [_archive_title(key), lines.size()],
-		14, Color(0.9, 0.88, 0.8))
-	tl.custom_minimum_size = Vector2(620, 0)
-	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var lines: Array = m.game.convo_log.get(key, {}).get("lines", [])
+	var card := _card(list, PURPLE)
+	_status_line(m, card, "RECORDED", "%d lines" % lines.size(), PURPLE)
+	var title := m._lbl(card, m.game.touchify(_archive_title(key)), 15, Color.WHITE)
+	_wrap(title)
+	var read := m._btn(card, "  READ TRANSCRIPT  →  ", func() -> void: _read(m, key), BLUE)
+	read.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	read.custom_minimum_size = Vector2(0, 44)
 
 
-## A bucket's heading: the quest objective that was live, or the roadside
-## catch-all for talk between quests ("wanders_<chapter>" keys).
 static func _archive_title(key: String) -> String:
 	if key.begins_with("wanders_"):
 		return "Wanderings — talk of the road"
-	var t := Story.quest_text(key)
-	return t if t != "" else key.capitalize()
+	var text := Story.quest_text(key)
+	return text if text != "" else key.capitalize()
 
 
-## The transcript, exactly as it played: choices in green, the Narrator in
-## dusk-blue, every named speaker in parchment gold.
 static func _read(m: Menus, key: String) -> void:
-	var title := _archive_title(key)
+	var title := m.game.touchify(_archive_title(key))
 	if title.length() > 64:
 		title = title.substr(0, 61) + "..."
 	var vbox := m._open("Story — %s" % title, 900, 640, true)
@@ -185,174 +483,136 @@ static func _read(m: Menus, key: String) -> void:
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.add_theme_constant_override("separation", 8)
 	scroll.add_child(list)
-	for l in m.game.convo_log.get(key, {}).get("lines", []):
-		var who := String(l[0])
-		var text := String(l[1])
-		var lbl: Label
+	for line in m.game.convo_log.get(key, {}).get("lines", []):
+		var who := String(line[0])
+		var text := m.game.touchify(String(line[1]))
+		var label: Label
 		if who == "You":
-			lbl = m._lbl(list, text, 14, Color(0.7, 1.0, 0.7))
+			label = m._lbl(list, text, 14, GREEN)
 		elif who == "" or who == "Narrator":
-			lbl = m._lbl(list, text, 13, Color(0.72, 0.76, 0.92))
+			label = m._lbl(list, text, 13, Color(0.72, 0.76, 0.92))
 		else:
-			lbl = m._lbl(list, "%s —  %s" % [who, text], 14, Color(0.92, 0.88, 0.72))
-		lbl.custom_minimum_size = Vector2(830, 0)
-		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var row := HBoxContainer.new()
-	vbox.add_child(row)
-	m._btn(row, "  ← Back to the archive  ", func() -> void: m.open_journal("story"),
-		Color(0.8, 0.9, 1.0))
+			label = m._lbl(list, "%s —  %s" % [who, text], 14, Color(0.92, 0.88, 0.72))
+		label.custom_minimum_size = Vector2(830, 0)
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var back := m._btn(vbox, "  ←  BACK TO STORY ARCHIVE  ", func() -> void:
+		m.open_journal("story"), BLUE)
+	back.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	back.custom_minimum_size = Vector2(0, 44)
 	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
 
 
-## Active bounties with progress. Daily first, then weekly.
-## Accepted side quests (Story.SIDE_QUESTS): step checklist while live,
-## one green line once paid. Section hides until something is accepted —
-## side quests are found, not assigned.
-static func _side_quests(m: Menus, list: VBoxContainer) -> void:
-	var g := m.game
-	var entries: Array = []
+# ------------------------------------------------------------- UI HELPERS ---
+
+static func _section(m: Menus, parent: VBoxContainer, title: String,
+		subtitle: String, color: Color) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	parent.add_child(row)
+	var heading := m._lbl(row, title, 15, color)
+	UITheme.header(heading)
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading.custom_minimum_size = Vector2(280, 0)
+	var note := m._lbl(row, subtitle, 12, MUTED)
+	note.custom_minimum_size = Vector2(430, 0)
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+static func _card(parent: VBoxContainer, accent: Color) -> VBoxContainer:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.12, 0.11, 0.16, 0.78)
+	sb.border_color = Color(accent, 0.42)
+	sb.border_width_left = 3
+	sb.border_width_top = 1
+	sb.border_width_right = 1
+	sb.border_width_bottom = 1
+	sb.set_corner_radius_all(5)
+	sb.content_margin_left = 13
+	sb.content_margin_right = 13
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	panel.add_theme_stylebox_override("panel", sb)
+	parent.add_child(panel)
+	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_theme_constant_override("separation", 5)
+	panel.add_child(box)
+	return box
+
+
+static func _status_line(m: Menus, parent: VBoxContainer, left: String,
+		right: String, color: Color) -> void:
+	var row := HBoxContainer.new()
+	parent.add_child(row)
+	var status := m._lbl(row, left, 11, color)
+	status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status.custom_minimum_size = Vector2(360, 0)
+	var tag := m._lbl(row, right, 11, MUTED)
+	tag.custom_minimum_size = Vector2(260, 0)
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+
+
+static func _meter(m: Menus, parent: VBoxContainer, value: int, maximum: int,
+		color: Color, left: String, right: String) -> void:
+	var labels := HBoxContainer.new()
+	parent.add_child(labels)
+	var label := m._lbl(labels, left, 11, MUTED)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.custom_minimum_size = Vector2(360, 0)
+	var count := m._lbl(labels, right, 11, color)
+	count.custom_minimum_size = Vector2(140, 0)
+	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var bar := ProgressBar.new()
+	bar.name = "JournalMeter"
+	bar.show_percentage = false
+	bar.min_value = 0
+	bar.max_value = maxi(1, maximum)
+	bar.value = clampi(value, 0, maxi(1, maximum))
+	bar.custom_minimum_size = Vector2(0, 9)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.035, 0.035, 0.055, 0.95)
+	bg.border_color = Color(color, 0.28)
+	bg.set_border_width_all(1)
+	bg.set_corner_radius_all(3)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(color, 0.86)
+	fill.set_corner_radius_all(3)
+	bar.add_theme_stylebox_override("background", bg)
+	bar.add_theme_stylebox_override("fill", fill)
+	parent.add_child(bar)
+
+
+static func _wrap(label: Label) -> void:
+	label.custom_minimum_size = Vector2(CARD_TEXT_WIDTH, 0)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+
+static func _active_side_count(g: Game) -> int:
+	var count := 0
 	for id in Story.ALL_SIDE_QUESTS:
 		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
-		if String(q.get("chapter", "")) != g.chapter_id:
-			continue
-		if not g.get_flag("sq_on_" + String(id), false):
-			continue
-		entries.append([String(id), q])
-	if not entries.is_empty():
-		m._lbl(list, "— SIDE QUESTS —", 16, Color(0.7, 0.95, 0.7))
-	for e in entries:
-		var id: String = e[0]
-		var q: Dictionary = e[1]
-		var paid: bool = g.get_flag("sq_paid_" + id, false)
-		m._lbl(list, ("✔  %s — complete" if paid else "⚑  %s") % String(q["name"]), 15,
-			Color(0.55, 0.8, 0.55) if paid else Color(0.95, 0.95, 0.8))
-		if paid:
-			continue
-		var dl := m._lbl(list, "   " + String(q.get("desc", "")), 12, Color(0.75, 0.75, 0.8))
-		dl.custom_minimum_size = Vector2(780, 0)
-		dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		for step in q.get("steps", []):
-			var done: bool = g.get_flag(String(step["flag"]), false)
-			m._lbl(list, "   %s  %s" % ["✔" if done else "◇", String(step["text"])], 13,
-				Color(0.55, 0.8, 0.55) if done else Color(0.9, 0.85, 0.7))
-		# The DEADLINE, on every open promise. A quest that expires without a
-		# visible clock is a feel-bad every time — this line is what earns
-		# game_base._expire_side_quests the right to charge for it.
-		m._lbl(list, "   ⧗  Expires when this chapter ends — finish it BEFORE the final boss, or the promise is broken.",
-			12, Color(0.95, 0.7, 0.45))
-	_available_quests(m, list)
+		if String(q.get("chapter", "")) == g.chapter_id \
+				and g.get_flag("sq_on_" + String(id), false) \
+				and not g.get_flag("sq_paid_" + String(id), false):
+			count += 1
+	return count
 
 
-## AVAILABLE: offered in this world, not yet taken. The journal used to list
-## ONLY accepted quests, so a player who walked past a giver had no way to
-## learn a quest existed at all — the log was a tracker with no discovery in
-## it. Gated on side_quest_available (the giver must actually be present in
-## THIS run), so it can never advertise a wanderer the seed never rolled.
-static func _available_quests(m: Menus, list: VBoxContainer) -> void:
-	var g := m.game
-	var open: Array = []
+static func _available_side_count(g: Game) -> int:
+	var count := 0
 	for id in Story.ALL_SIDE_QUESTS:
 		if g.side_quest_available(String(id)):
-			open.append(Story.ALL_SIDE_QUESTS[id])
-	if open.is_empty():
-		return
-	m._lbl(list, "— AVAILABLE —", 16, Color(0.95, 0.85, 0.5))
-	m._lbl(list, "Someone in this chapter is still waiting to ask. Look for the ❢ over their head.",
-		12, Color(0.7, 0.72, 0.78))
-	for q in open:
-		m._lbl(list, "❢  %s" % String(q["name"]), 15, Color(0.95, 0.9, 0.6))
-		var dl := m._lbl(list, "   " + String(q.get("desc", "")), 12, Color(0.75, 0.75, 0.8))
-		dl.custom_minimum_size = Vector2(780, 0)
-		dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			count += 1
+	return count
 
 
-static func _bounties(m: Menus, list: VBoxContainer) -> void:
-	m._lbl(list, "— BOUNTIES —", 16, Color(0.6, 1.0, 0.7))
-	if m.game.bounties.is_empty():
-		m._lbl(list, "No bounties active.", 13, Color(0.6, 0.62, 0.68))
-		return
-	for scope in ["daily", "weekly"]:
-		for b in m.game.bounties:
-			if String(b["scope"]) != scope:
-				continue
-			var done: bool = b["done"]
-			var tag := "DAILY" if scope == "daily" else "WEEKLY"
-			var reward := "%d gold" % int(b["gold"]) + ("  + gem" if int(b["gems"]) > 0 else "") \
-				+ ("  + ◈%d" % int(b.get("renown", 0)) if int(b.get("renown", 0)) > 0 else "")
-			var line := "%s  [%s]  %s  —  %d/%d   (%s)" % [
-				"✓" if done else "○", tag, String(b["desc"]),
-				int(b["progress"]), int(b["target"]), reward]
-			m._lbl(list, line, 14, Color(0.6, 1.0, 0.6) if done else Color(0.85, 0.88, 0.94))
-
-
-## The weekly vault: progress toward the guaranteed reward + claim button.
-static func _vault(m: Menus, list: VBoxContainer) -> void:
-	var g := m.game
-	m._lbl(list, "— WEEKLY VAULT —", 16, Color(1.0, 0.85, 0.4))
-	var prog: int = g.vault_progress if g._week_index() == g.vault_week else 0
-	var goal: int = Balance.VAULT_BOSS_GOAL
-	m._lbl(list, "Bosses this week:  %d / %d  →  a guaranteed golden chest + ◈%d Renown" %
-		[mini(prog, goal), goal, Balance.RENOWN_VAULT], 14, Color(0.9, 0.85, 0.7))
-	if g.vault_ready():
-		var row := HBoxContainer.new()
-		list.add_child(row)
-		m._btn(row, "   Claim vault reward   ", func() -> void:
-			g.claim_vault()
-			m.open_journal(), Color(1.0, 0.88, 0.45))
-	elif g.vault_claimed_week == g._week_index():
-		m._lbl(list, "Claimed this week. Resets next week.", 13, Color(0.6, 0.62, 0.68))
-
-
-## The weekly challenge (retention roadmap #2): one fixed seed + one
-## modifier per week, the same for every player. Starts a replay of the
-## week's chapter; the clear pays once per week and keeps a weekly best.
-static func _weekly(m: Menus, list: VBoxContainer) -> void:
-	var g := m.game
-	m._lbl(list, "— WEEKLY CHALLENGE —", 16, Color(0.85, 0.6, 1.0))
-	var mod: Dictionary = g.weekly_mod()
-	var chname := String(Story.chapter(g.weekly_chapter())["name"])
-	var head := m._lbl(list, "%s  —  %s   (%s, fixed map for everyone this week)" %
-		[String(mod["name"]), String(mod["desc"]), chname], 14, Color(0.9, 0.85, 1.0))
-	head.custom_minimum_size = Vector2(800, 0)
-	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var best: Dictionary = g.weekly_best()
-	if not best.is_empty():
-		var secs := int(float(best.get("time", 0.0)))
-		m._lbl(list, "Your best this week:  %d:%02d  (%s, grade %s)" %
-			[secs / 60, secs % 60, String(Classes.CLASSES.get(String(best.get("cls", "warrior")), {}).get("name", "?")),
-			String(best.get("grade", "?"))], 14, Color(0.7, 1.0, 0.7))
-	if g.weekly_claimed_week == g._week_index():
-		m._lbl(list, "Reward claimed this week — the seed still races for a better time.",
-			13, Color(0.6, 0.62, 0.68))
-	else:
-		m._lbl(list, "Completion pays gold, gems and ◈%d Renown, once per week." % Balance.RENOWN_WEEKLY,
-			13, Color(0.7, 0.72, 0.78))
-	if g.weekly_active and g.weekly_week == g._week_index():
-		m._lbl(list, "◆ The challenge is LIVE — this run rides the week's modifier.",
-			14, Color(1.0, 0.88, 0.45))
-	else:
-		var row := HBoxContainer.new()
-		list.add_child(row)
-		m._btn(row, "   Begin the weekly run   ", func() -> void:
-			m.open_confirm(
-				"Begin this week's challenge? It restarts %s from its beginning on the week's fixed map, with '%s' live (%s). Your character, gear and Resonance carry in — chapter story progress resets, like any replay." %
-					[chname, String(mod["name"]), String(mod["desc"])],
-				func() -> void: g.start_weekly()), Color(0.85, 0.7, 1.0))
-
-	# --- the Waking Incursion (rides the same rotating chapter) ---
-	m._lbl(list, "— THE WAKING —", 16, Color(0.7, 0.85, 1.0))
-	var wk_ch := g.weekly_chapter()
-	var can_wake: bool = g.get_flag("completed_" + wk_ch, false) \
-		and not Story.chapter(wk_ch).get("spine", []).is_empty()
-	var banked: int = g.waking_kills.size() if g.waking_kills_week == g._week_index() else 0
-	if can_wake:
-		var wl := m._lbl(list, "%s is Waking this week: three breach rooms off the spine, each holding an echo from another god-king's domain (finale level +%d, one affix). Replay the chapter solo to hunt them." %
-			[chname, Balance.WAKING_LEVEL_BONUS], 13, Color(0.85, 0.88, 0.94))
-		wl.custom_minimum_size = Vector2(800, 0)
-		wl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		m._lbl(list, "Breaches sealed this week:  %d / %d  →  a bright gem + gold each; all %d pay the Waking Chest + ◈%d Renown." %
-			[banked, Balance.WAKING_ROOMS, Balance.WAKING_ROOMS, Balance.RENOWN_WAKING],
-			13, Color(0.7, 1.0, 0.7) if banked > 0 else Color(0.7, 0.72, 0.78))
-	else:
-		m._lbl(list, "The Waking stirs where the weekly points — clear %s and its breaches will open to you." % chname,
-			13, Color(0.6, 0.62, 0.68))
+static func _visited_count(g: Game) -> int:
+	var count := 0
+	for i in g.zone_count:
+		if g.visited.get(i, false):
+			count += 1
+	return count

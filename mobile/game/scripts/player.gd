@@ -6,6 +6,10 @@ class_name Player extends "res://scripts/player_kit_warlock.gd"
 
 # ================================================================= per frame
 
+func _process(_delta: float) -> void:
+	_refresh_occlusion_outline()
+
+
 func _physics_process(delta: float) -> void:
 	_sync_skin_ambient()
 	# MP (wave 4): a remote peer's player is PRESENTATION ONLY on this

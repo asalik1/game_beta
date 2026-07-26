@@ -30,6 +30,13 @@ var path_core: Line2D = null
 var path_start := Vector2.ZERO
 var path_ready := false
 var path_closing := false
+var trail_max_points := 0
+var trail_min_step := 1.5
+var trail_fade_time := 0.11
+var motion_profile := {}
+var motion_particles: CPUParticles2D = null
+var flight_phase := 0.0
+var flight_wobble := Vector2.ZERO
 var visual_impact_sent := false
 var visual_offset := Vector2.ZERO
 var visual_offset_start := Vector2.ZERO
@@ -54,9 +61,13 @@ func _apply_rise() -> void:
 	if _vis != null:
 		# Offset is presentation-only and expressed in world pixels. Collision,
 		# range and network flight remain on the projectile node itself.
-		_vis.position = Vector2(
+		var base_offset := Vector2(
 			visual_offset.x / maxf(0.05, scale.x),
 			(visual_offset.y - rise) / maxf(0.05, scale.y))
+		var wobble_offset := Vector2(
+			flight_wobble.x / maxf(0.05, scale.x),
+			flight_wobble.y / maxf(0.05, scale.y))
+		_vis.position = base_offset + wobble_offset
 
 
 ## Begin the rendered shot somewhere other than its physics muzzle, then fold
@@ -110,6 +121,142 @@ const GLOWS := {
 	"hellfire_brand_bolt": Color(1.0, 0.28, 0.06),
 }
 
+# Boss-only 64px art keeps the existing material language for glows, lights,
+# sparks, trails and impacts without inheriting the legacy core sprite.
+const BOSS_PROJECTILE_STYLE := {
+	"fx_boss_fire_comet": "fireball",
+	"fx_boss_frost_lance": "icelance",
+	"fx_boss_storm_javelin": "stormbolt",
+	"fx_boss_rot_spore": "rotbolt",
+	"fx_boss_earth_fang": "earthshard",
+	"fx_boss_metal_crownshard": "metalshard",
+	"fx_varo_reliquary_bolt": "holybolt",
+	"fx_vess_griefwave": "griefwave",
+	"fx_sexton_sigilbolt": "sigilbolt",
+	"fx_veyx_windslash": "windslash",
+	"fx_echo_knife": "knife",
+}
+
+# Ordinary ranged mobs no longer share the old pink `bolt`. Their basic shot
+# carries the shooter's authored material language; bosses reuse their existing
+# signature projectile art for the same reason.
+const ENEMY_PROJECTILE_ART := {
+	"cultist": "mob_blight_thorn",
+	"stormcult": "mob_storm_fork",
+	"beastkin_howler": "mob_howl_wave",
+	"wildkin_ranger": "arrow_base",
+	"null_acolyte": "mob_null_shard",
+	"vale_mourner": "mob_grave_nail",
+	"forge_acolyte": "mob_forge_brand",
+	"hushcaller": "mob_hush_wave",
+	"bloom_acolyte": "mob_bloom_seed",
+	"static_caller": "mob_storm_fork",
+	"plague_chanter": "mob_plague_spore",
+	"pale_archivist": "mob_null_shard",
+	"cataloguer": "mob_grave_nail",
+	"morwen": "fx_boss_rot_spore",
+	"choirmother": "fx_sexton_sigilbolt",
+	"vess": "fx_vess_griefwave",
+	"ashpriest": "fx_boss_fire_comet",
+	"icebound": "fx_boss_frost_lance",
+	"sleepkeeper": "fx_boss_frost_lance",
+	"gardener": "fx_boss_rot_spore",
+	"stormdrake_veyx": "fx_boss_storm_javelin",
+	"stormmouth": "fx_boss_storm_javelin",
+	"echo_clone": "fx_echo_knife",
+}
+
+const MOB_PROJECTILE_STYLE := {
+	"mob_blight_thorn": "rotbolt",
+	"mob_storm_fork": "stormbolt",
+	"mob_howl_wave": "earthshard",
+	"mob_null_shard": "shadowbolt",
+	"mob_grave_nail": "sigilbolt",
+	"mob_forge_brand": "fireball",
+	"mob_hush_wave": "griefwave",
+	"mob_bloom_seed": "rotbolt",
+	"mob_plague_spore": "rotbolt",
+}
+
+const MOB_PROJECTILE_GLOW := {
+	"mob_blight_thorn": Color(0.94, 0.60, 0.12),
+	"mob_storm_fork": Color(0.54, 0.88, 1.0),
+	"mob_howl_wave": Color(0.84, 0.66, 0.36),
+	"mob_null_shard": Color(0.66, 0.24, 0.96),
+	"mob_grave_nail": Color(0.76, 0.82, 0.88),
+	"mob_forge_brand": Color(1.0, 0.34, 0.05),
+	"mob_hush_wave": Color(0.68, 0.84, 0.98),
+	"mob_bloom_seed": Color(0.82, 0.36, 0.48),
+	"mob_plague_spore": Color(0.64, 0.72, 0.18),
+}
+
+# Live motion is authored per MATERIAL, not merely recolored. Every profile
+# keeps a short bounded world-space trail plus motes that remain where they
+# were emitted; `wobble` moves only the rendered sprite, never its collision.
+const MOB_MOTION := {
+	"mob_blight_thorn": {
+		"trail": Color(0.84, 0.54, 0.10, 0.90), "core": Color(1.0, 0.78, 0.24, 0.80),
+		"width": 2.2, "core_width": 0.65, "points": 15, "step": 2.8,
+		"wobble": 3.2, "freq": 16.0, "mote": Color(0.96, 0.70, 0.18, 0.92),
+		"amount": 9, "mote_life": 0.30, "mote_speed": 20.0, "spread": 34.0,
+		"glow_alpha": 0.48, "glow_scale": 0.70,
+	},
+	"mob_storm_fork": {
+		"trail": Color(0.34, 0.74, 1.0, 0.92), "core": Color(0.92, 0.98, 1.0, 0.96),
+		"width": 3.0, "core_width": 0.9, "points": 18, "step": 2.2,
+		"wobble": 0.45, "freq": 31.0, "mote": Color(0.62, 0.90, 1.0, 0.92),
+		"amount": 14, "mote_life": 0.22, "mote_speed": 28.0, "spread": 42.0,
+		"pulse": true,
+	},
+	"mob_howl_wave": {
+		"trail": Color(0.70, 0.52, 0.28, 0.66), "core": Color(0.92, 0.78, 0.48, 0.42),
+		"width": 2.5, "core_width": 0.45, "points": 12, "step": 3.6,
+		"wobble": 1.1, "freq": 9.0, "mote": Color(0.76, 0.62, 0.38, 0.72),
+		"amount": 8, "mote_life": 0.34, "mote_speed": 24.0, "spread": 55.0,
+	},
+	"mob_null_shard": {
+		"trail": Color(0.32, 0.08, 0.52, 0.84), "core": Color(0.74, 0.30, 1.0, 0.76),
+		"width": 2.2, "core_width": 0.65, "points": 17, "step": 2.8,
+		"wobble": 0.75, "freq": 13.0, "mote": Color(0.58, 0.22, 0.88, 0.84),
+		"amount": 9, "mote_life": 0.36, "mote_speed": 16.0, "spread": 70.0,
+	},
+	"mob_grave_nail": {
+		"trail": Color(0.68, 0.72, 0.78, 0.74), "core": Color(0.88, 0.94, 1.0, 0.52),
+		"width": 1.55, "core_width": 0.40, "points": 13, "step": 3.4,
+		"wobble": 0.55, "freq": 11.0, "mote": Color(0.80, 0.82, 0.86, 0.78),
+		"amount": 7, "mote_life": 0.42, "mote_speed": 13.0, "spread": 80.0,
+	},
+	"mob_forge_brand": {
+		"trail": Color(1.0, 0.30, 0.04, 0.82), "core": Color(1.0, 0.78, 0.24, 0.80),
+		"width": 2.4, "core_width": 0.65, "points": 15, "step": 2.6,
+		"wobble": 0.35, "freq": 18.0, "mote": Color(1.0, 0.42, 0.06, 0.90),
+		"amount": 13, "mote_life": 0.34, "mote_speed": 34.0, "spread": 46.0,
+		"pulse": true,
+	},
+	"mob_hush_wave": {
+		"trail": Color(0.52, 0.70, 0.88, 0.70), "core": Color(0.84, 0.94, 1.0, 0.48),
+		"width": 3.4, "core_width": 0.55, "points": 14, "step": 3.0,
+		"wobble": 1.45, "freq": 7.5, "mote": Color(0.70, 0.84, 0.96, 0.70),
+		"amount": 10, "mote_life": 0.46, "mote_speed": 15.0, "spread": 78.0,
+	},
+	"mob_bloom_seed": {
+		"trail": Color(0.72, 0.26, 0.38, 0.78), "core": Color(0.94, 0.56, 0.62, 0.56),
+		"width": 1.75, "core_width": 0.40, "points": 14, "step": 3.0,
+		"wobble": 2.2, "freq": 12.0, "mote": Color(0.92, 0.42, 0.56, 0.88),
+		"amount": 8, "mote_life": 0.44, "mote_speed": 17.0, "spread": 64.0,
+	},
+	"mob_plague_spore": {
+		"trail": Color(0.54, 0.66, 0.14, 0.78), "core": Color(0.82, 0.88, 0.28, 0.54),
+		"width": 2.0, "core_width": 0.45, "points": 13, "step": 3.1,
+		"wobble": 1.55, "freq": 10.0, "mote": Color(0.72, 0.80, 0.20, 0.88),
+		"amount": 11, "mote_life": 0.48, "mote_speed": 12.0, "spread": 92.0,
+	},
+}
+
+
+static func hostile_art(enemy_kind: String) -> String:
+	return String(ENEMY_PROJECTILE_ART.get(enemy_kind, "bolt"))
+
 
 static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: float, is_friendly: bool, tex_name: String) -> Projectile:
 	var p := Projectile.new()
@@ -121,7 +268,10 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	p.z_index = 5
 	p.add_to_group("projectiles")
 	p.tex_kind = tex_name
-	p.glow_color = GLOWS.get(tex_name, Color(1, 1, 1))
+	var style_key: String = String(BOSS_PROJECTILE_STYLE.get(
+		tex_name, MOB_PROJECTILE_STYLE.get(tex_name, tex_name)))
+	var authored_mob := MOB_PROJECTILE_STYLE.has(tex_name)
+	p.glow_color = MOB_PROJECTILE_GLOW.get(tex_name, GLOWS.get(style_key, Color(1, 1, 1)))
 
 	# Every visual child rides in _vis so `rise` can lift the drawn shot to
 	# hand height without moving the physics body (see the var's comment).
@@ -133,11 +283,19 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	# Magic bolts burn hotter.
 	var glow := Sprite2D.new()
 	glow.texture = Art.tex("glow")
-	var hot := tex_name in ["fireball", "icelance", "shadowbolt", "stormbolt",
+	var hot := not authored_mob and style_key in ["fireball", "icelance", "shadowbolt", "stormbolt",
 		"windslash", "rotbolt", "holybolt", "griefwave", "sigilbolt", "mage_firebolt",
 		"mage_crystal_decree", "warlock_shadowbolt", "hellfire_brand_bolt"]
 	glow.modulate = Art.hdr(Color(p.glow_color, 0.8 if hot else 0.6))
 	glow.scale = Vector2(1.35, 1.35) if hot else Vector2(1.0, 1.0)
+	if authored_mob:
+		# A restrained backing glow keeps the MATERIAL silhouette legible;
+		# particles/light would turn every distinct object back into an orb.
+		var mob_motion: Dictionary = MOB_MOTION.get(tex_name, {})
+		var mob_glow_alpha: float = float(mob_motion.get("glow_alpha", 0.40))
+		var mob_glow_scale: float = float(mob_motion.get("glow_scale", 0.64))
+		glow.modulate = Art.hdr(Color(p.glow_color, mob_glow_alpha), 1.1)
+		glow.scale = Vector2.ONE * mob_glow_scale
 	vis.add_child(glow)
 	# A Court-lance begins beside the Archmage, where a 95px point light washes
 	# her reflective body into a giant white bloom. Its sprite glow and authored
@@ -175,22 +333,22 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			"mage_crystal_decree": Color(0.78, 0.94, 1.0),
 			"warlock_shadowbolt": Color(0.65, 0.32, 0.95),
 			"hellfire_brand_bolt": Color(1.0, 0.24, 0.06),
-		}.get(tex_name, Color.WHITE)
+		}.get(style_key, Color.WHITE)
 		sparks.color = spark_col
 		vis.add_child(sparks)
 
 	# Arrows and knives streak: a thin motion trail behind the tip.
 	# Knives read SHARP (round 26): longer, thinner streak, dimmer glow,
 	# blade stretched along the flight line — a dart, not a glowstick.
-	if tex_name in ["arrow", "arrow_base", "arrow_frost", "arrow_void", "knife"]:
+	if style_key in ["arrow", "arrow_base", "arrow_frost", "arrow_void", "knife"]:
 		var trail := Sprite2D.new()
 		trail.texture = Art.tex("glow")
-		trail.modulate = Color(p.glow_color, 0.4 if tex_name.begins_with("arrow") else 0.5)
+		trail.modulate = Color(p.glow_color, 0.4 if style_key.begins_with("arrow") else 0.5)
 		trail.rotation = velocity.angle()
 		trail.position = -velocity.normalized() * 15.0
-		trail.scale = Vector2(1.6, 0.2) if tex_name.begins_with("arrow") else Vector2(2.6, 0.12)
+		trail.scale = Vector2(1.6, 0.2) if style_key.begins_with("arrow") else Vector2(2.6, 0.12)
 		vis.add_child(trail)
-	if tex_name == "knife":
+	if style_key == "knife":
 		glow.modulate.a = 0.35
 		glow.scale = Vector2(0.7, 0.7)
 
@@ -215,6 +373,28 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			glow.modulate.a = 0.62
 		"hellfire_brand_bolt":
 			sprite.scale = Vector2(0.84, 0.84)  # 30% smaller than the caster bolts
+		"fx_boss_fire_comet":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_boss_frost_lance":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_boss_storm_javelin":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_boss_rot_spore":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_boss_earth_fang":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_boss_metal_crownshard":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_varo_reliquary_bolt":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_vess_griefwave":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_sexton_sigilbolt":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_veyx_windslash":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
+		"fx_echo_knife":
+			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
 		"knife": sprite.scale = Vector2(3.8, 2.1)
 		"dart":
 			# The assassin's thrown KUNAI (round 50): a sleek generated blade
@@ -233,6 +413,8 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			glow.scale = Vector2(0.8, 0.8)
 			glow.modulate = Art.hdr(Color(p.glow_color, 0.75))
 		_: sprite.scale = Vector2(3, 3)
+	if authored_mob:
+		sprite.scale = Vector2.ONE * Balance.MOB_PROJECTILE_ART_SCALE
 	sprite.rotation = velocity.angle()
 	vis.add_child(sprite)
 	p.spr = sprite
@@ -253,6 +435,10 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	game_node.add_child(p)
 	if tex_name in ["mage_void_bullet", "mage_crystal_decree"]:
 		p._build_path_trail()
+	elif authored_mob and DisplayServer.get_name() != "headless":
+		# Headless test/dedicated processes have no rendered frame but would
+		# still pay CPUParticles/Line2D simulation cost across whole chapters.
+		p._build_mob_motion()
 	return p
 
 
@@ -270,6 +456,7 @@ func _physics_process(delta: float) -> void:
 	if homing and friendly:
 		_steer_home(delta)
 	_advance_visual_offset(delta)
+	_tick_mob_motion(delta)
 	_apply_rise()
 	global_position += vel * delta
 	_update_path_trail()
@@ -287,6 +474,97 @@ func _physics_process(delta: float) -> void:
 		_notify_visual_impact()
 		_bloom()
 		queue_free()
+
+
+func _build_mob_motion() -> void:
+	motion_profile = MOB_MOTION.get(tex_kind, {})
+	if motion_profile.is_empty():
+		return
+	trail_max_points = int(motion_profile.get("points", 12))
+	trail_min_step = float(motion_profile.get("step", 3.0))
+	trail_fade_time = float(motion_profile.get("mote_life", 0.32))
+
+	var trail_color: Color = motion_profile.get("trail", glow_color)
+	path_trail = Line2D.new()
+	path_trail.width = float(motion_profile.get("width", 1.8))
+	path_trail.z_index = 4
+	path_trail.antialiased = true
+	var trail_gradient := Gradient.new()
+	trail_gradient.offsets = PackedFloat32Array([0.0, 0.58, 1.0])
+	trail_gradient.colors = PackedColorArray([
+		Color(trail_color, 0.0),
+		Color(trail_color, trail_color.a * 0.34),
+		trail_color,
+	])
+	path_trail.gradient = trail_gradient
+	game.add_child(path_trail)
+
+	var core_width := float(motion_profile.get("core_width", 0.0))
+	if core_width > 0.0:
+		var core_color: Color = motion_profile.get("core", Color.WHITE)
+		path_core = Line2D.new()
+		path_core.width = core_width
+		path_core.z_index = 4
+		path_core.antialiased = true
+		var core_gradient := Gradient.new()
+		core_gradient.offsets = PackedFloat32Array([0.0, 0.70, 1.0])
+		core_gradient.colors = PackedColorArray([
+			Color(core_color, 0.0),
+			Color(core_color, core_color.a * 0.26),
+			core_color,
+		])
+		path_core.gradient = core_gradient
+		game.add_child(path_core)
+
+	# World-space motes remain behind after emission. Keeping them outside the
+	# projectile node lets the last few finish naturally after impact.
+	motion_particles = CPUParticles2D.new()
+	motion_particles.amount = int(motion_profile.get("amount", 8))
+	motion_particles.lifetime = float(motion_profile.get("mote_life", 0.32))
+	motion_particles.randomness = 0.72
+	motion_particles.local_coords = false
+	motion_particles.direction = -vel.normalized()
+	motion_particles.spread = float(motion_profile.get("spread", 60.0))
+	motion_particles.initial_velocity_min = float(motion_profile.get("mote_speed", 16.0)) * 0.45
+	motion_particles.initial_velocity_max = float(motion_profile.get("mote_speed", 16.0))
+	motion_particles.gravity = Vector2.ZERO
+	motion_particles.scale_amount_min = 0.045
+	motion_particles.scale_amount_max = 0.13
+	motion_particles.texture = Art.tex("glow")
+	var mote_color: Color = motion_profile.get("mote", trail_color)
+	var mote_gradient := Gradient.new()
+	mote_gradient.offsets = PackedFloat32Array([0.0, 0.32, 1.0])
+	mote_gradient.colors = PackedColorArray([
+		Color(mote_color, 0.0),
+		mote_color,
+		Color(mote_color, 0.0),
+	])
+	motion_particles.color_ramp = mote_gradient
+	motion_particles.z_index = 4
+	game.add_child(motion_particles)
+	motion_particles.global_position = _fx_pos()
+
+
+func _tick_mob_motion(delta: float) -> void:
+	if motion_profile.is_empty():
+		return
+	flight_phase += delta * float(motion_profile.get("freq", 10.0))
+	var flight_dir := vel.normalized()
+	flight_wobble = flight_dir.orthogonal() \
+		* sin(flight_phase) * float(motion_profile.get("wobble", 0.0))
+	if spr != null and is_instance_valid(spr):
+		var bend := 0.0
+		if tex_kind == "mob_blight_thorn":
+			bend = cos(flight_phase * 0.82) * 0.105
+		elif tex_kind in ["mob_bloom_seed", "mob_plague_spore", "mob_hush_wave"]:
+			bend = cos(flight_phase * 0.72) * 0.045
+		spr.rotation = flight_dir.angle() + bend
+		if bool(motion_profile.get("pulse", false)):
+			var pulse := 1.0 + 0.16 * sin(flight_phase)
+			spr.modulate = Color(pulse, pulse, pulse, 1.0)
+	if motion_particles != null and is_instance_valid(motion_particles):
+		motion_particles.global_position = _fx_pos()
+		motion_particles.direction = -flight_dir
 
 
 ## Eye and Court bolts leave one continuous authored path from their floating
@@ -329,12 +607,18 @@ func _update_path_trail() -> void:
 	# Preserve each bend made by homing variants. A two-point chord erased the
 	# actual travelled route as soon as the needle curved toward its target.
 	var last := path_trail.points[path_trail.points.size() - 1]
-	if last.distance_to(at) >= 1.5:
+	if last.distance_to(at) >= trail_min_step:
 		if tex_kind == "mage_void_bullet" and spr != null and is_instance_valid(spr):
 			spr.rotation = (at - last).angle()
 		path_trail.add_point(at)
 		if path_core != null and is_instance_valid(path_core):
 			path_core.add_point(at)
+		if trail_max_points > 0:
+			while path_trail.points.size() > trail_max_points:
+				path_trail.remove_point(0)
+			if path_core != null and is_instance_valid(path_core):
+				while path_core.points.size() > trail_max_points:
+					path_core.remove_point(0)
 
 
 func _fade_path_trail() -> void:
@@ -344,10 +628,17 @@ func _fade_path_trail() -> void:
 	for line in [path_trail, path_core]:
 		if line != null and is_instance_valid(line):
 			var fade: Tween = line.create_tween()
-			fade.tween_property(line, "modulate:a", 0.0, 0.11)
+			fade.tween_property(line, "modulate:a", 0.0, trail_fade_time)
 			fade.tween_callback(line.queue_free)
+	if motion_particles != null and is_instance_valid(motion_particles):
+		motion_particles.emitting = false
+		var particles := motion_particles
+		var settle: Tween = particles.create_tween()
+		settle.tween_interval(particles.lifetime)
+		settle.tween_callback(particles.queue_free)
 	path_trail = null
 	path_core = null
+	motion_particles = null
 
 
 func _notify_visual_impact() -> void:
@@ -408,18 +699,19 @@ func _bloom() -> void:
 ## Where the shot is DRAWN (physics position lifted by the muzzle rise) —
 ## impact FX spawn here so the burst lands on the arrow, not below it.
 func _fx_pos() -> Vector2:
-	return global_position + Vector2(0, -rise) + visual_offset
+	return global_position + Vector2(0, -rise) + visual_offset + flight_wobble
 
 
 ## A quick expanding shockwave where a magic bolt lands.
 ## Darts get a smaller, snappier ring so fan-of-knives hits register
 ## even when the flight itself was too short to see (round 31).
 func _impact_ring() -> void:
-	if not tex_kind in ["fireball", "icelance", "shadowbolt", "stormbolt",
+	var style_key: String = String(BOSS_PROJECTILE_STYLE.get(tex_kind, tex_kind))
+	if not style_key in ["fireball", "icelance", "shadowbolt", "stormbolt",
 		"windslash", "rotbolt", "earthshard", "metalshard", "holybolt",
 		"griefwave", "sigilbolt", "dart"]:
 		return
-	var small := tex_kind == "dart"
+	var small := style_key == "dart"
 	var ring := Sprite2D.new()
 	ring.texture = Art.tex("ring")
 	ring.modulate = Art.hdr(Color(glow_color, 0.9))

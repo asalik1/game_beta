@@ -48,11 +48,11 @@ const SIDE_QUESTS := {
 
 const QUEST_ITEMS := {
 	"ch5_grain_bundle": {
-		"name": "Ridge-Toll Grain",
+		"name": "Ridge-Toll Grain", "icon": "ch5_grain_bundle",
 		"desc": "The cult's toll-grain, cord-bound and weighed to the ounce — Hrolgar always checked. Heavy the way owed things are heavy.",
 		"grade": "C"},
 	"ch5_spring_verse": {
-		"name": "Ottar's Spring Song",
+		"name": "Ottar's Spring Song", "icon": "ch5_spring_verse",
 		"desc": "The spring song in the skald's own small sure hand — a thaw, a river, boots by a door. It wants a low voice and a fire going.",
 		"grade": "C"},
 }

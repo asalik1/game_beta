@@ -443,14 +443,15 @@ const STRUCTURES := {
 		"decals": [{"sprite": "sewer_flow", "off": Vector2(30, -8), "scale": 0.34, "z": 1}]},
 	# A great hearth: a hall fireplace — a brazier base with a tall licking
 	# flame (flame ANIMATES), a smoke column, firelight and crackle.
-	"great_hearth": {"sprite": "capital_great_hearth", "w": 270.0,
+	"great_hearth": {"sprite": "capital_great_hearth", "w": 244.1602,
+		"visual_x": -0.2637,
 		"colliders": [{"shape": "rect", "size": Vector2(180, 42), "off": Vector2(0, -8)}],
 		"fire": true},
-	"capital_city_bench": {"sprite": "capital_city_bench", "w": 150.0,
+	"capital_city_bench": {"sprite": "capital_city_bench", "w": 139.4531,
 		"colliders": [{"shape": "rect", "size": Vector2(112, 34), "off": Vector2(0, -7)}]},
-	"capital_city_directory": {"sprite": "capital_city_directory", "w": 190.0,
+	"capital_city_directory": {"sprite": "capital_city_directory", "w": 176.6406,
 		"colliders": [{"shape": "rect", "size": Vector2(138, 36), "off": Vector2(0, -7)}]},
-	"capital_alembic_station": {"sprite": "capital_alembic_station", "w": 235.0,
+	"capital_alembic_station": {"sprite": "capital_alembic_station", "w": 214.8047,
 		"colliders": [{"shape": "rect", "size": Vector2(174, 40), "off": Vector2(0, -8)}]},
 	# A market stall: a counter under an awning of two hung banners that SWAY
 	# (wind material). No light; a simple wide footprint.
@@ -487,7 +488,7 @@ const STRUCTURES := {
 	# resolution never dictates world scale. Civic facades use a shallow base
 	# footprint; open gates reserve only their side piers so the arch remains a
 	# readable passage instead of an invisible wall.
-	"capital_crown_spire_gate": {"sprite": "capital_crown_spire_gate", "w": 900.0,
+	"capital_crown_spire_gate": {"sprite": "capital_crown_spire_gate", "w": 878.9062,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(-310, -24)},
 			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(310, -24)}],
@@ -497,72 +498,87 @@ const STRUCTURES := {
 	# 2026-07-25: the hero could stroll INTO the silhouette — the room walls
 	# don't actually own this edge), so the city stays scenery you stand in
 	# front of, never inside.
-	"capital_city_arcade": {"sprite": "capital_city_arcade", "w": 1680.0,
+	"capital_city_arcade": {"sprite": "capital_city_arcade", "w": 1653.75,
 		"colliders": [{"shape": "rect", "size": Vector2(1680, 26), "off": Vector2(0, -8)}]},
 	# Collider-vs-art rule (owner 2026-07-25, the fangmoot "invisible wall"):
 	# a capital collider's SOUTH edge must sit at the art's lowest opaque row
 	# (base-anchor render: local +12 minus the rendered bottom padding) —
 	# never hanging into the visually empty grass below. Enforced by the
 	# autotest capital contract.
-	"capital_crown_fountain": {"sprite": "capital_crown_fountain", "w": 380.0,
+	"capital_crown_fountain": {"sprite": "capital_crown_fountain", "w": 271.6406,
 		"colliders": [{"shape": "rect", "size": Vector2(300, 130), "off": Vector2(0, -65)}]},
-	"capital_emberward_gate": {"sprite": "capital_emberward_gate", "w": 420.0,
+	"capital_emberward_gate": {"sprite": "capital_emberward_gate", "w": 404.4141,
+		"visual_x": 1.2305,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(-142, -34)},
 			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(142, -34)}],
 		"fire": true},
-	"capital_market_stall": {"sprite": "capital_market_stall", "w": 280.0,
+	"capital_market_stall": {"sprite": "capital_market_stall", "w": 243.3594,
+		"visual_x": 0.2734,
 		"colliders": [{"shape": "rect", "size": Vector2(178, 42), "off": Vector2(0, -18)}]},
 	# Portal piers are PILLAR FOOTPRINTS, not dots (owner 2026-07-25: the r22
 	# circles were narrower than the pillar art, so a hero slipped sideways
 	# and stood inside the column). Rects span each pillar's base; the
 	# center passage stays open so the arch still reads as a way through.
-	"capital_portal_story": {"sprite": "capital_portal_story", "w": 260.0,
+	"capital_portal_story": {"sprite": "capital_portal_story", "w": 226.4844,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(54, 42), "off": Vector2(-78, -12)},
 			{"shape": "rect", "size": Vector2(54, 42), "off": Vector2(78, -12)}]},
-	"capital_portal_crucible": {"sprite": "capital_portal_crucible", "w": 280.0,
+	"capital_portal_crucible": {"sprite": "capital_portal_crucible", "w": 254.8438,
+		"visual_x": 0.5469,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(58, 44), "off": Vector2(-88, -13)},
 			{"shape": "rect", "size": Vector2(58, 44), "off": Vector2(88, -13)}],
 		"fire": true},
-	"capital_portal_depths": {"sprite": "capital_portal_depths", "w": 230.0,
+	"capital_portal_depths": {"sprite": "capital_portal_depths", "w": 154.082,
+		"visual_x": 1.123,
 		"colliders": [{"shape": "rect", "size": Vector2(132, 42), "off": Vector2(0, -8)}]},
 	# CLOSED capital buildings carry BODY colliders, not just the default
 	# 34px base strip (owner report 2026-07-25: the strip let the hero wander
 	# INSIDE the tavern art from the sides). Rects cover the visual body;
 	# every authored NPC/hotspot stand-point stays south of them.
-	"capital_chartered_hall": {"sprite": "capital_chartered_hall", "w": 330.0,
+	"capital_chartered_hall": {"sprite": "capital_chartered_hall", "w": 309.375,
 		"colliders": [{"shape": "rect", "size": Vector2(275, 170), "off": Vector2(0, -90)}]},
-	"capital_ashfire_forge": {"sprite": "capital_ashfire_forge", "w": 360.0,
+	"capital_ashfire_forge": {"sprite": "capital_ashfire_forge", "w": 335.3906,
+		"visual_x": 1.0547,
 		"colliders": [{"shape": "rect", "size": Vector2(300, 170), "off": Vector2(0, -76)}],
 		"fire": true},
-	"capital_grand_archive": {"sprite": "capital_grand_archive", "w": 340.0,
+	"capital_grand_archive": {"sprite": "capital_grand_archive", "w": 306.7969,
+		"visual_x": 1.3281,
 		"colliders": [{"shape": "rect", "size": Vector2(285, 175), "off": Vector2(0, -93)}]},
-	"capital_ashen_tankard": {"sprite": "capital_ashen_tankard", "w": 360.0,
+	"capital_ashen_tankard": {"sprite": "capital_ashen_tankard", "w": 344.5312,
+		"visual_x": 2.8125,
 		"colliders": [{"shape": "rect", "size": Vector2(300, 190), "off": Vector2(0, -100)}],
 		"fire": true},
-	"capital_wildfang_fangmoot": {"sprite": "capital_wildfang_fangmoot", "w": 330.0,
+	"capital_wildfang_fangmoot": {"sprite": "capital_wildfang_fangmoot", "w": 306.7969,
+		"visual_x": 0.6445,
 		"colliders": [{"shape": "rect", "size": Vector2(280, 150), "off": Vector2(0, -66)}],
 		"fire": true},
-	"capital_rot_chapel": {"sprite": "capital_rot_chapel", "w": 350.0,
+	"capital_rot_chapel": {"sprite": "capital_rot_chapel", "w": 340.4297,
 		"colliders": [{"shape": "rect", "size": Vector2(290, 185), "off": Vector2(0, -98)}]},
-	"capital_accord_longhouse": {"sprite": "capital_accord_longhouse", "w": 420.0,
+	"capital_accord_longhouse": {"sprite": "capital_accord_longhouse", "w": 413.4375,
+		"visual_x": 1.6406,
 		"colliders": [{"shape": "rect", "size": Vector2(350, 170), "off": Vector2(0, -76)}],
 		"fire": true},
-	"capital_sable_hall": {"sprite": "capital_sable_hall", "w": 420.0,
+	"capital_sable_hall": {"sprite": "capital_sable_hall", "w": 401.1328,
+		"visual_x": 0.4102,
 		"colliders": [{"shape": "rect", "size": Vector2(350, 200), "off": Vector2(0, -105)}],
 		"fire": true},
-	"capital_wellspring": {"sprite": "capital_wellspring", "w": 330.0,
+	"capital_wellspring": {"sprite": "capital_wellspring", "w": 284.8828,
+		"visual_x": 1.9336,
 		"colliders": [{"shape": "circle", "radius": 70.0, "off": Vector2(0, -10)}]},
-	"capital_stables": {"sprite": "capital_stables", "w": 410.0},
-	"capital_watchtower": {"sprite": "capital_watchtower", "w": 250.0,
+	"capital_stables": {"sprite": "capital_stables", "w": 385.9766,
+		"visual_x": 0.8008},
+	"capital_watchtower": {"sprite": "capital_watchtower", "w": 187.9883,
+		"visual_x": 2.6855,
 		"fire": true},
-	"capital_undercroft": {"sprite": "capital_undercroft", "w": 360.0,
+	"capital_undercroft": {"sprite": "capital_undercroft", "w": 346.6406,
+		"visual_x": 5.9766,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(68, 40), "off": Vector2(-118, -8)},
 			{"shape": "rect", "size": Vector2(68, 40), "off": Vector2(118, -8)}]},
-	"capital_proving_gate": {"sprite": "capital_proving_gate", "w": 400.0,
+	"capital_proving_gate": {"sprite": "capital_proving_gate", "w": 387.5,
+		"visual_x": 1.5625,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(82, 44), "off": Vector2(-132, -8)},
 			{"shape": "rect", "size": Vector2(82, 44), "off": Vector2(132, -8)}],

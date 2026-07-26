@@ -11,11 +11,11 @@
 ## (Story.load_content merges module CONVOS over the base).
 
 const QUEST_ITEMS := {
-	"slag_core": {"name": "Cold Slag Core", "grade": "C",
+	"slag_core": {"name": "Cold Slag Core", "icon": "slag_core", "grade": "C",
 		"desc": "A fist-sized core of foundry slag, cold all the way through — sixty years in the one room the mountain won't listen through. Overseer Brann wants it for his ledger table."},
-	"nix_refund": {"name": "Nix's Refund Pouch", "grade": "C",
+	"nix_refund": {"name": "Nix's Refund Pouch", "icon": "nix_refund", "grade": "C",
 		"desc": "Twelve verdict charms' worth of crew five's wages, returned with the receipts. Nix was very clear: don't dress it up. It's a refund. For Smith Petra at the Cinder Gate."},
-	"harl_token": {"name": "Water-Quenched Token", "grade": "C",
+	"harl_token": {"name": "Water-Quenched Token", "icon": "harl_token", "grade": "C",
 		"desc": "A small iron token, quenched in river water the old way. Harl wants it left on the Ember Font's lip — one piece of iron that owes the deep nothing."},
 }
 

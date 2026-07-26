@@ -1232,3 +1232,33 @@ size, posterize to the entry's colour budget, hard-alpha, trim, install by
 name into `game/assets/sprites/` (+ mirror to mobile), reimport, and run
 `tools/art/verify_art.py` + the gates. The wall tiles additionally need the
 wrap check (offset by half-tile, look for seams) before install.
+
+---
+
+## HUD navigation set + desktop icon (2026-07-25)
+
+Generated with OpenAI's built-in image generation tool.
+
+Common HUD prompt:
+```
+31x31 dark medieval fantasy RPG HUD icon, crisp hand-authored classic
+16/32-bit pixel art, hard square pixels with no antialiasing, bold near-black
+outline, simplified chunky silhouette readable over tan stone, flat #ff00ff
+chroma-key background, no frame, text, numbers, watermark or glow.
+```
+
+One subject per icon: sealed parchment envelope with crimson wax (`ui_mail`);
+rolled parchment scroll with crimson ribbon (`ui_quest`); weathered leather
+satchel and brass clasp (`ui_bag`); red leather codex with gold fittings
+(`ui_book`); antique gold eight-point star medal with pale gem (`ui_daily`);
+branching pale-blue talent nodes with a gold center (`ui_skills`); forged-steel
+eight-tooth cog (`ui_settings`); three adventurer bust silhouettes
+(`ui_party`). Each was chroma-keyed, hard-alpha reduced, quantised and installed
+at 31x31.
+
+Desktop icon prompt:
+```
+Square Emberfall app icon: an ember-flame sigil rising through a cracked
+crown-like iron ring, near-black plum background, ember red/orange/gold and
+bone-white core, high-resolution pixel-art emblem, no text or watermark.
+```

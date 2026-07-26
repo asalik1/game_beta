@@ -61,14 +61,19 @@ static func esc(m: Menus) -> void:
 		"join":
 			open(m, "menu")
 		"host_lobby":
-			# Wave 9: in a live hub, ESC just closes the PANEL — the session
-			# (and the open gates) persist; ending it is the explicit button.
-			if m.game != null and m.game.play_started and Story.is_standalone(m.game.chapter_id):
+			# In a live world, ESC just closes the PANEL — the session persists;
+			# ending it is the explicit button. Pre-launch ESC still backs out.
+			if m.game != null and m.game.play_started:
 				m.close()
 			else:
 				_leave(m, "You closed the lobby.")
 		"guest_lobby":
-			_leave(m, "You left the lobby.")
+			# A guest reopening the live party panel gets the same safe close:
+			# ESC hides the panel, never silently leaves the persistent party.
+			if m.game != null and m.game.play_started:
+				m.close()
+			else:
+				_leave(m, "You left the lobby.")
 		"wait":
 			pass  # a connection attempt is in flight — let it resolve
 		_:
@@ -322,7 +327,9 @@ static func _stage_host_lobby(m: Menus) -> void:
 	if not net.is_online():
 		open(m, "menu")
 		return
-	var vbox := m._open("Lobby — your party gathers", 900, 560)
+	var live_world: bool = m.game != null and m.game.play_started
+	var vbox := m._open("Party — your session" if live_world
+		else "Lobby — your party gathers", 900, 560)
 	m.current = "lobby"
 	m.lobby["stage"] = "host_lobby"
 	m._lbl(vbox, "Read this code to your friends (Play Together → Join with a code):", 14, DIM)
@@ -368,16 +375,19 @@ static func _stage_host_lobby(m: Menus) -> void:
 	# Wave 9: hosting a LIVE hub, content starts at the PORTAL (ready
 	# check), not here — the lobby is the meeting room, the plaza is the
 	# town. Closing this panel keeps the gates open; friends keep joining.
-	var live_hub: bool = m.game != null and m.game.play_started \
-		and Story.is_standalone(m.game.chapter_id)
-	if live_hub:
-		m._lbl(vbox, "Your gates are open — friends appear in the plaza beside you. Lead the party to the PORTAL when it's time to set out.", 14, Color(0.75, 0.85, 0.75))
+	var live_hub: bool = live_world and Story.is_standalone(m.game.chapter_id)
+	if live_world:
+		m._lbl(vbox, "Your gates are open — friends appear in the plaza beside you. Lead the party to the PORTAL when it's time to set out."
+			if live_hub else "Your party session is still active. This panel can be closed at any time without ending it.",
+			14, Color(0.75, 0.85, 0.75))
 		m._btn(brow, "  ▼  Close this panel (stay hosting)  ", func() -> void: m.close(), GOOD)
 	else:
 		var start := m._btn(brow, "  ▶  Start the chapter  ", func() -> void: _start_session(m), GOOD)
 		start.add_theme_font_size_override("font_size", 17)
-	m._btn(brow, "  ✕  Close the lobby  ", func() -> void: _leave(m, "You closed the lobby."), BAD)
-	m._hint(vbox, "The portal sets the party moving — joins stay open while you stand in the Capital" if live_hub
+	m._btn(brow, "  ✕  End party session  " if live_world else "  ✕  Close the lobby  ",
+		func() -> void: _leave(m, "You ended the party session." if live_world
+			else "You closed the lobby."), BAD)
+	m._hint(vbox, "Close this panel or press ESC — your party session stays active" if live_world
 		else "Start any time — a party of 1 plays the solo game; joins lock once the chapter begins")
 	_wire(m, sess.lobby_changed, func() -> void: _refresh(m, "host_lobby"))
 	# MP-20: the check's lifecycle redraws this screen; a pass launches.
@@ -398,13 +408,14 @@ static func _stage_guest_lobby(m: Menus) -> void:
 	if not net.is_online():
 		open(m, "menu")
 		return
-	if m.game.play_started:
-		m.close()  # the snapshot already landed — we're in the world
-		return
-	var vbox := m._open("Lobby — the party gathers", 800, 520)
+	var live_world: bool = m.game != null and m.game.play_started
+	var vbox := m._open("Party — your session" if live_world
+		else "Lobby — the party gathers", 800, 520)
 	m.current = "lobby"
 	m.lobby["stage"] = "guest_lobby"
-	m._lbl(vbox, "You're in. The host starts the chapter once everyone has gathered — you'll all set out together.", 14, Color(0.75, 0.75, 0.75))
+	m._lbl(vbox, "Your party session is still active. Close this panel whenever you like — you stay with the party."
+		if live_world else "You're in. The host starts the chapter once everyone has gathered — you'll all set out together.",
+		14, Color(0.75, 0.75, 0.75))
 	# MP-20: the host's proposal is a CARD this guest answers — the content
 	# is named (chapter + NG+ tier) before anyone is moved anywhere.
 	var prop: Dictionary = sess.proposal_open
@@ -432,8 +443,16 @@ static func _stage_guest_lobby(m: Menus) -> void:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(spacer)
-	m._btn(vbox, "  ✕  Leave the lobby  ", func() -> void: _leave(m, "You left the lobby."), BAD)
-	m._hint(vbox, "ESC to leave the lobby")
+	if live_world:
+		var brow := HBoxContainer.new()
+		brow.add_theme_constant_override("separation", 16)
+		vbox.add_child(brow)
+		m._btn(brow, "  ▼  Close this panel (stay in party)  ", func() -> void: m.close(), GOOD)
+		m._btn(brow, "  ✕  Leave party  ", func() -> void: _leave(m, "You left the party."), BAD)
+		m._hint(vbox, "Close this panel or press ESC — you stay with the party")
+	else:
+		m._btn(vbox, "  ✕  Leave the lobby  ", func() -> void: _leave(m, "You left the lobby."), BAD)
+		m._hint(vbox, "ESC to leave the lobby")
 	_wire(m, sess.lobby_changed, func() -> void: _refresh(m, "guest_lobby"))
 	_wire(m, sess.proposal_changed, func() -> void: _refresh(m, "guest_lobby"))
 	_wire(m, sess.session_started, func() -> void:

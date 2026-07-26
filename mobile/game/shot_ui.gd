@@ -74,6 +74,13 @@ func _ready() -> void:
 	await get_tree().create_timer(2.5).timeout  # let the title card fade
 	await _frames(4)
 	_shot("hud_village")
+	# Exercise the radial sweep at the reported near-ready state. Fury also
+	# proves that the live HUD resolves equipped theme-specific icon assets.
+	game.player.ability_theme["a1"] = "fury"
+	game.player.cds["a1"] = 0.3
+	await _frames(3)
+	_shot("hud_ability_cooldown")
+	game.player.cds["a1"] = 0.0
 	game.hud.show_boss_bar("Ashpriest, Voice of the Pyre")
 	game.hud.update_boss_bar(0.72)
 	await _frames(2)
@@ -109,6 +116,8 @@ func _ready() -> void:
 	game.menus.close()
 	game.menus.open_skills("talents")
 	await _menu_shot("skills_talents")
+	game.menus.open_theme_picker("a1")
+	await _menu_shot("ability_variants")
 	game.menus.close()
 	game.menus.open_shop(0)
 	await _menu_shot("shop")
@@ -135,8 +144,9 @@ func _ready() -> void:
 	game.menus.open_keybinds()
 	await _menu_shot("keybinds")
 	game.menus.close()
-	game.menus.open_journal()
-	await _menu_shot("journal")
+	for journal_tab in ["quests", "activities", "progress", "story"]:
+		game.menus.open_journal(journal_tab)
+		await _menu_shot("journal_" + journal_tab)
 	game.menus.close()
 
 	print("UI SHOTS DONE: %d -> %s" % [shot_count,

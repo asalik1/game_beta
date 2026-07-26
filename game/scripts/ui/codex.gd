@@ -391,15 +391,15 @@ static func _enemy_icon(sprite: String) -> Texture2D:
 	var tex: Texture2D = Art.tex(sprite)
 	var out: Texture2D = tex
 	if tex != null:
-		var frames := 1
-		var ai: Dictionary = Art.anim_info(sprite)
-		if not ai.is_empty():
-			frames = maxi(1, int(ai.get("frames", 1)))
 		var img: Image = tex.get_image()
 		if img != null:
 			if img.is_compressed():
 				img.decompress()
-			var fw: int = int(img.get_width() / frames)
+			# Art.tex(sprite) is the single-frame static portrait. Animation
+			# lives in a separate <sprite>_anim.png strip, so dividing this
+			# texture by the animation's frame count scans only an empty sliver
+			# of padded boss exports.
+			var fw: int = img.get_width()
 			var fh: int = img.get_height()
 			var x0 := fw
 			var y0 := fh
@@ -720,7 +720,7 @@ static func _coop(m: Menus, list: VBoxContainer) -> void:
 		["Loot is personal", Color(0.6, 1.0, 0.6),
 			"Every drop, coin and gem you see is YOURS — each player is rolled their own rewards, nothing is split and nothing can be sniped. Guests take home everything their character earns; the world and its story stay the host's."],
 		["The party is the unit", Color(0.7, 0.9, 1.0),
-			"Press ENTER in a session to talk to your party (phones: the Say button). Entering content is a PROPOSAL: the host names the chapter — and its difficulty tier — and everyone clicks Ready; one decline cancels the check and names who declined. After a victory, WAY-GATES rise beside the fallen boss — Crownfall, a fresh pass, or the road on — and the leader's pick at a gate goes to the party as the same ready check, no codes re-read. The host can also remove a member (the ✕ in the lobby, or the pause menu mid-run)."],
+			"The Party HUD button stays visible for the whole session — even when you are its only member. Use it to reopen the roster, copy the join code, or manage the party after closing the panel; closing the panel never ends the session. Open party chat with ENTER on keyboard or Say on touch. Entering content is a PROPOSAL: the host names the chapter — and its difficulty tier — and everyone selects Ready; one decline cancels the check and names who declined. After a victory, WAY-GATES rise beside the fallen boss — Crownfall, a fresh pass, or the road on — and the leader's pick at a gate goes to the party as the same ready check, no codes re-read. The host can also remove a member (the ✕ in the party panel, or the pause menu mid-run)."],
 		["The battle meter", Color(0.95, 0.6, 0.25),
 			"In a party, a compact DAMAGE meter sits under the ally frames — everyone's damage this run, live. Boss victory letters carry the party's per-member breakdown, and endgame results tally damage, healing and damage taken for the whole crew."],
 		["One build, one road", Color(0.85, 0.6, 1.0),
@@ -1144,7 +1144,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	_card(list).add_child(gem_intro)
 	for line3 in [
 		"Each gem grants ONE stat and deepens with its level, up to Lv %d. Only C-grade gear and above has sockets — the same chapter gems begin to drop." % Items.GEM_MAX_LEVEL,
-		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (click them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level.",
+		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (select them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level.",
 		"SPECIAL gems — Haste, Lifesteal, Combo, Tenacity, Damage — begin dropping in Chapter 6 (alongside the A-grade gear that carries the only special slot). They are the ONLY way to build those stats: at most one special gem per item, and their totals soft-cap at %d%% Haste / %d%% Lifesteal / %d%% Combo (beyond, a point pays about a tenth)." %
 			[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)],
 		"A vessel holds what it can bear: C gear sockets gems up to Lv%d, B up to Lv%d, A up to Lv%d, S up to Lv%d — deep gems need endgame gear." %
@@ -1190,7 +1190,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	for line2 in [
 		"Gear, gems, consumables — and your HEALTH POTIONS — all share your bags' slots, and EVERY unit counts: 20 potions take 20 slots (they only STACK for display). Equip up to %d bags at once — total capacity is the SUM of their slots (F pouch 15 … S hold 45). You start with two Frayed Pouches." % Balance.MAX_BAGS,
 		"Bags drop from BOSSES and elites (tier tracks the CHAPTER, matching its boss gear) and merchants stock them too — but a good bag costs real gold. Pick up one past your %d and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],
-		"Full bag? Click any loose gear, gem, or consumable to open its detail card and DROP it — fling it out to free a slot. New loot drops at your feet instead of vanishing — anything left on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
+		"Full bag? Select any loose gear, gem, or consumable to open its detail card and DROP it — fling it out to free a slot. New loot drops at your feet instead of vanishing — anything left on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
 		var bl := m._lbl(bags, String(line2), 13, Color(0.7, 0.72, 0.78))
 		bl.custom_minimum_size = Vector2(880, 0)
 		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1199,7 +1199,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	var cons := VBoxContainer.new()
 	cons.add_theme_constant_override("separation", 2)
 	_card(list).add_child(cons)
-	var cl := m._lbl(cons, "⟲ Stone of Unlearning — crush it (click it in the bag) to refund EVERY allocated talent point, attributes and substats alike, for reallocation. Elite drop (~1 in 3).", 13, Color(0.7, 0.72, 0.78))
+	var cl := m._lbl(cons, "⟲ Stone of Unlearning — crush it (select it in the bag) to refund EVERY allocated talent point, attributes and substats alike, for reallocation. Elite drop (~1 in 3).", 13, Color(0.7, 0.72, 0.78))
 	cl.custom_minimum_size = Vector2(880, 0)
 	cl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var tl := m._lbl(cons, "⟲ Palimpsest of the Path — crush it to refund EVERY spent skill point and pick a new path down the tree. Elite drop, rarer than the Stone.", 13, Color(0.7, 0.72, 0.78))
@@ -1209,7 +1209,7 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	# alembic dc673ab already proved renders as tofu on mobile, so these six
 	# were the same bug one screen over. Names carry the list on their own.
 	for util in [
-		"Health Potion — mends 15% of your MISSING health (carry as many as your BAGS hold — each potion takes a bag slot and shows in your inventory, where you click the stack to plan your loadout) — a helping hand, not an eraser: worth the most at death's door. Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with your level. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter.",
+		"Health Potion — mends 15% of your MISSING health (carry as many as your BAGS hold — each potion takes a bag slot and shows in your inventory, where you select the stack to plan your loadout) — a helping hand, not an eraser: worth the most at death's door. Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with your level. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter.",
 		"Mana Draught — restore %d%% of your MISSING mana (priced like a health potion). Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
 		"Elixir of Might — +%d%% damage for %ds: a BURST WINDOW — pop it into the kill shot, not the whole fight." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
 		"Elixir of Warding — cut incoming damage by %d%% for %ds. Bought from merchants." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)],
@@ -1472,7 +1472,7 @@ static func _gallery(m: Menus, list: VBoxContainer, tab: String) -> void:
 		entries.append(e)
 	var shelf: String = {"heroes": "HEROES", "bosses": "BOSSES", "npcs": "FOLK OF THE VALE"}.get(bucket, "PORTRAITS")
 	m._lbl(list, "— %s —   met %d / %d" % [shelf, seen_n, entries.size()], 16, Color(0.95, 0.85, 0.5))
-	m._lbl(list, "Painted key art unlocks as you MEET its bearer in conversation. Click a portrait to see the full painting.",
+	m._lbl(list, "Painted key art unlocks as you MEET its bearer in conversation. Select a portrait to see the full painting.",
 		12, Color(0.7, 0.72, 0.78))
 	if entries.is_empty():
 		m._lbl(list, "Nothing hangs on this shelf yet.", 13, Color(0.6, 0.62, 0.68))

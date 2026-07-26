@@ -50,7 +50,7 @@ const SIDE_QUESTS := {
 }
 
 const QUEST_ITEMS := {
-	"ch6_gate_loaf": {"name": "The Gate Camp's Loaf", "grade": "C",
+	"ch6_gate_loaf": {"name": "The Gate Camp's Loaf", "icon": "ch6_gate_loaf", "grade": "C",
 		"desc": "Fresh from the gate flock's baking stone, wrapped in linen. Bound for the table between the schism camps — refusing Vela's bread is a heresy neither side has the doctrine for."},
 }
 

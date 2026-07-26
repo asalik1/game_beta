@@ -40,9 +40,9 @@ const SIDE_QUESTS := {
 }
 
 const QUEST_ITEMS := {
-	"sera_loaf": {"name": "Sera's Road Loaf",
+	"sera_loaf": {"name": "Sera's Road Loaf", "icon": "sera_loaf",
 		"desc": "Dark bread in waxed cloth, oven-warm when she tied it. Baked for whoever mans the far crossings.", "grade": "C"},
-	"bastion_ash": {"name": "Jar of Bastion Ash",
+	"bastion_ash": {"name": "Jar of Bastion Ash", "icon": "bastion_ash",
 		"desc": "Grey ash off the Null Bastion's road, sealed and labeled in Ivo's exact hand: 'ALDRIC — AS COMMISSIONED.'", "grade": "C"},
 }
 

@@ -543,7 +543,8 @@ func _face_interactable_to_player(entry: Dictionary) -> void:
 		var native_left := bool(entry.get("faces_left", true))
 		spr.flip_h = (to_player.x > 0.0) if native_left else (to_player.x < 0.0)
 		return
-	var face: String = Art.dir8_suffix(to_player)
+	var face: String = Art.dir8_suffix_for(
+		String(entry.get("sprite_name", "")), to_player)
 	var info: Dictionary = dirs.get(face, {})
 	if info.is_empty():
 		return
@@ -728,7 +729,7 @@ func _process(delta: float) -> void:
 	# New theme unlocked: announce it.
 	if player.pending_theme_note != "" and state == ST_PLAYING and not hud.dialogue_active and not menus.is_open():
 		hud.flash_title("THEME UNLOCKED: " + player.pending_theme_note,
-			"Press T to assign themes to your abilities", 2.2)
+			"Open Skills to assign themes to your abilities", 2.2)
 		sfx("victory")
 		player.pending_theme_note = ""
 

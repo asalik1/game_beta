@@ -2262,6 +2262,9 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 				sess.say("%s %d" % [String(args.get("text", "spam")), i])
 		"answer":
 			sess.answer_ready(bool(args.get("ok", false)))
+		"party_panel":
+			game.menus.open_party()
+			await _frames(2)
 		"strike":
 			game.player.global_position = Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
 			await _frames(6)  # a beat: soft target acquires the mirror
@@ -2440,6 +2443,15 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 				"open": not po.is_empty()}
 		"say", "say_flood", "answer":
 			return {"ok": true}  # the setup already acted; nothing to poll
+		"party_panel":
+			var live: bool = _net.is_online()
+			var stage: String = String(game.menus.lobby.get("stage", ""))
+			var open: bool = game.menus.current == "lobby" and stage == "guest_lobby"
+			var chip: bool = game.hud.party_btn.visible and game.hud.party_btn.icon != null \
+				and "2/4" in String(game.hud.party_btn.tooltip_text)
+			game.menus.close()
+			return {"ok": live and open and chip and _net.is_online(),
+				"stage": stage, "chip": String(game.hud.party_btn.tooltip_text)}
 		"world_state":
 			# Stage 15: which world is this machine in, at which NG+ tier?
 			# Polling absorbs the advance-snap rebuild lag.
@@ -4021,8 +4033,9 @@ func _run_guest14() -> void:
 # (chapter + NG+ tier, the MP-20 check), all-ready carries the whole party
 # into the chapter with the gates LOCKING behind them — and a mid-chapter
 # "reprise home" is REFUSED (the no-yank guard), while returning to the
-# hub REOPENS the gates. The victory-path return home rides the proven
-# stage-8(d)/14 advance machinery and isn't re-proven here.
+# hub REOPENS the gates. The persistent Party HUD chip also reopens the live
+# roster for both roles without ending the session. The victory-path return
+# home rides the proven stage-8(d)/14 advance machinery and isn't re-proven here.
 
 func _run_host15() -> void:
 	if not await _host_boot():
@@ -4039,6 +4052,17 @@ func _run_host15() -> void:
 		return _fail("host never reached the capital")
 	if not bool(_net.lobby_open):
 		return _fail("the gates should be OPEN in the capital (lobby_open)")
+	if not game.hud.party_btn.visible or game.hud.party_btn.icon == null \
+			or not "1/4" in String(game.hud.party_btn.tooltip_text):
+		return _fail("lone host has no persistent party HUD icon")
+	game.menus.open_party()
+	await _frames(2)
+	if game.menus.current != "lobby" \
+			or String(game.menus.lobby.get("stage", "")) != "host_lobby":
+		return _fail("host Party HUD route did not reopen the live roster")
+	game.menus.close()
+	if not _net.is_online():
+		return _fail("closing the host party panel ended the session")
 	print("[net_session] host15: standing in Crownfall, gates open")
 
 	if _spawn_peer("guest") < 0:
@@ -4051,7 +4075,15 @@ func _run_host15() -> void:
 	var r: Dictionary = await _watch(gid, "world_state", {"chapter": "capital", "tier": 0})
 	if r.is_empty() or not bool(r.get("ok", false)):
 		return _fail("the friend did not land in the capital plaza: %s" % str(r))
-	print("[net_session] host15: (a) friend joined the LIVE hub — no relaunch, plaza shared")
+	if not await _wait_for(func() -> bool:
+			return game.hud.party_btn.visible \
+				and "2/4" in String(game.hud.party_btn.tooltip_text),
+			5.0, "Party HUD count 2/4"):
+		return
+	r = await _watch(gid, "party_panel", {})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest Party HUD route did not reopen safely: %s" % str(r))
+	print("[net_session] host15: (a) friend joined the LIVE hub — Party 2/4 reopens for both roles")
 
 	# ---- the portal: propose ch1 at Nightmare, party says yes ----
 	sess.check_passed.connect(_on_check14)

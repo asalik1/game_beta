@@ -128,9 +128,15 @@ func _make_button(id: String) -> void:
 	var icon := TextureRect.new()
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.position = Vector2(diam * 0.18, diam * 0.18)
-	icon.custom_minimum_size = Vector2(diam * 0.64, diam * 0.64)
+	# Painted ability medallions already include their own circular rim. Let
+	# that rim nearly fill the touch target; utility glyphs keep the roomier
+	# inset they need inside the same panel shape.
+	var icon_inset: float = 0.0 if ABILITY_SLOTS.has(id) else 0.18
+	var icon_span: float = 1.0 if ABILITY_SLOTS.has(id) else 0.64
+	icon.position = Vector2(diam * icon_inset, diam * icon_inset)
+	icon.custom_minimum_size = Vector2(diam * icon_span, diam * icon_span)
 	icon.size = icon.custom_minimum_size
 	pnl.add_child(icon)
 	# Centre label: cooldown countdown for abilities, x-count for potion, glyph
@@ -219,9 +225,10 @@ func _refresh_ability_icons() -> void:
 	var p = game.local_player
 	for slot in ABILITY_SLOTS:
 		var b: Dictionary = _btns[slot]
-		var theme: Dictionary = Classes.theme_by_id(p.cls, p.ability_theme.get(slot, ""))
+		var theme_id: String = p.ability_theme.get(slot, "")
+		var theme: Dictionary = Classes.theme_by_id(p.cls, theme_id)
 		var tcol: Color = theme.get("color", Color(0.85, 0.85, 0.92))
-		var icon_tex: Texture2D = Art.ability_icon(p.cls, slot, tcol)
+		var icon_tex: Texture2D = Art.ability_icon(p.cls, slot, tcol, theme_id)
 		(b["icon"] as TextureRect).texture = icon_tex
 		# Variant glow: theme colour when equipped, dim neutral when bare.
 		if b["glow"] != null:
