@@ -381,16 +381,45 @@ honestly — the codex now tells players a tag means *leans*, not *grants*.
 
 ## 7. Art and naming
 
-### Three tiers of identity
+### Generic vs unique — the passive is the line (owner, 2026-07-26)
 
-Every shape exists at every grade — same bias, same archetype. Grade changes
-*presentation*. Named uniques are a separate axis on top, not a high grade.
+**A unique is generic-grade power PLUS a passive.** That is the entire
+difference. A generic S and a named S have the same stat ceiling; the unique
+additionally carries a signature passive, and it is rarer. Players chase uniques
+for the passive, not for bigger numbers.
 
-| Tier | What | Name | Art | Bias | Passive |
+| Kind | Power | Passive | Name / art | Rarity | First drops |
 |---|---|---|---|---|---|
-| **Graded generic** | the shape at a grade | `PREFIXES[grade]` + noun | `<shape>_<grade>.png` → family → tint | §3 budget | none |
-| **Named unique** | its own object | authored | **its own sprite** | may exceed budget | yes |
-| **Class legendary** | the S-exclusive unique | `S_GEAR[cls][slot]` | its own sprite | may exceed budget | signature, dormant until awakened |
+| **Generic** F–S | grade curve, §3 bias | **none** | `PREFIXES[grade]` + noun, graded art | the baseline drop | generic **S**: **Act 2** |
+| **Named A unique** | A-grade | **yes** | authored name, own sprite | rarer than generic | **Act 2** |
+| **Named S unique** | S-grade | **yes** | authored name, own sprite | rarest | **Act 3** |
+
+Drop schedule, stated plainly:
+
+- **Act 2** — generic S becomes available *and* named A uniques begin dropping
+  (at a lower rate than generic gear).
+- **Act 3** — named S uniques begin dropping (rarest of all).
+
+Every shape gets one named A and one named S (240 uniques, §"Named uniques"),
+each carrying its own passive.
+
+**This inverts the current code.** `roll_item_of` today makes *every* A drop a
+random `A_NAMES` name and *every* S drop the class legendary with its passive —
+so "generic S" does not exist yet, and passives are handed out on every S rather
+than gated to a rare unique roll. Reconciling that is the drop-system work (§8),
+not done here. Two design calls block it and are the owner's:
+
+1. **`S_GEAR` vs the new named-S uniques.** The six existing class legendaries
+   (Kingsbane, Stormcaller…) are already "named S + passive + awakening-gated."
+   Are they *the* named-S uniques for their shape, or a parallel class-exclusive
+   set beside the per-shape uniques? Awakening-gating currently applies only to
+   them.
+2. **240 passives.** One passive per unique is 240 distinct passives to design.
+   That is the real cost of this tier and should be sized before art commits to
+   240 one-off sprites.
+
+Everything else in this section (art cascade, naming, the uniques record shape)
+stands regardless of how those two resolve.
 
 ### The override cascade (shipped)
 

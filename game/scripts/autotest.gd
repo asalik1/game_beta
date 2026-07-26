@@ -1002,6 +1002,17 @@ func _run_systems() -> void:
 	# to shapes.values()[0], so a new sword silently renders as a Blade. Four tables
 	# have to agree per shape (PROPOSALS/GEAR_SHAPE_MATRIX.md s6); this pins the pair
 	# that fails quietly.
+	# A named unique whose sprite is MISSING does not error either — the cascade
+	# falls through and it renders as its plain shape, so the one-off piece the
+	# player chased looks like stock gear. Pin the manifest against the files.
+	for u in Items.UNIQUES:
+		var uart := String(u["art"])
+		if not ResourceLoader.exists("res://assets/icons/%s.png" % uart):
+			return _fail("unique '%s' points at assets/icons/%s.png, which does not exist" % [u["name"], uart])
+		if not Items.SHAPE_STYLE.has(String(u["noun"])):
+			return _fail("unique '%s' claims shape '%s', which has no SHAPE_STYLE entry" % [u["name"], u["noun"]])
+		if not Art.GEAR_SHAPES[String(u["slot"])].has(String(u["noun"])):
+			return _fail("unique '%s' claims shape '%s', which has no art mapping" % [u["name"], u["noun"]])
 	for slot in Items.SLOTS:
 		for noun in Items.SLOT_NAMES[slot]:
 			if not Art.GEAR_SHAPES[slot].has(noun):
@@ -1537,6 +1548,13 @@ func _run_systems() -> void:
 	game.menus.shop_tab = "buy"  # restore the default for later shop opens
 	game.menus.open_codex("gear")
 	await _frames(2)
+	# Gear split into shelves 2026-07-26 — smoke each so a broken subtab is caught,
+	# including the Shapes shelf's per-slot children.
+	for gsub in ["gear_shapes", "gear_shapes_weapon", "gear_shapes_armor",
+			"gear_shapes_boots", "gear_shapes_charm", "gear_uniques", "gear_gems",
+			"gear_bags", "gear_rules"]:
+		game.menus.open_codex(gsub)
+		await _frames(2)
 	game.menus.open_codex("terrains")
 	await _frames(2)
 	var _dev0: bool = game.dev_mode

@@ -21,8 +21,13 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 	vbox.add_child(tabs)
 	m._btn(tabs, "  Bestiary  ", func() -> void: m.open_codex("monsters"),
 		Color(0.95, 0.85, 0.5) if in_bestiary else Color(0.6, 0.6, 0.6))
-	m._btn(tabs, "  Gear  ", func() -> void: m.open_codex("gear"),
-		Color(0.95, 0.85, 0.5) if tab == "gear" else Color(0.6, 0.6, 0.6))
+	# Gear shares one top-level tab across its Shapes / Uniques / Gems / Bags /
+	# Rules shelves (the bestiary/gallery pattern) — the 120-shape matrix made one
+	# flat scroll unnavigable. "gear" alone is an alias for the Shapes shelf so old
+	# open_codex("gear") call sites still land somewhere sane.
+	var in_gear: bool = tab == "gear" or tab.begins_with("gear_")
+	m._btn(tabs, "  Gear  ", func() -> void: m.open_codex("gear_shapes"),
+		Color(0.95, 0.85, 0.5) if in_gear else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Terrains  ", func() -> void: m.open_codex("terrains"),
 		Color(0.95, 0.85, 0.5) if tab == "terrains" else Color(0.6, 0.6, 0.6))
 	m._btn(tabs, "  Curios  ", func() -> void: m.open_codex("curios"),
@@ -72,6 +77,33 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		m._btn(subs, "  NPCs  ", func() -> void: m.open_codex("npcs"),
 			Color(0.7, 0.9, 1.0) if tab == "npcs" else Color(0.55, 0.55, 0.58))
 
+	# Gear subtabs — Shapes / Uniques / Gems / Bags / Rules under the one parent.
+	if in_gear:
+		var gearsubs := HBoxContainer.new()
+		gearsubs.add_theme_constant_override("separation", 10)
+		vbox.add_child(gearsubs)
+		for pair in [["gear_shapes", "Shapes"], ["gear_uniques", "Uniques"],
+				["gear_gems", "Gems"], ["gear_bags", "Bags"], ["gear_rules", "Rules"]]:
+			var gt: String = pair[0]
+			# Shapes stays lit across its per-slot children (gear_shapes_weapon...).
+			var active: bool = tab == gt or (tab == "gear" and gt == "gear_shapes") \
+				or (gt == "gear_shapes" and tab.begins_with("gear_shapes"))
+			m._btn(gearsubs, "  %s  " % pair[1], func() -> void: m.open_codex(gt),
+				Color(1.0, 0.9, 0.6) if active else Color(0.55, 0.55, 0.58))
+
+	# Shapes per-slot level — Weapons / Armor / Boots / Charms. A single slot's
+	# gallery runs 20+ rows once the matrix lands, so the shelf splits again.
+	var in_shapes: bool = tab == "gear" or tab.begins_with("gear_shapes")
+	if in_shapes:
+		var slotbar := HBoxContainer.new()
+		slotbar.add_theme_constant_override("separation", 10)
+		vbox.add_child(slotbar)
+		for pair in [["weapon", "Weapons"], ["armor", "Armor"], ["boots", "Boots"], ["charm", "Charms"]]:
+			var st := "gear_shapes_" + String(pair[0])
+			var on_first: bool = pair[0] == "weapon" and (tab == "gear" or tab == "gear_shapes")
+			m._btn(slotbar, "  %s  " % pair[1], func() -> void: m.open_codex(st),
+				Color(0.85, 0.95, 0.7) if (tab == st or on_first) else Color(0.5, 0.55, 0.5))
+
 	# Gallery subtabs — Heroes / Bosses / Folk of the Vale.
 	if in_gallery:
 		var gsubs := HBoxContainer.new()
@@ -114,7 +146,7 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 	elif tab == "coop":
 		_coop(m, list)
 	else:
-		_gear(m, list)
+		_gear(m, list, tab)
 	m._hint(vbox, "ESC, ✕, click outside, or C to close")
 
 
@@ -1030,8 +1062,28 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 	rdesc.custom_minimum_size = Vector2(880, 0)
 
 
-static func _gear(m: Menus, list: VBoxContainer) -> void:
+## Gear tab dispatcher. Split into shelves 2026-07-26 (the shape matrix made one
+## flat scroll unnavigable); `tab` is "gear" (alias for shapes) or "gear_<shelf>".
+static func _gear(m: Menus, list: VBoxContainer, tab := "gear") -> void:
 	list.add_theme_constant_override("separation", 8)
+	var sub := "shapes" if tab == "gear" else tab.trim_prefix("gear_")
+	if sub.begins_with("shapes"):
+		# "shapes" | "shapes_<slot>" — the Shapes shelf carries its own per-slot
+		# level (a slot's gallery alone can run 20+ rows once the matrix lands).
+		_gear_shapes(m, list, sub.trim_prefix("shapes").trim_prefix("_"))
+		return
+	match sub:
+		"uniques": _gear_uniques(m, list)
+		"gems": _gear_gems(m, list)
+		"bags": _gear_bags(m, list)
+		"rules": _gear_rules(m, list)
+		_: _gear_shapes(m, list)
+
+
+## SHAPES shelf, one SLOT at a time (weapon/armor/boots/charm) — the explainer
+## plus that slot's every-shape-every-grade gallery. `slot` empty = the first.
+static func _gear_shapes(m: Menus, list: VBoxContainer, slot := "") -> void:
+	var show_slot := slot if slot in Items.SLOTS else String(Items.SLOTS[0])
 	var slot_desc := {
 		"weapon": "Main: your class attribute (largest budget). Upgradeable at merchants.",
 		"armor": "Main: your class attribute. Upgradeable at merchants.",
@@ -1056,31 +1108,39 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		sl_l.custom_minimum_size = Vector2(880, 0)
 		sl_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	# ------------------ visual gallery: every shape at every grade ------
-	for slot in Items.SLOTS:
-		m._lbl(list, "— %sS — %s" % [slot.to_upper(), slot_desc[slot]], 16, Color(0.95, 0.85, 0.5))
-		for noun in Art.GEAR_SHAPES[slot]:
-			var row := HBoxContainer.new()
-			row.add_theme_constant_override("separation", 10)
-			_card(list).add_child(row)
-			var tag: String = Items.SHAPE_STYLE.get(noun, {}).get("tag", "")
-			var name_l := m._lbl(row, "%s\n%s" % [noun, tag], 13, Color(0.85, 0.85, 0.9))
-			name_l.custom_minimum_size = Vector2(110, 34)
-			for g in Items.GRADES:
-				var cell := VBoxContainer.new()
-				cell.custom_minimum_size = Vector2(48, 0)
-				row.add_child(cell)
-				var icon := TextureRect.new()
-				icon.texture = Art.item_icon(slot, g, noun)
-				icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-				cell.add_child(icon)
-				var gl := Label.new()
-				gl.text = g
-				gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-				gl.add_theme_font_size_override("font_size", 12)
-				gl.add_theme_color_override("font_color", Items.GRADE_COLOR[g])
-				cell.add_child(gl)
+	# ------------------ visual gallery: this slot, every shape at every grade ------
+	m._lbl(list, "— %sS — %s" % [show_slot.to_upper(), slot_desc[show_slot]], 16, Color(0.95, 0.85, 0.5))
+	for noun in Art.GEAR_SHAPES[show_slot]:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_card(list).add_child(row)
+		var tag: String = Items.SHAPE_STYLE.get(noun, {}).get("tag", "")
+		var name_l := m._lbl(row, "%s\n%s" % [noun, tag], 13, Color(0.85, 0.85, 0.9))
+		name_l.custom_minimum_size = Vector2(110, 34)
+		for g in Items.GRADES:
+			var cell := VBoxContainer.new()
+			cell.custom_minimum_size = Vector2(64, 0)
+			row.add_child(cell)
+			var icon := TextureRect.new()
+			icon.texture = Art.item_icon(show_slot, g, noun)
+			# A 32px icon shown at 1:1 in a small cell reads as a sliver — a thin
+			# weapon vanishes. Upscale to a legible box, NEAREST so the pixels
+			# stay crisp instead of blurring.
+			icon.custom_minimum_size = Vector2(56, 56)
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			cell.add_child(icon)
+			var gl := Label.new()
+			gl.text = g
+			gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			gl.add_theme_font_size_override("font_size", 12)
+			gl.add_theme_color_override("font_color", Items.GRADE_COLOR[g])
+			cell.add_child(gl)
 
+
+## UNIQUES shelf — legacy epic names, the new own-art named uniques, and the
+## class legendaries.
+static func _gear_uniques(m: Menus, list: VBoxContainer) -> void:
 	# --------------------------------------- named epics & legendaries --
 	m._lbl(list, "— EPIC UNIQUES (A) — found in silver and golden chests —", 16, Items.GRADE_COLOR["A"])
 	for slot in Items.SLOTS:
@@ -1093,6 +1153,39 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 		row.add_child(icon)
 		var l := m._lbl(row, "  ·  ".join(Items.A_NAMES[slot]), 13, Items.GRADE_COLOR["A"])
 		l.custom_minimum_size = Vector2(780, 0)
+
+	# ------------------------------------------- named uniques (own art) ---
+	# Unlike the A_NAMES list above (bare names on a generic slot icon), each of
+	# these is its OWN object with its own sprite — so show the sprite. Empty
+	# until a class has entries, rather than printing a hollow header.
+	if not Items.UNIQUES.is_empty():
+		m._lbl(list, "— NAMED UNIQUES — one-off pieces, each its own forging —", 16, Color(1.0, 0.72, 0.45))
+		var ud := m._lbl(list, "A unique is a generic-grade piece that also carries a signature PASSIVE — that passive is the whole difference, and uniques drop more rarely to match. Its own name, its own art. Named A pieces surface in Act 2, named S in Act 3.",
+			13, Color(0.8, 0.82, 0.88))
+		ud.custom_minimum_size = Vector2(880, 0)
+		ud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		for cls in Classes.CLASSES:
+			var mine: Array = Items.uniques_for(String(cls))
+			if mine.is_empty():
+				continue
+			var ubox := VBoxContainer.new()
+			ubox.add_theme_constant_override("separation", 4)
+			_card(list).add_child(ubox)
+			m._lbl(ubox, String(Classes.CLASSES[cls]["name"]).to_upper(), 14, Color(0.95, 0.85, 0.5))
+			for u in mine:
+				var urow := HBoxContainer.new()
+				urow.add_theme_constant_override("separation", 14)
+				ubox.add_child(urow)
+				var uicon := TextureRect.new()
+				uicon.texture = Art.item_icon(String(u["slot"]), String(u["grade"]),
+					String(u["noun"]), String(u["art"]))
+				uicon.custom_minimum_size = Vector2(56, 56)
+				uicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				uicon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				urow.add_child(uicon)
+				var ul := m._lbl(urow, "%s   —   %s %s" % [u["name"], u["grade"], u["noun"]],
+					13, Items.GRADE_COLOR[String(u["grade"])])
+				ul.custom_minimum_size = Vector2(780, 0)
 
 	m._lbl(list, "— LEGENDARY (S) — class exclusive, golden chests only —", 16, Items.GRADE_COLOR["S"])
 	var awk := m._lbl(list, "A found or bought legendary keeps its name and top stats, but its signature PASSIVE sleeps — complete your class's short AWAKENING quest to wake it. Once awakened, every legendary of that class you carry is active.", 13, Color(0.85, 0.75, 0.55))
@@ -1119,6 +1212,9 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 			var l := m._lbl(row, special["name"] + extra, 13, Items.GRADE_COLOR["S"])
 			l.custom_minimum_size = Vector2(780, 0)
 
+
+## RULES shelf — grades, chests, drop bands, the stat-source rules and soft caps.
+static func _gear_rules(m: Menus, list: VBoxContainer) -> void:
 	# ------------------------------------------------- rules of thumb ---
 	m._lbl(list, "— GRADES & CHESTS —", 16, Color(0.95, 0.85, 0.5))
 	var rules := VBoxContainer.new()
@@ -1152,6 +1248,9 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 	caps.custom_minimum_size = Vector2(880, 0)
 	caps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+
+## GEMS shelf — sockets, synthesis, the special-gem gate and the per-gem table.
+static func _gear_gems(m: Menus, list: VBoxContainer) -> void:
 	# ------------------------------------------------------------ gems ---
 	m._lbl(list, "— GEMS — socket into C+ gear (C:%d · B:%d · A:%d · S:%d sockets) —" %
 		[int(Items.GEM_SLOTS["C"]), int(Items.GEM_SLOTS["B"]), int(Items.GEM_SLOTS["A"]), int(Items.GEM_SLOTS["S"])],
@@ -1197,6 +1296,9 @@ static func _gear(m: Menus, list: VBoxContainer) -> void:
 			13, Color(0.7, 0.72, 0.78))
 		val_l.custom_minimum_size = Vector2(300, 0)
 
+
+## BAGS shelf — bag capacity/stacking and the consumable list.
+static func _gear_bags(m: Menus, list: VBoxContainer) -> void:
 	# ------------------------------------------------- bags & consumables ---
 	m._lbl(list, "— BAGS — carry up to 5 stacking bags; everything shares their slots —", 16, Color(0.95, 0.85, 0.5))
 	var bags := VBoxContainer.new()

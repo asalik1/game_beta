@@ -60,8 +60,14 @@ stop and ask the owner — do not switch generators or spend external credits.
 |---|---|
 | Size | **32 × 32 px** |
 | Format | PNG, RGBA, transparent background |
-| Style | pixel art, matching the existing `game/assets/icons/` set |
+| Style | pixel art, a new cohesive Crownless gear language |
 | Destination | `game/assets/icons/<key>.png` |
+
+**The currently wired gear icons are placeholders, not art direction.** Do not
+use them as style references and do not preserve their look. Replace them as
+each family is covered, backing up the prior PNG as required below. New assets
+within a production slice should reference that slice's newly established style
+anchor so the set stays coherent.
 
 **Pre-brighten roughly gamma 0.78.** The Forward+ tonemap renders authored PNGs
 noticeably darker than they look in an image viewer. Judge from an in-game
@@ -96,6 +102,12 @@ falls through, so you can author in any order and nothing renders as a hole.
 **Tier 1 files receive no tint or embellishment.** Whatever you draw is exactly
 what ships. Tier 2 files still get a light grade tint, so draw those neutral.
 
+The item's name colour and bag-slot border already carry rarity. **Do not repeat
+that information by turning the same drawing blue for B, brown for A and gold
+for S.** The authored B / A / S art must climb through condition, material,
+ornament, construction and light. The ladder should still read in grayscale,
+and A must never look duller or cheaper than B.
+
 ---
 
 ## 4. The tier ladder — make grade legible at a glance
@@ -110,8 +122,8 @@ icon alone, before reading the name.
 | **D** | Tempered, Honed, Polished, Keen | **Maintained.** Clean lines, a slight sheen, edges true. Still undecorated but clearly cared for. |
 | **C** | Fine, Gilded, Wrought, Refined | **Crafted.** Deliberate shaping, a small amount of ornament, better material. First hint of colour beyond the base metal. |
 | **B** | Runed, Masterwork, Enchanted, Pristine | **Ornamented and magical.** Etched detail, inlay, a faint glow or rune accent. Quality steel, dyed leather, fine cloth. |
-| **A** | Dragonforged | **Exceptional.** Exotic material, strong colour identity, visible energy. A bigger read at a glance — more ornament, a distinct glow. |
-| **S** | Emberforged | **Legendary.** Dramatic and luminous. Unmistakable in a full bag. Ember/arcane light, exotic silhouette details, the best material in the world. |
+| **A** | Dragonforged | **Exceptional.** Exotic material and visible energy. A bigger read at a glance — more relief, ornament, contrast and a distinct glow. Clearly stronger than B without depending on an overall colour wash. |
+| **S** | Emberforged | **Legendary.** Dramatic and luminous. Unmistakable in a full bag. Ember/arcane light, the richest fittings and the best material in the world. |
 
 ### The constraint that keeps the bag readable
 
@@ -226,3 +238,36 @@ No author or co-author trailers.
 Gear *design* work (the stat side of `Items.SHAPE_STYLE`, per-class noun lists,
 the uniques table) is in flight separately. Stick to `game/assets/icons/` and the
 `Art.GEAR_SHAPES` table to avoid collisions.
+
+---
+
+## Production progress
+
+### 2026-07-26 — warrior weapon slice
+
+- Tier-2 family sprites: **5 / 120**
+- Tier-1 B / A / S sprites: **15 / 360**
+- Named A / S uniques: **10 / 240**
+- Slice total: **30 assets**
+- Shape mappings: Pike, Warblade, Saber, Bulwark Blade and Claymore wired in
+  `Art.GEAR_SHAPES`
+- Unique handoff: [`GEAR_UNIQUE_ART_MANIFEST.md`](GEAR_UNIQUE_ART_MANIFEST.md)
+- QA matrix:
+  [`GEAR_ART_WARRIOR_WEAPONS_PREVIEW.png`](GEAR_ART_WARRIOR_WEAPONS_PREVIEW.png)
+- Forward+ codex proof:
+  [`GEAR_ART_WARRIOR_WEAPONS_INGAME.png`](GEAR_ART_WARRIOR_WEAPONS_INGAME.png)
+
+Regeneration pass: all 15 authored B / A / S sprites were rebuilt so the grade
+ladder is carried by workmanship, exotic material, relief and energy rather
+than a blue / brown / gold recolour ramp. The previous 15 are backed up under
+`game/assets/icons/archive/2026-07-26_warrior_weapon_regen_pass1/`.
+
+Five named uniques were also rebuilt as independent designs: The Red Pennon,
+Marchbreaker, Ashrider, The Gate That Walks and Crownfall, the Kingdom's End.
+Red Horizon remains the distinctness benchmark. The five replaced unique
+sprites share the same backup directory.
+
+This slice used the built-in image generator only. PixelLab was not used, and
+the legacy wired weapon icons were not used as references. The replaced
+`w_claymore.png` is preserved under
+`game/assets/icons/archive/2026-07-26_pre_gear_art/`.

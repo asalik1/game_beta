@@ -50,7 +50,7 @@ const CLASS_PRIMARY := {
 # looting Tomes). Since 2026-07-06 gear is also class-LOCKED at equip
 # (item["cls"]) — a mage cannot wear an assassin's boots.
 const CLASS_WEAPONS := {
-	"warrior": ["Blade", "Edge", "Claymore"],
+	"warrior": ["Blade", "Edge", "Claymore", "Pike", "Warblade", "Saber", "Bulwark Blade"],
 	"archer": ["Bow", "Crossbow"],
 	"assassin": ["Fang", "Shuriken"],
 	"mage": ["Staff", "Wand"],
@@ -59,7 +59,7 @@ const CLASS_WEAPONS := {
 }
 
 const SLOT_NAMES := {
-	"weapon": ["Blade", "Edge", "Fang", "Shuriken", "Claymore", "Bow", "Crossbow", "Staff", "Wand", "Hammer", "Tome"],
+	"weapon": ["Blade", "Edge", "Fang", "Shuriken", "Claymore", "Pike", "Warblade", "Saber", "Bulwark Blade", "Bow", "Crossbow", "Staff", "Wand", "Hammer", "Tome"],
 	"armor":  ["Plate", "Mail", "Guard"],
 	"boots":  ["Boots", "Striders", "Treads"],
 	"charm":  ["Charm", "Talisman", "Sigil"],
@@ -99,6 +99,47 @@ const A_NAMES := {
 # passive ability (implemented in player.gd). Substats roll RANDOMLY like every
 # other grade — NO pinned synergy subs (2026-07-13): a legendary is chased for its
 # passive + top rolls, not handed a guaranteed stat line.
+# NAMED UNIQUES (2026-07-26) — generic-grade power PLUS a signature passive, and
+# rarer than generic (owner rule; PROPOSALS/GEAR_SHAPE_MATRIX.md §7). The PASSIVE
+# is the whole difference: a named S and a generic S share a stat ceiling, but the
+# unique carries a passive and drops less often. A unique is its own object — a
+# fixed shape, an authored name, and its own 32px sprite that outranks the
+# per-grade and family art (`art` -> assets/icons/<art>.png, via Art.icon_for /
+# Art.weapon_tex). Two per shape: one A, one S.
+#
+# THIS TABLE IS THE ART MANIFEST MADE REAL, NOTHING MORE — rows from
+# PROPOSALS/GEAR_UNIQUE_ART_MANIFEST.md so the codex can SHOW these pieces. Three
+# things are deliberately absent, all owner design calls, none the art agent's:
+#   * `bias`    — a unique may exceed the shape budget (cap Sum(bias-1) <= 1.20)
+#   * `passive` — one per unique (240 total); the defining trait, unsized so far
+#   * a DROP SOURCE — roll_item_of cannot emit one yet: generic S opens in Act 2,
+#     named A in Act 2 (rarer), named S in Act 3 (rarest). This also has to SPLIT
+#     the current behaviour, where every A/S drop is already auto-named (A_NAMES /
+#     S_GEAR) so "generic S" does not exist. Wire source + bias + passive together.
+# Only warrior weapons exist so far; the other 110 shapes are unstarted.
+const UNIQUES := [
+	{"name": "The Red Pennon", "cls": "warrior", "slot": "weapon", "noun": "Pike", "grade": "A", "art": "u_the_red_pennon"},
+	{"name": "Crownspike, the Last Decree", "cls": "warrior", "slot": "weapon", "noun": "Pike", "grade": "S", "art": "u_crownspike_the_last_decree"},
+	{"name": "Marchbreaker", "cls": "warrior", "slot": "weapon", "noun": "Warblade", "grade": "A", "art": "u_marchbreaker"},
+	{"name": "Throneless, Edge of the Last Host", "cls": "warrior", "slot": "weapon", "noun": "Warblade", "grade": "S", "art": "u_throneless_edge_of_the_last_host"},
+	{"name": "Ashrider", "cls": "warrior", "slot": "weapon", "noun": "Saber", "grade": "A", "art": "u_ashrider"},
+	{"name": "Red Horizon", "cls": "warrior", "slot": "weapon", "noun": "Saber", "grade": "S", "art": "u_red_horizon"},
+	{"name": "Bastion's Tooth", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "A", "art": "u_bastions_tooth"},
+	{"name": "The Gate That Walks", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "S", "art": "u_the_gate_that_walks"},
+	{"name": "Gravesong", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "A", "art": "u_gravesong"},
+	{"name": "Crownfall, the Kingdom's End", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "S", "art": "u_crownfall_the_kingdoms_end"},
+]
+
+
+## Named uniques for one class, in manifest order (shape, then A before S).
+static func uniques_for(cls: String) -> Array:
+	var out: Array = []
+	for u in UNIQUES:
+		if String(u["cls"]) == cls:
+			out.append(u)
+	return out
+
+
 const S_GEAR := {
 	"warrior": {
 		"weapon": {"name": "Kingsbane, Edge of the Fallen Crown", "passive": "kingsblade", "noun": "Blade"},
@@ -384,6 +425,14 @@ const DEFAULT_STYLE := {"main": 1.0, "bias": {}}
 const SHAPE_STYLE := {
 	"Blade":    {"main": 1.0,  "bias": {"atk_pct": 1.60}, "tag": "balanced"},
 	"Edge":     {"main": 1.2,  "bias": {}, "tag": "heavy hits"},
+	# Warrior weapon matrix, first slice (2026-07-26 — art landed, so the design
+	# side follows; PROPOSALS/GEAR_SHAPE_MATRIX.md §5). Together with Claymore
+	# these span all six stat groups for the warrior's weapon slot. Blade and Edge
+	# stay rollable for now — nothing is retired until the whole matrix lands.
+	"Pike":     {"main": 1.0,  "bias": {"physpen": 1.60}, "tag": "penetration"},
+	"Warblade": {"main": 1.05, "bias": {"atk_pct": 1.30, "crit": 1.30}, "tag": "killing steel"},
+	"Saber":    {"main": 0.9,  "bias": {"dex": 1.30, "eva": 1.30}, "tag": "fast and light"},
+	"Bulwark Blade": {"main": 1.1, "bias": {"physres": 1.20, "magres": 1.20, "hp_pct": 1.20}, "tag": "guarded"},
 	"Fang":     {"main": 0.85, "bias": {"crit": 1.60}, "tag": "crit"},
 	"Shuriken": {"main": 0.8,  "bias": {"crit": 1.30, "dex": 1.30}, "tag": "crit + aim"},
 	"Kunai":    {"main": 0.8,  "bias": {"crit": 1.30, "dex": 1.30}, "tag": "crit + aim"},  # back-compat: pre-2026-07-08 saves stored the "Kunai" noun
