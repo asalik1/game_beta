@@ -295,7 +295,11 @@ are MMO-phase work.
 Solo keeps its existing flow. In co-op:
 
 - A player at 0 HP enters a **downed** state: 30 s bleed-out, crawl-speed movement, no abilities.
-- Any teammate channels **3 s to revive** (interrupted by taking a hit); revived at 30% HP.
+- Any teammate channels **3 s to revive**; revived at 30% HP. The channel breaks on any hit that
+  deals post-mitigation damage and on hard CC (a hit fully eaten by a shield/ward keeps the hold;
+  root does not break it). Holding INTERACT through a break restarts the channel from zero.
+  (History: 2026-07-10 made the hold damage-proof; 2026-07-27 reversed it — untargetable downed
+  bodies plus a damage-proof channel made "let them drop, res mid-fire" the optimal line.)
   Constancy-lean healing interacting with revives is a phase-3 tuning note.
 - Bleed-out expiry ⇒ that player is a ghost until the room is cleared, then auto-revives.
 - **All players down ⇒ wipe**, which runs the *existing* death flow party-wide

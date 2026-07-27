@@ -787,9 +787,6 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	hurt_cd = 0.6
 	hurt_was_heavy = heavy  # a heavy-armed window blocks even other heavies
 	since_hurt = 0.0
-	# MP-12 (§5.3, owner call 2026-07-10): a landed hit NO LONGER breaks a
-	# revive channel — taking damage is the cost of the 3 s hold. Only a hard
-	# CC (freeze) interrupts, handled in _revive_channel_tick.
 	if dr_time > 0.0 and dmg_type != "true":
 		# Arcane Ward (round 45): the mage's Blink cloak — a brief, strong
 		# damage cut that SOFTENS a misstep instead of erasing it (the old
@@ -807,6 +804,13 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		var absorbed: float = minf(shield, amount)
 		shield -= absorbed
 		amount -= absorbed
+	if amount > 0.0:
+		# MP-12 (§5.3, owner call 2026-07-27 — reverses the 2026-07-10 call):
+		# a hit that DRAWS BLOOD breaks a revive channel. Downed bodies are
+		# untargetable, so a damage-proof 3 s hold made "let them drop, res
+		# mid-fire" the optimal line at high tiers. A hit a shield/ward fully
+		# ate keeps the hold: if it didn't hurt you, it didn't shake the grip.
+		_revive_interrupt(true)
 	if grit_regen > 0.0 and attacker != null:
 		# Grit (warrior, round 48): every ENEMY blow taken stokes recovery —
 		# stacks cap and refresh the window. Attacker-less damage (hazards,
@@ -1197,8 +1201,10 @@ func _down_tick(delta: float) -> void:
 ## wins; later hopefuls silently no-op); progress runs on THIS clock. A DOWNED
 ## or GHOSTED ally can be channeled (owner call 2026-07-10). Breaking the hold
 ## (release, move, range, or the ally standing) cancels quietly; a hard CC (a
-## freeze) cancels loudly. Plain damage does NOT interrupt — taking hits is the
-## cost of the hold.
+## freeze) cancels loudly here, and any hit that deals post-mitigation damage
+## cancels loudly from take_damage (owner call 2026-07-27). Holding INTERACT
+## through a break re-requests the claim, so a clipped channel restarts from
+## zero rather than needing a re-press.
 func _revive_channel_tick(delta: float) -> void:
 	if game == null or not game.net_online():
 		return
@@ -1210,9 +1216,10 @@ func _revive_channel_tick(delta: float) -> void:
 			_revive_interrupt(false)
 			return
 		if frozen_time > 0.0:
-			# Only a hard CC breaks the channel. A freeze is a full lockout —
-			# you can't hold the flame steady frozen solid. Root leaves you
-			# planted but working, so it doesn't (matches apply_root's ethos).
+			# A freeze is a full lockout — you can't hold the flame steady
+			# frozen solid. Root leaves you planted but working, so it doesn't
+			# (matches apply_root's ethos). Damage breaks the channel too, but
+			# from take_damage where the post-mitigation amount is known.
 			_revive_interrupt(true)
 			return
 		revive_t += delta
@@ -1244,8 +1251,9 @@ func _revive_channel_tick(delta: float) -> void:
 	game.net_session().request_revive(best.peer_id)
 
 
-## REVIVER: drop the channel. `loud` marks a combat interrupt (a landed
-## hit) — the quiet path covers deliberate releases and range breaks.
+## REVIVER: drop the channel. `loud` marks a combat interrupt (a damaging
+## hit or a freeze) — the quiet path covers deliberate releases and range
+## breaks.
 func _revive_interrupt(loud: bool) -> void:
 	if revive_target == null:
 		return

@@ -56,9 +56,9 @@ extends Node
 ##       the host's shell) and enemies retarget away from the body;
 ##   (b) the host channels INTERACT beside it for 3 s — the guest stands
 ##       at 30% max HP (owner-applied; the shell bar follows via vitals);
-##   (c) DAMAGE no longer interrupts (owner call 2026-07-10): the host holds
-##       the key through repeated hits and the channel SURVIVES; a hard CC
-##       (freeze) DOES break it, and the broken channel revives nobody;
+##   (c) DAMAGE interrupts (owner call 2026-07-27, reversing 2026-07-10): a
+##       shield-eaten hit keeps the hold, a hit that draws blood breaks it,
+##       a hard CC (freeze) breaks it — and a broken channel revives nobody;
 ##   (d) both down = WIPE: both machines replay the solo death flow —
 ##       both tithed, both respawned at the HOST's safe-room decision,
 ##       the wounded arena boss reset to full (leashed);
@@ -1273,9 +1273,10 @@ func _run_host6() -> void:
 	wolf.queue_free()
 	await _frames(2)
 
-	# (c) DAMAGE DOESN'T INTERRUPT, a FREEZE DOES (owner call 2026-07-10): hold
-	# INTERACT beside the body, take hits — the channel must SURVIVE them — then
-	# a freeze must break it, leaving the guest still down.
+	# (c) DAMAGE INTERRUPTS (owner call 2026-07-27, reversing 2026-07-10): hold
+	# INTERACT beside the body — a hit a shield fully eats must NOT break the
+	# hold, a hit that draws blood MUST, and a freeze must too; every broken
+	# channel leaves the guest still down.
 	# The shell may still be LERPING from the join spawn toward the owner's
 	# truth — let it settle first (teleporting the host onto a mid-lerp
 	# reading once dropped it inside village-center decor, and the physics
@@ -1296,19 +1297,32 @@ func _run_host6() -> void:
 	if not stood:
 		return _fail("host could not stand beside the body (village decor?)")
 	var ikey: int = int(game.binds["interact"])
+	game.player.eva = 0.0  # the interrupt legs need every hit to LAND (no dodge roll)
 	_press(ikey, true)
 	if not await _wait_for(func() -> bool: return game.player.revive_target != null,
 			5.0, "revive channel grant (interrupt test)"):
 		return
 	await get_tree().create_timer(0.8).timeout
-	# (c1) five landed hits must NOT break the hold (well under the 3 s finish):
-	for i in 5:
-		game.player.hurt_cd = 0.0
-		game.player.take_damage(6.0, "true", null, true)
-		if game.player.revive_target == null:
-			_press(ikey, false)
-			return _fail("a landed hit broke the channel — damage should no longer interrupt")
-		await get_tree().create_timer(0.15).timeout
+	# (c0) a hit the shield fully eats must NOT break the hold — no damage
+	# drawn, no interrupt (the amount > 0 gate in take_damage):
+	game.player.shield = 50.0
+	game.player.hurt_cd = 0.0
+	game.player.take_damage(6.0, "true", null, true)
+	if game.player.revive_target == null:
+		_press(ikey, false)
+		return _fail("a fully-shielded hit broke the channel — absorbed hits must keep the hold")
+	game.player.shield = 0.0
+	# (c1) a hit that draws blood MUST break it, synchronously:
+	game.player.hurt_cd = 0.0
+	game.player.take_damage(6.0, "true", null, true)
+	if game.player.revive_target != null:
+		_press(ikey, false)
+		return _fail("a damaging hit did not break the channel — damage must interrupt (owner call 2026-07-27)")
+	# The key is still held, so the channel re-requests past the 400 ms
+	# throttle and restarts from zero — wait for the fresh grant.
+	if not await _wait_for(func() -> bool: return game.player.revive_target != null,
+			5.0, "revive channel re-grant after the damage break"):
+		return
 	# (c2) a FREEZE (hard CC) breaks it before the 3 s completes. Set frozen_time
 	# directly (apply_freeze's control-forward path is moot for a genuinely-local
 	# reviver) and poll wall-clock — frames race ahead of physics headless.
@@ -1325,7 +1339,7 @@ func _run_host6() -> void:
 		return
 	if not bool(r.get("ok", false)):
 		return _fail("guest revived through a frozen-broken channel: %s" % str(r))
-	print("[net_session] host6: damage held the channel; a freeze broke it — guest still down")
+	print("[net_session] host6: shielded hit held, damage broke, freeze broke — guest still down")
 
 	# (b) the REAL revive: hold the channel 3 s uninterrupted — the guest
 	# stands at 30% max HP and the shell follows via vitals.
