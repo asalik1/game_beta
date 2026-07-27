@@ -225,8 +225,7 @@ func _death_mark() -> void:
 		# Bright maps (light backdrops) wash the wash out, so bump its opacity.
 		var bright: bool = Terrains.get_terrain(game.terrain_by_zone[game.cur_room]).get("bright", false)
 		var splash_op: float = Balance.PHANTOM_ULT_SPLASH_OPACITY_BRIGHT if bright else Balance.PHANTOM_ULT_SPLASH_OPACITY
-		var awakened: bool = bool(game.get_flag("s_awakened_" + cls, false))
-		var splash_key: String = Skins.skin_splash(cls, skin, awakened)
+		var splash_key: String = Skins.skin_splash(cls, skin)
 		game.hud.flash_splash(Art.tex(splash_key), splash_op, 0.85)
 		var storm := PhantomBladeStorm.new()
 		storm.target = target

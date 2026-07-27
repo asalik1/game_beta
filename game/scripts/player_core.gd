@@ -577,10 +577,9 @@ const DIR_POSE := {
 
 func _apply_class_sprite() -> void:
 	var art_name: String = Classes.CLASSES[cls]["sprite"]
-	# A skin with an awakened form (Phantom) evolves once this class's S-weapon
-	# awakening is complete (s_awakened_<cls>) — resolve to that base instead.
-	var awakened: bool = game != null and bool(game.get_flag("s_awakened_" + cls, false))
-	var skin_art: String = Skins.skin_sprite(cls, skin, awakened)
+	# (2026-07-27) Awakened forms retired: a skin resolves to ONE base, always
+	# (the Phantom simply IS the teal form now; the blue body is its own skin).
+	var skin_art: String = Skins.skin_sprite(cls, skin)
 	if skin_art != "":
 		art_name = skin_art
 	face_left = Art.faces_left(art_name)
@@ -849,8 +848,9 @@ func s_passive() -> String:
 	var w = equipment.get("weapon")
 	if w == null or not w.has("passive"):
 		return ""
-	if w.get("passive_dormant", false) and not weapon_awakened(w):
-		return ""
+	# (2026-07-27) The dormant/awakening gate is GONE with the legendary tier —
+	# every weapon passive is live on pickup. Old-save legendaries grandfather
+	# in: their stored passive_dormant flag is ignored, the passive just works.
 	return w["passive"]
 
 

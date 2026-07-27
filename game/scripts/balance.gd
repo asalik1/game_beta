@@ -266,9 +266,10 @@ const S_WEAPON_DROP_WEIGHT := 0.5    # S-TIER weapons only drop at HALF rate (th
 # a NAMED piece instead. Named A opens in Act 2, named S in Act 3 (rarest); the
 # class LEGENDARY (S_GEAR, awakening-quest passive) is Act 2+ and now a rare S
 # roll rather than every S weapon. Chances are un-benchmarked placeholders.
-const UNIQUE_A_CHANCE := 0.10        # an Act-2+ A-grade weapon roll lands as a named A unique
-const UNIQUE_S_CHANCE := 0.10        # an Act-3+ S-grade weapon roll lands as a named S unique
-const LEGEND_S_CHANCE := 0.12        # an Act-2+ S-grade roll lands as the class S_GEAR legendary (any slot)
+const UNIQUE_A_CHANCE := 0.10        # an Act-2+ A-grade roll lands as a named A unique (slot-generic)
+const UNIQUE_S_CHANCE := 0.10        # an Act-3+ S-grade roll lands as a named S unique (slot-generic)
+# (LEGEND_S_CHANCE deleted 2026-07-27: the legendary tier is retired — its six
+# flagship passives live on fitting named-S uniques; see Items.roll_item_of.)
 const UNIQUE_A_ACT := 2              # act floors for the named channels
 const UNIQUE_S_ACT := 3
 const SHOP_BUY_MARKUP := 2.0         # commodity (below the act's rare tier) grades: cheap flat price = intrinsic x this
@@ -1192,6 +1193,12 @@ const S_CASTER_BOLT_CDR := 0.08
 const UNIQ := {
 	# --- shared infrastructure ---
 	"evade_icd": 1.5,          # ONE shared internal cd for every on-evade trigger (owner call §10.4)
+	# --- the six flagship passives (ex-S_GEAR, transplanted onto named-S
+	# uniques 2026-07-27). Their magnitudes predate this table and live in
+	# their original homes (kit code + the S_CASTER_BOLT_CDR family below);
+	# these entries satisfy the every-passive-is-knobbed data contract.
+	"kingsblade": {}, "windward": {}, "wellspring": {},
+	"mirrorstep": {}, "dawnbreaker": {}, "voidmaw": {},
 	"struck_icd": 2.0,         # the on-hit-taken PROC family's shared cd (GEAR_ARMOR_UNIQUE_PASSIVES.md §1.3):
 	                           # weapon procs fire as shipped and STAMP it; armor struck-clauses require it clear
 	                           # (weapon-first by construction — no doubled counters on one blow)

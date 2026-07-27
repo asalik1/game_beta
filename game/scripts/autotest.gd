@@ -1138,45 +1138,49 @@ func _run_systems() -> void:
 			return _fail("sub-B gear rolled an endgame-only stat (lifesteal/combo)")
 	print("ok: class-aware drops (arsenal + S first-roll pen guarantee + B-gated lifesteal/combo)")
 
-	# 4b. S weapon: legendary shape + 3 sockets; its passive is DORMANT
-	# (round 51b) until the class's awakening flag is set. Wrong-class flag
-	# never wakes it; describe() reflects locked vs active.
-	# (2026-07-27 drop split) A plain S roll is now a GENERIC — top rolls, no
-	# passive; the legendary comes from the explicit make_legendary channel.
+	# 4b. The legendary tier is RETIRED (owner call 2026-07-27): a plain S
+	# roll is a generic with NO passive; the six flagship passives live on
+	# their fitting named-S uniques (live on pickup, no awakening quest);
+	# and an OLD-SAVE legendary (stored dormant flag) grandfathers in LIVE.
 	var srng := RandomNumberGenerator.new()
 	srng.seed = 7
 	var s_generic := Items.roll_item_of("weapon", "S", srng, "warrior")
 	if s_generic.has("passive"):
 		return _fail("a generic S roll must carry NO passive (drop split)")
-	var s_wpn := Items.make_legendary("warrior", "weapon", srng)
-	if s_wpn.get("passive", "") != "kingsblade" or s_wpn.get("cls", "") != "warrior":
-		return _fail("S warrior weapon wrong passive/class")
-	if not s_wpn.get("passive_dormant", false):
-		return _fail("a dropped S weapon must stamp passive_dormant")
-	if s_wpn.get("gem_slots", 0) != 3:
+	if s_generic.get("gem_slots", 0) != 3:
 		return _fail("S gear should have 3 gem slots")
+	var flagships := {"warrior": ["u_crownfall_the_kingdoms_end", "kingsblade"],
+		"archer": ["u_tempest_yew_bow_of_the_last_gale", "windward"],
+		"mage": ["u_firmament_the_heaven_bearing_staff", "wellspring"],
+		"assassin": ["u_pale_flight_blade_between_heartbeats", "mirrorstep"],
+		"paladin": ["u_dawnfall_hammer_of_the_final_oath", "dawnbreaker"],
+		"warlock": ["u_the_book_that_remembers_you", "voidmaw"]}
+	for fcls in flagships:
+		var want: Array = flagships[fcls]
+		var hit := false
+		for u in Items.uniques_of(String(fcls), "S", "weapon"):
+			if String(u["art"]) == String(want[0]):
+				hit = String(u.get("passive", "")) == String(want[1])
+		if not hit:
+			return _fail("%s flagship unique does not carry %s" % [fcls, want[1]])
+	# Old-save grandfather: a stored dormant legendary just works now.
+	var s_wpn := Items.roll_item_of("weapon", "S", srng, "warrior", "Claymore")
+	s_wpn["name"] = "Kingsbane, Edge of the Fallen Crown"
+	s_wpn["passive"] = "kingsblade"
+	s_wpn["passive_dormant"] = true
 	var keep_flags: Dictionary = game.flags.duplicate(true)
 	game.set_flag("s_awakened_warrior", false)
-	game.set_flag("s_awakened_archer", false)
 	game.player.add_item(s_wpn)
 	game.player.equip(s_wpn)
-	if game.player.s_passive() != "":
-		return _fail("dormant S passive fired without awakening")
-	game.set_flag("s_awakened_archer")  # wrong class
-	if game.player.s_passive() != "":
-		return _fail("wrong-class awakening woke a warrior legendary")
-	if not Items.describe(s_wpn, false).contains("LOCKED"):
-		return _fail("describe should show LOCKED for a dormant legendary")
-	game.set_flag("s_awakened_warrior")  # right class
 	if game.player.s_passive() != "kingsblade":
-		return _fail("s_passive not active after awakening the class")
-	if Items.describe(s_wpn, true).contains("LOCKED"):
-		return _fail("describe still LOCKED after awakening")
+		return _fail("old-save dormant legendary did not grandfather in live")
+	if Items.describe(s_wpn, false).contains("LOCKED"):
+		return _fail("describe still shows LOCKED — the awakening gate should be gone")
 	game.player.cds["a1"] = 0.0
 	game.player.use_ability("a1")
 	await _frames(15)
 	game.flags = keep_flags
-	print("ok: S weapon dormant passive + awakening (%s sleeps until s_awakened_warrior)" % s_wpn["name"])
+	print("ok: legendary tier retired (generic S passive-less, 6 flagship transplants, old saves grandfather live)")
 
 	# 4b2. Named uniques (2026-07-27): all 60 passives wired + described +
 	# knobbed; a unique is LIVE on pickup; the drop split holds (act 0 =
@@ -1218,15 +1222,14 @@ func _run_systems() -> void:
 		if gen.has("passive"):
 			return _fail("an act-0 roll must stay generic (drop split)")
 	var found_named := false
-	var found_leg := false
 	for i in 400:
 		var s_roll := Items.roll_item_of("weapon", "S", urng, "mage", "", 3)
 		if s_roll.get("passive_dormant", false):
-			found_leg = true
-		elif s_roll.has("passive"):
+			return _fail("a roll produced a dormant legendary — that tier is retired")
+		if s_roll.has("passive"):
 			found_named = true
-	if not (found_named and found_leg):
-		return _fail("act-3 S rolls never surfaced a named unique + legendary (400 tries)")
+	if not found_named:
+		return _fail("act-3 S rolls never surfaced a named unique (400 tries)")
 	# The named channel is slot-generic: act-3 GEAR rolls surface their own
 	# named uniques too (helmet here; the pool filter keeps slots honest).
 	var found_gear := false
@@ -1635,30 +1638,28 @@ func _run_systems() -> void:
 		return _fail("clearing chroma failed")
 	p_sk.chroma = old_chroma
 	print("ok: chroma shader (apply, uniforms, clear)")
+	# (2026-07-27) Awakened forms retired: one splash per skin, with per-skin
+	# `splash` overrides honored (the two Phantom forms share body-art history,
+	# so their derived keys would point at the wrong portraits).
 	for skin_cls in Skins.SKINS:
 		for skin_data in Skins.skins_for(skin_cls):
 			var skin_id: String = String(skin_data["id"])
-			var splash_key: String = Skins.skin_splash(skin_cls, skin_id, false)
+			var splash_key: String = Skins.skin_splash(skin_cls, skin_id)
 			if splash_key == "" or not Art.has_sprite(splash_key):
 				return _fail("missing skin splash: %s/%s -> %s" % [skin_cls, skin_id, splash_key])
-			if skin_data.has("awakened_sprite"):
-				var awakened_key: String = Skins.skin_splash(skin_cls, skin_id, true)
-				if awakened_key == splash_key or not Art.has_sprite(awakened_key):
-					return _fail("missing awakened skin splash: %s/%s -> %s" % [skin_cls, skin_id, awakened_key])
-	print("ok: every skin + awakened form has an installed splash")
+	if Skins.skin_splash("assassin", "phantom") != "splash_skin_assassin_phantom_awakened":
+		return _fail("the Phantom must default to its awakened (teal) portrait")
+	if Skins.skin_splash("assassin", "phantom_umbral") != "splash_skin_assassin_phantom":
+		return _fail("the Umbral Phantom must keep the original blue portrait")
+	if Skins.skin_sprite("assassin", "phantom") != "skins/mythic/assassin_phantom_awakened":
+		return _fail("the Phantom must resolve to the awakened body, always")
+	print("ok: every skin has an installed splash (Phantom teal-by-default, Umbral keeps blue)")
 	var old_skin: String = p_sk.skin
-	var awakened_flag := "s_awakened_" + p_sk.cls
-	var old_awakened: bool = bool(game.get_flag(awakened_flag, false))
 	p_sk.set_skin("dreadknight")
 	if game.hud._splash_for("You") != "splash_skin_warrior_dreadknight":
 		return _fail("hero dialogue did not resolve the equipped skin splash")
-	p_sk.set_skin("stormforged")
-	game.set_flag(awakened_flag, true)
-	if game.hud._splash_for("You") != "splash_skin_warrior_stormforged_awakened":
-		return _fail("hero dialogue did not resolve the live awakened skin splash")
-	game.set_flag(awakened_flag, old_awakened)
 	p_sk.set_skin(old_skin)
-	print("ok: hero dialogue splash follows live equipped + awakened skin")
+	print("ok: hero dialogue splash follows the live equipped skin")
 
 	# 5c. Choice dialogue + flag engine: choices apply resonance/flags,
 	# and both flag- and band-gated text variants resolve.

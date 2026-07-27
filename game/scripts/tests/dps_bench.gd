@@ -397,9 +397,8 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 		p.attr_points[attr] = 0
 	p.attr_points[String(Classes.CLASSES[cls]["primary"])] = plevel - 1
 	p.unspent_attr = 0
-	# S gear carries a dormant signature passive; a BiS run wants it LIVE.
-	if grade == "S":
-		game.set_flag("s_awakened_" + cls, true)
+	# (2026-07-27) Passives are live on pickup — the awakening flag is skin-only
+	# now; the bench weapon's flagship passive needs no flag.
 	_equip(p, cls, tid)
 	p.recalc()
 	_reset_player(p)

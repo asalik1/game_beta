@@ -157,10 +157,10 @@ const UNIQUES := [
 	{"name": "Bastion's Tooth", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "A", "art": "u_bastions_tooth", "passive": "reprisal"},
 	{"name": "The Gate That Walks", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "S", "art": "u_the_gate_that_walks", "passive": "thegate"},
 	{"name": "Gravesong", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "A", "art": "u_gravesong", "passive": "dirge"},
-	{"name": "Crownfall, the Kingdom's End", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "S", "art": "u_crownfall_the_kingdoms_end", "passive": "aftershock"},
+	{"name": "Crownfall, the Kingdom's End", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "S", "art": "u_crownfall_the_kingdoms_end", "passive": "kingsblade"},
 	# --- Archer weapons ---
 	{"name": "Siegebough", "cls": "archer", "slot": "weapon", "noun": "Warbow", "grade": "A", "art": "u_siegebough", "passive": "siegebolt"},
-	{"name": "Tempest Yew, Bow of the Last Gale", "cls": "archer", "slot": "weapon", "noun": "Warbow", "grade": "S", "art": "u_tempest_yew_bow_of_the_last_gale", "passive": "gale"},
+	{"name": "Tempest Yew, Bow of the Last Gale", "cls": "archer", "slot": "weapon", "noun": "Warbow", "grade": "S", "art": "u_tempest_yew_bow_of_the_last_gale", "passive": "windward"},
 	{"name": "Far-Witness", "cls": "archer", "slot": "weapon", "noun": "Longbow", "grade": "A", "art": "u_far_witness", "passive": "farsight"},
 	{"name": "Skyline, the Arrow Before Dawn", "cls": "archer", "slot": "weapon", "noun": "Longbow", "grade": "S", "art": "u_skyline_the_arrow_before_dawn", "passive": "herald"},
 	{"name": "Foxfire String", "cls": "archer", "slot": "weapon", "noun": "Hunting Bow", "grade": "A", "art": "u_foxfire_string", "passive": "foxfire"},
@@ -175,7 +175,7 @@ const UNIQUES := [
 	{"name": "Widow's Compass", "cls": "assassin", "slot": "weapon", "noun": "Shuriken", "grade": "A", "art": "u_widows_compass", "passive": "compass"},
 	{"name": "End of Night", "cls": "assassin", "slot": "weapon", "noun": "Shuriken", "grade": "S", "art": "u_end_of_night", "passive": "midnight"},
 	{"name": "Mothknife", "cls": "assassin", "slot": "weapon", "noun": "Glasswing", "grade": "A", "art": "u_mothknife", "passive": "mothdust"},
-	{"name": "Pale Flight, Blade Between Heartbeats", "cls": "assassin", "slot": "weapon", "noun": "Glasswing", "grade": "S", "art": "u_pale_flight_blade_between_heartbeats", "passive": "heartbeat"},
+	{"name": "Pale Flight, Blade Between Heartbeats", "cls": "assassin", "slot": "weapon", "noun": "Glasswing", "grade": "S", "art": "u_pale_flight_blade_between_heartbeats", "passive": "mirrorstep"},
 	{"name": "Parryshade", "cls": "assassin", "slot": "weapon", "noun": "Warded Fang", "grade": "A", "art": "u_parryshade", "passive": "parry"},
 	{"name": "The Hand That Refused Death", "cls": "assassin", "slot": "weapon", "noun": "Warded Fang", "grade": "S", "art": "u_the_hand_that_refused_death", "passive": "refusal"},
 	{"name": "Red Arithmetic", "cls": "assassin", "slot": "weapon", "noun": "Cleaver", "grade": "A", "art": "u_red_arithmetic", "passive": "arithmetic"},
@@ -190,7 +190,7 @@ const UNIQUES := [
 	{"name": "Springwake", "cls": "mage", "slot": "weapon", "noun": "Bloomstaff", "grade": "A", "art": "u_springwake", "passive": "springwake"},
 	{"name": "Verdancy, Staff of the Worldroot", "cls": "mage", "slot": "weapon", "noun": "Bloomstaff", "grade": "S", "art": "u_verdancy_staff_of_the_worldroot", "passive": "worldroot"},
 	{"name": "Atlas Branch", "cls": "mage", "slot": "weapon", "noun": "Greatstaff", "grade": "A", "art": "u_atlas_branch", "passive": "atlas"},
-	{"name": "Firmament, the Heaven-Bearing Staff", "cls": "mage", "slot": "weapon", "noun": "Greatstaff", "grade": "S", "art": "u_firmament_the_heaven_bearing_staff", "passive": "skyfall"},
+	{"name": "Firmament, the Heaven-Bearing Staff", "cls": "mage", "slot": "weapon", "noun": "Greatstaff", "grade": "S", "art": "u_firmament_the_heaven_bearing_staff", "passive": "wellspring"},
 	# --- Paladin weapons ---
 	{"name": "Vowspike", "cls": "paladin", "slot": "weapon", "noun": "Lance", "grade": "A", "art": "u_vowspike", "passive": "vow"},
 	{"name": "Noonday, Lance of the Unshadowed", "cls": "paladin", "slot": "weapon", "noun": "Lance", "grade": "S", "art": "u_noonday_lance_of_the_unshadowed", "passive": "noonday"},
@@ -201,10 +201,10 @@ const UNIQUES := [
 	{"name": "Chapel Knell", "cls": "paladin", "slot": "weapon", "noun": "Aegis Mace", "grade": "A", "art": "u_chapel_knell", "passive": "knell"},
 	{"name": "The Bastion's Answer", "cls": "paladin", "slot": "weapon", "noun": "Aegis Mace", "grade": "S", "art": "u_the_bastions_answer", "passive": "answer"},
 	{"name": "Pilgrim's Burden", "cls": "paladin", "slot": "weapon", "noun": "Warmaul", "grade": "A", "art": "u_pilgrims_burden", "passive": "burden"},
-	{"name": "Dawnfall, Hammer of the Final Oath", "cls": "paladin", "slot": "weapon", "noun": "Warmaul", "grade": "S", "art": "u_dawnfall_hammer_of_the_final_oath", "passive": "dawnfall"},
+	{"name": "Dawnfall, Hammer of the Final Oath", "cls": "paladin", "slot": "weapon", "noun": "Warmaul", "grade": "S", "art": "u_dawnfall_hammer_of_the_final_oath", "passive": "dawnbreaker"},
 	# --- Warlock weapons ---
 	{"name": "Ink of Teeth", "cls": "warlock", "slot": "weapon", "noun": "Grimoire", "grade": "A", "art": "u_ink_of_teeth", "passive": "inkteeth"},
-	{"name": "The Book That Remembers You", "cls": "warlock", "slot": "weapon", "noun": "Grimoire", "grade": "S", "art": "u_the_book_that_remembers_you", "passive": "remembrance"},
+	{"name": "The Book That Remembers You", "cls": "warlock", "slot": "weapon", "noun": "Grimoire", "grade": "S", "art": "u_the_book_that_remembers_you", "passive": "voidmaw"},
 	{"name": "Debtcollector", "cls": "warlock", "slot": "weapon", "noun": "Hexblade", "grade": "A", "art": "u_debtcollector", "passive": "collection"},
 	{"name": "Black Clause, Edge of the Final Bargain", "cls": "warlock", "slot": "weapon", "noun": "Hexblade", "grade": "S", "art": "u_black_clause_edge_of_the_final_bargain", "passive": "clause"},
 	{"name": "Hushbone", "cls": "warlock", "slot": "weapon", "noun": "Whisper Rod", "grade": "A", "art": "u_hushbone", "passive": "hush"},
@@ -589,15 +589,14 @@ static func uniques_for(cls: String) -> Array:
 	return out
 
 
-# S_GEAR — the class-signature legendaries. The weapon `noun` was DROPPED
-# 2026-07-26: it used to force each S weapon onto a legacy shape (Blade/Bow/…),
-# the last thing keeping those shapes alive. The passives are ability-based, not
-# shape-based, so a legendary now rides whatever matrix shape rolled and keeps its
-# name + signature passive. (2026-07-27) The interim "every S is a legendary"
-# behaviour is GONE: the legendary is now the class's 6th named-S — a rare
-# Act-2+ roll through roll_item_of's legendary channel (Balance.LEGEND_S_CHANCE),
-# same power tier as the named-S uniques, sole keeper of the awakening quest.
-# Generic S drops passive-less (PROPOSALS/GEAR_UNIQUE_PASSIVES.md §9).
+# S_GEAR — RETIRED (owner call, 2026-07-27): no legendary tier, no awakening
+# questline. The six flagship weapon passives were TRANSPLANTED onto fitting
+# named-S uniques (kingsblade->Crownfall, windward->Tempest Yew, wellspring->
+# Firmament, mirrorstep->Pale Flight, dawnbreaker->Dawnfall, voidmaw->The Book
+# That Remembers You) and are live on pickup like every unique. This table is
+# now a HISTORICAL RECORD only — old saves carry these names on their items
+# directly and their passives grandfather in live (the dormant gate is gone).
+# Nothing rolls from here; the codex legendary shelf was removed with the tier.
 const S_GEAR := {
 	"warrior": {
 		"weapon": {"name": "Kingsbane, Edge of the Fallen Crown", "passive": "kingsblade"},
@@ -1791,9 +1790,13 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 				var pool := uniques_of(cls, grade, slot)
 				if not pool.is_empty():
 					return make_unique(pool[rng.randi_range(0, pool.size() - 1)], rng)
-		if grade == "S" and act >= Balance.UNIQUE_A_ACT and S_GEAR.has(cls) \
-				and S_GEAR[cls].has(slot) and rng.randf() < Balance.LEGEND_S_CHANCE:
-			return make_legendary(cls, slot, rng)  # only slots with a defined legendary
+		# (2026-07-27, owner call) The LEGENDARY channel is RETIRED: no separate
+		# legendary tier, no awakening questline — the six flagship passives
+		# live on their fitting named-S uniques instead (kingsblade on
+		# Crownfall, windward on Tempest Yew, wellspring on Firmament,
+		# mirrorstep on Pale Flight, dawnbreaker on Dawnfall, voidmaw on The
+		# Book That Remembers You). Old-save legendaries keep working: their
+		# stored passive id is live and the dormant gate is gone.
 
 	var mult: float = GRADE_MULT[grade]
 	var noun_list: Array = SLOT_NAMES[slot]
@@ -1849,20 +1852,9 @@ static func make_unique(u: Dictionary, rng: RandomNumberGenerator) -> Dictionary
 	return item
 
 
-## Build the class's S_GEAR legendary for a slot: a generic S roll wearing the
-## legendary name; the weapon's signature passive SLEEPS until the class's
-## awakening quest sets s_awakened_<cls> (round 51b, unchanged).
-static func make_legendary(cls: String, slot: String, rng: RandomNumberGenerator) -> Dictionary:
-	var item := roll_item_of(slot, "S", rng, cls)
-	if not (S_GEAR.has(cls) and S_GEAR[cls].has(slot)):
-		return item  # no legendary defined for this slot (e.g. the new armor slots) — plain S
-	var special: Dictionary = S_GEAR[cls][slot]
-	item["name"] = special["name"]
-	item["cls"] = cls
-	if special.has("passive"):
-		item["passive"] = special["passive"]
-		item["passive_dormant"] = true
-	return item
+# (make_legendary deleted 2026-07-27 with the legendary tier — see the
+# retired-channel note in roll_item_of. S_GEAR below stays as the historical
+# name record; nothing rolls or reads it at drop time anymore.)
 
 
 ## How many RANDOM substats a grade rolls. Formula gives F/E/D:0, C/B:1, A:2; S is
@@ -2216,13 +2208,12 @@ static func gem_buy_price(lvl: int, chid: String) -> int:
 	return int(round(per_gem * weight * Balance.FARM_TAX))
 
 
-## "★ <Passive>" — or "★ <Passive> — LOCKED (awakening)" for a dormant
-## legendary whose class hasn't awakened (s_awakened_<cls>) yet.
-static func passive_label(item: Dictionary, awakened := false) -> String:
-	var txt: String = "★ " + PASSIVES[item["passive"]]
-	if item.get("passive_dormant", false) and not awakened:
-		txt += " — LOCKED (awakening)"
-	return txt
+## "★ <Passive>". The dormant/LOCKED path is GONE (2026-07-27): the legendary
+## tier retired and every passive is live on pickup — old-save legendaries
+## included (their passive_dormant field is simply ignored now). `awakened`
+## is kept for call-site compatibility and no longer changes the text.
+static func passive_label(item: Dictionary, _awakened := false) -> String:
+	return "★ " + PASSIVES[item["passive"]]
 
 
 ## `awakened` (the item's class flag s_awakened_<cls>) governs how a dormant

@@ -245,10 +245,11 @@ func _diff_tip(item: Dictionary) -> String:
 	return Items.diff_text(item, game.local_player.equipment.get(item["slot"]), _awk(item))
 
 
-## Is this item's class awakened (round 51b)? Governs whether a dormant
-## legendary's passive reads as active or LOCKED in player-facing text.
-func _awk(item: Dictionary) -> bool:
-	return bool(game.get_flag("s_awakened_" + String(item.get("cls", "")), false))
+## (2026-07-27) The awakening gate retired with the legendary tier: every
+## passive is live on pickup, so item text never reads LOCKED. Kept because
+## describe/diff_text call sites still pass it; always true.
+func _awk(_item: Dictionary) -> bool:
+	return true
 
 
 func _hint(vbox: Node, text := "ESC to close", touch_text := "") -> void:
@@ -2580,10 +2581,12 @@ func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 				_ability_preview_slot = s
 				_ability_preview_theme = theme_id
 				open_skills("abilities")
-			var marker := "✓  " if selected else ("◈  " if previewed else "")
-			var option_button := _btn(row, marker + String(option["name"]).to_upper(),
+			# The column header names the spec — cards carry only their state.
+			var state_text := "✓  ASSIGNED" if selected else ("◈  INSPECTING" if previewed else "")
+			var option_button := _btn(row, state_text,
 				assign_cb, option_color, true,
 				Art.ability_icon(p.cls, s, option_color, theme_id))
+			option_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			option_button.custom_minimum_size = Vector2(220, 78)
 			option_button.add_theme_constant_override("icon_max_width", 64)
 			_assignment_card_style(option_button, option_color, selected, previewed)

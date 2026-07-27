@@ -196,6 +196,18 @@ classes is off-meta by itself.
 
 ## 9. Reconciling S_GEAR class legendaries with the named-S uniques
 
+**SUPERSEDED (owner call, 2026-07-27, after ship):** there is NO legendary
+tier and NO awakening questline. The six flagship passives were TRANSPLANTED
+onto fitting named-S uniques — kingsblade → Crownfall, windward → Tempest
+Yew, wellspring → Firmament, mirrorstep → Pale Flight, dawnbreaker →
+Dawnfall, voidmaw → The Book That Remembers You — live on pickup like every
+unique. The displaced six designs (aftershock, gale, skyfall, heartbeat,
+dawnfall, remembrance) stay wired and dev-injectable, unreferenced by any
+item, re-homeable whenever wanted. Old-save legendaries grandfather in live.
+The awakened-skin forms retired with the flag (the Phantom defaults to its
+awakened body; the blue body is its own parked elite skin). The section
+below is kept as the superseded recommendation record.
+
 Each class now has **one S_GEAR weapon legendary** (Kingsbane etc., with the six
 real passives and their awakening quests) **and five named-S weapon uniques**.
 Today `roll_item_of` still stamps S_GEAR onto *every* S weapon (§7 of the shape

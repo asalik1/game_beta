@@ -1453,13 +1453,8 @@ func set_flag(flag_name: String, value = true) -> void:
 		# (Dynamic call: the marks live a layer up in game_world, same
 		# deliberate upward hop as _recheck_gates above.)
 		call("refresh_quest_marks")
-	# An S-weapon awakening evolves a mythic skin to its awakened form (Phantom
-	# blue -> teal Nightfang). Refresh the sprite on ANY change of the owning
-	# class's awakening flag so it flips the instant the class awakens — and
-	# reverts cleanly if a dev toggle clears it. Covers the quest, the dev-panel
-	# toggle, and any other path. Only the owning class reacts.
-	if player != null and flag_name == "s_awakened_" + String(player.cls):
-		player.refresh_skin_sprite()
+	# (2026-07-27) The s_awakened skin-refresh hook was removed with the
+	# awakened-form retirement — a skin resolves to one base, always.
 	# MP-13 (§5.4): WORLD flags are shared story state — quest progress,
 	# opened ways, one-time reveals, pay-once desks, shrine/cache/curse
 	# once-per-room marks. Route them through the host so every machine in

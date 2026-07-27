@@ -3093,8 +3093,7 @@ func _splash_for(who: String) -> String:
 		var player = game.local_player
 		if player != null:
 			var cls: String = String(player.cls)
-			var awakened: bool = bool(game.get_flag("s_awakened_" + cls, false))
-			var skin_cand: String = Skins.skin_splash(cls, String(player.skin), awakened)
+			var skin_cand: String = Skins.skin_splash(cls, String(player.skin))
 			if skin_cand != "" and Art.has_sprite(skin_cand):
 				return skin_cand
 			var class_cand := "class_splash_" + cls

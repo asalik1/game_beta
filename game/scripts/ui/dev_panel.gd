@@ -271,15 +271,8 @@ static func _tab_items(m: Menus, list: VBoxContainer) -> void:
 	m._btn(row3, "Give respec tome", func() -> void:
 		m.game.player.add_consumable(Items.make_respec_tome())
 		m.open_dev(), Color(0.6, 0.9, 1.0))
-	# Awaken toggle (round 51b): flip the current class's legendary-passive
-	# awakening flag so dropped/bought S weapons wake up, for testing before
-	# the awakening quests exist.
-	var awk_cls: String = m.game.player.cls
-	var awk_on: bool = bool(m.game.get_flag("s_awakened_" + awk_cls, false))
-	m._btn(row3, ("■ S passive AWAKENED" if awk_on else "□ Awaken S passive (this class)"), func() -> void:
-		m.game.set_flag("s_awakened_" + awk_cls, not awk_on)
-		m.game.player.recalc()
-		m.open_dev(), Color(1.0, 0.85, 0.35))
+	# (The round-51b awaken toggle was removed 2026-07-27: the awakening gate
+	# retired with the legendary tier — every passive is live on pickup.)
 	m._btn(row3, "Send gift mail", func() -> void:
 		var grng := RandomNumberGenerator.new()
 		grng.randomize()
@@ -701,11 +694,10 @@ static func _boss_level(m: Menus) -> int:
 	return -1
 
 
-## Dev: equip a fresh full set of `grade` gear in every slot — the
-## weapon in the class's signature shape; at S the weapon is the class
-## LEGENDARY (drop split 2026-07-27: a plain S roll is generic now, and
-## awakening-flow testing needs the legendary in hand). Replaced items
-## vanish; their gems return to the bag.
+## Dev: equip a fresh full set of `grade` gear in every slot — the weapon
+## in the class's signature shape, everything GENERIC (the legendary tier
+## retired 2026-07-27; use "Next unique" to cycle named passives). Replaced
+## items vanish; their gems return to the bag.
 static func _equip_set(m: Menus, grade: String) -> void:
 	var p: Player = m.game.player
 	var rng := RandomNumberGenerator.new()
@@ -714,10 +706,7 @@ static func _equip_set(m: Menus, grade: String) -> void:
 		var noun: String = Items.class_weapon_noun(p.cls) if slot == "weapon" else ""
 		if p.equipment.has(slot):
 			p.strip_gems(p.equipment[slot])
-		if grade == "S" and slot == "weapon" and Items.S_GEAR.has(p.cls):
-			p.equipment[slot] = Items.make_legendary(p.cls, slot, rng)
-		else:
-			p.equipment[slot] = Items.roll_item_of(slot, grade, rng, p.cls, noun)
+		p.equipment[slot] = Items.roll_item_of(slot, grade, rng, p.cls, noun)
 	p.recalc()
 	p._update_weapon_visual()
 	m.game.sfx("equip")

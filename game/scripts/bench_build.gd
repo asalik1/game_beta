@@ -94,6 +94,14 @@ static func godroll_item(item: Dictionary, cls: String) -> void:
 	item["subs"] = subs
 
 
+# The six transplanted flagship passives (ex-S_GEAR legendaries) — the bench's
+# BiS weapon signature per class (Items.UNIQUES carries them on their named-S
+# homes; the bench stamps the id directly so shape presets stay free).
+const FLAGSHIP_PASSIVE := {"warrior": "kingsblade", "archer": "windward",
+	"mage": "wellspring", "assassin": "mirrorstep", "paladin": "dawnbreaker",
+	"warlock": "voidmaw"}
+
+
 ## The 4-slot equipment dict for a build: gear rolled off `rng` (seed it with
 ## GEAR_SEED for the canonical sequence), stamped with plus, optionally godroll'd,
 ## every socket filled from the class's gem preset at the config's gem level.
@@ -109,14 +117,11 @@ static func equip_dict(cls: String, tid: String, cfg: Dictionary, rng: RandomNum
 	for slot in Items.SLOTS:
 		var noun: String = Items.class_weapon_noun(cls) if slot == "weapon" else ""
 		var item := Items.roll_item_of(slot, grade, rng, cls, noun)
-		if grade == "S" and slot == "weapon" and Items.S_GEAR.has(cls):
-			# Drop split (2026-07-27): a generic S carries NO passive now, but the
-			# BiS bench wants the class legendary live (dps_bench sets the
-			# awakening flag) — same S-tier measurement as before the split.
-			var special: Dictionary = Items.S_GEAR[cls]["weapon"]
-			item["name"] = String(special["name"])
-			item["passive"] = String(special["passive"])
-			item["passive_dormant"] = true
+		if grade == "S" and slot == "weapon" and FLAGSHIP_PASSIVE.has(cls):
+			# The BiS bench weapon carries the class's flagship passive (the
+			# six transplanted ex-legendary signatures — live on pickup since
+			# the legendary tier retired 2026-07-27). Same measurement as ever.
+			item["passive"] = String(FLAGSHIP_PASSIVE[cls])
 		item["plus"] = plus_lvl
 		if godroll:
 			godroll_item(item, cls)
@@ -149,8 +154,7 @@ static func save_dict(cls: String, preset_key: String) -> Dictionary:
 	for slot in ["a1", "a2", "a3", "ult"]:
 		themes[slot] = tid
 	var flags := {}
-	if String(cfg["grade"]) == "S":
-		flags["s_awakened_" + cls] = true   # a BiS run wants the legendary passive LIVE
+	# (2026-07-27) No awakening flag needed — passives are live on pickup.
 	return {
 		"version": SaveGame.VERSION,
 		"saved_at": Time.get_unix_time_from_system(),
