@@ -1,4 +1,5 @@
 extends "res://scripts/player_kit_archer.gd"
+const MAGE_ELEMENT_HUE_SHADER := preload("res://shaders/mage_element_hue.gdshader")
 ## PLAYER, layer 5 of 9 — the MAGE kit: dispatch + abilities.
 ## See player_core.gd for the chain layout.
 
@@ -60,15 +61,27 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 	if skin == "crystal_archmage":
 		bolt_col = Color(0.80, 0.94, 1.00)
 	_muzzle(dir, bolt_col)
-	# Each identity owns a bolt silhouette: base flame dart or hard crystal lance.
-	# Themes affect the muzzle and riders, not the body.
+	# The base Mage keeps one bolt silhouette and scale across every element;
+	# only named skins replace it with authored identity art.
 	var tex := "mage_firebolt"
 	if skin == "crystal_archmage":
 		tex = "mage_crystal_decree"
-	elif _tfx.get("pierce", 0):
-		tex = "icelance"
 	var p := _proj(dir, mult, tex, 440.0 * float(_tfx.get("proj_speed", 1.0)))
+	if skin == "" and _themed:
+		p.set_magic_color(bolt_col)
+		p.set_body_hue(bolt_col.h)
 	_finish_mage_bolt(p, mult)
+
+
+func _hue_shift_base_mage_sprite(target: Sprite2D, color: Color) -> void:
+	# Themes change the base ability's material, never its silhouette or scale.
+	# Skin-owned ability art returned through its own visual path before here.
+	if skin != "" or not _themed or target == null:
+		return
+	var mat := ShaderMaterial.new()
+	mat.shader = MAGE_ELEMENT_HUE_SHADER
+	mat.set_shader_parameter("target_hue", color.h)
+	target.material = mat
 
 
 func _finish_mage_bolt(p: Projectile, mult: float) -> void:
@@ -412,6 +425,7 @@ func _frost_nova(f := 1.0) -> void:
 	var sigil := Sprite2D.new()
 	sigil.texture = Art.tex("fx_frost_nova")
 	sigil.modulate = Color(col, 0.9)
+	_hue_shift_base_mage_sprite(sigil, col)
 	sigil.scale = Vector2.ONE * (radius / 32.0)
 	sigil.z_index = -4
 	add_child(sigil)
@@ -442,13 +456,14 @@ func _frost_nova(f := 1.0) -> void:
 		tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.32)
 		tw.tween_callback(ring.queue_free)
 
-	# Radial shards: icicles fly OUT, embers for the flame ring, and the
-	# implosion sucks them IN instead.
+	# Radial shards keep Frost Nova's base icicle silhouette for every element;
+	# the implosion still sucks them IN instead.
 	for i in 10:
 		var ang := TAU * i / 10.0 + randf_range(-0.15, 0.15)
 		var shard := Sprite2D.new()
-		shard.texture = Art.tex("fireball" if fiery else "icelance")
+		shard.texture = Art.tex("icelance")
 		shard.modulate = col
+		_hue_shift_base_mage_sprite(shard, col)
 		shard.rotation = ang + (PI if inward else 0.0)
 		shard.scale = Vector2(1.5, 1.5)
 		shard.z_index = 7
@@ -812,6 +827,7 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 	# This is the mage's signature impact: three times the former comet scale.
 	spr.scale = Vector2(7.2, 7.2)
 	spr.modulate = Art.hdr(col)
+	_hue_shift_base_mage_sprite(spr, col)
 	# Vertical asset and vertical travel: the rock now falls straight down.
 	spr.global_position = pos + Vector2(0, -460)
 	spr.z_index = 30

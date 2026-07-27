@@ -356,12 +356,51 @@ func _run_systems() -> void:
 	game.player.use_ability("a1")
 	await get_tree().create_timer(Balance.MAGE_BOLT_DELAY + 0.08).timeout  # bolt release frame
 	var fire_bolts := 0
+	var base_bolt_scale := Vector2.ZERO
+	var fire_theme_col: Color = Classes.theme_by_id("mage", "fire").get("color", Color.WHITE)
 	for pr in get_tree().get_nodes_in_group("projectiles"):
 		fire_bolts += 1
+		if pr.tex_kind != "mage_firebolt":
+			return _fail("fire Firebolt lost the base Mage silhouette")
+		if pr.spr == null:
+			return _fail("fire Firebolt spawned without a visual body")
+		base_bolt_scale = pr.spr.scale
+		var fire_mat := pr.spr.material as ShaderMaterial
+		if fire_mat == null or absf(float(fire_mat.get_shader_parameter("target_hue")) - fire_theme_col.h) > 0.001:
+			return _fail("fire Firebolt body did not receive its elemental hue")
+		if pr.glow_color != fire_theme_col:
+			return _fail("fire Firebolt aura did not match its elemental body")
 		if float(pr.fx.get("bleed", 0.0)) > 0.0:
 			return _fail("Wind Cuts leaked onto the FIRE firebolt")
 	if fire_bolts == 0:
 		return _fail("fire firebolt never spawned (bolt-release delay?)")
+	# Ice must keep that exact sprite and scale; only its pixel hue and gameplay
+	# riders differ. This guards the former 64px icelance / generic 3x mismatch.
+	_clear_combat()
+	game.player.set_all_themes("ice")
+	game.player.mp = game.player.max_mp
+	game.player.cds["a1"] = 0.0
+	game.player.use_ability("a1")
+	await get_tree().create_timer(Balance.MAGE_BOLT_DELAY + 0.08).timeout
+	var ice_bolts := 0
+	var ice_theme_col: Color = Classes.theme_by_id("mage", "ice").get("color", Color.WHITE)
+	for pr in get_tree().get_nodes_in_group("projectiles"):
+		ice_bolts += 1
+		if pr.tex_kind != "mage_firebolt" or pr.spr == null or pr.spr.scale != base_bolt_scale:
+			return _fail("ice Firebolt must match the base Firebolt sprite and scale")
+		var ice_mat := pr.spr.material as ShaderMaterial
+		if ice_mat == null or absf(float(ice_mat.get_shader_parameter("target_hue")) - ice_theme_col.h) > 0.001:
+			return _fail("ice Firebolt body did not receive its elemental hue")
+		if pr.glow_color != ice_theme_col:
+			return _fail("ice Firebolt aura did not match its elemental body")
+		if pr.halo == null or pr.halo.modulate != Art.hdr(Color(ice_theme_col, 0.8)):
+			return _fail("ice Firebolt retained the constructed orange halo")
+		if pr.magic_light == null or pr.magic_light.color != ice_theme_col:
+			return _fail("ice Firebolt retained the constructed orange point light")
+		if absf(pr.element_hue - ice_theme_col.h) > 0.001:
+			return _fail("ice Firebolt did not retain its network-replicable body hue")
+	if ice_bolts == 0:
+		return _fail("ice firebolt never spawned (bolt-release delay?)")
 	# Wind variant MUST carry a bleed on BOTH twin bolts.
 	_clear_combat()
 	game.player.set_all_themes("wind")
@@ -371,7 +410,15 @@ func _run_systems() -> void:
 	await get_tree().create_timer(Balance.MAGE_BOLT_DELAY + 0.08).timeout  # bolts
 	# release on the cast-thrust frame now, not the input frame (wall-clock: frames race headless)
 	var wind_bleeders := 0
+	var wind_theme_col: Color = Classes.theme_by_id("mage", "wind").get("color", Color.WHITE)
 	for pr in get_tree().get_nodes_in_group("projectiles"):
+		if pr.tex_kind != "mage_firebolt" or pr.spr == null or pr.spr.scale != base_bolt_scale:
+			return _fail("wind Firebolt must match the base Firebolt sprite and scale")
+		var wind_mat := pr.spr.material as ShaderMaterial
+		if wind_mat == null or absf(float(wind_mat.get_shader_parameter("target_hue")) - wind_theme_col.h) > 0.001:
+			return _fail("wind Firebolt body did not receive its elemental hue")
+		if pr.glow_color != wind_theme_col:
+			return _fail("wind Firebolt aura did not match its elemental body")
 		if float(pr.fx.get("bleed", 0.0)) > 0.0:
 			wind_bleeders += 1
 	if wind_bleeders < 2:
