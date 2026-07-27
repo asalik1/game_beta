@@ -1062,12 +1062,17 @@ func _run_systems() -> void:
 		if not Art.GEAR_SHAPES[String(u["slot"])].has(String(u["noun"])):
 			return _fail("unique '%s' claims shape '%s', which has no art mapping" % [u["name"], u["noun"]])
 	for slot in Items.SLOTS:
+		# helmet/gloves/pants are stat-wired ahead of their art (§5b): their whole
+		# shape set falls through to one placeholder on purpose, so skip the per-noun
+		# art check for them — but STILL verify their shapes have SHAPE_STYLE entries.
+		if not (slot in Art.ART_PENDING_SLOTS):
+			for noun in Items.SLOT_NAMES[slot]:
+				if not Art.GEAR_SHAPES[slot].has(noun):
+					return _fail("%s noun '%s' can roll but has no Art.GEAR_SHAPES entry — it would render as %s"
+						% [slot, noun, Art.GEAR_SHAPES[slot].keys()[0]])
 		for noun in Items.SLOT_NAMES[slot]:
-			if not Art.GEAR_SHAPES[slot].has(noun):
-				return _fail("%s noun '%s' can roll but has no Art.GEAR_SHAPES entry — it would render as %s"
-					% [slot, noun, Art.GEAR_SHAPES[slot].keys()[0]])
-		if not Items.SHAPE_STYLE.has(String(Items.SLOT_NAMES[slot][0])):
-			return _fail("%s nouns are missing SHAPE_STYLE entries" % slot)
+			if not Items.SHAPE_STYLE.has(String(noun)):
+				return _fail("%s noun '%s' is missing a SHAPE_STYLE entry" % [slot, noun])
 	for g in ["C", "B", "A", "S"]:
 		for nn in ["Warblade", "Claymore", "Shuriken", "Scepter", "Lance", "Bloomstaff", "Guard", "Treads", "Mail"]:
 			var sl := "weapon"
@@ -1116,17 +1121,17 @@ func _run_systems() -> void:
 		var aw := Items.roll_item_of("weapon", "A", crng, "archer")
 		if not (aw["noun"] in Items.CLASS_WEAPONS["archer"]):
 			return _fail("archer looted a %s (not in the archer arsenal)" % aw["noun"])
-		var ai := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "archer")
+		var ai := Items.roll_item_of(Items.SLOTS[i % Items.SLOTS.size()], "S", crng, "archer")
 		if ai["subs"].has("magpen"):
 			return _fail("an S archer first roll carried MagPen (off-type pen)")
-		var mi := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "mage")
+		var mi := Items.roll_item_of(Items.SLOTS[i % Items.SLOTS.size()], "S", crng, "mage")
 		if mi["subs"].has("physpen"):
 			return _fail("an S mage first roll carried PhysPen (off-type pen)")
 		# Endgame-only stats (round 43): nothing below B may carry lifesteal or
 		# combo. Both are gem-ONLY since 2026-07-06 (they left SUBSTATS entirely),
 		# and since 2026-07-26 a shape grants no stats either — so this now guards
 		# the pool contract itself rather than the retired Wand/Tome tack-ons.
-		var low := Items.roll_item_of(Items.SLOTS[i % 4], ["F", "E", "D", "C"][i % 4], crng)
+		var low := Items.roll_item_of(Items.SLOTS[i % Items.SLOTS.size()], ["F", "E", "D", "C"][i % 4], crng)
 		var wand_low := Items.roll_item_of("weapon", "C", crng, "", "Scepter")
 		if low["subs"].has("lifesteal") or low["subs"].has("combo") \
 				or wand_low["subs"].has("combo") or wand_low["subs"].has("lifesteal"):
@@ -2822,8 +2827,10 @@ func _test_set_bonus() -> void:
 	for slot in Items.SLOTS:
 		game.player.equipment[slot] = Items.roll_item_of(slot, "S", rng, cls)
 	game.player.recalc()
-	if Items.count_set_pieces(game.player.equipment, cls) != 4:
-		return _fail("full S set not detected as 4 pieces")
+	# Every slot equipped with class-matched S gear counts (7-slot lineup, §5b);
+	# the 4-piece set bonus still caps at 4 (count >= 4).
+	if Items.count_set_pieces(game.player.equipment, cls) != Items.SLOTS.size():
+		return _fail("full S set not detected as %d pieces" % Items.SLOTS.size())
 	if game.player.atk <= atk_bare:
 		return _fail("full S set did not raise ATK")
 
@@ -3466,7 +3473,7 @@ func _test_retention() -> void:
 	for i in 40:
 		# F..A rolls (S legendaries keep their AUTHORED specials — the
 		# sanctioned exception; the recalc caps guard the ceiling).
-		var it2 := Items.roll_item_of(Items.SLOTS[i % 4], Items.GRADES[i % 6], grng,
+		var it2 := Items.roll_item_of(Items.SLOTS[i % Items.SLOTS.size()], Items.GRADES[i % 6], grng,
 			["warrior", "mage", "archer"][i % 3])
 		for stat in Balance.SPECIAL_GEM_STATS + ["speed_pct"]:
 			if it2["subs"].has(stat) or it2["main"].has(stat):

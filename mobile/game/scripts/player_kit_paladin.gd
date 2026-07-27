@@ -30,10 +30,21 @@ func _use_paladin(slot: String, f: float) -> void:
 				hurt_cd = maxf(hurt_cd, Balance.MELEE_DASH_IFRAME)
 				hurt_was_heavy = true  # landing i-frame blocks heavy telegraph hits too
 			var jeff := {"stagger": 0.3, "knock": 280.0}
-			var dawn := s_passive() == "dawnbreaker"
+			var sp := s_passive()
+			var dawn := sp == "dawnbreaker"
 			if dawn:
 				jeff["splash"] = maxf(float(_tfx.get("splash", 0.0)), 0.5)
 				jeff["burn"] = current_atk() * 0.3
+			var measured := sp == "measure" and uniq_take("measure")
+			if sp == "vigil" and uniq_take("vigil"):
+				jeff["force_crit"] = 1  # First Light: the dodge lined the hammer up
+			var noon := false
+			if sp == "noonday":
+				# Noonday: every 4th Judgment lances THROUGH the target.
+				uniq_counter += 1
+				if uniq_counter >= int(uniq_k("every")):
+					uniq_counter = 0
+					noon = true
 			# Sync the impact to the warhammer's slam: the heavy overhead swing
 			# has a real windup, so the shock/pillar/hit land WITH the hammer,
 			# not on the input frame (which read ahead of the animation).
@@ -48,6 +59,12 @@ func _use_paladin(slot: String, f: float) -> void:
 			# smite damage folded into THIS Judgment (flat, so it crits/mitigates
 			# like the swing). current_atk cancels — the smite lands as holy_charge*f.
 			var jcoeff := ability_coeff("a1")
+			if sp == "burden":
+				jcoeff *= 1.0 + uniq_k("dmg")  # Pilgrim's Burden: heavier, slower
+			if measured:
+				# Mercy in Measure: the measured step earns a heavier, mending blow.
+				jcoeff *= 1.0 + uniq_k("bonus")
+				gain_hp(max_hp * uniq_k("heal"))
 			if holy_charge > 0.0 and current_atk() > 0.0:
 				jcoeff += holy_charge / current_atk()
 				holy_charge = 0.0
@@ -60,6 +77,17 @@ func _use_paladin(slot: String, f: float) -> void:
 			var jcol := _tcolor if _themed else Color(1.0, 0.9, 0.55)
 			jcol = _pal_skin_col(jcol)
 			_ring_fx(global_position + jdir * 58.0, jcol, 34.0)
+			if noon:
+				# Noonday: the 4th Judgment lances THROUGH — everything down the
+				# lane behind the target is seared by the unshadowed light.
+				game.sfx("nova", 1.2)
+				game.spawn_text(global_position + Vector2(0, -60), "NOONDAY", Color(1.0, 0.95, 0.7))
+				_beam_fx(global_position + jdir * 30.0,
+					global_position + jdir * uniq_k("reach"), Color(1.0, 0.95, 0.7), 0.2)
+				for le in _enemies_within(global_position + jdir * (uniq_k("reach") * 0.5), uniq_k("reach") * 0.5):
+					var off: Vector2 = le.global_position - global_position
+					if absf(off.cross(jdir)) < 55.0 and off.dot(jdir) > 20.0 and not le.dying:
+						hit_enemy(le, uniq_k("beam"), {"aoe": true})
 			if skin == "eclipse_knight":
 				_ring_fx(global_position + jdir * 58.0, Color(0.30, 0.16, 0.45), 20.0)
 			if skin == "eclipse_knight":
@@ -200,6 +228,13 @@ func _smite_rip(pos: Vector2, col: Color) -> void:
 
 ## Consecration: sanctify the ground where you stand — two waves of holy
 ## fire, and every enemy struck MENDS you (heal-on-hit is the identity).
+## Absolution (Oathflail S unique): the 3rd kill rings a free Consecration.
+## The base hook (_uniq_after_hit) can't call up the chain, so it rings this
+## override — the ability lives here.
+func _uniq_toll(mult: float) -> void:
+	_consecration(mult)
+
+
 func _consecration(f := 1.0) -> void:
 	var radius := 150.0 * float(_tfx.get("radius_mult", 1.0))
 	var col := _pal_skin_col(_tcolor if _themed else Color(1.0, 0.9, 0.5))
@@ -396,7 +431,18 @@ func _conviction_swap(f := 1.0) -> void:
 		game.spawn_text(global_position + Vector2(0, -64), "RETRIBUTION — ZEAL!", Color(1.0, 0.45, 0.25))
 		game.hud.flash_screen(Color(1.0, 0.4, 0.15), 0.3, 0.3)
 		# The wrath announces itself: chains drag the field in for the verdict.
-		_chains_of_wrath(f * Balance.PALADIN_SWAP_CHAINS)
+		var chain_f := f * Balance.PALADIN_SWAP_CHAINS
+		if s_passive() == "dawnfall":
+			chain_f *= uniq_k("mult")  # Dawnfall: the last oath falls harder
+		_chains_of_wrath(chain_f)
+		if s_passive() == "dawnfall":
+			# Dawnfall: everything near the verdict is left burning and slowed.
+			game.spawn_text(global_position + Vector2(0, -80), "DAWNFALL", Color(1.0, 0.85, 0.5))
+			for de in _enemies_within(global_position, 170.0):
+				if not de.dying:
+					de.apply_burn(_dot_dps(de, current_atk() * uniq_k("burn")),
+						uniq_k("dur"), Color(1.4, 0.8, 0.6), self)
+					de.apply_slow(1.0 - uniq_k("slow"), uniq_k("dur"))
 		# Chains' no-target early-out resets the ult cd to 1s (fine for the old
 		# nuke, an exploit for a stance: swap-swap at range = free 10% heals
 		# every ~2s). The SWAP always pays its full cooldown.

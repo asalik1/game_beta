@@ -261,6 +261,16 @@ const DEATH_DIM_RAMP := 1.4     # seconds the dim takes to ramp in (half the bea
 const FARM_TAX := 1.05
 const BOSSES_PER_RUN := 3            # every Act-1 chapter has exactly 3 bosses (verified via econ_audit)
 const S_WEAPON_DROP_WEIGHT := 0.5    # S-TIER weapons only drop at HALF rate (they carry the endgame passives) -> rarest, ~2x farm N; sub-S weapon rolls stay uniform
+# Named-unique drop split (2026-07-27, PROPOSALS/GEAR_UNIQUE_PASSIVES.md §9):
+# generic gear is the baseline; when a WEAPON roll passes these gates it lands as
+# a NAMED piece instead. Named A opens in Act 2, named S in Act 3 (rarest); the
+# class LEGENDARY (S_GEAR, awakening-quest passive) is Act 2+ and now a rare S
+# roll rather than every S weapon. Chances are un-benchmarked placeholders.
+const UNIQUE_A_CHANCE := 0.10        # an Act-2+ A-grade weapon roll lands as a named A unique
+const UNIQUE_S_CHANCE := 0.10        # an Act-3+ S-grade weapon roll lands as a named S unique
+const LEGEND_S_CHANCE := 0.12        # an Act-2+ S-grade roll lands as the class S_GEAR legendary (any slot)
+const UNIQUE_A_ACT := 2              # act floors for the named channels
+const UNIQUE_S_ACT := 3
 const SHOP_BUY_MARKUP := 2.0         # commodity (below the act's rare tier) grades: cheap flat price = intrinsic x this
 const MERCHANT_SELL_FRACTION := 0.45 # SELL = this x INTRINSIC value (Items.price / gem_gold_value), NOT farm-cost — no sell-spiral
 # Health potions are an INVESTMENT (2026-07-09 potion round): stock is
@@ -1172,6 +1182,89 @@ const CASTER_HASTE_BONUS := 0.25
 # awakened weapon, ON TOP of the weapon's other S-passive effect. Applied in
 # ability_cd (stacks multiplicatively with cdr, before the flat-haste term).
 const S_CASTER_BOLT_CDR := 0.08
+# ------------------------------------- named-unique signature passives (2026-07-27) ---
+# One knob home for all 60 named weapon uniques (PROPOSALS/GEAR_UNIQUE_PASSIVES.md).
+# EVERY number here is a FIRST-PASS PLACEHOLDER — un-benchmarked; the dedicated
+# dps-bench phase owns the real magnitudes. Keys are the passive ids in
+# Items.PASSIVES; sub-keys are that passive's own magnitudes. Framework: S = full
+# signature; A = LESSER (reduced/narrower) or BARGAIN (S-power with a printed
+# drawback that taxes the META build harder than the shape's own build).
+const UNIQ := {
+	# --- shared infrastructure ---
+	"evade_icd": 1.5,          # ONE shared internal cd for every on-evade trigger (owner call §10.4)
+	# --- warrior ---
+	"pennon":     {"shred": 20.0, "shred_dur": 4.0},                # Bash SUNDERS: flat physres shred
+	"decree":     {"mult": 1.15, "stagger": 0.35},                  # every 3rd Cleave: armor-ignoring thrust
+	"warpath":    {"echo": 0.6},                                    # Berserk-only: crits echo a ghost arc
+	"lasthost":   {"echo": 0.6, "icd": 0.3},                        # crits always echo (icd vs multi-crit loops)
+	"outrider":   {"window": 2.0},                                  # evade arms a double Cleave; BARGAIN: Grit off
+	"horizon":    {"bash_refund": 1.5, "window": 4.0},              # evade: next Cleave forced crit + Bash refund
+	"reprisal":   {"chance": 0.30, "counter": 0.6},                 # chance to counter-cut a melee attacker
+	"thegate":    {"guard": 80.0, "dur": 2.5, "counter": 0.8, "stagger": 0.5},  # Bash raises the Gate
+	"dirge":      {"dmg": 0.20, "cd_tax": 0.15},                    # heavier Cleave/Whirlwind; BARGAIN: slower Cleave
+	"aftershock": {"echo": 0.6, "delay": 0.5, "radius": 150.0, "stagger": 0.3},  # Whirlwind detonates twice
+	# --- archer ---
+	"siegebolt":  {},                                               # Multishot arrows pierce
+	"gale":       {"every": 5, "arrows": 3, "mult": 0.55},          # every 5th Quick Shot: free fan
+	"farsight":   {"range": 240.0, "pen_ignore": 0.5},              # long shots halve armor
+	"herald":     {"vuln": 1.0},                                    # first hit on unwounded prey: forced crit + mark
+	"foxfire":    {"window": 2.0, "mult": 0.85},                    # evade: next Quick Shot fires twin arrows
+	"hartsbreath": {"crits": 3},                                    # perfect dodge: 3 forced crits + Multishot reset
+	"briar":      {"dot": 0.2, "slow": 0.30, "dur": 3.0, "sw_tax": 0.5},  # thorns; BARGAIN: Second Wind halved
+	"bramble":    {"dot": 0.25, "slow": 0.20, "hurt_window": 3.0, "root": 0.5, "root_radius": 140.0, "icd": 6.0},
+	"warhorn":    {"extra": 2, "cd_tax": 1.5},                      # 7-arrow Multishot; BARGAIN: +1.5s cd
+	"moonturn":   {"echo_delay": 2.0, "echo_dur": 1.5, "echo_mult": 0.5},  # Arrow Storm returns at half
+	# --- assassin ---
+	"gapfinder":  {"pen_ignore": 0.5},                              # Stab half-ignores CC'd armor
+	"quietus":    {"threshold": 0.20, "ult_refund": 2.0},           # low-HP Stabs are TRUE; kills hasten Death Mark
+	"compass":    {},                                               # Fan converges (BARGAIN: no spread)
+	"midnight":   {"ricochet": 0.7, "range": 200.0},                # Fan crits ricochet to a second enemy
+	"mothdust":   {"slow": 0.30, "dur": 2.0, "radius": 90.0},       # evade: slowing dust
+	"heartbeat":  {"refund": 0.5, "dash_bonus": 0.30, "icd": 2.0},  # evade: dash refund + heavier next dash
+	"parry":      {"chance": 0.30, "riposte": 0.8, "eva_tax": 0.075},  # parry melee; BARGAIN: passive eva halved
+	"refusal":    {"icd": 90.0},                                    # cheat death @1 HP + surge + Death Mark reset
+	"arithmetic": {"every": 4, "bonus": 0.6, "stagger": 0.3},       # every 4th Stab lands cleaver-heavy
+	"headsman":   {"threshold": 0.12, "surge_ext": 1.5},            # Stab/Dash behead low mobs; feeds the surge
+	# --- mage ---
+	"wardcrack":  {"shred": 8.0, "cap": 24.0, "dur": 3.0},          # Firebolt cracks wards, stacking
+	"axiom":      {"true_frac": 0.15},                              # 15% of ability damage is TRUE
+	"cometfall":  {"splash": 0.30},                                 # Firebolt crits splash
+	"ninthstar":  {"every": 9, "splash": 0.40},                     # 9th Firebolt: forced crit + burst + shred
+	"squall":     {"window": 2.0},                                  # post-Blink Firebolt strikes twice
+	"breathless": {"blink_bonus": 1.0, "icd": 2.0, "window": 4.0},  # evade resets Blink; next shock doubled
+	"springwake": {"restore_mult": 1.5, "heal_per": 0.015},         # Nova restores more + mends per enemy
+	"worldroot":  {"hp_per_atk": 12.0, "root": 1.0},                # bonus max HP -> atk; Nova roots
+	"atlas":      {"true_frac": 0.40, "cd_tax": 6.0},               # truer Meteor; BARGAIN: +6s cd
+	"skyfall":    {"second": 0.5, "range": 400.0},                  # a second half-weight meteor falls
+	# --- paladin ---
+	"vow":        {"int_scale": 0.9, "str_scale": 0.6},             # BARGAIN: INT promoted, STR demoted
+	"noonday":    {"int_scale": 0.9, "every": 4, "beam": 0.8, "reach": 260.0},  # twin primaries + lance-through
+	"censure":    {"splash": 0.30, "stagger": 0.3, "icd": 0.5},     # crits toll: chime splash
+	"absolution": {"kills": 3, "mult": 0.9},                        # every 3rd kill: free Consecration
+	"measure":    {"bonus": 0.40, "heal": 0.02, "window": 2.0},     # evade arms a heavier, mending Judgment
+	"vigil":      {"window": 4.0},                                  # evade: leap rearmed + next Judgment forced crit
+	"knell":      {"heal": 0.01},                                   # Aegis smites mend
+	"answer":     {"bank": 0.30},                                   # damage taken banks holy charge
+	"burden":     {"dmg": 0.15, "cd_tax": 0.15},                    # heavier, slower Judgment (BARGAIN)
+	"dawnfall":   {"mult": 1.3, "burn": 0.3, "slow": 0.30, "dur": 3.0},  # Conviction slam burns + slows
+	# --- warlock ---
+	"inkteeth":   {"dot": 0.15},                                    # Shadowbolt gnaws
+	"remembrance": {"enemy_icd": 3.0},                              # whoever wounds you is HEXED
+	"collection": {"bonus": 0.30, "mp": 2.0},                       # crits vs hexed collect
+	"clause":     {"scale": 0.5, "icd": 1.0},                       # crits vs hexed detonate the hex early
+	"hush":       {"window": 2.0},                                  # evade: next Shadowbolt strikes twice
+	"truename":   {"lash": 0.8},                                    # evade: attacker hexed + lashed
+	"witness":    {"dot": 0.2, "slow": 0.40, "dur": 3.0, "icd": 1.0},  # attackers bound: withered + slowed
+	"thecover":   {"threshold": 0.30, "dr": 0.5, "dr_dur": 2.0, "icd": 25.0},  # panic cover + repulse
+	"veinroot":   {"hp_dmg": 0.04, "surge_ext": 2.0},               # Pact draws on max HP; surge lingers
+	"lastpulse":  {"hp_per_atk": 15.0, "double_dur": 5.0},          # bonus max HP -> atk; doubled after Pact
+}
+
+
+## One passive's knob dictionary ({} for ids without numbers).
+static func uniq(passive: String) -> Dictionary:
+	var v = UNIQ.get(passive, {})
+	return v if v is Dictionary else {}
 # ------------------------------------------------- DEX vs evasion (gradient) ---
 # DEX answers evasion as a GRADIENT of three tiers, not a flat subtraction
 # (2026-07-17). Old rule: eva_curve(e_eva - dex*0.004) then one dodge roll —

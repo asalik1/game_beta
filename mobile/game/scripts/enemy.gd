@@ -144,6 +144,8 @@ var toxin := 0         # green-DoT stacks: deepen the burn TICK (die with it)
 var brittle := 0       # ice stacks: ice hits bite harder per stack
 var brittle_t := 0.0
 var crush_t := 0.0     # recently displaced hard: void hits bite (crush window)
+var res_shred := 0.0   # named-unique armor shred (pennon/wardcrack): flat res torn open
+var res_shred_t := 0.0 # ...seconds left (typeless: the shredder's own damage type reads it)
 
 # --- identity traits (data: kind's ENEMIES "traits"; tuning: Balance) ---
 # The mob-mechanic vocabulary (2026-07-07 redesign): each is a real
@@ -662,6 +664,9 @@ func _physics_process(delta: float) -> void:
 	brittle_t = maxf(0.0, brittle_t - delta)
 	if brittle_t <= 0.0:
 		brittle = 0
+	res_shred_t = maxf(0.0, res_shred_t - delta)
+	if res_shred_t <= 0.0:
+		res_shred = 0.0
 	crush_t = maxf(0.0, crush_t - delta)
 	# A shove/pull harder than ordinary hit-flinch opens a crush window.
 	if knock.length() >= Balance.CRUSH_MIN_KNOCK:
@@ -848,6 +853,9 @@ func _net_mirror_tick(delta: float) -> void:
 	brittle_t = maxf(0.0, brittle_t - delta)
 	if brittle_t <= 0.0:
 		brittle = 0
+	res_shred_t = maxf(0.0, res_shred_t - delta)
+	if res_shred_t <= 0.0:
+		res_shred = 0.0
 	crush_t = maxf(0.0, crush_t - delta)
 	burn_time = maxf(0.0, burn_time - delta)
 	if burn_time <= 0.0:

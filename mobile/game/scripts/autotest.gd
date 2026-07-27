@@ -356,12 +356,51 @@ func _run_systems() -> void:
 	game.player.use_ability("a1")
 	await get_tree().create_timer(Balance.MAGE_BOLT_DELAY + 0.08).timeout  # bolt release frame
 	var fire_bolts := 0
+	var base_bolt_scale := Vector2.ZERO
+	var fire_theme_col: Color = Classes.theme_by_id("mage", "fire").get("color", Color.WHITE)
 	for pr in get_tree().get_nodes_in_group("projectiles"):
 		fire_bolts += 1
+		if pr.tex_kind != "mage_firebolt":
+			return _fail("fire Firebolt lost the base Mage silhouette")
+		if pr.spr == null:
+			return _fail("fire Firebolt spawned without a visual body")
+		base_bolt_scale = pr.spr.scale
+		var fire_mat := pr.spr.material as ShaderMaterial
+		if fire_mat == null or absf(float(fire_mat.get_shader_parameter("target_hue")) - fire_theme_col.h) > 0.001:
+			return _fail("fire Firebolt body did not receive its elemental hue")
+		if pr.glow_color != fire_theme_col:
+			return _fail("fire Firebolt aura did not match its elemental body")
 		if float(pr.fx.get("bleed", 0.0)) > 0.0:
 			return _fail("Wind Cuts leaked onto the FIRE firebolt")
 	if fire_bolts == 0:
 		return _fail("fire firebolt never spawned (bolt-release delay?)")
+	# Ice must keep that exact sprite and scale; only its pixel hue and gameplay
+	# riders differ. This guards the former 64px icelance / generic 3x mismatch.
+	_clear_combat()
+	game.player.set_all_themes("ice")
+	game.player.mp = game.player.max_mp
+	game.player.cds["a1"] = 0.0
+	game.player.use_ability("a1")
+	await get_tree().create_timer(Balance.MAGE_BOLT_DELAY + 0.08).timeout
+	var ice_bolts := 0
+	var ice_theme_col: Color = Classes.theme_by_id("mage", "ice").get("color", Color.WHITE)
+	for pr in get_tree().get_nodes_in_group("projectiles"):
+		ice_bolts += 1
+		if pr.tex_kind != "mage_firebolt" or pr.spr == null or pr.spr.scale != base_bolt_scale:
+			return _fail("ice Firebolt must match the base Firebolt sprite and scale")
+		var ice_mat := pr.spr.material as ShaderMaterial
+		if ice_mat == null or absf(float(ice_mat.get_shader_parameter("target_hue")) - ice_theme_col.h) > 0.001:
+			return _fail("ice Firebolt body did not receive its elemental hue")
+		if pr.glow_color != ice_theme_col:
+			return _fail("ice Firebolt aura did not match its elemental body")
+		if pr.halo == null or pr.halo.modulate != Art.hdr(Color(ice_theme_col, 0.8)):
+			return _fail("ice Firebolt retained the constructed orange halo")
+		if pr.magic_light == null or pr.magic_light.color != ice_theme_col:
+			return _fail("ice Firebolt retained the constructed orange point light")
+		if absf(pr.element_hue - ice_theme_col.h) > 0.001:
+			return _fail("ice Firebolt did not retain its network-replicable body hue")
+	if ice_bolts == 0:
+		return _fail("ice firebolt never spawned (bolt-release delay?)")
 	# Wind variant MUST carry a bleed on BOTH twin bolts.
 	_clear_combat()
 	game.player.set_all_themes("wind")
@@ -371,7 +410,15 @@ func _run_systems() -> void:
 	await get_tree().create_timer(Balance.MAGE_BOLT_DELAY + 0.08).timeout  # bolts
 	# release on the cast-thrust frame now, not the input frame (wall-clock: frames race headless)
 	var wind_bleeders := 0
+	var wind_theme_col: Color = Classes.theme_by_id("mage", "wind").get("color", Color.WHITE)
 	for pr in get_tree().get_nodes_in_group("projectiles"):
+		if pr.tex_kind != "mage_firebolt" or pr.spr == null or pr.spr.scale != base_bolt_scale:
+			return _fail("wind Firebolt must match the base Firebolt sprite and scale")
+		var wind_mat := pr.spr.material as ShaderMaterial
+		if wind_mat == null or absf(float(wind_mat.get_shader_parameter("target_hue")) - wind_theme_col.h) > 0.001:
+			return _fail("wind Firebolt body did not receive its elemental hue")
+		if pr.glow_color != wind_theme_col:
+			return _fail("wind Firebolt aura did not match its elemental body")
 		if float(pr.fx.get("bleed", 0.0)) > 0.0:
 			wind_bleeders += 1
 	if wind_bleeders < 2:
@@ -965,16 +1012,17 @@ func _run_systems() -> void:
 	# BIASES the roll on two axes (pool weight + magnitude, the latter widening the
 	# quench band). Four contracts below: the main budget still orders by shape; a
 	# shape never adds a stat outside the grade's affix count (the old tack-on put
-	# six stat lines on a 3-substat S Shuriken); a Fang's crit CEILING outreaches a
-	# Claymore's; and a Fang DRAWS crit more often than a neutral shape.
+	# six stat lines on a 3-substat S Shuriken); a crit weapon's crit CEILING
+	# outreaches a neutral one's; and it DRAWS crit more often. (Warblade = crit,
+	# Claymore = neutral massive — both warrior, so the main comparison is clean.)
 	var wrng := RandomNumberGenerator.new()
 	wrng.seed = 3
 	var clay := Items.roll_item_of("weapon", "C", wrng, "warrior", "Claymore")
-	var fang := Items.roll_item_of("weapon", "C", wrng, "assassin", "Fang")
+	var wbl := Items.roll_item_of("weapon", "C", wrng, "warrior", "Warblade")
 	# Mains are class attributes now (2026-07-06): shape mults still order
-	# the BUDGET (Claymore 1.4x > Fang 0.85x), just in attribute points.
-	if clay["main"]["STR"] <= fang["main"]["AGI"]:
-		return _fail("Claymore does not out-budget Fang")
+	# the BUDGET (Claymore 1.4x > Warblade 1.05x), just in attribute points.
+	if clay["main"]["STR"] <= wbl["main"]["STR"]:
+		return _fail("Claymore does not out-budget Warblade")
 	# A bias on a stat outside SUBSTATS is DEAD DATA — it can neither be drawn nor
 	# scaled, so the shape silently loses its personality. (This caught Hammer/Treads
 	# leaning on hp_flat, and Staff/Tome on mp_flat after mana left the pool.)
@@ -1014,14 +1062,19 @@ func _run_systems() -> void:
 		if not Art.GEAR_SHAPES[String(u["slot"])].has(String(u["noun"])):
 			return _fail("unique '%s' claims shape '%s', which has no art mapping" % [u["name"], u["noun"]])
 	for slot in Items.SLOTS:
+		# helmet/gloves/pants are stat-wired ahead of their art (§5b): their whole
+		# shape set falls through to one placeholder on purpose, so skip the per-noun
+		# art check for them — but STILL verify their shapes have SHAPE_STYLE entries.
+		if not (slot in Art.ART_PENDING_SLOTS):
+			for noun in Items.SLOT_NAMES[slot]:
+				if not Art.GEAR_SHAPES[slot].has(noun):
+					return _fail("%s noun '%s' can roll but has no Art.GEAR_SHAPES entry — it would render as %s"
+						% [slot, noun, Art.GEAR_SHAPES[slot].keys()[0]])
 		for noun in Items.SLOT_NAMES[slot]:
-			if not Art.GEAR_SHAPES[slot].has(noun):
-				return _fail("%s noun '%s' can roll but has no Art.GEAR_SHAPES entry — it would render as %s"
-					% [slot, noun, Art.GEAR_SHAPES[slot].keys()[0]])
-		if not Items.SHAPE_STYLE.has(String(Items.SLOT_NAMES[slot][0])):
-			return _fail("%s nouns are missing SHAPE_STYLE entries" % slot)
+			if not Items.SHAPE_STYLE.has(String(noun)):
+				return _fail("%s noun '%s' is missing a SHAPE_STYLE entry" % [slot, noun])
 	for g in ["C", "B", "A", "S"]:
-		for nn in ["Fang", "Claymore", "Shuriken", "Staff", "Wand", "Tome", "Guard", "Treads", "Mail"]:
+		for nn in ["Warblade", "Claymore", "Shuriken", "Scepter", "Lance", "Bloomstaff", "Guard", "Treads", "Mail"]:
 			var sl := "weapon"
 			if nn in ["Guard", "Mail"]:
 				sl = "armor"
@@ -1032,29 +1085,29 @@ func _run_systems() -> void:
 			if n_subs != Items.sub_count_for(String(g)):
 				return _fail("%s %s carries %d subs, grade allows %d — a shape granted a stat"
 					% [g, nn, n_subs, Items.sub_count_for(String(g))])
-	# Magnitude bias reaches the QUENCH BAND: chasing crit on a Fang beats a Claymore.
-	var fang_band := Items.stat_band(
-		{"grade": "S", "slot": "weapon", "noun": "Fang", "main": {}, "subs": {"crit": 0.0}}, "crit")
+	# Magnitude bias reaches the QUENCH BAND: chasing crit on a Warblade beats a Claymore.
+	var wbl_band := Items.stat_band(
+		{"grade": "S", "slot": "weapon", "noun": "Warblade", "main": {}, "subs": {"crit": 0.0}}, "crit")
 	var clay_band := Items.stat_band(
 		{"grade": "S", "slot": "weapon", "noun": "Claymore", "main": {}, "subs": {"crit": 0.0}}, "crit")
-	if float(fang_band[1]) <= float(clay_band[1]):
-		return _fail("a Fang's crit ceiling (%.3f) does not beat a Claymore's (%.3f)"
-			% [float(fang_band[1]), float(clay_band[1])])
+	if float(wbl_band[1]) <= float(clay_band[1]):
+		return _fail("a Warblade's crit ceiling (%.3f) does not beat a Claymore's (%.3f)"
+			% [float(wbl_band[1]), float(clay_band[1])])
 	# Pool bias, over a seeded sample (deterministic — same seed, same counts).
 	var brng := RandomNumberGenerator.new()
 	brng.seed = 11
-	var fang_hits := 0
+	var wbl_hits := 0
 	var clay_hits := 0
 	for i in 600:
-		if Items.roll_item_of("weapon", "C", brng, "", "Fang")["subs"].has("crit"):
-			fang_hits += 1
+		if Items.roll_item_of("weapon", "C", brng, "", "Warblade")["subs"].has("crit"):
+			wbl_hits += 1
 		if Items.roll_item_of("weapon", "C", brng, "", "Claymore")["subs"].has("crit"):
 			clay_hits += 1
-	if fang_hits <= clay_hits:
-		return _fail("Fang drew crit %d/600 vs neutral Claymore %d/600 — pool bias absent"
-			% [fang_hits, clay_hits])
+	if wbl_hits <= clay_hits:
+		return _fail("Warblade drew crit %d/600 vs neutral Claymore %d/600 — pool bias absent"
+			% [wbl_hits, clay_hits])
 	print("ok: weapon shape identities (budget order, zero granted stats, crit band + pool bias %d/600 vs %d/600)"
-		% [fang_hits, clay_hits])
+		% [wbl_hits, clay_hits])
 
 	# Class-aware drops (round 15): a class only loots weapons from its own
 	# arsenal. The pen half was NARROWED 2026-07-17 — only an S legendary's
@@ -1068,18 +1121,18 @@ func _run_systems() -> void:
 		var aw := Items.roll_item_of("weapon", "A", crng, "archer")
 		if not (aw["noun"] in Items.CLASS_WEAPONS["archer"]):
 			return _fail("archer looted a %s (not in the archer arsenal)" % aw["noun"])
-		var ai := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "archer")
+		var ai := Items.roll_item_of(Items.SLOTS[i % Items.SLOTS.size()], "S", crng, "archer")
 		if ai["subs"].has("magpen"):
 			return _fail("an S archer first roll carried MagPen (off-type pen)")
-		var mi := Items.roll_item_of(Items.SLOTS[i % 4], "S", crng, "mage")
+		var mi := Items.roll_item_of(Items.SLOTS[i % Items.SLOTS.size()], "S", crng, "mage")
 		if mi["subs"].has("physpen"):
 			return _fail("an S mage first roll carried PhysPen (off-type pen)")
 		# Endgame-only stats (round 43): nothing below B may carry lifesteal or
 		# combo. Both are gem-ONLY since 2026-07-06 (they left SUBSTATS entirely),
 		# and since 2026-07-26 a shape grants no stats either — so this now guards
 		# the pool contract itself rather than the retired Wand/Tome tack-ons.
-		var low := Items.roll_item_of(Items.SLOTS[i % 4], ["F", "E", "D", "C"][i % 4], crng)
-		var wand_low := Items.roll_item_of("weapon", "C", crng, "", "Wand")
+		var low := Items.roll_item_of(Items.SLOTS[i % Items.SLOTS.size()], ["F", "E", "D", "C"][i % 4], crng)
+		var wand_low := Items.roll_item_of("weapon", "C", crng, "", "Scepter")
 		if low["subs"].has("lifesteal") or low["subs"].has("combo") \
 				or wand_low["subs"].has("combo") or wand_low["subs"].has("lifesteal"):
 			return _fail("sub-B gear rolled an endgame-only stat (lifesteal/combo)")
@@ -1088,9 +1141,14 @@ func _run_systems() -> void:
 	# 4b. S weapon: legendary shape + 3 sockets; its passive is DORMANT
 	# (round 51b) until the class's awakening flag is set. Wrong-class flag
 	# never wakes it; describe() reflects locked vs active.
+	# (2026-07-27 drop split) A plain S roll is now a GENERIC — top rolls, no
+	# passive; the legendary comes from the explicit make_legendary channel.
 	var srng := RandomNumberGenerator.new()
 	srng.seed = 7
-	var s_wpn := Items.roll_item_of("weapon", "S", srng, "warrior")
+	var s_generic := Items.roll_item_of("weapon", "S", srng, "warrior")
+	if s_generic.has("passive"):
+		return _fail("a generic S roll must carry NO passive (drop split)")
+	var s_wpn := Items.make_legendary("warrior", "weapon", srng)
 	if s_wpn.get("passive", "") != "kingsblade" or s_wpn.get("cls", "") != "warrior":
 		return _fail("S warrior weapon wrong passive/class")
 	if not s_wpn.get("passive_dormant", false):
@@ -1119,6 +1177,65 @@ func _run_systems() -> void:
 	await _frames(15)
 	game.flags = keep_flags
 	print("ok: S weapon dormant passive + awakening (%s sleeps until s_awakened_warrior)" % s_wpn["name"])
+
+	# 4b2. Named uniques (2026-07-27): all 60 passives wired + described +
+	# knobbed; a unique is LIVE on pickup; the drop split holds (act 0 =
+	# generic only; act 3 surfaces named S uniques AND the legendary); the
+	# worldroot HP->atk conversion actually moves the sheet.
+	var urng := RandomNumberGenerator.new()
+	urng.seed = 13
+	if Items.UNIQUES.size() != 60:
+		return _fail("expected 60 named weapon uniques, found %d" % Items.UNIQUES.size())
+	var seen_pass := {}
+	for u in Items.UNIQUES:
+		var pid: String = String(u.get("passive", ""))
+		if pid == "" or not Items.PASSIVES.has(pid):
+			return _fail("unique %s lacks a described passive" % u.get("name", "?"))
+		if seen_pass.has(pid):
+			return _fail("duplicate unique passive id %s" % pid)
+		seen_pass[pid] = true
+		if not Balance.UNIQ.has(pid):
+			return _fail("unique passive %s has no Balance.UNIQ knobs entry" % pid)
+	var vspk := Items.make_unique(Items.uniques_of("paladin", "A")[0], urng)
+	if vspk.get("passive", "") != "vow" or vspk.get("passive_dormant", false):
+		return _fail("make_unique must stamp a LIVE passive (no awakening gate)")
+	for i in 30:
+		var gen := Items.roll_item_of("weapon", ["A", "S"][i % 2], urng, "warrior")
+		if gen.has("passive"):
+			return _fail("an act-0 roll must stay generic (drop split)")
+	var found_named := false
+	var found_leg := false
+	for i in 400:
+		var s_roll := Items.roll_item_of("weapon", "S", urng, "mage", "", 3)
+		if s_roll.get("passive_dormant", false):
+			found_leg = true
+		elif s_roll.has("passive"):
+			found_named = true
+	if not (found_named and found_leg):
+		return _fail("act-3 S rolls never surfaced a named unique + legendary (400 tries)")
+	# Worldroot: bonus max HP converts to ATK — strip the passive off the same
+	# item and the sheet must drop. Direct equipment poke (class lock is a UI
+	# gate); snapshot + restore per the shared-state rule.
+	var keep_wpn = game.player.equipment.get("weapon")
+	var wroot := Items.make_unique(Items.uniques_of("mage", "S")[3], urng)  # Verdancy
+	wroot["subs"] = {"hp_pct": 0.5}  # guarantee real bonus HP to convert
+	game.player.equipment["weapon"] = wroot
+	game.player.recalc()
+	var atk_with: float = game.player.atk
+	if game.player.uniq_hp_atk <= 0.0:
+		return _fail("worldroot converted no bonus HP to atk")
+	var wroot_plain := wroot.duplicate(true)
+	wroot_plain.erase("passive")
+	game.player.equipment["weapon"] = wroot_plain
+	game.player.recalc()
+	if atk_with <= game.player.atk:
+		return _fail("worldroot's conversion did not raise atk over the passive-less roll")
+	if keep_wpn == null:
+		game.player.equipment.erase("weapon")
+	else:
+		game.player.equipment["weapon"] = keep_wpn
+	game.player.recalc()
+	print("ok: named uniques (60 wired, live on pickup, drop split, worldroot conversion)")
 
 	# 4c. Gems: targeted socket, removal, stat change, synthesize, sell-return.
 	# Capital rework (§2): socket/unsocket are Lapidary bench work — borrow
@@ -2642,11 +2759,12 @@ func _test_reforge() -> void:
 
 	# Pen un-gate (2026-07-17): every grade BELOW S rolls the full pool, so a mage
 	# can draw physpen it can't use today (a damage-type rune makes it live). This
-	# is probabilistic — physpen is 1 of 12 in an A's 2 draws, so 60 rolls missing
-	# it entirely is ~1-in-60k, not flake territory.
+	# is probabilistic — physpen is 1 of 11 in an A's 2 draws, so 60 rolls missing
+	# it entirely is vanishingly unlikely, not flake territory. Greatstaff = the
+	# mage's NEUTRAL (unbiased) weapon, so nothing skews the draw.
 	var saw_offtype := false
 	for i in 60:
-		if Items.roll_subs("A", "Staff", "mage", rng).has("physpen"):
+		if Items.roll_subs("A", "Greatstaff", "mage", rng).has("physpen"):
 			saw_offtype = true
 			break
 	if not saw_offtype:
@@ -2654,7 +2772,7 @@ func _test_reforge() -> void:
 
 	# ...but an S legendary's FIRST roll stays class-usable — never the off-type pen.
 	for i in 60:
-		if Items.roll_subs("S", "Staff", "mage", rng).has("physpen"):
+		if Items.roll_subs("S", "Greatstaff", "mage", rng).has("physpen"):
 			return _fail("an S first roll must never carry the off-type pen")
 
 	# Transmute: swaps WHICH attribute the main feeds, KEEPS the rolled magnitude.
@@ -2709,8 +2827,10 @@ func _test_set_bonus() -> void:
 	for slot in Items.SLOTS:
 		game.player.equipment[slot] = Items.roll_item_of(slot, "S", rng, cls)
 	game.player.recalc()
-	if Items.count_set_pieces(game.player.equipment, cls) != 4:
-		return _fail("full S set not detected as 4 pieces")
+	# Every slot equipped with class-matched S gear counts (7-slot lineup, §5b);
+	# the 4-piece set bonus still caps at 4 (count >= 4).
+	if Items.count_set_pieces(game.player.equipment, cls) != Items.SLOTS.size():
+		return _fail("full S set not detected as %d pieces" % Items.SLOTS.size())
 	if game.player.atk <= atk_bare:
 		return _fail("full S set did not raise ATK")
 
@@ -3353,7 +3473,7 @@ func _test_retention() -> void:
 	for i in 40:
 		# F..A rolls (S legendaries keep their AUTHORED specials — the
 		# sanctioned exception; the recalc caps guard the ceiling).
-		var it2 := Items.roll_item_of(Items.SLOTS[i % 4], Items.GRADES[i % 6], grng,
+		var it2 := Items.roll_item_of(Items.SLOTS[i % Items.SLOTS.size()], Items.GRADES[i % 6], grng,
 			["warrior", "mage", "archer"][i % 3])
 		for stat in Balance.SPECIAL_GEM_STATS + ["speed_pct"]:
 			if it2["subs"].has(stat) or it2["main"].has(stat):

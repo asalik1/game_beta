@@ -1556,7 +1556,7 @@ func announce_projectile(p: Projectile) -> void:
 		"pos": p.global_position, "vel": p.vel, "tex": p.tex_kind,
 		"f": p.friendly, "pi": p.pierce, "ho": p.homing, "li": p.life,
 		"mo": p.modulate, "gl": p.glow_color, "sp": p.spin, "sc": p.scale,
-		"ri": p.rise,
+		"ri": p.rise, "eh": p.element_hue,
 	}
 	if not p.friendly and multiplayer.is_server():
 		_net_proj_counter += 1
@@ -1599,7 +1599,10 @@ func _spawn_projectile_visual(block: Dictionary) -> void:
 	p.homing = bool(block.get("ho", false))
 	p.life = float(block.get("li", 2.5))
 	p.modulate = block.get("mo", Color(1, 1, 1))
-	p.glow_color = block.get("gl", p.glow_color)
+	p.set_magic_color(block.get("gl", p.glow_color))
+	var element_hue := float(block.get("eh", -1.0))
+	if element_hue >= 0.0:
+		p.set_body_hue(element_hue)
 	p.spin = bool(block.get("sp", true))
 	p.scale = block.get("sc", Vector2.ONE)
 	p.rise = float(block.get("ri", 0.0))

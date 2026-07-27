@@ -342,6 +342,142 @@ pen carried by physpen alone.
 
 ---
 
+## 5b. The full 7-slot lineup — helmet, gloves, pants (2026-07-26)
+
+Owner call: the standard-gear lineup is **seven slots** —
+`weapon · helmet · armor (chest) · gloves · pants · boots · charm`. Helmet,
+gloves and pants are new. Two owner decisions frame them: **increase total gear
+power, with a sensible distribution across all seven**, and **full matrix — every
+slot lets a class build toward all six stat groups, five shapes per class per
+slot** (not slot-leaning "character" pieces).
+
+This section sets the STAT DISTRIBUTION (budgets + bias structure + shape names).
+Passives (a later agent pass) and art (another) build on it. Nothing is wired into
+code yet — the slots go live together with their art, exactly as weapons did.
+
+### Slot main budgets — the 7-way rebalance
+
+Every piece's main is the class primary attribute; the budget is how many points
+it carries (× grade × shape main-mult). The existing four already sit in a sane
+order (weapon dominant, chest the big armor, charm a solid stat-stick, boots
+minor); the three new slots drop into that hierarchy:
+
+| Tier | Slot | Budget | Was |
+|---|---|---|---|
+| dominant | weapon | 5.0 | 5.0 |
+| major armor | armor (chest) | 3.0 | 3.0 |
+| solid | helmet | **2.5** | — |
+| solid | pants | **2.5** | — |
+| solid | charm | 2.5 | 2.5 |
+| minor | boots | 2.0 | 2.0 |
+| minor | gloves | **2.0** | — |
+
+**Total 12.5 → 19.5 (+56%).** The existing four are unchanged — the increase is
+purely the three new slots, so no live gear loses power. The 2026-07-06 comment
+pinning the L42 full-B benchmark to "~1–2% of the pre-attribute-mains envelope" no
+longer holds: gear main is +56%, so the whole boss/mob curve shifts up. That is
+the owner's step-4 recalibration, expected and deliberate. *(If a flatter power
+jump is wanted later, trim the new slots or shave the existing ones — the ordering
+is the part that should stay.)*
+
+### The armor-family coverage template
+
+Helmet, gloves and pants are the "defensive family." Rather than invent 6 fresh
+group-mixes per class per slot, each class×slot draws **five shapes on one shared
+coverage skeleton** — the same six-group span, only the *names* change per slot
+and the pen is the class's on-type pen. This keeps every defensive slot fully
+build-toward-able while staying legible. (Chest/boots migrate onto the same
+skeleton when their matrix pass lands; today they still use the pre-matrix shared
+shapes.)
+
+| # | Covers (groups) | Bias | main-mult |
+|---|---|---|---|
+| A | res (magic ward) | `magres` **[1.60]** | 1.00 |
+| B | res (physical) | `physres`, `critres` **[1.30]** | 1.05 |
+| C | finesse | `dex`, `eva` **[1.30]** | 0.90 |
+| D | atk + crit + pen (aggressor) | `atk_pct`, `crit`, `<on-type pen>` **[1.20]** | 0.95 |
+| E | defense (bulwark) | `hp_pct`, `VIT` **[1.30]** | 1.10 |
+
+`<on-type pen>` = `physpen` for warrior/archer/assassin, `magpen` for
+mage/paladin/warlock. Each row spends the flat 0.60 bias budget (§3), so it passes
+the budget assertion unchanged. Six groups across five shapes: res (A + B, incl.
+critres), finesse (C), atk/crit/pen (D), defense (E).
+
+### The 90 shapes (confirmed 2026-07-26)
+
+Every name = class material + slot noun; the column is the profile (fixed A–E
+coverage above; on-type pen per class). main-mult rides the profile (A 1.00 · B
+1.05 · C 0.90 · D 0.95 · E 1.10). Names are first-pass — the art agent may refine
+wording as long as the profile it maps to is unchanged.
+
+**Warrior** — pen = physpen
+
+| Slot | A ward · magres | B guard · physres+critres | C finesse · dex+eva | D aggressor · atk+crit+physpen | E bulwark · hp+VIT |
+|---|---|---|---|---|---|
+| helmet | Wardsteel Helm | Ironwall Helm | Skirmisher's Helm | Reaver Helm | Titan Helm |
+| gloves | Wardsteel Gauntlets | Ironwall Gauntlets | Skirmisher's Gauntlets | Reaver Gauntlets | Titan Gauntlets |
+| pants | Wardsteel Legplates | Ironwall Legplates | Skirmisher's Legplates | Reaver Legplates | Titan Legplates |
+
+**Archer** — pen = physpen
+
+| Slot | A ward · magres | B guard · physres+critres | C finesse · dex+eva | D aggressor · atk+crit+physpen | E bulwark · hp+VIT |
+|---|---|---|---|---|---|
+| helmet | Stormweave Hood | Studded Hood | Ranger's Hood | Hunter's Hood | Beastpelt Hood |
+| gloves | Stormweave Bracers | Studded Bracers | Ranger's Bracers | Hunter's Bracers | Beastpelt Bracers |
+| pants | Stormweave Leggings | Studded Leggings | Ranger's Leggings | Hunter's Leggings | Beastpelt Leggings |
+
+**Assassin** — pen = physpen
+
+| Slot | A ward · magres | B guard · physres+critres | C finesse · dex+eva | D aggressor · atk+crit+physpen | E bulwark · hp+VIT |
+|---|---|---|---|---|---|
+| helmet | Shadowveil Cowl | Warded Cowl | Gossamer Cowl | Nightsilk Cowl | Grave Cowl |
+| gloves | Shadowveil Grips | Warded Grips | Gossamer Grips | Nightsilk Grips | Grave Grips |
+| pants | Shadowveil Wraps | Warded Wraps | Gossamer Wraps | Nightsilk Wraps | Grave Wraps |
+
+**Mage** — pen = magpen
+
+| Slot | A ward · magres | B guard · physres+critres | C finesse · dex+eva | D aggressor · atk+crit+magpen | E bulwark · hp+VIT |
+|---|---|---|---|---|---|
+| helmet | Silkward Circlet | Runeplate Circlet | Featherweave Circlet | Starweave Circlet | Earthen Circlet |
+| gloves | Silkward Handwraps | Runeplate Handwraps | Featherweave Handwraps | Starweave Handwraps | Earthen Handwraps |
+| pants | Silkward Underleggings | Runeplate Underleggings | Featherweave Underleggings | Starweave Underleggings | Earthen Underleggings |
+
+**Paladin** — pen = magpen
+
+| Slot | A ward · magres | B guard · physres+critres | C finesse · dex+eva | D aggressor · atk+crit+magpen | E bulwark · hp+VIT |
+|---|---|---|---|---|---|
+| helmet | Blessed Greathelm | Templar Greathelm | Vigil Greathelm | Zealot Greathelm | Sanctified Greathelm |
+| gloves | Blessed Gauntlets | Templar Gauntlets | Vigil Gauntlets | Zealot Gauntlets | Sanctified Gauntlets |
+| pants | Blessed Legguards | Templar Legguards | Vigil Legguards | Zealot Legguards | Sanctified Legguards |
+
+**Warlock** — pen = magpen
+
+| Slot | A ward · magres | B guard · physres+critres | C finesse · dex+eva | D aggressor · atk+crit+magpen | E bulwark · hp+VIT |
+|---|---|---|---|---|---|
+| helmet | Voidsilk Hood | Bonemail Hood | Shadeweave Hood | Ruinweave Hood | Bloodpact Hood |
+| gloves | Voidsilk Claws | Bonemail Claws | Shadeweave Claws | Ruinweave Claws | Bloodpact Claws |
+| pants | Voidsilk Chausses | Bonemail Chausses | Shadeweave Chausses | Ruinweave Chausses | Bloodpact Chausses |
+
+90 generic shapes (6 × 3 × 5), each class×slot spanning all six groups. **Uniques**
+for these slots (one A + one S per shape = 180) are named at the art pass, like the
+weapon uniques.
+
+### Status & the build sequence
+
+- **Confirmed** (owner, 2026-07-26): the +56% budget total and its tier ordering;
+  the full-matrix call; the shared 5-profile coverage skeleton.
+- **Chest + boots** still ride the pre-matrix shared 3-shape shapes. Folding them
+  onto this same skeleton is a later pass — not blocking, since they already have
+  working shapes and art.
+- **Sequence from here:** art agent draws the 90 shapes + names the 180 uniques →
+  passive agent → the code wiring that makes all 7 slots real. That wiring is its
+  own step (SLOTS / SLOT_ICON / SLOT_MAIN_BUDGET, the equip-screen layout, save
+  round-trip, gem-slot rules, `_roll_slot`, set bonuses) and lands with the art,
+  exactly as weapons did. Budgets are applied to `SLOT_MAIN_BUDGET` at that point,
+  not before — a half-wired slot would only muddy the current 4-slot balance.
+
+---
+
 ## 6. Adding a shape — the checklist
 
 Four tables must agree or the shape breaks silently:

@@ -197,15 +197,40 @@ const HUD_ICON_BUTTON := Vector2(40, 39)
 const HUD_ICON_STEP := 42.0
 const HUD_ICON_Y := 182.0
 const AVATAR_CROP_SCALE := 0.28
-# Splash faces do not share an exact vertical anchor. These normalized focal
-# points keep the eyes/helmet at the center of the circular portrait.
+# Where the face lands INSIDE the circle: dead center horizontally, at the
+# midpoint between the circle's top and its center — classic portrait framing
+# (owner request 2026-07-26), leaving the lower body of the circle to shoulders.
+const AVATAR_FACE_ANCHOR := Vector2(0.5, 0.25)
+# Normalized face (eye-line) position PER SPLASH — measured off the actual art,
+# keyed by the splash sprite so every skin/awakened form centers ITS face, not
+# its class's. A splash missing here gets the upper-center default below; add a
+# measured entry when installing new hero splash art (simulate across all skins
+# first — see the anchor-change rule).
+const AVATAR_FACE_DEFAULT := Vector2(0.5, 0.19)
 const AVATAR_FOCUS := {
-	"warrior": Vector2(0.50, 0.18),
-	"archer": Vector2(0.50, 0.19),
-	"mage": Vector2(0.50, 0.225),
-	"assassin": Vector2(0.50, 0.18),
-	"paladin": Vector2(0.50, 0.18),
-	"warlock": Vector2(0.50, 0.18),
+	"class_splash_archer": Vector2(0.432, 0.202),
+	"class_splash_assassin": Vector2(0.506, 0.189),
+	"class_splash_mage": Vector2(0.492, 0.222),
+	"class_splash_paladin": Vector2(0.488, 0.181),
+	"class_splash_warlock": Vector2(0.493, 0.17),
+	"class_splash_warrior": Vector2(0.506, 0.181),
+	"splash_skin_archer_frostfall_ranger": Vector2(0.492, 0.235),
+	"splash_skin_archer_voidwraith": Vector2(0.492, 0.212),
+	"splash_skin_archer_voidwraith_awakened": Vector2(0.506, 0.199),
+	"splash_skin_assassin_blade_dancer": Vector2(0.496, 0.186),
+	"splash_skin_assassin_phantom": Vector2(0.395, 0.36),
+	"splash_skin_assassin_phantom_awakened": Vector2(0.436, 0.358),
+	"splash_skin_mage_crystal_archmage": Vector2(0.525, 0.18),
+	"splash_skin_mage_crystal_archmage_awakened": Vector2(0.492, 0.245),
+	"splash_skin_paladin_eclipse_knight": Vector2(0.52, 0.198),
+	"splash_skin_paladin_fallen_arbiter": Vector2(0.50, 0.185),
+	"splash_skin_paladin_fallen_arbiter_awakened": Vector2(0.489, 0.212),
+	"splash_skin_warlock_arcane_warlock": Vector2(0.487, 0.203),
+	"splash_skin_warlock_eldritch_warlock": Vector2(0.52, 0.245),
+	"splash_skin_warlock_hellfire_inquisitor": Vector2(0.49, 0.136),
+	"splash_skin_warrior_dreadknight": Vector2(0.475, 0.154),
+	"splash_skin_warrior_stormforged": Vector2(0.565, 0.215),
+	"splash_skin_warrior_stormforged_awakened": Vector2(0.505, 0.20),
 }
 # Boss paintings are usually square while their reveal is 16:9. Keep the
 # aspect-cover presentation, but spend only this share of the vertical overflow
@@ -776,9 +801,10 @@ func _build_ability_bar() -> void:
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(icon)
-		# Clockwise cooldown sweep clipped to the circular icon.
+		# Clockwise cooldown sweep clipped to the circular icon. The mask must
+		# be generated at the drawn size — TextureProgressBar won't downscale.
 		var cd := TextureProgressBar.new()
-		cd.texture_progress = Art.ability_cooldown_mask()
+		cd.texture_progress = Art.ability_cooldown_mask(int(SLOT_SIZE - 8))
 		cd.tint_progress = Color(0.025, 0.035, 0.075, 0.8)
 		cd.fill_mode = TextureProgressBar.FILL_CLOCKWISE
 		cd.min_value = 0.0
@@ -1395,8 +1421,8 @@ func _update_avatar() -> void:
 	var source_size := Vector2(source.get_width(), source.get_height())
 	var side := minf(source_size.x, source_size.y) * AVATAR_CROP_SCALE
 	var crop_size := Vector2(side / source_size.x, side / source_size.y)
-	var focus: Vector2 = AVATAR_FOCUS.get(game.player.cls, Vector2(0.5, 0.19))
-	var crop_origin := focus - crop_size * 0.5
+	var focus: Vector2 = AVATAR_FOCUS.get(art_key, AVATAR_FACE_DEFAULT)
+	var crop_origin := focus - crop_size * AVATAR_FACE_ANCHOR
 	crop_origin.x = clampf(crop_origin.x, 0.0, 1.0 - crop_size.x)
 	crop_origin.y = clampf(crop_origin.y, 0.0, 1.0 - crop_size.y)
 	var portrait_mat := avatar_portrait.material as ShaderMaterial

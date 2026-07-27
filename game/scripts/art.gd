@@ -1926,7 +1926,18 @@ const GEAR_SHAPES := {
 	"armor":  {"Plate": "icon_armor", "Mail": "icon_mail", "Guard": "icon_shield"},
 	"boots":  {"Boots": "icon_boots", "Striders": "icon_striders", "Treads": "icon_treads"},
 	"charm":  {"Charm": "icon_charm", "Talisman": "icon_talisman", "Sigil": "icon_sigil"},
+	# helmet/gloves/pants (§5b) wired for STATS ahead of their ART — every one of
+	# their 90 shapes falls through _shape_for to this single placeholder until the
+	# art pass drops real per-shape keys. Listed in ART_PENDING_SLOTS so the
+	# codex/autotest know the sprites are intentionally generic for now.
+	"helmet": {"_placeholder": "icon_armor"},
+	"gloves": {"_placeholder": "icon_charm"},
+	"pants":  {"_placeholder": "icon_boots"},
 }
+
+# Slots whose shapes are wired for stats but not yet drawn — their GEAR_SHAPES map
+# is a lone placeholder, so the per-noun art assertion is skipped for them.
+const ART_PENDING_SLOTS := ["helmet", "gloves", "pants"]
 
 
 static func _shape_for(slot: String, noun: String) -> String:

@@ -327,8 +327,9 @@ func settle(died: bool, completed: bool) -> void:
 	for lv in pending_gems:
 		rewards.append({"kind": "gem", "gem": game.drop_gem(int(lv))})
 	for grade in pending_gear:
+		# Endgame modes are post-campaign: full Act-3 named channels open.
 		rewards.append({"kind": "item",
-			"item": Items.roll_gear_of_grade(String(grade), game.loot_rng, p.cls)})
+			"item": Items.roll_gear_of_grade(String(grade), game.loot_rng, p.cls, 3)})
 	if not rewards.is_empty():
 		game.send_mail("Spoils of %s" % _mode_name(),
 			_spoils_body(died, completed), rewards)

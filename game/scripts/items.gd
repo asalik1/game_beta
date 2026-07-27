@@ -23,8 +23,8 @@ const LOOT_SOUND := {
 static func loot_sound(grade: String) -> String:
 	return String(LOOT_SOUND.get(grade, "loot_low"))
 
-const SLOTS := ["weapon", "armor", "boots", "charm"]
-const SLOT_ICON := {"weapon": "⚔", "armor": "🛡", "boots": "👢", "charm": "❖"}
+const SLOTS := ["weapon", "helmet", "armor", "gloves", "pants", "boots", "charm"]
+const SLOT_ICON := {"weapon": "⚔", "helmet": "🪖", "armor": "🛡", "gloves": "🧤", "pants": "👖", "boots": "👢", "charm": "❖"}
 
 # Every piece's MAIN is the wearer-class's PRIMARY attribute (player
 # rule, 2026-07-06, WoW-style): guaranteed, class-matched, slot-budgeted
@@ -37,7 +37,11 @@ const SLOT_ICON := {"weapon": "⚔", "armor": "🛡", "boots": "👢", "charm": 
 # convert SUB-1 to ATK (0.9 — player rule: 100 STR = 90 ATK + 120 HP),
 # and the total slot budget stays small enough that gear attributes
 # never outrun the ~5.5%/level player curve every boss is pinned to.
-const SLOT_MAIN_BUDGET := {"weapon": 5.0, "armor": 3.0, "boots": 2.0, "charm": 2.5}
+# 7-slot lineup (2026-07-26, GEAR_SHAPE_MATRIX.md §5b): helmet/gloves/pants added.
+# The existing four keep their values; the three new slot into the hierarchy
+# (helmet/pants solid armor, gloves minor). Total 12.5 -> 19.5 (+56%) — the L42
+# benchmark envelope shifts up, so mobs/bosses recalibrate for it (owner step 4).
+const SLOT_MAIN_BUDGET := {"weapon": 5.0, "helmet": 2.5, "armor": 3.0, "gloves": 2.0, "pants": 2.5, "boots": 2.0, "charm": 2.5}
 # Mirror of Classes.CLASSES[cls]["primary"] — items.gd must not preload
 # classes.gd (same rule as CLASSES_DMG_TYPE below).
 const CLASS_PRIMARY := {
@@ -61,9 +65,22 @@ const CLASS_WEAPONS := {
 	"warlock":  ["Grimoire", "Hexblade", "Whisper Rod", "Pactshield Codex", "Grimheart Staff"],
 }
 
-# SLOT_NAMES["weapon"] = the union of every class's rollable weapon shapes (the
-# classless fallback pool). Armor/boots/charm are the shared shapes still awaiting
-# their own matrix pass.
+# Per-class shapes for the NEW matrix slots (helmet/gloves/pants, §5b). roll_item_of
+# picks from here when a class is set — the armor-family analogue of CLASS_WEAPONS.
+# (armor/boots/charm are not here yet; they still roll the shared SLOT_NAMES shapes
+# until their own matrix pass.)
+const CLASS_GEAR := {
+	"warrior": {"helmet": ["Wardsteel Helm", "Ironwall Helm", "Skirmisher's Helm", "Reaver Helm", "Titan Helm"], "gloves": ["Wardsteel Gauntlets", "Ironwall Gauntlets", "Skirmisher's Gauntlets", "Reaver Gauntlets", "Titan Gauntlets"], "pants": ["Wardsteel Legplates", "Ironwall Legplates", "Skirmisher's Legplates", "Reaver Legplates", "Titan Legplates"]},
+	"archer": {"helmet": ["Stormweave Hood", "Studded Hood", "Ranger's Hood", "Hunter's Hood", "Beastpelt Hood"], "gloves": ["Stormweave Bracers", "Studded Bracers", "Ranger's Bracers", "Hunter's Bracers", "Beastpelt Bracers"], "pants": ["Stormweave Leggings", "Studded Leggings", "Ranger's Leggings", "Hunter's Leggings", "Beastpelt Leggings"]},
+	"assassin": {"helmet": ["Shadowveil Cowl", "Warded Cowl", "Gossamer Cowl", "Nightsilk Cowl", "Grave Cowl"], "gloves": ["Shadowveil Grips", "Warded Grips", "Gossamer Grips", "Nightsilk Grips", "Grave Grips"], "pants": ["Shadowveil Wraps", "Warded Wraps", "Gossamer Wraps", "Nightsilk Wraps", "Grave Wraps"]},
+	"mage": {"helmet": ["Silkward Circlet", "Runeplate Circlet", "Featherweave Circlet", "Starweave Circlet", "Earthen Circlet"], "gloves": ["Silkward Handwraps", "Runeplate Handwraps", "Featherweave Handwraps", "Starweave Handwraps", "Earthen Handwraps"], "pants": ["Silkward Underleggings", "Runeplate Underleggings", "Featherweave Underleggings", "Starweave Underleggings", "Earthen Underleggings"]},
+	"paladin": {"helmet": ["Blessed Greathelm", "Templar Greathelm", "Vigil Greathelm", "Zealot Greathelm", "Sanctified Greathelm"], "gloves": ["Blessed Gauntlets", "Templar Gauntlets", "Vigil Gauntlets", "Zealot Gauntlets", "Sanctified Gauntlets"], "pants": ["Blessed Legguards", "Templar Legguards", "Vigil Legguards", "Zealot Legguards", "Sanctified Legguards"]},
+	"warlock": {"helmet": ["Voidsilk Hood", "Bonemail Hood", "Shadeweave Hood", "Ruinweave Hood", "Bloodpact Hood"], "gloves": ["Voidsilk Claws", "Bonemail Claws", "Shadeweave Claws", "Ruinweave Claws", "Bloodpact Claws"], "pants": ["Voidsilk Chausses", "Bonemail Chausses", "Shadeweave Chausses", "Ruinweave Chausses", "Bloodpact Chausses"]},
+}
+
+# SLOT_NAMES[slot] = the union of every class's rollable shapes (the classless
+# fallback pool). Weapon + the three new slots are per-class (CLASS_WEAPONS /
+# CLASS_GEAR); armor/boots/charm are the shared shapes still awaiting their matrix.
 const SLOT_NAMES := {
 	"weapon": ["Pike", "Warblade", "Saber", "Bulwark Blade", "Claymore",
 		"Warbow", "Longbow", "Hunting Bow", "Thornbow", "Recurve",
@@ -71,7 +88,10 @@ const SLOT_NAMES := {
 		"Scepter", "Starfocus", "Zephyr Rod", "Bloomstaff", "Greatstaff",
 		"Lance", "Oathflail", "Duelist's Blade", "Aegis Mace", "Warmaul",
 		"Grimoire", "Hexblade", "Whisper Rod", "Pactshield Codex", "Grimheart Staff"],
+	"helmet": ["Wardsteel Helm", "Ironwall Helm", "Skirmisher's Helm", "Reaver Helm", "Titan Helm", "Stormweave Hood", "Studded Hood", "Ranger's Hood", "Hunter's Hood", "Beastpelt Hood", "Shadowveil Cowl", "Warded Cowl", "Gossamer Cowl", "Nightsilk Cowl", "Grave Cowl", "Silkward Circlet", "Runeplate Circlet", "Featherweave Circlet", "Starweave Circlet", "Earthen Circlet", "Blessed Greathelm", "Templar Greathelm", "Vigil Greathelm", "Zealot Greathelm", "Sanctified Greathelm", "Voidsilk Hood", "Bonemail Hood", "Shadeweave Hood", "Ruinweave Hood", "Bloodpact Hood"],
 	"armor":  ["Plate", "Mail", "Guard"],
+	"gloves": ["Wardsteel Gauntlets", "Ironwall Gauntlets", "Skirmisher's Gauntlets", "Reaver Gauntlets", "Titan Gauntlets", "Stormweave Bracers", "Studded Bracers", "Ranger's Bracers", "Hunter's Bracers", "Beastpelt Bracers", "Shadowveil Grips", "Warded Grips", "Gossamer Grips", "Nightsilk Grips", "Grave Grips", "Silkward Handwraps", "Runeplate Handwraps", "Featherweave Handwraps", "Starweave Handwraps", "Earthen Handwraps", "Blessed Gauntlets", "Templar Gauntlets", "Vigil Gauntlets", "Zealot Gauntlets", "Sanctified Gauntlets", "Voidsilk Claws", "Bonemail Claws", "Shadeweave Claws", "Ruinweave Claws", "Bloodpact Claws"],
+	"pants":  ["Wardsteel Legplates", "Ironwall Legplates", "Skirmisher's Legplates", "Reaver Legplates", "Titan Legplates", "Stormweave Leggings", "Studded Leggings", "Ranger's Leggings", "Hunter's Leggings", "Beastpelt Leggings", "Shadowveil Wraps", "Warded Wraps", "Gossamer Wraps", "Nightsilk Wraps", "Grave Wraps", "Silkward Underleggings", "Runeplate Underleggings", "Featherweave Underleggings", "Starweave Underleggings", "Earthen Underleggings", "Blessed Legguards", "Templar Legguards", "Vigil Legguards", "Zealot Legguards", "Sanctified Legguards", "Voidsilk Chausses", "Bonemail Chausses", "Shadeweave Chausses", "Ruinweave Chausses", "Bloodpact Chausses"],
 	"boots":  ["Boots", "Striders", "Treads"],
 	"charm":  ["Charm", "Talisman", "Sigil"],
 }
@@ -610,6 +630,105 @@ const SHAPE_STYLE := {
 	# (Legacy weapon shapes Blade/Edge/Fang/Kunai/Bow/Crossbow/Staff/Wand/Hammer/
 	# Tome deleted 2026-07-26 — nothing references them now that S_GEAR dropped its
 	# pinned nouns; the matrix set fully replaces them. Owner: not needed as saves.)
+	# === HELMET / GLOVES / PANTS (matrix §5b, 2026-07-26) — the armor family on one
+	# shared 5-profile coverage skeleton (A magic ward · B physical ward · C finesse
+	# · D aggressor w/ on-type pen · E bulwark); only material + slot noun vary. ===
+	# --- Warrior (pen=physpen) ---
+	"Wardsteel Helm": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Ironwall Helm": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Skirmisher's Helm": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Reaver Helm": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "physpen": 1.20}, "tag": "aggressor"},
+	"Titan Helm": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Wardsteel Gauntlets": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Ironwall Gauntlets": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Skirmisher's Gauntlets": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Reaver Gauntlets": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "physpen": 1.20}, "tag": "aggressor"},
+	"Titan Gauntlets": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Wardsteel Legplates": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Ironwall Legplates": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Skirmisher's Legplates": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Reaver Legplates": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "physpen": 1.20}, "tag": "aggressor"},
+	"Titan Legplates": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	# --- Archer (pen=physpen) ---
+	"Stormweave Hood": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Studded Hood": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Ranger's Hood": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Hunter's Hood": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "physpen": 1.20}, "tag": "aggressor"},
+	"Beastpelt Hood": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Stormweave Bracers": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Studded Bracers": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Ranger's Bracers": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Hunter's Bracers": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "physpen": 1.20}, "tag": "aggressor"},
+	"Beastpelt Bracers": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Stormweave Leggings": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Studded Leggings": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Ranger's Leggings": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Hunter's Leggings": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "physpen": 1.20}, "tag": "aggressor"},
+	"Beastpelt Leggings": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	# --- Assassin (pen=physpen) ---
+	"Shadowveil Cowl": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Warded Cowl": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Gossamer Cowl": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Nightsilk Cowl": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "physpen": 1.20}, "tag": "aggressor"},
+	"Grave Cowl": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Shadowveil Grips": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Warded Grips": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Gossamer Grips": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Nightsilk Grips": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "physpen": 1.20}, "tag": "aggressor"},
+	"Grave Grips": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Shadowveil Wraps": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Warded Wraps": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Gossamer Wraps": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Nightsilk Wraps": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "physpen": 1.20}, "tag": "aggressor"},
+	"Grave Wraps": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	# --- Mage (pen=magpen) ---
+	"Silkward Circlet": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Runeplate Circlet": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Featherweave Circlet": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Starweave Circlet": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
+	"Earthen Circlet": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Silkward Handwraps": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Runeplate Handwraps": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Featherweave Handwraps": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Starweave Handwraps": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
+	"Earthen Handwraps": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Silkward Underleggings": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Runeplate Underleggings": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Featherweave Underleggings": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Starweave Underleggings": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
+	"Earthen Underleggings": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	# --- Paladin (pen=magpen) ---
+	"Blessed Greathelm": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Templar Greathelm": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Vigil Greathelm": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Zealot Greathelm": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
+	"Sanctified Greathelm": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Blessed Gauntlets": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Templar Gauntlets": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Vigil Gauntlets": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Zealot Gauntlets": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
+	"Sanctified Gauntlets": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Blessed Legguards": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Templar Legguards": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Vigil Legguards": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Zealot Legguards": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
+	"Sanctified Legguards": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	# --- Warlock (pen=magpen) ---
+	"Voidsilk Hood": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Bonemail Hood": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Shadeweave Hood": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Ruinweave Hood": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
+	"Bloodpact Hood": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Voidsilk Claws": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Bonemail Claws": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Shadeweave Claws": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Ruinweave Claws": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
+	"Bloodpact Claws": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
+	"Voidsilk Chausses": {"main": 1.00, "bias": {"magres": 1.60}, "tag": "spell ward"},
+	"Bonemail Chausses": {"main": 1.05, "bias": {"physres": 1.30, "critres": 1.30}, "tag": "guarded"},
+	"Shadeweave Chausses": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
+	"Ruinweave Chausses": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
+	"Bloodpact Chausses": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
 	# ===================== ARMOR / BOOTS / CHARM (matrix rework pending) ========
 	"Plate":    {"main": 1.15, "bias": {}, "tag": "bulk"},
 	"Mail":     {"main": 0.9,  "bias": {"eva": 1.60}, "tag": "elusive"},
@@ -812,13 +931,16 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 				if not pool.is_empty():
 					return make_unique(pool[rng.randi_range(0, pool.size() - 1)], rng)
 		if grade == "S" and act >= Balance.UNIQUE_A_ACT and S_GEAR.has(cls) \
-				and rng.randf() < Balance.LEGEND_S_CHANCE:
-			return make_legendary(cls, slot, rng)
+				and S_GEAR[cls].has(slot) and rng.randf() < Balance.LEGEND_S_CHANCE:
+			return make_legendary(cls, slot, rng)  # only slots with a defined legendary
 
 	var mult: float = GRADE_MULT[grade]
 	var noun_list: Array = SLOT_NAMES[slot]
-	if slot == "weapon" and cls != "" and CLASS_WEAPONS.has(cls):
-		noun_list = CLASS_WEAPONS[cls]
+	if cls != "":
+		if slot == "weapon" and CLASS_WEAPONS.has(cls):
+			noun_list = CLASS_WEAPONS[cls]
+		elif CLASS_GEAR.has(cls) and CLASS_GEAR[cls].has(slot):
+			noun_list = CLASS_GEAR[cls][slot]  # per-class helmet/gloves/pants (§5b)
 	var noun: String = force_noun if force_noun != "" else noun_list[rng.randi_range(0, noun_list.size() - 1)]
 	var style: Dictionary = SHAPE_STYLE.get(noun, DEFAULT_STYLE)
 
@@ -869,6 +991,8 @@ static func make_unique(u: Dictionary, rng: RandomNumberGenerator) -> Dictionary
 ## awakening quest sets s_awakened_<cls> (round 51b, unchanged).
 static func make_legendary(cls: String, slot: String, rng: RandomNumberGenerator) -> Dictionary:
 	var item := roll_item_of(slot, "S", rng, cls)
+	if not (S_GEAR.has(cls) and S_GEAR[cls].has(slot)):
+		return item  # no legendary defined for this slot (e.g. the new armor slots) — plain S
 	var special: Dictionary = S_GEAR[cls][slot]
 	item["name"] = special["name"]
 	item["cls"] = cls

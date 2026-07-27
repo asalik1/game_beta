@@ -396,6 +396,18 @@ var deathmark_time := 0.0      # assassin: Death Mark window — awakened Nightf
 var holy_charge := 0.0         # paladin: banked overheal (damage), spent by the next Judgment as a smite
 var next_crit := false         # Hunt: the next hit is a guaranteed crit
 var hunt_rhythm := 0           # Hunt: Quick Shots fired since the last rhythm crit (Balance.HUNT_RHYTHM_SHOTS)
+# ---- named-unique passive state (2026-07-27, Balance.UNIQ / Items.UNIQUES) ----
+# One generic clock: uniq_t maps a timer/window/ICD key -> seconds left, all
+# decremented together per-frame (player.gd). Kits arm windows (uniq_arm) and
+# consume them (uniq_take); ICD keys just gate re-triggers. Run state, unsaved.
+var uniq_t := {}               # named-unique timers/windows/ICDs (key -> seconds left)
+var uniq_counter := 0          # rhythm counters (decree 3rd Cleave / gale 5th shot / ninthstar / arithmetic / noonday)
+var uniq_kills := 0            # absolution: kills toward the next toll
+var uniq_crits := 0            # hartsbreath: forced-crit shots left after a perfect dodge
+var uniq_hp_atk := 0.0         # worldroot/lastpulse: atk derived from bonus max HP (set in recalc)
+var uniq_marks := {}           # remembrance: Enemy -> per-enemy re-hex ICD (seconds left)
+var tumble_perfect_t := 0.0    # live while Tumble's perfect-dodge window holds (hartsbreath reads it)
+var storm_mult := 1.0          # Arrow Storm damage scale (moonturn's echo storm rains at half)
 var dash_refund_t := 0.0       # Shadow phantom step: kill within this refunds the dash
 var dash_refund_frac := 0.0    # ...how much of the dash cd a closing kill returns
 var storm_time := 0.0
@@ -823,6 +835,28 @@ func s_passive() -> String:
 	if w.get("passive_dormant", false) and not weapon_awakened(w):
 		return ""
 	return w["passive"]
+
+
+# ---- named-unique passive plumbing (2026-07-27) -------------------------
+# All 60 unique passives ride the same s_passive() gate as the legendaries
+# (they're weapon passives; a unique is never dormant). These three helpers
+# are the whole state API: timers/windows/ICDs live in uniq_t, knobs in
+# Balance.UNIQ.
+
+## Is this uniq timer/window/ICD still running?
+func uniq_on(key: String) -> bool:
+	return float(uniq_t.get(key, 0.0)) > 0.0
+
+## CONSUME a window: true exactly once while it runs (zeroes it).
+func uniq_take(key: String) -> bool:
+	if float(uniq_t.get(key, 0.0)) <= 0.0:
+		return false
+	uniq_t[key] = 0.0
+	return true
+
+## One knob of the EQUIPPED weapon's passive (Balance.UNIQ single reader).
+func uniq_k(key: String, default := 0.0) -> float:
+	return float(Balance.uniq(s_passive()).get(key, default))
 
 
 ## Is this S weapon's class awakened for this character? (persisted flag)
@@ -1271,6 +1305,16 @@ func recalc() -> void:
 	# scaling ratios (an assassin gets far more from AGI than from STR);
 	# substat points (PhysRes, DEX, pens...) convert 1:1 for everyone.
 	var attr_scale: Dictionary = Classes.ATTR_SCALE[cls]
+	# Vowspike / Noonday (paladin lance uniques): the held weapon RE-ORDERS the
+	# soul — INT converts to atk at the primary rate; the Vow additionally
+	# demotes STR. A per-item override of the class table, weapon-held only
+	# (the INT-paladin enabler, GEAR_UNIQUE_PASSIVES.md — owner-approved).
+	var uniq_sp := s_passive()
+	if uniq_sp == "vow" or uniq_sp == "noonday":
+		attr_scale = attr_scale.duplicate(true)
+		attr_scale["INT"]["atk_flat"] = uniq_k("int_scale")
+		if uniq_sp == "vow":
+			attr_scale["STR"]["atk_flat"] = uniq_k("str_scale")
 	for attr in attr_points:
 		# Allocated points PLUS gear attribute mains (2026-07-06): every
 		# piece guarantees the class primary; both convert identically.
@@ -1358,6 +1402,29 @@ func recalc() -> void:
 		flat_dr += Balance.PLATE_DR_MAX * minf(1.0, magres / Balance.PLATE_DR_FULL_RES)
 	combo = Balance.soft_cap(maxf(0.0, b["combo"]), Balance.CAP_COMBO)  # soft knee
 	greed = b["greed"]
+	# ---- named-unique recalc-level effects (2026-07-27, Balance.UNIQ) ----
+	# The A-tier BARGAIN drawbacks live here (printed on the item card), plus
+	# the two HP->power conversions. uniq_sp was read above the attr loop.
+	uniq_hp_atk = 0.0
+	match uniq_sp:
+		"briar":
+			# Briar Covenant BARGAIN: the covenant replaces spacing-sustain —
+			# taxes the kiting build, costs the thorn-tank (never untouched) little.
+			sw_regen *= uniq_k("sw_tax")
+		"parry":
+			# Parryshade BARGAIN: you catch blades instead of slipping them.
+			eva = maxf(0.0, eva - uniq_k("eva_tax"))
+		"outrider":
+			# Ashrider BARGAIN: the saber rides too light for the grind — Grit
+			# never stacks (nothing to a dodge warrior, fatal to a face-tank).
+			grit_regen = 0.0
+			grit_stacks = 0
+		"worldroot", "lastpulse":
+			# Verdancy / Red Reliquary: bonus max HP (gear/VIT/attributes past
+			# the class curve) converts to attack — the bulk-caster enabler.
+			var base_hp: float = base["hp"] + base["hp_lvl"] * (level - 1)
+			uniq_hp_atk = maxf(0.0, max_hp - base_hp) / uniq_k("hp_per_atk", 1000.0)
+			atk += uniq_hp_atk
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
 
@@ -1391,6 +1458,10 @@ func gain_hp(amount: float) -> void:
 
 func current_atk() -> float:
 	var a := atk
+	if uniq_hp_atk > 0.0 and uniq_on("lastpulse"):
+		# Red Reliquary: for a spell after Dark Pact the HP->atk conversion
+		# runs DOUBLED (atk already carries it once from recalc).
+		a += uniq_hp_atk
 	if berserk_time > 0.0:
 		a *= 1.0 + berserk_bonus
 	if elixir_time > 0.0:
@@ -2133,6 +2204,10 @@ func ability_cd(slot: String) -> float:
 		# core throughput lever (paired with CASTER_HASTE_BONUS). No other class.
 		if Classes.CLASSES[cls]["primary"] == "INT":
 			ult_cd *= 1.0 - cdr
+		if s_passive() == "atlas":
+			# Atlas Branch BARGAIN: a flat printed tax AFTER haste — the sky
+			# always answers exactly this much later.
+			ult_cd += uniq_k("cd_tax")
 		return maxf(0.1, ult_cd)
 	if cls == "assassin" and slot == "a2":
 		# Shadow Dash: this is the WHIFF cd — floored so gear cdr can't push
@@ -2154,6 +2229,18 @@ func ability_cd(slot: String) -> float:
 		cd *= 0.92  # mage S weapon: Frost Nova & Blink cool down 8% faster
 	if slot == "a1" and s_passive() in ["wellspring", "voidmaw"]:
 		cd *= 1.0 - Balance.S_CASTER_BOLT_CDR  # mage/warlock S weapon: basic bolt cools faster
+	# Named-unique BARGAIN cd taxes (printed on the item card — no silent
+	# effects): the heavier blow swings slower (Balance.UNIQ knobs).
+	match s_passive():
+		"dirge":
+			if slot == "a1":
+				cd *= 1.0 + uniq_k("cd_tax")   # Gravesong: Cleave tolls slower
+		"burden":
+			if slot == "a1":
+				cd *= 1.0 + uniq_k("cd_tax")   # Pilgrim's Burden: Judgment swings slower
+		"warhorn":
+			if slot == "a2":
+				cd += uniq_k("cd_tax")         # Hornsong: the wider volley returns later
 	cd = cd * (1.0 - cdr)
 	if cls == "warrior" and slot == "a1" and berserk_time <= 0.0:
 		# Cleave has a HARD cd floor cdr can't pierce — plate hits hard, not fast,

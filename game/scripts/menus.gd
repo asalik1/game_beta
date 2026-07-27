@@ -1422,8 +1422,9 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	var catrow := HBoxContainer.new()
 	catrow.add_theme_constant_override("separation", 6)
 	right.add_child(catrow)
-	for spec in [["all", "All"], ["weapon", "Weapons"], ["armor", "Armor"], ["boots", "Boots"],
-			["charm", "Charms"], ["gems", "Gems"], ["consumables", "Consumables"]]:
+	for spec in [["all", "All"], ["weapon", "Weapons"], ["helmet", "Helmets"], ["armor", "Armor"],
+			["gloves", "Gloves"], ["pants", "Pants"], ["boots", "Boots"], ["charm", "Charms"],
+			["gems", "Gems"], ["consumables", "Consumables"]]:
 		var cid: String = spec[0]
 		var cb := _btn(catrow, spec[1], func() -> void: open_inventory("gear", cid),
 			Color(0.95, 0.85, 0.5) if cat == cid else Color(0.6, 0.6, 0.6))
@@ -3045,7 +3046,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		_lbl(buy, _smith_msg, 12, _smith_msg_color)
 		_smith_msg = ""
 	var up_grid := _shop_grid(buy)
-	for slot in ["weapon", "armor"]:
+	for slot in Items.SLOTS:
 		if p.equipment.has(slot):
 			var item: Dictionary = p.equipment[slot]
 			if not Items.can_upgrade(item):

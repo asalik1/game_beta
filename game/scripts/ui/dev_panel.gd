@@ -284,7 +284,7 @@ static func _tab_items(m: Menus, list: VBoxContainer) -> void:
 		var grng := RandomNumberGenerator.new()
 		grng.randomize()
 		m.game.send_mail("A Gift from the Devs", "Thanks for playing the event!",
-			[{"kind": "item", "item": Items.roll_item_of(Items.SLOTS[grng.randi_range(0, 3)], "A", grng, m.game.player.cls)},
+			[{"kind": "item", "item": Items.roll_item_of(Items.SLOTS[grng.randi_range(0, Items.SLOTS.size() - 1)], "A", grng, m.game.player.cls)},
 			{"kind": "gem", "gem": Items.random_gem(grng, 2)}])
 		m.open_dev(), Color(0.8, 0.9, 1.0))
 	m._btn(row3, "Age mail +31d", func() -> void:

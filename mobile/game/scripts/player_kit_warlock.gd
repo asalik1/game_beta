@@ -57,6 +57,7 @@ func _cast_shadowbolt(dir: Vector2, mult: float, cast_eye: Node2D = null) -> voi
 	# their bespoke fire/ichor treatment below.
 	p.modulate = Color.WHITE.lerp(_tcolor, 0.55) if skin == "" and _themed else Color.WHITE
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+	_uniq_shadowbolt_fx(p)
 	if skin == "hellfire_inquisitor":
 		# The branded spear sheds a small trail of real embers that fade behind it.
 		var tr := ProjTrail.new()
@@ -85,6 +86,20 @@ func _cast_shadowbolt(dir: Vector2, mult: float, cast_eye: Node2D = null) -> voi
 		tr.col = Color(0.35, 0.85, 0.55)
 		game.add_child(tr)
 		_living_tether(self, p, Color(0.36, 0.86, 0.56, 0.65), 0.48, true)
+
+
+## Named-unique Shadowbolt riders — one seam for both bolt paths (base cast
+## and the Eldritch skin's eye-bolt): the ink's teeth and the hush's echo.
+func _uniq_shadowbolt_fx(p: Projectile) -> void:
+	p.fx["uniq_a1"] = 1
+	match s_passive():
+		"inkteeth":
+			# Ink of Teeth: the bolt leaves gnawing teeth-marks (a refreshed dot).
+			p.fx["dot"] = maxf(float(p.fx.get("dot", 0.0)), uniq_k("dot"))
+		"hush":
+			# Hushbone: what missed you feeds the silence — the bolt strikes twice.
+			if uniq_take("hush"):
+				p.fx["echo"] = 1.0
 
 
 func _pick_eldritch_eye_origin() -> Vector2:
@@ -147,6 +162,7 @@ func _cast_eldritch_eye_bolt(eye: Node2D, intended_dir: Vector2,
 	game.sfx("fireball", 0.7)
 	var p := _proj(shot_dir, mult, "mage_void_bullet", 460.0)
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+	_uniq_shadowbolt_fx(p)
 	var base_visual_origin := p.global_position + Vector2(0, -p.rise)
 	var offset := eye_center - base_visual_origin
 	var settle := clampf(offset.length() / 460.0, 0.10, 0.22)
@@ -368,8 +384,16 @@ func _eldritch_curse_tick(e: Enemy) -> void:
 		fade.tween_callback(line.queue_free)
 
 
-## A cursed enemy died: the hex detonates onto its neighbors.
-func _hex_detonate(pos: Vector2) -> void:
+## Black Clause (Hexblade S unique): a crit against a hexed enemy calls the
+## debt in early — the detonation at partial strength, the hex left standing.
+## (The base hook _uniq_after_hit rings this override; the ability lives here.)
+func _uniq_clause_call(pos: Vector2, scale: float) -> void:
+	_hex_detonate(pos, scale)
+
+
+## A cursed enemy died: the hex detonates onto its neighbors. `scale` lets the
+## Black Clause invoke it early at partial strength (death detonations pass 1.0).
+func _hex_detonate(pos: Vector2, scale := 1.0) -> void:
 	var col := _wl_skin_col(Color(0.8, 0.45, 1.0))
 	game.sfx("nova", 0.65)
 	game.burst(pos, col, 14)
@@ -387,7 +411,7 @@ func _hex_detonate(pos: Vector2) -> void:
 	ct.tween_property(core, "scale", Vector2(2.6, 2.6), 0.16)
 	ct.parallel().tween_property(core, "modulate:a", 0.0, 0.2)
 	ct.tween_callback(core.queue_free)
-	var mult := 1.1 * float(hex_fx.get("hex_boom", 1.0)) * dm("a2")
+	var mult := 1.1 * float(hex_fx.get("hex_boom", 1.0)) * dm("a2") * scale
 	var saved := _tfx
 	_tfx = {}
 	for e in _enemies_within(pos, 110.0):
@@ -412,6 +436,12 @@ func _dark_pact(f := 1.0) -> void:
 	game.spawn_text(global_position + Vector2(0, -44), "-%d" % int(sacrifice), Color(1.0, 0.3, 0.4))
 	pact_time = 5.0
 	pact_ls = float(_tfx.get("pact_ls", 0.15))
+	if s_passive() == "veinroot":
+		pact_time += uniq_k("surge_ext")  # Veinroot: the surge lingers
+	elif s_passive() == "lastpulse":
+		# Red Reliquary: for a spell after the pact, the HP->atk conversion
+		# runs DOUBLED (current_atk reads this window).
+		uniq_t["lastpulse"] = uniq_k("double_dur")
 	# The pact's rays take the skin's craft; the BLOOD price particles below
 	# stay blood-red — the cost is the cost, whoever pays it.
 	var col := _wl_skin_col(_tcolor if _themed else Color(1.0, 0.3, 0.45))
@@ -496,8 +526,13 @@ func _dark_pact(f := 1.0) -> void:
 	var eff := {"aoe": true}
 	if _tfx.get("pull", 0):
 		eff["pull"] = 1
+	var pact_mult: float = ability_coeff("a2") * f
+	if s_passive() == "veinroot" and current_atk() > 0.0:
+		# Veinroot: the blast draws extra force from your reserve — a flat
+		# max-HP bite folded in as coeff (the holy_charge idiom: atk cancels).
+		pact_mult += max_hp * uniq_k("hp_dmg") / current_atk()
 	for e in _enemies_within(global_position, 170.0):
-		hit_enemy(e, ability_coeff("a2") * f, eff.duplicate())
+		hit_enemy(e, pact_mult, eff.duplicate())
 
 
 func _inquisition_rift_scene(pos: Vector2, radius: float) -> void:

@@ -1104,6 +1104,9 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	for key in _tfx:
 		if not effects.has(key):
 			effects[key] = _tfx[key]
+	var uniq_sp := s_passive()
+	if uniq_sp != "":
+		_uniq_pre_hit(e, uniq_sp, effects)
 	var dmg_type: String = effects.get("type", Classes.CLASSES[cls]["dmg_type"])
 	var pen := 0.0
 	var e_res := 0.0
@@ -1113,6 +1116,12 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	elif dmg_type == "magic":
 		pen = magpen
 		e_res = e.magres
+	# Named-unique armor interaction: torn-open wards (pennon/wardcrack
+	# shred, applied by an earlier hit) and this hit's own armor-ignore
+	# fraction (decree's thrust, gapfinder's gap, farsight's long draw).
+	e_res = maxf(0.0, e_res - e.res_shred)
+	if effects.has("pen_ignore"):
+		e_res *= 1.0 - clampf(float(effects["pen_ignore"]), 0.0, 1.0)
 
 	# Theme crit bonuses (and theme-line talents like Nightfall) are
 	# CAP-EXEMPT (player rule 2026-07-06): they ride above the 35% knee
@@ -1156,6 +1165,10 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	if effects.get("force_crit", 0) and dmg_type != "true" and not is_crit:
 		is_crit = true
 		dmg *= crit_dmg
+	# Debtcollector: crits against hexed prey collect — extra bite + a sip of mana.
+	if is_crit and uniq_sp == "collection" and hexed.has(e):
+		dmg *= 1.0 + uniq_k("bonus")
+		mp = minf(max_mp, mp + uniq_k("mp"))
 
 	# ------------------------------------------------ theme / rider effects
 	# DoTs resolve like hits — no hidden true damage: the tick rate is
@@ -1188,6 +1201,12 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	if effects.has("vuln") and randf() < effects["vuln"]:
 		e.apply_vuln(3.0)  # MP-10 seam: a mirror forwards the mark to the host
 		game.spawn_text(e.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
+	if effects.has("shred"):
+		# Named-unique armor shred (pennon/wardcrack): the crack opens for the
+		# NEXT hit — this one resolved against the res read above.
+		e.res_shred = minf(float(effects.get("shred_cap", 999.0)),
+			e.res_shred + float(effects["shred"]))
+		e.res_shred_t = float(effects.get("shred_dur", 3.0))
 	if effects.has("heal"):
 		gain_hp(max_hp * effects["heal"])  # bulwark ram / holy strike: SHOWS
 	if effects.has("blood_amp"):
@@ -1257,6 +1276,8 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		dash_refund_t = 0.0
 		dash_refund_frac = 0.0
 		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
+	if uniq_sp != "":
+		_uniq_after_hit(e, uniq_sp, dmg, mult, is_crit, effects)
 	# A Ninja-pack impact burst punctuates a CRIT (CC0) — elemental when
 	# themed, a warm shockburst otherwise. Single-target only: AoE and echo
 	# sub-hits stay quiet so a crowd hit doesn't turn to confetti.
@@ -1290,6 +1311,154 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		var again := effects.duplicate()
 		again["_echoed"] = true
 		hit_enemy(e, mult * 0.5, again)
+
+
+## Named-unique PRE-hit hook (2026-07-27): condition-gated effect keys the
+## resolve below then honors (force_crit / true type / pen_ignore / true_frac).
+## Kits tag their hits ("uniq_a1"/"uniq_dash"/"uniq_fan") so ability-scoped
+## passives never leak onto other sources.
+func _uniq_pre_hit(e: Enemy, sp: String, effects: Dictionary) -> void:
+	match sp:
+		"axiom":
+			# Axiom: a slice of ALL magic ability damage resolves as TRUE.
+			if String(effects.get("type", Classes.CLASSES[cls]["dmg_type"])) == "magic":
+				effects["true_frac"] = maxf(float(effects.get("true_frac", 0.0)), uniq_k("true_frac"))
+		"atlas":
+			# Atlas Branch: Meteor's true fraction deepens (the cd tax pays for it).
+			if float(effects.get("true_frac", 0.0)) > 0.0:
+				effects["true_frac"] = uniq_k("true_frac")
+		"herald":
+			# Skyline: the first arrow into unwounded prey cannot fail, and marks.
+			if e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999 \
+					and String(effects.get("type", "")) != "true":
+				effects["force_crit"] = 1
+				effects["vuln"] = maxf(float(effects.get("vuln", 0.0)), uniq_k("vuln"))
+		"quietus":
+			# Quietus: below the threshold the needle strikes TRUE. A melee arc
+			# reuses ONE effects dict across its victims, so the per-victim
+			# verdict must also CLEAR the key when this victim isn't low (a
+			# uniq_a1 hit never sets "type" any other way).
+			if effects.get("uniq_a1", 0):
+				if e.max_hp > 0.0 and e.hp < e.max_hp * uniq_k("threshold"):
+					effects["type"] = "true"
+				else:
+					effects.erase("type")
+		"gapfinder":
+			# Silkneedle: the gap is already open — CC'd armor half-ignored
+			# (same per-victim reset as quietus: the arc dict is shared).
+			if effects.get("uniq_a1", 0):
+				if e.stun_time > 0.0 or e.slow_time > 0.0:
+					effects["pen_ignore"] = uniq_k("pen_ignore")
+				else:
+					effects.erase("pen_ignore")
+		"farsight":
+			# Far-Witness: a long draw halves distant prey's armor.
+			if effects.get("uniq_a1", 0) \
+					and global_position.distance_to(e.global_position) >= uniq_k("range"):
+				effects["pen_ignore"] = maxf(float(effects.get("pen_ignore", 0.0)), uniq_k("pen_ignore"))
+
+
+## Named-unique AFTER-hit hook: crit follow-ups, kill riders and executes.
+## Echo sub-hits (_echoed) never re-trigger follow-ups, so nothing chains.
+func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: bool, effects: Dictionary) -> void:
+	var uk := Balance.uniq(sp)
+	var died := e.dying or e.hp <= 0.0
+	if is_crit and not effects.get("_echoed", false):
+		match sp:
+			"warpath", "lasthost":
+				# Throneless / Marchbreaker: the crit raises a ghost blade.
+				# Marchbreaker only rides while Berserk runs (its LESSER lane);
+				# a shared ICD keeps Whirlwind multi-crits from chain-echoing.
+				if not died and (sp == "lasthost" or berserk_time > 0.0) \
+						and not uniq_on("lasthost_icd"):
+					uniq_t["lasthost_icd"] = float(Balance.uniq("lasthost")["icd"])
+					game.burst(e.global_position, Color(0.8, 0.85, 1.0), 6)
+					_afterimages(global_position, e.global_position, Color(0.75, 0.8, 1.0), 2)
+					hit_enemy(e, mult * float(uk["echo"]), {"_echoed": true})
+			"midnight":
+				# End of Night: a critical fan-knife ricochets onward.
+				if effects.get("uniq_fan", 0):
+					var next_e: Enemy = null
+					var best := float(uk["range"])
+					for n in _enemies_within(e.global_position, float(uk["range"])):
+						if n != e and not n.dying:
+							var d: float = e.global_position.distance_to(n.global_position)
+							if d < best:
+								best = d
+								next_e = n
+					if next_e != null:
+						game.sfx("knife", 1.4)
+						_beam_fx(e.global_position, next_e.global_position, Color(0.75, 0.7, 1.0), 0.12)
+						hit_enemy(next_e, mult * float(uk["ricochet"]), {"_echoed": true})
+			"cometfall":
+				# Comet's Eye: the critical bolt bursts on the victim.
+				if effects.get("uniq_a1", 0):
+					game.burst(e.global_position, Color(1.0, 0.75, 0.4), 8)
+					for e2 in _enemies_within(e.global_position, 80.0):
+						if e2 != e and not e2.dying:
+							e2.hit_src = self
+							e2.take_damage(dmg * float(uk["splash"]),
+								(e2.global_position - e.global_position).normalized())
+			"censure":
+				# Bell of Censure: the crit tolls — chime splash + stagger.
+				if not effects.get("aoe", false) and not uniq_on("censure_icd"):
+					uniq_t["censure_icd"] = float(uk["icd"])
+					game.sfx("parry", 0.8)
+					_ring_fx(e.global_position, Color(1.0, 0.9, 0.6), 70.0)
+					_stun_or_concuss(e, float(uk["stagger"]))
+					for e2 in _enemies_within(e.global_position, 80.0):
+						if e2 != e and not e2.dying:
+							e2.hit_src = self
+							e2.take_damage(dmg * float(uk["splash"]),
+								(e2.global_position - e.global_position).normalized())
+			"clause":
+				# Black Clause: the debt is called in early — the hex detonates
+				# at half strength and STAYS on the books.
+				if not died and hexed.has(e) and not uniq_on("clause_icd"):
+					uniq_t["clause_icd"] = float(uk["icd"])
+					_uniq_clause_call(e.global_position, float(uk["scale"]))
+	match sp:
+		"quietus":
+			# A Stab kill hastens Death Mark.
+			if died and effects.get("uniq_a1", 0):
+				cds["ult"] = maxf(0.0, float(cds.get("ult", 0.0)) - float(uk["ult_refund"]))
+		"headsman":
+			# Headsman's Mercy: Stab/Dash BEHEAD wounded prey. Same guards as
+			# Hunger — never bosses, never zero-gold summons/sprouts.
+			if not died and (effects.get("uniq_a1", 0) or effects.get("uniq_dash", 0)) \
+					and not (e is Boss) and e.gold_value > 0 and e.max_hp > 0.0 \
+					and e.hp < e.max_hp * float(uk["threshold"]):
+				game.spawn_text(e.global_position + Vector2(0, -44), "BEHEADED", Color(1.0, 0.35, 0.3))
+				game.burst(e.global_position, Color(0.9, 0.2, 0.25), 10)
+				e.hit_src = self
+				e.take_damage(e.hp + 10.0, (e.global_position - global_position).normalized(), true)
+				if stab_ls_time > 0.0:
+					stab_ls_time += float(uk["surge_ext"])  # the blood feeds the surge
+				else:
+					_grant_stab_surge()
+		"absolution":
+			# Absolution: every 3rd kill rings a free Consecration.
+			if died:
+				uniq_kills += 1
+				if uniq_kills >= int(uk["kills"]):
+					uniq_kills = 0
+					game.spawn_text(global_position + Vector2(0, -64), "ABSOLUTION", Color(1.0, 0.92, 0.6))
+					_uniq_toll(float(uk["mult"]))
+
+
+# Two chain-shaped seams: these signatures re-invoke KIT abilities
+# (Consecration / the hex detonation), which live in layers above this one —
+# calls only flow derived→base, so the base declares the hook and the owning
+# kit overrides it (the _grant_stab_surge convention, inverted).
+
+## Absolution's toll — overridden by the paladin kit to ring Consecration.
+func _uniq_toll(_mult: float) -> void:
+	pass
+
+
+## Black Clause's early call — overridden by the warlock kit to detonate the hex.
+func _uniq_clause_call(_pos: Vector2, _scale: float) -> void:
+	pass
 
 
 ## DoT rate mitigated by the target's res (class damage type) minus our

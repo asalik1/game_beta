@@ -3,6 +3,8 @@ class_name Projectile extends Area2D
 ## Friendly shots route their damage through the owning Player
 ## (so crit, lifesteal and burns apply); hostile shots hurt the player.
 
+const ELEMENT_HUE_SHADER := preload("res://shaders/mage_element_hue.gdshader")
+
 signal visual_impact
 
 var vel := Vector2.ZERO
@@ -20,6 +22,10 @@ var game: Game
 var glow_color := Color(1, 1, 1)
 var tex_kind := ""
 var spr: Sprite2D = null       # thrown knives spin in flight
+var halo: Sprite2D = null
+var magic_light: PointLight2D = null
+var magic_particles: CPUParticles2D = null
+var element_hue := -1.0
 var spin := true               # darts (assassin fan) fly POINT-FIRST instead
 var anim_fps := 0.0            # authored projectile strips opt in per texture
 var anim_first := 0
@@ -90,6 +96,31 @@ func _advance_visual_offset(delta: float) -> void:
 	if weight >= 1.0:
 		visual_offset = Vector2.ZERO
 		visual_offset_time = 0.0
+## Recolor the presentation wrapped around an already-authored projectile body.
+## Base Mage themes use this with their body hue shader so the halo, carried
+## light, and motes agree with the pixels instead of leaving an orange aura.
+func set_magic_color(color: Color) -> void:
+	glow_color = color
+	if halo != null:
+		halo.modulate = Art.hdr(Color(color, 0.8))
+	if magic_light != null:
+		magic_light.color = color
+	if magic_particles != null:
+		magic_particles.color = color.lerp(Color.WHITE, 0.35)
+
+
+## Stamp an authored projectile body with an elemental hue. The value is kept
+## separately so multiplayer replicas can rebuild the same ShaderMaterial.
+func set_body_hue(hue: float) -> void:
+	element_hue = hue
+	if spr == null:
+		return
+	var mat := ShaderMaterial.new()
+	mat.shader = ELEMENT_HUE_SHADER
+	mat.set_shader_parameter("target_hue", hue)
+	spr.material = mat
+
+
 var homing := false            # Wind firebolt: friendly bolt curves to a target
 # --- MP-10 (§4.1 projectile row: spawn event + local flight) ---
 # net_visual: another peer's projectile flying HERE as pure presentation —
@@ -288,6 +319,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 		"mage_crystal_decree", "warlock_shadowbolt", "hellfire_brand_bolt"]
 	glow.modulate = Art.hdr(Color(p.glow_color, 0.8 if hot else 0.6))
 	glow.scale = Vector2(1.35, 1.35) if hot else Vector2(1.0, 1.0)
+	p.halo = glow
 	if authored_mob:
 		# A restrained backing glow keeps the MATERIAL silhouette legible;
 		# particles/light would turn every distinct object back into an orb.
@@ -303,7 +335,8 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	if hot and tex_name != "mage_crystal_decree":
 		# Magic bolts CARRY light: walls and ground brighten as they pass
 		# (scaled to the room's darkness — daylight mutes it).
-		vis.add_child(Art.light(p.glow_color, 95.0, 0.85 * p.game.light_mult))
+		p.magic_light = Art.light(p.glow_color, 95.0, 0.85 * p.game.light_mult)
+		vis.add_child(p.magic_light)
 
 	# Fire magic trails sparks; ice trails frost; shadow trails void wisps.
 	# Crystal Decree owns an authored multicolor ribbon. The generic magic-spark
@@ -335,6 +368,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			"hellfire_brand_bolt": Color(1.0, 0.24, 0.06),
 		}.get(style_key, Color.WHITE)
 		sparks.color = spark_col
+		p.magic_particles = sparks
 		vis.add_child(sparks)
 
 	# Arrows and knives streak: a thin motion trail behind the tip.

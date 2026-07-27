@@ -1201,7 +1201,7 @@ static func _gear_uniques(m: Menus, list: VBoxContainer) -> void:
 		cls_box.add_theme_constant_override("separation", 4)
 		_card(list).add_child(cls_box)
 		m._lbl(cls_box, Classes.CLASSES[cls]["name"].to_upper(), 14, Color(0.95, 0.85, 0.5))
-		for slot in Items.SLOTS:
+		for slot in Items.S_GEAR[cls]:   # the class's defined legendary slots (not all 7)
 			var special: Dictionary = Items.S_GEAR[cls][slot]
 			var row := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 14)
