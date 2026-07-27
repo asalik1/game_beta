@@ -372,6 +372,131 @@ invented here.
 | Veinbound Chausses | Warlock | pants | Bloodpact Chausses | A | `u_veinbound_chausses` |
 | Last Pulse, Chausses Beneath All Names | Warlock | pants | Bloodpact Chausses | S | `u_last_pulse_chausses_beneath_all_names` |
 
+## Armor, boots and charm uniques — shipped 2026-07-27
+
+These art-side records use one compact row per family: the named-A and named-S
+columns are independent designs, not recolours of the generic family.
+
+### Warrior armor, boots and charms
+
+| Slot | Shape | Named A | A file key | Named S | S file key |
+|---|---|---|---|---|---|
+| armor | Wardsteel Plate | Spellscar Cuirass | `u_spellscar_cuirass` | Null Crown, Plate of the Silent Siege | `u_null_crown_plate_of_the_silent_siege` |
+| armor | Ironwall Plate | Stone's Refusal | `u_stones_refusal` | Last Rampart, Armor That Would Not Fall | `u_last_rampart_armor_that_would_not_fall` |
+| armor | Skirmisher's Halfplate | Fleet Iron | `u_fleet_iron` | Windcut, Halfplate of the Uncaught | `u_windcut_halfplate_of_the_uncaught` |
+| armor | Bloodforged Harness | Red Maw Harness | `u_red_maw_harness` | The Armor That Bites Back | `u_the_armor_that_bites_back` |
+| armor | Titanplate | Mountain's Burden | `u_mountains_burden` | Worldweight, Plate of the First Giant | `u_worldweight_plate_of_the_first_giant` |
+| boots | Wardstep Greaves | Spellbreak March | `u_spellbreak_march` | Quiet Ground, Greaves of the Unhexed | `u_quiet_ground_greaves_of_the_unhexed` |
+| boots | Sabatons | Ironroot Sabatons | `u_ironroot_sabatons` | No Retreat, Steps of the Last Line | `u_no_retreat_steps_of_the_last_line` |
+| boots | Skirmisher's Boots | Quickmarch | `u_quickmarch` | Dustbefore, Boots of the First Charge | `u_dustbefore_boots_of_the_first_charge` |
+| boots | Reaver Treads | Red Spurs | `u_red_spurs` | Warpath, Treads That Crossed the Dead | `u_warpath_treads_that_crossed_the_dead` |
+| boots | Anchorplate | Groundlock | `u_groundlock` | Stillpoint, Boots Beneath the World | `u_stillpoint_boots_beneath_the_world` |
+| charm | Warbanner | Ash Pennant | `u_ash_pennant` | Standard of the Crownless Host | `u_standard_of_the_crownless_host` |
+| charm | Oath Sigil | Iron Promise | `u_iron_promise` | The Word That Outlived Kings | `u_the_word_that_outlived_kings` |
+| charm | Butcher's Token | Gapfinder's Mark | `u_gapfinders_mark` | Last Measure, Token of the Perfect Cut | `u_last_measure_token_of_the_perfect_cut` |
+| charm | Duelist's Knot | First Feint | `u_first_feint` | Untouchable, Knot of the Empty Step | `u_untouchable_knot_of_the_empty_step` |
+| charm | Heart of the Wall | Gateheart | `u_gateheart` | Citadel Seed, Heart of the Unbroken | `u_citadel_seed_heart_of_the_unbroken` |
+
+### Archer armor, boots and charms
+
+| Slot | Shape | Named A | A file key | Named S | S file key |
+|---|---|---|---|---|---|
+| armor | Stormweave Jerkin | Gale-Sewn Jack | `u_gale_sewn_jack` | Eye of the Tempest, Jerkin of Still Air | `u_eye_of_the_tempest_jerkin_of_still_air` |
+| armor | Studded Brigandine | Thousand-Nail Vest | `u_thousand_nail_vest` | Rainwall, Brigandine of the Last Volley | `u_rainwall_brigandine_of_the_last_volley` |
+| armor | Ranger's Leathers | Hartshadow Leathers | `u_hartshadow_leathers` | Greenwood Ghost, Hide of the Unseen Trail | `u_greenwood_ghost_hide_of_the_unseen_trail` |
+| armor | Hunter's Harness | Whitefang Rig | `u_whitefang_rig` | Apex Covenant, Harness of the First Hunt | `u_apex_covenant_harness_of_the_first_hunt` |
+| armor | Beastpelt | Moonclaw Pelt | `u_moonclaw_pelt` | Winterking's Mantle | `u_winterking_mantle` |
+| boots | Piercer's Cleats | Needleheel | `u_needleheel` | Groundsplit, Cleats of the Falling Star | `u_groundsplit_cleats_of_the_falling_star` |
+| boots | Windstriders | Kestrel Steps | `u_kestrel_steps` | Horizonless, Boots That Outran the Gale | `u_horizonless_boots_that_outran_the_gale` |
+| boots | Marksman's Stance | Deadstill Boots | `u_deadstill_boots` | Truefoot, Stance of the Final Arrow | `u_truefoot_stance_of_the_final_arrow` |
+| boots | Wardedsole | Hexwalker Soles | `u_hexwalker_soles` | Safe Passage, Boots Beyond the Curse | `u_safe_passage_boots_beyond_the_curse` |
+| boots | Trailboots | Wayfinder Treads | `u_wayfinder_treads` | Last Trail, Boots at the World's Edge | `u_last_trail_boots_at_the_worlds_edge` |
+| charm | Fletcher's Token | Blackshaft Token | `u_blackshaft_token` | First Arrow, Mark of the Empty Sky | `u_first_arrow_mark_of_the_empty_sky` |
+| charm | Windfeather | Stormpinion | `u_stormpinion` | Breath of the High Wind | `u_breath_of_the_high_wind` |
+| charm | Hunter's Totem | Stag-Eye Totem | `u_stag_eye_totem` | Horned Moon, Totem of the Old Hunt | `u_horned_moon_totem_of_the_old_hunt` |
+| charm | Stonebark Ward | Cairnseed Ward | `u_cairnseed_ward` | Elderwall, Ward of the Walking Wood | `u_elderwall_ward_of_the_walking_wood` |
+| charm | Greenheart Idol | Springcore Idol | `u_springcore_idol` | Everwild, Heart of the First Grove | `u_everwild_heart_of_the_first_grove` |
+
+### Assassin armor, boots and charms
+
+| Slot | Shape | Named A | A file key | Named S | S file key |
+|---|---|---|---|---|---|
+| armor | Shadowveil Cloak | Knife-Shadow Cloak | `u_knife_shadow_cloak` | Eclipse's Hem, Cloak of No Witness | `u_eclipses_hem_cloak_of_no_witness` |
+| armor | Warded Mantle | Nine-Seal Mantle | `u_nine_seal_mantle` | Unanswerable, Mantle of the Closed Door | `u_unanswerable_mantle_of_the_closed_door` |
+| armor | Gossamer Cloak | Widowglass Veil | `u_widowglass_veil` | Pale Web, Cloak Between Heartbeats | `u_pale_web_cloak_between_heartbeats` |
+| armor | Nightsilk Wrap | Red Fold | `u_red_fold` | Last Shadow, Wrap of the Absent Hand | `u_last_shadow_wrap_of_the_absent_hand` |
+| armor | Verdant Shroud | Thornshade Shroud | `u_thornshade_shroud` | Green Silence, Shroud of the Hollow Grove | `u_green_silence_shroud_of_the_hollow_grove` |
+| boots | Slipsteps | Mothstep | `u_mothstep` | No Footfall, Shoes of the Empty Room | `u_no_footfall_shoes_of_the_empty_room` |
+| boots | Prowlers | Wallcat Boots | `u_wallcat_boots` | High Hunt, Prowlers Above the Moon | `u_high_hunt_prowlers_above_the_moon` |
+| boots | Venomtread | Glassfang Treads | `u_glassfang_treads` | Last Dose, Boots of the Perfect Poison | `u_last_dose_boots_of_the_perfect_poison` |
+| boots | Ironsole Wraps | Quiet Anvil Wraps | `u_quiet_anvil_wraps` | Weightless Iron, Soles That Made No Sound | `u_weightless_iron_soles_that_made_no_sound` |
+| boots | Grave Treads | Pale Heel | `u_pale_heel` | Afterstep, Treads of the Returning Dead | `u_afterstep_treads_of_the_returning_dead` |
+| charm | Killer's Mark | Red Witness | `u_red_witness` | Final Name, Mark of the Inevitable | `u_final_name_mark_of_the_inevitable` |
+| charm | Poisoner's Vial | Green Secret | `u_green_secret` | Queen's Kiss, Vial of the Last Breath | `u_queens_kiss_vial_of_the_last_breath` |
+| charm | Ghostlight Charm | Lantern for None | `u_lantern_for_none` | Pale Guest, Light That Knows the Dead | `u_pale_guest_light_that_knows_the_dead` |
+| charm | Bloodoath Cord | Knotted Debt | `u_knotted_debt` | Never Broken, Cord of the First Betrayal | `u_never_broken_cord_of_the_first_betrayal` |
+| charm | Wraithbone Fetish | Hollow Finger | `u_hollow_finger` | Bone Whisper, Fetish of the Unremembered | `u_bone_whisper_fetish_of_the_unremembered` |
+
+### Mage armor, boots and charms
+
+| Slot | Shape | Named A | A file key | Named S | S file key |
+|---|---|---|---|---|---|
+| armor | Silk Vestments | Equation Robe | `u_equation_robe` | White Theorem, Vestments of Proof | `u_white_theorem_vestments_of_proof` |
+| armor | Runeplate Robe | Hexwall Cassock | `u_hexwall_cassock` | Axiom Guard, Robe of Nine Locks | `u_axiom_guard_robe_of_nine_locks` |
+| armor | Featherweave Robe | Skyquill Robe | `u_skyquill_robe` | Zero Weight, Raiment Above Gravity | `u_zero_weight_raiment_above_gravity` |
+| armor | Starweave Robe | Comet Sash | `u_comet_sash` | Eventide, Robe of the Last Constellation | `u_eventide_robe_of_the_last_constellation` |
+| armor | Earthen Robe | Faultscribe Robe | `u_faultscribe_robe` | Worldmantle, Vestment of the First Stone | `u_worldmantle_vestment_of_the_first_stone` |
+| boots | Starstep | Comet Heel | `u_comet_heel` | Orbitless, Steps Between Stars | `u_orbitless_steps_between_stars` |
+| boots | Levitation Slippers | Cloudkiss Slippers | `u_cloudkiss_slippers` | Ascendant, Slippers That Never Landed | `u_ascendant_slippers_that_never_landed` |
+| boots | Sigil Sandals | Circlewalker Sandals | `u_circlewalker_sandals` | Closed Form, Sandals of the Perfect Rune | `u_closed_form_sandals_of_the_perfect_rune` |
+| boots | Wardstone Shoes | Bastion Shoes | `u_bastion_shoes` | No Entry, Shoes of the Uncrossed Line | `u_no_entry_shoes_of_the_uncrossed_line` |
+| boots | Rootbound Sandals | Greenstride | `u_greenstride` | Worldroot Steps | `u_worldroot_steps` |
+| charm | Arcane Orb | Thesis Orb | `u_thesis_orb` | Singularity, Orb of the Unsolved | `u_singularity_orb_of_the_unsolved` |
+| charm | Starshard | Comet Splinter | `u_comet_splinter` | First Star's Tooth | `u_first_stars_tooth` |
+| charm | Aegis Crystal | Mirror Ward | `u_mirror_ward` | Absolute, Crystal of the Final Barrier | `u_absolute_crystal_of_the_final_barrier` |
+| charm | Zephyr Sigil | Gale Script | `u_gale_script` | Breathless Seal | `u_breathless_seal` |
+| charm | Lifebloom Pendant | Spring Axiom | `u_spring_axiom` | First Bloom, Pendant Before Winter | `u_first_bloom_pendant_before_winter` |
+
+### Paladin armor, boots and charms
+
+| Slot | Shape | Named A | A file key | Named S | S file key |
+|---|---|---|---|---|---|
+| armor | Templar Plate | Blue Oath Cuirass | `u_blue_oath_cuirass` | Covenant Crownplate | `u_covenant_crownplate` |
+| armor | Blessed Plate | Rose Chapel Plate | `u_rose_chapel_plate` | Noonheart, Armor of First Light | `u_noonheart_armor_of_first_light` |
+| armor | Vigil Halfplate | Watcher's Halfplate | `u_watchers_halfplate` | Unblinking, Plate of the Last Vigil | `u_unblinking_plate_of_the_last_vigil` |
+| armor | Zealot Harness | Red Doctrine | `u_red_doctrine` | Martyrfire Harness | `u_martyrfire_harness` |
+| armor | Sanctified Bulwark | Gate-Shrine Armor | `u_gate_shrine_armor` | Holy City, Bulwark of the Walking Cathedral | `u_holy_city_bulwark_of_the_walking_cathedral` |
+| boots | Zealot's Cleats | Redspur Cleats | `u_redspur_cleats` | Fervor, Steps of Unending Charge | `u_fervor_steps_of_unending_charge` |
+| boots | Sabatons of the Oath | Vowbound Sabatons | `u_vowbound_sabatons` | Ever Oath, Feet of the Faithful | `u_ever_oath_feet_of_the_faithful` |
+| boots | Vigil Steps | Nightwatch Steps | `u_nightwatch_steps` | Dawnless Watch, Boots That Never Slept | `u_dawnless_watch_boots_that_never_slept` |
+| boots | Radiant Greaves | Solarch Greaves | `u_solarch_greaves` | Noonwalker Greaves | `u_noonwalker_greaves` |
+| boots | Pilgrim's Resolve | Roadworn Promise | `u_roadworn_promise` | Final Mile, Boots Beyond the Shrine | `u_final_mile_boots_beyond_the_shrine` |
+| charm | Reliquary | Saint's Window | `u_saints_window` | House of Light, Reliquary Without Doors | `u_house_of_light_reliquary_without_doors` |
+| charm | Sunburst Icon | Dawn Coin | `u_dawn_coin` | Unsetting, Icon of the First Sun | `u_unsetting_icon_of_the_first_sun` |
+| charm | Judgment Sigil | White Verdict | `u_white_verdict` | Last Measure, Seal of Perfect Justice | `u_last_measure_seal_of_perfect_justice` |
+| charm | Swiftvow Cord | Red Haste Knot | `u_red_haste_knot` | First to Answer, Cord of Immediate Oath | `u_first_to_answer_cord_of_immediate_oath` |
+| charm | Oathkeeper's Seal | Broken King's Seal | `u_broken_kings_seal` | Never Forsworn, Seal That Binds the Dawn | `u_never_forsworn_seal_that_binds_the_dawn` |
+
+### Warlock armor, boots and charms
+
+| Slot | Shape | Named A | A file key | Named S | S file key |
+|---|---|---|---|---|---|
+| armor | Voidsilk Robe | Black Equation Robe | `u_black_equation_robe` | Event Horizon, Vestment of No Return | `u_event_horizon_vestment_of_no_return` |
+| armor | Bonemail | Pale Covenant | `u_pale_covenant` | Ossuary King, Mail of the First Grave | `u_ossuary_king_mail_of_the_first_grave` |
+| armor | Shadeweave Robe | Mothshade Robe | `u_mothshade_robe` | The Shadow That Remained | `u_the_shadow_that_remained` |
+| armor | Ruinweave | Broken Law Vestment | `u_broken_law_vestment` | Catastrophe Script | `u_catastrophe_script` |
+| armor | Bloodpact Vestment | Red Contract | `u_red_contract` | Last Pulse, Vestment of the Final Debt | `u_last_pulse_vestment_of_the_final_debt` |
+| boots | Ruinstep | Faultwalker | `u_faultwalker` | Worldbreak Treads | `u_worldbreak_treads` |
+| boots | Shadowstep Wraps | Hollow Step | `u_hollow_step` | Unseen Road | `u_unseen_road` |
+| boots | Hexcarved Treads | Nine-Hex Boots | `u_nine_hex_boots` | Final Curse Treads | `u_final_curse_treads` |
+| boots | Bonewalkers | Pale March | `u_pale_march` | Dead Road, Boots of Returning Kings | `u_dead_road_boots_of_returning_kings` |
+| boots | Gravebound Boots | Chainwake | `u_chainwake` | No Release, Boots of the Bound Dead | `u_no_release_boots_of_the_bound_dead` |
+| charm | Soul Fetish | Quiet Passenger | `u_quiet_passenger` | Soulstar, Fetish of the Last Breath | `u_soulstar_fetish_of_the_last_breath` |
+| charm | Cursed Idol | Black Oracle | `u_black_oracle` | Nameless God, Idol Beneath the Throne | `u_nameless_god_idol_beneath_the_throne` |
+| charm | Ward of Ash | Cinder Seal | `u_cinder_seal` | Ashen Law, Ward After All Fires | `u_ashen_law_ward_after_all_fires` |
+| charm | Umbral Cord | Night Knot | `u_night_knot` | Endless Shade, Cord Around the Moon | `u_endless_shade_cord_around_the_moon` |
+| charm | Heartcage | Vein Prison | `u_vein_prison` | Last Heart, Cage That Beats in Darkness | `u_last_heart_cage_that_beats_in_darkness` |
+
 All file keys resolve to `game/assets/icons/<file key>.png`.
 
 ## Passives — shipped 2026-07-27
@@ -422,3 +547,9 @@ not yet roll named non-weapon uniques.
   B/A/S variants and 180 independent named designs. It used the same chroma
   removal, alpha-aware LANCZOS normalization and gamma 0.78 compensation. The
   Paladin pants source received a targeted no-boots correction before slicing.
+- The armor, boots and charms slice adds another 90 neutral families, 270
+  authored B/A/S variants and 180 independent named designs. Every armor icon
+  is one torso garment, every boots icon is one matched pair, and every charm
+  icon is one compact talisman. The Warlock finish used five-family batch
+  sheets with deterministic extraction and border-component cleanup before the
+  standard chroma despill and 32 × 32 normalization.

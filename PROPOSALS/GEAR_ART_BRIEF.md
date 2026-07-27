@@ -339,3 +339,37 @@ cuff rather than drifting into attached boots or feet.
 The named designs are intentionally an art/data handoff. Runtime named-unique
 roll support currently exists only for weapons, so this pass does not invent
 non-weapon stats, passives or drop behavior.
+
+### 2026-07-27 — armor, boots and charms slice
+
+- Tier-2 family sprites: **90**
+- Tier-1 B / A / S sprites: **270**
+- Named A / S unique concepts: **180**
+- Slice total: **540 assets**
+- Completed classes: Warrior, Archer, Assassin, Mage, Paladin and Warlock
+- Shape mappings: all 90 armor, boots and charm nouns wired in
+  `Art.GEAR_SHAPES`
+- Unique handoff: [`GEAR_UNIQUE_ART_MANIFEST.md`](GEAR_UNIQUE_ART_MANIFEST.md)
+
+Each matrix is arranged family / B / A / S / named-A / named-S. Armor contains
+one torso garment, boots contain one matched pair, and charms contain one
+compact talisman:
+
+| Class | Armor | Boots | Charms |
+|---|---|---|---|
+| Warrior | [`armor`](GEAR_ART_WARRIOR_ARMOR_PREVIEW.png) | [`boots`](GEAR_ART_WARRIOR_BOOTS_PREVIEW.png) | [`charms`](GEAR_ART_WARRIOR_CHARMS_PREVIEW.png) |
+| Archer | [`armor`](GEAR_ART_ARCHER_ARMOR_PREVIEW.png) | [`boots`](GEAR_ART_ARCHER_BOOTS_PREVIEW.png) | [`charms`](GEAR_ART_ARCHER_CHARMS_PREVIEW.png) |
+| Assassin | [`armor`](GEAR_ART_ASSASSIN_ARMOR_PREVIEW.png) | [`boots`](GEAR_ART_ASSASSIN_BOOTS_PREVIEW.png) | [`charms`](GEAR_ART_ASSASSIN_CHARMS_PREVIEW.png) |
+| Mage | [`armor`](GEAR_ART_MAGE_ARMOR_PREVIEW.png) | [`boots`](GEAR_ART_MAGE_BOOTS_PREVIEW.png) | [`charms`](GEAR_ART_MAGE_CHARMS_PREVIEW.png) |
+| Paladin | [`armor`](GEAR_ART_PALADIN_ARMOR_PREVIEW.png) | [`boots`](GEAR_ART_PALADIN_BOOTS_PREVIEW.png) | [`charms`](GEAR_ART_PALADIN_CHARMS_PREVIEW.png) |
+| Warlock | [`armor`](GEAR_ART_WARLOCK_ARMOR_PREVIEW.png) | [`boots`](GEAR_ART_WARLOCK_BOOTS_PREVIEW.png) | [`charms`](GEAR_ART_WARLOCK_CHARMS_PREVIEW.png) |
+
+The batch-sheet workflow was adopted for the Warlock finish: one five-family
+sheet per slot and design tier, followed by deterministic cell extraction,
+border-component cleanup, chroma despill and the same alpha-aware 32 × 32
+normalization used elsewhere. This kept the visual bar unchanged while reducing
+generation turnaround.
+
+Across all seven gear slots, the completed art set now contains **210 family
+sprites, 630 authored B / A / S variants and 420 independent named designs:
+1,260 assets total**, each mirrored byte-for-byte between desktop and mobile.
