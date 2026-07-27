@@ -795,7 +795,7 @@ func gamble(tier: String) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	var grade := Balance.roll_weighted_grade(Balance.boss_weights(chapter_id), rng)
-	var won := Items.roll_gear_of_grade(grade, rng, player.cls)
+	var won := Items.roll_gear_of_grade(grade, rng, player.cls, Story.act_of(chapter_id))
 	player.add_item(won)
 	return won
 

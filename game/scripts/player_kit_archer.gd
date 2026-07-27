@@ -14,7 +14,27 @@ func _use_archer(slot: String, f: float) -> void:
 			if dead or downed or ghost:
 				return
 			_hunt_rhythm_tick()
+			if uniq_crits > 0:
+				# Hart's Breath: the perfect dodge lined these up (rides the
+				# hunt-rhythm next_crit machinery — white-hot muzzle and all).
+				uniq_crits -= 1
+				next_crit = true
 			_shoot(aim_dir(), ability_coeff("a1") * f)
+			var sp := s_passive()
+			if sp == "gale":
+				# Tempest Yew: every 5th Quick Shot looses a free gale-fan.
+				uniq_counter += 1
+				if uniq_counter >= int(uniq_k("every")):
+					uniq_counter = 0
+					game.spawn_text(global_position + Vector2(0, -56), "GALE", Color(0.7, 0.95, 0.8))
+					var gdir := aim_dir()
+					var g_n := int(uniq_k("arrows"))
+					for gi in g_n:
+						var gspread := (float(gi) - (g_n - 1) / 2.0) * 0.14
+						_skin_arrow(_proj(gdir.rotated(gspread), uniq_k("mult") * f, _skin_arrow_tex(), 520.0))
+			elif sp == "foxfire" and uniq_take("foxfire"):
+				# Foxfire String: the fox's twin arrow follows the dodge's shot.
+				_shoot(aim_dir(), ability_coeff("a1") * f * uniq_k("mult"))
 		"a2": _multishot(f)
 		"a3": _tumble()
 		"ult":
@@ -24,6 +44,11 @@ func _use_archer(slot: String, f: float) -> void:
 			storm_time = 3.0
 			storm_tick = 0.0
 			storm_fx = _tfx.duplicate()
+			storm_mult = 1.0
+			if s_passive() == "moonturn":
+				# Moonturn: night returns — the half-strength echo storm is
+				# scheduled off the real one's end (fires in player.gd's clock).
+				uniq_t["moonturn_echo"] = 3.0 + uniq_k("echo_delay")
 			_ult_sfx()
 			# Skin storms announce in their element: Frostfall's sky goes pale
 			# ice, Voidwraith's goes dark violet (Ronin pattern — colour only).
@@ -68,7 +93,13 @@ func _shoot(dir: Vector2, mult: float) -> void:
 		# of the theme tint (the hunt rhythm's 4th shot, or a lined-up shot).
 		col = Color(1.0, 0.95, 0.75)
 	_muzzle(dir, col)
-	_skin_arrow(_proj(dir, mult, _skin_arrow_tex(), 520.0))
+	var p := _proj(dir, mult, _skin_arrow_tex(), 520.0)
+	p.fx["uniq_a1"] = 1  # Quick Shot tag: farsight's long draw reads it at the hit
+	if s_passive() == "bramble" and since_hurt < uniq_k("hurt_window"):
+		# Green Ruin: while the wild has your blood, the arrows grow thorns.
+		p.fx["dot"] = maxf(float(p.fx.get("dot", 0.0)), uniq_k("dot"))
+		p.fx["slow"] = maxf(float(p.fx.get("slow", 0.0)), uniq_k("slow"))
+	_skin_arrow(p)
 
 
 ## Archer skin signature colour: Frostfall looses ice, Voidwraith looses
@@ -154,11 +185,14 @@ func _multishot(f := 1.0) -> void:
 	var dir := aim_dir()
 	_muzzle(dir, _skin_arrow_col(_tcolor if _themed else Color(0.9, 1.0, 0.6)))
 	var count := int(_tfx.get("knives", 5))
+	if s_passive() == "warhorn":
+		count += int(uniq_k("extra"))  # Hornsong: the horn calls a wider volley
 	var step := 0.05 if _tfx.get("narrow", 0) else float(_tfx.get("spread", 0.16))
 	for i in count:
 		var spread := (float(i) - (count - 1) / 2.0) * step
 		var p := _proj(dir.rotated(spread), ability_coeff("a2") * f, _skin_arrow_tex(), 520.0)
-		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+		# Siegebough: the volley punches straight through its victims.
+		p.pierce = p.pierce or bool(_tfx.get("pierce", 0)) or s_passive() == "siegebolt"
 		_skin_arrow(p)
 
 
@@ -171,6 +205,7 @@ func _tumble() -> void:
 	# the reposition so an average pilot still has margin, not a wall.
 	hurt_cd = maxf(hurt_cd, 0.1)
 	hurt_was_heavy = true  # the perfect-dodge window blocks heavy telegraph hits too
+	tumble_perfect_t = 0.1  # hartsbreath reads this exact window (take_damage)
 	dodge_time = rider("a3", "eva_secs")
 	dodge_amt = rider("a3", "eva")
 	if tumble_dr > 0.0:
@@ -580,7 +615,7 @@ func _storm_strike() -> void:
 	# (the Consecration save-restore idiom).
 	var saved := _tfx
 	_tfx = storm_fx
-	hit_enemy(e, ability_coeff("ult"), eff)
+	hit_enemy(e, ability_coeff("ult") * storm_mult, eff)
 	_tfx = saved
 
 
@@ -589,7 +624,7 @@ func _apply_archer_storm_hit(enemy: Enemy) -> void:
 	effects["aoe"] = true
 	var saved := _tfx
 	_tfx = storm_fx
-	hit_enemy(enemy, ability_coeff("ult"), effects)
+	hit_enemy(enemy, ability_coeff("ult") * storm_mult, effects)
 	_tfx = saved
 
 

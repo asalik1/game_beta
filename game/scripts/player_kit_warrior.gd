@@ -10,12 +10,42 @@ func _use_warrior(slot: String, f: float) -> void:
 			# (see _melee_arc variants).
 			var v := cleave_seq
 			cleave_seq = (cleave_seq + 1) % 3
+			var sp := s_passive()
+			var cleave_mult: float = ability_coeff("a1") * f
+			var cleave_eff := {"stagger": 0.35, "knock": 330.0}
+			if sp == "dirge":
+				cleave_mult *= 1.0 + uniq_k("dmg")  # Gravesong: the dirge swings heavy
+			var decree := false
+			if sp == "decree":
+				# Crownspike: the cycle's 3rd cut is the DECREE — a heavier
+				# thrust that ignores armor outright (earned tempo, hunt-rhythm
+				# pattern; the crack in the plate reads on the counter's beat).
+				uniq_counter += 1
+				if uniq_counter >= 3:
+					uniq_counter = 0
+					decree = true
+					cleave_mult *= uniq_k("mult")
+					cleave_eff["pen_ignore"] = 1.0
+					cleave_eff["stagger"] = uniq_k("stagger")
+			if sp == "horizon" and uniq_take("horizon"):
+				cleave_eff["force_crit"] = 1  # Red Horizon: the dodge lined it up
 			# Sync the cut to the swing's contact frame — the sword windup means
 			# FX/damage on the input frame read ahead of the animation.
 			await get_tree().create_timer(swing_delay(Balance.WARRIOR_SWING_DELAY)).timeout
 			if dead or downed or ghost:
 				return
-			_melee_arc(ability_coeff("a1") * f, 96.0, "slash", {"stagger": 0.35, "knock": 330.0}, "swing", "sword", v)
+			if decree:
+				game.spawn_text(global_position + Vector2(0, -60), "DECREE", Color(0.95, 0.8, 0.5))
+				game.sfx("stab", 0.9)
+			_melee_arc(cleave_mult, 96.0, "slash", cleave_eff, "swing", "sword", v)
+			if sp == "outrider" and uniq_take("outrider"):
+				# Ashrider: ride the opening — the cut comes again, mirrored
+				# (the fury wave2 pattern at full weight).
+				var out_mult := cleave_mult
+				var out_v := 2 - v
+				get_tree().create_timer(0.13).timeout.connect(func() -> void:
+					if not dead:
+						_melee_arc(out_mult, 96.0, "slash", {"stagger": 0.2}, "swing", "sword", out_v))
 			if skin == "dreadknight":
 				# A physical soul-cut rides the contact frame, rather than a red base
 				# slash: the harvested spirits make the Blood Oath readable at a glance.
@@ -68,8 +98,21 @@ func _use_warrior(slot: String, f: float) -> void:
 			var charge_from := global_position
 			# The ram parks you in the boss's face — a landing i-frame so the
 			# gap-close itself isn't punished (round 44).
+			var bash_eff := {"stun": rider("a2", "stun"), "knock": 220.0}
+			if s_passive() == "pennon":
+				# The Red Pennon: everything rammed is SUNDERED — armor torn open.
+				bash_eff["shred"] = uniq_k("shred")
+				bash_eff["shred_cap"] = uniq_k("shred")
+				bash_eff["shred_dur"] = uniq_k("shred_dur")
+			elif s_passive() == "thegate":
+				# The Gate That Walks: the Bash raises the Gate — a short massive
+				# guard whose counter-cuts land in _uniq_on_hit_taken.
+				theme_guard_time = maxf(theme_guard_time, uniq_k("dur"))
+				theme_guard_amt = maxf(theme_guard_amt, uniq_k("guard"))
+				uniq_t["thegate"] = uniq_k("dur")
+				game.spawn_text(global_position + Vector2(0, -60), "THE GATE", Color(0.75, 0.85, 1.0))
 			_dash_strike(170.0 * float(_tfx.get("dash_mult", 1.0)), ability_coeff("a2") * f,
-				{"stun": rider("a2", "stun"), "knock": 220.0}, 0.0, rider("a2", "iframe"), true)
+				bash_eff, 0.0, rider("a2", "iframe"), true)
 			var charge_col := _tcolor if _themed else Color(0.85, 0.85, 0.95)
 			if skin == "dreadknight":
 				# Dreadknight: the ram leaves a wake of dread — solid blood-dark
@@ -90,7 +133,22 @@ func _use_warrior(slot: String, f: float) -> void:
 				_ring_fx(global_position, _tcolor, 130.0)
 				for e in _enemies_within(global_position, 120.0):
 					hit_enemy(e, 0.7 * f, {"stun": 1.0, "aoe": true})
-		"a3": _whirlwind(f)
+		"a3":
+			var wf := f
+			if s_passive() == "dirge":
+				wf *= 1.0 + uniq_k("dmg")  # Gravesong: the cyclone swings heavy too
+			_whirlwind(wf)
+			if s_passive() == "aftershock":
+				# Crownfall: everything falls twice — the ring collapses and
+				# detonates a beat later.
+				var af := wf
+				get_tree().create_timer(uniq_k("delay")).timeout.connect(func() -> void:
+					if dead or downed or ghost:
+						return
+					game.sfx("slam", 0.9)
+					_ring_fx(global_position, Color(0.9, 0.8, 0.6), uniq_k("radius"))
+					for e in _enemies_within(global_position, uniq_k("radius")):
+						hit_enemy(e, ability_coeff("a3") * af * uniq_k("echo"), {"aoe": true, "stagger": uniq_k("stagger")}))
 		"ult":
 			berserk_time = float(_tfx.get("berserk_dur", 8.0))
 			berserk_bonus = float(_tfx.get("berserk_dmg", 0.4))

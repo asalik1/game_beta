@@ -1109,58 +1109,60 @@ static func _gear_shapes(m: Menus, list: VBoxContainer, slot := "") -> void:
 		sl_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# ------------------ visual gallery: this slot, every shape at every grade ------
+	# Draws only ROLLABLE shapes — legacy nouns (retired from SLOT_NAMES /
+	# CLASS_WEAPONS 2026-07-26) stay out of the codex even though their sprites live
+	# on for old saves. Weapons are class-locked, so they group under a class header;
+	# armor/boots/charm are shared, so they list flat.
 	m._lbl(list, "— %sS — %s" % [show_slot.to_upper(), slot_desc[show_slot]], 16, Color(0.95, 0.85, 0.5))
-	for noun in Art.GEAR_SHAPES[show_slot]:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-		_card(list).add_child(row)
-		var tag: String = Items.SHAPE_STYLE.get(noun, {}).get("tag", "")
-		var name_l := m._lbl(row, "%s\n%s" % [noun, tag], 13, Color(0.85, 0.85, 0.9))
-		name_l.custom_minimum_size = Vector2(110, 34)
-		for g in Items.GRADES:
-			var cell := VBoxContainer.new()
-			cell.custom_minimum_size = Vector2(64, 0)
-			row.add_child(cell)
-			var icon := TextureRect.new()
-			icon.texture = Art.item_icon(show_slot, g, noun)
-			# A 32px icon shown at 1:1 in a small cell reads as a sliver — a thin
-			# weapon vanishes. Upscale to a legible box, NEAREST so the pixels
-			# stay crisp instead of blurring.
-			icon.custom_minimum_size = Vector2(56, 56)
-			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			cell.add_child(icon)
-			var gl := Label.new()
-			gl.text = g
-			gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			gl.add_theme_font_size_override("font_size", 12)
-			gl.add_theme_color_override("font_color", Items.GRADE_COLOR[g])
-			cell.add_child(gl)
+	if show_slot == "weapon":
+		for cls in Classes.CLASSES:
+			m._lbl(list, "  %s" % String(Classes.CLASSES[cls]["name"]).to_upper(), 14, Color(0.7, 0.78, 0.95))
+			for noun in Items.CLASS_WEAPONS.get(cls, []):
+				_shape_row(m, list, show_slot, String(noun))
+	else:
+		for noun in Items.SLOT_NAMES[show_slot]:
+			_shape_row(m, list, show_slot, String(noun))
 
 
-## UNIQUES shelf — legacy epic names, the new own-art named uniques, and the
-## class legendaries.
-static func _gear_uniques(m: Menus, list: VBoxContainer) -> void:
-	# --------------------------------------- named epics & legendaries --
-	m._lbl(list, "— EPIC UNIQUES (A) — found in silver and golden chests —", 16, Items.GRADE_COLOR["A"])
-	for slot in Items.SLOTS:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 14)
-		_card(list).add_child(row)
+## One gallery row: shape name + tag, then its icon at every grade.
+static func _shape_row(m: Menus, list: VBoxContainer, slot: String, noun: String) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	_card(list).add_child(row)
+	var tag: String = Items.SHAPE_STYLE.get(noun, {}).get("tag", "")
+	var name_l := m._lbl(row, "%s\n%s" % [noun, tag], 13, Color(0.85, 0.85, 0.9))
+	name_l.custom_minimum_size = Vector2(120, 34)
+	for g in Items.GRADES:
+		var cell := VBoxContainer.new()
+		cell.custom_minimum_size = Vector2(64, 0)
+		row.add_child(cell)
 		var icon := TextureRect.new()
-		icon.texture = Art.item_icon(slot, "A")
+		icon.texture = Art.item_icon(slot, g, noun)
+		# A 32px icon shown at 1:1 in a small cell reads as a sliver — a thin
+		# weapon vanishes. Upscale to a legible box, NEAREST so the pixels
+		# stay crisp instead of blurring.
+		icon.custom_minimum_size = Vector2(56, 56)
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		row.add_child(icon)
-		var l := m._lbl(row, "  ·  ".join(Items.A_NAMES[slot]), 13, Items.GRADE_COLOR["A"])
-		l.custom_minimum_size = Vector2(780, 0)
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		cell.add_child(icon)
+		var gl := Label.new()
+		gl.text = g
+		gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		gl.add_theme_font_size_override("font_size", 12)
+		gl.add_theme_color_override("font_color", Items.GRADE_COLOR[g])
+		cell.add_child(gl)
 
+
+## UNIQUES shelf — the own-art named uniques and the class legendaries.
+static func _gear_uniques(m: Menus, list: VBoxContainer) -> void:
+	# The old "EPIC UNIQUES (A)" block (Items.A_NAMES on a generic slot icon) was
+	# removed 2026-07-26 along with A_NAMES itself — hollow names with no art or
+	# passive, superseded by the own-art NAMED UNIQUES below. Generic A now rolls a
+	# plain prefix+shape name; only these named uniques carry an identity + passive.
 	# ------------------------------------------- named uniques (own art) ---
-	# Unlike the A_NAMES list above (bare names on a generic slot icon), each of
-	# these is its OWN object with its own sprite — so show the sprite. Empty
-	# until a class has entries, rather than printing a hollow header.
 	if not Items.UNIQUES.is_empty():
 		m._lbl(list, "— NAMED UNIQUES — one-off pieces, each its own forging —", 16, Color(1.0, 0.72, 0.45))
-		var ud := m._lbl(list, "A unique is a generic-grade piece that also carries a signature PASSIVE — that passive is the whole difference, and uniques drop more rarely to match. Its own name, its own art. Named A pieces surface in Act 2, named S in Act 3.",
+		var ud := m._lbl(list, "A unique is a generic-grade piece that also carries a signature PASSIVE — that passive is the whole difference, and uniques drop more rarely to match. Its own name, its own art, live the moment you equip it (no awakening quest — that stays a legendary rite). Named A pieces surface in Act 2, named S in Act 3.",
 			13, Color(0.8, 0.82, 0.88))
 		ud.custom_minimum_size = Vector2(880, 0)
 		ud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1183,9 +1185,11 @@ static func _gear_uniques(m: Menus, list: VBoxContainer) -> void:
 				uicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				uicon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				urow.add_child(uicon)
-				var ul := m._lbl(urow, "%s   —   %s %s" % [u["name"], u["grade"], u["noun"]],
+				var ul := m._lbl(urow, "%s   —   %s %s\n★ %s" % [u["name"], u["grade"], u["noun"],
+					Items.PASSIVES.get(String(u.get("passive", "")), "signature passive — in design")],
 					13, Items.GRADE_COLOR[String(u["grade"])])
 				ul.custom_minimum_size = Vector2(780, 0)
+				ul.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	m._lbl(list, "— LEGENDARY (S) — class exclusive, golden chests only —", 16, Items.GRADE_COLOR["S"])
 	var awk := m._lbl(list, "A found or bought legendary keeps its name and top stats, but its signature PASSIVE sleeps — complete your class's short AWAKENING quest to wake it. Once awakened, every legendary of that class you carry is active.", 13, Color(0.85, 0.75, 0.55))

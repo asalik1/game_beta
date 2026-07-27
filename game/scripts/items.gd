@@ -49,17 +49,28 @@ const CLASS_PRIMARY := {
 # Weapon shapes a class can actually be DEALT (round 15: an archer was
 # looting Tomes). Since 2026-07-06 gear is also class-LOCKED at equip
 # (item["cls"]) — a mage cannot wear an assassin's boots.
+# Each class's five matrix weapon shapes (2026-07-26). The pre-matrix nouns
+# (Blade/Bow/Staff/Fang/Hammer/Tome/…) are RETIRED from rolling — kept only in
+# SHAPE_STYLE for old saves and S_GEAR legendary nouns.
 const CLASS_WEAPONS := {
-	"warrior": ["Blade", "Edge", "Claymore", "Pike", "Warblade", "Saber", "Bulwark Blade"],
-	"archer": ["Bow", "Crossbow"],
-	"assassin": ["Fang", "Shuriken"],
-	"mage": ["Staff", "Wand"],
-	"paladin": ["Hammer", "Blade"],
-	"warlock": ["Tome", "Wand"],
+	"warrior":  ["Pike", "Warblade", "Saber", "Bulwark Blade", "Claymore"],
+	"archer":   ["Warbow", "Longbow", "Hunting Bow", "Thornbow", "Recurve"],
+	"assassin": ["Stiletto", "Shuriken", "Glasswing", "Warded Fang", "Cleaver"],
+	"mage":     ["Scepter", "Starfocus", "Zephyr Rod", "Bloomstaff", "Greatstaff"],
+	"paladin":  ["Lance", "Oathflail", "Duelist's Blade", "Aegis Mace", "Warmaul"],
+	"warlock":  ["Grimoire", "Hexblade", "Whisper Rod", "Pactshield Codex", "Grimheart Staff"],
 }
 
+# SLOT_NAMES["weapon"] = the union of every class's rollable weapon shapes (the
+# classless fallback pool). Armor/boots/charm are the shared shapes still awaiting
+# their own matrix pass.
 const SLOT_NAMES := {
-	"weapon": ["Blade", "Edge", "Fang", "Shuriken", "Claymore", "Pike", "Warblade", "Saber", "Bulwark Blade", "Bow", "Crossbow", "Staff", "Wand", "Hammer", "Tome"],
+	"weapon": ["Pike", "Warblade", "Saber", "Bulwark Blade", "Claymore",
+		"Warbow", "Longbow", "Hunting Bow", "Thornbow", "Recurve",
+		"Stiletto", "Shuriken", "Glasswing", "Warded Fang", "Cleaver",
+		"Scepter", "Starfocus", "Zephyr Rod", "Bloomstaff", "Greatstaff",
+		"Lance", "Oathflail", "Duelist's Blade", "Aegis Mace", "Warmaul",
+		"Grimoire", "Hexblade", "Whisper Rod", "Pactshield Codex", "Grimheart Staff"],
 	"armor":  ["Plate", "Mail", "Guard"],
 	"boots":  ["Boots", "Striders", "Treads"],
 	"charm":  ["Charm", "Talisman", "Sigil"],
@@ -88,12 +99,11 @@ const PREFIXES := {
 }
 
 # A-grade items get a unique epic name instead of "prefix + noun".
-const A_NAMES := {
-	"weapon": ["The Ruined King's Sword", "Oathbreaker", "Dawnsplitter", "Widow's Bite", "The Shadow God's Dagger", "Lightbringer", "The Pactkeeper's Grimoire"],
-	"armor":  ["Bulwark of the Last Watch", "Heartguard", "The Unyielding", "Wyrmscale Cuirass", "Faithwall"],
-	"boots":  ["Windrunner Greaves", "Shadowdancer Treads", "Gravewalkers", "Stormchaser Boots", "Pilgrim's Resolve"],
-	"charm":  ["Eye of the Storm", "The Widow's Locket", "Emberheart", "Tear of the Old God", "Sigil of the Broken Pact"],
-}
+# A_NAMES retired 2026-07-26 (owner: only NAMED gear carries a passive/identity;
+# a generic A is just "Dragonforged <shape>"). The old table auto-renamed EVERY A
+# drop to a hollow epic — a pseudo-unique with no passive and no art — which is
+# exactly what named uniques (below) now are for real. Generic A rolls its grade
+# prefix + shape like every other grade.
 
 # S-grade gear is CLASS-EXCLUSIVE: a unique name, and S weapons carry a signature
 # passive ability (implemented in player.gd). Substats roll RANDOMLY like every
@@ -107,27 +117,82 @@ const A_NAMES := {
 # per-grade and family art (`art` -> assets/icons/<art>.png, via Art.icon_for /
 # Art.weapon_tex). Two per shape: one A, one S.
 #
-# THIS TABLE IS THE ART MANIFEST MADE REAL, NOTHING MORE — rows from
-# PROPOSALS/GEAR_UNIQUE_ART_MANIFEST.md so the codex can SHOW these pieces. Three
-# things are deliberately absent, all owner design calls, none the art agent's:
-#   * `bias`    — a unique may exceed the shape budget (cap Sum(bias-1) <= 1.20)
-#   * `passive` — one per unique (240 total); the defining trait, unsized so far
-#   * a DROP SOURCE — roll_item_of cannot emit one yet: generic S opens in Act 2,
-#     named A in Act 2 (rarer), named S in Act 3 (rarest). This also has to SPLIT
-#     the current behaviour, where every A/S drop is already auto-named (A_NAMES /
-#     S_GEAR) so "generic S" does not exist. Wire source + bias + passive together.
-# Only warrior weapons exist so far; the other 110 shapes are unstarted.
+# THE 60 NAMED WEAPON UNIQUES — rows from PROPOSALS/GEAR_UNIQUE_ART_MANIFEST.md,
+# passives assigned 2026-07-27 per PROPOSALS/GEAR_UNIQUE_PASSIVES.md (design
+# approved by owner; magnitudes in Balance.UNIQ are FIRST-PASS placeholders for
+# the dps-bench phase). Still deliberately absent:
+#   * `bias` — a unique may exceed the shape budget (cap Sum(bias-1) <= 1.20);
+#     for now every unique rides its shape's stock bias (the passive is the chase).
+# Drop source: make_unique / roll_item_of's named channels (named A Act 2+,
+# named S Act 3+ — Balance.UNIQUE_*). Armor/boots/charm uniques await their
+# shape matrix.
 const UNIQUES := [
-	{"name": "The Red Pennon", "cls": "warrior", "slot": "weapon", "noun": "Pike", "grade": "A", "art": "u_the_red_pennon"},
-	{"name": "Crownspike, the Last Decree", "cls": "warrior", "slot": "weapon", "noun": "Pike", "grade": "S", "art": "u_crownspike_the_last_decree"},
-	{"name": "Marchbreaker", "cls": "warrior", "slot": "weapon", "noun": "Warblade", "grade": "A", "art": "u_marchbreaker"},
-	{"name": "Throneless, Edge of the Last Host", "cls": "warrior", "slot": "weapon", "noun": "Warblade", "grade": "S", "art": "u_throneless_edge_of_the_last_host"},
-	{"name": "Ashrider", "cls": "warrior", "slot": "weapon", "noun": "Saber", "grade": "A", "art": "u_ashrider"},
-	{"name": "Red Horizon", "cls": "warrior", "slot": "weapon", "noun": "Saber", "grade": "S", "art": "u_red_horizon"},
-	{"name": "Bastion's Tooth", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "A", "art": "u_bastions_tooth"},
-	{"name": "The Gate That Walks", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "S", "art": "u_the_gate_that_walks"},
-	{"name": "Gravesong", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "A", "art": "u_gravesong"},
-	{"name": "Crownfall, the Kingdom's End", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "S", "art": "u_crownfall_the_kingdoms_end"},
+	# --- Warrior weapons ---
+	{"name": "The Red Pennon", "cls": "warrior", "slot": "weapon", "noun": "Pike", "grade": "A", "art": "u_the_red_pennon", "passive": "pennon"},
+	{"name": "Crownspike, the Last Decree", "cls": "warrior", "slot": "weapon", "noun": "Pike", "grade": "S", "art": "u_crownspike_the_last_decree", "passive": "decree"},
+	{"name": "Marchbreaker", "cls": "warrior", "slot": "weapon", "noun": "Warblade", "grade": "A", "art": "u_marchbreaker", "passive": "warpath"},
+	{"name": "Throneless, Edge of the Last Host", "cls": "warrior", "slot": "weapon", "noun": "Warblade", "grade": "S", "art": "u_throneless_edge_of_the_last_host", "passive": "lasthost"},
+	{"name": "Ashrider", "cls": "warrior", "slot": "weapon", "noun": "Saber", "grade": "A", "art": "u_ashrider", "passive": "outrider"},
+	{"name": "Red Horizon", "cls": "warrior", "slot": "weapon", "noun": "Saber", "grade": "S", "art": "u_red_horizon", "passive": "horizon"},
+	{"name": "Bastion's Tooth", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "A", "art": "u_bastions_tooth", "passive": "reprisal"},
+	{"name": "The Gate That Walks", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "S", "art": "u_the_gate_that_walks", "passive": "thegate"},
+	{"name": "Gravesong", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "A", "art": "u_gravesong", "passive": "dirge"},
+	{"name": "Crownfall, the Kingdom's End", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "S", "art": "u_crownfall_the_kingdoms_end", "passive": "aftershock"},
+	# --- Archer weapons ---
+	{"name": "Siegebough", "cls": "archer", "slot": "weapon", "noun": "Warbow", "grade": "A", "art": "u_siegebough", "passive": "siegebolt"},
+	{"name": "Tempest Yew, Bow of the Last Gale", "cls": "archer", "slot": "weapon", "noun": "Warbow", "grade": "S", "art": "u_tempest_yew_bow_of_the_last_gale", "passive": "gale"},
+	{"name": "Far-Witness", "cls": "archer", "slot": "weapon", "noun": "Longbow", "grade": "A", "art": "u_far_witness", "passive": "farsight"},
+	{"name": "Skyline, the Arrow Before Dawn", "cls": "archer", "slot": "weapon", "noun": "Longbow", "grade": "S", "art": "u_skyline_the_arrow_before_dawn", "passive": "herald"},
+	{"name": "Foxfire String", "cls": "archer", "slot": "weapon", "noun": "Hunting Bow", "grade": "A", "art": "u_foxfire_string", "passive": "foxfire"},
+	{"name": "The White Hart's Last Breath", "cls": "archer", "slot": "weapon", "noun": "Hunting Bow", "grade": "S", "art": "u_the_white_harts_last_breath", "passive": "hartsbreath"},
+	{"name": "Briar Covenant", "cls": "archer", "slot": "weapon", "noun": "Thornbow", "grade": "A", "art": "u_briar_covenant", "passive": "briar"},
+	{"name": "Green Ruin, Root of the First Wild", "cls": "archer", "slot": "weapon", "noun": "Thornbow", "grade": "S", "art": "u_green_ruin_root_of_the_first_wild", "passive": "bramble"},
+	{"name": "Hornsong", "cls": "archer", "slot": "weapon", "noun": "Recurve", "grade": "A", "art": "u_hornsong", "passive": "warhorn"},
+	{"name": "Moonturn, Bow of Returning Night", "cls": "archer", "slot": "weapon", "noun": "Recurve", "grade": "S", "art": "u_moonturn_bow_of_returning_night", "passive": "moonturn"},
+	# --- Assassin weapons ---
+	{"name": "Silkneedle", "cls": "assassin", "slot": "weapon", "noun": "Stiletto", "grade": "A", "art": "u_silkneedle", "passive": "gapfinder"},
+	{"name": "Quietus, the King's Final Thought", "cls": "assassin", "slot": "weapon", "noun": "Stiletto", "grade": "S", "art": "u_quietus_the_kings_final_thought", "passive": "quietus"},
+	{"name": "Widow's Compass", "cls": "assassin", "slot": "weapon", "noun": "Shuriken", "grade": "A", "art": "u_widows_compass", "passive": "compass"},
+	{"name": "End of Night", "cls": "assassin", "slot": "weapon", "noun": "Shuriken", "grade": "S", "art": "u_end_of_night", "passive": "midnight"},
+	{"name": "Mothknife", "cls": "assassin", "slot": "weapon", "noun": "Glasswing", "grade": "A", "art": "u_mothknife", "passive": "mothdust"},
+	{"name": "Pale Flight, Blade Between Heartbeats", "cls": "assassin", "slot": "weapon", "noun": "Glasswing", "grade": "S", "art": "u_pale_flight_blade_between_heartbeats", "passive": "heartbeat"},
+	{"name": "Parryshade", "cls": "assassin", "slot": "weapon", "noun": "Warded Fang", "grade": "A", "art": "u_parryshade", "passive": "parry"},
+	{"name": "The Hand That Refused Death", "cls": "assassin", "slot": "weapon", "noun": "Warded Fang", "grade": "S", "art": "u_the_hand_that_refused_death", "passive": "refusal"},
+	{"name": "Red Arithmetic", "cls": "assassin", "slot": "weapon", "noun": "Cleaver", "grade": "A", "art": "u_red_arithmetic", "passive": "arithmetic"},
+	{"name": "Headsman's Mercy", "cls": "assassin", "slot": "weapon", "noun": "Cleaver", "grade": "S", "art": "u_headsmans_mercy", "passive": "headsman"},
+	# --- Mage weapons ---
+	{"name": "Wardpiercer", "cls": "mage", "slot": "weapon", "noun": "Scepter", "grade": "A", "art": "u_wardpiercer", "passive": "wardcrack"},
+	{"name": "Axiom, Scepter of the Broken Law", "cls": "mage", "slot": "weapon", "noun": "Scepter", "grade": "S", "art": "u_axiom_scepter_of_the_broken_law", "passive": "axiom"},
+	{"name": "Comet's Eye", "cls": "mage", "slot": "weapon", "noun": "Starfocus", "grade": "A", "art": "u_comets_eye", "passive": "cometfall"},
+	{"name": "The Ninth Star, Unblinking", "cls": "mage", "slot": "weapon", "noun": "Starfocus", "grade": "S", "art": "u_the_ninth_star_unblinking", "passive": "ninthstar"},
+	{"name": "Quickweather", "cls": "mage", "slot": "weapon", "noun": "Zephyr Rod", "grade": "A", "art": "u_quickweather", "passive": "squall"},
+	{"name": "Breathless, Rod of the Empty Sky", "cls": "mage", "slot": "weapon", "noun": "Zephyr Rod", "grade": "S", "art": "u_breathless_rod_of_the_empty_sky", "passive": "breathless"},
+	{"name": "Springwake", "cls": "mage", "slot": "weapon", "noun": "Bloomstaff", "grade": "A", "art": "u_springwake", "passive": "springwake"},
+	{"name": "Verdancy, Staff of the Worldroot", "cls": "mage", "slot": "weapon", "noun": "Bloomstaff", "grade": "S", "art": "u_verdancy_staff_of_the_worldroot", "passive": "worldroot"},
+	{"name": "Atlas Branch", "cls": "mage", "slot": "weapon", "noun": "Greatstaff", "grade": "A", "art": "u_atlas_branch", "passive": "atlas"},
+	{"name": "Firmament, the Heaven-Bearing Staff", "cls": "mage", "slot": "weapon", "noun": "Greatstaff", "grade": "S", "art": "u_firmament_the_heaven_bearing_staff", "passive": "skyfall"},
+	# --- Paladin weapons ---
+	{"name": "Vowspike", "cls": "paladin", "slot": "weapon", "noun": "Lance", "grade": "A", "art": "u_vowspike", "passive": "vow"},
+	{"name": "Noonday, Lance of the Unshadowed", "cls": "paladin", "slot": "weapon", "noun": "Lance", "grade": "S", "art": "u_noonday_lance_of_the_unshadowed", "passive": "noonday"},
+	{"name": "Bell of Censure", "cls": "paladin", "slot": "weapon", "noun": "Oathflail", "grade": "A", "art": "u_bell_of_censure", "passive": "censure"},
+	{"name": "Absolution, the Last Toll", "cls": "paladin", "slot": "weapon", "noun": "Oathflail", "grade": "S", "art": "u_absolution_the_last_toll", "passive": "absolution"},
+	{"name": "Mercy in Measure", "cls": "paladin", "slot": "weapon", "noun": "Duelist's Blade", "grade": "A", "art": "u_mercy_in_measure", "passive": "measure"},
+	{"name": "First Light, Edge of the Vigil", "cls": "paladin", "slot": "weapon", "noun": "Duelist's Blade", "grade": "S", "art": "u_first_light_edge_of_the_vigil", "passive": "vigil"},
+	{"name": "Chapel Knell", "cls": "paladin", "slot": "weapon", "noun": "Aegis Mace", "grade": "A", "art": "u_chapel_knell", "passive": "knell"},
+	{"name": "The Bastion's Answer", "cls": "paladin", "slot": "weapon", "noun": "Aegis Mace", "grade": "S", "art": "u_the_bastions_answer", "passive": "answer"},
+	{"name": "Pilgrim's Burden", "cls": "paladin", "slot": "weapon", "noun": "Warmaul", "grade": "A", "art": "u_pilgrims_burden", "passive": "burden"},
+	{"name": "Dawnfall, Hammer of the Final Oath", "cls": "paladin", "slot": "weapon", "noun": "Warmaul", "grade": "S", "art": "u_dawnfall_hammer_of_the_final_oath", "passive": "dawnfall"},
+	# --- Warlock weapons ---
+	{"name": "Ink of Teeth", "cls": "warlock", "slot": "weapon", "noun": "Grimoire", "grade": "A", "art": "u_ink_of_teeth", "passive": "inkteeth"},
+	{"name": "The Book That Remembers You", "cls": "warlock", "slot": "weapon", "noun": "Grimoire", "grade": "S", "art": "u_the_book_that_remembers_you", "passive": "remembrance"},
+	{"name": "Debtcollector", "cls": "warlock", "slot": "weapon", "noun": "Hexblade", "grade": "A", "art": "u_debtcollector", "passive": "collection"},
+	{"name": "Black Clause, Edge of the Final Bargain", "cls": "warlock", "slot": "weapon", "noun": "Hexblade", "grade": "S", "art": "u_black_clause_edge_of_the_final_bargain", "passive": "clause"},
+	{"name": "Hushbone", "cls": "warlock", "slot": "weapon", "noun": "Whisper Rod", "grade": "A", "art": "u_hushbone", "passive": "hush"},
+	{"name": "The Name Beneath All Names", "cls": "warlock", "slot": "weapon", "noun": "Whisper Rod", "grade": "S", "art": "u_the_name_beneath_all_names", "passive": "truename"},
+	{"name": "Bound Witness", "cls": "warlock", "slot": "weapon", "noun": "Pactshield Codex", "grade": "A", "art": "u_bound_witness", "passive": "witness"},
+	{"name": "The Cover Between Worlds", "cls": "warlock", "slot": "weapon", "noun": "Pactshield Codex", "grade": "S", "art": "u_the_cover_between_worlds", "passive": "thecover"},
+	{"name": "Veinroot", "cls": "warlock", "slot": "weapon", "noun": "Grimheart Staff", "grade": "A", "art": "u_veinroot", "passive": "veinroot"},
+	{"name": "Red Reliquary, Staff of the Last Pulse", "cls": "warlock", "slot": "weapon", "noun": "Grimheart Staff", "grade": "S", "art": "u_red_reliquary_staff_of_the_last_pulse", "passive": "lastpulse"},
 ]
 
 
@@ -140,39 +205,48 @@ static func uniques_for(cls: String) -> Array:
 	return out
 
 
+# S_GEAR — the class-signature legendaries. The weapon `noun` was DROPPED
+# 2026-07-26: it used to force each S weapon onto a legacy shape (Blade/Bow/…),
+# the last thing keeping those shapes alive. The passives are ability-based, not
+# shape-based, so a legendary now rides whatever matrix shape rolled and keeps its
+# name + signature passive. (2026-07-27) The interim "every S is a legendary"
+# behaviour is GONE: the legendary is now the class's 6th named-S — a rare
+# Act-2+ roll through roll_item_of's legendary channel (Balance.LEGEND_S_CHANCE),
+# same power tier as the named-S uniques, sole keeper of the awakening quest.
+# Generic S drops passive-less (PROPOSALS/GEAR_UNIQUE_PASSIVES.md §9).
 const S_GEAR := {
 	"warrior": {
-		"weapon": {"name": "Kingsbane, Edge of the Fallen Crown", "passive": "kingsblade", "noun": "Blade"},
+		"weapon": {"name": "Kingsbane, Edge of the Fallen Crown", "passive": "kingsblade"},
 		"armor":  {"name": "Aegis of the Mountain"},
 		"boots":  {"name": "Earthshaker Sabatons"},
 		"charm":  {"name": "Warlord's Iron Oath"},
 	},
 	"archer": {
-		"weapon": {"name": "Stormcaller, Bow of the Tempest", "passive": "windward", "noun": "Bow"},
+		"weapon": {"name": "Stormcaller, Bow of the Tempest", "passive": "windward"},
 		"armor":  {"name": "Cloak of a Thousand Leaves"},
 		"boots":  {"name": "Zephyr's Grace"},
 		"charm":  {"name": "The Hawk God's Eye"},
 	},
 	"mage": {
-		"weapon": {"name": "Heart of the Phoenix", "passive": "wellspring", "noun": "Staff"},
+		"weapon": {"name": "Heart of the Phoenix", "passive": "wellspring"},
 		"armor":  {"name": "Robes of the Infinite"},
 		"boots":  {"name": "Steps of the Void"},
 		"charm":  {"name": "The Archmage's Folly"},
 	},
 	"assassin": {
-		"weapon": {"name": "Nightfang, Kiss of the Abyss", "passive": "mirrorstep", "noun": "Fang"},
+		"weapon": {"name": "Nightfang, Kiss of the Abyss", "passive": "mirrorstep"},
 		"armor":  {"name": "Shroud of Silence"},
 		"boots":  {"name": "Whisperwind"},
 		"charm":  {"name": "The Bloodpact"},
 	},
 	"paladin": {
-		"weapon": {"name": "Dawnbreaker, Hammer of the Highfather", "passive": "dawnbreaker", "noun": "Hammer"},
+		"weapon": {"name": "Dawnbreaker, Hammer of the Highfather", "passive": "dawnbreaker"},
 		"armor":  {"name": "Bulwark of the Dawn"},
 		"boots":  {"name": "Greaves of the Vigil"},
 		"charm":  {"name": "The Highfather's Oath"},
 	},
 	"warlock": {
-		"weapon": {"name": "Grimoire of the Hollow Choir", "passive": "voidmaw", "noun": "Tome"},
+		"weapon": {"name": "Grimoire of the Hollow Choir", "passive": "voidmaw"},
 		"armor":  {"name": "Vestments of the Long Bargain"},
 		"boots":  {"name": "Voidwalkers"},
 		"charm":  {"name": "The First Debt"},
@@ -180,12 +254,82 @@ const S_GEAR := {
 }
 
 const PASSIVES := {
+	# ---- the six S_GEAR class legendaries (awakening-quest gated) ----
 	"kingsblade":  "Cleave hurls a sword wave",
 	"windward":    "Second Wind kicks in after just 1.5s untouched (from 3s)",
 	"wellspring":  "+50% mana regen; Firebolt and (Frost Nova, Blink) cool down 8% faster",
 	"mirrorstep":  "Dashing reflects nearby projectiles and softens AoE damage; during Death Mark, Stab and Fan of Knives WEAVE — both fire at once for a burst",
 	"dawnbreaker": "Judgment calls down a pillar of light (splash + holy burn)",
 	"voidmaw":     "Shadowbolt cools down 8% faster; Void Rift ends with a curse-wave that shoves enemies off you and curses the room",
+	# ---- named-unique signature passives (2026-07-27, live on pickup) ----
+	# Text is the player-facing line on the item card; A-tier BARGAIN drawbacks
+	# are printed in full (no silent effects). Magnitudes live in Balance.UNIQ.
+	# --- warrior ---
+	"pennon":     "Shield Bash SUNDERS everything it rams — their armor is torn open for 4s",
+	"decree":     "Every 3rd Cleave is the DECREE: a heavier thrust that ignores armor outright and staggers",
+	"warpath":    "While Berserk runs, your crits echo a ghost-blade strike",
+	"lasthost":   "Your crits raise the Last Host — a spectral blade strikes again",
+	"outrider":   "When an attack misses you, your next Cleave (2s) strikes twice — BUT Grit never stacks",
+	"horizon":    "Every dodge sharpens the line: your next Cleave is a guaranteed crit, and Shield Bash returns 1.5s sooner",
+	"reprisal":   "Blows that land on you risk the tooth: 30% chance the melee attacker is counter-cut",
+	"thegate":    "Shield Bash raises the Gate: 2.5s of massive guard, and every blow taken is answered with a stagger and a counter-cut",
+	"dirge":      "Cleave and Whirlwind hit 20% harder — BUT Cleave tolls 15% slower",
+	"aftershock": "Everything falls twice: Whirlwind leaves a collapsing ring that detonates a beat later",
+	# --- archer ---
+	"siegebolt":  "Multishot looses siege bolts that punch straight through their victims",
+	"gale":       "Every 5th Quick Shot looses the gale — a free 3-arrow fan rides the shot",
+	"farsight":   "Arrows loosed at distant prey halve its armor",
+	"herald":     "Your first hit on an unwounded enemy is a guaranteed crit and EXPOSES the prey",
+	"foxfire":    "Slipping an attack draws the fox's shot: your next Quick Shot fires twin arrows",
+	"hartsbreath": "A PERFECT dodge grants the Hart's Breath: your next 3 shots are guaranteed crits and Multishot returns at once",
+	"briar":      "Enemies that strike you are briar-lashed (torn + slowed) — BUT Second Wind mends at half strength",
+	"bramble":    "While the wild has your blood (hit within 3s), your arrows grow thorns — and a landed blow vents a rooting burst (6s cd)",
+	"warhorn":    "Multishot fans 7 arrows instead of 5 — BUT takes 1.5s longer to return",
+	"moonturn":   "Night returns: after Arrow Storm ends, a half-strength storm falls again unbidden",
+	# --- assassin ---
+	"gapfinder":  "Stab ignores half the armor of staggered, stunned or slowed prey",
+	"quietus":    "Below 20% health the needle is a verdict: Stab strikes TRUE, and a Stab kill hastens Death Mark 2s",
+	"compass":    "Every knife points the same way: Fan of Knives converges on your prey — BUT loses its spread",
+	"midnight":   "A critical knife doesn't stop: Fan of Knives crits ricochet to a second enemy",
+	"mothdust":   "Slipping a blow shakes dust from the wing: nearby enemies are slowed",
+	"heartbeat":  "Each dodge falls between heartbeats: half of Shadow Dash's remaining cooldown vanishes and the next dash cuts 30% deeper",
+	"parry":      "30% chance to PARRY a melee blow outright and riposte — BUT your Elusive evasion is halved",
+	"refusal":    "Death is refused (90s): a killing blow leaves you at 1 HP, untouchable a breath, blood surge full, Death Mark ready",
+	"arithmetic": "The sum comes due: every 4th Stab lands with cleaver weight — 60% harder, staggering",
+	"headsman":   "Mercy is quick: Stab and Shadow Dash BEHEAD wounded prey outright, and each beheading feeds the blood surge",
+	# --- mage ---
+	"wardcrack":  "Each Firebolt cracks the ward a little wider — stacking armor shred",
+	"axiom":      "The law is broken: 15% of ALL your ability damage resolves as TRUE damage",
+	"cometfall":  "A critical Firebolt bursts like a cometfall — splash damage around the victim",
+	"ninthstar":  "The ninth bolt is the Star: every 9th Firebolt is a guaranteed crit that bursts and cracks the ward",
+	"squall":     "Blink stirs a squall: your next Firebolt after a Blink strikes twice",
+	"breathless": "The sky empties where you stood: evading a hit resets Blink, and the next Blink's shock strikes doubled",
+	"springwake": "The bloom drinks deeper: Frost Nova's restore swells half again, and each enemy caught mends you",
+	"worldroot":  "Your life IS your power: bonus max health feeds your ATK, and Frost Nova ROOTS what it catches",
+	"atlas":      "Meteor burns 40% TRUE (from 25%) — BUT the sky takes 6s longer to answer",
+	"skyfall":    "Heaven answers twice: Meteor calls a second, half-weight meteor onto the next-nearest enemy",
+	# --- paladin ---
+	"vow":        "The vow re-orders the soul: INT converts to ATK at the primary rate — BUT STR falls to the lesser one",
+	"noonday":    "At noon nothing shades you: INT converts at the primary rate alongside STR, and every 4th Judgment lances THROUGH the target",
+	"censure":    "A critical blow tolls the bell: the chime staggers and splashes around the victim",
+	"absolution": "Every 3rd kill rings the Last Toll: a free Consecration wave breaks from you",
+	"measure":    "A measured step earns a measured answer: evading arms your next Judgment with +40% weight and a sliver of mending",
+	"vigil":      "The vigil rewards the watchful: a dodge instantly rearms Judgment's leap, and the next Judgment lands as a guaranteed crit",
+	"knell":      "Each answered blow is a knell that mends: Aegis's smite-backs heal you",
+	"answer":     "The wall keeps accounts: 30% of damage you take is banked as holy charge for your next Judgment's SMITE",
+	"burden":     "The burden makes the blow: Judgment strikes 15% heavier — BUT swings 15% slower",
+	"dawnfall":   "The last oath falls like dawn: Conviction's slam hits 30% harder and leaves everything burning and slowed",
+	# --- warlock ---
+	"inkteeth":   "The ink bites: Shadowbolt leaves gnawing teeth-marks",
+	"remembrance": "Whoever wounds you is written down — your attacker is automatically HEXED",
+	"collection": "Debts accrue interest: crits against hexed enemies collect 30% extra and a little mana back",
+	"clause":     "The clause can be invoked early: a crit against a hexed enemy detonates its hex at half strength — without consuming it",
+	"hush":       "What misses you feeds the silence: after an evade, your next Shadowbolt strikes twice",
+	"truename":   "Dodge a blow and you have heard the attacker's true name: they are hexed on the spot and lashed by shadow",
+	"witness":    "The book sees who struck you: attackers are BOUND — withered and slowed",
+	"thecover":   "When a blow would break you (below 30%), the Cover opens: 2s of heavy damage reduction and a repulsing void-wave (25s cd)",
+	"veinroot":   "The root drinks from your reserve: Dark Pact's blast draws extra force from your max health, and its surge lingers 2s",
+	"lastpulse":  "Every pulse of stored blood is power: bonus max health feeds your ATK — doubled for 5s after Dark Pact",
 }
 
 # ------------------------------------------------------------------- gems ---
@@ -423,29 +567,50 @@ const SHAPE_BIAS_TWO := 1.30      # each of two
 const SHAPE_BIAS_THREE := 1.20    # each of three
 const DEFAULT_STYLE := {"main": 1.0, "bias": {}}
 const SHAPE_STYLE := {
-	"Blade":    {"main": 1.0,  "bias": {"atk_pct": 1.60}, "tag": "balanced"},
-	"Edge":     {"main": 1.2,  "bias": {}, "tag": "heavy hits"},
-	# Warrior weapon matrix, first slice (2026-07-26 — art landed, so the design
-	# side follows; PROPOSALS/GEAR_SHAPE_MATRIX.md §5). Together with Claymore
-	# these span all six stat groups for the warrior's weapon slot. Blade and Edge
-	# stay rollable for now — nothing is retired until the whole matrix lands.
-	"Pike":     {"main": 1.0,  "bias": {"physpen": 1.60}, "tag": "penetration"},
-	"Warblade": {"main": 1.05, "bias": {"atk_pct": 1.30, "crit": 1.30}, "tag": "killing steel"},
-	"Saber":    {"main": 0.9,  "bias": {"dex": 1.30, "eva": 1.30}, "tag": "fast and light"},
-	"Bulwark Blade": {"main": 1.1, "bias": {"physres": 1.20, "magres": 1.20, "hp_pct": 1.20}, "tag": "guarded"},
-	"Fang":     {"main": 0.85, "bias": {"crit": 1.60}, "tag": "crit"},
-	"Shuriken": {"main": 0.8,  "bias": {"crit": 1.30, "dex": 1.30}, "tag": "crit + aim"},
-	"Kunai":    {"main": 0.8,  "bias": {"crit": 1.30, "dex": 1.30}, "tag": "crit + aim"},  # back-compat: pre-2026-07-08 saves stored the "Kunai" noun
-	"Claymore": {"main": 1.4,  "bias": {}, "tag": "massive damage"},
-	"Bow":      {"main": 0.9,  "bias": {"dex": 1.60}, "tag": "true aim"},
-	"Crossbow": {"main": 1.05, "bias": {"physpen": 1.60}, "tag": "penetration"},
-	# The three caster shapes split three ways now that mana is off the table:
-	# Staff = raw power, Wand = crit + pen, Tome = pen + the warlock's OWN fuel
-	# (Dark Pact spends max HP; ATTR_SCALE already prices VIT higher for warlock).
-	"Staff":    {"main": 0.95, "bias": {"atk_pct": 1.60}, "tag": "raw power"},
-	"Wand":     {"main": 0.85, "bias": {"magpen": 1.30, "crit": 1.30}, "tag": "crit + magic pen"},
-	"Hammer":   {"main": 1.25, "bias": {"hp_pct": 1.60}, "tag": "crushing + sturdy"},
-	"Tome":     {"main": 0.9,  "bias": {"magpen": 1.30, "hp_pct": 1.30}, "tag": "dark power"},
+	# ===================== WEAPONS — per class (matrix §5) =====================
+	# Each class's five weapon shapes span all six stat groups. 2026-07-26: the
+	# full weapon matrix landed with its art, so all six classes are wired here and
+	# the pre-matrix weapon shapes drop to the LEGACY block below.
+	# --- Warrior ---
+	"Pike":          {"main": 1.0,  "bias": {"physpen": 1.60}, "tag": "penetration"},
+	"Warblade":      {"main": 1.05, "bias": {"atk_pct": 1.30, "crit": 1.30}, "tag": "killing steel"},
+	"Saber":         {"main": 0.9,  "bias": {"dex": 1.30, "eva": 1.30}, "tag": "fast and light"},
+	"Bulwark Blade": {"main": 1.1,  "bias": {"physres": 1.20, "magres": 1.20, "hp_pct": 1.20}, "tag": "guarded"},
+	"Claymore":      {"main": 1.4,  "bias": {}, "tag": "massive damage"},
+	# --- Archer ---
+	"Warbow":        {"main": 1.05, "bias": {"atk_pct": 1.60}, "tag": "raw draw"},
+	"Longbow":       {"main": 0.95, "bias": {"crit": 1.30, "physpen": 1.30}, "tag": "punch-through"},
+	"Hunting Bow":   {"main": 0.9,  "bias": {"dex": 1.30, "eva": 1.30}, "tag": "fast and light"},
+	"Thornbow":      {"main": 1.05, "bias": {"physres": 1.20, "magres": 1.20, "hp_pct": 1.20}, "tag": "warded wood"},
+	"Recurve":       {"main": 1.35, "bias": {}, "tag": "raw capacity"},
+	# --- Assassin --- (Shuriken moved crit+dex -> crit+atk: Glasswing now owns finesse)
+	"Stiletto":      {"main": 0.85, "bias": {"physpen": 1.60}, "tag": "find the gap"},
+	"Shuriken":      {"main": 0.8,  "bias": {"crit": 1.30, "atk_pct": 1.30}, "tag": "thrown steel"},
+	"Glasswing":     {"main": 0.8,  "bias": {"dex": 1.30, "eva": 1.30}, "tag": "fast and light"},
+	"Warded Fang":   {"main": 1.0,  "bias": {"physres": 1.20, "magres": 1.20, "hp_pct": 1.20}, "tag": "parrying"},
+	"Cleaver":       {"main": 1.35, "bias": {}, "tag": "brutal weight"},
+	# --- Mage ---
+	"Scepter":       {"main": 0.9,  "bias": {"magpen": 1.60}, "tag": "ward-borer"},
+	"Starfocus":     {"main": 0.95, "bias": {"crit": 1.30, "atk_pct": 1.30}, "tag": "concentrated"},
+	"Zephyr Rod":    {"main": 0.85, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "weightless"},
+	"Bloomstaff":    {"main": 1.0,  "bias": {"hp_pct": 1.20, "VIT": 1.20, "magres": 1.20}, "tag": "living wood"},
+	"Greatstaff":    {"main": 1.4,  "bias": {}, "tag": "raw capacity"},
+	# --- Paladin ---
+	"Lance":         {"main": 1.0,  "bias": {"magpen": 1.60}, "tag": "holy point"},
+	"Oathflail":     {"main": 1.05, "bias": {"atk_pct": 1.30, "crit": 1.30}, "tag": "finds openings"},
+	"Duelist's Blade": {"main": 0.9, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "fast and light"},
+	"Aegis Mace":    {"main": 1.1,  "bias": {"physres": 1.20, "magres": 1.20, "hp_pct": 1.20}, "tag": "mace-and-shield"},
+	"Warmaul":       {"main": 1.35, "bias": {}, "tag": "consecrated weight"},
+	# --- Warlock ---
+	"Grimoire":      {"main": 0.9,  "bias": {"magpen": 1.60}, "tag": "the written word"},
+	"Hexblade":      {"main": 1.0,  "bias": {"atk_pct": 1.30, "crit": 1.30}, "tag": "cursed edge"},
+	"Whisper Rod":   {"main": 0.85, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "drifting"},
+	"Pactshield Codex": {"main": 1.1, "bias": {"physres": 1.20, "magres": 1.20, "hp_pct": 1.20}, "tag": "bound to protect"},
+	"Grimheart Staff": {"main": 1.1, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "fuel reserve"},
+	# (Legacy weapon shapes Blade/Edge/Fang/Kunai/Bow/Crossbow/Staff/Wand/Hammer/
+	# Tome deleted 2026-07-26 — nothing references them now that S_GEAR dropped its
+	# pinned nouns; the matrix set fully replaces them. Owner: not needed as saves.)
+	# ===================== ARMOR / BOOTS / CHARM (matrix rework pending) ========
 	"Plate":    {"main": 1.15, "bias": {}, "tag": "bulk"},
 	"Mail":     {"main": 0.9,  "bias": {"eva": 1.60}, "tag": "elusive"},
 	"Guard":    {"main": 0.95, "bias": {"physres": 1.60}, "tag": "physical resistance"},
@@ -585,15 +750,24 @@ static func _roll_slot(grade: String, rng: RandomNumberGenerator) -> String:
 
 
 ## One gear item of an exact grade (slot picked via _roll_slot). Used by the
-## boss gear channel and the act-appearance shop roll.
-static func roll_gear_of_grade(grade: String, rng: RandomNumberGenerator, cls := "") -> Dictionary:
-	return roll_item_of(_roll_slot(grade, rng), grade, rng, cls)
+## boss gear channel and the act-appearance shop roll. `act` feeds the named
+## drop channels (0 = generic only — see roll_item_of).
+static func roll_gear_of_grade(grade: String, rng: RandomNumberGenerator, cls := "", act := 0) -> Dictionary:
+	return roll_item_of(_roll_slot(grade, rng), grade, rng, cls, "", act)
+
+
+## The chapter's act, for the named-unique drop gates. CHAPTER_ECON is the
+## source (Balance-only — items.gd must not pull Story/content in); an unknown
+## chid (endgame rooms pass their own act explicitly) is act 1 = generic only.
+static func chapter_act(chid: String) -> int:
+	return int(Balance.CHAPTER_ECON.get(chid, {}).get("act", 1))
 
 
 ## One GENERAL gear item for a chapter (chest / shop-filler / spoils / gamble):
 ## grade from the chapter's general band, slot via _roll_slot. (2026-07-09)
+## Derives the chapter's act so named uniques can surface where the split allows.
 static func roll_chapter_gear(chid: String, rng: RandomNumberGenerator, cls := "") -> Dictionary:
-	return roll_gear_of_grade(Balance.roll_weighted_grade(Balance.gear_weights(chid), rng), rng, cls)
+	return roll_gear_of_grade(Balance.roll_weighted_grade(Balance.gear_weights(chid), rng), rng, cls, chapter_act(chid))
 
 
 ## Grade a SHOP stock slot rolls — the chapter's GENERAL band table (2026-07-09).
@@ -610,23 +784,43 @@ static func roll_boss_gear_grade(chid: String, rng: RandomNumberGenerator) -> St
 	return Balance.roll_weighted_grade(Balance.boss_weights(chid), rng)
 
 
-## The class's signature weapon shape (from its S legendary) — used by
-## the dev gear sets and class swaps so a mage never holds a Claymore.
+## The class's signature weapon shape — its first matrix weapon. Used by the dev
+## gear sets and class swaps so a mage never holds a warrior's shape. (S_GEAR no
+## longer pins a noun, so this reads the arsenal directly.)
 static func class_weapon_noun(cls: String) -> String:
-	if S_GEAR.has(cls):
-		return S_GEAR[cls]["weapon"].get("noun", "Blade")
-	return "Blade"
+	var arsenal: Array = CLASS_WEAPONS.get(cls, [])
+	return String(arsenal[0]) if not arsenal.is_empty() else "Warblade"
 
 
-static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator, cls := "", force_noun := "") -> Dictionary:
+## `act` gates the NAMED drop channels (2026-07-27 drop split, PROPOSALS/
+## GEAR_UNIQUE_PASSIVES.md §9). 0 (the default — tests, dev paths, nested
+## constructor rolls) rolls pure generics: an S is now a prefixed generic with
+## NO passive, exactly like every other grade. Player-facing loot channels pass
+## the real act (Story.act_of / CHAPTER_ECON) so named gear can surface.
+static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator, cls := "", force_noun := "", act := 0) -> Dictionary:
+	# --- named channels first: the roll lands as a NAMED piece instead of a
+	# generic. Named A unique: Act 2+ weapons. Named S unique: Act 3+ weapons
+	# (rarest). Class LEGENDARY (S_GEAR): Act 2+ S of any slot — its weapon
+	# passive still sleeps behind the awakening quest; unique passives are
+	# live on pickup (owner call, §10.1).
+	if cls != "" and force_noun == "" and act > 0:
+		if slot == "weapon" and grade in ["A", "S"]:
+			var gate_act: int = Balance.UNIQUE_A_ACT if grade == "A" else Balance.UNIQUE_S_ACT
+			var chance: float = Balance.UNIQUE_A_CHANCE if grade == "A" else Balance.UNIQUE_S_CHANCE
+			if act >= gate_act and rng.randf() < chance:
+				var pool := uniques_of(cls, grade)
+				if not pool.is_empty():
+					return make_unique(pool[rng.randi_range(0, pool.size() - 1)], rng)
+		if grade == "S" and act >= Balance.UNIQUE_A_ACT and S_GEAR.has(cls) \
+				and rng.randf() < Balance.LEGEND_S_CHANCE:
+			return make_legendary(cls, slot, rng)
+
 	var mult: float = GRADE_MULT[grade]
 	var noun_list: Array = SLOT_NAMES[slot]
 	if slot == "weapon" and cls != "" and CLASS_WEAPONS.has(cls):
 		noun_list = CLASS_WEAPONS[cls]
 	var noun: String = force_noun if force_noun != "" else noun_list[rng.randi_range(0, noun_list.size() - 1)]
-	if grade == "S" and cls != "" and S_GEAR.has(cls) and S_GEAR[cls][slot].has("noun"):
-		noun = S_GEAR[cls][slot]["noun"]  # legendaries use their class shape
-	var style: Dictionary = SHAPE_STYLE.get(noun, {"main": 1.0, "subs": {}})
+	var style: Dictionary = SHAPE_STYLE.get(noun, DEFAULT_STYLE)
 
 	# The main is the class's primary attribute, guaranteed (2026-07-06).
 	var primary := String(CLASS_PRIMARY.get(cls, "STR"))
@@ -643,25 +837,44 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 		item["cls"] = cls  # class-locked: only this class may EQUIP it
 	var prefix_pool: Array = PREFIXES[grade]
 	item["name"] = "%s %s" % [prefix_pool[rng.randi_range(0, prefix_pool.size() - 1)], item["noun"]]
+	# (2026-07-27) Generic S no longer auto-names itself S_GEAR: the legendary
+	# is a rare named roll through the channel above, and "generic S" finally
+	# exists — top rolls, plain prefixed name, NO passive (the §7 target model).
+	return item
 
-	# A-grade: epic unique names.
-	if grade == "A":
-		var names: Array = A_NAMES[slot]
-		item["name"] = names[rng.randi_range(0, names.size() - 1)]
 
-	# S-grade: class-exclusive legendary with synergy stats / a passive.
-	if grade == "S" and cls != "" and S_GEAR.has(cls):
-		var special: Dictionary = S_GEAR[cls][slot]
-		item["name"] = special["name"]
-		item["cls"] = cls
-		if special.has("noun"):
-			item["noun"] = special["noun"]
-		if special.has("passive"):
-			item["passive"] = special["passive"]
-			# Round 51b: a looted/bought legendary keeps its NAME and top stats
-			# but its signature passive SLEEPS — it grants no effect until the
-			# class's awakening quest sets s_awakened_<cls> (see Player.s_passive).
-			item["passive_dormant"] = true
+## The named uniques of one class at one grade (drop pool for the named channel).
+static func uniques_of(cls: String, grade: String) -> Array:
+	var out: Array = []
+	for u in UNIQUES:
+		if String(u["cls"]) == cls and String(u["grade"]) == grade:
+			out.append(u)
+	return out
+
+
+## Build a named unique from its UNIQUES row: generic-grade power on the row's
+## fixed noun PLUS the identity — name, own art, signature passive. The passive
+## is LIVE on pickup: the awakening quest stays legendary-exclusive (owner call).
+static func make_unique(u: Dictionary, rng: RandomNumberGenerator) -> Dictionary:
+	var item := roll_item_of(String(u["slot"]), String(u["grade"]), rng,
+		String(u["cls"]), String(u["noun"]))
+	item["name"] = String(u["name"])
+	item["art"] = String(u["art"])
+	item["passive"] = String(u["passive"])
+	return item
+
+
+## Build the class's S_GEAR legendary for a slot: a generic S roll wearing the
+## legendary name; the weapon's signature passive SLEEPS until the class's
+## awakening quest sets s_awakened_<cls> (round 51b, unchanged).
+static func make_legendary(cls: String, slot: String, rng: RandomNumberGenerator) -> Dictionary:
+	var item := roll_item_of(slot, "S", rng, cls)
+	var special: Dictionary = S_GEAR[cls][slot]
+	item["name"] = special["name"]
+	item["cls"] = cls
+	if special.has("passive"):
+		item["passive"] = special["passive"]
+		item["passive_dormant"] = true
 	return item
 
 

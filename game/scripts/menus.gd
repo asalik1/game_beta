@@ -2781,7 +2781,7 @@ func open_shop(zone: int, tab := "") -> void:
 			game.capital_stock = []
 			for i in int(Balance.SHOP_STOCK_BY_TIER.get(Balance.CAPITAL_SHOP_TIER, 5)):
 				var sg := Items.roll_shop_grade(price_ch, crng, game.loot_cap())
-				game.capital_stock.append(Items.roll_gear_of_grade(sg, crng, game.local_player.cls))
+				game.capital_stock.append(Items.roll_gear_of_grade(sg, crng, game.local_player.cls, Story.act_of(price_ch)))
 			var cact: int = Story.act_of(price_ch)
 			var ccount: Array = Balance.SHOP_BAG_COUNT.get(cact, [1, 1])
 			game.capital_bags = []
@@ -2805,7 +2805,7 @@ func open_shop(zone: int, tab := "") -> void:
 		# roll_shop_grade), clamped to loot_cap — not the old chest tiers.
 		for i in stock_n:
 			var sg := Items.roll_shop_grade(game.chapter_id, rng, game.loot_cap())
-			stock.append(Items.roll_gear_of_grade(sg, rng, game.local_player.cls))
+			stock.append(Items.roll_gear_of_grade(sg, rng, game.local_player.cls, Story.act_of(game.chapter_id)))
 		game.shop_stock[zone] = stock
 	# Bags on the shelf (round 52): 1 (Act 1) or 1-2 (Act 2/3) of a rollable
 	# act tier — kept alongside gear stock until bought out.

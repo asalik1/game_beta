@@ -122,7 +122,7 @@ func _on_body_entered(body: Node) -> void:
 	# The grade was rolled (and shown) at drop time — honour it, don't re-roll.
 	# Same distribution as the old roll_chapter_gear path: chapter band, then
 	# _roll_slot. The chest never lies about what it holds.
-	var item := Items.roll_gear_of_grade(grade, rng, body.cls)
+	var item := Items.roll_gear_of_grade(grade, rng, body.cls, Story.act_of(game.chapter_id))
 	game.give_loot({"kind": "item", "item": item}, global_position)
 	game.loot_fanfare(item["grade"], global_position)  # rarity chime + beam
 	var bonus_gold := rng.randi_range(3, 8) * (1 + ["wood", "silver", "gold"].find(tier))

@@ -14,10 +14,21 @@ func _use_assassin(slot: String, f: float) -> void:
 			# Shadow Dash now; the blade covers the distance instead.
 			# Sync the cut to the lunge frame (round 50): the slash/hit lands
 			# WITH the thrust, not on the input frame.
+			var stab_mult: float = ability_coeff("a1") * f
+			var stab_eff := {"stagger": 0.3, "knock": 260.0, "uniq_a1": 1}
+			if s_passive() == "arithmetic":
+				# Red Arithmetic: the sum comes due — every 4th Stab lands with
+				# cleaver weight (earned tempo, hunt-rhythm pattern).
+				uniq_counter += 1
+				if uniq_counter >= int(uniq_k("every")):
+					uniq_counter = 0
+					stab_mult *= 1.0 + uniq_k("bonus")
+					stab_eff["stagger"] = uniq_k("stagger")
+					game.spawn_text(global_position + Vector2(0, -56), "THE SUM", Color(0.95, 0.5, 0.4))
 			await get_tree().create_timer(swing_delay(Balance.STAB_STRIKE_DELAY)).timeout
 			if dead or downed or ghost:
 				return
-			var cut := _melee_arc(ability_coeff("a1") * f, 118.0, "slash", {"stagger": 0.3, "knock": 260.0}, "stab", "stab")
+			var cut := _melee_arc(stab_mult, 118.0, "slash", stab_eff, "stab", "stab")
 			if cut > 0:
 				# Blood price, paid forward (round 25): dive in low, cut,
 				# ult through the answer, heal it back through knives.
@@ -44,6 +55,9 @@ func _shadow_dash(f := 1.0) -> void:
 	# mult (near/far) is applied per victim inside _dash_strike. The eaten-cdr
 	# bonus rides the HIT mult only, leaving the surge rider (stab_rider = f) clean.
 	var dash_mult := ability_coeff("a2") * f * (1.0 + eaten * Balance.DASH_CDR_TO_DMG)
+	if s_passive() == "heartbeat" and uniq_take("heartbeat"):
+		# Pale Flight: the dash that follows a dodge falls between heartbeats.
+		dash_mult *= 1.0 + uniq_k("dash_bonus")
 	if _tfx.has("kill_refund"):
 		# Shadow phantom step: ARM the refund window BEFORE the strike, so a kill
 		# from ANY source in the next PHANTOM_REFUND_WINDOW seconds refunds the
@@ -53,7 +67,7 @@ func _shadow_dash(f := 1.0) -> void:
 		# so room-chaining never strobes.
 		dash_refund_t = Balance.PHANTOM_REFUND_WINDOW
 		dash_refund_frac = float(_tfx["kill_refund"])
-	_dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), dash_mult, {"stagger": 0.4}, f, 0.0)
+	_dash_strike(210.0 * float(_tfx.get("dash_mult", 1.0)), dash_mult, {"stagger": 0.4, "uniq_dash": 1}, f, 0.0)
 	if s_passive() == "mirrorstep":
 		_mirrorstep_guard(start)
 	if _tfx.get("trail_mist", 0):
@@ -134,11 +148,16 @@ func _fan_of_knives(f := 1.0) -> void:
 		return
 	var count := int(_tfx.get("knives", 3))
 	var step := float(_tfx.get("spread", 0.13))
+	if s_passive() == "compass":
+		# Widow's Compass: every knife points the same way — the fan converges
+		# on your prey (the BARGAIN is the lost spread, printed on the card).
+		step = 0.0
 	for i in count:
 		var spread := (float(i) - (count - 1) / 2.0) * step
 		var p := _proj(dir.rotated(spread), ability_coeff("a3") * surge_amp * f, throw_tex, 760.0)
 		p.spin = ronin
 		p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
+		p.fx["uniq_fan"] = 1  # End of Night reads this tag: a crit knife ricochets
 		_knife_glow(p)
 
 

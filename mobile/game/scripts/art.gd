@@ -1901,9 +1901,28 @@ static func glyph_tex(name: String, tint := Color(0.92, 0.92, 0.98)) -> ImageTex
 	return t
 
 
-# Every gear family (noun) has its own sprite; grade adds the tint.
+# Every gear family (noun) has its own sprite. B/A/S may provide authored,
+# untinted condition-and-ornament variants alongside the neutral family art.
 const GEAR_SHAPES := {
-	"weapon": {"Blade": "w_blade", "Edge": "w_edge", "Fang": "w_fang", "Shuriken": "w_kunai", "Kunai": "w_kunai", "Pike": "w_pike", "Warblade": "w_warblade", "Saber": "w_saber", "Bulwark Blade": "w_bulwark_blade", "Claymore": "w_claymore", "Bow": "w_bow", "Crossbow": "w_crossbow", "Staff": "w_staff", "Wand": "w_wand", "Hammer": "w_hammer", "Tome": "w_tome"},
+	"weapon": {
+		"Shuriken": "w_shuriken",
+		"Pike": "w_pike", "Warblade": "w_warblade", "Saber": "w_saber",
+		"Bulwark Blade": "w_bulwark_blade", "Claymore": "w_claymore",
+		"Warbow": "w_warbow", "Longbow": "w_longbow",
+		"Hunting Bow": "w_hunting_bow", "Thornbow": "w_thornbow",
+		"Recurve": "w_recurve",
+		"Stiletto": "w_stiletto", "Glasswing": "w_glasswing",
+		"Warded Fang": "w_warded_fang", "Cleaver": "w_cleaver",
+		"Scepter": "w_scepter", "Starfocus": "w_starfocus",
+		"Zephyr Rod": "w_zephyr_rod", "Bloomstaff": "w_bloomstaff",
+		"Greatstaff": "w_greatstaff",
+		"Lance": "w_lance", "Oathflail": "w_oathflail",
+		"Duelist's Blade": "w_duelists_blade", "Aegis Mace": "w_aegis_mace",
+		"Warmaul": "w_warmaul",
+		"Grimoire": "w_grimoire", "Hexblade": "w_hexblade",
+		"Whisper Rod": "w_whisper_rod", "Pactshield Codex": "w_pactshield_codex",
+		"Grimheart Staff": "w_grimheart_staff",
+	},
 	"armor":  {"Plate": "icon_armor", "Mail": "icon_mail", "Guard": "icon_shield"},
 	"boots":  {"Boots": "icon_boots", "Striders": "icon_striders", "Treads": "icon_treads"},
 	"charm":  {"Charm": "icon_charm", "Talisman": "icon_talisman", "Sigil": "icon_sigil"},

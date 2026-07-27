@@ -271,3 +271,37 @@ This slice used the built-in image generator only. PixelLab was not used, and
 the legacy wired weapon icons were not used as references. The replaced
 `w_claymore.png` is preserved under
 `game/assets/icons/archive/2026-07-26_pre_gear_art/`.
+
+### 2026-07-26 — remaining class weapon slice
+
+- Tier-2 family sprites: **30 / 120**
+- Tier-1 B / A / S sprites: **90 / 360**
+- Named A / S uniques: **60 / 240**
+- Combined weapon total: **180 assets**
+- Completed classes: Warrior, Archer, Assassin, Mage, Paladin and Warlock
+- Shape mappings: all 30 weapon nouns wired in `Art.GEAR_SHAPES`
+- Unique handoff: [`GEAR_UNIQUE_ART_MANIFEST.md`](GEAR_UNIQUE_ART_MANIFEST.md)
+- QA matrices:
+  [`Archer`](GEAR_ART_ARCHER_WEAPONS_PREVIEW.png),
+  [`Assassin`](GEAR_ART_ASSASSIN_WEAPONS_PREVIEW.png),
+  [`Mage`](GEAR_ART_MAGE_WEAPONS_PREVIEW.png),
+  [`Paladin`](GEAR_ART_PALADIN_WEAPONS_PREVIEW.png) and
+  [`Warlock`](GEAR_ART_WARLOCK_WEAPONS_PREVIEW.png)
+
+The remaining five classes add 25 neutral family sprites, 75 authored B / A / S
+variants and 50 named uniques. Each grade variant was drawn independently around
+the same family silhouette: B adds etching or inlay, A changes construction to
+exotic material with contained energy, and S uses the most dramatic workmanship
+and light. Named uniques use separate construction, silhouette details, palette
+and concept while preserving the weapon noun at 32px.
+
+This slice also used the built-in image generator only. PixelLab and the legacy
+wired weapon icons were not used. All 150 desktop assets have byte-identical
+mobile counterparts.
+
+Single-object correction pass: the Aegis Mace family and its B / A / S variants
+were regenerated after the original prompt produced a mace-and-shield loadout.
+Each replacement is now one continuous mace: the aegis shape is forged into the
+mace head as relief rather than depicted as separate equipment. The rejected
+four sprites are preserved under
+`game/assets/icons/archive/2026-07-26_aegis_mace_two_object_pass/`.

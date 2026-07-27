@@ -97,6 +97,16 @@ no stat biases or passive design.
 
 All file keys resolve to `game/assets/icons/<file key>.png`.
 
+## Passives — shipped 2026-07-27
+
+Every named unique above now carries a **live signature passive** (design,
+framework and per-passive record: `PROPOSALS/GEAR_UNIQUE_PASSIVES.md`; ids in
+`Items.UNIQUES`/`Items.PASSIVES`, magnitudes in `Balance.UNIQ` — still
+un-benchmarked placeholders for the dps-bench phase). The six S_GEAR class
+legendaries were reconciled as each class's 6th named-S: same tier, rare
+Act-2+ S roll, sole keepers of the awakening quest; generic S drops
+passive-less. Armor/boots/charm uniques still await their shape matrix.
+
 ## Generation record
 
 - Generator: built-in image generation tool
@@ -105,7 +115,7 @@ All file keys resolve to `game/assets/icons/<file key>.png`.
   32 × 32 with transparent background
 - Post-process: chroma-key removal with spill cleanup, gamma 0.78 compensation
   and alpha-aware LANCZOS downsampling
-- Style anchors: the five newly generated neutral weapon families; legacy wired
+- Style anchors: the 30 newly generated neutral weapon families; legacy wired
   gear icons were not used as references
 - Regenerated generic ladder prompt set: B uses etched/inlaid craftsmanship and
   a faint local rune; A uses brighter exotic layered material, stronger relief
@@ -117,3 +127,15 @@ All file keys resolve to `game/assets/icons/<file key>.png`.
 - The previous 15 B / A / S sprites and five replaced unique sprites are
   preserved under
   `game/assets/icons/archive/2026-07-26_warrior_weapon_regen_pass1/`
+- Remaining-class generic prompt set: preserve each family silhouette while B
+  adds fine craft detail, A upgrades to exotic layered material and contained
+  energy, and S becomes dramatically luminous with the best fittings. No
+  blue/brown/gold rarity recolour ramp was used.
+- Remaining-class unique prompt set: every named item was prompted as a new
+  object with a category-first silhouette and a class-specific construction
+  idea—siege/weather/wild bows; needle/compass/wing/parry/execution blades;
+  law/star/weather/growth/firmament implements; oath/bell/vigil/bastion/pilgrim
+  arms; and memory/contract/whisper/rift/heart occult implements.
+- All remaining-class sources were generated on a sampled green field, matted
+  with border-key despill and normalized to a 29px maximum extent inside a
+  transparent 32 × 32 RGBA canvas.

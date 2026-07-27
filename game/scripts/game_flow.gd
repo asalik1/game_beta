@@ -904,7 +904,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		# Grade from the act table (Act1 ch1-6 B@1/3; ch7 +A@1/10; Act2/3 richer).
 		var ggrade := Items.roll_boss_gear_grade(loot_chapter(), loot_rng)
 		if ggrade != "":
-			var gear := Items.roll_gear_of_grade(ggrade, loot_rng, player.cls)
+			var gear := Items.roll_gear_of_grade(ggrade, loot_rng, player.cls, Story.act_of(chapter_id))
 			if give_loot({"kind": "item", "item": gear}, boss_pos + Vector2(40, 30)):
 				spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
 		# Bags: a SEPARATE, rarer roll (round 51b) — inventory expansion, not every
@@ -1306,7 +1306,7 @@ func roll_boss_pack(kind: String, boss_pos: Vector2, boss_lv: int,
 			"at": boss_pos + Vector2(-34.0 + 34.0 * gi, 30), "ty": -70 - 20 * gi})
 	var ggrade := Items.roll_boss_gear_grade(loot_chapter(), loot_rng)
 	if ggrade != "":
-		evs.append({"k": "item", "item": Items.roll_gear_of_grade(ggrade, loot_rng, cls),
+		evs.append({"k": "item", "item": Items.roll_gear_of_grade(ggrade, loot_rng, cls, Story.act_of(chapter_id)),
 			"at": boss_pos + Vector2(40, 30)})
 	if loot_rng.randf() < Balance.bag_drop_chance(Story.act_of(chapter_id)):
 		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(loot_chapter(), loot_rng)})

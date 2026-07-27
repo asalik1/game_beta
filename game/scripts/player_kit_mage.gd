@@ -26,6 +26,13 @@ func _use_mage(slot: String, f: float) -> void:
 			# Preserve the base spell's release-time targeting. The prelude may begin
 			# earlier, but no skin is allowed to snapshot aim or alter behavior.
 			var release_dir := aim_dir()
+			if s_passive() == "ninthstar":
+				# Counted per CAST (a twin release is one beat of the rhythm).
+				uniq_counter += 1
+				if uniq_counter >= int(uniq_k("every")):
+					uniq_counter = 0
+					uniq_t["ninthstar_armed"] = 0.5
+					game.spawn_text(global_position + Vector2(0, -56), "NINTH STAR", Color(1.0, 0.95, 0.75))
 			if _tfx.get("twin", 0):
 				# Wind: split the bolt.
 				if skin == "crystal_archmage":
@@ -65,6 +72,28 @@ func _cast_bolt(dir: Vector2, mult: float) -> void:
 
 
 func _finish_mage_bolt(p: Projectile, mult: float) -> void:
+	p.fx["uniq_a1"] = 1  # Firebolt tag: cometfall's crit-burst reads it at the hit
+	match s_passive():
+		"wardcrack":
+			# Wardpiercer: each bolt cracks the ward a little wider (stacking
+			# shred — the crack opens for the NEXT hit).
+			p.fx["shred"] = uniq_k("shred")
+			p.fx["shred_cap"] = uniq_k("cap")
+			p.fx["shred_dur"] = uniq_k("dur")
+		"ninthstar":
+			# The Ninth Star: the armed cast's bolt is the Star (one bolt even
+			# on a twin release — the ninth STAR, singular). Its crack borrows
+			# wardcrack's stack size: one clean opening, not a ramp.
+			if uniq_take("ninthstar_armed"):
+				p.fx["force_crit"] = 1
+				p.fx["splash"] = maxf(float(p.fx.get("splash", 0.0)), uniq_k("splash"))
+				p.fx["shred"] = float(Balance.uniq("wardcrack")["shred"])
+				p.fx["shred_dur"] = float(Balance.uniq("wardcrack")["dur"])
+				p.modulate = Color(1.0, 0.95, 0.75)
+		"squall":
+			# Quickweather: the post-Blink bolt strikes twice.
+			if uniq_take("squall"):
+				p.fx["echo"] = 1.0
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 	if _tfx.get("homing", 0):
 		p.homing = true  # Wind firebolt SEEKS its mark — baseline wind behavior, no talent
@@ -359,6 +388,8 @@ func _frost_nova(f := 1.0) -> void:
 	# mage's short-range button carries UTILITY, not damage budget
 	# (ranged kits can rarely connect close-range damage safely).
 	var restore := rider("a2", "restore")
+	if s_passive() == "springwake":
+		restore *= uniq_k("restore_mult")  # Springwake: the bloom drinks deeper
 	gain_hp((max_hp - hp) * restore)  # nova drinks the cold — SHOW the mend
 	if nova_regen > 0.0:
 		# Rimeheart (mage talent): the cold keeps mending — a long, slow trickle
@@ -456,8 +487,17 @@ func _apply_nova_gameplay(f: float, radius: float, inward: bool, fiery: bool) ->
 	if not (fiery or inward):
 		eff["knock"] = 340.0
 		eff["knock_no_boss"] = 1
-	for e in _enemies_within(global_position, radius):
+	var caught := _enemies_within(global_position, radius)
+	for e in caught:
 		hit_enemy(e, ability_coeff("a2") * f, eff.duplicate())
+		if s_passive() == "worldroot" and not e.dying:
+			# Verdancy: the worldroot HOLDS what the nova catches (a near-total
+			# slow is the root — mobs only; a boss converts it like any CC).
+			e.apply_slow(0.05, uniq_k("root"))
+			game.spawn_text(e.global_position + Vector2(0, -44), "ROOTED", Color(0.5, 0.9, 0.45))
+	if s_passive() == "springwake" and not caught.is_empty():
+		# Springwake: each enemy caught in the bloom mends you.
+		gain_hp(max_hp * uniq_k("heal_per") * caught.size())
 
 
 func _void_weaver_nova_visual(radius: float, col: Color) -> void:
@@ -533,9 +573,16 @@ func _blink() -> void:
 	if _tfx.has("freeze_path"):
 		eff["stun"] = float(_tfx["freeze_path"])  # Frostwalk
 	var start := global_position
+	var blink_coeff := ability_coeff("a3")
+	if s_passive() == "breathless" and uniq_take("breathless"):
+		# Breathless: the post-evade Blink's shock strikes doubled.
+		blink_coeff *= 1.0 + uniq_k("blink_bonus")
 	# Round 45: iframe cut 0.3->0.1 (like the archer roll) — a perfect-dodge
 	# window, not a sloppy blink-through. Safety now rides the DR cloak below.
-	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), ability_coeff("a3"), eff, 0.0, rider("a3", "iframe"))
+	_dash_strike(190.0 * float(_tfx.get("dash_mult", 1.0)), blink_coeff, eff, 0.0, rider("a3", "iframe"))
+	if s_passive() == "squall":
+		# Quickweather: Blink stirs a squall — the next Firebolt strikes twice.
+		uniq_t["squall"] = uniq_k("window")
 	var finish := global_position
 	if skin == "crystal_archmage":
 		_mage_skin_blink_visual(start, finish)
@@ -671,7 +718,20 @@ func _meteor() -> void:
 	if count <= 1:
 		# Fire / Ice: a single meteor on the aimed target.
 		var target := auto_aim()
-		_meteor_at(target.global_position if target else global_position + facing * 150.0)
+		var impact := target.global_position if target else global_position + facing * 150.0
+		_meteor_at(impact)
+		if s_passive() == "skyfall":
+			# Firmament: heaven answers twice — a second, half-weight meteor
+			# falls on the next-nearest enemy (or re-strikes the same point).
+			var second: Enemy = null
+			var best: float = uniq_k("range")
+			for n in _enemies_within(impact, uniq_k("range")):
+				if n != target and not n.dying:
+					var d: float = impact.distance_to(n.global_position)
+					if d < best:
+						best = d
+						second = n
+			_meteor_at(second.global_position if second != null else impact, uniq_k("second"))
 	else:
 		# Starfall (wind): comets fall in SEQUENCE on the lowest-health
 		# priority. Stacked hits on one target diminish, but a target's DEATH

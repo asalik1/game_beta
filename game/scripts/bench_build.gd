@@ -109,6 +109,14 @@ static func equip_dict(cls: String, tid: String, cfg: Dictionary, rng: RandomNum
 	for slot in Items.SLOTS:
 		var noun: String = Items.class_weapon_noun(cls) if slot == "weapon" else ""
 		var item := Items.roll_item_of(slot, grade, rng, cls, noun)
+		if grade == "S" and slot == "weapon" and Items.S_GEAR.has(cls):
+			# Drop split (2026-07-27): a generic S carries NO passive now, but the
+			# BiS bench wants the class legendary live (dps_bench sets the
+			# awakening flag) — same S-tier measurement as before the split.
+			var special: Dictionary = Items.S_GEAR[cls]["weapon"]
+			item["name"] = String(special["name"])
+			item["passive"] = String(special["passive"])
+			item["passive_dormant"] = true
 		item["plus"] = plus_lvl
 		if godroll:
 			godroll_item(item, cls)

@@ -251,6 +251,9 @@ static func _tab_items(m: Menus, list: VBoxContainer) -> void:
 		m._btn(row3, "Equip full %s set" % g, func() -> void:
 			_equip_set(m, g)
 			m.open_dev(), Items.GRADE_COLOR[g])
+	m._btn(row3, "Next unique ▶", func() -> void:
+		_equip_next_unique(m)
+		m.open_dev(), Color(1.0, 0.72, 0.45))
 	# Gems by the crate: count box + level box + button.
 	var gem_n := _qty_box(row3, "10")
 	var gem_lv := _qty_box(row3, "1")
@@ -699,8 +702,10 @@ static func _boss_level(m: Menus) -> int:
 
 
 ## Dev: equip a fresh full set of `grade` gear in every slot — the
-## weapon in the class's signature shape, S pieces as the class
-## legendaries. Replaced items vanish; their gems return to the bag.
+## weapon in the class's signature shape; at S the weapon is the class
+## LEGENDARY (drop split 2026-07-27: a plain S roll is generic now, and
+## awakening-flow testing needs the legendary in hand). Replaced items
+## vanish; their gems return to the bag.
 static func _equip_set(m: Menus, grade: String) -> void:
 	var p: Player = m.game.player
 	var rng := RandomNumberGenerator.new()
@@ -709,10 +714,36 @@ static func _equip_set(m: Menus, grade: String) -> void:
 		var noun: String = Items.class_weapon_noun(p.cls) if slot == "weapon" else ""
 		if p.equipment.has(slot):
 			p.strip_gems(p.equipment[slot])
-		p.equipment[slot] = Items.roll_item_of(slot, grade, rng, p.cls, noun)
+		if grade == "S" and slot == "weapon" and Items.S_GEAR.has(p.cls):
+			p.equipment[slot] = Items.make_legendary(p.cls, slot, rng)
+		else:
+			p.equipment[slot] = Items.roll_item_of(slot, grade, rng, p.cls, noun)
 	p.recalc()
 	p._update_weapon_visual()
 	m.game.sfx("equip")
+
+
+## Dev: cycle the class's 10 named weapon uniques (A then S per shape) —
+## equips the NEXT one each press so every signature passive can be
+## hand-tested in order. Uses a static cursor per session.
+static var _uniq_cursor := 0
+static func _equip_next_unique(m: Menus) -> void:
+	var p: Player = m.game.player
+	var mine := Items.uniques_for(p.cls)
+	if mine.is_empty():
+		return
+	var u: Dictionary = mine[_uniq_cursor % mine.size()]
+	_uniq_cursor += 1
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	if p.equipment.has("weapon"):
+		p.strip_gems(p.equipment["weapon"])
+	p.equipment["weapon"] = Items.make_unique(u, rng)
+	p.recalc()
+	p._update_weapon_visual()
+	m.game.sfx("equip")
+	m.game.spawn_text(p.global_position + Vector2(0, -60), String(u["name"]),
+		Items.GRADE_COLOR[String(u["grade"])])
 
 
 ## Dev: after a class swap, re-roll equipped gear into the new class's

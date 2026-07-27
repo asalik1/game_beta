@@ -403,23 +403,40 @@ Drop schedule, stated plainly:
 Every shape gets one named A and one named S (240 uniques, §"Named uniques"),
 each carrying its own passive.
 
-**This inverts the current code.** `roll_item_of` today makes *every* A drop a
-random `A_NAMES` name and *every* S drop the class legendary with its passive —
-so "generic S" does not exist yet, and passives are handed out on every S rather
-than gated to a rare unique roll. Reconciling that is the drop-system work (§8),
-not done here. Two design calls block it and are the owner's:
+### PASSIVES — owner rule + the placeholder plan (2026-07-26)
 
-1. **`S_GEAR` vs the new named-S uniques.** The six existing class legendaries
-   (Kingsbane, Stormcaller…) are already "named S + passive + awakening-gated."
-   Are they *the* named-S uniques for their shape, or a parallel class-exclusive
-   set beside the per-shape uniques? Awakening-gating currently applies only to
-   them.
-2. **240 passives.** One passive per unique is 240 distinct passives to design.
-   That is the real cost of this tier and should be sized before art commits to
-   240 one-off sprites.
+**Only NAMED gear carries a passive** — the named A and named S uniques, and the
+S_GEAR class legendaries. A **generic** A or S never does; it is just a
+`Dragonforged`/`Emberforged <shape>` with top rolls. The plan extends passives to
+**all four slots** (armor/charm/boots too, not only weapons) — so a full loadout
+of named gear eventually stacks four passives, which is exactly why it needs a
+dedicated **design phase + dps benchmark** before the numbers are set.
 
-Everything else in this section (art cascade, naming, the uniques record shape)
-stands regardless of how those two resolve.
+**Shipped (2026-07-27):** the weapon design phase landed — all 60 weapon
+uniques carry a live signature passive (design + framework:
+`PROPOSALS/GEAR_UNIQUE_PASSIVES.md`, the canonical record; knobs in
+`Balance.UNIQ`, still un-benchmarked). Armor/boots/charm uniques + their
+passives still await their shape matrix.
+
+**Interim inconsistency, on purpose:** the target is generic S = no passive, but
+`roll_item_of` still applies S_GEAR to *every* S weapon (the only in-game passive
+source today). Ripping that out now would delete working content — the six
+passives and their awakening quests — with nothing to replace it, so it waits for
+the design phase, together with the generic-vs-named drop split (§8). A_NAMES,
+which had no passives or quests, WAS retired now: generic A rolls a plain name.
+
+### Already cleaned up (2026-07-26)
+
+- **Legacy weapon shapes deleted** — Blade/Edge/Fang/Kunai/Bow/Crossbow/Staff/
+  Wand/Hammer/Tome are gone from `SHAPE_STYLE`, `CLASS_WEAPONS`, `SLOT_NAMES` and
+  `GEAR_SHAPES`. The matrix's 30 weapon shapes fully replace them. S_GEAR dropped
+  its pinned legacy nouns (a legendary now rides whatever matrix shape rolled — its
+  passive is ability-based, not shape-based), which was the last thing holding the
+  legacy shapes open.
+- **`A_NAMES` deleted** — generic A is a graded generic again.
+
+Everything in this section below (art cascade, naming, the uniques record shape)
+stands regardless of how the design phase resolves the passives.
 
 ### The override cascade (shipped)
 

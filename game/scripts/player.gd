@@ -73,6 +73,26 @@ func _physics_process(delta: float) -> void:
 	last_rites_cd = maxf(0.0, last_rites_cd - delta)
 	judgment_leap_cd = maxf(0.0, judgment_leap_cd - delta)
 	dash_refund_t = maxf(0.0, dash_refund_t - delta)  # shadow phantom-step window
+	# ---- named-unique passive clocks (2026-07-27) ----
+	tumble_perfect_t = maxf(0.0, tumble_perfect_t - delta)
+	if not uniq_t.is_empty():
+		# Moonturn fires ON expiry: the echo storm returns as the delay runs out.
+		var mt: float = float(uniq_t.get("moonturn_echo", 0.0))
+		if mt > 0.0 and mt <= delta and s_passive() == "moonturn":
+			storm_mult = uniq_k("echo_mult")
+			storm_time = uniq_k("echo_dur")
+			storm_tick = 0.0
+			game.spawn_text(global_position + Vector2(0, -60), "MOONTURN", Color(0.72, 0.78, 1.0))
+			game.sfx("bow", 0.8)
+		for k in uniq_t:
+			uniq_t[k] = maxf(0.0, float(uniq_t[k]) - delta)
+	if not uniq_marks.is_empty():
+		# Remembrance per-enemy re-hex ICDs (freed enemies fall out with them).
+		for k in uniq_marks.keys():
+			if not is_instance_valid(k) or float(uniq_marks[k]) - delta <= 0.0:
+				uniq_marks.erase(k)
+			else:
+				uniq_marks[k] = float(uniq_marks[k]) - delta
 	# Grit (warrior, round 48): the stacks live only while the grind does —
 	# go unhit for the window and they die. Kiting starves the juggernaut.
 	if grit_time > 0.0:
@@ -678,6 +698,15 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			game.net_session().host_player_hit(peer_id, amount, dmg_type, aid, heavy)
 		return
 	if hurt_cd > 0.0 and (hurt_was_heavy or not heavy):
+		# White Hart's Last Breath: a hit swallowed by Tumble's split-second
+		# window IS the perfect dodge — the Hart's Breath answers it.
+		if tumble_perfect_t > 0.0 and s_passive() == "hartsbreath":
+			tumble_perfect_t = 0.0
+			uniq_crits = int(uniq_k("crits"))
+			cds["a2"] = 0.0
+			game.spawn_text(global_position + Vector2(0, -60), "HART'S BREATH", Color(0.95, 1.0, 0.9))
+			game.sfx("blink", 1.2)
+			game.burst(global_position, Color(0.9, 1.0, 0.9), 10)
 		return
 	if game.dev_god:
 		# Dev god mode: ignore damage at the source. The per-frame HP restore in
@@ -698,6 +727,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			if randf() < Balance.ENFEEBLE_ASSASSIN_EVA * tox_frac:
 				game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.55, 1.0, 0.6))
 				game.sfx("blink")
+				_uniq_on_evade(attacker)
 				return
 		else:
 			amount *= 1.0 - Balance.ENFEEBLE_ARCHER_DR * tox_frac
@@ -722,6 +752,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		if result["miss"]:
 			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
 			game.sfx("blink")
+			_uniq_on_evade(attacker)
 			return
 		# A GRAZE on the receiving end: their DEX is good enough that your
 		# evasion only clipped the blow instead of voiding it (Stats.dex_tier).
@@ -733,6 +764,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		if randf() < Stats.eva_curve(eff_eva):
 			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
 			game.sfx("blink")
+			_uniq_on_evade(attacker)
 			return
 		if dmg_type != "true":
 			amount *= (1.0 - Stats.res_frac(res))
@@ -740,6 +772,18 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			# Mirrorstep (assassin S weapon): the un-dodgeable AoE (telegraphs,
 			# hazards — the attacker-less path) is softened during the dash.
 			amount *= 0.65
+	# Parryshade: the fang catches what the body would have slipped — a chance
+	# to PARRY a melee blow outright (negate + riposte). Melee = the attacker
+	# itself in arm's reach; projectiles and hazards can't be caught. Rolls
+	# AFTER evasion so the dodge (already halved by the BARGAIN) goes first.
+	if s_passive() == "parry" and attacker is Enemy and not (attacker as Enemy).dying \
+			and global_position.distance_to((attacker as Enemy).global_position) < 120.0 \
+			and randf() < uniq_k("chance"):
+		game.sfx("parry")
+		game.spawn_text(global_position + Vector2(0, -40), "PARRY!", Color(0.85, 0.9, 1.0))
+		game.burst(global_position, Color(0.85, 0.9, 1.0), 8)
+		hit_enemy(attacker as Enemy, uniq_k("riposte"), {})
+		return
 	hurt_cd = 0.6
 	hurt_was_heavy = heavy  # a heavy-armed window blocks even other heavies
 	since_hurt = 0.0
@@ -773,6 +817,15 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			game.spawn_text(global_position + Vector2(0, -56), "GRIT x%d" % grit_stacks,
 				Color(1.0, 0.75, 0.35))
 		grit_time = 6.0
+	# The Cover Between Worlds: a blow that would break you (below the
+	# threshold) opens the Cover — this hit still lands, then heavy DR and a
+	# repulsing void-wave answer it (25s internal cd).
+	if s_passive() == "thecover" and not uniq_on("thecover_icd") \
+			and hp - amount < max_hp * uniq_k("threshold"):
+		uniq_t["thecover_icd"] = uniq_k("icd")
+		dr_time = maxf(dr_time, uniq_k("dr_dur"))
+		dr_amt = maxf(dr_amt, uniq_k("dr"))
+		_cover_wave()
 	hp -= amount
 	# Vampiric (endgame affix, reworked 2026-07-21): the attacker DRINKS a
 	# fraction of the damage it actually lands (post-mitigation, post-shield).
@@ -783,6 +836,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		var vamp := attacker as Enemy
 		vamp.hp = minf(vamp.max_hp, vamp.hp + amount * Balance.AFFIX_LIFESTEAL_FRAC)
 		game.spawn_text(vamp.global_position + Vector2(0, -50), "DRINKS", Color(0.9, 0.35, 0.55))
+	_uniq_on_hit_taken(amount, attacker)
 	game.fight_note_damage(amount, attacker)
 	game.stat_taken(self, amount)  # battle stats: HP actually lost (owner-side)
 	game.sfx("hurt")
@@ -796,7 +850,20 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	else:
 		game.spawn_text(global_position + Vector2(0, -40), "-%d" % int(amount), Color(1.0, 0.35, 0.3))
 	if hp <= 0.0:
-		if last_rites > 0.0 and last_rites_cd <= 0.0:
+		if s_passive() == "refusal" and not uniq_on("refusal_icd"):
+			# The Hand That Refused Death: the killing blow leaves you at 1 HP,
+			# untouchable a breath, blood surge full, Death Mark ready (the
+			# Last Rites pattern, weapon-granted — once per Balance.UNIQ icd).
+			hp = 1.0
+			uniq_t["refusal_icd"] = uniq_k("icd")
+			hurt_cd = maxf(hurt_cd, 1.0)
+			hurt_was_heavy = true
+			_grant_stab_surge()
+			cds["ult"] = 0.0
+			game.spawn_text(global_position + Vector2(0, -60), "REFUSED", Color(0.82, 0.88, 1.0))
+			game.burst(global_position, Color(0.85, 0.9, 1.0), 22)
+			game.hud.flash_screen(Color(0.18, 0.24, 0.5), 0.5, 0.5)
+		elif last_rites > 0.0 and last_rites_cd <= 0.0:
 			# Last Rites (warlock talent): the pact refuses death, once a minute —
 			# survive at 5% max HP per point invested (up to 25% at 5).
 			hp = max_hp * 0.05 * last_rites
@@ -834,6 +901,9 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 				if aegis_fx.get("aegis_knock", 0):
 					eff["knock"] = 320.0
 				hit_enemy(e, aegis_reflect, eff)
+				if s_passive() == "knell":
+					# Chapel Knell: each answered blow is a knell that mends.
+					gain_hp(max_hp * uniq_k("heal"))
 			_tfx = saved
 		elif attacker is Enemy and is_instance_valid(attacker) \
 				and not (attacker as Enemy).dying and aegis_proj_left > 0:
@@ -850,7 +920,152 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			var saved_fx := _tfx
 			_tfx = aegis_fx
 			hit_enemy(shooter, aegis_reflect * Balance.AEGIS_PROJ_REFLECT, {"aoe": true})
+			if s_passive() == "knell":
+				gain_hp(max_hp * uniq_k("heal"))
 			_tfx = saved_fx
+
+
+## Named-unique on-evade dispatch (2026-07-27): ONE hook + ONE shared internal
+## cd (Balance.UNIQ.evade_icd) for every dodge-triggered passive — the whole
+## finesse column rides this. `attacker` may be null (hazard/AoE evades);
+## attacker-targeted passives simply don't fire on those.
+func _uniq_on_evade(attacker: Node) -> void:
+	var sp := s_passive()
+	if sp == "" or uniq_on("evade_icd"):
+		return
+	var armed := true
+	match sp:
+		"outrider":
+			# Ashrider: the miss is an opening — the next Cleave strikes twice.
+			uniq_t["outrider"] = uniq_k("window")
+			game.spawn_text(global_position + Vector2(0, -56), "OPENING", Color(0.85, 0.9, 1.0))
+		"horizon":
+			# Red Horizon: next Cleave is a guaranteed crit; Bash returns sooner.
+			uniq_t["horizon"] = uniq_k("window")
+			cds["a2"] = maxf(0.0, float(cds.get("a2", 0.0)) - uniq_k("bash_refund"))
+			game.spawn_text(global_position + Vector2(0, -56), "SIDESTEP", Color(1.0, 0.85, 0.6))
+		"foxfire":
+			uniq_t["foxfire"] = uniq_k("window")
+			game.spawn_text(global_position + Vector2(0, -56), "FOXFIRE", Color(1.0, 0.7, 0.4))
+		"mothdust":
+			# Mothknife: dust blooms where you stood — nearby enemies slowed.
+			game.burst(global_position, Color(0.82, 0.78, 0.9), 8)
+			_ring_fx(global_position, Color(0.82, 0.78, 0.9), uniq_k("radius"))
+			for e in _enemies_within(global_position, uniq_k("radius")):
+				e.apply_slow(1.0 - uniq_k("slow"), uniq_k("dur"))
+			game.spawn_text(global_position + Vector2(0, -56), "MOTH DUST", Color(0.82, 0.78, 0.9))
+		"heartbeat":
+			# Pale Flight: half the dash's remaining cd vanishes; next dash bites.
+			cds["a2"] = float(cds.get("a2", 0.0)) * (1.0 - uniq_k("refund"))
+			uniq_t["heartbeat"] = uniq_k("window", 4.0)
+			game.spawn_text(global_position + Vector2(0, -56), "HEARTBEAT", Color(0.8, 0.75, 1.0))
+		"breathless":
+			# Breathless: the evade resets Blink; the next shock strikes doubled.
+			cds["a3"] = 0.0
+			uniq_t["breathless"] = uniq_k("window")
+			game.spawn_text(global_position + Vector2(0, -56), "BREATHLESS", Color(0.7, 0.9, 1.0))
+		"measure":
+			uniq_t["measure"] = uniq_k("window")
+			game.spawn_text(global_position + Vector2(0, -56), "MEASURED", Color(1.0, 0.92, 0.6))
+		"vigil":
+			# First Light: the leap rearms NOW; the next Judgment cannot miss its mark.
+			judgment_leap_cd = 0.0
+			uniq_t["vigil"] = uniq_k("window")
+			game.spawn_text(global_position + Vector2(0, -56), "VIGIL", Color(1.0, 0.95, 0.75))
+		"hush":
+			uniq_t["hush"] = uniq_k("window")
+			game.spawn_text(global_position + Vector2(0, -56), "HUSH", Color(0.75, 0.7, 0.9))
+		"truename":
+			# The Name Beneath All Names: the attacker is hexed and lashed.
+			if attacker is Enemy and is_instance_valid(attacker) and not (attacker as Enemy).dying:
+				var te := attacker as Enemy
+				_beam_fx(global_position, te.global_position, Color(0.7, 0.45, 1.0), 0.14)
+				hit_enemy(te, uniq_k("lash"), {"aoe": true})
+				if not te.dying:
+					_hex_mark(te)
+				game.spawn_text(te.global_position + Vector2(0, -50), "NAMED", Color(0.75, 0.4, 1.0))
+			else:
+				armed = false  # nothing to name — don't burn the ICD
+		_:
+			armed = false
+	if armed:
+		uniq_t["evade_icd"] = maxf(float(Balance.UNIQ["evade_icd"]), uniq_k("icd"))
+
+
+## Named-unique on-hit-taken dispatch: thorns, witnesses, banks and the root
+## burst. `amount` is the POST-mitigation damage that actually landed.
+func _uniq_on_hit_taken(amount: float, attacker: Node) -> void:
+	var sp := s_passive()
+	if sp == "":
+		return
+	var foe := attacker as Enemy
+	var foe_live := foe != null and is_instance_valid(foe) and not foe.dying
+	match sp:
+		"reprisal":
+			# Bastion's Tooth: a chance the melee attacker is counter-cut.
+			if foe_live and global_position.distance_to(foe.global_position) < 130.0 \
+					and randf() < uniq_k("chance"):
+				game.sfx("sword")
+				game.spawn_text(foe.global_position + Vector2(0, -44), "REPRISAL", Color(0.9, 0.85, 0.7))
+				hit_enemy(foe, uniq_k("counter"), {})
+		"thegate":
+			# The Gate That Walks: while the Gate holds, every blow is answered.
+			if foe_live and uniq_on("thegate"):
+				game.sfx("parry", 0.9)
+				hit_enemy(foe, uniq_k("counter"), {"stagger": uniq_k("stagger")})
+		"briar":
+			# Briar Covenant: melee attackers are briar-lashed — torn and slowed.
+			if foe_live and global_position.distance_to(foe.global_position) < 130.0:
+				foe.apply_burn(_dot_dps(foe, current_atk() * uniq_k("dot")),
+					uniq_k("dur"), Color(0.5, 1.0, 0.5), self)
+				foe.apply_slow(1.0 - uniq_k("slow"), uniq_k("dur"))
+		"bramble":
+			# Green Ruin: a landed blow vents a root-burst (internal cd).
+			if not uniq_on("bramble_icd"):
+				uniq_t["bramble_icd"] = uniq_k("icd")
+				game.sfx("nova", 0.8)
+				_ring_fx(global_position, Color(0.45, 0.85, 0.4), uniq_k("root_radius"))
+				game.burst(global_position, Color(0.45, 0.85, 0.4), 12)
+				for e in _enemies_within(global_position, uniq_k("root_radius")):
+					e.apply_slow(0.05, uniq_k("root"))  # a near-total slow IS the root
+					game.spawn_text(e.global_position + Vector2(0, -44), "ROOTED", Color(0.5, 0.9, 0.45))
+		"witness":
+			# Bound Witness: the attacker is BOUND — withered and slowed.
+			if foe_live and not uniq_on("witness_icd"):
+				uniq_t["witness_icd"] = uniq_k("icd")
+				foe.apply_burn(_dot_dps(foe, current_atk() * uniq_k("dot")),
+					uniq_k("dur"), Color(0.8, 0.45, 1.0), self)
+				foe.apply_slow(1.0 - uniq_k("slow"), uniq_k("dur"))
+				game.spawn_text(foe.global_position + Vector2(0, -44), "BOUND", Color(0.8, 0.45, 1.0))
+		"remembrance":
+			# The Book That Remembers You: whoever wounds you is HEXED
+			# (per-enemy ICD so a fast hitter isn't re-marked every frame).
+			if foe_live and not uniq_marks.has(foe):
+				uniq_marks[foe] = uniq_k("enemy_icd")
+				_hex_mark(foe)
+				game.spawn_text(foe.global_position + Vector2(0, -50), "REMEMBERED", Color(0.8, 0.45, 1.0))
+		"answer":
+			# The Bastion's Answer: a share of the blow banks as holy charge
+			# (the overheal bank's own cap keeps it honest).
+			holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP,
+				holy_charge + amount * uniq_k("bank"))
+
+
+## The Cover Between Worlds' repulse: the voidmaw shove geometry WITHOUT the
+## curse — pure breathing room on the panic proc.
+func _cover_wave() -> void:
+	game.sfx("gate", 1.1)
+	var col := Color(0.45, 0.55, 0.95)
+	_ring_fx(global_position, col, 300.0)
+	game.burst(global_position, col, 16)
+	game.spawn_text(global_position + Vector2(0, -60), "THE COVER", col)
+	var max_reach := 520.0
+	for e in _enemies_within(global_position, max_reach):
+		var away: Vector2 = e.global_position - global_position
+		var dist := away.length()
+		if dist > 12.0 and not e.dying:
+			var push := clampf(1.0 - dist / max_reach, 0.15, 1.0)
+			e.apply_knock(away.normalized() * 640.0 * push)
 
 
 func revive() -> void:
