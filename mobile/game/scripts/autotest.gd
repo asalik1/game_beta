@@ -1279,6 +1279,44 @@ func _run_systems() -> void:
 	game.player.recalc()
 	print("ok: skill tree rows (caps + gating)")
 
+	# 5a. Named talent pages preserve independent allocations while sharing one
+	# real character budget. Switching must neither duplicate nor consume points.
+	game.player.level = 40
+	game.player.tree_points.clear()
+	game.player.skill_points = 40
+	game.player.load_talent_loadouts([], 0)
+	for i in 5:
+		if not game.player.add_tree_point("w00"):
+			return _fail("talent loadout could not build DPS page")
+	game.player.rename_talent_loadout(0, "DPS")
+	if not game.player.switch_talent_loadout(1):
+		return _fail("talent loadout switch to page 2 failed")
+	for i in 4:
+		if not game.player.add_tree_point("w01"):
+			return _fail("talent loadout could not build support page")
+	game.player.rename_talent_loadout(1, "Support")
+	if not game.player.switch_talent_loadout(0):
+		return _fail("talent loadout switch back to DPS failed")
+	if game.player.tree_points.get("w00", 0) != 5 \
+			or game.player.tree_points.get("w01", 0) != 0 \
+			or game.player.talent_point_budget() != 40:
+		return _fail("DPS talent page did not restore cleanly")
+	if not game.player.switch_talent_loadout(1):
+		return _fail("talent loadout second switch failed")
+	if game.player.tree_points.get("w01", 0) != 4 \
+			or game.player.tree_points.get("w00", 0) != 0 \
+			or game.player.talent_point_budget() != 40:
+		return _fail("support talent page changed the shared point budget")
+	if game.player.talent_loadouts[0]["name"] != "DPS" \
+			or game.player.talent_loadouts[1]["name"] != "Support":
+		return _fail("talent loadout labels were not preserved")
+	game.player.tree_points.clear()
+	game.player.skill_points = 0
+	game.player.level = saved_level
+	game.player.load_talent_loadouts([], 0)
+	game.player.recalc()
+	print("ok: named talent loadouts (independent pages, shared 40-point budget)")
+
 	# 5a2. Auto-synthesize: socketed gems level first, then the bag rolls up.
 	# Equipped-first is bench work now (capital rework §2) — city context.
 	var _keep_ch_5a2: String = game.chapter_id
@@ -1319,6 +1357,8 @@ func _run_systems() -> void:
 	var kept_atk: float = p.atk
 	var kept_seed: int = game.wander_seed
 	var kept_visited: int = game.visited.size()
+	p.rename_talent_loadout(0, "Solo")
+	p.rename_talent_loadout(1, "Support")
 	SaveGame.write(game, SaveGame.MAX_SLOTS)
 	p.char_name = ""
 	p.gold = 0
@@ -1340,6 +1380,10 @@ func _run_systems() -> void:
 		return _fail("save did not restore gold/resonance/faction")
 	if p.char_name != "Rowan":
 		return _fail("save did not restore character name (got '%s')" % p.char_name)
+	if p.talent_loadouts.size() != Player.TALENT_LOADOUT_COUNT \
+			or p.talent_loadouts[0]["name"] != "Solo" \
+			or p.talent_loadouts[1]["name"] != "Support":
+		return _fail("save did not restore named talent loadouts")
 	if game.quest_key != kept_quest or p.level != kept_level:
 		return _fail("save did not restore quest/level")
 	var got_weapon: String = p.equipment["weapon"]["name"] if p.equipment.has("weapon") else ""
@@ -1360,7 +1404,7 @@ func _run_systems() -> void:
 	SaveGame.delete(SaveGame.MAX_SLOTS)
 	if SaveGame.exists(SaveGame.MAX_SLOTS):
 		return _fail("save delete failed")
-	print("ok: save/load roundtrip (name, gold, resonance, factions, gear, room state)")
+	print("ok: save/load roundtrip (name, gold, talent pages, resonance, factions, gear, room state)")
 
 	# 5b1. Session-local name de-dup: colliding party names get a display-only
 	# "#N" suffix (case-insensitive), host/earlier ids keep the bare name.

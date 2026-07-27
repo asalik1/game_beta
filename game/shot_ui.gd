@@ -114,10 +114,16 @@ func _ready() -> void:
 		game.menus.open_item_panel(eq[0])
 		await _menu_shot("item_panel")
 	game.menus.close()
+	# Skill/loadout screens are most useful to audit in their fully unlocked
+	# state: every medallion and specialization must be visible at once.
+	game.player.level = 40
+	game.player.skill_points = 40
+	game.player.themes_known = 3
+	game.player.recalc()
 	game.menus.open_skills("talents")
 	await _menu_shot("skills_talents")
-	game.menus.open_theme_picker("a1")
-	await _menu_shot("ability_variants")
+	game.menus.open_skills("abilities")
+	await _menu_shot("ability_assignments")
 	game.menus.close()
 	game.menus.open_shop(0)
 	await _menu_shot("shop")

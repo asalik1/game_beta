@@ -90,12 +90,15 @@ static func write(game: Game, slot: int) -> void:
 ## write_character_home() (guest autosave, MP-08).
 static func _character_section(game: Game) -> Dictionary:
 	var p := game.player
+	p.sync_active_talent_loadout()
 	return {
 		# --- identity / progression ---
 		"name": p.char_name,
 		"cls": p.cls,
 		"level": p.level, "xp": p.xp,
 		"skill_points": p.skill_points, "tree_points": p.tree_points,
+		"talent_loadouts": p.talent_loadouts,
+		"active_talent_loadout": p.active_talent_loadout,
 		"attr_points": p.attr_points, "unspent_attr": p.unspent_attr,
 		"gold": p.gold, "potions": p.potions,
 		# The expiring ch1-3 teaching potion rides the save WITH its chapter:
@@ -465,6 +468,8 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	var tp: Dictionary = c.get("tree_points", {})
 	for k in tp:
 		p.tree_points[k] = int(tp[k])
+	var saved_loadouts: Array = c.get("talent_loadouts", [])
+	p.load_talent_loadouts(saved_loadouts, int(c.get("active_talent_loadout", 0)))
 	var ap: Dictionary = c.get("attr_points", {})
 	for k in p.attr_points:
 		p.attr_points[k] = int(ap.get(k, 0))

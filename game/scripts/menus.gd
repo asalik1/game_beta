@@ -36,6 +36,7 @@ var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv
 var dev_boss_level_override := 0  # dev panel: exact level for NEW boss spawns (0 = off)
 var dev_tab := "character"        # dev panel: which subtab is showing (persists across refreshes)
 var lobby := {}                   # Play Together flow state (ui/lobby.gd): stage, picks, code, msg
+var _talent_renaming := false     # inline rename field for the active talent page
 
 
 func _ready() -> void:
@@ -2389,104 +2390,270 @@ func _cell_glyph(cell: Dictionary) -> String:
 
 func open_skills(tab := "talents") -> void:
 	var p: Player = game.local_player
-	var vbox := _open("%s — %s" % [Classes.CLASSES[p.cls]["name"], "Skill Tree" if tab == "talents" else "Attributes"], 1120, 640, true)
+	var vbox := _open("%s — Skills & Loadouts" % Classes.CLASSES[p.cls]["name"], 1180, 660, true)
 	current = "skills"
 
-	# Subtabs: talents / attribute allocation.
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 12)
 	vbox.add_child(tabs)
-	_btn(tabs, "  Talents (%d pts)  " % p.skill_points, func() -> void: open_skills("talents"),
+	_btn(tabs, "  TALENTS  ·  %d pts  " % p.skill_points, func() -> void: open_skills("talents"),
 		Color(0.95, 0.85, 0.5) if tab == "talents" else Color(0.6, 0.6, 0.6))
-	_btn(tabs, "  Attributes (%d pts)  " % p.unspent_attr, func() -> void: open_skills("attributes"),
+	_btn(tabs, "  ABILITY ASSIGNMENTS  ", func() -> void: open_skills("abilities"),
+		Color(0.95, 0.85, 0.5) if tab == "abilities" else Color(0.6, 0.6, 0.6))
+	_btn(tabs, "  ATTRIBUTES  ·  %d pts  " % p.unspent_attr, func() -> void: open_skills("attributes"),
 		Color(0.95, 0.85, 0.5) if tab == "attributes" else Color(0.6, 0.6, 0.6))
 
 	if tab == "attributes":
 		_build_attributes_tab(vbox, p)
-		return
+	elif tab == "abilities":
+		_build_ability_assignments_tab(vbox, p)
+	else:
+		_build_talent_loadouts_tab(vbox, p)
 
-	_lbl(vbox, "Rows unlock as you level. Spend up to %d points per row, spread across its 3 columns (max %d per skill). Each column follows one of your themes." % [Skills.MAX_PER_ROW, Skills.MAX_PER_CELL], 13, Color(0.6, 0.62, 0.68))
 
+func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
+	p.sync_active_talent_loadout()
+	var profile_head := HBoxContainer.new()
+	profile_head.add_theme_constant_override("separation", 8)
+	vbox.add_child(profile_head)
+	var section := UITheme.header(_lbl(profile_head, "TALENT LOADOUTS", 16, UITheme.GOLD_BRIGHT))
+	section.custom_minimum_size = Vector2(168, 0)
+	for i in Player.TALENT_LOADOUT_COUNT:
+		var loadout_index: int = i
+		var profile: Dictionary = p.talent_loadouts[i]
+		var selected: bool = i == p.active_talent_loadout
+		var tab_text := ("◆  " if selected else "") + String(profile["name"])
+		var profile_button := _btn(profile_head, tab_text, func() -> void:
+			game.local_player.switch_talent_loadout(loadout_index)
+			_talent_renaming = false
+			open_skills("talents"),
+			UITheme.GOLD_BRIGHT if selected else Color(0.68, 0.68, 0.74))
+		profile_button.custom_minimum_size = Vector2(142, 34)
+		_profile_tab_style(profile_button, selected)
+
+	if _talent_renaming:
+		var name_edit := LineEdit.new()
+		name_edit.text = String(p.talent_loadouts[p.active_talent_loadout]["name"])
+		name_edit.max_length = 14
+		name_edit.placeholder_text = "Loadout name"
+		name_edit.custom_minimum_size = Vector2(150, 34)
+		profile_head.add_child(name_edit)
+		var commit_name := func() -> void:
+			game.local_player.rename_talent_loadout(
+				game.local_player.active_talent_loadout, name_edit.text)
+			_talent_renaming = false
+			open_skills("talents")
+		name_edit.text_submitted.connect(func(_submitted: String) -> void: commit_name.call())
+		_btn(profile_head, "SAVE", commit_name, Color(0.55, 1.0, 0.62))
+		name_edit.call_deferred("grab_focus")
+	else:
+		_btn(profile_head, "✎  RENAME", func() -> void:
+			_talent_renaming = true
+			open_skills("talents"), Color(0.78, 0.8, 0.88))
+
+	_lbl(vbox, "Each page remembers its own build. Switching pages redistributes the same %d-point character budget; it never creates extra points." % p.talent_point_budget(),
+		12, Color(0.62, 0.64, 0.72))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vbox.add_child(scroll)
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 6)
+	list.add_theme_constant_override("separation", 8)
 	scroll.add_child(list)
 
-	# Column headers = the class themes.
 	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 12)
+	head.add_theme_constant_override("separation", 10)
 	list.add_child(head)
-	var pad := _lbl(head, "", 13)
-	pad.custom_minimum_size = Vector2(120, 0)
+	var pad := _lbl(head, "TIER", 12, Color(0.5, 0.5, 0.56))
+	pad.custom_minimum_size = Vector2(112, 0)
 	for theme in Classes.THEMES[p.cls]:
-		var h := UITheme.header(_lbl(head, theme["name"].to_upper(), 15, theme["color"]))
-		h.custom_minimum_size = Vector2(288, 0)
+		var h := UITheme.header(_lbl(head, theme["name"].to_upper(), 14, theme["color"]))
+		h.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		h.custom_minimum_size = Vector2(326, 0)
 
 	for r in Skills.TREES[p.cls].size():
 		var row_box := HBoxContainer.new()
-		row_box.add_theme_constant_override("separation", 12)
+		row_box.add_theme_constant_override("separation", 10)
 		list.add_child(row_box)
 		var unlocked: bool = p.level >= Skills.ROW_LEVELS[r]
 		var spent := Skills.points_in_row(p.cls, r, p.tree_points)
-		var row_l := _lbl(row_box, "Lv.%d\n%d/%d pts" % [Skills.ROW_LEVELS[r], spent, Skills.MAX_PER_ROW], 13,
+		var row_l := _lbl(row_box, "LEVEL %d\n%s\n%d / %d" % [
+			Skills.ROW_LEVELS[r], "UNLOCKED" if unlocked else "LOCKED",
+			spent, Skills.MAX_PER_ROW], 12,
 			Color(0.95, 0.85, 0.5) if unlocked else Color(0.4, 0.4, 0.45))
-		row_l.custom_minimum_size = Vector2(120, 0)
+		row_l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row_l.custom_minimum_size = Vector2(112, 82)
 		var col_idx := 0
 		for cell in Skills.TREES[p.cls][r]:
 			var cd: Dictionary = cell
 			var theme_col: Color = Classes.THEMES[p.cls][col_idx]["color"]
 			col_idx += 1
 			var pts: int = p.tree_points.get(cd["id"], 0)
-			var can: bool = p.skill_points > 0 and Skills.can_add(p.cls, cd["id"], p.tree_points, p.level)
-			var color := Color(0.5, 1.0, 0.5) if pts > 0 else (Color(1, 1, 1) if can else Color(0.45, 0.45, 0.45))
+			var can: bool = p.skill_points > 0 and Skills.can_add(
+				p.cls, cd["id"], p.tree_points, p.level)
+			var color := Color(0.58, 1.0, 0.62) if pts > 0 else (
+				Color(0.93, 0.93, 0.97) if can else Color(0.48, 0.48, 0.52))
 			var add_cb := func() -> void:
 				if game.local_player.add_tree_point(cd["id"]):
-					open_skills()
-			var b := _btn(row_box, "%s  [%d/%d]\n%s" % [cd["name"], pts, Skills.cell_max(cd), cd["desc"]],
-				add_cb, color, can or pts > 0,
-				Art.glyph_tex(_cell_glyph(cd), theme_col if unlocked else Color(0.4, 0.4, 0.45)))
-			b.custom_minimum_size = Vector2(288, 0)
-			b.autowrap_mode = TextServer.AUTOWRAP_WORD  # long talent descs wrap, not overflow
-			if not can:
-				b.disabled = true
+					open_skills("talents")
+			var fallback := Art.glyph_tex(_cell_glyph(cd),
+				theme_col if unlocked else Color(0.4, 0.4, 0.45))
+			var b := _btn(row_box, "%s    %d/%d\n%s" % [
+				cd["name"], pts, Skills.cell_max(cd), cd["desc"]],
+				add_cb, color, can, _talent_icon(String(cd["id"]), fallback))
+			b.custom_minimum_size = Vector2(326, 82)
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			b.add_theme_constant_override("icon_max_width", 64)
+			b.tooltip_text = "%s\n%s\n%d of %d points" % [
+				cd["name"], cd["desc"], pts, Skills.cell_max(cd)]
+			_talent_card_style(b, theme_col, pts > 0, unlocked)
+	_hint(vbox, "ESC / T to close — select an unlocked talent to invest a point")
 
-	# ------------------------------------------------- theme assignment ---
+
+func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 	var next_note := "" if p.themes_known >= 3 else " — next unlocks at Lv %d" % Classes.THEME_LEVELS[mini(p.themes_known, 2)]
-	_lbl(vbox, "ABILITY VARIANTS — select an ability to choose its theme (%d/3 unlocked%s)" % [p.themes_known, next_note], 15, Color(0.95, 0.85, 0.5))
-	var trow := HBoxContainer.new()
-	trow.add_theme_constant_override("separation", 10)
-	vbox.add_child(trow)
+	UITheme.header(_lbl(vbox, "ABILITY ASSIGNMENTS", 17, UITheme.GOLD_BRIGHT))
+	_lbl(vbox, "Choose one specialization for each hotbar ability. Every option keeps the base ability and changes its behavior. %d/3 specializations unlocked%s." % [
+		p.themes_known, next_note], 12, Color(0.62, 0.64, 0.72))
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 8)
+	scroll.add_child(list)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 6)
+	list.add_child(header)
+	var ability_head := UITheme.header(_lbl(header, "HOTBAR ABILITY", 12, Color(0.52, 0.52, 0.58)))
+	ability_head.custom_minimum_size = Vector2(196, 0)
+	var base_head := UITheme.header(_lbl(header, "BASE", 13, Color(0.78, 0.78, 0.84)))
+	base_head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	base_head.custom_minimum_size = Vector2(220, 0)
+	for theme in Classes.THEMES[p.cls]:
+		var theme_head := UITheme.header(_lbl(header, theme["name"].to_upper(), 13, theme["color"]))
+		theme_head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		theme_head.custom_minimum_size = Vector2(220, 0)
+
+	var slot_labels := {"a1": "ABILITY 1", "a2": "ABILITY 2", "a3": "ABILITY 3", "ult": "ULTIMATE"}
 	for slot in ["a1", "a2", "a3", "ult"]:
 		var s: String = slot
-		var theme_id: String = p.ability_theme.get(s, "")
-		var theme := Classes.theme_by_id(p.cls, theme_id)
-		var label: String = theme.get("name", "Base")
-		var tcolor: Color = theme.get("color", Color(0.75, 0.75, 0.8))
-		var pick_cb := func() -> void:
-			open_theme_picker(s)
-		_btn(trow, "%s: %s ▾" % [Classes.ability(p.cls, s)["name"], label], pick_cb,
-			tcolor, p.themes_known > 0, Art.ability_icon(p.cls, s, tcolor, theme_id))
-	# One-click loadouts: opt every ability into a single theme.
+		var ab: Dictionary = Classes.ability(p.cls, s)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		list.add_child(row)
+		var ability_label := _lbl(row, "%s\n%s" % [slot_labels[s], ab["name"]], 13, Color(0.88, 0.86, 0.78))
+		ability_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		ability_label.custom_minimum_size = Vector2(196, 78)
+
+		var options: Array = [{"id": "", "name": "Base", "color": Color(0.78, 0.78, 0.84)}]
+		options.append_array(Classes.THEMES[p.cls])
+		for option_idx in options.size():
+			var option: Dictionary = options[option_idx]
+			var theme_id := String(option["id"])
+			var selected: bool = String(p.ability_theme.get(s, "")) == theme_id
+			var unlocked: bool = option_idx == 0 or option_idx - 1 < p.themes_known
+			var option_color: Color = option["color"] if unlocked else Color(0.38, 0.38, 0.43)
+			var assign_cb := func() -> void:
+				game.local_player.set_ability_theme(s, theme_id)
+				open_skills("abilities")
+			var marker := "◆  " if selected else ""
+			var option_button := _btn(row, marker + String(option["name"]).to_upper(),
+				assign_cb, option_color, unlocked,
+				Art.ability_icon(p.cls, s, option_color, theme_id))
+			option_button.custom_minimum_size = Vector2(220, 78)
+			option_button.add_theme_constant_override("icon_max_width", 64)
+			var detail := String(ab["desc"]) if theme_id == "" else (
+				Classes.variant_desc(p.cls, s, theme_id) + "\n" +
+				Classes.fx_text(Classes.ability_fx(p.cls, s, theme_id), p.cls))
+			option_button.tooltip_text = detail
+			_assignment_card_style(option_button, option_color, selected, unlocked)
+
 	var arow := HBoxContainer.new()
 	arow.add_theme_constant_override("separation", 10)
 	vbox.add_child(arow)
-	var al := _lbl(arow, "All-in:", 14, Color(0.7, 0.72, 0.78))
-	al.custom_minimum_size = Vector2(60, 0)
-	_btn(arow, " Base ", func() -> void:
+	var al := UITheme.header(_lbl(arow, "ASSIGN ALL", 13, Color(0.7, 0.72, 0.78)))
+	al.custom_minimum_size = Vector2(112, 0)
+	_btn(arow, " BASE ", func() -> void:
 		game.local_player.set_all_themes("")
-		open_skills(), Color(0.85, 0.85, 0.9), p.themes_known > 0)
+		open_skills("abilities"), Color(0.85, 0.85, 0.9))
 	for i2 in Classes.THEMES[p.cls].size():
 		var th: Dictionary = Classes.THEMES[p.cls][i2]
 		var tid: String = th["id"]
 		var t_unlocked: bool = i2 < p.themes_known
 		_btn(arow, " %s " % th["name"], func() -> void:
 			game.local_player.set_all_themes(tid)
-			open_skills(), th["color"] if t_unlocked else Color(0.4, 0.4, 0.45), t_unlocked)
-	_hint(vbox, "ESC / T to close — themes change how your abilities behave")
+			open_skills("abilities"),
+			th["color"] if t_unlocked else Color(0.4, 0.4, 0.45), t_unlocked)
+	_hint(vbox, "ESC / T to close — hover an assignment to read its exact behavior")
+
+
+func _profile_tab_style(button: Button, selected: bool) -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.24, 0.18, 0.08, 0.92) if selected else Color(0.10, 0.09, 0.14, 0.72)
+	normal.border_color = UITheme.GOLD_BRIGHT if selected else Color(UITheme.GOLD_DIM, 0.55)
+	normal.set_border_width_all(2 if selected else 1)
+	normal.set_corner_radius_all(5)
+	button.add_theme_stylebox_override("normal", normal)
+	var hover: StyleBoxFlat = normal.duplicate()
+	hover.border_color = UITheme.GOLD_BRIGHT
+	hover.bg_color = Color(0.25, 0.2, 0.12, 0.95)
+	button.add_theme_stylebox_override("hover", hover)
+
+
+func _talent_icon(cell_id: String, fallback: Texture2D = null) -> Texture2D:
+	var path := "res://assets/icons/talent_%s.png" % cell_id
+	if ResourceLoader.exists(path):
+		var texture := load(path) as Texture2D
+		if texture != null:
+			return texture
+	return fallback
+
+
+func _talent_card_style(button: Button, color: Color, invested: bool, unlocked: bool) -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(color.r * 0.12, color.g * 0.12, color.b * 0.12, 0.9)
+	normal.border_color = Color(color, 0.95 if invested else 0.38)
+	normal.set_border_width_all(2 if invested else 1)
+	normal.set_corner_radius_all(7)
+	normal.content_margin_left = 8.0
+	normal.content_margin_right = 8.0
+	button.add_theme_stylebox_override("normal", normal)
+	var hover: StyleBoxFlat = normal.duplicate()
+	hover.bg_color = Color(color.r * 0.2, color.g * 0.2, color.b * 0.2, 0.96)
+	hover.border_color = color
+	button.add_theme_stylebox_override("hover", hover)
+	var disabled: StyleBoxFlat = normal.duplicate()
+	disabled.bg_color = Color(0.07, 0.07, 0.09, 0.72)
+	disabled.border_color = Color(color, 0.5 if invested else 0.2)
+	if not unlocked:
+		disabled.bg_color = Color(0.05, 0.05, 0.07, 0.72)
+	button.add_theme_stylebox_override("disabled", disabled)
+
+
+func _assignment_card_style(button: Button, color: Color, selected: bool, unlocked: bool) -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(color.r * 0.12, color.g * 0.12, color.b * 0.12, 0.9)
+	normal.border_color = color if selected else Color(color, 0.32)
+	normal.set_border_width_all(3 if selected else 1)
+	normal.set_corner_radius_all(8)
+	button.add_theme_stylebox_override("normal", normal)
+	var hover: StyleBoxFlat = normal.duplicate()
+	hover.bg_color = Color(color.r * 0.2, color.g * 0.2, color.b * 0.2, 0.96)
+	hover.border_color = color
+	button.add_theme_stylebox_override("hover", hover)
+	var disabled: StyleBoxFlat = normal.duplicate()
+	disabled.bg_color = Color(0.05, 0.05, 0.07, 0.76)
+	disabled.border_color = Color(0.26, 0.26, 0.3, 0.5)
+	if not unlocked:
+		button.tooltip_text = "LOCKED — continue leveling to unlock this specialization"
+	button.add_theme_stylebox_override("disabled", disabled)
 
 
 ## Attribute allocation: +1 point per level. The four attributes

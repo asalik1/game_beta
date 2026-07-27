@@ -74,6 +74,14 @@ var level := 1
 var xp := 0
 var skill_points := 1    # points == level: the first lands at L1, tree fills at L40
 var tree_points := {}    # skill cell id -> points (0..5)
+const TALENT_LOADOUT_COUNT := 4
+var talent_loadouts: Array = [
+	{"name": "Build 1", "points": {}},
+	{"name": "Build 2", "points": {}},
+	{"name": "Build 3", "points": {}},
+	{"name": "Build 4", "points": {}},
+]
+var active_talent_loadout := 0
 # The four attributes convert at CLASS ratios (Classes.ATTR_SCALE);
 # the substats convert 1:1 for everyone (Classes.SUBSTAT_SCALE).
 var attr_points := {"STR": 0, "AGI": 0, "INT": 0, "VIT": 0,
@@ -1019,6 +1027,7 @@ func set_class(id: String) -> void:
 		refunded_skill += int(tree_points[tid])
 	tree_points.clear()
 	skill_points += refunded_skill
+	_reset_talent_loadouts()
 	var refunded_attr := 0
 	for attr in attr_points:
 		refunded_attr += int(attr_points[attr])
@@ -1071,6 +1080,117 @@ func set_ability_theme(slot: String, id: String) -> void:
 func set_all_themes(id: String) -> void:
 	for slot in ability_theme:
 		set_ability_theme(slot, id)
+
+
+# ========================================================== talent loadouts
+
+func _reset_talent_loadouts() -> void:
+	talent_loadouts = []
+	for i in TALENT_LOADOUT_COUNT:
+		talent_loadouts.append({"name": "Build %d" % (i + 1), "points": {}})
+	active_talent_loadout = 0
+
+
+func _copy_talent_points(source: Dictionary) -> Dictionary:
+	var out := {}
+	for id in source:
+		var amount := maxi(0, int(source[id]))
+		if amount > 0:
+			out[String(id)] = amount
+	return out
+
+
+func _talent_points_spent(points: Dictionary) -> int:
+	var total := 0
+	for id in points:
+		total += maxi(0, int(points[id]))
+	return total
+
+
+## The pool belongs to the character, not to a page. A loadout only changes
+## how that same pool is distributed.
+func talent_point_budget() -> int:
+	return skill_points + _talent_points_spent(tree_points)
+
+
+## Saved data is treated as a request, then rebuilt in canonical tree order.
+## This rejects stale ids, locked rows and over-budget/corrupt allocations.
+func _sanitize_talent_points(source: Dictionary, budget: int) -> Dictionary:
+	var out := {}
+	var remaining := maxi(0, budget)
+	for row_idx in Skills.TREES[cls].size():
+		if level < Skills.ROW_LEVELS[row_idx] or remaining <= 0:
+			continue
+		var row_room := Skills.MAX_PER_ROW
+		for cell in Skills.TREES[cls][row_idx]:
+			var cd: Dictionary = cell
+			var wanted := maxi(0, int(source.get(cd["id"], 0)))
+			var amount := mini(wanted, mini(Skills.cell_max(cd), mini(row_room, remaining)))
+			if amount > 0:
+				out[cd["id"]] = amount
+				row_room -= amount
+				remaining -= amount
+	return out
+
+
+func sync_active_talent_loadout() -> void:
+	if talent_loadouts.size() != TALENT_LOADOUT_COUNT:
+		_reset_talent_loadouts()
+	active_talent_loadout = clampi(active_talent_loadout, 0, TALENT_LOADOUT_COUNT - 1)
+	var profile: Dictionary = talent_loadouts[active_talent_loadout]
+	profile["points"] = _copy_talent_points(tree_points)
+	talent_loadouts[active_talent_loadout] = profile
+
+
+func switch_talent_loadout(index: int) -> bool:
+	if index < 0 or index >= TALENT_LOADOUT_COUNT:
+		return false
+	if talent_loadouts.size() != TALENT_LOADOUT_COUNT:
+		_reset_talent_loadouts()
+	var budget := talent_point_budget()
+	sync_active_talent_loadout()
+	var target: Dictionary = talent_loadouts[index]
+	var requested: Dictionary = target.get("points", {})
+	tree_points = _sanitize_talent_points(requested, budget)
+	skill_points = budget - _talent_points_spent(tree_points)
+	active_talent_loadout = index
+	sync_active_talent_loadout()
+	recalc()
+	game.sfx("ui_click")
+	return true
+
+
+func rename_talent_loadout(index: int, requested_name: String) -> void:
+	if index < 0 or index >= talent_loadouts.size():
+		return
+	var clean := requested_name.strip_edges().left(14)
+	if clean == "":
+		return
+	var profile: Dictionary = talent_loadouts[index]
+	profile["name"] = clean
+	talent_loadouts[index] = profile
+
+
+## Called by save loading after the canonical current tree has been restored.
+## Old saves have no profiles; their existing tree becomes Build 1.
+func load_talent_loadouts(saved: Array, saved_active: int) -> void:
+	var current := _copy_talent_points(tree_points)
+	_reset_talent_loadouts()
+	for i in mini(saved.size(), TALENT_LOADOUT_COUNT):
+		if not (saved[i] is Dictionary):
+			continue
+		var raw: Dictionary = saved[i]
+		var profile: Dictionary = talent_loadouts[i]
+		var raw_name := String(raw.get("name", "")).strip_edges().left(14)
+		if raw_name != "":
+			profile["name"] = raw_name
+		var raw_points: Dictionary = raw.get("points", {})
+		profile["points"] = _sanitize_talent_points(raw_points, talent_point_budget())
+		talent_loadouts[i] = profile
+	active_talent_loadout = clampi(saved_active, 0, TALENT_LOADOUT_COUNT - 1)
+	var active_profile: Dictionary = talent_loadouts[active_talent_loadout]
+	active_profile["points"] = current
+	talent_loadouts[active_talent_loadout] = active_profile
 
 
 func _theme_fx(slot: String) -> Dictionary:
@@ -1587,6 +1707,7 @@ func use_consumable(c: Dictionary) -> void:
 				back += int(tree_points[id])
 			tree_points.clear()
 			skill_points += back
+			sync_active_talent_loadout()
 			consumables.erase(c)
 			recalc()
 			game.sfx("levelup")
@@ -1972,6 +2093,7 @@ func add_tree_point(id: String) -> bool:
 		return false
 	skill_points -= 1
 	tree_points[id] = tree_points.get(id, 0) + 1
+	sync_active_talent_loadout()
 	recalc()
 	game.sfx("levelup")
 	# Capital intro quest: Marshal Corin's "commit a point" deed (rework §5).
