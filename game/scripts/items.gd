@@ -350,6 +350,40 @@ const PASSIVES := {
 	"thecover":   "When a blow would break you (below 30%), the Cover opens: 2s of heavy damage reduction and a repulsing void-wave (25s cd)",
 	"veinroot":   "The root drinks from your reserve: Dark Pact's blast draws extra force from your max health, and its surge lingers 2s",
 	"lastpulse":  "Every pulse of stored blood is power: bonus max health feeds your ATK — doubled for 5s after Dark Pact",
+	# ---- armor-family TEMPLATES (helmet/gloves/pants uniques, 2026-07-27) ----
+	# 30 shared systems (GEAR_ARMOR_UNIQUE_PASSIVES.md): bare id = S lane,
+	# `_a` = A lane. The 180 items carrying these arrive with the slot go-live
+	# (art pass names them); the engine behind every line is live already.
+	"helm_ward":      "Taking magic damage arms the ward-crown: 30% magic damage reduction for 2s (8s cd)",
+	"helm_ward_a":    "Taking magic damage arms a lesser ward: 15% magic damage reduction for 2s (8s cd)",
+	"glove_ward":     "Your hits unweave the target's wards — their armor is torn open for 3s",
+	"glove_ward_a":   "Your hits fray the target's wards — a little armor torn open for 3s",
+	"pants_ward":     "Grounded: slows, roots and freezes on you run 30% shorter",
+	"pants_ward_a":   "Deep-grounded: slows, roots and freezes on you run 50% shorter — BUT you receive 10% less healing",
+	"helm_guard":     "The crest BLUNTS: the first enemy crit every 10s lands as a normal hit",
+	"helm_guard_a":   "The crest turns: the first enemy crit every 10s loses half its bite",
+	"glove_guard":    "Iron answer: 25% chance a melee attacker is counter-struck",
+	"glove_guard_a":  "Iron answer: 15% chance a melee attacker is counter-struck",
+	"pants_guard":    "Anchor stance: every blow you take hardens you — flat damage reduction, up to 3 stacks",
+	"pants_guard_a":  "Anchor stance: blows you take harden you a little — up to 2 stacks",
+	"helm_finesse":   "Keen eye: evading a blow EXPOSES the attacker for 3s",
+	"helm_finesse_a": "Keen eye: evading a blow briefly EXPOSES the attacker",
+	"glove_finesse":  "Deft hands: every 5th basic attack cannot miss or be grazed",
+	"glove_finesse_a": "Deft hands: every 8th basic attack cannot miss or be grazed",
+	"pants_finesse":  "Slip stance: being hit leaves you slippery — +10% evasion for 2s",
+	"pants_finesse_a": "Slip stance: being hit leaves you very slippery — +15% evasion for 2s — BUT Second Wind waits 0.5s longer",
+	"helm_aggr":      "War-crown: your first hit on an unwounded enemy strikes 25% harder",
+	"helm_aggr_a":    "War-crown: your first hit on an unwounded enemy strikes 15% harder",
+	"glove_aggr":     "Blood knuckle: your crits tear — a wound that keeps burning for 3s",
+	"glove_aggr_a":   "Blood knuckle: your crits nick — a lesser wound that burns for 3s",
+	"pants_aggr":     "Advance stance: after your commit ability, your next damaging ability within 3s strikes 20% harder",
+	"pants_aggr_a":   "Advance stance: after your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"helm_bulwark":   "Life-crest: overhealing pools into a shield (up to 8% max health)",
+	"helm_bulwark_a": "Life-crest: overhealing pools into a small shield (up to 4% max health)",
+	"glove_bulwark":  "Might grip: your bulk lands with every hit — bonus damage from your max health",
+	"glove_bulwark_a": "Might grip: a little of your bulk lands with every hit",
+	"pants_bulwark":  "Last bastion: below 30% health you stand in the doorway — 15% damage reduction",
+	"pants_bulwark_a": "Last bastion: below 30% health, 25% damage reduction — BUT Second Wind never triggers while worn",
 }
 
 # ------------------------------------------------------------------- gems ---
@@ -923,11 +957,14 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 	# passive still sleeps behind the awakening quest; unique passives are
 	# live on pickup (owner call, §10.1).
 	if cls != "" and force_noun == "" and act > 0:
-		if slot == "weapon" and grade in ["A", "S"]:
+		if grade in ["A", "S"]:
+			# Slot-generic (2026-07-27): the pool filters by SLOT, so the channel
+			# lights up per slot exactly when that slot's uniques enter the table
+			# (weapons today; helmet/gloves/pants when the art pass names theirs).
 			var gate_act: int = Balance.UNIQUE_A_ACT if grade == "A" else Balance.UNIQUE_S_ACT
 			var chance: float = Balance.UNIQUE_A_CHANCE if grade == "A" else Balance.UNIQUE_S_CHANCE
 			if act >= gate_act and rng.randf() < chance:
-				var pool := uniques_of(cls, grade)
+				var pool := uniques_of(cls, grade, slot)
 				if not pool.is_empty():
 					return make_unique(pool[rng.randi_range(0, pool.size() - 1)], rng)
 		if grade == "S" and act >= Balance.UNIQUE_A_ACT and S_GEAR.has(cls) \
@@ -965,11 +1002,13 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 	return item
 
 
-## The named uniques of one class at one grade (drop pool for the named channel).
-static func uniques_of(cls: String, grade: String) -> Array:
+## The named uniques of one class at one grade (drop pool for the named
+## channel). `slot` narrows the pool ("" = all slots — codex/dev listings).
+static func uniques_of(cls: String, grade: String, slot := "") -> Array:
 	var out: Array = []
 	for u in UNIQUES:
-		if String(u["cls"]) == cls and String(u["grade"]) == grade:
+		if String(u["cls"]) == cls and String(u["grade"]) == grade \
+				and (slot == "" or String(u["slot"]) == slot):
 			out.append(u)
 	return out
 

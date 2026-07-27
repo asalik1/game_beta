@@ -1192,6 +1192,9 @@ const S_CASTER_BOLT_CDR := 0.08
 const UNIQ := {
 	# --- shared infrastructure ---
 	"evade_icd": 1.5,          # ONE shared internal cd for every on-evade trigger (owner call §10.4)
+	"struck_icd": 2.0,         # the on-hit-taken PROC family's shared cd (GEAR_ARMOR_UNIQUE_PASSIVES.md §1.3):
+	                           # weapon procs fire as shipped and STAMP it; armor struck-clauses require it clear
+	                           # (weapon-first by construction — no doubled counters on one blow)
 	# --- warrior ---
 	"pennon":     {"shred": 20.0, "shred_dur": 4.0},                # Bash SUNDERS: flat physres shred
 	"decree":     {"mult": 1.15, "stagger": 0.35},                  # every 3rd Cleave: armor-ignoring thrust
@@ -1258,6 +1261,48 @@ const UNIQ := {
 	"thecover":   {"threshold": 0.30, "dr": 0.5, "dr_dur": 2.0, "icd": 25.0},  # panic cover + repulse
 	"veinroot":   {"hp_dmg": 0.04, "surge_ext": 2.0},               # Pact draws on max HP; surge lingers
 	"lastpulse":  {"hp_per_atk": 15.0, "double_dur": 5.0},          # bonus max HP -> atk; doubled after Pact
+	# ===== ARMOR-FAMILY TEMPLATES (helmet/gloves/pants uniques — 2026-07-27) =====
+	# GEAR_ARMOR_UNIQUE_PASSIVES.md: 30 shared templates (5 profiles x 3 slots x
+	# A/S lanes), instantiated per class through the ART pass's 180 named items.
+	# The bare id is the S lane; `<id>_a` is the A lane (LESSER or BARGAIN, its
+	# drawback in the knob). All placeholders, un-benchmarked. The ENGINE is
+	# wired now; the items that carry these ids arrive with the slot go-live
+	# (SLOT wiring + art, per GEAR_SHAPE_MATRIX.md §5b).
+	# --- profile A: WARD ---
+	"helm_ward":     {"dr": 0.30, "dur": 2.0, "icd": 8.0},          # magic hit taken arms a magic-DR ward
+	"helm_ward_a":   {"dr": 0.15, "dur": 2.0, "icd": 8.0},
+	"glove_ward":    {"shred": 12.0, "dur": 3.0},                   # your hits unweave: flat res shred
+	"glove_ward_a":  {"shred": 7.0, "dur": 3.0},
+	"pants_ward":    {"cc_mult": 0.7},                              # slows/roots/freezes on YOU run shorter
+	"pants_ward_a":  {"cc_mult": 0.5, "heal_tax": 0.10},            # BARGAIN: deeper, but -10% healing received
+	# --- profile B: GUARD ---
+	"helm_guard":    {"blunt": 1.0, "icd": 10.0},                   # first enemy crit per icd lands BLUNTED
+	"helm_guard_a":  {"blunt": 0.5, "icd": 10.0},
+	"glove_guard":   {"chance": 0.25, "counter": 0.5},              # melee attacker counter-struck (struck family)
+	"glove_guard_a": {"chance": 0.15, "counter": 0.5},
+	"pants_guard":   {"dr_stack": 0.02, "stacks": 3, "knock": 0.5}, # hit taken -> flat-DR stack; knock DORMANT (no player-knock source today)
+	"pants_guard_a": {"dr_stack": 0.015, "stacks": 2, "knock": 0.5},
+	# --- profile C: FINESSE ---
+	"helm_finesse":   {"vuln_dur": 3.0},                            # evade marks the attacker EXPOSED (evade family, weapon-first)
+	"helm_finesse_a": {"vuln_dur": 1.5},
+	"glove_finesse":   {"every": 5},                                # every Nth basic cannot miss or graze (true-aim)
+	"glove_finesse_a": {"every": 8},
+	"pants_finesse":   {"eva": 0.10, "dur": 2.0},                   # being hit leaves you slippery (struck family)
+	"pants_finesse_a": {"eva": 0.15, "dur": 2.0, "sw_delay_tax": 0.5},  # BARGAIN: Second Wind waits longer
+	# --- profile D: AGGRESSOR ---
+	"helm_aggr":    {"opener": 0.25},                               # first hit on unwounded prey strikes harder
+	"helm_aggr_a":  {"opener": 0.15},
+	"glove_aggr":   {"dot": 0.15, "dur": 3.0},                      # your crits add a class-typed tear
+	"glove_aggr_a": {"dot": 0.10, "dur": 3.0},
+	"pants_aggr":   {"bonus": 0.20, "window": 3.0},                 # COMMIT ability arms the next damaging cast
+	"pants_aggr_a": {"bonus": 0.12, "window": 3.0},
+	# --- profile E: BULWARK ---
+	"helm_bulwark":   {"cap": 0.08},                                # overheal pools into a shield (Transfusion rail)
+	"helm_bulwark_a": {"cap": 0.04},
+	"glove_bulwark":   {"hp_per": 40.0},                            # hits carry flat bonus from max HP
+	"glove_bulwark_a": {"hp_per": 70.0},
+	"pants_bulwark":   {"dr": 0.15, "threshold": 0.30},             # below the threshold: a standing DR floor
+	"pants_bulwark_a": {"dr": 0.25, "threshold": 0.30, "sw_off": 1},  # BARGAIN: deeper floor, Second Wind never triggers
 }
 
 

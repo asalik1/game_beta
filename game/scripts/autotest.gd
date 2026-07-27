@@ -1237,6 +1237,63 @@ func _run_systems() -> void:
 	game.player.recalc()
 	print("ok: named uniques (60 wired, live on pickup, drop split, worldroot conversion)")
 
+	# 4b3. Armor-family passive TEMPLATES (GEAR_ARMOR_UNIQUE_PASSIVES.md):
+	# 30 ids (15 bases x S/A lanes) described + knobbed; the engine reads them
+	# off ANY equipped non-weapon piece; recalc-level effects move the sheet;
+	# pants_ward's CC modifier actually shortens a root. The 180 items that
+	# carry these arrive with the art pass — injected pieces stand in here.
+	for tbase in ["helm_ward", "glove_ward", "pants_ward", "helm_guard", "glove_guard",
+			"pants_guard", "helm_finesse", "glove_finesse", "pants_finesse",
+			"helm_aggr", "glove_aggr", "pants_aggr", "helm_bulwark", "glove_bulwark",
+			"pants_bulwark"]:
+		for lane in [String(tbase), String(tbase) + "_a"]:
+			if not Items.PASSIVES.has(lane):
+				return _fail("armor template %s lacks a card line" % lane)
+			if not Balance.UNIQ.has(lane):
+				return _fail("armor template %s lacks Balance.UNIQ knobs" % lane)
+	var arng := RandomNumberGenerator.new()
+	arng.seed = 21
+	var ap: Player = game.player
+	var keep_helm = ap.equipment.get("helmet")
+	var keep_glove = ap.equipment.get("gloves")
+	var keep_pants = ap.equipment.get("pants")
+	ap.recalc()
+	var base_transfusion: float = ap.transfusion
+	var t_helm := Items.roll_item_of("helmet", "S", arng, ap.cls)
+	t_helm["passive"] = "helm_bulwark"
+	var t_glove := Items.roll_item_of("gloves", "S", arng, ap.cls)
+	t_glove["passive"] = "glove_bulwark"
+	var t_pants := Items.roll_item_of("pants", "A", arng, ap.cls)
+	t_pants["passive"] = "pants_ward_a"
+	ap.equipment["helmet"] = t_helm
+	ap.equipment["gloves"] = t_glove
+	ap.equipment["pants"] = t_pants
+	ap.recalc()
+	if ap.uniq_armor.size() != 3 or ap.uniq_gear("helm_bulwark") != "helm_bulwark" \
+			or ap.uniq_gear("pants_ward") != "pants_ward_a":
+		return _fail("armor passive cache/lane reader wrong: %s" % [ap.uniq_armor])
+	if ap.transfusion <= base_transfusion:
+		return _fail("helm_bulwark did not raise the overheal pool")
+	if ap.uniq_hit_flat <= 0.0:
+		return _fail("glove_bulwark granted no per-hit bulk")
+	if absf(ap.uniq_heal_in - 0.9) > 0.001:
+		return _fail("pants_ward_a BARGAIN heal tax missing (got %.2f)" % ap.uniq_heal_in)
+	var keep_rooted: float = ap.rooted_time
+	ap.rooted_time = 0.0
+	ap.apply_root(1.0)
+	if absf(ap.rooted_time - 0.5) > 0.01:
+		return _fail("pants_ward_a did not shorten the root (%.2f left of 1.0)" % ap.rooted_time)
+	ap.rooted_time = keep_rooted
+	for pr in [["helmet", keep_helm], ["gloves", keep_glove], ["pants", keep_pants]]:
+		if pr[1] == null:
+			ap.equipment.erase(pr[0])
+		else:
+			ap.equipment[pr[0]] = pr[1]
+	ap.recalc()
+	if not ap.uniq_armor.is_empty():
+		return _fail("armor passive cache did not clear on unequip")
+	print("ok: armor passive templates (30 knobbed, lane reader, bulwark/grip/ward effects, CC shorten)")
+
 	# 4c. Gems: targeted socket, removal, stat change, synthesize, sell-return.
 	# Capital rework (§2): socket/unsocket are Lapidary bench work — borrow
 	# the city context for these RULE asserts (the gate has its own test).

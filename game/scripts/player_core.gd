@@ -408,6 +408,23 @@ var uniq_hp_atk := 0.0         # worldroot/lastpulse: atk derived from bonus max
 var uniq_marks := {}           # remembrance: Enemy -> per-enemy re-hex ICD (seconds left)
 var tumble_perfect_t := 0.0    # live while Tumble's perfect-dodge window holds (hartsbreath reads it)
 var storm_mult := 1.0          # Arrow Storm damage scale (moonturn's echo storm rains at half)
+# ---- armor-family named passives (GEAR_ARMOR_UNIQUE_PASSIVES.md, 2026-07-27) ----
+# Helmet/gloves/pants uniques carry TEMPLATE passives (Balance.UNIQ helm_/glove_/
+# pants_*; bare id = S lane, `_a` = A lane). uniq_armor caches the equipped ids
+# per recalc; the derived stats below are recalc-computed. All run state, unsaved.
+var uniq_armor: Array = []     # equipped non-weapon passive ids (recalc cache)
+var uniq_gcount := 0           # glove_finesse: basics since the last true-aim strike
+var uniq_heal_in := 1.0        # pants_ward A BARGAIN: healing-received factor
+var uniq_cc_mult := 1.0        # pants_ward: incoming slow/root/freeze duration factor
+var uniq_hit_flat := 0.0       # glove_bulwark: flat bonus damage folded into every hit
+var uniq_guard_stacks := 0     # pants_guard: flat-DR stacks from blows taken
+var uniq_guard_t := 0.0        # ...their Grit-style decay window
+var uniq_mward_t := 0.0        # helm_ward: magic-DR ward window
+var uniq_mward_amt := 0.0      # ...its strength
+# pants_aggr's COMMIT binding per class (the paladin's is his Judgment LEAP,
+# gated in use_ability on the leap actually firing).
+const UNIQ_COMMIT := {"warrior": "a2", "archer": "a3", "mage": "a3",
+	"assassin": "a2", "paladin": "a1", "warlock": "a3"}
 var dash_refund_t := 0.0       # Shadow phantom step: kill within this refunds the dash
 var dash_refund_frac := 0.0    # ...how much of the dash cd a closing kill returns
 var storm_time := 0.0
@@ -859,6 +876,25 @@ func uniq_k(key: String, default := 0.0) -> float:
 	return float(Balance.uniq(s_passive()).get(key, default))
 
 
+## The equipped ARMOR-family lane of template `base`: "" if absent, the bare
+## id for the S lane, "<base>_a" for the A lane. One piece per slot carries
+## one lane, so at most one is ever equipped.
+func uniq_gear(base: String) -> String:
+	if uniq_armor.has(base):
+		return base
+	if uniq_armor.has(base + "_a"):
+		return base + "_a"
+	return ""
+
+
+## One knob of an armor template's EQUIPPED lane (default when absent).
+func uniq_gk(base: String, key: String, default := 0.0) -> float:
+	var id := uniq_gear(base)
+	if id == "":
+		return default
+	return float(Balance.uniq(id).get(key, default))
+
+
 ## Is this S weapon's class awakened for this character? (persisted flag)
 func weapon_awakened(w: Dictionary) -> bool:
 	if game == null:
@@ -1279,6 +1315,15 @@ func recalc() -> void:
 		var stats := Items.stats_of(equipment[slot])
 		for stat in stats:
 			b[stat] = b.get(stat, 0.0) + stats[stat]
+	# Armor-family named passives: cache the equipped TEMPLATE ids once per
+	# recalc — every hook reads this list (weapon passives stay on s_passive).
+	uniq_armor.clear()
+	for slot in equipment:
+		if String(slot) == "weapon":
+			continue
+		var piece: Dictionary = equipment[slot]
+		if piece.has("passive") and not piece.get("passive_dormant", false):
+			uniq_armor.append(String(piece["passive"]))
 	# Set bonus: 2/4 pieces of your class's S legendary set grant escalating
 	# stat bonuses (Items.SET_BONUSES). Only S gear of your OWN class counts.
 	var set_pieces := Items.count_set_pieces(equipment, cls)
@@ -1425,6 +1470,25 @@ func recalc() -> void:
 			var base_hp: float = base["hp"] + base["hp_lvl"] * (level - 1)
 			uniq_hp_atk = maxf(0.0, max_hp - base_hp) / uniq_k("hp_per_atk", 1000.0)
 			atk += uniq_hp_atk
+	# ---- armor-template recalc effects (helmet/gloves/pants uniques) ----
+	# BARGAIN drawbacks + the standing conversions; procs live in the hooks.
+	uniq_heal_in = 1.0
+	uniq_cc_mult = 1.0
+	uniq_hit_flat = 0.0
+	if not uniq_armor.is_empty():
+		if uniq_gear("pants_ward") != "":
+			# Grounded: CC on you runs shorter; the A lane pays in healing taken.
+			uniq_cc_mult = uniq_gk("pants_ward", "cc_mult", 1.0)
+			uniq_heal_in = 1.0 - uniq_gk("pants_ward", "heal_tax")
+		if uniq_gear("pants_finesse") == "pants_finesse_a":
+			sw_delay += uniq_gk("pants_finesse", "sw_delay_tax")  # BARGAIN: SW waits
+		if uniq_gk("pants_bulwark", "sw_off") > 0.0:
+			sw_regen = 0.0  # BARGAIN: the bastion never rests
+		if uniq_gear("helm_bulwark") != "":
+			transfusion += uniq_gk("helm_bulwark", "cap")  # overheal pools (Transfusion rail)
+		if uniq_gear("glove_bulwark") != "":
+			# Might grip: bulk lands with every hit (folded like _cast_base).
+			uniq_hit_flat = max_hp / maxf(1.0, uniq_gk("glove_bulwark", "hp_per", 1000.0))
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
 
@@ -1436,6 +1500,7 @@ func gain_hp(amount: float) -> void:
 	if amount <= 0.0 or dead:
 		return
 	amount *= debuff_heal_in   # endgame Depths −healing-received debuff (1.0 off-run)
+	amount *= uniq_heal_in     # pants_ward A BARGAIN: deep-grounded pays in mending
 	var before := hp
 	hp = minf(max_hp, hp + amount)
 	heal_accum += hp - before

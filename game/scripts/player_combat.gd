@@ -1122,6 +1122,16 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	e_res = maxf(0.0, e_res - e.res_shred)
 	if effects.has("pen_ignore"):
 		e_res *= 1.0 - clampf(float(effects["pen_ignore"]), 0.0, 1.0)
+	# Armor-template hit riders (helmet/gloves/pants uniques):
+	var e_eva := e.eva
+	if not uniq_armor.is_empty():
+		if uniq_gear("glove_ward") != "":
+			# Unweaving hands: every hit tears the ward open for the next.
+			effects["shred"] = maxf(float(effects.get("shred", 0.0)), uniq_gk("glove_ward", "shred"))
+			effects["shred_cap"] = maxf(float(effects.get("shred_cap", 0.0)), uniq_gk("glove_ward", "shred"))
+			effects["shred_dur"] = maxf(float(effects.get("shred_dur", 0.0)), uniq_gk("glove_ward", "dur"))
+		if uniq_take("true_aim"):
+			e_eva = 0.0  # Deft hands: this strike cannot miss or be grazed
 
 	# Theme crit bonuses (and theme-line talents like Nightfall) are
 	# CAP-EXEMPT (player rule 2026-07-06): they ride above the 35% knee
@@ -1133,9 +1143,10 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# ability's dmg.true_frac, passed in via effects, e.g. Meteor's 25%): that slice
 	# ignores all defenses and cannot crit OR miss; the rest resolves normally.
 	var true_frac: float = effects.get("true_frac", 0.0)
-	var base_amt: float = current_atk() * mult + _cast_base
+	# glove_bulwark: bulk lands with every hit — flat, folded like _cast_base.
+	var base_amt: float = current_atk() * mult + _cast_base + uniq_hit_flat
 	var result := Stats.resolve(base_amt * (1.0 - true_frac), dmg_type,
-		crit, crit_dmg, pen, dex, e_res, e.eva, e.critres, crit_exempt)
+		crit, crit_dmg, pen, dex, e_res, e_eva, e.critres, crit_exempt)
 	if result["miss"] and true_frac <= 0.0:
 		game.spawn_text(e.global_position + Vector2(0, -30), "MISS", Color(0.7, 0.7, 0.7))
 		return
@@ -1255,6 +1266,11 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		var hunger := hunger_exec_bonus()
 		if hunger > 0.0:
 			dmg *= 1.0 + hunger
+	# helm_aggr (armor template): the war-crown's opener — the first blow into
+	# unwounded prey strikes harder (herald's weaker, stat-only cousin).
+	if not uniq_armor.is_empty() and uniq_gear("helm_aggr") != "" \
+			and e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999:
+		dmg *= 1.0 + uniq_gk("helm_aggr", "opener")
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -1278,6 +1294,12 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
 	if uniq_sp != "":
 		_uniq_after_hit(e, uniq_sp, dmg, mult, is_crit, effects)
+	# glove_aggr (armor template): the blood knuckle's tear — crits leave a
+	# class-typed wound (echo sub-hits stay clean, like every follow-up).
+	if is_crit and not uniq_armor.is_empty() and not e.dying \
+			and not effects.get("_echoed", false) and uniq_gear("glove_aggr") != "":
+		e.apply_burn(_dot_dps(e, current_atk() * uniq_gk("glove_aggr", "dot")),
+			uniq_gk("glove_aggr", "dur"), Color(1.2, 0.5, 0.4), self)
 	# A Ninja-pack impact burst punctuates a CRIT (CC0) — elemental when
 	# themed, a warm shockburst otherwise. Single-target only: AoE and echo
 	# sub-hits stay quiet so a crowd hit doesn't turn to confetti.
