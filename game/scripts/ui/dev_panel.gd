@@ -736,9 +736,12 @@ static func _equip_next_unique(m: Menus) -> void:
 	_uniq_cursor += 1
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	if p.equipment.has("weapon"):
-		p.strip_gems(p.equipment["weapon"])
-	p.equipment["weapon"] = Items.make_unique(u, rng)
+	# Equip into the unique's OWN slot (the cycler now walks all 70 per
+	# class — weapons AND the six gear slots' named pieces).
+	var uslot := String(u["slot"])
+	if p.equipment.has(uslot):
+		p.strip_gems(p.equipment[uslot])
+	p.equipment[uslot] = Items.make_unique(u, rng)
 	p.recalc()
 	p._update_weapon_visual()
 	m.game.sfx("equip")
