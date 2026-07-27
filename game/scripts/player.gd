@@ -408,6 +408,7 @@ func apply_freeze(dur: float) -> void:
 	if dead:
 		return
 	frozen_time = maxf(frozen_time, dur * uniq_cc_mult)  # pants_ward: grounded
+	_uniq_grounded_beat()
 	game.spawn_text(global_position + Vector2(0, -50), "FROZEN!", Color(0.6, 0.85, 1.0))
 	game.burst(global_position, Color(0.7, 0.9, 1.0), 14)
 
@@ -422,6 +423,7 @@ func apply_root(dur: float) -> void:
 	if dead:
 		return
 	rooted_time = maxf(rooted_time, dur * uniq_cc_mult)  # pants_ward: grounded
+	_uniq_grounded_beat()
 	game.spawn_text(global_position + Vector2(0, -50), "ROOTED!", Color(0.5, 0.8, 0.6))
 
 
@@ -437,6 +439,7 @@ func apply_chill(mult: float, dur := 0.35) -> void:
 		return
 	chill_mult = minf(chill_mult, mult) if chill_time > 0.0 else mult
 	chill_time = maxf(chill_time, dur * uniq_cc_mult)  # pants_ward: grounded
+	_uniq_grounded_beat()
 
 
 # ================================================================= abilities
@@ -589,18 +592,26 @@ func use_ability(slot: String) -> void:
 			if uniq_gcount >= int(uniq_gk("glove_finesse", "every", 99.0)):
 				uniq_gcount = 0
 				uniq_t["true_aim"] = 1.5
-		if uniq_gear("pants_aggr") != "":
-			# Advance stance: the COMMIT ability arms the window; the next
-			# DAMAGING cast inside it strikes harder. The paladin's commit is
-			# his Judgment LEAP — armed post-dispatch below, when it fires.
+		var adv_id := uniq_gear("pants_aggr")
+		if adv_id != "":
+			# Advance verb: the COMMIT ability arms the window; the next
+			# DAMAGING cast inside it strikes harder and fires the carrier's
+			# beat. The paladin's commit is his Judgment LEAP — armed
+			# post-dispatch below, when it fires.
 			var commit: String = UNIQ_COMMIT.get(cls, "")
 			if slot != commit and uniq_on("pants_aggr") \
 					and Classes.CLASSES[cls]["abilities"][slot].has("dmg") \
 					and uniq_take("pants_aggr"):
 				f *= 1.0 + uniq_gk("pants_aggr", "bonus")
 				game.spawn_text(global_position + Vector2(0, -66), "ADVANCE", Color(1.0, 0.8, 0.5))
+				_uniq_beat(adv_id)
 			elif slot == commit and cls != "paladin":
 				uniq_t["pants_aggr"] = uniq_gk("pants_aggr", "window")
+		var slip_id := uniq_gear("pants_finesse")
+		if slip_id != "" and dodge_time > 0.0 \
+				and String(Balance.uniq(slip_id).get("beat", "")) == "slipamp":
+			# Slip-amp beat: abilities cast while slippery strike harder.
+			f *= 1.0 + float(Balance.uniq(slip_id).get("amp", 0.0))
 	var uniq_leap_before := judgment_leap_cd
 	if _tfx.has("speed_buff"):
 		theme_speed_time = 2.5
@@ -805,6 +816,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			if blunt >= 1.0:
 				was_crit = false
 			game.spawn_text(global_position + Vector2(0, -52), "BLUNTED", Color(0.8, 0.85, 1.0))
+			_uniq_beat(uniq_gear("helm_guard"), attacker as Enemy)
 	else:
 		if randf() < Stats.eva_curve(eff_eva):
 			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
@@ -831,6 +843,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		return
 	hurt_cd = 0.6
 	hurt_was_heavy = heavy  # a heavy-armed window blocks even other heavies
+	var uniq_prev_sh := since_hurt  # the swkeep beat restores this (armor ward)
 	since_hurt = 0.0
 	if dr_time > 0.0 and dmg_type != "true":
 		# Arcane Ward (round 45): the mage's Blink cloak — a brief, strong
@@ -896,7 +909,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		vamp.hp = minf(vamp.max_hp, vamp.hp + amount * Balance.AFFIX_LIFESTEAL_FRAC)
 		game.spawn_text(vamp.global_position + Vector2(0, -50), "DRINKS", Color(0.9, 0.35, 0.55))
 	_uniq_on_hit_taken(amount, attacker)
-	_uniq_armor_on_hit_taken(amount, attacker, dmg_type)
+	_uniq_armor_on_hit_taken(amount, attacker, dmg_type, uniq_prev_sh)
 	game.fight_note_damage(amount, attacker)
 	game.stat_taken(self, amount)  # battle stats: HP actually lost (owner-side)
 	game.sfx("hurt")
@@ -985,6 +998,19 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			_tfx = saved_fx
 
 
+## Grounded verb beat: shrugging off a CC pays the carrier's class clause.
+## Own ICD — frost auras re-apply chill EVERY FRAME, so the beat must not
+## trickle-fire (the duration cut itself is continuous and un-throttled).
+func _uniq_grounded_beat() -> void:
+	if uniq_armor.is_empty() or uniq_cc_mult >= 1.0 or uniq_on("grounded_icd"):
+		return
+	var gr_id := uniq_gear("pants_ward")
+	if gr_id == "":
+		return
+	uniq_t["grounded_icd"] = 3.0
+	_uniq_beat(gr_id)
+
+
 ## Named-unique on-evade dispatch (2026-07-27): ONE hook + ONE shared internal
 ## cd (Balance.UNIQ.evade_icd) for every dodge-triggered passive — the whole
 ## finesse column rides this. `attacker` may be null (hazard/AoE evades);
@@ -1048,14 +1074,16 @@ func _uniq_on_evade(attacker: Node) -> void:
 				armed = false  # nothing to name — don't burn the ICD
 		_:
 			armed = false
-	# Armor evade clause (helm_finesse), weapon-first: it only fires when the
-	# weapon's evade passive didn't claim this dodge.
-	if not armed and not uniq_armor.is_empty() and uniq_gear("helm_finesse") != "" \
+	# Armor evade clause (the expose verb), weapon-first: it only fires when
+	# the weapon's evade passive didn't claim this dodge.
+	var ex_id := uniq_gear("helm_finesse")
+	if not armed and not uniq_armor.is_empty() and ex_id != "" \
 			and attacker is Enemy and is_instance_valid(attacker) \
 			and not (attacker as Enemy).dying:
 		var ke := attacker as Enemy
 		ke.apply_vuln(uniq_gk("helm_finesse", "vuln_dur"))
 		game.spawn_text(ke.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
+		_uniq_beat(ex_id, ke)
 		armed = true
 	if armed:
 		uniq_t["evade_icd"] = maxf(float(Balance.UNIQ["evade_icd"]), uniq_k("icd"))
@@ -1130,13 +1158,14 @@ func _uniq_on_hit_taken(amount: float, attacker: Node) -> void:
 ## STRUCK proc family shares one ICD with the weapon's on-hit procs — weapon
 ## procs stamp it first (they run first in take_damage), so armor clauses
 ## never double a blow's answer; among armor, helmet > pants > gloves.
-func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String) -> void:
+func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, prev_sh: float) -> void:
 	if uniq_armor.is_empty():
 		return
 	var foe := attacker as Enemy
 	var foe_live := foe != null and is_instance_valid(foe) and not foe.dying
-	# helm_ward: a MAGIC hit arms the ward-crown (own icd on top of the family's).
-	if dmg_type == "magic" and uniq_gear("helm_ward") != "" \
+	# Ward verb: a MAGIC hit arms the ward (own icd on top of the family's).
+	var wd_id := uniq_gear("helm_ward")
+	if dmg_type == "magic" and wd_id != "" \
 			and not uniq_on("helm_ward_icd") and not uniq_on("struck_icd"):
 		uniq_t["helm_ward_icd"] = uniq_gk("helm_ward", "icd", 8.0)
 		uniq_t["struck_icd"] = float(Balance.UNIQ["struck_icd"])
@@ -1144,22 +1173,41 @@ func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String) 
 		uniq_mward_amt = uniq_gk("helm_ward", "dr")
 		game.sfx("ward", 0.9)
 		game.spawn_text(global_position + Vector2(0, -52), "WARDED", Color(0.6, 0.8, 1.0))
-	# pants_finesse: slip stance — being hit leaves you slippery (Tumble's rail).
-	if uniq_gear("pants_finesse") != "" and not uniq_on("struck_icd"):
+		if String(Balance.uniq(wd_id).get("beat", "")) == "swkeep":
+			since_hurt = prev_sh  # the ward holds your breath — SW clock keeps
+		else:
+			_uniq_beat(wd_id, foe)
+	# Slip verb: being hit leaves you slippery (Tumble's rail).
+	var sl_id := uniq_gear("pants_finesse")
+	if sl_id != "" and not uniq_on("struck_icd"):
 		uniq_t["struck_icd"] = float(Balance.UNIQ["struck_icd"])
 		dodge_time = maxf(dodge_time, uniq_gk("pants_finesse", "dur"))
 		dodge_amt = maxf(dodge_amt, uniq_gk("pants_finesse", "eva"))
-	# glove_guard: iron answer — a melee attacker is counter-struck.
-	if foe_live and uniq_gear("glove_guard") != "" and not uniq_on("struck_icd") \
+		_uniq_beat(sl_id, foe)
+	# Iron-answer verb: a melee attacker is counter-struck (amp'd counter).
+	var an_id := uniq_gear("glove_guard")
+	if foe_live and an_id != "" and not uniq_on("struck_icd") \
 			and global_position.distance_to(foe.global_position) < 130.0 \
 			and randf() < uniq_gk("glove_guard", "chance"):
 		uniq_t["struck_icd"] = float(Balance.UNIQ["struck_icd"])
 		game.sfx("sword")
-		hit_enemy(foe, uniq_gk("glove_guard", "counter"), {})
-	# pants_guard: anchor stacks — passive accrual, outside the proc family.
-	if uniq_gear("pants_guard") != "":
+		hit_enemy(foe, uniq_gk("glove_guard", "counter") * uniq_amp(an_id, foe), {})
+		_uniq_beat(an_id, foe)
+	# Anchor verb: stacks accrue outside the proc family; the beat rides the
+	# stack that tops them out.
+	var ac_id := uniq_gear("pants_guard")
+	if ac_id != "":
 		uniq_guard_stacks = mini(uniq_guard_stacks + 1, int(uniq_gk("pants_guard", "stacks")))
 		uniq_guard_t = 6.0
+		if uniq_guard_stacks >= int(uniq_gk("pants_guard", "stacks")):
+			_uniq_beat(ac_id, foe)
+	# Bastion verb: below the threshold, blows also fire the carrier's beat
+	# (its own throttle — the floor itself is passive and always on).
+	var bs_id := uniq_gear("pants_bulwark")
+	if bs_id != "" and hp <= max_hp * uniq_gk("pants_bulwark", "threshold", 0.3) \
+			and not uniq_on("bastion_icd"):
+		uniq_t["bastion_icd"] = 1.5
+		_uniq_beat(bs_id, foe)
 
 
 ## The Cover Between Worlds' repulse: the voidmaw shove geometry WITHOUT the

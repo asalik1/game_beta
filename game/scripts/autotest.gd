@@ -1184,8 +1184,16 @@ func _run_systems() -> void:
 	# worldroot HP->atk conversion actually moves the sheet.
 	var urng := RandomNumberGenerator.new()
 	urng.seed = 13
-	if Items.UNIQUES.size() != 60:
-		return _fail("expected 60 named weapon uniques, found %d" % Items.UNIQUES.size())
+	if Items.UNIQUES.size() != 420:
+		return _fail("expected 420 named uniques (60 weapons + 360 gear), found %d" % Items.UNIQUES.size())
+	# Gear-unique data contract: every passive described + knobbed + distinct,
+	# and every GEAR passive's verb/beat resolves to engine vocabulary.
+	var known_verbs := ["helm_ward", "glove_ward", "pants_ward", "helm_guard", "glove_guard",
+		"pants_guard", "helm_finesse", "glove_finesse", "pants_finesse",
+		"helm_aggr", "glove_aggr", "pants_aggr", "helm_bulwark", "glove_bulwark", "pants_bulwark"]
+	var known_beats := ["", "amp", "slipamp", "grit", "holy", "mana", "heal", "hpq", "cdr",
+		"surge", "dmark", "hexext", "vuln", "wither", "slow", "stagger", "knock",
+		"shredx", "huntp", "tumblearm", "swkeep", "none"]
 	var seen_pass := {}
 	for u in Items.UNIQUES:
 		var pid: String = String(u.get("passive", ""))
@@ -1196,6 +1204,12 @@ func _run_systems() -> void:
 		seen_pass[pid] = true
 		if not Balance.UNIQ.has(pid):
 			return _fail("unique passive %s has no Balance.UNIQ knobs entry" % pid)
+		if String(u["slot"]) != "weapon":
+			var uk: Dictionary = Balance.uniq(pid)
+			if not known_verbs.has(String(uk.get("verb", ""))):
+				return _fail("gear passive %s declares unknown verb '%s'" % [pid, uk.get("verb", "")])
+			if not known_beats.has(String(uk.get("beat", ""))):
+				return _fail("gear passive %s declares unknown beat '%s'" % [pid, uk.get("beat", "")])
 	var vspk := Items.make_unique(Items.uniques_of("paladin", "A")[0], urng)
 	if vspk.get("passive", "") != "vow" or vspk.get("passive_dormant", false):
 		return _fail("make_unique must stamp a LIVE passive (no awakening gate)")
@@ -1213,6 +1227,18 @@ func _run_systems() -> void:
 			found_named = true
 	if not (found_named and found_leg):
 		return _fail("act-3 S rolls never surfaced a named unique + legendary (400 tries)")
+	# The named channel is slot-generic: act-3 GEAR rolls surface their own
+	# named uniques too (helmet here; the pool filter keeps slots honest).
+	var found_gear := false
+	for i in 400:
+		var h_roll := Items.roll_item_of("helmet", "S", urng, "warrior", "", 3)
+		if h_roll.has("passive"):
+			if String(h_roll["slot"]) != "helmet" or not String(h_roll["passive"]).begins_with("warrior_helmet_"):
+				return _fail("helmet named channel produced a mismatched unique: %s" % h_roll["name"])
+			found_gear = true
+			break
+	if not found_gear:
+		return _fail("act-3 helmet rolls never surfaced a named unique (400 tries)")
 	# Worldroot: bonus max HP converts to ATK — strip the passive off the same
 	# item and the sheet must drop. Direct equipment poke (class lock is a UI
 	# gate); snapshot + restore per the shared-state rule.
@@ -1235,7 +1261,7 @@ func _run_systems() -> void:
 	else:
 		game.player.equipment["weapon"] = keep_wpn
 	game.player.recalc()
-	print("ok: named uniques (60 wired, live on pickup, drop split, worldroot conversion)")
+	print("ok: named uniques (420 wired incl. gear verb/beat contracts, live on pickup, slot-generic drop split, worldroot conversion)")
 
 	# 4b3. Armor-family passive TEMPLATES (GEAR_ARMOR_UNIQUE_PASSIVES.md):
 	# 30 ids (15 bases x S/A lanes) described + knobbed; the engine reads them

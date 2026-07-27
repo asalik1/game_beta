@@ -876,15 +876,44 @@ func uniq_k(key: String, default := 0.0) -> float:
 	return float(Balance.uniq(s_passive()).get(key, default))
 
 
-## The equipped ARMOR-family lane of template `base`: "" if absent, the bare
-## id for the S lane, "<base>_a" for the A lane. One piece per slot carries
-## one lane, so at most one is ever equipped.
+## The equipped carrier of VERB `base` ("" if none): a bespoke gear passive
+## whose Balance.UNIQ entry declares {"verb": base}, or the engine stand-in
+## ids themselves (dev injection). First equipped carrier wins — same-verb
+## pieces deliberately do NOT stack (the stronger piece is the build call).
 func uniq_gear(base: String) -> String:
 	if uniq_armor.has(base):
 		return base
 	if uniq_armor.has(base + "_a"):
 		return base + "_a"
+	for id in uniq_armor:
+		if String(Balance.uniq(String(id)).get("verb", "")) == base:
+			return String(id)
 	return ""
+
+
+## Conditional amplifier of a bespoke id's verb (beat "amp"): 2x while its
+## `when` condition holds (1x otherwise, and for every other beat kind).
+## Target conditions (marked/hexed/shredded) read `foe` when given.
+func uniq_amp(id: String, foe: Enemy = null) -> float:
+	if id == "":
+		return 1.0
+	var k := Balance.uniq(id)
+	if String(k.get("beat", "")) != "amp":
+		return 1.0
+	var cond := false
+	match String(k.get("when", "")):
+		"berserk": cond = berserk_time > 0.0
+		"surge": cond = stab_ls_time > 0.0
+		"aegis": cond = aegis_time > 0.0
+		"pact": cond = pact_time > 0.0
+		"holy": cond = cls == "paladin" and paladin_mode == "holy"
+		"retri": cond = cls == "paladin" and paladin_mode == "retribution"
+		"lowhp": cond = hp < max_hp * 0.35
+		"slippery": cond = dodge_time > 0.0
+		"marked": cond = foe != null and is_instance_valid(foe) and foe.vuln_time > 0.0
+		"hexed": cond = foe != null and hexed.has(foe)
+		"shredded": cond = foe != null and is_instance_valid(foe) and foe.res_shred > 0.0
+	return 2.0 if cond else 1.0
 
 
 ## One knob of an armor template's EQUIPPED lane (default when absent).
@@ -1470,20 +1499,24 @@ func recalc() -> void:
 			var base_hp: float = base["hp"] + base["hp_lvl"] * (level - 1)
 			uniq_hp_atk = maxf(0.0, max_hp - base_hp) / uniq_k("hp_per_atk", 1000.0)
 			atk += uniq_hp_atk
-	# ---- armor-template recalc effects (helmet/gloves/pants uniques) ----
-	# BARGAIN drawbacks + the standing conversions; procs live in the hooks.
+	# ---- armor-passive recalc effects (helmet/gloves/pants + migrated slots) ----
+	# BARGAIN drawbacks signal by KNOB PRESENCE on the equipped carrier (each
+	# cost is printed on its card); standing conversions live here too. Procs
+	# and beats live in the hooks.
 	uniq_heal_in = 1.0
 	uniq_cc_mult = 1.0
 	uniq_hit_flat = 0.0
 	if not uniq_armor.is_empty():
 		if uniq_gear("pants_ward") != "":
-			# Grounded: CC on you runs shorter; the A lane pays in healing taken.
+			# Grounded: CC on you runs shorter; a BARGAIN lane pays in healing.
 			uniq_cc_mult = uniq_gk("pants_ward", "cc_mult", 1.0)
 			uniq_heal_in = 1.0 - uniq_gk("pants_ward", "heal_tax")
-		if uniq_gear("pants_finesse") == "pants_finesse_a":
-			sw_delay += uniq_gk("pants_finesse", "sw_delay_tax")  # BARGAIN: SW waits
+		sw_delay += uniq_gk("pants_finesse", "sw_delay_tax")  # BARGAIN: SW waits
 		if uniq_gk("pants_bulwark", "sw_off") > 0.0:
-			sw_regen = 0.0  # BARGAIN: the bastion never rests
+			sw_regen = 0.0  # BARGAIN: the bastion never rests (archer lane)
+		# Class-native sustain BARGAINS on the bastion carriers:
+		regen_pct *= 1.0 - uniq_gk("pants_bulwark", "regen_tax")
+		lifesteal *= 1.0 - uniq_gk("pants_bulwark", "ls_tax")
 		if uniq_gear("helm_bulwark") != "":
 			transfusion += uniq_gk("helm_bulwark", "cap")  # overheal pools (Transfusion rail)
 		if uniq_gear("glove_bulwark") != "":
@@ -1510,7 +1543,10 @@ func gain_hp(amount: float) -> void:
 	if transfusion > 0.0:
 		var overflow := amount - (hp - before)
 		if overflow > 0.0:
-			shield = minf(transfusion * max_hp, shield + overflow)
+			# A pool-carrier's conditional amp (e.g. "pools double while
+			# Berserk runs") speeds the FILL, never the cap.
+			shield = minf(transfusion * max_hp,
+				shield + overflow * uniq_amp(uniq_gear("helm_bulwark")))
 	if cls == "paladin":
 		# Overheal -> Holy Charge: healing the paladin can't use banks as smite
 		# damage for the next Judgment. Its sustain budget becomes offense exactly

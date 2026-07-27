@@ -1132,6 +1132,7 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 			effects["shred_dur"] = maxf(float(effects.get("shred_dur", 0.0)), uniq_gk("glove_ward", "dur"))
 		if uniq_take("true_aim"):
 			e_eva = 0.0  # Deft hands: this strike cannot miss or be grazed
+			_uniq_beat(uniq_gear("glove_finesse"), e)
 
 	# Theme crit bonuses (and theme-line talents like Nightfall) are
 	# CAP-EXEMPT (player rule 2026-07-06): they ride above the 35% knee
@@ -1143,8 +1144,10 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# ability's dmg.true_frac, passed in via effects, e.g. Meteor's 25%): that slice
 	# ignores all defenses and cannot crit OR miss; the rest resolves normally.
 	var true_frac: float = effects.get("true_frac", 0.0)
-	# glove_bulwark: bulk lands with every hit — flat, folded like _cast_base.
-	var base_amt: float = current_atk() * mult + _cast_base + uniq_hit_flat
+	# glove_bulwark: bulk lands with every hit — flat, folded like _cast_base
+	# (the grip carrier's amp doubles it under its condition).
+	var base_amt: float = current_atk() * mult + _cast_base \
+		+ uniq_hit_flat * uniq_amp(uniq_gear("glove_bulwark"))
 	var result := Stats.resolve(base_amt * (1.0 - true_frac), dmg_type,
 		crit, crit_dmg, pen, dex, e_res, e_eva, e.critres, crit_exempt)
 	if result["miss"] and true_frac <= 0.0:
@@ -1266,11 +1269,13 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		var hunger := hunger_exec_bonus()
 		if hunger > 0.0:
 			dmg *= 1.0 + hunger
-	# helm_aggr (armor template): the war-crown's opener — the first blow into
-	# unwounded prey strikes harder (herald's weaker, stat-only cousin).
-	if not uniq_armor.is_empty() and uniq_gear("helm_aggr") != "" \
-			and e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999:
-		dmg *= 1.0 + uniq_gk("helm_aggr", "opener")
+	# Opener verb (war-crowns and their kin): the first blow into unwounded
+	# prey strikes harder — the carrier's amp and beat ride it.
+	if not uniq_armor.is_empty() and e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999:
+		var op_id := uniq_gear("helm_aggr")
+		if op_id != "":
+			dmg *= 1.0 + uniq_gk("helm_aggr", "opener") * uniq_amp(op_id, e)
+			_uniq_beat(op_id, e)
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -1294,12 +1299,15 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
 	if uniq_sp != "":
 		_uniq_after_hit(e, uniq_sp, dmg, mult, is_crit, effects)
-	# glove_aggr (armor template): the blood knuckle's tear — crits leave a
-	# class-typed wound (echo sub-hits stay clean, like every follow-up).
+	# Tear verb (blood knuckles and their kin): crits leave a class-typed
+	# wound; the carrier's conditional amp deepens it (echo sub-hits clean).
 	if is_crit and not uniq_armor.is_empty() and not e.dying \
-			and not effects.get("_echoed", false) and uniq_gear("glove_aggr") != "":
-		e.apply_burn(_dot_dps(e, current_atk() * uniq_gk("glove_aggr", "dot")),
-			uniq_gk("glove_aggr", "dur"), Color(1.2, 0.5, 0.4), self)
+			and not effects.get("_echoed", false):
+		var tr_id := uniq_gear("glove_aggr")
+		if tr_id != "":
+			e.apply_burn(_dot_dps(e, current_atk() * uniq_gk("glove_aggr", "dot")
+					* uniq_amp(tr_id, e)),
+				uniq_gk("glove_aggr", "dur"), Color(1.2, 0.5, 0.4), self)
 	# A Ninja-pack impact burst punctuates a CRIT (CC0) — elemental when
 	# themed, a warm shockburst otherwise. Single-target only: AoE and echo
 	# sub-hits stay quiet so a crowd hit doesn't turn to confetti.
@@ -1466,6 +1474,75 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 					uniq_kills = 0
 					game.spawn_text(global_position + Vector2(0, -64), "ABSOLUTION", Color(1.0, 0.92, 0.6))
 					_uniq_toll(float(uk["mult"]))
+
+
+## Fire a bespoke gear passive's BEAT — the class clause riding its verb
+## proc (GEAR_ARMOR_UNIQUE_PASSIVES.md §4; data in Balance.UNIQ). `foe` is
+## the involved enemy where the trigger has one; self-beats ignore it.
+## "amp"/"slipamp" are read at their seams (uniq_amp / use_ability), not fired.
+func _uniq_beat(id: String, foe: Enemy = null) -> void:
+	if id == "":
+		return
+	var k := Balance.uniq(id)
+	var b := String(k.get("beat", ""))
+	var foe_live := foe != null and is_instance_valid(foe) and not foe.dying
+	match b:
+		"grit":
+			# The grind feeds him — even through a ward (warrior carriers only
+			# in practice; grit_cap is 0 elsewhere and the stack stays inert).
+			if grit_stacks < int(grit_cap):
+				grit_stacks += 1
+				game.spawn_text(global_position + Vector2(0, -56), "GRIT x%d" % grit_stacks,
+					Color(1.0, 0.75, 0.35))
+			grit_time = 6.0
+		"holy":
+			holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP, holy_charge + atk * 0.4)
+		"mana":
+			mp = minf(max_mp, mp + float(k.get("n", 0.0)))
+		"heal", "hpq":
+			gain_hp(max_hp * float(k.get("pct", 0.0)))
+		"cdr":
+			var sl := String(k.get("slot", ""))
+			if sl == "commit":
+				sl = String(UNIQ_COMMIT.get(cls, ""))
+			if sl != "" and cds.has(sl):
+				cds[sl] = maxf(0.0, float(cds[sl]) - float(k.get("s", 0.0)))
+		"surge":
+			if stab_ls_time > 0.0:
+				stab_ls_time += float(k.get("s", 0.0))
+			else:
+				_grant_stab_surge()
+		"dmark":
+			if deathmark_time > 0.0:
+				deathmark_time += float(k.get("s", 0.0))
+		"hexext":
+			for he in hexed:
+				hexed[he] = float(hexed[he]) + float(k.get("s", 0.0))
+		"vuln":
+			if foe_live:
+				foe.apply_vuln(float(k.get("dur", 2.0)))
+		"wither":
+			if foe_live:
+				foe.apply_burn(_dot_dps(foe, current_atk() * float(k.get("dot", 0.2))),
+					3.0, Color(0.8, 0.45, 1.0), self)
+		"slow":
+			if foe_live:
+				foe.apply_slow(1.0 - float(k.get("pct", 0.3)), float(k.get("dur", 2.0)))
+		"stagger":
+			if foe_live:
+				_stun_or_concuss(foe, float(k.get("s", 0.3)))
+		"knock":
+			if foe_live:
+				foe.apply_knock((foe.global_position - global_position).normalized() * float(k.get("n", 300.0)))
+		"shredx":
+			if foe_live:
+				foe.res_shred = minf(24.0, foe.res_shred + 8.0)
+				foe.res_shred_t = 8.0
+		"huntp":
+			hunt_rhythm += 1
+		"tumblearm":
+			tumble_perfect_t = maxf(tumble_perfect_t, 0.15)
+		# "swkeep" is handled at the ward site (needs the pre-hit clock).
 
 
 # Two chain-shaped seams: these signatures re-invoke KIT abilities
