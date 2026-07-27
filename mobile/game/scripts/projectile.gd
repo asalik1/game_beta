@@ -398,10 +398,11 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 		"knife": sprite.scale = Vector2(3.8, 2.1)
 		"dart":
 			# The assassin's thrown KUNAI (round 50): a sleek generated blade
-			# (assets/sprites/dart.png, ~90px) flying point-first (rotation =
-			# velocity.angle() below), tinted by the knife-throw variant via
-			# p.modulate, with the kit's _knife_glow halo behind it.
-			sprite.scale = Vector2(0.28, 0.28)
+			# (assets/sprites/dart.png, 64px tight-cropped) flying point-first
+			# (rotation = velocity.angle() below), tinted by the knife-throw
+			# variant via p.modulate, with the kit's _knife_glow halo behind it.
+			# 0.4 holds the drawn length the 0.28 x 90px original established.
+			sprite.scale = Vector2(0.4, 0.4)
 			glow.visible = false
 		"shuriken":
 			# Golden Ronin's throwing star (assets/sprites/shuriken.png, 64px):

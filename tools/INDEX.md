@@ -40,6 +40,7 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 | `tools/art/verify_art.py` | post-install sprite checks for a base name: strip geometry (engine floors frames = w/h), 8-dir completeness, `*_dir` 8·K frame count, green-bleed semi-alpha, stale `--import`. `--all` sweeps the whole sprites dir. |
 | `tools/art/anim_sheet.py` | labeled per-clip contact sheets (8 facings × frames, 1-based) — the owner's QA format for animation review. |
 | `tools/art/dip_check.py` | flags a character whose weapon dips below its feet per direction (anchor trouble). |
+| `tools/art/recenter_strip.py` | repairs square-cell strips whose figures were assembled OFF the frame grid (mob visibly slides side to side each loop): column-band segmentation reunites cross-boundary bleed, then each figure re-centres in its cell on the feet-band centroid. No `--apply` = audit only. |
 | `game/qa_skins.gd` | boots the real game once per class, equips every skin (base + awakened), screenshots. |
 
 ## Art — generate & install
