@@ -305,3 +305,37 @@ Each replacement is now one continuous mace: the aegis shape is forged into the
 mace head as relief rather than depicted as separate equipment. The rejected
 four sprites are preserved under
 `game/assets/icons/archive/2026-07-26_aegis_mace_two_object_pass/`.
+
+### 2026-07-27 — helmet, gloves and pants slice
+
+- Tier-2 family sprites: **90**
+- Tier-1 B / A / S sprites: **270**
+- Named A / S unique concepts: **180**
+- Slice total: **540 assets**
+- Completed classes: Warrior, Archer, Assassin, Mage, Paladin and Warlock
+- Shape mappings: all 90 helmet, gloves and pants nouns wired in
+  `Art.GEAR_SHAPES`
+- Unique handoff: [`GEAR_UNIQUE_ART_MANIFEST.md`](GEAR_UNIQUE_ART_MANIFEST.md)
+
+Every class has a native-size family-silhouette review plus a six-column
+family/B/A/S/named-A/named-S matrix for each slot:
+
+| Class | Family review | Helmet | Gloves | Pants |
+|---|---|---|---|---|
+| Warrior | [`review`](GEAR_ART_WARRIOR_NEW_SLOTS_FAMILY_REVIEW.png) | [`helmet`](GEAR_ART_WARRIOR_HELMET_PREVIEW.png) | [`gloves`](GEAR_ART_WARRIOR_GLOVES_PREVIEW.png) | [`pants`](GEAR_ART_WARRIOR_PANTS_PREVIEW.png) |
+| Archer | [`review`](GEAR_ART_ARCHER_NEW_SLOTS_FAMILY_REVIEW.png) | [`helmet`](GEAR_ART_ARCHER_HELMET_PREVIEW.png) | [`gloves`](GEAR_ART_ARCHER_GLOVES_PREVIEW.png) | [`pants`](GEAR_ART_ARCHER_PANTS_PREVIEW.png) |
+| Assassin | [`review`](GEAR_ART_ASSASSIN_NEW_SLOTS_FAMILY_REVIEW.png) | [`helmet`](GEAR_ART_ASSASSIN_HELMET_PREVIEW.png) | [`gloves`](GEAR_ART_ASSASSIN_GLOVES_PREVIEW.png) | [`pants`](GEAR_ART_ASSASSIN_PANTS_PREVIEW.png) |
+| Mage | [`review`](GEAR_ART_MAGE_NEW_SLOTS_FAMILY_REVIEW.png) | [`helmet`](GEAR_ART_MAGE_HELMET_PREVIEW.png) | [`gloves`](GEAR_ART_MAGE_GLOVES_PREVIEW.png) | [`pants`](GEAR_ART_MAGE_PANTS_PREVIEW.png) |
+| Paladin | [`review`](GEAR_ART_PALADIN_NEW_SLOTS_FAMILY_REVIEW.png) | [`helmet`](GEAR_ART_PALADIN_HELMET_PREVIEW.png) | [`gloves`](GEAR_ART_PALADIN_GLOVES_PREVIEW.png) | [`pants`](GEAR_ART_PALADIN_PANTS_PREVIEW.png) |
+| Warlock | [`review`](GEAR_ART_WARLOCK_NEW_SLOTS_FAMILY_REVIEW.png) | [`helmet`](GEAR_ART_WARLOCK_HELMET_PREVIEW.png) | [`gloves`](GEAR_ART_WARLOCK_GLOVES_PREVIEW.png) | [`pants`](GEAR_ART_WARLOCK_PANTS_PREVIEW.png) |
+
+This slice used the built-in image generator only; PixelLab was not used.
+Sources were generated on removable chroma fields, matted with border-key
+despill, pre-brightened with gamma 0.78 and alpha-aware downsampled to a 29px
+maximum extent inside transparent 32 × 32 RGBA canvases. The Paladin pants
+matrix received a targeted correction pass so every lower leg ends in an open
+cuff rather than drifting into attached boots or feet.
+
+The named designs are intentionally an art/data handoff. Runtime named-unique
+roll support currently exists only for weapons, so this pass does not invent
+non-weapon stats, passives or drop behavior.

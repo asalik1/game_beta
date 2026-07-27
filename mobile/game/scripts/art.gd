@@ -1926,18 +1926,34 @@ const GEAR_SHAPES := {
 	"armor":  {"Plate": "icon_armor", "Mail": "icon_mail", "Guard": "icon_shield"},
 	"boots":  {"Boots": "icon_boots", "Striders": "icon_striders", "Treads": "icon_treads"},
 	"charm":  {"Charm": "icon_charm", "Talisman": "icon_talisman", "Sigil": "icon_sigil"},
-	# helmet/gloves/pants (§5b) wired for STATS ahead of their ART — every one of
-	# their 90 shapes falls through _shape_for to this single placeholder until the
-	# art pass drops real per-shape keys. Listed in ART_PENDING_SLOTS so the
-	# codex/autotest know the sprites are intentionally generic for now.
-	"helmet": {"_placeholder": "icon_armor"},
-	"gloves": {"_placeholder": "icon_charm"},
-	"pants":  {"_placeholder": "icon_boots"},
+	"helmet": {
+		"Wardsteel Helm": "h_wardsteel_helm", "Ironwall Helm": "h_ironwall_helm", "Skirmisher's Helm": "h_skirmishers_helm", "Reaver Helm": "h_reaver_helm", "Titan Helm": "h_titan_helm",
+		"Stormweave Hood": "h_stormweave_hood", "Studded Hood": "h_studded_hood", "Ranger's Hood": "h_rangers_hood", "Hunter's Hood": "h_hunters_hood", "Beastpelt Hood": "h_beastpelt_hood",
+		"Shadowveil Cowl": "h_shadowveil_cowl", "Warded Cowl": "h_warded_cowl", "Gossamer Cowl": "h_gossamer_cowl", "Nightsilk Cowl": "h_nightsilk_cowl", "Grave Cowl": "h_grave_cowl",
+		"Silkward Circlet": "h_silkward_circlet", "Runeplate Circlet": "h_runeplate_circlet", "Featherweave Circlet": "h_featherweave_circlet", "Starweave Circlet": "h_starweave_circlet", "Earthen Circlet": "h_earthen_circlet",
+		"Blessed Greathelm": "h_blessed_greathelm", "Templar Greathelm": "h_templar_greathelm", "Vigil Greathelm": "h_vigil_greathelm", "Zealot Greathelm": "h_zealot_greathelm", "Sanctified Greathelm": "h_sanctified_greathelm",
+		"Voidsilk Hood": "h_voidsilk_hood", "Bonemail Hood": "h_bonemail_hood", "Shadeweave Hood": "h_shadeweave_hood", "Ruinweave Hood": "h_ruinweave_hood", "Bloodpact Hood": "h_bloodpact_hood",
+	},
+	"gloves": {
+		"Wardsteel Gauntlets": "g_wardsteel_gauntlets", "Ironwall Gauntlets": "g_ironwall_gauntlets", "Skirmisher's Gauntlets": "g_skirmishers_gauntlets", "Reaver Gauntlets": "g_reaver_gauntlets", "Titan Gauntlets": "g_titan_gauntlets",
+		"Stormweave Bracers": "g_stormweave_bracers", "Studded Bracers": "g_studded_bracers", "Ranger's Bracers": "g_rangers_bracers", "Hunter's Bracers": "g_hunters_bracers", "Beastpelt Bracers": "g_beastpelt_bracers",
+		"Shadowveil Grips": "g_shadowveil_grips", "Warded Grips": "g_warded_grips", "Gossamer Grips": "g_gossamer_grips", "Nightsilk Grips": "g_nightsilk_grips", "Grave Grips": "g_grave_grips",
+		"Silkward Handwraps": "g_silkward_handwraps", "Runeplate Handwraps": "g_runeplate_handwraps", "Featherweave Handwraps": "g_featherweave_handwraps", "Starweave Handwraps": "g_starweave_handwraps", "Earthen Handwraps": "g_earthen_handwraps",
+		"Blessed Gauntlets": "g_blessed_gauntlets", "Templar Gauntlets": "g_templar_gauntlets", "Vigil Gauntlets": "g_vigil_gauntlets", "Zealot Gauntlets": "g_zealot_gauntlets", "Sanctified Gauntlets": "g_sanctified_gauntlets",
+		"Voidsilk Claws": "g_voidsilk_claws", "Bonemail Claws": "g_bonemail_claws", "Shadeweave Claws": "g_shadeweave_claws", "Ruinweave Claws": "g_ruinweave_claws", "Bloodpact Claws": "g_bloodpact_claws",
+	},
+	"pants": {
+		"Wardsteel Legplates": "p_wardsteel_legplates", "Ironwall Legplates": "p_ironwall_legplates", "Skirmisher's Legplates": "p_skirmishers_legplates", "Reaver Legplates": "p_reaver_legplates", "Titan Legplates": "p_titan_legplates",
+		"Stormweave Leggings": "p_stormweave_leggings", "Studded Leggings": "p_studded_leggings", "Ranger's Leggings": "p_rangers_leggings", "Hunter's Leggings": "p_hunters_leggings", "Beastpelt Leggings": "p_beastpelt_leggings",
+		"Shadowveil Wraps": "p_shadowveil_wraps", "Warded Wraps": "p_warded_wraps", "Gossamer Wraps": "p_gossamer_wraps", "Nightsilk Wraps": "p_nightsilk_wraps", "Grave Wraps": "p_grave_wraps",
+		"Silkward Underleggings": "p_silkward_underleggings", "Runeplate Underleggings": "p_runeplate_underleggings", "Featherweave Underleggings": "p_featherweave_underleggings", "Starweave Underleggings": "p_starweave_underleggings", "Earthen Underleggings": "p_earthen_underleggings",
+		"Blessed Legguards": "p_blessed_legguards", "Templar Legguards": "p_templar_legguards", "Vigil Legguards": "p_vigil_legguards", "Zealot Legguards": "p_zealot_legguards", "Sanctified Legguards": "p_sanctified_legguards",
+		"Voidsilk Chausses": "p_voidsilk_chausses", "Bonemail Chausses": "p_bonemail_chausses", "Shadeweave Chausses": "p_shadeweave_chausses", "Ruinweave Chausses": "p_ruinweave_chausses", "Bloodpact Chausses": "p_bloodpact_chausses",
+	},
 }
 
-# Slots whose shapes are wired for stats but not yet drawn — their GEAR_SHAPES map
-# is a lone placeholder, so the per-noun art assertion is skipped for them.
-const ART_PENDING_SLOTS := ["helmet", "gloves", "pants"]
+# All currently rollable per-class slots have explicit noun-to-art mappings.
+const ART_PENDING_SLOTS := []
 
 
 static func _shape_for(slot: String, noun: String) -> String:
