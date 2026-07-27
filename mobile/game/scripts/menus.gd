@@ -37,6 +37,8 @@ var dev_boss_level_override := 0  # dev panel: exact level for NEW boss spawns (
 var dev_tab := "character"        # dev panel: which subtab is showing (persists across refreshes)
 var lobby := {}                   # Play Together flow state (ui/lobby.gd): stage, picks, code, msg
 var _talent_renaming := false     # inline rename field for the active talent page
+var _ability_preview_slot := ""   # card currently shown in the assignment detail panel
+var _ability_preview_theme := ""  # specialization currently being inspected
 
 
 func _ready() -> void:
@@ -2506,8 +2508,6 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 			b.custom_minimum_size = Vector2(326, 82)
 			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			b.add_theme_constant_override("icon_max_width", 64)
-			b.tooltip_text = "%s\n%s\n%d of %d points" % [
-				cd["name"], cd["desc"], pts, Skills.cell_max(cd)]
 			_talent_card_style(b, theme_col, pts > 0, unlocked)
 	_hint(vbox, "ESC / T to close — select an unlocked talent to invest a point")
 
@@ -2515,8 +2515,21 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 	var next_note := "" if p.themes_known >= 3 else " — next unlocks at Lv %d" % Classes.THEME_LEVELS[mini(p.themes_known, 2)]
 	UITheme.header(_lbl(vbox, "ABILITY ASSIGNMENTS", 17, UITheme.GOLD_BRIGHT))
-	_lbl(vbox, "Choose one specialization for each hotbar ability. Every option keeps the base ability and changes its behavior. %d/3 specializations unlocked%s." % [
+	_lbl(vbox, "Select an option to inspect it, then use ASSIGN. Every option keeps the base ability and changes its behavior. %d/3 specializations unlocked%s." % [
 		p.themes_known, next_note], 12, Color(0.62, 0.64, 0.72))
+
+	var slots := ["a1", "a2", "a3", "ult"]
+	if not slots.has(_ability_preview_slot):
+		_ability_preview_slot = "a1"
+		_ability_preview_theme = String(p.ability_theme.get("a1", ""))
+	var preview_theme_valid := _ability_preview_theme == ""
+	for preview_theme in Classes.THEMES[p.cls]:
+		if String(preview_theme["id"]) == _ability_preview_theme:
+			preview_theme_valid = true
+			break
+	if not preview_theme_valid:
+		_ability_preview_theme = String(p.ability_theme.get(_ability_preview_slot, ""))
+	_build_ability_detail(vbox, p)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -2542,7 +2555,7 @@ func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 		theme_head.custom_minimum_size = Vector2(220, 0)
 
 	var slot_labels := {"a1": "ABILITY 1", "a2": "ABILITY 2", "a3": "ABILITY 3", "ult": "ULTIMATE"}
-	for slot in ["a1", "a2", "a3", "ult"]:
+	for slot in slots:
 		var s: String = slot
 		var ab: Dictionary = Classes.ability(p.cls, s)
 		var row := HBoxContainer.new()
@@ -2558,22 +2571,21 @@ func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 			var option: Dictionary = options[option_idx]
 			var theme_id := String(option["id"])
 			var selected: bool = String(p.ability_theme.get(s, "")) == theme_id
+			var previewed: bool = _ability_preview_slot == s \
+				and _ability_preview_theme == theme_id
 			var unlocked: bool = option_idx == 0 or option_idx - 1 < p.themes_known
 			var option_color: Color = option["color"] if unlocked else Color(0.38, 0.38, 0.43)
 			var assign_cb := func() -> void:
-				game.local_player.set_ability_theme(s, theme_id)
+				_ability_preview_slot = s
+				_ability_preview_theme = theme_id
 				open_skills("abilities")
-			var marker := "◆  " if selected else ""
+			var marker := "✓  " if selected else ("◈  " if previewed else "")
 			var option_button := _btn(row, marker + String(option["name"]).to_upper(),
-				assign_cb, option_color, unlocked,
+				assign_cb, option_color, true,
 				Art.ability_icon(p.cls, s, option_color, theme_id))
 			option_button.custom_minimum_size = Vector2(220, 78)
 			option_button.add_theme_constant_override("icon_max_width", 64)
-			var detail := String(ab["desc"]) if theme_id == "" else (
-				Classes.variant_desc(p.cls, s, theme_id) + "\n" +
-				Classes.fx_text(Classes.ability_fx(p.cls, s, theme_id), p.cls))
-			option_button.tooltip_text = detail
-			_assignment_card_style(option_button, option_color, selected, unlocked)
+			_assignment_card_style(option_button, option_color, selected, previewed)
 
 	var arow := HBoxContainer.new()
 	arow.add_theme_constant_override("separation", 10)
@@ -2591,7 +2603,58 @@ func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 			game.local_player.set_all_themes(tid)
 			open_skills("abilities"),
 			th["color"] if t_unlocked else Color(0.4, 0.4, 0.45), t_unlocked)
-	_hint(vbox, "ESC / T to close — hover an assignment to read its exact behavior")
+	_hint(vbox, "Select a card to inspect it above, then choose ASSIGN")
+
+
+func _build_ability_detail(vbox: VBoxContainer, p: Player) -> void:
+	var ab: Dictionary = Classes.ability(p.cls, _ability_preview_slot)
+	var theme := Classes.theme_by_id(p.cls, _ability_preview_theme)
+	var theme_name := String(theme.get("name", "Base"))
+	var theme_color: Color = theme.get("color", Color(0.78, 0.78, 0.84))
+	var detail := String(ab["desc"]) if _ability_preview_theme == "" else (
+		Classes.variant_desc(p.cls, _ability_preview_slot, _ability_preview_theme) + "\n" +
+		Classes.fx_text(Classes.ability_fx(
+			p.cls, _ability_preview_slot, _ability_preview_theme), p.cls))
+	var theme_index := -1
+	for i in Classes.THEMES[p.cls].size():
+		if String(Classes.THEMES[p.cls][i]["id"]) == _ability_preview_theme:
+			theme_index = i
+			break
+	var unlocked := _ability_preview_theme == "" or theme_index < p.themes_known
+	var already_assigned := String(
+		p.ability_theme.get(_ability_preview_slot, "")) == _ability_preview_theme
+
+	var panel := PanelContainer.new()
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(
+		theme_color.r * 0.1, theme_color.g * 0.1, theme_color.b * 0.1, 0.94)
+	panel_style.border_color = Color(theme_color, 0.72)
+	panel_style.set_border_width_all(2)
+	panel_style.set_corner_radius_all(8)
+	panel_style.content_margin_left = 12.0
+	panel_style.content_margin_right = 12.0
+	panel_style.content_margin_top = 8.0
+	panel_style.content_margin_bottom = 8.0
+	panel.add_theme_stylebox_override("panel", panel_style)
+	vbox.add_child(panel)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	panel.add_child(row)
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(copy)
+	_lbl(copy, "%s  ·  %s" % [String(ab["name"]).to_upper(), theme_name.to_upper()],
+		14, theme_color)
+	var description := _lbl(copy, detail, 12, Color(0.86, 0.86, 0.9))
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description.custom_minimum_size = Vector2(760, 42)
+	var assign := _btn(row, "ASSIGNED" if already_assigned else (
+		"ASSIGN" if unlocked else "LOCKED"), func() -> void:
+			game.local_player.set_ability_theme(_ability_preview_slot, _ability_preview_theme)
+			open_skills("abilities"),
+		theme_color if unlocked else Color(0.4, 0.4, 0.45),
+		unlocked and not already_assigned)
+	assign.custom_minimum_size = Vector2(150, 64)
 
 
 func _profile_tab_style(button: Button, selected: bool) -> void:
@@ -2637,11 +2700,13 @@ func _talent_card_style(button: Button, color: Color, invested: bool, unlocked: 
 	button.add_theme_stylebox_override("disabled", disabled)
 
 
-func _assignment_card_style(button: Button, color: Color, selected: bool, unlocked: bool) -> void:
+func _assignment_card_style(button: Button, color: Color, selected: bool,
+		previewed := false) -> void:
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color(color.r * 0.12, color.g * 0.12, color.b * 0.12, 0.9)
-	normal.border_color = color if selected else Color(color, 0.32)
-	normal.set_border_width_all(3 if selected else 1)
+	normal.border_color = color if selected else (
+		Color(0.95, 0.92, 0.75) if previewed else Color(color, 0.32))
+	normal.set_border_width_all(3 if selected else (2 if previewed else 1))
 	normal.set_corner_radius_all(8)
 	button.add_theme_stylebox_override("normal", normal)
 	var hover: StyleBoxFlat = normal.duplicate()
@@ -2651,8 +2716,6 @@ func _assignment_card_style(button: Button, color: Color, selected: bool, unlock
 	var disabled: StyleBoxFlat = normal.duplicate()
 	disabled.bg_color = Color(0.05, 0.05, 0.07, 0.76)
 	disabled.border_color = Color(0.26, 0.26, 0.3, 0.5)
-	if not unlocked:
-		button.tooltip_text = "LOCKED — continue leveling to unlock this specialization"
 	button.add_theme_stylebox_override("disabled", disabled)
 
 
@@ -2781,7 +2844,7 @@ func open_shop(zone: int, tab := "") -> void:
 			game.capital_stock = []
 			for i in int(Balance.SHOP_STOCK_BY_TIER.get(Balance.CAPITAL_SHOP_TIER, 5)):
 				var sg := Items.roll_shop_grade(price_ch, crng, game.loot_cap())
-				game.capital_stock.append(Items.roll_gear_of_grade(sg, crng, game.local_player.cls))
+				game.capital_stock.append(Items.roll_gear_of_grade(sg, crng, game.local_player.cls, Story.act_of(price_ch)))
 			var cact: int = Story.act_of(price_ch)
 			var ccount: Array = Balance.SHOP_BAG_COUNT.get(cact, [1, 1])
 			game.capital_bags = []
@@ -2805,7 +2868,7 @@ func open_shop(zone: int, tab := "") -> void:
 		# roll_shop_grade), clamped to loot_cap — not the old chest tiers.
 		for i in stock_n:
 			var sg := Items.roll_shop_grade(game.chapter_id, rng, game.loot_cap())
-			stock.append(Items.roll_gear_of_grade(sg, rng, game.local_player.cls))
+			stock.append(Items.roll_gear_of_grade(sg, rng, game.local_player.cls, Story.act_of(game.chapter_id)))
 		game.shop_stock[zone] = stock
 	# Bags on the shelf (round 52): 1 (Act 1) or 1-2 (Act 2/3) of a rollable
 	# act tier — kept alongside gear stock until bought out.
