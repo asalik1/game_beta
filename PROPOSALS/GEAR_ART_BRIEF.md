@@ -364,6 +364,17 @@ compact talisman:
 | Paladin | [`armor`](GEAR_ART_PALADIN_ARMOR_PREVIEW.png) | [`boots`](GEAR_ART_PALADIN_BOOTS_PREVIEW.png) | [`charms`](GEAR_ART_PALADIN_CHARMS_PREVIEW.png) |
 | Warlock | [`armor`](GEAR_ART_WARLOCK_ARMOR_PREVIEW.png) | [`boots`](GEAR_ART_WARLOCK_BOOTS_PREVIEW.png) | [`charms`](GEAR_ART_WARLOCK_CHARMS_PREVIEW.png) |
 
+Post-pass visual QA replaced 23 targeted sprites without changing any filename,
+shape mapping, manifest entry or runtime behavior. Six complete B / A / S rows
+(Studded Brigandine, Fletcher's Token, Windfeather, Sabatons of the Oath,
+Reliquary and Sunburst Icon) were rebuilt to make grade progression read through
+condition, construction, ornament and energy rather than a color ramp. Four
+Warrior grade sprites (Ironwall Plate A, Wardstep Greaves A and Warbanner A / S)
+received the same correction, and the named-S Zero-Weight Raiment was redesigned
+as a distinct but unmistakably wearable robe. The affected matrices above were
+regenerated from the installed 32 × 32 assets and passed silhouette, single-item,
+alpha, gutter, duplicate-hash and desktop/mobile parity checks.
+
 The batch-sheet workflow was adopted for the Warlock finish: one five-family
 sheet per slot and design tier, followed by deterministic cell extraction,
 border-component cleanup, chroma despill and the same alpha-aware 32 × 32
