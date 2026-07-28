@@ -1107,8 +1107,12 @@ func _uniq_on_hit_taken(amount: float, attacker: Node) -> void:
 				game.spawn_text(foe.global_position + Vector2(0, -44), "REPRISAL", Color(0.9, 0.85, 0.7))
 				hit_enemy(foe, uniq_k("counter"), {})
 		"thegate":
-			# The Gate That Walks: while the Gate holds, every blow is answered.
-			if foe_live and uniq_on("thegate"):
+			# The Gate That Walks: while the Gate holds, blows are answered.
+			# Own 0.25s throttle (review 2026-07-27): a surrounding pack used
+			# to buy a counter-cut + stagger PER BLOW, unbounded — the Gate
+			# answered a 10-mob pile harder than the wielder ever swung.
+			if foe_live and uniq_on("thegate") and not uniq_on("thegate_icd"):
+				uniq_t["thegate_icd"] = uniq_k("icd")
 				uniq_t["struck_icd"] = float(Balance.UNIQ["struck_icd"])
 				game.sfx("parry", 0.9)
 				hit_enemy(foe, uniq_k("counter"), {"stagger": uniq_k("stagger")})

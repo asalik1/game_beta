@@ -1126,9 +1126,14 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	var e_eva := e.eva
 	if not uniq_armor.is_empty():
 		if uniq_gear("glove_ward") != "":
-			# Unweaving hands: every hit tears the ward open for the next.
-			effects["shred"] = maxf(float(effects.get("shred", 0.0)), uniq_gk("glove_ward", "shred"))
-			effects["shred_cap"] = maxf(float(effects.get("shred_cap", 0.0)), uniq_gk("glove_ward", "shred"))
+			# Unweaving hands: every hit tears the ward open for the next. S
+			# lanes STACK the tear deeper (their "cap" knob; A lanes cap at one
+			# application) — the honest wiring of the S clause, replacing the
+			# dead "shredx" beat no site ever fired (dps-bench pass 2026-07-27).
+			var uw_shred := uniq_gk("glove_ward", "shred")
+			effects["shred"] = maxf(float(effects.get("shred", 0.0)), uw_shred)
+			effects["shred_cap"] = maxf(float(effects.get("shred_cap", 0.0)),
+				uniq_gk("glove_ward", "cap", uw_shred))
 			effects["shred_dur"] = maxf(float(effects.get("shred_dur", 0.0)), uniq_gk("glove_ward", "dur"))
 		if uniq_take("true_aim"):
 			e_eva = 0.0  # Deft hands: this strike cannot miss or be grazed
@@ -1359,8 +1364,12 @@ func _uniq_pre_hit(e: Enemy, sp: String, effects: Dictionary) -> void:
 				effects["true_frac"] = uniq_k("true_frac")
 		"herald":
 			# Skyline: the first arrow into unwounded prey cannot fail, and marks.
-			if e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999 \
-					and String(effects.get("type", "")) != "true":
+			# Redesign (dps-bench pass, 2026-07-27): a KILL re-arms the dawn for a
+			# beat, so the opener flows kill-to-kill through a pack instead of
+			# firing exactly once per enemy (the old read was near-dead the moment
+			# everything in the room had a scratch).
+			if String(effects.get("type", "")) != "true" \
+					and ((e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999) or uniq_take("herald_rearm")):
 				effects["force_crit"] = 1
 				effects["vuln"] = maxf(float(effects.get("vuln", 0.0)), uniq_k("vuln"))
 		"quietus":
@@ -1448,6 +1457,11 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 					uniq_t["clause_icd"] = float(uk["icd"])
 					_uniq_clause_call(e.global_position, float(uk["scale"]))
 	match sp:
+		"herald":
+			# Skyline: a kill re-arms the dawn — the next arrow inside the
+			# window is again the first (forced crit + mark), pack-flow.
+			if died:
+				uniq_t["herald_rearm"] = float(uk["rearm"])
 		"quietus":
 			# A Stab kill hastens Death Mark.
 			if died and effects.get("uniq_a1", 0):

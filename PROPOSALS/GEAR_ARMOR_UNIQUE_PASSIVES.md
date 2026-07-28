@@ -12,8 +12,14 @@ verb library. FIRST-WIRE SIMPLIFICATIONS: a handful of catalog clauses
 shipped as their nearest engine primitive (marked-prey/pierce/full-Meteor
 riders on a few S rows read plainer in Balance than the §4 prose — the
 bench phase trues them up); every card line matches what actually fires.
-Every number remains a **rough placeholder, un-benchmarked** — the dps-bench
-phase owns magnitudes.
+**DPS-BENCH PASS RAN 2026-07-27** (round narrative: BALANCE_HISTORY.md top):
+two wiring gaps found and fixed — the unweave S-lanes' "shredx" beat was
+declared but NO engine site ever fired it (replaced by an honest data
+mechanic: S tears STACK to a `cap` of 2x, card lines rewritten), and the six
+`*_charm_Ea` BARGAIN sustain taxes (verb helm_bulwark) were never charged
+(recalc + mage Nova now read both bulwark verbs). Magnitudes were measured
+BiS-loadout-vs-L100-finale; survivors kept their placeholder values (they
+priced sanely under the new GEAR-ramp curve).
 
 Companion to `PROPOSALS/GEAR_UNIQUE_PASSIVES.md` (the shipped weapon pass,
 2026-07-27). The A/S framework carries over unchanged: **S = full effect; A =

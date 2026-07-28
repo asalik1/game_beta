@@ -206,6 +206,15 @@ func _tumble() -> void:
 	hurt_cd = maxf(hurt_cd, 0.1)
 	hurt_was_heavy = true  # the perfect-dodge window blocks heavy telegraph hits too
 	tumble_perfect_t = 0.1  # hartsbreath reads this exact window (take_damage)
+	if s_passive() == "hartsbreath":
+		# White Hart redesign (dps-bench pass, 2026-07-27): the ROLL itself
+		# draws the breath — 2 sure shots on any Tumble. The perfect dodge
+		# (take_damage's window) stays the mastery topper: 3 shots + the
+		# Multishot reset. The old design paid ONLY the 0.1s perfect window,
+		# a proc most pilots never saw (owner: too conditional).
+		if uniq_crits < int(uniq_k("crits_roll")):
+			uniq_crits = int(uniq_k("crits_roll"))
+			game.spawn_text(global_position + Vector2(0, -56), "HART'S EYE", Color(0.9, 1.0, 0.9))
 	dodge_time = rider("a3", "eva_secs")
 	dodge_amt = rider("a3", "eva")
 	if tumble_dr > 0.0:

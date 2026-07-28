@@ -639,17 +639,17 @@ static func enemy_stats_at(kind: String, level: int, overcap := false) -> Dictio
 	# Mob damage runs the same two regimes as HP: native band on the authored
 	# rate, player-tracking (BOSS_DMG_GROWTH) beyond it.
 	var dmg_m := pow(1.0 + dmg_growth, d_near) * pow(1.0 + Balance.BOSS_DMG_GROWTH, d_far) * dmg_flat
-	# Gem-expectation ramp (2026-07-06): the TIERLIST benchmark was
-	# gemless, but real players arrive socketed — UPSCALED bosses gain a
-	# small premium per level above where gems come online (round 45's
-	# "budget what the player actually has", extended). Anchor stats stay
-	# exactly as authored: high-anchor bosses get their gem allowance at
-	# authoring time, not from a hidden multiplier.
-	if is_boss:
-		var gl := float(lvl - maxi(Balance.BOSS_GEM_RAMP_START, int(base["level"])))
-		if gl > 0.0:
-			hp_m *= 1.0 + Balance.BOSS_GEM_HP_RAMP * gl
-			dmg_m *= 1.0 + Balance.BOSS_GEM_DMG_RAMP * gl
+	# GEAR-CEILING ramp (2026-07-27, replaces the inert gem ramp): past
+	# GEAR_RAMP_START the player's kit detaches from the base curve (S-band
+	# gear, named-unique passives, deep gems/smith/reforge stack
+	# multiplicatively), so UPSCALED monsters — bosses and far-field mobs
+	# alike — gain compounding extra HP per level above max(START, anchor).
+	# HP only: damage stays on the flat player-tracking dial (the new gear
+	# is all offense; L100 hits already land punishing). Anchor stats stay
+	# exactly as authored. Calibration: Balance.GEAR_RAMP_* comment.
+	var gr := float(lvl - maxi(Balance.GEAR_RAMP_START, int(base["level"])))
+	if gr > 0.0:
+		hp_m *= pow(1.0 + Balance.GEAR_RAMP_HP, gr)
 	var reward_m := 1.0 + d * Balance.REWARD_PER_LEVEL
 	var out := {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
 		"xp": int(ceil(base["xp"] * reward_m)),

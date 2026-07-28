@@ -1512,11 +1512,15 @@ func recalc() -> void:
 			uniq_cc_mult = uniq_gk("pants_ward", "cc_mult", 1.0)
 			uniq_heal_in = 1.0 - uniq_gk("pants_ward", "heal_tax")
 		sw_delay += uniq_gk("pants_finesse", "sw_delay_tax")  # BARGAIN: SW waits
-		if uniq_gk("pants_bulwark", "sw_off") > 0.0:
-			sw_regen = 0.0  # BARGAIN: the bastion never rests (archer lane)
-		# Class-native sustain BARGAINS on the bastion carriers:
-		regen_pct *= 1.0 - uniq_gk("pants_bulwark", "regen_tax")
-		lifesteal *= 1.0 - uniq_gk("pants_bulwark", "ls_tax")
+		# Class-native sustain BARGAINS on the bulwark carriers — BOTH the
+		# bastion (pants_bulwark) and pool (helm_bulwark) verbs print them
+		# (review 2026-07-27: the *_charm_Ea lanes ride helm_bulwark, and
+		# their printed costs were never being charged).
+		for uniq_bw in ["pants_bulwark", "helm_bulwark"]:
+			if uniq_gk(uniq_bw, "sw_off") > 0.0:
+				sw_regen = 0.0  # the bastion never rests (archer lanes)
+			regen_pct *= 1.0 - uniq_gk(uniq_bw, "regen_tax")
+			lifesteal *= 1.0 - uniq_gk(uniq_bw, "ls_tax")
 		if uniq_gear("helm_bulwark") != "":
 			transfusion += uniq_gk("helm_bulwark", "cap")  # overheal pools (Transfusion rail)
 		if uniq_gear("glove_bulwark") != "":
@@ -2334,8 +2338,11 @@ func ability_cd(slot: String) -> float:
 	# effects): the heavier blow swings slower (Balance.UNIQ knobs).
 	match s_passive():
 		"dirge":
-			if slot == "a1":
-				cd *= 1.0 + uniq_k("cd_tax")   # Gravesong: Cleave tolls slower
+			if slot == "a1" or slot == "a3":
+				# Gravesong: BOTH heavy swings toll slower. (Review 2026-07-27:
+				# the tax used to touch only Cleave, leaving the Whirlwind buff
+				# free — a BARGAIN that out-valued the S lane.)
+				cd *= 1.0 + uniq_k("cd_tax")
 		"burden":
 			if slot == "a1":
 				cd *= 1.0 + uniq_k("cd_tax")   # Pilgrim's Burden: Judgment swings slower

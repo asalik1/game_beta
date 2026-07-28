@@ -3720,8 +3720,8 @@ func _test_retention() -> void:
 
 	# --- boss HP grows on the flat player-tracking BOSS_HP_GROWTH (2026-07-09):
 	# the old per-kind hp_g + past-L32 gem ramp was folded into one dial so a
-	# scaled boss's TTK stays level-invariant instead of ballooning. The per-level
-	# ratio is now the SAME at every level (no ramp bump). ---
+	# scaled boss's TTK stays level-invariant instead of ballooning. Below
+	# GEAR_RAMP_START the per-level ratio is the SAME at every level. ---
 	var hi_ratio: float = float(Story.enemy_stats_at("nullwarden", 50)["hp"]) \
 		/ float(Story.enemy_stats_at("nullwarden", 49)["hp"])
 	var low_ratio: float = float(Story.enemy_stats_at("nullwarden", 30)["hp"]) \
@@ -3729,6 +3729,13 @@ func _test_retention() -> void:
 	if absf(hi_ratio - (1.0 + Balance.BOSS_HP_GROWTH)) > 0.001 \
 			or absf(low_ratio - (1.0 + Balance.BOSS_HP_GROWTH)) > 0.001:
 		return _fail("boss HP should grow at a flat BOSS_HP_GROWTH per level")
+	# --- GEAR-ceiling ramp (2026-07-27, dps-bench round): ABOVE the ramp start
+	# the ratio carries the compounding gear premium on top of the flat dial —
+	# the endgame recalibration for the 7-slot envelope + named-unique power. ---
+	var ramp_ratio: float = float(Story.enemy_stats_at("nullwarden", 100)["hp"]) \
+		/ float(Story.enemy_stats_at("nullwarden", 99)["hp"])
+	if absf(ramp_ratio - (1.0 + Balance.BOSS_HP_GROWTH) * (1.0 + Balance.GEAR_RAMP_HP)) > 0.001:
+		return _fail("boss HP past GEAR_RAMP_START should carry the gear-ceiling ramp")
 
 	# --- hidden caches: buried chest stays invisible, reveals near ---
 	var hc := Chest.drop(g, "silver", g.player.global_position + Vector2(400, 0))

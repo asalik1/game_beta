@@ -1,12 +1,18 @@
 # PROPOSALS — Named-unique signature passives (first pass)
 
-**Status: IMPLEMENTED 2026-07-27 (owner-approved as designed).** All 60
-passives are wired and live (`Items.UNIQUES` / `Items.PASSIVES`, knobs in
-`Balance.UNIQ`), the drop split is in (`roll_item_of` named channels: named A
-Act 2+, named S Act 3+, legendary = rare Act 2+ S roll via `make_legendary`;
-generic S carries no passive), and the §9 reconciliation shipped as
-recommended. Magnitudes remain **un-benchmarked placeholders** — the
-dps-benchmark phase still owns the real numbers. The §10 owner calls were
+**Status: IMPLEMENTED 2026-07-27 (owner-approved as designed); BENCHED same
+day.** All 60 passives are wired and live (`Items.UNIQUES` / `Items.PASSIVES`,
+knobs in `Balance.UNIQ`), the drop split is in (`roll_item_of` named channels:
+named A Act 2+, named S Act 3+, legendary = rare Act 2+ S roll via
+`make_legendary`; generic S carries no passive), and the §9 reconciliation
+shipped as recommended. **The dps-bench phase ran 2026-07-27** (full round
+narrative + measured board: BALANCE_HISTORY.md top entry): design review of
+all 60 + the 360 gear passives, four redesigns landed (hartsbreath's
+perfect-dodge-only trigger → any-Tumble base + perfect topper; herald gains a
+kill re-arm; dirge's tax now rings on both heavy swings; thegate's counter
+throttled 0.25s), decree's cadence moved onto a knob, and the boss/mob GEAR
+ramp recalibrated the endgame curve for the new power (60s perfect-kit TTK pin
+on the L100 Act-1 finale). The §10 owner calls were
 resolved per the recommendations (uniques live on pickup, awakening stays
 legendary-only, forced-crit procs cap-exempt, shared on-evade ICD in
 `Balance.UNIQ.evade_icd`, root approximated as a near-total slow, proc

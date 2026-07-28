@@ -130,6 +130,18 @@ var boss_kind := ""            # --boss=X: dummy carries THIS boss's sheet, not 
 # readout includes +damage-taken. Answers "can an optimized build clear
 # depth D" with numbers instead of vibes.
 var depth_sim := 0             # 0 = off
+# --uniques (2026-07-27 dps-bench phase): every slot wears its class's BiS
+# NAMED UNIQUE passive (BenchBuild.BIS_UNIQUES) — the "most optimized build
+# from all gear" frame. --wpassive=<id> overrides just the weapon signature
+# (candidate A/Bs). --ttk gives the dummy the target boss's REAL HP pool
+# (mortal, still pacifist/pinned) and measures actual time-to-kill — the
+# honest instrument for opener/execute/first-hit passives, which an immortal
+# full-HP dummy either fakes permanently or never lets fire.
+var use_uniques := false
+var wpassive := ""
+var ttk := false
+var hp_mult := 1.0             # --hpmult=N: scale the mortal pool (curve-retune probe)
+var gpassive := {}             # --gpassive=slot:id[,slot:id]: BiS gear-slot override (A/Bs)
 var results: Array = []
 
 # --- rotation driver state (one case at a time) ---
@@ -173,6 +185,13 @@ class BenchDummy extends Boss:
 	var m_crits := 0
 	var m_peak := 0.0
 	var pool := {}   # AoE mode: shared pack tally (empty in single mode)
+	# --ttk: the dummy is MORTAL — it carries the target boss's real HP pool
+	# and its hp genuinely falls (still pacifist, pinned, never dies), so
+	# first-hit/opener passives fire once like they really do, and execute-band
+	# passives (quietus) genuinely open at their thresholds. m_done latches at
+	# the kill; the case reports elapsed sim time as TTK.
+	var mortal := false
+	var m_done := false
 
 	static func spawn_bench(game_node: Node2D, pos: Vector2, lvl: int, block: Dictionary) -> BenchDummy:
 		var d := BenchDummy.new()
@@ -217,7 +236,15 @@ class BenchDummy extends Boss:
 			pool["peak"] = maxf(float(pool["peak"]), amount)
 			pool["started"] = true
 		knock = Vector2.ZERO
-		hp = max_hp               # immortal: the pool never moves, no phases
+		if mortal:
+			# --ttk: the pool genuinely drains. Floor at 1 HP (never dying —
+			# death paths would tear the measuring rig down mid-frame); the
+			# latch below ends the case.
+			hp = maxf(1.0, hp - amount)
+			if m_total >= max_hp - 0.5:
+				m_done = true
+		else:
+			hp = max_hp           # immortal: the pool never moves, no phases
 
 
 ## AoE-mode chaff: a pacifist, killable add. Credits EFFECTIVE damage
@@ -300,6 +327,17 @@ func _parse_args() -> void:
 			dlevel = plevel
 		elif a.begins_with("--boss="):
 			boss_kind = a.get_slice("=", 1)
+		elif a == "--uniques":
+			use_uniques = true
+		elif a.begins_with("--wpassive="):
+			wpassive = a.get_slice("=", 1)
+		elif a == "--ttk":
+			ttk = true
+		elif a.begins_with("--hpmult="):
+			hp_mult = maxf(0.01, float(a.get_slice("=", 1)))
+		elif a.begins_with("--gpassive="):
+			for pair in a.get_slice("=", 1).split(","):
+				gpassive[pair.get_slice(":", 0)] = pair.get_slice(":", 1)
 		elif a.begins_with("--depth="):
 			depth_sim = int(a.get_slice("=", 1))
 			dlevel = depth_sim
@@ -333,6 +371,13 @@ func _run() -> void:
 		", GODROLL" if godroll else "",
 		", +%d smith" % plus_lvl if plus_lvl > 0 else "",
 		gemlvl, sim_secs])
+	if use_uniques:
+		print("[bench] UNIQUES: BiS named-unique passives on every slot (BenchBuild.BIS_UNIQUES)%s" % [
+			("; weapon override --wpassive=" + wpassive) if wpassive != "" else ""])
+	if ttk:
+		var tk := boss_kind if boss_kind != "" else "stormmouth"
+		print("[bench] TTK MODE: mortal dummy carrying %s's real L%d pool (%.0f HP) — case ends at the kill" % [
+			tk, dlevel, Story.enemy_stats_at(tk, dlevel, dlevel > Balance.LEVEL_CAP)["hp"]])
 	if aoe:
 		print("[bench] AOE MODE: %d boss pillars in a row + %d adds (%.0f hp) every %.0fs — effective damage, pooled" % [
 			PILLARS, ADD_WAVE_COUNT, ADD_HP, ADD_WAVE_SECS])
@@ -455,6 +500,16 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 			p.global_position = pack_center + Vector2(0, 120)
 	else:
 		dummy = BenchDummy.spawn_bench(game, pack_center, dlevel, block)
+		if ttk:
+			# Mortal dummy: the target boss's REAL pool at this level. --ttk
+			# requires --boss (a pool must belong to someone). --hpmult scales
+			# it — the curve-retune probe (find the pool that hits the TTK
+			# target BEFORE touching the real growth constants).
+			var kind := boss_kind if boss_kind != "" else "stormmouth"
+			var pool_hp: float = Story.enemy_stats_at(kind, dlevel, dlevel > Balance.LEVEL_CAP)["hp"] * hp_mult
+			dummy.mortal = true
+			dummy.max_hp = pool_hp
+			dummy.hp = pool_hp
 		game.add_enemy(dummy)
 		var so: float = standoff_override if standoff_override >= 0.0 else float(STAND_OFF[cls])
 		p.global_position = dummy.home + Vector2(-so, 0)
@@ -480,7 +535,8 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	adds_spawned = 0
 	running = true
 	var guard := 0.0
-	while (aoe_win_t if aoe else dummy.m_time) < sim_secs:
+	while (aoe_win_t if aoe else dummy.m_time) < sim_secs \
+			and not (ttk and dummy.m_done):
 		await get_tree().physics_frame
 		guard += 1.0 / 60.0
 		if guard > sim_secs * 3.0 + 30.0:
@@ -512,6 +568,9 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 			"atk": p.atk,
 			"kills": "",
 		}
+		if ttk:
+			# TTK: real seconds to drain the pool; -1 = did not finish (DNF).
+			r["ttk"] = secs if dummy.m_done else -1.0
 	r["mana"] = ""
 	if not bool(Classes.CLASSES[cls].get("manaless", false)) and mp_frames > 0:
 		var starved_bits: Array = []
@@ -525,6 +584,9 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	var probe := ""
 	if knife_probe and knife_fans > 0:
 		probe = "  knives/fan %.2f (of 5, n=%d)" % [float(knife_connects) / float(knife_fans), knife_fans]
+	if ttk:
+		var tt: float = r.get("ttk", -1.0)
+		probe += "  TTK %s" % ("%.1fs" % tt if tt >= 0.0 else "DNF(>%.0fs)" % sim_secs)
 	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s%s%s" % [
 		r["case"], r["dps"], r["total"], r["secs"], r["hps"], r["crit"],
 		r["peak"], r["ults"], int(r["atk"]), r["kills"], r["mana"], probe])
@@ -558,8 +620,14 @@ func _equip(p: Player, cls: String, tid: String) -> void:
 	# the roll with THIS run's gear_seed (--gearseed lets it vary for a variance probe).
 	var rng := RandomNumberGenerator.new()
 	rng.seed = gear_seed
-	var cfg := {"grade": grade, "gemlvl": gemlvl, "plus": plus_lvl, "godroll": godroll}
+	var cfg := {"grade": grade, "gemlvl": gemlvl, "plus": plus_lvl, "godroll": godroll,
+		"uniques": use_uniques}
 	p.equipment = BenchBuild.equip_dict(cls, tid, cfg, rng)
+	if wpassive != "":
+		p.equipment["weapon"]["passive"] = wpassive  # --wpassive: candidate A/B
+	for gslot in gpassive:
+		if p.equipment.has(gslot):
+			p.equipment[gslot]["passive"] = String(gpassive[gslot])  # --gpassive A/B
 	p._update_weapon_visual()
 
 

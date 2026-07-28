@@ -30,6 +30,13 @@ Since the last edition the bench gained: `--level/--grade/--gemlvl` (arbitrary
 kit), `--boss=<kind>` (a specific boss's sheet), `--defense` (EHP/damage-taken
 readout), and `--rep=N` + `dps_bench_rep.ps1` (N parallel independent-RNG runs
 → a clean mean; crit specs swing ±15% run-to-run — never trust one roll).
+The 2026-07-27 dps-bench round added `--uniques` (BiS named-unique passives on
+every slot, `BenchBuild.BIS_UNIQUES`), `--wpassive=<id>` / `--gpassive=slot:id`
+(candidate A/B overrides), and `--ttk` + `--hpmult=N` (MORTAL dummy carrying
+the target boss's real pool — the honest frame for opener/execute passives,
+which the immortal full-HP dummy either fakes permanently or never fires; the
+L100 endgame board + the GEAR-ramp curve were tuned in this mode — see
+BALANCE_HISTORY.md's dps-bench round; this file's L40 boards are unaffected).
 
 Gem loadout under the typed-slot rule: the 4 special slots take the only three
 damage specials (`dmg_pct`, `combo`, `cdr`) + `lifesteal`; every regular slot a

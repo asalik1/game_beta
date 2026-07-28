@@ -403,8 +403,10 @@ func _frost_nova(f := 1.0) -> void:
 	var restore := rider("a2", "restore")
 	if s_passive() == "springwake":
 		restore *= uniq_k("restore_mult")  # Springwake: the bloom drinks deeper
-	# Mage bastion BARGAIN (armor uniques): Nova's restore is the price.
-	restore *= 1.0 - uniq_gk("pants_bulwark", "nova_tax")
+	# Mage bulwark BARGAINs (armor uniques): Nova's restore is the price —
+	# charged from the bastion (pants) AND pool (charm Ea) carriers alike.
+	restore *= (1.0 - uniq_gk("pants_bulwark", "nova_tax")) \
+		* (1.0 - uniq_gk("helm_bulwark", "nova_tax"))
 	gain_hp((max_hp - hp) * restore)  # nova drinks the cold — SHOW the mend
 	if nova_regen > 0.0:
 		# Rimeheart (mage talent): the cold keeps mending — a long, slow trickle

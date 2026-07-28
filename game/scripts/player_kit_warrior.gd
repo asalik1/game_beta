@@ -21,7 +21,7 @@ func _use_warrior(slot: String, f: float) -> void:
 				# thrust that ignores armor outright (earned tempo, hunt-rhythm
 				# pattern; the crack in the plate reads on the counter's beat).
 				uniq_counter += 1
-				if uniq_counter >= 3:
+				if uniq_counter >= int(uniq_k("every")):
 					uniq_counter = 0
 					decree = true
 					cleave_mult *= uniq_k("mult")

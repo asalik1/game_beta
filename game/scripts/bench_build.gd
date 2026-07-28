@@ -101,6 +101,44 @@ const FLAGSHIP_PASSIVE := {"warrior": "kingsblade", "archer": "windward",
 	"mage": "wellspring", "assassin": "mirrorstep", "paladin": "dawnbreaker",
 	"warlock": "voidmaw"}
 
+# BiS NAMED-UNIQUE loadout per class (dps-bench phase, 2026-07-27): the
+# DPS-optimal passive per slot against a single boss target, stamped onto the
+# rolled bench gear when a config sets "uniques" (dps_bench --uniques). Weapon
+# ids are weapon passives (s_passive); the six gear slots carry Balance.UNIQ
+# gear ids (uniq_armor). Picks were MEASURED (candidate A/Bs on the bench) —
+# see BALANCE_HISTORY.md's dps-bench round for the losing candidates. Slots
+# whose whole S column is defensive/reactive contribute nothing against a
+# pacifist bench boss; those picks are the piece a real fight would want and
+# are marked inert below.
+# Loadouts are DUPE-FREE by construction: same-verb pieces never stack (first
+# carrier wins, player_core.uniq_gear), so each slot carries a DISTINCT verb.
+const BIS_UNIQUES := {
+	"warrior": {"weapon": "kingsblade", "helmet": "warrior_helmet_Ds",
+		"gloves": "warrior_gloves_Es", "pants": "warrior_pants_Ds",
+		"armor": "warrior_armor_Ds", "boots": "warrior_boots_Bs",
+		"charm": "warrior_charm_Cs"},
+	"archer": {"weapon": "windward", "helmet": "archer_helmet_Ds",
+		"gloves": "archer_gloves_Ds", "pants": "archer_pants_Ds",
+		"armor": "archer_armor_Ds", "boots": "archer_boots_Bs",
+		"charm": "archer_charm_As"},
+	"mage": {"weapon": "wellspring", "helmet": "mage_helmet_Ds",
+		"gloves": "mage_gloves_Ds", "pants": "mage_pants_Ds",
+		"armor": "mage_armor_Ds", "boots": "mage_boots_Cs",
+		"charm": "mage_charm_As"},
+	"assassin": {"weapon": "mirrorstep", "helmet": "assassin_helmet_Ds",
+		"gloves": "assassin_gloves_Es", "pants": "assassin_pants_Ds",
+		"armor": "assassin_armor_Ds", "boots": "assassin_boots_As",
+		"charm": "assassin_charm_Bs"},
+	"paladin": {"weapon": "noonday", "helmet": "paladin_helmet_Ds",
+		"gloves": "paladin_gloves_Ds", "pants": "paladin_pants_Ds",
+		"armor": "paladin_armor_Ds", "boots": "paladin_boots_Bs",
+		"charm": "paladin_charm_Cs"},
+	"warlock": {"weapon": "voidmaw", "helmet": "warlock_helmet_Ds",
+		"gloves": "warlock_gloves_Ds", "pants": "warlock_pants_Ds",
+		"armor": "warlock_armor_Ds", "boots": "warlock_boots_Ds",
+		"charm": "warlock_charm_As"},
+}
+
 
 ## The 4-slot equipment dict for a build: gear rolled off `rng` (seed it with
 ## GEAR_SEED for the canonical sequence), stamped with plus, optionally godroll'd,
@@ -113,11 +151,17 @@ static func equip_dict(cls: String, tid: String, cfg: Dictionary, rng: RandomNum
 	var specials: Array = preset_lookup(GEM_PRESETS, cls, tid).get("specials", [])
 	var spec_cap: int = Items.special_slots(grade)
 	var spec_idx := 0
+	var bis: Dictionary = BIS_UNIQUES.get(cls, {}) if bool(cfg.get("uniques", false)) else {}
 	var equipment := {}
 	for slot in Items.SLOTS:
 		var noun: String = Items.class_weapon_noun(cls) if slot == "weapon" else ""
 		var item := Items.roll_item_of(slot, grade, rng, cls, noun)
-		if grade == "S" and slot == "weapon" and FLAGSHIP_PASSIVE.has(cls):
+		if bis.has(slot):
+			# "uniques" config: every slot wears its BiS named-unique passive —
+			# the full-loadout measurement (weapon via s_passive, the six gear
+			# slots via the uniq_armor cache).
+			item["passive"] = String(bis[slot])
+		elif grade == "S" and slot == "weapon" and FLAGSHIP_PASSIVE.has(cls):
 			# The BiS bench weapon carries the class's flagship passive (the
 			# six transplanted ex-legendary signatures — live on pickup since
 			# the legendary tier retired 2026-07-27). Same measurement as ever.

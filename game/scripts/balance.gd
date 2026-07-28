@@ -1204,22 +1204,22 @@ const UNIQ := {
 	                           # (weapon-first by construction — no doubled counters on one blow)
 	# --- warrior ---
 	"pennon":     {"shred": 20.0, "shred_dur": 4.0},                # Bash SUNDERS: flat physres shred
-	"decree":     {"mult": 1.15, "stagger": 0.35},                  # every 3rd Cleave: armor-ignoring thrust
+	"decree":     {"every": 3, "mult": 1.15, "stagger": 0.35},      # every 3rd Cleave: armor-ignoring thrust
 	"warpath":    {"echo": 0.6},                                    # Berserk-only: crits echo a ghost arc
 	"lasthost":   {"echo": 0.6, "icd": 0.3},                        # crits always echo (icd vs multi-crit loops)
 	"outrider":   {"window": 2.0},                                  # evade arms a double Cleave; BARGAIN: Grit off
 	"horizon":    {"bash_refund": 1.5, "window": 4.0},              # evade: next Cleave forced crit + Bash refund
 	"reprisal":   {"chance": 0.30, "counter": 0.6},                 # chance to counter-cut a melee attacker
-	"thegate":    {"guard": 80.0, "dur": 2.5, "counter": 0.8, "stagger": 0.5},  # Bash raises the Gate
+	"thegate":    {"guard": 80.0, "dur": 2.5, "counter": 0.8, "stagger": 0.5, "icd": 0.25},  # Bash raises the Gate (counter throttled)
 	"dirge":      {"dmg": 0.20, "cd_tax": 0.15},                    # heavier Cleave/Whirlwind; BARGAIN: slower Cleave
 	"aftershock": {"echo": 0.6, "delay": 0.5, "radius": 150.0, "stagger": 0.3},  # Whirlwind detonates twice
 	# --- archer ---
 	"siegebolt":  {},                                               # Multishot arrows pierce
 	"gale":       {"every": 5, "arrows": 3, "mult": 0.55},          # every 5th Quick Shot: free fan
 	"farsight":   {"range": 240.0, "pen_ignore": 0.5},              # long shots halve armor
-	"herald":     {"vuln": 1.0},                                    # first hit on unwounded prey: forced crit + mark
+	"herald":     {"vuln": 1.0, "rearm": 3.0},                      # first hit on unwounded prey: forced crit + mark; kills re-arm it
 	"foxfire":    {"window": 2.0, "mult": 0.85},                    # evade: next Quick Shot fires twin arrows
-	"hartsbreath": {"crits": 3},                                    # perfect dodge: 3 forced crits + Multishot reset
+	"hartsbreath": {"crits": 3, "crits_roll": 2},                   # any Tumble: 2 forced crits; perfect dodge: 3 + Multishot reset
 	"briar":      {"dot": 0.2, "slow": 0.30, "dur": 3.0, "sw_tax": 0.5},  # thorns; BARGAIN: Second Wind halved
 	"bramble":    {"dot": 0.25, "slow": 0.20, "hurt_window": 3.0, "root": 0.5, "root_radius": 140.0, "icd": 6.0},
 	"warhorn":    {"extra": 2, "cd_tax": 1.5},                      # 7-arrow Multishot; BARGAIN: +1.5s cd
@@ -1278,8 +1278,8 @@ const UNIQ := {
 	# --- profile A: WARD ---
 	"helm_ward":     {"dr": 0.30, "dur": 2.0, "icd": 8.0},          # magic hit taken arms a magic-DR ward
 	"helm_ward_a":   {"dr": 0.15, "dur": 2.0, "icd": 8.0},
-	"glove_ward":    {"shred": 12.0, "dur": 3.0},                   # your hits unweave: flat res shred
-	"glove_ward_a":  {"shred": 7.0, "dur": 3.0},
+	"glove_ward":    {"shred": 12.0, "cap": 24.0, "dur": 3.0},      # your hits unweave: flat res shred, stacking to cap (S)
+	"glove_ward_a":  {"shred": 7.0, "dur": 3.0},                    # A: one application (cap defaults to shred)
 	"pants_ward":    {"cc_mult": 0.7},                              # slows/roots/freezes on YOU run shorter
 	"pants_ward_a":  {"cc_mult": 0.5, "heal_tax": 0.10},            # BARGAIN: deeper, but -10% healing received
 	# --- profile B: GUARD ---
@@ -1325,7 +1325,7 @@ const UNIQ := {
 	"warrior_helmet_Ea": {"cap": 0.04, "verb": "helm_bulwark"},
 	"warrior_helmet_Es": {"beat": "amp", "cap": 0.08, "verb": "helm_bulwark", "when": "berserk"},
 	"warrior_gloves_Aa": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"warrior_gloves_As": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"warrior_gloves_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"warrior_gloves_Ba": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
 	"warrior_gloves_Bs": {"beat": "stagger", "chance": 0.25, "counter": 0.5, "s": 0.3, "verb": "glove_guard"},
 	"warrior_gloves_Ca": {"every": 8, "verb": "glove_finesse"},
@@ -1355,7 +1355,7 @@ const UNIQ := {
 	"archer_helmet_Ea": {"cap": 0.04, "verb": "helm_bulwark"},
 	"archer_helmet_Es": {"cap": 0.08, "verb": "helm_bulwark"},
 	"archer_gloves_Aa": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"archer_gloves_As": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"archer_gloves_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"archer_gloves_Ba": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
 	"archer_gloves_Bs": {"beat": "knock", "chance": 0.25, "counter": 0.5, "n": 320.0, "verb": "glove_guard"},
 	"archer_gloves_Ca": {"every": 8, "verb": "glove_finesse"},
@@ -1385,7 +1385,7 @@ const UNIQ := {
 	"assassin_helmet_Ea": {"cap": 0.04, "verb": "helm_bulwark"},
 	"assassin_helmet_Es": {"beat": "amp", "cap": 0.08, "verb": "helm_bulwark", "when": "surge"},
 	"assassin_gloves_Aa": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"assassin_gloves_As": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"assassin_gloves_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"assassin_gloves_Ba": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
 	"assassin_gloves_Bs": {"beat": "surge", "chance": 0.25, "counter": 0.5, "s": 1.0, "verb": "glove_guard"},
 	"assassin_gloves_Ca": {"every": 8, "verb": "glove_finesse"},
@@ -1415,7 +1415,7 @@ const UNIQ := {
 	"mage_helmet_Ea": {"cap": 0.04, "verb": "helm_bulwark"},
 	"mage_helmet_Es": {"cap": 0.08, "verb": "helm_bulwark"},
 	"mage_gloves_Aa": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"mage_gloves_As": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"mage_gloves_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"mage_gloves_Ba": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
 	"mage_gloves_Bs": {"beat": "slow", "chance": 0.25, "counter": 0.5, "dur": 2.0, "pct": 0.3, "verb": "glove_guard"},
 	"mage_gloves_Ca": {"every": 8, "verb": "glove_finesse"},
@@ -1445,7 +1445,7 @@ const UNIQ := {
 	"paladin_helmet_Ea": {"cap": 0.04, "verb": "helm_bulwark"},
 	"paladin_helmet_Es": {"beat": "amp", "cap": 0.08, "verb": "helm_bulwark", "when": "holy"},
 	"paladin_gloves_Aa": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"paladin_gloves_As": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"paladin_gloves_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"paladin_gloves_Ba": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
 	"paladin_gloves_Bs": {"beat": "heal", "chance": 0.25, "counter": 0.5, "pct": 0.01, "verb": "glove_guard"},
 	"paladin_gloves_Ca": {"every": 8, "verb": "glove_finesse"},
@@ -1475,7 +1475,7 @@ const UNIQ := {
 	"warlock_helmet_Ea": {"cap": 0.04, "verb": "helm_bulwark"},
 	"warlock_helmet_Es": {"beat": "amp", "cap": 0.08, "verb": "helm_bulwark", "when": "pact"},
 	"warlock_gloves_Aa": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"warlock_gloves_As": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"warlock_gloves_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"warlock_gloves_Ba": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
 	"warlock_gloves_Bs": {"beat": "slow", "chance": 0.25, "counter": 0.5, "dur": 3.0, "pct": 0.4, "verb": "glove_guard"},
 	"warlock_gloves_Ca": {"every": 8, "verb": "glove_finesse"},
@@ -1577,7 +1577,7 @@ const UNIQ := {
 	"assassin_charm_Aa": {"every": 8, "verb": "glove_finesse"},
 	"assassin_charm_As": {"beat": "surge", "every": 5, "s": 1.0, "verb": "glove_finesse"},
 	"assassin_charm_Ba": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"assassin_charm_Bs": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"assassin_charm_Bs": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"assassin_charm_Ca": {"verb": "helm_finesse", "vuln_dur": 1.5},
 	"assassin_charm_Cs": {"beat": "dmark", "s": 0.5, "verb": "helm_finesse", "vuln_dur": 3.0},
 	"assassin_charm_Da": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
@@ -1605,7 +1605,7 @@ const UNIQ := {
 	"mage_boots_Ea": {"dr": 0.1, "nova_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"mage_boots_Es": {"beat": "mana", "dr": 0.15, "n": 5.0, "threshold": 0.3, "verb": "pants_bulwark"},
 	"mage_charm_Aa": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"mage_charm_As": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"mage_charm_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"mage_charm_Ba": {"dot": 0.1, "dur": 3.0, "verb": "glove_aggr"},
 	"mage_charm_Bs": {"beat": "amp", "dot": 0.15, "dur": 3.0, "verb": "glove_aggr", "when": "shredded"},
 	"mage_charm_Ca": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
@@ -1639,7 +1639,7 @@ const UNIQ := {
 	"paladin_charm_Ba": {"dot": 0.1, "dur": 3.0, "verb": "glove_aggr"},
 	"paladin_charm_Bs": {"beat": "amp", "dot": 0.15, "dur": 3.0, "verb": "glove_aggr", "when": "retri"},
 	"paladin_charm_Ca": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"paladin_charm_Cs": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"paladin_charm_Cs": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"paladin_charm_Da": {"verb": "helm_finesse", "vuln_dur": 1.5},
 	"paladin_charm_Ds": {"beat": "cdr", "s": 1.0, "slot": "a3", "verb": "helm_finesse", "vuln_dur": 3.0},
 	"paladin_charm_Ea": {"cap": 0.04, "regen_tax": 0.5, "verb": "helm_bulwark"},
@@ -1665,7 +1665,7 @@ const UNIQ := {
 	"warlock_boots_Ea": {"dr": 0.1, "ls_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"warlock_boots_Es": {"beat": "hpq", "dr": 0.15, "pct": 0.01, "threshold": 0.3, "verb": "pants_bulwark"},
 	"warlock_charm_Aa": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
-	"warlock_charm_As": {"beat": "shredx", "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
+	"warlock_charm_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"warlock_charm_Ba": {"dot": 0.1, "dur": 3.0, "verb": "glove_aggr"},
 	"warlock_charm_Bs": {"beat": "amp", "dot": 0.15, "dur": 3.0, "verb": "glove_aggr", "when": "hexed"},
 	"warlock_charm_Ca": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
@@ -1745,19 +1745,25 @@ const PLATE_RES_DMG_LOG := 0.025     # log coefficient
 const PLATE_RES_DMG_K := 0.08        # res sensitivity inside the log
 const PLATE_RES_DMG_CAP := 0.15      # hard ceiling (halved from the old 0.30)
 
-# Boss gem-expectation ramp (player-approved, 2026-07-06): the TIERLIST
-# benchmark was gemless, but real players arrive with sockets filled —
-# boss hp/dmg gain a small compounding premium per level above the ramp
-# start (where B-gear sockets + Lv3 gems realistically come online), the
-# same "budget for what the player actually has" move as round 45's
-# gear-inclusive dps. Applied inside enemy_stats_at: codex stays honest.
-const BOSS_GEM_RAMP_START := 32
-# FOLDED into BOSS_HP_GROWTH / BOSS_DMG_GROWTH (2026-07-09): the gem premium was
-# a second per-level scaler that double-counted with a player-curve calibration
-# (the L100 player already has Lv10 gems). Zeroed so scaling is one clean dial
-# per axis; the growth rates were set to include the gemmed player curve.
-const BOSS_GEM_HP_RAMP := 0.0
-const BOSS_GEM_DMG_RAMP := 0.0
+# GEAR-CEILING ramp (2026-07-27, the 7-slot "owner step 4" recalibration +
+# the 420-unique power infusion, replacing the retired BOSS_GEM_* ramp —
+# 0.0 since 2026-07-09): past the ramp start the player's kit detaches from
+# the base ~5.5%/level curve — S-band drops, named-unique passives (A Act 2+,
+# S Act 3+), Lv8-10 gems, deep smith plusses and reforge chases all stack
+# MULTIPLICATIVELY — so upscaled monsters (bosses AND far-field mobs) gain
+# compounding EXTRA HP per level above max(START, their anchor). Applied in
+# enemy_stats_at (codex-honest); never above an anchor (high-anchor content
+# gets its allowance at authoring time); at-level fights untouched (L42
+# A-gear finale re-measured 41.9s vs the ~40s budget — the in-band curve
+# still holds). HP ONLY: boss damage stays on the flat player-tracking dial
+# (measured 2026-07-27: L100 finale patterns already land 30-83% of max HP
+# on perfect kits — punishing without help). START = 50: aligns with the
+# NG+ unlock (post-Act-3 kits) — nothing below L50 upscales into the ramp.
+# RATE calibrated on the measured board (BALANCE_HISTORY.md, dps-bench
+# round): #1 sustained dps (archer/hunt, 66.2k perfect-kit) x 60s TTK pin
+# on the L100 Act-1 finale -> pool x10.66 at cap -> 1.0485^50.
+const GEAR_RAMP_START := 50
+const GEAR_RAMP_HP := 0.0485
 
 # First-clear premium (reward calibration, 2026-07-06): conquering a
 # chapter the FIRST time pays a legible beat on top of XP + boss gems —
@@ -2050,6 +2056,29 @@ const SCENERY_CLUSTER_MAX := 4         # hard cap on clump size (5+ impossible)
 const SCENERY_CLUSTER_GROW := 0.5      # chance to add a 3rd member
 const SCENERY_CLUSTER_GROW_DECAY := 0.2  # each further member that much less likely
 const SCENERY_CLUSTER_RADIUS := 95.0   # px spread of a clump around its centre
+# High-resolution environment overrides normalize to authored world widths
+# instead of inheriting the legacy "native pixels x3" rule. This keeps a 320px
+# generated oak and a 48px pack oak in the same combat-readable size band.
+const SCENERY_SCALE_JITTER := Vector2(0.88, 1.12)
+const SCENERY_RENDER_WIDTH := {
+	"tree_green": 190.0, "tree_autumn": 190.0, "tree_gnarled": 230.0,
+	"deadtree": 180.0, "log": 130.0, "bush": 112.0,
+	"grave_statue": 92.0, "grave_angel": 100.0, "grave_deadtree": 175.0,
+	"tombstone": 72.0, "tombstone2": 74.0, "tombstone3": 150.0,
+	"tree_snow": 175.0, "tree_winter": 185.0, "ice_cairn": 104.0,
+	"storm_conductor": 108.0, "storm_standing_stone": 106.0,
+	"frost_reeds": 72.0,
+	"tree_teal": 195.0, "tree_spore": 195.0, "spore_shrine": 122.0,
+	"spore_vent": 104.0, "cattail": 62.0, "mushroom_purple": 76.0,
+	"rock_volcanic": 124.0, "forge_statue": 108.0, "magma_furnace": 120.0,
+	"magma_chainrig": 145.0, "cactus": 100.0, "sandstone": 112.0,
+	"grass": 52.0, "grass_autumn": 52.0, "grass_frost": 52.0,
+	"bush3": 92.0, "flower": 42.0, "mushroom": 50.0,
+	"castle_statue": 94.0, "garden_statue": 94.0, "ruin_pillar": 98.0,
+	"garden_fountain": 165.0, "topiary": 104.0, "keep_brazier": 102.0,
+	"crystal_cluster": 118.0, "crystal_spire": 110.0, "geode": 104.0,
+	"void_monolith": 108.0, "void_rift": 94.0, "void_obelisk": 108.0,
+}
 
 # Crownfall composition fallbacks. Authored zone data normally supplies the
 # width/offset; these keep malformed or hand-written capital content legible.
