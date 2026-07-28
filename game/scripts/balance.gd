@@ -1760,10 +1760,11 @@ const PLATE_RES_DMG_CAP := 0.15      # hard ceiling (halved from the old 0.30)
 # on perfect kits — punishing without help). START = 50: aligns with the
 # NG+ unlock (post-Act-3 kits) — nothing below L50 upscales into the ramp.
 # RATE calibrated on the measured board (BALANCE_HISTORY.md, dps-bench
-# round): #1 sustained dps (archer/hunt, 66.2k perfect-kit) x 60s TTK pin
-# on the L100 Act-1 finale -> pool x10.66 at cap -> 1.0485^50.
+# round + the owner-review follow-up that lightened hunt's proc mark): #1
+# sustained dps (assassin/shadow, 63.1k perfect-kit) x 60s TTK pin on the
+# L100 Act-1 finale -> pool x10.18 at cap -> 1.0475^50.
 const GEAR_RAMP_START := 50
-const GEAR_RAMP_HP := 0.0485
+const GEAR_RAMP_HP := 0.0475
 
 # First-clear premium (reward calibration, 2026-07-06): conquering a
 # chapter the FIRST time pays a legible beat on top of XP + boss gems —

@@ -1218,7 +1218,10 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	if effects.has("stun_chance") and randf() < effects["stun_chance"]:
 		_stun_or_concuss(e, 0.5)
 	if effects.has("vuln") and randf() < effects["vuln"]:
-		e.apply_vuln(3.0)  # MP-10 seam: a mirror forwards the mark to the host
+		# vuln_amp: a theme may mark LIGHTER than the +50% default (hunt's
+		# passive proc runs +35% — see Classes.THEMES). apply_vuln's expiry
+		# reset keeps a later full-weight mark from inheriting the lean amp.
+		e.apply_vuln(3.0, float(effects.get("vuln_amp", -1.0)))  # MP-10 seam: a mirror forwards the mark to the host
 		game.spawn_text(e.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
 	if effects.has("shred"):
 		# Named-unique armor shred (pennon/wardcrack): the crack opens for the

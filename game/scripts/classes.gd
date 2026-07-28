@@ -10,7 +10,9 @@ class_name Classes
 ##   stun_chance  chance to stun 0.5s
 ##   echo         chance the hit strikes a second time at 50%
 ##   heal         heal self this fraction of max HP per hit
-##   vuln         chance to mark target (+50% damage taken, 3s)
+##   vuln         chance to mark target EXPOSED (+50% damage taken, 3s)
+##   vuln_amp     the mark's multiplier override (1.35 = +35%; absent = the
+##                +50% default — earned ability marks keep the full weight)
 ##   crit_bonus   bonus crit chance on themed hits
 ##   splash       AoE splash around the target (fraction)
 ##   speed_buff   move-speed buff for 2.5s after casting
@@ -68,7 +70,14 @@ const THEMES := {
 			"fx": {"dot": 0.38, "slow": 0.30, "toxin": 1}},
 		{"id": "hunt", "name": "Hunt", "color": Color(1.00, 0.60, 0.25),
 			"desc": "Precision: crits and marks that expose the prey.",
-			"fx": {"crit_bonus": 0.15, "vuln": 0.20}},
+			# vuln_amp (owner call, 2026-07-27 dps-bench review): the hunt's
+			# proc mark is a lighter EXPOSED (+35%) than an earned ability
+			# mark (+50% default) — at endgame hit rates the proc saturates
+			# into permanent uptime, and at the full +50% it made hunt the
+			# runaway #1 (67.6k vs the 58-62k target band). The amp rides
+			# every hunt fx package (the per-ability variants below carry it
+			# too — those are what actually fire; this row is the fallback).
+			"fx": {"crit_bonus": 0.15, "vuln": 0.20, "vuln_amp": 1.35}},
 	],
 	"paladin": [
 		{"id": "holy", "name": "Holy", "color": Color(1.00, 0.92, 0.55),
@@ -373,7 +382,7 @@ const ABILITY_THEMES := {
 			"venom": {"desc": "Dipped arrowheads bite 15% deeper, and drip a heavy venom DoT that STACKS with every hit, plus a lingering slow.",
 				"fx": {"dmg_mult": 1.15, "dot": 0.65, "slow": 0.30, "toxin": 1}},
 			"hunt": {"desc": "Aim for the gaps: shots bite 20% deeper, can EXPOSE the prey — and every FOURTH arrow finds the eye (guaranteed crit).",
-				"fx": {"dmg_mult": 1.2, "vuln": 0.25}},
+				"fx": {"dmg_mult": 1.2, "vuln": 0.25, "vuln_amp": 1.35}},
 		},
 		"a2": {
 			"storm": {"desc": "Five charged arrows that PIERCE everything, splashing lightning on each hit.",
@@ -381,7 +390,7 @@ const ABILITY_THEMES := {
 			"venom": {"desc": "THREE heavy toxin arrows in a tight fan, punching through up to three bodies each — every wound drips a brutal, STACKING DoT.",
 				"fx": {"knives": 3, "spread": 0.10, "dmg_mult": 1.7, "pierce": 1, "pierce_cap": 3, "dot": 0.50, "slow": 0.25, "toxin": 1}},
 			"hunt": {"desc": "The whole volley converges on a single point, 20% heavier — one target eats all five.",
-				"fx": {"narrow": 1, "dmg_mult": 1.2, "crit_bonus": 0.15, "vuln": 0.30}},
+				"fx": {"narrow": 1, "dmg_mult": 1.2, "crit_bonus": 0.15, "vuln": 0.30, "vuln_amp": 1.35}},
 		},
 		"a3": {
 			"storm": {"desc": "Discharge a lightning burst where you leave — punish anything chasing you.",
@@ -397,7 +406,7 @@ const ABILITY_THEMES := {
 			"venom": {"desc": "A plague rain: everything struck rots and slows, arrow after arrow deepening the toxin.",
 				"fx": {"dot": 0.65, "slow": 0.30, "toxin": 1}},
 			"hunt": {"desc": "Every arrow hunts YOUR target — one prey, total focus, exposed to the bone.",
-				"fx": {"focus": 1, "vuln": 0.40, "crit_bonus": 0.15}},
+				"fx": {"focus": 1, "vuln": 0.40, "crit_bonus": 0.15, "vuln_amp": 1.35}},
 		},
 	},
 	"mage": {
