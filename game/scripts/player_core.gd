@@ -425,6 +425,8 @@ var uniq_mward_amt := 0.0      # ...its strength
 # gated in use_ability on the leap actually firing).
 const UNIQ_COMMIT := {"warrior": "a2", "archer": "a3", "mage": "a3",
 	"assassin": "a2", "paladin": "a1", "warlock": "a3"}
+var uniq_setn := {}            # profile SETS: letter -> worn piece count (recalc cache)
+var uniq_scount := 0           # mage aggressor-set 6pc: bolts since the last set shred
 var dash_refund_t := 0.0       # Shadow phantom step: kill within this refunds the dash
 var dash_refund_frac := 0.0    # ...how much of the dash cd a closing kill returns
 var storm_time := 0.0
@@ -924,6 +926,20 @@ func uniq_gk(base: String, key: String, default := 0.0) -> float:
 	return float(Balance.uniq(id).get(key, default))
 
 
+## Worn count of a profile SET's pieces (GEAR_UNIQUE_SETS.md).
+func uniq_set_n(prof: String) -> int:
+	return int(uniq_setn.get(prof, 0))
+
+
+## A live set-tier CLAUSE knob: its value once `tier` pieces are worn, else 0
+## — so seams read `if uniq_set_k("A", 4, "grit_on_magic") > 0.0` and the
+## knob doubles as the magnitude where it has one.
+func uniq_set_k(prof: String, tier: int, key: String) -> float:
+	if uniq_set_n(prof) < tier:
+		return 0.0
+	return float(Balance.uniq_set(cls, prof, "s%d" % tier).get(key, 0.0))
+
+
 ## Is this S weapon's class awakened for this character? (persisted flag)
 func weapon_awakened(w: Dictionary) -> bool:
 	if game == null:
@@ -1353,14 +1369,23 @@ func recalc() -> void:
 		var piece: Dictionary = equipment[slot]
 		if piece.has("passive") and not piece.get("passive_dormant", false):
 			uniq_armor.append(String(piece["passive"]))
-	# Set bonus: 2/4 pieces of your class's S legendary set grant escalating
-	# stat bonuses (Items.SET_BONUSES). Only S gear of your OWN class counts.
-	var set_pieces := Items.count_set_pieces(equipment, cls)
-	var set_data: Dictionary = Items.SET_BONUSES.get(cls, {})
-	for tier in ["2", "4"]:
-		if set_pieces >= int(tier) and set_data.has(tier):
-			for stat in set_data[tier]:
-				b[stat] = b.get(stat, 0.0) + set_data[tier][stat]
+	# Profile SETS (2026-07-28, GEAR_UNIQUE_SETS.md): a set is a PROFILE worn
+	# across the six gear slots — own-class named uniques counted by the
+	# profile letter in their structural passive id, 2/4/6 records in
+	# Balance.UNIQ_SETS. Stat keys fold into `b` here; clause knobs are read
+	# at their seams via uniq_set_k. (Replaces the legacy per-class S bonus.)
+	uniq_setn = Items.count_profile_pieces(equipment, cls)
+	for prof in uniq_setn:
+		var have: int = int(uniq_setn[prof])
+		for tier_n in [2, 4, 6]:
+			if have < tier_n:
+				break
+			var rec := Balance.uniq_set(cls, String(prof), "s%d" % tier_n)
+			for k in rec:
+				if b.has(k):
+					b[k] = b.get(k, 0.0) + float(rec[k])
+				elif String(k) == "magres_x":
+					b["magres"] = b.get("magres", 0.0) + float(rec[k])
 	for id in tree_points:
 		var cell := Skills.find_cell(cls, id)
 		if cell.is_empty():
@@ -1438,7 +1463,7 @@ func recalc() -> void:
 	# (a3.riders.dr / dr_secs) — the same numbers the tooltip reads. Any class
 	# whose Blink carries a DR rider gets it (only the mage does today).
 	var a3r: Dictionary = Classes.CLASSES[cls]["abilities"].get("a3", {}).get("riders", {})
-	blink_dr = float(a3r.get("dr", 0.0))
+	blink_dr = float(a3r.get("dr", 0.0)) + b["blink_dr"]  # + the mage ward-set 6pc
 	blink_dr_dur = float(a3r.get("dr_secs", 0.0))
 	tumble_dr = b["tumble_dr"]
 	veil_shield = b["veil_shield"]
@@ -2349,6 +2374,10 @@ func ability_cd(slot: String) -> float:
 		"warhorn":
 			if slot == "a2":
 				cd += uniq_k("cd_tax")         # Hornsong: the wider volley returns later
+	if slot == "a3":
+		# Finesse-set mobility clauses: the archer 4pc hastens Tumble, the
+		# mage 6pc hastens Blink (class-scoped by which knob the data carries).
+		cd = maxf(0.2, cd - uniq_set_k("C", 4, "tumble_cd") - uniq_set_k("C", 6, "blink_cd"))
 	cd = cd * (1.0 - cdr)
 	if cls == "warrior" and slot == "a1" and berserk_time <= 0.0:
 		# Cleave has a HARD cd floor cdr can't pierce — plate hits hard, not fast,

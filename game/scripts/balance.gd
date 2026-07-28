@@ -674,7 +674,11 @@ const BOSS_STRIKE_DELAY := 0.16
 # Falling-object presentation (telegraphed sky attacks). Boss signature
 # weapons use a detailed 96px sprite at near-native scale; the larger legacy
 # scales remain only for old 16px procedural callers.
-const FALLING_FIREBALL_SCALE := 6.0
+const FALLING_FIREBALL_SCALE := 1.25
+const FALLING_FIREBALL_TRAIL_AMOUNT := 42
+const FALLING_FIREBALL_TRAIL_LIFETIME := 0.44
+const FALLING_FIREBALL_TRAIL_SPEED := Vector2(26.0, 72.0)
+const FALLING_FIREBALL_TRAIL_SCALE := Vector2(2.0, 4.5)
 const FALLING_LEGACY_SWORD_SCALE := 4.5
 const BOSS_FALLING_WEAPON_SCALE := 1.15
 const FALLING_OBJECT_DEFAULT_END_Y := -20.0
@@ -686,9 +690,10 @@ const FALLING_OBJECT_FADE := 0.35
 # overstating the collision or threat.
 const MOB_PROJECTILE_ART_SCALE := 0.70
 # Authored boss projectiles are 64px source cells (versus the old 8/16px
-# procedural cores enlarged 3x). Near-native scale preserves their material
-# detail while keeping the same ~48px combat footprint.
-const BOSS_PROJECTILE_ART_SCALE := 0.95
+# procedural cores enlarged 3x). 0.75 restores the ~48px combat footprint
+# the old cores actually occupied — 0.95 "near-native" measured 56-61px of
+# content and boss shots read mob-sized in flight (owner 2026-07-28).
+const BOSS_PROJECTILE_ART_SCALE := 0.75
 # Boss pursuit profiles: melee gets a small universal closing-speed edge;
 # casters circle inside their authored firing band and flip before grinding
 # against arena walls.
@@ -1681,6 +1686,68 @@ const UNIQ := {
 static func uniq(passive: String) -> Dictionary:
 	var v = UNIQ.get(passive, {})
 	return v if v is Dictionary else {}
+
+
+# --------------------------- unique gear SETS (2026-07-28) -------------------
+# GEAR_UNIQUE_SETS.md: a set is a PROFILE worn across the six gear slots —
+# own-class NAMED uniques counted by the profile letter in their structural
+# passive id (A ward / B guard / C finesse / D aggressor / E bulwark); both
+# lanes count. Replaces the legacy one-set-per-class S bonus. Tier records:
+# s2/s4/s6 — keys that exist in recalc's stat bucket fold in as flat stats;
+# everything else is a CLAUSE knob read at its seam (player/kits). The 4pc is
+# each set's LENS (identity / weakness / off-meta — the doc tags them).
+# ALL PLACEHOLDERS, un-benchmarked.
+const UNIQ_SETS := {
+	"warrior": {
+		"A": {"s2": {"magres": 8.0}, "s4": {"grit_on_magic": 1.0}, "s6": {"ward_amp": 0.10}},
+		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"grit_cap": 2.0}, "s6": {"full_grit_answer": 0.3}},
+		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"grit_on_evade": 1.0}, "s6": {"slippery_amp": 0.10}},
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"berserk_ext": 2.0}, "s6": {"opener_stagger": 0.3}},
+		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08}, "s6": {"bastion_add": 0.10}},
+	},
+	"archer": {
+		"A": {"s2": {"magres": 8.0}, "s4": {"swkeep_ward": 1.0}, "s6": {"sw_regen": 0.02}},
+		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"huntp_struck": 1.0}, "s6": {"anchor_thorns": 0.15}},
+		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"tumble_cd": 1.0}, "s6": {"perfect_crit": 1.0}},
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_marked": 0.08}, "s6": {"opener_expose": 1.0}},
+		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08, "sw_delay": -0.5}, "s6": {"lowhp_slow": 0.2}},
+	},
+	"assassin": {
+		"A": {"s2": {"magres": 8.0}, "s4": {"surge_ward": 0.5}, "s6": {"magres_x": 10.0, "mward_add": 0.10}},
+		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"parry_add": 0.10}, "s6": {"surge_answer": 0.3}},
+		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"eva": 0.03}, "s6": {"dmark_evade": 0.3}},
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_marked": 0.08}, "s6": {"surge_kill": 1.0}},
+		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08}, "s6": {"surge_hold": 1.0}},
+	},
+	"mage": {
+		"A": {"s2": {"magres": 8.0}, "s4": {"mana_ward": 5.0}, "s6": {"magres_x": 10.0, "blink_dr": 0.10}},
+		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"blunt_icd_cut": 3.0}, "s6": {"cloak_stacks": 0.05}},
+		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"mana_evade": 10.0}, "s6": {"blink_cd": 0.5}},
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_shredded": 0.08}, "s6": {"bolt_shred_every": 4.0}},
+		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08, "nova_restore_add": 0.05}, "s6": {"nova_root": 0.5}},
+	},
+	"paladin": {
+		"A": {"s2": {"magres": 8.0}, "s4": {"holy_ward": 1.0}, "s6": {"magres_x": 10.0, "ward_amp": 0.10}},
+		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"holy_blunt": 1.0}, "s6": {"aegis_ext": 0.5}},
+		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"mend_evade": 0.02}, "s6": {"leap_cut": 1.0}},
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"magpen": 4.0, "opener_holy": 1.0}, "s6": {"swap_amp": 0.15}},
+		"E": {"s2": {"VIT": 8.0}, "s4": {"holy_mend_add": 0.01}, "s6": {"holy_mend_lowhp": 1.0}},
+	},
+	"warlock": {
+		"A": {"s2": {"magres": 8.0}, "s4": {"life_ward": 0.01}, "s6": {"magres_x": 10.0, "hexext_ward": 1.0}},
+		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"pact_cut_stacks": 0.33}, "s6": {"wither_struck": 0.2}},
+		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"hexext_evade": 1.0}, "s6": {"rift_pull": 0.25}},
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_hexed": 0.08}, "s6": {"detonate_amp": 0.15}},
+		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08, "pact_surge_ext": 1.0}, "s6": {"pact_free_lowhp": 1.0}},
+	},
+}
+# ("magres_x" is the 6pc's EXTRA magres on ward sets — a distinct key so the
+# recalc stat-fold doesn't double-apply the 2pc line's plain "magres".)
+
+
+## One set-tier record ({} when absent). cls -> profile letter -> s2|s4|s6.
+static func uniq_set(cls: String, profile: String, tier: String) -> Dictionary:
+	return UNIQ_SETS.get(cls, {}).get(profile, {}).get(tier, {})
 # ------------------------------------------------- DEX vs evasion (gradient) ---
 # DEX answers evasion as a GRADIENT of three tiers, not a flat subtraction
 # (2026-07-17). Old rule: eva_curve(e_eva - dex*0.004) then one dodge roll —
@@ -2073,6 +2140,7 @@ const SCENERY_RENDER_WIDTH := {
 	"spore_vent": 104.0, "cattail": 62.0, "mushroom_purple": 76.0,
 	"rock_volcanic": 124.0, "forge_statue": 108.0, "magma_furnace": 120.0,
 	"magma_chainrig": 145.0, "cactus": 100.0, "sandstone": 112.0,
+	"boulder": 78.0,
 	"grass": 52.0, "grass_autumn": 52.0, "grass_frost": 52.0,
 	"bush3": 92.0, "flower": 42.0, "mushroom": 50.0,
 	"castle_statue": 94.0, "garden_statue": 94.0, "ruin_pillar": 98.0,

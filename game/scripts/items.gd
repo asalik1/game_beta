@@ -2103,44 +2103,139 @@ static func add_socket(item: Dictionary) -> void:
 	item["gem_slots"] = int(item.get("gem_slots", 0)) + 1
 
 
-# --------------------------------------------------------------- set bonuses ---
-# Each class's four S legendaries form a SET. Wearing 2 / 4 pieces of your
-# own class's S set grants escalating bonuses (applied in Player.recalc).
-# S items carry item["cls"], so only your class's legendaries count.
-# ROLE-WEAKNESS doctrine (2026-07-07, refined): a set shores up the class's
-# WEAKNESS, not its strength. The plate tanks (warrior/paladin) already
-# excel at survival, so their set is pure OFFENSE — their weak axis — to
-# keep their dps from falling behind the squishies' damage scaling. The
-# squishies (archer/assassin/mage/warlock) get DEFENSE from real mitigation
-# — VITALITY (pool + a broad tiny-res sprinkle) plus direct resistances and
-# critres — NO evasion (a soft-capping avoid-RNG cop-out). Modest numbers
-# ride the STEEP low end of the res curve (res_frac saturates, so a little
-# from a near-zero base buys a lot), closing the survival gap for endgame
-# bullet hell WITHOUT making them tanks. All four squishy 4pc are broad
-# phys + mag res + a little critres (bullet hell throws both damage types);
-# the VIT 2pc adds the pool. No specials (gear rule holds).
-const SET_BONUSES := {
-	# S-set bonuses are the ENDGAME DPS dial (S-gear only, inert below): glass
-	# cannons (archer/mage) get OFFENSE to top the charts, plate a SMALL offense
-	# lift (they lead on survivability, not damage), assassin/warlock keep the
-	# defensive set (assassin tops on raw kit; warlock is the survivable caster).
-	"warrior":  {"name": "Emberforged Warplate",    "2": {"atk_pct": 0.02}, "4": {"atk_pct": 0.04, "physpen": 4.0}},
-	"paladin":  {"name": "The Highfather's Aegis",  "2": {"atk_pct": 0.06}, "4": {"atk_pct": 0.12, "magpen": 6.0}},
-	"archer":   {"name": "The Hawk God's Regalia",  "2": {"atk_pct": 0.08}, "4": {"atk_pct": 0.17, "crit": 0.04, "physpen": 6.0}},
-	"assassin": {"name": "The Shadow God's Vestige", "2": {"VIT": 8.0},     "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
-	"mage":     {"name": "The Archmage's Array",    "2": {"atk_pct": 0.10}, "4": {"atk_pct": 0.22, "magpen": 8.0}},
-	"warlock":  {"name": "The Long Bargain Raiment", "2": {"VIT": 8.0},     "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
+# ---------------------------- unique gear SETS (2026-07-28) -----------------
+# GEAR_UNIQUE_SETS.md: a set is a PROFILE worn across the six gear slots.
+# Membership is STRUCTURAL — the profile letter inside a named gear unique's
+# passive id ("<cls>_<slot>_<P><lane>"); both lanes count; weapons never do
+# (the weapon is the free signature choice). Bonuses live in Balance.UNIQ_SETS
+# and are applied in Player.recalc + their clause seams. This replaces the
+# legacy one-set-per-class S bonus (SET_BONUSES/count_set_pieces, retired —
+# it predated the 7-slot world and was named for the retired legendary tier;
+# generic S pieces no longer form a set).
+
+
+# Verb family -> profile letter. Membership derives from what a piece DOES
+# (its engine verb), not its positional id letter — armor/boots/charm rows
+# order by the §5 coverage tables, so position lies about the profile there
+# (an archer's pen-cleats sit in row A but fight like an aggressor piece).
+const VERB_PROFILE := {"helm_ward": "A", "glove_ward": "A", "pants_ward": "A",
+	"helm_guard": "B", "glove_guard": "B", "pants_guard": "B",
+	"helm_finesse": "C", "glove_finesse": "C", "pants_finesse": "C",
+	"helm_aggr": "D", "glove_aggr": "D", "pants_aggr": "D",
+	"helm_bulwark": "E", "glove_bulwark": "E", "pants_bulwark": "E"}
+
+
+## The profile letter (A-E) of a named GEAR unique — by VERB family; "" for
+## everything else (weapons, generics, flagship ids, foreign-class pieces).
+static func set_profile_of(item: Dictionary, cls := "") -> String:
+	if cls != "" and String(item.get("cls", "")) != cls:
+		return ""
+	var pid := String(item.get("passive", ""))
+	if pid == "" or pid.split("_").size() != 3:
+		return ""
+	return String(VERB_PROFILE.get(String(Balance.uniq(pid).get("verb", "")), ""))
+
+
+## Worn count per profile letter for `cls` ({"A": n, ...} — absent = 0).
+static func count_profile_pieces(equipment: Dictionary, cls: String) -> Dictionary:
+	var out := {}
+	for slot in equipment:
+		var prof := set_profile_of(equipment[slot], cls)
+		if prof != "":
+			out[prof] = int(out.get(prof, 0)) + 1
+	return out
+
+
+## A profile set's display name: the leading name of the class's helmet-S
+## unique in that profile (the art pass named S triads in families —
+## "Nullward, Helm of the Crownless Host" -> "Nullward").
+static func uniq_set_name(cls: String, profile: String) -> String:
+	var want := "%s_helmet_%ss" % [cls, profile]
+	for u in UNIQUES:
+		if String(u.get("passive", "")) == want:
+			return String(u["name"]).split(",")[0]
+	return "%s set" % profile
+
+
+# Player-facing lines for set CLAUSE knobs (plain stat keys render through
+# STAT_LABEL; these are the tiers recalc can't describe). Numbers here mirror
+# the Balance.UNIQ_SETS placeholders — the bench phase updates both together.
+const SET_CLAUSE_TEXT := {
+	"grit_on_magic": "taking magic damage builds a Grit stack",
+	"ward_amp": "+10% damage while your ward holds",
+	"grit_cap": "Grit cap +2",
+	"full_grit_answer": "at full Grit, blows you take are answered",
+	"grit_on_evade": "evading builds a Grit stack",
+	"slippery_amp": "+10% ability damage while slippery",
+	"berserk_ext": "Berserk runs +2s",
+	"opener_stagger": "your openers stagger",
+	"bastion_add": "the bastion floor deepens +10%",
+	"swkeep_ward": "a warded magic hit doesn't reset Second Wind",
+	"sw_regen": "Second Wind regen +2%/s",
+	"huntp_struck": "being hit ticks the hunt rhythm",
+	"anchor_thorns": "anchored blows return thorns",
+	"tumble_cd": "Tumble returns 1s sooner",
+	"perfect_crit": "a perfect dodge lines up a guaranteed crit",
+	"amp_marked": "EXPOSED prey takes +8% from you",
+	"opener_expose": "your first shot on unwounded prey EXPOSES it",
+	"sw_delay": "Second Wind starts 0.5s sooner",
+	"lowhp_slow": "below 30% HP your blows slow attackers",
+	"surge_ward": "a warded hit feeds the blood surge",
+	"mward_add": "your ward's reduction deepens +10%",
+	"parry_add": "full anchor stacks add +10% parry-family chance",
+	"surge_answer": "blows taken while surging are answered",
+	"dmark_evade": "evading extends a live Death Mark",
+	"surge_kill": "Stab kills extend the surge +1s",
+	"surge_hold": "below 30% HP the blood surge never expires",
+	"mana_ward": "warded hits refund 5 mana",
+	"blink_dr": "Blink's Arcane Ward +10% reduction",
+	"blunt_icd_cut": "the crit-blunt recovers 3s sooner",
+	"cloak_stacks": "anchor stacks harden Blink's cloak",
+	"mana_evade": "evading grants 10 mana",
+	"blink_cd": "Blink returns 0.5s sooner",
+	"amp_shredded": "ward-cracked prey takes +8% from you",
+	"bolt_shred_every": "every 4th Firebolt cracks the ward",
+	"nova_restore_add": "Frost Nova's restore +5%",
+	"nova_root": "Frost Nova roots what it catches",
+	"holy_ward": "warded blows bank holy charge",
+	"holy_blunt": "blunted crits bank holy charge",
+	"aegis_ext": "Aegis holds +0.5s",
+	"mend_evade": "evading mends 2%",
+	"leap_cut": "Judgment's leap rearms 1s sooner",
+	"opener_holy": "openers in Retribution bank holy charge",
+	"swap_amp": "Conviction's swap slam +15%",
+	"holy_mend_add": "Holy-stance mend +1%",
+	"holy_mend_lowhp": "below 30% HP the Holy mend doubles",
+	"life_ward": "the ward pays a sliver of life back",
+	"hexext_ward": "a warded hit deepens every live hex",
+	"pact_cut_stacks": "full anchor stacks cut Dark Pact's price a third",
+	"wither_struck": "blows you take WITHER the attacker",
+	"hexext_evade": "evading extends every live hex +1s",
+	"rift_pull": "Void Rift drags harder",
+	"amp_hexed": "HEXED prey takes +8% from you",
+	"detonate_amp": "hex detonations +15%",
+	"pact_surge_ext": "Dark Pact's surge runs +1s",
+	"pact_free_lowhp": "below 30% HP Dark Pact costs nothing",
 }
 
 
-## How many pieces of `cls`'s S set are equipped (S grade + matching class).
-static func count_set_pieces(equipment: Dictionary, cls: String) -> int:
-	var n := 0
-	for slot in equipment:
-		var it: Dictionary = equipment[slot]
-		if String(it.get("grade", "")) == "S" and String(it.get("cls", "")) == cls:
-			n += 1
-	return n
+## One set tier's display line: stats through the labels, clauses through
+## SET_CLAUSE_TEXT ("magres_x" is the ward sets' extra MagRes).
+static func set_tier_text(rec: Dictionary) -> String:
+	var bits: Array = []
+	for k in rec:
+		var ks := String(k)
+		if SET_CLAUSE_TEXT.has(ks):
+			bits.append(String(SET_CLAUSE_TEXT[ks]))
+		elif ks == "magres_x":
+			bits.append("MagRes +%d" % int(float(rec[k])))
+		elif STAT_LABEL.has(ks):
+			var v: float = float(rec[k])
+			if ks in FLAT_STATS:
+				bits.append("%s %+d" % [STAT_LABEL[ks], int(v)])
+			else:
+				bits.append("%s %+d%%" % [STAT_LABEL[ks], int(round(v * 100))])
+	return ", ".join(bits)
 
 
 ## All stats an item grants. The smith upgrade (plus) scales EVERY rolled stat

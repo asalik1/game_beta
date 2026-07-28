@@ -2884,44 +2884,69 @@ func _test_reforge() -> void:
 	print("ok: reforge bench (affix reroll, value reroll, add socket + cap incl. C, pen un-gate, transmute)")
 
 
-# ---- CORE: set bonuses (count, cross-class isolation, recalc) ------------
+# ---- CORE: profile SETS (membership, isolation, tiers) -------------------
+# GEAR_UNIQUE_SETS.md (2026-07-28): a set is a PROFILE worn across the six
+# gear slots — named uniques only, counted by the letter in their structural
+# passive id. Generic S pieces form NO set (the legacy per-class bonus is
+# retired). Names resolve from the S-triad family.
 func _test_set_bonus() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	var cls: String = game.player.cls
-	var other := "warrior" if cls != "warrior" else "mage"
 
-	# Counting: two class S pieces + one wrong-class piece.
-	var eq := {
-		"weapon": Items.roll_item_of("weapon", "S", rng, cls),
-		"armor": Items.roll_item_of("armor", "S", rng, cls),
-		"boots": Items.roll_item_of("boots", "S", rng, other),
-	}
-	if Items.count_set_pieces(eq, cls) != 2:
-		return _fail("count_set_pieces miscounted this class's S pieces")
-	if Items.count_set_pieces(eq, other) != 1:
-		return _fail("count_set_pieces leaked across classes")
+	# Membership: generic S = no profile; a named gear unique = its letter;
+	# a foreign-class piece never counts; weapons never count.
+	if Items.set_profile_of(Items.roll_item_of("armor", "S", rng, cls), cls) != "":
+		return _fail("a generic S piece claimed a profile set")
+	var ward_helm := Items.make_unique(Items.uniques_of(cls, "S", "helmet")[0], rng)
+	if Items.set_profile_of(ward_helm, cls) != "A":
+		return _fail("helmet-S row 0 should be the ward (A) profile")
+	var wpn_u := Items.make_unique(Items.uniques_of(cls, "S", "weapon")[0], rng)
+	if Items.set_profile_of(wpn_u, cls) != "":
+		return _fail("weapons must never join a profile set")
+	if Items.uniq_set_name(cls, "A") == "A set":
+		return _fail("ward set name did not resolve from the S-triad family")
 
-	# recalc detects 2 vs 4 pieces without error, and a full set beats none.
+	# Tiers: 0 -> 2 -> 4 ward-profile pieces move the sheet (2pc magres stat)
+	# and flip uniq_set_n; other profiles don't cross-count. Pieces are found
+	# SEMANTICALLY (set_profile_of == "A") so the test holds for any class.
+	var ward_pieces: Array = []
+	for u_slot in ["helmet", "gloves", "pants", "armor"]:
+		for lane in ["S", "A"]:
+			var found := {}
+			for u in Items.uniques_of(cls, String(lane), String(u_slot)):
+				var cand := Items.make_unique(u, rng)
+				if Items.set_profile_of(cand, cls) == "A":
+					found = cand
+					break
+			if not found.is_empty():
+				ward_pieces.append([u_slot, found])
+				break
+	if ward_pieces.size() < 4:
+		return _fail("could not assemble 4 ward-profile pieces for %s" % cls)
 	var keep_eq: Dictionary = game.player.equipment
 	game.player.equipment = {}
 	game.player.recalc()
-	var atk_bare: float = game.player.atk
-	game.player.equipment = {}
-	for slot in Items.SLOTS:
-		game.player.equipment[slot] = Items.roll_item_of(slot, "S", rng, cls)
+	var mr_bare: float = game.player.magres
+	for i in 2:
+		game.player.equipment[ward_pieces[i][0]] = ward_pieces[i][1]
 	game.player.recalc()
-	# Every slot equipped with class-matched S gear counts (7-slot lineup, §5b);
-	# the 4-piece set bonus still caps at 4 (count >= 4).
-	if Items.count_set_pieces(game.player.equipment, cls) != Items.SLOTS.size():
-		return _fail("full S set not detected as %d pieces" % Items.SLOTS.size())
-	if game.player.atk <= atk_bare:
-		return _fail("full S set did not raise ATK")
+	if game.player.uniq_set_n("A") != 2:
+		return _fail("two ward-profile pieces did not count as a 2pc set")
+	if game.player.magres <= mr_bare:
+		return _fail("the ward set's 2pc magres did not land")
+	for i in [2, 3]:
+		game.player.equipment[ward_pieces[i][0]] = ward_pieces[i][1]
+	game.player.recalc()
+	if game.player.uniq_set_n("A") != 4:
+		return _fail("four ward-profile pieces did not reach the 4pc tier")
+	if game.player.uniq_set_n("D") != 0:
+		return _fail("profile counting leaked across letters")
 
 	# Restore.
 	game.player.equipment = keep_eq
 	game.player.recalc()
-	print("ok: set bonuses (piece count, cross-class isolation, 2/4 detection)")
+	print("ok: profile sets (membership by VERB family, A/S lanes count, tier stats, no cross-count)")
 
 
 # ---- CORE: account stash (deposit, withdraw, capacity) ------------------

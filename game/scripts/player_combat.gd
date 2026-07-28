@@ -1278,12 +1278,32 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		if hunger > 0.0:
 			dmg *= 1.0 + hunger
 	# Opener verb (war-crowns and their kin): the first blow into unwounded
-	# prey strikes harder — the carrier's amp and beat ride it.
+	# prey strikes harder — the carrier's amp and beat ride it, and the
+	# aggressor SET's opener clauses fire on the same first blow.
 	if not uniq_armor.is_empty() and e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999:
 		var op_id := uniq_gear("helm_aggr")
 		if op_id != "":
 			dmg *= 1.0 + uniq_gk("helm_aggr", "opener") * uniq_amp(op_id, e)
 			_uniq_beat(op_id, e)
+		if not uniq_setn.is_empty():
+			var so_st := uniq_set_k("D", 6, "opener_stagger")
+			if so_st > 0.0:
+				_stun_or_concuss(e, so_st)
+			if uniq_set_k("D", 6, "opener_expose") > 0.0:
+				e.apply_vuln(3.0)
+			if uniq_set_k("D", 4, "opener_holy") > 0.0 and paladin_mode == "retribution":
+				holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP, holy_charge + atk * 0.4)
+	# Profile-set damage clauses: the aggressor 4pc prey amps and the ward
+	# 6pc "the ward pays while it holds".
+	if not uniq_setn.is_empty():
+		if e.vuln_time > 0.0:
+			dmg *= 1.0 + uniq_set_k("D", 4, "amp_marked")
+		if e.res_shred > 0.0:
+			dmg *= 1.0 + uniq_set_k("D", 4, "amp_shredded")
+		if hexed.has(e):
+			dmg *= 1.0 + uniq_set_k("D", 4, "amp_hexed")
+		if uniq_mward_t > 0.0:
+			dmg *= 1.0 + uniq_set_k("A", 6, "ward_amp")
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -1291,8 +1311,12 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		hp = minf(max_hp, hp + dmg * ls)
 	# Holy stance (paladin Conviction, round 48): every righteous blow mends —
 	# the stance IS the sustain (AoE hits mend at a third, like lifesteal).
+	# The bulwark set deepens it (4pc flat; 6pc doubled below the threshold).
 	if cls == "paladin" and paladin_mode == "holy":
-		gain_hp(max_hp * Balance.PALADIN_HOLY_MEND * (0.33 if effects.get("aoe", false) else 1.0))
+		var mend := Balance.PALADIN_HOLY_MEND + uniq_set_k("E", 4, "holy_mend_add")
+		if hp < max_hp * 0.3 and uniq_set_k("E", 6, "holy_mend_lowhp") > 0.0:
+			mend *= 2.0
+		gain_hp(max_hp * mend * (0.33 if effects.get("aoe", false) else 1.0))
 
 	var dir := (e.global_position - global_position).normalized()
 	e.hit_src = self  # MP-10: attribute the blow (reflect/counter/aggro; solo: THE player)
@@ -1307,6 +1331,10 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
 	if uniq_sp != "":
 		_uniq_after_hit(e, uniq_sp, dmg, mult, is_crit, effects)
+	# Assassin aggressor-set 6pc: a Stab kill feeds the running blood surge
+	# (sp-independent — a set must work over any weapon).
+	if (e.dying or e.hp <= 0.0) and effects.get("uniq_a1", 0) and stab_ls_time > 0.0:
+		stab_ls_time += uniq_set_k("D", 6, "surge_kill")
 	# Tear verb (blood knuckles and their kin): crits leave a class-typed
 	# wound; the carrier's conditional amp deepens it (echo sub-hits clean).
 	if is_crit and not uniq_armor.is_empty() and not e.dying \

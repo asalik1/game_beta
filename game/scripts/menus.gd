@@ -1420,8 +1420,11 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	_lbl(right, "Select any bag item for its detail card — equip/use/synthesize or drop it there · socketing and unsocketing are the Lapidary's trade in Crownfall (drag gems onto gear at her benches) · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
 	# Bag category filter: All (default) + per-slot gear, gems, consumables.
-	var catrow := HBoxContainer.new()
-	catrow.add_theme_constant_override("separation", 6)
+	# A flow container, not an HBox: the 7-slot lineup grew this to 10 chips,
+	# and a non-wrapping row inflated the whole right column's minimum width
+	# past the panel edge (chips AND the helper text above clipped offscreen).
+	var catrow := HFlowContainer.new()
+	catrow.add_theme_constant_override("h_separation", 6)
 	right.add_child(catrow)
 	for spec in [["all", "All"], ["weapon", "Weapons"], ["helmet", "Helmets"], ["armor", "Armor"],
 			["gloves", "Gloves"], ["pants", "Pants"], ["boots", "Boots"], ["charm", "Charms"],
@@ -2040,16 +2043,31 @@ func _item_info_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var d := _lbl(body, Items.describe(item, _awk(item)), 13, Color(Items.GRADE_COLOR[item["grade"]], 0.9))
 	d.custom_minimum_size = Vector2(440, 0)
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	# Set bonus panel (S legendaries): which tiers are live given what's worn.
-	if String(item.get("grade", "")) == "S" and item.has("cls"):
-		var sd: Dictionary = Items.SET_BONUSES.get(String(item["cls"]), {})
-		if not sd.is_empty():
-			var pieces := Items.count_set_pieces(p.equipment, String(item["cls"]))
-			_lbl(body, "SET: %s   (%d/4 pieces worn)" % [sd.get("name", "Set"), pieces], 15, Color(1.0, 0.85, 0.4))
-			for tier in ["2", "4"]:
-				var live := pieces >= int(tier)
-				_lbl(body, "   %spc %s  —  %s" % [tier, "✓ ACTIVE" if live else "inactive",
-					_stat_bonus_text(sd[tier])], 13, Color(0.6, 1.0, 0.6) if live else Color(0.6, 0.62, 0.68))
+	# Generic gear carries NO signature passive by design (that is the mark of
+	# NAMED uniques since the legendary retirement) — say so, or an all-generic
+	# loadout reads as the card forgetting to render one (owner 2026-07-28).
+	if not item.has("passive") and String(item.get("slot", "")) in Items.SLOTS:
+		var np := _lbl(body, "No signature passive — named uniques (rare drops, Act 2+) carry those.",
+			12, Color(0.55, 0.55, 0.6))
+		np.custom_minimum_size = Vector2(440, 0)
+		np.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Profile-set panel (GEAR_UNIQUE_SETS.md, 2026-07-28): a named GEAR unique
+	# belongs to its profile's set — name from the S-triad family, worn count
+	# of six, and the 2/4/6 tiers with live state. (Replaces the legacy
+	# one-set-per-class S panel; generic S pieces no longer form a set.)
+	var set_prof := Items.set_profile_of(item, String(item.get("cls", "")))
+	if set_prof != "" and String(item.get("cls", "")) == p.cls:
+		var set_cls := String(item["cls"])
+		var worn_n: int = p.uniq_set_n(set_prof)
+		_lbl(body, "SET: %s   (%d/6 pieces worn)" % [Items.uniq_set_name(set_cls, set_prof), worn_n],
+			15, Color(1.0, 0.85, 0.4))
+		for tier_n in [2, 4, 6]:
+			var rec := Balance.uniq_set(set_cls, set_prof, "s%d" % int(tier_n))
+			if rec.is_empty():
+				continue
+			var live: bool = worn_n >= int(tier_n)
+			_lbl(body, "   %dpc %s  —  %s" % [int(tier_n), "✓ ACTIVE" if live else "inactive",
+				Items.set_tier_text(rec)], 13, Color(0.6, 1.0, 0.6) if live else Color(0.6, 0.62, 0.68))
 
 
 ## Gems tab: real socket squares (click a gem for its card, drag it out to
