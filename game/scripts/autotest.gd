@@ -5654,6 +5654,32 @@ func _test_capital() -> void:
 	var prev: String = game.chapter_id
 	game.enter_capital()
 	await _frames(6)
+	await _capital_in_city()
+	# Leave the way a player does — back to the chapter we came from. This
+	# runs even when the block above FAILED. quit(1) is only QUEUED by _fail,
+	# so the next section still gets its frame: a mid-city failure used to
+	# hand _test_capital_rework_economy a live chapter_id of "capital", where
+	# shop_markup answers a flat 1.0 ("the bazaar sells fair") and the road-
+	# markup assert reported a second, entirely bogus failure (2026-07-26).
+	# Shared state gets restored on EVERY exit path, failures included.
+	if game.menus.is_open():
+		game.menus.close()   # a failure can leave a surface up; leave like the happy path
+	game.switch_chapter(prev, true)
+	if _failed:
+		return
+	await _frames(4)
+	if game.chapter_id != prev:
+		return _fail("capital: failed to restore chapter %s" % prev)
+	_capital_bench_gate()
+	if _failed:
+		return
+	print("ok: capital hub (9-room 3x3, NPC-owned services + dawn shelf + favor + lapidary quest end-to-end, bench gate holds on the road, leaves clean)")
+
+
+## Everything asserted while STANDING in Crownfall — split out (2026-07-26) so
+## that every one of its ~40 failure exits still runs the caller's "leave the
+## city" restore instead of stranding the suite in the capital.
+func _capital_in_city() -> void:
 	if game.chapter_id != "capital":
 		return _fail("capital: enter_capital did not switch (chapter is %s)" % game.chapter_id)
 	# First arrival plays the one-time welcome beat (rework §5) — clear it so
@@ -5831,10 +5857,32 @@ func _test_capital() -> void:
 		game.favor_add("petra", 8)
 		if game.favor_points("petra") != 10:
 			return _fail("capital: steady shard should pay 1.25x favor")
-	p_cap.resonance = keep_res
+	# Hold the shard NEUTRAL across the quest below (restored with the rest of
+	# the loadout at the end). Her turn-in pays FAVOR_QUEST_POINTS through
+	# favor_add, which reads the band — a tempted hero banks 0.75x, i.e. 11 of
+	# the 15 the assert wants. Whatever resonance the campaign that got us here
+	# happened to end on is not this section's business.
+	p_cap.resonance = 0.0
 	# The Lapidary end to end: greet -> the GOSSIP HUB (owner 2026-07-25:
 	# one press, splash dialogue, options) -> the offer hands a training
 	# gem -> the seat-a-stone deed at her benches -> turn-in pays gold+favor.
+	#
+	# LEND HER STUDENT AN EMPTY PACK FIRST (flake fix, 2026-07-26). Her kit
+	# is two objects and needs two free bag slots, and a full bag legally
+	# MAILS the kit instead (_cap_artisan_choice) — which this section reads
+	# as a failure. By the time the suite arrives here the hero carries a
+	# whole campaign of loot (~40 loose gems) in bags whose CAPACITY is
+	# itself loot luck: 30 starter slots plus whatever bag drops rolled
+	# (10%/9%/8% an act). A lucky run has room; an unlucky run is jammed at
+	# capacity, and the section failed on that alone. The bench path is what
+	# is under test, so give it deterministic room and restore the real
+	# loadout below (the kit + its seated stone leave with the lent pack).
+	var keep_bags: Array = p_cap.bags
+	var keep_bp: Array = p_cap.backpack
+	var keep_gem_bag: Array = p_cap.gem_bag
+	p_cap.bags = [Items.make_bag("S")]
+	p_cap.backpack = []
+	p_cap.gem_bag = []
 	p_cap.npc_favor.clear()
 	var keep_gold: int = p_cap.gold
 	var gems_before: int = p_cap.gem_bag.size()
@@ -5852,8 +5900,11 @@ func _test_capital() -> void:
 	await _frames(2)
 	if not game.get_flag("cap_q_gem_on", false):
 		return _fail("capital: lapidary visit did not open her intro quest")
-	if p_cap.gem_bag.size() != gems_before + 1 and game.mailbox.is_empty():
-		return _fail("capital: the training gem was neither bagged nor mailed")
+	# With the pack lent above there is room, so the BENCH path is asserted
+	# outright — the old "...or a letter exists somewhere" disjunct passed on
+	# any leftover mail and let the bag-full case through silently.
+	if p_cap.gem_bag.size() != gems_before + 1:
+		return _fail("capital: the training gem did not reach the bag")
 	if game.menus.is_open():
 		game.menus.close()
 	await _frames(1)
@@ -5866,7 +5917,8 @@ func _test_capital() -> void:
 		if String(bd.get("slot", "")) == "charm" and int(bd.get("gem_slots", 0)) >= 1:
 			kit_charm = bd
 	if kit_charm.is_empty():
-		return _fail("capital: the lapidary kit charm was neither bagged nor mailed")
+		return _fail("capital: the lapidary kit charm did not reach the bag (%d/%d slots used)" %
+			[p_cap.bag_used(), p_cap.bag_capacity()])
 	var train_gem: Dictionary = p_cap.gem_bag[p_cap.gem_bag.size() - 1]
 	if not p_cap.embed_gem_into(kit_charm, train_gem):
 		return _fail("capital: could not seat the training stone in the kit charm")
@@ -5889,13 +5941,17 @@ func _test_capital() -> void:
 	await _frames(1)
 	p_cap.npc_favor = keep_favor
 	p_cap.gold = keep_gold
+	p_cap.resonance = keep_res
+	p_cap.bags = keep_bags
+	p_cap.backpack = keep_bp
+	p_cap.gem_bag = keep_gem_bag
+	p_cap.recalc()
 
-	# Leave the way a player does — back to the chapter we came from.
-	game.switch_chapter(prev, true)
-	await _frames(4)
-	if game.chapter_id != prev:
-		return _fail("capital: failed to restore chapter %s" % prev)
-	# The bench gate: gem work is refused the moment you're back on the road.
+
+## Back on the road after the city block, whether it passed or failed.
+## The bench gate: gem work is refused the moment you're back on the road.
+func _capital_bench_gate() -> void:
+	var p_cap: Player = game.local_player
 	if p_cap != null and game.has_local_player():
 		var road_gem: Dictionary = Items.random_gem(game.loot_rng, 1)
 		var road_item: Dictionary = Items.roll_item_of("armor", "B", RandomNumberGenerator.new(), p_cap.cls)
@@ -5903,7 +5959,6 @@ func _test_capital() -> void:
 			Items.add_socket(road_item)
 		if p_cap.gem_socket_error(road_item, road_gem) == "":
 			return _fail("capital: field socketing should be refused outside Crownfall")
-	print("ok: capital hub (9-room 3x3, NPC-owned services + dawn shelf + favor + lapidary quest end-to-end, bench gate holds on the road, leaves clean)")
 
 
 ## The KEYBOARD twin of the touch overlay gate (cross-product audit 2026-07-21).
@@ -6377,6 +6432,15 @@ func _test_waking() -> void:
 ## clamped bell curve, deterministic per (run, room); npc_favor and the
 ## bazaar's dawn shelf ride the character save.
 func _test_capital_rework_economy() -> void:
+	# Precondition, said out loud (2026-07-26): the road markup only EXISTS on
+	# the road — shop_markup answers a flat 1.0 in the capital, in an endgame
+	# arena, and for any chapter off the campaign list. Reading a world some
+	# earlier section left behind therefore looks exactly like a broken curve
+	# ("markup 1.000 left the [1.10, 1.20] clamp"), which is a lie about this
+	# section. Name the real fault instead.
+	if game.chapter_id == "capital" or game.endgame_active \
+			or not Story.CHAPTER_LIST.has(game.chapter_id):
+		return _fail("capital economy: road markup needs a campaign chapter, not '%s' — an earlier section leaked its world state" % game.chapter_id)
 	var lo := 1.0 + Balance.ROAD_MARKUP_MIN
 	var hi := 1.0 + Balance.ROAD_MARKUP_MAX
 	if game.shop_markup(3) != game.shop_markup(3):
