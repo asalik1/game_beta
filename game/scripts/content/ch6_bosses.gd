@@ -24,7 +24,7 @@ const ENEMIES := {
 		# paid 100-136% of a level each — the chapter's fixed XP budget
 		# (30+22·lvl, DESIGN r5) had no room left for trash. Mids ~67-70%,
 		# finale ~85%, like ch1-4. Gold untouched (gold has no budget).
-		"hp": 34000.0, "dmg": 178.0, "speed": 130.0, "xp": 520, "gold": 600,
+		"hp": 90400.0, "dmg": 178.0, "speed": 130.0, "xp": 520, "gold": 600,
 		# The generated minotaur is normalized to the same 128px body cell as the
 		# directional boss sets. Scale 11.5 keeps him imposing without changing
 		# combat footprint or range tuning during the quadruped -> minotaur retcon.
@@ -56,7 +56,7 @@ const ENEMIES := {
 		# rotmaw.png: PixelLab redesign body (2026-07-10), ember-red glow
 		# pass baked in, ~95% cell coverage. Scale sits under the ch6
 		# finale (kaethra 10.5) per the ordinance.
-		"hp": 44000.0, "dmg": 185.0, "speed": 80.0, "xp": 560, "gold": 640,
+		"hp": 113900.0, "dmg": 185.0, "speed": 80.0, "xp": 560, "gold": 640,
 		"ranged": true, "scale": 10.2,
 		"physres": 25.0, "magres": 45.0, "eva": 0.05, "critres": 8.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 35, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -86,7 +86,7 @@ const ENEMIES := {
 	# sheathe, through the convo system (no mid-combat branching).
 	"curetwisted": {
 		"name": "Kaethra Cure-Twisted", "sprite": "kaethra",
-		"hp": 69000.0, "dmg": 205.0, "speed": 145.0, "xp": 720, "gold": 900,
+		"hp": 169200.0, "dmg": 205.0, "speed": 145.0, "xp": 720, "gold": 900,
 		"ranged": false, "scale": 10.5,
 		"physres": 30.0, "magres": 35.0, "eva": 0.05, "critres": 9.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 37, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,

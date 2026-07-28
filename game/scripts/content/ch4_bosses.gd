@@ -24,7 +24,7 @@ const ENEMIES := {
 	# you — the fight's hardest hit — and gains no buff.
 	"forgemistress": {
 		"name": "Forgemistress Calda", "sprite": "forgemistress",
-		"hp": 11500.0, "dmg": 96.0, "speed": 150.0, "xp": 300, "gold": 240,
+		"hp": 36300.0, "dmg": 96.0, "speed": 150.0, "xp": 300, "gold": 240,
 		"ranged": false, "scale": 8.5,
 		"physres": 25.0, "magres": 20.0, "eva": 0.05, "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 23, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
@@ -50,7 +50,7 @@ const ENEMIES := {
 	# magma-rain tantrum rides the window). At 30% the plates stop regrowing.
 	"cinderhide": {
 		"name": "Cinderhide the Unquenched", "sprite": "cinderhide",
-		"hp": 9500.0, "dmg": 110.0, "speed": 135.0, "xp": 330, "gold": 260,
+		"hp": 29900.0, "dmg": 110.0, "speed": 135.0, "xp": 330, "gold": 260,
 		# Scale 8.5 -> 10.5 (art audit 2026-07-17): at 8.5 it rendered 143px,
 		# the SMALLEST real boss despite armored-beast lore.
 		"ranged": false, "scale": 10.5,
@@ -89,7 +89,7 @@ const ENEMIES := {
 	# Judge attends and magma-rain runs continuous.
 	"ashpriest": {
 		"name": "Ashpriest Ordo, Voice of the Molten Judge", "sprite": "ashpriest",
-		"hp": 28000.0, "dmg": 125.0, "speed": 95.0, "xp": 460, "gold": 360,
+		"hp": 87600.0, "dmg": 125.0, "speed": 95.0, "xp": 460, "gold": 360,
 		"ranged": true, "scale": 10.5,
 		"physres": 20.0, "magres": 45.0, "eva": 0.05, "critres": 8.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 28, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,

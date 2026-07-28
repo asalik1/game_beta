@@ -1279,20 +1279,29 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 			dmg *= 1.0 + hunger
 	# Opener verb (war-crowns and their kin): the first blow into unwounded
 	# prey strikes harder — the carrier's amp and beat ride it, and the
-	# aggressor SET's opener clauses fire on the same first blow.
-	if not uniq_armor.is_empty() and e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999:
-		var op_id := uniq_gear("helm_aggr")
-		if op_id != "":
-			dmg *= 1.0 + uniq_gk("helm_aggr", "opener") * uniq_amp(op_id, e)
-			_uniq_beat(op_id, e)
+	# aggressor SET's opener clauses fire on the same first blow. The set's
+	# 6pc RE-ARMS the opening on a cadence: a boss never offers a second
+	# unwounded moment, so the capstone finds one (Balance.SET_OPENER_REARM).
+	if not uniq_armor.is_empty() and e.max_hp > 0.0:
+		var fresh := e.hp >= e.max_hp * 0.999
+		if fresh:
+			var op_id := uniq_gear("helm_aggr")
+			if op_id != "":
+				dmg *= 1.0 + uniq_gk("helm_aggr", "opener") * uniq_amp(op_id, e)
+				_uniq_beat(op_id, e)
 		if not uniq_setn.is_empty():
 			var so_st := uniq_set_k("D", 6, "opener_stagger")
-			if so_st > 0.0:
-				_stun_or_concuss(e, so_st)
-			if uniq_set_k("D", 6, "opener_expose") > 0.0:
-				e.apply_vuln(3.0)
-			if uniq_set_k("D", 4, "opener_holy") > 0.0 and paladin_mode == "retribution":
-				holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP, holy_charge + atk * 0.4)
+			var so_ex := uniq_set_k("D", 6, "opener_expose")
+			var rearms := (so_st > 0.0 or so_ex > 0.0) and not uniq_on("set_opener_cd")
+			if fresh or rearms:
+				if so_st > 0.0:
+					_stun_or_concuss(e, so_st)
+				if so_ex > 0.0:
+					e.apply_vuln(3.0)
+				if fresh and uniq_set_k("D", 4, "opener_holy") > 0.0 and paladin_mode == "retribution":
+					holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP, holy_charge + atk * 0.4)
+				if so_st > 0.0 or so_ex > 0.0:
+					uniq_t["set_opener_cd"] = float(Balance.SET_OPENER_REARM)
 	# Profile-set damage clauses: the aggressor 4pc prey amps and the ward
 	# 6pc "the ward pays while it holds".
 	if not uniq_setn.is_empty():
@@ -1304,6 +1313,8 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 			dmg *= 1.0 + uniq_set_k("D", 4, "amp_hexed")
 		if uniq_mward_t > 0.0:
 			dmg *= 1.0 + uniq_set_k("A", 6, "ward_amp")
+		if dodge_time > 0.0:
+			dmg *= 1.0 + uniq_set_k("C", 6, "slippery_amp")  # No Horizon: slippery bites
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -1332,9 +1343,15 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	if uniq_sp != "":
 		_uniq_after_hit(e, uniq_sp, dmg, mult, is_crit, effects)
 	# Assassin aggressor-set 6pc: a Stab kill feeds the running blood surge
-	# (sp-independent — a set must work over any weapon).
-	if (e.dying or e.hp <= 0.0) and effects.get("uniq_a1", 0) and stab_ls_time > 0.0:
-		stab_ls_time += uniq_set_k("D", 6, "surge_kill")
+	# (sp-independent — a set must work over any weapon). Kills feed it on
+	# trash; on BOSSES — where nothing dies mid-fight — Stab CRITS stand in
+	# for the kill (own ICD so crit builds don't turn the surge permanent).
+	if effects.get("uniq_a1", 0) and stab_ls_time > 0.0:
+		if e.dying or e.hp <= 0.0:
+			stab_ls_time += uniq_set_k("D", 6, "surge_kill")
+		elif is_crit and e is Boss and not uniq_on("set_skill_icd"):
+			uniq_t["set_skill_icd"] = float(Balance.SET_SURGE_CRIT_ICD)
+			stab_ls_time += uniq_set_k("D", 6, "surge_kill")
 	# Tear verb (blood knuckles and their kin): crits leave a class-typed
 	# wound; the carrier's conditional amp deepens it (echo sub-hits clean).
 	if is_crit and not uniq_armor.is_empty() and not e.dying \
@@ -1584,10 +1601,33 @@ func _uniq_beat(id: String, foe: Enemy = null) -> void:
 				foe.res_shred = minf(24.0, foe.res_shred + 8.0)
 				foe.res_shred_t = 8.0
 		"huntp":
-			hunt_rhythm += 1
+			_hunt_rhythm_feed()
 		"tumblearm":
 			tumble_perfect_t = maxf(tumble_perfect_t, 0.15)
 		# "swkeep" is handled at the ward site (needs the pre-hit clock).
+
+
+## Advance the hunt rhythm one tick and convert it at the threshold. The hunt
+## theme ticks this per Quick Shot; huntp gear beats and the archer guard-set
+## 4pc feed the SAME counter — conversion lives HERE so an off-theme carrier
+## still earns the crit (the theme's own per-shot tick is hunt-gated).
+func _hunt_rhythm_feed() -> void:
+	hunt_rhythm += 1
+	if hunt_rhythm >= Balance.HUNT_RHYTHM_SHOTS:
+		hunt_rhythm = 0
+		next_crit = true
+
+
+## The live anchor-stack cap: the pants_guard carrier's knob when worn, else
+## the guard set's own floor at 4pc — the set's stack-gated clauses must be
+## able to fire off ANY four guard pieces, not one specific pair of pants.
+func _anchor_cap() -> int:
+	var carrier := int(uniq_gk("pants_guard", "stacks"))
+	if carrier > 0:
+		return carrier
+	if uniq_set_n("B") >= 4:
+		return int(Balance.SET_ANCHOR_STACKS)
+	return 0
 
 
 # Two chain-shaped seams: these signatures re-invoke KIT abilities

@@ -138,6 +138,7 @@ var depth_sim := 0             # 0 = off
 # honest instrument for opener/execute/first-hit passives, which an immortal
 # full-HP dummy either fakes permanently or never lets fire.
 var use_uniques := false
+var setprof := ""              # --setprof=A..E: six gear slots wear the full profile SET (weapon stays BiS)
 var wpassive := ""
 var ttk := false
 var hp_mult := 1.0             # --hpmult=N: scale the mortal pool (curve-retune probe)
@@ -329,6 +330,8 @@ func _parse_args() -> void:
 			boss_kind = a.get_slice("=", 1)
 		elif a == "--uniques":
 			use_uniques = true
+		elif a.begins_with("--setprof="):
+			setprof = a.get_slice("=", 1).to_upper()
 		elif a.begins_with("--wpassive="):
 			wpassive = a.get_slice("=", 1)
 		elif a == "--ttk":
@@ -345,6 +348,15 @@ func _parse_args() -> void:
 
 
 func _run() -> void:
+	# Fail FAST on an unknown --boss id: without this the per-frame stat
+	# lookups error forever and the headless child spins as a zombie (the
+	# Act-1 finale's KEY is "stormmouth" — "Cyrraeth" is its display name).
+	Story.load_content()
+	if boss_kind != "" and not Story.ALL_ENEMIES.has(boss_kind):
+		push_error("[bench] unknown --boss id '%s' — known bosses: %s" % [
+			boss_kind, ", ".join(Menus.BOSS_KINDS)])
+		get_tree().quit(1)
+		return
 	var main_scene: PackedScene = load("res://scenes/main.tscn")
 	game = main_scene.instantiate()
 	game.no_saves = true  # never touch (or list) real save files
@@ -374,6 +386,8 @@ func _run() -> void:
 	if use_uniques:
 		print("[bench] UNIQUES: BiS named-unique passives on every slot (BenchBuild.BIS_UNIQUES)%s" % [
 			("; weapon override --wpassive=" + wpassive) if wpassive != "" else ""])
+	if setprof != "":
+		print("[bench] SET: six gear slots wear the full %s-profile set (weapon stays BiS)" % setprof)
 	if ttk:
 		var tk := boss_kind if boss_kind != "" else "stormmouth"
 		print("[bench] TTK MODE: mortal dummy carrying %s's real L%d pool (%.0f HP) — case ends at the kill" % [
@@ -437,6 +451,16 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	p.set_class(cls)          # refunds all points, derives theme unlocks
 	p.set_all_themes(tid)     # MONO spec: one identity across all four slots
 	p.tree_points = BenchBuild.preset_lookup(BenchBuild.TREE_PRESETS, cls, tid).duplicate()
+	# Era realism on low --level runs: a fresh hero hasn't banked the full
+	# 39-point preset — trim to the level's own budget (~1/level, like the
+	# attr line below), first rows first, so TTK-band rungs measure the kit
+	# the game actually fields at that level.
+	if plevel - 1 < 39:
+		var tree_budget := maxi(plevel - 1, 0)
+		for row in p.tree_points:
+			var take := mini(int(p.tree_points[row]), tree_budget)
+			p.tree_points[row] = take
+			tree_budget -= take
 	p.skill_points = 0
 	for attr in p.attr_points:
 		p.attr_points[attr] = 0
@@ -446,6 +470,10 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	# now; the bench weapon's flagship passive needs no flag.
 	_equip(p, cls, tid)
 	p.recalc()
+	if not p.uniq_setn.is_empty():
+		# Which profile SETS the kit forms (GEAR_UNIQUE_SETS.md) — reading a
+		# case without knowing its live set tiers misattributes the number.
+		print("[bench] set pieces: %s" % [p.uniq_setn])
 	_reset_player(p)
 
 	# --depth: apply the live pressure-band debuffs for this depth (mirror of
@@ -621,7 +649,7 @@ func _equip(p: Player, cls: String, tid: String) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = gear_seed
 	var cfg := {"grade": grade, "gemlvl": gemlvl, "plus": plus_lvl, "godroll": godroll,
-		"uniques": use_uniques}
+		"uniques": use_uniques, "setprof": setprof}
 	p.equipment = BenchBuild.equip_dict(cls, tid, cfg, rng)
 	if wpassive != "":
 		p.equipment["weapon"]["passive"] = wpassive  # --wpassive: candidate A/B

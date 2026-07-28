@@ -859,6 +859,10 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	hurt_was_heavy = heavy  # a heavy-armed window blocks even other heavies
 	var uniq_prev_sh := since_hurt  # the swkeep beat restores this (armor ward)
 	since_hurt = 0.0
+	# Tempest Crown 4pc (archer ward set): spell chip can't reset Second Wind —
+	# the hit still lands, only the untouched-clock survives it.
+	if dmg_type == "magic" and uniq_set_k("A", 4, "sw_magic_keep") > 0.0:
+		since_hurt = uniq_prev_sh
 	if dr_time > 0.0 and dmg_type != "true":
 		# Arcane Ward (round 45): the mage's Blink cloak — a brief, strong
 		# damage cut that SOFTENS a misstep instead of erasing it (the old
@@ -1207,22 +1211,23 @@ func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, 
 	var foe := attacker as Enemy
 	var foe_live := foe != null and is_instance_valid(foe) and not foe.dying
 	# Ward verb: a MAGIC hit arms the ward (own icd on top of the family's).
+	# The ward SET arms a baseline ward at 4pc even without a helm_ward
+	# carrier — its warded-hit clauses must fire off ANY four ward pieces.
 	var wd_id := uniq_gear("helm_ward")
-	if dmg_type == "magic" and wd_id != "" \
+	if dmg_type == "magic" and (wd_id != "" or uniq_set_n("A") >= 4) \
 			and not uniq_on("helm_ward_icd") and not uniq_on("struck_icd"):
 		uniq_t["helm_ward_icd"] = uniq_gk("helm_ward", "icd", 8.0)
 		uniq_t["struck_icd"] = float(Balance.UNIQ["struck_icd"])
-		uniq_mward_t = uniq_gk("helm_ward", "dur")
-		uniq_mward_amt = uniq_gk("helm_ward", "dr")
+		uniq_mward_t = uniq_gk("helm_ward", "dur", float(Balance.SET_WARD["dur"]))
+		uniq_mward_amt = uniq_gk("helm_ward", "dr", float(Balance.SET_WARD["dr"]))
 		game.sfx("ward", 0.9)
 		game.spawn_text(global_position + Vector2(0, -52), "WARDED", Color(0.6, 0.8, 1.0))
-		if String(Balance.uniq(wd_id).get("beat", "")) == "swkeep":
-			since_hurt = prev_sh  # the ward holds your breath — SW clock keeps
-		else:
-			_uniq_beat(wd_id, foe)
+		if wd_id != "":
+			if String(Balance.uniq(wd_id).get("beat", "")) == "swkeep":
+				since_hurt = prev_sh  # the ward holds your breath — SW clock keeps
+			else:
+				_uniq_beat(wd_id, foe)
 		# Ward-set clauses ride the proc (GEAR_UNIQUE_SETS.md, profile A):
-		if uniq_set_k("A", 4, "swkeep_ward") > 0.0:
-			since_hurt = prev_sh
 		if uniq_set_k("A", 4, "surge_ward") > 0.0:
 			stab_ls_time = maxf(stab_ls_time, 0.1) + uniq_set_k("A", 4, "surge_ward")
 		uniq_mward_amt += uniq_set_k("A", 6, "mward_add")
@@ -1256,12 +1261,15 @@ func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, 
 		hit_enemy(foe, uniq_gk("glove_guard", "counter") * uniq_amp(an_id, foe), {})
 		_uniq_beat(an_id, foe)
 	# Anchor verb: stacks accrue outside the proc family; the beat rides the
-	# stack that tops them out.
+	# stack that tops them out. The guard set's 4pc anchors WITHOUT the
+	# carrier too (set-default cap) — its stack-gated clauses must fire off
+	# ANY four guard pieces, not one specific pair of pants.
 	var ac_id := uniq_gear("pants_guard")
-	if ac_id != "":
-		uniq_guard_stacks = mini(uniq_guard_stacks + 1, int(uniq_gk("pants_guard", "stacks")))
+	var ac_cap := _anchor_cap()
+	if ac_cap > 0:
+		uniq_guard_stacks = mini(uniq_guard_stacks + 1, ac_cap)
 		uniq_guard_t = 6.0
-		if uniq_guard_stacks >= int(uniq_gk("pants_guard", "stacks")):
+		if ac_id != "" and uniq_guard_stacks >= ac_cap:
 			_uniq_beat(ac_id, foe)
 	# ---- profile-set struck clauses (GEAR_UNIQUE_SETS.md) ----
 	if not uniq_setn.is_empty():
@@ -1271,7 +1279,7 @@ func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, 
 			grit_time = 6.0
 		if uniq_set_k("B", 4, "huntp_struck") > 0.0 and not uniq_on("set_struck_icd"):
 			uniq_t["set_struck_icd"] = 1.0
-			hunt_rhythm += 1  # Ironwood Witness: being hit ticks the rhythm
+			_hunt_rhythm_feed()  # Ironwood Witness: being hit ticks the rhythm
 		var s_thorn := uniq_set_k("B", 6, "anchor_thorns")
 		if s_thorn > 0.0 and foe_live and uniq_guard_stacks > 0:
 			hit_enemy(foe, s_thorn, {"aoe": true})
@@ -1300,8 +1308,8 @@ func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, 
 ## Assassin guard-set 4pc: full anchor stacks raise the parry FAMILY's proc
 ## chance (Parryshade's parry + the iron-answer counter roll).
 func _uniq_set_parry_add() -> float:
-	var stacks := int(uniq_gk("pants_guard", "stacks"))
-	if stacks > 0 and uniq_guard_stacks >= stacks:
+	var cap := _anchor_cap()
+	if cap > 0 and uniq_guard_stacks >= cap:
 		return uniq_set_k("B", 4, "parry_add")
 	return 0.0
 

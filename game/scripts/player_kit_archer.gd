@@ -78,10 +78,7 @@ func _use_archer(slot: String, f: float) -> void:
 func _hunt_rhythm_tick() -> void:
 	if ability_theme.get("a1", "") != "hunt":
 		return
-	hunt_rhythm += 1
-	if hunt_rhythm >= Balance.HUNT_RHYTHM_SHOTS:
-		hunt_rhythm = 0
-		next_crit = true
+	_hunt_rhythm_feed()
 
 
 func _shoot(dir: Vector2, mult: float) -> void:

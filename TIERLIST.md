@@ -35,8 +35,15 @@ every slot, `BenchBuild.BIS_UNIQUES`), `--wpassive=<id>` / `--gpassive=slot:id`
 (candidate A/B overrides), and `--ttk` + `--hpmult=N` (MORTAL dummy carrying
 the target boss's real pool — the honest frame for opener/execute passives,
 which the immortal full-HP dummy either fakes permanently or never fires; the
-L100 endgame board + the GEAR-ramp curve were tuned in this mode — see
+L100 endgame board + the gear-power curve were tuned in this mode — see
 BALANCE_HISTORY.md's dps-bench round; this file's L40 boards are unaffected).
+The 2026-07-28 set-coverage round added `--setprof=A..E` (the six gear slots
+wear the class's full profile SET — the set-vs-BiS probe; a `[bench] set
+pieces:` line now prints each case's live set tiers), fail-fast on unknown
+`--boss` ids (the Act-1 finale's KEY is `stormmouth` — "Cyrraeth" is display
+name; a bad id used to error-loop the fan children forever), and a talent
+trim on low `--level` runs (the preset is capped to the level's own ~1/level
+budget, so TTK-band rungs measure era-honest kits).
 
 Gem loadout under the typed-slot rule: the 4 special slots take the only three
 damage specials (`dmg_pct`, `combo`, `cdr`) + `lifesteal`; every regular slot a

@@ -432,7 +432,7 @@ func _dark_pact(f := 1.0) -> void:
 	# Profile-set pact clauses: the guard 4pc cuts the blood price at full
 	# anchor stacks; the bulwark 6pc waives it entirely below the threshold.
 	if uniq_set_k("B", 4, "pact_cut_stacks") > 0.0 and uniq_guard_stacks > 0 \
-			and uniq_guard_stacks >= int(uniq_gk("pants_guard", "stacks")):
+			and uniq_guard_stacks >= _anchor_cap():
 		cost_frac *= 1.0 - uniq_set_k("B", 4, "pact_cut_stacks")
 	if uniq_set_k("E", 6, "pact_free_lowhp") > 0.0 and hp < max_hp * 0.3:
 		cost_frac = 0.0

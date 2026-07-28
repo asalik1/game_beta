@@ -140,6 +140,19 @@ const BIS_UNIQUES := {
 }
 
 
+## The S-lane piece of `cls`/`slot` whose SEMANTIC profile is `prof`
+## (Items.set_profile_of — membership by verb family); "" when none.
+static func set_piece_id(cls: String, slot: String, prof: String) -> String:
+	for u in Items.UNIQUES:
+		if String(u.get("cls", "")) != cls or String(u.get("slot", "")) != slot:
+			continue
+		if String(u.get("grade", "")) != "S" or not u.has("passive"):
+			continue
+		if Items.set_profile_of(u, cls) == prof:
+			return String(u["passive"])
+	return ""
+
+
 ## The 4-slot equipment dict for a build: gear rolled off `rng` (seed it with
 ## GEAR_SEED for the canonical sequence), stamped with plus, optionally godroll'd,
 ## every socket filled from the class's gem preset at the config's gem level.
@@ -156,7 +169,13 @@ static func equip_dict(cls: String, tid: String, cfg: Dictionary, rng: RandomNum
 	for slot in Items.SLOTS:
 		var noun: String = Items.class_weapon_noun(cls) if slot == "weapon" else ""
 		var item := Items.roll_item_of(slot, grade, rng, cls, noun)
-		if bis.has(slot):
+		var setprof := String(cfg.get("setprof", ""))
+		if setprof != "" and slot != "weapon":
+			# "setprof" config: the six gear slots wear the class's full
+			# 6pc PROFILE SET (semantic membership) — the set-vs-BiS probe.
+			# Weapons never join a set, so the weapon keeps its BiS logic.
+			item["passive"] = set_piece_id(cls, slot, setprof)
+		elif bis.has(slot):
 			# "uniques" config: every slot wears its BiS named-unique passive —
 			# the full-loadout measurement (weapon via s_passive, the six gear
 			# slots via the uniq_armor cache).

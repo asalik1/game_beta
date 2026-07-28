@@ -1,13 +1,16 @@
 # PROPOSALS — Unique gear SETS
 
-**Status: WIRED 2026-07-28 (owner-approved).** The legacy per-class
-`Items.SET_BONUSES` is retired (it counted ANY class-locked S piece and read
-"7/4 pieces worn" in the 7-slot world); the 30 profile sets below are live —
-membership by VERB family (`Items.set_profile_of`), bonuses in
-`Balance.UNIQ_SETS` (2pc stats fold in recalc; 4pc/6pc clauses at their
-seams), names resolved from the S-triad families (`Items.uniq_set_name`),
-the item-card panel shows n/6 with live tiers. All magnitudes are
-placeholders — the dps-bench phase owns numbers.
+**Status: WIRED 2026-07-28 (owner-approved); fix round + first bench SAME
+DAY.** The legacy per-class `Items.SET_BONUSES` is retired (it counted ANY
+class-locked S piece and read "7/4 pieces worn" in the 7-slot world); the 30
+profile sets below are live — membership by VERB family
+(`Items.set_profile_of`), bonuses in `Balance.UNIQ_SETS` (2pc stats fold in
+recalc; 4pc/6pc clauses at their seams), names resolved from the S-triad
+families (`Items.uniq_set_name`), the item-card panel shows n/6 with live
+tiers. The aggressor lane is BENCHED (2026-07-28 round: archer band held
+with the 4pc live; assassin 2pc runs hot for the crown — see
+BALANCE_HISTORY.md); the defensive lanes' magnitudes remain placeholders
+pending playtests.
 
 ---
 
@@ -26,13 +29,23 @@ Rules:
 - **Membership is SEMANTIC — by verb family** (wired 2026-07-28): a piece
   belongs to the profile its engine verb serves (ward verbs → A, guard → B…),
   not its positional id letter — the armor/boots/charm rows order by the §5
-  coverage tables, so position lies there (an archer's pen-cleats sit in row
-  A but fight like an aggressor piece). The A and S lanes BOTH count (the
-  Act-2 A pieces are the on-ramp). Weapons never count: the weapon stays the
-  free signature choice, per the stacking doctrine. CAVEAT: because a few
-  slots double a verb family (every chest's aggressor row is an iron-answer
-  = guard piece), some class×profile sets top out at 4-5 available pieces —
-  their 6pc is aspirational until the bench phase re-verbs those rows.
+  coverage tables, so position can lie there. The A and S lanes BOTH count
+  (the Act-2 A pieces are the on-ramp). Weapons never count: the weapon
+  stays the free signature choice, per the stacking doctrine. The old
+  caveat (doubled verb families capping 12 of the 30 sets at 4-5 pieces)
+  is CLOSED: the 2026-07-28 re-verb (17 rows, GEAR_ARMOR_UNIQUE_PASSIVES.md
+  §5b) gives every class×profile a piece in all six slots, and an autotest
+  section pins the 6/6 coverage.
+- **Sets self-carry their machinery** (2026-07-28): clauses that ride one
+  carrier verb's proc would otherwise read live on the card while doing
+  nothing without that exact piece. The guard set ANCHORS on its own at 4pc
+  (struck-accrual to `Balance.SET_ANCHOR_STACKS` when no pants_guard carrier
+  is worn) and the ward set arms a baseline magic ward at 4pc
+  (`Balance.SET_WARD`) — a worn carrier's own knobs always win.
+- **Capstones must exist in boss fights** (2026-07-28): the aggressor 6pc
+  opener clauses RE-ARM on a cadence (`Balance.SET_OPENER_REARM`) since a
+  boss never offers a second unwounded moment, and the assassin 6pc accepts
+  a Stab CRIT as the kill-stand-in on bosses (`Balance.SET_SURGE_CRIT_ICD`).
 - **Set names resolve from the S-triad's shared prefix at wiring time**
   (Nullward, Warhowl, White Wind…), so the art pass's naming does the
   flavor work — no new names invented here.
@@ -63,19 +76,19 @@ aggressor +3% ATK +2% Crit · bulwark +8 VIT.
 |---|---|---|
 | Nullward (ward) | [weakness: magres is the plate's soft side] taking MAGIC damage builds a Grit stack | your magic-ward verb also pays +10% damage while it holds — spellfire feeds the war |
 | Unbroken (guard) | [identity] Grit cap +2 | at full Grit stacks, blows you take are answered at 0.3× |
-| No Horizon (finesse) | [off-meta: the eva duelist] EVADING builds a Grit stack — the dodge feeds the grind | +10% ability damage while slippery |
-| Warhowl (aggressor) | [identity] Berserk runs +2s | your openers stagger |
+| No Horizon (finesse) | [off-meta: the eva duelist] EVADING builds a Grit stack — the dodge feeds the grind | +10% damage while slippery |
+| Warhowl (aggressor) | [identity] Berserk runs +2s | your openers stagger, and the opening re-arms every 12s |
 | Stonefather (bulwark) | [identity] +8% max HP | the bastion floor deepens +10% |
 
 ### Archer
 
 | Set (profile) | 4pc — the lens | 6pc — capstone |
 |---|---|---|
-| Tempest Crown (ward) | [weakness: no answer to spell chip] a warded magic hit doesn't reset Second Wind | Second Wind regen +2%/s |
-| Ironwood Witness (guard) | [off-meta: the thorn tank] being hit ticks the hunt rhythm | anchor stacks also return 0.15× thorns per blow |
+| Tempest Crown (ward) | [weakness: no answer to spell chip] magic damage doesn't reset Second Wind (redesigned 2026-07-28 — the warded-hit-only version paid ~2s in 8, noise in any pack) | Second Wind regen +2%/s |
+| Ironwood Witness (guard) | [off-meta: the thorn tank] being hit ticks the hunt rhythm (converts to the rhythm crit for EVERY a1 theme — the counter's conversion no longer requires hunt) | anchor stacks also return 0.15× thorns per blow |
 | White Wind (finesse) | [identity] Tumble cd −1s | a perfect dodge grants one guaranteed-crit shot |
-| Last Hunt (aggressor) | [identity] EXPOSED prey takes +8% from you | your first shot on unwounded prey is always EXPOSING |
-| First Beast (bulwark) | [off-meta] +8% max HP and Second Wind's delay −0.5s | below 30% HP your shots slow attackers 20% |
+| Last Hunt (aggressor) | [identity] EXPOSED prey takes +8% from you | your first shot on unwounded prey EXPOSES it, and the opening re-arms every 12s |
+| First Beast (bulwark) | [off-meta] +8% max HP and Second Wind's delay −0.5s | below 30% HP, blows you take SLOW the attacker 20% (the wiring answers being struck — the old "your shots slow" text lied) |
 
 ### Assassin
 
@@ -84,7 +97,7 @@ aggressor +3% ATK +2% Crit · bulwark +8 VIT.
 | ward triad | [weakness: magic chip bypasses Elusive] a warded magic hit feeds the blood surge +0.5s | +10 MagRes and the ward's DR +10% |
 | guard triad | [off-meta: the parry fencer] full anchor stacks add +10% parry-family proc chance | blows taken while surging are answered at 0.3× |
 | finesse triad | [identity] Elusive +3% evasion | evading extends a live Death Mark +0.3s |
-| aggressor triad | [identity] MARKED prey takes +8% from you | Stab kills extend the surge +1s |
+| aggressor triad | [identity] MARKED prey takes +8% from you | Stab kills extend the surge +1s (on bosses, Stab crits stand in) |
 | bulwark triad | [off-meta: the bulk fencer] +8% max HP | below 30% HP the blood surge never expires |
 
 ### Mage

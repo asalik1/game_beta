@@ -260,6 +260,15 @@ pass; their 180 uniques take the same verb+beat treatment (chest = the
 wall, boots = the road, charm = the will; the hp/VIT row's A lane pays
 the class-native sustain BARGAIN). Verb lanes as §3; class beats below.
 
+**RE-VERB 2026-07-28 (set-coverage round):** 17 rows below flipped verb
+family so every class x profile SET fields a piece in all six slots (the
+original coverage doubled some families per slot — every chest's aggressor
+row was an iron-answer piece, guard was missing boots/charm homes — which
+capped 12 of the 30 sets at 4-5 worn pieces and made their 6pc capstones
+unreachable). Names/art/beats kept where the fantasy held; knobs sit on the
+existing §3 verb machinery; the autotest coverage section now pins all 30
+sets at 6/6 slots.
+
 ### Warrior — armor / boots / charm
 
 | Slot | Shape | A unique | S unique |
@@ -267,14 +276,14 @@ the class-native sustain BARGAIN). Verb lanes as §3; class beats below.
 | armor | Wardsteel Plate | *ward* lesser | *ward*, and the warded blow builds Grit |
 | armor | Ironwall Plate | *anchor* lesser | *anchor*, and a full-stack blow staggers |
 | armor | Skirmisher's Halfplate | *slip* lesser | *slip*, and slipping a blow hastens Shield Bash |
-| armor | Bloodforged Harness | *answer* lesser | *answer*, and the harness's spikes stagger |
+| armor | Bloodforged Harness | *tear* lesser | *tear*, and the bite staggers |
 | armor | Titanplate | *bastion* lesser — BARGAIN: BUT Grit's regen is halved | *bastion*, and below the threshold blows mend you |
 | boots | Wardstep Greaves | *ward* lesser | *ward*, and warded ground feeds Grit |
 | boots | Sabatons | *anchor* lesser | *anchor*, and the planted stance staggers attackers |
 | boots | Skirmisher's Boots | *expose* lesser | *expose*, and the dodge hastens Shield Bash |
 | boots | Reaver Treads | *advance* lesser | *advance*, and the charge returns sooner |
 | boots | Anchorplate | *bastion* lesser — BARGAIN: BUT Grit's regen is halved | *bastion*, and below the threshold the ground holds you |
-| charm | Warbanner | *opener* lesser | *opener*, and the banner's first blow staggers |
+| charm | Warbanner | *anchor* lesser | *anchor*, and the planted standard's full stacks stagger |
 | charm | Oath Sigil | *ward* lesser | *ward*, and the sworn ward feeds Grit |
 | charm | Butcher's Token | *tear* lesser | *tear*, deeper while Berserk runs |
 | charm | Duelist's Knot | *expose* lesser | *expose*, and the feint hastens Whirlwind |
@@ -287,15 +296,15 @@ the class-native sustain BARGAIN). Verb lanes as §3; class beats below.
 | armor | Stormweave Jerkin | *ward* lesser | *ward*, and a warded hit keeps Second Wind's clock |
 | armor | Studded Brigandine | *anchor* lesser | *anchor*, and the riveted plates hold |
 | armor | Ranger's Leathers | *slip* lesser | *slip*, and slipping a blow ticks the hunt rhythm |
-| armor | Hunter's Harness | *answer* lesser | *answer*, as barbs that throw the attacker back |
+| armor | Hunter's Harness | *opener* lesser | *opener*, and the first strike of the hunt throws the prey back |
 | armor | Beastpelt | *bastion* lesser — BARGAIN: BUT Second Wind never triggers while worn | *bastion*, and below the threshold the pelt mends you |
 | boots | Piercer's Cleats | *advance* lesser | *advance*, and Tumble returns sooner |
 | boots | Windstriders | *expose* lesser | *expose*, and the dodge ticks the hunt rhythm |
-| boots | Marksman's Stance | *opener* lesser | *opener*, and the held shot feeds the rhythm |
+| boots | Marksman's Stance | *anchor* lesser | *anchor*, and holding the stance feeds the rhythm |
 | boots | Wardedsole | *grounded* lesser | *grounded*, and a shrugged CC refunds Tumble |
 | boots | Trailboots | *bastion* lesser — BARGAIN: BUT Second Wind never triggers while worn | *bastion*, and below the threshold Tumble hastens |
 | charm | Fletcher's Token | *trueaim* lesser | *trueaim*, and the perfect nock feeds the rhythm |
-| charm | Windfeather | *expose* lesser | *expose*, and the feather marks the attacker longer |
+| charm | Windfeather | *blunt* lesser | *blunt*, and the high wind EXPOSES the attacker |
 | charm | Hunter's Totem | *opener* lesser | *opener*, harder on EXPOSED prey |
 | charm | Stonebark Ward | *ward* lesser | *ward*, and the bark keeps Second Wind's clock |
 | charm | Greenheart Idol | *pool* lesser — BARGAIN: BUT Second Wind never triggers while worn | *pool*, — the grove's endurance pools |
@@ -307,14 +316,14 @@ the class-native sustain BARGAIN). Verb lanes as §3; class beats below.
 | armor | Shadowveil Cloak | *ward* lesser | *ward*, and a warded hit feeds the surge |
 | armor | Warded Mantle | *anchor* lesser | *anchor*, and a full-stack blow EXPOSES the attacker |
 | armor | Gossamer Cloak | *slip* lesser | *slip*, and slipping a blow feeds the surge |
-| armor | Nightsilk Wrap | *answer* lesser | *answer*, and the wrap's blades feed the surge |
+| armor | Nightsilk Wrap | *opener* lesser | *opener*, and the blade never seen feeds the surge |
 | armor | Verdant Shroud | *bastion* lesser — BARGAIN: BUT Elusive's regen is halved | *bastion*, and below the threshold the shroud mends you |
 | boots | Slipsteps | *slip* lesser | *slip*, and slipping a blow feeds the surge |
-| boots | Prowlers | *opener* lesser | *opener*, and the pounce arms the surge |
+| boots | Prowlers | *answer* lesser | *answer*, and the cornered claw feeds the surge |
 | boots | Venomtread | *advance* lesser | *advance*, and the dash returns sooner |
 | boots | Ironsole Wraps | *grounded* lesser | *grounded*, and a shrugged CC refunds the dash |
 | boots | Grave Treads | *bastion* lesser — BARGAIN: BUT Elusive's regen is halved | *bastion*, and below the threshold the surge holds |
-| charm | Killer's Mark | *trueaim* lesser | *trueaim*, and the perfect cut feeds the surge |
+| charm | Killer's Mark | *opener* lesser | *opener*, and writing the final name feeds the surge |
 | charm | Poisoner's Vial | *unweave* lesser | *unweave*, and the poison eats deeper |
 | charm | Ghostlight Charm | *expose* lesser | *expose*, and the dodge extends a live Death Mark |
 | charm | Bloodoath Cord | *answer* lesser | *answer*, and the sworn debt feeds the surge |
@@ -327,16 +336,16 @@ the class-native sustain BARGAIN). Verb lanes as §3; class beats below.
 | armor | Silk Vestments | *ward* lesser | *ward*, and the warded hit refunds mana |
 | armor | Runeplate Robe | *anchor* lesser | *anchor*, and full plates hasten Blink |
 | armor | Featherweave Robe | *slip* lesser | *slip*, and slipping a blow grants mana |
-| armor | Starweave Robe | *answer* lesser | *answer*, as star-fire that CHILLS the attacker |
+| armor | Starweave Robe | *advance* lesser | *advance*, and the empowered cast CHILLS |
 | armor | Earthen Robe | *bastion* lesser — BARGAIN: BUT Frost Nova's restore is halved | *bastion*, and below the threshold the clay mends you |
 | boots | Starstep | *opener* lesser | *opener*, and the opening cast cracks the ward |
 | boots | Levitation Slippers | *expose* lesser | *expose*, and the dodge grants mana |
-| boots | Sigil Sandals | *advance* lesser | *advance*, and Blink returns sooner |
+| boots | Sigil Sandals | *anchor* lesser | *anchor*, and the closed circle's full stacks return Blink sooner |
 | boots | Wardstone Shoes | *grounded* lesser | *grounded*, and a shrugged CC restores mana |
 | boots | Rootbound Sandals | *bastion* lesser — BARGAIN: BUT Frost Nova's restore is halved | *bastion*, and below the threshold blows restore mana |
 | charm | Arcane Orb | *unweave* lesser | *unweave*, and the orb's intent bores deeper |
 | charm | Starshard | *tear* lesser | *tear*, deeper on ward-cracked prey |
-| charm | Aegis Crystal | *ward* lesser | *ward*, and the carried ward refunds mana |
+| charm | Aegis Crystal | *blunt* lesser | *blunt*, and the final barrier refunds mana |
 | charm | Zephyr Sigil | *expose* lesser | *expose*, and the sigil pays the dodge in mana |
 | charm | Lifebloom Pendant | *pool* lesser — BARGAIN: BUT Frost Nova's restore is halved | *pool*, — the bloom's overflow pools |
 
@@ -347,14 +356,14 @@ the class-native sustain BARGAIN). Verb lanes as §3; class beats below.
 | armor | Templar Plate | *anchor* lesser | *anchor*, and full stacks bank holy charge |
 | armor | Blessed Plate | *ward* lesser | *ward*, and the warded blow banks holy charge |
 | armor | Vigil Halfplate | *slip* lesser | *slip*, and slipping a blow mends the watcher |
-| armor | Zealot Harness | *answer* lesser | *answer*, burning harder in Retribution |
+| armor | Zealot Harness | *tear* lesser | *tear*, a martyr's brand, deeper in Retribution |
 | armor | Sanctified Bulwark | *bastion* lesser — BARGAIN: BUT your class regen is halved | *bastion*, and below the threshold the Holy mend doubles |
 | boots | Zealot's Cleats | *opener* lesser | *opener*, and the charge's first blow staggers |
 | boots | Sabatons of the Oath | *grounded* lesser | *grounded*, and a shrugged CC banks holy charge |
 | boots | Vigil Steps | *expose* lesser | *expose*, and the watch mends the dodger |
-| boots | Radiant Greaves | *advance* lesser | *advance*, and the leap rearms sooner |
+| boots | Radiant Greaves | *anchor* lesser | *anchor*, and the noon stance's full stacks rearm the leap sooner |
 | boots | Pilgrim's Resolve | *bastion* lesser — BARGAIN: BUT your class regen is halved | *bastion*, and below the threshold the road mends you |
-| charm | Reliquary | *ward* lesser | *ward*, and the relic banks holy charge |
+| charm | Reliquary | *blunt* lesser | *blunt*, and the doorless house banks holy charge |
 | charm | Sunburst Icon | *tear* lesser | *tear*, of dawn-fire, deeper in Retribution |
 | charm | Judgment Sigil | *unweave* lesser | *unweave*, and the verdict bores through wards |
 | charm | Swiftvow Cord | *expose* lesser | *expose*, and the vow hastens Aegis |
@@ -367,16 +376,16 @@ the class-native sustain BARGAIN). Verb lanes as §3; class beats below.
 | armor | Voidsilk Robe | *ward* lesser | *ward*, and the ward pays you back in life |
 | armor | Bonemail | *anchor* lesser | *anchor*, and a full-stack blow WITHERS |
 | armor | Shadeweave Robe | *slip* lesser | *slip*, and slipping a blow deepens every hex |
-| armor | Ruinweave | *answer* lesser | *answer*, and the script curses the attacker |
+| armor | Ruinweave | *advance* lesser | *advance*, and the catastrophe WITHERS its prey |
 | armor | Bloodpact Vestment | *bastion* lesser — BARGAIN: BUT Soulthirst is halved | *bastion*, and below the threshold blows repay in blood |
-| boots | Ruinstep | *opener* lesser | *opener*, and the opening curse withers |
+| boots | Ruinstep | *anchor* lesser | *anchor*, and the breaking world's full stacks WITHER |
 | boots | Shadowstep Wraps | *expose* lesser | *expose*, and the dodge deepens every hex |
 | boots | Hexcarved Treads | *advance* lesser | *advance*, and the advance deepens every hex |
 | boots | Bonewalkers | *grounded* lesser | *grounded*, and a shrugged CC refunds max health |
 | boots | Gravebound Boots | *bastion* lesser — BARGAIN: BUT Soulthirst is halved | *bastion*, and below the threshold blows repay in blood |
 | charm | Soul Fetish | *unweave* lesser | *unweave*, and the fetish has been inside them |
 | charm | Cursed Idol | *tear* lesser | *tear*, ticking deeper on HEXED prey |
-| charm | Ward of Ash | *ward* lesser | *ward*, and the ash pays you back in life |
+| charm | Ward of Ash | *blunt* lesser | *blunt*, and the surviving law pays you back in life |
 | charm | Umbral Cord | *expose* lesser | *expose*, and the cord deepens every hex |
 | charm | Heartcage | *pool* lesser — BARGAIN: BUT Soulthirst is halved | *pool*, pooling double after Dark Pact |
 

@@ -928,6 +928,9 @@ func _run_systems() -> void:
 	# 3d10. Set bonuses: piece counting, cross-class isolation, recalc.
 	_test_set_bonus()
 
+	# 3d10b. Set coverage: every class x profile fields all six slots.
+	_test_set_coverage()
+
 	# 3d11. Account stash: deposit, withdraw to bag, capacity cap.
 	_test_stash()
 
@@ -2965,6 +2968,35 @@ func _test_set_bonus() -> void:
 	print("ok: profile sets (membership by VERB family, A/S lanes count, tier stats, no cross-count)")
 
 
+# ---- CORE: profile-set COVERAGE (every set can actually reach 6pc) -------
+# The 2026-07-28 re-verb pinned this: each class x profile must field a piece
+# in ALL SIX gear slots, or that set's 6pc capstone is dead content the item
+# card still advertises (pre-fix, every guard and aggressor set was capped at
+# 4-5 slots). Membership is semantic (verb family), so this guards future
+# row re-verbs too.
+func _test_set_coverage() -> void:
+	var cover := {}
+	for u in Items.UNIQUES:
+		var slot := String(u.get("slot", ""))
+		if slot == "weapon" or not u.has("passive"):
+			continue
+		var cls := String(u.get("cls", ""))
+		var prof := Items.set_profile_of(u, cls)
+		if prof == "":
+			continue
+		var key := "%s_%s" % [cls, prof]
+		if not cover.has(key):
+			cover[key] = {}
+		cover[key][slot] = true
+	for cls in Classes.CLASSES:
+		for prof in ["A", "B", "C", "D", "E"]:
+			var key := "%s_%s" % [cls, prof]
+			var n: int = cover.get(key, {}).size()
+			if n != 6:
+				return _fail("set %s covers %d/6 slots — its 6pc is unreachable" % [key, n])
+	print("ok: set coverage (all 30 class x profile sets field all six slots)")
+
+
 # ---- CORE: account stash (deposit, withdraw, capacity) ------------------
 func _test_stash() -> void:
 	var keep_stash: Array = game.stash
@@ -3762,7 +3794,7 @@ func _test_retention() -> void:
 	# --- boss HP grows on the flat player-tracking BOSS_HP_GROWTH (2026-07-09):
 	# the old per-kind hp_g + past-L32 gem ramp was folded into one dial so a
 	# scaled boss's TTK stays level-invariant instead of ballooning. Below
-	# GEAR_RAMP_START the per-level ratio is the SAME at every level. ---
+	# GEAR_POWER_FIRST the per-level ratio is the SAME at every level. ---
 	var hi_ratio: float = float(Story.enemy_stats_at("nullwarden", 50)["hp"]) \
 		/ float(Story.enemy_stats_at("nullwarden", 49)["hp"])
 	var low_ratio: float = float(Story.enemy_stats_at("nullwarden", 30)["hp"]) \
@@ -3770,13 +3802,15 @@ func _test_retention() -> void:
 	if absf(hi_ratio - (1.0 + Balance.BOSS_HP_GROWTH)) > 0.001 \
 			or absf(low_ratio - (1.0 + Balance.BOSS_HP_GROWTH)) > 0.001:
 		return _fail("boss HP should grow at a flat BOSS_HP_GROWTH per level")
-	# --- GEAR-ceiling ramp (2026-07-27, dps-bench round): ABOVE the ramp start
-	# the ratio carries the compounding gear premium on top of the flat dial —
-	# the endgame recalibration for the 7-slot envelope + named-unique power. ---
+	# --- GEAR-POWER curve (2026-07-28, replaces the GEAR_RAMP exponent):
+	# ABOVE the first gear anchor the ratio carries the measured gear curve
+	# on top of the flat dial (Balance.gear_power interpolation). ---
 	var ramp_ratio: float = float(Story.enemy_stats_at("nullwarden", 100)["hp"]) \
 		/ float(Story.enemy_stats_at("nullwarden", 99)["hp"])
-	if absf(ramp_ratio - (1.0 + Balance.BOSS_HP_GROWTH) * (1.0 + Balance.GEAR_RAMP_HP)) > 0.001:
-		return _fail("boss HP past GEAR_RAMP_START should carry the gear-ceiling ramp")
+	var want_ratio: float = (1.0 + Balance.BOSS_HP_GROWTH) \
+		* Balance.gear_power(100) / Balance.gear_power(99)
+	if absf(ramp_ratio - want_ratio) > 0.001:
+		return _fail("boss HP above GEAR_POWER_FIRST should track the measured gear-power curve")
 
 	# --- hidden caches: buried chest stays invisible, reveals near ---
 	var hc := Chest.drop(g, "silver", g.player.global_position + Vector2(400, 0))
@@ -3813,7 +3847,7 @@ func _test_mob_traits() -> void:
 		return _fail("mob DMG mult not applied")
 	# Bosses are exempt from both.
 	var fang := Story.enemy_stats_at("fangmaw", 4)
-	if absf(float(fang["hp"]) - 1200.0) > 1.0:
+	if absf(float(fang["hp"]) - 8600.0) > 1.0:
 		return _fail("boss HP wrongly caught the mob mult")
 
 	# Channel-healer: pulse tops up a wounded neighbor (both -1, same zone).
@@ -3930,23 +3964,68 @@ func _test_asset_seams() -> void:
 	if laid.a < 0.9 or laid.r < 0.9 or laid.g > 0.02 or laid.b > 0.02:
 		return _fail("ground _tile_fill did not lay the tile (got %s)" % laid)
 
-	# --- Landmark tier: signature silhouettes never become filler -----
+	# --- Environment taxonomy: 1 landmark, 5+ kinds per tier -----------
 	if "garden_statue" not in Terrains.structure_unique_props("village_grove"):
 		return _fail("village_grove must reserve its garden-statue landmark")
 	for terrain_id in Terrains.DATA:
+		if not Terrains.uses_procedural_taxonomy(String(terrain_id)):
+			continue  # capital districts use authored civic compositions
 		var terrain: Dictionary = Terrains.DATA[terrain_id]
+		var landmarks := Terrains.landmark_candidates(String(terrain_id))
+		var accents := Terrains.accent_specs(String(terrain_id))
+		var props := Terrains.repeatable_prop_kinds(String(terrain_id))
+		if landmarks.size() < 5:
+			return _fail("%s: needs >=5 landmark kinds (got %d)" % [
+				terrain_id, landmarks.size()])
+		if accents.size() < 5:
+			return _fail("%s: needs >=5 accent kinds (got %d)" % [
+				terrain_id, accents.size()])
+		if props.size() < 5:
+			return _fail("%s: needs >=5 repeatable prop kinds (got %d)" % [
+				terrain_id, props.size()])
+		var landmark_cycle := {}
+		for occurrence in landmarks.size():
+			var selected := Terrains.landmark_for_occurrence(
+				String(terrain_id), landmarks, occurrence)
+			if landmark_cycle.has(selected):
+				return _fail("%s: landmark repeated before roster exhaustion" % terrain_id)
+			landmark_cycle[selected] = true
 		for repeatable_tier in ["obstacles", "decor"]:
 			for raw_prop in terrain.get(repeatable_tier, []):
 				var prop := String(raw_prop)
 				if Terrains.is_unique_prop(prop):
 					return _fail("%s: unique prop %s leaked into repeatable %s" % [
 						terrain_id, prop, repeatable_tier])
-		var accent_bases := {}
-		for raw_accent in terrain.get("accents", []):
-			var accent_base := Terrains.prop_base(String(raw_accent))
-			if accent_bases.has(accent_base):
-				return _fail("%s: accent %s is listed twice" % [terrain_id, accent_base])
-			accent_bases[accent_base] = true
+		for accent_spec in accents:
+			var spec: Dictionary = accent_spec
+			if Terrains.is_unique_prop(String(spec["name"])):
+				return _fail("%s: landmark %s leaked into accent roster" % [
+					terrain_id, spec["name"]])
+	# The normal sampler must peak where the content profile says it peaks.
+	var bell_rng := RandomNumberGenerator.new()
+	bell_rng.seed = 7282026
+	for bell_name in ["mushroom_purple", "coffin"]:
+		var bell_spec: Dictionary = {"name": bell_name}
+		bell_spec.merge(Terrains.ACCENT_PROFILES[bell_name])
+		var histogram := {}
+		for sample_idx in 5000:
+			var sampled := Terrains.sample_accent_count(bell_spec, bell_rng)
+			histogram[sampled] = int(histogram.get(sampled, 0)) + 1
+		var bell_peak := int(bell_spec["peak"])
+		var peak_hits := int(histogram.get(bell_peak, 0))
+		for count_value in histogram:
+			if int(count_value) != bell_peak and int(histogram[count_value]) >= peak_hits:
+				return _fail("%s: accent count distribution does not peak at %d" % [
+					bell_name, bell_peak])
+	# Runtime seam: rebuilding a procedural room yields exactly one selected
+	# landmark node, even though its roster exposes five or more candidates.
+	game._spawn_scenery(0)
+	var runtime_landmarks := 0
+	for scenery_node in game.zone_scenery.get(0, []):
+		if is_instance_valid(scenery_node) and scenery_node.has_meta("terrain_landmark"):
+			runtime_landmarks += 1
+	if runtime_landmarks != 1:
+		return _fail("procedural room should place exactly 1 landmark (got %d)" % runtime_landmarks)
 	for structure_id in Terrains.STRUCTURES:
 		var structure: Dictionary = Terrains.STRUCTURES[structure_id]
 		var structure_visuals: Array = [{"sprite": structure.get("sprite", "")}]

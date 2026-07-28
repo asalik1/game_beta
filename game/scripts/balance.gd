@@ -27,11 +27,12 @@ const FACE_DEADZONE := 0.35
 # so the whole cast keeps its relative proportion. Purely visual: collision
 # radii, aggro/attack ranges and speeds are unchanged. Tune to taste; 1.0 = old size.
 const CHAR_RENDER_SCALE := 1.7
-# Structures y-sort over a hero who walks north of their base. Keep only this
-# thin cool edge above the architecture so the hidden hero remains trackable.
+# Structures y-sort over a hero who walks north of their base. Keep only a
+# thin cool edge — clipped to the covering structure's own pixels, so just the
+# HIDDEN part of the body reads back (owner 2026-07-28: full-body outline over
+# a tombstone looked wrong, and 3.25 read too thick).
 const PLAYER_OCCLUDED_OUTLINE_COLOR := Color(0.78, 0.94, 1.0, 0.60)
-const PLAYER_OCCLUDED_OUTLINE_WIDTH := 3.25
-const PLAYER_OCCLUDED_OUTLINE_Z := 4
+const PLAYER_OCCLUDED_OUTLINE_WIDTH := 1.75
 const PLAYER_OCCLUSION_ALPHA_THRESHOLD := 0.16
 const PLAYER_OCCLUSION_PROBES := [
 	Vector2(-14, -20), Vector2(0, -20), Vector2(14, -20),
@@ -1509,8 +1510,8 @@ const UNIQ := {
 	"warrior_armor_Bs": {"beat": "stagger", "dr_stack": 0.02, "s": 0.3, "stacks": 3, "verb": "pants_guard"},
 	"warrior_armor_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
 	"warrior_armor_Cs": {"beat": "cdr", "dur": 2.0, "eva": 0.1, "s": 1.0, "slot": "a2", "verb": "pants_finesse"},
-	"warrior_armor_Da": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
-	"warrior_armor_Ds": {"beat": "stagger", "chance": 0.25, "counter": 0.5, "s": 0.3, "verb": "glove_guard"},
+	"warrior_armor_Da": {"dot": 0.1, "dur": 3.0, "verb": "glove_aggr"},
+	"warrior_armor_Ds": {"beat": "stagger", "dot": 0.15, "dur": 3.0, "s": 0.3, "verb": "glove_aggr"},
 	"warrior_armor_Ea": {"dr": 0.1, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"warrior_armor_Es": {"beat": "heal", "dr": 0.15, "pct": 0.02, "threshold": 0.3, "verb": "pants_bulwark"},
 	"warrior_boots_Aa": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
@@ -1523,8 +1524,8 @@ const UNIQ := {
 	"warrior_boots_Ds": {"beat": "cdr", "bonus": 0.2, "s": 0.5, "slot": "commit", "verb": "pants_aggr", "window": 3.0},
 	"warrior_boots_Ea": {"dr": 0.1, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"warrior_boots_Es": {"beat": "heal", "dr": 0.15, "pct": 0.02, "threshold": 0.3, "verb": "pants_bulwark"},
-	"warrior_charm_Aa": {"opener": 0.15, "verb": "helm_aggr"},
-	"warrior_charm_As": {"beat": "stagger", "opener": 0.25, "s": 0.3, "verb": "helm_aggr"},
+	"warrior_charm_Aa": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
+	"warrior_charm_As": {"beat": "stagger", "dr_stack": 0.02, "s": 0.3, "stacks": 3, "verb": "pants_guard"},
 	"warrior_charm_Ba": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
 	"warrior_charm_Bs": {"beat": "grit", "dr": 0.3, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
 	"warrior_charm_Ca": {"dot": 0.1, "dur": 3.0, "verb": "glove_aggr"},
@@ -1539,24 +1540,24 @@ const UNIQ := {
 	"archer_armor_Bs": {"dr_stack": 0.02, "stacks": 3, "verb": "pants_guard"},
 	"archer_armor_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
 	"archer_armor_Cs": {"beat": "huntp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
-	"archer_armor_Da": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
-	"archer_armor_Ds": {"beat": "knock", "chance": 0.25, "counter": 0.5, "n": 320.0, "verb": "glove_guard"},
+	"archer_armor_Da": {"opener": 0.15, "verb": "helm_aggr"},
+	"archer_armor_Ds": {"beat": "knock", "n": 320.0, "opener": 0.25, "verb": "helm_aggr"},
 	"archer_armor_Ea": {"dr": 0.1, "sw_off": 1, "threshold": 0.3, "verb": "pants_bulwark"},
 	"archer_armor_Es": {"beat": "heal", "dr": 0.15, "pct": 0.02, "threshold": 0.3, "verb": "pants_bulwark"},
 	"archer_boots_Aa": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
 	"archer_boots_As": {"beat": "cdr", "bonus": 0.2, "s": 0.5, "slot": "commit", "verb": "pants_aggr", "window": 3.0},
 	"archer_boots_Ba": {"verb": "helm_finesse", "vuln_dur": 1.5},
 	"archer_boots_Bs": {"beat": "huntp", "verb": "helm_finesse", "vuln_dur": 3.0},
-	"archer_boots_Ca": {"opener": 0.15, "verb": "helm_aggr"},
-	"archer_boots_Cs": {"beat": "huntp", "opener": 0.25, "verb": "helm_aggr"},
+	"archer_boots_Ca": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
+	"archer_boots_Cs": {"beat": "huntp", "dr_stack": 0.02, "stacks": 3, "verb": "pants_guard"},
 	"archer_boots_Da": {"cc_mult": 0.8, "verb": "pants_ward"},
 	"archer_boots_Ds": {"beat": "cdr", "cc_mult": 0.7, "s": 1.0, "slot": "a3", "verb": "pants_ward"},
 	"archer_boots_Ea": {"dr": 0.1, "sw_off": 1, "threshold": 0.3, "verb": "pants_bulwark"},
 	"archer_boots_Es": {"beat": "cdr", "dr": 0.15, "s": 1.0, "slot": "a3", "threshold": 0.3, "verb": "pants_bulwark"},
 	"archer_charm_Aa": {"every": 8, "verb": "glove_finesse"},
 	"archer_charm_As": {"beat": "huntp", "every": 5, "verb": "glove_finesse"},
-	"archer_charm_Ba": {"verb": "helm_finesse", "vuln_dur": 1.5},
-	"archer_charm_Bs": {"beat": "vuln", "dur": 3.0, "verb": "helm_finesse", "vuln_dur": 3.0},
+	"archer_charm_Ba": {"blunt": 0.5, "icd": 10.0, "verb": "helm_guard"},
+	"archer_charm_Bs": {"beat": "vuln", "blunt": 1.0, "dur": 3.0, "icd": 10.0, "verb": "helm_guard"},
 	"archer_charm_Ca": {"opener": 0.15, "verb": "helm_aggr"},
 	"archer_charm_Cs": {"beat": "amp", "opener": 0.25, "verb": "helm_aggr", "when": "marked"},
 	"archer_charm_Da": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
@@ -1569,22 +1570,22 @@ const UNIQ := {
 	"assassin_armor_Bs": {"beat": "vuln", "dr_stack": 0.02, "dur": 2.0, "stacks": 3, "verb": "pants_guard"},
 	"assassin_armor_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
 	"assassin_armor_Cs": {"beat": "surge", "dur": 2.0, "eva": 0.1, "s": 0.5, "verb": "pants_finesse"},
-	"assassin_armor_Da": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
-	"assassin_armor_Ds": {"beat": "surge", "chance": 0.25, "counter": 0.5, "s": 1.0, "verb": "glove_guard"},
+	"assassin_armor_Da": {"opener": 0.15, "verb": "helm_aggr"},
+	"assassin_armor_Ds": {"beat": "surge", "opener": 0.25, "s": 1.0, "verb": "helm_aggr"},
 	"assassin_armor_Ea": {"dr": 0.1, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"assassin_armor_Es": {"beat": "heal", "dr": 0.15, "pct": 0.02, "threshold": 0.3, "verb": "pants_bulwark"},
 	"assassin_boots_Aa": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
 	"assassin_boots_As": {"beat": "surge", "dur": 2.0, "eva": 0.1, "s": 0.5, "verb": "pants_finesse"},
-	"assassin_boots_Ba": {"opener": 0.15, "verb": "helm_aggr"},
-	"assassin_boots_Bs": {"beat": "surge", "opener": 0.25, "s": 1.0, "verb": "helm_aggr"},
+	"assassin_boots_Ba": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
+	"assassin_boots_Bs": {"beat": "surge", "chance": 0.25, "counter": 0.5, "s": 1.0, "verb": "glove_guard"},
 	"assassin_boots_Ca": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
 	"assassin_boots_Cs": {"beat": "cdr", "bonus": 0.2, "s": 0.5, "slot": "commit", "verb": "pants_aggr", "window": 3.0},
 	"assassin_boots_Da": {"cc_mult": 0.8, "verb": "pants_ward"},
 	"assassin_boots_Ds": {"beat": "cdr", "cc_mult": 0.7, "s": 1.0, "slot": "a2", "verb": "pants_ward"},
 	"assassin_boots_Ea": {"dr": 0.1, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"assassin_boots_Es": {"beat": "surge", "dr": 0.15, "s": 1.0, "threshold": 0.3, "verb": "pants_bulwark"},
-	"assassin_charm_Aa": {"every": 8, "verb": "glove_finesse"},
-	"assassin_charm_As": {"beat": "surge", "every": 5, "s": 1.0, "verb": "glove_finesse"},
+	"assassin_charm_Aa": {"opener": 0.15, "verb": "helm_aggr"},
+	"assassin_charm_As": {"beat": "surge", "opener": 0.25, "s": 1.0, "verb": "helm_aggr"},
 	"assassin_charm_Ba": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
 	"assassin_charm_Bs": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"assassin_charm_Ca": {"verb": "helm_finesse", "vuln_dur": 1.5},
@@ -1599,16 +1600,16 @@ const UNIQ := {
 	"mage_armor_Bs": {"beat": "cdr", "dr_stack": 0.02, "s": 1.0, "slot": "a3", "stacks": 3, "verb": "pants_guard"},
 	"mage_armor_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
 	"mage_armor_Cs": {"beat": "mana", "dur": 2.0, "eva": 0.1, "n": 5.0, "verb": "pants_finesse"},
-	"mage_armor_Da": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
-	"mage_armor_Ds": {"beat": "slow", "chance": 0.25, "counter": 0.5, "dur": 2.0, "pct": 0.3, "verb": "glove_guard"},
+	"mage_armor_Da": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
+	"mage_armor_Ds": {"beat": "slow", "bonus": 0.2, "dur": 2.0, "pct": 0.3, "verb": "pants_aggr", "window": 3.0},
 	"mage_armor_Ea": {"dr": 0.1, "nova_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"mage_armor_Es": {"beat": "heal", "dr": 0.15, "pct": 0.02, "threshold": 0.3, "verb": "pants_bulwark"},
 	"mage_boots_Aa": {"opener": 0.15, "verb": "helm_aggr"},
 	"mage_boots_As": {"beat": "shredx", "opener": 0.25, "verb": "helm_aggr"},
 	"mage_boots_Ba": {"verb": "helm_finesse", "vuln_dur": 1.5},
 	"mage_boots_Bs": {"beat": "mana", "n": 8.0, "verb": "helm_finesse", "vuln_dur": 3.0},
-	"mage_boots_Ca": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
-	"mage_boots_Cs": {"beat": "cdr", "bonus": 0.2, "s": 0.5, "slot": "commit", "verb": "pants_aggr", "window": 3.0},
+	"mage_boots_Ca": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
+	"mage_boots_Cs": {"beat": "cdr", "dr_stack": 0.02, "s": 0.5, "slot": "commit", "stacks": 3, "verb": "pants_guard"},
 	"mage_boots_Da": {"cc_mult": 0.8, "verb": "pants_ward"},
 	"mage_boots_Ds": {"beat": "mana", "cc_mult": 0.7, "n": 8.0, "verb": "pants_ward"},
 	"mage_boots_Ea": {"dr": 0.1, "nova_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
@@ -1617,8 +1618,8 @@ const UNIQ := {
 	"mage_charm_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"mage_charm_Ba": {"dot": 0.1, "dur": 3.0, "verb": "glove_aggr"},
 	"mage_charm_Bs": {"beat": "amp", "dot": 0.15, "dur": 3.0, "verb": "glove_aggr", "when": "shredded"},
-	"mage_charm_Ca": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
-	"mage_charm_Cs": {"beat": "mana", "dr": 0.3, "dur": 2.0, "icd": 8.0, "n": 5.0, "verb": "helm_ward"},
+	"mage_charm_Ca": {"blunt": 0.5, "icd": 10.0, "verb": "helm_guard"},
+	"mage_charm_Cs": {"beat": "mana", "blunt": 1.0, "icd": 10.0, "n": 5.0, "verb": "helm_guard"},
 	"mage_charm_Da": {"verb": "helm_finesse", "vuln_dur": 1.5},
 	"mage_charm_Ds": {"beat": "mana", "n": 8.0, "verb": "helm_finesse", "vuln_dur": 3.0},
 	"mage_charm_Ea": {"cap": 0.04, "nova_tax": 0.5, "verb": "helm_bulwark"},
@@ -1629,8 +1630,8 @@ const UNIQ := {
 	"paladin_armor_Bs": {"beat": "holy", "dr": 0.3, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
 	"paladin_armor_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
 	"paladin_armor_Cs": {"beat": "heal", "dur": 2.0, "eva": 0.1, "pct": 0.01, "verb": "pants_finesse"},
-	"paladin_armor_Da": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
-	"paladin_armor_Ds": {"beat": "amp", "chance": 0.25, "counter": 0.5, "verb": "glove_guard", "when": "retri"},
+	"paladin_armor_Da": {"dot": 0.1, "dur": 3.0, "verb": "glove_aggr"},
+	"paladin_armor_Ds": {"beat": "amp", "dot": 0.15, "dur": 3.0, "verb": "glove_aggr", "when": "retri"},
 	"paladin_armor_Ea": {"dr": 0.1, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"paladin_armor_Es": {"beat": "amp", "dr": 0.15, "threshold": 0.3, "verb": "pants_bulwark", "when": "lowhp"},
 	"paladin_boots_Aa": {"opener": 0.15, "verb": "helm_aggr"},
@@ -1639,12 +1640,12 @@ const UNIQ := {
 	"paladin_boots_Bs": {"beat": "holy", "cc_mult": 0.7, "verb": "pants_ward"},
 	"paladin_boots_Ca": {"verb": "helm_finesse", "vuln_dur": 1.5},
 	"paladin_boots_Cs": {"beat": "heal", "pct": 0.01, "verb": "helm_finesse", "vuln_dur": 3.0},
-	"paladin_boots_Da": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
-	"paladin_boots_Ds": {"beat": "cdr", "bonus": 0.2, "s": 1.0, "slot": "a3", "verb": "pants_aggr", "window": 3.0},
+	"paladin_boots_Da": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
+	"paladin_boots_Ds": {"beat": "cdr", "dr_stack": 0.02, "s": 1.0, "slot": "a3", "stacks": 3, "verb": "pants_guard"},
 	"paladin_boots_Ea": {"dr": 0.1, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"paladin_boots_Es": {"beat": "heal", "dr": 0.15, "pct": 0.02, "threshold": 0.3, "verb": "pants_bulwark"},
-	"paladin_charm_Aa": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
-	"paladin_charm_As": {"beat": "holy", "dr": 0.3, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
+	"paladin_charm_Aa": {"blunt": 0.5, "icd": 10.0, "verb": "helm_guard"},
+	"paladin_charm_As": {"beat": "holy", "blunt": 1.0, "icd": 10.0, "verb": "helm_guard"},
 	"paladin_charm_Ba": {"dot": 0.1, "dur": 3.0, "verb": "glove_aggr"},
 	"paladin_charm_Bs": {"beat": "amp", "dot": 0.15, "dur": 3.0, "verb": "glove_aggr", "when": "retri"},
 	"paladin_charm_Ca": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
@@ -1659,12 +1660,12 @@ const UNIQ := {
 	"warlock_armor_Bs": {"beat": "wither", "dot": 0.2, "dr_stack": 0.02, "stacks": 3, "verb": "pants_guard"},
 	"warlock_armor_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
 	"warlock_armor_Cs": {"beat": "hexext", "dur": 2.0, "eva": 0.1, "s": 1.0, "verb": "pants_finesse"},
-	"warlock_armor_Da": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
-	"warlock_armor_Ds": {"beat": "wither", "chance": 0.25, "counter": 0.5, "dot": 0.2, "verb": "glove_guard"},
+	"warlock_armor_Da": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
+	"warlock_armor_Ds": {"beat": "wither", "bonus": 0.2, "dot": 0.2, "verb": "pants_aggr", "window": 3.0},
 	"warlock_armor_Ea": {"dr": 0.1, "ls_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"warlock_armor_Es": {"beat": "hpq", "dr": 0.15, "pct": 0.01, "threshold": 0.3, "verb": "pants_bulwark"},
-	"warlock_boots_Aa": {"opener": 0.15, "verb": "helm_aggr"},
-	"warlock_boots_As": {"beat": "wither", "dot": 0.2, "opener": 0.25, "verb": "helm_aggr"},
+	"warlock_boots_Aa": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
+	"warlock_boots_As": {"beat": "wither", "dot": 0.2, "dr_stack": 0.02, "stacks": 3, "verb": "pants_guard"},
 	"warlock_boots_Ba": {"verb": "helm_finesse", "vuln_dur": 1.5},
 	"warlock_boots_Bs": {"beat": "hexext", "s": 1.0, "verb": "helm_finesse", "vuln_dur": 3.0},
 	"warlock_boots_Ca": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
@@ -1677,8 +1678,8 @@ const UNIQ := {
 	"warlock_charm_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"warlock_charm_Ba": {"dot": 0.1, "dur": 3.0, "verb": "glove_aggr"},
 	"warlock_charm_Bs": {"beat": "amp", "dot": 0.15, "dur": 3.0, "verb": "glove_aggr", "when": "hexed"},
-	"warlock_charm_Ca": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
-	"warlock_charm_Cs": {"beat": "hpq", "dr": 0.3, "dur": 2.0, "icd": 8.0, "pct": 0.01, "verb": "helm_ward"},
+	"warlock_charm_Ca": {"blunt": 0.5, "icd": 10.0, "verb": "helm_guard"},
+	"warlock_charm_Cs": {"beat": "hpq", "blunt": 1.0, "icd": 10.0, "pct": 0.01, "verb": "helm_guard"},
 	"warlock_charm_Da": {"verb": "helm_finesse", "vuln_dur": 1.5},
 	"warlock_charm_Ds": {"beat": "hexext", "s": 1.0, "verb": "helm_finesse", "vuln_dur": 3.0},
 	"warlock_charm_Ea": {"cap": 0.04, "ls_tax": 0.5, "verb": "helm_bulwark"},
@@ -1701,6 +1702,19 @@ static func uniq(passive: String) -> Dictionary:
 # everything else is a CLAUSE knob read at its seam (player/kits). The 4pc is
 # each set's LENS (identity / weakness / off-meta — the doc tags them).
 # ALL PLACEHOLDERS, un-benchmarked.
+# A guard set ANCHORS on its own at 4pc: with no pants_guard carrier worn,
+# struck-accrual still builds anchor stacks to this cap (the S-lane carrier's
+# own 3) — the set's stack-gated clauses fire off any four guard pieces.
+const SET_ANCHOR_STACKS := 3
+# Same principle for the ward set: at 4pc with no helm_ward carrier, magic
+# hits arm a baseline ward at the A-lane knobs (a carrier's own dr/dur win).
+const SET_WARD := {"dr": 0.15, "dur": 2.0}
+# The aggressor 6pc opener clauses RE-ARM on this cadence mid-fight (a boss
+# never offers a second unwounded moment); the true opener always fires.
+const SET_OPENER_REARM := 12.0
+# Assassin D 6pc: on bosses a Stab CRIT stands in for the kill — this ICD
+# keeps crit-stacked builds from making the surge permanent.
+const SET_SURGE_CRIT_ICD := 3.0
 const UNIQ_SETS := {
 	"warrior": {
 		"A": {"s2": {"magres": 8.0}, "s4": {"grit_on_magic": 1.0}, "s6": {"ward_amp": 0.10}},
@@ -1710,7 +1724,7 @@ const UNIQ_SETS := {
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08}, "s6": {"bastion_add": 0.10}},
 	},
 	"archer": {
-		"A": {"s2": {"magres": 8.0}, "s4": {"swkeep_ward": 1.0}, "s6": {"sw_regen": 0.02}},
+		"A": {"s2": {"magres": 8.0}, "s4": {"sw_magic_keep": 1.0}, "s6": {"sw_regen": 0.02}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"huntp_struck": 1.0}, "s6": {"anchor_thorns": 0.15}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"tumble_cd": 1.0}, "s6": {"perfect_crit": 1.0}},
 		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_marked": 0.08}, "s6": {"opener_expose": 1.0}},
@@ -1720,7 +1734,11 @@ const UNIQ_SETS := {
 		"A": {"s2": {"magres": 8.0}, "s4": {"surge_ward": 0.5}, "s6": {"magres_x": 10.0, "mward_add": 0.10}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"parry_add": 0.10}, "s6": {"surge_answer": 0.3}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"eva": 0.03}, "s6": {"dmark_evade": 0.3}},
-		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_marked": 0.08}, "s6": {"surge_kill": 1.0}},
+		# Assassin's aggressor 2pc runs HOT (bench 2026-07-28): the measured
+		# BiS kit forms D3 (both D4 swaps measured WORSE — the piece passives
+		# outvalue amp_marked's ~1/6 mark uptime), so the 2pc is the only set
+		# lever that reaches the kit — priced to keep the dps crown assassin's.
+		"D": {"s2": {"atk_pct": 0.05, "crit": 0.03}, "s4": {"amp_marked": 0.08}, "s6": {"surge_kill": 1.0}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08}, "s6": {"surge_hold": 1.0}},
 	},
 	"mage": {
@@ -1816,26 +1834,52 @@ const PLATE_RES_DMG_LOG := 0.025     # log coefficient
 const PLATE_RES_DMG_K := 0.08        # res sensitivity inside the log
 const PLATE_RES_DMG_CAP := 0.15      # hard ceiling (halved from the old 0.30)
 
-# GEAR-CEILING ramp (2026-07-27, the 7-slot "owner step 4" recalibration +
-# the 420-unique power infusion, replacing the retired BOSS_GEM_* ramp —
-# 0.0 since 2026-07-09): past the ramp start the player's kit detaches from
-# the base ~5.5%/level curve — S-band drops, named-unique passives (A Act 2+,
-# S Act 3+), Lv8-10 gems, deep smith plusses and reforge chases all stack
-# MULTIPLICATIVELY — so upscaled monsters (bosses AND far-field mobs) gain
-# compounding EXTRA HP per level above max(START, their anchor). Applied in
-# enemy_stats_at (codex-honest); never above an anchor (high-anchor content
-# gets its allowance at authoring time); at-level fights untouched (L42
-# A-gear finale re-measured 41.9s vs the ~40s budget — the in-band curve
-# still holds). HP ONLY: boss damage stays on the flat player-tracking dial
-# (measured 2026-07-27: L100 finale patterns already land 30-83% of max HP
-# on perfect kits — punishing without help). START = 50: aligns with the
-# NG+ unlock (post-Act-3 kits) — nothing below L50 upscales into the ramp.
-# RATE calibrated on the measured board (BALANCE_HISTORY.md, dps-bench
-# round + the owner-review follow-up that lightened hunt's proc mark): #1
-# sustained dps (assassin/shadow, 63.1k perfect-kit) x 60s TTK pin on the
-# L100 Act-1 finale -> pool x10.18 at cap -> 1.0475^50.
-const GEAR_RAMP_START := 50
-const GEAR_RAMP_HP := 0.0475
+# ---------------- expected GEAR-POWER curve (2026-07-28) ---------------------
+# Replaces the GEAR_RAMP_* exponent (one hand-tuned rate bolted on past L50 —
+# owner: sloppy). The player grows on TWO curves: LEVELS, which the base
+# enemy curves track, and GEAR — named uniques (A Act 2+, S Act 3+), profile
+# SETS, Lv8-10 gems, deep smith plusses, reforge chases — which they don't.
+# This table IS the gear curve, made explicit: at each anchor level, the
+# dps-bench-MEASURED damage multiplier of the kit the game actually fields
+# by then, relative to the at-level A-grade baseline the curves were tuned
+# on (the L42/A finale re-measured ~on budget, so 1.0 at the first anchor —
+# uniques haven't stacked yet; L50 also aligns with the NG+ unlock, so
+# nothing below it upscales into gear territory). Upscaled monsters' POOLS
+# (bosses AND far-field mobs, one call site: story.enemy_stats_at) scale by
+# the interpolated ratio — geometric between anchors, FLAT past the last
+# (gear stops growing at the cap; deeper-content bite belongs to the growth
+# dials, not this curve) — and a monster's native-anchor stats are never
+# touched (the ratio is taken from max(its anchor, the first gear anchor)).
+# HP ONLY: damage stays on the flat player-tracking dial (L100 patterns
+# already land 30-83% of max HP on perfect kits). Anchor provenance (bench
+# kits + pins) lives in BALANCE_HISTORY.md; re-measure an anchor with
+# dps_bench --ttk [--setprof] whenever a gear phase lands.
+const GEAR_POWER_FIRST := 50
+# Anchors measured 2026-07-28 (assassin, dps_bench, avg-boss resist sheet):
+# 75 = the fielded-kit/A-baseline dps ratio SHAPE (27.9k/5.8k over the same
+# frame at 100: 58.9k/6.4k → 0.524 of the 100 anchor); 100 = pinned by the
+# owner's endgame proxy — perfect kit (BiS+godroll+set 2pc) ~60k dps kills
+# the retuned upscaled Act-1 finale (285.9k authored x2.865 flat dial) in
+# ~35s, the middle of the called 30-40s. Mid-endgame (60-85) rides the
+# shape anchor until Act-2+ bosses give a real reference (owner caveat).
+const GEAR_POWER_ANCHORS := {50: 1.0, 75: 1.35, 100: 2.57}
+
+
+## Expected gear-power multiplier at `lvl` — geometric interpolation over
+## GEAR_POWER_ANCHORS, flat below the first anchor and above the last.
+static func gear_power(lvl: int) -> float:
+	var lvls: Array = GEAR_POWER_ANCHORS.keys()
+	lvls.sort()
+	if lvl <= int(lvls[0]):
+		return float(GEAR_POWER_ANCHORS[lvls[0]])
+	for i in range(1, lvls.size()):
+		if lvl <= int(lvls[i]):
+			var l0: int = int(lvls[i - 1])
+			var l1: int = int(lvls[i])
+			var f := float(lvl - l0) / float(l1 - l0)
+			return float(GEAR_POWER_ANCHORS[l0]) \
+				* pow(float(GEAR_POWER_ANCHORS[l1]) / float(GEAR_POWER_ANCHORS[l0]), f)
+	return float(GEAR_POWER_ANCHORS[lvls[-1]])
 
 # First-clear premium (reward calibration, 2026-07-06): conquering a
 # chapter the FIRST time pays a legible beat on top of XP + boss gems —
@@ -2108,10 +2152,15 @@ const SCENERY_PLACE_TRIES := 48      # was 40 — tighter packing rejects more
 # everywhere. Scenery is cosmetic, so re-seeding room layouts is harmless.
 const SCENERY_DENSITY_JITTER := Vector2(0.6, 1.3)
 # ACCENT props are DISTINCTIVE (statues, whole skeletons, shovels, big
-# mushrooms) and litter when repeated. CHANCE is the seeded odds that each
-# distinct accent appears; successful accents are hard-capped at one per room.
-# Trees/rocks/grass remain the repeatable ecology tier.
+# mushrooms) and read as authored groups rather than scatter. CHANCE is the
+# seeded odds that each distinct accent GROUP appears; its kind-specific size
+# is sampled from a normal distribution in Terrains.ACCENT_PROFILES.
+# Trees/rocks/grass remain the repeatable prop tier.
 const SCENERY_ACCENT_CHANCE := 0.5
+const SCENERY_ACCENT_CHANCE_CAP := 0.9
+const SCENERY_ACCENT_GROUP_RADIUS := 72.0
+const SCENERY_ACCENT_INTRA_SPACING := 46.0
+const SCENERY_ACCENT_MEMBER_TRIES := 16
 # Grouping (2026-07-17): some props grow in natural CLUMPS — a stand of trees,
 # a patch of mushrooms — instead of always solo; rocks/pillars/landmarks stay
 # single (see _groupable). A clump's members count toward the room budget, so
