@@ -956,8 +956,8 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			game.hud.flash_screen(Color(0.18, 0.24, 0.5), 0.5, 0.5)
 		elif last_rites > 0.0 and last_rites_cd <= 0.0:
 			# Last Rites (warlock talent): the pact refuses death, once a minute —
-			# survive at 5% max HP per point invested (up to 25% at 5).
-			hp = max_hp * 0.05 * last_rites
+			# survive per point invested (up to 30% max HP at the 10-point cap).
+			hp = max_hp * Balance.LAST_RITES_HP_PER_PT * last_rites
 			last_rites_cd = 60.0
 			game.spawn_text(global_position + Vector2(0, -60), "LAST RITES", Color(0.85, 0.35, 1.0))
 			game.burst(global_position, Color(0.7, 0.2, 1.0), 22)

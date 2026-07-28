@@ -2499,10 +2499,11 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 		var row_box := HBoxContainer.new()
 		row_box.add_theme_constant_override("separation", 10)
 		list.add_child(row_box)
-		var unlocked: bool = p.level >= Skills.ROW_LEVELS[r]
+		var unlocked: bool = Skills.row_open(p.cls, r, p.tree_points, p.level)
 		var spent := Skills.points_in_row(p.cls, r, p.tree_points)
 		var row_l := _lbl(row_box, "LEVEL %d\n%s\n%d / %d" % [
-			Skills.ROW_LEVELS[r], "UNLOCKED" if unlocked else "LOCKED",
+			Skills.ROW_LEVELS[r],
+			"UNLOCKED" if unlocked else "LOCKED\n(fill row above)",
 			spent, Skills.MAX_PER_ROW], 12,
 			Color(0.95, 0.85, 0.5) if unlocked else Color(0.4, 0.4, 0.45))
 		row_l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -2529,7 +2530,7 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			b.add_theme_constant_override("icon_max_width", 64)
 			_talent_card_style(b, theme_col, pts > 0, unlocked)
-	_hint(vbox, "ESC / T to close — select an unlocked talent to invest a point")
+	_hint(vbox, "ESC / T to close — a row opens at its level, or as soon as the row above it is full")
 
 
 func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:

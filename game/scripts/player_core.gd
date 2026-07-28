@@ -183,7 +183,7 @@ var curse_spread := 0.0     # warlock Contagion talent: curse-jump chance on a c
 var transfusion := 0.0      # warlock Transfusion talent: lifesteal overheal -> shield (cap frac)
 var lowhp_dmg := 0.0        # warlock Sacrificial Might talent: +dmg while below 50% HP
 var shield := 0.0           # current absorb shield (Transfusion overheal buffer)
-var last_rites := 0.0       # warlock Last Rites talent: >0 enables the cheat-death
+var last_rites := 0.0       # warlock Last Rites talent: points invested — >0 enables the cheat-death, 3% revive HP each
 var last_rites_cd := 0.0    # cooldown on the cheat-death (60s)
 var grit_regen := 0.0       # warrior Grit: +regen per stack (passive-derived)
 var grit_cap := 0.0         # warrior Grit: max stacks (passive + Deep Grit talent)
@@ -491,6 +491,7 @@ var _cast_base := 0.0
 var sprite: Sprite2D
 var _occlusion_outline: Sprite2D
 var _occlusion_images := {}
+var _occlusion_probe_reach := 0.0  # longest probe offset, computed once in _ready
 var weapon_spr: Sprite2D
 var weapon_glow: Sprite2D
 var aura: Sprite2D
@@ -997,6 +998,8 @@ func _ready() -> void:
 	_occlusion_outline.z_index = Balance.PLAYER_OCCLUDED_OUTLINE_Z
 	_occlusion_outline.visible = false
 	add_child(_occlusion_outline)
+	for probe in Balance.PLAYER_OCCLUSION_PROBES:
+		_occlusion_probe_reach = maxf(_occlusion_probe_reach, (probe as Vector2).length())
 
 	# The shard-bearer sheds a faint warm light: invisible in daylight,
 	# a small readable halo in dark-tinted terrains (void/grave/night).
@@ -1056,6 +1059,14 @@ func _structure_covers_player() -> bool:
 			"occlusion_sort_y", visual.global_position.y))
 		if global_position.y >= sort_y:
 			continue
+		# Every scatter prop in every BUILT room is a group member now, so far
+		# candidates must exit before the per-probe transform math. Members
+		# without the radius meta (legacy spawns) keep the full probe.
+		var occl_radius: float = float(visual.get_meta("occlusion_radius", 0.0))
+		if occl_radius > 0.0:
+			var reach := occl_radius + _occlusion_probe_reach
+			if global_position.distance_squared_to(visual.global_position) > reach * reach:
+				continue
 		for probe in Balance.PLAYER_OCCLUSION_PROBES:
 			if _visual_alpha_at(visual, global_position + probe) \
 					>= Balance.PLAYER_OCCLUSION_ALPHA_THRESHOLD:
@@ -1234,7 +1245,9 @@ func _sanitize_talent_points(source: Dictionary, budget: int) -> Dictionary:
 	var out := {}
 	var remaining := maxi(0, budget)
 	for row_idx in Skills.TREES[cls].size():
-		if level < Skills.ROW_LEVELS[row_idx] or remaining <= 0:
+		# Dual-key gate against the rows accepted so far (canonical order means
+		# `out` already holds everything above this row).
+		if not Skills.row_open(cls, row_idx, out, level) or remaining <= 0:
 			continue
 		var row_room := Skills.MAX_PER_ROW
 		for cell in Skills.TREES[cls][row_idx]:

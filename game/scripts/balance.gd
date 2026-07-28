@@ -1041,6 +1041,10 @@ const MOB_SOW_LIFE := 3.5
 # Windrunner (archer capstone talent): DR window after a Tumble roll —
 # defense EARNED by dodging (dominated-cell rework 2026-07-09).
 const TUMBLE_DR_DUR := 3.0
+# Last Rites (warlock capstone talent): revive HP per point invested —
+# point 1 unlocks the cheat-death, 10 points = 30% max HP (2026-07-28,
+# was a binary 1-point cell at a flat 5%).
+const LAST_RITES_HP_PER_PT := 0.03
 # skirmish (2026-07-09 mob-distribution pass): a ranged mob that actually
 # KITES — full-speed backpedal with a strafing arc inside KEEP, advances past
 # FAR, holds and fires in the band between. Regular ranged mobs shuffle at
@@ -2104,13 +2108,10 @@ const SCENERY_PLACE_TRIES := 48      # was 40 — tighter packing rejects more
 # everywhere. Scenery is cosmetic, so re-seeding room layouts is harmless.
 const SCENERY_DENSITY_JITTER := Vector2(0.6, 1.3)
 # ACCENT props are DISTINCTIVE (statues, whole skeletons, shovels, big
-# mushrooms) — litter when repeated. Each accent rolls its own DECAYING-repeat
-# count so the room reads natural, not capped: CHANCE is the odds a given
-# accent appears at all (area+jitter scaled); each EXTRA copy is only DECAY as
-# likely as the last. With 0.5/0.28: ~50% present, twice ~8%, 3x ~0.4%,
-# 4x+ ~0.004% (near-impossible but not forbidden). Trees/rocks stay spammable.
+# mushrooms) and litter when repeated. CHANCE is the seeded odds that each
+# distinct accent appears; successful accents are hard-capped at one per room.
+# Trees/rocks/grass remain the repeatable ecology tier.
 const SCENERY_ACCENT_CHANCE := 0.5
-const SCENERY_ACCENT_DECAY := 0.28
 # Grouping (2026-07-17): some props grow in natural CLUMPS — a stand of trees,
 # a patch of mushrooms — instead of always solo; rocks/pillars/landmarks stay
 # single (see _groupable). A clump's members count toward the room budget, so
@@ -2140,7 +2141,7 @@ const SCENERY_RENDER_WIDTH := {
 	"spore_vent": 104.0, "cattail": 62.0, "mushroom_purple": 76.0,
 	"rock_volcanic": 124.0, "forge_statue": 108.0, "magma_furnace": 120.0,
 	"magma_chainrig": 145.0, "cactus": 100.0, "sandstone": 112.0,
-	"boulder": 78.0,
+	"rock": 64.0, "boulder": 78.0,
 	"grass": 52.0, "grass_autumn": 52.0, "grass_frost": 52.0,
 	"bush3": 92.0, "flower": 42.0, "mushroom": 50.0,
 	"castle_statue": 94.0, "garden_statue": 94.0, "ruin_pillar": 98.0,

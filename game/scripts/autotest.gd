@@ -1456,15 +1456,21 @@ func _run_systems() -> void:
 	print("ok: all %d boss projectile families use authored 64px art" %
 		Projectile.BOSS_PROJECTILE_STYLE.size())
 
-	# 5. Skill tree: row caps and gating. Drive it at a controlled level so
-	# the assertions don't depend on how far ch1 leveled us (rows now unlock
-	# at 10/20/30/40). Restore level + points afterward.
+	# 5. Skill tree: row caps and gating (dual-key 2026-07-28: a row opens at
+	# its level threshold OR the moment the row above it is full, so points
+	# earned between thresholds are never dead). Drive it at controlled
+	# levels so the assertions don't depend on how far ch1 leveled us.
+	# Restore level + points afterward.
 	var saved_level: int = game.player.level
-	game.player.level = Skills.ROW_LEVELS[2]  # rows 0-2 open, row 3 (Lv 40) locked
+	game.player.level = 1
 	game.player.tree_points.clear()
 	game.player.skill_points = 30
-	var added := 0
-	for i in 12:  # try to overfill row 0 (cell cap AND row cap are both 10)
+	if not game.player.add_tree_point("w00"):
+		return _fail("row 0 should accept points from level 1 (dual-key)")
+	if game.player.add_tree_point("w10"):
+		return _fail("row 1 must stay locked at Lv 1 while row 0 is unfilled")
+	var added := 1
+	for i in 11:  # try to overfill row 0 (cell cap AND row cap are both 10)
 		if game.player.add_tree_point("w00"):
 			added += 1
 	if added != Skills.MAX_PER_CELL:
@@ -1473,14 +1479,24 @@ func _run_systems() -> void:
 		return _fail("row cap should block an 11th point in row 0")
 	if game.player.dm("a1") < 1.24:
 		return _fail("10 points in Heavy Cleave should give +25%")
+	# Row 0 full -> row 1 opens EARLY (its Lv 20 key is unmet at Lv 1).
+	if not game.player.add_tree_point("w10"):
+		return _fail("a full row 0 should open row 1 below its level key")
 	var high_row := Skills.TREES["warrior"][3][0]["id"]
+	if game.player.add_tree_point(high_row):
+		return _fail("row 3 must stay locked at Lv 1 (row 2 unfilled)")
+	# The level key still opens a row on its own, sparse rows above and all —
+	# the today-legal path (and every existing save) stays legal.
+	game.player.level = Skills.ROW_LEVELS[2]
+	if not game.player.add_tree_point("w20"):
+		return _fail("level key should open row 2 at Lv %d despite row 1 at 1/10" % Skills.ROW_LEVELS[2])
 	if game.player.add_tree_point(high_row):
 		return _fail("locked row (Lv 40) accepted a point at Lv %d" % game.player.level)
 	game.player.tree_points.clear()
 	game.player.skill_points = 0
 	game.player.level = saved_level
 	game.player.recalc()
-	print("ok: skill tree rows (caps + gating)")
+	print("ok: skill tree rows (caps + gating + dual-key early open)")
 
 	# 5a. Named talent pages preserve independent allocations while sharing one
 	# real character budget. Switching must neither duplicate nor consume points.
@@ -3913,6 +3929,38 @@ func _test_asset_seams() -> void:
 	var laid := canvas.get_pixel(24, 24)  # middle tile
 	if laid.a < 0.9 or laid.r < 0.9 or laid.g > 0.02 or laid.b > 0.02:
 		return _fail("ground _tile_fill did not lay the tile (got %s)" % laid)
+
+	# --- Landmark tier: signature silhouettes never become filler -----
+	if "garden_statue" not in Terrains.structure_unique_props("village_grove"):
+		return _fail("village_grove must reserve its garden-statue landmark")
+	for terrain_id in Terrains.DATA:
+		var terrain: Dictionary = Terrains.DATA[terrain_id]
+		for repeatable_tier in ["obstacles", "decor"]:
+			for raw_prop in terrain.get(repeatable_tier, []):
+				var prop := String(raw_prop)
+				if Terrains.is_unique_prop(prop):
+					return _fail("%s: unique prop %s leaked into repeatable %s" % [
+						terrain_id, prop, repeatable_tier])
+		var accent_bases := {}
+		for raw_accent in terrain.get("accents", []):
+			var accent_base := Terrains.prop_base(String(raw_accent))
+			if accent_bases.has(accent_base):
+				return _fail("%s: accent %s is listed twice" % [terrain_id, accent_base])
+			accent_bases[accent_base] = true
+	for structure_id in Terrains.STRUCTURES:
+		var structure: Dictionary = Terrains.STRUCTURES[structure_id]
+		var structure_visuals: Array = [{"sprite": structure.get("sprite", "")}]
+		structure_visuals.append_array(structure.get("parts", []))
+		var structure_uniques := {}
+		for raw_visual in structure_visuals:
+			var visual: Dictionary = raw_visual
+			var visual_base := Terrains.prop_base(String(visual.get("sprite", "")))
+			if not Terrains.is_unique_prop(visual_base):
+				continue
+			if structure_uniques.has(visual_base):
+				return _fail("%s: authored landmark repeats unique prop %s" % [
+					structure_id, visual_base])
+			structure_uniques[visual_base] = true
 
 	# --- Lane 3: animated scenery props -------------------------------
 	# A synthetic 4-frame strip becomes a looping SpriteFrames.
