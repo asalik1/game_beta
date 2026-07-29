@@ -131,7 +131,12 @@ func _physics_process(delta: float) -> void:
 	if grit_stacks > 0:
 		regen_now += grit_regen * grit_stacks  # Grit: the beating IS the mending
 	if regen_now > 0.0 and not dead and hp > 0.0:
-		hp = minf(max_hp, hp + max_hp * regen_now * delta)
+		var regen_amt := max_hp * regen_now * delta
+		var regen_before := hp
+		hp = minf(max_hp, hp + regen_amt)
+		# Pool verb: regen/Second Wind/Grit overflow fills the shield — the
+		# fill the archer/warrior pool cards promise (carrier-gated helper).
+		_uniq_pool_overflow(regen_amt - (hp - regen_before))
 	anim_t += delta
 
 	# Hex watch: cursed enemies EXPLODE on death (chains: a detonation
@@ -608,13 +613,22 @@ func use_ability(slot: String) -> void:
 					and uniq_take("pants_aggr"):
 				f *= 1.0 + uniq_gk("pants_aggr", "bonus")
 				game.spawn_text(global_position + Vector2(0, -66), "ADVANCE", Color(1.0, 0.8, 0.5))
-				_uniq_beat(adv_id)
+				# Foe-targeted beats (wither/slow/...) can't fire at cast time —
+				# there is no foe yet, and they no-op'd silently (fix 2026-07-28).
+				# Defer them to the empowered cast's first landed hit; self-beats
+				# (cdr/hexext/...) still fire here.
+				if String(Balance.uniq(adv_id).get("beat", "")) in \
+						["vuln", "wither", "slow", "stagger", "knock", "shredx"]:
+					uniq_t["adv_beat"] = 1.5
+				else:
+					_uniq_beat(adv_id)
 			elif slot == commit and cls != "paladin":
 				uniq_t["pants_aggr"] = uniq_gk("pants_aggr", "window")
 		var slip_id := uniq_gear("pants_finesse")
-		if slip_id != "" and dodge_time > 0.0 \
+		if slip_id != "" and uniq_on("slipamp") \
 				and String(Balance.uniq(slip_id).get("beat", "")) == "slipamp":
-			# Slip-amp beat: abilities cast while slippery strike harder.
+			# Slip-amp beat: abilities cast in the slip WINDOW strike harder
+			# (own icd — reading raw dodge_time was near-100% uptime under fire).
 			f *= 1.0 + float(Balance.uniq(slip_id).get("amp", 0.0))
 	var uniq_leap_before := judgment_leap_cd
 	if _tfx.has("speed_buff"):
@@ -749,9 +763,12 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	if hurt_cd > 0.0 and (hurt_was_heavy or not heavy):
 		# White Hart's Last Breath: a hit swallowed by Tumble's split-second
 		# window IS the perfect dodge — the Hart's Breath answers it. The
-		# archer finesse-set 6pc pays a single lined-up shot the same way.
+		# archer finesse-set 6pc pays a single lined-up shot the same way,
+		# and so does the tumblearm carrier standalone (fix 2026-07-28: the
+		# slip beat armed a window NOTHING read without the Hart or the 6pc).
 		if tumble_perfect_t > 0.0 \
-				and (s_passive() == "hartsbreath" or uniq_set_k("C", 6, "perfect_crit") > 0.0):
+				and (s_passive() == "hartsbreath" or uniq_set_k("C", 6, "perfect_crit") > 0.0
+				or String(Balance.uniq(uniq_gear("pants_finesse")).get("beat", "")) == "tumblearm"):
 			tumble_perfect_t = 0.0
 			if s_passive() == "hartsbreath":
 				uniq_crits = int(uniq_k("crits"))
@@ -791,6 +808,9 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		res += theme_guard_amt
 	if aegis_time > 0.0:
 		res += aegis_amt
+		# Paladin pants_Bs: full anchor stacks brace Aegis while it holds.
+		if uniq_guard_stacks >= _anchor_cap() and _anchor_cap() > 0:
+			res += uniq_gk("pants_guard", "full_aegis")
 	if grit_res > 0.0 and grit_stacks > 0:
 		# Stonehide (warrior talent): the beating hardens him — res scales
 		# with Grit stacks, and dies with them when he kites away.
@@ -800,6 +820,9 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	# (a soft cushion, not the old free negate). Bosses still shave it via
 	# their DEX inside Stats.resolve, so accurate fights stay dangerous.
 	var eff_eva := eva + (dodge_amt if dodge_time > 0.0 else 0.0)
+	# Assassin pants_Bs: full anchor stacks harden Elusive (bonus evasion).
+	if uniq_guard_stacks >= _anchor_cap() and _anchor_cap() > 0:
+		eff_eva += uniq_gk("pants_guard", "full_eva")
 	if attacker != null:
 		var pen: float = attacker.physpen if dmg_type == "phys" else attacker.magpen
 		var result: Dictionary = Stats.resolve(amount, dmg_type,
@@ -867,7 +890,11 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		# Arcane Ward (round 45): the mage's Blink cloak — a brief, strong
 		# damage cut that SOFTENS a misstep instead of erasing it (the old
 		# ward absorbed a whole hit). Skips true damage like plate DR.
-		amount *= (1.0 - dr_amt)
+		var live_dr := dr_amt
+		# Mage pants_Bs: full anchor stacks deepen the live cloak.
+		if uniq_guard_stacks >= _anchor_cap() and _anchor_cap() > 0:
+			live_dr += uniq_gk("pants_guard", "full_blink_dr")
+		amount *= (1.0 - minf(0.9, live_dr))
 	if flat_dr > 0.0 and dmg_type != "true":
 		# Plate DR (round 21): flat, AFTER resists — immune to the res
 		# curve's saturation, exclusive to the plate classes.
@@ -879,8 +906,10 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	if not uniq_armor.is_empty() and dmg_type != "true":
 		if uniq_guard_stacks > 0:
 			amount *= 1.0 - uniq_gk("pants_guard", "dr_stack") * uniq_guard_stacks
-			if dr_time > 0.0:
-				amount *= 1.0 - uniq_set_k("B", 6, "cloak_stacks") * uniq_guard_stacks
+			# Mage guard 6pc (fix 2026-07-28): the anchored ward pays on its
+			# own — the old dr_time nesting made it a window-inside-a-window
+			# (Blink's ~0.8s cloak x recent-hit stacks: unobservable in play).
+			amount *= 1.0 - uniq_set_k("B", 6, "cloak_stacks") * uniq_guard_stacks
 		if uniq_gear("pants_bulwark") != "" \
 				and hp <= max_hp * uniq_gk("pants_bulwark", "threshold", 0.3):
 			amount *= 1.0 - (uniq_gk("pants_bulwark", "dr") + uniq_set_k("E", 6, "bastion_add"))
@@ -1105,7 +1134,9 @@ func _uniq_on_evade(attacker: Node) -> void:
 			and attacker is Enemy and is_instance_valid(attacker) \
 			and not (attacker as Enemy).dying:
 		var ke := attacker as Enemy
-		ke.apply_vuln(uniq_gk("helm_finesse", "vuln_dur"))
+		# Armor EXPOSE marks LIGHTER than Death Mark (Balance.UNIQ expose_mult
+		# — the default 1.5x let a dodge apply the ult's own amp).
+		ke.apply_vuln(uniq_gk("helm_finesse", "vuln_dur"), float(Balance.UNIQ["expose_mult"]))
 		game.spawn_text(ke.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
 		_uniq_beat(ex_id, ke)
 		armed = true
@@ -1204,7 +1235,9 @@ func _uniq_on_hit_taken(amount: float, attacker: Node) -> void:
 ## Armor-template on-hit-taken dispatch (helmet/gloves/pants uniques). The
 ## STRUCK proc family shares one ICD with the weapon's on-hit procs — weapon
 ## procs stamp it first (they run first in take_damage), so armor clauses
-## never double a blow's answer; among armor, helmet > pants > gloves.
+## never double a blow's answer; among armor, helmet > gloves > pants —
+## chance procs (the glove counter) roll BEFORE the unconditional slip
+## stamp, or the counter could never fire beside a slip piece.
 func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, prev_sh: float) -> void:
 	if uniq_armor.is_empty():
 		return
@@ -1231,11 +1264,16 @@ func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, 
 		if uniq_set_k("A", 4, "surge_ward") > 0.0:
 			stab_ls_time = maxf(stab_ls_time, 0.1) + uniq_set_k("A", 4, "surge_ward")
 		uniq_mward_amt += uniq_set_k("A", 6, "mward_add")
+		if uniq_set_k("A", 6, "ward_amp") > 0.0:
+			# 6pc amp runs from the ARMING, outliving the 2s ward window
+			# (fix 2026-07-28 — "while it holds" was 2s-in-8, noise).
+			uniq_t["set_ward_amp"] = float(Balance.SET_WARD_AMP_DUR)
 		var sw_mana := uniq_set_k("A", 4, "mana_ward")
 		if sw_mana > 0.0:
 			mp = minf(max_mp, mp + sw_mana)
 		if uniq_set_k("A", 4, "holy_ward") > 0.0:
-			holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP, holy_charge + atk * 0.4)
+			holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP,
+				holy_charge + atk * uniq_set_k("A", 4, "holy_ward"))
 		var sw_life := uniq_set_k("A", 4, "life_ward")
 		if sw_life > 0.0:
 			gain_hp(max_hp * sw_life)
@@ -1243,15 +1281,11 @@ func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, 
 		if sw_hex > 0.0:
 			for he in hexed:
 				hexed[he] = float(hexed[he]) + sw_hex
-	# Slip verb: being hit leaves you slippery (Tumble's rail).
-	var sl_id := uniq_gear("pants_finesse")
-	if sl_id != "" and not uniq_on("struck_icd"):
-		uniq_t["struck_icd"] = float(Balance.UNIQ["struck_icd"])
-		dodge_time = maxf(dodge_time, uniq_gk("pants_finesse", "dur"))
-		dodge_amt = maxf(dodge_amt, uniq_gk("pants_finesse", "eva"))
-		_uniq_beat(sl_id, foe)
-	# Iron-answer verb: a melee attacker is counter-struck (amp'd counter;
-	# the assassin guard-set 4pc adds to the roll at full anchor stacks).
+	# Iron-answer verb FIRST (fix 2026-07-28): the counter is a CHANCE roll,
+	# the slip below is unconditional — in the old order the slip stamped the
+	# family ICD before the counter ever rolled, so wearing any slip piece
+	# meant the glove counter could literally never fire. Chance procs roll
+	# first; the sure slip claims whatever window they pass on.
 	var an_id := uniq_gear("glove_guard")
 	if foe_live and an_id != "" and not uniq_on("struck_icd") \
 			and global_position.distance_to(foe.global_position) < 130.0 \
@@ -1260,6 +1294,20 @@ func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, 
 		game.sfx("sword")
 		hit_enemy(foe, uniq_gk("glove_guard", "counter") * uniq_amp(an_id, foe), {})
 		_uniq_beat(an_id, foe)
+	# Slip verb: being hit leaves you slippery (Tumble's rail). The slipamp
+	# beat's damage window arms on its OWN icd (fix 2026-07-28: dur 2.0 vs
+	# family icd 2.0 was back-to-back — a melee class under fire held a
+	# near-permanent +20%; the card now prints the cd).
+	var sl_id := uniq_gear("pants_finesse")
+	if sl_id != "" and not uniq_on("struck_icd"):
+		uniq_t["struck_icd"] = float(Balance.UNIQ["struck_icd"])
+		dodge_time = maxf(dodge_time, uniq_gk("pants_finesse", "dur"))
+		dodge_amt = maxf(dodge_amt, uniq_gk("pants_finesse", "eva"))
+		if String(Balance.uniq(sl_id).get("beat", "")) == "slipamp" \
+				and not uniq_on("slipamp_icd"):
+			uniq_t["slipamp_icd"] = uniq_gk("pants_finesse", "amp_icd", 8.0)
+			uniq_t["slipamp"] = uniq_gk("pants_finesse", "dur")
+		_uniq_beat(sl_id, foe)
 	# Anchor verb: stacks accrue outside the proc family; the beat rides the
 	# stack that tops them out. The guard set's 4pc anchors WITHOUT the
 	# carrier too (set-default cap) — its stack-gated clauses must fire off

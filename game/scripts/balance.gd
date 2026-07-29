@@ -789,7 +789,7 @@ const HUNT_RHYTHM_SHOTS := 4
 # and flick out under pressure — the reward curve lives in stance uptime.
 const PALADIN_HOLY_DMG := 0.90      # Holy stance: damage dealt multiplier (softened 0.80->0.90 in the 2026-07-13 rework — Holy now banks smite damage via overheal, so its stance penalty needn't double-punish the dance)
 const PALADIN_HOLY_MEND := 0.01     # Holy stance: max-HP fraction mended per hit landed
-const PALADIN_RETRI_DMG := 1.35     # Retribution stance: damage dealt multiplier (1.25->1.35 bench 2026-07-28: wrath's rep-mean measured 18% under mage vs the owner's called 8% — the gap closes in the stance wrath lives in; Holy untouched)
+const PALADIN_RETRI_DMG := 1.40     # Retribution stance: damage dealt multiplier (1.25->1.35 bench 2026-07-28; ->1.40 ordering retune 2026-07-29: wrath's rep-mean read ~46k on the current tree, ~17% under mage vs the called ~8% — the stance carries part of the gap, the new D6 retri_amp set clause carries the endgame-only rest; Holy untouched)
 const PALADIN_SWAP_HEAL := 0.10     # entering Holy: blessing burst (max-HP fraction)
 const PALADIN_SWAP_CHAINS := 0.5    # entering Retribution: chains cast at this scale
 # Paladin rework (2026-07-13): make the class's IDENTITY deal damage, fixing its
@@ -1212,6 +1212,9 @@ const UNIQ := {
 	"struck_icd": 2.0,         # the on-hit-taken PROC family's shared cd (GEAR_ARMOR_UNIQUE_PASSIVES.md §1.3):
 	                           # weapon procs fire as shipped and STAMP it; armor struck-clauses require it clear
 	                           # (weapon-first by construction — no doubled counters on one blow)
+	"expose_mult": 1.25,       # armor-sourced EXPOSE marks LIGHTER than Death Mark's 1.5x (fix round
+	                           # 2026-07-28: the evade/beat vuln shipped the ult's full amp and, worn with
+	                           # the Warded Mantle loop, sustained Death-Mark-grade uptime vs melee bosses)
 	# --- warrior ---
 	"pennon":     {"shred": 20.0, "shred_dur": 4.0},                # Bash SUNDERS: flat physres shred
 	"decree":     {"every": 3, "mult": 1.15, "stagger": 0.35},      # every 3rd Cleave: armor-ignoring thrust
@@ -1226,8 +1229,12 @@ const UNIQ := {
 	# --- archer ---
 	"siegebolt":  {},                                               # Multishot arrows pierce
 	"gale":       {"every": 5, "arrows": 3, "mult": 0.55},          # every 5th Quick Shot: free fan
-	"farsight":   {"range": 240.0, "pen_ignore": 0.5},              # long shots halve armor
-	"herald":     {"vuln": 1.0, "rearm": 3.0},                      # first hit on unwounded prey: forced crit + mark; kills re-arm it
+	"farsight":   {"range": 380.0, "pen_ignore": 0.35},             # truly long shots shear armor (fix 2026-07-28:
+	                                                                # 240px was the archer's default kiting band — a
+	                                                                # near-permanent 0.5 pen_ignore out-damaged the S)
+	"herald":     {"vuln": 1.0, "rearm": 3.0, "boss_rearm": 12.0},  # first hit on unwounded prey: forced crit + mark;
+	                                                                # kills re-arm it — vs a BOSS the dawn re-arms on a
+	                                                                # cadence instead (a boss offers no second kill)
 	"foxfire":    {"window": 2.0, "mult": 0.85},                    # evade: next Quick Shot fires twin arrows
 	"hartsbreath": {"crits": 3, "crits_roll": 2},                   # any Tumble: 2 forced crits; perfect dodge: 3 + Multishot reset
 	"briar":      {"dot": 0.2, "slow": 0.30, "dur": 3.0, "sw_tax": 0.5},  # thorns; BARGAIN: Second Wind halved
@@ -1244,7 +1251,9 @@ const UNIQ := {
 	"parry":      {"chance": 0.30, "riposte": 0.8, "eva_tax": 0.075},  # parry melee; BARGAIN: passive eva halved
 	"refusal":    {"icd": 90.0},                                    # cheat death @1 HP + surge + Death Mark reset
 	"arithmetic": {"every": 4, "bonus": 0.6, "stagger": 0.3},       # every 4th Stab lands cleaver-heavy
-	"headsman":   {"threshold": 0.12, "surge_ext": 1.5},            # Stab/Dash behead low mobs; feeds the surge
+	"headsman":   {"threshold": 0.12, "surge_ext": 1.5, "boss_icd": 3.0},  # Stab/Dash behead low mobs; feeds the surge
+	                                                                # — a boss refuses the blade, but Stab/Dash CRITS
+	                                                                # against it feed the surge on the icd (2026-07-28)
 	# --- mage ---
 	"wardcrack":  {"shred": 8.0, "cap": 24.0, "dur": 3.0},          # Firebolt cracks wards, stacking
 	"axiom":      {"true_frac": 0.15},                              # 15% of ability damage is TRUE
@@ -1254,18 +1263,22 @@ const UNIQ := {
 	"breathless": {"blink_bonus": 1.0, "icd": 2.0, "window": 4.0},  # evade resets Blink; next shock doubled
 	"springwake": {"restore_mult": 1.5, "heal_per": 0.015},         # Nova restores more + mends per enemy
 	"worldroot":  {"hp_per_atk": 12.0, "root": 1.0},                # bonus max HP -> atk; Nova roots
-	"atlas":      {"true_frac": 0.40, "cd_tax": 6.0},               # truer Meteor; BARGAIN: +6s cd
+	"atlas":      {"true_frac": 0.40},                              # truer Meteor (fix 2026-07-28: the +6s cd
+	                                                                # BARGAIN out-taxed the gain at every res level
+	                                                                # — a strictly losing equip; now a plain LESSER)
 	"skyfall":    {"second": 0.5, "range": 400.0},                  # a second half-weight meteor falls
 	# --- paladin ---
 	"vow":        {"int_scale": 0.9, "str_scale": 0.6},             # BARGAIN: INT promoted, STR demoted
 	"noonday":    {"int_scale": 0.9, "every": 4, "beam": 0.8, "reach": 260.0},  # twin primaries + lance-through
 	"censure":    {"splash": 0.30, "stagger": 0.3, "icd": 0.5},     # crits toll: chime splash
-	"absolution": {"kills": 3, "mult": 0.9},                        # every 3rd kill: free Consecration
+	"absolution": {"kills": 3, "mult": 0.9, "boss_icd": 4.0},       # every 3rd kill: free Consecration — vs a
+	                                                                # BOSS, crits count as tolls on the icd (2026-07-28)
 	"measure":    {"bonus": 0.40, "heal": 0.02, "window": 2.0},     # evade arms a heavier, mending Judgment
 	"vigil":      {"window": 4.0},                                  # evade: leap rearmed + next Judgment forced crit
 	"knell":      {"heal": 0.01},                                   # Aegis smites mend
 	"answer":     {"bank": 0.30},                                   # damage taken banks holy charge
-	"burden":     {"dmg": 0.15, "cd_tax": 0.15},                    # heavier, slower Judgment (BARGAIN)
+	"burden":     {"dmg": 0.25, "cd_tax": 0.15},                    # heavier, slower Judgment (BARGAIN; 0.15/0.15
+	                                                                # was an exact wash — repriced 2026-07-28)
 	"dawnfall":   {"mult": 1.3, "burn": 0.3, "slow": 0.30, "dur": 3.0},  # Conviction slam burns + slows
 	# --- warlock ---
 	"inkteeth":   {"dot": 0.15},                                    # Shadowbolt gnaws
@@ -1349,7 +1362,7 @@ const UNIQ := {
 	"warrior_pants_Ba": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
 	"warrior_pants_Bs": {"beat": "stagger", "dr_stack": 0.02, "s": 0.3, "stacks": 3, "verb": "pants_guard"},
 	"warrior_pants_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
-	"warrior_pants_Cs": {"amp": 0.2, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
+	"warrior_pants_Cs": {"amp": 0.2, "amp_icd": 8.0, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
 	"warrior_pants_Da": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
 	"warrior_pants_Ds": {"beat": "cdr", "bonus": 0.2, "s": 0.5, "slot": "commit", "verb": "pants_aggr", "window": 3.0},
 	"warrior_pants_Ea": {"dr": 0.25, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
@@ -1407,9 +1420,9 @@ const UNIQ := {
 	"assassin_pants_Aa": {"cc_mult": 0.5, "heal_tax": 0.1, "verb": "pants_ward"},
 	"assassin_pants_As": {"beat": "cdr", "cc_mult": 0.7, "s": 1.0, "slot": "a2", "verb": "pants_ward"},
 	"assassin_pants_Ba": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
-	"assassin_pants_Bs": {"dr_stack": 0.02, "stacks": 3, "verb": "pants_guard"},
+	"assassin_pants_Bs": {"dr_stack": 0.02, "stacks": 3, "full_eva": 0.05, "verb": "pants_guard"},
 	"assassin_pants_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
-	"assassin_pants_Cs": {"amp": 0.2, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
+	"assassin_pants_Cs": {"amp": 0.2, "amp_icd": 8.0, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
 	"assassin_pants_Da": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
 	"assassin_pants_Ds": {"beat": "cdr", "bonus": 0.2, "s": 0.5, "slot": "commit", "verb": "pants_aggr", "window": 3.0},
 	"assassin_pants_Ea": {"dr": 0.25, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
@@ -1423,7 +1436,7 @@ const UNIQ := {
 	"mage_helmet_Da": {"opener": 0.15, "verb": "helm_aggr"},
 	"mage_helmet_Ds": {"beat": "shredx", "opener": 0.25, "verb": "helm_aggr"},
 	"mage_helmet_Ea": {"cap": 0.04, "verb": "helm_bulwark"},
-	"mage_helmet_Es": {"cap": 0.08, "verb": "helm_bulwark"},
+	"mage_helmet_Es": {"cap": 0.08, "nova_pool": 0.04, "verb": "helm_bulwark"},
 	"mage_gloves_Aa": {"dur": 3.0, "shred": 7.0, "verb": "glove_ward"},
 	"mage_gloves_As": {"cap": 24.0, "dur": 3.0, "shred": 12.0, "verb": "glove_ward"},
 	"mage_gloves_Ba": {"chance": 0.15, "counter": 0.5, "verb": "glove_guard"},
@@ -1437,9 +1450,9 @@ const UNIQ := {
 	"mage_pants_Aa": {"cc_mult": 0.5, "heal_tax": 0.1, "verb": "pants_ward"},
 	"mage_pants_As": {"beat": "mana", "cc_mult": 0.7, "n": 8.0, "verb": "pants_ward"},
 	"mage_pants_Ba": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
-	"mage_pants_Bs": {"dr_stack": 0.02, "stacks": 3, "verb": "pants_guard"},
+	"mage_pants_Bs": {"dr_stack": 0.02, "stacks": 3, "full_blink_dr": 0.10, "verb": "pants_guard"},
 	"mage_pants_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
-	"mage_pants_Cs": {"amp": 0.2, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
+	"mage_pants_Cs": {"amp": 0.2, "amp_icd": 8.0, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
 	"mage_pants_Da": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
 	"mage_pants_Ds": {"beat": "cdr", "bonus": 0.2, "s": 0.5, "slot": "commit", "verb": "pants_aggr", "window": 3.0},
 	"mage_pants_Ea": {"dr": 0.25, "nova_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
@@ -1467,11 +1480,11 @@ const UNIQ := {
 	"paladin_pants_Aa": {"cc_mult": 0.5, "heal_tax": 0.1, "verb": "pants_ward"},
 	"paladin_pants_As": {"beat": "holy", "cc_mult": 0.7, "verb": "pants_ward"},
 	"paladin_pants_Ba": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
-	"paladin_pants_Bs": {"dr_stack": 0.02, "stacks": 3, "verb": "pants_guard"},
+	"paladin_pants_Bs": {"dr_stack": 0.02, "stacks": 3, "full_aegis": 10.0, "verb": "pants_guard"},
 	"paladin_pants_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
-	"paladin_pants_Cs": {"amp": 0.2, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
+	"paladin_pants_Cs": {"amp": 0.2, "amp_icd": 8.0, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
 	"paladin_pants_Da": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
-	"paladin_pants_Ds": {"beat": "cdr", "bonus": 0.2, "s": 1.0, "slot": "a3", "verb": "pants_aggr", "window": 3.0},
+	"paladin_pants_Ds": {"beat": "cdr", "bonus": 0.2, "s": 1.0, "slot": "leap", "verb": "pants_aggr", "window": 3.0},
 	"paladin_pants_Ea": {"dr": 0.25, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"paladin_pants_Es": {"beat": "amp", "dr": 0.15, "threshold": 0.3, "verb": "pants_bulwark", "when": "lowhp"},
 	"warlock_helmet_Aa": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
@@ -1497,9 +1510,9 @@ const UNIQ := {
 	"warlock_pants_Aa": {"cc_mult": 0.5, "heal_tax": 0.1, "verb": "pants_ward"},
 	"warlock_pants_As": {"beat": "hpq", "cc_mult": 0.7, "pct": 0.03, "verb": "pants_ward"},
 	"warlock_pants_Ba": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
-	"warlock_pants_Bs": {"dr_stack": 0.02, "stacks": 3, "verb": "pants_guard"},
+	"warlock_pants_Bs": {"dr_stack": 0.02, "stacks": 3, "pact_cut": 0.25, "verb": "pants_guard"},
 	"warlock_pants_Ca": {"dur": 2.0, "eva": 0.07, "verb": "pants_finesse"},
-	"warlock_pants_Cs": {"amp": 0.2, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
+	"warlock_pants_Cs": {"amp": 0.2, "amp_icd": 8.0, "beat": "slipamp", "dur": 2.0, "eva": 0.1, "verb": "pants_finesse"},
 	"warlock_pants_Da": {"bonus": 0.12, "verb": "pants_aggr", "window": 3.0},
 	"warlock_pants_Ds": {"beat": "hexext", "bonus": 0.2, "s": 1.0, "verb": "pants_aggr", "window": 3.0},
 	"warlock_pants_Ea": {"dr": 0.25, "ls_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
@@ -1562,7 +1575,7 @@ const UNIQ := {
 	"archer_charm_Cs": {"beat": "amp", "opener": 0.25, "verb": "helm_aggr", "when": "marked"},
 	"archer_charm_Da": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
 	"archer_charm_Ds": {"beat": "swkeep", "dr": 0.3, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
-	"archer_charm_Ea": {"cap": 0.04, "sw_off": 1, "verb": "helm_bulwark"},
+	"archer_charm_Ea": {"cap": 0.04, "sw_tax": 0.5, "verb": "helm_bulwark"},
 	"archer_charm_Es": {"cap": 0.08, "verb": "helm_bulwark"},
 	"assassin_armor_Aa": {"dr": 0.15, "dur": 2.0, "icd": 8.0, "verb": "helm_ward"},
 	"assassin_armor_As": {"beat": "surge", "dr": 0.3, "dur": 2.0, "icd": 8.0, "s": 0.5, "verb": "helm_ward"},
@@ -1641,7 +1654,7 @@ const UNIQ := {
 	"paladin_boots_Ca": {"verb": "helm_finesse", "vuln_dur": 1.5},
 	"paladin_boots_Cs": {"beat": "heal", "pct": 0.01, "verb": "helm_finesse", "vuln_dur": 3.0},
 	"paladin_boots_Da": {"dr_stack": 0.015, "stacks": 2, "verb": "pants_guard"},
-	"paladin_boots_Ds": {"beat": "cdr", "dr_stack": 0.02, "s": 1.0, "slot": "a3", "stacks": 3, "verb": "pants_guard"},
+	"paladin_boots_Ds": {"beat": "cdr", "dr_stack": 0.02, "s": 1.0, "slot": "leap", "stacks": 3, "verb": "pants_guard"},
 	"paladin_boots_Ea": {"dr": 0.1, "regen_tax": 0.5, "threshold": 0.3, "verb": "pants_bulwark"},
 	"paladin_boots_Es": {"beat": "heal", "dr": 0.15, "pct": 0.02, "threshold": 0.3, "verb": "pants_bulwark"},
 	"paladin_charm_Aa": {"blunt": 0.5, "icd": 10.0, "verb": "helm_guard"},
@@ -1709,6 +1722,10 @@ const SET_ANCHOR_STACKS := 3
 # Same principle for the ward set: at 4pc with no helm_ward carrier, magic
 # hits arm a baseline ward at the A-lane knobs (a carrier's own dr/dur win).
 const SET_WARD := {"dr": 0.15, "dur": 2.0}
+# Ward-set 6pc ward_amp pays for THIS long from the ward ARMING (2026-07-28:
+# the old "while the ward holds" was 2s-in-8 — the exact uptime shape the
+# Tempest Crown fix condemned; the amp now outlives the ward window).
+const SET_WARD_AMP_DUR := 6.0
 # The aggressor 6pc opener clauses RE-ARM on this cadence mid-fight (a boss
 # never offers a second unwounded moment); the true opener always fires.
 const SET_OPENER_REARM := 12.0
@@ -1717,25 +1734,34 @@ const UNIQ_SETS := {
 		"A": {"s2": {"magres": 8.0}, "s4": {"grit_on_magic": 1.0}, "s6": {"ward_amp": 0.10}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"grit_cap": 2.0}, "s6": {"full_grit_answer": 0.3}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"grit_on_evade": 1.0}, "s6": {"slippery_amp": 0.10}},
-		# Warrior aggressor runs hotter than the other classes' rows (bench
-		# 2026-07-28): fury measured 18% under mage vs the owner's called 8% —
-		# the gap closes through Berserk (the fury identity) + these tiers.
+		# Warrior aggressor 2pc/4pc are the fury ordering dial (bench 2026-07-28;
+		# trimmed in the 2026-07-29 ordering retune: the item-opener re-arm and
+		# tree drift pushed fury to ~54.4k rep-mean, ~-1.5% under mage vs the
+		# called ~-8% — 2pc back near standard, Berserk's extension eased 4->3s;
+		# berserk_dmg 0.70 itself untouched, it is the at-level fury identity).
 		# Completion still escalates: warrior BiS forms D4 on its own.
 		# 6pc: the stagger opens a CRUSH window (player_combat opener seam) and
 		# "crush_amp" folds into recalc's stat bucket — warrior knockbacks and
 		# the crush talent read the same window, so trash pays it constantly.
-		"D": {"s2": {"atk_pct": 0.04, "crit": 0.025}, "s4": {"berserk_ext": 4.0}, "s6": {"opener_stagger": 0.3, "crush_amp": 0.12}},
+		"D": {"s2": {"atk_pct": 0.025, "crit": 0.02}, "s4": {"berserk_ext": 3.0}, "s6": {"opener_stagger": 0.3, "crush_amp": 0.12}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08}, "s6": {"bastion_add": 0.10}},
 	},
 	"archer": {
 		"A": {"s2": {"magres": 8.0}, "s4": {"sw_magic_keep": 1.0}, "s6": {"sw_regen": 0.02}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"huntp_struck": 1.0}, "s6": {"anchor_thorns": 0.15}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"tumble_cd": 1.0}, "s6": {"perfect_crit": 1.0}},
-		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_marked": 0.08}, "s6": {"opener_expose": 1.0}},
+		# 6pc (fix 2026-07-28): the re-armed EXPOSE alone measured ~0 on the hunt
+		# build (redundant under hunt's own permanent marks — the saturated-capstone
+		# shape that got the assassin extension deleted). Three-part capstone:
+		# rhythm_cut quickens the rhythm one beat (measured +0.6% alone — real but
+		# small), amp_marked6 deepens the 4pc amp vs marked prey (the premier
+		# payload; hunt marks run near-permanent, the warlock amp_hexed shape),
+		# and the EXPOSE stays for OFF-hunt themes, whose prey is otherwise bare.
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_marked": 0.08}, "s6": {"opener_expose": 1.0, "rhythm_cut": 1.0, "amp_marked6": 0.05}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08, "sw_delay": -0.5}, "s6": {"lowhp_slow": 0.2}},
 	},
 	"assassin": {
-		"A": {"s2": {"magres": 8.0}, "s4": {"surge_ward": 0.5}, "s6": {"magres_x": 10.0, "mward_add": 0.10}},
+		"A": {"s2": {"magres": 8.0}, "s4": {"surge_ward": 1.5}, "s6": {"magres_x": 10.0, "mward_add": 0.10}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"parry_add": 0.10}, "s6": {"surge_answer": 0.3}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"eva": 0.03}, "s6": {"dmark_evade": 0.3}},
 		# Assassin aggressor tiers ESCALATE (owner rule 2026-07-28: completion
@@ -1747,31 +1773,51 @@ const UNIQ_SETS := {
 		# saturated — stab cadence already maintains the surge, so the full six
 		# measured under the 4pc kit. The capstone now deepens the surge
 		# itself (a standing amp while it runs): completion escalates.
-		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_marked": 0.25}, "s6": {"surge_amp": 0.15}},
+		# amp_deathmarked (fix 2026-07-28): keys on the ULT window + the mark,
+		# not bare vuln_time — armor EXPOSE pieces (evade proc / Warded Mantle)
+		# were lighting the Death-Mark-priced amp at near-100% uptime vs melee.
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_deathmarked": 0.25}, "s6": {"surge_amp": 0.15}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08}, "s6": {"surge_hold": 1.0}},
 	},
 	"mage": {
-		"A": {"s2": {"magres": 8.0}, "s4": {"mana_ward": 5.0}, "s6": {"magres_x": 10.0, "blink_dr": 0.10}},
+		"A": {"s2": {"magres": 8.0}, "s4": {"mana_ward": 15.0}, "s6": {"magres_x": 10.0, "blink_dr": 0.10}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"blunt_icd_cut": 3.0}, "s6": {"cloak_stacks": 0.05}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"mana_evade": 10.0}, "s6": {"blink_cd": 0.5}},
-		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_shredded": 0.08}, "s6": {"bolt_shred_every": 4.0}},
+		# 4pc (fix 2026-07-28): at exactly four pieces the only shred source was
+		# the once-per-fight opener beat (~8s uptime per boss) — the amp now
+		# carries its own applicator (every 8th bolt); the 6pc quickens it to 4.
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_shredded": 0.08, "bolt_shred_every4": 8.0}, "s6": {"bolt_shred_every": 4.0}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08, "nova_restore_add": 0.05}, "s6": {"nova_root": 0.5}},
 	},
 	"paladin": {
-		"A": {"s2": {"magres": 8.0}, "s4": {"holy_ward": 1.0}, "s6": {"magres_x": 10.0, "ward_amp": 0.10}},
+		"A": {"s2": {"magres": 8.0}, "s4": {"holy_ward": 0.8}, "s6": {"magres_x": 10.0, "ward_amp": 0.10}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"holy_blunt": 1.0}, "s6": {"aegis_ext": 0.5}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"mend_evade": 0.02}, "s6": {"leap_cut": 1.0}},
-		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"magpen": 4.0, "opener_holy": 1.0}, "s6": {"swap_amp": 0.15}},
+		# opener_holy re-arms on the SET_OPENER_REARM cadence like the 6pc
+		# openers (fix 2026-07-28: fresh-only fired exactly once per boss);
+		# the knob is the atk multiple banked per opening.
+		# retri_amp (ordering retune 2026-07-29): the capstone's premier payload
+		# — a standing amp in the stance wrath lives in (the surge_amp/crush_amp
+		# seam family). Endgame-only by construction (sets), it carries the part
+		# of paladin's called gap the stance knob shouldn't tax at-level; it also
+		# ends the accepted D6=D4 tie (swap_amp stays for the off-meta swapper).
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"magpen": 4.0, "opener_holy": 0.6}, "s6": {"swap_amp": 0.15, "retri_amp": 0.10}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"holy_mend_add": 0.01}, "s6": {"holy_mend_lowhp": 1.0}},
 	},
 	"warlock": {
-		"A": {"s2": {"magres": 8.0}, "s4": {"life_ward": 0.01}, "s6": {"magres_x": 10.0, "hexext_ward": 1.0}},
+		"A": {"s2": {"magres": 8.0}, "s4": {"life_ward": 0.03}, "s6": {"magres_x": 10.0, "hexext_ward": 1.0}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"pact_cut_stacks": 0.33}, "s6": {"wither_struck": 0.2}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"hexext_evade": 1.0}, "s6": {"rift_pull": 0.25}},
-		# amp_hexed 0.10 (bench 2026-07-28): void measured 6% under mage vs
-		# the owner's called 4% — hexes are near-permanent on the focus target,
-		# so the amp reads close to face value.
-		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_hexed": 0.16}, "s6": {"detonate_amp": 0.15}},
+		# amp_hexed 0.04 (ordering retune 2026-07-29, from 0.16): on the current
+		# tree the class's no-amp baseline alone measures ~52k (mage -5.6%) and
+		# the amp reads at face value (hex is near-permanent on the focus
+		# target) — 0.16 ran the class ABOVE mage (~60.4k rep-mean, breaking the
+		# owner's mage >= warlock). 0.04 lands best-kit ~54k = the called -4%,
+		# and prices the 4pc exactly at the displaced-passive band.
+		# 6pc stays parked (detonate_amp measured flat vs D4 single-target AND
+		# --aoe): warlock's ladder cannot escalate past -4%-under-mage while the
+		# baseline sits this high — capstone redesign waits on that adjudication.
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_hexed": 0.04}, "s6": {"detonate_amp": 0.15}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08, "pact_surge_ext": 1.0}, "s6": {"pact_free_lowhp": 1.0}},
 	},
 }

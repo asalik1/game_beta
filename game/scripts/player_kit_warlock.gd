@@ -434,6 +434,11 @@ func _dark_pact(f := 1.0) -> void:
 	if uniq_set_k("B", 4, "pact_cut_stacks") > 0.0 and uniq_guard_stacks > 0 \
 			and uniq_guard_stacks >= _anchor_cap():
 		cost_frac *= 1.0 - uniq_set_k("B", 4, "pact_cut_stacks")
+	# warlock_pants_Bs standalone: full anchor stacks steady the pact too
+	# (fix 2026-07-28 — the card promised it, no seam existed).
+	if uniq_gk("pants_guard", "pact_cut") > 0.0 and uniq_guard_stacks > 0 \
+			and uniq_guard_stacks >= _anchor_cap():
+		cost_frac *= 1.0 - uniq_gk("pants_guard", "pact_cut")
 	if uniq_set_k("E", 6, "pact_free_lowhp") > 0.0 and hp < max_hp * 0.3:
 		cost_frac = 0.0
 	var sacrifice := max_hp * cost_frac

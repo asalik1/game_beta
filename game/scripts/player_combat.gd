@@ -1152,7 +1152,8 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# glove_bulwark: bulk lands with every hit — flat, folded like _cast_base
 	# (the grip carrier's amp doubles it under its condition).
 	var base_amt: float = current_atk() * mult + _cast_base \
-		+ uniq_hit_flat * uniq_amp(uniq_gear("glove_bulwark"))
+		+ uniq_hit_flat * uniq_amp(uniq_gear("glove_bulwark")) \
+		* (0.5 if effects.get("uniq_storm", 0) else 1.0)  # Arrow Storm carries HALF (the card's printed rate)
 	var result := Stats.resolve(base_amt * (1.0 - true_frac), dmg_type,
 		crit, crit_dmg, pen, dex, e_res, e_eva, e.critres, crit_exempt)
 	if result["miss"] and true_frac <= 0.0:
@@ -1284,15 +1285,25 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	# unwounded moment, so the capstone finds one (Balance.SET_OPENER_REARM).
 	if not uniq_armor.is_empty() and e.max_hp > 0.0:
 		var fresh := e.hp >= e.max_hp * 0.999
-		if fresh:
-			var op_id := uniq_gear("helm_aggr")
-			if op_id != "":
+		var op_id := uniq_gear("helm_aggr")
+		if op_id != "":
+			# The ITEM opener re-arms on the set cadence too (fix 2026-07-28:
+			# fresh-only meant once per boss, EVER — the same hole the set
+			# round patched for its own 6pc). The true opener stays free;
+			# only the re-armed opening spends the cadence.
+			var op_rearm := not fresh and not uniq_on("item_opener_cd")
+			if fresh or op_rearm:
 				dmg *= 1.0 + uniq_gk("helm_aggr", "opener") * uniq_amp(op_id, e)
 				_uniq_beat(op_id, e)
+				if op_rearm:
+					uniq_t["item_opener_cd"] = float(Balance.SET_OPENER_REARM)
 		if not uniq_setn.is_empty():
 			var so_st := uniq_set_k("D", 6, "opener_stagger")
 			var so_ex := uniq_set_k("D", 6, "opener_expose")
-			var rearms := (so_st > 0.0 or so_ex > 0.0) and not uniq_on("set_opener_cd")
+			var so_holy := uniq_set_k("D", 4, "opener_holy")
+			var rearms := (so_st > 0.0 or so_ex > 0.0 or so_holy > 0.0) \
+				and not uniq_on("set_opener_cd")
+			var holy_fired := false
 			if fresh or rearms:
 				if so_st > 0.0:
 					_stun_or_concuss(e, so_st)
@@ -1306,30 +1317,54 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 					# under hunt's own permanent marks, so the capstone pays every
 					# theme something real.
 					_hunt_rhythm_feed()
-				if fresh and uniq_set_k("D", 4, "opener_holy") > 0.0 and paladin_mode == "retribution":
-					holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP, holy_charge + atk * 0.4)
-				if so_st > 0.0 or so_ex > 0.0:
+				# Paladin 4pc rides the same re-arm cadence (fix 2026-07-28:
+				# fresh-only banked exactly one charge per boss fight).
+				if so_holy > 0.0 and paladin_mode == "retribution":
+					holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP,
+						holy_charge + atk * so_holy)
+					holy_fired = true
+				if so_st > 0.0 or so_ex > 0.0 or holy_fired:
 					uniq_t["set_opener_cd"] = float(Balance.SET_OPENER_REARM)
+		# Deferred advance beat (pants_aggr): a foe-targeted beat can't fire at
+		# cast time (no foe yet) — the empowered cast's first landed hit
+		# carries it (armed in use_ability; uniq_take fires it exactly once).
+		if uniq_take("adv_beat"):
+			_uniq_beat(uniq_gear("pants_aggr"), e)
 	# Profile-set damage clauses: the aggressor 4pc prey amps and the ward
 	# 6pc "the ward pays while it holds".
 	if not uniq_setn.is_empty():
 		if e.vuln_time > 0.0:
 			dmg *= 1.0 + uniq_set_k("D", 4, "amp_marked")
+			dmg *= 1.0 + uniq_set_k("D", 6, "amp_marked6")  # archer capstone: the mark bites deeper
+			# Assassin 4pc keys on the ULT window + the mark (fix 2026-07-28:
+			# bare vuln_time let armor EXPOSE pieces run the Death-Mark-priced
+			# 0.25 at near-100% uptime vs melee bosses).
+			if deathmark_time > 0.0:
+				dmg *= 1.0 + uniq_set_k("D", 4, "amp_deathmarked")
 		if e.res_shred > 0.0:
 			dmg *= 1.0 + uniq_set_k("D", 4, "amp_shredded")
 		if hexed.has(e):
 			dmg *= 1.0 + uniq_set_k("D", 4, "amp_hexed")
-		if uniq_mward_t > 0.0:
+		if uniq_on("set_ward_amp"):
+			# Runs from the ward's ARMING (fix 2026-07-28: gating on the live
+			# 2s ward window was 2s-in-8 — the condemned Tempest Crown shape).
 			dmg *= 1.0 + uniq_set_k("A", 6, "ward_amp")
 		if dodge_time > 0.0:
 			dmg *= 1.0 + uniq_set_k("C", 6, "slippery_amp")  # No Horizon: slippery bites
 		if stab_ls_time > 0.0:
 			dmg *= 1.0 + uniq_set_k("D", 6, "surge_amp")  # assassin 6pc: the surge bites deeper
+		if paladin_mode == "retribution":
+			dmg *= 1.0 + uniq_set_k("D", 6, "retri_amp")  # paladin 6pc: wrath's standing edge
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
 	if ls > 0.0:
-		hp = minf(max_hp, hp + dmg * ls)
+		var ls_amt := dmg * ls
+		var ls_before := hp
+		hp = minf(max_hp, hp + ls_amt)
+		# Pool verb: lifesteal overflow fills the shield — the fill the
+		# warrior/assassin pool cards promise (carrier-gated helper).
+		_uniq_pool_overflow(ls_amt - (hp - ls_before))
 	# Holy stance (paladin Conviction, round 48): every righteous blow mends —
 	# the stance IS the sustain (AoE hits mend at a third, like lifesteal).
 	# The bulwark set deepens it (4pc flat; 6pc doubled below the threshold).
@@ -1417,11 +1452,17 @@ func _uniq_pre_hit(e: Enemy, sp: String, effects: Dictionary) -> void:
 			# Redesign (dps-bench pass, 2026-07-27): a KILL re-arms the dawn for a
 			# beat, so the opener flows kill-to-kill through a pack instead of
 			# firing exactly once per enemy (the old read was near-dead the moment
-			# everything in the room had a scratch).
-			if String(effects.get("type", "")) != "true" \
-					and ((e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999) or uniq_take("herald_rearm")):
-				effects["force_crit"] = 1
-				effects["vuln"] = maxf(float(effects.get("vuln", 0.0)), uniq_k("vuln"))
+			# everything in the room had a scratch). Vs a BOSS there are no kills
+			# to flow through — the dawn re-arms on its own cadence instead
+			# (boss_rearm; fix 2026-07-28, mirroring SET_OPENER_REARM).
+			if String(effects.get("type", "")) != "true":
+				var herald_boss := e is Boss and not uniq_on("herald_bosscd")
+				if (e.max_hp > 0.0 and e.hp >= e.max_hp * 0.999) \
+						or uniq_take("herald_rearm") or herald_boss:
+					if herald_boss:
+						uniq_t["herald_bosscd"] = uniq_k("boss_rearm")
+					effects["force_crit"] = 1
+					effects["vuln"] = maxf(float(effects.get("vuln", 0.0)), uniq_k("vuln"))
 		"quietus":
 			# Quietus: below the threshold the needle strikes TRUE. A melee arc
 			# reuses ONE effects dict across its victims, so the per-victim
@@ -1433,10 +1474,15 @@ func _uniq_pre_hit(e: Enemy, sp: String, effects: Dictionary) -> void:
 				else:
 					effects.erase("type")
 		"gapfinder":
-			# Silkneedle: the gap is already open — CC'd armor half-ignored
-			# (same per-victim reset as quietus: the arc dict is shared).
+			# Silkneedle: the gap is already open — CC'd or MARKED armor
+			# half-ignored (same per-victim reset as quietus: the arc dict is
+			# shared). Re-keyed 2026-07-28: bosses NEVER hold stun_time/slow_time
+			# (stuns concuss, slows hobble) — the old gate was dead on every boss
+			# door while Stab's own stagger held it ~always-on vs trash. Hobble
+			# and the mark (Death Mark, Exposed) are conditions a boss can wear.
 			if effects.get("uniq_a1", 0):
-				if e.stun_time > 0.0 or e.slow_time > 0.0:
+				if e.stun_time > 0.0 or e.slow_time > 0.0 \
+						or e.hobble_t > 0.0 or e.vuln_time > 0.0:
 					effects["pen_ignore"] = uniq_k("pen_ignore")
 				else:
 					effects.erase("pen_ignore")
@@ -1530,9 +1576,28 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 					stab_ls_time += float(uk["surge_ext"])  # the blood feeds the surge
 				else:
 					_grant_stab_surge()
+			elif e is Boss and is_crit and not died \
+					and (effects.get("uniq_a1", 0) or effects.get("uniq_dash", 0)) \
+					and not uniq_on("headsman_bosscd"):
+				# Boss stand-in (fix 2026-07-28): a boss refuses the blade, but a
+				# critical Stab/Dash tastes the kill it's owed — the surge feeds
+				# on the icd. Without this the whole S passive was 0 vs the fight
+				# type the endgame is tuned around (the set round's crit-as-kill
+				# precedent, extended to the item).
+				uniq_t["headsman_bosscd"] = float(uk["boss_icd"])
+				if stab_ls_time > 0.0:
+					stab_ls_time += float(uk["surge_ext"])
+				else:
+					_grant_stab_surge()
 		"absolution":
-			# Absolution: every 3rd kill rings a free Consecration.
-			if died:
+			# Absolution: every 3rd kill rings a free Consecration. Vs a BOSS
+			# crits count as tolls on the icd (fix 2026-07-28: kill-gated alone,
+			# the S passive paid zero across a whole 40-90s boss fight).
+			var tolled := died
+			if not tolled and e is Boss and is_crit and not uniq_on("absolution_bosscd"):
+				uniq_t["absolution_bosscd"] = float(uk["boss_icd"])
+				tolled = true
+			if tolled:
 				uniq_kills += 1
 				if uniq_kills >= int(uk["kills"]):
 					uniq_kills = 0
@@ -1569,7 +1634,12 @@ func _uniq_beat(id: String, foe: Enemy = null) -> void:
 			var sl := String(k.get("slot", ""))
 			if sl == "commit":
 				sl = String(UNIQ_COMMIT.get(cls, ""))
-			if sl != "" and cds.has(sl):
+			if sl == "leap":
+				# Paladin pants/boots_Ds: the JUDGMENT LEAP rearms sooner — its
+				# own clock, not an ability cd (fix 2026-07-28: these cards
+				# promised the leap while the knob quietly hastened Aegis).
+				judgment_leap_cd = maxf(0.0, judgment_leap_cd - float(k.get("s", 0.0)))
+			elif sl != "" and cds.has(sl):
 				cds[sl] = maxf(0.0, float(cds[sl]) - float(k.get("s", 0.0)))
 		"surge":
 			if stab_ls_time > 0.0:
@@ -1584,7 +1654,10 @@ func _uniq_beat(id: String, foe: Enemy = null) -> void:
 				hexed[he] = float(hexed[he]) + float(k.get("s", 0.0))
 		"vuln":
 			if foe_live:
-				foe.apply_vuln(float(k.get("dur", 2.0)))
+				# Armor-sourced EXPOSE marks lighter than Death Mark (fix
+				# 2026-07-28 — the Warded Mantle re-applied the ult's 1.5x
+				# on every full-stack hit taken).
+				foe.apply_vuln(float(k.get("dur", 2.0)), float(Balance.UNIQ["expose_mult"]))
 		"wither":
 			if foe_live:
 				foe.apply_burn(_dot_dps(foe, current_atk() * float(k.get("dot", 0.2))),
@@ -1615,7 +1688,9 @@ func _uniq_beat(id: String, foe: Enemy = null) -> void:
 ## still earns the crit (the theme's own per-shot tick is hunt-gated).
 func _hunt_rhythm_feed() -> void:
 	hunt_rhythm += 1
-	if hunt_rhythm >= Balance.HUNT_RHYTHM_SHOTS:
+	# Archer aggressor 6pc: the rhythm converts one beat sooner (never below 2).
+	var need := maxi(2, Balance.HUNT_RHYTHM_SHOTS - int(uniq_set_k("D", 6, "rhythm_cut")))
+	if hunt_rhythm >= need:
 		hunt_rhythm = 0
 		next_crit = true
 

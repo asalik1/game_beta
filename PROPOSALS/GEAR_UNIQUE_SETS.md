@@ -7,10 +7,13 @@ profile sets below are live — membership by VERB family
 (`Items.set_profile_of`), bonuses in `Balance.UNIQ_SETS` (2pc stats fold in
 recalc; 4pc/6pc clauses at their seams), names resolved from the S-triad
 families (`Items.uniq_set_name`), the item-card panel shows n/6 with live
-tiers. The aggressor lane is BENCHED (2026-07-28 round: archer band held
-with the 4pc live; assassin 2pc runs hot for the crown — see
-BALANCE_HISTORY.md); the defensive lanes' magnitudes remain placeholders
-pending playtests.
+tiers. The aggressor lane is BENCHED (2026-07-28 rounds: archer band held
+with the 4pc live; assassin 2pc runs hot for the crown; the audit fix
+round re-measured the ladders — archer D4 58.0k < D6 60.5k, mage D4 55.2k
+< D6 56.4k, assassin D6 72.5k — see BALANCE_HISTORY.md); the defensive
+lanes' magnitudes remain placeholders pending playtests, EXCEPT the shapes
+the 2026-07-28 audit fix round repaired (ward_amp's window, the ward 4pc
+riders, cloak_stacks' nesting — noted per row below).
 
 ---
 
@@ -71,18 +74,22 @@ finesse +6 DEX +3% EVA · aggressor +3% ATK +2% Crit · bulwark +8 VIT) —
 no longer strictly uniform: since the 2026-07-28 bench, a class's aggressor
 2pc/4pc may run hotter or leaner as the ENDGAME board-ordering dial (the
 owner's called class gaps live partly here because set tiers only exist on
-endgame kits — at-level, set-less pacing never moves). Current deviations:
-warrior 2pc +4%/+2.5% (fury closed an 18% gap), assassin 4pc amp 0.25
-(priced for ~1/6 mark uptime), warlock 4pc amp 0.16.
+endgame kits — at-level, set-less pacing never moves). Current deviations
+(2026-07-29 ordering retune): warrior 2pc +2.5%/+2% (the 4/2.5 fury dial
+eased back — tree drift + the item-opener re-arm had pushed fury near
+mage), assassin 4pc amp 0.25 (priced for ~1/6 Death-Mark uptime), warlock
+4pc amp 0.04 (down from 0.16 — the class's no-amp baseline alone sits ~5.6%
+under mage on the current tree, so the face-value amp is priced at exactly
+the displaced-passive band).
 
 ### Warrior
 
 | Set (profile) | 4pc — the lens | 6pc — capstone |
 |---|---|---|
-| Nullward (ward) | [weakness: magres is the plate's soft side] taking MAGIC damage builds a Grit stack | your magic-ward verb also pays +10% damage while it holds — spellfire feeds the war |
+| Nullward (ward) | [weakness: magres is the plate's soft side] taking MAGIC damage builds a Grit stack | +10% damage for 6s from the ward's ARMING (audit fix 2026-07-28: "while it holds" was 2s-in-8 — the condemned Tempest Crown shape) |
 | Unbroken (guard) | [identity] Grit cap +2 | at full Grit stacks, blows you take are answered at 0.3× |
 | No Horizon (finesse) | [off-meta: the eva duelist] EVADING builds a Grit stack — the dodge feeds the grind | +10% damage while slippery |
-| Warhowl (aggressor) | [identity] Berserk runs +4s | your openers stagger and CRUSH (+12% while the foe reels), re-arming every 12s — the crush window is the one warrior knockbacks and the crush talent already read |
+| Warhowl (aggressor) | [identity] Berserk runs +3s (eased from +4s, 2026-07-29 ordering retune) | your openers stagger and CRUSH (+12% while the foe reels), re-arming every 12s — the crush window is the one warrior knockbacks and the crush talent already read |
 | Stonefather (bulwark) | [identity] +8% max HP | the bastion floor deepens +10% |
 
 ### Archer
@@ -92,47 +99,47 @@ warrior 2pc +4%/+2.5% (fury closed an 18% gap), assassin 4pc amp 0.25
 | Tempest Crown (ward) | [weakness: no answer to spell chip] magic damage doesn't reset Second Wind (redesigned 2026-07-28 — the warded-hit-only version paid ~2s in 8, noise in any pack) | Second Wind regen +2%/s |
 | Ironwood Witness (guard) | [off-meta: the thorn tank] being hit ticks the hunt rhythm (converts to the rhythm crit for EVERY a1 theme — the counter's conversion no longer requires hunt) | anchor stacks also return 0.15× thorns per blow |
 | White Wind (finesse) | [identity] Tumble cd −1s | a perfect dodge grants one guaranteed-crit shot |
-| Last Hunt (aggressor) | [identity] EXPOSED prey takes +8% from you | your first shot on unwounded prey EXPOSES it, and the opening re-arms every 12s |
+| Last Hunt (aggressor) | [identity] EXPOSED prey takes +8% from you | three-part capstone (audit fix 2026-07-28 — the re-armed EXPOSE alone measured ~0 on hunt, redundant under hunt's own permanent marks): EXPOSED prey takes a further +5%, the hunt rhythm converts one beat sooner, and the re-armed opening EXPOSE stays for off-hunt themes. Measured: D4 58.0k < D6 60.5k (+4.3%) |
 | First Beast (bulwark) | [off-meta] +8% max HP and Second Wind's delay −0.5s | below 30% HP, blows you take SLOW the attacker 20% (the wiring answers being struck — the old "your shots slow" text lied) |
 
 ### Assassin
 
 | Set (profile) | 4pc — the lens | 6pc — capstone |
 |---|---|---|
-| ward triad | [weakness: magic chip bypasses Elusive] a warded magic hit feeds the blood surge +0.5s | +10 MagRes and the ward's DR +10% |
+| ward triad | [weakness: magic chip bypasses Elusive] a warded magic hit feeds the blood surge +1.5s (audit fix 2026-07-28: 0.5s per ≥8s proc was sub-noise) | +10 MagRes and the ward's DR +10% |
 | guard triad | [off-meta: the parry fencer] full anchor stacks add +10% parry-family proc chance | blows taken while surging are answered at 0.3× |
 | finesse triad | [identity] Elusive +3% evasion | evading extends a live Death Mark +0.3s |
-| aggressor triad | [identity] MARKED prey takes +25% from you (priced for the ~1/6 Death-Mark uptime) | while the blood surge runs, your blades bite +6% (redesigned 2026-07-28: the kill/crit surge EXTENSION was saturated — stab cadence already maintains the surge — so the full six measured under the 4pc kit) |
+| aggressor triad | [identity] Death-Marked prey takes +25% from you (audit fix 2026-07-28: re-keyed onto the ULT window + the mark — bare vuln_time let armor EXPOSE pieces run the Death-Mark-priced amp near-permanently; still ~1/6 uptime as priced) | while the blood surge runs, your blades bite +15% (redesigned 2026-07-28: the kill/crit surge EXTENSION was saturated — stab cadence already maintains the surge — so the full six measured under the 4pc kit). Measured D6 72.5k |
 | bulwark triad | [off-meta: the bulk fencer] +8% max HP | below 30% HP the blood surge never expires |
 
 ### Mage
 
 | Set (profile) | 4pc — the lens | 6pc — capstone |
 |---|---|---|
-| ward triad | [identity] warded hits refund 5 mana | +10 MagRes and Blink's Arcane Ward +10% DR |
-| guard triad | [weakness: the glass body] the crit-blunt icd −3s | anchor stacks harden Blink's cloak +5% each |
+| ward triad | [identity] warded hits refund 15 mana (audit fix 2026-07-28: 5 per ≥8s proc was under a second of base regen) | +10 MagRes and Blink's Arcane Ward +10% DR |
+| guard triad | [weakness: the glass body] the crit-blunt icd −3s | anchor stacks ward you 5% each (audit fix 2026-07-28: un-nested from Blink's ~0.8s dr window — the triple gate was unobservable) |
 | finesse triad | [off-meta: the eva mage] evading grants 10 mana | Blink cd −0.5s |
-| aggressor triad | [identity] ward-cracked prey takes +8% from you | every 4th Firebolt cracks the ward |
+| aggressor triad | [identity] ward-cracked prey takes +8% from you, and every 8th Firebolt cracks the ward itself (audit fix 2026-07-28: at exactly 4pc the only shred source was the once-per-fight opener beat — ~8s uptime per boss, a possible D3>D4 inversion) | the crack quickens to every 4th Firebolt. Measured: D4 55.2k < D6 56.4k (the old accepted tie now escalates) |
 | bulwark triad | [off-meta: the battle-mage] +8% max HP, Nova restore +5% | Frost Nova roots 0.5s |
 
 ### Paladin
 
 | Set (profile) | 4pc — the lens | 6pc — capstone |
 |---|---|---|
-| ward triad | [identity] warded blows bank holy charge | +10 MagRes; the ward pays +10% while it holds |
+| ward triad | [identity] warded blows bank holy charge (0.8× atk) | +10 MagRes; +10% damage for 6s from the ward's arming (same audit-fix shape as Nullward) |
 | guard triad | [identity] blunted crits bank holy charge | Aegis holds +0.5s |
 | finesse triad | [off-meta: the duelist paladin] evading mends 2% | Judgment's leap rearms 1s sooner |
-| aggressor triad | [off-meta: the INT lance] +4 MagPen; openers in Retribution bank charge | Conviction's swap slam +15% |
+| aggressor triad | [off-meta: the INT lance] +4 MagPen; openers in Retribution bank charge (0.6× atk), re-arming every 12s (audit fix 2026-07-28: fresh-only banked exactly once per boss fight) | in Retribution your blows strike +10% harder (retri_amp, 2026-07-29 ordering retune — the endgame share of paladin's called gap, and the capstone that ends the accepted D6=D4 tie); Conviction's swap slam +15% stays for the off-meta swapper |
 | bulwark triad | [identity] Holy-stance mend +1% | below 30% HP the Holy mend doubles |
 
 ### Warlock
 
 | Set (profile) | 4pc — the lens | 6pc — capstone |
 |---|---|---|
-| ward triad | [identity] the ward feeds 3% of what it eats back as life | +10 MagRes; hexes on your attackers run +1s |
+| ward triad | [identity] the arming ward mends 3% of your health (audit fix 2026-07-28: the "3% of what it eats" framing was never the wiring, and the old 1% was sub-noise) | +10 MagRes; hexes on your attackers run +1s |
 | guard triad | [weakness: the squishy channeler] full anchor stacks cut Dark Pact's cost a third | blows taken WITHER the attacker |
 | finesse triad | [off-meta: the eva warlock] evading extends every live hex +1s | Void Rift pulls harder |
-| aggressor triad | [identity] HEXED prey takes +8% from you | hex detonations +15% |
+| aggressor triad | [identity] HEXED prey takes +4% from you (2026-07-29 ordering retune, from 0.16 — see the deviations note above) | hex detonations +15% — OPEN: measured level with D4 single-target AND in --aoe; the capstone fails the completion rule everywhere measured, and the ladder cannot escalate past the called −4%-under-mage while the class baseline sits ~−5.6% — capstone redesign waits on that tension (see BALANCE_HISTORY.md) |
 | bulwark triad | [off-meta: the blood tank] +8% max HP; Dark Pact surge +1s | below 30% HP Dark Pact costs nothing |
 
 ---

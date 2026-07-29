@@ -89,8 +89,13 @@ five of its profile templates live inside it:
 The armor-passive ENGINE shipped ahead of the items: `uniq_armor` (the
 equipped non-weapon passive cache), the `struck_icd` proc family (weapon
 procs stamp it; armor clauses require it clear — weapon-first, then
-helmet > pants > gloves), the armor lane of the shared evade ICD, and these
-verbs, each live in code and suite-covered:
+helmet > gloves > pants: the audit fix round 2026-07-28 moved the CHANCE
+proc (iron answer) ahead of the unconditional slip, which otherwise
+stamped the family ICD first and shadowed the counter 100% of the time),
+the armor lane of the shared evade ICD, and these verbs, each live in
+code and suite-covered. Same-verb resolution prefers the S LANE (audit
+fix 2026-07-28 — the old first-equipped scan resolved by save-file slot
+order, so an A piece could permanently shadow an S piece):
 
 | Verb | Mechanic (where) |
 |---|---|
@@ -100,13 +105,13 @@ verbs, each live in code and suite-covered:
 | blunt | first enemy crit per icd sheds its bonus (take_damage resolve) |
 | iron answer | melee counter-strike on being hit (struck family) |
 | anchor | Grit-style flat-DR stacks from blows taken (`uniq_guard_*`) |
-| expose | evade marks the attacker EXPOSED (evade family, weapon-first) |
+| expose | evade marks the attacker EXPOSED at `Balance.UNIQ.expose_mult` = 1.25× (audit fix 2026-07-28: the default 1.5× let a dodge apply Death Mark's own amp and feed every "marked" seam at ult grade) |
 | true-aim | every Nth basic cannot miss or graze (eva-0 resolve, `uniq_gcount`) |
-| slip | being hit grants a Tumble-rail evasion surge (struck family) |
-| opener | first hit on unwounded prey amplified (hit_enemy mod chain) |
+| slip | being hit grants a Tumble-rail evasion surge (struck family); the slipamp DAMAGE window arms on its own 8s icd (audit fix 2026-07-28: dur 2.0 vs family icd 2.0 was back-to-back — a melee class under fire held a near-permanent +20%) |
+| opener | first hit on unwounded prey amplified (hit_enemy mod chain); RE-ARMS every 12s on wounded targets (audit fix 2026-07-28 — fresh-only meant once per boss, ever; the set round's own cadence, extended to items) |
 | tear | crits leave a class-typed dot (hit_enemy follow-up) |
-| advance | COMMIT ability arms a next-damaging-cast window (use_ability; paladin = the Judgment leap, gated on it firing) |
-| pool | overheal → shield on the Transfusion rail (recalc) |
+| advance | COMMIT ability arms a next-damaging-cast window (use_ability; paladin = the Judgment leap, gated on it firing); foe-targeted beats (wither/slow/…) defer to the empowered cast's first landed hit (audit fix 2026-07-28 — at cast time there is no foe and they no-op'd silently) |
+| pool | overheal → shield on the Transfusion rail (recalc); lifesteal, regen/Second Wind/Grit ticks and Nova's bank feed the pool through their own overflow now (audit fix 2026-07-28: every sustain the pool cards NAME bypassed gain_hp — three charm BARGAINs charged a permanent tax for a pool that could not fill) |
 | grip | flat per-hit damage from max HP (`uniq_hit_flat`) |
 | bastion | below-threshold standing DR floor (take_damage mitigation) |
 
@@ -201,7 +206,7 @@ warlock: Soulthirst lifesteal).
 | helmet | Runeplate Circlet (guard) | *blunt* half | *blunt* full, and the blow refunds 1s of Blink |
 | helmet | Featherweave Circlet (finesse) | *expose* 1.5s | *expose* 3s, and the dodge grants 10 mana |
 | helmet | Starweave Circlet (aggressor) | *opener* +15% | *opener* +25%, and an opening Firebolt cracks the ward (one shred stack) |
-| helmet | Earthen Circlet (bulwark) | *pool* 4% | *pool* 8%, and Frost Nova's restore overflow pools |
+| helmet | Earthen Circlet (bulwark) | *pool* 4% | *pool* 8%, and casting Frost Nova banks 4% max health into it (audit fix 2026-07-28: a missing-HP restore can never overflow — the old clause was structurally impossible) |
 | gloves | Silkward Handwraps (ward) | *unweave* small | *unweave*, and Frost Nova tears everything it catches |
 | gloves | Runeplate Handwraps (guard) | *iron answer* 15% | *iron answer* 25% as an arcane snap that also CHILLS the attacker |
 | gloves | Featherweave Handwraps (finesse) | *true-aim* every 8th Firebolt | every 5th, and the sure bolt echoes at 25% |
@@ -287,7 +292,7 @@ sets at 6/6 slots.
 | charm | Oath Sigil | *ward* lesser | *ward*, and the sworn ward feeds Grit |
 | charm | Butcher's Token | *tear* lesser | *tear*, deeper while Berserk runs |
 | charm | Duelist's Knot | *expose* lesser | *expose*, and the feint hastens Whirlwind |
-| charm | Heart of the Wall | *pool* lesser — BARGAIN: BUT Grit's regen is halved | *pool*, pooling double while Berserk runs |
+| charm | Heart of the Wall | *pool* lesser — BARGAIN: BUT your health regen (knit and Grit) is halved (audit fix 2026-07-28: the tax now charges Grit's engine too, as the card always claimed) | *pool*, pooling double while Berserk runs |
 
 ### Archer — armor / boots / charm
 
@@ -307,7 +312,7 @@ sets at 6/6 slots.
 | charm | Windfeather | *blunt* lesser | *blunt*, and the high wind EXPOSES the attacker |
 | charm | Hunter's Totem | *opener* lesser | *opener*, harder on EXPOSED prey |
 | charm | Stonebark Ward | *ward* lesser | *ward*, and the bark keeps Second Wind's clock |
-| charm | Greenheart Idol | *pool* lesser — BARGAIN: BUT Second Wind never triggers while worn | *pool*, — the grove's endurance pools |
+| charm | Greenheart Idol | *pool* lesser — BARGAIN: BUT Second Wind mends at half strength (audit fix 2026-07-28: sw_off was a pure downside — SW was both the named fill and the price) | *pool*, — the grove's endurance pools |
 
 ### Assassin — armor / boots / charm
 

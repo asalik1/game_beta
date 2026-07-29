@@ -107,9 +107,13 @@ func _finish_mage_bolt(p: Projectile, mult: float) -> void:
 			# Quickweather: the post-Blink bolt strikes twice.
 			if uniq_take("squall"):
 				p.fx["echo"] = 1.0
-	# Mage aggressor-set 6pc: every Nth bolt cracks the ward (own counter,
-	# sp-independent — a set must work over any weapon).
+	# Mage aggressor-set: every Nth bolt cracks the ward (own counter,
+	# sp-independent — a set must work over any weapon). The 4pc carries its
+	# own slower cadence (fix 2026-07-28: at exactly four pieces the only
+	# shred source was the once-per-fight opener beat); the 6pc quickens it.
 	var s_every := uniq_set_k("D", 6, "bolt_shred_every")
+	if s_every <= 0.0:
+		s_every = uniq_set_k("D", 4, "bolt_shred_every4")
 	if s_every > 0.0:
 		uniq_scount += 1
 		if uniq_scount >= int(s_every):
@@ -418,6 +422,12 @@ func _frost_nova(f := 1.0) -> void:
 	restore *= (1.0 - uniq_gk("pants_bulwark", "nova_tax")) \
 		* (1.0 - uniq_gk("helm_bulwark", "nova_tax"))
 	gain_hp((max_hp - hp) * restore)  # nova drinks the cold — SHOW the mend
+	# mage_helmet_Es: casting Nova banks a flat slice into the pool (fix
+	# 2026-07-28 — the old "restore overflow pools" card was structurally
+	# impossible: a missing-HP restore can never overflow).
+	var nova_pool := uniq_gk("helm_bulwark", "nova_pool")
+	if nova_pool > 0.0:
+		_uniq_pool_overflow(max_hp * nova_pool)
 	if nova_regen > 0.0:
 		# Rimeheart (mage talent): the cold keeps mending — a long, slow trickle
 		# (recast RENEWS this window, never stacks the rate: spam ≠ more potency).

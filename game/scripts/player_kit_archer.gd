@@ -628,6 +628,7 @@ func _storm_strike() -> void:
 func _apply_archer_storm_hit(enemy: Enemy) -> void:
 	var effects := storm_fx.duplicate()
 	effects["aoe"] = true
+	effects["uniq_storm"] = 1  # glove_bulwark: storm arrows carry HALF the bulk (the card's rate)
 	var saved := _tfx
 	_tfx = storm_fx
 	hit_enemy(enemy, ability_coeff("ult") * storm_mult, effects)

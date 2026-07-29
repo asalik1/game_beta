@@ -489,7 +489,8 @@ var _themed := false
 var _cast_base := 0.0
 
 var sprite: Sprite2D
-var _occlusion_outline: Sprite2D
+var _occlusion_outline_mat: ShaderMaterial
+var _occlusion_clips := {}  # covering visual's instance id -> outline Sprite2D clipped inside it
 var _occlusion_images := {}
 var _occlusion_probe_reach := 0.0  # longest probe offset, computed once in _ready
 var weapon_spr: Sprite2D
@@ -881,17 +882,27 @@ func uniq_k(key: String, default := 0.0) -> float:
 
 ## The equipped carrier of VERB `base` ("" if none): a bespoke gear passive
 ## whose Balance.UNIQ entry declares {"verb": base}, or the engine stand-in
-## ids themselves (dev injection). First equipped carrier wins — same-verb
-## pieces deliberately do NOT stack (the stronger piece is the build call).
+## ids themselves (dev injection). Same-verb pieces deliberately do NOT
+## stack; the S LANE outranks the A lane (fix 2026-07-28 — the old scan
+## resolved by dict order, i.e. the save file's slot order, so an A helmet
+## could permanently shadow an S chest). Lane ties break lexicographically
+## so the winner is stable across save/load.
 func uniq_gear(base: String) -> String:
 	if uniq_armor.has(base):
 		return base
-	if uniq_armor.has(base + "_a"):
-		return base + "_a"
+	var pick := ""
+	var pick_s := false
 	for id in uniq_armor:
-		if String(Balance.uniq(String(id)).get("verb", "")) == base:
-			return String(id)
-	return ""
+		var s := String(id)
+		if String(Balance.uniq(s).get("verb", "")) != base:
+			continue
+		var is_s := s.ends_with("s")
+		if pick == "" or (is_s and not pick_s) or (is_s == pick_s and s < pick):
+			pick = s
+			pick_s = is_s
+	if pick != "":
+		return pick
+	return base + "_a" if uniq_armor.has(base + "_a") else ""
 
 
 ## Conditional amplifier of a bespoke id's verb (beat "amp"): 2x while its
@@ -987,17 +998,12 @@ func _ready() -> void:
 	_apply_class_sprite()
 	sprite.flip_h = face_left  # start facing right regardless of art
 	add_child(sprite)
-	_occlusion_outline = Sprite2D.new()
-	var outline_mat := ShaderMaterial.new()
-	outline_mat.shader = load("res://shaders/occluded_outline.gdshader")
-	outline_mat.set_shader_parameter("outline_color",
+	_occlusion_outline_mat = ShaderMaterial.new()
+	_occlusion_outline_mat.shader = load("res://shaders/occluded_outline.gdshader")
+	_occlusion_outline_mat.set_shader_parameter("outline_color",
 		Balance.PLAYER_OCCLUDED_OUTLINE_COLOR)
-	outline_mat.set_shader_parameter("outline_width",
+	_occlusion_outline_mat.set_shader_parameter("outline_width",
 		Balance.PLAYER_OCCLUDED_OUTLINE_WIDTH)
-	_occlusion_outline.material = outline_mat
-	_occlusion_outline.z_index = Balance.PLAYER_OCCLUDED_OUTLINE_Z
-	_occlusion_outline.visible = false
-	add_child(_occlusion_outline)
 	for probe in Balance.PLAYER_OCCLUSION_PROBES:
 		_occlusion_probe_reach = maxf(_occlusion_probe_reach, (probe as Vector2).length())
 
@@ -1027,30 +1033,78 @@ func _ready() -> void:
 	mp = max_mp
 
 
-## A structure that y-sorts over the hero should actually hide the body. This
-## second sprite draws only a faint outer edge at z=1, and only while opaque
-## structure pixels cover representative points down the hero's silhouette.
+## A structure that y-sorts over the hero should actually hide the body, and
+## only the COVERED part reads back as a thin edge (owner 2026-07-28: a full-
+## body outline floating over the tombstone looked wrong). Each covering
+## structure gets an outline copy of the hero parented INSIDE it with
+## clip_children on, so the engine masks the outline to that structure's own
+## rendered pixels — the visible part of the body never wears the outline, and
+## animated/wind-swayed occluders mask with their true displaced art.
 func _refresh_occlusion_outline() -> void:
-	if _occlusion_outline == null or sprite == null:
+	if sprite == null:
 		return
-	_occlusion_outline.texture = sprite.texture
-	_occlusion_outline.hframes = sprite.hframes
-	_occlusion_outline.vframes = sprite.vframes
-	_occlusion_outline.frame = sprite.frame
-	_occlusion_outline.centered = sprite.centered
-	_occlusion_outline.offset = sprite.offset
-	_occlusion_outline.flip_h = sprite.flip_h
-	_occlusion_outline.flip_v = sprite.flip_v
-	_occlusion_outline.position = sprite.position
-	_occlusion_outline.rotation = sprite.rotation
-	_occlusion_outline.scale = sprite.scale
-	_occlusion_outline.modulate.a = sprite.modulate.a
-	_occlusion_outline.visible = sprite.visible and _structure_covers_player()
+	var covering: Array = _covering_structures() if sprite.visible else []
+	for key in _occlusion_clips.keys():
+		# UNTYPED read on purpose: a freed occluder frees its clip child with
+		# it, and assigning a freed instance to a Sprite2D-typed var is itself
+		# a per-frame script error — the validity check must run first.
+		var stale = _occlusion_clips[key]
+		if not is_instance_valid(stale):
+			_occlusion_clips.erase(key)
+			continue
+		if not covering.has(stale.get_parent()):
+			_release_occlusion_clip(stale)
+			_occlusion_clips.erase(key)
+	for covering_visual in covering:
+		var occluder := covering_visual as Node2D
+		var key := occluder.get_instance_id()
+		var outline: Sprite2D = _occlusion_clips.get(key)
+		if outline == null:
+			outline = Sprite2D.new()
+			outline.material = _occlusion_outline_mat
+			outline.add_to_group("occlusion_clip_outlines")
+			(occluder as CanvasItem).clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
+			occluder.add_child(outline)
+			_occlusion_clips[key] = outline
+		outline.texture = sprite.texture
+		outline.hframes = sprite.hframes
+		outline.vframes = sprite.vframes
+		outline.frame = sprite.frame
+		outline.centered = sprite.centered
+		outline.offset = sprite.offset
+		outline.flip_h = sprite.flip_h
+		outline.flip_v = sprite.flip_v
+		outline.global_transform = sprite.global_transform
+		outline.modulate.a = sprite.modulate.a
 
 
-func _structure_covers_player() -> bool:
+## Un-clip the occluder only when the LAST outline leaves it — in co-op another
+## hero may still be clipping their own outline into the same structure.
+func _release_occlusion_clip(outline: Sprite2D) -> void:
+	var occluder := outline.get_parent()
+	outline.queue_free()
+	if occluder is CanvasItem:
+		for child in occluder.get_children():
+			if child != outline and child.is_in_group("occlusion_clip_outlines"):
+				return
+		(occluder as CanvasItem).clip_children = CanvasItem.CLIP_CHILDREN_DISABLED
+
+
+## The outlines live inside WORLD nodes, not under this player — without this a
+## despawning hero (co-op leave, class swap rebuild) strands frozen outlines
+## in whatever structure last covered them.
+func _exit_tree() -> void:
+	for key in _occlusion_clips:
+		var outline = _occlusion_clips[key]  # untyped: entry may be freed (see above)
+		if is_instance_valid(outline):
+			_release_occlusion_clip(outline)
+	_occlusion_clips.clear()
+
+
+func _covering_structures() -> Array:
+	var covering: Array = []
 	if get_tree() == null:
-		return false
+		return covering
 	for candidate in get_tree().get_nodes_in_group("structure_occluders"):
 		var visual := candidate as Node2D
 		if visual == null or not visual.is_visible_in_tree():
@@ -1070,8 +1124,9 @@ func _structure_covers_player() -> bool:
 		for probe in Balance.PLAYER_OCCLUSION_PROBES:
 			if _visual_alpha_at(visual, global_position + probe) \
 					>= Balance.PLAYER_OCCLUSION_ALPHA_THRESHOLD:
-				return true
-	return false
+				covering.append(visual)
+				break
+	return covering
 
 
 func _visual_alpha_at(visual: Node2D, world_point: Vector2) -> float:
@@ -1557,7 +1612,12 @@ func recalc() -> void:
 		for uniq_bw in ["pants_bulwark", "helm_bulwark"]:
 			if uniq_gk(uniq_bw, "sw_off") > 0.0:
 				sw_regen = 0.0  # the bastion never rests (archer lanes)
+			sw_regen *= 1.0 - uniq_gk(uniq_bw, "sw_tax")  # archer charm Ea: SW mends at half
 			regen_pct *= 1.0 - uniq_gk(uniq_bw, "regen_tax")
+			# The regen tax charges Grit's engine too (fix 2026-07-28: the
+			# warrior cards promised "Grit's regen is halved" while only the
+			# base knit paid — the face-tank kept its whole sustain).
+			grit_regen *= 1.0 - uniq_gk(uniq_bw, "regen_tax")
 			lifesteal *= 1.0 - uniq_gk(uniq_bw, "ls_tax")
 		if uniq_gear("helm_bulwark") != "":
 			transfusion += uniq_gk("helm_bulwark", "cap")  # overheal pools (Transfusion rail)
@@ -1597,6 +1657,22 @@ func gain_hp(amount: float) -> void:
 		if over > 0.0:
 			holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP,
 				holy_charge + over * Balance.PALADIN_OVERHEAL_DMG)
+
+
+## Feed hp OVERFLOW from a heal path that writes hp directly (lifesteal,
+## regen/Second Wind/Grit ticks) into the pool-verb shield. Fix 2026-07-28:
+## the pool only ever filled through gain_hp, but every sustain the pool
+## cards NAME (Berserk's lifesteal, the surge, Second Wind) bypasses it —
+## three charm BARGAINs charged a permanent tax for a pool that could not
+## fill. Carrier-gated so the warlock Transfusion TALENT keeps its own
+## gain_hp-only fill semantics.
+func _uniq_pool_overflow(overflow: float) -> void:
+	if overflow <= 0.0 or transfusion <= 0.0:
+		return
+	var pool_id := uniq_gear("helm_bulwark")
+	if pool_id == "":
+		return
+	shield = minf(transfusion * max_hp, shield + overflow * uniq_amp(pool_id))
 
 
 func current_atk() -> float:
@@ -2347,10 +2423,6 @@ func ability_cd(slot: String) -> float:
 		# core throughput lever (paired with CASTER_HASTE_BONUS). No other class.
 		if Classes.CLASSES[cls]["primary"] == "INT":
 			ult_cd *= 1.0 - cdr
-		if s_passive() == "atlas":
-			# Atlas Branch BARGAIN: a flat printed tax AFTER haste — the sky
-			# always answers exactly this much later.
-			ult_cd += uniq_k("cd_tax")
 		return maxf(0.1, ult_cd)
 	if cls == "assassin" and slot == "a2":
 		# Shadow Dash: this is the WHIFF cd — floored so gear cdr can't push
