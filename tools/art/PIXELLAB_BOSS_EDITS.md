@@ -126,4 +126,4 @@ commit if a pathspec matches nothing.
 ---
 Related: `boss-sprite-pipeline` + `read-metadata-before-regen` memories;
 CLAUDE.md "PixelLab characters" sections; `tools/art/README.md` (the older
-OneDrive 5-row-sheet cutting path).
+5-row-sheet cutting path; masters now in `art_src/Custom`).

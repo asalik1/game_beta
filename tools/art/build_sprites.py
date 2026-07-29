@@ -20,10 +20,11 @@ SOURCE MAP — pick the sheet that CONTRASTS the character:
     art_src/heroes_clips/ (padded seam-fill re-applied). The Heroes source
     sheets it came from no longer exist, so the extracted strips ARE the master.
 
-Source sheets live in the asset library, NOT the repo. Point at them with
-CROWNLESS_ART_SRC (defaults to the maintainer's OneDrive path). The pre-rename
-name EMBERFALL_ART_SRC is still honoured as a fallback, so a stale export from
-before the 2026-07-17 rename keeps working instead of silently defaulting.
+Source sheets live in the repo at art_src/Custom (moved in from the OneDrive
+asset library 2026-07-28). CROWNLESS_ART_SRC overrides the location. The
+pre-rename name EMBERFALL_ART_SRC is still honoured as a fallback, so a stale
+export from before the 2026-07-17 rename keeps working instead of silently
+defaulting.
 """
 import os, sys, subprocess, tempfile, shutil, glob
 import numpy as np
@@ -38,7 +39,7 @@ def _env(name, default):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-SRC  = _env("ART_SRC", r"C:/Users/asali/OneDrive/Assets/Custom")
+SRC  = _env("ART_SRC", os.path.join(REPO, "art_src", "Custom"))
 DEST = os.path.join(REPO, "game", "assets", "sprites")
 BACKUP = os.path.join(REPO, "art_src", "heroes_clips")
 EXTRACT = os.path.join(HERE, "extract_sheet.py")

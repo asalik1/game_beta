@@ -4,9 +4,9 @@
 Each source sheet is a strict 4x4 grid:
   row 1: idle, row 2: walk, row 3: attack, row 4: defeat.
 
-The source masters live outside the repository so generated build artifacts do
-not become the only editable copy. Set CROWNLESS_ART_SRC to override the
-default OneDrive asset library.
+The source masters are committed at art_src/Custom/MobRedesign_2026-07-25 so
+the installed strips are never the only editable copy. Set CROWNLESS_ART_SRC
+to override the location.
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ def default_source_dir() -> Path:
         candidate = Path(root).expanduser()
         nested = candidate / "MobRedesign_2026-07-25"
         return nested if nested.exists() else candidate
-    return Path.home() / "OneDrive" / "Assets" / "Custom" / "MobRedesign_2026-07-25"
+    return Path(__file__).resolve().parents[2] / "art_src" / "Custom" / "MobRedesign_2026-07-25"
 
 
 def remove_chroma(source: Path) -> Image.Image:

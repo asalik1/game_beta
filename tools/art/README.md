@@ -18,8 +18,9 @@ each COLUMN is a frame, and each cell has a character. The tool takes either a
 one (it auto-keys the bg by colour when the image is mostly opaque). Baked-in
 gold labels (row names + frame numbers) are removed automatically.
 
-Source sheets live in the asset library (`OneDrive/Assets/Custom/`), NOT in the
-repo. Only the extracted strips get committed, into `game/assets/sprites/`.
+Source sheets live in the repo at `art_src/Custom/` (moved in from the OneDrive
+asset library 2026-07-28; `CROWNLESS_ART_SRC` overrides the location). The
+extracted strips install into `game/assets/sprites/`.
 
 ### Pick the source that CONTRASTS the character (measured)
 
@@ -59,7 +60,7 @@ tools/Godot_v4.4.1-stable_win64_console.exe --headless --path game --import
 
 | what | where | in repo? |
 |---|---|---|
-| Source sheets (raw art) | `OneDrive/Assets/Custom/` (`CROWNLESS_ART_SRC`) | no — asset library only |
+| Source sheets (raw art) | `art_src/Custom/` (`CROWNLESS_ART_SRC` overrides) | yes |
 | Extracted engine strips | `game/assets/sprites/<class>_*.png` | yes — the shipped sprites |
 | Heroes-set backup + directional master | `art_src/heroes_clips/` | yes |
 
@@ -340,7 +341,7 @@ the exact grid, normalizes every frame to a 192px square, and writes the base
 sprite plus `_anim`, `_walk`, `_attack`, and `_death` strips.
 
 Source masters default to
-`~/OneDrive/Assets/Custom/MobRedesign_2026-07-25`. Override that location with
+`art_src/Custom/MobRedesign_2026-07-25`. Override that location with
 `CROWNLESS_ART_SRC`, then rebuild with:
 
     python tools/art/build_mob_redesigns.py
@@ -354,7 +355,7 @@ The companion ranged-projectile family is built from a label-free 3×3 master:
     python tools/art/build_mob_projectiles.py
 
 Its source defaults to
-`~/OneDrive/Assets/Custom/MobProjectiles_2026-07-25/mob_projectiles_master.png`.
+`art_src/Custom/MobProjectiles_2026-07-25/mob_projectiles_master.png`.
 The builder keys and slices nine 64px assets. `Projectile.ENEMY_PROJECTILE_ART`
 then maps every ranged enemy kind to one of those silhouettes, the existing
 player arrow, or an existing boss-signature projectile. `Projectile.MOB_MOTION`

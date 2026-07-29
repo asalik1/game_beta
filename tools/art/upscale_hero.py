@@ -16,7 +16,7 @@ Reference is regenerated on the fly, so this is fully reproducible:
   - body clips  <- Custom/<Class> (2).png   (extract_sheet)
   - directional <- art_src/heroes_clips       (the seam-filled Heroes backup)
 
-Sources (archived):  OneDrive/Assets/Custom/<class>_upscaled/*.png
+Sources (archived):  art_src/Custom/<class>_upscaled/*.png
 Run:  python tools/art/upscale_hero.py [class ...]   (default: every class below)
 """
 import os, sys, subprocess, tempfile, shutil
@@ -40,7 +40,7 @@ def _env(name, default):
     return os.environ.get("CROWNLESS_" + name) or os.environ.get("EMBERFALL_" + name) or default
 
 
-CUSTOM  = _env("ART_SRC", "C:/Users/asali/OneDrive/Assets/Custom")
+CUSTOM  = _env("ART_SRC", os.path.join(ROOT, "art_src", "Custom"))
 
 # Per class: the (2) sheet + its clip order (extract_sheet names, "idle"->_anim),
 # the body map {dest suffix: upscale-source stem}, and any 8-way directional

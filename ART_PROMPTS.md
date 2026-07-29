@@ -576,7 +576,7 @@ tried first, on warrior/a1. **Both failed; do not retry them for icons.**
   the walls/props lane.
 
 **The owned pack was checked first, per the asset-library rule.** Raven Fantasy
-Icons (`OneDrive/Assets/Visuals`, the *same purchased pack* the rest of
+Icons (`art_src/Visuals`, the *same purchased pack* the rest of
 `assets/icons/` comes from — 2192 icons at 32x32) is a **gear/consumable/status**
 pack. It covers maybe 6–8 of the 24 slots (`fb664` shield, `fb2154` arrow,
 `fb656` X, `fb670` holy cross, `fb651` running figure, `fb705` chain) and has

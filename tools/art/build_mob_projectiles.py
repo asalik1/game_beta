@@ -37,9 +37,8 @@ def default_source() -> Path:
             return nested
         return candidate / "mob_projectiles_master.png"
     return (
-        Path.home()
-        / "OneDrive"
-        / "Assets"
+        Path(__file__).resolve().parents[2]
+        / "art_src"
         / "Custom"
         / "MobProjectiles_2026-07-25"
         / "mob_projectiles_master.png"
