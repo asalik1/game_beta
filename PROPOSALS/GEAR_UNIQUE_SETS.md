@@ -66,9 +66,14 @@ per row below as [identity] / [weakness] / [off-meta].
 
 ## 2. The 30 sets
 
-2pc is uniform per profile (in-profile stats, placeholder sizes):
-ward +8 MagRes · guard +8 PhysRes +4 CritRes · finesse +6 DEX +3% EVA ·
-aggressor +3% ATK +2% Crit · bulwark +8 VIT.
+2pc is per-profile stats (ward +8 MagRes · guard +8 PhysRes +4 CritRes ·
+finesse +6 DEX +3% EVA · aggressor +3% ATK +2% Crit · bulwark +8 VIT) —
+no longer strictly uniform: since the 2026-07-28 bench, a class's aggressor
+2pc/4pc may run hotter or leaner as the ENDGAME board-ordering dial (the
+owner's called class gaps live partly here because set tiers only exist on
+endgame kits — at-level, set-less pacing never moves). Current deviations:
+warrior 2pc +4%/+2.5% (fury closed an 18% gap), assassin 4pc amp 0.25
+(priced for ~1/6 mark uptime), warlock 4pc amp 0.16.
 
 ### Warrior
 
@@ -77,7 +82,7 @@ aggressor +3% ATK +2% Crit · bulwark +8 VIT.
 | Nullward (ward) | [weakness: magres is the plate's soft side] taking MAGIC damage builds a Grit stack | your magic-ward verb also pays +10% damage while it holds — spellfire feeds the war |
 | Unbroken (guard) | [identity] Grit cap +2 | at full Grit stacks, blows you take are answered at 0.3× |
 | No Horizon (finesse) | [off-meta: the eva duelist] EVADING builds a Grit stack — the dodge feeds the grind | +10% damage while slippery |
-| Warhowl (aggressor) | [identity] Berserk runs +2s | your openers stagger, and the opening re-arms every 12s |
+| Warhowl (aggressor) | [identity] Berserk runs +4s | your openers stagger and CRUSH (+12% while the foe reels), re-arming every 12s — the crush window is the one warrior knockbacks and the crush talent already read |
 | Stonefather (bulwark) | [identity] +8% max HP | the bastion floor deepens +10% |
 
 ### Archer
@@ -97,7 +102,7 @@ aggressor +3% ATK +2% Crit · bulwark +8 VIT.
 | ward triad | [weakness: magic chip bypasses Elusive] a warded magic hit feeds the blood surge +0.5s | +10 MagRes and the ward's DR +10% |
 | guard triad | [off-meta: the parry fencer] full anchor stacks add +10% parry-family proc chance | blows taken while surging are answered at 0.3× |
 | finesse triad | [identity] Elusive +3% evasion | evading extends a live Death Mark +0.3s |
-| aggressor triad | [identity] MARKED prey takes +8% from you | Stab kills extend the surge +1s (on bosses, Stab crits stand in) |
+| aggressor triad | [identity] MARKED prey takes +25% from you (priced for the ~1/6 Death-Mark uptime) | while the blood surge runs, your blades bite +6% (redesigned 2026-07-28: the kill/crit surge EXTENSION was saturated — stab cadence already maintains the surge — so the full six measured under the 4pc kit) |
 | bulwark triad | [off-meta: the bulk fencer] +8% max HP | below 30% HP the blood surge never expires |
 
 ### Mage

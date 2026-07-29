@@ -367,8 +367,8 @@ const ABILITY_THEMES := {
 				"fx": {"pull": 1, "stun_chance": 0.30, "slow": 0.30}},
 		},
 		"ult": {
-			"fury": {"desc": "Deeper rage: +55% damage, and it burns for 10 seconds.",
-				"fx": {"berserk_dmg": 0.55, "berserk_dur": 10.0}},
+			"fury": {"desc": "Deeper rage: +70% damage, and it burns for 10 seconds.",
+				"fx": {"berserk_dmg": 0.7, "berserk_dur": 10.0}},
 			"bulwark": {"desc": "Juggernaut: the rage heals 25% HP on cast and armors you while it lasts.",
 				"fx": {"berserk_heal": 0.25, "berserk_guard": 100.0}},
 			"earth": {"desc": "Your roar is seismic: enemies around you are STUNNED 2s when you awaken.",

@@ -789,7 +789,7 @@ const HUNT_RHYTHM_SHOTS := 4
 # and flick out under pressure — the reward curve lives in stance uptime.
 const PALADIN_HOLY_DMG := 0.90      # Holy stance: damage dealt multiplier (softened 0.80->0.90 in the 2026-07-13 rework — Holy now banks smite damage via overheal, so its stance penalty needn't double-punish the dance)
 const PALADIN_HOLY_MEND := 0.01     # Holy stance: max-HP fraction mended per hit landed
-const PALADIN_RETRI_DMG := 1.25     # Retribution stance: damage dealt multiplier
+const PALADIN_RETRI_DMG := 1.35     # Retribution stance: damage dealt multiplier (1.25->1.35 bench 2026-07-28: wrath's rep-mean measured 18% under mage vs the owner's called 8% — the gap closes in the stance wrath lives in; Holy untouched)
 const PALADIN_SWAP_HEAL := 0.10     # entering Holy: blessing burst (max-HP fraction)
 const PALADIN_SWAP_CHAINS := 0.5    # entering Retribution: chains cast at this scale
 # Paladin rework (2026-07-13): make the class's IDENTITY deal damage, fixing its
@@ -1712,15 +1712,19 @@ const SET_WARD := {"dr": 0.15, "dur": 2.0}
 # The aggressor 6pc opener clauses RE-ARM on this cadence mid-fight (a boss
 # never offers a second unwounded moment); the true opener always fires.
 const SET_OPENER_REARM := 12.0
-# Assassin D 6pc: on bosses a Stab CRIT stands in for the kill — this ICD
-# keeps crit-stacked builds from making the surge permanent.
-const SET_SURGE_CRIT_ICD := 3.0
 const UNIQ_SETS := {
 	"warrior": {
 		"A": {"s2": {"magres": 8.0}, "s4": {"grit_on_magic": 1.0}, "s6": {"ward_amp": 0.10}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"grit_cap": 2.0}, "s6": {"full_grit_answer": 0.3}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"grit_on_evade": 1.0}, "s6": {"slippery_amp": 0.10}},
-		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"berserk_ext": 2.0}, "s6": {"opener_stagger": 0.3}},
+		# Warrior aggressor runs hotter than the other classes' rows (bench
+		# 2026-07-28): fury measured 18% under mage vs the owner's called 8% —
+		# the gap closes through Berserk (the fury identity) + these tiers.
+		# Completion still escalates: warrior BiS forms D4 on its own.
+		# 6pc: the stagger opens a CRUSH window (player_combat opener seam) and
+		# "crush_amp" folds into recalc's stat bucket — warrior knockbacks and
+		# the crush talent read the same window, so trash pays it constantly.
+		"D": {"s2": {"atk_pct": 0.04, "crit": 0.025}, "s4": {"berserk_ext": 4.0}, "s6": {"opener_stagger": 0.3, "crush_amp": 0.12}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08}, "s6": {"bastion_add": 0.10}},
 	},
 	"archer": {
@@ -1734,11 +1738,16 @@ const UNIQ_SETS := {
 		"A": {"s2": {"magres": 8.0}, "s4": {"surge_ward": 0.5}, "s6": {"magres_x": 10.0, "mward_add": 0.10}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"parry_add": 0.10}, "s6": {"surge_answer": 0.3}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"eva": 0.03}, "s6": {"dmark_evade": 0.3}},
-		# Assassin's aggressor 2pc runs HOT (bench 2026-07-28): the measured
-		# BiS kit forms D3 (both D4 swaps measured WORSE — the piece passives
-		# outvalue amp_marked's ~1/6 mark uptime), so the 2pc is the only set
-		# lever that reaches the kit — priced to keep the dps crown assassin's.
-		"D": {"s2": {"atk_pct": 0.05, "crit": 0.03}, "s4": {"amp_marked": 0.08}, "s6": {"surge_kill": 1.0}},
+		# Assassin aggressor tiers ESCALATE (owner rule 2026-07-28: completion
+		# must out-pay partial sets — the earlier hot-2pc crown inverted that).
+		# The 4pc amp is priced for the ~1/6 Death-Mark uptime (0.25 in the
+		# window ≈ +4% sustained), so committing the 4th slot beats the BiS
+		# piece it displaces; the 6pc carries the crown's top end.
+		# 6pc redesigned (bench 2026-07-28): the kill/crit surge EXTENSION was
+		# saturated — stab cadence already maintains the surge, so the full six
+		# measured under the 4pc kit. The capstone now deepens the surge
+		# itself (a standing amp while it runs): completion escalates.
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_marked": 0.25}, "s6": {"surge_amp": 0.15}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08}, "s6": {"surge_hold": 1.0}},
 	},
 	"mage": {
@@ -1759,7 +1768,10 @@ const UNIQ_SETS := {
 		"A": {"s2": {"magres": 8.0}, "s4": {"life_ward": 0.01}, "s6": {"magres_x": 10.0, "hexext_ward": 1.0}},
 		"B": {"s2": {"physres": 8.0, "critres": 4.0}, "s4": {"pact_cut_stacks": 0.33}, "s6": {"wither_struck": 0.2}},
 		"C": {"s2": {"dex": 6.0, "eva": 0.03}, "s4": {"hexext_evade": 1.0}, "s6": {"rift_pull": 0.25}},
-		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_hexed": 0.08}, "s6": {"detonate_amp": 0.15}},
+		# amp_hexed 0.10 (bench 2026-07-28): void measured 6% under mage vs
+		# the owner's called 4% — hexes are near-permanent on the focus target,
+		# so the amp reads close to face value.
+		"D": {"s2": {"atk_pct": 0.03, "crit": 0.02}, "s4": {"amp_hexed": 0.16}, "s6": {"detonate_amp": 0.15}},
 		"E": {"s2": {"VIT": 8.0}, "s4": {"hp_pct": 0.08, "pact_surge_ext": 1.0}, "s6": {"pact_free_lowhp": 1.0}},
 	},
 }
@@ -1862,7 +1874,7 @@ const GEAR_POWER_FIRST := 50
 # the retuned upscaled Act-1 finale (285.9k authored x2.865 flat dial) in
 # ~35s, the middle of the called 30-40s. Mid-endgame (60-85) rides the
 # shape anchor until Act-2+ bosses give a real reference (owner caveat).
-const GEAR_POWER_ANCHORS := {50: 1.0, 75: 1.35, 100: 2.57}
+const GEAR_POWER_ANCHORS := {50: 1.0, 75: 1.38, 100: 2.75}
 
 
 ## Expected gear-power multiplier at `lvl` — geometric interpolation over
@@ -2197,6 +2209,30 @@ const SCENERY_RENDER_WIDTH := {
 	"garden_fountain": 165.0, "topiary": 104.0, "keep_brazier": 102.0,
 	"crystal_cluster": 118.0, "crystal_spire": 110.0, "geode": 104.0,
 	"void_monolith": 108.0, "void_rift": 94.0, "void_obelisk": 108.0,
+}
+
+# Ground-footprint radii for authored high-resolution scenery. The old fixed
+# 11px circle belonged to the original 32px tiles and let a hero walk through
+# most of a 100-145px boulder, shrine, furnace, or sculpture. Canopies keep
+# trunk-sized footprints; broad solid props block their visible bases.
+const SCENERY_COLLIDER_RADIUS := {
+	"tree_green": 20.0, "tree_autumn": 20.0, "tree_gnarled": 25.0,
+	"deadtree": 20.0, "log": 48.0, "bush": 34.0,
+	"grave_statue": 26.0, "grave_angel": 30.0, "grave_deadtree": 20.0,
+	"tombstone": 20.0, "tombstone2": 21.0, "tombstone3": 38.0,
+	"tree_snow": 20.0, "tree_winter": 21.0, "ice_cairn": 32.0,
+	"storm_conductor": 34.0, "storm_standing_stone": 31.0,
+	"frost_reeds": 12.0,
+	"tree_teal": 21.0, "tree_spore": 22.0, "spore_shrine": 38.0,
+	"spore_vent": 35.0, "cattail": 10.0, "mushroom_purple": 18.0,
+	"rock_volcanic": 42.0, "forge_statue": 32.0, "magma_furnace": 44.0,
+	"magma_chainrig": 44.0, "cactus": 23.0, "sandstone": 37.0,
+	"rock": 23.0, "boulder": 29.0,
+	"bush3": 30.0, "mushroom": 13.0,
+	"castle_statue": 27.0, "garden_statue": 27.0, "ruin_pillar": 29.0,
+	"garden_fountain": 68.0, "topiary": 31.0, "keep_brazier": 32.0,
+	"crystal_cluster": 36.0, "crystal_spire": 31.0, "geode": 34.0,
+	"void_monolith": 31.0, "void_rift": 29.0, "void_obelisk": 31.0,
 }
 
 # Crownfall composition fallbacks. Authored zone data normally supplies the

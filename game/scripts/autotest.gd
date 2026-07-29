@@ -640,11 +640,12 @@ func _run_systems() -> void:
 	# lands on the swing's contact frame now (wall-clock: frames race headless)
 	if get_tree().get_nodes_in_group("projectiles").size() <= proj_before:
 		return _fail("earth Cleave did not launch a quake wave")
-	# Fury Berserk: deeper rage tuning (+55% for 10s).
+	# Fury Berserk: deeper rage tuning (+70% for 10s — the 2026-07-28 class
+	# ordering round: fury measured 18% under mage vs the owner's called 8%).
 	game.player.set_ability_theme("ult", "fury")
 	game.player.cds["ult"] = 0.0
 	game.player.use_ability("ult")
-	if absf(game.player.berserk_bonus - 0.55) > 0.001 or game.player.berserk_time < 9.5:
+	if absf(game.player.berserk_bonus - 0.7) > 0.001 or game.player.berserk_time < 9.5:
 		return _fail("fury Berserk tuning not applied (bonus %.2f, dur %.1f)" %
 			[game.player.berserk_bonus, game.player.berserk_time])
 	game.player.berserk_time = 0.0
@@ -4092,19 +4093,83 @@ func _test_asset_seams() -> void:
 		return _fail("unlisted structure should degrade to one footprint collider (got %d)" % fb_cols)
 	fallback.queue_free()
 
-	# --- SHOWCASE assets (2026-07-18): the five authored floors, eight
-	# animated props, and the animated composite structures are installed, so
+	# --- SHOWCASE assets (2026-07-18): the five authored floors, animated
+	# props, and the animated composite structures are installed, so
 	# assert the real art landed (a dropped strip or a bad terrain regresses
 	# here, not silently in play). Placeholder-terrain content, dev-only.
 	for gk in ["forgefloor", "lavafield", "dungeonfloor", "hallwood", "castletile"]:
 		if Art._ground_tileset(gk).is_empty():
 			return _fail("showcase ground_%s.png tileset did not load" % gk)
 	for pn in ["flame", "ember_smoke", "forge_hearth", "cook_grill", "cook_pan",
-			"sewer_flow", "fountain_flow", "camp_bonfire"]:
+			"sewer_flow", "fountain_flow", "camp_bonfire",
+			"spore_puff", "void_energy", "storm_arcs"]:
 		if Art.anim_info(pn).is_empty():
 			return _fail("showcase animated prop %s has no _anim strip" % pn)
 		if Art.anim_prop(pn) == null:
 			return _fail("showcase prop %s did not build an AnimatedSprite2D" % pn)
+	var flow_info := Art.anim_info("fountain_flow")
+	if int(flow_info.get("frames", 0)) != 4:
+		return _fail("fountain water needs four motion frames")
+	var flow_image: Image = (flow_info["tex"] as Texture2D).get_image()
+	var flow_frame: Vector2i = flow_info["frame_size"]
+	for frame_idx in 4:
+		var x0 := frame_idx * flow_frame.x
+		for corner in [
+				Vector2i(x0, 0), Vector2i(x0 + flow_frame.x - 1, 0),
+				Vector2i(x0, flow_frame.y - 1),
+				Vector2i(x0 + flow_frame.x - 1, flow_frame.y - 1),
+		]:
+			if flow_image.get_pixelv(corner).a > 0.05:
+				return _fail("fountain water frame %d regressed to an opaque rectangle" % frame_idx)
+	# Active scenery keeps the solid shell stable and animates only its local
+	# water/energy/spore element. This must work through the shared prop seam,
+	# including scatter/accent placements rather than structures alone.
+	for active_name in ["spore_vent", "void_rift", "capital_portal_depths",
+			"storm_conductor", "magma_furnace"]:
+		var active_visual := game._prop_visual(active_name)
+		var has_motion := false
+		for child in active_visual.get_children():
+			if child is AnimatedSprite2D:
+				has_motion = true
+				break
+		if not has_motion:
+			active_visual.queue_free()
+			return _fail("%s should carry a local animated motion overlay" % active_name)
+		active_visual.queue_free()
+	# The blue fountain square was an opaque placeholder water strip, while a
+	# 30px circle covered less than half the basin. All fountain aliases now
+	# carry transparent water motion and a two-lobe full-rim footprint.
+	for fountain_name in ["town_fountain", "garden_fountain", "holy_sanctum"]:
+		var fountain := game._add_structure(fountain_name, Vector2(-4550, -4550))
+		var fountain_motion := false
+		var broad_lobes := 0
+		for child in fountain.get_children():
+			if child is AnimatedSprite2D:
+				fountain_motion = true
+			elif child is CollisionShape2D:
+				var circle := (child as CollisionShape2D).shape as CircleShape2D
+				if circle != null and circle.radius >= 42.0:
+					broad_lobes += 1
+		if not fountain_motion or broad_lobes != 2:
+			fountain.queue_free()
+			return _fail("%s needs animated water + two broad basin colliders" % fountain_name)
+		fountain.queue_free()
+	for solid_name in ["boulder", "rock_volcanic", "spore_vent", "magma_furnace",
+			"crystal_cluster", "garden_statue"]:
+		if float(Balance.SCENERY_COLLIDER_RADIUS.get(solid_name, 0.0)) <= 20.0:
+			return _fail("%s regressed to a legacy undersized scenery collider" % solid_name)
+	var boulder_body := game._add_obstacle("boulder", Vector2(-4575, -4575))
+	var boulder_radius := 0.0
+	for child in boulder_body.get_children():
+		if child is CollisionShape2D:
+			var circle := (child as CollisionShape2D).shape as CircleShape2D
+			if circle != null:
+				boulder_radius = circle.radius
+				break
+	if boulder_radius < 29.0:
+		boulder_body.queue_free()
+		return _fail("boulder runtime footprint ignored its authored radius")
+	boulder_body.queue_free()
 	# The working forge composites an animated furnace part + an animated flame
 	# decal (both self-animate off their strips), carries a forge light, and
 	# has its 2-shape footprint — Lane 2 x Lane 3 in one build.
@@ -4231,7 +4296,7 @@ func _test_asset_seams() -> void:
 		if gt == null:
 			return _fail("showcase terrain %s ground failed to bake" % tid)
 	print("ok: asset seams (ground tilesets / composite structures + decals / animated props)")
-	print("ok: seam showcase (5 authored floors + 8 animated props + animated forge/hearth/fountain/capital structures)")
+	print("ok: seam showcase (5 authored floors + living water/spores/rifts/storm/fire structures)")
 
 
 ## A legacy side-profile NPC has no eight-way strip to select, but must still

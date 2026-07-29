@@ -1296,8 +1296,16 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 			if fresh or rearms:
 				if so_st > 0.0:
 					_stun_or_concuss(e, so_st)
+					# Warrior 6pc: the stagger opens a CRUSH window — the set's
+					# own crush_amp (a recalc stat fold) and the crush talent
+					# both read it, bosses included.
+					e.crush_t = maxf(e.crush_t, Balance.CRUSH_WINDOW)
 				if so_ex > 0.0:
 					e.apply_vuln(3.0)
+					# The opening also feeds the rhythm — the EXPOSE is redundant
+					# under hunt's own permanent marks, so the capstone pays every
+					# theme something real.
+					_hunt_rhythm_feed()
 				if fresh and uniq_set_k("D", 4, "opener_holy") > 0.0 and paladin_mode == "retribution":
 					holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP, holy_charge + atk * 0.4)
 				if so_st > 0.0 or so_ex > 0.0:
@@ -1315,6 +1323,8 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 			dmg *= 1.0 + uniq_set_k("A", 6, "ward_amp")
 		if dodge_time > 0.0:
 			dmg *= 1.0 + uniq_set_k("C", 6, "slippery_amp")  # No Horizon: slippery bites
+		if stab_ls_time > 0.0:
+			dmg *= 1.0 + uniq_set_k("D", 6, "surge_amp")  # assassin 6pc: the surge bites deeper
 
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
@@ -1343,15 +1353,7 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 	if uniq_sp != "":
 		_uniq_after_hit(e, uniq_sp, dmg, mult, is_crit, effects)
 	# Assassin aggressor-set 6pc: a Stab kill feeds the running blood surge
-	# (sp-independent — a set must work over any weapon). Kills feed it on
-	# trash; on BOSSES — where nothing dies mid-fight — Stab CRITS stand in
-	# for the kill (own ICD so crit builds don't turn the surge permanent).
-	if effects.get("uniq_a1", 0) and stab_ls_time > 0.0:
-		if e.dying or e.hp <= 0.0:
-			stab_ls_time += uniq_set_k("D", 6, "surge_kill")
-		elif is_crit and e is Boss and not uniq_on("set_skill_icd"):
-			uniq_t["set_skill_icd"] = float(Balance.SET_SURGE_CRIT_ICD)
-			stab_ls_time += uniq_set_k("D", 6, "surge_kill")
+	# (sp-independent — a set must work over any weapon).
 	# Tear verb (blood knuckles and their kin): crits leave a class-typed
 	# wound; the carrier's conditional amp deepens it (echo sub-hits clean).
 	if is_crit and not uniq_armor.is_empty() and not e.dying \

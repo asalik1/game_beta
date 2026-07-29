@@ -2168,7 +2168,8 @@ const SET_CLAUSE_TEXT := {
 	"grit_on_evade": "evading builds a Grit stack",
 	"slippery_amp": "+10% damage while slippery",
 	"berserk_ext": "Berserk runs +2s",
-	"opener_stagger": "your openers stagger, and the opening re-arms every 12s",
+	"opener_stagger": "your openers stagger and CRUSH (+12% while the foe reels), re-arming every 12s",
+	"crush_amp": "",
 	"bastion_add": "the bastion floor deepens +10%",
 	"sw_magic_keep": "magic damage doesn't reset Second Wind",
 	"sw_regen": "Second Wind regen +2%/s",
@@ -2177,7 +2178,7 @@ const SET_CLAUSE_TEXT := {
 	"tumble_cd": "Tumble returns 1s sooner",
 	"perfect_crit": "a perfect dodge lines up a guaranteed crit",
 	"amp_marked": "EXPOSED prey takes +8% from you",
-	"opener_expose": "your first shot on unwounded prey EXPOSES it, and the opening re-arms every 12s",
+	"opener_expose": "your first shot on unwounded prey EXPOSES it and feeds the rhythm, re-arming every 12s",
 	"sw_delay": "Second Wind starts 0.5s sooner",
 	"lowhp_slow": "below 30% HP, blows you take SLOW the attacker",
 	"surge_ward": "a warded hit feeds the blood surge",
@@ -2185,7 +2186,7 @@ const SET_CLAUSE_TEXT := {
 	"parry_add": "full anchor stacks add +10% parry-family chance",
 	"surge_answer": "blows taken while surging are answered",
 	"dmark_evade": "evading extends a live Death Mark",
-	"surge_kill": "Stab kills extend the surge +1s (on bosses, Stab crits do)",
+	"surge_amp": "while the blood surge runs, your blades bite +15%",
 	"surge_hold": "below 30% HP the blood surge never expires",
 	"mana_ward": "warded hits refund 5 mana",
 	"blink_dr": "Blink's Arcane Ward +10% reduction",
@@ -2226,7 +2227,10 @@ static func set_tier_text(rec: Dictionary) -> String:
 	for k in rec:
 		var ks := String(k)
 		if SET_CLAUSE_TEXT.has(ks):
-			bits.append(String(SET_CLAUSE_TEXT[ks]))
+			# "" = a knob whose display rides a sibling clause's line (e.g. the
+			# warrior 6pc crush_amp is described by opener_stagger's text).
+			if String(SET_CLAUSE_TEXT[ks]) != "":
+				bits.append(String(SET_CLAUSE_TEXT[ks]))
 		elif ks == "magres_x":
 			bits.append("MagRes +%d" % int(float(rec[k])))
 		elif STAT_LABEL.has(ks):
