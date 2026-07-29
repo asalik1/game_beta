@@ -3965,6 +3965,36 @@ func _test_asset_seams() -> void:
 	if laid.a < 0.9 or laid.r < 0.9 or laid.g > 0.02 or laid.b > 0.02:
 		return _fail("ground _tile_fill did not lay the tile (got %s)" % laid)
 
+	# The 20 future biomes are complete room surfaces, not aliases to legacy
+	# terrain materials. Each keeps a bespoke route grammar and wall finish,
+	# remains dev-only, and ships its own correctly sized room texture.
+	var future_grounds := {
+		"ph_mossmeadow": "mossmeadow", "ph_amberwood": "amberleaf",
+		"ph_hollowgrove": "hollowsoil", "ph_moonfen": "moonmire",
+		"ph_mournfields": "mournearth", "ph_barrowmoor": "barrowgrass",
+		"ph_ossuary": "bonefloor", "ph_ashflats": "ashsoil",
+		"ph_slagworks": "slagstone", "ph_obsidianreach": "obsidian",
+		"ph_cinderquarry": "cinderstone", "ph_rimewood": "rimegrass",
+		"ph_frozenlake": "blueice", "ph_hoarfrostruins": "hoarfrost",
+		"ph_crystalchasm": "deepcrystal", "ph_drownedfen": "drownedsoil",
+		"ph_rootboundbog": "rootsoil", "ph_fungalcathedral": "fungalhumus",
+		"ph_stormspire": "stormstone", "ph_voidscar": "voidscar",
+	}
+	for future_id in future_grounds:
+		var ground_key: String = future_grounds[future_id]
+		var future_terrain: Dictionary = Terrains.DATA[future_id]
+		if not bool(future_terrain.get("placeholder", false)):
+			return _fail("%s escaped the dev-only placeholder shelf" % future_id)
+		if not Art.GROUND_ROOM_PATH.has(ground_key):
+			return _fail("%s has no bespoke authored route grammar" % future_id)
+		if Terrains.wall_tint_for(future_id) == Color.WHITE:
+			return _fail("%s has no terrain-specific boundary finish" % future_id)
+		var room_surface := Art._ground_room_surface(ground_key, 704, 416)
+		if room_surface == null or room_surface.get_size() != Vector2i(704, 416):
+			return _fail("%s has no 704x416 authored room surface" % future_id)
+	if Terrains.DATA["ph_moonfen"].has("river") or Terrains.DATA["ph_drownedfen"].has("river"):
+		return _fail("authored fen surfaces must not receive a second generic river overlay")
+
 	# --- Environment taxonomy: 1 landmark, 5+ kinds per tier -----------
 	if "garden_statue" not in Terrains.structure_unique_props("village_grove"):
 		return _fail("village_grove must reserve its garden-statue landmark")

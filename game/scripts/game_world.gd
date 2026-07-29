@@ -1561,6 +1561,11 @@ func _spawn_scenery(zi: int) -> void:
 			node.queue_free()
 	zone_scenery[zi] = []
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	# Dev-gallery terrains must preview as complete environments. If one is
+	# painted onto Emberfall (or any authored story room), do not retain that
+	# zone's cottages, civic landmark, furniture or scatter overrides over the
+	# new biome. Normal story terrains continue to honour all zone authorship.
+	var terrain_preview := bool(terrain.get("placeholder", false))
 	# Scenery is TERRAIN-keyed by default, but a ZONE may author its own
 	# props — buildings / obstacles / decor / accents / obstacle_count on the
 	# zone dict override the terrain. Without this, the one "village" terrain
@@ -1584,7 +1589,7 @@ func _spawn_scenery(zi: int) -> void:
 	# behind the existing perimeter walls, carry no collider, and leave their
 	# authored central arch aligned with the room's real north road.
 	var room_scale: float = float(zone.get("room_scale", 1.0))
-	for backdrop in zone.get("backdrops", []):
+	for backdrop in ([] if terrain_preview else zone.get("backdrops", [])):
 		var backdrop_spec: Dictionary = backdrop
 		var backdrop_name: String = String(backdrop_spec.get("name", ""))
 		if backdrop_name.is_empty():
@@ -1601,7 +1606,7 @@ func _spawn_scenery(zi: int) -> void:
 	# terrain's shuffled structures, these use exact room-local coordinates and
 	# reserve enough breathing room that random clutter cannot pile against a
 	# facade, fountain, gate, or ward monument.
-	for landmark in zone.get("landmarks", []):
+	for landmark in ([] if terrain_preview else zone.get("landmarks", [])):
 		var spec: Dictionary = landmark
 		var landmark_name: String = String(spec.get("name", ""))
 		if landmark_name.is_empty():
@@ -1672,7 +1677,7 @@ func _spawn_scenery(zi: int) -> void:
 
 	# Capital furniture is placed deliberately, not scattered. This prevents
 	# generic benches from clipping the inset walls or reading as fence scraps.
-	for furnishing in zone.get("furnishings", []):
+	for furnishing in ([] if terrain_preview else zone.get("furnishings", [])):
 		var furnish_spec: Dictionary = furnishing
 		var furnish_world := room_pos(zi, float(furnish_spec.get("x", ROOM_CENTER.x)),
 			float(furnish_spec.get("y", ROOM_CENTER.y)))
@@ -1688,9 +1693,11 @@ func _spawn_scenery(zi: int) -> void:
 
 	# Non-colliding ground decor (density scaled to the room's area —
 	# small rooms get proportionally less).
-	var decor_list: Array = zone.get("decor", terrain.get("decor", ["pebble"]))
-	var decor_target := int(zone.get("decor_count",
-		ceil(Balance.SCENERY_DECOR_BASE * area_frac * dens)))
+	var decor_list: Array = terrain.get("decor", ["pebble"]) if terrain_preview \
+		else zone.get("decor", terrain.get("decor", ["pebble"]))
+	var decor_target := int(ceil(Balance.SCENERY_DECOR_BASE * area_frac * dens)) \
+		if terrain_preview else int(zone.get("decor_count",
+			ceil(Balance.SCENERY_DECOR_BASE * area_frac * dens)))
 	if decor_list.is_empty():
 		decor_target = 0
 	var decor_n := 0
@@ -1739,13 +1746,16 @@ func _spawn_scenery(zi: int) -> void:
 		decor_n += dclump
 
 	# Colliding obstacles, kept off the road band and the door lanes.
-	var obstacles: Array = zone.get("obstacles", terrain.get("obstacles", ["rock"]))
+	var obstacles: Array = terrain.get("obstacles", ["rock"]) if terrain_preview \
+		else zone.get("obstacles", terrain.get("obstacles", ["rock"]))
 	var max_x := pw - 760.0 if zones[zi].get("boss", "") != "" else pw - 90.0
 
 	# Buildings first (visual pass): AUTHORED landmarks a zone opts into —
 	# Emberfall's cottages + stall, Maren's camp kit — not terrain scatter.
 	# Seeded like everything else; obstacles keep clear of them.
-	for bname in zone.get("buildings", terrain.get("buildings", [])):
+	var preview_buildings: Array = terrain.get("buildings", []) if terrain_preview \
+		else zone.get("buildings", terrain.get("buildings", []))
+	for bname in preview_buildings:
 		for attempt in 60:
 			var bpos := Vector2(rng.randf_range(200.0, max_x - 160.0), rng.randf_range(170.0, ph - 180.0))
 			if absf(bpos.y - ph / 2.0) < 160.0 or absf(bpos.x - pw / 2.0) < 190.0:
@@ -1765,8 +1775,9 @@ func _spawn_scenery(zi: int) -> void:
 	# checklist; the family pool fills every procedural terrain to >=5 kinds.
 	# The selected composition is seeded, clear of road/door lanes, and claims
 	# its signature sprites so accents/props cannot echo it elsewhere.
+	var zone_structures: Array = [] if terrain_preview else zone.get("structures", [])
 	var landmark_roster := Terrains.landmark_candidates(
-		terrain_by_zone[zi], zone.get("structures", []))
+		terrain_by_zone[zi], zone_structures)
 	if Terrains.uses_procedural_taxonomy(terrain_by_zone[zi]) and not landmark_roster.is_empty():
 		var landmark_occurrence := 0
 		for previous_zi in zi:
@@ -1792,7 +1803,9 @@ func _spawn_scenery(zi: int) -> void:
 					unique_props_seen[String(unique_name)] = true
 				break
 
-	var count := int(ceil(float(zone.get("obstacle_count", terrain.get("count", 10))) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
+	var obstacle_count: int = int(terrain.get("count", 10)) if terrain_preview \
+		else int(zone.get("obstacle_count", terrain.get("count", 10)))
+	var count := int(ceil(float(obstacle_count) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
 	var placed_n := 0
 	var guard := 0
 	while placed_n < count and guard < count * 3:
@@ -1865,7 +1878,8 @@ func _spawn_scenery(zi: int) -> void:
 	# or giant fungi common and both smaller/larger groups progressively rarer;
 	# peak 1 makes a second coffin/sign uncommon. Multiple accent kinds may
 	# coexist. Props above remain the freely repeatable scatter tier.
-	var raw_accents: Array = zone.get("accents", terrain.get("accents", []))
+	var raw_accents: Array = terrain.get("accents", []) if terrain_preview \
+		else zone.get("accents", terrain.get("accents", []))
 	for accent_spec in Terrains.accent_specs(terrain_by_zone[zi], raw_accents):
 		var spec: Dictionary = accent_spec
 		var aname := String(spec["name"])
@@ -2436,6 +2450,10 @@ func _build_room_walls(i: int) -> void:
 				_wall(Rect2(cx2, cy2 + gap / 2.0, ins.x, TILE), wt)
 		else:
 			_wall(Rect2(x, r.position.y, TILE, r.size.y), wt)
+	var wall_tint := Terrains.wall_tint_for(terrain_by_zone[i])
+	for wall_sprite in zone_wall_sprites[i]:
+		if is_instance_valid(wall_sprite):
+			wall_sprite.modulate = wall_tint
 	# Locked edges get a gate — built once per edge, by whichever room
 	# builds first, and only while the lock is still unmet.
 	for dir in exits.keys():
@@ -2755,9 +2773,11 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 	# so no rebuild — just swap the visual). Lets the dev terrain-paint preview
 	# walls too, not just ground/props.
 	var wt: String = Terrains.wall_for(terrain_id)
+	var wall_tint := Terrains.wall_tint_for(terrain_id)
 	for s in zone_wall_sprites.get(zi, []):
 		if is_instance_valid(s):
 			s.texture = Art.tex(wt)
+			s.modulate = wall_tint
 	# If the player is standing in this room, refresh mood immediately.
 	if cur_room == zi:
 		var tween := create_tween()

@@ -1382,6 +1382,34 @@ const GROUND_NOISE := {
 	"holystone":    [70, 340],
 }
 
+# Authored future-biome surfaces keep their own macro composition.  Their
+# route arms are therefore blended INTO that surface instead of overwriting
+# it with one of the legacy dirt/stone/snow strips.  Pattern + palette make
+# the navigation language terrain-specific while keeping every real doorway
+# connected.
+const GROUND_ROOM_PATH := {
+	"mossmeadow":  {"pattern": "stepping", "tint": Color("#748b43"), "accent": Color("#b7b66c"), "alpha": 0.12, "period": 22},
+	"amberleaf":   {"pattern": "leafwind", "tint": Color("#6d4227"), "accent": Color("#b06d2d"), "alpha": 0.14, "period": 17},
+	"hollowsoil":  {"pattern": "root", "tint": Color("#343229"), "accent": Color("#666047"), "alpha": 0.16, "period": 25},
+	"moonmire":    {"pattern": "boardwalk", "tint": Color("#46504b"), "accent": Color("#8b8c76"), "alpha": 0.18, "period": 8},
+	"mournearth":  {"pattern": "procession", "tint": Color("#b0a999"), "accent": Color("#77736b"), "alpha": 0.11, "period": 20},
+	"barrowgrass": {"pattern": "moortrack", "tint": Color("#4c4431"), "accent": Color("#777057"), "alpha": 0.15, "period": 21},
+	"bonefloor":   {"pattern": "inlay", "tint": Color("#77736c"), "accent": Color("#c0b798"), "alpha": 0.12, "period": 18},
+	"ashsoil":     {"pattern": "ashwind", "tint": Color("#625d58"), "accent": Color("#8a8075"), "alpha": 0.13, "period": 24},
+	"slagstone":   {"pattern": "rail", "tint": Color("#29272a"), "accent": Color("#8c4d32"), "alpha": 0.16, "period": 10},
+	"obsidian":    {"pattern": "glass", "tint": Color("#242033"), "accent": Color("#665482"), "alpha": 0.10, "period": 29},
+	"cinderstone": {"pattern": "quarry", "tint": Color("#56372d"), "accent": Color("#8d4d32"), "alpha": 0.14, "period": 16},
+	"rimegrass":   {"pattern": "snowtrack", "tint": Color("#899caf"), "accent": Color("#c0c9cd"), "alpha": 0.12, "period": 23},
+	"blueice":     {"pattern": "iceridge", "tint": Color("#7092aa"), "accent": Color("#c1d4df"), "alpha": 0.09, "period": 31},
+	"hoarfrost":   {"pattern": "runes", "tint": Color("#77818d"), "accent": Color("#b8c4ca"), "alpha": 0.11, "period": 20},
+	"deepcrystal": {"pattern": "mineral", "tint": Color("#343b67"), "accent": Color("#7c89ae"), "alpha": 0.12, "period": 27},
+	"drownedsoil": {"pattern": "sunkenplank", "tint": Color("#30372e"), "accent": Color("#6f6a54"), "alpha": 0.18, "period": 9},
+	"rootsoil":    {"pattern": "root", "tint": Color("#53412c"), "accent": Color("#8a6a42"), "alpha": 0.13, "period": 22},
+	"fungalhumus": {"pattern": "mycelium", "tint": Color("#5b3d50"), "accent": Color("#b69a83"), "alpha": 0.11, "period": 19},
+	"stormstone":  {"pattern": "storm", "tint": Color("#46586b"), "accent": Color("#9eb2c4"), "alpha": 0.10, "period": 26},
+	"voidscar":    {"pattern": "voidflow", "tint": Color("#33223f"), "accent": Color("#73567d"), "alpha": 0.10, "period": 33},
+}
+
 
 ## Load an asset-override image through the resource system, so it works
 ## in EXPORTED builds too. Image.load_from_file + globalize_path only
@@ -3344,6 +3372,104 @@ static func _tile_fill(image: Image, rect: Rect2i, ts: Dictionary, rng: RandomNu
 		y += 16
 
 
+static func _route_mark(image: Image, mask: PackedByteArray, pw: int, ph: int,
+		x: int, y: int, radius: int, color: Color, strength: float = 0.46) -> void:
+	for py in range(maxi(0, y - radius), mini(ph, y + radius + 1)):
+		var row := py * pw
+		for px in range(maxi(0, x - radius), mini(pw, x + radius + 1)):
+			if mask[row + px] == 1:
+				var current := image.get_pixel(px, py)
+				image.set_pixel(px, py, current.lerp(color, strength))
+
+
+## Preserve the authored room composition while still making every real exit
+## readable. The legacy compositor replaced every path arm with dirt/stone;
+## these future biomes instead receive a restrained material glaze plus their
+## own route grammar (fen planks, slag rails, root ribs, ice seams, etc.).
+static func _paint_authored_route(image: Image, mask: PackedByteArray, arms: Array,
+		pw: int, ph: int, spec: Dictionary, rng: RandomNumberGenerator) -> void:
+	var tint: Color = spec.get("tint", Color.WHITE)
+	var accent: Color = spec.get("accent", tint.lightened(0.18))
+	var alpha: float = float(spec.get("alpha", 0.12))
+	var pattern: String = String(spec.get("pattern", "track"))
+	var period: int = int(spec.get("period", 20))
+	for y in ph:
+		var row := y * pw
+		for x in pw:
+			if mask[row + x] == 1:
+				image.set_pixel(x, y, image.get_pixel(x, y).lerp(tint, alpha))
+
+	for arm_var in arms:
+		var arm: Rect2i = arm_var
+		var vertical := arm.size.y > arm.size.x
+		var start := arm.position.y if vertical else arm.position.x
+		var finish := arm.end.y if vertical else arm.end.x
+		var center := arm.position.x + arm.size.x / 2 if vertical else arm.position.y + arm.size.y / 2
+		var along := start + period / 2
+		while along < finish:
+			var jitter := rng.randi_range(-2, 2)
+			var x := center + jitter if vertical else along
+			var y := along if vertical else center + jitter
+			match pattern:
+				"boardwalk", "sunkenplank":
+					# Cross-planks, deliberately broken in the drowned variant.
+					var half := 18 if pattern == "boardwalk" else 15
+					for cross in range(-half, half + 1, 3):
+						if pattern == "sunkenplank" and rng.randf() < 0.12:
+							continue
+						_route_mark(image, mask, pw, ph,
+							x + (cross if vertical else 0),
+							y + (0 if vertical else cross), 1, accent, 0.42)
+				"rail":
+					# Paired rails and regularly spaced clinker ties.
+					for offset in [-11, 11]:
+						_route_mark(image, mask, pw, ph,
+							x + (offset if vertical else 0),
+							y + (0 if vertical else offset), 1, accent, 0.58)
+					for cross in range(-16, 17, 4):
+						_route_mark(image, mask, pw, ph,
+							x + (cross if vertical else 0),
+							y + (0 if vertical else cross), 0, tint.lightened(0.16), 0.38)
+				"stepping":
+					for offset in [-8, 7]:
+						_route_mark(image, mask, pw, ph,
+							x + (offset if vertical else 0),
+							y + (0 if vertical else offset), 3, accent, 0.28)
+				"procession", "moortrack", "snowtrack":
+					for offset in [-9, 9]:
+						_route_mark(image, mask, pw, ph,
+							x + (offset if vertical else 0),
+							y + (0 if vertical else offset),
+							1 if pattern != "snowtrack" else 2, accent, 0.30)
+				"root", "mycelium":
+					for offset in [-10, 0, 10]:
+						var wave := int(sin(float(along + offset * 3) * 0.08) * 4.0)
+						_route_mark(image, mask, pw, ph,
+							x + (offset + wave if vertical else 0),
+							y + (0 if vertical else offset + wave),
+							1 if pattern == "root" else 0, accent, 0.33)
+				"leafwind", "ashwind":
+					for offset in [-12, 0, 12]:
+						_route_mark(image, mask, pw, ph,
+							x + (offset if vertical else jitter),
+							y + (jitter if vertical else offset), 1, accent, 0.28)
+				"inlay", "runes", "quarry":
+					for offset in [-6, 6]:
+						_route_mark(image, mask, pw, ph,
+							x + (offset if vertical else 0),
+							y + (0 if vertical else offset), 1, accent, 0.38)
+					_route_mark(image, mask, pw, ph, x, y, 2, accent, 0.24)
+				"glass", "iceridge", "mineral", "storm", "voidflow":
+					var branch := rng.randi_range(-9, 9)
+					_route_mark(image, mask, pw, ph, x, y, 1, accent, 0.31)
+					_route_mark(image, mask, pw, ph,
+						x + (branch if vertical else 4),
+						y + (4 if vertical else branch), 0, accent, 0.27)
+				_:
+					_route_mark(image, mask, pw, ph, x, y, 1, accent, 0.30)
+			along += period
+
+
 ## Compose one big ground texture for a zone (34 x 15 tiles of 16px art).
 ## Organic look: patch blobs instead of a tile checkerboard, litter (fallen
 ## leaves / puddles), an edge-highlighted road, and depth shading under
@@ -3392,6 +3518,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	var tiled_base := not base_ts.is_empty()
 	var tiled_path := not path_ts.is_empty()
 	var authored_base := authored_room or tiled_base
+	var authored_path := authored_room and GROUND_ROOM_PATH.has(base_kind)
 
 	var g_cols: Array = GROUND[base_kind]
 	var p_cols: Array = GROUND[path_kind]
@@ -3405,7 +3532,9 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	mask.resize(pw * ph)
 	for arm in arms:
 		var ar: Rect2i = arm
-		if tiled_path:
+		if authored_path:
+			pass  # keep the room-scale composition under its bespoke route
+		elif tiled_path:
 			_tile_fill(image, ar, path_ts, rng)
 		else:
 			image.fill_rect(ar, p_cols[0])
@@ -3413,6 +3542,8 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 			var row := y * pw
 			for x in range(ar.position.x, ar.end.x):
 				mask[row + x] = 1
+	if authored_path:
+		_paint_authored_route(image, mask, arms, pw, ph, GROUND_ROOM_PATH[base_kind], rng)
 
 	# Soft organic patches of lighter/darker ground (no checkerboard!).
 	var noise_prof: Array = GROUND_NOISE.get(base_kind, [90, 600])
@@ -3421,7 +3552,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		var cy := rng.randi_range(0, ph - 1)
 		var r := rng.randi_range(3, 9)
 		var on_path := mask[cy * pw + cx] == 1
-		if (on_path and tiled_path) or (not on_path and authored_base):
+		if (on_path and (tiled_path or authored_path)) or (not on_path and authored_base):
 			continue  # a PNG-tiled band carries its own detail
 		var cols: Array = p_cols if on_path else g_cols
 		var col: Color = cols[1] if rng.randf() < 0.5 else cols[2]
@@ -3436,7 +3567,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		var x := rng.randi_range(0, pw - 1)
 		var y := rng.randi_range(0, ph - 1)
 		var on_path_px := mask[y * pw + x] == 1
-		if (on_path_px and tiled_path) or (not on_path_px and authored_base):
+		if (on_path_px and (tiled_path or authored_path)) or (not on_path_px and authored_base):
 			continue  # skip speckle over a PNG-tiled band
 		var cols: Array = p_cols if on_path_px else g_cols
 		image.set_pixel(x, y, cols[1] if rng.randf() < 0.5 else cols[2])
@@ -3446,7 +3577,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	# path ships its own edges, so this painted rim + stones skip it.
 	var edge: Color = p_cols[2].lightened(0.12)
 	var dark: Color = p_cols[1].darkened(0.15)
-	for y in (0 if tiled_path else ph):
+	for y in (0 if tiled_path or authored_path else ph):
 		var row := y * pw
 		for x in pw:
 			if mask[row + x] == 0:
@@ -3457,7 +3588,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 				image.set_pixel(x, y, edge)
 			elif shad and rng.randf() < 0.85:
 				image.set_pixel(x, y, dark)
-	for i in (0 if tiled_path else 26):
+	for i in (0 if tiled_path or authored_path else 26):
 		for attempt in 14:
 			var sx := rng.randi_range(2, pw - 3)
 			var sy := rng.randi_range(2, ph - 3)
