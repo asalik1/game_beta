@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "source": "art_src/Custom/Act2_2026-07-29",
+  "chapters": [
+    {
+      "chapter": 8,
+      "title": "Ashen Verdict",
+      "entries": [
+        {"key":"foundry_thrall","name":"Foundry Thrall","kind":"mob"},
+        {"key":"slag_hound","name":"Slag Hound","kind":"mob"},
+        {"key":"bellows_imp","name":"Bellows Imp","kind":"mob"},
+        {"key":"forge_zealot","name":"Forge Zealot","kind":"mob","weapon":"warhammer"},
+        {"key":"verdict_drone","name":"Verdict Drone","kind":"mob","movement":"hover"},
+        {"key":"cindersmith","name":"Cindersmith","kind":"mob","weapon":"hammer and censer"},
+        {"key":"smelter_lord_thrain","name":"Smelter-Lord Thrain","kind":"boss","weapon":"forge hammer"},
+        {"key":"verdant_anvil","name":"The Verdant Anvil","kind":"boss","movement":"stationary"},
+        {"key":"archon_vassik","name":"Archon Vassik","kind":"boss","weapon":"archon staff"}
+      ]
+    },
+    {
+      "chapter": 9,
+      "title": "Verdant Cure",
+      "entries": [
+        {"key":"sluice_lurker","name":"Sluice Lurker","kind":"mob"},
+        {"key":"cistern_mimic","name":"Cistern Mimic","kind":"mob"},
+        {"key":"root_spiderling","name":"Root-Spiderling","kind":"mob"},
+        {"key":"drowned_warden","name":"Drowned Warden","kind":"mob","weapon":"spear and shield"},
+        {"key":"cure_seeker_heretic","name":"Cure-Seeker Heretic","kind":"mob","weapon":"root staff"},
+        {"key":"bloat_leech","name":"Bloat Leech","kind":"mob"},
+        {"key":"broodmother_yskara","name":"Broodmother Yskara","kind":"boss"},
+        {"key":"overgrown_gatewarden","name":"Overgrown Gatewarden","kind":"boss"},
+        {"key":"pale_nursery","name":"The Pale Nursery","kind":"boss","movement":"stationary"}
+      ]
+    },
+    {
+      "chapter": 10,
+      "title": "Frozen Chorus",
+      "entries": [
+        {"key":"chorister_of_frost","name":"Chorister of Frost","kind":"mob","weapon":"frost staff"},
+        {"key":"glasshide_stalker","name":"Glasshide Stalker","kind":"mob"},
+        {"key":"rime_wolf","name":"Rime Wolf","kind":"mob"},
+        {"key":"sleepwalker","name":"Sleepwalker","kind":"mob"},
+        {"key":"shardcaller","name":"Shardcaller","kind":"mob","weapon":"crystal staff"},
+        {"key":"choir_of_frost","name":"Choir of Frost","kind":"boss","weapon":"frost staff"},
+        {"key":"glacius","name":"Glacius","kind":"boss"},
+        {"key":"elara_vessel","name":"Elara, Vessel of Winter","kind":"boss"}
+      ]
+    },
+    {
+      "chapter": 11,
+      "title": "Shattered Vow",
+      "entries": [
+        {"key":"bannerman","name":"Bannerman","kind":"mob","weapon":"war banner"},
+        {"key":"crusade_zealot","name":"Crusade Zealot","kind":"mob","weapon":"battle axe"},
+        {"key":"field_chirurgeon","name":"Field Chirurgeon","kind":"mob"},
+        {"key":"storm_adept","name":"Storm Adept","kind":"mob"},
+        {"key":"oathbound_knight","name":"Oathbound Knight","kind":"mob","weapon":"sword and shield"},
+        {"key":"commander_drayce","name":"Commander Drayce","kind":"boss","weapon":"sword and shield"},
+        {"key":"high_artificer_maeven","name":"High Artificer Maeven","kind":"boss","weapon":"split-crystal staff"},
+        {"key":"shattered_vow","name":"The Shattered Vow","kind":"boss","movement":"hover"},
+        {"key":"aldric_burned_out","name":"Aldric, Burned Out","kind":"boss","weapon":"plain sword"}
+      ]
+    },
+    {
+      "chapter": 12,
+      "title": "Rootbound",
+      "entries": [
+        {"key":"rootspawn","name":"Rootspawn","kind":"mob"},
+        {"key":"anchor_vine","name":"Anchor Vine","kind":"mob","movement":"stationary"},
+        {"key":"thorn_howler","name":"Thorn Howler","kind":"mob"},
+        {"key":"grove_tender","name":"Grove Tender","kind":"mob","weapon":"grove staff"},
+        {"key":"pollen_drifter","name":"Pollen Drifter","kind":"mob","movement":"hover"},
+        {"key":"rootweaver","name":"Rootweaver","kind":"boss","weapon":"root staff"},
+        {"key":"thornfather_grael","name":"Thornfather Grael","kind":"boss","weapon":"thorn flail and shield"},
+        {"key":"heart_of_the_root","name":"Heart of the Root","kind":"boss","movement":"stationary"}
+      ]
+    },
+    {
+      "chapter": 13,
+      "title": "The Unfinished Sentence",
+      "entries": [
+        {"key":"word_wisp","name":"Word-Wisp","kind":"mob","movement":"hover"},
+        {"key":"riftling","name":"Riftling","kind":"mob"},
+        {"key":"sand_revenant","name":"Sand Revenant","kind":"mob","weapon":"saber"},
+        {"key":"conductor_acolyte","name":"Conductor Acolyte","kind":"mob","weapon":"conductor staff"},
+        {"key":"void_hound","name":"Void Hound","kind":"mob"},
+        {"key":"unfinished_sentence","name":"The Unfinished Sentence","kind":"boss","movement":"hover"},
+        {"key":"korrag_reborn","name":"Korrag Reborn","kind":"boss","weapon":"chain flail"},
+        {"key":"mouth_of_the_storm","name":"Mouth of the Storm","kind":"boss","movement":"stationary"}
+      ]
+    },
+    {
+      "chapter": 14,
+      "title": "Hollow Flame",
+      "entries": [
+        {"key":"choir_radical","name":"Choir Radical","kind":"mob","weapon":"censer staff"},
+        {"key":"hollow_knight","name":"Hollow Knight","kind":"mob","weapon":"greatsword"},
+        {"key":"waking_shard","name":"Waking Shard","kind":"mob","movement":"hover"},
+        {"key":"flux_hound","name":"Flux Hound","kind":"mob"},
+        {"key":"converted","name":"The Converted","kind":"mob","weapon":"cleaver"},
+        {"key":"choir_ascendant","name":"Choir Ascendant","kind":"boss","weapon":"censer rod"},
+        {"key":"burned_kings_echo","name":"Burned King's Echo","kind":"boss","weapon":"greatsword"},
+        {"key":"morwyn_hollow_flame","name":"Morwyn, the Hollow Flame","kind":"boss"}
+      ]
+    }
+  ]
+}
