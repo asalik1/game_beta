@@ -702,6 +702,8 @@ func drink_potion() -> void:
 			return  # never chug mana at full — held Q would drain the stack
 		if active_potion == "elixir_might" and elixir_time > 1.0:
 			return  # elixir already running: don't burn a second vial
+		if active_potion == "elixir_ward" and dr_time > 1.0:
+			return  # ward already up: held Q shouldn't burn a second vial
 		for c in consumables:
 			if String(c.get("id", "")) == active_potion:
 				use_consumable(c)

@@ -1762,7 +1762,7 @@ func update_stats(p: Player) -> void:
 						game.control_hint("potion_next", "↻")]))
 			else:
 				var cnt := p.consumable_count(p.active_potion)
-				box["name"].text = ("%s ▸%d" % ["Mana" if p.active_potion == "mana_potion" else "Might", active_left]) if left > 0 else "Spent"
+				box["name"].text = ("%s ▸%d" % [p.potion_short_name(p.active_potion), active_left]) if left > 0 else "Spent"
 				box["num"].text = "x%d" % cnt
 				var ic: Texture2D = Art.consumable_icon({"id": p.active_potion})
 				box["icon"].texture = ic if ic != null else Art.tex("potion")

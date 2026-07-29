@@ -1953,6 +1953,21 @@ func potion_display_name(id: String) -> String:
 	return id
 
 
+## The one-word label the HUD potion slot shows (space is tight, so the full
+## potion_display_name won't fit). Kept HERE beside potion_display_name so all
+## potion naming lives in one file — the HUD's old inline "Mana"/else-"Might"
+## ternary silently mislabelled every non-mana rotation type (renewal read as
+## "Might"; elixir_ward would too when it joined the rotation 2026-07-29).
+func potion_short_name(id: String) -> String:
+	match id:
+		"health": return "Potion"
+		"mana_potion": return "Mana"
+		"elixir_might": return "Might"
+		"elixir_ward": return "Ward"
+		"renewal_draught": return "Renewal"
+	return potion_display_name(id)
+
+
 ## Shared drink gate (2026-07-21): EVERY budgeted drink — Q-rotation or a bag
 ## click — passes here. The bag path used to skip the per-room budget entirely
 ## (a renewal chain was unlimited in-fight healing, gold the only gate, which
@@ -2019,6 +2034,8 @@ func use_consumable(c: Dictionary) -> void:
 			game.sfx("potion", 0.85)
 			game.spawn_text(global_position + Vector2(0, -56), "MIGHT!", Color(1.0, 0.6, 0.3))
 		"elixir_ward":
+			if not _drink_gate("elixir_ward"):
+				return
 			dr_time = Balance.ELIXIR_WARD_DUR
 			dr_amt = Balance.ELIXIR_WARD_AMT
 			consumables.erase(c)

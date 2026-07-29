@@ -1841,6 +1841,13 @@ func _run_systems() -> void:
 		await _frames(2)
 	game.menus.open_codex("terrains")
 	await _frames(2)
+	var terrain_catalog_copy: String = _tree_ui_text(game.menus.root)
+	for terrain_id in Terrains.DATA:
+		if not String(terrain_id).begins_with("capital_"):
+			continue
+		if terrain_id in Terrains.catalog_ids() \
+				or String(Terrains.DATA[terrain_id]["name"]) in terrain_catalog_copy:
+			return _fail("Crownfall room profile leaked into the terrain catalog: %s" % terrain_id)
 	var _dev0: bool = game.dev_mode
 	game.dev_mode = true  # bestiary stays placeholder-free even in dev (2026-07-18)
 	game.menus.open_codex("monsters")
@@ -1993,8 +2000,13 @@ func _run_systems() -> void:
 	await _frames(2)
 	if game.menus.current != "daily":
 		return _fail("daily reward screen did not open")
-	game.menus.open_dev()
+	game.menus.open_dev("world")
 	await _frames(2)
+	var dev_world_copy: String = _tree_ui_text(game.menus.root)
+	for terrain_id in Terrains.DATA:
+		if String(terrain_id).begins_with("capital_") \
+				and String(Terrains.DATA[terrain_id]["name"]) in dev_world_copy:
+			return _fail("Crownfall room profile leaked into the dev terrain picker: %s" % terrain_id)
 	game.menus.close()
 	await _frames(2)
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
@@ -2395,6 +2407,7 @@ func _run_campaign_ch2() -> void:
 	await _test_endgame_no_placeholder_bosses()
 	await _test_pause_menu()
 	await _test_mp_lobby_ui()
+	await _test_elixir_ward_gate()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -5518,16 +5531,24 @@ func _test_merchant_economy() -> void:
 	if qi.is_empty() or Balance.CONSUMABLE_PRICES.has(String(qi.get("id", ""))):
 		return _fail("quest keepsake is sellable")
 
-	# New consumables apply their effect and are consumed.
+	# New consumables apply their effect and are consumed. Drink gate
+	# (2026-07-21, extended to elixir_ward 2026-07-29): both are budgeted
+	# rotation potions now — grant a room slot and a clear drink cd like a
+	# planned loadout would before each quaff. (Deeper drink-gate coverage —
+	# off-plan refusal, chain-chug closed — lives in _test_elixir_ward_gate.)
 	var keep_cons: Array = p.consumables.duplicate()
 	var keep_dr: float = p.dr_time
 	var keep_dra: float = p.dr_amt
 	var keep_hp: float = p.hp
+	var keep_room_pots: Dictionary = p.room_potions.duplicate()
+	var keep_pcd: float = p.potion_cd
 	p.consumables = []
 
 	p.dr_time = 0.0
 	var ward := Items.make_elixir_ward()
 	p.consumables.append(ward)
+	p.room_potions = {"health": 1, "elixir_ward": 1}
+	p.potion_cd = 0.0
 	p.use_consumable(ward)
 	if p.dr_time <= 0.0 or not is_equal_approx(p.dr_amt, Balance.ELIXIR_WARD_AMT) or p.consumables.has(ward):
 		return _fail("elixir of warding did not apply / wasn't consumed")
@@ -5536,10 +5557,6 @@ func _test_merchant_economy() -> void:
 	var before: float = p.hp
 	var draught := Items.make_renewal_draught()
 	p.consumables.append(draught)
-	# Drink gate (2026-07-21): renewal is budgeted now — grant it a room slot
-	# and a clear drink cd like a planned loadout would.
-	var keep_room_pots: Dictionary = p.room_potions.duplicate()
-	var keep_pcd: float = p.potion_cd
 	p.room_potions = {"health": 1, "renewal_draught": 1}
 	p.potion_cd = 0.0
 	p.use_consumable(draught)
@@ -6721,3 +6738,74 @@ func _test_capital_rework_economy() -> void:
 	game.capital_bags = keep_bags
 	game.capital_shop_day = keep_day
 	print("ok: capital rework economy (deterministic clamped road-markup curve; favor + dawn shelf save round-trip)")
+
+
+# ---- CONTENT: elixir_ward joins the drink gate (2026-07-29) ---------------
+## elixir_ward shipped with NO _drink_gate in its use_consumable branch, so it
+## never spent a room slot nor armed potion_cd — chain-chugging bought near-
+## permanent 25% DR with gold the only limit (the exact bypass the 2026-07-21
+## rule at items.gd closed for renewal_draught). This pins the fix: ward is a
+## ROTATION_POTIONS type, its bag click is REFUSED off-plan, a budgeted drink
+## works once, and the very next drink is REFUSED (cd armed + slot spent) —
+## proving the chain is broken. New func + one hook call per CLAUDE.md; the
+## existing _test_consumables section is left untouched.
+func _test_elixir_ward_gate() -> void:
+	var p := game.player
+	var keep_cons: Array = p.consumables.duplicate()
+	var keep_rotation: Array = p.potion_rotation.duplicate()
+	var keep_room_pots: Dictionary = p.room_potions.duplicate()
+	var keep_active: String = p.active_potion
+	var keep_pcd: float = p.potion_cd
+	var keep_drt: float = p.dr_time
+	var keep_dra: float = p.dr_amt
+
+	# The fix's load-bearing datum: ward can slot in the rotation, so the
+	# ALWAYS-spends-the-budget rule applies to it.
+	if not ("elixir_ward" in Items.ROTATION_POTIONS):
+		return _fail("elixir_ward must be a ROTATION_POTIONS type so the drink gate governs it")
+
+	p.consumables = []
+	p.dr_time = 0.0
+	p.dr_amt = 0.0
+
+	# (a) Off-plan bag click is REFUSED — no ward budget this room.
+	p.potion_cd = 0.0
+	p.potion_rotation = []
+	p.reset_room_potions()
+	var ward := Items.make_elixir_ward()
+	p.consumables.append(ward)
+	p.use_consumable(ward)
+	if p.dr_time > 0.0 or not p.consumables.has(ward):
+		return _fail("off-plan elixir_ward should be refused (chain-chug bypass fix)")
+
+	# (b) Budgeted + cd clear: it wards once, is consumed, spends its slot, arms cd.
+	p.potion_rotation = ["elixir_ward"]
+	p.room_potions = {"elixir_ward": 1}
+	p.potion_cd = 0.0
+	p.use_consumable(ward)
+	if p.dr_time <= 0.0 or absf(p.dr_amt - Balance.ELIXIR_WARD_AMT) > 0.001:
+		return _fail("budgeted elixir_ward did not apply its damage-reduction window")
+	if p.consumables.has(ward):
+		return _fail("elixir_ward was not consumed on a budgeted drink")
+	if int(p.room_potions.get("elixir_ward", 0)) != 0:
+		return _fail("elixir_ward did not spend its room-budget slot")
+	if p.potion_cd <= 0.0:
+		return _fail("elixir_ward did not arm the drink cooldown")
+
+	# (c) The chain is broken: an immediate second ward is REFUSED (cd armed +
+	# slot already spent), so it survives in the bag instead of chugging.
+	var ward2 := Items.make_elixir_ward()
+	p.consumables.append(ward2)
+	p.use_consumable(ward2)
+	if not p.consumables.has(ward2):
+		return _fail("a second elixir_ward drank through the armed cd/spent budget — chain-chug still open")
+
+	# Restore.
+	p.consumables = keep_cons
+	p.potion_rotation = keep_rotation
+	p.room_potions = keep_room_pots
+	p.active_potion = keep_active
+	p.potion_cd = keep_pcd
+	p.dr_time = keep_drt
+	p.dr_amt = keep_dra
+	print("ok: elixir_ward drink gate (off-plan refused, budgeted once, chain-chug closed)")

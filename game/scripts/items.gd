@@ -1229,7 +1229,10 @@ static func bag_buy_price(grade: String) -> int:
 # and BYPASSED the room budget entirely (unlimited 30%-max heals, gold the
 # only gate). Rule now: if it can slot in the rotation, it ALWAYS spends the
 # room budget — bag click or Q alike (player_core._drink_gate).
-const ROTATION_POTIONS := ["mana_potion", "elixir_might", "renewal_draught"]
+# elixir_ward joined 2026-07-29 for the SAME reason: its use_consumable branch
+# had no _drink_gate, so chain-chugging bought near-permanent 25% DR (gold the
+# only gate) — the exact bypass the rule above exists to close.
+const ROTATION_POTIONS := ["mana_potion", "elixir_might", "elixir_ward", "renewal_draught"]
 static func make_reset_stone() -> Dictionary:
 	return {"kind": "stone", "id": "reset_stone", "grade": "B",
 		"name": "Stone of Unlearning",
