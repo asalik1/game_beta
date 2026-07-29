@@ -139,7 +139,7 @@ the displaced-passive band).
 | ward triad | [identity] the arming ward mends 3% of your health (audit fix 2026-07-28: the "3% of what it eats" framing was never the wiring, and the old 1% was sub-noise) | +10 MagRes; hexes on your attackers run +1s |
 | guard triad | [weakness: the squishy channeler] full anchor stacks cut Dark Pact's cost a third | blows taken WITHER the attacker |
 | finesse triad | [off-meta: the eva warlock] evading extends every live hex +1s | Void Rift pulls harder |
-| aggressor triad | [identity] HEXED prey takes +4% from you (2026-07-29 ordering retune, from 0.16 — see the deviations note above) | hex detonations +15% — OPEN: measured level with D4 single-target AND in --aoe; the capstone fails the completion rule everywhere measured, and the ladder cannot escalate past the called −4%-under-mage while the class baseline sits ~−5.6% — capstone redesign waits on that tension (see BALANCE_HISTORY.md) |
+| aggressor triad | [identity] HEXED prey takes +4% from you (2026-07-29 ordering retune, from 0.16 — see the deviations note above) | hex detonations +15% — OWNER-ACCEPTED AS-IS (2026-07-29, closed, don't reopen): measured level with D4 single-target AND in --aoe; a completion ladder cannot escalate past the called −4%-under-mage while the class baseline sits ~−5.6%, and the owner ruled the flat capstone acceptable — warlock's completion payoff is the pack-mode detonation identity, not a bench rung |
 | bulwark triad | [off-meta: the blood tank] +8% max HP; Dark Pact surge +1s | below 30% HP Dark Pact costs nothing |
 
 ---
