@@ -1320,21 +1320,44 @@ const SPRITES := {
 # (terrains.gd) instead.
 const GROUND := {
 	"grass":  [Color(0.32, 0.55, 0.30), Color(0.27, 0.49, 0.26), Color(0.38, 0.62, 0.33)],
-	"forest": [Color(0.22, 0.39, 0.23), Color(0.17, 0.32, 0.19), Color(0.28, 0.47, 0.27)],
-	"marsh":  [Color(0.33, 0.38, 0.23), Color(0.27, 0.32, 0.19), Color(0.40, 0.44, 0.27)],
+	"forest": [Color(0.28, 0.45, 0.28), Color(0.22, 0.37, 0.22), Color(0.36, 0.54, 0.34)],
+	"marsh":  [Color(0.37, 0.43, 0.27), Color(0.30, 0.36, 0.22), Color(0.46, 0.51, 0.33)],
 	"stone":  [Color(0.40, 0.40, 0.46), Color(0.34, 0.34, 0.40), Color(0.46, 0.46, 0.52)],
 	"dirt":   [Color(0.52, 0.40, 0.26), Color(0.45, 0.34, 0.22), Color(0.58, 0.46, 0.30)],
 	# --------------------------------------------- terrain expansion ---
-	"basalt":       [Color(0.20, 0.12, 0.11), Color(0.15, 0.09, 0.08), Color(0.30, 0.15, 0.10)],
+	"basalt":       [Color(0.32, 0.20, 0.18), Color(0.24, 0.14, 0.13), Color(0.42, 0.25, 0.18)],
 	"snow":         [Color(0.82, 0.86, 0.93), Color(0.74, 0.79, 0.88), Color(0.92, 0.95, 1.00)],
 	"gravedirt":    [Color(0.40, 0.38, 0.34), Color(0.33, 0.31, 0.28), Color(0.48, 0.46, 0.41)],
 	"sand":         [Color(0.78, 0.67, 0.44), Color(0.70, 0.59, 0.38), Color(0.86, 0.76, 0.52)],
-	"bogsoil":      [Color(0.21, 0.28, 0.17), Color(0.16, 0.22, 0.13), Color(0.28, 0.35, 0.21)],
+	"bogsoil":      [Color(0.28, 0.35, 0.22), Color(0.21, 0.28, 0.17), Color(0.36, 0.43, 0.27)],
 	"crystalfloor": [Color(0.30, 0.31, 0.46), Color(0.24, 0.25, 0.38), Color(0.40, 0.42, 0.60)],
 	"stormgrass":   [Color(0.36, 0.40, 0.46), Color(0.29, 0.33, 0.38), Color(0.44, 0.49, 0.55)],
-	"voidstone":    [Color(0.11, 0.08, 0.16), Color(0.07, 0.05, 0.11), Color(0.18, 0.13, 0.26)],
+	"voidstone":    [Color(0.18, 0.12, 0.24), Color(0.12, 0.08, 0.17), Color(0.28, 0.19, 0.36)],
 	"holystone":    [Color(0.66, 0.61, 0.49), Color(0.58, 0.53, 0.42), Color(0.76, 0.71, 0.58)],
-	"sporesoil":    [Color(0.31, 0.23, 0.31), Color(0.25, 0.18, 0.25), Color(0.40, 0.30, 0.40)],
+	"sporesoil":    [Color(0.38, 0.29, 0.38), Color(0.31, 0.23, 0.31), Color(0.48, 0.37, 0.48)],
+	# Dev-preview terrain expansion (2026-07-27): twenty future-biome floor
+	# identities. These colors now serve only as road/fallback values: each
+	# kind ships a full non-repeating ground_room_<kind>.png surface.
+	"mossmeadow":   [Color(0.34, 0.50, 0.32), Color(0.27, 0.42, 0.26), Color(0.43, 0.59, 0.39)],
+	"amberleaf":    [Color(0.43, 0.32, 0.21), Color(0.34, 0.24, 0.16), Color(0.54, 0.40, 0.25)],
+	"hollowsoil":   [Color(0.25, 0.31, 0.24), Color(0.18, 0.24, 0.18), Color(0.33, 0.39, 0.29)],
+	"moonmire":     [Color(0.25, 0.34, 0.34), Color(0.18, 0.27, 0.28), Color(0.34, 0.43, 0.42)],
+	"mournearth":   [Color(0.45, 0.43, 0.40), Color(0.36, 0.34, 0.32), Color(0.54, 0.52, 0.48)],
+	"barrowgrass":  [Color(0.36, 0.43, 0.33), Color(0.28, 0.35, 0.26), Color(0.45, 0.51, 0.40)],
+	"bonefloor":    [Color(0.49, 0.47, 0.41), Color(0.39, 0.37, 0.32), Color(0.59, 0.56, 0.49)],
+	"ashsoil":      [Color(0.37, 0.33, 0.31), Color(0.29, 0.25, 0.24), Color(0.46, 0.40, 0.37)],
+	"slagstone":    [Color(0.30, 0.22, 0.20), Color(0.23, 0.16, 0.15), Color(0.40, 0.28, 0.23)],
+	"obsidian":     [Color(0.22, 0.21, 0.25), Color(0.16, 0.15, 0.19), Color(0.31, 0.29, 0.34)],
+	"cinderstone":  [Color(0.36, 0.23, 0.16), Color(0.27, 0.16, 0.11), Color(0.47, 0.31, 0.20)],
+	"rimegrass":    [Color(0.57, 0.64, 0.67), Color(0.47, 0.55, 0.59), Color(0.68, 0.73, 0.76)],
+	"blueice":      [Color(0.56, 0.68, 0.77), Color(0.45, 0.58, 0.68), Color(0.69, 0.79, 0.86)],
+	"hoarfrost":    [Color(0.54, 0.58, 0.62), Color(0.44, 0.48, 0.53), Color(0.65, 0.68, 0.72)],
+	"deepcrystal":  [Color(0.25, 0.28, 0.39), Color(0.18, 0.21, 0.31), Color(0.35, 0.39, 0.53)],
+	"drownedsoil":  [Color(0.24, 0.33, 0.27), Color(0.17, 0.26, 0.21), Color(0.32, 0.41, 0.34)],
+	"rootsoil":     [Color(0.29, 0.25, 0.20), Color(0.22, 0.18, 0.14), Color(0.38, 0.33, 0.25)],
+	"fungalhumus":  [Color(0.31, 0.23, 0.29), Color(0.23, 0.16, 0.22), Color(0.42, 0.31, 0.39)],
+	"stormstone":   [Color(0.31, 0.35, 0.40), Color(0.24, 0.28, 0.33), Color(0.41, 0.46, 0.51)],
+	"voidscar":     [Color(0.20, 0.14, 0.28), Color(0.14, 0.09, 0.20), Color(0.31, 0.21, 0.42)],
 	# ----- authored-floor demo kinds (2026-07-18, Lane 1): each has a
 	# ground_<kind>.png tileset drop-in, so these palettes only tint the road
 	# blend/fallback; the PNG carries the real look. Placeholder-terrain only.
@@ -1352,6 +1375,8 @@ const GROUND := {
 # their speckle so the flagstone seams read as the dominant texture.
 const GROUND_NOISE := {
 	"voidstone":    [14, 70],
+	"voidscar":     [12, 60],
+	"obsidian":     [28, 110],
 	"crystalfloor": [60, 240],
 	"stone":        [70, 340],
 	"holystone":    [70, 340],
@@ -3268,6 +3293,28 @@ static func _ground_tileset(kind: String) -> Dictionary:
 	return info
 
 
+## A complete authored room surface. Unlike ground_<kind>.png tile sheets,
+## this image is stretched once across the whole 44x26 room and never repeats.
+## Roads, door-aware arms, wall shadow and boundary walls are still composited
+## afterward, so authored terrain material does not break navigation language.
+static var _ground_room_cache := {}
+static func _ground_room_surface(kind: String, pw: int, ph: int) -> Image:
+	var key := "%s_%dx%d" % [kind, pw, ph]
+	if _ground_room_cache.has(key):
+		return _ground_room_cache[key]
+	var im := _override_image("res://assets/sprites/ground_room_%s.png" % kind)
+	if im != null:
+		if im.get_format() != Image.FORMAT_RGBA8:
+			im.convert(Image.FORMAT_RGBA8)
+		if im.get_width() != pw or im.get_height() != ph:
+			# Preserve the deliberately chunky pixel clusters at non-default
+			# room sizes; smoothing would pull these surfaces back toward the
+			# overly realistic look this authored pass replaces.
+			im.resize(pw, ph, Image.INTERPOLATE_NEAREST)
+	_ground_room_cache[key] = im
+	return im
+
+
 ## Fill `rect` by tiling a ground tileset — one 16px floor tile per step,
 ## a seeded variation cell each — so a multi-cell sheet covers without an
 ## obvious repeat. Source cells resize to 16px once and cache on the shared
@@ -3335,18 +3382,22 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		arms.append(Rect2i(vleft, path_bottom, 48, ph - path_bottom))
 	var image := Image.create_empty(pw, ph, false, Image.FORMAT_RGBA8)
 
-	# Optional PNG ground tilesets (Lane 1 seam). When present they REPLACE
-	# the palette fill for that band; the procedural noise/macro passes then
-	# skip the tiled band so the pack art carries its own detail. Absent ->
-	# tiled_* stay false and every pass below runs exactly as before.
+	# Full authored room surfaces take precedence over optional tile sheets.
+	# Both replace procedural base detail; paths remain independently
+	# composited so exits and roads stay readable.
+	var room_surface := _ground_room_surface(base_kind, pw, ph)
+	var authored_room := room_surface != null
 	var base_ts := _ground_tileset(base_kind)
 	var path_ts := _ground_tileset(path_kind)
 	var tiled_base := not base_ts.is_empty()
 	var tiled_path := not path_ts.is_empty()
+	var authored_base := authored_room or tiled_base
 
 	var g_cols: Array = GROUND[base_kind]
 	var p_cols: Array = GROUND[path_kind]
-	if tiled_base:
+	if authored_room:
+		image.blit_rect(room_surface, Rect2i(0, 0, pw, ph), Vector2i.ZERO)
+	elif tiled_base:
 		_tile_fill(image, Rect2i(0, 0, pw, ph), base_ts, rng)
 	else:
 		image.fill_rect(Rect2i(0, 0, pw, ph), g_cols[0])
@@ -3370,7 +3421,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		var cy := rng.randi_range(0, ph - 1)
 		var r := rng.randi_range(3, 9)
 		var on_path := mask[cy * pw + cx] == 1
-		if (on_path and tiled_path) or (not on_path and tiled_base):
+		if (on_path and tiled_path) or (not on_path and authored_base):
 			continue  # a PNG-tiled band carries its own detail
 		var cols: Array = p_cols if on_path else g_cols
 		var col: Color = cols[1] if rng.randf() < 0.5 else cols[2]
@@ -3385,7 +3436,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		var x := rng.randi_range(0, pw - 1)
 		var y := rng.randi_range(0, ph - 1)
 		var on_path_px := mask[y * pw + x] == 1
-		if (on_path_px and tiled_path) or (not on_path_px and tiled_base):
+		if (on_path_px and tiled_path) or (not on_path_px and authored_base):
 			continue  # skip speckle over a PNG-tiled band
 		var cols: Array = p_cols if on_path_px else g_cols
 		image.set_pixel(x, y, cols[1] if rng.randf() < 0.5 else cols[2])
@@ -3423,7 +3474,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	# strokes, so the floor reads at the same pixel density as the props
 	# standing on it. Everything respects the road mask. A PNG-tiled base
 	# ships its own landmark detail, so the macro pass skips it.
-	if not tiled_base:
+	if not authored_base:
 		_ground_macro(image, mask, base_kind, pw, ph, rng)
 
 	# Depth: the ground darkens in the wall's shadow at the top.
@@ -3461,33 +3512,33 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 static func _ground_macro(image: Image, mask: PackedByteArray, base_kind: String, pw: int, ph: int, rng: RandomNumberGenerator) -> void:
 	var tiles := (pw / 16) * (ph / 16)
 	match base_kind:
-		"grass":
+		"grass", "mossmeadow":
 			_gm_grass(image, mask, pw, ph, rng, tiles)
-		"forest":
+		"forest", "amberleaf", "hollowsoil":
 			_gm_forest(image, mask, pw, ph, rng, tiles)
-		"marsh":
+		"marsh", "moonmire", "drownedsoil":
 			_gm_wetland(image, mask, pw, ph, rng, tiles, true)
-		"bogsoil":
+		"bogsoil", "rootsoil":
 			_gm_wetland(image, mask, pw, ph, rng, tiles, false)
-		"stone":
+		"stone", "bonefloor", "hoarfrost":
 			_gm_flagstones(image, mask, pw, ph, rng, tiles, false)
 		"holystone":
 			_gm_flagstones(image, mask, pw, ph, rng, tiles, true)
-		"basalt":
+		"basalt", "ashsoil", "slagstone", "cinderstone", "obsidian":
 			_gm_basalt(image, mask, pw, ph, rng, tiles)
-		"snow":
+		"snow", "rimegrass", "blueice":
 			_gm_snow(image, mask, pw, ph, rng, tiles)
-		"gravedirt":
+		"gravedirt", "mournearth", "barrowgrass":
 			_gm_gravedirt(image, mask, pw, ph, rng, tiles)
 		"sand":
 			_gm_sand(image, mask, pw, ph, rng)
-		"crystalfloor":
+		"crystalfloor", "deepcrystal":
 			_gm_crystal(image, mask, pw, ph, rng, tiles)
-		"voidstone":
+		"voidstone", "voidscar":
 			_gm_void(image, mask, pw, ph, rng, tiles)
-		"stormgrass":
+		"stormgrass", "stormstone":
 			_gm_storm(image, mask, pw, ph, rng, tiles)
-		"sporesoil":
+		"sporesoil", "fungalhumus":
 			_gm_spore(image, mask, pw, ph, rng, tiles)
 
 

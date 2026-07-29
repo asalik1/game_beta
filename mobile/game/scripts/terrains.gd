@@ -25,39 +25,99 @@ class_name Terrains
 # GROUND palette in art.gd + macro floor features, NOT from the modulate.
 # (Graveyard at 0.78 avg deleted its own tombstones; void at 0.55/0.5/0.7
 # was the worst offender.)
+## Real silhouette families for repeated ecology. A terrain can keep weighting
+## the canonical key while every placement deterministically selects one of
+## these authored variants. This prevents a grove from stamping one tree PNG.
+const PROP_VARIANT_GROUPS := [
+	["tree_green", "tree_green2", "tree_green3", "tree_green4"],
+	["tree_autumn", "tree_autumn2", "tree_autumn3"],
+	["tree_teal", "tree_teal2", "tree_teal3"],
+	["tree_snow", "tree_snow2", "tree_snow3"],
+	["tree_winter", "tree_winter2", "tree_winter3"],
+	["tree_spore", "tree_spore2", "tree_spore3"],
+	["tree_gnarled", "tree_gnarled2", "tree_gnarled3"],
+	["deadtree", "deadtree2", "deadtree3"],
+	["bush", "bush2", "bush3"],
+	["grass", "grass2", "grass3"],
+	["cattail", "cattail2", "cattail3"],
+	["mushroom", "mushroom2", "mushroom3"],
+	["rock", "rock2", "rock3"],
+	["boulder", "boulder2"],
+	["tombstone", "tombstone2"],
+]
+
+# Signature silhouettes are landmarks, not environmental filler. They may
+# appear once as a standalone accent OR once inside an authored structure,
+# but random obstacle rolls must never stamp a second copy into the room.
+const UNIQUE_PROP_NAMES := {
+	"castle_statue": true,
+	"forge_statue": true,
+	"garden_fountain": true,
+	"garden_statue": true,
+	"grave_angel": true,
+	"grave_statue": true,
+	"ice_cairn": true,
+	"magma_furnace": true,
+	"spore_shrine": true,
+	"storm_conductor": true,
+	"storm_standing_stone": true,
+	"void_monolith": true,
+	"void_obelisk": true,
+	"void_rift": true,
+}
+
+
+static func prop_family(name: String) -> Array:
+	for family in PROP_VARIANT_GROUPS:
+		if name in family:
+			return family
+	return [name]
+
+
+static func prop_base(name: String) -> String:
+	return String(prop_family(name)[0])
+
+
+static func prop_variant(name: String, placement_seed: int) -> String:
+	var family := prop_family(name)
+	return String(family[absi(placement_seed) % family.size()])
+
+
 const DATA := {
 	# ------------------------------------------------ story terrains ---
 	"village": {"name": "Emberfall Village", "ground": "grass", "path": "dirt",
 		"tint": Color(1.0, 0.98, 0.9), "ambient": "leaves_green", "music": "village",
-		"obstacles": ["tree_green", "tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3", "tree_green4"], "decor": ["flower", "flower", "pebble", "grass", "bush", "bush3", "toadstool", "toadstool2", "signpost"], "accents": ["log"], "count": 9,
+		"obstacles": ["tree_green", "tree_green", "tree_green", "rock", "rock2", "boulder", "tree_green2", "ruin_pillar"], "decor": ["flower", "flower", "pebble", "grass", "bush", "bush3", "mushroom", "toadstool", "signpost"], "accents": ["log", "garden_statue"], "count": 9,
 		# Buildings are AUTHORED PER ZONE (_spawn_scenery), not terrain
 		# scatter: this terrain paints the grass + props, and each village
 		# ZONE opts into its own cottages/stall/camp kit. (Cottage roof
 		# colorways a2/b2 = PNG override variants; _add_building mirrors.)
-		"patches": [], "event": ""},
+		"patches": [], "event": "", "ecology": ["village_grove"]},
 	"darkwood": {"name": "The Darkwood", "ground": "forest", "path": "dirt",
 		"tint": Color(0.87, 0.94, 0.88), "ambient": "leaves_autumn", "music": "darkwood",
-		"obstacles": ["tree_autumn", "tree_autumn", "rock", "rock2", "boulder", "tree_autumn2", "tree_autumn3"], "decor": ["mushroom", "pebble", "flower", "grass_autumn", "bush_autumn", "toadstool", "toadstool2", "tree_stump"], "accents": ["log", "tree_gnarled", "tree_tall_red"], "count": 16,
-		"patches": [], "event": ""},
+		"obstacles": ["tree_autumn", "tree_autumn", "tree_autumn", "rock", "rock2", "boulder", "tree_gnarled"], "decor": ["mushroom", "pebble", "flower", "grass_autumn", "bush_autumn", "bush3", "toadstool", "tree_stump"], "accents": ["log", "tree_gnarled", "ruin_pillar"], "count": 14,
+		"patches": [], "event": "", "ecology": ["darkwood_hollow"]},
 	"marsh": {"name": "The Blightmarsh", "ground": "marsh", "path": "dirt",
 		"tint": Color(0.9, 0.95, 0.8), "ambient": "fireflies", "music": "marsh",
-		"obstacles": ["tree_teal", "deadtree", "rock", "tree_teal2", "tree_pine"], "decor": ["mushroom", "pebble", "grass", "bush", "cattail", "cattail2"], "accents": ["dead_shrub", "log", "mushroom_purple", "bones"], "count": 14,
-		"patches": [], "event": "",
+		"obstacles": ["tree_teal", "tree_teal", "deadtree", "rock", "tree_teal2"], "decor": ["mushroom", "pebble", "grass", "bush", "cattail", "cattail"], "accents": ["dead_shrub", "log", "mushroom_purple", "spore_vent", "bones"], "count": 13,
+		"patches": [], "event": "", "ecology": ["marsh_islet"],
 		"river": {"chance": 0.45, "color": Color(0.10, 0.20, 0.19, 0.82)}},
 	"keep": {"name": "Vargoth's Keep", "ground": "stone", "path": "stone",
 		"tint": Color(0.8, 0.78, 0.88), "ambient": "embers", "music": "keep",
-		"obstacles": ["pillar", "pillar", "rock", "rock2", "boulder", "rock3", "boulder2"], "decor": ["crack", "pebble", "rubble"], "accents": ["bones", "keep_brazier", "keep_arch"], "count": 10,
-		"patches": [], "event": ""},
+		"obstacles": ["ruin_pillar", "ruin_pillar", "rock", "rock2", "boulder", "rock3", "boulder2"], "decor": ["crack", "pebble", "rubble"], "accents": ["bones", "keep_brazier", "keep_arch", "castle_statue"], "count": 10,
+		"patches": [], "event": "", "ecology": ["keep_courtyard"]},
 	# ------------------------------------------------- new terrains ---
 	"magma": {"name": "Scorched Wastes", "ground": "basalt", "path": "basalt",
 		"tint": Color(1.0, 0.8, 0.7), "ambient": "embers", "music": "magma",
-		"obstacles": ["rock", "rock", "pillar", "rock_volcanic", "boulder", "rock3", "forge_cauldron"], "decor": ["crack", "crack", "pebble", "rubble", "forge_brazier"], "accents": ["bones", "forge_statue", "magma_furnace", "magma_chainrig"], "count": 12,
+		"obstacles": ["rock_volcanic", "rock_volcanic", "rock_volcanic", "boulder", "rock3", "forge_cauldron"], "decor": ["crack", "crack", "pebble", "rubble", "forge_brazier"], "accents": ["bones", "forge_statue", "magma_furnace", "magma_chainrig", "keep_brazier"], "count": 11,
 		"patches": [{"type": "lava", "count": 4, "radius": [55, 85]}],
+		"ecology": ["magma_judgment"],
 		"event": "magma_rain", "event_t": [3.5, 6.5]},
 	"ice": {"name": "Frozen Expanse", "ground": "snow", "path": "snow",
 		"tint": Color(0.88, 0.93, 1.05), "ambient": "snow", "music": "icefield",
-		"obstacles": ["tree_snow", "tree_snow", "rock", "rock_ice", "boulder", "tree_snow2", "tree_winter"], "decor": ["pebble", "grass_frost", "stump_snow"], "accents": ["log", "ice_cairn", "ice_sled"], "count": 12,
+		"obstacles": ["tree_snow", "tree_snow", "tree_winter", "rock_ice", "boulder"], "decor": ["pebble", "grass_frost", "frost_reeds", "stump_snow"], "accents": ["log", "crystal_spire", "ice_sled", "ice_cairn"], "count": 11,
 		"patches": [{"type": "ice", "count": 10, "radius": [60, 110]}],
+		"ecology": ["ice_waymarker"],
 		"event": "", "bright": true},
 	"graveyard": {"name": "Restless Graveyard", "ground": "gravedirt", "path": "gravedirt",
 		# Pale cold mist, NOT darkness: the old 0.78-avg tint buried the
@@ -71,44 +131,48 @@ const DATA := {
 		# cuts). Big landmarks (cluster, mourner, angel statues) stay at 1
 		# weight each = ~1/room per the anti-litter lesson; count 11 -> 10.
 		"obstacles": ["tombstone", "tombstone", "tombstone2", "grave_cross", "grave_cross", "grave_cross2", "grave_deadtree"], "decor": ["grave_crack", "pebble"], "accents": ["tombstone3", "grave_statue", "grave_angel", "grave_bones", "grave_mound", "coffin"], "count": 10,
-		"patches": [], "event": "grave_spawn", "event_t": [5.0, 9.0]},
+		"patches": [], "event": "grave_spawn", "event_t": [5.0, 9.0],
+		"ecology": ["grave_memorial"]},
 	"desert": {"name": "Scorching Dunes", "ground": "sand", "path": "sand",
 		"tint": Color(1.05, 0.98, 0.85), "ambient": "sand", "music": "desert",
-		"obstacles": ["rock", "deadtree", "sandstone", "sandstone2", "boulder", "cactus", "cactus2"], "decor": ["pebble", "sand_drift", "sand_drift2"], "accents": ["dead_shrub", "bones", "bone"], "count": 9,
-		"patches": [], "event": "gust", "event_t": [7.0, 11.0], "bright": true},
+		"obstacles": ["rock", "deadtree", "sandstone", "sandstone", "boulder", "cactus", "cactus2"], "decor": ["pebble", "sand_drift", "sand_drift2", "grass_autumn"], "accents": ["dead_shrub", "bones", "magma_chainrig"], "count": 9,
+		"patches": [], "event": "gust", "event_t": [7.0, 11.0], "bright": true,
+		"ecology": ["desert_hoodoo"]},
 	"bog": {"name": "Poison Bog", "ground": "bogsoil", "path": "bogsoil",
 		"tint": Color(0.82, 0.9, 0.75), "ambient": "fireflies", "music": "marsh",
-		"obstacles": ["tree_teal", "deadtree", "rock", "tree_teal2", "tree_pine"], "decor": ["mushroom", "mushroom", "toadstool", "bush", "cattail"], "accents": ["dead_shrub", "mushroom_purple", "log", "bones", "tree_gnarled"], "count": 13,
+		"obstacles": ["tree_teal", "tree_teal", "deadtree", "tree_gnarled", "rock"], "decor": ["mushroom", "mushroom", "bush3", "cattail", "grass"], "accents": ["dead_shrub", "mushroom_purple", "spore_vent", "log", "bones"], "count": 12,
 		"patches": [{"type": "poison", "count": 8, "radius": [55, 95]}],
-		"event": "",
+		"event": "", "ecology": ["bog_rootwell"],
 		# The Greyrun runs BLACK through the blightlands (ch2 mill canon).
 		"river": {"chance": 0.5, "color": Color(0.07, 0.08, 0.08, 0.88)}},
 	"crystal": {"name": "Crystal Caverns", "ground": "crystalfloor", "path": "crystalfloor",
 		"tint": Color(0.85, 0.88, 1.05), "ambient": "twinkle", "music": "crystalline",
-		"obstacles": ["crystal", "crystal", "pillar", "rock2", "boulder", "boulder2", "stalagmite"], "decor": ["pebble", "crack", "rubble"], "accents": ["crystal_cluster", "crystal_spire", "geode"], "count": 14,
-		"patches": [], "event": "shard", "event_t": [4.0, 7.0], "mp_boost": true},
+		"obstacles": ["crystal_cluster", "crystal_cluster", "crystal_spire", "rock2", "boulder", "boulder2", "stalagmite"], "decor": ["pebble", "crack", "rubble"], "accents": ["geode", "void_monolith"], "count": 12,
+		"patches": [], "event": "shard", "event_t": [4.0, 7.0], "mp_boost": true,
+		"ecology": ["crystal_garden"]},
 	"storm": {"name": "Thunder Plains", "ground": "stormgrass", "path": "dirt",
 		# Rain-grey does the mood; the grey-blue GROUND carries the biome.
 		"tint": Color(0.8, 0.86, 0.95), "ambient": "rain", "music": "rainstorm",
-		"obstacles": ["tree_green", "rock", "rock2", "boulder", "tree_green2", "tree_green3", "deadtree2"], "decor": ["flower", "pebble", "grass", "bush", "bush3"], "accents": ["log", "storm_conductor", "storm_standing_stone"], "count": 8,
-		"patches": [], "event": "lightning", "event_t": [4.0, 7.5]},
+		"obstacles": ["tree_green", "tree_green", "deadtree", "rock", "rock2", "boulder"], "decor": ["flower", "pebble", "grass", "bush", "bush3", "frost_reeds"], "accents": ["log", "storm_conductor", "storm_standing_stone", "ruin_pillar"], "count": 8,
+		"patches": [], "event": "lightning", "event_t": [4.0, 7.5],
+		"ecology": ["storm_array"]},
 	"void": {"name": "The Void", "ground": "voidstone", "path": "voidstone",
 		# Purple hue-skew keeps the menace; the near-black GROUND is the
 		# darkness. The old 0.55/0.5/0.7 modulate ate the pillars too.
-		"tint": Color(0.72, 0.64, 0.92), "ambient": "motes", "music": "void",
-		"obstacles": ["pillar", "crystal", "rock_pale", "boulder"], "decor": ["crack", "crack", "rubble"], "accents": ["void_monolith", "void_rift", "void_obelisk"], "count": 10,
+		"tint": Color(0.82, 0.74, 1.02), "ambient": "motes", "music": "void",
+		"obstacles": ["rock_pale", "rock_pale", "boulder", "geode"], "decor": ["crack", "crack", "rubble"], "accents": ["void_rift", "void_monolith", "void_obelisk", "crystal_spire", "storm_standing_stone"], "count": 9,
 		"patches": [{"type": "slow", "count": 7, "radius": [60, 100]}],
-		"event": ""},
+		"event": "", "ecology": ["void_breach"]},
 	"holy": {"name": "Sanctified Ruins", "ground": "holystone", "path": "holystone",
 		"tint": Color(1.05, 1.0, 0.88), "ambient": "sparkle", "music": "holy",
-		"obstacles": ["pillar", "pillar", "rock", "rock2", "boulder"], "decor": ["flower", "flower_pink", "crack", "pebble", "rubble"], "accents": ["grave_statue", "grave_angel"], "count": 11,
+		"obstacles": ["ruin_pillar", "ruin_pillar", "rock", "rock2", "boulder"], "decor": ["flower", "flower", "crack", "pebble", "rubble"], "accents": ["grave_statue", "grave_angel", "garden_statue", "garden_fountain"], "count": 10,
 		"patches": [{"type": "heal", "count": 4, "radius": [55, 75]}],
-		"event": "", "bright": true},
+		"event": "", "bright": true, "ecology": ["holy_sanctum"]},
 	"spore": {"name": "Spore Glade", "ground": "sporesoil", "path": "sporesoil",
 		"tint": Color(0.95, 0.85, 1.0), "ambient": "spores", "music": "spore",
-		"obstacles": ["tree_spore", "tree_spore", "rock", "boulder", "tree_spore2"], "decor": ["mushroom", "mushroom", "toadstool", "toadstool2", "grass", "mushroom_blue"], "accents": ["mushroom_purple", "spore_vent", "spore_shrine"], "count": 13,
+		"obstacles": ["tree_spore", "tree_spore", "tree_spore", "rock", "boulder"], "decor": ["mushroom", "mushroom", "mushroom_purple", "grass", "bush3"], "accents": ["spore_shrine", "spore_vent", "crystal_cluster", "tree_gnarled"], "count": 12,
 		"patches": [{"type": "poison", "count": 5, "radius": [60, 90], "drift": true}],
-		"event": ""},
+		"event": "", "ecology": ["spore_cathedral"]},
 	# ---------------------------------------- Crownfall capital districts ---
 	# Safe civic palettes use the brighter procedural midtones rather than the
 	# dark placeholder showcase floors. Capital zones author their own scenery,
@@ -147,7 +211,156 @@ const DATA := {
 		"ground": "stone", "path": "holystone",
 		"tint": Color(0.94, 0.95, 1.0), "ambient": "embers", "music": "keep",
 		"obstacles": [], "decor": [], "accents": [], "count": 0,
-		"patches": [], "event": ""},
+		"patches": [], "event": "", "structures": ["keep_courtyard"]},
+	# ---- future-biome gallery (2026-07-27 environment polish) ---------
+	# Twenty owner-requested terrain TYPES, intentionally dev-preview-only.
+	# Nothing in Story.CHAPTERS references these IDs: `placeholder` keeps them
+	# on the dev panel / Future > Terrains shelf until a later content pass
+	# assigns them. Each has a distinct floor material, prop ecology, weather,
+	# wall family and (where appropriate) existing terrain mechanic.
+	"ph_mossmeadow": {"name": "Mosslight Meadow", "ground": "mossmeadow", "path": "dirt",
+		"tint": Color(0.96, 1.0, 0.91), "ambient": "leaves_green", "music": "village",
+		"obstacles": ["tree_green", "tree_green", "tree_green2", "rock", "boulder", "ruin_pillar"],
+		"decor": ["grass", "grass", "flower", "bush", "bush3", "pebble", "mushroom"],
+		"accents": ["log", "garden_statue", "topiary"], "count": 11,
+		"patches": [{"type": "heal", "count": 2, "radius": [48, 68]}], "event": "",
+		"bright": true, "placeholder": true},
+	"ph_amberwood": {"name": "Amberwood", "ground": "amberleaf", "path": "dirt",
+		"tint": Color(1.0, 0.91, 0.78), "ambient": "leaves_autumn", "music": "darkwood",
+		"obstacles": ["tree_autumn", "tree_autumn", "tree_autumn2", "tree_autumn3", "rock", "boulder"],
+		"decor": ["grass_autumn", "grass_autumn", "bush_autumn", "mushroom", "pebble"],
+		"accents": ["log", "tree_gnarled", "ruin_pillar"], "count": 14,
+		"patches": [], "event": "", "placeholder": true},
+	"ph_hollowgrove": {"name": "Hollow Grove", "ground": "hollowsoil", "path": "forest",
+		"tint": Color(0.84, 0.91, 0.84), "ambient": "mist", "music": "darkwood",
+		"obstacles": ["tree_gnarled", "tree_gnarled", "deadtree", "rock", "boulder", "ruin_pillar"],
+		"decor": ["mushroom", "mushroom", "grass", "bush3", "pebble", "web"],
+		"accents": ["log", "bones", "grave_statue"], "count": 10,
+		"patches": [{"type": "slow", "count": 4, "radius": [45, 72]}], "event": "",
+		"placeholder": true},
+	"ph_moonfen": {"name": "Moonmirror Fen", "ground": "moonmire", "path": "dirt",
+		"tint": Color(0.84, 0.96, 1.0), "ambient": "fireflies", "music": "marsh",
+		"obstacles": ["tree_teal", "tree_teal", "deadtree", "rock"],
+		"decor": ["cattail", "cattail", "grass", "mushroom", "pebble"],
+		"accents": ["spore_shrine", "spore_vent", "log", "mushroom_purple"], "count": 11,
+		"patches": [{"type": "poison", "count": 3, "radius": [45, 70]}], "event": "",
+		"river": {"chance": 0.72, "color": Color(0.12, 0.31, 0.38, 0.84)},
+		"placeholder": true},
+	"ph_mournfields": {"name": "Mourners' Fields", "ground": "mournearth", "path": "gravedirt",
+		"tint": Color(0.92, 0.94, 1.0), "ambient": "mist", "music": "graveyard",
+		"obstacles": ["tombstone", "tombstone", "tombstone2", "grave_deadtree"],
+		"decor": ["grave_crack", "grass_frost", "pebble"],
+		"accents": ["tombstone3", "grave_statue", "grave_angel", "grave_mound", "grave_bones"], "count": 11,
+		"patches": [], "event": "grave_spawn", "event_t": [6.0, 10.0],
+		"placeholder": true},
+	"ph_barrowmoor": {"name": "Weeping Barrowmoor", "ground": "barrowgrass", "path": "gravedirt",
+		"tint": Color(0.86, 0.91, 0.88), "ambient": "mist", "music": "graveyard",
+		"obstacles": ["grave_mound", "grave_mound", "tombstone", "grave_deadtree", "tree_gnarled", "rock"],
+		"decor": ["grass_frost", "grave_crack", "pebble", "grave_bones"],
+		"accents": ["tombstone3", "grave_statue", "coffin"], "count": 12,
+		"patches": [{"type": "slow", "count": 4, "radius": [50, 78]}], "event": "",
+		"placeholder": true},
+	"ph_ossuary": {"name": "The Open Ossuary", "ground": "bonefloor", "path": "stone",
+		"tint": Color(0.94, 0.91, 0.84), "ambient": "embers", "music": "keep",
+		"obstacles": ["ruin_pillar", "ruin_pillar", "tombstone3", "rock"],
+		"decor": ["grave_bones", "bones", "grave_crack", "pebble"],
+		"accents": ["grave_statue", "grave_angel", "keep_brazier", "coffin", "crypt"], "count": 9,
+		"patches": [], "event": "", "structures": ["mausoleum", "torch_pillar"],
+		"placeholder": true},
+	"ph_ashflats": {"name": "Ashen Flats", "ground": "ashsoil", "path": "dirt",
+		"tint": Color(1.0, 0.87, 0.78), "ambient": "sand", "music": "desert",
+		"obstacles": ["rock_volcanic", "rock_volcanic", "cactus", "sandstone", "boulder", "deadtree"],
+		"decor": ["sand_drift", "pebble", "crack", "grass_autumn"],
+		"accents": ["magma_chainrig", "bones", "dead_shrub"], "count": 9,
+		"patches": [], "event": "gust", "event_t": [7.0, 11.0],
+		"placeholder": true},
+	"ph_slagworks": {"name": "The Slagworks", "ground": "slagstone", "path": "basalt",
+		"tint": Color(1.0, 0.79, 0.68), "ambient": "embers", "music": "magma",
+		"obstacles": ["rock_volcanic", "forge_cauldron", "boulder"],
+		"decor": ["crack", "rubble", "pebble", "forge_brazier"],
+		"accents": ["magma_furnace", "forge_statue", "magma_chainrig", "keep_brazier"], "count": 10,
+		"patches": [{"type": "lava", "count": 5, "radius": [52, 82]}],
+		"event": "magma_rain", "event_t": [4.0, 7.0],
+		"structures": ["guild_forge", "watch_brazier"], "placeholder": true},
+	"ph_obsidianreach": {"name": "Obsidian Reach", "ground": "obsidian", "path": "basalt",
+		"tint": Color(0.82, 0.78, 0.94), "ambient": "motes", "music": "void",
+		"obstacles": ["rock_volcanic", "rock_volcanic", "geode", "boulder"],
+		"decor": ["crack", "rubble", "pebble"],
+		"accents": ["void_rift", "void_monolith", "void_obelisk", "crystal_cluster"], "count": 9,
+		"patches": [{"type": "slow", "count": 4, "radius": [54, 82]}], "event": "",
+		"placeholder": true},
+	"ph_cinderquarry": {"name": "Cinder Quarry", "ground": "cinderstone", "path": "basalt",
+		"tint": Color(1.0, 0.84, 0.72), "ambient": "embers", "music": "magma",
+		"obstacles": ["rock_volcanic", "rock_volcanic", "sandstone", "boulder", "magma_chainrig"],
+		"decor": ["rubble", "crack", "pebble", "sand_drift"],
+		"accents": ["magma_furnace", "forge_statue"], "count": 12,
+		"patches": [{"type": "lava", "count": 3, "radius": [45, 70]}], "event": "",
+		"placeholder": true},
+	"ph_rimewood": {"name": "Rimewood", "ground": "rimegrass", "path": "snow",
+		"tint": Color(0.89, 0.95, 1.05), "ambient": "snow", "music": "icefield",
+		"obstacles": ["tree_snow", "tree_snow", "tree_winter", "rock_ice", "boulder"],
+		"decor": ["grass_frost", "frost_reeds", "pebble", "stump_snow"],
+		"accents": ["log", "ice_cairn", "storm_standing_stone"], "count": 13,
+		"patches": [{"type": "ice", "count": 5, "radius": [48, 76]}], "event": "",
+		"bright": true, "placeholder": true},
+	"ph_frozenlake": {"name": "Frozen Mirror", "ground": "blueice", "path": "snow",
+		"tint": Color(0.88, 0.96, 1.06), "ambient": "snow", "music": "icefield",
+		"obstacles": ["rock_ice", "crystal_cluster", "tree_winter", "boulder"],
+		"decor": ["frost_reeds", "grass_frost", "pebble"],
+		"accents": ["ice_cairn", "crystal_spire", "geode", "ice_sled"], "count": 8,
+		"patches": [{"type": "ice", "count": 12, "radius": [62, 112]}], "event": "",
+		"bright": true, "placeholder": true},
+	"ph_hoarfrostruins": {"name": "Hoarfrost Ruins", "ground": "hoarfrost", "path": "stone",
+		"tint": Color(0.88, 0.92, 1.02), "ambient": "snow", "music": "icefield",
+		"obstacles": ["ruin_pillar", "ruin_pillar", "tree_winter", "rock_ice", "boulder"],
+		"decor": ["grass_frost", "frost_reeds", "crack", "pebble"],
+		"accents": ["ice_cairn", "castle_statue", "garden_statue", "keep_brazier"], "count": 10,
+		"patches": [{"type": "ice", "count": 6, "radius": [52, 86]}], "event": "",
+		"structures": ["ruined_gate"], "placeholder": true},
+	"ph_crystalchasm": {"name": "Crystal Chasm", "ground": "deepcrystal", "path": "crystalfloor",
+		"tint": Color(0.79, 0.88, 1.06), "ambient": "twinkle", "music": "crystalline",
+		"obstacles": ["crystal_cluster", "crystal_cluster", "crystal_spire", "geode", "rock2", "boulder"],
+		"decor": ["crack", "rubble", "pebble"],
+		"accents": ["storm_standing_stone", "void_monolith"], "count": 14,
+		"patches": [], "event": "shard", "event_t": [4.0, 7.0],
+		"mp_boost": true, "placeholder": true},
+	"ph_drownedfen": {"name": "Drowned Fen", "ground": "drownedsoil", "path": "bogsoil",
+		"tint": Color(0.82, 0.94, 0.86), "ambient": "fireflies", "music": "marsh",
+		"obstacles": ["tree_teal", "tree_teal", "deadtree", "spore_vent", "rock", "boulder"],
+		"decor": ["cattail", "cattail", "grass", "mushroom", "pebble"],
+		"accents": ["log", "spore_shrine", "mushroom_purple"], "count": 13,
+		"patches": [{"type": "poison", "count": 6, "radius": [52, 84]}], "event": "",
+		"river": {"chance": 0.82, "color": Color(0.08, 0.19, 0.17, 0.88)},
+		"placeholder": true},
+	"ph_rootboundbog": {"name": "Rootbound Bog", "ground": "rootsoil", "path": "bogsoil",
+		"tint": Color(0.88, 0.92, 0.75), "ambient": "fireflies", "music": "marsh",
+		"obstacles": ["tree_gnarled", "tree_teal", "tree_spore", "deadtree", "rock"],
+		"decor": ["mushroom", "mushroom_purple", "cattail", "bush3", "pebble"],
+		"accents": ["spore_shrine", "spore_vent", "log", "bones"], "count": 12,
+		"patches": [{"type": "slow", "count": 5, "radius": [55, 90]},
+			{"type": "poison", "count": 3, "radius": [48, 72]}],
+		"event": "", "placeholder": true},
+	"ph_fungalcathedral": {"name": "Fungal Cathedral", "ground": "fungalhumus", "path": "sporesoil",
+		"tint": Color(0.92, 0.82, 1.02), "ambient": "spores", "music": "spore",
+		"obstacles": ["tree_spore", "tree_spore", "rock", "boulder"],
+		"decor": ["mushroom", "mushroom", "mushroom_purple", "grass", "pebble"],
+		"accents": ["spore_shrine", "spore_vent", "crystal_cluster", "tree_gnarled"], "count": 14,
+		"patches": [{"type": "poison", "count": 7, "radius": [58, 92], "drift": true}],
+		"event": "", "placeholder": true},
+	"ph_stormspire": {"name": "Stormspire Plateau", "ground": "stormstone", "path": "stone",
+		"tint": Color(0.79, 0.87, 0.98), "ambient": "rain", "music": "rainstorm",
+		"obstacles": ["ruin_pillar", "rock", "rock2", "boulder"],
+		"decor": ["grass_frost", "frost_reeds", "crack", "pebble"],
+		"accents": ["storm_conductor", "storm_standing_stone", "crystal_spire", "keep_brazier"], "count": 9,
+		"patches": [], "event": "lightning", "event_t": [3.5, 6.5],
+		"structures": ["ruined_gate", "watch_brazier"], "placeholder": true},
+	"ph_voidscar": {"name": "The Voidscar", "ground": "voidscar", "path": "voidstone",
+		"tint": Color(0.74, 0.66, 0.94), "ambient": "motes", "music": "void",
+		"obstacles": ["rock_volcanic", "geode", "boulder"],
+		"decor": ["crack", "rubble", "pebble"],
+		"accents": ["void_rift", "void_monolith", "void_obelisk", "crystal_spire", "storm_standing_stone"], "count": 10,
+		"patches": [{"type": "slow", "count": 9, "radius": [58, 102]}], "event": "",
+		"placeholder": true},
 	# ---- placeholder terrains (2026-07-08 environment-pack sweep) ----
 	# Authored from the owned Pixel Crawler environment packs, dev-only:
 	# the codex hides them outside the dev launcher and tags them
@@ -156,7 +369,7 @@ const DATA := {
 	# them. All reuse existing ground types / props / hazards.
 	"ph_garden": {"name": "Palace Gardens", "ground": "grass", "path": "stone",
 		"tint": Color(1.0, 0.98, 0.92), "ambient": "sparkle", "music": "holy",
-		"obstacles": ["topiary", "topiary", "garden_statue", "garden_bench", "garden_urns", "rock2"], "decor": ["flowerbed_pink", "flowerbed_red", "flowerbed_purple", "flowers_mixed", "flower", "grass", "window_box"], "accents": ["garden_fountain", "clay_pot"], "count": 10,
+		"obstacles": ["topiary", "topiary", "garden_bench", "garden_urns", "rock2"], "decor": ["flowerbed_pink", "flowerbed_red", "flowerbed_purple", "flowers_mixed", "flower", "grass", "window_box"], "accents": ["garden_statue", "garden_fountain", "clay_pot"], "count": 10,
 		"patches": [], "event": "", "bright": true,
 		"placeholder": true},
 	# ---- MMO-seed placeholder terrains (2026-07-18): guild/profession
@@ -180,7 +393,7 @@ const DATA := {
 	# as the 2026-07-08 batch: no zone references them, codex hides them.
 	"ph_castle": {"name": "Royal Gallery", "ground": "stone", "path": "stone",
 		"tint": Color(0.85, 0.82, 0.92), "ambient": "embers", "music": "keep",
-		"obstacles": ["castle_bust", "castle_bust2", "castle_statue", "pillar"], "decor": ["castle_sconce", "crack", "pebble", "carpet", "candelabra"], "accents": ["castle_throne", "castle_banner"], "count": 10,
+		"obstacles": ["castle_bust", "castle_bust2", "pillar"], "decor": ["castle_sconce", "crack", "pebble", "carpet", "candelabra"], "accents": ["castle_statue", "castle_throne", "castle_banner"], "count": 10,
 		"patches": [], "event": "",
 		"placeholder": true},
 	"ph_library": {"name": "The Great Library", "ground": "holystone", "path": "holystone",
@@ -205,12 +418,12 @@ const DATA := {
 		"placeholder": true},
 	"ph_hall": {"name": "Castle Hall", "ground": "holystone", "path": "holystone",
 		"tint": Color(0.9, 0.86, 0.95), "ambient": "embers", "music": "keep",
-		"obstacles": ["pillar", "pillar", "rock"], "decor": ["crack", "pebble"], "count": 10,
+		"obstacles": ["pillar", "pillar", "rock"], "decor": ["crack", "pebble", "rubble"], "count": 10,
 		"patches": [], "event": "", "bright": true,
 		"placeholder": true},
 	"ph_fae": {"name": "Fae Grove", "ground": "forest", "path": "dirt",
 		"tint": Color(0.85, 0.95, 0.92), "ambient": "fireflies", "music": "darkwood",
-		"obstacles": ["tree_green", "tree_green", "rock"], "decor": ["flower", "flower", "mushroom"], "count": 15,
+		"obstacles": ["tree_green", "tree_green", "rock"], "decor": ["flower", "flower", "mushroom", "bush"], "count": 15,
 		"patches": [{"type": "heal", "count": 3, "radius": [55, 80]}], "event": "",
 		"placeholder": true},
 	# ---- composite-structure preview (2026-07-18, Lane 2) ----------------
@@ -272,6 +485,177 @@ const DATA := {
 		"placeholder": true},
 }
 
+# Procedural environment taxonomy (owner clarification 2026-07-28):
+# - exactly one LANDMARK candidate is selected per room;
+# - multiple ACCENT kinds may appear, each with its own bell-curve group size;
+# - obstacles + decor are repeatable PROPS.
+# Every non-capital terrain resolves to >=5 kinds in each tier. Terrain-local
+# ecology/structures/accents lead the roster; these family pools fill gaps.
+const LANDMARK_POOLS := {
+	"village": ["village_grove", "old_well", "market_stall", "notice_board", "town_fountain"],
+	"darkwood": ["darkwood_hollow", "ruined_gate", "old_well", "signal_fire", "mausoleum"],
+	"marsh": ["marsh_islet", "bog_rootwell", "old_well", "sewer_outfall", "spore_shrine"],
+	"keep": ["keep_courtyard", "ruined_gate", "castle_statue", "watch_brazier", "mausoleum"],
+	"magma": ["magma_judgment", "forge_statue", "magma_furnace", "guild_forge", "great_hearth"],
+	"ice": ["ice_waymarker", "ice_cairn", "crystal_spire", "old_well", "ruined_gate"],
+	"graveyard": ["grave_memorial", "mausoleum", "crypt", "grave_angel", "grave_statue"],
+	"desert": ["desert_hoodoo", "ruined_gate", "signal_fire", "old_well", "watch_brazier"],
+	"bog": ["bog_rootwell", "marsh_islet", "old_well", "sewer_outfall", "spore_shrine"],
+	"crystal": ["crystal_garden", "void_breach", "geode", "crystal_spire", "void_monolith"],
+	"storm": ["storm_array", "storm_conductor", "storm_standing_stone", "ruined_gate", "signal_fire"],
+	"void": ["void_breach", "void_monolith", "void_obelisk", "void_rift", "crystal_garden"],
+	"holy": ["holy_sanctum", "garden_fountain", "garden_statue", "grave_angel", "town_fountain"],
+	"spore": ["spore_cathedral", "spore_shrine", "bog_rootwell", "marsh_islet", "void_breach"],
+}
+
+const MUSIC_TERRAIN_FAMILY := {
+	"village": "village", "darkwood": "darkwood", "marsh": "marsh",
+	"keep": "keep", "magma": "magma", "icefield": "ice",
+	"graveyard": "graveyard", "desert": "desert", "crystalline": "crystal",
+	"rainstorm": "storm", "void": "void", "holy": "holy", "spore": "spore",
+}
+
+const ACCENT_FAMILY_POOLS := {
+	"village": ["log", "tree_gnarled", "mushroom_purple", "topiary", "signpost"],
+	"darkwood": ["log", "tree_gnarled", "mushroom_purple", "dead_shrub", "bones"],
+	"marsh": ["spore_vent", "mushroom_purple", "dead_shrub", "log", "bones"],
+	"keep": ["keep_brazier", "keep_arch", "bones", "coffin", "magma_chainrig"],
+	"magma": ["magma_chainrig", "keep_brazier", "bones", "forge_cauldron", "rock_volcanic"],
+	"ice": ["log", "crystal_spire", "ice_sled", "geode", "dead_shrub"],
+	"graveyard": ["tombstone3", "grave_bones", "grave_mound", "coffin", "bones"],
+	"desert": ["dead_shrub", "bones", "magma_chainrig", "sandstone", "cactus"],
+	"bog": ["spore_vent", "mushroom_purple", "dead_shrub", "log", "bones"],
+	"crystal": ["geode", "crystal_spire", "crystal_cluster", "stalagmite", "rubble"],
+	"storm": ["log", "ruin_pillar", "crystal_spire", "dead_shrub", "frost_reeds"],
+	"void": ["crystal_spire", "geode", "magma_chainrig", "bones", "rock_pale"],
+	"holy": ["grave_bones", "keep_brazier", "topiary", "tombstone3", "ruin_pillar"],
+	"spore": ["spore_vent", "crystal_cluster", "tree_gnarled", "mushroom_purple", "dead_shrub"],
+}
+
+# Count is sampled from N(peak, sigma), rounded and clamped to [1, max].
+# Peaks are authored per accent kind: a lone sign/coffin is normal, while
+# crystals, giant fungi and large-tree stands naturally center around three.
+const ACCENT_PROFILES := {
+	"bones": {"peak": 1.0, "sigma": 0.55, "max": 3, "radius": 52.0},
+	"cactus": {"peak": 2.0, "sigma": 0.75, "max": 5, "radius": 82.0},
+	"coffin": {"peak": 1.0, "sigma": 0.45, "max": 2, "radius": 48.0},
+	"crystal_cluster": {"peak": 3.0, "sigma": 0.85, "max": 6, "radius": 88.0},
+	"crystal_spire": {"peak": 3.0, "sigma": 0.8, "max": 6, "radius": 92.0},
+	"dead_shrub": {"peak": 2.0, "sigma": 0.7, "max": 5, "radius": 72.0},
+	"forge_cauldron": {"peak": 1.0, "sigma": 0.5, "max": 3, "radius": 60.0},
+	"frost_reeds": {"peak": 3.0, "sigma": 0.9, "max": 6, "radius": 86.0},
+	"geode": {"peak": 3.0, "sigma": 0.8, "max": 6, "radius": 88.0},
+	"grave_bones": {"peak": 1.0, "sigma": 0.55, "max": 3, "radius": 52.0},
+	"grave_mound": {"peak": 2.0, "sigma": 0.65, "max": 4, "radius": 70.0},
+	"ice_sled": {"peak": 1.0, "sigma": 0.4, "max": 2, "radius": 48.0},
+	"keep_arch": {"peak": 1.0, "sigma": 0.45, "max": 2, "radius": 54.0},
+	"keep_brazier": {"peak": 2.0, "sigma": 0.7, "max": 4, "radius": 74.0},
+	"log": {"peak": 2.0, "sigma": 0.7, "max": 4, "radius": 76.0},
+	"magma_chainrig": {"peak": 1.0, "sigma": 0.5, "max": 3, "radius": 62.0},
+	"mushroom_purple": {"peak": 3.0, "sigma": 0.85, "max": 6, "radius": 84.0},
+	"rock_pale": {"peak": 3.0, "sigma": 0.9, "max": 6, "radius": 88.0},
+	"rock_volcanic": {"peak": 3.0, "sigma": 0.9, "max": 6, "radius": 90.0},
+	"rubble": {"peak": 3.0, "sigma": 0.95, "max": 7, "radius": 84.0},
+	"ruin_pillar": {"peak": 2.0, "sigma": 0.65, "max": 4, "radius": 82.0},
+	"sandstone": {"peak": 3.0, "sigma": 0.85, "max": 6, "radius": 92.0},
+	"signpost": {"peak": 1.0, "sigma": 0.4, "max": 2, "radius": 44.0},
+	"spore_vent": {"peak": 3.0, "sigma": 0.85, "max": 6, "radius": 82.0},
+	"stalagmite": {"peak": 3.0, "sigma": 0.85, "max": 6, "radius": 86.0},
+	"tombstone3": {"peak": 2.0, "sigma": 0.65, "max": 4, "radius": 74.0},
+	"topiary": {"peak": 2.0, "sigma": 0.65, "max": 4, "radius": 78.0},
+	"tree_gnarled": {"peak": 3.0, "sigma": 0.75, "max": 5, "radius": 112.0},
+}
+
+
+static func uses_procedural_taxonomy(id: String) -> bool:
+	return not id.begins_with("capital_")
+
+
+static func terrain_family(id: String) -> String:
+	if LANDMARK_POOLS.has(id):
+		return id
+	var terrain: Dictionary = get_terrain(id)
+	return String(MUSIC_TERRAIN_FAMILY.get(String(terrain.get("music", "village")), "village"))
+
+
+static func landmark_candidates(id: String, zone_structures: Array = []) -> Array:
+	var terrain: Dictionary = get_terrain(id)
+	var out: Array = []
+	for source in [terrain.get("ecology", []), terrain.get("structures", []), zone_structures]:
+		for raw_name in source:
+			var name := String(raw_name)
+			if not name.is_empty() and name not in out:
+				out.append(name)
+	var family := terrain_family(id)
+	for raw_name in LANDMARK_POOLS.get(family, LANDMARK_POOLS["village"]):
+		var name := String(raw_name)
+		if name not in out:
+			out.append(name)
+	return out
+
+
+## Seeded draw without replacement across rooms of the same terrain. The first
+## roster-length occurrences are all different; only then may the cycle repeat.
+static func landmark_for_occurrence(id: String, candidates: Array, occurrence: int) -> String:
+	if candidates.is_empty():
+		return ""
+	var shuffled := candidates.duplicate()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = id.hash() * 7919 + 7282026
+	for idx in range(shuffled.size() - 1, 0, -1):
+		var swap_idx := rng.randi_range(0, idx)
+		var held = shuffled[idx]
+		shuffled[idx] = shuffled[swap_idx]
+		shuffled[swap_idx] = held
+	return String(shuffled[posmod(occurrence, shuffled.size())])
+
+
+static func accent_specs(id: String, raw_accents: Array = []) -> Array:
+	var terrain: Dictionary = get_terrain(id)
+	var source: Array = raw_accents if not raw_accents.is_empty() else terrain.get("accents", [])
+	var family := terrain_family(id)
+	var combined: Array = source.duplicate()
+	combined.append_array(ACCENT_FAMILY_POOLS.get(family, ACCENT_FAMILY_POOLS["village"]))
+	var out: Array = []
+	var seen := {}
+	for raw_accent in combined:
+		var supplied: Dictionary = raw_accent if raw_accent is Dictionary else {}
+		var name := String(supplied.get("name", supplied.get("sprite", raw_accent)))
+		var base := prop_base(name)
+		# Signature landmarks belong exclusively to the one-of-N landmark tier.
+		if name.is_empty() or is_unique_prop(base) or seen.has(base):
+			continue
+		seen[base] = true
+		var defaults: Dictionary = ACCENT_PROFILES.get(base, {
+			"peak": 1.0, "sigma": 0.55, "max": 3, "radius": 58.0})
+		var spec: Dictionary = {"name": name}
+		for key in defaults:
+			spec[key] = defaults[key]
+		for key in supplied:
+			if key != "name" and key != "sprite":
+				spec[key] = supplied[key]
+		out.append(spec)
+	return out
+
+
+static func sample_accent_count(spec: Dictionary, rng: RandomNumberGenerator) -> int:
+	var peak := float(spec.get("peak", 1.0))
+	var sigma := maxf(0.05, float(spec.get("sigma", 0.55)))
+	return clampi(roundi(rng.randfn(peak, sigma)), 1,
+		maxi(1, int(spec.get("max", 3))))
+
+
+static func repeatable_prop_kinds(id: String) -> Array:
+	var terrain: Dictionary = get_terrain(id)
+	var out: Array = []
+	for tier in ["obstacles", "decor"]:
+		for raw_name in terrain.get(tier, []):
+			var base := prop_base(String(raw_name))
+			if not is_unique_prop(base) and base not in out:
+				out.append(base)
+	return out
+
+
 # Ambient AUDIO bed per terrain (Sfx.make_ambient kinds; "" = silence).
 # The visual weather lives in AMBIENTS below; this is its soundtrack.
 const AMBIENT_LOOPS := {
@@ -281,6 +665,17 @@ const AMBIENT_LOOPS := {
 	"marsh": "amb_crickets", "bog": "amb_crickets", "spore": "amb_crickets",
 	"keep": "amb_drone", "void": "amb_drone", "graveyard": "amb_drone",
 	"magma": "amb_drone", "crystal": "amb_drone",
+	# Future-biome gallery keeps its visual weather audible in the dev panel.
+	"ph_mossmeadow": "amb_birds", "ph_amberwood": "amb_birds",
+	"ph_hollowgrove": "amb_drone", "ph_moonfen": "amb_crickets",
+	"ph_mournfields": "amb_drone", "ph_barrowmoor": "amb_drone",
+	"ph_ossuary": "amb_drone", "ph_ashflats": "amb_wind",
+	"ph_slagworks": "amb_drone", "ph_obsidianreach": "amb_drone",
+	"ph_cinderquarry": "amb_wind", "ph_rimewood": "amb_cold",
+	"ph_frozenlake": "amb_cold", "ph_hoarfrostruins": "amb_cold",
+	"ph_crystalchasm": "amb_drone", "ph_drownedfen": "amb_crickets",
+	"ph_rootboundbog": "amb_crickets", "ph_fungalcathedral": "amb_crickets",
+	"ph_stormspire": "amb_rain", "ph_voidscar": "amb_drone",
 }
 
 # Weather / ambient particle presets.
@@ -328,6 +723,18 @@ const WALL := {
 	"ph_sewer": "wall_sewer", "ph_garden": "wall_hedge",
 	"ph_castle": "wall_castle", "ph_guildhall": "wall_castle", "ph_library": "wall_castle",
 	"ph_hideout": "wall_wood",
+	# 2026-07-27 future-biome gallery.
+	"ph_mossmeadow": "wall_moss", "ph_amberwood": "wall_moss",
+	"ph_hollowgrove": "wall_moss", "ph_moonfen": "wall_moss",
+	"ph_drownedfen": "wall_moss", "ph_rootboundbog": "wall_moss",
+	"ph_fungalcathedral": "wall_moss",
+	"ph_mournfields": "wall_grave", "ph_barrowmoor": "wall_grave",
+	"ph_ossuary": "wall_grave",
+	"ph_ashflats": "wall_volcanic", "ph_slagworks": "wall_volcanic",
+	"ph_obsidianreach": "wall_volcanic", "ph_cinderquarry": "wall_volcanic",
+	"ph_voidscar": "wall_volcanic",
+	"ph_rimewood": "wall_ice", "ph_frozenlake": "wall_ice",
+	"ph_hoarfrostruins": "wall_ice",
 	# seam-showcase terrains
 	"ph_forge": "wall_volcanic", "ph_kitchen": "wall_wood", "ph_dungeon": "wall_sewer",
 	"ph_market": "wall_castle", "ph_crypt": "wall_grave",
@@ -366,7 +773,200 @@ static func wall_for(id: String) -> String:
 #               omitted -> one rect ~62% of the base width (building default)
 #   decals[]    {sprite, off, scale, z, wind, light:Color, light_energy, light_scale}
 #   fire        positional campfire/hearth crackle as you pass
+#
+# Local motion overlays keep a solid prop's authored body stable while the
+# physically active part moves. Offsets and widths are normalized against the
+# base texture, so the same profile works in scatter, accent, and structure
+# paths at any render size.
+const PROP_MOTION := {
+	"spore_vent": {"sprite": "spore_puff", "width_ratio": 0.72,
+		"off_ratio": Vector2(0.0, -0.17), "z": 2},
+	"void_rift": {"sprite": "void_energy", "width_ratio": 1.24,
+		"off_ratio": Vector2(0.0, 0.0), "z": 2},
+	"capital_portal_depths": {"sprite": "void_energy", "width_ratio": 0.90,
+		"off_ratio": Vector2(0.08, 0.03), "z": 2},
+	"storm_conductor": {"sprite": "storm_arcs", "width_ratio": 1.02,
+		"off_ratio": Vector2(0.0, -0.27), "z": 2},
+	"magma_furnace": {"sprite": "flame", "width_ratio": 0.25,
+		"off_ratio": Vector2(0.0, 0.21), "z": 2},
+	"keep_brazier": {"sprite": "flame", "width_ratio": 0.22,
+		"off_ratio": Vector2(0.0, -0.19), "z": 2},
+	"forge_cauldron": {"sprite": "flame", "width_ratio": 0.52,
+		"off_ratio": Vector2(0.0, -0.24), "z": 2},
+	"forge_brazier": {"sprite": "flame", "width_ratio": 1.15,
+		"off_ratio": Vector2(0.0, -0.24), "z": 2},
+	"camp_furnace": {"sprite": "flame", "width_ratio": 0.50,
+		"off_ratio": Vector2(0.0, 0.02), "z": 2},
+	"station_furnace_t1": {"sprite": "flame", "width_ratio": 0.44,
+		"off_ratio": Vector2(0.0, 0.06), "z": 2},
+	"station_furnace_t2": {"sprite": "flame", "width_ratio": 0.42,
+		"off_ratio": Vector2(0.0, 0.03), "z": 2},
+	"station_furnace_t3": {"sprite": "flame", "width_ratio": 0.40,
+		"off_ratio": Vector2(0.0, 0.0), "z": 2},
+}
+
 const STRUCTURES := {
+	# ---- LIVE TERRAIN ECOLOGY LANDMARKS (2026-07-27) ----------------------
+	# One authored composition per playable biome. These are deliberately more
+	# than oversized props: a focal silhouette, supporting growth/ruin, a
+	# multi-part footprint, and light or wind where the ecology calls for it.
+	# The seeded room placer gives every live terrain a recognizable "place"
+	# while preserving its road and door lanes.
+	"village_grove": {"sprite": "tree_green", "w": 190.0, "wind": true, "mirror": true,
+		"parts": [
+			{"sprite": "garden_statue", "off": Vector2(-88, -25), "scale": 0.34, "z": 1},
+			{"sprite": "bush", "off": Vector2(78, -20), "scale": 0.38, "z": 2, "wind": true},
+			{"sprite": "grass", "off": Vector2(112, -12), "scale": 0.20, "z": 2, "wind": true}],
+		"colliders": [
+			{"shape": "circle", "radius": 18.0, "off": Vector2(0, 4)},
+			{"shape": "circle", "radius": 12.0, "off": Vector2(-88, 2)}]},
+	"darkwood_hollow": {"sprite": "tree_gnarled", "w": 230.0, "wind": true, "mirror": true,
+		"parts": [
+			{"sprite": "tree_autumn", "off": Vector2(-112, -56), "scale": 0.55, "z": -1, "wind": true},
+			{"sprite": "log", "off": Vector2(92, -11), "scale": 0.40, "z": 1},
+			{"sprite": "mushroom_purple", "off": Vector2(68, -17), "scale": 0.24, "z": 2, "wind": true},
+			{"sprite": "bush3", "off": Vector2(-73, -18), "scale": 0.30, "z": 2, "wind": true}],
+		"colliders": [
+			{"shape": "circle", "radius": 21.0, "off": Vector2(0, 5)},
+			{"shape": "circle", "radius": 15.0, "off": Vector2(-112, 5)},
+			{"shape": "rect", "size": Vector2(66, 24), "off": Vector2(92, 3)}]},
+	"marsh_islet": {"sprite": "tree_teal", "w": 205.0, "wind": true, "mirror": true,
+		"parts": [
+			{"sprite": "deadtree", "off": Vector2(104, -48), "scale": 0.48, "z": -1, "wind": true},
+			{"sprite": "cattail", "off": Vector2(-83, -24), "scale": 0.28, "z": 2, "wind": true},
+			{"sprite": "cattail", "off": Vector2(-111, -20), "scale": 0.23, "z": 2, "wind": true},
+			{"sprite": "spore_vent", "off": Vector2(69, -17), "scale": 0.25, "z": 2}],
+		"colliders": [
+			{"shape": "circle", "radius": 20.0, "off": Vector2(0, 5)},
+			{"shape": "circle", "radius": 15.0, "off": Vector2(104, 4)}]},
+	"keep_courtyard": {"sprite": "castle_statue", "w": 145.0, "mirror": true,
+		"parts": [
+			{"sprite": "ruin_pillar", "off": Vector2(-94, -54), "scale": 0.53, "z": -1},
+			{"sprite": "ruin_pillar", "off": Vector2(94, -54), "scale": 0.53, "z": -1},
+			{"sprite": "keep_brazier", "off": Vector2(-58, -18), "scale": 0.28, "z": 2},
+			{"sprite": "keep_brazier", "off": Vector2(58, -18), "scale": 0.28, "z": 2}],
+		"colliders": [
+			{"shape": "rect", "size": Vector2(42, 30), "off": Vector2(0, -2)},
+			{"shape": "circle", "radius": 14.0, "off": Vector2(-94, 0)},
+			{"shape": "circle", "radius": 14.0, "off": Vector2(94, 0)}],
+		"decals": [
+			{"sprite": "flame", "off": Vector2(-58, -57), "scale": 0.12, "z": 3,
+				"light": Color(1.0, 0.58, 0.25, 0.9), "light_energy": 0.8, "light_scale": 0.65},
+			{"sprite": "flame", "off": Vector2(58, -57), "scale": 0.12, "z": 3,
+				"light": Color(1.0, 0.58, 0.25, 0.9), "light_energy": 0.8, "light_scale": 0.65}],
+		"fire": true},
+	"magma_judgment": {"sprite": "forge_statue", "w": 155.0,
+		"parts": [
+			{"sprite": "magma_furnace", "off": Vector2(-102, -34), "scale": 0.54, "z": -1},
+			{"sprite": "rock_volcanic", "off": Vector2(96, -20), "scale": 0.38, "z": 1},
+			{"sprite": "magma_chainrig", "off": Vector2(69, -40), "scale": 0.38, "z": 2}],
+		"colliders": [
+			{"shape": "circle", "radius": 19.0, "off": Vector2(0, 2)},
+			{"shape": "rect", "size": Vector2(55, 34), "off": Vector2(-102, 0)},
+			{"shape": "circle", "radius": 15.0, "off": Vector2(96, 3)}],
+		"decals": [{"sprite": "flame", "off": Vector2(-102, -83), "scale": 0.20, "z": 3,
+			"light": Color(1.0, 0.34, 0.12, 0.95), "light_energy": 1.25, "light_scale": 1.0}],
+		"fire": true},
+	"ice_waymarker": {"sprite": "ice_cairn", "w": 150.0,
+		"parts": [
+			{"sprite": "tree_snow", "off": Vector2(-106, -64), "scale": 0.66, "z": -1, "wind": true},
+			{"sprite": "crystal_spire", "off": Vector2(91, -38), "scale": 0.39, "z": 1},
+			{"sprite": "frost_reeds", "off": Vector2(119, -15), "scale": 0.25, "z": 2, "wind": true}],
+		"colliders": [
+			{"shape": "circle", "radius": 20.0, "off": Vector2(0, 3)},
+			{"shape": "circle", "radius": 17.0, "off": Vector2(-106, 4)},
+			{"shape": "circle", "radius": 12.0, "off": Vector2(91, 2)}],
+		"decals": [{"sprite": "glow", "off": Vector2(91, -72), "scale": 0.18, "z": 3,
+			"light": Color(0.56, 0.83, 1.0, 0.75), "light_energy": 0.55, "light_scale": 0.7}]},
+	"grave_memorial": {"sprite": "grave_angel", "w": 150.0, "mirror": true,
+		"parts": [
+			{"sprite": "grave_deadtree", "off": Vector2(-115, -70), "scale": 0.68, "z": -1, "wind": true},
+			{"sprite": "grave_statue", "off": Vector2(100, -35), "scale": 0.44, "z": 1},
+			{"sprite": "tombstone3", "off": Vector2(55, -18), "scale": 0.30, "z": 2},
+			{"sprite": "grass_frost", "off": Vector2(-59, -13), "scale": 0.22, "z": 2, "wind": true}],
+		"colliders": [
+			{"shape": "circle", "radius": 17.0, "off": Vector2(0, 3)},
+			{"shape": "circle", "radius": 18.0, "off": Vector2(-115, 4)},
+			{"shape": "circle", "radius": 14.0, "off": Vector2(100, 2)}]},
+	"desert_hoodoo": {"sprite": "sandstone", "w": 185.0, "mirror": true,
+		"parts": [
+			{"sprite": "cactus", "off": Vector2(-104, -45), "scale": 0.46, "z": 1},
+			{"sprite": "sandstone", "off": Vector2(109, -35), "scale": 0.43, "z": -1},
+			{"sprite": "grass_autumn", "off": Vector2(-65, -12), "scale": 0.20, "z": 2, "wind": true}],
+		"colliders": [
+			{"shape": "circle", "radius": 24.0, "off": Vector2(0, 2)},
+			{"shape": "circle", "radius": 14.0, "off": Vector2(-104, 3)},
+			{"shape": "circle", "radius": 18.0, "off": Vector2(109, 3)}]},
+	"bog_rootwell": {"sprite": "tree_gnarled", "w": 210.0, "wind": true, "mirror": true,
+		"parts": [
+			{"sprite": "spore_shrine", "off": Vector2(103, -38), "scale": 0.43, "z": 1},
+			{"sprite": "mushroom_purple", "off": Vector2(-72, -16), "scale": 0.24, "z": 2, "wind": true},
+			{"sprite": "cattail", "off": Vector2(137, -18), "scale": 0.22, "z": 2, "wind": true},
+			{"sprite": "spore_vent", "off": Vector2(67, -17), "scale": 0.23, "z": 2}],
+		"colliders": [
+			{"shape": "circle", "radius": 22.0, "off": Vector2(0, 4)},
+			{"shape": "circle", "radius": 16.0, "off": Vector2(103, 3)}]},
+	"crystal_garden": {"sprite": "crystal_spire", "w": 175.0,
+		"parts": [
+			{"sprite": "crystal_cluster", "off": Vector2(-104, -31), "scale": 0.54, "z": 1},
+			{"sprite": "geode", "off": Vector2(101, -27), "scale": 0.43, "z": 1},
+			{"sprite": "crystal_cluster", "off": Vector2(64, -18), "scale": 0.31, "z": 2}],
+		"colliders": [
+			{"shape": "circle", "radius": 20.0, "off": Vector2(0, 2)},
+			{"shape": "circle", "radius": 18.0, "off": Vector2(-104, 3)},
+			{"shape": "circle", "radius": 15.0, "off": Vector2(101, 3)}],
+		"decals": [{"sprite": "glow", "off": Vector2(0, -102), "scale": 0.18, "z": 3,
+			"light": Color(0.44, 0.68, 1.0, 0.9), "light_energy": 0.9, "light_scale": 0.9}]},
+	"storm_array": {"sprite": "storm_conductor", "w": 170.0,
+		"parts": [
+			{"sprite": "storm_standing_stone", "off": Vector2(-106, -47), "scale": 0.52, "z": -1},
+			{"sprite": "rock3", "off": Vector2(106, -25), "scale": 0.72, "z": -1},
+			{"sprite": "frost_reeds", "off": Vector2(-62, -14), "scale": 0.22, "z": 2, "wind": true},
+			{"sprite": "grass", "off": Vector2(65, -13), "scale": 0.20, "z": 2, "wind": true}],
+		"colliders": [
+			{"shape": "circle", "radius": 18.0, "off": Vector2(0, 3)},
+			{"shape": "circle", "radius": 16.0, "off": Vector2(-106, 3)},
+			{"shape": "circle", "radius": 16.0, "off": Vector2(106, 3)}],
+		"decals": [{"sprite": "glow", "off": Vector2(0, -104), "scale": 0.16, "z": 3,
+			"light": Color(0.48, 0.72, 1.0, 0.9), "light_energy": 0.85, "light_scale": 0.8}]},
+	"void_breach": {"sprite": "void_rift", "w": 180.0,
+		"parts": [
+			{"sprite": "void_monolith", "off": Vector2(-104, -58), "scale": 0.54, "z": -1},
+			{"sprite": "void_obelisk", "off": Vector2(108, -60), "scale": 0.50, "z": -1},
+			{"sprite": "crystal_spire", "off": Vector2(62, -25), "scale": 0.27, "z": 2}],
+		"colliders": [
+			{"shape": "circle", "radius": 22.0, "off": Vector2(0, 3)},
+			{"shape": "circle", "radius": 16.0, "off": Vector2(-104, 2)},
+			{"shape": "circle", "radius": 16.0, "off": Vector2(108, 2)}],
+		"decals": [{"sprite": "glow", "off": Vector2(0, -72), "scale": 0.18, "z": 3,
+			"light": Color(0.62, 0.27, 1.0, 0.9), "light_energy": 1.15, "light_scale": 1.0}]},
+	"holy_sanctum": {"sprite": "garden_fountain", "w": 165.0,
+		"parts": [
+			{"sprite": "grave_angel", "off": Vector2(-105, -46), "scale": 0.47, "z": -1},
+			{"sprite": "garden_statue", "off": Vector2(105, -40), "scale": 0.43, "z": -1},
+			{"sprite": "ruin_pillar", "off": Vector2(0, -90), "scale": 0.38, "z": -2},
+			{"sprite": "flower", "off": Vector2(67, -12), "scale": 0.18, "z": 2, "wind": true}],
+		"colliders": [
+			{"shape": "circle", "radius": 46.0, "off": Vector2(-35, -25)},
+			{"shape": "circle", "radius": 46.0, "off": Vector2(35, -25)},
+			{"shape": "circle", "radius": 14.0, "off": Vector2(-105, 2)},
+			{"shape": "circle", "radius": 14.0, "off": Vector2(105, 2)}],
+		"decals": [
+			{"sprite": "fountain_flow", "off": Vector2(0, -46), "scale": 0.50, "z": 2},
+			{"sprite": "glow", "off": Vector2(0, -100), "scale": 0.18, "z": 3,
+				"light": Color(1.0, 0.87, 0.46, 0.8), "light_energy": 0.7, "light_scale": 0.8}]},
+	"spore_cathedral": {"sprite": "spore_shrine", "w": 190.0,
+		"parts": [
+			{"sprite": "tree_spore", "off": Vector2(-115, -72), "scale": 0.67, "z": -1, "wind": true},
+			{"sprite": "tree_spore", "off": Vector2(115, -72), "scale": 0.67, "z": -1, "wind": true},
+			{"sprite": "spore_vent", "off": Vector2(-68, -17), "scale": 0.26, "z": 2},
+			{"sprite": "mushroom_purple", "off": Vector2(70, -17), "scale": 0.25, "z": 2, "wind": true}],
+		"colliders": [
+			{"shape": "circle", "radius": 22.0, "off": Vector2(0, 3)},
+			{"shape": "circle", "radius": 18.0, "off": Vector2(-115, 3)},
+			{"shape": "circle", "radius": 18.0, "off": Vector2(115, 3)}],
+		"decals": [{"sprite": "glow", "off": Vector2(0, -92), "scale": 0.18, "z": 3,
+			"light": Color(0.68, 0.32, 0.96, 0.8), "light_energy": 0.7, "light_scale": 0.8}]},
 	# A ruined gateway: an arch flanked by two pillars, EACH its own collider
 	# (a composite footprint no single circle could describe), a banner slung
 	# over the span as a wall decal.
@@ -385,11 +985,10 @@ const STRUCTURES := {
 		"decals": [{"sprite": "keep_brazier", "off": Vector2(0, -92), "scale": 0.34, "z": 2,
 			"light": Color(1.0, 0.62, 0.28, 0.9), "light_energy": 1.1, "light_scale": 0.9}],
 		"fire": true},
-	# An old well: a broad boulder ring (a wide flat footprint, not a point)
-	# with a bucket resting on the rim.
-	"old_well": {"sprite": "boulder", "w": 150.0, "mirror": true,
-		"colliders": [{"shape": "rect", "size": Vector2(104.0, 40.0), "off": Vector2(0, -4)}],
-		"decals": [{"sprite": "water_bucket", "off": Vector2(34, -24), "scale": 0.16, "z": 2}]},
+	# A real masonry well: dedicated high-resolution art replaces the old
+	# 14px boulder enlarged to 150px with a bucket pasted on its rim.
+	"old_well": {"sprite": "old_well", "w": 150.0, "mirror": true,
+		"colliders": [{"shape": "circle", "radius": 49.0, "off": Vector2(0, -4)}]},
 	# A signal fire: a stacked-log pyre that BURNS — an open flame decal with
 	# light + audio, ringed by a small footprint.
 	"signal_fire": {"sprite": "log", "w": 96.0,
@@ -434,8 +1033,31 @@ const STRUCTURES := {
 	# ANIMATES). No light, no fire — just a calm centerpiece with a broad
 	# rim footprint.
 	"town_fountain": {"sprite": "garden_fountain", "w": 150.0,
-		"colliders": [{"shape": "circle", "radius": 30.0, "off": Vector2(0, -6)}],
-		"decals": [{"sprite": "fountain_flow", "off": Vector2(0, -30), "scale": 0.22, "z": 1}]},
+		"colliders": [
+			{"shape": "circle", "radius": 42.0, "off": Vector2(-32, -24)},
+			{"shape": "circle", "radius": 42.0, "off": Vector2(32, -24)}],
+		"decals": [{"sprite": "fountain_flow", "off": Vector2(0, -44), "scale": 0.50, "z": 2}]},
+	# The raw garden-fountain landmark uses the same living-water and broad
+	# basin contract as the named town variant. Without its own definition it
+	# fell through to a generic thin building strip whenever the holy/garden
+	# landmark draw selected it.
+	"garden_fountain": {"sprite": "garden_fountain", "w": 165.0,
+		"colliders": [
+			{"shape": "circle", "radius": 46.0, "off": Vector2(-35, -25)},
+			{"shape": "circle", "radius": 46.0, "off": Vector2(35, -25)}],
+		"decals": [{"sprite": "fountain_flow", "off": Vector2(0, -46), "scale": 0.50, "z": 2}]},
+	# Kinetic landmarks own explicit full-base footprints. Their stable shell
+	# is the structure base; PROP_MOTION supplies only the living element.
+	"magma_furnace": {"sprite": "magma_furnace", "w": 120.0,
+		"colliders": [{"shape": "rect", "size": Vector2(100, 44), "off": Vector2(0, -10)}],
+		"decals": [{"sprite": "ember_smoke", "off": Vector2(0, -74), "scale": 0.32, "z": 2}],
+		"fire": true},
+	"storm_conductor": {"sprite": "storm_conductor", "w": 108.0,
+		"colliders": [{"shape": "circle", "radius": 34.0, "off": Vector2(0, -5)}]},
+	"void_rift": {"sprite": "void_rift", "w": 94.0,
+		"colliders": [{"shape": "circle", "radius": 29.0, "off": Vector2(0, -3)}]},
+	"spore_shrine": {"sprite": "spore_shrine", "w": 122.0,
+		"colliders": [{"shape": "circle", "radius": 38.0, "off": Vector2(0, -3)}]},
 	# A sewer outfall: a broad pipe spilling a pool of FLOWING sludge
 	# (sewer_flow ANIMATES) across a wide flat footprint.
 	"sewer_outfall": {"sprite": "sewer_pipe", "w": 140.0, "mirror": true,
@@ -466,12 +1088,12 @@ const STRUCTURES := {
 		"decals": [
 			{"sprite": "hideout_poster", "off": Vector2(-16, -40), "scale": 0.22, "z": 2},
 			{"sprite": "hideout_poster", "off": Vector2(18, -46), "scale": 0.2, "z": 2}]},
-	# A mausoleum: a crypt flanked by two grave statues, a COMPOSITE footprint
-	# (three rects no single circle could describe). Static — the dead keep still.
+	# A mausoleum: a crypt flanked by a mourner and an angel, a COMPOSITE
+	# footprint (three shapes no single circle could describe). Static.
 	"mausoleum": {"sprite": "crypt", "w": 168.0, "mirror": true,
 		"parts": [
 			{"sprite": "grave_statue", "off": Vector2(-84, -8), "scale": 0.26, "z": 1},
-			{"sprite": "grave_statue", "off": Vector2(84, -8), "scale": 0.26, "z": 1}],
+			{"sprite": "grave_angel", "off": Vector2(84, -8), "scale": 0.26, "z": 1}],
 		"colliders": [
 			{"shape": "rect", "size": Vector2(120.0, 40.0), "off": Vector2(0, -8)},
 			{"shape": "circle", "radius": 12.0, "off": Vector2(-84, -2)},
@@ -584,3 +1206,25 @@ const STRUCTURES := {
 			{"shape": "rect", "size": Vector2(82, 44), "off": Vector2(132, -8)}],
 		"fire": true},
 }
+
+
+static func is_unique_prop(name: String) -> bool:
+	return UNIQUE_PROP_NAMES.has(prop_base(name))
+
+
+## Returns only the signature sprites claimed by a composite. Natural support
+## pieces (grass, trees, ordinary rocks) remain available to scatter nearby.
+static func structure_unique_props(name: String) -> Array:
+	var out: Array = []
+	var def: Dictionary = STRUCTURES.get(name, {})
+	# Unlisted landmark candidates degrade to a single-sprite structure.
+	var root := String(def.get("sprite", name))
+	if is_unique_prop(root):
+		out.append(prop_base(root))
+	for raw_part in def.get("parts", []):
+		var part: Dictionary = raw_part
+		var sprite := String(part.get("sprite", ""))
+		var base := prop_base(sprite)
+		if is_unique_prop(base) and base not in out:
+			out.append(base)
+	return out

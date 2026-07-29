@@ -1527,7 +1527,18 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 func _groupable(name: String) -> bool:
 	if name.begins_with("tree") or name.begins_with("bush") or name.begins_with("grass"):
 		return true
-	return name in ["mushroom", "toadstool", "flower", "pebble"]
+	return name in ["mushroom", "mushroom_purple", "toadstool", "flower",
+		"pebble", "cattail", "frost_reeds"]
+
+
+## Living scenery shares one restrained wind language. The earlier pass only
+## moved large trees plus two flower types, leaving reed beds and undergrowth
+## frozen like cardboard beneath a moving canopy.
+func _wind_scenery(name: String) -> bool:
+	return name.contains("tree") or name.begins_with("bush") \
+		or name.begins_with("grass") or name in [
+			"mushroom", "mushroom_purple", "toadstool", "flower",
+			"cattail", "frost_reeds"]
 
 
 ## Clump size with a DECAYING tail: starts at 2, each extra member only GROW
@@ -1566,6 +1577,7 @@ func _spawn_scenery(zi: int) -> void:
 	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
 	var placed: Array = []
 	var reserved: Array = []
+	var unique_props_seen := {}
 
 	# Connected city-edge architecture gives the capital a skyline without
 	# pretending that every background window is another shop. Backdrops sit
@@ -1606,6 +1618,8 @@ func _spawn_scenery(zi: int) -> void:
 			"radius": float(spec.get("clearance", 190.0))})
 		var landmark_node := _add_structure(landmark_name, landmark_world)
 		zone_scenery[zi].append(landmark_node)
+		for unique_name in Terrains.structure_unique_props(landmark_name):
+			unique_props_seen[String(unique_name)] = true
 		# The structure's rendered height (base sprite meta) — the prompt
 		# anchors ON the art, not at the invisible stand-point below it.
 		var landmark_h: float = float(landmark_node.get_child(0).get_meta("hpx", 120.0))
@@ -1703,12 +1717,23 @@ func _spawn_scenery(zi: int) -> void:
 				dpos = dcenter + Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0)) * Balance.SCENERY_CLUSTER_RADIUS
 				dpos.x = clampf(dpos.x, origin.x + 70.0, origin.x + pw - 70.0)
 				dpos.y = clampf(dpos.y, origin.y + 80.0, origin.y + ph - 80.0)
-			var spr := _prop_visual(decor_name)  # animates if a _anim strip ships
-			spr.scale = Vector2(3, 3)
+			var decor_base := Terrains.prop_base(decor_name)
+			var decor_visual := Terrains.prop_variant(
+				decor_name, int(dpos.x * 31.0 + dpos.y * 17.0))
+			var spr := _prop_visual(decor_visual)  # animates if a _anim strip ships
+			var decor_scale: float = _scenery_render_scale(
+				spr, decor_base,
+				rng.randf_range(Balance.SCENERY_SCALE_JITTER.x, Balance.SCENERY_SCALE_JITTER.y))
+			spr.scale = Vector2(decor_scale, decor_scale)
 			spr.position = dpos
+			if Balance.SCENERY_RENDER_WIDTH.has(decor_base):
+				# Generated ground details are tight-cropped. Plant their
+				# painted roots at the scatter point instead of centering them.
+				spr.position.y -= _visual_size(spr).y * decor_scale * 0.5 - 5.0
 			spr.z_index = -8
-			if decor_name in ["flower", "mushroom"]:
-				spr.material = Art.wind_material()  # soft stems nod in the wind
+			_apply_scenery_variation(spr, decor_base, dpos)
+			if _wind_scenery(decor_base):
+				spr.material = Art.wind_material()
 			world.add_child(spr)
 			zone_scenery[zi].append(spr)
 		decor_n += dclump
@@ -1735,11 +1760,20 @@ func _spawn_scenery(zi: int) -> void:
 				zone_scenery[zi].append(_add_building(String(bname), origin + bpos))
 				break
 
-	# Composite STRUCTURES (Lane 2): multi-part builds — ruined gates, lit
-	# braziers, wells — with a composite footprint + wall decals. Placed like
-	# buildings: authored per zone/terrain, seeded, clear of the road and door
-	# lanes, spaced off other landmarks.
-	for sname in zone.get("structures", terrain.get("structures", [])):
+	# LANDMARK: select exactly ONE candidate from the terrain roster. Ecology,
+	# terrain structures and zone additions are candidates, not an additive
+	# checklist; the family pool fills every procedural terrain to >=5 kinds.
+	# The selected composition is seeded, clear of road/door lanes, and claims
+	# its signature sprites so accents/props cannot echo it elsewhere.
+	var landmark_roster := Terrains.landmark_candidates(
+		terrain_by_zone[zi], zone.get("structures", []))
+	if Terrains.uses_procedural_taxonomy(terrain_by_zone[zi]) and not landmark_roster.is_empty():
+		var landmark_occurrence := 0
+		for previous_zi in zi:
+			if terrain_by_zone[previous_zi] == terrain_by_zone[zi]:
+				landmark_occurrence += 1
+		var sname := Terrains.landmark_for_occurrence(
+			terrain_by_zone[zi], landmark_roster, landmark_occurrence)
 		for attempt in 60:
 			var spos := Vector2(rng.randf_range(200.0, max_x - 160.0), rng.randf_range(170.0, ph - 180.0))
 			if absf(spos.y - ph / 2.0) < 160.0 or absf(spos.x - pw / 2.0) < 190.0:
@@ -1751,7 +1785,11 @@ func _spawn_scenery(zi: int) -> void:
 					break
 			if sok:
 				placed.append(spos)
-				zone_scenery[zi].append(_add_structure(String(sname), origin + spos))
+				var landmark_node := _add_structure(String(sname), origin + spos)
+				landmark_node.set_meta("terrain_landmark", String(sname))
+				zone_scenery[zi].append(landmark_node)
+				for unique_name in Terrains.structure_unique_props(String(sname)):
+					unique_props_seen[String(unique_name)] = true
 				break
 
 	var count := int(ceil(float(zone.get("obstacle_count", terrain.get("count", 10))) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
@@ -1760,6 +1798,9 @@ func _spawn_scenery(zi: int) -> void:
 	while placed_n < count and guard < count * 3:
 		guard += 1
 		var prop: String = obstacles[rng.randi_range(0, obstacles.size() - 1)]
+		var prop_base := Terrains.prop_base(prop)
+		if Terrains.is_unique_prop(prop_base) and unique_props_seen.has(prop_base):
+			continue
 		# Groupable props (trees, bushes) sometimes form a STAND; rocks/pillars
 		# stay solo. A clump's members count toward `count`, so density holds.
 		var clump := 1
@@ -1812,37 +1853,76 @@ func _spawn_scenery(zi: int) -> void:
 				if not okc:
 					continue
 			placed.append(mpos)
-			zone_scenery[zi].append(_add_obstacle(prop, origin + mpos))
+			zone_scenery[zi].append(_add_obstacle(
+				prop, origin + mpos,
+				rng.randf_range(Balance.SCENERY_SCALE_JITTER.x, Balance.SCENERY_SCALE_JITTER.y)))
+			if Terrains.is_unique_prop(prop_base):
+				unique_props_seen[prop_base] = true
 			placed_n += 1
 
-	# ACCENTS: distinctive props (skeletons, shovels, statues, big mushrooms)
-	# that read as litter when repeated — unlike trees/rocks, spammable above.
-	# Each accent rolls its OWN decaying-repeat count (real-world tail, not a
-	# hard cap): first copy at CHANCE, each extra only DECAY as likely as the
-	# last, so twice is uncommon, thrice rare, 4+ near-impossible-but-possible.
-	# A biome with a short accent list just shows fewer — those regions want
-	# more accent art (flagged in terrains.gd).
-	for aname in (zone.get("accents", terrain.get("accents", [])) as Array):
-		var ap := minf(0.9, Balance.SCENERY_ACCENT_CHANCE * area_frac * dens)
-		var reps := 0
-		while rng.randf() < ap and reps < 6:
-			reps += 1
-			ap *= Balance.SCENERY_ACCENT_DECAY
-			for attempt in Balance.SCENERY_PLACE_TRIES:
-				var apos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
-				if apos.y > ph / 2.0 - 90.0 and apos.y < ph / 2.0 + 90.0:
-					continue
-				if absf(apos.x - pw / 2.0) < 130.0:
-					continue
-				var aok := true
-				for other in placed:
-					if apos.distance_to(other) < Balance.SCENERY_MIN_SPACING:
-						aok = false
-						break
-				if aok:
-					placed.append(apos)
-					zone_scenery[zi].append(_add_obstacle(String(aname), origin + apos))
+	# ACCENTS: distinct, non-landmark features placed as ONE local group per
+	# kind. Each kind owns a normalized bell curve: peak 3 makes three crystals
+	# or giant fungi common and both smaller/larger groups progressively rarer;
+	# peak 1 makes a second coffin/sign uncommon. Multiple accent kinds may
+	# coexist. Props above remain the freely repeatable scatter tier.
+	var raw_accents: Array = zone.get("accents", terrain.get("accents", []))
+	for accent_spec in Terrains.accent_specs(terrain_by_zone[zi], raw_accents):
+		var spec: Dictionary = accent_spec
+		var aname := String(spec["name"])
+		var ap := minf(Balance.SCENERY_ACCENT_CHANCE_CAP,
+			float(spec.get("chance", Balance.SCENERY_ACCENT_CHANCE)) * area_frac * dens)
+		if rng.randf() >= ap:
+			continue
+		var group_count := Terrains.sample_accent_count(spec, rng)
+		var group_radius := float(spec.get("radius", Balance.SCENERY_ACCENT_GROUP_RADIUS))
+		for attempt in Balance.SCENERY_PLACE_TRIES:
+			var acenter := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
+			if acenter.y > ph / 2.0 - 90.0 and acenter.y < ph / 2.0 + 90.0:
+				continue
+			if absf(acenter.x - pw / 2.0) < 130.0:
+				continue
+			var aok := true
+			for other in placed:
+				if acenter.distance_to(other) < Balance.SCENERY_MIN_SPACING:
+					aok = false
 					break
+			if not aok:
+				continue
+			var group_positions: Array = []
+			for member_idx in group_count:
+				var apos := acenter
+				if member_idx > 0:
+					var member_found := false
+					for member_try in Balance.SCENERY_ACCENT_MEMBER_TRIES:
+						var angle := rng.randf_range(0.0, TAU)
+						var distance := group_radius * sqrt(rng.randf_range(0.18, 1.0))
+						apos = acenter + Vector2.from_angle(angle) * distance
+						apos.x = clampf(apos.x, 90.0, max_x)
+						apos.y = clampf(apos.y, 100.0, ph - 100.0)
+						if apos.y > ph / 2.0 - 90.0 and apos.y < ph / 2.0 + 90.0:
+							continue
+						if absf(apos.x - pw / 2.0) < 130.0:
+							continue
+						var member_ok := true
+						for other in placed:
+							if apos.distance_to(other) < Balance.SCENERY_ACCENT_INTRA_SPACING:
+								member_ok = false
+								break
+						for sibling in group_positions:
+							if apos.distance_to(sibling) < Balance.SCENERY_ACCENT_INTRA_SPACING:
+								member_ok = false
+								break
+						if member_ok:
+							member_found = true
+							break
+					if not member_found:
+						continue
+				group_positions.append(apos)
+				placed.append(apos)
+				zone_scenery[zi].append(_add_obstacle(
+					aname, origin + apos,
+					rng.randf_range(Balance.SCENERY_SCALE_JITTER.x, Balance.SCENERY_SCALE_JITTER.y)))
+			break
 
 	# Ambient critters (birds/crows/butterflies) live with the scenery:
 	# room rebuilds and terrain repaints sweep them up too.
@@ -1910,6 +1990,7 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	var wpx := float(spr.texture.get_width()) * bscale
 	spr.position = Vector2(0, -hpx * 0.5 + 12.0)
 	spr.set_meta("occlusion_sort_y", pos.y)
+	spr.set_meta("occlusion_radius", Vector2(wpx, hpx).length() * 0.5)
 	spr.add_to_group("structure_occluders")
 	body.add_child(spr)
 	var cs := CollisionShape2D.new()
@@ -1955,15 +2036,19 @@ func _attach_fire_audio(body: Node2D) -> void:
 	body.add_child(fire)
 
 
-func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
-	var is_tree := sprite_name.begins_with("tree")
+func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -> StaticBody2D:
+	var family_base := Terrains.prop_base(sprite_name)
+	var visual_name := Terrains.prop_variant(
+		sprite_name, int(pos.x * 31.0 + pos.y * 17.0))
+	var is_tree := family_base.contains("tree")
 	var body := StaticBody2D.new()
 	body.position = pos
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var cs := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
-	shape.radius = 13.0 if is_tree else 11.0
+	shape.radius = float(Balance.SCENERY_COLLIDER_RADIUS.get(
+		family_base, 13.0 if is_tree else 11.0))
 	cs.shape = shape
 	cs.position = Vector2(0, 10)
 	body.add_child(cs)
@@ -1974,16 +2059,44 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	body.add_child(shadow)
 	# Static Sprite2D, or a self-animating AnimatedSprite2D when the prop ships
 	# a <name>_anim.png strip (Lane 3) — same 3x footprint either way.
-	var spr := _prop_visual(sprite_name)
-	spr.scale = Vector2(3, 3)
-	if is_tree:
+	var spr := _prop_visual(visual_name)
+	var visual_scale: float = _scenery_render_scale(spr, family_base, visual_variation)
+	spr.scale = Vector2(visual_scale, visual_scale)
+	if Balance.SCENERY_RENDER_WIDTH.has(family_base):
+		var base_y := 38.0 if is_tree else 22.0
+		spr.position = Vector2(
+			0, base_y - _visual_size(spr).y * visual_scale * 0.5)
+	elif is_tree:
 		spr.position = Vector2(0, -18)  # trunk base sits at the body origin
-		spr.material = Art.wind_material()  # canopy sways in the wind
+	_apply_scenery_variation(spr, family_base, pos)
+	if _wind_scenery(family_base):
+		spr.material = Art.wind_material()
+	# Scatter props y-sort over a hero north of their base exactly like
+	# buildings do, so they join the same occlusion-outline group (2026-07-28:
+	# the hero vanished outline-less behind trees/statues — only architecture
+	# was tagged). The scaled half-diagonal lets the player's per-frame probe
+	# skip far props before doing any transform math.
+	spr.set_meta("occlusion_sort_y", pos.y)
+	spr.set_meta("occlusion_radius", _visual_size(spr).length() * visual_scale * 0.5)
+	spr.add_to_group("structure_occluders")
 	body.add_child(spr)
 	if sprite_name == "camp_bonfire":
 		_attach_fire_audio(body)  # an open camp fire crackles like a hearth
 	world.add_child(body)
 	return body
+
+
+## Seeded micro-variation supplements real silhouette families: mirror, a
+## restrained natural lean and slight value drift. The same room rebuilds
+## identically, while repeated plants and rocks stop reading as cloned stamps.
+func _apply_scenery_variation(vis: Node2D, family_base: String, pos: Vector2) -> void:
+	var h := absi(("%s_%d_%d" % [family_base, int(pos.x), int(pos.y)]).hash())
+	if h % 2 == 1:
+		vis.scale.x *= -1.0
+	var lean_step := int(h / 2) % 7 - 3
+	vis.rotation = float(lean_step) * 0.007
+	var value := 0.94 + float(int(h / 14) % 9) * 0.015
+	vis.modulate = Color(value, value, value, 1.0)
 
 
 ## The visual node for a scenery prop: a looping AnimatedSprite2D when the
@@ -1992,12 +2105,34 @@ func _add_obstacle(sprite_name: String, pos: Vector2) -> StaticBody2D:
 ## CanvasItem, so every existing call still type-checks. This is the ONE seam
 ## every prop path (obstacles, decor, accents, structure parts) routes through.
 func _prop_visual(name: String) -> Node2D:
-	var anim := Art.anim_prop(name)
-	if anim != null:
-		return anim
-	var spr := Sprite2D.new()
-	spr.texture = Art.tex(name)
-	return spr
+	var vis: Node2D = Art.anim_prop(name)
+	if vis == null:
+		var spr := Sprite2D.new()
+		spr.texture = Art.tex(name)
+		vis = spr
+	_attach_prop_motion(vis, name)
+	return vis
+
+
+## A fountain, vent, rift, conductor, or furnace is not "animated" by moving
+## its stone/metal shell. Its local active element loops as a child overlay,
+## preserving the authored silhouette and collision while adding real motion.
+func _attach_prop_motion(base: Node2D, name: String) -> void:
+	var spec: Dictionary = Terrains.PROP_MOTION.get(name, {})
+	if spec.is_empty():
+		return
+	var fx := Art.anim_prop(String(spec["sprite"]))
+	if fx == null:
+		return
+	var base_size := _visual_size(base)
+	var fx_size := _visual_size(fx)
+	var target_width := base_size.x * float(spec.get("width_ratio", 0.5))
+	var fx_scale := target_width / maxf(1.0, fx_size.x)
+	fx.scale = Vector2(fx_scale, fx_scale)
+	var off_ratio: Vector2 = spec.get("off_ratio", Vector2.ZERO)
+	fx.position = Vector2(base_size.x * off_ratio.x, base_size.y * off_ratio.y)
+	fx.z_index = int(spec.get("z", 1))
+	base.add_child(fx)
 
 
 ## The native (unscaled) pixel size of a prop visual, whether it's a static
@@ -2013,6 +2148,15 @@ func _visual_size(vis: Node2D) -> Vector2:
 			if t != null:
 				return t.get_size()
 	return Vector2(16, 16)
+
+
+## World-space scale for scenery. Generated overrides use an authored rendered
+## width; all other assets preserve the legacy 3x native-pixel contract.
+func _scenery_render_scale(vis: Node2D, name: String, variation := 1.0) -> float:
+	var native := _visual_size(vis)
+	var authored_w: float = float(Balance.SCENERY_RENDER_WIDTH.get(
+		name, native.x * 3.0))
+	return authored_w * variation / maxf(1.0, native.x)
 
 
 ## One width-normalized part of a composite structure (Lane 2). Returns the
@@ -2142,6 +2286,7 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 		base_spr.position.y += float(_art_pad_bottom(probe_tex, String(def.get("sprite", name)))) \
 			* (bh / maxf(1.0, float(probe_tex.get_height())))
 	base_spr.set_meta("occlusion_sort_y", pos.y)
+	base_spr.set_meta("occlusion_radius", Vector2(bw, bh).length() * 0.5)
 	base_spr.add_to_group("structure_occluders")
 	body.add_child(base_spr)
 	var target_w: float = float(def.get("w", 180.0))
@@ -2153,6 +2298,13 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			target_w * float(part.get("scale", 1.0)), part.get("wind", false))
 		ps.position = part.get("off", Vector2.ZERO)
 		ps.z_index = int(part.get("z", 0))
+		# Sunken parts (z<0) render beneath the hero and can never hide them;
+		# every other part covers like the base sprite, so it probes too.
+		if ps.z_index >= 0:
+			ps.set_meta("occlusion_sort_y", pos.y)
+			ps.set_meta("occlusion_radius", Vector2(float(ps.get_meta("wpx")),
+				float(ps.get_meta("hpx"))).length() * 0.5)
+			ps.add_to_group("structure_occluders")
 		body.add_child(ps)
 
 	# Footprint collider(s): a composite of rects/circles. Default = one rect
