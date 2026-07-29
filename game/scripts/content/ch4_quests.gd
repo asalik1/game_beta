@@ -62,6 +62,9 @@ const CONVOS := {
 			"text": "You're the one who opened the Vale road. Good — freight's moving, which means my problems are now arriving FASTER. Brann, overseer of what's left of the southern foundry line.",
 			"variants": [
 				{"flag": "ch4_briefed", "text": "The yard first, bearer — Calda holds the quench line, and nothing gets past a smith who's stopped making mistakes.", "next": "b_rounds"},
+				{"flag": "ch4_people_first", "text": "First thing you say is about my crews and not my ore? Then we'll get along. Most of what comes through that gate has it the other way round."},
+				{"flag": "ch4_heard_verdict", "text": "You came to hear what the fire calls justice. Fine — but listen from outside the furnace. Ordo has made witnesses of people who only meant to work a shift."},
+				{"flag": "ch4_not_my_court", "text": "Not your court? Good. Then leave the theology buried and help me get living crews out from under it. Brann, overseer. Sit."},
 				{"flag": "chose_varo_mercy", "text": "You're the one from the Vale — the one who put their saint down GENTLY, the story goes. Good. I've got people down there I'd want handled the same way, if it comes to it. Brann. Overseer. Sit."},
 				{"flag": "chose_varo_spoils", "text": "You're the one from the Vale. The story that arrived with the freight says you asked what the saint would DROP. Ha! Honest mercenary — I can work with honest. Brann, overseer. Sit."},
 			],

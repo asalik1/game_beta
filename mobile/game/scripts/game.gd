@@ -382,17 +382,7 @@ func on_class_chosen(id: String) -> void:
 		# storybook plays under the CQ dialogue (cues in Story.CONVOS), and a choice
 		# moves Resonance before Maren ever appears.
 		set_flag("opened_" + id)
-		cutscene = Cutscene.new(self)
-		hud.add_child(cutscene)
-		# Above the gameplay HUD (bars/quest/abilities), under the words.
-		hud.move_child(cutscene, hud.dialogue_box.get_index())
-		run_convo_id("open_" + id, func() -> void:
-			if cutscene:
-				var cs := cutscene
-				cutscene = null
-				cs.finish(begin)
-			else:
-				begin.call())
+		run_cinematic_convo("open_" + id, begin)
 	else:
 		hud.dialogue(Story.ALL_BEATS["intro"], begin)
 

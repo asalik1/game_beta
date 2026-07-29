@@ -1741,7 +1741,7 @@ func _run_systems() -> void:
 			var nxt: String = String(node2.get("next", ""))
 			if nxt != "" and not nodes2.has(nxt):
 				return _fail("%s/%s: next '%s' missing" % [cid, nid, nxt])
-			if node2.has("cue") and not (String(node2["cue"]) in Cutscene.KNOWN_CUES):
+			if node2.has("cue") and not Cutscene.is_known_cue(String(node2["cue"])):
 				return _fail("%s/%s: unknown cue '%s'" % [cid, nid, node2["cue"]])
 			for c2 in node2.get("choices", []):
 				var cnxt: String = String(c2.get("next", ""))
@@ -1767,8 +1767,27 @@ func _run_systems() -> void:
 				var vnxt: String = String(v2.get("next", ""))
 				if vnxt != "" and not nodes2.has(vnxt):
 					return _fail("%s/%s: variant next '%s' missing" % [cid, nid, vnxt])
+				if v2.has("cue") and not Cutscene.is_known_cue(String(v2["cue"])):
+					return _fail("%s/%s: unknown variant cue '%s'" % [cid, nid, v2["cue"]])
 		if cid.begins_with("open_") and not Story.ALL_CONVOS.has("maren_" + cid.substr(5)):
 			return _fail("%s has no matching Maren convo" % cid)
+	# Chapter opener schema: six class-specific conversations per chapter,
+	# with one persistent stance flag on every choice and installed art for
+	# every cue. This also covers the pre-wired Act 2 chapters.
+	var opener_classes := ["warrior", "assassin", "mage", "archer", "paladin", "warlock"]
+	for chapter_num in range(2, 15):
+		for cls in opener_classes:
+			var opener_id := "ch%d_opening_%s" % [chapter_num, cls]
+			if not Story.ALL_CONVOS.has(opener_id):
+				return _fail("missing chapter opener '%s'" % opener_id)
+			var opener_nodes: Dictionary = Story.ALL_CONVOS[opener_id]["nodes"]
+			var opener_choices: Array = opener_nodes.get("n4", {}).get("choices", [])
+			if opener_choices.size() != 3:
+				return _fail("%s: expected three stance choices" % opener_id)
+			for opener_choice in opener_choices:
+				var opener_flags: Dictionary = opener_choice.get("flags", {})
+				if opener_flags.size() != 1:
+					return _fail("%s: stance choice needs exactly one persistent flag" % opener_id)
 	# The wanderer pool's convos must all exist.
 	for w in Story.WANDERERS:
 		if not Story.ALL_CONVOS.has(String(w["convo"])):
@@ -2157,7 +2176,8 @@ func _run_campaign_ch1() -> void:
 	await _goto_room(1)
 	game.player.global_position = game.rooms[1]["origin"] + Vector2(1900.0, 1100.0)
 	await _frames(3)
-	for tid in Terrains.DATA:
+	var terrain_ids: Array = Terrains.catalog_ids()
+	for tid in terrain_ids:
 		game.apply_terrain(1, tid)
 		await _frames(3)
 		var terrain_ev: String = Terrains.DATA[tid].get("event", "")
@@ -2176,7 +2196,7 @@ func _run_campaign_ch1() -> void:
 	game.gust_vec = Vector2.ZERO
 	await _frames(5)
 	_buff()
-	print("ok: all %d terrains applied + events fired" % Terrains.DATA.size())
+	print("ok: all %d terrains applied + events fired" % terrain_ids.size())
 
 	# 7. The zone graph in play: lazy building, per-pack aggro, door
 	# seals, room clears, and the fog-of-war map state.

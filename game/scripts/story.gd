@@ -1058,6 +1058,7 @@ const CHAPTERS := {
 # Register each module with ONE preload line here — that is the only
 # shared-file edit a content task ever makes.
 const CONTENT_MODULES: Array = [
+	preload("res://scripts/content/chapter_openers.gd"), # ch2-ch14 illustrated entries
 	preload("res://scripts/content/ch2_hub.gd"),        # (T1) zone 0
 	preload("res://scripts/content/ch2_zones_act1.gd"), # (T2) zones 1-4
 	preload("res://scripts/content/ch2_zones_act2.gd"), # (T3) zones 5-9
@@ -1090,6 +1091,13 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]
+
+
+## The stance flags authored by the generated chapter-opening module describe
+## the character, not a disposable chapter world. GameFlow uses this list for
+## both save persistence and per-head co-op routing.
+static func chapter_opener_flags() -> Array:
+	return CONTENT_MODULES[0].CHAPTER_OPENER_FLAGS
 
 static var _content_loaded := false
 static var ALL_CONVOS: Dictionary = {}

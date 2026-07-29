@@ -1648,6 +1648,47 @@ func run_convo_id(id: String, on_done := Callable()) -> void:
 			return
 	run_convo(convo, on_done)
 
+
+## Mount the illustrated storybook beneath the existing CQ dialogue chrome,
+## run one authored conversation, then dissolve the art before continuing.
+## Both the class prologue and chapter entries use this single seam.
+func run_cinematic_convo(id: String, on_done := Callable()) -> void:
+	if not Story.ALL_CONVOS.has(id):
+		if on_done.is_valid():
+			on_done.call()
+		return
+	cutscene = Cutscene.new(self)
+	hud.add_child(cutscene)
+	# Above gameplay HUD (bars/quest/abilities), beneath the CQ dialogue box.
+	hud.move_child(cutscene, hud.dialogue_box.get_index())
+	run_convo_id(id, func() -> void:
+		if cutscene:
+			var illustrated_entry := cutscene
+			cutscene = null
+			illustrated_entry.finish(on_done)
+		elif on_done.is_valid():
+			on_done.call())
+
+
+## First-entry chapter opener. The persistent per-character marker means
+## chapter select, NG+, and later replays never repeat a plate the hero saw.
+## In co-op each client calls this locally after its own chapter rebuild.
+func run_chapter_opener_if_needed(chapter_key: String,
+		on_done := Callable()) -> void:
+	if dedicated or not has_local_player():
+		if on_done.is_valid():
+			on_done.call()
+		return
+	var convo_id := chapter_key + "_opening_" + String(player.cls)
+	var seen_flag := "saw_chapter_opening_" + chapter_key
+	if get_flag(seen_flag, false) or not Story.ALL_CONVOS.has(convo_id):
+		if on_done.is_valid():
+			on_done.call()
+		return
+	set_flag(seen_flag)
+	run_cinematic_convo(convo_id, on_done)
+
+
 func run_convo(convo: Dictionary, on_done := Callable()) -> void:
 	_convo_node(convo, String(convo.get("start", "")), on_done)
 
@@ -1659,13 +1700,14 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 			on_done.call()
 		return
 	var node: Dictionary = nodes[node_id]
-	if cutscene and node.has("cue"):
-		cutscene.cue(String(node["cue"]))  # stage the picture for this beat
-	var who: String = node.get("who", "")
 	# A matched variant can override the text AND the path: a variant
 	# with its own "next" makes the node linear (choices are skipped) —
 	# the short-circuit for "we already had this conversation" greetings.
 	var variant := _convo_variant(node)
+	var cue_name: String = String(variant.get("cue", node.get("cue", "")))
+	if cutscene and cue_name != "":
+		cutscene.cue(cue_name)  # stage the variant's authored picture
+	var who: String = node.get("who", "")
 	var text: String = variant.get("text", node.get("text", ""))
 	var next_id: String = String(variant.get("next", node.get("next", "")))
 	var force_linear: bool = variant.has("next")

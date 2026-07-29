@@ -80,6 +80,9 @@ const CONVOS := {
 			"text": "So. Another one the shards chose. Sit; the fire doesn't bite. Unlike most of what's left out there.",
 			"variants": [
 				{"flag": "ch2_briefed", "text": "East, shard-bearer. The blight will not scout itself — and the factions' recruiters move faster than you do.", "next": ""},
+				{"flag": "ch2_kept_faith", "text": "So. Another one the shards chose — and one who put the missing hours to honest work. Sit. Anyone who can build around an Ember may yet build past it."},
+				{"flag": "ch2_fed_ember", "text": "Sit. And keep those hands where I can see them — the woken who practice in the dark have a certain smell of scorch about them. You'll learn what I mean, or you'll become what I mean."},
+				{"flag": "ch2_buried_it", "text": "So. Another one the shards chose, and another who tried to answer fire with a locked room. Sit. Buried things have a way of choosing their own hour to surface."},
 				{"flag": "chose_virtue", "text": "So. Another one the shards chose — and this one, they tell me, chose BACK. Good. Sit; you and I may actually get along."},
 				{"flag": "chose_temptation", "text": "So. Another one the shards chose. I heard what the waking cost — and what you told yourself about it. Sit anyway. Better here than out there alone with that voice."},
 				{"flag": "chose_away", "text": "So. Another one the shards chose — the kind that walks away from things. You walked HERE, at least. Sit."},

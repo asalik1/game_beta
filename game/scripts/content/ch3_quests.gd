@@ -63,6 +63,9 @@ const CONVOS := {
 			"text": "You're the bearer Maren wrote ahead about. Good. I left the Choir the day they voted to keep a dying man alive as furniture — I'll explain on the way to that sentence making sense.",
 			"variants": [
 				{"flag": "ch3_briefed", "text": "The Vale is east, bearer. The Sexton first — no one reaches Vess or the saint while he still has holes to put them in.", "next": "q_hub"},
+				{"flag": "ch3_vowed_rest", "text": "You came into the Vale promising rest before you'd seen what refuses it. Good. Keep that promise where the Choir can hear it; they have mistaken endurance for holiness long enough."},
+				{"flag": "ch3_covets_rot", "text": "I left the Choir because they looked at a dying man and saw furniture. You're looking at him and seeing a RECIPE. Watch that, bearer — that's how cantors start."},
+				{"flag": "ch3_eyes_forward", "text": "Eyes forward, is it? Sensible. Just remember: everyone who left the Vale to its own business used those exact words while the graves learned to walk."},
 				{"flag": "joined_accord", "text": "You wear the Accord's trust — Maren's letter said as much. Good. What I'm going to ask for is exactly the kind of mercy her people understand and mine call murder."},
 				{"flag": "joined_cinderborn", "text": "Cinderborn colors. Hm. Your factor will tell you the Vale is 'unproductive land under hostile administration.' Listen to me first, then decide what it actually is."},
 			],

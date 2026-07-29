@@ -1,11 +1,10 @@
 class_name Cutscene extends Control
-## The class opener's illustrated storybook player.
+## Crownless' illustrated storybook player.
 ##
-## Ordinary quests keep using Hud.dialogue() exactly as before. Only the six
-## opening conversations create this full-screen layer. Story nodes select an
-## authored cue; each cue plays a short sequence of identity-locked paintings
-## with a slow camera push and cross-dissolves beneath the existing CQ dialogue
-## chrome.
+## Ordinary quests keep using Hud.dialogue() exactly as before. Class and
+## first-entry chapter openers mount this full-screen layer beneath the existing
+## CQ dialogue chrome. Story cues play authored, identity-locked paintings as
+## living storybook plates with a slow camera track and cross-dissolves.
 
 const FRAME_ROOT := "res://assets/sprites/opening/"
 const FRAME_SEQUENCES := {
@@ -46,6 +45,25 @@ const FRAME_SEQUENCES := {
 	"tome_open": ["opening_warlock_2"],
 }
 
+const CHAPTER_CLASSES := [
+	"warrior", "assassin", "mage", "archer", "paladin", "warlock",
+]
+const CHAPTER_SHARED_CUES := {
+	"shatter": "ch2",
+	"vale": "ch3",
+	"foundry": "ch4",
+	"sledge": "ch5",
+	"bloom": "ch6",
+	"relay": "ch7",
+	"ashfall": "ch8",
+	"drowned": "ch9",
+	"singing_ice": "ch10",
+	"two_fires": "ch11",
+	"roothold": "ch12",
+	"storm_scar": "ch13",
+	"convergence": "ch14",
+}
+
 # Every cue Story.CONVOS may reference (autotest validates against this).
 const KNOWN_CUES := [
 	"crown", "road", "aftermath", "camp", "camp_cold",
@@ -53,9 +71,11 @@ const KNOWN_CUES := [
 	"tome", "tome_open", "fade",
 ]
 
-const FRAME_DISSOLVE := 0.72
-const FRAME_HOLD := 1.15
-const CAMERA_PUSH := Vector2(1.024, 1.024)
+const FRAME_DISSOLVE := 0.82
+const FRAME_HOLD := 1.55
+const CAMERA_START_SCALE := Vector2(1.012, 1.012)
+const CAMERA_END_SCALE := Vector2(1.042, 1.042)
+const CAMERA_TRACK_X := 7.0
 
 var game: Game
 var art_stack: Control
@@ -96,17 +116,23 @@ func _init(g: Node2D) -> void:
 shader_type canvas_item;
 
 void fragment() {
-	vec4 source = texture(TEXTURE, UV);
+	// Keep every plate subtly alive even after its authored camera move ends.
+	// The built-in overscan prevents the breathing crop from exposing an edge.
+	float breath = 1.016 + sin(TIME * 0.31) * 0.003;
+	vec2 drift = vec2(sin(TIME * 0.17), cos(TIME * 0.13)) * 0.0018;
+	vec2 story_uv = (UV - vec2(0.5)) / breath + vec2(0.5) + drift;
+	vec4 source = texture(TEXTURE, story_uv);
 	vec3 display_rgb = min(pow(max(source.rgb, vec3(0.0)), vec3(0.48)) * 1.04, vec3(1.0));
-	COLOR = vec4(display_rgb, COLOR.a);
+	float light_breathe = 0.985 + 0.018 * sin(TIME * 0.41 + UV.x * 2.7);
+	COLOR = vec4(display_rgb * light_breathe, COLOR.a);
 }
 """
 	_frame_material = ShaderMaterial.new()
 	_frame_material.shader = frame_shader
 
-	# A few slow motes bind the painted frames together without pretending the
-	# still illustrations are sprite animation. The actual motion is in the
-	# frame progression, dissolve, and camera push.
+	# A few slow motes bind the painted frames together. Plate progression,
+	# opposing camera tracks, cross-dissolves, and the shader's near-imperceptible
+	# breathing crop make this opener feel illustrated rather than slideshow-like.
 	ash = CPUParticles2D.new()
 	ash.amount = 24
 	ash.lifetime = 4.2
@@ -165,11 +191,44 @@ func cue(id: String) -> void:
 	if id == "fade":
 		_fade_out()
 		return
-	var frame_names: Array = FRAME_SEQUENCES.get(id, [])
+	var frame_names: Array = _frames_for_cue(id)
 	if frame_names.is_empty():
 		return
 	_play_sequence(frame_names)
 	_tint_motes(id)
+
+
+static func is_known_cue(id: String) -> bool:
+	if id in KNOWN_CUES or id == "crown_hollow":
+		return true
+	if CHAPTER_SHARED_CUES.has(id):
+		return true
+	for shared_cue in CHAPTER_SHARED_CUES:
+		if id.begins_with(String(shared_cue) + "_") \
+				and id.trim_prefix(String(shared_cue) + "_") in CHAPTER_CLASSES:
+			return true
+	return false
+
+
+static func _frames_for_cue(id: String) -> Array:
+	if FRAME_SEQUENCES.has(id):
+		return FRAME_SEQUENCES[id]
+	if id == "crown_hollow":
+		return ["chapters/opening_ch14_2"]
+	if CHAPTER_SHARED_CUES.has(id):
+		var chapter_id: String = String(CHAPTER_SHARED_CUES[id])
+		return [
+			"chapters/opening_%s_0" % chapter_id,
+			"chapters/opening_%s_1" % chapter_id,
+		]
+	for shared_cue in CHAPTER_SHARED_CUES:
+		var prefix := String(shared_cue) + "_"
+		if id.begins_with(prefix):
+			var class_id := id.trim_prefix(prefix)
+			if class_id in CHAPTER_CLASSES:
+				var chapter_id: String = String(CHAPTER_SHARED_CUES[shared_cue])
+				return ["chapters/opening_%s_%s" % [chapter_id, class_id]]
+	return []
 
 
 ## Fade the complete opener away after the branching conversation resolves.
@@ -200,19 +259,29 @@ func _play_sequence(frame_names: Array) -> void:
 	_sequence_tween.set_trans(Tween.TRANS_SINE)
 	_sequence_tween.set_ease(Tween.EASE_IN_OUT)
 
-	for frame_name in frame_names:
+	for frame_index in range(frame_names.size()):
+		var frame_name: String = String(frame_names[frame_index])
 		var texture: Texture2D = _frame_texture(String(frame_name))
 		if texture == null:
 			continue
 		var frame := _make_frame(texture)
 		frame.modulate.a = 0.0
+		var track_direction := -1.0 if frame_index % 2 == 0 else 1.0
+		frame.position.x += CAMERA_TRACK_X * track_direction
+		frame.scale = CAMERA_START_SCALE
 		art_stack.add_child(frame)
 
-		# The dissolve happens while the new plate makes a very slow 2.4% push.
-		# The previous plate stays behind it, so there is never a black flash.
+		# Each authored plate dissolves over its predecessor while tracking in the
+		# opposite direction. Shared chapter cues therefore read as two connected
+		# story beats; one-plate class cues still have a deliberate moving hold.
+		var move_duration := FRAME_DISSOLVE + FRAME_HOLD
 		_sequence_tween.tween_property(frame, "modulate:a", 1.0, FRAME_DISSOLVE)
 		_sequence_tween.parallel().tween_property(
-			frame, "scale", CAMERA_PUSH, FRAME_DISSOLVE + FRAME_HOLD)
+			frame, "scale", CAMERA_END_SCALE, move_duration)
+		_sequence_tween.parallel().tween_property(
+			frame, "position:x",
+			frame.position.x - CAMERA_TRACK_X * track_direction * 2.0,
+			move_duration)
 		_sequence_tween.tween_interval(FRAME_HOLD)
 
 
@@ -264,7 +333,7 @@ func _collapse_stack() -> void:
 	if keep_texture != null:
 		var base := _make_frame(keep_texture)
 		base.modulate.a = 1.0
-		base.scale = CAMERA_PUSH
+		base.scale = CAMERA_END_SCALE
 		art_stack.add_child(base)
 
 

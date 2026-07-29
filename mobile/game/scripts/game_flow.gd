@@ -69,8 +69,9 @@ func replay_chapter(id: String) -> void:
 	request_pause(false)
 	hud.visible = true  # the chapter-select menu hid it
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
-	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(id)["name"]))
-	autosave()
+	run_chapter_opener_if_needed(id, func() -> void:
+		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(id)["name"]))
+		autosave())
 
 
 ## Begin this week's challenge run: the WEEK'S fixed seed (everyone plays
@@ -92,9 +93,10 @@ func start_weekly() -> void:
 	request_pause(false)
 	hud.visible = true  # the challenge menu hid it
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
-	hud.flash_title(zones[cur_room]["name"],
-		"WEEKLY CHALLENGE — %s" % String(weekly_mod()["name"]))
-	autosave()
+	run_chapter_opener_if_needed(chid, func() -> void:
+		hud.flash_title(zones[cur_room]["name"],
+			"WEEKLY CHALLENGE — %s" % String(weekly_mod()["name"]))
+		autosave())
 
 ## DEDICATED (MMO step A): the server's victory card has no reader. After a
 ## grace window (guests read their own synced cards), the world moves on by
@@ -153,7 +155,6 @@ func advance_chapter() -> void:
 	switch_chapter(next_ch, true)
 	play_started = true
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
-	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(next_ch)["name"]))
 	# MP-14 (§5.4): the party follows through the SAME rebuild the join flow
 	# uses — the host briefs each guest into the new chapter (its live character
 	# rides along; only the world rebuilds). Remotes re-home to the new start so
@@ -163,7 +164,9 @@ func advance_chapter() -> void:
 			if q != null and is_instance_valid(q) and q != local_player:
 				q.global_position = room_center(cur_room)
 		net_session().host_advance_party()
-	autosave()
+	run_chapter_opener_if_needed(next_ch, func() -> void:
+		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(next_ch)["name"]))
+		autosave())
 
 
 ## Rework §6: dismiss the victory card back INTO the world. The card stays
@@ -623,7 +626,10 @@ func chapter_available(chid: String, replay := false) -> bool:
 # cap_ (2026-07-25 capital rework): Crownfall quest/meet progress describes
 # the CHARACTER — it survives chapter wipes and stays per-head in co-op via
 # the same list §5.4's set_flag routing reads.
-const KEPT_FLAG_PREFIXES := ["opened_", "chose_", "completed_", "s_awakened_", "cap_"]
+const KEPT_FLAG_PREFIXES := [
+	"opened_", "chose_", "completed_", "s_awakened_", "cap_",
+	"saw_chapter_opening_",
+]
 const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
 	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
 	"left_silent", "said_farewell", "cut_clean", "walked_silent",
@@ -645,8 +651,9 @@ func _broken_promises_text(broken: Array) -> String:
 
 func _wipe_chapter_flags() -> void:
 	var kept := {}
+	var opener_flags: Array = Story.chapter_opener_flags()
 	for fname in flags:
-		var keep: bool = String(fname) in KEPT_FLAGS
+		var keep: bool = String(fname) in KEPT_FLAGS or String(fname) in opener_flags
 		for pre in KEPT_FLAG_PREFIXES:
 			if String(fname).begins_with(pre):
 				keep = true
@@ -675,7 +682,7 @@ func _wipe_chapter_flags() -> void:
 ## from game_base via call() (the base layer can't see this derived const),
 ## the same idiom as _recheck_gates.
 func _flag_is_local(flag_name: String) -> bool:
-	if flag_name in KEPT_FLAGS:
+	if flag_name in KEPT_FLAGS or flag_name in Story.chapter_opener_flags():
 		return true
 	for pre in KEPT_FLAG_PREFIXES:
 		if flag_name.begins_with(pre):
@@ -1575,8 +1582,9 @@ func net_advance(snap: Dictionary) -> void:
 	hud.visible = true
 	net_session()._gate_existing_chests()  # the rebuilt world's chests are ours
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
-	hud.flash_title(zones[cur_room]["name"], String(Story.chapter(chapter_id)["name"]))
-	autosave()
+	run_chapter_opener_if_needed(chapter_id, func() -> void:
+		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(chapter_id)["name"]))
+		autosave())
 
 
 ## MP-14 (§5.7), GUEST: the host ended the run (replay / title) rather than

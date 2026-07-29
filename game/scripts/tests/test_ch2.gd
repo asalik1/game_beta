@@ -445,6 +445,9 @@ func _test_chapter_progression() -> void:
 	game.state = Game.ST_VICTORY
 	get_tree().paused = true
 	game.set_flag("completed_ch1", true)
+	# This test isolates chapter-state transfer; the cinematic opener has its
+	# own schema/cue coverage in autotest.gd.
+	game.set_flag("saw_chapter_opening_ch2", true)
 	game.advance_chapter()
 	await _frames(10)
 	if game.chapter_id != "ch2":
