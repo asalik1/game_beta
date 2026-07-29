@@ -203,7 +203,7 @@ const CHAPTER_ZONES := {
 # Long Sleep monsters. HP on the gear-inclusive dps curve, dmg on the
 # parity curve (in-game = base x 1.3).
 const ENEMIES := {
-	"cold_pilgrim": {"name": "Cold Pilgrim", "sprite": "cultist", "hp": 330.0, "dmg": 58.0, "speed": 95.0, "xp": 13, "gold": 20, "ranged": false, "scale": 3.2,
+	"cold_pilgrim": {"name": "Cold Pilgrim", "sprite": "cold_pilgrim", "hp": 330.0, "dmg": 58.0, "speed": 95.0, "xp": 13, "gold": 20, "ranged": false, "scale": 3.2,
 		"physres": 20.0, "magres": 30.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
 		"level": 28, "hp_g": 0.10, "dmg_g": 0.09, "traits": ["mend"],
 		"lore": "Cult porters who walked the white road one too many times. They still walk it. They no longer bring wagons, or come back."},

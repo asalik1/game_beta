@@ -214,7 +214,7 @@ const ENEMIES := {
 		"physres": 32.0, "magres": 8.0, "eva": 0.0, "critres": 2.0, "dmg_type": "phys",
 		"level": 17, "hp_g": 0.11, "dmg_g": 0.09, "traits": ["frenzy", "swift"],
 		"lore": "Old bones from before the Choir, woken by sixty years of singing overhead. They resent the noise."},
-	"vale_mourner": {"name": "Vale Mourner", "sprite": "cultist", "hp": 160.0, "dmg": 35.0, "speed": 100.0, "xp": 15, "gold": 16, "ranged": true, "scale": 3.2,
+	"vale_mourner": {"name": "Vale Mourner", "sprite": "vale_mourner", "hp": 160.0, "dmg": 35.0, "speed": 100.0, "xp": 15, "gold": 16, "ranged": true, "scale": 3.2,
 		"physres": 8.0, "magres": 32.0, "eva": 0.0, "critres": 2.0, "dmg_type": "magic",
 		"level": 18, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["martyr"],
 		"lore": "Choir faithful who wept until the blight took the weeping over. The grief is real. The aim is too."},

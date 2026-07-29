@@ -74,7 +74,7 @@ const ENEMIES := {
 	"blightwolf": {"name": "Waking Wolf", "sprite": "blightwolf", "hp": 58.0, "dmg": 11.0, "speed": 165.0, "xp": 18, "gold": 6, "ranged": false, "scale": 3.2,
 		"physres": 8.0, "magres": 5.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
 		"level": 3, "hp_g": 0.10, "dmg_g": 0.08, "traits": ["pounce"]},
-	"bogspider": {"name": "Greyrun Lurker", "sprite": "rat", "hp": 50.0, "dmg": 9.0, "speed": 205.0, "xp": 20, "gold": 7, "ranged": false, "scale": 3.2,
+	"bogspider": {"name": "Greyrun Lurker", "sprite": "greyrun_lurker", "hp": 50.0, "dmg": 9.0, "speed": 205.0, "xp": 20, "gold": 7, "ranged": false, "scale": 3.2,
 		"physres": 0.0, "magres": 8.0, "eva": 0.14, "critres": 0.0, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["web"]},
 	"beastkin_raider": {"name": "Wildfang Raider", "sprite": "orc", "hp": 82.0, "dmg": 13.0, "speed": 175.0, "xp": 26, "gold": 10, "ranged": false, "scale": 3.4,
