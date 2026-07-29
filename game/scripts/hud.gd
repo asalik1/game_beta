@@ -3162,8 +3162,18 @@ func _set_splash(who: String) -> void:
 		game.note_splash_seen(sp)  # codex Gallery: this portrait is now met
 	else:
 		splash_layer.visible = false
-		dialogue_inner.color = Color(0.08, 0.07, 0.12, 0.97)  # opaque default
-		_set_portrait(who)
+		# Opening story plates are already full-bleed CQ art even though the
+		# Narrator has no speaker splash. Let that authored frame breathe through
+		# the box; ordinary quest dialogue keeps the opaque fallback.
+		var opening_art: bool = game != null and game.cutscene != null
+		dialogue_inner.color = Color(0.06, 0.05, 0.10, 0.86) if opening_art \
+			else Color(0.08, 0.07, 0.12, 0.97)
+		# The story plate already contains the speaker at painted-key-art
+		# quality; do not paste the generic 32px world sprite over it.
+		if opening_art:
+			portrait_box.visible = false
+		else:
+			_set_portrait(who)
 
 
 ## A small CQ reader chip (LOG/SKIP/AUTO). Unparented — the caller adds it and
@@ -3368,6 +3378,11 @@ func set_touch_mode(on: bool) -> void:
 func set_cinematic(on: bool) -> void:
 	for l in hint_labels:
 		l.visible = (not on) and not _touch_mode
+	# The avatar ring carries a higher z-index than ordinary HUD children, so
+	# it otherwise leaks over a full-screen opener even when every bar beneath
+	# it is covered by the art.
+	if avatar_root != null:
+		avatar_root.visible = not on
 
 
 # ------------------------------------------- beat mirror (MP-13, §5.4)

@@ -367,9 +367,9 @@ func on_class_chosen(id: String) -> void:
 		save_slot = SaveGame.next_free_slot()
 	request_pause(false)
 	# The class-select menu hid the HUD on the way in — and the opening's
-	# dialogue box and cutscene stage are its CHILDREN, so it must come back
+	# dialogue box and illustrated opener are its CHILDREN, so it must come back
 	# BEFORE the convo below or the whole opening plays invisibly (a "frozen"
-	# game to the player). The cutscene's full-screen stage covers the
+	# game to the player). The opener's full-screen art covers the
 	# gameplay bars, so nothing gameplay-shaped leaks into the cinematic.
 	hud.visible = true
 	var begin := func() -> void:
@@ -378,8 +378,8 @@ func on_class_chosen(id: String) -> void:
 		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(chapter_id)["name"]))
 		autosave()
 	if Story.ALL_CONVOS.has("open_" + id):
-		# Class openings replace the generic intro: a staged cinematic
-		# plays under the words (cues in Story.CONVOS), and a choice
+		# Class openings replace the generic intro: an illustrated, multi-frame
+		# storybook plays under the CQ dialogue (cues in Story.CONVOS), and a choice
 		# moves Resonance before Maren ever appears.
 		set_flag("opened_" + id)
 		cutscene = Cutscene.new(self)
