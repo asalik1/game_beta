@@ -417,6 +417,124 @@ static func material_grade_up(grade: String) -> String:
 	var capped: int = GEAR_TIER_ORDER.find(MATERIAL_MOB_GRADE_CAP)
 	return String(GEAR_TIER_ORDER[mini(i + 1, capped)])
 
+# ------------------------------------------------ professions / crafting ---
+# The crafting CORE (PROPOSALS/PROFESSIONS.md). Three trades, each a locked
+# gather-and-craft identity; mastery gates the craftable tier; blueprints gate
+# B/A; a generic-A craft can PROMOTE into a random named-A unique. Every number
+# here is a first-guess knob (§9 farm-minute sizing). Materials (above) already
+# drop; this section makes them USEFUL. DEFERRED (noted, not built): trade-gated
+# gathering NODES, universal SALVAGE, and the CONSUMABLE outputs (Alchemist
+# potions / Blacksmith bench-stones / Tailor bags) — gear crafting only for now.
+
+# Trade -> {name, slots it crafts}. Seven gear slots, each covered exactly once
+# (§1): weapon/helmet = Blacksmith, armor/pants/boots = Tailor, charm/gloves =
+# Alchemist. (Tailor also makes BAGS — deferred, non-gear utility.)
+const PROFESSION_TRADES := {
+	"alchemist": {"name": "Alchemist", "trainer": "Herbalist Kesh", "slots": ["charm", "gloves"]},
+	"blacksmith": {"name": "Blacksmith", "trainer": "Smith Petra", "slots": ["weapon", "helmet"]},
+	"tailor": {"name": "Tailor", "trainer": "Seamster Suli", "slots": ["armor", "pants", "boots"]},
+}
+const PROFESSION_ORDER := ["blacksmith", "alchemist", "tailor"]
+
+# Which MATERIAL family a slot's craft consumes — keyed to what the gear is
+# physically made of (§4): metal for weapon/helmet, cloth for the soft slots +
+# gloves, bone for charms. A craft spends `craft_material_cost(grade)` units of
+# this family AT THE CRAFTED GRADE (an A helmet needs grade-A metal).
+const SLOT_CRAFT_MATERIAL := {
+	"weapon": "metal", "helmet": "metal",
+	"armor": "cloth", "pants": "cloth", "boots": "cloth", "gloves": "cloth",
+	"charm": "bone",
+}
+
+# Mastery tier climb (§3). Bands in order; each gates the max grade it can craft.
+# Novice unlocks F AND E (cap E); every higher band lifts the cap one grade.
+# Artisan(B)/Master(A) ALSO need the matching generic blueprint (checked apart).
+const MASTERY_BANDS := ["Novice", "Adept", "Expert", "Artisan", "Master"]
+const MASTERY_BAND_MAX_GRADE := {
+	"Novice": "E", "Adept": "D", "Expert": "C", "Artisan": "B", "Master": "A",
+}
+# Points needed to REACH each band (cumulative). Sized in farm-minutes (§9):
+# Adept ~3 min, Expert ~8, Artisan ~20, Master ~45 of crafting — the material
+# hunt is the real cost. Earned per craft via CRAFT_MASTERY_BY_GRADE.
+const MASTERY_THRESHOLDS := {
+	"Novice": 0, "Adept": 30, "Expert": 90, "Artisan": 220, "Master": 500,
+}
+# Mastery points a single craft pays, by crafted grade — higher grades pay more,
+# so the climb accelerates as you invest (§3).
+const CRAFT_MASTERY_BY_GRADE := {
+	"F": 5, "E": 7, "D": 11, "C": 18, "B": 30, "A": 48,
+}
+# Material UNITS spent per craft, by crafted grade (a knob; the material hunt is
+# the gate). Same family (SLOT_CRAFT_MATERIAL) at the crafted grade.
+const CRAFT_MATERIAL_COST := {
+	"F": 2, "E": 3, "D": 4, "C": 6, "B": 9, "A": 14,
+}
+# Gold fee per craft, by crafted grade (a deterministic sink; the bench charges
+# for the fire, §6). Cheaper than buying the equivalent gear off the shelf.
+const CRAFT_GOLD_FEE := {
+	"F": 40, "E": 120, "D": 350, "C": 1000, "B": 3000, "A": 8000,
+}
+# Named-A PROMOTION: chance a generic-A craft comes out as a random named-A
+# unique of the crafter's class+slot (§5, §9 first guess ~3-5%).
+const CRAFT_PROMOTE_CHANCE := 0.04
+
+# Boss blueprint faucet (§5: bosses + the shop are the ONLY blueprint source, no
+# ordinary-mob path). A killed boss has this chance to drop ONE generic B/A
+# blueprint; BOSS_BLUEPRINT_A_FRACTION of those are the rarer A recipe. Learn-on-
+# acquire. Slot is ungated for now (trade-gating of drops rides the deferred
+# node/gather layer — materials are ungated for the same reason).
+const BOSS_BLUEPRINT_CHANCE := 0.18
+const BOSS_BLUEPRINT_A_FRACTION := 0.28
+
+# Blueprint prices (§5). The midpoint-power slot (budget 2.5 -> helmet/pants/
+# charm) is the baseline: B = 30k, A = 75k; every other slot scales in DIRECT
+# proportion, multiplier = SLOT_MAIN_BUDGET[slot] / 2.5 (weapon x2.0 -> A 150k).
+const BLUEPRINT_BASE_PRICE := {"B": 30000, "A": 75000}
+const BLUEPRINT_BASELINE_BUDGET := 2.5
+
+# Trade swap (§2): 5k base, DOUBLES each swap, no cap, resets to base at the
+# weekly epoch (trusted-clock week). Mastery persists across swaps.
+const SWAP_COST_BASE := 5000
+const SWAP_COST_STEP_MULT := 2
+
+## Highest mastery BAND a points total has reached (Novice..Master).
+static func mastery_band(points: int) -> String:
+	var out := "Novice"
+	for band in MASTERY_BANDS:
+		if points >= int(MASTERY_THRESHOLDS.get(band, 1 << 30)):
+			out = band
+	return out
+
+## The highest gear GRADE a mastery-points total may craft (via its band).
+static func mastery_max_grade(points: int) -> String:
+	return String(MASTERY_BAND_MAX_GRADE.get(mastery_band(points), "E"))
+
+## Points still owed to reach the NEXT band ("" band once at Master -> 0).
+static func mastery_to_next(points: int) -> int:
+	var band := mastery_band(points)
+	var idx: int = MASTERY_BANDS.find(band)
+	if idx < 0 or idx >= MASTERY_BANDS.size() - 1:
+		return 0
+	return maxi(0, int(MASTERY_THRESHOLDS[MASTERY_BANDS[idx + 1]]) - points)
+
+## The material family a slot's craft consumes (SLOT_CRAFT_MATERIAL).
+static func craft_material(slot: String) -> String:
+	return String(SLOT_CRAFT_MATERIAL.get(slot, "cloth"))
+
+## Deterministic blueprint price = base(grade) x SLOT_MAIN_BUDGET[slot] / 2.5.
+## Reads the live slot budget so the formula is genuinely derived (§5 table).
+static func blueprint_price(slot: String, grade: String) -> int:
+	var base: int = int(BLUEPRINT_BASE_PRICE.get(grade, 0))
+	if base <= 0:
+		return 0
+	var budget: float = float(Items.SLOT_MAIN_BUDGET.get(slot, BLUEPRINT_BASELINE_BUDGET))
+	return int(round(base * budget / BLUEPRINT_BASELINE_BUDGET))
+
+## Gold to swap the active trade when `step` swaps have already been paid this
+## week: base x mult^step (5k, 10k, 20k, 40k...). No cap — self-limiting (§2).
+static func swap_cost(step: int) -> int:
+	return int(SWAP_COST_BASE * pow(float(SWAP_COST_STEP_MULT), float(maxi(0, step))))
+
 # --- Chapter loot BANDS (2026-07-09; replaces the act-keyed loot framework) ---
 # Every gear/bag drop is a WEIGHTED roll from the chapter's table (no more
 # roll-high-then-clamp). Two profiles per chapter:

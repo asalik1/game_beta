@@ -4152,6 +4152,12 @@ func open_wardrobe() -> void:
 	UIWardrobe.open(self)
 
 
+## The Professions panel (trade lock, mastery, blueprints, craft bench) lives in
+## ui/professions.gd. Opened from a capital trainer station (game_world hub).
+func open_professions() -> void:
+	UIProfessions.open(self)
+
+
 ## Debug panel (F1, only when launched via dev_mode.bat) — ui/dev_panel.gd.
 ## `tab` empty keeps the current subtab (so in-panel refreshes stay put).
 func open_dev(tab := "") -> void:

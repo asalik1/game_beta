@@ -1219,6 +1219,7 @@ func _curse_payout(zi: int) -> void:
 #   {"k": "stone", "stone": {...}, "at": Vector2}     # text = "+ <name>"
 #   {"k": "potion", "potion": {...}, "at": Vector2, "ty": text_y_offset}   # graded potion (supply chest)
 #   {"k": "material", "family": "metal".."herb", "grade": "F".."S", "count": int, "at": Vector2, "ty": text_y_offset}
+#   {"k": "blueprint", "bp": {kind:"blueprint", slot, grade, ...}, "at": Vector2}   # learn-on-acquire generic recipe
 #   {"k": "bag",   "grade": "F".."S"}
 #   {"k": "sfx",   "id": "...", "vol": 1.0}
 #   {"k": "toast", "text": "...", "color": Color, "dur": 0.0}
@@ -1275,6 +1276,20 @@ func apply_award_events(events: Array) -> void:
 				if give_loot({"kind": "material", "family": mfam, "grade": mgr, "count": mcnt}, at):
 					spawn_text(at + Vector2(0, float(ev.get("ty", -70))),
 						"+ %s x%d" % [mnm, mcnt], Items.GRADE_COLOR.get(mgr, Color(1, 1, 1)))
+			"blueprint":
+				# Generic recipe, LEARN-ON-ACQUIRE (PROFESSIONS §5): recorded on
+				# the receiving player, not banked as a bag item. No Area2D spawn,
+				# so this is flush-guard safe from any award context.
+				var bp: Dictionary = ev.get("bp", {})
+				var bslot := String(bp.get("slot", ""))
+				var bgrade := String(bp.get("grade", ""))
+				if is_instance_valid(player) and bslot != "":
+					if player.learn_blueprint(bslot, bgrade):
+						spawn_text(at + Vector2(0, -92), "+ " + String(bp.get("name", "Blueprint")),
+							Color(0.85, 0.75, 1.0))
+					else:
+						spawn_text(at + Vector2(0, -92), "Blueprint (already known)",
+							Color(0.7, 0.7, 0.75))
 			"bag":
 				player.acquire_bag(Items.make_bag(String(ev.get("grade", "F"))))
 			"sfx":
@@ -1397,6 +1412,13 @@ func roll_boss_pack(kind: String, boss_pos: Vector2, boss_lv: int,
 	evs.append({"k": "chest", "chest_kind": "gear", "grade": gear_grade, "gem_ok": false,
 		"tier": "gold", "at": clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos)})
 	evs.append_array(roll_boss_supply_events(boss_pos, boss_lv, first_clear))
+	# A small chance at a GENERIC B/A blueprint — bosses + the shop are the only
+	# blueprint source (PROFESSIONS §5). Learn-on-acquire; slot ungated for now.
+	if loot_rng.randf() < Balance.BOSS_BLUEPRINT_CHANCE:
+		var bp_slot := String(Items.SLOTS[loot_rng.randi_range(0, Items.SLOTS.size() - 1)])
+		var bp_grade := "A" if loot_rng.randf() < Balance.BOSS_BLUEPRINT_A_FRACTION else "B"
+		evs.append({"k": "blueprint", "bp": Items.make_blueprint(bp_slot, bp_grade),
+			"at": clamp_to_zone(boss_pos + Vector2(-60, 40), boss_pos)})
 	return evs
 
 

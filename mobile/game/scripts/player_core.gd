@@ -130,6 +130,16 @@ var depths_checkpoint := 0
 # game_base.run_tier() is the gated read — endgame/weekly/co-op force 0.
 var run_tier := 0
 
+# --- professions (crafting core, PROPOSALS/PROFESSIONS.md) ---
+# The single LOCKED trade key (Balance.PROFESSION_TRADES), "" = none chosen yet.
+# Swapping (Professions.swap_trade) costs gold and doubles per week; mastery
+# below persists PER TRADE across swaps. All four fields ride the save.
+var profession := ""
+var mastery := {}            # trade key -> mastery points (persists across swaps)
+var blueprints: Array = []   # known generic recipes ("slot:grade"), learn-on-acquire
+var swap_cost_step := 0      # swaps already paid THIS week (doubling counter)
+var swap_week := -1          # trusted-clock week the step counter belongs to
+
 # --- vitals ---
 var max_hp := 100.0
 var hp := 100.0
@@ -557,7 +567,7 @@ const ABILITY_CLIP := {
 	"archer":   {"a1": "attack", "a2": "attack2", "a3": "dash",    "ult": "cast"},    # Quick Shot / Multishot / Tumble / Arrow Storm
 	"mage":     {"a1": "attack", "a2": "cast",    "a3": "dash",    "ult": "cast"},    # Firebolt / Frost Nova / Blink / Meteor
 	"assassin": {"a1": "attack", "a2": "dash",    "a3": "attack2", "ult": "ult"},     # Stab / Shadow Dash / Fan of Knives / Death Mark (ult = vanish clip)
-	"paladin":  {"a1": "attack", "a2": "attack2", "a3": "",        "ult": ""},        # Judgment / Consecration / Aegis / Conviction
+	"paladin":  {"a1": "attack", "a2": "attack2", "a3": "cast",    "ult": "ult"},     # Judgment / Consecration / Aegis / Conviction
 	"warlock":  {"a1": "attack", "a2": "ult",     "a3": "attack2", "ult": "cast"},    # Shadowbolt / Hex / Dark Pact / Void Rift
 }
 
@@ -1843,6 +1853,45 @@ func add_material(family: String, grade: String, count := 1) -> bool:
 	if bag_used() >= bag_capacity():
 		return false
 	materials.append(Items.make_material(family, grade, mini(Items.MATERIAL_STACK_MAX, count)))
+	return true
+
+
+## Total units of a (family, grade) material stack the bag holds (0 if none).
+func material_count(family: String, grade: String) -> int:
+	for m in materials:
+		if String(m.get("family", "")) == family and String(m.get("grade", "")) == grade:
+			return int(m.get("count", 0))
+	return 0
+
+
+## Consume `count` units of a (family, grade) stack for a craft. Returns false
+## (no side effects) if the stack can't cover it; empties the slot when drained.
+func take_material(family: String, grade: String, count: int) -> bool:
+	if count <= 0:
+		return true
+	for i in materials.size():
+		var m: Dictionary = materials[i]
+		if String(m.get("family", "")) == family and String(m.get("grade", "")) == grade:
+			if int(m.get("count", 0)) < count:
+				return false
+			m["count"] = int(m["count"]) - count
+			if int(m["count"]) <= 0:
+				materials.remove_at(i)
+			return true
+	return false
+
+
+## Is a generic (slot, grade) recipe known? (player.blueprints holds the keys.)
+func has_blueprint(slot: String, grade: String) -> bool:
+	return blueprints.has(Items.blueprint_key(slot, grade))
+
+
+## Learn a generic recipe (learn-on-acquire). Returns false if already known.
+func learn_blueprint(slot: String, grade: String) -> bool:
+	var key := Items.blueprint_key(slot, grade)
+	if blueprints.has(key):
+		return false
+	blueprints.append(key)
 	return true
 
 

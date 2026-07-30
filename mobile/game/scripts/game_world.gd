@@ -216,6 +216,12 @@ func _hub_action(act: String) -> void:
 			menus.open_shop(cur_room)
 		"potions":
 			menus.open_potion_loadout()
+		"professions":
+			# The trainer craft station (PROFESSIONS §7): trade lock, mastery,
+			# blueprints, and the craft bench — capital-is-the-shop gated inside
+			# the panel. Fired by a trainer's gossip choice (Herbalist Kesh) or
+			# Smith Petra's forge hub.
+			menus.open_professions()
 		"forge":
 			_cap_artisan("petra")
 		"lapidary":
@@ -268,6 +274,12 @@ func _cap_artisan(npc: String) -> void:
 		return
 	var options: Array = ["Use the bench"]
 	var acts: Array = ["bench"]
+	# Petra is the Blacksmith TRAINER (PROFESSIONS §7): her forge hosts the craft
+	# station too. The panel is trade-agnostic (it shows YOUR locked trade), so it
+	# is a legitimate station regardless of what the visitor's trade is.
+	if npc == "petra":
+		options.append("Craft & professions")
+		acts.append("professions")
 	if not get_flag("cap_q_%s_on" % qid, false):
 		options.append("\"Any work for a newcomer?\"")
 		acts.append("offer")
@@ -289,6 +301,8 @@ func _cap_artisan_choice(npc: String, acts: Array, idx: int) -> void:
 	match String(acts[clampi(idx, 0, acts.size() - 1)]):
 		"bench":
 			_cap_open_service(npc)
+		"professions":
+			menus.open_professions()
 		"offer":
 			set_flag("cap_q_%s_on" % qid)
 			if qid == "gem" and has_local_player():

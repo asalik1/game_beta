@@ -128,6 +128,10 @@ static func _character_section(game: Game) -> Dictionary:
 		"depths_checkpoint": p.depths_checkpoint,
 		# NG+ difficulty tier the campaign runs at (0 = Normal).
 		"run_tier": p.run_tier,
+		# Professions (crafting core): the locked trade, per-trade mastery (persists
+		# across swaps), known generic blueprints, and the weekly swap-cost counter.
+		"profession": p.profession, "mastery": p.mastery, "blueprints": p.blueprints,
+		"swap_cost_step": p.swap_cost_step, "swap_week": p.swap_week,
 		# --- vitals ---
 		"hp": p.hp, "mp": p.mp,
 		# Mailbox + dropped loot are CHARACTER-owned (§5.5 loot instancing:
@@ -302,6 +306,7 @@ const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tr
 	"attr_points", "unspent_attr", "gold", "ability_theme", "chroma", "skin",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
 	"consumables", "materials", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
+	"profession", "mastery", "blueprints", "swap_cost_step", "swap_week",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
 	"achievements", "boss_records", "kill_counts", "player_title",
 	"bounties", "bounty_day", "bounty_week",
@@ -533,6 +538,20 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	p.active_potion = String(c.get("active_potion", "health"))
 	p.depths_checkpoint = int(c.get("depths_checkpoint", 0))  # pre-restructure saves: no checkpoint yet
 	p.run_tier = clampi(int(c.get("run_tier", 0)), 0, Balance.TIER_NAMES.size() - 1)  # pre-tier saves: Normal
+	# Professions (pre-professions saves: no trade — start unlocked, mastery empty).
+	p.profession = String(c.get("profession", ""))
+	if not Balance.PROFESSION_TRADES.has(p.profession):
+		p.profession = ""  # a retired/unknown trade id just dies on load (no-migration rule)
+	p.mastery = {}
+	for t in c.get("mastery", {}):
+		if Balance.PROFESSION_TRADES.has(String(t)):
+			p.mastery[String(t)] = int(c["mastery"][t])
+	p.blueprints = []
+	for key in c.get("blueprints", []):
+		if String(key) not in p.blueprints:
+			p.blueprints.append(String(key))
+	p.swap_cost_step = maxi(0, int(c.get("swap_cost_step", 0)))
+	p.swap_week = int(c.get("swap_week", -1))
 
 	p.recalc()
 	p.hp = clampf(float(c.get("hp", p.max_hp)), 1.0, p.max_hp)

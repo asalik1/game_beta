@@ -2434,6 +2434,7 @@ func _run_campaign_ch2() -> void:
 	await _test_materials()
 	await _test_graded_potions()
 	await _test_boss_loot()
+	await _test_professions()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -7328,3 +7329,158 @@ func _ev_count(evs: Array, kval: String) -> int:
 		if String(ev.get("k", "")) == kval:
 			n += 1
 	return n
+
+
+# ---- Professions (crafting core, PROPOSALS/PROFESSIONS.md) ---------------
+# Trade lock (first is free) + the DOUBLING swap curve + weekly reset + mastery
+# that PERSISTS across swaps; a craft consumes materials + a gold fee and yields
+# a class-matched gear of the right slot/grade + grants mastery; mastery GATES
+# the tier; S never crafts; B/A REQUIRE the learned blueprint; a FORCED
+# promotion yields a named-A of the crafter's class+slot; blueprint prices follow
+# the slot-budget formula. ALL exits restore player state via _prof_fail.
+func _test_professions() -> void:
+	var p := game.player
+	var snap := {
+		"prof": p.profession, "mastery": p.mastery.duplicate(true),
+		"bp": p.blueprints.duplicate(), "gold": p.gold,
+		"mats": p.materials.duplicate(true), "backpack": p.backpack.duplicate(),
+		"gems": p.gem_bag.duplicate(), "cons": p.consumables.duplicate(true),
+		"bags": p.bags.duplicate(true), "step": p.swap_cost_step, "week": p.swap_week,
+	}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 424242
+	# Deterministic pockets: no trade, no recipes, empty craft bag, deep gold, and
+	# one roomy bag so material stacks always fit regardless of prior sections.
+	p.profession = ""
+	p.mastery = {}
+	p.blueprints = []
+	p.materials = []
+	p.backpack = []
+	p.gem_bag = []
+	p.consumables = []
+	p.bags = [Items.make_bag("A")]
+	p.swap_cost_step = 0
+	p.swap_week = Professions.week_index(p)
+	p.gold = 10000000
+
+	# (a) blueprint prices = base(grade) x SLOT_MAIN_BUDGET[slot] / 2.5.
+	for slot in Items.SLOTS:
+		for grade in Items.BLUEPRINT_GRADES:
+			var want: int = int(round(int(Balance.BLUEPRINT_BASE_PRICE[grade])
+				* float(Items.SLOT_MAIN_BUDGET[slot]) / Balance.BLUEPRINT_BASELINE_BUDGET))
+			if Balance.blueprint_price(slot, grade) != want:
+				return _prof_fail(snap, "blueprint price %s %s = %d, want %d" %
+					[slot, grade, Balance.blueprint_price(slot, grade), want])
+	if Balance.blueprint_price("helmet", "A") != 75000 or Balance.blueprint_price("weapon", "A") != 150000:
+		return _prof_fail(snap, "blueprint baseline/weapon off (want helmet-A 75k, weapon-A 150k)")
+
+	# (b) first lock is FREE; the swap curve doubles from 5k; mastery persists.
+	var r0 := Professions.lock_trade(p, "blacksmith")
+	if not r0["ok"] or int(r0["cost"]) != 0 or p.profession != "blacksmith":
+		return _prof_fail(snap, "first trade lock should be free and set the trade")
+	p.mastery["blacksmith"] = 250
+	if Professions.swap_cost(p) != 5000:
+		return _prof_fail(snap, "first swap should cost the 5k base, got %d" % Professions.swap_cost(p))
+	var r1 := Professions.lock_trade(p, "tailor")
+	if not r1["ok"] or int(r1["cost"]) != 5000 or p.swap_cost_step != 1:
+		return _prof_fail(snap, "swap #1 should cost 5k and bump the weekly step")
+	if Professions.swap_cost(p) != 10000:
+		return _prof_fail(snap, "swap #2 should double to 10k, got %d" % Professions.swap_cost(p))
+	var r2 := Professions.lock_trade(p, "alchemist")
+	if int(r2["cost"]) != 10000 or Professions.swap_cost(p) != 20000:
+		return _prof_fail(snap, "swap curve not doubling (want 10k then 20k)")
+	if Professions.points(p, "blacksmith") != 250:
+		return _prof_fail(snap, "smithing mastery did not persist across two swaps")
+	# Weekly epoch resets the counter (cost back to base).
+	p.swap_week = -999
+	if Professions.swap_cost(p) != 5000 or p.swap_cost_step != 0:
+		return _prof_fail(snap, "weekly epoch should reset the swap cost to base")
+
+	# (c) mastery GATES the tier; a craft consumes materials + gold, grants
+	# mastery, and yields a class-matched gear of the right slot/grade.
+	Professions.lock_trade(p, "blacksmith")   # weapon / helmet
+	p.mastery["blacksmith"] = 0               # Novice -> F/E only
+	if Professions.max_grade(p) != "E":
+		return _prof_fail(snap, "Novice must cap at grade E, got %s" % Professions.max_grade(p))
+	if Professions.craft_blocked(p, "weapon", "D") == "":
+		return _prof_fail(snap, "grade D must be blocked at Novice mastery")
+	p.add_material("metal", "F", 10)
+	var mats_before := p.material_count("metal", "F")
+	var gold_before := p.gold
+	var cres := Professions.craft(p, "weapon", "F", rng)
+	if not cres["ok"]:
+		return _prof_fail(snap, "F weapon craft blocked: %s" % String(cres["reason"]))
+	var item: Dictionary = cres["item"]
+	if String(item.get("slot", "")) != "weapon" or String(item.get("grade", "")) != "F":
+		return _prof_fail(snap, "craft yielded the wrong slot/grade")
+	if String(item.get("cls", "")) != p.cls:
+		return _prof_fail(snap, "craft yielded gear not matched to the crafter's class")
+	if p.material_count("metal", "F") != mats_before - int(Balance.CRAFT_MATERIAL_COST["F"]):
+		return _prof_fail(snap, "craft did not consume the right material count")
+	if p.gold != gold_before - int(Balance.CRAFT_GOLD_FEE["F"]):
+		return _prof_fail(snap, "craft did not charge the gold fee")
+	if Professions.points(p) != int(Balance.CRAFT_MASTERY_BY_GRADE["F"]):
+		return _prof_fail(snap, "craft did not grant mastery")
+
+	# (d) S is NEVER craftable, at any mastery.
+	p.mastery["blacksmith"] = 10000000
+	if Professions.craftable_grades(p, "weapon").has("S"):
+		return _prof_fail(snap, "S must never appear as craftable")
+	if Professions.craft_blocked(p, "weapon", "S") == "":
+		return _prof_fail(snap, "an S craft must be blocked")
+
+	# (e) B/A REQUIRE the blueprint, even at Master mastery.
+	p.blueprints = []
+	if Professions.craft_blocked(p, "weapon", "B") == "":
+		return _prof_fail(snap, "B must be blocked without the blueprint")
+	if Professions.craft_blocked(p, "weapon", "A") == "":
+		return _prof_fail(snap, "A must be blocked without the blueprint")
+	var buy := Professions.buy_blueprint(p, "weapon", "A")
+	if not buy["ok"] or not p.has_blueprint("weapon", "A"):
+		return _prof_fail(snap, "buying the A blueprint failed")
+	p.add_material("metal", "A", 40)
+	var block_a := Professions.craft_blocked(p, "weapon", "A")
+	if block_a != "":
+		return _prof_fail(snap, "A should craft with blueprint + mats + gold: %s" % block_a)
+
+	# (f) a FORCED promotion yields a NAMED-A unique of the crafter's class+slot.
+	var pres := Professions.craft(p, "weapon", "A", rng, true)
+	if not pres["ok"] or not bool(pres["promoted"]):
+		return _prof_fail(snap, "forced A promotion did not fire")
+	var uitem: Dictionary = pres["item"]
+	if not uitem.has("passive") or String(uitem.get("cls", "")) != p.cls \
+			or String(uitem.get("slot", "")) != "weapon" or String(uitem.get("grade", "")) != "A":
+		return _prof_fail(snap, "promotion did not yield a named-A of the crafter's class+weapon")
+	var is_named := false
+	for u in Items.uniques_of(p.cls, "A", "weapon"):
+		if String(u["name"]) == String(uitem.get("name", "")):
+			is_named = true
+			break
+	if not is_named:
+		return _prof_fail(snap, "promoted item is not a real UNIQUES-table named-A")
+
+	_prof_restore(snap)
+	print("ok: professions (free lock+doubling swap+weekly reset+persist, gated craft, S-block, B/A blueprint gate, forced named-A promotion, price formula)")
+
+
+## Restore every player pocket _test_professions touched (CLAUDE.md: failure
+## paths must restore too — quit is only queued).
+func _prof_restore(snap: Dictionary) -> void:
+	var p := game.player
+	p.profession = String(snap["prof"])
+	p.mastery = snap["mastery"]
+	p.blueprints = snap["bp"]
+	p.gold = int(snap["gold"])
+	p.materials = snap["mats"]
+	p.backpack = snap["backpack"]
+	p.gem_bag = snap["gems"]
+	p.consumables = snap["cons"]
+	p.bags = snap["bags"]
+	p.swap_cost_step = int(snap["step"])
+	p.swap_week = int(snap["week"])
+	p.recalc()
+
+
+func _prof_fail(snap: Dictionary, msg: String) -> void:
+	_prof_restore(snap)
+	_fail(msg)

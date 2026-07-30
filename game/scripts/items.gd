@@ -1281,6 +1281,27 @@ static func material_value(grade: String) -> int:
 	return int(round(MATERIAL_BASE_VALUE * float(GRADE_MULT.get(grade, 1.0))))
 
 
+# ---------------------------------------------------------- blueprints ---
+# GENERIC crafting recipes (PROFESSIONS §5). One blueprint = one (slot, grade)
+# recipe, and they exist ONLY for B and A (F-D craft on mastery alone). A
+# blueprint is LEARN-ON-ACQUIRE: it is never a bag item that sits and stacks —
+# make_blueprint builds the drop/award payload, and the recipe is recorded on
+# player.blueprints (the "slot:grade" key). There is NO named blueprint — named
+# gear is the promotion roll, not a targetable recipe (§5).
+const BLUEPRINT_GRADES := ["B", "A"]
+
+## The canonical known-recipe key for player.blueprints ("weapon:A").
+static func blueprint_key(slot: String, grade: String) -> String:
+	return "%s:%s" % [slot, grade]
+
+## A generic-blueprint payload ({"kind":"blueprint", slot, grade, name, key}).
+## Learn-on-acquire: apply_award_events / the shop record `key` on the player.
+static func make_blueprint(slot: String, grade: String) -> Dictionary:
+	return {"kind": "blueprint", "slot": slot, "grade": grade,
+		"key": blueprint_key(slot, grade),
+		"name": "Blueprint: Generic %s %s" % [grade, slot.capitalize()]}
+
+
 # ----------------------------------------------------------- consumables ---
 # Non-gear bag items. Stones/scrolls are {"kind": "stone", ...}; graded potions
 # are {"kind": "potion", ...} (below). Elites/merchants are the sources.

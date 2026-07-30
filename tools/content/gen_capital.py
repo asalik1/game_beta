@@ -33,6 +33,10 @@ HUB_ACTIONS = {
     "portal_story", "portal_crucible", "portal_depths",
     "vault", "codex", "daily", "map", "mail", "journal", "records",
     "guild", "potions", "wardrobe", "forge", "lapidary", "drill",
+    # Professions craft station (PROFESSIONS §7): trade lock, mastery,
+    # blueprints, craft bench. Placed by Herbalist Kesh's gossip hub (the
+    # Alchemist trainer); Smith Petra's forge hub also opens it in code.
+    "professions",
 }
 ROOMS = [
   # --- CROWN PLAZA: the whole town ritual in one grand room ---
@@ -396,6 +400,21 @@ GOSSIP = {
     "talk": {"who": "Tavern Keeper",
           "text": "News? The wards keep their corners, the plaza keeps the coin, and the gates keep out exactly as much of the wild as the wild allows. Same as ever. Stay for a cup.",
           "next": ""}}},
+ # Herbalist Kesh is the ALCHEMIST trainer (PROFESSIONS §7): a gossip hub whose
+ # craft-bench choice opens the trade-agnostic Professions panel.
+ "cap_kesh": {"start": "a", "nodes": {
+    "a": {"who": "Herbalist Kesh",
+          "text": "Cures for the ward, reagents for the Alembic across the plaza. I keep the Alchemist's bench — charms and gloves worked from bone and cloth. Here to craft, or after the day's leaves?",
+          "choices": [
+             {"text": "Open the craft bench  (Professions)", "hub_action": "professions", "next": "craft"},
+             {"text": "\"Tell me about the gathering.\"", "next": "talk"},
+             {"text": "(Leave)", "next": ""}]},
+    "craft": {"who": "Herbalist Kesh",
+          "text": "Lock a trade at the bench — only your own trade's work will take. Mastery keeps, though, whatever you swap to.",
+          "next": ""},
+    "talk": {"who": "Herbalist Kesh",
+          "text": "I set the day's gathering. Bring back the right leaves and no one dies of the wrong ones.",
+          "next": ""}}},
 }
 CONVOS = {
  "cap_citizen": ("A Citizen", "First visit? Everything a returning company needs rings this plaza — Petra's forge west, the Lapidary east, your vault by the fountain, the bazaar and mail at the south stalls. Gates north, Tankard west, Archive east, the four ward halls at the corners."),
@@ -407,7 +426,6 @@ CONVOS = {
  "cap_ilse": ("Cantor Ilse", "The Choir does not bury its dead — rot is the land's honest truth, and the dead keep their own vigil here. Tend them with me. It's patient work. Daily work."),
  "cap_vela": ("Deacon Vela", "Quieter tasks than the Cantor's: recover a relic, carry a name north to the sleepers, witness a thing and return unbroken. The blight rewards the faithful."),
  "cap_maren": ("Elder Maren", "So — the shards still choosing, and the factions still counting. The Accord holds this ward and half this city's conscience. There's honest work daily, if you want it. Sit; the fire doesn't bite."),
- "cap_kesh": ("Herbalist Kesh", "Cures for the ward, reagents for the Alembic across the plaza. I set the day's gathering. Bring back the right leaves and no one dies of the wrong ones."),
  "cap_aldric": ("Ser Aldric", "The Cinderborn keep the forms of a court that lost its crown. I keep its sword arm. There's work in the old key — recover, restore, avenge — for a crown that might yet find a head. Daily, if you've the stomach."),
  "cap_vessa": ("Envoy Vessa", "Work with us and be paid, protected, and remembered. I've a commission most days — a courier run, a quiet errand, imperial paper with teeth. First one's waiting."),
 }
