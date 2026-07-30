@@ -423,10 +423,14 @@ static func material_grade_up(grade: String) -> String:
 #   GENERAL — mobs, chests, shop stock, spoils, gamble (skews low/mid)
 #   BOSS    — the boss gear channel + ALL bag sources (reaches the ceiling)
 # Tiers phase in/out on a sliding window (intent; the tables are the truth):
-#   F ch1-3 | E ch2-4 | D ch3-7 | C ch4-11 | B ch5-.. | A ch6-.. | S ch12-..
-# Regular gems drop ch4+, special gems ch6+ (see *_gems_drop below). ch12 is
-# the S-band table (S ch12-∞ per the window) — authored 2026-07-24 because the
-# NG+ tier shift (tier_chapter below) makes it reachable from Torment ch4+.
+#   F ch1-3 | E ch2-4 | D ch3-7 | C ch4-11 | B ch5-.. | A ch6-.. | S BOSS-ONLY
+# GENERAL caps at A (BOSS_LOOT.md §5, 2026-07-29): S-tier gear now drops ONLY
+# from the boss GEAR chest (S enters the BOSS band at ch12), never the general
+# band — this supersedes ACT2_ECONOMY.md §4's "generic S enters at ch12 in the
+# general band". Shop / world chest / elite chest / clear-spoils all ceiling at A.
+# Regular gems drop ch4+, special gems ch6+ (see *_gems_drop below). ch12's BOSS
+# table is the S-band table (S ch12-∞) — authored 2026-07-24 because the NG+
+# tier shift (tier_chapter below) makes it reachable from Torment ch4+.
 # ch13+ tables are set later (unbuilt) — gear_weights/boss_weights fall back
 # to the richest authored table so nothing rolls empty.
 const GEAR_TIER_ORDER := ["F", "E", "D", "C", "B", "A", "S"]
@@ -443,7 +447,7 @@ const CHAPTER_GEAR_WEIGHTS := {
 	"ch9":  {"C": 10, "B": 89, "A": 1},
 	"ch10": {"C": 6, "B": 92, "A": 2},
 	"ch11": {"C": 2, "B": 96, "A": 2},
-	"ch12": {"B": 90, "A": 9, "S": 1},
+	"ch12": {"B": 90, "A": 10},   # general band caps at A (BOSS_LOOT §5); S moved to the boss gear chest
 }
 const CHAPTER_BOSS_WEIGHTS := {
 	"ch1":  {"F": 100},
@@ -714,6 +718,164 @@ const BOSS_GEM_CAP_LEVEL := 40.0     # guaranteed from here up
 static func boss_gem_chance(lvl: float) -> float:
 	return clampf((lvl - BOSS_GEM_FLOOR_LEVEL) / (BOSS_GEM_CAP_LEVEL - BOSS_GEM_FLOOR_LEVEL),
 		BOSS_GEM_CHANCE_MIN, 1.0)
+
+
+# ================================================= BOSS SUPPLY CHESTS =========
+# BOSS_LOOT.md §2-§4. A boss drops ONE guaranteed grade-matched GEAR chest
+# (boss band, F-S) PLUS three SUPPLY slots. Each supply slot is either a real
+# supply chest (act-tiered Bronze/Silver/Gold) or, when it doesn't roll one, a
+# BUNDLE of raw crafting materials — floor: at least one chest. A supply chest
+# is a crafting-materials faucet FIRST (the common pull), finished bags/potions
+# second, with exactly ONE of the boss's chests guaranteed to carry a gem. Every
+# number here is a knob (no bare loot numbers in game_flow/chest). This SUBSUMES
+# the interim boss material drop (roll_boss_material) and the separate boss gem/
+# gear/bag inline channels — all of it now flows through the two chest kinds.
+const SUPPLY_SLOTS := 3                       # a boss yields three supply slots (§4)
+# Supply TIER by LOOT chapter (NG+-aware, like gem/gear/bag lookups): Bronze in
+# Act 1 (ch1-7), Silver from ch8 (Act 2 band), Gold from ch12 (the S band) — so
+# the Gold chest, the ONLY S materials/bags/potions source, shares its gate with
+# S gear (the boss band's S entry, also ch12+). Bosses below ch8 give Bronze.
+const SUPPLY_TIER_SILVER_CH := 8
+const SUPPLY_TIER_GOLD_CH := 12
+# Per-tier grade WINDOW [floor, ceiling] (§2). The ceiling is RARE; higher tiers
+# PHASE OUT the low grades (the floor rises with the ceiling), so a Gold chest
+# stops dropping the junk grades entirely.
+const SUPPLY_TIER_FLOOR_GRADE := {"bronze": "F", "silver": "C", "gold": "A"}
+const SUPPLY_TIER_CEIL_GRADE := {"bronze": "B", "silver": "A", "gold": "S"}
+# The tier's world sprite KEY (Art.tex -> assets/sprites/<key>.png). Reuse the
+# old metallic tier chest art (chest_wood≈bronze, chest_silver, chest_gold).
+const SUPPLY_TIER_ART := {"bronze": "chest_wood", "silver": "chest_silver", "gold": "chest_gold"}
+# Guaranteed-gem LEVEL ceiling per tier (§3): Bronze Lv2 / Silver Lv3 / Gold Lv4,
+# ceiling rare, first-clear +1. Reconciles the old boss gem law: the supply
+# chest IS the boss's gem source now (regular_gems_drop still gates ch1-3 out).
+const SUPPLY_GEM_LEVEL := {"bronze": 2, "silver": 3, "gold": 4}
+const SUPPLY_GEM_FIRST_CLEAR_BONUS := 1
+# Ceiling-rare weighting: each grade/level up the window is DECAY x as likely, so
+# you mostly pull mid and low. A stronger boss shifts the whole table toward its
+# ceiling (§2) — DECAY climbs with boss level toward DECAY_MAX.
+const SUPPLY_GRADE_DECAY := 0.5
+const SUPPLY_GRADE_DECAY_PER_LEVEL := 0.006
+const SUPPLY_GRADE_DECAY_MAX := 0.85
+# The 1-3 count (§4): per-slot chance a slot is a real chest (else a material
+# bundle). Scales with the boss; first-clear leans toward more chests. Floor is
+# enforced in code (>=1 chest).
+const SUPPLY_CHEST_CHANCE := 0.5
+const SUPPLY_CHEST_CHANCE_PER_LEVEL := 0.006
+const SUPPLY_CHEST_CHANCE_MAX := 0.9
+const SUPPLY_CHEST_FIRST_CLEAR := 0.85
+# Inside a chest: material stacks are the common pull; a finished bag/potion is
+# the rarer upside (§3). The "would-be bag" pays cloth, the "would-be potion"
+# pays herb/reagent. Laced (black-market) potions CAN drop (§3).
+const SUPPLY_MAT_STACKS_MIN := 1
+const SUPPLY_MAT_STACKS_MAX := 2
+const SUPPLY_MAT_COUNT_MIN := 2
+const SUPPLY_MAT_COUNT_MAX := 5
+const SUPPLY_BUNDLE_COUNT_MIN := 3            # a "missing chest" bundle pays more units
+const SUPPLY_BUNDLE_COUNT_MAX := 6
+const SUPPLY_FINISHED_BAG_CHANCE := 0.10      # else cloth materials (a Tailor crafts the bag)
+const SUPPLY_FINISHED_POTION_CHANCE := 0.30   # else herb/reagent (an Alchemist brews it)
+const SUPPLY_LACED_POTION_CHANCE := 0.25      # a finished potion may be black-market (§3)
+const SUPPLY_POTION_MAT_FAMILIES := ["herb", "reagent"]
+const SUPPLY_SLOT_OFFSETS := [Vector2(-62.0, 40.0), Vector2(0.0, 66.0), Vector2(62.0, 40.0)]
+
+
+## Supply chest TIER ("bronze"/"silver"/"gold") for a loot chapter (§2).
+static func supply_tier(chid: String) -> String:
+	var n := chapter_num(chid)
+	if n >= SUPPLY_TIER_GOLD_CH:
+		return "gold"
+	if n >= SUPPLY_TIER_SILVER_CH:
+		return "silver"
+	return "bronze"
+
+## The tier's world sprite stem (Art.tex key).
+static func supply_chest_art(tier: String) -> String:
+	return String(SUPPLY_TIER_ART.get(tier, "wood"))
+
+## The tier's ceiling grade — the chest's telegraph/halo grade.
+static func supply_chest_grade(tier: String) -> String:
+	return String(SUPPLY_TIER_CEIL_GRADE.get(tier, "B"))
+
+## The grades a tier can roll (floor..ceiling inclusive), low phased in.
+static func supply_grades_in_window(tier: String) -> Array:
+	var lo: int = GEAR_TIER_ORDER.find(String(SUPPLY_TIER_FLOOR_GRADE.get(tier, "F")))
+	var hi: int = GEAR_TIER_ORDER.find(String(SUPPLY_TIER_CEIL_GRADE.get(tier, "B")))
+	if lo < 0 or hi < 0 or hi < lo:
+		return ["F"]
+	return GEAR_TIER_ORDER.slice(lo, hi + 1)
+
+## Effective ceiling-rare decay for a boss level (stronger boss -> toward ceiling).
+static func supply_decay(boss_lv: int) -> float:
+	return clampf(SUPPLY_GRADE_DECAY + SUPPLY_GRADE_DECAY_PER_LEVEL * float(maxi(boss_lv, 0)),
+		SUPPLY_GRADE_DECAY, SUPPLY_GRADE_DECAY_MAX)
+
+## {grade: weight} for a tier's window, ceiling RARE (geometric decay from floor).
+static func supply_grade_weights(tier: String, boss_lv: int) -> Dictionary:
+	var decay := supply_decay(boss_lv)
+	var out := {}
+	var w := 1.0
+	for g in supply_grades_in_window(tier):
+		out[String(g)] = w
+		w *= decay
+	return out
+
+## One material/finished-good GRADE from a tier's window (ceiling rare).
+static func roll_supply_grade(tier: String, boss_lv: int, rng: RandomNumberGenerator) -> String:
+	return roll_weighted_grade(supply_grade_weights(tier, boss_lv), rng)
+
+## One material/finished GRADE from a tier's window, CLAMPED to an allowed set
+## (e.g. a potion ladder that skips some grades). Empty overlap -> best allowed.
+static func roll_supply_grade_in(tier: String, boss_lv: int, allowed: Array,
+		rng: RandomNumberGenerator) -> String:
+	var w := supply_grade_weights(tier, boss_lv)
+	var filtered := {}
+	for g in w:
+		if g in allowed:
+			filtered[g] = w[g]
+	if filtered.is_empty():
+		# No window overlap: hand back the best allowed grade at/under the ceiling.
+		var ceil_i: int = GEAR_TIER_ORDER.find(supply_chest_grade(tier))
+		var best := ""
+		for g in allowed:
+			var gi: int = GEAR_TIER_ORDER.find(String(g))
+			if gi <= ceil_i and (best == "" or gi > GEAR_TIER_ORDER.find(best)):
+				best = String(g)
+		return best if best != "" else (String(allowed[0]) if not allowed.is_empty() else "")
+	return roll_weighted_grade(filtered, rng)
+
+## The guaranteed gem's LEVEL for a tier (ceiling rare; first-clear +1).
+static func roll_supply_gem_level(tier: String, first_clear: bool, rng: RandomNumberGenerator) -> int:
+	var ceil_lvl: int = int(SUPPLY_GEM_LEVEL.get(tier, 2)) \
+		+ (SUPPLY_GEM_FIRST_CLEAR_BONUS if first_clear else 0)
+	ceil_lvl = maxi(1, ceil_lvl)
+	# Geometric pick over 1..ceil, higher levels rarer (same lean as the grades).
+	var decay := supply_decay(0)
+	var weights := {}
+	var total := 0.0
+	var w := 1.0
+	for lv in range(1, ceil_lvl + 1):
+		weights[lv] = w
+		total += w
+		w *= decay
+	var pick := rng.randf() * total
+	for lv in range(1, ceil_lvl + 1):
+		pick -= float(weights[lv])
+		if pick <= 0.0:
+			return lv
+	return ceil_lvl
+
+## Per-slot chance a supply slot is a real chest vs a material bundle (§4).
+static func supply_chest_chance(boss_lv: int, first_clear: bool) -> float:
+	if first_clear:
+		return SUPPLY_CHEST_FIRST_CLEAR
+	return clampf(SUPPLY_CHEST_CHANCE + SUPPLY_CHEST_CHANCE_PER_LEVEL * float(maxi(boss_lv, 0)),
+		SUPPLY_CHEST_CHANCE, SUPPLY_CHEST_CHANCE_MAX)
+
+## World offset for supply slot `i` (spreads the drops around the corpse).
+static func supply_slot_offset(i: int) -> Vector2:
+	if i >= 0 and i < SUPPLY_SLOT_OFFSETS.size():
+		return SUPPLY_SLOT_OFFSETS[i]
+	return Vector2(0.0, 50.0)
 
 
 # ---------------------------------------------- assassin blade economy ---

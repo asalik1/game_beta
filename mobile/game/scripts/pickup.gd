@@ -110,6 +110,18 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 				spr.scale = Vector2(1.1, 1.1)
 			else:
 				c._glyph("◆", tint)
+		"potion":
+			# Bag-overflow graded potion (supply-chest drop): its authored bottle,
+			# grade-tinted (falls back to the alembic glyph if the sprite is absent).
+			var pot: Dictionary = payload.get("potion", {})
+			tint = Items.GRADE_COLOR.get(String(pot.get("grade", "F")), Color(0.7, 0.95, 0.8))
+			var ptex: ImageTexture = Art.consumable_icon(pot)
+			if ptex != null:
+				spr = Sprite2D.new()
+				spr.texture = ptex
+				spr.scale = Vector2(1.1, 1.1)
+			else:
+				c._glyph("⚗", tint)
 		_:
 			# Consumable on the ground: real icon when one exists (mana
 			# draught, elixir, scroll, stones), else the old ⟲ glyph.

@@ -2433,6 +2433,7 @@ func _run_campaign_ch2() -> void:
 	await _test_elixir_ward_gate()
 	await _test_materials()
 	await _test_graded_potions()
+	await _test_boss_loot()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -6416,10 +6417,14 @@ func _test_difficulty() -> void:
 	if Balance.tier_chapter("crucible", 2) != "crucible":
 		return _fail("tier_chapter must pass non-chapter ids through")
 	var w12: Dictionary = Balance.gear_weights(Balance.tier_chapter("ch7", 2))
-	if not w12.has("S"):
-		return _fail("Torment ch7 general band should reach S (ch12 fallback table)")
+	# BOSS_LOOT §5: the GENERAL band now caps at A — S-tier gear drops ONLY from
+	# the boss GEAR chest (the boss band's S entry), never shop/world/elite/spoils.
+	if w12.has("S"):
+		return _fail("general band must cap at A now — S moved to the boss gear chest (BOSS_LOOT §5)")
+	if not w12.has("A"):
+		return _fail("Torment ch7 general band should still reach A (ch12 fallback table)")
 	if not Balance.boss_weights("ch12").has("S"):
-		return _fail("ch12 boss band should carry S")
+		return _fail("ch12 boss band should carry S (the boss gear chest's S source)")
 	if Balance.chapter_gear_ceiling("ch1") != "F" or Balance.chapter_gear_ceiling("ch7") != "B":
 		return _fail("authored band ceilings moved (ch12 row should be additive)")
 	if not Balance.regular_gems_drop(Balance.tier_chapter("ch1", 1)):
@@ -7158,3 +7163,168 @@ func _pot_restore(s: Dictionary) -> void:
 	p.laced_dmg_in_time = float(s["ldi_t"])
 	p.laced_dmg_in_amt = float(s["ldi_a"])
 	p.since_hurt = float(s["since"])
+
+
+# ---- Boss loot: the gear-chest + supply-chest redesign (BOSS_LOOT.md) --------
+# A boss drops ONE guaranteed grade-matched GEAR chest (boss band) + 1-3 act-
+# tiered SUPPLY chests (materials-first, one guaranteed gem, a rare finished
+# bag/potion, laced potions possible) with a material-bundle fallback for missing
+# chests. This covers: the general band now caps at A (S moved to the boss gear
+# chest); tier ceilings + phase-out; the guaranteed-gem rule; S material/bag/
+# potion ONLY from the Gold tier; and the roll_boss_pack shape + chest floor +
+# bundle fallback. Parts a-d are PURE (no world state). Part e snapshots and
+# RESTORES loot_rng + the tier gate on EVERY exit.
+func _test_boss_loot() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 90125
+
+	# (a) general band caps at A; boss band keeps S (BOSS_LOOT §5).
+	for chid in Balance.CHAPTER_GEAR_WEIGHTS:
+		if Balance.CHAPTER_GEAR_WEIGHTS[chid].has("S"):
+			return _fail("general band %s still offers S — must cap at A (BOSS_LOOT §5)" % chid)
+	if not Balance.CHAPTER_BOSS_WEIGHTS["ch12"].has("S"):
+		return _fail("ch12 boss band must keep S (the boss gear chest's only S source)")
+
+	# (b) tier mapping + ceilings + phase-out.
+	if Balance.supply_tier("ch1") != "bronze" or Balance.supply_tier("ch8") != "silver" \
+			or Balance.supply_tier("ch12") != "gold":
+		return _fail("supply_tier act mapping wrong (want bronze/silver/gold at ch1/ch8/ch12)")
+	if Balance.supply_chest_grade("bronze") != "B" or Balance.supply_chest_grade("silver") != "A" \
+			or Balance.supply_chest_grade("gold") != "S":
+		return _fail("supply tier ceilings wrong (want B/A/S)")
+	# Gold phases out the junk: its window floor is A (nothing below A).
+	if Balance.supply_grades_in_window("gold").has("C") \
+			or not Balance.supply_grades_in_window("gold").has("S"):
+		return _fail("gold supply window should be A..S (junk grades phased out)")
+
+	# (c) guaranteed-gem rule (pure roller): with_gem -> exactly one; else zero.
+	if _ev_count(Chest.roll_supply_contents("silver", true, false, true, 10, Vector2.ZERO, rng), "gem") != 1:
+		return _fail("a guaranteed-gem supply chest must hold exactly one gem")
+	if _ev_count(Chest.roll_supply_contents("silver", false, false, true, 10, Vector2.ZERO, rng), "gem") != 0:
+		return _fail("a non-gem supply chest must hold no gem")
+
+	# (d) materials-first + Gold is the S source + laced can drop + bronze ceiling.
+	var mat_events := 0
+	var finished := 0
+	var saw_s_mat := false
+	var saw_s_bag := false
+	var saw_s_pot := false
+	var saw_laced := false
+	for i in 600:
+		for ev in Chest.roll_supply_contents("gold", true, false, true, 40, Vector2.ZERO, rng):
+			match String(ev.get("k", "")):
+				"material":
+					mat_events += 1
+					var mg := String(ev.get("grade", ""))
+					if Items.GRADES.find(mg) < Items.GRADES.find("A"):
+						return _fail("gold supply material fell below its A floor: %s" % mg)
+					if mg == "S":
+						saw_s_mat = true
+				"bag":
+					finished += 1
+					if String(ev.get("grade", "")) == "S":
+						saw_s_bag = true
+				"potion":
+					finished += 1
+					var pot: Dictionary = ev.get("potion", {})
+					if String(pot.get("grade", "")) == "S":
+						saw_s_pot = true
+					if String(pot.get("lane", "")) == "black":
+						saw_laced = true
+	if not (saw_s_mat and saw_s_bag and saw_s_pot):
+		return _fail("gold supply chest must be able to yield an S material AND bag AND potion")
+	if not saw_laced:
+		return _fail("laced (black-market) potions must be able to drop from supply chests (§3)")
+	if mat_events <= finished:
+		return _fail("supply chests must be materials-FIRST (materials outnumber finished goods)")
+	# Bronze never exceeds its B ceiling (materials/bags/potions).
+	for i in 300:
+		for ev in Chest.roll_supply_contents("bronze", false, false, true, 1, Vector2.ZERO, rng):
+			var k := String(ev.get("k", ""))
+			var g := ""
+			if k == "material" or k == "bag":
+				g = String(ev.get("grade", ""))
+			elif k == "potion":
+				g = String(Dictionary(ev.get("potion", {})).get("grade", ""))
+			if g != "" and Items.GRADES.find(g) > Items.GRADES.find("B"):
+				return _fail("bronze supply exceeded its B ceiling: %s" % g)
+
+	# (e) roll_boss_pack shape + gear chest + guaranteed gem + floor + bundle
+	# fallback. Snapshot loot_rng + the tier gate; shift the loot band up so gems
+	# unlock, then RESTORE on every exit.
+	var keep_rng: int = game.loot_rng.state
+	var keep_wtier: int = game.world_run_tier
+	var keep_endgame: bool = game.endgame_active
+	var keep_weekly: bool = game.weekly_active
+	game.endgame_active = false
+	game.weekly_active = false
+	game.world_run_tier = 1                        # Nightmare: ch2 -> ch6 loot band (gems on)
+	game.loot_rng.seed = 424242
+	var boss_kind := String(Story.chapter(game.chapter_id).get("final_boss", ""))
+	if not Story.ALL_ENEMIES.has(boss_kind):
+		boss_kind = String(Story.ALL_ENEMIES.keys()[0])
+	var fail_msg := ""
+	if not Balance.regular_gems_drop(game.loot_chapter()):
+		fail_msg = "test setup: expected the shifted loot band to unlock gems"
+	var pos: Vector2 = game.player.global_position
+	var min_chests := 99
+	var saw_bundle := false
+	if fail_msg == "":
+		for i in 40:
+			var pack := game.roll_boss_pack(boss_kind, pos, 12, false, game.player.cls)
+			var gearc := 0
+			var supc := 0
+			var supgem := 0
+			var mats := 0
+			for ev in pack:
+				match String(ev.get("k", "")):
+					"chest":
+						if String(ev.get("chest_kind", "")) == "gear":
+							gearc += 1
+							if not Balance.boss_weights(game.loot_chapter()).has(String(ev.get("grade", ""))):
+								fail_msg = "gear chest grade left the boss band"
+							if bool(ev.get("gem_ok", true)):
+								fail_msg = "boss gear chest must suppress its loose gem (gems ride supply)"
+						elif String(ev.get("chest_kind", "")) == "supply":
+							supc += 1
+							if bool(ev.get("supply_gem", false)):
+								supgem += 1
+					"material":
+						mats += 1
+			if _ev_count(pack, "gold") != 1:
+				fail_msg = "boss pack must carry exactly one gold pile"
+			if gearc != 1:
+				fail_msg = "boss pack must carry exactly one gear chest"
+			if supc + mats != Balance.SUPPLY_SLOTS:
+				fail_msg = "boss pack must fill exactly %d supply slots" % Balance.SUPPLY_SLOTS
+			if supc < 1:
+				fail_msg = "boss supply floor: at least one chest"
+			if supgem != 1:
+				fail_msg = "exactly one supply chest is the guaranteed-gem chest on a replay"
+			min_chests = mini(min_chests, supc)
+			if supc < Balance.SUPPLY_SLOTS:
+				saw_bundle = true
+			if fail_msg != "":
+				break
+
+	# RESTORE (all exits pass through here).
+	game.world_run_tier = keep_wtier
+	game.endgame_active = keep_endgame
+	game.weekly_active = keep_weekly
+	game.loot_rng.state = keep_rng
+	if fail_msg != "":
+		return _fail(fail_msg)
+	if min_chests < 1:
+		return _fail("supply floor violated (a boss dropped zero chests)")
+	if not saw_bundle:
+		return _fail("material-bundle fallback never fired across 40 packs")
+	print("ok: boss loot (1 gear chest + 1-3 supply chests, materials-first, S-from-gold, guaranteed gem, chest floor + bundle fallback, general A-cap)")
+
+
+## Count award/loot events of a given "k" in an events Array.
+func _ev_count(evs: Array, kval: String) -> int:
+	var n := 0
+	for ev in evs:
+		if String(ev.get("k", "")) == kval:
+			n += 1
+	return n

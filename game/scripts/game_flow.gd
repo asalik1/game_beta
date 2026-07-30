@@ -880,50 +880,20 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		player.mp = player.max_mp
 	# (No potion restock — 2026-07-09 investment round: stock is bought.)
 
-	# Bosses always drop a golden chest + a pile of gold (host-personal;
-	# guests' shares fan via host_boss_kill below, a server drops none).
-	if has_local_player():
-		Chest.drop(self, "gold", clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos))
-		Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), boss_pos)
-
-	# Boss gems (round 44): first clear of the chapter = 3 guaranteed
-	# gems per boss (this runs BEFORE completed_<ch> is set below, so
-	# the first run's final boss still counts). Replays roll a per-kill
-	# chance scaling with the boss's level — 1/25 early, sure at L40+.
+	# first_clear MUST be read BEFORE completed_<ch> is set below (so the first
+	# run's final boss still counts as a first clear).
 	var boss_lv: int = src.level if is_instance_valid(src) else 1
 	var first_clear: bool = not flags.get("completed_" + chapter_id, false)
-	# Host-personal boss spoils (gems / gear / bag). DEDICATED skips them
-	# whole — each guest's package rolls in host_boss_kill below.
+	# BOSS_LOOT.md: the whole boss payout — the gold pile, ONE guaranteed grade-
+	# matched GEAR chest (boss band F-S), and 1-3 act-tiered SUPPLY chests
+	# (materials-first, one guaranteed gem, a rare finished bag/potion, and a
+	# material-bundle fallback for any slot that doesn't roll a chest) — is rolled
+	# by roll_boss_pack, the SINGLE loot roller. The co-op mirror below
+	# (host_boss_kill) rolls one package per guest through the SAME function, so
+	# solo and every head stay in lockstep. Host-personal; a DEDICATED server (no
+	# local body) drops nothing itself — each guest's package fans in host_boss_kill.
 	if has_local_player():
-		var gem_count := 0
-		if Balance.regular_gems_drop(loot_chapter()):   # ch1-3 bosses drop no gems (gear only)
-			if first_clear:
-				gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
-			elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
-				gem_count = 1
-		# First-clear catch-up bundle rolls one level richer than the act floor.
-		var boss_gem_lvl := Balance.gem_drop_level(loot_chapter()) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
-		for gi in gem_count:
-			var boss_gem := drop_gem(boss_gem_lvl)
-			if give_loot({"kind": "gem", "gem": boss_gem}, boss_pos + Vector2(-34.0 + 34.0 * gi, 30)):
-				spawn_text(boss_pos + Vector2(0, -70 - 20 * gi),
-					"+ " + Items.gem_title(boss_gem), Items.gem_color(boss_gem))
-
-		# Boss GEAR channel (round 51): a NEW drop on top of gems/gold/spoils.
-		# Grade from the act table (Act1 ch1-6 B@1/3; ch7 +A@1/10; Act2/3 richer).
-		var ggrade := Items.roll_boss_gear_grade(loot_chapter(), loot_rng)
-		if ggrade != "":
-			var gear := Items.roll_gear_of_grade(ggrade, loot_rng, player.cls, Story.act_of(chapter_id))
-			if give_loot({"kind": "item", "item": gear}, boss_pos + Vector2(40, 30)):
-				spawn_text(boss_pos + Vector2(0, -92), "+ " + Items.title(gear), Items.GRADE_COLOR[ggrade])
-		# Bags: a SEPARATE, rarer roll (round 51b) — inventory expansion, not every
-		# run. Chance is per-act (Balance.bag_drop_chance); the GRADE follows the
-		# chapter's boss band (2026-07-09, tier-shifted); over MAX_BAGS keeps the best set.
-		if loot_rng.randf() < Balance.bag_drop_chance(Story.act_of(chapter_id)):
-			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(loot_chapter(), loot_rng)))
-		# Guaranteed boss supply material (Slice B; mirror roll_boss_pack): any
-		# family, the act band's top grade (A in Act 3; never S from this path).
-		apply_award_events([roll_boss_material(boss_pos + Vector2(-40, 30))])
+		apply_award_events(roll_boss_pack(kind, boss_pos, boss_lv, first_clear, player.cls))
 
 	# MP-11 (§5.5): the same boss pays every head. One personal package
 	# per guest — host-rolled (loot_rng, one full roll sequence per player,
@@ -1241,10 +1211,13 @@ func _curse_payout(zi: int) -> void:
 #
 # Award event schema (one Array of these per package, RPC-safe types):
 #   {"k": "gold",  "n": base_amount, "at": Vector2}   # pre-multiplier base
-#   {"k": "chest", "tier": "wood|silver|gold", "at": Vector2}
+#   {"k": "chest", "tier": "wood|silver|gold", "at": Vector2}   # classic gear box
+#   {"k": "chest", "chest_kind": "gear", "grade": "F".."S", "gem_ok": bool, "tier": ..., "at": Vector2}   # boss gear chest (fixed grade)
+#   {"k": "chest", "chest_kind": "supply", "supply_tier": "bronze|silver|gold", "supply_gem": bool, "first_clear": bool, "boss_lv": int, "tier": ..., "at": Vector2}   # boss supply chest (BOSS_LOOT)
 #   {"k": "gem",   "gem": {...}, "at": Vector2, "ty": text_y_offset}
 #   {"k": "item",  "item": {...}, "at": Vector2}
 #   {"k": "stone", "stone": {...}, "at": Vector2}     # text = "+ <name>"
+#   {"k": "potion", "potion": {...}, "at": Vector2, "ty": text_y_offset}   # graded potion (supply chest)
 #   {"k": "material", "family": "metal".."herb", "grade": "F".."S", "count": int, "at": Vector2, "ty": text_y_offset}
 #   {"k": "bag",   "grade": "F".."S"}
 #   {"k": "sfx",   "id": "...", "vol": 1.0}
@@ -1260,7 +1233,19 @@ func apply_award_events(events: Array) -> void:
 			"gold":
 				Pickup.drop_gold(self, _kill_gold(int(ev.get("n", 0))), at)
 			"chest":
-				Chest.drop(self, String(ev.get("tier", "wood")), at)
+				var ck := String(ev.get("chest_kind", "gear"))
+				var copts := {"kind": ck}
+				if ck == "supply":
+					copts["supply_tier"] = String(ev.get("supply_tier", "bronze"))
+					copts["supply_gem"] = bool(ev.get("supply_gem", false))
+					copts["first_clear"] = bool(ev.get("first_clear", false))
+					copts["boss_lv"] = int(ev.get("boss_lv", 1))
+				else:
+					if ev.has("grade"):
+						copts["grade"] = String(ev.get("grade", ""))
+					if ev.has("gem_ok"):
+						copts["gem_ok"] = bool(ev.get("gem_ok", true))
+				Chest.drop(self, String(ev.get("tier", "wood")), at, copts)
 			"gem":
 				var gem: Dictionary = ev.get("gem", {})
 				if give_loot({"kind": "gem", "gem": gem}, at):
@@ -1276,6 +1261,12 @@ func apply_award_events(events: Array) -> void:
 				if give_loot({"kind": "stone", "stone": st}, at):
 					spawn_text(at + Vector2(0, -92), "+ " + String(st.get("name", "Stone")),
 						Color(0.6, 0.9, 1.0))
+			"potion":
+				var pot: Dictionary = ev.get("potion", {})
+				if give_loot({"kind": "potion", "potion": pot}, at):
+					spawn_text(at + Vector2(0, float(ev.get("ty", -70))),
+						"+ " + String(pot.get("name", "Potion")),
+						Items.GRADE_COLOR.get(String(pot.get("grade", "F")), Color(0.7, 0.95, 0.8)))
 			"material":
 				var mfam := String(ev.get("family", ""))
 				var mgr := String(ev.get("grade", ""))
@@ -1347,46 +1338,65 @@ func roll_material_drop(kind: String, elite: bool, pos: Vector2) -> Dictionary:
 		"count": loot_rng.randi_range(lo, hi), "at": pos, "ty": -60}
 
 
-## One GUARANTEED boss supply material (simple integration; the full BOSS_LOOT
-## chest redesign — incl. the S-grade Gold chest — is a separate effort). Any
-## family, the act band's TOP grade (A in Act 3; never S from this path), a few
-## units.
-func roll_boss_material(pos: Vector2) -> Dictionary:
-	var fam: String = Items.MATERIAL_FAMILIES[loot_rng.randi_range(0, Items.MATERIAL_FAMILIES.size() - 1)]
-	var band: Array = Balance.material_grade_band(Story.act_of(chapter_id))
-	var grade: String = String(band[band.size() - 1])
-	return {"k": "material", "family": fam, "grade": grade,
-		"count": loot_rng.randi_range(Balance.MATERIAL_BOSS_COUNT_MIN, Balance.MATERIAL_BOSS_COUNT_MAX),
-		"at": pos, "ty": -70}
+## The boss SUPPLY payout (BOSS_LOOT §2-§4): three slots, each a supply chest OR
+## — when it doesn't roll one — a bundle of boss-scaled crafting materials, with
+## a FLOOR of at least one chest. Exactly ONE spawned chest is the guaranteed-gem
+## chest on a replay; on a first clear EVERY chest carries a gem (the catch-up
+## shower the old 3-gem bundle used to be). Chests roll their own contents on
+## OPEN (per-machine, co-op-safe); this only decides slot shape + the gem gate.
+## `tier` is act-derived (Bronze/Silver/Gold); gems stay gated to ch4+.
+func roll_boss_supply_events(boss_pos: Vector2, boss_lv: int, first_clear: bool) -> Array:
+	var tier := Balance.supply_tier(loot_chapter())
+	var gems_ok := Balance.regular_gems_drop(loot_chapter())
+	# Decide chest-vs-bundle per slot, then enforce the floor (>=1 chest).
+	var chest_here: Array = []
+	for s in Balance.SUPPLY_SLOTS:
+		chest_here.append(loot_rng.randf() < Balance.supply_chest_chance(boss_lv, first_clear))
+	if not chest_here.has(true):
+		chest_here[0] = true
+	var first_chest: int = chest_here.find(true)
+	var evs: Array = []
+	for s in Balance.SUPPLY_SLOTS:
+		var at: Vector2 = clamp_to_zone(boss_pos + Balance.supply_slot_offset(s), boss_pos)
+		if bool(chest_here[s]):
+			# Guaranteed-gem chest: exactly the first on a replay; all on first clear.
+			var with_gem: bool = gems_ok and (first_clear or s == first_chest)
+			evs.append({"k": "chest", "chest_kind": "supply", "tier": "wood",
+				"supply_tier": tier, "supply_gem": with_gem, "first_clear": first_clear,
+				"boss_lv": boss_lv, "at": at})
+		else:
+			# A missing chest pays out as a boss-scaled material bundle (§4).
+			var fams: Array = Items.MATERIAL_FAMILIES
+			evs.append({"k": "material",
+				"family": String(fams[loot_rng.randi_range(0, fams.size() - 1)]),
+				"grade": Balance.roll_supply_grade(tier, boss_lv, loot_rng),
+				"count": loot_rng.randi_range(Balance.SUPPLY_BUNDLE_COUNT_MIN, Balance.SUPPLY_BUNDLE_COUNT_MAX),
+				"at": at, "ty": -60})
+	return evs
 
 
-## HOST-side: one player's share of a boss kill — the mirror of
-## on_boss_died's drop block (keep them in step). first_clear is the
-## HOST's chapter state: the trigger is shared, the payout per head
-## (§5.5). `cls` is the receiving player's class (gear rolls their kit).
+## HOST-side: one player's share of a boss kill (BOSS_LOOT.md) — the SINGLE loot
+## roller for both solo (on_boss_died applies it locally) and co-op (host rolls
+## one package per guest, RPC'd to their machine). Keeping them one function is
+## the parity guarantee. first_clear is the HOST's chapter state: the trigger is
+## shared, the payout per head (§5.5). `_cls` (the receiving player's class) is
+## no longer needed here — the gear CHEST rolls the OPENER's class on open, so a
+## guest gets their own kit from their own copy — but the parameter stays for the
+## net_session call site. The payout: the gold pile, ONE guaranteed grade-matched
+## GEAR chest (boss band F-S, S only where the band offers it at ch12+), and the
+## 3-slot supply payout. BOSS_GEAR_CHANCE is retired for bosses — gear is guaranteed.
 func roll_boss_pack(kind: String, boss_pos: Vector2, boss_lv: int,
-		first_clear: bool, cls: String) -> Array:
+		first_clear: bool, _cls: String) -> Array:
 	var evs: Array = [
-		{"k": "chest", "tier": "gold", "at": clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos)},
 		{"k": "gold", "n": int(Story.ALL_ENEMIES[kind].get("gold", 50)), "at": boss_pos},
 	]
-	var gem_count := 0
-	if Balance.regular_gems_drop(loot_chapter()):
-		if first_clear:
-			gem_count = Balance.BOSS_GEMS_FIRST_CLEAR
-		elif loot_rng.randf() < Balance.boss_gem_chance(boss_lv):
-			gem_count = 1
-	var gem_lvl := Balance.gem_drop_level(loot_chapter()) + (Balance.BOSS_FIRST_CLEAR_GEM_BONUS if first_clear else 0)
-	for gi in gem_count:
-		evs.append({"k": "gem", "gem": drop_gem(gem_lvl),
-			"at": boss_pos + Vector2(-34.0 + 34.0 * gi, 30), "ty": -70 - 20 * gi})
-	var ggrade := Items.roll_boss_gear_grade(loot_chapter(), loot_rng)
-	if ggrade != "":
-		evs.append({"k": "item", "item": Items.roll_gear_of_grade(ggrade, loot_rng, cls, Story.act_of(chapter_id)),
-			"at": boss_pos + Vector2(40, 30)})
-	if loot_rng.randf() < Balance.bag_drop_chance(Story.act_of(chapter_id)):
-		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(loot_chapter(), loot_rng)})
-	evs.append(roll_boss_material(boss_pos + Vector2(-40, 30)))  # guaranteed boss supply (mirror on_boss_died)
+	# The guaranteed grade-matched GEAR chest (boss band; the chest rolls the
+	# actual `cls` piece of this grade on open). gem_ok=false: a boss's gems ride
+	# its supply chests, not the gear box.
+	var gear_grade := Balance.roll_weighted_grade(Balance.boss_weights(loot_chapter()), loot_rng)
+	evs.append({"k": "chest", "chest_kind": "gear", "grade": gear_grade, "gem_ok": false,
+		"tier": "gold", "at": clamp_to_zone(boss_pos + Vector2(0, 60), boss_pos)})
+	evs.append_array(roll_boss_supply_events(boss_pos, boss_lv, first_clear))
 	return evs
 
 

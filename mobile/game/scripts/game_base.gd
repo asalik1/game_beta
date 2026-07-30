@@ -1407,6 +1407,8 @@ func _try_receive(payload: Dictionary) -> bool:
 			return player.gain_gem(payload["gem"])
 		"stone":
 			return player.add_consumable(payload["stone"])
+		"potion":
+			return player.add_consumable(payload["potion"])
 		"material":
 			return player.add_material(String(payload.get("family", "")),
 				String(payload.get("grade", "")), int(payload.get("count", 1)))
