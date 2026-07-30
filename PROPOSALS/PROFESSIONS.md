@@ -75,7 +75,8 @@ can attempt; higher-grade crafts pay more mastery, so the climb accelerates as y
 One schema kind: `kind:"material"`, stackable (cap 99), stash-legal, sellable at flat base (anti-haul
 law), never rollable. Materials are keyed to **what gear is physically made of**, NOT to a trade — so
 a material can feed more than one trade, and which trade can *use* a given material is just whichever
-trade's recipes call for it (owner, 2026-07-29):
+trade's recipes call for it (owner, 2026-07-29). **Per-grade material NAMES and the full mob→material
+drop map live in MATERIALS.md** — this section owns the economy, that doc owns the catalog.
 
 | Material | Salvaged from (gear type) | Crafts | Trades that use it |
 |---|---|---|---|
