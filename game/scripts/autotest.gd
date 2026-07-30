@@ -1678,8 +1678,12 @@ func _run_systems() -> void:
 	p_sk.set_skin("dreadknight")
 	if game.hud._splash_for("You") != "splash_skin_warrior_dreadknight":
 		return _fail("hero dialogue did not resolve the equipped skin splash")
+	game.hud.dialogue_hero_class_override = "mage"
+	if game.hud._splash_for("You") != "class_splash_mage":
+		return _fail("dev opener class lens did not override the live hero splash")
+	game.hud.dialogue_hero_class_override = ""
 	p_sk.set_skin(old_skin)
-	print("ok: hero dialogue splash follows the live equipped skin")
+	print("ok: hero dialogue splash follows the live equipped skin + dev opener class lens")
 
 	# 5c. Choice dialogue + flag engine: choices apply resonance/flags,
 	# and both flag- and band-gated text variants resolve.
@@ -2007,6 +2011,24 @@ func _run_systems() -> void:
 		if String(terrain_id).begins_with("capital_") \
 				and String(Terrains.DATA[terrain_id]["name"]) in dev_world_copy:
 			return _fail("Crownfall room profile leaked into the dev terrain picker: %s" % terrain_id)
+	game.menus.dev_opener_class = ""
+	game.menus.open_dev("openers")
+	await _frames(2)
+	var dev_openers_copy: String = _tree_ui_text(game.menus.root)
+	if "CHAPTER OPENERS" not in dev_openers_copy:
+		return _fail("dev chapter-opener tab did not open")
+	for opener_class in UIDevPanel.OPENER_CLASSES:
+		if String(Classes.CLASSES[opener_class]["name"]) not in dev_openers_copy:
+			return _fail("dev chapter-opener class lens missing: %s" % opener_class)
+	for chapter_number in range(1, 15):
+		var chapter_key := "ch%d" % chapter_number
+		var chapter_name: String = String(Story.chapter(chapter_key).get("name", ""))
+		if chapter_name == "" or chapter_name not in dev_openers_copy:
+			return _fail("dev chapter-opener button missing: %s" % chapter_key)
+		for opener_class in UIDevPanel.OPENER_CLASSES:
+			var opener_id: String = UIDevPanel.chapter_opener_id(chapter_key, opener_class)
+			if not Story.ALL_CONVOS.has(opener_id):
+				return _fail("dev chapter-opener target missing: %s" % opener_id)
 	game.menus.close()
 	await _frames(2)
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
@@ -3998,9 +4020,10 @@ func _test_asset_seams() -> void:
 	if laid.a < 0.9 or laid.r < 0.9 or laid.g > 0.02 or laid.b > 0.02:
 		return _fail("ground _tile_fill did not lay the tile (got %s)" % laid)
 
-	# The 20 future biomes are complete room surfaces, not aliases to legacy
-	# terrain materials. Each keeps a bespoke route grammar and wall finish,
-	# remains dev-only, and ships its own correctly sized room texture.
+	# The 20 promoted unassigned biomes are complete room surfaces, not aliases
+	# to legacy terrain materials. Each keeps a bespoke route grammar and wall
+	# finish, isolates its dev-painted composition from the host story room,
+	# and ships its own correctly sized room texture.
 	var future_grounds := {
 		"ph_mossmeadow": "mossmeadow", "ph_amberwood": "amberleaf",
 		"ph_hollowgrove": "hollowsoil", "ph_moonfen": "moonmire",
@@ -4016,8 +4039,14 @@ func _test_asset_seams() -> void:
 	for future_id in future_grounds:
 		var ground_key: String = future_grounds[future_id]
 		var future_terrain: Dictionary = Terrains.DATA[future_id]
-		if not bool(future_terrain.get("placeholder", false)):
-			return _fail("%s escaped the dev-only placeholder shelf" % future_id)
+		if bool(future_terrain.get("placeholder", false)):
+			return _fail("%s should be a promoted terrain, not a placeholder" % future_id)
+		if not bool(future_terrain.get("preview_isolated", false)):
+			return _fail("%s lost isolated dev-paint composition" % future_id)
+		for chapter_id in Story.CHAPTER_LIST:
+			for chapter_zone in Story.CHAPTER_LIST[chapter_id].get("zones", []):
+				if String(chapter_zone.get("terrain", "")) == String(future_id):
+					return _fail("%s was promoted into a chapter assignment" % future_id)
 		if not Art.GROUND_ROOM_PATH.has(ground_key):
 			return _fail("%s has no bespoke authored route grammar" % future_id)
 		if Terrains.wall_tint_for(future_id) == Color.WHITE:
@@ -4164,59 +4193,134 @@ func _test_asset_seams() -> void:
 		if Art._ground_tileset(gk).is_empty():
 			return _fail("showcase ground_%s.png tileset did not load" % gk)
 	for pn in ["flame", "ember_smoke", "forge_hearth", "cook_grill", "cook_pan",
-			"sewer_flow", "fountain_flow", "camp_bonfire",
-			"spore_puff", "void_energy", "storm_arcs"]:
+			"camp_bonfire"]:
 		if Art.anim_info(pn).is_empty():
 			return _fail("showcase animated prop %s has no _anim strip" % pn)
 		if Art.anim_prop(pn) == null:
 			return _fail("showcase prop %s did not build an AnimatedSprite2D" % pn)
-	var flow_info := Art.anim_info("fountain_flow")
-	if int(flow_info.get("frames", 0)) != 4:
-		return _fail("fountain water needs four motion frames")
-	var flow_image: Image = (flow_info["tex"] as Texture2D).get_image()
-	var flow_frame: Vector2i = flow_info["frame_size"]
-	for frame_idx in 4:
-		var x0 := frame_idx * flow_frame.x
-		for corner in [
-				Vector2i(x0, 0), Vector2i(x0 + flow_frame.x - 1, 0),
-				Vector2i(x0, flow_frame.y - 1),
-				Vector2i(x0 + flow_frame.x - 1, flow_frame.y - 1),
-		]:
-			if flow_image.get_pixelv(corner).a > 0.05:
-				return _fail("fountain water frame %d regressed to an opaque rectangle" % frame_idx)
-	# Active scenery keeps the solid shell stable and animates only its local
-	# water/energy/spore element. This must work through the shared prop seam,
-	# including scatter/accent placements rather than structures alone.
-	for active_name in ["spore_vent", "void_rift", "capital_portal_depths",
-			"storm_conductor", "magma_furnace"]:
+	# Active terrain props ship as complete four-frame objects. Their static
+	# source and every animation frame share one exact canvas. Rigid-object
+	# strips retain their opaque baseline and centre; authored silhouette
+	# motion (flame lean and cloth billow) is allowed to change those bounds.
+	# No child motion sticker is attached by the shared scenery seam.
+	var full_prop_anims := [
+		"garden_fountain", "spore_vent", "void_rift",
+		"capital_portal_depths", "storm_conductor", "magma_furnace",
+		"keep_brazier", "forge_cauldron", "forge_brazier", "camp_furnace",
+		"station_furnace_t1", "station_furnace_t2", "station_furnace_t3",
+		"sewer_outfall", "cook_grill", "camp_bonfire",
+		"banner_blue", "banner_green", "banner_red", "station_alchemy_t3",
+	]
+	var silhouette_motion_anims := [
+		"camp_bonfire", "banner_blue", "banner_green", "banner_red",
+	]
+	for active_name: String in full_prop_anims:
+		var info := Art.anim_info(active_name)
+		if int(info.get("frames", 0)) != 4:
+			return _fail("%s needs a complete four-frame animation strip" % active_name)
+		var static_size := Vector2i(Art.tex(active_name).get_size())
+		var frame_size: Vector2i = info.get("frame_size", Vector2i.ZERO)
+		if frame_size != static_size:
+			return _fail("%s animation frame %s != static source %s" %
+				[active_name, frame_size, static_size])
+		var strip_image: Image = (info["tex"] as Texture2D).get_image()
+		var frame_centres: Array = []
+		var frame_baselines: Array = []
+		for frame_idx in 4:
+			var frame_image := strip_image.get_region(Rect2i(
+				frame_idx * frame_size.x, 0, frame_size.x, frame_size.y))
+			var used := frame_image.get_used_rect()
+			frame_centres.append(float(used.position.x) + float(used.size.x) * 0.5)
+			frame_baselines.append(used.end.y)
+		if active_name not in silhouette_motion_anims:
+			for frame_idx in range(1, 4):
+				if absi(int(frame_baselines[frame_idx]) - int(frame_baselines[0])) > 1:
+					return _fail("%s frame %d baseline drifts" % [active_name, frame_idx])
+				if absf(float(frame_centres[frame_idx]) - float(frame_centres[0])) > 2.0:
+					return _fail("%s frame %d centre drifts" % [active_name, frame_idx])
 		var active_visual := game._prop_visual(active_name)
-		var has_motion := false
+		if not active_visual is AnimatedSprite2D:
+			active_visual.queue_free()
+			return _fail("%s should animate as one complete base sprite" % active_name)
 		for child in active_visual.get_children():
 			if child is AnimatedSprite2D:
-				has_motion = true
-				break
-		if not has_motion:
-			active_visual.queue_free()
-			return _fail("%s should carry a local animated motion overlay" % active_name)
+				active_visual.queue_free()
+				return _fail("%s regressed to a nested motion overlay" % active_name)
 		active_visual.queue_free()
+	# TERRAIN_ART_FIX_TASK tiers 1-3 are all real high-resolution overrides.
+	# Exact canvases make accidental restoration of the tiny pack art obvious,
+	# while authored world widths stop source resolution changing gameplay.
+	var tiered_art := {
+		"cottage_a": Vector2i(384, 300), "cottage_a2": Vector2i(384, 320),
+		"cottage_b": Vector2i(384, 260), "stall": Vector2i(320, 252),
+		"rock3": Vector2i(256, 320), "crypt": Vector2i(256, 300),
+		"signpost": Vector2i(112, 192), "keep_arch": Vector2i(320, 240),
+		"camp_workbench": Vector2i(288, 240), "cook_grill": Vector2i(256, 224),
+		"camp_bonfire": Vector2i(192, 128), "pillar": Vector2i(160, 256),
+		"banner_blue": Vector2i(96, 192), "banner_green": Vector2i(96, 192),
+		"banner_red": Vector2i(96, 192), "hideout_poster": Vector2i(96, 144),
+		"hideout_table": Vector2i(256, 224), "amphora": Vector2i(112, 192),
+		"station_alchemy_t3": Vector2i(320, 256),
+		"station_anvil_t3": Vector2i(320, 288),
+	}
+	for tier_name: String in tiered_art:
+		var actual_size := Vector2i(Art.tex(tier_name).get_size())
+		if actual_size != tiered_art[tier_name]:
+			return _fail("%s tiered-art canvas %s != %s" %
+				[tier_name, actual_size, tiered_art[tier_name]])
+	for scaled_name in [
+		"crypt", "keep_arch", "signpost", "camp_workbench", "cook_grill",
+		"camp_bonfire", "pillar", "banner_blue", "banner_green", "banner_red",
+		"hideout_poster", "hideout_table", "amphora",
+		"station_alchemy_t3", "station_anvil_t3",
+	]:
+		if not Balance.SCENERY_RENDER_WIDTH.has(scaled_name):
+			return _fail("%s high-resolution art lacks a normalized world width" % scaled_name)
+	for blocking_name in [
+		"crypt", "keep_arch", "camp_workbench", "cook_grill",
+		"camp_bonfire", "pillar", "hideout_table",
+		"station_alchemy_t3", "station_anvil_t3",
+	]:
+		if float(Balance.SCENERY_COLLIDER_RADIUS.get(blocking_name, 0.0)) < 28.0:
+			return _fail("%s tiered art lacks a logical blocking footprint" % blocking_name)
+	var bonfire_building := game._add_building("camp_bonfire", Vector2(-4540, -4540))
+	var bonfire_base_anim := 0
+	for child in bonfire_building.get_children():
+		if child is AnimatedSprite2D:
+			bonfire_base_anim += 1
+	if bonfire_base_anim != 1:
+		bonfire_building.queue_free()
+		return _fail("building-path camp_bonfire should use one complete animation strip")
+	bonfire_building.queue_free()
 	# The blue fountain square was an opaque placeholder water strip, while a
 	# 30px circle covered less than half the basin. All fountain aliases now
 	# carry transparent water motion and a two-lobe full-rim footprint.
 	for fountain_name in ["town_fountain", "garden_fountain", "holy_sanctum"]:
 		var fountain := game._add_structure(fountain_name, Vector2(-4550, -4550))
-		var fountain_motion := false
+		var fountain_motion := 0
 		var broad_lobes := 0
 		for child in fountain.get_children():
 			if child is AnimatedSprite2D:
-				fountain_motion = true
+				fountain_motion += 1
 			elif child is CollisionShape2D:
 				var circle := (child as CollisionShape2D).shape as CircleShape2D
 				if circle != null and circle.radius >= 42.0:
 					broad_lobes += 1
-		if not fountain_motion or broad_lobes != 2:
+		if fountain_motion != 1 or broad_lobes != 2:
 			fountain.queue_free()
-			return _fail("%s needs animated water + two broad basin colliders" % fountain_name)
+			return _fail("%s needs one full animated fountain + two broad basin colliders" %
+				fountain_name)
 		fountain.queue_free()
+	for overlay_free_name in [
+		"town_fountain", "garden_fountain", "holy_sanctum",
+		"keep_courtyard", "magma_judgment", "magma_furnace",
+		"sewer_outfall",
+	]:
+		for decal in Terrains.STRUCTURES[overlay_free_name].get("decals", []):
+			if String(decal.get("sprite", "")) in [
+				"fountain_flow", "sewer_flow", "flame", "ember_smoke",
+			]:
+				return _fail("%s regressed to a pasted motion decal" % overlay_free_name)
 	for solid_name in ["boulder", "rock_volcanic", "spore_vent", "magma_furnace",
 			"crystal_cluster", "garden_statue"]:
 		if float(Balance.SCENERY_COLLIDER_RADIUS.get(solid_name, 0.0)) <= 20.0:

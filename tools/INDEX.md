@@ -59,6 +59,8 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 | `tools/art/install_env_asset.py` | environment art into the Track-D seams: ground tilesets, animated props (grid/square normalize + naming). |
 | `tools/art/build_capital_water_anim.py` | generated 2×2 capital water storyboard + locked static landmark → geometry-stable horizontal animation strip (only blue/cyan water pixels may change). |
 | `tools/art/build_capital_polish.py` | generated Crownfall furniture/hearth sources → normalized production props, plus integrated four-frame fire strips for every fire-bearing capital landmark (no nested flame decals). |
+| `tools/art/build_terrain_prop_anims.py` | generated four-frame full-object terrain props → shared-crop, footprint-anchored static + `_anim` strips (fountains, furnaces, rifts, vents, conductor, sewer outfall; no motion stickers). |
+| `tools/art/build_terrain_art_fix.py` | `TERRAIN_ART_FIX_TASK.md` tier 1–3 masters → 20 palette-controlled desktop/mobile replacements plus six registered full-object `_anim` strips. |
 | `tools/art/build_capital_monumental.py` | generated Crownfall Crown Spire + connected city arcade sources → production architecture and an integrated four-frame gate-fire strip. |
 | `tools/art/clean_sprite.py` | FLUX/Pollinations render → clean pixel sprite (normalize). |
 | `tools/art/polligen.py` / `tools/art/flux_draft.py` | free generation lanes (pollinations.ai textures/props / FLUX concept drafts — note: HF inference is dead, see memory/ART docs). |

@@ -1561,11 +1561,13 @@ func _spawn_scenery(zi: int) -> void:
 			node.queue_free()
 	zone_scenery[zi] = []
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
-	# Dev-gallery terrains must preview as complete environments. If one is
-	# painted onto Emberfall (or any authored story room), do not retain that
+	# Gallery/unassigned terrains must preview as complete environments. If one
+	# is painted onto Emberfall (or any authored story room), do not retain that
 	# zone's cottages, civic landmark, furniture or scatter overrides over the
-	# new biome. Normal story terrains continue to honour all zone authorship.
-	var terrain_preview := bool(terrain.get("placeholder", false))
+	# new biome. `preview_isolated` survives promotion out of placeholder status;
+	# legacy placeholders remain isolated by their existing flag.
+	var terrain_preview := bool(terrain.get("preview_isolated", false)) \
+		or bool(terrain.get("placeholder", false))
 	# Scenery is TERRAIN-keyed by default, but a ZONE may author its own
 	# props — buildings / obstacles / decor / accents / obstacle_count on the
 	# zone dict override the terrain. Without this, the one "village" terrain
@@ -1985,8 +1987,7 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	body.position = pos  # the base line is the sort anchor
 	body.collision_layer = 1
 	body.collision_mask = 0
-	var spr := Sprite2D.new()
-	spr.texture = Art.tex(sprite_name)
+	var spr := _prop_visual(sprite_name)
 	# Houses DWARF a person (2026-07-17): a cottage renders ~250px wide ->
 	# ~180px tall, ~2x the 88px hero body — only bosses top a structure.
 	# The stall is mid; the camp kit (bonfire/tripod/meat rack) is person-
@@ -1996,12 +1997,17 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 		target_w = 250.0
 	elif sprite_name.begins_with("camp_"):
 		target_w = 90.0
-	var bscale := target_w / maxf(1.0, float(spr.texture.get_width()))
+	var native_size := _visual_size(spr)
+	var bscale := target_w / maxf(1.0, native_size.x)
 	spr.scale = Vector2(bscale, bscale)
 	# Seeded mirroring: half the houses face the other way (free variety).
-	spr.flip_h = (int(pos.x) + int(pos.y)) % 2 == 1
-	var hpx := float(spr.texture.get_height()) * bscale
-	var wpx := float(spr.texture.get_width()) * bscale
+	var mirrored := (int(pos.x) + int(pos.y)) % 2 == 1
+	if spr is Sprite2D:
+		(spr as Sprite2D).flip_h = mirrored
+	elif spr is AnimatedSprite2D:
+		(spr as AnimatedSprite2D).flip_h = mirrored
+	var hpx := native_size.y * bscale
+	var wpx := native_size.x * bscale
 	spr.position = Vector2(0, -hpx * 0.5 + 12.0)
 	spr.set_meta("occlusion_sort_y", pos.y)
 	spr.set_meta("occlusion_radius", Vector2(wpx, hpx).length() * 0.5)
@@ -2021,7 +2027,7 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 		smoke.lifetime = 3.5
 		smoke.preprocess = 3.5
 		# The chimney sits ~66% across the art; mirrored houses mirror it.
-		smoke.position = Vector2(wpx * 0.16 * (-1.0 if spr.flip_h else 1.0), -hpx + 8.0)
+		smoke.position = Vector2(wpx * 0.16 * (-1.0 if mirrored else 1.0), -hpx + 8.0)
 		smoke.direction = Vector2(0.25, -1)
 		smoke.spread = 14.0
 		smoke.gravity = Vector2(6, -16)
@@ -2124,29 +2130,7 @@ func _prop_visual(name: String) -> Node2D:
 		var spr := Sprite2D.new()
 		spr.texture = Art.tex(name)
 		vis = spr
-	_attach_prop_motion(vis, name)
 	return vis
-
-
-## A fountain, vent, rift, conductor, or furnace is not "animated" by moving
-## its stone/metal shell. Its local active element loops as a child overlay,
-## preserving the authored silhouette and collision while adding real motion.
-func _attach_prop_motion(base: Node2D, name: String) -> void:
-	var spec: Dictionary = Terrains.PROP_MOTION.get(name, {})
-	if spec.is_empty():
-		return
-	var fx := Art.anim_prop(String(spec["sprite"]))
-	if fx == null:
-		return
-	var base_size := _visual_size(base)
-	var fx_size := _visual_size(fx)
-	var target_width := base_size.x * float(spec.get("width_ratio", 0.5))
-	var fx_scale := target_width / maxf(1.0, fx_size.x)
-	fx.scale = Vector2(fx_scale, fx_scale)
-	var off_ratio: Vector2 = spec.get("off_ratio", Vector2.ZERO)
-	fx.position = Vector2(base_size.x * off_ratio.x, base_size.y * off_ratio.y)
-	fx.z_index = int(spec.get("z", 1))
-	base.add_child(fx)
 
 
 ## The native (unscaled) pixel size of a prop visual, whether it's a static
@@ -2358,6 +2342,18 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			lt.texture_scale = float(d.get("light_scale", 0.7))
 			lt.position = d.get("off", Vector2.ZERO)
 			body.add_child(lt)
+
+	# Pure light sockets preserve a structure's authored illumination without
+	# requiring a second animated sprite to be pasted over its full-object
+	# animation strip.
+	for light in def.get("lights", []):
+		var lt := PointLight2D.new()
+		lt.texture = Art.tex("light")
+		lt.color = light.get("color", Color.WHITE)
+		lt.energy = float(light.get("energy", 0.8)) * light_mult
+		lt.texture_scale = float(light.get("scale", 0.7))
+		lt.position = light.get("off", Vector2.ZERO)
+		body.add_child(lt)
 
 	if def.get("fire", false):
 		_attach_fire_audio(body)  # a lit structure crackles as you pass

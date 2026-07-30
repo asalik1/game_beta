@@ -173,7 +173,10 @@ const DATA := {
 		"obstacles": ["tree_spore", "tree_spore", "tree_spore", "rock", "boulder"], "decor": ["mushroom", "mushroom", "mushroom_purple", "grass", "bush3"], "accents": ["spore_shrine", "spore_vent", "crystal_cluster", "tree_gnarled"], "count": 12,
 		"patches": [{"type": "poison", "count": 5, "radius": [60, 90], "drift": true}],
 		"event": "", "ecology": ["spore_cathedral"]},
-	# ---------------------------------------- Crownfall capital districts ---
+	# -------------------------- Crownfall internal environment profiles ---
+	# These are renderer profiles for rooms inside ONE location: Crownfall.
+	# They are intentionally excluded from catalog_ids(), so the Codex and dev
+	# terrain picker do not misrepresent each city district as its own terrain.
 	# Safe civic palettes use the brighter procedural midtones rather than the
 	# dark placeholder showcase floors. Capital zones author their own scenery,
 	# so these profiles deliberately carry no random obstacle/decor scatter.
@@ -212,12 +215,11 @@ const DATA := {
 		"tint": Color(0.94, 0.95, 1.0), "ambient": "embers", "music": "keep",
 		"obstacles": [], "decor": [], "accents": [], "count": 0,
 		"patches": [], "event": "", "structures": ["keep_courtyard"]},
-	# ---- future-biome gallery (2026-07-27 environment polish) ---------
-	# Twenty owner-requested terrain TYPES, intentionally dev-preview-only.
-	# Nothing in Story.CHAPTERS references these IDs: `placeholder` keeps them
-	# on the dev panel / Future > Terrains shelf until a later content pass
-	# assigns them. Each has a distinct floor material, prop ecology, weather,
-	# wall family and (where appropriate) existing terrain mechanic.
+	# ---- promoted unassigned biomes (2026-07-27 environment polish) ----
+	# Twenty owner-requested terrain TYPES. They are complete catalog terrains,
+	# not placeholders, but remain unassigned: nothing in Story.CHAPTERS
+	# references these IDs. `preview_isolated` keeps dev-painting them onto an
+	# authored story room from inheriting that room's buildings/furniture.
 	"ph_mossmeadow": {"name": "Mosslight Meadow", "ground": "mossmeadow", "path": "dirt",
 		"tint": Color(0.96, 1.0, 0.91), "ambient": "leaves_green", "music": "village",
 		"ecology": ["village_grove", "old_well", "town_fountain", "garden_statue", "ruined_gate"],
@@ -225,14 +227,14 @@ const DATA := {
 		"decor": ["grass", "grass", "flower", "bush", "bush3", "pebble", "mushroom"],
 		"accents": ["log", "garden_statue", "topiary"], "count": 11,
 		"patches": [{"type": "heal", "count": 2, "radius": [48, 68]}], "event": "",
-		"bright": true, "placeholder": true},
+		"bright": true, "preview_isolated": true},
 	"ph_amberwood": {"name": "Amberwood", "ground": "amberleaf", "path": "dirt",
 		"tint": Color(1.0, 0.91, 0.78), "ambient": "leaves_autumn", "music": "darkwood",
 		"ecology": ["darkwood_hollow", "old_well", "signal_fire", "ruined_gate", "tree_gnarled"],
 		"obstacles": ["tree_autumn", "tree_autumn", "tree_autumn2", "tree_autumn3", "rock", "boulder"],
 		"decor": ["grass_autumn", "grass_autumn", "bush_autumn", "mushroom", "pebble"],
 		"accents": ["log", "tree_gnarled", "ruin_pillar"], "count": 14,
-		"patches": [], "event": "", "placeholder": true},
+		"patches": [], "event": "", "preview_isolated": true},
 	"ph_hollowgrove": {"name": "Hollow Grove", "ground": "hollowsoil", "path": "forest",
 		"tint": Color(0.84, 0.91, 0.84), "ambient": "mist", "music": "darkwood",
 		"ecology": ["bog_rootwell", "darkwood_hollow", "ruined_gate", "old_well", "mausoleum"],
@@ -240,7 +242,7 @@ const DATA := {
 		"decor": ["mushroom", "mushroom", "grass", "bush3", "pebble", "web"],
 		"accents": ["log", "bones", "grave_statue"], "count": 10,
 		"patches": [{"type": "slow", "count": 4, "radius": [45, 72]}], "event": "",
-		"placeholder": true},
+		"preview_isolated": true},
 	"ph_moonfen": {"name": "Moonmirror Fen", "ground": "moonmire", "path": "dirt",
 		"tint": Color(0.84, 0.96, 1.0), "ambient": "fireflies", "music": "marsh",
 		"ecology": ["marsh_islet", "old_well", "sewer_outfall", "spore_shrine", "bog_rootwell"],
@@ -248,7 +250,7 @@ const DATA := {
 		"decor": ["cattail", "cattail", "grass", "mushroom", "pebble"],
 		"accents": ["spore_shrine", "spore_vent", "log", "mushroom_purple"], "count": 11,
 		"patches": [{"type": "poison", "count": 3, "radius": [45, 70]}], "event": "",
-		"placeholder": true},
+		"preview_isolated": true},
 	"ph_mournfields": {"name": "Mourners' Fields", "ground": "mournearth", "path": "gravedirt",
 		"tint": Color(0.92, 0.94, 1.0), "ambient": "mist", "music": "graveyard",
 		"ecology": ["grave_memorial", "mausoleum", "crypt", "grave_angel", "grave_statue"],
@@ -256,7 +258,7 @@ const DATA := {
 		"decor": ["grave_crack", "grass_frost", "pebble"],
 		"accents": ["tombstone3", "grave_statue", "grave_angel", "grave_mound", "grave_bones"], "count": 11,
 		"patches": [], "event": "grave_spawn", "event_t": [6.0, 10.0],
-		"placeholder": true},
+		"preview_isolated": true},
 	"ph_barrowmoor": {"name": "Weeping Barrowmoor", "ground": "barrowgrass", "path": "gravedirt",
 		"tint": Color(0.86, 0.91, 0.88), "ambient": "mist", "music": "graveyard",
 		"ecology": ["grave_memorial", "mausoleum", "crypt", "grave_mound", "grave_statue"],
@@ -264,7 +266,7 @@ const DATA := {
 		"decor": ["grass_frost", "grave_crack", "pebble", "grave_bones"],
 		"accents": ["tombstone3", "grave_statue", "coffin"], "count": 12,
 		"patches": [{"type": "slow", "count": 4, "radius": [50, 78]}], "event": "",
-		"placeholder": true},
+		"preview_isolated": true},
 	"ph_ossuary": {"name": "The Open Ossuary", "ground": "bonefloor", "path": "stone",
 		"tint": Color(0.94, 0.91, 0.84), "ambient": "embers", "music": "keep",
 		"ecology": ["keep_courtyard", "mausoleum", "crypt", "grave_angel", "castle_statue"],
@@ -272,7 +274,7 @@ const DATA := {
 		"decor": ["grave_bones", "bones", "grave_crack", "pebble"],
 		"accents": ["grave_statue", "grave_angel", "keep_brazier", "coffin", "crypt"], "count": 9,
 		"patches": [], "event": "", "structures": ["mausoleum", "torch_pillar"],
-		"placeholder": true},
+		"preview_isolated": true},
 	"ph_ashflats": {"name": "Ashen Flats", "ground": "ashsoil", "path": "dirt",
 		"tint": Color(1.0, 0.87, 0.78), "ambient": "sand", "music": "desert",
 		"ecology": ["desert_hoodoo", "signal_fire", "ruined_gate", "old_well", "watch_brazier"],
@@ -280,7 +282,7 @@ const DATA := {
 		"decor": ["sand_drift", "pebble", "crack", "grass_autumn"],
 		"accents": ["magma_chainrig", "bones", "dead_shrub"], "count": 9,
 		"patches": [], "event": "gust", "event_t": [7.0, 11.0],
-		"placeholder": true},
+		"preview_isolated": true},
 	"ph_slagworks": {"name": "The Slagworks", "ground": "slagstone", "path": "basalt",
 		"tint": Color(1.0, 0.79, 0.68), "ambient": "embers", "music": "magma",
 		"ecology": ["magma_judgment", "magma_furnace", "guild_forge", "great_hearth", "forge_statue"],
@@ -289,7 +291,7 @@ const DATA := {
 		"accents": ["magma_furnace", "forge_statue", "magma_chainrig", "keep_brazier"], "count": 10,
 		"patches": [{"type": "lava", "count": 5, "radius": [52, 82]}],
 		"event": "magma_rain", "event_t": [4.0, 7.0],
-		"structures": ["guild_forge", "watch_brazier"], "placeholder": true},
+		"structures": ["guild_forge", "watch_brazier"], "preview_isolated": true},
 	"ph_obsidianreach": {"name": "Obsidian Reach", "ground": "obsidian", "path": "basalt",
 		"tint": Color(0.82, 0.78, 0.94), "ambient": "motes", "music": "void",
 		"ecology": ["void_breach", "void_monolith", "void_obelisk", "void_rift", "crystal_garden"],
@@ -297,7 +299,7 @@ const DATA := {
 		"decor": ["crack", "rubble", "pebble"],
 		"accents": ["void_rift", "void_monolith", "void_obelisk", "crystal_cluster"], "count": 9,
 		"patches": [{"type": "slow", "count": 4, "radius": [54, 82]}], "event": "",
-		"placeholder": true},
+		"preview_isolated": true},
 	"ph_cinderquarry": {"name": "Cinder Quarry", "ground": "cinderstone", "path": "basalt",
 		"tint": Color(1.0, 0.84, 0.72), "ambient": "embers", "music": "magma",
 		"ecology": ["magma_judgment", "guild_forge", "ruined_gate", "magma_furnace", "forge_statue"],
@@ -305,7 +307,7 @@ const DATA := {
 		"decor": ["rubble", "crack", "pebble", "sand_drift"],
 		"accents": ["magma_furnace", "forge_statue"], "count": 12,
 		"patches": [{"type": "lava", "count": 3, "radius": [45, 70]}], "event": "",
-		"placeholder": true},
+		"preview_isolated": true},
 	"ph_rimewood": {"name": "Rimewood", "ground": "rimegrass", "path": "snow",
 		"tint": Color(0.89, 0.95, 1.05), "ambient": "snow", "music": "icefield",
 		"ecology": ["ice_waymarker", "old_well", "ruined_gate", "ice_cairn", "crystal_spire"],
@@ -313,7 +315,7 @@ const DATA := {
 		"decor": ["grass_frost", "frost_reeds", "pebble", "stump_snow"],
 		"accents": ["log", "ice_cairn", "storm_standing_stone"], "count": 13,
 		"patches": [{"type": "ice", "count": 5, "radius": [48, 76]}], "event": "",
-		"bright": true, "placeholder": true},
+		"bright": true, "preview_isolated": true},
 	"ph_frozenlake": {"name": "Frozen Mirror", "ground": "blueice", "path": "snow",
 		"tint": Color(0.88, 0.96, 1.06), "ambient": "snow", "music": "icefield",
 		"ecology": ["ice_waymarker", "crystal_garden", "ice_cairn", "crystal_spire", "geode"],
@@ -321,7 +323,7 @@ const DATA := {
 		"decor": ["frost_reeds", "grass_frost", "pebble"],
 		"accents": ["ice_cairn", "crystal_spire", "geode", "ice_sled"], "count": 8,
 		"patches": [{"type": "ice", "count": 12, "radius": [62, 112]}], "event": "",
-		"bright": true, "placeholder": true},
+		"bright": true, "preview_isolated": true},
 	"ph_hoarfrostruins": {"name": "Hoarfrost Ruins", "ground": "hoarfrost", "path": "stone",
 		"tint": Color(0.88, 0.92, 1.02), "ambient": "snow", "music": "icefield",
 		"ecology": ["keep_courtyard", "ice_waymarker", "ruined_gate", "castle_statue", "mausoleum"],
@@ -329,7 +331,7 @@ const DATA := {
 		"decor": ["grass_frost", "frost_reeds", "crack", "pebble"],
 		"accents": ["ice_cairn", "castle_statue", "garden_statue", "keep_brazier"], "count": 10,
 		"patches": [{"type": "ice", "count": 6, "radius": [52, 86]}], "event": "",
-		"structures": ["ruined_gate"], "placeholder": true},
+		"structures": ["ruined_gate"], "preview_isolated": true},
 	"ph_crystalchasm": {"name": "Crystal Chasm", "ground": "deepcrystal", "path": "crystalfloor",
 		"tint": Color(0.79, 0.88, 1.06), "ambient": "twinkle", "music": "crystalline",
 		"ecology": ["crystal_garden", "void_breach", "geode", "crystal_spire", "void_monolith"],
@@ -337,7 +339,7 @@ const DATA := {
 		"decor": ["crack", "rubble", "pebble"],
 		"accents": ["storm_standing_stone", "void_monolith"], "count": 14,
 		"patches": [], "event": "shard", "event_t": [4.0, 7.0],
-		"mp_boost": true, "placeholder": true},
+		"mp_boost": true, "preview_isolated": true},
 	"ph_drownedfen": {"name": "Drowned Fen", "ground": "drownedsoil", "path": "bogsoil",
 		"tint": Color(0.82, 0.94, 0.86), "ambient": "fireflies", "music": "marsh",
 		"ecology": ["marsh_islet", "bog_rootwell", "sewer_outfall", "old_well", "spore_shrine"],
@@ -345,7 +347,7 @@ const DATA := {
 		"decor": ["cattail", "cattail", "grass", "mushroom", "pebble"],
 		"accents": ["log", "spore_shrine", "mushroom_purple"], "count": 13,
 		"patches": [{"type": "poison", "count": 6, "radius": [52, 84]}], "event": "",
-		"placeholder": true},
+		"preview_isolated": true},
 	"ph_rootboundbog": {"name": "Rootbound Bog", "ground": "rootsoil", "path": "bogsoil",
 		"tint": Color(0.88, 0.92, 0.75), "ambient": "fireflies", "music": "marsh",
 		"ecology": ["bog_rootwell", "marsh_islet", "old_well", "spore_shrine", "darkwood_hollow"],
@@ -354,7 +356,7 @@ const DATA := {
 		"accents": ["spore_shrine", "spore_vent", "log", "bones"], "count": 12,
 		"patches": [{"type": "slow", "count": 5, "radius": [55, 90]},
 			{"type": "poison", "count": 3, "radius": [48, 72]}],
-		"event": "", "placeholder": true},
+		"event": "", "preview_isolated": true},
 	"ph_fungalcathedral": {"name": "Fungal Cathedral", "ground": "fungalhumus", "path": "sporesoil",
 		"tint": Color(0.92, 0.82, 1.02), "ambient": "spores", "music": "spore",
 		"ecology": ["spore_cathedral", "spore_shrine", "bog_rootwell", "marsh_islet", "void_breach"],
@@ -362,7 +364,7 @@ const DATA := {
 		"decor": ["mushroom", "mushroom", "mushroom_purple", "grass", "pebble"],
 		"accents": ["spore_shrine", "spore_vent", "crystal_cluster", "tree_gnarled"], "count": 14,
 		"patches": [{"type": "poison", "count": 7, "radius": [58, 92], "drift": true}],
-		"event": "", "placeholder": true},
+		"event": "", "preview_isolated": true},
 	"ph_stormspire": {"name": "Stormspire Plateau", "ground": "stormstone", "path": "stone",
 		"tint": Color(0.79, 0.87, 0.98), "ambient": "rain", "music": "rainstorm",
 		"ecology": ["storm_array", "storm_conductor", "storm_standing_stone", "ruined_gate", "signal_fire"],
@@ -370,7 +372,7 @@ const DATA := {
 		"decor": ["grass_frost", "frost_reeds", "crack", "pebble"],
 		"accents": ["storm_conductor", "storm_standing_stone", "crystal_spire", "keep_brazier"], "count": 9,
 		"patches": [], "event": "lightning", "event_t": [3.5, 6.5],
-		"structures": ["ruined_gate", "watch_brazier"], "placeholder": true},
+		"structures": ["ruined_gate", "watch_brazier"], "preview_isolated": true},
 	"ph_voidscar": {"name": "The Voidscar", "ground": "voidscar", "path": "voidstone",
 		"tint": Color(0.74, 0.66, 0.94), "ambient": "motes", "music": "void",
 		"ecology": ["void_breach", "void_monolith", "void_obelisk", "void_rift", "crystal_garden"],
@@ -378,7 +380,7 @@ const DATA := {
 		"decor": ["crack", "rubble", "pebble"],
 		"accents": ["void_rift", "void_monolith", "void_obelisk", "crystal_spire", "storm_standing_stone"], "count": 10,
 		"patches": [{"type": "slow", "count": 9, "radius": [58, 102]}], "event": "",
-		"placeholder": true},
+		"preview_isolated": true},
 	# ---- placeholder terrains (2026-07-08 environment-pack sweep) ----
 	# Authored from the owned Pixel Crawler environment packs, dev-only:
 	# the codex hides them outside the dev launcher and tags them
@@ -587,6 +589,21 @@ const ACCENT_PROFILES := {
 
 static func uses_procedural_taxonomy(id: String) -> bool:
 	return not id.begins_with("capital_")
+
+
+## Player-facing and dev-paintable terrain IDs. Crownfall's capital_* entries
+## share the renderer schema but are internal room profiles for one city, not
+## standalone terrains.
+static func catalog_ids(include_placeholders: bool = true) -> Array:
+	var out: Array = []
+	for raw_id in DATA:
+		var id: String = String(raw_id)
+		if id.begins_with("capital_"):
+			continue
+		if not include_placeholders and bool(DATA[id].get("placeholder", false)):
+			continue
+		out.append(id)
+	return out
 
 
 static func terrain_family(id: String) -> String:
@@ -821,38 +838,8 @@ static func wall_tint_for(id: String) -> Color:
 #   colliders[] {shape:"rect"|"circle", size:Vector2 | radius:float, off:Vector2}
 #               omitted -> one rect ~62% of the base width (building default)
 #   decals[]    {sprite, off, scale, z, wind, light:Color, light_energy, light_scale}
+#   lights[]    {off, color, energy, scale}; illumination with no pasted sprite
 #   fire        positional campfire/hearth crackle as you pass
-#
-# Local motion overlays keep a solid prop's authored body stable while the
-# physically active part moves. Offsets and widths are normalized against the
-# base texture, so the same profile works in scatter, accent, and structure
-# paths at any render size.
-const PROP_MOTION := {
-	"spore_vent": {"sprite": "spore_puff", "width_ratio": 0.72,
-		"off_ratio": Vector2(0.0, -0.17), "z": 2},
-	"void_rift": {"sprite": "void_energy", "width_ratio": 1.24,
-		"off_ratio": Vector2(0.0, 0.0), "z": 2},
-	"capital_portal_depths": {"sprite": "void_energy", "width_ratio": 0.90,
-		"off_ratio": Vector2(0.08, 0.03), "z": 2},
-	"storm_conductor": {"sprite": "storm_arcs", "width_ratio": 1.02,
-		"off_ratio": Vector2(0.0, -0.27), "z": 2},
-	"magma_furnace": {"sprite": "flame", "width_ratio": 0.25,
-		"off_ratio": Vector2(0.0, 0.21), "z": 2},
-	"keep_brazier": {"sprite": "flame", "width_ratio": 0.22,
-		"off_ratio": Vector2(0.0, -0.19), "z": 2},
-	"forge_cauldron": {"sprite": "flame", "width_ratio": 0.52,
-		"off_ratio": Vector2(0.0, -0.24), "z": 2},
-	"forge_brazier": {"sprite": "flame", "width_ratio": 1.15,
-		"off_ratio": Vector2(0.0, -0.24), "z": 2},
-	"camp_furnace": {"sprite": "flame", "width_ratio": 0.50,
-		"off_ratio": Vector2(0.0, 0.02), "z": 2},
-	"station_furnace_t1": {"sprite": "flame", "width_ratio": 0.44,
-		"off_ratio": Vector2(0.0, 0.06), "z": 2},
-	"station_furnace_t2": {"sprite": "flame", "width_ratio": 0.42,
-		"off_ratio": Vector2(0.0, 0.03), "z": 2},
-	"station_furnace_t3": {"sprite": "flame", "width_ratio": 0.40,
-		"off_ratio": Vector2(0.0, 0.0), "z": 2},
-}
 
 const STRUCTURES := {
 	# ---- LIVE TERRAIN ECOLOGY LANDMARKS (2026-07-27) ----------------------
@@ -898,11 +885,11 @@ const STRUCTURES := {
 			{"shape": "rect", "size": Vector2(42, 30), "off": Vector2(0, -2)},
 			{"shape": "circle", "radius": 14.0, "off": Vector2(-94, 0)},
 			{"shape": "circle", "radius": 14.0, "off": Vector2(94, 0)}],
-		"decals": [
-			{"sprite": "flame", "off": Vector2(-58, -57), "scale": 0.12, "z": 3,
-				"light": Color(1.0, 0.58, 0.25, 0.9), "light_energy": 0.8, "light_scale": 0.65},
-			{"sprite": "flame", "off": Vector2(58, -57), "scale": 0.12, "z": 3,
-				"light": Color(1.0, 0.58, 0.25, 0.9), "light_energy": 0.8, "light_scale": 0.65}],
+		"lights": [
+			{"off": Vector2(-58, -57), "color": Color(1.0, 0.58, 0.25, 0.9),
+				"energy": 0.8, "scale": 0.65},
+			{"off": Vector2(58, -57), "color": Color(1.0, 0.58, 0.25, 0.9),
+				"energy": 0.8, "scale": 0.65}],
 		"fire": true},
 	"magma_judgment": {"sprite": "forge_statue", "w": 155.0,
 		"parts": [
@@ -913,8 +900,8 @@ const STRUCTURES := {
 			{"shape": "circle", "radius": 19.0, "off": Vector2(0, 2)},
 			{"shape": "rect", "size": Vector2(55, 34), "off": Vector2(-102, 0)},
 			{"shape": "circle", "radius": 15.0, "off": Vector2(96, 3)}],
-		"decals": [{"sprite": "flame", "off": Vector2(-102, -83), "scale": 0.20, "z": 3,
-			"light": Color(1.0, 0.34, 0.12, 0.95), "light_energy": 1.25, "light_scale": 1.0}],
+		"lights": [{"off": Vector2(-102, -83), "color": Color(1.0, 0.34, 0.12, 0.95),
+			"energy": 1.25, "scale": 1.0}],
 		"fire": true},
 	"ice_waymarker": {"sprite": "ice_cairn", "w": 150.0,
 		"parts": [
@@ -1000,10 +987,8 @@ const STRUCTURES := {
 			{"shape": "circle", "radius": 46.0, "off": Vector2(35, -25)},
 			{"shape": "circle", "radius": 14.0, "off": Vector2(-105, 2)},
 			{"shape": "circle", "radius": 14.0, "off": Vector2(105, 2)}],
-		"decals": [
-			{"sprite": "fountain_flow", "off": Vector2(0, -46), "scale": 0.50, "z": 2},
-			{"sprite": "glow", "off": Vector2(0, -100), "scale": 0.18, "z": 3,
-				"light": Color(1.0, 0.87, 0.46, 0.8), "light_energy": 0.7, "light_scale": 0.8}]},
+		"decals": [{"sprite": "glow", "off": Vector2(0, -100), "scale": 0.18, "z": 3,
+			"light": Color(1.0, 0.87, 0.46, 0.8), "light_energy": 0.7, "light_scale": 0.8}]},
 	"spore_cathedral": {"sprite": "spore_shrine", "w": 190.0,
 		"parts": [
 			{"sprite": "tree_spore", "off": Vector2(-115, -72), "scale": 0.67, "z": -1, "wind": true},
@@ -1026,7 +1011,7 @@ const STRUCTURES := {
 		"colliders": [
 			{"shape": "circle", "radius": 15.0, "off": Vector2(-92, -4)},
 			{"shape": "circle", "radius": 15.0, "off": Vector2(92, -4)}],
-		"decals": [{"sprite": "banner_red", "off": Vector2(0, -74), "scale": 0.22, "z": 2, "wind": true}]},
+		"decals": [{"sprite": "banner_red", "off": Vector2(0, -74), "scale": 0.22, "z": 2}]},
 	# A lit watch-brazier: a pillar topped by a brazier decal that GLOWS
 	# (point light) and CRACKLES (positional fire audio).
 	"watch_brazier": {"sprite": "pillar", "w": 120.0,
@@ -1084,8 +1069,7 @@ const STRUCTURES := {
 	"town_fountain": {"sprite": "garden_fountain", "w": 150.0,
 		"colliders": [
 			{"shape": "circle", "radius": 42.0, "off": Vector2(-32, -24)},
-			{"shape": "circle", "radius": 42.0, "off": Vector2(32, -24)}],
-		"decals": [{"sprite": "fountain_flow", "off": Vector2(0, -44), "scale": 0.50, "z": 2}]},
+			{"shape": "circle", "radius": 42.0, "off": Vector2(32, -24)}]},
 	# The raw garden-fountain landmark uses the same living-water and broad
 	# basin contract as the named town variant. Without its own definition it
 	# fell through to a generic thin building strip whenever the holy/garden
@@ -1093,13 +1077,13 @@ const STRUCTURES := {
 	"garden_fountain": {"sprite": "garden_fountain", "w": 165.0,
 		"colliders": [
 			{"shape": "circle", "radius": 46.0, "off": Vector2(-35, -25)},
-			{"shape": "circle", "radius": 46.0, "off": Vector2(35, -25)}],
-		"decals": [{"sprite": "fountain_flow", "off": Vector2(0, -46), "scale": 0.50, "z": 2}]},
+			{"shape": "circle", "radius": 46.0, "off": Vector2(35, -25)}]},
 	# Kinetic landmarks own explicit full-base footprints. Their stable shell
 	# is the structure base; PROP_MOTION supplies only the living element.
 	"magma_furnace": {"sprite": "magma_furnace", "w": 120.0,
 		"colliders": [{"shape": "rect", "size": Vector2(100, 44), "off": Vector2(0, -10)}],
-		"decals": [{"sprite": "ember_smoke", "off": Vector2(0, -74), "scale": 0.32, "z": 2}],
+		"lights": [{"off": Vector2(0, -42), "color": Color(1.0, 0.34, 0.12, 0.9),
+			"energy": 1.0, "scale": 0.8}],
 		"fire": true},
 	"storm_conductor": {"sprite": "storm_conductor", "w": 108.0,
 		"colliders": [{"shape": "circle", "radius": 34.0, "off": Vector2(0, -5)}]},
@@ -1109,9 +1093,8 @@ const STRUCTURES := {
 		"colliders": [{"shape": "circle", "radius": 38.0, "off": Vector2(0, -3)}]},
 	# A sewer outfall: a broad pipe spilling a pool of FLOWING sludge
 	# (sewer_flow ANIMATES) across a wide flat footprint.
-	"sewer_outfall": {"sprite": "sewer_pipe", "w": 140.0, "mirror": true,
-		"colliders": [{"shape": "rect", "size": Vector2(96.0, 34.0), "off": Vector2(0, -6)}],
-		"decals": [{"sprite": "sewer_flow", "off": Vector2(30, -8), "scale": 0.34, "z": 1}]},
+	"sewer_outfall": {"sprite": "sewer_outfall", "w": 140.0, "mirror": true,
+		"colliders": [{"shape": "rect", "size": Vector2(106.0, 42.0), "off": Vector2(0, -7)}]},
 	# A great hearth: a hall fireplace — a brazier base with a tall licking
 	# flame (flame ANIMATES), a smoke column, firelight and crackle.
 	"great_hearth": {"sprite": "capital_great_hearth", "w": 244.1602,
@@ -1129,8 +1112,8 @@ const STRUCTURES := {
 	"market_stall": {"sprite": "hideout_table", "w": 140.0, "mirror": true,
 		"colliders": [{"shape": "rect", "size": Vector2(100.0, 30.0), "off": Vector2(0, -4)}],
 		"decals": [
-			{"sprite": "banner_blue", "off": Vector2(-38, -70), "scale": 0.2, "z": 2, "wind": true},
-			{"sprite": "banner_green", "off": Vector2(38, -70), "scale": 0.2, "z": 2, "wind": true}]},
+			{"sprite": "banner_blue", "off": Vector2(-38, -70), "scale": 0.2, "z": 2},
+			{"sprite": "banner_green", "off": Vector2(38, -70), "scale": 0.2, "z": 2}]},
 	# A notice board: a signpost hung with two posters — the town's job board.
 	"notice_board": {"sprite": "signpost", "w": 84.0,
 		"colliders": [{"shape": "circle", "radius": 12.0, "off": Vector2(0, -2)}],

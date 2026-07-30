@@ -5,9 +5,9 @@ After installing/replacing sprite art, run this on the base name. It runs
 the checks that are otherwise scattered snippets in tools/art/README.md
 (and therefore get skipped):
 
-  GEOMETRY   strip width must be an exact multiple of height. The engine
-             derives frames = width/height (art.gd _strip_info) and FLOORS,
-             so a mis-cut strip silently drops/shears frames.   -> FAIL
+  GEOMETRY   strips use square cells by default. An *_anim strip may instead
+             use rectangular cells when a matching static sprite has the same
+             height and evenly tiles the strip (art.gd _strip_info). -> FAIL
   DIR8       a directional set with SOME of the 8 facings missing. The
              engine falls back to south, so it renders -- but a partial set
              is almost always an install slip.                  -> WARN
@@ -86,12 +86,28 @@ def check_file(png: Path) -> None:
     w, h = img.size
     stem = png.stem
 
-    is_strip = "_" in stem and stem.rsplit("_", 1)[0] != stem  # anything with a suffix
-    if is_strip and w % h != 0:
-        FAIL.append(f"[GEOMETRY] {rel}: {w}x{h} -- width not a multiple of height; the engine "
-                    f"floors frames to {w // h} and shears the rest (art.gd _strip_info)")
-    if stem.endswith("_dir") and h > 0 and w % h == 0 and (w // h) % 8 != 0:
-        FAIL.append(f"[DIRSTRIP] {rel}: {w // h} frames -- aim strips must be 8*K frames, "
+    # Authored room surfaces are deliberately rectangular, loaded directly by
+    # Art._ground_room_surface(), and never pass through the square-strip
+    # decoder. Do not misclassify their descriptive suffix as animation.
+    is_ground_room = stem.startswith("ground_room_")
+    suffixes = CLIPS + DIR8
+    is_strip = not is_ground_room and any(stem.endswith(f"_{suffix}") for suffix in suffixes)
+    frame_width = h
+    frames = w // h if h > 0 else 0
+    if stem.endswith("_anim"):
+        static_png = png.with_name(f"{stem.removesuffix('_anim')}.png")
+        if static_png.exists():
+            static_w, static_h = Image.open(static_png).size
+            if static_h == h and static_w > 0 and w % static_w == 0:
+                frame_width = static_w
+                frames = w // static_w
+    if is_strip and (frame_width <= 0 or w % frame_width != 0):
+        FAIL.append(
+            f"[GEOMETRY] {rel}: {w}x{h} -- strip does not tile its "
+            f"{frame_width} px frame width; art.gd _strip_info would shear frames"
+        )
+    if stem.endswith("_dir") and frame_width > 0 and w % frame_width == 0 and frames % 8 != 0:
+        FAIL.append(f"[DIRSTRIP] {rel}: {frames} frames -- aim strips must be 8*K frames, "
                     "direction-major E,NE,N,NW,W,SW,S,SE (tools/art/README.md)")
 
     a = np.asarray(img)[:, :, 3]

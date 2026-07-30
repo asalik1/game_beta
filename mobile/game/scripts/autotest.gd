@@ -640,11 +640,12 @@ func _run_systems() -> void:
 	# lands on the swing's contact frame now (wall-clock: frames race headless)
 	if get_tree().get_nodes_in_group("projectiles").size() <= proj_before:
 		return _fail("earth Cleave did not launch a quake wave")
-	# Fury Berserk: deeper rage tuning (+55% for 10s).
+	# Fury Berserk: deeper rage tuning (+70% for 10s — the 2026-07-28 class
+	# ordering round: fury measured 18% under mage vs the owner's called 8%).
 	game.player.set_ability_theme("ult", "fury")
 	game.player.cds["ult"] = 0.0
 	game.player.use_ability("ult")
-	if absf(game.player.berserk_bonus - 0.55) > 0.001 or game.player.berserk_time < 9.5:
+	if absf(game.player.berserk_bonus - 0.7) > 0.001 or game.player.berserk_time < 9.5:
 		return _fail("fury Berserk tuning not applied (bonus %.2f, dur %.1f)" %
 			[game.player.berserk_bonus, game.player.berserk_time])
 	game.player.berserk_time = 0.0
@@ -928,6 +929,9 @@ func _run_systems() -> void:
 	# 3d10. Set bonuses: piece counting, cross-class isolation, recalc.
 	_test_set_bonus()
 
+	# 3d10b. Set coverage: every class x profile fields all six slots.
+	_test_set_coverage()
+
 	# 3d11. Account stash: deposit, withdraw to bag, capacity cap.
 	_test_stash()
 
@@ -1138,45 +1142,49 @@ func _run_systems() -> void:
 			return _fail("sub-B gear rolled an endgame-only stat (lifesteal/combo)")
 	print("ok: class-aware drops (arsenal + S first-roll pen guarantee + B-gated lifesteal/combo)")
 
-	# 4b. S weapon: legendary shape + 3 sockets; its passive is DORMANT
-	# (round 51b) until the class's awakening flag is set. Wrong-class flag
-	# never wakes it; describe() reflects locked vs active.
-	# (2026-07-27 drop split) A plain S roll is now a GENERIC — top rolls, no
-	# passive; the legendary comes from the explicit make_legendary channel.
+	# 4b. The legendary tier is RETIRED (owner call 2026-07-27): a plain S
+	# roll is a generic with NO passive; the six flagship passives live on
+	# their fitting named-S uniques (live on pickup, no awakening quest);
+	# and an OLD-SAVE legendary (stored dormant flag) grandfathers in LIVE.
 	var srng := RandomNumberGenerator.new()
 	srng.seed = 7
 	var s_generic := Items.roll_item_of("weapon", "S", srng, "warrior")
 	if s_generic.has("passive"):
 		return _fail("a generic S roll must carry NO passive (drop split)")
-	var s_wpn := Items.make_legendary("warrior", "weapon", srng)
-	if s_wpn.get("passive", "") != "kingsblade" or s_wpn.get("cls", "") != "warrior":
-		return _fail("S warrior weapon wrong passive/class")
-	if not s_wpn.get("passive_dormant", false):
-		return _fail("a dropped S weapon must stamp passive_dormant")
-	if s_wpn.get("gem_slots", 0) != 3:
+	if s_generic.get("gem_slots", 0) != 3:
 		return _fail("S gear should have 3 gem slots")
+	var flagships := {"warrior": ["u_crownfall_the_kingdoms_end", "kingsblade"],
+		"archer": ["u_tempest_yew_bow_of_the_last_gale", "windward"],
+		"mage": ["u_firmament_the_heaven_bearing_staff", "wellspring"],
+		"assassin": ["u_pale_flight_blade_between_heartbeats", "mirrorstep"],
+		"paladin": ["u_dawnfall_hammer_of_the_final_oath", "dawnbreaker"],
+		"warlock": ["u_the_book_that_remembers_you", "voidmaw"]}
+	for fcls in flagships:
+		var want: Array = flagships[fcls]
+		var hit := false
+		for u in Items.uniques_of(String(fcls), "S", "weapon"):
+			if String(u["art"]) == String(want[0]):
+				hit = String(u.get("passive", "")) == String(want[1])
+		if not hit:
+			return _fail("%s flagship unique does not carry %s" % [fcls, want[1]])
+	# Old-save grandfather: a stored dormant legendary just works now.
+	var s_wpn := Items.roll_item_of("weapon", "S", srng, "warrior", "Claymore")
+	s_wpn["name"] = "Kingsbane, Edge of the Fallen Crown"
+	s_wpn["passive"] = "kingsblade"
+	s_wpn["passive_dormant"] = true
 	var keep_flags: Dictionary = game.flags.duplicate(true)
 	game.set_flag("s_awakened_warrior", false)
-	game.set_flag("s_awakened_archer", false)
 	game.player.add_item(s_wpn)
 	game.player.equip(s_wpn)
-	if game.player.s_passive() != "":
-		return _fail("dormant S passive fired without awakening")
-	game.set_flag("s_awakened_archer")  # wrong class
-	if game.player.s_passive() != "":
-		return _fail("wrong-class awakening woke a warrior legendary")
-	if not Items.describe(s_wpn, false).contains("LOCKED"):
-		return _fail("describe should show LOCKED for a dormant legendary")
-	game.set_flag("s_awakened_warrior")  # right class
 	if game.player.s_passive() != "kingsblade":
-		return _fail("s_passive not active after awakening the class")
-	if Items.describe(s_wpn, true).contains("LOCKED"):
-		return _fail("describe still LOCKED after awakening")
+		return _fail("old-save dormant legendary did not grandfather in live")
+	if Items.describe(s_wpn, false).contains("LOCKED"):
+		return _fail("describe still shows LOCKED — the awakening gate should be gone")
 	game.player.cds["a1"] = 0.0
 	game.player.use_ability("a1")
 	await _frames(15)
 	game.flags = keep_flags
-	print("ok: S weapon dormant passive + awakening (%s sleeps until s_awakened_warrior)" % s_wpn["name"])
+	print("ok: legendary tier retired (generic S passive-less, 6 flagship transplants, old saves grandfather live)")
 
 	# 4b2. Named uniques (2026-07-27): all 60 passives wired + described +
 	# knobbed; a unique is LIVE on pickup; the drop split holds (act 0 =
@@ -1184,8 +1192,16 @@ func _run_systems() -> void:
 	# worldroot HP->atk conversion actually moves the sheet.
 	var urng := RandomNumberGenerator.new()
 	urng.seed = 13
-	if Items.UNIQUES.size() != 60:
-		return _fail("expected 60 named weapon uniques, found %d" % Items.UNIQUES.size())
+	if Items.UNIQUES.size() != 420:
+		return _fail("expected 420 named uniques (60 weapons + 360 gear), found %d" % Items.UNIQUES.size())
+	# Gear-unique data contract: every passive described + knobbed + distinct,
+	# and every GEAR passive's verb/beat resolves to engine vocabulary.
+	var known_verbs := ["helm_ward", "glove_ward", "pants_ward", "helm_guard", "glove_guard",
+		"pants_guard", "helm_finesse", "glove_finesse", "pants_finesse",
+		"helm_aggr", "glove_aggr", "pants_aggr", "helm_bulwark", "glove_bulwark", "pants_bulwark"]
+	var known_beats := ["", "amp", "slipamp", "grit", "holy", "mana", "heal", "hpq", "cdr",
+		"surge", "dmark", "hexext", "vuln", "wither", "slow", "stagger", "knock",
+		"shredx", "huntp", "tumblearm", "swkeep", "none"]
 	var seen_pass := {}
 	for u in Items.UNIQUES:
 		var pid: String = String(u.get("passive", ""))
@@ -1196,6 +1212,12 @@ func _run_systems() -> void:
 		seen_pass[pid] = true
 		if not Balance.UNIQ.has(pid):
 			return _fail("unique passive %s has no Balance.UNIQ knobs entry" % pid)
+		if String(u["slot"]) != "weapon":
+			var uk: Dictionary = Balance.uniq(pid)
+			if not known_verbs.has(String(uk.get("verb", ""))):
+				return _fail("gear passive %s declares unknown verb '%s'" % [pid, uk.get("verb", "")])
+			if not known_beats.has(String(uk.get("beat", ""))):
+				return _fail("gear passive %s declares unknown beat '%s'" % [pid, uk.get("beat", "")])
 	var vspk := Items.make_unique(Items.uniques_of("paladin", "A")[0], urng)
 	if vspk.get("passive", "") != "vow" or vspk.get("passive_dormant", false):
 		return _fail("make_unique must stamp a LIVE passive (no awakening gate)")
@@ -1204,15 +1226,26 @@ func _run_systems() -> void:
 		if gen.has("passive"):
 			return _fail("an act-0 roll must stay generic (drop split)")
 	var found_named := false
-	var found_leg := false
 	for i in 400:
 		var s_roll := Items.roll_item_of("weapon", "S", urng, "mage", "", 3)
 		if s_roll.get("passive_dormant", false):
-			found_leg = true
-		elif s_roll.has("passive"):
+			return _fail("a roll produced a dormant legendary — that tier is retired")
+		if s_roll.has("passive"):
 			found_named = true
-	if not (found_named and found_leg):
-		return _fail("act-3 S rolls never surfaced a named unique + legendary (400 tries)")
+	if not found_named:
+		return _fail("act-3 S rolls never surfaced a named unique (400 tries)")
+	# The named channel is slot-generic: act-3 GEAR rolls surface their own
+	# named uniques too (helmet here; the pool filter keeps slots honest).
+	var found_gear := false
+	for i in 400:
+		var h_roll := Items.roll_item_of("helmet", "S", urng, "warrior", "", 3)
+		if h_roll.has("passive"):
+			if String(h_roll["slot"]) != "helmet" or not String(h_roll["passive"]).begins_with("warrior_helmet_"):
+				return _fail("helmet named channel produced a mismatched unique: %s" % h_roll["name"])
+			found_gear = true
+			break
+	if not found_gear:
+		return _fail("act-3 helmet rolls never surfaced a named unique (400 tries)")
 	# Worldroot: bonus max HP converts to ATK — strip the passive off the same
 	# item and the sheet must drop. Direct equipment poke (class lock is a UI
 	# gate); snapshot + restore per the shared-state rule.
@@ -1235,7 +1268,64 @@ func _run_systems() -> void:
 	else:
 		game.player.equipment["weapon"] = keep_wpn
 	game.player.recalc()
-	print("ok: named uniques (60 wired, live on pickup, drop split, worldroot conversion)")
+	print("ok: named uniques (420 wired incl. gear verb/beat contracts, live on pickup, slot-generic drop split, worldroot conversion)")
+
+	# 4b3. Armor-family passive TEMPLATES (GEAR_ARMOR_UNIQUE_PASSIVES.md):
+	# 30 ids (15 bases x S/A lanes) described + knobbed; the engine reads them
+	# off ANY equipped non-weapon piece; recalc-level effects move the sheet;
+	# pants_ward's CC modifier actually shortens a root. The 180 items that
+	# carry these arrive with the art pass — injected pieces stand in here.
+	for tbase in ["helm_ward", "glove_ward", "pants_ward", "helm_guard", "glove_guard",
+			"pants_guard", "helm_finesse", "glove_finesse", "pants_finesse",
+			"helm_aggr", "glove_aggr", "pants_aggr", "helm_bulwark", "glove_bulwark",
+			"pants_bulwark"]:
+		for lane in [String(tbase), String(tbase) + "_a"]:
+			if not Items.PASSIVES.has(lane):
+				return _fail("armor template %s lacks a card line" % lane)
+			if not Balance.UNIQ.has(lane):
+				return _fail("armor template %s lacks Balance.UNIQ knobs" % lane)
+	var arng := RandomNumberGenerator.new()
+	arng.seed = 21
+	var ap: Player = game.player
+	var keep_helm = ap.equipment.get("helmet")
+	var keep_glove = ap.equipment.get("gloves")
+	var keep_pants = ap.equipment.get("pants")
+	ap.recalc()
+	var base_transfusion: float = ap.transfusion
+	var t_helm := Items.roll_item_of("helmet", "S", arng, ap.cls)
+	t_helm["passive"] = "helm_bulwark"
+	var t_glove := Items.roll_item_of("gloves", "S", arng, ap.cls)
+	t_glove["passive"] = "glove_bulwark"
+	var t_pants := Items.roll_item_of("pants", "A", arng, ap.cls)
+	t_pants["passive"] = "pants_ward_a"
+	ap.equipment["helmet"] = t_helm
+	ap.equipment["gloves"] = t_glove
+	ap.equipment["pants"] = t_pants
+	ap.recalc()
+	if ap.uniq_armor.size() != 3 or ap.uniq_gear("helm_bulwark") != "helm_bulwark" \
+			or ap.uniq_gear("pants_ward") != "pants_ward_a":
+		return _fail("armor passive cache/lane reader wrong: %s" % [ap.uniq_armor])
+	if ap.transfusion <= base_transfusion:
+		return _fail("helm_bulwark did not raise the overheal pool")
+	if ap.uniq_hit_flat <= 0.0:
+		return _fail("glove_bulwark granted no per-hit bulk")
+	if absf(ap.uniq_heal_in - 0.9) > 0.001:
+		return _fail("pants_ward_a BARGAIN heal tax missing (got %.2f)" % ap.uniq_heal_in)
+	var keep_rooted: float = ap.rooted_time
+	ap.rooted_time = 0.0
+	ap.apply_root(1.0)
+	if absf(ap.rooted_time - 0.5) > 0.01:
+		return _fail("pants_ward_a did not shorten the root (%.2f left of 1.0)" % ap.rooted_time)
+	ap.rooted_time = keep_rooted
+	for pr in [["helmet", keep_helm], ["gloves", keep_glove], ["pants", keep_pants]]:
+		if pr[1] == null:
+			ap.equipment.erase(pr[0])
+		else:
+			ap.equipment[pr[0]] = pr[1]
+	ap.recalc()
+	if not ap.uniq_armor.is_empty():
+		return _fail("armor passive cache did not clear on unequip")
+	print("ok: armor passive templates (30 knobbed, lane reader, bulwark/grip/ward effects, CC shorten)")
 
 	# 4c. Gems: targeted socket, removal, stat change, synthesize, sell-return.
 	# Capital rework (§2): socket/unsocket are Lapidary bench work — borrow
@@ -1370,15 +1460,21 @@ func _run_systems() -> void:
 	print("ok: all %d boss projectile families use authored 64px art" %
 		Projectile.BOSS_PROJECTILE_STYLE.size())
 
-	# 5. Skill tree: row caps and gating. Drive it at a controlled level so
-	# the assertions don't depend on how far ch1 leveled us (rows now unlock
-	# at 10/20/30/40). Restore level + points afterward.
+	# 5. Skill tree: row caps and gating (dual-key 2026-07-28: a row opens at
+	# its level threshold OR the moment the row above it is full, so points
+	# earned between thresholds are never dead). Drive it at controlled
+	# levels so the assertions don't depend on how far ch1 leveled us.
+	# Restore level + points afterward.
 	var saved_level: int = game.player.level
-	game.player.level = Skills.ROW_LEVELS[2]  # rows 0-2 open, row 3 (Lv 40) locked
+	game.player.level = 1
 	game.player.tree_points.clear()
 	game.player.skill_points = 30
-	var added := 0
-	for i in 12:  # try to overfill row 0 (cell cap AND row cap are both 10)
+	if not game.player.add_tree_point("w00"):
+		return _fail("row 0 should accept points from level 1 (dual-key)")
+	if game.player.add_tree_point("w10"):
+		return _fail("row 1 must stay locked at Lv 1 while row 0 is unfilled")
+	var added := 1
+	for i in 11:  # try to overfill row 0 (cell cap AND row cap are both 10)
 		if game.player.add_tree_point("w00"):
 			added += 1
 	if added != Skills.MAX_PER_CELL:
@@ -1387,14 +1483,24 @@ func _run_systems() -> void:
 		return _fail("row cap should block an 11th point in row 0")
 	if game.player.dm("a1") < 1.24:
 		return _fail("10 points in Heavy Cleave should give +25%")
+	# Row 0 full -> row 1 opens EARLY (its Lv 20 key is unmet at Lv 1).
+	if not game.player.add_tree_point("w10"):
+		return _fail("a full row 0 should open row 1 below its level key")
 	var high_row := Skills.TREES["warrior"][3][0]["id"]
+	if game.player.add_tree_point(high_row):
+		return _fail("row 3 must stay locked at Lv 1 (row 2 unfilled)")
+	# The level key still opens a row on its own, sparse rows above and all —
+	# the today-legal path (and every existing save) stays legal.
+	game.player.level = Skills.ROW_LEVELS[2]
+	if not game.player.add_tree_point("w20"):
+		return _fail("level key should open row 2 at Lv %d despite row 1 at 1/10" % Skills.ROW_LEVELS[2])
 	if game.player.add_tree_point(high_row):
 		return _fail("locked row (Lv 40) accepted a point at Lv %d" % game.player.level)
 	game.player.tree_points.clear()
 	game.player.skill_points = 0
 	game.player.level = saved_level
 	game.player.recalc()
-	print("ok: skill tree rows (caps + gating)")
+	print("ok: skill tree rows (caps + gating + dual-key early open)")
 
 	# 5a. Named talent pages preserve independent allocations while sharing one
 	# real character budget. Switching must neither duplicate nor consume points.
@@ -1552,30 +1658,32 @@ func _run_systems() -> void:
 		return _fail("clearing chroma failed")
 	p_sk.chroma = old_chroma
 	print("ok: chroma shader (apply, uniforms, clear)")
+	# (2026-07-27) Awakened forms retired: one splash per skin, with per-skin
+	# `splash` overrides honored (the two Phantom forms share body-art history,
+	# so their derived keys would point at the wrong portraits).
 	for skin_cls in Skins.SKINS:
 		for skin_data in Skins.skins_for(skin_cls):
 			var skin_id: String = String(skin_data["id"])
-			var splash_key: String = Skins.skin_splash(skin_cls, skin_id, false)
+			var splash_key: String = Skins.skin_splash(skin_cls, skin_id)
 			if splash_key == "" or not Art.has_sprite(splash_key):
 				return _fail("missing skin splash: %s/%s -> %s" % [skin_cls, skin_id, splash_key])
-			if skin_data.has("awakened_sprite"):
-				var awakened_key: String = Skins.skin_splash(skin_cls, skin_id, true)
-				if awakened_key == splash_key or not Art.has_sprite(awakened_key):
-					return _fail("missing awakened skin splash: %s/%s -> %s" % [skin_cls, skin_id, awakened_key])
-	print("ok: every skin + awakened form has an installed splash")
+	if Skins.skin_splash("assassin", "phantom") != "splash_skin_assassin_phantom_awakened":
+		return _fail("the Phantom must default to its awakened (teal) portrait")
+	if Skins.skin_splash("assassin", "phantom_umbral") != "splash_skin_assassin_phantom":
+		return _fail("the Umbral Phantom must keep the original blue portrait")
+	if Skins.skin_sprite("assassin", "phantom") != "skins/mythic/assassin_phantom_awakened":
+		return _fail("the Phantom must resolve to the awakened body, always")
+	print("ok: every skin has an installed splash (Phantom teal-by-default, Umbral keeps blue)")
 	var old_skin: String = p_sk.skin
-	var awakened_flag := "s_awakened_" + p_sk.cls
-	var old_awakened: bool = bool(game.get_flag(awakened_flag, false))
 	p_sk.set_skin("dreadknight")
 	if game.hud._splash_for("You") != "splash_skin_warrior_dreadknight":
 		return _fail("hero dialogue did not resolve the equipped skin splash")
-	p_sk.set_skin("stormforged")
-	game.set_flag(awakened_flag, true)
-	if game.hud._splash_for("You") != "splash_skin_warrior_stormforged_awakened":
-		return _fail("hero dialogue did not resolve the live awakened skin splash")
-	game.set_flag(awakened_flag, old_awakened)
+	game.hud.dialogue_hero_class_override = "mage"
+	if game.hud._splash_for("You") != "class_splash_mage":
+		return _fail("dev opener class lens did not override the live hero splash")
+	game.hud.dialogue_hero_class_override = ""
 	p_sk.set_skin(old_skin)
-	print("ok: hero dialogue splash follows live equipped + awakened skin")
+	print("ok: hero dialogue splash follows the live equipped skin + dev opener class lens")
 
 	# 5c. Choice dialogue + flag engine: choices apply resonance/flags,
 	# and both flag- and band-gated text variants resolve.
@@ -1737,6 +1845,13 @@ func _run_systems() -> void:
 		await _frames(2)
 	game.menus.open_codex("terrains")
 	await _frames(2)
+	var terrain_catalog_copy: String = _tree_ui_text(game.menus.root)
+	for terrain_id in Terrains.DATA:
+		if not String(terrain_id).begins_with("capital_"):
+			continue
+		if terrain_id in Terrains.catalog_ids() \
+				or String(Terrains.DATA[terrain_id]["name"]) in terrain_catalog_copy:
+			return _fail("Crownfall room profile leaked into the terrain catalog: %s" % terrain_id)
 	var _dev0: bool = game.dev_mode
 	game.dev_mode = true  # bestiary stays placeholder-free even in dev (2026-07-18)
 	game.menus.open_codex("monsters")
@@ -1889,8 +2004,31 @@ func _run_systems() -> void:
 	await _frames(2)
 	if game.menus.current != "daily":
 		return _fail("daily reward screen did not open")
-	game.menus.open_dev()
+	game.menus.open_dev("world")
 	await _frames(2)
+	var dev_world_copy: String = _tree_ui_text(game.menus.root)
+	for terrain_id in Terrains.DATA:
+		if String(terrain_id).begins_with("capital_") \
+				and String(Terrains.DATA[terrain_id]["name"]) in dev_world_copy:
+			return _fail("Crownfall room profile leaked into the dev terrain picker: %s" % terrain_id)
+	game.menus.dev_opener_class = ""
+	game.menus.open_dev("openers")
+	await _frames(2)
+	var dev_openers_copy: String = _tree_ui_text(game.menus.root)
+	if "CHAPTER OPENERS" not in dev_openers_copy:
+		return _fail("dev chapter-opener tab did not open")
+	for opener_class in UIDevPanel.OPENER_CLASSES:
+		if String(Classes.CLASSES[opener_class]["name"]) not in dev_openers_copy:
+			return _fail("dev chapter-opener class lens missing: %s" % opener_class)
+	for chapter_number in range(1, 15):
+		var chapter_key := "ch%d" % chapter_number
+		var chapter_name: String = String(Story.chapter(chapter_key).get("name", ""))
+		if chapter_name == "" or chapter_name not in dev_openers_copy:
+			return _fail("dev chapter-opener button missing: %s" % chapter_key)
+		for opener_class in UIDevPanel.OPENER_CLASSES:
+			var opener_id: String = UIDevPanel.chapter_opener_id(chapter_key, opener_class)
+			if not Story.ALL_CONVOS.has(opener_id):
+				return _fail("dev chapter-opener target missing: %s" % opener_id)
 	game.menus.close()
 	await _frames(2)
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
@@ -2072,7 +2210,8 @@ func _run_campaign_ch1() -> void:
 	await _goto_room(1)
 	game.player.global_position = game.rooms[1]["origin"] + Vector2(1900.0, 1100.0)
 	await _frames(3)
-	for tid in Terrains.DATA:
+	var terrain_ids: Array = Terrains.catalog_ids()
+	for tid in terrain_ids:
 		game.apply_terrain(1, tid)
 		await _frames(3)
 		var terrain_ev: String = Terrains.DATA[tid].get("event", "")
@@ -2091,7 +2230,7 @@ func _run_campaign_ch1() -> void:
 	game.gust_vec = Vector2.ZERO
 	await _frames(5)
 	_buff()
-	print("ok: all %d terrains applied + events fired" % Terrains.DATA.size())
+	print("ok: all %d terrains applied + events fired" % terrain_ids.size())
 
 	# 7. The zone graph in play: lazy building, per-pack aggro, door
 	# seals, room clears, and the fog-of-war map state.
@@ -2290,6 +2429,7 @@ func _run_campaign_ch2() -> void:
 	await _test_endgame_no_placeholder_bosses()
 	await _test_pause_menu()
 	await _test_mp_lobby_ui()
+	await _test_elixir_ward_gate()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -2819,44 +2959,98 @@ func _test_reforge() -> void:
 	print("ok: reforge bench (affix reroll, value reroll, add socket + cap incl. C, pen un-gate, transmute)")
 
 
-# ---- CORE: set bonuses (count, cross-class isolation, recalc) ------------
+# ---- CORE: profile SETS (membership, isolation, tiers) -------------------
+# GEAR_UNIQUE_SETS.md (2026-07-28): a set is a PROFILE worn across the six
+# gear slots — named uniques only, counted by the letter in their structural
+# passive id. Generic S pieces form NO set (the legacy per-class bonus is
+# retired). Names resolve from the S-triad family.
 func _test_set_bonus() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	var cls: String = game.player.cls
-	var other := "warrior" if cls != "warrior" else "mage"
 
-	# Counting: two class S pieces + one wrong-class piece.
-	var eq := {
-		"weapon": Items.roll_item_of("weapon", "S", rng, cls),
-		"armor": Items.roll_item_of("armor", "S", rng, cls),
-		"boots": Items.roll_item_of("boots", "S", rng, other),
-	}
-	if Items.count_set_pieces(eq, cls) != 2:
-		return _fail("count_set_pieces miscounted this class's S pieces")
-	if Items.count_set_pieces(eq, other) != 1:
-		return _fail("count_set_pieces leaked across classes")
+	# Membership: generic S = no profile; a named gear unique = its letter;
+	# a foreign-class piece never counts; weapons never count.
+	if Items.set_profile_of(Items.roll_item_of("armor", "S", rng, cls), cls) != "":
+		return _fail("a generic S piece claimed a profile set")
+	var ward_helm := Items.make_unique(Items.uniques_of(cls, "S", "helmet")[0], rng)
+	if Items.set_profile_of(ward_helm, cls) != "A":
+		return _fail("helmet-S row 0 should be the ward (A) profile")
+	var wpn_u := Items.make_unique(Items.uniques_of(cls, "S", "weapon")[0], rng)
+	if Items.set_profile_of(wpn_u, cls) != "":
+		return _fail("weapons must never join a profile set")
+	if Items.uniq_set_name(cls, "A") == "A set":
+		return _fail("ward set name did not resolve from the S-triad family")
 
-	# recalc detects 2 vs 4 pieces without error, and a full set beats none.
+	# Tiers: 0 -> 2 -> 4 ward-profile pieces move the sheet (2pc magres stat)
+	# and flip uniq_set_n; other profiles don't cross-count. Pieces are found
+	# SEMANTICALLY (set_profile_of == "A") so the test holds for any class.
+	var ward_pieces: Array = []
+	for u_slot in ["helmet", "gloves", "pants", "armor"]:
+		for lane in ["S", "A"]:
+			var found := {}
+			for u in Items.uniques_of(cls, String(lane), String(u_slot)):
+				var cand := Items.make_unique(u, rng)
+				if Items.set_profile_of(cand, cls) == "A":
+					found = cand
+					break
+			if not found.is_empty():
+				ward_pieces.append([u_slot, found])
+				break
+	if ward_pieces.size() < 4:
+		return _fail("could not assemble 4 ward-profile pieces for %s" % cls)
 	var keep_eq: Dictionary = game.player.equipment
 	game.player.equipment = {}
 	game.player.recalc()
-	var atk_bare: float = game.player.atk
-	game.player.equipment = {}
-	for slot in Items.SLOTS:
-		game.player.equipment[slot] = Items.roll_item_of(slot, "S", rng, cls)
+	var mr_bare: float = game.player.magres
+	for i in 2:
+		game.player.equipment[ward_pieces[i][0]] = ward_pieces[i][1]
 	game.player.recalc()
-	# Every slot equipped with class-matched S gear counts (7-slot lineup, §5b);
-	# the 4-piece set bonus still caps at 4 (count >= 4).
-	if Items.count_set_pieces(game.player.equipment, cls) != Items.SLOTS.size():
-		return _fail("full S set not detected as %d pieces" % Items.SLOTS.size())
-	if game.player.atk <= atk_bare:
-		return _fail("full S set did not raise ATK")
+	if game.player.uniq_set_n("A") != 2:
+		return _fail("two ward-profile pieces did not count as a 2pc set")
+	if game.player.magres <= mr_bare:
+		return _fail("the ward set's 2pc magres did not land")
+	for i in [2, 3]:
+		game.player.equipment[ward_pieces[i][0]] = ward_pieces[i][1]
+	game.player.recalc()
+	if game.player.uniq_set_n("A") != 4:
+		return _fail("four ward-profile pieces did not reach the 4pc tier")
+	if game.player.uniq_set_n("D") != 0:
+		return _fail("profile counting leaked across letters")
 
 	# Restore.
 	game.player.equipment = keep_eq
 	game.player.recalc()
-	print("ok: set bonuses (piece count, cross-class isolation, 2/4 detection)")
+	print("ok: profile sets (membership by VERB family, A/S lanes count, tier stats, no cross-count)")
+
+
+# ---- CORE: profile-set COVERAGE (every set can actually reach 6pc) -------
+# The 2026-07-28 re-verb pinned this: each class x profile must field a piece
+# in ALL SIX gear slots, or that set's 6pc capstone is dead content the item
+# card still advertises (pre-fix, every guard and aggressor set was capped at
+# 4-5 slots). Membership is semantic (verb family), so this guards future
+# row re-verbs too.
+func _test_set_coverage() -> void:
+	var cover := {}
+	for u in Items.UNIQUES:
+		var slot := String(u.get("slot", ""))
+		if slot == "weapon" or not u.has("passive"):
+			continue
+		var cls := String(u.get("cls", ""))
+		var prof := Items.set_profile_of(u, cls)
+		if prof == "":
+			continue
+		var key := "%s_%s" % [cls, prof]
+		if not cover.has(key):
+			cover[key] = {}
+		cover[key][slot] = true
+	for cls in Classes.CLASSES:
+		for prof in ["A", "B", "C", "D", "E"]:
+			var key := "%s_%s" % [cls, prof]
+			var n: int = cover.get(key, {}).size()
+			if n != 6:
+				return _fail("set %s covers %d/6 slots — its 6pc is unreachable" % [key, n])
+	print("ok: set coverage (all 30 class x profile sets field all six slots)")
 
 
 # ---- CORE: account stash (deposit, withdraw, capacity) ------------------
@@ -3655,8 +3849,8 @@ func _test_retention() -> void:
 
 	# --- boss HP grows on the flat player-tracking BOSS_HP_GROWTH (2026-07-09):
 	# the old per-kind hp_g + past-L32 gem ramp was folded into one dial so a
-	# scaled boss's TTK stays level-invariant instead of ballooning. The per-level
-	# ratio is now the SAME at every level (no ramp bump). ---
+	# scaled boss's TTK stays level-invariant instead of ballooning. Below
+	# GEAR_POWER_FIRST the per-level ratio is the SAME at every level. ---
 	var hi_ratio: float = float(Story.enemy_stats_at("nullwarden", 50)["hp"]) \
 		/ float(Story.enemy_stats_at("nullwarden", 49)["hp"])
 	var low_ratio: float = float(Story.enemy_stats_at("nullwarden", 30)["hp"]) \
@@ -3664,6 +3858,15 @@ func _test_retention() -> void:
 	if absf(hi_ratio - (1.0 + Balance.BOSS_HP_GROWTH)) > 0.001 \
 			or absf(low_ratio - (1.0 + Balance.BOSS_HP_GROWTH)) > 0.001:
 		return _fail("boss HP should grow at a flat BOSS_HP_GROWTH per level")
+	# --- GEAR-POWER curve (2026-07-28, replaces the GEAR_RAMP exponent):
+	# ABOVE the first gear anchor the ratio carries the measured gear curve
+	# on top of the flat dial (Balance.gear_power interpolation). ---
+	var ramp_ratio: float = float(Story.enemy_stats_at("nullwarden", 100)["hp"]) \
+		/ float(Story.enemy_stats_at("nullwarden", 99)["hp"])
+	var want_ratio: float = (1.0 + Balance.BOSS_HP_GROWTH) \
+		* Balance.gear_power(100) / Balance.gear_power(99)
+	if absf(ramp_ratio - want_ratio) > 0.001:
+		return _fail("boss HP above GEAR_POWER_FIRST should track the measured gear-power curve")
 
 	# --- hidden caches: buried chest stays invisible, reveals near ---
 	var hc := Chest.drop(g, "silver", g.player.global_position + Vector2(400, 0))
@@ -3700,7 +3903,7 @@ func _test_mob_traits() -> void:
 		return _fail("mob DMG mult not applied")
 	# Bosses are exempt from both.
 	var fang := Story.enemy_stats_at("fangmaw", 4)
-	if absf(float(fang["hp"]) - 1200.0) > 1.0:
+	if absf(float(fang["hp"]) - 8600.0) > 1.0:
 		return _fail("boss HP wrongly caught the mob mult")
 
 	# Channel-healer: pulse tops up a wounded neighbor (both -1, same zone).
@@ -3817,6 +4020,120 @@ func _test_asset_seams() -> void:
 	if laid.a < 0.9 or laid.r < 0.9 or laid.g > 0.02 or laid.b > 0.02:
 		return _fail("ground _tile_fill did not lay the tile (got %s)" % laid)
 
+	# The 20 promoted unassigned biomes are complete room surfaces, not aliases
+	# to legacy terrain materials. Each keeps a bespoke route grammar and wall
+	# finish, isolates its dev-painted composition from the host story room,
+	# and ships its own correctly sized room texture.
+	var future_grounds := {
+		"ph_mossmeadow": "mossmeadow", "ph_amberwood": "amberleaf",
+		"ph_hollowgrove": "hollowsoil", "ph_moonfen": "moonmire",
+		"ph_mournfields": "mournearth", "ph_barrowmoor": "barrowgrass",
+		"ph_ossuary": "bonefloor", "ph_ashflats": "ashsoil",
+		"ph_slagworks": "slagstone", "ph_obsidianreach": "obsidian",
+		"ph_cinderquarry": "cinderstone", "ph_rimewood": "rimegrass",
+		"ph_frozenlake": "blueice", "ph_hoarfrostruins": "hoarfrost",
+		"ph_crystalchasm": "deepcrystal", "ph_drownedfen": "drownedsoil",
+		"ph_rootboundbog": "rootsoil", "ph_fungalcathedral": "fungalhumus",
+		"ph_stormspire": "stormstone", "ph_voidscar": "voidscar",
+	}
+	for future_id in future_grounds:
+		var ground_key: String = future_grounds[future_id]
+		var future_terrain: Dictionary = Terrains.DATA[future_id]
+		if bool(future_terrain.get("placeholder", false)):
+			return _fail("%s should be a promoted terrain, not a placeholder" % future_id)
+		if not bool(future_terrain.get("preview_isolated", false)):
+			return _fail("%s lost isolated dev-paint composition" % future_id)
+		for chapter_id in Story.CHAPTER_LIST:
+			for chapter_zone in Story.CHAPTER_LIST[chapter_id].get("zones", []):
+				if String(chapter_zone.get("terrain", "")) == String(future_id):
+					return _fail("%s was promoted into a chapter assignment" % future_id)
+		if not Art.GROUND_ROOM_PATH.has(ground_key):
+			return _fail("%s has no bespoke authored route grammar" % future_id)
+		if Terrains.wall_tint_for(future_id) == Color.WHITE:
+			return _fail("%s has no terrain-specific boundary finish" % future_id)
+		var room_surface := Art._ground_room_surface(ground_key, 704, 416)
+		if room_surface == null or room_surface.get_size() != Vector2i(704, 416):
+			return _fail("%s has no 704x416 authored room surface" % future_id)
+	if Terrains.DATA["ph_moonfen"].has("river") or Terrains.DATA["ph_drownedfen"].has("river"):
+		return _fail("authored fen surfaces must not receive a second generic river overlay")
+
+	# --- Environment taxonomy: 1 landmark, 5+ kinds per tier -----------
+	if "garden_statue" not in Terrains.structure_unique_props("village_grove"):
+		return _fail("village_grove must reserve its garden-statue landmark")
+	for terrain_id in Terrains.DATA:
+		if not Terrains.uses_procedural_taxonomy(String(terrain_id)):
+			continue  # capital districts use authored civic compositions
+		var terrain: Dictionary = Terrains.DATA[terrain_id]
+		var landmarks := Terrains.landmark_candidates(String(terrain_id))
+		var accents := Terrains.accent_specs(String(terrain_id))
+		var props := Terrains.repeatable_prop_kinds(String(terrain_id))
+		if landmarks.size() < 5:
+			return _fail("%s: needs >=5 landmark kinds (got %d)" % [
+				terrain_id, landmarks.size()])
+		if accents.size() < 5:
+			return _fail("%s: needs >=5 accent kinds (got %d)" % [
+				terrain_id, accents.size()])
+		if props.size() < 5:
+			return _fail("%s: needs >=5 repeatable prop kinds (got %d)" % [
+				terrain_id, props.size()])
+		var landmark_cycle := {}
+		for occurrence in landmarks.size():
+			var selected := Terrains.landmark_for_occurrence(
+				String(terrain_id), landmarks, occurrence)
+			if landmark_cycle.has(selected):
+				return _fail("%s: landmark repeated before roster exhaustion" % terrain_id)
+			landmark_cycle[selected] = true
+		for repeatable_tier in ["obstacles", "decor"]:
+			for raw_prop in terrain.get(repeatable_tier, []):
+				var prop := String(raw_prop)
+				if Terrains.is_unique_prop(prop):
+					return _fail("%s: unique prop %s leaked into repeatable %s" % [
+						terrain_id, prop, repeatable_tier])
+		for accent_spec in accents:
+			var spec: Dictionary = accent_spec
+			if Terrains.is_unique_prop(String(spec["name"])):
+				return _fail("%s: landmark %s leaked into accent roster" % [
+					terrain_id, spec["name"]])
+	# The normal sampler must peak where the content profile says it peaks.
+	var bell_rng := RandomNumberGenerator.new()
+	bell_rng.seed = 7282026
+	for bell_name in ["mushroom_purple", "coffin"]:
+		var bell_spec: Dictionary = {"name": bell_name}
+		bell_spec.merge(Terrains.ACCENT_PROFILES[bell_name])
+		var histogram := {}
+		for sample_idx in 5000:
+			var sampled := Terrains.sample_accent_count(bell_spec, bell_rng)
+			histogram[sampled] = int(histogram.get(sampled, 0)) + 1
+		var bell_peak := int(bell_spec["peak"])
+		var peak_hits := int(histogram.get(bell_peak, 0))
+		for count_value in histogram:
+			if int(count_value) != bell_peak and int(histogram[count_value]) >= peak_hits:
+				return _fail("%s: accent count distribution does not peak at %d" % [
+					bell_name, bell_peak])
+	# Runtime seam: rebuilding a procedural room yields exactly one selected
+	# landmark node, even though its roster exposes five or more candidates.
+	game._spawn_scenery(0)
+	var runtime_landmarks := 0
+	for scenery_node in game.zone_scenery.get(0, []):
+		if is_instance_valid(scenery_node) and scenery_node.has_meta("terrain_landmark"):
+			runtime_landmarks += 1
+	if runtime_landmarks != 1:
+		return _fail("procedural room should place exactly 1 landmark (got %d)" % runtime_landmarks)
+	for structure_id in Terrains.STRUCTURES:
+		var structure: Dictionary = Terrains.STRUCTURES[structure_id]
+		var structure_visuals: Array = [{"sprite": structure.get("sprite", "")}]
+		structure_visuals.append_array(structure.get("parts", []))
+		var structure_uniques := {}
+		for raw_visual in structure_visuals:
+			var visual: Dictionary = raw_visual
+			var visual_base := Terrains.prop_base(String(visual.get("sprite", "")))
+			if not Terrains.is_unique_prop(visual_base):
+				continue
+			if structure_uniques.has(visual_base):
+				return _fail("%s: authored landmark repeats unique prop %s" % [
+					structure_id, visual_base])
+			structure_uniques[visual_base] = true
+
 	# --- Lane 3: animated scenery props -------------------------------
 	# A synthetic 4-frame strip becomes a looping SpriteFrames.
 	var strip := Image.create_empty(64, 16, false, Image.FORMAT_RGBA8)
@@ -3868,19 +4185,158 @@ func _test_asset_seams() -> void:
 		return _fail("unlisted structure should degrade to one footprint collider (got %d)" % fb_cols)
 	fallback.queue_free()
 
-	# --- SHOWCASE assets (2026-07-18): the five authored floors, eight
-	# animated props, and the animated composite structures are installed, so
+	# --- SHOWCASE assets (2026-07-18): the five authored floors, animated
+	# props, and the animated composite structures are installed, so
 	# assert the real art landed (a dropped strip or a bad terrain regresses
 	# here, not silently in play). Placeholder-terrain content, dev-only.
 	for gk in ["forgefloor", "lavafield", "dungeonfloor", "hallwood", "castletile"]:
 		if Art._ground_tileset(gk).is_empty():
 			return _fail("showcase ground_%s.png tileset did not load" % gk)
 	for pn in ["flame", "ember_smoke", "forge_hearth", "cook_grill", "cook_pan",
-			"sewer_flow", "fountain_flow", "camp_bonfire"]:
+			"camp_bonfire"]:
 		if Art.anim_info(pn).is_empty():
 			return _fail("showcase animated prop %s has no _anim strip" % pn)
 		if Art.anim_prop(pn) == null:
 			return _fail("showcase prop %s did not build an AnimatedSprite2D" % pn)
+	# Active terrain props ship as complete four-frame objects. Their static
+	# source and every animation frame share one exact canvas. Rigid-object
+	# strips retain their opaque baseline and centre; authored silhouette
+	# motion (flame lean and cloth billow) is allowed to change those bounds.
+	# No child motion sticker is attached by the shared scenery seam.
+	var full_prop_anims := [
+		"garden_fountain", "spore_vent", "void_rift",
+		"capital_portal_depths", "storm_conductor", "magma_furnace",
+		"keep_brazier", "forge_cauldron", "forge_brazier", "camp_furnace",
+		"station_furnace_t1", "station_furnace_t2", "station_furnace_t3",
+		"sewer_outfall", "cook_grill", "camp_bonfire",
+		"banner_blue", "banner_green", "banner_red", "station_alchemy_t3",
+	]
+	var silhouette_motion_anims := [
+		"camp_bonfire", "banner_blue", "banner_green", "banner_red",
+	]
+	for active_name: String in full_prop_anims:
+		var info := Art.anim_info(active_name)
+		if int(info.get("frames", 0)) != 4:
+			return _fail("%s needs a complete four-frame animation strip" % active_name)
+		var static_size := Vector2i(Art.tex(active_name).get_size())
+		var frame_size: Vector2i = info.get("frame_size", Vector2i.ZERO)
+		if frame_size != static_size:
+			return _fail("%s animation frame %s != static source %s" %
+				[active_name, frame_size, static_size])
+		var strip_image: Image = (info["tex"] as Texture2D).get_image()
+		var frame_centres: Array = []
+		var frame_baselines: Array = []
+		for frame_idx in 4:
+			var frame_image := strip_image.get_region(Rect2i(
+				frame_idx * frame_size.x, 0, frame_size.x, frame_size.y))
+			var used := frame_image.get_used_rect()
+			frame_centres.append(float(used.position.x) + float(used.size.x) * 0.5)
+			frame_baselines.append(used.end.y)
+		if active_name not in silhouette_motion_anims:
+			for frame_idx in range(1, 4):
+				if absi(int(frame_baselines[frame_idx]) - int(frame_baselines[0])) > 1:
+					return _fail("%s frame %d baseline drifts" % [active_name, frame_idx])
+				if absf(float(frame_centres[frame_idx]) - float(frame_centres[0])) > 2.0:
+					return _fail("%s frame %d centre drifts" % [active_name, frame_idx])
+		var active_visual := game._prop_visual(active_name)
+		if not active_visual is AnimatedSprite2D:
+			active_visual.queue_free()
+			return _fail("%s should animate as one complete base sprite" % active_name)
+		for child in active_visual.get_children():
+			if child is AnimatedSprite2D:
+				active_visual.queue_free()
+				return _fail("%s regressed to a nested motion overlay" % active_name)
+		active_visual.queue_free()
+	# TERRAIN_ART_FIX_TASK tiers 1-3 are all real high-resolution overrides.
+	# Exact canvases make accidental restoration of the tiny pack art obvious,
+	# while authored world widths stop source resolution changing gameplay.
+	var tiered_art := {
+		"cottage_a": Vector2i(384, 300), "cottage_a2": Vector2i(384, 320),
+		"cottage_b": Vector2i(384, 260), "stall": Vector2i(320, 252),
+		"rock3": Vector2i(256, 320), "crypt": Vector2i(256, 300),
+		"signpost": Vector2i(112, 192), "keep_arch": Vector2i(320, 240),
+		"camp_workbench": Vector2i(288, 240), "cook_grill": Vector2i(256, 224),
+		"camp_bonfire": Vector2i(192, 128), "pillar": Vector2i(160, 256),
+		"banner_blue": Vector2i(96, 192), "banner_green": Vector2i(96, 192),
+		"banner_red": Vector2i(96, 192), "hideout_poster": Vector2i(96, 144),
+		"hideout_table": Vector2i(256, 224), "amphora": Vector2i(112, 192),
+		"station_alchemy_t3": Vector2i(320, 256),
+		"station_anvil_t3": Vector2i(320, 288),
+	}
+	for tier_name: String in tiered_art:
+		var actual_size := Vector2i(Art.tex(tier_name).get_size())
+		if actual_size != tiered_art[tier_name]:
+			return _fail("%s tiered-art canvas %s != %s" %
+				[tier_name, actual_size, tiered_art[tier_name]])
+	for scaled_name in [
+		"crypt", "keep_arch", "signpost", "camp_workbench", "cook_grill",
+		"camp_bonfire", "pillar", "banner_blue", "banner_green", "banner_red",
+		"hideout_poster", "hideout_table", "amphora",
+		"station_alchemy_t3", "station_anvil_t3",
+	]:
+		if not Balance.SCENERY_RENDER_WIDTH.has(scaled_name):
+			return _fail("%s high-resolution art lacks a normalized world width" % scaled_name)
+	for blocking_name in [
+		"crypt", "keep_arch", "camp_workbench", "cook_grill",
+		"camp_bonfire", "pillar", "hideout_table",
+		"station_alchemy_t3", "station_anvil_t3",
+	]:
+		if float(Balance.SCENERY_COLLIDER_RADIUS.get(blocking_name, 0.0)) < 28.0:
+			return _fail("%s tiered art lacks a logical blocking footprint" % blocking_name)
+	var bonfire_building := game._add_building("camp_bonfire", Vector2(-4540, -4540))
+	var bonfire_base_anim := 0
+	for child in bonfire_building.get_children():
+		if child is AnimatedSprite2D:
+			bonfire_base_anim += 1
+	if bonfire_base_anim != 1:
+		bonfire_building.queue_free()
+		return _fail("building-path camp_bonfire should use one complete animation strip")
+	bonfire_building.queue_free()
+	# The blue fountain square was an opaque placeholder water strip, while a
+	# 30px circle covered less than half the basin. All fountain aliases now
+	# carry transparent water motion and a two-lobe full-rim footprint.
+	for fountain_name in ["town_fountain", "garden_fountain", "holy_sanctum"]:
+		var fountain := game._add_structure(fountain_name, Vector2(-4550, -4550))
+		var fountain_motion := 0
+		var broad_lobes := 0
+		for child in fountain.get_children():
+			if child is AnimatedSprite2D:
+				fountain_motion += 1
+			elif child is CollisionShape2D:
+				var circle := (child as CollisionShape2D).shape as CircleShape2D
+				if circle != null and circle.radius >= 42.0:
+					broad_lobes += 1
+		if fountain_motion != 1 or broad_lobes != 2:
+			fountain.queue_free()
+			return _fail("%s needs one full animated fountain + two broad basin colliders" %
+				fountain_name)
+		fountain.queue_free()
+	for overlay_free_name in [
+		"town_fountain", "garden_fountain", "holy_sanctum",
+		"keep_courtyard", "magma_judgment", "magma_furnace",
+		"sewer_outfall",
+	]:
+		for decal in Terrains.STRUCTURES[overlay_free_name].get("decals", []):
+			if String(decal.get("sprite", "")) in [
+				"fountain_flow", "sewer_flow", "flame", "ember_smoke",
+			]:
+				return _fail("%s regressed to a pasted motion decal" % overlay_free_name)
+	for solid_name in ["boulder", "rock_volcanic", "spore_vent", "magma_furnace",
+			"crystal_cluster", "garden_statue"]:
+		if float(Balance.SCENERY_COLLIDER_RADIUS.get(solid_name, 0.0)) <= 20.0:
+			return _fail("%s regressed to a legacy undersized scenery collider" % solid_name)
+	var boulder_body := game._add_obstacle("boulder", Vector2(-4575, -4575))
+	var boulder_radius := 0.0
+	for child in boulder_body.get_children():
+		if child is CollisionShape2D:
+			var circle := (child as CollisionShape2D).shape as CircleShape2D
+			if circle != null:
+				boulder_radius = circle.radius
+				break
+	if boulder_radius < 29.0:
+		boulder_body.queue_free()
+		return _fail("boulder runtime footprint ignored its authored radius")
+	boulder_body.queue_free()
 	# The working forge composites an animated furnace part + an animated flame
 	# decal (both self-animate off their strips), carries a forge light, and
 	# has its 2-shape footprint — Lane 2 x Lane 3 in one build.
@@ -4007,7 +4463,7 @@ func _test_asset_seams() -> void:
 		if gt == null:
 			return _fail("showcase terrain %s ground failed to bake" % tid)
 	print("ok: asset seams (ground tilesets / composite structures + decals / animated props)")
-	print("ok: seam showcase (5 authored floors + 8 animated props + animated forge/hearth/fountain/capital structures)")
+	print("ok: seam showcase (5 authored floors + living water/spores/rifts/storm/fire structures)")
 
 
 ## A legacy side-profile NPC has no eight-way strip to select, but must still
@@ -5179,16 +5635,24 @@ func _test_merchant_economy() -> void:
 	if qi.is_empty() or Balance.CONSUMABLE_PRICES.has(String(qi.get("id", ""))):
 		return _fail("quest keepsake is sellable")
 
-	# New consumables apply their effect and are consumed.
+	# New consumables apply their effect and are consumed. Drink gate
+	# (2026-07-21, extended to elixir_ward 2026-07-29): both are budgeted
+	# rotation potions now — grant a room slot and a clear drink cd like a
+	# planned loadout would before each quaff. (Deeper drink-gate coverage —
+	# off-plan refusal, chain-chug closed — lives in _test_elixir_ward_gate.)
 	var keep_cons: Array = p.consumables.duplicate()
 	var keep_dr: float = p.dr_time
 	var keep_dra: float = p.dr_amt
 	var keep_hp: float = p.hp
+	var keep_room_pots: Dictionary = p.room_potions.duplicate()
+	var keep_pcd: float = p.potion_cd
 	p.consumables = []
 
 	p.dr_time = 0.0
 	var ward := Items.make_elixir_ward()
 	p.consumables.append(ward)
+	p.room_potions = {"health": 1, "elixir_ward": 1}
+	p.potion_cd = 0.0
 	p.use_consumable(ward)
 	if p.dr_time <= 0.0 or not is_equal_approx(p.dr_amt, Balance.ELIXIR_WARD_AMT) or p.consumables.has(ward):
 		return _fail("elixir of warding did not apply / wasn't consumed")
@@ -5197,10 +5661,6 @@ func _test_merchant_economy() -> void:
 	var before: float = p.hp
 	var draught := Items.make_renewal_draught()
 	p.consumables.append(draught)
-	# Drink gate (2026-07-21): renewal is budgeted now — grant it a room slot
-	# and a clear drink cd like a planned loadout would.
-	var keep_room_pots: Dictionary = p.room_potions.duplicate()
-	var keep_pcd: float = p.potion_cd
 	p.room_potions = {"health": 1, "renewal_draught": 1}
 	p.potion_cd = 0.0
 	p.use_consumable(draught)
@@ -5557,6 +6017,32 @@ func _test_capital() -> void:
 	var prev: String = game.chapter_id
 	game.enter_capital()
 	await _frames(6)
+	await _capital_in_city()
+	# Leave the way a player does — back to the chapter we came from. This
+	# runs even when the block above FAILED. quit(1) is only QUEUED by _fail,
+	# so the next section still gets its frame: a mid-city failure used to
+	# hand _test_capital_rework_economy a live chapter_id of "capital", where
+	# shop_markup answers a flat 1.0 ("the bazaar sells fair") and the road-
+	# markup assert reported a second, entirely bogus failure (2026-07-26).
+	# Shared state gets restored on EVERY exit path, failures included.
+	if game.menus.is_open():
+		game.menus.close()   # a failure can leave a surface up; leave like the happy path
+	game.switch_chapter(prev, true)
+	if _failed:
+		return
+	await _frames(4)
+	if game.chapter_id != prev:
+		return _fail("capital: failed to restore chapter %s" % prev)
+	_capital_bench_gate()
+	if _failed:
+		return
+	print("ok: capital hub (9-room 3x3, NPC-owned services + dawn shelf + favor + lapidary quest end-to-end, bench gate holds on the road, leaves clean)")
+
+
+## Everything asserted while STANDING in Crownfall — split out (2026-07-26) so
+## that every one of its ~40 failure exits still runs the caller's "leave the
+## city" restore instead of stranding the suite in the capital.
+func _capital_in_city() -> void:
 	if game.chapter_id != "capital":
 		return _fail("capital: enter_capital did not switch (chapter is %s)" % game.chapter_id)
 	# First arrival plays the one-time welcome beat (rework §5) — clear it so
@@ -5734,10 +6220,32 @@ func _test_capital() -> void:
 		game.favor_add("petra", 8)
 		if game.favor_points("petra") != 10:
 			return _fail("capital: steady shard should pay 1.25x favor")
-	p_cap.resonance = keep_res
+	# Hold the shard NEUTRAL across the quest below (restored with the rest of
+	# the loadout at the end). Her turn-in pays FAVOR_QUEST_POINTS through
+	# favor_add, which reads the band — a tempted hero banks 0.75x, i.e. 11 of
+	# the 15 the assert wants. Whatever resonance the campaign that got us here
+	# happened to end on is not this section's business.
+	p_cap.resonance = 0.0
 	# The Lapidary end to end: greet -> the GOSSIP HUB (owner 2026-07-25:
 	# one press, splash dialogue, options) -> the offer hands a training
 	# gem -> the seat-a-stone deed at her benches -> turn-in pays gold+favor.
+	#
+	# LEND HER STUDENT AN EMPTY PACK FIRST (flake fix, 2026-07-26). Her kit
+	# is two objects and needs two free bag slots, and a full bag legally
+	# MAILS the kit instead (_cap_artisan_choice) — which this section reads
+	# as a failure. By the time the suite arrives here the hero carries a
+	# whole campaign of loot (~40 loose gems) in bags whose CAPACITY is
+	# itself loot luck: 30 starter slots plus whatever bag drops rolled
+	# (10%/9%/8% an act). A lucky run has room; an unlucky run is jammed at
+	# capacity, and the section failed on that alone. The bench path is what
+	# is under test, so give it deterministic room and restore the real
+	# loadout below (the kit + its seated stone leave with the lent pack).
+	var keep_bags: Array = p_cap.bags
+	var keep_bp: Array = p_cap.backpack
+	var keep_gem_bag: Array = p_cap.gem_bag
+	p_cap.bags = [Items.make_bag("S")]
+	p_cap.backpack = []
+	p_cap.gem_bag = []
 	p_cap.npc_favor.clear()
 	var keep_gold: int = p_cap.gold
 	var gems_before: int = p_cap.gem_bag.size()
@@ -5755,8 +6263,11 @@ func _test_capital() -> void:
 	await _frames(2)
 	if not game.get_flag("cap_q_gem_on", false):
 		return _fail("capital: lapidary visit did not open her intro quest")
-	if p_cap.gem_bag.size() != gems_before + 1 and game.mailbox.is_empty():
-		return _fail("capital: the training gem was neither bagged nor mailed")
+	# With the pack lent above there is room, so the BENCH path is asserted
+	# outright — the old "...or a letter exists somewhere" disjunct passed on
+	# any leftover mail and let the bag-full case through silently.
+	if p_cap.gem_bag.size() != gems_before + 1:
+		return _fail("capital: the training gem did not reach the bag")
 	if game.menus.is_open():
 		game.menus.close()
 	await _frames(1)
@@ -5769,7 +6280,8 @@ func _test_capital() -> void:
 		if String(bd.get("slot", "")) == "charm" and int(bd.get("gem_slots", 0)) >= 1:
 			kit_charm = bd
 	if kit_charm.is_empty():
-		return _fail("capital: the lapidary kit charm was neither bagged nor mailed")
+		return _fail("capital: the lapidary kit charm did not reach the bag (%d/%d slots used)" %
+			[p_cap.bag_used(), p_cap.bag_capacity()])
 	var train_gem: Dictionary = p_cap.gem_bag[p_cap.gem_bag.size() - 1]
 	if not p_cap.embed_gem_into(kit_charm, train_gem):
 		return _fail("capital: could not seat the training stone in the kit charm")
@@ -5792,13 +6304,17 @@ func _test_capital() -> void:
 	await _frames(1)
 	p_cap.npc_favor = keep_favor
 	p_cap.gold = keep_gold
+	p_cap.resonance = keep_res
+	p_cap.bags = keep_bags
+	p_cap.backpack = keep_bp
+	p_cap.gem_bag = keep_gem_bag
+	p_cap.recalc()
 
-	# Leave the way a player does — back to the chapter we came from.
-	game.switch_chapter(prev, true)
-	await _frames(4)
-	if game.chapter_id != prev:
-		return _fail("capital: failed to restore chapter %s" % prev)
-	# The bench gate: gem work is refused the moment you're back on the road.
+
+## Back on the road after the city block, whether it passed or failed.
+## The bench gate: gem work is refused the moment you're back on the road.
+func _capital_bench_gate() -> void:
+	var p_cap: Player = game.local_player
 	if p_cap != null and game.has_local_player():
 		var road_gem: Dictionary = Items.random_gem(game.loot_rng, 1)
 		var road_item: Dictionary = Items.roll_item_of("armor", "B", RandomNumberGenerator.new(), p_cap.cls)
@@ -5806,7 +6322,6 @@ func _test_capital() -> void:
 			Items.add_socket(road_item)
 		if p_cap.gem_socket_error(road_item, road_gem) == "":
 			return _fail("capital: field socketing should be refused outside Crownfall")
-	print("ok: capital hub (9-room 3x3, NPC-owned services + dawn shelf + favor + lapidary quest end-to-end, bench gate holds on the road, leaves clean)")
 
 
 ## The KEYBOARD twin of the touch overlay gate (cross-product audit 2026-07-21).
@@ -6280,6 +6795,15 @@ func _test_waking() -> void:
 ## clamped bell curve, deterministic per (run, room); npc_favor and the
 ## bazaar's dawn shelf ride the character save.
 func _test_capital_rework_economy() -> void:
+	# Precondition, said out loud (2026-07-26): the road markup only EXISTS on
+	# the road — shop_markup answers a flat 1.0 in the capital, in an endgame
+	# arena, and for any chapter off the campaign list. Reading a world some
+	# earlier section left behind therefore looks exactly like a broken curve
+	# ("markup 1.000 left the [1.10, 1.20] clamp"), which is a lie about this
+	# section. Name the real fault instead.
+	if game.chapter_id == "capital" or game.endgame_active \
+			or not Story.CHAPTER_LIST.has(game.chapter_id):
+		return _fail("capital economy: road markup needs a campaign chapter, not '%s' — an earlier section leaked its world state" % game.chapter_id)
 	var lo := 1.0 + Balance.ROAD_MARKUP_MIN
 	var hi := 1.0 + Balance.ROAD_MARKUP_MAX
 	if game.shop_markup(3) != game.shop_markup(3):
@@ -6318,3 +6842,74 @@ func _test_capital_rework_economy() -> void:
 	game.capital_bags = keep_bags
 	game.capital_shop_day = keep_day
 	print("ok: capital rework economy (deterministic clamped road-markup curve; favor + dawn shelf save round-trip)")
+
+
+# ---- CONTENT: elixir_ward joins the drink gate (2026-07-29) ---------------
+## elixir_ward shipped with NO _drink_gate in its use_consumable branch, so it
+## never spent a room slot nor armed potion_cd — chain-chugging bought near-
+## permanent 25% DR with gold the only limit (the exact bypass the 2026-07-21
+## rule at items.gd closed for renewal_draught). This pins the fix: ward is a
+## ROTATION_POTIONS type, its bag click is REFUSED off-plan, a budgeted drink
+## works once, and the very next drink is REFUSED (cd armed + slot spent) —
+## proving the chain is broken. New func + one hook call per CLAUDE.md; the
+## existing _test_consumables section is left untouched.
+func _test_elixir_ward_gate() -> void:
+	var p := game.player
+	var keep_cons: Array = p.consumables.duplicate()
+	var keep_rotation: Array = p.potion_rotation.duplicate()
+	var keep_room_pots: Dictionary = p.room_potions.duplicate()
+	var keep_active: String = p.active_potion
+	var keep_pcd: float = p.potion_cd
+	var keep_drt: float = p.dr_time
+	var keep_dra: float = p.dr_amt
+
+	# The fix's load-bearing datum: ward can slot in the rotation, so the
+	# ALWAYS-spends-the-budget rule applies to it.
+	if not ("elixir_ward" in Items.ROTATION_POTIONS):
+		return _fail("elixir_ward must be a ROTATION_POTIONS type so the drink gate governs it")
+
+	p.consumables = []
+	p.dr_time = 0.0
+	p.dr_amt = 0.0
+
+	# (a) Off-plan bag click is REFUSED — no ward budget this room.
+	p.potion_cd = 0.0
+	p.potion_rotation = []
+	p.reset_room_potions()
+	var ward := Items.make_elixir_ward()
+	p.consumables.append(ward)
+	p.use_consumable(ward)
+	if p.dr_time > 0.0 or not p.consumables.has(ward):
+		return _fail("off-plan elixir_ward should be refused (chain-chug bypass fix)")
+
+	# (b) Budgeted + cd clear: it wards once, is consumed, spends its slot, arms cd.
+	p.potion_rotation = ["elixir_ward"]
+	p.room_potions = {"elixir_ward": 1}
+	p.potion_cd = 0.0
+	p.use_consumable(ward)
+	if p.dr_time <= 0.0 or absf(p.dr_amt - Balance.ELIXIR_WARD_AMT) > 0.001:
+		return _fail("budgeted elixir_ward did not apply its damage-reduction window")
+	if p.consumables.has(ward):
+		return _fail("elixir_ward was not consumed on a budgeted drink")
+	if int(p.room_potions.get("elixir_ward", 0)) != 0:
+		return _fail("elixir_ward did not spend its room-budget slot")
+	if p.potion_cd <= 0.0:
+		return _fail("elixir_ward did not arm the drink cooldown")
+
+	# (c) The chain is broken: an immediate second ward is REFUSED (cd armed +
+	# slot already spent), so it survives in the bag instead of chugging.
+	var ward2 := Items.make_elixir_ward()
+	p.consumables.append(ward2)
+	p.use_consumable(ward2)
+	if not p.consumables.has(ward2):
+		return _fail("a second elixir_ward drank through the armed cd/spent budget — chain-chug still open")
+
+	# Restore.
+	p.consumables = keep_cons
+	p.potion_rotation = keep_rotation
+	p.room_potions = keep_room_pots
+	p.active_potion = keep_active
+	p.potion_cd = keep_pcd
+	p.dr_time = keep_drt
+	p.dr_amt = keep_dra
+	print("ok: elixir_ward drink gate (off-plan refused, budgeted once, chain-chug closed)")
