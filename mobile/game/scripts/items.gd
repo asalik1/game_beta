@@ -41,6 +41,9 @@ const SLOT_ICON := {"weapon": "⚔", "helmet": "🪖", "armor": "🛡", "gloves"
 # The existing four keep their values; the three new slot into the hierarchy
 # (helmet/pants solid armor, gloves minor). Total 12.5 -> 19.5 (+56%) — the L42
 # benchmark envelope shifts up, so mobs/bosses recalibrate for it (owner step 4).
+# STEP 4 DONE (2026-07-27, dps-bench round): at-level re-measured ON budget
+# (L42/A finale 41.9s vs ~40s), so the recalibration landed as the endgame
+# GEAR-power curve (Balance.GEAR_POWER_ANCHORS) instead of an in-band retune.
 const SLOT_MAIN_BUDGET := {"weapon": 5.0, "helmet": 2.5, "armor": 3.0, "gloves": 2.0, "pants": 2.5, "boots": 2.0, "charm": 2.5}
 # Mirror of Classes.CLASSES[cls]["primary"] — items.gd must not preload
 # classes.gd (same rule as CLASSES_DMG_TYPE below).
@@ -70,12 +73,12 @@ const CLASS_WEAPONS := {
 # (armor/boots/charm are not here yet; they still roll the shared SLOT_NAMES shapes
 # until their own matrix pass.)
 const CLASS_GEAR := {
-	"warrior": {"helmet": ["Wardsteel Helm", "Ironwall Helm", "Skirmisher's Helm", "Reaver Helm", "Titan Helm"], "gloves": ["Wardsteel Gauntlets", "Ironwall Gauntlets", "Skirmisher's Gauntlets", "Reaver Gauntlets", "Titan Gauntlets"], "pants": ["Wardsteel Legplates", "Ironwall Legplates", "Skirmisher's Legplates", "Reaver Legplates", "Titan Legplates"]},
-	"archer": {"helmet": ["Stormweave Hood", "Studded Hood", "Ranger's Hood", "Hunter's Hood", "Beastpelt Hood"], "gloves": ["Stormweave Bracers", "Studded Bracers", "Ranger's Bracers", "Hunter's Bracers", "Beastpelt Bracers"], "pants": ["Stormweave Leggings", "Studded Leggings", "Ranger's Leggings", "Hunter's Leggings", "Beastpelt Leggings"]},
-	"assassin": {"helmet": ["Shadowveil Cowl", "Warded Cowl", "Gossamer Cowl", "Nightsilk Cowl", "Grave Cowl"], "gloves": ["Shadowveil Grips", "Warded Grips", "Gossamer Grips", "Nightsilk Grips", "Grave Grips"], "pants": ["Shadowveil Wraps", "Warded Wraps", "Gossamer Wraps", "Nightsilk Wraps", "Grave Wraps"]},
-	"mage": {"helmet": ["Silkward Circlet", "Runeplate Circlet", "Featherweave Circlet", "Starweave Circlet", "Earthen Circlet"], "gloves": ["Silkward Handwraps", "Runeplate Handwraps", "Featherweave Handwraps", "Starweave Handwraps", "Earthen Handwraps"], "pants": ["Silkward Underleggings", "Runeplate Underleggings", "Featherweave Underleggings", "Starweave Underleggings", "Earthen Underleggings"]},
-	"paladin": {"helmet": ["Blessed Greathelm", "Templar Greathelm", "Vigil Greathelm", "Zealot Greathelm", "Sanctified Greathelm"], "gloves": ["Blessed Gauntlets", "Templar Gauntlets", "Vigil Gauntlets", "Zealot Gauntlets", "Sanctified Gauntlets"], "pants": ["Blessed Legguards", "Templar Legguards", "Vigil Legguards", "Zealot Legguards", "Sanctified Legguards"]},
-	"warlock": {"helmet": ["Voidsilk Hood", "Bonemail Hood", "Shadeweave Hood", "Ruinweave Hood", "Bloodpact Hood"], "gloves": ["Voidsilk Claws", "Bonemail Claws", "Shadeweave Claws", "Ruinweave Claws", "Bloodpact Claws"], "pants": ["Voidsilk Chausses", "Bonemail Chausses", "Shadeweave Chausses", "Ruinweave Chausses", "Bloodpact Chausses"]},
+	"warrior": {"helmet": ["Wardsteel Helm", "Ironwall Helm", "Skirmisher's Helm", "Reaver Helm", "Titan Helm"], "gloves": ["Wardsteel Gauntlets", "Ironwall Gauntlets", "Skirmisher's Gauntlets", "Reaver Gauntlets", "Titan Gauntlets"], "pants": ["Wardsteel Legplates", "Ironwall Legplates", "Skirmisher's Legplates", "Reaver Legplates", "Titan Legplates"], "armor": ["Wardsteel Plate", "Ironwall Plate", "Skirmisher's Halfplate", "Bloodforged Harness", "Titanplate"], "boots": ["Wardstep Greaves", "Sabatons", "Skirmisher's Boots", "Reaver Treads", "Anchorplate"], "charm": ["Warbanner", "Oath Sigil", "Butcher's Token", "Duelist's Knot", "Heart of the Wall"]},
+	"archer": {"helmet": ["Stormweave Hood", "Studded Hood", "Ranger's Hood", "Hunter's Hood", "Beastpelt Hood"], "gloves": ["Stormweave Bracers", "Studded Bracers", "Ranger's Bracers", "Hunter's Bracers", "Beastpelt Bracers"], "pants": ["Stormweave Leggings", "Studded Leggings", "Ranger's Leggings", "Hunter's Leggings", "Beastpelt Leggings"], "armor": ["Stormweave Jerkin", "Studded Brigandine", "Ranger's Leathers", "Hunter's Harness", "Beastpelt"], "boots": ["Piercer's Cleats", "Windstriders", "Marksman's Stance", "Wardedsole", "Trailboots"], "charm": ["Fletcher's Token", "Windfeather", "Hunter's Totem", "Stonebark Ward", "Greenheart Idol"]},
+	"assassin": {"helmet": ["Shadowveil Cowl", "Warded Cowl", "Gossamer Cowl", "Nightsilk Cowl", "Grave Cowl"], "gloves": ["Shadowveil Grips", "Warded Grips", "Gossamer Grips", "Nightsilk Grips", "Grave Grips"], "pants": ["Shadowveil Wraps", "Warded Wraps", "Gossamer Wraps", "Nightsilk Wraps", "Grave Wraps"], "armor": ["Shadowveil Cloak", "Warded Mantle", "Gossamer Cloak", "Nightsilk Wrap", "Verdant Shroud"], "boots": ["Slipsteps", "Prowlers", "Venomtread", "Ironsole Wraps", "Grave Treads"], "charm": ["Killer's Mark", "Poisoner's Vial", "Ghostlight Charm", "Bloodoath Cord", "Wraithbone Fetish"]},
+	"mage": {"helmet": ["Silkward Circlet", "Runeplate Circlet", "Featherweave Circlet", "Starweave Circlet", "Earthen Circlet"], "gloves": ["Silkward Handwraps", "Runeplate Handwraps", "Featherweave Handwraps", "Starweave Handwraps", "Earthen Handwraps"], "pants": ["Silkward Underleggings", "Runeplate Underleggings", "Featherweave Underleggings", "Starweave Underleggings", "Earthen Underleggings"], "armor": ["Silk Vestments", "Runeplate Robe", "Featherweave Robe", "Starweave Robe", "Earthen Robe"], "boots": ["Starstep", "Levitation Slippers", "Sigil Sandals", "Wardstone Shoes", "Rootbound Sandals"], "charm": ["Arcane Orb", "Starshard", "Aegis Crystal", "Zephyr Sigil", "Lifebloom Pendant"]},
+	"paladin": {"helmet": ["Blessed Greathelm", "Templar Greathelm", "Vigil Greathelm", "Zealot Greathelm", "Sanctified Greathelm"], "gloves": ["Blessed Gauntlets", "Templar Gauntlets", "Vigil Gauntlets", "Zealot Gauntlets", "Sanctified Gauntlets"], "pants": ["Blessed Legguards", "Templar Legguards", "Vigil Legguards", "Zealot Legguards", "Sanctified Legguards"], "armor": ["Templar Plate", "Blessed Plate", "Vigil Halfplate", "Zealot Harness", "Sanctified Bulwark"], "boots": ["Zealot's Cleats", "Sabatons of the Oath", "Vigil Steps", "Radiant Greaves", "Pilgrim's Resolve"], "charm": ["Reliquary", "Sunburst Icon", "Judgment Sigil", "Swiftvow Cord", "Oathkeeper's Seal"]},
+	"warlock": {"helmet": ["Voidsilk Hood", "Bonemail Hood", "Shadeweave Hood", "Ruinweave Hood", "Bloodpact Hood"], "gloves": ["Voidsilk Claws", "Bonemail Claws", "Shadeweave Claws", "Ruinweave Claws", "Bloodpact Claws"], "pants": ["Voidsilk Chausses", "Bonemail Chausses", "Shadeweave Chausses", "Ruinweave Chausses", "Bloodpact Chausses"], "armor": ["Voidsilk Robe", "Bonemail", "Shadeweave Robe", "Ruinweave", "Bloodpact Vestment"], "boots": ["Ruinstep", "Shadowstep Wraps", "Hexcarved Treads", "Bonewalkers", "Gravebound Boots"], "charm": ["Soul Fetish", "Cursed Idol", "Ward of Ash", "Umbral Cord", "Heartcage"]},
 }
 
 # SLOT_NAMES[slot] = the union of every class's rollable shapes (the classless
@@ -89,11 +92,11 @@ const SLOT_NAMES := {
 		"Lance", "Oathflail", "Duelist's Blade", "Aegis Mace", "Warmaul",
 		"Grimoire", "Hexblade", "Whisper Rod", "Pactshield Codex", "Grimheart Staff"],
 	"helmet": ["Wardsteel Helm", "Ironwall Helm", "Skirmisher's Helm", "Reaver Helm", "Titan Helm", "Stormweave Hood", "Studded Hood", "Ranger's Hood", "Hunter's Hood", "Beastpelt Hood", "Shadowveil Cowl", "Warded Cowl", "Gossamer Cowl", "Nightsilk Cowl", "Grave Cowl", "Silkward Circlet", "Runeplate Circlet", "Featherweave Circlet", "Starweave Circlet", "Earthen Circlet", "Blessed Greathelm", "Templar Greathelm", "Vigil Greathelm", "Zealot Greathelm", "Sanctified Greathelm", "Voidsilk Hood", "Bonemail Hood", "Shadeweave Hood", "Ruinweave Hood", "Bloodpact Hood"],
-	"armor":  ["Plate", "Mail", "Guard"],
+	"armor":  ["Wardsteel Plate", "Ironwall Plate", "Skirmisher's Halfplate", "Bloodforged Harness", "Titanplate", "Stormweave Jerkin", "Studded Brigandine", "Ranger's Leathers", "Hunter's Harness", "Beastpelt", "Shadowveil Cloak", "Warded Mantle", "Gossamer Cloak", "Nightsilk Wrap", "Verdant Shroud", "Silk Vestments", "Runeplate Robe", "Featherweave Robe", "Starweave Robe", "Earthen Robe", "Templar Plate", "Blessed Plate", "Vigil Halfplate", "Zealot Harness", "Sanctified Bulwark", "Voidsilk Robe", "Bonemail", "Shadeweave Robe", "Ruinweave", "Bloodpact Vestment"],
 	"gloves": ["Wardsteel Gauntlets", "Ironwall Gauntlets", "Skirmisher's Gauntlets", "Reaver Gauntlets", "Titan Gauntlets", "Stormweave Bracers", "Studded Bracers", "Ranger's Bracers", "Hunter's Bracers", "Beastpelt Bracers", "Shadowveil Grips", "Warded Grips", "Gossamer Grips", "Nightsilk Grips", "Grave Grips", "Silkward Handwraps", "Runeplate Handwraps", "Featherweave Handwraps", "Starweave Handwraps", "Earthen Handwraps", "Blessed Gauntlets", "Templar Gauntlets", "Vigil Gauntlets", "Zealot Gauntlets", "Sanctified Gauntlets", "Voidsilk Claws", "Bonemail Claws", "Shadeweave Claws", "Ruinweave Claws", "Bloodpact Claws"],
 	"pants":  ["Wardsteel Legplates", "Ironwall Legplates", "Skirmisher's Legplates", "Reaver Legplates", "Titan Legplates", "Stormweave Leggings", "Studded Leggings", "Ranger's Leggings", "Hunter's Leggings", "Beastpelt Leggings", "Shadowveil Wraps", "Warded Wraps", "Gossamer Wraps", "Nightsilk Wraps", "Grave Wraps", "Silkward Underleggings", "Runeplate Underleggings", "Featherweave Underleggings", "Starweave Underleggings", "Earthen Underleggings", "Blessed Legguards", "Templar Legguards", "Vigil Legguards", "Zealot Legguards", "Sanctified Legguards", "Voidsilk Chausses", "Bonemail Chausses", "Shadeweave Chausses", "Ruinweave Chausses", "Bloodpact Chausses"],
-	"boots":  ["Boots", "Striders", "Treads"],
-	"charm":  ["Charm", "Talisman", "Sigil"],
+	"boots":  ["Wardstep Greaves", "Sabatons", "Skirmisher's Boots", "Reaver Treads", "Anchorplate", "Piercer's Cleats", "Windstriders", "Marksman's Stance", "Wardedsole", "Trailboots", "Slipsteps", "Prowlers", "Venomtread", "Ironsole Wraps", "Grave Treads", "Starstep", "Levitation Slippers", "Sigil Sandals", "Wardstone Shoes", "Rootbound Sandals", "Zealot's Cleats", "Sabatons of the Oath", "Vigil Steps", "Radiant Greaves", "Pilgrim's Resolve", "Ruinstep", "Shadowstep Wraps", "Hexcarved Treads", "Bonewalkers", "Gravebound Boots"],
+	"charm":  ["Warbanner", "Oath Sigil", "Butcher's Token", "Duelist's Knot", "Heart of the Wall", "Fletcher's Token", "Windfeather", "Hunter's Totem", "Stonebark Ward", "Greenheart Idol", "Killer's Mark", "Poisoner's Vial", "Ghostlight Charm", "Bloodoath Cord", "Wraithbone Fetish", "Arcane Orb", "Starshard", "Aegis Crystal", "Zephyr Sigil", "Lifebloom Pendant", "Reliquary", "Sunburst Icon", "Judgment Sigil", "Swiftvow Cord", "Oathkeeper's Seal", "Soul Fetish", "Cursed Idol", "Ward of Ash", "Umbral Cord", "Heartcage"],
 }
 
 # One representative prefix per grade (used in the codex).
@@ -157,10 +160,10 @@ const UNIQUES := [
 	{"name": "Bastion's Tooth", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "A", "art": "u_bastions_tooth", "passive": "reprisal"},
 	{"name": "The Gate That Walks", "cls": "warrior", "slot": "weapon", "noun": "Bulwark Blade", "grade": "S", "art": "u_the_gate_that_walks", "passive": "thegate"},
 	{"name": "Gravesong", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "A", "art": "u_gravesong", "passive": "dirge"},
-	{"name": "Crownfall, the Kingdom's End", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "S", "art": "u_crownfall_the_kingdoms_end", "passive": "aftershock"},
+	{"name": "Crownfall, the Kingdom's End", "cls": "warrior", "slot": "weapon", "noun": "Claymore", "grade": "S", "art": "u_crownfall_the_kingdoms_end", "passive": "kingsblade"},
 	# --- Archer weapons ---
 	{"name": "Siegebough", "cls": "archer", "slot": "weapon", "noun": "Warbow", "grade": "A", "art": "u_siegebough", "passive": "siegebolt"},
-	{"name": "Tempest Yew, Bow of the Last Gale", "cls": "archer", "slot": "weapon", "noun": "Warbow", "grade": "S", "art": "u_tempest_yew_bow_of_the_last_gale", "passive": "gale"},
+	{"name": "Tempest Yew, Bow of the Last Gale", "cls": "archer", "slot": "weapon", "noun": "Warbow", "grade": "S", "art": "u_tempest_yew_bow_of_the_last_gale", "passive": "windward"},
 	{"name": "Far-Witness", "cls": "archer", "slot": "weapon", "noun": "Longbow", "grade": "A", "art": "u_far_witness", "passive": "farsight"},
 	{"name": "Skyline, the Arrow Before Dawn", "cls": "archer", "slot": "weapon", "noun": "Longbow", "grade": "S", "art": "u_skyline_the_arrow_before_dawn", "passive": "herald"},
 	{"name": "Foxfire String", "cls": "archer", "slot": "weapon", "noun": "Hunting Bow", "grade": "A", "art": "u_foxfire_string", "passive": "foxfire"},
@@ -175,7 +178,7 @@ const UNIQUES := [
 	{"name": "Widow's Compass", "cls": "assassin", "slot": "weapon", "noun": "Shuriken", "grade": "A", "art": "u_widows_compass", "passive": "compass"},
 	{"name": "End of Night", "cls": "assassin", "slot": "weapon", "noun": "Shuriken", "grade": "S", "art": "u_end_of_night", "passive": "midnight"},
 	{"name": "Mothknife", "cls": "assassin", "slot": "weapon", "noun": "Glasswing", "grade": "A", "art": "u_mothknife", "passive": "mothdust"},
-	{"name": "Pale Flight, Blade Between Heartbeats", "cls": "assassin", "slot": "weapon", "noun": "Glasswing", "grade": "S", "art": "u_pale_flight_blade_between_heartbeats", "passive": "heartbeat"},
+	{"name": "Pale Flight, Blade Between Heartbeats", "cls": "assassin", "slot": "weapon", "noun": "Glasswing", "grade": "S", "art": "u_pale_flight_blade_between_heartbeats", "passive": "mirrorstep"},
 	{"name": "Parryshade", "cls": "assassin", "slot": "weapon", "noun": "Warded Fang", "grade": "A", "art": "u_parryshade", "passive": "parry"},
 	{"name": "The Hand That Refused Death", "cls": "assassin", "slot": "weapon", "noun": "Warded Fang", "grade": "S", "art": "u_the_hand_that_refused_death", "passive": "refusal"},
 	{"name": "Red Arithmetic", "cls": "assassin", "slot": "weapon", "noun": "Cleaver", "grade": "A", "art": "u_red_arithmetic", "passive": "arithmetic"},
@@ -190,7 +193,7 @@ const UNIQUES := [
 	{"name": "Springwake", "cls": "mage", "slot": "weapon", "noun": "Bloomstaff", "grade": "A", "art": "u_springwake", "passive": "springwake"},
 	{"name": "Verdancy, Staff of the Worldroot", "cls": "mage", "slot": "weapon", "noun": "Bloomstaff", "grade": "S", "art": "u_verdancy_staff_of_the_worldroot", "passive": "worldroot"},
 	{"name": "Atlas Branch", "cls": "mage", "slot": "weapon", "noun": "Greatstaff", "grade": "A", "art": "u_atlas_branch", "passive": "atlas"},
-	{"name": "Firmament, the Heaven-Bearing Staff", "cls": "mage", "slot": "weapon", "noun": "Greatstaff", "grade": "S", "art": "u_firmament_the_heaven_bearing_staff", "passive": "skyfall"},
+	{"name": "Firmament, the Heaven-Bearing Staff", "cls": "mage", "slot": "weapon", "noun": "Greatstaff", "grade": "S", "art": "u_firmament_the_heaven_bearing_staff", "passive": "wellspring"},
 	# --- Paladin weapons ---
 	{"name": "Vowspike", "cls": "paladin", "slot": "weapon", "noun": "Lance", "grade": "A", "art": "u_vowspike", "passive": "vow"},
 	{"name": "Noonday, Lance of the Unshadowed", "cls": "paladin", "slot": "weapon", "noun": "Lance", "grade": "S", "art": "u_noonday_lance_of_the_unshadowed", "passive": "noonday"},
@@ -201,10 +204,10 @@ const UNIQUES := [
 	{"name": "Chapel Knell", "cls": "paladin", "slot": "weapon", "noun": "Aegis Mace", "grade": "A", "art": "u_chapel_knell", "passive": "knell"},
 	{"name": "The Bastion's Answer", "cls": "paladin", "slot": "weapon", "noun": "Aegis Mace", "grade": "S", "art": "u_the_bastions_answer", "passive": "answer"},
 	{"name": "Pilgrim's Burden", "cls": "paladin", "slot": "weapon", "noun": "Warmaul", "grade": "A", "art": "u_pilgrims_burden", "passive": "burden"},
-	{"name": "Dawnfall, Hammer of the Final Oath", "cls": "paladin", "slot": "weapon", "noun": "Warmaul", "grade": "S", "art": "u_dawnfall_hammer_of_the_final_oath", "passive": "dawnfall"},
+	{"name": "Dawnfall, Hammer of the Final Oath", "cls": "paladin", "slot": "weapon", "noun": "Warmaul", "grade": "S", "art": "u_dawnfall_hammer_of_the_final_oath", "passive": "dawnbreaker"},
 	# --- Warlock weapons ---
 	{"name": "Ink of Teeth", "cls": "warlock", "slot": "weapon", "noun": "Grimoire", "grade": "A", "art": "u_ink_of_teeth", "passive": "inkteeth"},
-	{"name": "The Book That Remembers You", "cls": "warlock", "slot": "weapon", "noun": "Grimoire", "grade": "S", "art": "u_the_book_that_remembers_you", "passive": "remembrance"},
+	{"name": "The Book That Remembers You", "cls": "warlock", "slot": "weapon", "noun": "Grimoire", "grade": "S", "art": "u_the_book_that_remembers_you", "passive": "voidmaw"},
 	{"name": "Debtcollector", "cls": "warlock", "slot": "weapon", "noun": "Hexblade", "grade": "A", "art": "u_debtcollector", "passive": "collection"},
 	{"name": "Black Clause, Edge of the Final Bargain", "cls": "warlock", "slot": "weapon", "noun": "Hexblade", "grade": "S", "art": "u_black_clause_edge_of_the_final_bargain", "passive": "clause"},
 	{"name": "Hushbone", "cls": "warlock", "slot": "weapon", "noun": "Whisper Rod", "grade": "A", "art": "u_hushbone", "passive": "hush"},
@@ -213,6 +216,370 @@ const UNIQUES := [
 	{"name": "The Cover Between Worlds", "cls": "warlock", "slot": "weapon", "noun": "Pactshield Codex", "grade": "S", "art": "u_the_cover_between_worlds", "passive": "thecover"},
 	{"name": "Veinroot", "cls": "warlock", "slot": "weapon", "noun": "Grimheart Staff", "grade": "A", "art": "u_veinroot", "passive": "veinroot"},
 	{"name": "Red Reliquary, Staff of the Last Pulse", "cls": "warlock", "slot": "weapon", "noun": "Grimheart Staff", "grade": "S", "art": "u_red_reliquary_staff_of_the_last_pulse", "passive": "lastpulse"},
+	# ===== ARMOR-FAMILY + ARMOR/BOOTS/CHARM UNIQUES (2026-07-27) =====
+	# 360 rows from GEAR_UNIQUE_ART_MANIFEST.md; passives are the bespoke
+	# catalog of GEAR_ARMOR_UNIQUE_PASSIVES.md §4 (verb + class beat), ids
+	# structural <cls>_<slot>_<profile><lane>, knobs in Balance.UNIQ.
+	{"name": "Spellscar Helm", "cls": "warrior", "slot": "helmet", "noun": "Wardsteel Helm", "grade": "A", "art": "u_spellscar_helm", "passive": "warrior_helmet_Aa"},
+	{"name": "Nullward, Helm of the Crownless Host", "cls": "warrior", "slot": "helmet", "noun": "Wardsteel Helm", "grade": "S", "art": "u_nullward_helm_of_the_crownless_host", "passive": "warrior_helmet_As"},
+	{"name": "Gatebrow Helm", "cls": "warrior", "slot": "helmet", "noun": "Ironwall Helm", "grade": "A", "art": "u_gatebrow_helm", "passive": "warrior_helmet_Ba"},
+	{"name": "Unbroken, Helm of the Crownless Host", "cls": "warrior", "slot": "helmet", "noun": "Ironwall Helm", "grade": "S", "art": "u_unbroken_helm_of_the_crownless_host", "passive": "warrior_helmet_Bs"},
+	{"name": "Windcut Helm", "cls": "warrior", "slot": "helmet", "noun": "Skirmisher's Helm", "grade": "A", "art": "u_windcut_helm", "passive": "warrior_helmet_Ca"},
+	{"name": "No Horizon, Helm of the Crownless Host", "cls": "warrior", "slot": "helmet", "noun": "Skirmisher's Helm", "grade": "S", "art": "u_no_horizon_helm_of_the_crownless_host", "passive": "warrior_helmet_Cs"},
+	{"name": "Red Antler Helm", "cls": "warrior", "slot": "helmet", "noun": "Reaver Helm", "grade": "A", "art": "u_red_antler_helm", "passive": "warrior_helmet_Da"},
+	{"name": "Warhowl, Helm of the Crownless Host", "cls": "warrior", "slot": "helmet", "noun": "Reaver Helm", "grade": "S", "art": "u_warhowl_helm_of_the_crownless_host", "passive": "warrior_helmet_Ds"},
+	{"name": "Mountainheart Helm", "cls": "warrior", "slot": "helmet", "noun": "Titan Helm", "grade": "A", "art": "u_mountainheart_helm", "passive": "warrior_helmet_Ea"},
+	{"name": "Stonefather, Helm of the Crownless Host", "cls": "warrior", "slot": "helmet", "noun": "Titan Helm", "grade": "S", "art": "u_stonefather_helm_of_the_crownless_host", "passive": "warrior_helmet_Es"},
+	{"name": "Spellscar Gauntlets", "cls": "warrior", "slot": "gloves", "noun": "Wardsteel Gauntlets", "grade": "A", "art": "u_spellscar_gauntlets", "passive": "warrior_gloves_Aa"},
+	{"name": "Nullward, Hands of the Crownless Host", "cls": "warrior", "slot": "gloves", "noun": "Wardsteel Gauntlets", "grade": "S", "art": "u_nullward_hands_of_the_crownless_host", "passive": "warrior_gloves_As"},
+	{"name": "Gatebrow Gauntlets", "cls": "warrior", "slot": "gloves", "noun": "Ironwall Gauntlets", "grade": "A", "art": "u_gatebrow_gauntlets", "passive": "warrior_gloves_Ba"},
+	{"name": "Unbroken, Hands of the Crownless Host", "cls": "warrior", "slot": "gloves", "noun": "Ironwall Gauntlets", "grade": "S", "art": "u_unbroken_hands_of_the_crownless_host", "passive": "warrior_gloves_Bs"},
+	{"name": "Windcut Gauntlets", "cls": "warrior", "slot": "gloves", "noun": "Skirmisher's Gauntlets", "grade": "A", "art": "u_windcut_gauntlets", "passive": "warrior_gloves_Ca"},
+	{"name": "No Horizon, Hands of the Crownless Host", "cls": "warrior", "slot": "gloves", "noun": "Skirmisher's Gauntlets", "grade": "S", "art": "u_no_horizon_hands_of_the_crownless_host", "passive": "warrior_gloves_Cs"},
+	{"name": "Red Antler Gauntlets", "cls": "warrior", "slot": "gloves", "noun": "Reaver Gauntlets", "grade": "A", "art": "u_red_antler_gauntlets", "passive": "warrior_gloves_Da"},
+	{"name": "Warhowl, Hands of the Crownless Host", "cls": "warrior", "slot": "gloves", "noun": "Reaver Gauntlets", "grade": "S", "art": "u_warhowl_hands_of_the_crownless_host", "passive": "warrior_gloves_Ds"},
+	{"name": "Mountainheart Gauntlets", "cls": "warrior", "slot": "gloves", "noun": "Titan Gauntlets", "grade": "A", "art": "u_mountainheart_gauntlets", "passive": "warrior_gloves_Ea"},
+	{"name": "Stonefather, Hands of the Crownless Host", "cls": "warrior", "slot": "gloves", "noun": "Titan Gauntlets", "grade": "S", "art": "u_stonefather_hands_of_the_crownless_host", "passive": "warrior_gloves_Es"},
+	{"name": "Spellscar Legplates", "cls": "warrior", "slot": "pants", "noun": "Wardsteel Legplates", "grade": "A", "art": "u_spellscar_legplates", "passive": "warrior_pants_Aa"},
+	{"name": "Nullward, Legplates of the Crownless Host", "cls": "warrior", "slot": "pants", "noun": "Wardsteel Legplates", "grade": "S", "art": "u_nullward_legplates_of_the_crownless_host", "passive": "warrior_pants_As"},
+	{"name": "Gatebrow Legplates", "cls": "warrior", "slot": "pants", "noun": "Ironwall Legplates", "grade": "A", "art": "u_gatebrow_legplates", "passive": "warrior_pants_Ba"},
+	{"name": "Unbroken, Legplates of the Crownless Host", "cls": "warrior", "slot": "pants", "noun": "Ironwall Legplates", "grade": "S", "art": "u_unbroken_legplates_of_the_crownless_host", "passive": "warrior_pants_Bs"},
+	{"name": "Windcut Legplates", "cls": "warrior", "slot": "pants", "noun": "Skirmisher's Legplates", "grade": "A", "art": "u_windcut_legplates", "passive": "warrior_pants_Ca"},
+	{"name": "No Horizon, Legplates of the Crownless Host", "cls": "warrior", "slot": "pants", "noun": "Skirmisher's Legplates", "grade": "S", "art": "u_no_horizon_legplates_of_the_crownless_host", "passive": "warrior_pants_Cs"},
+	{"name": "Red Antler Legplates", "cls": "warrior", "slot": "pants", "noun": "Reaver Legplates", "grade": "A", "art": "u_red_antler_legplates", "passive": "warrior_pants_Da"},
+	{"name": "Warhowl, Legplates of the Crownless Host", "cls": "warrior", "slot": "pants", "noun": "Reaver Legplates", "grade": "S", "art": "u_warhowl_legplates_of_the_crownless_host", "passive": "warrior_pants_Ds"},
+	{"name": "Mountainheart Legplates", "cls": "warrior", "slot": "pants", "noun": "Titan Legplates", "grade": "A", "art": "u_mountainheart_legplates", "passive": "warrior_pants_Ea"},
+	{"name": "Stonefather, Legplates of the Crownless Host", "cls": "warrior", "slot": "pants", "noun": "Titan Legplates", "grade": "S", "art": "u_stonefather_legplates_of_the_crownless_host", "passive": "warrior_pants_Es"},
+	{"name": "Stormneedle Hood", "cls": "archer", "slot": "helmet", "noun": "Stormweave Hood", "grade": "A", "art": "u_stormneedle_hood", "passive": "archer_helmet_Aa"},
+	{"name": "Tempest Crown, Hood of the Last Gale", "cls": "archer", "slot": "helmet", "noun": "Stormweave Hood", "grade": "S", "art": "u_tempest_crown_hood_of_the_last_gale", "passive": "archer_helmet_As"},
+	{"name": "Rivetleaf Hood", "cls": "archer", "slot": "helmet", "noun": "Studded Hood", "grade": "A", "art": "u_rivetleaf_hood", "passive": "archer_helmet_Ba"},
+	{"name": "Ironwood Witness, Hood of the Last Gale", "cls": "archer", "slot": "helmet", "noun": "Studded Hood", "grade": "S", "art": "u_ironwood_witness_hood_of_the_last_gale", "passive": "archer_helmet_Bs"},
+	{"name": "Windfeather Hood", "cls": "archer", "slot": "helmet", "noun": "Ranger's Hood", "grade": "A", "art": "u_windfeather_hood", "passive": "archer_helmet_Ca"},
+	{"name": "White Wind, Hood of the Last Gale", "cls": "archer", "slot": "helmet", "noun": "Ranger's Hood", "grade": "S", "art": "u_white_wind_hood_of_the_last_gale", "passive": "archer_helmet_Cs"},
+	{"name": "Red Quarry Hood", "cls": "archer", "slot": "helmet", "noun": "Hunter's Hood", "grade": "A", "art": "u_red_quarry_hood", "passive": "archer_helmet_Da"},
+	{"name": "Last Hunt, Hood of the Last Gale", "cls": "archer", "slot": "helmet", "noun": "Hunter's Hood", "grade": "S", "art": "u_last_hunt_hood_of_the_last_gale", "passive": "archer_helmet_Ds"},
+	{"name": "Oldhide Hood", "cls": "archer", "slot": "helmet", "noun": "Beastpelt Hood", "grade": "A", "art": "u_oldhide_hood", "passive": "archer_helmet_Ea"},
+	{"name": "First Beast, Hood of the Last Gale", "cls": "archer", "slot": "helmet", "noun": "Beastpelt Hood", "grade": "S", "art": "u_first_beast_hood_of_the_last_gale", "passive": "archer_helmet_Es"},
+	{"name": "Stormneedle Bracers", "cls": "archer", "slot": "gloves", "noun": "Stormweave Bracers", "grade": "A", "art": "u_stormneedle_bracers", "passive": "archer_gloves_Aa"},
+	{"name": "Tempest Crown, Bracers of the Last Gale", "cls": "archer", "slot": "gloves", "noun": "Stormweave Bracers", "grade": "S", "art": "u_tempest_crown_bracers_of_the_last_gale", "passive": "archer_gloves_As"},
+	{"name": "Rivetleaf Bracers", "cls": "archer", "slot": "gloves", "noun": "Studded Bracers", "grade": "A", "art": "u_rivetleaf_bracers", "passive": "archer_gloves_Ba"},
+	{"name": "Ironwood Witness, Bracers of the Last Gale", "cls": "archer", "slot": "gloves", "noun": "Studded Bracers", "grade": "S", "art": "u_ironwood_witness_bracers_of_the_last_gale", "passive": "archer_gloves_Bs"},
+	{"name": "Windfeather Bracers", "cls": "archer", "slot": "gloves", "noun": "Ranger's Bracers", "grade": "A", "art": "u_windfeather_bracers", "passive": "archer_gloves_Ca"},
+	{"name": "White Wind, Bracers of the Last Gale", "cls": "archer", "slot": "gloves", "noun": "Ranger's Bracers", "grade": "S", "art": "u_white_wind_bracers_of_the_last_gale", "passive": "archer_gloves_Cs"},
+	{"name": "Red Quarry Bracers", "cls": "archer", "slot": "gloves", "noun": "Hunter's Bracers", "grade": "A", "art": "u_red_quarry_bracers", "passive": "archer_gloves_Da"},
+	{"name": "Last Hunt, Bracers of the Last Gale", "cls": "archer", "slot": "gloves", "noun": "Hunter's Bracers", "grade": "S", "art": "u_last_hunt_bracers_of_the_last_gale", "passive": "archer_gloves_Ds"},
+	{"name": "Oldhide Bracers", "cls": "archer", "slot": "gloves", "noun": "Beastpelt Bracers", "grade": "A", "art": "u_oldhide_bracers", "passive": "archer_gloves_Ea"},
+	{"name": "First Beast, Bracers of the Last Gale", "cls": "archer", "slot": "gloves", "noun": "Beastpelt Bracers", "grade": "S", "art": "u_first_beast_bracers_of_the_last_gale", "passive": "archer_gloves_Es"},
+	{"name": "Stormneedle Leggings", "cls": "archer", "slot": "pants", "noun": "Stormweave Leggings", "grade": "A", "art": "u_stormneedle_leggings", "passive": "archer_pants_Aa"},
+	{"name": "Tempest Crown, Leggings of the Last Gale", "cls": "archer", "slot": "pants", "noun": "Stormweave Leggings", "grade": "S", "art": "u_tempest_crown_leggings_of_the_last_gale", "passive": "archer_pants_As"},
+	{"name": "Rivetleaf Leggings", "cls": "archer", "slot": "pants", "noun": "Studded Leggings", "grade": "A", "art": "u_rivetleaf_leggings", "passive": "archer_pants_Ba"},
+	{"name": "Ironwood Witness, Leggings of the Last Gale", "cls": "archer", "slot": "pants", "noun": "Studded Leggings", "grade": "S", "art": "u_ironwood_witness_leggings_of_the_last_gale", "passive": "archer_pants_Bs"},
+	{"name": "Windfeather Leggings", "cls": "archer", "slot": "pants", "noun": "Ranger's Leggings", "grade": "A", "art": "u_windfeather_leggings", "passive": "archer_pants_Ca"},
+	{"name": "White Wind, Leggings of the Last Gale", "cls": "archer", "slot": "pants", "noun": "Ranger's Leggings", "grade": "S", "art": "u_white_wind_leggings_of_the_last_gale", "passive": "archer_pants_Cs"},
+	{"name": "Red Quarry Leggings", "cls": "archer", "slot": "pants", "noun": "Hunter's Leggings", "grade": "A", "art": "u_red_quarry_leggings", "passive": "archer_pants_Da"},
+	{"name": "Last Hunt, Leggings of the Last Gale", "cls": "archer", "slot": "pants", "noun": "Hunter's Leggings", "grade": "S", "art": "u_last_hunt_leggings_of_the_last_gale", "passive": "archer_pants_Ds"},
+	{"name": "Oldhide Leggings", "cls": "archer", "slot": "pants", "noun": "Beastpelt Leggings", "grade": "A", "art": "u_oldhide_leggings", "passive": "archer_pants_Ea"},
+	{"name": "First Beast, Leggings of the Last Gale", "cls": "archer", "slot": "pants", "noun": "Beastpelt Leggings", "grade": "S", "art": "u_first_beast_leggings_of_the_last_gale", "passive": "archer_pants_Es"},
+	{"name": "Hushveil Cowl", "cls": "assassin", "slot": "helmet", "noun": "Shadowveil Cowl", "grade": "A", "art": "u_hushveil_cowl", "passive": "assassin_helmet_Aa"},
+	{"name": "Empty Witness, Cowl Between Heartbeats", "cls": "assassin", "slot": "helmet", "noun": "Shadowveil Cowl", "grade": "S", "art": "u_empty_witness_cowl_between_heartbeats", "passive": "assassin_helmet_As"},
+	{"name": "Sealhand Cowl", "cls": "assassin", "slot": "helmet", "noun": "Warded Cowl", "grade": "A", "art": "u_sealhand_cowl", "passive": "assassin_helmet_Ba"},
+	{"name": "Closed Door, Cowl Between Heartbeats", "cls": "assassin", "slot": "helmet", "noun": "Warded Cowl", "grade": "S", "art": "u_closed_door_cowl_between_heartbeats", "passive": "assassin_helmet_Bs"},
+	{"name": "Mothsilk Cowl", "cls": "assassin", "slot": "helmet", "noun": "Gossamer Cowl", "grade": "A", "art": "u_mothsilk_cowl", "passive": "assassin_helmet_Ca"},
+	{"name": "Pale Web, Cowl Between Heartbeats", "cls": "assassin", "slot": "helmet", "noun": "Gossamer Cowl", "grade": "S", "art": "u_pale_web_cowl_between_heartbeats", "passive": "assassin_helmet_Cs"},
+	{"name": "Red Fold Cowl", "cls": "assassin", "slot": "helmet", "noun": "Nightsilk Cowl", "grade": "A", "art": "u_red_fold_cowl", "passive": "assassin_helmet_Da"},
+	{"name": "Last Shadow, Cowl Between Heartbeats", "cls": "assassin", "slot": "helmet", "noun": "Nightsilk Cowl", "grade": "S", "art": "u_last_shadow_cowl_between_heartbeats", "passive": "assassin_helmet_Ds"},
+	{"name": "Pale Bone Cowl", "cls": "assassin", "slot": "helmet", "noun": "Grave Cowl", "grade": "A", "art": "u_pale_bone_cowl", "passive": "assassin_helmet_Ea"},
+	{"name": "Returning Dead, Cowl Between Heartbeats", "cls": "assassin", "slot": "helmet", "noun": "Grave Cowl", "grade": "S", "art": "u_returning_dead_cowl_between_heartbeats", "passive": "assassin_helmet_Es"},
+	{"name": "Hushveil Grips", "cls": "assassin", "slot": "gloves", "noun": "Shadowveil Grips", "grade": "A", "art": "u_hushveil_grips", "passive": "assassin_gloves_Aa"},
+	{"name": "Empty Witness, Grips Between Heartbeats", "cls": "assassin", "slot": "gloves", "noun": "Shadowveil Grips", "grade": "S", "art": "u_empty_witness_grips_between_heartbeats", "passive": "assassin_gloves_As"},
+	{"name": "Sealhand Grips", "cls": "assassin", "slot": "gloves", "noun": "Warded Grips", "grade": "A", "art": "u_sealhand_grips", "passive": "assassin_gloves_Ba"},
+	{"name": "Closed Door, Grips Between Heartbeats", "cls": "assassin", "slot": "gloves", "noun": "Warded Grips", "grade": "S", "art": "u_closed_door_grips_between_heartbeats", "passive": "assassin_gloves_Bs"},
+	{"name": "Mothsilk Grips", "cls": "assassin", "slot": "gloves", "noun": "Gossamer Grips", "grade": "A", "art": "u_mothsilk_grips", "passive": "assassin_gloves_Ca"},
+	{"name": "Pale Web, Grips Between Heartbeats", "cls": "assassin", "slot": "gloves", "noun": "Gossamer Grips", "grade": "S", "art": "u_pale_web_grips_between_heartbeats", "passive": "assassin_gloves_Cs"},
+	{"name": "Red Fold Grips", "cls": "assassin", "slot": "gloves", "noun": "Nightsilk Grips", "grade": "A", "art": "u_red_fold_grips", "passive": "assassin_gloves_Da"},
+	{"name": "Last Shadow, Grips Between Heartbeats", "cls": "assassin", "slot": "gloves", "noun": "Nightsilk Grips", "grade": "S", "art": "u_last_shadow_grips_between_heartbeats", "passive": "assassin_gloves_Ds"},
+	{"name": "Pale Bone Grips", "cls": "assassin", "slot": "gloves", "noun": "Grave Grips", "grade": "A", "art": "u_pale_bone_grips", "passive": "assassin_gloves_Ea"},
+	{"name": "Returning Dead, Grips Between Heartbeats", "cls": "assassin", "slot": "gloves", "noun": "Grave Grips", "grade": "S", "art": "u_returning_dead_grips_between_heartbeats", "passive": "assassin_gloves_Es"},
+	{"name": "Hushveil Wraps", "cls": "assassin", "slot": "pants", "noun": "Shadowveil Wraps", "grade": "A", "art": "u_hushveil_wraps", "passive": "assassin_pants_Aa"},
+	{"name": "Empty Witness, Wraps Between Heartbeats", "cls": "assassin", "slot": "pants", "noun": "Shadowveil Wraps", "grade": "S", "art": "u_empty_witness_wraps_between_heartbeats", "passive": "assassin_pants_As"},
+	{"name": "Sealhand Wraps", "cls": "assassin", "slot": "pants", "noun": "Warded Wraps", "grade": "A", "art": "u_sealhand_wraps", "passive": "assassin_pants_Ba"},
+	{"name": "Closed Door, Wraps Between Heartbeats", "cls": "assassin", "slot": "pants", "noun": "Warded Wraps", "grade": "S", "art": "u_closed_door_wraps_between_heartbeats", "passive": "assassin_pants_Bs"},
+	{"name": "Mothsilk Wraps", "cls": "assassin", "slot": "pants", "noun": "Gossamer Wraps", "grade": "A", "art": "u_mothsilk_wraps", "passive": "assassin_pants_Ca"},
+	{"name": "Pale Web, Wraps Between Heartbeats", "cls": "assassin", "slot": "pants", "noun": "Gossamer Wraps", "grade": "S", "art": "u_pale_web_wraps_between_heartbeats", "passive": "assassin_pants_Cs"},
+	{"name": "Red Fold Wraps", "cls": "assassin", "slot": "pants", "noun": "Nightsilk Wraps", "grade": "A", "art": "u_red_fold_wraps", "passive": "assassin_pants_Da"},
+	{"name": "Last Shadow, Wraps Between Heartbeats", "cls": "assassin", "slot": "pants", "noun": "Nightsilk Wraps", "grade": "S", "art": "u_last_shadow_wraps_between_heartbeats", "passive": "assassin_pants_Ds"},
+	{"name": "Pale Bone Wraps", "cls": "assassin", "slot": "pants", "noun": "Grave Wraps", "grade": "A", "art": "u_pale_bone_wraps", "passive": "assassin_pants_Ea"},
+	{"name": "Returning Dead, Wraps Between Heartbeats", "cls": "assassin", "slot": "pants", "noun": "Grave Wraps", "grade": "S", "art": "u_returning_dead_wraps_between_heartbeats", "passive": "assassin_pants_Es"},
+	{"name": "Wardthread Circlet", "cls": "mage", "slot": "helmet", "noun": "Silkward Circlet", "grade": "A", "art": "u_wardthread_circlet", "passive": "mage_helmet_Aa"},
+	{"name": "White Theorem, Circlet Beyond the Firmament", "cls": "mage", "slot": "helmet", "noun": "Silkward Circlet", "grade": "S", "art": "u_white_theorem_circlet_beyond_the_firmament", "passive": "mage_helmet_As"},
+	{"name": "Hexplate Circlet", "cls": "mage", "slot": "helmet", "noun": "Runeplate Circlet", "grade": "A", "art": "u_hexplate_circlet", "passive": "mage_helmet_Ba"},
+	{"name": "Axiom Guard, Circlet Beyond the Firmament", "cls": "mage", "slot": "helmet", "noun": "Runeplate Circlet", "grade": "S", "art": "u_axiom_guard_circlet_beyond_the_firmament", "passive": "mage_helmet_Bs"},
+	{"name": "Skyquill Circlet", "cls": "mage", "slot": "helmet", "noun": "Featherweave Circlet", "grade": "A", "art": "u_skyquill_circlet", "passive": "mage_helmet_Ca"},
+	{"name": "Zero Weight, Circlet Beyond the Firmament", "cls": "mage", "slot": "helmet", "noun": "Featherweave Circlet", "grade": "S", "art": "u_zero_weight_circlet_beyond_the_firmament", "passive": "mage_helmet_Cs"},
+	{"name": "Cometweave Circlet", "cls": "mage", "slot": "helmet", "noun": "Starweave Circlet", "grade": "A", "art": "u_cometweave_circlet", "passive": "mage_helmet_Da"},
+	{"name": "Ninth Star, Circlet Beyond the Firmament", "cls": "mage", "slot": "helmet", "noun": "Starweave Circlet", "grade": "S", "art": "u_ninth_star_circlet_beyond_the_firmament", "passive": "mage_helmet_Ds"},
+	{"name": "Faultstone Circlet", "cls": "mage", "slot": "helmet", "noun": "Earthen Circlet", "grade": "A", "art": "u_faultstone_circlet", "passive": "mage_helmet_Ea"},
+	{"name": "Worldmantle, Circlet Beyond the Firmament", "cls": "mage", "slot": "helmet", "noun": "Earthen Circlet", "grade": "S", "art": "u_worldmantle_circlet_beyond_the_firmament", "passive": "mage_helmet_Es"},
+	{"name": "Wardthread Handwraps", "cls": "mage", "slot": "gloves", "noun": "Silkward Handwraps", "grade": "A", "art": "u_wardthread_handwraps", "passive": "mage_gloves_Aa"},
+	{"name": "White Theorem, Handwraps Beyond the Firmament", "cls": "mage", "slot": "gloves", "noun": "Silkward Handwraps", "grade": "S", "art": "u_white_theorem_handwraps_beyond_the_firmament", "passive": "mage_gloves_As"},
+	{"name": "Hexplate Handwraps", "cls": "mage", "slot": "gloves", "noun": "Runeplate Handwraps", "grade": "A", "art": "u_hexplate_handwraps", "passive": "mage_gloves_Ba"},
+	{"name": "Axiom Guard, Handwraps Beyond the Firmament", "cls": "mage", "slot": "gloves", "noun": "Runeplate Handwraps", "grade": "S", "art": "u_axiom_guard_handwraps_beyond_the_firmament", "passive": "mage_gloves_Bs"},
+	{"name": "Skyquill Handwraps", "cls": "mage", "slot": "gloves", "noun": "Featherweave Handwraps", "grade": "A", "art": "u_skyquill_handwraps", "passive": "mage_gloves_Ca"},
+	{"name": "Zero Weight, Handwraps Beyond the Firmament", "cls": "mage", "slot": "gloves", "noun": "Featherweave Handwraps", "grade": "S", "art": "u_zero_weight_handwraps_beyond_the_firmament", "passive": "mage_gloves_Cs"},
+	{"name": "Cometweave Handwraps", "cls": "mage", "slot": "gloves", "noun": "Starweave Handwraps", "grade": "A", "art": "u_cometweave_handwraps", "passive": "mage_gloves_Da"},
+	{"name": "Ninth Star, Handwraps Beyond the Firmament", "cls": "mage", "slot": "gloves", "noun": "Starweave Handwraps", "grade": "S", "art": "u_ninth_star_handwraps_beyond_the_firmament", "passive": "mage_gloves_Ds"},
+	{"name": "Faultstone Handwraps", "cls": "mage", "slot": "gloves", "noun": "Earthen Handwraps", "grade": "A", "art": "u_faultstone_handwraps", "passive": "mage_gloves_Ea"},
+	{"name": "Worldmantle, Handwraps Beyond the Firmament", "cls": "mage", "slot": "gloves", "noun": "Earthen Handwraps", "grade": "S", "art": "u_worldmantle_handwraps_beyond_the_firmament", "passive": "mage_gloves_Es"},
+	{"name": "Wardthread Underleggings", "cls": "mage", "slot": "pants", "noun": "Silkward Underleggings", "grade": "A", "art": "u_wardthread_underleggings", "passive": "mage_pants_Aa"},
+	{"name": "White Theorem, Underleggings Beyond the Firmament", "cls": "mage", "slot": "pants", "noun": "Silkward Underleggings", "grade": "S", "art": "u_white_theorem_underleggings_beyond_the_firmament", "passive": "mage_pants_As"},
+	{"name": "Hexplate Underleggings", "cls": "mage", "slot": "pants", "noun": "Runeplate Underleggings", "grade": "A", "art": "u_hexplate_underleggings", "passive": "mage_pants_Ba"},
+	{"name": "Axiom Guard, Underleggings Beyond the Firmament", "cls": "mage", "slot": "pants", "noun": "Runeplate Underleggings", "grade": "S", "art": "u_axiom_guard_underleggings_beyond_the_firmament", "passive": "mage_pants_Bs"},
+	{"name": "Skyquill Underleggings", "cls": "mage", "slot": "pants", "noun": "Featherweave Underleggings", "grade": "A", "art": "u_skyquill_underleggings", "passive": "mage_pants_Ca"},
+	{"name": "Zero Weight, Underleggings Beyond the Firmament", "cls": "mage", "slot": "pants", "noun": "Featherweave Underleggings", "grade": "S", "art": "u_zero_weight_underleggings_beyond_the_firmament", "passive": "mage_pants_Cs"},
+	{"name": "Cometweave Underleggings", "cls": "mage", "slot": "pants", "noun": "Starweave Underleggings", "grade": "A", "art": "u_cometweave_underleggings", "passive": "mage_pants_Da"},
+	{"name": "Ninth Star, Underleggings Beyond the Firmament", "cls": "mage", "slot": "pants", "noun": "Starweave Underleggings", "grade": "S", "art": "u_ninth_star_underleggings_beyond_the_firmament", "passive": "mage_pants_Ds"},
+	{"name": "Faultstone Underleggings", "cls": "mage", "slot": "pants", "noun": "Earthen Underleggings", "grade": "A", "art": "u_faultstone_underleggings", "passive": "mage_pants_Ea"},
+	{"name": "Worldmantle, Underleggings Beyond the Firmament", "cls": "mage", "slot": "pants", "noun": "Earthen Underleggings", "grade": "S", "art": "u_worldmantle_underleggings_beyond_the_firmament", "passive": "mage_pants_Es"},
+	{"name": "Saintglass Greathelm", "cls": "paladin", "slot": "helmet", "noun": "Blessed Greathelm", "grade": "A", "art": "u_saintglass_greathelm", "passive": "paladin_helmet_Aa"},
+	{"name": "Unshadowed, Greathelm of the Final Oath", "cls": "paladin", "slot": "helmet", "noun": "Blessed Greathelm", "grade": "S", "art": "u_unshadowed_greathelm_of_the_final_oath", "passive": "paladin_helmet_As"},
+	{"name": "Oathiron Greathelm", "cls": "paladin", "slot": "helmet", "noun": "Templar Greathelm", "grade": "A", "art": "u_oathiron_greathelm", "passive": "paladin_helmet_Ba"},
+	{"name": "Last Templar, Greathelm of the Final Oath", "cls": "paladin", "slot": "helmet", "noun": "Templar Greathelm", "grade": "S", "art": "u_last_templar_greathelm_of_the_final_oath", "passive": "paladin_helmet_Bs"},
+	{"name": "Swiftvow Greathelm", "cls": "paladin", "slot": "helmet", "noun": "Vigil Greathelm", "grade": "A", "art": "u_swiftvow_greathelm", "passive": "paladin_helmet_Ca"},
+	{"name": "Vigil Without End, Greathelm of the Final Oath", "cls": "paladin", "slot": "helmet", "noun": "Vigil Greathelm", "grade": "S", "art": "u_vigil_without_end_greathelm_of_the_final_oath", "passive": "paladin_helmet_Cs"},
+	{"name": "Censure Greathelm", "cls": "paladin", "slot": "helmet", "noun": "Zealot Greathelm", "grade": "A", "art": "u_censure_greathelm", "passive": "paladin_helmet_Da"},
+	{"name": "Final Censure, Greathelm of the Final Oath", "cls": "paladin", "slot": "helmet", "noun": "Zealot Greathelm", "grade": "S", "art": "u_final_censure_greathelm_of_the_final_oath", "passive": "paladin_helmet_Ds"},
+	{"name": "Dawnstone Greathelm", "cls": "paladin", "slot": "helmet", "noun": "Sanctified Greathelm", "grade": "A", "art": "u_dawnstone_greathelm", "passive": "paladin_helmet_Ea"},
+	{"name": "First Dawn, Greathelm of the Final Oath", "cls": "paladin", "slot": "helmet", "noun": "Sanctified Greathelm", "grade": "S", "art": "u_first_dawn_greathelm_of_the_final_oath", "passive": "paladin_helmet_Es"},
+	{"name": "Saintglass Gauntlets", "cls": "paladin", "slot": "gloves", "noun": "Blessed Gauntlets", "grade": "A", "art": "u_saintglass_gauntlets", "passive": "paladin_gloves_Aa"},
+	{"name": "Unshadowed, Gauntlets of the Final Oath", "cls": "paladin", "slot": "gloves", "noun": "Blessed Gauntlets", "grade": "S", "art": "u_unshadowed_gauntlets_of_the_final_oath", "passive": "paladin_gloves_As"},
+	{"name": "Oathiron Gauntlets", "cls": "paladin", "slot": "gloves", "noun": "Templar Gauntlets", "grade": "A", "art": "u_oathiron_gauntlets", "passive": "paladin_gloves_Ba"},
+	{"name": "Last Templar, Gauntlets of the Final Oath", "cls": "paladin", "slot": "gloves", "noun": "Templar Gauntlets", "grade": "S", "art": "u_last_templar_gauntlets_of_the_final_oath", "passive": "paladin_gloves_Bs"},
+	{"name": "Swiftvow Gauntlets", "cls": "paladin", "slot": "gloves", "noun": "Vigil Gauntlets", "grade": "A", "art": "u_swiftvow_gauntlets", "passive": "paladin_gloves_Ca"},
+	{"name": "Vigil Without End, Gauntlets of the Final Oath", "cls": "paladin", "slot": "gloves", "noun": "Vigil Gauntlets", "grade": "S", "art": "u_vigil_without_end_gauntlets_of_the_final_oath", "passive": "paladin_gloves_Cs"},
+	{"name": "Censure Gauntlets", "cls": "paladin", "slot": "gloves", "noun": "Zealot Gauntlets", "grade": "A", "art": "u_censure_gauntlets", "passive": "paladin_gloves_Da"},
+	{"name": "Final Censure, Gauntlets of the Final Oath", "cls": "paladin", "slot": "gloves", "noun": "Zealot Gauntlets", "grade": "S", "art": "u_final_censure_gauntlets_of_the_final_oath", "passive": "paladin_gloves_Ds"},
+	{"name": "Dawnstone Gauntlets", "cls": "paladin", "slot": "gloves", "noun": "Sanctified Gauntlets", "grade": "A", "art": "u_dawnstone_gauntlets", "passive": "paladin_gloves_Ea"},
+	{"name": "First Dawn, Gauntlets of the Final Oath", "cls": "paladin", "slot": "gloves", "noun": "Sanctified Gauntlets", "grade": "S", "art": "u_first_dawn_gauntlets_of_the_final_oath", "passive": "paladin_gloves_Es"},
+	{"name": "Saintglass Legguards", "cls": "paladin", "slot": "pants", "noun": "Blessed Legguards", "grade": "A", "art": "u_saintglass_legguards", "passive": "paladin_pants_Aa"},
+	{"name": "Unshadowed, Legguards of the Final Oath", "cls": "paladin", "slot": "pants", "noun": "Blessed Legguards", "grade": "S", "art": "u_unshadowed_legguards_of_the_final_oath", "passive": "paladin_pants_As"},
+	{"name": "Oathiron Legguards", "cls": "paladin", "slot": "pants", "noun": "Templar Legguards", "grade": "A", "art": "u_oathiron_legguards", "passive": "paladin_pants_Ba"},
+	{"name": "Last Templar, Legguards of the Final Oath", "cls": "paladin", "slot": "pants", "noun": "Templar Legguards", "grade": "S", "art": "u_last_templar_legguards_of_the_final_oath", "passive": "paladin_pants_Bs"},
+	{"name": "Swiftvow Legguards", "cls": "paladin", "slot": "pants", "noun": "Vigil Legguards", "grade": "A", "art": "u_swiftvow_legguards", "passive": "paladin_pants_Ca"},
+	{"name": "Vigil Without End, Legguards of the Final Oath", "cls": "paladin", "slot": "pants", "noun": "Vigil Legguards", "grade": "S", "art": "u_vigil_without_end_legguards_of_the_final_oath", "passive": "paladin_pants_Cs"},
+	{"name": "Censure Legguards", "cls": "paladin", "slot": "pants", "noun": "Zealot Legguards", "grade": "A", "art": "u_censure_legguards", "passive": "paladin_pants_Da"},
+	{"name": "Final Censure, Legguards of the Final Oath", "cls": "paladin", "slot": "pants", "noun": "Zealot Legguards", "grade": "S", "art": "u_final_censure_legguards_of_the_final_oath", "passive": "paladin_pants_Ds"},
+	{"name": "Dawnstone Legguards", "cls": "paladin", "slot": "pants", "noun": "Sanctified Legguards", "grade": "A", "art": "u_dawnstone_legguards", "passive": "paladin_pants_Ea"},
+	{"name": "First Dawn, Legguards of the Final Oath", "cls": "paladin", "slot": "pants", "noun": "Sanctified Legguards", "grade": "S", "art": "u_first_dawn_legguards_of_the_final_oath", "passive": "paladin_pants_Es"},
+	{"name": "Nullsilk Hood", "cls": "warlock", "slot": "helmet", "noun": "Voidsilk Hood", "grade": "A", "art": "u_nullsilk_hood", "passive": "warlock_helmet_Aa"},
+	{"name": "Oblivion Veil, Hood Beneath All Names", "cls": "warlock", "slot": "helmet", "noun": "Voidsilk Hood", "grade": "S", "art": "u_oblivion_veil_hood_beneath_all_names", "passive": "warlock_helmet_As"},
+	{"name": "Gravebone Hood", "cls": "warlock", "slot": "helmet", "noun": "Bonemail Hood", "grade": "A", "art": "u_gravebone_hood", "passive": "warlock_helmet_Ba"},
+	{"name": "Ossuary King, Hood Beneath All Names", "cls": "warlock", "slot": "helmet", "noun": "Bonemail Hood", "grade": "S", "art": "u_ossuary_king_hood_beneath_all_names", "passive": "warlock_helmet_Bs"},
+	{"name": "Hushshade Hood", "cls": "warlock", "slot": "helmet", "noun": "Shadeweave Hood", "grade": "A", "art": "u_hushshade_hood", "passive": "warlock_helmet_Ca"},
+	{"name": "Shadow Without Owner, Hood Beneath All Names", "cls": "warlock", "slot": "helmet", "noun": "Shadeweave Hood", "grade": "S", "art": "u_shadow_without_owner_hood_beneath_all_names", "passive": "warlock_helmet_Cs"},
+	{"name": "Black Clause Hood", "cls": "warlock", "slot": "helmet", "noun": "Ruinweave Hood", "grade": "A", "art": "u_black_clause_hood", "passive": "warlock_helmet_Da"},
+	{"name": "Ruin's Testament, Hood Beneath All Names", "cls": "warlock", "slot": "helmet", "noun": "Ruinweave Hood", "grade": "S", "art": "u_ruins_testament_hood_beneath_all_names", "passive": "warlock_helmet_Ds"},
+	{"name": "Veinbound Hood", "cls": "warlock", "slot": "helmet", "noun": "Bloodpact Hood", "grade": "A", "art": "u_veinbound_hood", "passive": "warlock_helmet_Ea"},
+	{"name": "Last Pulse, Hood Beneath All Names", "cls": "warlock", "slot": "helmet", "noun": "Bloodpact Hood", "grade": "S", "art": "u_last_pulse_hood_beneath_all_names", "passive": "warlock_helmet_Es"},
+	{"name": "Nullsilk Claws", "cls": "warlock", "slot": "gloves", "noun": "Voidsilk Claws", "grade": "A", "art": "u_nullsilk_claws", "passive": "warlock_gloves_Aa"},
+	{"name": "Oblivion Veil, Claws Beneath All Names", "cls": "warlock", "slot": "gloves", "noun": "Voidsilk Claws", "grade": "S", "art": "u_oblivion_veil_claws_beneath_all_names", "passive": "warlock_gloves_As"},
+	{"name": "Gravebone Claws", "cls": "warlock", "slot": "gloves", "noun": "Bonemail Claws", "grade": "A", "art": "u_gravebone_claws", "passive": "warlock_gloves_Ba"},
+	{"name": "Ossuary King, Claws Beneath All Names", "cls": "warlock", "slot": "gloves", "noun": "Bonemail Claws", "grade": "S", "art": "u_ossuary_king_claws_beneath_all_names", "passive": "warlock_gloves_Bs"},
+	{"name": "Hushshade Claws", "cls": "warlock", "slot": "gloves", "noun": "Shadeweave Claws", "grade": "A", "art": "u_hushshade_claws", "passive": "warlock_gloves_Ca"},
+	{"name": "Shadow Without Owner, Claws Beneath All Names", "cls": "warlock", "slot": "gloves", "noun": "Shadeweave Claws", "grade": "S", "art": "u_shadow_without_owner_claws_beneath_all_names", "passive": "warlock_gloves_Cs"},
+	{"name": "Black Clause Claws", "cls": "warlock", "slot": "gloves", "noun": "Ruinweave Claws", "grade": "A", "art": "u_black_clause_claws", "passive": "warlock_gloves_Da"},
+	{"name": "Ruin's Testament, Claws Beneath All Names", "cls": "warlock", "slot": "gloves", "noun": "Ruinweave Claws", "grade": "S", "art": "u_ruins_testament_claws_beneath_all_names", "passive": "warlock_gloves_Ds"},
+	{"name": "Veinbound Claws", "cls": "warlock", "slot": "gloves", "noun": "Bloodpact Claws", "grade": "A", "art": "u_veinbound_claws", "passive": "warlock_gloves_Ea"},
+	{"name": "Last Pulse, Claws Beneath All Names", "cls": "warlock", "slot": "gloves", "noun": "Bloodpact Claws", "grade": "S", "art": "u_last_pulse_claws_beneath_all_names", "passive": "warlock_gloves_Es"},
+	{"name": "Nullsilk Chausses", "cls": "warlock", "slot": "pants", "noun": "Voidsilk Chausses", "grade": "A", "art": "u_nullsilk_chausses", "passive": "warlock_pants_Aa"},
+	{"name": "Oblivion Veil, Chausses Beneath All Names", "cls": "warlock", "slot": "pants", "noun": "Voidsilk Chausses", "grade": "S", "art": "u_oblivion_veil_chausses_beneath_all_names", "passive": "warlock_pants_As"},
+	{"name": "Gravebone Chausses", "cls": "warlock", "slot": "pants", "noun": "Bonemail Chausses", "grade": "A", "art": "u_gravebone_chausses", "passive": "warlock_pants_Ba"},
+	{"name": "Ossuary King, Chausses Beneath All Names", "cls": "warlock", "slot": "pants", "noun": "Bonemail Chausses", "grade": "S", "art": "u_ossuary_king_chausses_beneath_all_names", "passive": "warlock_pants_Bs"},
+	{"name": "Hushshade Chausses", "cls": "warlock", "slot": "pants", "noun": "Shadeweave Chausses", "grade": "A", "art": "u_hushshade_chausses", "passive": "warlock_pants_Ca"},
+	{"name": "Shadow Without Owner, Chausses Beneath All Names", "cls": "warlock", "slot": "pants", "noun": "Shadeweave Chausses", "grade": "S", "art": "u_shadow_without_owner_chausses_beneath_all_names", "passive": "warlock_pants_Cs"},
+	{"name": "Black Clause Chausses", "cls": "warlock", "slot": "pants", "noun": "Ruinweave Chausses", "grade": "A", "art": "u_black_clause_chausses", "passive": "warlock_pants_Da"},
+	{"name": "Ruin's Testament, Chausses Beneath All Names", "cls": "warlock", "slot": "pants", "noun": "Ruinweave Chausses", "grade": "S", "art": "u_ruins_testament_chausses_beneath_all_names", "passive": "warlock_pants_Ds"},
+	{"name": "Veinbound Chausses", "cls": "warlock", "slot": "pants", "noun": "Bloodpact Chausses", "grade": "A", "art": "u_veinbound_chausses", "passive": "warlock_pants_Ea"},
+	{"name": "Last Pulse, Chausses Beneath All Names", "cls": "warlock", "slot": "pants", "noun": "Bloodpact Chausses", "grade": "S", "art": "u_last_pulse_chausses_beneath_all_names", "passive": "warlock_pants_Es"},
+	{"name": "Spellscar Cuirass", "cls": "warrior", "slot": "armor", "noun": "Wardsteel Plate", "grade": "A", "art": "u_spellscar_cuirass", "passive": "warrior_armor_Aa"},
+	{"name": "Null Crown, Plate of the Silent Siege", "cls": "warrior", "slot": "armor", "noun": "Wardsteel Plate", "grade": "S", "art": "u_null_crown_plate_of_the_silent_siege", "passive": "warrior_armor_As"},
+	{"name": "Stone's Refusal", "cls": "warrior", "slot": "armor", "noun": "Ironwall Plate", "grade": "A", "art": "u_stones_refusal", "passive": "warrior_armor_Ba"},
+	{"name": "Last Rampart, Armor That Would Not Fall", "cls": "warrior", "slot": "armor", "noun": "Ironwall Plate", "grade": "S", "art": "u_last_rampart_armor_that_would_not_fall", "passive": "warrior_armor_Bs"},
+	{"name": "Fleet Iron", "cls": "warrior", "slot": "armor", "noun": "Skirmisher's Halfplate", "grade": "A", "art": "u_fleet_iron", "passive": "warrior_armor_Ca"},
+	{"name": "Windcut, Halfplate of the Uncaught", "cls": "warrior", "slot": "armor", "noun": "Skirmisher's Halfplate", "grade": "S", "art": "u_windcut_halfplate_of_the_uncaught", "passive": "warrior_armor_Cs"},
+	{"name": "Red Maw Harness", "cls": "warrior", "slot": "armor", "noun": "Bloodforged Harness", "grade": "A", "art": "u_red_maw_harness", "passive": "warrior_armor_Da"},
+	{"name": "The Armor That Bites Back", "cls": "warrior", "slot": "armor", "noun": "Bloodforged Harness", "grade": "S", "art": "u_the_armor_that_bites_back", "passive": "warrior_armor_Ds"},
+	{"name": "Mountain's Burden", "cls": "warrior", "slot": "armor", "noun": "Titanplate", "grade": "A", "art": "u_mountains_burden", "passive": "warrior_armor_Ea"},
+	{"name": "Worldweight, Plate of the First Giant", "cls": "warrior", "slot": "armor", "noun": "Titanplate", "grade": "S", "art": "u_worldweight_plate_of_the_first_giant", "passive": "warrior_armor_Es"},
+	{"name": "Spellbreak March", "cls": "warrior", "slot": "boots", "noun": "Wardstep Greaves", "grade": "A", "art": "u_spellbreak_march", "passive": "warrior_boots_Aa"},
+	{"name": "Quiet Ground, Greaves of the Unhexed", "cls": "warrior", "slot": "boots", "noun": "Wardstep Greaves", "grade": "S", "art": "u_quiet_ground_greaves_of_the_unhexed", "passive": "warrior_boots_As"},
+	{"name": "Ironroot Sabatons", "cls": "warrior", "slot": "boots", "noun": "Sabatons", "grade": "A", "art": "u_ironroot_sabatons", "passive": "warrior_boots_Ba"},
+	{"name": "No Retreat, Steps of the Last Line", "cls": "warrior", "slot": "boots", "noun": "Sabatons", "grade": "S", "art": "u_no_retreat_steps_of_the_last_line", "passive": "warrior_boots_Bs"},
+	{"name": "Quickmarch", "cls": "warrior", "slot": "boots", "noun": "Skirmisher's Boots", "grade": "A", "art": "u_quickmarch", "passive": "warrior_boots_Ca"},
+	{"name": "Dustbefore, Boots of the First Charge", "cls": "warrior", "slot": "boots", "noun": "Skirmisher's Boots", "grade": "S", "art": "u_dustbefore_boots_of_the_first_charge", "passive": "warrior_boots_Cs"},
+	{"name": "Red Spurs", "cls": "warrior", "slot": "boots", "noun": "Reaver Treads", "grade": "A", "art": "u_red_spurs", "passive": "warrior_boots_Da"},
+	{"name": "Warpath, Treads That Crossed the Dead", "cls": "warrior", "slot": "boots", "noun": "Reaver Treads", "grade": "S", "art": "u_warpath_treads_that_crossed_the_dead", "passive": "warrior_boots_Ds"},
+	{"name": "Groundlock", "cls": "warrior", "slot": "boots", "noun": "Anchorplate", "grade": "A", "art": "u_groundlock", "passive": "warrior_boots_Ea"},
+	{"name": "Stillpoint, Boots Beneath the World", "cls": "warrior", "slot": "boots", "noun": "Anchorplate", "grade": "S", "art": "u_stillpoint_boots_beneath_the_world", "passive": "warrior_boots_Es"},
+	{"name": "Ash Pennant", "cls": "warrior", "slot": "charm", "noun": "Warbanner", "grade": "A", "art": "u_ash_pennant", "passive": "warrior_charm_Aa"},
+	{"name": "Standard of the Crownless Host", "cls": "warrior", "slot": "charm", "noun": "Warbanner", "grade": "S", "art": "u_standard_of_the_crownless_host", "passive": "warrior_charm_As"},
+	{"name": "Iron Promise", "cls": "warrior", "slot": "charm", "noun": "Oath Sigil", "grade": "A", "art": "u_iron_promise", "passive": "warrior_charm_Ba"},
+	{"name": "The Word That Outlived Kings", "cls": "warrior", "slot": "charm", "noun": "Oath Sigil", "grade": "S", "art": "u_the_word_that_outlived_kings", "passive": "warrior_charm_Bs"},
+	{"name": "Gapfinder's Mark", "cls": "warrior", "slot": "charm", "noun": "Butcher's Token", "grade": "A", "art": "u_gapfinders_mark", "passive": "warrior_charm_Ca"},
+	{"name": "Last Measure, Token of the Perfect Cut", "cls": "warrior", "slot": "charm", "noun": "Butcher's Token", "grade": "S", "art": "u_last_measure_token_of_the_perfect_cut", "passive": "warrior_charm_Cs"},
+	{"name": "First Feint", "cls": "warrior", "slot": "charm", "noun": "Duelist's Knot", "grade": "A", "art": "u_first_feint", "passive": "warrior_charm_Da"},
+	{"name": "Untouchable, Knot of the Empty Step", "cls": "warrior", "slot": "charm", "noun": "Duelist's Knot", "grade": "S", "art": "u_untouchable_knot_of_the_empty_step", "passive": "warrior_charm_Ds"},
+	{"name": "Gateheart", "cls": "warrior", "slot": "charm", "noun": "Heart of the Wall", "grade": "A", "art": "u_gateheart", "passive": "warrior_charm_Ea"},
+	{"name": "Citadel Seed, Heart of the Unbroken", "cls": "warrior", "slot": "charm", "noun": "Heart of the Wall", "grade": "S", "art": "u_citadel_seed_heart_of_the_unbroken", "passive": "warrior_charm_Es"},
+	{"name": "Gale-Sewn Jack", "cls": "archer", "slot": "armor", "noun": "Stormweave Jerkin", "grade": "A", "art": "u_gale_sewn_jack", "passive": "archer_armor_Aa"},
+	{"name": "Eye of the Tempest, Jerkin of Still Air", "cls": "archer", "slot": "armor", "noun": "Stormweave Jerkin", "grade": "S", "art": "u_eye_of_the_tempest_jerkin_of_still_air", "passive": "archer_armor_As"},
+	{"name": "Thousand-Nail Vest", "cls": "archer", "slot": "armor", "noun": "Studded Brigandine", "grade": "A", "art": "u_thousand_nail_vest", "passive": "archer_armor_Ba"},
+	{"name": "Rainwall, Brigandine of the Last Volley", "cls": "archer", "slot": "armor", "noun": "Studded Brigandine", "grade": "S", "art": "u_rainwall_brigandine_of_the_last_volley", "passive": "archer_armor_Bs"},
+	{"name": "Hartshadow Leathers", "cls": "archer", "slot": "armor", "noun": "Ranger's Leathers", "grade": "A", "art": "u_hartshadow_leathers", "passive": "archer_armor_Ca"},
+	{"name": "Greenwood Ghost, Hide of the Unseen Trail", "cls": "archer", "slot": "armor", "noun": "Ranger's Leathers", "grade": "S", "art": "u_greenwood_ghost_hide_of_the_unseen_trail", "passive": "archer_armor_Cs"},
+	{"name": "Whitefang Rig", "cls": "archer", "slot": "armor", "noun": "Hunter's Harness", "grade": "A", "art": "u_whitefang_rig", "passive": "archer_armor_Da"},
+	{"name": "Apex Covenant, Harness of the First Hunt", "cls": "archer", "slot": "armor", "noun": "Hunter's Harness", "grade": "S", "art": "u_apex_covenant_harness_of_the_first_hunt", "passive": "archer_armor_Ds"},
+	{"name": "Moonclaw Pelt", "cls": "archer", "slot": "armor", "noun": "Beastpelt", "grade": "A", "art": "u_moonclaw_pelt", "passive": "archer_armor_Ea"},
+	{"name": "Winterking's Mantle", "cls": "archer", "slot": "armor", "noun": "Beastpelt", "grade": "S", "art": "u_winterking_mantle", "passive": "archer_armor_Es"},
+	{"name": "Needleheel", "cls": "archer", "slot": "boots", "noun": "Piercer's Cleats", "grade": "A", "art": "u_needleheel", "passive": "archer_boots_Aa"},
+	{"name": "Groundsplit, Cleats of the Falling Star", "cls": "archer", "slot": "boots", "noun": "Piercer's Cleats", "grade": "S", "art": "u_groundsplit_cleats_of_the_falling_star", "passive": "archer_boots_As"},
+	{"name": "Kestrel Steps", "cls": "archer", "slot": "boots", "noun": "Windstriders", "grade": "A", "art": "u_kestrel_steps", "passive": "archer_boots_Ba"},
+	{"name": "Horizonless, Boots That Outran the Gale", "cls": "archer", "slot": "boots", "noun": "Windstriders", "grade": "S", "art": "u_horizonless_boots_that_outran_the_gale", "passive": "archer_boots_Bs"},
+	{"name": "Deadstill Boots", "cls": "archer", "slot": "boots", "noun": "Marksman's Stance", "grade": "A", "art": "u_deadstill_boots", "passive": "archer_boots_Ca"},
+	{"name": "Truefoot, Stance of the Final Arrow", "cls": "archer", "slot": "boots", "noun": "Marksman's Stance", "grade": "S", "art": "u_truefoot_stance_of_the_final_arrow", "passive": "archer_boots_Cs"},
+	{"name": "Hexwalker Soles", "cls": "archer", "slot": "boots", "noun": "Wardedsole", "grade": "A", "art": "u_hexwalker_soles", "passive": "archer_boots_Da"},
+	{"name": "Safe Passage, Boots Beyond the Curse", "cls": "archer", "slot": "boots", "noun": "Wardedsole", "grade": "S", "art": "u_safe_passage_boots_beyond_the_curse", "passive": "archer_boots_Ds"},
+	{"name": "Wayfinder Treads", "cls": "archer", "slot": "boots", "noun": "Trailboots", "grade": "A", "art": "u_wayfinder_treads", "passive": "archer_boots_Ea"},
+	{"name": "Last Trail, Boots at the World's Edge", "cls": "archer", "slot": "boots", "noun": "Trailboots", "grade": "S", "art": "u_last_trail_boots_at_the_worlds_edge", "passive": "archer_boots_Es"},
+	{"name": "Blackshaft Token", "cls": "archer", "slot": "charm", "noun": "Fletcher's Token", "grade": "A", "art": "u_blackshaft_token", "passive": "archer_charm_Aa"},
+	{"name": "First Arrow, Mark of the Empty Sky", "cls": "archer", "slot": "charm", "noun": "Fletcher's Token", "grade": "S", "art": "u_first_arrow_mark_of_the_empty_sky", "passive": "archer_charm_As"},
+	{"name": "Stormpinion", "cls": "archer", "slot": "charm", "noun": "Windfeather", "grade": "A", "art": "u_stormpinion", "passive": "archer_charm_Ba"},
+	{"name": "Breath of the High Wind", "cls": "archer", "slot": "charm", "noun": "Windfeather", "grade": "S", "art": "u_breath_of_the_high_wind", "passive": "archer_charm_Bs"},
+	{"name": "Stag-Eye Totem", "cls": "archer", "slot": "charm", "noun": "Hunter's Totem", "grade": "A", "art": "u_stag_eye_totem", "passive": "archer_charm_Ca"},
+	{"name": "Horned Moon, Totem of the Old Hunt", "cls": "archer", "slot": "charm", "noun": "Hunter's Totem", "grade": "S", "art": "u_horned_moon_totem_of_the_old_hunt", "passive": "archer_charm_Cs"},
+	{"name": "Cairnseed Ward", "cls": "archer", "slot": "charm", "noun": "Stonebark Ward", "grade": "A", "art": "u_cairnseed_ward", "passive": "archer_charm_Da"},
+	{"name": "Elderwall, Ward of the Walking Wood", "cls": "archer", "slot": "charm", "noun": "Stonebark Ward", "grade": "S", "art": "u_elderwall_ward_of_the_walking_wood", "passive": "archer_charm_Ds"},
+	{"name": "Springcore Idol", "cls": "archer", "slot": "charm", "noun": "Greenheart Idol", "grade": "A", "art": "u_springcore_idol", "passive": "archer_charm_Ea"},
+	{"name": "Everwild, Heart of the First Grove", "cls": "archer", "slot": "charm", "noun": "Greenheart Idol", "grade": "S", "art": "u_everwild_heart_of_the_first_grove", "passive": "archer_charm_Es"},
+	{"name": "Knife-Shadow Cloak", "cls": "assassin", "slot": "armor", "noun": "Shadowveil Cloak", "grade": "A", "art": "u_knife_shadow_cloak", "passive": "assassin_armor_Aa"},
+	{"name": "Eclipse's Hem, Cloak of No Witness", "cls": "assassin", "slot": "armor", "noun": "Shadowveil Cloak", "grade": "S", "art": "u_eclipses_hem_cloak_of_no_witness", "passive": "assassin_armor_As"},
+	{"name": "Nine-Seal Mantle", "cls": "assassin", "slot": "armor", "noun": "Warded Mantle", "grade": "A", "art": "u_nine_seal_mantle", "passive": "assassin_armor_Ba"},
+	{"name": "Unanswerable, Mantle of the Closed Door", "cls": "assassin", "slot": "armor", "noun": "Warded Mantle", "grade": "S", "art": "u_unanswerable_mantle_of_the_closed_door", "passive": "assassin_armor_Bs"},
+	{"name": "Widowglass Veil", "cls": "assassin", "slot": "armor", "noun": "Gossamer Cloak", "grade": "A", "art": "u_widowglass_veil", "passive": "assassin_armor_Ca"},
+	{"name": "Pale Web, Cloak Between Heartbeats", "cls": "assassin", "slot": "armor", "noun": "Gossamer Cloak", "grade": "S", "art": "u_pale_web_cloak_between_heartbeats", "passive": "assassin_armor_Cs"},
+	{"name": "Red Fold", "cls": "assassin", "slot": "armor", "noun": "Nightsilk Wrap", "grade": "A", "art": "u_red_fold", "passive": "assassin_armor_Da"},
+	{"name": "Last Shadow, Wrap of the Absent Hand", "cls": "assassin", "slot": "armor", "noun": "Nightsilk Wrap", "grade": "S", "art": "u_last_shadow_wrap_of_the_absent_hand", "passive": "assassin_armor_Ds"},
+	{"name": "Thornshade Shroud", "cls": "assassin", "slot": "armor", "noun": "Verdant Shroud", "grade": "A", "art": "u_thornshade_shroud", "passive": "assassin_armor_Ea"},
+	{"name": "Green Silence, Shroud of the Hollow Grove", "cls": "assassin", "slot": "armor", "noun": "Verdant Shroud", "grade": "S", "art": "u_green_silence_shroud_of_the_hollow_grove", "passive": "assassin_armor_Es"},
+	{"name": "Mothstep", "cls": "assassin", "slot": "boots", "noun": "Slipsteps", "grade": "A", "art": "u_mothstep", "passive": "assassin_boots_Aa"},
+	{"name": "No Footfall, Shoes of the Empty Room", "cls": "assassin", "slot": "boots", "noun": "Slipsteps", "grade": "S", "art": "u_no_footfall_shoes_of_the_empty_room", "passive": "assassin_boots_As"},
+	{"name": "Wallcat Boots", "cls": "assassin", "slot": "boots", "noun": "Prowlers", "grade": "A", "art": "u_wallcat_boots", "passive": "assassin_boots_Ba"},
+	{"name": "High Hunt, Prowlers Above the Moon", "cls": "assassin", "slot": "boots", "noun": "Prowlers", "grade": "S", "art": "u_high_hunt_prowlers_above_the_moon", "passive": "assassin_boots_Bs"},
+	{"name": "Glassfang Treads", "cls": "assassin", "slot": "boots", "noun": "Venomtread", "grade": "A", "art": "u_glassfang_treads", "passive": "assassin_boots_Ca"},
+	{"name": "Last Dose, Boots of the Perfect Poison", "cls": "assassin", "slot": "boots", "noun": "Venomtread", "grade": "S", "art": "u_last_dose_boots_of_the_perfect_poison", "passive": "assassin_boots_Cs"},
+	{"name": "Quiet Anvil Wraps", "cls": "assassin", "slot": "boots", "noun": "Ironsole Wraps", "grade": "A", "art": "u_quiet_anvil_wraps", "passive": "assassin_boots_Da"},
+	{"name": "Weightless Iron, Soles That Made No Sound", "cls": "assassin", "slot": "boots", "noun": "Ironsole Wraps", "grade": "S", "art": "u_weightless_iron_soles_that_made_no_sound", "passive": "assassin_boots_Ds"},
+	{"name": "Pale Heel", "cls": "assassin", "slot": "boots", "noun": "Grave Treads", "grade": "A", "art": "u_pale_heel", "passive": "assassin_boots_Ea"},
+	{"name": "Afterstep, Treads of the Returning Dead", "cls": "assassin", "slot": "boots", "noun": "Grave Treads", "grade": "S", "art": "u_afterstep_treads_of_the_returning_dead", "passive": "assassin_boots_Es"},
+	{"name": "Red Witness", "cls": "assassin", "slot": "charm", "noun": "Killer's Mark", "grade": "A", "art": "u_red_witness", "passive": "assassin_charm_Aa"},
+	{"name": "Final Name, Mark of the Inevitable", "cls": "assassin", "slot": "charm", "noun": "Killer's Mark", "grade": "S", "art": "u_final_name_mark_of_the_inevitable", "passive": "assassin_charm_As"},
+	{"name": "Green Secret", "cls": "assassin", "slot": "charm", "noun": "Poisoner's Vial", "grade": "A", "art": "u_green_secret", "passive": "assassin_charm_Ba"},
+	{"name": "Queen's Kiss, Vial of the Last Breath", "cls": "assassin", "slot": "charm", "noun": "Poisoner's Vial", "grade": "S", "art": "u_queens_kiss_vial_of_the_last_breath", "passive": "assassin_charm_Bs"},
+	{"name": "Lantern for None", "cls": "assassin", "slot": "charm", "noun": "Ghostlight Charm", "grade": "A", "art": "u_lantern_for_none", "passive": "assassin_charm_Ca"},
+	{"name": "Pale Guest, Light That Knows the Dead", "cls": "assassin", "slot": "charm", "noun": "Ghostlight Charm", "grade": "S", "art": "u_pale_guest_light_that_knows_the_dead", "passive": "assassin_charm_Cs"},
+	{"name": "Knotted Debt", "cls": "assassin", "slot": "charm", "noun": "Bloodoath Cord", "grade": "A", "art": "u_knotted_debt", "passive": "assassin_charm_Da"},
+	{"name": "Never Broken, Cord of the First Betrayal", "cls": "assassin", "slot": "charm", "noun": "Bloodoath Cord", "grade": "S", "art": "u_never_broken_cord_of_the_first_betrayal", "passive": "assassin_charm_Ds"},
+	{"name": "Hollow Finger", "cls": "assassin", "slot": "charm", "noun": "Wraithbone Fetish", "grade": "A", "art": "u_hollow_finger", "passive": "assassin_charm_Ea"},
+	{"name": "Bone Whisper, Fetish of the Unremembered", "cls": "assassin", "slot": "charm", "noun": "Wraithbone Fetish", "grade": "S", "art": "u_bone_whisper_fetish_of_the_unremembered", "passive": "assassin_charm_Es"},
+	{"name": "Equation Robe", "cls": "mage", "slot": "armor", "noun": "Silk Vestments", "grade": "A", "art": "u_equation_robe", "passive": "mage_armor_Aa"},
+	{"name": "White Theorem, Vestments of Proof", "cls": "mage", "slot": "armor", "noun": "Silk Vestments", "grade": "S", "art": "u_white_theorem_vestments_of_proof", "passive": "mage_armor_As"},
+	{"name": "Hexwall Cassock", "cls": "mage", "slot": "armor", "noun": "Runeplate Robe", "grade": "A", "art": "u_hexwall_cassock", "passive": "mage_armor_Ba"},
+	{"name": "Axiom Guard, Robe of Nine Locks", "cls": "mage", "slot": "armor", "noun": "Runeplate Robe", "grade": "S", "art": "u_axiom_guard_robe_of_nine_locks", "passive": "mage_armor_Bs"},
+	{"name": "Skyquill Robe", "cls": "mage", "slot": "armor", "noun": "Featherweave Robe", "grade": "A", "art": "u_skyquill_robe", "passive": "mage_armor_Ca"},
+	{"name": "Zero Weight, Raiment Above Gravity", "cls": "mage", "slot": "armor", "noun": "Featherweave Robe", "grade": "S", "art": "u_zero_weight_raiment_above_gravity", "passive": "mage_armor_Cs"},
+	{"name": "Comet Sash", "cls": "mage", "slot": "armor", "noun": "Starweave Robe", "grade": "A", "art": "u_comet_sash", "passive": "mage_armor_Da"},
+	{"name": "Eventide, Robe of the Last Constellation", "cls": "mage", "slot": "armor", "noun": "Starweave Robe", "grade": "S", "art": "u_eventide_robe_of_the_last_constellation", "passive": "mage_armor_Ds"},
+	{"name": "Faultscribe Robe", "cls": "mage", "slot": "armor", "noun": "Earthen Robe", "grade": "A", "art": "u_faultscribe_robe", "passive": "mage_armor_Ea"},
+	{"name": "Worldmantle, Vestment of the First Stone", "cls": "mage", "slot": "armor", "noun": "Earthen Robe", "grade": "S", "art": "u_worldmantle_vestment_of_the_first_stone", "passive": "mage_armor_Es"},
+	{"name": "Comet Heel", "cls": "mage", "slot": "boots", "noun": "Starstep", "grade": "A", "art": "u_comet_heel", "passive": "mage_boots_Aa"},
+	{"name": "Orbitless, Steps Between Stars", "cls": "mage", "slot": "boots", "noun": "Starstep", "grade": "S", "art": "u_orbitless_steps_between_stars", "passive": "mage_boots_As"},
+	{"name": "Cloudkiss Slippers", "cls": "mage", "slot": "boots", "noun": "Levitation Slippers", "grade": "A", "art": "u_cloudkiss_slippers", "passive": "mage_boots_Ba"},
+	{"name": "Ascendant, Slippers That Never Landed", "cls": "mage", "slot": "boots", "noun": "Levitation Slippers", "grade": "S", "art": "u_ascendant_slippers_that_never_landed", "passive": "mage_boots_Bs"},
+	{"name": "Circlewalker Sandals", "cls": "mage", "slot": "boots", "noun": "Sigil Sandals", "grade": "A", "art": "u_circlewalker_sandals", "passive": "mage_boots_Ca"},
+	{"name": "Closed Form, Sandals of the Perfect Rune", "cls": "mage", "slot": "boots", "noun": "Sigil Sandals", "grade": "S", "art": "u_closed_form_sandals_of_the_perfect_rune", "passive": "mage_boots_Cs"},
+	{"name": "Bastion Shoes", "cls": "mage", "slot": "boots", "noun": "Wardstone Shoes", "grade": "A", "art": "u_bastion_shoes", "passive": "mage_boots_Da"},
+	{"name": "No Entry, Shoes of the Uncrossed Line", "cls": "mage", "slot": "boots", "noun": "Wardstone Shoes", "grade": "S", "art": "u_no_entry_shoes_of_the_uncrossed_line", "passive": "mage_boots_Ds"},
+	{"name": "Greenstride", "cls": "mage", "slot": "boots", "noun": "Rootbound Sandals", "grade": "A", "art": "u_greenstride", "passive": "mage_boots_Ea"},
+	{"name": "Worldroot Steps", "cls": "mage", "slot": "boots", "noun": "Rootbound Sandals", "grade": "S", "art": "u_worldroot_steps", "passive": "mage_boots_Es"},
+	{"name": "Thesis Orb", "cls": "mage", "slot": "charm", "noun": "Arcane Orb", "grade": "A", "art": "u_thesis_orb", "passive": "mage_charm_Aa"},
+	{"name": "Singularity, Orb of the Unsolved", "cls": "mage", "slot": "charm", "noun": "Arcane Orb", "grade": "S", "art": "u_singularity_orb_of_the_unsolved", "passive": "mage_charm_As"},
+	{"name": "Comet Splinter", "cls": "mage", "slot": "charm", "noun": "Starshard", "grade": "A", "art": "u_comet_splinter", "passive": "mage_charm_Ba"},
+	{"name": "First Star's Tooth", "cls": "mage", "slot": "charm", "noun": "Starshard", "grade": "S", "art": "u_first_stars_tooth", "passive": "mage_charm_Bs"},
+	{"name": "Mirror Ward", "cls": "mage", "slot": "charm", "noun": "Aegis Crystal", "grade": "A", "art": "u_mirror_ward", "passive": "mage_charm_Ca"},
+	{"name": "Absolute, Crystal of the Final Barrier", "cls": "mage", "slot": "charm", "noun": "Aegis Crystal", "grade": "S", "art": "u_absolute_crystal_of_the_final_barrier", "passive": "mage_charm_Cs"},
+	{"name": "Gale Script", "cls": "mage", "slot": "charm", "noun": "Zephyr Sigil", "grade": "A", "art": "u_gale_script", "passive": "mage_charm_Da"},
+	{"name": "Breathless Seal", "cls": "mage", "slot": "charm", "noun": "Zephyr Sigil", "grade": "S", "art": "u_breathless_seal", "passive": "mage_charm_Ds"},
+	{"name": "Spring Axiom", "cls": "mage", "slot": "charm", "noun": "Lifebloom Pendant", "grade": "A", "art": "u_spring_axiom", "passive": "mage_charm_Ea"},
+	{"name": "First Bloom, Pendant Before Winter", "cls": "mage", "slot": "charm", "noun": "Lifebloom Pendant", "grade": "S", "art": "u_first_bloom_pendant_before_winter", "passive": "mage_charm_Es"},
+	{"name": "Blue Oath Cuirass", "cls": "paladin", "slot": "armor", "noun": "Templar Plate", "grade": "A", "art": "u_blue_oath_cuirass", "passive": "paladin_armor_Aa"},
+	{"name": "Covenant Crownplate", "cls": "paladin", "slot": "armor", "noun": "Templar Plate", "grade": "S", "art": "u_covenant_crownplate", "passive": "paladin_armor_As"},
+	{"name": "Rose Chapel Plate", "cls": "paladin", "slot": "armor", "noun": "Blessed Plate", "grade": "A", "art": "u_rose_chapel_plate", "passive": "paladin_armor_Ba"},
+	{"name": "Noonheart, Armor of First Light", "cls": "paladin", "slot": "armor", "noun": "Blessed Plate", "grade": "S", "art": "u_noonheart_armor_of_first_light", "passive": "paladin_armor_Bs"},
+	{"name": "Watcher's Halfplate", "cls": "paladin", "slot": "armor", "noun": "Vigil Halfplate", "grade": "A", "art": "u_watchers_halfplate", "passive": "paladin_armor_Ca"},
+	{"name": "Unblinking, Plate of the Last Vigil", "cls": "paladin", "slot": "armor", "noun": "Vigil Halfplate", "grade": "S", "art": "u_unblinking_plate_of_the_last_vigil", "passive": "paladin_armor_Cs"},
+	{"name": "Red Doctrine", "cls": "paladin", "slot": "armor", "noun": "Zealot Harness", "grade": "A", "art": "u_red_doctrine", "passive": "paladin_armor_Da"},
+	{"name": "Martyrfire Harness", "cls": "paladin", "slot": "armor", "noun": "Zealot Harness", "grade": "S", "art": "u_martyrfire_harness", "passive": "paladin_armor_Ds"},
+	{"name": "Gate-Shrine Armor", "cls": "paladin", "slot": "armor", "noun": "Sanctified Bulwark", "grade": "A", "art": "u_gate_shrine_armor", "passive": "paladin_armor_Ea"},
+	{"name": "Holy City, Bulwark of the Walking Cathedral", "cls": "paladin", "slot": "armor", "noun": "Sanctified Bulwark", "grade": "S", "art": "u_holy_city_bulwark_of_the_walking_cathedral", "passive": "paladin_armor_Es"},
+	{"name": "Redspur Cleats", "cls": "paladin", "slot": "boots", "noun": "Zealot's Cleats", "grade": "A", "art": "u_redspur_cleats", "passive": "paladin_boots_Aa"},
+	{"name": "Fervor, Steps of Unending Charge", "cls": "paladin", "slot": "boots", "noun": "Zealot's Cleats", "grade": "S", "art": "u_fervor_steps_of_unending_charge", "passive": "paladin_boots_As"},
+	{"name": "Vowbound Sabatons", "cls": "paladin", "slot": "boots", "noun": "Sabatons of the Oath", "grade": "A", "art": "u_vowbound_sabatons", "passive": "paladin_boots_Ba"},
+	{"name": "Ever Oath, Feet of the Faithful", "cls": "paladin", "slot": "boots", "noun": "Sabatons of the Oath", "grade": "S", "art": "u_ever_oath_feet_of_the_faithful", "passive": "paladin_boots_Bs"},
+	{"name": "Nightwatch Steps", "cls": "paladin", "slot": "boots", "noun": "Vigil Steps", "grade": "A", "art": "u_nightwatch_steps", "passive": "paladin_boots_Ca"},
+	{"name": "Dawnless Watch, Boots That Never Slept", "cls": "paladin", "slot": "boots", "noun": "Vigil Steps", "grade": "S", "art": "u_dawnless_watch_boots_that_never_slept", "passive": "paladin_boots_Cs"},
+	{"name": "Solarch Greaves", "cls": "paladin", "slot": "boots", "noun": "Radiant Greaves", "grade": "A", "art": "u_solarch_greaves", "passive": "paladin_boots_Da"},
+	{"name": "Noonwalker Greaves", "cls": "paladin", "slot": "boots", "noun": "Radiant Greaves", "grade": "S", "art": "u_noonwalker_greaves", "passive": "paladin_boots_Ds"},
+	{"name": "Roadworn Promise", "cls": "paladin", "slot": "boots", "noun": "Pilgrim's Resolve", "grade": "A", "art": "u_roadworn_promise", "passive": "paladin_boots_Ea"},
+	{"name": "Final Mile, Boots Beyond the Shrine", "cls": "paladin", "slot": "boots", "noun": "Pilgrim's Resolve", "grade": "S", "art": "u_final_mile_boots_beyond_the_shrine", "passive": "paladin_boots_Es"},
+	{"name": "Saint's Window", "cls": "paladin", "slot": "charm", "noun": "Reliquary", "grade": "A", "art": "u_saints_window", "passive": "paladin_charm_Aa"},
+	{"name": "House of Light, Reliquary Without Doors", "cls": "paladin", "slot": "charm", "noun": "Reliquary", "grade": "S", "art": "u_house_of_light_reliquary_without_doors", "passive": "paladin_charm_As"},
+	{"name": "Dawn Coin", "cls": "paladin", "slot": "charm", "noun": "Sunburst Icon", "grade": "A", "art": "u_dawn_coin", "passive": "paladin_charm_Ba"},
+	{"name": "Unsetting, Icon of the First Sun", "cls": "paladin", "slot": "charm", "noun": "Sunburst Icon", "grade": "S", "art": "u_unsetting_icon_of_the_first_sun", "passive": "paladin_charm_Bs"},
+	{"name": "White Verdict", "cls": "paladin", "slot": "charm", "noun": "Judgment Sigil", "grade": "A", "art": "u_white_verdict", "passive": "paladin_charm_Ca"},
+	{"name": "Last Measure, Seal of Perfect Justice", "cls": "paladin", "slot": "charm", "noun": "Judgment Sigil", "grade": "S", "art": "u_last_measure_seal_of_perfect_justice", "passive": "paladin_charm_Cs"},
+	{"name": "Red Haste Knot", "cls": "paladin", "slot": "charm", "noun": "Swiftvow Cord", "grade": "A", "art": "u_red_haste_knot", "passive": "paladin_charm_Da"},
+	{"name": "First to Answer, Cord of Immediate Oath", "cls": "paladin", "slot": "charm", "noun": "Swiftvow Cord", "grade": "S", "art": "u_first_to_answer_cord_of_immediate_oath", "passive": "paladin_charm_Ds"},
+	{"name": "Broken King's Seal", "cls": "paladin", "slot": "charm", "noun": "Oathkeeper's Seal", "grade": "A", "art": "u_broken_kings_seal", "passive": "paladin_charm_Ea"},
+	{"name": "Never Forsworn, Seal That Binds the Dawn", "cls": "paladin", "slot": "charm", "noun": "Oathkeeper's Seal", "grade": "S", "art": "u_never_forsworn_seal_that_binds_the_dawn", "passive": "paladin_charm_Es"},
+	{"name": "Black Equation Robe", "cls": "warlock", "slot": "armor", "noun": "Voidsilk Robe", "grade": "A", "art": "u_black_equation_robe", "passive": "warlock_armor_Aa"},
+	{"name": "Event Horizon, Vestment of No Return", "cls": "warlock", "slot": "armor", "noun": "Voidsilk Robe", "grade": "S", "art": "u_event_horizon_vestment_of_no_return", "passive": "warlock_armor_As"},
+	{"name": "Pale Covenant", "cls": "warlock", "slot": "armor", "noun": "Bonemail", "grade": "A", "art": "u_pale_covenant", "passive": "warlock_armor_Ba"},
+	{"name": "Ossuary King, Mail of the First Grave", "cls": "warlock", "slot": "armor", "noun": "Bonemail", "grade": "S", "art": "u_ossuary_king_mail_of_the_first_grave", "passive": "warlock_armor_Bs"},
+	{"name": "Mothshade Robe", "cls": "warlock", "slot": "armor", "noun": "Shadeweave Robe", "grade": "A", "art": "u_mothshade_robe", "passive": "warlock_armor_Ca"},
+	{"name": "The Shadow That Remained", "cls": "warlock", "slot": "armor", "noun": "Shadeweave Robe", "grade": "S", "art": "u_the_shadow_that_remained", "passive": "warlock_armor_Cs"},
+	{"name": "Broken Law Vestment", "cls": "warlock", "slot": "armor", "noun": "Ruinweave", "grade": "A", "art": "u_broken_law_vestment", "passive": "warlock_armor_Da"},
+	{"name": "Catastrophe Script", "cls": "warlock", "slot": "armor", "noun": "Ruinweave", "grade": "S", "art": "u_catastrophe_script", "passive": "warlock_armor_Ds"},
+	{"name": "Red Contract", "cls": "warlock", "slot": "armor", "noun": "Bloodpact Vestment", "grade": "A", "art": "u_red_contract", "passive": "warlock_armor_Ea"},
+	{"name": "Last Pulse, Vestment of the Final Debt", "cls": "warlock", "slot": "armor", "noun": "Bloodpact Vestment", "grade": "S", "art": "u_last_pulse_vestment_of_the_final_debt", "passive": "warlock_armor_Es"},
+	{"name": "Faultwalker", "cls": "warlock", "slot": "boots", "noun": "Ruinstep", "grade": "A", "art": "u_faultwalker", "passive": "warlock_boots_Aa"},
+	{"name": "Worldbreak Treads", "cls": "warlock", "slot": "boots", "noun": "Ruinstep", "grade": "S", "art": "u_worldbreak_treads", "passive": "warlock_boots_As"},
+	{"name": "Hollow Step", "cls": "warlock", "slot": "boots", "noun": "Shadowstep Wraps", "grade": "A", "art": "u_hollow_step", "passive": "warlock_boots_Ba"},
+	{"name": "Unseen Road", "cls": "warlock", "slot": "boots", "noun": "Shadowstep Wraps", "grade": "S", "art": "u_unseen_road", "passive": "warlock_boots_Bs"},
+	{"name": "Nine-Hex Boots", "cls": "warlock", "slot": "boots", "noun": "Hexcarved Treads", "grade": "A", "art": "u_nine_hex_boots", "passive": "warlock_boots_Ca"},
+	{"name": "Final Curse Treads", "cls": "warlock", "slot": "boots", "noun": "Hexcarved Treads", "grade": "S", "art": "u_final_curse_treads", "passive": "warlock_boots_Cs"},
+	{"name": "Pale March", "cls": "warlock", "slot": "boots", "noun": "Bonewalkers", "grade": "A", "art": "u_pale_march", "passive": "warlock_boots_Da"},
+	{"name": "Dead Road, Boots of Returning Kings", "cls": "warlock", "slot": "boots", "noun": "Bonewalkers", "grade": "S", "art": "u_dead_road_boots_of_returning_kings", "passive": "warlock_boots_Ds"},
+	{"name": "Chainwake", "cls": "warlock", "slot": "boots", "noun": "Gravebound Boots", "grade": "A", "art": "u_chainwake", "passive": "warlock_boots_Ea"},
+	{"name": "No Release, Boots of the Bound Dead", "cls": "warlock", "slot": "boots", "noun": "Gravebound Boots", "grade": "S", "art": "u_no_release_boots_of_the_bound_dead", "passive": "warlock_boots_Es"},
+	{"name": "Quiet Passenger", "cls": "warlock", "slot": "charm", "noun": "Soul Fetish", "grade": "A", "art": "u_quiet_passenger", "passive": "warlock_charm_Aa"},
+	{"name": "Soulstar, Fetish of the Last Breath", "cls": "warlock", "slot": "charm", "noun": "Soul Fetish", "grade": "S", "art": "u_soulstar_fetish_of_the_last_breath", "passive": "warlock_charm_As"},
+	{"name": "Black Oracle", "cls": "warlock", "slot": "charm", "noun": "Cursed Idol", "grade": "A", "art": "u_black_oracle", "passive": "warlock_charm_Ba"},
+	{"name": "Nameless God, Idol Beneath the Throne", "cls": "warlock", "slot": "charm", "noun": "Cursed Idol", "grade": "S", "art": "u_nameless_god_idol_beneath_the_throne", "passive": "warlock_charm_Bs"},
+	{"name": "Cinder Seal", "cls": "warlock", "slot": "charm", "noun": "Ward of Ash", "grade": "A", "art": "u_cinder_seal", "passive": "warlock_charm_Ca"},
+	{"name": "Ashen Law, Ward After All Fires", "cls": "warlock", "slot": "charm", "noun": "Ward of Ash", "grade": "S", "art": "u_ashen_law_ward_after_all_fires", "passive": "warlock_charm_Cs"},
+	{"name": "Night Knot", "cls": "warlock", "slot": "charm", "noun": "Umbral Cord", "grade": "A", "art": "u_night_knot", "passive": "warlock_charm_Da"},
+	{"name": "Endless Shade, Cord Around the Moon", "cls": "warlock", "slot": "charm", "noun": "Umbral Cord", "grade": "S", "art": "u_endless_shade_cord_around_the_moon", "passive": "warlock_charm_Ds"},
+	{"name": "Vein Prison", "cls": "warlock", "slot": "charm", "noun": "Heartcage", "grade": "A", "art": "u_vein_prison", "passive": "warlock_charm_Ea"},
+	{"name": "Last Heart, Cage That Beats in Darkness", "cls": "warlock", "slot": "charm", "noun": "Heartcage", "grade": "S", "art": "u_last_heart_cage_that_beats_in_darkness", "passive": "warlock_charm_Es"},
 ]
 
 
@@ -225,15 +592,14 @@ static func uniques_for(cls: String) -> Array:
 	return out
 
 
-# S_GEAR — the class-signature legendaries. The weapon `noun` was DROPPED
-# 2026-07-26: it used to force each S weapon onto a legacy shape (Blade/Bow/…),
-# the last thing keeping those shapes alive. The passives are ability-based, not
-# shape-based, so a legendary now rides whatever matrix shape rolled and keeps its
-# name + signature passive. (2026-07-27) The interim "every S is a legendary"
-# behaviour is GONE: the legendary is now the class's 6th named-S — a rare
-# Act-2+ roll through roll_item_of's legendary channel (Balance.LEGEND_S_CHANCE),
-# same power tier as the named-S uniques, sole keeper of the awakening quest.
-# Generic S drops passive-less (PROPOSALS/GEAR_UNIQUE_PASSIVES.md §9).
+# S_GEAR — RETIRED (owner call, 2026-07-27): no legendary tier, no awakening
+# questline. The six flagship weapon passives were TRANSPLANTED onto fitting
+# named-S uniques (kingsblade->Crownfall, windward->Tempest Yew, wellspring->
+# Firmament, mirrorstep->Pale Flight, dawnbreaker->Dawnfall, voidmaw->The Book
+# That Remembers You) and are live on pickup like every unique. This table is
+# now a HISTORICAL RECORD only — old saves carry these names on their items
+# directly and their passives grandfather in live (the dormant gate is gone).
+# Nothing rolls from here; the codex legendary shelf was removed with the tier.
 const S_GEAR := {
 	"warrior": {
 		"weapon": {"name": "Kingsbane, Edge of the Fallen Crown", "passive": "kingsblade"},
@@ -292,22 +658,22 @@ const PASSIVES := {
 	"outrider":   "When an attack misses you, your next Cleave (2s) strikes twice — BUT Grit never stacks",
 	"horizon":    "Every dodge sharpens the line: your next Cleave is a guaranteed crit, and Shield Bash returns 1.5s sooner",
 	"reprisal":   "Blows that land on you risk the tooth: 30% chance the melee attacker is counter-cut",
-	"thegate":    "Shield Bash raises the Gate: 2.5s of massive guard, and every blow taken is answered with a stagger and a counter-cut",
-	"dirge":      "Cleave and Whirlwind hit 20% harder — BUT Cleave tolls 15% slower",
+	"thegate":    "Shield Bash raises the Gate: 2.5s of massive guard, and blows taken while it holds are answered with a stagger and a counter-cut",
+	"dirge":      "Cleave and Whirlwind hit 20% harder — BUT both toll 15% slower",
 	"aftershock": "Everything falls twice: Whirlwind leaves a collapsing ring that detonates a beat later",
 	# --- archer ---
 	"siegebolt":  "Multishot looses siege bolts that punch straight through their victims",
 	"gale":       "Every 5th Quick Shot looses the gale — a free 3-arrow fan rides the shot",
-	"farsight":   "Arrows loosed at distant prey halve its armor",
-	"herald":     "Your first hit on an unwounded enemy is a guaranteed crit and EXPOSES the prey",
+	"farsight":   "Arrows loosed from far afield shear a third of the prey's armor",
+	"herald":     "Your first hit on an unwounded enemy is a guaranteed crit and EXPOSES the prey — a kill re-arms the dawn for 3s, and against a boss the dawn returns every 12s",
 	"foxfire":    "Slipping an attack draws the fox's shot: your next Quick Shot fires twin arrows",
-	"hartsbreath": "A PERFECT dodge grants the Hart's Breath: your next 3 shots are guaranteed crits and Multishot returns at once",
+	"hartsbreath": "Tumble draws the Hart's Breath: your next 2 shots are guaranteed crits — a PERFECT dodge draws 3, and Multishot returns at once",
 	"briar":      "Enemies that strike you are briar-lashed (torn + slowed) — BUT Second Wind mends at half strength",
 	"bramble":    "While the wild has your blood (hit within 3s), your arrows grow thorns — and a landed blow vents a rooting burst (6s cd)",
 	"warhorn":    "Multishot fans 7 arrows instead of 5 — BUT takes 1.5s longer to return",
 	"moonturn":   "Night returns: after Arrow Storm ends, a half-strength storm falls again unbidden",
 	# --- assassin ---
-	"gapfinder":  "Stab ignores half the armor of staggered, stunned or slowed prey",
+	"gapfinder":  "Stab ignores half the armor of staggered, stunned, slowed, hobbled or MARKED prey",
 	"quietus":    "Below 20% health the needle is a verdict: Stab strikes TRUE, and a Stab kill hastens Death Mark 2s",
 	"compass":    "Every knife points the same way: Fan of Knives converges on your prey — BUT loses its spread",
 	"midnight":   "A critical knife doesn't stop: Fan of Knives crits ricochet to a second enemy",
@@ -316,7 +682,7 @@ const PASSIVES := {
 	"parry":      "30% chance to PARRY a melee blow outright and riposte — BUT your Elusive evasion is halved",
 	"refusal":    "Death is refused (90s): a killing blow leaves you at 1 HP, untouchable a breath, blood surge full, Death Mark ready",
 	"arithmetic": "The sum comes due: every 4th Stab lands with cleaver weight — 60% harder, staggering",
-	"headsman":   "Mercy is quick: Stab and Shadow Dash BEHEAD wounded prey outright, and each beheading feeds the blood surge",
+	"headsman":   "Mercy is quick: Stab and Shadow Dash BEHEAD wounded prey outright, and each beheading feeds the blood surge — a boss refuses the blade, but critical Stabs and Dashes against it feed the surge all the same (3s cd)",
 	# --- mage ---
 	"wardcrack":  "Each Firebolt cracks the ward a little wider — stacking armor shred",
 	"axiom":      "The law is broken: 15% of ALL your ability damage resolves as TRUE damage",
@@ -326,18 +692,18 @@ const PASSIVES := {
 	"breathless": "The sky empties where you stood: evading a hit resets Blink, and the next Blink's shock strikes doubled",
 	"springwake": "The bloom drinks deeper: Frost Nova's restore swells half again, and each enemy caught mends you",
 	"worldroot":  "Your life IS your power: bonus max health feeds your ATK, and Frost Nova ROOTS what it catches",
-	"atlas":      "Meteor burns 40% TRUE (from 25%) — BUT the sky takes 6s longer to answer",
+	"atlas":      "Meteor burns 40% TRUE (from 25%)",
 	"skyfall":    "Heaven answers twice: Meteor calls a second, half-weight meteor onto the next-nearest enemy",
 	# --- paladin ---
 	"vow":        "The vow re-orders the soul: INT converts to ATK at the primary rate — BUT STR falls to the lesser one",
 	"noonday":    "At noon nothing shades you: INT converts at the primary rate alongside STR, and every 4th Judgment lances THROUGH the target",
 	"censure":    "A critical blow tolls the bell: the chime staggers and splashes around the victim",
-	"absolution": "Every 3rd kill rings the Last Toll: a free Consecration wave breaks from you",
+	"absolution": "Every 3rd kill rings the Last Toll: a free Consecration wave breaks from you — against a boss, your crits count as tolls (one per 4s)",
 	"measure":    "A measured step earns a measured answer: evading arms your next Judgment with +40% weight and a sliver of mending",
 	"vigil":      "The vigil rewards the watchful: a dodge instantly rearms Judgment's leap, and the next Judgment lands as a guaranteed crit",
 	"knell":      "Each answered blow is a knell that mends: Aegis's smite-backs heal you",
 	"answer":     "The wall keeps accounts: 30% of damage you take is banked as holy charge for your next Judgment's SMITE",
-	"burden":     "The burden makes the blow: Judgment strikes 15% heavier — BUT swings 15% slower",
+	"burden":     "The burden makes the blow: Judgment strikes 25% heavier — BUT swings 15% slower",
 	"dawnfall":   "The last oath falls like dawn: Conviction's slam hits 30% harder and leaves everything burning and slowed",
 	# --- warlock ---
 	"inkteeth":   "The ink bites: Shadowbolt leaves gnawing teeth-marks",
@@ -350,6 +716,401 @@ const PASSIVES := {
 	"thecover":   "When a blow would break you (below 30%), the Cover opens: 2s of heavy damage reduction and a repulsing void-wave (25s cd)",
 	"veinroot":   "The root drinks from your reserve: Dark Pact's blast draws extra force from your max health, and its surge lingers 2s",
 	"lastpulse":  "Every pulse of stored blood is power: bonus max health feeds your ATK — doubled for 5s after Dark Pact",
+	# ---- armor-family TEMPLATES (helmet/gloves/pants uniques, 2026-07-27) ----
+	# 30 shared systems (GEAR_ARMOR_UNIQUE_PASSIVES.md): bare id = S lane,
+	# `_a` = A lane. The 180 items carrying these arrive with the slot go-live
+	# (art pass names them); the engine behind every line is live already.
+	"helm_ward":      "Taking magic damage arms the ward-crown: 30% magic damage reduction for 2s (8s cd)",
+	"helm_ward_a":    "Taking magic damage arms a lesser ward: 15% magic damage reduction for 2s (8s cd)",
+	"glove_ward":     "Your hits unweave the target's wards — their armor is torn open for 3s",
+	"glove_ward_a":   "Your hits fray the target's wards — a little armor torn open for 3s",
+	"pants_ward":     "Grounded: slows, roots and freezes on you run 30% shorter",
+	"pants_ward_a":   "Deep-grounded: slows, roots and freezes on you run 50% shorter — BUT you receive 10% less healing",
+	"helm_guard":     "The crest BLUNTS: the first enemy crit every 10s lands as a normal hit",
+	"helm_guard_a":   "The crest turns: the first enemy crit every 10s loses half its bite",
+	"glove_guard":    "Iron answer: 25% chance a melee attacker is counter-struck",
+	"glove_guard_a":  "Iron answer: 15% chance a melee attacker is counter-struck",
+	"pants_guard":    "Anchor stance: every blow you take hardens you — flat damage reduction, up to 3 stacks",
+	"pants_guard_a":  "Anchor stance: blows you take harden you a little — up to 2 stacks",
+	"helm_finesse":   "Keen eye: evading a blow EXPOSES the attacker for 3s",
+	"helm_finesse_a": "Keen eye: evading a blow briefly EXPOSES the attacker",
+	"glove_finesse":  "Deft hands: every 5th basic attack cannot miss or be grazed",
+	"glove_finesse_a": "Deft hands: every 8th basic attack cannot miss or be grazed",
+	"pants_finesse":  "Slip stance: being hit leaves you slippery — +10% evasion for 2s",
+	"pants_finesse_a": "Slip stance: being hit leaves you very slippery — +15% evasion for 2s — BUT Second Wind waits 0.5s longer",
+	"helm_aggr":      "War-crown: your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s)",
+	"helm_aggr_a":    "War-crown: your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"glove_aggr":     "Blood knuckle: your crits tear — a wound that keeps burning for 3s",
+	"glove_aggr_a":   "Blood knuckle: your crits nick — a lesser wound that burns for 3s",
+	"pants_aggr":     "Advance stance: after your commit ability, your next damaging ability within 3s strikes 20% harder",
+	"pants_aggr_a":   "Advance stance: after your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"helm_bulwark":   "Life-crest: overhealing pools into a shield (up to 8% max health)",
+	"helm_bulwark_a": "Life-crest: overhealing pools into a small shield (up to 4% max health)",
+	"glove_bulwark":  "Might grip: your bulk lands with every hit — bonus damage from your max health",
+	"glove_bulwark_a": "Might grip: a little of your bulk lands with every hit",
+	"pants_bulwark":  "Last bastion: below 30% health you stand in the doorway — 15% damage reduction",
+	"pants_bulwark_a": "Last bastion: below 30% health, 25% damage reduction — BUT Second Wind never triggers while worn",
+	# ---- the 360 named gear uniques (armor family + armor/boots/charm) ----
+	"warrior_helmet_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"warrior_helmet_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the warded blow still builds a GRIT stack",
+	"warrior_helmet_Ba": "The first enemy crit every 10s loses half its bite",
+	"warrior_helmet_Bs": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the blunted blow grants a free Grit stack",
+	"warrior_helmet_Ca": "Evading a blow briefly EXPOSES the attacker",
+	"warrior_helmet_Cs": "Evading a blow EXPOSES the attacker for 3s, and the dodge refunds 1.5s of Whirlwind",
+	"warrior_helmet_Da": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"warrior_helmet_Ds": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and the opening blow staggers",
+	"warrior_helmet_Ea": "Overhealing pools into a small shield (up to 4% max health)",
+	"warrior_helmet_Es": "Overhealing pools into a shield (up to 8% max health), and it pools at double rate while Berserk runs",
+	"warrior_gloves_Aa": "Your hits fray the target's wards a little for 3s",
+	"warrior_gloves_As": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"warrior_gloves_Ba": "Iron answer: 15% chance a melee attacker is counter-struck",
+	"warrior_gloves_Bs": "Iron answer: 25% chance a melee attacker is counter-struck, and the counter-cut staggers",
+	"warrior_gloves_Ca": "Every 8th basic attack cannot miss or be grazed",
+	"warrior_gloves_Cs": "Every 5th basic attack cannot miss or be grazed, and the sure cut knocks harder",
+	"warrior_gloves_Da": "Your crits nick — a lesser wound that burns for 3s",
+	"warrior_gloves_Ds": "Your crits TEAR — a wound that keeps burning for 3s, and it tears deeper while Berserk runs",
+	"warrior_gloves_Ea": "A little of your bulk lands with every hit",
+	"warrior_gloves_Es": "Your bulk lands with every hit — bonus damage from your max health, doubled while Berserk runs",
+	"warrior_pants_Aa": "Grounded: slows, roots and freezes on you run 20% shorter — BUT you receive 10% less healing",
+	"warrior_pants_As": "Grounded: slows, roots and freezes on you run 30% shorter, and shaking off a CC grants a Grit stack",
+	"warrior_pants_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"warrior_pants_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and a full-stack blow staggers the attacker",
+	"warrior_pants_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"warrior_pants_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and abilities cast while slippery strike 20% harder (8s cd)",
+	"warrior_pants_Da": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"warrior_pants_Ds": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and the commit returns 0.5s sooner",
+	"warrior_pants_Ea": "Below 30% health, 25% damage reduction — BUT your health regen (knit and Grit) is halved",
+	"warrior_pants_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold every blow feeds Grit",
+	"archer_helmet_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"archer_helmet_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and a warded hit does not reset Second Wind's clock",
+	"archer_helmet_Ba": "The first enemy crit every 10s loses half its bite",
+	"archer_helmet_Bs": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the blunted attacker is EXPOSED",
+	"archer_helmet_Ca": "Evading a blow briefly EXPOSES the attacker",
+	"archer_helmet_Cs": "Evading a blow EXPOSES the attacker for 3s, and the dodge ticks the hunt rhythm by one",
+	"archer_helmet_Da": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"archer_helmet_Ds": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and an opening shot feeds the hunt rhythm",
+	"archer_helmet_Ea": "Overhealing pools into a small shield (up to 4% max health)",
+	"archer_helmet_Es": "Overhealing pools into a shield (up to 8% max health), — Second Wind's overshoot pools too",
+	"archer_gloves_Aa": "Your hits fray the target's wards a little for 3s",
+	"archer_gloves_As": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"archer_gloves_Ba": "Iron answer: 15% chance a melee attacker is counter-struck",
+	"archer_gloves_Bs": "Iron answer: 25% chance a melee attacker is counter-struck, as a point-blank arrow that shoves the attacker back",
+	"archer_gloves_Ca": "Every 8th basic attack cannot miss or be grazed",
+	"archer_gloves_Cs": "Every 5th basic attack cannot miss or be grazed, — the sure arrow flies true",
+	"archer_gloves_Da": "Your crits nick — a lesser wound that burns for 3s",
+	"archer_gloves_Ds": "Your crits TEAR — a wound that keeps burning for 3s, deeper on EXPOSED prey",
+	"archer_gloves_Ea": "A little of your bulk lands with every hit",
+	"archer_gloves_Es": "Your bulk lands with every hit — bonus damage from your max health, — Arrow Storm arrows each carry half of it",
+	"archer_pants_Aa": "Grounded: slows, roots and freezes on you run 20% shorter — BUT you receive 10% less healing",
+	"archer_pants_As": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC refunds 1s of Tumble",
+	"archer_pants_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"archer_pants_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and at full stacks the hide toughens",
+	"archer_pants_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"archer_pants_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and a second blow slipped in the same instant lines up a guaranteed crit",
+	"archer_pants_Da": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"archer_pants_Ds": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and Tumble returns 0.5s sooner",
+	"archer_pants_Ea": "Below 30% health, 25% damage reduction — BUT Second Wind never triggers while worn",
+	"archer_pants_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold Tumble returns sooner",
+	"assassin_helmet_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"assassin_helmet_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and a warded hit keeps the blood surge alive",
+	"assassin_helmet_Ba": "The first enemy crit every 10s loses half its bite",
+	"assassin_helmet_Bs": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the blunted attacker is left bleeding",
+	"assassin_helmet_Ca": "Evading a blow briefly EXPOSES the attacker",
+	"assassin_helmet_Cs": "Evading a blow EXPOSES the attacker for 3s, and the dodge extends a live Death Mark's window",
+	"assassin_helmet_Da": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"assassin_helmet_Ds": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and an opening strike arms the blood surge",
+	"assassin_helmet_Ea": "Overhealing pools into a small shield (up to 4% max health)",
+	"assassin_helmet_Es": "Overhealing pools into a shield (up to 8% max health), and it pools at double rate while the surge runs",
+	"assassin_gloves_Aa": "Your hits fray the target's wards a little for 3s",
+	"assassin_gloves_As": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"assassin_gloves_Ba": "Iron answer: 15% chance a melee attacker is counter-struck",
+	"assassin_gloves_Bs": "Iron answer: 25% chance a melee attacker is counter-struck, and a landed counter feeds the blood surge",
+	"assassin_gloves_Ca": "Every 8th basic attack cannot miss or be grazed",
+	"assassin_gloves_Cs": "Every 5th basic attack cannot miss or be grazed, and the sure Stab's surge runs longer",
+	"assassin_gloves_Da": "Your crits nick — a lesser wound that burns for 3s",
+	"assassin_gloves_Ds": "Your crits TEAR — a wound that keeps burning for 3s, ticking deeper on MARKED prey",
+	"assassin_gloves_Ea": "A little of your bulk lands with every hit",
+	"assassin_gloves_Es": "Your bulk lands with every hit — bonus damage from your max health, doubled while the blood surge runs",
+	"assassin_pants_Aa": "Grounded: slows, roots and freezes on you run 20% shorter — BUT you receive 10% less healing",
+	"assassin_pants_As": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC refunds 1s of Shadow Dash",
+	"assassin_pants_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"assassin_pants_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and full stacks harden Elusive — +5% evasion",
+	"assassin_pants_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"assassin_pants_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and abilities cast while slippery strike 20% harder (8s cd)",
+	"assassin_pants_Da": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"assassin_pants_Ds": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and the dash returns 0.5s sooner",
+	"assassin_pants_Ea": "Below 30% health, 25% damage reduction — BUT Elusive's regen is halved",
+	"assassin_pants_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold the surge holds",
+	"mage_helmet_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"mage_helmet_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the warded hit refunds 5 mana",
+	"mage_helmet_Ba": "The first enemy crit every 10s loses half its bite",
+	"mage_helmet_Bs": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the blow refunds 1s of Blink",
+	"mage_helmet_Ca": "Evading a blow briefly EXPOSES the attacker",
+	"mage_helmet_Cs": "Evading a blow EXPOSES the attacker for 3s, and the dodge grants 10 mana",
+	"mage_helmet_Da": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"mage_helmet_Ds": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and an opening bolt cracks the ward",
+	"mage_helmet_Ea": "Overhealing pools into a small shield (up to 4% max health)",
+	"mage_helmet_Es": "Overhealing pools into a shield (up to 8% max health), and casting Frost Nova banks 4% max health into it",
+	"mage_gloves_Aa": "Your hits fray the target's wards a little for 3s",
+	"mage_gloves_As": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"mage_gloves_Ba": "Iron answer: 15% chance a melee attacker is counter-struck",
+	"mage_gloves_Bs": "Iron answer: 25% chance a melee attacker is counter-struck, as an arcane snap that CHILLS the attacker",
+	"mage_gloves_Ca": "Every 8th basic attack cannot miss or be grazed",
+	"mage_gloves_Cs": "Every 5th basic attack cannot miss or be grazed, — the sure bolt cannot be slipped",
+	"mage_gloves_Da": "Your crits nick — a lesser wound that burns for 3s",
+	"mage_gloves_Ds": "Your crits TEAR — a wound that keeps burning for 3s, deeper on ward-cracked prey",
+	"mage_gloves_Ea": "A little of your bulk lands with every hit",
+	"mage_gloves_Es": "Your bulk lands with every hit — bonus damage from your max health, — it rides Meteor at full weight",
+	"mage_pants_Aa": "Grounded: slows, roots and freezes on you run 20% shorter — BUT you receive 10% less healing",
+	"mage_pants_As": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC restores mana",
+	"mage_pants_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"mage_pants_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and full stacks deepen Blink's Arcane Ward +10%",
+	"mage_pants_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"mage_pants_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and abilities cast while slippery strike 20% harder (8s cd)",
+	"mage_pants_Da": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"mage_pants_Ds": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and Blink returns 0.5s sooner",
+	"mage_pants_Ea": "Below 30% health, 25% damage reduction — BUT Frost Nova's restore is halved",
+	"mage_pants_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold blows restore mana",
+	"paladin_helmet_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"paladin_helmet_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the warded blow banks holy charge",
+	"paladin_helmet_Ba": "The first enemy crit every 10s loses half its bite",
+	"paladin_helmet_Bs": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the blunted blow banks holy charge",
+	"paladin_helmet_Ca": "Evading a blow briefly EXPOSES the attacker",
+	"paladin_helmet_Cs": "Evading a blow EXPOSES the attacker for 3s, and the dodge mends you",
+	"paladin_helmet_Da": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"paladin_helmet_Ds": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and it opens harder in Retribution",
+	"paladin_helmet_Ea": "Overhealing pools into a small shield (up to 4% max health)",
+	"paladin_helmet_Es": "Overhealing pools into a shield (up to 8% max health), and it pools at double rate in Holy stance",
+	"paladin_gloves_Aa": "Your hits fray the target's wards a little for 3s",
+	"paladin_gloves_As": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"paladin_gloves_Ba": "Iron answer: 15% chance a melee attacker is counter-struck",
+	"paladin_gloves_Bs": "Iron answer: 25% chance a melee attacker is counter-struck, as a smite that mends you 1%",
+	"paladin_gloves_Ca": "Every 8th basic attack cannot miss or be grazed",
+	"paladin_gloves_Cs": "Every 5th basic attack cannot miss or be grazed, and the sure Judgment mends 1%",
+	"paladin_gloves_Da": "Your crits nick — a lesser wound that burns for 3s",
+	"paladin_gloves_Ds": "Your crits TEAR — a wound that keeps burning for 3s, of holy fire, deeper in Retribution",
+	"paladin_gloves_Ea": "A little of your bulk lands with every hit",
+	"paladin_gloves_Es": "Your bulk lands with every hit — bonus damage from your max health, doubled while Aegis holds",
+	"paladin_pants_Aa": "Grounded: slows, roots and freezes on you run 20% shorter — BUT you receive 10% less healing",
+	"paladin_pants_As": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC banks holy charge",
+	"paladin_pants_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"paladin_pants_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and at full stacks Aegis guards harder (+10 resist)",
+	"paladin_pants_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"paladin_pants_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and abilities cast while slippery strike 20% harder (8s cd)",
+	"paladin_pants_Da": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"paladin_pants_Ds": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and the leap rearms sooner",
+	"paladin_pants_Ea": "Below 30% health, 25% damage reduction — BUT your class regen is halved",
+	"paladin_pants_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold the Holy mend doubles",
+	"warlock_helmet_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"warlock_helmet_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the arming ward mends 1% of your health",
+	"warlock_helmet_Ba": "The first enemy crit every 10s loses half its bite",
+	"warlock_helmet_Bs": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the blunted attacker is WITHERED",
+	"warlock_helmet_Ca": "Evading a blow briefly EXPOSES the attacker",
+	"warlock_helmet_Cs": "Evading a blow EXPOSES the attacker for 3s, and the dodge extends every live hex",
+	"warlock_helmet_Da": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"warlock_helmet_Ds": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and an opening bolt withers",
+	"warlock_helmet_Ea": "Overhealing pools into a small shield (up to 4% max health)",
+	"warlock_helmet_Es": "Overhealing pools into a shield (up to 8% max health), and it pools at double rate after Dark Pact",
+	"warlock_gloves_Aa": "Your hits fray the target's wards a little for 3s",
+	"warlock_gloves_As": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"warlock_gloves_Ba": "Iron answer: 15% chance a melee attacker is counter-struck",
+	"warlock_gloves_Bs": "Iron answer: 25% chance a melee attacker is counter-struck, and the counter BINDS the attacker",
+	"warlock_gloves_Ca": "Every 8th basic attack cannot miss or be grazed",
+	"warlock_gloves_Cs": "Every 5th basic attack cannot miss or be grazed, and the sure bolt drains life",
+	"warlock_gloves_Da": "Your crits nick — a lesser wound that burns for 3s",
+	"warlock_gloves_Ds": "Your crits TEAR — a wound that keeps burning for 3s, ticking deeper on HEXED prey",
+	"warlock_gloves_Ea": "A little of your bulk lands with every hit",
+	"warlock_gloves_Es": "Your bulk lands with every hit — bonus damage from your max health, doubled for a spell after Dark Pact",
+	"warlock_pants_Aa": "Grounded: slows, roots and freezes on you run 20% shorter — BUT you receive 10% less healing",
+	"warlock_pants_As": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC refunds 3% max health",
+	"warlock_pants_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"warlock_pants_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and full stacks steady the pact — its blood price cut a quarter",
+	"warlock_pants_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"warlock_pants_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and abilities cast while slippery strike 20% harder (8s cd)",
+	"warlock_pants_Da": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"warlock_pants_Ds": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and the advance deepens every hex",
+	"warlock_pants_Ea": "Below 30% health, 25% damage reduction — BUT Soulthirst is halved",
+	"warlock_pants_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold blows repay in blood",
+	"warrior_armor_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"warrior_armor_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the warded blow builds Grit",
+	"warrior_armor_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"warrior_armor_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and a full-stack blow staggers",
+	"warrior_armor_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"warrior_armor_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and slipping a blow hastens Shield Bash",
+	"warrior_armor_Da": "Your crits nick — a lesser wound that burns for 3s",
+	"warrior_armor_Ds": "Your crits TEAR — the maw's wound burns for 3s, and the bite staggers",
+	"warrior_armor_Ea": "Below 30% health, 10% damage reduction — BUT your health regen (knit and Grit) is halved",
+	"warrior_armor_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold blows mend you",
+	"warrior_boots_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"warrior_boots_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and warded ground feeds Grit",
+	"warrior_boots_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"warrior_boots_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and the planted stance staggers attackers",
+	"warrior_boots_Ca": "Evading a blow briefly EXPOSES the attacker",
+	"warrior_boots_Cs": "Evading a blow EXPOSES the attacker for 3s, and the dodge hastens Shield Bash",
+	"warrior_boots_Da": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"warrior_boots_Ds": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and the charge returns sooner",
+	"warrior_boots_Ea": "Below 30% health, 10% damage reduction — BUT your health regen (knit and Grit) is halved",
+	"warrior_boots_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold the ground holds you",
+	"warrior_charm_Aa": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"warrior_charm_As": "Anchor: the planted standard hardens you — flat damage reduction, up to 3 stacks, and topping them out staggers your foe",
+	"warrior_charm_Ba": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"warrior_charm_Bs": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the sworn ward feeds Grit",
+	"warrior_charm_Ca": "Your crits nick — a lesser wound that burns for 3s",
+	"warrior_charm_Cs": "Your crits TEAR — a wound that keeps burning for 3s, deeper while Berserk runs",
+	"warrior_charm_Da": "Evading a blow briefly EXPOSES the attacker",
+	"warrior_charm_Ds": "Evading a blow EXPOSES the attacker for 3s, and the feint hastens Whirlwind",
+	"warrior_charm_Ea": "Overhealing pools into a small shield (up to 4% max health) — BUT your health regen (knit and Grit) is halved",
+	"warrior_charm_Es": "Overhealing pools into a shield (up to 8% max health), pooling double while Berserk runs",
+	"archer_armor_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"archer_armor_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and a warded hit keeps Second Wind's clock",
+	"archer_armor_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"archer_armor_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and the riveted plates hold",
+	"archer_armor_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"archer_armor_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and slipping a blow ticks the hunt rhythm",
+	"archer_armor_Da": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"archer_armor_Ds": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and the first strike of the hunt throws the prey back",
+	"archer_armor_Ea": "Below 30% health, 10% damage reduction — BUT Second Wind never triggers while worn",
+	"archer_armor_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold the pelt mends you",
+	"archer_boots_Aa": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"archer_boots_As": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and Tumble returns sooner",
+	"archer_boots_Ba": "Evading a blow briefly EXPOSES the attacker",
+	"archer_boots_Bs": "Evading a blow EXPOSES the attacker for 3s, and the dodge ticks the hunt rhythm",
+	"archer_boots_Ca": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"archer_boots_Cs": "Anchor: the dead-still stance hardens you — flat damage reduction, up to 3 stacks, and holding it feeds the rhythm",
+	"archer_boots_Da": "Grounded: slows, roots and freezes on you run 20% shorter",
+	"archer_boots_Ds": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC refunds Tumble",
+	"archer_boots_Ea": "Below 30% health, 10% damage reduction — BUT Second Wind never triggers while worn",
+	"archer_boots_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold Tumble hastens",
+	"archer_charm_Aa": "Every 8th basic attack cannot miss or be grazed",
+	"archer_charm_As": "Every 5th basic attack cannot miss or be grazed, and the perfect nock feeds the rhythm",
+	"archer_charm_Ba": "The first enemy crit every 10s loses half its bite",
+	"archer_charm_Bs": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the high wind EXPOSES the attacker",
+	"archer_charm_Ca": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"archer_charm_Cs": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), harder on EXPOSED prey",
+	"archer_charm_Da": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"archer_charm_Ds": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the bark keeps Second Wind's clock",
+	"archer_charm_Ea": "Overhealing pools into a small shield (up to 4% max health) — BUT Second Wind mends at half strength",
+	"archer_charm_Es": "Overhealing pools into a shield (up to 8% max health), — the grove's endurance pools",
+	"assassin_armor_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"assassin_armor_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and a warded hit feeds the surge",
+	"assassin_armor_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"assassin_armor_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and a full-stack blow EXPOSES the attacker",
+	"assassin_armor_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"assassin_armor_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and slipping a blow feeds the surge",
+	"assassin_armor_Da": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"assassin_armor_Ds": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and the blade never seen feeds the surge",
+	"assassin_armor_Ea": "Below 30% health, 10% damage reduction — BUT Elusive's regen is halved",
+	"assassin_armor_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold the shroud mends you",
+	"assassin_boots_Aa": "Being hit leaves you slippery — +7% evasion for 2s",
+	"assassin_boots_As": "Being hit leaves you slippery — +10% evasion for 2s, and slipping a blow feeds the surge",
+	"assassin_boots_Ba": "Iron answer: 15% chance a melee attacker is counter-struck",
+	"assassin_boots_Bs": "Iron answer: 25% chance a melee attacker is counter-struck, and the cornered claw feeds the surge",
+	"assassin_boots_Ca": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"assassin_boots_Cs": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and the dash returns sooner",
+	"assassin_boots_Da": "Grounded: slows, roots and freezes on you run 20% shorter",
+	"assassin_boots_Ds": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC refunds the dash",
+	"assassin_boots_Ea": "Below 30% health, 10% damage reduction — BUT Elusive's regen is halved",
+	"assassin_boots_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold the surge holds",
+	"assassin_charm_Aa": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"assassin_charm_As": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and writing the final name feeds the surge",
+	"assassin_charm_Ba": "Your hits fray the target's wards a little for 3s",
+	"assassin_charm_Bs": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"assassin_charm_Ca": "Evading a blow briefly EXPOSES the attacker",
+	"assassin_charm_Cs": "Evading a blow EXPOSES the attacker for 3s, and the dodge extends a live Death Mark",
+	"assassin_charm_Da": "Iron answer: 15% chance a melee attacker is counter-struck",
+	"assassin_charm_Ds": "Iron answer: 25% chance a melee attacker is counter-struck, and the sworn debt feeds the surge",
+	"assassin_charm_Ea": "Overhealing pools into a small shield (up to 4% max health) — BUT Elusive's regen is halved",
+	"assassin_charm_Es": "Overhealing pools into a shield (up to 8% max health), pooling double while the surge runs",
+	"mage_armor_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"mage_armor_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the warded hit refunds mana",
+	"mage_armor_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"mage_armor_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and full plates hasten Blink",
+	"mage_armor_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"mage_armor_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and slipping a blow grants mana",
+	"mage_armor_Da": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"mage_armor_Ds": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and the empowered cast CHILLS",
+	"mage_armor_Ea": "Below 30% health, 10% damage reduction — BUT Frost Nova's restore is halved",
+	"mage_armor_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold the clay mends you",
+	"mage_boots_Aa": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"mage_boots_As": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and the opening cast cracks the ward",
+	"mage_boots_Ba": "Evading a blow briefly EXPOSES the attacker",
+	"mage_boots_Bs": "Evading a blow EXPOSES the attacker for 3s, and the dodge grants mana",
+	"mage_boots_Ca": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"mage_boots_Cs": "Anchor: the closed circle hardens you — flat damage reduction, up to 3 stacks, and completing it returns Blink sooner",
+	"mage_boots_Da": "Grounded: slows, roots and freezes on you run 20% shorter",
+	"mage_boots_Ds": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC restores mana",
+	"mage_boots_Ea": "Below 30% health, 10% damage reduction — BUT Frost Nova's restore is halved",
+	"mage_boots_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold blows restore mana",
+	"mage_charm_Aa": "Your hits fray the target's wards a little for 3s",
+	"mage_charm_As": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"mage_charm_Ba": "Your crits nick — a lesser wound that burns for 3s",
+	"mage_charm_Bs": "Your crits TEAR — a wound that keeps burning for 3s, deeper on ward-cracked prey",
+	"mage_charm_Ca": "The first enemy crit every 10s loses half its bite",
+	"mage_charm_Cs": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the final barrier refunds mana",
+	"mage_charm_Da": "Evading a blow briefly EXPOSES the attacker",
+	"mage_charm_Ds": "Evading a blow EXPOSES the attacker for 3s, and the sigil pays the dodge in mana",
+	"mage_charm_Ea": "Overhealing pools into a small shield (up to 4% max health) — BUT Frost Nova's restore is halved",
+	"mage_charm_Es": "Overhealing pools into a shield (up to 8% max health), — the bloom's overflow pools",
+	"paladin_armor_Aa": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"paladin_armor_As": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and full stacks bank holy charge",
+	"paladin_armor_Ba": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"paladin_armor_Bs": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the warded blow banks holy charge",
+	"paladin_armor_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"paladin_armor_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and slipping a blow mends the watcher",
+	"paladin_armor_Da": "Your crits nick — a lesser wound that burns for 3s",
+	"paladin_armor_Ds": "Your crits TEAR — a martyr's brand that burns for 3s, deeper in Retribution",
+	"paladin_armor_Ea": "Below 30% health, 10% damage reduction — BUT your class regen is halved",
+	"paladin_armor_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold the Holy mend doubles",
+	"paladin_boots_Aa": "Your first hit on an unwounded enemy strikes 15% harder (the opening re-arms every 12s)",
+	"paladin_boots_As": "Your first hit on an unwounded enemy strikes 25% harder (the opening re-arms every 12s), and the charge's first blow staggers",
+	"paladin_boots_Ba": "Grounded: slows, roots and freezes on you run 20% shorter",
+	"paladin_boots_Bs": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC banks holy charge",
+	"paladin_boots_Ca": "Evading a blow briefly EXPOSES the attacker",
+	"paladin_boots_Cs": "Evading a blow EXPOSES the attacker for 3s, and the watch mends the dodger",
+	"paladin_boots_Da": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"paladin_boots_Ds": "Anchor: the noon stance hardens you — flat damage reduction, up to 3 stacks, and holding it rearms the leap sooner",
+	"paladin_boots_Ea": "Below 30% health, 10% damage reduction — BUT your class regen is halved",
+	"paladin_boots_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold the road mends you",
+	"paladin_charm_Aa": "The first enemy crit every 10s loses half its bite",
+	"paladin_charm_As": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the doorless house banks holy charge",
+	"paladin_charm_Ba": "Your crits nick — a lesser wound that burns for 3s",
+	"paladin_charm_Bs": "Your crits TEAR — a wound that keeps burning for 3s, of dawn-fire, deeper in Retribution",
+	"paladin_charm_Ca": "Your hits fray the target's wards a little for 3s",
+	"paladin_charm_Cs": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"paladin_charm_Da": "Evading a blow briefly EXPOSES the attacker",
+	"paladin_charm_Ds": "Evading a blow EXPOSES the attacker for 3s, and the vow hastens Aegis",
+	"paladin_charm_Ea": "Overhealing pools into a small shield (up to 4% max health) — BUT your class regen is halved",
+	"paladin_charm_Es": "Overhealing pools into a shield (up to 8% max health), pooling double in Holy stance",
+	"warlock_armor_Aa": "Taking magic damage arms a lesser ward — 15% magic damage reduction for 2s (8s cd)",
+	"warlock_armor_As": "Taking magic damage arms a ward — 30% magic damage reduction for 2s (8s cd), and the ward pays you back in life",
+	"warlock_armor_Ba": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"warlock_armor_Bs": "Anchor: every blow you take hardens you — flat damage reduction, up to 3 stacks, and a full-stack blow WITHERS",
+	"warlock_armor_Ca": "Being hit leaves you slippery — +7% evasion for 2s",
+	"warlock_armor_Cs": "Being hit leaves you slippery — +10% evasion for 2s, and slipping a blow deepens every hex",
+	"warlock_armor_Da": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"warlock_armor_Ds": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and the catastrophe WITHERS its prey",
+	"warlock_armor_Ea": "Below 30% health, 10% damage reduction — BUT Soulthirst is halved",
+	"warlock_armor_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold blows repay in blood",
+	"warlock_boots_Aa": "Anchor: blows you take harden you a little — up to 2 stacks",
+	"warlock_boots_As": "Anchor: the breaking world hardens you — flat damage reduction, up to 3 stacks, and topping them out WITHERS your foe",
+	"warlock_boots_Ba": "Evading a blow briefly EXPOSES the attacker",
+	"warlock_boots_Bs": "Evading a blow EXPOSES the attacker for 3s, and the dodge deepens every hex",
+	"warlock_boots_Ca": "After your commit ability, your next damaging ability within 3s strikes 12% harder",
+	"warlock_boots_Cs": "After your commit ability, your next damaging ability within 3s strikes 20% harder, and the advance deepens every hex",
+	"warlock_boots_Da": "Grounded: slows, roots and freezes on you run 20% shorter",
+	"warlock_boots_Ds": "Grounded: slows, roots and freezes on you run 30% shorter, and a shrugged CC refunds max health",
+	"warlock_boots_Ea": "Below 30% health, 10% damage reduction — BUT Soulthirst is halved",
+	"warlock_boots_Es": "Below 30% health you stand in the doorway — 15% damage reduction, and below the threshold blows repay in blood",
+	"warlock_charm_Aa": "Your hits fray the target's wards a little for 3s",
+	"warlock_charm_As": "Your hits unweave the target's wards, tearing armor open for 3s — and the tear stacks twice as deep",
+	"warlock_charm_Ba": "Your crits nick — a lesser wound that burns for 3s",
+	"warlock_charm_Bs": "Your crits TEAR — a wound that keeps burning for 3s, ticking deeper on HEXED prey",
+	"warlock_charm_Ca": "The first enemy crit every 10s loses half its bite",
+	"warlock_charm_Cs": "The first enemy crit every 10s lands BLUNTED to a normal hit, and the law that survives pays you back in life",
+	"warlock_charm_Da": "Evading a blow briefly EXPOSES the attacker",
+	"warlock_charm_Ds": "Evading a blow EXPOSES the attacker for 3s, and the cord deepens every hex",
+	"warlock_charm_Ea": "Overhealing pools into a small shield (up to 4% max health) — BUT Soulthirst is halved",
+	"warlock_charm_Es": "Overhealing pools into a shield (up to 8% max health), pooling double after Dark Pact",
 }
 
 # ------------------------------------------------------------------- gems ---
@@ -456,6 +1217,70 @@ static func bag_buy_price(grade: String) -> int:
 	return int(Balance.BAG_BUY_PRICE.get(grade, 30))
 
 
+# ----------------------------------------------------- crafting materials ---
+# Five PHYSICAL families x seven grades (PROPOSALS/MATERIALS.md §2). A material
+# is a STACKING bag item ({"kind": "material", ...}); the names below ARE the
+# exact GearFlavor.FLAVOR keys, so the ported lore resolves off "name". Mob/node
+# materials cap at A (Balance.MATERIAL_MOB_GRADE_CAP) — every family's S entry
+# exists but is boss-Gold-chest-only (BOSS_LOOT.md). Sprites live at
+# assets/icons/materials/<family>_<lowercase grade>_<snake name>.png; material_stem
+# derives the stem and autotest asserts every one of the 35 files exists.
+const MATERIAL_FAMILIES := ["metal", "cloth", "bone", "reagent", "herb"]
+const MATERIALS := {
+	"metal": {"F": "Rusted Scrap", "E": "Pitted Iron", "D": "Plain Ingot",
+		"C": "Tempered Steel", "B": "Fine Steel", "A": "Mastercrafted Alloy",
+		"S": "Starforged Ingot"},
+	"cloth": {"F": "Frayed Scraps", "E": "Coarse Cloth", "D": "Plain Bolt",
+		"C": "Tanned Weave", "B": "Fine Silk", "A": "Gilded Weave",
+		"S": "Moonweave"},
+	"bone": {"F": "Cracked Bone", "E": "Bleached Bone", "D": "Whole Bone",
+		"C": "Runed Bone", "B": "Blessed Relic", "A": "Saintbone",
+		"S": "Concordium Relic"},
+	"reagent": {"F": "Foul Residue", "E": "Crude Extract", "D": "Clean Extract",
+		"C": "Potent Essence", "B": "Pure Essence", "A": "Radiant Essence",
+		"S": "Quintessence"},
+	"herb": {"F": "Wilted Sprig", "E": "Common Weed", "D": "Fresh Herb",
+		"C": "Verdant Herb", "B": "Rare Bloom", "A": "Pristine Bloom",
+		"S": "Sunpetal"},
+}
+const MATERIAL_STACK_MAX := 99          # a stack caps here; a fresh (family,grade) needs a new bag slot
+const MATERIAL_BASE_VALUE := 6.0        # intrinsic gold per unit at grade D (x GRADE_MULT); SELL = x MERCHANT_SELL_FRACTION
+
+
+## Snake-cased sprite stem for a material name: lowercase, every run of
+## non-alphanumeric collapses to a single "_" (matches the installed files,
+## e.g. "Rusted Scrap" -> "metal_f_rusted_scrap").
+static func material_stem(family: String, grade: String, mat_name: String) -> String:
+	var slug := ""
+	var prev_us := true  # start true so leading punctuation never opens with "_"
+	for ch in mat_name.to_lower():
+		var c: int = ch.unicode_at(0)
+		if (c >= 97 and c <= 122) or (c >= 48 and c <= 57):
+			slug += ch
+			prev_us = false
+		elif not prev_us:
+			slug += "_"
+			prev_us = true
+	return "%s_%s_%s" % [family, grade.to_lower(), slug.trim_suffix("_")]
+
+
+## A stacking crafting-material bag item. `sprite` is the assets/icons-relative
+## stem ("materials/<stem>") so Art.material_icon and Pickup render it directly;
+## `name` is the GearFlavor key. Unknown family/grade yields an empty name.
+static func make_material(family: String, grade: String, count := 1) -> Dictionary:
+	var mat_name := String(MATERIALS.get(family, {}).get(grade, ""))
+	return {"kind": "material", "family": family, "grade": grade,
+		"name": mat_name, "sprite": "materials/" + material_stem(family, grade, mat_name),
+		"count": maxi(1, count)}
+
+
+## Flat INTRINSIC gold value of one material unit (anti-haul, PROFESSIONS §4):
+## a fixed per-grade number, NOT a farm-cost. SELL applies MERCHANT_SELL_FRACTION
+## on top (menus.gd) exactly like gems (gem_gold_value) and gear (price).
+static func material_value(grade: String) -> int:
+	return int(round(MATERIAL_BASE_VALUE * float(GRADE_MULT.get(grade, 1.0))))
+
+
 # ----------------------------------------------------------- consumables ---
 # Non-gear bag items ({"kind": "stone", ...}). The talent reset stone is
 # the first; elites are the primary source (playtest round 6).
@@ -468,7 +1293,10 @@ static func bag_buy_price(grade: String) -> int:
 # and BYPASSED the room budget entirely (unlimited 30%-max heals, gold the
 # only gate). Rule now: if it can slot in the rotation, it ALWAYS spends the
 # room budget — bag click or Q alike (player_core._drink_gate).
-const ROTATION_POTIONS := ["mana_potion", "elixir_might", "renewal_draught"]
+# elixir_ward joined 2026-07-29 for the SAME reason: its use_consumable branch
+# had no _drink_gate, so chain-chugging bought near-permanent 25% DR (gold the
+# only gate) — the exact bypass the rule above exists to close.
+const ROTATION_POTIONS := ["mana_potion", "elixir_might", "elixir_ward", "renewal_draught"]
 static func make_reset_stone() -> Dictionary:
 	return {"kind": "stone", "id": "reset_stone", "grade": "B",
 		"name": "Stone of Unlearning",
@@ -729,7 +1557,106 @@ const SHAPE_STYLE := {
 	"Shadeweave Chausses": {"main": 0.90, "bias": {"dex": 1.30, "eva": 1.30}, "tag": "nimble"},
 	"Ruinweave Chausses": {"main": 0.95, "bias": {"atk_pct": 1.20, "crit": 1.20, "magpen": 1.20}, "tag": "aggressor"},
 	"Bloodpact Chausses": {"main": 1.10, "bias": {"hp_pct": 1.30, "VIT": 1.30}, "tag": "bulwark"},
-	# ===================== ARMOR / BOOTS / CHARM (matrix rework pending) ========
+	# ===== ARMOR / BOOTS / CHARM matrix shapes (§5, migrated 2026-07-27) =====
+	# The legacy shared shapes (Plate/Mail/.../Sigil) stay below for saved
+	# items; they are no longer in SLOT_NAMES' union or CLASS_GEAR.
+	# --- Warrior ---
+	"Wardsteel Plate": {"main": 1.0, "bias": {"magres": 1.6}, "tag": "warded"},
+	"Ironwall Plate": {"main": 1.05, "bias": {"physres": 1.3, "critres": 1.3}, "tag": "guarded"},
+	"Skirmisher's Halfplate": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Bloodforged Harness": {"main": 0.95, "bias": {"atk_pct": 1.2, "crit": 1.2, "physpen": 1.2}, "tag": "aggressor"},
+	"Titanplate": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Wardstep Greaves": {"main": 1.0, "bias": {"magres": 1.6}, "tag": "warded"},
+	"Sabatons": {"main": 1.05, "bias": {"physres": 1.3, "critres": 1.3}, "tag": "guarded"},
+	"Skirmisher's Boots": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Reaver Treads": {"main": 0.95, "bias": {"atk_pct": 1.2, "crit": 1.2, "physpen": 1.2}, "tag": "aggressor"},
+	"Anchorplate": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Warbanner": {"main": 0.9, "bias": {"atk_pct": 1.6}, "tag": "aggressor"},
+	"Oath Sigil": {"main": 1.0, "bias": {"physres": 1.3, "magres": 1.3}, "tag": "guarded"},
+	"Butcher's Token": {"main": 0.9, "bias": {"crit": 1.3, "physpen": 1.3}, "tag": "aggressor"},
+	"Duelist's Knot": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Heart of the Wall": {"main": 1.1, "bias": {"hp_pct": 1.2, "VIT": 1.2, "critres": 1.2}, "tag": "bulk"},
+	# --- Archer ---
+	"Stormweave Jerkin": {"main": 1.0, "bias": {"magres": 1.6}, "tag": "warded"},
+	"Studded Brigandine": {"main": 1.05, "bias": {"physres": 1.3, "critres": 1.3}, "tag": "guarded"},
+	"Ranger's Leathers": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Hunter's Harness": {"main": 0.95, "bias": {"atk_pct": 1.2, "crit": 1.2, "physpen": 1.2}, "tag": "aggressor"},
+	"Beastpelt": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Piercer's Cleats": {"main": 0.9, "bias": {"physpen": 1.6}, "tag": "aggressor"},
+	"Windstriders": {"main": 0.9, "bias": {"eva": 1.3, "dex": 1.3}, "tag": "fast and light"},
+	"Marksman's Stance": {"main": 0.95, "bias": {"crit": 1.3, "atk_pct": 1.3}, "tag": "aggressor"},
+	"Wardedsole": {"main": 1.05, "bias": {"physres": 1.2, "magres": 1.2, "critres": 1.2}, "tag": "guarded"},
+	"Trailboots": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Fletcher's Token": {"main": 0.85, "bias": {"crit": 1.6}, "tag": "aggressor"},
+	"Windfeather": {"main": 0.9, "bias": {"eva": 1.3, "dex": 1.3}, "tag": "fast and light"},
+	"Hunter's Totem": {"main": 0.9, "bias": {"atk_pct": 1.3, "physpen": 1.3}, "tag": "aggressor"},
+	"Stonebark Ward": {"main": 1.0, "bias": {"physres": 1.3, "critres": 1.3}, "tag": "guarded"},
+	"Greenheart Idol": {"main": 1.1, "bias": {"hp_pct": 1.2, "VIT": 1.2, "magres": 1.2}, "tag": "bulk"},
+	# --- Assassin ---
+	"Shadowveil Cloak": {"main": 1.0, "bias": {"magres": 1.6}, "tag": "warded"},
+	"Warded Mantle": {"main": 1.05, "bias": {"physres": 1.3, "critres": 1.3}, "tag": "guarded"},
+	"Gossamer Cloak": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Nightsilk Wrap": {"main": 0.95, "bias": {"physpen": 1.2, "atk_pct": 1.2, "crit": 1.2}, "tag": "aggressor"},
+	"Verdant Shroud": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Slipsteps": {"main": 0.9, "bias": {"eva": 1.6}, "tag": "fast and light"},
+	"Prowlers": {"main": 0.9, "bias": {"crit": 1.3, "dex": 1.3}, "tag": "fast and light"},
+	"Venomtread": {"main": 0.95, "bias": {"physpen": 1.3, "atk_pct": 1.3}, "tag": "aggressor"},
+	"Ironsole Wraps": {"main": 1.05, "bias": {"physres": 1.2, "magres": 1.2, "critres": 1.2}, "tag": "guarded"},
+	"Grave Treads": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Killer's Mark": {"main": 0.85, "bias": {"crit": 1.6}, "tag": "aggressor"},
+	"Poisoner's Vial": {"main": 0.85, "bias": {"physpen": 1.6}, "tag": "aggressor"},
+	"Ghostlight Charm": {"main": 0.9, "bias": {"eva": 1.3, "dex": 1.3}, "tag": "fast and light"},
+	"Bloodoath Cord": {"main": 0.95, "bias": {"atk_pct": 1.3, "physres": 1.3}, "tag": "guarded"},
+	"Wraithbone Fetish": {"main": 1.1, "bias": {"hp_pct": 1.2, "VIT": 1.2, "magres": 1.2}, "tag": "bulk"},
+	# --- Mage ---
+	"Silk Vestments": {"main": 1.0, "bias": {"magres": 1.6}, "tag": "warded"},
+	"Runeplate Robe": {"main": 1.05, "bias": {"physres": 1.3, "critres": 1.3}, "tag": "guarded"},
+	"Featherweave Robe": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Starweave Robe": {"main": 0.95, "bias": {"atk_pct": 1.2, "crit": 1.2, "magpen": 1.2}, "tag": "aggressor"},
+	"Earthen Robe": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Starstep": {"main": 0.85, "bias": {"crit": 1.6}, "tag": "aggressor"},
+	"Levitation Slippers": {"main": 0.9, "bias": {"eva": 1.3, "dex": 1.3}, "tag": "fast and light"},
+	"Sigil Sandals": {"main": 0.95, "bias": {"magpen": 1.3, "atk_pct": 1.3}, "tag": "aggressor"},
+	"Wardstone Shoes": {"main": 1.05, "bias": {"physres": 1.2, "magres": 1.2, "critres": 1.2}, "tag": "guarded"},
+	"Rootbound Sandals": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Arcane Orb": {"main": 0.85, "bias": {"magpen": 1.6}, "tag": "aggressor"},
+	"Starshard": {"main": 0.9, "bias": {"crit": 1.3, "atk_pct": 1.3}, "tag": "aggressor"},
+	"Aegis Crystal": {"main": 1.0, "bias": {"physres": 1.3, "magres": 1.3}, "tag": "guarded"},
+	"Zephyr Sigil": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Lifebloom Pendant": {"main": 1.1, "bias": {"hp_pct": 1.2, "VIT": 1.2, "critres": 1.2}, "tag": "bulk"},
+	# --- Paladin ---
+	"Templar Plate": {"main": 1.05, "bias": {"physres": 1.6}, "tag": "guarded"},
+	"Blessed Plate": {"main": 1.0, "bias": {"magres": 1.3, "critres": 1.3}, "tag": "guarded"},
+	"Vigil Halfplate": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Zealot Harness": {"main": 0.95, "bias": {"atk_pct": 1.2, "crit": 1.2, "magpen": 1.2}, "tag": "aggressor"},
+	"Sanctified Bulwark": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Zealot's Cleats": {"main": 0.85, "bias": {"crit": 1.6}, "tag": "aggressor"},
+	"Sabatons of the Oath": {"main": 1.05, "bias": {"physres": 1.3, "magres": 1.3}, "tag": "guarded"},
+	"Vigil Steps": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Radiant Greaves": {"main": 0.95, "bias": {"magpen": 1.3, "atk_pct": 1.3}, "tag": "aggressor"},
+	"Pilgrim's Resolve": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Reliquary": {"main": 1.0, "bias": {"magres": 1.6}, "tag": "warded"},
+	"Sunburst Icon": {"main": 0.9, "bias": {"atk_pct": 1.3, "crit": 1.3}, "tag": "aggressor"},
+	"Judgment Sigil": {"main": 0.85, "bias": {"magpen": 1.6}, "tag": "aggressor"},
+	"Swiftvow Cord": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Oathkeeper's Seal": {"main": 1.1, "bias": {"hp_pct": 1.2, "VIT": 1.2, "physres": 1.2}, "tag": "bulk"},
+	# --- Warlock ---
+	"Voidsilk Robe": {"main": 1.0, "bias": {"magres": 1.6}, "tag": "warded"},
+	"Bonemail": {"main": 1.05, "bias": {"physres": 1.3, "critres": 1.3}, "tag": "guarded"},
+	"Shadeweave Robe": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Ruinweave": {"main": 0.95, "bias": {"atk_pct": 1.2, "crit": 1.2, "magpen": 1.2}, "tag": "aggressor"},
+	"Bloodpact Vestment": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Ruinstep": {"main": 0.85, "bias": {"crit": 1.6}, "tag": "aggressor"},
+	"Shadowstep Wraps": {"main": 0.9, "bias": {"eva": 1.3, "dex": 1.3}, "tag": "fast and light"},
+	"Hexcarved Treads": {"main": 0.95, "bias": {"magpen": 1.3, "atk_pct": 1.3}, "tag": "aggressor"},
+	"Bonewalkers": {"main": 1.05, "bias": {"physres": 1.2, "magres": 1.2, "critres": 1.2}, "tag": "guarded"},
+	"Gravebound Boots": {"main": 1.1, "bias": {"hp_pct": 1.3, "VIT": 1.3}, "tag": "bulk"},
+	"Soul Fetish": {"main": 0.85, "bias": {"magpen": 1.6}, "tag": "aggressor"},
+	"Cursed Idol": {"main": 0.9, "bias": {"crit": 1.3, "atk_pct": 1.3}, "tag": "aggressor"},
+	"Ward of Ash": {"main": 1.0, "bias": {"physres": 1.3, "magres": 1.3}, "tag": "guarded"},
+	"Umbral Cord": {"main": 0.9, "bias": {"dex": 1.3, "eva": 1.3}, "tag": "fast and light"},
+	"Heartcage": {"main": 1.1, "bias": {"hp_pct": 1.2, "VIT": 1.2, "critres": 1.2}, "tag": "bulk"},
+	# ===================== ARMOR / BOOTS / CHARM (LEGACY back-compat) ========
 	"Plate":    {"main": 1.15, "bias": {}, "tag": "bulk"},
 	"Mail":     {"main": 0.9,  "bias": {"eva": 1.60}, "tag": "elusive"},
 	"Guard":    {"main": 0.95, "bias": {"physres": 1.60}, "tag": "physical resistance"},
@@ -923,16 +1850,23 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 	# passive still sleeps behind the awakening quest; unique passives are
 	# live on pickup (owner call, §10.1).
 	if cls != "" and force_noun == "" and act > 0:
-		if slot == "weapon" and grade in ["A", "S"]:
+		if grade in ["A", "S"]:
+			# Slot-generic (2026-07-27): the pool filters by SLOT, so the channel
+			# lights up per slot exactly when that slot's uniques enter the table
+			# (weapons today; helmet/gloves/pants when the art pass names theirs).
 			var gate_act: int = Balance.UNIQUE_A_ACT if grade == "A" else Balance.UNIQUE_S_ACT
 			var chance: float = Balance.UNIQUE_A_CHANCE if grade == "A" else Balance.UNIQUE_S_CHANCE
 			if act >= gate_act and rng.randf() < chance:
-				var pool := uniques_of(cls, grade)
+				var pool := uniques_of(cls, grade, slot)
 				if not pool.is_empty():
 					return make_unique(pool[rng.randi_range(0, pool.size() - 1)], rng)
-		if grade == "S" and act >= Balance.UNIQUE_A_ACT and S_GEAR.has(cls) \
-				and S_GEAR[cls].has(slot) and rng.randf() < Balance.LEGEND_S_CHANCE:
-			return make_legendary(cls, slot, rng)  # only slots with a defined legendary
+		# (2026-07-27, owner call) The LEGENDARY channel is RETIRED: no separate
+		# legendary tier, no awakening questline — the six flagship passives
+		# live on their fitting named-S uniques instead (kingsblade on
+		# Crownfall, windward on Tempest Yew, wellspring on Firmament,
+		# mirrorstep on Pale Flight, dawnbreaker on Dawnfall, voidmaw on The
+		# Book That Remembers You). Old-save legendaries keep working: their
+		# stored passive id is live and the dormant gate is gone.
 
 	var mult: float = GRADE_MULT[grade]
 	var noun_list: Array = SLOT_NAMES[slot]
@@ -965,11 +1899,13 @@ static func roll_item_of(slot: String, grade: String, rng: RandomNumberGenerator
 	return item
 
 
-## The named uniques of one class at one grade (drop pool for the named channel).
-static func uniques_of(cls: String, grade: String) -> Array:
+## The named uniques of one class at one grade (drop pool for the named
+## channel). `slot` narrows the pool ("" = all slots — codex/dev listings).
+static func uniques_of(cls: String, grade: String, slot := "") -> Array:
 	var out: Array = []
 	for u in UNIQUES:
-		if String(u["cls"]) == cls and String(u["grade"]) == grade:
+		if String(u["cls"]) == cls and String(u["grade"]) == grade \
+				and (slot == "" or String(u["slot"]) == slot):
 			out.append(u)
 	return out
 
@@ -986,20 +1922,9 @@ static func make_unique(u: Dictionary, rng: RandomNumberGenerator) -> Dictionary
 	return item
 
 
-## Build the class's S_GEAR legendary for a slot: a generic S roll wearing the
-## legendary name; the weapon's signature passive SLEEPS until the class's
-## awakening quest sets s_awakened_<cls> (round 51b, unchanged).
-static func make_legendary(cls: String, slot: String, rng: RandomNumberGenerator) -> Dictionary:
-	var item := roll_item_of(slot, "S", rng, cls)
-	if not (S_GEAR.has(cls) and S_GEAR[cls].has(slot)):
-		return item  # no legendary defined for this slot (e.g. the new armor slots) — plain S
-	var special: Dictionary = S_GEAR[cls][slot]
-	item["name"] = special["name"]
-	item["cls"] = cls
-	if special.has("passive"):
-		item["passive"] = special["passive"]
-		item["passive_dormant"] = true
-	return item
+# (make_legendary deleted 2026-07-27 with the legendary tier — see the
+# retired-channel note in roll_item_of. S_GEAR below stays as the historical
+# name record; nothing rolls or reads it at drop time anymore.)
 
 
 ## How many RANDOM substats a grade rolls. Formula gives F/E/D:0, C/B:1, A:2; S is
@@ -1245,44 +2170,148 @@ static func add_socket(item: Dictionary) -> void:
 	item["gem_slots"] = int(item.get("gem_slots", 0)) + 1
 
 
-# --------------------------------------------------------------- set bonuses ---
-# Each class's four S legendaries form a SET. Wearing 2 / 4 pieces of your
-# own class's S set grants escalating bonuses (applied in Player.recalc).
-# S items carry item["cls"], so only your class's legendaries count.
-# ROLE-WEAKNESS doctrine (2026-07-07, refined): a set shores up the class's
-# WEAKNESS, not its strength. The plate tanks (warrior/paladin) already
-# excel at survival, so their set is pure OFFENSE — their weak axis — to
-# keep their dps from falling behind the squishies' damage scaling. The
-# squishies (archer/assassin/mage/warlock) get DEFENSE from real mitigation
-# — VITALITY (pool + a broad tiny-res sprinkle) plus direct resistances and
-# critres — NO evasion (a soft-capping avoid-RNG cop-out). Modest numbers
-# ride the STEEP low end of the res curve (res_frac saturates, so a little
-# from a near-zero base buys a lot), closing the survival gap for endgame
-# bullet hell WITHOUT making them tanks. All four squishy 4pc are broad
-# phys + mag res + a little critres (bullet hell throws both damage types);
-# the VIT 2pc adds the pool. No specials (gear rule holds).
-const SET_BONUSES := {
-	# S-set bonuses are the ENDGAME DPS dial (S-gear only, inert below): glass
-	# cannons (archer/mage) get OFFENSE to top the charts, plate a SMALL offense
-	# lift (they lead on survivability, not damage), assassin/warlock keep the
-	# defensive set (assassin tops on raw kit; warlock is the survivable caster).
-	"warrior":  {"name": "Emberforged Warplate",    "2": {"atk_pct": 0.02}, "4": {"atk_pct": 0.04, "physpen": 4.0}},
-	"paladin":  {"name": "The Highfather's Aegis",  "2": {"atk_pct": 0.06}, "4": {"atk_pct": 0.12, "magpen": 6.0}},
-	"archer":   {"name": "The Hawk God's Regalia",  "2": {"atk_pct": 0.08}, "4": {"atk_pct": 0.17, "crit": 0.04, "physpen": 6.0}},
-	"assassin": {"name": "The Shadow God's Vestige", "2": {"VIT": 8.0},     "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
-	"mage":     {"name": "The Archmage's Array",    "2": {"atk_pct": 0.10}, "4": {"atk_pct": 0.22, "magpen": 8.0}},
-	"warlock":  {"name": "The Long Bargain Raiment", "2": {"VIT": 8.0},     "4": {"physres": 14.0, "magres": 14.0, "critres": 6.0}},
+# ---------------------------- unique gear SETS (2026-07-28) -----------------
+# GEAR_UNIQUE_SETS.md: a set is a PROFILE worn across the six gear slots.
+# Membership is STRUCTURAL — the profile letter inside a named gear unique's
+# passive id ("<cls>_<slot>_<P><lane>"); both lanes count; weapons never do
+# (the weapon is the free signature choice). Bonuses live in Balance.UNIQ_SETS
+# and are applied in Player.recalc + their clause seams. This replaces the
+# legacy one-set-per-class S bonus (SET_BONUSES/count_set_pieces, retired —
+# it predated the 7-slot world and was named for the retired legendary tier;
+# generic S pieces no longer form a set).
+
+
+# Verb family -> profile letter. Membership derives from what a piece DOES
+# (its engine verb), not its positional id letter — armor/boots/charm rows
+# order by the §5 coverage tables, so position lies about the profile there
+# (an archer's pen-cleats sit in row A but fight like an aggressor piece).
+const VERB_PROFILE := {"helm_ward": "A", "glove_ward": "A", "pants_ward": "A",
+	"helm_guard": "B", "glove_guard": "B", "pants_guard": "B",
+	"helm_finesse": "C", "glove_finesse": "C", "pants_finesse": "C",
+	"helm_aggr": "D", "glove_aggr": "D", "pants_aggr": "D",
+	"helm_bulwark": "E", "glove_bulwark": "E", "pants_bulwark": "E"}
+
+
+## The profile letter (A-E) of a named GEAR unique — by VERB family; "" for
+## everything else (weapons, generics, flagship ids, foreign-class pieces).
+static func set_profile_of(item: Dictionary, cls := "") -> String:
+	if cls != "" and String(item.get("cls", "")) != cls:
+		return ""
+	var pid := String(item.get("passive", ""))
+	if pid == "" or pid.split("_").size() != 3:
+		return ""
+	return String(VERB_PROFILE.get(String(Balance.uniq(pid).get("verb", "")), ""))
+
+
+## Worn count per profile letter for `cls` ({"A": n, ...} — absent = 0).
+static func count_profile_pieces(equipment: Dictionary, cls: String) -> Dictionary:
+	var out := {}
+	for slot in equipment:
+		var prof := set_profile_of(equipment[slot], cls)
+		if prof != "":
+			out[prof] = int(out.get(prof, 0)) + 1
+	return out
+
+
+## A profile set's display name: the leading name of the class's helmet-S
+## unique in that profile (the art pass named S triads in families —
+## "Nullward, Helm of the Crownless Host" -> "Nullward").
+static func uniq_set_name(cls: String, profile: String) -> String:
+	var want := "%s_helmet_%ss" % [cls, profile]
+	for u in UNIQUES:
+		if String(u.get("passive", "")) == want:
+			return String(u["name"]).split(",")[0]
+	return "%s set" % profile
+
+
+# Player-facing lines for set CLAUSE knobs (plain stat keys render through
+# STAT_LABEL; these are the tiers recalc can't describe). Numbers here mirror
+# the Balance.UNIQ_SETS placeholders — the bench phase updates both together.
+const SET_CLAUSE_TEXT := {
+	"grit_on_magic": "taking magic damage builds a Grit stack",
+	"ward_amp": "for 6s after your ward arms, +10% damage",
+	"grit_cap": "Grit cap +2",
+	"full_grit_answer": "at full Grit, blows you take are answered",
+	"grit_on_evade": "evading builds a Grit stack",
+	"slippery_amp": "+10% damage while slippery",
+	"berserk_ext": "Berserk runs +3s",
+	"opener_stagger": "your openers stagger and CRUSH (+12% while the foe reels), re-arming every 12s",
+	"crush_amp": "",
+	"bastion_add": "the bastion floor deepens +10%",
+	"sw_magic_keep": "magic damage doesn't reset Second Wind",
+	"sw_regen": "Second Wind regen +2%/s",
+	"huntp_struck": "being hit ticks the hunt rhythm",
+	"anchor_thorns": "anchored blows return thorns",
+	"tumble_cd": "Tumble returns 1s sooner",
+	"perfect_crit": "a perfect dodge lines up a guaranteed crit",
+	"amp_marked": "EXPOSED prey takes +8% from you",
+	"opener_expose": "your first shot on unwounded prey EXPOSES it and feeds the rhythm, re-arming every 12s",
+	"rhythm_cut": "the hunt rhythm converts one beat sooner",
+	"amp_marked6": "EXPOSED prey takes a further +5% from you",
+	"sw_delay": "Second Wind starts 0.5s sooner",
+	"lowhp_slow": "below 30% HP, blows you take SLOW the attacker",
+	"surge_ward": "a warded hit feeds the blood surge",
+	"mward_add": "your ward's reduction deepens +10%",
+	"parry_add": "full anchor stacks add +10% parry-family chance",
+	"surge_answer": "blows taken while surging are answered",
+	"dmark_evade": "evading extends a live Death Mark",
+	"surge_amp": "while the blood surge runs, your blades bite +15%",
+	"amp_deathmarked": "while Death Mark runs, the marked prey takes +25% from you",
+	"surge_hold": "below 30% HP the blood surge never expires",
+	"mana_ward": "warded hits refund 15 mana",
+	"blink_dr": "Blink's Arcane Ward +10% reduction",
+	"blunt_icd_cut": "your crit-blunt piece recovers 3s sooner",
+	"cloak_stacks": "anchor stacks ward you — 5% less damage per stack",
+	"mana_evade": "evading grants 10 mana",
+	"blink_cd": "Blink returns 0.5s sooner",
+	"amp_shredded": "ward-cracked prey takes +8% from you",
+	"bolt_shred_every4": "every 8th Firebolt cracks the ward",
+	"bolt_shred_every": "every 4th Firebolt cracks the ward",
+	"nova_restore_add": "Frost Nova's restore +5%",
+	"nova_root": "Frost Nova roots what it catches",
+	"holy_ward": "warded blows bank holy charge",
+	"holy_blunt": "blunted crits bank holy charge",
+	"aegis_ext": "Aegis holds +0.5s",
+	"mend_evade": "evading mends 2%",
+	"leap_cut": "Judgment's leap rearms 1s sooner",
+	"opener_holy": "openers in Retribution bank holy charge, re-arming every 12s",
+	"swap_amp": "Conviction's swap slam +15%",
+	"retri_amp": "in Retribution, your blows strike +10% harder",
+	"holy_mend_add": "Holy-stance mend +1%",
+	"holy_mend_lowhp": "below 30% HP the Holy mend doubles",
+	"life_ward": "the arming ward mends 3% of your health",
+	"hexext_ward": "a warded hit deepens every live hex",
+	"pact_cut_stacks": "full anchor stacks cut Dark Pact's price a third",
+	"wither_struck": "blows you take WITHER the attacker",
+	"hexext_evade": "evading extends every live hex +1s",
+	"rift_pull": "Void Rift drags harder",
+	"amp_hexed": "HEXED prey takes +4% from you",
+	"detonate_amp": "hex detonations +15%",
+	"pact_surge_ext": "Dark Pact's surge runs +1s",
+	"pact_free_lowhp": "below 30% HP Dark Pact costs nothing",
 }
 
 
-## How many pieces of `cls`'s S set are equipped (S grade + matching class).
-static func count_set_pieces(equipment: Dictionary, cls: String) -> int:
-	var n := 0
-	for slot in equipment:
-		var it: Dictionary = equipment[slot]
-		if String(it.get("grade", "")) == "S" and String(it.get("cls", "")) == cls:
-			n += 1
-	return n
+## One set tier's display line: stats through the labels, clauses through
+## SET_CLAUSE_TEXT ("magres_x" is the ward sets' extra MagRes).
+static func set_tier_text(rec: Dictionary) -> String:
+	var bits: Array = []
+	for k in rec:
+		var ks := String(k)
+		if SET_CLAUSE_TEXT.has(ks):
+			# "" = a knob whose display rides a sibling clause's line (e.g. the
+			# warrior 6pc crush_amp is described by opener_stagger's text).
+			if String(SET_CLAUSE_TEXT[ks]) != "":
+				bits.append(String(SET_CLAUSE_TEXT[ks]))
+		elif ks == "magres_x":
+			bits.append("MagRes +%d" % int(float(rec[k])))
+		elif STAT_LABEL.has(ks):
+			var v: float = float(rec[k])
+			if ks in FLAT_STATS:
+				bits.append("%s %+d" % [STAT_LABEL[ks], int(v)])
+			else:
+				bits.append("%s %+d%%" % [STAT_LABEL[ks], int(round(v * 100))])
+	return ", ".join(bits)
 
 
 ## All stats an item grants. The smith upgrade (plus) scales EVERY rolled stat
@@ -1353,13 +2382,12 @@ static func gem_buy_price(lvl: int, chid: String) -> int:
 	return int(round(per_gem * weight * Balance.FARM_TAX))
 
 
-## "★ <Passive>" — or "★ <Passive> — LOCKED (awakening)" for a dormant
-## legendary whose class hasn't awakened (s_awakened_<cls>) yet.
-static func passive_label(item: Dictionary, awakened := false) -> String:
-	var txt: String = "★ " + PASSIVES[item["passive"]]
-	if item.get("passive_dormant", false) and not awakened:
-		txt += " — LOCKED (awakening)"
-	return txt
+## "★ <Passive>". The dormant/LOCKED path is GONE (2026-07-27): the legendary
+## tier retired and every passive is live on pickup — old-save legendaries
+## included (their passive_dormant field is simply ignored now). `awakened`
+## is kept for call-site compatibility and no longer changes the text.
+static func passive_label(item: Dictionary, _awakened := false) -> String:
+	return "★ " + PASSIVES[item["passive"]]
 
 
 ## `awakened` (the item's class flag s_awakened_<cls>) governs how a dormant

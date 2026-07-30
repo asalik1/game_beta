@@ -1217,6 +1217,70 @@ static func bag_buy_price(grade: String) -> int:
 	return int(Balance.BAG_BUY_PRICE.get(grade, 30))
 
 
+# ----------------------------------------------------- crafting materials ---
+# Five PHYSICAL families x seven grades (PROPOSALS/MATERIALS.md §2). A material
+# is a STACKING bag item ({"kind": "material", ...}); the names below ARE the
+# exact GearFlavor.FLAVOR keys, so the ported lore resolves off "name". Mob/node
+# materials cap at A (Balance.MATERIAL_MOB_GRADE_CAP) — every family's S entry
+# exists but is boss-Gold-chest-only (BOSS_LOOT.md). Sprites live at
+# assets/icons/materials/<family>_<lowercase grade>_<snake name>.png; material_stem
+# derives the stem and autotest asserts every one of the 35 files exists.
+const MATERIAL_FAMILIES := ["metal", "cloth", "bone", "reagent", "herb"]
+const MATERIALS := {
+	"metal": {"F": "Rusted Scrap", "E": "Pitted Iron", "D": "Plain Ingot",
+		"C": "Tempered Steel", "B": "Fine Steel", "A": "Mastercrafted Alloy",
+		"S": "Starforged Ingot"},
+	"cloth": {"F": "Frayed Scraps", "E": "Coarse Cloth", "D": "Plain Bolt",
+		"C": "Tanned Weave", "B": "Fine Silk", "A": "Gilded Weave",
+		"S": "Moonweave"},
+	"bone": {"F": "Cracked Bone", "E": "Bleached Bone", "D": "Whole Bone",
+		"C": "Runed Bone", "B": "Blessed Relic", "A": "Saintbone",
+		"S": "Concordium Relic"},
+	"reagent": {"F": "Foul Residue", "E": "Crude Extract", "D": "Clean Extract",
+		"C": "Potent Essence", "B": "Pure Essence", "A": "Radiant Essence",
+		"S": "Quintessence"},
+	"herb": {"F": "Wilted Sprig", "E": "Common Weed", "D": "Fresh Herb",
+		"C": "Verdant Herb", "B": "Rare Bloom", "A": "Pristine Bloom",
+		"S": "Sunpetal"},
+}
+const MATERIAL_STACK_MAX := 99          # a stack caps here; a fresh (family,grade) needs a new bag slot
+const MATERIAL_BASE_VALUE := 6.0        # intrinsic gold per unit at grade D (x GRADE_MULT); SELL = x MERCHANT_SELL_FRACTION
+
+
+## Snake-cased sprite stem for a material name: lowercase, every run of
+## non-alphanumeric collapses to a single "_" (matches the installed files,
+## e.g. "Rusted Scrap" -> "metal_f_rusted_scrap").
+static func material_stem(family: String, grade: String, mat_name: String) -> String:
+	var slug := ""
+	var prev_us := true  # start true so leading punctuation never opens with "_"
+	for ch in mat_name.to_lower():
+		var c: int = ch.unicode_at(0)
+		if (c >= 97 and c <= 122) or (c >= 48 and c <= 57):
+			slug += ch
+			prev_us = false
+		elif not prev_us:
+			slug += "_"
+			prev_us = true
+	return "%s_%s_%s" % [family, grade.to_lower(), slug.trim_suffix("_")]
+
+
+## A stacking crafting-material bag item. `sprite` is the assets/icons-relative
+## stem ("materials/<stem>") so Art.material_icon and Pickup render it directly;
+## `name` is the GearFlavor key. Unknown family/grade yields an empty name.
+static func make_material(family: String, grade: String, count := 1) -> Dictionary:
+	var mat_name := String(MATERIALS.get(family, {}).get(grade, ""))
+	return {"kind": "material", "family": family, "grade": grade,
+		"name": mat_name, "sprite": "materials/" + material_stem(family, grade, mat_name),
+		"count": maxi(1, count)}
+
+
+## Flat INTRINSIC gold value of one material unit (anti-haul, PROFESSIONS §4):
+## a fixed per-grade number, NOT a farm-cost. SELL applies MERCHANT_SELL_FRACTION
+## on top (menus.gd) exactly like gems (gem_gold_value) and gear (price).
+static func material_value(grade: String) -> int:
+	return int(round(MATERIAL_BASE_VALUE * float(GRADE_MULT.get(grade, 1.0))))
+
+
 # ----------------------------------------------------------- consumables ---
 # Non-gear bag items ({"kind": "stone", ...}). The talent reset stone is
 # the first; elites are the primary source (playtest round 6).

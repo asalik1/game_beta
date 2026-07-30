@@ -121,7 +121,7 @@ static func _character_section(game: Game) -> Dictionary:
 		"capital_shop_day": game.capital_shop_day,
 		# --- gear ---
 		"equipment": p.equipment, "backpack": p.backpack, "gem_bag": p.gem_bag,
-		"bags": p.bags, "consumables": p.consumables,
+		"bags": p.bags, "consumables": p.consumables, "materials": p.materials,
 		"potion_rotation": p.potion_rotation, "active_potion": p.active_potion,
 		# Waking Depths: highest cleared checkpoint depth (re-entry point).
 		"depths_checkpoint": p.depths_checkpoint,
@@ -300,7 +300,7 @@ static func world_of(data: Dictionary) -> Dictionary:
 const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tree_points",
 	"attr_points", "unspent_attr", "gold", "potions", "potions_free", "ability_theme", "chroma", "skin",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
-	"consumables", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
+	"consumables", "materials", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
 	"achievements", "boss_records", "kill_counts", "player_title",
 	"bounties", "bounty_day", "bounty_week",
@@ -504,6 +504,17 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 		p.gem_bag.append(_fix_gem(g))
 	p.bags = load_bags(c)
 	p.consumables = c.get("consumables", [])
+	# Materials round-trip: rebuild each stack through make_material so the
+	# name/sprite are always current, and any family/grade that no longer
+	# exists simply drops (no-save-migration rule — old ids die on load).
+	p.materials = []
+	for rawm in c.get("materials", []):
+		var m: Dictionary = rawm
+		var fam := String(m.get("family", ""))
+		var gr := String(m.get("grade", ""))
+		var cnt := int(m.get("count", 1))
+		if cnt > 0 and Items.MATERIALS.has(fam) and Items.MATERIALS[fam].has(gr):
+			p.materials.append(Items.make_material(fam, gr, cnt))
 	p.potion_rotation = c.get("potion_rotation", [])
 	p.active_potion = String(c.get("active_potion", "health"))
 	p.depths_checkpoint = int(c.get("depths_checkpoint", 0))  # pre-restructure saves: no checkpoint yet

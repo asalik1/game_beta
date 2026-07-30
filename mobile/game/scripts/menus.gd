@@ -1429,7 +1429,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	right.add_child(catrow)
 	for spec in [["all", "All"], ["weapon", "Weapons"], ["helmet", "Helmets"], ["armor", "Armor"],
 			["gloves", "Gloves"], ["pants", "Pants"], ["boots", "Boots"], ["charm", "Charms"],
-			["gems", "Gems"], ["consumables", "Consumables"]]:
+			["gems", "Gems"], ["consumables", "Consumables"], ["materials", "Materials"]]:
 		var cid: String = spec[0]
 		var cb := _btn(catrow, spec[1], func() -> void: open_inventory("gear", cid),
 			Color(0.95, 0.85, 0.5) if cat == cid else Color(0.6, 0.6, 0.6))
@@ -1461,6 +1461,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	var show_gear: bool = cat == "all" or cat in Items.SLOTS
 	var show_gems: bool = cat == "all" or cat == "gems"
 	var show_cons: bool = cat == "all" or cat == "consumables"
+	var show_mats: bool = cat == "all" or cat == "materials"
 	if show_gear:
 		for item in p.backpack:
 			var it: Dictionary = item
@@ -1641,6 +1642,34 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				gbtn.set_drag_preview(_drag_preview(Art.gem_icon(Items.gem_color(g), int(g["lvl"]))))
 				return {"kind": "bag_gem", "gem": g}
 			gbtn.set_drag_forwarding(gem_drag, sock_can, sock_drop)
+	if show_mats:
+		# Crafting materials STACK by (family, grade) — one bag slot per stack,
+		# cap Items.MATERIAL_STACK_MAX. Click shows the ported flavor + sell value;
+		# sell them at any merchant (flat anti-haul price). Drop one to free it.
+		for m in p.materials:
+			var mm: Dictionary = m
+			var mfam := String(mm.get("family", ""))
+			var mgr := String(mm.get("grade", "F"))
+			var mcount := int(mm.get("count", 1))
+			var micon: Texture2D = Art.material_icon(mfam, mgr)
+			var mcol: Color = Items.GRADE_COLOR.get(mgr, Color(1, 1, 1))
+			var mname := String(mm.get("name", ""))
+			var mglyph: String = ("x%d" % mcount) if mcount > 1 else ""
+			if micon == null and mglyph == "":
+				mglyph = "◆"
+			_bag_slot(grid, micon, mglyph, mcol,
+				func() -> void:
+					var mval := maxi(1, int(Items.material_value(mgr) * Balance.MERCHANT_SELL_FRACTION))
+					var info := "%s material · grade %s\n\nStacks in your bag (up to %d per slot). A crafting input for the professions bench — sell spares at any merchant for %d gold each (flat, anti-haul)." % [
+						mfam.capitalize(), mgr, Items.MATERIAL_STACK_MAX, mval]
+					var drop_cb := func() -> void:
+						mm["count"] = int(mm.get("count", 1)) - 1
+						if int(mm.get("count", 0)) <= 0:
+							game.local_player.materials.erase(mm)
+						game.discard_to_ground({"kind": "material", "family": mfam, "grade": mgr, "count": 1})
+						open_inventory("gear", cat)
+					var actions: Array = [["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb]]
+					_open_detail_popover(micon, "%s  x%d" % [mname, mcount], mcol, info, actions, GearFlavor.of(mm))).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	# Free-space squares only in the All view (a filtered view isn't the
 	# whole bag, so padding it with empties would misrepresent capacity).
 	if cat == "all":
@@ -3385,6 +3414,29 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				open_shop(zone)
 			_shop_card(cons_grid, Art.tex("potion"), "Health Potion (x%d)" % p.potions,
 				"sell one for %d gold" % hval, Color(1.0, 0.5, 0.5), true, sell_pot)
+
+	# --- materials: flat anti-haul intrinsic (Items.material_value x sell
+	# fraction), stacked by family+grade, click sells ONE unit. ---
+	if not p.materials.is_empty():
+		sold_any = true
+		_lbl(list, "— Materials —", 13, Color(0.62, 0.64, 0.7))
+		var mat_grid := _shop_grid(list)
+		for m in p.materials:
+			var mm: Dictionary = m
+			var mgr := String(mm.get("grade", "F"))
+			var mcount := int(mm.get("count", 1))
+			var mval := maxi(1, int(Items.material_value(mgr) * Balance.MERCHANT_SELL_FRACTION))
+			var xn3 := "  (x%d)" % mcount if mcount > 1 else ""
+			var sell_mat := func() -> void:
+				mm["count"] = int(mm.get("count", 1)) - 1
+				if int(mm.get("count", 0)) <= 0:
+					p.materials.erase(mm)
+				p.gain_gold(mval)
+				game.sfx("potion")
+				open_shop(zone)
+			_shop_card(mat_grid, Art.material_icon(String(mm.get("family", "")), mgr),
+				"%s%s" % [String(mm.get("name", "")), xn3], "sell one for %d gold" % mval,
+				Items.GRADE_COLOR.get(mgr, Color(1, 1, 1)), true, sell_mat)
 
 	if not sold_any:
 		_lbl(list, "Nothing to sell.", 13, Color(0.5, 0.5, 0.5))

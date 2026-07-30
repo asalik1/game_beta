@@ -2430,6 +2430,7 @@ func _run_campaign_ch2() -> void:
 	await _test_pause_menu()
 	await _test_mp_lobby_ui()
 	await _test_elixir_ward_gate()
+	await _test_materials()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -3417,10 +3418,12 @@ func _test_bags_discard() -> void:
 	var cap_bp2: Array = p.backpack
 	var cap_pot: int = p.potions
 	var cap_potf: int = p.potions_free
+	var cap_mats: Array = p.materials   # materials count as units too (Slice A) — isolate them
 	p.bags = [Items.make_bag("A")]   # 40 slots
 	p.consumables = []
 	p.gem_bag = []
 	p.backpack = []
+	p.materials = []
 	# Health potions occupy slots too (2026-07-09 v2): bought stock AND the
 	# free chapter potion each count as one unit.
 	p.potions = 2
@@ -3458,6 +3461,7 @@ func _test_bags_discard() -> void:
 	p.backpack = cap_bp2
 	p.potions = cap_pot
 	p.potions_free = cap_potf
+	p.materials = cap_mats
 
 	# --- shop grey-out: no capacity gain -> buy is blocked ----------------
 	p.bags = []
@@ -6913,3 +6917,99 @@ func _test_elixir_ward_gate() -> void:
 	p.dr_time = keep_drt
 	p.dr_amt = keep_dra
 	print("ok: elixir_ward drink gate (off-plan refused, budgeted once, chain-chug closed)")
+
+
+# ---- Slice A/B: crafting materials (item type + storage + icons + drops) ----
+# make_material for all 5 families x 7 grades is a valid, flavored dict whose
+# sprite file ships; add_material STACKS (one slot per family+grade); the icon
+# loads; and a guaranteed elite drop produces a body-thematic material event.
+func _test_materials() -> void:
+	var p := game.player
+	# Snapshot every bag pocket we clear/touch — restore on ALL exits.
+	var keep_backpack: Array = p.backpack.duplicate()
+	var keep_gems: Array = p.gem_bag.duplicate()
+	var keep_cons: Array = p.consumables.duplicate()
+	var keep_mats: Array = p.materials.duplicate(true)
+	var keep_pots: int = p.potions
+	var keep_free: int = p.potions_free
+
+	# (a) make_material: 35 valid, GearFlavor-keyed dicts whose sprite file ships.
+	for fam in Items.MATERIAL_FAMILIES:
+		for gr in Items.GRADES:
+			var mat := Items.make_material(fam, gr, 1)
+			if String(mat.get("kind", "")) != "material":
+				return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+					"make_material(%s,%s) has no material kind" % [fam, gr])
+			var nm := String(mat.get("name", ""))
+			if nm == "" or not GearFlavor.FLAVOR.has(nm):
+				return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+					"material %s/%s name '%s' is not a GearFlavor key" % [fam, gr, nm])
+			var path := "res://assets/icons/%s.png" % String(mat.get("sprite", ""))
+			if not ResourceLoader.exists(path):
+				return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+					"material sprite missing: %s" % path)
+
+	# Clear the bag so slot math is deterministic.
+	p.backpack = []
+	p.gem_bag = []
+	p.consumables = []
+	p.materials = []
+	p.potions = 0
+	p.potions_free = 0
+
+	# (b) add_material STACKS into one slot per (family, grade); each stack = 1 slot.
+	if not p.add_material("metal", "F", 3):
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+			"add_material refused on an empty bag")
+	if not p.add_material("metal", "F", 2):
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+			"add_material refused a stack merge")
+	if p.materials.size() != 1 or int(p.materials[0].get("count", 0)) != 5:
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+			"add_material did not stack into one slot of 5")
+	if p.bag_used() != 1:
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+			"a material stack must cost exactly one bag slot (got %d)" % p.bag_used())
+	p.add_material("metal", "E", 1)
+	if p.materials.size() != 2:
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+			"a distinct grade must open a new stack")
+
+	# (c) material_icon loads real, installed art.
+	if Art.material_icon("herb", "S") == null:
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+			"material_icon returned null for an installed sprite")
+
+	# (d) body-type mapping + a GUARANTEED elite drop produces a material event.
+	if Balance.mob_material_families("skeleton") != ["bone", "metal"]:
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+			"skeleton (undead) must map to bone+metal")
+	var elite_ev := game.roll_material_drop("wolf", true, Vector2.ZERO)
+	if elite_ev.is_empty() or String(elite_ev.get("k", "")) != "material":
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+			"an elite material drop must be guaranteed")
+	if not (String(elite_ev.get("family", "")) in ["cloth", "reagent"]):
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+			"wolf (beast) material must be cloth or reagent")
+
+	# Restore.
+	p.backpack = keep_backpack
+	p.gem_bag = keep_gems
+	p.consumables = keep_cons
+	p.materials = keep_mats
+	p.potions = keep_pots
+	p.potions_free = keep_free
+	print("ok: crafting materials (5x7 dicts+sprites, stacking one-slot, icon, guaranteed elite drop)")
+
+
+## Restore the bag pockets _test_materials cleared, then fail — the CLAUDE.md
+## rule that FAILURE paths must restore shared state too (quit is only queued).
+func _mats_fail(bp: Array, gb: Array, cn: Array, mt: Array, po: int, fr: int, msg: String) -> void:
+	var p := game.player
+	p.backpack = bp
+	p.gem_bag = gb
+	p.consumables = cn
+	p.materials = mt
+	p.potions = po
+	p.potions_free = fr
+	_fail(msg)

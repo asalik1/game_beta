@@ -1404,6 +1404,9 @@ func _try_receive(payload: Dictionary) -> bool:
 			return player.gain_gem(payload["gem"])
 		"stone":
 			return player.add_consumable(payload["stone"])
+		"material":
+			return player.add_material(String(payload.get("family", "")),
+				String(payload.get("grade", "")), int(payload.get("count", 1)))
 	return false
 
 
@@ -1453,13 +1456,8 @@ func set_flag(flag_name: String, value = true) -> void:
 		# (Dynamic call: the marks live a layer up in game_world, same
 		# deliberate upward hop as _recheck_gates above.)
 		call("refresh_quest_marks")
-	# An S-weapon awakening evolves a mythic skin to its awakened form (Phantom
-	# blue -> teal Nightfang). Refresh the sprite on ANY change of the owning
-	# class's awakening flag so it flips the instant the class awakens — and
-	# reverts cleanly if a dev toggle clears it. Covers the quest, the dev-panel
-	# toggle, and any other path. Only the owning class reacts.
-	if player != null and flag_name == "s_awakened_" + String(player.cls):
-		player.refresh_skin_sprite()
+	# (2026-07-27) The s_awakened skin-refresh hook was removed with the
+	# awakened-form retirement — a skin resolves to one base, always.
 	# MP-13 (§5.4): WORLD flags are shared story state — quest progress,
 	# opened ways, one-time reveals, pay-once desks, shrine/cache/curse
 	# once-per-room marks. Route them through the host so every machine in
@@ -2660,6 +2658,7 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	pulse.tween_property(zone, "modulate:a", 0.45, 0.18)
 
 	var falling: Sprite2D = null
+	var falling_trail: CPUParticles2D = null
 	var falling_key: String = String(opts.get("falling_sprite", ""))
 	if falling_key.is_empty() and opts.get("fireball", false):
 		falling_key = "fireball"
@@ -2674,14 +2673,48 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 		falling.scale = Vector2(falling_scale, falling_scale)
 		if falling_key == "fireball":
 			falling.modulate = Color(1.0, 0.55, 0.2)
+			# Projectile art is authored pointing right. Sky hazards fall down,
+			# so rotate the comet head into its travel direction.
+			falling.rotation = PI / 2.0
 		falling.global_position = pos + Vector2(0, -420)
 		falling.z_index = Balance.FALLING_OBJECT_Z_INDEX
 		add_child(falling)
+		if falling_key == "fireball":
+			# World-space particles remain behind as the emitter descends;
+			# parenting them to the rotated sprite would turn the plume sideways.
+			falling_trail = CPUParticles2D.new()
+			falling_trail.amount = Balance.FALLING_FIREBALL_TRAIL_AMOUNT
+			falling_trail.lifetime = Balance.FALLING_FIREBALL_TRAIL_LIFETIME
+			falling_trail.local_coords = false
+			falling_trail.direction = Vector2.UP
+			falling_trail.spread = 18.0
+			falling_trail.gravity = Vector2(0.0, -24.0)
+			falling_trail.initial_velocity_min = Balance.FALLING_FIREBALL_TRAIL_SPEED.x
+			falling_trail.initial_velocity_max = Balance.FALLING_FIREBALL_TRAIL_SPEED.y
+			falling_trail.scale_amount_min = Balance.FALLING_FIREBALL_TRAIL_SCALE.x
+			falling_trail.scale_amount_max = Balance.FALLING_FIREBALL_TRAIL_SCALE.y
+			var fire_ramp := Gradient.new()
+			fire_ramp.offsets = PackedFloat32Array([0.0, 0.38, 1.0])
+			fire_ramp.colors = PackedColorArray([
+				Color(1.0, 0.94, 0.52, 0.95),
+				Color(1.0, 0.29, 0.04, 0.72),
+				Color(0.22, 0.05, 0.02, 0.0),
+			])
+			falling_trail.color_ramp = fire_ramp
+			falling_trail.global_position = falling.global_position
+			falling_trail.z_index = Balance.FALLING_OBJECT_Z_INDEX - 1
+			add_child(falling_trail)
+			falling_trail.emitting = true
 		var fall := falling.create_tween()
 		var falling_end_y: float = float(opts.get("falling_end_y",
 			Balance.FALLING_OBJECT_DEFAULT_END_Y))
-		fall.tween_property(falling, "global_position",
-			pos + Vector2(0, falling_end_y), delay).set_ease(Tween.EASE_IN)
+		var falling_target := pos + Vector2(0, falling_end_y)
+		fall.tween_property(falling, "global_position", falling_target, delay) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		if falling_trail != null:
+			var trail_fall := falling_trail.create_tween()
+			trail_fall.tween_property(falling_trail, "global_position",
+				falling_target, delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 	await get_tree().create_timer(delay).timeout
 	if not is_instance_valid(zone):
@@ -2696,6 +2729,11 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 		var sink := falling.create_tween()
 		sink.tween_property(falling, "modulate:a", 0.0, Balance.FALLING_OBJECT_FADE)
 		sink.tween_callback(falling.queue_free)
+	if falling_trail and is_instance_valid(falling_trail):
+		falling_trail.emitting = false
+		var trail_linger := falling_trail.create_tween()
+		trail_linger.tween_interval(Balance.FALLING_FIREBALL_TRAIL_LIFETIME)
+		trail_linger.tween_callback(falling_trail.queue_free)
 	if opts.get("net_visual", false):
 		return  # MP-09: a mirror of the danger, not the danger — damage and
 		        # riders stay host-side (guest hits arrive via MP-10's RPC)

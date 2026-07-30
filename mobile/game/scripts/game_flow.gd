@@ -919,6 +919,9 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		# chapter's boss band (2026-07-09, tier-shifted); over MAX_BAGS keeps the best set.
 		if loot_rng.randf() < Balance.bag_drop_chance(Story.act_of(chapter_id)):
 			player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(loot_chapter(), loot_rng)))
+		# Guaranteed boss supply material (Slice B; mirror roll_boss_pack): any
+		# family, the act band's top grade (A in Act 3; never S from this path).
+		apply_award_events([roll_boss_material(boss_pos + Vector2(-40, 30))])
 
 	# MP-11 (§5.5): the same boss pays every head. One personal package
 	# per guest — host-rolled (loot_rng, one full roll sequence per player,
@@ -1128,6 +1131,9 @@ func on_enemy_died(e: Enemy) -> void:
 			elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
 				# 2026-07-09: bag grade follows the chapter's boss table (like boss bags).
 				player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(loot_chapter(), loot_rng)))
+			# Guaranteed elite material (Slice B; mirror roll_elite_pack): +1 grade,
+			# 2-3 units, ON TOP of the gem/chest/economy above.
+			apply_award_events([roll_material_drop(e.kind, true, e.global_position + Vector2(0, 16))])
 		# MP-11 (§5.5): the pinata pays every head — a personal, host-rolled
 		# package per guest (roll_elite_pack mirrors the block above; keep
 		# them in step) + their own elite bounty credit.
@@ -1149,6 +1155,11 @@ func on_enemy_died(e: Enemy) -> void:
 			# (summons/mood spawns pay nothing and can never spill one).
 			if e.gold_value > 0 and loot_rng.randf() < Balance.GOLDRUSH_DROP_CHANCE:
 				Pickup.drop_goldrush(self, e.global_position + Vector2(0, 26))
+			# Trash material (Slice B; mirror mob_kill_share): a small chance at
+			# 1-2 units of the mob's body material, grade banded by the loot act.
+			var mev := roll_material_drop(e.kind, false, e.global_position + Vector2(0, 20))
+			if not mev.is_empty():
+				apply_award_events([mev])
 		# MP-11 (§5.5): the same trash kill pays every head — each guest gets
 		# a personal kill event: the BASE pile (their machine applies its own
 		# Hunger/weekly/greed), their own chest-chance roll (it reads THEIR
@@ -1232,6 +1243,7 @@ func _curse_payout(zi: int) -> void:
 #   {"k": "gem",   "gem": {...}, "at": Vector2, "ty": text_y_offset}
 #   {"k": "item",  "item": {...}, "at": Vector2}
 #   {"k": "stone", "stone": {...}, "at": Vector2}     # text = "+ <name>"
+#   {"k": "material", "family": "metal".."herb", "grade": "F".."S", "count": int, "at": Vector2, "ty": text_y_offset}
 #   {"k": "bag",   "grade": "F".."S"}
 #   {"k": "sfx",   "id": "...", "vol": 1.0}
 #   {"k": "toast", "text": "...", "color": Color, "dur": 0.0}
@@ -1262,6 +1274,14 @@ func apply_award_events(events: Array) -> void:
 				if give_loot({"kind": "stone", "stone": st}, at):
 					spawn_text(at + Vector2(0, -92), "+ " + String(st.get("name", "Stone")),
 						Color(0.6, 0.9, 1.0))
+			"material":
+				var mfam := String(ev.get("family", ""))
+				var mgr := String(ev.get("grade", ""))
+				var mcnt := int(ev.get("count", 1))
+				var mnm := String(Items.MATERIALS.get(mfam, {}).get(mgr, ""))
+				if give_loot({"kind": "material", "family": mfam, "grade": mgr, "count": mcnt}, at):
+					spawn_text(at + Vector2(0, float(ev.get("ty", -70))),
+						"+ %s x%d" % [mnm, mcnt], Items.GRADE_COLOR.get(mgr, Color(1, 1, 1)))
 			"bag":
 				player.acquire_bag(Items.make_bag(String(ev.get("grade", "F"))))
 			"sfx":
@@ -1279,7 +1299,7 @@ func apply_award_events(events: Array) -> void:
 ## greed at pickup); the chest chance reads the OWNER's greed — the one
 ## roll that cannot happen host-side (greed is never synced); the Gold
 ## Rush coin was host-rolled per player (goldrush). Called deferred.
-func mob_kill_share(pos: Vector2, base_gold: int, goldrush: bool) -> void:
+func mob_kill_share(pos: Vector2, base_gold: int, goldrush: bool, kind := "") -> void:
 	Pickup.drop_gold(self, _kill_gold(base_gold), pos)
 	var bonus := Stats.greed_loot(player.current_greed()) if is_instance_valid(player) else 0.0
 	var roll := loot_rng.randf()
@@ -1289,6 +1309,53 @@ func mob_kill_share(pos: Vector2, base_gold: int, goldrush: bool) -> void:
 		Chest.drop(self, "wood", pos)
 	if goldrush:
 		Pickup.drop_goldrush(self, pos + Vector2(0, 26))
+	# Trash material (Slice B; mirror on_enemy_died's non-elite block): owner-side
+	# roll, same as the chest. `kind` "" = a pre-material caller (safe no-op).
+	if kind != "":
+		var mev := roll_material_drop(kind, false, pos + Vector2(0, 20))
+		if not mev.is_empty():
+			apply_award_events([mev])
+
+
+# ----------------------------------------------------- material drops (§B) ---
+# Crafting-material faucets (PROFESSIONS §4 / MATERIALS §3), UNGATED: every
+# player gets the material a mob's BODY yields regardless of trade (professions
+# are unbuilt). One family per drop (two-body mobs roll one of their two). Grade
+# tracks the loot act (Balance.material_grade_band; elites bump +1, mob-capped at
+# A); knobs in balance.gd. Both the solo faucets (on_enemy_died / on_boss_died)
+# and their co-op pack mirrors call these, so a tune lands in one place.
+
+## One material loot event for a MOB kill, or {} for a trash no-roll. Trash rolls
+## MATERIAL_TRASH_DROP_CHANCE for 1-2 units; an elite is GUARANTEED, +1 grade and
+## 2-3 units. `pos`/`ty` place the world drop + float text.
+func roll_material_drop(kind: String, elite: bool, pos: Vector2) -> Dictionary:
+	if not elite and loot_rng.randf() >= Balance.MATERIAL_TRASH_DROP_CHANCE:
+		return {}
+	var fams: Array = Balance.mob_material_families(kind)
+	var band: Array = Balance.material_grade_band(Story.act_of(chapter_id))
+	if fams.is_empty() or band.is_empty():
+		return {}
+	var fam := String(fams[loot_rng.randi_range(0, fams.size() - 1)])
+	var grade := String(band[loot_rng.randi_range(0, band.size() - 1)])
+	if elite:
+		grade = Balance.material_grade_up(grade)  # one grade higher, capped at A
+	var lo: int = Balance.MATERIAL_ELITE_COUNT_MIN if elite else Balance.MATERIAL_TRASH_COUNT_MIN
+	var hi: int = Balance.MATERIAL_ELITE_COUNT_MAX if elite else Balance.MATERIAL_TRASH_COUNT_MAX
+	return {"k": "material", "family": fam, "grade": grade,
+		"count": loot_rng.randi_range(lo, hi), "at": pos, "ty": -60}
+
+
+## One GUARANTEED boss supply material (simple integration; the full BOSS_LOOT
+## chest redesign — incl. the S-grade Gold chest — is a separate effort). Any
+## family, the act band's TOP grade (A in Act 3; never S from this path), a few
+## units.
+func roll_boss_material(pos: Vector2) -> Dictionary:
+	var fam: String = Items.MATERIAL_FAMILIES[loot_rng.randi_range(0, Items.MATERIAL_FAMILIES.size() - 1)]
+	var band: Array = Balance.material_grade_band(Story.act_of(chapter_id))
+	var grade: String = String(band[band.size() - 1])
+	return {"k": "material", "family": fam, "grade": grade,
+		"count": loot_rng.randi_range(Balance.MATERIAL_BOSS_COUNT_MIN, Balance.MATERIAL_BOSS_COUNT_MAX),
+		"at": pos, "ty": -70}
 
 
 ## HOST-side: one player's share of a boss kill — the mirror of
@@ -1317,6 +1384,7 @@ func roll_boss_pack(kind: String, boss_pos: Vector2, boss_lv: int,
 			"at": boss_pos + Vector2(40, 30)})
 	if loot_rng.randf() < Balance.bag_drop_chance(Story.act_of(chapter_id)):
 		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(loot_chapter(), loot_rng)})
+	evs.append(roll_boss_material(boss_pos + Vector2(-40, 30)))  # guaranteed boss supply (mirror on_boss_died)
 	return evs
 
 
@@ -1339,6 +1407,7 @@ func roll_elite_pack(e: Enemy) -> Array:
 		evs.append({"k": "stone", "stone": Items.make_respec_tome(), "at": pos + Vector2(-36, 8)})
 	elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
 		evs.append({"k": "bag", "grade": Balance.roll_bag_grade(loot_chapter(), loot_rng)})
+	evs.append(roll_material_drop(e.kind, true, pos + Vector2(0, 16)))  # guaranteed elite material (mirror on_enemy_died)
 	return evs
 
 

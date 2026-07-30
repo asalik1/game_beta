@@ -1364,7 +1364,7 @@ func host_mob_kill(e: Enemy) -> void:
 	for pid in peer_chars:
 		var gr: bool = e.gold_value > 0 \
 			and game.loot_rng.randf() < Balance.GOLDRUSH_DROP_CHANCE
-		_rpc_mob_kill.rpc_id(int(pid), e.global_position, e.gold_value, gr)
+		_rpc_mob_kill.rpc_id(int(pid), e.global_position, e.gold_value, gr, e.kind)
 
 
 ## HOST: an elite fell — one personal, host-rolled pinata per guest +
@@ -1458,10 +1458,10 @@ func _rpc_award(evs: Array) -> void:
 ## OWNER: a personal trash-kill event (base pile + own chest roll + a
 ## host-rolled Gold Rush coin).
 @rpc("authority", "call_remote", "reliable")
-func _rpc_mob_kill(pos: Vector2, base_gold: int, goldrush: bool) -> void:
+func _rpc_mob_kill(pos: Vector2, base_gold: int, goldrush: bool, kind := "") -> void:
 	if game == null or multiplayer.is_server() or not world_ready:
 		return
-	game.mob_kill_share.call_deferred(pos, base_gold, goldrush)
+	game.mob_kill_share.call_deferred(pos, base_gold, goldrush, kind)
 
 
 ## OWNER: advance the OWN bounty board / weekly vault (character-owned

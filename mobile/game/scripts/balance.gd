@@ -340,6 +340,83 @@ const GAMBLE_DISCOUNT := 0.8         # gamble costs this x the EXPECTED farm pri
 const GEM_GOLD_BASE := 30.0
 const GEM_GOLD_PER_LEVEL := 3.0
 
+# ----------------------------------------------------- crafting materials ---
+# Mob material faucets (Slice B; PROFESSIONS §4 + MATERIALS §3). UNGATED — every
+# player gets the material a mob's BODY yields, regardless of trade (professions
+# are unbuilt). A two-body mob rolls ONE of its two families per drop. Grade
+# tracks the loot act; elites bump +1, and mob/node materials cap at A (S-grade
+# is boss-Gold-chest-only, BOSS_LOOT.md). The intrinsic sell value lives in
+# items.gd (Items.MATERIAL_BASE_VALUE / material_value) with the material catalog.
+const MATERIAL_TRASH_DROP_CHANCE := 0.15   # a trash kill's chance to yield material at all
+const MATERIAL_TRASH_COUNT_MIN := 1
+const MATERIAL_TRASH_COUNT_MAX := 2
+const MATERIAL_ELITE_COUNT_MIN := 2        # elites: guaranteed, more units, +1 grade
+const MATERIAL_ELITE_COUNT_MAX := 3
+const MATERIAL_BOSS_COUNT_MIN := 3         # boss supply drop: a few units, act-top grade
+const MATERIAL_BOSS_COUNT_MAX := 5
+# Grade band by ACT (mob/elite drops). Act 1 -> F/E, Act 2 -> D/C, Act 3+ -> B/A.
+const MATERIAL_ACT_GRADES := {1: ["F", "E"], 2: ["D", "C"], 3: ["B", "A"]}
+const MATERIAL_MOB_GRADE_CAP := "A"        # a mob/elite material never exceeds A
+# Body type -> families (MATERIALS §1/§3). A mob drops its body material(s); a
+# two-family body rolls one per drop.
+const MATERIAL_BODY_FAMILIES := {
+	"beast": ["cloth", "reagent"],
+	"humanoid": ["cloth", "reagent"],
+	"undead": ["bone", "metal"],
+	"construct": ["metal"],
+	"plant": ["herb"],
+	"void": ["reagent"],
+}
+const MATERIAL_DEFAULT_BODY := "humanoid"  # any unclassified kind (cloth/reagent, the commonest body)
+# Roster kind -> body type (MATERIALS §3 drop map). Unclassified kinds fall to
+# MATERIAL_DEFAULT_BODY; keep in step with Story.ALL_ENEMIES as the roster grows.
+const MATERIAL_MOB_BODY := {
+	# Beasts
+	"wolf": "beast", "spider": "beast", "bat": "beast", "direbat": "beast",
+	"blightwolf": "beast", "bogspider": "beast", "duneprowler": "beast",
+	"winterfang": "beast", "storm_harrier": "beast", "kraken": "beast",
+	# Humanoids / cultists
+	"cultist": "humanoid", "stormcult": "humanoid", "beastkin_raider": "humanoid",
+	"beastkin_howler": "humanoid", "wildkin_ranger": "humanoid", "null_acolyte": "humanoid",
+	"forge_acolyte": "humanoid", "bloom_acolyte": "humanoid", "cold_pilgrim": "humanoid",
+	"hushcaller": "humanoid", "static_caller": "humanoid", "vow_sentinel": "humanoid",
+	# Undead
+	"skeleton": "undead", "zombie": "undead", "sun_bleached": "undead",
+	"frost_husk": "undead", "gravewalker": "undead", "barrow_wight": "undead",
+	"vale_mourner": "undead", "casket_creeper": "undead", "bloated_dead": "undead",
+	"grave_cutter": "undead", "frozen_guard": "undead", "great_spirit": "undead",
+	# Construct / elemental
+	"slag_core": "construct", "cinder_whelp": "construct", "slag_brute": "construct",
+	"flame_giant": "construct", "cyclops": "construct", "deep_stalker": "construct",
+	"tengu": "construct",
+	# Plant / fungal
+	"sporeshambler": "plant", "root_shambler": "plant", "bog_lurker": "plant",
+	"grove_horror": "plant",
+	# Void / aberration
+	"void_husk": "void", "void_shade": "void", "ooze": "void",
+}
+
+
+## Families a mob KIND's body yields (MATERIALS §3). Never empty — an
+## unclassified kind falls to the commonest body. One is chosen per drop.
+static func mob_material_families(kind: String) -> Array:
+	var body: String = MATERIAL_MOB_BODY.get(kind, MATERIAL_DEFAULT_BODY)
+	return MATERIAL_BODY_FAMILIES.get(body, MATERIAL_BODY_FAMILIES[MATERIAL_DEFAULT_BODY])
+
+
+## The grade band a drop rolls from for an ACT (mob/elite; Act 3+ = B/A).
+static func material_grade_band(act: int) -> Array:
+	return MATERIAL_ACT_GRADES.get(clampi(act, 1, 3), MATERIAL_ACT_GRADES[3])
+
+
+## Bump a material grade one step (elite drops), never above the mob cap (A).
+static func material_grade_up(grade: String) -> String:
+	var i: int = GEAR_TIER_ORDER.find(grade)
+	if i < 0:
+		return grade
+	var capped: int = GEAR_TIER_ORDER.find(MATERIAL_MOB_GRADE_CAP)
+	return String(GEAR_TIER_ORDER[mini(i + 1, capped)])
+
 # --- Chapter loot BANDS (2026-07-09; replaces the act-keyed loot framework) ---
 # Every gear/bag drop is a WEIGHTED roll from the chapter's table (no more
 # roll-high-then-clamp). Two profiles per chapter:

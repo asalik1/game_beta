@@ -107,6 +107,10 @@ var gem_bag: Array = []  # loose gems
 # stock at merchants. Start with two F pouches (Balance.STARTER_BAGS).
 var bags: Array = Items.starter_bags()
 var consumables: Array = []   # reset stones etc. ({"kind": "stone", ...})
+# Crafting materials (Slice A): STACKING bag items ({"kind": "material", ...}),
+# one slot per (family, grade) stack up to Items.MATERIAL_STACK_MAX. Save/load
+# round-trips them (save.gd) exactly like consumables/gem_bag.
+var materials: Array = []
 # Q-rotation (playtest 2026-07-07): Q drinks the ACTIVE potion; the
 # potion_next bind cycles health + every slotted rotation potion you
 # actually carry. Both persist in the save.
@@ -1761,7 +1765,7 @@ func consumable_count(id: String) -> int:
 # internally (save format unchanged), but every owned potion occupies a
 # slot like any other consumable unit (bag tiers grew +5 to compensate).
 func bag_used() -> int:
-	return backpack.size() + gem_bag.size() + consumables.size() + potion_count()
+	return backpack.size() + gem_bag.size() + consumables.size() + materials.size() + potion_count()
 
 
 # Bag-full adds return false with NO side effects — the caller decides
@@ -1796,6 +1800,24 @@ func add_consumable(c: Dictionary) -> bool:
 	if bag_used() >= bag_capacity():
 		return false
 	consumables.append(c)
+	return true
+
+
+## Stacking material pickup (mob drops, boss supply). One bag slot per
+## (family, grade) stack, up to Items.MATERIAL_STACK_MAX per stack. Merging
+## into an existing stack costs NO new slot, so it succeeds even at a full bag;
+## a brand-new stack costs a slot and a full bag refuses it (mirror
+## add_consumable — no side effects on refusal, the caller drops/mails it).
+func add_material(family: String, grade: String, count := 1) -> bool:
+	if count <= 0:
+		return true
+	for m in materials:
+		if String(m.get("family", "")) == family and String(m.get("grade", "")) == grade:
+			m["count"] = mini(Items.MATERIAL_STACK_MAX, int(m.get("count", 0)) + count)
+			return true
+	if bag_used() >= bag_capacity():
+		return false
+	materials.append(Items.make_material(family, grade, mini(Items.MATERIAL_STACK_MAX, count)))
 	return true
 
 

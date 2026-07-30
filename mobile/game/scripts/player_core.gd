@@ -107,6 +107,10 @@ var gem_bag: Array = []  # loose gems
 # stock at merchants. Start with two F pouches (Balance.STARTER_BAGS).
 var bags: Array = Items.starter_bags()
 var consumables: Array = []   # reset stones etc. ({"kind": "stone", ...})
+# Crafting materials (Slice A): STACKING bag items ({"kind": "material", ...}),
+# one slot per (family, grade) stack up to Items.MATERIAL_STACK_MAX. Save/load
+# round-trips them (save.gd) exactly like consumables/gem_bag.
+var materials: Array = []
 # Q-rotation (playtest 2026-07-07): Q drinks the ACTIVE potion; the
 # potion_next bind cycles health + every slotted rotation potion you
 # actually carry. Both persist in the save.
@@ -183,7 +187,7 @@ var curse_spread := 0.0     # warlock Contagion talent: curse-jump chance on a c
 var transfusion := 0.0      # warlock Transfusion talent: lifesteal overheal -> shield (cap frac)
 var lowhp_dmg := 0.0        # warlock Sacrificial Might talent: +dmg while below 50% HP
 var shield := 0.0           # current absorb shield (Transfusion overheal buffer)
-var last_rites := 0.0       # warlock Last Rites talent: >0 enables the cheat-death
+var last_rites := 0.0       # warlock Last Rites talent: points invested — >0 enables the cheat-death, 3% revive HP each
 var last_rites_cd := 0.0    # cooldown on the cheat-death (60s)
 var grit_regen := 0.0       # warrior Grit: +regen per stack (passive-derived)
 var grit_cap := 0.0         # warrior Grit: max stacks (passive + Deep Grit talent)
@@ -408,6 +412,25 @@ var uniq_hp_atk := 0.0         # worldroot/lastpulse: atk derived from bonus max
 var uniq_marks := {}           # remembrance: Enemy -> per-enemy re-hex ICD (seconds left)
 var tumble_perfect_t := 0.0    # live while Tumble's perfect-dodge window holds (hartsbreath reads it)
 var storm_mult := 1.0          # Arrow Storm damage scale (moonturn's echo storm rains at half)
+# ---- armor-family named passives (GEAR_ARMOR_UNIQUE_PASSIVES.md, 2026-07-27) ----
+# Helmet/gloves/pants uniques carry TEMPLATE passives (Balance.UNIQ helm_/glove_/
+# pants_*; bare id = S lane, `_a` = A lane). uniq_armor caches the equipped ids
+# per recalc; the derived stats below are recalc-computed. All run state, unsaved.
+var uniq_armor: Array = []     # equipped non-weapon passive ids (recalc cache)
+var uniq_gcount := 0           # glove_finesse: basics since the last true-aim strike
+var uniq_heal_in := 1.0        # pants_ward A BARGAIN: healing-received factor
+var uniq_cc_mult := 1.0        # pants_ward: incoming slow/root/freeze duration factor
+var uniq_hit_flat := 0.0       # glove_bulwark: flat bonus damage folded into every hit
+var uniq_guard_stacks := 0     # pants_guard: flat-DR stacks from blows taken
+var uniq_guard_t := 0.0        # ...their Grit-style decay window
+var uniq_mward_t := 0.0        # helm_ward: magic-DR ward window
+var uniq_mward_amt := 0.0      # ...its strength
+# pants_aggr's COMMIT binding per class (the paladin's is his Judgment LEAP,
+# gated in use_ability on the leap actually firing).
+const UNIQ_COMMIT := {"warrior": "a2", "archer": "a3", "mage": "a3",
+	"assassin": "a2", "paladin": "a1", "warlock": "a3"}
+var uniq_setn := {}            # profile SETS: letter -> worn piece count (recalc cache)
+var uniq_scount := 0           # mage aggressor-set 6pc: bolts since the last set shred
 var dash_refund_t := 0.0       # Shadow phantom step: kill within this refunds the dash
 var dash_refund_frac := 0.0    # ...how much of the dash cd a closing kill returns
 var storm_time := 0.0
@@ -470,8 +493,10 @@ var _themed := false
 var _cast_base := 0.0
 
 var sprite: Sprite2D
-var _occlusion_outline: Sprite2D
+var _occlusion_outline_mat: ShaderMaterial
+var _occlusion_clips := {}  # covering visual's instance id -> outline Sprite2D clipped inside it
 var _occlusion_images := {}
+var _occlusion_probe_reach := 0.0  # longest probe offset, computed once in _ready
 var weapon_spr: Sprite2D
 var weapon_glow: Sprite2D
 var aura: Sprite2D
@@ -560,10 +585,9 @@ const DIR_POSE := {
 
 func _apply_class_sprite() -> void:
 	var art_name: String = Classes.CLASSES[cls]["sprite"]
-	# A skin with an awakened form (Phantom) evolves once this class's S-weapon
-	# awakening is complete (s_awakened_<cls>) — resolve to that base instead.
-	var awakened: bool = game != null and bool(game.get_flag("s_awakened_" + cls, false))
-	var skin_art: String = Skins.skin_sprite(cls, skin, awakened)
+	# (2026-07-27) Awakened forms retired: a skin resolves to ONE base, always
+	# (the Phantom simply IS the teal form now; the blue body is its own skin).
+	var skin_art: String = Skins.skin_sprite(cls, skin)
 	if skin_art != "":
 		art_name = skin_art
 	face_left = Art.faces_left(art_name)
@@ -832,8 +856,9 @@ func s_passive() -> String:
 	var w = equipment.get("weapon")
 	if w == null or not w.has("passive"):
 		return ""
-	if w.get("passive_dormant", false) and not weapon_awakened(w):
-		return ""
+	# (2026-07-27) The dormant/awakening gate is GONE with the legendary tier —
+	# every weapon passive is live on pickup. Old-save legendaries grandfather
+	# in: their stored passive_dormant flag is ignored, the passive just works.
 	return w["passive"]
 
 
@@ -857,6 +882,78 @@ func uniq_take(key: String) -> bool:
 ## One knob of the EQUIPPED weapon's passive (Balance.UNIQ single reader).
 func uniq_k(key: String, default := 0.0) -> float:
 	return float(Balance.uniq(s_passive()).get(key, default))
+
+
+## The equipped carrier of VERB `base` ("" if none): a bespoke gear passive
+## whose Balance.UNIQ entry declares {"verb": base}, or the engine stand-in
+## ids themselves (dev injection). Same-verb pieces deliberately do NOT
+## stack; the S LANE outranks the A lane (fix 2026-07-28 — the old scan
+## resolved by dict order, i.e. the save file's slot order, so an A helmet
+## could permanently shadow an S chest). Lane ties break lexicographically
+## so the winner is stable across save/load.
+func uniq_gear(base: String) -> String:
+	if uniq_armor.has(base):
+		return base
+	var pick := ""
+	var pick_s := false
+	for id in uniq_armor:
+		var s := String(id)
+		if String(Balance.uniq(s).get("verb", "")) != base:
+			continue
+		var is_s := s.ends_with("s")
+		if pick == "" or (is_s and not pick_s) or (is_s == pick_s and s < pick):
+			pick = s
+			pick_s = is_s
+	if pick != "":
+		return pick
+	return base + "_a" if uniq_armor.has(base + "_a") else ""
+
+
+## Conditional amplifier of a bespoke id's verb (beat "amp"): 2x while its
+## `when` condition holds (1x otherwise, and for every other beat kind).
+## Target conditions (marked/hexed/shredded) read `foe` when given.
+func uniq_amp(id: String, foe: Enemy = null) -> float:
+	if id == "":
+		return 1.0
+	var k := Balance.uniq(id)
+	if String(k.get("beat", "")) != "amp":
+		return 1.0
+	var cond := false
+	match String(k.get("when", "")):
+		"berserk": cond = berserk_time > 0.0
+		"surge": cond = stab_ls_time > 0.0
+		"aegis": cond = aegis_time > 0.0
+		"pact": cond = pact_time > 0.0
+		"holy": cond = cls == "paladin" and paladin_mode == "holy"
+		"retri": cond = cls == "paladin" and paladin_mode == "retribution"
+		"lowhp": cond = hp < max_hp * 0.35
+		"slippery": cond = dodge_time > 0.0
+		"marked": cond = foe != null and is_instance_valid(foe) and foe.vuln_time > 0.0
+		"hexed": cond = foe != null and hexed.has(foe)
+		"shredded": cond = foe != null and is_instance_valid(foe) and foe.res_shred > 0.0
+	return 2.0 if cond else 1.0
+
+
+## One knob of an armor template's EQUIPPED lane (default when absent).
+func uniq_gk(base: String, key: String, default := 0.0) -> float:
+	var id := uniq_gear(base)
+	if id == "":
+		return default
+	return float(Balance.uniq(id).get(key, default))
+
+
+## Worn count of a profile SET's pieces (GEAR_UNIQUE_SETS.md).
+func uniq_set_n(prof: String) -> int:
+	return int(uniq_setn.get(prof, 0))
+
+
+## A live set-tier CLAUSE knob: its value once `tier` pieces are worn, else 0
+## — so seams read `if uniq_set_k("A", 4, "grit_on_magic") > 0.0` and the
+## knob doubles as the magnitude where it has one.
+func uniq_set_k(prof: String, tier: int, key: String) -> float:
+	if uniq_set_n(prof) < tier:
+		return 0.0
+	return float(Balance.uniq_set(cls, prof, "s%d" % tier).get(key, 0.0))
 
 
 ## Is this S weapon's class awakened for this character? (persisted flag)
@@ -905,17 +1002,14 @@ func _ready() -> void:
 	_apply_class_sprite()
 	sprite.flip_h = face_left  # start facing right regardless of art
 	add_child(sprite)
-	_occlusion_outline = Sprite2D.new()
-	var outline_mat := ShaderMaterial.new()
-	outline_mat.shader = load("res://shaders/occluded_outline.gdshader")
-	outline_mat.set_shader_parameter("outline_color",
+	_occlusion_outline_mat = ShaderMaterial.new()
+	_occlusion_outline_mat.shader = load("res://shaders/occluded_outline.gdshader")
+	_occlusion_outline_mat.set_shader_parameter("outline_color",
 		Balance.PLAYER_OCCLUDED_OUTLINE_COLOR)
-	outline_mat.set_shader_parameter("outline_width",
+	_occlusion_outline_mat.set_shader_parameter("outline_width",
 		Balance.PLAYER_OCCLUDED_OUTLINE_WIDTH)
-	_occlusion_outline.material = outline_mat
-	_occlusion_outline.z_index = Balance.PLAYER_OCCLUDED_OUTLINE_Z
-	_occlusion_outline.visible = false
-	add_child(_occlusion_outline)
+	for probe in Balance.PLAYER_OCCLUSION_PROBES:
+		_occlusion_probe_reach = maxf(_occlusion_probe_reach, (probe as Vector2).length())
 
 	# The shard-bearer sheds a faint warm light: invisible in daylight,
 	# a small readable halo in dark-tinted terrains (void/grave/night).
@@ -943,30 +1037,78 @@ func _ready() -> void:
 	mp = max_mp
 
 
-## A structure that y-sorts over the hero should actually hide the body. This
-## second sprite draws only a faint outer edge at z=1, and only while opaque
-## structure pixels cover representative points down the hero's silhouette.
+## A structure that y-sorts over the hero should actually hide the body, and
+## only the COVERED part reads back as a thin edge (owner 2026-07-28: a full-
+## body outline floating over the tombstone looked wrong). Each covering
+## structure gets an outline copy of the hero parented INSIDE it with
+## clip_children on, so the engine masks the outline to that structure's own
+## rendered pixels — the visible part of the body never wears the outline, and
+## animated/wind-swayed occluders mask with their true displaced art.
 func _refresh_occlusion_outline() -> void:
-	if _occlusion_outline == null or sprite == null:
+	if sprite == null:
 		return
-	_occlusion_outline.texture = sprite.texture
-	_occlusion_outline.hframes = sprite.hframes
-	_occlusion_outline.vframes = sprite.vframes
-	_occlusion_outline.frame = sprite.frame
-	_occlusion_outline.centered = sprite.centered
-	_occlusion_outline.offset = sprite.offset
-	_occlusion_outline.flip_h = sprite.flip_h
-	_occlusion_outline.flip_v = sprite.flip_v
-	_occlusion_outline.position = sprite.position
-	_occlusion_outline.rotation = sprite.rotation
-	_occlusion_outline.scale = sprite.scale
-	_occlusion_outline.modulate.a = sprite.modulate.a
-	_occlusion_outline.visible = sprite.visible and _structure_covers_player()
+	var covering: Array = _covering_structures() if sprite.visible else []
+	for key in _occlusion_clips.keys():
+		# UNTYPED read on purpose: a freed occluder frees its clip child with
+		# it, and assigning a freed instance to a Sprite2D-typed var is itself
+		# a per-frame script error — the validity check must run first.
+		var stale = _occlusion_clips[key]
+		if not is_instance_valid(stale):
+			_occlusion_clips.erase(key)
+			continue
+		if not covering.has(stale.get_parent()):
+			_release_occlusion_clip(stale)
+			_occlusion_clips.erase(key)
+	for covering_visual in covering:
+		var occluder := covering_visual as Node2D
+		var key := occluder.get_instance_id()
+		var outline: Sprite2D = _occlusion_clips.get(key)
+		if outline == null:
+			outline = Sprite2D.new()
+			outline.material = _occlusion_outline_mat
+			outline.add_to_group("occlusion_clip_outlines")
+			(occluder as CanvasItem).clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
+			occluder.add_child(outline)
+			_occlusion_clips[key] = outline
+		outline.texture = sprite.texture
+		outline.hframes = sprite.hframes
+		outline.vframes = sprite.vframes
+		outline.frame = sprite.frame
+		outline.centered = sprite.centered
+		outline.offset = sprite.offset
+		outline.flip_h = sprite.flip_h
+		outline.flip_v = sprite.flip_v
+		outline.global_transform = sprite.global_transform
+		outline.modulate.a = sprite.modulate.a
 
 
-func _structure_covers_player() -> bool:
+## Un-clip the occluder only when the LAST outline leaves it — in co-op another
+## hero may still be clipping their own outline into the same structure.
+func _release_occlusion_clip(outline: Sprite2D) -> void:
+	var occluder := outline.get_parent()
+	outline.queue_free()
+	if occluder is CanvasItem:
+		for child in occluder.get_children():
+			if child != outline and child.is_in_group("occlusion_clip_outlines"):
+				return
+		(occluder as CanvasItem).clip_children = CanvasItem.CLIP_CHILDREN_DISABLED
+
+
+## The outlines live inside WORLD nodes, not under this player — without this a
+## despawning hero (co-op leave, class swap rebuild) strands frozen outlines
+## in whatever structure last covered them.
+func _exit_tree() -> void:
+	for key in _occlusion_clips:
+		var outline = _occlusion_clips[key]  # untyped: entry may be freed (see above)
+		if is_instance_valid(outline):
+			_release_occlusion_clip(outline)
+	_occlusion_clips.clear()
+
+
+func _covering_structures() -> Array:
+	var covering: Array = []
 	if get_tree() == null:
-		return false
+		return covering
 	for candidate in get_tree().get_nodes_in_group("structure_occluders"):
 		var visual := candidate as Node2D
 		if visual == null or not visual.is_visible_in_tree():
@@ -975,11 +1117,20 @@ func _structure_covers_player() -> bool:
 			"occlusion_sort_y", visual.global_position.y))
 		if global_position.y >= sort_y:
 			continue
+		# Every scatter prop in every BUILT room is a group member now, so far
+		# candidates must exit before the per-probe transform math. Members
+		# without the radius meta (legacy spawns) keep the full probe.
+		var occl_radius: float = float(visual.get_meta("occlusion_radius", 0.0))
+		if occl_radius > 0.0:
+			var reach := occl_radius + _occlusion_probe_reach
+			if global_position.distance_squared_to(visual.global_position) > reach * reach:
+				continue
 		for probe in Balance.PLAYER_OCCLUSION_PROBES:
 			if _visual_alpha_at(visual, global_position + probe) \
 					>= Balance.PLAYER_OCCLUSION_ALPHA_THRESHOLD:
-				return true
-	return false
+				covering.append(visual)
+				break
+	return covering
 
 
 func _visual_alpha_at(visual: Node2D, world_point: Vector2) -> float:
@@ -1153,7 +1304,9 @@ func _sanitize_talent_points(source: Dictionary, budget: int) -> Dictionary:
 	var out := {}
 	var remaining := maxi(0, budget)
 	for row_idx in Skills.TREES[cls].size():
-		if level < Skills.ROW_LEVELS[row_idx] or remaining <= 0:
+		# Dual-key gate against the rows accepted so far (canonical order means
+		# `out` already holds everything above this row).
+		if not Skills.row_open(cls, row_idx, out, level) or remaining <= 0:
 			continue
 		var row_room := Skills.MAX_PER_ROW
 		for cell in Skills.TREES[cls][row_idx]:
@@ -1279,14 +1432,32 @@ func recalc() -> void:
 		var stats := Items.stats_of(equipment[slot])
 		for stat in stats:
 			b[stat] = b.get(stat, 0.0) + stats[stat]
-	# Set bonus: 2/4 pieces of your class's S legendary set grant escalating
-	# stat bonuses (Items.SET_BONUSES). Only S gear of your OWN class counts.
-	var set_pieces := Items.count_set_pieces(equipment, cls)
-	var set_data: Dictionary = Items.SET_BONUSES.get(cls, {})
-	for tier in ["2", "4"]:
-		if set_pieces >= int(tier) and set_data.has(tier):
-			for stat in set_data[tier]:
-				b[stat] = b.get(stat, 0.0) + set_data[tier][stat]
+	# Armor-family named passives: cache the equipped TEMPLATE ids once per
+	# recalc — every hook reads this list (weapon passives stay on s_passive).
+	uniq_armor.clear()
+	for slot in equipment:
+		if String(slot) == "weapon":
+			continue
+		var piece: Dictionary = equipment[slot]
+		if piece.has("passive") and not piece.get("passive_dormant", false):
+			uniq_armor.append(String(piece["passive"]))
+	# Profile SETS (2026-07-28, GEAR_UNIQUE_SETS.md): a set is a PROFILE worn
+	# across the six gear slots — own-class named uniques counted by the
+	# profile letter in their structural passive id, 2/4/6 records in
+	# Balance.UNIQ_SETS. Stat keys fold into `b` here; clause knobs are read
+	# at their seams via uniq_set_k. (Replaces the legacy per-class S bonus.)
+	uniq_setn = Items.count_profile_pieces(equipment, cls)
+	for prof in uniq_setn:
+		var have: int = int(uniq_setn[prof])
+		for tier_n in [2, 4, 6]:
+			if have < tier_n:
+				break
+			var rec := Balance.uniq_set(cls, String(prof), "s%d" % tier_n)
+			for k in rec:
+				if b.has(k):
+					b[k] = b.get(k, 0.0) + float(rec[k])
+				elif String(k) == "magres_x":
+					b["magres"] = b.get("magres", 0.0) + float(rec[k])
 	for id in tree_points:
 		var cell := Skills.find_cell(cls, id)
 		if cell.is_empty():
@@ -1364,7 +1535,7 @@ func recalc() -> void:
 	# (a3.riders.dr / dr_secs) — the same numbers the tooltip reads. Any class
 	# whose Blink carries a DR rider gets it (only the mage does today).
 	var a3r: Dictionary = Classes.CLASSES[cls]["abilities"].get("a3", {}).get("riders", {})
-	blink_dr = float(a3r.get("dr", 0.0))
+	blink_dr = float(a3r.get("dr", 0.0)) + b["blink_dr"]  # + the mage ward-set 6pc
 	blink_dr_dur = float(a3r.get("dr_secs", 0.0))
 	tumble_dr = b["tumble_dr"]
 	veil_shield = b["veil_shield"]
@@ -1425,6 +1596,38 @@ func recalc() -> void:
 			var base_hp: float = base["hp"] + base["hp_lvl"] * (level - 1)
 			uniq_hp_atk = maxf(0.0, max_hp - base_hp) / uniq_k("hp_per_atk", 1000.0)
 			atk += uniq_hp_atk
+	# ---- armor-passive recalc effects (helmet/gloves/pants + migrated slots) ----
+	# BARGAIN drawbacks signal by KNOB PRESENCE on the equipped carrier (each
+	# cost is printed on its card); standing conversions live here too. Procs
+	# and beats live in the hooks.
+	uniq_heal_in = 1.0
+	uniq_cc_mult = 1.0
+	uniq_hit_flat = 0.0
+	if not uniq_armor.is_empty():
+		if uniq_gear("pants_ward") != "":
+			# Grounded: CC on you runs shorter; a BARGAIN lane pays in healing.
+			uniq_cc_mult = uniq_gk("pants_ward", "cc_mult", 1.0)
+			uniq_heal_in = 1.0 - uniq_gk("pants_ward", "heal_tax")
+		sw_delay += uniq_gk("pants_finesse", "sw_delay_tax")  # BARGAIN: SW waits
+		# Class-native sustain BARGAINS on the bulwark carriers — BOTH the
+		# bastion (pants_bulwark) and pool (helm_bulwark) verbs print them
+		# (review 2026-07-27: the *_charm_Ea lanes ride helm_bulwark, and
+		# their printed costs were never being charged).
+		for uniq_bw in ["pants_bulwark", "helm_bulwark"]:
+			if uniq_gk(uniq_bw, "sw_off") > 0.0:
+				sw_regen = 0.0  # the bastion never rests (archer lanes)
+			sw_regen *= 1.0 - uniq_gk(uniq_bw, "sw_tax")  # archer charm Ea: SW mends at half
+			regen_pct *= 1.0 - uniq_gk(uniq_bw, "regen_tax")
+			# The regen tax charges Grit's engine too (fix 2026-07-28: the
+			# warrior cards promised "Grit's regen is halved" while only the
+			# base knit paid — the face-tank kept its whole sustain).
+			grit_regen *= 1.0 - uniq_gk(uniq_bw, "regen_tax")
+			lifesteal *= 1.0 - uniq_gk(uniq_bw, "ls_tax")
+		if uniq_gear("helm_bulwark") != "":
+			transfusion += uniq_gk("helm_bulwark", "cap")  # overheal pools (Transfusion rail)
+		if uniq_gear("glove_bulwark") != "":
+			# Might grip: bulk lands with every hit (folded like _cast_base).
+			uniq_hit_flat = max_hp / maxf(1.0, uniq_gk("glove_bulwark", "hp_per", 1000.0))
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
 
@@ -1436,6 +1639,7 @@ func gain_hp(amount: float) -> void:
 	if amount <= 0.0 or dead:
 		return
 	amount *= debuff_heal_in   # endgame Depths −healing-received debuff (1.0 off-run)
+	amount *= uniq_heal_in     # pants_ward A BARGAIN: deep-grounded pays in mending
 	var before := hp
 	hp = minf(max_hp, hp + amount)
 	heal_accum += hp - before
@@ -1445,7 +1649,10 @@ func gain_hp(amount: float) -> void:
 	if transfusion > 0.0:
 		var overflow := amount - (hp - before)
 		if overflow > 0.0:
-			shield = minf(transfusion * max_hp, shield + overflow)
+			# A pool-carrier's conditional amp (e.g. "pools double while
+			# Berserk runs") speeds the FILL, never the cap.
+			shield = minf(transfusion * max_hp,
+				shield + overflow * uniq_amp(uniq_gear("helm_bulwark")))
 	if cls == "paladin":
 		# Overheal -> Holy Charge: healing the paladin can't use banks as smite
 		# damage for the next Judgment. Its sustain budget becomes offense exactly
@@ -1454,6 +1661,22 @@ func gain_hp(amount: float) -> void:
 		if over > 0.0:
 			holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP,
 				holy_charge + over * Balance.PALADIN_OVERHEAL_DMG)
+
+
+## Feed hp OVERFLOW from a heal path that writes hp directly (lifesteal,
+## regen/Second Wind/Grit ticks) into the pool-verb shield. Fix 2026-07-28:
+## the pool only ever filled through gain_hp, but every sustain the pool
+## cards NAME (Berserk's lifesteal, the surge, Second Wind) bypasses it —
+## three charm BARGAINs charged a permanent tax for a pool that could not
+## fill. Carrier-gated so the warlock Transfusion TALENT keeps its own
+## gain_hp-only fill semantics.
+func _uniq_pool_overflow(overflow: float) -> void:
+	if overflow <= 0.0 or transfusion <= 0.0:
+		return
+	var pool_id := uniq_gear("helm_bulwark")
+	if pool_id == "":
+		return
+	shield = minf(transfusion * max_hp, shield + overflow * uniq_amp(pool_id))
 
 
 func current_atk() -> float:
@@ -1542,7 +1765,7 @@ func consumable_count(id: String) -> int:
 # internally (save format unchanged), but every owned potion occupies a
 # slot like any other consumable unit (bag tiers grew +5 to compensate).
 func bag_used() -> int:
-	return backpack.size() + gem_bag.size() + consumables.size() + potion_count()
+	return backpack.size() + gem_bag.size() + consumables.size() + materials.size() + potion_count()
 
 
 # Bag-full adds return false with NO side effects — the caller decides
@@ -1577,6 +1800,24 @@ func add_consumable(c: Dictionary) -> bool:
 	if bag_used() >= bag_capacity():
 		return false
 	consumables.append(c)
+	return true
+
+
+## Stacking material pickup (mob drops, boss supply). One bag slot per
+## (family, grade) stack, up to Items.MATERIAL_STACK_MAX per stack. Merging
+## into an existing stack costs NO new slot, so it succeeds even at a full bag;
+## a brand-new stack costs a slot and a full bag refuses it (mirror
+## add_consumable — no side effects on refusal, the caller drops/mails it).
+func add_material(family: String, grade: String, count := 1) -> bool:
+	if count <= 0:
+		return true
+	for m in materials:
+		if String(m.get("family", "")) == family and String(m.get("grade", "")) == grade:
+			m["count"] = mini(Items.MATERIAL_STACK_MAX, int(m.get("count", 0)) + count)
+			return true
+	if bag_used() >= bag_capacity():
+		return false
+	materials.append(Items.make_material(family, grade, mini(Items.MATERIAL_STACK_MAX, count)))
 	return true
 
 
@@ -1734,6 +1975,21 @@ func potion_display_name(id: String) -> String:
 	return id
 
 
+## The one-word label the HUD potion slot shows (space is tight, so the full
+## potion_display_name won't fit). Kept HERE beside potion_display_name so all
+## potion naming lives in one file — the HUD's old inline "Mana"/else-"Might"
+## ternary silently mislabelled every non-mana rotation type (renewal read as
+## "Might"; elixir_ward would too when it joined the rotation 2026-07-29).
+func potion_short_name(id: String) -> String:
+	match id:
+		"health": return "Potion"
+		"mana_potion": return "Mana"
+		"elixir_might": return "Might"
+		"elixir_ward": return "Ward"
+		"renewal_draught": return "Renewal"
+	return potion_display_name(id)
+
+
 ## Shared drink gate (2026-07-21): EVERY budgeted drink — Q-rotation or a bag
 ## click — passes here. The bag path used to skip the per-room budget entirely
 ## (a renewal chain was unlimited in-fight healing, gold the only gate, which
@@ -1800,6 +2056,8 @@ func use_consumable(c: Dictionary) -> void:
 			game.sfx("potion", 0.85)
 			game.spawn_text(global_position + Vector2(0, -56), "MIGHT!", Color(1.0, 0.6, 0.3))
 		"elixir_ward":
+			if not _drink_gate("elixir_ward"):
+				return
 			dr_time = Balance.ELIXIR_WARD_DUR
 			dr_amt = Balance.ELIXIR_WARD_AMT
 			consumables.erase(c)
@@ -2204,10 +2462,6 @@ func ability_cd(slot: String) -> float:
 		# core throughput lever (paired with CASTER_HASTE_BONUS). No other class.
 		if Classes.CLASSES[cls]["primary"] == "INT":
 			ult_cd *= 1.0 - cdr
-		if s_passive() == "atlas":
-			# Atlas Branch BARGAIN: a flat printed tax AFTER haste — the sky
-			# always answers exactly this much later.
-			ult_cd += uniq_k("cd_tax")
 		return maxf(0.1, ult_cd)
 	if cls == "assassin" and slot == "a2":
 		# Shadow Dash: this is the WHIFF cd — floored so gear cdr can't push
@@ -2233,14 +2487,21 @@ func ability_cd(slot: String) -> float:
 	# effects): the heavier blow swings slower (Balance.UNIQ knobs).
 	match s_passive():
 		"dirge":
-			if slot == "a1":
-				cd *= 1.0 + uniq_k("cd_tax")   # Gravesong: Cleave tolls slower
+			if slot == "a1" or slot == "a3":
+				# Gravesong: BOTH heavy swings toll slower. (Review 2026-07-27:
+				# the tax used to touch only Cleave, leaving the Whirlwind buff
+				# free — a BARGAIN that out-valued the S lane.)
+				cd *= 1.0 + uniq_k("cd_tax")
 		"burden":
 			if slot == "a1":
 				cd *= 1.0 + uniq_k("cd_tax")   # Pilgrim's Burden: Judgment swings slower
 		"warhorn":
 			if slot == "a2":
 				cd += uniq_k("cd_tax")         # Hornsong: the wider volley returns later
+	if slot == "a3":
+		# Finesse-set mobility clauses: the archer 4pc hastens Tumble, the
+		# mage 6pc hastens Blink (class-scoped by which knob the data carries).
+		cd = maxf(0.2, cd - uniq_set_k("C", 4, "tumble_cd") - uniq_set_k("C", 6, "blink_cd"))
 	cd = cd * (1.0 - cdr)
 	if cls == "warrior" and slot == "a1" and berserk_time <= 0.0:
 		# Cleave has a HARD cd floor cdr can't pierce — plate hits hard, not fast,

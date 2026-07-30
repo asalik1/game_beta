@@ -2434,6 +2434,28 @@ static func consumable_icon(c: Dictionary) -> ImageTexture:
 	return t
 
 
+## A crafting-material icon from
+## assets/icons/materials/<family>_<lowercase grade>_<snake name>.png, resized
+## to 32x32 and cached. Returns null when the art is missing so the caller can
+## fall back to a glyph.
+static func material_icon(family: String, grade: String) -> ImageTexture:
+	var mat_name := String(Items.MATERIALS.get(family, {}).get(grade, ""))
+	if mat_name == "":
+		return null
+	var stem := Items.material_stem(family, grade, mat_name)
+	var key := "maticon_" + stem
+	if _cache.has(key):
+		return _cache[key]
+	var im := _icon_override("materials/" + stem)
+	if im == null:
+		return null
+	if im.get_width() != 32 or im.get_height() != 32:
+		im.resize(32, 32, Image.INTERPOLATE_NEAREST)
+	var t := ImageTexture.create_from_image(im)
+	_cache[key] = t
+	return t
+
+
 # A cut gem: bright crown top-left falling to a dark pavilion — drawn
 # in whites/steels so the stat color tints it multiplicatively (same
 # trick as item_icon). Rows are 12x12.

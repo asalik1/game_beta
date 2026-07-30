@@ -99,6 +99,17 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 			spr = Sprite2D.new()
 			spr.texture = Art.gem_icon(tint, int(payload["gem"].get("lvl", 1)))
 			spr.scale = Vector2(0.9, 0.9)
+		"material":
+			# Bag-overflow crafting material: its authored 32px icon, grade-tinted.
+			tint = Items.GRADE_COLOR.get(String(payload.get("grade", "F")), Color(1, 1, 1))
+			var mtex: ImageTexture = Art.material_icon(String(payload.get("family", "")),
+				String(payload.get("grade", "")))
+			if mtex != null:
+				spr = Sprite2D.new()
+				spr.texture = mtex
+				spr.scale = Vector2(1.1, 1.1)
+			else:
+				c._glyph("◆", tint)
 		_:
 			# Consumable on the ground: real icon when one exists (mana
 			# draught, elixir, scroll, stones), else the old ⟲ glyph.
