@@ -100,11 +100,12 @@ static func _character_section(game: Game) -> Dictionary:
 		"talent_loadouts": p.talent_loadouts,
 		"active_talent_loadout": p.active_talent_loadout,
 		"attr_points": p.attr_points, "unspent_attr": p.unspent_attr,
-		"gold": p.gold, "potions": p.potions,
-		# The expiring ch1-3 teaching potion rides the save WITH its chapter:
-		# switch_chapter re-grants on load, then this overwrites (drunk stays
-		# drunk; leaving the chapter zeroes it before any save can bank it).
-		"potions_free": p.potions_free,
+		"gold": p.gold,
+		# Health potions are graded bag items now (CONSUMABLE_GRADES) — they ride
+		# the `consumables` array like any potion; the `potions`/`potions_free`
+		# counters are RETIRED (no save-migration: old fields drop on load). The
+		# ch1-3 teaching gift is a flagged Defective Health Potion that game_world
+		# reconciles on chapter entry (re-granted, then never re-banked stale).
 		"ability_theme": p.ability_theme,
 		"chroma": p.chroma,
 		"skin": p.skin,
@@ -298,7 +299,7 @@ static func world_of(data: Dictionary) -> Dictionary:
 # Where each v2 flat field lands in v3. "bag" is the round-52 legacy
 # single-bag key (pre-`bags` saves) — routed so load_bags still sees it.
 const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tree_points",
-	"attr_points", "unspent_attr", "gold", "potions", "potions_free", "ability_theme", "chroma", "skin",
+	"attr_points", "unspent_attr", "gold", "ability_theme", "chroma", "skin",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
 	"consumables", "materials", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
@@ -475,8 +476,6 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 		p.attr_points[k] = int(ap.get(k, 0))
 	p.unspent_attr = int(c.get("unspent_attr", 0))
 	p.gold = int(c.get("gold", 0))
-	p.potions = int(c.get("potions", 0))
-	p.potions_free = int(c.get("potions_free", 0))
 	var themes: Dictionary = c.get("ability_theme", {})
 	for k in p.ability_theme:
 		p.ability_theme[k] = String(themes.get(k, p.ability_theme[k]))
@@ -503,7 +502,22 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	for g in c.get("gem_bag", []):
 		p.gem_bag.append(_fix_gem(g))
 	p.bags = load_bags(c)
-	p.consumables = c.get("consumables", [])
+	# Graded potions round-trip through make_potion so their effect params /
+	# sprite / price stay current; a family/grade/lane that no longer exists
+	# simply drops (no-save-migration rule). Stones/scrolls/quest items pass
+	# through untouched. The ch1-3 gift flag is preserved (game_world reconciles).
+	p.consumables = []
+	for rawc in c.get("consumables", []):
+		var cc: Dictionary = rawc
+		if String(cc.get("kind", "")) == "potion":
+			var np := Items.make_potion(String(cc.get("family", "")), String(cc.get("shape", "")),
+				String(cc.get("grade", "")), String(cc.get("lane", "")))
+			if not np.is_empty():
+				if bool(cc.get("gift", false)):
+					np["gift"] = true
+				p.consumables.append(np)
+		else:
+			p.consumables.append(cc)
 	# Materials round-trip: rebuild each stack through make_material so the
 	# name/sprite are always current, and any family/grade that no longer
 	# exists simply drops (no-save-migration rule — old ids die on load).

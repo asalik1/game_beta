@@ -1205,12 +1205,9 @@ func open_potion_loadout() -> void:
 	UITheme.rule(vbox)
 	_lbl(vbox, "YOUR POTIONS:", 15, Color(0.95, 0.85, 0.5))
 	var any_rot := false
-	for rid in Items.ROTATION_POTIONS:
+	for rid in p.owned_potion_ids():
 		var rid_c := String(rid)
-		var owned := 0
-		for c in p.consumables:
-			if String(c.get("id", "")) == rid_c:
-				owned += 1
+		var owned := p.consumable_count(rid_c)
 		if owned <= 0:
 			continue
 		any_rot = true
@@ -1229,7 +1226,7 @@ func open_potion_loadout() -> void:
 				game.local_player.loadout_remove(rid_c)
 				open_potion_loadout(), Color(0.7, 0.82, 0.95))
 	if not any_rot:
-		var warn := _lbl(vbox, "You only carry Health potions right now — every slot pours Health, so there's nothing to rotate yet. Buy a Mana Draught or an Elixir of Might from an alchemist's shelf, then come back here to slot it. That's how a rotation is built.", 13, Color(1.0, 0.82, 0.5))
+		var warn := _lbl(vbox, "You carry no rotation potions right now — every unassigned slot pours your cheapest Health Potion. Buy a Mana Potion, an Elixir of Might/Warding, a Tonic or a Draught of Renewal from an alchemist's shelf (or the black market), then come back here to slot the exact bottle. That's how a rotation is built.", 13, Color(1.0, 0.82, 0.5))
 		warn.custom_minimum_size = Vector2(700, 0)
 	if not p.potion_rotation.is_empty():
 		_btn(vbox, "  ⟲  All slots back to Health  ", func() -> void:
@@ -1483,70 +1480,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					]
 					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions, GearFlavor.of(it))).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
-		# Health potions (2026-07-09 v2): stored as a COUNTER
-		# (potions/potions_free) but they occupy bag slots like any unit,
-		# so they render here as VIRTUAL stack entries — bought stock and
-		# the expiring chapter gift separately. Clicking one plans the
-		# loadout, exactly what the HUD potion tooltip promises. No Use
-		# (Q drinks via the room budget) and no Drop (sell spares at any
-		# merchant instead).
-		var pot_stacks: Array = []
-		if p.potions > 0:
-			pot_stacks.append([p.potions, "", Color(1.0, 0.5, 0.5),
-				"Mends 15%% of your MISSING health. Drink with the %s in the field (per-room budget); sell spare stock at any merchant. Each potion rides in your bags — one slot per potion." %
-					game.control_hint("potion", "Potion button")])
-		if p.potions_free > 0:
-			pot_stacks.append([p.potions_free, " (chapter gift)", Color(1.0, 0.78, 0.45),
-				"The chapter's free teaching potion — drunk FIRST, never sellable, and it EXPIRES the moment you leave this chapter. It still takes a bag slot while you hold it."])
-		for ps in pot_stacks:
-			var pn: int = ps[0]
-			var psuf: String = ps[1]
-			var pcol: Color = ps[2]
-			var pdesc: String = ps[3]
-			_bag_slot(grid, Art.tex("potion"), ("x%d" % pn) if pn > 1 else "", pcol,
-				func() -> void:
-					var info := pdesc
-					# THE ROTATION HUB (2026-07-09): clicking the health potion is where
-					# you PLAN the room loadout — slot-by-slot readout + an action per
-					# ownable rotation type, so the editor exists even on a fresh
-					# character (the old panel showed NO actions until the rotation was
-					# already non-empty — exactly the "no way to set it up" report).
-					var comp: Array = []
-					for rid in p.potion_rotation:
-						comp.append(p.potion_display_name(String(rid)))
-					for _h in range(p.potion_slot_cap() - p.potion_rotation.size()):
-						comp.append("Health")
-					info += "\n\nROOM LOADOUT (%d slots): %s — unassigned slots drink as HEALTH. %s cycles in the field." % [
-						p.potion_slot_cap(), " | ".join(comp),
-						game.control_hint("potion_next", "The ↻ button")]
-					var actions: Array = []
-					for rid in Items.ROTATION_POTIONS:
-						var rid_c := String(rid)
-						var owned := 0
-						for c in p.consumables:
-							if String(c.get("id", "")) == rid_c:
-								owned += 1
-						if owned <= 0:
-							continue
-						var in_rot: int = p.potion_rotation.count(rid_c)
-						actions.append(["  ＋  Slot %s  (own x%d%s)  " % [p.potion_display_name(rid_c), owned,
-								(", slotted x%d" % in_rot) if in_rot > 0 else ""], Color(0.7, 0.9, 1.0),
-							func() -> void:
-								game.local_player.loadout_add(rid_c)
-								open_inventory("gear", cat)])
-						if in_rot > 0:
-							actions.append(["  －  Unslot %s  " % p.potion_display_name(rid_c), Color(0.7, 0.82, 0.95),
-								func() -> void:
-									game.local_player.loadout_remove(rid_c)
-									open_inventory("gear", cat)])
-					if not p.potion_rotation.is_empty():
-						actions.append(["  ⟲  All slots back to health  ", Color(0.6, 1.0, 0.8),
-							func() -> void:
-								game.local_player.potion_rotation.clear()
-								game.local_player.active_potion = "health"
-								open_inventory("gear", cat)])
-					_open_detail_popover(Art.tex("potion"), "Health Potion%s  x%d" % [psuf, pn],
-						pcol, info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
+		# Health potions are graded bag items now (CONSUMABLE_GRADES) — they
+		# render through the normal consumables loop below like any potion. The
+		# loadout is planned from the dedicated "Potion Loadout" tab (or each
+		# potion's Slot action). The old health-counter virtual stacks are gone.
 		# Consumables STACK by id (playtest 2026-07-07): one slot per
 		# type, count in the tooltip, click uses ONE.
 		var cgroups := {}
@@ -1589,7 +1526,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					# renders as tofu (dc673ab dropped it from the loadout tab —
 					# this Use button carried the same codepoint and was missed).
 					var actions: Array = [["  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
-					if cid in Items.ROTATION_POTIONS:
+					if Items.is_rotation_potion(cid):
 						# Loadout editing (per-room potion budget, 2026-07-07 v2).
 						info += "\n\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. %s cycles potions in the field." % [
 							p.potion_rotation.size(), p.potion_slot_cap(),
@@ -3135,47 +3072,77 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				Color(0.6, 0.9, 1.0), p.gold >= cost, do_upgrade)
 
 	# ========================================================= CONSUMABLES ===
-	_lbl(buy, "— Consumables —", 13, Color(0.62, 0.64, 0.7))
-	var cons_grid := _shop_grid(buy)
-	# Potion price scales with the chapter (2026-07-09 investment round):
-	# potions heal % HP, so their value — and price — grows with the game.
-	var potion_cost := int(ceil(float(Balance.potion_price(game.local_player.level)) * haggle))
-	var buy_potion := func() -> void:
-		if p.gold >= potion_cost:
-			# Potions occupy bag slots (2026-07-09 v2): BAG SPACE is the only
-			# limit (no separate stock cap) — a full bag blocks the buy.
-			if p.can_gain_potion():
-				p.gold -= potion_cost
-				p.potions += 1
+	# Graded potions (CONSUMABLE_GRADES §10 sourcing). The Accord (clean) shelf
+	# stocks every family across an act-appropriate grade band, NEVER S (S is
+	# boss/elite drop only). Prices are the per-grade table x haggle.
+	var pot_act: int = Story.act_of(price_ch)
+	var pot_shapes := [["health", "instant"], ["health", "tonic"], ["mana", "instant"],
+		["mana", "tonic"], ["might", "buff"], ["ward", "buff"], ["renewal", "burst"]]
+	_lbl(buy, "— Alchemist's Shelf (Accord) —", 13, Color(0.6, 0.72, 0.66))
+	var acc_grid := _shop_grid(buy)
+	for ps in pot_shapes:
+		var fam: String = ps[0]
+		var shp: String = ps[1]
+		for gr in Balance.shop_potion_grades(pot_act, false):
+			var made := Items.make_potion(fam, shp, String(gr), "accord")
+			if made.is_empty():
+				continue
+			var pcost := int(ceil(float(made["price"]) * haggle))
+			var buy_cb := func() -> void:
+				if p.gold >= pcost:
+					if p.add_consumable(made.duplicate(true)):
+						p.gold -= pcost
+						game.sfx("potion")
+					else:
+						game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+				open_shop(zone)
+			_shop_card(acc_grid, Art.consumable_icon(made), String(made["name"]),
+				"%d gold   (%s)" % [pcost, made["desc"]],
+				Items.GRADE_COLOR[made["grade"]], p.gold >= pcost, buy_cb)
+	# The ungraded Scroll of Recall still shares the Accord shelf.
+	var recall := Items.make_recall_scroll()
+	var rcost := int(ceil(float(Balance.consumable_price("recall_scroll", p.level)) * haggle))
+	var buy_recall := func() -> void:
+		if p.gold >= rcost:
+			if p.add_consumable(recall.duplicate(true)):
+				p.gold -= rcost
 				game.sfx("potion")
 			else:
 				game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
 		open_shop(zone)
-	var ptxt := "%d gold  (you have %d)" % [potion_cost, p.potion_count()]
-	if not p.can_gain_potion():
-		ptxt += "  — bag full"
-	_shop_card(cons_grid, Art.tex("potion"), "Health Potion",
-		ptxt, Color(1.0, 0.5, 0.5), p.gold >= potion_cost and p.can_gain_potion(), buy_potion)
+	_shop_card(acc_grid, Art.consumable_icon(recall), String(recall["name"]),
+		"%d gold   (%s)" % [rcost, recall["desc"]], Items.GRADE_COLOR[recall["grade"]],
+		p.gold >= rcost, buy_recall)
 
-	# Alchemist's shelf: utility consumables (bag items, used from inventory).
-	for spec in [["mana_potion", Items.make_mana_potion()], ["elixir_might", Items.make_elixir_might()],
-			["elixir_ward", Items.make_elixir_ward()], ["renewal_draught", Items.make_renewal_draught()],
-			["recall_scroll", Items.make_recall_scroll()]]:
-		var cid: String = spec[0]
-		var made: Dictionary = spec[1]
-		var ccost := int(ceil(float(Balance.consumable_price(cid, p.level)) * haggle))
-		var buy_cons := func() -> void:
-			if p.gold >= ccost:
-				# Gold only moves when the item actually lands in the bag.
+	# The Black Market (laced lane, §10). MINIMAL stand-in for the proper Sable
+	# Court fence (capital content, not yet live) — one cheap laced bottle per
+	# family at the act's lowest band grade, cut with blightwater (the sting is
+	# shown on the card). PROPER FENCE + road smuggler are follow-ups (flagged).
+	_lbl(buy, "— Black Market (laced, under the counter) —", 13, Color(0.72, 0.55, 0.6))
+	var blk_grid := _shop_grid(buy)
+	for ps in pot_shapes:
+		var fam: String = ps[0]
+		var shp: String = ps[1]
+		var made := {}
+		for gr in Balance.shop_potion_grades(pot_act, true):
+			var cand := Items.make_potion(fam, shp, String(gr), "black")
+			if not cand.is_empty():
+				made = cand
+				break
+		if made.is_empty():
+			continue
+		var bcost := int(ceil(float(made["price"]) * haggle))
+		var buy_bcb := func() -> void:
+			if p.gold >= bcost:
 				if p.add_consumable(made.duplicate(true)):
-					p.gold -= ccost
+					p.gold -= bcost
 					game.sfx("potion")
 				else:
 					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
 			open_shop(zone)
-		_shop_card(cons_grid, Art.consumable_icon(made), String(made["name"]),
-			"%d gold   (%s)" % [ccost, made["desc"]],
-			Items.GRADE_COLOR[made["grade"]], p.gold >= ccost, buy_cons)
+		_shop_card(blk_grid, Art.consumable_icon(made), String(made["name"]),
+			"%d gold   (%s)" % [bcost, made["desc"]],
+			Items.GRADE_COLOR[made["grade"]], p.gold >= bcost, buy_bcb)
 
 	# ======================================================= MISCELLANEOUS ===
 	_lbl(buy, "— Miscellaneous —", 13, Color(0.62, 0.64, 0.7))
@@ -3367,29 +3334,34 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				"%s%s" % [Items.gem_title(g), xn], "sell one for %d gold" % gval,
 				Items.gem_color(g), true, sell_gem)
 
-	# --- consumables: ONLY merchant-stocked ones (in CONSUMABLE_PRICES), plus
-	# spare health potions. Quest keepsakes (kind "quest") and elite utility
-	# (stone/tome) have no market price -> never sellable, so run-scoped quest
-	# items can't be lost. ---
+	# --- consumables: graded potions (their per-grade price) + the Scroll of
+	# Recall (CONSUMABLE_PRICES). The teaching GIFT potion is never sellable;
+	# quest keepsakes (kind "quest") and elite utility (stone/tome) have no
+	# market price -> never sellable, so run-scoped quest items can't be lost. ---
 	var cg := {}
 	var corder: Array = []
 	for c in p.consumables:
 		var cc0: Dictionary = c
 		var gid := String(cc0.get("id", ""))
-		if not Balance.CONSUMABLE_PRICES.has(gid):
+		var is_pot := String(cc0.get("kind", "")) == "potion"
+		if is_pot and bool(cc0.get("gift", false)):
+			continue  # the ch1-3 teaching gift never sells
+		if not is_pot and not Balance.CONSUMABLE_PRICES.has(gid):
 			continue
 		if not cg.has(gid):
 			cg[gid] = {"c": cc0, "count": 0}
 			corder.append(gid)
 		cg[gid]["count"] += 1
-	if not corder.is_empty() or p.potions > 0:
+	if not corder.is_empty():
 		sold_any = true
 		_lbl(list, "— Consumables —", 13, Color(0.62, 0.64, 0.7))
 		var cons_grid := _shop_grid(list)
 		for gid in corder:
 			var cc: Dictionary = cg[gid]["c"]
 			var ccount: int = cg[gid]["count"]
-			var cval := maxi(1, int(float(Balance.CONSUMABLE_PRICES[gid]) * Balance.MERCHANT_SELL_FRACTION))
+			var base_val: int = int(cc.get("price", 0)) if String(cc.get("kind", "")) == "potion" \
+				else int(Balance.CONSUMABLE_PRICES.get(gid, 0))
+			var cval := maxi(1, int(float(base_val) * Balance.MERCHANT_SELL_FRACTION))
 			var xn2 := "  (x%d)" % ccount if ccount > 1 else ""
 			var sell_cons := func() -> void:
 				p.consumables.erase(cc)
@@ -3399,21 +3371,6 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			_shop_card(cons_grid, Art.consumable_icon(cc), "%s%s" % [String(cc["name"]), xn2],
 				"sell one for %d gold" % cval, Items.GRADE_COLOR[String(cc.get("grade", "C"))],
 				true, sell_cons)
-
-		# Spare health potions (the on-player counter). BOUGHT stock only
-		# (potions_free — the expiring ch1-3 teaching potion — is never sellable),
-		# and the sell basis stays the flat ch1 base price: chapter-scaled buy
-		# prices must never open a haul-forward sell spiral.
-		if p.potions > 0:
-			var hval := maxi(1, int(float(Balance.POTION_PRICE) * Balance.MERCHANT_SELL_FRACTION))
-			var sell_pot := func() -> void:
-				if p.potions > 0:
-					p.potions -= 1
-					p.gain_gold(hval)
-					game.sfx("potion")
-				open_shop(zone)
-			_shop_card(cons_grid, Art.tex("potion"), "Health Potion (x%d)" % p.potions,
-				"sell one for %d gold" % hval, Color(1.0, 0.5, 0.5), true, sell_pot)
 
 	# --- materials: flat anti-haul intrinsic (Items.material_value x sell
 	# fraction), stacked by family+grade, click sells ONE unit. ---

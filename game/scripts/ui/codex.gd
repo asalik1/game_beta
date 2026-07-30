@@ -1353,11 +1353,12 @@ static func _gear_bags(m: Menus, list: VBoxContainer) -> void:
 	# alembic dc673ab already proved renders as tofu on mobile, so these six
 	# were the same bug one screen over. Names carry the list on their own.
 	for util in [
-		"Health Potion — mends 15% of your MISSING health (carry as many as your BAGS hold — each potion takes a bag slot and shows in your inventory, where you select the stack to plan your loadout) — a helping hand, not an eraser: worth the most at death's door. Potions are an INVESTMENT: buy them from merchants — nothing restocks them for free, and the price climbs with your level. The one exception: Chapters 1-3 each greet you with a single free potion that EXPIRES when you leave that chapter.",
-		"Mana Draught — restore %d%% of your MISSING mana (priced like a health potion). Bought from merchants." % int(Balance.MANA_POTION_FRAC * 100),
-		"Elixir of Might — +%d%% damage for %ds: a BURST WINDOW — pop it into the kill shot, not the whole fight." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)],
-		"Elixir of Warding — cut incoming damage by %d%% for %ds. Bought from merchants." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)],
-		"Draught of Renewal — instantly restore %d%% of maximum health — a full heal in one gulp, where a potion only tops you up. Bought from merchants." % int(Balance.RENEWAL_HEAL_FRAC * 100),
+		"Potions are GRADED F→S in two lanes now (CONSUMABLE_GRADES). The ACCORD lane is clean, chartered alchemy — sold at every merchant F→A (S is boss/elite drop only). The BLACK MARKET lane is the same headline effect ~35% cheaper, cut with diluted blightwater: every laced bottle carries a sting (weakened body, sealed wounds, dulled arms, heavy limbs, a bleed-back loan). Effect and price scale by grade; drink the right bottle for the moment.",
+		"Health — a POTION restores a % of your MISSING health instantly; a TONIC restores the same total slower and cheaper (it drips over a grade-scaled window). The generic Health slot auto-pours your cheapest one; Chapters 1-3 gift a single Defective Health Potion that EXPIRES on leaving.",
+		"Mana — a POTION restores a % of MISSING mana instantly; a TONIC restores a bigger total over time.",
+		"Elixir of Might — a timed +damage window: pop it into the kill shot, not the whole fight.",
+		"Elixir of Warding — a timed −incoming-damage window: quaff it just before a telegraphed blow.",
+		"Draught of Renewal — instantly restore a % of your MAXIMUM health, the premium life-spike (C→S).",
 		"Scroll of Recall — whisk yourself back to the last safe room (not in combat). Bought from merchants."]:
 		var ul := m._lbl(cons, String(util), 13, Color(0.7, 0.72, 0.78))
 		ul.custom_minimum_size = Vector2(880, 0)
@@ -1386,9 +1387,23 @@ static func _curios(m: Menus, list: VBoxContainer) -> void:
 		m._lbl(list, "None catalogued yet — the road will provide.", 13, Color(0.55, 0.55, 0.6))
 
 	UITheme.header(m._lbl(list, "— DRAUGHTS & TONICS —", 16, Color(0.6, 0.95, 0.7)))
-	for item in [Items.make_mana_potion(), Items.make_elixir_might(), Items.make_elixir_ward(),
-			Items.make_renewal_draught(), Items.make_recall_scroll()]:
-		# consumable_icon, NOT icon_for — stone-kind items carry no gear slot.
+	# Graded potions (CONSUMABLE_GRADES) run F→S in two lanes — the Accord (clean)
+	# and the Black Market (laced, cut with blightwater). A representative shelf:
+	# the seven Accord peaks (the S uniques), a laced example, and the Recall scroll.
+	var codex_pots := [
+		Items.make_potion("health", "instant", "S", "accord"),
+		Items.make_potion("health", "tonic", "S", "accord"),
+		Items.make_potion("mana", "instant", "S", "accord"),
+		Items.make_potion("mana", "tonic", "S", "accord"),
+		Items.make_potion("might", "buff", "S", "accord"),
+		Items.make_potion("ward", "buff", "S", "accord"),
+		Items.make_potion("renewal", "burst", "S", "accord"),
+		Items.make_potion("health", "instant", "F", "black"),
+		Items.make_potion("might", "buff", "A", "black"),
+		Items.make_recall_scroll(),
+	]
+	for item in codex_pots:
+		# consumable_icon, NOT icon_for — potion/stone items carry no gear slot.
 		_curio_card(m, list, String(item["name"]), String(item.get("desc", "")), "", false, Art.consumable_icon(item))
 
 	# Relic entries carry an optional "group" (armory/supplies live in the

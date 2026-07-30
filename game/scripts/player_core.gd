@@ -88,13 +88,13 @@ var attr_points := {"STR": 0, "AGI": 0, "INT": 0, "VIT": 0,
 	"PhysRes": 0, "MagRes": 0, "CritRes": 0, "DEX": 0, "PhysPen": 0, "MagPen": 0}
 var unspent_attr := 0    # +1 per level, allocate in the skills menu
 var gold := 15           # scarcity pass: merchants and haggling matter
-# Health potions are an INVESTMENT (2026-07-09): `potions` is BOUGHT stock
-# (merchant gold, carries across chapters, sellable) — a fresh run starts
-# DRY. `potions_free` is the ONE teaching potion granted on entering ch1-3
-# (Balance.FREE_POTION_CHAPTERS): it EXPIRES on leaving the chapter
-# (switch_chapter sets it absolutely), is drunk FIRST, and never sells.
-var potions := 0
-var potions_free := 0
+# Health potions are GRADED bag items now (CONSUMABLE_GRADES, 2026-07-30): the
+# old `potions`/`potions_free` counters are RETIRED. Health Potions ride the
+# `consumables` array like any potion (kind "potion", family "health", shape
+# "instant"); the ch1-3 teaching freebie is a Defective (F) unit flagged
+# {"gift": true} (drunk first, never sold, expires on leaving the chapter —
+# game_world reconciles it). potion_count()/spend_health_potion() below read
+# the bag. No save-migration: old counter fields simply drop on load.
 
 # --- gear ---
 var equipment := {}      # slot -> item Dictionary
@@ -156,6 +156,25 @@ var blink_dr := 0.0      # Arcane Ward: DR fraction Blink grants (mage passive)
 var blink_dr_dur := 0.0  # how long that DR window lasts after a Blink
 var dr_time := 0.0       # while > 0, incoming non-true damage is cut by dr_amt
 var dr_amt := 0.0        # active damage-reduction fraction (multiplicative)
+# Graded-potion (CONSUMABLE_GRADES) laced stings + over-time drips. All are
+# small timed self-debuffs applied at the standard damage/heal/move choke
+# points (player.gd). The blightwater sting reads like the rot doing what the
+# rot does (§0); the tonic drips deliver the bottle's banked TOTAL over its
+# grade-scaled window (self-timed, so a fresh tonic REPLACES an active one).
+var laced_dmg_in_time := 0.0   # +damage taken (Red / Fury sting)
+var laced_dmg_in_amt := 0.0
+var laced_dmg_out_time := 0.0  # -damage dealt (Haze sting)
+var laced_dmg_out_amt := 0.0
+var laced_move_time := 0.0     # -move speed (Hide sting)
+var laced_move_amt := 0.0
+var laced_heal_in_time := 0.0  # -healing received (Rust sting; the tonic's own drip bypasses it)
+var laced_heal_in_amt := 0.0
+var laced_bleed_time := 0.0    # bleed-back DoT (Renewal loan sting)
+var laced_bleed_rate := 0.0    # hp/sec drained (clamped to never drop below 1 HP)
+var heal_tonic_time := 0.0     # Health Tonic drip window
+var heal_tonic_rate := 0.0     # hp/sec delivered
+var mana_tonic_time := 0.0     # Mana Tonic drip window
+var mana_tonic_rate := 0.0     # mp/sec delivered
 # Stacking debuff multipliers (endgame Waking Depths pressure band, ACT2 §II — a
 # general knob other systems can reuse). 1.0 = no effect. Applied at the three
 # choke points: current_atk (damage dealt), take_damage (damage taken), gain_hp
@@ -1635,10 +1654,15 @@ func recalc() -> void:
 ## Heal that SHOWS: raise HP and bank the real (clamped) amount for the
 ## throttled green tick in _physics_process. Use for discrete mends the
 ## player should SEE; continuous lifesteal/regen stay silent by design.
-func gain_hp(amount: float) -> void:
+func gain_hp(amount: float, apply_laced := true) -> void:
 	if amount <= 0.0 or dead:
 		return
 	amount *= debuff_heal_in   # endgame Depths −healing-received debuff (1.0 off-run)
+	# Laced Rust sting: cheap stitching reduces healing received (§3). The Tonic
+	# that inflicted it delivers its OWN drip through apply_laced=false, so the
+	# bottle keeps its promised total; every OTHER heal is docked for the window.
+	if apply_laced and laced_heal_in_time > 0.0:
+		amount *= 1.0 - laced_heal_in_amt
 	amount *= uniq_heal_in     # pants_ward A BARGAIN: deep-grounded pays in mending
 	var before := hp
 	hp = minf(max_hp, hp + amount)
@@ -1706,6 +1730,8 @@ func current_atk() -> float:
 		a *= 1.0 + minf(Balance.PLATE_RES_DMG_CAP,
 			Balance.PLATE_RES_DMG_LOG * log(1.0 + (physres + magres) * Balance.PLATE_RES_DMG_K))
 	a *= debuff_dmg_out   # endgame Depths −damage-dealt debuff (1.0 off-run)
+	if laced_dmg_out_time > 0.0:
+		a *= 1.0 - laced_dmg_out_amt   # laced Haze sting: the dream dulls the blade (§5)
 	return a
 
 
@@ -1760,12 +1786,11 @@ func consumable_count(id: String) -> int:
 # Capacity counts UNITS, not kinds (round 52b): every gear item, every
 # gem, and every consumable UNIT eats one bag slot. Stacking is purely a
 # DISPLAY convenience (the inventory groups "Mana Potion x12"), but all 12
-# count here — 20 potions really is 20 slots. 2026-07-09 v2: HEALTH
-# potions joined the count — `potions`/`potions_free` stay counters
-# internally (save format unchanged), but every owned potion occupies a
-# slot like any other consumable unit (bag tiers grew +5 to compensate).
+# count here — 20 potions really is 20 slots. Health potions are graded bag
+# items now (CONSUMABLE_GRADES), so they count via `consumables` like any unit
+# — no separate potion_count() term (the bag tiers stay their +5 curve).
 func bag_used() -> int:
-	return backpack.size() + gem_bag.size() + consumables.size() + materials.size() + potion_count()
+	return backpack.size() + gem_bag.size() + consumables.size() + materials.size()
 
 
 # Bag-full adds return false with NO side effects — the caller decides
@@ -1838,27 +1863,80 @@ func potion_slot_cap() -> int:
 	return Balance.potion_slots(game.chapter_id)
 
 
-## Total drinkable health-potion stock: bought potions + the expiring
-## ch1-3 teaching freebie (potions_free).
+## Total drinkable Health-Potion (instant) stock carried in the bag — every
+## grade, both lanes. This is what the generic "health" loadout fill draws on
+## and what the HUD "Potions x%d" reads.
 func potion_count() -> int:
-	return potions + potions_free
+	var n := 0
+	for c in consumables:
+		if String(c.get("family", "")) == "health" and String(c.get("shape", "")) == "instant":
+			n += 1
+	return n
 
 
-## Merchant buy guard: every potion occupies a bag slot (2026-07-09 v2), and
-## BAG SPACE is the only limit — carry as many as your bags hold (there's no
-## separate stock cap). A full bag refuses the sale, same rule as gear/gems/
-## consumables. No side effects; the shop shows the standard "Bag full!" feedback.
+## The health-instant potions the bag holds, ordered by the DRINK-FIRST rule:
+## the expiring chapter gift first, then cheapest (lowest grade), then Accord
+## before Black (so the generic fill never picks up a laced sting when a clean
+## bottle of the same grade is on hand).
+func _health_potions_ordered() -> Array:
+	var pots: Array = []
+	for c in consumables:
+		if String(c.get("family", "")) == "health" and String(c.get("shape", "")) == "instant":
+			pots.append(c)
+	pots.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var ag := 1 if bool(a.get("gift", false)) else 0
+		var bg := 1 if bool(b.get("gift", false)) else 0
+		if ag != bg:
+			return ag > bg
+		var ar := Items.GRADES.find(String(a.get("grade", "F")))
+		var br := Items.GRADES.find(String(b.get("grade", "F")))
+		if ar != br:
+			return ar < br
+		return String(a.get("lane", "")) == "accord" and String(b.get("lane", "")) != "accord")
+	return pots
+
+
+## The bottle the generic "health" fill would drink next (or {} if none).
+func next_health_potion() -> Dictionary:
+	var pots := _health_potions_ordered()
+	return pots[0] if not pots.is_empty() else {}
+
+
+## Merchant buy guard: every potion occupies a bag slot, and BAG SPACE is the
+## only limit — carry as many as your bags hold. A full bag refuses the sale,
+## same rule as gear/gems/consumables. No side effects.
 func can_gain_potion() -> bool:
 	return bag_used() < bag_capacity()
 
 
-## Consume one health potion from stock — the EXPIRING freebie first (it
-## dies with the chapter anyway; bought stock is the investment that keeps).
+## Reconcile the ch1-3 teaching gift (game_world calls this on chapter entry):
+## strip any stale gift-flagged Health Potion, then re-grant exactly one when
+## entering a teaching chapter (grant=true). Absolute set = grant + expiry in
+## one move, so revisits never stack freebies (mirrors the old potions_free).
+func reconcile_gift_potion(grant: bool) -> void:
+	for c in consumables.duplicate():
+		if bool(c.get("gift", false)):
+			consumables.erase(c)
+	if grant and bag_used() < bag_capacity():
+		consumables.append(Items.make_gift_health_potion())
+
+
+## Consume one health potion from stock following the drink-first order (gift
+## first, then cheapest). Erases the unit from the bag.
 func spend_health_potion() -> void:
-	if potions_free > 0:
-		potions_free -= 1
-	elif potions > 0:
-		potions -= 1
+	var pots := _health_potions_ordered()
+	if not pots.is_empty():
+		consumables.erase(pots[0])
+
+
+## Distinct potion ids the bag currently holds (loadout planning lists these).
+func owned_potion_ids() -> Array:
+	var out: Array = []
+	for c in consumables:
+		var id := String(c.get("id", ""))
+		if Items.is_rotation_potion(id) and not out.has(id):
+			out.append(id)
+	return out
 
 
 ## The full plan: assigned slots (clamped to cap) + health-fill.
@@ -1943,7 +2021,7 @@ func loadout_add(id: String) -> void:
 			active_potion = "health"
 		game.sfx("ui_click")
 		return
-	if not (id in Items.ROTATION_POTIONS):
+	if not Items.is_rotation_potion(id):
 		return
 	if potion_rotation.size() >= potion_slot_cap():
 		game.spawn_text(global_position + Vector2(0, -52),
@@ -1969,9 +2047,9 @@ func potion_display_name(id: String) -> String:
 	for c in consumables:
 		if String(c.get("id", "")) == id:
 			return String(c["name"])
-	match id:
-		"mana_potion": return "Mana Draught"
-		"elixir_might": return "Elixir of Might"
+	var t := Items.potion_by_id(id)
+	if not t.is_empty():
+		return String(t["name"])
 	return id
 
 
@@ -1981,12 +2059,16 @@ func potion_display_name(id: String) -> String:
 ## ternary silently mislabelled every non-mana rotation type (renewal read as
 ## "Might"; elixir_ward would too when it joined the rotation 2026-07-29).
 func potion_short_name(id: String) -> String:
-	match id:
-		"health": return "Potion"
-		"mana_potion": return "Mana"
-		"elixir_might": return "Might"
-		"elixir_ward": return "Ward"
-		"renewal_draught": return "Renewal"
+	if id == "health":
+		return "Potion"
+	var t := Items.potion_by_id(id)
+	if not t.is_empty():
+		match String(t.get("family", "")):
+			"health": return "Tonic" if String(t.get("shape", "")) == "tonic" else "Potion"
+			"mana": return "Mana Tonic" if String(t.get("shape", "")) == "tonic" else "Mana"
+			"might": return "Might"
+			"ward": return "Ward"
+			"renewal": return "Renewal"
 	return potion_display_name(id)
 
 
@@ -2012,9 +2094,15 @@ func _drink_gate(kind: String) -> bool:
 	return true
 
 
-## Use a consumable from the bag (the bag UI calls this).
-func use_consumable(c: Dictionary) -> void:
+## Use a consumable from the bag (the bag UI calls this). Graded potions
+## (kind "potion") dispatch through _use_potion; `gate_key` overrides the
+## room-budget key (the generic "health" fill passes "health", a specifically
+## slotted bottle passes its own id — the default when gate_key is "").
+func use_consumable(c: Dictionary, gate_key := "") -> void:
 	if not consumables.has(c):
+		return
+	if String(c.get("kind", "")) == "potion":
+		_use_potion(c, gate_key if gate_key != "" else String(c.get("id", "")))
 		return
 	match str(c.get("id", "")):
 		"reset_stone":
@@ -2040,40 +2128,93 @@ func use_consumable(c: Dictionary) -> void:
 			game.sfx("levelup")
 			game.spawn_text(global_position + Vector2(0, -56),
 				"SKILL TREE RESET — %d points refunded (open Skills)" % back, Color(0.6, 0.9, 1.0))
-		"mana_potion":
-			if not _drink_gate("mana_potion"):
-				return
-			mp = minf(max_mp, mp + (max_mp - mp) * Balance.MANA_POTION_FRAC)
-			consumables.erase(c)
-			game.sfx("potion", 1.3)
-			game.spawn_text(global_position + Vector2(0, -56), "MANA RESTORED", Color(0.5, 0.7, 1.0))
-		"elixir_might":
-			if not _drink_gate("elixir_might"):
-				return
-			elixir_time = Balance.ELIXIR_MIGHT_DUR
-			elixir_atk = Balance.ELIXIR_MIGHT_AMT
-			consumables.erase(c)
-			game.sfx("potion", 0.85)
-			game.spawn_text(global_position + Vector2(0, -56), "MIGHT!", Color(1.0, 0.6, 0.3))
-		"elixir_ward":
-			if not _drink_gate("elixir_ward"):
-				return
-			dr_time = Balance.ELIXIR_WARD_DUR
-			dr_amt = Balance.ELIXIR_WARD_AMT
-			consumables.erase(c)
-			game.sfx("potion", 0.75)
-			game.spawn_text(global_position + Vector2(0, -56), "WARDED!", Color(0.5, 0.8, 1.0))
-		"renewal_draught":
-			if not _drink_gate("renewal_draught"):
-				return
-			gain_hp(max_hp * Balance.RENEWAL_HEAL_FRAC)
-			consumables.erase(c)
-			game.sfx("potion", 1.15)
-			game.spawn_text(global_position + Vector2(0, -56), "RENEWED", Color(0.5, 1.0, 0.6))
 		"recall_scroll":
 			if game.recall_to_safe():
 				consumables.erase(c)
 				game.sfx("blink")
+
+
+## Drink a graded potion: spend the drink gate on `gate_key`, apply the
+## family/shape/grade effect, then the laced sting, then consume the unit.
+## Constancy resonance still multiplies HEALTH healing (instant, tonic drip,
+## renewal). Tonics bank a TOTAL and drip it over the grade-scaled window.
+func _use_potion(c: Dictionary, gate_key: String) -> void:
+	if not _drink_gate(gate_key):
+		return
+	var effect := String(c.get("effect", ""))
+	var amt := float(c.get("amt", 0.0))
+	var dur := float(c.get("dur", 0.0))
+	match effect:
+		"heal_instant":
+			gain_hp((max_hp - hp) * amt * constancy_heal_mult())
+			game.sfx("potion")
+			game.spawn_text(global_position + Vector2(0, -56), "+HP", Color(0.4, 1.0, 0.4))
+		"heal_tonic":
+			heal_tonic_rate = ((max_hp - hp) * amt * constancy_heal_mult()) / maxf(0.1, dur)
+			heal_tonic_time = dur
+			game.sfx("potion", 1.1)
+			game.spawn_text(global_position + Vector2(0, -56), "MENDING…", Color(0.5, 1.0, 0.6))
+		"mana_instant":
+			mp = minf(max_mp, mp + (max_mp - mp) * amt)
+			game.sfx("potion", 1.3)
+			game.spawn_text(global_position + Vector2(0, -56), "MANA RESTORED", Color(0.5, 0.7, 1.0))
+		"mana_tonic":
+			mana_tonic_rate = ((max_mp - mp) * amt) / maxf(0.1, dur)
+			mana_tonic_time = dur
+			game.sfx("potion", 1.25)
+			game.spawn_text(global_position + Vector2(0, -56), "MANA TIDE…", Color(0.5, 0.7, 1.0))
+		"might":
+			elixir_time = dur
+			elixir_atk = amt
+			game.sfx("potion", 0.85)
+			game.spawn_text(global_position + Vector2(0, -56), "MIGHT!", Color(1.0, 0.6, 0.3))
+		"ward":
+			dr_time = dur
+			dr_amt = amt
+			game.sfx("potion", 0.75)
+			game.spawn_text(global_position + Vector2(0, -56), "WARDED!", Color(0.5, 0.8, 1.0))
+		"renewal":
+			gain_hp(max_hp * amt * constancy_heal_mult())
+			game.sfx("potion", 1.15)
+			game.spawn_text(global_position + Vector2(0, -56), "RENEWED", Color(0.5, 1.0, 0.6))
+	_apply_potion_sting(c.get("sting", {}))
+	consumables.erase(c)
+
+
+## Apply a laced (black-market) sting as a timed self-debuff (or an instant
+## true-damage hit). Every sting reads like the diluted blightwater doing what
+## the rot does (§0). Announced on screen — NO silent effects.
+func _apply_potion_sting(sting: Dictionary) -> void:
+	if not (sting is Dictionary) or sting.is_empty():
+		return
+	var t := String(sting.get("type", ""))
+	var a := float(sting.get("amt", 0.0))
+	var d := float(sting.get("dur", 0.0))
+	match t:
+		"dmg_taken":
+			laced_dmg_in_amt = a
+			laced_dmg_in_time = d
+			game.spawn_text(global_position + Vector2(0, -40), "WEAKENED", Color(0.9, 0.5, 0.4))
+		"heal_recv_down":
+			laced_heal_in_amt = a
+			laced_heal_in_time = d
+			game.spawn_text(global_position + Vector2(0, -40), "SEALED WOUNDS", Color(0.85, 0.55, 0.5))
+		"true_dmg":
+			# The blue is paid in blood (§4): true damage, bypassing DR/shield.
+			call("take_damage", max_hp * a, "true")
+			game.spawn_text(global_position + Vector2(0, -40), "BLOOD PRICE", Color(0.95, 0.4, 0.4))
+		"dmg_dealt_down":
+			laced_dmg_out_amt = a
+			laced_dmg_out_time = d
+			game.spawn_text(global_position + Vector2(0, -40), "DULLED", Color(0.7, 0.6, 0.85))
+		"move_slow":
+			laced_move_amt = a
+			laced_move_time = d
+			game.spawn_text(global_position + Vector2(0, -40), "HEAVY LIMBS", Color(0.75, 0.68, 0.55))
+		"bleed":
+			laced_bleed_rate = (max_hp * a) / maxf(0.1, d)
+			laced_bleed_time = d
+			game.spawn_text(global_position + Vector2(0, -40), "THE LOAN", Color(0.9, 0.4, 0.45))
 
 
 ## A looted/bought bag joins the equipped set (capacity grows). A SIXTH

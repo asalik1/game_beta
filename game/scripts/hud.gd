@@ -97,6 +97,7 @@ var dialogue_lines: Array = []
 var dialogue_index := 0
 var dialogue_done: Callable
 var dialogue_active := false
+var dialogue_hero_class_override := "" # dev opener preview: class art without mutating the player
 # CQ-style speaker splash (visual-novel framing): full-bleed painted art behind
 # the box when the speaker HAS splash art (class_splash_<cls> for the hero, or
 # assets/sprites/splash_<sprite>.png for any named speaker). Absent -> the box
@@ -1756,7 +1757,7 @@ func update_stats(p: Player) -> void:
 					(Color(0.75, 0.35, 0.35) if p.potion_count() > 0 else Color(0.3, 0.15, 0.15)) \
 					if left > 0 else Color(0.18, 0.12, 0.12))
 				box["border"].set_meta("tip", _wrap_tip(
-					"Health Potion — mends 15%% of your MISSING health (x%d carried — bought from merchants, each takes a bag slot, so BAG SPACE is your only stock limit; the price grows with your LEVEL). ROOM BUDGET: %d of your %d loadout slots left — it refills next room. %s cycles the loadout; open the inventory and select a potion stack to plan it." % [
+					"Health Potion — mends a grade-scaled %% of your MISSING health (x%d carried; drinks the cheapest first — the chapter gift, then up the grades). Bought from any merchant (Accord shelf F→A) or found; each takes a bag slot. ROOM BUDGET: %d of your %d loadout slots left — it refills next room. %s cycles the loadout; open the inventory and select a potion to plan the exact bottle." % [
 						p.potion_count(),
 						left, p.potion_slot_cap(),
 						game.control_hint("potion_next", "↻")]))
@@ -3090,6 +3091,9 @@ func _splash_for(who: String) -> String:
 	# Resolve the hero live instead of caching it under "You": skins can be
 	# equipped or awakened without rebuilding the HUD.
 	if low in ["you", "hero"]:
+		if dialogue_hero_class_override != "":
+			var preview_class := "class_splash_" + dialogue_hero_class_override
+			return preview_class if Art.has_sprite(preview_class) else ""
 		var player = game.local_player
 		if player != null:
 			var cls: String = String(player.cls)

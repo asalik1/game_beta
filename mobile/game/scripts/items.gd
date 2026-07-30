@@ -1282,21 +1282,9 @@ static func material_value(grade: String) -> int:
 
 
 # ----------------------------------------------------------- consumables ---
-# Non-gear bag items ({"kind": "stone", ...}). The talent reset stone is
-# the first; elites are the primary source (playtest round 6).
+# Non-gear bag items. Stones/scrolls are {"kind": "stone", ...}; graded potions
+# are {"kind": "potion", ...} (below). Elites/merchants are the sources.
 
-# Potions eligible for the room LOADOUT (2026-07-07 v2): slotted from
-# the inventory, cycled with the potion_next bind, budgeted per room
-# (Balance.potion_slots, chapter-banded; unassigned slots drink as health).
-# Scrolls and stones stay inventory-clicked utilities.
-# renewal_draught joined 2026-07-21: it shipped round 50 as a bag-only click
-# and BYPASSED the room budget entirely (unlimited 30%-max heals, gold the
-# only gate). Rule now: if it can slot in the rotation, it ALWAYS spends the
-# room budget — bag click or Q alike (player_core._drink_gate).
-# elixir_ward joined 2026-07-29 for the SAME reason: its use_consumable branch
-# had no _drink_gate, so chain-chugging bought near-permanent 25% DR (gold the
-# only gate) — the exact bypass the rule above exists to close.
-const ROTATION_POTIONS := ["mana_potion", "elixir_might", "elixir_ward", "renewal_draught"]
 static func make_reset_stone() -> Dictionary:
 	return {"kind": "stone", "id": "reset_stone", "grade": "B",
 		"name": "Stone of Unlearning",
@@ -1312,36 +1300,267 @@ static func make_respec_tome() -> Dictionary:
 		"desc": "Crush it to refund EVERY spent skill point — the tree forgets, you choose a new path."}
 
 
-## Utility consumables (round 47) — bought from merchants, used from the
-## bag. Distinct from the health-potion counter (that lives on the player).
-static func make_mana_potion() -> Dictionary:
-	return {"kind": "stone", "id": "mana_potion", "grade": "D",
-		"name": "Mana Draught",
-		"desc": "Restore %d%% of your MISSING mana." % int(Balance.MANA_POTION_FRAC * 100)}
-
-
-static func make_elixir_might() -> Dictionary:
-	return {"kind": "stone", "id": "elixir_might", "grade": "C",
-		"name": "Elixir of Might",
-		"desc": "+%d%% damage for %ds." % [int(Balance.ELIXIR_MIGHT_AMT * 100), int(Balance.ELIXIR_MIGHT_DUR)]}
-
-
+## Ungraded utility (unchanged): whisk back to the last safe room.
 static func make_recall_scroll() -> Dictionary:
 	return {"kind": "stone", "id": "recall_scroll", "grade": "D",
 		"name": "Scroll of Recall",
 		"desc": "Whisk yourself back to the last safe room you rested in."}
 
 
-static func make_elixir_ward() -> Dictionary:
-	return {"kind": "stone", "id": "elixir_ward", "grade": "C",
-		"name": "Elixir of Warding",
-		"desc": "Cut incoming damage by %d%% for %ds. Quaff it before a heavy blow lands." % [int(Balance.ELIXIR_WARD_AMT * 100), int(Balance.ELIXIR_WARD_DUR)]}
+# =============================================== GRADED POTIONS (85 types) ===
+# The two-lane F→S consumable matrix (PROPOSALS/CONSUMABLE_GRADES.md §2-§8).
+# Seven family-shapes x an Accord (clean, F→S; Renewal C→S) + a Black-market
+# (laced, F→A; Renewal C→A) ladder = 85 slottable consumable types. Each is a
+# STACKING-by-display bag item ({"kind":"potion", ...}); make_potion builds one.
+# NAMES here ARE the exact GearFlavor.FLAVOR keys AND the sprite stems
+# (assets/icons/consumables/<stem>). Magnitudes/durations/prices/stings live in
+# balance.gd (knob rule); this file owns the shapes, names, id scheme + effect.
+#
+# Each potion is its own slottable type in the room loadout (Q-cycles it). The
+# generic "health" loadout token (player_core) is the DEFAULT fill for
+# unassigned slots and auto-drinks your cheapest carried Health Potion, so the
+# health family stays the reliable fallback even unplanned.
+const POTION_SHAPES := {
+	"health_instant": {"family": "health", "shape": "instant", "effect": "heal_instant"},
+	"health_tonic":   {"family": "health", "shape": "tonic",   "effect": "heal_tonic"},
+	"mana_instant":   {"family": "mana",   "shape": "instant", "effect": "mana_instant"},
+	"mana_tonic":     {"family": "mana",   "shape": "tonic",   "effect": "mana_tonic"},
+	"might":          {"family": "might",  "shape": "buff",    "effect": "might"},
+	"ward":           {"family": "ward",   "shape": "buff",    "effect": "ward"},
+	"renewal":        {"family": "renewal","shape": "burst",   "effect": "renewal"},
+}
+# The Accord naming spine (v9): grade prefix + family noun. S is a unique name.
+const POTION_ACCORD_PREFIX := {"F": "Defective", "E": "Apprentice's", "D": "Journeyman's",
+	"C": "Accordmark", "B": "Master's", "A": "Masterwork"}
+const POTION_ACCORD_NOUN := {"health_instant": "Health Potion", "health_tonic": "Health Tonic",
+	"mana_instant": "Mana Potion", "mana_tonic": "Mana Tonic", "might": "Elixir of Might",
+	"ward": "Elixir of Warding", "renewal": "Draught of Renewal"}
+const POTION_S_NAMES := {"health_instant": "Heartsblood", "health_tonic": "Everbloom",
+	"mana_instant": "Stormglass", "mana_tonic": "Starwater", "might": "Giantsblood",
+	"ward": "Adamant", "renewal": "Dawnmend"}
+# Black-market street names — a family-recognizable noun per ladder (§1).
+const POTION_BLACK_NAMES := {
+	"health_instant": {"F": "Gutter Red", "E": "Brawler's Red", "D": "Dockside Red",
+		"C": "Thinner's Red", "B": "Bleakvein Red", "A": "Hollowbone Red"},
+	"health_tonic": {"F": "Gutter Rust", "E": "Beggar's Rust", "D": "Smuggler's Rust",
+		"C": "Cheapstitch Rust", "B": "Scarseal Rust", "A": "Deadflesh Rust"},
+	"mana_instant": {"F": "Vein-Burn Blue", "E": "Backalley Blue", "D": "Smuggler's Blue",
+		"C": "Furnace Blue", "B": "Stormsick Blue", "A": "Heartscorch Blue"},
+	"mana_tonic": {"F": "Gutter Haze", "E": "Poppyfield Haze", "D": "Backalley Haze",
+		"C": "Syrup Haze", "B": "Lotus Haze", "A": "Dreamer's Haze"},
+	"might": {"F": "Pit Fury", "E": "Dogfight Fury", "D": "Cutthroat Fury",
+		"C": "Warpit Fury", "B": "Blooddebt Fury", "A": "Deathwish Fury"},
+	"ward": {"F": "Gutterhide", "E": "Mule's Hide", "D": "Ironmonger's Hide",
+		"C": "Bricklayer's Hide", "B": "Millstone Hide", "A": "Gravestone Hide"},
+	"renewal": {"C": "Graverobber's Mercy", "B": "Sawbones' Miracle", "A": "Deathbed Bargain"},
+}
 
 
-static func make_renewal_draught() -> Dictionary:
-	return {"kind": "stone", "id": "renewal_draught", "grade": "C",
-		"name": "Draught of Renewal",
-		"desc": "Instantly restore %d%% of your maximum health." % int(Balance.RENEWAL_HEAL_FRAC * 100)}
+## (family, shape) -> the POTION_SHAPES key.
+static func potion_shapekey(family: String, shape: String) -> String:
+	if family == "might" or family == "ward" or family == "renewal":
+		return family
+	return "%s_%s" % [family, shape]
+
+
+## Snake-cased sprite stem for a potion NAME: lowercase, apostrophes DROPPED
+## entirely (matches the installed files — "Apprentice's Health Potion" ->
+## "apprentices_health_potion", "Sawbones' Miracle" -> "sawbones_miracle"), and
+## every OTHER run of non-alphanumeric collapses to one "_" ("Vein-Burn Blue" ->
+## "vein_burn_blue"). Note this differs from material_stem, whose generator
+## turned punctuation (incl. apostrophes) into "_".
+static func potion_stem(pname: String) -> String:
+	var slug := ""
+	var prev_us := true
+	for ch in pname.to_lower():
+		var c: int = ch.unicode_at(0)
+		if c == 39 or c == 0x2019:   # ' or ' — dropped, no separator
+			continue
+		if (c >= 97 and c <= 122) or (c >= 48 and c <= 57):
+			slug += ch
+			prev_us = false
+		elif not prev_us:
+			slug += "_"
+			prev_us = true
+	return slug.trim_suffix("_")
+
+
+## Display name for a (shapekey, grade, lane). "" for an unsupported combo.
+static func potion_name(fs: String, grade: String, lane: String) -> String:
+	if lane == "black":
+		return String(POTION_BLACK_NAMES.get(fs, {}).get(grade, ""))
+	if grade == "S":
+		return String(POTION_S_NAMES.get(fs, ""))
+	var pref := String(POTION_ACCORD_PREFIX.get(grade, ""))
+	var noun := String(POTION_ACCORD_NOUN.get(fs, ""))
+	if pref == "" or noun == "":
+		return ""
+	return "%s %s" % [pref, noun]
+
+
+## Every (family, shape, grade, lane) spec — the 85 potions, deterministic order.
+static func potion_specs() -> Array:
+	var out: Array = []
+	for fs in POTION_SHAPES:
+		var meta: Dictionary = POTION_SHAPES[fs]
+		var fam := String(meta["family"])
+		var shp := String(meta["shape"])
+		var acc: Array = Balance.POTION_GRADES_RENEWAL if fam == "renewal" else Balance.POTION_GRADES
+		var blk: Array = Balance.POTION_GRADES_RENEWAL_LACED if fam == "renewal" else Balance.POTION_GRADES_LACED
+		for g in acc:
+			out.append({"family": fam, "shape": shp, "grade": String(g), "lane": "accord"})
+		for g in blk:
+			out.append({"family": fam, "shape": shp, "grade": String(g), "lane": "black"})
+	return out
+
+
+# Lazy id->potion cache (built once; HUD/icon lookups are cheap after).
+static var _potion_index := {}
+static var _rotation_ids: Array = []
+
+static func _build_potion_index() -> void:
+	if not _potion_index.is_empty():
+		return
+	for spec in potion_specs():
+		var p := make_potion(String(spec["family"]), String(spec["shape"]),
+			String(spec["grade"]), String(spec["lane"]))
+		_potion_index[String(p["id"])] = p
+		_rotation_ids.append(String(p["id"]))
+
+
+## The full static template for a potion id (name/sprite/effect/params), or {}.
+static func potion_by_id(id: String) -> Dictionary:
+	_build_potion_index()
+	return _potion_index.get(id, {})
+
+
+## Every potion id (all 85) — the slottable rotation universe (menus/loadout).
+static func rotation_potion_ids() -> Array:
+	_build_potion_index()
+	return _rotation_ids
+
+
+## Is this consumable id a graded potion (slottable in the room loadout)?
+static func is_rotation_potion(id: String) -> bool:
+	return id.begins_with("pot_")
+
+
+## The Accord-lane Defective (F) Health Potion, flagged as the ch1-3 teaching
+## gift: drunk first, never sellable, EXPIRES on leaving the chapter (§2/§12).
+static func make_gift_health_potion() -> Dictionary:
+	var p := make_potion("health", "instant", "F", "accord")
+	p["gift"] = true
+	return p
+
+
+## Build a graded potion bag item. `family` in {health,mana,might,ward,renewal};
+## `shape` in {instant,tonic,buff,burst}; `grade` a GRADES letter; `lane` in
+## {accord,black}. Returns {} for an unsupported combo. All numbers come from
+## the balance.gd knob tables (never inline a bottle's value).
+static func make_potion(family: String, shape: String, grade: String, lane: String) -> Dictionary:
+	var fs := potion_shapekey(family, shape)
+	var meta: Dictionary = POTION_SHAPES.get(fs, {})
+	if meta.is_empty():
+		return {}
+	var laced := lane == "black"
+	# Grade must be supported for this family+lane (Renewal C→S / laced C→A;
+	# others F→S / laced F→A). Guards shop loops that walk a wider act band.
+	var ok_grades: Array
+	if laced:
+		ok_grades = Balance.POTION_GRADES_RENEWAL_LACED if family == "renewal" else Balance.POTION_GRADES_LACED
+	else:
+		ok_grades = Balance.POTION_GRADES_RENEWAL if family == "renewal" else Balance.POTION_GRADES
+	if not (grade in ok_grades):
+		return {}
+	var pname := potion_name(fs, grade, lane)
+	if pname == "":
+		return {}
+	var effect := String(meta["effect"])
+	var out := {
+		"kind": "potion",
+		"id": "pot_%s_%s_%s_%s" % [family, shape, grade.to_lower(), lane],
+		"family": family, "shape": shape, "grade": grade, "lane": lane,
+		"effect": effect, "name": pname,
+		"sprite": "consumables/" + potion_stem(pname),
+		"amt": 0.0, "dur": 0.0, "price": 0, "sting": {},
+	}
+	match effect:
+		"heal_instant":
+			out["amt"] = float(Balance.POT_HEALTH_INSTANT_FRAC[grade])
+			out["price"] = int((Balance.POT_HEALTH_INSTANT_PRICE_LACED if laced else Balance.POT_HEALTH_INSTANT_PRICE)[grade])
+			if laced:
+				out["sting"] = {"type": "dmg_taken", "amt": float(Balance.POT_HEALTH_INSTANT_STING[grade]), "dur": Balance.POT_HEALTH_INSTANT_STING_DUR}
+		"heal_tonic":
+			out["amt"] = float(Balance.POT_HEALTH_TONIC_FRAC[grade])
+			out["dur"] = float(Balance.POT_HEALTH_TONIC_DUR[grade])
+			out["price"] = int((Balance.POT_HEALTH_TONIC_PRICE_LACED if laced else Balance.POT_HEALTH_TONIC_PRICE)[grade])
+			if laced:
+				out["sting"] = {"type": "heal_recv_down", "amt": float(Balance.POT_HEALTH_TONIC_STING[grade]), "dur": Balance.POT_HEALTH_TONIC_STING_DUR}
+		"mana_instant":
+			out["amt"] = float(Balance.POT_MANA_INSTANT_FRAC[grade])
+			out["price"] = int((Balance.POT_MANA_INSTANT_PRICE_LACED if laced else Balance.POT_MANA_INSTANT_PRICE)[grade])
+			if laced:
+				out["sting"] = {"type": "true_dmg", "amt": float(Balance.POT_MANA_INSTANT_STING[grade]), "dur": 0.0}
+		"mana_tonic":
+			out["amt"] = float(Balance.POT_MANA_TONIC_FRAC[grade])
+			out["dur"] = float(Balance.POT_MANA_TONIC_DUR[grade])
+			out["price"] = int((Balance.POT_MANA_TONIC_PRICE_LACED if laced else Balance.POT_MANA_TONIC_PRICE)[grade])
+			if laced:
+				out["sting"] = {"type": "dmg_dealt_down", "amt": float(Balance.POT_MANA_TONIC_STING[grade]), "dur": float(out["dur"])}
+		"might":
+			out["amt"] = float(Balance.POT_MIGHT_AMT[grade])
+			out["dur"] = float((Balance.POT_MIGHT_DUR_LACED if laced else Balance.POT_MIGHT_DUR)[grade])
+			out["price"] = int((Balance.POT_MIGHT_PRICE_LACED if laced else Balance.POT_MIGHT_PRICE)[grade])
+			if laced:
+				out["sting"] = {"type": "dmg_taken", "amt": float(Balance.POT_MIGHT_STING[grade]), "dur": float(out["dur"])}
+		"ward":
+			out["amt"] = float(Balance.POT_WARD_AMT[grade])
+			out["dur"] = float(Balance.POT_WARD_DUR[grade])
+			out["price"] = int((Balance.POT_WARD_PRICE_LACED if laced else Balance.POT_WARD_PRICE)[grade])
+			if laced:
+				out["sting"] = {"type": "move_slow", "amt": float(Balance.POT_WARD_STING[grade]), "dur": float(out["dur"])}
+		"renewal":
+			out["amt"] = float(Balance.POT_RENEWAL_FRAC[grade])
+			out["price"] = int((Balance.POT_RENEWAL_PRICE_LACED if laced else Balance.POT_RENEWAL_PRICE)[grade])
+			if laced:
+				out["sting"] = {"type": "bleed", "amt": float(Balance.POT_RENEWAL_STING[grade]), "dur": Balance.POT_RENEWAL_STING_DUR}
+	out["desc"] = potion_desc(out)
+	return out
+
+
+## Human-readable effect line (bag/shop cards, HUD tips). Includes the laced sting.
+static func potion_desc(p: Dictionary) -> String:
+	var eff := String(p.get("effect", ""))
+	var amt := int(round(float(p.get("amt", 0.0)) * 100.0))
+	var dur := int(float(p.get("dur", 0.0)))
+	var s := ""
+	match eff:
+		"heal_instant": s = "Restore %d%% of your MISSING health, instantly." % amt
+		"heal_tonic": s = "Restore %d%% of your MISSING health over %ds." % [amt, dur]
+		"mana_instant": s = "Restore %d%% of your MISSING mana, instantly." % amt
+		"mana_tonic": s = "Restore %d%% of your MISSING mana over %ds." % [amt, dur]
+		"might": s = "+%d%% damage for %ds." % [amt, dur]
+		"ward": s = "Cut incoming damage by %d%% for %ds. Quaff it before a heavy blow." % [amt, dur]
+		"renewal": s = "Instantly restore %d%% of your MAXIMUM health." % amt
+	var sting: Dictionary = p.get("sting", {})
+	if not sting.is_empty():
+		s += "  ⚠ " + potion_sting_desc(sting)
+	return s
+
+
+## The laced sting line (black-market twins). The rot is diluted blightwater (§0).
+static func potion_sting_desc(sting: Dictionary) -> String:
+	var t := String(sting.get("type", ""))
+	var a := int(round(float(sting.get("amt", 0.0)) * 100.0))
+	var d := int(float(sting.get("dur", 0.0)))
+	match t:
+		"dmg_taken": return "Blightwater: +%d%% damage taken for %ds." % [a, d]
+		"heal_recv_down": return "Blightwater: healing received −%d%% for %ds after." % [a, d]
+		"true_dmg": return "Blightwater: %d%% max-HP true damage on drink." % a
+		"dmg_dealt_down": return "Blightwater: your damage −%d%% while it runs." % a
+		"move_slow": return "Blightwater: −%d%% move speed while it holds." % a
+		"bleed": return "Blightwater: bleed %d%% max HP back over %ds." % [a, d]
+	return ""
 
 
 # ------------------------------------------------------------ quest items ---

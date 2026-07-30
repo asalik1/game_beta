@@ -9,8 +9,11 @@ const TABS := [
 	["items", "Items & Gems"],
 	["econ", "Progression"],
 	["world", "World"],
+	["openers", "Openers"],
 	["audio", "Audio"],
 ]
+
+const OPENER_CLASSES := ["warrior", "assassin", "mage", "archer", "paladin", "warlock"]
 
 ## Debug panel (F1, only when launched via dev_mode.bat). Lets the
 ## tester change class/level/gear/terrain/bosses instantly instead of
@@ -46,6 +49,7 @@ static func open(m: Menus, tab := "") -> void:
 		"items": _tab_items(m, list)
 		"econ": _tab_econ(m, list)
 		"world": _tab_world(m, list)
+		"openers": _tab_openers(m, list)
 		"audio": _tab_audio(m, list)
 		_: _tab_character(m, list)
 	m._hint(vbox, "ESC / F1 to close")
@@ -60,7 +64,8 @@ static func _tab_character(m: Menus, list: VBoxContainer) -> void:
 		m.game.dev_god = not m.game.dev_god
 		m.open_dev(), Color(0.5, 1.0, 0.5) if m.game.dev_god else Color(1, 1, 1))
 	m._btn(row1, "Fill potions", func() -> void:
-		m.game.player.potions += maxi(0, m.game.player.bag_capacity() - m.game.player.bag_used())
+		while m.game.player.add_consumable(Items.make_potion("health", "instant", "D", "accord")):
+			pass
 		m.open_dev())
 	m._btn(row1, "Heal + reset CDs", func() -> void:
 		m.game.player.hp = m.game.player.max_hp
@@ -176,6 +181,61 @@ static func _tab_character(m: Menus, list: VBoxContainer) -> void:
 		]), Color(0.7, 0.9, 1.0))
 
 
+## Replay every illustrated chapter entry without touching its first-entry
+## marker. The class picker is a lens for the authored variant, not a class
+## swap, so reviewing all six versions cannot disturb the debug character.
+static func _tab_openers(m: Menus, list: VBoxContainer) -> void:
+	_section(m, list, "CHAPTER OPENERS")
+	m._lbl(list, "Choose a class lens, then play any illustrated opener. Previewing does not mark the chapter opener as seen; dialogue choices still exercise their authored stance flags and resonance.", 14, Color(0.78, 0.78, 0.82))
+
+	var live_class := String(m.game.player.cls) if m.game.player != null else "warrior"
+	if not OPENER_CLASSES.has(m.dev_opener_class):
+		m.dev_opener_class = live_class if OPENER_CLASSES.has(live_class) else "warrior"
+
+	var class_row := _flow(list)
+	for raw_class in OPENER_CLASSES:
+		var class_id: String = raw_class
+		var selected: bool = m.dev_opener_class == class_id
+		var display_name: String = String(Classes.CLASSES[class_id]["name"])
+		m._btn(class_row, ("● " if selected else "") + display_name, func() -> void:
+			m.dev_opener_class = class_id
+			m.open_dev("openers"),
+			Color(0.95, 0.85, 0.5) if selected else Color(0.72, 0.82, 1.0))
+
+	for chapter_number in range(1, 15):
+		if chapter_number == 1 or chapter_number == 8:
+			_section(m, list, "ACT %d" % (1 if chapter_number == 1 else 2))
+		var chapter_key := "ch%d" % chapter_number
+		var chapter: Dictionary = Story.chapter(chapter_key)
+		var convo_id := chapter_opener_id(chapter_key, m.dev_opener_class)
+		var available: bool = Story.ALL_CONVOS.has(convo_id)
+		var chapter_row := _flow(list)
+		var chapter_name: String = String(chapter.get("name", "Chapter %d" % chapter_number))
+		m._btn(chapter_row, "▶  " + chapter_name, func() -> void:
+			_play_chapter_opener(m, chapter_key, m.dev_opener_class),
+			Color(0.92, 0.82, 0.48) if available else Color(0.45, 0.45, 0.45))
+
+
+## Chapter 1 predates the chN_opening_* registry naming used by ch2-ch14.
+static func chapter_opener_id(chapter_key: String, class_id: String) -> String:
+	return "open_" + class_id if chapter_key == "ch1" \
+		else chapter_key + "_opening_" + class_id
+
+
+static func _play_chapter_opener(m: Menus, chapter_key: String, class_id: String) -> void:
+	var g := m.game
+	var convo_id := chapter_opener_id(chapter_key, class_id)
+	if g.player == null or g.state != g.ST_PLAYING or not Story.ALL_CONVOS.has(convo_id):
+		return
+	m.close()
+	# "You" must show the selected class, even though this preview deliberately
+	# does not mutate the live player's class, skin, gear, or progression.
+	g.hud.dialogue_hero_class_override = class_id
+	g.run_cinematic_convo(convo_id, func() -> void:
+		if is_instance_valid(g) and g.hud != null:
+			g.hud.dialogue_hero_class_override = "")
+
+
 ## Dailies, bounties, vault, achievements, records, economy levers.
 static func _tab_econ(m: Menus, list: VBoxContainer) -> void:
 	# --------------------------------------------- progression & economy ---
@@ -220,8 +280,11 @@ static func _tab_econ(m: Menus, list: VBoxContainer) -> void:
 		m.game.record_boss("vargoth", 88.0, 2400.0)
 		m.open_dev(), Color(1.0, 0.6, 0.6))
 	m._btn(mrow2, "Give utility consumables", func() -> void:
-		m.game.player.add_consumable(Items.make_mana_potion())
-		m.game.player.add_consumable(Items.make_elixir_might())
+		m.game.player.add_consumable(Items.make_potion("mana", "instant", "C", "accord"))
+		m.game.player.add_consumable(Items.make_potion("might", "buff", "C", "accord"))
+		m.game.player.add_consumable(Items.make_potion("ward", "buff", "C", "accord"))
+		m.game.player.add_consumable(Items.make_potion("renewal", "burst", "C", "accord"))
+		m.game.player.add_consumable(Items.make_potion("health", "tonic", "C", "black"))
 		m.game.player.add_consumable(Items.make_recall_scroll())
 		m.open_dev(), Color(0.6, 0.9, 1.0))
 	m._btn(mrow2, "Gamble x5 (silver)", func() -> void:
@@ -271,15 +334,8 @@ static func _tab_items(m: Menus, list: VBoxContainer) -> void:
 	m._btn(row3, "Give respec tome", func() -> void:
 		m.game.player.add_consumable(Items.make_respec_tome())
 		m.open_dev(), Color(0.6, 0.9, 1.0))
-	# Awaken toggle (round 51b): flip the current class's legendary-passive
-	# awakening flag so dropped/bought S weapons wake up, for testing before
-	# the awakening quests exist.
-	var awk_cls: String = m.game.player.cls
-	var awk_on: bool = bool(m.game.get_flag("s_awakened_" + awk_cls, false))
-	m._btn(row3, ("■ S passive AWAKENED" if awk_on else "□ Awaken S passive (this class)"), func() -> void:
-		m.game.set_flag("s_awakened_" + awk_cls, not awk_on)
-		m.game.player.recalc()
-		m.open_dev(), Color(1.0, 0.85, 0.35))
+	# (The round-51b awaken toggle was removed 2026-07-27: the awakening gate
+	# retired with the legendary tier — every passive is live on pickup.)
 	m._btn(row3, "Send gift mail", func() -> void:
 		var grng := RandomNumberGenerator.new()
 		grng.randomize()
@@ -432,7 +488,7 @@ static func _tab_world(m: Menus, list: VBoxContainer) -> void:
 	# --------------------------------------------------------- terrains ---
 	_section(m, list, "TERRAIN (applies to the room you're standing in)")
 	var trow := _flow(list)
-	for tid in Terrains.DATA:
+	for tid in Terrains.catalog_ids():
 		var t: String = tid
 		var active: bool = m.game.terrain_by_zone[m.game.cur_room] == t
 		m._btn(trow, ("● " if active else "") + Terrains.DATA[t]["name"], func() -> void:
@@ -701,11 +757,10 @@ static func _boss_level(m: Menus) -> int:
 	return -1
 
 
-## Dev: equip a fresh full set of `grade` gear in every slot — the
-## weapon in the class's signature shape; at S the weapon is the class
-## LEGENDARY (drop split 2026-07-27: a plain S roll is generic now, and
-## awakening-flow testing needs the legendary in hand). Replaced items
-## vanish; their gems return to the bag.
+## Dev: equip a fresh full set of `grade` gear in every slot — the weapon
+## in the class's signature shape, everything GENERIC (the legendary tier
+## retired 2026-07-27; use "Next unique" to cycle named passives). Replaced
+## items vanish; their gems return to the bag.
 static func _equip_set(m: Menus, grade: String) -> void:
 	var p: Player = m.game.player
 	var rng := RandomNumberGenerator.new()
@@ -714,10 +769,7 @@ static func _equip_set(m: Menus, grade: String) -> void:
 		var noun: String = Items.class_weapon_noun(p.cls) if slot == "weapon" else ""
 		if p.equipment.has(slot):
 			p.strip_gems(p.equipment[slot])
-		if grade == "S" and slot == "weapon" and Items.S_GEAR.has(p.cls):
-			p.equipment[slot] = Items.make_legendary(p.cls, slot, rng)
-		else:
-			p.equipment[slot] = Items.roll_item_of(slot, grade, rng, p.cls, noun)
+		p.equipment[slot] = Items.roll_item_of(slot, grade, rng, p.cls, noun)
 	p.recalc()
 	p._update_weapon_visual()
 	m.game.sfx("equip")
@@ -736,9 +788,12 @@ static func _equip_next_unique(m: Menus) -> void:
 	_uniq_cursor += 1
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	if p.equipment.has("weapon"):
-		p.strip_gems(p.equipment["weapon"])
-	p.equipment["weapon"] = Items.make_unique(u, rng)
+	# Equip into the unique's OWN slot (the cycler now walks all 70 per
+	# class — weapons AND the six gear slots' named pieces).
+	var uslot := String(u["slot"])
+	if p.equipment.has(uslot):
+		p.strip_gems(p.equipment[uslot])
+	p.equipment[uslot] = Items.make_unique(u, rng)
 	p.recalc()
 	p._update_weapon_visual()
 	m.game.sfx("equip")

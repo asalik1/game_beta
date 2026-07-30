@@ -78,11 +78,12 @@ func switch_chapter(id: String, force := false) -> void:
 	quest_marks.clear()      # the old world's ❢ nodes die with it
 	# Potion investment (2026-07-09): stock is BOUGHT and carries across
 	# chapters — no grants. The one exception: entering a teaching chapter
-	# (ch1-3) hands ONE free health potion that EXPIRES on leaving it. The
-	# absolute set below is grant + expiry in one move (revisits can never
-	# stack freebies); loads overwrite it from the save right after this.
+	# (ch1-3) hands ONE free Health Potion that EXPIRES on leaving it. It's a
+	# flagged Defective (F) Health Potion now (CONSUMABLE_GRADES) — reconcile is
+	# grant + expiry in one move (revisits can never stack freebies); loads
+	# overwrite consumables from the save right after this.
 	if has_local_player():
-		player.potions_free = 1 if chapter_id in Balance.FREE_POTION_CHAPTERS else 0
+		player.reconcile_gift_potion(chapter_id in Balance.FREE_POTION_CHAPTERS)
 	var chapter: Dictionary = Story.chapter(id)
 	zones = chapter["zones"]
 	zone_count = zones.size()
@@ -1268,8 +1269,9 @@ func _shrine_outcome(cost: int) -> void:
 			Chest.drop(self, "silver", clamp_to_zone(pos + Vector2(70, 0), pos))
 			spawn_text(pos + Vector2(0, -70), "A gift surfaces...", Color(0.85, 0.88, 0.95))
 		else:
-			give_loot({"kind": "stone", "stone": Items.make_elixir_might()}, pos + Vector2(0, 44))
-			spawn_text(pos + Vector2(0, -70), "+ Elixir of Might", Color(1.0, 0.7, 0.4))
+			var mightpot := Items.make_potion("might", "buff", "D", "accord")
+			give_loot({"kind": "stone", "stone": mightpot}, pos + Vector2(0, 44))
+			spawn_text(pos + Vector2(0, -70), "+ %s" % mightpot["name"], Color(1.0, 0.7, 0.4))
 	else:
 		sfx("hurt", 0.8)
 		hud.flash_screen(Color(0.6, 0.2, 0.5), 0.25, 0.3)

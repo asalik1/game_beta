@@ -1801,19 +1801,20 @@ func _run_systems() -> void:
 	# 6. Shop + codex + map still open fine.
 	game.player.gold = 500
 	# Inventory must survive a gem hoard (compact grid + capped scroll) —
-	# and render the virtual health-potion stacks (2026-07-09 v2: potions
-	# take bag slots and show as clickable stack entries).
+	# and render graded Health Potion stacks (CONSUMABLE_GRADES: potions are bag
+	# items now and show through the normal consumables loop).
 	for i in 40:
 		game.player.gem_bag.append(Items.random_gem(game.loot_rng, 1 + (i % 5)))
-	var keep_pot2: int = game.player.potions
-	game.player.potions = 2
+	var keep_cons2: Array = game.player.consumables.duplicate()
+	game.player.consumables.append(Items.make_potion("health", "instant", "F", "accord"))
+	game.player.consumables.append(Items.make_potion("health", "instant", "F", "accord"))
 	game.menus.open_inventory()
 	await _frames(2)
 	if not game.menus.is_open():
 		return _fail("inventory did not open with a 40-gem bag")
 	game.menus.close()
 	game.player.gem_bag.clear()
-	game.player.potions = keep_pot2
+	game.player.consumables = keep_cons2
 	await _frames(1)
 	game.menus.open_shop(0)
 	await _frames(2)
@@ -2431,6 +2432,7 @@ func _run_campaign_ch2() -> void:
 	await _test_mp_lobby_ui()
 	await _test_elixir_ward_gate()
 	await _test_materials()
+	await _test_graded_potions()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -2620,7 +2622,7 @@ func _test_daily() -> void:
 	var keep_last: int = game.daily_last_day
 	var keep_streak: int = game.daily_streak
 	var keep_gold: int = game.player.gold
-	var keep_pot: int = game.player.potions
+	var keep_cons_daily: Array = game.player.consumables.duplicate()
 	var today: int = game.daily_day_index()
 
 	# A new day since the last claim: reward is available.
@@ -2648,7 +2650,7 @@ func _test_daily() -> void:
 	game.daily_last_day = keep_last
 	game.daily_streak = keep_streak
 	game.player.gold = keep_gold
-	game.player.potions = keep_pot
+	game.player.consumables = keep_cons_daily
 	print("ok: daily login reward (new-day claim, streak advance + reset)")
 
 
@@ -3128,32 +3130,35 @@ func _test_consumables() -> void:
 
 	# Drink-gate (2026-07-21): EVERY budgeted drink — bag click included —
 	# spends a per-room loadout slot. Unbudgeted bag chugging was the renewal
-	# exploit (unlimited 30%-max heals, gold the only gate).
+	# exploit (unlimited heals, gold the only gate). Graded potions now
+	# (CONSUMABLE_GRADES): the gate keys on each bottle's own id.
+	var mana := Items.make_potion("mana", "instant", "D", "accord")
+	var elix := Items.make_potion("might", "buff", "C", "accord")
+	var renew := Items.make_potion("renewal", "burst", "C", "accord")
+	var mana_id := String(mana["id"])
+	var might_id := String(elix["id"])
+	var renew_id := String(renew["id"])
 	# (a) A drink whose type is NOT in this room's plan is REFUSED.
 	p.potion_cd = 0.0
 	p.potion_rotation = []
 	p.reset_room_potions()
 	p.mp = 0.0
-	var mana := Items.make_mana_potion()
 	p.consumables.append(mana)
 	p.use_consumable(mana)
 	if p.mp > 0.0 or not p.consumables.has(mana):
 		return _fail("unbudgeted bag drink should be refused (renewal-exploit fix)")
 
 	# (b) Slotted in the rotation + budgeted, the same drink works and is consumed.
-	# (Budget granted directly: the suite sits in ch1 whose loadout cap is 1
-	# slot — the point here is the gate mechanics, not the chapter band.)
-	p.potion_rotation = ["mana_potion", "elixir_might", "renewal_draught"]
-	p.room_potions = {"health": 1, "mana_potion": 1, "elixir_might": 1, "renewal_draught": 1}
+	p.potion_rotation = [mana_id, might_id, renew_id]
+	p.room_potions = {"health": 1, mana_id: 1, might_id: 1, renew_id: 1}
 	p.potion_cd = 0.0
 	p.use_consumable(mana)
 	if p.mp <= 0.0 or p.consumables.has(mana):
-		return _fail("mana draught did not restore mana / wasn't consumed")
+		return _fail("mana potion did not restore mana / wasn't consumed")
 
 	# (c) Elixir of Might raises current_atk while it holds (shares the drink cd).
 	p.elixir_time = 0.0
 	var atk0 := p.current_atk()
-	var elix := Items.make_elixir_might()
 	p.consumables.append(elix)
 	p.use_consumable(elix)
 	if p.elixir_time > 0.0:
@@ -3163,15 +3168,14 @@ func _test_consumables() -> void:
 	if p.elixir_time <= 0.0 or p.current_atk() <= atk0:
 		return _fail("elixir of might did not buff damage")
 
-	# (d) Renewal heals 30% max, budgeted like everything else.
+	# (d) Renewal heals a % of MAX hp, budgeted like everything else.
 	p.potion_cd = 0.0
 	p.hp = maxf(1.0, p.max_hp * 0.25)
 	var before_hp: float = p.hp
-	var renew := Items.make_renewal_draught()
 	p.consumables.append(renew)
 	p.use_consumable(renew)
-	if p.hp < before_hp + p.max_hp * Balance.RENEWAL_HEAL_FRAC - 0.01 or p.consumables.has(renew):
-		return _fail("budgeted renewal draught should heal 30% max and be consumed")
+	if p.hp < before_hp + p.max_hp * float(renew["amt"]) - 0.5 or p.consumables.has(renew):
+		return _fail("budgeted renewal draught should heal its %% max and be consumed")
 
 	# Recall: refused mid-combat (scroll survives), allowed otherwise.
 	var scroll := Items.make_recall_scroll()
@@ -3416,23 +3420,22 @@ func _test_bags_discard() -> void:
 	var cap_cons: Array = p.consumables
 	var cap_gems: Array = p.gem_bag
 	var cap_bp2: Array = p.backpack
-	var cap_pot: int = p.potions
-	var cap_potf: int = p.potions_free
 	var cap_mats: Array = p.materials   # materials count as units too (Slice A) — isolate them
 	p.bags = [Items.make_bag("A")]   # 40 slots
 	p.consumables = []
 	p.gem_bag = []
 	p.backpack = []
 	p.materials = []
-	# Health potions occupy slots too (2026-07-09 v2): bought stock AND the
-	# free chapter potion each count as one unit.
-	p.potions = 2
-	p.potions_free = 1
-	var used0: int = p.bag_used()    # 3 — the potions alone
+	# Health potions are graded bag items now (CONSUMABLE_GRADES): each unit —
+	# including the ch1-3 teaching gift — counts as one bag unit via consumables.
+	p.consumables.append(Items.make_gift_health_potion())
+	p.consumables.append(Items.make_potion("health", "instant", "F", "accord"))
+	p.consumables.append(Items.make_potion("health", "instant", "E", "accord"))
+	var used0: int = p.bag_used()    # 3 — the health potions alone
 	if used0 != 3:
-		return _fail("owned health potions (bought + free) must count as bag units")
+		return _fail("owned health potions must count as bag units")
 	for i in 30:
-		var pot := Items.make_mana_potion()   # ALL the same id
+		var pot := Items.make_potion("mana", "instant", "D", "accord")   # ALL the same id
 		if not p.add_consumable(pot):
 			return _fail("add_consumable refused a unit while the bag had room")
 	if p.bag_used() != used0 + 30:
@@ -3443,7 +3446,7 @@ func _test_bags_discard() -> void:
 			return _fail("gain_gem refused a gem while the bag had room")
 	if p.bag_used() != p.bag_capacity():
 		return _fail("unit-counting did not exactly fill the bag")
-	if p.add_consumable(Items.make_mana_potion()):
+	if p.add_consumable(Items.make_potion("mana", "instant", "D", "accord")):
 		return _fail("a FULL bag accepted another consumable (unit cap breach)")
 	if p.gain_gem(Items.make_gem("crit", 1)):
 		return _fail("a FULL bag accepted another gem (unit cap breach)")
@@ -3451,16 +3454,13 @@ func _test_bags_discard() -> void:
 	# shop's guard); freeing the potions' own slots re-opens it.
 	if p.can_gain_potion():
 		return _fail("a FULL bag must block a merchant health-potion buy")
-	p.potions = 0
-	p.potions_free = 0
+	p.consumables = []
 	if not p.can_gain_potion():
 		return _fail("freed potion slots must re-allow a health-potion buy")
 	p.bags = cap_bags
 	p.consumables = cap_cons
 	p.gem_bag = cap_gems
 	p.backpack = cap_bp2
-	p.potions = cap_pot
-	p.potions_free = cap_potf
 	p.materials = cap_mats
 
 	# --- shop grey-out: no capacity gain -> buy is blocked ----------------
@@ -5628,22 +5628,19 @@ func _test_merchant_economy() -> void:
 	if Items.gem_buy_price(1, "ch3") <= int(Balance.gem_gold_value(1) * Balance.MERCHANT_SELL_FRACTION):
 		return _fail("gem buy (farm-cost) not above gem sell")
 
-	# Sell-eligibility (menus.open_shop): ONLY ids in CONSUMABLE_PRICES.
+	# Sell-eligibility (menus.open_shop): the Scroll of Recall keeps its
+	# CONSUMABLE_PRICES entry; graded potions sell at their own per-grade price.
 	# Elite utility + quest keepsakes have no market price -> unsellable.
-	for cid in ["mana_potion", "elixir_might", "elixir_ward", "renewal_draught", "recall_scroll"]:
-		if not Balance.CONSUMABLE_PRICES.has(cid):
-			return _fail("merchant consumable %s missing a price" % cid)
+	if not Balance.CONSUMABLE_PRICES.has("recall_scroll"):
+		return _fail("Scroll of Recall missing a price")
 	if Balance.CONSUMABLE_PRICES.has("reset_stone") or Balance.CONSUMABLE_PRICES.has("tree_tome"):
 		return _fail("elite utility became sellable")
 	var qi := Items.make_quest_item("millers_hat")
 	if qi.is_empty() or Balance.CONSUMABLE_PRICES.has(String(qi.get("id", ""))):
 		return _fail("quest keepsake is sellable")
 
-	# New consumables apply their effect and are consumed. Drink gate
-	# (2026-07-21, extended to elixir_ward 2026-07-29): both are budgeted
-	# rotation potions now — grant a room slot and a clear drink cd like a
-	# planned loadout would before each quaff. (Deeper drink-gate coverage —
-	# off-plan refusal, chain-chug closed — lives in _test_elixir_ward_gate.)
+	# Graded potions apply their effect and are consumed through the shared drink
+	# gate (CONSUMABLE_GRADES). Deeper gate coverage lives in _test_elixir_ward_gate.
 	var keep_cons: Array = p.consumables.duplicate()
 	var keep_dr: float = p.dr_time
 	var keep_dra: float = p.dr_amt
@@ -5653,19 +5650,21 @@ func _test_merchant_economy() -> void:
 	p.consumables = []
 
 	p.dr_time = 0.0
-	var ward := Items.make_elixir_ward()
+	var ward := Items.make_potion("ward", "buff", "C", "accord")
+	var eco_ward_id := String(ward["id"])
 	p.consumables.append(ward)
-	p.room_potions = {"health": 1, "elixir_ward": 1}
+	p.room_potions = {"health": 1, eco_ward_id: 1}
 	p.potion_cd = 0.0
 	p.use_consumable(ward)
-	if p.dr_time <= 0.0 or not is_equal_approx(p.dr_amt, Balance.ELIXIR_WARD_AMT) or p.consumables.has(ward):
+	if p.dr_time <= 0.0 or not is_equal_approx(p.dr_amt, float(ward["amt"])) or p.consumables.has(ward):
 		return _fail("elixir of warding did not apply / wasn't consumed")
 
 	p.hp = maxf(1.0, p.max_hp * 0.25)
 	var before: float = p.hp
-	var draught := Items.make_renewal_draught()
+	var draught := Items.make_potion("renewal", "burst", "C", "accord")
+	var eco_renew_id := String(draught["id"])
 	p.consumables.append(draught)
-	p.room_potions = {"health": 1, "renewal_draught": 1}
+	p.room_potions = {"health": 1, eco_renew_id: 1}
 	p.potion_cd = 0.0
 	p.use_consumable(draught)
 	if p.hp <= before or p.consumables.has(draught):
@@ -6867,10 +6866,13 @@ func _test_elixir_ward_gate() -> void:
 	var keep_drt: float = p.dr_time
 	var keep_dra: float = p.dr_amt
 
-	# The fix's load-bearing datum: ward can slot in the rotation, so the
-	# ALWAYS-spends-the-budget rule applies to it.
-	if not ("elixir_ward" in Items.ROTATION_POTIONS):
-		return _fail("elixir_ward must be a ROTATION_POTIONS type so the drink gate governs it")
+	# The fix's load-bearing datum: a Warding potion can slot in the rotation,
+	# so the ALWAYS-spends-the-budget rule applies to it.
+	var ward := Items.make_potion("ward", "buff", "C", "accord")
+	var ward_id := String(ward["id"])
+	var ward_amt := float(ward["amt"])
+	if not Items.is_rotation_potion(ward_id):
+		return _fail("a Warding potion must be a rotation type so the drink gate governs it")
 
 	p.consumables = []
 	p.dr_time = 0.0
@@ -6880,33 +6882,32 @@ func _test_elixir_ward_gate() -> void:
 	p.potion_cd = 0.0
 	p.potion_rotation = []
 	p.reset_room_potions()
-	var ward := Items.make_elixir_ward()
 	p.consumables.append(ward)
 	p.use_consumable(ward)
 	if p.dr_time > 0.0 or not p.consumables.has(ward):
-		return _fail("off-plan elixir_ward should be refused (chain-chug bypass fix)")
+		return _fail("off-plan Warding potion should be refused (chain-chug bypass fix)")
 
 	# (b) Budgeted + cd clear: it wards once, is consumed, spends its slot, arms cd.
-	p.potion_rotation = ["elixir_ward"]
-	p.room_potions = {"elixir_ward": 1}
+	p.potion_rotation = [ward_id]
+	p.room_potions = {ward_id: 1}
 	p.potion_cd = 0.0
 	p.use_consumable(ward)
-	if p.dr_time <= 0.0 or absf(p.dr_amt - Balance.ELIXIR_WARD_AMT) > 0.001:
-		return _fail("budgeted elixir_ward did not apply its damage-reduction window")
+	if p.dr_time <= 0.0 or absf(p.dr_amt - ward_amt) > 0.001:
+		return _fail("budgeted Warding potion did not apply its damage-reduction window")
 	if p.consumables.has(ward):
-		return _fail("elixir_ward was not consumed on a budgeted drink")
-	if int(p.room_potions.get("elixir_ward", 0)) != 0:
-		return _fail("elixir_ward did not spend its room-budget slot")
+		return _fail("Warding potion was not consumed on a budgeted drink")
+	if int(p.room_potions.get(ward_id, 0)) != 0:
+		return _fail("Warding potion did not spend its room-budget slot")
 	if p.potion_cd <= 0.0:
-		return _fail("elixir_ward did not arm the drink cooldown")
+		return _fail("Warding potion did not arm the drink cooldown")
 
 	# (c) The chain is broken: an immediate second ward is REFUSED (cd armed +
 	# slot already spent), so it survives in the bag instead of chugging.
-	var ward2 := Items.make_elixir_ward()
+	var ward2 := Items.make_potion("ward", "buff", "C", "accord")
 	p.consumables.append(ward2)
 	p.use_consumable(ward2)
 	if not p.consumables.has(ward2):
-		return _fail("a second elixir_ward drank through the armed cd/spent budget — chain-chug still open")
+		return _fail("a second Warding potion drank through the armed cd/spent budget — chain-chug still open")
 
 	# Restore.
 	p.consumables = keep_cons
@@ -6930,23 +6931,21 @@ func _test_materials() -> void:
 	var keep_gems: Array = p.gem_bag.duplicate()
 	var keep_cons: Array = p.consumables.duplicate()
 	var keep_mats: Array = p.materials.duplicate(true)
-	var keep_pots: int = p.potions
-	var keep_free: int = p.potions_free
 
 	# (a) make_material: 35 valid, GearFlavor-keyed dicts whose sprite file ships.
 	for fam in Items.MATERIAL_FAMILIES:
 		for gr in Items.GRADES:
 			var mat := Items.make_material(fam, gr, 1)
 			if String(mat.get("kind", "")) != "material":
-				return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+				return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 					"make_material(%s,%s) has no material kind" % [fam, gr])
 			var nm := String(mat.get("name", ""))
 			if nm == "" or not GearFlavor.FLAVOR.has(nm):
-				return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+				return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 					"material %s/%s name '%s' is not a GearFlavor key" % [fam, gr, nm])
 			var path := "res://assets/icons/%s.png" % String(mat.get("sprite", ""))
 			if not ResourceLoader.exists(path):
-				return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+				return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 					"material sprite missing: %s" % path)
 
 	# Clear the bag so slot math is deterministic.
@@ -6954,42 +6953,40 @@ func _test_materials() -> void:
 	p.gem_bag = []
 	p.consumables = []
 	p.materials = []
-	p.potions = 0
-	p.potions_free = 0
 
 	# (b) add_material STACKS into one slot per (family, grade); each stack = 1 slot.
 	if not p.add_material("metal", "F", 3):
-		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 			"add_material refused on an empty bag")
 	if not p.add_material("metal", "F", 2):
-		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 			"add_material refused a stack merge")
 	if p.materials.size() != 1 or int(p.materials[0].get("count", 0)) != 5:
-		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 			"add_material did not stack into one slot of 5")
 	if p.bag_used() != 1:
-		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 			"a material stack must cost exactly one bag slot (got %d)" % p.bag_used())
 	p.add_material("metal", "E", 1)
 	if p.materials.size() != 2:
-		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 			"a distinct grade must open a new stack")
 
 	# (c) material_icon loads real, installed art.
 	if Art.material_icon("herb", "S") == null:
-		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 			"material_icon returned null for an installed sprite")
 
 	# (d) body-type mapping + a GUARANTEED elite drop produces a material event.
 	if Balance.mob_material_families("skeleton") != ["bone", "metal"]:
-		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 			"skeleton (undead) must map to bone+metal")
 	var elite_ev := game.roll_material_drop("wolf", true, Vector2.ZERO)
 	if elite_ev.is_empty() or String(elite_ev.get("k", "")) != "material":
-		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 			"an elite material drop must be guaranteed")
 	if not (String(elite_ev.get("family", "")) in ["cloth", "reagent"]):
-		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats, keep_pots, keep_free,
+		return _mats_fail(keep_backpack, keep_gems, keep_cons, keep_mats,
 			"wolf (beast) material must be cloth or reagent")
 
 	# Restore.
@@ -6997,19 +6994,167 @@ func _test_materials() -> void:
 	p.gem_bag = keep_gems
 	p.consumables = keep_cons
 	p.materials = keep_mats
-	p.potions = keep_pots
-	p.potions_free = keep_free
 	print("ok: crafting materials (5x7 dicts+sprites, stacking one-slot, icon, guaranteed elite drop)")
 
 
 ## Restore the bag pockets _test_materials cleared, then fail — the CLAUDE.md
 ## rule that FAILURE paths must restore shared state too (quit is only queued).
-func _mats_fail(bp: Array, gb: Array, cn: Array, mt: Array, po: int, fr: int, msg: String) -> void:
+func _mats_fail(bp: Array, gb: Array, cn: Array, mt: Array, msg: String) -> void:
 	var p := game.player
 	p.backpack = bp
 	p.gem_bag = gb
 	p.consumables = cn
 	p.materials = mt
-	p.potions = po
-	p.potions_free = fr
 	_fail(msg)
+
+
+# ---- Graded potions (CONSUMABLE_GRADES two-lane matrix) ------------------
+# make_potion over all 85 (valid dict + shipped sprite + GearFlavor key + lane
+# has/hasn't a sting), an instant heal, a might + ward buff, a renewal burst, a
+# laced sting applying, and a Health Tonic drip ticking over wall-clock time.
+# ALL exits restore the shared player state through _pot_restore.
+func _test_graded_potions() -> void:
+	var p := game.player
+	var snap := {
+		"cons": p.consumables.duplicate(), "rot": p.potion_rotation.duplicate(),
+		"room": p.room_potions.duplicate(), "active": p.active_potion, "pcd": p.potion_cd,
+		"hp": p.hp, "mp": p.mp, "dr_t": p.dr_time, "dr_a": p.dr_amt,
+		"el_t": p.elixir_time, "el_a": p.elixir_atk,
+		"ht_t": p.heal_tonic_time, "ht_r": p.heal_tonic_rate,
+		"mt_t": p.mana_tonic_time, "mt_r": p.mana_tonic_rate,
+		"ldi_t": p.laced_dmg_in_time, "ldi_a": p.laced_dmg_in_amt, "since": p.since_hurt,
+	}
+
+	# (a) All 85 potions: valid dict, shipped sprite, GearFlavor key, lane<->sting.
+	var specs: Array = Items.potion_specs()
+	if specs.size() != 85:
+		_pot_restore(snap)
+		return _fail("expected 85 graded potions, got %d" % specs.size())
+	for spec in specs:
+		var pot := Items.make_potion(String(spec["family"]), String(spec["shape"]),
+			String(spec["grade"]), String(spec["lane"]))
+		if pot.is_empty() or String(pot.get("kind", "")) != "potion":
+			_pot_restore(snap)
+			return _fail("make_potion(%s) is not a potion dict" % spec)
+		var nm := String(pot.get("name", ""))
+		if nm == "" or not GearFlavor.FLAVOR.has(nm):
+			_pot_restore(snap)
+			return _fail("potion name '%s' is not a GearFlavor key" % nm)
+		var path := "res://assets/icons/%s.png" % String(pot.get("sprite", ""))
+		if not ResourceLoader.exists(path):
+			_pot_restore(snap)
+			return _fail("potion sprite missing: %s" % path)
+		var st: Dictionary = pot.get("sting", {})
+		if String(spec["lane"]) == "black" and st.is_empty():
+			_pot_restore(snap)
+			return _fail("laced potion %s carries no sting" % nm)
+		if String(spec["lane"]) == "accord" and not st.is_empty():
+			_pot_restore(snap)
+			return _fail("accord potion %s must never be laced" % nm)
+
+	# Isolate: empty bag, cleared buff/sting/tonic state, no recent hurt.
+	p.consumables = []
+	p.potion_cd = 0.0
+	p.since_hurt = 999.0
+	p.dr_time = 0.0
+	p.elixir_time = 0.0
+	p.heal_tonic_time = 0.0
+	p.mana_tonic_time = 0.0
+	p.laced_dmg_in_time = 0.0
+
+	# (b) Instant Health Potion restores a % of MISSING hp.
+	p.hp = maxf(1.0, p.max_hp * 0.4)
+	var hp0 := p.hp
+	var heal := Items.make_potion("health", "instant", "C", "accord")
+	p.consumables.append(heal)
+	p.room_potions = {String(heal["id"]): 1}
+	p.potion_cd = 0.0
+	p.use_consumable(heal)
+	if p.hp <= hp0 or p.consumables.has(heal):
+		_pot_restore(snap)
+		return _fail("instant Health Potion did not heal / wasn't consumed")
+
+	# (c) Might arms the +damage window; Warding arms the DR window.
+	var mgt := Items.make_potion("might", "buff", "B", "accord")
+	p.consumables.append(mgt)
+	p.room_potions = {String(mgt["id"]): 1}
+	p.potion_cd = 0.0
+	p.use_consumable(mgt)
+	if p.elixir_time <= 0.0 or absf(p.elixir_atk - float(mgt["amt"])) > 0.001:
+		_pot_restore(snap)
+		return _fail("Might elixir did not arm its buff")
+	var wrd := Items.make_potion("ward", "buff", "B", "accord")
+	p.consumables.append(wrd)
+	p.room_potions = {String(wrd["id"]): 1}
+	p.potion_cd = 0.0
+	p.use_consumable(wrd)
+	if p.dr_time <= 0.0 or absf(p.dr_amt - float(wrd["amt"])) > 0.001:
+		_pot_restore(snap)
+		return _fail("Warding elixir did not arm its DR window")
+
+	# (d) Renewal burst heals a % of MAX hp.
+	p.hp = maxf(1.0, p.max_hp * 0.3)
+	var rb0 := p.hp
+	var ren := Items.make_potion("renewal", "burst", "B", "accord")
+	p.consumables.append(ren)
+	p.room_potions = {String(ren["id"]): 1}
+	p.potion_cd = 0.0
+	p.use_consumable(ren)
+	if p.hp < rb0 + p.max_hp * float(ren["amt"]) - 0.5 or p.consumables.has(ren):
+		_pot_restore(snap)
+		return _fail("Renewal burst did not heal its %% max")
+
+	# (e) A laced sting applies (Gutter Red: +damage-taken window).
+	p.hp = maxf(1.0, p.max_hp * 0.5)
+	p.laced_dmg_in_time = 0.0
+	var red := Items.make_potion("health", "instant", "F", "black")
+	p.consumables.append(red)
+	p.room_potions = {String(red["id"]): 1}
+	p.potion_cd = 0.0
+	p.use_consumable(red)
+	var red_sting: Dictionary = red["sting"]
+	if p.laced_dmg_in_time <= 0.0 or absf(p.laced_dmg_in_amt - float(red_sting["amt"])) > 0.001:
+		_pot_restore(snap)
+		return _fail("laced Gutter Red did not apply its +damage-taken sting")
+
+	# (f) A Health Tonic banks a TOTAL and drips it over the window (wall-clock).
+	p.hp = maxf(1.0, p.max_hp * 0.4)
+	var tonic := Items.make_potion("health", "tonic", "C", "accord")
+	p.consumables.append(tonic)
+	p.room_potions = {String(tonic["id"]): 1}
+	p.potion_cd = 0.0
+	p.use_consumable(tonic)
+	if p.heal_tonic_time <= 0.0 or p.heal_tonic_rate <= 0.0:
+		_pot_restore(snap)
+		return _fail("Health Tonic did not schedule its drip")
+	var tonic_hp0 := p.hp
+	var tonic_t0 := p.heal_tonic_time
+	await get_tree().create_timer(0.35).timeout   # wall-clock: let the drip tick
+	if p.heal_tonic_time >= tonic_t0 or p.hp <= tonic_hp0:
+		_pot_restore(snap)
+		return _fail("Health Tonic drip did not tick over time")
+
+	_pot_restore(snap)
+	print("ok: graded potions (85 dicts+sprites+flavor, instant heal, might/ward buff, renewal burst, laced sting, tonic drip)")
+
+
+func _pot_restore(s: Dictionary) -> void:
+	var p := game.player
+	p.consumables = s["cons"]
+	p.potion_rotation = s["rot"]
+	p.room_potions = s["room"]
+	p.active_potion = String(s["active"])
+	p.potion_cd = float(s["pcd"])
+	p.hp = float(s["hp"])
+	p.mp = float(s["mp"])
+	p.dr_time = float(s["dr_t"])
+	p.dr_amt = float(s["dr_a"])
+	p.elixir_time = float(s["el_t"])
+	p.elixir_atk = float(s["el_a"])
+	p.heal_tonic_time = float(s["ht_t"])
+	p.heal_tonic_rate = float(s["ht_r"])
+	p.mana_tonic_time = float(s["mt_t"])
+	p.mana_tonic_rate = float(s["mt_r"])
+	p.laced_dmg_in_time = float(s["ldi_t"])
+	p.laced_dmg_in_amt = float(s["ldi_a"])
+	p.since_hurt = float(s["since"])

@@ -113,6 +113,20 @@ func _physics_process(delta: float) -> void:
 		nova_regen_time = maxf(0.0, nova_regen_time - delta)
 		gain_hp(max_hp * nova_regen * delta)  # Rimeheart heal-over-time
 	stab_ls_time = maxf(0.0, stab_ls_time - delta)
+	# Graded-potion (CONSUMABLE_GRADES) timers — laced stings + tonic drips.
+	laced_dmg_in_time = maxf(0.0, laced_dmg_in_time - delta)
+	laced_dmg_out_time = maxf(0.0, laced_dmg_out_time - delta)
+	laced_move_time = maxf(0.0, laced_move_time - delta)
+	laced_heal_in_time = maxf(0.0, laced_heal_in_time - delta)
+	if heal_tonic_time > 0.0:
+		heal_tonic_time = maxf(0.0, heal_tonic_time - delta)
+		gain_hp(heal_tonic_rate * delta, false)  # the tonic's own drip bypasses the Rust sting
+	if mana_tonic_time > 0.0:
+		mana_tonic_time = maxf(0.0, mana_tonic_time - delta)
+		mp = minf(max_mp, mp + mana_tonic_rate * delta)
+	if laced_bleed_time > 0.0:
+		laced_bleed_time = maxf(0.0, laced_bleed_time - delta)
+		hp = maxf(1.0, hp - laced_bleed_rate * delta)  # the loan collects (never lethal — clamps at 1)
 	# Heal tick: fold accumulated discrete mends into one soft green cue
 	# (~3/s max) so bulwark/holy/nova/kit heals are SEEN, not silent.
 	heal_fx_cd = maxf(0.0, heal_fx_cd - delta)
@@ -229,6 +243,8 @@ func _physics_process(delta: float) -> void:
 	spd *= hazard_speed  # ice patches boost, void rifts slow
 	if chill_time > 0.0:
 		spd *= chill_mult  # a mob's frost aura drags at your feet
+	if laced_move_time > 0.0:
+		spd *= 1.0 - laced_move_amt  # laced Hide sting: heavy proofing, slow limbs (§7)
 	velocity = dir * spd + game.gust_vec  # sandstorm gusts shove everyone
 	move_and_slide()
 
@@ -693,40 +709,46 @@ func drink_potion() -> void:
 	if int(room_potions.get(active_potion, 0)) <= 0:
 		cycle_potion()  # active type spent: fall to the next budgeted one
 		return
-	# Rotation potions route through the same bag effects as clicking
-	# them in the inventory. use_consumable's _drink_gate owns the cd +
-	# budget spend now (2026-07-21) — arming potion_cd here first made the
-	# renewal branch refuse while the slot was already spent.
-	if active_potion != "health":
-		if active_potion == "mana_potion" and mp >= max_mp - 0.5:
-			return  # never chug mana at full — held Q would drain the stack
-		if active_potion == "elixir_might" and elixir_time > 1.0:
-			return  # elixir already running: don't burn a second vial
-		if active_potion == "elixir_ward" and dr_time > 1.0:
-			return  # ward already up: held Q shouldn't burn a second vial
-		for c in consumables:
-			if String(c.get("id", "")) == active_potion:
-				use_consumable(c)
-				if int(room_potions.get(active_potion, 0)) <= 0 \
-						or consumable_count(active_potion) <= 0:
-					cycle_potion()  # slot spent or stock dry: next potion
-				return
-		potion_cd = 0.6
-		cycle_potion()  # nothing left of this type — swap instead of sulking
+	# Health drinks are now GRADED bag items (CONSUMABLE_GRADES). The generic
+	# "health" loadout token auto-pours the cheapest carried Health Potion (gift
+	# first) through the SAME drink gate as everything else, keyed "health".
+	if active_potion == "health":
+		if hp >= max_hp:
+			return
+		var pot := next_health_potion()
+		if pot.is_empty():
+			potion_cd = 0.3
+			cycle_potion()  # no health bottle to pour — swap to whatever else is planned
+			return
+		game.fight_note_potion()
+		use_consumable(pot, "health")
+		if int(room_potions.get("health", 0)) <= 0 or next_health_potion().is_empty():
+			cycle_potion()
 		return
-	# Health drinks consume OWNED stock (2026-07-09 investment round):
-	# bought potions, or the expiring ch1-3 teaching freebie — never free.
-	if potion_count() <= 0 or hp >= max_hp:
+	# A specifically-slotted graded potion. use_consumable's _drink_gate owns the
+	# cd + budget spend (2026-07-21). Held-Q waste guards, generalised by effect.
+	var eff := String(Items.potion_by_id(active_potion).get("effect", ""))
+	if (eff == "heal_instant" or eff == "renewal") and hp >= max_hp:
 		return
+	if eff == "mana_instant" and mp >= max_mp - 0.5:
+		return
+	if eff == "mana_tonic" and mana_tonic_time > 0.5:
+		return
+	if eff == "heal_tonic" and heal_tonic_time > 0.5:
+		return
+	if eff == "might" and elixir_time > 1.0:
+		return
+	if eff == "ward" and dr_time > 1.0:
+		return
+	for c in consumables:
+		if String(c.get("id", "")) == active_potion:
+			use_consumable(c)
+			if int(room_potions.get(active_potion, 0)) <= 0 \
+					or consumable_count(active_potion) <= 0:
+				cycle_potion()  # slot spent or stock dry: next potion
+			return
 	potion_cd = 0.6
-	spend_health_potion()
-	room_potions["health"] = int(room_potions.get("health", 1)) - 1
-	game.fight_note_potion()
-	hp = minf(max_hp, hp + (max_hp - hp) * Balance.POTION_HEAL_FRAC * constancy_heal_mult())
-	game.sfx("potion")
-	game.spawn_text(global_position + Vector2(0, -40), "+HP", Color(0.4, 1.0, 0.4))
-	if int(room_potions.get("health", 0)) <= 0:
-		cycle_potion()
+	cycle_potion()  # nothing left of this type — swap instead of sulking
 
 
 ## attacker (optional Enemy/Boss): resolves the hit through the SAME
@@ -788,6 +810,8 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		# frame it lands — this does.
 		return
 	amount *= debuff_dmg_in   # endgame Depths +damage-taken debuff (1.0 off-run)
+	if laced_dmg_in_time > 0.0:
+		amount *= 1.0 + laced_dmg_in_amt   # laced Red/Fury sting: the blightwater weakens the body
 	if attacker is Enemy and (attacker as Enemy).toxin > 0:
 		# ENFEEBLE (round 49e; split 49f): YOUR toxin on the attacker turns
 		# its rot into your survival — class-flavored, scaled by live stacks

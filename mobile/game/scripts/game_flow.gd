@@ -497,11 +497,13 @@ func buy_weekly_cache() -> bool:
 	if not cache_available() or not spend_renown(Balance.RENOWN_CACHE_PRICE):
 		return false
 	renown_cache_week = _week_index()
-	var makers := {"mana_potion": Items.make_mana_potion, "elixir_might": Items.make_elixir_might,
-		"elixir_ward": Items.make_elixir_ward, "renewal_draught": Items.make_renewal_draught}
+	# Clean lane only (§10), low-grade graded ids — never S, never laced.
 	var i := 0
 	for id in Balance.RENOWN_CACHE_ITEMS:
-		give_loot({"kind": "stone", "stone": (makers[id] as Callable).call()},
+		var made: Dictionary = Items.potion_by_id(String(id))
+		if made.is_empty():
+			continue
+		give_loot({"kind": "stone", "stone": made.duplicate(true)},
 			player.global_position + Vector2(-45.0 + 30.0 * i, 40.0))
 		i += 1
 	autosave()

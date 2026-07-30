@@ -908,11 +908,14 @@ func _grant_daily_reward(streak: int) -> Array:
 		lines.append("%d gold" % g)
 	if r.has("potions"):
 		var pc := int(r["potions"])
-		var room := maxi(0, player.bag_capacity() - player.bag_used())  # potions take bag slots
-		var got := mini(pc, room)
-		player.potions += got
+		var got := 0
+		for i in pc:
+			# Graded bag items now (CONSUMABLE_GRADES): a low-grade clean Health
+			# Potion per unit, routed through add_consumable (a full bag stops it).
+			if player.add_consumable(Items.make_potion("health", "instant", "E", "accord")):
+				got += 1
 		if got > 0:
-			lines.append("%d potion%s" % [got, "" if got == 1 else "s"])
+			lines.append("%d Health Potion%s" % [got, "" if got == 1 else "s"])
 	if r.has("gems"):
 		var gc := int(r["gems"])
 		var lvl := int(r.get("gem_lvl", 1))

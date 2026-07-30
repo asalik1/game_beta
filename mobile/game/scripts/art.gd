@@ -2417,8 +2417,28 @@ const CONSUMABLE_ICONS := {
 ## Hand-authored icon for a non-gear consumable Dictionary, or null.
 ## Same seam as item_icon overrides: used untinted — grade rarity stays
 ## on bag-slot borders and name colors.
+##
+## Graded potions carry a `sprite` ("consumables/<stem>"); a bare {"id": ...}
+## (the HUD/touch-HUD pass just the active id) resolves its stem through
+## Items.potion_by_id. Stones/scrolls fall back to the CONSUMABLE_ICONS map.
 static func consumable_icon(c: Dictionary) -> ImageTexture:
-	var icon_name: String = CONSUMABLE_ICONS.get(String(c.get("id", "")), "")
+	var id := String(c.get("id", ""))
+	var sprite := String(c.get("sprite", ""))
+	if sprite == "" and Items.is_rotation_potion(id):
+		sprite = String(Items.potion_by_id(id).get("sprite", ""))
+	if sprite.begins_with("consumables/"):
+		var pkey := "consicon_" + sprite
+		if _cache.has(pkey):
+			return _cache[pkey]
+		var pim := _icon_override(sprite)
+		if pim == null:
+			return null
+		if pim.get_width() != 32 or pim.get_height() != 32:
+			pim.resize(32, 32, Image.INTERPOLATE_NEAREST)
+		var pt := ImageTexture.create_from_image(pim)
+		_cache[pkey] = pt
+		return pt
+	var icon_name: String = CONSUMABLE_ICONS.get(id, "")
 	if icon_name == "":
 		return null
 	var key := "consicon_" + icon_name

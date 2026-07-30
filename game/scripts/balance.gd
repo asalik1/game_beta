@@ -2077,8 +2077,8 @@ const RES_HUNGER_GOLD_MAX := 0.15     # bonus KILL gold at full lean
 const RES_CONSTANCY_HEAL_MAX := 0.25  # bonus potion healing at full lean
 # Potion heals are MISSING-hp based (2026-07-09 rebalance): a 60%-of-max heal
 # ERASED a mistake; a helping hand mends a fraction of what you've LOST — worth
-# the most at death's door, worth nothing to a topped-off facetank.
-const POTION_HEAL_FRAC := 0.15        # health potion: fraction of MISSING hp (a hand up, never a crutch)
+# the most at death's door, worth nothing to a topped-off facetank. The exact
+# fraction is now per-GRADE (Balance.POT_HEALTH_INSTANT_FRAC / _TONIC_FRAC).
 
 # ----------------------------------------------------- quest abandonment ---
 # A side quest ACCEPTED and never finished is settled at the chapter's
@@ -2202,7 +2202,9 @@ const RENOWN_PRICE_MYTHIC := 600
 # faucet — capped so it stays collected-not-farmed and never undercuts
 # the alchemist's level-scaled gold shelf.
 const RENOWN_CACHE_PRICE := 25
-const RENOWN_CACHE_ITEMS := ["mana_potion", "elixir_might", "elixir_ward", "renewal_draught"]
+# Clean lane only (§10), low-grade graded ids — the renown cache never grants S.
+const RENOWN_CACHE_ITEMS := ["pot_health_instant_f_accord", "pot_mana_instant_f_accord",
+	"pot_might_buff_f_accord", "pot_ward_buff_f_accord"]
 const RENOWN_COLOR := Color(0.78, 0.55, 1.0)   # the violet every Renown surface shares
 
 # ----------------------------------------------------- waking incursions ---
@@ -2228,27 +2230,104 @@ static func renown_price(kind: String, tier := "") -> int:
 	return RENOWN_PRICE_MYTHIC if tier == "mythic" else RENOWN_PRICE_ELITE
 
 # ------------------------------------------------------------ consumables ---
-# Utility consumables beyond the health potion (bag items, used from the
-# inventory). Prices are the merchant's base (before haggle); effects tuned
-# to be handy, not build-warping.
-const MANA_POTION_FRAC := 0.3    # restores this fraction of MISSING mana (mirrors the health potion)
-const ELIXIR_MIGHT_AMT := 0.12   # +12% damage while the elixir holds
-const ELIXIR_MIGHT_DUR := 5.0    # a BURST WINDOW, not a whole boss fight (2026-07-09: 20%/30s was a fight-long free multiplier)
-# Round 50 additions — a defensive elixir (mirrors Might on the dr_ system)
-# and a burst bag-heal (distinct from the 5-cap health-potion counter, and
-# not budgeted by it — a real reason to spend at the alchemist's shelf).
-const ELIXIR_WARD_AMT := 0.25    # incoming non-true damage cut while it holds
-const ELIXIR_WARD_DUR := 6.0     # a BURST WINDOW to eat one telegraphed hit (2026-07-21: 25%/20s was a fight-long free mitigation layer — the exact trap the Might nerf closed at 20%/30s)
-const RENEWAL_HEAL_FRAC := 0.3   # instant heal, fraction of MAX hp — the premium flask (shares the drink cd; level-priced ~2.5x a potion)
-# BASE prices (L1). The whole shelf LEVEL-SCALES like the health potion
-# (2026-07-09: flat prices went dirt-cheap against level-scaled income — a
-# 90g renewal at L40 was stronger AND cheaper than a health potion). SELL
-# stays on the flat base (menus.gd) so nothing hauls for profit.
-const CONSUMABLE_PRICES := {"mana_potion": 60, "elixir_might": 130, "recall_scroll": 55,
-	"elixir_ward": 110, "renewal_draught": 150}
+# The Scroll of Recall stays an ungraded utility (bag item), used from the
+# inventory. Its price level-scales like the old shelf did; SELL stays on the
+# flat base (menus.gd). (The graded potion families own their own price tables
+# below and DON'T level-scale — the grade ladder IS the price curve.)
+const CONSUMABLE_PRICES := {"recall_scroll": 55}
 
 static func consumable_price(id: String, level: int) -> int:
 	return int(round(float(CONSUMABLE_PRICES[id]) * (1.0 + POTION_PRICE_PER_LEVEL * float(maxi(level, 1) - 1))))
+
+# ===================================================== GRADED POTIONS =========
+# The two-lane F→S consumable matrix (PROPOSALS/CONSUMABLE_GRADES.md §2-§8).
+# EVERY number below is transcribed VERBATIM from that doc's family tables —
+# magnitudes, over-time TOTAL fractions, durations, laced stings, and prices.
+# items.gd/make_potion + player_core reads pull only from here (knob rule);
+# never inline a bottle's number in logic. Grades run F→S (Renewal C→S); the
+# black-market ladder always stops at A (S is never laced, never sold — §0/§10).
+const POTION_GRADES := ["F", "E", "D", "C", "B", "A", "S"]
+const POTION_GRADES_LACED := ["F", "E", "D", "C", "B", "A"]        # S is never laced
+const POTION_GRADES_RENEWAL := ["C", "B", "A", "S"]                # premium burst starts at C
+const POTION_GRADES_RENEWAL_LACED := ["C", "B", "A"]
+
+# --- HEALTH, instant — the Potion (§2): restore % of MISSING hp, instantly ---
+const POT_HEALTH_INSTANT_FRAC := {"F": 0.08, "E": 0.11, "D": 0.14, "C": 0.17, "B": 0.22, "A": 0.28, "S": 0.40}
+const POT_HEALTH_INSTANT_PRICE := {"F": 250, "E": 700, "D": 2200, "C": 7000, "B": 25000, "A": 95000, "S": 150000}
+const POT_HEALTH_INSTANT_PRICE_LACED := {"F": 165, "E": 455, "D": 1450, "C": 4600, "B": 16500, "A": 62000}
+# laced sting: the mend weakens the body (+damage taken, 5s)
+const POT_HEALTH_INSTANT_STING := {"F": 0.08, "E": 0.08, "D": 0.10, "C": 0.10, "B": 0.12, "A": 0.12}
+const POT_HEALTH_INSTANT_STING_DUR := 5.0
+
+# --- HEALTH, over-time — the Tonic (§3): same TOTALS, over a grade-growing window ---
+const POT_HEALTH_TONIC_FRAC := {"F": 0.08, "E": 0.11, "D": 0.14, "C": 0.17, "B": 0.22, "A": 0.28, "S": 0.40}
+const POT_HEALTH_TONIC_DUR := {"F": 4.0, "E": 5.0, "D": 5.0, "C": 6.0, "B": 6.0, "A": 7.0, "S": 8.0}
+const POT_HEALTH_TONIC_PRICE := {"F": 150, "E": 420, "D": 1300, "C": 4200, "B": 15000, "A": 57000, "S": 90000}
+const POT_HEALTH_TONIC_PRICE_LACED := {"F": 100, "E": 275, "D": 850, "C": 2700, "B": 9800, "A": 37000}
+# laced sting: cheap stitching (healing received reduced for 8s after)
+const POT_HEALTH_TONIC_STING := {"F": 0.15, "E": 0.15, "D": 0.20, "C": 0.20, "B": 0.25, "A": 0.25}
+const POT_HEALTH_TONIC_STING_DUR := 8.0
+
+# --- MANA, instant — the Potion (§4): restore % of MISSING mana, instantly ---
+const POT_MANA_INSTANT_FRAC := {"F": 0.11, "E": 0.16, "D": 0.21, "C": 0.26, "B": 0.33, "A": 0.42, "S": 0.55}
+const POT_MANA_INSTANT_PRICE := {"F": 250, "E": 700, "D": 2200, "C": 7000, "B": 25000, "A": 95000, "S": 150000}
+const POT_MANA_INSTANT_PRICE_LACED := {"F": 165, "E": 455, "D": 1450, "C": 4600, "B": 16500, "A": 62000}
+# laced sting: the burn is paid in blood (max-HP TRUE damage on drink)
+const POT_MANA_INSTANT_STING := {"F": 0.04, "E": 0.05, "D": 0.06, "C": 0.08, "B": 0.10, "A": 0.12}
+
+# --- MANA, over-time — the Tonic (§5): bigger TOTALS than the Potion, over a window ---
+const POT_MANA_TONIC_FRAC := {"F": 0.15, "E": 0.22, "D": 0.30, "C": 0.37, "B": 0.47, "A": 0.60, "S": 0.75}
+const POT_MANA_TONIC_DUR := {"F": 4.0, "E": 5.0, "D": 5.0, "C": 6.0, "B": 6.0, "A": 7.0, "S": 8.0}
+const POT_MANA_TONIC_PRICE := {"F": 250, "E": 700, "D": 2200, "C": 7000, "B": 25000, "A": 95000, "S": 150000}
+const POT_MANA_TONIC_PRICE_LACED := {"F": 165, "E": 455, "D": 1450, "C": 4600, "B": 16500, "A": 62000}
+# laced sting: the dream dulls the blade (your damage reduced while it runs)
+const POT_MANA_TONIC_STING := {"F": 0.08, "E": 0.08, "D": 0.10, "C": 0.10, "B": 0.12, "A": 0.12}
+
+# --- MIGHT — the fury (§6): timed +damage window ---
+const POT_MIGHT_AMT := {"F": 0.04, "E": 0.06, "D": 0.08, "C": 0.12, "B": 0.16, "A": 0.20, "S": 0.30}
+const POT_MIGHT_DUR := {"F": 4.0, "E": 4.0, "D": 5.0, "C": 5.0, "B": 6.0, "A": 6.0, "S": 6.0}
+# the laced ladder matches the clean twin EXCEPT Deathwish Fury (A) — its 8s bargain
+const POT_MIGHT_DUR_LACED := {"F": 4.0, "E": 4.0, "D": 5.0, "C": 5.0, "B": 6.0, "A": 8.0}
+const POT_MIGHT_PRICE := {"F": 380, "E": 1100, "D": 3400, "C": 11000, "B": 38000, "A": 140000, "S": 220000}
+const POT_MIGHT_PRICE_LACED := {"F": 250, "E": 720, "D": 2200, "C": 7200, "B": 24500, "A": 91000}
+# laced sting: fury on credit (+damage taken while it holds; Deathwish's A set heavier)
+const POT_MIGHT_STING := {"F": 0.08, "E": 0.08, "D": 0.10, "C": 0.10, "B": 0.12, "A": 0.15}
+
+# --- WARDING — the hide (§7): timed −incoming-damage window (gentle ramp, caps −25%/6s) ---
+const POT_WARD_AMT := {"F": 0.08, "E": 0.10, "D": 0.12, "C": 0.15, "B": 0.18, "A": 0.21, "S": 0.25}
+const POT_WARD_DUR := {"F": 4.0, "E": 4.0, "D": 5.0, "C": 5.0, "B": 5.0, "A": 6.0, "S": 6.0}
+const POT_WARD_PRICE := {"F": 330, "E": 950, "D": 3000, "C": 9500, "B": 34000, "A": 125000, "S": 200000}
+const POT_WARD_PRICE_LACED := {"F": 215, "E": 620, "D": 1950, "C": 6200, "B": 22000, "A": 81000}
+# laced sting: heavy proofing (move speed reduced while it holds)
+const POT_WARD_STING := {"F": 0.15, "E": 0.15, "D": 0.20, "C": 0.20, "B": 0.25, "A": 0.25}
+
+# --- RENEWAL — the premium burst (§8): instant % of MAX hp (C→S) ---
+const POT_RENEWAL_FRAC := {"C": 0.18, "B": 0.25, "A": 0.33, "S": 0.45}
+const POT_RENEWAL_PRICE := {"C": 14000, "B": 50000, "A": 190000, "S": 300000}
+const POT_RENEWAL_PRICE_LACED := {"C": 9100, "B": 32500, "A": 123000}
+# laced sting: the loan (bleed a slice of max HP back over 10s)
+const POT_RENEWAL_STING := {"C": 0.06, "B": 0.08, "A": 0.10}
+const POT_RENEWAL_STING_DUR := 10.0
+
+# Constancy (Virtue resonance) still multiplies HEALTH healing — the instant
+# Potion, the Tonic drip AND the Renewal burst all scale by it (player_core).
+
+# The teaching freebie (FREE_POTION_CHAPTERS) is now a literal Defective (F)
+# accord Health Potion unit, flagged as a chapter gift (expires on leaving,
+# never sellable) — see Items.make_gift_health_potion / game_world.
+
+# Shop sourcing (§10): the Accord (clean) lane sells at every merchant across an
+# act-appropriate grade band, NEVER S. The Black-market (laced) lane sells only
+# from a distinct black-market shelf (stand-in for the Sable Court fence — see
+# menus.gd) at the act's lowest band grade per family. S is boss/elite-drop only.
+const SHOP_POTION_ACCORD_GRADES := {
+	1: ["F", "E", "D", "C"], 2: ["E", "D", "C", "B", "A"], 3: ["D", "C", "B", "A"]}
+const SHOP_POTION_BLACK_GRADES := {
+	1: ["F", "E", "D", "C"], 2: ["E", "D", "C", "B", "A"], 3: ["D", "C", "B", "A"]}
+
+static func shop_potion_grades(act: int, laced := false) -> Array:
+	var tbl := SHOP_POTION_BLACK_GRADES if laced else SHOP_POTION_ACCORD_GRADES
+	return tbl.get(clampi(act, 1, 3), tbl[1])
 
 # Gambling vendor (reworked 2026-07-09): the PITY machine — a gamble rolls
 # from the chapter's BOSS band (CHAPTER_BOSS_WEIGHTS), priced at the boss-
