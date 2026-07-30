@@ -17,10 +17,13 @@ Doc standard (owner, v6): every table carries its Price column, and every over-t
 - **Potions are a luxury at every tier**: clean F = **250g** (~10% of ch1-clear wealth per the 2026-07-09 repricing note in balance.gd; ~5 minutes of ch2 farm).
 - **The price curve escalates harder every step up to A, then S sits close above** (owner, v8: the old A→S cliff was closed by RAISING every tier below it — F slightly, then larger and larger bumps up to A; S prices unchanged). Step ratios grow from ~×2.8 at the bottom to ~×3.8 into A, with S a soft ~×1.6 above A.
 - **S is never laced** (standing: S carries no drawback — and the black market can't counterfeit legends).
+- **Shop caps at A — S is never sold** (owner, 2026-07-29). Merchants stock F→A; an S potion comes only from **boss/elite drops** — never a shop, and **never a renown reward** (renown never grants gear or S items; owner, 2026-07-29). Applies to S gear too (PROFESSIONS.md). The Alkahest Codex and gear blueprints are exempt — they are recipes, not finished S items, and stay shop-sellable.
 - **No act/chapter gating** — REJECTED: an F potion self-obsoletes when a boss swings for half your HP; price gates the top.
 - **One-per-slot loadout restriction** — raised and SCRATCHED: the cost ladder is the deterrent. Room budget / duplicate slots unchanged.
 - **No save-migration work** — standing rule: the game is unreleased; old consumable ids simply die (drop unknown ids on load).
-- **Flavor ties into the ACTUAL story** (owner, v9 — no copy-paste templates): the clean lane is Accord-chartered alchemy (Kesh's trade, Crownfall's stamp); lines hook real canon — the Ember Guard, the Concord wars, the blight and Mórwyn, the Choir, the seals and their keepers, Crown-bearers and the first fall. The laced lane has ONE unifying secret: **black-market brews are cut with diluted blightwater** — that's why they're cheap, and why every sting reads like the rot (weakened body, sealed wounds, dulled arms, heavy limbs, the loan that collects). Every S still hints it "can be synthesized into something greater" (long fuse into Alchemy, PROPOSALS/PROFESSIONS.md — Kesh's recipes already claim "existing shelf items").
+- **Flavor ties into the ACTUAL story** (owner, v9 — no copy-paste templates): the clean lane is Accord-chartered alchemy (Kesh's trade, Crownfall's stamp); lines hook real canon — the Ember Guard, the Concord wars, the blight and Mórwyn, the Choir, the seals and their keepers, Crown-bearers and the first fall. The laced lane has ONE unifying secret: **black-market brews are cut with diluted blightwater** — that's why they're cheap, and why every sting reads like the rot (weakened body, sealed wounds, dulled arms, heavy limbs, the loan that collects). Every S still hints it "can be synthesized into something greater" — the payoff is the Synthesis capstone in §9 (long fuse into Alchemy, PROPOSALS/PROFESSIONS.md — Kesh's recipes already claim "existing shelf items").
+- **SYNTHESIS capstone** (owner, v10): a recipe book — the **Alkahest Codex** — teaches how to combine the clean S and the laced A of a family into a **Grand** potion (a modest step above S, no drawback). The Codex is an S-tier drop, ~100k if a shop rolls it, learned once. It answers the lore question "how can Kesh out-craft a legend" — she can't alone; the legends each made one half and vanished, and the Codex is the first text to marry both halves safely. Grand potions are synthesis-only (never sold), stay "very helpful not fight-carrying," and each craft eats an ultra-rare S + laced A — so it deepens the peak without widening the frontier or selling power (MT4 rules). Full spec §9.
+- **CRAFTING via Alchemy** (owner, v11): the clean lane is craftable through the Alchemy profession (PROFESSIONS.md). Two ingredient faucets — **base herbs** from Herbalism nodes + **reagents** that drop from mobs, and reagents drop **only for a player who has learned Alchemy** (choose the profession, and the world starts dropping what you can use). **The reagent sets the grade; bosses drop the rarest reagents.** Clean lane craftable F→A; **S is never craftable** (the vanished legends' lost secret — drop/shop only); laced lane stays buy-only from the fence. Full spec §11.
 
 ## 1. Shape of the system
 
@@ -308,27 +311,86 @@ Instant, % of MAX hp. The clean lane's identity is the pure spike; the laced lan
 - B: "A Sable Court miracle, stitched in a cellar. The thread pulls itself back out."
 - A: "You walked away from that one. Mórwyn's ledger doesn't lose entries — it follows, and it collects."
 
-## 9. The Black Market (where the laced lane lives)
+## 9. SYNTHESIS — the Alkahest Codex and the Grand potions
 
-- Accord lane: every regular merchant, every act — no gates (owner ruling); shelf breadth varies by merchant personality/markup as today.
+The payoff of the "synthesized into something greater" thread every S flavor line carries, and the answer to the lore question the owner raised: **how can Kesh out-craft a legendary alchemist?** She can't — alone. The legends each brewed ONE half of a whole and vanished; the street stumbled onto the other half and poisoned it with blightwater. The Codex is the first text to marry them safely, and Kesh + the Codex does what no single legend ever managed.
+
+- **The Alkahest Codex** — a recipe book, its own **S-tier drop**. Extremely rare from endgame sources (A/S-relevant bosses, Waking Depths); if a Crownfall shelf happens to roll it, **~100,000g** (a recipe, not a finished S item, so the shop-cap-at-A rule doesn't apply — but renown never grants it either). Learned ONCE (per character) — the book is knowledge, not a consumable; after that Kesh can synthesize forever.
+- **The recipe = combine both potions** (owner's exact ask). One clean **S** potion **+** one laced **A** potion of the same family, brought to Kesh with a gold fee → one **Grand [family]** potion. The clean S is the Accord's perfected half; the laced A is the blightwater half the Accord never dared use; the Codex is how to fuse them so the rot serves instead of stings.
+- **The Grand potion**: a modest step above S with **NO drawback** (the recipe neutralizes the blightwater). Example magnitudes — Grand Heartsblood 48% of missing HP (S 40%); Grand Stormglass 65% missing mana (S 55%); Grand Giantsblood +35% dmg 6s (S +30%); Grand Adamant −28% incoming 6s (S −25%); Grand Dawnmend 52% max HP (S 45%). Still "very helpful, never fight-carrying" (standing rule).
+- **Crafted one-off, not a shelf tier**: no shop sells a Grand potion; each one consumes an already-ultra-rare S **and** a laced A. So the top of the ladder deepens without the frontier widening and without power being sold (MT4 antipatterns: never sell power, never freeze the frontier).
+- **It's a flex, not an efficiency play — by design**: burning a ~150k S + a ~62k laced A + a synthesis fee to gain ~8 points over the S you already had is a deliberately terrible gold-per-power trade. That's what makes it the endgame gold sink and the brag rather than the optimal buy.
+- **Profession capstone**: the top of Kesh's Alchemy tree (PROFESSIONS.md). Learning the Codex may gate on Master Alchemist standing; a leveled Kesh (npc_favor) could discount the synthesis fee. Wire when Alchemy lands.
+
+Lore — the Codex closes the S myth. Every S "vanished maker" (Dawnmend's healer, the seal-keepers who kept Adamant's half, the hand behind Everbloom) was one hidden circle who understood synthesis and buried it when the blight showed what the other half could do. The Codex is their recovered formulary. Kesh reads it and goes very quiet.
+
+## 10. The Black Market (where the laced lane lives)
+
+- Accord lane: every regular merchant, every act — no gates (owner ruling); shelf breadth varies by merchant personality/markup as today. **The shop caps at A** (owner, 2026-07-29): merchants stock F→A only, never S.
 - Laced lane: sold ONLY by black-market vendors. Proposal: a **fence in the Sable Court's shadow-market** (the Cinderborn ward already reads like the place Crownfall doesn't ledger) + an **occasional road smuggler** spawn on route maps — cheap bottles far from town, exactly when you're desperate.
 - The lane's open secret (lore, §0): the discount is blightwater. Every sting is the rot doing what the rot does — the fence will tell you it's fine, and the fence is lying by less than you'd hope.
-- Drops/renown caches: clean lane only (the world's loot isn't cut with gutter water). Laced is a *purchase decision* — you chose the discount.
-- S tier: Accord lane only, full price, plus rare boss/renown drop. No counterfeit exists.
+- Renown cache: clean lane only. **Chests CAN drop laced potions** (owner, 2026-07-29 — the world's loot can be cut with blightwater after all; see BOSS_LOOT.md §3). The fence is still the *reliable* laced source and the only one you choose; a chest laced roll is incidental luck.
+- S tier: **boss/elite DROP only — NEVER sold in any shop, NEVER a renown reward** (owner, 2026-07-29; shop caps at A, renown grants no gear/S items). Accord lane at all lower grades, but an S potion is earned from loot, not bought. No laced counterfeit exists either.
 - Held in reserve: a mana bleed-back sting (gain the blue, some drains away) is owner-approved palette but currently unassigned — available if a third mana variant ever ships.
 
-## 10. Wiring notes (build-time)
+## 11. CRAFTING — ingredients, mob drops, and the grade ladder (Alchemy)
+
+Depends on PROFESSIONS.md, which owns the Alchemist trade, the lock/swap economy, mastery-gated tiers, the `kind:"material"` schema, and craft-cost sizing. **This section owns only the potion-specific recipe ladder** (which ingredient makes which grade); the general materials economy is not repeated here. Grade access follows Alchemist mastery (Novice F/E → Master A); B+ potions need a generic potion blueprint; S potions are uncraftable (drop/shop only).
+
+**Every brew takes two ingredient kinds, from two different faucets:**
+1. **Base herb** — the botanical body of the potion, gathered from **Herbalism nodes** (PROFESSIONS §2 Herb family, act-tiered). This is the walk-the-world faucet.
+2. **Reagent** — a monster-part active ingredient that gives the potion its kick and **sets its grade**. It is the alchemical yield of a mob's body (gland, venom, essence) and drops **ungated and thematic** like all mob materials (PROFESSIONS.md §4, owner 2026-07-29 — reversing the earlier "gated on knowing Alchemy" sketch): any mob that yields reagents drops them regardless of your trade; pick them up if you're an Alchemist, else discard/sell. **Bosses drop the rarest reagents** (Gold supply chest), and mob reagents cap at A — S reagents are boss-only.
+
+**Reagent quality sets the grade ceiling:**
+
+| Reagent quality | Mob source | Crafts grades |
+|---|---|---|
+| Common | trash packs — wolves, spiders, skeletons | F, E |
+| Uncommon | rare / tougher mobs, blightspawn | D, C |
+| Elite | elites, champions, mini-bosses | B |
+| Boss | chapter bosses (guaranteed first-kill, chance on repeat) | A |
+| — | S is NOT craftable — the vanished legends' lost secret; drop/shop only | — |
+
+**A recipe = base herb(s) + one reagent + a Kesh brew fee.** Higher grade = more herb units, a higher-quality reagent, and a bigger fee. Total craft cost ≈ 0.7× the shelf price (PROFESSIONS §6) — deterministic and cheaper than buying, but you paid in gathering + killing time.
+
+**Reagent families — one active line per potion family, flavor tied to the bestiary:**
+
+| Potion family | Reagent line | Common (F–E) | Uncommon–Elite (D–B) | Boss (A) |
+|---|---|---|---|---|
+| Health | Vital ichor | Wolf's-blood clot | Blightheart (blight-dead) | Fangmaw's marrow |
+| Mana | Arcane residue | Spider-eye lens | Cultist's censer-ash | Morwen's whisper-salt |
+| Might | Predator's fury | Wolf fang | Rendered beastblood | Stormwarden's stormgland |
+| Warding | Ironhide chitin | Spider carapace | Skeleton bonemeal | Nullwarden's sealplate |
+| Renewal | Pure essence | (premium: Essence family, PROFESSIONS §2) | Waking Ember | Saint Varo's censer-oil |
+
+**Worked examples (Health line):**
+- Defective Health Potion (F): 2 Marshbell + 1 Wolf's-blood clot + 60g brew fee.
+- Accordmark Health Potion (C): 4 Marshbell + 1 Uncommon Vital ichor + 1,900g.
+- Master's Health Potion (B): 5 Palerose + 1 Elite Vital ichor + 6,800g.
+- Masterwork Health Potion (A): 6 Palerose + 1 Fangmaw's marrow (boss) + 26,000g.
+
+**Reconciliation rules:**
+- **Clean lane craftable F→A; S never craftable** — S has no reagent tier; it stays a drop/shop legend (matches the "vanished maker" lore).
+- **Laced lane is buy-only from the fence** (§10), not crafted. If we ever allow crafting it, the reagent is refined blightwater (Choir / Rot-Chapel / blight-zone drop) and the sting is inherent to that ingredient.
+- **Grand / synthesis (§9) is not a from-herbs craft** — it fuses a finished clean S + a finished laced A via the Codex. Crafting supplies neither half; it only reaches A.
+- **High grades act-gate themselves, organically** — A needs a boss reagent, B needs an elite, so those grades are craftable only where such mobs exist (Act 2+). This is ingredient availability, not a hard wall: **buying any grade stays ungated by gold** (the owner's no-act-gate rule governs the shop; it never governed what a chapter-1 wolf can drop).
+
+## 12. Wiring notes (build-time)
 
 - Makers take (family, shape, grade, lane); prices and effects move to per-family curve tables in `balance.gd` (knob rule) — no bare numbers. Duration is a per-grade knob on the over-time ladders.
 - Sting hooks in player_core, small timed self-debuff vars alongside the existing elixir pair: damage-taken-up, self-move-slow, damage-dealt-down, healing-received-down, bleed-back DoT, true-damage self-hit. All map to existing damage/heal paths. Over-time shapes tick on current-missing per second (self-damping).
 - Health potions stop being a special counter → graded bag units (`potions_free` → F-grade Potion units, spent first, same expiring precedent). HUD/touch HUD shows active bottle + grade frame. No save-migration work (standing rule) — unknown old ids drop on load.
 - Icons: one per family+shape per lane (laced gets the grimier bottle), grade via frame color; art.gd keys per id.
 - Codex: consumable reference gains all lanes (codex staleness rule); the Sable Court fence joins the roster docs.
-- Tests: autotest consumable sections re-anchored to graded ids; sting debuffs and over-time drips get wall-clock waits; econ_audit re-run after pricing.
+- Synthesis: the Alkahest Codex is a learned flag (per character, rides the save); Grand potions are new graded ids above S with no drawback field; the synthesis UI lives at Kesh (or the plaza alembic pre-Alchemy) and consumes 1 clean S + 1 laced A + gold. In-game codex documents the recipe once the Codex is learned.
+- Crafting (§11): reagents are a new `kind:"material"` sub-family (PROFESSIONS §2 gains a Reagent row); mob loot tables roll them only when Alchemy is known (a `has_profession("alchemy")` gate on the drop). Recipes are `kind:"recipe"` learn-on-click, keyed (family, shape, grade). Alchemy craft caps at A; the recipe list has no S entry.
+- Tests: autotest consumable sections re-anchored to graded ids; sting debuffs and over-time drips get wall-clock waits; econ_audit re-run after pricing; a synthesis test asserts the S+A consume and the drawback-free Grand output; a craft test asserts reagent-gating (no reagent drop without the profession) and grade↔reagent-quality matching.
 
-## 11. Open taste calls
+## 13. Open taste calls
 
 1. **Top-end sanity vs late-act income**: F (250g) is anchored to measured ch1/ch2 income; the 90k–300k S band is a statement of intent with no Act 2/3 economy to check it against yet. Re-run econ_audit when Act 2 gold exists and re-fit D→A so the mid-grades track actual wealth bands.
 2. **Exact-bottle loadout slots** (my rec — plan the specific entry) vs slot-the-family, drink-cheapest-first.
 3. **Names/flavor red-pen** — the eight S uniques (Heartsblood / Everbloom / Stormglass / Starwater / Giantsblood / Adamant / Dawnmend), the "Accordmark" C-tier prefix (renamed from Guildmark in v9), and the street lanes' voice.
 4. **Black-market placement** — the Sable Court fence + road smuggler, or somewhere else?
+5. **Synthesis (§9)** — (a) one master Alkahest Codex vs per-family blueprints (per-family = more chase + more gold sinks, the ladder-heavy option); (b) Codex name; (c) Grand potion magnitudes per family; (d) can a Grand potion itself ever drop, or synthesis-only?
+6. **Crafting (§11)** — (a) should a pure gatherer be able to brew the lowest grades from herbs ALONE (no reagent), so non-fighters aren't locked out of F/E? (b) reagent tiers: 4 shown (Common/Uncommon/Elite/Boss) — finer? (c) do reagents drop from ALL mobs of a tier or only thematically-matched ones (wolf→Might, spider→Warding)? matched is more flavorful but can starve a family; (d) boss reagent repeat-drop rate.
