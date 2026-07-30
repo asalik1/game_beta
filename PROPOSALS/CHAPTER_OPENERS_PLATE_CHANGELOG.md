@@ -21,7 +21,12 @@ beyond the few flagged keeps below.
 ## Fully SAFE chapters (zero changes — do not regenerate)
 
 - **ch2** — all 8 plates.
-- **ch14** — all 9 plates (incl. the `crown_hollow` rhyme plate).
+- **ch14** — 8 of 9 plates (incl. the `crown_hollow` rhyme plate).
+  **Exception added 2026-07-30:** `opening_ch14_1` — REGENERATE: Mórwyn
+  on the causeway now includes ELARA at the causeway's foot — small
+  foreground figure, fifteen, standing her ground to watch her mother's
+  gait go by (owner call: she is the chapter's asker and belongs in
+  frame).
 
 ## Act 1 — stale plates (13)
 
@@ -146,10 +151,24 @@ changed too (new beats) — re-read those blocks. Regenerate:
   planted inside a man-tall storm-word telegraph, reading it to the end
   instead of dodging.
 
+## 2026-07-30 update — no further visual changes
+
+Three later narrative passes hit the doc (ch2 canon fix, the asker/
+internal-deliberation restructure, the Ember Crown ruling) and changed
+**one additional plate visual**: `opening_ch14_1` gains Elara (see the
+ch14 exception above). Other notes: ch2's `opening_ch2_0` is now
+captioned as a FLASHBACK (first fall, thirty years past — same image),
+and ch14's `crown_hollow` plate now depicts a canonical object (the
+enthroned hollow band) with no composition change.
+
+**Dialogue drift is tracked separately** — if you also built the opener
+CONVOS (commit 586f244), see `CHAPTER_OPENERS_DIALOGUE_CHANGELOG.md`:
+the build's source snapshot predates several text passes.
+
 ## Tally
 
 | | Stale | Safe |
 |---|---|---|
 | Act 1 (ch2–ch7) | 13 | 36 |
-| Act 2 (ch8–ch14) | 19 | 29 |
-| Total | 32 | 65 |
+| Act 2 (ch8–ch14) | 20 | 28 |
+| Total | 33 | 64 |

@@ -82,6 +82,32 @@ spine says what the chapter IS; the class turn says what it means TO YOU:
   the model). Vary camera and scale per class across chapters — closeup,
   wide, over-shoulder, reflection — or thirteen openers become one
   painting with palette swaps.
+- **The question comes from the WORLD, never from the power.** In every
+  ch1 opener a person in the scene asks (Bren, the Carter, the Mother,
+  Ren, Osric, the Tome-as-presence) and the options are REPLIES. Chapter
+  openers do the same: each chapter names an ASKER — a figure standing in
+  the spine's scene, never the chapter's briefing NPC — whose n4 prompt
+  the class-voiced options answer. The Ember/chain/tome may lean in n3;
+  it never polls you. (v2 defect, owner-caught: thirteen chapters of the
+  narrator asking "what do you think" is one scene with palette swaps.)
+- **Two prompt modes (owner call, 2026-07-29).** PUBLIC chapters — ch3,
+  ch4, ch6, ch7, ch8, ch11, ch12, ch14 — keep the external asker: the
+  options are spoken replies. PRIVATE chapters — ch2, ch5, ch9, ch10,
+  ch13 — go INTERNAL: the world still supplies a concrete trigger (the
+  offered pen, the barred shaft), but the deliberation is the
+  character's own, and the TEMPTATION option is written in the vice's
+  own voice — the shard/chain/tome speaking in CAPS (the ch1 paladin's
+  "HE IS YOURS" convention). Choosing it means agreeing with its
+  account. Where the vice is the character's own wish rather than the
+  power's (ch5's warrior), it stays quiet lowercase — hidden FROM the
+  shard. Budget: the power speaks inside temptation options ONLY in
+  these five chapters — five times a campaign, class-voiced, rare enough
+  to chill.
+- **No false promises.** Every option either resolves inside the cutscene
+  (ch1's kneel, ch1's walk) or is a stance on HOW the chapter's mandatory
+  events get done — never on WHETHER. A deflection that vows to leave the
+  saint alone is a lie the boss wall exposes an hour later (v2 defect,
+  owner-caught: ch3's assassin, all six ch12 deflections).
 - **Replies + fade:** each option gets a short reply node (drafted at
   build, ch1-style) and the shared `fade` travel hook.
 - **The echo:** the chapter's existing briefing NPC gains one read-back
@@ -102,18 +128,35 @@ spine says what the chapter IS; the class turn says what it means TO YOU:
 **Shared spine** *(cue `shatter`)*
 - `opening_ch2_0` — the Ember Crown mid-shatter, fragments streaking out
   over a darkened map of Vaelscar. Deliberate rhyme with the `crown` plate:
-  same composition, breaking.
+  same composition, breaking. (A FLASHBACK plate — the first fall, thirty
+  years past; visual unchanged.)
 - `opening_ch2_1` — the quiet years: a road, refugee wagons, blight-green
   creeping along a fence line no one repaints.
-- n1 — "Vargoth fell. The Crown did not surrender — it SCATTERED. Every
-  fragment took a piece of the fire with it, and went looking for a hand to
-  close around it."
-- n2 — "Years, then. The kingdom did not heal; it settled, the way a broken
-  bone settles when nobody sets it. The land began — there is no better
-  word — to WAKE. And the shards began to choose."
+- n1 — "Thirty years ago, Ser Aldric's blade found the Hollow King, and
+  the Ember Crown shattered — not into metal, but into PEOPLE. You know
+  this the way you know your own scar: one of those pieces has been in
+  your chest since before you had a name for it. Vargoth told you so
+  himself, at the end."
+- n2 — "Then came the second fall — yours. The years since have not
+  healed the kingdom; they have WOKEN it. All across Vaelscar the old
+  scatter is stirring: shards that slept thirty years in farmhands and
+  deserters are opening their eyes, the factions count the newly-woken
+  like a harvest, and an old woman keeps a fire at the crossroads to
+  reach them first."
+- *(Canon: `story.gd:1272-1341` — the Crown shattered at the FIRST fall,
+  thirty years back; the player's shard predates ch1, and Vargoth names
+  it: "A piece of me, walking about in someone else's chest." The v2
+  draft wrongly put the scatter at the second fall — owner caught it.)*
 
-**Class turns** — the shared question is "how did you carry the quiet
-years?", and each class answers from inside its ch1 ending.
+**The trigger + n4 (INTERNAL)** — the stranger across Maren's fire, a
+fellow newly-woken with the shard-glow still fresh under their wrist:
+"I got mine in the spring. You've had yours a while, haven't you. …How
+did you carry it?" You look into the fire instead of answering. The
+shard was there for all of it — and it offers its account FIRST. Each
+class's temptation below is the shard's version of the years, in its own
+voice; choosing it means agreeing with its memory.
+
+**Class turns** — each class answers from inside its ch1 ending.
 
 **Warrior — the counted gaps.** Plate: a woodpile split far past need, axe
 still in hand, dawn light.
@@ -123,8 +166,9 @@ still in hand, dawn light.
   of the gaps."
 - "Point it at work. Every gap ended with something BUILT — you made the
   blackout a carpenter." → **+6** `ch2_kept_faith`
-- "Stop fighting it. You picked the nights, walked past the tree line, and
-  let it swing until IT was tired." → **−6** `ch2_fed_ember`
+- "YOU PICKED THE NIGHTS. YOU WALKED PAST THE TREE LINE AND LET ME SWING
+  UNTIL I WAS TIRED — AND YOU SLEPT SOUND, AFTER. SAY IT WAS US." →
+  **−6** `ch2_fed_ember`
 - "Chain it. No sword in the house, sleep tied to the bedpost, and never
   once ask it what it wanted." → **0** `ch2_buried_it`
 
@@ -136,8 +180,8 @@ hooded figure; every stall-candle leaning toward them.
   at you like debt collectors who already knew the address."
 - "Pay forward. Every winter you found the freezing and sat with them —
   let it take from YOU for a change." → **+6** `ch2_kept_faith`
-- "Take on schedule. A little from many, none the wiser, you well-fed —
-  you made the theft a tax." → **−6** `ch2_fed_ember`
+- "A LITTLE FROM MANY, NONE THE WISER, BOTH OF US FED. WE MADE THE THEFT
+  A TAX — AND THE TAX WAS FAIR." → **−6** `ch2_fed_ember`
 - "Starve it. Sleep cold, eat thin, touch no one. It waited. It is very
   good at waiting." → **0** `ch2_buried_it`
 
@@ -148,8 +192,8 @@ boy's grey mark sketched a hundred times over pinned pages.
   your green light was NOT."
 - "Keep it burning. Every remedy, every archive, every road that rumored a
   cure — the promise aged better than you did." → **+6** `ch2_kept_faith`
-- "Refine the light. To fix the spell you cast it again — smaller,
-  controlled, on things that couldn't consent." → **−6** `ch2_fed_ember`
+- "WE CAST IT AGAIN. SMALLER. CONTROLLED. ON THINGS THAT COULD NOT SAY
+  NO — HOW ELSE DOES ANYONE LEARN?" → **−6** `ch2_fed_ember`
 - "File it away. The boy stopped writing back; the journals went in a
   chest. Some spells you outlive." → **0** `ch2_buried_it`
 - *(Continuity: the "promise" is her PRIVATE vow on every ch1 branch —
@@ -169,8 +213,8 @@ ridge; one gate open; a small light in the farmhouse.
   small remembered sound. The latch."
 - "Answer it. Walk down, sit at Ren's table, and let the stranger-distance
   be a thing you both work at." → **+6** `ch2_kept_faith`
-- "Cut the habit too. The ridge road is a thread you are still holding —
-  stop taking it, and get lighter." → **−6** `ch2_fed_ember`
+- "THE RIDGE ROAD WAS A THREAD AND WE CUT IT. YOU FELT THE LIGHTNESS.
+  YOU LIKED IT. SAY YOU LIKED IT." → **−6** `ch2_fed_ember`
 - "Keep the ritual. The ridge, the smoke-count. Near enough to know; far
   enough to owe nothing." → **0** `ch2_buried_it`
 - *(Build note: gate option wording with `req_flag` where a ch1 branch
@@ -186,8 +230,8 @@ wall, out of reach.
 - "Rule anyway — slowly. You heard every case twice: once as yourself,
   once listening for which verdict the chain leaned on. You ruled against
   the lean." → **+6** `ch2_kept_faith`
-- "Let it draft. The chain's verdicts were fast, clean, and popular. You
-  started reading them aloud unedited." → **−6** `ch2_fed_ember`
+- "MY VERDICTS WERE FAST, CLEAN, AND LOVED. YOU READ THEM ALOUD
+  UNEDITED — AND NOT ONE VILLAGE APPEALED." → **−6** `ch2_fed_ember`
 - "Decline the bench. 'Find a magistrate.' Let the chain argue with an
   empty room." → **0** `ch2_buried_it`
 
@@ -200,9 +244,9 @@ candle burned to its ring — and a second ring, older, beside it.
 - "Audit it. You learned its grammar, listed every asset 'what you traded'
   could mean, and crossed off what you could prove still yours." → **+6**
   `ch2_kept_faith`
-- "Borrow small. A candle here, a candle there — for good causes, mostly.
-  The debt is deeper and your reasons were excellent." → **−6**
-  `ch2_fed_ember`
+- "A CANDLE HERE, A CANDLE THERE — FOR GOOD CAUSES, MOSTLY. THE DEBT IS
+  DEEPER AND YOUR REASONS WERE EXCELLENT. *(The tome's account. In your
+  handwriting.)*" → **−6** `ch2_fed_ember`
 - "Freeze the account. The tome stayed wrapped in the pack's bottom.
   Unopened. Warm." → **0** `ch2_buried_it`
 
@@ -234,6 +278,10 @@ versions of the deed — write to the stance, never the specifics.)*
   of it all kneels Saint Varo — the one man the rot refuses, worshipped
   for the refusing, asking the one mercy the Vale no longer stocks."
 
+**The asker (n4)** — the gate's counting-cantor, looking up from her
+ledger as the procession shuffles past: "State your business with the
+unburied, pilgrim."
+
 **Warrior — harm that stays standing.** Plate: the warrior stilled
 mid-stride as the procession parts around him, sword-hand hanging open.
 - n3: "Every dead thing here is an aftermath still on its feet. You know
@@ -257,8 +305,8 @@ assassin's shadow stretched toward him up the grave-rows, leaning.
 - "Learn the refusal. Whatever keeps the rot's hands off him could keep
   YOUR Ember's hands off everyone else — take the technique." → **−6**
   `ch3_covets_rot`
-- "Keep distance. A thing the rot won't touch is a thing you shouldn't
-  either." → **0** `ch3_eyes_forward`
+- "No gifts, no studies. If the saint must fall, let it be clean
+  stranger's work — in, through, gone." → **0** `ch3_eyes_forward`
 
 **Mage — the mark writ large.** Plate: a walking corpse passing the mage
 close on the grave-road — on its jaw, a bloom of grey; the mage arrested
@@ -345,6 +393,10 @@ signing the work.
   longer-working, unblinking at the fire. Improved, the overseers say.
   And in the sermon-hall, the smiths have begun to notice that when the
   chaplain says GUILTY, the fire leans in."
+
+**The asker (n4)** — the crew-boss at the furnace corridor's mouth, her
+roped crew filing past behind her: "You're not signed. So what's a
+foundry to you, stranger?"
 
 **Paladin — the chain meets the Judge.** Plate: Ordo mid-verdict, arm
 extended, the forge-fire behind him leaning the same direction as his
@@ -458,6 +510,10 @@ evil.
   shelf, the vault grows a row at a time — and there is always an empty
   bed."
 
+**The trigger + n4 (INTERNAL)** — a Long Sleep sister at the sledge line
+offers the open ledger and the pen, and says nothing at all. The pen
+hangs there. The deliberation is yours — and the shard gets a word in.
+
 **Assassin — the hush with no bill.** Plate: the vault in blue light, rows
 of the kept; one turned-down empty bed, and the assassin's lantern the
 only warm color in frame.
@@ -467,8 +523,9 @@ only warm color in frame.
   to a bed like that. There is an empty one."
 - "Wake them. You know what 'kept' costs from the taking side — nobody
   down there agreed to the real price." → **+6** `ch5_vowed_morning`
-- "Lie down. Just to hear the hush from inside. The Ember can't spend what
-  the ice holds still." → **−6** `ch5_felt_pull`
+- "LIE DOWN. ONE TENCOUNT IN THE EMPTY BED. WHAT THE ICE HOLDS STILL I
+  CANNOT SPEND — AND YOU ARE SO TIRED OF MY SPENDING." → **−6**
+  `ch5_felt_pull`
 - "Their beds, their business. Clear the road, tithe the cult nothing,
   touch no ledgers." → **0** `ch5_kept_ledger`
 
@@ -481,8 +538,8 @@ at the roadside, exactly between the child and the ice.
   a farmhouse window from the ridge."
 - "Threads are for holding. Wake them into their own winters and stand
   there while they re-tie." → **+6** `ch5_vowed_morning`
-- "Envy them cleanly. All the lightness, none of the walking — ask what
-  the intake ledger requires." → **−6** `ch5_felt_pull`
+- "ALL THE LIGHTNESS, NONE OF THE WALKING. EVERY THREAD AT ONCE, AND NO
+  ROAD AFTER. ASK WHAT THE LEDGER REQUIRES." → **−6** `ch5_felt_pull`
 - "Neither wake nor join. Count the beds like chimney smoke — near enough
   to know — and move on." → **0** `ch5_kept_ledger`
 
@@ -494,8 +551,9 @@ shelf above the vault; below, hundreds of hands folded and still, forever.
   forever. It is the only guarantee you have ever been offered."
 - "Mornings over guarantees. Wake them, and keep waking — a held sword
   beats a buried one." → **+6** `ch5_vowed_morning`
-- "Price the bed. Not for the peace — for the CONTAINMENT. One sleeper
-  down there could never hurt a miller again." → **−6** `ch5_felt_pull`
+- "Price the bed — not for the peace, for the containment. Think it
+  quietly, so the shard doesn't hear: one sleeper down there never hurts
+  a miller again." → **−6** `ch5_felt_pull`
 - "Fight what's awake. The Queen's problem is the Queen; leave the
   sleeping to their bargain." → **0** `ch5_kept_ledger`
 
@@ -507,9 +565,9 @@ the sick-flush frozen on their face like paint that will never dry.
   it would stop. Stopping is not undoing. You know that. You KNOW that."
 - "The promise says undone, not paused. Wake them into cures, however long
   cures take." → **+6** `ch5_vowed_morning`
-- "Test the stillness. One bloom of grey under the Queen's cold — if it
-  halts the mark, the boy sleeps a winter and wakes clean-ish." → **−6**
-  `ch5_felt_pull`
+- "ONE BLOOM OF GREY UNDER HER COLD. IF THE MARK HALTS, THE BOY SLEEPS A
+  WINTER AND WAKES CLEAN. YOU HAVE CAST ON WORSE ODDS — WE BOTH
+  REMEMBER." → **−6** `ch5_felt_pull`
 - "Study nothing here. Preservation is her domain and her invoice; you
   have one open account already." → **0** `ch5_kept_ledger`
 
@@ -524,8 +582,9 @@ where the witness should stand.
 - "Coercion doesn't need a knife. Void the winter's terms: grain stays,
   sleepers wake, and the cult renegotiates with ME." → **+6**
   `ch5_vowed_morning`
-- "Uphold the contracts. The chain is warm with certainty: consent given
-  is consent kept — enforce the ledgers as written." → **−6** `ch5_felt_pull`
+- "CONSENT GIVEN IS CONSENT KEPT. THE LEDGERS ARE LAWFUL. ENFORCE THEM
+  AS WRITTEN — OR ADMIT YOUR MERCY OUTRANKS THE LAW." → **−6**
+  `ch5_felt_pull`
 - "Rule narrow. The road must open; everything else is out of
   jurisdiction." → **0** `ch5_kept_ledger`
 
@@ -539,9 +598,8 @@ headings from three places back.
   have read this instrument before. You are STANDING in one."
 - "Call the loan early. Wake them before the Queen's 'morning' names its
   real price." → **+6** `ch5_vowed_morning`
-- "Meet the lender. A creditor patient enough to freeze centuries has
-  terms worth hearing — professional to professional." → **−6**
-  `ch5_felt_pull`
+- "A CREDITOR PATIENT ENOUGH TO FREEZE CENTURIES. TERMS WORTH HEARING,
+  PROFESSIONAL TO PROFESSIONAL. INTRODUCE US." → **−6** `ch5_felt_pull`
 - "Neither borrow nor foreclose. Clear the ridge and leave the ice its
   portfolio." → **0** `ch5_kept_ledger`
 
@@ -572,6 +630,9 @@ half the flock knelt on sight.
   came out half its size — the rest stayed, knee-down in the moss.
   Somewhere at the heart of the green, a shaman went looking for a cure
   and found a congregation."
+
+**The asker (n4)** — a glad-eyed kneeler, catching your sleeve at the
+gate: "It gives, stranger. It only ever gives. Will you not take?"
 
 **Mage — THE green.** Plate: the green light rising off the waterline in
 the exact SHAPE of her old healing light — and the mage a step back from
@@ -614,8 +675,8 @@ heal the way other men watch a fire.
 - "Test it properly. If the Deep unmakes damage, then in the green the
   blackout is FREE — let it off the leash where nothing can die." → **−6**
   `ch6_answered_green`
-- "Burn it back. A world where breaking doesn't count is a world where
-  nothing does. You need the count." → **0** `ch6_would_burn`
+- "Refuse the absolution. Break what the road demands, count every
+  breaking, and let none of it grow over you." → **0** `ch6_would_burn`
 
 **Assassin — the giving thing.** Plate: the green offering fruit into the
 column's open hands; the assassin's hands the only ones behind their back.
@@ -699,6 +760,11 @@ speaker has stopped speaking.
 - n2 — "The last speaker has stopped speaking. He stands on the ridge with
   his mouth closed, and he is not resting — he is LISTENING. And the sky
   has begun, very quietly, to finish his sentences for him."
+
+**The asker (n4)** — Apprentice Sorrel, falling in step on the summit
+road: "Everyone up there asks about the drake. Nobody asks about the
+SENTENCE. What are words, to you?" *(Maren's echo already names her —
+the wiring pays twice.)*
 
 **Warlock — contracts of speech.** Plate: the relay-chain redrawn as a
 single unbroken line of script winding ridge to ridge; the tome beneath
@@ -843,6 +909,10 @@ invoice.
   only reason to look closely." / `joined_accord`: "Your writ says
   infiltrate. The ash does not care whose seal is on your papers.")*
 
+**The asker (n4)** — a journeyman who walked out mid-indenture, feeding
+the defectors' cold fire one splinter at a time: "Going in, then. To
+cool it, to copy it, or just to kill it — which?"
+
 **Paladin — the maker's-mark.** Plate: the paladin's hammer held up
 against the city's oldest foundry gate — and on both, the same
 maker's-mark. *(Canon-safe: the ch1 opener puts the Ember IN the hammer —
@@ -981,6 +1051,11 @@ Kaethra-conditional, keyed on the ch6 finale flags
   cutting in your pack turned over in the night. It is pointing at the
   city like a compass needle.")*
 
+**The trigger + n4 (INTERNAL)** — the cure-seekers' map-runner shows you
+a chart the city corrected overnight, then wades off to re-survey. You
+stand at the waterline holding the wrong map. Below is a god that talks.
+The shard has opinions about gods that talk.
+
 **Mage — the sister wound.** Plate: Kaethra grown into the junction wall
 (or her faceless echo), and beside the image, small, a page of the mage's
 own journal — the handwriting nearly the same.
@@ -990,10 +1065,10 @@ own journal — the handwriting nearly the same.
   the ending still wet."
 - "She is what the boy could become. Cut tethers, never wire — and take
   the truth home whole this time." → **+6** `ch9_spares_the_wire`
-- "The Root answered her question. It could answer YOURS — get close to
-  the relay and ask about grey marks." → **−6** `ch9_would_bargain`
-- "Flood the archives behind you. Some answers cost more asked than
-  unasked." → **0** `ch9_seals_behind`
+- "IT ANSWERED HER. IT WILL ANSWER YOU. GET CLOSE TO THE RELAY AND ASK
+  ABOUT GREY MARKS — ASKING IS NOT TAKING." → **−6** `ch9_would_bargain`
+- "Let the water keep the answers. Some questions cost more asked than
+  unasked — pass through, and open nothing." → **0** `ch9_seals_behind`
 
 **Archer — threads through people.** Plate: a cure-seeker wading,
 oblivious, through root-threads strung in one wrist and out the
@@ -1004,11 +1079,11 @@ collarbone — visible only to the archer in the foreground.
   through. You can't stop."
 - "Wire is people. Cut only tethers, and walk the seekers out along the
   lines they can't see." → **+6** `ch9_spares_the_wire`
-- "Follow one thread all the way in. A weaver who works in people could
-  rework what got severed in YOU — the Deep already offered once." →
+- "FOLLOW ONE THREAD ALL THE WAY IN. A WEAVER WHO WORKS IN PEOPLE COULD
+  RESTRING WHAT I CUT. THE GREEN OFFERED ONCE. I AM OFFERING NOW." →
   **−6** `ch9_would_bargain`
-- "Seal the tunnels. A net you drown is a net that catches no one else." →
-  **0** `ch9_seals_behind`
+- "Close every door you pass. What the water holds it can keep — it just
+  catches no one NEW." → **0** `ch9_seals_behind`
 
 **Warrior — borrowed hands.** Plate: wire-people at work in the flooded
 dark — tying, hauling, holding — every posture competent, every face
@@ -1020,10 +1095,10 @@ absent.
   the wire goes slack."
 - "Nobody else wakes up in wreckage they didn't choose. Slack every wire
   gently; catch them as they come back." → **+6** `ch9_spares_the_wire`
-- "A god that borrows hands could take the blackout OFF yours — offer the
-  Root a trade it already knows how to use." → **−6** `ch9_would_bargain`
-- "Drown the junctions. A wire underwater moves nothing." → **0**
-  `ch9_seals_behind`
+- "IT BORROWS HANDS. IT COULD BORROW ME. OFFER IT THE TRADE — AND WAKE
+  UP INNOCENT FOREVER." → **−6** `ch9_would_bargain`
+- "Break the junctions as you pass, and let the water hold what falls. A
+  wire underwater moves nothing." → **0** `ch9_seals_behind`
 
 **Assassin — the god that negotiates.** Plate: a root-tendril curled on a
 stone table in the shape of an open hand — palm up, patient, waiting.
@@ -1035,11 +1110,11 @@ stone table in the shape of an open hand — palm up, patient, waiting.
 - "You never got to bargain either — the Ember just took. Spare the wire
   the courtesy nobody spared you: get them out un-negotiated." → **+6**
   `ch9_spares_the_wire`
-- "A power that deals is a power that can be dealt DOWN. Sit at the
-  table; open with the Ember's appetite as collateral." → **−6**
+- "IT DEALS. I NEVER LEARNED HOW. SIT US AT THE TABLE AND OPEN WITH MY
+  APPETITE — SEE WHAT A GOD BIDS FOR A HUNGER LIKE MINE." → **−6**
   `ch9_would_bargain`
-- "Never bargain wet. Seal the water behind you and keep your pockets
-  shut." → **0** `ch9_seals_behind`
+- "Never bargain wet. Pass through with your pockets shut and leave the
+  water sitting between you and its table." → **0** `ch9_seals_behind`
 
 **Paladin — the defendant that inherits.** Plate: an imperial courtroom
 under water, root-mass on the bench, in the dock, and in the gallery —
@@ -1051,9 +1126,11 @@ all one organism.
   only decide who drowns in it."
 - "Protect the witnesses. The wire comes out alive; the Root can answer
   in a later court." → **+6** `ch9_spares_the_wire`
-- "Depose it. The relay talks — take testimony straight from the god,
-  whatever the hearing costs the wire." → **−6** `ch9_would_bargain`
-- "Summary judgment: seal the undercity. Appeals in the spring." → **0**
+- "THE RELAY TALKS. TAKE TESTIMONY FROM THE GOD ITSELF, WHATEVER THE
+  HEARING COSTS THE WIRE. TRUTH OUTRANKS WITNESSES." → **−6**
+  `ch9_would_bargain`
+- "No hearings below the waterline. Do what the descent demands and let
+  the water keep custody of the rest. Appeals in the spring." → **0**
   `ch9_seals_behind`
 
 **Warlock — the inheritor.** Plate: a drowned guildhall strongroom, root
@@ -1065,10 +1142,11 @@ knots — ownership dissolving in real time.
   consent, no clause, no debt. Even your creditor thinks it's cheating."
 - "No one consents to being plumbing. Cut the wire free, estate by
   estate." → **+6** `ch9_spares_the_wire`
-- "A power that needs no signature could void one that DID. Ask the Root,
-  through the relay, what it takes to eat a contract." → **−6**
-  `ch9_would_bargain`
-- "Flood the probate court. What the Root can't reach it can't inherit." →
+- "Ask the Root, through the relay, what it takes to eat a contract.
+  *(The tome pressed itself shut ON YOUR HAND as you thought it. You are
+  still thinking it.)*" → **−6** `ch9_would_bargain`
+- "Contest nothing, sign nothing, save nothing it can bill you for. Take
+  the one path through and leave the water holding the paperwork." →
   **0** `ch9_seals_behind`
 
 **Echo:** briefing NPC (a Wildfang cure-seeker foreman — the bible puts
@@ -1101,6 +1179,11 @@ everything warm had been taken from her.
   / `ch5_felt_pull`: "The hush you leaned toward under the ice — it has a
   name now, and the name is a child's.")*
 
+**The trigger + n4 (INTERNAL)** — the singer barring the shaft mouth
+breaks off mid-hymn: "If you go down to her — go down carrying WHAT?"
+You push past without answering. The answer happens on the long climb
+down, in the blue dark, where the shard's voice carries best.
+
 **Mage — the founding debt.** Plate: the cocoon, and reflected faintly in
 its crystal face, not the mage's own reflection but a forge-town burning.
 - n3: "Elara's father died of the blight — Mórwyn's domain, the same
@@ -1110,9 +1193,9 @@ its crystal face, not the mage's own reflection but a forge-town burning.
   power's era costs the people it doesn't choose."
 - "Then owe her. Carry the warm thing down, hold the door open, and pay
   the founding debt in person." → **+6** `ch10_carries_warmth`
-- "The Queen filtered through a child is the weakest a god-king will EVER
-  be — and you need to study one before Mórwyn. Strike through." → **−6**
-  `ch10_strikes_through`
+- "A GOD FILTERED THROUGH A CHILD IS THE WEAKEST IT WILL EVER BE. YOU
+  NEED TO HAVE STUDIED ONE BEFORE THE HOLLOW FLAME. STRIKE THROUGH — I
+  WILL HOLD YOUR HAND STEADY." → **−6** `ch10_strikes_through`
 - "The cult built the shrine; the cult answers. Keep your arithmetic out
   of it." → **0** `ch10_blames_cult`
 
@@ -1125,8 +1208,8 @@ warrior at its lip, sword half-drawn, his own breath the only movement.
   yourself the whole way down."
 - "Stay yourself. Carry warmth, swing late, and be the first blade she
   sees that waited." → **+6** `ch10_carries_warmth`
-- "Let the arm decide at the cocoon. It has always known what you won't
-  admit wanting — and it never hesitates on the downswing." → **−6**
+- "LET THE ARM DECIDE AT THE COCOON. I HAVE ALWAYS KNOWN WHAT YOU WON'T
+  ADMIT WANTING. I NEVER HESITATE ON THE DOWNSWING." → **−6**
   `ch10_strikes_through`
 - "Bind the cult, starve the shrine, and make the singers undo what the
   singing built." → **0** `ch10_blames_cult`
@@ -1142,9 +1225,9 @@ own; a web with no anchor points.
 - "Bring her a real one. One thread that doesn't pull, offered beside the
   Queen's fakes — held out until she takes it, or doesn't." → **+6**
   `ch10_carries_warmth`
-- "Nothing anchors her — the Queen grips a girl with no handles. One shot
-  through the cocoon and the grip closes on NOTHING. It would even be
-  clean." → **−6** `ch10_strikes_through`
+- "NOTHING ANCHORS HER. THE QUEEN GRIPS A GIRL WITH NO HANDLES — ONE
+  SHOT AND THE GRIP CLOSES ON NOTHING. IT WOULD EVEN BE CLEAN. I CUT
+  CLEANER." → **−6** `ch10_strikes_through`
 - "The cult spun the web; the cult unspins it. Warrant first." → **0**
   `ch10_blames_cult`
 
@@ -1159,9 +1242,9 @@ ch1's "take my warmth back" beat — flagged, not accidental).
   contract. You've BEEN this contract."
 - "Break it the way nobody broke yours: warmth returned, no charge, and
   stay till dawn." → **+6** `ch10_carries_warmth`
-- "Trust funds can be raided. Strike through the trustee while the
-  assets are still liquid — before the Queen finishes moving in." →
-  **−6** `ch10_strikes_through`
+- "TRUST FUNDS CAN BE RAIDED. STRIKE THE TRUSTEE WHILE THE ASSETS RUN
+  LIQUID — AND WHAT THE VAULT SPILLS, I WILL CATCH." → **−6**
+  `ch10_strikes_through`
 - "The cult brokered the deposit. Collect the brokers; leave the vault." →
   **0** `ch10_blames_cult`
 
@@ -1177,8 +1260,8 @@ raised in accusation while his own arms stay at his sides.
 - "When there is no one to punish, there is still someone to protect.
   Warm the plaintiff; let the charge stay empty." → **+6**
   `ch10_carries_warmth`
-- "Accept the chain's nomination. A vessel is the crime made flesh —
-  strike through the girl and call the case closed." → **−6**
+- "A VESSEL IS THE CRIME MADE FLESH. STRIKE THROUGH THE GIRL AND ENTER
+  THE CASE CLOSED. I WILL SIGN THE WARRANT MYSELF." → **−6**
   `ch10_strikes_through`
 - "There IS a hand: the ones who sang her down. Charge the cult, and let
   precedent sort the god." → **0** `ch10_blames_cult`
@@ -1195,9 +1278,9 @@ you have ever seen it keep.
 - "An empty deed can't be foreclosed — but it can be lived in again.
   Carry the warm thing down and help her repossess herself." → **+6**
   `ch10_carries_warmth`
-- "A trustee holding no security is a trustee with no claim. Strike
-  through the arrangement while the Queen owns nothing — the cheapest
-  god-kill there will ever be." → **−6** `ch10_strikes_through`
+- "A TRUSTEE WITH NO SECURITY HAS NO CLAIM. STRIKE WHILE THE QUEEN HOLDS
+  NOTHING — THE CHEAPEST GOD-KILL THERE WILL EVER BE. I HAVE RUN THE
+  NUMBERS TWICE." → **−6** `ch10_strikes_through`
 - "The brokers wrote a deal on an empty deed. Unwind the cult and let the
   escrow starve." → **0** `ch10_blames_cult`
 
@@ -1231,6 +1314,10 @@ slaughter.
   years, the Guard's last, no fire left in him at all — not choosing a
   side. GRADING them."
 - *(faction variants on n1, one line each, matching allegiance.)*
+
+**The asker (n4)** — the refugee with the door on his back, passing
+without stopping: "Two armies, both right. Where will you be standing
+when they stop being polite about it?"
 
 **Paladin — right v right.** Plate: the chain split down its length into
 grey-gold and flame-red strands, pulling evenly, the paladin's fist
@@ -1311,7 +1398,7 @@ faint, the AFTER-IMAGE of a fire that is no longer there, like a brand
 lifted from a page.
 - n3: "The tome cannot stop looking at the man on the wall. Aldric BURNED
   his Ember — principal, interest, the whole instrument, discharged in
-  one payment, forty years ago, on the first Vargoth's body. The only
+  one payment, thirty years ago, on the first fall's field. The only
   closed ledger in Vaelscar, walking around, breathing. The tome finds
   him obscene. You find him… instructive."
 - "A man who paid everything guards what's left honestly. Stand between
@@ -1351,6 +1438,10 @@ inside it.
 - *(flag variant on n2, `ch6_answered_green`: "The cutting you took in the
   Deep is heavier every day now. It is not growing. It is REPORTING.")*
 
+**The asker (n4)** — a Wildfang scout hammering in a warning-post at the
+treeline, the third replacement this month: "Signs don't hold it. What
+is YOUR answer to a land that will not die?"
+
 **Archer — a country of thread.** Plate: the horizon as pure weave —
 thread AS landscape — five great knots glowing at the center.
 - n3: "The whole horizon is weave. Not threads THROUGH things — thread AS
@@ -1361,8 +1452,9 @@ thread AS landscape — five great knots glowing at the center.
   give the country a hem." → **+6** `ch12_brings_ending`
 - "A weaver this size could re-string ANYTHING — walk to the hearts and
   show it the cut end you carry." → **−6** `ch12_would_garden`
-- "You don't unpick what you can't re-lay. Hem the borders and post the
-  warnings." → **0** `ch12_draws_borders`
+- "Unpick exactly what the road demands — five knots, no flourishes —
+  then hem the border behind you and post the warnings." → **0**
+  `ch12_draws_borders`
 
 **Warrior — the meaningless swing.** Plate: a sword-cut through a root
 wall, already sealing; the warrior watching it close with an unreadable
@@ -1376,7 +1468,8 @@ face.
   deliberately, heart by heart." → **+6** `ch12_brings_ending`
 - "Ask the Root to KEEP the arm asleep. It quiets what it grows through —
   a gardener's hands never black out." → **−6** `ch12_would_garden`
-- "Draw the border where the swing still counts, and hold it." → **0**
+- "Cut the five hearts because they must fall — not because it means
+  anything. Then draw the border, and hold it." → **0**
   `ch12_draws_borders`
 
 **Mage — the casterless working.** Plate: the five hearts drawn as a
@@ -1393,8 +1486,9 @@ root, waiting at that exact point.
 - "Take the maintainer's chair. A working needs no caster, but it will
   accept a GARDENER — and a gardener could grow one small grey-marked
   cure on the side." → **−6** `ch12_would_garden`
-- "Ward the perimeter and touch nothing. Live workings kill their
-  editors." → **0** `ch12_draws_borders`
+- "Edit nothing you don't have to. The hearts fall — that is surgery,
+  not authorship — then ward the perimeter and go." → **0**
+  `ch12_draws_borders`
 
 **Assassin — the thing without appetite.** Plate: a candle set at the
 green's edge as a test — burning dead straight, unleaned-at; the
@@ -1409,8 +1503,9 @@ assassin crouched behind it, watching the flame not move.
   for itself." → **+6** `ch12_brings_ending`
 - "Feed it the one thing it lacks: intent. Offer your hands as gardener
   and your hunger as seed." → **−6** `ch12_would_garden`
-- "Nothing to steal, nothing to save. Fence the border, warn the parish,
-  walk away." → **0** `ch12_draws_borders`
+- "Nothing to steal, nothing to save — just five hearts between you and
+  out. Do the job, fence the border, walk away." → **0**
+  `ch12_draws_borders`
 
 **Paladin — the country-sized defendant.** Plate: a Wildfang map-table:
 the region redrawn five times, older maps pushed off the table's edge;
@@ -1426,8 +1521,9 @@ crawls.
 - "Plea-bargain: the Root wants a warden it can grow around. Take the
   gardener's bench and call it a supervised sentence." → **−6**
   `ch12_would_garden`
-- "Adjourn sine die. Border, signage, and let the next generation
-  empanel." → **0** `ch12_draws_borders`
+- "Execute the warrant, not a verdict: five hearts, due force, no ruling
+  entered. Border and signage for whatever grows back." → **0**
+  `ch12_draws_borders`
 
 **Warlock — the solvent estate.** Plate: the warlock at the Roothold's
 treeline, holding the tome out toward the green like a talisman — and
@@ -1442,8 +1538,9 @@ nothing in the whole breathing country so much as leaning toward it.
 - "Apply for residency. A gardener inside a debtless estate is beyond
   every creditor's reach — including the one in your pack." → **−6**
   `ch12_would_garden`
-- "Draw the border at the treeline and keep your liabilities OUT of its
-  assets." → **0** `ch12_draws_borders`
+- "Settle only what blocks the road — five hearts, itemized, no interest
+  taken — then draw the border at the treeline and keep your liabilities
+  OUT of its assets." → **0** `ch12_draws_borders`
 
 **Echo:** briefing NPC (a Wildfang elder who remembers the Deep as a
 bog — this is their homeland's last argument). **Later payoff:**
@@ -1477,6 +1574,12 @@ your language.
   you meant it." / `ch7_let_it_end`: "You wanted to hear the world
   unmuzzled. Listen, then. It is saying something.")*
 
+**The trigger + n4 (INTERNAL)** — the youngest of the three speakers,
+hoarse between recitations *(the senior speaker stays the briefing
+NPC)*: "What is a name, in your hands?" You open your mouth to answer —
+and realize you have been mouthing storm-words all morning without
+choosing to. Some of the voice below is yours. Some is not.
+
 **Warlock — the first language.** Plate: the tome open beneath the glyph
 lightning, copying — and its own script visibly a child's hand beside the
 storm's.
@@ -1488,8 +1591,8 @@ storm's.
 - "Finish the vow. A recitation held six hundred years deserves speakers,
   not creditors — learn it whole and hand it on." → **+6**
   `ch13_finishes_the_vow`
-- "Hold the name. One true name, unshared, is the only collateral a
-  talking god respects — and the tome could be made to respect it too." →
+- "HOLD THE NAME. UNSHARED, IT IS THE ONLY COLLATERAL A TALKING GOD
+  RESPECTS — AND I WOULD RESPECT IT TOO. I WOULD HAVE NO CHOICE." →
   **−6** `ch13_holds_the_leash`
 - "Words are ordnance here. Learn what the fight needs, spend it on the
   fight, archive nothing." → **0** `ch13_spends_the_word`
@@ -1505,8 +1608,9 @@ the telegraph line, reading it to the end instead of dodging.
 - "Good arguments deserve a real hearing: finish the vow, learn the name,
   and retry the case with the sentence INTACT." → **+6**
   `ch13_finishes_the_vow`
-- "Hold the name as leverage over prisoner AND court. A judge who owns
-  the sentence answers to neither." → **−6** `ch13_holds_the_leash`
+- "HOLD THE NAME. LEVERAGE OVER PRISONER AND COURT ALIKE — A JUDGE WHO
+  OWNS THE SENTENCE ANSWERS TO NEITHER. NOT EVEN TO ME." → **−6**
+  `ch13_holds_the_leash`
 - "Motion denied, recitation cited, next case. Spend the words where the
   fight needs them." → **0** `ch13_spends_the_word`
 
@@ -1521,9 +1625,9 @@ across the ground, and the mage mid-dodge — reading it on the way past.
 - "Learn the whole sentence and speak it as MEANT — the first perfect
   work of your life, borrowed from six hundred years of imperfect
   mouths." → **+6** `ch13_finishes_the_vow`
-- "Keep the grammar. A name that instructs the world, held privately… the
-  boy's mark is also, technically, an instruction." → **−6**
-  `ch13_holds_the_leash`
+- "KEEP THE GRAMMAR. A NAME THAT INSTRUCTS THE WORLD, HELD PRIVATELY.
+  THE BOY'S MARK IS ALSO, TECHNICALLY, AN INSTRUCTION — AND INSTRUCTIONS
+  CAN BE REVOKED." → **−6** `ch13_holds_the_leash`
 - "Read only what dodging requires. Some curricula are priced to ruin the
   scholar." → **0** `ch13_spends_the_word`
 
@@ -1538,8 +1642,8 @@ it, listening despite himself.
 - "Finish the vow. If force can learn to speak, it can learn to stop
   mid-sentence — hold the line and learn the words that hold." → **+6**
   `ch13_finishes_the_vow`
-- "Take dictation. Let the storm teach the arm its grammar — a blackout
-  that SPEAKS could finally be negotiated with." → **−6**
+- "TAKE DICTATION. LET THE STORM TEACH ME GRAMMAR — IF I COULD SPEAK,
+  YOU COULD FINALLY NEGOTIATE. WOULDN'T YOU LIKE TERMS?" → **−6**
   `ch13_holds_the_leash`
 - "The arm doesn't need a thesaurus. Spend the words on the fight and
   keep your own silence." → **0** `ch13_spends_the_word`
@@ -1555,9 +1659,9 @@ lips pressed shut against it.
 - "Catch the strands. Learn the words as they were tied and splice the
   line back to strength — a thread of breath deserves one archer who
   holds." → **+6** `ch13_finishes_the_vow`
-- "Gather them PRIVATELY. Whoever winds the loose strands holds the whole
-  line — and every mouth that ever leaned on it." → **−6**
-  `ch13_holds_the_leash`
+- "GATHER THE STRANDS PRIVATELY. WHO WINDS THE LOOSE LINE HOLDS EVERY
+  MOUTH THAT EVER LEANED ON IT. YOU HAVE ALWAYS WANTED A THREAD THAT
+  CANNOT BE CUT." → **−6** `ch13_holds_the_leash`
 - "Field-strip the language: the words that win the fight, nothing more.
   Lines this old make poor slings." → **0** `ch13_spends_the_word`
 
@@ -1572,8 +1676,9 @@ fingers, half-swallowed already.
 - "Steal it FOR them. Assemble the name and hand it to the speakers
   whole — the one theft in your life with a return address." → **+6**
   `ch13_finishes_the_vow`
-- "Finders keepers. A leash on a god, held quietly — the first thing the
-  Ember ever took that could take BACK." → **−6** `ch13_holds_the_leash`
+- "FINDERS KEEPERS. A LEASH ON A GOD, HELD QUIETLY — THE FIRST THING I
+  EVER TOOK THAT COULD TAKE BACK. LET ME HAVE IT. LET US HAVE IT." →
+  **−6** `ch13_holds_the_leash`
 - "Spend the words in the fight, then burn your notes. Some loot marks
   its taker." → **0** `ch13_spends_the_word`
 
@@ -1595,7 +1700,10 @@ game's first image comes back wrong.
   by district.
 - `opening_ch14_1` — Mórwyn on the causeway: walking, unhurried, blight
   blooming in her footprints like a bridal train; both armies' lines
-  parting BEFORE she reaches them.
+  parting BEFORE she reaches them — and at the causeway's foot, small in
+  the foreground, a girl of fifteen standing her ground to watch her
+  mother's gait go by. Elara: the chapter's asker, in the frame (owner
+  call 2026-07-30).
 - `opening_ch14_2` *(shared third plate — the rhyme)* — the Hollow
   Throne, composed as an exact match of the game-opening `crown` plate:
   same angle, same framing, the crown's silhouette now hollow and burning
@@ -1614,6 +1722,12 @@ game's first image comes back wrong.
   into the ice — the Queen took the daughter; the Flame took the mother.
   Two god-kings, one family's grief. You are the only one on this field
   who has met both halves."
+
+**The asker (n4)** — Elara, at the causeway's foot, awake and steady and
+fifteen: "That is my mother's walk it is wearing. When you reach the
+throne — what did you come for?" *(Realizes the approved Elara–Mórwyn
+wiring; if the owner prefers Maren keeps the bookend, Maren asks and
+Elara stands beside her.)*
 
 **Mage — the marquee mirror.** Plate: Mórwyn and the mage facing across
 the causeway; between them, small, two identical green lights — hers old,

@@ -43,6 +43,55 @@ directly. Killing a vessel frees the god-king's power to seek a new host (or
 break free entirely if the seal is cracked enough). This is why Act 3 exists —
 Act 2 buys time; Act 3 is the reckoning.
 
+### The Ember Crown — The Fifth Instrument (owner ruling 2026-07-30)
+
+The Ember Crown is the Concord's fifth binding instrument — cousin to the
+four seals and the Cinderborn binding texts. Its rule is one line: **one
+head may hold many shards.** The crown is the SOCKET; the shards are the
+fire.
+
+This retro-explains what canon already shows:
+- Vargoth wore assembled fire for sixty years because the crown held it
+  assembled — a dead man in the socket.
+- Aldric's blade (thirty years ago — `story.gd:1273`) broke the socket's
+  GRIP, not the fire: the power scattered into people. "It did not
+  scatter into nothing."
+- What Vargoth wore in ch1 — and what "clatters to the stones, still
+  warm" at his second fall — is the hollow band: the socket without its
+  fire. A hollow king, a hollow crown.
+- The shards outrank the object for thirteen chapters because fire beats
+  socket — until someone owns both. Assembly needs the socket. That is
+  the Act 2 finale's engine and Act 3's stakes.
+
+**Whereabouts timeline:**
+- *Post-ch1:* the band is laid on the Ember Guard reliquary's stand — the
+  one that stood "empty sixty years" (`story.gd:351`; the room already
+  senses shard-bearers — Vargoth felt the player's hand on the stand).
+  Nobody dares wear it. The Accord watches it and does not talk about it.
+  (Lands as a post-ch1 text variant of the reliquary room — one line,
+  with the chapter-openers build or any ch2+ pass.)
+- *Mid-Act 2, ch11–ch12 window:* the stand is discovered EMPTY — a quiet
+  beat as faction tension peaks. Nobody claims the theft. (One convo line
+  in the ch11 or ch12 build.)
+- *ch14 reveal:* the Choir Ascendant's radical wing took it and ENTHRONED
+  it at the Hollow Throne — they have seen the Hollow Flame walking and
+  are preparing her coronation. This is why Mórwyn walks to the THRONE
+  and not the reliquary. The ch14 opener's `crown_hollow` plate depicts
+  exactly this — the band, enthroned, hollow, burning green (no art
+  change needed).
+
+**Endgame payoffs (already written, now literal):**
+- The Hollow ending's "the echo crowns itself with your shard-power"
+  (DESIGN.md) becomes mechanical fact — the socket is present at the
+  raid.
+- The ch14 opener's CROWNLESS option = break the socket forever, so no
+  one — god, echo, or player — can ever hold assembled fire again.
+- The Cinderborn's interest in the band (same instrument family as their
+  binding texts, §Ch8) is a free Act 2 subplot: whoever holds the crown
+  holds the argument.
+- Act 3's inciting question sharpens from "is she dead" to "who holds the
+  socket now."
+
 ### The True Name Quests
 
 600 years of the Concord meant 600 years of not speaking the god-kings'
@@ -554,7 +603,7 @@ sentence is a lightning bolt."*
 
 #### Aldric, the Burned-Out Ember — Chapter Finale
 **L60 · chapter finale · scripted duel · phys**
-*"He burned his Ember killing Vargoth. No power, no fire — just forty years of
+*"He burned his Ember killing Vargoth. No power, no fire — just thirty years of
 knowing exactly how you fight."*
 
 - **No abilities. No magic. No telegraphs.** Mundane sword, mundane speed.
@@ -705,7 +754,9 @@ walking and decided this is what holiness looks like."*
   blight aura (soft timer) + Choir adds that sing healing hymns.
   Adds are invulnerable while singing, interrupted by body-blocking their
   circle. Solo: prioritize. Co-op: one player per singer.
-- At 50%: reveals Mórwyn's position (story beat). Remaining rooms shift to
+- At 50%: reveals Mórwyn's position AND the crown (story beat): her wing
+  stole the hollow band from the reliquary and enthroned it — the
+  coronation is prepared (§I, The Ember Crown). Remaining rooms shift to
   blight terrain.
 
 #### The Burned King's Echo — What Vargoth Left Behind
