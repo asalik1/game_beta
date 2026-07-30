@@ -49,6 +49,7 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 |---|---|
 | `tools/art/extract_sheet.py` | pre-keyed animation sheet → engine clip strips (the alpha-key/solidify/mirror/feet-anchor pipeline; see `tools/art/README.md`). |
 | `tools/art/build_sprites.py` | rebuild every class sprite from source (per-class recipes codified), then re-import. |
+| `tools/art/build_gem_icons.py` | lore-authored 5×2 gem masters → 140 distinct 32px stat+level icons, hard-alpha QA sheet, desktop/mobile install. |
 | `tools/art/upscale_hero.py` | rebuild a dark-class hero from the ChatGPT upscales (white-key, rescale, feet-anchor to original layout). |
 | `tools/art/install_char_anims.py` | PixelLab character download zip → installed 8-dir clip strips. |
 | `tools/art/install_clip.py` | surgical per-clip strip installer (drift regens: replace ONE clip, touch nothing else). |

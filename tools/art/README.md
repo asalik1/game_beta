@@ -402,3 +402,20 @@ props (torches, braziers, banners, fires, water, foliage) come from the same
 packs' FX/prop sheets and Ninja Adventure. Live-biome art is owner-review-gated
 (taste call) — stage new environment art as a dev-only placeholder terrain
 first, exactly like `ph_ruins`.
+
+## Lore-authored gem icon sheets
+
+The gem redesign uses one strict 5x2 ImageGen master per gem family, with levels
+1-5 on the first row and 6-10 on the second. The progression is not a generic
+facet ladder: every family carries the corresponding
+`PROPOSALS/GEAR_FLAVOR/BAGS_GEMS.md` material and supernatural motif, and every
+level changes silhouette or internal language even inside one quality band.
+
+```bash
+python tools/art/build_gem_icons.py
+```
+
+The builder edge-keys the green/magenta screen (so enclosed Opal fire is not
+erased), downsamples fixed cells to native 32x32 hard-alpha icons, writes all
+140 `gem_<stat>_lv<level>.png` files, mirrors them to mobile, and writes the
+labelled `art_src/gems_2026-07-30/qa_contact_sheet.png`.

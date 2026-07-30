@@ -602,7 +602,7 @@ func _walk_items() -> void:
 		})
 	_add("consumables", "potion", "Health potion",
 		{"exposure": 10, "used_in": ["HUD potion button", "ground drop"]})
-	# Gem cut ladder (level 1-10) plus the stat colorways.
+	# Legacy neutral cut ladder plus every lore-authored stat+level family.
 	for lvl in range(1, Items.GEM_MAX_LEVEL + 1):
 		_add_rendered("gems", "gem_lv%d" % lvl, "Gem cut — Lv%d" % lvl,
 			Art.gem_icon(Color(0.85, 0.85, 0.95), lvl),
@@ -612,11 +612,12 @@ func _walk_items() -> void:
 		var stat := String(stat_key)
 		var gs: Dictionary = Items.GEM_STATS[stat]
 		var col: Color = gs.get("color", Color.WHITE)
-		_add_rendered("gems", "gem_stat_%s" % stat,
-			"Gem — %s" % gs.get("name", stat),
-			Art.gem_icon(col, 5),
-			{"exposure": 1, "used_in": ["socketed gem"],
-			 "meta": {"stat": stat, "color": col.to_html(false)}})
+		for lvl in range(1, Items.GEM_MAX_LEVEL + 1):
+			_add_rendered("gems", "gem_%s_lv%d" % [stat, lvl],
+				"%s — Lv%d" % [gs.get("name", stat), lvl],
+				Art.gem_icon(col, lvl),
+				{"exposure": 2, "used_in": ["bag / socket UI / ground drop"],
+				 "meta": {"stat": stat, "level": lvl, "color": col.to_html(false)}})
 	# Chests.
 	for tier_key in Items.CHEST_TIERS:
 		var tier := String(tier_key)

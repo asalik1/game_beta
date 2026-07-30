@@ -2434,18 +2434,45 @@ const GEM_ROWS := [
 ]
 
 
-## Gem icon tinted by the stat color. The CUT encodes the level (owner
-## rule, 2026-07-09: more cuts = higher tier — teardrop at Lv1 climbing
-## to octagon at Lv9/10): assets/icons/gem_lv<1..10>.png, neutral-grey
-## bases so the stat tint colors them; Lv10 gains a gold crown pip.
+## Resolve the stat identity from the exact Items.GEM_STATS color supplied by
+## every call site. Keeping the public color+level signature avoids making all
+## inventory/socket/mailbox callers depend on icon filenames.
+static func _gem_stat_for_color(col: Color) -> String:
+	var best_stat := ""
+	var best_distance := INF
+	for stat_key in Items.GEM_STATS:
+		var stat := String(stat_key)
+		var authored: Color = Items.GEM_STATS[stat]["color"]
+		var distance := absf(authored.r - col.r) + absf(authored.g - col.g) \
+			+ absf(authored.b - col.b)
+		if distance < best_distance:
+			best_distance = distance
+			best_stat = stat
+	return best_stat if best_distance <= 0.02 else ""
+
+
+## Lore-authored gem family + exact level:
+## assets/icons/gem_<stat>_lv<1..10>.png. Every level changes silhouette or
+## internal motif, with a shared rough 1-3 / cut 4-6 / fine 7-9 / perfected 10
+## quality rhythm. The old tintable cut ladder remains the missing-art fallback.
 ## 32x32, cached — bags hold a lot of gems.
 static func gem_icon(col: Color, lvl := 1) -> ImageTexture:
-	var key := "gemicon_%s_%d" % [col.to_html(false), lvl]
+	var safe_lvl := clampi(lvl, 1, 10)
+	var key := "gemicon_%s_%d" % [col.to_html(false), safe_lvl]
 	if _cache.has(key):
 		return _cache[key]
+	var stat := _gem_stat_for_color(col)
+	if stat != "":
+		var family := _icon_override("gem_%s_lv%d" % [stat, safe_lvl])
+		if family != null:
+			if family.get_width() != 32 or family.get_height() != 32:
+				family.resize(32, 32, Image.INTERPOLATE_NEAREST)
+			var family_tex := ImageTexture.create_from_image(family)
+			_cache[key] = family_tex
+			return family_tex
 	# Per-level cut first, then the shared gem.png (same seam as the ground
 	# drop, which modulates the neutral jewel by stat colour).
-	var override := _icon_override("gem_lv%d" % clampi(lvl, 1, 10))
+	var override := _icon_override("gem_lv%d" % safe_lvl)
 	if override == null:
 		override = _icon_override("gem")
 	if override != null:

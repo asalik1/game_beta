@@ -93,16 +93,11 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 			spr.texture = Art.icon_for(payload["item"])
 			spr.scale = Vector2(1.6, 1.6)
 		"gem":
-			# A real cut gem on the ground (was a text ◆ glyph). A Raven faceted
-			# gem tinted by the gem's stat color reads as a proper jewel; fall
-			# back to the procedural gem if the icon isn't present/imported yet.
+			# The same lore-authored stat+level stone used by the bag/socket UI.
+			# Art.gem_icon retains the old shared/tinted cut as missing-art fallback.
 			tint = Items.gem_color(payload["gem"])
 			spr = Sprite2D.new()
-			if ResourceLoader.exists("res://assets/icons/gem.png"):
-				spr.texture = load("res://assets/icons/gem.png")
-				spr.modulate = tint
-			else:
-				spr.texture = Art.gem_icon(tint, int(payload["gem"].get("lvl", 1)))
+			spr.texture = Art.gem_icon(tint, int(payload["gem"].get("lvl", 1)))
 			spr.scale = Vector2(0.9, 0.9)
 		_:
 			# Consumable on the ground: real icon when one exists (mana
