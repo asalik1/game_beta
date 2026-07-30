@@ -61,7 +61,7 @@ TRAVEL_HOOKS = {
 ASKERS = {
     "ch2": {
         "who": "You",
-        "text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it offers its account FIRST.",
+        "text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
     },
     "ch3": {
         "who": "Gate-Cantor",

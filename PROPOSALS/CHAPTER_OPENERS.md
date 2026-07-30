@@ -98,7 +98,12 @@ spine says what the chapter IS; the class turn says what it means TO YOU:
   character's own, and the TEMPTATION option is written in the vice's
   own voice — the shard/chain/tome speaking in CAPS (the ch1 paladin's
   "HE IS YOURS" convention). Choosing it means agreeing with its
-  account. Where the vice is the character's own wish rather than the
+  account. **Attribution rule (owner-caught 2026-07-30):** bare CAPS in
+  a choice list reads as noise, so every caps temptation OPENS with the
+  player-case act — "Let the shard answer." / "Let the chain answer." /
+  "Let the tome answer." — before the caps line. The selection IS the
+  act of letting it speak for you, and the case contrast inside one
+  option makes the voice legible without a nameplate. Where the vice is the character's own wish rather than the
   power's (ch5's warrior), it stays quiet lowercase — hidden FROM the
   shard. Budget: the power speaks inside temptation options ONLY in
   these five chapters — five times a campaign, class-voiced, rare enough
@@ -152,9 +157,9 @@ spine says what the chapter IS; the class turn says what it means TO YOU:
 fellow newly-woken with the shard-glow still fresh under their wrist:
 "I got mine in the spring. You've had yours a while, haven't you. …How
 did you carry it?" You look into the fire instead of answering. The
-shard was there for all of it — and it offers its account FIRST. Each
-class's temptation below is the shard's version of the years, in its own
-voice; choosing it means agreeing with its memory.
+shard was there for all of it — and it has an account of its own,
+ready. Each class's temptation below is the shard's version of the
+years, in its own voice; choosing it means agreeing with its memory.
 
 **Class turns** — each class answers from inside its ch1 ending.
 
@@ -166,7 +171,7 @@ still in hand, dawn light.
   of the gaps."
 - "Point it at work. Every gap ended with something BUILT — you made the
   blackout a carpenter." → **+6** `ch2_kept_faith`
-- "YOU PICKED THE NIGHTS. YOU WALKED PAST THE TREE LINE AND LET ME SWING
+- "Let the shard answer. YOU PICKED THE NIGHTS. YOU WALKED PAST THE TREE LINE AND LET ME SWING
   UNTIL I WAS TIRED — AND YOU SLEPT SOUND, AFTER. SAY IT WAS US." →
   **−6** `ch2_fed_ember`
 - "Chain it. No sword in the house, sleep tied to the bedpost, and never
@@ -180,7 +185,7 @@ hooded figure; every stall-candle leaning toward them.
   at you like debt collectors who already knew the address."
 - "Pay forward. Every winter you found the freezing and sat with them —
   let it take from YOU for a change." → **+6** `ch2_kept_faith`
-- "A LITTLE FROM MANY, NONE THE WISER, BOTH OF US FED. WE MADE THE THEFT
+- "Let the shard answer. A LITTLE FROM MANY, NONE THE WISER, BOTH OF US FED. WE MADE THE THEFT
   A TAX — AND THE TAX WAS FAIR." → **−6** `ch2_fed_ember`
 - "Starve it. Sleep cold, eat thin, touch no one. It waited. It is very
   good at waiting." → **0** `ch2_buried_it`
@@ -192,7 +197,7 @@ boy's grey mark sketched a hundred times over pinned pages.
   your green light was NOT."
 - "Keep it burning. Every remedy, every archive, every road that rumored a
   cure — the promise aged better than you did." → **+6** `ch2_kept_faith`
-- "WE CAST IT AGAIN. SMALLER. CONTROLLED. ON THINGS THAT COULD NOT SAY
+- "Let the shard answer. WE CAST IT AGAIN. SMALLER. CONTROLLED. ON THINGS THAT COULD NOT SAY
   NO — HOW ELSE DOES ANYONE LEARN?" → **−6** `ch2_fed_ember`
 - "File it away. The boy stopped writing back; the journals went in a
   chest. Some spells you outlive." → **0** `ch2_buried_it`
@@ -213,7 +218,7 @@ ridge; one gate open; a small light in the farmhouse.
   small remembered sound. The latch."
 - "Answer it. Walk down, sit at Ren's table, and let the stranger-distance
   be a thing you both work at." → **+6** `ch2_kept_faith`
-- "THE RIDGE ROAD WAS A THREAD AND WE CUT IT. YOU FELT THE LIGHTNESS.
+- "Let the shard answer. THE RIDGE ROAD WAS A THREAD AND WE CUT IT. YOU FELT THE LIGHTNESS.
   YOU LIKED IT. SAY YOU LIKED IT." → **−6** `ch2_fed_ember`
 - "Keep the ritual. The ridge, the smoke-count. Near enough to know; far
   enough to owe nothing." → **0** `ch2_buried_it`
@@ -230,7 +235,7 @@ wall, out of reach.
 - "Rule anyway — slowly. You heard every case twice: once as yourself,
   once listening for which verdict the chain leaned on. You ruled against
   the lean." → **+6** `ch2_kept_faith`
-- "MY VERDICTS WERE FAST, CLEAN, AND LOVED. YOU READ THEM ALOUD
+- "Let the chain answer. MY VERDICTS WERE FAST, CLEAN, AND LOVED. YOU READ THEM ALOUD
   UNEDITED — AND NOT ONE VILLAGE APPEALED." → **−6** `ch2_fed_ember`
 - "Decline the bench. 'Find a magistrate.' Let the chain argue with an
   empty room." → **0** `ch2_buried_it`
@@ -244,7 +249,7 @@ candle burned to its ring — and a second ring, older, beside it.
 - "Audit it. You learned its grammar, listed every asset 'what you traded'
   could mean, and crossed off what you could prove still yours." → **+6**
   `ch2_kept_faith`
-- "A CANDLE HERE, A CANDLE THERE — FOR GOOD CAUSES, MOSTLY. THE DEBT IS
+- "Let the tome answer. A CANDLE HERE, A CANDLE THERE — FOR GOOD CAUSES, MOSTLY. THE DEBT IS
   DEEPER AND YOUR REASONS WERE EXCELLENT. *(The tome's account. In your
   handwriting.)*" → **−6** `ch2_fed_ember`
 - "Freeze the account. The tome stayed wrapped in the pack's bottom.
@@ -523,7 +528,7 @@ only warm color in frame.
   to a bed like that. There is an empty one."
 - "Wake them. You know what 'kept' costs from the taking side — nobody
   down there agreed to the real price." → **+6** `ch5_vowed_morning`
-- "LIE DOWN. ONE TENCOUNT IN THE EMPTY BED. WHAT THE ICE HOLDS STILL I
+- "Let the shard answer. LIE DOWN. ONE TENCOUNT IN THE EMPTY BED. WHAT THE ICE HOLDS STILL I
   CANNOT SPEND — AND YOU ARE SO TIRED OF MY SPENDING." → **−6**
   `ch5_felt_pull`
 - "Their beds, their business. Clear the road, tithe the cult nothing,
@@ -538,7 +543,7 @@ at the roadside, exactly between the child and the ice.
   a farmhouse window from the ridge."
 - "Threads are for holding. Wake them into their own winters and stand
   there while they re-tie." → **+6** `ch5_vowed_morning`
-- "ALL THE LIGHTNESS, NONE OF THE WALKING. EVERY THREAD AT ONCE, AND NO
+- "Let the shard answer. ALL THE LIGHTNESS, NONE OF THE WALKING. EVERY THREAD AT ONCE, AND NO
   ROAD AFTER. ASK WHAT THE LEDGER REQUIRES." → **−6** `ch5_felt_pull`
 - "Neither wake nor join. Count the beds like chimney smoke — near enough
   to know — and move on." → **0** `ch5_kept_ledger`
@@ -565,7 +570,7 @@ the sick-flush frozen on their face like paint that will never dry.
   it would stop. Stopping is not undoing. You know that. You KNOW that."
 - "The promise says undone, not paused. Wake them into cures, however long
   cures take." → **+6** `ch5_vowed_morning`
-- "ONE BLOOM OF GREY UNDER HER COLD. IF THE MARK HALTS, THE BOY SLEEPS A
+- "Let the shard answer. ONE BLOOM OF GREY UNDER HER COLD. IF THE MARK HALTS, THE BOY SLEEPS A
   WINTER AND WAKES CLEAN. YOU HAVE CAST ON WORSE ODDS — WE BOTH
   REMEMBER." → **−6** `ch5_felt_pull`
 - "Study nothing here. Preservation is her domain and her invoice; you
@@ -582,7 +587,7 @@ where the witness should stand.
 - "Coercion doesn't need a knife. Void the winter's terms: grain stays,
   sleepers wake, and the cult renegotiates with ME." → **+6**
   `ch5_vowed_morning`
-- "CONSENT GIVEN IS CONSENT KEPT. THE LEDGERS ARE LAWFUL. ENFORCE THEM
+- "Let the chain answer. CONSENT GIVEN IS CONSENT KEPT. THE LEDGERS ARE LAWFUL. ENFORCE THEM
   AS WRITTEN — OR ADMIT YOUR MERCY OUTRANKS THE LAW." → **−6**
   `ch5_felt_pull`
 - "Rule narrow. The road must open; everything else is out of
@@ -598,7 +603,7 @@ headings from three places back.
   have read this instrument before. You are STANDING in one."
 - "Call the loan early. Wake them before the Queen's 'morning' names its
   real price." → **+6** `ch5_vowed_morning`
-- "A CREDITOR PATIENT ENOUGH TO FREEZE CENTURIES. TERMS WORTH HEARING,
+- "Let the tome answer. A CREDITOR PATIENT ENOUGH TO FREEZE CENTURIES. TERMS WORTH HEARING,
   PROFESSIONAL TO PROFESSIONAL. INTRODUCE US." → **−6** `ch5_felt_pull`
 - "Neither borrow nor foreclose. Clear the ridge and leave the ice its
   portfolio." → **0** `ch5_kept_ledger`
@@ -1065,7 +1070,7 @@ own journal — the handwriting nearly the same.
   the ending still wet."
 - "She is what the boy could become. Cut tethers, never wire — and take
   the truth home whole this time." → **+6** `ch9_spares_the_wire`
-- "IT ANSWERED HER. IT WILL ANSWER YOU. GET CLOSE TO THE RELAY AND ASK
+- "Let the shard answer. IT ANSWERED HER. IT WILL ANSWER YOU. GET CLOSE TO THE RELAY AND ASK
   ABOUT GREY MARKS — ASKING IS NOT TAKING." → **−6** `ch9_would_bargain`
 - "Let the water keep the answers. Some questions cost more asked than
   unasked — pass through, and open nothing." → **0** `ch9_seals_behind`
@@ -1079,7 +1084,7 @@ collarbone — visible only to the archer in the foreground.
   through. You can't stop."
 - "Wire is people. Cut only tethers, and walk the seekers out along the
   lines they can't see." → **+6** `ch9_spares_the_wire`
-- "FOLLOW ONE THREAD ALL THE WAY IN. A WEAVER WHO WORKS IN PEOPLE COULD
+- "Let the shard answer. FOLLOW ONE THREAD ALL THE WAY IN. A WEAVER WHO WORKS IN PEOPLE COULD
   RESTRING WHAT I CUT. THE GREEN OFFERED ONCE. I AM OFFERING NOW." →
   **−6** `ch9_would_bargain`
 - "Close every door you pass. What the water holds it can keep — it just
@@ -1095,7 +1100,7 @@ absent.
   the wire goes slack."
 - "Nobody else wakes up in wreckage they didn't choose. Slack every wire
   gently; catch them as they come back." → **+6** `ch9_spares_the_wire`
-- "IT BORROWS HANDS. IT COULD BORROW ME. OFFER IT THE TRADE — AND WAKE
+- "Let the shard answer. IT BORROWS HANDS. IT COULD BORROW ME. OFFER IT THE TRADE — AND WAKE
   UP INNOCENT FOREVER." → **−6** `ch9_would_bargain`
 - "Break the junctions as you pass, and let the water hold what falls. A
   wire underwater moves nothing." → **0** `ch9_seals_behind`
@@ -1110,7 +1115,7 @@ stone table in the shape of an open hand — palm up, patient, waiting.
 - "You never got to bargain either — the Ember just took. Spare the wire
   the courtesy nobody spared you: get them out un-negotiated." → **+6**
   `ch9_spares_the_wire`
-- "IT DEALS. I NEVER LEARNED HOW. SIT US AT THE TABLE AND OPEN WITH MY
+- "Let the shard answer. IT DEALS. I NEVER LEARNED HOW. SIT US AT THE TABLE AND OPEN WITH MY
   APPETITE — SEE WHAT A GOD BIDS FOR A HUNGER LIKE MINE." → **−6**
   `ch9_would_bargain`
 - "Never bargain wet. Pass through with your pockets shut and leave the
@@ -1126,7 +1131,7 @@ all one organism.
   only decide who drowns in it."
 - "Protect the witnesses. The wire comes out alive; the Root can answer
   in a later court." → **+6** `ch9_spares_the_wire`
-- "THE RELAY TALKS. TAKE TESTIMONY FROM THE GOD ITSELF, WHATEVER THE
+- "Let the chain answer. THE RELAY TALKS. TAKE TESTIMONY FROM THE GOD ITSELF, WHATEVER THE
   HEARING COSTS THE WIRE. TRUTH OUTRANKS WITNESSES." → **−6**
   `ch9_would_bargain`
 - "No hearings below the waterline. Do what the descent demands and let
@@ -1193,7 +1198,7 @@ its crystal face, not the mage's own reflection but a forge-town burning.
   power's era costs the people it doesn't choose."
 - "Then owe her. Carry the warm thing down, hold the door open, and pay
   the founding debt in person." → **+6** `ch10_carries_warmth`
-- "A GOD FILTERED THROUGH A CHILD IS THE WEAKEST IT WILL EVER BE. YOU
+- "Let the shard answer. A GOD FILTERED THROUGH A CHILD IS THE WEAKEST IT WILL EVER BE. YOU
   NEED TO HAVE STUDIED ONE BEFORE THE HOLLOW FLAME. STRIKE THROUGH — I
   WILL HOLD YOUR HAND STEADY." → **−6** `ch10_strikes_through`
 - "The cult built the shrine; the cult answers. Keep your arithmetic out
@@ -1208,7 +1213,7 @@ warrior at its lip, sword half-drawn, his own breath the only movement.
   yourself the whole way down."
 - "Stay yourself. Carry warmth, swing late, and be the first blade she
   sees that waited." → **+6** `ch10_carries_warmth`
-- "LET THE ARM DECIDE AT THE COCOON. I HAVE ALWAYS KNOWN WHAT YOU WON'T
+- "Let the shard answer. LET THE ARM DECIDE AT THE COCOON. I HAVE ALWAYS KNOWN WHAT YOU WON'T
   ADMIT WANTING. I NEVER HESITATE ON THE DOWNSWING." → **−6**
   `ch10_strikes_through`
 - "Bind the cult, starve the shrine, and make the singers undo what the
@@ -1225,7 +1230,7 @@ own; a web with no anchor points.
 - "Bring her a real one. One thread that doesn't pull, offered beside the
   Queen's fakes — held out until she takes it, or doesn't." → **+6**
   `ch10_carries_warmth`
-- "NOTHING ANCHORS HER. THE QUEEN GRIPS A GIRL WITH NO HANDLES — ONE
+- "Let the shard answer. NOTHING ANCHORS HER. THE QUEEN GRIPS A GIRL WITH NO HANDLES — ONE
   SHOT AND THE GRIP CLOSES ON NOTHING. IT WOULD EVEN BE CLEAN. I CUT
   CLEANER." → **−6** `ch10_strikes_through`
 - "The cult spun the web; the cult unspins it. Warrant first." → **0**
@@ -1242,7 +1247,7 @@ ch1's "take my warmth back" beat — flagged, not accidental).
   contract. You've BEEN this contract."
 - "Break it the way nobody broke yours: warmth returned, no charge, and
   stay till dawn." → **+6** `ch10_carries_warmth`
-- "TRUST FUNDS CAN BE RAIDED. STRIKE THE TRUSTEE WHILE THE ASSETS RUN
+- "Let the shard answer. TRUST FUNDS CAN BE RAIDED. STRIKE THE TRUSTEE WHILE THE ASSETS RUN
   LIQUID — AND WHAT THE VAULT SPILLS, I WILL CATCH." → **−6**
   `ch10_strikes_through`
 - "The cult brokered the deposit. Collect the brokers; leave the vault." →
@@ -1260,7 +1265,7 @@ raised in accusation while his own arms stay at his sides.
 - "When there is no one to punish, there is still someone to protect.
   Warm the plaintiff; let the charge stay empty." → **+6**
   `ch10_carries_warmth`
-- "A VESSEL IS THE CRIME MADE FLESH. STRIKE THROUGH THE GIRL AND ENTER
+- "Let the chain answer. A VESSEL IS THE CRIME MADE FLESH. STRIKE THROUGH THE GIRL AND ENTER
   THE CASE CLOSED. I WILL SIGN THE WARRANT MYSELF." → **−6**
   `ch10_strikes_through`
 - "There IS a hand: the ones who sang her down. Charge the cult, and let
@@ -1278,7 +1283,7 @@ you have ever seen it keep.
 - "An empty deed can't be foreclosed — but it can be lived in again.
   Carry the warm thing down and help her repossess herself." → **+6**
   `ch10_carries_warmth`
-- "A TRUSTEE WITH NO SECURITY HAS NO CLAIM. STRIKE WHILE THE QUEEN HOLDS
+- "Let the tome answer. A TRUSTEE WITH NO SECURITY HAS NO CLAIM. STRIKE WHILE THE QUEEN HOLDS
   NOTHING — THE CHEAPEST GOD-KILL THERE WILL EVER BE. I HAVE RUN THE
   NUMBERS TWICE." → **−6** `ch10_strikes_through`
 - "The brokers wrote a deal on an empty deed. Unwind the cult and let the
@@ -1591,7 +1596,7 @@ storm's.
 - "Finish the vow. A recitation held six hundred years deserves speakers,
   not creditors — learn it whole and hand it on." → **+6**
   `ch13_finishes_the_vow`
-- "HOLD THE NAME. UNSHARED, IT IS THE ONLY COLLATERAL A TALKING GOD
+- "Let the tome answer. HOLD THE NAME. UNSHARED, IT IS THE ONLY COLLATERAL A TALKING GOD
   RESPECTS — AND I WOULD RESPECT IT TOO. I WOULD HAVE NO CHOICE." →
   **−6** `ch13_holds_the_leash`
 - "Words are ordnance here. Learn what the fight needs, spend it on the
@@ -1608,7 +1613,7 @@ the telegraph line, reading it to the end instead of dodging.
 - "Good arguments deserve a real hearing: finish the vow, learn the name,
   and retry the case with the sentence INTACT." → **+6**
   `ch13_finishes_the_vow`
-- "HOLD THE NAME. LEVERAGE OVER PRISONER AND COURT ALIKE — A JUDGE WHO
+- "Let the chain answer. HOLD THE NAME. LEVERAGE OVER PRISONER AND COURT ALIKE — A JUDGE WHO
   OWNS THE SENTENCE ANSWERS TO NEITHER. NOT EVEN TO ME." → **−6**
   `ch13_holds_the_leash`
 - "Motion denied, recitation cited, next case. Spend the words where the
@@ -1625,7 +1630,7 @@ across the ground, and the mage mid-dodge — reading it on the way past.
 - "Learn the whole sentence and speak it as MEANT — the first perfect
   work of your life, borrowed from six hundred years of imperfect
   mouths." → **+6** `ch13_finishes_the_vow`
-- "KEEP THE GRAMMAR. A NAME THAT INSTRUCTS THE WORLD, HELD PRIVATELY.
+- "Let the shard answer. KEEP THE GRAMMAR. A NAME THAT INSTRUCTS THE WORLD, HELD PRIVATELY.
   THE BOY'S MARK IS ALSO, TECHNICALLY, AN INSTRUCTION — AND INSTRUCTIONS
   CAN BE REVOKED." → **−6** `ch13_holds_the_leash`
 - "Read only what dodging requires. Some curricula are priced to ruin the
@@ -1642,7 +1647,7 @@ it, listening despite himself.
 - "Finish the vow. If force can learn to speak, it can learn to stop
   mid-sentence — hold the line and learn the words that hold." → **+6**
   `ch13_finishes_the_vow`
-- "TAKE DICTATION. LET THE STORM TEACH ME GRAMMAR — IF I COULD SPEAK,
+- "Let the shard answer. TAKE DICTATION. LET THE STORM TEACH ME GRAMMAR — IF I COULD SPEAK,
   YOU COULD FINALLY NEGOTIATE. WOULDN'T YOU LIKE TERMS?" → **−6**
   `ch13_holds_the_leash`
 - "The arm doesn't need a thesaurus. Spend the words on the fight and
@@ -1659,7 +1664,7 @@ lips pressed shut against it.
 - "Catch the strands. Learn the words as they were tied and splice the
   line back to strength — a thread of breath deserves one archer who
   holds." → **+6** `ch13_finishes_the_vow`
-- "GATHER THE STRANDS PRIVATELY. WHO WINDS THE LOOSE LINE HOLDS EVERY
+- "Let the shard answer. GATHER THE STRANDS PRIVATELY. WHO WINDS THE LOOSE LINE HOLDS EVERY
   MOUTH THAT EVER LEANED ON IT. YOU HAVE ALWAYS WANTED A THREAD THAT
   CANNOT BE CUT." → **−6** `ch13_holds_the_leash`
 - "Field-strip the language: the words that win the fight, nothing more.
@@ -1676,7 +1681,7 @@ fingers, half-swallowed already.
 - "Steal it FOR them. Assemble the name and hand it to the speakers
   whole — the one theft in your life with a return address." → **+6**
   `ch13_finishes_the_vow`
-- "FINDERS KEEPERS. A LEASH ON A GOD, HELD QUIETLY — THE FIRST THING I
+- "Let the shard answer. FINDERS KEEPERS. A LEASH ON A GOD, HELD QUIETLY — THE FIRST THING I
   EVER TOOK THAT COULD TAKE BACK. LET ME HAVE IT. LET US HAVE IT." →
   **−6** `ch13_holds_the_leash`
 - "Spend the words in the fight, then burn your notes. Some loot marks

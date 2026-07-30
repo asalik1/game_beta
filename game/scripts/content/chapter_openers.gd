@@ -25,7 +25,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it offers its account FIRST.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Point it at work. Every gap ended with something BUILT — you made the blackout a carpenter.",
@@ -36,7 +36,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "YOU PICKED THE NIGHTS. YOU WALKED PAST THE TREE LINE AND LET ME SWING UNTIL I WAS TIRED — AND YOU SLEPT SOUND, AFTER. SAY IT WAS US.",
+						"text": "Let the shard answer. YOU PICKED THE NIGHTS. YOU WALKED PAST THE TREE LINE AND LET ME SWING UNTIL I WAS TIRED — AND YOU SLEPT SOUND, AFTER. SAY IT WAS US.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -97,7 +97,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it offers its account FIRST.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Pay forward. Every winter you found the freezing and sat with them — let it take from YOU for a change.",
@@ -108,7 +108,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A LITTLE FROM MANY, NONE THE WISER, BOTH OF US FED. WE MADE THE THEFT A TAX — AND THE TAX WAS FAIR.",
+						"text": "Let the shard answer. A LITTLE FROM MANY, NONE THE WISER, BOTH OF US FED. WE MADE THE THEFT A TAX — AND THE TAX WAS FAIR.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -169,7 +169,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it offers its account FIRST.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Keep it burning. Every remedy, every archive, every road that rumored a cure — the promise aged better than you did.",
@@ -180,7 +180,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "WE CAST IT AGAIN. SMALLER. CONTROLLED. ON THINGS THAT COULD NOT SAY NO — HOW ELSE DOES ANYONE LEARN?",
+						"text": "Let the shard answer. WE CAST IT AGAIN. SMALLER. CONTROLLED. ON THINGS THAT COULD NOT SAY NO — HOW ELSE DOES ANYONE LEARN?",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -251,7 +251,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it offers its account FIRST.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Answer it. Walk down, sit at Ren's table, and let the stranger-distance be a thing you both work at.",
@@ -262,7 +262,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "THE RIDGE ROAD WAS A THREAD AND WE CUT IT. YOU FELT THE LIGHTNESS. YOU LIKED IT. SAY YOU LIKED IT.",
+						"text": "Let the shard answer. THE RIDGE ROAD WAS A THREAD AND WE CUT IT. YOU FELT THE LIGHTNESS. YOU LIKED IT. SAY YOU LIKED IT.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -323,7 +323,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it offers its account FIRST.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Rule anyway — slowly. You heard every case twice: once as yourself, once listening for which verdict the chain leaned on. You ruled against the lean.",
@@ -334,7 +334,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "MY VERDICTS WERE FAST, CLEAN, AND LOVED. YOU READ THEM ALOUD UNEDITED — AND NOT ONE VILLAGE APPEALED.",
+						"text": "Let the chain answer. MY VERDICTS WERE FAST, CLEAN, AND LOVED. YOU READ THEM ALOUD UNEDITED — AND NOT ONE VILLAGE APPEALED.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -395,7 +395,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it offers its account FIRST.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Audit it. You learned its grammar, listed every asset 'what you traded' could mean, and crossed off what you could prove still yours.",
@@ -406,7 +406,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A CANDLE HERE, A CANDLE THERE — FOR GOOD CAUSES, MOSTLY. THE DEBT IS DEEPER AND YOUR REASONS WERE EXCELLENT. *(The tome's account. In your handwriting.)*",
+						"text": "Let the tome answer. A CANDLE HERE, A CANDLE THERE — FOR GOOD CAUSES, MOSTLY. THE DEBT IS DEEPER AND YOUR REASONS WERE EXCELLENT. *(The tome's account. In your handwriting.)*",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -1474,7 +1474,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "LIE DOWN. ONE TENCOUNT IN THE EMPTY BED. WHAT THE ICE HOLDS STILL I CANNOT SPEND — AND YOU ARE SO TIRED OF MY SPENDING.",
+						"text": "Let the shard answer. LIE DOWN. ONE TENCOUNT IN THE EMPTY BED. WHAT THE ICE HOLDS STILL I CANNOT SPEND — AND YOU ARE SO TIRED OF MY SPENDING.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1546,7 +1546,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "ONE BLOOM OF GREY UNDER HER COLD. IF THE MARK HALTS, THE BOY SLEEPS A WINTER AND WAKES CLEAN. YOU HAVE CAST ON WORSE ODDS — WE BOTH REMEMBER.",
+						"text": "Let the shard answer. ONE BLOOM OF GREY UNDER HER COLD. IF THE MARK HALTS, THE BOY SLEEPS A WINTER AND WAKES CLEAN. YOU HAVE CAST ON WORSE ODDS — WE BOTH REMEMBER.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1618,7 +1618,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "ALL THE LIGHTNESS, NONE OF THE WALKING. EVERY THREAD AT ONCE, AND NO ROAD AFTER. ASK WHAT THE LEDGER REQUIRES.",
+						"text": "Let the shard answer. ALL THE LIGHTNESS, NONE OF THE WALKING. EVERY THREAD AT ONCE, AND NO ROAD AFTER. ASK WHAT THE LEDGER REQUIRES.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1690,7 +1690,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "CONSENT GIVEN IS CONSENT KEPT. THE LEDGERS ARE LAWFUL. ENFORCE THEM AS WRITTEN — OR ADMIT YOUR MERCY OUTRANKS THE LAW.",
+						"text": "Let the chain answer. CONSENT GIVEN IS CONSENT KEPT. THE LEDGERS ARE LAWFUL. ENFORCE THEM AS WRITTEN — OR ADMIT YOUR MERCY OUTRANKS THE LAW.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1762,7 +1762,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A CREDITOR PATIENT ENOUGH TO FREEZE CENTURIES. TERMS WORTH HEARING, PROFESSIONAL TO PROFESSIONAL. INTRODUCE US.",
+						"text": "Let the tome answer. A CREDITOR PATIENT ENOUGH TO FREEZE CENTURIES. TERMS WORTH HEARING, PROFESSIONAL TO PROFESSIONAL. INTRODUCE US.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -3292,7 +3292,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "IT BORROWS HANDS. IT COULD BORROW ME. OFFER IT THE TRADE — AND WAKE UP INNOCENT FOREVER.",
+						"text": "Let the shard answer. IT BORROWS HANDS. IT COULD BORROW ME. OFFER IT THE TRADE — AND WAKE UP INNOCENT FOREVER.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3376,7 +3376,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "IT DEALS. I NEVER LEARNED HOW. SIT US AT THE TABLE AND OPEN WITH MY APPETITE — SEE WHAT A GOD BIDS FOR A HUNGER LIKE MINE.",
+						"text": "Let the shard answer. IT DEALS. I NEVER LEARNED HOW. SIT US AT THE TABLE AND OPEN WITH MY APPETITE — SEE WHAT A GOD BIDS FOR A HUNGER LIKE MINE.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3460,7 +3460,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "IT ANSWERED HER. IT WILL ANSWER YOU. GET CLOSE TO THE RELAY AND ASK ABOUT GREY MARKS — ASKING IS NOT TAKING.",
+						"text": "Let the shard answer. IT ANSWERED HER. IT WILL ANSWER YOU. GET CLOSE TO THE RELAY AND ASK ABOUT GREY MARKS — ASKING IS NOT TAKING.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3544,7 +3544,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "FOLLOW ONE THREAD ALL THE WAY IN. A WEAVER WHO WORKS IN PEOPLE COULD RESTRING WHAT I CUT. THE GREEN OFFERED ONCE. I AM OFFERING NOW.",
+						"text": "Let the shard answer. FOLLOW ONE THREAD ALL THE WAY IN. A WEAVER WHO WORKS IN PEOPLE COULD RESTRING WHAT I CUT. THE GREEN OFFERED ONCE. I AM OFFERING NOW.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3628,7 +3628,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "THE RELAY TALKS. TAKE TESTIMONY FROM THE GOD ITSELF, WHATEVER THE HEARING COSTS THE WIRE. TRUTH OUTRANKS WITNESSES.",
+						"text": "Let the chain answer. THE RELAY TALKS. TAKE TESTIMONY FROM THE GOD ITSELF, WHATEVER THE HEARING COSTS THE WIRE. TRUTH OUTRANKS WITNESSES.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3794,7 +3794,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "LET THE ARM DECIDE AT THE COCOON. I HAVE ALWAYS KNOWN WHAT YOU WON'T ADMIT WANTING. I NEVER HESITATE ON THE DOWNSWING.",
+						"text": "Let the shard answer. LET THE ARM DECIDE AT THE COCOON. I HAVE ALWAYS KNOWN WHAT YOU WON'T ADMIT WANTING. I NEVER HESITATE ON THE DOWNSWING.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3876,7 +3876,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "TRUST FUNDS CAN BE RAIDED. STRIKE THE TRUSTEE WHILE THE ASSETS RUN LIQUID — AND WHAT THE VAULT SPILLS, I WILL CATCH.",
+						"text": "Let the shard answer. TRUST FUNDS CAN BE RAIDED. STRIKE THE TRUSTEE WHILE THE ASSETS RUN LIQUID — AND WHAT THE VAULT SPILLS, I WILL CATCH.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3958,7 +3958,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A GOD FILTERED THROUGH A CHILD IS THE WEAKEST IT WILL EVER BE. YOU NEED TO HAVE STUDIED ONE BEFORE THE HOLLOW FLAME. STRIKE THROUGH — I WILL HOLD YOUR HAND STEADY.",
+						"text": "Let the shard answer. A GOD FILTERED THROUGH A CHILD IS THE WEAKEST IT WILL EVER BE. YOU NEED TO HAVE STUDIED ONE BEFORE THE HOLLOW FLAME. STRIKE THROUGH — I WILL HOLD YOUR HAND STEADY.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -4040,7 +4040,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "NOTHING ANCHORS HER. THE QUEEN GRIPS A GIRL WITH NO HANDLES — ONE SHOT AND THE GRIP CLOSES ON NOTHING. IT WOULD EVEN BE CLEAN. I CUT CLEANER.",
+						"text": "Let the shard answer. NOTHING ANCHORS HER. THE QUEEN GRIPS A GIRL WITH NO HANDLES — ONE SHOT AND THE GRIP CLOSES ON NOTHING. IT WOULD EVEN BE CLEAN. I CUT CLEANER.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -4122,7 +4122,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A VESSEL IS THE CRIME MADE FLESH. STRIKE THROUGH THE GIRL AND ENTER THE CASE CLOSED. I WILL SIGN THE WARRANT MYSELF.",
+						"text": "Let the chain answer. A VESSEL IS THE CRIME MADE FLESH. STRIKE THROUGH THE GIRL AND ENTER THE CASE CLOSED. I WILL SIGN THE WARRANT MYSELF.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -4204,7 +4204,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A TRUSTEE WITH NO SECURITY HAS NO CLAIM. STRIKE WHILE THE QUEEN HOLDS NOTHING — THE CHEAPEST GOD-KILL THERE WILL EVER BE. I HAVE RUN THE NUMBERS TWICE.",
+						"text": "Let the tome answer. A TRUSTEE WITH NO SECURITY HAS NO CLAIM. STRIKE WHILE THE QUEEN HOLDS NOTHING — THE CHEAPEST GOD-KILL THERE WILL EVER BE. I HAVE RUN THE NUMBERS TWICE.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -5246,7 +5246,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "TAKE DICTATION. LET THE STORM TEACH ME GRAMMAR — IF I COULD SPEAK, YOU COULD FINALLY NEGOTIATE. WOULDN'T YOU LIKE TERMS?",
+						"text": "Let the shard answer. TAKE DICTATION. LET THE STORM TEACH ME GRAMMAR — IF I COULD SPEAK, YOU COULD FINALLY NEGOTIATE. WOULDN'T YOU LIKE TERMS?",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5328,7 +5328,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "FINDERS KEEPERS. A LEASH ON A GOD, HELD QUIETLY — THE FIRST THING I EVER TOOK THAT COULD TAKE BACK. LET ME HAVE IT. LET US HAVE IT.",
+						"text": "Let the shard answer. FINDERS KEEPERS. A LEASH ON A GOD, HELD QUIETLY — THE FIRST THING I EVER TOOK THAT COULD TAKE BACK. LET ME HAVE IT. LET US HAVE IT.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5410,7 +5410,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "KEEP THE GRAMMAR. A NAME THAT INSTRUCTS THE WORLD, HELD PRIVATELY. THE BOY'S MARK IS ALSO, TECHNICALLY, AN INSTRUCTION — AND INSTRUCTIONS CAN BE REVOKED.",
+						"text": "Let the shard answer. KEEP THE GRAMMAR. A NAME THAT INSTRUCTS THE WORLD, HELD PRIVATELY. THE BOY'S MARK IS ALSO, TECHNICALLY, AN INSTRUCTION — AND INSTRUCTIONS CAN BE REVOKED.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5492,7 +5492,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "GATHER THE STRANDS PRIVATELY. WHO WINDS THE LOOSE LINE HOLDS EVERY MOUTH THAT EVER LEANED ON IT. YOU HAVE ALWAYS WANTED A THREAD THAT CANNOT BE CUT.",
+						"text": "Let the shard answer. GATHER THE STRANDS PRIVATELY. WHO WINDS THE LOOSE LINE HOLDS EVERY MOUTH THAT EVER LEANED ON IT. YOU HAVE ALWAYS WANTED A THREAD THAT CANNOT BE CUT.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5574,7 +5574,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "HOLD THE NAME. LEVERAGE OVER PRISONER AND COURT ALIKE — A JUDGE WHO OWNS THE SENTENCE ANSWERS TO NEITHER. NOT EVEN TO ME.",
+						"text": "Let the chain answer. HOLD THE NAME. LEVERAGE OVER PRISONER AND COURT ALIKE — A JUDGE WHO OWNS THE SENTENCE ANSWERS TO NEITHER. NOT EVEN TO ME.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5656,7 +5656,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "HOLD THE NAME. UNSHARED, IT IS THE ONLY COLLATERAL A TALKING GOD RESPECTS — AND I WOULD RESPECT IT TOO. I WOULD HAVE NO CHOICE.",
+						"text": "Let the tome answer. HOLD THE NAME. UNSHARED, IT IS THE ONLY COLLATERAL A TALKING GOD RESPECTS — AND I WOULD RESPECT IT TOO. I WOULD HAVE NO CHOICE.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
