@@ -627,12 +627,10 @@ static func _terrains(m: Menus, list: VBoxContainer) -> void:
 			if not found_in.has(zone.get("terrain", "")):
 				found_in[zone.get("terrain", "")] = zone["name"]
 
-	for id in Terrains.DATA:
+	for id in Terrains.catalog_ids(false):
 		# Placeholder terrains (authored from the asset packs, unplaced) live
 		# on the dev-only Future > Terrains shelf, never on the player list.
 		# The dev panel can still paint any room with them regardless.
-		if Terrains.DATA[id].get("placeholder", false):
-			continue
 		_terrain_card(m, list, String(id), String(found_in.get(id, "")), false)
 
 
@@ -653,7 +651,7 @@ static func _terrain_card(m: Menus, list: VBoxContainer, id: String, where: Stri
 	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var where_txt: String = where
 	if where_txt == "":
-		where_txt = "Dev panel only" if ph else "Beyond Chapter 1"
+		where_txt = "Dev panel only" if ph else "Unassigned terrain"
 	var where_l := m._lbl(head, where_txt, 13,
 		Color(0.95, 0.85, 0.5) if where != "" else Color(0.55, 0.58, 0.66))
 	where_l.custom_minimum_size = Vector2(220, 0)
@@ -1144,11 +1142,15 @@ static func _gear_shapes(m: Menus, list: VBoxContainer, slot := "") -> void:
 			_shape_row(m, list, show_slot, String(noun))
 
 
-## One gallery row: shape name + tag, then its icon at every grade.
+## One gallery row: shape name + tag, then its icon at every grade — and a
+## dim flavor line beneath when the shape carries one.
 static func _shape_row(m: Menus, list: VBoxContainer, slot: String, noun: String) -> void:
+	var card_box := VBoxContainer.new()
+	card_box.add_theme_constant_override("separation", 4)
+	_card(list).add_child(card_box)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	_card(list).add_child(row)
+	card_box.add_child(row)
 	var tag: String = Items.SHAPE_STYLE.get(noun, {}).get("tag", "")
 	var name_l := m._lbl(row, "%s\n%s" % [noun, tag], 13, Color(0.85, 0.85, 0.9))
 	name_l.custom_minimum_size = Vector2(120, 34)
@@ -1171,6 +1173,12 @@ static func _shape_row(m: Menus, list: VBoxContainer, slot: String, noun: String
 		gl.add_theme_font_size_override("font_size", 12)
 		gl.add_theme_color_override("font_color", Items.GRADE_COLOR[g])
 		cell.add_child(gl)
+	# Flavor: a quoted, dim parchment line under the gallery row (empty = none).
+	var flav := GearFlavor.of({"noun": noun})
+	if flav != "":
+		var fl := m._lbl(card_box, "❝ %s ❞" % flav, 12, Color(0.72, 0.68, 0.55))
+		fl.custom_minimum_size = Vector2(760, 0)
+		fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
 ## UNIQUES shelf, one SLOT at a time (the shapes-shelf pattern — 420 named
@@ -1208,11 +1216,21 @@ static func _gear_uniques(m: Menus, list: VBoxContainer, slot := "") -> void:
 				uicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				uicon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				urow.add_child(uicon)
-				var ul := m._lbl(urow, "%s   —   %s %s\n★ %s" % [u["name"], u["grade"], u["noun"],
+				var uinfo := VBoxContainer.new()
+				uinfo.add_theme_constant_override("separation", 2)
+				uinfo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				urow.add_child(uinfo)
+				var ul := m._lbl(uinfo, "%s   —   %s %s\n★ %s" % [u["name"], u["grade"], u["noun"],
 					Items.PASSIVES.get(String(u.get("passive", "")), "signature passive — in design")],
 					13, Items.GRADE_COLOR[String(u["grade"])])
 				ul.custom_minimum_size = Vector2(780, 0)
 				ul.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				# Flavor: the unique's own line (by name), dim under its passive.
+				var uflav := GearFlavor.of(u)
+				if uflav != "":
+					var ufl := m._lbl(uinfo, "❝ %s ❞" % uflav, 12, Color(0.72, 0.68, 0.55))
+					ufl.custom_minimum_size = Vector2(780, 0)
+					ufl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# (The LEGENDARY (S) shelf was removed 2026-07-27 with the legendary tier:
 	# no separate legendary gear and no awakening questline — the six flagship
@@ -1397,7 +1415,7 @@ static func _curios(m: Menus, list: VBoxContainer) -> void:
 static func _future(m: Menus, list: VBoxContainer, tab: String) -> void:
 	if tab == "future_terrains":
 		UITheme.header(m._lbl(list, "— PLACEHOLDER TERRAINS — paint any room via the dev panel —", 16, Color(0.7, 0.95, 0.85)))
-		var tids: Array = Terrains.DATA.keys()
+		var tids: Array = Terrains.catalog_ids()
 		tids.sort()
 		var shown := 0
 		for tid in tids:

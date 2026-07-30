@@ -35,6 +35,7 @@ var chapter_replay := false       # chapter select opened from the pause menu
 var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv (default), 2 +10, 3 +20
 var dev_boss_level_override := 0  # dev panel: exact level for NEW boss spawns (0 = off)
 var dev_tab := "character"        # dev panel: which subtab is showing (persists across refreshes)
+var dev_opener_class := ""        # dev panel: class lens used by the chapter-opener preview
 var lobby := {}                   # Play Together flow state (ui/lobby.gd): stage, picks, code, msg
 var _talent_renaming := false     # inline rename field for the active talent page
 var _ability_preview_slot := ""   # card currently shown in the assignment detail panel
@@ -245,10 +246,11 @@ func _diff_tip(item: Dictionary) -> String:
 	return Items.diff_text(item, game.local_player.equipment.get(item["slot"]), _awk(item))
 
 
-## Is this item's class awakened (round 51b)? Governs whether a dormant
-## legendary's passive reads as active or LOCKED in player-facing text.
-func _awk(item: Dictionary) -> bool:
-	return bool(game.get_flag("s_awakened_" + String(item.get("cls", "")), false))
+## (2026-07-27) The awakening gate retired with the legendary tier: every
+## passive is live on pickup, so item text never reads LOCKED. Kept because
+## describe/diff_text call sites still pass it; always true.
+func _awk(_item: Dictionary) -> bool:
+	return true
 
 
 func _hint(vbox: Node, text := "ESC to close", touch_text := "") -> void:
@@ -1419,8 +1421,11 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	_lbl(right, "Select any bag item for its detail card — equip/use/synthesize or drop it there · socketing and unsocketing are the Lapidary's trade in Crownfall (drag gems onto gear at her benches) · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
 
 	# Bag category filter: All (default) + per-slot gear, gems, consumables.
-	var catrow := HBoxContainer.new()
-	catrow.add_theme_constant_override("separation", 6)
+	# A flow container, not an HBox: the 7-slot lineup grew this to 10 chips,
+	# and a non-wrapping row inflated the whole right column's minimum width
+	# past the panel edge (chips AND the helper text above clipped offscreen).
+	var catrow := HFlowContainer.new()
+	catrow.add_theme_constant_override("h_separation", 6)
 	right.add_child(catrow)
 	for spec in [["all", "All"], ["weapon", "Weapons"], ["helmet", "Helmets"], ["armor", "Armor"],
 			["gloves", "Gloves"], ["pants", "Pants"], ["boots", "Boots"], ["charm", "Charms"],
@@ -1475,7 +1480,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						["  ⚔  Equip  ", Color(0.6, 1.0, 0.6), equip_cb],
 						["  ✖  Drop  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb],
 					]
-					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
+					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions, GearFlavor.of(it))).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
 		# Health potions (2026-07-09 v2): stored as a COUNTER
 		# (potions/potions_free) but they occupy bag slots like any unit,
@@ -1601,7 +1606,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
 					_open_detail_popover(cicon, str(cc["name"]) + xn,
 						Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
-						info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
+						info, actions, GearFlavor.of(cc))).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_gems:
 		var groups := _gem_groups()
 		for key in _sorted_gem_keys(groups):
@@ -1626,7 +1631,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				if can_synth:
 					actions.append(["  ⚒  Synthesize  (3 → 1 Lv%d)  " % (g["lvl"] + 1), Color(0.6, 0.9, 1.0), synth_cb])
 				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
-				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions)
+				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions, GearFlavor.of(g))
 			var gbtn := _bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), gem_cb)
 			# Drag it straight onto an equipped item (left) to socket it — and
@@ -1774,7 +1779,7 @@ func _popover_settle(pop: PanelContainer, at: Vector2, scroll: ScrollContainer =
 ## `actions` is a list of [label, color, Callable]. Cursor-anchored,
 ## auto-sized. Shared by inventory bags, the shop and equipped gear.
 func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
-		info: String, actions: Array) -> void:
+		info: String, actions: Array, flavor := "") -> void:
 	if not root:
 		return
 	var vbox := _popover_frame(title_color)
@@ -1782,6 +1787,10 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 	_popover_header(vbox, icon, title, title_color)
 	var il := _lbl(vbox, info, 14, Color(0.85, 0.85, 0.92))
 	il.custom_minimum_size = Vector2(320, 0)
+	# Flavor: a quoted, dim parchment line under the stats (empty = hidden).
+	if flavor != "":
+		var fl := _lbl(vbox, "❝ %s ❞" % flavor, 13, Color(0.72, 0.68, 0.55))
+		fl.custom_minimum_size = Vector2(320, 0)
 	for a in actions:
 		var acb: Callable = a[2]
 		_btn(vbox, String(a[0]), acb, a[1])
@@ -2039,16 +2048,31 @@ func _item_info_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var d := _lbl(body, Items.describe(item, _awk(item)), 13, Color(Items.GRADE_COLOR[item["grade"]], 0.9))
 	d.custom_minimum_size = Vector2(440, 0)
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	# Set bonus panel (S legendaries): which tiers are live given what's worn.
-	if String(item.get("grade", "")) == "S" and item.has("cls"):
-		var sd: Dictionary = Items.SET_BONUSES.get(String(item["cls"]), {})
-		if not sd.is_empty():
-			var pieces := Items.count_set_pieces(p.equipment, String(item["cls"]))
-			_lbl(body, "SET: %s   (%d/4 pieces worn)" % [sd.get("name", "Set"), pieces], 15, Color(1.0, 0.85, 0.4))
-			for tier in ["2", "4"]:
-				var live := pieces >= int(tier)
-				_lbl(body, "   %spc %s  —  %s" % [tier, "✓ ACTIVE" if live else "inactive",
-					_stat_bonus_text(sd[tier])], 13, Color(0.6, 1.0, 0.6) if live else Color(0.6, 0.62, 0.68))
+	# Generic gear carries NO signature passive by design (that is the mark of
+	# NAMED uniques since the legendary retirement) — say so, or an all-generic
+	# loadout reads as the card forgetting to render one (owner 2026-07-28).
+	if not item.has("passive") and String(item.get("slot", "")) in Items.SLOTS:
+		var np := _lbl(body, "No signature passive — named uniques (rare drops, Act 2+) carry those.",
+			12, Color(0.55, 0.55, 0.6))
+		np.custom_minimum_size = Vector2(440, 0)
+		np.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Profile-set panel (GEAR_UNIQUE_SETS.md, 2026-07-28): a named GEAR unique
+	# belongs to its profile's set — name from the S-triad family, worn count
+	# of six, and the 2/4/6 tiers with live state. (Replaces the legacy
+	# one-set-per-class S panel; generic S pieces no longer form a set.)
+	var set_prof := Items.set_profile_of(item, String(item.get("cls", "")))
+	if set_prof != "" and String(item.get("cls", "")) == p.cls:
+		var set_cls := String(item["cls"])
+		var worn_n: int = p.uniq_set_n(set_prof)
+		_lbl(body, "SET: %s   (%d/6 pieces worn)" % [Items.uniq_set_name(set_cls, set_prof), worn_n],
+			15, Color(1.0, 0.85, 0.4))
+		for tier_n in [2, 4, 6]:
+			var rec := Balance.uniq_set(set_cls, set_prof, "s%d" % int(tier_n))
+			if rec.is_empty():
+				continue
+			var live: bool = worn_n >= int(tier_n)
+			_lbl(body, "   %dpc %s  —  %s" % [int(tier_n), "✓ ACTIVE" if live else "inactive",
+				Items.set_tier_text(rec)], 13, Color(0.6, 1.0, 0.6) if live else Color(0.6, 0.62, 0.68))
 
 
 ## Gems tab: real socket squares (click a gem for its card, drag it out to
@@ -2480,10 +2504,11 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 		var row_box := HBoxContainer.new()
 		row_box.add_theme_constant_override("separation", 10)
 		list.add_child(row_box)
-		var unlocked: bool = p.level >= Skills.ROW_LEVELS[r]
+		var unlocked: bool = Skills.row_open(p.cls, r, p.tree_points, p.level)
 		var spent := Skills.points_in_row(p.cls, r, p.tree_points)
 		var row_l := _lbl(row_box, "LEVEL %d\n%s\n%d / %d" % [
-			Skills.ROW_LEVELS[r], "UNLOCKED" if unlocked else "LOCKED",
+			Skills.ROW_LEVELS[r],
+			"UNLOCKED" if unlocked else "LOCKED\n(fill row above)",
 			spent, Skills.MAX_PER_ROW], 12,
 			Color(0.95, 0.85, 0.5) if unlocked else Color(0.4, 0.4, 0.45))
 		row_l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -2510,7 +2535,7 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			b.add_theme_constant_override("icon_max_width", 64)
 			_talent_card_style(b, theme_col, pts > 0, unlocked)
-	_hint(vbox, "ESC / T to close — select an unlocked talent to invest a point")
+	_hint(vbox, "ESC / T to close — a row opens at its level, or as soon as the row above it is full")
 
 
 func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
@@ -2580,10 +2605,12 @@ func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 				_ability_preview_slot = s
 				_ability_preview_theme = theme_id
 				open_skills("abilities")
-			var marker := "✓  " if selected else ("◈  " if previewed else "")
-			var option_button := _btn(row, marker + String(option["name"]).to_upper(),
+			# The column header names the spec — cards carry only their state.
+			var state_text := "✓  ASSIGNED" if selected else ("◈  INSPECTING" if previewed else "")
+			var option_button := _btn(row, state_text,
 				assign_cb, option_color, true,
 				Art.ability_icon(p.cls, s, option_color, theme_id))
+			option_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			option_button.custom_minimum_size = Vector2(220, 78)
 			option_button.add_theme_constant_override("icon_max_width", 64)
 			_assignment_card_style(option_button, option_color, selected, previewed)

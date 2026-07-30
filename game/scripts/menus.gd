@@ -35,6 +35,7 @@ var chapter_replay := false       # chapter select opened from the pause menu
 var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv (default), 2 +10, 3 +20
 var dev_boss_level_override := 0  # dev panel: exact level for NEW boss spawns (0 = off)
 var dev_tab := "character"        # dev panel: which subtab is showing (persists across refreshes)
+var dev_opener_class := ""        # dev panel: class lens used by the chapter-opener preview
 var lobby := {}                   # Play Together flow state (ui/lobby.gd): stage, picks, code, msg
 var _talent_renaming := false     # inline rename field for the active talent page
 var _ability_preview_slot := ""   # card currently shown in the assignment detail panel
@@ -1479,7 +1480,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						["  ⚔  Equip  ", Color(0.6, 1.0, 0.6), equip_cb],
 						["  ✖  Drop  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb],
 					]
-					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
+					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions, GearFlavor.of(it))).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
 		# Health potions (2026-07-09 v2): stored as a COUNTER
 		# (potions/potions_free) but they occupy bag slots like any unit,
@@ -1605,7 +1606,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
 					_open_detail_popover(cicon, str(cc["name"]) + xn,
 						Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
-						info, actions)).set_drag_forwarding(Callable(), sock_can, sock_drop)
+						info, actions, GearFlavor.of(cc))).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_gems:
 		var groups := _gem_groups()
 		for key in _sorted_gem_keys(groups):
@@ -1630,7 +1631,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				if can_synth:
 					actions.append(["  ⚒  Synthesize  (3 → 1 Lv%d)  " % (g["lvl"] + 1), Color(0.6, 0.9, 1.0), synth_cb])
 				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
-				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions)
+				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions, GearFlavor.of(g))
 			var gbtn := _bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), gem_cb)
 			# Drag it straight onto an equipped item (left) to socket it — and
@@ -1778,7 +1779,7 @@ func _popover_settle(pop: PanelContainer, at: Vector2, scroll: ScrollContainer =
 ## `actions` is a list of [label, color, Callable]. Cursor-anchored,
 ## auto-sized. Shared by inventory bags, the shop and equipped gear.
 func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
-		info: String, actions: Array) -> void:
+		info: String, actions: Array, flavor := "") -> void:
 	if not root:
 		return
 	var vbox := _popover_frame(title_color)
@@ -1786,6 +1787,10 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 	_popover_header(vbox, icon, title, title_color)
 	var il := _lbl(vbox, info, 14, Color(0.85, 0.85, 0.92))
 	il.custom_minimum_size = Vector2(320, 0)
+	# Flavor: a quoted, dim parchment line under the stats (empty = hidden).
+	if flavor != "":
+		var fl := _lbl(vbox, "❝ %s ❞" % flavor, 13, Color(0.72, 0.68, 0.55))
+		fl.custom_minimum_size = Vector2(320, 0)
 	for a in actions:
 		var acb: Callable = a[2]
 		_btn(vbox, String(a[0]), acb, a[1])

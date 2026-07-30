@@ -85,22 +85,28 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		for pair in [["gear_shapes", "Shapes"], ["gear_uniques", "Uniques"],
 				["gear_gems", "Gems"], ["gear_bags", "Bags"], ["gear_rules", "Rules"]]:
 			var gt: String = pair[0]
-			# Shapes stays lit across its per-slot children (gear_shapes_weapon...).
+			# Shapes/Uniques stay lit across their per-slot children
+			# (gear_shapes_weapon... / gear_uniques_helmet...).
 			var active: bool = tab == gt or (tab == "gear" and gt == "gear_shapes") \
-				or (gt == "gear_shapes" and tab.begins_with("gear_shapes"))
+				or (gt == "gear_shapes" and tab.begins_with("gear_shapes")) \
+				or (gt == "gear_uniques" and tab.begins_with("gear_uniques"))
 			m._btn(gearsubs, "  %s  " % pair[1], func() -> void: m.open_codex(gt),
 				Color(1.0, 0.9, 0.6) if active else Color(0.55, 0.55, 0.58))
 
-	# Shapes per-slot level — Weapons / Armor / Boots / Charms. A single slot's
-	# gallery runs 20+ rows once the matrix lands, so the shelf splits again.
+	# Per-slot level for the Shapes AND Uniques shelves — all 7 slots (the
+	# uniques shelf runs 420 rows flat; a slot at a time is 60, 2026-07-27).
 	var in_shapes: bool = tab == "gear" or tab.begins_with("gear_shapes")
-	if in_shapes:
+	var in_uniques: bool = tab.begins_with("gear_uniques")
+	if in_shapes or in_uniques:
+		var shelf := "gear_uniques_" if in_uniques else "gear_shapes_"
+		var shelf_root: bool = tab in ["gear", "gear_shapes", "gear_uniques"]
 		var slotbar := HBoxContainer.new()
 		slotbar.add_theme_constant_override("separation", 10)
 		vbox.add_child(slotbar)
-		for pair in [["weapon", "Weapons"], ["armor", "Armor"], ["boots", "Boots"], ["charm", "Charms"]]:
-			var st := "gear_shapes_" + String(pair[0])
-			var on_first: bool = pair[0] == "weapon" and (tab == "gear" or tab == "gear_shapes")
+		for pair in [["weapon", "Weapons"], ["helmet", "Helmets"], ["armor", "Armor"],
+				["gloves", "Gloves"], ["pants", "Pants"], ["boots", "Boots"], ["charm", "Charms"]]:
+			var st := shelf + String(pair[0])
+			var on_first: bool = pair[0] == "weapon" and shelf_root
 			m._btn(slotbar, "  %s  " % pair[1], func() -> void: m.open_codex(st),
 				Color(0.85, 0.95, 0.7) if (tab == st or on_first) else Color(0.5, 0.55, 0.5))
 
@@ -621,12 +627,10 @@ static func _terrains(m: Menus, list: VBoxContainer) -> void:
 			if not found_in.has(zone.get("terrain", "")):
 				found_in[zone.get("terrain", "")] = zone["name"]
 
-	for id in Terrains.DATA:
+	for id in Terrains.catalog_ids(false):
 		# Placeholder terrains (authored from the asset packs, unplaced) live
 		# on the dev-only Future > Terrains shelf, never on the player list.
 		# The dev panel can still paint any room with them regardless.
-		if Terrains.DATA[id].get("placeholder", false):
-			continue
 		_terrain_card(m, list, String(id), String(found_in.get(id, "")), false)
 
 
@@ -647,7 +651,7 @@ static func _terrain_card(m: Menus, list: VBoxContainer, id: String, where: Stri
 	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var where_txt: String = where
 	if where_txt == "":
-		where_txt = "Dev panel only" if ph else "Beyond Chapter 1"
+		where_txt = "Dev panel only" if ph else "Unassigned terrain"
 	var where_l := m._lbl(head, where_txt, 13,
 		Color(0.95, 0.85, 0.5) if where != "" else Color(0.55, 0.58, 0.66))
 	where_l.custom_minimum_size = Vector2(220, 0)
@@ -1072,8 +1076,12 @@ static func _gear(m: Menus, list: VBoxContainer, tab := "gear") -> void:
 		# level (a slot's gallery alone can run 20+ rows once the matrix lands).
 		_gear_shapes(m, list, sub.trim_prefix("shapes").trim_prefix("_"))
 		return
+	if sub.begins_with("uniques"):
+		# "uniques" | "uniques_<slot>" — same per-slot split (420 named rows
+		# flat was unnavigable; one slot at a time is 60, 2026-07-27).
+		_gear_uniques(m, list, sub.trim_prefix("uniques").trim_prefix("_"))
+		return
 	match sub:
-		"uniques": _gear_uniques(m, list)
 		"gems": _gear_gems(m, list)
 		"bags": _gear_bags(m, list)
 		"rules": _gear_rules(m, list)
@@ -1086,8 +1094,11 @@ static func _gear_shapes(m: Menus, list: VBoxContainer, slot := "") -> void:
 	var show_slot := slot if slot in Items.SLOTS else String(Items.SLOTS[0])
 	var slot_desc := {
 		"weapon": "Main: your class attribute (largest budget). Upgradeable at merchants.",
+		"helmet": "Main: your class attribute (solid budget).",
 		"armor": "Main: your class attribute. Upgradeable at merchants.",
-		"boots": "Main: your class attribute (smallest budget).",
+		"gloves": "Main: your class attribute (smallest budget).",
+		"pants": "Main: your class attribute (solid budget).",
+		"boots": "Main: your class attribute (small budget).",
 		"charm": "Main: your class attribute.",
 	}
 
@@ -1119,16 +1130,27 @@ static func _gear_shapes(m: Menus, list: VBoxContainer, slot := "") -> void:
 			m._lbl(list, "  %s" % String(Classes.CLASSES[cls]["name"]).to_upper(), 14, Color(0.7, 0.78, 0.95))
 			for noun in Items.CLASS_WEAPONS.get(cls, []):
 				_shape_row(m, list, show_slot, String(noun))
+	elif not Items.CLASS_GEAR.get("warrior", {}).get(show_slot, []).is_empty():
+		# Per-class slot (every gear slot since the 2026-07-27 matrix
+		# migration): group under class headers like weapons.
+		for cls in Classes.CLASSES:
+			m._lbl(list, "  %s" % String(Classes.CLASSES[cls]["name"]).to_upper(), 14, Color(0.7, 0.78, 0.95))
+			for noun in Items.CLASS_GEAR.get(cls, {}).get(show_slot, []):
+				_shape_row(m, list, show_slot, String(noun))
 	else:
 		for noun in Items.SLOT_NAMES[show_slot]:
 			_shape_row(m, list, show_slot, String(noun))
 
 
-## One gallery row: shape name + tag, then its icon at every grade.
+## One gallery row: shape name + tag, then its icon at every grade — and a
+## dim flavor line beneath when the shape carries one.
 static func _shape_row(m: Menus, list: VBoxContainer, slot: String, noun: String) -> void:
+	var card_box := VBoxContainer.new()
+	card_box.add_theme_constant_override("separation", 4)
+	_card(list).add_child(card_box)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	_card(list).add_child(row)
+	card_box.add_child(row)
 	var tag: String = Items.SHAPE_STYLE.get(noun, {}).get("tag", "")
 	var name_l := m._lbl(row, "%s\n%s" % [noun, tag], 13, Color(0.85, 0.85, 0.9))
 	name_l.custom_minimum_size = Vector2(120, 34)
@@ -1151,23 +1173,32 @@ static func _shape_row(m: Menus, list: VBoxContainer, slot: String, noun: String
 		gl.add_theme_font_size_override("font_size", 12)
 		gl.add_theme_color_override("font_color", Items.GRADE_COLOR[g])
 		cell.add_child(gl)
+	# Flavor: a quoted, dim parchment line under the gallery row (empty = none).
+	var flav := GearFlavor.of({"noun": noun})
+	if flav != "":
+		var fl := m._lbl(card_box, "❝ %s ❞" % flav, 12, Color(0.72, 0.68, 0.55))
+		fl.custom_minimum_size = Vector2(760, 0)
+		fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
-## UNIQUES shelf — the own-art named uniques and the class legendaries.
-static func _gear_uniques(m: Menus, list: VBoxContainer) -> void:
-	# The old "EPIC UNIQUES (A)" block (Items.A_NAMES on a generic slot icon) was
-	# removed 2026-07-26 along with A_NAMES itself — hollow names with no art or
-	# passive, superseded by the own-art NAMED UNIQUES below. Generic A now rolls a
-	# plain prefix+shape name; only these named uniques carry an identity + passive.
-	# ------------------------------------------- named uniques (own art) ---
+## UNIQUES shelf, one SLOT at a time (the shapes-shelf pattern — 420 named
+## rows flat was unnavigable; a slot is 60, grouped by class).
+static func _gear_uniques(m: Menus, list: VBoxContainer, slot := "") -> void:
+	var show_slot := slot if slot in Items.SLOTS else String(Items.SLOTS[0])
 	if not Items.UNIQUES.is_empty():
 		m._lbl(list, "— NAMED UNIQUES — one-off pieces, each its own forging —", 16, Color(1.0, 0.72, 0.45))
-		var ud := m._lbl(list, "A unique is a generic-grade piece that also carries a signature PASSIVE — that passive is the whole difference, and uniques drop more rarely to match. Its own name, its own art, live the moment you equip it (no awakening quest — that stays a legendary rite). Named A pieces surface in Act 2, named S in Act 3.",
+		var ud := m._lbl(list, "A unique is a generic-grade piece that also carries a signature PASSIVE — that passive is the whole difference, and uniques drop more rarely to match. Its own name, its own art, live the moment you equip it. Named A pieces surface in Act 2, named S in Act 3.",
 			13, Color(0.8, 0.82, 0.88))
 		ud.custom_minimum_size = Vector2(880, 0)
 		ud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		m._lbl(list, "— %s UNIQUES —" % show_slot.to_upper(), 16, Color(0.95, 0.85, 0.5))
 		for cls in Classes.CLASSES:
-			var mine: Array = Items.uniques_for(String(cls))
+			# Table order keeps each shape's A/S pair adjacent (the weaker/
+			# stronger read the design doc promises).
+			var mine: Array = []
+			for u in Items.uniques_for(String(cls)):
+				if String(u["slot"]) == show_slot:
+					mine.append(u)
 			if mine.is_empty():
 				continue
 			var ubox := VBoxContainer.new()
@@ -1185,36 +1216,26 @@ static func _gear_uniques(m: Menus, list: VBoxContainer) -> void:
 				uicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				uicon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				urow.add_child(uicon)
-				var ul := m._lbl(urow, "%s   —   %s %s\n★ %s" % [u["name"], u["grade"], u["noun"],
+				var uinfo := VBoxContainer.new()
+				uinfo.add_theme_constant_override("separation", 2)
+				uinfo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				urow.add_child(uinfo)
+				var ul := m._lbl(uinfo, "%s   —   %s %s\n★ %s" % [u["name"], u["grade"], u["noun"],
 					Items.PASSIVES.get(String(u.get("passive", "")), "signature passive — in design")],
 					13, Items.GRADE_COLOR[String(u["grade"])])
 				ul.custom_minimum_size = Vector2(780, 0)
 				ul.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				# Flavor: the unique's own line (by name), dim under its passive.
+				var uflav := GearFlavor.of(u)
+				if uflav != "":
+					var ufl := m._lbl(uinfo, "❝ %s ❞" % uflav, 12, Color(0.72, 0.68, 0.55))
+					ufl.custom_minimum_size = Vector2(780, 0)
+					ufl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	m._lbl(list, "— LEGENDARY (S) — class exclusive, golden chests only —", 16, Items.GRADE_COLOR["S"])
-	var awk := m._lbl(list, "A found or bought legendary keeps its name and top stats, but its signature PASSIVE sleeps — complete your class's short AWAKENING quest to wake it. Once awakened, every legendary of that class you carry is active.", 13, Color(0.85, 0.75, 0.55))
-	awk.custom_minimum_size = Vector2(880, 0)
-	awk.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	for cls in Items.S_GEAR:
-		# One card per class holding its four legendary pieces.
-		var cls_box := VBoxContainer.new()
-		cls_box.add_theme_constant_override("separation", 4)
-		_card(list).add_child(cls_box)
-		m._lbl(cls_box, Classes.CLASSES[cls]["name"].to_upper(), 14, Color(0.95, 0.85, 0.5))
-		for slot in Items.S_GEAR[cls]:   # the class's defined legendary slots (not all 7)
-			var special: Dictionary = Items.S_GEAR[cls][slot]
-			var row := HBoxContainer.new()
-			row.add_theme_constant_override("separation", 14)
-			cls_box.add_child(row)
-			var icon := TextureRect.new()
-			icon.texture = Art.item_icon(slot, "S", special.get("noun", ""))
-			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			row.add_child(icon)
-			var extra := ""
-			if special.has("passive"):
-				extra = "  ★ " + Items.PASSIVES[special["passive"]] + "  (DORMANT until you awaken it)"
-			var l := m._lbl(row, special["name"] + extra, 13, Items.GRADE_COLOR["S"])
-			l.custom_minimum_size = Vector2(780, 0)
+	# (The LEGENDARY (S) shelf was removed 2026-07-27 with the legendary tier:
+	# no separate legendary gear and no awakening questline — the six flagship
+	# weapon passives live on their fitting named-S uniques above, live on
+	# pickup. Old saves' legendaries keep working; they're just uniques now.)
 
 
 ## RULES shelf — grades, chests, drop bands, the stat-source rules and soft caps.
@@ -1394,7 +1415,7 @@ static func _curios(m: Menus, list: VBoxContainer) -> void:
 static func _future(m: Menus, list: VBoxContainer, tab: String) -> void:
 	if tab == "future_terrains":
 		UITheme.header(m._lbl(list, "— PLACEHOLDER TERRAINS — paint any room via the dev panel —", 16, Color(0.7, 0.95, 0.85)))
-		var tids: Array = Terrains.DATA.keys()
+		var tids: Array = Terrains.catalog_ids()
 		tids.sort()
 		var shown := 0
 		for tid in tids:
@@ -1692,12 +1713,10 @@ static func _gallery_seen(m: Menus, e: Dictionary) -> bool:
 	if String(e.get("kind", "")) != "" \
 			and int(g.kill_counts.get(String(e["kind"]), 0)) > 0:
 		return true
-	# Owning a look hangs its painting (wardrobe purchases are account meta);
-	# an awakened form additionally needs the awakening actually earned.
+	# Owning a look hangs its painting (wardrobe purchases are account meta).
+	# (2026-07-27) Awakened forms retired — ownership alone hangs it now.
 	if String(e.get("skin_cls", "")) != "":
-		var owned: bool = bool(g.owns_cosmetic("skin", String(e["skin_cls"]), String(e["skin_id"])))
-		if owned and (not bool(e.get("awakened", false))
-				or bool(g.get_flag("s_awakened_" + String(e["skin_cls"]), false))):
+		if bool(g.owns_cosmetic("skin", String(e["skin_cls"]), String(e["skin_id"]))):
 			return true
 	return false
 
@@ -1748,7 +1767,9 @@ static func _gallery_entries(m: Menus) -> Array:
 			out.append({"sprite": base, "aka": [], "name": cname,
 				"bucket": "heroes", "sort": "0_" + cname})
 		elif base.begins_with("splash_skin_"):
-			out.append(_gallery_skin_entry(String(base)))
+			var se := _gallery_skin_entry(String(base))
+			if not se.is_empty():
+				out.append(se)
 		else:
 			world.append(base)
 
@@ -1809,25 +1830,21 @@ static func _gallery_entries(m: Menus) -> Array:
 ## Carries skin_cls/skin_id so OWNING the look hangs its painting (account
 ## meta — owner 2026-07-25: the gallery spans your whole roster).
 static func _gallery_skin_entry(base: String) -> Dictionary:
-	var rest := base.trim_prefix("splash_skin_")
-	var awakened := rest.ends_with("_awakened")
-	if awakened:
-		rest = rest.trim_suffix("_awakened")
-	var cls := ""
-	for c in Classes.CLASSES:
-		if rest.begins_with(String(c) + "_"):
-			cls = String(c)
-			break
-	var skin_id := rest.trim_prefix(cls + "_") if cls != "" else rest
-	var skin: Dictionary = Skins.find_skin(cls, skin_id) if cls != "" else {}
-	var nm := String(skin.get("name", skin_id.capitalize()))
-	if awakened:
-		nm += " — Awakened"
-	if cls != "":
-		nm += "  (%s)" % String(Classes.CLASSES.get(cls, {}).get("name", cls.capitalize()))
-	return {"sprite": base, "aka": [], "name": nm, "bucket": "heroes",
-		"skin_cls": cls, "skin_id": skin_id, "awakened": awakened,
-		"sort": "1_%s_%s_%s" % [cls, skin_id, "1" if awakened else "0"]}
+	# (2026-07-27) Resolve the file to the skin that CLAIMS it via
+	# Skins.skin_splash — per-skin `splash` overrides (the two Phantom forms)
+	# make filename-derivation lie, and a splash NO skin claims (the retired
+	# placeholder awakened forms — art kept on disk per the never-delete rule)
+	# hangs nowhere. Returns {} for unclaimed files; the caller skips those.
+	for cls in Skins.SKINS:
+		for sk in Skins.skins_for(String(cls)):
+			var sid := String(sk["id"])
+			if Skins.skin_splash(String(cls), sid) == base:
+				var nm := String(sk.get("name", sid.capitalize()))
+				nm += "  (%s)" % String(Classes.CLASSES.get(cls, {}).get("name", String(cls).capitalize()))
+				return {"sprite": base, "aka": [], "name": nm, "bucket": "heroes",
+					"skin_cls": String(cls), "skin_id": sid,
+					"sort": "1_%s_%s" % [cls, sid]}
+	return {}
 
 
 ## Are the shorter slug words a contiguous run inside the longer ones?
