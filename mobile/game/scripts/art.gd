@@ -1455,6 +1455,25 @@ static func ui_icon(name: String) -> ImageTexture:
 	return t
 
 
+## Grade-specific equipped/shop bag art. Authored icons are 32x32, matching
+## gear; missing grades retain the existing inventory-pouch fallback.
+static func bag_icon(grade: String) -> ImageTexture:
+	var key := "bagicon_" + grade
+	if _cache.has(key):
+		return _cache[key]
+	var im := _icon_override("bag_%s" % grade)
+	if im != null:
+		if im.get_width() != 32 or im.get_height() != 32:
+			im.resize(32, 32, Image.INTERPOLATE_NEAREST)
+		var authored := ImageTexture.create_from_image(im)
+		_cache[key] = authored
+		return authored
+	var hud_bag := ui_icon("ui_bag")
+	var fallback: ImageTexture = hud_bag if hud_bag != null else tex("bag")
+	_cache[key] = fallback
+	return fallback
+
+
 ## Get (and cache) the texture for a named sprite.
 ## If assets/sprites/<name>.png exists it OVERRIDES the procedural art —
 ## drop in hand-drawn or CC0 sprites (any size) without touching code.

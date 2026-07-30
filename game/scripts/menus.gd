@@ -1397,7 +1397,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		crow.add_theme_constant_override("separation", 5)
 		chip.add_child(crow)
 		var bic := TextureRect.new()
-		bic.texture = Art.tex("bag")
+		bic.texture = Art.bag_icon(bg2)
 		bic.custom_minimum_size = Vector2(16, 16)
 		bic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		bic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -3189,7 +3189,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		var bdetail := "+%d slots — %d gold" % [int(bit["slots"]), bcost]
 		if not bimproves:
 			bdetail += "  (no gain — bags full & larger)"
-		_shop_card(misc_grid, null, "🎒 %s" % String(bit["name"]), bdetail,
+		_shop_card(misc_grid, Art.bag_icon(String(bit["grade"])), String(bit["name"]), bdetail,
 			Items.GRADE_COLOR[String(bit["grade"])], p.gold >= bcost and bimproves, buy_bag)
 
 	# Gambling shelf (2026-07-09): the pity machine — rolls the chapter's
