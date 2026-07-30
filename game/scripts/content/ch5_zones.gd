@@ -301,7 +301,7 @@ const CONVOS := {
 				{"flag": "chose_foreman_judged", "text": "The south sends a bearer — the one who passed a foundry verdict with nine mourners for a jury, the freight-tales say. Mind yourself here: this valley LOVES a stranger who decides things for people. That's how the cult recruits. Yri, Wildfang. Sit."},
 			],
 			"next": "b2"},
-		"b2": {"who": "Tracker Yri", "text": "The Long Sleep cult carries sleepers north — their own kin, freely given, to 'wait for the Queen's morning' in the deep ice. Madness, but GENTLE madness, and here's the knot: they pay the winter clans in grain for safe passage. Famine snow, bearer. That grain is the only reason my cousins' children have marrow in their bones this year.", "next": "b3"},
+		"b2": {"who": "Tracker Yri", "text": "You've seen the sledges. Here's the knot the road can't show: madness, yes — but gentle madness, freely given, and paid for in the only coin that matters this winter. My cousins' children have marrow in their bones because of that grain. Remember it when the valley starts looking simple.", "next": "b3"},
 		"b3": {"who": "Tracker Yri", "text": "Hrolgar Whitepelt holds the Watch Ridge for them. He is not corrupted, not mad, not cruel — he is a chieftain who found one way to feed forty mouths and doesn't ask what the wagons carry. You will have to move him, and he will not move. I'm asking you to know all of that BEFORE the ridge, not after.",
 			"choices": [
 				{"text": "\"I'll give him every chance to stand aside — and carry it plainly if he won't.\"",

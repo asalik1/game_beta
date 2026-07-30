@@ -52,10 +52,177 @@ TRAVEL_HOOKS = {
     "ch13": "The weather tears open ahead. Three voices are still holding its corners.",
     "ch14": "The old capital opens before you. The first throne waits at the last road.",
 }
+# The n4 prompt per chapter — transcribed from the doc's "The asker (n4)" /
+# "The trigger + n4 (INTERNAL)" blocks (§1 two-prompt-modes rule). PUBLIC
+# chapters: a Narrator setup node stages the asker, then the asker speaks the
+# prompt. INTERNAL chapters (ch2/5/9/10/13): who is "You", the text is the
+# deliberation trigger, and the doc's CAPS temptation options carry the vice's
+# voice. Update these WITH the doc blocks — never invent a stem.
+ASKERS = {
+    "ch2": {
+        "who": "You",
+        "text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it offers its account FIRST.",
+    },
+    "ch3": {
+        "who": "Gate-Cantor",
+        "setup": "At the gate, the counting-cantor looks up from her ledger as the procession shuffles past.",
+        "text": "State your business with the unburied, pilgrim.",
+    },
+    "ch4": {
+        "who": "Crew-Boss",
+        "setup": "At the furnace corridor's mouth a crew-boss blocks your way, her roped crew filing past behind her.",
+        "text": "You're not signed. So what's a foundry to you, stranger?",
+    },
+    "ch5": {
+        "who": "You",
+        "text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
+    },
+    "ch6": {
+        "who": "Glad-Eyed Kneeler",
+        "setup": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+        "text": "It gives, stranger. It only ever gives. Will you not take?",
+    },
+    "ch7": {
+        "who": "Apprentice Sorrel",
+        "setup": "Apprentice Sorrel falls in step beside you on the summit road.",
+        "text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
+    },
+    "ch8": {
+        "who": "Journeyman Smith",
+        "setup": "At the defectors' cold fire, a journeyman who walked out mid-indenture feeds the embers one splinter at a time.",
+        "text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
+    },
+    "ch9": {
+        "who": "You",
+        "text": "The cure-seekers' map-runner shows you a chart the city corrected overnight, then wades off to re-survey. You stand at the waterline holding the wrong map. Below is a god that talks. The shard has opinions about gods that talk.",
+    },
+    "ch10": {
+        "who": "You",
+        "text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
+    },
+    "ch11": {
+        "who": "Refugee",
+        "setup": "On the road between the armies, a man with his front door on his back passes you without stopping.",
+        "text": "Two armies, both right. Where will you be standing when they stop being polite about it?",
+    },
+    "ch12": {
+        "who": "Wildfang Scout",
+        "setup": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+        "text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
+    },
+    "ch13": {
+        "who": "You",
+        "text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
+    },
+    "ch14": {
+        "who": "Elara",
+        "setup": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+        "text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
+    },
+}
+
+# Post-choice reply beats, chapter-flavored and stance-true (generator glue,
+# same category as TRAVEL_HOOKS — the scene answers, never a generic Ember).
 REPLIES = {
-    "virtue": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
-    "temptation": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
-    "deflection": "The question follows when you decline to answer it. Silence is still a direction.",
+    "ch2": {
+        "virtue": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
+        "temptation": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
+        "deflection": "The shard says nothing. It has waited years; it can wait one chapter more.",
+    },
+    "ch3": {
+        "virtue": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
+        "temptation": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
+        "deflection": "The cantor waves you through. The procession does not look up.",
+    },
+    "ch4": {
+        "virtue": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
+        "temptation": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
+        "deflection": "The crew-boss shrugs and turns back to her rope-line. Strangers' business is strangers' business.",
+    },
+    "ch5": {
+        "virtue": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
+        "temptation": "The pen goes back untouched. The shard hums the sister's silence all the way up the ice.",
+        "deflection": "You leave the ledger open to the wind. Let the snow sign it.",
+    },
+    "ch6": {
+        "virtue": "The kneeler lets go of your sleeve, puzzled. Refusal is the one gift the green never taught them to read.",
+        "temptation": "The kneeler beams and turns back to the light. Somewhere under the moss, something files your answer.",
+        "deflection": "The kneeler recoils as if scorched. The green closes gently over the place your shadow fell.",
+    },
+    "ch7": {
+        "virtue": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
+        "temptation": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
+        "deflection": "\"The drake. Right.\" Sorrel's voice does the thing voices do when they stop expecting.",
+    },
+    "ch8": {
+        "virtue": "The journeyman feeds the fire another splinter. \"Cool it, then. Some of us would like our hands back.\"",
+        "temptation": "The journeyman looks at you the way a man looks at his own old mistake wearing new boots.",
+        "deflection": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
+    },
+    "ch9": {
+        "virtue": "The wrong map folds easier than the right one would have. Wire first. Roots after.",
+        "temptation": "Below the waterline, something adjusts its terms. The shard calls it progress.",
+        "deflection": "You leave the map on a piling for the next fool. The water is already correcting it.",
+    },
+    "ch10": {
+        "virtue": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
+        "temptation": "The shard goes quiet the way a blade goes quiet in a sheath. The blue dark says nothing either.",
+        "deflection": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
+    },
+    "ch11": {
+        "virtue": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
+        "temptation": "The refugee spits, hitches the door higher, and walks faster. Receipts warm no one.",
+        "deflection": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
+    },
+    "ch12": {
+        "virtue": "The scout stops hammering. \"An ending.\" She tries the word like a foreign coin, then pockets it.",
+        "temptation": "The scout's hammer stops mid-swing. She looks at you the way her elders look at the green.",
+        "deflection": "The scout drives the post the rest of the way down. \"Border it is. I'll cut more signs.\"",
+    },
+    "ch13": {
+        "virtue": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
+        "temptation": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
+        "deflection": "The young speaker turns back to the recitation. Ammunition, then. The storm prices it the same.",
+    },
+    "ch14": {
+        "virtue": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
+        "temptation": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
+        "deflection": "Elara looks at the throne a long moment. \"Good,\" she says. \"Break everything.\" And steps aside.",
+    },
+}
+
+# Spine flag-variants — the doc's italic "*(flag variants …)*" bullets, which
+# the Markdown parser deliberately skips. Each entry APPENDS a line to the
+# node's base text for the flagged players; per-class overrides carry the
+# ch6_answered_green deed rule (warrior LOOSED, archer ASKED — they never
+# pocket a cutting).
+SPINE_VARIANTS = {
+    "ch8": {"n2": [
+        {"flag": "joined_cinderborn", "append": {"default": "These are YOUR people's fires. That is either a reason to look away or the only reason to look closely."}},
+        {"flag": "joined_accord", "append": {"default": "Your writ says infiltrate. The ash does not care whose seal is on your papers."}},
+    ]},
+    "ch9": {"n1": [
+        {"flag": "ch6_answered_green", "append": {
+            "default": "The cutting in your pack turned over in the night. It is pointing at the city like a compass needle.",
+            "warrior": "What you loosed in the green has been restless all night. It knows this city.",
+            "archer": "What you asked the green has been growing an answer. It is ahead of you now.",
+        }},
+    ]},
+    "ch10": {"n2": [
+        {"flag": "ch5_vowed_morning", "append": {"default": "You promised the north a real morning once. She is what the promise looks like now."}},
+        {"flag": "ch5_felt_pull", "append": {"default": "The hush you leaned toward under the ice — it has a name now, and the name is a child's."}},
+    ]},
+    "ch12": {"n2": [
+        {"flag": "ch6_answered_green", "append": {
+            "default": "The cutting you took in the Deep is heavier every day now. It is not growing. It is REPORTING.",
+            "warrior": "What you loosed in the Deep went quiet a day's march out. The Roothold heard you coming.",
+            "archer": "What you asked the green in the Deep — the Roothold has been growing the answer ever since. It is the size of a country now.",
+        }},
+    ]},
+    "ch13": {"n2": [
+        {"flag": "ch7_would_speak", "append": {"default": "You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it."}},
+        {"flag": "ch7_let_it_end", "append": {"default": "You wanted to hear the world unmuzzled. Listen, then. It is saying something."}},
+    ]},
 }
 
 
@@ -235,14 +402,6 @@ def parse_source() -> dict[str, dict[str, Any]]:
                 "flag": "chose_kaethra_sheathed",
                 "text": clean(f'"{spared}"'),
             }]
-            appended = (
-                "The cutting in your pack turned over in the night. "
-                "It is pointing at the city like a compass needle."
-            )
-            spec["n1_variants"] = [{
-                "flag": "ch6_answered_green",
-                "text": f"{spec['n1']} {appended}",
-            }]
         specs[chapter_id] = spec
         index = end
 
@@ -257,6 +416,17 @@ def validate(specs: dict[str, dict[str, Any]]) -> None:
             f"chapter set mismatch: expected {sorted(expected_chapters)}, "
             f"got {sorted(specs)}"
         )
+    if set(ASKERS) != expected_chapters:
+        raise ValueError("ASKERS table does not cover ch2-ch14")
+    if set(REPLIES) != expected_chapters:
+        raise ValueError("REPLIES table does not cover ch2-ch14")
+    internal = {"ch2", "ch5", "ch9", "ch10", "ch13"}
+    for chapter_id, asker in ASKERS.items():
+        if (chapter_id in internal) != (asker["who"] == "You"):
+            raise ValueError(
+                f"{chapter_id}: prompt mode does not match the doc's "
+                "public/private split"
+            )
     for chapter_id, spec in specs.items():
         expected_shared = 3 if chapter_id == "ch14" else 2
         if len(spec["plates"]) != expected_shared:
@@ -283,12 +453,25 @@ def validate(specs: dict[str, dict[str, Any]]) -> None:
         )
 
 
+def spine_variants(
+    chapter_id: str, node_id: str, base: str, class_id: str
+) -> list[dict[str, str]]:
+    """Per-class flag variants that APPEND a line to the node's base text."""
+    variants: list[dict[str, str]] = []
+    for entry in SPINE_VARIANTS.get(chapter_id, {}).get(node_id, []):
+        line = entry["append"].get(class_id, entry["append"]["default"])
+        variants.append({"flag": entry["flag"], "text": f"{base} {line}"})
+    return variants
+
+
 def build_conversations(specs: dict[str, dict[str, Any]]) -> dict[str, Any]:
     conversations: dict[str, Any] = {}
     stance_names = ("virtue", "temptation", "deflection")
     for chapter_id, spec in specs.items():
+        asker = ASKERS[chapter_id]
         for class_id in CLASSES:
             turn = spec["classes"][class_id]
+            has_setup = "setup" in asker
             nodes: dict[str, Any] = {
                 "n1": {
                     "who": "Narrator",
@@ -305,18 +488,30 @@ def build_conversations(specs: dict[str, dict[str, Any]]) -> dict[str, Any]:
                     "who": "Narrator",
                     "cue": f"{spec['cue']}_{class_id}",
                     "text": turn["n3"],
-                    "next": "n4",
+                    "next": "n4s" if has_setup else "n4",
                 },
                 "n4": {
-                    "who": "You",
-                    "text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+                    "who": asker["who"],
+                    "text": asker["text"],
                     "choices": [],
                 },
             }
-            if spec["n1_variants"]:
-                nodes["n1"]["variants"] = spec["n1_variants"]
-            if spec["n2_variants"]:
-                nodes["n2"]["variants"] = spec["n2_variants"]
+            if has_setup:
+                nodes["n4s"] = {
+                    "who": "Narrator",
+                    "text": asker["setup"],
+                    "next": "n4",
+                }
+            n1_variants = list(spec["n1_variants"]) + spine_variants(
+                chapter_id, "n1", spec["n1"], class_id
+            )
+            n2_variants = list(spec["n2_variants"]) + spine_variants(
+                chapter_id, "n2", spec["n2"], class_id
+            )
+            if n1_variants:
+                nodes["n1"]["variants"] = n1_variants
+            if n2_variants:
+                nodes["n2"]["variants"] = n2_variants
             if turn["n3_variants"]:
                 nodes["n3"]["variants"] = turn["n3_variants"]
             if chapter_id == "ch14":
@@ -333,7 +528,7 @@ def build_conversations(specs: dict[str, dict[str, Any]]) -> dict[str, Any]:
                 )
                 nodes[reply_id] = {
                     "who": "Narrator",
-                    "text": REPLIES[stance],
+                    "text": REPLIES[chapter_id][stance],
                     "next": "n_end",
                 }
             nodes["n_end"] = {

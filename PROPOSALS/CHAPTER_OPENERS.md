@@ -505,10 +505,10 @@ evil.
   given, every one — they sign their names, lie down smiling, and wait for
   the Queen's morning. The cult keeps the ledgers beautifully."
 - n2 — "The winter clans let the sledges pass because the cult pays in
-  grain, and this is a famine winter. That grain is marrow in children's
-  bones. Every bundle on those sledges is somebody's supper. Under the
-  shelf, the vault grows a row at a time — and there is always an empty
-  bed."
+  grain, and this is a famine winter. Count the children at the clan
+  line — watching the sacks, not the sleepers. Every bundle on those
+  sledges is somebody's supper. Under the shelf, the vault grows a row
+  at a time — and there is always an empty bed."
 
 **The trigger + n4 (INTERNAL)** — a Long Sleep sister at the sledge line
 offers the open ledger and the pen, and says nothing at all. The pen

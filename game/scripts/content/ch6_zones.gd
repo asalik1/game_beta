@@ -273,7 +273,7 @@ const CONVOS := {
 				{"flag": "chose_wagon_north", "text": "You're the bearer from the ice — the one who finished a dead porter's haul and delivered eleven sleepers to their vow. My faithful approved; vows are our trade. I keep wondering about YOUR nights since. Vela. Deacon. Welcome to a worse question."},
 			],
 			"next": "b2"},
-		"b2": {"who": "Deacon Vela", "text": "We came on pilgrimage. The blight is the land telling the truth — rot comes for everything; the Choir simply stopped calling that bad news. Sixty years of that creed, bearer, and it HELD, through plague and Vale and worse. Then we walked into the Deep and found the opposite of rot: growth without death. Things that only add. And half my flock knelt to it on sight.", "next": "b3"},
+		"b2": {"who": "Deacon Vela", "text": "Sixty years I preached that rot is the land's honesty — and the creed HELD, through plague and Vale and worse, right up to that waterline. You saw what waits past it. I won't preach what it does to the preaching; I will tell you that half the people I have prayed beside for twenty years are still out there, knee-down in the moss, and I keep the count.", "next": "b3"},
 		"b3": {"who": "Deacon Vela", "text": "The Auroch holds the wallow — the bog-bull that drowned a century back and never stopped growing. Past it, Rotmaw: MY deacon once, now gardener to the lie. And in the heart of the Bloom, the Wildfang shaman Kaethra, who drank the green looking for a cure. Both her camps agree she cannot leave the Deep. When Wildfang camps agree, bearer, the thing they agree on is always terrible.",
 			"choices": [
 				{"text": "\"I'll clear the way and hear Kaethra out before anything ends. She's owed that much.\"",
