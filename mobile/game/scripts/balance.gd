@@ -2625,18 +2625,22 @@ const ALKAHEST_CODEX_DROP_CHANCE := 0.02   # extremely rare boss drop (learn-onc
 # accord Health Potion unit, flagged as a chapter gift (expires on leaving,
 # never sellable) — see Items.make_gift_health_potion / game_world.
 
-# Shop sourcing (§10): the Accord (clean) lane sells at every merchant across an
-# act-appropriate grade band, NEVER S. The Black-market (laced) lane sells only
-# from a distinct black-market shelf (stand-in for the Sable Court fence — see
-# menus.gd) at the act's lowest band grade per family. S is boss/elite-drop only.
+# Shop sourcing (§10): the Accord (clean) lane sells at EVERY merchant across an
+# act-appropriate grade band, NEVER S. S is boss/elite-drop only.
 const SHOP_POTION_ACCORD_GRADES := {
 	1: ["F", "E", "D", "C"], 2: ["E", "D", "C", "B", "A"], 3: ["D", "C", "B", "A"]}
-const SHOP_POTION_BLACK_GRADES := {
-	1: ["F", "E", "D", "C"], 2: ["E", "D", "C", "B", "A"], 3: ["D", "C", "B", "A"]}
 
-static func shop_potion_grades(act: int, laced := false) -> Array:
-	var tbl := SHOP_POTION_BLACK_GRADES if laced else SHOP_POTION_ACCORD_GRADES
-	return tbl.get(clampi(act, 1, 3), tbl[1])
+static func shop_potion_grades(act: int) -> Array:
+	return SHOP_POTION_ACCORD_GRADES.get(clampi(act, 1, 3), SHOP_POTION_ACCORD_GRADES[1])
+
+# Black-market (laced) lane sourcing (§10): sold ONLY by black-market vendors —
+# a fence in the capital's Sable Court (Cinderborn ward) + an occasional road
+# smuggler — NEVER the chartered merchant. Both share the ONE black-market shelf
+# (Items.black_market_stock) and stock the FULL laced ladder F→A per family (no
+# act gate — price gates the top, §0). S is never laced, so it never appears; the
+# per-bottle price is the stored laced value (≈65% of the clean twin, doc §0/§10).
+# The road smuggler is a small seeded chance per campaign SAFE (social) room.
+const SMUGGLER_ROAD_CHANCE := 0.14
 
 # Gambling vendor (reworked 2026-07-09): the PITY machine — a gamble rolls
 # from the chapter's BOSS band (CHAPTER_BOSS_WEIGHTS), priced at the boss-

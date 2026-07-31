@@ -1474,6 +1474,25 @@ static func is_rotation_potion(id: String) -> bool:
 	return id.begins_with("pot_")
 
 
+## The black-market shelf (CONSUMABLE_GRADES §10): the LACED lane F→A, one bottle
+## per family+grade (Renewal C→A), in the deterministic family order the Sable
+## Court fence AND the road smuggler both stock. S is NEVER laced, so it can never
+## appear here. Prices are the stored laced values (≈65% of the clean twin, §0).
+## The one source both black-market vendors share (menus.open_black_market).
+static func black_market_stock() -> Array:
+	var out: Array = []
+	for fs in POTION_SHAPES:
+		var meta: Dictionary = POTION_SHAPES[fs]
+		var fam := String(meta["family"])
+		var shp := String(meta["shape"])
+		var ladder: Array = Balance.POTION_GRADES_RENEWAL_LACED if fam == "renewal" else Balance.POTION_GRADES_LACED
+		for g in ladder:
+			var p := make_potion(fam, shp, String(g), "black")
+			if not p.is_empty():
+				out.append(p)
+	return out
+
+
 ## The Accord-lane Defective (F) Health Potion, flagged as the ch1-3 teaching
 ## gift: drunk first, never sellable, EXPIRES on leaving the chapter (§2/§12).
 static func make_gift_health_potion() -> Dictionary:

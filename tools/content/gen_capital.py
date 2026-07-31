@@ -41,6 +41,11 @@ HUB_ACTIONS = {
     # Codex, then fuse a clean S + a laced A into a Grand potion. Kesh's alembic
     # capstone — placed by her gossip hub alongside the craft bench.
     "synthesis",
+    # The black-market FENCE (CONSUMABLE_GRADES §10): the laced lane, sold ONLY
+    # by black-market vendors. Placed on a shady peddler in the Sable Court
+    # (Cinderborn ward); game_world._cap_fence plays her greet once then opens
+    # menus.open_black_market. The occasional road smuggler shares that shelf.
+    "blackmarket",
 }
 ROOMS = [
   # --- CROWN PLAZA: the whole town ritual in one grand room ---
@@ -71,7 +76,9 @@ ROOMS = [
       ("herbalist_kesh","E — Herbalist Kesh","cap_kesh",P)]),
   ("cin_court","The Sable Court",1,1,"capital_cinderborn",0.78,[
       ("aldric","E — Ser Aldric","cap_aldric",P),
-      ("vessa","E — Envoy Vessa","cap_vessa",P)]),
+      ("vessa","E — Envoy Vessa","cap_vessa",P),
+      # The black-market fence lurks in the ward Crownfall doesn't ledger (§10).
+      ("grave_goods_peddler","E — The Fence","blackmarket",A,"cap_fence")]),
 ]
 
 # merchant rooms (existing shop system): id -> [x,y]. The plaza bazaar is the
@@ -300,7 +307,9 @@ NPC_SLOT_OVERRIDES = {
     "wf_moot": [(720, 650), (1390, 650)],
     "ch_chapel": [(720, 650), (1390, 650)],
     "acc_commons": [(720, 650), (1390, 650)],
-    "cin_court": [(720, 650), (1390, 650)],
+    # Aldric + Vessa flank the Sable Hall; the fence keeps to the shadow-market
+    # south of it (clear of the hall's clearance radius).
+    "cin_court": [(720, 650), (1390, 650), (1056, 940)],
 }
 
 def gd_zone(i, room):
@@ -436,6 +445,10 @@ CONVOS = {
  "cap_maren": ("Elder Maren", "So — the shards still choosing, and the factions still counting. The Accord holds this ward and half this city's conscience. There's honest work daily, if you want it. Sit; the fire doesn't bite."),
  "cap_aldric": ("Ser Aldric", "The Cinderborn keep the forms of a court that lost its crown. I keep its sword arm. There's work in the old key — recover, restore, avenge — for a crown that might yet find a head. Daily, if you've the stomach."),
  "cap_vessa": ("Envoy Vessa", "Work with us and be paid, protected, and remembered. I've a commission most days — a courier run, a quiet errand, imperial paper with teeth. First one's waiting."),
+ # The black-market fence's one-time greet (CONSUMABLE_GRADES §10 street voice):
+ # the discount is diluted blightwater, and she'll tell you it's fine — lying by
+ # less than you'd hope. Played once (cap_met_fence), then the laced shelf opens.
+ "cap_fence": ("The Fence", "Keep it down. The Accord won't stamp what I sell — which is why it's a third off their chartered rate, every bottle. Aye, it's cut. Blightwater, thinned near to nothing. Closes the wound just the same; the rest is a little rot, and rot never yet collected off anyone who paid on time. Come see the shelf."),
 }
 
 # ---------- content integrity before write ----------

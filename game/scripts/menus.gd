@@ -1226,7 +1226,7 @@ func open_potion_loadout() -> void:
 				game.local_player.loadout_remove(rid_c)
 				open_potion_loadout(), Color(0.7, 0.82, 0.95))
 	if not any_rot:
-		var warn := _lbl(vbox, "You carry no rotation potions right now — every unassigned slot pours your cheapest Health Potion. Buy a Mana Potion, an Elixir of Might/Warding, a Tonic or a Draught of Renewal from an alchemist's shelf (or the black market), then come back here to slot the exact bottle. That's how a rotation is built.", 13, Color(1.0, 0.82, 0.5))
+		var warn := _lbl(vbox, "You carry no rotation potions right now — every unassigned slot pours your cheapest Health Potion. Buy a Mana Potion, an Elixir of Might/Warding, a Tonic or a Draught of Renewal from an alchemist's shelf (or the cheaper, laced bottles from the Sable Court fence or a road smuggler), then come back here to slot the exact bottle. That's how a rotation is built.", 13, Color(1.0, 0.82, 0.5))
 		warn.custom_minimum_size = Vector2(700, 0)
 	if not p.potion_rotation.is_empty():
 		_btn(vbox, "  ⟲  All slots back to Health  ", func() -> void:
@@ -2921,6 +2921,58 @@ func open_shop(zone: int, tab := "") -> void:
 	_hint(vbox)
 
 
+## The BLACK MARKET (CONSUMABLE_GRADES §10): the laced lane, sold ONLY here — by
+## the Sable Court fence in Crownfall (game_world._cap_fence) and the occasional
+## road smuggler (_spawn_road_smuggler). Both share this ONE shelf: the full laced
+## ladder F→A per family (Items.black_market_stock), every bottle cut with diluted
+## blightwater so the sting rides on the card. S is never laced, so it never shows.
+## Prices are the stored laced values (≈65% of the clean twin, §0) times the shard-
+## reputation band — no road markup; the discount IS the lane. `source` picks the
+## vendor voice ("fence" | "smuggler"). Like every menu, it is a pause/overlay
+## surface — the touch HUD and tap-to-talk gate on is_open(), not the tree pause.
+func open_black_market(source := "fence") -> void:
+	var p: Player = game.local_player
+	var title := ("The Sable Court Fence — you have %d gold" if source == "fence"
+		else "A Road Smuggler — you have %d gold") % p.gold
+	var vbox := _open(title, 1120, 600, true)
+	current = "black_market"
+	if source == "fence":
+		_lbl(vbox, "\"Under the counter, friend. Same kick as the Accord's finest, a third off the price. The rot in it? A rumour. Mostly.\"", 14, Color(0.78, 0.6, 0.66))
+	else:
+		_lbl(vbox, "\"Long way from a chartered shelf out here. I've the cheap bottles; you've the desperation. Fair trade.\"", 14, Color(0.78, 0.6, 0.66))
+	_lbl(vbox, "Every laced bottle is cut with diluted blightwater — that's the discount, and that's the sting. No S here: legends can't be counterfeited.", 12, Color(0.62, 0.6, 0.66))
+	# The shelf scrolls — the full laced ladder is taller than the panel.
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var buy := VBoxContainer.new()
+	buy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	buy.add_theme_constant_override("separation", 6)
+	scroll.add_child(buy)
+	_lbl(buy, "— Black Market (laced, F→A) —", 13, Color(0.72, 0.55, 0.6))
+	var grid := _shop_grid(buy)
+	# Shard reputation still reads on the price; the fence charges no road markup —
+	# the laced discount already IS the reason to come here.
+	var haggle: float = game.band_price_mult()
+	for made_v in Items.black_market_stock():
+		var made: Dictionary = made_v
+		var bcost := int(ceil(float(made["price"]) * haggle))
+		var buy_cb := func() -> void:
+			if p.gold >= bcost:
+				if p.add_consumable(made.duplicate(true)):
+					p.gold -= bcost
+					game.sfx("potion")
+				else:
+					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+			open_black_market(source)
+		_shop_card(grid, Art.consumable_icon(made), String(made["name"]),
+			"%d gold   (%s)" % [bcost, made["desc"]],
+			Items.GRADE_COLOR[made["grade"]], p.gold >= bcost, buy_cb)
+	_hint(vbox)
+
+
 ## A 2-up card grid for a shelf of items. The old shop stacked every item as a
 ## full-width row, so a ~500px label sat in a ~1070px box and wasted the whole
 ## right half; two roomy columns halve that whitespace and read like the bag.
@@ -3083,7 +3135,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	for ps in pot_shapes:
 		var fam: String = ps[0]
 		var shp: String = ps[1]
-		for gr in Balance.shop_potion_grades(pot_act, false):
+		for gr in Balance.shop_potion_grades(pot_act):
 			var made := Items.make_potion(fam, shp, String(gr), "accord")
 			if made.is_empty():
 				continue
@@ -3113,36 +3165,9 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	_shop_card(acc_grid, Art.consumable_icon(recall), String(recall["name"]),
 		"%d gold   (%s)" % [rcost, recall["desc"]], Items.GRADE_COLOR[recall["grade"]],
 		p.gold >= rcost, buy_recall)
-
-	# The Black Market (laced lane, §10). MINIMAL stand-in for the proper Sable
-	# Court fence (capital content, not yet live) — one cheap laced bottle per
-	# family at the act's lowest band grade, cut with blightwater (the sting is
-	# shown on the card). PROPER FENCE + road smuggler are follow-ups (flagged).
-	_lbl(buy, "— Black Market (laced, under the counter) —", 13, Color(0.72, 0.55, 0.6))
-	var blk_grid := _shop_grid(buy)
-	for ps in pot_shapes:
-		var fam: String = ps[0]
-		var shp: String = ps[1]
-		var made := {}
-		for gr in Balance.shop_potion_grades(pot_act, true):
-			var cand := Items.make_potion(fam, shp, String(gr), "black")
-			if not cand.is_empty():
-				made = cand
-				break
-		if made.is_empty():
-			continue
-		var bcost := int(ceil(float(made["price"]) * haggle))
-		var buy_bcb := func() -> void:
-			if p.gold >= bcost:
-				if p.add_consumable(made.duplicate(true)):
-					p.gold -= bcost
-					game.sfx("potion")
-				else:
-					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
-			open_shop(zone)
-		_shop_card(blk_grid, Art.consumable_icon(made), String(made["name"]),
-			"%d gold   (%s)" % [bcost, made["desc"]],
-			Items.GRADE_COLOR[made["grade"]], p.gold >= bcost, buy_bcb)
+	# NO laced lane here (§10): the black market is sold ONLY by the Sable Court
+	# fence + the road smuggler (menus.open_black_market), never the chartered
+	# merchant. The Accord (clean) shelf above stays at every merchant.
 
 	# ======================================================= MISCELLANEOUS ===
 	_lbl(buy, "— Miscellaneous —", 13, Color(0.62, 0.64, 0.7))

@@ -1353,7 +1353,7 @@ static func _gear_bags(m: Menus, list: VBoxContainer) -> void:
 	# alembic dc673ab already proved renders as tofu on mobile, so these six
 	# were the same bug one screen over. Names carry the list on their own.
 	for util in [
-		"Potions are GRADED F→S in two lanes now (CONSUMABLE_GRADES). The ACCORD lane is clean, chartered alchemy — sold at every merchant F→A (S is boss/elite drop only). The BLACK MARKET lane is the same headline effect ~35% cheaper, cut with diluted blightwater: every laced bottle carries a sting (weakened body, sealed wounds, dulled arms, heavy limbs, a bleed-back loan). Effect and price scale by grade; drink the right bottle for the moment.",
+		"Potions are GRADED F→S in two lanes now (CONSUMABLE_GRADES). The ACCORD lane is clean, chartered alchemy — sold at every merchant F→A (S is boss/elite drop only). The BLACK MARKET lane is the same headline effect ~35% cheaper, cut with diluted blightwater: every laced bottle carries a sting (weakened body, sealed wounds, dulled arms, heavy limbs, a bleed-back loan). It is NEVER on the chartered shelf — buy it from the fence in Crownfall's Sable Court or the occasional road smuggler. Effect and price scale by grade; drink the right bottle for the moment.",
 		"Health — a POTION restores a % of your MISSING health instantly; a TONIC restores the same total slower and cheaper (it drips over a grade-scaled window). The generic Health slot auto-pours your cheapest one; Chapters 1-3 gift a single Defective Health Potion that EXPIRES on leaving.",
 		"Mana — a POTION restores a % of MISSING mana instantly; a TONIC restores a bigger total over time.",
 		"Elixir of Might — a timed +damage window: pop it into the kill shot, not the whole fight.",

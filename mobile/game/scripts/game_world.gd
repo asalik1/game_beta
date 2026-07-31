@@ -227,6 +227,11 @@ func _hub_action(act: String) -> void:
 			# then fuse a clean S + a laced A into a Grand potion. Kesh's alembic;
 			# capital-is-the-shop gated inside the panel. Fired by her gossip choice.
 			menus.open_synthesis()
+		"blackmarket":
+			# The Sable Court fence (CONSUMABLE_GRADES §10): the ONLY reliable laced
+			# source, in Crownfall's Cinderborn ward. First press plays the street-
+			# fence greet once, then every press opens the black-market shelf.
+			_cap_fence()
 		"forge":
 			_cap_artisan("petra")
 		"lapidary":
@@ -239,6 +244,19 @@ func _hub_action(act: String) -> void:
 
 func _inspect_landmark(title: String, text: String) -> void:
 	hud.dialogue([[title, text]])
+
+
+## The Sable Court fence (CONSUMABLE_GRADES §10) — Crownfall's black-market vendor,
+## in the Cinderborn ward. On the FIRST meeting she gives her street pitch (the
+## cap_fence greet, gated on the character-scoped cap_met_fence flag), then opens
+## the laced shelf; every later press goes straight to the shelf. The road smuggler
+## shares that same shelf without the greet (_spawn_road_smuggler).
+func _cap_fence() -> void:
+	if not get_flag("cap_met_fence", false):
+		set_flag("cap_met_fence")
+		run_convo_id("cap_fence", func() -> void: menus.open_black_market("fence"))
+		return
+	menus.open_black_market("fence")
 
 
 # ------------------------------------- capital rework: services + quests ---
@@ -965,6 +983,10 @@ func _build_room(i: int) -> void:
 	# walk-past-able; neither ever ambushes.
 	_spawn_risk_events(i)
 
+	# Occasional road smuggler (CONSUMABLE_GRADES §10): the black-market laced
+	# lane far from any fence, seeded per character+room like the wanderer.
+	_spawn_road_smuggler(i)
+
 	# Hidden caches (exploration premium): some dead ends bury a chest
 	# that only glints awake when the player wanders near.
 	_spawn_hidden_cache(i)
@@ -1306,6 +1328,27 @@ func _shrine_outcome(cost: int) -> void:
 
 ## Social rooms roll ONE wanderer from the pool, seeded per character —
 ## a replay meets different people (DESIGN.md room palette).
+## An occasional ROAD SMUGGLER (CONSUMABLE_GRADES §10): the black-market laced
+## lane far from any fence — cheap bottles exactly when you're desperate. A small
+## seeded chance per campaign SAFE (social) room, deterministic per character+
+## room+chapter (like the wanderer/shrine) so a reload — and a co-op guest that
+## re-runs _build_room off the same wander_seed — finds the same smuggler.
+## Standalones (capital/arenas) have no social rooms and their own fence; a
+## static-merchant room is skipped so a smuggler never stacks on a shop.
+func _spawn_road_smuggler(i: int) -> void:
+	if room_type(i) != "social" or not Story.CHAPTER_LIST.has(chapter_id):
+		return
+	if merchant_zones.has(i):
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 89 + i * 421 + chapter_id.hash() % 6113
+	if rng.randf() >= Balance.SMUGGLER_ROAD_CHANCE:
+		return
+	var pos := room_center(i) + Vector2(rng.randf_range(-210.0, 210.0), rng.randf_range(120.0, 200.0))
+	_make_npc("roadside_peddler", pos, "E — A hooded smuggler", func() -> void:
+		menus.open_black_market("smuggler"))
+
+
 func _spawn_wanderer(i: int) -> void:
 	var pool: Array = Story.wanderers_for(chapter_id)
 	if pool.is_empty():

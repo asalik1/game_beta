@@ -2433,6 +2433,7 @@ func _run_campaign_ch2() -> void:
 	await _test_elixir_ward_gate()
 	await _test_materials()
 	await _test_graded_potions()
+	await _test_black_market()
 	await _test_boss_loot()
 	await _test_professions()
 	await _test_synthesis()
@@ -7637,4 +7638,109 @@ func _synth_restore(snap: Dictionary) -> void:
 
 func _synth_fail(snap: Dictionary, msg: String) -> void:
 	_synth_restore(snap)
+	_fail(msg)
+
+
+# ---- Black-market fence + road smuggler (CONSUMABLE_GRADES §10) --------------
+# The laced lane moved OFF the chartered merchant onto black-market-only vendors:
+# a fence in Crownfall's Sable Court + an occasional road smuggler, both sharing
+# ONE shelf (Items.black_market_stock / menus.open_black_market). Asserts: the
+# shelf IS the laced ladder F→A (never S, every bottle stung, full per-family
+# coverage); laced price ≈ 65% of the clean twin; the general merchant now stocks
+# the Accord lane but NO laced bottle; and BOTH vendor voices open the same laced
+# shelf. Snapshots + restores shop/menu state on EVERY exit (incl. failures).
+func _test_black_market() -> void:
+	var snap := {
+		"gold": game.player.gold,
+		"has0": game.shop_stock.has(0), "s0": game.shop_stock.get(0, null),
+		"hasb0": game.shop_bags.has(0), "b0": game.shop_bags.get(0, null),
+		"tab": game.menus.shop_tab, "cur": game.menus.current,
+	}
+
+	# (a) The shared shelf is the laced ladder F→A: never S, every bottle stung,
+	# and it covers every laced grade of every family.
+	var stock: Array = Items.black_market_stock()
+	if stock.is_empty():
+		return _bm_restore_fail(snap, "black-market shelf is empty")
+	var grades_by_fam := {}
+	for row in stock:
+		var b: Dictionary = row
+		if String(b.get("lane", "")) != "black":
+			return _bm_restore_fail(snap, "black-market shelf carries a non-laced bottle: %s" % b.get("name", "?"))
+		if String(b.get("grade", "")) == "S":
+			return _bm_restore_fail(snap, "black-market shelf must NEVER stock S (%s)" % b.get("name", "?"))
+		if (b.get("sting", {}) as Dictionary).is_empty():
+			return _bm_restore_fail(snap, "laced bottle %s carries no sting" % b.get("name", "?"))
+		var fs := Items.potion_shapekey(String(b["family"]), String(b["shape"]))
+		if not grades_by_fam.has(fs):
+			grades_by_fam[fs] = {}
+		grades_by_fam[fs][String(b["grade"])] = true
+	# Every family covers its full laced ladder (renewal C→A, the rest F→A).
+	for fs in Items.POTION_SHAPES:
+		var want: Array = Balance.POTION_GRADES_RENEWAL_LACED if fs == "renewal" else Balance.POTION_GRADES_LACED
+		for g in want:
+			if not (grades_by_fam.get(fs, {}) as Dictionary).has(String(g)):
+				return _bm_restore_fail(snap, "black-market shelf misses %s %s" % [fs, g])
+
+	# (b) Every laced price ≈ 65% of its clean twin (doc §0/§10; observed 0.64–0.67).
+	for row in stock:
+		var b: Dictionary = row
+		var clean := Items.make_potion(String(b["family"]), String(b["shape"]), String(b["grade"]), "accord")
+		if clean.is_empty():
+			return _bm_restore_fail(snap, "no clean twin for laced %s" % b.get("name", "?"))
+		var ratio := float(b["price"]) / maxf(1.0, float(clean["price"]))
+		if ratio < 0.62 or ratio > 0.69:
+			return _bm_restore_fail(snap, "laced %s priced %.2f of clean (want ~0.65)" % [b.get("name", "?"), ratio])
+
+	# (c) The GENERAL merchant shop stocks the Accord lane but NO laced bottle.
+	game.menus.open_shop(0, "buy")
+	await _frames(2)
+	if not game.menus.is_open():
+		return _bm_restore_fail(snap, "merchant shop did not open")
+	var shop_txt := _tree_ui_text(game.menus.root)
+	if not ("Health Potion" in shop_txt):
+		return _bm_restore_fail(snap, "merchant Accord shelf lost its clean Health Potion")
+	for laced_name in ["Gutter Red", "Gutter Rust", "Pit Fury", "Gutterhide", "Graverobber's Mercy"]:
+		if laced_name in shop_txt:
+			return _bm_restore_fail(snap, "merchant shop still stocks a laced bottle (%s)" % laced_name)
+	game.menus.close()
+	await _frames(1)
+
+	# (d) BOTH black-market voices open the SAME laced shelf — laced names present,
+	# no S unique, no Accord-only bottle.
+	for src in ["fence", "smuggler"]:
+		game.menus.open_black_market(src)
+		await _frames(2)
+		if not game.menus.is_open() or game.menus.current != "black_market":
+			return _bm_restore_fail(snap, "black market (%s) did not open" % src)
+		var bm_txt := _tree_ui_text(game.menus.root)
+		if not ("Gutter Red" in bm_txt):
+			return _bm_restore_fail(snap, "black market (%s) shelf missing a laced bottle" % src)
+		if ("Heartsblood" in bm_txt) or ("Defective Health Potion" in bm_txt):
+			return _bm_restore_fail(snap, "black market (%s) leaked an S or Accord bottle" % src)
+		game.menus.close()
+		await _frames(1)
+
+	_bm_restore(snap)
+	print("ok: black market (laced F→A shelf, ~65% price, off the chartered merchant, fence + smuggler share it)")
+
+
+func _bm_restore(s: Dictionary) -> void:
+	if game.menus.is_open():
+		game.menus.close()
+	game.player.gold = int(s["gold"])
+	if bool(s["has0"]):
+		game.shop_stock[0] = s["s0"]
+	else:
+		game.shop_stock.erase(0)
+	if bool(s["hasb0"]):
+		game.shop_bags[0] = s["b0"]
+	else:
+		game.shop_bags.erase(0)
+	game.menus.shop_tab = String(s["tab"])
+	game.menus.current = String(s["cur"])
+
+
+func _bm_restore_fail(s: Dictionary, msg: String) -> void:
+	_bm_restore(s)
 	_fail(msg)
