@@ -132,6 +132,8 @@ static func _character_section(game: Game) -> Dictionary:
 		# across swaps), known generic blueprints, and the weekly swap-cost counter.
 		"profession": p.profession, "mastery": p.mastery, "blueprints": p.blueprints,
 		"swap_cost_step": p.swap_cost_step, "swap_week": p.swap_week,
+		# The Alkahest Codex learn-once flag (CONSUMABLE_GRADES §9 synthesis capstone).
+		"knows_alkahest": p.knows_alkahest,
 		# --- vitals ---
 		"hp": p.hp, "mp": p.mp,
 		# Mailbox + dropped loot are CHARACTER-owned (§5.5 loot instancing:
@@ -306,7 +308,7 @@ const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tr
 	"attr_points", "unspent_attr", "gold", "ability_theme", "chroma", "skin",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
 	"consumables", "materials", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
-	"profession", "mastery", "blueprints", "swap_cost_step", "swap_week",
+	"profession", "mastery", "blueprints", "swap_cost_step", "swap_week", "knows_alkahest",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
 	"achievements", "boss_records", "kill_counts", "player_title",
 	"bounties", "bounty_day", "bounty_week",
@@ -552,6 +554,8 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 			p.blueprints.append(String(key))
 	p.swap_cost_step = maxi(0, int(c.get("swap_cost_step", 0)))
 	p.swap_week = int(c.get("swap_week", -1))
+	# The Alkahest Codex learn-once flag (pre-§9 saves: unlearned, no-migration).
+	p.knows_alkahest = bool(c.get("knows_alkahest", false))
 
 	p.recalc()
 	p.hp = clampf(float(c.get("hp", p.max_hp)), 1.0, p.max_hp)

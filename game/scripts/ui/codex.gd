@@ -1406,6 +1406,21 @@ static func _curios(m: Menus, list: VBoxContainer) -> void:
 		# consumable_icon, NOT icon_for — potion/stone items carry no gear slot.
 		_curio_card(m, list, String(item["name"]), String(item.get("desc", "")), "", false, Art.consumable_icon(item))
 
+	# The synthesis capstone (CONSUMABLE_GRADES §9): the Alkahest Codex + the
+	# Grand potions Kesh mints from it (a clean S + a laced A → a modest step
+	# above S, no drawback). Synthesis-only — never sold. A representative shelf.
+	UITheme.header(m._lbl(list, "— SYNTHESIS — the Alkahest Codex —", 16, Color(1.0, 0.94, 0.66)))
+	var codex_synth := [
+		Items.make_alkahest_codex(),
+		Items.make_grand_potion("health_instant"),
+		Items.make_grand_potion("mana_instant"),
+		Items.make_grand_potion("might"),
+		Items.make_grand_potion("ward"),
+		Items.make_grand_potion("renewal"),
+	]
+	for item in codex_synth:
+		_curio_card(m, list, String(item["name"]), String(item.get("desc", "")), "", false, Art.consumable_icon(item))
+
 	# Relic entries carry an optional "group" (armory/supplies live in the
 	# Future tab until promoted); the player shelf shows SHIPPED relics only.
 	var sect_shown := 0

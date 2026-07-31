@@ -181,3 +181,61 @@ static func lock_trade(p: Player, trade: String) -> Dictionary:
 	if not p.mastery.has(trade):
 		p.mastery[trade] = 0
 	return {"ok": true, "cost": cost, "reason": ""}
+
+
+# ----------------------------------------------------- synthesis (Alkahest) ---
+# The Alchemy capstone (PROPOSALS/CONSUMABLE_GRADES.md §9): with the Alkahest
+# Codex learned, Kesh fuses a clean S + the laced A of one family into a Grand
+# potion (a modest step above S, no drawback — the Codex neutralises the
+# blightwater). Each synthesis eats BOTH ultra-rare bottles + a gold fee — a
+# deliberately bad gold-per-power trade (the endgame flex + gold sink). Pure
+# static logic over the Player, like craft(); the UI (ui/synthesis.gd) and the
+# autotest both call these so the loop is identical in and out of the panel.
+
+## The family-shape keys a Grand can be synthesised for (one per S bottle).
+static func synth_families() -> Array:
+	return Balance.POT_GRAND_FAMILIES
+
+## Buy the Alkahest Codex from Kesh (~100k, learn-on-buy). It is a RECIPE, so the
+## shop-caps-at-A rule does not apply. Returns {ok, cost, reason}.
+static func buy_codex(p: Player) -> Dictionary:
+	if p.knows_alkahest:
+		return {"ok": false, "cost": 0, "reason": "The Alkahest Codex is already learned."}
+	var cost := int(Balance.ALKAHEST_CODEX_PRICE)
+	if p.gold < cost:
+		return {"ok": false, "cost": cost, "reason": "Needs %d gold; have %d." % [cost, p.gold]}
+	p.gold -= cost
+	p.learn_alkahest()
+	return {"ok": true, "cost": cost, "reason": ""}
+
+## Why a family's synthesis can't proceed — "" means it CAN. synthesize()
+## re-checks this so the UI can only ever fire a legal synthesis.
+static func synth_blocked(p: Player, fs: String) -> String:
+	if not p.knows_alkahest:
+		return "Learn the Alkahest Codex first."
+	if not Items.POTION_SHAPES.has(fs) or not (fs in Balance.POT_GRAND_FAMILIES):
+		return "No Grand recipe for this family."
+	if p.find_potion_by(fs, "S", "accord").is_empty():
+		return "Needs a clean S %s." % Items.potion_name(fs, "S", "accord")
+	if p.find_potion_by(fs, "A", "black").is_empty():
+		return "Needs the laced A %s." % Items.potion_name(fs, "A", "black")
+	var fee := int(Balance.SYNTHESIS_FEE)
+	if p.gold < fee:
+		return "Needs %d gold; have %d." % [fee, p.gold]
+	return ""
+
+## The synthesis transaction. Validates (synth_blocked), consumes the clean S +
+## the laced A + the gold fee, then mints one Grand potion of that family.
+## Returns {ok, item, fee, reason}. The CALLER banks the item (add_consumable, or
+## mail on a full bag — though consuming two and adding one always frees a slot).
+static func synthesize(p: Player, fs: String) -> Dictionary:
+	var blocked := synth_blocked(p, fs)
+	if blocked != "":
+		return {"ok": false, "item": {}, "fee": 0, "reason": blocked}
+	var s_pot := p.find_potion_by(fs, "S", "accord")
+	var a_pot := p.find_potion_by(fs, "A", "black")
+	p.consumables.erase(s_pot)
+	p.consumables.erase(a_pot)
+	var fee := int(Balance.SYNTHESIS_FEE)
+	p.gold -= fee
+	return {"ok": true, "item": Items.make_grand_potion(fs), "fee": fee, "reason": ""}

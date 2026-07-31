@@ -1290,6 +1290,18 @@ func apply_award_events(events: Array) -> void:
 					else:
 						spawn_text(at + Vector2(0, -92), "Blueprint (already known)",
 							Color(0.7, 0.7, 0.75))
+			"codex":
+				# The Alkahest Codex (CONSUMABLE_GRADES §9): learn-ONCE, recorded on
+				# the receiving player (no bag item), so this is flush-guard safe
+				# from any award context — same shape as the blueprint case.
+				if is_instance_valid(player):
+					if player.learn_alkahest():
+						spawn_text(at + Vector2(0, -92), "+ " + Items.ALKAHEST_CODEX_NAME,
+							Color(1.0, 0.94, 0.66))
+						sfx("loot_s")
+					else:
+						spawn_text(at + Vector2(0, -92), "The Alkahest Codex (already learned)",
+							Color(0.7, 0.7, 0.75))
 			"bag":
 				player.acquire_bag(Items.make_bag(String(ev.get("grade", "F"))))
 			"sfx":
@@ -1419,6 +1431,12 @@ func roll_boss_pack(kind: String, boss_pos: Vector2, boss_lv: int,
 		var bp_grade := "A" if loot_rng.randf() < Balance.BOSS_BLUEPRINT_A_FRACTION else "B"
 		evs.append({"k": "blueprint", "bp": Items.make_blueprint(bp_slot, bp_grade),
 			"at": clamp_to_zone(boss_pos + Vector2(-60, 40), boss_pos)})
+	# An EXTREMELY rare Alkahest Codex (CONSUMABLE_GRADES §9): the synthesis
+	# capstone book, learn-once. Bosses + Kesh's ~100k shelf are its only sources.
+	# Learn-on-acquire (no Area2D) — a duplicate on an already-taught hero just
+	# reads "already learned", exactly like the blueprint above.
+	if loot_rng.randf() < Balance.ALKAHEST_CODEX_DROP_CHANCE:
+		evs.append({"k": "codex", "at": clamp_to_zone(boss_pos + Vector2(60, 40), boss_pos)})
 	return evs
 
 

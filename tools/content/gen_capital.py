@@ -37,6 +37,10 @@ HUB_ACTIONS = {
     # blueprints, craft bench. Placed by Herbalist Kesh's gossip hub (the
     # Alchemist trainer); Smith Petra's forge hub also opens it in code.
     "professions",
+    # Synthesis bench / the Alkahest Codex (CONSUMABLE_GRADES §9): learn the
+    # Codex, then fuse a clean S + a laced A into a Grand potion. Kesh's alembic
+    # capstone — placed by her gossip hub alongside the craft bench.
+    "synthesis",
 }
 ROOMS = [
   # --- CROWN PLAZA: the whole town ritual in one grand room ---
@@ -404,13 +408,17 @@ GOSSIP = {
  # craft-bench choice opens the trade-agnostic Professions panel.
  "cap_kesh": {"start": "a", "nodes": {
     "a": {"who": "Herbalist Kesh",
-          "text": "Cures for the ward, reagents for the Alembic across the plaza. I keep the Alchemist's bench — charms and gloves worked from bone and cloth. Here to craft, or after the day's leaves?",
+          "text": "Cures for the ward, reagents for the Alembic across the plaza. I keep the Alchemist's bench — charms and gloves worked from bone and cloth. And if you've found the Codex, the alembic answers to it. Craft, synthesise, or after the day's leaves?",
           "choices": [
              {"text": "Open the craft bench  (Professions)", "hub_action": "professions", "next": "craft"},
+             {"text": "The synthesis bench  (Alkahest Codex)", "hub_action": "synthesis", "next": "synth"},
              {"text": "\"Tell me about the gathering.\"", "next": "talk"},
              {"text": "(Leave)", "next": ""}]},
     "craft": {"who": "Herbalist Kesh",
           "text": "Lock a trade at the bench — only your own trade's work will take. Mastery keeps, though, whatever you swap to.",
+          "next": ""},
+    "synth": {"who": "Herbalist Kesh",
+          "text": "The Codex is the one text that marries a legend's clean half to the street's rotted twin. Bring me both bottles and the fee, and I'll draw off something greater than either. No single legend ever managed it — they each made one half and vanished.",
           "next": ""},
     "talk": {"who": "Herbalist Kesh",
           "text": "I set the day's gathering. Bring back the right leaves and no one dies of the wrong ones.",

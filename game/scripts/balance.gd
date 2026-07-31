@@ -2589,6 +2589,35 @@ const POT_RENEWAL_PRICE_LACED := {"C": 9100, "B": 32500, "A": 123000}
 const POT_RENEWAL_STING := {"C": 0.06, "B": 0.08, "A": 0.10}
 const POT_RENEWAL_STING_DUR := 10.0
 
+# --- GRAND — the synthesis capstone (CONSUMABLE_GRADES §9): one Grand per
+# S-bearing family-shape, a MODEST step above S with NO drawback (the Alkahest
+# Codex neutralises the blightwater). Synthesis-only — never sold, price 0.
+# Magnitudes are §9's worked examples (Heartsblood 40→48, Stormglass 55→65,
+# Giantsblood 30→35, Adamant 25→28, Dawnmend 45→52); the two tonics take the
+# same modest step as their instant twin (health tonic mirrors the instant's
+# TOTAL by the §3 same-totals rule; the mana tonic scales its bigger total by the
+# instant's ~1.17 ratio, 75→88). Duration holds at the S window (tonics 8s, buffs
+# 6s). "Very helpful, never fight-carrying" still governs — this only deepens the
+# peak, it does not widen the frontier (MT4 rules).
+const POT_GRAND_FAMILIES := ["health_instant", "health_tonic", "mana_instant", "mana_tonic", "might", "ward", "renewal"]
+const POT_GRAND_AMT := {
+	"health_instant": 0.48, "health_tonic": 0.48, "mana_instant": 0.65,
+	"mana_tonic": 0.88, "might": 0.35, "ward": 0.28, "renewal": 0.52}
+const POT_GRAND_DUR := {
+	"health_instant": 0.0, "health_tonic": 8.0, "mana_instant": 0.0,
+	"mana_tonic": 8.0, "might": 6.0, "ward": 6.0, "renewal": 0.0}
+
+# The Alkahest Codex + synthesis economy (§9). The recipe book is an S-tier text
+# learned ONCE (rides the save as player.knows_alkahest): Kesh sells it for ~100k
+# (a recipe is exempt from the shop-caps-at-A rule; renown never grants it), and
+# it drops rarely from bosses. Each synthesis fuses 1 clean S + 1 laced A of a
+# family + a gold fee → 1 Grand potion. The fee is a deliberately terrible
+# gold-per-power trade (§9): the ultra-rare S+A inputs are the real cost — the
+# fee is only the endgame gold sink on top.
+const ALKAHEST_CODEX_PRICE := 100000
+const SYNTHESIS_FEE := 25000
+const ALKAHEST_CODEX_DROP_CHANCE := 0.02   # extremely rare boss drop (learn-once)
+
 # Constancy (Virtue resonance) still multiplies HEALTH healing — the instant
 # Potion, the Tonic drip AND the Renewal burst all scale by it (player_core).
 

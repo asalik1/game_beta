@@ -2435,6 +2435,7 @@ func _run_campaign_ch2() -> void:
 	await _test_graded_potions()
 	await _test_boss_loot()
 	await _test_professions()
+	await _test_synthesis()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -7483,4 +7484,157 @@ func _prof_restore(snap: Dictionary) -> void:
 
 func _prof_fail(snap: Dictionary, msg: String) -> void:
 	_prof_restore(snap)
+	_fail(msg)
+
+
+# ---- Synthesis: the Alkahest Codex + the Grand potions (CONSUMABLE_GRADES §9) ----
+# The synthesis capstone: 7 Grand potions (one per S-bearing family) are valid
+# usable dicts with flavor, a modest step ABOVE their S twin, and NO drawback;
+# they are OFF the 85-potion shelf and unsellable; the Alkahest Codex learns
+# ONCE (learn_alkahest + buy_codex); a synthesis eats exactly one clean S + one
+# laced A of the family + the gold fee and yields the Grand; it REFUSES without
+# the Codex or without both inputs; and a Grand potion actually applies its
+# effect through _use_potion. New func + one hook call per CLAUDE.md; the state
+# is snapshot and RESTORED on EVERY exit (failure paths only queue quit).
+func _test_synthesis() -> void:
+	var p := game.player
+	var snap := {
+		"knows": p.knows_alkahest, "gold": p.gold,
+		"cons": p.consumables.duplicate(), "room": p.room_potions.duplicate(),
+		"pcd": p.potion_cd, "hp": p.hp, "mp": p.mp, "since": p.since_hurt,
+		"el_t": p.elixir_time, "el_a": p.elixir_atk, "dr_t": p.dr_time, "dr_a": p.dr_amt,
+		"ldi_t": p.laced_dmg_in_time, "ldi_a": p.laced_dmg_in_amt,
+	}
+
+	# (a) 7 Grand potions: usable dict, shipped sprite, flavor key, NO drawback,
+	# price 0 + no_sell, and a magnitude a modest step ABOVE the S twin.
+	var gids := Items.grand_potion_ids()
+	if gids.size() != Balance.POT_GRAND_FAMILIES.size():
+		return _synth_fail(snap, "expected one Grand id per S-bearing family (%d)" % gids.size())
+	for fs in Balance.POT_GRAND_FAMILIES:
+		var gp := Items.make_grand_potion(fs)
+		if gp.is_empty() or String(gp.get("kind", "")) != "potion":
+			return _synth_fail(snap, "make_grand_potion(%s) is not a potion dict" % fs)
+		if String(gp.get("grade", "")) != Items.POTION_GRAND_GRADE:
+			return _synth_fail(snap, "Grand %s has the wrong grade" % fs)
+		if not Dictionary(gp.get("sting", {})).is_empty():
+			return _synth_fail(snap, "Grand %s carries a drawback (must have none)" % fs)
+		if int(gp.get("price", -1)) != 0 or not bool(gp.get("no_sell", false)):
+			return _synth_fail(snap, "Grand %s must be price 0 + no_sell (synthesis-only)" % fs)
+		var nm := String(gp.get("name", ""))
+		if not nm.begins_with("Grand ") or not GearFlavor.FLAVOR.has(nm):
+			return _synth_fail(snap, "Grand %s name/flavor missing: '%s'" % [fs, nm])
+		if not ResourceLoader.exists("res://assets/icons/%s.png" % String(gp.get("sprite", ""))):
+			return _synth_fail(snap, "Grand %s sprite fallback missing" % fs)
+		var meta: Dictionary = Items.POTION_SHAPES[fs]
+		var s_twin := Items.make_potion(String(meta["family"]), String(meta["shape"]), "S", "accord")
+		if float(gp.get("amt", 0.0)) <= float(s_twin.get("amt", 0.0)):
+			return _synth_fail(snap, "Grand %s must exceed its S twin's magnitude" % fs)
+
+	# (b) Grand potions are NOT part of the 85-potion shelf; potion_by_id resolves them.
+	for spec in Items.potion_specs():
+		var sp := Items.make_potion(String(spec["family"]), String(spec["shape"]),
+			String(spec["grade"]), String(spec["lane"]))
+		if String(sp.get("grade", "")) == Items.POTION_GRAND_GRADE:
+			return _synth_fail(snap, "a Grand potion leaked into the 85-potion shelf")
+	if Items.potion_by_id("pot_grand_might").is_empty():
+		return _synth_fail(snap, "potion_by_id must resolve a Grand id")
+
+	# Isolate: empty bag, deep gold, cleared cd, Codex not yet learned.
+	p.consumables = []
+	p.gold = 10000000
+	p.potion_cd = 0.0
+	p.since_hurt = 999.0
+	p.knows_alkahest = false
+
+	# (c) The Codex learns ONCE (learn_alkahest idempotent; buy_codex refuses re-buy).
+	if not p.learn_alkahest():
+		return _synth_fail(snap, "first learn_alkahest should succeed")
+	if p.learn_alkahest() or not p.knows_alkahest:
+		return _synth_fail(snap, "learn_alkahest must be learn-once (idempotent)")
+	if bool(Professions.buy_codex(p)["ok"]):
+		return _synth_fail(snap, "buy_codex must refuse when already learned")
+	# buy_codex from scratch charges the price and learns it.
+	p.knows_alkahest = false
+	var buy := Professions.buy_codex(p)
+	if not buy["ok"] or int(buy["cost"]) != int(Balance.ALKAHEST_CODEX_PRICE) or not p.knows_alkahest:
+		return _synth_fail(snap, "buy_codex should learn the Codex for its price")
+
+	# (d) Synthesis REFUSES without both inputs; with S + A + fee it consumes both
+	# bottles + the fee and yields exactly the Grand.
+	var fs0 := "health_instant"
+	if Professions.synth_blocked(p, fs0) == "":
+		return _synth_fail(snap, "synthesis must refuse with no inputs")
+	var s_bottle := Items.make_potion("health", "instant", "S", "accord")
+	p.consumables.append(s_bottle)
+	if Professions.synth_blocked(p, fs0) == "":
+		return _synth_fail(snap, "synthesis must refuse with only the clean S")
+	var a_bottle := Items.make_potion("health", "instant", "A", "black")
+	p.consumables.append(a_bottle)
+	if Professions.synth_blocked(p, fs0) != "":
+		return _synth_fail(snap, "synthesis should proceed with S + A + fee: %s" % Professions.synth_blocked(p, fs0))
+	var gold_before := p.gold
+	var sres := Professions.synthesize(p, fs0)
+	if not sres["ok"] or String(Dictionary(sres["item"]).get("id", "")) != "pot_grand_health_instant":
+		return _synth_fail(snap, "synthesize did not yield the right Grand: %s" % String(sres.get("reason", "")))
+	if p.consumables.has(s_bottle) or p.consumables.has(a_bottle):
+		return _synth_fail(snap, "synthesis did not consume BOTH inputs")
+	if p.gold != gold_before - int(Balance.SYNTHESIS_FEE):
+		return _synth_fail(snap, "synthesis did not charge the fee")
+
+	# (e) Even holding both bottles, synthesis refuses WITHOUT the Codex.
+	p.knows_alkahest = false
+	p.consumables = [Items.make_potion("health", "instant", "S", "accord"),
+		Items.make_potion("health", "instant", "A", "black")]
+	if Professions.synth_blocked(p, fs0) == "":
+		return _synth_fail(snap, "synthesis must refuse without the Alkahest Codex")
+	p.knows_alkahest = true
+
+	# (f) A Grand potion applies its effect through _use_potion — with NO drawback.
+	p.consumables = []
+	p.hp = maxf(1.0, p.max_hp * 0.4)
+	var hp0 := p.hp
+	var grand_heal := Items.make_grand_potion("health_instant")
+	p.consumables.append(grand_heal)
+	p.room_potions = {String(grand_heal["id"]): 1}
+	p.potion_cd = 0.0
+	p.use_consumable(grand_heal)
+	if p.hp <= hp0 or p.consumables.has(grand_heal):
+		return _synth_fail(snap, "a Grand Heartsblood did not heal / wasn't consumed via _use_potion")
+	p.elixir_time = 0.0
+	p.laced_dmg_in_time = 0.0
+	var grand_might := Items.make_grand_potion("might")
+	p.consumables.append(grand_might)
+	p.room_potions = {String(grand_might["id"]): 1}
+	p.potion_cd = 0.0
+	p.use_consumable(grand_might)
+	if p.elixir_time <= 0.0 or absf(p.elixir_atk - float(grand_might["amt"])) > 0.001:
+		return _synth_fail(snap, "Grand Giantsblood did not arm its buff")
+	if p.laced_dmg_in_time > 0.0:
+		return _synth_fail(snap, "a Grand potion applied a drawback (must have none)")
+
+	_synth_restore(snap)
+	print("ok: synthesis (7 Grand dicts+sprites+flavor+no-drawback+above-S, Codex learn-once+buy, S+A+fee consume, refuse without Codex/inputs, Grand off-shelf, _use_potion applies)")
+
+
+func _synth_restore(snap: Dictionary) -> void:
+	var p := game.player
+	p.knows_alkahest = bool(snap["knows"])
+	p.gold = int(snap["gold"])
+	p.consumables = snap["cons"]
+	p.room_potions = snap["room"]
+	p.potion_cd = float(snap["pcd"])
+	p.hp = float(snap["hp"])
+	p.mp = float(snap["mp"])
+	p.since_hurt = float(snap["since"])
+	p.elixir_time = float(snap["el_t"])
+	p.elixir_atk = float(snap["el_a"])
+	p.dr_time = float(snap["dr_t"])
+	p.dr_amt = float(snap["dr_a"])
+	p.laced_dmg_in_time = float(snap["ldi_t"])
+	p.laced_dmg_in_amt = float(snap["ldi_a"])
+
+
+func _synth_fail(snap: Dictionary, msg: String) -> void:
+	_synth_restore(snap)
 	_fail(msg)

@@ -140,6 +140,12 @@ var blueprints: Array = []   # known generic recipes ("slot:grade"), learn-on-ac
 var swap_cost_step := 0      # swaps already paid THIS week (doubling counter)
 var swap_week := -1          # trusted-clock week the step counter belongs to
 
+# --- the Alkahest Codex (synthesis capstone, CONSUMABLE_GRADES §9) ---
+# Learned ONCE per character (Kesh's ~100k sale, or a rare boss drop). While
+# known, Kesh's synthesis bench fuses a clean S + a laced A into a Grand potion.
+# Rides the save (no-migration: an old save without the key loads as unlearned).
+var knows_alkahest := false
+
 # --- vitals ---
 var max_hp := 100.0
 var hp := 100.0
@@ -1893,6 +1899,32 @@ func learn_blueprint(slot: String, grade: String) -> bool:
 		return false
 	blueprints.append(key)
 	return true
+
+
+## Learn the Alkahest Codex (learn-once, CONSUMABLE_GRADES §9). Returns false if
+## it was already known (a wasted duplicate drop / re-buy).
+func learn_alkahest() -> bool:
+	if knows_alkahest:
+		return false
+	knows_alkahest = true
+	return true
+
+
+## The first carried potion matching a (POTION_SHAPES key, grade, lane), or {}.
+## The synthesis bench uses it to find its two inputs — a clean S accord bottle
+## and the laced A black-market twin of the same family.
+func find_potion_by(fs: String, grade: String, lane: String) -> Dictionary:
+	var meta: Dictionary = Items.POTION_SHAPES.get(fs, {})
+	if meta.is_empty():
+		return {}
+	var fam := String(meta["family"])
+	var shp := String(meta["shape"])
+	for c in consumables:
+		if String(c.get("kind", "")) == "potion" and String(c.get("family", "")) == fam \
+				and String(c.get("shape", "")) == shp and String(c.get("grade", "")) == grade \
+				and String(c.get("lane", "")) == lane:
+			return c
+	return {}
 
 
 # ------------------------------------------------------ potion loadout ---

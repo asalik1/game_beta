@@ -3346,6 +3346,8 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		var is_pot := String(cc0.get("kind", "")) == "potion"
 		if is_pot and bool(cc0.get("gift", false)):
 			continue  # the ch1-3 teaching gift never sells
+		if is_pot and bool(cc0.get("no_sell", false)):
+			continue  # synthesised Grand potions are never sold (CONSUMABLE_GRADES §9)
 		if not is_pot and not Balance.CONSUMABLE_PRICES.has(gid):
 			continue
 		if not cg.has(gid):
@@ -4156,6 +4158,12 @@ func open_wardrobe() -> void:
 ## ui/professions.gd. Opened from a capital trainer station (game_world hub).
 func open_professions() -> void:
 	UIProfessions.open(self)
+
+
+## The Synthesis bench (Alkahest Codex + Grand potions) lives in ui/synthesis.gd.
+## Opened from Herbalist Kesh's gossip hub in Crownfall (game_world hub action).
+func open_synthesis() -> void:
+	UISynthesis.open(self)
 
 
 ## Debug panel (F1, only when launched via dev_mode.bat) — ui/dev_panel.gd.

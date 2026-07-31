@@ -222,6 +222,11 @@ func _hub_action(act: String) -> void:
 			# the panel. Fired by a trainer's gossip choice (Herbalist Kesh) or
 			# Smith Petra's forge hub.
 			menus.open_professions()
+		"synthesis":
+			# The Alkahest Codex capstone (CONSUMABLE_GRADES §9): learn the Codex,
+			# then fuse a clean S + a laced A into a Grand potion. Kesh's alembic;
+			# capital-is-the-shop gated inside the panel. Fired by her gossip choice.
+			menus.open_synthesis()
 		"forge":
 			_cap_artisan("petra")
 		"lapidary":

@@ -11,6 +11,9 @@ const GRADE_COLOR := {
 	"D": Color(0.45, 0.85, 0.45), "C": Color(0.40, 0.65, 1.00),
 	"B": Color(0.75, 0.45, 0.95), "A": Color(1.00, 0.60, 0.20),
 	"S": Color(1.00, 0.30, 0.30),
+	# Grand — the synthesis capstone above S (CONSUMABLE_GRADES §9). A radiant
+	# white-gold that reads above S-red; only the Grand potions carry it.
+	"Grand": Color(1.00, 0.94, 0.66),
 }
 
 # Per-grade pickup chime (loot fanfare — the rarity is audible before
@@ -1450,7 +1453,12 @@ static func _build_potion_index() -> void:
 
 
 ## The full static template for a potion id (name/sprite/effect/params), or {}.
+## Grand ids resolve straight through make_grand_potion — they are NOT part of
+## the 85-potion shelf index (synthesis-only, never sold), but the HUD/loadout
+## look them up here exactly like any bottle.
 static func potion_by_id(id: String) -> Dictionary:
+	if id.begins_with("pot_grand_"):
+		return make_grand_potion(id.substr(10))
 	_build_potion_index()
 	return _potion_index.get(id, {})
 
@@ -1582,6 +1590,64 @@ static func potion_sting_desc(sting: Dictionary) -> String:
 		"move_slow": return "Blightwater: −%d%% move speed while it holds." % a
 		"bleed": return "Blightwater: bleed %d%% max HP back over %ds." % [a, d]
 	return ""
+
+
+# ============================================ GRAND POTIONS + the CODEX (§9) ===
+# The synthesis capstone (PROPOSALS/CONSUMABLE_GRADES.md §9). ONE Grand per
+# S-bearing family-shape — a modest step above S with NO drawback. Grand potions
+# are NOT part of the 85-potion shelf: they never appear in potion_specs / the
+# rotation index, no shop sells them, and `no_sell` keeps them out of a
+# merchant's buy-back. The synthesis bench (Professions.synthesize) mints one by
+# fusing a clean S + a laced A + a gold fee, and _use_potion drinks them like any
+# bottle. All magnitudes/durations come from balance.gd (knob rule). Grade is the
+# sentinel "Grand" (Items.GRADE_COLOR carries its radiant tint).
+const POTION_GRAND_GRADE := "Grand"
+
+## The Grand potion for a POTION_SHAPES key ({} if the family has no S / Grand).
+## Name is "Grand " + the family's S unique (Grand Heartsblood, Grand Stormglass,
+## …). Sprite falls back to the family's S CLEAN icon — dedicated Grand art is a
+## follow-up (no grand_* sprites ship yet); the fallback reads clean in-game.
+static func make_grand_potion(fs: String) -> Dictionary:
+	var meta: Dictionary = POTION_SHAPES.get(fs, {})
+	if meta.is_empty() or not (fs in Balance.POT_GRAND_FAMILIES):
+		return {}
+	var sname := String(POTION_S_NAMES.get(fs, ""))
+	if sname == "":
+		return {}
+	var out := {
+		"kind": "potion", "id": "pot_grand_%s" % fs,
+		"family": String(meta["family"]), "shape": String(meta["shape"]),
+		"grade": POTION_GRAND_GRADE, "lane": "grand",
+		"effect": String(meta["effect"]), "name": "Grand " + sname,
+		"sprite": "consumables/" + potion_stem(sname),
+		"amt": float(Balance.POT_GRAND_AMT[fs]),
+		"dur": float(Balance.POT_GRAND_DUR[fs]),
+		"price": 0, "sting": {}, "no_sell": true,
+	}
+	out["desc"] = potion_desc(out)
+	return out
+
+
+## Every Grand potion id, one per S-bearing family (synthesis outputs / tests).
+static func grand_potion_ids() -> Array:
+	var out: Array = []
+	for fs in Balance.POT_GRAND_FAMILIES:
+		out.append("pot_grand_%s" % fs)
+	return out
+
+
+# ------------------------------------------------------- the Alkahest Codex ---
+# The synthesis recipe book (§9): an S-tier learn-ONCE text, not a stacking
+# consumable. Learning it sets player.knows_alkahest (rides the save); after that
+# Kesh can synthesize forever. Sourced from Kesh (~ALKAHEST_CODEX_PRICE) or a
+# rare boss drop. This payload is the drop/award display + the codex card;
+# learning is learn-on-acquire (game_flow) or learn-on-buy (the synthesis bench).
+const ALKAHEST_CODEX_NAME := "The Alkahest Codex"
+
+static func make_alkahest_codex() -> Dictionary:
+	return {"kind": "codex", "id": "alkahest_codex", "grade": "S",
+		"name": ALKAHEST_CODEX_NAME,
+		"desc": "The recovered formulary that marries a clean S potion to its laced twin. Learned once — then Herbalist Kesh can synthesise a Grand potion from the pair forever."}
 
 
 # ------------------------------------------------------------ quest items ---

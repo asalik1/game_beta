@@ -6,7 +6,7 @@ class_name GearFlavor
 ## Generic gear resolves by SHAPE ("noun") + grade-band (F-E/D-C/B-A/S).
 ## Gems resolve by GEM_STATS name + level-band (Lv1-3/Lv4-6/Lv7-9/Lv10).
 ## Authored in PROPOSALS/GEAR_FLAVOR/*.md, PROPOSALS/MATERIALS.md; ported by tools.
-## Potions: full two-lane matrix ported; Grand-synthesis + Alkahest Codex pending flavor.
+## Potions: full two-lane matrix ported, plus the Grand-synthesis capstone (7 Grand potions) + the Alkahest Codex.
 const FLAVOR := {
 	"Absolute, Crystal of the Final Barrier": "The last ward, past which nothing passes: the first blow breaks against it to almost nothing, and the barrier returns her the mana to raise it again.",
 	"Absolution, the Last Toll": "Three sins settled and the flail tolls absolution — a wave of grace breaks off you and mends you by the measure of every soul it washes.",
@@ -382,6 +382,13 @@ const FLAVOR := {
 	"Gossamer Wraps|D-C": "Serviceable gossamer wraps, light enough to billow with the dodge and settle again.",
 	"Gossamer Wraps|F-E": "Gauze leg-ties, so slight they tear on a bramble but never bind a stride.",
 	"Gossamer Wraps|S": "So near weightless the leg forgets them; the dodge is already spent before the miss arrives.",
+	"Grand Adamant": "The seal-makers' kept half, wed at last to the rot they never dared touch — the mountain still falls, and now it falls entirely on someone else.",
+	"Grand Dawnmend": "The dawn the vanished healer only half-finished, the Codex completes — it raises the near-dead whole, and the loan the street's twin would have collected is struck from the ledger before it comes due.",
+	"Grand Everbloom": "The bloom that outlasts Mórwyn's rot, at last grown whole — the nameless alchemist's mercy married to the poison that once mocked it, and now the mending simply does not stop.",
+	"Grand Giantsblood": "Whatever the Concord buried, the Codex has woken twice over — the giant's strength poured neat, and the debt the pit once charged for it struck from the arithmetic entirely.",
+	"Grand Heartsblood": "The Guard's lost red and the gutter's rotted twin, married by the Codex into one pour — it finds the deepest wound and closes it clean, and the blightwater finds nothing left to sour.",
+	"Grand Starwater": "The offer Kesh never stopped making, finally answered — sky-water wed to the dream that dulled it, the tide come back in full while the blade stays keen.",
+	"Grand Stormglass": "The storm that unmade the Stormwarden line, decanted whole — the Codex takes the neat charge and the blood-price both, and hands back nothing but the lightning.",
 	"Grave Cowl|B-A": "Masterwork cerecloth, softened and rewoven, carrying the calm of the buried without the smell.",
 	"Grave Cowl|D-C": "A serviceable shroud-cowl, cool at the brow and quiet at the ear.",
 	"Grave Cowl|F-E": "A hood cut from grave-linen still stiff with the ground it came out of.",
@@ -1172,6 +1179,7 @@ const FLAVOR := {
 	"Tenacity|Lv10": "Perfected, a fleck of the deep that outlasted the mountain above it; the blight breaks the Vale around the wearer and finds them, blow after blow, simply still standing.",
 	"Tenacity|Lv4-6": "Cut from stone that survived being crushed and came out denser, it dulls the weight of every blow that lands.",
 	"Tenacity|Lv7-9": "Near-flawless and heavy beyond reason, it teaches the body its own history: to be pressed by the whole falling world and hold anyway.",
+	"The Alkahest Codex": "The recovered formulary of the one hidden circle who understood the fusing and buried it when the blight showed what a half-brew could do. Every vanished maker wrote a page; Kesh reads them all, and goes very quiet.",
 	"The Armor That Bites Back": "They stopped closing on the soldier in this — the harness tears what touches it, and the wound rocks the fool back on his heels.",
 	"The Bastion's Answer": "The bastion keeps accounts: every wound you take is entered as holy charge, and your next Judgment spends the ledger back into the sinner who opened it.",
 	"The Book That Remembers You": "Open it once and it keeps your name forever; speak that name back and the void behind the page yawns wide, a maw that curses the whole room the wave washes over.",
