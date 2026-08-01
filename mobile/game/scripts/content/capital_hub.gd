@@ -121,7 +121,8 @@ const CHAPTER := {
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1653.75}],
 		"npcs": [
 			{"sprite": "elder", "x": 720, "y": 650, "prompt": "E — Elder Maren", "convo": "cap_maren"},
-			{"sprite": "herbalist_kesh", "x": 1390, "y": 650, "prompt": "E — Herbalist Kesh", "convo": "cap_kesh"}],
+			{"sprite": "herbalist_kesh", "x": 1390, "y": 650, "prompt": "E — Herbalist Kesh", "convo": "cap_kesh"},
+			{"sprite": "seamster_suli", "x": 1056, "y": 940, "prompt": "E — Seamster Suli", "convo": "cap_suli"}],
 	},
 	{"name": "The Sable Court", "terrain": "capital_cinderborn", "type": "safe",
 		"coord": [1, 1], "room_scale": 0.78, "exits": ["N", "W"], "enemies": [], "boss": "",
@@ -151,6 +152,7 @@ const CONVOS := {
 	"cap_ilse": {"start": "a", "nodes": {"a": {"who": "Cantor Ilse", "text": "The Choir does not bury its dead — rot is the land's honest truth, and the dead keep their own vigil here. Tend them with me. It's patient work. Daily work.", "next": ""}}},
 	"cap_vela": {"start": "a", "nodes": {"a": {"who": "Deacon Vela", "text": "Quieter tasks than the Cantor's: recover a relic, carry a name north to the sleepers, witness a thing and return unbroken. The blight rewards the faithful.", "next": ""}}},
 	"cap_maren": {"start": "a", "nodes": {"a": {"who": "Elder Maren", "text": "So — the shards still choosing, and the factions still counting. The Accord holds this ward and half this city's conscience. There's honest work daily, if you want it. Sit; the fire doesn't bite.", "next": ""}}},
+	"cap_suli": {"start": "a", "nodes": {"a": {"who": "Seamster Suli", "text": "The needle trade — armor, breeches, boots, and bags, anything cut from cloth or hide. Lock the tailor's craft in at the bench there and bring me the makings; my needle's fast, and steady custom earns a sharper price.", "next": ""}}},
 	"cap_aldric": {"start": "a", "nodes": {"a": {"who": "Ser Aldric", "text": "The Cinderborn keep the forms of a court that lost its crown. I keep its sword arm. There's work in the old key — recover, restore, avenge — for a crown that might yet find a head. Daily, if you've the stomach.", "next": ""}}},
 	"cap_vessa": {"start": "a", "nodes": {"a": {"who": "Envoy Vessa", "text": "Work with us and be paid, protected, and remembered. I've a commission most days — a courier run, a quiet errand, imperial paper with teeth. First one's waiting.", "next": ""}}},
 	"cap_fence": {"start": "a", "nodes": {"a": {"who": "The Fence", "text": "Keep it down. The Accord won't stamp what I sell — which is why it's a third off their chartered rate, every bottle. Aye, it's cut. Blightwater, thinned near to nothing. Closes the wound just the same; the rest is a little rot, and rot never yet collected off anyone who paid on time. Come see the shelf.", "next": ""}}},

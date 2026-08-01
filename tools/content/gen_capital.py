@@ -73,7 +73,11 @@ ROOMS = [
       ("deacon_vela","E — Deacon Vela","cap_vela",P)]),
   ("acc_commons","Accord Commons",-1,1,"capital_accord",0.78,[
       ("elder","E — Elder Maren","cap_maren",P),
-      ("herbalist_kesh","E — Herbalist Kesh","cap_kesh",P)]),
+      ("herbalist_kesh","E — Herbalist Kesh","cap_kesh",P),
+      # Seamster Suli — the Tailor's face in the artisan ward, beside Kesh. She
+      # points to the shared craft bench (Kesh owns the one professions door here,
+      # per the one-access-point rule); her greet establishes the tailor trade.
+      ("seamster_suli","E — Seamster Suli","cap_suli",P)]),
   ("cin_court","The Sable Court",1,1,"capital_cinderborn",0.78,[
       ("aldric","E — Ser Aldric","cap_aldric",P),
       ("vessa","E — Envoy Vessa","cap_vessa",P),
@@ -306,7 +310,7 @@ NPC_SLOT_OVERRIDES = {
     "gate": [(1056, 814)],
     "wf_moot": [(720, 650), (1390, 650)],
     "ch_chapel": [(720, 650), (1390, 650)],
-    "acc_commons": [(720, 650), (1390, 650)],
+    "acc_commons": [(720, 650), (1390, 650), (1056, 940)],
     # Aldric + Vessa flank the Sable Hall; the fence keeps to the shadow-market
     # south of it (clear of the hall's clearance radius).
     "cin_court": [(720, 650), (1390, 650), (1056, 940)],
@@ -443,6 +447,7 @@ CONVOS = {
  "cap_ilse": ("Cantor Ilse", "The Choir does not bury its dead — rot is the land's honest truth, and the dead keep their own vigil here. Tend them with me. It's patient work. Daily work."),
  "cap_vela": ("Deacon Vela", "Quieter tasks than the Cantor's: recover a relic, carry a name north to the sleepers, witness a thing and return unbroken. The blight rewards the faithful."),
  "cap_maren": ("Elder Maren", "So — the shards still choosing, and the factions still counting. The Accord holds this ward and half this city's conscience. There's honest work daily, if you want it. Sit; the fire doesn't bite."),
+ "cap_suli": ("Seamster Suli", "The needle trade — armor, breeches, boots, and bags, anything cut from cloth or hide. Lock the tailor's craft in at the bench there and bring me the makings; my needle's fast, and steady custom earns a sharper price."),
  "cap_aldric": ("Ser Aldric", "The Cinderborn keep the forms of a court that lost its crown. I keep its sword arm. There's work in the old key — recover, restore, avenge — for a crown that might yet find a head. Daily, if you've the stomach."),
  "cap_vessa": ("Envoy Vessa", "Work with us and be paid, protected, and remembered. I've a commission most days — a courier run, a quiet errand, imperial paper with teeth. First one's waiting."),
  # The black-market fence's one-time greet (CONSUMABLE_GRADES §10 street voice):

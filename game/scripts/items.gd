@@ -1624,8 +1624,8 @@ const POTION_GRAND_GRADE := "Grand"
 
 ## The Grand potion for a POTION_SHAPES key ({} if the family has no S / Grand).
 ## Name is "Grand " + the family's S unique (Grand Heartsblood, Grand Stormglass,
-## …). Sprite falls back to the family's S CLEAN icon — dedicated Grand art is a
-## follow-up (no grand_* sprites ship yet); the fallback reads clean in-game.
+## …). Sprite = the dedicated grand_<stem> icon (radiant gilded flask, Codex-generated
+## 2026-07-30), one per family, in assets/icons/consumables/.
 static func make_grand_potion(fs: String) -> Dictionary:
 	var meta: Dictionary = POTION_SHAPES.get(fs, {})
 	if meta.is_empty() or not (fs in Balance.POT_GRAND_FAMILIES):
@@ -1638,7 +1638,7 @@ static func make_grand_potion(fs: String) -> Dictionary:
 		"family": String(meta["family"]), "shape": String(meta["shape"]),
 		"grade": POTION_GRAND_GRADE, "lane": "grand",
 		"effect": String(meta["effect"]), "name": "Grand " + sname,
-		"sprite": "consumables/" + potion_stem(sname),
+		"sprite": "consumables/grand_" + potion_stem(sname),
 		"amt": float(Balance.POT_GRAND_AMT[fs]),
 		"dur": float(Balance.POT_GRAND_DUR[fs]),
 		"price": 0, "sting": {}, "no_sell": true,
