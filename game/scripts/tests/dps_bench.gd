@@ -48,6 +48,7 @@ extends Node
 ## simulated seconds decouple from the wall clock (CPU-bound speed).
 
 const SIM_SECS_DEFAULT := 180.0   # long window: dilutes ult-cycle edge bias
+const SIEGE_SWING_DEFAULT := 1.2  # --siege: one dummy strike per this many seconds (clears the 0.6s hurt_cd)
 const PLAYER_LEVEL := 40
 const DUMMY_LEVEL := 40
 const GEAR_GRADE := "A"
@@ -114,6 +115,16 @@ var rep := -1           # --rep=N: independent RNG stream (parallel-mean fan)
 var standoff_override := -1.0  # --standoff=N: override STAND_OFF (fidelity probe)
 var knife_probe := false       # --knifeprobe: count avg knives/fan connecting
 var defense := false           # --defense: print EHP / damage-taken vs the boss, no DPS sim
+# --siege (2026-07-29): the dummy ANSWERS — fixed-cadence strikes through the
+# player's real take_damage pipeline (attacker = the dummy, so evasion/graze/
+# enemy-crit/ward/blunt/slip/counter/anchor/low-HP clauses ALL fire), while the
+# rotation keeps running (dps-under-fire). This is the instrument the pacifist
+# dummy could never be: every when-struck / on-evade / below-threshold passive
+# and the whole defensive set catalog price at ZERO without it.
+var siege := false             # --siege: enable the answering dummy (single-target only)
+var incoming_frac := 0.10      # --incoming=F: each strike's PRE-mitigation size as a fraction of player max HP
+var swing_secs := SIEGE_SWING_DEFAULT  # --swing=S: strike cadence — 1.2 models chip pressure, 3.0+0.35 models boss-pattern BURST
+                                       # (steady chip lets sustain engines fully amortize; bursts are what actually kill)
 var grade := GEAR_GRADE        # --grade=X: gear tier on every slot (realistic-kit runs)
 var gemlvl := GEM_LVL          # --gemlvl=N: gem level in every socket
 var plus_lvl := 0              # --plus=N: smith upgrade level on every piece
@@ -157,6 +168,16 @@ var ult_casts := 0
 # single boss (perp dist of each knife ray to the boss center <= body+dart r).
 var knife_fans := 0
 var knife_connects := 0
+# --siege telemetry (defense under fire)
+var siege_t := 0.0
+var siege_swings := 0
+var sg_taken := 0.0     # hp actually lost over the window (post-everything)
+var sg_healed := 0.0    # hp actually recovered (regen/lifesteal/mends/SW)
+var sg_raw := 0.0       # pre-mitigation damage attempted (mit% denominator)
+var sg_prev_hp := 0.0
+var sg_hpfrac_sum := 0.0
+var sg_frames := 0
+var sg_downs := 0       # would-die refills (hp under 20% at a strike = a down)
 # mana telemetry (round 49: "is the warlock running dry?")
 var mp_min := 0.0
 var mp_sum := 0.0
@@ -313,6 +334,12 @@ func _parse_args() -> void:
 			knife_probe = true
 		elif a == "--defense":
 			defense = true
+		elif a == "--siege":
+			siege = true
+		elif a.begins_with("--incoming="):
+			incoming_frac = clampf(float(a.get_slice("=", 1)), 0.01, 1.0)
+		elif a.begins_with("--swing="):
+			swing_secs = maxf(0.7, float(a.get_slice("=", 1)))
 		elif a.begins_with("--grade="):
 			grade = a.get_slice("=", 1)
 		elif a.begins_with("--gemlvl="):
@@ -398,6 +425,9 @@ func _run() -> void:
 	if downtime:
 		print("[bench] DOWNTIME MODE: no casting %.1fs of every %.1fs — the telegraph-dodge tax (DoTs keep ticking)" % [
 			DOWNTIME_DUR, DOWNTIME_EVERY])
+	if siege:
+		print("[bench] SIEGE MODE: the dummy ANSWERS — a strike every %.1fs at %.0f%% max HP pre-mitigation (every 4th magic), through the real take_damage pipeline; rotation keeps running (dps-under-fire) + defense telemetry per case" % [
+			swing_secs, incoming_frac * 100.0])
 
 	for cls in CLS_ORDER:
 		if only_cls != "" and cls != only_cls:
@@ -557,6 +587,15 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	mp_sum = 0.0
 	mp_frames = 0
 	starved = {}
+	siege_t = 0.0
+	siege_swings = 0
+	sg_taken = 0.0
+	sg_healed = 0.0
+	sg_raw = 0.0
+	sg_prev_hp = p.hp
+	sg_hpfrac_sum = 0.0
+	sg_frames = 0
+	sg_downs = 0
 	aoe_win_t = 0.0
 	wave_t = ADD_WAVE_SECS  # first wave lands immediately
 	wave_idx = 0
@@ -599,6 +638,15 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 		if ttk:
 			# TTK: real seconds to drain the pool; -1 = did not finish (DNF).
 			r["ttk"] = secs if dummy.m_done else -1.0
+	r["def"] = ""
+	if siege and sg_frames > 0:
+		var sw := maxf(float(sg_frames) / 60.0, 0.001)
+		r["def"] = "  | taken/s %d (mit %d%%)  heal/s %d  avg hp %d%%  downs %d" % [
+			int(sg_taken / sw),
+			int(100.0 * (1.0 - sg_taken / maxf(sg_raw, 1.0))),
+			int(sg_healed / sw),
+			int(100.0 * sg_hpfrac_sum / float(sg_frames)),
+			sg_downs]
 	r["mana"] = ""
 	if not bool(Classes.CLASSES[cls].get("manaless", false)) and mp_frames > 0:
 		var starved_bits: Array = []
@@ -615,9 +663,10 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	if ttk:
 		var tt: float = r.get("ttk", -1.0)
 		probe += "  TTK %s" % ("%.1fs" % tt if tt >= 0.0 else "DNF(>%.0fs)" % sim_secs)
-	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s%s%s" % [
+	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s%s%s%s" % [
 		r["case"], r["dps"], r["total"], r["secs"], r["hps"], r["crit"],
-		r["peak"], r["ults"], int(r["atk"]), r["kills"], r["mana"], probe])
+		r["peak"], r["ults"], int(r["atk"]), r["kills"], r["mana"], probe,
+		r.get("def", "")])
 
 	# --- teardown: drop the targets, let in-flight effects (mists, rifts,
 	# meteors, storm arrows) resolve into nothing before the next case.
@@ -708,6 +757,8 @@ func _physics_process(_delta: float) -> void:
 		# keep working; casts (and ult presses) wait out the telegraph.
 		return
 	var p: Player = game.player
+	if siege and not aoe:
+		_siege_tick(p)
 	if rot_cls == "assassin":
 		_drive_assassin(p)
 		return
@@ -734,6 +785,38 @@ func _physics_process(_delta: float) -> void:
 	mp_min = minf(mp_min, p.mp)
 	mp_sum += p.mp
 	mp_frames += 1
+
+
+## --siege: sample sustain per frame, then land the dummy's strike on the
+## cadence. Strikes go through the player's REAL take_damage with the dummy
+## as attacker — evasion rolls, graze tiers, enemy crits (the blunt family's
+## trigger), wards, slips, counters, anchors and low-HP floors all behave
+## exactly as in a live fight. A would-die (hp under 20% when the strike
+## arrives) counts a DOWN and refills — the rig must never actually die.
+func _siege_tick(p: Player) -> void:
+	var dh := p.hp - sg_prev_hp
+	if dh > 0.0:
+		sg_healed += dh
+	elif dh < 0.0:
+		sg_taken += -dh
+	sg_prev_hp = p.hp
+	sg_hpfrac_sum += p.hp / p.max_hp
+	sg_frames += 1
+	siege_t += 1.0 / 60.0
+	if siege_t < swing_secs:
+		return
+	siege_t = 0.0
+	# Danger floor scales with the strike (a 1.5x crit must never actually
+	# kill the rig): a strike arriving with hp under it counts a DOWN and
+	# refills. "downs" therefore reads "times the kit fell into lethal range".
+	if p.hp <= p.max_hp * clampf(incoming_frac * 1.6, 0.2, 0.6):
+		sg_downs += 1
+		p.hp = p.max_hp
+		sg_prev_hp = p.max_hp  # the refill is bookkeeping, never "healing"
+	siege_swings += 1
+	sg_raw += p.max_hp * incoming_frac
+	p.take_damage(p.max_hp * incoming_frac,
+		"magic" if siege_swings % 4 == 0 else "phys", dummy, false)
 
 
 ## AoE mode: a fresh wave of low-health adds every ADD_WAVE_SECS, popped

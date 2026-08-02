@@ -106,10 +106,18 @@ static func _stage_menu(m: Menus) -> void:
 			_host_here(m), GOOD)
 	m._btn(vbox, "  ⚑  Host a session  ", func() -> void:
 		m.lobby["path"] = "host"
+		m.lobby["duel"] = false
 		open(m, "char"), GOLD)
 	m._btn(vbox, "  ➤  Join with a code  ", func() -> void:
 		m.lobby["path"] = "join"
+		m.lobby["duel"] = false
 		open(m, "join"), BLUE)
+	# PvP v1 (2026-08-01): a 1v1 on the same code plumbing — host a duel code,
+	# the rival joins it with the ordinary Join button above.
+	m._btn(vbox, "  ⚔  Duel a rival  (PvP — first to 3 falls)  ", func() -> void:
+		m.lobby["path"] = "host"
+		m.lobby["duel"] = true
+		open(m, "char"), Color(1.0, 0.62, 0.55))
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(spacer)
@@ -158,7 +166,10 @@ static func _stage_char(m: Menus) -> void:
 			m.lobby["cls"] = cls
 			m.lobby["level"] = level
 			m.lobby["name"] = hname
-			if hosting:
+			if hosting and bool(m.lobby.get("duel", false)):
+				# A duel skips the chapter pick — the arena IS the content.
+				_host_go_duel(m)
+			elif hosting:
 				var sdata: Dictionary = SaveGame.read(slot)
 				m.lobby["saved_chapter"] = String(sdata.get("chapter", "ch1"))
 				# NG+ (2026-07-24): the save carries both tiers — the world's
@@ -365,6 +376,10 @@ static func _stage_host_lobby(m: Menus) -> void:
 		m._lbl(vbox, "⌛ READY CHECK — waiting on the party…", 14, GOLD)
 	elif String(sess.last_check_msg) != "":
 		m._lbl(vbox, "◆ " + String(sess.last_check_msg) + "  You can start again, or remove them.", 14, BAD)
+	var duel: bool = bool(m.lobby.get("duel", false)) and not live_world
+	if duel:
+		var dl := m._lbl(vbox, "⚔ A DUEL: one rival joins with the code, then you begin. Gates open on a countdown; first to %d falls loses. No spoils, no losses — bragging rights only (v1)." % Balance.PVP_DEATHS_TO_LOSE, 14, Color(1.0, 0.75, 0.7))
+		dl.custom_minimum_size = Vector2(800, 0)
 	_party(m, vbox)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -381,6 +396,15 @@ static func _stage_host_lobby(m: Menus) -> void:
 			if live_hub else "Your party session is still active. This panel can be closed at any time without ending it.",
 			14, Color(0.75, 0.85, 0.75))
 		m._btn(brow, "  ▼  Close this panel (stay hosting)  ", func() -> void: m.close(), GOOD)
+	elif duel:
+		# A duel seats EXACTLY two — the bell only rings with one rival seated.
+		var foes: int = (net.peers as Array).size()
+		var start_d := m._btn(brow, "  ⚔  Begin the duel  ", func() -> void: _start_duel(m), GOOD, foes == 1)
+		start_d.add_theme_font_size_override("font_size", 17)
+		if foes == 0:
+			m._lbl(vbox, "Waiting for a rival to join with your code…", 13, DIM)
+		elif foes > 1:
+			m._lbl(vbox, "A duel seats exactly two — remove extras (✕) before the bell.", 13, BAD)
 	else:
 		var start := m._btn(brow, "  ▶  Start the chapter  ", func() -> void: _start_session(m), GOOD)
 		start.add_theme_font_size_override("font_size", 17)
@@ -394,7 +418,9 @@ static func _stage_host_lobby(m: Menus) -> void:
 	_wire(m, sess.proposal_changed, func() -> void: _refresh(m, "host_lobby"))
 	_wire(m, sess.check_passed, func(mode: String, _chid: String, _tier: int, _cont: bool) -> void:
 		if mode == "start":
-			_launch_session(m))
+			_launch_session(m)
+		elif mode == "pvp":
+			_launch_duel(m))
 	_wire(m, net.peer_rejected, func(_id: int, reason: String) -> void:
 		m.lobby["msg"] = "A knock was turned away — %s" % reason
 		_refresh(m, "host_lobby"))
@@ -416,6 +442,11 @@ static func _stage_guest_lobby(m: Menus) -> void:
 	m._lbl(vbox, "Your party session is still active. Close this panel whenever you like — you stay with the party."
 		if live_world else "You're in. The host starts the chapter once everyone has gathered — you'll all set out together.",
 		14, Color(0.75, 0.75, 0.75))
+	# PvP v1: a duel host's roster block carries the challenge — say what this
+	# code IS before the launch throws anyone into the arena.
+	if not live_world and bool((sess.lobby_roster() as Dictionary).get(1, {}).get("duel", false)):
+		var dgl := m._lbl(vbox, "⚔ THIS IS A DUEL — the host means to fight YOU. Gates open on a countdown; first to %d falls loses. No spoils, no losses (v1). Staying seated means accepting the challenge." % Balance.PVP_DEATHS_TO_LOSE, 14, Color(1.0, 0.75, 0.7))
+		dgl.custom_minimum_size = Vector2(720, 0)
 	# MP-20: the host's proposal is a CARD this guest answers — the content
 	# is named (chapter + NG+ tier) before anyone is moved anywhere.
 	var prop: Dictionary = sess.proposal_open
@@ -429,6 +460,9 @@ static func _stage_guest_lobby(m: Menus) -> void:
 			m._lbl(vbox, "%s — every spawn +%d levels, richer loot, no XP" % [
 				Balance.tier_name(ptier).to_upper(), Balance.tier_level_offset(ptier)],
 				13, Balance.tier_color(ptier))
+		if String(prop.get("mode", "")) == "pvp":
+			m._lbl(vbox, "⚔ A PVP DUEL — first to %d falls loses. No stakes (v1)." % Balance.PVP_DEATHS_TO_LOSE,
+				13, Color(1.0, 0.75, 0.7))
 		if bool(prop.get("answered", false)):
 			m._lbl(vbox, "✓ Ready — waiting for the others…", 14, GOOD)
 		else:
@@ -542,6 +576,69 @@ static func _host_go(m: Menus, chid: String, cont: bool) -> void:
 		return
 	net.lobby_open = true
 	open(m, "host_lobby")
+
+
+## DUEL HOST (PvP v1): raise the session for a 1v1 — the arena chapter, no
+## save-world continue (the proving grounds are throwaway; the hero rides in
+## as-is and rides home unchanged). Same noray-first transport as _host_go.
+static func _host_go_duel(m: Menus) -> void:
+	m.lobby["chapter"] = "pvp_arena"
+	m.lobby["continue"] = false
+	m.lobby["tier"] = 0
+	_stage_wait(m, "Opening the proving grounds...", "Raising a lobby — a few seconds.")
+	var net: Node = m.get_node("/root/NetworkManager")
+	var sess: Node = m.get_node("/root/NetworkManager/Session")
+	sess.local_char = {"slot": int(m.lobby.get("slot", 0)),
+		"cls": String(m.lobby.get("cls", "warrior")),
+		"level": int(m.lobby.get("level", 1)),
+		"name": _lobby_name(m, sess),
+		"duel": true}   # the roster carries the challenge to the guest lobby
+	var err: Error = await net.host(NetMgr.Mode.NORAY)
+	if err != OK:
+		err = await net.host(NetMgr.Mode.ENET_DIRECT)
+	if err != OK:
+		m.lobby["msg"] = "Could not open a session (%s)." % error_string(err)
+		open(m, "menu")
+		return
+	net.lobby_open = true
+	open(m, "host_lobby")
+
+
+## DUEL HOST: the bell. Exactly one rival must be seated; lobby-stage guests
+## have no world yet (peer_chars empty), so propose_content collapses to an
+## immediate launch — the guest lobby already named the challenge in plain
+## words, and the join snapshot does the moving.
+static func _start_duel(m: Menus) -> void:
+	var net: Node = m.get_node("/root/NetworkManager")
+	var sess: Node = m.get_node("/root/NetworkManager/Session")
+	if (net.peers as Array).size() != 1:
+		m.lobby["msg"] = "A duel seats exactly two — you and one rival."
+		_refresh(m, "host_lobby")
+		return
+	if sess.propose_content("pvp", "pvp_arena", 0, false):
+		if (net.peers as Array).size() == 1:
+			_launch_duel(m)
+		else:
+			m.lobby["msg"] = "Your rival left before the bell."
+			_refresh(m, "host_lobby")
+	else:
+		_refresh(m, "host_lobby")  # a live-world check is in flight — it shows
+
+
+## DUEL HOST: the actual launch — lock the lobby, load the picked hero, and
+## enter the arena. The guest is carried by the join snapshot (cold lobby) or
+## the advance snap (live-world checks) — game_flow.enter_pvp picks the road.
+static func _launch_duel(m: Menus) -> void:
+	var net: Node = m.get_node("/root/NetworkManager")
+	net.lobby_open = false
+	var slot: int = int(m.lobby.get("slot", 0))
+	if m.root:
+		m.root.queue_free()
+		m.root = null
+	m.current = ""
+	m.game.load_save(slot)
+	if m.game.play_started:
+		m.game.enter_pvp()
 
 
 ## JOIN: announce who we're bringing (slot = OUR save; its character

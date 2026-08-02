@@ -36,7 +36,8 @@ opt-in online co-op (2–4 players clearing chapters together) while leaving sol
   change, not a rewrite).
 
 **Non-goals (this milestone)**
-- PvP, rollback netcode, lag compensation for competitive play.
+- ~~PvP~~ (a v1 duel mode SHIPPED 2026-08-01 — see §11; still no rollback netcode or lag
+  compensation: the duel rides the exact co-op trust model, tuned for friends, not ranked play).
 - Host migration (host quits ⇒ session ends; guests keep their character progress).
 - Cross-play with the frozen `mobile/` snapshot (the *architecture* accounts for the future mobile
   port — see §10 — but no mobile work happens in this milestone; `mobile/` stays untouched).
@@ -557,6 +558,48 @@ so the port inherits multiplayer instead of retrofitting it:
 The meta systems already built solo-first (daily rewards, buff bar, boss records, minimap) were
 designed to seed a multiplayer backend; co-op is the first consumer. Keystones/mastery
 (Act-2+ layer) should assume party play exists by the time they land.
+
+---
+
+## 11. PvP duels v1 — "The Proving Grounds" (2026-08-01, NET_VERSION 0.3.0)
+
+The owner-specced 1v1, riding the co-op transport unchanged (lobby code, host-authoritative
+session, owner-applied damage). No new netcode class — the duel is a mode ON the session.
+
+- **World:** `pvp_arena` ("The Proving Grounds", `content/pvp_arena.gd`) — 3 authored rooms:
+  west gatehouse (host), center arena, east gatehouse (guest); both center edges barred by the
+  ordinary flag-locked gate bodies (`flag:pvp_gates`, flipped only by the controller). Resolved by
+  `Story.chapter()` / `Story.is_pvp()`, kept out of `CHAPTER_LIST`; the lobby LOCKS when it loads.
+- **Entry:** Play Together → *Duel a rival* → pick a hero → the code. The rival joins with the
+  ordinary Join button; its lobby names the challenge (the host's roster block carries
+  `duel: true`). *Begin the duel* requires exactly one rival seated. Launch = `load_save` +
+  `game_flow.enter_pvp()`; the guest is carried by the join brief (cold lobby) or the reprise
+  advance snap (live-world/harness road).
+- **Match flow (`pvp.gd`, host decides, everyone renders):** warmup countdown behind sealed gates
+  (`Balance.PVP_COUNTDOWN_FIRST` 10 s round 1, `_ROUND` 5 s after) over a rerolled arena terrain
+  (host names the id; scenery/patches are `(zone, terrain)`-seeded so both machines rebuild
+  identically) → the fight fan drops the gates → falls are owner-reported (`player.gd`'s lethal
+  branch bypasses the co-op DOWNED detour under `pvp_active`), host-scored, and either reset the
+  round or end the match at `Balance.PVP_DEATHS_TO_LOSE` (3). Wipe census and map travel are
+  fenced off under `pvp_active`.
+- **Player-vs-player damage — the proxy seam:** PvP damage is structurally impossible in the
+  combat layer (everything is typed to `Enemy`/the `"enemies"` group; friendly projectiles mask
+  players out). Each machine raises ONE invisible `pvp_proxy.gd` Enemy shadowing the rival's
+  shell: all existing targeting/melee/projectile paths hit it natively, and its `take_damage`
+  override forwards the resolved amount through `net_session.pvp_strike` (host-validated against
+  `combat_live`) into the rival's OWN owner-side `take_damage` — their armor/evasion mitigate,
+  the enemy→guest doctrine. Known v1 limits: control riders don't cross the wire (damage only);
+  DoTs tick on the proxy at a flat 0.5 s cadence.
+- **No stakes (owner call):** no rewards, no tithe, no saves (`autosave` writes nothing under
+  `pvp_active`), potions barred at the drink gate. Iron out the system before spoils exist.
+- **Wire:** `pvp_strike`/`pvp_died` up, `pvp_round`/`pvp_fight`/`pvp_kill`/`pvp_end` fans down —
+  all in `net_session.gd`. NET_VERSION bumped 0.2.0 → 0.3.0.
+- **Tests:** `net_test.bat` stage 16 (two real processes: carry-in, sealed warmup, ceasefire
+  strike fizzle, gate fan, both strike directions through the real lethal branches, terrain sync,
+  3-fall verdict, clean wind-down); autotest `_test_pvp_arena` (module shape, chapter routing,
+  duel lobby stages, offline).
+- **Open (v2 candidates):** rematch without re-hosting, wagers/spoils once the economy ruling
+  lands, CC riders crossing the wire, spectate, best-of settings, a level-bracket warning.
 
 ---
 

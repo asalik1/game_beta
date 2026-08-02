@@ -1087,7 +1087,8 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/pc_bosses.gd"),      # Ninja Adventure sweep (2026-07-08): 6 placeholder bosses — dev-only, TODO real fights
 	preload("res://scripts/content/pc_curios.gd"),      # Pixel Crawler mining (2026-07-18): placeholder quest-item curios + codex relics gallery
 	preload("res://scripts/content/rv_na_gallery.gd"),  # Raven Icons + Ninja animals (2026-07-18): placeholder alchemy/armory/supplies/provisions/critters
-	preload("res://scripts/content/capital_hub.gd"),    # Crownfall (2026-07-24): standalone 25-room dev-only capital hub — CONVOS merge here; CHAPTER resolved in chapter()
+	preload("res://scripts/content/capital_hub.gd"),    # Crownfall (reworked 2026-07-25): standalone LIVE 9-room capital hub (3x3 grid) — reached via the Travel button + first-ch1-clear routing + dev panel; CONVOS merge here; CHAPTER resolved in chapter()
+	preload("res://scripts/content/pvp_arena.gd"),      # The Proving Grounds (PvP v1 2026-08-01): 3-room duel arena — no CONVOS/ENEMIES; CHAPTER resolved in chapter(), match flow in pvp.gd
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]
@@ -1203,6 +1204,8 @@ static func chapter(id: String) -> Dictionary:
 		return ENDGAME_ARENAS[id]
 	if id == "capital":          # Crownfall hub — standalone; the PARTY TOWN (Wave 9: pause-menu travel, open-gates hosting, portal ready checks)
 		return CapitalHub.CHAPTER
+	if id == "pvp_arena":        # The Proving Grounds — the PvP duel world (pvp.gd)
+		return PvpArena.CHAPTER
 	return CHAPTER_LIST.get(id, CHAPTER_LIST.get("ch1", {}))
 
 
@@ -1215,6 +1218,13 @@ static func is_endgame(id: String) -> bool:
 ## campaign, not endgame. Crownfall, the capital hub. switch_chapter allows it.
 static func is_standalone(id: String) -> bool:
 	return id == "capital"
+
+
+## The PvP duel world (The Proving Grounds) — resolved by chapter(), kept out
+## of CHAPTER_LIST, and NOT standalone (the lobby locks the moment it loads:
+## a duel seats exactly two). Flows branch on it via game.pvp_active.
+static func is_pvp(id: String) -> bool:
+	return id == "pvp_arena"
 
 
 static func quest_text(key: String) -> String:

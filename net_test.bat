@@ -67,6 +67,8 @@ call :stage 14 240000 "res://scenes/net_test_session.tscn"  "--net-stage=14"
 if errorlevel 1 goto cleanup
 call :stage 15 240000 "res://scenes/net_test_session.tscn"  "--net-stage=15"
 if errorlevel 1 goto cleanup
+call :stage 16 240000 "res://scenes/net_test_session.tscn"  "--net-stage=16"
+if errorlevel 1 goto cleanup
 
 set "EF_EXIT=0"
 goto cleanup
