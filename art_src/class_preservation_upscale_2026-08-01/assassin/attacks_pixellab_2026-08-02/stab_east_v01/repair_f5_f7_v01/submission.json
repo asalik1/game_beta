@@ -1,0 +1,21 @@
+{
+  "request": {
+    "description": "Repair dagger continuity only in this east-facing Assassin attack segment. Every frame must visibly show exactly TWO separate short thin silver daggers total, one firmly gripped in each hand. Restore the missing dagger in any empty hand and keep both blades short, identical, distinct, and readable. Change nothing else: preserve the exact attack motion, arm and leg poses, foot positions, anatomy, frame order, scale, cool charcoal hood and cloak, pitch-black face shadow, cyan eye, armor, burgundy straps, existing dagger, palette, transparency, and pixel-art style. Do not merge, lengthen, hide, sheath, or swap the daggers. No sword, spear, staff, third blade, FX, trail, glow, extra limb, duplicate character, background, or camera change.",
+    "source_frames": [
+      5,
+      6,
+      7
+    ],
+    "direction": "east",
+    "image_size": {
+      "width": 212,
+      "height": 212
+    },
+    "seed": 20260802
+  },
+  "response": {
+    "usage": null,
+    "background_job_id": "b27f7694-efdd-4688-9d2d-a235b50fd932",
+    "status": "processing"
+  }
+}

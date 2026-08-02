@@ -1,0 +1,31 @@
+{
+  "request": {
+    "description": "Add one matching short curved silver dagger to the Assassin's currently empty REAR hand in every frame. The added dagger's complete silver blade must be clearly visible as a separate silhouette projecting to the LEFT of the body, while the existing front-hand dagger remains visible projecting to the RIGHT. Every frame must visibly show exactly two separate daggers total, one in each hand; no hidden, sheathed, merged, or overlapping second dagger. Preserve everything else exactly: the complete six-frame walking motion and foot positions, anatomy, pose, silhouette, hood shape and cool charcoal color, cyan eye, armor, burgundy straps, cape, palette, scale, existing primary dagger, transparency, and pixel-art style. Do not change the gait, legs, body, costume, expression, camera, or frame order.",
+    "phase_order": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      1
+    ],
+    "groups": {
+      "tail_f5_f6": [
+        4,
+        5
+      ]
+    },
+    "image_size": {
+      "width": 133,
+      "height": 192
+    },
+    "seed": 20260819
+  },
+  "responses": {
+    "tail_f5_f6": {
+      "usage": null,
+      "background_job_id": "47641004-beed-4a3f-b474-c85b066b3adb",
+      "status": "processing"
+    }
+  }
+}

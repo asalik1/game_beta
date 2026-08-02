@@ -3091,8 +3091,10 @@ static func hdr(c: Color, boost: float = HDR_FX_BOOST) -> Color:
 # assets/sprites/<name>_anim.png — a HORIZONTAL strip of square frames —
 # and that creature animates. Rendering stays Sprite2D (hframes + frame
 # advance), so every existing flip/tint/scale/juice call still works.
-# Frame count is auto-detected (width / height). Strips follow the same
-# native-facing rule as static overrides (Art.faces_left).
+# Frame count is auto-detected (width / cell width), with no authored-count
+# assumption; 4-, 7-, 8-, etc. frame strips all use the same reader. The only
+# practical ceiling is the platform's maximum texture width. Strips follow the
+# same native-facing rule as static overrides (Art.faces_left).
 static var _anim_cache := {}
 
 ## Idle strip: assets/sprites/<name>_anim.png.

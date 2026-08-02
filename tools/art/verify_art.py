@@ -85,6 +85,7 @@ def check_file(png: Path) -> None:
     img = Image.open(png).convert("RGBA")
     w, h = img.size
     stem = png.stem
+    a = np.asarray(img)[:, :, 3]
 
     # Authored room surfaces are deliberately rectangular, loaded directly by
     # Art._ground_room_surface(), and never pass through the square-strip
@@ -110,7 +111,34 @@ def check_file(png: Path) -> None:
         FAIL.append(f"[DIRSTRIP] {rel}: {frames} frames -- aim strips must be 8*K frames, "
                     "direction-major E,NE,N,NW,W,SW,S,SE (tools/art/README.md)")
 
-    a = np.asarray(img)[:, :, 3]
+    # A non-empty frame can still be effectively invisible when a mixed-source
+    # normalizer shrinks the body to a miniature.  Catch catastrophic body-box
+    # collapse on ordinary full-body clips; effects/death/dash are excluded
+    # because deliberate vanish/transform frames are valid there.
+    body_clips = ("anim", "walk", "run", "attack", "attack2")
+    is_body_clip = any(
+        re.search(rf"_{clip}(?:_|$)", stem) for clip in body_clips
+    )
+    if is_body_clip and frame_width > 0 and frames > 1 and w % frame_width == 0:
+        heights: list[int] = []
+        for frame_index in range(frames):
+            region = a[:, frame_index * frame_width : (frame_index + 1) * frame_width]
+            ys = np.where(region > 0)[0]
+            heights.append(int(ys[-1] - ys[0] + 1) if len(ys) else 0)
+        positive = [height for height in heights if height > 0]
+        if positive:
+            # Use the upper quartile rather than the median: a broken row can
+            # contain a majority of miniature frames (the Warrior north cleave
+            # had four tiny middles and three full-size bookends).
+            reference_height = float(np.percentile(positive, 75))
+            for frame_index, height in enumerate(heights):
+                if height < max(8.0, reference_height * 0.45):
+                    FAIL.append(
+                        f"[BODYSCALE] {rel}: f{frame_index + 1} alpha height {height}px "
+                        f"vs {reference_height:.0f}px upper-quartile reference -- "
+                        "likely mixed-source shrink/cut"
+                    )
+
     semi = int(((a > 0) & (a < 255)).sum())
     if semi:
         WARN.append(f"[BLEED] {rel}: {semi} semi-transparent pixel(s) -- extracted sprites must "

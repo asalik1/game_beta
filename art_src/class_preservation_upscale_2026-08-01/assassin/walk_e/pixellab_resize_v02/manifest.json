@@ -1,0 +1,32 @@
+{
+  "source": "backup\\assassin_base_pre_erased_name_2026-07-31\\assassin_walk_e.png",
+  "source_cell": 166,
+  "source_union_crop": [
+    51,
+    50,
+    126,
+    158
+  ],
+  "source_size": [
+    75,
+    108
+  ],
+  "target_size": [
+    133,
+    192
+  ],
+  "target_body": 180,
+  "request_body": 183,
+  "seed": 20260802,
+  "frames": {
+    "6": {
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\walk_e\\pixellab_resize_v02\\assassin_walk_e_f06_input.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\walk_e\\pixellab_resize_v02\\assassin_walk_e_f06_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\walk_e\\pixellab_resize_v02\\assassin_walk_e_f06_normalized.png",
+      "usage": {
+        "type": "usd",
+        "usd": 0.015281055245134564
+      }
+    }
+  }
+}

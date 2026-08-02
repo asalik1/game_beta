@@ -1,0 +1,497 @@
+{
+  "group_id": "fb56a3b4-5086-4ad1-93bb-72e28af72d13",
+  "states": [
+    {
+      "character": {
+        "id": "8b3b2ab1-afe7-4ef3-9361-9b7aef1fe7c6",
+        "name": "Assassin v2",
+        "prompt": "grim cutthroat assassin, dark grey tattered ragged hooded robes and cloak, face entirely lost in pitch-black shadow beneath the deep hood with only two small glowing blue eyes showing, black gloved hands with no bare skin visible, twin thin straight daggers held low in reverse grip, lean and gaunt, muted dark palette, somber dark fantasy, no smoke",
+        "size": {
+          "width": 212,
+          "height": 212
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-07-10T19:48:07.343561+00:00"
+      },
+      "folder": "Assassin_v2",
+      "frames": {
+        "rotations": {
+          "south": "Assassin_v2/rotations/south.png",
+          "south-east": "Assassin_v2/rotations/south-east.png",
+          "east": "Assassin_v2/rotations/east.png",
+          "north-east": "Assassin_v2/rotations/north-east.png",
+          "north": "Assassin_v2/rotations/north.png",
+          "north-west": "Assassin_v2/rotations/north-west.png",
+          "west": "Assassin_v2/rotations/west.png",
+          "south-west": "Assassin_v2/rotations/south-west.png"
+        },
+        "animations": {
+          "animating": {
+            "south-east": [
+              "Assassin_v2/animations/animating/south-east/frame_000.png",
+              "Assassin_v2/animations/animating/south-east/frame_001.png",
+              "Assassin_v2/animations/animating/south-east/frame_002.png",
+              "Assassin_v2/animations/animating/south-east/frame_003.png"
+            ],
+            "north-east": [
+              "Assassin_v2/animations/animating/north-east/frame_000.png",
+              "Assassin_v2/animations/animating/north-east/frame_001.png",
+              "Assassin_v2/animations/animating/north-east/frame_002.png",
+              "Assassin_v2/animations/animating/north-east/frame_003.png"
+            ],
+            "east": [
+              "Assassin_v2/animations/animating/east/frame_000.png",
+              "Assassin_v2/animations/animating/east/frame_001.png",
+              "Assassin_v2/animations/animating/east/frame_002.png",
+              "Assassin_v2/animations/animating/east/frame_003.png"
+            ],
+            "south": [
+              "Assassin_v2/animations/animating/south/frame_000.png",
+              "Assassin_v2/animations/animating/south/frame_001.png",
+              "Assassin_v2/animations/animating/south/frame_002.png",
+              "Assassin_v2/animations/animating/south/frame_003.png"
+            ],
+            "north": [
+              "Assassin_v2/animations/animating/north/frame_000.png",
+              "Assassin_v2/animations/animating/north/frame_001.png",
+              "Assassin_v2/animations/animating/north/frame_002.png",
+              "Assassin_v2/animations/animating/north/frame_003.png"
+            ]
+          },
+          "dash": {
+            "north-east": [
+              "Assassin_v2/animations/dash/north-east/frame_000.png",
+              "Assassin_v2/animations/dash/north-east/frame_001.png",
+              "Assassin_v2/animations/dash/north-east/frame_002.png",
+              "Assassin_v2/animations/dash/north-east/frame_003.png",
+              "Assassin_v2/animations/dash/north-east/frame_004.png",
+              "Assassin_v2/animations/dash/north-east/frame_005.png",
+              "Assassin_v2/animations/dash/north-east/frame_006.png"
+            ],
+            "north": [
+              "Assassin_v2/animations/dash/north/frame_000.png",
+              "Assassin_v2/animations/dash/north/frame_001.png",
+              "Assassin_v2/animations/dash/north/frame_002.png",
+              "Assassin_v2/animations/dash/north/frame_003.png",
+              "Assassin_v2/animations/dash/north/frame_004.png",
+              "Assassin_v2/animations/dash/north/frame_005.png",
+              "Assassin_v2/animations/dash/north/frame_006.png"
+            ],
+            "east": [
+              "Assassin_v2/animations/dash/east/frame_000.png",
+              "Assassin_v2/animations/dash/east/frame_001.png",
+              "Assassin_v2/animations/dash/east/frame_002.png",
+              "Assassin_v2/animations/dash/east/frame_003.png",
+              "Assassin_v2/animations/dash/east/frame_004.png",
+              "Assassin_v2/animations/dash/east/frame_005.png",
+              "Assassin_v2/animations/dash/east/frame_006.png"
+            ],
+            "south-east": [
+              "Assassin_v2/animations/dash/south-east/frame_000.png",
+              "Assassin_v2/animations/dash/south-east/frame_001.png",
+              "Assassin_v2/animations/dash/south-east/frame_002.png",
+              "Assassin_v2/animations/dash/south-east/frame_003.png",
+              "Assassin_v2/animations/dash/south-east/frame_004.png",
+              "Assassin_v2/animations/dash/south-east/frame_005.png",
+              "Assassin_v2/animations/dash/south-east/frame_006.png"
+            ],
+            "south": [
+              "Assassin_v2/animations/dash/south/frame_000.png",
+              "Assassin_v2/animations/dash/south/frame_001.png",
+              "Assassin_v2/animations/dash/south/frame_002.png",
+              "Assassin_v2/animations/dash/south/frame_003.png",
+              "Assassin_v2/animations/dash/south/frame_004.png",
+              "Assassin_v2/animations/dash/south/frame_005.png",
+              "Assassin_v2/animations/dash/south/frame_006.png"
+            ]
+          },
+          "walking": {
+            "east": [
+              "Assassin_v2/animations/walking/east/frame_000.png",
+              "Assassin_v2/animations/walking/east/frame_001.png",
+              "Assassin_v2/animations/walking/east/frame_002.png",
+              "Assassin_v2/animations/walking/east/frame_003.png",
+              "Assassin_v2/animations/walking/east/frame_004.png",
+              "Assassin_v2/animations/walking/east/frame_005.png"
+            ],
+            "south": [
+              "Assassin_v2/animations/walking/south/frame_000.png",
+              "Assassin_v2/animations/walking/south/frame_001.png",
+              "Assassin_v2/animations/walking/south/frame_002.png",
+              "Assassin_v2/animations/walking/south/frame_003.png",
+              "Assassin_v2/animations/walking/south/frame_004.png",
+              "Assassin_v2/animations/walking/south/frame_005.png"
+            ],
+            "north": [
+              "Assassin_v2/animations/walking/north/frame_000.png",
+              "Assassin_v2/animations/walking/north/frame_001.png",
+              "Assassin_v2/animations/walking/north/frame_002.png",
+              "Assassin_v2/animations/walking/north/frame_003.png",
+              "Assassin_v2/animations/walking/north/frame_004.png",
+              "Assassin_v2/animations/walking/north/frame_005.png"
+            ],
+            "north-east": [
+              "Assassin_v2/animations/walking/north-east/frame_000.png",
+              "Assassin_v2/animations/walking/north-east/frame_001.png",
+              "Assassin_v2/animations/walking/north-east/frame_002.png",
+              "Assassin_v2/animations/walking/north-east/frame_003.png",
+              "Assassin_v2/animations/walking/north-east/frame_004.png",
+              "Assassin_v2/animations/walking/north-east/frame_005.png"
+            ],
+            "south-east": [
+              "Assassin_v2/animations/walking/south-east/frame_000.png",
+              "Assassin_v2/animations/walking/south-east/frame_001.png",
+              "Assassin_v2/animations/walking/south-east/frame_002.png",
+              "Assassin_v2/animations/walking/south-east/frame_003.png",
+              "Assassin_v2/animations/walking/south-east/frame_004.png",
+              "Assassin_v2/animations/walking/south-east/frame_005.png"
+            ]
+          },
+          "running": {
+            "north-east": [
+              "Assassin_v2/animations/running/north-east/frame_000.png",
+              "Assassin_v2/animations/running/north-east/frame_001.png",
+              "Assassin_v2/animations/running/north-east/frame_002.png",
+              "Assassin_v2/animations/running/north-east/frame_003.png",
+              "Assassin_v2/animations/running/north-east/frame_004.png",
+              "Assassin_v2/animations/running/north-east/frame_005.png"
+            ],
+            "south": [
+              "Assassin_v2/animations/running/south/frame_000.png",
+              "Assassin_v2/animations/running/south/frame_001.png",
+              "Assassin_v2/animations/running/south/frame_002.png",
+              "Assassin_v2/animations/running/south/frame_003.png",
+              "Assassin_v2/animations/running/south/frame_004.png",
+              "Assassin_v2/animations/running/south/frame_005.png"
+            ],
+            "east": [
+              "Assassin_v2/animations/running/east/frame_000.png",
+              "Assassin_v2/animations/running/east/frame_001.png",
+              "Assassin_v2/animations/running/east/frame_002.png",
+              "Assassin_v2/animations/running/east/frame_003.png",
+              "Assassin_v2/animations/running/east/frame_004.png",
+              "Assassin_v2/animations/running/east/frame_005.png"
+            ],
+            "north": [
+              "Assassin_v2/animations/running/north/frame_000.png",
+              "Assassin_v2/animations/running/north/frame_001.png",
+              "Assassin_v2/animations/running/north/frame_002.png",
+              "Assassin_v2/animations/running/north/frame_003.png",
+              "Assassin_v2/animations/running/north/frame_004.png",
+              "Assassin_v2/animations/running/north/frame_005.png"
+            ],
+            "south-east": [
+              "Assassin_v2/animations/running/south-east/frame_000.png",
+              "Assassin_v2/animations/running/south-east/frame_001.png",
+              "Assassin_v2/animations/running/south-east/frame_002.png",
+              "Assassin_v2/animations/running/south-east/frame_003.png",
+              "Assassin_v2/animations/running/south-east/frame_004.png",
+              "Assassin_v2/animations/running/south-east/frame_005.png"
+            ]
+          },
+          "walk-fix": {
+            "north": [
+              "Assassin_v2/animations/walk-fix/north/frame_000.png",
+              "Assassin_v2/animations/walk-fix/north/frame_001.png",
+              "Assassin_v2/animations/walk-fix/north/frame_002.png",
+              "Assassin_v2/animations/walk-fix/north/frame_003.png",
+              "Assassin_v2/animations/walk-fix/north/frame_004.png",
+              "Assassin_v2/animations/walk-fix/north/frame_005.png"
+            ]
+          },
+          "ultidle": {
+            "south-east": [
+              "Assassin_v2/animations/ultidle/south-east/frame_000.png",
+              "Assassin_v2/animations/ultidle/south-east/frame_001.png",
+              "Assassin_v2/animations/ultidle/south-east/frame_002.png",
+              "Assassin_v2/animations/ultidle/south-east/frame_003.png",
+              "Assassin_v2/animations/ultidle/south-east/frame_004.png",
+              "Assassin_v2/animations/ultidle/south-east/frame_005.png",
+              "Assassin_v2/animations/ultidle/south-east/frame_006.png"
+            ],
+            "north": [
+              "Assassin_v2/animations/ultidle/north/frame_000.png",
+              "Assassin_v2/animations/ultidle/north/frame_001.png",
+              "Assassin_v2/animations/ultidle/north/frame_002.png",
+              "Assassin_v2/animations/ultidle/north/frame_003.png",
+              "Assassin_v2/animations/ultidle/north/frame_004.png",
+              "Assassin_v2/animations/ultidle/north/frame_005.png",
+              "Assassin_v2/animations/ultidle/north/frame_006.png"
+            ],
+            "east": [
+              "Assassin_v2/animations/ultidle/east/frame_000.png",
+              "Assassin_v2/animations/ultidle/east/frame_001.png",
+              "Assassin_v2/animations/ultidle/east/frame_002.png",
+              "Assassin_v2/animations/ultidle/east/frame_003.png",
+              "Assassin_v2/animations/ultidle/east/frame_004.png",
+              "Assassin_v2/animations/ultidle/east/frame_005.png",
+              "Assassin_v2/animations/ultidle/east/frame_006.png"
+            ],
+            "north-east": [
+              "Assassin_v2/animations/ultidle/north-east/frame_000.png",
+              "Assassin_v2/animations/ultidle/north-east/frame_001.png",
+              "Assassin_v2/animations/ultidle/north-east/frame_002.png",
+              "Assassin_v2/animations/ultidle/north-east/frame_003.png",
+              "Assassin_v2/animations/ultidle/north-east/frame_004.png",
+              "Assassin_v2/animations/ultidle/north-east/frame_005.png",
+              "Assassin_v2/animations/ultidle/north-east/frame_006.png"
+            ],
+            "south": [
+              "Assassin_v2/animations/ultidle/south/frame_000.png",
+              "Assassin_v2/animations/ultidle/south/frame_001.png",
+              "Assassin_v2/animations/ultidle/south/frame_002.png",
+              "Assassin_v2/animations/ultidle/south/frame_003.png",
+              "Assassin_v2/animations/ultidle/south/frame_004.png",
+              "Assassin_v2/animations/ultidle/south/frame_005.png",
+              "Assassin_v2/animations/ultidle/south/frame_006.png"
+            ]
+          },
+          "attack": {
+            "south-east": [
+              "Assassin_v2/animations/attack/south-east/frame_000.png",
+              "Assassin_v2/animations/attack/south-east/frame_001.png",
+              "Assassin_v2/animations/attack/south-east/frame_002.png",
+              "Assassin_v2/animations/attack/south-east/frame_003.png",
+              "Assassin_v2/animations/attack/south-east/frame_004.png",
+              "Assassin_v2/animations/attack/south-east/frame_005.png",
+              "Assassin_v2/animations/attack/south-east/frame_006.png"
+            ],
+            "east": [
+              "Assassin_v2/animations/attack/east/frame_000.png",
+              "Assassin_v2/animations/attack/east/frame_001.png",
+              "Assassin_v2/animations/attack/east/frame_002.png",
+              "Assassin_v2/animations/attack/east/frame_003.png",
+              "Assassin_v2/animations/attack/east/frame_004.png",
+              "Assassin_v2/animations/attack/east/frame_005.png",
+              "Assassin_v2/animations/attack/east/frame_006.png"
+            ],
+            "north": [
+              "Assassin_v2/animations/attack/north/frame_000.png",
+              "Assassin_v2/animations/attack/north/frame_001.png",
+              "Assassin_v2/animations/attack/north/frame_002.png",
+              "Assassin_v2/animations/attack/north/frame_003.png",
+              "Assassin_v2/animations/attack/north/frame_004.png",
+              "Assassin_v2/animations/attack/north/frame_005.png",
+              "Assassin_v2/animations/attack/north/frame_006.png"
+            ],
+            "north-east": [
+              "Assassin_v2/animations/attack/north-east/frame_000.png",
+              "Assassin_v2/animations/attack/north-east/frame_001.png",
+              "Assassin_v2/animations/attack/north-east/frame_002.png",
+              "Assassin_v2/animations/attack/north-east/frame_003.png",
+              "Assassin_v2/animations/attack/north-east/frame_004.png",
+              "Assassin_v2/animations/attack/north-east/frame_005.png",
+              "Assassin_v2/animations/attack/north-east/frame_006.png"
+            ],
+            "south": [
+              "Assassin_v2/animations/attack/south/frame_000.png",
+              "Assassin_v2/animations/attack/south/frame_001.png",
+              "Assassin_v2/animations/attack/south/frame_002.png",
+              "Assassin_v2/animations/attack/south/frame_003.png",
+              "Assassin_v2/animations/attack/south/frame_004.png",
+              "Assassin_v2/animations/attack/south/frame_005.png",
+              "Assassin_v2/animations/attack/south/frame_006.png"
+            ]
+          },
+          "ult": {
+            "south-east": [
+              "Assassin_v2/animations/ult/south-east/frame_000.png",
+              "Assassin_v2/animations/ult/south-east/frame_001.png",
+              "Assassin_v2/animations/ult/south-east/frame_002.png",
+              "Assassin_v2/animations/ult/south-east/frame_003.png",
+              "Assassin_v2/animations/ult/south-east/frame_004.png",
+              "Assassin_v2/animations/ult/south-east/frame_005.png",
+              "Assassin_v2/animations/ult/south-east/frame_006.png",
+              "Assassin_v2/animations/ult/south-east/frame_007.png",
+              "Assassin_v2/animations/ult/south-east/frame_008.png"
+            ],
+            "east": [
+              "Assassin_v2/animations/ult/east/frame_000.png",
+              "Assassin_v2/animations/ult/east/frame_001.png",
+              "Assassin_v2/animations/ult/east/frame_002.png",
+              "Assassin_v2/animations/ult/east/frame_003.png",
+              "Assassin_v2/animations/ult/east/frame_004.png",
+              "Assassin_v2/animations/ult/east/frame_005.png",
+              "Assassin_v2/animations/ult/east/frame_006.png",
+              "Assassin_v2/animations/ult/east/frame_007.png",
+              "Assassin_v2/animations/ult/east/frame_008.png"
+            ],
+            "north-east": [
+              "Assassin_v2/animations/ult/north-east/frame_000.png",
+              "Assassin_v2/animations/ult/north-east/frame_001.png",
+              "Assassin_v2/animations/ult/north-east/frame_002.png",
+              "Assassin_v2/animations/ult/north-east/frame_003.png",
+              "Assassin_v2/animations/ult/north-east/frame_004.png",
+              "Assassin_v2/animations/ult/north-east/frame_005.png",
+              "Assassin_v2/animations/ult/north-east/frame_006.png",
+              "Assassin_v2/animations/ult/north-east/frame_007.png",
+              "Assassin_v2/animations/ult/north-east/frame_008.png"
+            ],
+            "south": [
+              "Assassin_v2/animations/ult/south/frame_000.png",
+              "Assassin_v2/animations/ult/south/frame_001.png",
+              "Assassin_v2/animations/ult/south/frame_002.png",
+              "Assassin_v2/animations/ult/south/frame_003.png",
+              "Assassin_v2/animations/ult/south/frame_004.png",
+              "Assassin_v2/animations/ult/south/frame_005.png",
+              "Assassin_v2/animations/ult/south/frame_006.png",
+              "Assassin_v2/animations/ult/south/frame_007.png",
+              "Assassin_v2/animations/ult/south/frame_008.png"
+            ],
+            "north": [
+              "Assassin_v2/animations/ult/north/frame_000.png",
+              "Assassin_v2/animations/ult/north/frame_001.png",
+              "Assassin_v2/animations/ult/north/frame_002.png",
+              "Assassin_v2/animations/ult/north/frame_003.png",
+              "Assassin_v2/animations/ult/north/frame_004.png",
+              "Assassin_v2/animations/ult/north/frame_005.png",
+              "Assassin_v2/animations/ult/north/frame_006.png",
+              "Assassin_v2/animations/ult/north/frame_007.png",
+              "Assassin_v2/animations/ult/north/frame_008.png"
+            ]
+          },
+          "death_grounded": {
+            "south": [
+              "Assassin_v2/animations/death_grounded/south/frame_000.png",
+              "Assassin_v2/animations/death_grounded/south/frame_001.png",
+              "Assassin_v2/animations/death_grounded/south/frame_002.png",
+              "Assassin_v2/animations/death_grounded/south/frame_003.png",
+              "Assassin_v2/animations/death_grounded/south/frame_004.png",
+              "Assassin_v2/animations/death_grounded/south/frame_005.png",
+              "Assassin_v2/animations/death_grounded/south/frame_006.png",
+              "Assassin_v2/animations/death_grounded/south/frame_007.png",
+              "Assassin_v2/animations/death_grounded/south/frame_008.png"
+            ]
+          },
+          "attack2": {
+            "east": [
+              "Assassin_v2/animations/attack2/east/frame_000.png",
+              "Assassin_v2/animations/attack2/east/frame_001.png",
+              "Assassin_v2/animations/attack2/east/frame_002.png",
+              "Assassin_v2/animations/attack2/east/frame_003.png",
+              "Assassin_v2/animations/attack2/east/frame_004.png",
+              "Assassin_v2/animations/attack2/east/frame_005.png",
+              "Assassin_v2/animations/attack2/east/frame_006.png"
+            ],
+            "south": [
+              "Assassin_v2/animations/attack2/south/frame_000.png",
+              "Assassin_v2/animations/attack2/south/frame_001.png",
+              "Assassin_v2/animations/attack2/south/frame_002.png",
+              "Assassin_v2/animations/attack2/south/frame_003.png",
+              "Assassin_v2/animations/attack2/south/frame_004.png",
+              "Assassin_v2/animations/attack2/south/frame_005.png",
+              "Assassin_v2/animations/attack2/south/frame_006.png"
+            ],
+            "north": [
+              "Assassin_v2/animations/attack2/north/frame_000.png",
+              "Assassin_v2/animations/attack2/north/frame_001.png",
+              "Assassin_v2/animations/attack2/north/frame_002.png",
+              "Assassin_v2/animations/attack2/north/frame_003.png",
+              "Assassin_v2/animations/attack2/north/frame_004.png",
+              "Assassin_v2/animations/attack2/north/frame_005.png",
+              "Assassin_v2/animations/attack2/north/frame_006.png"
+            ],
+            "north-east": [
+              "Assassin_v2/animations/attack2/north-east/frame_000.png",
+              "Assassin_v2/animations/attack2/north-east/frame_001.png",
+              "Assassin_v2/animations/attack2/north-east/frame_002.png",
+              "Assassin_v2/animations/attack2/north-east/frame_003.png",
+              "Assassin_v2/animations/attack2/north-east/frame_004.png",
+              "Assassin_v2/animations/attack2/north-east/frame_005.png",
+              "Assassin_v2/animations/attack2/north-east/frame_006.png"
+            ],
+            "south-east": [
+              "Assassin_v2/animations/attack2/south-east/frame_000.png",
+              "Assassin_v2/animations/attack2/south-east/frame_001.png",
+              "Assassin_v2/animations/attack2/south-east/frame_002.png",
+              "Assassin_v2/animations/attack2/south-east/frame_003.png",
+              "Assassin_v2/animations/attack2/south-east/frame_004.png",
+              "Assassin_v2/animations/attack2/south-east/frame_005.png",
+              "Assassin_v2/animations/attack2/south-east/frame_006.png"
+            ]
+          },
+          "attack2-fix2": {
+            "north-east": [
+              "Assassin_v2/animations/attack2-fix2/north-east/frame_000.png",
+              "Assassin_v2/animations/attack2-fix2/north-east/frame_001.png",
+              "Assassin_v2/animations/attack2-fix2/north-east/frame_002.png",
+              "Assassin_v2/animations/attack2-fix2/north-east/frame_003.png",
+              "Assassin_v2/animations/attack2-fix2/north-east/frame_004.png",
+              "Assassin_v2/animations/attack2-fix2/north-east/frame_005.png",
+              "Assassin_v2/animations/attack2-fix2/north-east/frame_006.png"
+            ]
+          },
+          "wstride": {
+            "south": [
+              "Assassin_v2/animations/wstride/south/frame_000.png",
+              "Assassin_v2/animations/wstride/south/frame_001.png",
+              "Assassin_v2/animations/wstride/south/frame_002.png",
+              "Assassin_v2/animations/wstride/south/frame_003.png",
+              "Assassin_v2/animations/wstride/south/frame_004.png",
+              "Assassin_v2/animations/wstride/south/frame_005.png"
+            ]
+          },
+          "ult-f7021451": {
+            "north-east": [
+              "Assassin_v2/animations/ult-f7021451/north-east/frame_000.png",
+              "Assassin_v2/animations/ult-f7021451/north-east/frame_001.png",
+              "Assassin_v2/animations/ult-f7021451/north-east/frame_002.png",
+              "Assassin_v2/animations/ult-f7021451/north-east/frame_003.png",
+              "Assassin_v2/animations/ult-f7021451/north-east/frame_004.png",
+              "Assassin_v2/animations/ult-f7021451/north-east/frame_005.png",
+              "Assassin_v2/animations/ult-f7021451/north-east/frame_006.png",
+              "Assassin_v2/animations/ult-f7021451/north-east/frame_007.png",
+              "Assassin_v2/animations/ult-f7021451/north-east/frame_008.png"
+            ]
+          },
+          "walk-v3": {
+            "east": [
+              "Assassin_v2/animations/walk-v3/east/frame_000.png",
+              "Assassin_v2/animations/walk-v3/east/frame_001.png",
+              "Assassin_v2/animations/walk-v3/east/frame_002.png",
+              "Assassin_v2/animations/walk-v3/east/frame_003.png",
+              "Assassin_v2/animations/walk-v3/east/frame_004.png",
+              "Assassin_v2/animations/walk-v3/east/frame_005.png"
+            ],
+            "north": [
+              "Assassin_v2/animations/walk-v3/north/frame_000.png",
+              "Assassin_v2/animations/walk-v3/north/frame_001.png",
+              "Assassin_v2/animations/walk-v3/north/frame_002.png",
+              "Assassin_v2/animations/walk-v3/north/frame_003.png",
+              "Assassin_v2/animations/walk-v3/north/frame_004.png",
+              "Assassin_v2/animations/walk-v3/north/frame_005.png"
+            ],
+            "south-east": [
+              "Assassin_v2/animations/walk-v3/south-east/frame_000.png",
+              "Assassin_v2/animations/walk-v3/south-east/frame_001.png",
+              "Assassin_v2/animations/walk-v3/south-east/frame_002.png",
+              "Assassin_v2/animations/walk-v3/south-east/frame_003.png",
+              "Assassin_v2/animations/walk-v3/south-east/frame_004.png",
+              "Assassin_v2/animations/walk-v3/south-east/frame_005.png"
+            ],
+            "north-east": [
+              "Assassin_v2/animations/walk-v3/north-east/frame_000.png",
+              "Assassin_v2/animations/walk-v3/north-east/frame_001.png",
+              "Assassin_v2/animations/walk-v3/north-east/frame_002.png",
+              "Assassin_v2/animations/walk-v3/north-east/frame_003.png",
+              "Assassin_v2/animations/walk-v3/north-east/frame_004.png",
+              "Assassin_v2/animations/walk-v3/north-east/frame_005.png"
+            ],
+            "south": [
+              "Assassin_v2/animations/walk-v3/south/frame_000.png",
+              "Assassin_v2/animations/walk-v3/south/frame_001.png",
+              "Assassin_v2/animations/walk-v3/south/frame_002.png",
+              "Assassin_v2/animations/walk-v3/south/frame_003.png",
+              "Assassin_v2/animations/walk-v3/south/frame_004.png",
+              "Assassin_v2/animations/walk-v3/south/frame_005.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-08-02T06:19:05.957343"
+}

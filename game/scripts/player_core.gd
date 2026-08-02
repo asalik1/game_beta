@@ -661,7 +661,26 @@ func _apply_class_sprite() -> void:
 		# Fixed per-class hero size (broad warrior, lean assassin) — set once,
 		# purely visual identity; deterministic per class so co-op needs no sync.
 		var csize: float = Balance.HERO_CLASS_SIZE.get(cls, 1.0)
-		var m := _measure_hero_frame(_clips["idle"], csize)
+		# Stamp every clip with its own frame-box grounding. Most sheets share the
+		# idle cell size, but preservation artwork can need a larger square cell
+		# to retain a wide sword arc. Per-strip metadata keeps the same measured
+		# body scale and feet anchor without cropping or changing playback.
+		var stamped_clips := {}
+		for clip_name in _clips:
+			stamped_clips[clip_name] = _with_render_meta(_clips[clip_name], csize)
+		_clips = stamped_clips
+		var stamped_loco := {}
+		for clip_name in _dir_loco:
+			var stamped_set := {}
+			for suffix in _dir_loco[clip_name]:
+				stamped_set[suffix] = _with_render_meta(
+					_dir_loco[clip_name][suffix], csize)
+			stamped_loco[clip_name] = stamped_set
+		_dir_loco = stamped_loco
+		var m := {
+			"scale": _clips["idle"]["render_scale"],
+			"offset": _clips["idle"]["render_offset"],
+		}
 		_hero_scale = m["scale"]
 		# Per-skin anchor nudge: a skin whose weapon hangs below the boots is
 		# grounded on the blade tip by the lowest-pixel anchor; nudge it DOWN so
@@ -721,17 +740,13 @@ func _measure_hero_frame(info: Dictionary, size_mult := 1.0) -> Dictionary:
 	var frames := int(info["frames"])
 	var fw := int(img.get_width() / max(1, frames))
 	var fh := img.get_height()
-	var top := fh
-	var bot := 0
-	for y in fh:
-		for x in fw:
-			if img.get_pixel(x, y).a > 0.15:
-				if y < top:
-					top = y
-				if y > bot:
-					bot = y
-				break
-	var body_h := maxi(1, bot - top)
+	# get_used_rect runs in the engine instead of crossing the GDScript/Image
+	# boundary once per pixel. This matters now that each directional clip is
+	# measured once for its own grounding metadata.
+	var first_frame := img.get_region(Rect2i(0, 0, fw, fh))
+	var used := first_frame.get_used_rect()
+	var bot: int = used.end.y - 1
+	var body_h := maxi(1, used.size.y - 1)
 	# CHAR_RENDER_SCALE enlarges the on-screen body (less downscale = thin detail
 	# like the sword blade survives). Feet stay anchored at HERO_FEET_ANCHOR, so
 	# the bigger body grows UPWARD from the same ground line (shadow scales to match).
@@ -739,6 +754,17 @@ func _measure_hero_frame(info: Dictionary, size_mult := 1.0) -> Dictionary:
 	# offset uses the SAME sc so the feet stay grounded at any hero size.
 	var sc := HERO_TARGET_BODY * size_mult * Balance.CHAR_RENDER_SCALE / float(body_h)
 	return {"scale": sc, "offset": HERO_FEET_ANCHOR / sc - float(bot) + float(fh) / 2.0}
+
+
+## Copy a strip descriptor and attach the scale/offset derived from that
+## strip's own first frame. This is cached once at class-art load, never in the
+## per-frame animation path.
+func _with_render_meta(info: Dictionary, size_mult: float) -> Dictionary:
+	var out := info.duplicate()
+	var meta := _measure_hero_frame(out, size_mult)
+	out["render_scale"] = meta["scale"]
+	out["render_offset"] = meta["offset"]
+	return out
 
 
 ## A movement action (the dash) sets this so its clip faces the TRAVEL line,
@@ -771,6 +797,7 @@ func _play_clip(name: String, loop: bool) -> void:
 		name = "idle"
 		loop = true
 	var info: Dictionary = _clips[name]
+	var render_info: Dictionary = info
 	_clip = name
 	_clip_loop = loop
 	# Any clip takeover releases special sprite states: a held dash pose
@@ -795,6 +822,7 @@ func _play_clip(name: String, loop: bool) -> void:
 	if not loop and _dir_loco.has(name):
 		var suf: String = Art.dir8_suffix(_action_facing_vec())
 		var dinfo: Dictionary = _dir_loco[name][suf]
+		render_info = dinfo
 		strip_frames = int(dinfo["frames"])
 		strip_fps = float(dinfo["fps"])
 		sprite.texture = dinfo["tex"]
@@ -803,8 +831,10 @@ func _play_clip(name: String, loop: bool) -> void:
 		_action_dir_on = true
 		_loco_dir = suf  # carry the action facing into idle so it doesn't snap
 		                 # back sideways when the one-shot ends (N/S dash bug)
-	sprite.scale = Vector2(_hero_scale, _hero_scale)
-	sprite.offset = Vector2(0, _hero_offset_y)
+	var render_scale := float(render_info.get("render_scale", _hero_scale))
+	var render_offset := float(render_info.get("render_offset", _hero_offset_y))
+	sprite.scale = Vector2(render_scale, render_scale)
+	sprite.offset = Vector2(0, render_offset)
 
 
 ## Fire a one-shot action clip that returns to locomotion when it finishes.
