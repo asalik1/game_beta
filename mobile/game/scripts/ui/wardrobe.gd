@@ -148,8 +148,8 @@ static func _skin_row(m: Menus, list: VBoxContainer, id: String, sk: Dictionary)
 			open(m))
 	else:
 		_buy_btn(m, row, "skin", id, sk)
-	var awakened: bool = g.get_flag("s_awakened_" + p.cls, false) and sk.has("awakened_sprite")
-	var thumb: Texture2D = UICodex._gallery_thumb(Skins.skin_splash(p.cls, id, awakened))
+	# (2026-07-27) Awakened forms retired — one look per skin, one thumb.
+	var thumb: Texture2D = UICodex._gallery_thumb(Skins.skin_splash(p.cls, id))
 	if thumb != null:
 		var tr := TextureRect.new()
 		tr.texture = thumb
@@ -161,7 +161,7 @@ static func _skin_row(m: Menus, list: VBoxContainer, id: String, sk: Dictionary)
 	var chip := m._lbl(row, "MYTHIC" if mythic else "ELITE", 12,
 		Balance.RENOWN_COLOR if mythic else Color(1.0, 0.85, 0.4))
 	chip.custom_minimum_size = Vector2(64, 0)
-	var nm := m._lbl(row, String(sk["name"]) + ("  ✦ awakened" if awakened else "") +
+	var nm := m._lbl(row, String(sk["name"]) +
 		("   ← worn" if worn else ""), 14,
 		Color(1.0, 0.88, 0.45) if worn else (Color(0.85, 0.88, 0.94) if owned else Color(0.62, 0.64, 0.7)))
 	nm.custom_minimum_size = Vector2(300, 0)

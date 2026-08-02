@@ -1,11 +1,13 @@
 class_name Skills
 ## Row-based skill tree (like classic MMO talent pages):
-##  - a new ROW unlocks every 10 levels (ROW_LEVELS) — the tree fills out
-##    across all of Act 1, capping exactly at level 40 (points == level)
+##  - a new ROW unlocks every 10 levels (ROW_LEVELS) — or EARLY, the moment
+##    the row above it is full (row 1 is always open), so every point is
+##    spendable the level it's earned; the tree fills out across all of
+##    Act 1, capping exactly at level 40 (points == level)
 ##  - you may spend up to 10 points TOTAL per row, spread freely
 ##    across its 3 columns, max 10 in any single cell
-##  - a cell may override its own ceiling with a "max" field (binary
-##    talents like Last Rites cap at 1)
+##  - a cell may override its own ceiling with a "max" field (currently
+##    none do — every talent runs the full 10)
 ##  - each point buffs that cell's effect by one increment (values are
 ##    HALF the old 5-point tuning, so a maxed cell lands the same total)
 ##  - the 3 columns line up with the class's 3 themes / playstyles
@@ -148,7 +150,7 @@ const TREES := {
 		],
 		[
 			{"id": "k30", "name": "Archfiend's Favor", "desc": "+1% total damage", "bonus": {"atk_pct": 0.01}},
-			{"id": "k31", "name": "Last Rites",        "desc": "Survive a lethal blow at 5% max HP (once per min)", "bonus": {"last_rites": 1.0}, "max": 1},
+			{"id": "k31", "name": "Last Rites",        "desc": "Survive a lethal blow at 3% max HP per point (once per min; 30% when maxed)", "bonus": {"last_rites": 1.0}},
 			{"id": "k32", "name": "Annihilation",      "desc": "+3% crit damage", "bonus": {"crit_dmg": 0.03}},
 		],
 	],
@@ -178,15 +180,26 @@ static func points_in_row(cls: String, row: int, points: Dictionary) -> int:
 	return total
 
 
-## This cell's own ceiling — a binary talent (Last Rites) overrides MAX_PER_CELL.
+## This cell's own ceiling — a cell may override MAX_PER_CELL via its "max" field.
 static func cell_max(cell: Dictionary) -> int:
 	return int(cell.get("max", MAX_PER_CELL))
+
+
+## Dual-key row unlock (2026-07-28): a row opens at its level threshold, OR
+## as soon as the row above it is full — so points earned between thresholds
+## are never dead. Deep rows still cost full commitment below (completing a
+## row early means 10 points per row above it), and level 40 opens every row
+## unconditionally, so the endgame build space is unchanged.
+static func row_open(cls: String, row: int, points: Dictionary, level: int) -> bool:
+	if row == 0 or level >= ROW_LEVELS[row]:
+		return true
+	return points_in_row(cls, row - 1, points) >= MAX_PER_ROW
 
 
 ## Can one more point go into this cell?
 static func can_add(cls: String, id: String, points: Dictionary, level: int) -> bool:
 	var row := row_of(cls, id)
-	if row < 0 or level < ROW_LEVELS[row]:
+	if row < 0 or not row_open(cls, row, points, level):
 		return false
 	var cell := find_cell(cls, id)
 	if points.get(id, 0) >= cell_max(cell):

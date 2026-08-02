@@ -156,6 +156,12 @@ func _ready() -> void:
 	var terrains: Array = ["village", "darkwood", "marsh", "keep", "magma",
 		"ice", "graveyard", "desert", "bog", "crystal", "storm", "void",
 		"holy", "spore"]
+	if OS.has_environment("CROWNLESS_PLACEHOLDER_TERRAIN_SHOTS"):
+		terrains.clear()
+		for terrain_id in Terrains.DATA:
+			if bool(Terrains.DATA[terrain_id].get("placeholder", false)):
+				terrains.append(terrain_id)
+		terrains.sort()
 	game.camera.zoom = Vector2(0.7, 0.7)
 	for t in terrains:
 		game.apply_terrain(0, t)
@@ -163,6 +169,10 @@ func _ready() -> void:
 		await _frames(8)
 		_shot("terrain_%s" % t)
 	game.camera.zoom = Vector2(1.0, 1.0)
+	if OS.has_environment("CROWNLESS_TERRAIN_SHOTS_ONLY"):
+		print("TERRAIN SHOT AUDIT COMPLETE: ", terrains.size(), " profiles")
+		get_tree().quit()
+		return
 
 	# --- full roster lineups: daylight floor + NEUTRAL light so sprite
 	# colors read true (tinted ambience crushed the first pass) ---

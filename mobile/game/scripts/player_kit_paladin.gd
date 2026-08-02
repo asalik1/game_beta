@@ -17,7 +17,8 @@ func _use_paladin(slot: String, f: float) -> void:
 			var j_tgt := auto_aim(300.0)
 			if j_tgt and judgment_leap_cd <= 0.0 \
 					and global_position.distance_to(j_tgt.global_position) > 95.0:
-				judgment_leap_cd = Balance.JUDGMENT_LEAP_CD
+				# The finesse set's 6pc rearms the leap sooner.
+				judgment_leap_cd = Balance.JUDGMENT_LEAP_CD - uniq_set_k("C", 6, "leap_cut")
 				var j_from := global_position
 				global_position = game.clamp_to_zone(
 					j_tgt.global_position + (global_position - j_tgt.global_position).normalized() * 58.0,
@@ -333,7 +334,8 @@ func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, f
 ## strikes you is smitten in return (see take_damage).
 func _aegis() -> void:
 	game.sfx("equip")
-	aegis_time = float(_tfx.get("aegis_dur", 2.5))
+	# The guard set's 6pc holds the shield up longer.
+	aegis_time = float(_tfx.get("aegis_dur", 2.5)) + uniq_set_k("B", 6, "aegis_ext")
 	aegis_amt = float(_tfx.get("aegis_amt", 110.0))
 	aegis_reflect = float(_tfx.get("aegis_reflect", 0.6))
 	aegis_proj_left = Balance.AEGIS_PROJ_CAP  # arrows answered per cast
@@ -434,6 +436,7 @@ func _conviction_swap(f := 1.0) -> void:
 		var chain_f := f * Balance.PALADIN_SWAP_CHAINS
 		if s_passive() == "dawnfall":
 			chain_f *= uniq_k("mult")  # Dawnfall: the last oath falls harder
+		chain_f *= 1.0 + uniq_set_k("D", 6, "swap_amp")  # aggressor set: the verdict deepens
 		_chains_of_wrath(chain_f)
 		if s_passive() == "dawnfall":
 			# Dawnfall: everything near the verdict is left burning and slowed.

@@ -21,7 +21,7 @@ func _use_warrior(slot: String, f: float) -> void:
 				# thrust that ignores armor outright (earned tempo, hunt-rhythm
 				# pattern; the crack in the plate reads on the counter's beat).
 				uniq_counter += 1
-				if uniq_counter >= 3:
+				if uniq_counter >= int(uniq_k("every")):
 					uniq_counter = 0
 					decree = true
 					cleave_mult *= uniq_k("mult")
@@ -150,7 +150,8 @@ func _use_warrior(slot: String, f: float) -> void:
 					for e in _enemies_within(global_position, uniq_k("radius")):
 						hit_enemy(e, ability_coeff("a3") * af * uniq_k("echo"), {"aoe": true, "stagger": uniq_k("stagger")}))
 		"ult":
-			berserk_time = float(_tfx.get("berserk_dur", 8.0))
+			berserk_time = float(_tfx.get("berserk_dur", 8.0)) \
+				+ uniq_set_k("D", 4, "berserk_ext")  # Warhowl set: the rage runs longer
 			berserk_bonus = float(_tfx.get("berserk_dmg", 0.4))
 			if _tfx.has("berserk_heal"):
 				hp = minf(max_hp, hp + max_hp * float(_tfx["berserk_heal"]))

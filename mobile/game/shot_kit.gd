@@ -36,6 +36,7 @@ func _ready() -> void:
 	var cls := "assassin"
 	var skin := ""
 	var terrain := ""
+	var theme := ""
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--class="):
 			cls = arg.trim_prefix("--class=")
@@ -45,7 +46,10 @@ func _ready() -> void:
 			# Repaint the shooting room — judge FX under a dark tint
 			# (voidstone, gravedirt) as well as village daylight.
 			terrain = arg.trim_prefix("--terrain=")
-	shot_prefix = "%s_%s_%s" % [cls, skin if skin != "" else "base", terrain if terrain != "" else "default"]
+		elif arg.begins_with("--theme="):
+			theme = arg.trim_prefix("--theme=")
+	shot_prefix = "%s_%s_%s_%s" % [cls, skin if skin != "" else "base",
+		theme if theme != "" else "unthemed", terrain if terrain != "" else "default"]
 	game.menus.pick_class(cls)
 	await _frames(5)
 	if skin != "":
@@ -71,6 +75,8 @@ func _ready() -> void:
 	game.player.max_hp = 99999.0
 	game.player.hp = 99999.0
 	game.player.themes_known = 3
+	if theme != "":
+		game.player.set_all_themes(theme)
 	var dummy := Enemy.make(game, "wolf", game.player.global_position + Vector2(110, 0))
 	dummy.max_hp = 9999999.0
 	dummy.hp = 9999999.0

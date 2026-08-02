@@ -48,6 +48,7 @@ extends Node
 ## simulated seconds decouple from the wall clock (CPU-bound speed).
 
 const SIM_SECS_DEFAULT := 180.0   # long window: dilutes ult-cycle edge bias
+const SIEGE_SWING_DEFAULT := 1.2  # --siege: one dummy strike per this many seconds (clears the 0.6s hurt_cd)
 const PLAYER_LEVEL := 40
 const DUMMY_LEVEL := 40
 const GEAR_GRADE := "A"
@@ -114,6 +115,16 @@ var rep := -1           # --rep=N: independent RNG stream (parallel-mean fan)
 var standoff_override := -1.0  # --standoff=N: override STAND_OFF (fidelity probe)
 var knife_probe := false       # --knifeprobe: count avg knives/fan connecting
 var defense := false           # --defense: print EHP / damage-taken vs the boss, no DPS sim
+# --siege (2026-07-29): the dummy ANSWERS — fixed-cadence strikes through the
+# player's real take_damage pipeline (attacker = the dummy, so evasion/graze/
+# enemy-crit/ward/blunt/slip/counter/anchor/low-HP clauses ALL fire), while the
+# rotation keeps running (dps-under-fire). This is the instrument the pacifist
+# dummy could never be: every when-struck / on-evade / below-threshold passive
+# and the whole defensive set catalog price at ZERO without it.
+var siege := false             # --siege: enable the answering dummy (single-target only)
+var incoming_frac := 0.10      # --incoming=F: each strike's PRE-mitigation size as a fraction of player max HP
+var swing_secs := SIEGE_SWING_DEFAULT  # --swing=S: strike cadence — 1.2 models chip pressure, 3.0+0.35 models boss-pattern BURST
+                                       # (steady chip lets sustain engines fully amortize; bursts are what actually kill)
 var grade := GEAR_GRADE        # --grade=X: gear tier on every slot (realistic-kit runs)
 var gemlvl := GEM_LVL          # --gemlvl=N: gem level in every socket
 var plus_lvl := 0              # --plus=N: smith upgrade level on every piece
@@ -130,6 +141,19 @@ var boss_kind := ""            # --boss=X: dummy carries THIS boss's sheet, not 
 # readout includes +damage-taken. Answers "can an optimized build clear
 # depth D" with numbers instead of vibes.
 var depth_sim := 0             # 0 = off
+# --uniques (2026-07-27 dps-bench phase): every slot wears its class's BiS
+# NAMED UNIQUE passive (BenchBuild.BIS_UNIQUES) — the "most optimized build
+# from all gear" frame. --wpassive=<id> overrides just the weapon signature
+# (candidate A/Bs). --ttk gives the dummy the target boss's REAL HP pool
+# (mortal, still pacifist/pinned) and measures actual time-to-kill — the
+# honest instrument for opener/execute/first-hit passives, which an immortal
+# full-HP dummy either fakes permanently or never lets fire.
+var use_uniques := false
+var setprof := ""              # --setprof=A..E: six gear slots wear the full profile SET (weapon stays BiS)
+var wpassive := ""
+var ttk := false
+var hp_mult := 1.0             # --hpmult=N: scale the mortal pool (curve-retune probe)
+var gpassive := {}             # --gpassive=slot:id[,slot:id]: BiS gear-slot override (A/Bs)
 var results: Array = []
 
 # --- rotation driver state (one case at a time) ---
@@ -144,6 +168,16 @@ var ult_casts := 0
 # single boss (perp dist of each knife ray to the boss center <= body+dart r).
 var knife_fans := 0
 var knife_connects := 0
+# --siege telemetry (defense under fire)
+var siege_t := 0.0
+var siege_swings := 0
+var sg_taken := 0.0     # hp actually lost over the window (post-everything)
+var sg_healed := 0.0    # hp actually recovered (regen/lifesteal/mends/SW)
+var sg_raw := 0.0       # pre-mitigation damage attempted (mit% denominator)
+var sg_prev_hp := 0.0
+var sg_hpfrac_sum := 0.0
+var sg_frames := 0
+var sg_downs := 0       # would-die refills (hp under 20% at a strike = a down)
 # mana telemetry (round 49: "is the warlock running dry?")
 var mp_min := 0.0
 var mp_sum := 0.0
@@ -173,6 +207,13 @@ class BenchDummy extends Boss:
 	var m_crits := 0
 	var m_peak := 0.0
 	var pool := {}   # AoE mode: shared pack tally (empty in single mode)
+	# --ttk: the dummy is MORTAL — it carries the target boss's real HP pool
+	# and its hp genuinely falls (still pacifist, pinned, never dies), so
+	# first-hit/opener passives fire once like they really do, and execute-band
+	# passives (quietus) genuinely open at their thresholds. m_done latches at
+	# the kill; the case reports elapsed sim time as TTK.
+	var mortal := false
+	var m_done := false
 
 	static func spawn_bench(game_node: Node2D, pos: Vector2, lvl: int, block: Dictionary) -> BenchDummy:
 		var d := BenchDummy.new()
@@ -217,7 +258,15 @@ class BenchDummy extends Boss:
 			pool["peak"] = maxf(float(pool["peak"]), amount)
 			pool["started"] = true
 		knock = Vector2.ZERO
-		hp = max_hp               # immortal: the pool never moves, no phases
+		if mortal:
+			# --ttk: the pool genuinely drains. Floor at 1 HP (never dying —
+			# death paths would tear the measuring rig down mid-frame); the
+			# latch below ends the case.
+			hp = maxf(1.0, hp - amount)
+			if m_total >= max_hp - 0.5:
+				m_done = true
+		else:
+			hp = max_hp           # immortal: the pool never moves, no phases
 
 
 ## AoE-mode chaff: a pacifist, killable add. Credits EFFECTIVE damage
@@ -285,6 +334,12 @@ func _parse_args() -> void:
 			knife_probe = true
 		elif a == "--defense":
 			defense = true
+		elif a == "--siege":
+			siege = true
+		elif a.begins_with("--incoming="):
+			incoming_frac = clampf(float(a.get_slice("=", 1)), 0.01, 1.0)
+		elif a.begins_with("--swing="):
+			swing_secs = maxf(0.7, float(a.get_slice("=", 1)))
 		elif a.begins_with("--grade="):
 			grade = a.get_slice("=", 1)
 		elif a.begins_with("--gemlvl="):
@@ -300,6 +355,19 @@ func _parse_args() -> void:
 			dlevel = plevel
 		elif a.begins_with("--boss="):
 			boss_kind = a.get_slice("=", 1)
+		elif a == "--uniques":
+			use_uniques = true
+		elif a.begins_with("--setprof="):
+			setprof = a.get_slice("=", 1).to_upper()
+		elif a.begins_with("--wpassive="):
+			wpassive = a.get_slice("=", 1)
+		elif a == "--ttk":
+			ttk = true
+		elif a.begins_with("--hpmult="):
+			hp_mult = maxf(0.01, float(a.get_slice("=", 1)))
+		elif a.begins_with("--gpassive="):
+			for pair in a.get_slice("=", 1).split(","):
+				gpassive[pair.get_slice(":", 0)] = pair.get_slice(":", 1)
 		elif a.begins_with("--depth="):
 			depth_sim = int(a.get_slice("=", 1))
 			dlevel = depth_sim
@@ -307,6 +375,15 @@ func _parse_args() -> void:
 
 
 func _run() -> void:
+	# Fail FAST on an unknown --boss id: without this the per-frame stat
+	# lookups error forever and the headless child spins as a zombie (the
+	# Act-1 finale's KEY is "stormmouth" — "Cyrraeth" is its display name).
+	Story.load_content()
+	if boss_kind != "" and not Story.ALL_ENEMIES.has(boss_kind):
+		push_error("[bench] unknown --boss id '%s' — known bosses: %s" % [
+			boss_kind, ", ".join(Menus.BOSS_KINDS)])
+		get_tree().quit(1)
+		return
 	var main_scene: PackedScene = load("res://scenes/main.tscn")
 	game = main_scene.instantiate()
 	game.no_saves = true  # never touch (or list) real save files
@@ -333,12 +410,24 @@ func _run() -> void:
 		", GODROLL" if godroll else "",
 		", +%d smith" % plus_lvl if plus_lvl > 0 else "",
 		gemlvl, sim_secs])
+	if use_uniques:
+		print("[bench] UNIQUES: BiS named-unique passives on every slot (BenchBuild.BIS_UNIQUES)%s" % [
+			("; weapon override --wpassive=" + wpassive) if wpassive != "" else ""])
+	if setprof != "":
+		print("[bench] SET: six gear slots wear the full %s-profile set (weapon stays BiS)" % setprof)
+	if ttk:
+		var tk := boss_kind if boss_kind != "" else "stormmouth"
+		print("[bench] TTK MODE: mortal dummy carrying %s's real L%d pool (%.0f HP) — case ends at the kill" % [
+			tk, dlevel, Story.enemy_stats_at(tk, dlevel, dlevel > Balance.LEVEL_CAP)["hp"]])
 	if aoe:
 		print("[bench] AOE MODE: %d boss pillars in a row + %d adds (%.0f hp) every %.0fs — effective damage, pooled" % [
 			PILLARS, ADD_WAVE_COUNT, ADD_HP, ADD_WAVE_SECS])
 	if downtime:
 		print("[bench] DOWNTIME MODE: no casting %.1fs of every %.1fs — the telegraph-dodge tax (DoTs keep ticking)" % [
 			DOWNTIME_DUR, DOWNTIME_EVERY])
+	if siege:
+		print("[bench] SIEGE MODE: the dummy ANSWERS — a strike every %.1fs at %.0f%% max HP pre-mitigation (every 4th magic), through the real take_damage pipeline; rotation keeps running (dps-under-fire) + defense telemetry per case" % [
+			swing_secs, incoming_frac * 100.0])
 
 	for cls in CLS_ORDER:
 		if only_cls != "" and cls != only_cls:
@@ -392,16 +481,29 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	p.set_class(cls)          # refunds all points, derives theme unlocks
 	p.set_all_themes(tid)     # MONO spec: one identity across all four slots
 	p.tree_points = BenchBuild.preset_lookup(BenchBuild.TREE_PRESETS, cls, tid).duplicate()
+	# Era realism on low --level runs: a fresh hero hasn't banked the full
+	# 39-point preset — trim to the level's own budget (~1/level, like the
+	# attr line below), first rows first, so TTK-band rungs measure the kit
+	# the game actually fields at that level.
+	if plevel - 1 < 39:
+		var tree_budget := maxi(plevel - 1, 0)
+		for row in p.tree_points:
+			var take := mini(int(p.tree_points[row]), tree_budget)
+			p.tree_points[row] = take
+			tree_budget -= take
 	p.skill_points = 0
 	for attr in p.attr_points:
 		p.attr_points[attr] = 0
 	p.attr_points[String(Classes.CLASSES[cls]["primary"])] = plevel - 1
 	p.unspent_attr = 0
-	# S gear carries a dormant signature passive; a BiS run wants it LIVE.
-	if grade == "S":
-		game.set_flag("s_awakened_" + cls, true)
+	# (2026-07-27) Passives are live on pickup — the awakening flag is skin-only
+	# now; the bench weapon's flagship passive needs no flag.
 	_equip(p, cls, tid)
 	p.recalc()
+	if not p.uniq_setn.is_empty():
+		# Which profile SETS the kit forms (GEAR_UNIQUE_SETS.md) — reading a
+		# case without knowing its live set tiers misattributes the number.
+		print("[bench] set pieces: %s" % [p.uniq_setn])
 	_reset_player(p)
 
 	# --depth: apply the live pressure-band debuffs for this depth (mirror of
@@ -456,6 +558,16 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 			p.global_position = pack_center + Vector2(0, 120)
 	else:
 		dummy = BenchDummy.spawn_bench(game, pack_center, dlevel, block)
+		if ttk:
+			# Mortal dummy: the target boss's REAL pool at this level. --ttk
+			# requires --boss (a pool must belong to someone). --hpmult scales
+			# it — the curve-retune probe (find the pool that hits the TTK
+			# target BEFORE touching the real growth constants).
+			var kind := boss_kind if boss_kind != "" else "stormmouth"
+			var pool_hp: float = Story.enemy_stats_at(kind, dlevel, dlevel > Balance.LEVEL_CAP)["hp"] * hp_mult
+			dummy.mortal = true
+			dummy.max_hp = pool_hp
+			dummy.hp = pool_hp
 		game.add_enemy(dummy)
 		var so: float = standoff_override if standoff_override >= 0.0 else float(STAND_OFF[cls])
 		p.global_position = dummy.home + Vector2(-so, 0)
@@ -475,13 +587,23 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	mp_sum = 0.0
 	mp_frames = 0
 	starved = {}
+	siege_t = 0.0
+	siege_swings = 0
+	sg_taken = 0.0
+	sg_healed = 0.0
+	sg_raw = 0.0
+	sg_prev_hp = p.hp
+	sg_hpfrac_sum = 0.0
+	sg_frames = 0
+	sg_downs = 0
 	aoe_win_t = 0.0
 	wave_t = ADD_WAVE_SECS  # first wave lands immediately
 	wave_idx = 0
 	adds_spawned = 0
 	running = true
 	var guard := 0.0
-	while (aoe_win_t if aoe else dummy.m_time) < sim_secs:
+	while (aoe_win_t if aoe else dummy.m_time) < sim_secs \
+			and not (ttk and dummy.m_done):
 		await get_tree().physics_frame
 		guard += 1.0 / 60.0
 		if guard > sim_secs * 3.0 + 30.0:
@@ -513,6 +635,18 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 			"atk": p.atk,
 			"kills": "",
 		}
+		if ttk:
+			# TTK: real seconds to drain the pool; -1 = did not finish (DNF).
+			r["ttk"] = secs if dummy.m_done else -1.0
+	r["def"] = ""
+	if siege and sg_frames > 0:
+		var sw := maxf(float(sg_frames) / 60.0, 0.001)
+		r["def"] = "  | taken/s %d (mit %d%%)  heal/s %d  avg hp %d%%  downs %d" % [
+			int(sg_taken / sw),
+			int(100.0 * (1.0 - sg_taken / maxf(sg_raw, 1.0))),
+			int(sg_healed / sw),
+			int(100.0 * sg_hpfrac_sum / float(sg_frames)),
+			sg_downs]
 	r["mana"] = ""
 	if not bool(Classes.CLASSES[cls].get("manaless", false)) and mp_frames > 0:
 		var starved_bits: Array = []
@@ -526,9 +660,13 @@ func _run_case(cls: String, tid: String, block: Dictionary) -> void:
 	var probe := ""
 	if knife_probe and knife_fans > 0:
 		probe = "  knives/fan %.2f (of 5, n=%d)" % [float(knife_connects) / float(knife_fans), knife_fans]
-	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s%s%s" % [
+	if ttk:
+		var tt: float = r.get("ttk", -1.0)
+		probe += "  TTK %s" % ("%.1fs" % tt if tt >= 0.0 else "DNF(>%.0fs)" % sim_secs)
+	print("[dps] %-18s %7.0f dps   (%.0f over %.0fs)  hits/s %4.1f  crit %2.0f%%  peak %6.0f  ults %d  atk %d%s%s%s%s" % [
 		r["case"], r["dps"], r["total"], r["secs"], r["hps"], r["crit"],
-		r["peak"], r["ults"], int(r["atk"]), r["kills"], r["mana"], probe])
+		r["peak"], r["ults"], int(r["atk"]), r["kills"], r["mana"], probe,
+		r.get("def", "")])
 
 	# --- teardown: drop the targets, let in-flight effects (mists, rifts,
 	# meteors, storm arrows) resolve into nothing before the next case.
@@ -559,8 +697,14 @@ func _equip(p: Player, cls: String, tid: String) -> void:
 	# the roll with THIS run's gear_seed (--gearseed lets it vary for a variance probe).
 	var rng := RandomNumberGenerator.new()
 	rng.seed = gear_seed
-	var cfg := {"grade": grade, "gemlvl": gemlvl, "plus": plus_lvl, "godroll": godroll}
+	var cfg := {"grade": grade, "gemlvl": gemlvl, "plus": plus_lvl, "godroll": godroll,
+		"uniques": use_uniques, "setprof": setprof}
 	p.equipment = BenchBuild.equip_dict(cls, tid, cfg, rng)
+	if wpassive != "":
+		p.equipment["weapon"]["passive"] = wpassive  # --wpassive: candidate A/B
+	for gslot in gpassive:
+		if p.equipment.has(gslot):
+			p.equipment[gslot]["passive"] = String(gpassive[gslot])  # --gpassive A/B
 	p._update_weapon_visual()
 
 
@@ -613,6 +757,8 @@ func _physics_process(_delta: float) -> void:
 		# keep working; casts (and ult presses) wait out the telegraph.
 		return
 	var p: Player = game.player
+	if siege and not aoe:
+		_siege_tick(p)
 	if rot_cls == "assassin":
 		_drive_assassin(p)
 		return
@@ -639,6 +785,38 @@ func _physics_process(_delta: float) -> void:
 	mp_min = minf(mp_min, p.mp)
 	mp_sum += p.mp
 	mp_frames += 1
+
+
+## --siege: sample sustain per frame, then land the dummy's strike on the
+## cadence. Strikes go through the player's REAL take_damage with the dummy
+## as attacker — evasion rolls, graze tiers, enemy crits (the blunt family's
+## trigger), wards, slips, counters, anchors and low-HP floors all behave
+## exactly as in a live fight. A would-die (hp under 20% when the strike
+## arrives) counts a DOWN and refills — the rig must never actually die.
+func _siege_tick(p: Player) -> void:
+	var dh := p.hp - sg_prev_hp
+	if dh > 0.0:
+		sg_healed += dh
+	elif dh < 0.0:
+		sg_taken += -dh
+	sg_prev_hp = p.hp
+	sg_hpfrac_sum += p.hp / p.max_hp
+	sg_frames += 1
+	siege_t += 1.0 / 60.0
+	if siege_t < swing_secs:
+		return
+	siege_t = 0.0
+	# Danger floor scales with the strike (a 1.5x crit must never actually
+	# kill the rig): a strike arriving with hp under it counts a DOWN and
+	# refills. "downs" therefore reads "times the kit fell into lethal range".
+	if p.hp <= p.max_hp * clampf(incoming_frac * 1.6, 0.2, 0.6):
+		sg_downs += 1
+		p.hp = p.max_hp
+		sg_prev_hp = p.max_hp  # the refill is bookkeeping, never "healing"
+	siege_swings += 1
+	sg_raw += p.max_hp * incoming_frac
+	p.take_damage(p.max_hp * incoming_frac,
+		"magic" if siege_swings % 4 == 0 else "phys", dummy, false)
 
 
 ## AoE mode: a fresh wave of low-health adds every ADD_WAVE_SECS, popped

@@ -411,7 +411,8 @@ func _hex_detonate(pos: Vector2, scale := 1.0) -> void:
 	ct.tween_property(core, "scale", Vector2(2.6, 2.6), 0.16)
 	ct.parallel().tween_property(core, "modulate:a", 0.0, 0.2)
 	ct.tween_callback(core.queue_free)
-	var mult := 1.1 * float(hex_fx.get("hex_boom", 1.0)) * dm("a2") * scale
+	var mult := 1.1 * float(hex_fx.get("hex_boom", 1.0)) * dm("a2") * scale \
+		* (1.0 + uniq_set_k("D", 6, "detonate_amp"))  # aggressor set: louder debts
 	var saved := _tfx
 	_tfx = {}
 	for e in _enemies_within(pos, 110.0):
@@ -428,13 +429,25 @@ func _hex_detonate(pos: Vector2, scale := 1.0) -> void:
 ## through a lifesteal surge.
 func _dark_pact(f := 1.0) -> void:
 	var cost_frac := float(_tfx.get("pact_cost", 0.12))
+	# Profile-set pact clauses: the guard 4pc cuts the blood price at full
+	# anchor stacks; the bulwark 6pc waives it entirely below the threshold.
+	if uniq_set_k("B", 4, "pact_cut_stacks") > 0.0 and uniq_guard_stacks > 0 \
+			and uniq_guard_stacks >= _anchor_cap():
+		cost_frac *= 1.0 - uniq_set_k("B", 4, "pact_cut_stacks")
+	# warlock_pants_Bs standalone: full anchor stacks steady the pact too
+	# (fix 2026-07-28 — the card promised it, no seam existed).
+	if uniq_gk("pants_guard", "pact_cut") > 0.0 and uniq_guard_stacks > 0 \
+			and uniq_guard_stacks >= _anchor_cap():
+		cost_frac *= 1.0 - uniq_gk("pants_guard", "pact_cut")
+	if uniq_set_k("E", 6, "pact_free_lowhp") > 0.0 and hp < max_hp * 0.3:
+		cost_frac = 0.0
 	var sacrifice := max_hp * cost_frac
 	if hp <= sacrifice + 1.0:
 		cds["a3"] = 0.5  # you cannot pay in blood you don't have
 		return
 	hp -= sacrifice
 	game.spawn_text(global_position + Vector2(0, -44), "-%d" % int(sacrifice), Color(1.0, 0.3, 0.4))
-	pact_time = 5.0
+	pact_time = 5.0 + uniq_set_k("E", 4, "pact_surge_ext")  # bulwark set: it lingers
 	pact_ls = float(_tfx.get("pact_ls", 0.15))
 	if s_passive() == "veinroot":
 		pact_time += uniq_k("surge_ext")  # Veinroot: the surge lingers
@@ -683,8 +696,10 @@ func _void_rift(f := 1.0) -> void:
 				_living_tether(mark, e, Color(0.36, 0.88, 0.58, 0.72), 0.3, true)
 			var to_rift: Vector2 = pos - e.global_position
 			if to_rift.length() > 20.0:
-				# apply_knock (MP-10 seam): a mirror ships the pull to the host
-				e.apply_knock(to_rift.normalized() * (520.0 if hard else 300.0))
+				# apply_knock (MP-10 seam): a mirror ships the pull to the host.
+				# The finesse set's 6pc drags harder.
+				e.apply_knock(to_rift.normalized() * (520.0 if hard else 300.0)
+					* (1.0 + uniq_set_k("C", 6, "rift_pull")))
 	if is_instance_valid(mark):
 		mark.queue_free()
 	if is_instance_valid(vortex):

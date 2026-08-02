@@ -283,7 +283,7 @@ const CONVOS := {
 				{"flag": "chose_kaethra_struck", "text": "Bearer. Sit. ...Kesh's runner reached me before you did. A clean stroke, carried honestly — her camps are grieving without feuding, which in Wildfang terms is a miracle with your name under it. To work, then."},
 			],
 			"next": "m2"},
-		"m2": {"who": "Elder Maren", "text": "The arithmetic, plainly. Four seals strained this year; you put down every herald the Waking sent — and Serane taught us the bill: each herald is also a hinge. The Storm Tongue's seal is last and worst, because its lock was never stone. It was a SENTENCE — an unbroken relay of speakers, six hundred years long. Korrag's own order. And the last speaker has stopped speaking it and started listening.", "next": "m3"},
+		"m2": {"who": "Elder Maren", "text": "The arithmetic, plainly. Four seals strained this year; you put down every herald the Waking sent — and Serane taught us the bill: each herald is also a hinge. You've seen what holds the fifth seal now. Words, and one man's mouth — and you saw which way his head was tilted.", "next": "m3"},
 		"m3": {"who": "Elder Maren", "text": "Cyrraeth will not be talked back — three of mine tried; the storm answered for him. So it comes to you, and I will not dress it: kill him and the recitation dies with him, and the seal cracks. Spare him and the seal cracks SLOWER, with a god-king's mouth attached. There is no road out of this chapter where the sky holds, bearer. There is only who is standing under it after.",
 			"choices": [
 				{"text": "\"Then I'll finish the sentence for him. And after — we hold what the crack lets through, together.\"",

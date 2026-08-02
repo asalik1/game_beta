@@ -24,7 +24,7 @@ const ENEMIES := {
 		# LEVELS each — Cyrraeth alone was two and a half. Mids ~70%, act
 		# finale ~86% of a level; Act 1 closes at ~L41-42 as designed.
 		# The finale's fanfare stays in its gold (gold has no XP budget).
-		"hp": 62000.0, "dmg": 205.0, "speed": 115.0, "xp": 600, "gold": 980,
+		"hp": 148000.0, "dmg": 205.0, "speed": 115.0, "xp": 600, "gold": 980,
 		# A storm-front-sized elemental — the 4x+ tier (boss scale doctrine).
 		# Sprite 2026-07-17: retired the 32px `stormwarden` placeholder for a
 		# custom PixelLab storm-wraith (216px cell, floating, grinning arc-seam).
@@ -57,7 +57,7 @@ const ENEMIES := {
 	# real one. Void zones shrink the arena; blink-strike punishes lingering.
 	"unnamed_echo": {
 		"name": "The Echo of the Unnamed", "sprite": "echo",
-		"hp": 48000.0, "dmg": 260.0, "speed": 170.0, "xp": 640, "gold": 1020,
+		"hp": 111500.0, "dmg": 260.0, "speed": 170.0, "xp": 640, "gold": 1020,
 		# 2x the hero, no higher: he mirrors the HERO — a person, not a titan.
 		# (The assassin strip's body fills ~65% of its cell, so hitting a true
 		# measured 2x needs scale 10; 6.0 rendered him hero-sized. He stays an
@@ -91,7 +91,7 @@ const ENEMIES := {
 	# the mid-game begins. ACT 1 FINALE.
 	"stormmouth": {
 		"name": "Cyrraeth, Mouth of the Storm", "sprite": "stormmouth",
-		"hp": 130000.0, "dmg": 275.0, "speed": 105.0, "xp": 800, "gold": 1900,
+		"hp": 285900.0, "dmg": 275.0, "speed": 105.0, "xp": 800, "gold": 1900,
 		# The Act 1 finale titan: ~4.5x the hero, the largest thing alive
 		# (13.5 measured only 4.0x — a dead tie with Veyx; 15.0 = 4.5x true).
 		"ranged": true, "scale": 15.0,

@@ -107,6 +107,19 @@ func _finish_mage_bolt(p: Projectile, mult: float) -> void:
 			# Quickweather: the post-Blink bolt strikes twice.
 			if uniq_take("squall"):
 				p.fx["echo"] = 1.0
+	# Mage aggressor-set: every Nth bolt cracks the ward (own counter,
+	# sp-independent — a set must work over any weapon). The 4pc carries its
+	# own slower cadence (fix 2026-07-28: at exactly four pieces the only
+	# shred source was the once-per-fight opener beat); the 6pc quickens it.
+	var s_every := uniq_set_k("D", 6, "bolt_shred_every")
+	if s_every <= 0.0:
+		s_every = uniq_set_k("D", 4, "bolt_shred_every4")
+	if s_every > 0.0:
+		uniq_scount += 1
+		if uniq_scount >= int(s_every):
+			uniq_scount = 0
+			p.fx["shred"] = maxf(float(p.fx.get("shred", 0.0)), 8.0)
+			p.fx["shred_dur"] = maxf(float(p.fx.get("shred_dur", 0.0)), 3.0)
 	p.pierce = p.pierce or bool(_tfx.get("pierce", 0))
 	if _tfx.get("homing", 0):
 		p.homing = true  # Wind firebolt SEEKS its mark — baseline wind behavior, no talent
@@ -403,7 +416,18 @@ func _frost_nova(f := 1.0) -> void:
 	var restore := rider("a2", "restore")
 	if s_passive() == "springwake":
 		restore *= uniq_k("restore_mult")  # Springwake: the bloom drinks deeper
+	restore += uniq_set_k("E", 4, "nova_restore_add")  # bulwark SET: drinks deeper still
+	# Mage bulwark BARGAINs (armor uniques): Nova's restore is the price —
+	# charged from the bastion (pants) AND pool (charm Ea) carriers alike.
+	restore *= (1.0 - uniq_gk("pants_bulwark", "nova_tax")) \
+		* (1.0 - uniq_gk("helm_bulwark", "nova_tax"))
 	gain_hp((max_hp - hp) * restore)  # nova drinks the cold — SHOW the mend
+	# mage_helmet_Es: casting Nova banks a flat slice into the pool (fix
+	# 2026-07-28 — the old "restore overflow pools" card was structurally
+	# impossible: a missing-HP restore can never overflow).
+	var nova_pool := uniq_gk("helm_bulwark", "nova_pool")
+	if nova_pool > 0.0:
+		_uniq_pool_overflow(max_hp * nova_pool)
 	if nova_regen > 0.0:
 		# Rimeheart (mage talent): the cold keeps mending — a long, slow trickle
 		# (recast RENEWS this window, never stacks the rate: spam ≠ more potency).
@@ -503,12 +527,14 @@ func _apply_nova_gameplay(f: float, radius: float, inward: bool, fiery: bool) ->
 		eff["knock"] = 340.0
 		eff["knock_no_boss"] = 1
 	var caught := _enemies_within(global_position, radius)
+	var root_dur: float = maxf(uniq_k("root") if s_passive() == "worldroot" else 0.0,
+		uniq_set_k("E", 6, "nova_root"))  # Verdancy AND/OR the bulwark set's 6pc
 	for e in caught:
 		hit_enemy(e, ability_coeff("a2") * f, eff.duplicate())
-		if s_passive() == "worldroot" and not e.dying:
-			# Verdancy: the worldroot HOLDS what the nova catches (a near-total
-			# slow is the root — mobs only; a boss converts it like any CC).
-			e.apply_slow(0.05, uniq_k("root"))
+		if root_dur > 0.0 and not e.dying:
+			# The worldroot HOLDS what the nova catches (a near-total slow is
+			# the root — mobs only; a boss converts it like any CC).
+			e.apply_slow(0.05, root_dur)
 			game.spawn_text(e.global_position + Vector2(0, -44), "ROOTED", Color(0.5, 0.9, 0.45))
 	if s_passive() == "springwake" and not caught.is_empty():
 		# Springwake: each enemy caught in the bloom mends you.

@@ -2033,6 +2033,7 @@ func _run_systems() -> void:
 	game.menus.close()
 	await _frames(2)
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
+	_test_status_icon_coverage()
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
 	await _test_endgame()
@@ -7744,3 +7745,32 @@ func _bm_restore(s: Dictionary) -> void:
 func _bm_restore_fail(s: Dictionary, msg: String) -> void:
 	_bm_restore(s)
 	_fail(msg)
+
+
+## Every literal active-effect id emitted by Hud._active_buffs must resolve to
+## an installed authored PNG. Parsing the producer prevents a newly-added state
+## from silently falling back because somebody forgot a second registry.
+func _test_status_icon_coverage() -> void:
+	var source := FileAccess.get_file_as_string("res://scripts/hud.gd")
+	var start := source.find("func _active_buffs()")
+	var finish := source.find("func _update_buffs()", start)
+	if start < 0 or finish <= start:
+		return _fail("status-icon coverage could not locate Hud._active_buffs")
+	var body := source.substr(start, finish - start)
+	var pattern := RegEx.new()
+	pattern.compile("\"id\"\\s*:\\s*\"([a-z0-9_]+)\"")
+	var active_ids := {}
+	for match in pattern.search_all(body):
+		active_ids[match.get_string(1)] = true
+	if active_ids.is_empty():
+		return _fail("status-icon coverage found no active-effect ids")
+	for id in active_ids:
+		if not Hud.BUFF_ICONS.has(id):
+			return _fail("active effect has no authored icon mapping: %s" % id)
+		var icon: String = String(Hud.BUFF_ICONS[id])
+		if not ResourceLoader.exists("res://assets/icons/%s.png" % icon):
+			return _fail("active effect icon is missing: %s -> %s.png" % [id, icon])
+	for id in Hud.BUFF_ICONS:
+		if not active_ids.has(id):
+			return _fail("stale status icon mapping has no active effect: %s" % id)
+	print("ok: status icons (%d active ids, all authored PNGs, no procedural fallbacks)" % active_ids.size())

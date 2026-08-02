@@ -407,6 +407,12 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			glow.modulate.a = 0.62
 		"hellfire_brand_bolt":
 			sprite.scale = Vector2(0.84, 0.84)  # 30% smaller than the caster bolts
+		"warlock_eldritch_bolt":
+			# Arcane Warlock's living eye-bolt is authored at 96px (the class
+			# bolts are 40px); 0.5 lands it at the base Shadowbolt's ~48px
+			# flight length. Unmatched it fell to the legacy 3x default below
+			# and drew 288px wide — three heroes tall (owner 2026-07-28).
+			sprite.scale = Vector2(0.5, 0.5)
 		"fx_boss_fire_comet":
 			sprite.scale = Vector2.ONE * Balance.BOSS_PROJECTILE_ART_SCALE
 		"fx_boss_frost_lance":
@@ -447,7 +453,13 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 			sprite.scale = Vector2(0.4, 0.4)          # 20% smaller than before (0.5)
 			glow.scale = Vector2(0.8, 0.8)
 			glow.modulate = Art.hdr(Color(p.glow_color, 0.75))
-		_: sprite.scale = Vector2(3, 3)
+		_:
+			# Legacy procedural cores (8/16px pixel grids) enlarge 3x. An
+			# AUTHORED texture that reaches this default unmatched must never
+			# inherit that blowup (the 96px arcane eye-bolt did, and flew at
+			# 288px) — pin it to the legacy ~48px cell instead.
+			var tex_w: int = sprite.texture.get_width() if sprite.texture != null else 16
+			sprite.scale = Vector2(3, 3) if tex_w <= 32 else Vector2.ONE * (48.0 / float(tex_w))
 	if authored_mob:
 		sprite.scale = Vector2.ONE * Balance.MOB_PROJECTILE_ART_SCALE
 	sprite.rotation = velocity.angle()

@@ -9,12 +9,12 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Vargoth fell. The Crown did not surrender — it SCATTERED. Every fragment took a piece of the fire with it, and went looking for a hand to close around it.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Years, then. The kingdom did not heal; it settled, the way a broken bone settles when nobody sets it. The land began — there is no better word — to WAKE. And the shards began to choose.",
+				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
@@ -25,7 +25,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Point it at work. Every gap ended with something BUILT — you made the blackout a carpenter.",
@@ -36,7 +36,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Stop fighting it. You picked the nights, walked past the tree line, and let it swing until IT was tired.",
+						"text": "Let the shard answer. YOU PICKED THE NIGHTS. YOU WALKED PAST THE TREE LINE AND LET ME SWING UNTIL I WAS TIRED — AND YOU SLEPT SOUND, AFTER. SAY IT WAS US.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -55,17 +55,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -81,12 +81,12 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Vargoth fell. The Crown did not surrender — it SCATTERED. Every fragment took a piece of the fire with it, and went looking for a hand to close around it.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Years, then. The kingdom did not heal; it settled, the way a broken bone settles when nobody sets it. The land began — there is no better word — to WAKE. And the shards began to choose.",
+				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
@@ -97,7 +97,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Pay forward. Every winter you found the freezing and sat with them — let it take from YOU for a change.",
@@ -108,7 +108,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Take on schedule. A little from many, none the wiser, you well-fed — you made the theft a tax.",
+						"text": "Let the shard answer. A LITTLE FROM MANY, NONE THE WISER, BOTH OF US FED. WE MADE THE THEFT A TAX — AND THE TAX WAS FAIR.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -127,17 +127,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -153,12 +153,12 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Vargoth fell. The Crown did not surrender — it SCATTERED. Every fragment took a piece of the fire with it, and went looking for a hand to close around it.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Years, then. The kingdom did not heal; it settled, the way a broken bone settles when nobody sets it. The land began — there is no better word — to WAKE. And the shards began to choose.",
+				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
@@ -169,7 +169,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Keep it burning. Every remedy, every archive, every road that rumored a cure — the promise aged better than you did.",
@@ -180,7 +180,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Refine the light. To fix the spell you cast it again — smaller, controlled, on things that couldn't consent.",
+						"text": "Let the shard answer. WE CAST IT AGAIN. SMALLER. CONTROLLED. ON THINGS THAT COULD NOT SAY NO — HOW ELSE DOES ANYONE LEARN?",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -199,17 +199,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -225,12 +225,12 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Vargoth fell. The Crown did not surrender — it SCATTERED. Every fragment took a piece of the fire with it, and went looking for a hand to close around it.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Years, then. The kingdom did not heal; it settled, the way a broken bone settles when nobody sets it. The land began — there is no better word — to WAKE. And the shards began to choose.",
+				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
@@ -251,7 +251,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Answer it. Walk down, sit at Ren's table, and let the stranger-distance be a thing you both work at.",
@@ -262,7 +262,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Cut the habit too. The ridge road is a thread you are still holding — stop taking it, and get lighter.",
+						"text": "Let the shard answer. THE RIDGE ROAD WAS A THREAD AND WE CUT IT. YOU FELT THE LIGHTNESS. YOU LIKED IT. SAY YOU LIKED IT.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -281,17 +281,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -307,12 +307,12 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Vargoth fell. The Crown did not surrender — it SCATTERED. Every fragment took a piece of the fire with it, and went looking for a hand to close around it.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Years, then. The kingdom did not heal; it settled, the way a broken bone settles when nobody sets it. The land began — there is no better word — to WAKE. And the shards began to choose.",
+				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
@@ -323,7 +323,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Rule anyway — slowly. You heard every case twice: once as yourself, once listening for which verdict the chain leaned on. You ruled against the lean.",
@@ -334,7 +334,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let it draft. The chain's verdicts were fast, clean, and popular. You started reading them aloud unedited.",
+						"text": "Let the chain answer. MY VERDICTS WERE FAST, CLEAN, AND LOVED. YOU READ THEM ALOUD UNEDITED — AND NOT ONE VILLAGE APPEALED.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -353,17 +353,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -379,12 +379,12 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Vargoth fell. The Crown did not surrender — it SCATTERED. Every fragment took a piece of the fire with it, and went looking for a hand to close around it.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Years, then. The kingdom did not heal; it settled, the way a broken bone settles when nobody sets it. The land began — there is no better word — to WAKE. And the shards began to choose.",
+				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
@@ -395,7 +395,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Audit it. You learned its grammar, listed every asset 'what you traded' could mean, and crossed off what you could prove still yours.",
@@ -406,7 +406,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Borrow small. A candle here, a candle there — for good causes, mostly. The debt is deeper and your reasons were excellent.",
+						"text": "Let the tome answer. A CANDLE HERE, A CANDLE THERE — FOR GOOD CAUSES, MOSTLY. THE DEBT IS DEEPER AND YOUR REASONS WERE EXCELLENT. *(The tome's account. In your handwriting.)*",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -425,17 +425,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -463,11 +463,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "vale_warrior",
 				"text": "Every dead thing here is an aftermath still on its feet. You know aftermaths — you wake up in them. The Vale is a blackout that never ends, walking in grave-clothes, and nobody here will even flinch if you swing.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Gate-Cantor",
+				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
 						"text": "Endings are owed. You finish what you start — time somebody finished THESE.",
@@ -495,19 +495,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate, the counting-cantor looks up from her ledger as the procession shuffles past.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The cantor waves you through. The procession does not look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -535,11 +540,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "vale_assassin",
 				"text": "Sixty years and the rot has not taken ONE thing from Varo. You, who cannot keep a fire lit near a stranger, are walking toward the single most refused man alive. The Ember is curious. You can feel it leaning.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Gate-Cantor",
+				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
 						"text": "Give him rest. The one gift nobody here has offered the man everything else refuses.",
@@ -558,7 +563,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Keep distance. A thing the rot won't touch is a thing you shouldn't either.",
+						"text": "No gifts, no studies. If the saint must fall, let it be clean stranger's work — in, through, gone.",
 						"resonance": 0.0,
 						"flags": {
 							"ch3_eyes_forward": true,
@@ -567,19 +572,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate, the counting-cantor looks up from her ledger as the procession shuffles past.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The cantor waves you through. The procession does not look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -607,11 +617,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "vale_mage",
 				"text": "The grey on the ferrier's boy — cold, spreading, unwashable. You have carried its likeness for years. The Vale is ACRES of it. Somewhere between the gate and the saint, this place knows what your green light did.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Gate-Cantor",
+				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
 						"text": "The promise walks in with you. If the Vale can teach you what the mark IS, the boy finally gets his answer.",
@@ -639,19 +649,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate, the counting-cantor looks up from her ledger as the procession shuffles past.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The cantor waves you through. The procession does not look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -679,11 +694,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "vale_archer",
 				"text": "You can see the threads here. That is the horror of it — every walking corpse trails a hundred, held from the OTHER end. The Vale is not full of dead who won't leave. It is full of mourners who won't let go.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Gate-Cantor",
+				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
 						"text": "Release is a mercy you know the price of. Untie them — gently, one funeral at a time, all the way up the hill.",
@@ -711,19 +726,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate, the counting-cantor looks up from her ledger as the procession shuffles past.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The cantor waves you through. The procession does not look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -751,11 +771,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "vale_paladin",
 				"text": "Sixty years, one petitioner, no verdict. Varo begs for death and the Choir calls the begging liturgy. The chain has read the case already and — for the first time since the granary — it is NOT SURE. You felt it hesitate. That frightened you more than its certainty ever has.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Gate-Cantor",
+				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
 						"text": "Hear the case. Climb, listen to the man himself, and deliver the verdict sixty years of clergy refused to.",
@@ -783,19 +803,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate, the counting-cantor looks up from her ledger as the procession shuffles past.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The cantor waves you through. The procession does not look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -823,11 +848,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "vale_warlock",
 				"text": "You know these books. Death deferred, grief compounding, the principal never touched — the Vale is a loan sixty years past due and still accruing. The tome, in your pack, is purring. It thinks it is HOME.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Gate-Cantor",
+				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
 						"text": "Close the accounts. Every walker is a debt someone refuses to settle — settle them, paid in full, starting at the gate.",
@@ -855,19 +880,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate, the counting-cantor looks up from her ledger as the procession shuffles past.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The cantor waves you through. The procession does not look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -895,11 +925,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "foundry_warrior",
 				"text": "The improved stand straighter, hit harder, and stop blinking at the fire. Nobody says what got smelted out. You have wondered your whole life what you'd give to be certain of your own hands. The furnace is CERTAIN.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Crew-Boss",
+				"text": "You're not signed. So what's a foundry to you, stranger?",
 				"choices": [
 					{
 						"text": "Hands like yours don't go in fires. Get the crews out before the certainty spreads.",
@@ -927,19 +957,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the furnace corridor's mouth a crew-boss blocks your way, her roped crew filing past behind her.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The crew-boss shrugs and turns back to her rope-line. Strangers' business is strangers' business.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -967,11 +1002,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "foundry_assassin",
 				"text": "Your Ember takes and leaves nothing but grey lips. The furnace takes and hands back improvements, itemized. It is the same theft with better paperwork — and half this city is GRATEFUL. That is the part that itches.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Crew-Boss",
+				"text": "You're not signed. So what's a foundry to you, stranger?",
 				"choices": [
 					{
 						"text": "Gratitude isn't consent. Get them out before the bill comes due — you know how these ledgers end.",
@@ -999,19 +1034,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the furnace corridor's mouth a crew-boss blocks your way, her roped crew filing past behind her.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The crew-boss shrugs and turns back to her rope-line. Strangers' business is strangers' business.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1039,11 +1079,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "foundry_mage",
 				"text": "The blades stopped breaking. Say it plainly: somewhere below, a technique exists that does not FAIL. You cast one heal, once, and it is still failing years later. Mórwyn would have loved this place. That sentence should be the whole warning.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Crew-Boss",
+				"text": "You're not signed. So what's a foundry to you, stranger?",
 				"choices": [
 					{
 						"text": "Perfect isn't the promise — UNDONE is. Take nothing from this place the boy wouldn't thank you for.",
@@ -1071,19 +1111,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the furnace corridor's mouth a crew-boss blocks your way, her roped crew filing past behind her.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The crew-boss shrugs and turns back to her rope-line. Strangers' business is strangers' business.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1111,11 +1156,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "foundry_archer",
 				"text": "You see the freight lines the way you see threads — and every thread in this city runs DOWNHILL. Crews roped together walking in; ore, verdicts, prayers, all one direction. Nothing in the Slagfields leads out.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Crew-Boss",
+				"text": "You're not signed. So what's a foundry to you, stranger?",
 				"choices": [
 					{
 						"text": "Cut them loose. Every rope walking furnace-ward gets an arrow before the door does.",
@@ -1143,19 +1188,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the furnace corridor's mouth a crew-boss blocks your way, her roped crew filing past behind her.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The crew-boss shrugs and turns back to her rope-line. Strangers' business is strangers' business.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1183,11 +1233,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "foundry_paladin",
 				"text": "Three rooms past the gate and the chain went QUIET — the quiet of a junior arbiter when the high judge enters. Something under this rock hands down verdicts, and the thing around your heart wants to clerk for it.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Crew-Boss",
+				"text": "You're not signed. So what's a foundry to you, stranger?",
 				"choices": [
 					{
 						"text": "People first, then the bench. Get the crews out; a court that burns its witnesses is no court.",
@@ -1215,19 +1265,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the furnace corridor's mouth a crew-boss blocks your way, her roped crew filing past behind her.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The crew-boss shrugs and turns back to her rope-line. Strangers' business is strangers' business.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1255,11 +1310,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "foundry_warlock",
 				"text": "The tome has not said one word since you crossed the Cinder Gate. You know that silence — a small creditor in a large bank's lobby. The thing beneath the foundries writes contracts in fire and signs them with verdicts, and your book is AFRAID of it.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Crew-Boss",
+				"text": "You're not signed. So what's a foundry to you, stranger?",
 				"choices": [
 					{
 						"text": "A creditor that scares yours has clients that need out. Void what contracts you can, crews first.",
@@ -1287,19 +1342,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the furnace corridor's mouth a crew-boss blocks your way, her roped crew filing past behind her.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The crew-boss shrugs and turns back to her rope-line. Strangers' business is strangers' business.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1320,7 +1380,7 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. That grain is marrow in children's bones. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
@@ -1331,7 +1391,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
 				"choices": [
 					{
 						"text": "Mornings over guarantees. Wake them, and keep waking — a held sword beats a buried one.",
@@ -1342,7 +1402,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Price the bed. Not for the peace — for the CONTAINMENT. One sleeper down there could never hurt a miller again.",
+						"text": "Price the bed — not for the peace, for the containment. Think it quietly, so the shard doesn't hear: one sleeper down there never hurts a miller again.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1361,17 +1421,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The pen goes back untouched. The shard hums the sister's silence all the way up the ice.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the ledger open to the wind. Let the snow sign it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1392,7 +1452,7 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. That grain is marrow in children's bones. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
@@ -1403,7 +1463,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
 				"choices": [
 					{
 						"text": "Wake them. You know what 'kept' costs from the taking side — nobody down there agreed to the real price.",
@@ -1414,7 +1474,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Lie down. Just to hear the hush from inside. The Ember can't spend what the ice holds still.",
+						"text": "Let the shard answer. LIE DOWN. ONE TENCOUNT IN THE EMPTY BED. WHAT THE ICE HOLDS STILL I CANNOT SPEND — AND YOU ARE SO TIRED OF MY SPENDING.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1433,17 +1493,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The pen goes back untouched. The shard hums the sister's silence all the way up the ice.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the ledger open to the wind. Let the snow sign it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1464,7 +1524,7 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. That grain is marrow in children's bones. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
@@ -1475,7 +1535,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
 				"choices": [
 					{
 						"text": "The promise says undone, not paused. Wake them into cures, however long cures take.",
@@ -1486,7 +1546,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Test the stillness. One bloom of grey under the Queen's cold — if it halts the mark, the boy sleeps a winter and wakes clean-ish.",
+						"text": "Let the shard answer. ONE BLOOM OF GREY UNDER HER COLD. IF THE MARK HALTS, THE BOY SLEEPS A WINTER AND WAKES CLEAN. YOU HAVE CAST ON WORSE ODDS — WE BOTH REMEMBER.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1505,17 +1565,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The pen goes back untouched. The shard hums the sister's silence all the way up the ice.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the ledger open to the wind. Let the snow sign it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1536,7 +1596,7 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. That grain is marrow in children's bones. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
@@ -1547,7 +1607,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
 				"choices": [
 					{
 						"text": "Threads are for holding. Wake them into their own winters and stand there while they re-tie.",
@@ -1558,7 +1618,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Envy them cleanly. All the lightness, none of the walking — ask what the intake ledger requires.",
+						"text": "Let the shard answer. ALL THE LIGHTNESS, NONE OF THE WALKING. EVERY THREAD AT ONCE, AND NO ROAD AFTER. ASK WHAT THE LEDGER REQUIRES.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1577,17 +1637,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The pen goes back untouched. The shard hums the sister's silence all the way up the ice.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the ledger open to the wind. Let the snow sign it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1608,7 +1668,7 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. That grain is marrow in children's bones. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
@@ -1619,7 +1679,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
 				"choices": [
 					{
 						"text": "Coercion doesn't need a knife. Void the winter's terms: grain stays, sleepers wake, and the cult renegotiates with ME.",
@@ -1630,7 +1690,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Uphold the contracts. The chain is warm with certainty: consent given is consent kept — enforce the ledgers as written.",
+						"text": "Let the chain answer. CONSENT GIVEN IS CONSENT KEPT. THE LEDGERS ARE LAWFUL. ENFORCE THEM AS WRITTEN — OR ADMIT YOUR MERCY OUTRANKS THE LAW.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1649,17 +1709,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The pen goes back untouched. The shard hums the sister's silence all the way up the ice.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the ledger open to the wind. Let the snow sign it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1680,7 +1740,7 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. That grain is marrow in children's bones. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
@@ -1691,7 +1751,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
 				"choices": [
 					{
 						"text": "Call the loan early. Wake them before the Queen's 'morning' names its real price.",
@@ -1702,7 +1762,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Meet the lender. A creditor patient enough to freeze centuries has terms worth hearing — professional to professional.",
+						"text": "Let the tome answer. A CREDITOR PATIENT ENOUGH TO FREEZE CENTURIES. TERMS WORTH HEARING, PROFESSIONAL TO PROFESSIONAL. INTRODUCE US.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1721,17 +1781,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The pen goes back untouched. The shard hums the sister's silence all the way up the ice.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the ledger open to the wind. Let the snow sign it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1759,11 +1819,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "bloom_warrior",
 				"text": "You broke a sapling at the gate — habit, checking your hands. By the time the column passed, it had straightened. A place where NOTHING you break stays broken. You have wanted absolution your whole bearing life. This is the counterfeit, and it is very good.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Glad-Eyed Kneeler",
+				"text": "It gives, stranger. It only ever gives. Will you not take?",
 				"choices": [
 					{
 						"text": "Absolution is owned, not grown over. Find the shaman, find the truth, and keep your own count honest.",
@@ -1782,7 +1842,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Burn it back. A world where breaking doesn't count is a world where nothing does. You need the count.",
+						"text": "Refuse the absolution. Break what the road demands, count every breaking, and let none of it grow over you.",
 						"resonance": 0.0,
 						"flags": {
 							"ch6_would_burn": true,
@@ -1791,19 +1851,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The kneeler lets go of your sleeve, puzzled. Refusal is the one gift the green never taught them to read.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The kneeler beams and turns back to the light. Somewhere under the moss, something files your answer.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The kneeler recoils as if scorched. The green closes gently over the place your shadow fell.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1831,11 +1896,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "bloom_assassin",
 				"text": "It gives. No fee, no flask, no grey lips after — fruit for the walking, shade for the tired, never once reaching into the pilgrims' pockets. Your Ember has been leaning at it since the gate like a cat at a fishmonger's. Nothing gives like this. Nothing gives like this WITHOUT A REASON.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Glad-Eyed Kneeler",
+				"text": "It gives, stranger. It only ever gives. Will you not take?",
 				"choices": [
 					{
 						"text": "Find the reason. Kaethra knows what the green charges and when — get the truth before the bill lands.",
@@ -1863,19 +1928,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The kneeler lets go of your sleeve, puzzled. Refusal is the one gift the green never taught them to read.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The kneeler beams and turns back to the light. Somewhere under the moss, something files your answer.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The kneeler recoils as if scorched. The green closes gently over the place your shadow fell.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1903,11 +1973,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "bloom_mage",
 				"text": "The light standing on the waterline is the color your heal came out. Not similar. THE color. The green said yes to Kaethra too — and you would give both journals to know whether it finished the sentence.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Glad-Eyed Kneeler",
+				"text": "It gives, stranger. It only ever gives. Will you not take?",
 				"choices": [
 					{
 						"text": "Find Kaethra. Two people the green answered; between you, maybe one truth — and the boy's cure at the end of it.",
@@ -1935,19 +2005,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The kneeler lets go of your sleeve, puzzled. Refusal is the one gift the green never taught them to read.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The kneeler beams and turns back to the light. Somewhere under the moss, something files your answer.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The kneeler recoils as if scorched. The green closes gently over the place your shadow fell.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -1975,11 +2050,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "bloom_archer",
 				"text": "Nothing here stays cut. Vines close behind the column; a cleared path heals by morning. You watched a pilgrim snap a stem and it FOUND ITSELF again by dusk. You have exactly one severed thing you never stopped carrying, and the Deep is very quietly offering.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Glad-Eyed Kneeler",
+				"text": "It gives, stranger. It only ever gives. Will you not take?",
 				"choices": [
 					{
 						"text": "Some cuts should hold — the Ember's included. Find what the green wants before deciding what it gives.",
@@ -2007,19 +2082,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The kneeler lets go of your sleeve, puzzled. Refusal is the one gift the green never taught them to read.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The kneeler beams and turns back to the light. Somewhere under the moss, something files your answer.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The kneeler recoils as if scorched. The green closes gently over the place your shadow fell.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2047,11 +2127,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "bloom_paladin",
 				"text": "The Deep acquits EVERYONE. No case heard, no sentence weighed — the sick walk in guilty of nothing and come out green and glad. The flock knelt in HALVES, and the chain, for the second time in your life, has gone quiet. Not respectful-quiet. OUTNUMBERED-quiet.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Glad-Eyed Kneeler",
+				"text": "It gives, stranger. It only ever gives. Will you not take?",
 				"choices": [
 					{
 						"text": "Mercy without truth is just anesthesia. Find Kaethra, hear the actual case, and rule on what the green really does.",
@@ -2079,19 +2159,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The kneeler lets go of your sleeve, puzzled. Refusal is the one gift the green never taught them to read.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The kneeler beams and turns back to the light. Somewhere under the moss, something files your answer.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The kneeler recoils as if scorched. The green closes gently over the place your shadow fell.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2119,11 +2204,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "bloom_warlock",
 				"text": "The tome went RIGID at the gate. Growth that only adds, credit that never calls, compounding without repayment — the Deep runs the tome's own scheme at landscape scale and undercuts it on rates. You have never felt your creditor jealous before. It is almost worth the trip.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Glad-Eyed Kneeler",
+				"text": "It gives, stranger. It only ever gives. Will you not take?",
 				"choices": [
 					{
 						"text": "Two predatory lenders, one honest question: find the shaman and learn what the green's fine print actually says.",
@@ -2151,19 +2236,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The kneeler lets go of your sleeve, puzzled. Refusal is the one gift the green never taught them to read.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The kneeler beams and turns back to the light. Somewhere under the moss, something files your answer.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The kneeler recoils as if scorched. The green closes gently over the place your shadow fell.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2191,11 +2281,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "relay_warrior",
 				"text": "You know Cyrraeth's stillness. It is the stillness before your own gaps — the body quiet, the tenant leaning forward. He is not resting up there. He is doing what you do at night: listening to something on the far side of himself, deciding whether to open the door. Nobody ever warned HIM about bedposts.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Apprentice Sorrel",
+				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
 				"choices": [
 					{
 						"text": "Nobody stood with you in the quiet either. Learn the words — stand the next watch so his door stays shut.",
@@ -2223,19 +2313,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "Apprentice Sorrel falls in step beside you on the summit road.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"The drake. Right.\" Sorrel's voice does the thing voices do when they stop expecting.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2263,11 +2358,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "relay_assassin",
 				"text": "Every seal you have met was a lock. This one is held shut by what the speakers GIVE it: breath, years, a life apiece, freely, forever. Nothing taken anywhere. Your Ember circles the idea like it circles a warm room, finding no way in. A power sustained by paying. You didn't know that was allowed.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Apprentice Sorrel",
+				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
 				"choices": [
 					{
 						"text": "Learn the words. Just once, be the one who gives the warmth instead of the one who wakes holding the flask.",
@@ -2295,19 +2390,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "Apprentice Sorrel falls in step beside you on the summit road.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"The drake. Right.\" Sorrel's voice does the thing voices do when they stop expecting.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2335,11 +2435,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "relay_mage",
 				"text": "Look at it as a working: one spell, held without error, for six hundred years, across three hundred casters, none of whom were archmages. Your one heal failed inside a breath. You came up the summit road planning tactics and found yourself just… standing there. Admiring the craftsmanship. Grieving it.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Apprentice Sorrel",
+				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
 				"choices": [
 					{
 						"text": "Work that good is finished by hand, not dropped. Learn the words — errorless, this time, if it kills you.",
@@ -2367,19 +2467,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "Apprentice Sorrel falls in step beside you on the summit road.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"The drake. Right.\" Sorrel's voice does the thing voices do when they stop expecting.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2407,11 +2512,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "relay_archer",
 				"text": "The relay is a thread — the longest you have ever seen. Six hundred years of voices tied breath to breath, taut as a bowstring, one end fraying in a silent man's mouth. You know exactly what it sounds like when a thread like that lets go: a small sound, and it carries further than the howl after it.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Apprentice Sorrel",
+				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
 				"choices": [
 					{
 						"text": "Hold the line. Learn the words and splice yourself in — some threads are worth being tied by.",
@@ -2439,19 +2544,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "Apprentice Sorrel falls in step beside you on the summit road.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"The drake. Right.\" Sorrel's voice does the thing voices do when they stop expecting.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2479,11 +2589,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "relay_paladin",
 				"text": "The relay is older than the chain, older than benches — a sentence served not ON the guilty but BY the innocent, six hundred years of speakers doing time for a god's crime. The chain reads it and, for once, asks YOU what it means.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Apprentice Sorrel",
+				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
 				"choices": [
 					{
 						"text": "It means somebody has to serve. Learn the words — a sentence this old ends properly or not at all.",
@@ -2511,19 +2621,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "Apprentice Sorrel falls in step beside you on the summit road.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"The drake. Right.\" Sorrel's voice does the thing voices do when they stop expecting.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2551,11 +2666,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "relay_warlock",
 				"text": "Six hundred years of enforceable SPEECH. No parchment, no seal — just breath handed mouth to mouth, and a god bound by the unbroken saying of it. The greatest contract ever executed, and the counterparty has found the flaw: outlive the signatories. The tome takes notes. So do you.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Apprentice Sorrel",
+				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
 				"choices": [
 					{
 						"text": "Contracts this good deserve performance. Learn the words; be the next mouth if no better one stands.",
@@ -2583,19 +2698,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "Apprentice Sorrel falls in step beside you on the summit road.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"The drake. Right.\" Sorrel's voice does the thing voices do when they stop expecting.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2618,16 +2738,26 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "joined_cinderborn",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+					},
+					{
+						"flag": "joined_accord",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_warrior",
 				"text": "There is one improved man in the defectors' camp. He had a thing like yours once — gaps, a tenant, wreckage he didn't remember making. The furnace took it. He is certain now, and steady, and he sits outside the walls because he cannot stop MISSING it. You walked in ready to envy this city. Nobody warned you about the cured man grieving his disease.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Journeyman Smith",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
 				"choices": [
 					{
 						"text": "Believe him. The cure is a taking with better manners — cool the forges before it collects everyone still deciding.",
@@ -2655,19 +2785,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the defectors' cold fire, a journeyman who walked out mid-indenture feeds the embers one splinter at a time.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The journeyman feeds the fire another splinter. \"Cool it, then. Some of us would like our hands back.\"",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The journeyman looks at you the way a man looks at his own old mistake wearing new boots.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2690,16 +2825,26 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "joined_cinderborn",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+					},
+					{
+						"flag": "joined_accord",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_assassin",
 				"text": "Every door in this city stands open to you, and that is what has your neck prickling: the Judge's city does not guard against takers — it RECRUITS them. Walk in, take anything; the fire adds it to your account and starts improving you toward repayment. The first vault you've met that WANTS the thief inside. The Ember thinks it is home.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Journeyman Smith",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
 				"choices": [
 					{
 						"text": "Take nothing but people. Crews out, account empty, forges cooling behind you.",
@@ -2727,19 +2872,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the defectors' cold fire, a journeyman who walked out mid-indenture feeds the embers one splinter at a time.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The journeyman feeds the fire another splinter. \"Cool it, then. Some of us would like our hands back.\"",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The journeyman looks at you the way a man looks at his own old mistake wearing new boots.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2762,16 +2912,26 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "joined_cinderborn",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+					},
+					{
+						"flag": "joined_accord",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_mage",
 				"text": "You grieved one great working on the summit — six hundred years, ended clean. This one is ending UGLY: the Concord's seal, patched by forge-lords who mistake the prisoner's patience for their own skill. Every 'improvement' in this city is the working failing a little further, and production calling it yield. You are watching the second-oldest spell in Vaelscar die of mismanagement.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Journeyman Smith",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
 				"choices": [
 					{
 						"text": "Workings deserve better deaths. Cool the forges and give the seal an honest keeper — or an honest end.",
@@ -2799,19 +2959,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the defectors' cold fire, a journeyman who walked out mid-indenture feeds the embers one splinter at a time.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The journeyman feeds the fire another splinter. \"Cool it, then. Some of us would like our hands back.\"",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The journeyman looks at you the way a man looks at his own old mistake wearing new boots.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2834,16 +2999,26 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "joined_cinderborn",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+					},
+					{
+						"flag": "joined_accord",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_archer",
 				"text": "Two acts of reading threads people would not drop, and here is something new: threads CUT WELL. Masters who loved the work, watched the signature change, and walked out with the ends cauterized. You know what that walk costs down to the copper. You are the only person at their fire who has made it on purpose.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Journeyman Smith",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
 				"choices": [
 					{
 						"text": "Every smith still inside is mid-decision. Cool the forges before the furnace closes the question for them.",
@@ -2871,19 +3046,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the defectors' cold fire, a journeyman who walked out mid-indenture feeds the embers one splinter at a time.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The journeyman feeds the fire another splinter. \"Cool it, then. Some of us would like our hands back.\"",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The journeyman looks at you the way a man looks at his own old mistake wearing new boots.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2906,16 +3086,26 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "joined_cinderborn",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+					},
+					{
+						"flag": "joined_accord",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_paladin",
 				"text": "The chain does not go quiet here. It RECITES — case law you never learned, precedents in a dead tongue, rising through the links like heat through a floor. And on the city's oldest gate: a maker's-mark you have run your thumb over a thousand times without reading — the one on the cheek of YOUR hammer. The hammer that carries your Ember was poured in these foundries. Start asking what else of yours was.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Journeyman Smith",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
 				"choices": [
 					{
 						"text": "Whatever poured it doesn't own it. Cool this city, crews first, and let the chain watch you overrule the foundry that cast your hammer.",
@@ -2943,19 +3133,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the defectors' cold fire, a journeyman who walked out mid-indenture feeds the embers one splinter at a time.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The journeyman feeds the fire another splinter. \"Cool it, then. Some of us would like our hands back.\"",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The journeyman looks at you the way a man looks at his own old mistake wearing new boots.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2978,16 +3173,26 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "joined_cinderborn",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+					},
+					{
+						"flag": "joined_accord",
+						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_warlock",
 				"text": "The binding texts are the only known instrument that made a god-king countersign — mortal paper, divine signatory, terms ENFORCED for six centuries. Your book has spent two acts refusing to name what you traded. Somewhere below is the grammar that could COMPEL it — and the tome knows, and has pressed itself flat against your back like a debtor at a summons.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Journeyman Smith",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
 				"choices": [
 					{
 						"text": "Compel it for everyone. Cool the forges, free the collateral — this city's people first, your clause after.",
@@ -3015,19 +3220,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the defectors' cold fire, a journeyman who walked out mid-indenture feeds the embers one splinter at a time.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The journeyman feeds the fire another splinter. \"Cool it, then. Some of us would like our hands back.\"",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The journeyman looks at you the way a man looks at his own old mistake wearing new boots.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3048,7 +3258,7 @@ const CONVOS := {
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. The cutting in your pack turned over in the night. It is pointing at the city like a compass needle.",
+						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. What you loosed in the green has been restless all night. It knows this city.",
 					},
 				],
 			},
@@ -3071,7 +3281,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The cure-seekers' map-runner shows you a chart the city corrected overnight, then wades off to re-survey. You stand at the waterline holding the wrong map. Below is a god that talks. The shard has opinions about gods that talk.",
 				"choices": [
 					{
 						"text": "Nobody else wakes up in wreckage they didn't choose. Slack every wire gently; catch them as they come back.",
@@ -3082,7 +3292,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A god that borrows hands could take the blackout OFF yours — offer the Root a trade it already knows how to use.",
+						"text": "Let the shard answer. IT BORROWS HANDS. IT COULD BORROW ME. OFFER IT THE TRADE — AND WAKE UP INNOCENT FOREVER.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3090,7 +3300,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Drown the junctions. A wire underwater moves nothing.",
+						"text": "Break the junctions as you pass, and let the water hold what falls. A wire underwater moves nothing.",
 						"resonance": 0.0,
 						"flags": {
 							"ch9_seals_behind": true,
@@ -3101,17 +3311,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The wrong map folds easier than the right one would have. Wire first. Roots after.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Below the waterline, something adjusts its terms. The shard calls it progress.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3155,7 +3365,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The cure-seekers' map-runner shows you a chart the city corrected overnight, then wades off to re-survey. You stand at the waterline holding the wrong map. Below is a god that talks. The shard has opinions about gods that talk.",
 				"choices": [
 					{
 						"text": "You never got to bargain either — the Ember just took. Spare the wire the courtesy nobody spared you: get them out un-negotiated.",
@@ -3166,7 +3376,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A power that deals is a power that can be dealt DOWN. Sit at the table; open with the Ember's appetite as collateral.",
+						"text": "Let the shard answer. IT DEALS. I NEVER LEARNED HOW. SIT US AT THE TABLE AND OPEN WITH MY APPETITE — SEE WHAT A GOD BIDS FOR A HUNGER LIKE MINE.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3174,7 +3384,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Never bargain wet. Seal the water behind you and keep your pockets shut.",
+						"text": "Never bargain wet. Pass through with your pockets shut and leave the water sitting between you and its table.",
 						"resonance": 0.0,
 						"flags": {
 							"ch9_seals_behind": true,
@@ -3185,17 +3395,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The wrong map folds easier than the right one would have. Wire first. Roots after.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Below the waterline, something adjusts its terms. The shard calls it progress.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3239,7 +3449,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The cure-seekers' map-runner shows you a chart the city corrected overnight, then wades off to re-survey. You stand at the waterline holding the wrong map. Below is a god that talks. The shard has opinions about gods that talk.",
 				"choices": [
 					{
 						"text": "She is what the boy could become. Cut tethers, never wire — and take the truth home whole this time.",
@@ -3250,7 +3460,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "The Root answered her question. It could answer YOURS — get close to the relay and ask about grey marks.",
+						"text": "Let the shard answer. IT ANSWERED HER. IT WILL ANSWER YOU. GET CLOSE TO THE RELAY AND ASK ABOUT GREY MARKS — ASKING IS NOT TAKING.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3258,7 +3468,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Flood the archives behind you. Some answers cost more asked than unasked.",
+						"text": "Let the water keep the answers. Some questions cost more asked than unasked — pass through, and open nothing.",
 						"resonance": 0.0,
 						"flags": {
 							"ch9_seals_behind": true,
@@ -3269,17 +3479,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The wrong map folds easier than the right one would have. Wire first. Roots after.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Below the waterline, something adjusts its terms. The shard calls it progress.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3300,7 +3510,7 @@ const CONVOS := {
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. The cutting in your pack turned over in the night. It is pointing at the city like a compass needle.",
+						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. What you asked the green has been growing an answer. It is ahead of you now.",
 					},
 				],
 			},
@@ -3323,7 +3533,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The cure-seekers' map-runner shows you a chart the city corrected overnight, then wades off to re-survey. You stand at the waterline holding the wrong map. Below is a god that talks. The shard has opinions about gods that talk.",
 				"choices": [
 					{
 						"text": "Wire is people. Cut only tethers, and walk the seekers out along the lines they can't see.",
@@ -3334,7 +3544,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Follow one thread all the way in. A weaver who works in people could rework what got severed in YOU — the Deep already offered once.",
+						"text": "Let the shard answer. FOLLOW ONE THREAD ALL THE WAY IN. A WEAVER WHO WORKS IN PEOPLE COULD RESTRING WHAT I CUT. THE GREEN OFFERED ONCE. I AM OFFERING NOW.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3342,7 +3552,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Seal the tunnels. A net you drown is a net that catches no one else.",
+						"text": "Close every door you pass. What the water holds it can keep — it just catches no one NEW.",
 						"resonance": 0.0,
 						"flags": {
 							"ch9_seals_behind": true,
@@ -3353,17 +3563,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The wrong map folds easier than the right one would have. Wire first. Roots after.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Below the waterline, something adjusts its terms. The shard calls it progress.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3407,7 +3617,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The cure-seekers' map-runner shows you a chart the city corrected overnight, then wades off to re-survey. You stand at the waterline holding the wrong map. Below is a god that talks. The shard has opinions about gods that talk.",
 				"choices": [
 					{
 						"text": "Protect the witnesses. The wire comes out alive; the Root can answer in a later court.",
@@ -3418,7 +3628,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Depose it. The relay talks — take testimony straight from the god, whatever the hearing costs the wire.",
+						"text": "Let the chain answer. THE RELAY TALKS. TAKE TESTIMONY FROM THE GOD ITSELF, WHATEVER THE HEARING COSTS THE WIRE. TRUTH OUTRANKS WITNESSES.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3426,7 +3636,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Summary judgment: seal the undercity. Appeals in the spring.",
+						"text": "No hearings below the waterline. Do what the descent demands and let the water keep custody of the rest. Appeals in the spring.",
 						"resonance": 0.0,
 						"flags": {
 							"ch9_seals_behind": true,
@@ -3437,17 +3647,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The wrong map folds easier than the right one would have. Wire first. Roots after.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Below the waterline, something adjusts its terms. The shard calls it progress.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3491,7 +3701,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The cure-seekers' map-runner shows you a chart the city corrected overnight, then wades off to re-survey. You stand at the waterline holding the wrong map. Below is a god that talks. The shard has opinions about gods that talk.",
 				"choices": [
 					{
 						"text": "No one consents to being plumbing. Cut the wire free, estate by estate.",
@@ -3502,7 +3712,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A power that needs no signature could void one that DID. Ask the Root, through the relay, what it takes to eat a contract.",
+						"text": "Ask the Root, through the relay, what it takes to eat a contract. *(The tome pressed itself shut ON YOUR HAND as you thought it. You are still thinking it.)*",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3510,7 +3720,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Flood the probate court. What the Root can't reach it can't inherit.",
+						"text": "Contest nothing, sign nothing, save nothing it can bill you for. Take the one path through and leave the water holding the paperwork.",
 						"resonance": 0.0,
 						"flags": {
 							"ch9_seals_behind": true,
@@ -3521,17 +3731,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The wrong map folds easier than the right one would have. Wire first. Roots after.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Below the waterline, something adjusts its terms. The shard calls it progress.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3554,6 +3764,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch5_vowed_morning",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+					},
+					{
+						"flag": "ch5_felt_pull",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -3563,7 +3783,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
 						"text": "Stay yourself. Carry warmth, swing late, and be the first blade she sees that waited.",
@@ -3574,7 +3794,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the arm decide at the cocoon. It has always known what you won't admit wanting — and it never hesitates on the downswing.",
+						"text": "Let the shard answer. LET THE ARM DECIDE AT THE COCOON. I HAVE ALWAYS KNOWN WHAT YOU WON'T ADMIT WANTING. I NEVER HESITATE ON THE DOWNSWING.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3593,17 +3813,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard goes quiet the way a blade goes quiet in a sheath. The blue dark says nothing either.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3626,6 +3846,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch5_vowed_morning",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+					},
+					{
+						"flag": "ch5_felt_pull",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -3635,7 +3865,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
 						"text": "Break it the way nobody broke yours: warmth returned, no charge, and stay till dawn.",
@@ -3646,7 +3876,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Trust funds can be raided. Strike through the trustee while the assets are still liquid — before the Queen finishes moving in.",
+						"text": "Let the shard answer. TRUST FUNDS CAN BE RAIDED. STRIKE THE TRUSTEE WHILE THE ASSETS RUN LIQUID — AND WHAT THE VAULT SPILLS, I WILL CATCH.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3665,17 +3895,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard goes quiet the way a blade goes quiet in a sheath. The blue dark says nothing either.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3698,6 +3928,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch5_vowed_morning",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+					},
+					{
+						"flag": "ch5_felt_pull",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -3707,7 +3947,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
 						"text": "Then owe her. Carry the warm thing down, hold the door open, and pay the founding debt in person.",
@@ -3718,7 +3958,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "The Queen filtered through a child is the weakest a god-king will EVER be — and you need to study one before Mórwyn. Strike through.",
+						"text": "Let the shard answer. A GOD FILTERED THROUGH A CHILD IS THE WEAKEST IT WILL EVER BE. YOU NEED TO HAVE STUDIED ONE BEFORE THE HOLLOW FLAME. STRIKE THROUGH — I WILL HOLD YOUR HAND STEADY.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3737,17 +3977,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard goes quiet the way a blade goes quiet in a sheath. The blue dark says nothing either.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3770,6 +4010,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch5_vowed_morning",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+					},
+					{
+						"flag": "ch5_felt_pull",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -3779,7 +4029,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
 						"text": "Bring her a real one. One thread that doesn't pull, offered beside the Queen's fakes — held out until she takes it, or doesn't.",
@@ -3790,7 +4040,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Nothing anchors her — the Queen grips a girl with no handles. One shot through the cocoon and the grip closes on NOTHING. It would even be clean.",
+						"text": "Let the shard answer. NOTHING ANCHORS HER. THE QUEEN GRIPS A GIRL WITH NO HANDLES — ONE SHOT AND THE GRIP CLOSES ON NOTHING. IT WOULD EVEN BE CLEAN. I CUT CLEANER.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3809,17 +4059,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard goes quiet the way a blade goes quiet in a sheath. The blue dark says nothing either.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3842,6 +4092,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch5_vowed_morning",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+					},
+					{
+						"flag": "ch5_felt_pull",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -3851,7 +4111,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
 						"text": "When there is no one to punish, there is still someone to protect. Warm the plaintiff; let the charge stay empty.",
@@ -3862,7 +4122,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Accept the chain's nomination. A vessel is the crime made flesh — strike through the girl and call the case closed.",
+						"text": "Let the chain answer. A VESSEL IS THE CRIME MADE FLESH. STRIKE THROUGH THE GIRL AND ENTER THE CASE CLOSED. I WILL SIGN THE WARRANT MYSELF.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3881,17 +4141,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard goes quiet the way a blade goes quiet in a sheath. The blue dark says nothing either.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3914,6 +4174,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch5_vowed_morning",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+					},
+					{
+						"flag": "ch5_felt_pull",
+						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -3923,7 +4193,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
 						"text": "An empty deed can't be foreclosed — but it can be lived in again. Carry the warm thing down and help her repossess herself.",
@@ -3934,7 +4204,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A trustee holding no security is a trustee with no claim. Strike through the arrangement while the Queen owns nothing — the cheapest god-kill there will ever be.",
+						"text": "Let the tome answer. A TRUSTEE WITH NO SECURITY HAS NO CLAIM. STRIKE WHILE THE QUEEN HOLDS NOTHING — THE CHEAPEST GOD-KILL THERE WILL EVER BE. I HAVE RUN THE NUMBERS TWICE.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3953,17 +4223,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The shard goes quiet the way a blade goes quiet in a sheath. The blue dark says nothing either.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3991,11 +4261,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "two_fires_warrior",
 				"text": "A war is the one place the blackout comes PRE-FORGIVEN — every gap in memory covered in advance by somebody's righteous cause. Two of them, even, bidding. You have never been offered absolution wholesale before, and it smells exactly like the furnace city did.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Refugee",
+				"text": "Two armies, both right. Where will you be standing when they stop being polite about it?",
 				"choices": [
 					{
 						"text": "No cause gets the arm unsupervised. Stand between, swing last, remember everything you can.",
@@ -4023,19 +4293,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "On the road between the armies, a man with his front door on his back passes you without stopping.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The refugee spits, hitches the door higher, and walks faster. Receipts warm no one.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4063,11 +4338,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "two_fires_assassin",
 				"text": "War is the taking with a UNIFORM — requisition, forage, spoils, all signed for in advance. Your Ember has never been so relaxed; everything it wants to do here is POLICY somewhere. That, precisely, is what has your hackles up: you have spent years learning to refuse yourself. Nobody else on this field is even trying.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Refugee",
+				"text": "Two armies, both right. Where will you be standing when they stop being polite about it?",
 				"choices": [
 					{
 						"text": "Somebody has to keep refusing. Stand between the armies and the larders they'll 'requisition' through.",
@@ -4095,19 +4370,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "On the road between the armies, a man with his front door on his back passes you without stopping.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The refugee spits, hitches the door higher, and walks faster. Receipts warm no one.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4135,11 +4415,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "two_fires_mage",
 				"text": "Both armies brought ARTIFACTS — Accord seal-lattices, Cinderborn bound-fire engines, the best applied work of the age rolling toward mutual disassembly. It is a symposium with casualties. And every device on both manifests descends from someone's 'just once'.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Refugee",
+				"text": "Two armies, both right. Where will you be standing when they stop being polite about it?",
 				"choices": [
 					{
 						"text": "Stand between the engines and the people they'll miss by. Somebody has to review this war's methods.",
@@ -4167,19 +4447,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "On the road between the armies, a man with his front door on his back passes you without stopping.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The refugee spits, hitches the door higher, and walks faster. Receipts warm no one.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4207,11 +4492,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "two_fires_archer",
 				"text": "A banner is a thread you tie ON PURPOSE — the first ones you've seen chosen freely since the Ember cut yours. Whole camps belonging, loudly, in matching colors. And between the camps, the refugees: every one trailing threads to houses both armies plan to be RIGHT on top of.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Refugee",
+				"text": "Two armies, both right. Where will you be standing when they stop being polite about it?",
 				"choices": [
 					{
 						"text": "Stand where the threads cross. The refugees' lines out are the only ones on this field worth guarding.",
@@ -4239,19 +4524,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "On the road between the armies, a man with his front door on his back passes you without stopping.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The refugee spits, hitches the door higher, and walks faster. Receipts warm no one.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4279,11 +4569,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "two_fires_paladin",
 				"text": "The chain has read both briefs and finds for BOTH — which it has never done, and it is not enjoying the experience. The Accord's math is sacrifice; the Cinderborn's is hubris; and Aldric on the wall has stopped grading the armies and started watching YOU.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Refugee",
+				"text": "Two armies, both right. Where will you be standing when they stop being polite about it?",
 				"choices": [
 					{
 						"text": "When both sides are right, the verdict protects whoever's between them. Stand there.",
@@ -4311,19 +4601,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "On the road between the armies, a man with his front door on his back passes you without stopping.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The refugee spits, hitches the door higher, and walks faster. Receipts warm no one.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4350,12 +4645,12 @@ const CONVOS := {
 			"n3": {
 				"who": "Narrator",
 				"cue": "two_fires_warlock",
-				"text": "The tome cannot stop looking at the man on the wall. Aldric BURNED his Ember — principal, interest, the whole instrument, discharged in one payment, forty years ago, on the first Vargoth's body. The only closed ledger in Vaelscar, walking around, breathing. The tome finds him obscene. You find him… instructive.",
-				"next": "n4",
+				"text": "The tome cannot stop looking at the man on the wall. Aldric BURNED his Ember — principal, interest, the whole instrument, discharged in one payment, thirty years ago, on the first fall's field. The only closed ledger in Vaelscar, walking around, breathing. The tome finds him obscene. You find him… instructive.",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Refugee",
+				"text": "Two armies, both right. Where will you be standing when they stop being polite about it?",
 				"choices": [
 					{
 						"text": "A man who paid everything guards what's left honestly. Stand between the armies the way he stands above them.",
@@ -4383,19 +4678,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "On the road between the armies, a man with his front door on his back passes you without stopping.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The refugee spits, hitches the door higher, and walks faster. Receipts warm no one.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4418,16 +4718,22 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch6_answered_green",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. What you loosed in the Deep went quiet a day's march out. The Roothold heard you coming.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_warrior",
 				"text": "You hit it, it heals. You burn it, it blooms. A COUNTRY where the arm means nothing — every swing absorbed like rain into loam. The blackout took one look at the regrowing green and, for the first time in your life, went back to sleep. You cannot decide if that is peace or insult.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Wildfang Scout",
+				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
 				"choices": [
 					{
 						"text": "If the arm means nothing here, bring what does: an ending, delivered deliberately, heart by heart.",
@@ -4446,7 +4752,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Draw the border where the swing still counts, and hold it.",
+						"text": "Cut the five hearts because they must fall — not because it means anything. Then draw the border, and hold it.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -4455,19 +4761,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The scout stops hammering. \"An ending.\" She tries the word like a foreign coin, then pockets it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The scout's hammer stops mid-swing. She looks at you the way her elders look at the green.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The scout drives the post the rest of the way down. \"Border it is. I'll cut more signs.\"",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4490,16 +4801,22 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch6_answered_green",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It is not growing. It is REPORTING.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_assassin",
 				"text": "It has stopped inheriting and started COMPOSING — a whole country now, self-owned, self-feeding, needing nothing from anyone. Even the relay lived on what its speakers paid in; this doesn't even RECEIVE. The first power you've ever met with no appetite at all. Your Ember stands at the treeline like a pickpocket at a monastery: professionally offended, personally unnerved.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Wildfang Scout",
+				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
 				"choices": [
 					{
 						"text": "No appetite means no mercy either. Give it the ending it can't want for itself.",
@@ -4518,7 +4835,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Nothing to steal, nothing to save. Fence the border, warn the parish, walk away.",
+						"text": "Nothing to steal, nothing to save — just five hearts between you and out. Do the job, fence the border, walk away.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -4527,19 +4844,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The scout stops hammering. \"An ending.\" She tries the word like a foreign coin, then pockets it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The scout's hammer stops mid-swing. She looks at you the way her elders look at the green.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The scout drives the post the rest of the way down. \"Border it is. I'll cut more signs.\"",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4562,16 +4884,22 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch6_answered_green",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It is not growing. It is REPORTING.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_mage",
 				"text": "Five hearts, one working, no caster. It maintains ITSELF — the dream every archmage chased and the nightmare every apprentice is warned with, running at country scale on nobody's mana. Your green light needed you for one breath and failed. This needed no one, ever, and cannot stop succeeding.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Wildfang Scout",
+				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
 				"choices": [
 					{
 						"text": "A working that can't stop isn't finished — it's abandoned mid-cast. End it properly, heart by heart, the way its author should have.",
@@ -4590,7 +4918,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Ward the perimeter and touch nothing. Live workings kill their editors.",
+						"text": "Edit nothing you don't have to. The hearts fall — that is surgery, not authorship — then ward the perimeter and go.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -4599,19 +4927,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The scout stops hammering. \"An ending.\" She tries the word like a foreign coin, then pockets it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The scout's hammer stops mid-swing. She looks at you the way her elders look at the green.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The scout drives the post the rest of the way down. \"Border it is. I'll cut more signs.\"",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4634,16 +4967,22 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch6_answered_green",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. What you asked the green in the Deep — the Roothold has been growing the answer ever since. It is the size of a country now.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_archer",
 				"text": "The whole horizon is weave. Not threads THROUGH things — thread AS things: hills of it, weather of it, five slow knots at the center glowing like hearts because they ARE hearts. You have read rooms by their threads all your life. You have never had to read a nation.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Wildfang Scout",
+				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
 				"choices": [
 					{
 						"text": "Read it to the end. Every weave has a selvage — find the Root's, and give the country a hem.",
@@ -4662,7 +5001,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "You don't unpick what you can't re-lay. Hem the borders and post the warnings.",
+						"text": "Unpick exactly what the road demands — five knots, no flourishes — then hem the border behind you and post the warnings.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -4671,19 +5010,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The scout stops hammering. \"An ending.\" She tries the word like a foreign coin, then pockets it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The scout's hammer stops mid-swing. She looks at you the way her elders look at the green.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The scout drives the post the rest of the way down. \"Border it is. I'll cut more signs.\"",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4706,16 +5050,22 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch6_answered_green",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It is not growing. It is REPORTING.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_paladin",
 				"text": "The trial you postponed in the Drowned Reaches convenes here, and the defendant has grown into its own jurisdiction — courts need borders, and the Root IS one. Five hearts, five counts. The chain has stopped reciting and started PREPARING. It has never sentenced a landscape before. Neither have you.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Wildfang Scout",
+				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
 				"choices": [
 					{
 						"text": "Five counts, five verdicts, executed in person. A land that can't die gets due process and an ENDING.",
@@ -4734,7 +5084,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Adjourn sine die. Border, signage, and let the next generation empanel.",
+						"text": "Execute the warrant, not a verdict: five hearts, due force, no ruling entered. Border and signage for whatever grows back.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -4743,19 +5093,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The scout stops hammering. \"An ending.\" She tries the word like a foreign coin, then pockets it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The scout's hammer stops mid-swing. She looks at you the way her elders look at the green.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The scout drives the post the rest of the way down. \"Border it is. I'll cut more signs.\"",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4778,16 +5133,22 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch6_answered_green",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It is not growing. It is REPORTING.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_warlock",
 				"text": "The tome ran the numbers three times: the Root owes NOTHING. No pacts, no interest, no counterparty — a god that simply grew until owning and being were the same act. Your whole life is denominated in what you owe. You are standing inside the only solvent thing you have ever met, and it is beautiful, and the tome wants it BURNED.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Wildfang Scout",
+				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
 				"choices": [
 					{
 						"text": "Solvency isn't innocence. Close the estate cleanly — five hearts, five settlements, no heirs.",
@@ -4806,7 +5167,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Draw the border at the treeline and keep your liabilities OUT of its assets.",
+						"text": "Settle only what blocks the road — five hearts, itemized, no interest taken — then draw the border at the treeline and keep your liabilities OUT of its assets.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -4815,19 +5176,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The scout stops hammering. \"An ending.\" She tries the word like a foreign coin, then pockets it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The scout's hammer stops mid-swing. She looks at you the way her elders look at the green.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The scout drives the post the rest of the way down. \"Border it is. I'll cut more signs.\"",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4850,6 +5216,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch7_would_speak",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+					},
+					{
+						"flag": "ch7_let_it_end",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -4859,7 +5235,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
 						"text": "Finish the vow. If force can learn to speak, it can learn to stop mid-sentence — hold the line and learn the words that hold.",
@@ -4870,7 +5246,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Take dictation. Let the storm teach the arm its grammar — a blackout that SPEAKS could finally be negotiated with.",
+						"text": "Let the shard answer. TAKE DICTATION. LET THE STORM TEACH ME GRAMMAR — IF I COULD SPEAK, YOU COULD FINALLY NEGOTIATE. WOULDN'T YOU LIKE TERMS?",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -4889,17 +5265,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The young speaker turns back to the recitation. Ammunition, then. The storm prices it the same.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4922,6 +5298,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch7_would_speak",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+					},
+					{
+						"flag": "ch7_let_it_end",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -4931,7 +5317,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
 						"text": "Steal it FOR them. Assemble the name and hand it to the speakers whole — the one theft in your life with a return address.",
@@ -4942,7 +5328,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Finders keepers. A leash on a god, held quietly — the first thing the Ember ever took that could take BACK.",
+						"text": "Let the shard answer. FINDERS KEEPERS. A LEASH ON A GOD, HELD QUIETLY — THE FIRST THING I EVER TOOK THAT COULD TAKE BACK. LET ME HAVE IT. LET US HAVE IT.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -4961,17 +5347,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The young speaker turns back to the recitation. Ammunition, then. The storm prices it the same.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4994,6 +5380,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch7_would_speak",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+					},
+					{
+						"flag": "ch7_let_it_end",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -5003,7 +5399,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
 						"text": "Learn the whole sentence and speak it as MEANT — the first perfect work of your life, borrowed from six hundred years of imperfect mouths.",
@@ -5014,7 +5410,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Keep the grammar. A name that instructs the world, held privately… the boy's mark is also, technically, an instruction.",
+						"text": "Let the shard answer. KEEP THE GRAMMAR. A NAME THAT INSTRUCTS THE WORLD, HELD PRIVATELY. THE BOY'S MARK IS ALSO, TECHNICALLY, AN INSTRUCTION — AND INSTRUCTIONS CAN BE REVOKED.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5033,17 +5429,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The young speaker turns back to the recitation. Ammunition, then. The storm prices it the same.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5066,6 +5462,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch7_would_speak",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+					},
+					{
+						"flag": "ch7_let_it_end",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -5075,7 +5481,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
 						"text": "Catch the strands. Learn the words as they were tied and splice the line back to strength — a thread of breath deserves one archer who holds.",
@@ -5086,7 +5492,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Gather them PRIVATELY. Whoever winds the loose strands holds the whole line — and every mouth that ever leaned on it.",
+						"text": "Let the shard answer. GATHER THE STRANDS PRIVATELY. WHO WINDS THE LOOSE LINE HOLDS EVERY MOUTH THAT EVER LEANED ON IT. YOU HAVE ALWAYS WANTED A THREAD THAT CANNOT BE CUT.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5105,17 +5511,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The young speaker turns back to the recitation. Ammunition, then. The storm prices it the same.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5138,6 +5544,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch7_would_speak",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+					},
+					{
+						"flag": "ch7_let_it_end",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -5147,7 +5563,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
 						"text": "Good arguments deserve a real hearing: finish the vow, learn the name, and retry the case with the sentence INTACT.",
@@ -5158,7 +5574,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Hold the name as leverage over prisoner AND court. A judge who owns the sentence answers to neither.",
+						"text": "Let the chain answer. HOLD THE NAME. LEVERAGE OVER PRISONER AND COURT ALIKE — A JUDGE WHO OWNS THE SENTENCE ANSWERS TO NEITHER. NOT EVEN TO ME.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5177,17 +5593,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The young speaker turns back to the recitation. Ammunition, then. The storm prices it the same.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5210,6 +5626,16 @@ const CONVOS := {
 				"who": "Narrator",
 				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
+				"variants": [
+					{
+						"flag": "ch7_would_speak",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+					},
+					{
+						"flag": "ch7_let_it_end",
+						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+					},
+				],
 			},
 			"n3": {
 				"who": "Narrator",
@@ -5219,7 +5645,7 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
 						"text": "Finish the vow. A recitation held six hundred years deserves speakers, not creditors — learn it whole and hand it on.",
@@ -5230,7 +5656,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Hold the name. One true name, unshared, is the only collateral a talking god respects — and the tome could be made to respect it too.",
+						"text": "Let the tome answer. HOLD THE NAME. UNSHARED, IT IS THE ONLY COLLATERAL A TALKING GOD RESPECTS — AND I WOULD RESPECT IT TOO. I WOULD HAVE NO CHOICE.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5249,17 +5675,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "The young speaker turns back to the recitation. Ammunition, then. The storm prices it the same.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5288,11 +5714,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "convergence_warrior",
 				"text": "Something has been trying you on for years — that is what the blackout is, on its worst nights: a fitting. You never let yourself finish the thought of what FOR. Now you watch the armies part for Mórwyn without an order given, and you finally recognize the gait. That is a body being WORN WELL. That is the finished version of your bad nights.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Elara",
+				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
 				"choices": [
 					{
 						"text": "Come for the wearer, not the worn. Somewhere in there is a smith who never asked — swing for HER captor, and remember every second of it.",
@@ -5320,19 +5746,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Elara looks at the throne a long moment. \"Good,\" she says. \"Break everything.\" And steps aside.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5361,11 +5792,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "convergence_assassin",
 				"text": "Six hundred years ago something did to Mórwyn what your Ember does retail: took a person and kept the receipts. What walks the causeway is the takings, compounded past humanity, coming to collect the crown — the final acquisition. You have been small-time your whole cursed life. Here is the career criminal. And under all of it, the first victim.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Elara",
+				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
 				"choices": [
 					{
 						"text": "Come for the victim. Whatever the god kept of the blacksmith, steal it BACK — the one heist your Ember was born for.",
@@ -5393,19 +5824,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Elara looks at the throne a long moment. \"Good,\" she says. \"Break everything.\" And steps aside.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5434,11 +5870,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "convergence_mage",
 				"text": "'You know exactly what I mean, spellwright.' She hasn't said it yet — she will — and the terrible thing is she's right. Battle-healer. Perfect work. A green yes that didn't finish its sentence. Mórwyn is your art's founding error walking to collect its throne, and every step of her causeway is paved with your own reasons.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Elara",
+				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
 				"choices": [
 					{
 						"text": "Come for the blacksmith inside her — the one who loved the work before the work loved back. Someone should reach the forge-memory FIRST.",
@@ -5466,19 +5902,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Elara looks at the throne a long moment. \"Good,\" she says. \"Break everything.\" And steps aside.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5507,11 +5948,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "convergence_archer",
 				"text": "Even from the causeway you can see it: one thread left on her, running back through six centuries to a forge that no longer exists. Everything else the god burned through. It is the last thread in Vaelscar you have any business cutting — and the only one that, cut, sets a dead woman free.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Elara",
+				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
 				"choices": [
 					{
 						"text": "Follow it in. Reach the forge-end of her before the god does, and hold it taut so she can find her way back down it — once, at the end.",
@@ -5539,19 +5980,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Elara looks at the throne a long moment. \"Good,\" she says. \"Break everything.\" And steps aside.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5580,11 +6026,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "convergence_paladin",
 				"text": "The chain has argued every verdict of your life — and on the causeway it falls SILENT, the silence of counsel resting. This is the case it was forged for. Mórwyn is defendant, victim, and precedent in one body; the crown behind her is the court that corrupted the law itself. Whatever you rule at the throne, you rule alone. It is, at last, watching its arbiter.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Elara",
+				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
 				"choices": [
 					{
 						"text": "Find for the victim. The blacksmith gets remembered into the record before any sentence touches the god.",
@@ -5612,19 +6058,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Elara looks at the throne a long moment. \"Good,\" she says. \"Break everything.\" And steps aside.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5653,11 +6104,11 @@ const CONVOS := {
 				"who": "Narrator",
 				"cue": "convergence_warlock",
 				"text": "The tome has gone reverent, which is worse than afraid. Mórwyn is the oldest open position in the world — six hundred years compounding, walking to the throne to close itself out. And your own unnamed debt, the thing you traded and never lost YET? On the causeway, for the first time, the tome offers to TELL you. Free. Which means the price is ahead.",
-				"next": "n4",
+				"next": "n4s",
 			},
 			"n4": {
-				"who": "You",
-				"text": "Before the first step, the Ember asks what you will make of what waits ahead.",
+				"who": "Elara",
+				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
 				"choices": [
 					{
 						"text": "Refuse the reveal one last time and come for the blacksmith — some debts end by remembering the debtor, not the amount.",
@@ -5685,19 +6136,24 @@ const CONVOS := {
 					},
 				],
 			},
+			"n4s": {
+				"who": "Narrator",
+				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"next": "n4",
+			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The Ember answers with heat, then yields. For once, you carry it instead of being carried.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The Ember warms as if recognized. The chapter ahead has heard your answer.",
+				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The question follows when you decline to answer it. Silence is still a direction.",
+				"text": "Elara looks at the throne a long moment. \"Good,\" she says. \"Break everything.\" And steps aside.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -5752,7 +6208,7 @@ const CHAPTER_OPENER_FLAGS := [
 ]
 
 const CHAPTER_OPENER_PLATES := {
-	"opening_ch2_0": "the Ember Crown mid-shatter, fragments streaking out over a darkened map of Vaelscar. Deliberate rhyme with the crown plate: same composition, breaking.",
+	"opening_ch2_0": "the Ember Crown mid-shatter, fragments streaking out over a darkened map of Vaelscar. Deliberate rhyme with the crown plate: same composition, breaking. (A FLASHBACK plate — the first fall, thirty years past; visual unchanged.)",
 	"opening_ch2_1": "the quiet years: a road, refugee wagons, blight-green creeping along a fence line no one repaints.",
 	"opening_ch2_warrior": "a woodpile split far past need, axe still in hand, dawn light.",
 	"opening_ch2_assassin": "a market crowd parting around a hooded figure; every stall-candle leaning toward them.",
@@ -5849,7 +6305,7 @@ const CHAPTER_OPENER_PLATES := {
 	"opening_ch13_archer": "a glowing word-strand drifting past the archer's face at the anchor camp, close as a mosquito — her lips pressed shut against it.",
 	"opening_ch13_assassin": "a single storm-word caught mid-air in the assassin's hand like a lifted purse — glowing between the fingers, half-swallowed already.",
 	"opening_ch14_0": "the old capital under a sky of ALL weathers at once — snow into ashfall into green rain, the Waking smearing reality by district.",
-	"opening_ch14_1": "Mórwyn on the causeway: walking, unhurried, blight blooming in her footprints like a bridal train; both armies' lines parting BEFORE she reaches them.",
+	"opening_ch14_1": "Mórwyn on the causeway: walking, unhurried, blight blooming in her footprints like a bridal train; both armies' lines parting BEFORE she reaches them — and at the causeway's foot, small in the foreground, a girl of fifteen standing her ground to watch her mother's gait go by. Elara: the chapter's asker, in the frame (owner call 2026-07-30).",
 	"opening_ch14_2": "the rhyme)* — the Hollow Throne, composed as an exact match of the game-opening crown plate: same angle, same framing, the crown's silhouette now hollow and burning green. The first image of the game, returned wrong.",
 	"opening_ch14_mage": "Mórwyn and the mage facing across the causeway; between them, small, two identical green lights — hers old, yours young.",
 	"opening_ch14_warrior": "the warrior's reflection in a blade — and the reflection wearing something the warrior isn't.",

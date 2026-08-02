@@ -277,7 +277,7 @@ const CONVOS := {
 				{"flag": "chose_varo_spoils", "text": "You're the one from the Vale. The story that arrived with the freight says you asked what the saint would DROP. Ha! Honest mercenary — I can work with honest. Brann, overseer. Sit."},
 			],
 			"next": "b2"},
-		"b2": {"who": "Overseer Brann", "text": "Here's the honest ledger. The Compact reopened these foundries two years ago — best ore vein in Vaelscar, and the heats run HIGH down here, higher than the coal explains. We told ourselves it was a gift. Then Calda's blades stopped breaking, and Cinderhide ate four crews, and our chaplain started ending his sermons with verdicts.", "next": "b3"},
+		"b2": {"who": "Overseer Brann", "text": "You saw the stacks on the road in — so skip to what the coal doesn't explain. Calda's blades stopped breaking. Cinderhide ate four crews. And our chaplain started ending his sermons with verdicts.", "next": "b3"},
 		"b3": {"who": "Overseer Brann", "text": "Three problems, in order of depth: Calda at the quenching yard — my finest smith, and lately her mistakes don't break either. The beast in the deep vents. And at the bottom, Ordo — who I signed the requisitions for, flame help me, when he asked to hold services closer to the heat.",
 			"choices": [
 				{"text": "\"Your people got in over something old, Brann. I'll cap it — Calda first.\"",

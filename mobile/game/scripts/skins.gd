@@ -140,8 +140,7 @@ const SKINS := {
 		# Awakened: the storm wakes — the plate deepens toward violet, the
 		# charged accents flare, and the face itself ignites storm-light.
 		{"id": "stormforged", "name": "Stormforged", "tier": "mythic",
-			"sprite": "skins/mythic/warrior_stormforged",
-			"awakened_sprite": "skins/mythic/warrior_stormforged_awakened"},
+			"sprite": "skins/mythic/warrior_stormforged"},
 	],
 	"archer": [
 		{"id": "frostfall_ranger", "name": "Frostfall Ranger", "tier": "elite",
@@ -149,15 +148,13 @@ const SKINS := {
 		# Awakened: the void deepens — the grey cloak drinks dusk-violet and
 		# every purple accent surges toward glowing magenta.
 		{"id": "voidwraith", "name": "Voidwraith", "tier": "mythic",
-			"sprite": "skins/mythic/archer_voidwraith",
-			"awakened_sprite": "skins/mythic/archer_voidwraith_awakened"},
+			"sprite": "skins/mythic/archer_voidwraith"},
 	],
 	"mage": [
 		# Awakened: prismatic — bright facets bleach to white light while the
 		# robe's shadows refract indigo-violet.
 		{"id": "crystal_archmage", "name": "Crystal Archmage", "tier": "mythic",
-			"sprite": "skins/mythic/mage_crystal_archmage",
-			"awakened_sprite": "skins/mythic/mage_crystal_archmage_awakened"},
+			"sprite": "skins/mythic/mage_crystal_archmage"},
 	],
 	"assassin": [
 		# Golden Ronin (id kept as "blade_dancer" for save/sprite-path compat).
@@ -165,14 +162,17 @@ const SKINS := {
 		# with a fading after-image instead of the kunai — see player_kit_assassin.
 		{"id": "blade_dancer", "name": "Golden Ronin", "tier": "elite",
 			"sprite": "skins/elite/assassin_blade_dancer"},
+		# (2026-07-27, owner call — awakened forms retired with the legendary
+		# tier.) The Phantom IS the teal spectral form now, always; its old
+		# blue body lives on below as its own elite skin, parked until the
+		# owner decides its identity. `splash` overrides the derived key so
+		# each form keeps the portrait that matches its body.
 		{"id": "phantom", "name": "Phantom", "tier": "mythic",
+			"sprite": "skins/mythic/assassin_phantom_awakened",
+			"splash": "splash_skin_assassin_phantom_awakened"},
+		{"id": "phantom_umbral", "name": "Umbral Phantom", "tier": "elite",
 			"sprite": "skins/mythic/assassin_phantom",
-			# Awakened form: completing the assassin's S-weapon awakening
-			# (flag s_awakened_assassin) evolves the blue Phantom into the teal
-			# spectral "Nightfang" form — same skin, a progression payoff. The
-			# render resolver (player_core._apply_class_sprite) swaps to this
-			# base when the flag is set; falls back to `sprite` otherwise.
-			"awakened_sprite": "skins/mythic/assassin_phantom_awakened"},
+			"splash": "splash_skin_assassin_phantom"},
 	],
 	"paladin": [
 		{"id": "eclipse_knight", "name": "Eclipse Knight", "tier": "elite",
@@ -181,8 +181,7 @@ const SKINS := {
 		# bleach to silver-white over the black wings; the verdict has no
 		# warmth left in it.
 		{"id": "fallen_arbiter", "name": "Fallen Arbiter", "tier": "mythic",
-			"sprite": "skins/mythic/paladin_fallen_arbiter",
-			"awakened_sprite": "skins/mythic/paladin_fallen_arbiter_awakened"},
+			"sprite": "skins/mythic/paladin_fallen_arbiter"},
 	],
 	"warlock": [
 		{"id": "hellfire_inquisitor", "name": "Hellfire Inquisitor", "tier": "elite",
@@ -219,6 +218,7 @@ const SWING := {
 	"assassin": {
 		"blade_dancer": {"attack": 0.182, "attack2": 0.227},
 		"phantom": {"attack": 0.227, "attack2": 0.182},
+		"phantom_umbral": {"attack": 0.227, "attack2": 0.182},  # same body sheets as phantom
 	},
 	# Judgment (a1) lands the golden shock on the overhead-hammer contact (~frame
 	# 4). Consecration (attack2) is a near-static channel with no crisp contact —
@@ -290,29 +290,26 @@ static func find_skin(cls: String, skin_id: String) -> Dictionary:
 
 
 ## Return the Art sprite name for a skin, or "" if invalid/no skin.
-## When `awakened` (the skin's class has completed its S-weapon awakening) and
-## the skin defines an `awakened_sprite`, returns that evolved base instead —
-## e.g. Phantom's teal Nightfang form. Skins without one ignore the flag.
-static func skin_sprite(cls: String, skin_id: String, awakened := false) -> String:
+## (2026-07-27) Awakened forms are RETIRED with the legendary tier — a skin is
+## one look, always. `_awakened` is kept for call-site compatibility only.
+static func skin_sprite(cls: String, skin_id: String, _awakened := false) -> String:
 	var data: Dictionary = find_skin(cls, skin_id)
 	if data.is_empty():
 		return ""
-	if awakened and data.has("awakened_sprite"):
-		return String(data["awakened_sprite"])
 	return String(data["sprite"])
 
 
-## Return the installed dialogue/Codex splash for a skin. Awakened art is used
-## only when that skin actually defines an awakened world sprite, keeping the
-## portrait and the live character on the same visual form.
-static func skin_splash(cls: String, skin_id: String, awakened := false) -> String:
+## Return the installed dialogue/Codex splash for a skin. A skin may pin its
+## portrait with an explicit `splash` key (the two Phantom forms share body
+## art history, so their derived keys would lie); otherwise the key derives
+## from cls+id as ever. `_awakened` kept for call-site compatibility.
+static func skin_splash(cls: String, skin_id: String, _awakened := false) -> String:
 	var data: Dictionary = find_skin(cls, skin_id)
 	if data.is_empty():
 		return ""
-	var key := "splash_skin_%s_%s" % [cls, skin_id]
-	if awakened and data.has("awakened_sprite"):
-		key += "_awakened"
-	return key
+	if data.has("splash"):
+		return String(data["splash"])
+	return "splash_skin_%s_%s" % [cls, skin_id]
 
 
 ## Build (or update) a ShaderMaterial for the chroma effect. When

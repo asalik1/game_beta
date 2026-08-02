@@ -81,14 +81,14 @@ const CONVOS := {
 			"variants": [
 				{"flag": "ch2_briefed", "text": "East, shard-bearer. The blight will not scout itself — and the factions' recruiters move faster than you do.", "next": ""},
 				{"flag": "ch2_kept_faith", "text": "So. Another one the shards chose — and one who put the missing hours to honest work. Sit. Anyone who can build around an Ember may yet build past it."},
-				{"flag": "ch2_fed_ember", "text": "Sit. And keep those hands where I can see them — the woken who practice in the dark have a certain smell of scorch about them. You'll learn what I mean, or you'll become what I mean."},
+				{"flag": "ch2_fed_ember", "text": "Sit. …So the quiet years weren't quiet. The woken who spent them leaning INTO the thing carry the lean ever after — I could see yours from across the fire. We'll work on it, or it will work on you."},
 				{"flag": "ch2_buried_it", "text": "So. Another one the shards chose, and another who tried to answer fire with a locked room. Sit. Buried things have a way of choosing their own hour to surface."},
 				{"flag": "chose_virtue", "text": "So. Another one the shards chose — and this one, they tell me, chose BACK. Good. Sit; you and I may actually get along."},
 				{"flag": "chose_temptation", "text": "So. Another one the shards chose. I heard what the waking cost — and what you told yourself about it. Sit anyway. Better here than out there alone with that voice."},
 				{"flag": "chose_away", "text": "So. Another one the shards chose — the kind that walks away from things. You walked HERE, at least. Sit."},
 			],
 			"next": "m2"},
-		"m2": {"who": "Elder Maren", "text": "Years since Vargoth fell, and the world is not healed — it is WAKING. The crown's shards rooted in people like you. The blight never stopped crawling, the beastkin never stopped raiding, and now every power in Vaelscar wants shard-bearers on a leash.", "next": "m3"},
+		"m2": {"who": "Elder Maren", "text": "You've seen the road in — the Waking isn't a rumor, it's a season. What you haven't seen is what circles the newly-woken: the blight never stopped crawling, the beastkin never stopped raiding, and every power in Vaelscar wants shard-bearers on a leash. The leashes are getting polite.", "next": "m3"},
 		"m3": {"who": "Elder Maren", "text": "I find the newly-woken before the factions do. What I ask is small: eyes and honesty. What THEY will ask is everything. Any questions, or do I point you east?",
 			"choices": [
 				{"text": "\"Point me east. Whatever's out there, I'd rather meet it than wait for it.\"",

@@ -285,7 +285,7 @@ const CONVOS := {
 				{"flag": "joined_cinderborn", "text": "Cinderborn colors. Hm. Your factor will tell you the Vale is 'unproductive land under hostile administration.' Listen to me first, then decide what it actually is."},
 			],
 			"next": "b2"},
-		"b2": {"who": "Cantor Ilse", "text": "The Choir does not bury its dead — rot is the land's honest truth, so the dead WALK their own funerals, forever. Sixty years of forever, now. The Vale is one open grave from gate to cathedral, and at the top of it kneels Saint Varo — the one man in Vaelscar the rot refuses. My congregation worships his misery and calls it proof.", "next": "b3"},
+		"b2": {"who": "Cantor Ilse", "text": "You walked the grave-road in; I'll spare you the liturgy of it. What the road cannot show you is this: my congregation WORSHIPS what you just saw — Varo's misery is their proof, and they will keep him kneeling until the proof gives out.", "next": "b3"},
 		"b3": {"who": "Cantor Ilse", "text": "Three stand between you and him. The Sexton, who digs and digs and never fills. Vess, the first widow they told 'no' — her scream became our liturgy, and I sang it for thirty years before I heard the words. And Varo himself, who has been BEGGING to die longer than you've been alive.",
 			"choices": [
 				{"text": "\"Then I'll give him what he's asking for. Gently, if the fight allows it.\"",

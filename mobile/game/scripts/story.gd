@@ -514,7 +514,7 @@ const ENEMIES := {
 	# render wildly different sizes. Contact bites stay fair at any size
 	# via Boss._reach (body-edge, not center, distance); note the physics
 	# circle (enemy.gd: radius 6*scale*0.7) grows with the same knob.
-	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "fangmaw", "hp": 1200.0,  "dmg": 30.0, "speed": 160.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 8.5,
+	"fangmaw":  {"name": "Fangmaw the Ravener",     "sprite": "fangmaw", "hp": 8600.0,  "dmg": 30.0, "speed": 160.0, "xp": 80,  "gold": 60,  "ranged": false, "scale": 8.5,
 		"physres": 15.0, "magres": 10.0, "eva": 0.08, "critres": 2.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 4, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"STR": 1.5, "AGI": 1.5},
@@ -528,7 +528,7 @@ const ENEMIES := {
 			{"name": "Calls the Pack (50%)",
 			 "tell": "At half health he howls and two wolves spawn at his flanks.",
 			 "counter": "The wolves drop zero XP and gold — don't farm them. Keep damage on Fangmaw and kite the pack rather than chasing it."}]},
-	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "morwen",   "hp": 2200.0,  "dmg": 26.0, "speed": 120.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 9.0,
+	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "morwen",   "hp": 14300.0,  "dmg": 26.0, "speed": 120.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 9.0,
 		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 7, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.0},
@@ -542,7 +542,7 @@ const ENEMIES := {
 			{"name": "Bolt Volleys & Ring",
 			 "tell": "She fires a three-bolt fan at you on a fast cadence, and periodically rings out a full circle of twelve bolts.",
 			 "counter": "Strafe across the fan rather than backing straight up. For the ring, slip out through a gap between bolts instead of tanking it."}]},
-	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "vargoth",  "hp": 4200.0, "dmg": 50.0, "speed": 132.0, "xp": 200, "gold": 150, "ranged": false, "scale": 13.0,
+	"vargoth":  {"name": "King Vargoth the Hollow", "sprite": "vargoth",  "hp": 23700.0, "dmg": 50.0, "speed": 132.0, "xp": 200, "gold": 150, "ranged": false, "scale": 13.0,
 		"physres": 40.0, "magres": 25.0, "eva": 0.0,  "critres": 5.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 10, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"STR": 2.0, "VIT": 1.5},
@@ -639,17 +639,15 @@ static func enemy_stats_at(kind: String, level: int, overcap := false) -> Dictio
 	# Mob damage runs the same two regimes as HP: native band on the authored
 	# rate, player-tracking (BOSS_DMG_GROWTH) beyond it.
 	var dmg_m := pow(1.0 + dmg_growth, d_near) * pow(1.0 + Balance.BOSS_DMG_GROWTH, d_far) * dmg_flat
-	# Gem-expectation ramp (2026-07-06): the TIERLIST benchmark was
-	# gemless, but real players arrive socketed — UPSCALED bosses gain a
-	# small premium per level above where gems come online (round 45's
-	# "budget what the player actually has", extended). Anchor stats stay
-	# exactly as authored: high-anchor bosses get their gem allowance at
-	# authoring time, not from a hidden multiplier.
-	if is_boss:
-		var gl := float(lvl - maxi(Balance.BOSS_GEM_RAMP_START, int(base["level"])))
-		if gl > 0.0:
-			hp_m *= 1.0 + Balance.BOSS_GEM_HP_RAMP * gl
-			dmg_m *= 1.0 + Balance.BOSS_GEM_DMG_RAMP * gl
+	# GEAR-POWER scaling (2026-07-28, replaces the GEAR_RAMP exponent):
+	# upscaled monsters' pools track the MEASURED gear curve — the ratio of
+	# expected gear power at the fight's level over power at the monster's
+	# own anchor (or the first gear anchor, whichever is higher), so native-
+	# band stats stay exactly as authored. HP only: damage stays on the flat
+	# player-tracking dial. Model + anchors: Balance.GEAR_POWER_ANCHORS.
+	var g_from := maxi(Balance.GEAR_POWER_FIRST, int(base["level"]))
+	if lvl > g_from:
+		hp_m *= Balance.gear_power(lvl) / Balance.gear_power(g_from)
 	var reward_m := 1.0 + d * Balance.REWARD_PER_LEVEL
 	var out := {"level": lvl, "hp": base["hp"] * hp_m, "dmg": base["dmg"] * dmg_m,
 		"xp": int(ceil(base["xp"] * reward_m)),
@@ -1089,7 +1087,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/pc_bosses.gd"),      # Ninja Adventure sweep (2026-07-08): 6 placeholder bosses — dev-only, TODO real fights
 	preload("res://scripts/content/pc_curios.gd"),      # Pixel Crawler mining (2026-07-18): placeholder quest-item curios + codex relics gallery
 	preload("res://scripts/content/rv_na_gallery.gd"),  # Raven Icons + Ninja animals (2026-07-18): placeholder alchemy/armory/supplies/provisions/critters
-	preload("res://scripts/content/capital_hub.gd"),    # Crownfall (2026-07-24): standalone 25-room dev-only capital hub — CONVOS merge here; CHAPTER resolved in chapter()
+	preload("res://scripts/content/capital_hub.gd"),    # Crownfall (reworked 2026-07-25): standalone LIVE 9-room capital hub (3x3 grid) — reached via the Travel button + first-ch1-clear routing + dev panel; CONVOS merge here; CHAPTER resolved in chapter()
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]

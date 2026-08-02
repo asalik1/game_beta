@@ -94,6 +94,65 @@ static func godroll_item(item: Dictionary, cls: String) -> void:
 	item["subs"] = subs
 
 
+# The six transplanted flagship passives (ex-S_GEAR legendaries) — the bench's
+# BiS weapon signature per class (Items.UNIQUES carries them on their named-S
+# homes; the bench stamps the id directly so shape presets stay free).
+const FLAGSHIP_PASSIVE := {"warrior": "kingsblade", "archer": "windward",
+	"mage": "wellspring", "assassin": "mirrorstep", "paladin": "dawnbreaker",
+	"warlock": "voidmaw"}
+
+# BiS NAMED-UNIQUE loadout per class (dps-bench phase, 2026-07-27): the
+# DPS-optimal passive per slot against a single boss target, stamped onto the
+# rolled bench gear when a config sets "uniques" (dps_bench --uniques). Weapon
+# ids are weapon passives (s_passive); the six gear slots carry Balance.UNIQ
+# gear ids (uniq_armor). Picks were MEASURED (candidate A/Bs on the bench) —
+# see BALANCE_HISTORY.md's dps-bench round for the losing candidates. Slots
+# whose whole S column is defensive/reactive contribute nothing against a
+# pacifist bench boss; those picks are the piece a real fight would want and
+# are marked inert below.
+# Loadouts are DUPE-FREE by construction: same-verb pieces never stack (first
+# carrier wins, player_core.uniq_gear), so each slot carries a DISTINCT verb.
+const BIS_UNIQUES := {
+	"warrior": {"weapon": "kingsblade", "helmet": "warrior_helmet_Ds",
+		"gloves": "warrior_gloves_Es", "pants": "warrior_pants_Ds",
+		"armor": "warrior_armor_Ds", "boots": "warrior_boots_Bs",
+		"charm": "warrior_charm_Cs"},
+	"archer": {"weapon": "windward", "helmet": "archer_helmet_Ds",
+		"gloves": "archer_gloves_Ds", "pants": "archer_pants_Ds",
+		"armor": "archer_armor_Ds", "boots": "archer_boots_Bs",
+		"charm": "archer_charm_As"},
+	"mage": {"weapon": "wellspring", "helmet": "mage_helmet_Ds",
+		"gloves": "mage_gloves_Ds", "pants": "mage_pants_Ds",
+		"armor": "mage_armor_Ds", "boots": "mage_boots_Cs",
+		"charm": "mage_charm_As"},
+	"assassin": {"weapon": "mirrorstep", "helmet": "assassin_helmet_Ds",
+		"gloves": "assassin_gloves_Es", "pants": "assassin_pants_Ds",
+		"armor": "assassin_armor_Ds", "boots": "assassin_boots_As",
+		"charm": "assassin_charm_Bs"},
+	"paladin": {"weapon": "noonday", "helmet": "paladin_helmet_Ds",
+		"gloves": "paladin_gloves_Ds", "pants": "paladin_pants_Ds",
+		"armor": "paladin_armor_Ds", "boots": "paladin_boots_Bs",
+		"charm": "paladin_charm_Cs"},
+	"warlock": {"weapon": "voidmaw", "helmet": "warlock_helmet_Ds",
+		"gloves": "warlock_gloves_Ds", "pants": "warlock_pants_Ds",
+		"armor": "warlock_armor_Ds", "boots": "warlock_boots_Ds",
+		"charm": "warlock_charm_As"},
+}
+
+
+## The S-lane piece of `cls`/`slot` whose SEMANTIC profile is `prof`
+## (Items.set_profile_of — membership by verb family); "" when none.
+static func set_piece_id(cls: String, slot: String, prof: String) -> String:
+	for u in Items.UNIQUES:
+		if String(u.get("cls", "")) != cls or String(u.get("slot", "")) != slot:
+			continue
+		if String(u.get("grade", "")) != "S" or not u.has("passive"):
+			continue
+		if Items.set_profile_of(u, cls) == prof:
+			return String(u["passive"])
+	return ""
+
+
 ## The 4-slot equipment dict for a build: gear rolled off `rng` (seed it with
 ## GEAR_SEED for the canonical sequence), stamped with plus, optionally godroll'd,
 ## every socket filled from the class's gem preset at the config's gem level.
@@ -105,18 +164,27 @@ static func equip_dict(cls: String, tid: String, cfg: Dictionary, rng: RandomNum
 	var specials: Array = preset_lookup(GEM_PRESETS, cls, tid).get("specials", [])
 	var spec_cap: int = Items.special_slots(grade)
 	var spec_idx := 0
+	var bis: Dictionary = BIS_UNIQUES.get(cls, {}) if bool(cfg.get("uniques", false)) else {}
 	var equipment := {}
 	for slot in Items.SLOTS:
 		var noun: String = Items.class_weapon_noun(cls) if slot == "weapon" else ""
 		var item := Items.roll_item_of(slot, grade, rng, cls, noun)
-		if grade == "S" and slot == "weapon" and Items.S_GEAR.has(cls):
-			# Drop split (2026-07-27): a generic S carries NO passive now, but the
-			# BiS bench wants the class legendary live (dps_bench sets the
-			# awakening flag) — same S-tier measurement as before the split.
-			var special: Dictionary = Items.S_GEAR[cls]["weapon"]
-			item["name"] = String(special["name"])
-			item["passive"] = String(special["passive"])
-			item["passive_dormant"] = true
+		var setprof := String(cfg.get("setprof", ""))
+		if setprof != "" and slot != "weapon":
+			# "setprof" config: the six gear slots wear the class's full
+			# 6pc PROFILE SET (semantic membership) — the set-vs-BiS probe.
+			# Weapons never join a set, so the weapon keeps its BiS logic.
+			item["passive"] = set_piece_id(cls, slot, setprof)
+		elif bis.has(slot):
+			# "uniques" config: every slot wears its BiS named-unique passive —
+			# the full-loadout measurement (weapon via s_passive, the six gear
+			# slots via the uniq_armor cache).
+			item["passive"] = String(bis[slot])
+		elif grade == "S" and slot == "weapon" and FLAGSHIP_PASSIVE.has(cls):
+			# The BiS bench weapon carries the class's flagship passive (the
+			# six transplanted ex-legendary signatures — live on pickup since
+			# the legendary tier retired 2026-07-27). Same measurement as ever.
+			item["passive"] = String(FLAGSHIP_PASSIVE[cls])
 		item["plus"] = plus_lvl
 		if godroll:
 			godroll_item(item, cls)
@@ -149,8 +217,7 @@ static func save_dict(cls: String, preset_key: String) -> Dictionary:
 	for slot in ["a1", "a2", "a3", "ult"]:
 		themes[slot] = tid
 	var flags := {}
-	if String(cfg["grade"]) == "S":
-		flags["s_awakened_" + cls] = true   # a BiS run wants the legendary passive LIVE
+	# (2026-07-27) No awakening flag needed — passives are live on pickup.
 	return {
 		"version": SaveGame.VERSION,
 		"saved_at": Time.get_unix_time_from_system(),
