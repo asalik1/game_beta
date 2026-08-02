@@ -83,7 +83,6 @@ var ash: CPUParticles2D
 var fade_rect: ColorRect
 
 var _frame_cache: Dictionary = {}
-var _frame_material: ShaderMaterial
 var _sequence_tween: Tween = null
 var _finish_started := false
 
@@ -105,34 +104,9 @@ func _init(g: Node2D) -> void:
 	art_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(art_stack)
 
-	# Generated painted plates are authored in display-referred sRGB. This
-	# Forward+ canvas is intentionally linear, which otherwise crushes them to
-	# near-black in-game even though the source PNG previews correctly. Sample
-	# the texture once, lift it back to display space, and reuse ONLY COLOR.a
-	# (COLOR already contains the texture sample; multiplying it would square
-	# the image and darken it again — see the canvas-item shader trap).
-	var frame_shader := Shader.new()
-	frame_shader.code = """
-shader_type canvas_item;
-
-void fragment() {
-	// Keep every plate subtly alive even after its authored camera move ends.
-	// The built-in overscan prevents the breathing crop from exposing an edge.
-	float breath = 1.016 + sin(TIME * 0.31) * 0.003;
-	vec2 drift = vec2(sin(TIME * 0.17), cos(TIME * 0.13)) * 0.0018;
-	vec2 story_uv = (UV - vec2(0.5)) / breath + vec2(0.5) + drift;
-	vec4 source = texture(TEXTURE, story_uv);
-	vec3 display_rgb = min(pow(max(source.rgb, vec3(0.0)), vec3(0.48)) * 1.04, vec3(1.0));
-	float light_breathe = 0.985 + 0.018 * sin(TIME * 0.41 + UV.x * 2.7);
-	COLOR = vec4(display_rgb * light_breathe, COLOR.a);
-}
-"""
-	_frame_material = ShaderMaterial.new()
-	_frame_material.shader = frame_shader
-
-	# A few slow motes bind the painted frames together. Plate progression,
-	# opposing camera tracks, cross-dissolves, and the shader's near-imperceptible
-	# breathing crop make this opener feel illustrated rather than slideshow-like.
+	# Render authored plates directly. Their source color is already correct;
+	# camera tracks and cross-dissolves provide motion without color processing.
+	# A few slow motes bind the painted frames together.
 	ash = CPUParticles2D.new()
 	ash.amount = 24
 	ash.lifetime = 4.2
@@ -308,7 +282,6 @@ func _make_frame(texture: Texture2D) -> TextureRect:
 	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	frame.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	frame.material = _frame_material
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return frame
 

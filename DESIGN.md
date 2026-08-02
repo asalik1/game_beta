@@ -33,6 +33,7 @@ The Crown was four Embers — primal fragments carried by the Ember Guard's foun
 - **Aldric**: spent his ember on the killing blow; burned-out legend, can't fight, knows what's coming. Late-game lore NPC / "what I never told you" quest / optional superboss homage.
 - **Elder Maren**: trained under Aldric; finds newly-awakened bearers before the factions do. Onboarding NPC for all eight classes, reading each recruit differently.
 - **Fangmaw & Mórwyn** were corrupted Guard commanders (Stormwarden beastmaster; Emberwright battle-healer whose fire-healing curdled into blight). Killing them cut off the head — warbands and blight-plague still spread years later, justifying repeatable zones and the 14 terrains.
+- **PvP v1 — The Proving Grounds (2026-08-01):** a 1v1 duel on the co-op code plumbing (Play Together → Duel a rival). Three-room arena: sealed gatehouses either side of a proving floor whose terrain rerolls every round; 10 s opening countdown (5 s between rounds), gates open, first to 3 falls loses. ZERO stakes by design — no rewards, no losses, no saves, potions barred — until the system is ironed out. Full spec: MULTIPLAYER.md §11; knobs: `Balance.PVP_*`.
 
 ## Progression Trackers
 
@@ -293,6 +294,12 @@ Six ship Phase 1; Death Knight + Summoner are expansion. All openings share one 
 ### Warrior — Melee — STR — Sword/Axe — live
 Ember: Vargoth's own. Virtue: Protection. Temptation: Tyranny ("I'll control them for their own good"). Themes: Fury (rage burst), Bulwark (DR/reflect), Earth (CC/zone).
 Opening: wake mid-blackout having hurt someone while protecting them; the quest is the aftermath. Maren: brisk, professional — she's trained Vargoth's bloodline before; doesn't say it until Act 2.
+Visual canon: the Warrior wears a fully enclosed, unlit black-iron helm as
+self-imposed restraint, not as Vargoth regalia. It is the face he chooses to
+present because he does not trust what happens when his memory goes dark.
+Asymmetric half-plate and one exposed, Ember-scarred arm keep the human cost
+visible; the greatsword's single Ember fuller is interrupted by three black
+restraint staples. No glowing visor or all-over molten corruption.
 
 ### Paladin — Melee — STR/INT — Hammer — NEW at launch
 Ember: a fragment of the Concord's binding magic itself — the only Ember that resists corruption rather than embodying it. Virtue: Defiance (refusing what the Ember demands). Temptation: Righteousness ("I know what you need saving from"). Themes: Holy (heal-on-hit, Consecration stacks), Aegis (redirect/reflect charges), Wrath (tethers that root/drag into melee).

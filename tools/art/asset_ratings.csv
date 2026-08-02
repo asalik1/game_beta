@@ -12,16 +12,12 @@ skins/skins/elite/paladin_eclipse_knight,8,wardrobe set is the strongest art in 
 skins/skins/elite/warlock_hellfire_inquisitor,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Hellfire Inquisitor (warlock elite),8,shipped
 skins/skins/elite/warrior_dreadknight,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Dreadknight (warrior elite),8,shipped
 skins/skins/mythic/archer_voidwraith,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Voidwraith (archer mythic),8,shipped
-skins/skins/mythic/archer_voidwraith_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Voidwraith — Awakened (archer),4,shipped
-skins/skins/mythic/assassin_phantom,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Phantom (assassin mythic),8,shipped
-skins/skins/mythic/assassin_phantom_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Phantom — Awakened (assassin),4,shipped
+skins/skins/mythic/assassin_phantom,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Umbral Phantom (assassin elite),8,shipped
+skins/skins/mythic/assassin_phantom_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Phantom (assassin mythic),8,shipped
 skins/skins/mythic/mage_crystal_archmage,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Crystal Archmage (mage mythic),8,shipped
-skins/skins/mythic/mage_crystal_archmage_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Crystal Archmage — Awakened (mage),4,shipped
 skins/skins/mythic/paladin_fallen_arbiter,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Fallen Arbiter (paladin mythic),8,shipped
-skins/skins/mythic/paladin_fallen_arbiter_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Fallen Arbiter — Awakened (paladin),4,shipped
 skins/skins/mythic/warlock_eldritch_herald,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Arcane Warlock (warlock elite),8,shipped
 skins/skins/mythic/warrior_stormforged,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Stormforged (warrior mythic),8,shipped
-skins/skins/mythic/warrior_stormforged_awakened,8,wardrobe set is the strongest art in the project,claude 2026-07-26 (group),skins,Stormforged — Awakened (warrior),4,shipped
 chromas/chroma_archer_ember,,,,chromas,Archer — Ember,2,shipped
 chromas/chroma_archer_jade,,,,chromas,Archer — Jade,2,shipped
 chromas/chroma_archer_rose,,,,chromas,Archer — Rose,2,shipped
@@ -77,7 +73,8 @@ mobs/blightwolf,6.5,,claude 2026-07-26,mobs,Waking Wolf,5,shipped
 mobs/bog_lurker,6,clean recolor of the re-cut spider,claude 2026-07-26,mobs,Bog Lurker,28,shipped
 mobs/casket_creeper,6,clean recolor of the re-cut spider,claude 2026-07-26,mobs,Casket Creeper,14,shipped
 mobs/choir_censer,8,excellent boss-projectile identity,claude 2026-07-26,mobs,Blighted Censer,0,unreferenced
-mobs/cultist,7.5,best mob against the art bible,claude 2026-07-26,mobs,Blight Cultist,87,shipped
+mobs/cold_pilgrim,,,,mobs,Cold Pilgrim,23,shipped
+mobs/cultist,7.5,best mob against the art bible,claude 2026-07-26,mobs,Blight Cultist,31,shipped
 mobs/deep_stalker,6,clean recolor of the re-cut spider,claude 2026-07-26,mobs,Crystal Stalker,5,shipped
 mobs/direbat,5,same cartoon lean as bat,claude 2026-07-26,mobs,Blightbat,0,unreferenced
 mobs/duneprowler,6.5,,claude 2026-07-26,mobs,Dune Prowler,5,shipped
@@ -88,6 +85,7 @@ mobs/elf_wild,5.5,,claude 2026-07-26,mobs,Wildkin Skirmisher,0,unreferenced
 mobs/fungus_heavy,6,,claude 2026-07-26,mobs,Spore Shambler,5,shipped
 mobs/fungus_immature,4.5,bright orange cap; cartoon lean,claude 2026-07-26,mobs,Sporeling,0,unreferenced
 mobs/fungus_long,6,,claude 2026-07-26,mobs,Root Shambler,26,shipped
+mobs/greyrun_lurker,,,,mobs,Greyrun Lurker,5,shipped
 mobs/grove_horror,7,genuinely creepy; full 8-frame anim,claude 2026-07-26,mobs,Grove Horror,22,shipped
 mobs/mummy,6,,claude 2026-07-26,mobs,Sun-Bleached Husk,3,shipped
 mobs/mummy_mage,6.5,,claude 2026-07-26 (group),mobs,Forge Acolyte,38,shipped
@@ -96,7 +94,6 @@ mobs/mummy_warrior,4,same off-palette Egyptian kit,claude 2026-07-26,mobs,Tomb W
 mobs/null_acolyte,7,,claude 2026-07-26,mobs,Null Acolyte,13,shipped
 mobs/orc,6,,claude 2026-07-26,mobs,Wildfang Raider,3,shipped
 mobs/orc_rogue,6,,claude 2026-07-26,mobs,Wildfang Howler,4,shipped
-mobs/rat,6.5,,claude 2026-07-26 (group),mobs,Greyrun Lurker,5,shipped
 mobs/rat_mage,8,"complete authored plague-priest family; strong rat, robe, censer, and vial silhouette",codex 2026-07-26 replacement,mobs,Plague Chanter,6,shipped
 mobs/rat_rogue,4.5,cartoon proportions,claude 2026-07-26,mobs,Gutter Cutter,0,unreferenced
 mobs/rat_warrior,4,cartoon + a saturated purple that fits nothing,claude 2026-07-26,mobs,Warren Breaker,0,unreferenced
@@ -118,6 +115,7 @@ mobs/tick_cyan,2.5,neon cyan recolor of the AA tick,claude 2026-07-26,mobs,Rime 
 mobs/tick_green,2.5,neon green recolor of the AA tick,claude 2026-07-26,mobs,Bog Tick,0,placeholder
 mobs/tick_orange,2.5,neon orange recolor of the AA tick,claude 2026-07-26,mobs,Ember Tick,0,placeholder
 mobs/tick_pale,3,bone-white recolor of the AA tick,claude 2026-07-26,mobs,Grave Tick,0,placeholder
+mobs/vale_mourner,,,,mobs,Vale Mourner,33,shipped
 mobs/vent_skitter,6,clean recolor of the re-cut spider,claude 2026-07-26,mobs,Vent Skitter,23,shipped
 mobs/verdant_elder,1.5,unpainted beige mannequin,claude 2026-07-26,mobs,Verdant Elder,0,placeholder
 mobs/verdant_matron,1.5,unpainted beige mannequin,claude 2026-07-26,mobs,Verdant Matron,0,placeholder
@@ -298,22 +296,22 @@ splash/splash_sexton,8.5,"painterly dark-fantasy set, highly consistent",claude 
 splash/splash_sister_ottilie,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,sister_ottilie — splash,2,shipped
 splash/splash_skald_ottar,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,skald_ottar — splash,3,shipped
 splash/splash_skin_archer_frostfall_ranger,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Frostfall Ranger splash,12,shipped
-splash/splash_skin_archer_voidwraith,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Voidwraith splash,6,shipped
-splash/splash_skin_archer_voidwraith_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Voidwraith splash (awakened),6,shipped
+splash/splash_skin_archer_voidwraith,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Voidwraith splash,12,shipped
+splash/splash_skin_archer_voidwraith_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,skin archer voidwraith awakened,0,unreferenced
 splash/splash_skin_assassin_blade_dancer,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Golden Ronin splash,12,shipped
-splash/splash_skin_assassin_phantom,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Phantom splash,6,shipped
-splash/splash_skin_assassin_phantom_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Phantom splash (awakened),6,shipped
-splash/splash_skin_mage_crystal_archmage,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Crystal Archmage splash,6,shipped
-splash/splash_skin_mage_crystal_archmage_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Crystal Archmage splash (awakened),6,shipped
+splash/splash_skin_assassin_phantom,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Umbral Phantom splash,12,shipped
+splash/splash_skin_assassin_phantom_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Phantom splash,12,shipped
+splash/splash_skin_mage_crystal_archmage,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Crystal Archmage splash,12,shipped
+splash/splash_skin_mage_crystal_archmage_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,skin mage crystal archmage awakened,0,unreferenced
 splash/splash_skin_paladin_eclipse_knight,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Eclipse Knight splash,12,shipped
-splash/splash_skin_paladin_fallen_arbiter,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Fallen Arbiter splash,6,shipped
-splash/splash_skin_paladin_fallen_arbiter_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Fallen Arbiter splash (awakened),6,shipped
+splash/splash_skin_paladin_fallen_arbiter,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Fallen Arbiter splash,12,shipped
+splash/splash_skin_paladin_fallen_arbiter_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,skin paladin fallen arbiter awakened,0,unreferenced
 splash/splash_skin_warlock_arcane_warlock,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Arcane Warlock splash,12,shipped
 splash/splash_skin_warlock_eldritch_warlock,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Eldritch Warlock splash,12,shipped
 splash/splash_skin_warlock_hellfire_inquisitor,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Hellfire Inquisitor splash,12,shipped
 splash/splash_skin_warrior_dreadknight,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Dreadknight splash,12,shipped
-splash/splash_skin_warrior_stormforged,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Stormforged splash,6,shipped
-splash/splash_skin_warrior_stormforged_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Stormforged splash (awakened),6,shipped
+splash/splash_skin_warrior_stormforged,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Stormforged splash,12,shipped
+splash/splash_skin_warrior_stormforged_awakened,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,skin warrior stormforged awakened,0,unreferenced
 splash/splash_smith_harl,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,smith_harl — splash,2,shipped
 splash/splash_smith_petra,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,smith_petra — splash,3,shipped
 splash/splash_storm_chaser_ilya,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,storm_chaser_ilya — splash,2,shipped
@@ -338,26 +336,46 @@ splash/splash_warden_null_the_last_sentinel,8.5,"painterly dark-fantasy set, hig
 splash/splash_warden_palla,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,warden_palla — splash,1,shipped
 splash/splash_warden_sighne,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,warden_sighne — splash,2,shipped
 splash/splash_widow_sera,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,widow sera,0,unreferenced
-terrains/ground_basalt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — basalt,1,shipped
-terrains/ground_bogsoil,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — bogsoil,1,shipped
+terrains/ground_amberleaf,,,,terrains,Ground tiles — amberleaf,1,shipped
+terrains/ground_ashsoil,,,,terrains,Ground tiles — ashsoil,1,shipped
+terrains/ground_barrowgrass,,,,terrains,Ground tiles — barrowgrass,1,shipped
+terrains/ground_basalt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — basalt,4,shipped
+terrains/ground_blueice,,,,terrains,Ground tiles — blueice,1,shipped
+terrains/ground_bogsoil,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — bogsoil,3,shipped
+terrains/ground_bonefloor,,,,terrains,Ground tiles — bonefloor,1,shipped
 terrains/ground_castletile,5,,claude 2026-07-26,terrains,Ground tiles — castletile,4,shipped
-terrains/ground_crystalfloor,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — crystalfloor,1,shipped
-terrains/ground_dirt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — dirt,9,shipped
+terrains/ground_cinderstone,,,,terrains,Ground tiles — cinderstone,1,shipped
+terrains/ground_crystalfloor,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — crystalfloor,2,shipped
+terrains/ground_deepcrystal,,,,terrains,Ground tiles — deepcrystal,1,shipped
+terrains/ground_dirt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — dirt,13,shipped
+terrains/ground_drownedsoil,,,,terrains,Ground tiles — drownedsoil,1,shipped
 terrains/ground_dungeonfloor,4.5,,claude 2026-07-26,terrains,Ground tiles — dungeonfloor,2,shipped
-terrains/ground_forest,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — forest,2,shipped
+terrains/ground_forest,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — forest,3,shipped
 terrains/ground_forgefloor,4.5,,claude 2026-07-26,terrains,Ground tiles — forgefloor,1,shipped
+terrains/ground_fungalhumus,,,,terrains,Ground tiles — fungalhumus,1,shipped
 terrains/ground_grass,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — grass,5,shipped
-terrains/ground_gravedirt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — gravedirt,2,shipped
+terrains/ground_gravedirt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — gravedirt,4,shipped
 terrains/ground_hallwood,5,,claude 2026-07-26,terrains,Ground tiles — hallwood,2,shipped
+terrains/ground_hoarfrost,,,,terrains,Ground tiles — hoarfrost,1,shipped
+terrains/ground_hollowsoil,,,,terrains,Ground tiles — hollowsoil,1,shipped
 terrains/ground_holystone,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — holystone,9,shipped
 terrains/ground_lavafield,3.5,"flat orange fill, no structure",claude 2026-07-26,terrains,Ground tiles — lavafield,1,shipped
 terrains/ground_marsh,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — marsh,1,shipped
+terrains/ground_moonmire,,,,terrains,Ground tiles — moonmire,1,shipped
+terrains/ground_mossmeadow,,,,terrains,Ground tiles — mossmeadow,1,shipped
+terrains/ground_mournearth,,,,terrains,Ground tiles — mournearth,1,shipped
+terrains/ground_obsidian,,,,terrains,Ground tiles — obsidian,1,shipped
+terrains/ground_rimegrass,,,,terrains,Ground tiles — rimegrass,1,shipped
+terrains/ground_rootsoil,,,,terrains,Ground tiles — rootsoil,1,shipped
 terrains/ground_sand,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — sand,1,shipped
-terrains/ground_snow,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — snow,1,shipped
-terrains/ground_sporesoil,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — sporesoil,1,shipped
-terrains/ground_stone,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — stone,10,shipped
+terrains/ground_slagstone,,,,terrains,Ground tiles — slagstone,1,shipped
+terrains/ground_snow,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — snow,3,shipped
+terrains/ground_sporesoil,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — sporesoil,2,shipped
+terrains/ground_stone,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — stone,13,shipped
 terrains/ground_stormgrass,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — stormgrass,2,shipped
-terrains/ground_voidstone,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — voidstone,1,shipped
+terrains/ground_stormstone,,,,terrains,Ground tiles — stormstone,1,shipped
+terrains/ground_voidscar,,,,terrains,Ground tiles — voidscar,1,shipped
+terrains/ground_voidstone,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Ground tiles — voidstone,2,shipped
 terrains/terrain_bog,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Poison Bog,1,shipped
 terrains/terrain_capital_accord,5,same undifferentiated capital tan,claude 2026-07-26,terrains,Crownfall Accord Ward,1,shipped
 terrains/terrain_capital_approach,5,same undifferentiated capital tan,claude 2026-07-26,terrains,Crownfall Emberward,1,shipped
@@ -375,22 +393,42 @@ terrains/terrain_ice,7,,claude 2026-07-26,terrains,Frozen Expanse,1,shipped
 terrains/terrain_keep,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Vargoth's Keep,1,shipped
 terrains/terrain_magma,7,"strong identity, unmistakable floor",claude 2026-07-26,terrains,Scorched Wastes,1,shipped
 terrains/terrain_marsh,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Blightmarsh,1,shipped
+terrains/terrain_ph_amberwood,,,,terrains,Amberwood,1,placeholder
+terrains/terrain_ph_ashflats,,,,terrains,Ashen Flats,1,placeholder
+terrains/terrain_ph_barrowmoor,,,,terrains,Weeping Barrowmoor,1,placeholder
 terrains/terrain_ph_camp,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Wayfarer's Camp,1,placeholder
 terrains/terrain_ph_castle,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Royal Gallery,1,placeholder
+terrains/terrain_ph_cinderquarry,,,,terrains,Cinder Quarry,1,placeholder
 terrains/terrain_ph_crypt,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Sunken Tombs,1,placeholder
+terrains/terrain_ph_crystalchasm,,,,terrains,Crystal Chasm,1,placeholder
+terrains/terrain_ph_drownedfen,,,,terrains,Drowned Fen,1,placeholder
 terrains/terrain_ph_dungeon,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Sunless Warren,1,placeholder
 terrains/terrain_ph_fae,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Fae Grove,1,placeholder
 terrains/terrain_ph_fields,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Harvest Fields,1,placeholder
 terrains/terrain_ph_forge,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Great Forge,1,placeholder
+terrains/terrain_ph_frozenlake,,,,terrains,Frozen Mirror,1,placeholder
+terrains/terrain_ph_fungalcathedral,,,,terrains,Fungal Cathedral,1,placeholder
 terrains/terrain_ph_garden,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Palace Gardens,1,placeholder
 terrains/terrain_ph_guildhall,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Guild Hall,1,placeholder
 terrains/terrain_ph_hall,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Castle Hall,1,placeholder
 terrains/terrain_ph_hideout,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Bandit Hideout,1,placeholder
+terrains/terrain_ph_hoarfrostruins,,,,terrains,Hoarfrost Ruins,1,placeholder
+terrains/terrain_ph_hollowgrove,,,,terrains,Hollow Grove,1,placeholder
 terrains/terrain_ph_kitchen,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Kitchens,1,placeholder
 terrains/terrain_ph_library,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,The Great Library,1,placeholder
 terrains/terrain_ph_market,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Merchant Row,1,placeholder
+terrains/terrain_ph_moonfen,,,,terrains,Moonmirror Fen,1,placeholder
+terrains/terrain_ph_mossmeadow,,,,terrains,Mosslight Meadow,1,placeholder
+terrains/terrain_ph_mournfields,,,,terrains,Mourners' Fields,1,placeholder
+terrains/terrain_ph_obsidianreach,,,,terrains,Obsidian Reach,1,placeholder
+terrains/terrain_ph_ossuary,,,,terrains,The Open Ossuary,1,placeholder
+terrains/terrain_ph_rimewood,,,,terrains,Rimewood,1,placeholder
+terrains/terrain_ph_rootboundbog,,,,terrains,Rootbound Bog,1,placeholder
 terrains/terrain_ph_ruins,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Broken Bastion,1,placeholder
 terrains/terrain_ph_sewer,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Undercroft Sewer,1,placeholder
+terrains/terrain_ph_slagworks,,,,terrains,The Slagworks,1,placeholder
+terrains/terrain_ph_stormspire,,,,terrains,Stormspire Plateau,1,placeholder
+terrains/terrain_ph_voidscar,,,,terrains,The Voidscar,1,placeholder
 terrains/terrain_spore,6.5,,claude 2026-07-26,terrains,Spore Glade,1,shipped
 terrains/terrain_storm,6,"readable floor, but biome floors repeat across wards",claude 2026-07-26 (group),terrains,Thunder Plains,1,shipped
 terrains/terrain_village,6,,claude 2026-07-26,terrains,Emberfall Village,1,shipped
@@ -413,21 +451,21 @@ props/armory_vine_blade,5,,claude 2026-07-26 (group),props,Gardener's Mercy,1,pl
 props/auroch,6,"the retired boss body, now a curio",claude 2026-07-26,props,auroch,4,shipped
 props/banner_blue,3.5,flat rectangle,claude 2026-07-26,props,Banner Blue,3,placeholder
 props/banner_green,3.5,flat rectangle,claude 2026-07-26,props,Banner Green,3,placeholder
-props/banner_red,3.5,flat rectangle,claude 2026-07-26,props,Banner Red,3,placeholder
+props/banner_red,3.5,flat rectangle,claude 2026-07-26,props,Banner Red,5,placeholder
 props/bench2,3.5,flat,claude 2026-07-26,props,Bench 2,3,placeholder
 props/bird,5,,claude 2026-07-26 (group),props,Bird,0,unreferenced
 props/boar,3.5,pink cartoon,claude 2026-07-26,props,Russet Boar,1,placeholder
-props/bone,7,small but readable horn-bone silhouette; original low score was too harsh,codex 2026-07-26 audit,props,Bone,1,shipped
-props/bones,7.5,authored crossed-bone cluster remains legible at the native 8px footprint,codex 2026-07-26 replacement,props,Bones,9,shipped
-props/boulder,7.5,authored granite planes and a strong low obstacle silhouette,codex 2026-07-26 replacement,props,Boulder,15,shipped
+props/bone,7,small but readable horn-bone silhouette; original low score was too harsh,codex 2026-07-26 audit,props,bone,1,shipped
+props/bones,7.5,authored crossed-bone cluster remains legible at the native 8px footprint,codex 2026-07-26 replacement,props,Bones,13,shipped
+props/boulder,7.5,authored granite planes and a strong low obstacle silhouette,codex 2026-07-26 replacement,props,Boulder,30,shipped
 props/boulder2,7.5,compact authored stone variant with readable highlight and shadow planes,codex 2026-07-26 replacement,props,Boulder 2,2,shipped
 props/bridge,5,,claude 2026-07-26 (group),props,Bridge,0,unreferenced
-props/bush,7.5,layered leaf clusters and a grounded branch base at native size,codex 2026-07-26 replacement,props,Bush,4,shipped
-props/bush2,7.5,distinct low teal shrub silhouette with an exposed twig,codex 2026-07-26 replacement,props,bush2,4,shipped
-props/bush3,7.5,compact broadleaf variant with a clear dark center,codex 2026-07-26 replacement,props,Bush 3,2,shipped
-props/bush_autumn,6.5,,claude 2026-07-26,props,Bush Autumn,1,shipped
+props/bush,7.5,layered leaf clusters and a grounded branch base at native size,codex 2026-07-26 replacement,props,Bush,5,shipped
+props/bush2,7.5,distinct low teal shrub silhouette with an exposed twig,codex 2026-07-26 replacement,props,bush2,1,shipped
+props/bush3,7.5,compact broadleaf variant with a clear dark center,codex 2026-07-26 replacement,props,Bush 3,8,shipped
+props/bush_autumn,6.5,,claude 2026-07-26,props,Bush Autumn,2,shipped
 props/butterfly,5,,claude 2026-07-26 (group),props,Butterfly,0,unreferenced
-props/cactus,4.5,,claude 2026-07-26,props,Cactus,1,shipped
+props/cactus,4.5,,claude 2026-07-26,props,Cactus,2,shipped
 props/cactus2,4.5,,claude 2026-07-26,props,Cactus 2,1,shipped
 props/camp_anvil,5,,claude 2026-07-26 (group),props,Camp Anvil,1,placeholder
 props/camp_bonfire,3.5,,claude 2026-07-26,props,Camp Bonfire,6,shipped
@@ -443,25 +481,26 @@ props/castle_banner,5.5,,claude 2026-07-26,props,Castle Banner,2,placeholder
 props/castle_bust,5.5,,claude 2026-07-26,props,Castle Bust,2,shipped
 props/castle_bust2,6.5,,claude 2026-07-26,props,Castle Bust 2,1,placeholder
 props/castle_sconce,5,,claude 2026-07-26,props,Castle Sconce,2,placeholder
-props/castle_statue,6.5,,claude 2026-07-26,props,Castle Statue,1,placeholder
+props/castle_statue,6.5,,claude 2026-07-26,props,Castle Statue,3,shipped
 props/castle_throne,4.5,,claude 2026-07-26,props,Castle Throne,2,placeholder
 props/cat,5,,claude 2026-07-26 (group),props,Barn Cat,1,placeholder
-props/cattail,5.5,,claude 2026-07-26,props,Cattail,2,shipped
-props/cattail2,5,,claude 2026-07-26 (group),props,Cattail 2,1,shipped
+props/cattail,5.5,,claude 2026-07-26,props,Cattail,8,shipped
+props/cattail2,5,,claude 2026-07-26 (group),props,cattail2,1,shipped
+props/cattail3,,,,props,cattail3,1,shipped
 props/chair,5,,claude 2026-07-26 (group),props,Chair,1,placeholder
 props/chicken,5,,claude 2026-07-26 (group),props,Copper Hen,1,placeholder
 props/clay_pot,3.5,,claude 2026-07-26,props,Clay Pot,5,placeholder
 props/clay_pot2,5,,claude 2026-07-26 (group),props,Clay Pot 2,2,placeholder
-props/coffin,7,,claude 2026-07-26,props,Coffin,2,shipped
+props/coffin,7,,claude 2026-07-26,props,Coffin,4,shipped
 props/coin,8,clean crown-stamped gold pickup; immediately readable at the native 8px footprint,codex 2026-07-26 replacement,props,Coin pickup,20,shipped
 props/cook_grill,4,,claude 2026-07-26,props,Cook Grill,2,placeholder
 props/cook_pan,5,,claude 2026-07-26 (group),props,Cook Pan,1,placeholder
 props/cottage_a,5,,claude 2026-07-26 (group),props,Cottage A,1,shipped
-props/cottage_a2,7,,claude 2026-07-26,props,cottage a2,2,shipped
+props/cottage_a2,7,,claude 2026-07-26,props,cottage a2,1,shipped
 props/cottage_b,5,,claude 2026-07-26 (group),props,Cottage B,1,shipped
-props/cottage_b2,7,,claude 2026-07-26,props,cottage b2,2,shipped
+props/cottage_b2,7,,claude 2026-07-26,props,cottage b2,3,shipped
 props/cow,5,,claude 2026-07-26 (group),props,Dapple Cow,1,placeholder
-props/crack,7.5,bold branching ground fissure reads cleanly at 8px,codex 2026-07-26 replacement,props,Crack,13,shipped
+props/crack,7.5,bold branching ground fissure reads cleanly at 8px,codex 2026-07-26 replacement,props,Crack,21,shipped
 props/crop_cabbage,7.5,layered muted cabbage head with a grounded soil silhouette,codex 2026-07-26 replacement,props,Crop Cabbage,2,shipped
 props/crop_carrot,7.5,recognizable carrot and leafy crown at gameplay scale,codex 2026-07-26 replacement,props,Crop Carrot,2,shipped
 props/crop_mid,7.5,coherent mature field-crop stalk with a clear seed head,codex 2026-07-26 replacement,props,Crop Mid,2,shipped
@@ -469,20 +508,19 @@ props/crop_sprout,7.5,simple but intentional two-leaf sprout grounded by soil,co
 props/crop_turnip,7.5,readable pale bulb and broad-leaf silhouette on a small expanded canvas,codex 2026-07-26 replacement,props,Crop Turnip,2,shipped
 props/crow,5,,claude 2026-07-26 (group),props,Crow,0,unreferenced
 props/crown,5,,claude 2026-07-26 (group),props,Crown,0,unreferenced
-props/crypt,5,,claude 2026-07-26 (group),props,Crypt,1,placeholder
-props/crystal,8,faceted violet-blue shard cluster with restrained cyan accents,codex 2026-07-26 replacement,props,Crystal,3,shipped
-props/crystal_cluster,7,,claude 2026-07-26,props,Crystal Cluster,2,shipped
-props/crystal_spire,5,,claude 2026-07-26 (group),props,Crystal Spire,1,shipped
-props/dead_shrub,5,,claude 2026-07-26,props,Dead Shrub,3,shipped
-props/deadtree,5,,claude 2026-07-26,props,Deadtree,3,shipped
-props/deadtree2,5,,claude 2026-07-26 (group),props,Deadtree 2,1,shipped
+props/crypt,5,,claude 2026-07-26 (group),props,Crypt,2,placeholder
+props/crystal_cluster,7,,claude 2026-07-26,props,Crystal Cluster,9,shipped
+props/crystal_spire,5,,claude 2026-07-26 (group),props,Crystal Spire,7,shipped
+props/dead_shrub,5,,claude 2026-07-26,props,Dead Shrub,4,shipped
+props/deadtree,5,,claude 2026-07-26,props,Deadtree,9,shipped
+props/deadtree2,5,,claude 2026-07-26 (group),props,deadtree2,1,shipped
+props/deadtree3,,,,props,deadtree3,1,shipped
 props/direwolf,5,,claude 2026-07-26 (group),props,Direwolf,0,unreferenced
 props/dog,5,,claude 2026-07-26 (group),props,Farm Hound,1,placeholder
-props/ember_smoke,3,all but invisible,claude 2026-07-26,props,Ember Smoke,3,placeholder
+props/ember_smoke,3,all but invisible,claude 2026-07-26,props,Ember Smoke,4,placeholder
 props/fence,7,clear timber-post and rail silhouette; original score understated its readability,codex 2026-07-26 audit,props,Fence,5,shipped
-props/flame,5,,claude 2026-07-26 (group),props,Flame,10,placeholder
-props/flower,7.5,"muted ivory bloom, gold center, stem, and leaves remain distinct at gameplay scale",codex 2026-07-26 replacement,props,Flower,10,shipped
-props/flower_pink,5,,claude 2026-07-26 (group),props,Flower Pink,1,shipped
+props/flame,5,,claude 2026-07-26 (group),props,Flame,12,placeholder
+props/flower,7.5,"muted ivory bloom, gold center, stem, and leaves remain distinct at gameplay scale",codex 2026-07-26 replacement,props,Flower,12,shipped
 props/flowerbed_pink,5,,claude 2026-07-26 (group),props,Flowerbed Pink,1,placeholder
 props/flowerbed_purple,5,,claude 2026-07-26 (group),props,Flowerbed Purple,1,placeholder
 props/flowerbed_red,5,,claude 2026-07-26 (group),props,Flowerbed Red,1,placeholder
@@ -498,32 +536,35 @@ props/food_onion,5,,claude 2026-07-26 (group),props,White Onion,1,placeholder
 props/food_sausage,5,,claude 2026-07-26 (group),props,Hunter's Link,1,placeholder
 props/food_skewer,5,,claude 2026-07-26 (group),props,Camp Skewer,1,placeholder
 props/food_steak,5,,claude 2026-07-26 (group),props,Marbled Cut,1,placeholder
-props/forge_brazier,5,,claude 2026-07-26 (group),props,Forge Brazier,1,shipped
-props/forge_cauldron,5,,claude 2026-07-26 (group),props,Forge Cauldron,2,shipped
-props/forge_hearth,6.5,,claude 2026-07-26,props,Forge Hearth,3,placeholder
-props/forge_statue,4.5,,claude 2026-07-26,props,Forge Statue,2,shipped
-props/fountain_flow,5,,claude 2026-07-26 (group),props,Fountain Flow,1,placeholder
+props/forge_brazier,5,,claude 2026-07-26 (group),props,Forge Brazier,2,shipped
+props/forge_cauldron,5,,claude 2026-07-26 (group),props,Forge Cauldron,3,shipped
+props/forge_hearth,6.5,,claude 2026-07-26,props,Forge Hearth,4,placeholder
+props/forge_statue,4.5,,claude 2026-07-26,props,Forge Statue,4,shipped
+props/fountain_flow,5,,claude 2026-07-26 (group),props,fountain flow,1,shipped
 props/frog,5,,claude 2026-07-26 (group),props,Pond Frog,1,placeholder
 props/frost_ice_lance,5,,claude 2026-07-26 (group),props,frost ice lance,1,shipped
+props/frost_reeds,,,,props,Frost Reeds,6,shipped
 props/garden_bench,5,,claude 2026-07-26 (group),props,Garden Bench,1,placeholder
-props/garden_fountain,6.5,,claude 2026-07-26,props,Garden Fountain,2,shipped
-props/garden_statue,4.5,,claude 2026-07-26,props,Garden Statue,2,shipped
+props/garden_fountain,6.5,,claude 2026-07-26,props,Garden Fountain,3,shipped
+props/garden_statue,4.5,,claude 2026-07-26,props,Garden Statue,6,shipped
 props/garden_urns,5,,claude 2026-07-26 (group),props,Garden Urns,1,placeholder
 props/gate,5,,claude 2026-07-26 (group),props,Gate,0,unreferenced
 props/gem,5,,claude 2026-07-26 (group),props,Gem,0,unreferenced
-props/geode,5,,claude 2026-07-26 (group),props,Geode,1,shipped
-props/grass,7,simple intentional grass tuft that reads cleanly in context,codex 2026-07-26 audit,props,Grass,9,shipped
-props/grass2,5,,claude 2026-07-26,props,grass2,4,shipped
-props/grass_autumn,5,,claude 2026-07-26 (group),props,Grass Autumn,1,shipped
-props/grass_frost,5,,claude 2026-07-26 (group),props,Grass Frost,1,shipped
-props/grave_angel,7.5,,claude 2026-07-26,props,Grave Angel,4,shipped
-props/grave_bones,7,,claude 2026-07-26,props,Grave Bones,2,shipped
-props/grave_crack,7.5,authored branching earth fissure with readable edge highlights,codex 2026-07-26 replacement,props,Grave Crack,2,shipped
+props/geode,5,,claude 2026-07-26 (group),props,Geode,6,shipped
+props/glow,,,,props,Glow,0,unreferenced
+props/grass,7,simple intentional grass tuft that reads cleanly in context,codex 2026-07-26 audit,props,Grass,16,shipped
+props/grass2,5,,claude 2026-07-26,props,grass2,1,shipped
+props/grass3,,,,props,grass3,1,shipped
+props/grass_autumn,5,,claude 2026-07-26 (group),props,Grass Autumn,5,shipped
+props/grass_frost,5,,claude 2026-07-26 (group),props,Grass Frost,7,shipped
+props/grave_angel,7.5,,claude 2026-07-26,props,Grave Angel,9,shipped
+props/grave_bones,7,,claude 2026-07-26,props,Grave Bones,5,shipped
+props/grave_crack,7.5,authored branching earth fissure with readable edge highlights,codex 2026-07-26 replacement,props,Grave Crack,5,shipped
 props/grave_cross,6.5,replaced 2026-07-17,claude 2026-07-26,props,Grave Cross,3,shipped
 props/grave_cross2,5,,claude 2026-07-26 (group),props,Grave Cross 2,1,shipped
-props/grave_deadtree,5,,claude 2026-07-26 (group),props,Grave Deadtree,1,shipped
-props/grave_mound,5,,claude 2026-07-26 (group),props,Grave Mound,1,shipped
-props/grave_statue,7,,claude 2026-07-26,props,Grave Statue,8,shipped
+props/grave_deadtree,5,,claude 2026-07-26 (group),props,Grave Deadtree,3,shipped
+props/grave_mound,5,,claude 2026-07-26 (group),props,Grave Mound,4,shipped
+props/grave_statue,7,,claude 2026-07-26,props,Grave Statue,11,shipped
 props/greatsword,5,,claude 2026-07-26 (group),props,Greatsword,0,unreferenced
 props/herb_bundle,5,,claude 2026-07-26 (group),props,Dried Herb Bundle,1,placeholder
 props/hideout_barrel,5,,claude 2026-07-26 (group),props,Hideout Barrel,1,placeholder
@@ -535,12 +576,12 @@ props/hideout_poster,2.5,flat tan rectangle,claude 2026-07-26,props,Hideout Post
 props/hideout_table,3.5,flat brown box,claude 2026-07-26,props,Hideout Table,4,placeholder
 props/horse,5,,claude 2026-07-26 (group),props,Bay Courser,1,placeholder
 props/hyena,5,,claude 2026-07-26 (group),props,Gravel Hyena,1,placeholder
-props/ice_cairn,5,,claude 2026-07-26 (group),props,Ice Cairn,1,shipped
-props/ice_sled,5,,claude 2026-07-26 (group),props,Ice Sled,1,shipped
+props/ice_cairn,5,,claude 2026-07-26 (group),props,Ice Cairn,4,shipped
+props/ice_sled,5,,claude 2026-07-26 (group),props,Ice Sled,2,shipped
 props/icebound,7,,claude 2026-07-26,props,icebound,4,shipped
 props/icon_weapon,5,,claude 2026-07-26 (group),props,Icon Weapon,0,unreferenced
 props/keep_arch,5,,claude 2026-07-26 (group),props,Keep Arch,1,shipped
-props/keep_brazier,6.5,,claude 2026-07-26,props,Keep Brazier,2,shipped
+props/keep_brazier,6.5,,claude 2026-07-26,props,Keep Brazier,11,shipped
 props/king,5,"reads 'fire knight', not king",claude 2026-07-26,props,King,0,unreferenced
 props/knight,5,,claude 2026-07-26 (group),props,Knight,0,unreferenced
 props/library_cabinet,4.5,"teal/orange, off-palette",claude 2026-07-26,props,Library Cabinet,2,shipped
@@ -550,10 +591,10 @@ props/library_rug,4,flat,claude 2026-07-26,props,Library Rug,2,placeholder
 props/library_shelf,4.5,,claude 2026-07-26,props,Library Shelf,2,placeholder
 props/library_shelf2,5,,claude 2026-07-26 (group),props,Library Shelf 2,1,placeholder
 props/lion,5,,claude 2026-07-26 (group),props,Dune Lion,1,placeholder
-props/log,7.5,bark texture and cut growth rings make the horizontal log immediately readable,codex 2026-07-26 replacement,props,Log,6,shipped
+props/log,7.5,bark texture and cut growth rings make the horizontal log immediately readable,codex 2026-07-26 replacement,props,Log,13,shipped
 props/log2,7.5,distinct diagonal broken-log silhouette with bark and splintered end,codex 2026-07-26 replacement,props,Log 2,2,shipped
-props/magma_chainrig,5,,claude 2026-07-26 (group),props,Magma Chainrig,1,shipped
-props/magma_furnace,5,,claude 2026-07-26 (group),props,Magma Furnace,1,shipped
+props/magma_chainrig,5,,claude 2026-07-26 (group),props,Magma Chainrig,5,shipped
+props/magma_furnace,5,,claude 2026-07-26 (group),props,Magma Furnace,3,shipped
 props/mat_bread,5,,claude 2026-07-26 (group),props,Traveler's Loaf,1,placeholder
 props/mat_coal,5,,claude 2026-07-26 (group),props,Forge Coal,1,placeholder
 props/mat_gem,5,,claude 2026-07-26 (group),props,Raw Teal Gem,1,placeholder
@@ -562,26 +603,28 @@ props/mat_plank,5,,claude 2026-07-26 (group),props,Milled Plank,1,placeholder
 props/merchant,5,"old batch, busiest sprite in the game (123 colors in 32px)",claude 2026-07-26,props,Merchant,0,unreferenced
 props/meteor_down,5,,claude 2026-07-26 (group),props,meteor down,1,shipped
 props/monkey,5,,claude 2026-07-26 (group),props,Rust Monkey,1,placeholder
-props/mushroom,4.5,bright salmon cartoon,claude 2026-07-26,props,Mushroom,7,shipped
-props/mushroom_blue,5,,claude 2026-07-26 (group),props,Mushroom Blue,1,shipped
-props/mushroom_purple,5.5,,claude 2026-07-26,props,Mushroom Purple,3,shipped
+props/mushroom,4.5,bright salmon cartoon,claude 2026-07-26,props,Mushroom,17,shipped
+props/mushroom2,,,,props,mushroom2,1,shipped
+props/mushroom3,,,,props,mushroom3,1,shipped
+props/mushroom_purple,5.5,,claude 2026-07-26,props,Mushroom Purple,7,shipped
 props/node_crystal,4.5,,claude 2026-07-26,props,Node Crystal,2,placeholder
 props/node_gold,5,,claude 2026-07-26 (group),props,Node Gold,1,placeholder
 props/node_herb,5,,claude 2026-07-26 (group),props,Node Herb,1,placeholder
 props/node_ore,3.5,,claude 2026-07-26,props,Node Ore,2,placeholder
 props/parrot,5,,claude 2026-07-26 (group),props,Scarlet Parrot,1,placeholder
-props/pebble,7.5,intentional three-stone cluster at the native 8px footprint,codex 2026-07-26 replacement,props,Pebble,24,shipped
+props/pebble,7.5,intentional three-stone cluster at the native 8px footprint,codex 2026-07-26 replacement,props,Pebble,44,shipped
 props/pig,5,,claude 2026-07-26 (group),props,Pink Sow,1,placeholder
-props/pillar,7.5,ruined masonry pillar with chipped silhouette and readable planes,codex 2026-07-26 replacement,props,Pillar,17,shipped
+props/pillar,7.5,ruined masonry pillar with chipped silhouette and readable planes,codex 2026-07-26 replacement,props,Pillar,14,placeholder
 props/potion,5,,claude 2026-07-26 (group),props,Potion,0,unreferenced
 props/racoon,5,,claude 2026-07-26 (group),props,Masked Thief,1,placeholder
-props/rock,7,clean cel rock — the standard the flat blobs should meet,claude 2026-07-26,props,Rock,19,shipped
-props/rock2,7.5,authored cool-stone variant with distinct highlight and shadow planes,codex 2026-07-26 replacement,props,Rock 2,7,shipped
+props/rock,7,clean cel rock — the standard the flat blobs should meet,claude 2026-07-26,props,Rock,26,shipped
+props/rock2,7.5,authored cool-stone variant with distinct highlight and shadow planes,codex 2026-07-26 replacement,props,Rock 2,9,shipped
 props/rock3,7.5,low-profile authored stone variant with a clean gameplay silhouette,codex 2026-07-26 replacement,props,Rock 3,2,shipped
-props/rock_ice,5,,claude 2026-07-26 (group),props,Rock Ice,1,shipped
-props/rock_pale,5,,claude 2026-07-26 (group),props,Rock Pale,1,shipped
-props/rock_volcanic,5,,claude 2026-07-26 (group),props,Rock Volcanic,1,shipped
-props/rubble,7.5,cohesive broken-masonry pile with differentiated stone and brick pieces,codex 2026-07-26 replacement,props,Rubble,7,shipped
+props/rock_ice,5,,claude 2026-07-26 (group),props,Rock Ice,4,shipped
+props/rock_pale,5,,claude 2026-07-26 (group),props,Rock Pale,2,shipped
+props/rock_volcanic,5,,claude 2026-07-26 (group),props,Rock Volcanic,11,shipped
+props/rubble,7.5,cohesive broken-masonry pile with differentiated stone and brick pieces,codex 2026-07-26 replacement,props,Rubble,13,shipped
+props/ruin_pillar,,,,props,Ruin Pillar,17,shipped
 props/rv_arm_amulet,5,,claude 2026-07-26 (group),props,Jade Amulet,1,placeholder
 props/rv_arm_axe,5,,claude 2026-07-26 (group),props,Iron Battleaxe,1,placeholder
 props/rv_arm_boots,5,,claude 2026-07-26 (group),props,Riding Boots,1,placeholder
@@ -700,17 +743,17 @@ props/rv_tool_bait,5,,claude 2026-07-26 (group),props,Bait Bucket,1,placeholder
 props/rv_tool_mortar,5,,claude 2026-07-26 (group),props,Mortar & Pestle,1,placeholder
 props/rv_tool_rod,5,,claude 2026-07-26 (group),props,Fishing Rod,1,placeholder
 props/rv_tool_scales,5,,claude 2026-07-26 (group),props,Merchant's Scales,1,placeholder
-props/sand_drift,5,,claude 2026-07-26 (group),props,Sand Drift,1,shipped
+props/sand_drift,5,,claude 2026-07-26 (group),props,Sand Drift,3,shipped
 props/sand_drift2,5,,claude 2026-07-26 (group),props,Sand Drift 2,1,shipped
-props/sandstone,5,,claude 2026-07-26 (group),props,Sandstone,1,shipped
-props/sandstone2,5,,claude 2026-07-26 (group),props,Sandstone 2,1,shipped
-props/sewer_flow,5,,claude 2026-07-26 (group),props,Sewer Flow,1,placeholder
+props/sandstone,5,,claude 2026-07-26 (group),props,Sandstone,4,shipped
+props/sandstone2,5,,claude 2026-07-26 (group),props,sandstone2,4,shipped
+props/sewer_flow,5,,claude 2026-07-26 (group),props,sewer flow,1,shipped
 props/sewer_lantern,5,,claude 2026-07-26 (group),props,Sewer Lantern,2,placeholder
 props/sewer_pipe,3,pink lines,claude 2026-07-26,props,Sewer Pipe,2,placeholder
 props/sewer_pipe2,3,pink lines,claude 2026-07-26,props,Sewer Pipe 2,2,placeholder
 props/signpost,4,,claude 2026-07-26,props,Signpost,3,shipped
-props/spore_shrine,5,,claude 2026-07-26 (group),props,Spore Shrine,1,shipped
-props/spore_vent,5,,claude 2026-07-26 (group),props,Spore Vent,1,shipped
+props/spore_shrine,5,,claude 2026-07-26 (group),props,Spore Shrine,5,shipped
+props/spore_vent,5,,claude 2026-07-26 (group),props,Spore Vent,7,shipped
 props/sprout,3,,claude 2026-07-26,props,Sprout,2,placeholder
 props/stalagmite,5,,claude 2026-07-26 (group),props,Stalagmite,1,shipped
 props/stall,5,,claude 2026-07-26 (group),props,Stall,1,shipped
@@ -726,47 +769,470 @@ props/station_furnace_t3,5,,claude 2026-07-26 (group),props,Station Furnace T 3,
 props/station_sawmill_t1,5,,claude 2026-07-26 (group),props,Station Sawmill T 1,1,placeholder
 props/station_sawmill_t2,5,,claude 2026-07-26 (group),props,Station Sawmill T 2,1,placeholder
 props/station_sawmill_t3,5,,claude 2026-07-26 (group),props,Station Sawmill T 3,1,placeholder
-props/storm_conductor,5,,claude 2026-07-26 (group),props,Storm Conductor,1,shipped
-props/storm_standing_stone,5,,claude 2026-07-26 (group),props,Storm Standing Stone,1,shipped
+props/storm_conductor,5,,claude 2026-07-26 (group),props,Storm Conductor,2,shipped
+props/storm_standing_stone,5,,claude 2026-07-26 (group),props,Storm Standing Stone,6,shipped
 props/stormwarden,5,retired 32px knight kept as a prop,claude 2026-07-26,props,stormwarden,4,shipped
-props/stump_snow,5,,claude 2026-07-26 (group),props,Stump Snow,1,shipped
-props/toadstool,5,,claude 2026-07-26,props,Toadstool,4,shipped
-props/toadstool2,5,,claude 2026-07-26,props,Toadstool 2,3,shipped
-props/tombstone,6.5,replaced 2026-07-17 with a clean headstone,claude 2026-07-26,props,Tombstone,3,shipped
-props/tombstone2,6.5,,claude 2026-07-26,props,Tombstone 2,2,shipped
-props/tombstone3,5,,claude 2026-07-26 (group),props,Tombstone 3,1,shipped
+props/stump_snow,5,,claude 2026-07-26 (group),props,Stump Snow,2,shipped
+props/toadstool,5,,claude 2026-07-26,props,Toadstool,2,shipped
+props/toadstool2,5,,claude 2026-07-26,props,toadstool2,4,shipped
+props/tombstone,6.5,replaced 2026-07-17 with a clean headstone,claude 2026-07-26,props,Tombstone,6,shipped
+props/tombstone2,6.5,,claude 2026-07-26,props,Tombstone 2,3,shipped
+props/tombstone3,5,,claude 2026-07-26 (group),props,Tombstone 3,4,shipped
 props/tool_hammer,5,,claude 2026-07-26 (group),props,Smith's Cross-Peen,1,placeholder
 props/tool_sawblade,5,,claude 2026-07-26 (group),props,Mill Blade,1,placeholder
-props/topiary,4,,claude 2026-07-26,props,Topiary,2,placeholder
+props/topiary,4,,claude 2026-07-26,props,Topiary,3,placeholder
 props/torch,5,,claude 2026-07-26 (group),props,Torch,0,unreferenced
 props/tree,5,,claude 2026-07-26 (group),props,Tree,0,unreferenced
-props/tree_autumn,7,,claude 2026-07-26,props,Tree Autumn,3,shipped
-props/tree_autumn2,5,,claude 2026-07-26 (group),props,Tree Autumn 2,1,shipped
-props/tree_autumn3,5,,claude 2026-07-26 (group),props,Tree Autumn 3,1,shipped
-props/tree_gnarled,6.5,,claude 2026-07-26,props,Tree Gnarled,3,shipped
-props/tree_green,6,,claude 2026-07-26,props,Tree Green,7,shipped
+props/tree_autumn,7,,claude 2026-07-26,props,Tree Autumn,6,shipped
+props/tree_autumn2,5,,claude 2026-07-26 (group),props,Tree Autumn 2,1,placeholder
+props/tree_autumn3,5,,claude 2026-07-26 (group),props,Tree Autumn 3,1,placeholder
+props/tree_gnarled,6.5,,claude 2026-07-26,props,Tree Gnarled,11,shipped
+props/tree_green,6,,claude 2026-07-26,props,Tree Green,11,shipped
 props/tree_green2,6.5,,claude 2026-07-26,props,Tree Green 2,2,shipped
-props/tree_green3,6.5,,claude 2026-07-26,props,Tree Green 3,2,shipped
-props/tree_green4,5,,claude 2026-07-26 (group),props,Tree Green 4,1,shipped
-props/tree_pine,6.5,,claude 2026-07-26,props,Tree Pine,2,shipped
-props/tree_snow,6,replaced 2026-07-17 with a clean frost pine,claude 2026-07-26,props,Tree Snow,2,shipped
-props/tree_snow2,5,,claude 2026-07-26 (group),props,Tree Snow 2,1,shipped
-props/tree_spore,7,,claude 2026-07-26,props,Tree Spore,2,shipped
-props/tree_spore2,5,,claude 2026-07-26 (group),props,Tree Spore 2,1,shipped
+props/tree_snow,6,replaced 2026-07-17 with a clean frost pine,claude 2026-07-26,props,Tree Snow,4,shipped
+props/tree_spore,7,,claude 2026-07-26,props,Tree Spore,6,shipped
 props/tree_stump,5.5,,claude 2026-07-26,props,Tree Stump,3,shipped
-props/tree_tall_red,5,,claude 2026-07-26 (group),props,Tree Tall Red,1,shipped
-props/tree_teal,6.5,,claude 2026-07-26,props,Tree Teal,2,shipped
-props/tree_teal2,6.5,,claude 2026-07-26,props,Tree Teal 2,2,shipped
-props/tree_winter,5,,claude 2026-07-26 (group),props,Tree Winter,1,shipped
-props/void_monolith,7,,claude 2026-07-26,props,Void Monolith,2,shipped
-props/void_obelisk,5,,claude 2026-07-26 (group),props,Void Obelisk,1,shipped
-props/void_rift,7.5,sharp authored void tear with a restrained magenta core; original score misread the silhouette,codex 2026-07-26 audit,props,Void Rift,2,shipped
-props/water_bucket,5,,claude 2026-07-26,props,Water Bucket,3,placeholder
-props/web,4,,claude 2026-07-26,props,Web,4,placeholder
+props/tree_teal,6.5,,claude 2026-07-26,props,Tree Teal,9,shipped
+props/tree_teal2,6.5,,claude 2026-07-26,props,Tree Teal 2,1,shipped
+props/tree_winter,5,,claude 2026-07-26 (group),props,Tree Winter,4,shipped
+props/u_absolute_crystal_of_the_final_barrier,,,,props,u absolute crystal of the final barrier,1,shipped
+props/u_absolution_the_last_toll,,,,props,u absolution the last toll,1,shipped
+props/u_afterstep_treads_of_the_returning_dead,,,,props,u afterstep treads of the returning dead,1,shipped
+props/u_apex_covenant_harness_of_the_first_hunt,,,,props,u apex covenant harness of the first hunt,1,shipped
+props/u_ascendant_slippers_that_never_landed,,,,props,u ascendant slippers that never landed,1,shipped
+props/u_ash_pennant,,,,props,u ash pennant,1,shipped
+props/u_ashen_law_ward_after_all_fires,,,,props,u ashen law ward after all fires,1,shipped
+props/u_ashrider,,,,props,u ashrider,1,shipped
+props/u_atlas_branch,,,,props,u atlas branch,1,shipped
+props/u_axiom_guard_circlet_beyond_the_firmament,,,,props,u axiom guard circlet beyond the firmament,1,shipped
+props/u_axiom_guard_handwraps_beyond_the_firmament,,,,props,u axiom guard handwraps beyond the firmament,1,shipped
+props/u_axiom_guard_robe_of_nine_locks,,,,props,u axiom guard robe of nine locks,1,shipped
+props/u_axiom_guard_underleggings_beyond_the_firmament,,,,props,u axiom guard underleggings beyond the firmament,1,shipped
+props/u_axiom_scepter_of_the_broken_law,,,,props,u axiom scepter of the broken law,1,shipped
+props/u_bastion_shoes,,,,props,u bastion shoes,1,shipped
+props/u_bastions_tooth,,,,props,u bastions tooth,1,shipped
+props/u_bell_of_censure,,,,props,u bell of censure,1,shipped
+props/u_black_clause_chausses,,,,props,u black clause chausses,1,shipped
+props/u_black_clause_claws,,,,props,u black clause claws,1,shipped
+props/u_black_clause_edge_of_the_final_bargain,,,,props,u black clause edge of the final bargain,1,shipped
+props/u_black_clause_hood,,,,props,u black clause hood,1,shipped
+props/u_black_equation_robe,,,,props,u black equation robe,1,shipped
+props/u_black_oracle,,,,props,u black oracle,1,shipped
+props/u_blackshaft_token,,,,props,u blackshaft token,1,shipped
+props/u_blue_oath_cuirass,,,,props,u blue oath cuirass,1,shipped
+props/u_bone_whisper_fetish_of_the_unremembered,,,,props,u bone whisper fetish of the unremembered,1,shipped
+props/u_bound_witness,,,,props,u bound witness,1,shipped
+props/u_breath_of_the_high_wind,,,,props,u breath of the high wind,1,shipped
+props/u_breathless_rod_of_the_empty_sky,,,,props,u breathless rod of the empty sky,1,shipped
+props/u_breathless_seal,,,,props,u breathless seal,1,shipped
+props/u_briar_covenant,,,,props,u briar covenant,1,shipped
+props/u_broken_kings_seal,,,,props,u broken kings seal,1,shipped
+props/u_broken_law_vestment,,,,props,u broken law vestment,1,shipped
+props/u_cairnseed_ward,,,,props,u cairnseed ward,1,shipped
+props/u_catastrophe_script,,,,props,u catastrophe script,1,shipped
+props/u_censure_gauntlets,,,,props,u censure gauntlets,1,shipped
+props/u_censure_greathelm,,,,props,u censure greathelm,1,shipped
+props/u_censure_legguards,,,,props,u censure legguards,1,shipped
+props/u_chainwake,,,,props,u chainwake,1,shipped
+props/u_chapel_knell,,,,props,u chapel knell,1,shipped
+props/u_cinder_seal,,,,props,u cinder seal,1,shipped
+props/u_circlewalker_sandals,,,,props,u circlewalker sandals,1,shipped
+props/u_citadel_seed_heart_of_the_unbroken,,,,props,u citadel seed heart of the unbroken,1,shipped
+props/u_closed_door_cowl_between_heartbeats,,,,props,u closed door cowl between heartbeats,1,shipped
+props/u_closed_door_grips_between_heartbeats,,,,props,u closed door grips between heartbeats,1,shipped
+props/u_closed_door_wraps_between_heartbeats,,,,props,u closed door wraps between heartbeats,1,shipped
+props/u_closed_form_sandals_of_the_perfect_rune,,,,props,u closed form sandals of the perfect rune,1,shipped
+props/u_cloudkiss_slippers,,,,props,u cloudkiss slippers,1,shipped
+props/u_comet_heel,,,,props,u comet heel,1,shipped
+props/u_comet_sash,,,,props,u comet sash,1,shipped
+props/u_comet_splinter,,,,props,u comet splinter,1,shipped
+props/u_comets_eye,,,,props,u comets eye,1,shipped
+props/u_cometweave_circlet,,,,props,u cometweave circlet,1,shipped
+props/u_cometweave_handwraps,,,,props,u cometweave handwraps,1,shipped
+props/u_cometweave_underleggings,,,,props,u cometweave underleggings,1,shipped
+props/u_covenant_crownplate,,,,props,u covenant crownplate,1,shipped
+props/u_crownfall_the_kingdoms_end,,,,props,u crownfall the kingdoms end,2,shipped
+props/u_crownspike_the_last_decree,,,,props,u crownspike the last decree,1,shipped
+props/u_dawn_coin,,,,props,u dawn coin,1,shipped
+props/u_dawnfall_hammer_of_the_final_oath,,,,props,u dawnfall hammer of the final oath,2,shipped
+props/u_dawnless_watch_boots_that_never_slept,,,,props,u dawnless watch boots that never slept,1,shipped
+props/u_dawnstone_gauntlets,,,,props,u dawnstone gauntlets,1,shipped
+props/u_dawnstone_greathelm,,,,props,u dawnstone greathelm,1,shipped
+props/u_dawnstone_legguards,,,,props,u dawnstone legguards,1,shipped
+props/u_dead_road_boots_of_returning_kings,,,,props,u dead road boots of returning kings,1,shipped
+props/u_deadstill_boots,,,,props,u deadstill boots,1,shipped
+props/u_debtcollector,,,,props,u debtcollector,1,shipped
+props/u_dustbefore_boots_of_the_first_charge,,,,props,u dustbefore boots of the first charge,1,shipped
+props/u_eclipses_hem_cloak_of_no_witness,,,,props,u eclipses hem cloak of no witness,1,shipped
+props/u_elderwall_ward_of_the_walking_wood,,,,props,u elderwall ward of the walking wood,1,shipped
+props/u_empty_witness_cowl_between_heartbeats,,,,props,u empty witness cowl between heartbeats,1,shipped
+props/u_empty_witness_grips_between_heartbeats,,,,props,u empty witness grips between heartbeats,1,shipped
+props/u_empty_witness_wraps_between_heartbeats,,,,props,u empty witness wraps between heartbeats,1,shipped
+props/u_end_of_night,,,,props,u end of night,1,shipped
+props/u_endless_shade_cord_around_the_moon,,,,props,u endless shade cord around the moon,1,shipped
+props/u_equation_robe,,,,props,u equation robe,1,shipped
+props/u_event_horizon_vestment_of_no_return,,,,props,u event horizon vestment of no return,1,shipped
+props/u_eventide_robe_of_the_last_constellation,,,,props,u eventide robe of the last constellation,1,shipped
+props/u_ever_oath_feet_of_the_faithful,,,,props,u ever oath feet of the faithful,1,shipped
+props/u_everwild_heart_of_the_first_grove,,,,props,u everwild heart of the first grove,1,shipped
+props/u_eye_of_the_tempest_jerkin_of_still_air,,,,props,u eye of the tempest jerkin of still air,1,shipped
+props/u_far_witness,,,,props,u far witness,1,shipped
+props/u_faultscribe_robe,,,,props,u faultscribe robe,1,shipped
+props/u_faultstone_circlet,,,,props,u faultstone circlet,1,shipped
+props/u_faultstone_handwraps,,,,props,u faultstone handwraps,1,shipped
+props/u_faultstone_underleggings,,,,props,u faultstone underleggings,1,shipped
+props/u_faultwalker,,,,props,u faultwalker,1,shipped
+props/u_fervor_steps_of_unending_charge,,,,props,u fervor steps of unending charge,1,shipped
+props/u_final_censure_gauntlets_of_the_final_oath,,,,props,u final censure gauntlets of the final oath,1,shipped
+props/u_final_censure_greathelm_of_the_final_oath,,,,props,u final censure greathelm of the final oath,1,shipped
+props/u_final_censure_legguards_of_the_final_oath,,,,props,u final censure legguards of the final oath,1,shipped
+props/u_final_curse_treads,,,,props,u final curse treads,1,shipped
+props/u_final_mile_boots_beyond_the_shrine,,,,props,u final mile boots beyond the shrine,1,shipped
+props/u_final_name_mark_of_the_inevitable,,,,props,u final name mark of the inevitable,1,shipped
+props/u_firmament_the_heaven_bearing_staff,,,,props,u firmament the heaven bearing staff,2,shipped
+props/u_first_arrow_mark_of_the_empty_sky,,,,props,u first arrow mark of the empty sky,1,shipped
+props/u_first_beast_bracers_of_the_last_gale,,,,props,u first beast bracers of the last gale,1,shipped
+props/u_first_beast_hood_of_the_last_gale,,,,props,u first beast hood of the last gale,1,shipped
+props/u_first_beast_leggings_of_the_last_gale,,,,props,u first beast leggings of the last gale,1,shipped
+props/u_first_bloom_pendant_before_winter,,,,props,u first bloom pendant before winter,1,shipped
+props/u_first_dawn_gauntlets_of_the_final_oath,,,,props,u first dawn gauntlets of the final oath,1,shipped
+props/u_first_dawn_greathelm_of_the_final_oath,,,,props,u first dawn greathelm of the final oath,1,shipped
+props/u_first_dawn_legguards_of_the_final_oath,,,,props,u first dawn legguards of the final oath,1,shipped
+props/u_first_feint,,,,props,u first feint,1,shipped
+props/u_first_light_edge_of_the_vigil,,,,props,u first light edge of the vigil,1,shipped
+props/u_first_stars_tooth,,,,props,u first stars tooth,1,shipped
+props/u_first_to_answer_cord_of_immediate_oath,,,,props,u first to answer cord of immediate oath,1,shipped
+props/u_fleet_iron,,,,props,u fleet iron,1,shipped
+props/u_foxfire_string,,,,props,u foxfire string,1,shipped
+props/u_gale_script,,,,props,u gale script,1,shipped
+props/u_gale_sewn_jack,,,,props,u gale sewn jack,1,shipped
+props/u_gapfinders_mark,,,,props,u gapfinders mark,1,shipped
+props/u_gate_shrine_armor,,,,props,u gate shrine armor,1,shipped
+props/u_gatebrow_gauntlets,,,,props,u gatebrow gauntlets,1,shipped
+props/u_gatebrow_helm,,,,props,u gatebrow helm,1,shipped
+props/u_gatebrow_legplates,,,,props,u gatebrow legplates,1,shipped
+props/u_gateheart,,,,props,u gateheart,1,shipped
+props/u_glassfang_treads,,,,props,u glassfang treads,1,shipped
+props/u_gravebone_chausses,,,,props,u gravebone chausses,1,shipped
+props/u_gravebone_claws,,,,props,u gravebone claws,1,shipped
+props/u_gravebone_hood,,,,props,u gravebone hood,1,shipped
+props/u_gravesong,,,,props,u gravesong,1,shipped
+props/u_green_ruin_root_of_the_first_wild,,,,props,u green ruin root of the first wild,1,shipped
+props/u_green_secret,,,,props,u green secret,1,shipped
+props/u_green_silence_shroud_of_the_hollow_grove,,,,props,u green silence shroud of the hollow grove,1,shipped
+props/u_greenstride,,,,props,u greenstride,1,shipped
+props/u_greenwood_ghost_hide_of_the_unseen_trail,,,,props,u greenwood ghost hide of the unseen trail,1,shipped
+props/u_groundlock,,,,props,u groundlock,1,shipped
+props/u_groundsplit_cleats_of_the_falling_star,,,,props,u groundsplit cleats of the falling star,1,shipped
+props/u_hartshadow_leathers,,,,props,u hartshadow leathers,1,shipped
+props/u_headsmans_mercy,,,,props,u headsmans mercy,1,shipped
+props/u_hexplate_circlet,,,,props,u hexplate circlet,1,shipped
+props/u_hexplate_handwraps,,,,props,u hexplate handwraps,1,shipped
+props/u_hexplate_underleggings,,,,props,u hexplate underleggings,1,shipped
+props/u_hexwalker_soles,,,,props,u hexwalker soles,1,shipped
+props/u_hexwall_cassock,,,,props,u hexwall cassock,1,shipped
+props/u_high_hunt_prowlers_above_the_moon,,,,props,u high hunt prowlers above the moon,1,shipped
+props/u_hollow_finger,,,,props,u hollow finger,1,shipped
+props/u_hollow_step,,,,props,u hollow step,1,shipped
+props/u_holy_city_bulwark_of_the_walking_cathedral,,,,props,u holy city bulwark of the walking cathedral,1,shipped
+props/u_horizonless_boots_that_outran_the_gale,,,,props,u horizonless boots that outran the gale,1,shipped
+props/u_horned_moon_totem_of_the_old_hunt,,,,props,u horned moon totem of the old hunt,1,shipped
+props/u_hornsong,,,,props,u hornsong,1,shipped
+props/u_house_of_light_reliquary_without_doors,,,,props,u house of light reliquary without doors,1,shipped
+props/u_hushbone,,,,props,u hushbone,1,shipped
+props/u_hushshade_chausses,,,,props,u hushshade chausses,1,shipped
+props/u_hushshade_claws,,,,props,u hushshade claws,1,shipped
+props/u_hushshade_hood,,,,props,u hushshade hood,1,shipped
+props/u_hushveil_cowl,,,,props,u hushveil cowl,1,shipped
+props/u_hushveil_grips,,,,props,u hushveil grips,1,shipped
+props/u_hushveil_wraps,,,,props,u hushveil wraps,1,shipped
+props/u_ink_of_teeth,,,,props,u ink of teeth,1,shipped
+props/u_iron_promise,,,,props,u iron promise,1,shipped
+props/u_ironroot_sabatons,,,,props,u ironroot sabatons,1,shipped
+props/u_ironwood_witness_bracers_of_the_last_gale,,,,props,u ironwood witness bracers of the last gale,1,shipped
+props/u_ironwood_witness_hood_of_the_last_gale,,,,props,u ironwood witness hood of the last gale,1,shipped
+props/u_ironwood_witness_leggings_of_the_last_gale,,,,props,u ironwood witness leggings of the last gale,1,shipped
+props/u_kestrel_steps,,,,props,u kestrel steps,1,shipped
+props/u_knife_shadow_cloak,,,,props,u knife shadow cloak,1,shipped
+props/u_knotted_debt,,,,props,u knotted debt,1,shipped
+props/u_lantern_for_none,,,,props,u lantern for none,1,shipped
+props/u_last_dose_boots_of_the_perfect_poison,,,,props,u last dose boots of the perfect poison,1,shipped
+props/u_last_heart_cage_that_beats_in_darkness,,,,props,u last heart cage that beats in darkness,1,shipped
+props/u_last_hunt_bracers_of_the_last_gale,,,,props,u last hunt bracers of the last gale,1,shipped
+props/u_last_hunt_hood_of_the_last_gale,,,,props,u last hunt hood of the last gale,1,shipped
+props/u_last_hunt_leggings_of_the_last_gale,,,,props,u last hunt leggings of the last gale,1,shipped
+props/u_last_measure_seal_of_perfect_justice,,,,props,u last measure seal of perfect justice,1,shipped
+props/u_last_measure_token_of_the_perfect_cut,,,,props,u last measure token of the perfect cut,1,shipped
+props/u_last_pulse_chausses_beneath_all_names,,,,props,u last pulse chausses beneath all names,1,shipped
+props/u_last_pulse_claws_beneath_all_names,,,,props,u last pulse claws beneath all names,1,shipped
+props/u_last_pulse_hood_beneath_all_names,,,,props,u last pulse hood beneath all names,1,shipped
+props/u_last_pulse_vestment_of_the_final_debt,,,,props,u last pulse vestment of the final debt,1,shipped
+props/u_last_rampart_armor_that_would_not_fall,,,,props,u last rampart armor that would not fall,1,shipped
+props/u_last_shadow_cowl_between_heartbeats,,,,props,u last shadow cowl between heartbeats,1,shipped
+props/u_last_shadow_grips_between_heartbeats,,,,props,u last shadow grips between heartbeats,1,shipped
+props/u_last_shadow_wrap_of_the_absent_hand,,,,props,u last shadow wrap of the absent hand,1,shipped
+props/u_last_shadow_wraps_between_heartbeats,,,,props,u last shadow wraps between heartbeats,1,shipped
+props/u_last_templar_gauntlets_of_the_final_oath,,,,props,u last templar gauntlets of the final oath,1,shipped
+props/u_last_templar_greathelm_of_the_final_oath,,,,props,u last templar greathelm of the final oath,1,shipped
+props/u_last_templar_legguards_of_the_final_oath,,,,props,u last templar legguards of the final oath,1,shipped
+props/u_last_trail_boots_at_the_worlds_edge,,,,props,u last trail boots at the worlds edge,1,shipped
+props/u_marchbreaker,,,,props,u marchbreaker,1,shipped
+props/u_martyrfire_harness,,,,props,u martyrfire harness,1,shipped
+props/u_mercy_in_measure,,,,props,u mercy in measure,1,shipped
+props/u_mirror_ward,,,,props,u mirror ward,1,shipped
+props/u_moonclaw_pelt,,,,props,u moonclaw pelt,1,shipped
+props/u_moonturn_bow_of_returning_night,,,,props,u moonturn bow of returning night,1,shipped
+props/u_mothknife,,,,props,u mothknife,1,shipped
+props/u_mothshade_robe,,,,props,u mothshade robe,1,shipped
+props/u_mothsilk_cowl,,,,props,u mothsilk cowl,1,shipped
+props/u_mothsilk_grips,,,,props,u mothsilk grips,1,shipped
+props/u_mothsilk_wraps,,,,props,u mothsilk wraps,1,shipped
+props/u_mothstep,,,,props,u mothstep,1,shipped
+props/u_mountainheart_gauntlets,,,,props,u mountainheart gauntlets,1,shipped
+props/u_mountainheart_helm,,,,props,u mountainheart helm,1,shipped
+props/u_mountainheart_legplates,,,,props,u mountainheart legplates,1,shipped
+props/u_mountains_burden,,,,props,u mountains burden,1,shipped
+props/u_nameless_god_idol_beneath_the_throne,,,,props,u nameless god idol beneath the throne,1,shipped
+props/u_needleheel,,,,props,u needleheel,1,shipped
+props/u_never_broken_cord_of_the_first_betrayal,,,,props,u never broken cord of the first betrayal,1,shipped
+props/u_never_forsworn_seal_that_binds_the_dawn,,,,props,u never forsworn seal that binds the dawn,1,shipped
+props/u_night_knot,,,,props,u night knot,1,shipped
+props/u_nightwatch_steps,,,,props,u nightwatch steps,1,shipped
+props/u_nine_hex_boots,,,,props,u nine hex boots,1,shipped
+props/u_nine_seal_mantle,,,,props,u nine seal mantle,1,shipped
+props/u_ninth_star_circlet_beyond_the_firmament,,,,props,u ninth star circlet beyond the firmament,1,shipped
+props/u_ninth_star_handwraps_beyond_the_firmament,,,,props,u ninth star handwraps beyond the firmament,1,shipped
+props/u_ninth_star_underleggings_beyond_the_firmament,,,,props,u ninth star underleggings beyond the firmament,1,shipped
+props/u_no_entry_shoes_of_the_uncrossed_line,,,,props,u no entry shoes of the uncrossed line,1,shipped
+props/u_no_footfall_shoes_of_the_empty_room,,,,props,u no footfall shoes of the empty room,1,shipped
+props/u_no_horizon_hands_of_the_crownless_host,,,,props,u no horizon hands of the crownless host,1,shipped
+props/u_no_horizon_helm_of_the_crownless_host,,,,props,u no horizon helm of the crownless host,1,shipped
+props/u_no_horizon_legplates_of_the_crownless_host,,,,props,u no horizon legplates of the crownless host,1,shipped
+props/u_no_release_boots_of_the_bound_dead,,,,props,u no release boots of the bound dead,1,shipped
+props/u_no_retreat_steps_of_the_last_line,,,,props,u no retreat steps of the last line,1,shipped
+props/u_noonday_lance_of_the_unshadowed,,,,props,u noonday lance of the unshadowed,1,shipped
+props/u_noonheart_armor_of_first_light,,,,props,u noonheart armor of first light,1,shipped
+props/u_noonwalker_greaves,,,,props,u noonwalker greaves,1,shipped
+props/u_null_crown_plate_of_the_silent_siege,,,,props,u null crown plate of the silent siege,1,shipped
+props/u_nullsilk_chausses,,,,props,u nullsilk chausses,1,shipped
+props/u_nullsilk_claws,,,,props,u nullsilk claws,1,shipped
+props/u_nullsilk_hood,,,,props,u nullsilk hood,1,shipped
+props/u_nullward_hands_of_the_crownless_host,,,,props,u nullward hands of the crownless host,1,shipped
+props/u_nullward_helm_of_the_crownless_host,,,,props,u nullward helm of the crownless host,1,shipped
+props/u_nullward_legplates_of_the_crownless_host,,,,props,u nullward legplates of the crownless host,1,shipped
+props/u_oathiron_gauntlets,,,,props,u oathiron gauntlets,1,shipped
+props/u_oathiron_greathelm,,,,props,u oathiron greathelm,1,shipped
+props/u_oathiron_legguards,,,,props,u oathiron legguards,1,shipped
+props/u_oblivion_veil_chausses_beneath_all_names,,,,props,u oblivion veil chausses beneath all names,1,shipped
+props/u_oblivion_veil_claws_beneath_all_names,,,,props,u oblivion veil claws beneath all names,1,shipped
+props/u_oblivion_veil_hood_beneath_all_names,,,,props,u oblivion veil hood beneath all names,1,shipped
+props/u_oldhide_bracers,,,,props,u oldhide bracers,1,shipped
+props/u_oldhide_hood,,,,props,u oldhide hood,1,shipped
+props/u_oldhide_leggings,,,,props,u oldhide leggings,1,shipped
+props/u_orbitless_steps_between_stars,,,,props,u orbitless steps between stars,1,shipped
+props/u_ossuary_king_chausses_beneath_all_names,,,,props,u ossuary king chausses beneath all names,1,shipped
+props/u_ossuary_king_claws_beneath_all_names,,,,props,u ossuary king claws beneath all names,1,shipped
+props/u_ossuary_king_hood_beneath_all_names,,,,props,u ossuary king hood beneath all names,1,shipped
+props/u_ossuary_king_mail_of_the_first_grave,,,,props,u ossuary king mail of the first grave,1,shipped
+props/u_pale_bone_cowl,,,,props,u pale bone cowl,1,shipped
+props/u_pale_bone_grips,,,,props,u pale bone grips,1,shipped
+props/u_pale_bone_wraps,,,,props,u pale bone wraps,1,shipped
+props/u_pale_covenant,,,,props,u pale covenant,1,shipped
+props/u_pale_flight_blade_between_heartbeats,,,,props,u pale flight blade between heartbeats,2,shipped
+props/u_pale_guest_light_that_knows_the_dead,,,,props,u pale guest light that knows the dead,1,shipped
+props/u_pale_heel,,,,props,u pale heel,1,shipped
+props/u_pale_march,,,,props,u pale march,1,shipped
+props/u_pale_web_cloak_between_heartbeats,,,,props,u pale web cloak between heartbeats,1,shipped
+props/u_pale_web_cowl_between_heartbeats,,,,props,u pale web cowl between heartbeats,1,shipped
+props/u_pale_web_grips_between_heartbeats,,,,props,u pale web grips between heartbeats,1,shipped
+props/u_pale_web_wraps_between_heartbeats,,,,props,u pale web wraps between heartbeats,1,shipped
+props/u_parryshade,,,,props,u parryshade,1,shipped
+props/u_pilgrims_burden,,,,props,u pilgrims burden,1,shipped
+props/u_queens_kiss_vial_of_the_last_breath,,,,props,u queens kiss vial of the last breath,1,shipped
+props/u_quickmarch,,,,props,u quickmarch,1,shipped
+props/u_quickweather,,,,props,u quickweather,1,shipped
+props/u_quiet_anvil_wraps,,,,props,u quiet anvil wraps,1,shipped
+props/u_quiet_ground_greaves_of_the_unhexed,,,,props,u quiet ground greaves of the unhexed,1,shipped
+props/u_quiet_passenger,,,,props,u quiet passenger,1,shipped
+props/u_quietus_the_kings_final_thought,,,,props,u quietus the kings final thought,1,shipped
+props/u_rainwall_brigandine_of_the_last_volley,,,,props,u rainwall brigandine of the last volley,1,shipped
+props/u_red_antler_gauntlets,,,,props,u red antler gauntlets,1,shipped
+props/u_red_antler_helm,,,,props,u red antler helm,1,shipped
+props/u_red_antler_legplates,,,,props,u red antler legplates,1,shipped
+props/u_red_arithmetic,,,,props,u red arithmetic,1,shipped
+props/u_red_contract,,,,props,u red contract,1,shipped
+props/u_red_doctrine,,,,props,u red doctrine,1,shipped
+props/u_red_fold,,,,props,u red fold,1,shipped
+props/u_red_fold_cowl,,,,props,u red fold cowl,1,shipped
+props/u_red_fold_grips,,,,props,u red fold grips,1,shipped
+props/u_red_fold_wraps,,,,props,u red fold wraps,1,shipped
+props/u_red_haste_knot,,,,props,u red haste knot,1,shipped
+props/u_red_horizon,,,,props,u red horizon,1,shipped
+props/u_red_maw_harness,,,,props,u red maw harness,1,shipped
+props/u_red_quarry_bracers,,,,props,u red quarry bracers,1,shipped
+props/u_red_quarry_hood,,,,props,u red quarry hood,1,shipped
+props/u_red_quarry_leggings,,,,props,u red quarry leggings,1,shipped
+props/u_red_reliquary_staff_of_the_last_pulse,,,,props,u red reliquary staff of the last pulse,1,shipped
+props/u_red_spurs,,,,props,u red spurs,1,shipped
+props/u_red_witness,,,,props,u red witness,1,shipped
+props/u_redspur_cleats,,,,props,u redspur cleats,1,shipped
+props/u_returning_dead_cowl_between_heartbeats,,,,props,u returning dead cowl between heartbeats,1,shipped
+props/u_returning_dead_grips_between_heartbeats,,,,props,u returning dead grips between heartbeats,1,shipped
+props/u_returning_dead_wraps_between_heartbeats,,,,props,u returning dead wraps between heartbeats,1,shipped
+props/u_rivetleaf_bracers,,,,props,u rivetleaf bracers,1,shipped
+props/u_rivetleaf_hood,,,,props,u rivetleaf hood,1,shipped
+props/u_rivetleaf_leggings,,,,props,u rivetleaf leggings,1,shipped
+props/u_roadworn_promise,,,,props,u roadworn promise,1,shipped
+props/u_rose_chapel_plate,,,,props,u rose chapel plate,1,shipped
+props/u_ruins_testament_chausses_beneath_all_names,,,,props,u ruins testament chausses beneath all names,1,shipped
+props/u_ruins_testament_claws_beneath_all_names,,,,props,u ruins testament claws beneath all names,1,shipped
+props/u_ruins_testament_hood_beneath_all_names,,,,props,u ruins testament hood beneath all names,1,shipped
+props/u_safe_passage_boots_beyond_the_curse,,,,props,u safe passage boots beyond the curse,1,shipped
+props/u_saintglass_gauntlets,,,,props,u saintglass gauntlets,1,shipped
+props/u_saintglass_greathelm,,,,props,u saintglass greathelm,1,shipped
+props/u_saintglass_legguards,,,,props,u saintglass legguards,1,shipped
+props/u_saints_window,,,,props,u saints window,1,shipped
+props/u_sealhand_cowl,,,,props,u sealhand cowl,1,shipped
+props/u_sealhand_grips,,,,props,u sealhand grips,1,shipped
+props/u_sealhand_wraps,,,,props,u sealhand wraps,1,shipped
+props/u_shadow_without_owner_chausses_beneath_all_names,,,,props,u shadow without owner chausses beneath all names,1,shipped
+props/u_shadow_without_owner_claws_beneath_all_names,,,,props,u shadow without owner claws beneath all names,1,shipped
+props/u_shadow_without_owner_hood_beneath_all_names,,,,props,u shadow without owner hood beneath all names,1,shipped
+props/u_siegebough,,,,props,u siegebough,1,shipped
+props/u_silkneedle,,,,props,u silkneedle,1,shipped
+props/u_singularity_orb_of_the_unsolved,,,,props,u singularity orb of the unsolved,1,shipped
+props/u_skyline_the_arrow_before_dawn,,,,props,u skyline the arrow before dawn,1,shipped
+props/u_skyquill_circlet,,,,props,u skyquill circlet,1,shipped
+props/u_skyquill_handwraps,,,,props,u skyquill handwraps,1,shipped
+props/u_skyquill_robe,,,,props,u skyquill robe,1,shipped
+props/u_skyquill_underleggings,,,,props,u skyquill underleggings,1,shipped
+props/u_solarch_greaves,,,,props,u solarch greaves,1,shipped
+props/u_soulstar_fetish_of_the_last_breath,,,,props,u soulstar fetish of the last breath,1,shipped
+props/u_spellbreak_march,,,,props,u spellbreak march,1,shipped
+props/u_spellscar_cuirass,,,,props,u spellscar cuirass,1,shipped
+props/u_spellscar_gauntlets,,,,props,u spellscar gauntlets,1,shipped
+props/u_spellscar_helm,,,,props,u spellscar helm,1,shipped
+props/u_spellscar_legplates,,,,props,u spellscar legplates,1,shipped
+props/u_spring_axiom,,,,props,u spring axiom,1,shipped
+props/u_springcore_idol,,,,props,u springcore idol,1,shipped
+props/u_springwake,,,,props,u springwake,1,shipped
+props/u_stag_eye_totem,,,,props,u stag eye totem,1,shipped
+props/u_standard_of_the_crownless_host,,,,props,u standard of the crownless host,1,shipped
+props/u_stillpoint_boots_beneath_the_world,,,,props,u stillpoint boots beneath the world,1,shipped
+props/u_stonefather_hands_of_the_crownless_host,,,,props,u stonefather hands of the crownless host,1,shipped
+props/u_stonefather_helm_of_the_crownless_host,,,,props,u stonefather helm of the crownless host,1,shipped
+props/u_stonefather_legplates_of_the_crownless_host,,,,props,u stonefather legplates of the crownless host,1,shipped
+props/u_stones_refusal,,,,props,u stones refusal,1,shipped
+props/u_stormneedle_bracers,,,,props,u stormneedle bracers,1,shipped
+props/u_stormneedle_hood,,,,props,u stormneedle hood,1,shipped
+props/u_stormneedle_leggings,,,,props,u stormneedle leggings,1,shipped
+props/u_stormpinion,,,,props,u stormpinion,1,shipped
+props/u_swiftvow_gauntlets,,,,props,u swiftvow gauntlets,1,shipped
+props/u_swiftvow_greathelm,,,,props,u swiftvow greathelm,1,shipped
+props/u_swiftvow_legguards,,,,props,u swiftvow legguards,1,shipped
+props/u_tempest_crown_bracers_of_the_last_gale,,,,props,u tempest crown bracers of the last gale,1,shipped
+props/u_tempest_crown_hood_of_the_last_gale,,,,props,u tempest crown hood of the last gale,1,shipped
+props/u_tempest_crown_leggings_of_the_last_gale,,,,props,u tempest crown leggings of the last gale,1,shipped
+props/u_tempest_yew_bow_of_the_last_gale,,,,props,u tempest yew bow of the last gale,2,shipped
+props/u_the_armor_that_bites_back,,,,props,u the armor that bites back,1,shipped
+props/u_the_bastions_answer,,,,props,u the bastions answer,1,shipped
+props/u_the_book_that_remembers_you,,,,props,u the book that remembers you,2,shipped
+props/u_the_cover_between_worlds,,,,props,u the cover between worlds,1,shipped
+props/u_the_gate_that_walks,,,,props,u the gate that walks,1,shipped
+props/u_the_hand_that_refused_death,,,,props,u the hand that refused death,1,shipped
+props/u_the_name_beneath_all_names,,,,props,u the name beneath all names,1,shipped
+props/u_the_ninth_star_unblinking,,,,props,u the ninth star unblinking,1,shipped
+props/u_the_red_pennon,,,,props,u the red pennon,1,shipped
+props/u_the_shadow_that_remained,,,,props,u the shadow that remained,1,shipped
+props/u_the_white_harts_last_breath,,,,props,u the white harts last breath,1,shipped
+props/u_the_word_that_outlived_kings,,,,props,u the word that outlived kings,1,shipped
+props/u_thesis_orb,,,,props,u thesis orb,1,shipped
+props/u_thornshade_shroud,,,,props,u thornshade shroud,1,shipped
+props/u_thousand_nail_vest,,,,props,u thousand nail vest,1,shipped
+props/u_throneless_edge_of_the_last_host,,,,props,u throneless edge of the last host,1,shipped
+props/u_truefoot_stance_of_the_final_arrow,,,,props,u truefoot stance of the final arrow,1,shipped
+props/u_unanswerable_mantle_of_the_closed_door,,,,props,u unanswerable mantle of the closed door,1,shipped
+props/u_unblinking_plate_of_the_last_vigil,,,,props,u unblinking plate of the last vigil,1,shipped
+props/u_unbroken_hands_of_the_crownless_host,,,,props,u unbroken hands of the crownless host,1,shipped
+props/u_unbroken_helm_of_the_crownless_host,,,,props,u unbroken helm of the crownless host,1,shipped
+props/u_unbroken_legplates_of_the_crownless_host,,,,props,u unbroken legplates of the crownless host,1,shipped
+props/u_unseen_road,,,,props,u unseen road,1,shipped
+props/u_unsetting_icon_of_the_first_sun,,,,props,u unsetting icon of the first sun,1,shipped
+props/u_unshadowed_gauntlets_of_the_final_oath,,,,props,u unshadowed gauntlets of the final oath,1,shipped
+props/u_unshadowed_greathelm_of_the_final_oath,,,,props,u unshadowed greathelm of the final oath,1,shipped
+props/u_unshadowed_legguards_of_the_final_oath,,,,props,u unshadowed legguards of the final oath,1,shipped
+props/u_untouchable_knot_of_the_empty_step,,,,props,u untouchable knot of the empty step,1,shipped
+props/u_vein_prison,,,,props,u vein prison,1,shipped
+props/u_veinbound_chausses,,,,props,u veinbound chausses,1,shipped
+props/u_veinbound_claws,,,,props,u veinbound claws,1,shipped
+props/u_veinbound_hood,,,,props,u veinbound hood,1,shipped
+props/u_veinroot,,,,props,u veinroot,1,shipped
+props/u_verdancy_staff_of_the_worldroot,,,,props,u verdancy staff of the worldroot,1,shipped
+props/u_vigil_without_end_gauntlets_of_the_final_oath,,,,props,u vigil without end gauntlets of the final oath,1,shipped
+props/u_vigil_without_end_greathelm_of_the_final_oath,,,,props,u vigil without end greathelm of the final oath,1,shipped
+props/u_vigil_without_end_legguards_of_the_final_oath,,,,props,u vigil without end legguards of the final oath,1,shipped
+props/u_vowbound_sabatons,,,,props,u vowbound sabatons,1,shipped
+props/u_vowspike,,,,props,u vowspike,1,shipped
+props/u_wallcat_boots,,,,props,u wallcat boots,1,shipped
+props/u_wardpiercer,,,,props,u wardpiercer,1,shipped
+props/u_wardthread_circlet,,,,props,u wardthread circlet,1,shipped
+props/u_wardthread_handwraps,,,,props,u wardthread handwraps,1,shipped
+props/u_wardthread_underleggings,,,,props,u wardthread underleggings,1,shipped
+props/u_warhowl_hands_of_the_crownless_host,,,,props,u warhowl hands of the crownless host,1,shipped
+props/u_warhowl_helm_of_the_crownless_host,,,,props,u warhowl helm of the crownless host,1,shipped
+props/u_warhowl_legplates_of_the_crownless_host,,,,props,u warhowl legplates of the crownless host,1,shipped
+props/u_warpath_treads_that_crossed_the_dead,,,,props,u warpath treads that crossed the dead,1,shipped
+props/u_watchers_halfplate,,,,props,u watchers halfplate,1,shipped
+props/u_wayfinder_treads,,,,props,u wayfinder treads,1,shipped
+props/u_weightless_iron_soles_that_made_no_sound,,,,props,u weightless iron soles that made no sound,1,shipped
+props/u_white_theorem_circlet_beyond_the_firmament,,,,props,u white theorem circlet beyond the firmament,1,shipped
+props/u_white_theorem_handwraps_beyond_the_firmament,,,,props,u white theorem handwraps beyond the firmament,1,shipped
+props/u_white_theorem_underleggings_beyond_the_firmament,,,,props,u white theorem underleggings beyond the firmament,1,shipped
+props/u_white_theorem_vestments_of_proof,,,,props,u white theorem vestments of proof,1,shipped
+props/u_white_verdict,,,,props,u white verdict,1,shipped
+props/u_white_wind_bracers_of_the_last_gale,,,,props,u white wind bracers of the last gale,1,shipped
+props/u_white_wind_hood_of_the_last_gale,,,,props,u white wind hood of the last gale,1,shipped
+props/u_white_wind_leggings_of_the_last_gale,,,,props,u white wind leggings of the last gale,1,shipped
+props/u_whitefang_rig,,,,props,u whitefang rig,1,shipped
+props/u_widowglass_veil,,,,props,u widowglass veil,1,shipped
+props/u_widows_compass,,,,props,u widows compass,1,shipped
+props/u_windcut_gauntlets,,,,props,u windcut gauntlets,1,shipped
+props/u_windcut_halfplate_of_the_uncaught,,,,props,u windcut halfplate of the uncaught,1,shipped
+props/u_windcut_helm,,,,props,u windcut helm,1,shipped
+props/u_windcut_legplates,,,,props,u windcut legplates,1,shipped
+props/u_windfeather_bracers,,,,props,u windfeather bracers,1,shipped
+props/u_windfeather_hood,,,,props,u windfeather hood,1,shipped
+props/u_windfeather_leggings,,,,props,u windfeather leggings,1,shipped
+props/u_winterking_mantle,,,,props,u winterking mantle,1,shipped
+props/u_worldbreak_treads,,,,props,u worldbreak treads,1,shipped
+props/u_worldmantle_circlet_beyond_the_firmament,,,,props,u worldmantle circlet beyond the firmament,1,shipped
+props/u_worldmantle_handwraps_beyond_the_firmament,,,,props,u worldmantle handwraps beyond the firmament,1,shipped
+props/u_worldmantle_underleggings_beyond_the_firmament,,,,props,u worldmantle underleggings beyond the firmament,1,shipped
+props/u_worldmantle_vestment_of_the_first_stone,,,,props,u worldmantle vestment of the first stone,1,shipped
+props/u_worldroot_steps,,,,props,u worldroot steps,1,shipped
+props/u_worldweight_plate_of_the_first_giant,,,,props,u worldweight plate of the first giant,1,shipped
+props/u_zero_weight_circlet_beyond_the_firmament,,,,props,u zero weight circlet beyond the firmament,1,shipped
+props/u_zero_weight_handwraps_beyond_the_firmament,,,,props,u zero weight handwraps beyond the firmament,1,shipped
+props/u_zero_weight_raiment_above_gravity,,,,props,u zero weight raiment above gravity,1,shipped
+props/u_zero_weight_underleggings_beyond_the_firmament,,,,props,u zero weight underleggings beyond the firmament,1,shipped
+props/void_monolith,7,,claude 2026-07-26,props,Void Monolith,6,shipped
+props/void_obelisk,5,,claude 2026-07-26 (group),props,Void Obelisk,3,shipped
+props/void_rift,7.5,sharp authored void tear with a restrained magenta core; original score misread the silhouette,codex 2026-07-26 audit,props,Void Rift,4,shipped
+props/w_blade,,,,props,W Blade,0,unreferenced
+props/w_bow,,,,props,W Bow,0,unreferenced
+props/w_crossbow,,,,props,W Crossbow,0,unreferenced
+props/w_edge,,,,props,W Edge,0,unreferenced
+props/w_fang,,,,props,W Fang,0,unreferenced
+props/w_hammer,,,,props,W Hammer,0,unreferenced
+props/w_kunai,,,,props,W Kunai,0,unreferenced
+props/w_staff,,,,props,W Staff,0,unreferenced
+props/w_tome,,,,props,W Tome,0,unreferenced
+props/w_wand,,,,props,W Wand,0,unreferenced
+props/water_bucket,5,,claude 2026-07-26,props,Water Bucket,2,placeholder
+props/web,4,,claude 2026-07-26,props,Web,5,placeholder
 props/whitepelt,6,,claude 2026-07-26,props,whitepelt,4,shipped
 props/window_box,5,,claude 2026-07-26 (group),props,Window Box,1,placeholder
 props/witch,5,,claude 2026-07-26 (group),props,Witch,0,unreferenced
-structures/boulder,3,flat olive blob,claude 2026-07-26,structures,Old Well,1,placeholder
 structures/camp_workbench,4.5,,claude 2026-07-26,structures,Cook Hearth,1,placeholder
 structures/capital_accord_longhouse,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Accord Longhouse,1,shipped
 structures/capital_alembic_station,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Alembic Station,1,shipped
@@ -793,25 +1259,39 @@ structures/capital_undercroft,8,"Crownfall architecture set: detailed, on-palett
 structures/capital_watchtower,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Watchtower,0,unreferenced
 structures/capital_wellspring,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Wellspring,0,unreferenced
 structures/capital_wildfang_fangmoot,8,"Crownfall architecture set: detailed, on-palette",claude 2026-07-26 (group),structures,Capital Wildfang Fangmoot,1,shipped
-structures/crypt,6.5,,claude 2026-07-26,structures,Mausoleum,2,placeholder
+structures/castle_statue,,,,structures,Keep Courtyard,1,shipped
+structures/crypt,6.5,,claude 2026-07-26,structures,Mausoleum,3,placeholder
+structures/crystal_spire,,,,structures,Crystal Garden,0,unreferenced
+structures/forge_statue,,,,structures,Magma Judgment,0,unreferenced
 structures/garden_fountain,4.5,flat teal oval,claude 2026-07-26,structures,Town Fountain,1,placeholder
+structures/grave_angel,,,,structures,Grave Memorial,0,unreferenced
 structures/hideout_table,3,flat brown box,claude 2026-07-26,structures,Market Stall,2,placeholder
-structures/keep_arch,6,,claude 2026-07-26,structures,Ruined Gate,1,placeholder
+structures/ice_cairn,,,,structures,Ice Waymarker,0,unreferenced
+structures/keep_arch,6,,claude 2026-07-26,structures,Ruined Gate,3,placeholder
 structures/log,3,flat brown rectangle,claude 2026-07-26,structures,Signal Fire,1,placeholder
-structures/pillar,3.5,flat grey I-beam standing in a hand-painted city,claude 2026-07-26,structures,Watch Brazier,4,placeholder
-structures/sewer_pipe,3,pink/white arch,claude 2026-07-26,structures,Sewer Outfall,1,placeholder
+structures/magma_furnace,,,,structures,Magma Furnace,0,unreferenced
+structures/old_well,,,,structures,Old Well,1,placeholder
+structures/pillar,3.5,flat grey I-beam standing in a hand-painted city,claude 2026-07-26,structures,Torch Pillar,7,placeholder
+structures/sandstone,,,,structures,Desert Hoodoo,0,unreferenced
+structures/sewer_outfall,,,,structures,Sewer Outfall,1,placeholder
 structures/signpost,4,,claude 2026-07-26,structures,Notice Board,1,placeholder
+structures/spore_shrine,,,,structures,Spore Cathedral,0,unreferenced
 structures/station_alchemy_t3,4.5,busy pack art,claude 2026-07-26,structures,Brew Stand,2,placeholder
-structures/station_anvil_t3,4.5,busy pack art,claude 2026-07-26,structures,Guild Forge,2,placeholder
-walls/wall_castle,7.5,64px authored charcoal ashlar macro-tile with readable mortar and no obvious seams,codex 2026-07-26 replacement,walls,Wall Castle,8,shipped
-walls/wall_grave,4,"flat tan, no texture",claude 2026-07-26,walls,Wall Grave,3,shipped
-walls/wall_hedge,7.5,64px authored leaf-cluster macro-tile with organic structure and clean repetition,codex 2026-07-26 replacement,walls,Wall Hedge,2,shipped
-walls/wall_ice,5,brightness outlier: far lighter than every other wall,claude 2026-07-26,walls,Wall Ice,1,shipped
-walls/wall_moss,5.5,serves four shipped biomes — highest exposure of any wall,claude 2026-07-26,walls,Wall Moss,6,shipped
-walls/wall_sand,6,,claude 2026-07-26,walls,Wall Sand,1,shipped
-walls/wall_sewer,4.5,,claude 2026-07-26,walls,Wall Sewer,2,placeholder
-walls/wall_volcanic,5,very dark — risks reading as void after the tonemap,claude 2026-07-26,walls,Wall Volcanic,3,shipped
-walls/wall_wood,5.5,,claude 2026-07-26,walls,Wall Wood,3,shipped
+structures/station_anvil_t3,4.5,busy pack art,claude 2026-07-26,structures,Guild Forge,3,placeholder
+structures/storm_conductor,,,,structures,Storm Array,0,unreferenced
+structures/tree_gnarled,,,,structures,Darkwood Hollow,0,unreferenced
+structures/tree_green,,,,structures,Village Grove,0,unreferenced
+structures/tree_teal,,,,structures,Marsh Islet,0,unreferenced
+structures/void_rift,,,,structures,Void Breach,0,unreferenced
+walls/wall_castle,7.5,64px authored charcoal ashlar macro-tile with readable mortar and no obvious seams,codex 2026-07-26 replacement,walls,Wall Castle,11,shipped
+walls/wall_grave,4,"flat tan, no texture",claude 2026-07-26,walls,Wall Grave,5,shipped
+walls/wall_hedge,7.5,64px authored leaf-cluster macro-tile with organic structure and clean repetition,codex 2026-07-26 replacement,walls,Wall Hedge,3,shipped
+walls/wall_ice,5,brightness outlier: far lighter than every other wall,claude 2026-07-26,walls,Wall Ice,3,shipped
+walls/wall_moss,5.5,serves four shipped biomes — highest exposure of any wall,claude 2026-07-26,walls,Wall Moss,8,shipped
+walls/wall_sand,6,,claude 2026-07-26,walls,Wall Sand,2,shipped
+walls/wall_sewer,4.5,,claude 2026-07-26,walls,Wall Sewer,3,placeholder
+walls/wall_volcanic,5,very dark — risks reading as void after the tonemap,claude 2026-07-26,walls,Wall Volcanic,7,shipped
+walls/wall_wood,5.5,,claude 2026-07-26,walls,Wall Wood,7,shipped
 walls/wallblock,7.5,64px neutral fieldstone macro-tile; authored fallback with readable masonry,codex 2026-07-26 replacement,walls,Wallblock,8,shipped
 chests/chest_a,,,,chests,Chest — grade A,2,shipped
 chests/chest_b,,,,chests,Chest — grade B,2,shipped
@@ -823,17 +1303,186 @@ chests/chest_gold,7.5,authored gold chest with a compact silhouette and red jewe
 chests/chest_s,,,,chests,Chest — grade S,2,shipped
 chests/chest_silver,7.5,authored silver chest with cool plates and a pale-blue gem latch,codex 2026-07-26 replacement,chests,Silver chest,4,shipped
 chests/chest_wood,7.5,authored oak chest with dark iron bands and a clear latch,codex 2026-07-26 replacement,chests,Wood chest,4,shipped
-gear/held_w_blade,4,grade tint flattens the held weapon to a coloured blob,claude 2026-07-26,gear,Blade — held,5,shipped
-gear/held_w_bow,4,same flattening,claude 2026-07-26,gear,Bow — held,5,shipped
+gear/a_beastpelt,,,,gear,Beastpelt (armor),7,shipped
+gear/a_blessed_plate,,,,gear,Blessed Plate (armor),7,shipped
+gear/a_bloodforged_harness,,,,gear,Bloodforged Harness (armor),7,shipped
+gear/a_bloodpact_vestment,,,,gear,Bloodpact Vestment (armor),7,shipped
+gear/a_bonemail,,,,gear,Bonemail (armor),7,shipped
+gear/a_earthen_robe,,,,gear,Earthen Robe (armor),7,shipped
+gear/a_featherweave_robe,,,,gear,Featherweave Robe (armor),7,shipped
+gear/a_gossamer_cloak,,,,gear,Gossamer Cloak (armor),7,shipped
+gear/a_hunters_harness,,,,gear,Hunter's Harness (armor),7,shipped
+gear/a_ironwall_plate,,,,gear,Ironwall Plate (armor),7,shipped
+gear/a_nightsilk_wrap,,,,gear,Nightsilk Wrap (armor),7,shipped
+gear/a_rangers_leathers,,,,gear,Ranger's Leathers (armor),7,shipped
+gear/a_ruinweave,,,,gear,Ruinweave (armor),7,shipped
+gear/a_runeplate_robe,,,,gear,Runeplate Robe (armor),7,shipped
+gear/a_sanctified_bulwark,,,,gear,Sanctified Bulwark (armor),7,shipped
+gear/a_shadeweave_robe,,,,gear,Shadeweave Robe (armor),7,shipped
+gear/a_shadowveil_cloak,,,,gear,Shadowveil Cloak (armor),7,shipped
+gear/a_silk_vestments,,,,gear,Silk Vestments (armor),7,shipped
+gear/a_skirmishers_halfplate,,,,gear,Skirmisher's Halfplate (armor),7,shipped
+gear/a_starweave_robe,,,,gear,Starweave Robe (armor),7,shipped
+gear/a_stormweave_jerkin,,,,gear,Stormweave Jerkin (armor),7,shipped
+gear/a_studded_brigandine,,,,gear,Studded Brigandine (armor),7,shipped
+gear/a_templar_plate,,,,gear,Templar Plate (armor),7,shipped
+gear/a_titanplate,,,,gear,Titanplate (armor),7,shipped
+gear/a_verdant_shroud,,,,gear,Verdant Shroud (armor),7,shipped
+gear/a_vigil_halfplate,,,,gear,Vigil Halfplate (armor),7,shipped
+gear/a_voidsilk_robe,,,,gear,Voidsilk Robe (armor),7,shipped
+gear/a_warded_mantle,,,,gear,Warded Mantle (armor),7,shipped
+gear/a_wardsteel_plate,,,,gear,Wardsteel Plate (armor),7,shipped
+gear/a_zealot_harness,,,,gear,Zealot Harness (armor),7,shipped
+gear/b_anchorplate,,,,gear,Anchorplate (boots),7,shipped
+gear/b_bonewalkers,,,,gear,Bonewalkers (boots),7,shipped
+gear/b_grave_treads,,,,gear,Grave Treads (boots),7,shipped
+gear/b_gravebound_boots,,,,gear,Gravebound Boots (boots),7,shipped
+gear/b_hexcarved_treads,,,,gear,Hexcarved Treads (boots),7,shipped
+gear/b_ironsole_wraps,,,,gear,Ironsole Wraps (boots),7,shipped
+gear/b_levitation_slippers,,,,gear,Levitation Slippers (boots),7,shipped
+gear/b_marksmans_stance,,,,gear,Marksman's Stance (boots),7,shipped
+gear/b_piercers_cleats,,,,gear,Piercer's Cleats (boots),7,shipped
+gear/b_pilgrims_resolve,,,,gear,Pilgrim's Resolve (boots),7,shipped
+gear/b_prowlers,,,,gear,Prowlers (boots),7,shipped
+gear/b_radiant_greaves,,,,gear,Radiant Greaves (boots),7,shipped
+gear/b_reaver_treads,,,,gear,Reaver Treads (boots),7,shipped
+gear/b_rootbound_sandals,,,,gear,Rootbound Sandals (boots),7,shipped
+gear/b_ruinstep,,,,gear,Ruinstep (boots),7,shipped
+gear/b_sabatons,,,,gear,Sabatons (boots),7,shipped
+gear/b_sabatons_of_the_oath,,,,gear,Sabatons of the Oath (boots),7,shipped
+gear/b_shadowstep_wraps,,,,gear,Shadowstep Wraps (boots),7,shipped
+gear/b_sigil_sandals,,,,gear,Sigil Sandals (boots),7,shipped
+gear/b_skirmishers_boots,,,,gear,Skirmisher's Boots (boots),7,shipped
+gear/b_slipsteps,,,,gear,Slipsteps (boots),7,shipped
+gear/b_starstep,,,,gear,Starstep (boots),7,shipped
+gear/b_trailboots,,,,gear,Trailboots (boots),7,shipped
+gear/b_venomtread,,,,gear,Venomtread (boots),7,shipped
+gear/b_vigil_steps,,,,gear,Vigil Steps (boots),7,shipped
+gear/b_wardedsole,,,,gear,Wardedsole (boots),7,shipped
+gear/b_wardstep_greaves,,,,gear,Wardstep Greaves (boots),7,shipped
+gear/b_wardstone_shoes,,,,gear,Wardstone Shoes (boots),7,shipped
+gear/b_windstriders,,,,gear,Windstriders (boots),7,shipped
+gear/b_zealots_cleats,,,,gear,Zealot's Cleats (boots),7,shipped
+gear/c_aegis_crystal,,,,gear,Aegis Crystal (charm),7,shipped
+gear/c_arcane_orb,,,,gear,Arcane Orb (charm),7,shipped
+gear/c_bloodoath_cord,,,,gear,Bloodoath Cord (charm),7,shipped
+gear/c_butchers_token,,,,gear,Butcher's Token (charm),7,shipped
+gear/c_cursed_idol,,,,gear,Cursed Idol (charm),7,shipped
+gear/c_duelists_knot,,,,gear,Duelist's Knot (charm),7,shipped
+gear/c_fletchers_token,,,,gear,Fletcher's Token (charm),7,shipped
+gear/c_ghostlight_charm,,,,gear,Ghostlight Charm (charm),7,shipped
+gear/c_greenheart_idol,,,,gear,Greenheart Idol (charm),7,shipped
+gear/c_heart_of_the_wall,,,,gear,Heart of the Wall (charm),7,shipped
+gear/c_heartcage,,,,gear,Heartcage (charm),7,shipped
+gear/c_hunters_totem,,,,gear,Hunter's Totem (charm),7,shipped
+gear/c_judgment_sigil,,,,gear,Judgment Sigil (charm),7,shipped
+gear/c_killers_mark,,,,gear,Killer's Mark (charm),7,shipped
+gear/c_lifebloom_pendant,,,,gear,Lifebloom Pendant (charm),7,shipped
+gear/c_oath_sigil,,,,gear,Oath Sigil (charm),7,shipped
+gear/c_oathkeepers_seal,,,,gear,Oathkeeper's Seal (charm),7,shipped
+gear/c_poisoners_vial,,,,gear,Poisoner's Vial (charm),7,shipped
+gear/c_reliquary,,,,gear,Reliquary (charm),7,shipped
+gear/c_soul_fetish,,,,gear,Soul Fetish (charm),7,shipped
+gear/c_starshard,,,,gear,Starshard (charm),7,shipped
+gear/c_stonebark_ward,,,,gear,Stonebark Ward (charm),7,shipped
+gear/c_sunburst_icon,,,,gear,Sunburst Icon (charm),7,shipped
+gear/c_swiftvow_cord,,,,gear,Swiftvow Cord (charm),7,shipped
+gear/c_umbral_cord,,,,gear,Umbral Cord (charm),7,shipped
+gear/c_warbanner,,,,gear,Warbanner (charm),7,shipped
+gear/c_ward_of_ash,,,,gear,Ward of Ash (charm),7,shipped
+gear/c_windfeather,,,,gear,Windfeather (charm),7,shipped
+gear/c_wraithbone_fetish,,,,gear,Wraithbone Fetish (charm),7,shipped
+gear/c_zephyr_sigil,,,,gear,Zephyr Sigil (charm),7,shipped
+gear/g_beastpelt_bracers,,,,gear,Beastpelt Bracers (gloves),7,shipped
+gear/g_blessed_gauntlets,,,,gear,Blessed Gauntlets (gloves),7,shipped
+gear/g_bloodpact_claws,,,,gear,Bloodpact Claws (gloves),7,shipped
+gear/g_bonemail_claws,,,,gear,Bonemail Claws (gloves),7,shipped
+gear/g_earthen_handwraps,,,,gear,Earthen Handwraps (gloves),7,shipped
+gear/g_featherweave_handwraps,,,,gear,Featherweave Handwraps (gloves),7,shipped
+gear/g_gossamer_grips,,,,gear,Gossamer Grips (gloves),7,shipped
+gear/g_grave_grips,,,,gear,Grave Grips (gloves),7,shipped
+gear/g_hunters_bracers,,,,gear,Hunter's Bracers (gloves),7,shipped
+gear/g_ironwall_gauntlets,,,,gear,Ironwall Gauntlets (gloves),7,shipped
+gear/g_nightsilk_grips,,,,gear,Nightsilk Grips (gloves),7,shipped
+gear/g_rangers_bracers,,,,gear,Ranger's Bracers (gloves),7,shipped
+gear/g_reaver_gauntlets,,,,gear,Reaver Gauntlets (gloves),7,shipped
+gear/g_ruinweave_claws,,,,gear,Ruinweave Claws (gloves),7,shipped
+gear/g_runeplate_handwraps,,,,gear,Runeplate Handwraps (gloves),7,shipped
+gear/g_sanctified_gauntlets,,,,gear,Sanctified Gauntlets (gloves),7,shipped
+gear/g_shadeweave_claws,,,,gear,Shadeweave Claws (gloves),7,shipped
+gear/g_shadowveil_grips,,,,gear,Shadowveil Grips (gloves),7,shipped
+gear/g_silkward_handwraps,,,,gear,Silkward Handwraps (gloves),7,shipped
+gear/g_skirmishers_gauntlets,,,,gear,Skirmisher's Gauntlets (gloves),7,shipped
+gear/g_starweave_handwraps,,,,gear,Starweave Handwraps (gloves),7,shipped
+gear/g_stormweave_bracers,,,,gear,Stormweave Bracers (gloves),7,shipped
+gear/g_studded_bracers,,,,gear,Studded Bracers (gloves),7,shipped
+gear/g_templar_gauntlets,,,,gear,Templar Gauntlets (gloves),7,shipped
+gear/g_titan_gauntlets,,,,gear,Titan Gauntlets (gloves),7,shipped
+gear/g_vigil_gauntlets,,,,gear,Vigil Gauntlets (gloves),7,shipped
+gear/g_voidsilk_claws,,,,gear,Voidsilk Claws (gloves),7,shipped
+gear/g_warded_grips,,,,gear,Warded Grips (gloves),7,shipped
+gear/g_wardsteel_gauntlets,,,,gear,Wardsteel Gauntlets (gloves),7,shipped
+gear/g_zealot_gauntlets,,,,gear,Zealot Gauntlets (gloves),7,shipped
+gear/h_beastpelt_hood,,,,gear,Beastpelt Hood (helmet),7,shipped
+gear/h_blessed_greathelm,,,,gear,Blessed Greathelm (helmet),7,shipped
+gear/h_bloodpact_hood,,,,gear,Bloodpact Hood (helmet),7,shipped
+gear/h_bonemail_hood,,,,gear,Bonemail Hood (helmet),7,shipped
+gear/h_earthen_circlet,,,,gear,Earthen Circlet (helmet),7,shipped
+gear/h_featherweave_circlet,,,,gear,Featherweave Circlet (helmet),7,shipped
+gear/h_gossamer_cowl,,,,gear,Gossamer Cowl (helmet),7,shipped
+gear/h_grave_cowl,,,,gear,Grave Cowl (helmet),7,shipped
+gear/h_hunters_hood,,,,gear,Hunter's Hood (helmet),7,shipped
+gear/h_ironwall_helm,,,,gear,Ironwall Helm (helmet),7,shipped
+gear/h_nightsilk_cowl,,,,gear,Nightsilk Cowl (helmet),7,shipped
+gear/h_rangers_hood,,,,gear,Ranger's Hood (helmet),7,shipped
+gear/h_reaver_helm,,,,gear,Reaver Helm (helmet),7,shipped
+gear/h_ruinweave_hood,,,,gear,Ruinweave Hood (helmet),7,shipped
+gear/h_runeplate_circlet,,,,gear,Runeplate Circlet (helmet),7,shipped
+gear/h_sanctified_greathelm,,,,gear,Sanctified Greathelm (helmet),7,shipped
+gear/h_shadeweave_hood,,,,gear,Shadeweave Hood (helmet),7,shipped
+gear/h_shadowveil_cowl,,,,gear,Shadowveil Cowl (helmet),7,shipped
+gear/h_silkward_circlet,,,,gear,Silkward Circlet (helmet),7,shipped
+gear/h_skirmishers_helm,,,,gear,Skirmisher's Helm (helmet),7,shipped
+gear/h_starweave_circlet,,,,gear,Starweave Circlet (helmet),7,shipped
+gear/h_stormweave_hood,,,,gear,Stormweave Hood (helmet),7,shipped
+gear/h_studded_hood,,,,gear,Studded Hood (helmet),7,shipped
+gear/h_templar_greathelm,,,,gear,Templar Greathelm (helmet),7,shipped
+gear/h_titan_helm,,,,gear,Titan Helm (helmet),7,shipped
+gear/h_vigil_greathelm,,,,gear,Vigil Greathelm (helmet),7,shipped
+gear/h_voidsilk_hood,,,,gear,Voidsilk Hood (helmet),7,shipped
+gear/h_warded_cowl,,,,gear,Warded Cowl (helmet),7,shipped
+gear/h_wardsteel_helm,,,,gear,Wardsteel Helm (helmet),7,shipped
+gear/h_zealot_greathelm,,,,gear,Zealot Greathelm (helmet),7,shipped
+gear/held_w_aegis_mace,,,,gear,Aegis Mace — held,5,shipped
+gear/held_w_bloomstaff,,,,gear,Bloomstaff — held,5,shipped
+gear/held_w_bulwark_blade,,,,gear,Bulwark Blade — held,5,shipped
 gear/held_w_claymore,4,same flattening,claude 2026-07-26,gear,Claymore — held,5,shipped
-gear/held_w_crossbow,4,same flattening,claude 2026-07-26,gear,Crossbow — held,5,shipped
-gear/held_w_edge,4,same flattening,claude 2026-07-26,gear,Edge — held,5,shipped
-gear/held_w_fang,4,same flattening,claude 2026-07-26,gear,Fang — held,5,shipped
-gear/held_w_hammer,4,same flattening,claude 2026-07-26,gear,Hammer — held,5,shipped
-gear/held_w_kunai,4,same flattening,claude 2026-07-26,gear,Shuriken — held,5,shipped
-gear/held_w_staff,4,same flattening,claude 2026-07-26,gear,Staff — held,5,shipped
-gear/held_w_tome,4,same flattening,claude 2026-07-26,gear,Tome — held,5,shipped
-gear/held_w_wand,4,same flattening,claude 2026-07-26,gear,Wand — held,5,shipped
+gear/held_w_cleaver,,,,gear,Cleaver — held,5,shipped
+gear/held_w_duelists_blade,,,,gear,Duelist's Blade — held,5,shipped
+gear/held_w_glasswing,,,,gear,Glasswing — held,5,shipped
+gear/held_w_greatstaff,,,,gear,Greatstaff — held,5,shipped
+gear/held_w_grimheart_staff,,,,gear,Grimheart Staff — held,5,shipped
+gear/held_w_grimoire,,,,gear,Grimoire — held,5,shipped
+gear/held_w_hexblade,,,,gear,Hexblade — held,5,shipped
+gear/held_w_hunting_bow,,,,gear,Hunting Bow — held,5,shipped
+gear/held_w_lance,,,,gear,Lance — held,5,shipped
+gear/held_w_longbow,,,,gear,Longbow — held,5,shipped
+gear/held_w_oathflail,,,,gear,Oathflail — held,5,shipped
+gear/held_w_pactshield_codex,,,,gear,Pactshield Codex — held,5,shipped
+gear/held_w_pike,,,,gear,Pike — held,5,shipped
+gear/held_w_recurve,,,,gear,Recurve — held,5,shipped
+gear/held_w_saber,,,,gear,Saber — held,5,shipped
+gear/held_w_scepter,,,,gear,Scepter — held,5,shipped
+gear/held_w_shuriken,,,,gear,Shuriken — held,5,shipped
+gear/held_w_starfocus,,,,gear,Starfocus — held,5,shipped
+gear/held_w_stiletto,,,,gear,Stiletto — held,5,shipped
+gear/held_w_thornbow,,,,gear,Thornbow — held,5,shipped
+gear/held_w_warblade,,,,gear,Warblade — held,5,shipped
+gear/held_w_warbow,,,,gear,Warbow — held,5,shipped
+gear/held_w_warded_fang,,,,gear,Warded Fang — held,5,shipped
+gear/held_w_warmaul,,,,gear,Warmaul — held,5,shipped
+gear/held_w_whisper_rod,,,,gear,Whisper Rod — held,5,shipped
+gear/held_w_zephyr_rod,,,,gear,Zephyr Rod — held,5,shipped
 gear/icon_armor,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Plate (armor),7,shipped
 gear/icon_boots,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Boots (boots),7,shipped
 gear/icon_charm,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Charm (charm),7,shipped
@@ -843,18 +1492,167 @@ gear/icon_sigil,5.5,"small, simple shapes; grade treatment carries most of the r
 gear/icon_striders,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Striders (boots),7,shipped
 gear/icon_talisman,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Talisman (charm),7,shipped
 gear/icon_treads,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Treads (boots),7,shipped
-gear/w_blade,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Blade (weapon),7,shipped
-gear/w_bow,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Bow (weapon),7,shipped
+gear/p_beastpelt_leggings,,,,gear,Beastpelt Leggings (pants),7,shipped
+gear/p_blessed_legguards,,,,gear,Blessed Legguards (pants),7,shipped
+gear/p_bloodpact_chausses,,,,gear,Bloodpact Chausses (pants),7,shipped
+gear/p_bonemail_chausses,,,,gear,Bonemail Chausses (pants),7,shipped
+gear/p_earthen_underleggings,,,,gear,Earthen Underleggings (pants),7,shipped
+gear/p_featherweave_underleggings,,,,gear,Featherweave Underleggings (pants),7,shipped
+gear/p_gossamer_wraps,,,,gear,Gossamer Wraps (pants),7,shipped
+gear/p_grave_wraps,,,,gear,Grave Wraps (pants),7,shipped
+gear/p_hunters_leggings,,,,gear,Hunter's Leggings (pants),7,shipped
+gear/p_ironwall_legplates,,,,gear,Ironwall Legplates (pants),7,shipped
+gear/p_nightsilk_wraps,,,,gear,Nightsilk Wraps (pants),7,shipped
+gear/p_rangers_leggings,,,,gear,Ranger's Leggings (pants),7,shipped
+gear/p_reaver_legplates,,,,gear,Reaver Legplates (pants),7,shipped
+gear/p_ruinweave_chausses,,,,gear,Ruinweave Chausses (pants),7,shipped
+gear/p_runeplate_underleggings,,,,gear,Runeplate Underleggings (pants),7,shipped
+gear/p_sanctified_legguards,,,,gear,Sanctified Legguards (pants),7,shipped
+gear/p_shadeweave_chausses,,,,gear,Shadeweave Chausses (pants),7,shipped
+gear/p_shadowveil_wraps,,,,gear,Shadowveil Wraps (pants),7,shipped
+gear/p_silkward_underleggings,,,,gear,Silkward Underleggings (pants),7,shipped
+gear/p_skirmishers_legplates,,,,gear,Skirmisher's Legplates (pants),7,shipped
+gear/p_starweave_underleggings,,,,gear,Starweave Underleggings (pants),7,shipped
+gear/p_stormweave_leggings,,,,gear,Stormweave Leggings (pants),7,shipped
+gear/p_studded_leggings,,,,gear,Studded Leggings (pants),7,shipped
+gear/p_templar_legguards,,,,gear,Templar Legguards (pants),7,shipped
+gear/p_titan_legplates,,,,gear,Titan Legplates (pants),7,shipped
+gear/p_vigil_legguards,,,,gear,Vigil Legguards (pants),7,shipped
+gear/p_voidsilk_chausses,,,,gear,Voidsilk Chausses (pants),7,shipped
+gear/p_warded_wraps,,,,gear,Warded Wraps (pants),7,shipped
+gear/p_wardsteel_legplates,,,,gear,Wardsteel Legplates (pants),7,shipped
+gear/p_zealot_legguards,,,,gear,Zealot Legguards (pants),7,shipped
+gear/w_aegis_mace,,,,gear,Aegis Mace (weapon),7,shipped
+gear/w_bloomstaff,,,,gear,Bloomstaff (weapon),7,shipped
+gear/w_bulwark_blade,,,,gear,Bulwark Blade (weapon),7,shipped
 gear/w_claymore,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Claymore (weapon),7,shipped
-gear/w_crossbow,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Crossbow (weapon),7,shipped
-gear/w_edge,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Edge (weapon),7,shipped
-gear/w_fang,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Fang (weapon),7,shipped
-gear/w_hammer,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Hammer (weapon),7,shipped
-gear/w_kunai,6.5,smooth-shaded style outlier in the icon folder,claude 2026-07-26,gear,Shuriken (weapon),7,shipped
-gear/w_staff,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Staff (weapon),7,shipped
-gear/w_tome,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Tome (weapon),7,shipped
-gear/w_wand,5.5,"small, simple shapes; grade treatment carries most of the read",claude 2026-07-26 (group),gear,Wand (weapon),7,shipped
+gear/w_cleaver,,,,gear,Cleaver (weapon),7,shipped
+gear/w_duelists_blade,,,,gear,Duelist's Blade (weapon),7,shipped
+gear/w_glasswing,,,,gear,Glasswing (weapon),7,shipped
+gear/w_greatstaff,,,,gear,Greatstaff (weapon),7,shipped
+gear/w_grimheart_staff,,,,gear,Grimheart Staff (weapon),7,shipped
+gear/w_grimoire,,,,gear,Grimoire (weapon),7,shipped
+gear/w_hexblade,,,,gear,Hexblade (weapon),7,shipped
+gear/w_hunting_bow,,,,gear,Hunting Bow (weapon),7,shipped
+gear/w_lance,,,,gear,Lance (weapon),7,shipped
+gear/w_longbow,,,,gear,Longbow (weapon),7,shipped
+gear/w_oathflail,,,,gear,Oathflail (weapon),7,shipped
+gear/w_pactshield_codex,,,,gear,Pactshield Codex (weapon),7,shipped
+gear/w_pike,,,,gear,Pike (weapon),7,shipped
+gear/w_recurve,,,,gear,Recurve (weapon),7,shipped
+gear/w_saber,,,,gear,Saber (weapon),7,shipped
+gear/w_scepter,,,,gear,Scepter (weapon),7,shipped
+gear/w_shuriken,,,,gear,Shuriken (weapon),7,shipped
+gear/w_starfocus,,,,gear,Starfocus (weapon),7,shipped
+gear/w_stiletto,,,,gear,Stiletto (weapon),7,shipped
+gear/w_thornbow,,,,gear,Thornbow (weapon),7,shipped
+gear/w_warblade,,,,gear,Warblade (weapon),7,shipped
+gear/w_warbow,,,,gear,Warbow (weapon),7,shipped
+gear/w_warded_fang,,,,gear,Warded Fang (weapon),7,shipped
+gear/w_warmaul,,,,gear,Warmaul (weapon),7,shipped
+gear/w_whisper_rod,,,,gear,Whisper Rod (weapon),7,shipped
+gear/w_zephyr_rod,,,,gear,Zephyr Rod (weapon),7,shipped
 gems/gem,,,,gems,Gem — shared base icon,3,shipped
+gems/gem_atk_flat_lv1,,,,gems,Ruby — Lv1,2,shipped
+gems/gem_atk_flat_lv10,,,,gems,Ruby — Lv10,2,shipped
+gems/gem_atk_flat_lv2,,,,gems,Ruby — Lv2,2,shipped
+gems/gem_atk_flat_lv3,,,,gems,Ruby — Lv3,2,shipped
+gems/gem_atk_flat_lv4,,,,gems,Ruby — Lv4,2,shipped
+gems/gem_atk_flat_lv5,,,,gems,Ruby — Lv5,2,shipped
+gems/gem_atk_flat_lv6,,,,gems,Ruby — Lv6,2,shipped
+gems/gem_atk_flat_lv7,,,,gems,Ruby — Lv7,2,shipped
+gems/gem_atk_flat_lv8,,,,gems,Ruby — Lv8,2,shipped
+gems/gem_atk_flat_lv9,,,,gems,Ruby — Lv9,2,shipped
+gems/gem_cdr_lv1,,,,gems,Sapphire — Lv1,2,shipped
+gems/gem_cdr_lv10,,,,gems,Sapphire — Lv10,2,shipped
+gems/gem_cdr_lv2,,,,gems,Sapphire — Lv2,2,shipped
+gems/gem_cdr_lv3,,,,gems,Sapphire — Lv3,2,shipped
+gems/gem_cdr_lv4,,,,gems,Sapphire — Lv4,2,shipped
+gems/gem_cdr_lv5,,,,gems,Sapphire — Lv5,2,shipped
+gems/gem_cdr_lv6,,,,gems,Sapphire — Lv6,2,shipped
+gems/gem_cdr_lv7,,,,gems,Sapphire — Lv7,2,shipped
+gems/gem_cdr_lv8,,,,gems,Sapphire — Lv8,2,shipped
+gems/gem_cdr_lv9,,,,gems,Sapphire — Lv9,2,shipped
+gems/gem_combo_lv1,,,,gems,Opal — Lv1,2,shipped
+gems/gem_combo_lv10,,,,gems,Opal — Lv10,2,shipped
+gems/gem_combo_lv2,,,,gems,Opal — Lv2,2,shipped
+gems/gem_combo_lv3,,,,gems,Opal — Lv3,2,shipped
+gems/gem_combo_lv4,,,,gems,Opal — Lv4,2,shipped
+gems/gem_combo_lv5,,,,gems,Opal — Lv5,2,shipped
+gems/gem_combo_lv6,,,,gems,Opal — Lv6,2,shipped
+gems/gem_combo_lv7,,,,gems,Opal — Lv7,2,shipped
+gems/gem_combo_lv8,,,,gems,Opal — Lv8,2,shipped
+gems/gem_combo_lv9,,,,gems,Opal — Lv9,2,shipped
+gems/gem_crit_lv1,,,,gems,Topaz — Lv1,2,shipped
+gems/gem_crit_lv10,,,,gems,Topaz — Lv10,2,shipped
+gems/gem_crit_lv2,,,,gems,Topaz — Lv2,2,shipped
+gems/gem_crit_lv3,,,,gems,Topaz — Lv3,2,shipped
+gems/gem_crit_lv4,,,,gems,Topaz — Lv4,2,shipped
+gems/gem_crit_lv5,,,,gems,Topaz — Lv5,2,shipped
+gems/gem_crit_lv6,,,,gems,Topaz — Lv6,2,shipped
+gems/gem_crit_lv7,,,,gems,Topaz — Lv7,2,shipped
+gems/gem_crit_lv8,,,,gems,Topaz — Lv8,2,shipped
+gems/gem_crit_lv9,,,,gems,Topaz — Lv9,2,shipped
+gems/gem_dex_lv1,,,,gems,Amber — Lv1,2,shipped
+gems/gem_dex_lv10,,,,gems,Amber — Lv10,2,shipped
+gems/gem_dex_lv2,,,,gems,Amber — Lv2,2,shipped
+gems/gem_dex_lv3,,,,gems,Amber — Lv3,2,shipped
+gems/gem_dex_lv4,,,,gems,Amber — Lv4,2,shipped
+gems/gem_dex_lv5,,,,gems,Amber — Lv5,2,shipped
+gems/gem_dex_lv6,,,,gems,Amber — Lv6,2,shipped
+gems/gem_dex_lv7,,,,gems,Amber — Lv7,2,shipped
+gems/gem_dex_lv8,,,,gems,Amber — Lv8,2,shipped
+gems/gem_dex_lv9,,,,gems,Amber — Lv9,2,shipped
+gems/gem_dmg_pct_lv1,,,,gems,Sunstone — Lv1,2,shipped
+gems/gem_dmg_pct_lv10,,,,gems,Sunstone — Lv10,2,shipped
+gems/gem_dmg_pct_lv2,,,,gems,Sunstone — Lv2,2,shipped
+gems/gem_dmg_pct_lv3,,,,gems,Sunstone — Lv3,2,shipped
+gems/gem_dmg_pct_lv4,,,,gems,Sunstone — Lv4,2,shipped
+gems/gem_dmg_pct_lv5,,,,gems,Sunstone — Lv5,2,shipped
+gems/gem_dmg_pct_lv6,,,,gems,Sunstone — Lv6,2,shipped
+gems/gem_dmg_pct_lv7,,,,gems,Sunstone — Lv7,2,shipped
+gems/gem_dmg_pct_lv8,,,,gems,Sunstone — Lv8,2,shipped
+gems/gem_dmg_pct_lv9,,,,gems,Sunstone — Lv9,2,shipped
+gems/gem_eva_lv1,,,,gems,Jade — Lv1,2,shipped
+gems/gem_eva_lv10,,,,gems,Jade — Lv10,2,shipped
+gems/gem_eva_lv2,,,,gems,Jade — Lv2,2,shipped
+gems/gem_eva_lv3,,,,gems,Jade — Lv3,2,shipped
+gems/gem_eva_lv4,,,,gems,Jade — Lv4,2,shipped
+gems/gem_eva_lv5,,,,gems,Jade — Lv5,2,shipped
+gems/gem_eva_lv6,,,,gems,Jade — Lv6,2,shipped
+gems/gem_eva_lv7,,,,gems,Jade — Lv7,2,shipped
+gems/gem_eva_lv8,,,,gems,Jade — Lv8,2,shipped
+gems/gem_eva_lv9,,,,gems,Jade — Lv9,2,shipped
+gems/gem_flat_dr_lv1,,,,gems,Tenacity — Lv1,2,shipped
+gems/gem_flat_dr_lv10,,,,gems,Tenacity — Lv10,2,shipped
+gems/gem_flat_dr_lv2,,,,gems,Tenacity — Lv2,2,shipped
+gems/gem_flat_dr_lv3,,,,gems,Tenacity — Lv3,2,shipped
+gems/gem_flat_dr_lv4,,,,gems,Tenacity — Lv4,2,shipped
+gems/gem_flat_dr_lv5,,,,gems,Tenacity — Lv5,2,shipped
+gems/gem_flat_dr_lv6,,,,gems,Tenacity — Lv6,2,shipped
+gems/gem_flat_dr_lv7,,,,gems,Tenacity — Lv7,2,shipped
+gems/gem_flat_dr_lv8,,,,gems,Tenacity — Lv8,2,shipped
+gems/gem_flat_dr_lv9,,,,gems,Tenacity — Lv9,2,shipped
+gems/gem_hp_pct_lv1,,,,gems,Garnet — Lv1,2,shipped
+gems/gem_hp_pct_lv10,,,,gems,Garnet — Lv10,2,shipped
+gems/gem_hp_pct_lv2,,,,gems,Garnet — Lv2,2,shipped
+gems/gem_hp_pct_lv3,,,,gems,Garnet — Lv3,2,shipped
+gems/gem_hp_pct_lv4,,,,gems,Garnet — Lv4,2,shipped
+gems/gem_hp_pct_lv5,,,,gems,Garnet — Lv5,2,shipped
+gems/gem_hp_pct_lv6,,,,gems,Garnet — Lv6,2,shipped
+gems/gem_hp_pct_lv7,,,,gems,Garnet — Lv7,2,shipped
+gems/gem_hp_pct_lv8,,,,gems,Garnet — Lv8,2,shipped
+gems/gem_hp_pct_lv9,,,,gems,Garnet — Lv9,2,shipped
+gems/gem_lifesteal_lv1,,,,gems,Vampire Eye — Lv1,2,shipped
+gems/gem_lifesteal_lv10,,,,gems,Vampire Eye — Lv10,2,shipped
+gems/gem_lifesteal_lv2,,,,gems,Vampire Eye — Lv2,2,shipped
+gems/gem_lifesteal_lv3,,,,gems,Vampire Eye — Lv3,2,shipped
+gems/gem_lifesteal_lv4,,,,gems,Vampire Eye — Lv4,2,shipped
+gems/gem_lifesteal_lv5,,,,gems,Vampire Eye — Lv5,2,shipped
+gems/gem_lifesteal_lv6,,,,gems,Vampire Eye — Lv6,2,shipped
+gems/gem_lifesteal_lv7,,,,gems,Vampire Eye — Lv7,2,shipped
+gems/gem_lifesteal_lv8,,,,gems,Vampire Eye — Lv8,2,shipped
+gems/gem_lifesteal_lv9,,,,gems,Vampire Eye — Lv9,2,shipped
 gems/gem_lv1,,,,gems,Gem cut — Lv1,2,shipped
 gems/gem_lv10,,,,gems,Gem cut — Lv10,2,shipped
 gems/gem_lv2,,,,gems,Gem cut — Lv2,2,shipped
@@ -865,20 +1663,46 @@ gems/gem_lv6,,,,gems,Gem cut — Lv6,2,shipped
 gems/gem_lv7,,,,gems,Gem cut — Lv7,2,shipped
 gems/gem_lv8,,,,gems,Gem cut — Lv8,2,shipped
 gems/gem_lv9,,,,gems,Gem cut — Lv9,2,shipped
-gems/gem_stat_atk_flat,,,,gems,Gem — Ruby,1,shipped
-gems/gem_stat_cdr,,,,gems,Gem — Sapphire,1,shipped
-gems/gem_stat_combo,,,,gems,Gem — Opal,1,shipped
-gems/gem_stat_crit,,,,gems,Gem — Topaz,1,shipped
-gems/gem_stat_dex,,,,gems,Gem — Amber,1,shipped
-gems/gem_stat_dmg_pct,,,,gems,Gem — Sunstone,1,shipped
-gems/gem_stat_eva,,,,gems,Gem — Jade,1,shipped
-gems/gem_stat_flat_dr,,,,gems,Gem — Tenacity,1,shipped
-gems/gem_stat_hp_pct,,,,gems,Gem — Garnet,1,shipped
-gems/gem_stat_lifesteal,,,,gems,Gem — Vampire Eye,1,shipped
-gems/gem_stat_magpen,,,,gems,Gem — Amethyst,1,shipped
-gems/gem_stat_magres,,,,gems,Gem — Lapis,1,shipped
-gems/gem_stat_physpen,,,,gems,Gem — Bloodstone,1,shipped
-gems/gem_stat_physres,,,,gems,Gem — Onyx,1,shipped
+gems/gem_magpen_lv1,,,,gems,Amethyst — Lv1,2,shipped
+gems/gem_magpen_lv10,,,,gems,Amethyst — Lv10,2,shipped
+gems/gem_magpen_lv2,,,,gems,Amethyst — Lv2,2,shipped
+gems/gem_magpen_lv3,,,,gems,Amethyst — Lv3,2,shipped
+gems/gem_magpen_lv4,,,,gems,Amethyst — Lv4,2,shipped
+gems/gem_magpen_lv5,,,,gems,Amethyst — Lv5,2,shipped
+gems/gem_magpen_lv6,,,,gems,Amethyst — Lv6,2,shipped
+gems/gem_magpen_lv7,,,,gems,Amethyst — Lv7,2,shipped
+gems/gem_magpen_lv8,,,,gems,Amethyst — Lv8,2,shipped
+gems/gem_magpen_lv9,,,,gems,Amethyst — Lv9,2,shipped
+gems/gem_magres_lv1,,,,gems,Lapis — Lv1,2,shipped
+gems/gem_magres_lv10,,,,gems,Lapis — Lv10,2,shipped
+gems/gem_magres_lv2,,,,gems,Lapis — Lv2,2,shipped
+gems/gem_magres_lv3,,,,gems,Lapis — Lv3,2,shipped
+gems/gem_magres_lv4,,,,gems,Lapis — Lv4,2,shipped
+gems/gem_magres_lv5,,,,gems,Lapis — Lv5,2,shipped
+gems/gem_magres_lv6,,,,gems,Lapis — Lv6,2,shipped
+gems/gem_magres_lv7,,,,gems,Lapis — Lv7,2,shipped
+gems/gem_magres_lv8,,,,gems,Lapis — Lv8,2,shipped
+gems/gem_magres_lv9,,,,gems,Lapis — Lv9,2,shipped
+gems/gem_physpen_lv1,,,,gems,Bloodstone — Lv1,2,shipped
+gems/gem_physpen_lv10,,,,gems,Bloodstone — Lv10,2,shipped
+gems/gem_physpen_lv2,,,,gems,Bloodstone — Lv2,2,shipped
+gems/gem_physpen_lv3,,,,gems,Bloodstone — Lv3,2,shipped
+gems/gem_physpen_lv4,,,,gems,Bloodstone — Lv4,2,shipped
+gems/gem_physpen_lv5,,,,gems,Bloodstone — Lv5,2,shipped
+gems/gem_physpen_lv6,,,,gems,Bloodstone — Lv6,2,shipped
+gems/gem_physpen_lv7,,,,gems,Bloodstone — Lv7,2,shipped
+gems/gem_physpen_lv8,,,,gems,Bloodstone — Lv8,2,shipped
+gems/gem_physpen_lv9,,,,gems,Bloodstone — Lv9,2,shipped
+gems/gem_physres_lv1,,,,gems,Onyx — Lv1,2,shipped
+gems/gem_physres_lv10,,,,gems,Onyx — Lv10,2,shipped
+gems/gem_physres_lv2,,,,gems,Onyx — Lv2,2,shipped
+gems/gem_physres_lv3,,,,gems,Onyx — Lv3,2,shipped
+gems/gem_physres_lv4,,,,gems,Onyx — Lv4,2,shipped
+gems/gem_physres_lv5,,,,gems,Onyx — Lv5,2,shipped
+gems/gem_physres_lv6,,,,gems,Onyx — Lv6,2,shipped
+gems/gem_physres_lv7,,,,gems,Onyx — Lv7,2,shipped
+gems/gem_physres_lv8,,,,gems,Onyx — Lv8,2,shipped
+gems/gem_physres_lv9,,,,gems,Onyx — Lv9,2,shipped
 consumables/mana_draught,,,,consumables,Mana Potion,3,shipped
 consumables/might_elixir,,,,consumables,Elixir Might,3,shipped
 consumables/potion,,,,consumables,Health potion,10,shipped
@@ -1195,7 +2019,7 @@ ui/mail,5.5,procedural fallback,claude 2026-07-26,ui,Mail,40,shipped
 ui/settings,5.5,procedural fallback,claude 2026-07-26,ui,Settings,40,shipped
 ui/skills,5.5,procedural fallback,claude 2026-07-26,ui,Skills,40,shipped
 ui/stash,5.5,procedural fallback,claude 2026-07-26,ui,Stash,40,shipped
-ui/ui_bag,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui bag,2,shipped
+ui/ui_bag,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui bag,3,shipped
 ui/ui_book,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui book,2,shipped
 ui/ui_daily,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui daily,2,shipped
 ui/ui_mail,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui mail,2,shipped
@@ -1203,12 +2027,394 @@ ui/ui_party,6.5,pack icons read well; procedural fallbacks are plain,claude 2026
 ui/ui_quest,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui quest,2,shipped
 ui/ui_settings,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui settings,2,shipped
 ui/ui_skills,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,ui skills,2,shipped
+orphan/anchor_vine,,,,orphan,anchor vine,0,unwired
+orphan/archive/2026-07-26_aegis_mace_two_object_pass/w_aegis_mace,,,,orphan,w aegis mace,0,unwired
+orphan/archive/2026-07-26_aegis_mace_two_object_pass/w_aegis_mace_A,,,,orphan,w aegis mace A,0,unwired
+orphan/archive/2026-07-26_aegis_mace_two_object_pass/w_aegis_mace_B,,,,orphan,w aegis mace B,0,unwired
+orphan/archive/2026-07-26_aegis_mace_two_object_pass/w_aegis_mace_S,,,,orphan,w aegis mace S,0,unwired
+orphan/archive/2026-07-26_pre_gear_art/w_claymore,,,,orphan,w claymore,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/u_ashrider,,,,orphan,u ashrider,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/u_crownfall_the_kingdoms_end,,,,orphan,u crownfall the kingdoms end,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/u_marchbreaker,,,,orphan,u marchbreaker,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/u_the_gate_that_walks,,,,orphan,u the gate that walks,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/u_the_red_pennon,,,,orphan,u the red pennon,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_bulwark_blade_A,,,,orphan,w bulwark blade A,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_bulwark_blade_B,,,,orphan,w bulwark blade B,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_bulwark_blade_S,,,,orphan,w bulwark blade S,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_claymore_A,,,,orphan,w claymore A,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_claymore_B,,,,orphan,w claymore B,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_claymore_S,,,,orphan,w claymore S,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_pike_A,,,,orphan,w pike A,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_pike_B,,,,orphan,w pike B,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_pike_S,,,,orphan,w pike S,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_saber_A,,,,orphan,w saber A,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_saber_B,,,,orphan,w saber B,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_saber_S,,,,orphan,w saber S,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_warblade_A,,,,orphan,w warblade A,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_warblade_B,,,,orphan,w warblade B,0,unwired
+orphan/archive/2026-07-26_warrior_weapon_regen_pass1/w_warblade_S,,,,orphan,w warblade S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_beastpelt_bracers_S,,,,orphan,g beastpelt bracers S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_bloodpact_claws_S,,,,orphan,g bloodpact claws S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_earthen_handwraps_S,,,,orphan,g earthen handwraps S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_featherweave_handwraps_S,,,,orphan,g featherweave handwraps S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_ironwall_gauntlets_S,,,,orphan,g ironwall gauntlets S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_rangers_bracers_S,,,,orphan,g rangers bracers S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_sanctified_gauntlets_S,,,,orphan,g sanctified gauntlets S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_shadeweave_claws_S,,,,orphan,g shadeweave claws S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_skirmishers_gauntlets_S,,,,orphan,g skirmishers gauntlets S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_starweave_handwraps_S,,,,orphan,g starweave handwraps S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_studded_bracers_S,,,,orphan,g studded bracers S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_templar_gauntlets_S,,,,orphan,g templar gauntlets S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_titan_gauntlets_S,,,,orphan,g titan gauntlets S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_vigil_gauntlets_S,,,,orphan,g vigil gauntlets S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_voidsilk_claws_S,,,,orphan,g voidsilk claws S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/g_warded_grips_S,,,,orphan,g warded grips S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_beastpelt_hood,,,,orphan,h beastpelt hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_beastpelt_hood_A,,,,orphan,h beastpelt hood A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_beastpelt_hood_B,,,,orphan,h beastpelt hood B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_beastpelt_hood_S,,,,orphan,h beastpelt hood S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_blessed_greathelm,,,,orphan,h blessed greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_blessed_greathelm_A,,,,orphan,h blessed greathelm A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_blessed_greathelm_B,,,,orphan,h blessed greathelm B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_blessed_greathelm_S,,,,orphan,h blessed greathelm S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_bloodpact_hood_S,,,,orphan,h bloodpact hood S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_earthen_circlet_S,,,,orphan,h earthen circlet S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_featherweave_circlet_S,,,,orphan,h featherweave circlet S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_hunters_hood,,,,orphan,h hunters hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_hunters_hood_A,,,,orphan,h hunters hood A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_hunters_hood_B,,,,orphan,h hunters hood B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_hunters_hood_S,,,,orphan,h hunters hood S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_ironwall_helm_S,,,,orphan,h ironwall helm S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_rangers_hood,,,,orphan,h rangers hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_rangers_hood_A,,,,orphan,h rangers hood A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_rangers_hood_B,,,,orphan,h rangers hood B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_rangers_hood_S,,,,orphan,h rangers hood S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_sanctified_greathelm,,,,orphan,h sanctified greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_sanctified_greathelm_A,,,,orphan,h sanctified greathelm A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_sanctified_greathelm_B,,,,orphan,h sanctified greathelm B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_sanctified_greathelm_S,,,,orphan,h sanctified greathelm S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_shadeweave_hood_S,,,,orphan,h shadeweave hood S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_skirmishers_helm_S,,,,orphan,h skirmishers helm S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_starweave_circlet_S,,,,orphan,h starweave circlet S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_stormweave_hood,,,,orphan,h stormweave hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_stormweave_hood_A,,,,orphan,h stormweave hood A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_stormweave_hood_B,,,,orphan,h stormweave hood B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_stormweave_hood_S,,,,orphan,h stormweave hood S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_studded_hood,,,,orphan,h studded hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_studded_hood_A,,,,orphan,h studded hood A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_studded_hood_B,,,,orphan,h studded hood B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_studded_hood_S,,,,orphan,h studded hood S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_templar_greathelm,,,,orphan,h templar greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_templar_greathelm_A,,,,orphan,h templar greathelm A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_templar_greathelm_B,,,,orphan,h templar greathelm B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_templar_greathelm_S,,,,orphan,h templar greathelm S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_titan_helm_S,,,,orphan,h titan helm S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_vigil_greathelm,,,,orphan,h vigil greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_vigil_greathelm_A,,,,orphan,h vigil greathelm A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_vigil_greathelm_B,,,,orphan,h vigil greathelm B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_vigil_greathelm_S,,,,orphan,h vigil greathelm S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_voidsilk_hood_S,,,,orphan,h voidsilk hood S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_warded_cowl_S,,,,orphan,h warded cowl S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_zealot_greathelm,,,,orphan,h zealot greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_zealot_greathelm_A,,,,orphan,h zealot greathelm A,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_zealot_greathelm_B,,,,orphan,h zealot greathelm B,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/h_zealot_greathelm_S,,,,orphan,h zealot greathelm S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_beastpelt_leggings_S,,,,orphan,p beastpelt leggings S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_bloodpact_chausses_S,,,,orphan,p bloodpact chausses S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_earthen_underleggings_S,,,,orphan,p earthen underleggings S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_featherweave_underleggings_S,,,,orphan,p featherweave underleggings S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_ironwall_legplates_S,,,,orphan,p ironwall legplates S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_rangers_leggings_S,,,,orphan,p rangers leggings S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_sanctified_legguards_S,,,,orphan,p sanctified legguards S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_shadeweave_chausses_S,,,,orphan,p shadeweave chausses S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_skirmishers_legplates_S,,,,orphan,p skirmishers legplates S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_starweave_underleggings_S,,,,orphan,p starweave underleggings S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_studded_leggings_S,,,,orphan,p studded leggings S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_templar_legguards_S,,,,orphan,p templar legguards S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_titan_legplates_S,,,,orphan,p titan legplates S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_vigil_legguards_S,,,,orphan,p vigil legguards S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_voidsilk_chausses_S,,,,orphan,p voidsilk chausses S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/p_warded_wraps_S,,,,orphan,p warded wraps S,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_axiom_guard_handwraps_beyond_the_firmament,,,,orphan,u axiom guard handwraps beyond the firmament,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_axiom_guard_underleggings_beyond_the_firmament,,,,orphan,u axiom guard underleggings beyond the firmament,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_censure_greathelm,,,,orphan,u censure greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_closed_door_cowl_between_heartbeats,,,,orphan,u closed door cowl between heartbeats,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_dawnstone_greathelm,,,,orphan,u dawnstone greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_final_censure_greathelm_of_the_final_oath,,,,orphan,u final censure greathelm of the final oath,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_first_beast_hood_of_the_last_gale,,,,orphan,u first beast hood of the last gale,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_first_dawn_greathelm_of_the_final_oath,,,,orphan,u first dawn greathelm of the final oath,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_ironwood_witness_hood_of_the_last_gale,,,,orphan,u ironwood witness hood of the last gale,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_last_hunt_hood_of_the_last_gale,,,,orphan,u last hunt hood of the last gale,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_last_templar_gauntlets_of_the_final_oath,,,,orphan,u last templar gauntlets of the final oath,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_last_templar_greathelm_of_the_final_oath,,,,orphan,u last templar greathelm of the final oath,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_last_templar_legguards_of_the_final_oath,,,,orphan,u last templar legguards of the final oath,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_no_horizon_legplates_of_the_crownless_host,,,,orphan,u no horizon legplates of the crownless host,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_nullward_helm_of_the_crownless_host,,,,orphan,u nullward helm of the crownless host,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_nullward_legplates_of_the_crownless_host,,,,orphan,u nullward legplates of the crownless host,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_oathiron_greathelm,,,,orphan,u oathiron greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_oblivion_veil_hood_beneath_all_names,,,,orphan,u oblivion veil hood beneath all names,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_oldhide_hood,,,,orphan,u oldhide hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_ossuary_king_chausses_beneath_all_names,,,,orphan,u ossuary king chausses beneath all names,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_red_quarry_hood,,,,orphan,u red quarry hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_returning_dead_wraps_between_heartbeats,,,,orphan,u returning dead wraps between heartbeats,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_rivetleaf_hood,,,,orphan,u rivetleaf hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_ruins_testament_claws_beneath_all_names,,,,orphan,u ruins testament claws beneath all names,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_saintglass_greathelm,,,,orphan,u saintglass greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_shadow_without_owner_hood_beneath_all_names,,,,orphan,u shadow without owner hood beneath all names,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_stonefather_legplates_of_the_crownless_host,,,,orphan,u stonefather legplates of the crownless host,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_stormneedle_hood,,,,orphan,u stormneedle hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_swiftvow_greathelm,,,,orphan,u swiftvow greathelm,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_tempest_crown_hood_of_the_last_gale,,,,orphan,u tempest crown hood of the last gale,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_unbroken_helm_of_the_crownless_host,,,,orphan,u unbroken helm of the crownless host,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_unbroken_legplates_of_the_crownless_host,,,,orphan,u unbroken legplates of the crownless host,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_unshadowed_greathelm_of_the_final_oath,,,,orphan,u unshadowed greathelm of the final oath,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_vigil_without_end_gauntlets_of_the_final_oath,,,,orphan,u vigil without end gauntlets of the final oath,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_vigil_without_end_greathelm_of_the_final_oath,,,,orphan,u vigil without end greathelm of the final oath,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_warhowl_legplates_of_the_crownless_host,,,,orphan,u warhowl legplates of the crownless host,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_white_wind_hood_of_the_last_gale,,,,orphan,u white wind hood of the last gale,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_windfeather_hood,,,,orphan,u windfeather hood,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_worldmantle_handwraps_beyond_the_firmament,,,,orphan,u worldmantle handwraps beyond the firmament,0,unwired
+orphan/archive/2026-07-27_newslots_qa_pass1/u_worldmantle_underleggings_beyond_the_firmament,,,,orphan,u worldmantle underleggings beyond the firmament,0,unwired
+orphan/archon_vassik,,,,orphan,archon vassik,0,unwired
 orphan/bandit_fighter,,,,orphan,bandit fighter,0,unwired
 orphan/bandit_sorcerer,,,,orphan,bandit sorcerer,0,unwired
+orphan/bannerman,,,,orphan,bannerman,0,unwired
+orphan/bellows_imp,,,,orphan,bellows imp,0,unwired
+orphan/bloat_leech,,,,orphan,bloat leech,0,unwired
+orphan/broodmother_yskara,,,,orphan,broodmother yskara,0,unwired
+orphan/burned_kings_echo,,,,orphan,burned kings echo,0,unwired
+orphan/choir_ascendant,,,,orphan,choir ascendant,0,unwired
+orphan/choir_of_frost,,,,orphan,choir of frost,0,unwired
+orphan/choir_radical,,,,orphan,choir radical,0,unwired
+orphan/chorister_of_frost,,,,orphan,chorister of frost,0,unwired
+orphan/cindersmith,,,,orphan,cindersmith,0,unwired
+orphan/cistern_mimic,,,,orphan,cistern mimic,0,unwired
+orphan/commander_drayce,,,,orphan,commander drayce,0,unwired
+orphan/conductor_acolyte,,,,orphan,conductor acolyte,0,unwired
+orphan/consumables/accordmark_health_potion,,,,orphan,accordmark health potion,0,unwired
+orphan/consumables/accordmark_health_tonic,,,,orphan,accordmark health tonic,0,unwired
+orphan/consumables/apprentices_health_potion,,,,orphan,apprentices health potion,0,unwired
+orphan/consumables/apprentices_health_tonic,,,,orphan,apprentices health tonic,0,unwired
+orphan/consumables/bleakvein_red,,,,orphan,bleakvein red,0,unwired
+orphan/consumables/brawlers_red,,,,orphan,brawlers red,0,unwired
+orphan/consumables/defective_health_potion,,,,orphan,defective health potion,0,unwired
+orphan/consumables/defective_health_tonic,,,,orphan,defective health tonic,0,unwired
+orphan/consumables/dockside_red,,,,orphan,dockside red,0,unwired
+orphan/consumables/gutter_red,,,,orphan,gutter red,0,unwired
+orphan/consumables/heartsblood,,,,orphan,heartsblood,0,unwired
+orphan/consumables/hollowbone_red,,,,orphan,hollowbone red,0,unwired
+orphan/consumables/journeymans_health_potion,,,,orphan,journeymans health potion,0,unwired
+orphan/consumables/journeymans_health_tonic,,,,orphan,journeymans health tonic,0,unwired
+orphan/consumables/masters_health_potion,,,,orphan,masters health potion,0,unwired
+orphan/consumables/masters_health_tonic,,,,orphan,masters health tonic,0,unwired
+orphan/consumables/masterwork_health_potion,,,,orphan,masterwork health potion,0,unwired
+orphan/consumables/masterwork_health_tonic,,,,orphan,masterwork health tonic,0,unwired
+orphan/consumables/thinners_red,,,,orphan,thinners red,0,unwired
+orphan/converted,,,,orphan,converted,0,unwired
+orphan/crusade_zealot,,,,orphan,crusade zealot,0,unwired
+orphan/cure_seeker_heretic,,,,orphan,cure seeker heretic,0,unwired
+orphan/drowned_warden,,,,orphan,drowned warden,0,unwired
+orphan/elara_vessel,,,,orphan,elara vessel,0,unwired
+orphan/field_chirurgeon,,,,orphan,field chirurgeon,0,unwired
+orphan/flux_hound,,,,orphan,flux hound,0,unwired
+orphan/forge_zealot,,,,orphan,forge zealot,0,unwired
+orphan/foundry_thrall,,,,orphan,foundry thrall,0,unwired
 orphan/fungus_old,,,,orphan,fungus old,0,unwired
 orphan/fx_frost_moon,,,,orphan,fx frost moon,0,unwired
 orphan/fx_void_eclipse,,,,orphan,fx void eclipse,0,unwired
+orphan/glacius,,,,orphan,glacius,0,unwired
+orphan/glasshide_stalker,,,,orphan,glasshide stalker,0,unwired
+orphan/ground_room_amberleaf,,,,orphan,ground room amberleaf,0,unwired
+orphan/ground_room_ashsoil,,,,orphan,ground room ashsoil,0,unwired
+orphan/ground_room_barrowgrass,,,,orphan,ground room barrowgrass,0,unwired
+orphan/ground_room_blueice,,,,orphan,ground room blueice,0,unwired
+orphan/ground_room_bonefloor,,,,orphan,ground room bonefloor,0,unwired
+orphan/ground_room_cinderstone,,,,orphan,ground room cinderstone,0,unwired
+orphan/ground_room_deepcrystal,,,,orphan,ground room deepcrystal,0,unwired
+orphan/ground_room_drownedsoil,,,,orphan,ground room drownedsoil,0,unwired
+orphan/ground_room_fungalhumus,,,,orphan,ground room fungalhumus,0,unwired
+orphan/ground_room_hoarfrost,,,,orphan,ground room hoarfrost,0,unwired
+orphan/ground_room_hollowsoil,,,,orphan,ground room hollowsoil,0,unwired
+orphan/ground_room_moonmire,,,,orphan,ground room moonmire,0,unwired
+orphan/ground_room_mossmeadow,,,,orphan,ground room mossmeadow,0,unwired
+orphan/ground_room_mournearth,,,,orphan,ground room mournearth,0,unwired
+orphan/ground_room_obsidian,,,,orphan,ground room obsidian,0,unwired
+orphan/ground_room_rimegrass,,,,orphan,ground room rimegrass,0,unwired
+orphan/ground_room_rootsoil,,,,orphan,ground room rootsoil,0,unwired
+orphan/ground_room_slagstone,,,,orphan,ground room slagstone,0,unwired
+orphan/ground_room_stormstone,,,,orphan,ground room stormstone,0,unwired
+orphan/ground_room_voidscar,,,,orphan,ground room voidscar,0,unwired
+orphan/grove_tender,,,,orphan,grove tender,0,unwired
+orphan/heart_of_the_root,,,,orphan,heart of the root,0,unwired
+orphan/high_artificer_maeven,,,,orphan,high artificer maeven,0,unwired
+orphan/hollow_knight,,,,orphan,hollow knight,0,unwired
+orphan/materials/bone_a_saintbone,,,,orphan,bone a saintbone,0,unwired
+orphan/materials/bone_b_blessed_relic,,,,orphan,bone b blessed relic,0,unwired
+orphan/materials/bone_c_runed_bone,,,,orphan,bone c runed bone,0,unwired
+orphan/materials/bone_d_whole_bone,,,,orphan,bone d whole bone,0,unwired
+orphan/materials/bone_e_bleached_bone,,,,orphan,bone e bleached bone,0,unwired
+orphan/materials/bone_f_cracked_bone,,,,orphan,bone f cracked bone,0,unwired
+orphan/materials/bone_s_concordium_relic,,,,orphan,bone s concordium relic,0,unwired
+orphan/materials/cloth_a_gilded_weave,,,,orphan,cloth a gilded weave,0,unwired
+orphan/materials/cloth_b_fine_silk,,,,orphan,cloth b fine silk,0,unwired
+orphan/materials/cloth_c_tanned_weave,,,,orphan,cloth c tanned weave,0,unwired
+orphan/materials/cloth_d_plain_bolt,,,,orphan,cloth d plain bolt,0,unwired
+orphan/materials/cloth_e_coarse_cloth,,,,orphan,cloth e coarse cloth,0,unwired
+orphan/materials/cloth_f_frayed_scraps,,,,orphan,cloth f frayed scraps,0,unwired
+orphan/materials/cloth_s_moonweave,,,,orphan,cloth s moonweave,0,unwired
+orphan/materials/herb_a_pristine_bloom,,,,orphan,herb a pristine bloom,0,unwired
+orphan/materials/herb_b_rare_bloom,,,,orphan,herb b rare bloom,0,unwired
+orphan/materials/herb_c_verdant_herb,,,,orphan,herb c verdant herb,0,unwired
+orphan/materials/herb_d_fresh_herb,,,,orphan,herb d fresh herb,0,unwired
+orphan/materials/herb_e_common_weed,,,,orphan,herb e common weed,0,unwired
+orphan/materials/herb_f_wilted_sprig,,,,orphan,herb f wilted sprig,0,unwired
+orphan/materials/herb_s_sunpetal,,,,orphan,herb s sunpetal,0,unwired
+orphan/materials/metal_a_mastercrafted_alloy,,,,orphan,metal a mastercrafted alloy,0,unwired
+orphan/materials/metal_b_fine_steel,,,,orphan,metal b fine steel,0,unwired
+orphan/materials/metal_c_tempered_steel,,,,orphan,metal c tempered steel,0,unwired
+orphan/materials/metal_d_plain_ingot,,,,orphan,metal d plain ingot,0,unwired
+orphan/materials/metal_e_pitted_iron,,,,orphan,metal e pitted iron,0,unwired
+orphan/materials/metal_f_rusted_scrap,,,,orphan,metal f rusted scrap,0,unwired
+orphan/materials/metal_s_starforged_ingot,,,,orphan,metal s starforged ingot,0,unwired
+orphan/materials/reagent_a_radiant_essence,,,,orphan,reagent a radiant essence,0,unwired
+orphan/materials/reagent_b_pure_essence,,,,orphan,reagent b pure essence,0,unwired
+orphan/materials/reagent_c_potent_essence,,,,orphan,reagent c potent essence,0,unwired
+orphan/materials/reagent_d_clean_extract,,,,orphan,reagent d clean extract,0,unwired
+orphan/materials/reagent_e_crude_extract,,,,orphan,reagent e crude extract,0,unwired
+orphan/materials/reagent_f_foul_residue,,,,orphan,reagent f foul residue,0,unwired
+orphan/materials/reagent_s_quintessence,,,,orphan,reagent s quintessence,0,unwired
 orphan/medusa,,,,orphan,medusa,0,unwired
+orphan/morwyn_hollow_flame,,,,orphan,morwyn hollow flame,0,unwired
+orphan/mouth_of_the_storm,,,,orphan,mouth of the storm,0,unwired
+orphan/oathbound_knight,,,,orphan,oathbound knight,0,unwired
+orphan/opening/chapters/opening_ch10_0,,,,orphan,opening ch10 0,0,unwired
+orphan/opening/chapters/opening_ch10_1,,,,orphan,opening ch10 1,0,unwired
+orphan/opening/chapters/opening_ch10_archer,,,,orphan,opening ch10 archer,0,unwired
+orphan/opening/chapters/opening_ch10_assassin,,,,orphan,opening ch10 assassin,0,unwired
+orphan/opening/chapters/opening_ch10_mage,,,,orphan,opening ch10 mage,0,unwired
+orphan/opening/chapters/opening_ch10_paladin,,,,orphan,opening ch10 paladin,0,unwired
+orphan/opening/chapters/opening_ch10_warlock,,,,orphan,opening ch10 warlock,0,unwired
+orphan/opening/chapters/opening_ch10_warrior,,,,orphan,opening ch10 warrior,0,unwired
+orphan/opening/chapters/opening_ch11_0,,,,orphan,opening ch11 0,0,unwired
+orphan/opening/chapters/opening_ch11_1,,,,orphan,opening ch11 1,0,unwired
+orphan/opening/chapters/opening_ch11_archer,,,,orphan,opening ch11 archer,0,unwired
+orphan/opening/chapters/opening_ch11_assassin,,,,orphan,opening ch11 assassin,0,unwired
+orphan/opening/chapters/opening_ch11_mage,,,,orphan,opening ch11 mage,0,unwired
+orphan/opening/chapters/opening_ch11_paladin,,,,orphan,opening ch11 paladin,0,unwired
+orphan/opening/chapters/opening_ch11_warlock,,,,orphan,opening ch11 warlock,0,unwired
+orphan/opening/chapters/opening_ch11_warrior,,,,orphan,opening ch11 warrior,0,unwired
+orphan/opening/chapters/opening_ch12_0,,,,orphan,opening ch12 0,0,unwired
+orphan/opening/chapters/opening_ch12_1,,,,orphan,opening ch12 1,0,unwired
+orphan/opening/chapters/opening_ch12_archer,,,,orphan,opening ch12 archer,0,unwired
+orphan/opening/chapters/opening_ch12_assassin,,,,orphan,opening ch12 assassin,0,unwired
+orphan/opening/chapters/opening_ch12_mage,,,,orphan,opening ch12 mage,0,unwired
+orphan/opening/chapters/opening_ch12_paladin,,,,orphan,opening ch12 paladin,0,unwired
+orphan/opening/chapters/opening_ch12_warlock,,,,orphan,opening ch12 warlock,0,unwired
+orphan/opening/chapters/opening_ch12_warrior,,,,orphan,opening ch12 warrior,0,unwired
+orphan/opening/chapters/opening_ch13_0,,,,orphan,opening ch13 0,0,unwired
+orphan/opening/chapters/opening_ch13_1,,,,orphan,opening ch13 1,0,unwired
+orphan/opening/chapters/opening_ch13_archer,,,,orphan,opening ch13 archer,0,unwired
+orphan/opening/chapters/opening_ch13_assassin,,,,orphan,opening ch13 assassin,0,unwired
+orphan/opening/chapters/opening_ch13_mage,,,,orphan,opening ch13 mage,0,unwired
+orphan/opening/chapters/opening_ch13_paladin,,,,orphan,opening ch13 paladin,0,unwired
+orphan/opening/chapters/opening_ch13_warlock,,,,orphan,opening ch13 warlock,0,unwired
+orphan/opening/chapters/opening_ch13_warrior,,,,orphan,opening ch13 warrior,0,unwired
+orphan/opening/chapters/opening_ch14_0,,,,orphan,opening ch14 0,0,unwired
+orphan/opening/chapters/opening_ch14_1,,,,orphan,opening ch14 1,0,unwired
+orphan/opening/chapters/opening_ch14_2,,,,orphan,opening ch14 2,0,unwired
+orphan/opening/chapters/opening_ch14_archer,,,,orphan,opening ch14 archer,0,unwired
+orphan/opening/chapters/opening_ch14_assassin,,,,orphan,opening ch14 assassin,0,unwired
+orphan/opening/chapters/opening_ch14_mage,,,,orphan,opening ch14 mage,0,unwired
+orphan/opening/chapters/opening_ch14_paladin,,,,orphan,opening ch14 paladin,0,unwired
+orphan/opening/chapters/opening_ch14_warlock,,,,orphan,opening ch14 warlock,0,unwired
+orphan/opening/chapters/opening_ch14_warrior,,,,orphan,opening ch14 warrior,0,unwired
+orphan/opening/chapters/opening_ch2_0,,,,orphan,opening ch2 0,0,unwired
+orphan/opening/chapters/opening_ch2_1,,,,orphan,opening ch2 1,0,unwired
+orphan/opening/chapters/opening_ch2_archer,,,,orphan,opening ch2 archer,0,unwired
+orphan/opening/chapters/opening_ch2_assassin,,,,orphan,opening ch2 assassin,0,unwired
+orphan/opening/chapters/opening_ch2_mage,,,,orphan,opening ch2 mage,0,unwired
+orphan/opening/chapters/opening_ch2_paladin,,,,orphan,opening ch2 paladin,0,unwired
+orphan/opening/chapters/opening_ch2_warlock,,,,orphan,opening ch2 warlock,0,unwired
+orphan/opening/chapters/opening_ch2_warrior,,,,orphan,opening ch2 warrior,0,unwired
+orphan/opening/chapters/opening_ch3_0,,,,orphan,opening ch3 0,0,unwired
+orphan/opening/chapters/opening_ch3_1,,,,orphan,opening ch3 1,0,unwired
+orphan/opening/chapters/opening_ch3_archer,,,,orphan,opening ch3 archer,0,unwired
+orphan/opening/chapters/opening_ch3_assassin,,,,orphan,opening ch3 assassin,0,unwired
+orphan/opening/chapters/opening_ch3_mage,,,,orphan,opening ch3 mage,0,unwired
+orphan/opening/chapters/opening_ch3_paladin,,,,orphan,opening ch3 paladin,0,unwired
+orphan/opening/chapters/opening_ch3_warlock,,,,orphan,opening ch3 warlock,0,unwired
+orphan/opening/chapters/opening_ch3_warrior,,,,orphan,opening ch3 warrior,0,unwired
+orphan/opening/chapters/opening_ch4_0,,,,orphan,opening ch4 0,0,unwired
+orphan/opening/chapters/opening_ch4_1,,,,orphan,opening ch4 1,0,unwired
+orphan/opening/chapters/opening_ch4_archer,,,,orphan,opening ch4 archer,0,unwired
+orphan/opening/chapters/opening_ch4_assassin,,,,orphan,opening ch4 assassin,0,unwired
+orphan/opening/chapters/opening_ch4_mage,,,,orphan,opening ch4 mage,0,unwired
+orphan/opening/chapters/opening_ch4_paladin,,,,orphan,opening ch4 paladin,0,unwired
+orphan/opening/chapters/opening_ch4_warlock,,,,orphan,opening ch4 warlock,0,unwired
+orphan/opening/chapters/opening_ch4_warrior,,,,orphan,opening ch4 warrior,0,unwired
+orphan/opening/chapters/opening_ch5_0,,,,orphan,opening ch5 0,0,unwired
+orphan/opening/chapters/opening_ch5_1,,,,orphan,opening ch5 1,0,unwired
+orphan/opening/chapters/opening_ch5_archer,,,,orphan,opening ch5 archer,0,unwired
+orphan/opening/chapters/opening_ch5_assassin,,,,orphan,opening ch5 assassin,0,unwired
+orphan/opening/chapters/opening_ch5_mage,,,,orphan,opening ch5 mage,0,unwired
+orphan/opening/chapters/opening_ch5_paladin,,,,orphan,opening ch5 paladin,0,unwired
+orphan/opening/chapters/opening_ch5_warlock,,,,orphan,opening ch5 warlock,0,unwired
+orphan/opening/chapters/opening_ch5_warrior,,,,orphan,opening ch5 warrior,0,unwired
+orphan/opening/chapters/opening_ch6_0,,,,orphan,opening ch6 0,0,unwired
+orphan/opening/chapters/opening_ch6_1,,,,orphan,opening ch6 1,0,unwired
+orphan/opening/chapters/opening_ch6_archer,,,,orphan,opening ch6 archer,0,unwired
+orphan/opening/chapters/opening_ch6_assassin,,,,orphan,opening ch6 assassin,0,unwired
+orphan/opening/chapters/opening_ch6_mage,,,,orphan,opening ch6 mage,0,unwired
+orphan/opening/chapters/opening_ch6_paladin,,,,orphan,opening ch6 paladin,0,unwired
+orphan/opening/chapters/opening_ch6_warlock,,,,orphan,opening ch6 warlock,0,unwired
+orphan/opening/chapters/opening_ch6_warrior,,,,orphan,opening ch6 warrior,0,unwired
+orphan/opening/chapters/opening_ch7_0,,,,orphan,opening ch7 0,0,unwired
+orphan/opening/chapters/opening_ch7_1,,,,orphan,opening ch7 1,0,unwired
+orphan/opening/chapters/opening_ch7_archer,,,,orphan,opening ch7 archer,0,unwired
+orphan/opening/chapters/opening_ch7_assassin,,,,orphan,opening ch7 assassin,0,unwired
+orphan/opening/chapters/opening_ch7_mage,,,,orphan,opening ch7 mage,0,unwired
+orphan/opening/chapters/opening_ch7_paladin,,,,orphan,opening ch7 paladin,0,unwired
+orphan/opening/chapters/opening_ch7_warlock,,,,orphan,opening ch7 warlock,0,unwired
+orphan/opening/chapters/opening_ch7_warrior,,,,orphan,opening ch7 warrior,0,unwired
+orphan/opening/chapters/opening_ch8_0,,,,orphan,opening ch8 0,0,unwired
+orphan/opening/chapters/opening_ch8_1,,,,orphan,opening ch8 1,0,unwired
+orphan/opening/chapters/opening_ch8_archer,,,,orphan,opening ch8 archer,0,unwired
+orphan/opening/chapters/opening_ch8_assassin,,,,orphan,opening ch8 assassin,0,unwired
+orphan/opening/chapters/opening_ch8_mage,,,,orphan,opening ch8 mage,0,unwired
+orphan/opening/chapters/opening_ch8_paladin,,,,orphan,opening ch8 paladin,0,unwired
+orphan/opening/chapters/opening_ch8_warlock,,,,orphan,opening ch8 warlock,0,unwired
+orphan/opening/chapters/opening_ch8_warrior,,,,orphan,opening ch8 warrior,0,unwired
+orphan/opening/chapters/opening_ch9_0,,,,orphan,opening ch9 0,0,unwired
+orphan/opening/chapters/opening_ch9_1,,,,orphan,opening ch9 1,0,unwired
+orphan/opening/chapters/opening_ch9_archer,,,,orphan,opening ch9 archer,0,unwired
+orphan/opening/chapters/opening_ch9_assassin,,,,orphan,opening ch9 assassin,0,unwired
+orphan/opening/chapters/opening_ch9_mage,,,,orphan,opening ch9 mage,0,unwired
+orphan/opening/chapters/opening_ch9_paladin,,,,orphan,opening ch9 paladin,0,unwired
+orphan/opening/chapters/opening_ch9_warlock,,,,orphan,opening ch9 warlock,0,unwired
+orphan/opening/chapters/opening_ch9_warrior,,,,orphan,opening ch9 warrior,0,unwired
+orphan/opening/opening_archer_0,,,,orphan,opening archer 0,0,unwired
+orphan/opening/opening_archer_1,,,,orphan,opening archer 1,0,unwired
+orphan/opening/opening_archer_2,,,,orphan,opening archer 2,0,unwired
+orphan/opening/opening_assassin_0,,,,orphan,opening assassin 0,0,unwired
+orphan/opening/opening_assassin_1,,,,orphan,opening assassin 1,0,unwired
+orphan/opening/opening_assassin_2,,,,orphan,opening assassin 2,0,unwired
+orphan/opening/opening_crown_0,,,,orphan,opening crown 0,0,unwired
+orphan/opening/opening_crown_1,,,,orphan,opening crown 1,0,unwired
+orphan/opening/opening_crown_2,,,,orphan,opening crown 2,0,unwired
+orphan/opening/opening_mage_0,,,,orphan,opening mage 0,0,unwired
+orphan/opening/opening_mage_1,,,,orphan,opening mage 1,0,unwired
+orphan/opening/opening_mage_2,,,,orphan,opening mage 2,0,unwired
+orphan/opening/opening_paladin_0,,,,orphan,opening paladin 0,0,unwired
+orphan/opening/opening_paladin_1,,,,orphan,opening paladin 1,0,unwired
+orphan/opening/opening_paladin_2,,,,orphan,opening paladin 2,0,unwired
+orphan/opening/opening_warlock_0,,,,orphan,opening warlock 0,0,unwired
+orphan/opening/opening_warlock_1,,,,orphan,opening warlock 1,0,unwired
+orphan/opening/opening_warlock_2,,,,orphan,opening warlock 2,0,unwired
+orphan/opening/opening_warrior_0,,,,orphan,opening warrior 0,0,unwired
+orphan/opening/opening_warrior_1,,,,orphan,opening warrior 1,0,unwired
+orphan/opening/opening_warrior_2,,,,orphan,opening warrior 2,0,unwired
+orphan/overgrown_gatewarden,,,,orphan,overgrown gatewarden,0,unwired
+orphan/pale_nursery,,,,orphan,pale nursery,0,unwired
 orphan/placeholders/aldric_placeholder,,,,orphan,aldric placeholder,0,placeholder
 orphan/placeholders/elder_maren_round1_direction_sources/elder_anim,,,,orphan,elder anim,0,placeholder
 orphan/placeholders/elder_maren_round1_superseded/elder,,,,orphan,elder,0,placeholder
@@ -1216,11 +2422,109 @@ orphan/placeholders/merchant_placeholder,,,,orphan,merchant placeholder,0,placeh
 orphan/placeholders/merchant_pre_pixellab,,,,orphan,merchant pre pixellab,0,placeholder
 orphan/placeholders/merchant_round1_alpha_failed,,,,orphan,merchant round1 alpha failed,0,placeholder
 orphan/placeholders/merchant_round2_readable_but_wrong_style,,,,orphan,merchant round2 readable but wrong style,0,placeholder
+orphan/pollen_drifter,,,,orphan,pollen drifter,0,unwired
+orphan/rat,,,,orphan,rat,0,unwired
+orphan/riftling,,,,orphan,riftling,0,unwired
+orphan/rime_wolf,,,,orphan,rime wolf,0,unwired
+orphan/root_spiderling,,,,orphan,root spiderling,0,unwired
+orphan/rootspawn,,,,orphan,rootspawn,0,unwired
+orphan/rootweaver,,,,orphan,rootweaver,0,unwired
 orphan/royal_priest,,,,orphan,royal priest,0,unwired
 orphan/royal_soldier,,,,orphan,royal soldier,0,unwired
+orphan/sand_revenant,,,,orphan,sand revenant,0,unwired
 orphan/scholar_censor,,,,orphan,scholar censor,0,unwired
 orphan/scholar_director,,,,orphan,scholar director,0,unwired
+orphan/shardcaller,,,,orphan,shardcaller,0,unwired
+orphan/shattered_vow,,,,orphan,shattered vow,0,unwired
 orphan/skins/archive/archer_astral_marksman_anim,,,,orphan,archer astral marksman anim,0,placeholder
 orphan/skins/archive/archer_plague_doctor_anim,,,,orphan,archer plague doctor anim,0,placeholder
+orphan/slag_hound,,,,orphan,slag hound,0,unwired
+orphan/sleepwalker,,,,orphan,sleepwalker,0,unwired
+orphan/sluice_lurker,,,,orphan,sluice lurker,0,unwired
+orphan/smelter_lord_thrain,,,,orphan,smelter lord thrain,0,unwired
+orphan/spore_puff,,,,orphan,spore puff,0,unwired
 orphan/stone_golem,,,,orphan,stone golem,0,unwired
 orphan/stone_lava,,,,orphan,stone lava,0,unwired
+orphan/storm_adept,,,,orphan,storm adept,0,unwired
+orphan/storm_arcs,,,,orphan,storm arcs,0,unwired
+orphan/talent_a00,,,,orphan,talent a00,0,unwired
+orphan/talent_a01,,,,orphan,talent a01,0,unwired
+orphan/talent_a02,,,,orphan,talent a02,0,unwired
+orphan/talent_a10,,,,orphan,talent a10,0,unwired
+orphan/talent_a11,,,,orphan,talent a11,0,unwired
+orphan/talent_a12,,,,orphan,talent a12,0,unwired
+orphan/talent_a20,,,,orphan,talent a20,0,unwired
+orphan/talent_a21,,,,orphan,talent a21,0,unwired
+orphan/talent_a22,,,,orphan,talent a22,0,unwired
+orphan/talent_a30,,,,orphan,talent a30,0,unwired
+orphan/talent_a31,,,,orphan,talent a31,0,unwired
+orphan/talent_a32,,,,orphan,talent a32,0,unwired
+orphan/talent_k00,,,,orphan,talent k00,0,unwired
+orphan/talent_k01,,,,orphan,talent k01,0,unwired
+orphan/talent_k02,,,,orphan,talent k02,0,unwired
+orphan/talent_k10,,,,orphan,talent k10,0,unwired
+orphan/talent_k11,,,,orphan,talent k11,0,unwired
+orphan/talent_k12,,,,orphan,talent k12,0,unwired
+orphan/talent_k20,,,,orphan,talent k20,0,unwired
+orphan/talent_k21,,,,orphan,talent k21,0,unwired
+orphan/talent_k22,,,,orphan,talent k22,0,unwired
+orphan/talent_k30,,,,orphan,talent k30,0,unwired
+orphan/talent_k31,,,,orphan,talent k31,0,unwired
+orphan/talent_k32,,,,orphan,talent k32,0,unwired
+orphan/talent_m00,,,,orphan,talent m00,0,unwired
+orphan/talent_m01,,,,orphan,talent m01,0,unwired
+orphan/talent_m02,,,,orphan,talent m02,0,unwired
+orphan/talent_m10,,,,orphan,talent m10,0,unwired
+orphan/talent_m11,,,,orphan,talent m11,0,unwired
+orphan/talent_m12,,,,orphan,talent m12,0,unwired
+orphan/talent_m20,,,,orphan,talent m20,0,unwired
+orphan/talent_m21,,,,orphan,talent m21,0,unwired
+orphan/talent_m22,,,,orphan,talent m22,0,unwired
+orphan/talent_m30,,,,orphan,talent m30,0,unwired
+orphan/talent_m31,,,,orphan,talent m31,0,unwired
+orphan/talent_m32,,,,orphan,talent m32,0,unwired
+orphan/talent_p00,,,,orphan,talent p00,0,unwired
+orphan/talent_p01,,,,orphan,talent p01,0,unwired
+orphan/talent_p02,,,,orphan,talent p02,0,unwired
+orphan/talent_p10,,,,orphan,talent p10,0,unwired
+orphan/talent_p11,,,,orphan,talent p11,0,unwired
+orphan/talent_p12,,,,orphan,talent p12,0,unwired
+orphan/talent_p20,,,,orphan,talent p20,0,unwired
+orphan/talent_p21,,,,orphan,talent p21,0,unwired
+orphan/talent_p22,,,,orphan,talent p22,0,unwired
+orphan/talent_p30,,,,orphan,talent p30,0,unwired
+orphan/talent_p31,,,,orphan,talent p31,0,unwired
+orphan/talent_p32,,,,orphan,talent p32,0,unwired
+orphan/talent_s00,,,,orphan,talent s00,0,unwired
+orphan/talent_s01,,,,orphan,talent s01,0,unwired
+orphan/talent_s02,,,,orphan,talent s02,0,unwired
+orphan/talent_s10,,,,orphan,talent s10,0,unwired
+orphan/talent_s11,,,,orphan,talent s11,0,unwired
+orphan/talent_s12,,,,orphan,talent s12,0,unwired
+orphan/talent_s20,,,,orphan,talent s20,0,unwired
+orphan/talent_s21,,,,orphan,talent s21,0,unwired
+orphan/talent_s22,,,,orphan,talent s22,0,unwired
+orphan/talent_s30,,,,orphan,talent s30,0,unwired
+orphan/talent_s31,,,,orphan,talent s31,0,unwired
+orphan/talent_s32,,,,orphan,talent s32,0,unwired
+orphan/talent_w00,,,,orphan,talent w00,0,unwired
+orphan/talent_w01,,,,orphan,talent w01,0,unwired
+orphan/talent_w02,,,,orphan,talent w02,0,unwired
+orphan/talent_w10,,,,orphan,talent w10,0,unwired
+orphan/talent_w11,,,,orphan,talent w11,0,unwired
+orphan/talent_w12,,,,orphan,talent w12,0,unwired
+orphan/talent_w20,,,,orphan,talent w20,0,unwired
+orphan/talent_w21,,,,orphan,talent w21,0,unwired
+orphan/talent_w22,,,,orphan,talent w22,0,unwired
+orphan/talent_w30,,,,orphan,talent w30,0,unwired
+orphan/talent_w31,,,,orphan,talent w31,0,unwired
+orphan/talent_w32,,,,orphan,talent w32,0,unwired
+orphan/thorn_howler,,,,orphan,thorn howler,0,unwired
+orphan/thornfather_grael,,,,orphan,thornfather grael,0,unwired
+orphan/unfinished_sentence,,,,orphan,unfinished sentence,0,unwired
+orphan/verdant_anvil,,,,orphan,verdant anvil,0,unwired
+orphan/verdict_drone,,,,orphan,verdict drone,0,unwired
+orphan/void_energy,,,,orphan,void energy,0,unwired
+orphan/void_hound,,,,orphan,void hound,0,unwired
+orphan/waking_shard,,,,orphan,waking shard,0,unwired
+orphan/word_wisp,,,,orphan,word wisp,0,unwired

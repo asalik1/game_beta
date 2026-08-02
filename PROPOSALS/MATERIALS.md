@@ -20,20 +20,66 @@ Naming + drop companion to PROFESSIONS.md §4 (which owns the materials economy)
 - **Ungated** (PROFESSIONS §4): you always get the material a source yields by type; use it if your trade
   wants it, else discard/sell. Only nodes are trade-gated.
 
-## 2. Grade name ladders (F→S)
+## 2. Grade name ladders + flavor (F→S)
 
-| Grade | Metal | Cloth | Bone | Reagent | Herb |
-|---|---|---|---|---|---|
-| **F** | Rusted Scrap | Frayed Scraps | Cracked Bone | Foul Residue | Wilted Sprig |
-| **E** | Pitted Iron | Coarse Cloth | Bleached Bone | Crude Extract | Common Weed |
-| **D** | Plain Ingot | Plain Bolt | Whole Bone | Clean Extract | Fresh Herb |
-| **C** | Tempered Steel | Tanned Weave | Runed Bone | Potent Essence | Verdant Herb |
-| **B** | Fine Steel | Fine Silk | Blessed Relic | Pure Essence | Rare Bloom |
-| **A** | Mastercrafted Alloy | Gilded Weave | Saintbone | Radiant Essence | Pristine Bloom |
-| **S** | Starforged Ingot | Moonweave | Concordium Relic | Quintessence | Sunpetal |
+F/E read as junk, D as the common working stock, C/B as good, A as the master grade, S as the unique
+legend. Flavor hooks canon (the Ember Guard, the Vale, the Choir, the Concord's seals, the blight, the
+first Crown-fall) — no copy-paste templates, same rule as the potion shelf.
 
-- F/E read as junk, D as the common working stock, C/B as good, A as the master grade, S as the unique
-  legend (lore-tied: Concordium Relic → the Concord's seals; the others evocative).
+### Metal — Blacksmith (weapon, helmet)
+| Grade | Name | Flavor |
+|---|---|---|
+| F | Rusted Scrap | Corroded plate pried off the fallen. It remembers being armor, barely. |
+| E | Pitted Iron | Pig-iron with the slag still in it. Holds an edge for one good swing. |
+| D | Plain Ingot | Honest soldier's steel — the metal the Ember Guard marched in. |
+| C | Tempered Steel | Folded and quenched proper. A smith will nod at this. |
+| B | Fine Steel | Blue-sheened and true — the bar a master reaches for without looking. |
+| A | Mastercrafted Alloy | Alloyed to a recipe two generations refined and one smith died guarding. |
+| S | Starforged Ingot | Metal that fell burning the night the first Crown broke. It has never once rusted. |
+
+### Cloth — Tailor (armor/pants/boots/bags), Alchemist (gloves)
+| Grade | Name | Flavor |
+|---|---|---|
+| F | Frayed Scraps | Rag-ends off a dead man's hem. Sewn together, they cover something. |
+| E | Coarse Cloth | Homespun, itchy, warm enough. Half the Vale is dressed in it. |
+| D | Plain Bolt | A clean bolt of undyed weave — the tailor's daily bread. |
+| C | Tanned Weave | Hide worked soft or linen woven tight; either takes a stitch well. |
+| B | Fine Silk | Thread so fine it whispers. The capital's seamsters hoard it. |
+| A | Gilded Weave | Cloth shot through with drawn gold, light as breath and twice as dear. |
+| S | Moonweave | Spun, they say, on a loom that only turns by moonlight. No needle has ever torn it. |
+
+### Bone — Alchemist (charm)
+| Grade | Name | Flavor |
+|---|---|---|
+| F | Cracked Bone | Splintered and grey. The graves give up so many it's barely worth stooping for. |
+| E | Bleached Bone | Sun-scoured clean. Holds a carved sigil if your hand is steady. |
+| D | Whole Bone | Unbroken and sound — the charm-maker's working stock. |
+| C | Runed Bone | Already scored with an old ward-mark. Half the work is done, if you trust who did it. |
+| B | Blessed Relic | Bone of someone the Choir once called holy, before the Choir went wrong. |
+| A | Saintbone | A true saint's finger, they swear. It stays warm in a cold room. |
+| S | Concordium Relic | A shard of the Concord's seal-keepers, interred with the fifth binding. It hums near the blight. |
+
+### Reagent — Alchemist (potion active)
+| Grade | Name | Flavor |
+|---|---|---|
+| F | Foul Residue | Scraped from something's gland. It reeks, and it works, a little. |
+| E | Crude Extract | Boiled down in a field pot. Cloudy, sharp, unreliable. |
+| D | Clean Extract | Filtered twice — a journeyman's honest reagent. |
+| C | Potent Essence | Distilled to a bright, biting clarity. The working alchemist's staple. |
+| B | Pure Essence | Not a mote of dross left in it. It glows faintly in the dark. |
+| A | Radiant Essence | So concentrated it warms the vial. A master measures it by the single drop. |
+| S | Quintessence | The fifth essence — what the old alchemists chased, and mostly died pretending to have found. |
+
+### Herb — Alchemist (potion base)
+| Grade | Name | Flavor |
+|---|---|---|
+| F | Wilted Sprig | Half-dead already. Steeps into something bitter and weak. |
+| E | Common Weed | Roadside green, plucked by the fistful. Every remedy starts here. |
+| D | Fresh Herb | Cut this morning, still holding its scent — the daily base of every brew. |
+| C | Verdant Herb | Grown deep where the soil never soured. Rich, green, potent. |
+| B | Rare Bloom | Flowers a week a year in places the blight hasn't reached. Gather fast. |
+| A | Pristine Bloom | Perfect, unblemished, glowing with its own faint life. A master's prize. |
+| S | Sunpetal | A blossom that turns to face a sun it remembers from before the ash. Rarer than an honest king. |
 
 ## 3. Mob → material drop map
 

@@ -835,19 +835,22 @@ func _set_ability_ring(box: Dictionary, color: Color) -> void:
 
 const BUFF_SLOTS := 8
 const BUFF_W := 48.0
+const BUFF_H := 48.0
+const BUFF_ICON := 42.0
 
-## Raven status-icon override per active-buff id (assets/icons/buff_*.png):
-## damage / heal / armor / arcane-ward / lifesteal / mobility. A buff with no
-## entry (e.g. Arrow Storm) keeps its tinted procedural ability glyph, and a
-## missing/unimported PNG falls back to the same glyph — so the bar never
-## renders blank.
+## Authored status-icon override per active-buff id (assets/icons/buff_*.png).
+## Every id emitted by _active_buffs must live here; the systems test parses
+## that function and rejects missing mappings or missing PNGs.
 const BUFF_ICONS := {
+	"ng_tier": "buff_tier",
 	"berserk": "buff_atk", "elixir": "buff_atk", "retri": "buff_atk",
 	"holy": "buff_heal", "second_wind": "buff_heal",
 	"grit": "buff_armor", "guard": "buff_armor",
 	"ward": "buff_ward", "aegis": "buff_ward",
 	"pact": "buff_blood", "surge": "buff_blood",
 	"speed": "buff_speed", "dodge": "buff_speed", "haste": "buff_speed",
+	"goldrush": "buff_goldrush",
+	"storm": "buff_storm",
 	"damp": "buff_damp",
 }
 
@@ -857,12 +860,12 @@ const BUFF_ICONS := {
 ## left-to-right each frame.
 func _build_buff_bar() -> void:
 	var x0 := 470.0   # left edge of the ability bar
-	var y := 590.0    # just above it (bar sits at y=634)
+	var y := 580.0    # taller chips still clear the ability bar at y=634
 	for i in BUFF_SLOTS:
 		var x := x0 + i * (BUFF_W + 6.0)
 		var border := ColorRect.new()
 		border.position = Vector2(x - 2, y - 2)
-		border.size = Vector2(BUFF_W + 4, 40)
+		border.size = Vector2(BUFF_W + 4, BUFF_H + 4)
 		# PASS: the chip's hover target for its tooltip (see ability bar note).
 		border.mouse_filter = Control.MOUSE_FILTER_PASS
 		_click_to_popover(border, "")
@@ -870,24 +873,35 @@ func _build_buff_bar() -> void:
 		var box := ColorRect.new()
 		box.color = Color(0.06, 0.06, 0.10, 0.9)
 		box.position = Vector2(x, y)
-		box.size = Vector2(BUFF_W, 36)
+		box.size = Vector2(BUFF_W, BUFF_H)
 		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(box)
 		var icon := TextureRect.new()
-		icon.position = Vector2(x + 13, y + 1)
-		icon.custom_minimum_size = Vector2(22, 22)
-		icon.size = Vector2(22, 22)
+		icon.position = Vector2(x + (BUFF_W - BUFF_ICON) * 0.5, y + 1)
+		icon.custom_minimum_size = Vector2(BUFF_ICON, BUFF_ICON)
+		icon.size = icon.custom_minimum_size
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(icon)
-		var time_l := _label(Vector2(x, y + 21), 14, Color(1, 1, 1), BUFF_W, HORIZONTAL_ALIGNMENT_CENTER)
+		# Countdown text overlays a compact dark footer instead of stealing a
+		# permanent half of the chip. Persistent effects with no stack text hide
+		# the footer entirely and let the medallion own the full tile.
+		var time_bg := ColorRect.new()
+		time_bg.color = Color(0.02, 0.02, 0.04, 0.78)
+		time_bg.position = Vector2(x + 2, y + 30)
+		time_bg.size = Vector2(BUFF_W - 4, 15)
+		time_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(time_bg)
+		var time_l := _label(Vector2(x, y + 28), 14, Color(1, 1, 1), BUFF_W, HORIZONTAL_ALIGNMENT_CENTER)
 		var fill := ColorRect.new()
-		fill.position = Vector2(x, y + 33)
+		fill.position = Vector2(x, y + BUFF_H - 3)
 		fill.size = Vector2(BUFF_W, 3)
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(fill)
-		var slot := {"border": border, "box": box, "icon": icon, "time": time_l, "fill": fill, "glyph": ""}
+		var slot := {"border": border, "box": box, "icon": icon, "time_bg": time_bg,
+			"time": time_l, "fill": fill, "glyph": ""}
 		_set_buff_slot_visible(slot, false)
 		buff_slots.append(slot)
 
@@ -896,6 +910,7 @@ func _set_buff_slot_visible(slot: Dictionary, vis: bool) -> void:
 	slot["border"].visible = vis
 	slot["box"].visible = vis
 	slot["icon"].visible = vis
+	slot["time_bg"].visible = vis
 	slot["time"].visible = vis
 	slot["fill"].visible = vis
 
@@ -1082,7 +1097,7 @@ func _update_buffs() -> void:
 		slot["border"].color = col
 		slot["border"].set_meta("tip", _wrap_tip(String(b.get("tip", ""))))
 		var glyph: String = String(b["glyph"])
-		# Prefer a Raven status icon (assets/icons/buff_*.png) when this buff
+		# Prefer an authored status icon (assets/icons/buff_*.png) when this buff
 		# maps to one; else the tinted procedural ability glyph. Cached per
 		# slot on the resolved icon key, so we only rebuild when THIS slot's
 		# icon actually changes rather than thrashing every frame.
@@ -1092,7 +1107,7 @@ func _update_buffs() -> void:
 			slot["glyph"] = icon_key
 			var rpath := "res://assets/icons/%s.png" % raven
 			if raven != "" and ResourceLoader.exists(rpath):
-				slot["icon"].texture = load(rpath)   # Raven's own colors
+				slot["icon"].texture = load(rpath)   # authored colors
 			else:
 				slot["icon"].texture = Art.glyph_tex(glyph, col.lightened(0.15))
 		slot["fill"].color = col
@@ -1106,6 +1121,7 @@ func _update_buffs() -> void:
 				else ("%.0f" % ceil(t) if t >= 1.0 else "%.1f" % t)
 			var peak: float = maxf(float(_buff_peak.get(b["id"], t)), 0.01)
 			slot["fill"].size.x = BUFF_W * clampf(t / peak, 0.0, 1.0)
+		slot["time_bg"].visible = not slot["time"].text.is_empty()
 
 
 const MINIMAP_AREA := Vector2(182, 116)
@@ -2782,6 +2798,51 @@ func show_end_screen(text: String, sub: String, color: Color) -> void:
 	subtitle_label.text = sub
 	title_label.modulate.a = 1.0
 	subtitle_label.modulate.a = 1.0
+
+
+# ----------------------------------------------- PvP duel HUD (pvp.gd) ---
+# The big gate countdown + the persistent falls scoreline. Built lazily on
+# the first duel frame (solo/co-op never allocates); pvp_ui_hide is the one
+# teardown every exit path calls (controller teardown, session end).
+
+var pvp_count_label: Label = null   # the big warmup number, mid-screen
+var pvp_score_label: Label = null   # "falls — you 1 : 2 rival", top center
+
+
+func _ensure_pvp_ui() -> void:
+	if pvp_count_label != null:
+		return
+	pvp_count_label = _label(Vector2(0, 300), 64, Color(1.0, 0.9, 0.55), 1280, HORIZONTAL_ALIGNMENT_CENTER)
+	UITheme.title(pvp_count_label, 64)
+	pvp_count_label.visible = false
+	pvp_score_label = _label(Vector2(0, 64), 16, Color(0.9, 0.92, 0.98), 1280, HORIZONTAL_ALIGNMENT_CENTER)
+	pvp_score_label.visible = false
+
+
+## Per-frame while the gates are sealed: the whole seconds left, big.
+func pvp_countdown(secs_left: float) -> void:
+	_ensure_pvp_ui()
+	pvp_count_label.text = str(int(ceil(secs_left)))
+	pvp_count_label.visible = secs_left > 0.0
+
+
+func pvp_countdown_hide() -> void:
+	if pvp_count_label != null:
+		pvp_count_label.visible = false
+
+
+## The standing scoreline (the controller composes the text; "" hides it).
+func pvp_score(line: String) -> void:
+	_ensure_pvp_ui()
+	pvp_score_label.text = line
+	pvp_score_label.visible = line != ""
+
+
+func pvp_ui_hide() -> void:
+	if pvp_count_label != null:
+		pvp_count_label.visible = false
+	if pvp_score_label != null:
+		pvp_score_label.visible = false
 
 
 ## The chapter results card (retention roadmap #1): the run's numbers, a

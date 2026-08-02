@@ -1,5 +1,11 @@
 # Sprite-sheet extraction pipeline (`extract_sheet.py`)
 
+For the full, provider-to-runtime workflow—lore and identity design, built-in
+ImageGen prompts, animation timelines, deterministic builders, direction
+repairs, Godot wiring, QA, tests, and mobile synchronization—start with
+[`IMAGEGEN_SPRITE_PIPELINE.md`](IMAGEGEN_SPRITE_PIPELINE.md). This README
+documents the older general extraction utilities in more detail.
+
 Turns a **pre-keyed animation sheet** (one big grid of labelled frames on a
 transparent background) into the engine-ready horizontal clip strips Crownless
 loads. Built for the six class sheets; **reuse it verbatim for boss/mob sheets.**
@@ -350,6 +356,26 @@ The runtime triggers `_attack` automatically for ordinary ranged shots and
 melee windups. `_death` is installed as a future-ready one-shot seam; the
 existing death dissolve remains the live defeat presentation.
 
+## Act 2 creature sheets (`build_act2_sprites.py`)
+
+The Act 2 visual roster uses the same label-free 4×4 contract and extraction
+pipeline. Its 59 approved masters cover Chapters 8–14: 37 documented mobs plus
+22 distinct boss, boss-form, and encounter bodies. Sources, the prompt/QA
+contract, and correction notes live in
+`art_src/Custom/Act2_2026-07-29/README.md`.
+
+    python tools/art/build_act2_sprites.py
+
+Use `--keys <key> [key ...]` to rebuild only corrected masters without
+rewriting the other installed families.
+
+Canonical future-content keys are registered in
+`game/assets/act2_visual_catalog.json`. Validate every installed family through
+the live `Art` loader and capture paged walk-cycle contact shots with:
+
+    tools/Godot_v4.4.1-stable_win64_console.exe --path game \
+      res://shot_act2_art.tscn
+
 The companion ranged-projectile family is built from a label-free 3×3 master:
 
     python tools/art/build_mob_projectiles.py
@@ -402,6 +428,21 @@ props (torches, braziers, banners, fires, water, foliage) come from the same
 packs' FX/prop sheets and Ninja Adventure. Live-biome art is owner-review-gated
 (taste call) — stage new environment art as a dev-only placeholder terrain
 first, exactly like `ph_ruins`.
+
+## Tiered terrain-art replacement builder
+
+`build_terrain_art_fix.py` rebuilds all 20 assets in
+`TERRAIN_ART_FIX_TASK.md` from the archived built-in image-generation masters:
+
+```bash
+python tools/art/build_terrain_art_fix.py
+```
+
+The builder removes residual chroma variation, uses a shared crop for each
+four-frame object, preserves one baseline/origin, reduces the palette, writes
+matching static and `_anim` files, and mirrors production PNGs to
+`mobile/game/assets/sprites/`. Source masters and the prompt contract live in
+`art_src/terrain_art_fix_2026-07-30/`.
 
 ## Lore-authored gem icon sheets
 
