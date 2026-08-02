@@ -387,7 +387,10 @@ func _test_pause_menu() -> void:
 	game.apply_audio_settings()
 	if absf(game.music_player.volume_db - (game.music_gain_db + linear_to_db(0.5))) > 0.5:
 		return _fail("music volume not applied (%.1f dB)" % game.music_player.volume_db)
-	if game.sound_pool[0].volume_db > -80.0:
+	# SFX (pool + ambience + positional) mute lives on the shared SFX bus, so
+	# one level controls them all — including a live slider drag.
+	var sfx_bus: int = AudioServer.get_bus_index("SFX")
+	if sfx_bus == -1 or AudioServer.get_bus_volume_db(sfx_bus) > -79.0:
 		return _fail("sfx mute not applied")
 	game.settings["music"] = music_keep
 	game.settings["sfx"] = sfx_keep

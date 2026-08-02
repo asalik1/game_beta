@@ -39,13 +39,26 @@ func save_settings() -> void:
 	if f:
 		f.store_string(JSON.stringify(settings))
 
+## The SFX bus centralizes the sound-effect slider: the sound pool, ambience
+## and every positional player (campfire, …) all route to it, so ONE bus level
+## controls them together — including a live slider drag and any positional
+## audio added later. Without it, sfx() re-stamps each pooled player's
+## volume_db every play and the slider is silently ignored. Music stays on
+## Master with its own per-player fade path (set_music).
+func _ensure_sfx_bus() -> void:
+	if AudioServer.get_bus_index("SFX") != -1:
+		return
+	var idx := AudioServer.bus_count
+	AudioServer.add_bus(idx)
+	AudioServer.set_bus_name(idx, "SFX")
+	AudioServer.set_bus_send(idx, "Master")
+
 func apply_audio_settings() -> void:
 	if music_player:
 		music_player.volume_db = music_gain_db + _vol_db(float(settings["music"]))
-	for sp in sound_pool:
-		sp.volume_db = -8.0 + _vol_db(float(settings["sfx"]))
-	if amb_player:
-		amb_player.volume_db = AMB_DB + _vol_db(float(settings["sfx"]))
+	var sfx_bus := AudioServer.get_bus_index("SFX")
+	if sfx_bus != -1:
+		AudioServer.set_bus_volume_db(sfx_bus, _vol_db(float(settings["sfx"])))
 
 func apply_display_settings() -> void:
 	if DisplayServer.get_name() == "headless":

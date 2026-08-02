@@ -2116,6 +2116,7 @@ func _attach_fire_audio(body: Node2D) -> void:
 	fire.max_distance = 340.0
 	fire.attenuation = 1.6
 	fire.volume_db = -6.0
+	fire.bus = "SFX"  # respects the SFX volume slider (incl. live drags)
 	fire.autoplay = true
 	body.add_child(fire)
 

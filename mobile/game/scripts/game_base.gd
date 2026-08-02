@@ -2521,7 +2521,7 @@ func refresh_ambience() -> void:
 	if not amb_tracks.has(kind):
 		amb_tracks[kind] = Sfx.make_ambient(kind)
 	amb_player.stream = amb_tracks[kind]
-	amb_player.volume_db = AMB_DB + _vol_db(float(settings["sfx"]))
+	amb_player.volume_db = AMB_DB  # SFX bus applies the volume slider
 	amb_player.play()
 
 

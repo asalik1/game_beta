@@ -105,9 +105,11 @@ func _ready() -> void:
 		if snd:
 			sounds[file.get_basename()] = snd
 	_build_sound_groups()
+	_ensure_sfx_bus()  # SFX slider drives this bus; pool + ambience + positional route here
 	for i in 10:
 		var sp := AudioStreamPlayer.new()
 		sp.volume_db = -8.0
+		sp.bus = "SFX"
 		add_child(sp)
 		sound_pool.append(sp)
 
@@ -147,6 +149,7 @@ func _ready() -> void:
 	add_child(music_player)
 	amb_player = AudioStreamPlayer.new()
 	amb_player.volume_db = AMB_DB
+	amb_player.bus = "SFX"
 	amb_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(amb_player)
 	load_settings()

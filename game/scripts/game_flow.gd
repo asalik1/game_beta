@@ -39,13 +39,26 @@ func save_settings() -> void:
 	if f:
 		f.store_string(JSON.stringify(settings))
 
+## The SFX bus centralizes the sound-effect slider: the sound pool, ambience
+## and every positional player (campfire, …) all route to it, so ONE bus level
+## controls them together — including a live slider drag and any positional
+## audio added later. Without it, sfx() re-stamps each pooled player's
+## volume_db every play and the slider is silently ignored. Music stays on
+## Master with its own per-player fade path (set_music).
+func _ensure_sfx_bus() -> void:
+	if AudioServer.get_bus_index("SFX") != -1:
+		return
+	var idx := AudioServer.bus_count
+	AudioServer.add_bus(idx)
+	AudioServer.set_bus_name(idx, "SFX")
+	AudioServer.set_bus_send(idx, "Master")
+
 func apply_audio_settings() -> void:
 	if music_player:
 		music_player.volume_db = music_gain_db + _vol_db(float(settings["music"]))
-	for sp in sound_pool:
-		sp.volume_db = -8.0 + _vol_db(float(settings["sfx"]))
-	if amb_player:
-		amb_player.volume_db = AMB_DB + _vol_db(float(settings["sfx"]))
+	var sfx_bus := AudioServer.get_bus_index("SFX")
+	if sfx_bus != -1:
+		AudioServer.set_bus_volume_db(sfx_bus, _vol_db(float(settings["sfx"])))
 
 func apply_display_settings() -> void:
 	if DisplayServer.get_name() == "headless":
@@ -851,6 +864,51 @@ func enter_endgame(mode: String) -> void:
 	play_started = true
 	request_pause(false)
 	hud.visible = true
+
+
+## Enter The Proving Grounds (PvP duel, pvp.gd). HOST entry point — the lobby's
+## duel launch calls it right after load_save; the dev/harness road can call it
+## mid-session too. Guests never call this: their world arrives via the join
+## brief or the advance snap, and switch_chapter raises their controller.
+func enter_pvp() -> void:
+	if endgame_active:
+		return
+	# Mid-session road only: someone already LIVES in a world (peer_chars fills
+	# at join_ready), so the party must be carried by the reprise advance snap.
+	# The cold lobby launch skips it — the initial join brief (which polls
+	# play_started and reads chapter_id after this switch) does the moving.
+	var carry_party: bool = net_host() and play_started \
+		and not (net_session().peer_chars as Dictionary).is_empty()
+	switch_chapter("pvp_arena", true)
+	if carry_party:
+		net_session().host_advance_party()
+	state = ST_PLAYING
+	play_started = true
+	request_pause(false)
+	hud.visible = true
+
+
+## Raise the duel controller with a pvp world — called from switch_chapter on
+## EVERY machine (the dynamic-call idiom _hub_action uses for enter_endgame).
+func ensure_pvp_controller() -> void:
+	pvp_active = true
+	if pvp == null or not is_instance_valid(pvp):
+		var ctl := PvpDuel.new()
+		ctl.game = self
+		pvp = ctl
+		add_child(ctl)
+	(pvp as PvpDuel).arm()
+
+
+## The world moved OFF the arena (session teardown, load, title): the duel
+## controller and its HUD die with it.
+func teardown_pvp_controller() -> void:
+	pvp_active = false
+	if pvp != null and is_instance_valid(pvp):
+		pvp.queue_free()
+	pvp = null
+	if hud != null:
+		hud.pvp_ui_hide()
 
 
 func on_boss_died(kind: String, dead: Boss = null) -> void:
@@ -1725,6 +1783,10 @@ func net_session_over() -> void:
 ## Refused while a room is HOT (doors sealed mid-combat) — returns false so
 ## the scroll isn't consumed. Returns true on a successful recall.
 func recall_to_safe() -> bool:
+	if pvp_active:
+		# The duel's gates ARE the structure — no scroll skips them.
+		spawn_text(player.global_position + Vector2(0, -56), "No recall in the proving grounds!", Color(1.0, 0.6, 0.4))
+		return false
 	if barrier_active:
 		spawn_text(player.global_position + Vector2(0, -56), "Can't recall in combat!", Color(1.0, 0.6, 0.4))
 		return false
