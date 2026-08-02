@@ -30,7 +30,7 @@ func net_apply_boss_done(kind: String) -> void:
 func switch_chapter(id: String, force := false) -> void:
 	# World teardown: forgotten ground loot mails itself first (round 8).
 	flush_dropped_loot()
-	if not (Story.CHAPTER_LIST.has(id) or Story.is_endgame(id) or Story.is_standalone(id)) or (id == chapter_id and not force):
+	if not (Story.CHAPTER_LIST.has(id) or Story.is_endgame(id) or Story.is_standalone(id) or Story.is_pvp(id)) or (id == chapter_id and not force):
 		return
 	chapter_id = id
 	# NG+ tier snapshot: the RUN owns its tier from launch to clear. The
@@ -140,6 +140,13 @@ func switch_chapter(id: String, force := false) -> void:
 	_enter_room(last_safe_room)
 	ambient.color = Terrains.get_terrain(terrain_by_zone[cur_room])["tint"]
 	refresh_quest()
+	# PvP duel arena: the controller rises and falls WITH the world, on every
+	# machine (host launch, guest brief, mid-session advance). The funcs live
+	# in the derived game_flow layer — the _hub_action enter_endgame idiom.
+	if Story.is_pvp(id):
+		call("ensure_pvp_controller")
+	elif pvp_active:
+		call("teardown_pvp_controller")
 
 
 ## Enter Crownfall, the standalone capital hub (dev panel "Go To Capital").

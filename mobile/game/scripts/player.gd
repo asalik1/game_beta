@@ -523,8 +523,10 @@ func _loco_dir_frame() -> void:
 		strip_fps = float(info["fps"])
 		sprite.texture = info["tex"]
 		sprite.hframes = strip_frames
-		sprite.scale = Vector2(_hero_scale, _hero_scale)
-		sprite.offset = Vector2(0, _hero_offset_y)
+		var render_scale := float(info.get("render_scale", _hero_scale))
+		var render_offset := float(info.get("render_offset", _hero_offset_y))
+		sprite.scale = Vector2(render_scale, render_scale)
+		sprite.offset = Vector2(0, render_offset)
 	_loco_dir_on = true
 	sprite.flip_h = false
 
@@ -698,6 +700,14 @@ func use_ability(slot: String) -> void:
 
 func drink_potion() -> void:
 	if potion_cd > 0.0 or dead or downed or ghost:
+		return
+	# PVP v1 (owner spec): the duel has no stakes, so it takes no stock either —
+	# potions are BARRED (drinking real bottles into a zero-reward mode would be
+	# pure loss, and sustain in a 1v1 is its own balance question for later).
+	if game != null and game.pvp_active:
+		potion_cd = 0.6
+		game.spawn_text(global_position + Vector2(0, -40),
+			"Potions are barred in the proving grounds", Color(0.8, 0.85, 1.0))
 		return
 	# Per-room budget (playtest 2026-07-07 v2): every drink spends a
 	# loadout slot; a spent loadout locks Q until the next room.
@@ -1023,6 +1033,15 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			game.hud.flash_screen(Color(0.5, 0.1, 0.7), 0.5, 0.5)
 		else:
 			hp = 0.0
+			# PVP (v1): a lethal hit in a duel is a real FALL — the controller
+			# scores it and resets the round. Never the co-op downed detour
+			# (nobody revives a rival), never the solo death flow (no tithe,
+			# no respawn walk — pvp.gd owns the reset).
+			if game != null and game.net_online() and game.pvp_active:
+				dead = true
+				play_death_anim()
+				game.net_session().pvp_report_death()
+				return
 			# MP-12 (§5.3): in an online session a lethal hit DOWNS you
 			# instead of killing — 30 s bleed-out, crawl, teammate-revivable.
 			# Solo keeps the exact death below; the wipe flow re-kills

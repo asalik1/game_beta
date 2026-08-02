@@ -202,6 +202,14 @@ var victory_gates_up := false
 var endgame: Endgame = null
 var endgame_active := false
 
+# PvP duels (v1, 2026-08-01): pvp.gd runs a 1v1 in the throwaway pvp_arena
+# world. `pvp_active` fences saves (autosave writes NOTHING — the duel has no
+# stakes), map travel, the co-op wipe census and potions; the lethal-hit
+# branch (player.gd) reports a FALL to the controller instead of downing.
+# Typed Node so the base layer never depends on the derived controller class.
+var pvp: Node = null
+var pvp_active := false
+
 # ------------------------------------------------------- fight report ---
 # Benchmark instrument: boss fights are timed from FIRST BLOOD (either
 # direction) to the roster emptying, and the kill prints a report —
@@ -804,6 +812,11 @@ func gamble(tier: String) -> Dictionary:
 ## Guesting in another world (MP-08, §5.7): only the character block
 ## travels home — the host's world must never colonize the guest's save.
 func autosave() -> void:
+	# PVP (v1, 2026-08-01): the duel has NO stakes — nothing earned, nothing
+	# risked, so nothing is written from an arena world. (A guest's session-end
+	# character write in net_session_over stays the co-op safety it always was.)
+	if pvp_active:
+		return
 	# DEDICATED (MMO step B): the server has no character — its save IS the
 	# world. Every existing autosave call site (room clears, boss kills, flag
 	# changes via story flow, WM_CLOSE) now persists the world file instead.
@@ -2030,6 +2043,10 @@ func charted(i: int) -> bool:
 
 func travel_target(i: int) -> bool:
 	if i == cur_room:
+		return false
+	# No map-travel in a duel — teleporting out of (or into) the arena would
+	# skip the gates that ARE the match structure. The controller moves bodies.
+	if pvp_active:
 		return false
 	# In the capital every room is a safe fast-travel target (the whole city is
 	# charted), so a click on the map walks you there — no "must visit first".

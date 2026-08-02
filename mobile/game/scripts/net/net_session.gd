@@ -272,16 +272,23 @@ static func dedup_roster(roster: Dictionary) -> Dictionary:
 
 
 ## This machine's lobby identity: what the lobby UI picked, else the live
-## player (dev CLI hosts), else a level-1 warrior.
+## player (dev CLI hosts), else a level-1 warrior. A duel host's block also
+## carries "duel": true (host seat only — guest hellos are sanitized) so the
+## guest lobby can warn "this code is a challenge" BEFORE the launch moves it.
 func _lobby_block() -> Dictionary:
+	var out: Dictionary
 	var nm := String(local_char.get("name", os_name()))
 	if local_char.has("cls"):
-		return {"name": nm, "cls": String(local_char.get("cls", "warrior")),
+		out = {"name": nm, "cls": String(local_char.get("cls", "warrior")),
 			"level": maxi(1, int(local_char.get("level", 1)))}
-	if game != null and game.local_player != null:
-		return {"name": nm, "cls": String(game.local_player.cls),
+	elif game != null and game.local_player != null:
+		out = {"name": nm, "cls": String(game.local_player.cls),
 			"level": int(game.local_player.level)}
-	return {"name": nm, "cls": "warrior", "level": 1}
+	else:
+		out = {"name": nm, "cls": "warrior", "level": 1}
+	if bool(local_char.get("duel", false)):
+		out["duel"] = true
+	return out
 
 
 ## Best available player-recognizable name until characters are named:
@@ -555,6 +562,11 @@ func _on_peer_left(id: int) -> void:
 					if game.hud != null:
 						game.hud.mirror_end()
 		_check_wipe()
+	# PVP: a duelist's machine left — the remaining head takes the walkover
+	# (local-only; there is nobody left on the wire to tell). Every machine
+	# runs this so a host-side kick and a guest-side host-loss both settle.
+	if game != null and bool(game.pvp_active) and game.pvp != null:
+		game.pvp.on_peer_left(id)
 	# MP-16: mid-run, tell the party in plain words that a friend dropped (a
 	# lobby-time leave already shows in the lobby list). Fires on EVERY
 	# remaining machine — host and sibling guests alike.
@@ -640,6 +652,7 @@ func _on_session_ended(reason: String) -> void:
 		if game.hud != null:
 			game.hud.mirror_end()
 			game.hud.reset_party_ui()  # MP-14: party frames/arrows/labels freed
+			game.hud.pvp_ui_hide()     # duel countdown/scoreline die with the session
 	_guest_boss_gone.call_deferred()  # a mirror's bar must not outlive it
 	lobby_changed.emit()
 	# MP-16: a GUEST that lost its host mid-run returns to the title with a
@@ -1990,6 +2003,11 @@ func _check_wipe() -> void:
 		return
 	if game.state != game.ST_PLAYING:
 		return
+	# PVP: a duel death is the CONTROLLER's business (score + round reset) —
+	# the co-op wipe census would respawn-flow a legitimate fall, and a
+	# simultaneous double-down would re-kill both duelists mid-reset.
+	if bool(game.pvp_active):
+		return
 	var total := 0
 	var standing := 0
 	for p in game.players:
@@ -2768,3 +2786,138 @@ func _rpc_session_over() -> void:
 	if game == null or multiplayer.is_server():
 		return
 	game.net_session_over()
+
+
+# --------------------------------------------- PvP duels (v1, pvp.gd) ---
+# The Proving Grounds wire: HOST-authoritative match transitions (round /
+# fight / kill / end fans, run locally on the host inline — the
+# host_spawn_text pattern), plus two upstream reports: a strike (each
+# machine's proxy forwards resolved damage) and a fall (the owner's lethal
+# branch). Strikes land as the defender's OWN take_damage — attacker-less,
+# so their evasion/resists mitigate (the enemy->guest damage doctrine).
+# Everything gates on game.pvp_active; solo/co-op never enters this block.
+
+## ANY MACHINE: my proxy resolved a hit on the rival — route it to the host,
+## which validates the fight is live and applies it to the target's owner.
+func pvp_strike(target_pid: int, amount: float, dmg_type: String) -> void:
+	if game == null or not _net().is_online() or not bool(game.pvp_active):
+		return
+	if multiplayer.is_server():
+		if game.pvp != null and bool(game.pvp.combat_live()):
+			_pvp_apply_strike(target_pid, amount, dmg_type)
+	else:
+		_rpc_pvp_strike.rpc_id(1, target_pid, amount, dmg_type)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String) -> void:
+	if not multiplayer.is_server() or game == null or not bool(game.pvp_active):
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers) or target_pid == pid:
+		return
+	if game.pvp == null or not bool(game.pvp.combat_live()):
+		return  # gates closed on the HOST's clock — late/early blows fizzle
+	_pvp_apply_strike(target_pid, amount, dmg_type)
+
+
+## HOST: land a validated strike on the target's owner. The host's own hero
+## takes it directly; a guest's rides the existing owner-applied hit RPC.
+func _pvp_apply_strike(target_pid: int, amount: float, dmg_type: String) -> void:
+	amount = maxf(0.0, amount)
+	if amount <= 0.0:
+		return
+	if target_pid == 1:
+		var p: Player = game.local_player
+		if p != null and is_instance_valid(p) and not p.dead:
+			p.take_damage(amount, dmg_type, null, false)
+	else:
+		host_player_hit(target_pid, amount, dmg_type, 0, false)
+
+
+## OWNER: my hero fell in the duel (player.gd lethal branch) — tell the host.
+func pvp_report_death() -> void:
+	if game == null or not _net().is_online() or not bool(game.pvp_active):
+		return
+	if multiplayer.is_server():
+		if game.pvp != null:
+			game.pvp.host_report_death(1)
+	else:
+		_rpc_pvp_died.rpc_id(1)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_pvp_died() -> void:
+	if not multiplayer.is_server() or game == null or not bool(game.pvp_active):
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers):
+		return
+	if game.pvp != null:
+		game.pvp.host_report_death(pid)
+
+
+## HOST fans (each runs the host's own copy inline — host_spawn_text pattern).
+
+func pvp_fan_round(round_no: int, terrain: String, secs: float, sc: Dictionary) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_pvp_round.rpc(round_no, terrain, secs, sc)
+	if game.pvp != null:
+		game.pvp._apply_round(round_no, terrain, secs, sc)
+
+
+func pvp_fan_fight() -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_pvp_fight.rpc()
+	if game.pvp != null:
+		game.pvp._apply_fight()
+
+
+func pvp_fan_kill(victim_pid: int, sc: Dictionary) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_pvp_kill.rpc(victim_pid, sc)
+	if game.pvp != null:
+		game.pvp._apply_kill(victim_pid, sc)
+
+
+func pvp_fan_end(winner_pid: int, sc: Dictionary) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_pvp_end.rpc(winner_pid, sc)
+	if game.pvp != null:
+		game.pvp._apply_end(winner_pid, sc)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_pvp_round(round_no: int, terrain: String, secs: float, sc: Dictionary) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	if bool(game.pvp_active) and game.pvp != null:
+		game.pvp._apply_round(round_no, terrain, secs, sc)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_pvp_fight() -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	if bool(game.pvp_active) and game.pvp != null:
+		game.pvp._apply_fight()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_pvp_kill(victim_pid: int, sc: Dictionary) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	if bool(game.pvp_active) and game.pvp != null:
+		game.pvp._apply_kill(victim_pid, sc)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_pvp_end(winner_pid: int, sc: Dictionary) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	if bool(game.pvp_active) and game.pvp != null:
+		game.pvp._apply_end(winner_pid, sc)

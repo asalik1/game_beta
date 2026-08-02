@@ -2995,3 +2995,21 @@ const AFFIX_LIFESTEAL_FRAC := 0.30     # "lifesteal" (Vampiric): attacker heals 
 ## climbing one level per 10 bosses/depths so a deep run sockets richer.
 static func endgame_gem_level(progress: int) -> int:
 	return gem_drop_level("ch7") + progress / 10
+
+# ================================================================ pvp duels ===
+# The Proving Grounds (PvP v1, owner spec 2026-08-01): a lobby-code 1v1 riding
+# the co-op transport. Three authored rooms — two sealed gatehouses and a
+# center arena whose terrain rerolls every round. A big countdown behind the
+# gates, then first to PVP_DEATHS_TO_LOSE falls loses. NO STAKES yet (owner
+# call): no rewards, no tithe, no saves, potions barred — the system gets
+# ironed out before spoils exist. Controller: pvp.gd; world: content/pvp_arena.gd.
+const PVP_COUNTDOWN_FIRST := 10.0  # s — the opening countdown behind sealed gates
+const PVP_COUNTDOWN_ROUND := 5.0   # s — the between-round countdown after a fall
+const PVP_DEATHS_TO_LOSE := 3      # falls that end the match (first to take them loses)
+const PVP_ROUND_END_BEAT := 2.2    # s — savor the kill before the round resets
+const PVP_END_LINGER := 5.0        # s — the victory/defeat card before returning to title
+const PVP_DMG_MULT := 1.0          # global player-vs-player damage scalar (the tuning dial)
+# The arena reroll pool — the endgame arena set (their events/hazards are the
+# arena's only neutral threat; keep/village-style eventless terrains excluded
+# so every round has a little weather in it).
+const PVP_TERRAINS := ["magma", "ice", "bog", "storm", "graveyard", "holy", "crystal", "void", "desert"]

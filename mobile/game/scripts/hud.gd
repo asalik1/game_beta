@@ -2800,6 +2800,51 @@ func show_end_screen(text: String, sub: String, color: Color) -> void:
 	subtitle_label.modulate.a = 1.0
 
 
+# ----------------------------------------------- PvP duel HUD (pvp.gd) ---
+# The big gate countdown + the persistent falls scoreline. Built lazily on
+# the first duel frame (solo/co-op never allocates); pvp_ui_hide is the one
+# teardown every exit path calls (controller teardown, session end).
+
+var pvp_count_label: Label = null   # the big warmup number, mid-screen
+var pvp_score_label: Label = null   # "falls — you 1 : 2 rival", top center
+
+
+func _ensure_pvp_ui() -> void:
+	if pvp_count_label != null:
+		return
+	pvp_count_label = _label(Vector2(0, 300), 64, Color(1.0, 0.9, 0.55), 1280, HORIZONTAL_ALIGNMENT_CENTER)
+	UITheme.title(pvp_count_label, 64)
+	pvp_count_label.visible = false
+	pvp_score_label = _label(Vector2(0, 64), 16, Color(0.9, 0.92, 0.98), 1280, HORIZONTAL_ALIGNMENT_CENTER)
+	pvp_score_label.visible = false
+
+
+## Per-frame while the gates are sealed: the whole seconds left, big.
+func pvp_countdown(secs_left: float) -> void:
+	_ensure_pvp_ui()
+	pvp_count_label.text = str(int(ceil(secs_left)))
+	pvp_count_label.visible = secs_left > 0.0
+
+
+func pvp_countdown_hide() -> void:
+	if pvp_count_label != null:
+		pvp_count_label.visible = false
+
+
+## The standing scoreline (the controller composes the text; "" hides it).
+func pvp_score(line: String) -> void:
+	_ensure_pvp_ui()
+	pvp_score_label.text = line
+	pvp_score_label.visible = line != ""
+
+
+func pvp_ui_hide() -> void:
+	if pvp_count_label != null:
+		pvp_count_label.visible = false
+	if pvp_score_label != null:
+		pvp_score_label.visible = false
+
+
 ## The chapter results card (retention roadmap #1): the run's numbers, a
 ## big grade letter, and NEW BEST callouts. Rides the victory screen —
 ## the process_mode override keeps it visible through the pause.

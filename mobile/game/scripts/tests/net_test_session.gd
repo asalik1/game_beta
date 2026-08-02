@@ -172,6 +172,7 @@ const PORT_STAGE13 := 48237  # stage 13 phase 1 (MMO B: the world that persists)
 const PORT_STAGE13B := 48239 # stage 13 phase 2 (the restarted server; guests join HERE)
 const PORT_STAGE14 := 48241  # stage 14 (Wave 8: chat / ready check / kick)
 const PORT_STAGE15 := 48243  # stage 15 (Wave 9: the capital party town)
+const PORT_STAGE16 := 48245  # stage 16 (PvP v1: the proving grounds duel)
 const STEP_TIMEOUT := 30.0   # s per observable step (boots include a world build)
 const EXIT_TIMEOUT := 15.0   # s for the guest process to exit after its work
 const DROP_TIMEOUT := 45.0   # s for a KILLED peer to register as gone (MP-16 flake 2).
@@ -239,7 +240,9 @@ func _ready() -> void:
 		"subhost":
 			_run_subhost()  # MP-16 stage 9(b): a throwaway host to be killed
 		"host":
-			if _stage == 15:
+			if _stage == 16:
+				_run_host16()
+			elif _stage == 15:
 				_run_host15()
 			elif _stage == 14:
 				_run_host14()
@@ -268,7 +271,9 @@ func _ready() -> void:
 			else:
 				_run_host()
 		"guest":
-			if _stage == 15:
+			if _stage == 16:
+				_run_guest16()
+			elif _stage == 15:
 				_run_guest14()  # stage 15 reuses 14's serve-until-finished guest
 			elif _stage == 14:
 				_run_guest14()
@@ -301,6 +306,8 @@ func _ready() -> void:
 
 
 func _port() -> int:
+	if _stage == 16:
+		return PORT_STAGE16
 	if _stage == 15:
 		return PORT_STAGE15
 	if _stage == 14:
@@ -2279,6 +2286,10 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 		"party_panel":
 			game.menus.open_party()
 			await _frames(2)
+		"pvp_strike":
+			# Stage 16: the guest's strike road — the same public seam the
+			# proxy forwards through (guest -> host RPC -> owner-side hit).
+			sess.pvp_strike(1, float(args.get("amount", 999999.0)), "phys")
 		"strike":
 			game.player.global_position = Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
 			await _frames(6)  # a beat: soft target acquires the mirror
@@ -2455,8 +2466,22 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 				and String(po.get("chapter", "")) == String(args.get("chapter", ""))
 				and int(po.get("tier", -1)) == int(args.get("tier", -1)),
 				"open": not po.is_empty()}
-		"say", "say_flood", "answer":
+		"say", "say_flood", "answer", "pvp_strike":
 			return {"ok": true}  # the setup already acted; nothing to poll
+		"pvp_state":
+			# Stage 16: this machine's duel shape — state, round, my room, how
+			# many gate bodies stand, and the arena's current terrain id.
+			var ctl = game.pvp
+			if not bool(game.pvp_active) or ctl == null:
+				return {"ok": false, "why": "no duel controller"}
+			var arena_t: String = String(game.terrain_by_zone[1]) if game.zone_count == 3 else ""
+			return {"ok": String(ctl.state) == String(args.get("want", "")),
+				"state": String(ctl.state), "round": int(ctl.round_no),
+				"room": game.cur_room, "gates": game.gates.size(), "terrain": arena_t}
+		"pvp_hp_full":
+			# Stage 16: nothing (or a fresh round) left this hero scratched.
+			return {"ok": not game.player.dead and game.player.hp >= game.player.max_hp - 0.5,
+				"hp": game.player.hp, "max": game.player.max_hp}
 		"party_panel":
 			var live: bool = _net.is_online()
 			var stage: String = String(game.menus.lobby.get("stage", ""))
@@ -4138,3 +4163,183 @@ func _run_host15() -> void:
 		return _fail("returning to the capital should reopen the gates")
 	print("[net_session] host15: (d) home again — gates open for the next friend")
 	await _pass()
+
+
+# --------------------------------- stage 16 (PvP v1) the proving grounds ---
+# The duel, end to end over real sockets: the host carries a standing guest
+# into the arena (the reprise advance road), the controller auto-starts the
+# match, both duelists warm up SEALED in their own gatehouses (a strike
+# during the ceasefire fizzles on the host's combat_live gate), the fight
+# fan drops the gates on both machines, and falls are scored host-side
+# through the REAL owner-side lethal branch in BOTH directions (host strike
+# -> guest fall; guest strike -> host fall), with the arena terrain synced
+# on every reset. The third fall ends it: winner verdicts on both machines,
+# the controller winds the session down, and the guest lands OFFLINE with
+# its DONE state intact (asserted in its own process — its exit code is the
+# verdict). The lobby-UI road to the same launch is autotest's business.
+
+func _run_host16() -> void:
+	if not await _host_boot():
+		return
+	if _spawn_peer("guest") < 0:
+		return _fail("could not spawn the guest process")
+	if not await _wait_for(func() -> bool: return not _net.peers.is_empty(), STEP_TIMEOUT, "guest admission"):
+		return
+	var gid: int = _net.peers[0]
+	if not await _wait_for(func() -> bool: return bool(_report.get("ready", false)), STEP_TIMEOUT, "guest ready report"):
+		return
+	var sess: Node = get_node("/root/NetworkManager/Session")
+
+	# ---- (a) into the arena: the mid-session advance road ----
+	game.enter_pvp()
+	if String(game.chapter_id) != "pvp_arena" or not game.pvp_active or game.pvp == null:
+		return _fail("host did not land in the arena (chapter %s)" % game.chapter_id)
+	if not await _wait_for(func() -> bool: return String(game.pvp.state) == "warmup",
+			STEP_TIMEOUT, "match auto-start (warmup)"):
+		return
+	if game.cur_room != 0:
+		return _fail("host must warm up in the WEST gatehouse (room 0, got %d)" % game.cur_room)
+	if game.gates.size() != 2:
+		return _fail("both arena gates must stand sealed (host sees %d)" % game.gates.size())
+	var r: Dictionary = await _watch(gid, "pvp_state", {"want": "warmup"})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("guest not in warmup: %s" % str(r))
+	if int(r.get("room", -1)) != 2:
+		return _fail("guest must warm up in the EAST gatehouse (room 2, got %s)" % str(r.get("room")))
+	if int(r.get("gates", -1)) != 2:
+		return _fail("guest must see both gates sealed (got %s)" % str(r.get("gates")))
+	print("[net_session] host16: (a) both duelists sealed in their gatehouses, countdown live")
+
+	# ---- (b) the ceasefire: a warmup strike fizzles on combat_live ----
+	sess.pvp_strike(gid, 999999.0, "phys")
+	await get_tree().create_timer(0.8).timeout
+	r = await _watch(gid, "pvp_hp_full", {})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("a warmup strike drew blood through sealed gates: %s" % str(r))
+	print("[net_session] host16: (b) warmup strike fizzled — the gates are a real ceasefire")
+
+	# ---- (c) the countdown runs out: gates open on BOTH machines ----
+	if not await _wait_for(func() -> bool: return String(game.pvp.state) == "fight",
+			Balance.PVP_COUNTDOWN_FIRST + STEP_TIMEOUT, "gates open (fight)"):
+		return
+	if game.gates.size() != 0:
+		return _fail("the fight fan must drop both host-side gates (%d stand)" % game.gates.size())
+	r = await _watch(gid, "pvp_state", {"want": "fight"})
+	if r.is_empty() or not bool(r.get("ok", false)) or int(r.get("gates", -1)) != 0:
+		return _fail("guest gates did not open with the fan: %s" % str(r))
+	var terrain1 := String(r.get("terrain", ""))
+	if terrain1 != String(game.terrain_by_zone[1]) or not (terrain1 in Balance.PVP_TERRAINS):
+		return _fail("arena terrain out of sync (host %s, guest %s)" % [String(game.terrain_by_zone[1]), terrain1])
+	print("[net_session] host16: (c) FIGHT — gates down both sides, arena wears %s" % terrain1)
+
+	# ---- (d) fall 1, host -> guest (retried: the archer's REAL evasion can
+	# dodge a strike — that mitigation running at all is part of the point) ----
+	if not await _fall16(sess, gid, 1):
+		return _fail("guest fall 1 never scored (strikes kept missing?)")
+	if not await _wait_for(func() -> bool: return String(game.pvp.state) == "fight" and int(game.pvp.round_no) == 2,
+			Balance.PVP_ROUND_END_BEAT + Balance.PVP_COUNTDOWN_ROUND + STEP_TIMEOUT, "round 2 fight"):
+		return
+	r = await _watch(gid, "pvp_state", {"want": "fight"})
+	if r.is_empty() or not bool(r.get("ok", false)) or int(r.get("round", -1)) != 2:
+		return _fail("guest did not reach round 2: %s" % str(r))
+	r = await _watch(gid, "pvp_hp_full", {})
+	if r.is_empty() or not bool(r.get("ok", false)):
+		return _fail("the fallen guest did not stand back at full hp: %s" % str(r))
+	print("[net_session] host16: (d) guest fell (them 1 : us 0), round 2 reset both sides")
+
+	# ---- (e) fall 2, guest -> host: the reverse road ----
+	var scored := false
+	for attempt in 3:
+		r = await _watch(gid, "pvp_strike", {})
+		if r.is_empty():
+			return
+		var deadline: int = Time.get_ticks_msec() + 2500
+		while Time.get_ticks_msec() < deadline:
+			if int(game.pvp.scores.get(1, 0)) >= 1:
+				scored = true
+				break
+			await get_tree().create_timer(0.1).timeout
+		if scored:
+			break
+	if not scored:
+		return _fail("the guest's strike never felled the host")
+	if not await _wait_for(func() -> bool: return String(game.pvp.state) == "fight" and int(game.pvp.round_no) == 3,
+			Balance.PVP_ROUND_END_BEAT + Balance.PVP_COUNTDOWN_ROUND + STEP_TIMEOUT, "round 3 fight"):
+		return
+	if game.player.dead or game.player.hp < game.player.max_hp - 0.5:
+		return _fail("the fallen host did not stand back at full hp")
+	print("[net_session] host16: (e) host fell to the guest's strike (1:1), round 3 live")
+
+	# ---- (f) falls 3 + 4: the guest's third fall ends the match ----
+	if not await _fall16(sess, gid, 2):
+		return _fail("guest fall 2 never scored")
+	if not await _wait_for(func() -> bool: return String(game.pvp.state) == "fight" and int(game.pvp.round_no) == 4,
+			Balance.PVP_ROUND_END_BEAT + Balance.PVP_COUNTDOWN_ROUND + STEP_TIMEOUT, "round 4 fight"):
+		return
+	if not await _fall16(sess, gid, int(Balance.PVP_DEATHS_TO_LOSE)):
+		return _fail("the deciding fall never scored")
+	if not await _wait_for(func() -> bool: return String(game.pvp.state) == "done", STEP_TIMEOUT, "match end"):
+		return
+	if int(game.pvp.winner_pid) != 1 or int(game.pvp.scores.get(gid, 0)) != int(Balance.PVP_DEATHS_TO_LOSE):
+		return _fail("wrong verdict: winner %s scores %s" % [str(game.pvp.winner_pid), str(game.pvp.scores)])
+	if game.state != game.ST_VICTORY:
+		return _fail("the end card must flip the host to ST_VICTORY")
+	print("[net_session] host16: (f) match end at %d falls — the host takes it" % int(Balance.PVP_DEATHS_TO_LOSE))
+
+	# ---- (g) the wind-down: the controller ends the session for everyone;
+	# the guest asserts its own DONE card offline and exits 0 ----
+	if not await _wait_for(func() -> bool: return _net.peers.is_empty() or not _net.is_online(),
+			Balance.PVP_END_LINGER + STEP_TIMEOUT, "session wound down"):
+		return
+	if not await _wait_exit("duel guest", 30.0):
+		return
+	print("[net_session] host16: (g) session wound down clean — guest verdict via its exit code")
+	await _pass()
+
+
+## HOST16: strike the guest until its fall count reaches `want` (bounded).
+## Retries exist because the defender's REAL mitigation runs — an archer can
+## legitimately DODGE a strike, and that roll happening at all is the test.
+## Only strikes while the fight is live (round_end/warmup strikes fizzle).
+func _fall16(sess: Node, gid: int, want: int) -> bool:
+	for i in 10:
+		if String(game.pvp.state) == "fight":
+			sess.pvp_strike(gid, 999999.0, "phys")
+		var deadline: int = Time.get_ticks_msec() + 1500
+		while Time.get_ticks_msec() < deadline:
+			if int(game.pvp.scores.get(gid, 0)) >= want:
+				return true
+			await get_tree().create_timer(0.1).timeout
+	return int(game.pvp.scores.get(gid, 0)) >= want
+
+
+func _run_guest16() -> void:
+	if not await _guest_boot():
+		return
+	_rpc_report.rpc_id(1, {"ready": true})
+	# Serve probes while the duel plays out. The match end lands this machine
+	# OFFLINE (the controller's session-over wind-down) with the DONE state
+	# intact — that terminal shape is this process's own assertion.
+	if not await _wait_for(func() -> bool: return _finish or not _net.is_online(), 300.0, "duel end (offline) or finish"):
+		return
+	if not _net.is_online():
+		if not bool(game.pvp_active) or game.pvp == null:
+			print("NET TEST FAIL  guest16: pvp state gone before the end card")
+			get_tree().quit(1)
+			return
+		if String(game.pvp.state) != "done" or int(game.pvp.winner_pid) != 1:
+			print("NET TEST FAIL  guest16: wrong end state (%s, winner %s)"
+				% [String(game.pvp.state), str(game.pvp.winner_pid)])
+			get_tree().quit(1)
+			return
+		if game.state != game.ST_VICTORY:
+			print("NET TEST FAIL  guest16: the end card must flip ST_VICTORY")
+			get_tree().quit(1)
+			return
+		print("[net_session] guest16: defeat card up, session closed clean under it")
+		await get_tree().create_timer(0.3).timeout
+		get_tree().quit(0)
+		return
+	_net.leave()
+	await get_tree().create_timer(0.5).timeout
+	get_tree().quit(0)

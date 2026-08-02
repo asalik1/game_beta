@@ -2438,6 +2438,7 @@ func _run_campaign_ch2() -> void:
 	await _test_boss_loot()
 	await _test_professions()
 	await _test_synthesis()
+	await _test_pvp_arena()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -4152,6 +4153,19 @@ func _test_asset_seams() -> void:
 		return _fail("animated-prop SpriteFrames wrong (frames/loop)")
 	if sf.get_frame_texture("default", 0).get_size() != Vector2(16, 16):
 		return _fail("animated-prop frame cell should be 16x16")
+	# Animation counts are data, not clip-specific constants. The installed
+	# Warlock South walk is seven frames; the runtime reader must expose all of
+	# them rather than assuming the common six-frame walk cadence.
+	var warlock_walk := Art.walk_info("warlock")
+	if int(warlock_walk.get("frames", 0)) != 7:
+		return _fail("strip reader should auto-detect Warlock's 7-frame walk")
+	# The iterator itself is not capped at familiar animation lengths.
+	var long_strip := Image.create_empty(1600, 16, false, Image.FORMAT_RGBA8)
+	var long_tex := ImageTexture.create_from_image(long_strip)
+	var long_sf := Art._prop_frames(
+		"test_synth_prop_100", {"tex": long_tex, "frames": 100, "fps": 6.0})
+	if long_sf.get_frame_count("default") != 100:
+		return _fail("animation iterator should accept a 100-frame strip")
 	# No strip -> null, so the static Sprite2D path stays.
 	if Art.anim_prop("no_such_prop_zzz") != null:
 		return _fail("anim_prop should be null when no _anim strip exists")
@@ -7774,3 +7788,45 @@ func _test_status_icon_coverage() -> void:
 		if not active_ids.has(id):
 			return _fail("stale status icon mapping has no active effect: %s" % id)
 	print("ok: status icons (%d active ids, all authored PNGs, no procedural fallbacks)" % active_ids.size())
+
+
+# =========================================================== pvp arena (v1)
+
+## The Proving Grounds (PvP v1, 2026-08-01): OFFLINE structural checks only —
+## data shape, chapter routing, balance-pool validity, and the duel lobby UI
+## stages. The real two-process duel flow (join -> countdown -> gates -> falls
+## -> match end) lives in net_test.bat stage 16. Deliberately never switches
+## the live campaign world (snapshot/restore doctrine: a chapter swap would
+## nuke cleared/boss state the later sections inherit).
+func _test_pvp_arena() -> void:
+	var err: String = PvpArena.selftest()
+	if err != "":
+		return _fail("pvp arena: " + err)
+	if not Story.is_pvp("pvp_arena") or Story.is_pvp("ch1") or Story.is_pvp("capital"):
+		return _fail("pvp arena: is_pvp misroutes")
+	if Story.CHAPTER_LIST.has("pvp_arena"):
+		return _fail("pvp arena: leaked into CHAPTER_LIST (campaign machinery would see it)")
+	if Story.is_standalone("pvp_arena") or Story.is_endgame("pvp_arena"):
+		return _fail("pvp arena: must be neither standalone nor endgame (lobby locks on it)")
+	var ch := Story.chapter("pvp_arena")
+	if String(ch.get("name", "")) != "The Proving Grounds" or not bool(ch.get("pvp", false)):
+		return _fail("pvp arena: chapter() does not resolve the arena dict")
+	if int(Balance.PVP_DEATHS_TO_LOSE) < 1 or Balance.PVP_COUNTDOWN_FIRST <= 0.0 \
+			or Balance.PVP_COUNTDOWN_ROUND <= 0.0:
+		return _fail("pvp arena: nonsensical match knobs")
+	# The duel lobby stages open and close clean (the _test_mp_lobby_ui shape).
+	game.menus.open_lobby()
+	if game.menus.current != "lobby":
+		game.menus.close()
+		return _fail("pvp arena: lobby menu did not open")
+	game.menus.lobby["path"] = "host"
+	game.menus.lobby["duel"] = true
+	game.menus.open_lobby("char")
+	if String(game.menus.lobby.get("stage", "")) != "char":
+		game.menus.close()
+		return _fail("pvp arena: duel hero pick stage did not open")
+	game.menus.close()
+	game.menus.lobby["duel"] = false
+	if game.menus.is_open():
+		return _fail("pvp arena: lobby did not close clean")
+	print("ok: pvp arena (module shape + chapter routing + duel lobby stage)")
