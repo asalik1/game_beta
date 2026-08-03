@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots-slot icon source
+Primary request: one named S-grade matched pair of Worldroot Steps, an independent legendary Mage Rootbound Sandals design grown through with a thread of the Worldroot
+Scene/backdrop: perfectly flat solid #ff00ff chroma background for removal; no floor, tree, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty tall sandal-greaves total, centered orthographic pair, hollow root-arch heel cups, broad visible empty footbeds, open toes, tall split root cages, fully visible, 82% square
+Lighting/mood: clear upper-left key light, deep readable shadows, primordial world-bearing strength with contained turquoise-gold life
+Materials/textures: midnight worldwood footbeds, enormous ivory-brown root arches forming continuous attached heel and shin cages, deep teal leather straps, dark stone-bark sole plates, one turquoise-gold world-sap lens recessed inside each arch, hairline life seams confined within roots
+Constraints: independent tall monumental silhouette but unmistakably wearable empty sandals; every root, plate and lens attached; no feet, toes, skin, legs, wearer, tree trunk, loose roots, ground, props, text, frame, watermark; no #ff00ff
+Avoid: forest scene, detached vines, floating leaves, scenery, duplicate pair, third sandal, floor, shadow, reflection, logos, aura cloud, smoke, blur
+
+Generation note: the first render was rejected because it used a dark studio gradient instead of the required chroma field. The accepted rerender changed only the background instruction, requiring perfectly uniform edge-to-edge #ff00ff with no vignette or halo.

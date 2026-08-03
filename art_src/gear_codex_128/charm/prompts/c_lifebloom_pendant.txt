@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one Lifebloom Pendant charm, designed as a complete standalone object: a compact teardrop pendant made from two carved darkwood leaves cupping a small opaque green seed stone, with a simple bronze stem bail and one short wrapped leather binding; restrained neutral-tier healer's pendant, sturdy closed silhouette, unmistakably living growth without loose flowers
+Scene/backdrop: perfectly flat solid #ff00ff chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one pendant only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, no magical glow
+Materials/textures: carved darkwood leaf shell, opaque green seed stone, weathered bronze stem bail, small leather binding
+Constraints: preserve exact Lifebloom Pendant charm category; strong compact silhouette; no detached petals or noise; no watermark; do not use #ff00ff anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, bouquet, loose flowers, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

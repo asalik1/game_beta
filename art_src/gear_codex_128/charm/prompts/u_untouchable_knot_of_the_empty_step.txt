@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one Untouchable, Knot of the Empty Step, named S-grade Duelist's Knot unique; an independent perfectly closed circular black-silk knot braided around a large clean empty center aperture, with four subtle silver deflection plates integrated into the outer braid and one integral closed suspension loop; a razor-thin pale-violet light traces only the inner rim, making the protected emptiness the focal shape, no loose tails
+Scene/backdrop: perfectly flat solid #00ff00 chroma background; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: crisp high-detail dark-fantasy sprite illustration, iconic silhouette, detailed at 128px and clear at 32px
+Composition/framing: exactly one connected standalone charm, centered orthographic catalogue view, fully visible, even padding, roughly 82% of square
+Lighting/mood: upper-left light, deep readable shadows, contained pale-violet inner-rim light only
+Constraints: independent legendary construction; obvious empty aperture; no text, letters, numbers, symbols, glyphs, runes, watermark, wearer/body/hand/neck, chain, weapon, duplicate, detached prop, loose strand, orbiting VFX, inset, frame, floor, shadow, or vivid green in object

@@ -319,8 +319,7 @@ func net_push_snapshot(pos: Vector2, vel: Vector2, look: float) -> void:
 #
 # Taste defaults (MP-12 — candidates for a later balance.gd promotion;
 # owner review in MP_TASKS PLAYTEST NOTES):
-const DOWN_CRAWL_MULT := 0.35   # crawl speed while downed (fraction of move speed)
-const DOWN_BLEEDOUT := 30.0     # s from downed to ghost
+const DOWN_BLEEDOUT := 30.0     # s from downed to ghost (downed bodies hold position — no crawl)
 const REVIVE_REACH := 60.0      # px a reviver must stand within to channel
 const REVIVE_CHANNEL := 3.0     # s of uninterrupted channel to revive
 const REVIVE_HP_FRAC := 0.30    # revived / ghost-cleared players stand at this HP
@@ -912,11 +911,11 @@ func play_death_anim() -> void:
 		_clip_locked = true
 
 
-## Passive granted by an equipped S-grade weapon ("" if none). A DORMANT
-## legendary (round 51b — looted/bought, passive_dormant) grants NOTHING until
-## the class's awakening quest sets s_awakened_<cls>; this is the SINGLE gate —
-## every kit/effect reads the passive through here. Legacy legendaries without
-## the dormant marker (old saves, direct grants) stay active, ungrandfathered.
+## Passive granted by an equipped S-grade weapon ("" if none) — the SINGLE
+## accessor every kit/effect reads a weapon passive through. Since the legendary
+## tier retired (2026-07-27; see the inline note below) there is NO dormant /
+## awakening-quest gate: a weapon's passive is live the moment it's equipped, and
+## old-save "dormant" legendaries grandfather in (their passive_dormant is ignored).
 func s_passive() -> String:
 	var w = equipment.get("weapon")
 	if w == null or not w.has("passive"):

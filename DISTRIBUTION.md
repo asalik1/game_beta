@@ -45,12 +45,12 @@ never drift from the gate the game actually enforces.
 ## 2. Before you cut a build: bump `NET_VERSION`?
 
 **The one constant that gates cross-build play:** `NET_VERSION` in
-`game/scripts/net/net_manager.gd` (currently `"0.1.0"`).
+`game/scripts/net/net_manager.gd` (currently `"0.3.1"`).
 
 - The join handshake (`net_manager.gd`, `_on_auth_received`) compares it **exactly**. A
-  mismatch is a clean refusal that **names both versions** ("host runs 0.1.0, you run 0.1.1")
+  mismatch is a clean refusal that **names both versions** ("host runs 0.3.1, you run 0.3.2")
   — never a half-join, never a silent desync.
-- It's printed on the **title screen** ("build 0.1.0"), and in the Host/Join lobby panels and
+- It's printed on the **title screen** ("build 0.3.1"), and in the Host/Join lobby panels and
   the codex co-op page. Every one of those reads the const directly (verified — no drifted
   literals anywhere), so bumping the const updates all of them at once.
 

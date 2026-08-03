@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one S-grade matched pair of empty Piercer's Cleats, legendary workmanship in same family identity
+Scene/backdrop: perfectly flat solid #00ff00 chroma background, no floor, shadow, gradient, texture, reflection
+Style/medium: crisp high-detail dark-fantasy sprite illustration, readable compact silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty ankle boots, orthographic centered pair, hollow crownlike cuffs, enclosed pointed toes, fully visible, 80% square
+Materials/textures: black-red wyrmhide, richest starsteel toe and heel piercer plates all attached, layered sole fangs, luminous ember seams confined in metal
+Constraints: no feet, legs, wearer, detached spikes, weapons, props, text, frame, watermark; no #00ff00 in object

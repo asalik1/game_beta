@@ -1,0 +1,14 @@
+Input image: `../generated/a_wardsteel_plate.png` is the neutral Wardsteel Plate family silhouette and rendering-language reference, not an edit target.
+
+Use case: stylized-concept
+Asset type: high-resolution dark-fantasy game inventory icon; source for a 128x128 Codex master and a separately downsampled 32x32 gameplay icon
+Input images: Image 1 is the neutral Wardsteel Plate family silhouette and rendering-language reference, not an edit target
+Primary request: create the authored B-grade “Runed Wardsteel Plate” as an independently rendered upgraded version of the same armor family
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for local background removal; one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation
+Subject: exactly one empty wearable torso armor garment; preserve Image 1’s recognizable high gorget, compact layered shoulder plates, breastplate mass, and overlapping waist-lame silhouette; upgrade the workmanship to masterwork steel with crisp beveled edges, disciplined geometric ward etching, fine silver inlay, and three small contained cold-violet rune accents; believable leather side straps; no separate accessories
+Style/medium: premium hand-painted pixel-art game icon with genuine high-resolution detail, crisp clustered shapes, controlled highlights, dark Crownless fantasy, readable at small size; match Image 1’s visual language; not a photo, smooth 3D, or vector clip art
+Composition/framing: centered, same near-front three-quarter presentation as Image 1, entire armor fully visible, generous even padding, square icon composition; bold material separation suitable for reduction to 128px and 32px
+Lighting/mood: cool controlled item lighting on the armor; magical but restrained, clearly more crafted and ornamented than the neutral family
+Color palette: charcoal steel, polished gunmetal, silver inlay, tiny cold violet-white rune light; do not use #00ff00 in the subject and do not turn the whole armor purple
+Materials/textures: quality forged steel, precision engraving, leather straps, clean maintained edges; no rust, damage, or broad color wash
+Constraints: B grade must read through workmanship, etched detail, inlay, and faint contained magic; keep the same fundamental family silhouette; exactly one torso garment; empty openings; no head, body, limbs, weapon, shield, cape, pedestal, shadow, reflection, text, border, rarity frame, watermark, scenery, particles, smoke, or glow spilling into the background; crisp clean silhouette with no green fringe

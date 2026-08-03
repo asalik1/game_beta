@@ -138,10 +138,15 @@ func _ready() -> void:
 	game.menus.open_codex("records")
 	await _menu_shot("codex_records")
 	game.menus.close()
-	game.menus.open_codex("gear_shapes_weapon")
-	await _menu_shot("codex_gear_shapes")
-	game.menus.open_codex("gear_uniques_weapon")
-	await _menu_shot("codex_gear_uniques")
+	# Every slot owns independent high-resolution shapes + unique art. Capture
+	# them separately so a thin weapon, attached feet, mismatched glove pair, or
+	# low-detail charm cannot hide behind the one historical weapon screenshot.
+	for gear_slot_key in Items.SLOTS:
+		var gear_slot := String(gear_slot_key)
+		game.menus.open_codex("gear_shapes_" + gear_slot)
+		await _menu_shot("codex_gear_shapes_" + gear_slot)
+		game.menus.open_codex("gear_uniques_" + gear_slot)
+		await _menu_shot("codex_gear_uniques_" + gear_slot)
 	game.menus.close()
 	game.menus.open_map()
 	await _menu_shot("map")

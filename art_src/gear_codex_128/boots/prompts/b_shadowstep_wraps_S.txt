@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one S-grade matched pair of empty Shadowstep Wraps, legendary culmination of the close-fitting silent wrapped assassin family
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty ankle-high wrapped boots total, centered orthographic pair, hollow swept cuffs, enclosed blade-point toes, fully visible, 78% square
+Lighting/mood: clear upper-left key light, deep readable shadows, supernatural but contained silence
+Materials/textures: interlocked black voidsilk bands, dark iridescent leather scales, slim hooked heel shells, layered blade-point toes, seamless flexible soles, compact cold-violet sparks trapped at band intersections
+Constraints: S reads through richest attached layering, dimensional relief and luminous seams; same family identity; no loose fabric, feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: detached cloth strips, smoke cloud, duplicate pair, third boot, floor, shadow, reflection, readable symbols, large aura, blur

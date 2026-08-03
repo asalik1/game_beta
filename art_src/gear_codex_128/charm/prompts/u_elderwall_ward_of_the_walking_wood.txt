@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG legendary unique charm icon; high-detail codex master only
+Primary request: exactly one S-grade Stonebark Ward unique named Elderwall, Ward of the Walking Wood: a compact monumental gate-shaped talisman built from three vertical slabs of primordial black-brown heartwood armored with pale petrified bark; two massive articulated root-buttresses curve inward as the side walls and lock beneath a crown-silver suspension arch, while a rectangular emerald core glows behind a central portcullis of living wood; the lower edge ends in two short interlocking root feet, expressing an ancient mobile forest wall without depicting a creature or scene
+Scene/backdrop: perfectly flat solid #ff00ff chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one connected broad upright charm only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 80% of the square
+Lighting/mood: clear upper-left key light, deep readable shadows, contained emerald light behind the central wooden portcullis
+Materials/textures: primordial dark heartwood, pale petrified bark armor, crown-silver arch and clamps, rectangular emerald core
+Constraints: preserve Stonebark Ward category and Elderwall concept; independent legendary gate silhouette, broad and compact at 32px; all root structures connected into one talisman; no detached pieces, leaves or debris; no watermark; do not use #ff00ff anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, walking creature, humanoid, face, forest scene, castle scene, full tree, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, orbiting VFX, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

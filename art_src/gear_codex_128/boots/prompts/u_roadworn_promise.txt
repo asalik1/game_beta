@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dual-resolution dark-fantasy boots icon source
+Primary request: one named A-grade matched pair of Roadworn Promise, independent Pilgrim's Resolve design
+Scene/backdrop: flat solid #00ff00 chroma only; no floor, shadow, gradient, texture, reflection
+Style/medium: crisp high-detail sprite illustration, compact readable silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty low broad boots, centered orthographic pair, hollow folded cuffs, enclosed scuffed toes, fully visible, 76%
+Materials/textures: cracked red-brown leather carefully repaired with pale oath-thread, broad black soles, silver heel staples, one warm amber sealed token lens attached to each cuff
+Constraints: unique silhouette; no feet, legs, wearer, road, shrine, loose tokens, props, text, frame, watermark; no #00ff00

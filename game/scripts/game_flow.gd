@@ -1842,24 +1842,59 @@ func run_terrain_event(ev: String, zi_in := -1, anchor: Player = null) -> void:
 				z.force_aggro = true
 				add_enemy(z)
 				emote(z, "!", 0.8)
+				# MP (co-op fix): the mob mirrors to guests, but its arrival
+				# flourish (dust + gate sfx) was host-local — fan it so the
+				# grave-burst reads on every screen.
+				if net_host():
+					net_session().host_terrain_fx("grave_spawn", pos)
 		"gust":
 			gust_vec = Vector2.RIGHT.rotated(randf() * TAU) * 220.0
 			gust_t = 1.8
+			var puff: Vector2 = p.global_position + gust_vec.normalized() * -80.0
 			sfx("blink", 0.6)
-			burst(p.global_position + gust_vec.normalized() * -80.0, Color(0.85, 0.72, 0.45), 16)
+			burst(puff, Color(0.85, 0.72, 0.45), 16)
 			# Wave-1 co-op fix: weather is host-only (guests early-return above),
 			# so the gust push never reached them — fan the vector/timer so it
 			# shoves their player + enemies too (game.gd per-frame decays it).
+			# The puff + whoosh were likewise host-local: fan them too.
 			if net_host():
 				net_session().host_gust(gust_vec, gust_t)
+				net_session().host_terrain_fx("gust", puff)
 		"lightning":
 			var pos := clamp_to_zone(p.global_position + Vector2(randf_range(-160, 160), randf_range(-120, 120)), p.global_position)
 			telegraph(pos, 60.0, 0.55, 24.0, {"color": Color(0.7, 0.85, 1.0, 0.6)})
 			hud.flash_screen(Color(0.8, 0.9, 1.0), 0.25, 0.2)
+			# MP (co-op fix): the strike telegraph broadcasts, but the white
+			# screen flash was host-local — fan it so the sky lights for everyone.
+			if net_host():
+				net_session().host_terrain_fx("lightning", pos)
 		"shard":
 			var pos := clamp_to_zone(p.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), p.global_position)
 			telegraph(pos, 55.0, 0.7, 14.0, {"color": Color(0.5, 0.85, 1.0, 0.55)})
 			sfx("nova", 1.3)
+			# MP (co-op fix): the shard telegraph broadcasts, but its chime was
+			# host-local — fan it so the fall is heard on every screen.
+			if net_host():
+				net_session().host_terrain_fx("shard", pos)
+
+## GUEST (co-op fix): replay the pure-cosmetic flourish of a host-rolled terrain
+## event (run_terrain_event fans this via host_terrain_fx). The gameplay — hazard
+## pools, the gust push, event mobs — already arrived through their own fans;
+## guests early-return from run_terrain_event, so this is the ONLY place the
+## weather's screen flash / sound / dust reaches their screens. Params mirror the
+## host branches above exactly so the storm LOOKS identical on every machine.
+func net_apply_terrain_fx(ev: String, pos: Vector2) -> void:
+	match ev:
+		"lightning":
+			hud.flash_screen(Color(0.8, 0.9, 1.0), 0.25, 0.2)
+		"shard":
+			sfx("nova", 1.3)
+		"grave_spawn":
+			burst(pos, Color(0.5, 0.45, 0.35), 12)
+			sfx("gate", 1.4)
+		"gust":
+			burst(pos, Color(0.85, 0.72, 0.45), 16)
+			sfx("blink", 0.6)
 
 ## Apply floor-patch effects to the player and enemies (ticked at 2.5Hz).
 ## DEDICATED: the player half skips whole (each guest's own machine ticks

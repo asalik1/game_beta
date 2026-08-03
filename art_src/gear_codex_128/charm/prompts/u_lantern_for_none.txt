@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one Lantern for None, named A-grade Ghostlight Charm unique; an independent tiny sealed black-brass lantern with no door, a broad octagonal closed body around an apparently empty smoke-gray glass chamber, one narrow pale-blue horizon line trapped across its middle, heavy cap, and integral suspension loop
+Scene/backdrop: perfectly flat solid #ff00ff chroma background with no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: crisp Crownless dark-fantasy sprite illustration, iconic construction, detailed at 128px and clear at 32px
+Composition/framing: exactly one connected standalone charm, centered catalogue view, fully visible, even padding, roughly 82% of square
+Lighting/mood: upper-left light, deep readable shadows, one contained pale-blue line
+Constraints: independent sealed lantern; no door, smoke, external flame, text, symbols, glyphs, runes, watermark, wearer, body, hand, neck, chain, duplicate, detached spirit, orbiting VFX, scene, frame, floor, shadow, or magenta in object

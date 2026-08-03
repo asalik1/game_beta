@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: high-resolution dark-fantasy game UI equipment icon source, intended for a 128x128 codex master and later 32x32 gameplay export
+Primary request: one A-grade Dragonforged Crownless warrior Pike; preserve the same long infantry-pike silhouette as the neutral family, upgraded into an exceptional exotic-material weapon through construction and contained energy rather than a rarity recolor
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for local background removal
+Subject: exactly one complete pike with a narrow elongated leaf blade forged from layered blackened dragonsteel, a brighter pale cutting ridge, sculpted reinforced socket with subtle crownless heraldic relief, straight smoke-dark ash shaft, oxblood grip, fine silver-red inlay, and a contained ember-white energy seam only within the blade and socket
+Style/medium: cohesive premium hand-painted pixel-art-inspired dark fantasy game icon; genuine high-resolution material detail; crisp silhouette; controlled relief and edge highlights; not photorealistic; not a low-resolution pixel sprite enlarged
+Composition/framing: centered diagonal from lower left to upper right, weapon occupying about 78% of the square, generous clear padding on every side
+Lighting/mood: dramatic but controlled cool studio light with localized warm energy; somber Crownless mood
+Color palette: layered charcoal dragonsteel, pale steel ridge, dark ash, muted oxblood, restrained silver and ember-white; do not use bright green
+Materials/textures: visible layered forging, crisp edge, raised heraldic metalwork, carved wood, tight leather binding, contained luminous seam
+Constraints: exactly one pike; same fundamental family silhouette as a neutral infantry pike; A grade clearly richer and more powerful than B through exotic layered material, stronger relief, and contained energy; no overall blue/purple/brown/gold rarity wash; no free-floating flames; no text; no badge; no border; no inventory slot frame; no cast shadow; no contact shadow; no reflection; no watermark
+Chroma constraints: background must be one uniform #00ff00 color with no shadows, gradients, texture, floor plane, reflections, or lighting variation; keep the object fully separated from the background with crisp edges and generous padding; do not use #00ff00 anywhere in the object

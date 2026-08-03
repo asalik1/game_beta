@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one S-grade Fletcher's Token charm, the same compact leaf-shaped arrowhead plaque with broad closed body, legendary dark meteoric steel construction, richly stepped feather-like shoulder plates, keen silver central spine, two fixed sapphire studs, razor-thin blue-white luminous seams, and one integral closed suspension loop
+Scene/backdrop: perfectly flat solid #00ff00 chroma background with no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: crisp Crownless high-detail sprite illustration, deliberate edges, compact readable silhouette, tasteful pixel-art influence, detailed at 128px and clear at 32px
+Composition/framing: exactly one connected standalone charm, centered orthographic catalogue view, fully visible, even padding, roughly 82% of square
+Lighting/mood: upper-left light, deep readable shadows, compact blue-white seam light
+Constraints: same Fletcher's Token family silhouette; token not weapon; no text, symbols, glyphs, runes, watermark, wearer, hand, neck, chain, bow, full arrow, duplicate, detached feather, orbiting VFX, frame, floor, shadow, or vivid green in object

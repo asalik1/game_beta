@@ -1,0 +1,8 @@
+MANDATORY BACKGROUND: perfectly flat uniform solid #00ff00 green chroma across every background pixel; no white, gray, black, transparent, gradient, floor, shadow, texture, reflection, halo, or lighting variation in the background.
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; codex master only
+Primary request: one Last Measure, Token of the Perfect Cut, named S-grade unique; a compact circular black-adamant measuring token with one razor-straight bright-platinum bar fused horizontally across its center, six heavy platinum outer clamp teeth joined to the dark rim, a precise wedge-shaped lower point, fortified closed suspension loop, and a narrow crimson-white energy seam contained directly inside the center bar
+Style: crisp high-detail Crownless dark-fantasy sprite illustration, legendary workmanship, high-contrast materials, strong at 32px
+Composition: exactly one connected standalone charm, centered catalogue view, fully visible with generous padding, 82% square
+Lighting: upper-left on object only, deep readable shadows, contained red luminosity
+Constraints: black adamant, platinum and red object only; do not use green in object; all clamps joined; no marks, writing, numbers, symbols, glyphs, runes, logo, wearer/body/hand/neck, chain, duplicate, detached prop/VFX, frame, floor, shadow, or watermark

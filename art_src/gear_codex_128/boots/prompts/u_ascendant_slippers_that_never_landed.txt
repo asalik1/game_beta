@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named S-grade matched pair of Ascendant, Slippers That Never Landed, independent legendary Levitation Slippers
+Scene/backdrop: perfectly flat solid #ff00ff chroma background; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: high-detail sprite illustration, crisp deliberate edges, compact readable silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty slippers total, orthographic catalogue view, centered compact pair, tall split hollow cuffs, enclosed narrow toes, fully visible, 80% square
+Materials/textures: black-blue voidsilk, ivory star-metal arch soles physically attached toe-to-heel, backward swept heel crowns, sealed cyan-white null-gravity lenses, concentric luminous seams
+Constraints: unique silhouette not recolored generic or Cloudkiss; no feet, legs, wearer, wings, feathers, duplicate, third shoe, floating detached parts, text, frame, watermark; no #ff00ff in object

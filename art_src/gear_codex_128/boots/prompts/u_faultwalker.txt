@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named A-grade matched pair of Faultwalker, an independent Warlock Ruinstep design that compresses a failing fault beneath its heels
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, ground, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty low broad boots total, centered orthographic pair, hollow folded cuffs, enclosed square toes, fully visible, 76% square
+Lighting/mood: clear upper-left key light, deep readable shadows, immense pressure held compactly
+Materials/textures: soot-brown leather, broad basalt-metal heel blocks integrated into black soles, pale bronze compression bands encircling each low boot, dense layered square toe plates, one sealed amber-violet pressure lens per heel
+Constraints: independent low compressed silhouette; boots, not rocks or structures; all blocks, bands and lenses attached; no debris, ground, feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: rubble pile, floating stones, scenery, duplicate pair, third boot, floor, shadow, reflection, logos, aura, smoke, blur

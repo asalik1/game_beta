@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; codex master only
+Primary request: one Last Measure, Token of the Perfect Cut, named S-grade unique; a compact circular black-adamant measuring token with a single razor-straight bright-platinum split fused horizontally across its center, exactly six heavy platinum outer clamp teeth joined to the dark rim, a precise wedge-shaped lower point, a fortified closed suspension loop, and one narrow crimson-white energy seam contained directly inside the central platinum split
+Scene/backdrop: flat solid #00ff00 chroma; no floor, shadow, gradient, texture, reflection
+Style: crisp high-detail Crownless dark-fantasy sprite illustration, legendary workmanship, high-contrast material hierarchy, strong silhouette at 32px
+Composition: exactly one connected standalone charm, centered catalogue view, full object, even padding, 82% square
+Lighting/mood: clear upper-left light, deep readable shadows, dramatic luminosity restricted to the straight central seam
+Constraints: unmistakably S-grade through black adamant, bright platinum, deep stepped relief and contained energy; all six clamps joined; no measuring marks, writing, numbers, symbols, glyphs, runes, logo, wearer/body/hand/neck, chain, coin stack, duplicate, detached prop/VFX, frame, floor, shadow, watermark, or green

@@ -1,0 +1,7 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; codex master only
+Primary request: one Gapfinder's Mark, named A-grade Butcher's Token unique; an independent narrow wedge-shaped black-steel tally with one deep open notch built into the blunt side, a pale razor edge on the opposite side, three integral bronze clamp pins, and a closed suspension hole forged through the broad top; the gap is structural negative space, not a symbol
+Scene/backdrop: flat solid #00ff00 chroma; no floor, shadow, gradient, texture, reflection
+Style: crisp Crownless dark-fantasy sprite illustration, readable asymmetrical silhouette, detailed 128px, reducible 32px
+Composition: exactly one connected standalone charm, centered catalogue view, full object, even padding, 82% square
+Constraints: miniature blank token, not full weapon; no writing/symbols/glyphs/runes/logo, wearer/body/hand/neck, chain, coin, duplicate, detached prop/VFX, frame, floor, shadow, watermark, or green

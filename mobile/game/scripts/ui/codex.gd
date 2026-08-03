@@ -1151,13 +1151,15 @@ static func _shape_row(m: Menus, list: VBoxContainer, slot: String, noun: String
 		cell.custom_minimum_size = Vector2(64, 0)
 		row.add_child(cell)
 		var icon := TextureRect.new()
-		icon.texture = Art.item_icon(slot, g, noun)
+		icon.texture = Art.codex_item_icon(slot, g, noun)
 		# A 32px icon shown at 1:1 in a small cell reads as a sliver — a thin
 		# weapon vanishes. Upscale to a legible box, NEAREST so the pixels
 		# stay crisp instead of blurring.
 		icon.custom_minimum_size = Vector2(56, 56)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if icon.texture.get_width() >= 64 \
+			else CanvasItem.TEXTURE_FILTER_NEAREST
 		cell.add_child(icon)
 		var gl := Label.new()
 		gl.text = g
@@ -1230,11 +1232,13 @@ static func _unique_card(m: Menus, grid: GridContainer, u: Dictionary) -> void:
 	row.add_theme_constant_override("separation", 12)
 	card.add_child(row)
 	var uicon := TextureRect.new()
-	uicon.texture = Art.item_icon(String(u["slot"]), grade,
+	uicon.texture = Art.codex_item_icon(String(u["slot"]), grade,
 		String(u["noun"]), String(u["art"]))
 	uicon.custom_minimum_size = Vector2(64, 64)
+	uicon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	uicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	uicon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	uicon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if uicon.texture.get_width() >= 64 \
+		else CanvasItem.TEXTURE_FILTER_NEAREST
 	uicon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	row.add_child(uicon)
 	var info := VBoxContainer.new()
@@ -1622,7 +1626,12 @@ static func _curio_card(m: Menus, list: VBoxContainer, name: String, desc: Strin
 	icon.custom_minimum_size = Vector2(48, 48)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# Painted high-resolution curios should downsample smoothly. Keep the
+	# intentional tiny Raven/pixel placeholders crisp until they are replaced.
+	var authored_size := 0
+	if icon.texture != null:
+		authored_size = maxi(icon.texture.get_width(), icon.texture.get_height())
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if authored_size >= 64 else CanvasItem.TEXTURE_FILTER_NEAREST
 	row.add_child(icon)
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL

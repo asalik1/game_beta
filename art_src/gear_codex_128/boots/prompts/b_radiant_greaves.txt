@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one neutral pair of Crownless Paladin Radiant Greaves, designed as a complete standalone matched pair of empty armored boots
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one matched pair of two boots, orthographic catalogue view, centered as a compact symmetrical pair, fully visible from open upper cuffs to armored toes, slight outward angle so both profiles remain readable, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, dignified and restrained, no magical glow
+Materials/textures: physically coherent well-made pale steel shin plates and articulated sabaton toes, subtle warm-brass edge fittings, dark brown leather gussets and sole edges, simple rivets and hinges; restrained construction establishes the unmistakable Radiant Greaves family silhouette while rewarding the 64px codex view
+Constraints: preserve the exact Radiant Greaves boots category; exactly one matched pair of two empty knee-high armored greave-boots; both boots must share the same design, height, material, and scale; clearly hollow open cuffs; strong paired silhouette; no detached armor pieces; no watermark; do not use #00ff00 anywhere in the object
+Avoid: feet, toes, legs, knees, skin, wearer, person, hand, mannequin, socks, trousers, floor, pedestal, props, weapon, shield, duplicate pair, third boot, mismatched boots, text, letters, numbers, logos, readable runes, UI frame, card, cast shadow, contact shadow, reflection, bloom fog, smoke cloud, soft painterly blur

@@ -1,0 +1,7 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; codex master only
+Primary request: one B-grade Butcher's Token preserving the miniature cleaver-tally silhouette and integral suspension hole; masterwork dark steel, precise stepped bevel, bronze rivet heads, layered spine reinforcement, shallow hammered relief, and one restrained dull-red seam contained along the cutting bevel
+Scene/backdrop: flat solid #00ff00 chroma; no floor, shadow, gradient, texture, reflection
+Style: crisp Crownless dark-fantasy sprite illustration, readable silhouette, detailed 128px, reducible 32px
+Composition: exactly one connected standalone charm, centered slight three-quarter catalogue view, full object, even padding, 82% square
+Constraints: grade by construction; blank metal; no writing/symbols/glyphs/runes/logo, wearer/body/hand/neck, chain, coin, duplicate, detached prop/VFX, frame, floor, shadow, watermark, or green

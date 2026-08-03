@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one Absolute, Crystal of the Final Barrier, named S-grade unique Aegis Crystal charm; an independent monumental hexagonal barrier crystal with a thick transparent ice-teal center, six black-adamant buttress ribs fused around its edge, bright platinum capstones, a closed fortified suspension loop, and concentric white-blue internal fracture planes that stop at the reinforced rim
+Scene/backdrop: perfectly flat solid #ff00ff chroma background; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: crisp high-detail sprite illustration, deliberate dark-fantasy edges, readable compact silhouette, tasteful pixel-art influence, materially detailed at 128px and reducible to 32px
+Composition/framing: exactly one connected standalone charm, centered orthographic catalogue view at slight three-quarter angle, fully visible, even padding, roughly 82% of square
+Lighting/mood: upper-left light, deep readable shadows, legendary contained barrier luminosity
+Constraints: no floating shield field or detached shards; integrated loop/fittings; no text, letters, symbols, glyphs, runes, watermark, wearer, body, hand, neck, chain, necklace, duplicate, detached prop, spark, VFX, inset, frame, floor, cast shadow, or #ff00ff in object

@@ -1,0 +1,7 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; codex master only
+Primary request: one Nameless God, Idol Beneath the Throne, named S-grade Cursed Idol unique; a single squat black-adamant throne-shaped mask stone with a blank featureless central face plane, seven fused platinum buttress teeth around its rim, deep layered base relief, fortified suspension loop, and contained violet-white light leaking only through closed internal fractures
+Scene/backdrop: flat solid #00ff00 chroma; no floor/shadow/gradient/texture/reflection
+Style: crisp legendary dark-fantasy sprite illustration, iconic silhouette, detailed 128px, clear 32px
+Composition: exactly one connected standalone talisman, centered, full object, padding, 82% square
+Constraints: one carved object, no seated figure/body; blank face; no writing/symbols/glyphs/runes, eyes, wearer/hand/neck, chain, duplicate, detached throne/prop/VFX, frame, watermark, green

@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one S-grade matched pair of empty Assassin Prowlers, legendary roofline climbing boots in the same family identity
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty mid-ankle boots total, centered orthographic catalogue pair, hollow swept cuffs, enclosed tapered toes, slight outward angle, fully visible, 80% square
+Lighting/mood: clear upper-left key light, deep readable shadows, legendary silent height with contained moon-white light
+Materials/textures: flawless nightglass leather, richest interlocking black moonsteel grip plates, articulated toe and heel talons physically integrated into continuous soles, swept cuff fins, fine silver fittings, luminous moon-white traction seams confined inside the sole frames
+Constraints: S reads above A through finest material, deepest coherent relief, richest fittings and contained luminous seams; same Prowlers family; no detached light or claws; no feet, legs, wearer, wall, moon scene, props, text, frame, watermark; no #00ff00
+Avoid: detached spikes, animal paws, duplicate pair, third boot, floor, shadow, reflection, readable runes, logos, aura cloud, smoke, blur

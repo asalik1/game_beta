@@ -23,6 +23,33 @@ func _recheck_gates() -> void:
 func net_apply_boss_done(kind: String) -> void:
 	boss_done[kind] = true
 	_recheck_gates()
+	# MP (co-op fix): the post-boss narrative beat is part of the kill, not
+	# just the host's. on_boss_died runs host-only, so its hud.dialogue(post_
+	# <kind>) never reached the guests — they watched the boss die in silence
+	# (a mid-chapter boss like Fangmaw; the FINAL boss already fans its card via
+	# host_victory). Replay the SAME beat here, read against THIS guest's own
+	# resonance band, so each head gets its own band's flavor exactly like solo.
+	# This rides the LIVE-kill RPC (_rpc_boss_done), NOT the join snapshot, so a
+	# late joiner never re-hears an old boss. Gates already reopened above, so
+	# the beat is purely narrative — nothing gameplay-critical waits behind it.
+	if has_local_player():
+		var beat: Array = Story.beat_for("post_" + kind,
+			Story.res_band(player.resonance), flags)
+		if not beat.is_empty():
+			hud.dialogue(beat)
+
+## MP (co-op fix): GUEST side of the boss INTRO — the mirror of net_apply_boss_
+## done. _on_boss_trigger (and its pre_<kind> beat) is host-only, so the host
+## fans host_boss_intro at the trigger and each guest reads the intro here for
+## ITS OWN resonance band. Non-blocking: the boss spawns on host authority and
+## streams in on its own; nothing here gates that. Skip when there's no authored
+## intro or no local body (a dedicated head has none).
+func net_apply_boss_intro(kind: String) -> void:
+	if has_local_player():
+		var beat: Array = Story.beat_for("pre_" + kind,
+			Story.res_band(player.resonance), flags)
+		if not beat.is_empty():
+			hud.dialogue(beat)
 
 ## Tear the world down and rebuild it from another chapter's data.
 ## Only ever called before play starts (chapter select) or on load —
@@ -2658,6 +2685,14 @@ func _on_boss_trigger(zi: int) -> void:
 	if beat.is_empty():
 		_spawn_boss(zi, kind)
 	else:
+		# MP (co-op fix): this whole path is HOST-only (_try_spawn_boss returns
+		# for guests — bosses are host-authoritative), so the intro beat never
+		# reached the guests; they watched the boss rise in silence. Fan the cue
+		# so each guest reads pre_<kind> for its own band. The host still gates
+		# the SPAWN behind its own dismissal below; the guest's copy is a non-
+		# blocking overlay (the boss streams in on host authority regardless).
+		if net_host():
+			net_session().host_boss_intro(kind)
 		hud.dialogue(beat, func() -> void:
 			_spawn_boss(zi, kind)
 		)
@@ -2726,6 +2761,35 @@ func add_enemy(e: Enemy) -> void:
 		e.dmg *= weekly_fx("dmg")
 		e.speed *= weekly_fx("speed")
 	world.add_child(e)
+
+
+## DEV: spawn one dev-panel entity on THIS machine. In co-op this runs on the
+## HOST only — enemies/bosses are host-authoritative, and the Enemy._ready
+## choke point (net_session.host_register_enemy) announces the result to every
+## guest, boss bar + mirror included, exactly like a story boss. A GUEST never
+## calls this directly: its dev panel routes the request here through the host
+## (net_session.dev_spawn_request), so a guest's spawn is SHARED instead of a
+## rogue local node the host never hears about (the bug this fixes). Solo just
+## calls it inline. `spec`: {what, kind, level, pos}.
+func dev_spawn(spec: Dictionary) -> void:
+	var pos: Vector2 = spec.get("pos", Vector2.ZERO)
+	match String(spec.get("what", "")):
+		"boss":
+			# A fresh spawn is a fresh benchmark: clear leftover fight state so
+			# this roster's report is trustworthy (matches the old inline path).
+			fight_reset()
+			var k := String(spec.get("kind", ""))
+			var b: Boss = Boss.make_boss(self, k, pos, int(spec.get("level", -1)))
+			bosses.append(b)
+			current_boss = b
+			add_child(b)
+			hud.show_boss_bar(Story.ALL_ENEMIES[k]["name"])
+			set_music(_boss_music())
+		"elite":
+			var e := Enemy.make(self, String(spec.get("kind", "")), pos,
+				int(spec.get("level", 1)))
+			e.promote_elite()
+			add_enemy(e)
 
 
 # ============================================================ death / respawn

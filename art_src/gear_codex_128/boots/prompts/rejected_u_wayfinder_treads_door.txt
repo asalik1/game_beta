@@ -1,0 +1,1 @@
+Rejected built-in generation for u_wayfinder_treads: produced a sealed door/badge object on green instead of two boots and ignored the requested magenta key. Preserved as generated/rejected_u_wayfinder_treads_door.png.

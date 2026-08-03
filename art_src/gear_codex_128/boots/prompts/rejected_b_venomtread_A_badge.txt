@@ -1,0 +1,1 @@
+Rejected b_venomtread_A edit: replaced the accepted boot pair with a circular wood/bronze amulet. Preserved as generated/rejected_b_venomtread_A_badge.png. Retry removes lens/ampoule language and returns to a simple two-shoe prompt.

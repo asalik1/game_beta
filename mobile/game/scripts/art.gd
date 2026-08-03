@@ -5,6 +5,8 @@ class_name Art
 ## these grids into textures, so the project needs zero image files.
 
 static var _cache: Dictionary = {}
+static var _codex_item_cache: Dictionary = {}
+const CODEX_ITEM_CACHE_LIMIT := 256
 
 # Shared palette: character -> color.
 const PAL := {
@@ -2229,23 +2231,42 @@ static func _make_tree(kind: String) -> Image:
 
 ## Little white speech bubble for emotes ("!", "♪", "…").
 static func _make_bubble() -> Image:
-	var image := Image.create_empty(14, 13, false, Image.FORMAT_RGBA8)
-	var k := Color(0.05, 0.04, 0.08)
-	var wcol := Color(0.98, 0.98, 1.0)
-	for y in range(1, 9):
-		for x in range(1, 13):
-			image.set_pixel(x, y, wcol)
-	for x in range(1, 13):
-		image.set_pixel(x, 0, k)
-		image.set_pixel(x, 9, k)
-	for y in range(1, 9):
-		image.set_pixel(0, y, k)
-		image.set_pixel(13, y, k)
-	# Tail.
-	image.set_pixel(4, 10, k)
-	image.set_pixel(5, 10, wcol)
-	image.set_pixel(6, 10, k)
-	image.set_pixel(5, 11, k)
+	# Render at 3x and downscale at the call site: the world footprint stays
+	# unchanged while corners and the tail stop enlarging as square pixels.
+	var image := Image.create_empty(42, 39, false, Image.FORMAT_RGBA8)
+	var ink := Color(0.05, 0.04, 0.08)
+	var paper := Color(0.98, 0.98, 1.0)
+	var samples := 4
+	for y in 39:
+		for x in 42:
+			var outer_hits := 0
+			var inner_hits := 0
+			for sy in samples:
+				for sx in samples:
+					var p := Vector2(x + (sx + 0.5) / samples, y + (sy + 0.5) / samples)
+					var outer_near := Vector2(clampf(p.x, 7.0, 35.0), clampf(p.y, 7.0, 24.0))
+					var outer_body := p.distance_to(outer_near) <= 6.0
+					var outer_tail := false
+					if p.y >= 25.0 and p.y <= 37.0:
+						var tail_t := (p.y - 25.0) / 12.0
+						outer_tail = p.x >= lerpf(12.0, 17.0, tail_t) and p.x <= lerpf(25.0, 17.0, tail_t)
+					if outer_body or outer_tail:
+						outer_hits += 1
+
+					var inner_near := Vector2(clampf(p.x, 7.0, 35.0), clampf(p.y, 7.0, 23.0))
+					var inner_body := p.distance_to(inner_near) <= 3.5
+					var inner_tail := false
+					if p.y >= 24.0 and p.y <= 33.5:
+						var inner_t := (p.y - 24.0) / 9.5
+						inner_tail = p.x >= lerpf(15.0, 17.5, inner_t) and p.x <= lerpf(22.0, 17.5, inner_t)
+					if inner_body or inner_tail:
+						inner_hits += 1
+			if outer_hits > 0:
+				var coverage := float(outer_hits) / float(samples * samples)
+				var fill := clampf(float(inner_hits) / float(outer_hits), 0.0, 1.0)
+				var color := ink.lerp(paper, fill)
+				color.a = coverage
+				image.set_pixel(x, y, color)
 	return image
 
 
@@ -2315,6 +2336,44 @@ static func item_icon(slot: String, grade: String, noun := "", art := "") -> Ima
 	var t := ImageTexture.create_from_image(_tier_frame(base, grade, not authored))
 	_cache[key] = t
 	return t
+
+
+## High-detail gear texture for the codex. Runtime bag/drop/held-weapon art must
+## remain 32x32, but enlarging that tiny texture into a 56-64px catalogue cell
+## merely magnifies its pixel grid. The regeneration pass therefore installs a
+## parallel assets/icons/codex/<key>.png master. This resolver preserves that
+## native detail and falls back to item_icon while a slice is still incomplete.
+##
+## The cascade deliberately mirrors item_icon: unique -> authored grade ->
+## neutral family. Neutral high-resolution families receive the same gentle
+## grade tint; authored grade and unique art is used exactly as painted.
+static func codex_item_icon(slot: String, grade: String, noun := "", art := "") -> ImageTexture:
+	var shape := _shape_for(slot, noun)
+	var key := "codexitem_%s_%s_%s" % [shape, grade, art]
+	if _codex_item_cache.has(key):
+		return _codex_item_cache[key]
+	# One shapes shelf is 210 textures; keep that whole screen hot without
+	# retaining every 128px icon ever viewed for the rest of the session.
+	if _codex_item_cache.size() >= CODEX_ITEM_CACHE_LIMIT:
+		_codex_item_cache.clear()
+	if art != "":
+		var unique := _icon_override("codex/%s" % art)
+		if unique != null:
+			var unique_tex := ImageTexture.create_from_image(unique)
+			_codex_item_cache[key] = unique_tex
+			return unique_tex
+	var base := _icon_override("codex/%s_%s" % [shape, grade])
+	if base == null:
+		base = _icon_override("codex/%s" % shape)
+		if base != null:
+			_grade_tint(base, Items.GRADE_COLOR[grade], Balance.ICON_OVERRIDE_TINT)
+	if base == null:
+		var fallback := item_icon(slot, grade, noun, art)
+		_codex_item_cache[key] = fallback
+		return fallback
+	var texture := ImageTexture.create_from_image(base)
+	_codex_item_cache[key] = texture
+	return texture
 
 
 ## Blend a sprite's opaque pixels toward its grade color (multiplied so
@@ -2831,31 +2890,35 @@ static func _make_stash() -> Image:
 ## graduation ticks, a bright core dot) — reads as "aim / lock on". (Distinct
 ## from _make_reticle, the yellow auto-aim corner brackets.)
 static func _make_crosshair() -> Image:
-	var w := 24
-	var h := 24
-	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var size := 64
+	var img := Image.create_empty(size, size, false, Image.FORMAT_RGBA8)
 	var red := Color(0.92, 0.18, 0.16)
 	var red_l := Color(1.0, 0.48, 0.42)
-	var cx := 12
-	var cy := 12
-	# Crosshair arms (2px) with a centre gap around the dot.
-	for i in range(1, 23):
-		if i >= 9 and i <= 15:
-			continue
-		img.set_pixel(cx - 1, i, red)
-		img.set_pixel(cx, i, red)
-		img.set_pixel(i, cy - 1, red)
-		img.set_pixel(i, cy, red)
-	# Graduation ticks near each arm's end (scope feel).
-	for tk in [3, 20]:
-		img.set_pixel(cx - 2, tk, red)
-		img.set_pixel(cx + 1, tk, red)
-		img.set_pixel(tk, cy - 2, red)
-		img.set_pixel(tk, cy + 1, red)
-	# Bright core dot.
-	for y in range(cy - 1, cy + 1):
-		for x in range(cx - 1, cx + 1):
-			img.set_pixel(x, y, red_l)
+	var center := Vector2(32.0, 32.0)
+	var samples := 4
+	for y in size:
+		for x in size:
+			var hits := 0
+			var highlight_hits := 0
+			for sy in samples:
+				for sx in samples:
+					var p := Vector2(x + (sx + 0.5) / samples, y + (sy + 0.5) / samples)
+					var rel := p - center
+					var dist := rel.length()
+					var ring := absf(dist - 22.0) <= 1.35
+					var horizontal := absf(rel.y) <= 1.25 and absf(rel.x) >= 7.0 and absf(rel.x) <= 29.0
+					var vertical := absf(rel.x) <= 1.25 and absf(rel.y) >= 7.0 and absf(rel.y) <= 29.0
+					var tick_h := absf(absf(rel.x) - 27.0) <= 1.2 and absf(rel.y) <= 4.0
+					var tick_v := absf(absf(rel.y) - 27.0) <= 1.2 and absf(rel.x) <= 4.0
+					var core := dist <= 3.0
+					if ring or horizontal or vertical or tick_h or tick_v or core:
+						hits += 1
+						if core:
+							highlight_hits += 1
+			if hits > 0:
+				var color := red.lerp(red_l, float(highlight_hits) / float(hits))
+				color.a = float(hits) / float(samples * samples)
+				img.set_pixel(x, y, color)
 	return img
 
 

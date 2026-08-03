@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one complete standalone Stonebark Ward charm, a compact round shield-shaped talisman carved from one thick slab of ancient gray-brown bark, reinforced by four broad dark-iron root clamps around the rim and a closed integral suspension loop; the face has a single raised central heartwood boss and natural concentric growth ridges, with no writing or symbols
+Scene/backdrop: perfectly flat solid #ff00ff chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one connected charm only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, no external glow
+Materials/textures: rugged layered stone-hard bark, weathered dark iron, dense heartwood
+Constraints: preserve Stonebark Ward category; neutral family master, restrained and well-made; strong broad closed silhouette; no detached leaves or debris; no watermark; do not use #ff00ff anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, green foliage, tree scene, living tree, face, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

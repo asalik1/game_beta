@@ -40,7 +40,7 @@ enum Mode {
 ## (§3.4). Printed on the title screen later so "you're on 0.1.0, I'm on
 ## 0.1.1" is readable without debugging. The auth handshake compares this
 ## EXACTLY — mismatch means a clean refusal, never a half-join.
-const NET_VERSION := "0.3.0"  # 0.3.0: PvP duels v1 (the Proving Grounds — pvp_* RPCs)
+const NET_VERSION := "0.3.2"  # 0.3.2: co-op boss intro + terrain-flourish fans (_rpc_boss_intro, _rpc_terrain_fx) · 0.3.1: dev-panel spawns route to the host in co-op (_rpc_dev_spawn) · 0.3.0: PvP duels v1 (pvp_* RPCs)
 
 # --------------------------------------------------- network constants ---
 # Transport plumbing, not gameplay tuning — so they live here, not in
@@ -69,6 +69,9 @@ const PEER_TIMEOUT_MAX := 15000       # ms — the ceiling (was 30000 default, 8
 const NORAY_ADDRESS := "tomfol.io"    # free public instance (§3.2) — fine
 const NORAY_PORT := 8890              # for the friends phase; self-host later
 const NORAY_TIMEOUT := 10.0           # s for each noray registration step
+const JOIN_ANSWER_TIMEOUT := 15.0     # s a noray knock may go fully unanswered
+                                      # (wrong code = pure silence) before we
+                                      # call it — see _watch_join_answer
 
 const NorayClient := preload("res://addons/netfox.noray/noray.gd")
 const NorayHandshake := preload("res://addons/netfox.noray/packet-handshake.gd")
@@ -414,7 +417,26 @@ func _join_noray(oid: String) -> Error:
 	last_reject_reason = ""
 	_session_active = true
 	var nat_err: Error = _noray.connect_nat(oid)
+	if nat_err == OK:
+		_watch_join_answer(oid)
 	return nat_err
+
+
+## A knock with a WRONG code gets no reply at all: noray only relays connect
+## commands for OIDs it knows, and an unknown one is silence (the server's
+## error reply lands in the addon's trace-logged else). Without this the
+## joiner sits on "Knocking..." FOREVER — and the mixed-case codes make a
+## hand-typed mistake easy (I/l/1 lookalikes; the PvP bring-up 2026-08-02 hit
+## exactly this). Scope: the pure-silence case only — once any transport
+## connection starts, connection_failed / the auth gate own the outcome.
+func _watch_join_answer(oid: String) -> void:
+	await get_tree().create_timer(JOIN_ANSWER_TIMEOUT).timeout
+	if not _session_active or _noray_role != 2 or session_code != oid:
+		return  # a different session (or none) by now — not our knock
+	if multiplayer.multiplayer_peer != null \
+			and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer):
+		return  # the knock was answered — later failures have their own voices
+	_end_session("no host answered that code — check it letter for letter (capitals matter: I, l and 1 look alike), or have the host press ⧉ Copy and send it exactly")
 
 func _on_noray_connect_nat(address: String, port: int) -> void:
 	var err: Error = await _noray_handle_connect(address, port)

@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named A-grade matched pair of Needleheel, independent Piercer's Cleats assassin design
+Scene/backdrop: perfectly flat solid #00ff00 chroma background, no floor, shadow, gradient, texture, reflection
+Style/medium: crisp high-detail dark-fantasy sprite illustration, readable compact silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty sleek low boots, orthographic centered pair, hollow narrow cuffs, enclosed tapered toes, fully visible, 76% square
+Materials/textures: matte black leather, bone-white thin heel spines structurally attached, silver needle toe ridges, violet ankle lenses, narrow silent soles
+Constraints: unique silhouette not recolored generic; no feet, legs, wearer, loose needles, weapons, props, text, frame, watermark; no #00ff00 in object

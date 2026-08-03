@@ -1,0 +1,7 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; codex master only
+Primary request: one A-grade Cursed Idol preserving the compact mask-stone identity and integral hole; exceptional layered black obsidian face slab, pale wardsteel jaw clamps, black starmetal brow ribs, deep asymmetric eyeless sockets, bold fractured relief, and contained violet-white energy inside narrow stone seams
+Scene/backdrop: flat solid #00ff00 chroma; no floor/shadow/gradient/texture/reflection
+Style: crisp dark-fantasy sprite illustration, strong silhouette, detailed 128px, clear 32px
+Composition: exactly one connected standalone talisman, centered, full object, padding, 82% square
+Constraints: sculpture not living body; no writing/symbols/glyphs/runes, eyeballs, wearer/hand/neck, chain, duplicate, detached prop/VFX, frame, watermark, green

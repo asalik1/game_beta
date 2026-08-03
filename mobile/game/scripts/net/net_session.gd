@@ -762,6 +762,30 @@ func host_sweep_unregistered() -> void:
 			host_register_enemy(e)
 
 
+## GUEST→HOST (dev): route a dev-panel spawn to the host, the only authority
+## that can author a shared enemy (bosses/packs all return early for guests).
+## The host runs the SAME game.dev_spawn its own dev panel calls, so the
+## Enemy._ready choke point announces the result to every peer — boss bar and
+## mirror included, just like a story boss. No-op offline. Mirrors request_revive.
+func dev_spawn_request(spec: Dictionary) -> void:
+	if game == null or not _net().is_online():
+		return
+	if multiplayer.is_server():
+		game.dev_spawn(spec)
+	else:
+		_rpc_dev_spawn.rpc_id(1, spec)
+
+
+## HOST-only: a guest asked for a dev spawn. Author it through the normal path
+## so it fans out to the session (a mirror the guest sees, an enemy the host
+## can fight). Dropped on a guest / offline — enemies are host-authoritative.
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_dev_spawn(spec: Dictionary) -> void:
+	if game == null or not multiplayer.is_server():
+		return
+	game.dev_spawn(spec)
+
+
 ## Everything a guest needs to rebuild this enemy with the REAL
 ## constructors: sprites, strips, HP bar and elite ring all come out
 ## right because Enemy.make/Boss.make_boss build the mirror too.
@@ -1693,6 +1717,26 @@ func _rpc_boss_done(kind: String) -> void:
 	game.net_apply_boss_done(kind)
 
 
+## HOST -> GUESTS: a story boss is about to RISE (game_world._on_boss_trigger).
+## The intro beat + the spawn are host-only (bosses are host-authoritative,
+## _try_spawn_boss early-returns for guests), so the guests saw the boss pop in
+## with no intro — the mirror image of the post-kill silence host_boss_done
+## already fixed. Fan the cue so each guest reads pre_<kind> for ITS OWN band; it
+## is a non-blocking overlay (the boss still spawns on host authority and streams
+## in — the guest never gates the spawn behind its own dismissal).
+func host_boss_intro(kind: String) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_boss_intro.rpc(kind)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_boss_intro(kind: String) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	game.net_apply_boss_intro(kind)
+
+
 ## HOST -> GUESTS: a wandering merchant set up camp (game_world._merchant_arrives,
 ## a host-only post-clear/post-boss roll). Guests re-enter the same arrival so
 ## the node + fanfare land owner-side (a built room spawns it now, an unbuilt one
@@ -1728,6 +1772,25 @@ func _rpc_gust(vec: Vector2, dur: float) -> void:
 		return
 	game.gust_vec = vec
 	game.gust_t = dur
+
+
+## HOST -> GUESTS: the pure COSMETIC flourish of a host-rolled terrain event —
+## the screen flash, sound and dust the guests' early-return from
+## run_terrain_event skipped. The GAMEPLAY (hazard pools, gust push, event mobs)
+## already fans through host_hazard/host_gust/enemy mirroring and the telegraph
+## broadcast; this only replays the flair so the weather LOOKS the same on every
+## screen. `ev` names the event, `pos` anchors the world-space burst.
+func host_terrain_fx(ev: String, pos: Vector2) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	_rpc_terrain_fx.rpc(ev, pos)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_terrain_fx(ev: String, pos: Vector2) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	game.net_apply_terrain_fx(ev, pos)
 
 
 ## HOST -> GUESTS: a room curse was accepted (game_world._apply_room_curse). The

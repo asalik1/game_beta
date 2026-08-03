@@ -191,11 +191,22 @@ func _handle_commands(command: String, data: String):
 		_logger.debug("Saved PID: %s", [pid])
 	elif command == "connect":
 		var parts = data.split(":")
+		if parts.size() < 2:
+			# LOCAL PATCH (Crownless 2026-08-02): a server-side refusal rides
+			# the connect verb with an error string where "host:port" belongs
+			# (e.g. an unknown/mistyped OID). Upstream crashed the parser on
+			# parts[1]; log it instead — the game's own join-answer timeout
+			# (net_manager._watch_join_answer) narrates the failure to the player.
+			_logger.error("Connect failed: %s", [data])
+			return
 		var host = parts[0]
 		var port = parts[1].to_int()
 		_logger.debug("Received connect command to %s:%s", [host, port])
 		on_connect_nat.emit(host, port)
 	elif command == "connect-relay":
+		if not data.is_valid_int():
+			_logger.error("Relay connect failed: %s", [data])  # LOCAL PATCH, as above
+			return
 		var host = _address
 		var port = data.to_int()
 		_logger.debug("Received connect relay command to %s:%s", [host, port])

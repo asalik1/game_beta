@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one S-grade matched pair of empty Warrior Reaver Treads, legendary forward-only war boots in the same family identity
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty tall boots total, centered orthographic catalogue pair, hollow war-crested cuffs, enclosed broad articulated toes, slight outward angle, fully visible, 82% square
+Lighting/mood: clear upper-left key light, deep readable shadows, legendary unstoppable advance with contained red-white heat
+Materials/textures: flawless blood-dark warhide, richest interlocking crownsteel shin plates, articulated broad toe shells, massive forward-chevron star-iron tread foundations integrated into continuous soles, pale-gold heel braces, red-white drive seams trapped inside the tread plates
+Constraints: S reads above A through finest material, richest fittings, deepest relief and contained luminous seams; no detached light; no feet, legs, wearer, battlefield, props, text, frame, watermark; no #00ff00
+Avoid: detached spikes, tracks, blood, corpses, duplicate pair, third boot, floor, shadow, reflection, logos, aura cloud, smoke, blur

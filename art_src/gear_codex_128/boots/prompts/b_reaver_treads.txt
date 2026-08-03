@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one neutral matched pair of empty Warrior Reaver Treads, forward-driving field boots studded to bite the earth
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty mid-calf boots total, centered orthographic catalogue pair, hollow blunt cuffs, enclosed broad toes, slight outward angle, fully visible, 80% square
+Lighting/mood: clear upper-left key light, deep readable shadows, brutal forward momentum
+Materials/textures: battered dark oxblood leather, blackened iron toe caps, thick forward-raked tread blocks and rows of short grip studs physically integrated into the soles, heavy heel straps, plain steel buckles
+Constraints: wearable boots, one matched pair only, all studs attached; no feet, legs, wearer, battlefield, earth, props, text, frame, watermark; no #00ff00
+Avoid: detached spikes, tracks, blood, corpses, duplicate pair, third boot, floor, cast shadow, reflection, logos, runes, aura, smoke, blur

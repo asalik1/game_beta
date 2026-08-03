@@ -1525,9 +1525,9 @@ func net_clear_down_local() -> void:
 	_refresh_down_visual()
 
 
-## OWNER, per-frame while downed/ghost: tick the bleed-out clock and move
-## — crawl at DOWN_CRAWL_MULT while downed, plain walk as a ghost. Shells
-## never come here (_remote_present mirrors them).
+## OWNER, per-frame while downed/ghost: tick the bleed-out clock. A DOWNED
+## body holds position (owner call 2026-08-02 — no crawl); a GHOST drifts at
+## walk speed. Shells never come here (_remote_present mirrors them).
 func _down_tick(delta: float) -> void:
 	anim_t += delta
 	if downed:
@@ -1535,17 +1535,22 @@ func _down_tick(delta: float) -> void:
 		if down_t <= 0.0:
 			_enter_ghost()
 			return
+		# Owner call 2026-08-02: a downed ally is pinned where they fell — no
+		# crawl (there's no crawl anim, and holding still makes the reviver come
+		# to YOU). The prone pose was set on entry (_refresh_down_visual) and
+		# survives without a mover here; movement returns only as a ghost below.
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
+	# GHOST: immaterial drift at walk speed until the room clears.
 	var dir := _move_dir()
-	velocity = dir * speed * (DOWN_CRAWL_MULT if downed else 1.0)
+	velocity = dir * speed
 	move_and_slide()
 	if dir.x != 0.0:
 		look_sign = signf(dir.x)
 		facing = Vector2(look_sign, 0.0)
 		if sprite != null:
 			sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
-			if downed:
-				# prone rotation follows the flip so the body drags feet-first
-				sprite.rotation = (PI / 2.0) * (-1.0 if sprite.flip_h else 1.0)
 
 
 ## REVIVER, per-frame: hold INTERACT within REVIVE_REACH of a fallen ally to

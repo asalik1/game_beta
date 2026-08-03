@@ -1,0 +1,13 @@
+Use case: stylized-concept
+Asset type: one Crownless dark-fantasy RPG legendary unique charm icon master only
+Primary request: revise First to Answer, Cord of Immediate Oath into a BROAD COMPACT S-grade Swiftvow talisman. One continuous thick crimson-and-gold oath cord forms a chunky sideways zigzag lightning knot with three wide diagonal bars, all contained inside a broad hexagonal silhouette. Two large angular white-gold response gates span roughly 70% of icon width; a heavy crown-silver suspension eye sits directly on the top edge and a short wide arrowhead clasp seals the bottom. Shorten the total height by one quarter and substantially widen every cord segment. Thin amber-white light runs only inside the braid. All ends concealed, no loose tails.
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable dark-fantasy form, detailed master art, tasteful pixel-art influence
+Composition/framing: exactly one connected BROAD COMPACT charm only, centered orthographic catalogue view, fully visible, even padding, occupying about 78% of square; subject width at least 65% of square; no long thin pendant proportions
+Lighting/mood: upper-left key light, deep readable shadows, contained amber-white oath light
+Materials/textures: thick crimson oath cord braided with gold wire, white-gold response gates, crown-silver armored eye and short arrowhead clasp
+Constraints: independent legendary broad lightning-knot silhouette readable at 32px; no second version, preview, inset or thumbnail; all cord parts connected; no loose strand; no watermark; do not use #00ff00 in object
+Avoid: long narrow vertical cord, spear shape, thin lightning bolt, multiple objects, duplicate, alternate view, text, letters, numbers, logos, readable runes, necklace, rope coil, noose, weapon, UI frame, card, pedestal, environment, person, hand, mannequin, orbiting VFX, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen
+Revision: accepted broad replacement for the tall first result

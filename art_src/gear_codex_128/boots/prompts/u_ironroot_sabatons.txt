@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named A-grade matched pair of Ironroot Sabatons, an independent Warrior Sabatons design whose plate roots deeper with every blow weathered
+Scene/backdrop: perfectly flat solid #ff00ff chroma background for removal; no floor, ground, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty low broad armored boots total, centered orthographic pair, hollow flared cuffs, enclosed squared toes, fully visible, 77% square
+Lighting/mood: clear upper-left key light, deep readable shadows, patient rooted resilience
+Materials/textures: dark green-black iron plates, bronze root-shaped load braces physically fused from cuffs into broad flat soles, brown leather gussets, squared layered toe shells, one sealed amber-green endurance lens per heel
+Constraints: independent low rooted silhouette; root shapes are attached metal braces, not plants or scenery; no feet, legs, wearer, roots in ground, props, text, frame, watermark; no #ff00ff
+Avoid: detached roots, trees, floor, shield, duplicate pair, third boot, shadow, reflection, logos, aura, smoke, blur

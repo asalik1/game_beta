@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one B-grade Ghostlight Charm, the same compact closed four-rib dark-iron lantern talisman with broad base and peaked cap, now masterwork silver-edged ribs around one faceted pale-blue glass ember, one fixed moonstone stud, integral suspension loop, and restrained contained glow
+Scene/backdrop: perfectly flat solid #ff00ff chroma background with no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: crisp Crownless high-detail sprite illustration, deliberate edges, compact dark-fantasy silhouette, tasteful pixel-art influence, detailed at 128px and clear at 32px
+Composition/framing: exactly one connected standalone charm, centered slight three-quarter catalogue view, fully visible, even padding, roughly 82% of square
+Lighting/mood: upper-left light, deep readable shadows, restrained pale-blue inner light
+Constraints: same Ghostlight family silhouette; light enclosed; no smoke, flame outside cage, text, symbols, glyphs, runes, watermark, wearer, body, hand, neck, chain, duplicate, detached spirit, orbiting VFX, scene, frame, floor, shadow, or magenta in object

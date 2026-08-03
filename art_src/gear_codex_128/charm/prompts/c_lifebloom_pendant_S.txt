@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one S-grade Lifebloom Pendant charm, legendary workmanship within the same compact living-seed pendant family: a powerful closed teardrop silhouette of interlocked primordial ebony leaves and crown-silver vines, a magnificent radiant emerald seed containing a tiny branching tree shape, richest layered pale-bone leaf armor and amber sap jewels, luminous green veins and a few compact sparks held inside the form; dramatic but still one readable pendant
+Scene/backdrop: perfectly flat solid #ff00ff chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one pendant only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, luminous contained emerald veins and compact sparks
+Materials/textures: primordial ebony leaves, crown-silver vines, radiant faceted emerald seed, pale-bone leaf armor, amber sap jewels
+Constraints: same Lifebloom Pendant family identity; grade readable through legendary construction and ornament; strong compact silhouette; no detached petals or noise; no watermark; do not use #ff00ff anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, bouquet, loose flowers, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

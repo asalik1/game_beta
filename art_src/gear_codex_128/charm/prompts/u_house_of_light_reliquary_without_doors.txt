@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one named S-grade Reliquary called House of Light, Reliquary Without Doors: a single compact open-sided cathedral lantern charm with a steep white-gold roof, four joined alabaster pillars, no front door or panel, a brilliant faceted sunstone suspended securely inside the open architecture, an integrated crown loop, and a black crystal foundation; independent silhouette and construction, no person, face, readable symbols, letters, hands, or runes
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one joined reliquary charm only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of square
+Lighting/mood: clear upper-left key light, deep readable shadows, compact warm-white sunstone glow contained within architecture
+Materials/textures: white gold, alabaster, faceted sunstone and black crystal; named legendary workmanship through unmistakable open architecture, not a brightened generic
+Constraints: immediately reads as a doorless miniature shrine-reliquary; one joined object; sunstone visibly secured inside; strong closed outer silhouette despite open sides; no detached pieces; no watermark; do not use #00ff00 or bright green in object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, portrait, hand, mannequin, duplicate object, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

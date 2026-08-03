@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG named charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one named S-grade Heart of the Wall charm called Citadel Seed, Heart of the Unbroken, an independent legendary standalone talisman: a compact diamond seed silhouette made from four interlocked miniature basalt bastions enclosing an uncracked molten-gold heart crystal, with a crown-silver armored shell, tiny portcullis ribs, radiant gold mortar seams, and one heavy loop integrated at the top; it must look like a fortress compressed into a single indestructible seed, not a brightened generic wall heart
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one talisman only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, contained molten-gold core light and compact luminous seams
+Materials/textures: night-basalt bastions, crown-silver armored shell, molten-gold faceted heart crystal, black steel ribs
+Constraints: preserve Heart of the Wall category and Citadel Seed Heart of the Unbroken concept; independent silhouette and construction; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, castle scene, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

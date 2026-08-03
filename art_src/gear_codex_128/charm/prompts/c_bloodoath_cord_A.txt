@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one A-grade Bloodoath Cord charm preserving the closed loop and central knot; exceptional layered braid of oxblood leather and black silk, interlocking pale-steel knot armor, black starmetal end-caps fused beneath the binding, bold braided relief, and contained ruby-white energy channels following the weave
+Scene/backdrop: perfectly flat solid #00ff00 chroma background; no floor, shadow, gradient, texture, or reflection
+Style/medium: crisp Crownless dark-fantasy sprite illustration, deliberate edges, readable knot silhouette, detailed at 128px and reducible to 32px
+Composition/framing: exactly one connected standalone talisman, centered catalogue view, fully visible, even padding, 82% of square
+Lighting/mood: upper-left light, readable shadows, stronger contained channels
+Constraints: grade by materials/relief; cord forms loop; tails tucked; no text/symbols/glyphs/runes, wearer/body/hand/neck, chain, necklace, tassel, coin, duplicate, detached prop/VFX, frame, floor, shadow, watermark, or green

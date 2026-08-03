@@ -1,0 +1,1 @@
+Rejected third b_venomtread attempt: even a plain two-work-boots prompt produced a joined padded trouser/greave garment and ignored the magenta key. Preserved as generated/rejected_b_venomtread_pants_v2.png. Next attempt uses an accepted boot pair as a category-preserving edit reference.

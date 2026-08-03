@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one Pale Guest, Light That Knows the Dead, named S-grade Ghostlight Charm unique; an independent ivory-bone lantern talisman shaped like a narrow faceless funerary arch, with a single cyan-white glass teardrop fully enclosed behind silver ribs, a sealed black base, crown-like cap, and integral suspension loop; legendary cold construction
+Scene/backdrop: perfectly flat solid #ff00ff chroma background with no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: crisp Crownless dark-fantasy sprite illustration, iconic legendary silhouette, detailed at 128px and clear at 32px
+Composition/framing: exactly one connected standalone charm, centered orthographic catalogue view, fully visible, even padding, roughly 82% of square
+Lighting/mood: upper-left light, deep readable shadows, contained cyan-white funerary light
+Constraints: independent lantern, not a person or skull; light enclosed; no face, eyes, smoke, external flame, text, symbols, glyphs, runes, watermark, wearer, body, hand, neck, chain, duplicate, detached spirit, orbiting VFX, scene, frame, floor, shadow, or magenta in object

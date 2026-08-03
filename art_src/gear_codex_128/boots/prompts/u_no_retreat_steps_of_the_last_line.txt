@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named S-grade matched pair of No Retreat, Steps of the Last Line, an independent legendary Warrior Sabatons design that embodies a line never stepping back
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, battlefield, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty knee-high armored boots total, centered orthographic pair, hollow inward-hooked rampart cuffs, enclosed immense square toes, fully visible, 82% square
+Lighting/mood: clear upper-left key light, deep readable shadows, absolute last-line defiance with contained red-ivory force
+Materials/textures: black last-line steel, tall pale iron rampart ribs, deep crimson enamel underplates, massive rectangular toe bastions and continuous flat heel foundations, one red-ivory resolve lens recessed per shin, narrow force seams confined inside the foundations
+Constraints: independent tall rampart silhouette, unmistakably wearable boots not walls or towers; all ribs, foundations and lenses attached; no soldiers, battlefield, feet, legs, wearer, shield, props, text, frame, watermark; no #00ff00
+Avoid: architecture, detached armor, scenery, duplicate pair, third boot, floor, shadow, reflection, logos, aura cloud, smoke, blur

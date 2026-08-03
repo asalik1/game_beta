@@ -145,7 +145,7 @@ npcs/choirmother,7.5,"current-generation roster: muted, painterly, consistent",c
 npcs/clerk_voss,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Clerk Voss,3,shipped
 npcs/commander_ashe,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Commander Ashe,1,shipped
 npcs/consul_verane,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Consul Verane,1,shipped
-npcs/crystal,3.5,"bright cyan blob, off-palette",claude 2026-07-26,npcs,Crystal,5,shipped
+npcs/crystal,8,regenerated 192px painted resonance shrine; replaces 16px cyan blob,codex 2026-08-02,npcs,Crystal,5,shipped
 npcs/deacon_vela,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Deacon Vela,2,shipped
 npcs/deadtree,5,,claude 2026-07-26,npcs,Deadtree,5,shipped
 npcs/digger_haim,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Digger Haim,2,shipped
@@ -707,12 +707,12 @@ props/rv_mat_coral,5,,claude 2026-07-26 (group),props,Blood Coral,1,placeholder
 props/rv_mat_crystal_raw,5,,claude 2026-07-26 (group),props,Raw Crystal,1,placeholder
 props/rv_mat_egg,5,,claude 2026-07-26 (group),props,Speckled Egg,1,placeholder
 props/rv_mat_frond,5,,claude 2026-07-26 (group),props,Crimson Frond,1,placeholder
-props/rv_mat_gem_amber,5,,claude 2026-07-26 (group),props,Amber Drop,1,placeholder
-props/rv_mat_gem_blue,5,,claude 2026-07-26 (group),props,Cut Sapphire,1,placeholder
-props/rv_mat_gem_green,5,,claude 2026-07-26 (group),props,Cut Emerald,1,placeholder
-props/rv_mat_gem_moon,5,,claude 2026-07-26 (group),props,Moonstone,1,placeholder
-props/rv_mat_gem_red,5,,claude 2026-07-26 (group),props,Cut Ruby,1,placeholder
-props/rv_mat_gem_violet,5,,claude 2026-07-26 (group),props,Cut Amethyst,1,placeholder
+props/rv_mat_gem_amber,8,regenerated 128px painted gem family,codex 2026-08-02,props,Amber Drop,1,placeholder
+props/rv_mat_gem_blue,8,regenerated 128px painted gem family,codex 2026-08-02,props,Cut Sapphire,1,placeholder
+props/rv_mat_gem_green,8,regenerated 128px painted gem family,codex 2026-08-02,props,Cut Emerald,1,placeholder
+props/rv_mat_gem_moon,8,regenerated 128px painted moonstone; replaces blocky 22px Raven icon,codex 2026-08-02,props,Moonstone,1,placeholder
+props/rv_mat_gem_red,8,regenerated 128px painted gem family,codex 2026-08-02,props,Cut Ruby,1,placeholder
+props/rv_mat_gem_violet,8,regenerated 128px painted gem family,codex 2026-08-02,props,Cut Amethyst,1,placeholder
 props/rv_mat_ingot_copper,5,,claude 2026-07-26 (group),props,Copper Ingot,1,placeholder
 props/rv_mat_ingot_gold,5,,claude 2026-07-26 (group),props,Gold Ingot,1,placeholder
 props/rv_mat_ingot_silver,5,,claude 2026-07-26 (group),props,Silver Ingot,1,placeholder
@@ -1937,7 +1937,7 @@ glyphs/ic_eye,,,,glyphs,ic eye,1,shipped
 glyphs/ic_hp,,,,glyphs,ic hp,1,shipped
 glyphs/ic_mp,,,,glyphs,ic mp,1,shipped
 glyphs/ic_pen,,,,glyphs,ic pen,1,shipped
-fx/bubble,4,white box with a black border,claude 2026-07-26,fx,Bubble,15,shipped
+fx/bubble,7.5,42px antialiased procedural speech balloon; preserves world footprint,codex 2026-08-02,fx,Bubble,15,shipped
 fx/dangerrim,4.5,grey gradient square,claude 2026-07-26,fx,Dangerrim,15,shipped
 fx/fx/frost_snowflake_cast,5.5,,claude 2026-07-26,fx,frost snowflake cast,5,shipped
 fx/fx/frost_snowflake_radial,7.5,,claude 2026-07-26 (group),fx,frost snowflake radial,5,shipped
@@ -2014,7 +2014,7 @@ ui/buff_damp,6.5,pack icons read well; procedural fallbacks are plain,claude 202
 ui/buff_heal,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff heal,2,shipped
 ui/buff_speed,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff speed,3,shipped
 ui/buff_ward,6.5,pack icons read well; procedural fallbacks are plain,claude 2026-07-26 (group),ui,buff ward,2,shipped
-ui/crosshair,5.5,procedural fallback,claude 2026-07-26,ui,Crosshair,40,shipped
+ui/crosshair,7.5,64px antialiased scope reticle for mobile scaling,codex 2026-08-02,ui,Crosshair,40,shipped
 ui/mail,5.5,procedural fallback,claude 2026-07-26,ui,Mail,40,shipped
 ui/settings,5.5,procedural fallback,claude 2026-07-26,ui,Settings,40,shipped
 ui/skills,5.5,procedural fallback,claude 2026-07-26,ui,Skills,40,shipped

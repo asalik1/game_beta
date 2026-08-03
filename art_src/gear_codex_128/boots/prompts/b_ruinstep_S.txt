@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one S-grade matched pair of empty Warlock Ruinstep, legendary fault-line boots in the same family identity
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, ground, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty tall boots total, centered orthographic pair, hollow crown-fractured cuffs, enclosed articulated toes, fully visible, 82% square
+Lighting/mood: clear upper-left key light, deep readable shadows, legendary world-cracking stillness with contained violet-white force
+Materials/textures: flawless black worldhide, richest interlocking obsidian-steel shin plates, articulated dark toe shells, massive continuous faultstone sole foundations bound by pale star-bronze arches, violet-white fissure seams trapped inside the soles
+Constraints: S reads above A through finest material, deepest coherent relief, richest fittings and contained luminous seams; no detached light or stone; no feet, legs, wearer, ruins, props, text, frame, watermark; no #00ff00
+Avoid: rubble, floating rocks, scenery, duplicate pair, third boot, floor, shadow, reflection, logos, aura cloud, smoke, blur

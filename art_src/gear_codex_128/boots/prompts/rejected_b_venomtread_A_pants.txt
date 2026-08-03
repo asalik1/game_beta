@@ -1,0 +1,1 @@
+Rejected standalone b_venomtread_A retry: generated a joined futuristic armored trouser/greave garment instead of boots and ignored the requested green field. Preserved as generated/rejected_b_venomtread_A_pants.png. Next retry passes the accepted B source as an explicit edit path.

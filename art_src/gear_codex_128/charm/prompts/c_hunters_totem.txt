@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one Hunter's Totem charm, designed as a complete standalone object: a compact weathered antler-bone plaque shaped like a narrow shield, topped by two short symmetrical tine stubs, with a carved closed eye motif, crossed rawhide bindings, and a small iron hanging loop; well-made but restrained neutral-tier wilderness construction, unmistakably a hunter's ward token
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one totem only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, no magical glow
+Materials/textures: weathered antler bone, dark carved wood backing, crossed rawhide, small iron loop
+Constraints: preserve exact Hunter's Totem charm category; strong compact silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, animal, skull, duplicate object, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

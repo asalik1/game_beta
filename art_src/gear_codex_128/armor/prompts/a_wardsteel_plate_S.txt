@@ -1,0 +1,14 @@
+Input image: `../generated/a_wardsteel_plate.png` is the neutral Wardsteel Plate family silhouette and rendering-language reference, not an edit target.
+
+Use case: stylized-concept
+Asset type: high-resolution dark-fantasy game inventory icon; source for a 128x128 Codex master and a separately downsampled 32x32 gameplay icon
+Input images: Image 1 is the neutral Wardsteel Plate family silhouette and rendering-language reference, not an edit target
+Primary request: create the authored S-grade “Emberforged Wardsteel Plate” as an independently rendered legendary version of the same armor family
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for local background removal; one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation
+Subject: exactly one empty wearable torso armor garment; preserve Image 1’s recognizable high gorget, compact layered shoulder plates, breastplate mass, and overlapping waist-lame silhouette; rebuild it from peerless black star-metal with massive crownlike ward ridges, radiant pale-silver runic channels, a central faceted void-amethyst seal, tiny ember-orange light only in the deepest forge seams, and the richest precise fittings; the silhouette remains clearly Wardsteel Plate rather than becoming a new category; no separate accessories
+Style/medium: premium hand-painted pixel-art game icon with genuine high-resolution detail, crisp clustered shapes, controlled highlights, dark Crownless fantasy, dramatic but readable at small size; match Image 1’s visual language; not a photo, smooth 3D, or vector clip art
+Composition/framing: centered, same near-front three-quarter presentation as Image 1, entire armor fully visible, generous even padding, square icon composition; unmistakable high-contrast silhouette suitable for reduction to 128px and 32px
+Lighting/mood: legendary contained internal light; sovereign, impregnable, unmistakable in a full inventory, but no ambient aura
+Color palette: deep black star-metal, brilliant cold silver, focused violet-white ward light, pinprick ember-orange forge seams; do not use #00ff00 in the subject and do not rely on an overall gold or purple wash
+Materials/textures: flawless exotic star-metal, masterful relief, faceted spellglass seal, immaculate premium bindings
+Constraints: S grade must clearly exceed A through legendary material, strongest relief, richest workmanship, and dramatic contained luminosity; keep the same fundamental family silhouette; exactly one torso garment; empty openings; no head, body, limbs, weapon, shield, cape, pedestal, shadow, reflection, text, border, rarity frame, watermark, scenery, particles, smoke, flames, or glow spilling into the background; crisp clean silhouette with no green fringe

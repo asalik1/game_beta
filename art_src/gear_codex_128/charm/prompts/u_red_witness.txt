@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG named charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one named A-grade Killer's Mark charm called Red Witness, an independent complete standalone talisman with its own silhouette: a compact vertical eye-shaped black-silver setting holding one faceted red crystal iris, crossed by a single narrow diagonal silver scar, with a rigid pointed lower teardrop integrated into the frame and a small black bail; exceptional assassin craftsmanship, watchful and incriminating, no text or runes, not a brightened generic target tag
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one talisman only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, contained red crystal eye light
+Materials/textures: blackened silver eye setting, faceted red crystal iris, narrow silver scar inlay, rigid black bail
+Constraints: preserve Killer's Mark category and Red Witness concept; independent compact silhouette and construction; no detached noise; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, realistic eyeball, blood splatter, gore, separate weapon, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

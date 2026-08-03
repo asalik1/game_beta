@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named A-grade matched pair of Vowbound Sabatons, independent empty armored boots whose heavy binding bands visibly lock a sworn warrior to their promise
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, ground, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty low broad armored boots total, centered orthographic pair, hollow split cuffs, enclosed squared toes, fully visible, 78% square
+Lighting/mood: clear upper-left key light, deep readable shadows, weighty unbroken conviction
+Materials/textures: gunmetal plate shells, three thick antique-brass binding bands physically wrapped around each shin and instep, burgundy leather joins, squared layered toes, small sealed white-glass clasp at each ankle
+Constraints: independent banded silhouette; every band attached to the boots; no chains extending away; no feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: detached rings, loose chains, shield, floor, duplicate pair, third boot, shadow, reflection, readable symbols, aura, smoke, blur

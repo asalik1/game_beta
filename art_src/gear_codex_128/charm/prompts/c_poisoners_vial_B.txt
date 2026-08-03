@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one B-grade Poisoner's Vial charm, masterwork version of same compact teardrop bottle family: faceted smoky crystal bottle half-filled with vivid toxic green liquid, refined blackened-steel thorn cage, silver neck collar, sealed dark cork beneath a suspension loop, and one integrated fang-shaped dosage tag; no label, text, skull, letters, hands, or runes
+Scene/backdrop: perfectly flat solid #ff00ff magenta chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one vial only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 78% of square
+Lighting/mood: clear upper-left key light, deep readable shadows, restrained green liquid glow contained inside glass
+Materials/textures: faceted smoky crystal, toxic green liquid, refined blackened steel, silver collar, dark cork
+Constraints: same Poisoner's Vial family identity; B grade through construction; one joined compact object; poison green must remain; no detached drops; no watermark; do not use #ff00ff or magenta in object
+Avoid: text, letters, numbers, logos, readable runes, label, skull symbol, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, multiple bottles, potion set, separate stopper, spilled liquid, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

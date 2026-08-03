@@ -349,6 +349,23 @@ static func delete(slot: int) -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(path(slot)))
 
 
+## Rename a hero in place: rewrite ONLY the character name onto an existing
+## save, leaving world and the rest of the character block untouched. Reads
+## through the v3 lift, so a legacy blob is renamed and re-stamped in its
+## modern shape (lossless — _migrate_v2 preserves every field). No-ops on an
+## empty/missing slot. The name arrives already sanitized (menus.gd).
+static func rename_character(slot: int, new_name: String) -> void:
+	var data := read(slot)
+	if data.is_empty():
+		return
+	var c := character_of(data)
+	c["name"] = new_name
+	data["character"] = c
+	var f := FileAccess.open(path(slot), FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(data))
+
+
 ## Every existing save, newest first: [{slot, cls, level, quest, saved_at}].
 static func list() -> Array:
 	var out: Array = []

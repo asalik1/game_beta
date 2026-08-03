@@ -16,7 +16,7 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 | `test.bat` | full suite (minutes, both chapters end to end). Required green before staging. |
 | `game/check_compile.gd` | the compile gate itself (both bats run it FIRST — never invoke the test scene directly; a parse error makes the headless engine idle forever). |
 | `suite_verdict.ps1` | log-grep verdict helper the bats use (exit code alone lies). |
-| `net_test.bat` | 11-stage multiplayer proof over localhost ENet (feature waves + soak). |
+| `net_test.bat` | 16-stage multiplayer proof over localhost ENet (feature waves + soak). |
 | `dps_bench.bat` (`game/scripts/tests/dps_bench.gd`) | per-class max sustained DPS vs an average-L40 immortal dummy; parallel 6-process, ±5% variance. |
 | `game/econ_audit.gd` | reward-economy audit: what each chapter actually pays, first run vs replay, per faucet. Run before touching reward numbers. |
 
@@ -53,7 +53,10 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 | `tools/art/install_preservation_owner_walk_copies.py` | exact owner-directed walk copies for Archer/Warlock plus the corrected seven-frame Warlock South install. |
 | `tools/art/rebuild_preservation_archer_alpha.py` | rebuild Archer preservation idle/walk candidates with a border-connected key that preserves the green cape. |
 | `tools/art/build_sprites.py` | rebuild every class sprite from source (per-class recipes codified), then re-import. |
+| `tools/art/build_act1_directional_walks.py` | reviewed ImageGen sources -> grounded 8-direction Act 1 strips; prefers independent per-direction cycles when all eight exist, otherwise builds the reviewed 5x4 master. |
+| `tools/art/enforce_act1_gait_alternation.py` | enforce and audit A/B lower-limb contact swaps while keeping generated upper bodies and low-hanging gear fixed. |
 | `tools/art/build_gem_icons.py` | lore-authored 5×2 gem masters → 140 distinct 32px stat+level icons, hard-alpha QA sheet, desktop/mobile install. |
+| `tools/art/build_gear_codex_icons.py` | approved transparent gear masters → 128px codex + separately optimized 32px gameplay candidates, exact 1,260-key coverage audit, dated backups and per-slot QA sheets. |
 | `tools/art/upscale_hero.py` | rebuild a dark-class hero from the ChatGPT upscales (white-key, rescale, feet-anchor to original layout). |
 | `tools/art/install_preservation_class_idle_walks.py` | guarded old-design Archer/Assassin/Warlock idle+walk candidate installer; validates 277px cells/180px bodies and archives the replaced runtime PNGs. |
 | `tools/art/build_preservation_walk_candidate.py` | auto-detect authored figures from broad source gutters, refuse mismatched `--frames`, and build normalized preservation strips/QA. |
@@ -81,7 +84,7 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 | `tools/art/clean_sprite.py` | FLUX/Pollinations render → clean pixel sprite (normalize). |
 | `tools/art/polligen.py` / `tools/art/flux_draft.py` | free generation lanes (pollinations.ai textures/props / FLUX concept drafts — note: HF inference is dead, see memory/ART docs). |
 | `tools/art/pl_anim_ids.py` | print a PixelLab character's per-direction anim ids for a clip (frame-URL gotcha). |
-| `tools/content/gen_capital.py` | regenerate `capital_hub.gd` (the compact 25-room capital content module). |
+| `tools/content/gen_capital.py` | regenerate `capital_hub.gd` (the 9-room, 3×3 Crownfall capital content module). |
 | `gen_asset_manifest.py` | regenerate `game/assets/asset_manifest.json` (exports can't scan dirs; `export_all.bat` runs it). |
 
 ## In-engine shot rigs (windowed, boot the real game, screenshot to disk)

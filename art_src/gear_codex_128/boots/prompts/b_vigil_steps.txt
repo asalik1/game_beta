@@ -1,0 +1,11 @@
+Built-in ImageGen. Accepted neutral Vigil Steps on #00ff00: one matched pair of empty open-cuff ankle boots with black-brown leather, charcoal quarters, dull iron toe bands, crossed straps, quiet soles, and practical attached heel braces.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG BOOTS icon
+Primary request: exactly ONE matched PAIR of empty ankle BOOTS called Vigil Steps, restrained neutral-grade night-watch footwear. Compact sturdy black-brown leather boots with wide visible open empty cuffs, low ankle uppers, distinct rounded toes, heels, and thick quiet soles; charcoal suede quarters, dull iron toe bands, practical crossed instep straps, small attached crescent-shaped heel braces, sober watchman construction without magical effects.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail dark-fantasy sprite illustration, crisp deliberate edges, readable at 128px and 32px, tasteful pixel-art influence
+Composition/framing: exactly two separate matching empty boots forming one pair, three-quarter orthographic catalogue view, side by side, centered in middle 70% of square, fully visible with generous uniform padding
+Lighting/mood: clear upper-left light, deep readable shadows
+Constraints: BOOTS ONLY; each boot visibly ends at ankle with open empty cuff, toe, heel, sole. No wearer, anatomy, duplicate pair, detached ornament, magic, badge, watermark, or text. Do not use #00ff00 in boots.
+Avoid: legs, feet, body, character, mannequin, pants, leggings, greaves, shin guards, torso armor, amulet, necklace, pendant, medallion, shield, badge, card, frame, pedestal, floor, environment, props, text, letters, logos, runes, cast shadow, smoke, crop, edge touch

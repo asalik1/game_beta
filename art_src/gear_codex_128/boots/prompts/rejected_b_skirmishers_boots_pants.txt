@@ -1,0 +1,5 @@
+Rejected built-in generation for b_skirmishers_boots.
+
+Reason: generated a joined lower-body trouser/greave garment instead of exactly two separate empty ankle boots. The source is preserved as generated/rejected_b_skirmishers_boots_pants.png.
+
+Prompt requested a neutral matched pair of empty Skirmisher's Boots on flat #00ff00, but the output violated the exact category and no-legs/garment constraint.

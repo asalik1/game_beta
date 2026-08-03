@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG named charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one named A-grade Lifebloom Pendant charm called Spring Axiom, an independent complete standalone talisman: a compact perfectly symmetrical four-leaf silver frame arranged around one bright green seed crystal, with darkwood geometric braces, a small amber center node and rigid vine-shaped bail; growth expressed as precise natural geometry rather than writing or runes, exceptional healer craftsmanship, not a brightened generic teardrop pendant
+Scene/backdrop: perfectly flat solid #ff00ff chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one broad compact pendant only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, contained bright spring-green seed light
+Materials/textures: moon-silver four-leaf frame, faceted green seed crystal, darkwood geometric braces, small amber node
+Constraints: preserve Lifebloom Pendant category and Spring Axiom concept; independent symmetrical silhouette and construction; no detached petals or noise; no watermark; do not use #ff00ff anywhere in the object
+Avoid: text, letters, numbers, equations, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, bouquet, loose flowers, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

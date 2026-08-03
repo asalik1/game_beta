@@ -1,0 +1,3 @@
+Rejected built-in edit for b_skirmishers_boots_S.
+
+Reason: replaced the footwear reference with an abstract metal badge. Preserved as generated/rejected_b_skirmishers_boots_S_badge.png. Retry narrows the edit to surface and sole details only.

@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one S-grade Oathkeeper's Seal charm, legendary apex of the same compact round guardian medallion family: sovereign black-steel disc, monumental radiant-silver shield clasped by a straight dawn-gold sword, flawless deep-crimson wax circlet locked by four crown-shaped gold brackets, fortress-crown suspension loop, armored ribbon tabs, and restrained white-gold oathlight contained behind the shield; no text, letters, hands, or runes
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one seal only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, restrained contained white-gold oathlight
+Materials/textures: sovereign black steel, radiant silver shield, dawn-gold sword, flawless crimson sealing wax, crown gold brackets
+Constraints: same Oathkeeper's Seal family identity; S grade readable through monumental construction and controlled supernatural finish; strong circular silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in object
+Avoid: text, letters, numbers, logos, readable runes, interlocking rings, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, separate weapon, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

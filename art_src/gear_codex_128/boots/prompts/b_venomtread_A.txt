@@ -1,0 +1,11 @@
+Built-in ImageGen. Accepted A-grade Venomtread on #ff00ff: exactly one matched pair of empty low-cut ankle boots with open cuffs, black scaled leather, charcoal panels, dark iron eyelets, acid-green glass fang toe guards, sealed poison-green channels, and exotic layered construction.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG BOOTS icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: exactly ONE matched PAIR of empty low-cut ankle BOOTS called Venomtread, A-grade exceptional poison-hunter footwear. These are clearly wearable SHOES/BOOTS, not armor for legs and not jewelry. Each boot has a fully visible open ankle cuff with a dark empty interior, a short leather upper, distinct toe box, heel, and thick outsole. Black scaled leather, charcoal panels, dark iron eyelets, acid-green glass fang-shaped toe guards, restrained sealed poison-green channels, exotic layered construction.
+Scene/backdrop: perfectly flat solid #ff00ff chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable footwear silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly two separate matching empty boots forming one pair, three-quarter orthographic catalogue view, side by side, centered, fully visible from toe through open cuff, generous even padding, occupying roughly 78% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, contained green light only inside sealed accents
+Constraints: BOOTS ONLY. Preserve the exact footwear category. Both boots visibly end at the ankle and have open empty cuffs. No wearer. No anatomy. No duplicate pair. No detached ornaments. No watermark. Do not use #ff00ff anywhere in the boots.
+Avoid: legs, feet, body, character, mannequin, pants, trousers, leggings, greaves, shin guards, thigh armor, torso armor, amulet, necklace, pendant, medallion, badge, shield, star emblem, card, frame, pedestal, floor, environment, props, text, letters, numbers, logos, readable runes, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

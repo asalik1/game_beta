@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: high-resolution dark-fantasy game inventory icon; source for a 128x128 Codex master and a separately downsampled 32x32 gameplay icon
+Primary request: create the neutral family artwork for “Wardsteel Plate,” a practical warrior torso armor cuirass whose identity is disciplined protection against hostile magic
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for local background removal; the background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation
+Subject: exactly one empty wearable torso armor garment, no person or mannequin; a sturdy blackened-steel breastplate with a high protective gorget, compact layered shoulder plates, overlapping waist lames, restrained silver ward-binding seams, and believable leather side straps; no separate accessories
+Style/medium: premium hand-painted pixel-art game icon with genuine high-resolution detail, crisp clustered shapes, controlled highlights, dark Crownless fantasy, readable silhouette at small size; not a photo, not smooth 3D, not vector clip art
+Composition/framing: centered, near-front three-quarter view, entire armor fully visible, generous even padding, square icon composition; large simple silhouette and bold material separation suitable for reduction to 128px and 32px
+Lighting/mood: neutral cool studio-like item lighting contained entirely on the armor; sober, practical, battle-ready
+Color palette: charcoal iron, gunmetal, dull silver, very restrained cold blue-gray; do not use #00ff00 anywhere in the subject
+Materials/textures: forged plate steel with subtle hammering, leather straps, lightly worn edges; no rust or damage
+Constraints: neutral family design, not a rare or legendary grade; exactly one torso garment; empty neck and arm openings; no head, face, body, hands, arms, legs, weapon, shield, cape, pedestal, cast shadow, contact shadow, reflection, text, border, badge, rarity frame, watermark, scenery, floating particles, smoke, or glow spilling into the background; crisp clean silhouette with no green fringe

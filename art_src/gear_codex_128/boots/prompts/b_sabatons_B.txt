@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one B-grade matched pair of empty Warrior Sabatons preserving the neutral broad flat armored family with masterwork construction
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty mid-calf armored boots total, centered orthographic pair, hollow plate cuffs, broad articulated toes, fully visible, 80% square
+Lighting/mood: clear upper-left key light, deep readable shadows, disciplined resolve
+Materials/textures: dark tempered steel shin plates, premium oxblood gussets, finely articulated toe lames, broad reinforced flat soles, etched heel braces, restrained cold-white weight seams
+Constraints: B reads above neutral through finer construction and contained accent, not recolor; no feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: detached armor, shield, duplicate pair, third boot, floor, shadow, reflection, logos, aura, smoke, blur

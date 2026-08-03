@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots-slot icon source
+Primary request: one S-grade matched pair of empty Mage Rootbound Sandals, legendary sandals rooted into the world in the same family identity
+Scene/backdrop: perfectly flat solid #ff00ff chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty sandals total, centered orthographic pair, high arched heel cups, visible empty footbeds, open toes, tall crown-like root cages, fully visible, 80% square
+Lighting/mood: clear upper-left key light, deep readable shadows, legendary world-deep calm with contained gold-green life
+Materials/textures: black worldwood footbeds, richest interwoven pale-gold roots forming continuous sole and ankle cages, deep green enamel straps, layered barksteel edges, luminous gold-green veins trapped inside the roots
+Constraints: S reads above A through finest material, richest coherent construction and contained luminous seams; all roots attached; empty sandals, no feet, toes, skin, legs, wearer, ground, tree, props, text, frame, watermark; no #ff00ff
+Avoid: detached vines, floating leaves, scenery, duplicate pair, third sandal, floor, shadow, reflection, logos, aura cloud, smoke, blur

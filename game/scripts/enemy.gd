@@ -756,11 +756,13 @@ func _physics_process(delta: float) -> void:
 	if not _strip_action.is_empty():
 		# One-shot ability strip: play frames 0..N-1 once, then revert.
 		_advance_action_anim(delta)
-	elif anim_frames > 1 or not _dir_idle.is_empty():
+	elif anim_frames > 1 or not _dir_idle.is_empty() or not _dir_walk.is_empty():
 		# Walk/idle split. Single-facing art keeps the flip path; 8-direction
 		# art also picks the strip by facing — and runs even for 1-frame idle
 		# rotations (PixelLab's static rotations are one frame per direction).
-		if _dir_idle.is_empty():
+		var directional_loco := (_moving_anim and not _dir_walk.is_empty()) \
+			or (not _moving_anim and not _dir_idle.is_empty())
+		if not directional_loco:
 			if not _strip_walk.is_empty() and _moving_anim != _strip_walking:
 				_strip_walking = _moving_anim
 				_apply_strip(_strip_walk if _moving_anim else _strip_idle)
@@ -801,7 +803,9 @@ func _physics_process(delta: float) -> void:
 	# Directional locomotion encoded facing in its chosen strip (flip_h
 	# false); apply the horizontal flip only for single-facing art, or
 	# while a single-facing one-shot action strip is playing.
-	if os != 0.0 and _action_dir.is_empty() and (_dir_idle.is_empty() or not _strip_action.is_empty()):
+	var directional_loco := (_moving_anim and not _dir_walk.is_empty()) \
+		or (not _moving_anim and not _dir_idle.is_empty())
+	if os != 0.0 and _action_dir.is_empty() and (not directional_loco or not _strip_action.is_empty()):
 		sprite.flip_h = (os > 0.0) if face_left else (os < 0.0)
 	# Walk bob removed (old artifact); hover_amp>0 still levitates (Varo throne).
 	if hover_amp > 0.0:

@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named A-grade matched pair of Deadstill Boots, independent Marksman's Stance execution design
+Scene/backdrop: perfectly flat solid #00ff00 chroma background; no floor, shadow, gradient, texture, reflection, lighting variation
+Style/medium: crisp high-detail sprite illustration, compact dark-fantasy silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty low boots, orthographic catalogue view, centered symmetrical pair, hollow narrow cuffs, enclosed squared toes, fully visible, 76% square
+Materials/textures: matte corpse-grey leather, black iron ankle cages, extremely broad silent heel blocks, pale bone toe ridges, one dark-red sealed stillness lens per boot
+Constraints: independent silhouette not recolored generic; one pair only; no feet, legs, wearer, corpse, bows, arrows, props, text, frame, watermark; no #00ff00 in object

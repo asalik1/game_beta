@@ -1,0 +1,7 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; codex master only
+Primary request: one Last Measure, Token of the Perfect Cut, named S-grade Butcher's Token unique; one compact circular black-adamant measuring token with a single razor-straight platinum split fused across its center, six heavy outer clamp teeth joined to the rim, a precise wedge-shaped lower point, and a fortified closed suspension loop; construction evokes exact cutting without numbers or markings
+Scene/backdrop: flat solid #00ff00 chroma; no floor, shadow, gradient, texture, reflection
+Style: crisp Crownless dark-fantasy sprite illustration, readable silhouette, detailed 128px, reducible 32px
+Composition: exactly one connected standalone charm, centered catalogue view, full object, even padding, 82% square
+Constraints: all clamps joined; no measuring marks, writing, numbers, symbols, glyphs, runes, logo, wearer/body/hand/neck, chain, coin stack, duplicate, detached prop/VFX, frame, floor, shadow, watermark, or green

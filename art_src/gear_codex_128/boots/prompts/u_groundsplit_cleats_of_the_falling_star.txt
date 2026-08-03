@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named S-grade matched pair of Groundsplit, Cleats of the Falling Star, independent legendary Piercer's Cleats
+Scene/backdrop: perfectly flat solid #00ff00 chroma background, no floor, shadow, gradient, texture, reflection
+Style/medium: crisp high-detail dark-fantasy sprite illustration, readable compact silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty mid-calf boots, orthographic centered pair, hollow flared cuffs, massive enclosed wedge toes, fully visible, 82% square
+Materials/textures: midnight meteor iron, jagged gold-white impact ribs integrated into shells, broad cleated sole foundations, one molten star lens protected per shin, contained fracture light
+Constraints: independent silhouette not generic or Needleheel; no feet, legs, wearer, falling star, rocks, debris, weapons, detached sparks, props, text, frame, watermark; no #00ff00 in object

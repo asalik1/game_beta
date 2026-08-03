@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one B-grade matched pair of empty Sabatons of the Oath preserving the neutral solemn rounded armored family with masterwork construction
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty mid-calf armored boots total, centered orthographic pair, hollow plate cuffs, broad enclosed toes, fully visible, 80% square
+Lighting/mood: clear upper-left key light, deep readable shadows, disciplined devotion
+Materials/textures: dark tempered steel plates with fine bevels, premium ivory leather gussets, precisely articulated rounded toes, reinforced soles, engraved brass vow clasps, one restrained pearl-white seam per cuff
+Constraints: B reads above neutral through finer construction and contained accent, not recolor; no feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: detached armor, shield, duplicate pair, third boot, floor, shadow, reflection, readable symbols, aura, smoke, blur

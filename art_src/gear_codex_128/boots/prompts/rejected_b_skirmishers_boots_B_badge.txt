@@ -1,0 +1,3 @@
+Rejected built-in generation for b_skirmishers_boots_B.
+
+Reason: generated a metal badge/pendant rather than footwear. Preserved as generated/rejected_b_skirmishers_boots_B_badge.png. The accepted retry uses the approved neutral boots as an edit reference while preserving category and silhouette.

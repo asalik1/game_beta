@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one Blackshaft Token, named A-grade Fletcher's Token unique; an independent small obsidian arrowhead talisman fused to a thumb-length charred blackwood shaft fragment, capped by a closed iron suspension loop, with one copper binding collar and a single burnt-orange resin eyelet; one connected object, compact broad silhouette
+Scene/backdrop: perfectly flat solid #00ff00 chroma background with no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: crisp Crownless dark-fantasy sprite illustration, iconic construction, detailed at 128px and clear at 32px
+Composition/framing: exactly one connected standalone charm, centered diagonal catalogue view, fully visible, even padding, roughly 82% of square
+Lighting/mood: upper-left light, deep readable shadows, no magical glow
+Constraints: independent token, not a usable arrow; no text, symbols, glyphs, runes, watermark, wearer, hand, neck, chain, bow, full arrow, duplicate, detached feather, VFX, frame, floor, shadow, or vivid green in object

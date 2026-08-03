@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one A-grade Duelist's Knot charm, the same compact closed figure-eight silhouette made from one continuous black silk cord interwoven with flexible silver filaments, cinched through a layered dark-steel center clasp shaped like overlapping guard plates, with one integral closed suspension loop at top; contained crimson light visible only in narrow clasp seams, no loose tails
+Scene/backdrop: perfectly flat solid #00ff00 chroma background; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: crisp high-detail sprite illustration, deliberate edges, compact readable silhouette, tasteful pixel-art influence, detailed at 128px and reducible to 32px
+Composition/framing: exactly one connected standalone charm, orthographic catalogue view, centered, fully visible, even padding, roughly 82% of square
+Lighting/mood: upper-left light, deep readable shadows, contained crimson seam light
+Constraints: same Duelist's Knot family silhouette; exceptional layered construction; no text, letters, numbers, symbols, glyphs, runes, watermark, wearer/body/hand/neck, chain, weapon, duplicate knot, detached prop, loose strand, orbiting VFX, inset, frame, floor, shadow, or vivid green in object

@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named A-grade matched pair of Hollow Step, independent empty assassin wrap-boots constructed around visible sealed hollows that swallow footfall
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, ground, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty low wrap-boots total, centered orthographic pair, hollow split cuffs, enclosed blunt toes, fully visible, 76% square
+Lighting/mood: clear upper-left key light, deep readable shadows, uncanny absence
+Materials/textures: ash-grey layered cloth, black bone heel shells, dull silver arch cages physically attached around one recessed matte-black oval chamber in each instep, padded silent soles
+Constraints: independent compact hollow-centered silhouette; chambers are sealed in the boots, not holes through the canvas; no feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: detached rings, skulls, smoke, floor, duplicate pair, third boot, shadow, reflection, readable symbols, large aura, blur

@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named A-grade matched pair of Wallcat Boots, an independent Assassin Prowlers design built for reflexive wall grip rather than a recolored generic family pair
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, wall, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty low boots total, centered orthographic catalogue pair, hollow cat-ear-notched cuffs, enclosed broad climbing toes, slight outward angle, fully visible, 76% square
+Lighting/mood: clear upper-left key light, deep readable shadows, coiled reflex
+Materials/textures: dark rust-black leather, pale steel side cages shaped as angular climbing arcs, four short retractable-looking wall claws integrated beneath each broad toe and heel, crimson inner gussets, one amber reflex lens sealed at each outer ankle
+Constraints: unique low broad silhouette distinct from generic grades; unmistakably boots, never animal feet; all claws, cages, and lenses attached; no cat body, paws, feet, legs, wearer, wall, props, text, frame, watermark; no #00ff00
+Avoid: animal anatomy, detached claws, loose blades, duplicate pair, third boot, floor, shadow, reflection, readable runes, logos, aura, smoke, blur

@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one neutral matched pair of empty Marksman's Stance boots, stable archer field boots
+Scene/backdrop: perfectly flat solid #00ff00 chroma background; no floor, shadow, gradient, texture, reflection, lighting variation
+Style/medium: crisp high-detail sprite illustration, compact dark-fantasy silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty mid-calf boots, orthographic catalogue view, centered symmetrical pair, hollow open cuffs, enclosed toes, fully visible, 80% square
+Materials/textures: weathered charcoal leather, broad planted heels, reinforced slate toe caps, tan ankle straps, asymmetrical-looking outer braces repeated identically on each boot; restrained neutral workmanship
+Constraints: one matched pair only; no feet, legs, wearer, bows, arrows, props, text, frame, watermark; no #00ff00 in object

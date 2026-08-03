@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; high-detail codex master only
+Primary request: one First Feint, named A-grade Duelist's Knot unique; an independent compact asymmetric knot made from a single continuous ivory dueling cord folded into one deceptive double-loop silhouette, pinned through a slim blackened-steel needle clasp that is part of the charm, with one integral closed suspension loop; the front loop crosses behind itself as an optical misdirection, one tiny fixed red enamel drop at the crossing, no loose tails
+Scene/backdrop: perfectly flat solid #00ff00 chroma background; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: crisp high-detail dark-fantasy sprite illustration, iconic silhouette, detailed at 128px and clear at 32px
+Composition/framing: exactly one connected standalone charm, centered catalogue view, fully visible, even padding, roughly 82% of square
+Lighting/mood: upper-left light, deep readable shadows, no magical glow
+Constraints: independent unique construction and palette; unmistakable cord knot charm; no text, letters, numbers, symbols, glyphs, runes, watermark, wearer/body/hand/neck, chain, weapon, duplicate, detached prop, loose strand, VFX, inset, frame, floor, shadow, or vivid green in object

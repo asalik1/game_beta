@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG named charm icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one named A-grade Greenheart Idol called Springcore Idol, an independent complete standalone charm with its own unmistakable silhouette: a compact oval seedpod idol split by three curved darkwood ribs around a luminous new-green crystal seed, topped by one small unfurling leaf and bound at the base with pale bronze; exceptional ancient-druid construction, not a brightened generic heart emblem
+Scene/backdrop: perfectly flat solid #ff00ff chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy form, readable silhouette, materially detailed at 128px, tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one idol only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows, contained spring-green seed light
+Materials/textures: dark living wood ribs, faceted new-green crystal seed, pale weathered bronze, small fresh leaf
+Constraints: preserve Greenheart Idol category and Springcore concept; independent silhouette and construction; strong closed silhouette; no detached noise; no watermark; do not use #ff00ff anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Generator: built-in ImageGen

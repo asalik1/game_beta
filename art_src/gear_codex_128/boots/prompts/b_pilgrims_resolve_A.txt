@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dual-resolution dark-fantasy boots icon source
+Primary request: one A-grade matched pair of empty Pilgrim's Resolve, same family with exotic layered construction
+Scene/backdrop: flat solid #00ff00 chroma only; no floor, shadow, gradient, texture, reflection
+Style/medium: crisp high-detail sprite illustration, compact readable silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty mid-calf boots, centered orthographic pair, hollow cuffs, enclosed rounded toes, fully visible, 80%
+Materials/textures: umber basilisk leather, ivory roadcloth layers, sun-bronze heel cages, segmented toe shells, contained amber wayfinding lenses
+Constraints: no feet, legs, wearer, shrine, road, props, text, frame, watermark; no #00ff00

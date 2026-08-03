@@ -1622,6 +1622,17 @@ func _run_systems() -> void:
 		return _fail("visited rooms did not survive the roundtrip")
 	if game.cur_room != 0:
 		return _fail("cur_room did not survive the roundtrip (got %d)" % game.cur_room)
+	# Rename in place: rewrite ONLY the name on the on-disk save (the roster
+	# ✎), leaving the rest of the character block untouched; blank clears it.
+	SaveGame.rename_character(SaveGame.MAX_SLOTS, "Renamed")
+	var re_char: Dictionary = SaveGame.character_of(SaveGame.read(SaveGame.MAX_SLOTS))
+	if String(re_char.get("name", "")) != "Renamed":
+		return _fail("rename_character did not rewrite the saved name (got '%s')" % re_char.get("name", ""))
+	if int(re_char.get("gold", -1)) != 4321:
+		return _fail("rename_character disturbed the rest of the character block (gold %d)" % int(re_char.get("gold", -1)))
+	SaveGame.rename_character(SaveGame.MAX_SLOTS, "")
+	if String(SaveGame.character_of(SaveGame.read(SaveGame.MAX_SLOTS)).get("name", "x")) != "":
+		return _fail("rename_character did not clear the name to blank")
 	game.flags = flags_keep  # never strand the run without its opening flags
 	game.flags["met_elder"] = true
 	SaveGame.delete(SaveGame.MAX_SLOTS)
@@ -1837,6 +1848,15 @@ func _run_systems() -> void:
 	game.menus.shop_tab = "buy"  # restore the default for later shop opens
 	game.menus.open_codex("gear")
 	await _frames(2)
+	# Gear keeps a 32px gameplay contract but the codex must not magnify that
+	# tiny texture. The approved Pike benchmark proves both resolver branches.
+	var codex_pike: ImageTexture = Art.codex_item_icon("weapon", "B", "Pike")
+	var gameplay_pike: ImageTexture = Art.item_icon("weapon", "B", "Pike")
+	var codex_pennon: ImageTexture = Art.codex_item_icon(
+		"weapon", "A", "Pike", "u_the_red_pennon")
+	if codex_pike.get_width() != 128 or codex_pennon.get_width() != 128 \
+			or gameplay_pike.get_width() != 32:
+		return _fail("dual-resolution gear resolver lost its 128px codex / 32px gameplay contract")
 	# Gear split into shelves 2026-07-26 — smoke each so a broken subtab is caught,
 	# including the Shapes shelf's per-slot children.
 	for gsub in ["gear_shapes", "gear_shapes_weapon", "gear_shapes_armor",
@@ -2443,6 +2463,7 @@ func _run_campaign_ch2() -> void:
 	await _test_professions()
 	await _test_synthesis()
 	await _test_pvp_arena()
+	await _test_dev_morph()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -7834,3 +7855,71 @@ func _test_pvp_arena() -> void:
 	if game.menus.is_open():
 		return _fail("pvp arena: lobby did not close clean")
 	print("ok: pvp arena (module shape + chapter routing + duel lobby stage)")
+
+
+# ---- DEV: codex Transform / dev morph (2026-08-03) ------------------------
+## Wear a creature over the hero (dev_morph.gd) and assert the seam: the hero
+## sprite hides, the puppet carries art, real casts are suppressed (no cd/mana
+## spent), a one-shot clip plays and returns to locomotion, and revert restores
+## everything. The kind is picked from the INSTALLED art (first strip-animated
+## enemy whose basic clip ships) so the test tracks the asset set, not a name.
+## Assertions live here; the caller restores on every exit path.
+func _dev_morph_asserts() -> void:
+	var p: Player = game.player
+	var kind := ""
+	for k in Story.ALL_ENEMIES:
+		var spr: String = String(Story.ALL_ENEMIES[k].get("sprite", ""))
+		if spr == "" or Art.anim_info(spr).is_empty():
+			continue
+		var acts: Array = DevMorph._discover_actions(spr)
+		if acts.is_empty():
+			continue
+		var basic: String = DevMorph.basic_of(acts)
+		if not Art.action_info(spr, basic).is_empty() \
+				or not Art.dir_set("%s_%s" % [spr, basic]).is_empty():
+			kind = String(k)
+			break
+	if kind == "":
+		return _fail("dev morph: no strip-animated enemy kind with a playable clip")
+	DevMorph.start(p, kind)
+	await _frames(2)
+	if p.dev_morph == null or p.dev_morph.kind != kind:
+		return _fail("dev morph: transform did not install")
+	if p.sprite.visible:
+		return _fail("dev morph: hero sprite must hide while morphed")
+	if p.dev_morph.sprite == null or p.dev_morph.sprite.texture == null:
+		return _fail("dev morph: puppet sprite carries no art")
+	var cd0: float = p.cds["a1"]
+	var mp0: float = p.mp
+	p.use_ability("a1")
+	if p.cds["a1"] != cd0 or p.mp != mp0:
+		return _fail("dev morph: a morphed cast still spent real cd/mana")
+	p.dev_morph._play_named(p.dev_morph._basic_action())
+	if p.dev_morph._strip_action.is_empty():
+		return _fail("dev morph: the basic clip did not start")
+	# One-shots must hand back to locomotion (wall-clock: frames race headless).
+	await get_tree().create_timer(1.5).timeout
+	if p.dev_morph == null:
+		return _fail("dev morph: morph fell off during the clip (hero died?)")
+	if not p.dev_morph._strip_action.is_empty():
+		return _fail("dev morph: the one-shot never returned to locomotion")
+	DevMorph.stop(p)
+	if p.dev_morph != null:
+		return _fail("dev morph: revert left the morph installed")
+	if not p.sprite.visible:
+		return _fail("dev morph: revert must restore the hero sprite")
+
+
+func _test_dev_morph() -> void:
+	var _dev0: bool = game.dev_mode
+	var _god0: bool = game.dev_god
+	game.dev_mode = true
+	game.dev_god = true  # control the precondition: a stray mob mid-wait can't kill the rig
+	await _dev_morph_asserts()
+	# Restore on EVERY exit path — a failed assert above still passes through.
+	DevMorph.stop(game.player)
+	game.dev_god = _god0
+	game.dev_mode = _dev0
+	await _frames(2)
+	if not _failed:
+		print("ok: dev morph (codex Transform: hide/puppet/cast-suppress + clean revert)")

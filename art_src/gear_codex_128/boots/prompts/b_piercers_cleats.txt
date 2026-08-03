@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one neutral matched pair of empty Piercer's Cleats, aggressive enclosed battlefield boots
+Scene/backdrop: perfectly flat solid #00ff00 chroma background, no floor, shadow, gradient, texture, reflection
+Style/medium: crisp high-detail dark-fantasy sprite illustration, readable compact silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty ankle boots, orthographic centered pair, hollow cuffs, enclosed pointed toes, fully visible, 78% square
+Materials/textures: dark oxblood leather, gunmetal toe caps, attached triangular heel cleats and short sole studs, black straps; restrained practical construction
+Constraints: no feet, legs, wearer, loose spikes, weapons, props, text, frame, watermark; no #00ff00 in object

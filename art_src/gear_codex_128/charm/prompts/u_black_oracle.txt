@@ -1,0 +1,7 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; codex master only
+Primary request: one Black Oracle, named A-grade Cursed Idol unique; an independent smooth oval black-glass mask talisman with no eyes, one narrow silver blindfold brace fused across the upper face, a small sealed silver mouth clamp, asymmetric chipped edge, and closed suspension loop cut into the top rim; abstract cold violet reflection only
+Scene/backdrop: flat solid #00ff00 chroma; no floor/shadow/gradient/texture/reflection outside object
+Style: crisp dark-fantasy sprite illustration, iconic silhouette, detailed 128px, clear 32px
+Composition: exactly one connected standalone talisman, centered, full object, padding, 82% square
+Constraints: no reflected person/scene; no writing/symbols/glyphs/runes, eyes, living body, wearer/hand/neck, chain, duplicate, detached prop/VFX, frame, watermark, green

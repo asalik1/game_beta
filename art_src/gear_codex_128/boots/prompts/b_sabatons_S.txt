@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one S-grade matched pair of empty Warrior Sabatons, legendary last-line plate boots in the same family identity
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty tall armored boots total, centered orthographic pair, hollow fortress-like cuffs, broad richly articulated toes, fully visible, 82% square
+Lighting/mood: clear upper-left key light, deep readable shadows, legendary unbroken defense with contained ivory-white force
+Materials/textures: flawless midnight crownsteel, richest interlocking fortress plates, pale-gold load ribs, articulated toe shells, enormous continuous dead-flat star-iron sole foundations, ivory-white load seams trapped within metal
+Constraints: S reads above A through finest material, deepest relief, richest fittings and contained luminous seams; no detached light or plates; no feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: detached armor, shield, castle, duplicate pair, third boot, floor, shadow, reflection, logos, aura cloud, smoke, blur

@@ -594,6 +594,12 @@ session, owner-applied damage). No new netcode class — the duel is a mode ON t
   `pvp_active`), potions barred at the drink gate. Iron out the system before spoils exist.
 - **Wire:** `pvp_strike`/`pvp_died` up, `pvp_round`/`pvp_fight`/`pvp_kill`/`pvp_end` fans down —
   all in `net_session.gd`. NET_VERSION bumped 0.2.0 → 0.3.0.
+- **Bring-up finding (2026-08-02, co-op-wide):** a mistyped noray code used to fail SILENTLY —
+  the server's refusal rides the `connect` verb with no host:port payload, which crashed the
+  vendored parser (local patch in `addons/netfox.noray/noray.gd`, marked LOCAL PATCH) and left
+  the joiner on "Knocking..." forever. Now `net_manager.JOIN_ANSWER_TIMEOUT` (15 s) ends an
+  unanswered knock with a readable message, and both lobby screens warn that codes are
+  case-sensitive (I/l/1 lookalikes — ⧉ Copy is exact). No RPC change, no version bump.
 - **Tests:** `net_test.bat` stage 16 (two real processes: carry-in, sealed warmup, ceasefire
   strike fizzle, gate fan, both strike directions through the real lethal branches, terrain sync,
   3-fall verdict, clean wind-down); autotest `_test_pvp_arena` (module shape, chapter routing,

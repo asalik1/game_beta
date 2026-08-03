@@ -1,0 +1,7 @@
+Use case: stylized-concept
+Asset type: Crownless dark-fantasy RPG charm icon; codex master only
+Primary request: one neutral Butcher's Token charm, a small flat blackened-iron tally shaped like a compact cleaver blade with a blunt squared spine, short nonfunctional tang, worn beveled cutting edge, two plain rivets, and a closed suspension hole forged directly through the top corner; restrained well-made construction, clearly miniature talisman not full weapon
+Scene/backdrop: flat solid #00ff00 chroma; no floor, shadow, gradient, texture, reflection
+Style: crisp Crownless dark-fantasy sprite illustration, readable silhouette, detailed 128px, reducible 32px
+Composition: exactly one connected standalone charm, centered slight three-quarter catalogue view, full object, even padding, 82% square
+Constraints: blank metal, no writing/symbols/glyphs/runes/logo; no wearer/body/hand/neck, chain, coin, duplicate, detached hook/blade/prop/VFX, frame, floor, shadow, watermark, or green in object

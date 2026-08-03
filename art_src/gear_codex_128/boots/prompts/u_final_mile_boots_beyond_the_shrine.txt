@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: Crownless dual-resolution dark-fantasy boots icon source
+Primary request: one named S-grade matched pair of Final Mile, Boots Beyond the Shrine, independent legendary Pilgrim's Resolve
+Scene/backdrop: flat solid #00ff00 chroma only; no floor, shadow, gradient, texture, reflection
+Style/medium: crisp high-detail sprite illustration, compact readable silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty knee-high boots, centered orthographic pair, hollow arched cuffs, enclosed tapered toes, fully visible, 82%
+Materials/textures: midnight pilgrimage leather, pale cathedral-steel arch braces integrated into shafts, gold-capped toes, deep violet enamel, ivory-gold horizon lenses and contained upward seams
+Constraints: unique silhouette not generic or Roadworn; no feet, legs, wearer, shrine, road, architecture, props, text, frame, watermark; no #00ff00

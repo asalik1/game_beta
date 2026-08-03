@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one A-grade matched pair of empty Levitation Slippers, same family identity with exotic layered construction
+Scene/backdrop: perfectly flat solid #ff00ff chroma background; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: high-detail sprite illustration, crisp deliberate edges, compact readable silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty slippers total, orthographic catalogue view, centered compact pair, hollow open low cuffs, enclosed toes, fully visible, 78% square
+Materials/textures: layered midnight-blue silk armor, swept star-silver side fins physically attached to soles, nested heel rings, contained bright cyan seams
+Constraints: no feet, legs, wearer, mannequin, duplicate, third shoe, floating detached pieces, text, frame, watermark; no #ff00ff in object

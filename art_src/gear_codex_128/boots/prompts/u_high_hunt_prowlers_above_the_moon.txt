@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named S-grade matched pair of High Hunt, Prowlers Above the Moon, an independent legendary Assassin Prowlers design rather than a recolored generic pair or Wallcat Boots
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, roof, moon scene, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty tall lean boots total, centered orthographic catalogue pair, hollow crescent-split cuffs, enclosed hooked toes, slight outward angle, fully visible, 82% square
+Lighting/mood: clear upper-left key light, deep readable shadows, cold predatory elevation with contained silver-violet light
+Materials/textures: blue-black night leather, tall lean meteor-iron spine cages, pale crescent heel anchors and upward toe talons physically integrated into continuous soles, deep indigo enamel, one silver-violet hunt lens recessed inside each shin, hairline light confined within the grip frames
+Constraints: independent tall aerial-hunt silhouette distinct from generic grades and Wallcat; wearable boots, not towers or animal legs; every cage, crescent, talon and lens attached; no moon disk, skyline, feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: detached crescents, animal paws, duplicate pair, third boot, scenery, floor, shadow, reflection, readable runes, logos, aura cloud, smoke, blur

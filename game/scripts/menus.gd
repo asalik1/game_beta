@@ -352,12 +352,18 @@ func open_slots() -> void:
 			port.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			port.modulate = Color(1.3, 1.28, 1.2)  # tonemap-dark sprites need the lift
 			pframe.add_child(port)
-		var b := _btn(row, "  %s — Lv %d" % [cname, s["level"]], resume, Color(0.6, 1.0, 0.6), true)
+		# Lead with the hero's name (account name for unnamed legacy saves) so
+		# same-class, same-level heroes stay tellable apart. The ✎ renames.
+		var dname := _hero_display_name(String(s.get("name", "")))
+		var b := _btn(row, "  %s  —  %s Lv %d" % [dname, cname, s["level"]], resume, Color(0.6, 1.0, 0.6), true)
 		b.custom_minimum_size = Vector2(360, 0)
 		b.tooltip_text = Story.quest_text(s["quest"])
 		var when := Time.get_datetime_string_from_unix_time(s["saved_at"]).replace("T", "  ")
 		var wl := _lbl(row, when, 12, Color(0.55, 0.58, 0.66))
 		wl.custom_minimum_size = Vector2(170, 0)
+		var do_rename := func() -> void:
+			open_rename(slot, String(s.get("name", "")))
+		_btn(row, " ✎ ", do_rename, Color(0.7, 0.85, 1.0))
 		var erase := func() -> void:
 			SaveGame.delete(slot)
 			open_slots()  # stay on the roster — empty is a valid state now
@@ -1040,6 +1046,45 @@ func _default_char_name() -> String:
 	var sess: Node = game.get_node_or_null("/root/NetworkManager/Session")
 	var nm := String(sess.os_name()) if sess != null else ""
 	return nm if nm != "" else "Hero"
+
+
+## A roster/lobby hero's SHOWN name: its own name, or the account name when it
+## was never named (legacy saves) — the same fallback co-op labels use, so a
+## hero reads identically in the roster, the lobby and the battle meter.
+func _hero_display_name(raw: String) -> String:
+	var nm := raw.strip_edges()
+	return nm if nm != "" else _default_char_name()
+
+
+## Rename an existing hero from the roster: a one-field entry pre-filled with
+## the current name, written straight back to the save (no load). Blank clears
+## the name, falling the hero back to the account name. Returns to the roster.
+func open_rename(slot: int, cur_name: String) -> void:
+	var vbox := _open("Rename your hero", 640, 300)
+	current = "rename"
+	_lbl(vbox, "A new name for this hero — it's how friends find you in co-op. Leave it blank to fall back to your account name.",
+		14, Color(0.75, 0.75, 0.75))
+	var field := LineEdit.new()
+	field.max_length = Balance.CHAR_NAME_MAX
+	field.text = cur_name
+	field.placeholder_text = _default_char_name()
+	field.custom_minimum_size = Vector2(0, 40)
+	field.add_theme_font_size_override("font_size", 18)
+	vbox.add_child(field)
+	field.grab_focus()
+	field.select_all()
+	var confirm := func() -> void:
+		var nm := _sanitize_char_name(field.text)
+		SaveGame.rename_character(slot, nm)
+		# Keep the LIVE hero in step if the renamed slot is the one loaded.
+		if is_instance_valid(game.player) and int(game.save_slot) == slot:
+			game.player.char_name = nm
+		game.sfx("equip")
+		open_slots()
+	field.text_submitted.connect(func(_t: String) -> void: confirm.call())
+	_btn(vbox, "  Save name  ", func() -> void: confirm.call(), Color(0.6, 1.0, 0.6))
+	_btn(vbox, "  Cancel  ", func() -> void: open_slots(), Color(0.8, 0.85, 0.9))
+	_hint(vbox, "Enter to save · ESC to cancel")
 
 
 ## Commit the typed name onto the fresh character (save.gd reads game.player),
@@ -4002,6 +4047,13 @@ func _input(event: InputEvent) -> void:
 			# reason the dev-roster LineEdit works on the title screen below).
 			if event.keycode == KEY_ESCAPE:
 				open_class_select()
+				get_viewport().set_input_as_handled()
+			return
+		if current == "rename":
+			# ESC returns to the roster; every other key falls through UNHANDLED
+			# so the focused name field keeps the typing (same as name_entry).
+			if event.keycode == KEY_ESCAPE:
+				open_slots()
 				get_viewport().set_input_as_handled()
 			return
 		if current in ["title", "class_select", "class_splash"] \

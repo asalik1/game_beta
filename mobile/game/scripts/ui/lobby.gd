@@ -182,8 +182,9 @@ static func _stage_char(m: Menus) -> void:
 				open(m, "chapter")
 			else:
 				_join_go(m)
-		# Named heroes lead with their name; legacy (unnamed) saves show class only.
-		var label := "  %s — %s Lv %d" % [hname, cname, level] if hname != "" else "  %s — Lv %d" % [cname, level]
+		# Every hero leads with a name — its own, or your account name for
+		# unnamed legacy saves — so same-level heroes stay tellable apart.
+		var label := "  %s — %s Lv %d" % [m._hero_display_name(hname), cname, level]
 		var b := m._btn(row, label, pick, GOOD)
 		b.custom_minimum_size = Vector2(420, 0)
 		var when := Time.get_datetime_string_from_unix_time(int(s["saved_at"])).replace("T", "  ")
@@ -292,7 +293,7 @@ static func _stage_join(m: Menus) -> void:
 		m.lobby["msg"] = ""
 		var ml := m._lbl(vbox, "◆ " + msg, 14, BAD)
 		ml.custom_minimum_size = Vector2(680, 0)
-	m._lbl(vbox, "Ask the host for their lobby code — it's written large on their lobby screen.", 14, Color(0.75, 0.75, 0.75))
+	m._lbl(vbox, "Ask the host for their lobby code — it's written large on their lobby screen. Type it EXACTLY: capitals matter, and I, l and 1 look alike — pasting a copied code is safest.", 14, Color(0.75, 0.75, 0.75))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	vbox.add_child(row)
@@ -354,7 +355,7 @@ static func _stage_host_lobby(m: Menus) -> void:
 	cl.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY  # codes have no spaces
 	m._btn(crow, "  ⧉ Copy  ", func() -> void:
 		DisplayServer.clipboard_set(code), Color(0.8, 0.9, 1.0))
-	m._lbl(vbox, "An internet code — it works from anywhere." if int(net.mode) == NetMgr.Mode.NORAY
+	m._lbl(vbox, "An internet code — it works from anywhere. Capitals matter: ⧉ Copy sends it exactly." if int(net.mode) == NetMgr.Mode.NORAY
 		else "A direct address — same network (or a forwarded port) only.", 13, Color(0.55, 0.58, 0.66))
 	var msg := String(m.lobby.get("msg", ""))
 	if msg != "":

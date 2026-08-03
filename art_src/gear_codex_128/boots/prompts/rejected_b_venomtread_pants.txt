@@ -1,0 +1,1 @@
+Rejected built-in generation for b_venomtread: generated a joined trouser/greave garment instead of exactly two separate boots. Preserved as generated/rejected_b_venomtread_pants.png.

@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named S-grade matched pair of Warpath, Treads That Crossed the Dead, an independent legendary Warrior Reaver Treads design rather than generic grades or Red Spurs
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, road, battlefield, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty knee-high war boots total, centered orthographic catalogue pair, hollow split-banner cuffs, enclosed blunt armored toes, slight outward angle, fully visible, 82% square
+Lighting/mood: clear upper-left key light, deep readable shadows, merciless endless advance with contained ash-red light
+Materials/textures: soot-black campaign steel over dried-blood leather, tall layered shin barricades, pale bone-colored steel impact ribs without anatomical bone, immense continuous black tread plates embossed with abstract crossing bars, one deep red march lens recessed per shin, ash-red seams confined beneath the soles
+Constraints: independent tall siege-like silhouette, wearable boots not monuments; all ribs, tread plates and lenses attached; no corpses, bones, blood pools, road, feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: skulls, skeletons, detached bones, gore, scenery, duplicate pair, third boot, floor, shadow, reflection, readable runes, logos, aura cloud, smoke, blur

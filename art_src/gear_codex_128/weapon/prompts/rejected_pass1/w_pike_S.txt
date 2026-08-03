@@ -1,0 +1,12 @@
+Use case: stylized-concept
+Asset type: high-resolution dark-fantasy game UI equipment icon source, intended for a 128x128 codex master and later 32x32 gameplay export
+Primary request: one S-grade Emberforged Crownless warrior Pike; preserve the same long infantry-pike silhouette as the neutral family, elevated into an unmistakably legendary polearm through the richest workmanship, best materials, heraldic construction, and dramatic localized light rather than a rarity recolor
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for local background removal
+Subject: exactly one complete pike with a long narrow leaf-shaped blade of near-black crownsteel, a brilliant pale cutting ridge, deep layered forging, a sculpted shattered-crown socket and guard relief, straight black ash shaft with reinforced heraldic collars, rich oxblood grip, luminous ember-white seams confined to the blade and socket, and only two or three compact sparks hugging the metal
+Style/medium: cohesive premium hand-painted pixel-art-inspired dark fantasy game icon; genuine high-resolution material detail; crisp heroic silhouette; dramatic relief and controlled bloom; not photorealistic; not a low-resolution pixel sprite enlarged
+Composition/framing: centered diagonal from lower left to upper right, weapon occupying about 78% of the square, generous clear padding on every side
+Lighting/mood: legendary high contrast with localized ember-white radiance; severe somber Crownless dark fantasy
+Color palette: near-black crownsteel, bright pale steel edge, black ash, rich oxblood, restrained silver and ember-white; do not use bright green
+Materials/textures: master-forged layered steel, flawless cutting ridge, deep heraldic metal relief, polished collars, carved ash, premium leather, luminous forged seams
+Constraints: exactly one pike; same fundamental family silhouette as a neutral infantry pike; S grade unmistakably above A through the finest construction, richest fittings, dramatic luminous seams and compact sparks; still readable as a long pike, not a sword or axe; no overall blue/purple/brown/gold rarity wash; no large flames or aura cloud; no text; no badge; no border; no inventory slot frame; no cast shadow; no contact shadow; no reflection; no watermark
+Chroma constraints: background must be one uniform #00ff00 color with no shadows, gradients, texture, floor plane, reflections, or lighting variation; keep the object fully separated from the background with crisp edges and generous padding; do not use #00ff00 anywhere in the object

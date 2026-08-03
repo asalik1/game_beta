@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named A-grade matched pair of Cloudkiss Slippers, an independent cloud-sailing Levitation Slippers design
+Scene/backdrop: perfectly flat solid #ff00ff chroma background; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: high-detail sprite illustration, crisp deliberate edges, compact readable silhouette, tasteful pixel-art influence
+Composition/framing: exactly two matching empty slippers total, orthographic catalogue view, centered compact pair, hollow rolled cuffs, enclosed upturned toes, fully visible, 78% square
+Materials/textures: pearl-grey cloudsilk, pale blue lacquered toe caps, scalloped silver sole rails attached continuously, one cloudy opal ankle lens each, contained sky-cyan light
+Constraints: unique silhouette not recolored generic; no feet, legs, wearer, clouds, mist, wings, duplicate, third shoe, floating detached pieces, text, frame, watermark; no #ff00ff in object

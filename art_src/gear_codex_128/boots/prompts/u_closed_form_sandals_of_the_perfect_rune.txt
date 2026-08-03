@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named S-grade matched pair of Closed Form, Sandals of the Perfect Rune, independent empty mage sandals whose construction closes into an exact faceted loop without depicting written glyphs
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, ground, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty open sandals total, centered orthographic pair, hexagonal foot-shaped soles visibly empty beneath one continuous raised faceted strap shell, crown-like ankle loops, fully visible, 76% square
+Lighting/mood: clear upper-left key light, deep readable shadows, absolute mathematical completion
+Materials/textures: black-violet crystal soles, seamless pale-gold faceted strap loops physically closed around each sandal, deep blue inner leather, one contained white star-glass node set at each instep
+Constraints: independent closed-loop silhouette; no literal glyph or written rune; all geometry attached; no feet, toes, legs, wearer, props, text, letters, frame, watermark; no #00ff00
+Avoid: detached polygon, magic circle, floor diagram, readable symbol, duplicate pair, third sandal, shadow, reflection, large aura, smoke, blur

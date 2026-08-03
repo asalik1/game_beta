@@ -1,0 +1,14 @@
+Input image: `../generated/a_wardsteel_plate.png` is only a rendering-language and rough armor-category reference; this named unique must be its own object.
+
+Use case: stylized-concept
+Asset type: high-resolution dark-fantasy game inventory icon; source for a 128x128 Codex master and a separately downsampled 32x32 gameplay icon
+Input images: Image 1 is only a rendering-language and rough armor-category reference; this named unique must be its own object, not a recolored or upgraded copy
+Primary request: create the named A-grade unique “Spellscar Cuirass,” an unmistakably wearable warrior torso plate that survived a catastrophic sorcerous strike and now turns spell-force aside
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for local background removal; one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation
+Subject: exactly one empty torso cuirass; a lean asymmetrical black-silver plate harness with a sharply angled left shoulder guard and a compact right shoulder, crossed reinforcing ribs, and one dramatic diagonal spell-scar cut from upper shoulder across the breastplate; the scar is sealed with fractured pale cyan-violet spellglass and emits a thin contained internal light; scorched metal curls away from the scar but remains structurally masterful; a few silver null-runes radiate outward like repaired cracks; distinct silhouette from Image 1 while clearly remaining armor
+Style/medium: premium hand-painted pixel-art game icon with genuine high-resolution detail, crisp clustered shapes, controlled highlights, dark Crownless fantasy, readable at small size; match Image 1’s polish and visual language; not a photo, smooth 3D, or vector clip art
+Composition/framing: centered, near-front three-quarter view, entire armor fully visible, generous even padding, square icon composition; the diagonal spell-scar and asymmetric shoulder line must remain legible after reduction to 128px and 32px
+Lighting/mood: somber aftermath, dangerous captured magic; illumination stays inside the scar and runes
+Color palette: charred black steel, cold silver, bruised blue-gray, pale cyan-violet spellglass light; do not use #00ff00 in the subject
+Materials/textures: scorched forged plate, bright repaired edges, fractured spellglass, dark leather bindings
+Constraints: unique A design, completely different construction and silhouette details from the generic S Wardsteel Plate; exactly one torso garment; empty openings; no person, mannequin, head, body, limbs, weapon, shield, cape, pedestal, shadow, reflection, text, border, rarity frame, watermark, scenery, particles, smoke, detached debris, or glow spilling into the background; crisp clean silhouette with no green fringe

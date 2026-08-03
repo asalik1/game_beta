@@ -1,0 +1,3 @@
+Rejected built-in edit for b_skirmishers_boots_S.
+
+Reason: a narrowly scoped surface edit still replaced the footwear with an abstract metal badge. Preserved as generated/rejected_b_skirmishers_boots_S_badge_v2.png. Final retry returns to a standalone footwear generation prompt.

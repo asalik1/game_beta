@@ -1,0 +1,1 @@
+Rejected strict reroll for b_venomtread: produced a bundled amulet/talisman on green instead of two boots and ignored the requested magenta key. Preserved as generated/rejected_b_venomtread_amulet.png.

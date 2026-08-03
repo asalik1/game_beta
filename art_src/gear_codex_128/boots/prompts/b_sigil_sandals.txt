@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one neutral matched pair of empty Sigil Sandals, scholarly mage footwear with geometric strapwork
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty open sandals total, centered orthographic catalogue pair, foot-shaped soles visibly empty beneath arching straps, low ankle loops, slight outward angle, fully visible, 76% square
+Lighting/mood: clear upper-left key light, deep readable shadows, restrained arcane study
+Materials/textures: dark brown layered leather soles, charcoal suede straps arranged in simple attached angular knots, small dull-brass junction studs, no glowing magic
+Constraints: one wearable matched pair only; no feet, toes, legs, wearer, ground, props, text, letters, frame, watermark; no #00ff00
+Avoid: human anatomy, detached straps, literal written rune, scenery, duplicate pair, third sandal, floor, cast shadow, reflection, aura, smoke, blur

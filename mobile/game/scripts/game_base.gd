@@ -2161,14 +2161,33 @@ func fight_engage() -> void:
 
 # ------------------------------------------------- party battle stats ---
 
+## The local hero's display name: its chosen character name, or the OS
+## account name when it was left blank (unnamed legacy saves) — the exact
+## fallback the HUD identity line and the lobby use, so a hero reads the
+## same everywhere. "Hero" only if even the account name can't be read.
+func local_display_name() -> String:
+	if is_instance_valid(local_player):
+		var cn := String(local_player.char_name).strip_edges()
+		if cn != "":
+			return cn
+	var sess: Node = net_session()
+	if sess != null:
+		var osn := String(sess.os_name()).strip_edges()
+		if osn != "":
+			return osn
+	return "Hero"
+
+
 ## The meter row for a player, created on first contribution. Name/class
-## snapshot at that moment (a guest's shell carries its net_name meta).
+## snapshot at that moment (a guest's shell carries its net_name meta; the
+## local hero resolves through local_display_name so a blank char_name shows
+## the account name, not the class fallback the meter would otherwise draw).
 func _stat_bucket(store: Dictionary, p: Player) -> Dictionary:
 	var pid := int(p.peer_id)
 	if not store.has(pid):
 		var nm := String(p.get_meta("net_name", ""))
 		if nm == "" and is_instance_valid(local_player) and p == local_player:
-			nm = p.char_name
+			nm = local_display_name()
 		store[pid] = {"name": nm, "cls": p.cls, "dmg": 0.0, "heal": 0.0, "taken": 0.0}
 	return store[pid]
 
@@ -2993,7 +3012,7 @@ func emote(target: Node2D, symbol: String, dur := 1.4) -> void:
 	box.z_index = 30
 	var spr := Sprite2D.new()
 	spr.texture = Art.tex("bubble")
-	spr.scale = Vector2(2.4, 2.4)
+	spr.scale = Vector2(0.8, 0.8)  # 42x39 source; same footprint as the old 14x13 art.
 	box.add_child(spr)
 	var l := Label.new()
 	l.text = symbol

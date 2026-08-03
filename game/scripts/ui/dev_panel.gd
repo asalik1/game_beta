@@ -374,9 +374,9 @@ static func _tab_world(m: Menus, list: VBoxContainer) -> void:
 	rlbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# ----------------------------------------------- standalone worlds ---
-	# Crownfall, the compact 25-room capital hub (dev-only for now). See
-	# CROWNFALL_HUB.html. Drops the hero on the Crown Plaza; the Portal
-	# Sanctum's Story gate returns to whatever chapter we jumped in from.
+	# Crownfall, the 9-room 3×3 capital hub (live in-game; this button is the
+	# dev jump-in). See CROWNFALL_HUB.html. Drops the hero on the Crown Plaza; the
+	# Portal Sanctum's Story gate returns to whatever chapter we jumped in from.
 	_section(m, list, "CAPITAL HUB (Crownfall — dev only)")
 	var rowc := _flow(list)
 	m._btn(rowc, "▶ Go To Capital", func() -> void:
@@ -419,19 +419,16 @@ static func _tab_world(m: Menus, list: VBoxContainer) -> void:
 				node.queue_free()
 		m.open_dev(), Color(0.85, 0.9, 0.5))
 	m._btn(row4b, "Spawn elite (my Lv+1)", func() -> void:
-		var e := Enemy.make(m.game, "wolf",
-			m.game.player.global_position + Vector2(260, 0), m.game.player.level + 1)
-		e.promote_elite()
-		m.game.add_enemy(e)
+		_dev_spawn(m, {"what": "elite", "kind": "wolf",
+			"level": m.game.player.level + 1,
+			"pos": m.game.player.global_position + Vector2(260, 0)})
 		m.close(), Color(1.0, 0.8, 0.4))
 	m._btn(row4b, "Spawn 3 elites", func() -> void:
 		var kinds := ["wolf", "spider", "skeleton"]
 		for i in 3:
-			var e3 := Enemy.make(m.game, kinds[i],
-				m.game.player.global_position + Vector2(240 + i * 80, -70 + i * 70),
-				m.game.player.level + 1)
-			e3.promote_elite()
-			m.game.add_enemy(e3)
+			_dev_spawn(m, {"what": "elite", "kind": kinds[i],
+				"level": m.game.player.level + 1,
+				"pos": m.game.player.global_position + Vector2(240 + i * 80, -70 + i * 70)})
 		m.close(), Color(1.0, 0.8, 0.4))
 	# Boss spawn level: story anchor, or pinned to your level (+10/+20
 	# probes the no-downscale walls without hand-leveling first).
@@ -461,20 +458,16 @@ static func _tab_world(m: Menus, list: VBoxContainer) -> void:
 	for kind in m.BOSS_KINDS:
 		var k: String = kind
 		m._btn(row5, "Spawn " + k, func() -> void:
-			# A fresh spawn is a fresh benchmark: clear any leftover fight
-			# state (an abandoned boss's pool/wipes/clock) so this roster's
-			# report is trustworthy. (Stacking a brawl? Spawn them all in
-			# one breath BEFORE first blood — engage snapshots the field.)
-			m.game.fight_reset()
-			# Spawns STACK — brawl-test up to 5 at once. The bar follows
-			# your target; boss_x2..boss_x5 tracks play when installed.
-			var b: Boss = Boss.make_boss(m.game, k,
-				m.game.player.global_position + Vector2(320, 0), _boss_level(m))
-			m.game.bosses.append(b)
-			m.game.current_boss = b
-			m.game.add_child(b)
-			m.game.hud.show_boss_bar(Story.ALL_ENEMIES[k]["name"])
-			m.game.set_music(m.game._boss_music())
+			# Spawns STACK — brawl-test up to 5 at once. The bar follows your
+			# target; boss_x2..boss_x5 tracks play when installed. The fight
+			# reset (a fresh benchmark) and the spawn itself live in
+			# game.dev_spawn so the co-op HOST runs the exact same path.
+			# In co-op the spawn is host-authoritative: a guest's click routes
+			# to the host so BOTH players see and fight it (enemies are host-
+			# side — a local guest boss would be a rogue node the host can't see).
+			_dev_spawn(m, {"what": "boss", "kind": k,
+				"level": _boss_level(m),
+				"pos": m.game.player.global_position + Vector2(320, 0)})
 			m.close(), Color(1, 0.6, 0.6))
 	m._btn(row5, "Kill bosses", func() -> void:
 		# Removal, not a real kill: reset first so the death doesn't fire a
@@ -755,6 +748,18 @@ static func _boss_level(m: Menus) -> int:
 		2: return m.game.player.level + 10
 		3: return m.game.player.level + 20
 	return -1
+
+
+## Dev spawn dispatch. Solo/host spawns locally; a co-op GUEST routes the
+## request to the host (enemies are host-authoritative — a guest spawning
+## locally would be a rogue node the host never sees, which is exactly the
+## "my friend can't see the boss" bug). Either way the host's Enemy._ready
+## choke point (host_register_enemy) announces the result to the whole session.
+static func _dev_spawn(m: Menus, spec: Dictionary) -> void:
+	if m.game.net_online():
+		m.game.net_session().dev_spawn_request(spec)
+	else:
+		m.game.dev_spawn(spec)
 
 
 ## Dev: equip a fresh full set of `grade` gear in every slot — the weapon

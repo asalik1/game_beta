@@ -1,0 +1,3 @@
+Rejected built-in generation for b_skirmishers_boots_B.
+
+Reason: produced a joined trouser-and-greave lower-body garment rather than two separate empty ankle boots. Preserved as generated/rejected_b_skirmishers_boots_B_pants.png.

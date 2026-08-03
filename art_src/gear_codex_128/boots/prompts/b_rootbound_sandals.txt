@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots-slot icon source
+Primary request: one neutral matched pair of empty Mage Rootbound Sandals, living-root battle sandals grown to grip the ground
+Scene/backdrop: perfectly flat solid #ff00ff chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty sandals total, centered orthographic catalogue pair, thick closed heel cups, broad visible empty footbeds, open toes with no feet, low ankle straps, slight outward angle, fully visible, 74% square
+Lighting/mood: clear upper-left key light, deep readable shadows, patient earthen stability
+Materials/textures: dark walnut footbeds, thick living brown root soles, moss-green ankle straps, small copper clasps, attached root tendrils wrapped tightly around the sole edges without extending into scenery
+Constraints: unmistakably empty wearable sandals; one matched pair only; all roots attached; no feet, toes, skin, legs, wearer, ground, loose plants, props, text, frame, watermark; no #ff00ff in object
+Avoid: shoes or boots hiding the sandal form, detached vines, dirt clods, scenery, duplicate pair, third sandal, floor, cast shadow, reflection, logos, runes, aura, smoke, blur

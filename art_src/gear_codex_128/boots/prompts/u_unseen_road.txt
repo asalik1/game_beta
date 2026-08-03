@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution Crownless dark-fantasy RPG boots icon source
+Primary request: one named S-grade matched pair of Unseen Road, independent empty shadow-wrap boots whose layered soles conceal an impossible route
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, ground, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact readable silhouette, materially detailed at 128px, tasteful pixel-art influence
+Composition/framing: exactly two matching empty mid-ankle boots total, centered orthographic pair, hollow backward-swept cuffs, enclosed long tapered toes, fully visible, 77% square
+Lighting/mood: clear upper-left key light, deep readable shadows, elusive otherworldly purpose
+Materials/textures: deep indigo-black voidcloth wrapped beneath narrow obsidian ribs, layered soles shaped as three attached offset dark plates, dim silver edge lines, one contained violet horizon slit set across each heel
+Constraints: independent offset-sole silhouette; all road-like layers physically belong to boots; no literal road, scenery, feet, legs, wearer, props, text, frame, watermark; no #00ff00
+Avoid: detached path, landscape, smoke cloud, floor, duplicate pair, third boot, shadow, reflection, readable symbols, large aura, blur
