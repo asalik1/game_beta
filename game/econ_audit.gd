@@ -84,8 +84,13 @@ func _audit_chapter(chid: String) -> void:
 	var mob_gold := 0.0
 	var xp := 0
 	var rooms := {"combat": 0, "boss": 0, "social": 0, "dead_end": 0, "resonance": 0, "other": 0}
-	var pack_rooms := 0        # combat rooms with authored packs (elite/curse hosts)
+	var pack_rooms := 0        # rooms with authored packs, no boss (ELITE ambush hosts)
+	var curse_rooms := 0       # of those, the ones whose TYPE is combat (CURSED-chest hosts)
+	var dens_kills := 0        # authored spawns in DENSIFIABLE (non-boss) rooms
+	var dens_gold := 0.0       # their gold
+	var dens_xp := 0           # their xp
 	var caches := 0.0          # cache chests, in gold-equivalent
+	var hidden_eligible := 0   # dead ends with NO authored cache (see below)
 	var cache_gems := 0.0      # gems from cache chests (chest gem chance)
 	var pack_avg_gold := 0.0
 	var bosses: Array = []
@@ -97,7 +102,10 @@ func _audit_chapter(chid: String) -> void:
 		var packs: Array = zd.get("enemies", [])
 		if not packs.is_empty() and String(zd.get("boss", "")) == "":
 			pack_rooms += 1
+			if rt == "combat":
+				curse_rooms += 1
 		var room_gold := 0.0
+		var densifies := String(zd.get("boss", "")) == ""
 		for spawn in packs:
 			var kind := String(spawn[0])
 			var lvl := int(spawn[4]) if spawn.size() > 4 else int(Story.ALL_ENEMIES[kind]["level"])
@@ -105,7 +113,17 @@ func _audit_chapter(chid: String) -> void:
 			kills += 1
 			lvl_sum += lvl
 			room_gold += float(st["gold"])
-			xp += int(st["xp"])
+			if densifies:
+				dens_kills += 1
+				dens_gold += float(st["gold"])
+				dens_xp += int(spawn[5]) if spawn.size() > 5 else int(st["xp"])
+			# The spawn tuple's optional 6th param is an AUTHORED XP override
+			# (game_world._spawn_room_enemies sets e.xp_value from it) — the
+			# tool the mob-distribution round uses to pin cross-chapter ranged
+			# imports back onto the chapter's budget. Reading the kind's curve
+			# value here reported XP the game never pays, which mattered most
+			# for exactly the chapters that redistribute with it.
+			xp += int(spawn[5]) if spawn.size() > 5 else int(st["xp"])
 		mob_gold += room_gold
 		if not packs.is_empty():
 			pack_avg_gold += room_gold / packs.size()
@@ -113,6 +131,8 @@ func _audit_chapter(chid: String) -> void:
 		if cache_tier != "":
 			caches += _chest_value(cache_tier, chid)
 			cache_gems += _chest_gem_chance(cache_tier)
+		elif rt == "dead_end":
+			hidden_eligible += 1
 		var bkind := String(zd.get("boss", ""))
 		if bkind != "" and not bosses.has(bkind):
 			bosses.append(bkind)
@@ -120,18 +140,31 @@ func _audit_chapter(chid: String) -> void:
 		pack_avg_gold /= pack_rooms
 
 	# Hidden caches (exploration premium): buried chests in some dead ends.
-	caches += rooms["dead_end"] * Balance.HIDDEN_CACHE_CHANCE \
+	# ONLY dead ends without an AUTHORED cache are eligible — game_world
+	# ._spawn_hidden_cache returns early on `cache != ""`, so a dead end that
+	# already carries an authored chest can never bury a second one. Counting
+	# every dead end here credited gold the game does not pay, and it did so
+	# for exactly the chapters whose dead ends are all authored (ch2-ch7 carry
+	# two caches on two dead ends, so their true hidden-cache EV is zero).
+	caches += hidden_eligible * Balance.HIDDEN_CACHE_CHANCE \
 		* (Balance.HIDDEN_CACHE_GOLD_TIER * _chest_value("gold", chid)
 		+ (1.0 - Balance.HIDDEN_CACHE_GOLD_TIER) * _chest_value("silver", chid))
-	cache_gems += rooms["dead_end"] * Balance.HIDDEN_CACHE_CHANCE \
+	cache_gems += hidden_eligible * Balance.HIDDEN_CACHE_CHANCE \
 		* (Balance.HIDDEN_CACHE_GOLD_TIER * _chest_gem_chance("gold")
 		+ (1.0 - Balance.HIDDEN_CACHE_GOLD_TIER) * _chest_gem_chance("silver"))
 
-	# Mob chest EV: every kill rolls wood 18% / silver 4%.
-	var mob_chests := kills * (Balance.MOB_WOOD_CHEST_CHANCE * _chest_value("wood", chid)
-		+ Balance.MOB_SILVER_CHEST_CHANCE * _chest_value("silver", chid))
-	var mob_chest_gems := kills * (Balance.MOB_WOOD_CHEST_CHANCE * _chest_gem_chance("wood")
-		+ Balance.MOB_SILVER_CHEST_CHANCE * _chest_gem_chance("silver"))
+	# Mob chest EV. ONE roll with CUMULATIVE thresholds, not two independent
+	# rolls (game_flow.on_enemy_died / mob_kill_share): `roll < SILVER` drops
+	# silver, `elif roll < WOOD` drops wood — so P(silver) = 0.04 and
+	# P(wood) = WOOD - SILVER = 0.14, for 0.18 of kills dropping anything.
+	# Reading MOB_WOOD_CHEST_CHANCE as the wood probability double-counted
+	# the silver band and inflated every chapter's second-largest faucet.
+	var p_silver: float = Balance.MOB_SILVER_CHEST_CHANCE
+	var p_wood: float = maxf(Balance.MOB_WOOD_CHEST_CHANCE - Balance.MOB_SILVER_CHEST_CHANCE, 0.0)
+	var mob_chests := kills * (p_wood * _chest_value("wood", chid)
+		+ p_silver * _chest_value("silver", chid))
+	var mob_chest_gems := kills * (p_wood * _chest_gem_chance("wood")
+		+ p_silver * _chest_gem_chance("silver"))
 
 	# Elite EV (seeded): social rooms 30% + pack rooms 18%.
 	var elites: float = rooms["social"] * Balance.ELITE_SOCIAL_ROOM_CHANCE \
@@ -165,8 +198,14 @@ func _audit_chapter(chid: String) -> void:
 
 	# Risk events EV (seeded; assumes the player engages when offered). A cursed
 	# room's payout is a gold chest (gem chance 1.0) PLUS a guaranteed payout gem.
-	var curse_gold: float = pack_rooms * Balance.CURSED_ROOM_CHANCE * _chest_value("gold", chid)
-	var curse_gems: float = pack_rooms * Balance.CURSED_ROOM_CHANCE * (1.0 + _chest_gem_chance("gold"))
+	# The cursed chest is offered only in rooms whose TYPE is combat
+	# (game_world._offer_cursed_chest bails on any other type), so a dead end
+	# that happens to carry a pack is NOT a host — pack_rooms counts those and
+	# overstated the faucet for every chapter with mobs in a dead end.
+	# Elites are different and stay on pack_rooms: their ambush roll checks
+	# only "this room spawned something and has no boss", not the type.
+	var curse_gold: float = curse_rooms * Balance.CURSED_ROOM_CHANCE * _chest_value("gold", chid)
+	var curse_gems: float = curse_rooms * Balance.CURSED_ROOM_CHANCE * (1.0 + _chest_gem_chance("gold"))
 	var quiet: int = rooms["social"] + rooms["dead_end"]
 	# Shrine EV vs its cost: 60% bless (40% gem≈0g here, 30% 3x back, 20% silver chest, 10% elixir≈35g), 40% bane.
 	var shrine_n: float = quiet * Balance.SHRINE_ROOM_CHANCE
@@ -198,6 +237,21 @@ func _audit_chapter(chid: String) -> void:
 		[kills, xp, bosses.size(), boss_lv_sum / maxi(1, bosses.size())])
 	print("  gold/run est: mobs %4.0f | mob-chests %4.0f | caches %3.0f | elites(%0.1f) %4.0f | bosses %4.0f | risk %3.0f | 1st-clear %3.0f" %
 		[mob_gold, mob_chests, caches, elites, elite_gold, boss_gold, curse_gold + shrine_gold, fc_gold])
+	# PACK DENSITY, reported but deliberately NOT folded into the totals.
+	# game_world._spawn_room_enemies gives every authored spawn in a NON-BOSS
+	# room a MOB_DENSITY_EXTRA chance to bring a jittered twin, and that twin
+	# is a full enemy paying full gold and XP. So a real run kills ~15% more
+	# than the authored list. It stays out of the headline because "authored
+	# pack XP" is the design contract every chapter module writes its budget
+	# against (see the XP BUDGET headers in content/chN_zones.gd) — folding
+	# density in would silently redefine those budgets. Read this line when
+	# asking what a PLAYER experiences; read the totals when asking whether a
+	# chapter is authored to spec.
+	var d_kills := dens_kills * Balance.MOB_DENSITY_EXTRA
+	print("  +density:   %+.0f kills  %+.0f g mobs  %+.0f g mob-chests  %+.0f XP   (seeded twins, NOT in the totals)" %
+		[d_kills, dens_gold * Balance.MOB_DENSITY_EXTRA,
+		d_kills * (p_wood * _chest_value("wood", chid) + p_silver * _chest_value("silver", chid)),
+		float(dens_xp) * Balance.MOB_DENSITY_EXTRA])
 	print("  FIRST RUN:  %4.0f gold  %4.1f gems  (+%d XP)   -> %4.1f g/min  %4.2f gems/min  @%d min" %
 		[first_gold, first_gems_total, xp, first_gold / FIRST_RUN_MIN, first_gems_total / FIRST_RUN_MIN, int(FIRST_RUN_MIN)])
 	print("  REPLAY:     %4.0f gold  %4.1f gems  (no XP)    -> %4.1f g/min  %4.2f gems/min  @%d min" %

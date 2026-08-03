@@ -10,6 +10,13 @@
 const CHAPTER_ZONES := {
 	"ch2": [{
 		"name": "Maren's Camp", "terrain": "village", "ground": "grass", "path": "dirt",
+		# Graph retrofit: ch2 is a SPINE chapter now, so the road east is
+		# locked by `lock_next` (the legacy `gate_flag` reader only ran on
+		# the old west→east strip), and authored coords are full-cell —
+		# the camp's cast is spread across the whole 2112x1248 room instead
+		# of the old 34x15 zone the engine used to rescale from.
+		"type": "safe",
+		"lock_next": "flag:ch2_briefed",
 		# A refugee crossroads, NOT a village (lore) — so no cottages. A
 		# curated camp kit stands in as authored landmarks: the bonfire
 		# (crackles as you pass), a cooking tripod and a meat rack; a
@@ -17,23 +24,22 @@ const CHAPTER_ZONES := {
 		"buildings": ["camp_bonfire", "camp_tripod", "camp_meatrack"],
 		"obstacles": ["fence", "fence", "tree_autumn", "rock"], "obstacle_count": 6,
 		"decor": ["log2", "grass", "pebble", "tree_stump"],
-		"merchant": [820, 300],
+		"merchant": [1056, 620],
 		"enemies": [], "boss": "",
-		"gate_flag": "ch2_briefed",  # the road east opens after the briefing
 		"npcs": [
-			{"sprite": "elder", "x": 520, "y": 330, "prompt": "E — Maren", "convo": "ch2_maren_hub"},
-			{"sprite": "piet", "x": 1150, "y": 380, "prompt": "E — Talk", "convo": "ch2_sentry"},
-			{"sprite": "sera", "x": 340, "y": 500, "prompt": "E — Talk", "convo": "ch2_refugee"},
+			{"sprite": "elder", "x": 780, "y": 560, "prompt": "E — Maren", "convo": "ch2_maren_hub"},
+			{"sprite": "piet", "x": 1760, "y": 620, "prompt": "E — Talk", "convo": "ch2_sentry"},
+			{"sprite": "sera", "x": 470, "y": 700, "prompt": "E — Talk", "convo": "ch2_refugee"},
 			# Faction presences (convos live in ch2_factions.gd — T5):
-			{"sprite": "callis", "x": 660, "y": 200, "prompt": "E — Accord", "convo": "ch2_accord_recruit"},
-			{"sprite": "vessa", "x": 950, "y": 500, "prompt": "E — Cinderborn", "convo": "ch2_cinder_recruit"},
+			{"sprite": "callis", "x": 1320, "y": 340, "prompt": "E — Accord", "convo": "ch2_accord_recruit"},
+			{"sprite": "vessa", "x": 1400, "y": 860, "prompt": "E — Cinderborn", "convo": "ch2_cinder_recruit"},
 			# Playtest casting fixes: the scout renders IN its cage (bars
 			# composited over the sprite), and the pilgrim wears the
 			# Choir's grey habit — the same one the Choir Mother wears.
-			{"sprite": "caged_beastkin", "x": 1290, "y": 560, "prompt": "E — The Cage", "convo": "ch2_beastkin_cage"},
-			{"sprite": "choir_pilgrim", "x": 140, "y": 250, "prompt": "E — Pilgrim", "convo": "ch2_choir_pilgrim"},
+			{"sprite": "caged_beastkin", "x": 1050, "y": 980, "prompt": "E — The Cage", "convo": "ch2_beastkin_cage"},
+			{"sprite": "choir_pilgrim", "x": 430, "y": 470, "prompt": "E — Pilgrim", "convo": "ch2_choir_pilgrim"},
 			# The man who killed Vargoth, by his own small fire (T6):
-			{"sprite": "aldric", "x": 700, "y": 600, "prompt": "E — Ser Aldric", "convo": "ch2_aldric"},
+			{"sprite": "aldric", "x": 620, "y": 940, "prompt": "E — Ser Aldric", "convo": "ch2_aldric"},
 			# TODO(review): Pixel Crawler asset-extraction pass (2026-07-08).
 			# 10 HUMAN sprites wired as PLACEHOLDER NPCs along the camp's back
 			# edge so they can be reviewed in-game (this safe hub is zone 0 of
@@ -42,27 +48,27 @@ const CHAPTER_ZONES := {
 			# humans are reserved for NPCs (mobs use monster/half-monster art),
 			# but some read as bandit/royal/scholar and could instead become
 			# enemy variants — owner's call in the review pass.
-			{"sprite": "npc_hunter",         "x": 200,  "y": 150, "prompt": "E — [ph] Hunter",   "convo": "pc_ph_hunter",     "placeholder": true},
-			{"sprite": "npc_wanderer",       "x": 340,  "y": 150, "prompt": "E — [ph] Wanderer", "convo": "pc_ph_wanderer",   "placeholder": true},
-			{"sprite": "npc_villager_f",     "x": 480,  "y": 150, "prompt": "E — [ph] Villager", "convo": "pc_ph_villager_f", "placeholder": true},
-			{"sprite": "npc_villager_m",     "x": 620,  "y": 150, "prompt": "E — [ph] Villager", "convo": "pc_ph_villager_m", "placeholder": true},
-			{"sprite": "npc_elder2",         "x": 760,  "y": 150, "prompt": "E — [ph] Elder",    "convo": "pc_ph_elder2",     "placeholder": true},
-			{"sprite": "npc_bandit_tracker", "x": 900,  "y": 150, "prompt": "E — [ph] Tracker",  "convo": "pc_ph_tracker",    "placeholder": true},
-			{"sprite": "npc_royal_archer",   "x": 1040, "y": 150, "prompt": "E — [ph] Archer",   "convo": "pc_ph_archer",     "placeholder": true},
-			{"sprite": "npc_scholar_a",      "x": 1180, "y": 150, "prompt": "E — [ph] Scholar",  "convo": "pc_ph_scholar_a",  "placeholder": true},
-			{"sprite": "npc_scholar_b",      "x": 1320, "y": 150, "prompt": "E — [ph] Scholar",  "convo": "pc_ph_scholar_b",  "placeholder": true},
+			{"sprite": "npc_hunter",         "x": 240, "y": 160, "prompt": "E — [ph] Hunter",   "convo": "pc_ph_hunter",     "placeholder": true},
+			{"sprite": "npc_wanderer",       "x": 420, "y": 160, "prompt": "E — [ph] Wanderer", "convo": "pc_ph_wanderer",   "placeholder": true},
+			{"sprite": "npc_villager_f",     "x": 600, "y": 160, "prompt": "E — [ph] Villager", "convo": "pc_ph_villager_f", "placeholder": true},
+			{"sprite": "npc_villager_m",     "x": 780, "y": 160, "prompt": "E — [ph] Villager", "convo": "pc_ph_villager_m", "placeholder": true},
+			{"sprite": "npc_elder2",         "x": 960, "y": 160, "prompt": "E — [ph] Elder",    "convo": "pc_ph_elder2",     "placeholder": true},
+			{"sprite": "npc_bandit_tracker", "x": 1140, "y": 160, "prompt": "E — [ph] Tracker",  "convo": "pc_ph_tracker",    "placeholder": true},
+			{"sprite": "npc_royal_archer",   "x": 1320, "y": 160, "prompt": "E — [ph] Archer",   "convo": "pc_ph_archer",     "placeholder": true},
+			{"sprite": "npc_scholar_a",      "x": 1500, "y": 160, "prompt": "E — [ph] Scholar",  "convo": "pc_ph_scholar_a",  "placeholder": true},
+			{"sprite": "npc_scholar_b",      "x": 1680, "y": 160, "prompt": "E — [ph] Scholar",  "convo": "pc_ph_scholar_b",  "placeholder": true},
 			# Retired live elder body: retained as a dev-only comparison asset;
 			# never appears in a normal playthrough.
-			{"sprite": "npc_elder_legacy",   "x": 1460, "y": 150, "prompt": "E — [ph] Legacy Elder", "convo": "pc_ph_elder_legacy", "placeholder": true},
+			{"sprite": "npc_elder_legacy",   "x": 1860, "y": 160, "prompt": "E — [ph] Legacy Elder", "convo": "pc_ph_elder_legacy", "placeholder": true},
 			# Retired generic live-NPC bodies. These remain available only in the
 			# dev gallery after the authored roster replaced their story usage.
-			{"sprite": "villager",       "x": 200,  "y": 90, "prompt": "E — [ph] Legacy Villager", "convo": "pc_ph_legacy_villager", "placeholder": true},
-			{"sprite": "sentry",         "x": 340,  "y": 90, "prompt": "E — [ph] Legacy Sentry",   "convo": "pc_ph_legacy_sentry",   "placeholder": true},
-			{"sprite": "warden",         "x": 480,  "y": 90, "prompt": "E — [ph] Legacy Warden",   "convo": "pc_ph_legacy_warden",   "placeholder": true},
-			{"sprite": "envoy",          "x": 620,  "y": 90, "prompt": "E — [ph] Legacy Envoy",    "convo": "pc_ph_legacy_envoy",    "placeholder": true},
-			{"sprite": "beastkin",       "x": 760,  "y": 90, "prompt": "E — [ph] Legacy Beastkin", "convo": "pc_ph_legacy_beastkin", "placeholder": true},
-			{"sprite": "choirmother",    "x": 900,  "y": 90, "prompt": "E — [ph] Legacy Choir",    "convo": "pc_ph_legacy_choir",    "placeholder": true},
-			{"sprite": "mother_halla",   "x": 1040, "y": 90, "prompt": "E — [ph] Halla Concept",   "convo": "pc_ph_halla_concept",   "placeholder": true},
+			{"sprite": "villager",       "x": 240, "y": 290, "prompt": "E — [ph] Legacy Villager", "convo": "pc_ph_legacy_villager", "placeholder": true},
+			{"sprite": "sentry",         "x": 480, "y": 290, "prompt": "E — [ph] Legacy Sentry",   "convo": "pc_ph_legacy_sentry",   "placeholder": true},
+			{"sprite": "warden",         "x": 720, "y": 290, "prompt": "E — [ph] Legacy Warden",   "convo": "pc_ph_legacy_warden",   "placeholder": true},
+			{"sprite": "envoy",          "x": 960, "y": 290, "prompt": "E — [ph] Legacy Envoy",    "convo": "pc_ph_legacy_envoy",    "placeholder": true},
+			{"sprite": "beastkin",       "x": 1200, "y": 290, "prompt": "E — [ph] Legacy Beastkin", "convo": "pc_ph_legacy_beastkin", "placeholder": true},
+			{"sprite": "choirmother",    "x": 1440, "y": 290, "prompt": "E — [ph] Legacy Choir",    "convo": "pc_ph_legacy_choir",    "placeholder": true},
+			{"sprite": "mother_halla",   "x": 1680, "y": 290, "prompt": "E — [ph] Halla Concept",   "convo": "pc_ph_halla_concept",   "placeholder": true},
 		],
 	}],
 }

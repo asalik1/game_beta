@@ -774,7 +774,16 @@ const CHAPTER_ECON := {
 	# Re-measured 2026-07-24 (econ_audit.gd, post-loot-band tables): the
 	# prior 07-06 table drifted only 1-3% — farm-cost pricing was sound.
 	"ch1": {"act": 1, "first": 1558, "replay": 1241, "gems": 0.0},
-	"ch2": {"act": 1, "first": 1595, "replay": 1169, "gems": 0.0},
+	# ch2 re-measured 2026-07-26 after the graph retrofit (10 -> 20 rooms,
+	# CH2_RETROFIT_TASKS): the chapter's shop/gamble farm-cost pricing reads
+	# these, so the row has to move with the graph. Measured with econ_audit's
+	# THREE 2026-07-26 corrections (authored XP overrides were ignored; hidden
+	# caches credited to dead ends that already hold an authored one; mob-chest
+	# odds read as two independent rolls when the game runs ONE roll with
+	# cumulative thresholds). The other six rows predate all three and now read
+	# ~2-3% high; corrected values are tabled on the retrofit board for a
+	# deliberate table-wide pass, since that reprices every chapter's shop.
+	"ch2": {"act": 1, "first": 1953, "replay": 1526, "gems": 0.0},
 	"ch3": {"act": 1, "first": 2797, "replay": 2262, "gems": 0.0},
 	"ch4": {"act": 1, "first": 3393, "replay": 2746, "gems": 19.4},
 	"ch5": {"act": 1, "first": 4105, "replay": 3367, "gems": 19.4},

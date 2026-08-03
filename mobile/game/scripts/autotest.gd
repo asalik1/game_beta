@@ -2380,8 +2380,8 @@ func _run_campaign_ch2() -> void:
 		await _skip_dialogue()
 		print("ok: %s opening (virtue path)" % spec[0])
 
-	# 14. Chapter 2 boots into its hub — as a legacy chapter it converts
-	# to a west→east chain of rooms.
+	# 14. Chapter 2 boots into its hub — a spine chapter since the graph
+	# retrofit, so its rooms lay out on the seeded procedural walk.
 	game.queue_free()
 	await _frames(3)
 	game = main_scene.instantiate()
@@ -2402,9 +2402,20 @@ func _run_campaign_ch2() -> void:
 		await _skip_dialogue()
 	if game.zones[0]["name"] != "Maren's Camp":
 		return _fail("chapter 2 hub zone missing")
-	# Legacy conversion: a one-row chain with east/west doors.
-	if Vector2i(game.rooms[0]["coord"]) != Vector2i(0, 0) or game.neighbor(0, "E") != 1:
-		return _fail("legacy chapter did not convert to a chain")
+	# Spine conversion (CH2_RETROFIT_TASKS): ch2 was the last LEGACY STRIP
+	# — a fixed one-row chain, which is why it could carry no side rooms.
+	# It now lays out procedurally like ch1/ch3+: the walk starts room 0 at
+	# the origin and room 1 is its seeded neighbour in SOME direction (the
+	# walk jogs N/S), so "east of the camp" is no longer the contract.
+	if Vector2i(game.rooms[0]["coord"]) != Vector2i(0, 0):
+		return _fail("spine layout did not start the camp at the origin")
+	var camp_exits: Dictionary = game.rooms[0]["exits"]
+	var camp_leads_to_first := false
+	for d in camp_exits.keys():
+		if game.neighbor(0, String(d)) == 1:
+			camp_leads_to_first = true
+	if not camp_leads_to_first:
+		return _fail("spine layout did not place room 1 adjacent to the camp")
 	var hub_hostiles := 0
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
@@ -2416,7 +2427,7 @@ func _run_campaign_ch2() -> void:
 	# the provisioning stop; hub merchants only wander in post-clear.
 	if game.merchant_zones.has(0):
 		return _fail("chapter 2 hub still opens with a merchant")
-	print("ok: chapter 2 hub boots as a legacy chain (%d room[s])" % game.zone_count)
+	print("ok: chapter 2 hub boots on the spine layout (%d room[s])" % game.zone_count)
 
 	# ---- CONTENT-MODULE TEST HOOK ----------------------------------------
 	# T1/T2/T3/T5/T6: append your _test_*() func at the END of this file
@@ -2427,6 +2438,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch2_act1()
 	await _test_ch2_act2()
 	await _test_ch2_resonance()
+	await _test_ch2_side_rooms()
 	await _test_ch3_bosses()
 	await _test_ch4_bosses()
 	await _test_ch5_bosses()
@@ -7854,3 +7866,136 @@ func _test_pvp_arena() -> void:
 	if game.menus.is_open():
 		return _fail("pvp arena: lobby did not close clean")
 	print("ok: pvp arena (module shape + chapter routing + duel lobby stage)")
+## (CR) Chapter 2 SIDE ROOMS — the graph retrofit's ten new rooms
+## (CH2_RETROFIT_TASKS, content/ch2_zones_side.gd). The ch2 campaign
+## sections walk the SPINE (indices 0-9) and never set foot in a side
+## room, so without this the whole module — ten rooms, two resonance
+## shrines, two lore props and the five-strong wanderer pool ch2 never
+## had — would ship with zero coverage. Runs in the ch2 world the
+## previous ch2 sections leave standing.
+func _test_ch2_side_rooms() -> void:
+	# Shared state: snapshot, restore at the end (never clear). INVENTORY is
+	# in the list for a reason — this section walks into a dead end holding
+	# an authored cache, and a Chest opens on `body_entered`, not on a
+	# keypress. `_goto_room` lands the player at room centre, ~140px from
+	# where `_build_room` drops the cache, so simply LOOKING at the room
+	# banks its gear (and its gold). Left unrestored that pushed the bag
+	# over capacity, and the first thing downstream to notice was the
+	# capital's lapidary handing her keepsake to the MAILBOX instead of the
+	# pack — two sections and a whole chapter away from the cause.
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var snap_res: float = game.player.resonance
+	var snap_pack: Array = game.player.backpack.duplicate(true)
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)
+	var snap_gold: int = game.player.gold
+	var snap_secrets: int = game.run_secrets
+
+	# ---- structural: every authored reference in the new rooms resolves,
+	# and the room MIX is the one the economy was re-measured against.
+	var want := {"combat": 3, "dead_end": 2, "social": 2, "resonance": 2, "merchant": 1}
+	var seen := {}
+	for zi in range(10, game.zone_count):
+		var zone: Dictionary = game.zones[zi]
+		if zone.has("waking"):
+			continue  # a weekly Waking breach room, not one of ours
+		var rt: String = game.room_type(zi)
+		seen[rt] = int(seen.get(rt, 0)) + 1
+		for spawn in zone.get("enemies", []):
+			if not Story.ALL_ENEMIES.has(String(spawn[0])):
+				return _fail("ch2 side room %d: unknown enemy kind '%s'" % [zi, spawn[0]])
+		for npc in zone.get("npcs", []):
+			if not Story.ALL_CONVOS.has(String(npc["convo"])):
+				return _fail("ch2 side room %d: unknown convo '%s'" % [zi, npc["convo"]])
+	for rt in want:
+		if int(seen.get(rt, 0)) != int(want[rt]):
+			return _fail("ch2 side rooms: %s count %d, want %d"
+				% [rt, int(seen.get(rt, 0)), int(want[rt])])
+
+	# ---- the wanderer pool the new social rooms draw from. ch2 had none,
+	# so `wanderers_for` was silently falling back to ch1's pool.
+	var pool: Array = Story.wanderers_for("ch2")
+	if pool.size() != 5:
+		return _fail("ch2 wanderer pool size %d, want 5" % pool.size())
+	for w in pool:
+		if not Story.ALL_CONVOS.has(String(w["convo"])):
+			return _fail("ch2 wanderer convo '%s' missing" % w["convo"])
+
+	# ---- a resonance shrine end to end: the choice pays its authored
+	# resonance, sets its one-time flag, and short-circuits on revisit.
+	var font := -1
+	var cache_room := -1
+	var shop_room := -1
+	for zi in game.zone_count:
+		match String(game.zones[zi].get("name", "")):
+			"The Unbroken Font": font = zi
+			"The Salt Reliquary": cache_room = zi
+			"The Cold Waystation": shop_room = zi
+	if font < 0 or cache_room < 0 or shop_room < 0:
+		return _fail("ch2 side rooms: named room missing (font=%d cache=%d shop=%d)"
+			% [font, cache_room, shop_room])
+	_buff()
+	await _goto_room(font)
+	var font_action := _find_action("E — The Font")
+	if not font_action.is_valid():
+		return _fail("the Unbroken Font prop is missing from its room")
+	game.player.resonance = 0.0
+	font_action.call()
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if not game.hud.choices_active:
+		return _fail("the Font offered no choices")
+	game.hud._choose(0)  # drink and leave the cup: the +8 path
+	await _frames(2)
+	await _skip_dialogue()
+	if not game.get_flag("font_answered", false):
+		return _fail("the Font did not set its one-time flag")
+	if absf(game.player.resonance - 8.0) > 0.001:
+		return _fail("the Font paid %.1f resonance, want 8" % game.player.resonance)
+	font_action.call()
+	await _frames(2)
+	await _skip_dialogue()
+	await _frames(2)
+	if game.hud.choices_active:
+		return _fail("the Font re-offered its choices after being answered")
+
+	# ---- an authored dead-end cache actually drops its chest.
+	await _goto_room(cache_room)
+	var chests := 0
+	for node in game.get_children():
+		# Room-scoped on purpose: earlier sections leave chests standing
+		# elsewhere in the world, and a bare "any chest exists" check would
+		# pass on one of those without the cache ever having fired.
+		if node is Chest and game.room_at_pos((node as Chest).global_position) == cache_room:
+			chests += 1
+	# Either reading proves the cache fired: the chest node is still there,
+	# or the player already tripped it on the way in and it counted itself
+	# as a secret. Asserting only the node would race its open-and-free.
+	if chests == 0 and game.run_secrets == snap_secrets:
+		return _fail("the Salt Reliquary's authored cache dropped no chest")
+
+	# ---- the merchant room is ch2's only mid-run shop (the per-zone
+	# `merchant` offers on the spine could never fire — no bossless,
+	# packless room among them).
+	await _goto_room(shop_room)
+	if not game.merchant_zones.has(shop_room):
+		return _fail("the Cold Waystation did not register a merchant")
+
+	# Restore: back to the hub with the world as the next section expects.
+	# Any chest this section walked past must not linger either — a later
+	# movement test wandering into one would skew its exact loot counts
+	# (the same guard the elite section keeps).
+	for node in game.get_children():
+		if node is Chest:
+			node.queue_free()
+	await _frames(1)
+	game.flags = snap_flags
+	game.player.resonance = snap_res
+	game.player.backpack = snap_pack
+	game.player.gem_bag = snap_gems
+	game.player.gold = snap_gold
+	game.run_secrets = snap_secrets
+	game.player.recalc()
+	await _goto_room(0)
+	await _frames(5)
+	print("ok: ch2 side rooms (10 rooms / mix 3-2-2-2-1, refs resolve, wanderer pool, Font shrine, cache chest, waystation shop)")

@@ -11,60 +11,75 @@
 ## Stormwarden ends the beastkin push (zone 2), the Choir Mother ends
 ## the act (zone 4).
 
+## GRAPH RETROFIT (CH2_RETROFIT_TASKS): ch2 became a SPINE chapter, so
+## these four rooms are spine indices 1-4 and carry three changes —
+## explicit `type`, `lock_next` in place of the legacy `gate_flag` (the
+## spine layout never reads gate_flag), and full-cell coordinates laid
+## out in the ch3 pack idiom (pack 0 north-west, 1 south-east, 2
+## north-east, 3 centre) instead of the old 34x15 zone the engine used
+## to rescale from. Per-room merchant offers were dropped: they only ever
+## fired in bossless, packless rooms, so none of them could spawn — the
+## chapter's shop is the new Cold Waystation (ch2_zones_side.gd).
 const CHAPTER_ZONES := {
 	"ch2": [
 		{
 			"name": "The Greyrun Mills", "terrain": "bog", "ground": "bogsoil", "path": "dirt",
-			"merchant": [660, 560],
+			"type": "combat",
 			"enemies": [
-				["blightwolf", 300, 180], ["blightwolf", 420, 540], ["blightwolf", 560, 320],
-				["bogspider", 520, 600], ["bogspider", 700, 160], ["bogspider", 830, 470],
-				["beastkin_raider", 900, 300], ["blightwolf", 980, 550],
+				["blightwolf", 460, 300, 0], ["blightwolf", 600, 240, 0], ["blightwolf", 540, 430, 0],
+				["bogspider", 1380, 880, 1], ["bogspider", 1500, 800, 1], ["bogspider", 1440, 970, 1],
+				["beastkin_raider", 1740, 420, 2], ["blightwolf", 1860, 520, 2],
 			],
 			"boss": "",
 			"clear_flag": "blight_scouted",
-			"gate_flag": "blight_scouted",  # clearing opens the road on
+			"lock_next": "flag:blight_scouted",  # clearing opens the road on
 			"npcs": [
 				# Playtest casting fix: the mill is a BUILDING (blue-doored
 				# sprite), not a villager standing in a bog.
-				{"sprite": "mill", "x": 1240, "y": 200, "prompt": "E — The Mill", "convo": "ch2_mill"},
-				{"sprite": "bones", "x": 1150, "y": 560, "prompt": "E — A Fallen Courier", "convo": "ch2_courier"},
+				{"sprite": "mill", "x": 1040, "y": 230, "prompt": "E — The Mill", "convo": "ch2_mill"},
+				{"sprite": "bones", "x": 800, "y": 990, "prompt": "E — A Fallen Courier", "convo": "ch2_courier"},
 			],
 		},
 		{
 			"name": "The Howling Fields", "terrain": "storm", "ground": "stormgrass", "path": "dirt",
-			"merchant": [540, 170],
+			"type": "boss",
+			# THE beastkin skirmish line (room-banding constraint): keep the
+			# ranged-heavy wildkin_ranger + beastkin_howler identity.
 			"enemies": [
-				["beastkin_raider", 320, 200], ["wildkin_ranger", 450, 520], ["beastkin_raider", 600, 340],
-				["beastkin_howler", 700, 150], ["beastkin_howler", 860, 480],
-				["blightwolf", 540, 610], ["beastkin_howler", 780, 300], ["wildkin_ranger", 950, 560],
+				["beastkin_raider", 460, 320, 0], ["beastkin_raider", 600, 250, 0], ["blightwolf", 530, 440, 0],
+				["beastkin_howler", 1380, 860, 1], ["beastkin_howler", 1500, 790, 1], ["wildkin_ranger", 1440, 960, 1],
+				["beastkin_howler", 1760, 400, 2], ["wildkin_ranger", 1870, 500, 2],
 			],
 			"boss": "stormwarden",
 			"boss_level": 8,
+			"lock_next": "boss",
 		},
 		{
 			"name": "The Sporewood", "terrain": "spore", "ground": "sporesoil", "path": "dirt",
-			"merchant": [700, 540],
+			"type": "combat",
 			"enemies": [
-				["sporeshambler", 300, 250], ["sporeshambler", 460, 520], ["sporeshambler", 640, 180],
-				["bogspider", 560, 600], ["bogspider", 760, 350],
-				["stormcult", 820, 550], ["stormcult", 920, 200], ["sporeshambler", 990, 420],
+				["sporeshambler", 460, 300, 0], ["sporeshambler", 600, 240, 0], ["sporeshambler", 530, 440, 0],
+				["bogspider", 1380, 870, 1], ["bogspider", 1500, 800, 1],
+				["stormcult", 1750, 410, 2], ["stormcult", 1870, 520, 2],
+				["sporeshambler", 1020, 640, 3],
 			],
 			"boss": "",
 			"clear_flag": "sporewood_cleared",
-			"gate_flag": "sporewood_cleared",
+			"lock_next": "flag:sporewood_cleared",
 		},
 		{
 			"name": "Choir's Hollow", "terrain": "graveyard", "ground": "gravedirt", "path": "gravedirt",
-			"merchant": [820, 300],
+			"type": "boss",
 			"enemies": [
-				["zombie", 300, 220], ["zombie", 430, 540], ["zombie", 580, 330],
-				["stormcult", 660, 600], ["stormcult", 780, 170],
-				["sporeshambler", 850, 460], ["zombie", 940, 250], ["stormcult", 1000, 560],
+				["zombie", 460, 300, 0], ["zombie", 590, 240, 0], ["zombie", 520, 430, 0],
+				["stormcult", 1380, 870, 1], ["stormcult", 1500, 790, 1],
+				["sporeshambler", 1750, 420, 2], ["zombie", 1870, 520, 2],
+				["stormcult", 1030, 650, 3],
 			],
 			"boss": "choirmother",
 			"boss_level": 10,
 			"clear_flag": "act1_complete",
+			"lock_next": "boss",
 		},
 	],
 }
