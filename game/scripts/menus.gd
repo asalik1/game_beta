@@ -1,14 +1,7 @@
 class_name Menus extends CanvasLayer
-## All full-screen menus: class select, inventory, skill tree, merchant
-## shop, evolution choice, and keybinding. One menu open at a time;
-## opening a menu pauses the game.
-##
-## Menus are per-client UI (MULTIPLAYER.md §5.6): every player read in here
-## is `game.local_player` — the character on THIS screen. Solo they are the
-## same object; in co-op your inventory is never a teammate's.
+## Per-client full-screen menus. All player reads use `game.local_player`.
 
-# The lobby module (MP-08) is loaded by PATH, not class_name: adding a
-# class_name would demand a --import pass, and the lobby ships mid-wave.
+# Lobby remains path-loaded so it does not require class-name registration.
 const UILobby := preload("res://scripts/ui/lobby.gd")
 # The transport autoload's SCRIPT, for NET_VERSION only (the bare
 # `NetworkManager` global doesn't exist under check_compile — MP-05).
@@ -64,8 +57,7 @@ func close() -> void:
 			and not (current == "lobby" and not game.play_started):
 		game.request_pause(false)
 	current = ""
-	# Restore the HUD once the menu is gone — but only in actual play (boot
-	# menus run over the cover, where the HUD should stay hidden).
+	# Boot menus keep the HUD hidden.
 	if game and game.hud:
 		game.hud.visible = game.play_started
 	game.talk_cd = maxf(game.talk_cd, 0.35)  # debounce the reopen hotkeys
@@ -75,25 +67,16 @@ func close() -> void:
 
 # ------------------------------------------------------------ scaffolding ---
 
-## `closable` screens (inventory, pause, codex, quest log, mailbox) get a red
-## ✕ in the panel's top-right AND close when you click the dimmed area outside
-## the box — so ESC is no longer their only exit (and is retired for them).
+## Open the shared modal shell. Closable screens expose ✕ and click-outside.
 func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxContainer:
 	if root:
 		root.queue_free()
 	game.request_pause(true)
 	_closable_now = closable  # so _hint tells the truth about the exits on touch
-	# Drop any held touch input NOW: the touch HUD disables itself on its next
-	# _process (it reads is_open()), and this closes that one-frame window — a
-	# missed finger-release would leave the joystick "stuck held" and deaf to new
-	# touches after the menu closes. Solo also freezes the HUD mid-gesture via the
-	# pause; a session never pauses (§5.4), so the HUD's overlay gate is the one
-	# thing stopping it there.
+	# Release held touch input before the menu's overlay gate takes over.
 	if game._touch_hud != null:
 		game._touch_hud._release_everything()
-	# Hide the gameplay HUD while a menu is up: it sits on a lower CanvasLayer,
-	# so the dim only fades it — the quest banner and quickbar still bleed
-	# through behind the panel and crowd the title and both shop columns.
+	# Full-screen menus replace, rather than overlap, the gameplay HUD.
 	if game and game.hud:
 		game.hud.visible = false
 	root = Control.new()
@@ -102,19 +85,16 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	detail_popover = null  # any popover was a child of the old root; drop the ref
 
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.65)
+	dim.color = Color(0.008, 0.012, 0.022, 0.74)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	if closable:
-		# Click-off-the-box to close. The panel sits on top and absorbs its
-		# own clicks, so only clicks in the surrounding dim reach here.
+		# The panel absorbs its own clicks; the surrounding dim closes it.
 		dim.gui_input.connect(func(e: InputEvent) -> void:
 			if (e is InputEventMouseButton and e.pressed) or (e is InputEventScreenTouch and e.pressed):
 				close())
 	root.add_child(dim)
 
-	# Boot menus (roster / chapter / class select before play starts):
-	# keep the cover's night behind the panel instead of letting the
-	# not-yet-a-game village and HUD peek through the dim.
+	# Boot menus retain the cover's night background.
 	if not game.play_started:
 		var night := ColorRect.new()
 		night.color = Color(0.02, 0.015, 0.045)
@@ -122,25 +102,19 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 		root.add_child(night)
 		root.move_child(night, 0)
 
-	# Dressed panel (theme pass): the shared chrome lives in UITheme —
-	# gold border + bronze bevel + top sheen — and the root carries the
-	# code-built widget Theme, so every Button/HSlider/ScrollBar on any
-	# screen inherits the skin with no per-screen styling.
+	# UITheme owns the shell and all stock-widget styling.
 	UITheme.apply(root)
 	UITheme.panel(root, Vector2(640 - w / 2 - 3, 360 - h / 2 - 3), Vector2(w + 6, h + 6))
 
 	var vbox := VBoxContainer.new()
-	vbox.position = Vector2(640 - w / 2, 360 - h / 2) + Vector2(24, 16)
-	vbox.size = Vector2(w - 48, h - 32)
-	vbox.add_theme_constant_override("separation", 8)
+	vbox.position = Vector2(640 - w / 2, 360 - h / 2) + Vector2(28, 20)
+	vbox.size = Vector2(w - 56, h - 40)
+	vbox.add_theme_constant_override("separation", 10)
 	root.add_child(vbox)
 
 	var tl := Label.new()
 	tl.text = title
-	# Long titles (e.g. a multi-boss "Victory — ..." mail subject) must wrap,
-	# not spill off-screen. A non-wrapping title also reports its full line as
-	# minimum width, which inflates the whole VBox past the panel and makes the
-	# body labels below it stop wrapping too — so autowrap here fixes both.
+	# Wrapped titles cannot inflate the panel's content width.
 	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	UITheme.title(tl, 28)  # display font; ~26px optical in the pixel face
 	tl.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
@@ -148,7 +122,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	UITheme.rule(vbox)  # header underline: gold, fading right
 
 	if closable:
-		# Red ✕ pinned to the panel's top-right corner (added last = on top).
+		# Close control is added last so it stays above the shell.
 		var xbtn := Button.new()
 		xbtn.text = "✕"
 		xbtn.flat = true
@@ -163,16 +137,12 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 			game.sfx("ui_click")
 			close())
 		root.add_child(xbtn)
-	# Under touch, let a finger-swipe on the content scroll (not just the scrollbar).
-	# Deferred so it runs AFTER the caller fills this panel with its scroll content.
+	# Enable content drag after callers populate their scroll containers.
 	call_deferred("_enable_all_touch_scroll", root)
 	return vbox
 
 
-## Touch has no drag-scroll by default: content Controls default to MOUSE_FILTER_STOP,
-## which eats the swipe before the ScrollContainer sees it. Walk every ScrollContainer
-## in a freshly built panel and set its content children to PASS so the drag propagates
-## up (Godot cancels the child press once the scroll takes over). Touch mode only.
+## Let touch drags propagate from content controls to their ScrollContainer.
 func _enable_all_touch_scroll(node: Node) -> void:
 	if game == null or not game.touch_mode or node == null:
 		return
@@ -226,6 +196,14 @@ func _btn(parent: Node, text: String, cb: Callable, color := Color(1, 1, 1), ena
 	return b
 
 
+func _tab(parent: Node, text: String, cb: Callable, active: bool,
+		accent := UITheme.GOLD) -> Button:
+	var color: Color = accent if active else Color(0.68, 0.70, 0.76)
+	var b := _btn(parent, text, cb, color)
+	UITheme.tab(b, active, accent)
+	return b
+
+
 ## Row with a gear icon + colored text (for non-clickable item displays).
 func _item_row(parent: Node, item: Dictionary, text: String) -> void:
 	var hbox := HBoxContainer.new()
@@ -246,9 +224,7 @@ func _diff_tip(item: Dictionary) -> String:
 	return Items.diff_text(item, game.local_player.equipment.get(item["slot"]), _awk(item))
 
 
-## (2026-07-27) The awakening gate retired with the legendary tier: every
-## passive is live on pickup, so item text never reads LOCKED. Kept because
-## describe/diff_text call sites still pass it; always true.
+## Compatibility shim: all unique passives are live on pickup.
 func _awk(_item: Dictionary) -> bool:
 	return true
 
@@ -258,18 +234,13 @@ func _hint(vbox: Node, text := "ESC to close", touch_text := "") -> void:
 		if touch_text != "":
 			text = touch_text
 		else:
-		# Keyboard close-hints (ESC / panel hotkeys) mean nothing on touch; keep any
-		# info after the em-dash and swap the key list for the on-screen ways out.
-		# Only promise ✕/outside when the panel actually HAS them — otherwise the
-		# hint used to lie (keybinds had no exit yet still said "tap ✕ or outside").
+		# Touch hints only promise exits the current shell actually provides.
 			var dash := text.find("—")
 			var extra: String = (" " + text.substr(dash)) if dash >= 0 else ""
 			if _closable_now:
 				text = "Tap ✕ or outside to close" + extra
 			else:
-				# Some non-closable screens (the save roster) have no Back
-				# control at all. Preserve their useful instruction and only
-				# translate keyboard terms when the copy actually contains one.
+				# Preserve useful instructions on non-closable screens.
 				text = game.ui_copy(text)
 	var l := _lbl(vbox, text, 13, Color(0.55, 0.55, 0.55))
 	l.size_flags_vertical = Control.SIZE_SHRINK_END
@@ -277,9 +248,7 @@ func _hint(vbox: Node, text := "ESC to close", touch_text := "") -> void:
 
 # ------------------------------------------------------------ title screen ---
 
-## Boot stage 1 — the opening COVER (see ui/cover.gd). Always shown to
-## real players, saves or none; any key/click advances to the roster.
-## (Both stages report current == "title": one boot state, two looks.)
+## Opening cover; input advances to the roster.
 func open_title() -> void:
 	if root:
 		root.queue_free()
@@ -293,8 +262,6 @@ func open_title() -> void:
 	title_stage = "cover"
 	game.set_music("title")
 	UICover.build(self, root)
-	# The build mark (MULTIPLAYER.md §3.4): quiet, but readable enough that
-	# "you're on 0.1.0, I'm on 0.1.1" is a glance, not a debugging session.
 	var ver := Label.new()
 	ver.text = "build %s" % NetManager.NET_VERSION
 	ver.position = Vector2(10, 696)
@@ -304,9 +271,7 @@ func open_title() -> void:
 	ver.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	ver.add_theme_constant_override("outline_size", 4)
 	root.add_child(ver)
-	# MP-16: a mid-run host-loss reboots to here — surface the plain-words
-	# notice once (staged on the NetworkManager autoload, which survived the
-	# reload). Cleared on read, so it greets the player exactly once.
+	# Surface a host-loss notice once after returning here.
 	var net: Node = get_node_or_null("/root/NetworkManager")
 	if net != null and String(net.last_session_notice) != "":
 		var note := Label.new()
@@ -323,15 +288,10 @@ func open_title() -> void:
 		root.add_child(note)
 
 
-## Boot stage 2 — the character roster: continue a saved hero from its
-## slot, or forge a new one (next free slot). This is the FIRST
-## interactive screen; class select only appears for a new character.
+## Character roster and new-hero entry.
 func open_slots() -> void:
 	var saves: Array = SaveGame.list()
-	# Size the panel to its content (audit: 4 saves left the bottom ~45%
-	# of a fixed 560 panel as dead black): chrome ≈ 300px (incl. the Play
-	# Together row, MP-08) + ~68px a row, clamped to the old height so a
-	# 20-slot roster still just scrolls.
+	# Content-sized up to the scrollable maximum.
 	var slots_h := clampf(300.0 + saves.size() * 68.0 + (44.0 if game.dev_mode else 0.0), 380.0, 560.0)
 	var vbox := _open("CROWNLESS — your heroes", 760, slots_h)
 	current = "title"
@@ -341,13 +301,11 @@ func open_slots() -> void:
 	var have_saves := not saves.is_empty()
 	_btn(vbox, "  ⚔  New Character  ", func() -> void: open_chapter_select(),
 		Color(0.95, 0.85, 0.5))
-	# Co-op entry (MP-08, MULTIPLAYER.md §5.1): host or join with a code.
 	_btn(vbox, "  ❖  Play Together  ", func() -> void: open_lobby(),
 		Color(0.6, 0.9, 1.0))
 	UITheme.header(_lbl(vbox, "— CONTINUE —" if have_saves else "No heroes yet — forge your first.",
 		15, Color(0.95, 0.85, 0.5) if have_saves else Color(0.6, 0.62, 0.7)))
-	# The save list SCROLLS (20 slots + a dev roster overflowed the fixed
-	# panel — the bottom buttons must never leave the box).
+	# The roster scrolls while footer actions stay fixed.
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -370,12 +328,7 @@ func open_slots() -> void:
 				root = null
 			current = ""
 			game.load_save(slot)
-		# Class portrait at a UNIFORM size. Class sprites have varied native
-		# dimensions, and a Button icon draws at NATIVE px — so a big sprite
-		# (e.g. paladin) dwarfed a small one in the roster. A fixed-size
-		# KEEP_ASPECT TextureRect (same as the class-select screen) fixes it.
-		# Dressed 2026-07-10 (audit: "dark smudges"): a framed well, a bigger
-		# NEAREST upscale so the pixels read, and a lift out of the murk.
+		# Normalize class portraits into the same nearest-filtered frame.
 		if cls_info.has("sprite"):
 			var pframe := Panel.new()
 			pframe.custom_minimum_size = Vector2(64, 64)
@@ -389,8 +342,6 @@ func open_slots() -> void:
 			row.add_child(pframe)
 			var port := TextureRect.new()
 			port.texture = Art.tex(cls_info["sprite"])
-			# Anchored inset, not manual size: a plain assignment can be
-			# stomped when the frame lays out — anchors always re-fit.
 			port.set_anchors_preset(Control.PRESET_FULL_RECT)
 			port.offset_left = 5
 			port.offset_top = 5
@@ -412,17 +363,12 @@ func open_slots() -> void:
 			open_slots()  # stay on the roster — empty is a valid state now
 		_btn(row, " ✕ ", erase, Color(1, 0.5, 0.5))
 
-	# No spacer: the scroll list absorbs the flexible space, pinning
-	# these buttons inside the panel no matter how many saves exist.
 	_btn(vbox, "  🔊  Settings  ", func() -> void: open_settings("title"), Color(0.8, 0.85, 0.9))
 	_dev_roster_row(vbox)
 	_hint(vbox, "Continue a saved hero, or forge a new one")
 
 
-## Dev launcher row (dev_mode.bat only): batch-create the 6-class
-## roster straight from the launcher screens — no need to enter a
-## game and open F1 first. Opens a modal that picks a DPS-bench preset; each
-## writes one save per class (free slots only, never overwrites), then back.
+## Dev-only six-class benchmark roster shortcut.
 func _dev_roster_row(vbox: VBoxContainer) -> void:
 	if not game.dev_mode:
 		return
@@ -455,32 +401,25 @@ func open_benchmark_roster() -> void:
 
 # ---------------------------------------------------------------- pause ---
 
-## The system menu (ESC in-game): everything a session needs that isn't
-## combat — resume, options, chapter control, and the exits.
+## The in-game system menu.
 func open_pause() -> void:
-	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 460, true)
+	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 520, true)
 	current = "pause"
 	var zi := clampi(game.cur_room, 0, game.zone_count - 1)
 	_lbl(vbox, "%s, Level %d — %s" % [Classes.CLASSES[game.local_player.cls]["name"],
 		game.local_player.level, game.zones[zi]["name"]], 14, Color(0.7, 0.72, 0.78))
-	# Everything that has its own HUD icon (mail, daily, quest log, stash, endgame
-	# trials) is NOT repeated here — this is now just settings + chapter/session
-	# control + the exits. Resume is dropped too: ✕ / tap-outside / ESC already do it.
-	# UI strings route through Loc.t (localization pass — a table swap, not a sweep).
+	var resume := _btn(vbox, "Resume game", func() -> void: close(),
+		Color(0.58, 1.0, 0.68))
+	resume.custom_minimum_size.y = 42
 	_btn(vbox, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
-	# The Wardrobe is the one service screen WITHOUT a HUD icon (the rule
-	# above only bars duplicating screens that have one).
 	_btn(vbox, "  ◈  Wardrobe  (skins & chromas, bought with Renown)",
 		func() -> void: open_wardrobe(), Color(0.85, 0.7, 1.0))
-	# Wave 9: Crownfall is the PARTY TOWN — travel there from any campaign
-	# chapter (its portal brings you back; in-session travel rides the
-	# victory reprise picker instead, so a host can never strand guests).
+	# Solo campaign travel to the capital.
 	if not game.endgame_active and game.chapter_id != "capital" and not game.net_online():
 		_btn(vbox, "  ⌂  Travel to Crownfall  (the Capital)", func() -> void:
 			close()
 			game.enter_capital(), Color(0.7, 0.9, 1.0))
-	# MP-21: session control — the HOST may remove a member mid-run, behind
-	# the confirm gate (a mid-fight misclick must never strand a friend).
+	# Host-only removal remains behind a confirmation gate.
 	if game.net_online() and game.net_host():
 		var kick_sess: Node = get_node("/root/NetworkManager/Session")
 		for pid_v in kick_sess.peer_chars:
@@ -495,7 +434,6 @@ func open_pause() -> void:
 						close())
 			_btn(vbox, "  ✕  Remove %s from the party" % pname, kick, Color(1.0, 0.6, 0.55))
 	if game.endgame_active:
-		# In an endgame run: cash out (keep winnings) or abandon (forfeit).
 		var cash := func() -> void:
 			open_confirm("Cash out now? You keep everything you've earned this run and return to the title.",
 				func() -> void:
@@ -521,12 +459,9 @@ func open_pause() -> void:
 	_hint(vbox, "ESC, ✕, or click anywhere outside to resume")
 
 
-## A single yes/cancel gate in front of anything destructive. Pause-menu
-## flows fall back there on cancel; world prompts (shrines, cursed
-## chests) pass an on_cancel that just closes.
+## A single yes/cancel gate in front of destructive actions.
 func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> void:
-	# Size to the message (the Crucible rules overflowed a fixed 320) + closable so the
-	# ✕ / tap-outside the touch hint promises actually work (dismiss == cancel).
+	# Size to the message; dismissing the closable panel is cancellation.
 	var est_lines: int = int(ceil(msg.length() / 46.0)) + msg.count("\n")
 	var vbox := _open("Are you sure?", 680, clampf(300.0 + est_lines * 24.0, 320.0, 600.0), true)
 	current = "confirm"
@@ -547,8 +482,7 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> voi
 	_hint(vbox, "ESC to cancel")
 
 
-## Sound + display options. Everything applies live and persists to
-## user://settings.json. Reachable from the pause menu AND the title.
+## Live sound, display, language and input settings.
 var settings_return := "pause"
 func open_settings(from := "pause") -> void:
 	settings_return = from
@@ -585,7 +519,6 @@ func open_settings(from := "pause") -> void:
 			game.save_settings()
 			open_settings(settings_return), Color(0.9, 0.9, 0.95))
 	fs_btn.tooltip_text = "Borderless fullscreen on your current monitor."
-	# Language selector — cycles the Loc table (translation is a table swap).
 	var lang_btn := _btn(vbox, "  Language: %s  " % String(game.settings.get("lang", "en")).to_upper(),
 		func() -> void:
 			var langs := Loc.languages()
@@ -595,16 +528,14 @@ func open_settings(from := "pause") -> void:
 			game.save_settings()
 			open_settings(settings_return), Color(0.9, 0.9, 0.95))
 	lang_btn.tooltip_text = "Cycle UI language (localization foundation — most screens are English for now)."
-	# Control scheme (desktop only — mobile is always touch). Flips the on-screen
-	# joystick + buttons + click-to-talk on; keyboard shortcuts stay valid either way.
+	# Desktop can preview the touch control scheme.
 	if not OS.has_feature("mobile"):
 		var tc_btn := _btn(vbox, "  Controls: %s  " % ("TOUCH" if game.settings.get("touch_controls", false) else "KEYBOARD"),
 			func() -> void:
 				game.set_touch_controls(not bool(game.settings.get("touch_controls", false)))
 				open_settings(settings_return), Color(0.9, 0.9, 0.95))
 		tc_btn.tooltip_text = "Touch: on-screen joystick + buttons + click-to-talk. Keyboard shortcuts always stay valid."
-	# Touch-layout options — shown whenever touch controls are active (mobile, or desktop
-	# with the toggle on): joystick lock + a drag-to-rearrange button editor.
+	# Touch-only layout options.
 	if game.touch_mode:
 		var jl_btn := _btn(vbox, "  Joystick: %s  " % ("FIXED" if game.settings.get("joystick_locked", false) else "FLOATING"),
 			func() -> void:
@@ -612,8 +543,6 @@ func open_settings(from := "pause") -> void:
 				game.save_settings()
 				open_settings(settings_return), Color(0.9, 0.9, 0.95))
 		jl_btn.tooltip_text = "Floating: the stick springs to wherever your thumb lands. Fixed: it stays at one spot."
-		# Sensitivity: multiplies the stick's post-deadzone travel, so a higher value
-		# hits full speed on a shorter drag (calibrate to taste — 1.0× = raw stick).
 		var sens_row := HBoxContainer.new()
 		sens_row.add_theme_constant_override("separation", 14)
 		vbox.add_child(sens_row)
@@ -634,8 +563,7 @@ func open_settings(from := "pause") -> void:
 			sens_val.text = "%.1f×" % v)
 		_lbl(vbox, "1.0× = drag to the edge for full speed; higher = full speed on a shorter drag. Drag the joystick in the button editor to move it.", 12, Color(0.55, 0.58, 0.66))
 		_btn(vbox, "  Customize buttons…  ", func() -> void: _open_layout_editor(), Color(0.8, 0.95, 0.85))
-	# Keybinds live here now (moved out of the pause menu). Keyboard-only, so
-	# they're hidden under touch controls — there are no keys to rebind on a phone.
+	# Keyboard binding is irrelevant in touch mode.
 	if not game.touch_mode:
 		_btn(vbox, "  ⌨  " + Loc.t("keybinds") + "…", func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
@@ -649,7 +577,7 @@ func _settings_back() -> void:
 		open_pause()
 
 
-## Close the menu and drop into the on-screen button-layout editor (touch HUD).
+## Enter the touch HUD layout editor.
 func _open_layout_editor() -> void:
 	close()
 	if game._touch_hud != null:
@@ -785,8 +713,7 @@ func open_endgame_result(summary: Dictionary) -> void:
 	_hint(vbox, "Your rewards are banked. Press to return.")
 
 
-## New game step one — or, from the pause menu (replay=true), jump an
-## EXISTING character into any chapter from its beginning.
+## Start or replay a chapter from its beginning.
 func open_chapter_select(replay := false) -> void:
 	chapter_replay = replay
 	var vbox := _open("Choose your chapter", 900, 540)
@@ -795,12 +722,7 @@ func open_chapter_select(replay := false) -> void:
 		_lbl(vbox, "Return to any unlocked chapter with this character — farm, finish arcs, take other paths. Story progress there resets; your build, gear and Resonance travel with you.", 14, Color(0.75, 0.75, 0.75))
 	else:
 		_lbl(vbox, "One campaign, chapter by chapter: win a chapter and your hero journeys on to the next. Later chapters unlock once you've beaten the one before.", 14, Color(0.75, 0.75, 0.75))
-	# NG+ tier row (DESIGN "Difficulty tiers / NG+"): appears once Nightmare
-	# is unlocked (account-wide — clear the Act-1 finale). The pick is the
-	# character's STANDING campaign tier; it arms on the next launch below
-	# (switch_chapter snapshots it — a mid-run flip never mixes a live run).
-	# In a session only the HOST sees it (the world is theirs; guests ride
-	# the briefed tier and pick their own back in solo).
+	# The host's standing difficulty is snapshotted when the chapter starts.
 	if replay and game.tier_unlocked(1) and (not game.net_online() or game.net_host()):
 		var trow := HBoxContainer.new()
 		trow.add_theme_constant_override("separation", 10)
@@ -831,10 +753,7 @@ func open_chapter_select(replay := false) -> void:
 			tdesc += "  Clear Chapter 7 at %s to unlock %s." % [Balance.tier_name(cur), Balance.tier_name(cur + 1)]
 		var td := _lbl(vbox, tdesc, 13, Balance.tier_color(cur) if off > 0 else Color(0.65, 0.68, 0.78))
 		td.custom_minimum_size = Vector2(800, 0)
-	# The list SCROLLS (QA finding 4: seven chapters overflowed the fixed
-	# panel) — same pattern as the save roster. A holder Control wraps the
-	# scroll so a bottom fade can float over it: the last row dissolves
-	# instead of being guillotined mid-glyph at the viewport edge.
+	# A bottom fade marks overflow in the scrolling chapter list.
 	var holder := Control.new()
 	holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -870,8 +789,6 @@ func open_chapter_select(replay := false) -> void:
 			Color(0.65, 0.68, 0.78) if unlocked else Color(0.5, 0.5, 0.55))
 		sub.custom_minimum_size = Vector2(800, 0)
 		idx += 1
-	# The fade mask itself: panel-colored gradient pinned to the holder's
-	# bottom edge, visible only while there is more list below the fold.
 	var fade := TextureRect.new()
 	var fg := Gradient.new()
 	fg.set_color(0, Color(UITheme.PANEL_BG, 0.0))
@@ -912,10 +829,7 @@ func pick_chapter(id: String) -> void:
 # ------------------------------------------------------------ class select ---
 
 func open_class_select() -> void:
-	# 708 tall: the tallest card (paladin's stance passive) sets the row's
-	# MINIMUM height — a shorter panel can't clip it (a Control never shrinks
-	# below its content). The WHOLE card is the button now (see the loop), so
-	# nothing spills past the frame the way the old bottom "choose" buttons did.
+	# The tallest class card determines the full-height selector.
 	var vbox := _open("Choose your class", 1240, 716)
 	current = "class_select"
 	_lbl(vbox, "This choice sets your four abilities and your three elemental THEMES — playstyles that reshape those abilities as you level. Select any class to choose it.", 15, Color(0.75, 0.75, 0.75))
@@ -925,7 +839,6 @@ func open_class_select() -> void:
 	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(hbox)
 
-	# Cards share the row equally, however many classes exist.
 	var count := Classes.CLASSES.size()
 	var card_w := (1240.0 - 48.0 - 10.0 * (count - 1)) / count
 	var dense := count > 4  # 6-class roster: tighter type, smaller icon
@@ -933,11 +846,7 @@ func open_class_select() -> void:
 	var idx := 1
 	for id in Classes.CLASSES:
 		var c: Dictionary = Classes.CLASSES[id]
-		# The whole card IS the button (no bottom "choose" button that used to
-		# spill below the frame): a PanelContainer that picks the class on click,
-		# brightens + gains a gold rim on hover, and shows a pointing-hand cursor.
-		# Its VBox and every label inside pass mouse events through (IGNORE) so a
-		# click anywhere on the card reaches the panel.
+		# The full class card is one click target.
 		var card := PanelContainer.new()
 		card.custom_minimum_size = Vector2(card_w, 0)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -957,10 +866,7 @@ func open_class_select() -> void:
 		col.add_theme_constant_override("separation", 2 if dense else 6)
 		card.add_child(col)
 
-		# The name carries the number-key hint the old button used to ("(1)"):
-		# keys 1–6 still pick left-to-right (see _input). Dense (6-class) roster
-		# puts the icon and name on ONE row to reclaim height — the tallest card
-		# (Paladin's long passive + 4 abilities) has to clear the 720px frame.
+		# Number keys pick cards left-to-right.
 		if dense:
 			var header := HBoxContainer.new()
 			header.add_theme_constant_override("separation", 8)
@@ -972,8 +878,6 @@ func open_class_select() -> void:
 			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			header.add_child(icon)
 			var nm := _lbl(header, "%s  (%d)" % [c["name"], idx], 18, Color(0.95, 0.85, 0.5))
-			# A wrapping label inside an HBox with no min width collapses to one
-			# char per line (CLAUDE.md trap) — the name is short, so don't wrap it.
 			nm.autowrap_mode = TextServer.AUTOWRAP_OFF
 			nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -997,14 +901,9 @@ func open_class_select() -> void:
 			var tag: String = "ULT" if slot == "ult" else slot.to_upper()
 			var scaling: String = Classes.ability_scaling(id, slot)
 			var riders: String = Classes.ability_riders(id, slot)
-			# Dense roster shows ability names + the readout lines below; the full
-			# prose now sits behind the whole-card pick (a click anywhere chooses
-			# the class), so the old click-for-popover on ability lines is gone.
+			# The compact card shows names plus scaling/rider summaries.
 			var line: String = "%s %s" % [tag, ab["name"]] if dense else "%s %s — %s" % [tag, ab["name"], ab["desc"]]
 			_lbl(col, line, 11 if dense else 12, Color(0.65, 0.7, 0.8))
-			# Two readout lines under each ability (from its data): SCALING (type +
-			# %ATK, green) and RIDERS (CC/buffs/sustain/debuffs, amber). The
-			# tuning-transparency pair. Buffs with no damage show only riders.
 			if scaling != "":
 				_lbl(col, "    " + scaling, 10 if dense else 11, Color(0.58, 0.74, 0.66))
 			if riders != "":
@@ -1012,14 +911,12 @@ func open_class_select() -> void:
 		var spacer := Control.new()
 		spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		col.add_child(spacer)
-		# Every widget passes clicks through to the card panel above (recurse so
-		# the header row's icon + name don't swallow them either).
+		# Child controls pass clicks to the card.
 		_ignore_mouse_recursive(col)
 		idx += 1
 
 
-## Make every Control under `n` transparent to the mouse, so clicks fall
-## through the card's content down to the PanelContainer that selects it.
+## Make class-card content transparent to pointer input.
 func _ignore_mouse_recursive(n: Node) -> void:
 	for ch in n.get_children():
 		if ch is Control:
@@ -1027,8 +924,7 @@ func _ignore_mouse_recursive(n: Node) -> void:
 		_ignore_mouse_recursive(ch)
 
 
-## Chrome for one class-picker card: a faint panel that brightens and gains a
-## gold rim on hover, so the whole card reads as one big button.
+## Chrome for one class-picker card.
 func _class_card_style(hover: bool) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.12, 0.11, 0.15, 0.55) if hover else Color(0.06, 0.06, 0.08, 0.30)
@@ -1042,18 +938,14 @@ func _class_card_style(hover: bool) -> StyleBoxFlat:
 	return sb
 
 
-## A class was picked — from a card click or a number key. Both funnel here so
-## the splash reveal always plays. Guarded so a second click/key mid-reveal
-## can't double-fire.
+## Funnel card and keyboard selection through the splash reveal.
 func choose_class(id: String) -> void:
 	if current != "class_select":
 		return
 	_show_class_splash(id)
 
 
-## The "you chose the <Class>" beat: the class's splash art rises out of black
-## for ~1s, then name entry. Runs while the tree is paused — Menus is
-## PROCESS_MODE_ALWAYS, so the fade tween and the hold timer still tick.
+## Reveal the chosen class, then continue to name entry.
 func _show_class_splash(id: String) -> void:
 	if root:
 		root.queue_free()
@@ -1080,13 +972,7 @@ func _show_class_splash(id: String) -> void:
 	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Class splashes are PAINTERLY illustrations, not pixel art, and they are
-	# always UPSCALED here: a square splash fits to height, so it's drawn 720px
-	# tall in canvas space = 1080px on a 1080p screen, 1440p on 1440, 2160 on 4K.
-	# The 768px splashes are therefore magnified 1.4x-2.8x. Under the project's
-	# global NEAREST filter that magnification is a blocky stair-step — nearest
-	# is right for pixel art and wrong for a painting. Per-node override; world
-	# sprites keep NEAREST.
+	# Painterly splashes use linear filtering when scaled.
 	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	root.add_child(art)
 
@@ -1123,12 +1009,7 @@ func pick_class(id: String) -> void:
 
 # ------------------------------------------------------------- name your hero ---
 
-## Between the class pick and the world build: name the hero. Pre-filled with
-## the OS account name (what co-op friends already recognize) so a player who
-## just wants to start can hit Enter. The name rides the save (SaveGame) and
-## becomes this character's co-op identity; blank stores "" so the live OS
-## name answers instead. Direct pick_class() callers (tests, launchers) skip
-## this and keep the empty-name fallback.
+## Name the hero before entering the world.
 func open_name_entry(id: String) -> void:
 	var vbox := _open("Name your hero", 640, 360)
 	current = "name_entry"
@@ -1180,10 +1061,7 @@ func _sanitize_char_name(raw: String) -> String:
 
 # ----------------------------------------------------------- potion loadout ---
 
-## The per-room potion ROTATION editor (reached from the inventory's "Potion
-## Loadout" tab). Shows the room slots, lets you slot/unslot any owned elixir or
-## mana potion, and — crucially — is visible and self-explaining even when you
-## carry only Health (the old potion-popover path showed nothing then).
+## Per-room potion rotation editor.
 func open_potion_loadout() -> void:
 	var p = game.local_player
 	var vbox := _open("Potion Loadout", 760, 560, true)
@@ -1244,18 +1122,14 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	var vbox := _open("Inventory — %d gold" % game.local_player.gold, 1120, 640, true)
 	current = "inventory"
 
-	# Subtabs: gear management / full character sheet.
+	# Gear management, character sheet, and potion planning.
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 12)
 	vbox.add_child(tabs)
-	_btn(tabs, "  Gear  ", func() -> void: open_inventory("gear"),
-		Color(0.95, 0.85, 0.5) if tab == "gear" else Color(0.6, 0.6, 0.6))
-	_btn(tabs, "  Stats  ", func() -> void: open_inventory("stats"),
-		Color(0.95, 0.85, 0.5) if tab == "stats" else Color(0.6, 0.6, 0.6))
-	# Dedicated, always-visible entry to the per-room potion rotation editor —
-	# the old only-path (tap a potion stack, actions hidden unless you own an
-	# elixir) was undiscoverable.
-	_btn(tabs, "  Potion Loadout  ", func() -> void: open_potion_loadout(), Color(0.7, 0.92, 0.85))
+	_tab(tabs, "Gear", func() -> void: open_inventory("gear"), tab == "gear")
+	_tab(tabs, "Stats", func() -> void: open_inventory("stats"), tab == "stats")
+	_tab(tabs, "Potion Loadout", func() -> void: open_potion_loadout(), false,
+		Color(0.42, 0.84, 0.70))
 	if tab == "stats":
 		_build_stats_tab(vbox, game.local_player)
 		return
@@ -1264,11 +1138,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(hbox)
 
-	# EQUIPPED runs long once every slot holds a socketed S-item (4 slots ×
-	# title + wrapped stats + a 40px socket row easily exceeds the panel body),
-	# and a container never shrinks a child below its min height — so the raw
-	# VBox used to spill past the panel bottom. Scroll it, the same way the bag
-	# grid on the right does, and the list stays inside the panel.
+	# Both equipment and bag columns scroll independently.
 	var left_scroll := ScrollContainer.new()
 	left_scroll.custom_minimum_size = Vector2(456, 0)  # 440 col + ~16 scrollbar
 	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -1284,19 +1154,14 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	for slot in Items.SLOTS:
 		if game.local_player.equipment.has(slot):
 			var item: Dictionary = game.local_player.equipment[slot]
-			# The tabbed item panel: Info / Gems / Reforge, Unequip on top.
 			var open_cb := func() -> void:
 				open_item_panel(item)
-			# Title on a fixed-width clipped button; stats wrap in a label
-			# below it — long S-item text can no longer blow up the layout.
 			var b := _btn(left, Items.title(item), open_cb, Items.GRADE_COLOR[item["grade"]], true, Art.icon_for(item))
 			b.custom_minimum_size = Vector2(430, 0)
 			b.clip_text = true
 			var dl := _lbl(left, Items.describe(item, _awk(item), false), 12, Color(Items.GRADE_COLOR[item["grade"]], 0.8))
 			dl.custom_minimum_size = Vector2(430, 0)
-			# Real gem sockets (2026-07-09): the ◆◇ describe-glyphs became
-			# squares — a bag gem drags straight onto them (or onto the title
-			# button, a bigger target); a socketed gem drags back out.
+			# Gem sockets are direct drag targets.
 			var islots: int = item.get("gem_slots", 0)
 			if islots > 0:
 				var refresh := func() -> void: open_inventory("gear", cat)
@@ -1312,9 +1177,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				left.add_child(srow)
 				_socket_row(srow, item, refresh)
 		else:
-			# Framed silhouette for an empty gear slot: a socketed square
-			# with the slot's monogram, so "nothing equipped HERE" reads as
-			# a place, not a footnote.
+			# Empty slots remain visible as explicit targets.
 			var erow := HBoxContainer.new()
 			erow.add_theme_constant_override("separation", 10)
 			left.add_child(erow)
@@ -1346,10 +1209,6 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	hbox.add_child(right)
 
 	# ------------------------------------------------------------- bag ---
-	# One WoW-style slot grid for EVERYTHING carried: gear, gems
-	# (stacked by kind for display; each gem still owns a slot) and
-	# consumables, plus dark squares for the free space. Capacity comes
-	# from the equipped bag; bigger bags drop from elites.
 	var p: Player = game.local_player
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 12)
@@ -1363,11 +1222,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		p.bag_used(), p.bag_capacity()], 16, Items.GRADE_COLOR[best_grade])
 	UITheme.header(bh)
 	bh.custom_minimum_size = Vector2(360, 0)
-	# Equipped-bag chips on their own row (the old raw "F·15 F·15" string
-	# next to the header was a floating mystery): one framed chip per bag —
-	# pouch icon + grade + slot count, the bag's name on hover. A FLOW container
-	# (not a plain HBox) so a full loadout of bags WRAPS to new rows instead of
-	# running off the right column and dragging the whole panel past its edge.
+	# Bag chips wrap so a full loadout never widens the panel.
 	var chips := HFlowContainer.new()
 	chips.add_theme_constant_override("h_separation", 6)
 	chips.add_theme_constant_override("v_separation", 4)
@@ -1404,8 +1259,6 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var clbl := _lbl(crow, "%s · %d slots" % [bg2, int(bb2.get("slots", 0))], 12, Items.GRADE_COLOR[bg2])
 		clbl.custom_minimum_size = Vector2(74, 0)  # HBox label-collapse trap
 		clbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	# Auto-synth sits on its OWN row: inline in the header its ~170px pushed the
-	# BAGS+summary run past the right column, overflowing the panel edge.
 	if not p.gem_bag.is_empty():
 		var auto_cb := func() -> void:
 			var n: int = game.local_player.auto_synthesize()
@@ -1415,12 +1268,9 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var ab := _btn(right, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, gems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag); on the road only\nthe bag merges — socketed work waits for the Lapidary."
-	_lbl(right, "Select any bag item for its detail card — equip/use/synthesize or drop it there · socketing and unsocketing are the Lapidary's trade in Crownfall (drag gems onto gear at her benches) · every unit counts toward slots (stacks are display-only) · bags drop from bosses/elites & stock at merchants", 12, Color(0.55, 0.55, 0.6))
+	_lbl(right, "Select an item to inspect. Drag gems onto equipped gear at the Lapidary. Every carried unit uses one slot.", 12, UITheme.TEXT_MUTED)
 
-	# Bag category filter: All (default) + per-slot gear, gems, consumables.
-	# A flow container, not an HBox: the 7-slot lineup grew this to 10 chips,
-	# and a non-wrapping row inflated the whole right column's minimum width
-	# past the panel edge (chips AND the helper text above clipped offscreen).
+	# Category chips wrap instead of inflating the right column.
 	var catrow := HFlowContainer.new()
 	catrow.add_theme_constant_override("h_separation", 6)
 	right.add_child(catrow)
@@ -1442,11 +1292,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	grid.add_theme_constant_override("h_separation", 4)
 	grid.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(grid)
-	# The WHOLE bag area is a drop target for a gem dragged out of an equipped
-	# item's socket: the scroll, the grid, every free square — and every filled
-	# slot button too (buttons are MOUSE_FILTER_STOP, so a drop on one never
-	# bubbles to the grid; without their own forwarding the release showed the
-	# forbidden cursor and read as "drag doesn't work").
+	# The whole bag area accepts a gem dragged out of an equipped socket.
 	var sock_can := func(_pos: Vector2, data: Variant) -> bool:
 		return data is Dictionary and String(data.get("kind", "")) == "socketed_gem"
 	var sock_drop := func(_pos: Vector2, data: Variant) -> void:
@@ -1480,12 +1326,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					]
 					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions, GearFlavor.of(it))).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
-		# Health potions are graded bag items now (CONSUMABLE_GRADES) — they
-		# render through the normal consumables loop below like any potion. The
-		# loadout is planned from the dedicated "Potion Loadout" tab (or each
-		# potion's Slot action). The old health-counter virtual stacks are gone.
-		# Consumables STACK by id (playtest 2026-07-07): one slot per
-		# type, count in the tooltip, click uses ONE.
+		# Consumables stack by id for display; using one consumes one.
 		var cgroups := {}
 		var corder: Array = []
 		for c in p.consumables:
@@ -1499,9 +1340,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var cc: Dictionary = cgroups[gid]["c"]
 			var count: int = cgroups[gid]["count"]
 			var xn := "  x%d" % count if count > 1 else ""
-			# Quest keepsakes ride the bag but have no use/drop — they exist
-			# to be GIVEN (and vanish when the run ends). Click shows the
-			# keepsake's story text; no action buttons.
+			# Quest keepsakes expose story text but no use/drop actions.
 			if String(cc.get("kind", "")) == "quest":
 				_bag_slot(grid, null, "❦", Items.GRADE_COLOR[str(cc.get("grade", "B"))],
 					func() -> void:
@@ -1522,12 +1361,8 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						game.local_player.consumables.erase(cc)
 						game.discard_to_ground({"kind": "stone", "stone": cc})
 						open_inventory("gear", cat)
-					# No alembic here: U+2697 has no glyph coverage on mobile and
-					# renders as tofu (dc673ab dropped it from the loadout tab —
-					# this Use button carried the same codepoint and was missed).
 					var actions: Array = [["  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
 					if Items.is_rotation_potion(cid):
-						# Loadout editing (per-room potion budget, 2026-07-07 v2).
 						info += "\n\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. %s cycles potions in the field." % [
 							p.potion_rotation.size(), p.potion_slot_cap(),
 							("  (this: x%d)" % slotted) if slotted > 0 else "",
@@ -1572,17 +1407,13 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions, GearFlavor.of(g))
 			var gbtn := _bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), gem_cb)
-			# Drag it straight onto an equipped item (left) to socket it — and
-			# accept a socketed gem dropped back the other way (landing one on
-			# its matching stack is the most natural target in the grid).
+			# Gem stacks accept gems dragged back out of equipment.
 			var gem_drag := func(_pos: Vector2) -> Variant:
 				gbtn.set_drag_preview(_drag_preview(Art.gem_icon(Items.gem_color(g), int(g["lvl"]))))
 				return {"kind": "bag_gem", "gem": g}
 			gbtn.set_drag_forwarding(gem_drag, sock_can, sock_drop)
 	if show_mats:
-		# Crafting materials STACK by (family, grade) — one bag slot per stack,
-		# cap Items.MATERIAL_STACK_MAX. Click shows the ported flavor + sell value;
-		# sell them at any merchant (flat anti-haul price). Drop one to free it.
+		# Crafting materials stack by family and grade.
 		for m in p.materials:
 			var mm: Dictionary = m
 			var mfam := String(mm.get("family", ""))
@@ -1607,16 +1438,14 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						open_inventory("gear", cat)
 					var actions: Array = [["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb]]
 					_open_detail_popover(micon, "%s  x%d" % [mname, mcount], mcol, info, actions, GearFlavor.of(mm))).set_drag_forwarding(Callable(), sock_can, sock_drop)
-	# Free-space squares only in the All view (a filtered view isn't the
-	# whole bag, so padding it with empties would misrepresent capacity).
+	# Only the All view represents free capacity.
 	if cat == "all":
 		for i in maxi(0, p.bag_capacity() - p.bag_used()):
 			_bag_empty(grid).set_drag_forwarding(Callable(), sock_can, sock_drop)
 	_hint(vbox, "ESC, ✕, click outside, or I to close")
 
 
-## One square bag slot: an item icon or a colored glyph, colored border,
-## click action. No hover tooltip — clicking opens the detail popover.
+## One clickable bag slot.
 func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color,
 		cb: Callable) -> Button:
 	var b := Button.new()
@@ -1741,9 +1570,7 @@ func _popover_settle(pop: PanelContainer, at: Vector2, scroll: ScrollContainer =
 		clampf(pop.position.y, 8.0, 720.0 - sz.y - 8.0))
 
 
-## The simple popover: header, an info block, then flat action buttons.
-## `actions` is a list of [label, color, Callable]. Cursor-anchored,
-## auto-sized. Shared by inventory bags, the shop and equipped gear.
+## Cursor-anchored detail popover shared by bag, shop and equipment.
 func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 		info: String, actions: Array, flavor := "") -> void:
 	if not root:
@@ -1763,8 +1590,7 @@ func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 	await _popover_settle(pop, Vector2(-1, -1))
 
 
-## Dismiss the popover, leaving the screen it floats over (inventory or
-## shop) intact underneath.
+## Dismiss the popover without rebuilding its underlay.
 func _close_detail_popover() -> void:
 	if detail_popover:
 		detail_popover.queue_free()
@@ -1773,8 +1599,7 @@ func _close_detail_popover() -> void:
 		current = detail_return if detail_return != "" else "inventory"
 
 
-## Gem-group keys ordered by stat name, then level descending —
-## a stable, scannable order no matter what the bag looks like.
+## Stable gem order: stat name, then level descending.
 func _sorted_gem_keys(groups: Dictionary) -> Array:
 	var keys: Array = groups.keys()
 	keys.sort_custom(func(a, b) -> bool:
@@ -1786,8 +1611,7 @@ func _sorted_gem_keys(groups: Dictionary) -> Array:
 	return keys
 
 
-## Full character sheet: every stat on its own row, with a hover tooltip
-## explaining what it does — so players learn what to invest in.
+## Full character sheet with per-stat explanations.
 func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -1844,9 +1668,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	for r in rows3:
 		_stat_row(list, r[0], r[1], r[2])
 
-	# The shard's opinion of you — surfaced here after playtest round 6
-	# ("I can't even SEE this stat"): the number, its band, and what
-	# actually moves it.
+	# Resonance number, band and sources.
 	_lbl(list, "SHARD", 16, Color(0.95, 0.85, 0.5))
 	var res_band := String(Story.res_band(p.resonance))
 	var res_word: String = {"steady": "Steady — the shard hums warm",
@@ -1855,8 +1677,6 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 		"tempted": Color(1.0, 0.6, 0.6)}.get(res_band, Color(0.85, 0.85, 0.9))
 	_stat_row(list, "Resonance", "%+d   (%s)" % [int(p.resonance), res_word],
 		"How the shard resonates with your CHOICES, from -100 (Temptation) to +100 (Virtue). Kindness, mercy and honest work raise it; cruelty, theft and grave-robbing lower it. The world reads it before you do: merchants price you 10% kinder when it's high and 10% warier when it's low, some dialogue options only open at certain bands, and NPCs react to what the shard says about you.", res_col)
-	# Band leans (2026-07-09): the shard's conviction worn as NUMBERS
-	# (player rule: never explain a stat only in prose).
 	if p.res_lean() <= 0.0:
 		_stat_row(list, "Shard lean", "none — the shard is undecided",
 			"Commit past the band line (±25) and a lean wakes, growing to full strength at ±100. Virtue leans into CONSTANCY: health potions mend up to %d%% deeper. Temptation leans into HUNGER: up to +%d%% damage to wounded mobs (below %d%% HP — never bosses) and up to +%d%% gold from kills. Neither is the correct answer; staying undecided is the only way to get nothing." % [
@@ -1890,9 +1710,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	_hint(vbox, "ESC, ✕, click outside, or I to close")
 
 
-## One stat line: name, value, and a 🛈 hint. Click the row to open the
-## explanation as an opaque popover (hover still previews it too). Labels
-## ignore the mouse so the click lands on the row itself.
+## One clickable stat row with an explanation popover.
 func _stat_row(parent: Node, stat_name: String, value: String, tip: String, color := Color(0.85, 0.85, 0.9)) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
@@ -1935,23 +1753,14 @@ func _stat_bonus_text(d: Dictionary) -> String:
 	return ", ".join(parts)
 
 
-## The equipped-item management popover — the same scrollable opaque
-## click-off-to-close box as before, now with codex-style subtabs (2026-07-09)
-## instead of one long stack: Info (stats + set bonuses) / Gems (REAL socket
-## squares + insert list) / Reforge (the gold bench). Unequip rides above the
-## tabs — it applies on every tab. `at` re-anchors a rebuild in place so
-## socketing/reforging doesn't make the box hop to the cursor each time.
+## Equipped-item popover: Info, Gems and Reforge tabs plus Unequip.
 func open_item_panel(item: Dictionary, at := Vector2(-1, -1), tab := "info") -> void:
 	if not root:
 		return
-	# Rebuild in place: a socket/reforge action (or a subtab click) replaces an
-	# open popover — keep its spot so the box doesn't hop to the cursor.
+	# Preserve position across tab and item rebuilds.
 	if at.x < 0.0 and is_instance_valid(_popover_box):
 		at = _popover_box.position
-	# The panel EDITS the item (sockets, reforges) while the inventory shows the
-	# same item's stat line and socket row underneath — rebuild the underlay
-	# first so both views agree ("Add gem socket" left the equipped column's
-	# socket row a square short), then float the panel back on top.
+	# Rebuild the inventory underlay so edits stay in sync.
 	if current == "inventory" or (current == "detail" and detail_return == "inventory"):
 		open_inventory("gear", inv_cat)
 	var p: Player = game.local_player
@@ -1977,8 +1786,6 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1), tab := "info") -> 
 		_btn(tabrow, "  %s  " % spec[1], func() -> void: open_item_panel(item, Vector2(-1, -1), tid),
 			Color(0.95, 0.85, 0.5) if tab == tid else Color(0.6, 0.6, 0.6))
 
-	# Equipped items can be UNEQUIPPED back to the bag (leaving the slot
-	# empty) — not just swapped by equipping something else.
 	var is_equipped: bool = p.equipment.get(String(item.get("slot", ""))) == item
 	if is_equipped:
 		var slot_id: String = String(item["slot"])
@@ -1989,8 +1796,7 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1), tab := "info") -> 
 				game.spawn_text(game.local_player.global_position + Vector2(0, -50), "Bag full!", Color(1, 0.6, 0.4))
 		_btn(vbox, "  ⇩  Unequip  (move to bag)  ", unequip_cb, Color(1.0, 0.8, 0.5))
 
-	# The tab body scrolls, so a fully-socketed S item with a long insert
-	# list can't overrun the box (_popover_settle caps the scroll height).
+	# Long tab content scrolls within the popover cap.
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.custom_minimum_size = Vector2(452, 0)
@@ -2014,18 +1820,13 @@ func _item_info_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var d := _lbl(body, Items.describe(item, _awk(item)), 13, Color(Items.GRADE_COLOR[item["grade"]], 0.9))
 	d.custom_minimum_size = Vector2(440, 0)
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	# Generic gear carries NO signature passive by design (that is the mark of
-	# NAMED uniques since the legendary retirement) — say so, or an all-generic
-	# loadout reads as the card forgetting to render one (owner 2026-07-28).
+	# Generic gear deliberately has no signature passive.
 	if not item.has("passive") and String(item.get("slot", "")) in Items.SLOTS:
 		var np := _lbl(body, "No signature passive — named uniques (rare drops, Act 2+) carry those.",
 			12, Color(0.55, 0.55, 0.6))
 		np.custom_minimum_size = Vector2(440, 0)
 		np.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	# Profile-set panel (GEAR_UNIQUE_SETS.md, 2026-07-28): a named GEAR unique
-	# belongs to its profile's set — name from the S-triad family, worn count
-	# of six, and the 2/4/6 tiers with live state. (Replaces the legacy
-	# one-set-per-class S panel; generic S pieces no longer form a set.)
+	# Named gear uniques contribute to their profile's 2/4/6 set tiers.
 	var set_prof := Items.set_profile_of(item, String(item.get("cls", "")))
 	if set_prof != "" and String(item.get("cls", "")) == p.cls:
 		var set_cls := String(item["cls"])
@@ -2041,13 +1842,10 @@ func _item_info_tab(body: VBoxContainer, item: Dictionary) -> void:
 				Items.set_tier_text(rec)], 13, Color(0.6, 1.0, 0.6) if live else Color(0.6, 0.62, 0.68))
 
 
-## Gems tab: real socket squares (click a gem for its card, drag it out to
-## unsocket, drop a bag gem onto an empty one), then the insert-from-bag list.
+## Gems tab: socket targets and insert-from-bag list.
 func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var p: Player = game.local_player
-	# Capital rework (§2): gem work is the Lapidary's trade — the sockets
-	# still SHOW anywhere (gem_socket_error refuses the actions), but the
-	# tab says where the bench is instead of letting buttons fail quietly.
+	# Sockets remain visible away from the Lapidary, with an explicit refusal.
 	if game.chapter_id != "capital":
 		_lbl(body, "THE LAPIDARY'S BENCHES", 16, Color(0.95, 0.85, 0.5))
 		_lbl(body, "Socketing and unsocketing happen at the Master Lapidary on the Crownfall plaza.\nTravel there from the pause menu (⌂).", 13, Color(0.7, 0.72, 0.78))
@@ -2082,8 +1880,7 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 			_lbl(body, "No gems in your bag to insert (they drop from chests).", 12, Color(0.5, 0.5, 0.55))
 		else:
 			_lbl(body, "INSERT FROM BAG:", 15, Color(0.95, 0.85, 0.5))
-			# Two-column gem grid straight in the scrolling body — no nested
-			# scroll (that one collapsed to 0px and hid every insert button).
+			# Avoid a nested scroll; it collapses inside this body.
 			var groups := _gem_groups()
 			var igrid := GridContainer.new()
 			igrid.columns = 1  # single column — the popover is narrower than the old panel
@@ -2094,8 +1891,7 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 			for key in _sorted_gem_keys(groups):
 				var group: Dictionary = groups[key]
 				var g2: Dictionary = group["gem"]
-				# Say IN-PANEL why a gem won't fit here (the old refusal floated
-				# behind the menu as world text — read as "nothing happened").
+				# Keep socket refusal feedback inside the panel.
 				var err := game.local_player.gem_socket_error(item, g2)
 				if err == "":
 					var ins_cb := func() -> void:
@@ -2111,9 +1907,7 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 					db.custom_minimum_size = Vector2(414, 0)
 
 
-## Reforge tab: gold-cost crafting on this item. Capital rework (§2): this IS
-## Smith Petra's bench — it only works in Crownfall, her favor tier discounts
-## it (visible, never silent), and gold spent here builds that favor.
+## Reforge tab: Crownfall smithing actions and visible favor discounts.
 func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var p: Player = game.local_player
 	if game.chapter_id != "capital":
@@ -2128,20 +1922,17 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 	if _reforge_msg != "":
 		_lbl(body, _reforge_msg, 12, _reforge_msg_color)
 		_reforge_msg = ""
-	# Gold spent at Petra's bench builds her favor and settles her intro
-	# quest's deed ("temper any piece once").
+	# Smithing spend builds favor and progresses the intro deed.
 	var petra_spend := func(amount: int) -> void:
 		game.favor_spend("petra", amount)
 		if game.get_flag("cap_q_forge_on", false) and not game.get_flag("cap_q_forge_done", false):
 			game.set_flag("cap_q_forge_done")
 	var subs2: Dictionary = item.get("subs", {})
-	# S-gear reforges within its own class; everything else uses the wearer's.
 	var rcls: String = String(item.get("cls", p.cls))
 	if subs2.is_empty() and not Items.can_add_socket(item) and item.get("main", {}).is_empty():
 		_lbl(body, "Nothing to reforge — no affixes to reroll or sockets to add.",
 			12, Color(0.55, 0.55, 0.6))
-	# --- QUENCH: reroll a stat's band, keep the higher (never regresses) ---
-	# Main stat first, then each rollable sub. plus scales the kept value later.
+	# Quench rerolls a stat's band and never regresses it.
 	var quench_stats: Array = item.get("main", {}).keys() + subs2.keys()
 	var any_quench := false
 	for stat in quench_stats:
@@ -2180,7 +1971,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 			_btn(body, "   Quench %s: %s / %s  —  %d gold" % [Items.STAT_LABEL.get(qs, qs),
 				String.num(cur, 2), String.num(float(band[1]), 2), qcost], q_cb,
 				Color(0.75, 0.85, 0.95) if p.gold >= qcost else Color(0.5, 0.5, 0.55))
-	# --- Reforge: reroll ONE substat slot into a different affix (you pick which) ---
+	# Reforge one selected substat slot.
 	var acost := int(ceil(Items.reforge_cost(item, "affix") * petra_mult))
 	var reforgeable := false
 	for stat in subs2.keys():
@@ -2203,8 +1994,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 				open_item_panel(item, Vector2(-1, -1), "reforge")
 		_btn(body, "   Reforge %s → ?  —  %d gold" % [Items.STAT_LABEL.get(rs, rs), acost], rf_cb,
 			Color(0.9, 0.82, 0.7) if p.gold >= acost else Color(0.5, 0.5, 0.55))
-	# --- Transmute main: point the rolled budget at another attribute ---
-	# Keeps the roll, changes what it feeds — the bench half of an off-meta build.
+	# Transmute redirects the main-stat budget without changing its roll.
 	if Items.can_transmute_main(item):
 		var tcost := int(ceil(Items.transmute_cost(item) * petra_mult))
 		var main_stat := String(item["main"].keys()[0])
@@ -2226,7 +2016,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 			_btn(body, "   %s → %s  —  %d gold" % [Items.STAT_LABEL.get(main_stat, main_stat),
 				Items.STAT_LABEL.get(tgt, tgt), tcost], t_cb,
 				Color(0.85, 0.75, 0.95) if p.gold >= tcost else Color(0.5, 0.5, 0.55))
-	# --- Add gem socket: ONE-TIME, steep, tier-scaled (Balance.ADD_SOCKET_COST) ---
+	# Socket cutting is a one-time, tier-scaled action.
 	if Items.can_add_socket(item):
 		# Socket-cutting is the LAPIDARY's trade — her favor rates this one.
 		var ccost := int(ceil(Items.reforge_cost(item, "socket") * game.favor_price_mult("lapidary")))
@@ -2827,9 +2617,7 @@ func open_shop(zone: int, tab := "") -> void:
 	var at_capital: bool = game.chapter_id == "capital"
 	var price_ch := game.shop_chapter()
 	if at_capital:
-		# The Crown Bazaar restocks at DAWN (capital rework §3): the shelf is
-		# a daily roll for the character's road ahead, not a buy-out pool. The
-		# rolled shelf rides the save — re-entering the city never re-rolls it.
+	# The Crown Bazaar shelf persists until the next trusted dawn.
 		var today := game.daily_day_index()
 		if game.capital_shop_day != today:
 			game.capital_shop_day = today
@@ -2844,28 +2632,22 @@ func open_shop(zone: int, tab := "") -> void:
 			game.capital_bags = []
 			for i in crng.randi_range(int(ccount[0]), int(ccount[1])):
 				game.capital_bags.append(Items.make_bag(Balance.roll_bag_grade(price_ch, crng)))
-		# Alias the plaza room onto the persistent shelf: buys erase from both
-		# views of the SAME array, so buy-out still sticks until dawn.
+		# Plaza and saved bazaar stock share the same array.
 		game.shop_stock[zone] = game.capital_stock
 		game.shop_bags[zone] = game.capital_bags
-	# Each ROAD merchant keeps their stock until you buy it out.
+	# Road stock persists until bought out.
 	if not game.shop_stock.has(zone):
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
-		# Rooms may declare their stock tier; otherwise it climbs with
-		# how deep the room sits (works for any chapter).
 		var tier: String = String(game.zones[zone].get("shop_tier",
 			["wood", "silver", "silver", "gold"][clampi(zone, 0, 3)]))
 		var stock: Array = []
 		var stock_n: int = int(Balance.SHOP_STOCK_BY_TIER.get(tier, 3))
-		# Round 51: stock grade follows the ACT appearance table (Items.
-		# roll_shop_grade), clamped to loot_cap — not the old chest tiers.
 		for i in stock_n:
 			var sg := Items.roll_shop_grade(game.chapter_id, rng, game.loot_cap())
 			stock.append(Items.roll_gear_of_grade(sg, rng, game.local_player.cls, Story.act_of(game.chapter_id)))
 		game.shop_stock[zone] = stock
-	# Bags on the shelf (round 52): 1 (Act 1) or 1-2 (Act 2/3) of a rollable
-	# act tier — kept alongside gear stock until bought out.
+	# Bag stock uses the act's rollable tiers.
 	if not game.shop_bags.has(zone):
 		var brng := RandomNumberGenerator.new()
 		brng.randomize()
@@ -2885,7 +2667,6 @@ func open_shop(zone: int, tab := "") -> void:
 	var vbox := _open(("The Crown Bazaar — you have %d gold" if at_capital
 		else "Merchant — you have %d gold") % p.gold, 1120, 600, true)
 	current = "shop"
-	# (T7) The merchant reads the shard before quoting a price.
 	match Story.res_band(p.resonance):
 		"steady":
 			_lbl(vbox, "\"For YOU? Fair rates, friend — the road speaks well of you.\"  (prices 10% kinder)", 14, Color(0.6, 0.9, 0.6))
@@ -2894,18 +2675,15 @@ func open_shop(zone: int, tab := "") -> void:
 		_:
 			_lbl(vbox, "\"Ah, a customer! Dangerous roads make good business.\"", 14, Color(0.75, 0.7, 0.6))
 	if at_capital:
-		# Dawn countdown: the shelf's whole identity is that it comes back.
 		var left: int = maxi(0, (game.daily_day_index() + 1) * 86400 - game.trusted_now())
 		_lbl(vbox, "Fresh stock at dawn — new shelf in %dh %02dm." % [left / 3600, (left % 3600) / 60],
 			13, Color(0.85, 0.8, 0.55))
 	elif game.shop_markup(zone) > 1.0:
-		# Road prices (capital rework §3): named on the sign so the markup
-		# reads as a rate, never a bug. Provision at the capital instead.
+		# Road markup is named explicitly in the shop copy.
 		_lbl(vbox, "Road prices — everything +%d%% out here. The Crown Bazaar sells fair." %
 			int(round((game.shop_markup(zone) - 1.0) * 100.0)), 13, Color(1.0, 0.75, 0.5))
 
-	# Codex-style tabs: Buy / Sell, each a full-width view. They used to sit
-	# side-by-side in two columns, which cramped both lists (2026-07-09).
+	# Buy and Sell are separate full-width views.
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 12)
 	vbox.add_child(tabs)
@@ -2921,15 +2699,7 @@ func open_shop(zone: int, tab := "") -> void:
 	_hint(vbox)
 
 
-## The BLACK MARKET (CONSUMABLE_GRADES §10): the laced lane, sold ONLY here — by
-## the Sable Court fence in Crownfall (game_world._cap_fence) and the occasional
-## road smuggler (_spawn_road_smuggler). Both share this ONE shelf: the full laced
-## ladder F→A per family (Items.black_market_stock), every bottle cut with diluted
-## blightwater so the sting rides on the card. S is never laced, so it never shows.
-## Prices are the stored laced values (≈65% of the clean twin, §0) times the shard-
-## reputation band — no road markup; the discount IS the lane. `source` picks the
-## vendor voice ("fence" | "smuggler"). Like every menu, it is a pause/overlay
-## surface — the touch HUD and tap-to-talk gate on is_open(), not the tree pause.
+## Shared laced-potion shelf for the capital fence and road smuggler.
 func open_black_market(source := "fence") -> void:
 	var p: Player = game.local_player
 	var title := ("The Sable Court Fence — you have %d gold" if source == "fence"
@@ -2941,7 +2711,6 @@ func open_black_market(source := "fence") -> void:
 	else:
 		_lbl(vbox, "\"Long way from a chartered shelf out here. I've the cheap bottles; you've the desperation. Fair trade.\"", 14, Color(0.78, 0.6, 0.66))
 	_lbl(vbox, "Every laced bottle is cut with diluted blightwater — that's the discount, and that's the sting. No S here: legends can't be counterfeited.", 12, Color(0.62, 0.6, 0.66))
-	# The shelf scrolls — the full laced ladder is taller than the panel.
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -2953,8 +2722,7 @@ func open_black_market(source := "fence") -> void:
 	scroll.add_child(buy)
 	_lbl(buy, "— Black Market (laced, F→A) —", 13, Color(0.72, 0.55, 0.6))
 	var grid := _shop_grid(buy)
-	# Shard reputation still reads on the price; the fence charges no road markup —
-	# the laced discount already IS the reason to come here.
+	# Reputation modifies the stored laced price; there is no road markup.
 	var haggle: float = game.band_price_mult()
 	for made_v in Items.black_market_stock():
 		var made: Dictionary = made_v
@@ -2973,9 +2741,7 @@ func open_black_market(source := "fence") -> void:
 	_hint(vbox)
 
 
-## A 2-up card grid for a shelf of items. The old shop stacked every item as a
-## full-width row, so a ~500px label sat in a ~1070px box and wasted the whole
-## right half; two roomy columns halve that whitespace and read like the bag.
+## A two-column shelf grid.
 func _shop_grid(parent: Node) -> GridContainer:
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -2986,9 +2752,7 @@ func _shop_grid(parent: Node) -> GridContainer:
 	return grid
 
 
-## One compact card in a _shop_grid: icon + grade-colored title over a detail/
-## price line, boxed like a bag slot. `title`/`detail` render as two lines of
-## the same grade color (matching the old single-color rows). Fills its column.
+## One item card in a shop grid.
 func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: String,
 		color: Color, enabled: bool, cb: Callable) -> Button:
 	var b := Button.new()
@@ -3006,7 +2770,6 @@ func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: Str
 		b.icon = icon
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
-	# Boxed like _bag_slot: grade border + dark fill, brighter border on hover.
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.09, 0.09, 0.12, 0.92)
 	sb.border_color = Color(color, 0.55 if enabled else 0.28)
@@ -3032,9 +2795,7 @@ func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: Str
 	return b
 
 
-## Buy tab (full width): rolled gear + upgrades, consumables, then the
-## miscellaneous shelf (gems, bags, gamble). Scrolls — the full shelf is
-## taller than the panel and otherwise spills into the HUD/quickbar.
+## Scrollable Buy shelf.
 func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	var buy_scroll := ScrollContainer.new()
 	buy_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -3046,26 +2807,19 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	buy.add_theme_constant_override("separation", 6)
 	buy_scroll.add_child(buy)
 
-	# Road markup rides the same multiplier the shard-haggle does, so every
-	# shelf below prices consistently (capital + Depths camp = 1.0).
+	# One multiplier prices every shelf consistently.
 	var haggle: float = game.band_price_mult() * game.shop_markup(zone)
-	# The capital quotes the character's NEXT chapter's economy (shop_chapter);
-	# road merchants quote their own chapter's, as always.
 	var price_ch := game.shop_chapter()
-	# Round 51: gear buy = FARM-COST (Items.shop_buy_price), so buying never
-	# beats farming. Consumables/health potion stay flat staples; the old
-	# per-level ladder is retired.
+	# Gear uses farm-cost pricing; staple consumables remain flat.
 
 	# ================================================================ GEAR ===
-	# The headline purchase leads the column: rolled stock, then upgrades.
 	_lbl(buy, "— Gear —", 13, Color(0.62, 0.64, 0.7))
 	var gear_grid := _shop_grid(buy)
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
 		var cost := int(ceil(Items.shop_buy_price(it, price_ch) * haggle))
 		var can_afford: bool = p.gold >= cost
-		# Click opens the same detail popover the bag uses — full breakdown +
-		# "Compared to equipped" + a Buy button — instead of buying on contact.
+		# Buying is confirmed from the shared detail popover.
 		var open_cb := func() -> void:
 			var info := "%d gold\n%s\n\nCompared to what's equipped:\n%s" % [cost, Items.describe(it, _awk(it)), _diff_tip(it)]
 			var actions: Array = []
@@ -3110,8 +2864,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 						_smith_msg_color = Color(0.5, 1.0, 0.5)
 						game.sfx("levelup")
 					else:
-						# Gold-only fail (2026-07-13): the attempt is spent, but the
-						# item keeps its plus — no downgrade.
+						# A failed attempt spends gold but never downgrades the item.
 						_smith_msg = "Upgrade FAILED — %s held at +%d (gold spent)" % [Items.title(item), int(item["plus"])]
 						_smith_msg_color = Color(1.0, 0.5, 0.4)
 						game.sfx("hurt")
@@ -3124,9 +2877,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				Color(0.6, 0.9, 1.0), p.gold >= cost, do_upgrade)
 
 	# ========================================================= CONSUMABLES ===
-	# Graded potions (CONSUMABLE_GRADES §10 sourcing). The Accord (clean) shelf
-	# stocks every family across an act-appropriate grade band, NEVER S (S is
-	# boss/elite drop only). Prices are the per-grade table x haggle.
+	# The clean shelf stocks act-appropriate grades below S.
 	var pot_act: int = Story.act_of(price_ch)
 	var pot_shapes := [["health", "instant"], ["health", "tonic"], ["mana", "instant"],
 		["mana", "tonic"], ["might", "buff"], ["ward", "buff"], ["renewal", "burst"]]
@@ -3151,7 +2902,6 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			_shop_card(acc_grid, Art.consumable_icon(made), String(made["name"]),
 				"%d gold   (%s)" % [pcost, made["desc"]],
 				Items.GRADE_COLOR[made["grade"]], p.gold >= pcost, buy_cb)
-	# The ungraded Scroll of Recall still shares the Accord shelf.
 	var recall := Items.make_recall_scroll()
 	var rcost := int(ceil(float(Balance.consumable_price("recall_scroll", p.level)) * haggle))
 	var buy_recall := func() -> void:
@@ -3165,16 +2915,12 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	_shop_card(acc_grid, Art.consumable_icon(recall), String(recall["name"]),
 		"%d gold   (%s)" % [rcost, recall["desc"]], Items.GRADE_COLOR[recall["grade"]],
 		p.gold >= rcost, buy_recall)
-	# NO laced lane here (§10): the black market is sold ONLY by the Sable Court
-	# fence + the road smuggler (menus.open_black_market), never the chartered
-	# merchant. The Accord (clean) shelf above stays at every merchant.
+	# Laced potions remain exclusive to black-market vendors.
 
 	# ======================================================= MISCELLANEOUS ===
 	_lbl(buy, "— Miscellaneous —", 13, Color(0.62, 0.64, 0.7))
 	var misc_grid := _shop_grid(buy)
-	# Gem shelf (round 51): buy loose gems at the act's level(s), random stat.
-	# Farm-cost priced (Items.gem_buy_price) — a fraction of gear, scales by act.
-	# Gated to ch4+ (2026-07-09): merchants don't stock gems before they drop.
+	# Loose gems appear only once their drops have entered the campaign.
 	if Balance.regular_gems_drop(price_ch):
 		var gem_act: int = int(Balance.CHAPTER_ECON.get(price_ch, {}).get("act", 1))
 		var gem_range: Array = Balance.SHOP_GEM_RANGE.get(gem_act, [1, 1])
@@ -3192,14 +2938,11 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			_shop_card(misc_grid, null, "💎 Gem — Lv%d" % gl, "random stat — %d gold" % gprice,
 				Color(0.6, 0.9, 1.0), p.gold >= gprice, buy_gem)
 
-	# Bag shelf (round 52): expand carry capacity. Capacity is QoL not power,
-	# so bags are priced FAR below gear. Buying joins the equipped set (over
-	# MAX_BAGS keeps the best via acquire_bag). Sells for only 1g, so buy >> sell.
+	# Bags are low-cost capacity upgrades; acquire_bag keeps the best set.
 	for bag_item in game.shop_bags[zone]:
 		var bit: Dictionary = bag_item
 		var bcost := int(ceil(float(Items.bag_buy_price(String(bit["grade"]))) * haggle))
-		# Grey the buy when it can't raise capacity (round 52b): a full set of
-		# bags all >= this one would just cash it for 1g — don't waste gold.
+		# Disable bags that cannot improve total capacity.
 		var bimproves: bool = p.bag_would_improve(int(bit["slots"]))
 		var buy_bag := func() -> void:
 			if p.gold >= bcost and bimproves:
@@ -3213,11 +2956,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		_shop_card(misc_grid, Art.bag_icon(String(bit["grade"])), String(bit["name"]), bdetail,
 			Items.GRADE_COLOR[String(bit["grade"])], p.gold >= bcost and bimproves, buy_bag)
 
-	# Gambling shelf (2026-07-09): the pity machine — rolls the chapter's
-	# BOSS band at ~0.8x its expected farm cost (game.gamble_cost). The
-	# legacy merchant tier is still passed but no longer shapes anything.
-	# Capital rework: the bazaar does NOT gamble — the pity machine is a
-	# road vice, and "capital" has no boss band of its own to roll.
+	# Gambling is a road-only boss-band pity roll.
 	if game.chapter_id == "capital":
 		return
 	var gamble_tier := String(game.zones[zone].get("shop_tier",
@@ -3238,22 +2977,18 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		Color(0.85, 0.6, 1.0), p.gold >= gcost, gamble_cb)
 
 
-## Set the junk-sell floor grade and rebuild the sell tab so the chips + the
-## "Sell ≤ X" button reflect the new floor. Kept a named method so the chip's
-## callback stays a single-line lambda (a multi-statement one breaks the parse).
+## Set the junk-sell floor and rebuild the sell view.
 func _pick_junk_tier(g: String, zone: int) -> void:
 	shop_junk_tier = g
 	open_shop(zone, "sell")
 
 
-## Sell tab: bulk actions (SELL ALL + junk-sell ≤ floor) lead, then gridded
-## cards for gear, loose gems, merchant-stocked consumables + spare potions.
+## Sell tab: bulk actions followed by item cards.
 func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	_lbl(vbox, "Buy-back is %d%% of market." % int(Balance.MERCHANT_SELL_FRACTION * 100),
 		13, Color(0.7, 0.72, 0.78))
 
-	# ---- bulk actions lead the tab (fixed above the scroll, always in reach) ----
-	# gear sell values, computed up front so SELL ALL / junk-sell can headline.
+	# Keep bulk actions fixed above the scrolling stock.
 	var gear_total := 0
 	for item in p.backpack:
 		gear_total += maxi(1, int(Items.price(item) * Balance.MERCHANT_SELL_FRACTION))
@@ -3269,9 +3004,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			sell_all, Color(1.0, 0.9, 0.4))
 		allb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-		# Junk-sell: pick a floor grade, then one click dumps that grade and every
-		# grade below it — higher gear is never touched. The floor persists across
-		# shop visits (shop_junk_tier). S is intentionally not offerable as a floor.
+		# Junk-sell includes the selected grade and below, never S.
 		var junk_idx := Items.GRADES.find(shop_junk_tier)
 		var junk_total := 0
 		var junk_n := 0
@@ -3285,16 +3018,12 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		frow.add_theme_constant_override("separation", 6)
 		vbox.add_child(frow)
 		var flbl := _lbl(frow, "Junk floor:", 13, Color(0.7, 0.72, 0.78))
-		# Autowrapped labels inside an HBox report an almost-zero minimum width.
-		# Without an explicit floor this becomes one character per line, making
-		# the entire filter row hundreds of pixels tall.
+		# Explicit widths avoid the HBox label-collapse trap.
 		flbl.custom_minimum_size = Vector2(88, 0)
 		flbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		for gr in ["F", "E", "D", "C", "B", "A"]:
 			var g: String = gr
 			var picked: bool = shop_junk_tier == g
-			# Single-line lambda (via _pick_junk_tier) so the trailing color arg can
-			# sit after it — a multi-statement lambda here would be a parse error.
 			var chip := _btn(frow, " %s " % g, func() -> void: _pick_junk_tier(g, zone),
 				Items.GRADE_COLOR[g] if picked else Color(0.5, 0.5, 0.55))
 			chip.add_theme_font_size_override("font_size", 14)
@@ -3321,7 +3050,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	scroll.add_child(list)
 	var sold_any := false
 
-	# --- gear cards (click sells one; strips gems back into the bag first) ---
+	# --- gear cards ---
 	if not p.backpack.is_empty():
 		sold_any = true
 		_lbl(list, "— Gear —", 13, Color(0.62, 0.64, 0.7))
@@ -3338,7 +3067,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			_shop_card(gear_grid, Art.icon_for(it), Items.title(it),
 				"sell for %d gold" % value, Items.GRADE_COLOR[it["grade"]], true, sell_one)
 
-	# --- loose gems (priced on gem level, not player level) ---
+	# --- loose gems ---
 	var gem_groups := _gem_groups()
 	var gem_keys := _sorted_gem_keys(gem_groups)
 	if not gem_keys.is_empty():
@@ -3359,10 +3088,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				"%s%s" % [Items.gem_title(g), xn], "sell one for %d gold" % gval,
 				Items.gem_color(g), true, sell_gem)
 
-	# --- consumables: graded potions (their per-grade price) + the Scroll of
-	# Recall (CONSUMABLE_PRICES). The teaching GIFT potion is never sellable;
-	# quest keepsakes (kind "quest") and elite utility (stone/tome) have no
-	# market price -> never sellable, so run-scoped quest items can't be lost. ---
+	# --- marketable consumables; quest/utility items never appear here ---
 	var cg := {}
 	var corder: Array = []
 	for c in p.consumables:
@@ -3399,8 +3125,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				"sell one for %d gold" % cval, Items.GRADE_COLOR[String(cc.get("grade", "C"))],
 				true, sell_cons)
 
-	# --- materials: flat anti-haul intrinsic (Items.material_value x sell
-	# fraction), stacked by family+grade, click sells ONE unit. ---
+	# --- materials: click sells one unit from the stack ---
 	if not p.materials.is_empty():
 		sold_any = true
 		_lbl(list, "— Materials —", 13, Color(0.62, 0.64, 0.7))
@@ -3428,11 +3153,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 
 # --------------------------------------------------------------- map (M) ---
 
-# Fog-of-war rules (DESIGN.md): only VISITED rooms render. Unexplored
-# exits off visited rooms show as stubs — you can see THAT there's
-# somewhere left to go without being shown what's there. A boss door
-# gets its marker only once it has been seen. Fast travel goes to
-# visited safe rooms; combat rooms are never travel targets.
+# Only visited rooms render; unexplored exits appear as stubs.
 const MAP_TYPE_COLOR := {
 	"safe": Color(0.30, 0.45, 0.30), "merchant": Color(0.32, 0.44, 0.34),
 	"social": Color(0.30, 0.42, 0.38), "resonance": Color(0.30, 0.36, 0.50),
@@ -3444,9 +3165,7 @@ const MAP_TYPE_ICON := {
 	"dead_end": "", "combat": "", "boss": "☠",
 }
 
-# District palette for the capital's detailed map (every hub room is "safe", so
-# the type colour is useless there — colour by DISTRICT instead, matching the
-# CROWNFALL_HUB.html plan).
+# Crownfall uses district color rather than room-type color.
 const DISTRICT_COLOR := {
 	"heart":    Color(0.72, 0.42, 0.18), "craft":  Color(0.52, 0.31, 0.16),
 	"civic":    Color(0.24, 0.35, 0.45), "approach": Color(0.30, 0.34, 0.40),
@@ -3474,8 +3193,7 @@ func open_map() -> void:
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board.custom_minimum_size = Vector2(1120, 440)
 	vbox.add_child(board)
-	# Chart backdrop (cartography pass 2026-07-10): a parchment-dark board
-	# with a bronze inner rim — one visited room no longer floats in void.
+	# Dark chart board with a restrained inner rim.
 	var bbg := Panel.new()
 	var bsb := StyleBoxFlat.new()
 	bsb.bg_color = Color(0.115, 0.10, 0.072, 0.96)
@@ -3525,10 +3243,7 @@ func open_map() -> void:
 	var cell_pos := func(c: Vector2i) -> Vector2:
 		return org + Vector2((c.x - min_c.x) * (cw + 10.0), (c.y - min_c.y) * (ch + 10.0))
 
-	# Cartographic chrome: a faint surveyor's grid aligned to the room
-	# lattice, plus a compass rose in the corner — the chart reads as a
-	# chart even when one room is all you've walked. Drawn, not noded:
-	# a single ignore-mouse Control with a draw callback is the cheap way.
+	# Draw grid and compass in one ignore-mouse control.
 	var chrome := Control.new()
 	chrome.set_anchors_preset(Control.PRESET_FULL_RECT)
 	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -3548,8 +3263,6 @@ func open_map() -> void:
 			if gy > 6.0:
 				chrome.draw_line(Vector2(6.0, gy), Vector2(sz.x - 6.0, gy), gcol, 1.0)
 			gy += pitch.y
-		# Compass rose, top-right: two rings, a long N–S needle, a short
-		# E–W one, and N in the display face. Quiet gold — chrome, not UI.
 		var cpos := Vector2(sz.x - 58.0, 62.0)
 		chrome.draw_arc(cpos, 30.0, 0.0, TAU, 48, Color(0.9, 0.8, 0.5, 0.30), 1.5)
 		chrome.draw_arc(cpos, 22.0, 0.0, TAU, 40, Color(0.9, 0.8, 0.5, 0.14), 1.0)
@@ -3572,7 +3285,7 @@ func open_map() -> void:
 		var c: Vector2i = game.rooms[i]["coord"]
 		var p: Vector2 = cell_pos.call(c)
 
-		# Connections + unexplored-exit stubs (drawn under the cells).
+		# Draw connections and exit stubs under room cells.
 		for dir in game.rooms[i]["exits"].keys():
 			var nb: int = game.neighbor(i, String(dir))
 			if nb < 0:
@@ -3590,7 +3303,7 @@ func open_map() -> void:
 			link.size = Vector2(absf(to.x - mid.x) + thick, absf(to.y - mid.y) + thick)
 			link.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			board.add_child(link)
-			# A seen-but-unentered BOSS door earns its skull early.
+			# Seen boss doors reveal their marker before entry.
 			if not nb_visited and game.room_type(nb) == "boss" and game.door_seen.get(nb, false):
 				var skull := _lbl(board, "☠", 15, Color(1.0, 0.55, 0.6))
 				skull.position = to - Vector2(7, 12)
@@ -3652,9 +3365,7 @@ func open_map() -> void:
 			cell.mouse_filter = Control.MOUSE_FILTER_STOP
 			board.add_child(cell)
 
-		# Doorway notches: every exit of a visited room gets a bright pip
-		# on that edge of its cell — clear the room, glance at the map,
-		# and you KNOW which walls have doors (playtest round 3).
+		# Doorway pips expose exits at a glance.
 		for dir in game.rooms[i]["exits"].keys():
 			var pip := ColorRect.new()
 			pip.color = Color(0.95, 0.85, 0.5) if i == game.cur_room else Color(0.78, 0.74, 0.6)
@@ -3688,8 +3399,7 @@ func open_map() -> void:
 			done_l.size = Vector2(14, 16)
 			done_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# Legend row — the minimap's own vocabulary (here/boss/cleared), with
-	# the current room named on the ◆ chip.
+	# Legend includes the current room name.
 	var legend := HBoxContainer.new()
 	legend.add_theme_constant_override("separation", 22)
 	vbox.add_child(legend)

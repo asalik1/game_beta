@@ -1840,10 +1840,14 @@ func _run_systems() -> void:
 	# Gear split into shelves 2026-07-26 — smoke each so a broken subtab is caught,
 	# including the Shapes shelf's per-slot children.
 	for gsub in ["gear_shapes", "gear_shapes_weapon", "gear_shapes_armor",
-			"gear_shapes_boots", "gear_shapes_charm", "gear_uniques", "gear_gems",
+			"gear_shapes_boots", "gear_shapes_charm", "gear_uniques", "gear_uniques_weapon", "gear_gems",
 			"gear_bags", "gear_rules"]:
 		game.menus.open_codex(gsub)
 		await _frames(2)
+		if gsub == "gear_uniques_weapon":
+			var unique_grid := game.menus.root.find_child("UniqueGrid_warrior", true, false) as GridContainer
+			if unique_grid == null or unique_grid.columns != 2:
+				return _fail("codex unique gear did not build its two-column card grid")
 	game.menus.open_codex("terrains")
 	await _frames(2)
 	var terrain_catalog_copy: String = _tree_ui_text(game.menus.root)

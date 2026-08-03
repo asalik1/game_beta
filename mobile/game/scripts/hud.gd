@@ -268,6 +268,7 @@ func _ready() -> void:
 	xp_fill = _bar(Vector2(BAR_X, 58), Vector2(BAR_W, 8), Color(0.95, 0.8, 0.25))
 	hp_text = _bar_text(Vector2(BAR_X, 16), Vector2(BAR_W, 20), 12)
 	mp_text = _bar_text(Vector2(BAR_X, 40), Vector2(BAR_W, 14), 10)
+	_panel(Vector2(8, 76), Vector2(344, 148))
 	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1), 650)
 	gold_label = _label(Vector2(18, 104), 15, Color(1.0, 0.85, 0.35))
 	cr_label = _label(Vector2(18, 126), 15, Color(0.65, 0.9, 1.0))
@@ -387,6 +388,7 @@ func _ready() -> void:
 	depths_btn = _endgame_icon("🕯", "The Waking Depths — Marathon", Vector2(45, 226), "depths")
 
 	# ---------------------------------------------------- quest tracker ---
+	_panel(Vector2(350, 8), Vector2(580, 56))
 	zone_label = _label(Vector2(360, 12), 16, Color(0.95, 0.85, 0.5), 560, HORIZONTAL_ALIGNMENT_CENTER)
 	UITheme.title(zone_label, 17)  # the location name is a header
 	quest_label = _label(Vector2(360, 36), 16, Color(1, 1, 1), 560, HORIZONTAL_ALIGNMENT_CENTER)
@@ -497,6 +499,9 @@ func _ready() -> void:
 		if game.play_started and game.net_online() and not game.menus.is_open():
 			game.menus.open_party())
 	add_child(party_btn)
+	for hud_button: Button in [mail_btn, quest_btn, inv_btn, codex_btn, daily_btn,
+			skills_btn, settings_btn, party_btn]:
+		_style_hud_icon(hud_button)
 	# Stash access moved AGAIN (capital rework 2026-07-25 §2): off the HUD row
 	# entirely — the vault coffer on the Crownfall plaza IS the stash now, so
 	# the account bank has a street address instead of a floating icon. The
@@ -1146,10 +1151,10 @@ func _build_minimap() -> void:
 	# ground too (QA finding 7: it dissolved over void terrain).
 	var bg := Panel.new()
 	var bgsb := StyleBoxFlat.new()
-	bgsb.bg_color = Color(0.05, 0.05, 0.09, 0.88)
-	bgsb.border_color = Color(0.9, 0.8, 0.5, 0.3)
+	bgsb.bg_color = Color(UITheme.PANEL_BG, 0.93)
+	bgsb.border_color = UITheme.BORDER
 	bgsb.set_border_width_all(1)
-	bgsb.set_corner_radius_all(4)
+	bgsb.set_corner_radius_all(10)
 	bg.add_theme_stylebox_override("panel", bgsb)
 	bg.size = Vector2(198, 170)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1454,12 +1459,35 @@ func _update_avatar() -> void:
 
 
 func _panel(pos: Vector2, panel_size: Vector2) -> void:
-	var bg := ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.45)
+	var bg := Panel.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(UITheme.PANEL_BG, 0.86)
+	sb.border_color = Color(UITheme.BORDER, 0.72)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(10)
+	sb.shadow_color = Color(0, 0, 0, 0.34)
+	sb.shadow_size = 8
+	bg.add_theme_stylebox_override("panel", sb)
 	bg.position = pos
 	bg.size = panel_size
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
+
+
+func _style_hud_icon(button: Button) -> void:
+	button.flat = false
+	button.focus_mode = Control.FOCUS_NONE
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(UITheme.PANEL_BG, 0.84)
+	normal.border_color = Color(UITheme.BORDER, 0.82)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(10)
+	var hover: StyleBoxFlat = normal.duplicate()
+	hover.bg_color = UITheme.SURFACE_RAISED
+	hover.border_color = Color(UITheme.GOLD, 0.78)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", hover)
 
 
 ## Framed resource bar (theme pass): 2px warm-metal border on a dark

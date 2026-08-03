@@ -16,33 +16,26 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 	# codex screens stay top-level. `in_bestiary` keeps the parent lit.
 	var in_bestiary: bool = tab in ["monsters", "bosses", "npcs"]
 
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 12)
+	var tabs := HFlowContainer.new()
+	tabs.add_theme_constant_override("h_separation", 7)
+	tabs.add_theme_constant_override("v_separation", 7)
 	vbox.add_child(tabs)
-	m._btn(tabs, "  Bestiary  ", func() -> void: m.open_codex("monsters"),
-		Color(0.95, 0.85, 0.5) if in_bestiary else Color(0.6, 0.6, 0.6))
+	_nav(m, tabs, "Bestiary", func() -> void: m.open_codex("monsters"), in_bestiary)
 	# Gear shares one top-level tab across its Shapes / Uniques / Gems / Bags /
 	# Rules shelves (the bestiary/gallery pattern) — the 120-shape matrix made one
 	# flat scroll unnavigable. "gear" alone is an alias for the Shapes shelf so old
 	# open_codex("gear") call sites still land somewhere sane.
 	var in_gear: bool = tab == "gear" or tab.begins_with("gear_")
-	m._btn(tabs, "  Gear  ", func() -> void: m.open_codex("gear_shapes"),
-		Color(0.95, 0.85, 0.5) if in_gear else Color(0.6, 0.6, 0.6))
-	m._btn(tabs, "  Terrains  ", func() -> void: m.open_codex("terrains"),
-		Color(0.95, 0.85, 0.5) if tab == "terrains" else Color(0.6, 0.6, 0.6))
-	m._btn(tabs, "  Curios  ", func() -> void: m.open_codex("curios"),
-		Color(0.95, 0.85, 0.5) if tab == "curios" else Color(0.6, 0.6, 0.6))
-	m._btn(tabs, "  Status  ", func() -> void: m.open_codex("status"),
-		Color(0.95, 0.85, 0.5) if tab == "status" else Color(0.6, 0.6, 0.6))
-	m._btn(tabs, "  Records  ", func() -> void: m.open_codex("records"),
-		Color(0.95, 0.85, 0.5) if tab == "records" else Color(0.6, 0.6, 0.6))
+	_nav(m, tabs, "Gear", func() -> void: m.open_codex("gear_shapes"), in_gear)
+	_nav(m, tabs, "Terrains", func() -> void: m.open_codex("terrains"), tab == "terrains")
+	_nav(m, tabs, "Curios", func() -> void: m.open_codex("curios"), tab == "curios")
+	_nav(m, tabs, "Status", func() -> void: m.open_codex("status"), tab == "status")
+	_nav(m, tabs, "Records", func() -> void: m.open_codex("records"), tab == "records")
 	# Portrait gallery (CQ Illustration-Tome pattern): shares one top-level
 	# tab across its Heroes / Bosses / Folk shelves, like the bestiary.
 	var in_gallery := tab.begins_with("gallery")
-	m._btn(tabs, "  Gallery  ", func() -> void: m.open_codex("gallery_heroes"),
-		Color(0.95, 0.85, 0.5) if in_gallery else Color(0.6, 0.6, 0.6))
-	m._btn(tabs, "  Co-op  ", func() -> void: m.open_codex("coop"),
-		Color(0.95, 0.85, 0.5) if tab == "coop" else Color(0.6, 0.6, 0.6))
+	_nav(m, tabs, "Gallery", func() -> void: m.open_codex("gallery_heroes"), in_gallery)
+	_nav(m, tabs, "Co-op", func() -> void: m.open_codex("coop"), tab == "coop")
 	# The FUTURE shelf (dev launcher only): every placeholder in the project,
 	# by category — mined art awaiting a story/system home. Players never
 	# see the tab; the shipping codex stays clean.
@@ -70,12 +63,12 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 		var subs := HBoxContainer.new()
 		subs.add_theme_constant_override("separation", 10)
 		vbox.add_child(subs)
-		m._btn(subs, "  Monsters  ", func() -> void: m.open_codex("monsters"),
-			Color(1.0, 0.9, 0.6) if tab == "monsters" else Color(0.55, 0.55, 0.58))
-		m._btn(subs, "  Bosses  ", func() -> void: m.open_codex("bosses"),
-			Color(1.0, 0.7, 0.7) if tab == "bosses" else Color(0.55, 0.55, 0.58))
-		m._btn(subs, "  NPCs  ", func() -> void: m.open_codex("npcs"),
-			Color(0.7, 0.9, 1.0) if tab == "npcs" else Color(0.55, 0.55, 0.58))
+		_nav(m, subs, "Monsters", func() -> void: m.open_codex("monsters"),
+			tab == "monsters", Color(1.0, 0.82, 0.42))
+		_nav(m, subs, "Bosses", func() -> void: m.open_codex("bosses"),
+			tab == "bosses", Color(1.0, 0.45, 0.48))
+		_nav(m, subs, "NPCs", func() -> void: m.open_codex("npcs"),
+			tab == "npcs", Color(0.45, 0.78, 1.0))
 
 	# Gear subtabs — Shapes / Uniques / Gems / Bags / Rules under the one parent.
 	if in_gear:
@@ -90,8 +83,7 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 			var active: bool = tab == gt or (tab == "gear" and gt == "gear_shapes") \
 				or (gt == "gear_shapes" and tab.begins_with("gear_shapes")) \
 				or (gt == "gear_uniques" and tab.begins_with("gear_uniques"))
-			m._btn(gearsubs, "  %s  " % pair[1], func() -> void: m.open_codex(gt),
-				Color(1.0, 0.9, 0.6) if active else Color(0.55, 0.55, 0.58))
+			_nav(m, gearsubs, String(pair[1]), func() -> void: m.open_codex(gt), active)
 
 	# Per-slot level for the Shapes AND Uniques shelves — all 7 slots (the
 	# uniques shelf runs 420 rows flat; a slot at a time is 60, 2026-07-27).
@@ -107,20 +99,20 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 				["gloves", "Gloves"], ["pants", "Pants"], ["boots", "Boots"], ["charm", "Charms"]]:
 			var st := shelf + String(pair[0])
 			var on_first: bool = pair[0] == "weapon" and shelf_root
-			m._btn(slotbar, "  %s  " % pair[1], func() -> void: m.open_codex(st),
-				Color(0.85, 0.95, 0.7) if (tab == st or on_first) else Color(0.5, 0.55, 0.5))
+			_nav(m, slotbar, String(pair[1]), func() -> void: m.open_codex(st),
+				tab == st or on_first, Color(0.66, 0.86, 0.56))
 
 	# Gallery subtabs — Heroes / Bosses / Folk of the Vale.
 	if in_gallery:
 		var gsubs := HBoxContainer.new()
 		gsubs.add_theme_constant_override("separation", 10)
 		vbox.add_child(gsubs)
-		m._btn(gsubs, "  Heroes  ", func() -> void: m.open_codex("gallery_heroes"),
-			Color(1.0, 0.9, 0.6) if tab == "gallery_heroes" else Color(0.55, 0.55, 0.58))
-		m._btn(gsubs, "  Bosses  ", func() -> void: m.open_codex("gallery_bosses"),
-			Color(1.0, 0.7, 0.7) if tab == "gallery_bosses" else Color(0.55, 0.55, 0.58))
-		m._btn(gsubs, "  Folk  ", func() -> void: m.open_codex("gallery_npcs"),
-			Color(0.7, 0.9, 1.0) if tab == "gallery_npcs" else Color(0.55, 0.55, 0.58))
+		_nav(m, gsubs, "Heroes", func() -> void: m.open_codex("gallery_heroes"),
+			tab == "gallery_heroes")
+		_nav(m, gsubs, "Bosses", func() -> void: m.open_codex("gallery_bosses"),
+			tab == "gallery_bosses", Color(1.0, 0.45, 0.48))
+		_nav(m, gsubs, "Folk", func() -> void: m.open_codex("gallery_npcs"),
+			tab == "gallery_npcs", Color(0.45, 0.78, 1.0))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -157,18 +149,16 @@ static func open(m: Menus, tab := "monsters", boss := "") -> void:
 
 
 ## Rounded, padded card panel — shared row container for codex galleries.
+static func _nav(m: Menus, parent: Node, text: String, cb: Callable,
+		active: bool, accent := UITheme.GOLD) -> Button:
+	var b := m._btn(parent, text, cb,
+		accent if active else Color(0.64, 0.66, 0.72))
+	UITheme.tab(b, active, accent)
+	return b
+
+
 static func _card(parent: Container) -> PanelContainer:
-	var card := PanelContainer.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(1, 1, 1, 0.045)
-	sb.set_corner_radius_all(6)
-	sb.content_margin_left = 12
-	sb.content_margin_right = 12
-	sb.content_margin_top = 8
-	sb.content_margin_bottom = 8
-	card.add_theme_stylebox_override("panel", sb)
-	parent.add_child(card)
-	return card
+	return UITheme.card(parent, Color(0.42, 0.45, 0.55), 12.0)
 
 
 static func _monsters(m: Menus, list: VBoxContainer) -> void:
@@ -1203,41 +1193,70 @@ static func _gear_uniques(m: Menus, list: VBoxContainer, slot := "") -> void:
 					mine.append(u)
 			if mine.is_empty():
 				continue
-			var ubox := VBoxContainer.new()
-			ubox.add_theme_constant_override("separation", 4)
-			_card(list).add_child(ubox)
-			m._lbl(ubox, String(Classes.CLASSES[cls]["name"]).to_upper(), 14, Color(0.95, 0.85, 0.5))
+			var class_row := HBoxContainer.new()
+			class_row.add_theme_constant_override("separation", 10)
+			list.add_child(class_row)
+			var class_label := m._lbl(class_row,
+				String(Classes.CLASSES[cls]["name"]).to_upper(), 13, UITheme.GOLD_BRIGHT)
+			class_label.custom_minimum_size = Vector2(150, 0)
+			var class_rule := HSeparator.new()
+			class_rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			class_rule.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			class_row.add_child(class_rule)
+			var ugrid := GridContainer.new()
+			ugrid.name = "UniqueGrid_" + String(cls)
+			ugrid.columns = 2
+			ugrid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			ugrid.add_theme_constant_override("h_separation", 8)
+			ugrid.add_theme_constant_override("v_separation", 8)
+			list.add_child(ugrid)
 			for u in mine:
-				var urow := HBoxContainer.new()
-				urow.add_theme_constant_override("separation", 14)
-				ubox.add_child(urow)
-				var uicon := TextureRect.new()
-				uicon.texture = Art.item_icon(String(u["slot"]), String(u["grade"]),
-					String(u["noun"]), String(u["art"]))
-				uicon.custom_minimum_size = Vector2(56, 56)
-				uicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-				uicon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-				urow.add_child(uicon)
-				var uinfo := VBoxContainer.new()
-				uinfo.add_theme_constant_override("separation", 2)
-				uinfo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				urow.add_child(uinfo)
-				var ul := m._lbl(uinfo, "%s   —   %s %s\n★ %s" % [u["name"], u["grade"], u["noun"],
-					Items.PASSIVES.get(String(u.get("passive", "")), "signature passive — in design")],
-					13, Items.GRADE_COLOR[String(u["grade"])])
-				ul.custom_minimum_size = Vector2(780, 0)
-				ul.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-				# Flavor: the unique's own line (by name), dim under its passive.
-				var uflav := GearFlavor.of(u)
-				if uflav != "":
-					var ufl := m._lbl(uinfo, "❝ %s ❞" % uflav, 12, Color(0.72, 0.68, 0.55))
-					ufl.custom_minimum_size = Vector2(780, 0)
-					ufl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				_unique_card(m, ugrid, u)
 
 	# (The LEGENDARY (S) shelf was removed 2026-07-27 with the legendary tier:
 	# no separate legendary gear and no awakening questline — the six flagship
 	# weapon passives live on their fitting named-S uniques above, live on
 	# pickup. Old saves' legendaries keep working; they're just uniques now.)
+
+
+## One unique per compact card, two cards across. Separating title, grade and
+## passive removes the old icon/text ladder and makes A/S pairs easy to scan.
+static func _unique_card(m: Menus, grid: GridContainer, u: Dictionary) -> void:
+	var grade := String(u["grade"])
+	var color: Color = Items.GRADE_COLOR[grade]
+	var card := UITheme.card(grid, color, 10.0)
+	card.custom_minimum_size = Vector2(430, 118)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	card.add_child(row)
+	var uicon := TextureRect.new()
+	uicon.texture = Art.item_icon(String(u["slot"]), grade,
+		String(u["noun"]), String(u["art"]))
+	uicon.custom_minimum_size = Vector2(64, 64)
+	uicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	uicon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	uicon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(uicon)
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 3)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+	var name_l := m._lbl(info, String(u["name"]), 14, color)
+	name_l.custom_minimum_size = Vector2(330, 0)
+	name_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var meta := m._lbl(info, "%s GRADE  •  %s" % [grade, String(u["noun"]).to_upper()],
+		10, Color(0.60, 0.63, 0.70))
+	meta.custom_minimum_size = Vector2(330, 0)
+	var passive := m._lbl(info, String(Items.PASSIVES.get(
+		String(u.get("passive", "")), "Signature passive — in design")),
+		12, Color(0.86, 0.88, 0.94))
+	passive.custom_minimum_size = Vector2(330, 0)
+	passive.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var flavor := GearFlavor.of(u)
+	if flavor != "":
+		var flavor_l := m._lbl(info, flavor, 11, Color(0.67, 0.65, 0.58))
+		flavor_l.custom_minimum_size = Vector2(330, 0)
+		flavor_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
 ## RULES shelf — grades, chests, drop bands, the stat-source rules and soft caps.
