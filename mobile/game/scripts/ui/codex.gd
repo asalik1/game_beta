@@ -542,6 +542,21 @@ static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bo
 		m._btn(info, "  ▸ Mechanics & Tells  ",
 			func() -> void: m.open_codex("bosses", bk), Color(1, 0.7, 0.7))
 
+	# Dev launcher only: TRANSFORM — wear this creature over the hero to
+	# road-test its walk/attack clips in place (dev_morph.gd drives the puppet;
+	# the ability keys play the clips). The same card reverts.
+	if m.game.dev_mode and m.game.player != null:
+		var mk := String(kind)
+		var cur: DevMorph = m.game.player.dev_morph
+		if cur != null and cur.kind == mk:
+			m._btn(info, "  ⟲ Revert transform  ", func() -> void:
+				DevMorph.stop(m.game.player)
+				m.close(), Color(0.7, 0.95, 0.85))
+		else:
+			m._btn(info, "  ⇄ Transform  ", func() -> void:
+				DevMorph.start(m.game.player, mk)
+				m.close(), Color(0.7, 0.95, 0.85))
+
 
 ## Focused boss detail: the summary card, then each authored mechanic as
 ## its own mini-card (name heading, the TELL you'll see, the green COUNTER).

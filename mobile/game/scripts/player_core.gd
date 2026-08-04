@@ -30,6 +30,7 @@ var chroma := ""   # active chroma id ("" = base skin, e.g. "obsidian")
 var skin := ""     # active skin id ("" = default, e.g. "dreadknight")
 var _skin_ambient: Node2D = null  # mythic locomotion/idle identity; built by player_combat
 var _skin_ambient_id := ""
+var dev_morph: DevMorph = null  # dev-mode codex TRANSFORM: creature puppet over the hero (dev_morph.gd)
 
 # --- Phase 1 story trackers (persisted with the save from day one) ---
 var resonance := 0.0     # -100 (Temptation) .. +100 (Virtue), per DESIGN.md

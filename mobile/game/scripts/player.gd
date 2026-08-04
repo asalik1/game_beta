@@ -245,6 +245,10 @@ func _physics_process(delta: float) -> void:
 		spd *= chill_mult  # a mob's frost aura drags at your feet
 	if laced_move_time > 0.0:
 		spd *= 1.0 - laced_move_amt  # laced Hide sting: heavy proofing, slow limbs (§7)
+	if dev_morph != null:
+		# Dev transform: walk at the creature's raw table speed (hero buffs and
+		# hazards dropped) so the walk cycle's foot-slide reads true to a spawn.
+		spd = dev_morph.move_speed
 	velocity = dir * spd + game.gust_vec  # sandstorm gusts shove everyone
 	move_and_slide()
 
@@ -550,6 +554,8 @@ func _loco_clip() -> String:
 
 
 func use_ability(slot: String) -> void:
+	if dev_morph != null:
+		return  # dev transform: ability keys preview the creature's clips (dev_morph.gd polls them)
 	if dead or downed or ghost or cds[slot] > 0.0:
 		return
 	if frozen_time > 0.0:
