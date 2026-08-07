@@ -34,6 +34,12 @@ const MELEE_RES := {
 	"archer": 0.0, "mage": 0.0, "warlock": 0.0,
 }
 
+# The "1 dex gem every player is expected to carry" floor (owner 2026-08-07):
+# ~52 dex = one Amber. It's BELOW the graze threshold, so the baseline does NOT
+# counter eva (eva stays viable) — countering takes a real, dedicated investment
+# (graze ~2 gems, full cancel ~4). Attacker dex is max(built dex, this).
+const BASELINE_DEX := 52.0
+
 const ARENA_LEN := 1300.0   # ROOM_W 2112 x room_scale 0.62 playable width
 const START_DIST := 720.0
 const MELEE := 85.0          # melee reach
@@ -105,6 +111,21 @@ const GEM_ROLE := {
 	"archer": "phys", "assassin": "phys",
 	"mage": "mag", "warlock": "mag",
 }
+# --build / --sweep: BUILD ARCHETYPES layered on the fixed 2+2 gear. Each sets the
+# attribute allocation + the REGULAR gem slots (specials keep the class preset).
+# The sweep runs every class at every build vs the standard (dps) field and FLAGS
+# gross outliers — a coarse guardrail against shipping a wildly-broken build, NOT
+# a precise ranker (the kit is a lean model, not the real class code).
+var build_mode := "dps"
+var sweep := false
+var evadiag := false
+const BUILDS := {
+	"dps":  {"attr": "primary", "reg": "atk_flat"},   # baseline: raw stat + Ruby
+	"pen":  {"attr": "primary", "reg": "pen"},         # armor penetration
+	"crit": {"attr": "primary", "reg": "crit"},        # crit stacking
+	"eva":  {"attr": "AGI",     "reg": "eva"},          # dodge / AGI
+	"tank": {"attr": "VIT",     "reg": "res"},          # bulk: VIT + res gems
+}
 # --trace: replay ONE duel (--a=X --b=Y) as a play-by-play + damage-by-source.
 var trace := false
 var trace_a := "assassin"
@@ -130,9 +151,17 @@ func _ready() -> void:
 	await _frames(5)
 	await _skip_opening()
 
+	if evadiag:
+		_run_evadiag()
+		get_tree().quit(0)
+		return
+	if sweep:
+		_run_sweep()
+		get_tree().quit(0)
+		return
 	var base := {}
 	for cls in CLS_ORDER:
-		base[cls] = _read_fighter(cls)
+		base[cls] = _read_fighter(cls, build_mode)
 	if trace:
 		_run_trace(base)
 	else:
@@ -163,10 +192,17 @@ func _parse_args() -> void:
 			trace_b = a.get_slice("=", 1)
 		elif a.begins_with("--gems="):
 			gems_mode = a.get_slice("=", 1)
+		elif a.begins_with("--build="):
+			build_mode = a.get_slice("=", 1)
+		elif a == "--sweep":
+			sweep = true
+		elif a == "--evadiag":
+			evadiag = true
 
 
 ## Build the god-roll and snapshot the PvP-relevant stats into a template dict.
-func _read_fighter(cls: String) -> Dictionary:
+## `build` (BUILDS key) sets the attribute allocation + regular-gem archetype.
+func _read_fighter(cls: String, build := "dps") -> Dictionary:
 	var p: Player = game.player
 	var tid: String = String(BenchBuild.DEFAULT_THEME[cls])
 	p.level = 100
@@ -177,13 +213,18 @@ func _read_fighter(cls: String) -> Dictionary:
 	p.skill_points = 0
 	for attr in p.attr_points:
 		p.attr_points[attr] = 0
-	p.attr_points[String(Classes.CLASSES[cls]["primary"])] = 99
+	var ba: String = String(BUILDS[build]["attr"])
+	var alloc: String = String(Classes.CLASSES[cls]["primary"]) if ba == "primary" else ba
+	p.attr_points[alloc] = 99
 	p.unspent_attr = 0
 	var cfg := {"grade": "S", "gemlvl": 10, "plus": 20, "godroll": true}
 	var rng := RandomNumberGenerator.new()
 	rng.seed = BenchBuild.GEAR_SEED
 	p.equipment = BenchBuild.equip_dict(cls, tid, cfg, rng)
-	_regem(p.equipment, cls)
+	if build == "dps":
+		_regem(p.equipment, cls)   # honors --gems (dps/pvp)
+	else:
+		_regem_build(p.equipment, cls, build)
 	p._update_weapon_visual()
 	p.recalc()
 	# The melee-res grant (recalc applies it only under pvp_active, which is off in
@@ -206,7 +247,9 @@ func _read_fighter(cls: String) -> Dictionary:
 		"physpen": p.physpen,
 		"magpen": p.magpen,
 		"dtype": String(Classes.CLASSES[cls]["dmg_type"]),
-		"eva": Stats.eva_curve(p.eva),
+		"eva": Stats.eva_curve(p.eva),   # dodge CHANCE (curved)
+		"eva_raw": p.eva,                # raw stat, for dex_tier
+		"dex": p.dex,                    # attacker accuracy vs eva
 		"speed": float(SPEED[cls]),
 	}
 
@@ -226,6 +269,25 @@ func _regem(equipment: Dictionary, cls: String) -> void:
 		for i in n:
 			glist.append(Items.make_gem(_gem_stat(role, i < spec_cap, i), 10))
 		item["gems"] = glist
+
+
+## Replace the REGULAR gems for a build archetype (specials keep the class preset).
+func _regem_build(equipment: Dictionary, cls: String, build: String) -> void:
+	var reg: String = String(BUILDS[build]["reg"])
+	if reg == "atk_flat":
+		return   # baseline Ruby regulars already placed
+	var magic := String(Classes.CLASSES[cls]["dmg_type"]) == "magic"
+	for slot in equipment:
+		var gems: Array = equipment[slot].get("gems", [])
+		for i in gems.size():
+			if String((gems[i] as Dictionary).get("stat", "")) in Balance.SPECIAL_GEM_STATS:
+				continue   # keep the % specials; only regular slots change
+			var s := reg
+			if reg == "pen":
+				s = "magpen" if magic else "physpen"
+			elif reg == "res":
+				s = "physres" if i % 2 == 0 else "magres"
+			gems[i] = Items.make_gem(s, 10)
 
 
 ## Gem stat per slot/role: bruiser = sustain special (Vampire Eye) + both-threat
@@ -429,11 +491,24 @@ func _use(f: Dictionary, o: Dictionary, ab: Dictionary, dist: float) -> void:
 
 
 func _hit(f: Dictionary, o: Dictionary, ab: Dictionary) -> void:
-	# i-frame fully negates; else evasion roll.
+	# i-frame fully negates.
 	if float(o["iframe_t"]) > 0.0:
 		return
-	if randf() < float(o["eva"]):
-		return
+	# DEX vs EVA (Stats.dex_tier): the attacker's DEX answers the defender's eva —
+	# enough cancels the dodge, half-parity downgrades a dodge to a GRAZE (half
+	# damage), too little = full miss. Attacker carries at least BASELINE_DEX (the
+	# "some dex every player has"), so eva isn't a free 50% dodge.
+	var grazed := false
+	var graze_frac := 1.0
+	var e_eva := float(o["eva_raw"])
+	if e_eva > 0.0:
+		var f_dex: float = maxf(float(f["dex"]), BASELINE_DEX)
+		var tier := Stats.dex_tier(f_dex, e_eva)
+		if tier < 2 and randf() < float(o["eva"]):
+			if tier == 0:
+				return          # full miss
+			grazed = true       # graze — leaks the curve's fraction through
+			graze_frac = Stats.graze_through(f_dex, e_eva)
 	var coeff := float(ab["coeff"]) * float(ab.get("hits", 1))
 	var truef := float(ab.get("truef", 0.0))
 	var base := float(f["atk"]) * coeff
@@ -459,6 +534,8 @@ func _hit(f: Dictionary, o: Dictionary, ab: Dictionary) -> void:
 	if float(o["dr_t"]) > 0.0:
 		mit *= 1.0 - float(o["dr_amt"])
 	dmg = dmg * ((1.0 - truef) * mit + truef) * dmg_mult
+	if grazed:
+		dmg *= graze_frac   # the graze curve: how much the dodge leaks through
 	o["hp"] = maxf(0.0, float(o["hp"]) - dmg)
 	if float(o["hp"]) <= 0.0:
 		o["dead"] = true   # a corpse can't regen or heal off zero (death is prompt)
@@ -602,6 +679,96 @@ func _snap(a: Dictionary, b: Dictionary) -> void:
 		a["cls"], int(float(a["hp"]) / float(a["maxhp"]) * 100.0), int(a["pos"]),
 		b["cls"], int(float(b["hp"]) / float(b["maxhp"]) * 100.0), int(b["pos"]),
 		int(absf(float(a["pos"]) - float(b["pos"])))])
+
+
+# ============================================================= eva diag ===
+
+## Verify the eva/dex loop on REAL eva builds: for each class's full-eva build,
+## the raw eva it reaches, the resulting dodge %, and the DEX (in dex gems, ~52
+## each) that grazes / cancels it under the current dex_tier calibration.
+func _run_evadiag() -> void:
+	print("")
+	print("EVA/DEX VERIFY — full-eva builds (dex gem ~= 52 dex; graze halves the dodge, cancel negates it)")
+	print("%-9s %8s %8s   %-18s %-18s" % ["class", "raw eva", "dodge", "graze at", "cancel at"])
+	for cls in CLS_ORDER:
+		var f := _read_fighter(cls, "eva")
+		var raw: float = float(f["eva_raw"])
+		var dodge: float = Stats.eva_curve(raw)
+		var graze: float = Balance.DEX_GRAZE_RATIO * dodge / Balance.DEX_PER_EVA
+		var cancel: float = dodge / Balance.DEX_PER_EVA
+		print("%-9s %8.2f %7.0f%%   %4.0f dex (%.1f gems)  %4.0f dex (%.1f gems)" % [
+			cls, raw, dodge * 100.0, graze, graze / 52.0, cancel, cancel / 52.0])
+	print("")
+	print("GRAZE CURVE (dmg leaking through a dodge vs a full-eva build, exp %.1f):" % Balance.GRAZE_CURVE_EXP)
+	var eva_ref := float(_read_fighter("warrior", "eva")["eva_raw"])
+	for g in [2.7, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5]:
+		var dx: float = float(g) * 52.0
+		print("    %.1f dex gems -> %3.0f%% through" % [g, Stats.graze_through(dx, eva_ref) * 100.0])
+	print("EVA DIAG DONE")
+
+
+# ============================================================= sweep ===
+
+## Guardrail: run every class at every BUILD archetype vs the standard (dps) field
+## and flag builds that are wildly out of line. Coarse by design — the kit is a
+## lean model, so this catches GROSS outliers to investigate, not fine tiers.
+func _run_sweep() -> void:
+	var sr := mini(reps, 81)   # a screen doesn't need 201-rep precision
+	var field := {}
+	for c in CLS_ORDER:
+		field[c] = _read_fighter(c, "dps")
+	var builds: Array = BUILDS.keys()
+	var rows := {}
+	for cls in CLS_ORDER:
+		rows[cls] = {}
+		for b in builds:
+			var hero := _read_fighter(cls, String(b))
+			var w := 0.0
+			var n := 0.0
+			for opp in CLS_ORDER:
+				if opp == cls:
+					continue
+				seed(hash(cls + String(b) + opp) & 0x7FFFFFFF)
+				for r in sr:
+					var res := _duel(hero, field[opp], r % 2 == 0)
+					if res > 0:
+						w += 1.0
+					elif res == 0:
+						w += 0.5
+					n += 1.0
+			rows[cls][b] = w / maxf(1.0, n) * 100.0
+	print("")
+	print("=====================================================================")
+	print(" PVP BUILD SWEEP — win %% vs the dps field  @ tough %.0f heal %.2f meleeres %.2f  (%d reps)" % [
+		tough, heal_mult, meleeres, sr])
+	print(" Coarse guardrail on a LEAN kit model — flags gross outliers, not fine tiers.")
+	print("=====================================================================")
+	var header := "%-9s" % "class\\build"
+	for b in builds:
+		header += "%8s" % b
+	print(header)
+	for cls in CLS_ORDER:
+		var line := "%-9s" % cls
+		for b in builds:
+			line += "%7.0f%%" % float(rows[cls][b])
+		print(line)
+	print("")
+	print("OUTLIER FLAGS — a non-dps build beating the class's OWN dps baseline by")
+	print("  >=15 pts, or any build >=75%% overall (a build worth investigating):")
+	var flagged := false
+	for cls in CLS_ORDER:
+		var dps_wr: float = float(rows[cls]["dps"])
+		for b in builds:
+			if String(b) == "dps":
+				continue
+			var wr: float = float(rows[cls][b])
+			if wr >= dps_wr + 15.0 or wr >= 75.0:
+				print("  %-9s + %-5s = %3.0f%%   (its dps baseline: %.0f%%)" % [
+					cls, b, wr, dps_wr])
+				flagged = true
+	if not flagged:
+		print("  (none — no build wildly out of line on this model)")
+	print("PVP BUILD SWEEP DONE")
 
 
 # ============================================================= run + report ===

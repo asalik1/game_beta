@@ -1150,7 +1150,7 @@ const GEM_LEVEL_LIMIT := {"F": 0, "E": 0, "D": 0, "C": 2, "B": 3, "A": 6, "S": 1
 # stat -> [display name, base value per level-ish, color]
 const GEM_STATS := {
 	"atk_flat": {"name": "Ruby",      "base": 1.0,   "color": Color(1.0, 0.3, 0.3)},  # FLAT atk (+1/lvl-ish), NOT a % — a regular gem that doesn't scale, so stacking it can't runaway
-	"hp_pct":   {"name": "Garnet",    "base": 0.025, "color": Color(0.9, 0.45, 0.45)},
+	"hp_flat":  {"name": "Garnet",    "base": 10.0,  "color": Color(0.9, 0.45, 0.45)},  # FLAT HP (regular gem — owner rule 2026-08-07: % is runaway scaling, so it lives ONLY on special gems; regulars are flat). base tunable.
 	"crit":     {"name": "Topaz",     "base": 0.012, "color": Color(1.0, 0.8, 0.3)},
 	"dmg_pct":  {"name": "Sunstone",  "base": 0.02,  "color": Color(1.0, 0.6, 0.2)},  # universal DAMAGE increase (special slot); replaced the crit-only crit_dmg gem
 	"cdr":      {"name": "Sapphire",  "base": 0.01,  "color": Color(0.35, 0.55, 1.0)},
@@ -2057,6 +2057,14 @@ const SUBSTATS := {
 	"physpen": 5.0, "magpen": 5.0,
 }
 
+# The 2-offensive + 2-defensive substat rule (owner 2026-08-07): every piece rolls
+# 4 subs, one pair from each pool, so ALL gear carries some defense and tier scales
+# MAGNITUDE not count. Pools are disjoint (a stat is offense OR defense, never both).
+const OFFENSIVE_SUBS := ["atk_pct", "crit", "physpen", "magpen", "dex"]
+const DEFENSIVE_SUBS := ["hp_pct", "VIT", "physres", "magres", "critres", "eva"]
+const OFFENSIVE_COUNT := 2
+const DEFENSIVE_COUNT := 2
+
 const STAT_LABEL := {
 	"atk_flat": "ATK", "hp_flat": "HP", "atk_pct": "ATK%", "hp_pct": "HP%",
 	"STR": "STR", "AGI": "AGI", "INT": "INT", "VIT": "VIT",
@@ -2256,9 +2264,7 @@ static func make_unique(u: Dictionary, rng: RandomNumberGenerator) -> Dictionary
 ## overridden to Balance.S_SUB_COUNT (its legendary stat weight, all random now that
 ## pinned synergy subs are gone). Single source for roll_subs AND the dps bench.
 static func sub_count_for(grade: String) -> int:
-	if grade == "S":
-		return Balance.S_SUB_COUNT
-	return maxi(0, (GRADES.find(grade) - 1) / 2)
+	return OFFENSIVE_COUNT + DEFENSIVE_COUNT   # all gear: 2 offensive + 2 defensive (owner 2026-08-07)
 
 
 ## Roll an item's substat set: `sub_count` random affixes for the grade
@@ -2269,28 +2275,30 @@ static func roll_subs(grade: String, noun: String, cls: String, rng: RandomNumbe
 	var mult: float = GRADE_MULT[grade]
 	var style: Dictionary = SHAPE_STYLE.get(noun, DEFAULT_STYLE)
 	var bias: Dictionary = style.get("bias", {})
-	var sub_count := sub_count_for(grade)
 	var subs := {}
-	var pool := SUBSTATS.keys()
-	# Every grade below S rolls the FULL pool (2026-07-17, supersedes round 15's
-	# "no dead stats"). Round 15 assumed a class's damage type never changes —
-	# once a rune can reroute it, the off-type pen is DORMANT, not dead, and the
-	# bench is the player's to fix. S is the exception the rule now names: a
-	# legendary's FIRST roll is guaranteed class-usable (what the player reforges
-	# it into afterward is their own risk).
-	# (Special stats — Haste/Lifesteal/Combo/Tenacity/Dmg% — aren't in the pool at
-	# all since 2026-07-06: gem-only, superseding round 43's B-gate.)
+	# The 2-offensive + 2-defensive rule (2026-08-07, supersedes the per-grade
+	# count): EVERY piece rolls OFFENSIVE_COUNT from the offense pool and
+	# DEFENSIVE_COUNT from the defense pool, so all gear carries some defense and
+	# tier scales MAGNITUDE (GRADE_MULT) not count. The pools are disjoint, so the
+	# result is always exactly 4 distinct subs.
+	# S is the one exception the older rule still names: the off-type pen is
+	# dormant for this class, so it drops from the OFFENSE pool — a legendary's
+	# first roll stays class-usable (non-S can draw it; a rune reroutes it live).
+	# (Special stats — Haste/Lifesteal/Combo/Tenacity/Dmg% — are gem-only, never
+	# in either gear pool.)
+	var off_pool: Array = OFFENSIVE_SUBS.duplicate()
+	var def_pool: Array = DEFENSIVE_SUBS.duplicate()
 	if grade == "S" and cls != "" and CLASSES_DMG_TYPE.has(cls):
-		pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
-	# Shape-WEIGHTED draw without replacement (2026-07-26): a Shuriken pulls crit
-	# more often than a Hammer does, and rolls it bigger when it lands. No stat is
-	# ever GRANTED — a Shuriken that draws three defensive subs is just a bad
-	# Shuriken, and the bench is the player's way out.
-	var count := mini(sub_count, pool.size())
-	for _i in count:
-		var stat := _weighted_take(pool, bias, rng)
-		var b: float = float(bias.get(stat, 1.0))
-		subs[stat] = snappedf(SUBSTATS[stat] * b * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
+		off_pool.erase("physpen" if CLASSES_DMG_TYPE[cls] == "magic" else "magpen")
+	# Shape-WEIGHTED draw without replacement: a Shuriken pulls crit harder, a
+	# Guard pulls res — within each pool, and bigger when it lands. No stat is
+	# GRANTED; a Shuriken that draws its two defensive subs badly is just unlucky.
+	for spec in [[off_pool, OFFENSIVE_COUNT], [def_pool, DEFENSIVE_COUNT]]:
+		var pool: Array = spec[0]
+		for _i in mini(int(spec[1]), pool.size()):
+			var stat := _weighted_take(pool, bias, rng)
+			var b: float = float(bias.get(stat, 1.0))
+			subs[stat] = snappedf(SUBSTATS[stat] * b * rng.randf_range(0.7, 1.3) * (1.0 + mult * 0.25), 0.01)
 	return subs
 
 

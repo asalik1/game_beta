@@ -95,18 +95,25 @@ func _run_systems() -> void:
 		var t2 := Stats.resolve(100.0, "phys", 0.0, 1.5, 0.0, parity, 0.0, 0.30, 0.0)
 		if t2["miss"] or t2["graze"]:
 			return _fail("parity DEX still lost a hit to evasion")
-	# Tier 1 never MISSES — it grazes, and a graze pays exactly GRAZE_DAMAGE.
+	# Tier 1 never MISSES — it grazes, and a graze pays the graze CURVE fraction
+	# (graze_through), which ramps convexly with DEX from ~0 at the graze threshold
+	# to full at parity — superseding the old flat GRAZE_DAMAGE (2026-08-07).
 	var saw_graze := false
+	var expect_frac := Stats.graze_through(parity * 0.6, 0.30)
 	for _i in 400:
 		var t1 := Stats.resolve(100.0, "phys", 0.0, 1.5, 0.0, parity * 0.6, 0.0, 0.30, 0.0)
 		if t1["miss"]:
 			return _fail("the graze tier must never MISS outright")
 		if t1["graze"]:
 			saw_graze = true
-			if absf(float(t1["dmg"]) - 100.0 * Balance.GRAZE_DAMAGE) > 0.01:
-				return _fail("a graze must pay exactly GRAZE_DAMAGE")
+			if absf(float(t1["dmg"]) - 100.0 * expect_frac) > 0.01:
+				return _fail("a graze must pay the graze-curve fraction (graze_through)")
 	if not saw_graze:
 		return _fail("the graze tier never grazed across 400 rolls")
+	# The curve RAMPS: a graze deeper in the band (near parity) leaks more through
+	# than one just inside it (near the threshold).
+	if Stats.graze_through(parity * 0.9, 0.30) <= Stats.graze_through(parity * 0.6, 0.30):
+		return _fail("the graze curve must ramp — deeper DEX leaks more through")
 	# Tier 0 CAN erase a hit outright — the wall that asks for DEX.
 	var saw_miss := false
 	for _i in 400:
@@ -3779,8 +3786,8 @@ func _test_retention() -> void:
 	# Theme crit is CAP-EXEMPT: 35% built + 15% themed = 50% flat, no knee.
 	if absf(Stats.effective_crit(0.35, 0.15, 0.0) - 0.5) > 0.001:
 		return _fail("theme crit bonus did not ride above the knee")
-	if absf(Stats.eva_curve(0.8) - (0.50 + 0.3 * 0.1)) > 0.001:
-		return _fail("evasion knee is not 50% + 1/10 beyond")
+	if absf(Stats.eva_curve(0.8) - (0.50 + 0.3 * Balance.EVA_OVERCAP_RATE)) > 0.001:
+		return _fail("evasion knee is not 50% + EVA_OVERCAP_RATE beyond")
 	if Stats.res_frac(9999.0) > 0.82:
 		return _fail("resistance reduction exceeded its ~82% ceiling")
 	if Stats.greed_loot(0.1) <= 0.0:
@@ -3803,8 +3810,8 @@ func _test_retention() -> void:
 	game.chapter_id = "capital"
 	var b_host := {"slot": "armor", "grade": "B", "name": "t2", "noun": "Plate",
 		"main": {}, "subs": {}, "plus": 0, "gem_slots": 1, "gems": []}
-	var g_lv4 := Items.make_gem("hp_pct", 4)
-	var g_lv3 := Items.make_gem("hp_pct", 3)
+	var g_lv4 := Items.make_gem("hp_flat", 4)
+	var g_lv3 := Items.make_gem("hp_flat", 3)
 	game.player.gem_bag.append_array([g_lv4, g_lv3])
 	if game.player.embed_gem_into(b_host, g_lv4):
 		return _fail("B gear accepted a Lv4 gem (limit Lv3)")

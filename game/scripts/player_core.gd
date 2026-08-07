@@ -1803,6 +1803,14 @@ func recalc() -> void:
 		physres += pvp_mr
 		magres += pvp_mr
 		max_hp *= Balance.PVP_TOUGHNESS
+	# Per-class resistance soft cap: res past the class threshold pays ~1/10, so a
+	# glass class can't stack the shared 2-defensive-sub gear into plate-tier
+	# mitigation. Applied LAST (after gear/kit/grant) so it's the true ceiling;
+	# plate DR above already read the raw res, and take_damage's temporary guard/
+	# aegis/grit windows still stack ON TOP of this baseline.
+	var rcap: Dictionary = Balance.RES_SOFTCAP.get(cls, {"physres": 180.0, "magres": 180.0})
+	physres = Balance.soft_cap(physres, float(rcap["physres"]))
+	magres = Balance.soft_cap(magres, float(rcap["magres"]))
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
 

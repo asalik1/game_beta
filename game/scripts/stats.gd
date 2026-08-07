@@ -21,9 +21,11 @@ static func crit_curve(c: float) -> float:
 	return Balance.soft_cap(maxf(0.0, c), Balance.CAP_CRIT, Balance.CRIT_SOFT_RATE)
 
 
-## Evasion: knee at 50% — nothing approaches unhittable.
+## Evasion: knee at 50%, then a GENTLE overflow (EVA_OVERCAP_RATE, owner 2026-08-07)
+## so a full dedicated eva stack tops out ~65% dodge — strong and rewarding for a
+## heavy commitment, but not an unhittable wall (and answerable by ~matching dex).
 static func eva_curve(e: float) -> float:
-	return Balance.soft_cap(maxf(0.0, e), Balance.CAP_EVA)
+	return Balance.soft_cap(maxf(0.0, e), Balance.CAP_EVA, Balance.EVA_OVERCAP_RATE)
 
 
 ## How well `dex` answers `e_eva` — the DEX-vs-evasion gradient (Balance
@@ -35,12 +37,33 @@ static func eva_curve(e: float) -> float:
 ## build out of it, where the old flat subtraction just bled a hidden
 ## dodge chance. Zero evasion is tier 2 — there is nothing to answer.
 static func dex_tier(dex: float, e_eva: float) -> int:
-	if e_eva <= 0.0:
+	# DEX answers the CAPPED dodge chance (eva_curve), NOT the runaway raw stat
+	# (owner 2026-08-07): stacking eva past the 50% chance cap no longer buys
+	# uncounterability — the dodge keeps its full value, but a fixed, reachable DEX
+	# (parity ~= 4 dex gems at the cap) answers it, so eva stays a viable build.
+	var eff := eva_curve(e_eva)
+	if eff <= 0.0:
 		return 2
-	var ratio: float = maxf(0.0, dex) * Balance.DEX_PER_EVA / e_eva
+	var ratio: float = maxf(0.0, dex) * Balance.DEX_PER_EVA / eff
 	if ratio >= 1.0:
 		return 2
 	return 1 if ratio >= Balance.DEX_GRAZE_RATIO else 0
+
+
+## Fraction of damage a GRAZED hit pays through (the graze CURVE). 0 at the graze
+## threshold (dodge still fully works), ramping convexly to 1.0 at parity (dodge
+## cancelled). Only meaningful for a tier-1 (grazed) hit; matches dex_tier's bands.
+static func graze_through(dex: float, e_eva: float) -> float:
+	var eff := eva_curve(e_eva)
+	if eff <= 0.0:
+		return 1.0
+	var ratio: float = maxf(0.0, dex) * Balance.DEX_PER_EVA / eff
+	if ratio >= 1.0:
+		return 1.0
+	if ratio < Balance.DEX_GRAZE_RATIO:
+		return 0.0
+	var t: float = (ratio - Balance.DEX_GRAZE_RATIO) / (1.0 - Balance.DEX_GRAZE_RATIO)
+	return pow(t, Balance.GRAZE_CURVE_EXP)
 
 
 ## Combo: chance an ability doesn't go on cooldown. Its knee lives in
@@ -105,8 +128,10 @@ static func resolve(atk_dmg: float, dmg_type: String, crit_chance: float, crit_d
 		dmg *= (1.0 - res_frac(eff_res))
 		if pen > e_res:
 			dmg += (pen - e_res) * 0.5
-	# The graze is the LAST cut, after crit/res/pen: it clips whatever the
-	# blow would otherwise have paid, so it reads as "you barely connected".
+	# The graze is the LAST cut, after crit/res/pen: it clips whatever the blow
+	# would otherwise have paid. The graze CURVE (graze_through) scales the clip by
+	# how far the attacker's DEX has climbed the counter band — near 0% just inside
+	# it, ramping to full at parity — so the dodge degrades smoothly, not a flat 50%.
 	if grazed:
-		dmg *= Balance.GRAZE_DAMAGE
+		dmg *= graze_through(dex, e_eva)
 	return {"dmg": dmg, "crit": is_crit, "miss": false, "graze": grazed}
