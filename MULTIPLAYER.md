@@ -582,14 +582,23 @@ session, owner-applied damage). No new netcode class — the duel is a mode ON t
   branch bypasses the co-op DOWNED detour under `pvp_active`), host-scored, and either reset the
   round or end the match at `Balance.PVP_DEATHS_TO_LOSE` (3). Wipe census and map travel are
   fenced off under `pvp_active`.
-- **Player-vs-player damage — the proxy seam:** PvP damage is structurally impossible in the
-  combat layer (everything is typed to `Enemy`/the `"enemies"` group; friendly projectiles mask
-  players out). Each machine raises ONE invisible `pvp_proxy.gd` Enemy shadowing the rival's
-  shell: all existing targeting/melee/projectile paths hit it natively, and its `take_damage`
-  override forwards the resolved amount through `net_session.pvp_strike` (host-validated against
-  `combat_live`) into the rival's OWN owner-side `take_damage` — their armor/evasion mitigate,
-  the enemy→guest doctrine. Known v1 limits: control riders don't cross the wire (damage only);
-  DoTs tick on the proxy at a flat 0.5 s cadence.
+- **Player-vs-player damage — the combat-target union (refactored 2026-08-02; replaces the
+  v1 phantom proxy-Enemy):** the rival's SHELL is a first-class combat target. Targeting,
+  sweeps and the hit funnel take the union (`CharacterBody2D` — the shared base): in a live
+  duel `player_combat._strike_candidates()` adds the shell to every scan, `hit_enemy`
+  dispatches Players to `_hit_rival` (attacker-side offense vs neutral defenses), and friendly
+  projectiles mask layer 2 in duel worlds and resolve `body is Player` hits through the same
+  funnel. Damage lands via `net_session.pvp_strike` (host-validated against `combat_live`)
+  as the rival's OWN owner-side `take_damage` — their armor/evasion mitigate, the enemy→guest
+  doctrine. Player carries a rider-compat surface (`player_core`, "rival-target" block):
+  DoTs park on the shell (attacker-side bookkeeping, `pvp.gd` forwards 0.5 s ticks over the
+  strike wire), **stun/slow now CROSS the wire** (`pvp_status` → owner-applied freeze/chill),
+  and the synergy windows (vuln/brittle/crush/slow) feed the same kit reads they feed on
+  enemies — Death Mark, Killing Frost, Serpent's Due and executes work in duels. Deliberately
+  enemy-only (documented v1 boundaries): warlock hex/wither bookkeeping (the direct curse
+  hit + EXPOSE + DoT still land), paladin Chains of Wrath (a drag can't cross the
+  owner-authoritative movement wire — parked with knockback), splash/ricochet flat sub-hits,
+  armor shred, and named-unique beats/set procs.
 - **No stakes (owner call):** no rewards, no tithe, no saves (`autosave` writes nothing under
   `pvp_active`), potions barred at the drink gate. Iron out the system before spoils exist.
 - **Wire:** `pvp_strike`/`pvp_died` up, `pvp_round`/`pvp_fight`/`pvp_kill`/`pvp_end` fans down —
@@ -601,11 +610,14 @@ session, owner-applied damage). No new netcode class — the duel is a mode ON t
   unanswered knock with a readable message, and both lobby screens warn that codes are
   case-sensitive (I/l/1 lookalikes — ⧉ Copy is exact). No RPC change, no version bump.
 - **Tests:** `net_test.bat` stage 16 (two real processes: carry-in, sealed warmup, ceasefire
-  strike fizzle, gate fan, both strike directions through the real lethal branches, terrain sync,
-  3-fall verdict, clean wind-down); autotest `_test_pvp_arena` (module shape, chapter routing,
-  duel lobby stages, offline).
+  strike fizzle, gate fan, a REAL melee swing landed through the union funnel, both strike
+  directions through the real lethal branches, terrain sync, 3-fall verdict, clean wind-down);
+  autotest `_test_pvp_arena` (module shape, chapter routing, duel lobby stages, offline).
+  Balance instrument: `scenes/pvp_probe.tscn` (owner-built) — the perfect-L100 one-shot matrix
+  through the real forward math.
 - **Open (v2 candidates):** rematch without re-hosting, wagers/spoils once the economy ruling
-  lands, CC riders crossing the wire, spectate, best-of settings, a level-bracket warning.
+  lands, knockback/drag over the wire (unlocks paladin chains + shove pressure), spectate,
+  best-of settings, a level-bracket warning, PVP_DMG_MULT tuning off the probe's matrix.
 
 ---
 

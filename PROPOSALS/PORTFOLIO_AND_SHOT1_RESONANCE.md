@@ -2,13 +2,13 @@
 
 Working doc. Captures the strategy and the shot-1 concept. Owner's call on everything; where a risk is unresolved it's written as a **TEST**, not a debate to reopen.
 
-_Last expanded: 2026-08-04 (full session synthesis: monetization finalized, streamability checklist, renewable-shock rule, Crownless status + the shot-1-vehicle decision added)._
+_Last expanded: 2026-08-04 (full session synthesis: monetization finalized, streamability checklist, renewable-shock rule, Crownless status + the shot-1-vehicle decision added). Review pass same day: Steam AI-disclosure fact (§7), marketing-calendar overlap (§1), Crownless-mobile fencing tension (§8), rewarded-ads walk-away decision (§8/§10), grind-knob data source fixed (§8), band boundary pinned (§4)._
 
 ---
 
 ## 0. Premise (low attachment)
 
-We have options. Any single game can die in a fire and we're fine. The unit that matters is **the developer over many shots**, not this game. Velocity (a complete game in ~1 month — Crownless was 518 commits, 2026-07-03 → 08-03) is the rare asset; the job is to point it well and take many cheap tickets.
+We have options. Any single game can die in a fire and we're fine. The unit that matters is **the developer over many shots**, not this game. Velocity (a *shippable* game in ~1 month — Crownless was 520 commits, 2026-07-03 → 08-03; "complete" arrives via the §9 repositioning, don't overclaim it) is the rare asset; the job is to point it well and take many cheap tickets.
 
 - **The portfolio math is the whole thesis.** Game outcomes are power-law. One well-marketed game ≈ a single-digit % shot at a real hit. But shots compound: at ~8% per *well-marketed* shot, ten shots ≈ `1 − 0.92¹⁰ ≈ 57%` that at least one lands. One swing is a gamble; ten swings is a strategy. Velocity is what makes ten swings possible — almost no solo dev can do this.
 - **The catch:** velocity buys *shots*, not *conversion*. Ten illegible games = the same losing ticket ten times. The tickets only count as independent draws if each clears the bar velocity can't touch — a legible hook, a first hour that holds strangers, cohesive art, an actual wishlist campaign. Those are a *different skill* (taste + distribution) and the one still to prove.
@@ -20,6 +20,7 @@ We have options. Any single game can die in a fire and we're fine. The unit that
 - **Portfolio of bounded shots** inside the **Emberfall shared universe.** Different genres/playstyles, same world → shots fail/hit independently *and* reuse lore/pipeline/brand.
 - **Build once → ship → walk away.** No live-service treadmill. Everything ships complete-in-the-box.
 - **Cohorts of ~3 shots, sequenced (not batched).** Launch #1, read the data, feed it into #2, then #3. After 3, holistic review: revisit anything worth revisiting, else start a new set.
+- **Sequenced ≠ idle — the calendar collision, addressed.** A build takes ~1 month, but a wishlist campaign that produces launch visibility takes ~6+ months (announce → Next Fest → launch), and retention/word-of-mouth data matures for weeks after launch. Naive sequencing = most of a year idle per shot, which the velocity thesis can't intend. So **overlap the pipelines**: while #1's campaign ramps, build #2's *lesson-independent* layer (systems, art pipeline, spine); hold the parts cohort learning would change (hook, store page, first hour) until #1's data lands. And **timebox "read the data"** — funnel + retention verdicts at ~4–6 weeks post-launch; word-of-mouth trickles in later and must not stall the pipeline.
 - **Spread the cohort across the legibility axis.** Don't ship 3 flavors of the same deep-systems game — you'd never learn whether a *genre* failed or your own *depth-instinct* did. Put one game dead-simple/legible, one medium, one deep. The cohort then answers the question that actually haunts us: was it the genre, or was it me?
 - **Pre-registered scorecard before every launch** — numbers in writing (hit above X wishlists / Y first-week / Z retention; kill below W). No grading our own homework after the fact.
 - **Power-law inference discipline.** Three misses is the *modal outcome for an eventual winner*, not evidence the strategy is wrong. A hit is loud signal; misses are quiet. Don't let a bounded sample of quiet results pivot us off a good horse.
@@ -42,7 +43,7 @@ We have options. Any single game can die in a fire and we're fine. The unit that
   - wishlist, no retention → not fun / bad first hour
   - retention, no word-of-mouth → fun, not remarkable
   - …but only **above a reach threshold** (zero signal at zero reach = noise masquerading as a verdict — the most expensive misread, because it makes us abandon something that was merely unseen).
-- **Leading success-point for this template: organic clip/creator pickup.** TEST cheaply with a demo at Steam Next Fest + a handful of seeded creators before full commit.
+- **Leading success-point for this template: organic clip/creator pickup.** TEST cheaply with a demo at Steam Next Fest + a handful of seeded creators before full commit. **This TEST rides with whichever vehicle ships first** — if Crownless is #1 (§9), *it* gets the demo + seeded creators; §9 already predicts it's weak on the streamer template, so pre-register that prediction and let the data grade it rather than assuming it.
 
 ---
 
@@ -68,7 +69,7 @@ We have options. Any single game can die in a fire and we're fine. The unit that
 
 ## 4. Resonance design
 
-- **Bands:** −100..−50, −49..0, 0..49, 50..100. Two middle bands share a branch (different tint); the two extremes each get their own branch. → **effectively 3 LANES, 4 TINTS.**
+- **Bands:** −100..−50, −49..−1, 0..49, 50..100 (boundary pinned: 0 belongs to the upper-middle band — decided here so code doesn't decide it). Two middle bands share a branch (different tint); the two extremes each get their own branch. → **effectively 3 LANES, 4 TINTS.**
 - Band **fluctuates** with choices; it accumulates from small ± deltas over the run. The lane you *end* in drives the ending.
 - **Two-layer cost model:**
   - **Tint (cheap, everywhere):** band colors dialogue tone, greetings, minor gates, ambient flavor. Variable text/flags, not authored scenes. AI-appropriate volume work.
@@ -112,12 +113,16 @@ We have options. Any single game can die in a fire and we're fine. The unit that
   - Current state, as a cautionary example: ch2 opener choices set `ch2_kept_faith / ch2_fed_ember / ch2_buried_it` six times, read in exactly one place (`ch2_hub.gd:89–91`) as one swapped greeting line, then reconverge. Choice dressed as consequence. The new game *cashes* these instead.
 - **AI usage:** heavy on the **tint/volume** layer (hundreds of reactive flavor lines, ambient barks). Owner's call, backed by domain experience in the fantasy-fulfillment market: AI-generated tropey content **sells**, and AI is genuinely good at branch divergence/convergence bookkeeping.
 - **Split of record:** AI for the tint (high-volume, low-stakes, nobody scrutinizes a greeting) — use aggressively. The 5–8 sold pivots + character voices are where the story *is*; the owner's position is that "satisfying fantasy-fulfillment" is the bar, not prestige prose, and AI clears that. The counter-caution (below) is logged as a TEST, not a blocker.
-- **TEST (don't assume):** does the tolerant power-fantasy crowd buy on Steam, or does the Steam-gamer audience react to AI content? The owner's sales evidence is from the web-serial/video market (near-infinitely cliché-tolerant, near-zero upfront cost); a paid Steam game reaches a different audience with a review system and hotter AI antibodies. Pre-register **review sentiment on AI content + conversion** as watched metrics. **Mobile largely defuses this** — mobile audiences are AI-tolerant and the pipeline is already wired.
+- **TEST (don't assume):** does the tolerant power-fantasy crowd buy on Steam, or does the Steam-gamer audience react to AI content? The owner's sales evidence is from the web-serial/video market (near-infinitely cliché-tolerant, near-zero upfront cost); a paid Steam game reaches a different audience with a review system and hotter AI antibodies.
+  - **Hard fact that reshapes the test: Steam REQUIRES an AI-content disclosure on the store page** (policy since Jan 2024, covers pre-generated and live-generated content). Nobody has to *detect* anything — the label sits on the page before purchase. So the exposure is **upstream of reviews**: watch **store-page conversion (CTR → wishlist → purchase) with the disclosure present**, not just review sentiment. Write the disclosure wording deliberately — what AI touched and what it didn't (hand-authored pivots, art direction) — don't discover the form field at submission.
+  - **Mobile largely defuses this** — mobile audiences are AI-tolerant, Apple/Google have no equivalent store-page label, and the pipeline is already wired.
 - AI **art** for splashes/backgrounds is far more defensible than AI **writing** in a story game — players forgive AI visuals faster than AI prose; keep it art-directed for cohesion.
 
 ---
 
 ## 8. Monetization / distribution
+
+_2026-08-06: mechanics now live in [MONETIZATION_SPLIT.md](MONETIZATION_SPLIT.md) (SoT — SKUs, currency, tickets, catalog, accounts; its §8 lists the deltas vs this section, incl. the cross-buy-vs-walk-away decision). This section keeps the portfolio-lens principles._
 
 Ship **PC first**, then use its feedback to tune a **stronger mobile launch** with properly-calibrated monetization. Two channels → not dependent on Steam alone; different monetization path per platform.
 
@@ -131,9 +136,11 @@ Ship **PC first**, then use its feedback to tune a **stronger mobile launch** wi
 - **Governing principles:**
   - **Ethical-F2P lane:** never sell power or gate the *core / critical path*; sell cosmetics + net-new content. (PoE's cosmetic ethos + the accepted DLC norm — the model players respect.)
   - **Fair-DLC, not fenced-off-cut:** the paywall must land on content that reads as *"extra I added,"* never *"part of the game I fenced off."* Endless/daily/new-classes = clearly-additive = safe. **Do not retroactively wall existing grind rewards** ("you took a reward I'd have earned and charged me"). Owner's framing already lands here: full story free, extras paid, "not entitled to the bonus layer."
+  - **Known tension if Crownless is the vehicle (§9): its "paid extras" are existing core content.** On PC ($15, everything included) Crucible / Depths / dailies are part of the game; the mobile model fences them. A fresh mobile audience has no retroactive baseline — nothing is *taken* from any mobile player — but reviews cross-reference platforms ("it's all included on Steam"). Defensible framing: mobile's free tier is the complete story (the "taste" rule holds) and the fenced layer is bonus *by mobile's own norms*. **Accepted risk, in writing** — pre-register mobile review sentiment on the paywall as a watched metric; if it sours, the fallback is folding endgame into the free tier and leaning on cosmetics/expansions alone.
   - **Free tier must FEEL complete — the "taste" rule.** If the free Act 1–3 feels like a whole game, the paywall is bulletproof. If it feels like a *demo engineered to upsell*, it flips to resentment. Same content; the *felt completeness* of the free tier decides everything. Build it complete, not teasing.
   - **Walk-away preserved:** cosmetics ship as a **fixed set** unlocked via pay/grind — **not** an ever-refreshing live store (that would be live-ops). Expansions are **optional future shots**, not a committed cadence. Both keep the "build once, walk away" property intact.
-  - **Grind : pay ratio** is the make-or-break knob (too slow = coercive/rage; too fast = nobody pays). Defer to data — tune it on mobile after PC feedback.
+  - **Rewarded ads are the one walk-away breach in this section.** An ad network = SDK, account, fill-rate management, and policy churn *forever* — quiet live-ops. IAP-only (the store handles billing) is the walk-away-compatible version. → [DECISION] in §10: keep or cut the ads lane.
+  - **Grind : pay ratio** is the make-or-break knob (too slow = coercive/rage; too fast = nobody pays). **Only mobile cohort data can tune it** — PC is premium with everything unlocked and carries *zero* information about this knob; PC feedback informs content/fun, not monetization calibration. Ship mobile with a conservative (generous) first guess, tune from mobile's own data.
 
 ---
 
@@ -153,7 +160,7 @@ _From the 2026-08 cut-line analysis of `game/`. This section exists because the 
 - **Money shape:** deep-not-legible ARPG = "solid genre seller *if* it reaches its audience" (the $100k-if-it-lands end), **not** a Balatro-style viral spike. Co-op helps (buy-in-pairs). Mild tension: walk-away vs. a genre whose fans expect seasons.
 
 **THE OPEN DECISION — what is shot #1?**
-- **Option A — Crownless (the ARPG) is shot #1.** It's *already built*, serverless, walk-away-ready, and it already has the endless/daily/class content the mobile model monetizes. Fastest path to a real data point + launch-craft reps. **But** it's deep-not-legible (weak on the streamer template), and its resonance system is currently *pure flavor* (the plant-with-no-cash finding) — it is **not** the resonance-narrative game this doc describes.
+- **Option A — Crownless (the ARPG) is shot #1.** It's *already built*, serverless, walk-away-ready, and it already has the endless/daily/class content the mobile model monetizes (with the fenced-off-cut tension that implies — accepted in writing in §8). Fastest path to a real data point + launch-craft reps. **But** it's deep-not-legible (weak on the streamer template), and its resonance system is currently *pure flavor* (the plant-with-no-cash finding) — it is **not** the resonance-narrative game this doc describes.
 - **Option B — a new, lean, resonance-driven narrative game** (this doc's concept). Purpose-built for the choice-drama streamability vector, reuses Crownless tech + world. More legible, more on-template — but a net-new build, and it would need its *own* side-content to monetize the mobile model.
 - **Do NOT bolt the deep narrative onto the 40h ARPG** — that's scope creep that violates the legibility target and bloats shot #1.
 - **Recommended resolution (owner's call):** stop conflating them. **Crownless = shot #1** (ship the built thing, get data + launch reps + a live test of the F2P model), **resonance-narrative game = shot #2** (apply cohort-1 lessons + the new legible hook). This honors both "ship what exists" and "build the legible game," and fits the sequenced-cohort strategy. The doc title currently designates the resonance game as #1 — reconcile the title once decided.
@@ -164,9 +171,11 @@ _From the 2026-08 cut-line analysis of `game/`. This section exists because the 
 
 - **[DECISION] Shot-1 vehicle:** Crownless-as-#1 vs. resonance-game-as-#1 (see §9). Recommend Crownless #1, resonance game #2.
 - **[DECISION] Resonance topology:** confirm lanes reconverge mid-game (string of pearls); permanent divergence only at the 3 endings (§5).
-- **[TEST] AI content on Steam:** review sentiment on AI-generated content + conversion of the power-fantasy crowd (§7). Mobile defuses; PC is the exposure.
-- **[TEST] Organic clip pickup:** demo at Next Fest + seeded creators before full commit (§2, §3a).
-- **[TEST] Grind : pay ratio** on mobile (§8) — tune with data post-PC.
+- **[DECISION] Rewarded ads: keep or cut** (§8) — the one walk-away breach in the monetization model; IAP-only is the clean version.
+- **[TEST] AI content on Steam:** Steam's mandatory AI disclosure sits on the store page, so watch **store-page conversion with the label present** (CTR → wishlist → purchase) *plus* review sentiment (§7). Mobile defuses (no equivalent label); PC is the exposure.
+- **[TEST] Organic clip pickup:** demo at Next Fest + seeded creators before full commit (§2, §3a) — applies to **whichever vehicle is #1**, including Crownless.
+- **[TEST] Mobile paywall sentiment on Crownless** (§8): does fencing existing endgame read as fair-DLC to a fresh mobile audience? Fallback pre-declared: fold endgame free, sell cosmetics/expansions only.
+- **[TEST] Grind : pay ratio** on mobile (§8) — tunable only with mobile cohort data; ship a generous first guess.
 - **[DECISION] Crownless narrative closure:** reposition + reword Ch7 finale rather than build Acts 2–3 (§9), *if* Crownless ships as a standalone buy-once product.
 
 ---
@@ -175,7 +184,7 @@ _From the 2026-08 cut-line analysis of `game/`. This section exists because the 
 
 1. **Decide the shot-1 vehicle** (§9) — everything downstream branches on it.
 2. **Pre-registered scorecard** for shot #1 (wishlist / CTR / first-hour retention / clip-pickup thresholds).
-3. If Crownless is #1: **reposition it** (store framing + Ch7 finale reword) and **wire the mobile F2P model** (free Act 1–3, paid endless/daily/cosmetics/class-expansions) + offline-safe the noray transport (Steam swap or direct-IP floor).
-4. If the resonance game is next: **string-of-pearls skeleton** for act 1 — hubs, the 5–8 pivots, reconvergence points, flags carried forward, 3 endings — then **build the CASH layer** on the existing plant plumbing (band + flags → branch at pivots).
+3. If Crownless is #1: **reposition it** (store framing + Ch7 finale reword), **run the funnel TEST on it** (demo + seeded creators — §2's test transfers to the shipping vehicle), and **wire the mobile F2P model** (free Act 1–3, paid endless/daily/cosmetics/class-expansions) + offline-safe the noray transport (Steam swap or direct-IP floor). Draft the **Steam AI-disclosure wording** alongside the store page, not at submission (§7).
+4. If the resonance game is next: **string-of-pearls skeleton** for act 1 — hubs, the 5–8 pivots, reconvergence points, flags carried forward, 3 endings — then **build the CASH layer** on the existing plant plumbing (band + flags → branch at pivots). **→ Drafted: `RESONANCE_ACT1_DIALOGUE.md`** (Act 1 skeleton + authored dialogue, owner review pending).
 5. **Add humor** — cheapest, highest-leverage shareability lever, currently missing.
 6. Alt shot parked: **survivors-like** in Emberfall (max reach / min depth, highest streamability-per-build-cost) — the "legible" end of the cohort's legibility spread.

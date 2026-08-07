@@ -904,6 +904,10 @@ func ensure_pvp_controller() -> void:
 ## controller and its HUD die with it.
 func teardown_pvp_controller() -> void:
 	pvp_active = false
+	# Revert the PvP durability conversion (max_hp ×toughness, melee-res) so an
+	# inflated pool can never leak into PvE if this hero node outlives the arena.
+	if local_player != null and is_instance_valid(local_player):
+		local_player.recalc()
 	if pvp != null and is_instance_valid(pvp):
 		pvp.queue_free()
 	pvp = null

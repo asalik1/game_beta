@@ -40,7 +40,7 @@ enum Mode {
 ## (§3.4). Printed on the title screen later so "you're on 0.1.0, I'm on
 ## 0.1.1" is readable without debugging. The auth handshake compares this
 ## EXACTLY — mismatch means a clean refusal, never a half-join.
-const NET_VERSION := "0.3.2"  # 0.3.2: co-op boss intro + terrain-flourish fans (_rpc_boss_intro, _rpc_terrain_fx) · 0.3.1: dev-panel spawns route to the host in co-op (_rpc_dev_spawn) · 0.3.0: PvP duels v1 (pvp_* RPCs)
+const NET_VERSION := "0.3.3"  # 0.3.3: PvP strikes carry the striker's pen (pvp_strike/_rpc_player_hit gain a pen field) so it cuts the defender's resistance · 0.3.2: co-op boss intro + terrain-flourish fans (_rpc_boss_intro, _rpc_terrain_fx) · 0.3.1: dev-panel spawns route to the host in co-op (_rpc_dev_spawn) · 0.3.0: PvP duels v1 (pvp_* RPCs)
 
 # --------------------------------------------------- network constants ---
 # Transport plumbing, not gameplay tuning — so they live here, not in

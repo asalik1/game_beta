@@ -12,11 +12,12 @@ class_name PvpDuel extends Node
 ##              freshly rerolled arena terrain. The host names the terrain id;
 ##              scenery/hazard patches are seeded by (zone, terrain) alone
 ##              (game_world), so both machines rebuild the arena identically.
-##   fight      the host fans the gate-open. Player-vs-player damage flows
-##              through each machine's invisible proxy Enemy (pvp_proxy.gd —
-##              every existing targeting/melee/projectile path hits it
-##              natively) into net_session.pvp_strike, landing as the
-##              defender's own owner-side take_damage (their armor/evasion).
+##   fight      the host fans the gate-open. The rival's SHELL is a first-
+##              class combat target (the 2026-08-02 duel refactor — targeting,
+##              melee sweeps and projectiles acquire it natively; player_combat
+##              _hit_rival is the funnel branch) and damage lands over
+##              net_session.pvp_strike as the defender's own owner-side
+##              take_damage (their armor/evasion mitigate).
 ##   a fall     the owner's lethal branch (player.gd) reports it; the host
 ##              scores it and fans either the round reset (both heroes stand
 ##              fresh at their gates) or the match end at PVP_DEATHS_TO_LOSE.
@@ -40,9 +41,10 @@ var scores := {}           # peer id -> falls taken (PVP_DEATHS_TO_LOSE ends it)
 var deadline_ms := 0       # warmup: when the gates open (local render clock)
 var arena_terrain := ""    # current arena terrain id (rerolled every round)
 var winner_pid := 0
-var proxy: Node = null     # my invisible rival-shadow (pvp_proxy.gd)
 var _walkover := false     # the rival's machine left mid-match
 var _count_shown := -1     # last whole second rendered (countdown tick sfx edge)
+var _burn_acc := 0.0       # rival DoT forward cadence accumulators (0.5 s ticks)
+var _bleed_acc := 0.0
 
 
 ## Fresh arena world (switch_chapter re-raise): a clean slate.
@@ -54,7 +56,7 @@ func arm() -> void:
 	winner_pid = 0
 	arena_terrain = ""
 	_walkover = false
-	_free_proxy()
+	_clear_rival_riders()
 
 
 ## Per-frame from game._process (the endgame.tick slot). The host rings the
@@ -78,8 +80,67 @@ func tick(_delta: float) -> void:
 					game.sfx("blink", 0.7)
 			if left <= 0.0 and game.net_host():
 				game.net_session().pvp_fan_fight()
+		"fight":
+			_tick_rival_riders(_delta)
 		_:
 			pass
+
+
+## ATTACKER-side rider bookkeeping on the rival's shell (duel refactor
+## 2026-08-02 — the state player_core's compat surface parks there). Decay
+## the synergy windows, and forward parked DoT damage in 0.5 s ticks over
+## the same host-validated strike wire every hit rides. The defender's own
+## take_damage mitigates each tick as it lands, so a DoT is never "free
+## true damage" — it just can't read their armor from here.
+func _tick_rival_riders(delta: float) -> void:
+	var foe: Player = _foe_shell()
+	if foe == null:
+		return
+	foe.vuln_time = maxf(0.0, foe.vuln_time - delta)
+	foe.slow_time = maxf(0.0, foe.slow_time - delta)
+	foe.stun_time = maxf(0.0, foe.stun_time - delta)
+	foe.crush_t = maxf(0.0, foe.crush_t - delta)
+	foe.res_shred_t = maxf(0.0, foe.res_shred_t - delta)
+	if foe.res_shred_t <= 0.0:
+		foe.res_shred = 0.0
+	var sess: Node = game.net_session()
+	if foe.burn_time > 0.0:
+		foe.burn_time -= delta
+		_burn_acc += delta
+		if _burn_acc >= 0.5 and not foe.dead:
+			_burn_acc = 0.0
+			sess.pvp_strike(foe.peer_id, foe.burn_dps * 0.5 * Balance.PVP_DMG_MULT, "magic")
+	else:
+		foe.burn_dps = 0.0
+	if foe.bleed_time > 0.0:
+		foe.bleed_time -= delta
+		_bleed_acc += delta
+		if _bleed_acc >= 0.5 and not foe.dead:
+			_bleed_acc = 0.0
+			sess.pvp_strike(foe.peer_id, foe.bleed_dps * 0.5 * Balance.PVP_DMG_MULT, "phys")
+	else:
+		foe.bleed_dps = 0.0
+
+
+## Drop every rider parked on the rival's shell (round reset / match end —
+## nothing crosses a round boundary; brittle stacks die with the round too).
+func _clear_rival_riders() -> void:
+	_burn_acc = 0.0
+	_bleed_acc = 0.0
+	var foe: Player = _foe_shell()
+	if foe == null:
+		return
+	foe.vuln_time = 0.0
+	foe.burn_time = 0.0
+	foe.burn_dps = 0.0
+	foe.bleed_time = 0.0
+	foe.bleed_dps = 0.0
+	foe.slow_time = 0.0
+	foe.stun_time = 0.0
+	foe.brittle = 0
+	foe.crush_t = 0.0
+	foe.res_shred = 0.0
+	foe.res_shred_t = 0.0
 
 
 ## The strike gate every damage forward checks: only a live FIGHT lands blows —
@@ -157,6 +218,9 @@ func _apply_round(rn: int, terrain: String, secs: float, sc: Dictionary) -> void
 	# My hero: stand fresh in my gatehouse, kit reset — a round is a clean slate.
 	var p: Player = game.local_player
 	if p != null and is_instance_valid(p):
+		# PvP conversion applies through recalc (max_hp ×toughness, melee-res) —
+		# run it with pvp_active live BEFORE revive fills the inflated pool.
+		p.recalc()
 		p.revive()
 		for k in p.cds:
 			p.cds[k] = 0.0
@@ -171,7 +235,7 @@ func _apply_round(rn: int, terrain: String, secs: float, sc: Dictionary) -> void
 	_seal_gates()
 	game.apply_terrain(ROOM_ARENA, terrain)
 	arena_terrain = terrain
-	_ensure_proxy()
+	_clear_rival_riders()
 	_update_score_hud()
 	game.hud.flash_title("ROUND %d" % rn, _score_line(), 1.2, false)
 	game.sfx("gate")
@@ -213,7 +277,7 @@ func _apply_end(w_pid: int, sc: Dictionary) -> void:
 	state = "done"
 	winner_pid = w_pid
 	scores = sc.duplicate()
-	_free_proxy()
+	_clear_rival_riders()
 	game.hud.pvp_countdown_hide()
 	_update_score_hud()
 	var won: bool = w_pid == _my_pid()
@@ -253,7 +317,7 @@ func _finish_exit() -> void:
 		game.exit_to_title()
 
 
-# ------------------------------------------------------- gates + proxy ---
+# ------------------------------------------------------------------ gates ---
 
 ## Rebuild both gate bodies (round reset). The pvp_gates flag is cleared so
 ## _edge_unlocked reads the bar as real again; open_edge freed the old nodes.
@@ -276,27 +340,6 @@ func _open_gates() -> void:
 	game.flags["pvp_gates"] = true
 	game.open_edge(ROOM_WEST, ROOM_ARENA)
 	game.open_edge(ROOM_ARENA, ROOM_EAST)
-
-
-## My machine's invisible rival-shadow: the Enemy every existing combat path
-## can see. One per machine, per match; rounds reuse it.
-func _ensure_proxy() -> void:
-	var foe: Player = _foe_shell()
-	if foe == null:
-		return
-	if proxy != null and is_instance_valid(proxy):
-		proxy.foe = foe
-		return
-	var pr = preload("res://scripts/pvp_proxy.gd").new()
-	pr.setup_proxy(game, foe)
-	game.world.add_child(pr)
-	proxy = pr
-
-
-func _free_proxy() -> void:
-	if proxy != null and is_instance_valid(proxy):
-		proxy.queue_free()
-	proxy = null
 
 
 # ---------------------------------------------------------------- lookups ---

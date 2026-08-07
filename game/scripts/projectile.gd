@@ -478,7 +478,11 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 	# shot's mask already collides with ANY number of player bodies — no
 	# mask change needed for co-op — and _on_body_entered resolves hits by
 	# CLASS (`body is Player`), never by identity against game.player.
-	p.collision_mask = (1 | 4) if is_friendly else (1 | 2)
+	# PVP (duel refactor 2026-08-02): a friendly shot in a duel world also
+	# masks layer 2 so it can strike the RIVAL's shell — the handler skips
+	# the shooter's own body (the shot spawns inside it).
+	var friendly_mask: int = (1 | 4 | 2) if bool(game_node.pvp_active) else (1 | 4)
+	p.collision_mask = friendly_mask if is_friendly else (1 | 2)
 	game_node.add_child(p)
 	if tex_name in ["mage_void_bullet", "mage_crystal_decree"]:
 		p._build_path_trail()
@@ -833,6 +837,19 @@ func _on_body_entered(body: Node) -> void:
 			_impact_ring()
 			if not pierce:
 				queue_free()
+		elif friendly and body is Player:
+			# PVP: the visual copy of a rival's duel shot bursts on the LOCAL
+			# hero it was really aimed at — cosmetic only (the real hit rides
+			# the strike wire). Never on the shooter's own shell: the copy
+			# SPAWNS inside it and would burst-and-die on frame one.
+			if body != game.local_player or _already_hit.has(body) \
+					or not bool(game.pvp_active):
+				return
+			_already_hit[body] = true
+			_notify_visual_impact()
+			game.burst(_fx_pos(), glow_color, 5)
+			if not pierce:
+				queue_free()
 		elif not friendly and body is Player:
 			_notify_visual_impact()
 			game.burst(_fx_pos(), glow_color, 5)
@@ -871,6 +888,30 @@ func _on_body_entered(body: Node) -> void:
 		# "threads the whole pack" (blood knives, void bolts, venom arrows).
 		var cap := int(fx.get("pierce_cap", 0))
 		if not pierce or (cap > 0 and _already_hit.size() >= cap):
+			_bloom()
+			queue_free()
+	elif friendly and body is Player:
+		# PVP (duel refactor 2026-08-02): a friendly duel shot strikes the
+		# RIVAL's shell — the widened hit funnel resolves and ships it. The
+		# shooter's OWN body enters this mask too (the shot spawns inside
+		# it): never the shooter, and only while a duel is live.
+		if body == source_player or _already_hit.has(body):
+			return
+		if game == null or not bool(game.pvp_active):
+			return
+		_already_hit[body] = true
+		_notify_visual_impact()
+		game.burst(_fx_pos(), glow_color, 5)
+		_frost_arrow_impact()
+		_mage_skin_impact()
+		_impact_ring()
+		if is_instance_valid(source_player):
+			var saved_tfx_q: Dictionary = source_player._tfx
+			source_player._tfx = {}
+			source_player.hit_enemy(body, hit_player_mult, fx)
+			source_player._tfx = saved_tfx_q
+		var cap_q := int(fx.get("pierce_cap", 0))
+		if not pierce or (cap_q > 0 and _already_hit.size() >= cap_q):
 			_bloom()
 			queue_free()
 	elif not friendly and body is Player:

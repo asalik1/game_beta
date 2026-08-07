@@ -512,8 +512,107 @@ var facing := Vector2.RIGHT
 var look_sign := 1.0           # which way the hero visually faces (+1 right)
 var face_left := false         # does the sprite's art natively face left?
 var anim_t := 0.0
-var locked_target: Enemy = null
-var soft_target: Enemy = null   # sticky auto-target (no Tab-lock); see player_combat
+# Targets are the COMBAT-TARGET UNION (PvP duel refactor 2026-08-02): an Enemy,
+# or — during a live duel — the RIVAL's shell (a real Player). CharacterBody2D
+# is the shared engine base; both classes carry the dying/untargetable surface
+# the scans read. Solo/co-op never yields a Player candidate (player_combat
+# _strike_candidates), so offline behavior is bit-identical.
+var locked_target: CharacterBody2D = null
+var soft_target: CharacterBody2D = null   # sticky auto-target (no Tab-lock); see player_combat
+
+# ---- PvP duel: the rival's shell as a first-class combat target ----------
+# (duel refactor 2026-08-02 — replaces the phantom proxy-Enemy). In a duel the
+# attack pipeline acquires and strikes the RIVAL'S SHELL directly. These fields
+# are the ATTACKER-side bookkeeping of riders parked on that shell — the shell
+# is this machine's own view of the rival, so the state honestly lives on it:
+# pvp.gd ticks the clocks and forwards DoT damage over net_session.pvp_strike;
+# control riders cross via pvp_status and apply on the OWNER's machine; the
+# synergy windows (vuln/slow/brittle/crush) feed the same kit reads they feed
+# on enemies. Solo/co-op never writes any of this (see _rival_shell below).
+# `dying`/`untargetable` are the two reads targeting makes on ANY candidate.
+var dying: bool:
+	get:
+		return dead
+var untargetable: bool:
+	get:
+		return downed or ghost
+var vuln_time := 0.0    # EXPOSED window on the rival (attacker-side amp)
+var vuln_mult := 1.5
+var burn_time := 0.0    # DoT riders parked on the rival (pvp.gd forwards ticks)
+var burn_dps := 0.0
+var bleed_time := 0.0
+var bleed_dps := 0.0
+var slow_time := 0.0    # synergy window (Killing Frost); the real CC rides the wire
+var stun_time := 0.0
+var brittle := 0        # ice-stack synergy, attacker-side
+var crush_t := 0.0      # void-crush window (a shove can't cross the wire; this can)
+var res_shred := 0.0    # kit-write compat; defender-side armor is invisible here,
+var res_shred_t := 0.0  # so shred carries no math weight vs a rival (v1)
+
+
+## Is this Player object a rival shell we may bookkeep riders on? Only a
+## REMOTE body in a live duel qualifies — my own hero and every co-op ally
+## fall through to no-ops, so the compat surface below is inert outside PvP.
+func _rival_shell() -> bool:
+	return game != null and game.pvp_active and not is_locally_controlled()
+
+
+# Rider-compat surface: the calls kits and the hit funnel make on any target.
+# On a rival's shell they park/forward as documented above; anywhere else they
+# no-op. Signatures mirror enemy.gd's so call sites stay type-agnostic.
+
+func apply_burn(dps: float, dur: float, _color := Color(1.4, 0.8, 0.6), _src = null) -> void:
+	if not _rival_shell():
+		return
+	burn_dps = maxf(burn_dps, dps)   # refresh-don't-stack (enemy.gd semantics)
+	burn_time = maxf(burn_time, dur)
+
+
+func apply_toxin(dps: float, dur: float, _color := Color(0.5, 1.2, 0.5), _src = null) -> void:
+	apply_burn(dps, dur)   # toxin deepens enemy burns; vs a rival it's one DoT lane
+
+
+func apply_bleed(dps: float, dur: float, _src = null) -> void:
+	if not _rival_shell():
+		return
+	bleed_dps = maxf(bleed_dps, dps)
+	bleed_time = maxf(bleed_time, dur)
+
+
+func apply_slow(mult: float, dur: float) -> void:
+	if not _rival_shell():
+		return
+	slow_time = maxf(slow_time, dur)
+	game.net_session().pvp_status(peer_id, "chill", mult, dur)
+
+
+func apply_stun(dur: float) -> void:
+	if not _rival_shell():
+		return
+	stun_time = maxf(stun_time, dur)
+	game.net_session().pvp_status(peer_id, "freeze", dur, 0.0)
+
+
+func apply_vuln(dur: float, mult := -1.0) -> void:
+	if not _rival_shell():
+		return
+	vuln_mult = mult if mult > 0.0 else 1.5
+	vuln_time = maxf(vuln_time, dur)
+
+
+func add_brittle() -> void:
+	if not _rival_shell():
+		return
+	brittle = mini(brittle + 1, 8)
+
+
+func apply_knock(_vec: Vector2, crush := false) -> void:
+	if not _rival_shell():
+		return
+	# Movement is owner-authoritative — the shove itself never crosses the
+	# wire (v1). The CRUSH window it would open does, attacker-side.
+	if crush:
+		crush_t = maxf(crush_t, Balance.CRUSH_WINDOW)
 var pending_theme_note := ""   # set when a new theme unlocks (game shows it)
 
 # per-cast theme payload (set by use_ability, read by ability helpers)
@@ -780,7 +879,7 @@ var action_face_hint := Vector2.ZERO
 func _action_facing_vec() -> Vector2:
 	if action_face_hint != Vector2.ZERO:
 		return action_face_hint
-	var t: Enemy = locked_target if is_instance_valid(locked_target) else soft_target
+	var t: CharacterBody2D = locked_target if is_instance_valid(locked_target) else soft_target
 	if is_instance_valid(t) and not t.dying:
 		return t.global_position - global_position
 	if velocity.length() > 20.0:
@@ -1693,6 +1792,17 @@ func recalc() -> void:
 		if uniq_gear("glove_bulwark") != "":
 			# Might grip: bulk lands with every hit (folded like _cast_base).
 			uniq_hit_flat = max_hp / maxf(1.0, uniq_gk("glove_bulwark", "hp_per", 1000.0))
+	# ---- PvP conversion (PROPOSALS/PVP_BALANCE.md) — DUELS ONLY, PvE untouched.
+	# Runs LAST, after the HP->power conversions above (worldroot/lastpulse atk,
+	# glove_bulwark hit-flat) which must read the BASE pool: the melee-res grant
+	# adds pure res on top of plate DR, and toughness inflates the pool (covers
+	# true damage, auto-dilutes lifesteal on the ×N bar). Idempotent — max_hp is
+	# recomputed from base each recalc, so this never compounds.
+	if game != null and game.pvp_active:
+		var pvp_mr: float = Balance.PVP_MELEE_RES.get(cls, 0.0)
+		physres += pvp_mr
+		magres += pvp_mr
+		max_hp *= Balance.PVP_TOUGHNESS
 	hp = clampf(max_hp * hp_frac, 1.0, max_hp)
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
 
@@ -1704,6 +1814,8 @@ func gain_hp(amount: float, apply_laced := true) -> void:
 	if amount <= 0.0 or dead:
 		return
 	amount *= debuff_heal_in   # endgame Depths −healing-received debuff (1.0 off-run)
+	if game != null and game.pvp_active:
+		amount *= Balance.PVP_HEAL_MULT   # PvP healing scalar (PROPOSALS/PVP_BALANCE.md §3.3)
 	# Laced Rust sting: cheap stitching reduces healing received (§3). The Tonic
 	# that inflicted it delivers its OWN drip through apply_laced=false, so the
 	# bottle keeps its promised total; every OTHER heal is docked for the window.

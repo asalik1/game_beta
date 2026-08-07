@@ -260,7 +260,7 @@ func _death_mark() -> void:
 
 ## The floating X over a marked target's head: two crossed blade
 ## slivers riding the enemy (freed with it) for the mark's 5s window.
-func _mark_overhead_x(target: Enemy) -> void:
+func _mark_overhead_x(target: CharacterBody2D) -> void:
 	var x_mark := Node2D.new()
 	x_mark.position = Vector2(0, -56)
 	x_mark.z_index = 30
@@ -393,7 +393,7 @@ func _gilded_iai_strike(target) -> void:
 ## X (a slash and a 0.7x true hit each), then the assassin blinks
 ## BEHIND it and lands the killing stab (1.3x true, via the real stab
 ## arc). Shadow theme: a survivor under 30% is finished on the spot.
-func _death_mark_execution(target: Enemy, execute := 0.0) -> void:
+func _death_mark_execution(target: CharacterBody2D, execute := 0.0) -> void:
 	var phantom := skin == "phantom"
 	for diag in [Vector2(1, 1).normalized(), Vector2(-1, 1).normalized()]:
 		if not is_instance_valid(target) or target.dying:

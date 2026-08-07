@@ -478,8 +478,13 @@ func _chains_of_wrath(f := 1.0) -> void:
 	# (then wedge against the wall trying to reach you). Same-room keeps the
 	# pull honest.
 	var my_room := game.room_at_pos(global_position)
+	# Enemy-only (duel refactor v1): the chains are a DRAG — and movement is
+	# owner-authoritative in PvP, so a rival can't be reeled over the wire.
+	# Rather than chain-stun a body the hammer can't gather, the rival is
+	# simply not a valid tether (parked with apply_knock's wire gap).
 	var targets := _enemies_within(global_position, radius).filter(
-		func(e: Node) -> bool: return game.room_at_pos((e as Node2D).global_position) == my_room)
+		func(e: Node) -> bool: return e is Enemy \
+			and game.room_at_pos((e as Node2D).global_position) == my_room)
 	if targets.is_empty():
 		cds["ult"] = 1.0
 		return

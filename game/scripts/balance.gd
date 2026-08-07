@@ -236,6 +236,19 @@ const BOSS_DMG_MULT := 1.2
 # the same % of HP — tanks survive, squishies dodge, exactly as at native L40).
 const BOSS_HP_GROWTH := 0.018    # bosses only; tracks player DPS growth -> level-invariant TTK
 const BOSS_DMG_GROWTH := 0.015   # tracks player EHP growth -> level-invariant hit danger
+# No-flat-resistance floor (2026-08-07): every boss grows BOTH resistances with
+# level. VIT feeds physres+magres, so a purely offensive authored `attrs` (a caster
+# with no VIT, a STR/AGI brute) still gets a floor of VIT — its non-specialized
+# resistance climbs, just slower than its signature (which its primary drives).
+# Bosses only; native-level fights are unchanged (growth is 0 at anchor).
+const BOSS_VIT_FLOOR := 1.0
+# Base-res tier floor (2026-08-07): a boss's BASE resistance (at its anchor level)
+# rises with story position — signature (its damage type) at SIG/level, the off-type
+# at OFF/level. Applied as a max() so a designed tank's authored values stay, and an
+# under-tuned late boss is pulled up to a tier-appropriate floor. Later Act bosses
+# (higher anchors) get higher bases automatically. Bosses only.
+const BOSS_BASE_RES_SIG := 1.5
+const BOSS_BASE_RES_OFF := 0.6
 const GOLD_MULT := 0.6          # global gold scarcity (merchants must matter)
 const REWARD_PER_LEVEL := 0.12  # xp/gold grow LINEARLY per level (no farm spiral)
 # Death tithe (player-approved 2026-07-09): death must cost SOMETHING or every
@@ -3018,6 +3031,22 @@ const PVP_DEATHS_TO_LOSE := 3      # falls that end the match (first to take the
 const PVP_ROUND_END_BEAT := 2.2    # s — savor the kill before the round resets
 const PVP_END_LINGER := 5.0        # s — the victory/defeat card before returning to title
 const PVP_DMG_MULT := 1.0          # global player-vs-player damage scalar (the tuning dial)
+# PvP durability conversion (PROPOSALS/PVP_BALANCE.md, owner-locked 2026-08-06):
+# god-roll gear is offense-only, so at L100 damage (~3500/hit) dwarfs the bare-curve
+# HP pool (~1300-2300) and every basic one-shots. These fold in ONLY under
+# game.pvp_active (recalc / gain_hp), so PvE is byte-for-byte untouched.
+const PVP_TOUGHNESS := 35.0        # effective-HP multiplier in duels — attrition TTK, no one-shots (max_hp *= this)
+# Healing is NOT nerfed in PvP (owner call 2026-08-06, reversing the earlier 0.5):
+# a flat heal cut hits the most heal-reliant kit — the paladin's holy mend — hardest,
+# and toughness already dilutes lifesteal on the ×N bar. Kept as a 1.0 dial (the
+# benches read it via --heal) so it can be re-tuned without a code change.
+const PVP_HEAL_MULT := 1.0
+# Melee-res grant (the League melee/ranged comp): PvP-only physres+magres for the
+# bruisers who must EAT poke to close — warrior/paladin full, the gap-close+iframe
+# assassin none (it never eats the kite, and it's already the tuned-up duelist).
+# TRUE damage bypasses (Death Mark still punches plate).
+const PVP_MELEE_RES := {"warrior": 90.0, "archer": 0.0, "mage": 0.0,
+	"assassin": 0.0, "paladin": 90.0, "warlock": 0.0}
 # The arena reroll pool — the endgame arena set (their events/hazards are the
 # arena's only neutral threat; keep/village-style eventless terrains excluded
 # so every round has a little weather in it).
