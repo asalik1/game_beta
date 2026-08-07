@@ -779,7 +779,7 @@ func drink_potion() -> void:
 ## So a HEAVY hit pierces a gate armed by chip damage; it is still blocked by
 ## a gate armed by another heavy hit (or a deliberate i-frame window), so two
 ## overlapping telegraphs can't double-tap someone instantly.
-func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false) -> void:
+func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false, pvp_pen := 0.0) -> void:
 	if dead:
 		return
 	if downed or ghost:
@@ -903,7 +903,10 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			_uniq_on_evade(attacker)
 			return
 		if dmg_type != "true":
-			amount *= (1.0 - Stats.res_frac(res))
+			# PvP: the striker's pen crosses the wire and cuts our resistance here
+			# (pvp_pen; 0 for enemy hits, which resolve pen attacker-side above).
+			# This is what makes pen gems answer the melee-res grant in duels.
+			amount *= (1.0 - Stats.res_frac(maxf(0.0, res - pvp_pen)))
 		if dash_guard_time > 0.0 and dmg_type != "true":
 			# Mirrorstep (assassin S weapon): the un-dodgeable AoE (telegraphs,
 			# hazards — the attacker-less path) is softened during the dash.

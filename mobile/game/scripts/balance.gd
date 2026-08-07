@@ -236,6 +236,19 @@ const BOSS_DMG_MULT := 1.2
 # the same % of HP — tanks survive, squishies dodge, exactly as at native L40).
 const BOSS_HP_GROWTH := 0.018    # bosses only; tracks player DPS growth -> level-invariant TTK
 const BOSS_DMG_GROWTH := 0.015   # tracks player EHP growth -> level-invariant hit danger
+# No-flat-resistance floor (2026-08-07): every boss grows BOTH resistances with
+# level. VIT feeds physres+magres, so a purely offensive authored `attrs` (a caster
+# with no VIT, a STR/AGI brute) still gets a floor of VIT — its non-specialized
+# resistance climbs, just slower than its signature (which its primary drives).
+# Bosses only; native-level fights are unchanged (growth is 0 at anchor).
+const BOSS_VIT_FLOOR := 1.0
+# Base-res tier floor (2026-08-07): a boss's BASE resistance (at its anchor level)
+# rises with story position — signature (its damage type) at SIG/level, the off-type
+# at OFF/level. Applied as a max() so a designed tank's authored values stay, and an
+# under-tuned late boss is pulled up to a tier-appropriate floor. Later Act bosses
+# (higher anchors) get higher bases automatically. Bosses only.
+const BOSS_BASE_RES_SIG := 1.5
+const BOSS_BASE_RES_OFF := 0.6
 const GOLD_MULT := 0.6          # global gold scarcity (merchants must matter)
 const REWARD_PER_LEVEL := 0.12  # xp/gold grow LINEARLY per level (no farm spiral)
 # Death tithe (player-approved 2026-07-09): death must cost SOMETHING or every
@@ -2220,16 +2233,46 @@ static func uniq_set(cls: String, profile: String, tier: String) -> Dictionary:
 # an enemy, and enemies hitting a player whose eva came from archer Tumble /
 # assassin Enfeeble). An enemy's DEX (scaled off its AGI) reads the player's
 # evasion through this same ladder.
-const DEX_PER_EVA := 0.004     # DEX -> evasion answered. Parity DEX = e_eva / this (0.30 eva asks 75 DEX)
+const DEX_PER_EVA := 0.0024    # DEX answers the CAPPED eva chance (Stats.dex_tier). At the 50% cap, parity (full
+                               # counter) = 0.50/this ~= 208 DEX = 4 dex gems (a heavy, real sacrifice); graze ~= 2 gems.
+                               # 1 dex gem (~52, the expected minimum every player carries) is BELOW graze — eva stays viable.
 const DEX_GRAZE_RATIO := 0.5   # fraction of parity DEX where a full miss softens into a graze
-const GRAZE_DAMAGE := 0.5      # what a grazed hit pays through
+const GRAZE_DAMAGE := 0.5      # (legacy flat graze; superseded by the graze CURVE below for eva)
+# Graze CURVE (owner 2026-08-07): a dodged hit no longer pays a flat 50% — the
+# damage that leaks through ramps from 0% (just entering the counter, DEX_GRAZE_RATIO)
+# to 100% (parity, dodge fully cancelled) as attacker DEX climbs the graze band.
+# Convex, so the final stretch to full-cancel is the steepest (the "5->6 gems"
+# payoff). through = ((ratio - GRAZE_RATIO)/(1 - GRAZE_RATIO)) ^ this.
+const GRAZE_CURVE_EXP := 1.7
 
 const CAP_LIFESTEAL := 0.35  # knee on the TOTAL incl. surges/berserk/pact
 const CAP_COMBO := 0.30
 const CAP_CRIT := 0.35       # the old 70%-curve was far too generous
-const CAP_EVA := 0.50        # nothing approaches unhittable
+const CAP_EVA := 0.50        # dodge KNEE at 50%; a dedicated stack overflows gently (below) to ~65%
+const EVA_OVERCAP_RATE := 0.06  # dodge past the 50% knee pays only this per raw point (was the global 0.1) —
+                                # a full 14-gem eva stack (~raw 3) lands ~65% dodge, not 74%; owner 2026-08-07
 const CAP_GREED := 0.40
 const CAP_RES_FRAC := 0.80   # damage REDUCTION knee: >80% pays 1/10
+# Per-class RESISTANCE soft cap (owner 2026-08-07): with every gear piece now
+# rolling 2 defensive subs (the 2+2 rule), glass classes could stack the SAME res
+# as plate — so res past the class threshold pays the usual soft-cap ~1/10, per
+# class AND per type. Two design rules:
+#   TIERS (overall level): warrior/paladin > assassin > archer > mage/warlock.
+#   SHAPE (within a class): the signature type — a class's own damage type, the
+#     armor it "knows" — caps higher (warrior physres > its magres; mage magres >
+#     its physres). But the tier gap exceeds the shape spread, so a tier-1's WEAKER
+#     cap still beats a lower tier's STRONGER cap (warrior magres 280 > assassin
+#     physres 260). Every cap is strictly ordered across the whole roster.
+# Ceilings (res_frac at the threshold): T1 ~70-74%, T2 ~64-68%, T3 ~57-63%, T4 ~48-56%.
+# The hard CAP_RES_FRAC (80%) is untouched; temp guard/aegis/grit windows stack above.
+const RES_SOFTCAP := {
+	"warrior":  {"physres": 340.0, "magres": 280.0},   # T1, phys signature
+	"paladin":  {"physres": 280.0, "magres": 340.0},   # T1, magic (holy) signature
+	"assassin": {"physres": 260.0, "magres": 210.0},   # T2, phys signature
+	"archer":   {"physres": 200.0, "magres": 160.0},   # T3, phys signature
+	"mage":     {"physres": 110.0, "magres": 150.0},   # T4, magic signature
+	"warlock":  {"physres": 110.0, "magres": 150.0},   # T4, magic signature
+}
 # SPECIAL gem stats (2026-07-08): gem-ONLY, and each lives in the dedicated
 # A+ SPECIAL slot, ONE gem of each stat across your whole loadout (not a
 # stack). `dmg_pct` (Sunstone) is the UNIVERSAL damage special — it replaced
@@ -3018,6 +3061,24 @@ const PVP_DEATHS_TO_LOSE := 3      # falls that end the match (first to take the
 const PVP_ROUND_END_BEAT := 2.2    # s — savor the kill before the round resets
 const PVP_END_LINGER := 5.0        # s — the victory/defeat card before returning to title
 const PVP_DMG_MULT := 1.0          # global player-vs-player damage scalar (the tuning dial)
+# PvP durability conversion (PROPOSALS/PVP_BALANCE.md, owner-locked 2026-08-06):
+# god-roll gear is offense-only, so at L100 damage (~3500/hit) dwarfs the bare-curve
+# HP pool (~1300-2300) and every basic one-shots. These fold in ONLY under
+# game.pvp_active (recalc / gain_hp), so PvE is byte-for-byte untouched.
+const PVP_TOUGHNESS := 12.0        # effective-HP multiplier in duels (2026-08-07 re-tune, on TOP of the 2+2 gear
+                                   # defense + per-class res caps): a war of attrition/strategy, not one-shots.
+                                   # Down from 35 (that was tuned vs zero-defense gear; gear now carries the floor).
+# Healing is NOT nerfed in PvP (owner call 2026-08-06, reversing the earlier 0.5):
+# a flat heal cut hits the most heal-reliant kit — the paladin's holy mend — hardest,
+# and toughness already dilutes lifesteal on the ×N bar. Kept as a 1.0 dial (the
+# benches read it via --heal) so it can be re-tuned without a code change.
+const PVP_HEAL_MULT := 1.0
+# Melee-res grant (the League melee/ranged comp): PvP-only physres+magres for the
+# bruisers who must EAT poke to close — warrior/paladin full, the gap-close+iframe
+# assassin none (it never eats the kite, and it's already the tuned-up duelist).
+# TRUE damage bypasses (Death Mark still punches plate).
+const PVP_MELEE_RES := {"warrior": 0.0, "archer": 0.0, "mage": 0.0,
+	"assassin": 0.0, "paladin": 0.0, "warlock": 0.0}   # NEUTRALIZED 2026-08-07 (was warrior/paladin 90) — gear res covers it now; re-tune after re-reading PvP state
 # The arena reroll pool — the endgame arena set (their events/hazards are the
 # arena's only neutral threat; keep/village-style eventless terrains excluded
 # so every round has a little weather in it).

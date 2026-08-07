@@ -955,7 +955,35 @@ func _face_sign() -> float:
 ## Is a hard Tab-lock in force? A locked target overrides ALL targeting —
 ## every aimed and seeking ability homes to it, and the hero's orientation
 ## tracks it — until it dies (then per-frame clears the lock).
-func _hard_lock(rng: float) -> Enemy:
+## The COMBAT-TARGET UNION (PvP duel refactor 2026-08-02): every candidate the
+## attack pipeline may acquire or strike — the enemies group, plus (in a live
+## duel only) the RIVAL's shell, a real Player. Both classes carry the
+## dying/untargetable/hp surface the scans and synergies read (player_core's
+## rival-target block), and hit_enemy dispatches on the concrete class. Solo
+## and co-op never produce a Player candidate, so PvE stays bit-identical.
+func _strike_candidates() -> Array:
+	var out: Array = get_tree().get_nodes_in_group("enemies")
+	var foe := _duel_foe()
+	if foe != null:
+		out.append(foe)
+	return out
+
+
+## The rival's shell while a duel is live, else null. Targetable from the
+## warmup on (the reticle reads them through the gate); actual damage stays
+## gated on pvp.combat_live() in _hit_rival and host-side.
+func _duel_foe() -> Player:
+	if game == null or not game.pvp_active or game.pvp == null:
+		return null
+	if not bool(game.pvp.match_started):
+		return null
+	for q in game.players:
+		if q != null and is_instance_valid(q) and q != self and q is Player:
+			return q
+	return null
+
+
+func _hard_lock(rng: float) -> CharacterBody2D:
 	if is_instance_valid(locked_target) and not locked_target.dying \
 			and not locked_target.untargetable \
 			and global_position.distance_to(locked_target.global_position) <= rng * 1.4:
@@ -970,7 +998,7 @@ func _hard_lock(rng: float) -> Enemy:
 ## consistent target instead of sniping the biggest threat. The two deliberate
 ## multi-target spreads (mage Starfall's lowest-HP cascade, baseline archer
 ## Storm's random scatter) pick their own way and don't route through here.
-func auto_aim(rng := 520.0) -> Enemy:
+func auto_aim(rng := 520.0) -> CharacterBody2D:
 	return _aim_target(rng)
 
 
@@ -981,7 +1009,7 @@ func auto_aim(rng := 520.0) -> Enemy:
 ## Only when there's no soft target in range do we fall back to the old
 ## nearest-on-the-facing-side pick (short-range abilities whose soft target
 ## is out of reach still hit whatever's actually in front of them).
-func _aim_target(rng: float) -> Enemy:
+func _aim_target(rng: float) -> CharacterBody2D:
 	var lock := _hard_lock(rng)
 	if lock:
 		return lock
@@ -990,10 +1018,10 @@ func _aim_target(rng: float) -> Enemy:
 			and global_position.distance_to(soft_target.global_position) <= rng:
 		return soft_target
 	var side := _face_sign()
-	var best: Enemy = null
+	var best: CharacterBody2D = null
 	var best_d := rng
-	for node in get_tree().get_nodes_in_group("enemies"):
-		var e := node as Enemy
+	for node in _strike_candidates():
+		var e := node as CharacterBody2D
 		if e == null or e.dying or e.untargetable:
 			continue
 		var to := e.global_position - global_position
@@ -1015,7 +1043,7 @@ func _aim_target(rng: float) -> Enemy:
 ## within SOFT_TARGET_ACQUIRE, biased to the pressed side. A hard lock overrides
 ## everything downstream, so this can run harmlessly even while locked.
 func _update_soft_target(move: Vector2) -> void:
-	var keep := is_instance_valid(soft_target) and not soft_target.dying \
+	var keep: bool = is_instance_valid(soft_target) and not soft_target.dying \
 			and not soft_target.untargetable \
 			and global_position.distance_to(soft_target.global_position) <= Balance.SOFT_TARGET_KEEP
 	var want := signf(move.x)  # horizontal input this frame; 0 when none
@@ -1031,22 +1059,22 @@ func _update_soft_target(move: Vector2) -> void:
 
 ## Which side an enemy sits on for orientation: -1/+1, or 0 when it's basically
 ## overhead (inside the vertical cone — no clear left/right).
-func _side_of(e: Enemy) -> float:
+func _side_of(e: CharacterBody2D) -> float:
 	var to := e.global_position - global_position
 	if absf(to.x) <= absf(to.y) * Balance.AIM_VERTICAL_CONE:
 		return 0.0
 	return signf(to.x)
 
 
-## Nearest live enemy within `rng`. When `side` is non-zero, prefer that
-## horizontal side and only fall back to the far side if that side is empty.
-func _nearest_enemy(rng: float, side: float) -> Enemy:
-	var best: Enemy = null
+## Nearest live target within `rng` (the combat-target union). When `side` is
+## non-zero, prefer that horizontal side, far-side fallback if it's empty.
+func _nearest_enemy(rng: float, side: float) -> CharacterBody2D:
+	var best: CharacterBody2D = null
 	var best_d := rng
-	var far: Enemy = null
+	var far: CharacterBody2D = null
 	var far_d := rng
-	for node in get_tree().get_nodes_in_group("enemies"):
-		var e := node as Enemy
+	for node in _strike_candidates():
+		var e := node as CharacterBody2D
 		if e == null or e.dying or e.untargetable:
 			continue
 		var d := global_position.distance_to(e.global_position)
@@ -1065,8 +1093,8 @@ func _nearest_enemy(rng: float, side: float) -> Enemy:
 
 func cycle_target() -> void:
 	var list: Array = []
-	for node in get_tree().get_nodes_in_group("enemies"):
-		var e := node as Enemy
+	for node in _strike_candidates():
+		var e := node as CharacterBody2D
 		if e and not e.dying and not e.untargetable \
 				and global_position.distance_to(e.global_position) <= 560.0:
 			list.append(e)
@@ -1090,7 +1118,7 @@ func aim_dir(rng := 520.0) -> Vector2:
 ## The enemy your AIMED attacks would strike right now (facing-gated, or the
 ## hard-locked target) — drives the on-screen reticle so it always sits on
 ## what a basic attack hits, and hides when nothing is on your side.
-func aim_focus(rng := 520.0) -> Enemy:
+func aim_focus(rng := 520.0) -> CharacterBody2D:
 	return _aim_target(rng)
 
 
@@ -1121,7 +1149,16 @@ func rider(slot: String, key: String, default := 0.0) -> float:
 	return float(Classes.CLASSES[cls]["abilities"][slot].get("riders", {}).get(key, default))
 
 
-func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
+## THE hit funnel. Takes the combat-target union (duel refactor 2026-08-02):
+## an Enemy runs the untouched PvE path below; a rival Player dispatches to
+## _hit_rival. Every existing Enemy-typed call site upcasts silently.
+func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
+	var e := target as Enemy
+	if e == null:
+		var q := target as Player
+		if q != null:
+			_hit_rival(q, mult, effects)
+		return
 	for key in _tfx:
 		if not effects.has(key):
 			effects[key] = _tfx[key]
@@ -1443,8 +1480,9 @@ func hit_enemy(e: Enemy, mult: float, effects := {}) -> void:
 		e.apply_knock(dir * (sf * Balance.BOSS_SHOVE_FACTOR if e is Boss else sf), true)
 	if effects.has("splash"):
 		game.burst(e.global_position, _tcolor if _themed else Color(1.0, 0.6, 0.2), 8)
-		for e2 in _enemies_within(e.global_position, 80.0):
-			if e2 != e and not e2.dying:
+		for n2 in _enemies_within(e.global_position, 80.0):
+			var e2 := n2 as Enemy  # splash sub-hits are the flat enemy path (a rival in the sweep skips)
+			if e2 != null and e2 != e and not e2.dying:
 				e2.hit_src = self
 				e2.take_damage(dmg * effects["splash"], (e2.global_position - e.global_position).normalized())
 	# Echo: the hit strikes again at half strength.
@@ -1534,7 +1572,7 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 			"midnight":
 				# End of Night: a critical fan-knife ricochets onward.
 				if effects.get("uniq_fan", 0):
-					var next_e: Enemy = null
+					var next_e: CharacterBody2D = null  # union: the knife may leap to the rival
 					var best := float(uk["range"])
 					for n in _enemies_within(e.global_position, float(uk["range"])):
 						if n != e and not n.dying:
@@ -1550,8 +1588,9 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 				# Comet's Eye: the critical bolt bursts on the victim.
 				if effects.get("uniq_a1", 0):
 					game.burst(e.global_position, Color(1.0, 0.75, 0.4), 8)
-					for e2 in _enemies_within(e.global_position, 80.0):
-						if e2 != e and not e2.dying:
+					for n2 in _enemies_within(e.global_position, 80.0):
+						var e2 := n2 as Enemy  # flat sub-hit: enemy path only
+						if e2 != null and e2 != e and not e2.dying:
 							e2.hit_src = self
 							e2.take_damage(dmg * float(uk["splash"]),
 								(e2.global_position - e.global_position).normalized())
@@ -1562,8 +1601,9 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 					game.sfx("parry", 0.8)
 					_ring_fx(e.global_position, Color(1.0, 0.9, 0.6), 70.0)
 					_stun_or_concuss(e, float(uk["stagger"]))
-					for e2 in _enemies_within(e.global_position, 80.0):
-						if e2 != e and not e2.dying:
+					for n2 in _enemies_within(e.global_position, 80.0):
+						var e2 := n2 as Enemy  # flat sub-hit: enemy path only
+						if e2 != null and e2 != e and not e2.dying:
 							e2.hit_src = self
 							e2.take_damage(dmg * float(uk["splash"]),
 								(e2.global_position - e.global_position).normalized())
@@ -1743,10 +1783,140 @@ func _uniq_clause_call(_pos: Vector2, _scale: float) -> void:
 	pass
 
 
+# ------------------------------------------- the rival path (PvP duels) ---
+
+## hit_enemy's PLAYER branch (duel refactor 2026-08-02 — replaces the phantom
+## proxy-Enemy). ATTACKER-side offense only, mirroring hit_enemy's head: our
+## atk/crit/pen resolve against NEUTRAL defenses (0 res/eva/critres) and the
+## DEFENDER's own take_damage applies their real evasion/resists owner-side
+## when the strike lands over the wire (net_session.pvp_strike, host-gated on
+## combat_live). Riders map honestly: DoTs park on the shell and pvp.gd
+## forwards their ticks; stun/slow cross as freeze/chill on the owner; the
+## synergy windows (vuln/brittle/crush/slow) bookkeep attacker-side on the
+## shell and feed the SAME kit reads they feed on enemies. Deliberately
+## enemy-only and absent here (v1): hex/wither bookkeeping, armor shred
+## (defender armor is invisible attacker-side), named-unique beats/set
+## procs, and the gold-gated Hunger execute — a duel is kit-vs-kit, not
+## PvE-passive-vs-player.
+func _hit_rival(q: Player, mult: float, effects := {}) -> void:
+	if game == null or game.pvp == null or not bool(game.pvp.combat_live()):
+		return
+	if q.dead or q.downed or q.ghost:
+		return
+	for key in _tfx:
+		if not effects.has(key):
+			effects[key] = _tfx[key]
+	var dmg_type: String = effects.get("type", Classes.CLASSES[cls]["dmg_type"])
+	var pen := 0.0
+	if dmg_type == "phys":
+		pen = physpen
+	elif dmg_type == "magic":
+		pen = magpen
+	var crit_exempt: float = effects.get("crit_bonus", 0.0)
+	if void_crit > 0.0 and effects.get("crush", 0):
+		crit_exempt += void_crit
+	var true_frac: float = effects.get("true_frac", 0.0)
+	var base_amt: float = current_atk() * mult + _cast_base \
+		+ uniq_hit_flat * (0.5 if effects.get("uniq_storm", 0) else 1.0)
+	# Resolve crit/graze against NEUTRAL defenses with pen=0: the defender's
+	# resistance (and our pen against it) is applied owner-side in their
+	# take_damage — pen crosses the wire below. Passing our pen here would double-
+	# dip as the 0-res "excess pen" flat bonus (the PvE armor-stack rule), which
+	# in a duel is just free damage the defender never gets to resist.
+	var result := Stats.resolve(base_amt * (1.0 - true_frac), dmg_type,
+		crit, crit_dmg, 0.0, dex, 0.0, 0.0, 0.0, crit_exempt)
+	var dmg: float = float(result["dmg"]) + base_amt * true_frac
+	var is_crit: bool = result["crit"]
+	if effects.get("marked_crit", 0) and dmg_type != "true" \
+			and not is_crit and q.vuln_time > 0.0:
+		is_crit = true
+		dmg *= crit_dmg
+	if next_crit and dmg_type != "true":
+		next_crit = false
+		if not is_crit:
+			is_crit = true
+			dmg *= crit_dmg
+	if effects.get("force_crit", 0) and dmg_type != "true" and not is_crit:
+		is_crit = true
+		dmg *= crit_dmg
+	# Riders — the same vocabulary hit_enemy applies, on the compat surface.
+	# No dot_mit: rival armor is owner-side and mitigates each tick as it lands.
+	if effects.has("dot"):
+		var dot_dps: float = current_atk() * effects["dot"]
+		if effects.get("toxin", 0):
+			q.apply_toxin(dot_dps, 3.0)
+		else:
+			q.apply_burn(dot_dps, 3.0)
+	if effects.has("burn"):
+		q.apply_burn(float(effects["burn"]), 3.0)
+	if effects.has("bleed"):
+		q.apply_bleed(float(effects["bleed"]) / 3.0, 3.0)
+	if effects.has("slow"):
+		q.apply_slow(1.0 - effects["slow"] if effects["slow"] < 1.0 else 0.5, effects.get("slow_dur", 2.0))
+	if effects.has("stun"):
+		q.apply_stun(effects["stun"])
+	if effects.has("stagger"):
+		q.apply_stun(effects["stagger"])
+	if effects.has("stun_chance") and randf() < effects["stun_chance"]:
+		q.apply_stun(0.5)
+	if effects.has("vuln") and randf() < effects["vuln"]:
+		q.apply_vuln(3.0, float(effects.get("vuln_amp", -1.0)))
+		game.spawn_text(q.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
+	if effects.has("heal"):
+		gain_hp(max_hp * effects["heal"])
+	if effects.has("blood_amp"):
+		dmg *= 1.0 + effects["blood_amp"] * (1.0 - hp / max_hp)
+	# Attacker-side amps off the shell's bookkept windows (the enemy path
+	# resolves vuln inside take_damage; here the attacker owns the ledger).
+	if q.vuln_time > 0.0:
+		dmg *= q.vuln_mult
+	if effects.get("brittle", 0):
+		dmg *= 1.0 + q.brittle * Balance.BRITTLE_PER_STACK
+		q.add_brittle()
+	if effects.get("crush", 0) and q.crush_t > 0.0:
+		dmg *= 1.0 + Balance.CRUSH_MULT
+	if crush_amp > 0.0 and q.crush_t > 0.0:
+		dmg *= 1.0 + crush_amp
+	if chill_dmg > 0.0 and (q.slow_time > 0.0 or q.stun_time > 0.0):
+		dmg *= 1.0 + chill_dmg
+	if poison_dmg > 0.0 and q.burn_time > 0.0:
+		dmg *= 1.0 + poison_dmg
+	if execute_dmg > 0.0 and q.max_hp > 0.0 and q.hp < q.max_hp * 0.40:
+		dmg *= 1.0 + execute_dmg  # Coup de Grâce reads the synced bar honestly
+	# Lifesteal + the paladin holy mend pay the attacker. Lifesteal writes hp
+	# directly (bypasses gain_hp), so the PvP heal scalar is applied here; the mend
+	# rides gain_hp and is scaled there. Toughness already dilutes ls on the ×N bar.
+	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
+	if ls > 0.0:
+		var ls_amt := dmg * ls * Balance.PVP_HEAL_MULT
+		var ls_before := hp
+		hp = minf(max_hp, hp + ls_amt)
+		_uniq_pool_overflow(ls_amt - (hp - ls_before))
+	if cls == "paladin" and paladin_mode == "holy":
+		var mend := Balance.PALADIN_HOLY_MEND + uniq_set_k("E", 4, "holy_mend_add")
+		if hp < max_hp * 0.3 and uniq_set_k("E", 6, "holy_mend_lowhp") > 0.0:
+			mend *= 2.0
+		gain_hp(max_hp * mend * (0.33 if effects.get("aoe", false) else 1.0))
+	dmg *= Balance.PVP_DMG_MULT
+	# Attacker-side juice (the number here, their hurt flash on their machine,
+	# vitals re-truth the bars), then the wire.
+	game.sfx("ehit", 1.0, 0.0, 4.0)
+	if is_crit:
+		game.spawn_text(q.global_position + Vector2(0, -34), "%d!" % int(dmg), Color(1.0, 0.55, 0.1))
+	else:
+		game.spawn_text(q.global_position + Vector2(0, -30), str(int(dmg)), Color(1, 1, 1))
+	game.net_session().pvp_strike(q.peer_id, dmg, dmg_type, pen)
+
+
 ## DoT rate mitigated by the target's res (class damage type) minus our
 ## pen — for dot sources OUTSIDE hit_enemy (the mist primitive, the
 ## poison Death Mark), which mirror the rider pipeline's snapshot rule.
-func _dot_dps(e: Enemy, dps: float) -> float:
+## A rival Player mitigates nothing here — their real armor is invisible
+## attacker-side and applies owner-side when each tick lands (duel refactor).
+func _dot_dps(t: CharacterBody2D, dps: float) -> float:
+	var e := t as Enemy
+	if e == null:
+		return dps
 	var dmg_type: String = Classes.CLASSES[cls]["dmg_type"]
 	var pen := physpen if dmg_type == "phys" else magpen
 	var e_res := e.physres if dmg_type == "phys" else e.magres
@@ -1755,8 +1925,16 @@ func _dot_dps(e: Enemy, dps: float) -> float:
 
 ## Stun — or CONCUSSION: a CC-immune target (boss) takes the failed
 ## stun as bonus damage instead (duration x mult x ATK), so stun riders
-## keep a boss-fight value without re-opening boss CC.
-func _stun_or_concuss(e: Enemy, dur: float) -> void:
+## keep a boss-fight value without re-opening boss CC. A rival Player
+## takes the real stun — it crosses the wire as a freeze on the owner
+## (player_core's compat apply_stun; duel refactor).
+func _stun_or_concuss(t: CharacterBody2D, dur: float) -> void:
+	var e := t as Enemy
+	if e == null:
+		var q := t as Player
+		if q != null:
+			q.apply_stun(dur)
+		return
 	if e is Boss:
 		if not e.dying:
 			e.hit_src = self
@@ -1766,10 +1944,13 @@ func _stun_or_concuss(e: Enemy, dur: float) -> void:
 		e.apply_stun(dur)
 
 
+## Every live combat target within radius — the AoE sweep. Union-aware since
+## the duel refactor: in a live PvP match the rival's shell sweeps like any
+## enemy (hit_enemy dispatches it; rider calls land on the compat surface).
 func _enemies_within(center: Vector2, radius: float) -> Array:
 	var out: Array = []
-	for node in get_tree().get_nodes_in_group("enemies"):
-		var e := node as Enemy
+	for node in _strike_candidates():
+		var e := node as CharacterBody2D
 		if e and not e.dying and not e.untargetable \
 				and center.distance_to(e.global_position) <= radius:
 			out.append(e)
@@ -2204,8 +2385,8 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 	var kills := 0
 	var rider_hit := false
 	var rider_count := 0
-	for node in get_tree().get_nodes_in_group("enemies"):
-		var e := node as Enemy
+	for node in _strike_candidates():
+		var e := node as CharacterBody2D  # union: the dash lane cuts the rival too
 		if e == null or e.dying or e.untargetable:
 			continue
 		var closest := Geometry2D.get_closest_point_to_segment(e.global_position, start, end)

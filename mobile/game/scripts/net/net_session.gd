@@ -1210,16 +1210,16 @@ func _rpc_enemy_status(id: int, kind: String, d: Dictionary) -> void:
 ## hurt_cd (incl. the heavy-pierce rule) and death happen on the machine
 ## that owns the stats. attacker_id names the enemy so the owner resolves
 ## crit/pen/dex/Enfeeble against its own mirror, exactly like solo.
-func host_player_hit(pid: int, amount: float, dmg_type: String, attacker_id: int, heavy: bool) -> void:
+func host_player_hit(pid: int, amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0) -> void:
 	if not _net().is_online() or not multiplayer.is_server():
 		return
 	if not (pid in _net().peers):
 		return
-	_rpc_player_hit.rpc_id(pid, amount, dmg_type, attacker_id, heavy)
+	_rpc_player_hit.rpc_id(pid, amount, dmg_type, attacker_id, heavy, pvp_pen)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: bool) -> void:
+func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0) -> void:
 	if game == null or multiplayer.is_server():
 		return
 	var p: Node = game.local_player
@@ -1230,7 +1230,9 @@ func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: b
 		var m: Enemy = net_enemies.get(attacker_id)
 		if m != null and is_instance_valid(m) and not m.dying:
 			attacker = m  # the mirror: real kind/level stats resolve the hit
-	p.take_damage(maxf(0.0, amount), dmg_type, attacker, heavy)
+	# pvp_pen is the PvP striker's forwarded penetration (0 for enemy hits, whose
+	# pen resolves attacker-side against the mirror above).
+	p.take_damage(maxf(0.0, amount), dmg_type, attacker, heavy, pvp_pen)
 
 
 ## HOST -> OWNER: a control effect a host-side source put on the shell
@@ -2862,18 +2864,18 @@ func _rpc_session_over() -> void:
 
 ## ANY MACHINE: my proxy resolved a hit on the rival — route it to the host,
 ## which validates the fight is live and applies it to the target's owner.
-func pvp_strike(target_pid: int, amount: float, dmg_type: String) -> void:
+func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0) -> void:
 	if game == null or not _net().is_online() or not bool(game.pvp_active):
 		return
 	if multiplayer.is_server():
 		if game.pvp != null and bool(game.pvp.combat_live()):
-			_pvp_apply_strike(target_pid, amount, dmg_type)
+			_pvp_apply_strike(target_pid, amount, dmg_type, pen)
 	else:
-		_rpc_pvp_strike.rpc_id(1, target_pid, amount, dmg_type)
+		_rpc_pvp_strike.rpc_id(1, target_pid, amount, dmg_type, pen)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String) -> void:
+func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0) -> void:
 	if not multiplayer.is_server() or game == null or not bool(game.pvp_active):
 		return
 	var pid := multiplayer.get_remote_sender_id()
@@ -2881,21 +2883,67 @@ func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String) -> void:
 		return
 	if game.pvp == null or not bool(game.pvp.combat_live()):
 		return  # gates closed on the HOST's clock — late/early blows fizzle
-	_pvp_apply_strike(target_pid, amount, dmg_type)
+	_pvp_apply_strike(target_pid, amount, dmg_type, pen)
 
 
 ## HOST: land a validated strike on the target's owner. The host's own hero
 ## takes it directly; a guest's rides the existing owner-applied hit RPC.
-func _pvp_apply_strike(target_pid: int, amount: float, dmg_type: String) -> void:
+func _pvp_apply_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0) -> void:
 	amount = maxf(0.0, amount)
 	if amount <= 0.0:
 		return
 	if target_pid == 1:
 		var p: Player = game.local_player
 		if p != null and is_instance_valid(p) and not p.dead:
-			p.take_damage(amount, dmg_type, null, false)
+			p.take_damage(amount, dmg_type, null, false, pen)
 	else:
-		host_player_hit(target_pid, amount, dmg_type, 0, false)
+		host_player_hit(target_pid, amount, dmg_type, 0, false, pen)
+
+
+## ANY MACHINE: a control rider landed on the rival (duel refactor 2026-08-02
+## — stun crosses as a freeze, slow as a chill). Host-validated like a strike,
+## then applied by the OWNER through the same status road enemy CC rides
+## (host_player_status -> _rpc_player_status -> apply_freeze/apply_chill).
+func pvp_status(target_pid: int, kind: String, a: float, b: float) -> void:
+	if game == null or not _net().is_online() or not bool(game.pvp_active):
+		return
+	if not (kind in ["freeze", "chill", "root"]):
+		return
+	if multiplayer.is_server():
+		if game.pvp != null and bool(game.pvp.combat_live()):
+			_pvp_apply_status(target_pid, kind, a, b)
+	else:
+		_rpc_pvp_status.rpc_id(1, target_pid, kind, a, b)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_pvp_status(target_pid: int, kind: String, a: float, b: float) -> void:
+	if not multiplayer.is_server() or game == null or not bool(game.pvp_active):
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers) or target_pid == pid:
+		return
+	if not (kind in ["freeze", "chill", "root"]):
+		return
+	if game.pvp == null or not bool(game.pvp.combat_live()):
+		return
+	_pvp_apply_status(target_pid, kind, a, b)
+
+
+func _pvp_apply_status(target_pid: int, kind: String, a: float, b: float) -> void:
+	if target_pid == 1:
+		var p: Player = game.local_player
+		if p == null or not is_instance_valid(p) or p.dead:
+			return
+		match kind:
+			"freeze":
+				p.apply_freeze(a)
+			"root":
+				p.apply_root(a)
+			"chill":
+				p.apply_chill(a, maxf(0.05, b))
+	else:
+		host_player_status(target_pid, kind, a, b)
 
 
 ## OWNER: my hero fell in the duel (player.gd lethal branch) — tell the host.

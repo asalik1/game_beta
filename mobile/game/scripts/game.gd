@@ -620,15 +620,19 @@ func _process(delta: float) -> void:
 		reticle.global_position = target.global_position
 		reticle.modulate = Color(1.0, 0.45, 0.2) if target == local_player.locked_target else Color(1, 1, 1)
 		reticle_label.text = "Lv %d" % target.level
-		# Color the level by threat vs your own level.
-		var diff := target.level - local_player.level
+		# Color the level by threat vs your own level. (target is the combat-
+		# target UNION since the duel refactor — .level is a Variant read.)
+		var diff: int = target.level - local_player.level
 		reticle_label.add_theme_color_override("font_color",
 			Color(1, 0.35, 0.3) if diff >= 3 else (Color(1, 0.85, 0.4) if diff >= 0 else Color(0.6, 1, 0.6)))
 	else:
 		reticle.visible = false
 
-	# The boss bar follows your TARGET: the locked/aimed boss if any,
-	# else the first live one (endgame brawls run up to 5 at once).
+	# The top HP bar follows your TARGET — mob, boss, or duel rival — and
+	# hud.track_target_bar dresses it per kind. With nothing on your side
+	# it holds on the live boss fight (the locked/aimed boss if any, else
+	# the first live one — endgame brawls run up to 5 at once), so a boss
+	# bar never blinks while you kite; no boss either and it hides.
 	var live_bosses := _live_bosses()
 	if not live_bosses.is_empty():
 		var shown: Boss = local_player.locked_target as Boss
@@ -636,10 +640,7 @@ func _process(delta: float) -> void:
 			shown = target as Boss  # the auto-aim pick from above
 		if shown == null or not live_bosses.has(shown):
 			shown = live_bosses[0] if current_boss == null or not live_bosses.has(current_boss) else current_boss
-		if shown != current_boss:
-			current_boss = shown
-			hud.show_boss_bar(shown.display_name)
-		hud.update_boss_bar(current_boss.hp / current_boss.max_hp)
+		current_boss = shown
 		# Fight-report bookkeeping: our first blood engages the clock
 		# (a boss's first hit engages via take_damage); brawl
 		# reinforcements join the HP pool the frame they appear.
@@ -652,6 +653,10 @@ func _process(delta: float) -> void:
 				if b.hp < b.max_hp - 0.5:
 					fight_engage()
 					break
+	var bar_unit: CharacterBody2D = target if not local_player.dead else null
+	if bar_unit == null and not live_bosses.is_empty():
+		bar_unit = current_boss
+	hud.track_target_bar(bar_unit)
 
 	# Room transitions: walking through a doorway moves you next door.
 	# (Aggro is per-pack now — entering a room wakes nobody by itself.)

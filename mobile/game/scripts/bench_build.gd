@@ -81,16 +81,14 @@ static func godroll_item(item: Dictionary, cls: String) -> void:
 	var primary := String(Items.CLASS_PRIMARY.get(cls, "STR"))
 	item["main"] = {primary: snappedf(
 		float(Items.SLOT_MAIN_BUDGET[item["slot"]]) * mult * float(style["main"]) * 1.15, 0.01)}
-	var pen := "magpen" if String(Items.CLASSES_DMG_TYPE.get(cls, "physical")) == "magic" else "physpen"
-	var sub_count: int = Items.sub_count_for(g)
 	var scale: float = 1.3 * (1.0 + mult * 0.25)
+	# The 2-offensive + 2-defensive substat rule (Items.roll_subs): DPS-optimal
+	# offense (ATK% > Crit) + a balanced defensive pair, reforge-chased to the
+	# grade ceiling. Every piece now carries defense — the god-roll is no longer
+	# a zero-resistance glass build.
 	var subs := {}
-	var picked := 0
-	for stat in ["atk_pct", "crit", pen, "dex"]:
-		if picked >= sub_count:
-			break
+	for stat in ["atk_pct", "crit", "physres", "magres"]:
 		subs[stat] = snappedf(float(Items.SUBSTATS[stat]) * Items.shape_bias(noun, stat) * scale, 0.01)
-		picked += 1
 	item["subs"] = subs
 
 

@@ -54,6 +54,15 @@ var subtitle_label: Label
 var boss_box: Control
 var boss_fill: ColorRect
 var boss_name: Label
+# Target-bar variants (2026-08-06): the same top bar slot, dressed per target
+# kind — trash mobs a slim strip in their overhead-bar red, a duel rival
+# their class tint. game.gd feeds track_target_bar each frame.
+var mob_box: Control
+var mob_fill: ColorRect
+var mob_name: Label
+var rival_box: Control
+var rival_fill: ColorRect
+var rival_name: Label
 
 # ability bar
 var slot_boxes: Array = []      # [{bg, cd, key, name}] for a1,a2,a3,ult,potion
@@ -125,6 +134,8 @@ var vignette: TextureRect
 var flash_rect: ColorRect = null
 var results_box: Control = null   # chapter results card (victory screen)
 var boss_base_name := ""
+var target_bar_unit: CharacterBody2D = null  # what the top bar tracks (display only)
+var _target_bar_label := ""  # mob/rival name half of "Name — 63%"
 var banner_y := 110.0
 
 # downed/revive indicators (MP-12 §5.3). The local player's own DOWNED/GHOST
@@ -526,6 +537,37 @@ func _ready() -> void:
 	boss_name.add_theme_color_override("font_color", Color(1, 0.6, 0.6))
 	_outline(boss_name)
 	boss_box.add_child(boss_name)
+
+	# Mob variant: same slot, slimmer strip in the mobs' own overhead-bar
+	# red — a glance says "trash", the width says "boss" never lies.
+	mob_box = Control.new()
+	mob_box.visible = false
+	mob_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(mob_box)
+	mob_fill = _bar(Vector2(490, 88), Vector2(300, 10), Color(0.9, 0.25, 0.2), mob_box)
+	mob_name = Label.new()
+	mob_name.position = Vector2(490, 64)
+	mob_name.size = Vector2(300, 20)
+	mob_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mob_name.add_theme_font_size_override("font_size", 13)
+	mob_name.add_theme_color_override("font_color", Color(0.92, 0.88, 0.8))
+	_outline(mob_name)
+	mob_box.add_child(mob_name)
+
+	# Rival variant (PvP duels): between the two in weight, and it wears the
+	# rival's CLASS TINT — the bar itself says who you're fencing with.
+	rival_box = Control.new()
+	rival_box.visible = false
+	rival_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(rival_box)
+	rival_fill = _bar(Vector2(440, 88), Vector2(400, 14), Color(0.55, 0.35, 0.9), rival_box)
+	rival_name = Label.new()
+	rival_name.position = Vector2(440, 62)
+	rival_name.size = Vector2(400, 22)
+	rival_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UITheme.title(rival_name, 16)
+	_outline(rival_name)
+	rival_box.add_child(rival_name)
 
 	# ------------------------------------------------------ big titles ---
 	title_label = _label(Vector2(0, 200), 44, Color(1, 1, 1), 1280, HORIZONTAL_ALIGNMENT_CENTER)
@@ -2653,7 +2695,70 @@ func show_boss_bar(bname: String) -> void:
 	boss_base_name = bname
 	boss_name.text = bname
 	boss_box.visible = true
+	mob_box.visible = false
+	rival_box.visible = false
+	# Spawn-announcement callers pass a NAME, not a node: drop the tracked
+	# unit so the next track_target_bar frame re-dresses from scratch
+	# (track's own boss path re-assigns right after this call).
+	target_bar_unit = null
 	_boss_splash_intro(bname)
+
+
+# --- target bar (2026-08-06): the top bar follows whatever the player's
+# attacks would hit — mob, boss, or duel rival — dressed per kind. game.gd
+# drives this per frame with the same aim target the reticle sits on (boss
+# fallback when nothing is on your side, so a boss fight never blinks).
+
+## Point the top bar at `unit`. Restyles only when the unit CHANGES; every
+## frame it refreshes the fill + the "Name — 63%" readout. null (or a freed/
+## invalid unit) hides the bar. Bosses route through show_boss_bar, keeping
+## the splash intro and the wide crimson dress the fights already own.
+func track_target_bar(unit: CharacterBody2D) -> void:
+	if unit == null or not is_instance_valid(unit):
+		if target_bar_unit != null or boss_box.visible \
+				or mob_box.visible or rival_box.visible:
+			hide_boss_bar()
+		return
+	if unit != target_bar_unit:
+		if unit is Boss:
+			show_boss_bar(unit.display_name)
+		elif unit is Player:
+			_show_rival_bar(unit as Player)
+		else:
+			_show_mob_bar(unit)
+		target_bar_unit = unit
+	var frac: float = clampf(float(unit.hp) / maxf(1.0, float(unit.max_hp)), 0.0, 1.0)
+	if unit is Boss:
+		update_boss_bar(frac)
+	elif unit is Player:
+		_set_fill(rival_fill, frac)
+		rival_name.text = "%s — %d%%" % [_target_bar_label, int(ceil(frac * 100))]
+	else:
+		_set_fill(mob_fill, frac)
+		mob_name.text = "%s — %d%%" % [_target_bar_label, int(ceil(frac * 100))]
+
+
+func _show_mob_bar(e: CharacterBody2D) -> void:
+	var nm_v: Variant = e.get("display_name")
+	_target_bar_label = String(nm_v) if nm_v != null else "Enemy"
+	mob_name.text = _target_bar_label
+	mob_box.visible = true
+	boss_box.visible = false
+	rival_box.visible = false
+
+
+func _show_rival_bar(p: Player) -> void:
+	var tint: Color = CLASS_TINT.get(p.cls, Color(0.7, 0.7, 0.75))
+	rival_fill.color = tint.darkened(0.15)
+	rival_name.add_theme_color_override("font_color", tint.lerp(Color(1, 1, 1), 0.35))
+	var nm := String(p.get_meta("net_name", ""))
+	if nm == "":
+		nm = String(p.char_name)
+	_target_bar_label = nm if nm != "" else "Rival"
+	rival_name.text = _target_bar_label
+	rival_box.visible = true
+	boss_box.visible = false
+	mob_box.visible = false
 
 
 # --- boss splash intro (2026-07-25): the boss's splash art flashes for a
@@ -2742,8 +2847,13 @@ func update_boss_bar(fraction: float) -> void:
 	boss_name.text = "%s — %d%%" % [boss_base_name, int(ceil(clampf(fraction, 0.0, 1.0) * 100))]
 
 
+## Hides ALL target-bar dresses (the name predates the mob/rival variants;
+## every existing kill/cleanup call site means "drop the top bar").
 func hide_boss_bar() -> void:
 	boss_box.visible = false
+	mob_box.visible = false
+	rival_box.visible = false
+	target_bar_unit = null
 
 
 func loot_banner(item: Dictionary, bonus_gold: int) -> void:

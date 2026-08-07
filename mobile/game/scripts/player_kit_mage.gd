@@ -764,7 +764,7 @@ func _meteor() -> void:
 		if s_passive() == "skyfall":
 			# Firmament: heaven answers twice — a second, half-weight meteor
 			# falls on the next-nearest enemy (or re-strikes the same point).
-			var second: Enemy = null
+			var second: CharacterBody2D = null  # union: the echo may pick the rival
 			var best: float = uniq_k("range")
 			for n in _enemies_within(impact, uniq_k("range")):
 				if n != target and not n.dying:
@@ -791,7 +791,7 @@ func _meteor() -> void:
 ## seek the lowest-health target, diminish a repeat hit on the SAME target,
 ## but reset to FULL when the priority changes — a kill cascades the salvo
 ## onward at full power onto the next threat.
-func _starfall_comet(remaining: int, falloff: float, last: Enemy, stack: int) -> void:
+func _starfall_comet(remaining: int, falloff: float, last: CharacterBody2D, stack: int) -> void:
 	if remaining <= 0 or dead:
 		return
 	var tgt := _lowest_hp_enemy(560.0)
@@ -811,9 +811,10 @@ func _starfall_comet(remaining: int, falloff: float, last: Enemy, stack: int) ->
 		_starfall_comet(remaining - 1, falloff, tgt, stack))
 
 
-## The lowest-health live enemy within range — Starfall's priority pick.
-func _lowest_hp_enemy(radius: float) -> Enemy:
-	var best: Enemy = null
+## The lowest-health live target within range — Starfall's priority pick
+## (combat-target union: in a duel the rival competes on the same terms).
+func _lowest_hp_enemy(radius: float) -> CharacterBody2D:
+	var best: CharacterBody2D = null
 	for e in _enemies_within(global_position, radius):
 		if best == null or e.hp < best.hp:
 			best = e

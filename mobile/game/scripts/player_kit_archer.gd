@@ -546,7 +546,7 @@ func _dismiss_void_tentacles() -> void:
 
 
 func _storm_strike() -> void:
-	var e: Enemy = null
+	var e: CharacterBody2D = null  # combat-target union (a duel rival storms too)
 	if storm_fx.get("focus", 0):
 		# Hunt: every arrow hunts YOUR target.
 		e = auto_aim(560.0)
@@ -625,7 +625,7 @@ func _storm_strike() -> void:
 	_tfx = saved
 
 
-func _apply_archer_storm_hit(enemy: Enemy) -> void:
+func _apply_archer_storm_hit(enemy: CharacterBody2D) -> void:
 	var effects := storm_fx.duplicate()
 	effects["aoe"] = true
 	effects["uniq_storm"] = 1  # glove_bulwark: storm arrows carry HALF the bulk (the card's rate)
@@ -635,7 +635,7 @@ func _apply_archer_storm_hit(enemy: Enemy) -> void:
 	_tfx = saved
 
 
-func _void_tentacle_contact_fx(enemy: Enemy) -> void:
+func _void_tentacle_contact_fx(enemy: CharacterBody2D) -> void:
 	if not is_instance_valid(enemy):
 		return
 	game.burst(enemy.global_position, Color(0.66, 0.36, 1.0), 7)

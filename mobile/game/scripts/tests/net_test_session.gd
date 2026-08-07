@@ -540,10 +540,18 @@ func _run_host3() -> void:
 	# Enemy._ready exactly like production spawns.
 	var sess: Node = get_node("/root/NetworkManager/Session")
 	var base: int = sess.net_enemies.size()
+	# One reference point for BOTH screens: the guest hero spawned at
+	# room_center (net_session join flow), so the host hero parks there
+	# too and every cast distance below is exact on either machine. The
+	# target-first HUD bar (2026-08-06) reads the guest's aim — a wolf
+	# inside its 520 px aim cone would legally dress stage (e)'s bar as
+	# a MOB — so the whole cast sits beyond that reach for the idle pair
+	# (and still outside aggro, as before).
+	game.local_player.global_position = game.room_center(game.cur_room)
 	var origin: Vector2 = game.local_player.global_position
 	var wolves: Array = []
 	for k in 3:
-		var e := Enemy.make(game, "wolf", origin + Vector2(520.0 + 40.0 * k, 90.0 * k - 60.0), 3)
+		var e := Enemy.make(game, "wolf", origin + Vector2(560.0 + 40.0 * k, 90.0 * k - 60.0), 3)
 		game.add_enemy(e)
 		wolves.append(e)
 	var boss: Boss = Boss.make_boss(game, "vargoth", origin + Vector2(640.0, -140.0))
@@ -2482,6 +2490,11 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 			# Stage 16: nothing (or a fresh round) left this hero scratched.
 			return {"ok": not game.player.dead and game.player.hp >= game.player.max_hp - 0.5,
 				"hp": game.player.hp, "max": game.player.max_hp}
+		"pvp_hurt":
+			# Stage 16 (duel refactor): a REAL swing on the other machine drew
+			# blood — this hero's owner-side hp dropped below full.
+			return {"ok": game.player.hp < game.player.max_hp - 0.5,
+				"hp": game.player.hp, "max": game.player.max_hp}
 		"party_panel":
 			var live: bool = _net.is_online()
 			var stage: String = String(game.menus.lobby.get("stage", ""))
@@ -4232,6 +4245,29 @@ func _run_host16() -> void:
 		return _fail("arena terrain out of sync (host %s, guest %s)" % [String(game.terrain_by_zone[1]), terrain1])
 	print("[net_session] host16: (c) FIGHT — gates down both sides, arena wears %s" % terrain1)
 
+	# ---- (c2) a REAL swing through the refactored funnel (duel refactor
+	# 2026-08-02): stand beside the rival's shell and land the warrior a1
+	# melee arc on it — target acquisition, the union sweep, hit_enemy's
+	# rival dispatch and the strike wire all fire on the live path. Volleys
+	# retry because the archer's REAL evasion can dodge whole swings.
+	var foe_shell: Player = null
+	for q in game.players:
+		if q != null and is_instance_valid(q) and q != game.player:
+			foe_shell = q
+	if foe_shell == null:
+		return _fail("no rival shell registered on the host")
+	game.player.global_position = foe_shell.global_position + Vector2(56.0, 0.0)
+	await _frames(8)   # a beat: the sticky soft target acquires the rival
+	var cut := false
+	for volley in 3:
+		r = await _watch(gid, "pvp_hurt", {}, func() -> void: _volley16())
+		if not r.is_empty() and bool(r.get("ok", false)):
+			cut = true
+			break
+	if not cut:
+		return _fail("a real melee swing never drew blood on the rival")
+	print("[net_session] host16: (c2) a real swing cut the rival through the union funnel")
+
 	# ---- (d) fall 1, host -> guest (retried: the archer's REAL evasion can
 	# dodge a strike — that mitigation running at all is part of the point) ----
 	if not await _fall16(sess, gid, 1):
@@ -4295,6 +4331,18 @@ func _run_host16() -> void:
 		return
 	print("[net_session] host16: (g) session wound down clean — guest verdict via its exit code")
 	await _pass()
+
+
+## HOST16: a volley of real a1 taps (the melee arc) at the rival — fired as
+## a _watch act while the guest polls its own hp. Fire-and-forget coroutine.
+func _volley16() -> void:
+	for i in 8:
+		if game == null or not is_instance_valid(game) or String(game.pvp.state) != "fight":
+			return
+		_press(KEY_J, true)
+		await get_tree().create_timer(0.15).timeout
+		_press(KEY_J, false)
+		await get_tree().create_timer(0.5).timeout
 
 
 ## HOST16: strike the guest until its fall count reaches `want` (bounded).

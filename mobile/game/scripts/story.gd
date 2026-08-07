@@ -564,7 +564,9 @@ const ENEMIES := {
 # "attrs" build is points invested PER LEVEL above its anchor, so
 # every substat climbs with level, not just hp/dmg.
 const MONSTER_ATTR_SCALE := {
-	"STR": {"physpen": 0.8, "critres": 0.2},
+	# STR now feeds physres (a brute is physically tough) — the mirror of INT->magres,
+	# so a physical boss can SPECIALIZE its physical resistance, not just its pen.
+	"STR": {"physpen": 0.8, "physres": 0.5, "critres": 0.2},
 	"AGI": {"dex": 1.0, "crit": 0.004, "eva": 0.0015},
 	"INT": {"magpen": 0.8, "magres": 0.5},
 	"VIT": {"physres": 0.8, "magres": 0.4, "critres": 0.3},
@@ -579,16 +581,22 @@ const SCALED_SUBSTATS := ["physres", "magres", "eva", "critres", "crit",
 ## brutes push STR, skirmishers AGI, casters INT, everyone a bit of
 ## VIT — and bosses invest at double the trash rate (they ARE the wall).
 static func monster_build(base: Dictionary) -> Dictionary:
+	var b: Dictionary
 	if base.has("attrs"):
-		return base["attrs"]
-	var primary := "STR"
-	if str(base.get("dmg_type", "phys")) == "magic":
-		primary = "INT"
-	elif bool(base.get("ranged", false)):
-		primary = "AGI"
+		b = (base["attrs"] as Dictionary).duplicate()   # never mutate the authored table
+	else:
+		var primary := "STR"
+		if str(base.get("dmg_type", "phys")) == "magic":
+			primary = "INT"
+		elif bool(base.get("ranged", false)):
+			primary = "AGI"
+		b = {primary: 2.0, "VIT": 1.0} if bool(base.get("boss", false)) else {primary: 1.0, "VIT": 0.5}
+	# The no-flat-resistance floor (Balance.BOSS_VIT_FLOOR): guarantee every boss a
+	# minimum VIT so BOTH resistances climb — a caster's physres and a brute's magres
+	# stop being flat. The signature res still outgrows it via the primary attribute.
 	if bool(base.get("boss", false)):
-		return {primary: 2.0, "VIT": 1.0}
-	return {primary: 1.0, "VIT": 0.5}
+		b["VIT"] = maxf(float(b.get("VIT", 0.0)), Balance.BOSS_VIT_FLOOR)
+	return b
 
 
 ## A monster's FULL combat sheet at an arbitrary level.
@@ -654,6 +662,19 @@ static func enemy_stats_at(kind: String, level: int, overcap := false) -> Dictio
 		"gold": maxi(1, int(ceil(base["gold"] * reward_m * Balance.GOLD_MULT)))}
 	for stat in SCALED_SUBSTATS:
 		out[stat] = float(base.get(stat, 0.0))
+	# Base-res tier floor (Balance.BOSS_BASE_RES_*): later bosses start naturally
+	# harder — the base res climbs with anchor level, signature (damage type) above
+	# the off-type — kept as a max() so authored designed-tank values survive. Growth
+	# below then compounds on the floored base.
+	if is_boss:
+		var sig: float = float(base["level"]) * Balance.BOSS_BASE_RES_SIG
+		var off: float = float(base["level"]) * Balance.BOSS_BASE_RES_OFF
+		if str(base.get("dmg_type", "phys")) == "magic":
+			out["magres"] = maxf(out["magres"], sig)
+			out["physres"] = maxf(out["physres"], off)
+		else:
+			out["physres"] = maxf(out["physres"], sig)
+			out["magres"] = maxf(out["magres"], off)
 	var build := monster_build(base)
 	for attr in build:
 		var pts: float = float(build[attr]) * d

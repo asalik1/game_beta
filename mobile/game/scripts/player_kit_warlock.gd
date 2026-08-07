@@ -305,19 +305,26 @@ func _hex(f := 1.0) -> void:
 		_beam_fx(center, e.global_position, col, 0.16)
 		hit_enemy(e, ability_coeff("a1") * f, eff.duplicate())
 		if not e.dying:
-			if skin == "hellfire_inquisitor":
-				_inquisitor_brand_stamp(e)
-			elif skin == "arcane_warlock":
-				_arcane_eye_curse(e)
-			_hex_mark(e)
+			# The PERSISTENT hex (wither ramp, contagion, death-burst) stays
+			# enemy-only (duel refactor v1): a rival eats the curse's direct
+			# hit + EXPOSE + DoT through the funnel above, but the Enemy-keyed
+			# hex machinery never bookkeeps a Player.
+			var he := e as Enemy
+			if he != null:
+				if skin == "hellfire_inquisitor":
+					_inquisitor_brand_stamp(he)
+				elif skin == "arcane_warlock":
+					_arcane_eye_curse(he)
+				_hex_mark(he)
 
 
 ## Contagion (warlock talent): a cursed death seeds the curse onto one nearby
 ## un-cursed enemy — EXPOSED + explode-on-death + wither, no damage hit (so it
 ## carries the attrition engine into packs without touching single-target).
 func _spread_curse(pos: Vector2) -> void:
-	for e in _enemies_within(pos, 160.0):
-		if hexed.has(e) or e.dying:
+	for n in _enemies_within(pos, 160.0):
+		var e := n as Enemy  # contagion is a pack mechanic — never seeds a rival
+		if e == null or hexed.has(e) or e.dying:
 			continue
 		e.apply_vuln(3.0)  # EXPOSED (MP-10 seam: mirrors forward the mark)
 		_hex_mark(e)
@@ -802,5 +809,6 @@ func _voidmaw_wave() -> void:
 			e.apply_knock(away.normalized() * 640.0 * push)
 		_beam_fx(global_position, e.global_position, col, 0.14)
 		hit_enemy(e, 0.4, eff.duplicate())   # Voidmaw S-passive wave — NOT the ult burst
-		if not e.dying:
-			_hex_mark(e)
+		var he := e as Enemy  # the persistent hex stays enemy-only (duel refactor v1)
+		if he != null and not he.dying:
+			_hex_mark(he)
