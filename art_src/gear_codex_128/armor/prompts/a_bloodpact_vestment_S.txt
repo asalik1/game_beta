@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe487-a685-7da1-9ff7-351e111007f4\exec-8187eb5c-849c-459b-b487-ce4d0aee44bb.png
+Stored chroma master: ../generated/a_bloodpact_vestment_S.png; alpha: ../alpha/a_bloodpact_vestment_S.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered S-grade Bloodpact Vestment, no wearer/body/floor/text/duplicates; alpha and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One S-grade Bloodpact Vestment: legendary empty warlock black wine-red sleeveless robe armor with layered crimson lacquer, blackened iron ribs, contained ruby heartstone, compact red seam-light and ornate belt fittings; hollow openings with no wearer or body. Flat #00ff00 chroma background; avoid wearer, body, text, readable runes, duplicates, shadows, smoke, blur, UI, and watermark.

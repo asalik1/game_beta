@@ -1,0 +1,35 @@
+Generator: built-in ImageGen. Chroma key: #00ff00. Approved source and alpha
+master will use the manifest key once it passes the one-empty-matched-pair
+contract. This record retains the rejected first attempt below.
+
+Rejected attempt 01
+Source: ../generated/rejected/g_sanctified_gauntlets_01_wrong_category.png
+Reason: the output depicted a hooded garment, not an empty matched pair of
+Sanctified Gauntlets; it violated the manifest noun/category and was never
+placed in alpha/.
+
+Prompt:
+Use case: stylized-concept. Asset type: dual-resolution dark-fantasy RPG gear
+icon. Primary request: exactly one empty matched pair of Sanctified Gauntlets,
+polished pale-steel articulated gloves with restrained sun-gold trim and ivory
+sunburst wrist discs. On a perfectly flat #00ff00 chroma background. No hands,
+arms, body, mannequin, floor, text, duplicate pair, shadow, or scenery.
+
+Approved attempt 02
+Source: ../generated/g_sanctified_gauntlets.png
+Alpha master: ../alpha/g_sanctified_gauntlets.png
+Extraction: border auto-key (#05f80f), soft matte, thresholds 12/220, despill.
+QA: 1254x1254 RGBA; all four corners alpha 0; visible bbox 111,177–1142,1061;
+32px and 128px candidates pass builder validation and visually retain one empty,
+matched, articulated gauntlet pair.
+
+Exact prompt:
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: EXACTLY ONE EMPTY MATCHED PAIR OF SANCTIFIED GAUNTLETS ONLY. Two separate but matching articulated metal gloves with hollow open cuffs; no wearer. Pale polished steel finger plates, restrained sun-gold rim trim, ivory sunburst enamel disks at each wrist, tiny warm ivory seam glow. This is a pair of gloves, not a helmet, hood, cloak, armor, weapon, or garment.
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without painterly blur or photorealism
+Composition/framing: one glove pair only, centered and fully visible with generous even padding. Both empty gauntlets face inward and overlap slightly at the wrists to read as a single icon; no duplicate pair.
+Lighting/mood: clear upper-left key light, deep but readable shadows, restrained sacred light
+Constraints: preserve exact item category. Exactly one EMPTY matched glove pair; no hands inside, no arms, no body, no person, no mannequin. No text, no watermark, no #00ff00 in the object.
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, arm, body, mannequin, helmet, hood, cloak, chest armor, weapon, duplicate object, duplicate pair, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_zealot_gauntlets_A.png (exec-3d0df6c2-a4ab-4eba-8f3f-9d5da3043e62.png)
+Alpha master: ../alpha/g_zealot_gauntlets_A.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: transparent corners; accepted 128px/32px candidates. Shared wording: ../../PROMPT_CONTRACT.md.
+Exact asset request: exactly one EMPTY MATCHED PAIR of Zealot Gauntlets, A grade: exceptional militant wearable gauntlets with hollow cuffs and empty finger tubes; layered dark steel plates, pale gold finger guards, angled sunburst cuff flanges, exotic ivory enamel, raised non-readable oath relief, contained ember-gold holy seams. No hands, arms, body, mannequin, floor, text, extra glove, unmatched item, or duplicate pair.

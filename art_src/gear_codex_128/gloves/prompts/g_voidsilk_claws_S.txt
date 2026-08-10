@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_voidsilk_claws_S.png (exec-ecd8d6d9-bb84-4c7f-b659-ce6b7d26c793.png)
+Alpha master: ../alpha/g_voidsilk_claws_S.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: transparent corners; accepted 128px/32px candidates. Shared wording: ../../PROMPT_CONTRACT.md.
+Exact asset request: exactly one EMPTY MATCHED PAIR of Voidsilk Claws, S grade: legendary slender wearable clawed gloves with hollow cuffs and empty finger tubes; richest black-violet voidsilk, dark smoky steel fingertip talons, elaborate folded dusk-metal cuffs, intricate purple seam embroidery, compact cold-violet void sparks. No hands, arms, body, mannequin, floor, text, extra glove, unmatched item, or duplicate pair.

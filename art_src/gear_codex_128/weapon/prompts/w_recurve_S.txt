@@ -1,0 +1,12 @@
+Executed 2026-08-08 with built-in ImageGen. Source chroma output retained as `../generated/w_recurve_S.png`, copied from `C:\Users\asali\.codex\generated_images\019fe3f5-861f-70b0-bff4-70ad6030b368\exec-a22db642-45e2-4ce0-a442-8e826701d748.png`. Accepted first pass; no rejected candidate.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one S-grade Crownless archer Recurve, designed as a complete standalone object: a compact recurve bow with strongly bent broad warm-yew limbs, dark horn tips, a taut sinew string and an oxblood-leather wrapped central grip. This legendary S-grade version preserves the Recurve family silhouette while adding the richest horn-and-sunsteel limb laminations, raised bronze filigree, luminous amber resin seams and two or three compact golden sparks near the grip. It must visibly surpass A grade while remaining one readable bow.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: one object only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square; show the nearly full wide bow arc as a closed silhouette, readable at 32px
+Lighting/mood: clear upper-left key light, deep but readable shadows, restrained local magical light only in the amber seams
+Materials/textures: warm yew, dark horn, sunsteel, bronze, sinew, oxblood leather and amber resin; enough secondary construction detail to reward the 64px codex view while the main shape remains unmistakable at 32px
+Constraints: preserve the exact Recurve category and same fundamental family silhouette; exactly one complete weapon; strong closed silhouette; no detached noise beyond two or three compact sparks; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, extra weapon, cast shadow, contact shadow, bloom fog, smoke cloud, large flame, soft painterly blur

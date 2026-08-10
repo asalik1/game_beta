@@ -1,0 +1,7 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe478-f49b-7232-9d3b-d8f62123083f\exec-22e9bbb2-66e3-4df9-b7dc-7087efe28735.png
+Stored chroma master: ../generated/a_starweave_robe_A.png; alpha: ../alpha/a_starweave_robe_A.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty Starweave A-grade robe, no wearer/body/floor/text/duplicates; alpha and 128px/32px QA passed. Rejections: none.
+
+One A-grade Starweave Robe: the same complete empty midnight-navy high-collared mage robe with fitted leather sash and layered skirt panels, made from exotic deep-indigo meteor silk with raised silver constellation embroidery, a nested crescent mantle clasp, and contained violet-white starlight along the seams. Crownless high-detail sprite illustration, centered orthographic catalogue view, fully visible with generous padding. Clear upper-left light, readable shadows. Empty garment only: no wearer, body, head, limbs, hands, mannequin, hanger, floor, shadow, text, labels, runes, duplicate object, UI, environment, smoke, or #00ff00 in the item.

@@ -1,0 +1,6 @@
+Built-in ImageGen prompt, 2026-08-09: exactly one empty matched pair of Hexplate Handwraps, named A-grade Runeplate Handwraps: hollow left-and-right glove-shaped charcoal cloth wraps, open cuffs and empty finger tubes, no wearer; layered charcoal linen, articulated copper and slate hexagonal plate segments, blackened steel knuckle guards, and one contained violet-blue gem at each wrist; decorative hex geometry only, no readable letters or runes. Flat #00ff00 chroma background; no floor/shadow/gradient/texture/reflection; no hands/arms/body/mannequin/text/UI/duplicate pair/inset/environment/fog/smoke/bloom/painterly blur.
+
+Built-in ImageGen source: C:\Users\asali\.codex\generated_images\019fe4e7-44a6-7fe1-b846-e621f876911c\exec-51eda07c-db4a-4705-b274-6665b01996fe.png
+Initial rejection: the raw source includes a duplicate miniature below the primary pair, retained as `generated/rejected/u_hexplate_handwraps_01_duplicate_inset.png`.
+Deterministic salvage: cropped the raw source to `(0, 0, 1254, 860)`, completely excluding the miniature; approved crop is `generated/u_hexplate_handwraps.png`.
+Result: accepted after crop. Alpha corners transparent; per-key 128px and hard-alpha 32px candidates built and visually checked. No additional ImageGen call.

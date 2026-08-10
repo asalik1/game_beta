@@ -1,0 +1,1 @@
+Built-in ImageGen rejection: generated a feather pendant rather than exactly one matched pair of empty open-cuff ankle boots. Preserved source output under ../generated/rejected_b_vigil_steps_B_feather.png; do not use as footwear art.

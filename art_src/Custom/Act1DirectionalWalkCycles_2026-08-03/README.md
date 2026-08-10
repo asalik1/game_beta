@@ -33,3 +33,20 @@ The audit rejects four-frame strips unless frames 1/3 and 2/4 have measurably
 different lower silhouettes. QA contact sheets include all eight directions,
 not a three-direction sample. Banshee is intentionally excluded: it floats and
 animates its arms/tattered hem rather than pretending to have feet.
+
+## Correction (2026-08-08): spider SE/NE cycles replaced with mirrors
+
+The generated `spider_walk_se_cycle.png` and `spider_walk_ne_cycle.png`
+arrived WEST-facing (head down-left) — in-game the spider moonwalked on both
+right diagonals (owner-reported via the codex Transform review). Both files
+are now per-band horizontal mirrors of their SW/NW siblings (frame order
+preserved, so the gait is untouched — a whole-image flip would reverse it),
+and the installed strips are per-cell mirrors of the enforced SW/NW strips.
+This is an exception to the "no mirrored reuse" line above; the spider is
+bilaterally symmetric, so the mirror rule allows it.
+
+Known remaining drift, owner's call before regenerating: the NW cycle is
+really a SW-style view (eyes fully visible on an away-facing direction) and
+the S cycle is a 3/4 left view instead of a front view — so NE (its mirror)
+reads as a down-right 3/4 rather than a true up-right view. A proper fix is
+regenerating NW + S (then re-mirroring NE), not more mirroring.

@@ -1,0 +1,5 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-9fcf1d27-34b0-454c-8b2d-53b354c71024.png
+Stored chroma master: ../generated/u_last_pulse_vestment_of_the_final_debt.png; alpha: ../alpha/u_last_pulse_vestment_of_the_final_debt.png
+Alpha: border auto-key, soft matte, despill. Review: accepted — one centered empty named S-grade Bloodpact Vestment; transparency and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract. Last Pulse: black-crimson bound vestment with contained heart cage and compact red pulse on flat #00ff00; no wearer/body/text/duplicates/floor.

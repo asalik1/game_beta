@@ -1,0 +1,7 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe478-f49b-7232-9d3b-d8f62123083f\exec-71713da4-b06d-47dd-a3ab-2e47536706c8.png
+Stored chroma master: ../generated/u_comet_sash.png; alpha: ../alpha/u_comet_sash.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered standalone Comet Sash, no wearer/body/floor/text/duplicates; alpha and 128px/32px QA passed. Rejections: none.
+
+One Comet Sash: complete empty standalone armor garment, an independent deep-blue mage sash with a wide star-silk belt, offset comet-tail drape from one hip, one pale-silver comet clasp, and non-textual silver star stitch details. Crownless high-detail sprite illustration, centered orthographic catalogue view, fully visible with generous padding. Clear upper-left light and contained cool comet glow. No wearer, body, head, limbs, hands, mannequin, hanger, floor, shadow, text, labels, runes, second item, UI, environment, smoke, or #00ff00 in the item.

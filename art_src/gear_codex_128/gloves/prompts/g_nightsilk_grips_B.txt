@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_nightsilk_grips_B.png
+Alpha master: ../alpha/g_nightsilk_grips_B.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: exactly one EMPTY MATCHED PAIR OF NIGHTSILK GRIPS, B grade ONLY. Two matching empty wearable sleek silk gloves, left and right as one equipment pair, hollow open cuffs and empty finger tubes; black-violet nightsilk wraps over dark leather, slim obsidian knuckle plates, moon-silver clasp at each wrist. B grade: same family silhouette, masterwork silk stitching, fine moon-silver inlay and one restrained violet wrist glint. No wearer. Flat #00ff00 chroma-key background; no floor, shadow, gradient, texture, reflection, or lighting variation. Crownless high-detail sprite illustration, centered with generous padding. Exactly one empty matched pair; no hands, arms, body, person, mannequin, text, watermark, duplicate pair, readable runes, UI, environment, cast shadow, fog, smoke, or painterly blur.

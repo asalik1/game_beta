@@ -3126,6 +3126,7 @@ static func _make_reticle() -> Image:
 ## since facing is resolved on the base name.
 const FACES_RIGHT := {
 	"zombie": true, "zombie_brute": true, "zombie_overweight": true,
+	"stormcult": true,
 }
 
 ## Does this sprite's art natively face LEFT? The Crawl-tileset override
@@ -3267,6 +3268,42 @@ static func anim_prop(name: String) -> AnimatedSprite2D:
 # rotation set per clip; the install step assembles them into these files.
 static var _dir_cache := {}
 const DIR8 := ["s", "se", "e", "ne", "n", "nw", "w", "sw"]
+
+## Mob locomotion exceptions from the owner-reviewed 2026-08-08 repair pass.
+## Robe-covered bodies glide on their idle strip; repaired single-facing walk
+## cycles deliberately bypass the older generated direction sets and use the
+## established horizontal flip path.
+const MOB_IDLE_ONLY_LOCOMOTION := {
+	"null_acolyte": true, "static_caller": true, "rat_mage": true,
+	"stormcult": true, "mummy": true, "skeleton_mage": true,
+	"skeleton_warrior": true, "vale_mourner": true, "mummy_mage": true,
+	"cold_pilgrim": true,
+}
+const MOB_FLAT_WALK_LOCOMOTION := {
+	"wolf": true, "cultist": true, "skeleton": true, "zombie": true,
+	"blightwolf": true, "orc": true, "orc_rogue": true,
+	"elf_ranger": true, "duneprowler": true, "deep_stalker": true,
+	"casket_creeper": true, "stone_broken": true, "vent_skitter": true,
+	"winterfang": true, "royal_knight": true, "bog_lurker": true,
+	"elf_druid": true, "vow_sentinel": true, "bandit_scout": true,
+	"skeleton_rogue": true, "spider": true,
+}
+const MOB_BODY_SCALE_WALK := {
+	# The compact ImageGen gait needs a wider square canvas to keep every leg
+	# complete while retaining the idle torso's pixel scale.
+	"bog_lurker": true,
+}
+
+static func mob_idle_only_locomotion(name: String) -> bool:
+	return MOB_IDLE_ONLY_LOCOMOTION.has(name)
+
+
+static func mob_flat_walk_locomotion(name: String) -> bool:
+	return mob_idle_only_locomotion(name) or MOB_FLAT_WALK_LOCOMOTION.has(name)
+
+
+static func mob_body_scale_walk(name: String) -> bool:
+	return MOB_BODY_SCALE_WALK.has(name)
 
 ## A few generated rotation sets arrived with mislabeled source views. Keep the
 ## correction beside the direction seam instead of teaching individual NPC

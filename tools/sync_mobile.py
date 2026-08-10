@@ -49,6 +49,20 @@ MOBILE_ONLY_OK = {
     "export_presets.cfg",
 }
 
+
+def copy_replace(source: Path, destination: Path) -> None:
+    """Copy through a sibling temp file so live PNG mappings are not truncated."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    handle, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.", suffix=".sync", dir=destination.parent)
+    os.close(handle)
+    temporary = Path(temporary_name)
+    try:
+        shutil.copy2(source, temporary)
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+
 BANNER = [
     ";",
     "; ---------------------------------------------------------------------------",
@@ -114,11 +128,18 @@ def main() -> int:
     ap.add_argument("--gate", action="store_true",
                     help="with --apply: run --import + compile gate + quick suite on mobile/game")
     ap.add_argument("--full", action="store_true", help="print every finding (no aggregation cap)")
+    ap.add_argument("--paths", nargs="*", type=Path,
+                    help="limit check/apply to these game-relative files or directories; "
+                         "useful for a safe scoped sync in a shared dirty worktree")
     args = ap.parse_args()
 
     drift, missing, extra, notes = [], [], [], []
 
     src_files = walk(SRC)
+    if args.paths:
+        scopes = [Path(str(path).replace("\\", "/")) for path in args.paths]
+        src_files = [rel for rel in src_files
+                     if any(rel == scope or scope in rel.parents for scope in scopes)]
     dst_names = set(walk(DST))
     for rel in src_files:
         name = rel.name
@@ -139,7 +160,7 @@ def main() -> int:
                 drift.append((rel, "content differs"))
             # else: line-endings only -- not drift (the documented diff -rq blind spot)
 
-    for rel in sorted(dst_names - set(src_files)):
+    for rel in sorted(dst_names - set(src_files)) if not args.paths else []:
         if rel.name.endswith(".uid") and (SRC / rel.with_name(rel.name[:-4])).exists():
             continue  # uid for a synced file -- legitimately differs per project
         if rel.name in MOBILE_ONLY_OK:
@@ -197,12 +218,10 @@ def main() -> int:
             want = transform_project_godot((SRC / rel).read_text(encoding="utf-8", errors="replace"))
             (DST / rel).write_text("\n".join(want) + "\n", encoding="utf-8", newline="\n")
         else:
-            (DST / rel).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(SRC / rel, DST / rel)
+            copy_replace(SRC / rel, DST / rel)
         copied += 1
     for rel in missing:
-        (DST / rel).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(SRC / rel, DST / rel)
+        copy_replace(SRC / rel, DST / rel)
         copied += 1
     pruned = 0
     for rel in extra:

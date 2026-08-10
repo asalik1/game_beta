@@ -1,0 +1,3 @@
+Built-in ImageGen prompt: exactly one empty matched pair of Dawnstone Gauntlets, named A-grade Sanctified Gauntlets: hollow ivory-steel gauntlets with gold trim, burgundy leather joints, letter-free sunburst plates, and amber dawnstone wrist gems. Flat #00ff00 chroma field; no wearer, hands, arms, body, text, duplicate pair, inset, floor, or environment.
+Source: C:\Users\asali\.codex\generated_images\019fe4e7-44a6-7fe1-b846-e621f876911c\exec-3c52fe4a-9bc7-4bd1-8358-10ab231848cf.png
+Result: accepted; chroma alpha and per-key 128px/32px candidate QA passed.

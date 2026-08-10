@@ -1,0 +1,6 @@
+Rejected source: C:\Users\asali\.codex\generated_images\019fe37f-0c5b-7600-8d0d-5bacc9ca0cf8\exec-fbb299c9-bdb7-406c-a57e-703afa33d7e2.png
+Rejection reason: generated sleeves/arms; armor masters must be a standalone empty torso only.
+
+Accepted source. Prompt: exactly one centered strictly sleeveless standalone empty torso jerkin named Gale-Sewn Jack, unique charcoal leather vest with high open collar, midnight-blue panels, crossed straps, subtle silver wind-stitch embroidery without readable symbols and small collar-mounted shoulder armor; garment ends at the armholes with no sleeves or arms. Perfectly flat #00ff00 chroma background. No wearer, body, mannequin, head, arms, hands, sleeves, legs, pants, greaves, boots, helmet, weapons, shields, duplicate armor, floor, props, text, runes, frame, cast shadow, smoke, or green armor.
+
+Accepted source: C:\Users\asali\.codex\generated_images\019fe37f-0c5b-7600-8d0d-5bacc9ca0cf8\exec-e042d1d7-c80c-4dc1-8e9e-71a22ed39288.png

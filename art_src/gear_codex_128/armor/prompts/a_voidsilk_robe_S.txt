@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-0995455d-5e66-4225-a2fd-9b0ec6a543a0.png
+Stored chroma master: ../generated/a_voidsilk_robe_S.png; alpha: ../alpha/a_voidsilk_robe_S.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty S-grade Voidsilk Robe; transparent corners and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. Legendary violet-black empty Voidsilk Robe with layered astral panels, obsidian-silver fittings and compact indigo-violet seam light on flat #00ff00; no wearer/body/text/duplicates/floor.

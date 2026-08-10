@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe487-a685-7da1-9ff7-351e111007f4\exec-6f82c6de-132e-4d99-8fbc-58c2f727562b.png
+Stored chroma master: ../generated/a_vigil_halfplate.png; alpha: ../alpha/a_vigil_halfplate.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty Vigil Halfplate, no wearer/body/floor/text/duplicates; alpha and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One Vigil Halfplate: empty paladin dark gunmetal halfplate over charcoal quilting, one asymmetric watch-guard pauldron, leather waist belts and non-textual eye relief; hollow neck and arm openings with no wearer or body. Flat #00ff00 chroma background; avoid wearer, body, text, readable runes, duplicates, shadows, smoke, blur, UI, and watermark.

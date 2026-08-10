@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe464-b189-76e1-89e2-1d04071c1c68\exec-85ea34a0-4f3d-40a4-907b-6f70d7115847.png
+Stored chroma master: ../generated/a_runeplate_robe_A.png; alpha: ../alpha/a_runeplate_robe_A.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty robe-cuirass, no wearer/body/floor/text/duplicates; alpha and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One exact Runeplate Robe A: exceptional sleeveless plate-and-silk robe cuirass with high collar, layered obsidian steel plates, smoky indigo cloth, raised non-readable geometric rune-like channels, inset amethyst sternum gem and compact violet energy. Empty garment only. Palette obsidian/indigo/silver/amethyst; exotic layered steel and silk with relief channels. Flat #00ff00 chroma background; avoid text/readable runes/mannequin/person/body/duplicates/shadows/fog/smoke/blur/other clothing/weapons/watermark.

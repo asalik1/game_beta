@@ -1,0 +1,12 @@
+Executed 2026-08-08 with the common contract in ../../PROMPT_CONTRACT.md.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite.
+Primary request: one S-grade Crownless assassin Glasswing, designed as a complete standalone legendary long dagger; preserve the compact wing-shaped translucent smoky-glass blade, dark iron spine, short leather grip and pointed pommel, with legendary workmanship rather than a recolored generic.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; absolutely no floor plane, cast shadow, gradient, texture, reflection, or lighting variation.
+Style/medium: cohesive Crownless high-detail sprite illustration, crisp deliberate edges, compact dark-fantasy forms, readable silhouette, fine construction at 128px with tasteful pixel-art influence, no painterly blur or photorealism.
+Composition/framing: exactly one complete weapon only, orthographic catalogue view, centered and fully visible, generous even padding, about 78% of a square; compact lower-left to upper-right diagonal; the closed wing-shaped blade should be broad and substantial but no wider than 45% of the canvas, and the complete dagger must not resemble a huge bat wing, a card, or a long thin object.
+Lighting/mood: clear upper-left key light, deep readable shadows, restrained cold ivory-violet seams contained inside the blade, a few compact sparks fused to fittings only.
+Materials/textures: layered smoke-grey, black and pale opaline glass, rich faceted blackened-steel wing-vein ribs, brightest pale cutting ridge, dark-plum leather grip, rich silver fittings and one small amethyst pommel stone; high relief and coherent legendary construction visibly above A.
+Constraints: preserve the exact Glasswing dagger category and same fundamental family silhouette; grade must read in grayscale through construction and ornament; exactly one weapon, no detached noise, no watermark, no #00ff00 in the object.
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, extra weapon, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur.

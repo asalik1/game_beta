@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe464-b189-76e1-89e2-1d04071c1c68\exec-0d39ff4d-9d7c-4f29-94cd-1aaf2dec61da.png
+Stored chroma master: ../generated/u_zero_weight_raiment_above_gravity.png; alpha: ../alpha/u_zero_weight_raiment_above_gravity.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty feathered robe-cuirass, no wearer/body/floor/text/duplicates; alpha and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One exact named Zero Weight, Raiment Above Gravity: legendary sleeveless feathered robe-cuirass with high collar, ivory feathers in tight concentric layers over cobalt silk, platinum hems and small suspended blue crystal clasp, but no unattached or drifting objects. Empty garment only. Independent S-grade Featherweave silhouette. Flat #00ff00 chroma background; avoid text/readable runes/mannequin/person/body/duplicates/shadows/fog/smoke/blur/other clothing/weapons/watermark.

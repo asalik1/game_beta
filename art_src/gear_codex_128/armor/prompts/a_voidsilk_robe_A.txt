@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-c3356cde-f3dd-49b3-9a71-0ec30424bfaf.png
+Stored chroma master: ../generated/a_voidsilk_robe_A.png; alpha: ../alpha/a_voidsilk_robe_A.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty A-grade Voidsilk Robe, no wearer/body/floor/text/duplicates; transparent corners, one closed silhouette, and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One A-grade Voidsilk Robe: empty violet-black sleeveless arcane robe with tall collar, layered voidsilk panels, plated shoulder trims, wide belt and split skirt; exotic oily black-purple silk, starless geometric relief, contained dim indigo-violet seam energy. Flat #00ff00 chroma background; avoid wearer, body, text, readable runes, duplicates, shadows, smoke, blur, UI, and watermark.

@@ -1,0 +1,5 @@
+Built-in ImageGen prompt, 2026-08-08:
+
+Exactly one matched empty pair of Runeplate Handwraps: two wrapped mage handguards displayed symmetrically as a standalone inventory object, with no hands or arms inside. Layered violet-black cloth bandages around small midnight-steel backhand plates, a few non-readable geometric violet inlays, and dark silver clasps; controlled arcane-craft materials without an aura or particles. Render as a cohesive Crownless crisp high-detail sprite illustration with compact readable silhouette and real 128px material detail; tasteful pixel-art influence, not coarse-grid, painterly, or photorealistic. Centre the pair on a perfectly flat #00ff00 chroma-key field. No text, letters, readable runes, logos, UI, cards, environment, person, hands, arms, body, mannequin, duplicate pair, extra gear, floor, shadows, glow, fire, smoke, fog, blur, or watermark; do not use green in the object.
+
+Accepted after visual inspection: exactly one empty matched handwrap pair, no excluded subject, no readable marking, and a readable 128px silhouette.

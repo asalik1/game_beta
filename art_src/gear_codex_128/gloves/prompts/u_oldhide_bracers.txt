@@ -1,0 +1,15 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite
+Critical output rule: generate only the single high-resolution codex master in this image; the 32px gameplay sprite will be derived later and must not appear as a thumbnail, inset, comparison, second depiction, or pixel-art miniature
+Primary request: exactly one matched pair of Oldhide Bracers, a named A-grade unique Beastpelt Bracer set: aged tawny beast-pelt leather wraps, dark weathered iron buckles, subtle old-hide stitching, and a rugged independent silhouette.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one matched glove/bracer pair only, centered, fully visible, generous even padding, occupying roughly 82% of the square; both bracers empty, no hands, arms, body, mannequin, or wearer; no inset, thumbnail, alternate view, or second representation anywhere on the canvas
+Lighting/mood: clear upper-left key light, deep but readable shadows
+Materials/textures: physically coherent worn leather, beast pelt, weathered iron, stitching
+Constraints: preserve the bracer category; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in the bracers
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, arm, mannequin, duplicate pair, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Built-in ImageGen source: C:\\Users\\asali\\.codex\\generated_images\\019fe4dd-6d38-7b71-9b95-ee30b77dd28f\\exec-6c587e1f-3bb5-46eb-b037-f8d78c46789e.png
+Result: accepted. Exactly one empty matched bracer pair; alpha QA passed (all corners transparent, coverage 47.83%, no visible chroma pixels); per-key 128px/32px candidates built.
+Rejections: none.

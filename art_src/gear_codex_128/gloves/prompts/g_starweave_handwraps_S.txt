@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #ff00ff.
+Source: ../generated/g_starweave_handwraps_S.png
+Alpha master: ../alpha/g_starweave_handwraps_S.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: EXACTLY ONE EMPTY MATCHED PAIR of Starweave Handwraps, S grade: same midnight-navy-silk, black-leather, cyan-and-silver-starburst and pale-teal-bead family, luminous cyan seams and compact sparks close to the wraps. Flat #ff00ff chroma background; no floor/shadow/text/body/hand/arms/person/mannequin/duplicate pair/UI/environment/smoke/blur.

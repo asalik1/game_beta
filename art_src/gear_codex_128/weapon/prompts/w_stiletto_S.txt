@@ -1,0 +1,14 @@
+Built-in ImageGen generation record — 2026-08-08
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one legendary S-grade Stiletto, designed as a complete standalone narrow thrusting dagger. Preserve the same compact stiletto silhouette: long straight triangular needle blade, a single small oval guard, wrapped handle and pointed pommel, running lower-left to upper-right. Legendary black meteor-steel blade with rich silver fittings, deep fluted relief and a controlled violet-white luminous seam down the central blade; dramatic workmanship while remaining a one-object dagger.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: one object only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square; weapon diagonal lower-left to upper-right
+Lighting/mood: clear upper-left key light, deep but readable shadows, compact luminous seam only
+Materials/textures: physically coherent meteor steel, silver and wrapped leather
+Constraints: preserve the exact item category; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, runes that resemble readable text, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Result: accepted. Single standalone stiletto; no person, hand, floor, text, duplicate, or chroma collision.

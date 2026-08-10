@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_sanctified_gauntlets_B.png
+Alpha master: ../alpha/g_sanctified_gauntlets_B.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: EXACTLY ONE EMPTY MATCHED PAIR of Sanctified Gauntlets, B grade: two empty articulated gauntlets with open wrist cuffs and hollow fingers, no hands or arms; same ivory-steel and burgundy-leather family, rounded wrist guards with letter-free sunburst geometry, masterwork construction, fine gold inlay and one restrained amber accent. Flat #00ff00 chroma background; no floor/shadow/text/body/hand/arms/person/mannequin/duplicate pair/UI/environment/smoke/blur.

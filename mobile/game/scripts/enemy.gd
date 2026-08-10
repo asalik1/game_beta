@@ -342,12 +342,14 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 	else:
 		# Animated override strip (Track C seam): same Sprite2D, hframes on.
 		_strip_idle = anim
-		_strip_walk = Art.walk_info(stats["sprite"])
+		_strip_walk = {} if Art.mob_idle_only_locomotion(_sprite_key) \
+			else Art.walk_info(_sprite_key)
 		# 8-direction sets, if the art exists (else {} -> flip path stays).
 		# A directional asset also ships flat _anim/_walk strips (a south
 		# copy), so setup + the net mirror keep working on the flat strip.
 		_dir_idle = Art.dir_set(String(stats["sprite"]) + "_anim")
-		_dir_walk = Art.dir_set(String(stats["sprite"]) + "_walk")
+		_dir_walk = {} if Art.mob_flat_walk_locomotion(_sprite_key) \
+			else Art.dir_set(_sprite_key + "_walk")
 		_apply_strip(anim)
 	face_left = Art.faces_left(stats["sprite"])
 	# Identity tint from the def ("tint" key): the resting body color all
@@ -440,16 +442,19 @@ func _apply_strip(info: Dictionary, is_action := false) -> void:
 	sprite.frame = 0
 	anim_frames = frames
 	anim_fps = float(info["fps"])
-	# Idle/walk cells DEFINE the body reference. An ability strip ships a bigger
+	# The first idle cell defines the persistent body reference. Locomotion may
+	# use a different normalized canvas, but must never replace the reference an
+	# ability uses (otherwise attacking while walking changes size).
 	# (still SQUARE — the loader reads frame count as width/height) cell so a
 	# swung/raised weapon reaching past the idle silhouette isn't clipped; it
 	# renders at the SAME body scale off that reference (boss neither shrinks
 	# nor clips), sprite re-anchored so the feet stay put. is_action keeps an
 	# oversized ability cell from redefining the reference.
 	var cell := float(sprite.texture.get_height())
-	if not is_action:
+	if _body_cell <= 0.0:
 		_body_cell = cell
-	var ref := _body_cell if _body_cell > 0.0 else cell
+	var body_scaled := is_action or Art.mob_body_scale_walk(_sprite_key)
+	var ref := _body_cell if body_scaled else cell
 	var s := art_scale * render_mult * 16.0 / ref
 	sprite.scale = Vector2(s, s)
 	# Re-anchor an oversized ability cell onto the idle body. The naive
@@ -460,12 +465,17 @@ func _apply_strip(info: Dictionary, is_action := false) -> void:
 	# center-align lifts the whole body every time he attacks. When the cells
 	# differ, align the real FEET lines (frame-0 lowest opaque row) instead;
 	# fall back to the center-align when the image can't be read.
-	var off := -(cell - ref) / 2.0
-	if is_action and absf(cell - ref) > 0.5:
-		var bf := _strip_feet_y(_strip_idle.get("tex", null), ref)
-		var af := _strip_feet_y(sprite.texture, cell)
-		if bf >= 0.0 and af >= 0.0:
+	var off := 0.0
+	var bf := _strip_feet_y(_strip_idle.get("tex", null), _body_cell)
+	var af := _strip_feet_y(sprite.texture, cell)
+	if bf >= 0.0 and af >= 0.0:
+		if body_scaled:
 			off = (bf - ref / 2.0) - (af - cell / 2.0)
+		else:
+			# Locomotion cells render normalized to their own canvas; compare
+			# ground lines in normalized coordinates, then express the delta in
+			# current-cell pixels. This removes idle<->walk vertical pops.
+			off = ((bf / _body_cell - 0.5) - (af / cell - 0.5)) * cell
 	sprite.offset = Vector2(0, off)
 
 
@@ -558,6 +568,7 @@ func swap_sprite(new_key: String) -> void:
 	_action_dir = {}
 	_strip_walking = false
 	_cur_dir = "s"
+	_body_cell = 0.0
 	var anim := Art.anim_info(new_key)
 	if anim.is_empty():
 		_strip_idle = {}
@@ -568,9 +579,11 @@ func swap_sprite(new_key: String) -> void:
 		sprite.scale = Art.scale_for(sprite.texture, art_scale * render_mult)
 	else:
 		_strip_idle = anim
-		_strip_walk = Art.walk_info(new_key)
+		_strip_walk = {} if Art.mob_idle_only_locomotion(new_key) \
+			else Art.walk_info(new_key)
 		_dir_idle = Art.dir_set(new_key + "_anim")
-		_dir_walk = Art.dir_set(new_key + "_walk")
+		_dir_walk = {} if Art.mob_flat_walk_locomotion(new_key) \
+			else Art.dir_set(new_key + "_walk")
 		_apply_strip(anim)
 	face_left = Art.faces_left(new_key)
 
@@ -756,7 +769,8 @@ func _physics_process(delta: float) -> void:
 	if not _strip_action.is_empty():
 		# One-shot ability strip: play frames 0..N-1 once, then revert.
 		_advance_action_anim(delta)
-	elif anim_frames > 1 or not _dir_idle.is_empty() or not _dir_walk.is_empty():
+	elif anim_frames > 1 or not _strip_walk.is_empty() \
+			or not _dir_idle.is_empty() or not _dir_walk.is_empty():
 		# Walk/idle split. Single-facing art keeps the flip path; 8-direction
 		# art also picks the strip by facing — and runs even for 1-frame idle
 		# rotations (PixelLab's static rotations are one frame per direction).
@@ -823,7 +837,7 @@ func _net_mirror_tick(delta: float) -> void:
 	global_position = global_position.lerp(net_target, minf(1.0, delta * 10.0))
 	if not _strip_action.is_empty():
 		_advance_action_anim(delta)
-	elif anim_frames > 1:
+	elif anim_frames > 1 or not _strip_walk.is_empty():
 		if not _strip_walk.is_empty() and net_walk != _strip_walking:
 			_strip_walking = net_walk
 			_apply_strip(_strip_walk if net_walk else _strip_idle)

@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe478-f49b-7232-9d3b-d8f62123083f\exec-20f11de9-b370-4f33-a7bd-c98f47a0e8c3.png
+Stored chroma master: ../generated/a_bloodpact_vestment.png; alpha: ../alpha/a_bloodpact_vestment.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty Bloodpact Vestment, no wearer/body/floor/text/duplicates; alpha and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One Bloodpact Vestment: empty warlock robe armor of black wine-red cloth, ribbed leather harness, compact heart-red glass brooch and crimson bindings. Flat #00ff00 chroma background; avoid wearer, body, text, readable runes, duplicates, shadows, smoke, blur, UI, and watermark.

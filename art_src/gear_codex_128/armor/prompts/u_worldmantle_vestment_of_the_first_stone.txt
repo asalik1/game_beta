@@ -1,0 +1,5 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-6ac9ed47-e37f-4dfa-89d6-0dcd30c3441e.png
+Stored chroma master: ../generated/u_worldmantle_vestment_of_the_first_stone.png; alpha: ../alpha/u_worldmantle_vestment_of_the_first_stone.png
+Alpha: border auto-key, soft matte, despill. Review: accepted — one centered empty named S-grade Earthen Robe; transparency and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract. Worldmantle: basalt-and-ochre robe with stone mantle, earth crystal and restrained magma seams on flat #00ff00; no wearer/body/text/duplicates/floor.

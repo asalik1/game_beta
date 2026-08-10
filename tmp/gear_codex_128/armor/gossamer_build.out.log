@@ -1,0 +1,6 @@
+manifest: C:\Users\asali\Projects\MMO\art_src\gear_codex_128\manifest.json
+coverage: 78/180 transparent masters
+missing: armor=102
+qa: C:\Users\asali\Projects\MMO\tmp\gear_codex_128\armor\qa_codex.png
+qa: C:\Users\asali\Projects\MMO\tmp\gear_codex_128\armor\qa_gameplay.png
+built 78 candidate assets (runtime untouched)

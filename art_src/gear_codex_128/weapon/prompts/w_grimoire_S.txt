@@ -1,0 +1,12 @@
+Executed 2026-08-08 with the common contract in ../../PROMPT_CONTRACT.md.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon source
+Primary request: one S-grade Crownless warlock Grimoire, a complete standalone compact closed spellbook; preserve the Grimoire family identity as a thick black leather tome with a broad cover and central ivory tooth clasp, but make a legendary independent construction: heavy layered black-metal corners, a dramatic raised bone-and-bronze reliquary relief enclosing a small crimson eye-shaped gemstone, and rich crimson-lit page seams.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one complete closed book only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square; broad cover-forward three-quarter diagonal, book shape fills the card, no thin composition
+Lighting/mood: clear upper-left key light, deep readable shadows, contained crimson light in the eye gem and page seams only
+Materials/textures: black leather, aged ivory, dark ornate metal, bronze, dark pages and red light; legendary layered construction detailed at 64px and unmistakable book silhouette at 32px
+Constraints: preserve the exact Grimoire category; same family silhouette, legendary S-grade workmanship; one standalone object; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, extra weapon, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

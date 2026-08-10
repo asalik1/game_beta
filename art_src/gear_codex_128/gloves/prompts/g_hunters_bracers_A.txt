@@ -1,0 +1,7 @@
+Generator: built-in ImageGen. Chroma key: #ff00ff.
+Source: ../generated/g_hunters_bracers_A.png
+Alpha master: ../alpha/g_hunters_bracers_A.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill.
+QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+
+Exact prompt: exactly one EMPTY MATCHED PAIR OF HUNTER'S BRACERS, A grade ONLY. Two matching empty wearable hunting bracers, left and right as one equipment pair, hollow cuffs with no hands or arms inside; dark moss-green leather, russet deerskin panels, iron-buckled wrist straps, small pale antler toggles and subtle leaf-vein stitching. A grade: exotic layered hide, richer relief and contained amber-green glints in the strap rivets, visibly exceptional construction without a flat color wash. No wearer. Flat #ff00ff chroma-key background with no floor, shadow, gradient, texture, reflection, or lighting variation. Crownless high-detail sprite illustration, centered with generous padding. Exactly one empty matched pair; no hands, arms, body, person, mannequin, text, watermark, duplicate pair, readable runes, UI, environment, cast shadow, fog, smoke, or painterly blur.

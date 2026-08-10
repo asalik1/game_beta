@@ -1,0 +1,5 @@
+manifest: C:\Users\asali\Projects\MMO\art_src\gear_codex_128\manifest.json
+coverage: 180/180 transparent masters
+qa: C:\Users\asali\Projects\MMO\tmp\gear_codex_128\charm\qa_codex.png
+qa: C:\Users\asali\Projects\MMO\tmp\gear_codex_128\charm\qa_gameplay.png
+built 180 candidate assets (runtime untouched)

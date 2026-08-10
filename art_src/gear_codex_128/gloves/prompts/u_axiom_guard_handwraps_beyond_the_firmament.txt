@@ -1,0 +1,3 @@
+Built-in ImageGen prompt: exactly one empty matched pair of Axiom Guard, Handwraps Beyond the Firmament: named S-grade Runeplate Handwraps, hollow cuffs and finger tubes, no wearer; cobalt articulated plates over midnight cloth, silver lattice geometry without readable runes, pale-blue crystal wrist seals. Flat #ff00ff chroma background; no hands, arms, body, text, duplicate pair, inset, floor, or environment.
+Source: C:\Users\asali\.codex\generated_images\019fe4e7-44a6-7fe1-b846-e621f876911c\exec-06a6075f-6c9a-4ff6-8131-e70dcd425b1a.png
+Result: accepted; chroma alpha and per-key 128px/32px candidate QA passed.

@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_shadowveil_grips_S.png
+Alpha master: ../alpha/g_shadowveil_grips_S.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: EXACTLY ONE EMPTY MATCHED PAIR of Shadowveil Grips, S grade: two empty fitted gloves, hollow wrists and fingers, no hands or arms; same charcoal leather, smoke-purple silk, rich dusk-silver fittings and folded-veil-cuff family, deep letter-free geometric stitching, luminous plum-violet seams and compact sparks close to the grips. Flat #00ff00 chroma background; no floor/shadow/text/body/hand/arms/person/mannequin/duplicate pair/UI/environment/smoke/blur.

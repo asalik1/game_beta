@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_vigil_gauntlets_B.png (exec-c0fdb247-41ec-471d-9a80-c0a856a7f55b.png)
+Alpha master: ../alpha/g_vigil_gauntlets_B.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: transparent corners; accepted 128px/32px candidates. Shared wording: ../../PROMPT_CONTRACT.md.
+Exact asset request: exactly one EMPTY MATCHED PAIR of Vigil Gauntlets, B grade: masterwork nimble wearable gauntlets with hollow cuffs and empty finger tubes; pale steel backplates, dark leather finger guards, swept wing-like cuff fins, fine silver inlay, cobalt enamel, restrained blue-white oathlight accent. No hands, arms, body, mannequin, floor, text, extra glove, unmatched item, or duplicate pair.

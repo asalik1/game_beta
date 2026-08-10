@@ -1,0 +1,5 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-60d2ef70-3a3a-4dc3-927a-d9ae70ea9251.png
+Stored chroma master: ../generated/u_watchers_halfplate.png; alpha: ../alpha/u_watchers_halfplate.png
+Alpha: border auto-key, soft matte, despill. Review: accepted — one centered empty named A-grade Vigil Halfplate; transparency and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract. Watcher's Halfplate: charcoal halfplate with oversized watch pauldron and contained eye gemstone on flat #00ff00; no wearer/body/text/duplicates/floor.

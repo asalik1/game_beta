@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon, detailed codex master and separately derived 32px gameplay sprite
+Primary request: exactly one matched empty pair of Ranger's Bracers, standalone inventory object: two olive-green leather forearm bracers displayed together symmetrically, no hands or arms inside. Dark olive hide, moss-green cord lacing, subdued antique-bronze buckles, two tiny leaf-shaped plates; durable fieldcraft rather than magic.
+Scene/backdrop: perfectly flat solid #ff00ff chroma-key background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation.
+Style/medium: cohesive Crownless high-detail sprite illustration, crisp deliberate edges, compact dark-fantasy forms, readable silhouette and real fine material detail at 128px; tasteful pixel-art influence, not a coarse 32px grid, not painterly or photorealistic.
+Composition/framing: exactly one matched empty bracer pair only, catalogue orthographic view, centered, fully visible with generous padding, roughly 82% of square.
+Lighting/mood: clear upper-left light, deep but readable shadows.
+Constraints: exactly two matching empty bracers, strong closed silhouette, no detached components, do not use #ff00ff in object.
+Avoid: text, letters, runes, logos, UI, card, pedestal, environment, person, hand, arms, body, mannequin, duplicate pair, extra gear, floor, cast/contact shadow, fog, smoke, blur, watermark.
+
+Execution: built-in ImageGen on 2026-08-08. The first generated source was accepted after visual inspection. A second duplicate output was created only after the result-display adapter threw; it is retained as rejected and not used.

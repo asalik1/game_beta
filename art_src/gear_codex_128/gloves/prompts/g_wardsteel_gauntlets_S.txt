@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #ff00ff.
+Source: ../generated/g_wardsteel_gauntlets_S.png (exec-70c7263e-5992-4095-8d77-0292488dbdfb.png)
+Alpha master: ../alpha/g_wardsteel_gauntlets_S.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: transparent corners; accepted 128px/32px candidates. Shared wording: ../../PROMPT_CONTRACT.md.
+Exact asset request: exactly one EMPTY MATCHED PAIR of Wardsteel Gauntlets, S grade: legendary heavy wearable gauntlets with hollow cuffs and empty finger tubes; richest black wardsteel plates, pale nickel finger guards, elaborate storm-forged cuff ribs, deep non-readable ward channels, dark leather joints, compact electric blue-white ward sparks. No hands, arms, body, mannequin, floor, text, extra glove, unmatched item, or duplicate pair.

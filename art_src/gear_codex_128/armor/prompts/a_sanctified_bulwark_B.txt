@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe495-b35c-7431-89a9-3d4bd8d3cc08\exec-3449dbff-4f18-49f9-a187-54f75fbee097.png
+Stored chroma master: ../generated/a_sanctified_bulwark_B.png; alpha: ../alpha/a_sanctified_bulwark_B.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty B-grade Sanctified Bulwark cuirass, no wearer/body/floor/text/duplicates; transparent corners, one closed silhouette, and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One B-grade Sanctified Bulwark: empty broad ivory-and-gold plate cuirass with architectural shoulders, high gorget, gate-shaped non-textual chest relief and white cloth fauld; fine gold filigree, reinforced ivory plates, carved architectural trim, and a restrained pale blue-white gate light. All neck, arm, and waist openings visibly empty. Flat #00ff00 chroma background; avoid wearer, body, text, readable runes, duplicates, shadows, smoke, blur, UI, and watermark.

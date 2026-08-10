@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_shadeweave_claws_A.png
+Alpha master: ../alpha/g_shadeweave_claws_A.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: EXACTLY ONE EMPTY MATCHED PAIR of Shadeweave Claws, A grade: two empty claw gloves with hollow finger tubes and cuffs, no hands or arms; midnight indigo woven cloth, smoked black leather, four slim obsidian claw caps, letter-free stitched crescent geometry, exotic layered shadow-thread material, stronger relief, contained cool blue-violet edge light. Flat #00ff00 chroma background; no floor/shadow/text/body/hand/arms/person/mannequin/duplicate pair/UI/environment/smoke/blur.

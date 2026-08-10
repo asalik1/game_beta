@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe495-b35c-7431-89a9-3d4bd8d3cc08\exec-b2c9bb88-336b-421c-9a3c-400903cb835d.png
+Stored chroma master: ../generated/a_ruinweave_A.png; alpha: ../alpha/a_ruinweave_A.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty A-grade Ruinweave robe, no wearer/body/floor/text/duplicates; transparent corners, one closed silhouette, and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One A-grade Ruinweave: empty soot-black and ash-grey patched warlock robe with broken brass clasps and anchored ember-orange seams; charred velvet panels, fractured black ceramic shoulder plates, raised scorched relief, and contained seam-light. Neck, sleeve, and hem openings visibly empty. Flat #00ff00 chroma background; avoid wearer, body, text, readable runes, duplicates, shadows, smoke, blur, UI, and watermark.

@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_ruinweave_claws_B.png
+Alpha master: ../alpha/g_ruinweave_claws_B.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: EMPTY MATCHED PAIR OF RUINWEAVE CLAWS, B grade: two empty claw gloves, left and right pair, hollow cuffs/fingers, frayed charcoal cloth over cracked leather, broken stone-gray knuckle plates, four blunt black claws, copper repair staples; same family silhouette, masterwork repair stitching, copper inlay, one restrained blue-white wrist glint. Flat #00ff00 chroma background; no floor/shadow/text/body/hand/arms/person/mannequin/duplicate pair/UI/environment/smoke/blur.

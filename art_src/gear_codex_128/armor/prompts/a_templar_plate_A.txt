@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe495-b35c-7431-89a9-3d4bd8d3cc08\exec-90f4c969-ca3a-4f6b-988e-301b07dca586.png
+Stored chroma master: ../generated/a_templar_plate_A.png; alpha: ../alpha/a_templar_plate_A.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty A-grade Templar Plate cuirass, no wearer/body/floor/text/duplicates; transparent corners, one closed silhouette, and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One A-grade Templar Plate: empty broad ivory-steel cuirass with high collar, layered shoulder guards, warm gold trim and non-textual sunburst relief; mother-of-pearl steel panels, raised sun-gold relief, reinforced shoulders and contained warm-white sunburst light. All neck, arm, and waist openings visibly empty. Flat #00ff00 chroma background; avoid wearer, body, text, readable runes, duplicates, shadows, smoke, blur, UI, and watermark.

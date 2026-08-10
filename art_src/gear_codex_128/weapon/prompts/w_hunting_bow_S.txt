@@ -1,0 +1,13 @@
+Executed 2026-08-08 with built-in ImageGen.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon
+Primary request: one S-grade Hunting Bow, one complete standalone bow only. A legendary broad recurved hunting bow in front-facing vertical C-shaped icon composition: massive carved ancient yew limbs wrapped in black horn laminations, substantial central grip, noble luminous amber seams in the wood and a single bright continuous gold bowstring from tip to tip; richer fittings and compact sparks only, not a generic recolor.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: Crownless high-detail sprite illustration, crisp deliberate edges, compact dark-fantasy forms, tasteful pixel-art influence, not painterly and not photorealistic
+Composition/framing: center one complete object nearly upright with strong broad C-shaped recurve and thick limbs; fully visible with generous padding, about 82% of square; all limbs and string must survive at 32px. Make it a bold full bow icon, never a diagonal line or thin card composition.
+Lighting/mood: upper-left light, readable shadows, contained magical string light only
+Constraints: no detached noise, watermark, or #00ff00 in the bow
+Avoid: text, letters, numbers, logos, runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, cast/contact shadows, fog, smoke, blur
+
+Alpha conversion: border auto-key, soft matte, transparent threshold 12, opaque threshold 220, despill.

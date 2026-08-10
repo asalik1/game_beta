@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-11acf13c-93bd-4a25-b6d5-1f50cfc6aa97.png
+Stored chroma master: ../generated/a_zealot_harness_A.png; alpha: ../alpha/a_zealot_harness_A.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty A-grade Zealot Harness; transparent corners and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. Dark-iron and crimson empty Zealot Harness with angular guards, crossed belts, non-textual sunburst relief and ember seams on flat #00ff00; no wearer/body/text/duplicates/floor.

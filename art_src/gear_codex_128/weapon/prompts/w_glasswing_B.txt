@@ -1,0 +1,9 @@
+Executed 2026-08-08 with the common contract in ../../PROMPT_CONTRACT.md.
+
+Use case: stylized-concept
+Asset type: dark-fantasy RPG weapon icon source.
+Primary request: one B-grade Crownless assassin Glasswing, a complete standalone compact long dagger with one broad translucent smoky-glass wing-shaped blade, dark iron spine, short leather grip and pointed pommel; masterwork construction with refined dark-metal wing-vein inlay and one restrained pale-blue local light in the glass.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal, no floor, shadows, gradients, texture, reflections, or lighting variation.
+Style: Crownless high-detail sprite illustration, crisp deliberate edges, compact readable silhouette, tasteful pixel-art influence, no painterly blur.
+Composition: exactly one complete weapon, orthographic catalogue view, centered with generous padding, occupying 82% square, compact lower-left to upper-right diagonal, broad wing blade substantial; no long thin card composition.
+Constraints: no green in subject, no text, people, hands, props, duplicate objects, UI, scenery, shadows, smoke, or watermark.

@@ -1,0 +1,7 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_gossamer_grips_B.png
+Alpha master: ../alpha/g_gossamer_grips_B.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill.
+QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+
+Exact prompt: exactly one EMPTY MATCHED PAIR OF GOSSAMER GRIPS, B grade ONLY. Two matching empty wearable light silk gloves, left and right as one equipment pair, hollow open cuffs and empty finger tubes; charcoal leather palms crisscrossed with smoky violet gossamer webbing, pewter finger caps, a small moonstone clasp at each wrist. B grade: same family silhouette, masterwork web stitching, fine silver filament and one restrained violet wrist glint. No wearer. Flat #00ff00 chroma-key background; no floor, shadow, gradient, texture, reflection, or lighting variation. Crownless high-detail sprite illustration, centered with generous padding. Exactly one empty matched pair; no hands, arms, body, person, mannequin, text, watermark, duplicate pair, readable runes, UI, environment, cast shadow, fog, smoke, or painterly blur.

@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe495-b35c-7431-89a9-3d4bd8d3cc08\exec-32f70cae-6f7c-4189-845c-736caf7a216a.png
+Stored chroma master: ../generated/a_shadeweave_robe_S.png; alpha: ../alpha/a_shadeweave_robe_S.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty S-grade Shadeweave Robe, no wearer/body/floor/text/duplicates; transparent corners, one closed silhouette, and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One S-grade Shadeweave Robe: empty charcoal-black layered cloth robe with deep violet lining, blackened-silver clasp and dark plum highlights; richest silver fittings, intricate woven shadow-silk layers, raised plum relief, compact violet clasp seams, and tiny attached sparks. Neck, sleeve, and hem openings visibly empty. Flat #00ff00 chroma background; avoid wearer, body, text, readable runes, duplicates, shadows, smoke, blur, UI, and watermark.

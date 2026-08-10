@@ -90,9 +90,11 @@ func _ready() -> void:
 		sprite.scale = Art.scale_for(sprite.texture, _art_scale * Balance.CHAR_RENDER_SCALE)
 	else:
 		_strip_idle = anim
-		_strip_walk = Art.walk_info(_sprite_key)
+		_strip_walk = {} if Art.mob_idle_only_locomotion(_sprite_key) \
+			else Art.walk_info(_sprite_key)
 		_dir_idle = Art.dir_set(_sprite_key + "_anim")
-		_dir_walk = Art.dir_set(_sprite_key + "_walk")
+		_dir_walk = {} if Art.mob_flat_walk_locomotion(_sprite_key) \
+			else Art.dir_set(_sprite_key + "_walk")
 		_apply_strip(anim)
 	sprite.modulate = _base_mod
 	add_child(sprite)
@@ -138,7 +140,8 @@ func _physics_process(delta: float) -> void:
 	if not _strip_action.is_empty():
 		# One-shot clip: play frames 0..N-1 once, then revert to locomotion.
 		_advance_action(delta)
-	elif _anim_frames > 1 or not _dir_idle.is_empty() or not _dir_walk.is_empty():
+	elif _anim_frames > 1 or not _strip_walk.is_empty() \
+			or not _dir_idle.is_empty() or not _dir_walk.is_empty():
 		# Walk/idle split, exactly enemy.gd's shape: single-facing art keeps the
 		# flip path; 8-direction art picks the strip by facing — and runs even
 		# for 1-frame idle rotations.
@@ -291,17 +294,20 @@ func _apply_strip(info: Dictionary, is_action := false) -> void:
 	_anim_frames = frames
 	_anim_fps = float(info["fps"])
 	var cell := float(sprite.texture.get_height())
-	if not is_action:
+	if _body_cell <= 0.0:
 		_body_cell = cell
-	var ref := _body_cell if _body_cell > 0.0 else cell
+	var body_scaled := is_action or Art.mob_body_scale_walk(_sprite_key)
+	var ref := _body_cell if body_scaled else cell
 	var s := _art_scale * Balance.CHAR_RENDER_SCALE * 16.0 / ref
 	sprite.scale = Vector2(s, s)
-	var off := -(cell - ref) / 2.0
-	if is_action and absf(cell - ref) > 0.5:
-		var bf := Enemy._strip_feet_y(_strip_idle.get("tex", null), ref)
-		var af := Enemy._strip_feet_y(sprite.texture, cell)
-		if bf >= 0.0 and af >= 0.0:
+	var off := 0.0
+	var bf := Enemy._strip_feet_y(_strip_idle.get("tex", null), _body_cell)
+	var af := Enemy._strip_feet_y(sprite.texture, cell)
+	if bf >= 0.0 and af >= 0.0:
+		if body_scaled:
 			off = (bf - ref / 2.0) - (af - cell / 2.0)
+		else:
+			off = ((bf / _body_cell - 0.5) - (af / cell - 0.5)) * cell
 	sprite.offset = Vector2(0, off)
 
 

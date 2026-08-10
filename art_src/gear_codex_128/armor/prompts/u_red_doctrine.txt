@@ -1,0 +1,5 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-ec5375d1-a53f-4649-be6f-1727aaa128a9.png
+Stored chroma master: ../generated/u_red_doctrine.png; alpha: ../alpha/u_red_doctrine.png
+Alpha: border auto-key, soft matte, despill. Review: accepted — one centered empty named A-grade Zealot Harness; transparency and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract. Red Doctrine: severe dark iron and crimson harness with non-textual sunburst and ember seam on flat #00ff00; no wearer/body/text/duplicates/floor.

@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_studded_bracers_S.png
+Alpha master: ../alpha/g_studded_bracers_S.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: exactly one EMPTY MATCHED PAIR of Studded Bracers, S grade: legendary dark oxblood leather bracers with richest blackened-steel fittings, dense graduated studs, articulated riveted cuff plates, bright contained ember-red seams, and compact golden sparks. Flat #00ff00 chroma background; no hands, arms, body, mannequin, floor, text, or duplicate pair.

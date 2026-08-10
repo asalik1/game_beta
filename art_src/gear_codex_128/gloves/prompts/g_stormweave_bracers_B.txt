@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #ff00ff.
+Source: ../generated/g_stormweave_bracers_B.png
+Alpha master: ../alpha/g_stormweave_bracers_B.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: EMPTY MATCHED PAIR of Stormweave Bracers, B grade: same grey-cloth, cobalt-rib and teal-closure family, masterwork construction, fine silver inlay, restrained cyan accent. Flat #ff00ff chroma background; no forbidden figures/text/duplicates/environment.

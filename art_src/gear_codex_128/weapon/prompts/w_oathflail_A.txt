@@ -1,0 +1,14 @@
+Executed 2026-08-08 with built-in ImageGen.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon
+Primary request: one A-grade Oathflail, designed as a complete standalone object; compact exceptional paladin flail with a broad spiked steel-and-bronze hammer head, two short thick chain loops, dark ash handle with a heavy leather grip, and a small folded crimson-and-ivory oath ribbon; exotic layered construction with a restrained pale-gold sacred glow in the head, visibly more refined than B grade.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: one complete flail only, centered lower-left to upper-right, fully visible with generous padding; the large hammer head, thick linked chains, and handle form one closed compact silhouette that reads at 32px. Never render an extended thin chain, a detached head, or a weapon held by anyone.
+Lighting/mood: clear upper-left key light, deep but readable shadows, restrained local magical light only in the hammer head
+Materials/textures: polished steel, bronze, dark ash wood, leather, woven ribbon
+Constraints: preserve exact weapon category; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 in object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, cast/contact shadow, bloom fog, smoke, soft painterly blur
+
+Alpha conversion: border auto-key, soft matte, transparent threshold 12, opaque threshold 220, despill.

@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_titan_gauntlets_A.png
+Alpha master: ../alpha/g_titan_gauntlets_A.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: exactly one EMPTY MATCHED PAIR of Titan Gauntlets, A grade: exceptional massive gauntlets with layered granite-grey plates, dark iron finger guards, heavy square knuckles, hammered bronze rivets, and contained warm amber fissures. Flat #00ff00 chroma background; no arms, body, mannequin, floor, text, or duplicate pair.

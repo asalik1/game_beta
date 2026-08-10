@@ -1,0 +1,12 @@
+Executed 2026-08-08 with the common contract in ../../PROMPT_CONTRACT.md.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon source
+Primary request: one S-grade Crownless warlock Hexblade, a complete standalone compact broad one-handed sword; preserve the Hexblade family identity as a short dark hexagonal-bladed sword with a broad cleaver-like profile, black iron crossguard, wrapped grip and gemmed pommel; legendary independent construction with stacked obsidian facets, ornate thorn-like guard, a large violet heart-gem in the pommel, and luminous violet seams trapped in the broad blade.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one complete sword only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square; compact lower-left to upper-right diagonal; blade broad and short with large guard and pommel, never a thin long sword
+Lighting/mood: clear upper-left key light, deep readable shadows, luminous violet blade seams and a few compact sparks only
+Materials/textures: layered obsidian-black steel, black iron, dark leather, violet heart-gem; legendary construction readable at 64px and unmistakable weapon silhouette at 32px
+Constraints: preserve exact Hexblade sword category; same family silhouette, legendary S-grade workmanship; one standalone object; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, extra weapon, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

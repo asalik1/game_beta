@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed 128px codex master (the 32px gameplay sprite will be derived later; do not show a thumbnail, inset, comparison, second depiction, or pixel-art miniature)
+Primary request: one complete matched pair of Featherweave Handwraps, designed as a standalone equipment set. Soft charcoal and muted russet cloth handwraps with layered feather-shaped woven panels across the backs, slim brass claw clasps at each cuff, and neat wrapped fingers; well-made but restrained neutral family construction.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation.
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism.
+Composition/framing: exactly one matched pair only, the two related empty handwraps arranged together as one centered catalogue set, backs facing viewer at a slight three-quarter angle, fully visible, generous even padding, occupying roughly 82% of the square; no hands or arms inside them.
+Lighting/mood: clear upper-left key light, deep but readable shadows, no magical glow.
+Materials/textures: physically coherent woven cloth, soft feathers, leather binding and aged brass; enough secondary construction detail to reward the 64px codex view while remaining unmistakable at 32px.
+Constraints: preserve exact handwrap category and matched-pair identity; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 or vivid green anywhere in the object.
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, arm, mannequin, extra glove, unmatched second item, inset, thumbnail, comparison view, pixel-art miniature, loadout, weapon, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur.

@@ -1,0 +1,9 @@
+Executed 2026-08-08 with built-in ImageGen. Shared wording and all common constraints are exactly `../../PROMPT_CONTRACT.md`.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon
+Primary request: one A-grade Pactshield Codex, a complete standalone compact warlock offhand weapon: an open black leather grimoire bolted into a thick dark iron buckler frame, with broad violet crystal clasps, layered bone page edges and a contained indigo eye-shaped magical glow; exotic layered construction, visibly more refined than B grade.
+Composition/framing: one complete Pactshield Codex only, centered and fully visible with generous padding; one bound book fused into one broad shield, no separate duplicate book or shield. Compact strong closed silhouette that reads at 32px.
+Lighting/mood: clear upper-left key light, deep but readable shadows, restrained local magical light only in the clasp and page seam
+Materials/textures: black leather, dark iron, bone paper edges, violet crystal, brass rivets
+Alpha conversion: border auto-key, soft matte, transparent threshold 12, opaque threshold 220, despill.

@@ -1,0 +1,11 @@
+Executed 2026-08-08 with the common contract in ../../PROMPT_CONTRACT.md.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon source.
+Primary request: one A-grade Crownless mage Greatstaff, a complete standalone compact heavy staff; preserve its neutral family identity with one large faceted stone orb held in a thick bronze four-pronged cage, a stout darkwood shaft and metal-capped butt, enhanced with exotic layered construction and contained energy.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation.
+Style/medium: cohesive Crownless high-detail sprite illustration, crisp deliberate edges and a compact dark-fantasy silhouette, fine readable construction at 128px, tasteful pixel-art influence, no painterly blur.
+Composition/framing: exactly one complete weapon only, orthographic catalogue view, centered, fully visible, generous padding, about 78% of square; compact lower-left to upper-right diagonal, with the orb cage occupying the upper third and a short thick shaft—not a long thin wand or staff.
+Lighting/mood: clear upper-left key light, deep readable shadows, restrained pale mineral light contained in the stone facets and cage seams.
+Materials/textures: dark ironwood with visible grain, layered weathered bronze and blackened steel cage, a large charcoal stone orb split by contained pale blue-white mineral veins, premium charcoal leather lower grip, richer relief above B; grade legible in grayscale.
+Constraints: one complete Greatstaff, no green in subject, no detached debris or orbiting effects, no text, people, hands, duplicate objects, UI, scenery, shadows, smoke, or watermark.

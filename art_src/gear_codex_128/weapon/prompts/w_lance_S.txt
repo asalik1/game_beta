@@ -1,0 +1,14 @@
+Executed 2026-08-08 with built-in ImageGen.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one S-grade Lance, designed as a complete standalone object; compact legendary paladin lance with a very broad split-sun spearhead, thick dark ash shaft, layered gilded steel socket, radiant ivory enamel collar, and a short folded crimson-and-ivory pennant bound below the head; richest fittings, luminous pale-gold seams and a few compact sparks, immediately distinct from A grade.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: one full lance only, centered lower-left to upper-right, fully visible with generous padding, compact card-scale composition; oversized broad spearhead and collar occupy the upper third, thick shaft and visible butt, folded pennant adds broad visual mass. Never render a thin sliver or a long bare pole.
+Lighting/mood: clear upper-left key light, deep but readable shadows, restrained local magical light only on the spearhead
+Materials/textures: gilded steel, dark ash wood, leather binding, ivory enamel, woven pennant
+Constraints: preserve exact weapon category; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 in object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, cast/contact shadow, bloom fog, smoke, soft painterly blur
+
+Alpha conversion: border auto-key, soft matte, transparent threshold 12, opaque threshold 220, despill.

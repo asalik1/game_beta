@@ -1,0 +1,5 @@
+Built-in ImageGen prompt, 2026-08-08:
+
+Exactly one matched empty pair of Ruinweave Claws: two fingerless soot-black leather claw gloves displayed symmetrically as one standalone inventory object, with no hands or arms inside. Charcoal woven cloth, ember-red stitched seams, short darkened-steel talon caps at each fingertip, subtle burnt-brass fasteners; ruined fire suggested by materials only, without flames or smoke. Render as a crisp Crownless high-detail dark-fantasy sprite illustration with a compact readable silhouette and true 128px material detail; tasteful pixel-art influence, not coarse-grid, painterly, or photorealistic. Centre the pair on a perfectly flat #00ff00 chroma-key field. No text, letters, runes, logos, UI, cards, environment, person, hands, arms, body, mannequin, duplicate pair, extra gear, floor, shadows, fire, smoke, fog, blur, or watermark; do not use green in the object.
+
+Accepted after visual inspection: exactly one empty matched claw-glove pair, no excluded subject, clean compact silhouette.

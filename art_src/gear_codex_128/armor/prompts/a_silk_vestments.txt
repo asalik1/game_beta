@@ -1,0 +1,21 @@
+Built-in ImageGen generation record — accepted, first pass
+
+Source: C:\Users\asali\.codex\generated_images\019fe464-b189-76e1-89e2-1d04071c1c68\exec-da92755a-2c95-47d5-998b-dae976ae2906.png
+Stored chroma master: ../generated/a_silk_vestments.png
+Approved alpha master: ../alpha/a_silk_vestments.png
+Alpha processing: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: one centered empty silk vestment; no wearer, body, floor, text, or duplicate. Passed builder validation and 128px/32px QA.
+Rejections: none.
+
+Prompt:
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG armor icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one exact item, Silk Vestments: a single centered standalone sleeveless ceremonial silk vestment / cloth cuirass with high collar, structured folded silk panels, a narrow ivory lining, and a small restrained starburst clasp at the sternum. It is an empty garment with a hollow neck opening and arm openings, no wearer.
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: one object only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square
+Lighting/mood: clear upper-left key light, deep but readable shadows
+Color palette: midnight navy silk, muted ivory lining, one restrained pale-gold clasp
+Materials/textures: layered matte silk with stitched hems and subtle woven folds
+Constraints: preserve the exact armor category; a single centered empty cuirass/plate-like vestment, no body or mannequin; strong closed silhouette; no detached noise; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, face, hand, mannequin, duplicate object, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur, exposed body, trousers, gloves, boots, helmet, cape, weapons, watermark

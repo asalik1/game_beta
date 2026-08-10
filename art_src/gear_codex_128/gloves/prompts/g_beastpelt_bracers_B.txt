@@ -1,0 +1,16 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_beastpelt_bracers_B.png
+Alpha master: ../alpha/g_beastpelt_bracers_B.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill.
+QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+
+Exact prompt:
+Use case: stylized-concept
+Asset type: dark-fantasy RPG gear icon master
+Primary request: exactly one EMPTY MATCHED PAIR OF BEASTPELT BRACERS, B grade ONLY. Two matching empty wearable fur-trimmed leather bracers, left and right as one equipment pair, hollow open cuffs with no hands or arms inside. Preserve the Beastpelt Bracers family identity: dark brown leather cylinders, tawny animal-fur rims at both ends, black lacing threaded through pale bone toggles, and broad dark metal outer panels with three claw-scratch grooves. B grade: same silhouette, masterwork leather construction, fine brass edge inlay and one restrained warm amber glint inside a single claw groove. No wearer.
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without painterly blur or photorealism
+Composition/framing: one matched bracer pair only, centered, fully visible, generous even padding; empty cuffs angled inward, no duplicate pair
+Lighting/mood: clear upper-left key light, deep readable shadows
+Constraints: exactly one EMPTY matched bracer pair; no hands inside, no arms, body, person, mannequin, text, watermark, or #00ff00 in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, arm, body, mannequin, helmet, hood, cloak, chest armor, weapon, duplicate object, duplicate pair, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

@@ -1,0 +1,5 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-3c764834-3400-43a9-8710-f1e6a15352ea.png
+Stored chroma master: ../generated/u_holy_city_bulwark_of_the_walking_cathedral.png; alpha: ../alpha/u_holy_city_bulwark_of_the_walking_cathedral.png
+Alpha: border auto-key, soft matte, despill. Review: accepted — one centered empty named S-grade Sanctified Bulwark; transparency and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract. Holy City: monumental pale-gold bulwark plate with non-textual rose-window crystal pattern on flat #00ff00; armor only, no building or wearer/body/text/duplicates.

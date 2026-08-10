@@ -1,0 +1,12 @@
+Executed 2026-08-08 with the common contract in ../../PROMPT_CONTRACT.md.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon source
+Primary request: one A-grade Crownless warlock Grimoire, a complete standalone compact closed spellbook; preserve the family identity as a thick black leather-bound tome with an oversized visible cover, brass corner fittings, a central pale ivory tooth clasp and a contained ember-red slit of light along the page edge; elevate it with layered exotic bone plates and raised metal relief, not merely a recolor.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one complete closed book only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square; broad cover-forward three-quarter diagonal, book shape fills the card, no thin composition
+Lighting/mood: clear upper-left key light, deep readable shadows, contained ember-red page-edge light only
+Materials/textures: black leather, aged ivory bone plates, oxidized brass, dark pages and restrained red glow; rich raised construction details readable at 64px and an unmistakable book silhouette at 32px
+Constraints: preserve the exact Grimoire category; A-grade exceptional construction; one standalone object; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, extra weapon, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

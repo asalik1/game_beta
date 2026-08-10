@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_runeplate_handwraps_B.png
+Alpha master: ../alpha/g_runeplate_handwraps_B.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: EXACTLY ONE EMPTY MATCHED PAIR of Runeplate Handwraps, B grade: two empty gloves only, palms and finger compartments visible, no hands or arms; same charcoal-wrap, copper-and-slate articulated-plate family silhouette, masterwork dark steel knuckle guards, fine diamond and chevron decorative geometry only (no readable runes or letters), refined construction, fine inlay, one restrained violet accent. Flat #00ff00 chroma background; no floor/shadow/text/body/hand/arms/person/mannequin/duplicate pair/UI/environment/smoke/blur.

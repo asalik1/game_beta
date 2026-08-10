@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_skirmishers_gauntlets_A.png
+Alpha master: ../alpha/g_skirmishers_gauntlets_A.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: EXACTLY ONE EMPTY MATCHED PAIR of Skirmisher's Gauntlets, A grade: two empty fingerless leather-and-metal gauntlets with hollow cuffs and finger openings, no hands or arms; weathered russet leather, dark iron knuckle bars, layered wrist straps, letter-free triangular buckles, exotic toughened leather layers, stronger iron relief and contained ember-orange rivet glow. Flat #00ff00 chroma background; no floor/shadow/text/body/hand/arms/person/mannequin/duplicate pair/UI/environment/smoke/blur.

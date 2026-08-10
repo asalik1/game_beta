@@ -1,0 +1,5 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-d6786c45-fa68-4250-8c4d-47eef40c39c0.png
+Stored chroma master: ../generated/u_gate_shrine_armor.png; alpha: ../alpha/u_gate_shrine_armor.png
+Alpha: border auto-key, soft matte, despill. Review: accepted — one centered empty named A-grade Sanctified Bulwark; transparency and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract. Gate-Shrine Armor: ivory-bronze gate plate with non-textual amber facets and buttressed shoulders on flat #00ff00; no wearer/body/text/duplicates/floor.

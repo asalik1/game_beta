@@ -1,0 +1,8 @@
+Built-in ImageGen accepted source: one centered, empty standalone Ironwall Plate cuirass with high gorget, attached layered shoulder guards, square riveted steel torso plate, charcoal-leather trim, and no wearer/body/mannequin/floor/text/duplicates, on flat #00ff00.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG ARMOR icon
+Primary request: exactly one standalone torso cuirass called Ironwall Plate, neutral-grade heavy warrior armor. Complete empty steel breastplate with high gorget, layered broad shoulder guards attached to the torso plate, riveted dark iron bands, square chest silhouette, and subdued charcoal leather trim.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Composition/framing: one centered standalone cuirass only, orthographic catalogue view, fully visible, generous even padding
+Constraints: a single empty torso cuirass; do not use #00ff00 in armor; no wearer, body, mannequin, head, arms, hands, legs, pants, greaves, boots, separate helmet, weapons, shield, duplicate armor, floor, pedestal, environment, props, text, letters, readable runes, frame, cast shadow, smoke, crop, or edge touch.

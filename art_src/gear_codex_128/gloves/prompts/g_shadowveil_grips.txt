@@ -1,0 +1,15 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_shadowveil_grips.png
+Alpha master: ../alpha/g_shadowveil_grips.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill.
+
+Exact prompt:
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon
+Primary request: EXACTLY ONE EMPTY MATCHED PAIR OF SHADOWVEIL GRIPS ONLY. Two matching empty close-fitted thief gloves with hollow open cuffs and empty fingers; layered midnight-black leather, smoky charcoal cloth at the knuckles, narrow silver stitch lines, subtle deep violet lining, no wearer. Gloves only, not a hand, arm, person, hood, cloak, armor, weapon, or garment.
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without painterly blur or photorealism
+Composition/framing: one matched glove pair only, centered, fully visible, generous even padding; empty cuffs facing inward, no duplicate pair
+Lighting/mood: clear upper-left key light, deep readable shadows, stealthy restrained mood
+Constraints: exactly one EMPTY matched glove pair; no hands inside, no arms, body, person, mannequin, text, watermark, or #00ff00 in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, arm, body, mannequin, helmet, hood, cloak, chest armor, weapon, duplicate object, duplicate pair, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

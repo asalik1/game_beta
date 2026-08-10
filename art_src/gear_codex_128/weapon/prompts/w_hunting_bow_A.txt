@@ -1,0 +1,14 @@
+Executed 2026-08-08 with built-in ImageGen.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one A-grade Hunting Bow, designed as a complete standalone object; a compact broad recurved hunting bow with extraordinarily thick layered yew-and-horn limbs, substantial carved antler limb tips, broad central leather grip and a very prominent taut amber-gold bowstring; exceptional raised leaf bronze relief and only contained glow along the string
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: one single complete bow only, centered nearly upright with strong sweeping recurve, fully visible with generous even padding, occupying roughly 82% of the square; frame it as a large broad C-shaped object with thick limbs and a large grip so it has broad visual mass at 32px, never a diagonal line or thin card composition
+Lighting/mood: clear upper-left key light, deep but readable shadows, restrained local magical light only at the string
+Materials/textures: physically coherent yew wood, horn lamination, leather, bronze; enough secondary construction detail to reward the 64px codex view while the main bow shape remains unmistakable at 32px
+Constraints: preserve the exact weapon category; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, runes that resemble readable text, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur
+
+Alpha conversion: border auto-key, soft matte, transparent threshold 12, opaque threshold 220, despill. First pass was rejected and retained under `generated/rejected_pass3/` and `prompts/rejected_pass3/` because it read as a thin diagonal sliver at card scale.

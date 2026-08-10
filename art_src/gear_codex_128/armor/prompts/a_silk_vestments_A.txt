@@ -1,0 +1,8 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe464-b189-76e1-89e2-1d04071c1c68\exec-48bdd895-6c7d-4587-9a03-ec9e7e924891.png
+Stored chroma master: ../generated/a_silk_vestments_A.png
+Approved alpha master: ../alpha/a_silk_vestments_A.png
+Alpha processing: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: single centered empty vestment, no wearer/body/floor/text/duplicate; passed alpha validation and 128px/32px QA. Rejections: none.
+
+Prompt: Use the shared contract in ../../PROMPT_CONTRACT.md. Generate one exact item, Silk Vestments A grade: a single centered standalone exceptional sleeveless ceremonial silk vestment with high collar, layered deep-blue and ivory silk panels, an inset faceted sapphire at the sternum, raised silver threadwork, and a compact contained pale-blue energy within the clasp. Empty garment only; no wearer. Color palette: rich cobalt-blue, old ivory, silver, sapphire blue. Materials/textures: layered exotic silk, dimensional folded panels, gilt thread relief and a contained gem setting. Grade: A; same Silk Vestments identity, exceptional construction and a stronger contained magical detail without a color wash. Use perfectly flat #00ff00 chroma background; no floor/shadow/gradient; one centered empty cuirass/vestment only; avoid text, readable runes, mannequin, person, body, duplicate, loadout, cast shadow, fog, smoke, blur, other clothing, weapons, and watermark.

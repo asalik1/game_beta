@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: one neutral Crownless warrior Bulwark Blade, designed as a complete standalone object; a broad compact cleaver-like sword with a squared defensive dark-steel blade, thick central fuller, brass guard and stout wrapped grip.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism
+Composition/framing: exactly one complete weapon only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square; compact diagonal lower-left to upper-right; identity-bearing head or focus occupies a large upper third and the full butt remains visible; do not make a long thin composition
+Lighting/mood: clear upper-left key light, deep but readable shadows, no magical light
+Materials/textures: physically coherent forged charcoal steel with a subtle pale edge, dark bronze guard and oxblood leather binding; enough construction detail to reward the 64px codex view while unmistakable at 32px
+Constraints: preserve the exact weapon category; well-made but restrained neutral family anchor; strong closed silhouette; no detached noise; no watermark; do not use #00ff00 anywhere in the object
+Avoid: text, letters, numbers, logos, runes that resemble readable text, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, extra weapon, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

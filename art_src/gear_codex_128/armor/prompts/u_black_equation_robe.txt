@@ -1,0 +1,5 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-aeb174c5-6402-4177-9597-ee6155a48f90.png
+Stored chroma master: ../generated/u_black_equation_robe.png; alpha: ../alpha/u_black_equation_robe.png
+Alpha: border auto-key, soft matte, despill. Review: accepted — one centered empty named A-grade Voidsilk Robe; transparency and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract. Black Equation: black-violet robe with angular panels and non-textual nested-frame clasp on flat #00ff00; no numbers/writing/wearer/body/duplicates/floor.

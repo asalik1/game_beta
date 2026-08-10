@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-afcb86ab-78cf-4c32-b466-e5b439818cf2.png
+Stored chroma master: ../generated/u_noonheart_armor_of_first_light.png; alpha: ../alpha/u_noonheart_armor_of_first_light.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty named S-grade Blessed Plate; transparent corners and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. Noonheart: dawn-gold and ivory plate with non-textual sun-heart and white-gold seams on flat #00ff00; no wearer/body/text/duplicates/floor.

@@ -1,0 +1,5 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe4af-dedf-7b01-8cc0-32bd8a6fe7d8\exec-4562b989-4a86-4104-aeb1-dd8b23b0857a.png
+Stored chroma master: ../generated/u_faultscribe_robe.png; alpha: ../alpha/u_faultscribe_robe.png
+Alpha: border auto-key, soft matte, despill. Review: accepted — one centered empty named A-grade Earthen Robe; transparency and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract. Faultscribe: earth-brown robe with stone shoulders, geode clasp and amber fractures on flat #00ff00; no wearer/body/text/duplicates/floor.

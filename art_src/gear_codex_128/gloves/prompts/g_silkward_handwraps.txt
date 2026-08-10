@@ -1,0 +1,15 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_silkward_handwraps.png
+Alpha master: ../alpha/g_silkward_handwraps.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill.
+
+Exact prompt:
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon
+Primary request: EXACTLY ONE EMPTY MATCHED PAIR OF SILKWARD HANDWRAPS ONLY. Two matching empty mage handwrap gloves with hollow open cuffs and empty fingers; ivory and smoke-gray silk bands interlaced over thin dark leather palms, small restrained violet ward-thread knots at the wrists, no wearer. This is a pair of gloves, not a hand, arm, person, hood, cloak, armor, weapon, or garment.
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without painterly blur or photorealism
+Composition/framing: one matched glove pair only, centered, fully visible, generous even padding; empty cuffs angled inward, no duplicate pair
+Lighting/mood: clear upper-left key light, deep readable shadows, restrained arcane mood
+Constraints: exactly one EMPTY matched glove pair; no hands inside, no arms, body, person, mannequin, text, watermark, or #00ff00 in the object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, arm, body, mannequin, helmet, hood, cloak, chest armor, weapon, duplicate object, duplicate pair, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur

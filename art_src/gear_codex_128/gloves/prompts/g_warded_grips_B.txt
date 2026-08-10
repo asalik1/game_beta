@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #ff00ff.
+Source: ../generated/g_warded_grips_B.png (exec-4e10cf02-c3f4-4adf-8967-b9094df1f531.png)
+Alpha master: ../alpha/g_warded_grips_B.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: transparent corners; accepted 128px/32px candidates. Shared wording: ../../PROMPT_CONTRACT.md.
+Exact asset request: exactly one EMPTY MATCHED PAIR of Warded Grips, B grade: masterwork fitted wearable grips with hollow cuffs and empty finger tubes; charcoal leather, pale steel knuckle plates, non-readable ward stitching, silver cuff rings, blue-white ward stones, restrained protective accent. No hands, arms, body, mannequin, floor, text, extra glove, unmatched item, or duplicate pair.

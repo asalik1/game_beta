@@ -1,0 +1,9 @@
+Built-in ImageGen accepted source: one matched pair of empty ankle boots with open cuffs, dark brown leather, iron toe bands, crossed straps, silver watchman inlay, and restrained cool-blue reflection on #00ff00.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG BOOTS icon
+Primary request: exactly ONE MATCHED PAIR of EMPTY ANKLE BOOTS called Vigil Steps, B-grade masterwork night-watch footwear. Two separate matching dark brown leather boots only, side-by-side: each has a wide visibly hollow OPEN CUFF at the ankle, a short ankle upper, a round toe, heel, thick sole, crossed instep strap, dull iron toe band. Fine silver inlay and tiny restrained cool blue reflection only.
+Scene/backdrop: perfectly flat uniform #00ff00 chroma background for removal; no floor, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: cohesive Crownless high-detail dark-fantasy sprite illustration, crisp deliberate edges, readable at 128px and 32px
+Composition/framing: side-by-side pair centered, full object, generous even padding
+Constraints: FOOTWEAR ONLY: TWO EMPTY BOOTS. Both cuffs must be open and visibly empty. No wearer and nothing above either cuff. No attachment, dangling object, feather, pendant, amulet, badge, weapon, character, body, legs, feet, pants, greaves, shin guards, floor, props, text, logo, frame, shadow, smoke. Do not use #00ff00 in the boots.

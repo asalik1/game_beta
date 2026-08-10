@@ -1,0 +1,5 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_silkward_handwraps_A.png
+Alpha master: ../alpha/g_silkward_handwraps_A.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+Exact prompt: EXACTLY ONE EMPTY MATCHED PAIR of Silkward Handwraps, A grade: two empty glove-shaped handwraps, hollow cuffs and fingers, no hands or arms; pale ash-grey silk crossing black leather palms, pearl-white ceramic knuckle segments, rose-gold clasps, decorative zigzag weave with no letters or readable markings, exotic layered silk, raised wrap relief and contained pale blue-white glimmer. Flat #00ff00 chroma background; no floor/shadow/text/body/hand/arms/person/mannequin/duplicate pair/UI/environment/smoke/blur.

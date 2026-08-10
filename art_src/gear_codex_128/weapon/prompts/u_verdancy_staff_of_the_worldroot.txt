@@ -1,0 +1,16 @@
+Built-in ImageGen generation record — 2026-08-08
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon; detailed codex master and separately derived 32px gameplay sprite
+Primary request: Verdancy, Staff of the Worldroot, a named S-grade Crownless Bloomstaff, designed as one complete standalone compact legendary living worldroot staff. It must unmistakably read as a staff: a stout ancient dark-rootwood shaft running lower-left to upper-right, topped by one massive enclosed emerald seed-gem in an interwoven crown of thick roots; a few broad attached leaves and one compact ring of root tendrils bind the seed, with restrained luminous green sap seams inside the wood. Unique silhouette and construction, not a brightened generic; never a tree, plant scene, or separate floating crystal.
+Scene/backdrop: perfectly flat solid #ff00ff chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation.
+Style/medium: cohesive Crownless high-detail sprite illustration; crisp deliberate edges, compact dark-fantasy forms, readable silhouette, materially detailed at 128px without imitating a coarse 32px grid; tasteful pixel-art influence rather than painterly blur or photorealism.
+Composition/framing: exactly one complete weapon only, orthographic catalogue view, centered, fully visible, generous even padding, occupying roughly 82% of the square; shortened staff composition so the crown and shaft both read at 32px, diagonal lower-left to upper-right.
+Lighting/mood: clear upper-left key light, deep but readable shadows, restrained local magical light contained in the seed and sap seams only.
+Materials/textures: ancient black-brown rootwood, emerald seed crystal, dark bronze root bands, rich moss-green leaves, wrapped dark leather lower grip.
+Constraints: preserve the exact Bloomstaff weapon category; strong closed silhouette; every leaf, root, band and seed physically attached; no detached noise; no watermark; do not use #ff00ff anywhere in the object.
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, second weapon, loadout, cast shadow, contact shadow, bloom fog, smoke cloud, soft painterly blur.
+
+Source: built-in ImageGen, `C:\Users\asali\.codex\generated_images\019fe425-d3fa-7c82-9a20-2b07f00f86e6\exec-2d362966-bee4-414e-b807-156ca867864b.png`, retained unchanged as `../generated/u_verdancy_staff_of_the_worldroot.png`.
+Alpha conversion: border auto-key, soft matte, transparent threshold 12, opaque threshold 220, despill.
+QA accepted: 1254×1254 RGBA master with transparent corners; one attached Bloomstaff, no people, hands, floor, text, duplicate object or key-color spill; builder produced valid 128px codex and hard-alpha 32px gameplay candidates.

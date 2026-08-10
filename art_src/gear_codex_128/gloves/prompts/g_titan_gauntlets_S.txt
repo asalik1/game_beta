@@ -1,0 +1,7 @@
+Generator: built-in ImageGen. Chroma key: #00ff00.
+Source: ../generated/g_titan_gauntlets_S.png (C:\\Users\\asali\\.codex\\generated_images\\019fe4db-9b5d-7b40-9291-ad466433be04\\exec-6777f028-45f0-4a1f-8473-62aac60a078e.png)
+Alpha master: ../alpha/g_titan_gauntlets_S.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill. QA: transparent corners; accepted 128px codex and hard-alpha 32px gameplay candidates.
+Shared wording: ../../PROMPT_CONTRACT.md.
+Exact asset request: exactly one EMPTY MATCHED PAIR of Titan Gauntlets, S grade: legendary massive wearable war gauntlets with hollow cuffs and empty finger tubes; layered granite-grey stone plates, dark iron finger guards, heavy square knuckles, elaborate dark-bronze fittings, deepest carved strata, compact luminous amber mineral fissures. No hands, arms, body, mannequin, floor, text, extra glove, unmatched item, or duplicate pair.
+Rejected source retained: ../generated/rejected/g_titan_gauntlets_S_01_duplicate_call.png (duplicate call caused by a response-wrapper failure; not used).

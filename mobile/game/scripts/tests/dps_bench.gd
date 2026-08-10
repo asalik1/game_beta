@@ -105,6 +105,15 @@ const DEATH_MARK_WINDOW := 5.0    # Death Mark vuln duration: stab-spam window
 const DOWNTIME_EVERY := 5.0       # a dodge window this often...
 const DOWNTIME_DUR := 1.0         # ...costs this long of casting (20% uptime tax)
 
+# --resprofile=phys|bal|mag (shape testing): override the dummy's phys/magres to a
+# controlled type-skew (other defensive stats stay the averaged sheet), so a class's
+# DPS can be read against a phys-heavy vs balanced vs magic-heavy boss in isolation.
+const RES_PROFILES := {
+	"phys": {"physres": 190.0, "magres": 95.0},
+	"bal":  {"physres": 140.0, "magres": 140.0},
+	"mag":  {"physres": 95.0, "magres": 190.0},
+}
+
 var game: Game
 var sim_secs := SIM_SECS_DEFAULT
 var only_cls := ""
@@ -133,6 +142,7 @@ var godroll := false           # --godroll: reforge-chased ceiling (max main + m
 var plevel := PLAYER_LEVEL     # --level=N: hero level (also sets attr points = N-1)
 var dlevel := DUMMY_LEVEL      # --level=N sets this too; the target's level
 var boss_kind := ""            # --boss=X: dummy carries THIS boss's sheet, not the averaged one
+var res_profile := ""          # --resprofile=phys|bal|mag: controlled phys/magres skew (shape testing)
 # --depth=D (2026-07-21, Depths restructure): simulate a Depths room at depth D.
 # Depth == content level: the dummy carries the depth's (overcap-allowed) boss
 # sheet, the hero is capped at LEVEL_CAP, and the live pressure-band debuff
@@ -355,6 +365,8 @@ func _parse_args() -> void:
 			dlevel = plevel
 		elif a.begins_with("--boss="):
 			boss_kind = a.get_slice("=", 1)
+		elif a.begins_with("--resprofile="):
+			res_profile = a.get_slice("=", 1)
 		elif a == "--uniques":
 			use_uniques = true
 		elif a.begins_with("--setprof="):
@@ -396,6 +408,11 @@ func _run() -> void:
 	await _skip_opening()
 
 	var block := _boss_stat_block(dlevel)
+	if res_profile != "" and RES_PROFILES.has(res_profile):
+		block["physres"] = float(RES_PROFILES[res_profile]["physres"])
+		block["magres"] = float(RES_PROFILES[res_profile]["magres"])
+		print("[bench] RESPROFILE %s: dummy physres %.0f  magres %.0f (controlled type-skew, shape test)" % [
+			res_profile, block["physres"], block["magres"]])
 	if boss_kind == "":
 		print("[bench] target: avg of %d bosses at L%d — physres %.0f  magres %.0f  eva %.1f%%  critres %.0f" % [
 			Menus.BOSS_KINDS.size(), dlevel, block["physres"], block["magres"],

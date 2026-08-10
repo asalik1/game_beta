@@ -1,0 +1,7 @@
+Generator: built-in ImageGen. Chroma key: #ff00ff.
+Source: ../generated/g_featherweave_handwraps_A.png
+Alpha master: ../alpha/g_featherweave_handwraps_A.png
+Extraction: border auto-key, soft matte, thresholds 12/220, despill.
+QA: alpha corners transparent; 128px codex and hard-alpha 32px gameplay candidates built.
+
+Exact prompt: exactly one EMPTY MATCHED PAIR OF FEATHERWEAVE HANDWRAPS, A grade ONLY. Two matching empty wearable mage handwrap gloves, left and right as one equipment pair, hollow open cuffs and empty finger tubes; pale smoke-gray silk bands over dark leather palms, layered raven and pale gull feathers sewn along each wrist, thin silver thread. A grade: exotic layered feather lamellae, stronger relief and contained icy-blue seam light, visibly exceptional construction without a flat color wash. No wearer. Flat #ff00ff chroma-key background with no floor, shadow, gradient, texture, reflection, or lighting variation. Crownless high-detail sprite illustration, centered with generous padding. Exactly one empty matched pair; no hands, arms, body, person, mannequin, text, watermark, duplicate pair, readable runes, UI, environment, cast shadow, fog, smoke, or painterly blur.

@@ -1,0 +1,12 @@
+Executed 2026-08-08 with built-in ImageGen.
+
+Use case: stylized-concept
+Asset type: dual-resolution dark-fantasy RPG gear icon
+Primary request: one B-grade Lance, one complete standalone compact knight's lance. Strong readable icon with a broad steel diamond spearhead, thick dark ash shaft, heavy leather wrap and a short folded red pennant below the socket; masterwork construction with fine brass inlay and one small restrained pale-gold accent, distinctly simpler than A grade.
+Scene/backdrop: perfectly flat solid #00ff00 chroma background for removal; no floor plane, shadow, gradient, texture, reflection, or lighting variation
+Style/medium: Crownless high-detail sprite illustration, crisp deliberate edges, compact dark-fantasy forms, tasteful pixel-art influence, not painterly and not photorealistic
+Composition/framing: one complete lance centered lower-left to upper-right with a large head/socket assembly occupying upper third, thick visible shaft and complete butt, folded pennant providing card-scale mass. It must read clearly at 32px, never a thin line, bare pole, or card composition.
+Constraints: no detached noise, watermark, or #00ff00 in object
+Avoid: text, letters, numbers, logos, readable runes, UI frame, card, pedestal, environment, person, hand, mannequin, duplicate object, loadout, cast/contact shadows, fog, smoke, blur
+
+Alpha conversion: border auto-key, soft matte, transparent threshold 12, opaque threshold 220, despill.

@@ -1,0 +1,8 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe464-b189-76e1-89e2-1d04071c1c68\exec-6d9331d6-3a08-41de-bf81-b8a328511251.png
+Stored chroma master: ../generated/u_white_theorem_vestments_of_proof.png
+Approved alpha master: ../alpha/u_white_theorem_vestments_of_proof.png
+Alpha processing: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: single centered empty vestment, no wearer/body/floor/text/duplicate; passed alpha validation and 128px/32px QA. Rejections: none.
+
+Prompt: Use the shared contract in ../../PROMPT_CONTRACT.md. Generate one exact named armor, White Theorem, Vestments of Proof: a single centered standalone legendary sleeveless ivory silk cuirass with a high collar, deep-navy interior panels, sharply structured mathematical-looking but non-readable geometric seamwork, a radiant platinum eight-point chest clasp with contained pale-blue light, and no actual letters or runes. Empty garment only; no wearer. Color palette: chalk ivory, deep navy, platinum, restrained pale blue. Materials/textures: immaculate layered silk, platinum seams, sculpted geometric folds, compact clean magical light. Identity: an independent named S-grade silhouette that still immediately reads as Silk Vestments; legendary workmanship, rich fittings, no readable markings. Use perfectly flat #00ff00 chroma background; no floor/shadow/gradient; one centered empty cuirass/vestment only; avoid text, readable runes, mannequin, person, body, duplicate, loadout, cast shadow, fog, smoke, blur, other clothing, weapons, and watermark.

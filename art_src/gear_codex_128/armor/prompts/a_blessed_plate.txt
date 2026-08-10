@@ -1,0 +1,6 @@
+Built-in ImageGen generation record — accepted, first pass
+Source: C:\Users\asali\.codex\generated_images\019fe478-f49b-7232-9d3b-d8f62123083f\exec-3fbe90f3-b483-4dc1-9b31-90a29c204e5a.png
+Stored chroma master: ../generated/a_blessed_plate.png; alpha: ../alpha/a_blessed_plate.png
+Alpha: remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill
+Review: accepted — one centered empty Blessed Plate cuirass, no wearer/body/floor/text/duplicates; alpha and 128px/32px QA passed. Rejections: none.
+Prompt: Shared contract ../../PROMPT_CONTRACT.md. One Blessed Plate: empty white-gold paladin cuirass with tall gorget, rounded pauldrons, ivory enamel breastplate, non-textual sunburst relief, and crimson tabard. Flat #00ff00 chroma background; avoid wearer, body, text, readable runes, duplicates, shadows, smoke, blur, UI, and watermark.

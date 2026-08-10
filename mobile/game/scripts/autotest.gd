@@ -975,6 +975,8 @@ func _run_systems() -> void:
 	# 3d17. Mob presence + identity traits (HP/dmg mults, self-heal,
 	# healer pulse, lunge, frenzy damage).
 	await _test_mob_traits()
+	await _test_single_idle_walk_strip()
+	await _test_mob_strip_anchor_consistency()
 
 	# 3d18. Environment asset seams (2026-07-18): ground PNG tilesets,
 	# composite structures + wall decals, animated scenery props.
@@ -4048,6 +4050,73 @@ func _test_mob_traits() -> void:
 	if not untagged.is_empty():
 		return _fail("untagged mobs (need a trait): %s" % ", ".join(untagged))
 	print("ok: mob mechanics (presence + pounce/web/channel/warded/bloat... all ch1-7 tagged)")
+
+
+## A one-frame idle must still enter and advance a multi-frame walk strip.
+## Quadrupeds use exactly this shape; omitting _strip_walk from enemy.gd's
+## locomotion gate left them permanently displaying their idle frame.
+func _test_single_idle_walk_strip() -> void:
+	var probe := Enemy.make(game, "wolf", game.player.global_position + Vector2(220, 0), 3)
+	game.add_enemy(probe)
+	probe.zone_idx = -1
+	probe.force_aggro = true
+	var walk_tex: Texture2D = probe._strip_walk.get("tex")
+	var saw_advanced_walk := false
+	for _i in 45:
+		await _frames(1)
+		if probe.sprite.texture == walk_tex and probe.sprite.frame > 0:
+			saw_advanced_walk = true
+			break
+	if is_instance_valid(probe):
+		probe.queue_free()
+	await _frames(2)
+	if not saw_advanced_walk:
+		return _fail("one-frame-idle wolf never advanced its walk strip")
+	print("ok: one-frame idle enters + advances quadruped walk strip")
+
+
+## Idle is the persistent body reference: changing canvas size or entering a
+## same-cell attack must not change the rendered ground point.
+func _test_mob_strip_anchor_consistency() -> void:
+	var probe := Enemy.make(game, "cinder_whelp",
+		game.player.global_position + Vector2(220, 0), 3)
+	game.add_enemy(probe)
+	probe.zone_idx = -1
+	var body_cell: float = probe._body_cell
+	var idle_feet := Enemy._strip_feet_y(probe.sprite.texture, body_cell)
+	var idle_ground := (idle_feet - body_cell / 2.0 + probe.sprite.offset.y) \
+		* probe.sprite.scale.y
+	probe._apply_strip(probe._strip_walk)
+	var walk_cell := float(probe.sprite.texture.get_height())
+	var walk_feet := Enemy._strip_feet_y(probe.sprite.texture, walk_cell)
+	var walk_ground := (walk_feet - walk_cell / 2.0 + probe.sprite.offset.y) \
+		* probe.sprite.scale.y
+	if absf(probe._body_cell - body_cell) > 0.01 or absf(walk_ground - idle_ground) > 0.05:
+		probe.queue_free()
+		return _fail("walk strip changed persistent body reference/ground anchor")
+	var attack := Art.action_info("stone_base", "attack")
+	probe._apply_strip(attack, true)
+	var attack_cell := float(probe.sprite.texture.get_height())
+	var attack_feet := Enemy._strip_feet_y(probe.sprite.texture, attack_cell)
+	var attack_ground := (attack_feet - attack_cell / 2.0 + probe.sprite.offset.y) \
+		* probe.sprite.scale.y
+	if absf(probe._body_cell - body_cell) > 0.01 or absf(attack_ground - idle_ground) > 0.05:
+		probe.queue_free()
+		return _fail("attack strip changed persistent body reference/ground anchor")
+	if Art.faces_left("stormcult"):
+		probe.queue_free()
+		return _fail("Choir Cantor native facing metadata is inverted")
+	if not Art.mob_flat_walk_locomotion("spider"):
+		probe.queue_free()
+		return _fail("Marsh Spider selected inconsistent small directional walk sheets")
+	var slag_idle := Art.anim_info("stone_broken")
+	var slag_walk := Art.walk_info("stone_broken")
+	if int(slag_idle.get("frames", 0)) != 1 or int(slag_walk.get("frames", 0)) != 4:
+		probe.queue_free()
+		return _fail("Slagbound Brute must use idle frame 0 and its former idle as 4f walk")
+	probe.queue_free()
+	await _frames(2)
+	print("ok: mob strip body scale + ground anchor persist across idle/walk/attack")
 
 
 ## Environment asset seams (2026-07-18): the three engine unlocks that let
