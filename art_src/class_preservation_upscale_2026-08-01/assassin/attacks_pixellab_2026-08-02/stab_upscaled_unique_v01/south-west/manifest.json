@@ -1,0 +1,9 @@
+{
+  "direction": "south-west",
+  "source_direction": "south-east",
+  "source_dir": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\south-east",
+  "transform": "lossless per-cell horizontal mirror",
+  "cell": 277,
+  "frames": 8,
+  "candidate_only": true
+}

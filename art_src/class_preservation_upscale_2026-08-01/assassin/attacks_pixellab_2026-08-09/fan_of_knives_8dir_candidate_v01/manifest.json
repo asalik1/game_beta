@@ -1,0 +1,18 @@
+{
+  "south": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_south_v02\\reference_edit_candidate\\south\\assassin_fan_of_knives_south_reference_edit_v01_candidate.png",
+  "east": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_pixellab_resize_v01_candidate.png",
+  "north": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_north_v02\\upscaled_resize\\north\\assassin_fan_of_knives_north_pixellab_resize_v01_candidate.png",
+  "mapping": {
+    "south": "unique south",
+    "south-east": "east copy",
+    "east": "unique east",
+    "north-east": "east copy",
+    "north": "unique north",
+    "north-west": "lossless east mirror",
+    "west": "lossless east mirror",
+    "south-west": "lossless east mirror"
+  },
+  "cell": 277,
+  "frames": 8,
+  "candidate_only": true
+}

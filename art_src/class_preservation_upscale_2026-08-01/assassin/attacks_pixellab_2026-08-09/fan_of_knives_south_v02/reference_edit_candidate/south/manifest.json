@@ -1,0 +1,19 @@
+{
+  "source_dir": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_south_v02\\reference_edit_outputs",
+  "opening_idle_source": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\idle_regen_2026-08-02\\south\\assassin_idle_s_regen_v01_candidate.png",
+  "timeline": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    4,
+    3,
+    2
+  ],
+  "timeline_note": "poses 4/3/2 are intentional reverse recovery frames; no padded duplicate endpoint",
+  "cell": 277,
+  "baseline": 255,
+  "target_body": 180,
+  "candidate_only": true
+}

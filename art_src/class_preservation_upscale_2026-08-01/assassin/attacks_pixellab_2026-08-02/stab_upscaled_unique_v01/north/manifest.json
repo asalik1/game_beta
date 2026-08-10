@@ -1,0 +1,251 @@
+{
+  "source_dir": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_raw_8dir_candidate_v01\\north",
+  "direction": "north",
+  "source_cell": 212,
+  "source_baseline": 156,
+  "target_body": 180,
+  "request_body": 183,
+  "seed": 20260816,
+  "frames": {
+    "8": {
+      "source_box": [
+        60,
+        53,
+        155,
+        156
+      ],
+      "crop_box": [
+        58,
+        51,
+        157,
+        158
+      ],
+      "target_size": [
+        176,
+        190
+      ],
+      "api_size": [
+        176,
+        190
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f08_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f08_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f08_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f08_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "2": {
+      "source_box": [
+        45,
+        53,
+        167,
+        156
+      ],
+      "crop_box": [
+        43,
+        51,
+        169,
+        158
+      ],
+      "target_size": [
+        224,
+        190
+      ],
+      "api_size": [
+        200,
+        190
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f02_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f02_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f02_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f02_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "1": {
+      "source_box": [
+        52,
+        53,
+        161,
+        156
+      ],
+      "crop_box": [
+        50,
+        51,
+        163,
+        158
+      ],
+      "target_size": [
+        201,
+        190
+      ],
+      "api_size": [
+        200,
+        190
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f01_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f01_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f01_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f01_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "6": {
+      "source_box": [
+        45,
+        53,
+        165,
+        156
+      ],
+      "crop_box": [
+        43,
+        51,
+        167,
+        158
+      ],
+      "target_size": [
+        220,
+        190
+      ],
+      "api_size": [
+        200,
+        190
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f06_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f06_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f06_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f06_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "5": {
+      "source_box": [
+        40,
+        53,
+        171,
+        156
+      ],
+      "crop_box": [
+        38,
+        51,
+        173,
+        158
+      ],
+      "target_size": [
+        240,
+        190
+      ],
+      "api_size": [
+        200,
+        190
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f05_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f05_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f05_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f05_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "4": {
+      "source_box": [
+        37,
+        55,
+        173,
+        156
+      ],
+      "crop_box": [
+        35,
+        53,
+        175,
+        158
+      ],
+      "target_size": [
+        249,
+        187
+      ],
+      "api_size": [
+        200,
+        163
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f04_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f04_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f04_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f04_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "3": {
+      "source_box": [
+        40,
+        53,
+        170,
+        156
+      ],
+      "crop_box": [
+        38,
+        51,
+        172,
+        158
+      ],
+      "target_size": [
+        238,
+        190
+      ],
+      "api_size": [
+        200,
+        166
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f03_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f03_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f03_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f03_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "7": {
+      "source_box": [
+        53,
+        53,
+        161,
+        156
+      ],
+      "crop_box": [
+        51,
+        51,
+        163,
+        158
+      ],
+      "target_size": [
+        199,
+        190
+      ],
+      "api_size": [
+        152,
+        145
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f07_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f07_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f07_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-02\\stab_upscaled_unique_v01\\north\\assassin_stab_north_f07_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    }
+  }
+}

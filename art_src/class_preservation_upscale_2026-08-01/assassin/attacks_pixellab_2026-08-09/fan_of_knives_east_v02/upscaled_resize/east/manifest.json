@@ -1,0 +1,251 @@
+{
+  "source_dir": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\selected_8_animated",
+  "direction": "east",
+  "source_cell": 212,
+  "source_baseline": 159,
+  "target_body": 180,
+  "request_body": 183,
+  "seed": 20260850,
+  "frames": {
+    "1": {
+      "source_box": [
+        76,
+        53,
+        146,
+        159
+      ],
+      "crop_box": [
+        74,
+        51,
+        148,
+        161
+      ],
+      "target_size": [
+        128,
+        190
+      ],
+      "api_size": [
+        112,
+        166
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f01_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f01_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f01_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f01_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "3": {
+      "source_box": [
+        61,
+        53,
+        161,
+        159
+      ],
+      "crop_box": [
+        59,
+        51,
+        163,
+        161
+      ],
+      "target_size": [
+        180,
+        190
+      ],
+      "api_size": [
+        157,
+        166
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f03_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f03_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f03_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f03_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "8": {
+      "source_box": [
+        57,
+        54,
+        171,
+        159
+      ],
+      "crop_box": [
+        55,
+        52,
+        173,
+        161
+      ],
+      "target_size": [
+        204,
+        188
+      ],
+      "api_size": [
+        178,
+        165
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f08_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f08_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f08_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f08_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "2": {
+      "source_box": [
+        77,
+        52,
+        151,
+        159
+      ],
+      "crop_box": [
+        75,
+        50,
+        153,
+        161
+      ],
+      "target_size": [
+        135,
+        192
+      ],
+      "api_size": [
+        118,
+        168
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f02_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f02_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f02_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f02_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "6": {
+      "source_box": [
+        34,
+        57,
+        175,
+        159
+      ],
+      "crop_box": [
+        32,
+        55,
+        177,
+        161
+      ],
+      "target_size": [
+        250,
+        183
+      ],
+      "api_size": [
+        200,
+        160
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f06_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f06_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f06_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f06_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "7": {
+      "source_box": [
+        36,
+        56,
+        175,
+        159
+      ],
+      "crop_box": [
+        34,
+        54,
+        177,
+        161
+      ],
+      "target_size": [
+        247,
+        185
+      ],
+      "api_size": [
+        200,
+        162
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f07_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f07_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f07_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f07_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "5": {
+      "source_box": [
+        37,
+        57,
+        175,
+        159
+      ],
+      "crop_box": [
+        35,
+        55,
+        177,
+        161
+      ],
+      "target_size": [
+        245,
+        183
+      ],
+      "api_size": [
+        200,
+        160
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f05_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f05_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f05_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f05_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "4": {
+      "source_box": [
+        49,
+        56,
+        169,
+        159
+      ],
+      "crop_box": [
+        47,
+        54,
+        171,
+        161
+      ],
+      "target_size": [
+        214,
+        185
+      ],
+      "api_size": [
+        164,
+        141
+      ],
+      "input": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f04_input.png",
+      "api_output": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f04_pixellab_api.png",
+      "resized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f04_pixellab_resize.png",
+      "normalized": "art_src\\class_preservation_upscale_2026-08-01\\assassin\\attacks_pixellab_2026-08-09\\fan_of_knives_east_v02\\upscaled_resize\\east\\assassin_fan_of_knives_east_f04_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    }
+  }
+}

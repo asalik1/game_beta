@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import base64
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import io
 import json
 import os
@@ -63,8 +64,13 @@ def _palette_image(images: list[Image.Image]) -> Image.Image:
     return palette
 
 
-def _post(token: str, request_body: dict[str, object]) -> dict[str, object]:
-    for attempt in range(1, 4):
+def _post(
+    token: str,
+    request_body: dict[str, object],
+    timeout_seconds: int,
+    max_attempts: int,
+) -> dict[str, object]:
+    for attempt in range(1, max_attempts + 1):
         request = urllib.request.Request(
             ENDPOINT,
             data=json.dumps(request_body).encode("utf-8"),
@@ -75,22 +81,28 @@ def _post(token: str, request_body: dict[str, object]) -> dict[str, object]:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=300) as response:
+            with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             detail = error.read().decode("utf-8", errors="replace")
-            if error.code not in {502, 503, 504} or attempt == 3:
+            if error.code not in {502, 503, 504} or attempt == max_attempts:
                 raise RuntimeError(
                     f"PixelLab resize HTTP {error.code}: {detail}"
                 ) from error
-            print(f"PixelLab resize HTTP {error.code}; retry {attempt}/3")
+            print(
+                f"PixelLab resize HTTP {error.code}; "
+                f"retry {attempt}/{max_attempts}"
+            )
             time.sleep(attempt * 2)
         except (TimeoutError, urllib.error.URLError) as error:
-            if attempt == 3:
+            if attempt == max_attempts:
                 raise RuntimeError(
                     f"PixelLab resize network failure after {attempt} attempts: {error}"
                 ) from error
-            print(f"PixelLab resize network timeout; retry {attempt}/3")
+            print(
+                f"PixelLab resize network timeout; "
+                f"retry {attempt}/{max_attempts}"
+            )
             time.sleep(attempt * 2)
     raise AssertionError("unreachable")
 
@@ -112,6 +124,11 @@ def main() -> None:
     parser.add_argument("output_dir", type=Path)
     parser.add_argument("--direction", required=True)
     parser.add_argument(
+        "--clip-name",
+        default="stab",
+        help="filename/QA motion name (for example stab or fan_of_knives)",
+    )
+    parser.add_argument(
         "--palette-dir",
         type=Path,
         required=True,
@@ -124,6 +141,33 @@ def main() -> None:
     )
     parser.add_argument("--seed", type=int, default=20260802)
     parser.add_argument("--request-body", type=int, default=DEFAULT_REQUEST_BODY)
+    parser.add_argument(
+        "--api-body",
+        type=int,
+        default=None,
+        help=(
+            "optional smaller body size submitted to PixelLab; the returned pixels "
+            "are restored to --request-body geometry before normalization"
+        ),
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=300,
+        help="per-attempt PixelLab request timeout in seconds",
+    )
+    parser.add_argument(
+        "--attempts",
+        type=int,
+        default=3,
+        help="maximum attempts for a transient PixelLab request failure",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="parallel PixelLab frame requests within this one direction",
+    )
     parser.add_argument("--assemble-only", action="store_true")
     args = parser.parse_args()
 
@@ -139,6 +183,7 @@ def main() -> None:
     source_baseline = max(box[3] for box in resolved)
     reference_height = resolved[0][3] - resolved[0][1]
     scale = args.request_body / float(reference_height)
+    api_scale = (args.api_body or args.request_body) / float(reference_height)
 
     palette_sources = [
         Image.open(path).convert("RGBA")
@@ -154,6 +199,14 @@ def main() -> None:
     )
     if any(number < 1 or number > FRAMES for number in requested):
         raise ValueError(f"frame selection outside 1..{FRAMES}: {requested}")
+    if args.workers < 1 or args.workers > FRAMES:
+        raise ValueError(f"workers must be within 1..{FRAMES}: {args.workers}")
+    if args.timeout < 1:
+        raise ValueError(f"timeout must be positive: {args.timeout}")
+    if args.attempts < 1:
+        raise ValueError(f"attempts must be positive: {args.attempts}")
+    if args.api_body is not None and args.api_body < 1:
+        raise ValueError(f"api-body must be positive: {args.api_body}")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     palette.save(args.output_dir / "assassin_canonical_palette.png")
@@ -184,7 +237,7 @@ def main() -> None:
         "or add effects. Transparent background."
     )
 
-    for number in requested:
+    def process_frame(number: int) -> tuple[int, dict[str, object], str]:
         frame = frames[number - 1]
         box = resolved[number - 1]
         crop_box = (
@@ -198,16 +251,27 @@ def main() -> None:
             round(crop.width * scale),
             round(crop.height * scale),
         )
-        if max(target_size) > 256:
-            raise ValueError(f"PixelLab Resize target exceeds 256px: {target_size}")
+        if max(target_size) > RUNTIME_CELL:
+            raise ValueError(
+                f"restored attack silhouette exceeds {RUNTIME_CELL}px cell: "
+                f"{target_size}"
+            )
         # /v2/resize hard-limits each requested edge to 200 px.  Preserve the
         # source-derived final geometry by letting PixelLab redraw at the
         # largest accepted size and only then restoring a capped edge with
         # nearest-neighbour sampling.  This keeps the 180 px body scale and
         # does not ask the model to shorten wide attack weapons.
-        api_size = (min(target_size[0], 200), min(target_size[1], 200))
+        requested_api_size = (
+            round(crop.width * api_scale),
+            round(crop.height * api_scale),
+        )
+        api_size = (
+            min(requested_api_size[0], 200),
+            min(requested_api_size[1], 200),
+        )
 
-        crop_path = args.output_dir / f"assassin_stab_{args.direction}_f{number:02d}_input.png"
+        prefix = f"assassin_{args.clip_name}_{args.direction}"
+        crop_path = args.output_dir / f"{prefix}_f{number:02d}_input.png"
         crop.save(crop_path)
         image_payload = {"type": "base64", "base64": _png_b64(crop), "format": "png"}
         request_body: dict[str, object] = {
@@ -221,25 +285,25 @@ def main() -> None:
             "color_image": palette_payload,
             "seed": args.seed,
         }
-        response = _post(token, request_body)
+        response = _post(token, request_body, args.timeout, args.attempts)
         resized = _decode_image(response)
         if resized.size != api_size:
             raise ValueError(f"frame {number} returned {resized.size}, expected {api_size}")
-        api_path = args.output_dir / f"assassin_stab_{args.direction}_f{number:02d}_pixellab_api.png"
+        api_path = args.output_dir / f"{prefix}_f{number:02d}_pixellab_api.png"
         resized.save(api_path)
         if api_size != target_size:
             resized = resized.resize(target_size, Image.Resampling.NEAREST)
-        tight_path = args.output_dir / f"assassin_stab_{args.direction}_f{number:02d}_pixellab_resize.png"
+        tight_path = args.output_dir / f"{prefix}_f{number:02d}_pixellab_resize.png"
         resized.save(tight_path)
 
         runtime = Image.new("RGBA", (RUNTIME_CELL, RUNTIME_CELL), (0, 0, 0, 0))
         paste_x = RUNTIME_CELL // 2 + round((crop_box[0] - SOURCE_CELL // 2) * scale)
         paste_y = RUNTIME_BASELINE + round((crop_box[1] - source_baseline) * scale)
         runtime.alpha_composite(resized, (paste_x, paste_y))
-        normalized_path = args.output_dir / f"assassin_stab_{args.direction}_f{number:02d}_normalized.png"
+        normalized_path = args.output_dir / f"{prefix}_f{number:02d}_normalized.png"
         runtime.save(normalized_path)
 
-        manifest["frames"][str(number)] = {
+        record: dict[str, object] = {
             "source_box": box,
             "crop_box": crop_box,
             "target_size": target_size,
@@ -250,19 +314,47 @@ def main() -> None:
             "normalized": str(normalized_path),
             "usage": response.get("usage", {}),
         }
-        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-        print(
+        message = (
             f"frame {number}: PixelLab {crop.size} -> {api_size}; "
             f"normalized geometry={target_size}; usage={response.get('usage', {})}"
         )
+        return number, record, message
+
+    if requested:
+        # PixelLab's legacy resize endpoint can take several minutes for one
+        # frame. Requests are independent because every frame has its own
+        # immutable crop, palette, seed and output filenames; collect results
+        # on the main thread so manifest writes remain atomic and race-free.
+        with ThreadPoolExecutor(max_workers=min(args.workers, len(requested))) as pool:
+            futures = {pool.submit(process_frame, number): number for number in requested}
+            failures: list[tuple[int, BaseException]] = []
+            for future in as_completed(futures):
+                submitted_number = futures[future]
+                try:
+                    number, record, message = future.result()
+                except BaseException as error:
+                    failures.append((submitted_number, error))
+                    print(f"frame {submitted_number}: FAILED: {error}", flush=True)
+                    continue
+                manifest["frames"][str(number)] = record
+                manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+                print(message, flush=True)
+            if failures:
+                summary = "; ".join(
+                    f"frame {number}: {error}" for number, error in failures
+                )
+                raise RuntimeError(f"PixelLab resize frame failures: {summary}")
 
     normalized_paths = [
-        args.output_dir / f"assassin_stab_{args.direction}_f{number:02d}_normalized.png"
+        args.output_dir
+        / f"assassin_{args.clip_name}_{args.direction}_f{number:02d}_normalized.png"
         for number in range(1, FRAMES + 1)
     ]
     if all(path.exists() for path in normalized_paths):
         normalized = [Image.open(path).convert("RGBA") for path in normalized_paths]
-        stem = f"assassin_stab_{args.direction}_pixellab_resize_v01"
+        stem = (
+            f"assassin_{args.clip_name}_{args.direction}_pixellab_resize_v01"
+        )
         strip = Image.new("RGBA", (RUNTIME_CELL * FRAMES, RUNTIME_CELL), (0, 0, 0, 0))
         for index, frame in enumerate(normalized):
             strip.alpha_composite(frame, (index * RUNTIME_CELL, 0))
@@ -270,7 +362,8 @@ def main() -> None:
         _write_qa(
             args.output_dir,
             stem,
-            f"Assassin Stab {args.direction.title()} - PixelLab Resize",
+            f"Assassin {args.clip_name.replace('_', ' ').title()} "
+            f"{args.direction.title()} - PixelLab Resize",
             normalized,
             fps=12.0,
             opposite_contact=5,
