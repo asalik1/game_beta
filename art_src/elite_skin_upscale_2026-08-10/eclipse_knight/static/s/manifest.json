@@ -1,0 +1,58 @@
+{
+  "skin": "eclipse_knight",
+  "label": "Eclipse Knight",
+  "clip": "static",
+  "direction": "s",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\paladin_eclipse_knight.png",
+  "source_sha256": "4b83c8083be27636f02733ee2fa0f609f57b4e9047e2a3d18b66f2ca0b8e4234",
+  "source_cell": 252,
+  "source_baseline": 187,
+  "target_body": 180,
+  "scale": 1.4634146341463414,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        65,
+        64,
+        188,
+        187
+      ],
+      "crop_box": [
+        63,
+        62,
+        190,
+        189
+      ],
+      "target_size": [
+        186,
+        186
+      ],
+      "api_size": [
+        186,
+        186
+      ],
+      "paste": [
+        84,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\static\\s\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\static\\s\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\static\\s\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9499,
+      "output_box": [
+        87,
+        146,
+        267,
+        326
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

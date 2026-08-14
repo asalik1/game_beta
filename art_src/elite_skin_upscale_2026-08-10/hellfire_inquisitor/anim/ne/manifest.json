@@ -1,0 +1,304 @@
+{
+  "skin": "hellfire_inquisitor",
+  "label": "Hellfire Inquisitor",
+  "clip": "anim",
+  "direction": "ne",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\warlock_hellfire_inquisitor_anim_ne.png",
+  "source_sha256": "91405ea86c8c24eaaecb69f56d68507bbbe9a659b0de68d9e2df4afa2d9ee4d5",
+  "source_cell": 210,
+  "source_baseline": 183,
+  "target_body": 180,
+  "scale": 1.4516129032258065,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        59,
+        58,
+        135,
+        183
+      ],
+      "crop_box": [
+        57,
+        56,
+        137,
+        185
+      ],
+      "target_size": [
+        116,
+        187
+      ],
+      "api_size": [
+        116,
+        187
+      ],
+      "paste": [
+        106,
+        142
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.933,
+      "output_box": [
+        109,
+        145,
+        219,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "2": {
+      "source_box": [
+        63,
+        56,
+        136,
+        183
+      ],
+      "crop_box": [
+        61,
+        54,
+        138,
+        185
+      ],
+      "target_size": [
+        112,
+        190
+      ],
+      "api_size": [
+        112,
+        190
+      ],
+      "paste": [
+        112,
+        139
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_002_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_002_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_002_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.8868,
+      "output_box": [
+        115,
+        142,
+        221,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "3": {
+      "source_box": [
+        66,
+        54,
+        137,
+        182
+      ],
+      "crop_box": [
+        64,
+        52,
+        139,
+        184
+      ],
+      "target_size": [
+        109,
+        192
+      ],
+      "api_size": [
+        109,
+        192
+      ],
+      "paste": [
+        116,
+        136
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_003_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_003_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_003_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9191,
+      "output_box": [
+        118,
+        139,
+        222,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "4": {
+      "source_box": [
+        69,
+        51,
+        137,
+        182
+      ],
+      "crop_box": [
+        67,
+        49,
+        139,
+        184
+      ],
+      "target_size": [
+        105,
+        196
+      ],
+      "api_size": [
+        105,
+        196
+      ],
+      "paste": [
+        121,
+        131
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_004_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_004_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_004_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9142,
+      "output_box": [
+        124,
+        134,
+        223,
+        325
+      ],
+      "preserved_regions": 0
+    },
+    "5": {
+      "source_box": [
+        70,
+        53,
+        137,
+        182
+      ],
+      "crop_box": [
+        68,
+        51,
+        139,
+        184
+      ],
+      "target_size": [
+        103,
+        193
+      ],
+      "api_size": [
+        103,
+        193
+      ],
+      "paste": [
+        122,
+        134
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_005_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_005_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_005_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9002,
+      "output_box": [
+        125,
+        137,
+        222,
+        324
+      ],
+      "preserved_regions": 0
+    },
+    "6": {
+      "source_box": [
+        70,
+        48,
+        137,
+        182
+      ],
+      "crop_box": [
+        68,
+        46,
+        139,
+        184
+      ],
+      "target_size": [
+        103,
+        200
+      ],
+      "api_size": [
+        103,
+        200
+      ],
+      "paste": [
+        122,
+        127
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_006_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_006_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_006_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9112,
+      "output_box": [
+        125,
+        130,
+        222,
+        325
+      ],
+      "preserved_regions": 0
+    },
+    "7": {
+      "source_box": [
+        68,
+        59,
+        137,
+        182
+      ],
+      "crop_box": [
+        66,
+        57,
+        139,
+        184
+      ],
+      "target_size": [
+        106,
+        184
+      ],
+      "api_size": [
+        106,
+        184
+      ],
+      "paste": [
+        119,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_007_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_007_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\anim\\ne\\frame_007_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9203,
+      "output_box": [
+        122,
+        146,
+        222,
+        324
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

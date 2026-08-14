@@ -19,6 +19,42 @@ the checks that are otherwise scattered snippets in tools/art/README.md
   IMPORT     source md5 vs Godot's import sidecar -- catches "installed the
              PNG, forgot --import" (headless then uses STALE art). -> FAIL
 
+Content-geometry gates (2026-08-13, built from the owner's mob QA pass:
+the sheets TILED perfectly yet mobs slid, shrank, ghosted and lost limbs --
+all defects INSIDE the cells, invisible to the tiling check):
+
+  ANCHOR     locomotion strips (anim/walk; cx also on run): the figure's
+             centroid / feet line / bbox height wanders across frames.
+             The engine draws every cell on one fixed anchor, so in-cell
+             drift IS the on-screen slide ("assembled off the frame grid",
+             repair: tools/art/recenter_strip.py).             -> WARN
+  GHOST      a frame whose content splits into vertically disjoint bands --
+             a stray chunk of another pose baked into the cell (the Frozen
+             Guard "second frame below his feet").              -> WARN
+  EDGECUT    content within 1px of a cell's left/right boundary -- limbs
+             clipped at the frame cut, or bleed from the neighbour cell
+             ("part of hands get cut off").                     -> WARN
+  CLIPSCALE  clip's median body height, normalized the way the engine
+             scales it (actions + MOB_BODY_SCALE_WALK walks ride the idle
+             cell, plain locomotion its own cell), vs the idle strip's.
+             Catches "turns smaller in walk/attack".            -> WARN
+
+Content gates are judged lints, WARN by design: squash-stretch blobs,
+fliers/hoppers and flame-type creatures trip ANCHOR/GHOST legitimately,
+and one-shot swing arcs deform legitimately (which is why attack strips
+are exempt from the drift checks -- a broken swing and a good lunge are
+indistinguishable by bbox stats; that class stays a human review via
+anim_sheet.py). Calibrated 2026-08-13 over all 1,978 body-clip strips so
+the owner's QA complaints trip while reviewed hero/skin kits stay quiet.
+
+Boss ability strips (<base>_ability / dedicated action names like
+auroch_minotaur_slam) are swept into the base's family -- the action
+vocabulary is parsed live from play_action("...") in boss.gd/enemy.gd, so
+new abilities join automatically. They get every file check (GEOMETRY/
+BLEED/IMPORT/DIR8; before 2026-08-13 they were invisible to this tool)
+and the ACTION-class content gates (GHOST/EDGECUT/CLIPSCALE, no drift).
+Cast-type abilities may GHOST on detached spell fx -- judge those by eye.
+
 Intentional coverage gaps are NOT flagged: static idles, kit-matched clip
 subsets and flat single-facing death strips are design decisions -- this
 tool only judges the files that exist.
@@ -47,16 +83,117 @@ DIR8 = ("s", "se", "e", "ne", "n", "nw", "w", "sw")
 CLIPS = ("anim", "walk", "run", "attack", "attack2", "cast", "dash", "ult",
          "ultidle", "death", "stab", "throw", "dir")
 
+# Content-geometry gates (see module docstring). Thresholds calibrated
+# 2026-08-13 against the owner's mob QA pass over the full sprites corpus.
+BODY_GATE_CLIPS = ("anim", "walk", "run", "attack", "attack2")
+LOCO_CLIPS = ("anim", "walk", "run")
+
+# Boss ability strips (<base>_<action>[_<dir>].png, engine seam
+# Art.action_info / enemy _apply_strip is_action=true). The action
+# vocabulary is parsed live from play_action("...") literals in boss.gd +
+# enemy.gd -- self-maintaining, like the MOB_BODY_SCALE_WALK parse -- plus
+# the generic "ability" fallback strip every boss ships. Tokens already in
+# CLIPS (cast/stab/throw/...) keep their existing treatment; ability strips
+# are swept into the base's family and content-gated as ACTION clips
+# (GHOST/EDGECUT/CLIPSCALE, no drift gates -- one-shot motions legitimately
+# shift mass).
+_ability_tokens_cache: set | None = None
+
+
+def ability_tokens() -> set:
+    global _ability_tokens_cache
+    if _ability_tokens_cache is None:
+        names = {"ability"}
+        for script in ("boss.gd", "enemy.gd"):
+            try:
+                txt = (GAME / "scripts" / script).read_text(errors="replace")
+                names |= set(re.findall(r'play_action\("(\w+)"', txt))
+            except OSError:
+                pass
+        _ability_tokens_cache = names - set(CLIPS)
+    return _ability_tokens_cache
+A_SOLID = 8            # alpha above this counts as body content
+ANCHOR_CX = 0.08       # centroid-x drift, fraction of frame width (anim/walk)
+ANCHOR_CX_RUN = 0.10   # runs sway more legitimately (airborne stride)
+ANCHOR_CY = 0.08       # centroid-y drift, fraction of cell height
+ANCHOR_FEET = 0.07     # lowest-opaque-row drift (the engine's anchor line)
+ANCHOR_H = 0.12        # bbox-height drift within a locomotion strip
+GHOST_GAP = 0.06       # vertical content gap, fraction of cell height
+# Clip body height vs idle reference. Actions tolerate more: crouch/lunge
+# frames legitimately pull an attack's median (reviewed paladin 0.84, wolf
+# pounce 0.85); the defect band below 0.82 (cultist 0.80) stays caught, and
+# 0.82-0.88 defects carry EDGECUT/GHOST signatures instead. Runs are exempt
+# outright -- a sprint lean is legitimately shorter (archer run 0.74-0.78).
+SCALE_LO_LOCO, SCALE_LO_ACTION, SCALE_HI = 0.88, 0.82, 1.18
+
 FAIL, WARN = [], []
+
+# stem-keyed per-strip stats collected by check_file, consumed by
+# check_clip_scale once a base's whole family has been measured.
+_strip_stats: dict[str, dict] = {}
+
+
+def _clip_of(stem: str) -> str | None:
+    """walk for goblin_walk_ne, slam for auroch_minotaur_slam_e;
+    None for goblin_death / plain goblin."""
+    parts = stem.split("_")
+    if parts[-1] in DIR8:
+        parts = parts[:-1]
+    if len(parts) >= 2 and (parts[-1] in BODY_GATE_CLIPS
+                            or parts[-1] in ability_tokens()):
+        return parts[-1]
+    return None
+
+
+_body_scale_walk_cache: set | None = None
+
+
+def body_scale_walk_keys() -> set:
+    """Mobs whose walk rides the idle cell (art.gd MOB_BODY_SCALE_WALK)."""
+    global _body_scale_walk_cache
+    if _body_scale_walk_cache is None:
+        try:
+            txt = (GAME / "scripts" / "art.gd").read_text(errors="replace")
+            m = re.search(r"MOB_BODY_SCALE_WALK\s*:?=\s*\{(.*?)\}", txt, re.S)
+            _body_scale_walk_cache = set(re.findall(r'"(\w+)"\s*:', m.group(1))) if m else set()
+        except OSError:
+            _body_scale_walk_cache = set()
+    return _body_scale_walk_cache
+
+
+def _frame_metrics(a: np.ndarray, frame_width: int) -> list[dict | None]:
+    """Per-cell body stats for a horizontal strip's alpha channel."""
+    h = a.shape[0]
+    out: list[dict | None] = []
+    for i in range(a.shape[1] // frame_width):
+        region = a[:, i * frame_width:(i + 1) * frame_width]
+        ys, xs = np.where(region > A_SOLID)
+        if len(xs) == 0:
+            out.append(None)
+            continue
+        occupied = np.unique(ys)
+        gaps = np.diff(occupied)
+        out.append({
+            "bh": int(ys.max() - ys.min() + 1),
+            "cx": float(xs.mean()), "cy": float(ys.mean()),
+            "feet": int(ys.max()),
+            "left": bool((xs <= 0).any()),
+            "right": bool((xs >= frame_width - 1).any()),
+            "vgap": int(gaps.max()) - 1 if len(gaps) else 0,
+        })
+    return out
 
 
 def belongs(stem: str, base: str) -> bool:
-    """warrior_attack2_ne belongs to warrior; warrior_captain_anim does not."""
+    """warrior_attack2_ne belongs to warrior; warrior_captain_anim does not.
+    Boss ability strips (nullwarden_ability_ne, auroch_minotaur_slam) belong
+    via the parsed play_action vocabulary."""
     if stem == base:
         return True
     if not stem.startswith(base + "_"):
         return False
-    return all(t in CLIPS or t in DIR8 for t in stem[len(base) + 1:].split("_"))
+    ok = set(CLIPS) | set(DIR8) | ability_tokens()
+    return all(t in ok for t in stem[len(base) + 1:].split("_"))
 
 
 def check_import(png: Path) -> None:
@@ -139,12 +276,99 @@ def check_file(png: Path) -> None:
                         "likely mixed-source shrink/cut"
                     )
 
+    # ---- content-geometry gates (module docstring) --------------------
+    clip = _clip_of(stem)
+    in_fx = png.parent.name == "fx"
+    if clip and not in_fx and not is_ground_room \
+            and frame_width > 0 and w % frame_width == 0:
+        metrics = _frame_metrics(a, frame_width)
+        live = [m for m in metrics if m]
+        if live:
+            _strip_stats[str(png.parent / stem)] = {
+                "clip": clip, "cell": h,
+                "med_h": float(np.median([m["bh"] for m in live])),
+            }
+        if len(live) >= 2:
+            if clip in LOCO_CLIPS:
+                drift = []
+                cx_span = (max(m["cx"] for m in live) - min(m["cx"] for m in live)) / frame_width
+                cx_lim = ANCHOR_CX_RUN if clip == "run" else ANCHOR_CX
+                if cx_span >= cx_lim:
+                    drift.append(f"centroid-x {cx_span:.0%}")
+                if clip != "run":
+                    cy_span = (max(m["cy"] for m in live) - min(m["cy"] for m in live)) / h
+                    feet_span = (max(m["feet"] for m in live) - min(m["feet"] for m in live)) / h
+                    h_span = (max(m["bh"] for m in live) - min(m["bh"] for m in live)) \
+                        / max(m["bh"] for m in live)
+                    if cy_span >= ANCHOR_CY:
+                        drift.append(f"centroid-y {cy_span:.0%}")
+                    if feet_span >= ANCHOR_FEET:
+                        drift.append(f"feet line {feet_span:.0%}")
+                    if h_span >= ANCHOR_H:
+                        drift.append(f"body height {h_span:.0%}")
+                if drift:
+                    WARN.append(f"[ANCHOR] {rel}: figure wanders inside its cells "
+                                f"({', '.join(drift)} of cell) -- plays as an on-screen "
+                                "slide/wobble; off-grid assembly, repair: "
+                                "tools/art/recenter_strip.py")
+            ghost_frames = [
+                (i + 1, m["vgap"]) for i, m in enumerate(metrics)
+                if m and m["vgap"] >= max(4.0, GHOST_GAP * h)]
+            if ghost_frames:
+                gtxt = ", ".join(f"f{i} ({g}px gap)" for i, g in ghost_frames)
+                WARN.append(f"[GHOST] {rel}: {gtxt} -- content splits into vertically "
+                            "disjoint bands; stray chunk of another pose in the cell "
+                            "(legit only for fliers/flames/detached fx)")
+            cut = [i + 1 for i, m in enumerate(metrics) if m and (m["left"] or m["right"])]
+            if cut:
+                WARN.append(f"[EDGECUT] {rel}: f{cut} content touches a left/right cell "
+                            "edge -- limb clipped at the frame cut, or bleed from the "
+                            "neighbour cell")
+
     semi = int(((a > 0) & (a < 255)).sum())
     if semi:
         WARN.append(f"[BLEED] {rel}: {semi} semi-transparent pixel(s) -- extracted sprites must "
                     "be 0 (green-bleed); small counts on generated art may be benign AA")
 
     check_import(png)
+
+
+def check_clip_scale(files: list[Path]) -> None:
+    """Cross-clip: each clip's median body height vs the idle strip's, both
+    normalized the way the engine scales them (enemy _apply_strip: actions and
+    MOB_BODY_SCALE_WALK walks ride the idle cell, plain locomotion its own).
+    The idle STRIP is the reference -- it is what the owner accepted on
+    screen; statics are not rendered once an anim exists."""
+    scale_walk = body_scale_walk_keys()
+    for png in files:
+        key = str(png.parent / png.stem)
+        stat = _strip_stats.get(key)
+        if stat is None or stat["clip"] in ("anim", "run"):
+            continue
+        parts = png.stem.split("_")
+        d = parts[-1] if parts[-1] in DIR8 else None
+        core = parts[:-1] if d else parts
+        base = "_".join(core[:-1])
+        ref = None
+        candidates = ([f"{base}_anim_{d}"] if d else []) + [f"{base}_anim", f"{base}_anim_s"]
+        for cand in candidates:
+            ref = _strip_stats.get(str(png.parent / cand))
+            if ref:
+                break
+        if not ref or ref["med_h"] <= 0 or ref["cell"] <= 0:
+            continue
+        is_action = stat["clip"] in ("attack", "attack2") \
+            or stat["clip"] in ability_tokens()
+        action_like = is_action or (stat["clip"] == "walk" and base in scale_walk)
+        denom = ref["cell"] if action_like else stat["cell"]
+        ratio = (stat["med_h"] / denom) / (ref["med_h"] / ref["cell"])
+        lo = SCALE_LO_ACTION if is_action else SCALE_LO_LOCO
+        if ratio < lo or ratio > SCALE_HI:
+            WARN.append(f"[CLIPSCALE] {png.relative_to(SPRITES)}: renders at "
+                        f"{ratio:.2f}x the idle body height "
+                        f"(clip {stat['med_h']:.0f}px/{denom}, idle "
+                        f"{ref['med_h']:.0f}px/{ref['cell']}) -- clip plays "
+                        "smaller/larger than the body")
 
 
 def check_dir_sets(files: list[Path]) -> None:
@@ -184,6 +408,7 @@ def main() -> int:
         print(f"{base}: {len(mine)} file(s)")
         for p in mine:
             check_file(p)
+        check_clip_scale(mine)
         check_dir_sets(mine)
 
     for f in FAIL:

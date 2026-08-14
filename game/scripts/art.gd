@@ -3125,8 +3125,8 @@ static func _make_reticle() -> Image:
 ## base key here when it looks the wrong way; the _anim/_walk strips inherit it
 ## since facing is resolved on the base name.
 const FACES_RIGHT := {
-	"zombie": true, "zombie_brute": true, "zombie_overweight": true,
-	"stormcult": true,
+    "zombie_brute": true, "zombie_overweight": true,
+    "stormcult": true,
 }
 
 ## Does this sprite's art natively face LEFT? The Crawl-tileset override

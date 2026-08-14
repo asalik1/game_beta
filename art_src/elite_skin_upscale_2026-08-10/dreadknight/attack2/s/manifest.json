@@ -1,0 +1,304 @@
+{
+  "skin": "dreadknight",
+  "label": "Dreadknight",
+  "clip": "attack2",
+  "direction": "s",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\warrior_dreadknight_attack2_s.png",
+  "source_sha256": "ad82ab60b4ee2dc097cdaead67120d09821f9caa326e0df25c2e2c9ed1735669",
+  "source_cell": 207,
+  "source_baseline": 166,
+  "target_body": 180,
+  "scale": 1.5,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        44,
+        46,
+        160,
+        166
+      ],
+      "crop_box": [
+        42,
+        44,
+        162,
+        168
+      ],
+      "target_size": [
+        180,
+        186
+      ],
+      "api_size": [
+        180,
+        186
+      ],
+      "paste": [
+        84,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9984,
+      "output_box": [
+        87,
+        146,
+        261,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "2": {
+      "source_box": [
+        40,
+        46,
+        163,
+        166
+      ],
+      "crop_box": [
+        38,
+        44,
+        165,
+        168
+      ],
+      "target_size": [
+        190,
+        186
+      ],
+      "api_size": [
+        190,
+        186
+      ],
+      "paste": [
+        78,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_002_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_002_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_002_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9941,
+      "output_box": [
+        81,
+        146,
+        265,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "3": {
+      "source_box": [
+        36,
+        46,
+        165,
+        166
+      ],
+      "crop_box": [
+        34,
+        44,
+        167,
+        168
+      ],
+      "target_size": [
+        200,
+        186
+      ],
+      "api_size": [
+        200,
+        186
+      ],
+      "paste": [
+        72,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_003_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_003_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_003_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9945,
+      "output_box": [
+        75,
+        146,
+        269,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "4": {
+      "source_box": [
+        32,
+        46,
+        170,
+        166
+      ],
+      "crop_box": [
+        30,
+        44,
+        172,
+        168
+      ],
+      "target_size": [
+        213,
+        186
+      ],
+      "api_size": [
+        200,
+        175
+      ],
+      "paste": [
+        66,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_004_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_004_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_004_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9522,
+      "output_box": [
+        69,
+        146,
+        276,
+        327
+      ],
+      "preserved_regions": 0
+    },
+    "5": {
+      "source_box": [
+        29,
+        46,
+        165,
+        166
+      ],
+      "crop_box": [
+        27,
+        44,
+        167,
+        168
+      ],
+      "target_size": [
+        210,
+        186
+      ],
+      "api_size": [
+        200,
+        177
+      ],
+      "paste": [
+        62,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_005_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_005_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_005_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.7635,
+      "output_box": [
+        65,
+        146,
+        269,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "6": {
+      "source_box": [
+        28,
+        46,
+        165,
+        166
+      ],
+      "crop_box": [
+        26,
+        44,
+        167,
+        168
+      ],
+      "target_size": [
+        212,
+        186
+      ],
+      "api_size": [
+        200,
+        175
+      ],
+      "paste": [
+        60,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_006_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_006_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_006_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.7627,
+      "output_box": [
+        63,
+        146,
+        270,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "7": {
+      "source_box": [
+        26,
+        46,
+        164,
+        166
+      ],
+      "crop_box": [
+        24,
+        44,
+        166,
+        168
+      ],
+      "target_size": [
+        213,
+        186
+      ],
+      "api_size": [
+        200,
+        175
+      ],
+      "paste": [
+        58,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_007_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_007_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\attack2\\s\\frame_007_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.7516,
+      "output_box": [
+        61,
+        146,
+        268,
+        326
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

@@ -24,7 +24,7 @@
 - `preflight.bat` — the traps below, mechanized: stale/forgotten `--import`, codex/BOSS_KINDS staleness, unregistered content modules, diff-scoped balance-number + CONNECT_DEFERRED lints. Run it before staging; every finding prints its one-line fix.
 - `python tools/safe_commit.py -m "msg" <your paths>` — the serialized-commit etiquette as a guardrail: path-scoped commit that lists sibling-staged work instead of swallowing it.
 - `python tools/sync_mobile.py` — mobile drift report; `--apply [--gate]` performs the re-sync ritual from `mobile/README.md`.
-- `python tools/art/verify_art.py <base>` — post-install sprite checks (strip geometry, 8-dir completeness, green-bleed, stale import).
+- `python tools/art/verify_art.py <base>` — post-install sprite checks (strip geometry, 8-dir completeness, green-bleed, stale import, and in-cell content gates: anchor drift/ghost chunks/edge cuts/clip-vs-idle body scale).
 
 ## GDScript traps (each has bitten us) — review-time deep list: `CODING_GUIDELINES.md` §38
 - `var x := obj.method()` on a loosely-typed obj (or any Variant expression, e.g. `Dictionary.get`) = PARSE ERROR "cannot infer type". Annotate: `var x: float = ...`.
@@ -60,6 +60,11 @@
 - **NEVER assume PixelLab is authorized. PixelLab may be used only when the owner explicitly authorizes PixelLab for the specific task.** Existing PixelLab assets, PixelLab helper scripts, character metadata, or a matching PixelLab workflow elsewhere in the repo do not grant permission for a new generation.
 - When an agent has a built-in image-generation/editing tool (for example, ChatGPT/Codex image generation), that built-in tool is the default for generated art unless the owner explicitly requests or authorizes another generator.
 - This rule applies even when another generator appears technically better suited. If the built-in tool cannot meet the requirement, stop and ask the owner; do not silently switch tools or spend external generation credits.
+
+### Codex built-in ImageGen walk-animation observations
+- For bipedal characters, the built-in ImageGen tool often fails to preserve a fluid left/right leg cycle. A real same-colored leg crossing over the other in one passing frame can create a convincing walking illusion; keep that crossing to one or at most two frames rather than making every frame crossed.
+- The tool is generally more reliable for non-bipedal walks (for example, spiders and wolves), and for characters whose locomotion does not expose a conventional leg cycle: robes can communicate motion through cloth flutter, and floating characters can use body/cloth drift.
+- For bipedal sheets, prompt for fixed torso/pelvis anchors, a shared foot baseline, compact stride, and explicit negative constraints against recoloring legs, detached feet, duplicated frames, and high-knee marching. Inspect the generated sheet before installation and run `tools/art/verify_art.py <base>` afterward; anchor drift can still remain even when the sheet looks visually centered.
 
 ## PixelLab characters — regenerating an EXISTING one (deep dive: `tools/art/PIXELLAB_BOSS_EDITS.md`)
 - **Authorization gate:** this section applies only after the owner has explicitly authorized PixelLab for the current task. It is not permission to choose PixelLab.

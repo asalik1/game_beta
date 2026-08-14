@@ -1,0 +1,386 @@
+{
+  "skin": "golden_ronin",
+  "label": "Golden Ronin",
+  "clip": "ult",
+  "direction": "w",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\assassin_blade_dancer_ult_w.png",
+  "source_sha256": "4a72382bc3ea8091b82f58618c929abea3a3b9abf9d44ea7fd3c3a077529cb6e",
+  "source_cell": 230,
+  "source_baseline": 208,
+  "target_body": 180,
+  "scale": 1.487603305785124,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        59,
+        87,
+        161,
+        208
+      ],
+      "crop_box": [
+        57,
+        85,
+        163,
+        210
+      ],
+      "target_size": [
+        158,
+        186
+      ],
+      "api_size": [
+        158,
+        186
+      ],
+      "paste": [
+        90,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9826,
+      "output_box": [
+        93,
+        146,
+        245,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "2": {
+      "source_box": [
+        61,
+        87,
+        166,
+        208
+      ],
+      "crop_box": [
+        59,
+        85,
+        168,
+        210
+      ],
+      "target_size": [
+        162,
+        186
+      ],
+      "api_size": [
+        162,
+        186
+      ],
+      "paste": [
+        93,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_002_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_002_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_002_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.98,
+      "output_box": [
+        96,
+        146,
+        252,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "3": {
+      "source_box": [
+        60,
+        87,
+        214,
+        208
+      ],
+      "crop_box": [
+        58,
+        85,
+        216,
+        210
+      ],
+      "target_size": [
+        235,
+        186
+      ],
+      "api_size": [
+        200,
+        158
+      ],
+      "paste": [
+        91,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_003_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_003_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_003_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9247,
+      "output_box": [
+        94,
+        146,
+        323,
+        327
+      ],
+      "preserved_regions": 0
+    },
+    "4": {
+      "source_box": [
+        55,
+        88,
+        176,
+        208
+      ],
+      "crop_box": [
+        53,
+        86,
+        178,
+        210
+      ],
+      "target_size": [
+        186,
+        184
+      ],
+      "api_size": [
+        186,
+        184
+      ],
+      "paste": [
+        84,
+        145
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_004_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_004_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_004_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.977,
+      "output_box": [
+        87,
+        148,
+        267,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "5": {
+      "source_box": [
+        25,
+        83,
+        172,
+        208
+      ],
+      "crop_box": [
+        23,
+        81,
+        174,
+        210
+      ],
+      "target_size": [
+        225,
+        192
+      ],
+      "api_size": [
+        200,
+        171
+      ],
+      "paste": [
+        39,
+        137
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_005_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_005_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_005_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.696,
+      "output_box": [
+        42,
+        140,
+        261,
+        327
+      ],
+      "preserved_regions": 0
+    },
+    "6": {
+      "source_box": [
+        28,
+        81,
+        168,
+        208
+      ],
+      "crop_box": [
+        26,
+        79,
+        170,
+        210
+      ],
+      "target_size": [
+        214,
+        195
+      ],
+      "api_size": [
+        200,
+        182
+      ],
+      "paste": [
+        44,
+        134
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_006_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_006_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_006_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9093,
+      "output_box": [
+        46,
+        137,
+        255,
+        327
+      ],
+      "preserved_regions": 0
+    },
+    "7": {
+      "source_box": [
+        29,
+        94,
+        166,
+        208
+      ],
+      "crop_box": [
+        27,
+        92,
+        168,
+        210
+      ],
+      "target_size": [
+        210,
+        176
+      ],
+      "api_size": [
+        200,
+        168
+      ],
+      "paste": [
+        45,
+        153
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_007_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_007_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_007_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9403,
+      "output_box": [
+        48,
+        156,
+        252,
+        329
+      ],
+      "preserved_regions": 0
+    },
+    "8": {
+      "source_box": [
+        40,
+        90,
+        169,
+        208
+      ],
+      "crop_box": [
+        38,
+        88,
+        171,
+        210
+      ],
+      "target_size": [
+        198,
+        181
+      ],
+      "api_size": [
+        198,
+        181
+      ],
+      "paste": [
+        61,
+        147
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_008_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_008_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_008_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9806,
+      "output_box": [
+        64,
+        150,
+        256,
+        325
+      ],
+      "preserved_regions": 0
+    },
+    "9": {
+      "source_box": [
+        49,
+        88,
+        171,
+        208
+      ],
+      "crop_box": [
+        47,
+        86,
+        173,
+        210
+      ],
+      "target_size": [
+        187,
+        184
+      ],
+      "api_size": [
+        187,
+        184
+      ],
+      "paste": [
+        75,
+        145
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_009_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_009_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\ult\\w\\frame_009_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9816,
+      "output_box": [
+        78,
+        148,
+        259,
+        327
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

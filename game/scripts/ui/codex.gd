@@ -4,6 +4,8 @@ class_name UICodex
 ## (_open/_btn/_lbl/_hint) and the open/close state.
 
 static func open(m: Menus, tab := "monsters", boss := "") -> void:
+	# A new build cancels any still-streaming shelf from the previous tab.
+	_build_gen += 1
 	# A boss kind routes to its focused mechanics detail view (not a tab).
 	if boss != "" and Story.ALL_ENEMIES.has(boss):
 		_boss_detail(m, boss)
@@ -161,6 +163,56 @@ static func _card(parent: Container) -> PanelContainer:
 	return UITheme.card(parent, Color(0.42, 0.45, 0.55), 12.0)
 
 
+## ------------------------------------------------------ streamed shelves ---
+## The heavy shelves (bestiary, gear galleries, portraits) used to build every
+## card inside the open() frame — hundreds of icon decodes in one go, so the
+## panel froze on first open. They now STREAM: the first chunk builds
+## synchronously (the panel opens already showing content), the rest lands a
+## few cards per frame. Each open() bumps the generation so a still-streaming
+## shelf from the previous tab stops at its next frame instead of building
+## into a dead panel; the freed-list check covers closes from outside.
+static var _build_gen := 0
+
+static func _build_chunked(m: Menus, list: VBoxContainer, jobs: Array, per_frame := 6) -> void:
+	var gen := _build_gen
+	for start in range(0, jobs.size(), per_frame):
+		if start > 0:
+			await m.get_tree().process_frame
+			if gen != _build_gen or not is_instance_valid(list):
+				return
+		for i in range(start, mini(start + per_frame, jobs.size())):
+			(jobs[i] as Callable).call()
+
+
+## The enemy kind the hero currently wears via the dev Transform ("" = none).
+static func _morph_kind(m: Menus) -> String:
+	if not m.game.dev_mode or m.game.player == null:
+		return ""
+	var cur: DevMorph = m.game.player.dev_morph
+	if cur == null or not is_instance_valid(cur):
+		return ""
+	return String(cur.kind)
+
+
+## Jump a freshly built bestiary shelf to `card` — reopening the codex while
+## transformed (to switch or revert) used to mean hand-scrolling the whole
+## shelf back to the active mob every time.
+static func _scroll_to_card(m: Menus, card: Control) -> void:
+	await m.get_tree().process_frame  # container layout settles a frame later
+	if not is_instance_valid(card) or not card.is_inside_tree():
+		return
+	var y := 0.0
+	var c: Control = card
+	while c.get_parent() != null and not (c.get_parent() is ScrollContainer):
+		y += c.position.y
+		c = c.get_parent() as Control
+		if c == null:
+			return
+	var sc := c.get_parent() as ScrollContainer
+	if sc != null:
+		sc.scroll_vertical = maxi(0, int(y) - 10)
+
+
 static func _monsters(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	# Elites — the roaming miniboss variant (round 6).
@@ -194,6 +246,8 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 	# ones live on the dev-only Future > Mobs shelf instead (2026-07-18).
 	var used := _used_enemy_kinds()
 	UITheme.header(m._lbl(list, "— MONSTERS —", 16, Color(0.95, 0.85, 0.5)))
+	var morph := _morph_kind(m)
+	var jobs: Array = []
 	for kind in Story.ALL_ENEMIES:
 		if kind in m.BOSS_KINDS:
 			continue
@@ -204,7 +258,12 @@ static func _monsters(m: Menus, list: VBoxContainer) -> void:
 			continue
 		if not used.has(kind) or st.get("placeholder", false):
 			continue
-		_enemy_card(m, list, kind, false)
+		var mk := String(kind)
+		jobs.append(func() -> void:
+			var card := _enemy_card(m, list, mk, false)
+			if mk == morph:
+				_scroll_to_card(m, card))
+	_build_chunked(m, list, jobs)
 
 
 ## Bosses subtab: just the boss cards (each links to its mechanics detail).
@@ -214,12 +273,19 @@ static func _bosses(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	var used := _used_enemy_kinds()
 	UITheme.header(m._lbl(list, "— BOSSES —", 16, Color(1, 0.5, 0.5)))
+	var morph := _morph_kind(m)
+	var jobs: Array = []
 	for kind in Story.ALL_ENEMIES:
 		if not (kind in m.BOSS_KINDS):
 			continue
 		if not used.has(kind) or Story.ALL_ENEMIES[kind].get("placeholder", false):
 			continue
-		_enemy_card(m, list, kind, true)
+		var bk := String(kind)
+		jobs.append(func() -> void:
+			var card := _enemy_card(m, list, bk, true)
+			if bk == morph:
+				_scroll_to_card(m, card))
+	_build_chunked(m, list, jobs)
 
 
 ## Enemy kinds actually placed in the world: any zone's `enemies` spawns or
@@ -338,44 +404,52 @@ static func _npcs(m: Menus, list: VBoxContainer) -> void:
 	var card := VBoxContainer.new()
 	card.add_theme_constant_override("separation", 6)
 	_card(list).add_child(card)
+	var jobs: Array = []
 	for e in entries:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 14)
-		card.add_child(row)
-		# Framed pixel portrait, dialogue-box style: gold frame, dark well,
-		# nearest-neighbor upscale so the sprite reads chunky, not smeared.
-		var frame := Panel.new()
-		frame.custom_minimum_size = Vector2(64, 64)
-		var fsb := StyleBoxFlat.new()
-		fsb.bg_color = Color(0.1, 0.09, 0.15)
-		fsb.border_color = Color(UITheme.GOLD, 0.75)
-		fsb.set_border_width_all(2)
-		fsb.set_corner_radius_all(4)
-		frame.add_theme_stylebox_override("panel", fsb)
-		frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(frame)
-		var icon := TextureRect.new()
-		icon.texture = Art.tex(String(e["sprite"]))
-		# Anchored inset, not manual size — anchors re-fit on any layout pass.
-		icon.set_anchors_preset(Control.PRESET_FULL_RECT)
-		icon.offset_left = 6
-		icon.offset_top = 6
-		icon.offset_right = -6
-		icon.offset_bottom = -6
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		frame.add_child(icon)
-		var info := VBoxContainer.new()
-		info.add_theme_constant_override("separation", 2)
-		info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(info)
-		var nm2 := m._lbl(info, String(e["name"]), 16, Color(0.9, 0.92, 0.98))
-		nm2.custom_minimum_size = Vector2(760, 0)
-		var role := _npc_role(String(e["sprite"]), bool(e.get("quest", false)))
-		if role != "":
-			var rl := m._lbl(info, role, 13, Color(0.75, 0.7, 0.5))
-			rl.custom_minimum_size = Vector2(760, 0)
+		var ee: Dictionary = e
+		jobs.append(func() -> void: _npc_row(m, card, ee))
+	_build_chunked(m, list, jobs)
+
+
+## One NPC row of the cast card (streamed via _build_chunked).
+static func _npc_row(m: Menus, box: VBoxContainer, e: Dictionary) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	box.add_child(row)
+	# Framed pixel portrait, dialogue-box style: gold frame, dark well,
+	# nearest-neighbor upscale so the sprite reads chunky, not smeared.
+	var frame := Panel.new()
+	frame.custom_minimum_size = Vector2(64, 64)
+	var fsb := StyleBoxFlat.new()
+	fsb.bg_color = Color(0.1, 0.09, 0.15)
+	fsb.border_color = Color(UITheme.GOLD, 0.75)
+	fsb.set_border_width_all(2)
+	fsb.set_corner_radius_all(4)
+	frame.add_theme_stylebox_override("panel", fsb)
+	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(frame)
+	var icon := TextureRect.new()
+	icon.texture = Art.tex(String(e["sprite"]))
+	# Anchored inset, not manual size — anchors re-fit on any layout pass.
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon.offset_left = 6
+	icon.offset_top = 6
+	icon.offset_right = -6
+	icon.offset_bottom = -6
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	frame.add_child(icon)
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 2)
+	info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(info)
+	var nm2 := m._lbl(info, String(e["name"]), 16, Color(0.9, 0.92, 0.98))
+	nm2.custom_minimum_size = Vector2(760, 0)
+	var role := _npc_role(String(e["sprite"]), bool(e.get("quest", false)))
+	if role != "":
+		var rl := m._lbl(info, role, 13, Color(0.75, 0.7, 0.5))
+		rl.custom_minimum_size = Vector2(760, 0)
 
 
 ## Best display name for an npc entry: the speaker of its convo, else the
@@ -412,6 +486,7 @@ static func _npc_name(npc: Dictionary) -> String:
 static var _enemy_icons := {}
 const ICON_ALPHA := 0.08
 const ICON_BOX := 64.0   # the one bestiary portrait size, every entry
+const ICON_SCAN := 48    # bounds-scan proxy edge — sub-pixel precision buys nothing at 64px
 
 static func _enemy_icon(sprite: String) -> Texture2D:
 	if _enemy_icons.has(sprite):
@@ -429,21 +504,43 @@ static func _enemy_icon(sprite: String) -> Texture2D:
 			# of padded boss exports.
 			var fw: int = img.get_width()
 			var fh: int = img.get_height()
-			var x0 := fw
-			var y0 := fh
+			# Bounds-scan a ≤ICON_SCAN proxy, not the full frame: get_pixel over
+			# a 224px boss square is tens of ms of script per sprite, and a whole
+			# shelf of first-open scans froze the panel. Bilinear downscale
+			# AVERAGES alpha, so an isolated stray pixel dims further below the
+			# threshold (the anti-stray intent survives) while contiguous figure
+			# edges stay above it. Bounds map back with a one-proxy-pixel pad,
+			# which also absorbs the resize rounding.
+			var scan: Image = img
+			if maxi(fw, fh) > ICON_SCAN:
+				scan = img.duplicate()
+				var k: float = float(ICON_SCAN) / float(maxi(fw, fh))
+				scan.resize(maxi(1, int(fw * k)), maxi(1, int(fh * k)),
+					Image.INTERPOLATE_BILINEAR)
+			var sw: int = scan.get_width()
+			var sh: int = scan.get_height()
+			var pad: int = 0 if scan == img else 1
+			var x0 := sw
+			var y0 := sh
 			var x1 := -1
 			var y1 := -1
-			for y in fh:
-				for x in fw:
-					if img.get_pixel(x, y).a > ICON_ALPHA:
+			for y in sh:
+				for x in sw:
+					if scan.get_pixel(x, y).a > ICON_ALPHA:
 						x0 = mini(x0, x)
 						y0 = mini(y0, y)
 						x1 = maxi(x1, x)
 						y1 = maxi(y1, y)
 			if x1 >= x0 and y1 >= y0:
+				var mx: float = float(fw) / float(sw)
+				var my: float = float(fh) / float(sh)
+				var rx0: int = clampi(int(floor((x0 - pad) * mx)), 0, fw - 1)
+				var ry0: int = clampi(int(floor((y0 - pad) * my)), 0, fh - 1)
+				var rx1: int = clampi(int(ceil((x1 + 1 + pad) * mx)) - 1, 0, fw - 1)
+				var ry1: int = clampi(int(ceil((y1 + 1 + pad) * my)) - 1, 0, fh - 1)
 				var at := AtlasTexture.new()
 				at.atlas = tex
-				at.region = Rect2(Vector2(x0, y0), Vector2(x1 - x0 + 1, y1 - y0 + 1))
+				at.region = Rect2(Vector2(rx0, ry0), Vector2(rx1 - rx0 + 1, ry1 - ry0 + 1))
 				out = at
 	_enemy_icons[sprite] = out
 	return out
@@ -451,15 +548,17 @@ static func _enemy_icon(sprite: String) -> Texture2D:
 
 ## "▸ Mechanics & Tells" button that opens its focused detail; in the
 ## DETAIL view (`detail = true`) that button is suppressed (already there).
-static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bool, detail := false, placeholder := false) -> void:
+## Returns the card panel so a shelf can auto-scroll to the active morph.
+static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bool, detail := false, placeholder := false) -> PanelContainer:
 	var st: Dictionary = Story.ALL_ENEMIES[kind]
 	# Codex honesty: display what the fight actually deals/has
 	# (TTK and damage multipliers included), not raw table rows.
 	var live: Dictionary = Story.enemy_stats_at(kind, int(st.get("level", 1)))
 
+	var box := _card(list)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
-	_card(list).add_child(row)
+	box.add_child(row)
 	var icon := TextureRect.new()
 	# ONE box for every entry (owner 2026-07-25): the codex archives what a
 	# foe LOOKS like — it is not a scale chart, so a wolf and a god-king
@@ -556,6 +655,7 @@ static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bo
 			m._btn(info, "  ⇄ Transform  ", func() -> void:
 				DevMorph.start(m.game.player, mk)
 				m.close(), Color(0.7, 0.95, 0.85))
+	return box
 
 
 ## Focused boss detail: the summary card, then each authored mechanic as
@@ -1132,21 +1232,31 @@ static func _gear_shapes(m: Menus, list: VBoxContainer, slot := "") -> void:
 	# on for old saves. Weapons are class-locked, so they group under a class header;
 	# armor/boots/charm are shared, so they list flat.
 	m._lbl(list, "— %sS — %s" % [show_slot.to_upper(), slot_desc[show_slot]], 16, Color(0.95, 0.85, 0.5))
+	# One shelf decodes up to ~210 grade icons — stream the rows (a row is six
+	# icons, so a small chunk) instead of stalling the open on the whole matrix.
+	# Headers ride the job queue too so they land in shelf order.
+	var jobs: Array = []
 	if show_slot == "weapon":
 		for cls in Classes.CLASSES:
-			m._lbl(list, "  %s" % String(Classes.CLASSES[cls]["name"]).to_upper(), 14, Color(0.7, 0.78, 0.95))
+			var cn := String(Classes.CLASSES[cls]["name"]).to_upper()
+			jobs.append(func() -> void: m._lbl(list, "  %s" % cn, 14, Color(0.7, 0.78, 0.95)))
 			for noun in Items.CLASS_WEAPONS.get(cls, []):
-				_shape_row(m, list, show_slot, String(noun))
+				var nn := String(noun)
+				jobs.append(func() -> void: _shape_row(m, list, show_slot, nn))
 	elif not Items.CLASS_GEAR.get("warrior", {}).get(show_slot, []).is_empty():
 		# Per-class slot (every gear slot since the 2026-07-27 matrix
 		# migration): group under class headers like weapons.
 		for cls in Classes.CLASSES:
-			m._lbl(list, "  %s" % String(Classes.CLASSES[cls]["name"]).to_upper(), 14, Color(0.7, 0.78, 0.95))
+			var cn := String(Classes.CLASSES[cls]["name"]).to_upper()
+			jobs.append(func() -> void: m._lbl(list, "  %s" % cn, 14, Color(0.7, 0.78, 0.95)))
 			for noun in Items.CLASS_GEAR.get(cls, {}).get(show_slot, []):
-				_shape_row(m, list, show_slot, String(noun))
+				var nn := String(noun)
+				jobs.append(func() -> void: _shape_row(m, list, show_slot, nn))
 	else:
 		for noun in Items.SLOT_NAMES[show_slot]:
-			_shape_row(m, list, show_slot, String(noun))
+			var nn := String(noun)
+			jobs.append(func() -> void: _shape_row(m, list, show_slot, nn))
+	_build_chunked(m, list, jobs, 3)
 
 
 ## One gallery row: shape name + tag, then its icon at every grade — and a
@@ -1201,6 +1311,9 @@ static func _gear_uniques(m: Menus, list: VBoxContainer, slot := "") -> void:
 		ud.custom_minimum_size = Vector2(880, 0)
 		ud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		m._lbl(list, "— %s UNIQUES —" % show_slot.to_upper(), 16, Color(0.95, 0.85, 0.5))
+		# Headers and the (test-asserted) grids build synchronously — they're
+		# cheap and hold the shelf's shape; the ~60 icon-bearing cards stream.
+		var jobs: Array = []
 		for cls in Classes.CLASSES:
 			# Table order keeps each shape's A/S pair adjacent (the weaker/
 			# stronger read the design doc promises).
@@ -1228,7 +1341,9 @@ static func _gear_uniques(m: Menus, list: VBoxContainer, slot := "") -> void:
 			ugrid.add_theme_constant_override("v_separation", 8)
 			list.add_child(ugrid)
 			for u in mine:
-				_unique_card(m, ugrid, u)
+				var uu: Dictionary = u
+				jobs.append(func() -> void: _unique_card(m, ugrid, uu))
+		_build_chunked(m, list, jobs)
 
 	# (The LEGENDARY (S) shelf was removed 2026-07-27 with the legendary tier:
 	# no separate legendary gear and no awakening questline — the six flagship
@@ -1537,7 +1652,7 @@ const FUTURE_GROUP_TABS := ["armory", "supplies", "alchemy", "provisions", "crit
 static func _future_gallery(m: Menus, list: VBoxContainer, table: Dictionary, group: String, art_key: String, text_key: String) -> void:
 	var ids: Array = table.keys()
 	ids.sort()
-	var shown := 0
+	var jobs: Array = []
 	for id in ids:
 		var e: Dictionary = table[id]
 		if not e.get("placeholder", false):
@@ -1548,9 +1663,12 @@ static func _future_gallery(m: Menus, list: VBoxContainer, table: Dictionary, gr
 				continue
 		elif g != group:
 			continue
-		_curio_card(m, list, String(e.get("name", id)), String(e.get(text_key, "")), String(e.get(art_key, "")), true)
-		shown += 1
-	_none_waiting(m, list, shown)
+		var nm := String(e.get("name", id))
+		var dsc := String(e.get(text_key, ""))
+		var art := String(e.get(art_key, ""))
+		jobs.append(func() -> void: _curio_card(m, list, nm, dsc, art, true))
+	_none_waiting(m, list, jobs.size())
+	_build_chunked(m, list, jobs)
 
 
 ## Future bestiary shelves: every enemy of the bucket (mob / boss, split by
@@ -1562,7 +1680,8 @@ static func _future_enemies(m: Menus, list: VBoxContainer, bosses: bool) -> void
 	var used := _used_enemy_kinds()
 	var kinds: Array = Story.ALL_ENEMIES.keys()
 	kinds.sort()
-	var shown := 0
+	var morph := _morph_kind(m)
+	var jobs: Array = []
 	for kind in kinds:
 		if (kind in m.BOSS_KINDS) != bosses:
 			continue
@@ -1571,9 +1690,13 @@ static func _future_enemies(m: Menus, list: VBoxContainer, bosses: bool) -> void
 			continue
 		if used.has(kind) and not st.get("placeholder", false):
 			continue
-		_enemy_card(m, list, kind, bosses, false, true)
-		shown += 1
-	_none_waiting(m, list, shown)
+		var fk := String(kind)
+		jobs.append(func() -> void:
+			var card := _enemy_card(m, list, fk, bosses, false, true)
+			if fk == morph:
+				_scroll_to_card(m, card))
+	_none_waiting(m, list, jobs.size())
+	_build_chunked(m, list, jobs)
 
 
 ## Future NPC shelf: zone npc entries flagged `placeholder: true`, deduped
@@ -1582,7 +1705,7 @@ static func _future_enemies(m: Menus, list: VBoxContainer, bosses: bool) -> void
 ## description.
 static func _future_npcs(m: Menus, list: VBoxContainer) -> void:
 	var seen := {}
-	var shown := 0
+	var jobs: Array = []
 	for chid in Story.CHAPTER_LIST:
 		for zone in Story.CHAPTER_LIST[chid].get("zones", []):
 			for npc in zone.get("npcs", []):
@@ -1605,9 +1728,9 @@ static func _future_npcs(m: Menus, list: VBoxContainer) -> void:
 						var note: String = text.substr(cut + 1).strip_edges()
 						if note != "":
 							desc = note
-				_curio_card(m, list, nm, desc, spr, true)
-				shown += 1
-	_none_waiting(m, list, shown)
+				jobs.append(func() -> void: _curio_card(m, list, nm, desc, spr, true))
+	_none_waiting(m, list, jobs.size())
+	_build_chunked(m, list, jobs)
 
 
 ## Shared empty-state line for the Future shelves.
@@ -1701,38 +1824,48 @@ static func _gallery(m: Menus, list: VBoxContainer, tab: String) -> void:
 	grid.add_theme_constant_override("h_separation", 14)
 	grid.add_theme_constant_override("v_separation", 14)
 	list.add_child(grid)
+	# First-open thumbnail decodes are the whole cost of this shelf — stream
+	# the cells a few per frame instead of decoding every splash in one go.
+	var jobs: Array = []
 	for e in entries:
-		var unlocked := _gallery_seen(m, e)
-		var sprite := String(e["sprite"])
-		var disp := String(e["name"])
-		var back_tab := tab
-		var cell := VBoxContainer.new()
-		cell.add_theme_constant_override("separation", 4)
-		grid.add_child(cell)
-		var tr := TextureRect.new()
-		tr.custom_minimum_size = Vector2(168, 126)
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.texture = _gallery_thumb(sprite)
-		if unlocked:
-			tr.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			tr.gui_input.connect(func(ev: InputEvent) -> void:
-				if ev is InputEventMouseButton and ev.pressed \
-						and ev.button_index == MOUSE_BUTTON_LEFT:
-					_portrait_view(m, sprite, disp, back_tab))
-		else:
-			# Silhouette: the shape teases, the face stays earned.
-			tr.modulate = Color(0.05, 0.05, 0.08)
-		cell.add_child(tr)
-		var nm := m._lbl(cell, disp if unlocked else "???", 13,
-			Color(0.92, 0.92, 0.98) if unlocked else Color(0.5, 0.52, 0.58))
-		nm.custom_minimum_size = Vector2(168, 0)
-		nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var ee: Dictionary = e
+		jobs.append(func() -> void: _gallery_cell(m, grid, ee, tab))
+	_build_chunked(m, list, jobs, 3)
+
+
+## One portrait cell of the gallery grid (streamed via _build_chunked).
+static func _gallery_cell(m: Menus, grid: GridContainer, e: Dictionary, back_tab: String) -> void:
+	var unlocked := _gallery_seen(m, e)
+	var sprite := String(e["sprite"])
+	var disp := String(e["name"])
+	var cell := VBoxContainer.new()
+	cell.add_theme_constant_override("separation", 4)
+	grid.add_child(cell)
+	var tr := TextureRect.new()
+	tr.custom_minimum_size = Vector2(168, 126)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.texture = _gallery_thumb(sprite)
+	if unlocked:
+		tr.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		tr.gui_input.connect(func(ev: InputEvent) -> void:
+			if ev is InputEventMouseButton and ev.pressed \
+					and ev.button_index == MOUSE_BUTTON_LEFT:
+				_portrait_view(m, sprite, disp, back_tab))
+	else:
+		# Silhouette: the shape teases, the face stays earned.
+		tr.modulate = Color(0.05, 0.05, 0.08)
+	cell.add_child(tr)
+	var nm := m._lbl(cell, disp if unlocked else "???", 13,
+		Color(0.92, 0.92, 0.98) if unlocked else Color(0.5, 0.52, 0.58))
+	nm.custom_minimum_size = Vector2(168, 0)
+	nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 ## The full painting, one click deep. Back returns to the shelf it came from.
 static func _portrait_view(m: Menus, sprite: String, disp: String, back_tab: String) -> void:
+	_build_gen += 1  # cancel a still-streaming shelf behind the painting
 	var vbox := m._open(disp, 980, 640, true)
 	m.current = "codex"
 	var tr := TextureRect.new()

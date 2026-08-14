@@ -1,0 +1,386 @@
+{
+  "skin": "golden_ronin",
+  "label": "Golden Ronin",
+  "clip": "death",
+  "direction": "s",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\assassin_blade_dancer_death_s.png",
+  "source_sha256": "a9cc9bf0b52acce8c616235d1a87652e2fefc5cedfe95980eef37f408f44bc79",
+  "source_cell": 230,
+  "source_baseline": 215,
+  "target_body": 180,
+  "scale": 1.487603305785124,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        43,
+        87,
+        162,
+        208
+      ],
+      "crop_box": [
+        41,
+        85,
+        164,
+        210
+      ],
+      "target_size": [
+        183,
+        186
+      ],
+      "api_size": [
+        183,
+        186
+      ],
+      "paste": [
+        66,
+        133
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9894,
+      "output_box": [
+        69,
+        136,
+        246,
+        316
+      ],
+      "preserved_regions": 0
+    },
+    "2": {
+      "source_box": [
+        40,
+        87,
+        164,
+        208
+      ],
+      "crop_box": [
+        38,
+        85,
+        166,
+        210
+      ],
+      "target_size": [
+        190,
+        186
+      ],
+      "api_size": [
+        190,
+        186
+      ],
+      "paste": [
+        61,
+        133
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_002_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_002_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_002_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9901,
+      "output_box": [
+        64,
+        136,
+        248,
+        316
+      ],
+      "preserved_regions": 0
+    },
+    "3": {
+      "source_box": [
+        35,
+        87,
+        168,
+        208
+      ],
+      "crop_box": [
+        33,
+        85,
+        170,
+        210
+      ],
+      "target_size": [
+        204,
+        186
+      ],
+      "api_size": [
+        200,
+        182
+      ],
+      "paste": [
+        54,
+        133
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_003_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_003_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_003_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9425,
+      "output_box": [
+        57,
+        136,
+        255,
+        316
+      ],
+      "preserved_regions": 0
+    },
+    "4": {
+      "source_box": [
+        32,
+        88,
+        169,
+        207
+      ],
+      "crop_box": [
+        30,
+        86,
+        171,
+        209
+      ],
+      "target_size": [
+        210,
+        183
+      ],
+      "api_size": [
+        200,
+        174
+      ],
+      "paste": [
+        50,
+        134
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_004_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_004_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_004_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9566,
+      "output_box": [
+        53,
+        137,
+        257,
+        314
+      ],
+      "preserved_regions": 0
+    },
+    "5": {
+      "source_box": [
+        27,
+        91,
+        173,
+        205
+      ],
+      "crop_box": [
+        25,
+        89,
+        175,
+        207
+      ],
+      "target_size": [
+        223,
+        176
+      ],
+      "api_size": [
+        200,
+        158
+      ],
+      "paste": [
+        42,
+        139
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_005_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_005_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_005_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.7264,
+      "output_box": [
+        45,
+        142,
+        262,
+        314
+      ],
+      "preserved_regions": 0
+    },
+    "6": {
+      "source_box": [
+        22,
+        101,
+        179,
+        206
+      ],
+      "crop_box": [
+        20,
+        99,
+        181,
+        208
+      ],
+      "target_size": [
+        240,
+        162
+      ],
+      "api_size": [
+        200,
+        135
+      ],
+      "paste": [
+        35,
+        153
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_006_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_006_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_006_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.7537,
+      "output_box": [
+        38,
+        156,
+        272,
+        313
+      ],
+      "preserved_regions": 0
+    },
+    "7": {
+      "source_box": [
+        19,
+        123,
+        176,
+        214
+      ],
+      "crop_box": [
+        17,
+        121,
+        178,
+        216
+      ],
+      "target_size": [
+        240,
+        141
+      ],
+      "api_size": [
+        200,
+        118
+      ],
+      "paste": [
+        30,
+        186
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_007_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_007_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_007_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.5233,
+      "output_box": [
+        33,
+        189,
+        267,
+        324
+      ],
+      "preserved_regions": 0
+    },
+    "8": {
+      "source_box": [
+        25,
+        143,
+        175,
+        214
+      ],
+      "crop_box": [
+        23,
+        141,
+        177,
+        216
+      ],
+      "target_size": [
+        229,
+        112
+      ],
+      "api_size": [
+        200,
+        98
+      ],
+      "paste": [
+        39,
+        216
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_008_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_008_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_008_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.94,
+      "output_box": [
+        41,
+        219,
+        265,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "9": {
+      "source_box": [
+        23,
+        167,
+        190,
+        215
+      ],
+      "crop_box": [
+        21,
+        165,
+        192,
+        217
+      ],
+      "target_size": [
+        254,
+        77
+      ],
+      "api_size": [
+        200,
+        61
+      ],
+      "paste": [
+        36,
+        252
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_009_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_009_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\death\\s\\frame_009_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.1751,
+      "output_box": [
+        36,
+        255,
+        287,
+        326
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

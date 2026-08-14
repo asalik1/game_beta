@@ -1,0 +1,58 @@
+{
+  "skin": "hellfire_inquisitor",
+  "label": "Hellfire Inquisitor",
+  "clip": "static",
+  "direction": "s",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\warlock_hellfire_inquisitor.png",
+  "source_sha256": "fb5f022d60ab0d02a1f54768ee6215e0c0c2c6922986e324ff71317e383e72fc",
+  "source_cell": 252,
+  "source_baseline": 188,
+  "target_body": 180,
+  "scale": 1.4516129032258065,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        69,
+        64,
+        170,
+        188
+      ],
+      "crop_box": [
+        67,
+        62,
+        172,
+        190
+      ],
+      "target_size": [
+        152,
+        186
+      ],
+      "api_size": [
+        152,
+        186
+      ],
+      "paste": [
+        90,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\static\\s\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\static\\s\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\hellfire_inquisitor\\static\\s\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9441,
+      "output_box": [
+        93,
+        146,
+        239,
+        326
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

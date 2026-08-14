@@ -1,0 +1,386 @@
+{
+  "skin": "dreadknight",
+  "label": "Dreadknight",
+  "clip": "death",
+  "direction": "e",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\warrior_dreadknight_death_e.png",
+  "source_sha256": "45d776ebf938da7462d38b6ced2b278cdde775ef1424771f2a53b21561930c21",
+  "source_cell": 207,
+  "source_baseline": 171,
+  "target_body": 180,
+  "scale": 1.5,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        55,
+        46,
+        164,
+        167
+      ],
+      "crop_box": [
+        53,
+        44,
+        166,
+        169
+      ],
+      "target_size": [
+        170,
+        188
+      ],
+      "api_size": [
+        170,
+        188
+      ],
+      "paste": [
+        101,
+        136
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.971,
+      "output_box": [
+        104,
+        139,
+        268,
+        321
+      ],
+      "preserved_regions": 0
+    },
+    "2": {
+      "source_box": [
+        50,
+        47,
+        165,
+        167
+      ],
+      "crop_box": [
+        48,
+        45,
+        167,
+        169
+      ],
+      "target_size": [
+        178,
+        186
+      ],
+      "api_size": [
+        178,
+        186
+      ],
+      "paste": [
+        94,
+        137
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_002_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_002_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_002_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9809,
+      "output_box": [
+        97,
+        140,
+        269,
+        320
+      ],
+      "preserved_regions": 0
+    },
+    "3": {
+      "source_box": [
+        43,
+        52,
+        170,
+        167
+      ],
+      "crop_box": [
+        41,
+        50,
+        172,
+        169
+      ],
+      "target_size": [
+        196,
+        178
+      ],
+      "api_size": [
+        196,
+        178
+      ],
+      "paste": [
+        83,
+        144
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_003_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_003_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_003_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9832,
+      "output_box": [
+        86,
+        147,
+        276,
+        319
+      ],
+      "preserved_regions": 0
+    },
+    "4": {
+      "source_box": [
+        40,
+        64,
+        176,
+        166
+      ],
+      "crop_box": [
+        38,
+        62,
+        178,
+        168
+      ],
+      "target_size": [
+        210,
+        159
+      ],
+      "api_size": [
+        200,
+        151
+      ],
+      "paste": [
+        78,
+        162
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_004_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_004_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_004_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9384,
+      "output_box": [
+        81,
+        165,
+        285,
+        318
+      ],
+      "preserved_regions": 0
+    },
+    "5": {
+      "source_box": [
+        37,
+        79,
+        181,
+        169
+      ],
+      "crop_box": [
+        35,
+        77,
+        183,
+        171
+      ],
+      "target_size": [
+        222,
+        141
+      ],
+      "api_size": [
+        200,
+        127
+      ],
+      "paste": [
+        74,
+        185
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_005_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_005_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_005_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9065,
+      "output_box": [
+        77,
+        188,
+        293,
+        323
+      ],
+      "preserved_regions": 0
+    },
+    "6": {
+      "source_box": [
+        39,
+        96,
+        187,
+        166
+      ],
+      "crop_box": [
+        37,
+        94,
+        189,
+        168
+      ],
+      "target_size": [
+        228,
+        111
+      ],
+      "api_size": [
+        200,
+        97
+      ],
+      "paste": [
+        77,
+        210
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_006_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_006_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_006_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.6484,
+      "output_box": [
+        80,
+        213,
+        302,
+        318
+      ],
+      "preserved_regions": 0
+    },
+    "7": {
+      "source_box": [
+        36,
+        119,
+        194,
+        171
+      ],
+      "crop_box": [
+        34,
+        117,
+        196,
+        173
+      ],
+      "target_size": [
+        243,
+        84
+      ],
+      "api_size": [
+        200,
+        69
+      ],
+      "paste": [
+        72,
+        245
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_007_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_007_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_007_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.8326,
+      "output_box": [
+        75,
+        245,
+        312,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "8": {
+      "source_box": [
+        36,
+        120,
+        190,
+        171
+      ],
+      "crop_box": [
+        34,
+        118,
+        192,
+        173
+      ],
+      "target_size": [
+        237,
+        82
+      ],
+      "api_size": [
+        200,
+        69
+      ],
+      "paste": [
+        72,
+        246
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_008_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_008_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_008_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.8349,
+      "output_box": [
+        75,
+        249,
+        306,
+        325
+      ],
+      "preserved_regions": 0
+    },
+    "9": {
+      "source_box": [
+        36,
+        123,
+        194,
+        171
+      ],
+      "crop_box": [
+        34,
+        121,
+        196,
+        173
+      ],
+      "target_size": [
+        243,
+        78
+      ],
+      "api_size": [
+        200,
+        64
+      ],
+      "paste": [
+        72,
+        251
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_009_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_009_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\death\\e\\frame_009_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.7903,
+      "output_box": [
+        75,
+        254,
+        312,
+        326
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

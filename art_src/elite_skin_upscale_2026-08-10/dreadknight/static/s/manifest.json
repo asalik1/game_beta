@@ -1,0 +1,58 @@
+{
+  "skin": "dreadknight",
+  "label": "Dreadknight",
+  "clip": "static",
+  "direction": "s",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\warrior_dreadknight.png",
+  "source_sha256": "59d3ce6d4053126743b498ac0e9b2b8ed52874d76a1139ef1e7f21d8e615fbe8",
+  "source_cell": 248,
+  "source_baseline": 184,
+  "target_body": 180,
+  "scale": 1.5,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        66,
+        64,
+        182,
+        184
+      ],
+      "crop_box": [
+        64,
+        62,
+        184,
+        186
+      ],
+      "target_size": [
+        180,
+        186
+      ],
+      "api_size": [
+        180,
+        186
+      ],
+      "paste": [
+        86,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\static\\s\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\static\\s\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\dreadknight\\static\\s\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.7238,
+      "output_box": [
+        89,
+        146,
+        263,
+        326
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

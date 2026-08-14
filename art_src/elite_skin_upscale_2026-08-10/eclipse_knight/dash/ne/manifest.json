@@ -1,0 +1,304 @@
+{
+  "skin": "eclipse_knight",
+  "label": "Eclipse Knight",
+  "clip": "dash",
+  "direction": "ne",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\paladin_eclipse_knight_dash_ne.png",
+  "source_sha256": "c2020ddc829b573b85d7830ee0fbef97fac5474964118d7db1282b75b15dc809",
+  "source_cell": 188,
+  "source_baseline": 153,
+  "target_body": 180,
+  "scale": 1.4634146341463414,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        37,
+        28,
+        131,
+        153
+      ],
+      "crop_box": [
+        35,
+        26,
+        133,
+        155
+      ],
+      "target_size": [
+        143,
+        189
+      ],
+      "api_size": [
+        143,
+        189
+      ],
+      "paste": [
+        90,
+        140
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9957,
+      "output_box": [
+        93,
+        143,
+        230,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "2": {
+      "source_box": [
+        32,
+        26,
+        132,
+        151
+      ],
+      "crop_box": [
+        30,
+        24,
+        134,
+        153
+      ],
+      "target_size": [
+        152,
+        189
+      ],
+      "api_size": [
+        152,
+        189
+      ],
+      "paste": [
+        82,
+        137
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_002_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_002_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_002_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9802,
+      "output_box": [
+        85,
+        140,
+        231,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "3": {
+      "source_box": [
+        27,
+        30,
+        138,
+        151
+      ],
+      "crop_box": [
+        25,
+        28,
+        140,
+        153
+      ],
+      "target_size": [
+        168,
+        183
+      ],
+      "api_size": [
+        168,
+        183
+      ],
+      "paste": [
+        75,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_003_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_003_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_003_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9895,
+      "output_box": [
+        78,
+        146,
+        240,
+        325
+      ],
+      "preserved_regions": 0
+    },
+    "4": {
+      "source_box": [
+        21,
+        33,
+        135,
+        151
+      ],
+      "crop_box": [
+        19,
+        31,
+        137,
+        153
+      ],
+      "target_size": [
+        173,
+        179
+      ],
+      "api_size": [
+        173,
+        179
+      ],
+      "paste": [
+        66,
+        147
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_004_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_004_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_004_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9903,
+      "output_box": [
+        69,
+        148,
+        236,
+        323
+      ],
+      "preserved_regions": 0
+    },
+    "5": {
+      "source_box": [
+        26,
+        27,
+        137,
+        150
+      ],
+      "crop_box": [
+        24,
+        25,
+        139,
+        152
+      ],
+      "target_size": [
+        168,
+        186
+      ],
+      "api_size": [
+        168,
+        186
+      ],
+      "paste": [
+        74,
+        139
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_005_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_005_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_005_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9944,
+      "output_box": [
+        77,
+        142,
+        239,
+        322
+      ],
+      "preserved_regions": 0
+    },
+    "6": {
+      "source_box": [
+        32,
+        26,
+        139,
+        153
+      ],
+      "crop_box": [
+        30,
+        24,
+        141,
+        155
+      ],
+      "target_size": [
+        162,
+        192
+      ],
+      "api_size": [
+        162,
+        192
+      ],
+      "paste": [
+        82,
+        137
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_006_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_006_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_006_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9825,
+      "output_box": [
+        85,
+        140,
+        241,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "7": {
+      "source_box": [
+        40,
+        29,
+        141,
+        153
+      ],
+      "crop_box": [
+        38,
+        27,
+        143,
+        155
+      ],
+      "target_size": [
+        154,
+        187
+      ],
+      "api_size": [
+        154,
+        187
+      ],
+      "paste": [
+        94,
+        142
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_007_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_007_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\dash\\ne\\frame_007_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9901,
+      "output_box": [
+        97,
+        143,
+        245,
+        326
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

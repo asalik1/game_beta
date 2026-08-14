@@ -1,0 +1,386 @@
+{
+  "skin": "eclipse_knight",
+  "label": "Eclipse Knight",
+  "clip": "death",
+  "direction": "n",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\paladin_eclipse_knight_death_n.png",
+  "source_sha256": "3822a312114c7e9a652a9f06cdaa5261330d81d02d4f1a37bc08b0ca7f724e65",
+  "source_cell": 188,
+  "source_baseline": 167,
+  "target_body": 180,
+  "scale": 1.4634146341463414,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        34,
+        30,
+        157,
+        151
+      ],
+      "crop_box": [
+        32,
+        28,
+        159,
+        153
+      ],
+      "target_size": [
+        186,
+        183
+      ],
+      "api_size": [
+        186,
+        183
+      ],
+      "paste": [
+        85,
+        123
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9941,
+      "output_box": [
+        88,
+        126,
+        268,
+        303
+      ],
+      "preserved_regions": 0
+    },
+    "2": {
+      "source_box": [
+        31,
+        31,
+        159,
+        153
+      ],
+      "crop_box": [
+        29,
+        29,
+        161,
+        155
+      ],
+      "target_size": [
+        193,
+        184
+      ],
+      "api_size": [
+        193,
+        184
+      ],
+      "paste": [
+        81,
+        124
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_002_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_002_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_002_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9921,
+      "output_box": [
+        83,
+        127,
+        271,
+        306
+      ],
+      "preserved_regions": 0
+    },
+    "3": {
+      "source_box": [
+        29,
+        33,
+        162,
+        154
+      ],
+      "crop_box": [
+        27,
+        31,
+        164,
+        156
+      ],
+      "target_size": [
+        200,
+        183
+      ],
+      "api_size": [
+        200,
+        183
+      ],
+      "paste": [
+        78,
+        127
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_003_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_003_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_003_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9923,
+      "output_box": [
+        81,
+        130,
+        275,
+        307
+      ],
+      "preserved_regions": 0
+    },
+    "4": {
+      "source_box": [
+        26,
+        34,
+        165,
+        154
+      ],
+      "crop_box": [
+        24,
+        32,
+        167,
+        156
+      ],
+      "target_size": [
+        209,
+        181
+      ],
+      "api_size": [
+        200,
+        173
+      ],
+      "paste": [
+        74,
+        128
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_004_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_004_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_004_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9601,
+      "output_box": [
+        76,
+        131,
+        280,
+        307
+      ],
+      "preserved_regions": 0
+    },
+    "5": {
+      "source_box": [
+        19,
+        44,
+        170,
+        153
+      ],
+      "crop_box": [
+        17,
+        42,
+        172,
+        155
+      ],
+      "target_size": [
+        227,
+        165
+      ],
+      "api_size": [
+        200,
+        145
+      ],
+      "paste": [
+        63,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_005_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_005_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_005_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9575,
+      "output_box": [
+        66,
+        146,
+        287,
+        305
+      ],
+      "preserved_regions": 0
+    },
+    "6": {
+      "source_box": [
+        20,
+        76,
+        181,
+        157
+      ],
+      "crop_box": [
+        18,
+        74,
+        183,
+        159
+      ],
+      "target_size": [
+        241,
+        124
+      ],
+      "api_size": [
+        200,
+        103
+      ],
+      "paste": [
+        65,
+        190
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_006_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_006_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_006_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9444,
+      "output_box": [
+        68,
+        192,
+        303,
+        314
+      ],
+      "preserved_regions": 0
+    },
+    "7": {
+      "source_box": [
+        13,
+        88,
+        185,
+        157
+      ],
+      "crop_box": [
+        11,
+        86,
+        187,
+        159
+      ],
+      "target_size": [
+        258,
+        107
+      ],
+      "api_size": [
+        200,
+        83
+      ],
+      "paste": [
+        55,
+        207
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_007_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_007_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_007_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9438,
+      "output_box": [
+        58,
+        210,
+        310,
+        311
+      ],
+      "preserved_regions": 0
+    },
+    "8": {
+      "source_box": [
+        6,
+        99,
+        184,
+        167
+      ],
+      "crop_box": [
+        4,
+        97,
+        186,
+        169
+      ],
+      "target_size": [
+        266,
+        105
+      ],
+      "api_size": [
+        200,
+        79
+      ],
+      "paste": [
+        44,
+        224
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_008_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_008_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_008_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9422,
+      "output_box": [
+        47,
+        227,
+        307,
+        326
+      ],
+      "preserved_regions": 0
+    },
+    "9": {
+      "source_box": [
+        6,
+        99,
+        184,
+        165
+      ],
+      "crop_box": [
+        4,
+        97,
+        186,
+        167
+      ],
+      "target_size": [
+        266,
+        102
+      ],
+      "api_size": [
+        200,
+        77
+      ],
+      "paste": [
+        44,
+        224
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_009_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_009_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\eclipse_knight\\death\\n\\frame_009_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9326,
+      "output_box": [
+        47,
+        227,
+        307,
+        323
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

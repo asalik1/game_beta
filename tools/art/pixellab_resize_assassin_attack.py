@@ -85,7 +85,11 @@ def _post(
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             detail = error.read().decode("utf-8", errors="replace")
-            if error.code not in {502, 503, 504} or attempt == max_attempts:
+            # PixelLab sometimes wraps an upstream socket-read timeout in a
+            # generic HTTP 500.  It is transient in the same way as the
+            # gateway statuses and is safe to retry because Resize is a pure,
+            # deterministic request for the supplied image/seed.
+            if error.code not in {429, 500, 502, 503, 504} or attempt == max_attempts:
                 raise RuntimeError(
                     f"PixelLab resize HTTP {error.code}: {detail}"
                 ) from error
@@ -93,7 +97,9 @@ def _post(
                 f"PixelLab resize HTTP {error.code}; "
                 f"retry {attempt}/{max_attempts}"
             )
-            time.sleep(attempt * 2)
+            # 429 means all four account job slots are occupied.  Give those
+            # jobs meaningful time to clear; gateway errors can retry sooner.
+            time.sleep(attempt * (15 if error.code == 429 else 2))
         except (TimeoutError, urllib.error.URLError) as error:
             if attempt == max_attempts:
                 raise RuntimeError(

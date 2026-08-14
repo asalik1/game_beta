@@ -1,0 +1,58 @@
+{
+  "skin": "golden_ronin",
+  "label": "Golden Ronin",
+  "clip": "static",
+  "direction": "s",
+  "source_strip": "game\\assets\\sprites\\skins\\elite\\assassin_blade_dancer.png",
+  "source_sha256": "4de7c8df3fec699691b936df320baf87f782a0e8095a40b56eb8dd548b9adda1",
+  "source_cell": 248,
+  "source_baseline": 185,
+  "target_body": 180,
+  "scale": 1.487603305785124,
+  "runtime_cell": 352,
+  "runtime_baseline": 326,
+  "seed": 20260810,
+  "frames": {
+    "1": {
+      "source_box": [
+        64,
+        64,
+        183,
+        185
+      ],
+      "crop_box": [
+        62,
+        62,
+        185,
+        187
+      ],
+      "target_size": [
+        183,
+        186
+      ],
+      "api_size": [
+        183,
+        186
+      ],
+      "paste": [
+        84,
+        143
+      ],
+      "input": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\static\\s\\frame_001_input.png",
+      "api_output": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\static\\s\\frame_001_api.png",
+      "normalized": "art_src\\elite_skin_upscale_2026-08-10\\golden_ronin\\static\\s\\frame_001_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      },
+      "alpha_iou": 0.9065,
+      "output_box": [
+        87,
+        146,
+        264,
+        326
+      ],
+      "preserved_regions": 0
+    }
+  }
+}

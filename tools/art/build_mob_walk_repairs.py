@@ -38,10 +38,11 @@ ROBE_ATTACKS = IDLE_ONLY
 # frame fragments or moved the body core. Every master supplies four complete
 # generated subjects separated by real chroma gutters.
 CONSISTENCY_ATTACKS = (
-    "fungus_heavy", "skeleton", "orc_rogue", "elf_ranger",
+    "fungus_heavy", "skeleton", "orc_rogue", "elf_ranger", "cultist",
     "bandit_scout", "grove_horror", "spider", "blightwolf",
     "duneprowler", "null_acolyte", "skeleton_rogue", "stone_broken",
-    "storm_harrier", "rat_mage",
+    "storm_harrier", "rat_mage", "zombie", "winterfang", "bog_lurker",
+    "fungus_long", "elf_druid", "vow_sentinel", "royal_knight",
 )
 
 WALKS = (
@@ -49,8 +50,19 @@ WALKS = (
     "orc_rogue", "elf_ranger", "duneprowler", "deep_stalker",
     "casket_creeper", "stone_broken", "vent_skitter", "winterfang",
     "royal_knight", "bog_lurker", "elf_druid", "vow_sentinel",
-    "bandit_scout",
+    "bandit_scout", "fungus_long",
 )
+
+
+def reference_path(key: str, suffix: str = "") -> Path:
+    """Use the frozen art_src metric when present, otherwise the live idle/anim.
+
+    A few later repairs target shipped sprites whose original metric snapshot
+    predates the walk-repair bundle. Falling back to the unchanged live asset
+    keeps those repairs reproducible without inventing a second reference.
+    """
+    frozen = REFERENCES / f"{key}{suffix}.png"
+    return frozen if frozen.exists() else SPRITES / f"{key}{suffix}.png"
 
 def remove_green(path: Path) -> Image.Image:
     with Image.open(path) as opened:
@@ -188,14 +200,15 @@ def old_metrics(path: Path) -> tuple[int, float, float, float, float]:
 
 
 def normalize(frames: list[Image.Image], reference: Path,
-              visible_height: float | None = None) -> list[Image.Image]:
+              visible_height: float | None = None,
+              max_width_factor: float = 1.08) -> list[Image.Image]:
     cell, old_h, old_w, center_x, ground_y = old_metrics(reference)
     boxes = [alpha_box(frame) for frame in frames]
     source_heights = sorted(box[3] - box[1] for box in boxes)
     source_widths = sorted(box[2] - box[0] for box in boxes)
     target_h = old_h if visible_height is None else cell * visible_height
     scale = min(target_h / source_heights[len(source_heights) // 2],
-                min(cell * 0.92, max(old_w * 1.08, old_w + 4))
+                min(cell * 0.92, max(old_w * max_width_factor, old_w + 4))
                 / source_widths[len(source_widths) // 2])
     out = []
     for frame, box in zip(frames, boxes):
@@ -267,7 +280,8 @@ def normalize_attack(frames: list[Image.Image], idle_reference: Path) -> list[Im
 
 
 def normalize_locked_motion(frames: list[Image.Image],
-                            reference: Path) -> list[Image.Image]:
+                            reference: Path,
+                            max_width_factor: float = 1.08) -> list[Image.Image]:
     """Normalize complete robe poses around the upper body, not loose cloth.
 
     Flowing hems change each frame's outer alpha bounds. Their center must not
@@ -286,7 +300,8 @@ def normalize_locked_motion(frames: list[Image.Image],
     widths = sorted(box[2] - box[0] for box in boxes)
     mid = len(boxes) // 2
     scale = min(old_h / heights[mid],
-                min(cell * 0.92, max(old_w * 1.08, old_w + 4)) / widths[mid])
+                min(cell * 0.92, max(old_w * max_width_factor, old_w + 4))
+                / widths[mid])
 
     # Preserve body height unless a complete pose truly cannot fit the frozen
     # runtime cell around the same upper-body anchor and ground line.
@@ -363,7 +378,16 @@ def install_walk(key: str) -> None:
     complete = (four_grid_subjects(source)
                 if source.width < source.height * 1.5
                 else four_columns(source))
-    frames = normalize(complete, REFERENCES / f"{key}_anim.png")
+    reference = reference_path(key, "_anim")
+    if key == "vow_sentinel":
+        frames = normalize_locked_motion(
+            complete, reference, max_width_factor=1.5)
+    else:
+        frames = normalize(
+            complete,
+            reference,
+            max_width_factor=1.5 if key in ("skeleton", "orc_rogue") else 1.08,
+        )
     save_strip(frames, SPRITES / f"{key}_walk.png")
 
 
@@ -407,8 +431,7 @@ def install_generated_attack(key: str) -> None:
     complete = (four_grid_subjects(source)
                 if source.width < source.height * 1.5
                 else four_whole_subjects(source))
-    frames = normalize_attack(complete,
-                              REFERENCES / f"{key}.png")
+    frames = normalize_attack(complete, reference_path(key))
     save_strip(frames, SPRITES / f"{key}_attack.png")
 
 
@@ -464,13 +487,13 @@ def install_ground_locked_source(key: str, suffix: str) -> None:
 def install_consistency_repairs() -> None:
     bog = remove_green(SOURCE / "bog_lurker_walk_master.png")
     bog_frames = normalize_attack(
-        four_whole_subjects(bog), REFERENCES / "bog_lurker_anim.png")
+        four_whole_subjects(bog), reference_path("bog_lurker", "_anim"))
     save_strip(bog_frames, SPRITES / "bog_lurker_walk.png")
 
     for key in CONSISTENCY_ATTACKS:
         install_generated_attack(key)
 
-    for key in ("stone_base", "royal_knight"):
+    for key in ("stone_base",):
         install_ground_locked_source(key, "attack")
     install_ground_locked_source("storm_harrier", "walk")
     install_ground_locked_source("stone_base", "walk")
@@ -627,12 +650,12 @@ def main() -> int:
     missing += [SOURCE / f"stone_base_walk_{direction}_source.png" for direction in
                 ("s", "se", "e", "ne", "n", "nw", "w", "sw")]
     missing += [REFERENCES / f"{key}.png" for key in ROBE_MOTION]
-    missing += [REFERENCES / f"{key}_anim.png" for key in WALKS]
+    missing += [reference_path(key, "_anim") for key in WALKS]
     missing += [REFERENCES / "skeleton_rogue_anim.png",
                 REFERENCES / "skeleton_rogue_walk.png",
                 REFERENCES / "fungus_heavy_walk_n.png",
                 REFERENCES / "fungus_heavy_walk_s.png"]
-    missing += [REFERENCES / f"{key}.png" for key in
+    missing += [reference_path(key) for key in
                 ("stone_base", "storm_harrier", "royal_knight",
                  *CONSISTENCY_ATTACKS)]
     missing = [path for path in missing if not path.exists()]
